@@ -10,11 +10,8 @@ namespace util::data {
     uint32_t byteswapU32(uint32_t val);
     uint64_t byteswapU64(uint64_t val);
 
-    [[deprecated("Signed integer byteswap is implementation-defined.")]]
     int16_t byteswapI16(int16_t val);
-    [[deprecated("Signed integer byteswap is implementation-defined.")]]
     int32_t byteswapI32(int32_t val);
-    [[deprecated("Signed integer byteswap is implementation-defined.")]]
     int64_t byteswapI64(int64_t val);
 
     float byteswapF32(float val);

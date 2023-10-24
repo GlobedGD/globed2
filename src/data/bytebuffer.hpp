@@ -19,6 +19,7 @@ public:
     void write(T value);
 
     // Read and write method for primitive types
+
     uint8_t readU8();
     int8_t readI8();
     uint16_t readU16();
