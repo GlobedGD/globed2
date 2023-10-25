@@ -10,6 +10,7 @@
 #include <Geode/Geode.hpp>
 
 #include <cassert>
+#include <stdexcept>
 #include <bit>
 
 /* platform-specific:
@@ -45,7 +46,52 @@
 # define GLOBED_CAN_USE_SOURCE_LOCATION 0
 #endif
 
-// throws a runtime error if assertion fails
-#define GLOBED_ASSERT(condition,message) if (!(condition)) { geode::log::error("Assertion failed: {}", message); throw std::runtime_error(std::string("Globed assertion failed: ") + message); }
+/*
+* GLOBED_ASSERT - throws a runtime error if assertion fails
+* GLOBED_HARD_ASSERT - terminates the program if assertion fails. Don't use it unless the condition indicates a logic error in the code.
+*/
+#if GLOBED_CAN_USE_SOURCE_LOCATION
+# define GLOBED_ASSERT(condition,message) \
+    if (!(condition)) { \
+        auto __ev_msg = message; \
+        auto loc = GLOBED_SOURCE; \
+        geode::log::error("Assertion failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), __ev_msg); \
+        throw std::runtime_error(std::string("Globed assertion failed: ") + __ev_msg); \
+    }
+# define GLOBED_HARD_ASSERT(condition,message) \
+    if (!(condition)) { \
+        auto __ev_msg = message; \
+        auto loc = GLOBED_SOURCE; \
+        geode::log::error("Assertion failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), __ev_msg); \
+        std::abort(); \
+    }
+#else
+# define GLOBED_ASSERT(condition,message) \
+    if (!(condition)) { \
+        auto __ev_msg = message; \
+        geode::log::error("Assertion failed: {}", __ev_msg); \
+        throw std::runtime_error(std::string("Globed assertion failed: ") + __ev_msg); \
+    }
+# define GLOBED_HARD_ASSERT(condition,message) \
+    if (!(condition)) { \
+        auto __ev_msg = message; \
+        geode::log::error("Assertion failed: {}", __ev_msg); \
+        std::abort(); \
+    }
+#endif
 
 constexpr bool GLOBED_LITTLE_ENDIAN = std::endian::native == std::endian::little;
+
+// singleton classes
+
+#define GLOBED_SINGLETON(cls) \
+    public: \
+    static cls& get(); \
+    cls(const cls&) = delete; \
+    cls& operator=(const cls&) = delete;
+
+#define GLOBED_SINGLETON_GET(cls) \
+    cls& cls::get() { \
+        static cls instance; \
+        return instance; \
+    }

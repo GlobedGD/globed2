@@ -30,7 +30,7 @@ bytevector CryptoBox::encrypt(const bytevector& data) {
 
 bytevector CryptoBox::encrypt(const byte* data, size_t size) {
     byte nonce[crypto_box_NONCEBYTES];
-    randombytes(nonce, crypto_box_NONCEBYTES);
+    randombytes_buf(nonce, crypto_box_NONCEBYTES);
 
     bytevector ciphertext(size + crypto_box_MACBYTES);
     CRYPTO_ERR_CHECK(crypto_box_easy(ciphertext.data(), data, size, nonce, peerPublicKey, secretKey), "crypto_box_easy failed");
@@ -51,17 +51,30 @@ bytevector CryptoBox::decrypt(const bytevector& data) {
 }
 
 bytevector CryptoBox::decrypt(const byte* data, size_t size) {
-    CRYPTO_ASSERT(size >= crypto_box_NONCEBYTES + crypto_box_MACBYTES, "message is too short");
-
-    const byte* nonce = data;
-    const byte* ciphertext = data + crypto_box_NONCEBYTES;
-    size_t ciphertextLength = size - crypto_box_NONCEBYTES;
     size_t plaintextLength = size - crypto_box_NONCEBYTES - crypto_box_MACBYTES;
 
     bytevector plaintext(plaintextLength);
-    CRYPTO_ERR_CHECK(crypto_box_open_easy(plaintext.data(), ciphertext, ciphertextLength, nonce, peerPublicKey, secretKey), "crypto_box_open_easy failed");
+    decryptInto(data, plaintext.data(), size);
 
     return plaintext;
+}
+
+size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) {
+    CRYPTO_ASSERT(size >= crypto_box_NONCEBYTES + crypto_box_MACBYTES, "message is too short");
+
+    const byte* nonce = src;
+    const byte* ciphertext = src + crypto_box_NONCEBYTES;
+
+    size_t plaintextLength = size - crypto_box_NONCEBYTES - crypto_box_MACBYTES;
+    size_t ciphertextLength = size - crypto_box_NONCEBYTES;
+
+    CRYPTO_ERR_CHECK(crypto_box_open_easy(dest, ciphertext, ciphertextLength, nonce, peerPublicKey, secretKey), "crypto_box_open_easy failed");
+
+    return plaintextLength;
+}
+
+size_t CryptoBox::decryptInPlace(util::data::byte* data, size_t size) {
+    return decryptInto(data, data, size);
 }
 
 std::string CryptoBox::decryptToString(const bytevector& data) {

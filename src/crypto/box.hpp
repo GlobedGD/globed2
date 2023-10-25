@@ -5,6 +5,17 @@
 #include <sodium.h>
 #include <string>
 
+/*
+* CryptoBox - A class for secure data encryption/decryption using libsodium
+*
+* Uses `crypto_box_easy` and `crypto_box_open_easy` for en/decryption, and `crypto_box_keypair` for key generation.
+* The algorithms used are (as per https://libsodium.gitbook.io/doc/public-key_cryptography/authenticated_encryption#algorithm-details)
+*
+* Key exchange: X25519
+* Encryption: XSalsa20
+* Authentication: Poly1305
+*/
+
 class CryptoBox {
 public:
     CryptoBox(util::data::byte* peerKey = nullptr);
@@ -24,6 +35,8 @@ public:
     // Decrypts the data. It must include the nonce and the authentication tag.
     util::data::bytevector decrypt(const util::data::bytevector& data);
     util::data::bytevector decrypt(const util::data::byte* data, size_t size);
+    size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
+    size_t decryptInPlace(util::data::byte* data, size_t size);
 
     std::string decryptToString(const util::data::bytevector& data);
     std::string decryptToString(const util::data::byte* data, size_t size);

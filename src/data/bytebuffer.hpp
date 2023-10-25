@@ -44,8 +44,15 @@ public:
 
     // Read and write methods for dynamic-sized types
     std::string readString();
+    util::data::bytevector readByteArray();
 
     void writeString(const std::string& str);
+    void writeByteArray(const util::data::bytevector& vec);
+
+    // readBytes/writeBytes doesn't prepend the size unlike writeByteArray
+    util::data::bytevector readBytes(size_t size);
+    void writeBytes(const util::data::byte* data, size_t size);
+    void writeBytes(const util::data::bytevector& vec);
 
     // Read and write methods for bit manipulation
 
@@ -67,6 +74,9 @@ public:
 
     // Get the internal data as a bytevector
     util::data::bytevector getData() const;
+
+    // Get a reference to internal data instead of a copy
+    util::data::bytevector& getDataRef();
 
     size_t size() const;
     void clear();

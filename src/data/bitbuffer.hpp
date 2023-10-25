@@ -9,7 +9,9 @@
 
 #pragma once
 #include <bitset>
+#include <vector>
 #include <cstdint>
+#include <defs.hpp>
 
 template <size_t BitCount> requires (BitCount <= 64)
 class BitBuffer {

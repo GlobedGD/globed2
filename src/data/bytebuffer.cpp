@@ -6,7 +6,7 @@ using namespace util::data;
     if constexpr (GLOBED_LITTLE_ENDIAN) val = util::data::byteswap<type>(val); \
     return val;
 
-#define WRITE_VALUE(type, value) GLOBED_LITTLE_ENDIAN ? write<type>(util::data::byteswap<type>(value)) : write<type>(value);
+#define WRITE_VALUE(type, value) GLOBED_LITTLE_ENDIAN ? write<type>(util::data::byteswap<type>(value)) : this->write<type>(value);
 
 #define MAKE_READ_FUNC(type, suffix) type ByteBuffer::read##suffix() { READ_VALUE(type) }
 #define MAKE_WRITE_FUNC(type, suffix) void ByteBuffer::write##suffix(type val) { WRITE_VALUE(type, val) }
@@ -20,7 +20,7 @@ ByteBuffer::ByteBuffer(const byte* data, size_t length) : _data(bytevector(data,
 
 template <typename T>
 T ByteBuffer::read() {
-    boundsCheck(sizeof(T));
+    this->boundsCheck(sizeof(T));
 
     T value;
     std::memcpy(&value, _data.data() + _position, sizeof(T));
@@ -47,22 +47,55 @@ MAKE_BOTH_FUNCS(float, F32)
 MAKE_BOTH_FUNCS(double, F64)
 
 std::string ByteBuffer::readString() {
-    auto length = readU32();
+    auto length = this->readU32();
 
-    boundsCheck(length);
+    this->boundsCheck(length);
 
     std::string str(reinterpret_cast<const char*>(_data.data() + _position), length);
     _position += length;
+
     return str;
 }
 
+bytevector ByteBuffer::readByteArray() {
+    auto length = this->readU32();
+    return this->readBytes(length);
+}
+
+bytevector ByteBuffer::readBytes(size_t size) {
+    this->boundsCheck(size);
+
+    bytevector vec(_data.begin() + _position, _data.begin() + _position + size);
+    _position += size;
+
+    return vec;
+}
+
 void ByteBuffer::writeString(const std::string& str) {
-    writeU32(str.size());
+    this->writeU32(str.size());
     _data.insert(_data.end(), str.begin(), str.end());
     _position += str.size();
 }
 
-std::vector<uint8_t> ByteBuffer::getData() const {
+void ByteBuffer::writeByteArray(const bytevector& vec) {
+    this->writeU32(vec.size());
+    this->writeBytes(vec);
+}
+
+void ByteBuffer::writeBytes(const util::data::byte* data, size_t size) {
+    _data.insert(_data.end(), data, data + size);
+    _position += size;
+}
+
+void ByteBuffer::writeBytes(const bytevector& vec) {
+    this->writeBytes(vec.data(), vec.size());
+}
+
+bytevector ByteBuffer::getData() const {
+    return _data;
+}
+
+bytevector& ByteBuffer::getDataRef() {
     return _data;
 }
 
