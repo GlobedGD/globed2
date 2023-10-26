@@ -1,6 +1,9 @@
 #include "rng.hpp"
 
-#define RNG_DEF(type) template type Random::generate<type>()
+#define RNG_DEF(type) \
+    template type Random::generate<type>(); \
+    template type Random::generate<type>(type); \
+    template type Random::generate<type>(type, type)
 
 namespace util::rng {
     GLOBED_SINGLETON_GET(Random)
@@ -12,7 +15,17 @@ namespace util::rng {
 
     template <typename T>
     T Random::generate() {
-        std::uniform_int_distribution<T> dist(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
+        return generate(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
+    }
+
+    template <typename T>
+    T Random::generate(T max) {
+        return generate(std::numeric_limits<T>::min(), max);
+    }
+
+    template <typename T>
+    T Random::generate(T min, T max) {
+        std::uniform_int_distribution<T> dist(min, max);
         return dist(engine);
     }
 

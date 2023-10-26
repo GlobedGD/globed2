@@ -3,6 +3,14 @@
 #include <defs.hpp>
 #include <util/data.hpp>
 
+class ByteBuffer;
+template <typename T>
+concept Serializable = requires(T t, ByteBuffer& buf) {
+    { t.encode(buf) } -> std::same_as<void>;
+    { t.decode(buf) } -> std::same_as<void>;
+    T();
+};
+
 class ByteBuffer {
 public:
     // Constructs an empty ByteBuffer
@@ -10,7 +18,7 @@ public:
 
     // Construct a ByteBuffer and initializes it with some data
     ByteBuffer(const util::data::bytevector& data);
-    ByteBuffer(const byte* data, size_t length);
+    ByteBuffer(const util::data::byte* data, size_t length);
 
     template<typename T>
     T read();
@@ -70,6 +78,20 @@ public:
         constexpr size_t byteCount = util::data::bitsToBytes(BitCount);
 
         write(bitbuf.contents());
+    }
+
+    // Read and write methods for types implementing Serializable
+
+    template <Serializable T>
+    T readValue() {
+        T value;
+        value.decode(this);
+        return value;
+    }
+
+    template <Serializable T>
+    void writeValue(T value) {
+        value.encode(this);
     }
 
     // Get the internal data as a bytevector

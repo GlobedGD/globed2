@@ -23,4 +23,4 @@
 #include "server/crypto_handshake_response.hpp"
 
 // Matches a packet by packet ID, returns nullptr if not found. Otherwise returns an Packet* with uninitialized data
-std::unique_ptr<Packet> matchPacket(packetid_t packetId);
+std::shared_ptr<Packet> matchPacket(packetid_t packetId);

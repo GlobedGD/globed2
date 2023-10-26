@@ -1,4 +1,5 @@
 #include "bytebuffer.hpp"
+#include <cstring> // std::memcpy
 
 using namespace util::data;
 

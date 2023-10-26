@@ -1,17 +1,12 @@
 #include "debugging.hpp"
-#include <Geode/Geode.hpp>
 
 namespace util::debugging {
-    void Benchmarker::end(std::string id) {
+    std::chrono::microseconds Benchmarker::end(std::string id) {
         auto taken = std::chrono::high_resolution_clock::now() - _entries[id];
-        auto micros = std::chrono::duration_cast<std::chrono::microseconds>(taken).count();
-        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(taken).count();
+        auto micros = std::chrono::duration_cast<std::chrono::microseconds>(taken);
+        _entries.erase(id);
 
-        if (millis > 0) {
-            geode::log::info("[B] [!] {} took {}ms {}micros to run", id, millis, micros);
-        } else {
-            geode::log::info("[B] {} took {}micros to run", id, micros);
-        }
+        return micros;
     }
 
 #if GLOBED_CAN_USE_SOURCE_LOCATION

@@ -38,8 +38,11 @@ public:
     std::vector<T> extract() const {
         std::vector<T> out(queue.size());
 
-        for (size_t i = 0; i < queue.size(); i++) {
-            out[i] = queue[i];
+        std::queue<T> qcopy(queue);
+
+        while (!qcopy.empty()) {
+            out.push_back(qcopy.front());
+            qcopy.pop();
         }
 
         return out;

@@ -21,3 +21,9 @@ gotta figure it out somehow
 ### Android
 
 no clue either
+
+## Credit
+
+ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you for being awesome, whether it's because you helped me, suggested ideas, or if I just found you awesome in general :D
+
+Thank you Robert Nicholas Christian Topala for releasing this awesome game :)

@@ -34,7 +34,7 @@ public:
         std::unique_lock lock(_mtx);
         if (!_iq.empty()) return true;
         
-        return _cvar.wait_for(lock, timeout, [this](){ return !_iq.empty(); }) == std::cv_status::no_timeout;
+        return _cvar.wait_for(lock, timeout, [this](){ return !_iq.empty(); });
     }
 
     bool empty() {

@@ -7,7 +7,7 @@ class GameSocket : public UdpSocket {
 public:
     GameSocket();
 
-    std::unique_ptr<Packet> recvPacket();
+    std::shared_ptr<Packet> recvPacket();
     void sendPacket(Packet* packet);
 
 private:

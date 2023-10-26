@@ -20,7 +20,7 @@ using packetid_t = uint16_t;
 
 class Packet {
 public:
-    virtual ~Packet();
+    virtual ~Packet() {}
     // Encodes the packet into a bytebuffer
     virtual void encode(ByteBuffer& buf) = 0;
     // Decodes the packet from a bytebuffer

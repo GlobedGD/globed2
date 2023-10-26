@@ -8,7 +8,7 @@ GameSocket::GameSocket() {
     buffer = new byte[65536];
 }
 
-std::unique_ptr<Packet> GameSocket::recvPacket() {
+std::shared_ptr<Packet> GameSocket::recvPacket() {
     auto received = receive(reinterpret_cast<char*>(buffer), 65536);
     GLOBED_ASSERT(received > 0, "failed to receive data from a socket")
 

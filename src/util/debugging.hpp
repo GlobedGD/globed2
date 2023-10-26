@@ -1,6 +1,7 @@
 #pragma once
 #include <defs.hpp>
-#include <source_location>
+#include <chrono>
+#include <unordered_map>
 
 namespace util::debugging {
     class Benchmarker {
@@ -10,7 +11,7 @@ namespace util::debugging {
             _entries[id] = std::chrono::high_resolution_clock::now();
         }
 
-        void end(std::string id);
+        std::chrono::microseconds end(std::string id);
     private:
         std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> _entries;
     };

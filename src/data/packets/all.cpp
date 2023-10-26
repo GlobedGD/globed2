@@ -1,8 +1,8 @@
 #include "all.hpp"
 
-#define PACKET(id, pt) case id: return std::make_unique<pt>()
+#define PACKET(id, pt) case id: return std::make_shared<pt>()
 
-std::unique_ptr<Packet> matchPacket(packetid_t packetId) {
+std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
     switch (packetId) {
         /*
         * Client-side packets
@@ -19,6 +19,6 @@ std::unique_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(20001, CryptoHandshakeResponsePacket);
 
         default:
-            return std::unique_ptr<Packet>(nullptr);
+            return std::shared_ptr<Packet>(nullptr);
     }
 }

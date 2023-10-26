@@ -86,8 +86,8 @@ void NetworkManager::threadRecvFunc() {
         auto callback = (*listeners_).at(packetId);
 
         // this is scary
-        geode::Loader::get()->queueInMainThread([callback, packet = std::move(packet)]() mutable {
-            callback(std::move(packet));
+        geode::Loader::get()->queueInMainThread([callback, packet]() mutable {
+            callback(packet);
         });
     }
 }

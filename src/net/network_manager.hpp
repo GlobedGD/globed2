@@ -15,7 +15,7 @@ enum class NetworkThreadTask {
 
 class NetworkManager {
 public:
-    using PacketCallback = std::function<void(std::unique_ptr<Packet>)>;
+    using PacketCallback = std::function<void(std::shared_ptr<Packet>)>;
 
     GLOBED_SINGLETON(NetworkManager)
     NetworkManager();
