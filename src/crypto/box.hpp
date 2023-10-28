@@ -15,7 +15,7 @@
 * Encryption: XSalsa20
 * Authentication: Poly1305
 *
-* All methods (including the constructor) except for `getPublicKey` and `setPeerKey` will throw an exception on failure.
+* All methods (including the constructor) except for `getPublicKey` will throw an exception on failure.
 */
 
 class CryptoBox {
@@ -31,7 +31,7 @@ public:
 
     // The data is copied from src into a private member. You are responsible for freeing the source afterwards.
     // If the length is not equal to `crypto_box_PUBLICKEYBYTES` the behavior is undefined.
-    void setPeerKey(util::data::byte* src) noexcept;
+    void setPeerKey(util::data::byte* src);
 
     /* Encryption */
 
@@ -77,4 +77,6 @@ private: // nuh uh
     util::data::byte secretKey[crypto_box_SECRETKEYBYTES];
     util::data::byte publicKey[crypto_box_PUBLICKEYBYTES];
     util::data::byte peerPublicKey[crypto_box_PUBLICKEYBYTES];
+
+    util::data::byte sharedKey[crypto_box_BEFORENMBYTES];
 };

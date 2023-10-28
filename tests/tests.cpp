@@ -5,6 +5,7 @@
 #include <functional>
 #include <thread>
 #include <map>
+#include <cstring>
 
 #include <crypto/box.hpp>
 #include <util/rng.hpp>
@@ -62,6 +63,21 @@ void tCrypto() {
         for (size_t i = 0; i < decrypted.size(); i++) {
             ASSERT(contents[i] == decrypted[i], "decrypted data is invalid");
         }
+
+        // now try in place
+        const int testl = 64;
+        byte* buf2 = new byte[testl + CryptoBox::PREFIX_LEN];
+        randombytes_buf(buf2, testl);
+
+        byte* original = new byte[testl];
+        std::memcpy(original, buf2, testl);
+
+        size_t encrypted = alice.encryptInPlace(buf2, testl);
+        size_t decrypted_ = bob.decryptInPlace(buf2, encrypted);
+
+        for (size_t i = 0; i < testl; i++) {
+            ASSERT(buf2[i] == original[i], "decrypted data is invalid");
+        }
     }
 }
 
@@ -85,12 +101,14 @@ void tRandom() {
     ASSERT(diff < 4096, "poor random entropy")
 }
 
+using ms = std::chrono::microseconds;
+
 std::map<std::string, std::function<void()>> tests = {
     {"Random"s, tRandom},
     {"Crypto"s, tCrypto},
 };
 
-std::chrono::microseconds bnCrypto(size_t dataLength, size_t iterations) {
+ms bnCrypto(size_t dataLength, size_t iterations) {
     CryptoBox alice, bob;
     alice.setPeerKey(bob.getPublicKey());
     bob.setPeerKey(alice.getPublicKey());
@@ -122,7 +140,52 @@ std::chrono::microseconds bnCrypto(size_t dataLength, size_t iterations) {
     delete[] buf;
 
     auto totalmicros = (long long)((float)(tooktime.count()) / (float)(iterations));
-    return std::chrono::microseconds(totalmicros);
+    return ms(totalmicros);
+}
+
+ms bnCryptoInplace(size_t dataLength, size_t iterations) {
+    CryptoBox alice, bob;
+    alice.setPeerKey(bob.getPublicKey());
+    bob.setPeerKey(alice.getPublicKey());
+
+    byte* buf = new byte[dataLength + CryptoBox::PREFIX_LEN];
+    randombytes_buf(buf, dataLength);
+
+    byte* original = new byte[dataLength];
+    std::memcpy(original, buf, dataLength);
+
+    Benchmarker bench;
+    bench.start("all");
+
+    CryptoBox &box1 = alice, &box2 = bob;
+    for (size_t i = 0; i < iterations; i++) {
+        if (Random::get().generate<bool>()) {
+            box1 = bob;
+            box2 = alice;
+        } else {
+            box1 = alice;
+            box2 = bob;
+        }
+
+        size_t encSize = box1.encryptInPlace(buf, dataLength);
+        dataLength = box2.decryptInPlace(buf, encSize);
+    }
+
+    auto tooktime = bench.end("all");
+
+    for (size_t i = 0; i < dataLength; i++) {
+        if (buf[i] != original[i]) {
+            delete[] buf;
+            delete[] original;
+            ASSERT(false, "decrypted data is invalid");
+        }
+    }
+
+    delete[] original;
+    delete[] buf;
+
+    auto totalmicros = (long long)((float)(tooktime.count()) / (float)(iterations));
+    return ms(totalmicros);
 }
 
 int main(int argc, const char* *argv) {
@@ -148,13 +211,25 @@ int main(int argc, const char* *argv) {
             }
         }
     } else if (mode == "benchmark") {
+        // note - the tests aren't made to compare against each other
+        // but only among themselves. the in-place crypto is faster
+        // because the 1st variation does X runs of encryption and then X runs of decryption
+        // achieving bigger data lengths, when 2nd one runs both every iteration
         Benchmarker bench;
         int runs = 1024;
+        size_t lengthRuns[] = {64, 1024, 8192, 65536};
         std::cout << "Running crypto benchmarks, 1024 iterations per test" << std::endl;
-        std::cout << "64 bytes, per iter: " << time::toString(bnCrypto(64, runs)) << std::endl;
-        std::cout << "1024 bytes, per iter: " << time::toString(bnCrypto(1024, runs)) << std::endl;
-        std::cout << "8192 bytes, per iter: " << time::toString(bnCrypto(8192, runs)) << std::endl;
-        std::cout << "65536 bytes, per iter: " << time::toString(bnCrypto(65536, runs)) << std::endl;
+
+        for (size_t len : lengthRuns) {
+            std::cout << len << " bytes, per iter: " << time::toString(bnCrypto(len, runs)) << std::endl;
+        }
+
+        std::cout << "Running in-place crypto benchmarks, 1024 iterations per test" << std::endl;
+
+        for (size_t len : lengthRuns) {
+            std::cout << len << " bytes, per iter: " << time::toString(bnCryptoInplace(len, runs)) << std::endl;
+        }
+
     } else {
         std::cerr << "modes: test, benchmark" << std::endl;
     }
