@@ -17,56 +17,60 @@ CryptoBox::CryptoBox(byte* key) {
     }
 }
 
-byte* CryptoBox::getPublicKey() {
+byte* CryptoBox::getPublicKey() noexcept {
     return publicKey;
 }
 
-void CryptoBox::setPeerKey(byte* key) {
+void CryptoBox::setPeerKey(byte* key) noexcept {
     std::memcpy(peerPublicKey, key, crypto_box_PUBLICKEYBYTES);
 }
 
-bytevector CryptoBox::encrypt(const bytevector& data) {
-    return encrypt(data.data(), data.size());
+size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
+    byte* nonce = dest;
+    randombytes_buf(nonce, NONCE_LEN);
+
+    byte* ciphertext = dest + NONCE_LEN;
+    CRYPTO_ERR_CHECK(crypto_box_easy(ciphertext, src, size, nonce, peerPublicKey, secretKey), "crypto_box_easy failed");
+
+    return size + PREFIX_LEN;
 }
 
-bytevector CryptoBox::encrypt(const byte* data, size_t size) {
-    auto prefixSize = crypto_box_NONCEBYTES + crypto_box_MACBYTES;
-    bytevector result(prefixSize + size);
-
-    byte* nonce = result.data();
-    randombytes_buf(nonce, crypto_box_NONCEBYTES);
-
-    byte* ciphertext = result.data() + crypto_box_NONCEBYTES;
-    CRYPTO_ERR_CHECK(crypto_box_easy(ciphertext, data, size, nonce, peerPublicKey, secretKey), "crypto_box_easy failed");
-
-    return result;
+size_t CryptoBox::encryptInto(const std::string& src, byte* dest) {
+    return encryptInto(reinterpret_cast<const byte*>(src.c_str()), dest, src.size());
 }
 
-bytevector CryptoBox::encrypt(const std::string& data) {
-    return encrypt(reinterpret_cast<const byte*>(data.c_str()), data.size());
+size_t CryptoBox::encryptInto(const bytevector& src, byte* dest) {
+    return encryptInto(src.data(), dest, src.size());
 }
 
-bytevector CryptoBox::decrypt(const bytevector& data) {
-    return decrypt(data.data(), data.size());
+size_t CryptoBox::encryptInPlace(byte* data, size_t size) {
+    return encryptInto(data, data, size);
 }
 
-bytevector CryptoBox::decrypt(const byte* data, size_t size) {
-    size_t plaintextLength = size - crypto_box_NONCEBYTES - crypto_box_MACBYTES;
-
-    bytevector plaintext(plaintextLength);
-    decryptInto(data, plaintext.data(), size);
-
-    return plaintext;
+bytevector CryptoBox::encrypt(const bytevector& src) {
+    return encrypt(src.data(), src.size());
 }
+
+bytevector CryptoBox::encrypt(const byte* src, size_t size) {
+    bytevector output(size + PREFIX_LEN);
+    encryptInto(src, output.data(), size);
+    return output;
+}
+
+bytevector CryptoBox::encrypt(const std::string& src) {
+    return encrypt(reinterpret_cast<const byte*>(src.c_str()), src.size());
+}
+
+
 
 size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) {
-    CRYPTO_ASSERT(size >= crypto_box_NONCEBYTES + crypto_box_MACBYTES, "message is too short");
+    CRYPTO_ASSERT(size >= PREFIX_LEN, "message is too short");
 
     const byte* nonce = src;
-    const byte* ciphertext = src + crypto_box_NONCEBYTES;
+    const byte* ciphertext = src + NONCE_LEN;
 
-    size_t plaintextLength = size - crypto_box_NONCEBYTES - crypto_box_MACBYTES;
-    size_t ciphertextLength = size - crypto_box_NONCEBYTES;
+    size_t plaintextLength = size - PREFIX_LEN;
+    size_t ciphertextLength = size - NONCE_LEN;
 
     CRYPTO_ERR_CHECK(crypto_box_open_easy(dest, ciphertext, ciphertextLength, nonce, peerPublicKey, secretKey), "crypto_box_open_easy failed");
 
@@ -77,12 +81,25 @@ size_t CryptoBox::decryptInPlace(util::data::byte* data, size_t size) {
     return decryptInto(data, data, size);
 }
 
-std::string CryptoBox::decryptToString(const bytevector& data) {
-    auto vec = decrypt(data);
+bytevector CryptoBox::decrypt(const bytevector& src) {
+    return decrypt(src.data(), src.size());
+}
+
+bytevector CryptoBox::decrypt(const byte* src, size_t size) {
+    size_t plaintextLength = size - PREFIX_LEN;
+
+    bytevector plaintext(plaintextLength);
+    decryptInto(src, plaintext.data(), size);
+
+    return plaintext;
+}
+
+std::string CryptoBox::decryptToString(const bytevector& src) {
+    auto vec = decrypt(src);
     return std::string(vec.begin(), vec.end());
 }
 
-std::string CryptoBox::decryptToString(const byte* data, size_t size) {
-    auto vec = decrypt(data, size);
+std::string CryptoBox::decryptToString(const byte* src, size_t size) {
+    auto vec = decrypt(src, size);
     return std::string(vec.begin(), vec.end());
 }
