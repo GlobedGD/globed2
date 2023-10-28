@@ -12,10 +12,30 @@ using namespace util::data;
 CryptoBox::CryptoBox(byte* key) {
     // sodium_init returns 0 on success, 1 if already initialized, -1 on fail
     CRYPTO_ASSERT(sodium_init() != -1, "sodium_init failed");
+
+    memBasePtr = reinterpret_cast<byte*>(sodium_malloc(
+        crypto_box_PUBLICKEYBYTES * 2 + // publicKey, peerPublicKey
+        crypto_box_SECRETKEYBYTES + // secretKey
+        crypto_box_BEFORENMBYTES // sharedKey
+    ));
+
+    CRYPTO_ASSERT(memBasePtr != nullptr, "sodium_malloc returned nullptr");
+
+    secretKey = memBasePtr; // base + 0
+    publicKey = secretKey + crypto_box_SECRETKEYBYTES; // base + 32
+    peerPublicKey = publicKey + crypto_box_PUBLICKEYBYTES; // base + 64
+    sharedKey = peerPublicKey + crypto_box_PUBLICKEYBYTES; // base + 96
+
     CRYPTO_ERR_CHECK(crypto_box_keypair(publicKey, secretKey), "crypto_box_keypair failed");
 
     if (key != nullptr) {
         setPeerKey(key);
+    }
+}
+
+CryptoBox::~CryptoBox() {
+    if (memBasePtr) {
+        sodium_free(memBasePtr);
     }
 }
 

@@ -157,18 +157,18 @@ ms bnCryptoInplace(size_t dataLength, size_t iterations) {
     Benchmarker bench;
     bench.start("all");
 
-    CryptoBox &box1 = alice, &box2 = bob;
+    CryptoBox *box1, *box2;
     for (size_t i = 0; i < iterations; i++) {
         if (Random::get().generate<bool>()) {
-            box1 = bob;
-            box2 = alice;
+            box1 = &bob;
+            box2 = &alice;
         } else {
-            box1 = alice;
-            box2 = bob;
+            box1 = &alice;
+            box2 = &bob;
         }
 
-        size_t encSize = box1.encryptInPlace(buf, dataLength);
-        dataLength = box2.decryptInPlace(buf, encSize);
+        size_t encSize = box1->encryptInPlace(buf, dataLength);
+        dataLength = box2->decryptInPlace(buf, encSize);
     }
 
     auto tooktime = bench.end("all");

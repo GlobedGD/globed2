@@ -23,6 +23,9 @@ public:
 
     // Initialize this `CryptoBox`, optionally set peer's public key.
     CryptoBox(util::data::byte* peerKey = nullptr);
+    CryptoBox(const CryptoBox&) = delete;
+    CryptoBox& operator=(const CryptoBox&) = delete;
+    ~CryptoBox();
     
     // Get our public key. The returned pointer lives as long as this `CryptoBox` object does.
     util::data::byte* getPublicKey() noexcept;
@@ -73,9 +76,11 @@ public:
     std::string decryptToString(const util::data::byte* src, size_t size);
 
 private: // nuh uh
-    util::data::byte secretKey[crypto_box_SECRETKEYBYTES];
-    util::data::byte publicKey[crypto_box_PUBLICKEYBYTES];
-    util::data::byte peerPublicKey[crypto_box_PUBLICKEYBYTES];
+    util::data::byte* memBasePtr = nullptr;
 
-    util::data::byte sharedKey[crypto_box_BEFORENMBYTES];
+    util::data::byte* secretKey;
+    util::data::byte* publicKey;
+    util::data::byte* peerPublicKey;
+
+    util::data::byte* sharedKey;
 };
