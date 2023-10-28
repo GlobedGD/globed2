@@ -9,8 +9,13 @@ using namespace util::data;
 
 #define WRITE_VALUE(type, value) GLOBED_LITTLE_ENDIAN ? write<type>(util::data::byteswap<type>(value)) : this->write<type>(value);
 
-#define MAKE_READ_FUNC(type, suffix) type ByteBuffer::read##suffix() { READ_VALUE(type) }
-#define MAKE_WRITE_FUNC(type, suffix) void ByteBuffer::write##suffix(type val) { WRITE_VALUE(type, val) }
+#define MAKE_READ_FUNC(type, suffix) \
+    type ByteBuffer::read##suffix() { READ_VALUE(type) } \
+    template type ByteBuffer::read<type>();
+
+#define MAKE_WRITE_FUNC(type, suffix) \
+    void ByteBuffer::write##suffix(type val) { WRITE_VALUE(type, val) } \
+    template void ByteBuffer::write<type>(type);
 
 #define MAKE_BOTH_FUNCS(type, suffix) MAKE_READ_FUNC(type, suffix) \
     MAKE_WRITE_FUNC(type, suffix)
@@ -115,4 +120,16 @@ size_t ByteBuffer::getPosition() const {
 
 void ByteBuffer::setPosition(size_t pos) {
     _position = pos;
+}
+
+void ByteBuffer::resize(size_t bytes) {
+    _data.resize(bytes);
+}
+
+void ByteBuffer::grow(size_t bytes) {
+    this->resize(_data.size() + bytes);
+}
+
+void ByteBuffer::shrink(size_t bytes) {
+    this->resize(_data.size() - bytes);
 }

@@ -26,4 +26,6 @@ no clue either
 
 ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you for being awesome, whether it's because you helped me, suggested ideas, or if I just found you awesome in general :D
 
+camila314 - thank you for [UIBuilder](https://github.com/camila314/uibuilder)
+
 Thank you Robert Nicholas Christian Topala for releasing this awesome game :)

@@ -10,5 +10,8 @@ using namespace geode::prelude;
 
 class $modify(MenuLayer) {
 	void onMoreGames(CCObject*) {
+		ByteBuffer mybuf;
+		mybuf.writeI32(32);
+
 	}	
 };

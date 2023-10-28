@@ -85,13 +85,13 @@ public:
     template <Serializable T>
     T readValue() {
         T value;
-        value.decode(this);
+        value.decode(*this);
         return value;
     }
 
     template <Serializable T>
     void writeValue(T value) {
-        value.encode(this);
+        value.encode(*this);
     }
 
     // Get the internal data as a bytevector
@@ -105,6 +105,15 @@ public:
 
     size_t getPosition() const;
     void setPosition(size_t pos);
+
+    // Resize the internal vector to length `bytes`. Does not change the position
+    void resize(size_t bytes);
+
+    // Grow the internal vector, synonym to `resize(_data.len() + bytes)`
+    void grow(size_t bytes);
+
+    // Shrink the internal vector, synonym to `resize(_data.len() - bytes)`
+    void shrink(size_t bytes);
 private:
     util::data::bytevector _data;
     size_t _position;

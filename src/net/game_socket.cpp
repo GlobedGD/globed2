@@ -13,20 +13,22 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
     GLOBED_ASSERT(received > 0, "failed to receive data from a socket")
 
     // read the header, 2 bytes for packet ID, 1 byte for encrypted
-    GLOBED_ASSERT(received >= 3, "packet is missing a header")
+    GLOBED_ASSERT(received >= Packet::HEADER_LEN, "packet is missing a header")
 
-    ByteBuffer header(reinterpret_cast<byte*>(buffer), 3);
-    packetid_t packetId = header.read<packetid_t>();
-    bool encrypted = header.readU8() != 0;
+    ByteBuffer buf(reinterpret_cast<byte*>(buffer), received);
 
-    byte* messagePtr = buffer + 3;
-    size_t messageLength = received - 3;
+    // read header
+    packetid_t packetId = buf.read<packetid_t>();
+    bool encrypted = buf.readU8() != 0;
+
+    // packet size without the header
+    size_t messageLength = received - Packet::HEADER_LEN;
 
     if (encrypted) {
-        messageLength = box.decryptInPlace(messagePtr, messageLength);
+        bytevector& bufvec = buf.getDataRef();
+        messageLength = box.decryptInPlace(bufvec.data(), messageLength);
+        buf.resize(messageLength + 3);
     }
-
-    ByteBuffer buf(messagePtr, messageLength);
 
     auto packet = matchPacket(packetId);
     if (packet == nullptr) {
@@ -40,26 +42,18 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 
 void GameSocket::sendPacket(Packet* packet) {
     ByteBuffer buf;
+    buf.write<packetid_t>(packet->getPacketId());
+    buf.write(static_cast<uint8_t>(packet->getEncrypted()));
+
     packet->encode(buf);
+    size_t packetSize = buf.size() - Packet::HEADER_LEN;
 
-    bytevector& data = buf.getDataRef();
-
-    if (!packet->getEncrypted()) {
-        // data = box.encrypt(data);
-        sendAll(reinterpret_cast<char*>(data.data()), data.size());
-        return;
+    bytevector& dataref = buf.getDataRef();
+    if (packet->getEncrypted()) {
+        // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
+        buf.grow(CryptoBox::PREFIX_LEN);
+        box.encryptInPlace(dataref.data(), packetSize);
     }
 
-    ByteBuffer encBuf;
-
-    encBuf.write<packetid_t>(packet->getPacketId());
-    encBuf.writeU8(static_cast<uint8_t>(packet->getEncrypted()));
-
-    auto encrypted = box.encrypt(data);
-
-    encBuf.writeBytes(encrypted);
-
-    bytevector& finalvec = encBuf.getDataRef();
-
-    sendAll(reinterpret_cast<char*>(finalvec.data()), finalvec.size());
+    sendAll(reinterpret_cast<char*>(dataref.data()), dataref.size());
 }

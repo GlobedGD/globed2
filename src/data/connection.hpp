@@ -9,14 +9,14 @@
 
 class HandshakeData {
 public:
-    HandshakeData();
+    HandshakeData() {}
 
     void encode(ByteBuffer& buf) {
         buf.writeBytes(pubkey);
     }
 
     void decode(ByteBuffer& buf) {
-        GLOBED_UNIMPL("HandshakeData::decode unimplemented")
+        GLOBED_UNIMPL("HandshakeData::decode")
     }
 
     util::data::bytevector pubkey;
@@ -24,10 +24,10 @@ public:
 
 class HandshakeResponseData {
 public:
-    HandshakeResponseData();
+    HandshakeResponseData() {}
 
     void encode(ByteBuffer& buf) {
-        GLOBED_UNIMPL("HandshakeResponseData::encode unimplemented")
+        GLOBED_UNIMPL("HandshakeResponseData::encode")
     }
 
     void decode(ByteBuffer& buf) {

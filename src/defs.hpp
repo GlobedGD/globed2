@@ -62,16 +62,16 @@
 #if GLOBED_CAN_USE_SOURCE_LOCATION && !defined(GLOBED_ROOT_NO_GEODE)
 # define GLOBED_ASSERT(condition,message) \
     if (!(condition)) { \
-        auto __ev_msg = message; \
+        auto ev_msg = message; \
         auto loc = GLOBED_SOURCE; \
-        geode::log::error("Assertion failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), __ev_msg); \
-        throw std::runtime_error(std::string("Globed assertion failed: ") + __ev_msg); \
+        geode::log::error("Assertion failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
+        throw std::runtime_error(std::string("Globed assertion failed: ") + ev_msg); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) { \
-        auto __ev_msg = message; \
+        auto ev_msg = message; \
         auto loc = GLOBED_SOURCE; \
-        geode::log::error("Assertion failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), __ev_msg); \
+        geode::log::error("Assertion failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
         std::abort(); \
     }
 #else
@@ -80,19 +80,19 @@
 # endif
 # define GLOBED_ASSERT(condition,message) \
     if (!(condition)) { \
-        auto __ev_msg = message; \
-        GLOBED_ASSERT_LOG(std::string("Assertion failed: ") + __ev_msg); \
-        throw std::runtime_error(std::string("Globed assertion failed: ") + __ev_msg); \
+        auto ev_msg = message; \
+        GLOBED_ASSERT_LOG(std::string("Assertion failed: ") + ev_msg); \
+        throw std::runtime_error(std::string("Globed assertion failed: ") + ev_msg); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) { \
-        auto __ev_msg = message; \
-        GLOBED_ASSERT_LOG(std::string("Assertion failed: ") + __ev_msg); \
+        auto ev_msg = message; \
+        GLOBED_ASSERT_LOG(std::string("Assertion failed: ") + ev_msg); \
         std::abort(); \
     }
 #endif
 
-#define GLOBED_UNIMPL(message) GLOBED_ASSERT(false, message)
+#define GLOBED_UNIMPL(message) GLOBED_ASSERT(false, "unimplemented: " message)
 
 constexpr bool GLOBED_LITTLE_ENDIAN = std::endian::native == std::endian::little;
 

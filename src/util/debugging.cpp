@@ -9,6 +9,22 @@ namespace util::debugging {
         return micros;
     }
 
+    std::string hexDumpAddress(uintptr_t addr, size_t bytes) {
+        unsigned char* ptr = reinterpret_cast<unsigned char*>(addr);
+
+        std::stringstream ss;
+
+        for (size_t i = 0; i < bytes; i++) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(i[ptr]);
+        }
+
+        return ss.str();
+    }
+
+    std::string hexDumpAddress(void* ptr, size_t bytes) {
+        return hexDumpAddress(reinterpret_cast<uintptr_t>(ptr), bytes);
+    }
+
 #if GLOBED_CAN_USE_SOURCE_LOCATION
     std::string sourceLocation(const std::source_location loc) {
         return fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name());

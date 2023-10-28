@@ -28,4 +28,6 @@ public:
 
     virtual packetid_t getPacketId() const = 0;
     virtual bool getEncrypted() const = 0;
+
+    static const size_t HEADER_LEN = sizeof(packetid_t) + sizeof(byte);
 };

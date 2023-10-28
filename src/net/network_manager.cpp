@@ -71,7 +71,7 @@ void NetworkManager::threadRecvFunc() {
         // we have predefined handlers for connection related packets
         if (packetId == 20001) {
             auto packet_ = static_cast<CryptoHandshakeResponsePacket*>(packet.get());
-            socket.box.setPeerKey(packet_->serverkey.data());
+            socket.box.setPeerKey(packet_->data.serverkey.data());
             _established = true;
 
             continue;

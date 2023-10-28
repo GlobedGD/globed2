@@ -1,7 +1,6 @@
 #pragma once
 #include "game_socket.hpp"
 #include <defs.hpp>
-#include <data/network_thread_task.hpp>
 #include <util/sync.hpp>
 
 #include <functional>
