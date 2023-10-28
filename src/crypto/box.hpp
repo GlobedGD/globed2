@@ -20,7 +20,7 @@ class CryptoBox {
 public:
     CryptoBox(util::data::byte* peerKey = nullptr);
     
-    // The returned pointer lives as long as this `CryptoBox` object does.
+    // Get our public key. The returned pointer lives as long as this `CryptoBox` object does.
     util::data::byte* getPublicKey();
 
     // The data is copied from src into a private member. You are responsible for freeing the source afterwards.

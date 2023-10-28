@@ -8,6 +8,7 @@
 using namespace util::data;
 
 CryptoBox::CryptoBox(byte* key) {
+    // sodium_init returns 0 on success, 1 if already initialized, -1 on fail
     CRYPTO_ASSERT(sodium_init() != -1, "sodium_init failed");
     CRYPTO_ERR_CHECK(crypto_box_keypair(publicKey, secretKey), "crypto_box_keypair failed");
 
@@ -29,15 +30,14 @@ bytevector CryptoBox::encrypt(const bytevector& data) {
 }
 
 bytevector CryptoBox::encrypt(const byte* data, size_t size) {
-    byte nonce[crypto_box_NONCEBYTES];
+    auto prefixSize = crypto_box_NONCEBYTES + crypto_box_MACBYTES;
+    bytevector result(prefixSize + size);
+
+    byte* nonce = result.data();
     randombytes_buf(nonce, crypto_box_NONCEBYTES);
 
-    bytevector ciphertext(size + crypto_box_MACBYTES);
-    CRYPTO_ERR_CHECK(crypto_box_easy(ciphertext.data(), data, size, nonce, peerPublicKey, secretKey), "crypto_box_easy failed");
-
-    bytevector result;
-    result.insert(result.end(), nonce, nonce + crypto_box_NONCEBYTES);
-    result.insert(result.end(), ciphertext.begin(), ciphertext.end());
+    byte* ciphertext = result.data() + crypto_box_NONCEBYTES;
+    CRYPTO_ERR_CHECK(crypto_box_easy(ciphertext, data, size, nonce, peerPublicKey, secretKey), "crypto_box_easy failed");
 
     return result;
 }
