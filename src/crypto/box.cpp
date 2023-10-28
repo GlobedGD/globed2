@@ -1,3 +1,5 @@
+// this is incredibly overoptimized xd
+
 #include "box.hpp"
 #include <stdexcept> // std::runtime_error
 #include <cstring> // std::memcpy
@@ -23,8 +25,6 @@ byte* CryptoBox::getPublicKey() noexcept {
 
 void CryptoBox::setPeerKey(byte* key) {
     std::memcpy(peerPublicKey, key, crypto_box_PUBLICKEYBYTES);
-
-    // precompute the shared key
     CRYPTO_ERR_CHECK(crypto_box_beforenm(sharedKey, peerPublicKey, secretKey), "crypto_box_beforenm failed");
 }
 
@@ -33,7 +33,7 @@ size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
     randombytes_buf(nonce, NONCE_LEN);
 
     byte* ciphertext = dest + NONCE_LEN;
-    CRYPTO_ERR_CHECK(crypto_box_easy_afternm(ciphertext, src, size, nonce, sharedKey), "crypto_box_easy failed");
+    CRYPTO_ERR_CHECK(crypto_box_easy_afternm(ciphertext, src, size, nonce, sharedKey), "crypto_box_easy_afternm failed");
 
     // prepend the nonce
     std::memcpy(dest, nonce, NONCE_LEN);
@@ -78,7 +78,7 @@ size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* des
     size_t plaintextLength = size - PREFIX_LEN;
     size_t ciphertextLength = size - NONCE_LEN;
 
-    CRYPTO_ERR_CHECK(crypto_box_open_easy_afternm(dest, ciphertext, ciphertextLength, nonce, sharedKey), "crypto_box_open_easy failed");
+    CRYPTO_ERR_CHECK(crypto_box_open_easy_afternm(dest, ciphertext, ciphertextLength, nonce, sharedKey), "crypto_box_open_easy_afternm failed");
 
     return plaintextLength;
 }

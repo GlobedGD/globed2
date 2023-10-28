@@ -8,12 +8,9 @@
 /*
 * CryptoBox - A class for secure data encryption/decryption using libsodium
 *
-* Uses `crypto_box_easy` and `crypto_box_open_easy` for en/decryption, and `crypto_box_keypair` for key generation.
 * The algorithms used are (as per https://libsodium.gitbook.io/doc/public-key_cryptography/authenticated_encryption#algorithm-details)
 *
-* Key exchange: X25519
-* Encryption: XSalsa20
-* Authentication: Poly1305
+* Key exchange: X25519, encryption: XSalsa20, authentication: Poly1305
 *
 * All methods (including the constructor) except for `getPublicKey` will throw an exception on failure.
 */
@@ -24,6 +21,7 @@ public:
     static const size_t MAC_LEN = crypto_box_MACBYTES;
     static const size_t PREFIX_LEN = NONCE_LEN + MAC_LEN;
 
+    // Initialize this `CryptoBox`, optionally set peer's public key.
     CryptoBox(util::data::byte* peerKey = nullptr);
     
     // Get our public key. The returned pointer lives as long as this `CryptoBox` object does.
@@ -31,6 +29,7 @@ public:
 
     // The data is copied from src into a private member. You are responsible for freeing the source afterwards.
     // If the length is not equal to `crypto_box_PUBLICKEYBYTES` the behavior is undefined.
+    // This precomputes the shared key and stores it for use in all future operations.
     void setPeerKey(util::data::byte* src);
 
     /* Encryption */
