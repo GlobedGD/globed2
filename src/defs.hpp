@@ -1,6 +1,6 @@
 /*
 * Do not touch this file unless you are adding new functionality or fixing something.
-* If you want to change something, do it in `config.hpp`.
+* If you want to change configuration, do it in `config.hpp`.
 *
 * This file contains various useful macros to try and decrease the spaghetti code.
 */
@@ -8,9 +8,7 @@
 #pragma once
 #include <config.hpp>
 
-// if you want to run any tests, you have to define GLOBED_ROOT_NO_GEODE
-// as you can't really link to geode without making it a proper mod.
-// make sure to also define GLOBED_ASSERT_LOG as a replacement to geode::log::error
+// read the contributor guide for more info on GLOBED_ROOT_NO_GEODE
 #ifndef GLOBED_ROOT_NO_GEODE
 # include <Geode/Geode.hpp>
 #endif
@@ -18,6 +16,8 @@
 #include <cassert>
 #include <stdexcept>
 #include <bit>
+#include <mutex> // std::call_once and std::once_flag for singletons
+#include <memory> // std::unique_ptr for singletons
 
 /* platform-specific:
 * GLOBED_HAS_FMOD - 0 or 1, whether this platform links to FMOD
@@ -27,38 +27,41 @@
 #ifndef GLOBED_ROOT_NO_GEODE
 # ifdef GEODE_IS_WINDOWS
 #  define GLOBED_HAS_FMOD GLOBED_FMOD_WINDOWS
-#  define GLOBED_HAS_DRPC 1
+#  define GLOBED_HAS_DRPC GLOBED_DRPC_WINDOWS
 # elif defined(GEODE_IS_MACOS)
 #  define GLOBED_HAS_FMOD GLOBED_FMOD_MAC
-#  define GLOBED_HAS_DRPC 0
+#  define GLOBED_HAS_DRPC GLOBED_DRPC_MAC
 # elif defined(GEODE_IS_ANDROID)
 #  define GLOBED_HAS_FMOD GLOBED_FMOD_ANDROID
-#  define GLOBED_HAS_DRPC 0
+#  define GLOBED_HAS_DRPC GLOBED_DRPC_ANDROID
 # else
 #  error "Unsupported system. This mod only supports Windows, Mac and Android."
 # endif
 #endif
 
-/* platform independent:
+/*
 * GLOBED_CAN_USE_SOURCE_LOCATION - 0 or 1, whether <source_location> header is available
-* GLOBED_ASSERT(cond,msg) - assertions (see below)
-* GLOBED_LITTLE_ENDIAN - constexpr bool, self describing
 */
 
-// source_location
-#if defined(__cpp_consteval) && GLOBED_USE_SOURCE_LOCATION
+// force consteval for source location
+#if GLOBED_FORCE_CONSTEVAL && !defined(__cpp_consteval)
+# define __cpp_consteval 1
+#endif // GLOBED_FORCE_CONSTEVAL && !defined(__cpp_consteval)
+
+#if defined(__cpp_consteval)
 # define GLOBED_CAN_USE_SOURCE_LOCATION 1
 # include <source_location>
 # define GLOBED_SOURCE std::source_location::current()
 #else
 # define GLOBED_CAN_USE_SOURCE_LOCATION 0
-#endif
+#endif // defined(__cpp_consteval)
 
 /*
 * GLOBED_ASSERT - throws a runtime error if assertion fails
 * GLOBED_HARD_ASSERT - terminates the program if assertion fails. Don't use it unless the condition indicates a logic error in the code.
 * GLOBED_UNIMPL - throws a runtime error as the method was not implemented and isn't meant to be called
 */
+
 #if GLOBED_CAN_USE_SOURCE_LOCATION && !defined(GLOBED_ROOT_NO_GEODE)
 # define GLOBED_ASSERT(condition,message) \
     if (!(condition)) { \
@@ -92,20 +95,27 @@
     }
 #endif
 
-#define GLOBED_UNIMPL(message) GLOBED_ASSERT(false, "unimplemented: " message)
+#define GLOBED_UNIMPL(message) GLOBED_ASSERT(false, std::string("unimplemented: ") + (message))
 
 constexpr bool GLOBED_LITTLE_ENDIAN = std::endian::native == std::endian::little;
 
 // singleton classes
 
 #define GLOBED_SINGLETON(cls) \
+    private: \
+    static std::once_flag __singleton_once_flag; \
+    static std::unique_ptr<cls> __singleton_instance; \
+    \
     public: \
-    static cls& get(); \
+    static inline cls& get() { \
+        std::call_once(__singleton_once_flag, []() { \
+            __singleton_instance = std::make_unique<cls>(); \
+        }); \
+        return *__singleton_instance; \
+    } \
     cls(const cls&) = delete; \
     cls& operator=(const cls&) = delete;
 
-#define GLOBED_SINGLETON_GET(cls) \
-    cls& cls::get() { \
-        static cls instance; \
-        return instance; \
-    }
+#define GLOBED_SINGLETON_DEF(cls) \
+    std::unique_ptr<cls> cls::__singleton_instance = std::unique_ptr<cls>(nullptr); \
+    std::once_flag cls::__singleton_once_flag;

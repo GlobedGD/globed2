@@ -1,5 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
+#include <UIBuilder.hpp>
 
 #include <crypto/box.hpp>
 #include <data/bytebuffer.hpp>
@@ -10,8 +11,6 @@ using namespace geode::prelude;
 
 class $modify(MenuLayer) {
 	void onMoreGames(CCObject*) {
-		ByteBuffer mybuf;
-		mybuf.writeI32(32);
 
 	}	
 };

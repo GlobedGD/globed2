@@ -11,29 +11,21 @@ class HandshakeData {
 public:
     HandshakeData() {}
 
-    void encode(ByteBuffer& buf) {
+    void encode(ByteBuffer& buf) const {
         buf.writeBytes(pubkey);
     }
 
-    void decode(ByteBuffer& buf) {
-        GLOBED_UNIMPL("HandshakeData::decode")
-    }
-
-    util::data::bytevector pubkey;
+    util::data::bytearray<crypto_box_PUBLICKEYBYTES> pubkey;
 };
 
 class HandshakeResponseData {
 public:
     HandshakeResponseData() {}
 
-    void encode(ByteBuffer& buf) {
-        GLOBED_UNIMPL("HandshakeResponseData::encode")
-    }
-
     void decode(ByteBuffer& buf) {
-        serverkey = buf.readBytes(crypto_box_PUBLICKEYBYTES);
+        serverkey = buf.readBytes<crypto_box_PUBLICKEYBYTES>();
     }
 
-    util::data::bytevector serverkey;
+    util::data::bytearray<crypto_box_PUBLICKEYBYTES> serverkey;
 };
 

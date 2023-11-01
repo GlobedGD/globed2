@@ -1,6 +1,7 @@
 #include "data.hpp"
 
 #ifdef _MSC_VER
+# include <stdlib.h>
 # define BSWAP16(val) _byteswap_ushort(val)
 # define BSWAP32(val) _byteswap_ulong(val)
 # define BSWAP64(val) _byteswap_uint64(val)
@@ -23,9 +24,8 @@ namespace util::data {
         return BSWAP64(val);
     }
 
-    // XXX those 3 below are probably implementation defined, prefer not to use them
     int16_t byteswapI16(int16_t value) {
-        return (value >> 8) | ((value & 0xFF) << 8);
+        return ((value & 0xFF) << 8) | ((value & 0xFF00) >> 8);
     }
 
     int32_t byteswapI32(int32_t value) {
@@ -38,46 +38,14 @@ namespace util::data {
             ((value << 56) & 0xFF00000000000000LL);
     }
 
-    // Yes, this is bad. It compiles down to a single x86 `bswap` instruction though so i don't care!
     float byteswapF32(float val) {
-        float copy = val;
-        unsigned char *bytes = reinterpret_cast<unsigned char*>(&copy);
-        unsigned char temp;
-        
-        temp = bytes[0];
-        bytes[0] = bytes[3];
-        bytes[3] = temp;
-        
-        temp = bytes[1];
-        bytes[1] = bytes[2];
-        bytes[2] = temp;
-
-        return copy;
+        uint32_t num = std::bit_cast<uint32_t>(val);
+        return std::bit_cast<float>(BSWAP32(num));
     }
 
     double byteswapF64(double val) {
-        double copy = val;
-
-        unsigned char *bytes = reinterpret_cast<unsigned char*>(&copy);
-        unsigned char temp;
-        
-        temp = bytes[0];
-        bytes[0] = bytes[7];
-        bytes[7] = temp;
-        
-        temp = bytes[1];
-        bytes[1] = bytes[6];
-        bytes[6] = temp;
-        
-        temp = bytes[2];
-        bytes[2] = bytes[5];
-        bytes[5] = temp;
-        
-        temp = bytes[3];
-        bytes[3] = bytes[4];
-        bytes[4] = temp;
-
-        return copy;
+        uint64_t num = std::bit_cast<uint64_t>(val);
+        return std::bit_cast<double>(BSWAP64(num));
     }
 };
 

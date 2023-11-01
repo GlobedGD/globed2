@@ -2,14 +2,20 @@
 #include <data/bytebuffer.hpp>
 #include <data/packets/all.hpp>
 
+const size_t BUF_SIZE = 65536;
+
 using namespace util::data;
 
 GameSocket::GameSocket() {
-    buffer = new byte[65536];
+    buffer = new byte[BUF_SIZE];
+}
+
+GameSocket::~GameSocket() {
+    delete[] buffer;
 }
 
 std::shared_ptr<Packet> GameSocket::recvPacket() {
-    auto received = receive(reinterpret_cast<char*>(buffer), 65536);
+    auto received = receive(reinterpret_cast<char*>(buffer), BUF_SIZE);
     GLOBED_ASSERT(received > 0, "failed to receive data from a socket")
 
     // read the header, 2 bytes for packet ID, 1 byte for encrypted
@@ -26,7 +32,7 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 
     if (encrypted) {
         bytevector& bufvec = buf.getDataRef();
-        messageLength = box.decryptInPlace(bufvec.data(), messageLength);
+        // messageLength = box.decryptInPlace(bufvec.data(), messageLength);
         buf.resize(messageLength + 3);
     }
 
@@ -52,7 +58,7 @@ void GameSocket::sendPacket(Packet* packet) {
     if (packet->getEncrypted()) {
         // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
         buf.grow(CryptoBox::PREFIX_LEN);
-        box.encryptInPlace(dataref.data(), packetSize);
+        // box.encryptInPlace(dataref.data(), packetSize);
     }
 
     sendAll(reinterpret_cast<char*>(dataref.data()), dataref.size());

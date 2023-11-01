@@ -44,9 +44,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
 endif()
 
-# for <source_location>, alk told me not to do it but i'll do it anyway
-add_compile_definitions(__cpp_consteval=1)
-
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 if (NOT DEFINED ENV{GEODE_SDK})
@@ -56,6 +53,10 @@ else()
 endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
+
+# UIBuilder
+CPMAddPackage("gh:camila314/UIBuilder#main")
+target_link_libraries(${PROJECT_NAME} UIBuilder)
 
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)

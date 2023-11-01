@@ -6,7 +6,7 @@ class PingResponsePacket : public Packet {
 
     GLOBED_ENCODE_UNIMPL
 
-    void decode(ByteBuffer& buf) override {
+    GLOBED_DECODE {
         id = buf.readU32();
         playerCount = buf.readU32();
     }

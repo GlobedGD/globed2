@@ -1,4 +1,5 @@
 #include "debugging.hpp"
+#include <string>
 
 namespace util::debugging {
     std::chrono::microseconds Benchmarker::end(std::string id) {
@@ -27,7 +28,13 @@ namespace util::debugging {
 
 #if GLOBED_CAN_USE_SOURCE_LOCATION
     std::string sourceLocation(const std::source_location loc) {
-        return fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name());
+        return
+            std::string(loc.file_name())
+            + ":"
+            + std::to_string(loc.line())
+            + " ("
+            + std::string(loc.function_name())
+            + ")";
     }
 #else
     std::string sourceLocation() {

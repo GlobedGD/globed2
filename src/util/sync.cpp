@@ -2,8 +2,8 @@
 
 namespace util::sync {
 
-GLOBED_SINGLETON_GET(ErrorQueues)
 ErrorQueues::ErrorQueues() {}
+GLOBED_SINGLETON_DEF(ErrorQueues)
 
 void ErrorQueues::warn(const std::string& message) {
     _warns.push(message);

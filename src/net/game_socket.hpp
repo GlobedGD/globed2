@@ -6,6 +6,7 @@
 class GameSocket : public UdpSocket {
 public:
     GameSocket();
+    ~GameSocket();
 
     std::shared_ptr<Packet> recvPacket();
     void sendPacket(Packet* packet);
@@ -13,6 +14,6 @@ public:
 private:
     friend class NetworkManager;
 
-    CryptoBox box;
+    std::unique_ptr<CryptoBox> box;
     util::data::byte* buffer;
 };

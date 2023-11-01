@@ -7,6 +7,9 @@ namespace util::data {
     using byte = uint8_t;
     using bytevector = std::vector<byte>;
 
+    template <size_t Count>
+    using bytearray = std::array<byte, Count>;
+
     uint16_t byteswapU16(uint16_t val);
     uint32_t byteswapU32(uint32_t val);
     uint64_t byteswapU64(uint64_t val);

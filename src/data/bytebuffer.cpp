@@ -97,6 +97,50 @@ void ByteBuffer::writeBytes(const bytevector& vec) {
     this->writeBytes(vec.data(), vec.size());
 }
 
+/* cocos/gd */
+#ifndef GLOBED_ROOT_NO_GEODE
+
+cocos2d::ccColor3B ByteBuffer::readColor3() {
+    auto r = this->readU8();
+    auto g = this->readU8();
+    auto b = this->readU8();
+    return cocos2d::ccc3(r, g, b);
+}
+
+cocos2d::ccColor4B ByteBuffer::readColor4() {
+    auto r = this->readU8();
+    auto g = this->readU8();
+    auto b = this->readU8();
+    auto a = this->readU8();
+    return cocos2d::ccc4(r, g, b, a);
+}
+
+cocos2d::CCPoint ByteBuffer::readPoint() {
+    float x = this->readF32();
+    float y = this->readF32();
+    return ccp(x, y);
+}
+
+void ByteBuffer::writeColor3(cocos2d::ccColor3B color) {
+    this->writeU8(color.r);
+    this->writeU8(color.g);
+    this->writeU8(color.b);
+}
+
+void ByteBuffer::writeColor4(cocos2d::ccColor4B color) {
+    this->writeU8(color.r);
+    this->writeU8(color.g);
+    this->writeU8(color.b);
+    this->writeU8(color.a);
+}
+
+void ByteBuffer::writePoint(cocos2d::CCPoint point) {
+    this->writeF32(point.x);
+    this->writeF32(point.y);
+}
+
+#endif // GLOBED_ROOT_NO_GEODE
+
 bytevector ByteBuffer::getData() const {
     return _data;
 }

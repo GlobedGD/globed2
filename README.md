@@ -6,6 +6,10 @@ This repository is a complete rewrite of Globed, designed to be better in every 
 
 * wait for 2.2
 
+## Contributing
+
+If you want to contribute, please read the [Contributor guide](./contribution.md).
+
 ## Building
 
 ### Windows
@@ -28,4 +32,4 @@ ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you
 
 camila314 - thank you for [UIBuilder](https://github.com/camila314/uibuilder)
 
-Thank you Robert Nicholas Christian Topala for releasing this awesome game :)
+Thank you RobTop for releasing this awesome game :)

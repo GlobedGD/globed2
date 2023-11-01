@@ -2,11 +2,8 @@
 #include <util/time.hpp>
 #include <util/rng.hpp>
 
-GLOBED_SINGLETON_GET(GameServerManager)
-
-GameServerManager::GameServerManager() {
-
-}
+GLOBED_SINGLETON_DEF(GameServerManager)
+GameServerManager::GameServerManager() {}
 
 uint32_t GameServerManager::addPendingPing(const std::string& serverId) {
     uint32_t pingId = util::rng::Random::get().generate<uint32_t>();

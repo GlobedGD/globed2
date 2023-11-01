@@ -1,10 +1,11 @@
 /*
 * To add a new packet, your chores are:
 * 1. create a header file in client/ or server/
-* 2. copy the basic structure from ping_packet.hpp, inherit Packet and add GLOBED_PACKET(id, encrypt)
-* 3. override the decode and encode functions (put GLOBED_DECODE_UNIMPL or GLOBED_ENCODE_UNIMPL if the function isn't supposed to be used on the client)
-* 4. in `all.cpp` add the packet to the switch as PACKET(id, cls), make sure that IDs are sorted properly
-* 5. For client packets, you may also choose to add a ::create(...) function and/or a constructor
+* 2. inherit Packet and add GLOBED_PACKET(id, encrypt), encrypt should be true for packets that are important.
+* 3. add GLOBED_ENCODE and GLOBED_DECODE (you can replcae either with the _UNIMPL version if not meant to be used)
+* 4. For client packets, you may also choose to add a ::create(...) function and/or a constructor
+* 5. For server packets, in `all.cpp` add the packet to the switch as PACKET(id, cls), make sure that IDs are sorted properly.
+
 *
 * Make sure packet ID is in the right category, 1xxxx - upstream, 2xxxx - downstream
 * x0xxx - connection-related (encryption, keepalive, ping, handshake)

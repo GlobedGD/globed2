@@ -1,18 +1,12 @@
-// as much as i wanted to separate it into bitbuffer.hpp and bitbuffer.cpp
-// c++ got the best of me. go fuck yourself with your
-// error: undefined symbol: public: __thiscall BitBuffer<16>::BitBuffer<16>(void)
-// i dont know how to do this crap when templates are involved and i dont wanna learn.
-
-/*
-* BitBuffer - a simple interface that allows you to write/read bits
-*/
-
 #pragma once
 #include <bitset>
 #include <vector>
 #include <cstdint>
 #include <defs.hpp>
 
+/*
+* BitBuffer - a simple interface that allows you to read/write bits
+*/
 template <size_t BitCount> requires (BitCount <= 64)
 class BitBuffer {
 public:
@@ -40,7 +34,7 @@ public:
         (writeBit(args), ...);
     }
 
-    void writeBits(std::vector<bool> values) {
+    void writeBits(const std::vector<bool>& values) {
         for (bool value : values) {
             writeBit(value);
         }

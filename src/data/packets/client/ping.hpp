@@ -4,13 +4,12 @@
 class PingPacket : public Packet {
     GLOBED_PACKET(10000, false)
 
-    void encode(ByteBuffer& buf) override {
+    GLOBED_ENCODE {
         buf.write(id);
     }
 
     GLOBED_DECODE_UNIMPL
 
-    PingPacket() {}
     PingPacket(uint32_t _id) : id(_id) {}
 
     static PingPacket* create(uint32_t id) {

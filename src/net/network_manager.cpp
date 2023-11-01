@@ -6,6 +6,8 @@
 
 namespace log = geode::log;
 
+GLOBED_SINGLETON_DEF(NetworkManager)
+
 void NetworkManager::send(Packet* packet) {
     GLOBED_ASSERT(socket.connected, "tried to send a packet while disconnected");
     packetQueue.push(packet);
@@ -71,7 +73,7 @@ void NetworkManager::threadRecvFunc() {
         // we have predefined handlers for connection related packets
         if (packetId == 20001) {
             auto packet_ = static_cast<CryptoHandshakeResponsePacket*>(packet.get());
-            socket.box.setPeerKey(packet_->data.serverkey.data());
+            socket.box->setPeerKey(packet_->data.serverkey.data());
             _established = true;
 
             continue;
@@ -134,8 +136,6 @@ void NetworkManager::threadPingRecvFunc() {
         }
     }
 }
-
-GLOBED_SINGLETON_GET(NetworkManager)
 
 NetworkManager::NetworkManager() {
     util::net::initialize();

@@ -27,6 +27,10 @@ public:
         return queue.empty();
     }
 
+    void clear() {
+        queue = {}; // queue does not have .clear() for whatever funny reason
+    }
+
     T front() const {
         return queue.front();
     }
@@ -36,7 +40,7 @@ public:
     }
 
     std::vector<T> extract() const {
-        std::vector<T> out(queue.size());
+        std::vector<T> out;
 
         std::queue<T> qcopy(queue);
 
@@ -47,7 +51,7 @@ public:
 
         return out;
     }
-private:
+protected:
     std::queue<T> queue;
 };
 

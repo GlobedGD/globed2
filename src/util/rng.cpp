@@ -6,12 +6,12 @@
     template type Random::generate<type>(type, type)
 
 namespace util::rng {
-    GLOBED_SINGLETON_GET(Random)
-
     Random::Random() {
         std::random_device rdev;
         engine.seed(rdev());
     }
+
+    GLOBED_SINGLETON_DEF(Random)
 
     template <typename T>
     T Random::generate() {
@@ -39,5 +39,29 @@ namespace util::rng {
     template<> bool Random::generate<bool>() {
         std::uniform_int_distribution<int> dist(0, 1);
         return static_cast<bool>(dist(engine));
+    }
+
+    // floating point methods
+
+    // Generates a float with arbitrary limits
+    template<> float Random::generate<float>(float min, float max) {
+        std::uniform_real_distribution<float> dist(min, max);
+        return dist(engine);
+    }
+
+    // Generates a double with arbitrary limits
+    template<> double Random::generate<double>(double min, double max) {
+        std::uniform_real_distribution<double> dist(min, max);
+        return dist(engine);
+    }
+
+    // Generates a float between 0.0 and 1.0
+    template<> float Random::generate<float>() {
+        return generate(0.f, 1.f);
+    }
+
+    // Generates a double between 0.0 and 1.0
+    template<> double Random::generate<double>() {
+        return generate(0.0, 1.0);
     }
 }

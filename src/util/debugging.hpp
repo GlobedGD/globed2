@@ -4,6 +4,8 @@
 #include <unordered_map>
 
 namespace util::debugging {
+    // To use the benchmarker, create a `Benchmarker` object, call start(id), then run all the code you want to benchmark, and call end(id).
+    // It will return the number of microseconds the code took to run.
     class Benchmarker {
     public:
         Benchmarker() {}

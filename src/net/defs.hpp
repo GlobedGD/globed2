@@ -16,16 +16,16 @@
 # define GLOBED_SOCKET_POLL WSAPoll
 # define GLOBED_SOCKET_POLLFD WSAPOLLFD
 
-/* includes */
+/* windows includes */
 
 # include <ws2tcpip.h>
 
-#else // GEODE_IS_WINDOWS
+#else // ^ windows | v unix
 
 # define GLOBED_SOCKET_POLL ::poll
 # define GLOBED_SOCKET_POLLFD struct pollfd
 
-/* includes */
+/* unix includes */
 
 # include <sys/socket.h>
 # include <netinet/in.h>

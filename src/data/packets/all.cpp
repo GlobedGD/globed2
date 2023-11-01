@@ -5,13 +5,6 @@
 std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
     switch (packetId) {
         /*
-        * Client-side packets
-        */
-
-        PACKET(10000, PingPacket);
-        PACKET(10001, CryptoHandshakeStartPacket);
-
-        /*
         * Server-side packets
         */
 
