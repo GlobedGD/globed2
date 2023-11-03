@@ -25,7 +25,7 @@
 # error "Unknown platform"
 #endif
 
-#if defined(__i386__) || defined(_M_IX86) || defined(_M_IX64) || defined(__x86_64__)
+#if defined(__i386__) || defined(_M_IX86) || defined(_M_X64) || defined(__x86_64__)
 # define GLOBED_X86 1
 # if UINTPTR_MAX > 0xffffffff
 #  define GLOBED_X86_64 1

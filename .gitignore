@@ -53,7 +53,9 @@
 .cache/
 
 build.sh
+build-android.sh
 
 libs/libsodium
+libsodium-git
 
 server/target

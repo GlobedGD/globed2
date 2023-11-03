@@ -22,6 +22,14 @@ using namespace util::data;
 using namespace util::debugging;
 using namespace util;
 
+#if 1
+#define CRYPTO_ITERS 4096
+#define RNG_ITERS 65536
+#else // valgrind is sloooooooooooooow
+#define CRYPTO_ITERS 128
+#define RNG_ITERS 4096
+#endif
+
 #define ASSERT(cond, message) if (!(cond)) { throw std::runtime_error(std::string(message)); }
 
 void tCrypto() {
@@ -30,7 +38,7 @@ void tCrypto() {
     bob.setPeerKey(alice.getPublicKey());
 
     // test with random data
-    for (int i = 0; i < 4096; i++) {
+    for (int i = 0; i < CRYPTO_ITERS; i++) {
         Random& rng = Random::get();
         ByteBuffer buf;
 
@@ -79,8 +87,15 @@ void tCrypto() {
         size_t decrypted_ = bob.decryptInPlace(buf2, encrypted);
 
         for (size_t i = 0; i < testl; i++) {
-            ASSERT(buf2[i] == original[i], "decrypted data is invalid");
+            if (buf2[i] != original[i]) {
+                delete[] buf2;
+                delete[] original;
+                ASSERT(false, "decrypted data is invalid");
+            }
         }
+
+        delete[] buf2;
+        delete[] original;
     }
 }
 
@@ -91,7 +106,7 @@ void tSecretBox() {
     SecretBox bob = SecretBox::withPassword(pw);
 
     // test with random data
-    for (int i = 0; i < 4096; i++) {
+    for (int i = 0; i < CRYPTO_ITERS; i++) {
         Random& rng = Random::get();
         ByteBuffer buf;
 
@@ -140,15 +155,22 @@ void tSecretBox() {
         size_t decrypted_ = bob.decryptInPlace(buf2, encrypted);
 
         for (size_t i = 0; i < testl; i++) {
-            ASSERT(buf2[i] == original[i], "decrypted data is invalid");
+            if (buf2[i] != original[i]) {
+                delete[] buf2;
+                delete[] original;
+                ASSERT(false, "decrypted data is invalid");
+            }
         }
+
+        delete[] buf2;
+        delete[] original;
     }
 }
 
 void tRandom() {
     std::vector<bool> bools;
     Random& rng = Random::get();
-    for (int i = 0; i < 65536; i++) {
+    for (int i = 0; i < RNG_ITERS; i++) {
         bools.push_back(rng.generate<bool>());
     }
 
@@ -162,7 +184,17 @@ void tRandom() {
 
     auto diff = std::abs(trues - falses);
 
-    ASSERT(diff < 4096, "poor random entropy")
+    ASSERT(diff < RNG_ITERS / 16, "poor random entropy")
+}
+
+void tTotp() {
+    std::string key = "My epic key";
+    auto hashed = util::crypto::simpleHash(key);
+    // std::cout << "raw key: '" << key << "', encoded: " << util::debugging::hexDumpAddress(hashed.data(), hashed.size()) << std::endl;
+    auto totp = util::crypto::simpleTOTP(hashed);
+
+    // std::cout << "totp: " << totp << std::endl;
+    ASSERT(util::crypto::simpleTOTPVerify(totp, hashed), "simpleTOTPVerify failed");
 }
 
 using ms = std::chrono::microseconds;
@@ -171,6 +203,7 @@ std::map<std::string, std::function<void()>> tests = {
     {"Random"s, tRandom},
     {"CryptoBox"s, tCrypto},
     {"SecretBox"s, tSecretBox},
+    {"TOTP", tTotp},
 };
 
 ms bnCrypto(size_t dataLength, size_t iterations) {

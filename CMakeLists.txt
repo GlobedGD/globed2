@@ -31,13 +31,20 @@ else()
     set(LIBSODIUM_COMPONENT Release)
 endif()
 
+set(LIBSODIUM_DIR "${CMAKE_SOURCE_DIR}/libs/libsodium")
+
+add_definitions(-DSODIUM_STATIC=1)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_definitions(-DSODIUM_STATIC=1)
     add_definitions(-DSODIUM_EXPORT=)
     
     find_library(LIBSODIUM_LIBRARY NAMES libsodium HINTS ${LIBSODIUM_DIR}/Win32/${LIBSODIUM_COMPONENT}/v142/static)
-    message(STATUS "Libsodium: ${LIBSODIUM_LIBRARY}")
+elseif(ANDROID)
+    # todo x64 vs x32
+    set(LIBSODIUM_LIBRARY ${LIBSODIUM_DIR}/android-armv7/libsodium.a)
 endif()
+
+message(STATUS "Libsodium: ${LIBSODIUM_LIBRARY}")
 
 # disable iterator debugging if building in debug
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

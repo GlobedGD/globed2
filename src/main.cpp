@@ -19,5 +19,11 @@ $on_mod(Loaded) {
 
 class $modify(MenuLayer) {
 	void onMoreGames(CCObject*) {
+		std::string key = "My epic key";
+		auto hashed = util::crypto::simpleHash(key);
+		log::debug("raw key: {}, encoded: {}", key, util::debugging::hexDumpAddress(hashed.data(), hashed.size()));
+		auto totp = util::crypto::simpleTOTP(hashed);
+
+		log::debug("totp: {}", totp);
 	}	
 };

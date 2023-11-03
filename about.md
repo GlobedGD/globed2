@@ -1,3 +1,3 @@
-# Template Mod
+# Globed
 
-Edit about.md to change this
+Note for Android users: the mod does not support versions below Android 9. Sorry for the inconvenience.

@@ -42,7 +42,20 @@ gotta figure it out somehow
 
 ### Android
 
-no clue either
+alrighty, let's have some fun shall we? if you are not on linux then use WSL. make sure to have android NDK installed.
+
+for the first build, you need to build libsodium.
+
+```sh
+# change ndk home to whatever folder you have it installed in
+ANDROID_NDK_HOME=/opt/android-ndk ./build-sodium-android.sh
+```
+
+this will pull the repo and build it from source. if you don't see any errors then you're epic! the built libraries should be automatically copied into the correct directory.
+
+now simply use your epic build script and build the mod with cmake like you would build any other mod!
+
+NOTE: when configuring you must set `-DANDROID_PLATFORM=android-28` or higher. versions below do not have the `getrandom()` syscall so libsodium will fail to link. this means the mod is **incompatible** with versions of Android below 9.
 
 ## Credit
 

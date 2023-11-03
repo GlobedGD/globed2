@@ -13,7 +13,7 @@ auto num = Random::get().generate<uint32_t>(0, 10000);
 Short descriptions of available utility namespaces (`util::` omitted for simplicity sake):
 
 * `collections` - provides various collections like `CappedQueue` and util methods for working with other collections.
-* `crypto` - provides cryptography utilities like secure hashing.
+* `crypto` - provides cryptography utilities like secure hashing and TOTP generation.
 * `data` - provides helpers `byte`, `bytearray` and `bytevector` and byteswap implementations.
 * `debugging` - provides a `Benchmarker` class and other utilities for debugging code.
 * `net` - provides networking utilities.
@@ -108,7 +108,7 @@ Additionally, if you want to define some values in `config.hpp` manually through
 
 ## Tests
 
-If you want to use any of the code outside of the Geometry Dash/Geode environment, you must define `GLOBED_ROOT_NO_GEODE` prior to including any file. This prevents the inclusion of Geode headers and may disable some of the functionality (for example `ByteBuffer::writeColor3` or anything else that relies on Cocos structs).
+If you want to use any of the code outside of the Geometry Dash/Geode environment, you must define `GLOBED_ROOT_NO_GEODE` and `GLOBED_TESTING` prior to including any file. This prevents the inclusion of Geode headers and may disable some of the functionality (for example `ByteBuffer::writeColor3` or anything else that relies on Cocos structs).
 
 If you do that, you also must explicitly define `GLOBED_ASSERT_LOG` as the log function or macro for assertion failures. It should take exactly one argument. The recommended definition (and the one used in tests) is:
 
