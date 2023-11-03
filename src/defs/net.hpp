@@ -1,17 +1,12 @@
-/*
-* This is like the root `defs.hpp` except it contains things specifically needed for networking.
-*/
-
 #pragma once
-#include <config.hpp>
-#include <Geode/Geode.hpp>
+#include "platform.hpp"
 
 /*
 * GLOBED_SOCKET_POLL - poll function
 * GLOBED_SOCKET_POLLFD - pollfd structure
 */
 
-#ifdef GEODE_IS_WINDOWS
+#ifdef GLOBED_WIN32
 # pragma comment(lib, "ws2_32.lib")
 # define GLOBED_SOCKET_POLL WSAPoll
 # define GLOBED_SOCKET_POLLFD WSAPOLLFD
@@ -20,7 +15,7 @@
 
 # include <ws2tcpip.h>
 
-#else // ^ windows | v unix
+#elif defined(GLOBED_UNIX) // ^ windows | v unix
 
 # define GLOBED_SOCKET_POLL ::poll
 # define GLOBED_SOCKET_POLLFD struct pollfd
@@ -34,4 +29,4 @@
 # include <arpa/inet.h>
 # include <poll.h>
 
-#endif // GEODE_IS_WINDOWS
+#endif

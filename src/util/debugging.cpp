@@ -36,9 +36,21 @@ namespace util::debugging {
             + std::string(loc.function_name())
             + ")";
     }
+    
+    [[noreturn]] void suicide(const std::source_location loc) {
+        GLOBED_ASSERT_LOG("suicide called at " + sourceLocation(loc) + ", terminating.");
+		GLOBED_ASSERT_LOG("If you see this, something very, very bad happened.");
+        GLOBED_SUICIDE;
+    }
 #else
     std::string sourceLocation() {
         return "unknown file sorry";
+    }
+
+    [[noreturn]] void suicide() {
+        GLOBED_ASSERT_LOG("suicide called at <unknown location>, terminating.");
+        GLOBED_ASSERT_LOG("If you see this, something very, very bad happened.");
+        GLOBED_SUICIDE;
     }
 #endif
 }

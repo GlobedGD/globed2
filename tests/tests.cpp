@@ -1,4 +1,5 @@
 #undef NDEBUG
+/* horrible ahh code */
 
 #include <iostream>
 #include <cassert>
@@ -8,8 +9,10 @@
 #include <cstring>
 
 #include <crypto/box.hpp>
+#include <crypto/secret_box.hpp>
 #include <util/rng.hpp>
 #include <util/debugging.hpp>
+#include <util/crypto.hpp>
 #include <util/time.hpp>
 #include <data/bytebuffer.hpp>
 
@@ -25,6 +28,67 @@ void tCrypto() {
     CryptoBox alice, bob;
     alice.setPeerKey(bob.getPublicKey());
     bob.setPeerKey(alice.getPublicKey());
+
+    // test with random data
+    for (int i = 0; i < 4096; i++) {
+        Random& rng = Random::get();
+        ByteBuffer buf;
+
+        uint32_t length = rng.generate(0, 16384);
+        uint32_t pushed = 0;
+
+        while (pushed < length) {
+            uint32_t remaining = length - pushed;
+            if (remaining >= 4) {
+                buf.write(rng.generate<uint32_t>());
+                pushed += 4;
+            } else if (remaining >= 2) {
+                buf.write(rng.generate<uint16_t>());
+                pushed += 2;
+            } else if (remaining == 1) {
+                uint8_t num = rng.generate<uint16_t>() % 255;
+                buf.write(num);
+                pushed += 1;
+            }
+        }
+
+        auto contents = buf.getDataRef();
+        bytevector decrypted;
+
+        if (rng.generate<bool>()) {
+            auto encrypted = alice.encrypt(contents);
+            decrypted = bob.decrypt(encrypted);
+        } else {
+            auto encrypted = bob.encrypt(contents);
+            decrypted = alice.decrypt(encrypted);
+        }
+
+        for (size_t i = 0; i < decrypted.size(); i++) {
+            ASSERT(contents[i] == decrypted[i], "decrypted data is invalid");
+        }
+
+        // now try in place
+        const int testl = 64;
+        byte* buf2 = new byte[testl + CryptoBox::PREFIX_LEN];
+        randombytes_buf(buf2, testl);
+
+        byte* original = new byte[testl];
+        std::memcpy(original, buf2, testl);
+
+        size_t encrypted = alice.encryptInPlace(buf2, testl);
+        size_t decrypted_ = bob.decryptInPlace(buf2, encrypted);
+
+        for (size_t i = 0; i < testl; i++) {
+            ASSERT(buf2[i] == original[i], "decrypted data is invalid");
+        }
+    }
+}
+
+void tSecretBox() {
+    std::string pw = "Extremely based password";
+
+    SecretBox alice = SecretBox::withPassword(pw);
+    SecretBox bob = SecretBox::withPassword(pw);
 
     // test with random data
     for (int i = 0; i < 4096; i++) {
@@ -105,7 +169,8 @@ using ms = std::chrono::microseconds;
 
 std::map<std::string, std::function<void()>> tests = {
     {"Random"s, tRandom},
-    {"Crypto"s, tCrypto},
+    {"CryptoBox"s, tCrypto},
+    {"SecretBox"s, tSecretBox},
 };
 
 ms bnCrypto(size_t dataLength, size_t iterations) {

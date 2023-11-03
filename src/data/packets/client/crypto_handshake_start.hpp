@@ -1,6 +1,6 @@
 #pragma once
 #include <data/packets/packet.hpp>
-#include <data/connection.hpp>
+#include <data/types/handshake.hpp>
 
 class CryptoHandshakeStartPacket : public Packet {
     GLOBED_PACKET(10001, false)

@@ -23,7 +23,11 @@ namespace util::debugging {
 
 #if GLOBED_CAN_USE_SOURCE_LOCATION
     std::string sourceLocation(const std::source_location loc = GLOBED_SOURCE);
+    // crash the program immediately, print the location of the caller
+    [[noreturn]] void suicide(const std::source_location loc = GLOBED_SOURCE);
 #else
     std::string sourceLocation();
+    // crash the program immediately
+    [[noreturn]] void suicide();
 #endif
 }

@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.75"
+bytebuffer = "2.2.0"
+crypto_box = { version = "0.9.1", features = ["std"] }

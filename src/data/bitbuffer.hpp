@@ -7,7 +7,7 @@
 /*
 * BitBuffer - a simple interface that allows you to read/write bits
 */
-template <size_t BitCount> requires (BitCount <= 64)
+template <size_t BitCount> requires (BitCount <= 64 && BitCount > 0)
 class BitBuffer {
 public:
     using UnderlyingType = std::conditional_t<(BitCount <= 8), uint8_t,

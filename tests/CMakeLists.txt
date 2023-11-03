@@ -10,11 +10,14 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 add_definitions(-include ../testdef.hpp)
 add_executable(globed_tests tests.cpp
     ../src/crypto/box.cpp
+    ../src/crypto/base_box.cpp
+    ../src/crypto/secret_box.cpp
     ../src/data/bytebuffer.cpp
     ../src/util/data.cpp
     ../src/util/rng.cpp
     ../src/util/time.cpp
     ../src/util/debugging.cpp
+    ../src/util/crypto.cpp
 )
 
 enable_testing()

@@ -3,7 +3,7 @@
 */
 
 #pragma once
-#include "bytebuffer.hpp"
+#include <data/bytebuffer.hpp>
 #include <util/data.hpp>
 #include <crypto/box.hpp> // for crypto_box_PUBLICKEYBYTES
 

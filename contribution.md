@@ -1,6 +1,6 @@
 # Contributor guide
 
-This is a small guide mostly about helper macros in the mod you can use for checking certain things.
+This is a small guide mostly about helper macros and utilities you can use in the code. It is highly recommended to use everything listed here instead of the alternatives, to keep the code clean and consistent.
 
 ## Utilities
 
@@ -13,7 +13,7 @@ auto num = Random::get().generate<uint32_t>(0, 10000);
 Short descriptions of available utility namespaces (`util::` omitted for simplicity sake):
 
 * `collections` - provides various collections like `CappedQueue` and util methods for working with other collections.
-* `crypto` - provides nothing so far, may be removed in future.
+* `crypto` - provides cryptography utilities like secure hashing.
 * `data` - provides helpers `byte`, `bytearray` and `bytevector` and byteswap implementations.
 * `debugging` - provides a `Benchmarker` class and other utilities for debugging code.
 * `net` - provides networking utilities.
@@ -30,11 +30,23 @@ GLOBED_ASSERT(1 != 2, "math is broken");
 // if 1 == 2, throws std::runtime_error with the message "Assertion failed: math is broken"
 ```
 
-For something that should **never, ever happen** (not even in case of network data corruption), use `GLOBED_HARD_ASSERT`:
+For something that should **never, ever happen** (not even in case of network data corruption), use `GLOBED_HARD_ASSERT` or `util::debugging::suicide`:
 
 ```cpp
 GLOBED_HARD_ASSERT(sizeof(void*) != 2, "why are we in 16-bit mode again??")
 // if sizeof(void*) == 2, prints "Assertion failed: why are we in 16-bit mode again??" and terminates the entire game.
+
+util::debugging::suicide();
+// similar to GLOBED_HARD_ASSERT(false) but quicker and with less info printing
+```
+
+If you want to terminate the game as quickly as possible (why?), use `GLOBED_SUICIDE`:
+
+```cpp
+[[noreturn]] void crash() {
+    // raises SIGTRAP / EXCEPTION_BREAKPOINT by default
+    GLOBED_SUICIDE;
+}
 ```
 
 For code that is not implemented yet (or for stubs that should never be implemented but must be defined), use `GLOBED_UNIMPL`:
@@ -76,11 +88,13 @@ You also must put `GLOBED_SINGLETON_DEF(cls)` in the class definition (usually y
 GLOBED_SINGLETON_DEF(MySingleton)
 ```
 
-If you did everything correctly, you should now have a singleton class with a `get()` function that will lazily create a new instance when called for the first time, and in future will return that existing instance.
+If you did everything correctly, you should now have a singleton class with a thread-safe `get()` method that will lazily create a new instance when called for the first time, and in future will return that existing instance.
 
 ## Platform dependent macros
 
 These are various macros that may differ depending on your compiler, targeted platform, and the `config.hpp` file.
+
+`GLOBED_WIN32`, `GLOBED_MAC`, `GLOBED_ANDROID`, `GLOBED_UNIX`, `GLOBED_X86`, `GLOBED_X86_32`, `GLOBED_X86_64`, `GLOBED_ARM`, `GLOBED_ARM32`, `GLOBED_ARM64` - macros indicating the target platform/architecture. Prefer to use them instead of `GEODE_IS_xxxxx`.
 
 `GLOBED_CAN_USE_SOURCE_LOCATION` - if set to 1, the contents of `<source_location>` are available and `GLOBED_ASSERT`, `GLOBED_HARD_ASSERT` and `GLOBED_UNIMPL` will print the file and line where the assertion failed to the console. It is only set to 1 if either `__cpp_consteval` is defined or `GLOBED_FORCE_CONSTEVAL` is set to 1 in `config.hpp` (unrecommended!).
 
@@ -101,3 +115,13 @@ If you do that, you also must explicitly define `GLOBED_ASSERT_LOG` as the log f
 ```cpp
 #define GLOBED_ASSERT_LOG(content) (std::cerr << content << std::endl);
 ```
+
+## Crypto
+
+`util/crypto.hpp` provides some extra macros for cryptography. Note that they don't have the `GLOBED_` prefix.
+
+`CRYPTO_SODIUM_INIT` - initializes sodium_init() if it hasn't been initialized already. It is recommended to call this whenever you are unsure if it has ever been called before.
+
+`CRYPTO_ASSERT(cond, msg)` - same as `GLOBED_ASSERT` but adds `crypto error: ` at the start
+
+`CRYPTO_ERR_CHECK(res, msg)` - same as `CRYPTO_ASSERT(res == 0, msg)`
