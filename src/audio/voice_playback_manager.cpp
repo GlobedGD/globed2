@@ -40,12 +40,14 @@ void VoicePlaybackManager::playFrame(int playerId, const EncodedAudioFrame& fram
 
     size_t offset = 0;
     
-    auto frames = frame.extractFrames();
+    const auto& frames = frame.extractFrames();
     for (const auto& opusFrame : frames) {
         auto decodedFrame = vm.decodeSound(opusFrame.ptr, opusFrame.length);
         uintptr_t destPtr = reinterpret_cast<uintptr_t>(pcmData) + offset;
         std::memcpy(reinterpret_cast<void*>(destPtr), decodedFrame.ptr, decodedFrame.lengthBytes);
         offset += decodedFrame.lengthBytes;
+
+        OpusCodec::freeData(decodedFrame);
     }
 
     res = sound->unlock(pcmData, nullptr, exinfo.length, 0);
