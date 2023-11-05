@@ -2,7 +2,8 @@
 
 #include <util/net.hpp>
 #include <data/packets/all.hpp>
-#include "game_server_manager.hpp"
+#include <managers/game_server_manager.hpp>
+#include <managers/error_queues.hpp>
 
 namespace log = geode::log;
 

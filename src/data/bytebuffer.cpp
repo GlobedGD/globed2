@@ -77,6 +77,12 @@ bytevector ByteBuffer::readBytes(size_t size) {
     return vec;
 }
 
+void ByteBuffer::readBytesInto(byte* out, size_t size) {
+    this->boundsCheck(size);
+    std::memcpy(out, _data.data() + _position, size);
+    _position += size;
+}
+
 void ByteBuffer::writeString(const std::string& str) {
     this->writeU32(str.size());
     _data.insert(_data.end(), str.begin(), str.end());
@@ -86,6 +92,11 @@ void ByteBuffer::writeString(const std::string& str) {
 void ByteBuffer::writeByteArray(const bytevector& vec) {
     this->writeU32(vec.size());
     this->writeBytes(vec);
+}
+
+void ByteBuffer::writeByteArray(const byte* data, size_t length) {
+    this->writeU32(length);
+    this->writeBytes(data, length);
 }
 
 void ByteBuffer::writeBytes(const util::data::byte* data, size_t size) {

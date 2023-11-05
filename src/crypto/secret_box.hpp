@@ -7,7 +7,8 @@
 #include <string>
 
 /*
-* SecretBox
+* SecretBox - a class similar to CryptoBox, but instead of using public key cryptography,
+* uses a single secret key (or derives it from a passphrase) for data encryption.
 */
 
 class SecretBox : public BaseCryptoBox {

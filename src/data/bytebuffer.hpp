@@ -80,6 +80,8 @@ public:
     void writeString(const std::string& str);
     // Write a bytevector, prefixed with 4 bytes indicating length
     void writeByteArray(const util::data::bytevector& vec);
+    // Write a byte array, prefixed with 4 bytes indicating length
+    void writeByteArray(const util::data::byte* data, size_t length);
 
     /*
     * Read and write methods for fixed-size types
@@ -99,6 +101,9 @@ public:
 
         return arr;
     }
+
+    // Read a certain amount of bytes into this pointer
+    void readBytesInto(util::data::byte* out, size_t size);
 
     // Write a fixed-size bytearray. If the size isn't constant,
     // it is recommended to use writeByteArray instead.
@@ -142,6 +147,14 @@ public:
     T readValue() {
         T value;
         value.decode(*this);
+        return value;
+    }
+
+    // `readValue()` but with a unique_ptr for objects that can't be copied
+    template <Decodable T>
+    std::unique_ptr<T> readValueUnique() {
+        std::unique_ptr<T> value = std::make_unique<T>();
+        value->decode(*this);
         return value;
     }
 

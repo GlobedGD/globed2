@@ -7,6 +7,10 @@
 #include <util/all.hpp>
 #include <bit>
 
+#include <audio/opus_codec.hpp>
+#include <audio/audio_manager.hpp>
+#include <audio/voice_playback_manager.hpp>
+
 using namespace geode::prelude;
 
 $on_mod(Loaded) {
@@ -19,11 +23,18 @@ $on_mod(Loaded) {
 
 class $modify(MenuLayer) {
 	void onMoreGames(CCObject*) {
-		std::string key = "My epic key";
-		auto hashed = util::crypto::simpleHash(key);
-		log::debug("raw key: {}, encoded: {}", key, util::debugging::hexDumpAddress(hashed.data(), hashed.size()));
-		auto totp = util::crypto::simpleTOTP(hashed);
+		auto& vm = GlobedAudioManager::get();
+		vm.setActiveRecordingDevice(2);
+		log::debug("Listening to: {}", vm.getRecordingDevice().name);
 
-		log::debug("totp: {}", totp);
+		vm.startRecording([&vm](const EncodedAudioFrame& frame){
+			ByteBuffer bb;
+			bb.writeValue(frame);
+
+			bb.setPosition(0);
+
+			auto decodedFrame = bb.readValueUnique<EncodedAudioFrame>();
+			VoicePlaybackManager::get().playFrame(0, *decodedFrame.get());
+		});
 	}	
 };

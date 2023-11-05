@@ -26,7 +26,7 @@
 # define GLOBED_CRASH_SIGILL __builtin_trap(); while(true) {}
 #elif defined(GLOBED_X86) && !defined(GLOBED_X64) // msvc x86
 # define GLOBED_CRASH_SIGILL __asm ud2; while(true) {}
-#else
+#else // msvc x64 has no inline asm and no __builtin_trap() so we cant do much
 # define GLOBED_CRASH_SIGILL GLOBED_CRASH_SIGTRAP
 #endif
 

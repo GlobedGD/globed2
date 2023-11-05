@@ -208,23 +208,4 @@ private:
     mutable std::shared_mutex rw_mutex_;
 };
 
-/*
-* ErrorQueues is a simple singleton that has 2 smart message queues for errors and warnings
-* made to send network errors over to main thread to display them
-*/
-
-class ErrorQueues {
-public:
-    GLOBED_SINGLETON(ErrorQueues)
-    ErrorQueues();
-
-    void warn(const std::string& message);
-    void error(const std::string& message);
-
-    std::vector<std::string> getWarnings();
-    std::vector<std::string> getErrors();
-private:
-    SmartMessageQueue<std::string> _warns, _errors;
-};
-
 }

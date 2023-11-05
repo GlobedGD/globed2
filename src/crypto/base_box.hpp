@@ -5,9 +5,13 @@
 /*
 * This class contains no crypto implementation and is here just for boilerplate code.
 * Implementers must override:
+*
 * size_t encryptInto(byte* src, byte* dest, size_t size)
+*
 * size_t decryptInto(byte* src, byte* dest, size_t size)
+*
 * constexpr size_t nonceLength();
+*
 * constexpr size_t macLength();
 */
 

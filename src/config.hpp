@@ -10,6 +10,9 @@
 
 // for source location, unrecommended because may break things
 #define GLOBED_FORCE_CONSTEVAL 1
+// disable voice if you have skill issues setiing up opus
+
+// #define GLOBED_DISABLE_VOICE_SUPPORT
 
 /* platform-specific: Windows */
 #define GLOBED_FMOD_WINDOWS 1

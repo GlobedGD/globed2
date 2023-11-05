@@ -21,30 +21,34 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     endif()
 endif()
 
-# Include libsodium
-include_directories(libs/libsodium/include)
+# Include our libs
+include_directories(libs/libsodium/include libs/opus/include libs/libsamplerate/include)
+# include_directories(libs/opus/include)
 
-# libsodium libs
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(LIBSODIUM_COMPONENT Debug)
-else()
-    set(LIBSODIUM_COMPONENT Release)
-endif()
-
+# lib files
 set(LIBSODIUM_DIR "${CMAKE_SOURCE_DIR}/libs/libsodium")
+set(OPUS_DIR "${CMAKE_SOURCE_DIR}/libs/opus")
+set(LIBSAMPLERATE_DIR "${CMAKE_SOURCE_DIR}/libs/libsamplerate")
 
 add_definitions(-DSODIUM_STATIC=1)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DSODIUM_EXPORT=)
     
-    find_library(LIBSODIUM_LIBRARY NAMES libsodium HINTS ${LIBSODIUM_DIR}/Win32/${LIBSODIUM_COMPONENT}/v142/static)
+    find_library(LIBSODIUM_LIBRARY NAMES libsodium HINTS ${LIBSODIUM_DIR}/Win32/Release/v142/static)
+    find_library(OPUS_LIBRARY NAMES opus HINTS ${OPUS_DIR}/Win32)
+    find_library(LIBSAMPLERATE_LIBRARY NAMES samplerate HINTS ${LIBSAMPLERATE_DIR}/Win32)
+    
 elseif(ANDROID)
     # todo x64 vs x32
     set(LIBSODIUM_LIBRARY ${LIBSODIUM_DIR}/android-armv7/libsodium.a)
+    set(OPUS_LIBRARY ${OPUS_DIR}/android-armv7/libopus.a)
+    set(LIBSAMPLERATE_LIBRARY ${LIBSAMPLERATE_DIR}/android-armv7/libsamplerate.a)
 endif()
 
 message(STATUS "Libsodium: ${LIBSODIUM_LIBRARY}")
+message(STATUS "Opus: ${OPUS_LIBRARY}")
+message(STATUS "Libsamplerate: ${LIBSAMPLERATE_LIBRARY}")
 
 # disable iterator debugging if building in debug
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -68,12 +72,12 @@ target_link_libraries(${PROJECT_NAME} UIBuilder)
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
-# link to libsodium
-target_link_libraries(${PROJECT_NAME} ${LIBSODIUM_LIBRARY})
+# link to our libraries
+target_link_libraries(${PROJECT_NAME} ${LIBSODIUM_LIBRARY} ${OPUS_LIBRARY} ${LIBSAMPLERATE_LIBRARY})
 
 # link to fmod on android
 if (ANDROID)
-    target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libfmod.so)
+    target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod.so)
 endif()
 
 setup_geode_mod(${PROJECT_NAME})

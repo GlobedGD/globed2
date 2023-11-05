@@ -61,4 +61,10 @@
 # error "what"
 #endif
 
+#if GLOBED_HAS_FMOD && !defined(GLOBED_DISABLE_VOICE_SUPPORT)
+# define GLOBED_VOICE_SUPPORT 1
+#else
+# define GLOBED_VOICE_SUPPORT 0
+#endif
+
 constexpr bool GLOBED_LITTLE_ENDIAN = std::endian::native == std::endian::little;

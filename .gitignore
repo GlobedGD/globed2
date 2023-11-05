@@ -55,7 +55,23 @@
 build.sh
 build-android.sh
 
-libs/libsodium
+libs/libsodium/Win32
+libs/libsodium/x64
+libs/libsodium/android-armv7
+libs/libsodium/android-armv8
+
+libs/opus/Win32
+libs/opus/x64
+libs/opus/android-armv7
+libs/opus/android-armv8
+
+libs/libsamplerate/Win32
+libs/libsamplerate/x64
+libs/libsamplerate/android-armv7
+libs/libsamplerate/android-armv8
+
 libsodium-git
+opus-git
+samplerate-git
 
 server/target
