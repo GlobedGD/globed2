@@ -5,11 +5,11 @@
 class CryptoHandshakeStartPacket : public Packet {
     GLOBED_PACKET(10001, false)
 
-    GLOBED_ENCODE {
+    GLOBED_PACKET_ENCODE {
         buf.writeValue(data);
     }
 
-    GLOBED_DECODE_UNIMPL
+    GLOBED_PACKET_DECODE_UNIMPL
 
     CryptoHandshakeStartPacket(HandshakeData _data) : data(_data) {}
 

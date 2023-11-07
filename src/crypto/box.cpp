@@ -55,7 +55,7 @@ constexpr size_t CryptoBox::macLength() {
 
 size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
-    randombytes_buf(nonce, NONCE_LEN);
+    util::crypto::secureRandom(nonce, NONCE_LEN);
 
     byte* ciphertext = dest + NONCE_LEN;
     CRYPTO_ERR_CHECK(crypto_box_easy_afternm(ciphertext, src, size, nonce, sharedKey), "crypto_box_easy_afternm failed");

@@ -2,6 +2,9 @@
 
 #if GLOBED_VOICE_SUPPORT
 
+#include <util/time.hpp>
+#include <util/debugging.hpp>
+
 #define FMOD_ERR_CHECK(res, msg) \
     auto GEODE_CONCAT(__evcond, __LINE__) = (res); \
     if (GEODE_CONCAT(__evcond, __LINE__) != FMOD_OK) GLOBED_ASSERT(false, std::string(msg) + " failed: " + std::to_string((int)GEODE_CONCAT(__evcond, __LINE__)));
@@ -99,6 +102,8 @@ void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFra
     exinfo.defaultfrequency = recordDevice.sampleRate;
     exinfo.length = sizeof(float) * exinfo.numchannels * (int)((float)recordDevice.sampleRate * VOICE_CHUNK_RECORD_TIME);
 
+    geode::log::debug("mic chunksize: {}, hz: {}", exinfo.length, (int)((float)exinfo.length / VOICE_CHUNK_RECORD_TIME));
+
     recordChunkSize = exinfo.length;
 
     FMOD_ERR_CHECK(
@@ -135,6 +140,10 @@ void GlobedAudioManager::stopRecording() {
     }
 }
 
+void GlobedAudioManager::queueStopRecording() {
+    recordQueuedStop = true;
+}
+
 void GlobedAudioManager::recordContinueStream() {
     FMOD_ERR_CHECK(
         this->getSystem()->recordStart(recordDevice.id, recordSound, false),
@@ -157,6 +166,42 @@ void GlobedAudioManager::playSound(FMOD::Sound* sound) {
         this->getSystem()->playSound(sound, nullptr, false, &ch),
         "System::playSound"  
     );
+}
+
+FMOD::Sound* GlobedAudioManager::createSound(const float* pcm, size_t samples, int sampleRate) {
+    FMOD_CREATESOUNDEXINFO exinfo;
+    std::memset(&exinfo, 0, sizeof(FMOD_CREATESOUNDEXINFO));
+    exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
+    exinfo.numchannels = 1;
+    exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
+    exinfo.defaultfrequency = sampleRate;
+    exinfo.length = sizeof(float) * samples;
+
+    FMOD::Sound* sound;
+
+    FMOD_ERR_CHECK(this->getSystem()->createSound(
+        nullptr, FMOD_2D | FMOD_OPENUSER | FMOD_CREATESAMPLE, &exinfo, &sound),
+        "System::createSound"
+    );
+
+    float* data;
+    FMOD_ERR_CHECK(
+        sound->lock(0, exinfo.length, (void**)&data, nullptr, nullptr, nullptr),
+        "Sound::lock"
+    );
+
+    std::memcpy(data, pcm, exinfo.length);
+
+    FMOD_ERR_CHECK(
+        sound->unlock(data, nullptr, exinfo.length, 0),
+        "Sound::unlock"
+    );
+
+    return sound;
+}
+
+DecodedOpusData GlobedAudioManager::decodeSound(const EncodedOpusData& data) {
+    return opus.decode(data.ptr, data.length);
 }
 
 DecodedOpusData GlobedAudioManager::decodeSound(util::data::byte* data, size_t length) {
@@ -189,6 +234,12 @@ void GlobedAudioManager::audioThreadFunc() {
             continue;
         }
 
+        if (recordQueuedStop) {
+            recordQueuedStop = false;
+            stopRecording();
+            continue;
+        }
+
         audioThreadSleeping = false;
 
         if (!this->isRecording()) {
@@ -205,9 +256,19 @@ void GlobedAudioManager::audioThreadFunc() {
                 "Sound::lock"
             );
 
-            try {
-                float* resampled = recordResampler.resample(pcmData, (int)((float)recordDevice.sampleRate * VOICE_CHUNK_RECORD_TIME));
+            float* tmpBuf = new float[pcmLen / sizeof(float)];
+            std::memcpy(tmpBuf, pcmData, pcmLen);
 
+            FMOD_ERR_CHECK(
+                recordSound->unlock(pcmData, nullptr, pcmLen, 0),
+                "Sound::unlock"
+            );
+
+            recordContinueStream();
+            geode::log::debug("continued stream at {}", util::time::nowPretty());
+
+            try {
+                float* resampled = recordResampler.resample(tmpBuf, (int)((float)recordDevice.sampleRate * VOICE_CHUNK_RECORD_TIME));
                 size_t totalOpusFrames = static_cast<float>(VOICE_TARGET_SAMPLERATE) / VOICE_TARGET_FRAMESIZE * VOICE_CHUNK_RECORD_TIME;
 
                 for (size_t i = 0; i < totalOpusFrames; i++) {
@@ -216,26 +277,30 @@ void GlobedAudioManager::audioThreadFunc() {
                     frame.pushOpusFrame(std::move(encodedFrame));
                 }
             } catch (const std::exception& e) {
-                recordSound->unlock(pcmData, nullptr, pcmLen, 0);
+                delete[] tmpBuf;
                 geode::log::error("Ignoring exception in audio thread: {}", e.what());
                 continue;
             }
 
-            FMOD_ERR_CHECK(
-                recordSound->unlock(pcmData, nullptr, pcmLen, 0),
-                "Sound::unlock"
-            );
+            delete[] tmpBuf;
 
-            recordCallback(frame);
-            recordContinueStream();
+            try {
+                recordCallback(frame);
+            } catch (const std::exception& e) {
+                geode::log::error("ignoring exception in audio callback: {}", e.what());
+            }
         } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
     }
 }
 
 FMOD::System* GlobedAudioManager::getSystem() {
-    return FMODAudioEngine::sharedEngine()->m_system;
+    if (!cachedSystem) {
+        cachedSystem = FMODAudioEngine::sharedEngine()->m_system;
+    }
+
+    return cachedSystem;
 }
 
 #endif // GLOBED_VOICE_SUPPORT

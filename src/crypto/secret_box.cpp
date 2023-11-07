@@ -39,7 +39,7 @@ constexpr size_t SecretBox::macLength() {
 
 size_t SecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
-    randombytes_buf(nonce, NONCE_LEN);
+    util::crypto::secureRandom(nonce, NONCE_LEN);
 
     byte* ciphertext = dest + NONCE_LEN;
     CRYPTO_ERR_CHECK(crypto_secretbox_easy(ciphertext, src, size, nonce, key), "crypto_secretbox_easy failed");

@@ -51,19 +51,29 @@ public:
     // get the current active playback device
     AudioPlaybackDevice getPlaybackDevice();
 
-    // start recording the voice and call the callback 
+    // start recording the voice and call the callback
     void startRecording(std::function<void(const EncodedAudioFrame&)> callback);
     void stopRecording();
+    // like stopRecording but is safe to call from the callback in startRecording
+    void queueStopRecording();
     bool isRecording();
 
     // play a sound
     void playSound(FMOD::Sound* sound);
+
+    // create a sound from raw PCM data
+    [[nodiscard]] FMOD::Sound* createSound(const float* pcm, size_t samples, int sampleRate = VOICE_TARGET_SAMPLERATE);
     
     void setActiveRecordingDevice(int deviceId);
     void setActivePlaybackDevice(int deviceId);
 
     // Decode a sound from opus into PCM-float. Not recommended to use directly unless you know what you are doing.
     [[nodiscard]] DecodedOpusData decodeSound(util::data::byte* data, size_t length);
+    // Decode a sound from opus into PCM-float. Not recommended to use directly unless you know what you are doing.
+    [[nodiscard]] DecodedOpusData decodeSound(const EncodedOpusData& data);
+
+    // get the cached system
+    FMOD::System* getSystem();
 
 private:
     /* recording*/
@@ -73,6 +83,7 @@ private:
     size_t recordChunkSize = 0;
     std::function<void(const EncodedAudioFrame&)> recordCallback;
     std::mutex recordMutex;
+    std::atomic_bool recordQueuedStop = false;
     SRCResampler recordResampler;
 
     void recordContinueStream();
@@ -84,8 +95,7 @@ private:
 
     /* misc */
     std::atomic_bool _terminating;
-
-    FMOD::System* getSystem();
+    FMOD::System* cachedSystem = nullptr;
 
     void audioThreadFunc();
     std::atomic_bool audioThreadSleeping = true;

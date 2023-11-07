@@ -4,6 +4,7 @@
 #if GLOBED_VOICE_SUPPORT
 
 #include "audio_frame.hpp"
+#include "audio_stream.hpp"
 #include <chrono>
 
 /*
@@ -16,11 +17,14 @@ public:
     VoicePlaybackManager();
     ~VoicePlaybackManager();
 
-    void playFrame(int playerId, const EncodedAudioFrame& frame);
+    void playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
+
     void releaseStaleSounds();
 
 private:
     std::vector<std::pair<std::chrono::milliseconds, FMOD::Sound*>> activeSounds;
+
+    std::unordered_map<int, std::unique_ptr<AudioStream>> streams;
 };
 
 #endif // GLOBED_VOICE_SUPPORT

@@ -2,7 +2,9 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-const int RESAMPLER_QUALITY = SRC_SINC_MEDIUM_QUALITY;
+const int RESAMPLER_QUALITY = SRC_LINEAR;
+// 10x slower on average, barely any difference in quality
+// const int RESAMPLER_QUALITY = SRC_SINC_FASTEST;
 const size_t OUT_EXTRA_FRAMES = 16;
 
 SRCResampler::SRCResampler(int sourceRate, int outRate) {
@@ -49,7 +51,7 @@ void SRCResampler::setSampleRate(int sampleRate, int outRate) {
 
     this->samplerRatio = static_cast<double>(outRate) / static_cast<double>(sampleRate);
 
-    srcState = src_new(SRC_SINC_MEDIUM_QUALITY, 1, &_err);
+    srcState = src_new(RESAMPLER_QUALITY, 1, &_err);
     errcheck();
 
     _err = src_set_ratio(srcState, this->samplerRatio);

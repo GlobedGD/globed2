@@ -11,6 +11,11 @@
 #define CRYPTO_SODIUM_INIT CRYPTO_ASSERT(sodium_init() != -1, "sodium_init failed")
 
 namespace util::crypto {
+    // generate `size` bytes of securely generated random data
+    util::data::bytevector secureRandom(size_t size);
+    // generate `size` bytes of securely generated random data into the given buffer
+    void secureRandom(util::data::byte* dest, size_t size);
+
     /*
     * pwHash is better for sensitive data, as it has a salt
     * simpleHash is deterministic and uses Blake2b-256.

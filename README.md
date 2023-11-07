@@ -21,6 +21,7 @@ Planned features:
 Known issues:
 
 * i am silly
+* voice chat is a bit silly
 
 ## Contributing
 
@@ -40,7 +41,7 @@ The steps below have to be done only once. After you get all the libraries you c
 
 For libsodium, open the [latest release](https://github.com/jedisct1/libsodium), download the asset called `libsodium-1.x.y-msvc.zip` and unzip it into `libs/`. The `libs/libsodium` folder should now contain folders `include`, `Win32` and `x64`.
 
-For libresample, clone the [repo](https://github.com/libsndfile/libsamplerate), and build it with Visual Studio. Make sure to set the configuration to x86-Release. Once the build is done, copy the library from `out/build/x86-Release/src/samplerate.lib` into `libs/libsamplerate/Win32` in the mod directory. Create the path if it doesn't already exist.
+For libsamplerate, clone the [repo](https://github.com/libsndfile/libsamplerate), and build it with Visual Studio. Make sure to set the configuration to x86-Release. Once the build is done, copy the library from `out/build/x86-Release/src/samplerate.lib` into `libs/libsamplerate/Win32` in the mod directory. Create the path if it doesn't already exist.
 
 For opus, clone the [opus repo](https://github.com/xiph/opus), and open the file `win32/VS2015/opus.sln`. If it asks you to upgrade the solution, do it. Select the configuration Release Win32 and build the project "opus". Once that is done, copy the library from `win32/VS2015/Win32/Release/opus.lib` into `libs/opus/Win32` in the mod directory. Create the path if it doesn't already exist.
 

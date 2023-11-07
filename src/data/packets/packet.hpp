@@ -8,18 +8,18 @@ using packetid_t = uint16_t;
     packetid_t getPacketId() const override { return id; } \
     bool getEncrypted() const override { return enc; }
 
-#define GLOBED_ENCODE_UNIMPL \
-    GLOBED_ENCODE { \
+#define GLOBED_PACKET_ENCODE_UNIMPL \
+    GLOBED_PACKET_ENCODE { \
         GLOBED_UNIMPL(std::string("Encoding unimplemented for packet ") + std::to_string(getPacketId())) \
     }
 
-#define GLOBED_DECODE_UNIMPL \
-    GLOBED_DECODE { \
+#define GLOBED_PACKET_DECODE_UNIMPL \
+    GLOBED_PACKET_DECODE { \
         GLOBED_UNIMPL(std::string("Decoding unimplemented for packet ") + std::to_string(getPacketId())) \
     }
 
-#define GLOBED_ENCODE void encode(ByteBuffer& buf) const override
-#define GLOBED_DECODE void decode(ByteBuffer& buf) override
+#define GLOBED_PACKET_ENCODE void encode(ByteBuffer& buf) const override
+#define GLOBED_PACKET_DECODE void decode(ByteBuffer& buf) override
 
 class Packet {
 public:

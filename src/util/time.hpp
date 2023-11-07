@@ -11,4 +11,6 @@ namespace util::time {
     }
 
     std::string toString(std::chrono::microseconds time);
+
+    std::string nowPretty();
 }

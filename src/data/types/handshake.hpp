@@ -11,7 +11,7 @@ class HandshakeData {
 public:
     HandshakeData() {}
 
-    void encode(ByteBuffer& buf) const {
+    GLOBED_ENCODE {
         buf.writeBytes(pubkey);
     }
 
@@ -22,7 +22,7 @@ class HandshakeResponseData {
 public:
     HandshakeResponseData() {}
 
-    void decode(ByteBuffer& buf) {
+    GLOBED_DECODE {
         serverkey = buf.readBytes<crypto_box_PUBLICKEYBYTES>();
     }
 

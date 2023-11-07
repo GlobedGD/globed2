@@ -6,7 +6,7 @@
 
 const size_t VOICE_TARGET_SAMPLERATE = 24000;
 const size_t VOICE_TARGET_FRAMESIZE = 1440; // for opus, 60ms
-const float VOICE_CHUNK_RECORD_TIME = 1.2f;
+const float VOICE_CHUNK_RECORD_TIME = 1.2f; // the audio buffer that will be sent in a single packet
 
 #include "opus_codec.hpp"
 #include <data/bytebuffer.hpp>

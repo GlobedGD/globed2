@@ -22,6 +22,9 @@ concept Decodable = requires(T t, ByteBuffer& buf) {
 template <typename T>
 concept Serializable = Encodable<T> && Decodable<T>;
 
+#define GLOBED_ENCODE void encode(ByteBuffer& buf) const
+#define GLOBED_DECODE void decode(ByteBuffer& buf)
+
 // helper macros so you can do GLOBED_ENCODE {...} in serializable structs or packets
 
 class ByteBuffer {

@@ -26,6 +26,7 @@ void OpusCodec::setSampleRate(int sampleRate) {
     }
 
     encoder = opus_encoder_create(sampleRate, 1, OPUS_APPLICATION_VOIP, &_res);
+    
     errcheck("opus_encoder_create");
 
     decoder = opus_decoder_create(sampleRate, 1, &_res);
