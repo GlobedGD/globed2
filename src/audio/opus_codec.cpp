@@ -39,15 +39,15 @@ void OpusCodec::setFrameSize(int frameSize) {
 
 EncodedOpusData OpusCodec::encode(const float* data) {
     EncodedOpusData out;
-    size_t bytes = sizeof(short) * frameSize;
-    out.length = bytes / 2;
-    out.ptr = new byte[out.length];
+    size_t bytes = sizeof(float) * frameSize / 4;
+    out.length = bytes;
+    out.ptr = new byte[bytes];
 
-    out.length = opus_encode_float(encoder, data, frameSize, out.ptr, out.length);
+    out.length = opus_encode_float(encoder, data, frameSize, out.ptr, bytes);
     if (out.length < 0) {
         delete[] out.ptr;
         _res = out.length;
-        errcheck("opus_encode");
+        errcheck("opus_encode_float");
     }
 
     return out;
@@ -65,7 +65,7 @@ DecodedOpusData OpusCodec::decode(const byte* data, size_t length) {
     if (out.lengthSamples < 0) {
         delete[] out.ptr;
         _res = out.lengthSamples;
-        errcheck("opus_decode");
+        errcheck("opus_decode_float");
     }
 
     return out;
