@@ -1,6 +1,8 @@
 #pragma once
-#include <defs.hpp>
 #include "data.hpp"
+
+#include <defs.hpp>
+#include <sodium.h>
 
 #define CRYPTO_ASSERT(condition, message) GLOBED_ASSERT(condition, "crypto error: " message)
 #define CRYPTO_ERR_CHECK(result, message) CRYPTO_ASSERT(result == 0, message)
@@ -43,4 +45,39 @@ namespace util::crypto {
 
     // compares two strings in constant time to prevent timing attacks
     bool stringsEqual(const std::string& s1, const std::string& s2);
+
+    enum class Base64Variant {
+        ORIGINAL = sodium_base64_VARIANT_ORIGINAL,
+        ORIGINAL_NO_PAD = sodium_base64_VARIANT_ORIGINAL_NO_PADDING,
+        URLSAFE = sodium_base64_VARIANT_URLSAFE,
+        URLSAFE_NO_PAD = sodium_base64_VARIANT_URLSAFE_NO_PADDING,
+    };
+
+    // encodes the given byte array into a base64 string
+    std::string base64Encode(const util::data::byte* source, size_t size, Base64Variant variant = Base64Variant::ORIGINAL);
+    // encodes the given bytevector into a base64 string
+    std::string base64Encode(const util::data::bytevector& source, Base64Variant variant = Base64Variant::ORIGINAL);
+    // encodes the given string into a base64 string
+    std::string base64Encode(const std::string& source, Base64Variant variant = Base64Variant::ORIGINAL);
+
+    // decodes the given base64 byte array into a bytevector 
+    util::data::bytevector base64Decode(const util::data::byte* source, size_t size, Base64Variant variant = Base64Variant::ORIGINAL);
+    // decodes the given base64 string into a bytevector
+    util::data::bytevector base64Decode(const std::string& source, Base64Variant variant = Base64Variant::ORIGINAL);
+    // decodes the given base64 bytevector into a bytevector 
+    util::data::bytevector base64Decode(const util::data::bytevector& source, Base64Variant variant = Base64Variant::ORIGINAL);
+    
+    // encodes the given byte array into a hex string
+    std::string hexEncode(const util::data::byte* source, size_t size);
+    // encodes the given bytevector into a hex string
+    std::string hexEncode(const util::data::bytevector& source);
+    // encodes the given string into a hex string
+    std::string hexEncode(const std::string& source);
+
+    // decodes the given hex byte array into a bytevector
+    util::data::bytevector hexDecode(const util::data::byte* source, size_t size);
+    // decodes the given hex string into a bytevector
+    util::data::bytevector hexDecode(const std::string& source);
+    // decodes the given hex bytevector into a bytevector
+    util::data::bytevector hexDecode(const util::data::bytevector& source);
 };

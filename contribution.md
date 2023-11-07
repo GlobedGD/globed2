@@ -13,7 +13,7 @@ auto num = Random::get().generate<uint32_t>(0, 10000);
 Short descriptions of available utility namespaces (`util::` omitted for simplicity sake):
 
 * `collections` - provides various collections like `CappedQueue` and util methods for working with other collections.
-* `crypto` - provides cryptography utilities like secure hashing and TOTP generation.
+* `crypto` - provides cryptography utilities like secure hashing, TOTP generation, base64, hex encoding/decoding.
 * `data` - provides helpers `byte`, `bytearray` and `bytevector` and byteswap implementations.
 * `debugging` - provides a `Benchmarker` class and other utilities for debugging code.
 * `net` - provides networking utilities.
@@ -88,7 +88,7 @@ You also must put `GLOBED_SINGLETON_DEF(cls)` in the class definition (usually y
 GLOBED_SINGLETON_DEF(MySingleton)
 ```
 
-If you did everything correctly, you should now have a singleton class with a thread-safe `get()` method that will lazily create a new instance when called for the first time, and in future will return that existing instance.
+If you did everything correctly, you should now have a singleton class with a thread-safe `get()` method that will lazily create a new instance when called for the first time, and in future will return that existing instance. Note that the underlying singleton is not thread-safe by default, only the `get()` method.
 
 ## Platform dependent macros
 

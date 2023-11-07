@@ -6,7 +6,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.75"
 blake2 = "0.10.6"
+colored = "2.0.4"
 digest = "0.10.7"
-sodiumoxide = "0.2.7"
-totp-rs = { version = "5.4.0", features = ["gen_secret"] }
+log = "0.4.20"
+reqwest = "0.11.22"
+roa = { version = "0.6.1", features = ["router"] }
+serde = { version = "1.0.190", features = ["serde_derive"] }
+serde_json = "1.0.108"
+time = { version = "0.3.30", features = ["formatting"] }
+tokio = { version = "1.33.0", features = ["full"] }
+totp-rs = "5.4.0"
+async-watcher = { git = "https://github.com/justinrubek/async-watcher", rev = "e4084be446aa7060e01ef95f128e23637286eafa" }
+rand = "0.8.5"
+hmac = "0.12.1"
+sha2 = "0.10.8"
+base64 = "0.21.5"

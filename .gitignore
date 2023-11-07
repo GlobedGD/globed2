@@ -75,3 +75,5 @@ opus-git
 samplerate-git
 
 server/target
+server/central-conf.json
+server/game-conf.json

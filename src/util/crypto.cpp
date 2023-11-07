@@ -100,7 +100,7 @@ std::string simpleTOTPForPeriod(const byte *key, size_t keySize, uint64_t period
     return otpStream.str();
 }
 
-bool simpleTOTPVerify(const std::string& code, const util::data::byte* key, size_t keySize, size_t skew) {
+bool simpleTOTPVerify(const std::string& code, const byte* key, size_t keySize, size_t skew) {
     uint64_t curPeriod = std::time(nullptr) / 30;
     auto curTotp = simpleTOTPForPeriod(key, keySize, curPeriod);
     if (stringsEqual(code, curTotp)) {
@@ -126,7 +126,7 @@ bool simpleTOTPVerify(const std::string& code, const util::data::byte* key, size
     return false;
 }
 
-bool simpleTOTPVerify(const std::string& code, const util::data::bytevector& key, size_t skew) {
+bool simpleTOTPVerify(const std::string& code, const bytevector& key, size_t skew) {
     return simpleTOTPVerify(code, key.data(), key.size(), skew);
 }
 
@@ -141,6 +141,95 @@ bool stringsEqual(const std::string& s1, const std::string& s2) {
     }
 
     return (result == 0);
+}
+
+std::string base64Encode(const byte* source, size_t size, Base64Variant variant) {
+    size_t length = sodium_base64_ENCODED_LEN(size, (int)variant);
+    char* out = new char[length];
+    sodium_bin2base64(out, length, source, size, (int)variant);
+
+    auto ret = std::string(out);
+    delete[] out;
+
+    return ret;
+}
+
+std::string base64Encode(const bytevector& source, Base64Variant variant) {
+    return base64Encode(source.data(), source.size(), variant);
+}
+
+std::string base64Encode(const std::string& source, Base64Variant variant) {
+    return base64Encode(reinterpret_cast<const byte*>(source.c_str()), source.size(), variant);
+}
+
+bytevector base64Decode(const byte* source, size_t size, Base64Variant variant) {
+    auto outMaxLen = size / 4 * 3;
+    bytevector out(outMaxLen);
+
+    size_t outRealLen;
+    // crazy
+    CRYPTO_ERR_CHECK(sodium_base642bin(
+        out.data(), outMaxLen,
+        reinterpret_cast<const char*>(source), size,
+        nullptr, &outRealLen, nullptr, (int)variant
+    ), "sodium_base642bin failed");
+
+    out.resize(outRealLen); // necessary
+
+    return out;
+}
+
+bytevector base64Decode(const std::string& source, Base64Variant variant) {
+    return base64Decode(reinterpret_cast<const byte*>(source.c_str()), source.size(), variant);
+}
+
+bytevector base64Decode(const bytevector& source, Base64Variant variant) {
+    return base64Decode(source.data(), source.size(), variant);
+}
+
+std::string hexEncode(const byte* source, size_t size) {
+    auto outLen = size * 2 + 1;
+    char* out = new char[outLen];
+
+    sodium_bin2hex(out, outLen, source, size);
+
+    std::string ret(out);
+    delete[] out;
+
+    return ret;
+}
+
+std::string hexEncode(const bytevector& source) {
+    return hexEncode(source.data(), source.size());
+}
+
+std::string hexEncode(const std::string& source) {
+    return hexEncode(reinterpret_cast<const byte*>(source.c_str()), source.size());
+}
+
+bytevector hexDecode(const byte* source, size_t size) {
+    size_t outLen = size / 2;
+    bytevector out(outLen);
+    
+    size_t realOutLen;
+
+    CRYPTO_ERR_CHECK(sodium_hex2bin(
+        out.data(), outLen,
+        reinterpret_cast<const char*>(source), size,
+        nullptr, &realOutLen, nullptr
+    ), "sodium_hex2bin failed");
+
+    out.resize(realOutLen);
+
+    return out;
+}
+
+bytevector hexDecode(const std::string& source) {
+    return hexDecode(reinterpret_cast<const byte*>(source.c_str()), source.size());
+}
+
+bytevector hexDecode(const bytevector& source) {
+    return hexDecode(source.data(), source.size());
 }
 
 }

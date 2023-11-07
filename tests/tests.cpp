@@ -188,13 +188,33 @@ void tRandom() {
 }
 
 void tTotp() {
-    std::string key = "My epic key";
+    auto key = util::crypto::base64Decode("hb35940QWUxD7Ss5kw+goP5QLxRn1Sc7/yIIiQ4bdCg=");
     auto hashed = util::crypto::simpleHash(key);
     // std::cout << "raw key: '" << key << "', encoded: " << util::debugging::hexDumpAddress(hashed.data(), hashed.size()) << std::endl;
     auto totp = util::crypto::simpleTOTP(hashed);
 
-    // std::cout << "totp: " << totp << std::endl;
+    std::cout << "totp: " << totp << std::endl;
     ASSERT(util::crypto::simpleTOTPVerify(totp, hashed), "simpleTOTPVerify failed");
+}
+
+void tEncodings() {
+    auto src = std::string("holy balls!");
+    auto b64 = util::crypto::base64Encode(src);
+    auto hex = util::crypto::hexEncode(src);
+
+    std::cout << "base64: " << b64 << ", hex: " << hex << std::endl;
+
+    auto decoded = util::crypto::base64Decode(b64);
+    auto decodedHex = util::crypto::hexDecode(hex);
+
+    std::string decodedS(decoded.begin(), decoded.end());
+    std::string decodedH(decodedHex.begin(), decodedHex.end());
+
+    std::cout << "b64 decoded: '" << decodedS << "', size: " << decodedS.size() << std::endl;
+    std::cout << "hex decoded: '" << decodedH << "', size: " << decodedH.size() << std::endl;
+
+    ASSERT(decodedS == src, "base64 encode/decode failed");
+    ASSERT(decodedH == src, "hex encode/decode failed");
 }
 
 using ms = std::chrono::microseconds;
@@ -204,6 +224,7 @@ std::map<std::string, std::function<void()>> tests = {
     {"CryptoBox"s, tCrypto},
     {"SecretBox"s, tSecretBox},
     {"TOTP", tTotp},
+    {"encodings", tEncodings},
 };
 
 ms bnCrypto(size_t dataLength, size_t iterations) {

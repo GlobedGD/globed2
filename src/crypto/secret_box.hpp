@@ -31,6 +31,11 @@ public:
     size_t encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
     size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
 
+    void setKey(const util::data::bytevector& src);
+    void setKey(const util::data::byte* src);
+    // hashes the password and initializes the secret key with the hash
+    void setPassword(const std::string& pw);
+
 private:
     util::data::byte* key = nullptr;
 };

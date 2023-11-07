@@ -63,3 +63,17 @@ size_t SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
 
     return plaintextLength;
 }
+
+void SecretBox::setKey(const util::data::bytevector& src) {
+    GLOBED_ASSERT(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for SecretBox");
+    setKey(src.data());
+}
+
+void SecretBox::setKey(const util::data::byte* src) {
+    std::memcpy(this->key, src, crypto_secretbox_KEYBYTES);
+}
+
+void SecretBox::setPassword(const std::string& pw) {
+    auto key = util::crypto::simpleHash(pw);
+    setKey(key);
+}
