@@ -99,8 +99,8 @@ void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFra
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     exinfo.numchannels = 1;
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
-    exinfo.defaultfrequency = recordDevice.sampleRate;
-    exinfo.length = sizeof(float) * exinfo.numchannels * (int)((float)recordDevice.sampleRate * VOICE_CHUNK_RECORD_TIME);
+    exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
+    exinfo.length = sizeof(float) * exinfo.numchannels * (int)((float)VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_RECORD_TIME);
 
     geode::log::debug("mic chunksize: {}, hz: {}", exinfo.length, (int)((float)exinfo.length / VOICE_CHUNK_RECORD_TIME));
 
@@ -218,7 +218,6 @@ AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice() {
 
 void GlobedAudioManager::setActiveRecordingDevice(int deviceId) {
     recordDevice = this->getRecordingDevice(deviceId);
-    recordResampler.setSampleRate(recordDevice.sampleRate, VOICE_TARGET_SAMPLERATE);
 }
 
 void GlobedAudioManager::setActivePlaybackDevice(int deviceId) {
@@ -268,11 +267,10 @@ void GlobedAudioManager::audioThreadFunc() {
             geode::log::debug("continued stream at {}", util::time::nowPretty());
 
             try {
-                float* resampled = recordResampler.resample(tmpBuf, (int)((float)recordDevice.sampleRate * VOICE_CHUNK_RECORD_TIME));
                 size_t totalOpusFrames = static_cast<float>(VOICE_TARGET_SAMPLERATE) / VOICE_TARGET_FRAMESIZE * VOICE_CHUNK_RECORD_TIME;
 
                 for (size_t i = 0; i < totalOpusFrames; i++) {
-                    const float* dataStart = resampled + i * VOICE_TARGET_FRAMESIZE;
+                    const float* dataStart = tmpBuf + i * VOICE_TARGET_FRAMESIZE;
                     auto encodedFrame = opus.encode(dataStart);
                     frame.pushOpusFrame(std::move(encodedFrame));
                 }

@@ -8,7 +8,6 @@
 #include <fmod.hpp>
 #include <util/sync.hpp>
 #include "opus_codec.hpp"
-#include "src_resampler.hpp"
 #include "audio_frame.hpp"
 
 using util::sync::WrappingMutex;
@@ -84,7 +83,6 @@ private:
     std::function<void(const EncodedAudioFrame&)> recordCallback;
     std::mutex recordMutex;
     std::atomic_bool recordQueuedStop = false;
-    SRCResampler recordResampler;
 
     void recordContinueStream();
 

@@ -4,7 +4,7 @@ use std::{
 };
 
 use base64::{engine::general_purpose as b64e, Engine as _};
-use log::{info, warn};
+use log::warn;
 use rand::{distributions::Alphanumeric, Rng};
 use reqwest::StatusCode;
 use roa::{preload::PowerBody, query::Query, throw, Context};

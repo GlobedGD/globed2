@@ -22,13 +22,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 # Include our libs
-include_directories(libs/libsodium/include libs/opus/include libs/libsamplerate/include)
-# include_directories(libs/opus/include)
+include_directories(libs/libsodium/include libs/opus/include)
 
 # lib files
 set(LIBSODIUM_DIR "${CMAKE_SOURCE_DIR}/libs/libsodium")
 set(OPUS_DIR "${CMAKE_SOURCE_DIR}/libs/opus")
-set(LIBSAMPLERATE_DIR "${CMAKE_SOURCE_DIR}/libs/libsamplerate")
 
 add_definitions(-DSODIUM_STATIC=1)
 
@@ -37,18 +35,15 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     
     find_library(LIBSODIUM_LIBRARY NAMES libsodium HINTS ${LIBSODIUM_DIR}/Win32/Release/v142/static)
     find_library(OPUS_LIBRARY NAMES opus HINTS ${OPUS_DIR}/Win32)
-    find_library(LIBSAMPLERATE_LIBRARY NAMES samplerate HINTS ${LIBSAMPLERATE_DIR}/Win32)
     
 elseif(ANDROID)
     # todo x64 vs x32
     set(LIBSODIUM_LIBRARY ${LIBSODIUM_DIR}/android-armv7/libsodium.a)
     set(OPUS_LIBRARY ${OPUS_DIR}/android-armv7/libopus.a)
-    set(LIBSAMPLERATE_LIBRARY ${LIBSAMPLERATE_DIR}/android-armv7/libsamplerate.a)
 endif()
 
 message(STATUS "Libsodium: ${LIBSODIUM_LIBRARY}")
 message(STATUS "Opus: ${OPUS_LIBRARY}")
-message(STATUS "Libsamplerate: ${LIBSAMPLERATE_LIBRARY}")
 
 # disable iterator debugging if building in debug
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -73,7 +68,7 @@ target_link_libraries(${PROJECT_NAME} UIBuilder)
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # link to our libraries
-target_link_libraries(${PROJECT_NAME} ${LIBSODIUM_LIBRARY} ${OPUS_LIBRARY} ${LIBSAMPLERATE_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${LIBSODIUM_LIBRARY} ${OPUS_LIBRARY})
 
 # link to fmod on android
 if (ANDROID)
