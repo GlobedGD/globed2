@@ -1,3 +1,3 @@
-mod ping;
+mod connection;
 
-pub use ping::PingPacket;
+pub use connection::*;

@@ -21,6 +21,12 @@ public:
     NetworkManager();
     ~NetworkManager();
 
+    // Connect to a server
+    void connect(const std::string& addr, unsigned short port);
+
+    // Disconnect from a server. Does nothing if not connected
+    void disconnect();
+
     // Sends a packet to the currently established connection. Throws if disconnected.
     void send(Packet* packet);
 
@@ -41,7 +47,7 @@ public:
     // Returns true if ANY connection has been made with a server. The handshake might not have been done at this point.
     bool connected();
 
-    // Returns true ONLY if we are connected to a server and the handshake has finished.
+    // Returns true ONLY if we are connected to a server and the crypto handshake has finished.
     bool established();
 
 private:
@@ -64,7 +70,7 @@ private:
     std::thread threadTasks;
     std::thread threadPingRecv;
 
-    std::atomic_bool _running;
+    std::atomic_bool _running = true;
 
     std::atomic_bool _established = false;
 };

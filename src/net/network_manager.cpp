@@ -9,8 +9,55 @@ namespace log = geode::log;
 
 GLOBED_SINGLETON_DEF(NetworkManager)
 
+NetworkManager::NetworkManager() {
+    util::net::initialize();
+
+    if (!socket.create()) util::net::throwLastError();
+
+    threadMain = std::thread(&NetworkManager::threadMainFunc, this);
+    threadRecv = std::thread(&NetworkManager::threadRecvFunc, this);
+    threadTasks = std::thread(&NetworkManager::threadTasksFunc, this);
+    threadPingRecv = std::thread(&NetworkManager::threadPingRecvFunc, this);
+}
+
+NetworkManager::~NetworkManager() {
+    // cleanup left packets
+    _running = false;
+
+    log::debug("waiting for threads to die..");
+
+    if (threadMain.joinable()) threadMain.join();
+
+    if (socket.connected) {
+        log::debug("disconnecting from the server..");
+        // todo
+    }
+
+    log::debug("cleaning up..");
+    for (Packet* packet : packetQueue.popAll()) {
+        delete packet;
+    }
+
+    util::net::cleanup();
+    log::debug("Goodbye!");
+}
+
+void NetworkManager::connect(const std::string& addr, unsigned short port) {
+    GLOBED_ASSERT(socket.connect(addr, port), "failed to connect to the server")
+    socket.createBox();
+}
+
+void NetworkManager::disconnect() {
+    if (!connected()) {
+        return;
+    }
+
+    socket.disconnect();
+    socket.cleanupBox();
+}
+
 void NetworkManager::send(Packet* packet) {
-    GLOBED_ASSERT(socket.connected, "tried to send a packet while disconnected");
+    GLOBED_ASSERT(socket.connected, "tried to send a packet while disconnected")
     packetQueue.push(packet);
 }
 
@@ -48,10 +95,7 @@ void NetworkManager::threadMainFunc() {
             } catch (const std::exception& e) {
                 ErrorQueues::get().error(e.what());
             }
-        }
 
-        // cleanup
-        for (Packet* packet : messages) {
             delete packet;
         }
     }
@@ -68,6 +112,8 @@ void NetworkManager::threadRecvFunc() {
             log::warn("Invalid packet was returned");
             continue;
         }
+
+        log::debug("recv packet {}", packet->getPacketId());
 
         packetid_t packetId = packet->getPacketId();
 
@@ -136,39 +182,6 @@ void NetworkManager::threadPingRecvFunc() {
             GameServerManager::get().recordPingResponse(pingr->id, pingr->playerCount);
         }
     }
-}
-
-NetworkManager::NetworkManager() {
-    util::net::initialize();
-
-    if (!socket.create()) util::net::throwLastError();
-
-    threadMain = std::thread(&NetworkManager::threadMainFunc, this);
-    threadRecv = std::thread(&NetworkManager::threadRecvFunc, this);
-    threadTasks = std::thread(&NetworkManager::threadTasksFunc, this);
-    threadPingRecv = std::thread(&NetworkManager::threadPingRecvFunc, this);
-}
-
-NetworkManager::~NetworkManager() {
-    // cleanup left packets
-    _running = false;
-
-    log::debug("waiting for threads to die..");
-
-    if (threadMain.joinable()) threadMain.join();
-
-    if (socket.connected) {
-        log::debug("disconnecting from the server..");
-        // todo
-    }
-
-    log::debug("cleaning up..");
-    for (Packet* packet : packetQueue.popAll()) {
-        delete packet;
-    }
-
-    util::net::cleanup();
-    log::debug("Goodbye!");
 }
 
 bool NetworkManager::connected() {

@@ -39,9 +39,13 @@ If you are on Linux, I recommend dualbooting to windows right now or using a VM.
 
 The steps below have to be done only once. After you get all the libraries you can modify and rebuild the mod as much as you want without going through it again.
 
-For libsodium, open the [latest release](https://github.com/jedisct1/libsodium), download the asset called `libsodium-1.x.y-msvc.zip` and unzip it into `libs/`. The `libs/libsodium` folder should now contain folders `include`, `Win32` and `x64`.
+For libsodium you can download the prebuilt libraries from the [github releases](https://github.com/jedisct1/libsodium/releases). Make sure to download the MSVC precompiled binaries  (`libsodium-1.x.y-msvc.zip`).
 
-For opus, clone the [opus repo](https://github.com/xiph/opus), and open the file `win32/VS2015/opus.sln`. If it asks you to upgrade the solution, do it. Select the configuration Release Win32 and build the project "opus". Once that is done, copy the library from `win32/VS2015/Win32/Release/opus.lib` into `libs/opus/Win32` in the mod directory. Create the path if it doesn't already exist.
+For opus, clone the [opus repo](https://github.com/xiph/opus), and open the file `win32/VS2015/opus.sln`. If it asks you to upgrade the solution, do it. Select the configuration Release Win32 and build the project "opus". Once that is done, the library should be in `win32/VS2015/Win32/Release/opus.lib`.
+
+Copy the `include` folders from opus and libsodium into their respective subfolders under `libs/`.
+
+Now we want to copy the prebuilt libraries. In each subfolder inside `libs` create a folder called `Win32` and copy the respective `.lib` file there. For libsodium, you want to copy the file from `libsodium/Win32/Release/v142/static/libsodium.lib`
 
 Now, also if you are on Linux there's one extra step - open your splat directory and inside navigate to `crt/lib/x86`. Either make a symlink or simply copy the file `vcomp.lib` to `VCOMP.lib` in the same directory. Make sure the name is capitalized exactly like that.
 

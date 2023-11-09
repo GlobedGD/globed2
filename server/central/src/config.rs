@@ -37,7 +37,7 @@ fn default_challenge_level() -> i32 {
 
 /* end stinky serde defaults */
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone)]
 pub struct ServerConfig {
     #[serde(default = "default_web_mountpoint")]
     pub web_mountpoint: String,
@@ -47,6 +47,8 @@ pub struct ServerConfig {
     // security
     #[serde(default = "default_secret_key")]
     pub secret_key: String,
+    #[serde(default = "default_secret_key")]
+    pub game_server_password: String,
     #[serde(default = "default_challenge_expiry")]
     pub challenge_expiry: u32,
     #[serde(default = "default_challenge_level")]
@@ -71,7 +73,7 @@ impl ServerConfig {
 
     pub fn reload_in_place(&mut self, source: &Path) -> anyhow::Result<()> {
         let conf = ServerConfig::load(source)?;
-        ServerConfig::copy_to(&conf, self);
+        self.clone_from(&conf);
         Ok(())
     }
 
@@ -80,16 +82,9 @@ impl ServerConfig {
             web_mountpoint: default_web_mountpoint(),
             web_address: default_web_address(),
             secret_key: default_secret_key(),
+            game_server_password: default_secret_key(),
             challenge_expiry: default_challenge_expiry(),
             challenge_level: default_challenge_level(),
         }
-    }
-
-    fn copy_to(source: &ServerConfig, dest: &mut ServerConfig) {
-        dest.web_mountpoint = source.web_mountpoint.clone();
-        dest.web_address = source.web_address.clone();
-        dest.secret_key = source.secret_key.clone();
-        dest.challenge_expiry = source.challenge_expiry;
-        dest.challenge_level = source.challenge_level;
     }
 }

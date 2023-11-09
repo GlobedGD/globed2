@@ -102,8 +102,6 @@ void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFra
     exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
     exinfo.length = sizeof(float) * exinfo.numchannels * (int)((float)VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_RECORD_TIME);
 
-    geode::log::debug("mic chunksize: {}, hz: {}", exinfo.length, (int)((float)exinfo.length / VOICE_CHUNK_RECORD_TIME));
-
     recordChunkSize = exinfo.length;
 
     FMOD_ERR_CHECK(
@@ -264,7 +262,6 @@ void GlobedAudioManager::audioThreadFunc() {
             );
 
             recordContinueStream();
-            geode::log::debug("continued stream at {}", util::time::nowPretty());
 
             try {
                 size_t totalOpusFrames = static_cast<float>(VOICE_TARGET_SAMPLERATE) / VOICE_TARGET_FRAMESIZE * VOICE_CHUNK_RECORD_TIME;

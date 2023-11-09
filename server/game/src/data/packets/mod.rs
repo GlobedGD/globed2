@@ -1,10 +1,13 @@
 pub mod client;
 pub mod server;
 
-use crate::bytebufferext::{Decodable, Encodable};
+use std::any::Any;
+
+use crate::bytebufferext::{Decodable, Empty, Encodable};
+
+use self::client::{CryptoHandshakeStartPacket, PingPacket};
 
 type PacketId = u16;
-const HEADER_LEN: usize = 3; // u16 + bool
 
 /*
 * for creating a new packet, the basic structure is either:
@@ -25,11 +28,15 @@ macro_rules! packet {
             fn get_encrypted(&self) -> bool {
                 $encrypted
             }
+
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
         }
     };
     ($packet_type:ident, $packet_id:expr, $encrypted:expr, { $($field:ident: $field_type:ty),* $(,)? }) => {
         pub struct $packet_type {
-            $($field: $field_type),*
+            $(pub $field: $field_type),*
         }
 
         impl Packet for $packet_type {
@@ -40,13 +47,34 @@ macro_rules! packet {
             fn get_encrypted(&self) -> bool {
                 $encrypted
             }
+
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
         }
     };
 }
 
 pub(crate) use packet;
 
-pub trait Packet: Encodable + Decodable {
+pub trait Packet: Encodable + Decodable + Send + Sync {
     fn get_packet_id(&self) -> PacketId;
     fn get_encrypted(&self) -> bool;
+    fn as_any(&self) -> &dyn Any;
+}
+
+pub const PACKET_HEADER_LEN: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();
+
+macro_rules! mpacket {
+    ($typ:ty) => {{
+        Some(Box::new(<$typ>::empty()))
+    }};
+}
+
+pub fn match_packet(packet_id: PacketId) -> Option<Box<dyn Packet>> {
+    match packet_id {
+        10000 => mpacket!(PingPacket),
+        10001 => mpacket!(CryptoHandshakeStartPacket),
+        _ => None,
+    }
 }

@@ -1,10 +1,4 @@
-use std::{
-    collections::HashMap,
-    net::{IpAddr, SocketAddr},
-    path::PathBuf,
-    sync::Arc,
-    time::Duration,
-};
+use std::{collections::HashMap, net::IpAddr, path::PathBuf, sync::Arc, time::Duration};
 
 use hmac::{Hmac, Mac};
 use log::warn;

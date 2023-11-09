@@ -16,7 +16,7 @@
 
 /* platform-specific: Windows */
 #define GLOBED_FMOD_WINDOWS 1
-#define GLOBED_DRPC_WINDOWS 1
+#define GLOBED_DRPC_WINDOWS 0
 
 /* platform-specific: Mac */
 #define GLOBED_FMOD_MAC 0

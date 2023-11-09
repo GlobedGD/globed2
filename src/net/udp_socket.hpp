@@ -6,6 +6,7 @@ public:
     using Socket::send;
     using Socket::sendAll;
     UdpSocket();
+    ~UdpSocket();
 
     bool create() override;
     bool connect(const std::string& serverIp, unsigned short port) override;
@@ -17,7 +18,7 @@ public:
 
     bool connected = false;
 protected:
-    int socket_;
+    int socket_ = 0;
 
 private:
     sockaddr_in destAddr_;

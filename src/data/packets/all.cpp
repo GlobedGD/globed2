@@ -10,6 +10,9 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
 
         PACKET(20000, PingResponsePacket);
         PACKET(20001, CryptoHandshakeResponsePacket);
+#if GLOBED_VOICE_SUPPORT
+        PACKET(21010, VoiceBroadcastPacket);
+#endif
 
         default:
             return std::shared_ptr<Packet>(nullptr);

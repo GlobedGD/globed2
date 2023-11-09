@@ -14,8 +14,8 @@ public:
     GLOBED_SINGLETON(ErrorQueues);
     ErrorQueues();
 
-    void warn(const std::string& message);
-    void error(const std::string& message);
+    void warn(const std::string& message, bool print = true);
+    void error(const std::string& message, bool print = true);
 
     std::vector<std::string> getWarnings();
     std::vector<std::string> getErrors();

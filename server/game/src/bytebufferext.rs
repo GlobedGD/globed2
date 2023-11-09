@@ -1,6 +1,6 @@
 use crate::data::types::cocos;
 use anyhow::Result;
-use bytebuffer::ByteBuffer;
+use bytebuffer::{ByteBuffer, ByteReader};
 
 type ByteVec = Vec<u8>;
 
@@ -8,32 +8,51 @@ pub trait Encodable {
     fn encode(&self, buf: &mut ByteBuffer);
 }
 
-pub trait Decodable {
-    fn decode(buf: &mut ByteBuffer) -> Result<Self>
+pub trait Empty {
+    fn empty() -> Self
     where
         Self: Sized;
+}
+
+pub trait Decodable: Empty {
+    fn decode(&mut self, buf: &mut ByteBuffer) -> Result<()>;
+    fn decode_from_reader(&mut self, buf: &mut ByteReader) -> Result<()>;
 }
 
 pub trait Serializable: Encodable + Decodable {}
 
 macro_rules! encode_impl {
-    ($packet_type:ty, $buf:ident, $self:ident, $decode:expr) => {
+    ($packet_type:ty, $buf:ident, $self:ident, $encode:expr) => {
         impl crate::bytebufferext::Encodable for $packet_type {
             fn encode(&$self, $buf: &mut bytebuffer::ByteBuffer) {
-                $decode
+                $encode
             }
         }
     };
 }
 
 macro_rules! decode_impl {
-    ($packet_type:ty, $buf:ident, $decode:expr) => {
+    ($packet_type:ty, $buf:ident, $self:ident, $decode:expr) => {
         impl crate::bytebufferext::Decodable for $packet_type {
-            fn decode($buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self>
+            fn decode(&mut $self, $buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<()> {
+                $decode
+            }
+
+            fn decode_from_reader(&mut $self, $buf: &mut bytebuffer::ByteReader) -> anyhow::Result<()> {
+                $decode
+            }
+        }
+    };
+}
+
+macro_rules! empty_impl {
+    ($typ:ty, $empty:expr) => {
+        impl crate::bytebufferext::Empty for $typ {
+            fn empty() -> Self
             where
                 Self: Sized,
             {
-                $decode
+                $empty
             }
         }
     };
@@ -52,10 +71,11 @@ macro_rules! encode_unimpl {
 macro_rules! decode_unimpl {
     ($packet_type:ty) => {
         impl crate::bytebufferext::Decodable for $packet_type {
-            fn decode($buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self>
-            where
-                Self: Sized,
-            {
+            fn decode(&mut self, _: &mut bytebuffer::ByteBuffer) -> anyhow::Result<()> {
+                Err(anyhow::anyhow!("decoding unimplemented for this type"))
+            }
+
+            fn decode_from_reader(&mut self, _: &mut bytebuffer::ByteReader) -> anyhow::Result<()> {
                 Err(anyhow::anyhow!("decoding unimplemented for this type"))
             }
         }
@@ -63,57 +83,44 @@ macro_rules! decode_unimpl {
 }
 pub(crate) use decode_impl;
 pub(crate) use decode_unimpl;
+pub(crate) use empty_impl;
 pub(crate) use encode_impl;
 pub(crate) use encode_unimpl;
 
-pub trait ByteBufferExt {
-    // read a byte vector, prefixed with 4 bytes indicating length
-    fn read_byte_array(&mut self) -> Result<ByteVec>;
+pub trait ByteBufferExtWrite {
     // write a byte vector, prefixed with 4 bytes indicating length
     fn write_byte_array(&mut self, vec: &ByteVec);
 
-    fn read_value<T: Decodable>(&mut self) -> Result<T>;
     fn write_value<T: Encodable>(&mut self, val: &T);
 
-    fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>>;
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
-
-    fn read_color3(&mut self) -> Result<cocos::Color3B>;
-    fn read_color4(&mut self) -> Result<cocos::Color4B>;
-    fn read_point(&mut self) -> Result<cocos::Point>;
 
     fn write_color3(&mut self, val: cocos::Color3B);
     fn write_color4(&mut self, val: cocos::Color4B);
     fn write_point(&mut self, val: cocos::Point);
 }
 
-impl ByteBufferExt for ByteBuffer {
-    fn read_byte_array(&mut self) -> Result<ByteVec> {
-        let length = self.read_u32()? as usize;
-        Ok(self.read_bytes(length)?)
-    }
+pub trait ByteBufferExtRead {
+    // read a byte vector, prefixed with 4 bytes indicating length
+    fn read_byte_array(&mut self) -> Result<ByteVec>;
 
+    fn read_value<T: Decodable>(&mut self) -> Result<T>;
+
+    fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>>;
+
+    fn read_color3(&mut self) -> Result<cocos::Color3B>;
+    fn read_color4(&mut self) -> Result<cocos::Color4B>;
+    fn read_point(&mut self) -> Result<cocos::Point>;
+}
+
+impl ByteBufferExtWrite for ByteBuffer {
     fn write_byte_array(&mut self, vec: &ByteVec) {
         self.write_u32(vec.len() as u32);
-        self.write_bytes(&vec);
-    }
-
-    fn read_value<T: Decodable>(&mut self) -> Result<T> {
-        T::decode(self)
+        self.write_bytes(vec);
     }
 
     fn write_value<T: Encodable>(&mut self, val: &T) {
         val.encode(self);
-    }
-
-    fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>> {
-        let mut out = Vec::new();
-        let length = self.read_u32()? as usize;
-        for _ in 0..length {
-            out.push(T::decode(self)?);
-        }
-
-        Ok(out)
     }
 
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]) {
@@ -121,6 +128,43 @@ impl ByteBufferExt for ByteBuffer {
         for elem in val.iter() {
             elem.encode(self);
         }
+    }
+
+    fn write_color3(&mut self, val: cocos::Color3B) {
+        self.write_value(&val)
+    }
+
+    fn write_color4(&mut self, val: cocos::Color4B) {
+        self.write_value(&val)
+    }
+
+    fn write_point(&mut self, val: cocos::Point) {
+        self.write_value(&val)
+    }
+}
+
+impl ByteBufferExtRead for ByteBuffer {
+    fn read_byte_array(&mut self) -> Result<ByteVec> {
+        let length = self.read_u32()? as usize;
+        Ok(self.read_bytes(length)?)
+    }
+
+    fn read_value<T: Decodable>(&mut self) -> Result<T> {
+        let mut value = T::empty();
+        value.decode(self)?;
+        Ok(value)
+    }
+
+    fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>> {
+        let mut out = Vec::new();
+        let length = self.read_u32()? as usize;
+        for _ in 0..length {
+            let mut value = T::empty();
+            value.decode(self)?;
+            out.push(value);
+        }
+
+        Ok(out)
     }
 
     fn read_color3(&mut self) -> Result<cocos::Color3B> {
@@ -134,16 +178,41 @@ impl ByteBufferExt for ByteBuffer {
     fn read_point(&mut self) -> Result<cocos::Point> {
         self.read_value()
     }
+}
 
-    fn write_color3(&mut self, val: cocos::Color3B) {
-        self.write_value(&val)
+impl<'a> ByteBufferExtRead for ByteReader<'a> {
+    fn read_byte_array(&mut self) -> Result<ByteVec> {
+        let length = self.read_u32()? as usize;
+        Ok(self.read_bytes(length)?)
     }
 
-    fn write_color4(&mut self, val: cocos::Color4B) {
-        self.write_value(&val)
+    fn read_value<T: Decodable>(&mut self) -> Result<T> {
+        let mut value = T::empty();
+        value.decode_from_reader(self)?;
+        Ok(value)
     }
 
-    fn write_point(&mut self, val: cocos::Point) {
-        self.write_value(&val)
+    fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>> {
+        let mut out = Vec::new();
+        let length = self.read_u32()? as usize;
+        for _ in 0..length {
+            let mut value = T::empty();
+            value.decode_from_reader(self)?;
+            out.push(value);
+        }
+
+        Ok(out)
+    }
+
+    fn read_color3(&mut self) -> Result<cocos::Color3B> {
+        self.read_value()
+    }
+
+    fn read_color4(&mut self) -> Result<cocos::Color4B> {
+        self.read_value()
+    }
+
+    fn read_point(&mut self) -> Result<cocos::Point> {
+        self.read_value()
     }
 }

@@ -12,8 +12,12 @@ public:
 
     // directly set and save the setting as json
     template <typename T>
-    void set(const std::string& key, const T& elem) {
+    void set(const std::string& key, const T& elem, bool refresh = true) {
         geode::Mod::get()->setSavedValue<T>("gsetting-" + key);
+        
+        if (refresh) {
+            refreshCache();
+        }
     }
 
     // directly get the setting as json
@@ -24,4 +28,9 @@ public:
 
     // get cached settings for performance
     CachedSettings getCached();
+
+    void refreshCache();
+
+private:
+    CachedSettings cache;
 };

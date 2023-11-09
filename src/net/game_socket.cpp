@@ -24,21 +24,27 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
     ByteBuffer buf(reinterpret_cast<byte*>(buffer), received);
 
     // read header
-    packetid_t packetId = buf.read<packetid_t>();
+    packetid_t packetId = buf.readU16();
     bool encrypted = buf.readU8() != 0;
 
     // packet size without the header
     size_t messageLength = received - Packet::HEADER_LEN;
 
-    if (encrypted) {
-        bytevector& bufvec = buf.getDataRef();
-        // messageLength = box.decryptInPlace(bufvec.data(), messageLength);
-        buf.resize(messageLength + 3);
-    }
-
     auto packet = matchPacket(packetId);
     if (packet == nullptr) {
         return nullptr;
+    }
+
+    if (packet->getEncrypted() && !encrypted) {
+        GLOBED_ASSERT(false, "server sent a cleartext packet when expected an encrypted one")
+    }
+
+    if (encrypted) {
+        GLOBED_ASSERT(box.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
+        bytevector& bufvec = buf.getDataRef();
+
+        messageLength = box->decryptInPlace(bufvec.data(), messageLength);
+        buf.resize(messageLength + Packet::HEADER_LEN);
     }
 
     packet->decode(buf);
@@ -48,18 +54,27 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 
 void GameSocket::sendPacket(Packet* packet) {
     ByteBuffer buf;
-    buf.write<packetid_t>(packet->getPacketId());
-    buf.write(static_cast<uint8_t>(packet->getEncrypted()));
+    buf.writeU16(packet->getPacketId());
+    buf.writeU8(static_cast<uint8_t>(packet->getEncrypted()));
 
     packet->encode(buf);
     size_t packetSize = buf.size() - Packet::HEADER_LEN;
 
     bytevector& dataref = buf.getDataRef();
     if (packet->getEncrypted()) {
+        GLOBED_ASSERT(box.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
         // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
         buf.grow(CryptoBox::PREFIX_LEN);
-        // box.encryptInPlace(dataref.data(), packetSize);
+        box->encryptInPlace(dataref.data(), packetSize);
     }
 
     sendAll(reinterpret_cast<char*>(dataref.data()), dataref.size());
+}
+
+void GameSocket::cleanupBox() {
+    box = std::unique_ptr<CryptoBox>(nullptr);
+}
+
+void GameSocket::createBox() {
+    box = std::make_unique<CryptoBox>();
 }

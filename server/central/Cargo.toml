@@ -10,7 +10,7 @@ anyhow = "1.0.75"
 blake2 = "0.10.6"
 colored = "2.0.4"
 digest = "0.10.7"
-log = "0.4.20"
+log = { version = "0.4.20" }
 reqwest = "0.11.22"
 roa = { version = "0.6.1", features = ["router"] }
 serde = { version = "1.0.190", features = ["serde_derive"] }

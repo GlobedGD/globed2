@@ -37,9 +37,14 @@ public:
         return _cvar.wait_for(lock, timeout, [this](){ return !_iq.empty(); });
     }
 
-    bool empty() {
+    bool empty() const {
         std::lock_guard lock(_mtx);
         return _iq.empty();
+    }
+
+    size_t size() const {
+        std::lock_guard lock(_mtx);
+        return _iq.size();
     }
 
     T pop() {
@@ -78,7 +83,7 @@ public:
     }
 private:
     std::queue<T> _iq;
-    std::mutex _mtx;
+    mutable std::mutex _mtx;
     std::condition_variable _cvar;
 };
 

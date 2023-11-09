@@ -19,16 +19,17 @@ static LOGGER: Logger = Logger;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // logger setup
-    let log_level = if cfg!(debug_assertions) {
-        LevelFilter::Trace
-    } else {
-        LevelFilter::Info
-    };
+    log::set_logger(&LOGGER).unwrap();
 
-    log::set_logger(&LOGGER)
-        .map(|()| log::set_max_level(log_level))
-        .unwrap();
+    if std::env::var("GLOBED_LESS_LOG").unwrap_or("0".to_string()) == "1" {
+        log::set_max_level(LevelFilter::Warn);
+    } else {
+        log::set_max_level(if cfg!(debug_assertions) {
+            LevelFilter::Trace
+        } else {
+            LevelFilter::Info
+        });
+    }
 
     // config file
 

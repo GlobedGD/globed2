@@ -6,6 +6,10 @@ UdpSocket::UdpSocket() : socket_(0) {
     memset(&destAddr_, 0, sizeof(destAddr_));
 }
 
+UdpSocket::~UdpSocket() {
+    close();
+}
+
 bool UdpSocket::create() {
     socket_ = socket(AF_INET, SOCK_DGRAM, 0);
     return socket_ != -1;
@@ -36,6 +40,8 @@ int UdpSocket::receive(char* buffer, int bufferSize) {
 }
 
 bool UdpSocket::close() {
+    if (!connected) return true;
+
     connected = false;
 #ifdef GEODE_IS_WINDOWS
     return ::closesocket(socket_) == 0;
@@ -45,6 +51,10 @@ bool UdpSocket::close() {
 }
 
 bool UdpSocket::poll(long msDelay) {
+    if (!connected) {
+        return false;
+    }
+
     GLOBED_SOCKET_POLLFD fds[1];
 
     fds[0].fd = socket_;

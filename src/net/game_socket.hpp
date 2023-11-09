@@ -10,6 +10,9 @@ public:
 
     std::shared_ptr<Packet> recvPacket();
     void sendPacket(Packet* packet);
+    
+    void cleanupBox();
+    void createBox();
 
 private:
     friend class NetworkManager;

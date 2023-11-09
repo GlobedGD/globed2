@@ -1,10 +1,14 @@
 #include "settings.hpp"
 
 GLOBED_SINGLETON_DEF(GlobedSettings)
-GlobedSettings::GlobedSettings() {}
+GlobedSettings::GlobedSettings() {
+    refreshCache();
+}
 
 CachedSettings GlobedSettings::getCached() {
-    return CachedSettings {
-        .test = get<bool>("test")
-    };
+    return cache;
+}
+
+void GlobedSettings::refreshCache() {
+    cache.test = get<bool>("test");
 }

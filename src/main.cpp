@@ -10,6 +10,11 @@
 #include <audio/opus_codec.hpp>
 #include <audio/audio_manager.hpp>
 #include <audio/voice_playback_manager.hpp>
+#include <discord/manager.hpp>
+#include <net/network_manager.hpp>
+
+#include <data/packets/all.hpp>
+#include <managers/error_queues.hpp>
 
 using namespace geode::prelude;
 
@@ -24,15 +29,42 @@ $on_mod(Loaded) {
 void testFmod1();
 void testFmod2();
 
-class $modify(MenuLayer) {
-    void onMoreGames(CCObject*) {
-        auto& vm = GlobedAudioManager::get();
-        vm.setActiveRecordingDevice(2);
-        log::debug("Listening to: {}", vm.getRecordingDevice().name);
+class $modify(MyMenuLayer, MenuLayer) {
+    bool init() {
+        MenuLayer::init();
 
-        testFmod1();
+        CCScheduler::get()->scheduleSelector(schedule_selector(MyMenuLayer::Poop), this, 1.0f, false);
+        return true;
+    }
+
+    void Poop(float d) {
+        auto& eq = ErrorQueues::get();
+        for (const auto& msg : eq.getErrors()) {
+            log::warn("err: {}", msg);
+        }
+        for (const auto& msg : eq.getWarnings()) {
+            log::warn("warn: {}", msg);
+        }
+    }
+
+    void onMoreGames(CCObject*) {
+        auto& nm = NetworkManager::get();
+        nm.addListener(20000, [](std::shared_ptr<Packet> packet) {
+            auto pkt = static_cast<PingResponsePacket*>(packet.get());
+            log::debug("got ping packet with id {}, pc: {}", pkt->id, pkt->playerCount);
+        });
+
+        nm.connect("127.0.0.1", 41001);
+        nm.send(PingPacket::create(69696969));
+        
+        // DiscordManager::get().update();
+        // auto& vm = GlobedAudioManager::get();
+        // vm.setActiveRecordingDevice(2);
+        // log::debug("Listening to: {}", vm.getRecordingDevice().name);
+
+        // testFmod1();
         // testFmod2();
-    }	
+    }
 };
 
 // following listens to a frame and immediately plays it

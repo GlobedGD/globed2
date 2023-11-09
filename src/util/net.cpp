@@ -32,13 +32,24 @@ namespace util::net {
 
     std::string lastErrorString(int code) {
 #ifdef GLOBED_WIN32
-    char *s = NULL;
-    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&s, 0, NULL);
-    std::string formatted = std::string("[Win error ") + std::to_string(code) + "]: " + std::string(s);
-    LocalFree(s);
-    return formatted;
+        char *s = NULL;
+        if (FormatMessageA(
+                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&s, 0, NULL)
+        == 0) {
+            // some errors like WSA 10038 can raise ERROR_MR_MID_NOT_FOUND (0x13D)
+            // which basically means the formatted message txt doesn't exist in the OS.
+            // i call this a windows moment because like what the fuck???
+            auto le = GetLastError();
+            geode::log::error("FormatMessageA failed formatting error code {}, last error: {}", code, le);
+            return std::string("[Unknown windows error ") + std::to_string(code) + "]: formatting failed because of: " + std::to_string(le);
+        }
+
+        std::string formatted = std::string("[Win error ") + std::to_string(code) + "]: " + std::string(s);
+        LocalFree(s);
+        return formatted;
 #else
-    return std::string("[Unix error ") + std::to_string(code) + "]: " + std::string(strerror(code));
+        return std::string("[Unix error ") + std::to_string(code) + "]: " + std::string(strerror(code));
 #endif
     }
 

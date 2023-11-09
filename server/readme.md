@@ -16,12 +16,18 @@ The following is a simple configuration template with descriptions of all option
     "web_address": "0.0.0.0:41000", // server address
     // security related
     "secret_key": "random", // secret key for auth codes, keep it secure and don't use the default value.
+    "game_server_password": "random", // password for game servers to connect, see below
     "challenge_expiry": 60, // amount of seconds before an auth challenge expires
     "challenge_level": 1, // level ID for challenges, must be a valid non-unlisted level
 }
 ```
 
+The minimum log level is `Warn` for other crates and `Trace` for the server itself in debug builds. In release builds, the default is `Info` and you can change it to `Warn` by defining the environment variable `GLOBED_LESS_LOG=1`
 
 ## Game
 
 todo!
+
+To bridge the servers together, you must set a password in the central server configuration file. After that you simply pass it as the environment variable `GLOBED_GS_CENTRAL_PASSWORD`. Once you boot up the game server it will try to make a request to the central server and tell you if the authentication succeeded or not.
+
+The minimum log levels are the same as in the central server, except the environment variable to change them is `GLOBED_GS_LESS_LOG`

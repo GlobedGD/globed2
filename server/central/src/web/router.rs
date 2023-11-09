@@ -13,4 +13,6 @@ pub fn build_router() -> Router<ServerState> {
         .on("/totplogin", post(routes::auth::totp_login))
         .on("/challenge/new", post(routes::auth::challenge_start))
         .on("/challenge/verify", post(routes::auth::challenge_finish))
+        /* game-server api, not for the end user */
+        .on("/gs/boot", post(routes::game_server::boot))
 }

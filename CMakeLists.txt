@@ -33,7 +33,7 @@ add_definitions(-DSODIUM_STATIC=1)
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DSODIUM_EXPORT=)
     
-    find_library(LIBSODIUM_LIBRARY NAMES libsodium HINTS ${LIBSODIUM_DIR}/Win32/Release/v142/static)
+    find_library(LIBSODIUM_LIBRARY NAMES libsodium HINTS ${LIBSODIUM_DIR}/Win32)
     find_library(OPUS_LIBRARY NAMES opus HINTS ${OPUS_DIR}/Win32)
     
 elseif(ANDROID)
