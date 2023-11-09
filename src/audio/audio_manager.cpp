@@ -16,6 +16,9 @@ GlobedAudioManager::GlobedAudioManager() {
 
     opus.setSampleRate(VOICE_TARGET_SAMPLERATE);
     opus.setFrameSize(VOICE_TARGET_FRAMESIZE);
+
+    recordDevice = {.id = -1};
+    playbackDevice = {.id = -1};
 }
 
 GlobedAudioManager::~GlobedAudioManager() {
@@ -91,6 +94,7 @@ AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice(int deviceId) {
 }
 
 void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFrame&)> callback) {
+    GLOBED_ASSERT(this->recordDevice.id >= 0, "no recording device is set")
     GLOBED_ASSERT(!isRecording(), "attempting to record when already recording");
 
     FMOD_CREATESOUNDEXINFO exinfo;
@@ -150,6 +154,7 @@ void GlobedAudioManager::recordContinueStream() {
 }
 
 bool GlobedAudioManager::isRecording() {
+    GLOBED_ASSERT(this->recordDevice.id >= 0, "no recording device is set")
     bool recording;
     FMOD_ERR_CHECK(
         this->getSystem()->isRecording(this->recordDevice.id, &recording),

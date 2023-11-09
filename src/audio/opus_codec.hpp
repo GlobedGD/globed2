@@ -13,8 +13,7 @@ struct EncodedOpusData {
 
 struct DecodedOpusData {
     float* ptr;
-    size_t lengthBytes;
-    size_t lengthSamples;
+    size_t length;
 };
 
 class OpusCodec {
@@ -73,6 +72,7 @@ protected:
     OpusDecoder* decoder = nullptr;
     int _res;
     int sampleRate, frameSize;
+    const int channels = 1; // atm hardcoded, no reason to change
 
     void errcheck(const char* where);
 

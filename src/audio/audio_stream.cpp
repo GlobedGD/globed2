@@ -11,7 +11,7 @@
 /* AudioSampleQueue */
 
 void AudioSampleQueue::writeData(DecodedOpusData data) {
-    buf.insert(buf.end(), data.ptr, data.ptr + data.lengthSamples);
+    buf.insert(buf.end(), data.ptr, data.ptr + data.length);
 }
 
 size_t AudioSampleQueue::copyTo(float* dest, size_t samples) {

@@ -25,11 +25,10 @@ void OpusCodec::setSampleRate(int sampleRate) {
         return; // don't do anything
     }
 
-    encoder = opus_encoder_create(sampleRate, 1, OPUS_APPLICATION_VOIP, &_res);
-    
+    encoder = opus_encoder_create(sampleRate, channels, OPUS_APPLICATION_VOIP, &_res);
     errcheck("opus_encoder_create");
 
-    decoder = opus_decoder_create(sampleRate, 1, &_res);
+    decoder = opus_decoder_create(sampleRate, channels, &_res);
     errcheck("opus_decoder_create");
 }
 
@@ -56,15 +55,13 @@ EncodedOpusData OpusCodec::encode(const float* data) {
 DecodedOpusData OpusCodec::decode(const byte* data, size_t length) {
     DecodedOpusData out;
 
-    size_t outBytes = sizeof(float) * frameSize * 1; // channels = 1
-
-    out.ptr = new float[outBytes];
-    out.lengthBytes = outBytes;
+    out.length = frameSize * channels;
+    out.ptr = new float[out.length];
     
-    out.lengthSamples = opus_decode_float(decoder, data, length, out.ptr, frameSize, 0);
-    if (out.lengthSamples < 0) {
+    _res = opus_decode_float(decoder, data, length, out.ptr, frameSize, 0);
+    
+    if (_res < 0) {
         delete[] out.ptr;
-        _res = out.lengthSamples;
         errcheck("opus_decode_float");
     }
 

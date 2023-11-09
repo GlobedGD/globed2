@@ -108,7 +108,7 @@ Additionally, if you want to define some values in `config.hpp` manually through
 
 ## Tests
 
-If you want to use any of the code outside of the Geometry Dash/Geode environment, you must define `GLOBED_ROOT_NO_GEODE` and `GLOBED_TESTING` prior to including any file. This prevents the inclusion of Geode headers and may disable some of the functionality (for example `ByteBuffer::writeColor3` or anything else that relies on Cocos structs).
+If you want to use any of the code outside of the Geometry Dash/Geode environment (helpful for testing things without launching the game), you must define `GLOBED_ROOT_NO_GEODE` and `GLOBED_TESTING` prior to including any file. This prevents the inclusion of Geode headers and may disable some of the functionality (for example `ByteBuffer::writeColor3` or anything else that relies on Cocos structs).
 
 If you do that, you also must explicitly define `GLOBED_ASSERT_LOG` as the log function or macro for assertion failures. It should take exactly one argument. The recommended definition (and the one used in tests) is:
 
