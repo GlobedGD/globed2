@@ -2,7 +2,7 @@
 
 #include <util/net.hpp>
 #include <data/packets/all.hpp>
-#include <managers/game_server_manager.hpp>
+#include <managers/server_manager.hpp>
 #include <managers/error_queues.hpp>
 
 namespace log = geode::log;
@@ -51,6 +51,8 @@ void NetworkManager::disconnect() {
     if (!connected()) {
         return;
     }
+
+    _established = false;
 
     socket.disconnect();
     socket.cleanupBox();
@@ -107,36 +109,44 @@ void NetworkManager::threadRecvFunc() {
             continue;
         }
 
-        auto packet = socket.recvPacket();
-        if (packet == nullptr) {
-            log::warn("Invalid packet was returned");
+        std::shared_ptr<Packet> packet;
+
+        try {
+            packet = socket.recvPacket();
+        } catch (const std::exception& e) {
+            ErrorQueues::get().warn(fmt::format("failed to receive a packet: {}", e.what()));
             continue;
         }
-
-        log::debug("recv packet {}", packet->getPacketId());
 
         packetid_t packetId = packet->getPacketId();
 
         // we have predefined handlers for connection related packets
         if (packetId == 20001) {
             auto packet_ = static_cast<CryptoHandshakeResponsePacket*>(packet.get());
-            socket.box->setPeerKey(packet_->data.serverkey.data());
+            socket.box->setPeerKey(packet_->data.key.data());
             _established = true;
 
             continue;
-        }
-
-        auto listeners_ = listeners.lock();
-        if (!listeners_->contains(packetId)) {
-            log::warn("Unhandled packet: {}", packetId);
+        } else if (packetId == 20002) {
+            auto packet_ = static_cast<KeepaliveResponsePacket*>(packet.get());
+            // ?
+            continue;
+        } else if (packetId == 20003) {
+            auto packet_ = static_cast<ServerDisconnectPacket*>(packet.get());
+            ErrorQueues::get().error(fmt::format("You have been disconnected from the active server.\n\nReason: <cy>{}</c>", packet_->message));
+            this->disconnect();
             continue;
         }
 
-        auto callback = (*listeners_).at(packetId);
-
         // this is scary
-        geode::Loader::get()->queueInMainThread([callback, packet]() mutable {
-            callback(packet);
+        geode::Loader::get()->queueInMainThread([this, packetId, packet]() {
+            auto listeners_ = this->listeners.lock();
+            if (!listeners_->contains(packetId)) {
+                log::warn("Unhandled packet: {}", packetId);
+            } else {
+                // xd
+                (*listeners_)[packetId](packet);
+            }
         });
     }
 }
@@ -150,8 +160,8 @@ void NetworkManager::threadTasksFunc() {
         for (auto task : taskQueue.popAll()) {
             switch (task) {
             case NetworkThreadTask::PingServers: {
-                for (auto& [serverId, address] : GameServerManager::get().getServerAddresses()) {
-                    auto pingId = GameServerManager::get().addPendingPing(serverId);
+                for (auto& [serverId, address] : GlobedServerManager::get().getServerAddresses()) {
+                    auto pingId = GlobedServerManager::get().addPendingPing(serverId);
                     Packet* packet = PingPacket::create(pingId);
 
                     try {
@@ -177,9 +187,13 @@ void NetworkManager::threadPingRecvFunc() {
             continue;
         }
 
-        auto packet = pingSocket.recvPacket();
-        if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
-            GameServerManager::get().recordPingResponse(pingr->id, pingr->playerCount);
+        try {
+            auto packet = pingSocket.recvPacket();
+            if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
+                GlobedServerManager::get().recordPingResponse(pingr->id, pingr->playerCount);
+            }
+        } catch (const std::exception& e) {
+            ErrorQueues::get().warn(fmt::format("error pinging a server: {}", e.what()));
         }
     }
 }
@@ -189,5 +203,5 @@ bool NetworkManager::connected() {
 }
 
 bool NetworkManager::established() {
-    return _established;
+    return socket.connected && _established;
 }

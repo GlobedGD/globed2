@@ -1,11 +1,11 @@
-#include <managers/game_server_manager.hpp>
+#include "server_manager.hpp"
 #include <util/time.hpp>
 #include <util/rng.hpp>
 
-GLOBED_SINGLETON_DEF(GameServerManager)
-GameServerManager::GameServerManager() {}
+GLOBED_SINGLETON_DEF(GlobedServerManager)
+GlobedServerManager::GlobedServerManager() {}
 
-uint32_t GameServerManager::addPendingPing(const std::string& serverId) {
+uint32_t GlobedServerManager::addPendingPing(const std::string& serverId) {
     uint32_t pingId = util::rng::Random::get().generate<uint32_t>();
 
     auto& gsi = servers.write()->at(serverId);
@@ -14,7 +14,7 @@ uint32_t GameServerManager::addPendingPing(const std::string& serverId) {
     return pingId;
 }
 
-void GameServerManager::recordPingResponse(uint32_t pingId, uint32_t playerCount) {
+void GlobedServerManager::recordPingResponse(uint32_t pingId, uint32_t playerCount) {
     auto servers_ = servers.write();
     for (auto& server : util::collections::mapValues(*servers_)) {
         if (server.pendingPings.contains(pingId)) {
@@ -31,7 +31,7 @@ void GameServerManager::recordPingResponse(uint32_t pingId, uint32_t playerCount
     geode::log::warn("Ping ID doesn't exist in any known server: {}", pingId);
 }
 
-GameServerView GameServerManager::getServerView(const std::string& serverId) {
+GameServerView GlobedServerManager::getServerView(const std::string& serverId) {
     auto& gsi = servers.read()->at(serverId);
     return GameServerView {
         .ping = gsi.ping,
@@ -39,12 +39,12 @@ GameServerView GameServerManager::getServerView(const std::string& serverId) {
     };
 }
 
-std::vector<std::chrono::milliseconds> GameServerManager::getPingHistory(const std::string& serverId) {
+std::vector<std::chrono::milliseconds> GlobedServerManager::getPingHistory(const std::string& serverId) {
     auto& gsi = servers.read()->at(serverId);
     return gsi.pingHistory.extract();
 }
 
-std::unordered_map<std::string, GameServerAddress> GameServerManager::getServerAddresses() {
+std::unordered_map<std::string, GameServerAddress> GlobedServerManager::getServerAddresses() {
     std::unordered_map<std::string, GameServerAddress> out;
     auto servers_ = servers.read();
     for (const auto& [serverId, gsi] : *servers_) {

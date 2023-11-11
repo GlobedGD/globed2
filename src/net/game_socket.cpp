@@ -30,10 +30,13 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
     // packet size without the header
     size_t messageLength = received - Packet::HEADER_LEN;
 
+#ifdef GLOBED_DEBUG_PACKETS
+    geode::log::debug("Received packet: {} (size {}), encrypted: {}", packetId, messageLength, encrypted ? "true" : "false");
+#endif
+
     auto packet = matchPacket(packetId);
-    if (packet == nullptr) {
-        return nullptr;
-    }
+
+    GLOBED_ASSERT(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(packetId))
 
     if (packet->getEncrypted() && !encrypted) {
         GLOBED_ASSERT(false, "server sent a cleartext packet when expected an encrypted one")
@@ -53,6 +56,10 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 }
 
 void GameSocket::sendPacket(Packet* packet) {
+#ifdef GLOBED_DEBUG_PACKETS
+    geode::log::debug("Sending packet: {}, encrypted: {}", packet->getPacketId(), packet->getEncrypted() ? "true" : "false");
+#endif
+
     ByteBuffer buf;
     buf.writeU16(packet->getPacketId());
     buf.writeU8(static_cast<uint8_t>(packet->getEncrypted()));

@@ -13,8 +13,6 @@ pub mod logger;
 pub mod state;
 pub mod web;
 
-pub const PROTOCOL_VERSION: &str = "1";
-
 static LOGGER: Logger = Logger;
 
 #[tokio::main]
@@ -63,11 +61,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mnt_point = config.web_mountpoint.clone();
 
     let state_skey = config.secret_key.clone();
+    let token_expiry = config.token_expiry;
     let state = ServerState {
         inner: Arc::new(RwLock::new(ServerStateData::new(
             config_path.clone(),
             config,
             state_skey,
+            Duration::from_secs(token_expiry),
         ))),
     };
 
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // roa your favorite web app
 
-    let router = web::router::build_router();
+    let router = web::routes::build_router();
     let routes = router.routes(Box::leak(Box::new(mnt_point)))?;
     let app = App::state(state).end(routes);
 

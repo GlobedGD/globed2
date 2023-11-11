@@ -7,7 +7,7 @@
 #include <audio/audio_frame.hpp>
 
 class VoiceBroadcastPacket : public Packet {
-    GLOBED_PACKET(21010, false)
+    GLOBED_PACKET(21010, true)
 
     GLOBED_PACKET_ENCODE_UNIMPL
 

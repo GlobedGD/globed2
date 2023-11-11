@@ -17,14 +17,18 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
 
     let state = context.state_read().await;
 
-    let authkey = state.generate_authkey(&account_id);
+    let authkey = state.generate_authkey(account_id);
     let valid = state.verify_totp(&authkey, code);
 
-    drop(state);
-
     if !valid {
+        drop(state);
         throw!(StatusCode::UNAUTHORIZED, "login failed");
     }
+
+    let token = state.generate_token(account_id);
+    drop(state);
+
+    context.write(token);
 
     Ok(())
 }
@@ -40,25 +44,22 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     let mut should_remove = false;
     let mut should_return_existing = false;
     // check if there already is a challenge
-    match state.active_challenges.get(&account_id) {
-        Some(challenge) => {
-            // if it's the same addr then it's OK, return the same challenge
-            if challenge.initiator == context.remote_addr.ip() {
-                should_return_existing = true;
+    if let Some(challenge) = state.active_challenges.get(&account_id) {
+        // if it's the same addr then it's OK, return the same challenge
+        if challenge.initiator == context.remote_addr.ip() {
+            should_return_existing = true;
+        } else {
+            let passed_time = current_time - challenge.started;
+            if passed_time.as_secs() > (state.config.challenge_expiry as u64) {
+                should_remove = true;
             } else {
-                let passed_time = current_time - challenge.started;
-                if passed_time.as_secs() > (state.config.challenge_expiry as u64) {
-                    should_remove = true;
-                } else {
-                    throw!(
-                        StatusCode::FORBIDDEN,
-                        "challenge already requested for this account ID, please wait a minute and try again"
-                    );
-                }
+                throw!(
+                    StatusCode::FORBIDDEN,
+                    "challenge already requested for this account ID, please wait a minute and try again"
+                );
             }
         }
-        None => {}
-    };
+    }
 
     let level_id = state.config.challenge_level;
 
@@ -126,7 +127,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         );
     }
 
-    let result = state.verify_challenge(&challenge.value, &ch_answer);
+    let result = state.verify_challenge(&challenge.value, ch_answer);
 
     if !result {
         throw!(
@@ -136,15 +137,16 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     }
 
     let challenge_level = state.config.challenge_level;
+    let req_url = state.config.gd_api.clone();
+
+    let http_client = state.http_client.clone();
     drop(state);
 
     // now we have to request rob's servers and check if the challenge was solved
     // todo rate limiting
 
-    let result = reqwest::ClientBuilder::new()
-        .user_agent("")
-        .build()?
-        .post("http://www.boomlings.com/database/getGJComments21.php")
+    let result = http_client
+        .post(req_url)
         .form(&[
             ("levelID", challenge_level.to_string()),
             ("page", "0".to_string()),
@@ -168,15 +170,15 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     .text()
     .await?;
 
-    let octothorpe = response.find("#");
+    let octothorpe = response.find('#');
 
     if let Some(octothorpe) = octothorpe {
         response = response.split_at(octothorpe).0.to_string();
     }
 
-    let comment_strings = response.split("|");
+    let comment_strings = response.split('|');
     for string in comment_strings {
-        let colon = string.find(":");
+        let colon = string.find(':');
         if colon.is_none() {
             continue;
         }

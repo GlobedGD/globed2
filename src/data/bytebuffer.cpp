@@ -7,7 +7,7 @@ using namespace util::data;
     if constexpr (GLOBED_LITTLE_ENDIAN) val = util::data::byteswap<type>(val); \
     return val;
 
-#define WRITE_VALUE(type, value) GLOBED_LITTLE_ENDIAN ? write<type>(util::data::byteswap<type>(value)) : this->write<type>(value);
+#define WRITE_VALUE(type, value) this->write<type>(GLOBED_LITTLE_ENDIAN ? util::data::byteswap<type>(value) : value);
 
 #define MAKE_READ_FUNC(type, suffix) \
     type ByteBuffer::read##suffix() { READ_VALUE(type) } \
@@ -59,6 +59,7 @@ std::string ByteBuffer::readString() {
 
     std::string str(reinterpret_cast<const char*>(_data.data() + _position), length);
     _position += length;
+
 
     return str;
 }

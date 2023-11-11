@@ -1,6 +1,6 @@
 #pragma once
 #include <data/packets/packet.hpp>
-#include <data/types/handshake.hpp>
+#include <data/types/crypto.hpp>
 
 class PingResponsePacket : public Packet {
     GLOBED_PACKET(20000, false)
@@ -21,8 +21,32 @@ class CryptoHandshakeResponsePacket : public Packet {
     GLOBED_PACKET_ENCODE_UNIMPL
 
     GLOBED_PACKET_DECODE {
-        data = buf.readValue<HandshakeResponseData>();
+        data = buf.readValue<CryptoPublicKey>();
     }
 
-    HandshakeResponseData data;
+    CryptoPublicKey data;
+};
+
+class KeepaliveResponsePacket : public Packet {
+    GLOBED_PACKET(20002, false)
+    
+    GLOBED_PACKET_ENCODE_UNIMPL
+
+    GLOBED_PACKET_DECODE {
+        playerCount = buf.readU32();
+    }
+
+    uint32_t playerCount;
+};
+
+class ServerDisconnectPacket : public Packet {
+    GLOBED_PACKET(20003, false)
+
+    GLOBED_PACKET_ENCODE_UNIMPL
+
+    GLOBED_PACKET_DECODE {
+        message = buf.readString();
+    }
+
+    std::string message;
 };

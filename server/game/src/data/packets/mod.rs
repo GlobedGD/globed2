@@ -35,6 +35,7 @@ macro_rules! packet {
         }
     };
     ($packet_type:ident, $packet_id:expr, $encrypted:expr, { $($field:ident: $field_type:ty),* $(,)? }) => {
+        #[derive(Clone)]
         pub struct $packet_type {
             $(pub $field: $field_type),*
         }

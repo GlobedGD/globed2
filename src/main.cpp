@@ -1,4 +1,5 @@
 #include <Geode/Geode.hpp>
+#include <Geode/utils/web.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <UIBuilder.hpp>
 
@@ -107,7 +108,7 @@ void testFmod2() {
                 
                 for (const auto& opusFrame : opusFrames) {
                     auto rawFrame = vm.decodeSound(opusFrame);
-                    out.insert(out.end(), rawFrame.ptr, rawFrame.ptr + rawFrame.lengthSamples);
+                    out.insert(out.end(), rawFrame.ptr, rawFrame.ptr + rawFrame.length);
                 }
             }
 

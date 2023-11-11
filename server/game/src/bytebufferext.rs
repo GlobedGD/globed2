@@ -8,6 +8,7 @@ pub trait Encodable {
     fn encode(&self, buf: &mut ByteBuffer);
 }
 
+// empty is similar to default but default does silly things i think
 pub trait Empty {
     fn empty() -> Self
     where

@@ -13,7 +13,7 @@ encode_impl!(Color3B, buf, self, {
     buf.write_u8(self.b);
 });
 
-empty_impl!(Color3B, Self { r: 0, g: 0, b: 0 });
+empty_impl!(Color3B, Self::default());
 
 decode_impl!(Color3B, buf, self, {
     self.r = buf.read_u8()?;
@@ -37,15 +37,7 @@ encode_impl!(Color4B, buf, self, {
     buf.write_u8(self.a);
 });
 
-empty_impl!(
-    Color4B,
-    Self {
-        r: 0,
-        g: 0,
-        b: 0,
-        a: 0
-    }
-);
+empty_impl!(Color4B, Self::default());
 
 decode_impl!(Color4B, buf, self, {
     self.r = buf.read_u8()?;
@@ -66,7 +58,7 @@ encode_impl!(Point, buf, self, {
     buf.write_f32(self.y);
 });
 
-empty_impl!(Point, Self { x: 0f32, y: 0f32 });
+empty_impl!(Point, Self::default());
 
 decode_impl!(Point, buf, self, {
     self.x = buf.read_f32()?;

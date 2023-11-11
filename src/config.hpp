@@ -4,25 +4,33 @@
 // with cmake flags or whatever floats your boat
 #ifndef GLOBED_IGNORE_CONFIG_HPP
 
-
-
 /* platform: any */
 
-// for source location, unrecommended because may break things
-#define GLOBED_FORCE_CONSTEVAL 1
-// disable voice if you have skill issues setiing up opus
-
+// disable voice if you have skill issues setting up opus
 // #define GLOBED_DISABLE_VOICE_SUPPORT
 
+// various debugging options
+#ifdef GLOBED_DEBUG
+
+// for source location, unrecommended because may break things
+# define GLOBED_FORCE_CONSTEVAL 1
+// print all incoming and outgoing packets
+# define GLOBED_DEBUG_PACKETS
+
+#endif // GLOBED_DEBUG
+
 /* platform-specific: Windows */
+
 #define GLOBED_FMOD_WINDOWS 1
 #define GLOBED_DRPC_WINDOWS 0
 
 /* platform-specific: Mac */
+
 #define GLOBED_FMOD_MAC 0
 #define GLOBED_DRPC_MAC 0
 
 /* platform-specific: Android */
+
 #define GLOBED_FMOD_ANDROID 1
 #define GLOBED_DRPC_ANDROID 0
 

@@ -23,10 +23,6 @@ Known issues:
 * i am silly
 * voice chat is a bit silly
 
-## Contributing
-
-If you want to contribute, please read the [Contributor guide](./contribution.md).
-
 ## Building
 
 For building the server, you need nothing more than a Rust toolchain. Past that, it's essentially the same as any other Rust project. Building the client is, however, a bit more complex.

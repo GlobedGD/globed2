@@ -567,6 +567,7 @@ dependencies = [
  "blake2",
  "colored",
  "digest",
+ "globed-shared",
  "hmac",
  "log",
  "rand",
@@ -588,11 +589,22 @@ dependencies = [
  "bytebuffer",
  "colored",
  "crypto_box",
+ "globed-shared",
  "log",
  "reqwest",
  "rustc-hash",
+ "serde",
+ "serde_json",
  "time",
  "tokio",
+]
+
+[[package]]
+name = "globed-shared"
+version = "1.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

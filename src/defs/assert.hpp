@@ -31,14 +31,14 @@
 
 #if GLOBED_CAN_USE_SOURCE_LOCATION && !defined(GLOBED_ROOT_NO_GEODE)
 # define GLOBED_ASSERT(condition,message) \
-    if (!(condition)) { \
+    if (!(condition)) [[unlikely]] { \
         auto ev_msg = message; \
         auto loc = GLOBED_SOURCE; \
         geode::log::error("Assertion failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
         throw std::runtime_error(std::string("Globed assertion failed: ") + ev_msg); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
-    if (!(condition)) { \
+    if (!(condition)) [[unlikely]] { \
         auto ev_msg = message; \
         auto loc = GLOBED_SOURCE; \
         geode::log::error("Assertion failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
@@ -46,13 +46,13 @@
     }
 #else
 # define GLOBED_ASSERT(condition,message) \
-    if (!(condition)) { \
+    if (!(condition)) [[unlikely]] { \
         auto ev_msg = message; \
         GLOBED_ASSERT_LOG(std::string("Assertion failed: ") + ev_msg); \
         throw std::runtime_error(std::string("Globed assertion failed: ") + ev_msg); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
-    if (!(condition)) { \
+    if (!(condition)) [[unlikely]] { \
         auto ev_msg = message; \
         GLOBED_ASSERT_LOG(std::string("Assertion failed: ") + ev_msg); \
         GLOBED_SUICIDE; \

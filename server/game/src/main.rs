@@ -1,5 +1,6 @@
 use std::{error::Error, sync::Arc};
 
+use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
 use log::{error, info, LevelFilter};
 use logger::Logger;
 use state::ServerStateData;
@@ -15,8 +16,6 @@ pub mod server_thread;
 pub mod state;
 
 static LOGGER: Logger = Logger;
-
-pub const PROTOCOL_VERSION: &str = "1";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -89,22 +88,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
         central_pw: central_pw.clone(),
     }));
 
+    info!("Retreiving config from the central server..");
+
     let state_g = state.read().await;
-    // let response = state_g
-    //     .http_client
-    //     .post(format!("{}{}", state_g.central_url, "gs/boot"))
-    //     .query(&[("pw", state_g.central_pw.clone())])
-    //     .send()
-    //     .await?
-    //     .error_for_status()?;
-
-    // let configuration = response.text().await?;
-
-    // info!("retreived config: {}", configuration);
+    let response = state_g
+        .http_client
+        .post(format!("{}{}", state_g.central_url, "gs/boot"))
+        .query(&[("pw", state_g.central_pw.clone())])
+        .send()
+        .await?
+        .error_for_status()?;
 
     drop(state_g);
 
-    let server = Box::leak(Box::new(GameServer::new(host_address, state.clone()).await));
+    let configuration = response.text().await?;
+    let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
+
+    if boot_data.protocol != PROTOCOL_VERSION {
+        error!("Incompatible protocol versions!");
+        error!(
+            "This game server is on {}, while the central server uses {}",
+            PROTOCOL_VERSION, boot_data.protocol
+        );
+        panic!("aborting due to incompatible protocol versions");
+    }
+
+    let server = Box::leak(Box::new(
+        GameServer::new(host_address, state.clone(), boot_data).await,
+    ));
+
     server.run().await?;
 
     Ok(())

@@ -58,13 +58,13 @@ void dontCallMe() {
 // if called, throws std::runtime_error with the message "Assertion failed: unimplemented: dontCallMe"
 ```
 
-Packet subclasses have their own variations of this, `GLOBED_DECODE_UNIMPL` and `GLOBED_ENCODE_UNIMPL`:
+Packet subclasses have their own variations of this, `GLOBED_PACKET_DECODE_UNIMPL` and `GLOBED_PACKET_ENCODE_UNIMPL`:
 
 ```cpp
 class MyPacket : public Packet {
     // ...
-    GLOBED_ENCODE { /* ... */ }
-    GLOBED_DECODE_UNIMPL
+    GLOBED_PACKET_ENCODE { /* ... */ }
+    GLOBED_PACKET_DECODE_UNIMPL
     // if this is a client-side packet, there is no point of making a decode method.
     // attempting to decode this packet throws std::runtime_error with the message
     // "Assertion failed: unimplemented: Decoding unimplemented for packet <packet id>"
@@ -88,40 +88,4 @@ You also must put `GLOBED_SINGLETON_DEF(cls)` in the class definition (usually y
 GLOBED_SINGLETON_DEF(MySingleton)
 ```
 
-If you did everything correctly, you should now have a singleton class with a thread-safe `get()` method that will lazily create a new instance when called for the first time, and in future will return that existing instance. Note that the underlying singleton is not thread-safe by default, only the `get()` method.
-
-## Platform dependent macros
-
-These are various macros that may differ depending on your compiler, targeted platform, and the `config.hpp` file.
-
-`GLOBED_WIN32`, `GLOBED_MAC`, `GLOBED_ANDROID`, `GLOBED_UNIX`, `GLOBED_X86`, `GLOBED_X86_32`, `GLOBED_X86_64`, `GLOBED_ARM`, `GLOBED_ARM32`, `GLOBED_ARM64` - macros indicating the target platform/architecture. Prefer to use them instead of `GEODE_IS_xxxxx`.
-
-`GLOBED_CAN_USE_SOURCE_LOCATION` - if set to 1, the contents of `<source_location>` are available and `GLOBED_ASSERT`, `GLOBED_HARD_ASSERT` and `GLOBED_UNIMPL` will print the file and line where the assertion failed to the console. It is only set to 1 if either `__cpp_consteval` is defined or `GLOBED_FORCE_CONSTEVAL` is set to 1 in `config.hpp` (unrecommended!).
-
-`GLOBED_SOURCE` - if the previous macro is set to 1, expands to `std::source_location::current()`. Otherwise undefined.
-
-`GLOBED_LITTLE_ENDIAN` - not a macro, but a `constexpr bool` indicating if the target platform is little-endian.
-
-`GLOBED_HAS_FMOD` and `GLOBED_HAS_DRPC` - whether the target platform links to FMOD or has Discord Rich Presence. Defined for each platform in `config.hpp`.
-
-Additionally, if you want to define some values in `config.hpp` manually through build scripts rather than editing `config.hpp`, you should define `GLOBED_IGNORE_CONFIG_HPP` and then define everything else you need.
-
-## Tests
-
-If you want to use any of the code outside of the Geometry Dash/Geode environment (helpful for testing things without launching the game), you must define `GLOBED_ROOT_NO_GEODE` and `GLOBED_TESTING` prior to including any file. This prevents the inclusion of Geode headers and may disable some of the functionality (for example `ByteBuffer::writeColor3` or anything else that relies on Cocos structs).
-
-If you do that, you also must explicitly define `GLOBED_ASSERT_LOG` as the log function or macro for assertion failures. It should take exactly one argument. The recommended definition (and the one used in tests) is:
-
-```cpp
-#define GLOBED_ASSERT_LOG(content) (std::cerr << content << std::endl);
-```
-
-## Crypto
-
-`util/crypto.hpp` provides some extra macros for cryptography. Note that they don't have the `GLOBED_` prefix.
-
-`CRYPTO_SODIUM_INIT` - initializes sodium_init() if it hasn't been initialized already. It is recommended to call this whenever you are unsure if it has ever been called before.
-
-`CRYPTO_ASSERT(cond, msg)` - same as `GLOBED_ASSERT` but adds `crypto error: ` at the start
-
-`CRYPTO_ERR_CHECK(res, msg)` - same as `CRYPTO_ASSERT(res == 0, msg)`
+If you did everything correctly, you should now have a singleton class with a thread-safe `get()` method that will lazily create a new instance when called for the first time, and in future will return that existing instance. Note that the underlying singleton is not thread-safe by default, only the `get()` method that constructs/retrieves it.

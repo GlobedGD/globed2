@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::{File, OpenOptions},
     path::Path,
 };
@@ -15,6 +16,14 @@ fn default_web_mountpoint() -> String {
 
 fn default_web_address() -> String {
     "0.0.0.0:41000".to_string()
+}
+
+fn default_gdapi() -> String {
+    "http://www.boomlings.com/database/getGJComments21.php".to_string()
+}
+
+fn default_special_users() -> HashMap<i32, SpecialUser> {
+    HashMap::new()
 }
 
 fn default_secret_key() -> String {
@@ -35,7 +44,24 @@ fn default_challenge_level() -> i32 {
     1
 }
 
+fn default_token_expiry() -> u64 {
+    60 * 30
+}
+
+// special user defaults
+
+fn default_su_color() -> String {
+    "#ffffff".to_string()
+}
+
 /* end stinky serde defaults */
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct SpecialUser {
+    pub name: String,
+    #[serde(default = "default_su_color")]
+    pub color: String,
+}
 
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct ServerConfig {
@@ -43,6 +69,10 @@ pub struct ServerConfig {
     pub web_mountpoint: String,
     #[serde(default = "default_web_address")]
     pub web_address: String,
+    #[serde(default = "default_gdapi")]
+    pub gd_api: String,
+    #[serde(default = "default_special_users")]
+    pub special_users: HashMap<i32, SpecialUser>,
 
     // security
     #[serde(default = "default_secret_key")]
@@ -53,6 +83,8 @@ pub struct ServerConfig {
     pub challenge_expiry: u32,
     #[serde(default = "default_challenge_level")]
     pub challenge_level: i32,
+    #[serde(default = "default_token_expiry")]
+    pub token_expiry: u64,
 }
 
 impl ServerConfig {
@@ -81,10 +113,13 @@ impl ServerConfig {
         Self {
             web_mountpoint: default_web_mountpoint(),
             web_address: default_web_address(),
+            gd_api: default_gdapi(),
+            special_users: default_special_users(),
             secret_key: default_secret_key(),
             game_server_password: default_secret_key(),
             challenge_expiry: default_challenge_expiry(),
             challenge_level: default_challenge_level(),
+            token_expiry: default_token_expiry(),
         }
     }
 }

@@ -36,11 +36,11 @@ public:
     ByteBuffer(const util::data::bytevector& data);
     ByteBuffer(const util::data::byte* data, size_t length);
 
-    // Read a primitive type T. It is highly advised to not use this directly, as it performs no endianness conversions.
+    // Read a primitive type T. It is highly advised not to use this directly, as it performs no endianness conversions.
     template<typename T>
     T read();
 
-    // Write a primitive type T. It is highly advised to not use this directly, as it performs no endianness conversions.
+    // Write a primitive type T. It is highly advised not to use this directly, as it performs no endianness conversions.
     template<typename T>
     void write(T value);
 
@@ -125,7 +125,7 @@ public:
     */
 
     // Read `BitCount` bits from this ByteBuffer. The bit amount must be known at compile time.
-    // The amount of bytes read is rounded up from the bit count. So reading 10 bits would read 2 whols bytes.
+    // The amount of bytes read is rounded up from the bit count. So reading 10 bits would read 2 whole bytes.
     template<size_t BitCount>
     BitBuffer<BitCount> readBits() {
         constexpr size_t byteCount = util::data::bitsToBytes(BitCount);

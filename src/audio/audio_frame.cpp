@@ -2,6 +2,8 @@
 
 #if GLOBED_VOICE_SUPPORT
 
+const size_t VOICE_MAX_BYTES_IN_FRAME = 1500; // TODO ??? adjust later
+
 using namespace util::data;
 
 EncodedAudioFrame::EncodedAudioFrame() {}
@@ -32,10 +34,17 @@ void EncodedAudioFrame::encode(ByteBuffer& buf) const {
 }
 
 void EncodedAudioFrame::decode(ByteBuffer& buf) {
+    // when it comes to arbitrary allocation, DO NOT trust the other clients' data
     size_t length = buf.readU16();
+
+    GLOBED_ASSERT(length < (VOICE_OPUS_FRAMES_IN_AUDIO_FRAME + 2), fmt::format("Rejecting audio packet, too many frames ({})", length));
+
     for (size_t i = 0; i < length; i++) {
         EncodedOpusData frame;
         size_t frameDataSize = buf.readU32();
+
+        GLOBED_ASSERT(frameDataSize <= VOICE_MAX_BYTES_IN_FRAME, fmt::format("Rejecting audio packet, frame size too large ({})", length));
+
         frame.ptr = new byte[frameDataSize];
         frame.length = frameDataSize;
 

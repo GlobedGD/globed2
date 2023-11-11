@@ -27,10 +27,10 @@ struct GameServerView {
     uint32_t playerCount;
 };
 
-class GameServerManager {
+class GlobedServerManager {
 public:
-    GLOBED_SINGLETON(GameServerManager);
-    GameServerManager();
+    GLOBED_SINGLETON(GlobedServerManager);
+    GlobedServerManager();
 
     uint32_t addPendingPing(const std::string& serverId);
     void recordPingResponse(uint32_t pingId, uint32_t playerCount);
