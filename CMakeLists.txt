@@ -14,6 +14,7 @@ file(GLOB_RECURSE SOURCES
 # Include winsock
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if(MSVC)
+        add_compile_definitions(WIN32_LEAN_AND_MEAN=1)
         add_definitions(/FI"winsock2.h")
     else()
         # GCC or Clang

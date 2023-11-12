@@ -6,7 +6,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/account_manager.hpp>
 
-namespace log = geode::log;
+using namespace geode::prelude;
 
 GLOBED_SINGLETON_DEF(NetworkManager)
 

@@ -31,7 +31,11 @@ If you encounter any problems when building the client, please don't hesitate to
 
 ### Windows
 
-If you are on Linux, I recommend dualbooting to windows right now or using a VM. Otherwise good luck and have fun :)
+Same as any other mod.
+
+### Linux cross-compilation
+
+I recommend dualbooting to windows right now or using a VM. Otherwise good luck and have fun :)
 
 The steps below have to be done only once. After you get all the libraries you can modify and rebuild the mod as much as you want without going through it again.
 
@@ -43,9 +47,9 @@ Copy the `include` folders from opus and libsodium into their respective subfold
 
 Now we want to copy the prebuilt libraries. In each subfolder inside `libs` create a folder called `Win32` and copy the respective `.lib` file there. For libsodium, you want to copy the file from `libsodium/Win32/Release/v142/static/libsodium.lib`
 
-Now, also if you are on Linux there's one extra step - open your splat directory and inside navigate to `crt/lib/x86`. Either make a symlink or simply copy the file `vcomp.lib` to `VCOMP.lib` in the same directory. Make sure the name is capitalized exactly like that.
+Now, also there's one extra step - open your splat directory and inside navigate to `crt/lib/x86`. Either make a symlink or simply copy the file `vcomp.lib` to `VCOMP.lib` in the same directory. Make sure the name is capitalized exactly like that.
 
-If everything is successful, simply proceed with the CMake build, like you would in any other mod. Should work hopefully :)
+If everything is successful, navigate into the `linux` directory and run the cmake build like you would in any other mod. The root CMakeLists.txt will not work due to silly stuff related to SSE and AES in opus and libsodium, which is why we had to compile them separately instead of using CPM.
 
 ### Mac
 
@@ -53,19 +57,7 @@ gotta figure it out somehow
 
 ### Android
 
-alrighty, let's have some fun shall we? if you are not on linux then use WSL. make sure to have android NDK installed.
-
-for the first build, you need to build all the libraries yourself.
-
-```sh
-# change ndk home to whatever folder you have it installed in
-ANDROID_NDK_HOME=/opt/android-ndk ./build-sodium-android.sh
-ANDROID_NDK_HOME=/opt/android-ndk ./build-opus-android.sh
-```
-
-this will pull the repos and build them from source. if you don't see any errors then you're epic! the built libraries should be automatically copied into the correct directory.
-
-now simply use your epic build script and build the mod with cmake like you would build any other mod!
+same as any other mod!
 
 NOTE: when configuring the mod you must set `-DANDROID_PLATFORM=android-28` or higher. versions below do not have the `getrandom()` syscall so libsodium will fail to link. this means the mod is **incompatible** with versions of Android below 9.
 
