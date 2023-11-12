@@ -11,6 +11,8 @@ file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
 
+message(STATUS "system: ${CMAKE_HOST_SYSTEM}")
+
 # Include winsock
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if(MSVC)
@@ -20,6 +22,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         # GCC or Clang
         add_definitions(-include winsock2.h)
     endif()
+endif()
+
+# i am crying so hard right now
+if (CMAKE_HOST_SYSTEM MATCHES "Linux")
+    add_compile_options("-march=skylake")
 endif()
 
 # disable iterator debugging if building in debug
