@@ -1,10 +1,12 @@
 #include "game_socket.hpp"
 #include <data/bytebuffer.hpp>
 #include <data/packets/all.hpp>
+#include <util/debugging.hpp>
 
 const size_t BUF_SIZE = 65536;
 
 using namespace util::data;
+using namespace util::debugging;
 
 GameSocket::GameSocket() {
     buffer = new byte[BUF_SIZE];
@@ -31,7 +33,7 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
     size_t messageLength = received - Packet::HEADER_LEN;
 
 #ifdef GLOBED_DEBUG_PACKETS
-    geode::log::debug("Received packet: {} (size {}), encrypted: {}", packetId, messageLength, encrypted ? "true" : "false");
+    PacketLogger::get().record(packetId, encrypted, false, received);
 #endif
 
     auto packet = matchPacket(packetId);
@@ -56,10 +58,6 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 }
 
 void GameSocket::sendPacket(Packet* packet) {
-#ifdef GLOBED_DEBUG_PACKETS
-    geode::log::debug("Sending packet: {}, encrypted: {}", packet->getPacketId(), packet->getEncrypted() ? "true" : "false");
-#endif
-
     ByteBuffer buf;
     buf.writeU16(packet->getPacketId());
     buf.writeU8(static_cast<uint8_t>(packet->getEncrypted()));
@@ -74,6 +72,10 @@ void GameSocket::sendPacket(Packet* packet) {
         buf.grow(CryptoBox::PREFIX_LEN);
         box->encryptInPlace(dataref.data(), packetSize);
     }
+
+#ifdef GLOBED_DEBUG_PACKETS
+    PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, dataref.size());
+#endif
 
     sendAll(reinterpret_cast<char*>(dataref.data()), dataref.size());
 }

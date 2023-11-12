@@ -44,6 +44,14 @@ fn default_challenge_level() -> i32 {
     1
 }
 
+fn default_challenge_ratelimit() -> u64 {
+    60 * 5
+}
+
+fn default_cf_ip_header() -> bool {
+    false
+}
+
 fn default_token_expiry() -> u64 {
     60 * 30
 }
@@ -83,6 +91,10 @@ pub struct ServerConfig {
     pub challenge_expiry: u32,
     #[serde(default = "default_challenge_level")]
     pub challenge_level: i32,
+    #[serde(default = "default_challenge_ratelimit")]
+    pub challenge_ratelimit: u64,
+    #[serde(default = "default_cf_ip_header")]
+    pub use_cf_ip_header: bool,
     #[serde(default = "default_token_expiry")]
     pub token_expiry: u64,
 }
@@ -96,8 +108,7 @@ impl ServerConfig {
         let writer = OpenOptions::new().write(true).create(true).open(dest)?;
 
         // i hate 2 spaces i hate 2 spaces i hate 2 spaces
-        let mut serializer =
-            Serializer::with_formatter(writer, PrettyFormatter::with_indent(b"    "));
+        let mut serializer = Serializer::with_formatter(writer, PrettyFormatter::with_indent(b"    "));
         self.serialize(&mut serializer)?;
 
         Ok(())
@@ -119,6 +130,8 @@ impl ServerConfig {
             game_server_password: default_secret_key(),
             challenge_expiry: default_challenge_expiry(),
             challenge_level: default_challenge_level(),
+            challenge_ratelimit: default_challenge_ratelimit(),
+            use_cf_ip_header: default_cf_ip_header(),
             token_expiry: default_token_expiry(),
         }
     }

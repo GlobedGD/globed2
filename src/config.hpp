@@ -14,8 +14,7 @@
 
 // for source location, unrecommended because may break things
 # define GLOBED_FORCE_CONSTEVAL 1
-// print all incoming and outgoing packets
-# define GLOBED_DEBUG_PACKETS
+# define GLOBED_DEBUG_PACKETS // log all incoming and outgoing packets & bandwidth
 
 #endif // GLOBED_DEBUG
 

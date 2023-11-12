@@ -4,6 +4,7 @@
 #include <data/packets/all.hpp>
 #include <managers/server_manager.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/account_manager.hpp>
 
 namespace log = geode::log;
 
@@ -13,25 +14,55 @@ NetworkManager::NetworkManager() {
     util::net::initialize();
 
     if (!socket.create()) util::net::throwLastError();
+    if (!pingSocket.create()) util::net::throwLastError();
+
+    // add builtin listeners
+
+    addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
+        this->socket.box->setPeerKey(packet->data.key.data());
+        _established = true;
+        // and lets try to login!
+        auto& am = GlobedAccountManager::get();
+        this->send(LoginPacket::create(am.accountId, *am.authToken.lock()));
+    });
+
+    addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
+        // ?
+    });
+
+    addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
+        ErrorQueues::get().error(fmt::format("You have been disconnected from the active server.\n\nReason: <cy>{}</c>", packet->message));
+        this->disconnect(true);
+    });
+
+    addBuiltinListener<LoggedInPacket>([this](auto packet) {
+        this->_loggedin = true;
+    });
+
+    // boot up the threads
 
     threadMain = std::thread(&NetworkManager::threadMainFunc, this);
     threadRecv = std::thread(&NetworkManager::threadRecvFunc, this);
     threadTasks = std::thread(&NetworkManager::threadTasksFunc, this);
-    threadPingRecv = std::thread(&NetworkManager::threadPingRecvFunc, this);
 }
 
 NetworkManager::~NetworkManager() {
-    // cleanup left packets
+    // clear listeners
+    removeAllListeners();
+    builtinListeners.lock()->clear();
+
+    // wait for threads
     _running = false;
-
-    log::debug("waiting for threads to die..");
-
-    if (threadMain.joinable()) threadMain.join();
 
     if (socket.connected) {
         log::debug("disconnecting from the server..");
-        // todo
+        this->disconnect();
     }
+
+    log::debug("waiting for threads to die..");
+    if (threadMain.joinable()) threadMain.join();
+    if (threadRecv.joinable()) threadRecv.join();
+    if (threadTasks.joinable()) threadTasks.join();
 
     log::debug("cleaning up..");
     for (Packet* packet : packetQueue.popAll()) {
@@ -47,12 +78,20 @@ void NetworkManager::connect(const std::string& addr, unsigned short port) {
     socket.createBox();
 }
 
-void NetworkManager::disconnect() {
+void NetworkManager::disconnect(bool quiet) {
     if (!connected()) {
         return;
     }
 
+    if (!quiet) {
+        // send it directly instead of pushing to the queue
+        auto pkt = DisconnectPacket::create();
+        socket.sendPacket(pkt);
+        delete pkt;
+    }
+
     _established = false;
+    _loggedin = false;
 
     socket.disconnect();
     socket.cleanupBox();
@@ -105,7 +144,20 @@ void NetworkManager::threadMainFunc() {
 
 void NetworkManager::threadRecvFunc() {
     while (_running) {
-        if (!socket.poll(1000)) {
+        // we wanna poll both the normal socket and the ping socket.
+        auto pollResult = pollBothSockets(1000);
+        if (pollResult.hasPing) {
+            try {
+                auto packet = pingSocket.recvPacket();
+                if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
+                    GlobedServerManager::get().recordPingResponse(pingr->id, pingr->playerCount);
+                }
+            } catch (const std::exception& e) {
+                ErrorQueues::get().warn(fmt::format("ping error: {}", e.what()));
+            }
+        }
+
+        if (!pollResult.hasNormal) {
             continue;
         }
 
@@ -120,21 +172,9 @@ void NetworkManager::threadRecvFunc() {
 
         packetid_t packetId = packet->getPacketId();
 
-        // we have predefined handlers for connection related packets
-        if (packetId == 20001) {
-            auto packet_ = static_cast<CryptoHandshakeResponsePacket*>(packet.get());
-            socket.box->setPeerKey(packet_->data.key.data());
-            _established = true;
-
-            continue;
-        } else if (packetId == 20002) {
-            auto packet_ = static_cast<KeepaliveResponsePacket*>(packet.get());
-            // ?
-            continue;
-        } else if (packetId == 20003) {
-            auto packet_ = static_cast<ServerDisconnectPacket*>(packet.get());
-            ErrorQueues::get().error(fmt::format("You have been disconnected from the active server.\n\nReason: <cy>{}</c>", packet_->message));
-            this->disconnect();
+        auto builtin = builtinListeners.lock();
+        if (builtin->contains(packetId)) {
+            (*builtin)[packetId](packet);
             continue;
         }
 
@@ -180,22 +220,43 @@ void NetworkManager::threadTasksFunc() {
     }
 }
 
-void NetworkManager::threadPingRecvFunc() {
-    while (_running) {
-        // poll the ping socket, process all responses
-        if (!pingSocket.poll(1000)) {
-            continue;
-        }
-
-        try {
-            auto packet = pingSocket.recvPacket();
-            if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
-                GlobedServerManager::get().recordPingResponse(pingr->id, pingr->playerCount);
-            }
-        } catch (const std::exception& e) {
-            ErrorQueues::get().warn(fmt::format("error pinging a server: {}", e.what()));
-        }
+PollBothResult NetworkManager::pollBothSockets(long msDelay) {
+    PollBothResult out;
+    if (!socket.connected) {
+        // only poll the ping socket in that case
+        out.hasNormal = false;
+        out.hasPing = pingSocket.poll(msDelay);
+        return out;
     }
+
+    GLOBED_SOCKET_POLLFD fds[2];
+
+    fds[0].fd = socket.socket_;
+    fds[0].events = POLLIN;
+
+    fds[1].fd = pingSocket.socket_;
+    fds[1].events = POLLIN;
+
+    int result = GLOBED_SOCKET_POLL(fds, 2, (int)msDelay);
+
+    if (result == -1) {
+        util::net::throwLastError();
+    }
+
+    if (result == 0) { // timeout expired
+        out.hasNormal = false;
+        out.hasPing = false;
+    } else {
+        // unchecked -- please verify this works in future
+        out.hasNormal = (fds[0].revents & POLLIN) != 0;
+        out.hasPing = (fds[1].revents & POLLIN) != 0;
+    }
+
+    return out;
+}
+
+void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback callback) {
+    (*builtinListeners.lock())[id] = callback;
 }
 
 bool NetworkManager::connected() {
@@ -204,4 +265,8 @@ bool NetworkManager::connected() {
 
 bool NetworkManager::established() {
     return socket.connected && _established;
+}
+
+bool NetworkManager::authenticated() {
+    return socket.connected && _loggedin;
 }

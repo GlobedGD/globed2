@@ -113,9 +113,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         panic!("aborting due to incompatible protocol versions");
     }
 
-    let server = Box::leak(Box::new(
-        GameServer::new(host_address, state.clone(), boot_data).await,
-    ));
+    let server = Box::leak(Box::new(GameServer::new(host_address, state.clone(), boot_data).await));
 
     server.run().await?;
 

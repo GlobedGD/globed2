@@ -29,11 +29,7 @@ pub struct GameServer {
 }
 
 impl GameServer {
-    pub async fn new(
-        address: String,
-        state: ServerState,
-        central_conf: GameServerBootData,
-    ) -> Self {
+    pub async fn new(address: String, state: ServerState, central_conf: GameServerBootData) -> Self {
         let secret_key = SecretKey::generate(&mut OsRng);
 
         Self {
@@ -55,11 +51,30 @@ impl GameServer {
             match self.recv_and_handle(&mut buf).await {
                 Ok(_) => {}
                 Err(err) => {
-                    warn!("Failed to handle a packet: {}", err.to_string());
+                    warn!("Failed to handle a packet: {err}");
                 }
             }
         }
     }
+
+    /* various calls for other threads */
+
+    pub async fn broadcast_voice_packet(&'static self, vpkt: &VoiceBroadcastPacket) -> anyhow::Result<()> {
+        // todo dont send it to every single thread in existence
+        let threads = self.threads.read().await;
+        for thread in threads.values() {
+            let packet = vpkt.clone();
+            thread.send_message(ServerThreadMessage::BroadcastVoice(packet)).await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_player_count(&'static self) -> usize {
+        self.threads.read().await.len()
+    }
+
+    /* private handling stuff */
 
     async fn recv_and_handle(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {
         let (len, peer) = self.socket.recv_from(buf).await?;
@@ -82,7 +97,7 @@ impl GameServer {
             drop(threads);
             let mut threads = self.threads.write().await;
 
-            debug!("creating new thread for {}", peer);
+            debug!("creating new thread for {peer}");
 
             let thread = Arc::new(GameServerThread::new(
                 self.state.clone(),
@@ -97,11 +112,11 @@ impl GameServer {
                 match thread.run().await {
                     Ok(_) => {
                         // remove the thread from the list of threads in order to cleanup
-                        debug!("removing dead client: {}", peer);
+                        debug!("removing client: {}", peer);
                         self.remove_client(&peer).await;
                     }
                     Err(err) => {
-                        warn!("Client thread died: {}", err.to_string());
+                        warn!("Client thread died ({peer}): {err}");
                     }
                 };
             });
@@ -111,22 +126,6 @@ impl GameServer {
                 .await?;
 
             threads.insert(peer, thread_cl);
-        }
-
-        Ok(())
-    }
-
-    pub async fn broadcast_voice_packet(
-        &'static self,
-        vpkt: &VoiceBroadcastPacket,
-    ) -> anyhow::Result<()> {
-        // todo dont send it to every single thread in existence
-        let threads = self.threads.read().await;
-        for thread in threads.values() {
-            let packet = vpkt.clone();
-            thread
-                .send_message(ServerThreadMessage::BroadcastVoice(packet))
-                .await?;
         }
 
         Ok(())

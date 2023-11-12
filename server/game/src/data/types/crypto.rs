@@ -8,12 +8,7 @@ pub struct CryptoPublicKey {
     pub pubkey: PublicKey,
 }
 
-encode_impl!(
-    CryptoPublicKey,
-    buf,
-    self,
-    buf.write_bytes(self.pubkey.as_bytes())
-);
+encode_impl!(CryptoPublicKey, buf, self, buf.write_bytes(self.pubkey.as_bytes()));
 
 empty_impl!(
     CryptoPublicKey,

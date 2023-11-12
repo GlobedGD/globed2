@@ -10,7 +10,5 @@ namespace util::time {
         return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     }
 
-    std::string toString(std::chrono::microseconds time);
-
     std::string nowPretty();
 }

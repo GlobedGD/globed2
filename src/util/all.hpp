@@ -6,6 +6,7 @@
 #include "crypto.hpp"
 #include "data.hpp"
 #include "debugging.hpp"
+#include "formatting.hpp"
 #include "net.hpp"
 #include "rng.hpp"
 #include "sync.hpp"

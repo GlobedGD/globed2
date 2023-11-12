@@ -20,7 +20,7 @@ type PacketId = u16;
 
 macro_rules! packet {
     ($packet_type:ty, $packet_id:expr, $encrypted:expr) => {
-        impl Packet for $packet_type {
+        impl crate::data::packets::Packet for $packet_type {
             fn get_packet_id(&self) -> crate::data::packets::PacketId {
                 $packet_id
             }
@@ -31,6 +31,10 @@ macro_rules! packet {
 
             fn as_any(&self) -> &dyn std::any::Any {
                 self
+            }
+
+            impl crate::data::packets::PacketWithId for $packet_type {
+                const PACKET_ID: crate::data::packets::PacketId = $packet_id;
             }
         }
     };
@@ -40,7 +44,7 @@ macro_rules! packet {
             $(pub $field: $field_type),*
         }
 
-        impl Packet for $packet_type {
+        impl crate::data::packets::Packet for $packet_type {
             fn get_packet_id(&self) -> crate::data::packets::PacketId {
                 $packet_id
             }
@@ -52,6 +56,10 @@ macro_rules! packet {
             fn as_any(&self) -> &dyn std::any::Any {
                 self
             }
+        }
+
+        impl crate::data::packets::PacketWithId for $packet_type {
+            const PACKET_ID: crate::data::packets::PacketId = $packet_id;
         }
     };
 }
@@ -62,6 +70,11 @@ pub trait Packet: Encodable + Decodable + Send + Sync {
     fn get_packet_id(&self) -> PacketId;
     fn get_encrypted(&self) -> bool;
     fn as_any(&self) -> &dyn Any;
+}
+
+// god i hate this
+pub trait PacketWithId {
+    const PACKET_ID: PacketId;
 }
 
 pub const PACKET_HEADER_LEN: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();

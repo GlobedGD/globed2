@@ -50,10 +50,14 @@ class $modify(MyMenuLayer, MenuLayer) {
 
     void onMoreGames(CCObject*) {
         auto& nm = NetworkManager::get();
-        nm.addListener(20000, [](std::shared_ptr<Packet> packet) {
-            auto pkt = static_cast<PingResponsePacket*>(packet.get());
-            log::debug("got ping packet with id {}, pc: {}", pkt->id, pkt->playerCount);
+        nm.addListener<PingResponsePacket>([](auto* packet) {
+            log::debug("got ping packet with id {}, pc: {}", packet->id, packet->playerCount);
         });
+
+        // nm.addListener(PingResponsePacket::PACKET_ID, [](std::shared_ptr<Packet> packet) {
+        //     auto pkt = static_cast<PingResponsePacket*>(packet.get());
+        //     log::debug("got ping packet with id {}, pc: {}", pkt->id, pkt->playerCount);
+        // });
 
         nm.connect("127.0.0.1", 41001);
         nm.send(PingPacket::create(69696969));
@@ -65,6 +69,9 @@ class $modify(MyMenuLayer, MenuLayer) {
 
         // testFmod1();
         // testFmod2();
+
+        util::debugging::PacketLogger::get().getSummary().print();
+        
     }
 };
 

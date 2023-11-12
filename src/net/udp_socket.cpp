@@ -19,7 +19,7 @@ bool UdpSocket::connect(const std::string& serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
     destAddr_.sin_port = htons(port);
 
-    GLOBED_ASSERT(inet_pton(AF_INET, serverIp.c_str(), &(destAddr_.sin_addr)) > 0, "tried to connect to an invalid address");
+    GLOBED_ASSERT(inet_pton(AF_INET, serverIp.c_str(), &destAddr_.sin_addr) > 0, "tried to connect to an invalid address");
 
     connected = true;
     return true; // No actual connection is established in UDP
@@ -51,10 +51,6 @@ bool UdpSocket::close() {
 }
 
 bool UdpSocket::poll(long msDelay) {
-    if (!connected) {
-        return false;
-    }
-
     GLOBED_SOCKET_POLLFD fds[1];
 
     fds[0].fd = socket_;

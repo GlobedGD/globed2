@@ -20,8 +20,6 @@ decode_impl!(PingPacket, buf, self, {
 /* CryptoHandshakeStartPacket - 10001 */
 
 packet!(CryptoHandshakeStartPacket, 10001, false, {
-    account_id: i32,
-    token: String,
     key: CryptoPublicKey,
 });
 
@@ -29,15 +27,11 @@ encode_unimpl!(CryptoHandshakeStartPacket);
 
 empty_impl!(CryptoHandshakeStartPacket, {
     Self {
-        account_id: 0,
-        token: "".to_string(),
         key: CryptoPublicKey::empty(),
     }
 });
 
 decode_impl!(CryptoHandshakeStartPacket, buf, self, {
-    self.account_id = buf.read_i32()?;
-    self.token = buf.read_string()?;
     self.key = buf.read_value()?;
     Ok(())
 });
@@ -51,3 +45,36 @@ encode_unimpl!(KeepalivePacket);
 empty_impl!(KeepalivePacket, Self {});
 
 decode_impl!(KeepalivePacket, _buf, self, Ok(()));
+
+/* LoginPacket - 10003 */
+
+packet!(LoginPacket, 10003, true, {
+    account_id: i32,
+    token: String,
+});
+
+encode_unimpl!(LoginPacket);
+
+empty_impl!(
+    LoginPacket,
+    Self {
+        account_id: 0,
+        token: "".to_string(),
+    }
+);
+
+decode_impl!(LoginPacket, buf, self, {
+    self.account_id = buf.read_i32()?;
+    self.token = buf.read_string()?;
+    Ok(())
+});
+
+/* DisconnectPacket - 10004 */
+
+packet!(DisconnectPacket, 10004, false, {});
+
+encode_unimpl!(DisconnectPacket);
+
+empty_impl!(DisconnectPacket, Self {});
+
+decode_impl!(DisconnectPacket, _buf, self, Ok(()));

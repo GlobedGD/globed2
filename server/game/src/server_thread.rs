@@ -24,7 +24,7 @@ use tokio::{
 
 use crate::{
     data::{
-        packets::{client::*, match_packet, server::*, Packet, PACKET_HEADER_LEN},
+        packets::{client::*, match_packet, server::*, Packet, PacketWithId, PACKET_HEADER_LEN},
         types::crypto::CryptoPublicKey,
     },
     server::GameServer,
@@ -47,6 +47,7 @@ pub struct GameServerThread {
     account_id: AtomicI32,
     authenticated: AtomicBool,
     game_server: &'static GameServer,
+    awaiting_termination: AtomicBool,
 }
 
 macro_rules! gs_assert {
@@ -78,7 +79,8 @@ macro_rules! gs_retpacket {
 }
 
 macro_rules! gs_disconnect {
-    ($msg:expr) => {
+    ($self:ident,$msg:expr) => {
+        $self.terminate();
         return Ok(Some(Box::new(ServerDisconnectPacket { message: $msg })))
     };
 }
@@ -94,113 +96,73 @@ macro_rules! gs_needauth {
 }
 
 impl GameServerThread {
-    /* Packet handlers for specific packet types  */
+    /* public api for the main server */
 
-    gs_handler!(self, handle_ping, PingPacket, packet, {
-        gs_retpacket!(PingResponsePacket {
-            id: packet.id,
-            player_count: 2
-        });
-    });
+    pub fn new(
+        state: ServerState,
+        peer: SocketAddrV4,
+        socket: Arc<UdpSocket>,
+        secret_key: SecretKey,
+        game_server: &'static GameServer,
+    ) -> Self {
+        let (tx, rx) = mpsc::channel::<ServerThreadMessage>(8);
+        Self {
+            state,
+            tx,
+            rx: Mutex::new(rx),
+            peer,
+            secret_key,
+            socket,
+            crypto_box: Mutex::new(None),
+            account_id: AtomicI32::new(0),
+            authenticated: AtomicBool::new(false),
+            game_server,
+            awaiting_termination: AtomicBool::new(false),
+            // last_keepalive: Mutex::new(SystemTime::now()),
+        }
+    }
 
-    gs_handler!(
-        self,
-        handle_crypto_handshake,
-        CryptoHandshakeStartPacket,
-        packet,
-        {
-            let mut cbox = self.crypto_box.lock().await;
-            gs_assert!(cbox.is_none(), "attempting to initialize a cryptobox twice");
+    pub async fn run(&self) -> anyhow::Result<()> {
+        let mut rx = self.rx.lock().await;
 
-            // lets verify the token
-            let state = self.state.read().await;
-            let client = state.http_client.clone();
-            let central_url = state.central_url.clone();
-            let pw = state.central_pw.clone();
-            drop(state);
-
-            let url = format!("{}{}", central_url, "gs/verify");
-            let response = client
-                .post(url)
-                .query(&[
-                    ("account_id", packet.account_id.to_string()),
-                    ("token", packet.token.clone()),
-                    ("pw", pw),
-                ])
-                .send()
-                .await?
-                .error_for_status()?
-                .text()
-                .await?;
-
-            if response != "ok" {
-                gs_disconnect!(format!("failed to authenticate: {}", response));
+        loop {
+            if self.awaiting_termination.load(Ordering::Relaxed) {
+                break;
             }
 
-            self.authenticated.store(true, Ordering::Relaxed);
-            self.account_id.store(packet.account_id, Ordering::Relaxed);
-
-            let sbox = SalsaBox::new(&packet.key.pubkey, &self.secret_key);
-            *cbox = Some(sbox);
-
-            gs_retpacket!(CryptoHandshakeResponsePacket {
-                key: CryptoPublicKey {
-                    pubkey: self.secret_key.public_key().clone()
-                }
-            });
-        }
-    );
-
-    gs_handler!(self, handle_keepalive, KeepalivePacket, _packet, {
-        // *self.last_keepalive.lock().await = SystemTime::now();
-        gs_retpacket!(KeepaliveResponsePacket { player_count: 2 })
-    });
-
-    gs_handler!(self, handle_voice, VoicePacket, packet, {
-        gs_needauth!(self);
-
-        let vpkt = VoiceBroadcastPacket {
-            player_id: self.account_id.load(Ordering::Relaxed),
-            data: packet.data.clone(),
-        };
-
-        self.game_server.broadcast_voice_packet(&vpkt).await?;
-
-        Ok(None)
-    });
-
-    /* All the other stuff */
-
-    async fn handle_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<()> {
-        let response = match packet.get_packet_id() {
-            10000 => self.handle_ping(packet).await,
-            10001 => self.handle_crypto_handshake(packet).await,
-            10002 => self.handle_keepalive(packet).await,
-            11010 => self.handle_voice(packet).await,
-            x => Err(anyhow!("No handler for packet id {x}")),
-        }?;
-
-        if let Some(response_packet) = response {
-            self.send_packet(response_packet).await?;
+            match tokio::time::timeout(Duration::from_secs(60), rx.recv()).await {
+                Ok(Some(message)) => match self.handle_message(message).await {
+                    Ok(_) => {}
+                    Err(err) => warn!("{}", err.to_string()),
+                },
+                Ok(None) => break, // sender closed
+                Err(_) => break,   // timeout
+            };
         }
 
         Ok(())
     }
 
+    pub async fn send_message(&self, data: ServerThreadMessage) -> anyhow::Result<()> {
+        self.tx.send(data).await?;
+        Ok(())
+    }
+
+    pub fn terminate(&self) {
+        self.awaiting_termination.store(true, Ordering::Relaxed);
+    }
+
+    /* private utilities */
+
     async fn send_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<()> {
         let serialized = self.serialize_packet(packet).await?;
-        self.socket
-            .send_to(serialized.as_bytes(), self.peer)
-            .await?;
+        self.socket.send_to(serialized.as_bytes(), self.peer).await?;
 
         Ok(())
     }
 
     async fn parse_packet(&self, message: Vec<u8>) -> anyhow::Result<Box<dyn Packet>> {
-        gs_assert!(
-            message.len() > PACKET_HEADER_LEN,
-            "packet is missing a header"
-        );
+        gs_assert!(message.len() > PACKET_HEADER_LEN, "packet is missing a header");
 
         let mut data = ByteReader::from_bytes(&message);
 
@@ -212,10 +174,7 @@ impl GameServerThread {
 
         let mut packet = packet.unwrap();
         if packet.get_encrypted() && !encrypted {
-            gs_assert!(
-                false,
-                "client sent a cleartext packet when expected an encrypted one"
-            );
+            gs_assert!(false, "client sent a cleartext packet when expected an encrypted one");
         }
 
         if !packet.get_encrypted() {
@@ -279,70 +238,123 @@ impl GameServerThread {
             ServerThreadMessage::Packet(message) => match self.parse_packet(message).await {
                 Ok(packet) => match self.handle_packet(packet).await {
                     Ok(_) => {}
-                    Err(err) => {
-                        return Err(anyhow!("failed to handle packet: {}", err.to_string()))
-                    }
+                    Err(err) => return Err(anyhow!("failed to handle packet: {}", err.to_string())),
                 },
                 Err(err) => return Err(anyhow!("failed to parse packet: {}", err.to_string())),
             },
 
-            ServerThreadMessage::BroadcastVoice(voice_packet) => {
-                match self.send_packet(Box::new(voice_packet)).await {
-                    Ok(_) => {}
-                    Err(err) => {
-                        warn!("failed to broadcast voice packet: {}", err.to_string())
-                    }
+            ServerThreadMessage::BroadcastVoice(voice_packet) => match self.send_packet(Box::new(voice_packet)).await {
+                Ok(_) => {}
+                Err(err) => {
+                    warn!("failed to broadcast voice packet: {}", err.to_string())
                 }
+            },
+        }
+
+        Ok(())
+    }
+
+    /* packet handlers */
+
+    async fn handle_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<()> {
+        let response = match packet.get_packet_id() {
+            /* connection related */
+            PingPacket::PACKET_ID => self.handle_ping(packet).await,
+            CryptoHandshakeStartPacket::PACKET_ID => self.handle_crypto_handshake(packet).await,
+            KeepalivePacket::PACKET_ID => self.handle_keepalive(packet).await,
+            LoginPacket::PACKET_ID => self.handle_login(packet).await,
+            DisconnectPacket::PACKET_ID => self.handle_disconnect(packet).await,
+
+            /* level related */
+            VoicePacket::PACKET_ID => self.handle_voice(packet).await,
+            x => Err(anyhow!("No handler for packet id {x}")),
+        }?;
+
+        if let Some(response_packet) = response {
+            self.send_packet(response_packet).await?;
+        }
+
+        Ok(())
+    }
+
+    gs_handler!(self, handle_ping, PingPacket, packet, {
+        gs_retpacket!(PingResponsePacket {
+            id: packet.id,
+            player_count: 2
+        });
+    });
+
+    gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
+        let mut cbox = self.crypto_box.lock().await;
+        gs_assert!(cbox.is_none(), "attempting to initialize a cryptobox twice");
+
+        let sbox = SalsaBox::new(&packet.key.pubkey, &self.secret_key);
+        *cbox = Some(sbox);
+
+        gs_retpacket!(CryptoHandshakeResponsePacket {
+            key: CryptoPublicKey {
+                pubkey: self.secret_key.public_key().clone()
             }
+        });
+    });
+
+    gs_handler!(self, handle_keepalive, KeepalivePacket, _packet, {
+        gs_retpacket!(KeepaliveResponsePacket {
+            player_count: self.game_server.get_player_count().await as u32
+        })
+    });
+
+    gs_handler!(self, handle_login, LoginPacket, packet, {
+        // lets verify the given token
+        let state = self.state.read().await;
+        let client = state.http_client.clone();
+        let central_url = state.central_url.clone();
+        let pw = state.central_pw.clone();
+        drop(state);
+
+        let url = format!("{central_url}gs/verify");
+        let response = client
+            .post(url)
+            .query(&[
+                ("account_id", packet.account_id.to_string()),
+                ("token", packet.token.clone()),
+                ("pw", pw),
+            ])
+            .send()
+            .await?
+            .error_for_status()?
+            .text()
+            .await?;
+
+        if !response.starts_with("status_ok:") {
+            gs_disconnect!(self, format!("failed to authenticate: {response}"));
         }
 
-        Ok(())
-    }
+        let player_name = response.split_once(':').ok_or(anyhow!("central server is drunk"))?.1;
 
-    /* public api for the main server */
+        self.authenticated.store(true, Ordering::Relaxed);
+        self.account_id.store(packet.account_id, Ordering::Relaxed);
 
-    pub fn new(
-        state: ServerState,
-        peer: SocketAddrV4,
-        socket: Arc<UdpSocket>,
-        secret_key: SecretKey,
-        game_server: &'static GameServer,
-    ) -> Self {
-        let (tx, rx) = mpsc::channel::<ServerThreadMessage>(8);
-        Self {
-            state,
-            tx,
-            rx: Mutex::new(rx),
-            peer,
-            secret_key,
-            socket,
-            crypto_box: Mutex::new(None),
-            account_id: AtomicI32::new(0),
-            authenticated: AtomicBool::new(false),
-            game_server,
-            // last_keepalive: Mutex::new(SystemTime::now()),
-        }
-    }
+        gs_retpacket!(LoggedInPacket {})
+    });
 
-    pub async fn run(&self) -> anyhow::Result<()> {
-        let mut rx = self.rx.lock().await;
+    gs_handler!(self, handle_disconnect, DisconnectPacket, _packet, {
+        self.terminate();
+        return Ok(None);
+    });
 
-        loop {
-            match tokio::time::timeout(Duration::from_secs(60), rx.recv()).await {
-                Ok(Some(message)) => match self.handle_message(message).await {
-                    Ok(_) => {}
-                    Err(err) => warn!("{}", err.to_string()),
-                },
-                Ok(None) => break, // sender closed
-                Err(_) => break,   // timeout
-            };
-        }
+    /* level related */
 
-        Ok(())
-    }
+    gs_handler!(self, handle_voice, VoicePacket, packet, {
+        gs_needauth!(self);
 
-    pub async fn send_message(&self, data: ServerThreadMessage) -> anyhow::Result<()> {
-        self.tx.send(data).await?;
-        Ok(())
-    }
+        let vpkt = VoiceBroadcastPacket {
+            player_id: self.account_id.load(Ordering::Relaxed),
+            data: packet.data.clone(),
+        };
+
+        self.game_server.broadcast_voice_packet(&vpkt).await?;
+
+        Ok(None)
+    });
 }

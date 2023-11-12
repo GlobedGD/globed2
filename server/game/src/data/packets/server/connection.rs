@@ -1,9 +1,6 @@
 use crate::{
     bytebufferext::{decode_unimpl, empty_impl, encode_impl, ByteBufferExtWrite},
-    data::{
-        packets::{packet, Packet},
-        types::crypto::CryptoPublicKey,
-    },
+    data::{packets::packet, types::crypto::CryptoPublicKey},
 };
 
 /* PingResponsePacket - 20000 */
@@ -18,13 +15,7 @@ encode_impl!(PingResponsePacket, buf, self, {
     buf.write_u32(self.player_count);
 });
 
-empty_impl!(
-    PingResponsePacket,
-    Self {
-        id: 0,
-        player_count: 0
-    }
-);
+empty_impl!(PingResponsePacket, Self { id: 0, player_count: 0 });
 
 decode_unimpl!(PingResponsePacket);
 
@@ -71,11 +62,16 @@ encode_impl!(ServerDisconnectPacket, buf, self, {
     buf.write_string(&self.message);
 });
 
-empty_impl!(
-    ServerDisconnectPacket,
-    Self {
-        message: "".to_string()
-    }
-);
+empty_impl!(ServerDisconnectPacket, Self { message: "".to_string() });
 
 decode_unimpl!(ServerDisconnectPacket);
+
+/* LoggedInPacket - 20004 */
+
+packet!(LoggedInPacket, 20004, true, {});
+
+encode_impl!(LoggedInPacket, _buf, self, {});
+
+empty_impl!(LoggedInPacket, Self {});
+
+decode_unimpl!(LoggedInPacket);

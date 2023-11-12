@@ -74,12 +74,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // config file watcher
 
     let (mut debouncer, mut file_events) =
-        AsyncDebouncer::new_with_channel(Duration::from_secs(1), Some(Duration::from_secs(1)))
-            .await?;
+        AsyncDebouncer::new_with_channel(Duration::from_secs(1), Some(Duration::from_secs(1))).await?;
 
-    debouncer
-        .watcher()
-        .watch(&config_path, RecursiveMode::NonRecursive)?;
+    debouncer.watcher().watch(&config_path, RecursiveMode::NonRecursive)?;
 
     let watcher_state = state.clone();
     tokio::spawn(async move {

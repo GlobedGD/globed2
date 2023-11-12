@@ -15,11 +15,19 @@ The following is a simple configuration template with descriptions of all option
     "web_mountpoint": "/", // server HTTP mountpoint
     "web_address": "0.0.0.0:41000", // server address
     "gd_api": "http://www.boomlings.com/database/getGJComments21.php", // can be a proxy for the comments endpoint
+    "special_users": {
+        "9568205": {
+            "name": "imcool",
+            "color": "#ffffff"
+        }
+    },
     // security related
     "secret_key": "random", // secret key for auth codes, keep it secure and don't use the default value.
     "game_server_password": "random", // password for game servers to connect, see below
     "challenge_expiry": 60, // amount of seconds before an auth challenge expires
     "challenge_level": 1, // level ID for challenges, must be a valid non-unlisted level
+    "challenge_ratelimit": 300, // amount of seconds before a user can try to complete a challenge again
+    "use_cf_ip_header": false, // use CF-Connecting-IP header for determining user's IP address
     "token_expiry": 1800, // amount of seconds before a token expires
 }
 ```

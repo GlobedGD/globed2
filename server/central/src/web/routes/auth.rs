@@ -1,10 +1,12 @@
 use std::{
     collections::HashMap,
+    net::IpAddr,
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use anyhow::anyhow;
 use base64::{engine::general_purpose as b64e, Engine as _};
-use log::warn;
+use log::{debug, info, warn};
 use rand::{distributions::Alphanumeric, Rng};
 use reqwest::StatusCode;
 use roa::{preload::PowerBody, query::Query, throw, Context};
@@ -12,12 +14,13 @@ use roa::{preload::PowerBody, query::Query, throw, Context};
 use crate::state::{ActiveChallenge, ServerState};
 
 pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
-    let account_id = &*context.must_query("accountid")?;
+    let account_id = &*context.must_query("aid")?;
+    let account_name = &*context.must_query("aname")?;
     let code = &*context.must_query("code")?;
 
     let state = context.state_read().await;
 
-    let authkey = state.generate_authkey(account_id);
+    let authkey = state.generate_authkey(account_id, account_name);
     let valid = state.verify_totp(&authkey, code);
 
     if !valid {
@@ -25,8 +28,10 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
         throw!(StatusCode::UNAUTHORIZED, "login failed");
     }
 
-    let token = state.generate_token(account_id);
+    let token = state.generate_token(account_id, account_name);
     drop(state);
+
+    debug!("totp login from {} successful", account_id);
 
     context.write(token);
 
@@ -34,7 +39,7 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
 }
 
 pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result {
-    let account_id = &*context.must_query("accountid")?;
+    let account_id = &*context.must_query("aid")?;
     let account_id = account_id.parse::<i32>()?;
 
     let mut state = context.state_write().await;
@@ -64,12 +69,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     let level_id = state.config.challenge_level;
 
     if should_return_existing {
-        let rand_string = state
-            .active_challenges
-            .get(&account_id)
-            .unwrap()
-            .value
-            .clone();
+        let rand_string = state.active_challenges.get(&account_id).unwrap().value.clone();
         drop(state);
 
         context.write(format!("{}:{}", level_id, rand_string));
@@ -102,7 +102,8 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
 }
 
 pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result {
-    let account_id = &*context.must_query("accountid")?;
+    let account_id = &*context.must_query("aid")?;
+    let account_name = &*context.must_query("aname")?;
     let account_id = account_id.parse::<i32>()?;
 
     let ch_answer = &*context.must_query("answer")?;
@@ -111,10 +112,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
 
     let challenge = match state.active_challenges.get(&account_id) {
         None => {
-            throw!(
-                StatusCode::FORBIDDEN,
-                "challenge does not exist for this account ID"
-            );
+            throw!(StatusCode::FORBIDDEN, "challenge does not exist for this account ID");
         }
         Some(x) => x,
     }
@@ -143,7 +141,39 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     drop(state);
 
     // now we have to request rob's servers and check if the challenge was solved
-    // todo rate limiting
+
+    // check if the user is doing it too fast
+    let mut state = context.state_write().await;
+
+    // a bit ugly
+    let user_ip: anyhow::Result<IpAddr> = if state.config.use_cf_ip_header {
+        let header = context.req.headers.get("CF-Connecting-IP");
+        let ip = header
+            .and_then(|val| val.to_str().ok())
+            .and_then(|val| val.parse::<IpAddr>().ok());
+
+        ip.ok_or(anyhow!("failed to parse the IP header from Cloudflare"))
+    } else {
+        Ok(context.remote_addr.ip())
+    };
+
+    if user_ip.is_err() {
+        throw!(StatusCode::BAD_REQUEST, user_ip.unwrap_err().to_string());
+    }
+
+    let user_ip = match user_ip {
+        Ok(x) => x,
+        Err(err) => throw!(StatusCode::BAD_REQUEST, err.to_string()),
+    };
+
+    match state.record_login_attempt(&user_ip) {
+        Ok(_) => {}
+        Err(err) => {
+            warn!("peer is sending too many verification requests: {}", user_ip);
+            throw!(StatusCode::TOO_MANY_REQUESTS, err.to_string())
+        }
+    }
+    drop(state);
 
     let result = http_client
         .post(req_url)
@@ -197,10 +227,14 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         }
 
         let author_id = author_id.unwrap();
-        // let author_name = author_name.unwrap();
+        let author_name = author_name.unwrap();
         let comment_text = comment_text.unwrap();
 
         if author_id.parse::<i32>()? != account_id {
+            continue;
+        }
+
+        if author_name != account_name {
             continue;
         }
 
@@ -213,8 +247,10 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
 
         // on success, delete the challenge and generate the authkey
         if result {
+            info!("successfully generated an authkey for {} ({})", account_name, account_id);
+
             state.active_challenges.remove(&account_id);
-            let authkey = state.generate_authkey(&account_id.to_string());
+            let authkey = state.generate_authkey(author_id, author_name);
             drop(state);
 
             context.write(b64e::STANDARD.encode(authkey));

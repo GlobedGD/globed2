@@ -1,6 +1,4 @@
-use crate::bytebufferext::{
-    decode_impl, empty_impl, encode_impl, ByteBufferExtRead, ByteBufferExtWrite,
-};
+use crate::bytebufferext::{decode_impl, empty_impl, encode_impl, ByteBufferExtRead, ByteBufferExtWrite};
 
 type EncodedOpusData = Vec<u8>;
 #[derive(Clone, Default)]

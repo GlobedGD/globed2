@@ -31,22 +31,15 @@ pub struct ServerStateData {
     pub active_challenges: HashMap<i32, ActiveChallenge>,
     pub http_client: reqwest::Client,
     pub token_expiry: Duration,
+    pub login_attempts: HashMap<IpAddr, SystemTime>,
 }
 
 impl ServerStateData {
-    pub fn new(
-        config_path: PathBuf,
-        config: ServerConfig,
-        secret_key: String,
-        token_expiry: Duration,
-    ) -> Self {
+    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: String, token_expiry: Duration) -> Self {
         let skey_bytes = secret_key.as_bytes();
         let hmac_obj = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
 
-        let http_client = reqwest::ClientBuilder::new()
-            .user_agent("")
-            .build()
-            .unwrap();
+        let http_client = reqwest::ClientBuilder::new().user_agent("").build().unwrap();
 
         Self {
             config_path,
@@ -55,13 +48,16 @@ impl ServerStateData {
             active_challenges: HashMap::new(),
             http_client,
             token_expiry,
+            login_attempts: HashMap::new(),
         }
     }
 
-    // uses hmac-sha256 to derive an auth key from user's account ID
-    pub fn generate_authkey(&self, account_id: &str) -> Vec<u8> {
+    // uses hmac-sha256 to derive an auth key from user's account ID and name
+    pub fn generate_authkey(&self, account_id: &str, account_name: &str) -> Vec<u8> {
+        let val = format!("{}:{}", account_id, account_name);
+
         let mut hmac: Hmac<Sha256> = self.hmac.clone();
-        hmac.update(account_id.as_bytes());
+        hmac.update(val.as_bytes());
         let res = hmac.finalize();
         res.into_bytes().to_vec()
     }
@@ -83,13 +79,13 @@ impl ServerStateData {
     }
 
     // generate a token, similar to jwt but more efficient and lightweight
-    pub fn generate_token(&self, account_id: &str) -> String {
+    pub fn generate_token(&self, account_id: &str, account_name: &str) -> String {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("whoops our clock went backwards")
             .as_secs();
 
-        let data = format!("{}.{}", account_id, timestamp);
+        let data = format!("{}.{}.{}", account_id, account_name, timestamp);
         let mut hmac = self.hmac.clone();
         hmac.update(data.as_bytes());
         let res = hmac.finalize();
@@ -101,20 +97,24 @@ impl ServerStateData {
         )
     }
 
-    pub fn verify_token(&self, account_id: &str, token: &str) -> anyhow::Result<()> {
+    // verify the token and return the username if it's valid
+    pub fn verify_token(&self, account_id: &str, token: &str) -> anyhow::Result<String> {
         let timestamp = SystemTime::now();
 
         let (claims, signature) = token.split_once('.').ok_or(anyhow!("malformed token"))?;
 
         let data_str = String::from_utf8(b64e::URL_SAFE_NO_PAD.decode(claims)?)?;
-        let (orig_id, orig_ts) = data_str.split_once('.').ok_or(anyhow!("malformed token"))?;
+        let mut claims = data_str.split('.');
+
+        let orig_id = claims.next().ok_or(anyhow!("malformed token"))?;
+        let orig_name = claims.next().ok_or(anyhow!("malformed token"))?;
+        let orig_ts = claims.next().ok_or(anyhow!("malformed token"))?;
 
         if orig_id != account_id {
             return Err(anyhow!("token validation failed"));
         }
 
-        let elapsed =
-            timestamp.duration_since(UNIX_EPOCH + Duration::from_secs(orig_ts.parse::<u64>()?))?;
+        let elapsed = timestamp.duration_since(UNIX_EPOCH + Duration::from_secs(orig_ts.parse::<u64>()?))?;
 
         if elapsed > self.token_expiry {
             return Err(anyhow!("expired token, please reauthenticate"));
@@ -128,11 +128,29 @@ impl ServerStateData {
 
         hmac.verify_slice(&signature)?;
 
-        Ok(())
+        Ok(orig_name.to_string())
+    }
+
+    pub fn record_login_attempt(&mut self, addr: &IpAddr) -> anyhow::Result<()> {
+        match self.login_attempts.get_mut(addr) {
+            None => {
+                self.login_attempts.insert(*addr, SystemTime::now());
+                Ok(())
+            }
+            Some(last_attempt) => {
+                let passed = SystemTime::now().duration_since(*last_attempt)?.as_secs();
+                if passed < self.config.challenge_ratelimit {
+                    Err(anyhow!("you are doing this too fast, please try again later"))
+                } else {
+                    last_attempt.clone_from(&SystemTime::now());
+                    Ok(())
+                }
+            }
+        }
     }
 }
 
-// both roa::Context and RwLock have methods like read() and write()
+// both roa::Context and RwLock have the methods read() and write()
 // so doing Context<RwLock<..>> will break some things, hence we make a wrapper
 
 #[derive(Clone)]

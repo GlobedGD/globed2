@@ -15,11 +15,12 @@ Short descriptions of available utility namespaces (`util::` omitted for simplic
 * `collections` - provides various collections like `CappedQueue` and util methods for working with other collections.
 * `crypto` - provides cryptography utilities like secure hashing, TOTP generation, base64, hex encoding/decoding.
 * `data` - provides helpers `byte`, `bytearray` and `bytevector` and byteswap implementations.
+* `formatting` - provides functions for formatting certain things to a string
 * `debugging` - provides a `Benchmarker` class and other utilities for debugging code.
 * `net` - provides networking utilities.
 * `rng` - provides a simple interface for generating random numbers (and floats!)
 * `sync` - provides various classes for exchanging the data between threads safely.
-* `time` - provides utilities for getting the current system time and formatting it to a string.
+* `time` - provides utilities for getting the current system time
 
 ## Unexpected conditions
 

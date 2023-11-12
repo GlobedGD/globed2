@@ -32,18 +32,9 @@ impl log::Log for Logger {
                     record.level().to_string().bright_yellow(),
                     record.args().to_string().bright_yellow(),
                 ),
-                Level::Info => (
-                    record.level().to_string().cyan(),
-                    record.args().to_string().cyan(),
-                ),
-                Level::Debug => (
-                    record.level().to_string().normal(),
-                    record.args().to_string().normal(),
-                ),
-                Level::Trace => (
-                    record.level().to_string().black(),
-                    record.args().to_string().black(),
-                ),
+                Level::Info => (record.level().to_string().cyan(), record.args().to_string().cyan()),
+                Level::Debug => (record.level().to_string().normal(), record.args().to_string().normal()),
+                Level::Trace => (record.level().to_string().black(), record.args().to_string().black()),
             };
 
             println!("[{}] [{}] - {}", formatted_time, level, args,)
