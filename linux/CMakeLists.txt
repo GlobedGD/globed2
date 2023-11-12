@@ -11,6 +11,10 @@ file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
 
+if(GLOBED_DEBUG)
+    add_definitions(-DGLOBED_DEBUG=${GLOBED_DEBUG})
+endif()
+
 # Include winsock
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if(MSVC)
@@ -20,6 +24,30 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         add_definitions(-include winsock2.h)
     endif()
 endif()
+
+# Include our libs
+include_directories(libs/libsodium/include libs/opus/include)
+
+# lib files
+set(LIBSODIUM_DIR "${CMAKE_SOURCE_DIR}/libs/libsodium")
+set(OPUS_DIR "${CMAKE_SOURCE_DIR}/libs/opus")
+
+add_definitions(-DSODIUM_STATIC=1)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    add_definitions(-DSODIUM_EXPORT=)
+    
+    find_library(LIBSODIUM_LIBRARY NAMES libsodium HINTS ${LIBSODIUM_DIR}/Win32)
+    find_library(OPUS_LIBRARY NAMES opus HINTS ${OPUS_DIR}/Win32)
+    
+elseif(ANDROID)
+    # todo x64 vs x32
+    set(LIBSODIUM_LIBRARY ${LIBSODIUM_DIR}/android-armv7/libsodium.a)
+    set(OPUS_LIBRARY ${OPUS_DIR}/android-armv7/libopus.a)
+endif()
+
+message(STATUS "Libsodium: ${LIBSODIUM_LIBRARY}")
+message(STATUS "Opus: ${OPUS_LIBRARY}")
 
 # disable iterator debugging if building in debug
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -36,18 +64,15 @@ endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
+# UIBuilder
 CPMAddPackage("gh:camila314/UIBuilder#main")
 target_link_libraries(${PROJECT_NAME} UIBuilder)
 
-CPMAddPackage("gh:xiph/opus#master")
-target_link_libraries(${PROJECT_NAME} opus)
-
-CPMAddPackage("gh:dankmeme01/libsodium-cmake#a30cfce")
-target_link_libraries(${PROJECT_NAME} sodium)
-# target_include_directories(${PROJECT_NAME} PRIVATE ${libsodium_SOURCE_DIR}/src/libsodium/include)
-
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
+
+# link to our libraries
+target_link_libraries(${PROJECT_NAME} ${LIBSODIUM_LIBRARY} ${OPUS_LIBRARY})
 
 # link to fmod on android
 if (ANDROID)
