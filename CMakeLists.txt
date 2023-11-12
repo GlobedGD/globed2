@@ -1,4 +1,3 @@
-# I am horrendous at organizing cmakelists. Please help me.
 cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,17 +10,10 @@ file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
 
-message(STATUS "system: ${CMAKE_HOST_SYSTEM}")
-
 # Include winsock
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    if(MSVC)
-        add_compile_definitions(WIN32_LEAN_AND_MEAN=1)
-        add_definitions(/FI"winsock2.h")
-    else()
-        # GCC or Clang
-        add_definitions(-include winsock2.h)
-    endif()
+    add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
+    add_definitions(/FI"winsock2.h")
 endif()
 
 # i am crying so hard right now
@@ -45,14 +37,10 @@ endif()
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 CPMAddPackage("gh:camila314/UIBuilder#main")
-target_link_libraries(${PROJECT_NAME} UIBuilder)
-
 CPMAddPackage("gh:xiph/opus#master")
-target_link_libraries(${PROJECT_NAME} opus)
+CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 
-CPMAddPackage("gh:dankmeme01/libsodium-cmake#a30cfce")
-target_link_libraries(${PROJECT_NAME} sodium)
-# target_include_directories(${PROJECT_NAME} PRIVATE ${libsodium_SOURCE_DIR}/src/libsodium/include)
+target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
 
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)

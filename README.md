@@ -25,23 +25,7 @@ Known issues:
 
 ## Building
 
-For building the server, you need nothing more than a Rust toolchain. Past that, it's essentially the same as any other Rust project. Building the client is, however, a bit more complex.
-
-If you encounter any problems when building the client, please don't hesitate to reach out to me on discord (@dank_meme01). I know this is a bit confusing and there's probably a way to make it simpler but oh well.
-
-### Windows
-
-Same as any other mod.
-
-### Mac
-
-gotta figure it out somehow
-
-### Android
-
-same as any other mod!
-
-NOTE: when configuring the mod you must set `-DANDROID_PLATFORM=android-28` or higher. versions below do not have the `getrandom()` syscall so libsodium will fail to link. this means the mod is **incompatible** with versions of Android below 9.
+Building should be the same as any other mod, except for Android. On Android, when configuring the mod you must set `-DANDROID_PLATFORM=android-28` or higher. versions below do not have the `getrandom()` syscall so libsodium will fail to link. This means the mod is **incompatible** with versions of Android below 9.
 
 ## Credit
 
