@@ -34,6 +34,7 @@ $on_mod(Loaded) {
 
 void testFmod1();
 void testFmod2();
+void testNetworking();
 
 class $modify(MyMenuLayer, MenuLayer) {
     bool init() {
