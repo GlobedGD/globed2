@@ -13,6 +13,7 @@ use crypto_box::{
     aead::{Aead, AeadCore, OsRng},
     SalsaBox, SecretKey,
 };
+use globed_shared::PROTOCOL_VERSION;
 use log::warn;
 use tokio::{
     net::UdpSocket,
@@ -25,7 +26,7 @@ use tokio::{
 use crate::{
     data::{
         packets::{client::*, match_packet, server::*, Packet, PacketWithId, PACKET_HEADER_LEN},
-        types::crypto::CryptoPublicKey,
+        types::{CryptoPublicKey, PlayerAccountData},
     },
     server::GameServer,
     state::ServerState,
@@ -37,17 +38,20 @@ pub enum ServerThreadMessage {
 }
 
 pub struct GameServerThread {
+    game_server: &'static GameServer,
     state: ServerState,
+    secret_key: SecretKey,
+
     rx: Mutex<Receiver<ServerThreadMessage>>,
     tx: Sender<ServerThreadMessage>,
+    awaiting_termination: AtomicBool,
+    authenticated: AtomicBool,
+    crypto_box: Mutex<Option<SalsaBox>>,
+
     peer: SocketAddrV4,
     socket: Arc<UdpSocket>,
-    secret_key: SecretKey,
-    crypto_box: Mutex<Option<SalsaBox>>,
-    account_id: AtomicI32,
-    authenticated: AtomicBool,
-    game_server: &'static GameServer,
-    awaiting_termination: AtomicBool,
+    pub account_id: AtomicI32,
+    pub account_data: Mutex<PlayerAccountData>,
 }
 
 macro_rules! gs_assert {
@@ -118,7 +122,7 @@ impl GameServerThread {
             authenticated: AtomicBool::new(false),
             game_server,
             awaiting_termination: AtomicBool::new(false),
-            // last_keepalive: Mutex::new(SystemTime::now()),
+            account_data: Mutex::new(PlayerAccountData::default()), // last_keepalive: Mutex::new(SystemTime::now()),
         }
     }
 
@@ -265,7 +269,9 @@ impl GameServerThread {
             LoginPacket::PACKET_ID => self.handle_login(packet).await,
             DisconnectPacket::PACKET_ID => self.handle_disconnect(packet).await,
 
-            /* level related */
+            /* game related */
+            SyncIconsPacket::PACKET_ID => self.handle_sync_icons(packet).await,
+            RequestProfilesPacket::PACKET_ID => self.handle_request_profiles(packet).await,
             VoicePacket::PACKET_ID => self.handle_voice(packet).await,
             x => Err(anyhow!("No handler for packet id {x}")),
         }?;
@@ -278,13 +284,21 @@ impl GameServerThread {
     }
 
     gs_handler!(self, handle_ping, PingPacket, packet, {
+        self.terminate(); // kill the thread immediately for efficiency
         gs_retpacket!(PingResponsePacket {
             id: packet.id,
-            player_count: 2
+            player_count: self.game_server.get_player_count().await as u32
         });
     });
 
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
+        if packet.protocol != PROTOCOL_VERSION {
+            gs_disconnect!(
+                self,
+                format!("protocol mismatch! client: {}, server: {}", packet.protocol, PROTOCOL_VERSION)
+            );
+        }
+
         let mut cbox = self.crypto_box.lock().await;
         gs_assert!(cbox.is_none(), "attempting to initialize a cryptobox twice");
 
@@ -332,6 +346,10 @@ impl GameServerThread {
 
         let player_name = response.split_once(':').ok_or(anyhow!("central server is drunk"))?.1;
 
+        let mut account_data = self.account_data.lock().await;
+        account_data.account_id = packet.account_id;
+        account_data.name = player_name.to_string();
+
         self.authenticated.store(true, Ordering::Relaxed);
         self.account_id.store(packet.account_id, Ordering::Relaxed);
 
@@ -343,7 +361,23 @@ impl GameServerThread {
         return Ok(None);
     });
 
-    /* level related */
+    /* game related */
+
+    gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
+        gs_needauth!(self);
+
+        let mut account_data = self.account_data.lock().await;
+        account_data.icons.clone_from(&packet.icons);
+        Ok(None)
+    });
+
+    gs_handler!(self, handle_request_profiles, RequestProfilesPacket, packet, {
+        gs_needauth!(self);
+
+        gs_retpacket!(PlayerProfilesPacket {
+            profiles: self.game_server.gather_profiles(&packet.ids).await
+        })
+    });
 
     gs_handler!(self, handle_voice, VoicePacket, packet, {
         gs_needauth!(self);

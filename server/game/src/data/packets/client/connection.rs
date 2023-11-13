@@ -1,6 +1,6 @@
 use crate::bytebufferext::*;
 use crate::data::packets::*;
-use crate::data::types::crypto::CryptoPublicKey;
+use crate::data::types::CryptoPublicKey;
 
 /* PingPacket - 10000 */
 
@@ -20,6 +20,7 @@ decode_impl!(PingPacket, buf, self, {
 /* CryptoHandshakeStartPacket - 10001 */
 
 packet!(CryptoHandshakeStartPacket, 10001, false, {
+    protocol: u16,
     key: CryptoPublicKey,
 });
 
@@ -27,11 +28,13 @@ encode_unimpl!(CryptoHandshakeStartPacket);
 
 empty_impl!(CryptoHandshakeStartPacket, {
     Self {
+        protocol: 0,
         key: CryptoPublicKey::empty(),
     }
 });
 
 decode_impl!(CryptoHandshakeStartPacket, buf, self, {
+    self.protocol = buf.read_u16()?;
     self.key = buf.read_value()?;
     Ok(())
 });

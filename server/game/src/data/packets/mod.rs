@@ -16,6 +16,7 @@ type PacketId = u16;
 *    packet!(PacketName, id, enc)
 *
 * followed by packet_encode! and packet_decode! or their _unimpl versions
+* the empty_impl! also must be added which is basically Default but less silly i guess?
 */
 
 macro_rules! packet {

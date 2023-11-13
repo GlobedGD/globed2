@@ -1,6 +1,6 @@
 use std::{
     net::{SocketAddr, SocketAddrV4},
-    sync::Arc,
+    sync::{atomic::Ordering, Arc},
 };
 
 use anyhow::anyhow;
@@ -14,7 +14,7 @@ use log::{debug, info, warn};
 use tokio::{net::UdpSocket, sync::RwLock};
 
 use crate::{
-    data::packets::server::VoiceBroadcastPacket,
+    data::{packets::server::VoiceBroadcastPacket, types::PlayerAccountData},
     server_thread::{GameServerThread, ServerThreadMessage},
     state::ServerState,
 };
@@ -72,6 +72,21 @@ impl GameServer {
 
     pub async fn get_player_count(&'static self) -> usize {
         self.threads.read().await.len()
+    }
+
+    pub async fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
+        let mut out = Vec::new();
+
+        for id in ids {
+            let threads = self.threads.read().await;
+            for thread in threads.values() {
+                if thread.account_id.load(Ordering::Relaxed) == *id {
+                    out.push(thread.account_data.lock().await.clone());
+                }
+            }
+        }
+
+        out
     }
 
     /* private handling stuff */

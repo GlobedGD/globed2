@@ -1,6 +1,6 @@
 use crate::{
     bytebufferext::{decode_unimpl, empty_impl, encode_impl, ByteBufferExtWrite},
-    data::{packets::packet, types::crypto::CryptoPublicKey},
+    data::{packets::packet, types::CryptoPublicKey},
 };
 
 /* PingResponsePacket - 20000 */

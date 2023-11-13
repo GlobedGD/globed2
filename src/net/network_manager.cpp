@@ -124,6 +124,8 @@ void NetworkManager::taskPingServers() {
 
 void NetworkManager::threadMainFunc() {
     while (_running) {
+        maybeSendKeepalive();
+
         if (!packetQueue.waitForMessages(std::chrono::seconds(1))) {
             continue;
         }
@@ -157,9 +159,12 @@ void NetworkManager::threadRecvFunc() {
             }
         }
 
-        if (!pollResult.hasNormal) {
+        if (established() && !pollResult.hasNormal) {
+            maybeDisconnectIfDead();
             continue;
         }
+
+        lastReceivedPacket = std::chrono::system_clock::now();
 
         std::shared_ptr<Packet> packet;
 
@@ -217,6 +222,25 @@ void NetworkManager::threadTasksFunc() {
             }
             }
         }
+    }
+}
+
+void NetworkManager::maybeSendKeepalive() {
+    if (_loggedin) {
+        auto now = std::chrono::system_clock::now();
+        if ((now - lastKeepalive) > KEEPALIVE_INTERVAL) {
+            lastKeepalive = now;
+            this->send(KeepalivePacket::create());
+        }
+    }
+}
+
+// Disconnects from the server if there has been no response for a while
+void NetworkManager::maybeDisconnectIfDead() {
+    auto now = std::chrono::system_clock::now();
+    if ((now - lastReceivedPacket) > DISCONNECT_AFTER) {
+        ErrorQueues::get().error("The server you were connected to is not responding to any requests. <cy>You have been disconnected.</c>");
+        this->disconnect();
     }
 }
 

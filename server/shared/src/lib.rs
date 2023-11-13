@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const PROTOCOL_VERSION: u16 = 1;
 
 #[derive(Serialize, Deserialize)]
 pub struct GameServerBootData {
-    pub protocol: u32,
+    pub protocol: u16,
 }

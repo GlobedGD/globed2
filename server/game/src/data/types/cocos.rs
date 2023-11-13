@@ -2,9 +2,9 @@ use crate::bytebufferext::{decode_impl, empty_impl, encode_impl};
 
 #[derive(Copy, Clone, Default)]
 pub struct Color3B {
-    r: u8,
-    g: u8,
-    b: u8,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
 }
 
 encode_impl!(Color3B, buf, self, {
@@ -24,10 +24,10 @@ decode_impl!(Color3B, buf, self, {
 
 #[derive(Copy, Clone, Default)]
 pub struct Color4B {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
 encode_impl!(Color4B, buf, self, {
@@ -49,8 +49,8 @@ decode_impl!(Color4B, buf, self, {
 
 #[derive(Copy, Clone, Default)]
 pub struct Point {
-    x: f32,
-    y: f32,
+    pub x: f32,
+    pub y: f32,
 }
 
 encode_impl!(Point, buf, self, {

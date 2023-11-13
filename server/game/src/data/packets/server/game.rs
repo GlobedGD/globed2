@@ -1,6 +1,21 @@
 use crate::bytebufferext::*;
 use crate::data::packets::*;
-use crate::data::types::audio_frame::EncodedAudioFrame;
+use crate::data::types::EncodedAudioFrame;
+use crate::data::types::PlayerAccountData;
+
+/* PlayerProfilesPacket - 21000 */
+
+packet!(PlayerProfilesPacket, 21000, false, {
+    profiles: Vec<PlayerAccountData>,
+});
+
+encode_impl!(PlayerProfilesPacket, buf, self, {
+    buf.write_value_vec(&self.profiles);
+});
+
+empty_impl!(PlayerProfilesPacket, Self { profiles: Vec::new() });
+
+decode_unimpl!(PlayerProfilesPacket);
 
 /* VoiceBroadcastPacket - 21010 */
 

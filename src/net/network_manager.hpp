@@ -25,8 +25,10 @@ class NetworkManager {
 public:
     using PacketCallback = std::function<void(std::shared_ptr<Packet>)>;
 
-    template <typename Pty>
+    template <HasPacketID Pty>
     using PacketCallbackSpecific = std::function<void(Pty*)>;
+
+    const uint8_t PROTOCOL_VERSION = 1;
 
     GLOBED_SINGLETON(NetworkManager)
     NetworkManager();
@@ -79,6 +81,9 @@ public:
     bool authenticated();
 
 private:
+    const std::chrono::seconds KEEPALIVE_INTERVAL = std::chrono::seconds(5);
+    const std::chrono::seconds DISCONNECT_AFTER = std::chrono::seconds(20);
+
     GameSocket socket, pingSocket;
 
     SmartMessageQueue<Packet*> packetQueue;
@@ -102,6 +107,11 @@ private:
     std::atomic_bool _established = false;
     std::atomic_bool _loggedin = false;
 
+    std::chrono::system_clock::time_point lastKeepalive;
+    std::chrono::system_clock::time_point lastReceivedPacket;
+
+    void maybeSendKeepalive();
+    void maybeDisconnectIfDead();
     PollBothResult pollBothSockets(long msDelay);
 
     // Builtin listeners have priority above the others.

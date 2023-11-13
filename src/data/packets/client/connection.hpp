@@ -20,15 +20,19 @@ class PingPacket : public Packet {
 class CryptoHandshakeStartPacket : public Packet {
     GLOBED_PACKET(10001, false)
 
-    GLOBED_PACKET_ENCODE { buf.writeValue(key); }
+    GLOBED_PACKET_ENCODE {
+        buf.writeU16(protocol);
+        buf.writeValue(key);
+    }
     GLOBED_PACKET_DECODE_UNIMPL
 
-    CryptoHandshakeStartPacket(CryptoPublicKey _key) : key(_key) {}
+    CryptoHandshakeStartPacket(uint16_t _protocol, CryptoPublicKey _key) : protocol(_protocol), key(_key) {}
 
-    static CryptoHandshakeStartPacket* create(CryptoPublicKey key) {
-        return new CryptoHandshakeStartPacket(key);
+    static CryptoHandshakeStartPacket* create(uint16_t protocol, CryptoPublicKey key) {
+        return new CryptoHandshakeStartPacket(protocol, key);
     }
 
+    uint16_t protocol;
     CryptoPublicKey key;
 };
 
