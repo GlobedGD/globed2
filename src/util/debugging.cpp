@@ -15,17 +15,21 @@ namespace util::debugging {
 
     void PacketLogSummary::print() {
         geode::log::debug("====== Packet summary ======");
-        geode::log::debug("Total packets: {} ({} in, {} out)", total, totalIn, totalOut);
-        geode::log::debug("Encrypted packets: {} ({} cleartext, ratio: {}%)", totalEncrypted, totalCleartext, encryptedRatio * 100);
-        geode::log::debug(
-            "Total bytes transferred: {} ({} sent, {} received)",
-            formatting::formatBytes(totalBytes), 
-            formatting::formatBytes(totalBytesOut),
-            formatting::formatBytes(totalBytesIn)
-        );
-        geode::log::debug("Average bytes per packet: {}", formatting::formatBytes(bytesPerPacket));
-        for (const auto& [id, count] : packetCounts) {
-            geode::log::debug("Packet {} - {} occurrences", id, count);
+        if (total == 0) {
+            geode::log::debug("No packets have been sent during this period.");
+        } else {
+            geode::log::debug("Total packets: {} ({} in, {} out)", total, totalIn, totalOut);
+            geode::log::debug("Encrypted packets: {} ({} cleartext, ratio: {}%)", totalEncrypted, totalCleartext, encryptedRatio * 100);
+            geode::log::debug(
+                "Total bytes transferred: {} ({} sent, {} received)",
+                formatting::formatBytes(totalBytes), 
+                formatting::formatBytes(totalBytesOut),
+                formatting::formatBytes(totalBytesIn)
+            );
+            geode::log::debug("Average bytes per packet: {}", formatting::formatBytes(bytesPerPacket));
+            for (const auto& [id, count] : packetCounts) {
+                geode::log::debug("Packet {} - {} occurrences", id, count);
+            }
         }
         geode::log::debug("==== Packet summary end ====");
     }

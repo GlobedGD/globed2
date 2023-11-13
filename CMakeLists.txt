@@ -6,6 +6,11 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(globed2 VERSION 1.0.0)
 
+option(ENABLE_DEBUG "Debug mode" OFF)
+if (ENABLE_DEBUG)
+    add_compile_definitions(GLOBED_DEBUG=1)
+endif()
+
 file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
@@ -17,7 +22,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 # i am crying so hard right now
-if (CMAKE_HOST_SYSTEM MATCHES "Linux")
+if (CMAKE_HOST_SYSTEM MATCHES "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_options("-march=skylake")
 endif()
 
@@ -36,14 +41,16 @@ endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
+# done so you can include root files with <file.hpp>
+target_include_directories(${PROJECT_NAME} PRIVATE src/)
+
+# our favorite libraries
 CPMAddPackage("gh:camila314/UIBuilder#main")
 CPMAddPackage("gh:xiph/opus#master")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 
+# todo suppress libsodium warnings
 target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
-
-# done so you can include root files with <file.hpp>
-target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # link to fmod on android
 if (ANDROID)

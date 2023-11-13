@@ -25,6 +25,10 @@ $on_mod(Loaded) {
         log::error("sodium_misuse called. we are officially screwed.");
         util::debugging::suicide();
     });
+    
+#if defined(GLOBED_DEBUG) && GLOBED_DEBUG
+    geode::log::warn("=== Globed has been loaded in debug mode ===");
+#endif
 }
 
 void testFmod1();

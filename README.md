@@ -8,10 +8,6 @@ This repository contains the complete rewrite of Globed, for Geometry Dash 2.2 a
 
 Globed is a [Geode](https://github.com/geode-sdk/geode) mod, so it requires you to install Geode first. Once that's done, simply open the mods page in-game and download it from the index.
 
-## Hosting a server
-
-todo
-
 ## Roadmap
 
 Planned features:
@@ -23,9 +19,15 @@ Known issues:
 * i am silly
 * voice chat is a bit silly
 
+## Hosting a server
+
+todo
+
 ## Building
 
-Building should be the same as any other mod, except for Android. On Android, when configuring the mod you must set `-DANDROID_PLATFORM=android-28` or higher. versions below do not have the `getrandom()` syscall so libsodium will fail to link. This means the mod is **incompatible** with versions of Android below 9.
+Building should be the same as any other mod!
+
+todo macaroni os
 
 ## Credit
 

@@ -10,7 +10,7 @@
 // #define GLOBED_DISABLE_VOICE_SUPPORT
 
 // various debugging options
-#ifdef GLOBED_DEBUG
+#if defined(GLOBED_DEBUG) && GLOBED_DEBUG
 
 // for source location, unrecommended because may break things
 # define GLOBED_FORCE_CONSTEVAL 1

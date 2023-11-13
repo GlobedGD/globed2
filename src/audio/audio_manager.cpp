@@ -97,8 +97,7 @@ void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFra
     GLOBED_ASSERT(this->recordDevice.id >= 0, "no recording device is set")
     GLOBED_ASSERT(!isRecording(), "attempting to record when already recording");
 
-    FMOD_CREATESOUNDEXINFO exinfo;
-    std::memset(&exinfo, 0, sizeof(FMOD_CREATESOUNDEXINFO));
+    FMOD_CREATESOUNDEXINFO exinfo = {};
 
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     exinfo.numchannels = 1;
@@ -172,8 +171,7 @@ void GlobedAudioManager::playSound(FMOD::Sound* sound) {
 }
 
 FMOD::Sound* GlobedAudioManager::createSound(const float* pcm, size_t samples, int sampleRate) {
-    FMOD_CREATESOUNDEXINFO exinfo;
-    std::memset(&exinfo, 0, sizeof(FMOD_CREATESOUNDEXINFO));
+    FMOD_CREATESOUNDEXINFO exinfo = {};
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     exinfo.numchannels = 1;
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;

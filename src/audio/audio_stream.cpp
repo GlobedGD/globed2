@@ -38,8 +38,7 @@ size_t AudioSampleQueue::size() {
 /* AudioStream */
 
 AudioStream::AudioStream() {
-    FMOD_CREATESOUNDEXINFO exinfo;
-    std::memset(&exinfo, 0, sizeof(FMOD_CREATESOUNDEXINFO));
+    FMOD_CREATESOUNDEXINFO exinfo = {};
 
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     exinfo.numchannels = 1;
