@@ -19,11 +19,22 @@ namespace util::formatting {
         // i did not write this myself
         static const char* suffixes[] = {"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"};
 
+        if (bytes == 0) {
+            return "0B";
+        }
+
         int exp = static_cast<int>(std::log2(bytes) / 10);
         double value = static_cast<double>(bytes) / std::pow(1024, exp);
 
         std::ostringstream oss;
-        oss << std::fixed << std::setprecision(1) << value << suffixes[exp];
+
+        if (std::fmod(value, 1.0) == 0) {
+            oss << static_cast<int>(value);
+        } else {
+            oss << std::fixed << std::setprecision(1) << value;
+        }
+
+        oss << suffixes[exp];
 
         return oss.str();
     }

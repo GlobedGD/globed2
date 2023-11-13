@@ -19,4 +19,7 @@ namespace util::net {
 
     // Throws an exception with the message being the value from `lastErrorString()`
     [[noreturn]] void throwLastError();
+
+    // Returns the user agent for use in web requests
+    std::string webUserAgent();
 }

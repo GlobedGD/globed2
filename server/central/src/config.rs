@@ -18,6 +18,10 @@ fn default_web_address() -> String {
     "0.0.0.0:41000".to_string()
 }
 
+fn default_use_gd_api() -> bool {
+    true
+}
+
 fn default_gdapi() -> String {
     "http://www.boomlings.com/database/getGJComments21.php".to_string()
 }
@@ -77,6 +81,8 @@ pub struct ServerConfig {
     pub web_mountpoint: String,
     #[serde(default = "default_web_address")]
     pub web_address: String,
+    #[serde(default = "default_use_gd_api")]
+    pub use_gd_api: bool,
     #[serde(default = "default_gdapi")]
     pub gd_api: String,
     #[serde(default = "default_special_users")]
@@ -124,6 +130,7 @@ impl ServerConfig {
         Self {
             web_mountpoint: default_web_mountpoint(),
             web_address: default_web_address(),
+            use_gd_api: default_use_gd_api(),
             gd_api: default_gdapi(),
             special_users: default_special_users(),
             secret_key: default_secret_key(),

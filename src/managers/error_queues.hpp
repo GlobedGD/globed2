@@ -8,6 +8,7 @@
 /*
 * ErrorQueues is a simple singleton that has 2 smart message queues for errors and warnings
 * made to send network errors over to main thread to display them
+* It is fully thread safe.
 */
 class ErrorQueues {
 public:

@@ -4,6 +4,7 @@
 #include <crypto/secret_box.hpp>
 #include <util/sync.hpp>
 
+// This class is not guaranteed to be fully thread safe.
 class GlobedAccountManager {
 public:
     GLOBED_SINGLETON(GlobedAccountManager)
@@ -19,6 +20,8 @@ public:
 
     void storeAuthKey(const util::data::byte* source, size_t size);
     void storeAuthKey(const util::data::bytevector& source);
+
+    bool hasAuthKey();
 
     std::string generateAuthCode();
 

@@ -1,5 +1,6 @@
 use std::{error::Error, sync::Arc};
 
+use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
 use log::{error, info, LevelFilter};
 use logger::Logger;
@@ -63,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         central_pw = std::env::var("GLOBED_GS_CENTRAL_PASSWORD").unwrap_or("".to_string());
     }
 
-    if central_url.is_empty() || central_pw.is_empty() {
+    if central_url.is_empty() || central_pw.is_empty() || host_address.is_empty() {
         error!("Some of the configuration values are not set, aborting launch due to misconfiguration.");
         error!("Correct usage: {exe_name} <address> <central-url> <central-password>");
         error!(
@@ -97,7 +98,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .query(&[("pw", state_g.central_pw.clone())])
         .send()
         .await?
-        .error_for_status()?;
+        .error_for_status()
+        .map_err(|e| anyhow!("central server returned an error: {e}"))?;
 
     drop(state_g);
 

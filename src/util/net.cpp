@@ -58,4 +58,12 @@ namespace util::net {
         GLOBED_ASSERT_LOG(std::string("Throwing network exception: ") + message);
         throw std::runtime_error(std::string("Network error: ") + message);
     }
+
+    std::string webUserAgent() {
+#ifdef GLOBED_ROOT_NO_GEODE
+        return "globed";
+#else
+        return fmt::format("globed/{}", geode::Mod::get()->getVersion().toString());
+#endif
+    }
 }

@@ -40,6 +40,12 @@ byte* CryptoBox::getPublicKey() noexcept {
     return publicKey;
 }
 
+bytearray<crypto_box_PUBLICKEYBYTES> CryptoBox::extractPublicKey() noexcept {
+    bytearray<crypto_box_PUBLICKEYBYTES> out;
+    std::memcpy(out.data(), publicKey, crypto_box_PUBLICKEYBYTES);
+    return out;
+}
+
 void CryptoBox::setPeerKey(byte* key) {
     std::memcpy(peerPublicKey, key, crypto_box_PUBLICKEYBYTES);
     CRYPTO_ERR_CHECK(crypto_box_beforenm(sharedKey, peerPublicKey, secretKey), "crypto_box_beforenm failed");

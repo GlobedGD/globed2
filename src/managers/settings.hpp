@@ -5,6 +5,7 @@ struct CachedSettings {
     bool test;
 };
 
+// This class is only guaranteed to be safe to use from the main thread.
 class GlobedSettings {
 public:
     GLOBED_SINGLETON(GlobedSettings);

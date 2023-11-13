@@ -32,3 +32,8 @@ void GlobedAccountManager::storeAuthKey(const util::data::byte* source, size_t s
 void GlobedAccountManager::storeAuthKey(const util::data::bytevector& source) {
     storeAuthKey(source.data(), source.size());
 }
+
+bool GlobedAccountManager::hasAuthKey() {
+    auto b64Token = geode::Mod::get()->getSavedValue<std::string>("auth-totp-key");
+    return !b64Token.empty();
+}

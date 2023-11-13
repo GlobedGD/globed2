@@ -18,7 +18,7 @@ namespace util::debugging {
         if (total == 0) {
             geode::log::debug("No packets have been sent during this period.");
         } else {
-            geode::log::debug("Total packets: {} ({} in, {} out)", total, totalIn, totalOut);
+            geode::log::debug("Total packets: {} ({} sent, {} received)", total, totalOut, totalIn);
             geode::log::debug("Encrypted packets: {} ({} cleartext, ratio: {}%)", totalEncrypted, totalCleartext, encryptedRatio * 100);
             geode::log::debug(
                 "Total bytes transferred: {} ({} sent, {} received)",

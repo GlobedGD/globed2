@@ -48,7 +48,7 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
         GLOBED_ASSERT(box.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
         bytevector& bufvec = buf.getDataRef();
 
-        messageLength = box->decryptInPlace(bufvec.data(), messageLength);
+        messageLength = box->decryptInPlace(bufvec.data() + Packet::HEADER_LEN, messageLength);
         buf.resize(messageLength + Packet::HEADER_LEN);
     }
 
@@ -70,7 +70,7 @@ void GameSocket::sendPacket(Packet* packet) {
         GLOBED_ASSERT(box.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
         // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
         buf.grow(CryptoBox::PREFIX_LEN);
-        box->encryptInPlace(dataref.data(), packetSize);
+        box->encryptInPlace(dataref.data() + Packet::HEADER_LEN, packetSize);
     }
 
 #ifdef GLOBED_DEBUG_PACKETS

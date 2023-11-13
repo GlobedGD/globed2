@@ -49,7 +49,7 @@ CPMAddPackage("gh:camila314/UIBuilder#main")
 CPMAddPackage("gh:xiph/opus#master")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 
-# todo suppress libsodium warnings
+# TODO suppress -Wpointer-sign from libsodium
 target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
 
 # link to fmod on android

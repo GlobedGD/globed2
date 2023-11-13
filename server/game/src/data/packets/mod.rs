@@ -5,7 +5,7 @@ use std::any::Any;
 
 use crate::bytebufferext::{Decodable, Empty, Encodable};
 
-use self::client::{CryptoHandshakeStartPacket, PingPacket};
+use self::client::*;
 
 type PacketId = u16;
 
@@ -88,8 +88,16 @@ macro_rules! mpacket {
 
 pub fn match_packet(packet_id: PacketId) -> Option<Box<dyn Packet>> {
     match packet_id {
-        10000 => mpacket!(PingPacket),
-        10001 => mpacket!(CryptoHandshakeStartPacket),
+        PingPacket::PACKET_ID => mpacket!(PingPacket),
+        CryptoHandshakeStartPacket::PACKET_ID => mpacket!(CryptoHandshakeStartPacket),
+        KeepalivePacket::PACKET_ID => mpacket!(KeepalivePacket),
+        LoginPacket::PACKET_ID => mpacket!(LoginPacket),
+        DisconnectPacket::PACKET_ID => mpacket!(DisconnectPacket),
+
+        // game related
+        SyncIconsPacket::PACKET_ID => mpacket!(SyncIconsPacket),
+        RequestProfilesPacket::PACKET_ID => mpacket!(RequestProfilesPacket),
+        VoicePacket::PACKET_ID => mpacket!(VoicePacket),
         _ => None,
     }
 }

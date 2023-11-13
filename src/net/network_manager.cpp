@@ -7,6 +7,7 @@
 #include <managers/account_manager.hpp>
 
 using namespace geode::prelude;
+using namespace util::data;
 
 GLOBED_SINGLETON_DEF(NetworkManager)
 
@@ -28,6 +29,7 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
         // ?
+        log::debug("keepalive players: {}", packet->playerCount);
     });
 
     addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
@@ -36,6 +38,7 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
+        log::info("Successfully logged into the server!");
         this->_loggedin = true;
     });
 
@@ -74,8 +77,15 @@ NetworkManager::~NetworkManager() {
 }
 
 void NetworkManager::connect(const std::string& addr, unsigned short port) {
+    if (connected()) {
+        this->disconnect(true);
+    }
+    
     GLOBED_ASSERT(socket.connect(addr, port), "failed to connect to the server")
     socket.createBox();
+
+    auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(socket.box->extractPublicKey()));
+    this->send(packet);
 }
 
 void NetworkManager::disconnect(bool quiet) {
@@ -160,7 +170,7 @@ void NetworkManager::threadRecvFunc() {
         }
 
         if (established() && !pollResult.hasNormal) {
-            maybeDisconnectIfDead();
+            // maybeDisconnectIfDead();
             continue;
         }
 

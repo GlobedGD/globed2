@@ -10,6 +10,7 @@
 class CryptoPublicKey {
 public:
     CryptoPublicKey() {}
+    CryptoPublicKey(util::data::bytearray<crypto_box_PUBLICKEYBYTES> key) : key(key) {}
 
     GLOBED_ENCODE {
         buf.writeBytes(key);

@@ -31,6 +31,9 @@ public:
     // Get our public key. The returned pointer lives as long as this `CryptoBox` object does.
     util::data::byte* getPublicKey() noexcept;
 
+    // Get our public key as a bytearray instead of a borrowed pointer.
+    util::data::bytearray<crypto_box_PUBLICKEYBYTES> extractPublicKey() noexcept;
+
     // The data is copied from src into a private member. You are responsible for freeing the source afterwards.
     // If the length is not equal to `crypto_box_PUBLICKEYBYTES` the behavior is undefined.
     // This precomputes the shared key and stores it for use in all future operations.

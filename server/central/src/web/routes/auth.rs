@@ -18,6 +18,8 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     let account_name = &*context.must_query("aname")?;
     let code = &*context.must_query("code")?;
 
+    log::trace!("totp login from {} ({}), code: {}", account_name, account_id, code);
+
     let state = context.state_read().await;
 
     let authkey = state.generate_authkey(account_id, account_name);
@@ -108,6 +110,13 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
 
     let ch_answer = &*context.must_query("answer")?;
 
+    log::trace!(
+        "challenge finish from {} ({}) with answer: {}",
+        account_name,
+        account_id,
+        ch_answer
+    );
+
     let state = context.state_read().await;
 
     let challenge = match state.active_challenges.get(&account_id) {
@@ -138,6 +147,26 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     let req_url = state.config.gd_api.clone();
 
     let http_client = state.http_client.clone();
+
+    if !state.config.use_gd_api {
+        // return early
+        info!(
+            "(bypassed) successfully generated an authkey for {} ({})",
+            account_name, account_id
+        );
+
+        // reborrow as writable
+        drop(state);
+        let mut state = context.state_write().await;
+
+        state.active_challenges.remove(&account_id);
+        let authkey = state.generate_authkey(&account_id.to_string(), &account_name);
+        drop(state);
+
+        context.write(b64e::STANDARD.encode(authkey));
+        return Ok(());
+    }
+
     drop(state);
 
     // now we have to request rob's servers and check if the challenge was solved

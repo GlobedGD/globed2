@@ -166,7 +166,7 @@ impl GameServerThread {
     }
 
     async fn parse_packet(&self, message: Vec<u8>) -> anyhow::Result<Box<dyn Packet>> {
-        gs_assert!(message.len() > PACKET_HEADER_LEN, "packet is missing a header");
+        gs_assert!(message.len() >= PACKET_HEADER_LEN, "packet is missing a header");
 
         let mut data = ByteReader::from_bytes(&message);
 
@@ -174,7 +174,10 @@ impl GameServerThread {
         let encrypted = data.read_u8()? != 0u8;
 
         let packet = match_packet(packet_id);
-        gs_assert!(packet.is_some(), "invalid packet was sent");
+        gs_assert!(
+            packet.is_some(),
+            "packet was sent with an invalid id or the handler doesn't exist: {packet_id}"
+        );
 
         let mut packet = packet.unwrap();
         if packet.get_encrypted() && !encrypted {
@@ -313,6 +316,8 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_keepalive, KeepalivePacket, _packet, {
+        gs_needauth!(self);
+
         gs_retpacket!(KeepaliveResponsePacket {
             player_count: self.game_server.get_player_count().await as u32
         })

@@ -28,7 +28,7 @@ public:
     template <HasPacketID Pty>
     using PacketCallbackSpecific = std::function<void(Pty*)>;
 
-    const uint8_t PROTOCOL_VERSION = 1;
+    static constexpr uint8_t PROTOCOL_VERSION = 1;
 
     GLOBED_SINGLETON(NetworkManager)
     NetworkManager();
@@ -81,8 +81,8 @@ public:
     bool authenticated();
 
 private:
-    const std::chrono::seconds KEEPALIVE_INTERVAL = std::chrono::seconds(5);
-    const std::chrono::seconds DISCONNECT_AFTER = std::chrono::seconds(20);
+    static constexpr std::chrono::seconds KEEPALIVE_INTERVAL = std::chrono::seconds(5);
+    static constexpr std::chrono::seconds DISCONNECT_AFTER = std::chrono::seconds(20);
 
     GameSocket socket, pingSocket;
 

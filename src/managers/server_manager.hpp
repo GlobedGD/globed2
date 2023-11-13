@@ -27,6 +27,7 @@ struct GameServerView {
     uint32_t playerCount;
 };
 
+// This class is fully thread safe to use.
 class GlobedServerManager {
 public:
     GLOBED_SINGLETON(GlobedServerManager);
