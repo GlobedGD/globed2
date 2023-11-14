@@ -83,7 +83,7 @@ public:
     void writeString(const std::string& str);
     // Write a bytevector, prefixed with 4 bytes indicating length
     void writeByteArray(const util::data::bytevector& vec);
-    // Write a byte array, prefixed with 4 bytes indicating length
+    // Write bytes from a buffer, prefixed with 4 bytes indicating length
     void writeByteArray(const util::data::byte* data, size_t length);
 
     /*
@@ -105,13 +105,13 @@ public:
         return arr;
     }
 
-    // Read a certain amount of bytes into this pointer
+    // Read `size` bytes into the pointer `out`
     void readBytesInto(util::data::byte* out, size_t size);
 
-    // Write a fixed-size bytearray. If the size isn't constant,
+    // Write a fixed-size buffer of bytes. If the size isn't a constant,
     // it is recommended to use writeByteArray instead.
     void writeBytes(const util::data::byte* data, size_t size);
-    // Write a fixed-size bytevector. If the size isn't constant,
+    // Write a fixed-size bytevector. If the size isn't a constant,
     // it is recommended to use writeByteArray instead.
     void writeBytes(const util::data::bytevector& vec);
     // Write a bytearray whose size is known at compile time
@@ -132,13 +132,24 @@ public:
         boundsCheck(byteCount);
 
         auto value = read<BitBufferUnderlyingType<BitCount>>();
+        // I am not 100% sure about it, but it appears that byteswapping is unnecessary for BitBuffer.
+
+        // if constexpr (GLOBED_LITTLE_ENDIAN) {
+        //     value = util::data::byteswap(value);
+        // }
+
         return BitBuffer<BitCount>(value);
     }
 
     // Write all bits from the given `BitBuffer` into the current `ByteBuffer`
     template<size_t BitCount>
     void writeBits(BitBuffer<BitCount> bitbuf) {
-        write(bitbuf.contents());
+        auto value = bitbuf.contents();
+        // if constexpr (GLOBED_LITTLE_ENDIAN) {
+        //     value = util::data::byteswap(value);
+        // }
+
+        write(value);
     }
 
     /*
@@ -150,7 +161,7 @@ public:
     T readValue() {
         T value;
         value.decode(*this);
-        return value;
+        return std::move(value);
     }
 
     // `readValue()` but with a unique_ptr for objects that can't be copied

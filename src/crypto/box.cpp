@@ -73,7 +73,6 @@ size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
     return size + PREFIX_LEN;
 }
 
-
 size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) {
     CRYPTO_ASSERT(size >= PREFIX_LEN, "message is too short");
 

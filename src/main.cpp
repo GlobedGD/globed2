@@ -86,6 +86,7 @@ class $modify(MyMenuLayer, MenuLayer) {
     }
 };
 
+#if GLOBED_VOICE_SUPPORT
 // following listens to a frame and immediately plays it
 void testFmod1() {
     auto& vm = GlobedAudioManager::get();
@@ -138,6 +139,7 @@ void testFmod2() {
         }
     });
 }
+#endif // GLOBED_VOICE_SUPPORT
 
 void testNetworking() {
     auto& nm = NetworkManager::get();

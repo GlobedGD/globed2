@@ -4,12 +4,11 @@
 #include <string>
 #include <util/sync.hpp>
 
-
 /*
-* ErrorQueues is a simple singleton that has 2 smart message queues for errors and warnings
-* made to send network errors over to main thread to display them
-* It is fully thread safe.
+* ErrorQueues is a thread safe singleton for propagating errors to the main thread,
+* so they can be shown to the end user.
 */
+
 class ErrorQueues {
 public:
     GLOBED_SINGLETON(ErrorQueues);

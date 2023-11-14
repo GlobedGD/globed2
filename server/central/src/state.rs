@@ -12,7 +12,7 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use crate::config::ServerConfig;
+use crate::config::{ServerConfig, UserlistMode};
 use blake2::{Blake2b, Digest};
 use digest::consts::U32;
 use totp_rs::{Algorithm, Secret, TOTP};
@@ -147,6 +147,16 @@ impl ServerStateData {
                 }
             }
         }
+    }
+
+    pub fn should_block(&self, account_id: &str) -> anyhow::Result<bool> {
+        let id = account_id.parse::<i32>()?;
+
+        Ok(match self.config.userlist_mode {
+            UserlistMode::None => false,
+            UserlistMode::Blacklist => self.config.userlist.contains(&id),
+            UserlistMode::Whitelist => !self.config.userlist.contains(&id),
+        })
     }
 }
 

@@ -16,9 +16,9 @@ public:
     virtual void disconnect();
     bool poll(long msDelay) override;
 
-    bool connected = false;
+    std::atomic_bool connected = false;
 protected:
-    int socket_ = 0;
+    std::atomic_int socket_ = 0;
 
 private:
     sockaddr_in destAddr_;

@@ -30,6 +30,14 @@ fn default_special_users() -> HashMap<i32, SpecialUser> {
     HashMap::new()
 }
 
+fn default_userlist_mode() -> UserlistMode {
+    UserlistMode::None
+}
+
+fn default_userlist() -> Vec<i32> {
+    Vec::new()
+}
+
 fn default_secret_key() -> String {
     let rand_string: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -75,6 +83,43 @@ pub struct SpecialUser {
     pub color: String,
 }
 
+#[derive(PartialEq, Debug, Default, Clone)]
+pub enum UserlistMode {
+    Blacklist,
+    Whitelist,
+    #[default]
+    None,
+}
+
+impl<'de> Deserialize<'de> for UserlistMode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s: &str = Deserialize::deserialize(deserializer)?;
+        match s.to_lowercase().as_str() {
+            "none" => Ok(UserlistMode::None),
+            "blacklist" => Ok(UserlistMode::Blacklist),
+            "whitelist" => Ok(UserlistMode::Whitelist),
+            _ => Err(serde::de::Error::custom(format!("Unexpected value for 'userlist_mode': {s}"))),
+        }
+    }
+}
+
+impl Serialize for UserlistMode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let value = match self {
+            UserlistMode::None => "none",
+            UserlistMode::Blacklist => "blacklist",
+            UserlistMode::Whitelist => "whitelist",
+        };
+        serializer.serialize_str(value)
+    }
+}
+
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct ServerConfig {
     #[serde(default = "default_web_mountpoint")]
@@ -85,8 +130,14 @@ pub struct ServerConfig {
     pub use_gd_api: bool,
     #[serde(default = "default_gdapi")]
     pub gd_api: String,
+
+    // special users and "special" users
     #[serde(default = "default_special_users")]
     pub special_users: HashMap<i32, SpecialUser>,
+    #[serde(default = "default_userlist_mode")]
+    pub userlist_mode: UserlistMode,
+    #[serde(default = "default_userlist")]
+    pub userlist: Vec<i32>,
 
     // security
     #[serde(default = "default_secret_key")]
@@ -133,6 +184,8 @@ impl ServerConfig {
             use_gd_api: default_use_gd_api(),
             gd_api: default_gdapi(),
             special_users: default_special_users(),
+            userlist_mode: default_userlist_mode(),
+            userlist: default_userlist(),
             secret_key: default_secret_key(),
             game_server_password: default_secret_key(),
             challenge_expiry: default_challenge_expiry(),

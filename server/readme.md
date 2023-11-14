@@ -22,7 +22,11 @@ The following is a simple configuration template with descriptions of all option
             "color": "#ffffff"
         }
     },
+    "userlist_mode": "none", // can be 'blacklist', 'whitelist', 'none'
+    "userlist": [], // list of user IDs to either blacklist or whitelist, depending on 'userlist_mode'
+
     // security related
+
     "secret_key": "random", // secret key for auth codes, keep it secure and don't use the default value.
     "game_server_password": "random", // password for game servers to connect, see below
     "challenge_expiry": 60, // amount of seconds before an auth challenge expires

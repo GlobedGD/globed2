@@ -19,19 +19,21 @@ class PlayerProfilesPacket : public Packet {
 };
 
 #if GLOBED_VOICE_SUPPORT
-
 #include <audio/audio_frame.hpp>
+#endif
 
 class VoiceBroadcastPacket : public Packet {
     GLOBED_PACKET(21010, true)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-
+    
+#if GLOBED_VOICE_SUPPORT
     GLOBED_PACKET_DECODE {
         frame = buf.readValueUnique<EncodedAudioFrame>();
     }
 
     std::unique_ptr<EncodedAudioFrame> frame;
-};
-
+#else
+    GLOBED_PACKET_DECODE {}
 #endif // GLOBED_VOICE_SUPPORT
+};

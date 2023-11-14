@@ -21,7 +21,7 @@
 
 /*
 * GLOBED_ASSERT - throws a runtime error if assertion fails
-* GLOBED_HARD_ASSERT - terminates the program if assertion fails. Don't use it unless the condition indicates a logic error in the code.
+* GLOBED_HARD_ASSERT - terminates the program if assertion fails. Don't use it unless the condition indicates a hard logic error in the code.
 * GLOBED_UNIMPL - throws a runtime error as the method was not implemented and isn't meant to be called
 */
 

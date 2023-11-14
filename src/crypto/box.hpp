@@ -6,16 +6,6 @@
 #include <sodium.h>
 #include <string>
 
-/*
-* CryptoBox - A class for secure data encryption/decryption using libsodium
-*
-* The algorithms used are (as per https://libsodium.gitbook.io/doc/public-key_cryptography/authenticated_encryption#algorithm-details)
-*
-* Key exchange: X25519, encryption: XChaCha20/XSalsa20, authentication: Poly1305
-*
-* All methods (including the constructor) except for `getPublicKey` will throw an exception on failure.
-*/
-
 
 class CryptoBox : public BaseCryptoBox {
 public:
@@ -57,7 +47,7 @@ public:
     util::data::bytearray<KEY_LEN> extractPublicKey() noexcept;
 
     // The data is copied from src into a private member. You are responsible for freeing the source afterwards.
-    // If the length is not equal to `crypto_box_PUBLICKEYBYTES` the behavior is undefined.
+    // If the length is smaller than `CryptoBox::KEY_LEN` the behavior is undefined.
     // This precomputes the shared key and stores it for use in all future operations.
     void setPeerKey(util::data::byte* src);
 

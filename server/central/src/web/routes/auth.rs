@@ -22,6 +22,12 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
 
     let state = context.state_read().await;
 
+    match state.should_block(account_id) {
+        Ok(true) => throw!(StatusCode::FORBIDDEN, "<cr>You had only one shot.</c>"),
+        Err(_) => throw!(StatusCode::BAD_REQUEST, "malformed parameters"),
+        Ok(false) => {}
+    };
+
     let authkey = state.generate_authkey(account_id, account_name);
     let valid = state.verify_totp(&authkey, code);
 
