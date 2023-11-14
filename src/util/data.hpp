@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <array>
 
 namespace util::data {
     using byte = uint8_t;

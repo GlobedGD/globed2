@@ -68,7 +68,7 @@ decode_unimpl!(ServerDisconnectPacket);
 
 /* LoggedInPacket - 20004 */
 
-packet!(LoggedInPacket, 20004, true, {});
+packet!(LoggedInPacket, 20004, false, {});
 
 encode_impl!(LoggedInPacket, _buf, self, {});
 

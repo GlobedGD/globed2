@@ -11,6 +11,7 @@ namespace util::debugging {
         return micros;
     }
 
+#ifndef GLOBED_ROOT_NO_GEODE
     GLOBED_SINGLETON_DEF(PacketLogger)
 
     void PacketLogSummary::print() {
@@ -63,6 +64,7 @@ namespace util::debugging {
 
         return summary;
     }
+#endif // GLOBED_ROOT_NO_GEODE
 
     std::string hexDumpAddress(uintptr_t addr, size_t bytes) {
         unsigned char* ptr = reinterpret_cast<unsigned char*>(addr);

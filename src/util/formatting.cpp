@@ -1,4 +1,6 @@
 #include "formatting.hpp"
+#include <cmath>
+#include <iomanip>
 
 namespace util::formatting {
     std::string formatTime(std::chrono::microseconds time) {

@@ -8,12 +8,11 @@
 #include <map>
 #include <cstring>
 
+// #define GLOBED_USE_XSALSA20
+
 #include <crypto/box.hpp>
 #include <crypto/secret_box.hpp>
-#include <util/rng.hpp>
-#include <util/debugging.hpp>
-#include <util/crypto.hpp>
-#include <util/time.hpp>
+#include <util/all.hpp>
 #include <data/bytebuffer.hpp>
 
 using namespace std::string_literals;
@@ -316,16 +315,18 @@ int main(int argc, const char* *argv) {
         mode = std::string(argv[1]);
     }
 
+    std::cout << "crypto algo: " << CryptoBox::ALGORITHM << std::endl;
+
     if (mode == "test") {
         Benchmarker bench;
         for (auto& [name, test] : tests) {
             bench.start(name);
             try {
                 test();
-                auto time = time::toString(bench.end(name));
+                auto time = formatting::formatTime(bench.end(name));
                 std::cout << "\033[32mTest passed: " << name << " (took " << time << ")\033[0m" << std::endl;
             } catch (const std::runtime_error& e) {
-                auto time = time::toString(bench.end(name));
+                auto time = formatting::formatTime(bench.end(name));
                 std::cerr << "\033[31mTest failed: " << name << " - " << e.what() << " (took " << time << ")\033[0m" << std::endl;
             }
         }
@@ -340,13 +341,13 @@ int main(int argc, const char* *argv) {
         std::cout << "Running crypto benchmarks, 1024 iterations per test" << std::endl;
 
         for (size_t len : lengthRuns) {
-            std::cout << len << " bytes, per iter: " << time::toString(bnCrypto(len, runs)) << std::endl;
+            std::cout << len << " bytes, per iter: " << formatting::formatTime(bnCrypto(len, runs)) << std::endl;
         }
 
         std::cout << "Running in-place crypto benchmarks, 1024 iterations per test" << std::endl;
 
         for (size_t len : lengthRuns) {
-            std::cout << len << " bytes, per iter: " << time::toString(bnCryptoInplace(len, runs)) << std::endl;
+            std::cout << len << " bytes, per iter: " << formatting::formatTime(bnCryptoInplace(len, runs)) << std::endl;
         }
 
     } else {

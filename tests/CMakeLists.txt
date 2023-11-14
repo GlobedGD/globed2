@@ -17,6 +17,7 @@ add_executable(globed_tests tests.cpp
     ../src/util/rng.cpp
     ../src/util/time.cpp
     ../src/util/debugging.cpp
+    ../src/util/formatting.cpp
     ../src/util/crypto.cpp
 )
 

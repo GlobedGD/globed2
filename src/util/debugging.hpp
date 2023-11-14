@@ -48,6 +48,7 @@ namespace util::debugging {
         void print();
     };
 
+#ifndef GLOBED_ROOT_NO_GEODE
     class PacketLogger {
     public:
         GLOBED_SINGLETON(PacketLogger)
@@ -69,6 +70,8 @@ namespace util::debugging {
     private:
         collections::CappedQueue<PacketLog, 25000> queue;
     };
+    
+#endif // GLOBED_ROOT_NO_GEODE
 
     std::string hexDumpAddress(uintptr_t addr, size_t bytes);
     std::string hexDumpAddress(void* ptr, size_t bytes);

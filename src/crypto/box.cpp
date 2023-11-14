@@ -11,19 +11,19 @@ CryptoBox::CryptoBox(byte* key) {
     CRYPTO_SODIUM_INIT;
 
     memBasePtr = reinterpret_cast<byte*>(sodium_malloc(
-        crypto_box_PUBLICKEYBYTES * 2 + // publicKey, peerPublicKey
-        crypto_box_SECRETKEYBYTES + // secretKey
-        crypto_box_BEFORENMBYTES // sharedKey
+        KEY_LEN * 2 + // publicKey, peerPublicKey
+        SECRET_KEY_LEN + // secretKey
+        SHARED_KEY_LEN // sharedKey
     ));
 
     CRYPTO_ASSERT(memBasePtr != nullptr, "sodium_malloc returned nullptr");
 
     secretKey = memBasePtr; // base + 0
-    publicKey = secretKey + crypto_box_SECRETKEYBYTES; // base + 32
-    peerPublicKey = publicKey + crypto_box_PUBLICKEYBYTES; // base + 64
-    sharedKey = peerPublicKey + crypto_box_PUBLICKEYBYTES; // base + 96
+    publicKey = secretKey + SECRET_KEY_LEN; // base + 32
+    peerPublicKey = publicKey + KEY_LEN; // base + 64
+    sharedKey = peerPublicKey + KEY_LEN; // base + 96
 
-    CRYPTO_ERR_CHECK(crypto_box_keypair(publicKey, secretKey), "crypto_box_keypair failed");
+    CRYPTO_ERR_CHECK(func_box_keypair(publicKey, secretKey), "func_box_keypair failed");
 
     if (key != nullptr) {
         setPeerKey(key);
@@ -40,15 +40,16 @@ byte* CryptoBox::getPublicKey() noexcept {
     return publicKey;
 }
 
-bytearray<crypto_box_PUBLICKEYBYTES> CryptoBox::extractPublicKey() noexcept {
-    bytearray<crypto_box_PUBLICKEYBYTES> out;
-    std::memcpy(out.data(), publicKey, crypto_box_PUBLICKEYBYTES);
+bytearray<CryptoBox::KEY_LEN> CryptoBox::extractPublicKey() noexcept {
+    bytearray<KEY_LEN> out;
+    std::memcpy(out.data(), publicKey, KEY_LEN);
     return out;
 }
 
 void CryptoBox::setPeerKey(byte* key) {
-    std::memcpy(peerPublicKey, key, crypto_box_PUBLICKEYBYTES);
-    CRYPTO_ERR_CHECK(crypto_box_beforenm(sharedKey, peerPublicKey, secretKey), "crypto_box_beforenm failed");
+    std::memcpy(peerPublicKey, key, KEY_LEN);
+
+    CRYPTO_ERR_CHECK(func_box_beforenm(sharedKey, peerPublicKey, secretKey), "func_box_beforenm failed");
 }
 
 constexpr size_t CryptoBox::nonceLength() {
@@ -64,7 +65,7 @@ size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
     util::crypto::secureRandom(nonce, NONCE_LEN);
 
     byte* ciphertext = dest + NONCE_LEN;
-    CRYPTO_ERR_CHECK(crypto_box_easy_afternm(ciphertext, src, size, nonce, sharedKey), "crypto_box_easy_afternm failed");
+    CRYPTO_ERR_CHECK(func_box_easy(ciphertext, src, size, nonce, sharedKey), "func_box_easy failed");
 
     // prepend the nonce
     std::memcpy(dest, nonce, NONCE_LEN);
@@ -82,7 +83,7 @@ size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* des
     size_t plaintextLength = size - PREFIX_LEN;
     size_t ciphertextLength = size - NONCE_LEN;
 
-    CRYPTO_ERR_CHECK(crypto_box_open_easy_afternm(dest, ciphertext, ciphertextLength, nonce, sharedKey), "crypto_box_open_easy_afternm failed");
+    CRYPTO_ERR_CHECK(func_box_open_easy(dest, ciphertext, ciphertextLength, nonce, sharedKey), "func_box_open_easy failed");
 
     return plaintextLength;
 }

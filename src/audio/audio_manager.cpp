@@ -25,7 +25,6 @@ GlobedAudioManager::~GlobedAudioManager() {
     _terminating = true;
 }
 
-
 std::vector<AudioRecordingDevice> GlobedAudioManager::getRecordingDevices() {
     std::vector<AudioRecordingDevice> out;
 
@@ -124,7 +123,7 @@ void GlobedAudioManager::stopRecording() {
     recordMutex.lock();
 
     recordActive = false;
-    recordCallback = [](auto&& _){};
+    recordCallback = [](const auto& _){};
 
     recordMutex.unlock();
 

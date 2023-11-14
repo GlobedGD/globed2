@@ -11,7 +11,7 @@ use anyhow::anyhow;
 use bytebuffer::{ByteBuffer, ByteReader};
 use crypto_box::{
     aead::{Aead, AeadCore, OsRng},
-    SalsaBox, SecretKey,
+    ChaChaBox, SecretKey,
 };
 use globed_shared::PROTOCOL_VERSION;
 use log::warn;
@@ -46,7 +46,7 @@ pub struct GameServerThread {
     tx: Sender<ServerThreadMessage>,
     awaiting_termination: AtomicBool,
     authenticated: AtomicBool,
-    crypto_box: Mutex<Option<SalsaBox>>,
+    crypto_box: Mutex<Option<ChaChaBox>>,
 
     peer: SocketAddrV4,
     socket: Arc<UdpSocket>,
@@ -230,7 +230,7 @@ impl GameServerThread {
         packet.encode(&mut cltxtbuf);
 
         let cbox = cbox.as_ref().unwrap();
-        let nonce = SalsaBox::generate_nonce(&mut OsRng);
+        let nonce = ChaChaBox::generate_nonce(&mut OsRng);
 
         let encrypted = cbox.encrypt(&nonce, cltxtbuf.as_bytes())?;
 
@@ -305,7 +305,7 @@ impl GameServerThread {
         let mut cbox = self.crypto_box.lock().await;
         gs_assert!(cbox.is_none(), "attempting to initialize a cryptobox twice");
 
-        let sbox = SalsaBox::new(&packet.key.pubkey, &self.secret_key);
+        let sbox = ChaChaBox::new(&packet.key.pubkey, &self.secret_key);
         *cbox = Some(sbox);
 
         gs_retpacket!(CryptoHandshakeResponsePacket {

@@ -11,7 +11,7 @@ globed-shared = { path = "../shared" }
 anyhow = "1.0.75"
 bytebuffer = "2.2.0"
 colored = "2.0.4"
-crypto_box = { version = "0.9.1", features = ["std"] }
+crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
 log = { version = "0.4.20" }
 reqwest = "0.11.22"
 rustc-hash = "1.1.0"

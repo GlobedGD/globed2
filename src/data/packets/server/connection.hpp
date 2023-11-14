@@ -42,7 +42,7 @@ class ServerDisconnectPacket : public Packet {
 };
 
 class LoggedInPacket : public Packet {
-    GLOBED_PACKET(20004, true)
+    GLOBED_PACKET(20004, false)
 
     GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE {}
