@@ -237,11 +237,7 @@ impl GameServerThread {
 
         let encrypted = cbox.encrypt(&nonce, cltxtbuf.as_bytes())?;
 
-        // this dipshit piece of software shits itself and cannot realize that
-        // (&nonce) -> &[u8] and not &GenericArray god i fucking hate rust analyzer
-        #[cfg(not(rust_analyzer))]
         buf.write_bytes(&nonce);
-
         buf.write_bytes(&encrypted);
 
         Ok(buf)
