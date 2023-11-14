@@ -160,7 +160,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         let mut state = context.state_write().await;
 
         state.active_challenges.remove(&account_id);
-        let authkey = state.generate_authkey(&account_id.to_string(), &account_name);
+        let authkey = state.generate_authkey(&account_id.to_string(), account_name);
         drop(state);
 
         context.write(b64e::STANDARD.encode(authkey));
@@ -186,10 +186,6 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         Ok(context.remote_addr.ip())
     };
 
-    if user_ip.is_err() {
-        throw!(StatusCode::BAD_REQUEST, user_ip.unwrap_err().to_string());
-    }
-
     let user_ip = match user_ip {
         Ok(x) => x,
         Err(err) => throw!(StatusCode::BAD_REQUEST, err.to_string()),
@@ -202,6 +198,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
             throw!(StatusCode::TOO_MANY_REQUESTS, err.to_string())
         }
     }
+
     drop(state);
 
     let result = http_client

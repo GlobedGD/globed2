@@ -2,9 +2,9 @@ use std::{
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, Ordering},
-        Arc,
+        Arc, Mutex as StdMutex,
     },
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use anyhow::anyhow;
@@ -14,7 +14,7 @@ use crypto_box::{
     ChaChaBox, SecretKey,
 };
 use globed_shared::PROTOCOL_VERSION;
-use log::warn;
+use log::{debug, warn};
 use tokio::{
     net::UdpSocket,
     sync::{
@@ -46,12 +46,14 @@ pub struct GameServerThread {
     tx: Sender<ServerThreadMessage>,
     awaiting_termination: AtomicBool,
     authenticated: AtomicBool,
-    crypto_box: Mutex<Option<ChaChaBox>>,
+    crypto_box: StdMutex<Option<ChaChaBox>>,
 
     peer: SocketAddrV4,
     socket: Arc<UdpSocket>,
     pub account_id: AtomicI32,
-    pub account_data: Mutex<PlayerAccountData>,
+    pub account_data: StdMutex<PlayerAccountData>,
+
+    last_voice_packet: StdMutex<SystemTime>,
 }
 
 macro_rules! gs_assert {
@@ -117,12 +119,13 @@ impl GameServerThread {
             peer,
             secret_key,
             socket,
-            crypto_box: Mutex::new(None),
+            crypto_box: StdMutex::new(None),
             account_id: AtomicI32::new(0),
             authenticated: AtomicBool::new(false),
             game_server,
             awaiting_termination: AtomicBool::new(false),
-            account_data: Mutex::new(PlayerAccountData::default()), // last_keepalive: Mutex::new(SystemTime::now()),
+            account_data: StdMutex::new(PlayerAccountData::default()),
+            last_voice_packet: StdMutex::new(SystemTime::now()),
         }
     }
 
@@ -189,7 +192,7 @@ impl GameServerThread {
             return Ok(packet);
         }
 
-        let cbox = self.crypto_box.lock().await;
+        let cbox = self.crypto_box.lock().unwrap();
 
         gs_assert!(
             cbox.is_some(),
@@ -219,7 +222,7 @@ impl GameServerThread {
             return Ok(buf);
         }
 
-        let cbox = self.crypto_box.lock().await;
+        let cbox = self.crypto_box.lock().unwrap();
 
         gs_assert!(
             cbox.is_some(),
@@ -234,7 +237,11 @@ impl GameServerThread {
 
         let encrypted = cbox.encrypt(&nonce, cltxtbuf.as_bytes())?;
 
+        // this dipshit piece of software shits itself and cannot realize that
+        // (&nonce) -> &[u8] and not &GenericArray god i fucking hate rust analyzer
+        #[cfg(not(rust_analyzer))]
         buf.write_bytes(&nonce);
+
         buf.write_bytes(&encrypted);
 
         Ok(buf)
@@ -302,7 +309,7 @@ impl GameServerThread {
             );
         }
 
-        let mut cbox = self.crypto_box.lock().await;
+        let mut cbox = self.crypto_box.lock().unwrap();
         gs_assert!(cbox.is_none(), "attempting to initialize a cryptobox twice");
 
         let sbox = ChaChaBox::new(&packet.key.pubkey, &self.secret_key);
@@ -351,12 +358,14 @@ impl GameServerThread {
 
         let player_name = response.split_once(':').ok_or(anyhow!("central server is drunk"))?.1;
 
-        let mut account_data = self.account_data.lock().await;
+        let mut account_data = self.account_data.lock().unwrap();
         account_data.account_id = packet.account_id;
         account_data.name = player_name.to_string();
 
         self.authenticated.store(true, Ordering::Relaxed);
         self.account_id.store(packet.account_id, Ordering::Relaxed);
+
+        debug!("Login successful from {player_name} ({})", packet.account_id);
 
         gs_retpacket!(LoggedInPacket {})
     });
@@ -371,7 +380,7 @@ impl GameServerThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
         gs_needauth!(self);
 
-        let mut account_data = self.account_data.lock().await;
+        let mut account_data = self.account_data.lock().unwrap();
         account_data.icons.clone_from(&packet.icons);
         Ok(None)
     });
@@ -386,6 +395,24 @@ impl GameServerThread {
 
     gs_handler!(self, handle_voice, VoicePacket, packet, {
         gs_needauth!(self);
+
+        // check the throughput
+        {
+            let mut last_voice_packet = self.last_voice_packet.lock().unwrap();
+            let now = SystemTime::now();
+            let passed_time = now.duration_since(*last_voice_packet)?.as_millis();
+            *last_voice_packet = now;
+
+            let total_size = packet.data.opus_frames.iter().map(|frame| frame.len()).sum::<usize>();
+
+            let throughput = (total_size as f32) / (passed_time as f32); // in kb/s
+
+            debug!("voice packet throughput: {}kb/s", throughput);
+            if throughput > 8f32 {
+                warn!("rejecting a voice packet, throughput above the limit: {}kb/s", throughput);
+                return Ok(None);
+            }
+        }
 
         let vpkt = VoiceBroadcastPacket {
             player_id: self.account_id.load(Ordering::Relaxed),

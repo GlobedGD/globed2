@@ -55,7 +55,11 @@ class $modify(MyMenuLayer, MenuLayer) {
     }
 
     void onMoreGames(CCObject*) {
-        testNetworking();
+        if (NetworkManager::get().established()) {
+            util::debugging::PacketLogger::get().getSummary().print();
+        } else {
+            testNetworking();
+        }
 
         // nm.addListener<PingResponsePacket>([](auto* packet) {
         //     log::debug("got ping packet with id {}, pc: {}", packet->id, packet->playerCount);
@@ -154,7 +158,7 @@ void testNetworking() {
             .then([=](std::string response) {
                 log::debug("got token for gameserver reused!!: {}", response);
 
-                *GlobedAccountManager::get().authToken.lock() = response;
+                GlobedAccountManager::get().authToken.lock() = response;
                 GlobedAccountManager::get().accountId = 1;
                 GlobedAccountManager::get().accountName = "dankmeme01";
                 auto& nm = NetworkManager::get();

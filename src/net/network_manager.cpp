@@ -80,6 +80,8 @@ void NetworkManager::connect(const std::string& addr, unsigned short port) {
     if (connected()) {
         this->disconnect(true);
     }
+
+    GLOBED_ASSERT(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
     
     GLOBED_ASSERT(socket.connect(addr, port), "failed to connect to the server")
     socket.createBox();

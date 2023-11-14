@@ -28,7 +28,14 @@ namespace util::debugging {
                 formatting::formatBytes(totalBytesIn)
             );
             geode::log::debug("Average bytes per packet: {}", formatting::formatBytes(bytesPerPacket));
-            for (const auto& [id, count] : packetCounts) {
+            
+            // sort packets by the counts
+            std::vector<std::pair<packetid_t, size_t>> pc(packetCounts.begin(), packetCounts.end());
+            std::sort(pc.begin(), pc.end(), [](const auto& a, const auto& b) {
+                return a.second > b.second;
+            });
+
+            for (const auto& [id, count] : pc) {
                 geode::log::debug("Packet {} - {} occurrences", id, count);
             }
         }

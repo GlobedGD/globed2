@@ -16,37 +16,31 @@
 * All methods (including the constructor) except for `getPublicKey` will throw an exception on failure.
 */
 
+
 class CryptoBox : public BaseCryptoBox {
 public:
 
 // XSalsa20 is theoretically slower and less secure, but still possible to use by defining GLOBED_USE_XSALSA20
 #ifdef GLOBED_USE_XSALSA20
-    constexpr static size_t NONCE_LEN = crypto_box_NONCEBYTES;
-    constexpr static size_t MAC_LEN = crypto_box_MACBYTES;
-
-    constexpr static size_t KEY_LEN = crypto_box_PUBLICKEYBYTES;
-    constexpr static size_t SECRET_KEY_LEN = crypto_box_SECRETKEYBYTES;
-    constexpr static size_t SHARED_KEY_LEN = crypto_box_BEFORENMBYTES;
-
-    constexpr static auto func_box_keypair = crypto_box_keypair;
-    constexpr static auto func_box_beforenm = crypto_box_beforenm;
-    constexpr static auto func_box_easy = crypto_box_easy_afternm;
-    constexpr static auto func_box_open_easy = crypto_box_open_easy_afternm;
     constexpr static const char* ALGORITHM = "XSalsa20Poly1305";
+# define CRYPTO_JOIN(arg) crypto_box_##arg
 #else
-    constexpr static size_t NONCE_LEN = crypto_box_curve25519xchacha20poly1305_NONCEBYTES;
-    constexpr static size_t MAC_LEN = crypto_box_curve25519xchacha20poly1305_MACBYTES;
-
-    constexpr static size_t KEY_LEN = crypto_box_curve25519xchacha20poly1305_PUBLICKEYBYTES;
-    constexpr static size_t SECRET_KEY_LEN = crypto_box_curve25519xchacha20poly1305_SECRETKEYBYTES;
-    constexpr static size_t SHARED_KEY_LEN = crypto_box_curve25519xchacha20poly1305_BEFORENMBYTES;
-
-    constexpr static auto func_box_keypair = crypto_box_curve25519xchacha20poly1305_keypair;
-    constexpr static auto func_box_beforenm = crypto_box_curve25519xchacha20poly1305_beforenm;
-    constexpr static auto func_box_easy = crypto_box_curve25519xchacha20poly1305_easy_afternm;
-    constexpr static auto func_box_open_easy = crypto_box_curve25519xchacha20poly1305_open_easy_afternm;
     constexpr static const char* ALGORITHM = "XChaCha20Poly1305";
+# define CRYPTO_JOIN(arg) crypto_box_curve25519xchacha20poly1305_##arg
 #endif
+
+    // i ain't retyping crypto_box_curve25519xchacha20poly1305_open_easy_afternm, okay?
+    constexpr static size_t NONCE_LEN = CRYPTO_JOIN(NONCEBYTES);
+    constexpr static size_t MAC_LEN = CRYPTO_JOIN(MACBYTES);
+
+    constexpr static size_t KEY_LEN = CRYPTO_JOIN(PUBLICKEYBYTES);
+    constexpr static size_t SECRET_KEY_LEN = CRYPTO_JOIN(SECRETKEYBYTES);
+    constexpr static size_t SHARED_KEY_LEN = CRYPTO_JOIN(BEFORENMBYTES);
+
+    constexpr static auto func_box_keypair = CRYPTO_JOIN(keypair);
+    constexpr static auto func_box_beforenm = CRYPTO_JOIN(beforenm);
+    constexpr static auto func_box_easy = CRYPTO_JOIN(easy_afternm);
+    constexpr static auto func_box_open_easy = CRYPTO_JOIN(open_easy_afternm);
 
     constexpr static size_t PREFIX_LEN = NONCE_LEN + MAC_LEN;
 

@@ -7,6 +7,7 @@ use anyhow::anyhow;
 use crypto_box::{aead::OsRng, SecretKey};
 use globed_shared::GameServerBootData;
 use rustc_hash::FxHashMap;
+
 #[allow(unused_imports)]
 use tokio::sync::oneshot; // no way
 
@@ -75,18 +76,16 @@ impl GameServer {
     }
 
     pub async fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
-        let mut out = Vec::new();
+        let threads = self.threads.read().await;
 
-        for id in ids {
-            let threads = self.threads.read().await;
-            for thread in threads.values() {
-                if thread.account_id.load(Ordering::Relaxed) == *id {
-                    out.push(thread.account_data.lock().await.clone());
-                }
-            }
-        }
-
-        out
+        ids.iter()
+            .filter_map(|id| {
+                threads
+                    .values()
+                    .find(|thread| thread.account_id.load(Ordering::Relaxed) == *id)
+                    .map(|thread| thread.account_data.lock().unwrap().clone())
+            })
+            .collect()
     }
 
     /* private handling stuff */
