@@ -83,41 +83,15 @@ pub struct SpecialUser {
     pub color: String,
 }
 
-#[derive(PartialEq, Debug, Default, Clone)]
+#[derive(PartialEq, Debug, Default, Clone, Serialize, Deserialize)]
 pub enum UserlistMode {
+    #[serde(rename = "blacklist")]
     Blacklist,
+    #[serde(rename = "whitelist")]
     Whitelist,
     #[default]
+    #[serde(rename = "none")]
     None,
-}
-
-impl<'de> Deserialize<'de> for UserlistMode {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s: &str = Deserialize::deserialize(deserializer)?;
-        match s.to_lowercase().as_str() {
-            "none" => Ok(UserlistMode::None),
-            "blacklist" => Ok(UserlistMode::Blacklist),
-            "whitelist" => Ok(UserlistMode::Whitelist),
-            _ => Err(serde::de::Error::custom(format!("Unexpected value for 'userlist_mode': {s}"))),
-        }
-    }
-}
-
-impl Serialize for UserlistMode {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let value = match self {
-            UserlistMode::None => "none",
-            UserlistMode::Blacklist => "blacklist",
-            UserlistMode::Whitelist => "whitelist",
-        };
-        serializer.serialize_str(value)
-    }
 }
 
 #[derive(Serialize, Deserialize, Default, Clone)]

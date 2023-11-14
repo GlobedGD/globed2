@@ -7,7 +7,6 @@ struct CachedSettings {
 
 // Getting a setting is thread-safe. `set`, `refreshCache` and `getCached` are only safe to call from the main thread.
 class GlobedSettings {
-public:
     GLOBED_SINGLETON(GlobedSettings);
     GlobedSettings();
 

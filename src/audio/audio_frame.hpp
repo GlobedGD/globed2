@@ -5,8 +5,8 @@
 #if GLOBED_VOICE_SUPPORT
 
 const size_t VOICE_TARGET_SAMPLERATE = 24000;
-const size_t VOICE_TARGET_FRAMESIZE = 1440; // for opus, 60ms
-const float VOICE_CHUNK_RECORD_TIME = 1.2f; // the audio buffer that will be sent in a single packet
+const size_t VOICE_TARGET_FRAMESIZE = 1440; // for opus, 60ms per single opus frame
+const float VOICE_CHUNK_RECORD_TIME = 1.2f; // the audio buffer that will be sent in a single packet in seconds
 
 #include "opus_codec.hpp"
 #include <data/bytebuffer.hpp>

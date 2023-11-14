@@ -21,14 +21,14 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
         this->socket.box->setPeerKey(packet->data.key.data());
-        _established = true;
+        _established.store(true, std::memory_order::relaxed);
         // and lets try to login!
         auto& am = GlobedAccountManager::get();
         this->send(LoginPacket::create(am.accountId, *am.authToken.lock()));
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
-        // ?
+        // TODO ?
         log::debug("keepalive players: {}", packet->playerCount);
     });
 
@@ -39,7 +39,7 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
         log::info("Successfully logged into the server!");
-        this->_loggedin = true;
+        _loggedin.store(true, std::memory_order::relaxed);
     });
 
     // boot up the threads
@@ -55,9 +55,9 @@ NetworkManager::~NetworkManager() {
     builtinListeners.lock()->clear();
 
     // wait for threads
-    _running = false;
+    _running.store(false, std::memory_order::seq_cst);
 
-    if (socket.connected) {
+    if (connected()) {
         log::debug("disconnecting from the server..");
         this->disconnect();
     }
@@ -102,8 +102,8 @@ void NetworkManager::disconnect(bool quiet) {
         delete pkt;
     }
 
-    _established = false;
-    _loggedin = false;
+    _established.store(false, std::memory_order::relaxed);
+    _loggedin.store(false, std::memory_order::relaxed);
 
     socket.disconnect();
     socket.cleanupBox();
@@ -258,7 +258,7 @@ void NetworkManager::maybeDisconnectIfDead() {
 
 PollBothResult NetworkManager::pollBothSockets(long msDelay) {
     PollBothResult out;
-    if (!socket.connected) {
+    if (!connected()) {
         // only poll the ping socket in that case
         out.hasNormal = false;
         out.hasPing = pingSocket.poll(msDelay);
@@ -296,13 +296,13 @@ void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback callback) 
 }
 
 bool NetworkManager::connected() {
-    return socket.connected;
+    return socket.connected.load(std::memory_order::relaxed);
 }
 
 bool NetworkManager::established() {
-    return socket.connected && _established;
+    return connected() && _established.load(std::memory_order::relaxed);
 }
 
 bool NetworkManager::authenticated() {
-    return socket.connected && _loggedin;
+    return established() && _loggedin.load(std::memory_order::relaxed);
 }

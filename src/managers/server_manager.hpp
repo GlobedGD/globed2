@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <chrono>
 
+namespace chrono = std::chrono;
+
 struct GameServerAddress {
     std::string ip;
     unsigned short port;
@@ -14,22 +16,21 @@ struct GameServerAddress {
 struct GameServerInfo {
     GameServerAddress address;
 
-    std::chrono::milliseconds ping;
-    std::unordered_map<uint32_t, std::chrono::milliseconds> pendingPings;
-    util::collections::CappedQueue<std::chrono::milliseconds, 100> pingHistory;
+    chrono::milliseconds ping;
+    std::unordered_map<uint32_t, chrono::milliseconds> pendingPings;
+    util::collections::CappedQueue<chrono::milliseconds, 100> pingHistory;
 
     uint32_t playerCount;
 };
 
 // provides a view with server ping and player count
 struct GameServerView {
-    std::chrono::milliseconds ping;
+    chrono::milliseconds ping;
     uint32_t playerCount;
 };
 
 // This class is fully thread safe to use.
 class GlobedServerManager {
-public:
     GLOBED_SINGLETON(GlobedServerManager);
     GlobedServerManager();
 
@@ -37,7 +38,7 @@ public:
     void recordPingResponse(uint32_t pingId, uint32_t playerCount);
 
     GameServerView getServerView(const std::string& serverId);
-    std::vector<std::chrono::milliseconds> getPingHistory(const std::string& serverId);
+    std::vector<chrono::milliseconds> getPingHistory(const std::string& serverId);
 
     std::unordered_map<std::string, GameServerAddress> getServerAddresses();
 

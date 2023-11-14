@@ -89,6 +89,7 @@ AudioStream::AudioStream() {
 
 AudioStream::~AudioStream() {
     geode::log::debug("releasing sound");
+    // TODO fix this wtf
     // if (sound) sound->release();
 }
 

@@ -39,7 +39,7 @@ GameServerView GlobedServerManager::getServerView(const std::string& serverId) {
     };
 }
 
-std::vector<std::chrono::milliseconds> GlobedServerManager::getPingHistory(const std::string& serverId) {
+std::vector<chrono::milliseconds> GlobedServerManager::getPingHistory(const std::string& serverId) {
     auto& gsi = servers.read()->at(serverId);
     return gsi.pingHistory.extract();
 }

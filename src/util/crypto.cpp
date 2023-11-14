@@ -9,16 +9,6 @@ using namespace util::data;
 
 namespace util::crypto {
 
-util::data::bytevector secureRandom(size_t size) {
-    bytevector out(size);
-    secureRandom(out.data(), size);
-    return out;
-}
-
-void secureRandom(util::data::byte* dest, size_t size) {
-    randombytes_buf(dest, size);
-}
-
 bytevector pwHash(const std::string& input) {
     return pwHash(reinterpret_cast<const byte*>(input.c_str()), input.size());
 }

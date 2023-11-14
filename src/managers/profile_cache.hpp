@@ -5,7 +5,6 @@
 
 // This class is fully thread safe to use.
 class ProfileCacheManager {
-public:
     GLOBED_SINGLETON(ProfileCacheManager)
     ProfileCacheManager();
 

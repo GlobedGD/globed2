@@ -47,4 +47,4 @@ RobTop - thank you for releasing this awesome game :)
 
 * [Geode](https://github.com/geode-sdk/geode) - the one thing that made all of this possible :)
 * [Opus](https://github.com/xiph/opus) - audio codec used for audio compression
-* [libsodium](https://github.com/jedisct1/libsodium) - crypto library used for data encryption
+* [libsodium](https://github.com/jedisct1/libsodium) - library used for data encryption

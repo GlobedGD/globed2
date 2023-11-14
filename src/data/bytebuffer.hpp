@@ -74,6 +74,8 @@ public:
     * Read and write methods for dynamic-sized types
     */
 
+    // TODO strings might be broken if non ascii characters are sent
+
     // Read a string, prefixed with 4 bytes indicating length
     std::string readString();
     // Read a bytevector, prefixed with 4 bytes indicating length

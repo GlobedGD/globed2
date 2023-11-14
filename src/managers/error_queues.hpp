@@ -10,7 +10,6 @@
 */
 
 class ErrorQueues {
-public:
     GLOBED_SINGLETON(ErrorQueues);
     ErrorQueues();
 

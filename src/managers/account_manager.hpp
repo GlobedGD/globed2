@@ -6,7 +6,6 @@
 
 // This class is not guaranteed to be fully thread safe.
 class GlobedAccountManager {
-public:
     GLOBED_SINGLETON(GlobedAccountManager)
 
     int32_t accountId;

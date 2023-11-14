@@ -55,7 +55,7 @@ namespace util::debugging {
         PacketLogger() {}
 
         inline void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {
-#ifdef GLOBED_DEBUG_PACKETS
+# ifdef GLOBED_DEBUG_PACKETS
             geode::log::debug("{} packet {}, encrypted: {}, bytes: {}", outgoing ? "Sending" : "Receiving", id, encrypted ? "true" : "false", bytes);
             queue.push(PacketLog {
                 .id = id,
@@ -63,7 +63,7 @@ namespace util::debugging {
                 .outgoing = outgoing,
                 .bytes = bytes
             });
-#endif
+# endif
         }
 
         PacketLogSummary getSummary();

@@ -18,12 +18,12 @@ The following is a simple configuration template with descriptions of all option
     "gd_api": "http://www.boomlings.com/database/getGJComments21.php", // can be a proxy for the comments endpoint
     "special_users": {
         "9568205": {
-            "name": "imcool",
-            "color": "#ffffff"
+            "name": "imcool", // optional so that you can know who this is
+            "color": "#ffffff" // will be the name color of the user
         }
     },
     "userlist_mode": "none", // can be 'blacklist', 'whitelist', 'none'
-    "userlist": [], // list of user IDs to either blacklist or whitelist, depending on 'userlist_mode'
+    "userlist": [], // list of user account IDs to either block or allow, depending on 'userlist_mode'
 
     // security related
 
