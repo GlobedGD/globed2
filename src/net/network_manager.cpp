@@ -28,7 +28,7 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
-        // TODO ?
+        GlobedServerManager::get().pingFinishActive(packet->playerCount);
         log::debug("keepalive players: {}", packet->playerCount);
     });
 
@@ -63,14 +63,12 @@ NetworkManager::~NetworkManager() {
     }
 
     log::debug("waiting for threads to die..");
+
     if (threadMain.joinable()) threadMain.join();
     if (threadRecv.joinable()) threadRecv.join();
     if (threadTasks.joinable()) threadTasks.join();
 
     log::debug("cleaning up..");
-    for (Packet* packet : packetQueue.popAll()) {
-        delete packet;
-    }
 
     util::net::cleanup();
     log::debug("Goodbye!");
@@ -97,9 +95,7 @@ void NetworkManager::disconnect(bool quiet) {
 
     if (!quiet) {
         // send it directly instead of pushing to the queue
-        auto pkt = DisconnectPacket::create();
-        socket.sendPacket(pkt);
-        delete pkt;
+        socket.sendPacket(DisconnectPacket::create());
     }
 
     _established.store(false, std::memory_order::relaxed);
@@ -109,7 +105,7 @@ void NetworkManager::disconnect(bool quiet) {
     socket.cleanupBox();
 }
 
-void NetworkManager::send(Packet* packet) {
+void NetworkManager::send(std::shared_ptr<Packet> packet) {
     GLOBED_ASSERT(socket.connected, "tried to send a packet while disconnected")
     packetQueue.push(packet);
 }
@@ -144,14 +140,12 @@ void NetworkManager::threadMainFunc() {
 
         auto messages = packetQueue.popAll();
 
-        for (Packet* packet : messages) {
+        for (auto packet : messages) {
             try {
                 socket.sendPacket(packet);
             } catch (const std::exception& e) {
                 ErrorQueues::get().error(e.what());
             }
-
-            delete packet;
         }
     }
 }
@@ -164,7 +158,7 @@ void NetworkManager::threadRecvFunc() {
             try {
                 auto packet = pingSocket.recvPacket();
                 if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
-                    GlobedServerManager::get().recordPingResponse(pingr->id, pingr->playerCount);
+                    GlobedServerManager::get().pingFinish(pingr->id, pingr->playerCount);
                 }
             } catch (const std::exception& e) {
                 ErrorQueues::get().warn(fmt::format("ping error: {}", e.what()));
@@ -217,19 +211,17 @@ void NetworkManager::threadTasksFunc() {
         for (auto task : taskQueue.popAll()) {
             switch (task) {
             case NetworkThreadTask::PingServers: {
-                for (auto& [serverId, address] : GlobedServerManager::get().getServerAddresses()) {
-                    auto pingId = GlobedServerManager::get().addPendingPing(serverId);
-                    Packet* packet = PingPacket::create(pingId);
+                for (auto& [serverId, server] : GlobedServerManager::get().extractGameServers()) {
+                    auto pingId = GlobedServerManager::get().pingStart(serverId);
+                    auto packet = PingPacket::create(pingId);
 
                     try {
-                        pingSocket.connect(address.ip, address.port);
+                        pingSocket.connect(server.address.ip, server.address.port);
                         pingSocket.sendPacket(packet);
                         pingSocket.disconnect();
                     } catch (const std::exception& e) {
                         ErrorQueues::get().warn(e.what());
                     }
-
-                    delete packet;
                 }
             }
             }
@@ -243,6 +235,7 @@ void NetworkManager::maybeSendKeepalive() {
         if ((now - lastKeepalive) > KEEPALIVE_INTERVAL) {
             lastKeepalive = now;
             this->send(KeepalivePacket::create());
+            GlobedServerManager::get().pingStartActive();
         }
     }
 }

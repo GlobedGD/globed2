@@ -10,8 +10,8 @@ class PingPacket : public Packet {
 
     PingPacket(uint32_t _id) : id(_id) {}
 
-    static PingPacket* create(uint32_t id) {
-        return new PingPacket(id);
+    static std::shared_ptr<Packet>  create(uint32_t id) {
+        return std::make_shared<PingPacket>(id);
     }
 
     uint32_t id;
@@ -28,8 +28,8 @@ class CryptoHandshakeStartPacket : public Packet {
 
     CryptoHandshakeStartPacket(uint16_t _protocol, CryptoPublicKey _key) : protocol(_protocol), key(_key) {}
 
-    static CryptoHandshakeStartPacket* create(uint16_t protocol, CryptoPublicKey key) {
-        return new CryptoHandshakeStartPacket(protocol, key);
+    static std::shared_ptr<Packet> create(uint16_t protocol, CryptoPublicKey key) {
+        return std::make_shared<CryptoHandshakeStartPacket>(protocol, key);
     }
 
     uint16_t protocol;
@@ -43,8 +43,8 @@ class KeepalivePacket : public Packet {
     GLOBED_PACKET_DECODE_UNIMPL
 
     KeepalivePacket() {}
-    static KeepalivePacket* create() {
-        return new KeepalivePacket;
+    static std::shared_ptr<Packet> create() {
+        return std::make_shared<KeepalivePacket>();
     }
 };
 
@@ -60,8 +60,8 @@ class LoginPacket : public Packet {
     
     LoginPacket(int32_t _accid, const std::string& _token) : accountId(_accid), token(_token) {}
 
-    static LoginPacket* create(int32_t accid, const std::string& token) {
-        return new LoginPacket(accid, token);
+    static std::shared_ptr<Packet> create(int32_t accid, const std::string& token) {
+        return std::make_shared<LoginPacket>(accid, token);
     }
 
     int32_t accountId;
@@ -75,7 +75,7 @@ class DisconnectPacket : public Packet {
     GLOBED_PACKET_DECODE_UNIMPL
 
     DisconnectPacket() {}
-    static DisconnectPacket* create() {
-        return new DisconnectPacket;
+    static std::shared_ptr<Packet> create() {
+        return std::make_shared<DisconnectPacket>();
     }
 };

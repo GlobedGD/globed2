@@ -22,6 +22,14 @@ The following is a simple configuration template with descriptions of all option
             "color": "#ffffff" // will be the name color of the user
         }
     },
+    "game_servers": [ // list of game servers that will be sent to the client
+        {
+            "id": "unique-server-id",
+            "name": "Cool server",
+            "address": "127.0.0.1:41001",
+            "region": "'murica"
+        }
+    ]
     "userlist_mode": "none", // can be 'blacklist', 'whitelist', 'none'
     "userlist": [], // list of user account IDs to either block or allow, depending on 'userlist_mode'
 
@@ -33,7 +41,7 @@ The following is a simple configuration template with descriptions of all option
     "challenge_level": 1, // level ID for challenges, must be a valid non-unlisted level
     "challenge_ratelimit": 300, // amount of seconds before a user can try to complete a challenge again
     "use_cf_ip_header": false, // use CF-Connecting-IP header for determining user's IP address
-    "token_expiry": 1800, // amount of seconds before a token expires
+    "token_expiry": 86400, // amount of seconds before a token expires
 }
 ```
 

@@ -57,7 +57,7 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
     return packet;
 }
 
-void GameSocket::sendPacket(Packet* packet) {
+void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     ByteBuffer buf;
     buf.writeU16(packet->getPacketId());
     buf.writeU8(static_cast<uint8_t>(packet->getEncrypted()));

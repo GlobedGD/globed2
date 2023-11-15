@@ -26,6 +26,10 @@ fn default_gdapi() -> String {
     "http://www.boomlings.com/database/getGJComments21.php".to_string()
 }
 
+fn default_game_servers() -> Vec<GameServerEntry> {
+    Vec::new()
+}
+
 fn default_special_users() -> HashMap<i32, SpecialUser> {
     HashMap::new()
 }
@@ -65,7 +69,7 @@ fn default_cf_ip_header() -> bool {
 }
 
 fn default_token_expiry() -> u64 {
-    60 * 30
+    60 * 60 * 24
 }
 
 // special user defaults
@@ -95,6 +99,14 @@ pub enum UserlistMode {
 }
 
 #[derive(Serialize, Deserialize, Default, Clone)]
+pub struct GameServerEntry {
+    pub id: String,
+    pub name: String,
+    pub address: String,
+    pub region: String,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
 pub struct ServerConfig {
     #[serde(default = "default_web_mountpoint")]
     pub web_mountpoint: String,
@@ -104,6 +116,8 @@ pub struct ServerConfig {
     pub use_gd_api: bool,
     #[serde(default = "default_gdapi")]
     pub gd_api: String,
+    #[serde(default = "default_game_servers")]
+    pub game_servers: Vec<GameServerEntry>,
 
     // special users and "special" users
     #[serde(default = "default_special_users")]
@@ -157,6 +171,7 @@ impl ServerConfig {
             web_address: default_web_address(),
             use_gd_api: default_use_gd_api(),
             gd_api: default_gdapi(),
+            game_servers: default_game_servers(),
             special_users: default_special_users(),
             userlist_mode: default_userlist_mode(),
             userlist: default_userlist(),

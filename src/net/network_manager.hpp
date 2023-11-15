@@ -41,7 +41,7 @@ public:
     void disconnect(bool quiet = false);
 
     // Sends a packet to the currently established connection. Throws if disconnected.
-    void send(Packet* packet);
+    void send(std::shared_ptr<Packet> packet);
 
     // Adds a packet listener and calls your callback function when a packet with `id` is received.
     // If there already was a callback with this packet ID, it gets replaced.
@@ -86,7 +86,7 @@ private:
 
     GameSocket socket, pingSocket;
 
-    SmartMessageQueue<Packet*> packetQueue;
+    SmartMessageQueue<std::shared_ptr<Packet>> packetQueue;
     SmartMessageQueue<NetworkThreadTask> taskQueue;
 
     WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> listeners;

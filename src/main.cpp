@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/utils/web.hpp>
 #include <Geode/modify/MenuLayer.hpp>
+#include <ui/hooks/all.hpp>
 #include <UIBuilder.hpp>
 
 #include <crypto/box.hpp>

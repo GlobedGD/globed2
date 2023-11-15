@@ -14,8 +14,8 @@ class SyncIconsPacket : public Packet {
 
     SyncIconsPacket(const PlayerIconData& icons) : icons(icons) {}
 
-    static SyncIconsPacket* create(const PlayerIconData& icons) {
-        return new SyncIconsPacket(icons);
+    static std::shared_ptr<Packet> create(const PlayerIconData& icons) {
+        return std::make_shared<SyncIconsPacket>(icons);
     }
 
     PlayerIconData icons;
@@ -35,8 +35,8 @@ class RequestProfilesPacket : public Packet {
 
     RequestProfilesPacket(const std::vector<int32_t>& ids) : ids(ids) {}
 
-    static RequestProfilesPacket* create(const std::vector<int32_t>& ids) {
-        return new RequestProfilesPacket(ids);
+    static std::shared_ptr<Packet> create(const std::vector<int32_t>& ids) {
+        return std::make_shared<RequestProfilesPacket>(ids);
     }
 
     std::vector<int32_t> ids;
@@ -57,8 +57,8 @@ class VoicePacket : public Packet {
 
     VoicePacket(std::unique_ptr<EncodedAudioFrame> _frame) : frame(std::move(_frame)) {}
 
-    static VoicePacket* create(std::unique_ptr<EncodedAudioFrame> frame) {
-        return new VoicePacket(std::move(frame));
+    static std::shared_ptr<Packet>  create(std::unique_ptr<EncodedAudioFrame> frame) {
+        return std::make_shared<VoicePacket>(std::move(frame));
     }
 
     std::unique_ptr<EncodedAudioFrame> frame;

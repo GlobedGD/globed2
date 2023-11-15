@@ -12,6 +12,7 @@ pub mod routes {
             /* meta */
             .on("/", get(meta::index))
             .on("/version", get(meta::version))
+            .on("/servers", get(meta::servers))
             /* auth */
             .on("/totplogin", post(auth::totp_login))
             .on("/challenge/new", post(auth::challenge_start))

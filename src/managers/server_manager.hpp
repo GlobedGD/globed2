@@ -14,18 +14,26 @@ struct GameServerAddress {
 };
 
 struct GameServerInfo {
+    std::string name;
+    std::string region;
+
     GameServerAddress address;
 
-    chrono::milliseconds ping;
+    int ping;
     std::unordered_map<uint32_t, chrono::milliseconds> pendingPings;
     util::collections::CappedQueue<chrono::milliseconds, 100> pingHistory;
 
     uint32_t playerCount;
 };
 
-// provides a view with server ping and player count
+// provides a view with a bit less data than GameServerInfo
 struct GameServerView {
-    chrono::milliseconds ping;
+    std::string name;
+    std::string region;
+
+    GameServerAddress address;
+
+    int ping;
     uint32_t playerCount;
 };
 
@@ -34,14 +42,38 @@ class GlobedServerManager {
     GLOBED_SINGLETON(GlobedServerManager);
     GlobedServerManager();
 
-    uint32_t addPendingPing(const std::string& serverId);
-    void recordPingResponse(uint32_t pingId, uint32_t playerCount);
+    /* central server control */
 
-    GameServerView getServerView(const std::string& serverId);
+    void setCentral(std::string address);
+    std::string getCentral();
+
+    /* game servers */
+    void addGameServer(const std::string& serverId, const std::string& name, const std::string& address, const std::string& region);
+    std::string getActiveGameServer();
+    void clearGameServers();
+
+    uint32_t pingStart(const std::string& serverId);
+    // start a ping on the active game server
+    void pingStartActive();
+
+    void pingFinish(uint32_t pingId, uint32_t playerCount);
+    // finish a ping on the active game server
+    void pingFinishActive(uint32_t playerCount);
+
+    GameServerView getGameServer(const std::string& serverId);
     std::vector<chrono::milliseconds> getPingHistory(const std::string& serverId);
 
-    std::unordered_map<std::string, GameServerAddress> getServerAddresses();
+    std::unordered_map<std::string, GameServerView> extractGameServers();
+
+    std::atomic_bool pendingChanges;
 
 private:
-    util::sync::WrappingRwLock<std::unordered_map<std::string, GameServerInfo>> servers;
+    struct InnerData {
+        std::unordered_map<std::string, GameServerInfo> servers;
+        std::string central; // current central url
+        std::string game; // current game server ID
+        uint32_t activePingId;
+    };
+
+    util::sync::WrappingRwLock<InnerData> _data;
 };

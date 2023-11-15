@@ -9,7 +9,7 @@ public:
     ~GameSocket();
 
     std::shared_ptr<Packet> recvPacket();
-    void sendPacket(Packet* packet);
+    void sendPacket(std::shared_ptr<Packet> packet);
     
     void cleanupBox();
     void createBox();
