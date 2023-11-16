@@ -15,7 +15,7 @@ using namespace geode::prelude;
 bool GlobedMenuLayer::init() {
     if (!CCLayer::init()) return false;
 
-    auto listview = Build<ListView>::create(createServerList(), LIST_CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
+    auto listview = Build<ListView>::create(createServerList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
     auto winsize = CCDirector::get()->getWinSize();
@@ -27,8 +27,6 @@ bool GlobedMenuLayer::init() {
         .store(listLayer);
     
     listLayer->setPosition({winsize / 2 - listLayer->getScaledContentSize() / 2});
-
-    CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::refreshServerList), this, 1.0f, false);
 
     Build<CCSprite>::createSpriteName("miniSkull_001.png")
         .scale(1.2f)
@@ -49,6 +47,13 @@ bool GlobedMenuLayer::init() {
     this->setKeyboardEnabled(true);
     this->setKeypadEnabled(true);
 
+    CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::refreshServerList), this, 0.1f, false);
+    CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::pingServers), this, 5.0f, false);
+
+    if (GlobedServerManager::get().gameServerCount() == 0) {
+        this->requestServerList();
+    }
+
     return true;
 }
 
@@ -64,7 +69,7 @@ CCArray* GlobedMenuLayer::createServerList() {
 
     for (const auto [serverId, server] : sm.extractGameServers()) {
         bool active = authenticated && serverId == activeServer;
-        auto cell = ServerListCell::create(server);
+        auto cell = ServerListCell::create(server, active);
         ret->addObject(cell);
     }
 
@@ -72,14 +77,34 @@ CCArray* GlobedMenuLayer::createServerList() {
 }
 
 void GlobedMenuLayer::refreshServerList(float _) {
+    // if there are pending changes, hard refresh the list
     auto& sm = GlobedServerManager::get();
     if (sm.pendingChanges.load(std::memory_order::relaxed)) {
         sm.pendingChanges.store(false, std::memory_order::relaxed);
-        auto listview = Build<ListView>::create(createServerList(), LIST_CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
-            .collect();
 
         listLayer->m_listView->removeFromParent();
-        listLayer->m_listView = listview;
+        
+        auto serverList = createServerList();
+        listLayer->m_listView = Build<ListView>::create(serverList, ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
+            .parent(listLayer)
+            .collect();
+
+        return;
+    }
+
+    // if there were no pending changes, still update the server data (ping, players, etc.)
+
+    auto listCells = listLayer->m_listView->m_tableView->m_contentLayer->getChildren();
+    if (listCells == nullptr) {
+        return;
+    }
+
+    auto active = sm.getActiveGameServer();
+    bool authenticated = NetworkManager::get().authenticated();
+    
+    for (auto* obj : CCArrayExt<CCNode>(listCells)) {
+        auto slc = static_cast<ServerListCell*>(obj->getChildren()->objectAtIndex(2));
+        slc->updateWith(sm.getGameServer(slc->gsview.id), authenticated && slc->gsview.id == active);
     }
 }
 
@@ -122,4 +147,8 @@ void GlobedMenuLayer::requestServerList() {
 
 void GlobedMenuLayer::keyBackClicked() {
     util::ui::navigateBack();
+}
+
+void GlobedMenuLayer::pingServers(float _) {
+    NetworkManager::get().taskPingServers();
 }

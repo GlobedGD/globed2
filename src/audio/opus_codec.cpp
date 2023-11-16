@@ -80,7 +80,7 @@ void OpusCodec::freeData(EncodedOpusData data) {
 void OpusCodec::errcheck(const char* where) {
     if (_res != OPUS_OK) {
         const char* msg = opus_strerror(_res);
-        GLOBED_ASSERT(false, std::string("opus error in ") + where + ": " + msg);
+        GLOBED_REQUIRE(false, std::string("opus error in ") + where + ": " + msg);
     }
 }
 

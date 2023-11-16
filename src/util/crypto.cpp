@@ -71,7 +71,7 @@ std::string simpleTOTP(const bytevector& key) {
 std::string simpleTOTPForPeriod(const byte *key, size_t keySize, uint64_t period) {
     CRYPTO_SODIUM_INIT;
 
-    CRYPTO_ASSERT(keySize == crypto_auth_hmacsha256_KEYBYTES, "invalid key size passed to simpleTOTPForPeriod");
+    CRYPTO_REQUIRE(keySize == crypto_auth_hmacsha256_KEYBYTES, "invalid key size passed to simpleTOTPForPeriod");
 
     if constexpr (GLOBED_LITTLE_ENDIAN) {
         period = byteswap(period);

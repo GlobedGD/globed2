@@ -96,4 +96,47 @@ std::vector<V> mapValues(const std::unordered_map<K, V>& map) {
     return out;
 }
 
+/* borrowed versions of the above functions */
+
+
+template <typename K, typename V>
+std::vector<K*> mapKeysBorrowed(std::map<K, V>& map) {
+    std::vector<K*> out;
+    for (auto& pair : map) {
+        out.push_back(&pair.first);
+    }
+
+    return out;
+}
+
+template <typename K, typename V>
+std::vector<K*> mapKeysBorrowed(std::unordered_map<K, V>& map) {
+    std::vector<K*> out;
+    for (auto& pair : map) {
+        out.push_back(&pair.first);
+    }
+
+    return out;
+}
+
+template <typename K, typename V>
+std::vector<V*> mapValuesBorrowed(std::map<K, V>& map) {
+    std::vector<V*> out;
+    for (auto& pair : map) {
+        out.push_back(&pair.second);
+    }
+
+    return out;
+}
+
+template <typename K, typename V>
+std::vector<V*> mapValuesBorrowed(std::unordered_map<K, V>& map) {
+    std::vector<V*> out;
+    for (auto& pair : map) {
+        out.push_back(&pair.second);
+    }
+
+    return out;
+}
+
 };

@@ -84,7 +84,7 @@ AudioStream::AudioStream() {
     auto system = vm.getSystem();
     res = system->createStream(nullptr, FMOD_OPENUSER | FMOD_2D | FMOD_LOOP_NORMAL, &exinfo, &sound);
 
-    GLOBED_ASSERT(res == FMOD_OK, std::string("FMOD System::createStream failed: ") + std::to_string((int)res));
+    GLOBED_REQUIRE(res == FMOD_OK, std::string("FMOD System::createStream failed: ") + std::to_string((int)res));
 }
 
 AudioStream::~AudioStream() {

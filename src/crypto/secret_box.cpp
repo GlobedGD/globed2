@@ -8,13 +8,13 @@ using namespace util::data;
 SecretBox::SecretBox(bytevector key) {
     CRYPTO_SODIUM_INIT;
     
-    CRYPTO_ASSERT(key.size() == crypto_secretbox_KEYBYTES, "provided key is too long or too short for SecretBox");
+    CRYPTO_REQUIRE(key.size() == crypto_secretbox_KEYBYTES, "provided key is too long or too short for SecretBox");
 
     this->key = reinterpret_cast<byte*>(sodium_malloc(
         crypto_secretbox_KEYBYTES
     ));
 
-    CRYPTO_ASSERT(this->key != nullptr, "sodium_malloc returned nullptr");
+    CRYPTO_REQUIRE(this->key != nullptr, "sodium_malloc returned nullptr");
 
     std::memcpy(this->key, key.data(), crypto_secretbox_KEYBYTES);
 }
@@ -52,7 +52,7 @@ size_t SecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
 }
 
 size_t SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
-    CRYPTO_ASSERT(size >= PREFIX_LEN, "message is too short");
+    CRYPTO_REQUIRE(size >= PREFIX_LEN, "message is too short");
 
     const byte* nonce = src;
     const byte* ciphertext = src + NONCE_LEN;
@@ -66,7 +66,7 @@ size_t SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
 }
 
 void SecretBox::setKey(const util::data::bytevector& src) {
-    GLOBED_ASSERT(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for SecretBox");
+    GLOBED_REQUIRE(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for SecretBox");
     setKey(src.data());
 }
 

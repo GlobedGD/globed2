@@ -101,8 +101,8 @@ namespace util::debugging {
     }
     
     [[noreturn]] void suicide(const std::source_location loc) {
-        GLOBED_ASSERT_LOG("suicide called at " + sourceLocation(loc) + ", terminating.");
-		GLOBED_ASSERT_LOG("If you see this, something very, very bad happened.");
+        GLOBED_REQUIRE_LOG("suicide called at " + sourceLocation(loc) + ", terminating.");
+		GLOBED_REQUIRE_LOG("If you see this, something very, very bad happened.");
         GLOBED_SUICIDE;
     }
 #else
@@ -111,8 +111,8 @@ namespace util::debugging {
     }
 
     [[noreturn]] void suicide() {
-        GLOBED_ASSERT_LOG("suicide called at <unknown location>, terminating.");
-        GLOBED_ASSERT_LOG("If you see this, something very, very bad happened.");
+        GLOBED_REQUIRE_LOG("suicide called at <unknown location>, terminating.");
+        GLOBED_REQUIRE_LOG("If you see this, something very, very bad happened.");
         GLOBED_SUICIDE;
     }
 #endif

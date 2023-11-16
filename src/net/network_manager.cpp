@@ -24,7 +24,8 @@ NetworkManager::NetworkManager() {
         _established.store(true, std::memory_order::relaxed);
         // and lets try to login!
         auto& am = GlobedAccountManager::get();
-        this->send(LoginPacket::create(am.accountId, *am.authToken.lock()));
+        auto authtoken = *am.authToken.lock();
+        this->send(LoginPacket::create(am.accountId.load(std::memory_order::relaxed), authtoken));
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
@@ -79,9 +80,9 @@ void NetworkManager::connect(const std::string& addr, unsigned short port) {
         this->disconnect(true);
     }
 
-    GLOBED_ASSERT(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
+    GLOBED_REQUIRE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
     
-    GLOBED_ASSERT(socket.connect(addr, port), "failed to connect to the server")
+    GLOBED_REQUIRE(socket.connect(addr, port), "failed to connect to the server")
     socket.createBox();
 
     auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(socket.box->extractPublicKey()));
@@ -106,7 +107,7 @@ void NetworkManager::disconnect(bool quiet) {
 }
 
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
-    GLOBED_ASSERT(socket.connected, "tried to send a packet while disconnected")
+    GLOBED_REQUIRE(socket.connected, "tried to send a packet while disconnected")
     packetQueue.push(packet);
 }
 
@@ -131,7 +132,7 @@ void NetworkManager::taskPingServers() {
 // threads
 
 void NetworkManager::threadMainFunc() {
-    while (_running) {
+    while (_running.load(std::memory_order::relaxed)) {
         maybeSendKeepalive();
 
         if (!packetQueue.waitForMessages(std::chrono::seconds(1))) {
@@ -151,7 +152,7 @@ void NetworkManager::threadMainFunc() {
 }
 
 void NetworkManager::threadRecvFunc() {
-    while (_running) {
+    while (_running.load(std::memory_order::relaxed)) {
         // we wanna poll both the normal socket and the ping socket.
         auto pollResult = pollBothSockets(1000);
         if (pollResult.hasPing) {
@@ -165,7 +166,7 @@ void NetworkManager::threadRecvFunc() {
             }
         }
 
-        if (established() && !pollResult.hasNormal) {
+        if (!pollResult.hasNormal) {
             // maybeDisconnectIfDead();
             continue;
         }
@@ -203,7 +204,7 @@ void NetworkManager::threadRecvFunc() {
 }
 
 void NetworkManager::threadTasksFunc() {
-    while (_running) {
+    while (_running.load(std::memory_order::relaxed)) {
         if (!taskQueue.waitForMessages(std::chrono::seconds(1))) {
             continue;
         }
@@ -212,12 +213,11 @@ void NetworkManager::threadTasksFunc() {
             switch (task) {
             case NetworkThreadTask::PingServers: {
                 for (auto& [serverId, server] : GlobedServerManager::get().extractGameServers()) {
-                    auto pingId = GlobedServerManager::get().pingStart(serverId);
-                    auto packet = PingPacket::create(pingId);
 
                     try {
                         pingSocket.connect(server.address.ip, server.address.port);
-                        pingSocket.sendPacket(packet);
+                        auto pingId = GlobedServerManager::get().pingStart(serverId);
+                        pingSocket.sendPacket(PingPacket::create(pingId));
                         pingSocket.disconnect();
                     } catch (const std::exception& e) {
                         ErrorQueues::get().warn(e.what());
@@ -230,7 +230,7 @@ void NetworkManager::threadTasksFunc() {
 }
 
 void NetworkManager::maybeSendKeepalive() {
-    if (_loggedin) {
+    if (_loggedin.load(std::memory_order::relaxed)) {
         auto now = std::chrono::system_clock::now();
         if ((now - lastKeepalive) > KEEPALIVE_INTERVAL) {
             lastKeepalive = now;
@@ -260,10 +260,10 @@ PollBothResult NetworkManager::pollBothSockets(long msDelay) {
 
     GLOBED_SOCKET_POLLFD fds[2];
 
-    fds[0].fd = socket.socket_;
+    fds[0].fd = socket.socket_.load(std::memory_order::relaxed);
     fds[0].events = POLLIN;
 
-    fds[1].fd = pingSocket.socket_;
+    fds[1].fd = pingSocket.socket_.load(std::memory_order::relaxed);
     fds[1].events = POLLIN;
 
     int result = GLOBED_SOCKET_POLL(fds, 2, (int)msDelay);

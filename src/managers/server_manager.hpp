@@ -28,6 +28,7 @@ struct GameServerInfo {
 
 // provides a view with a bit less data than GameServerInfo
 struct GameServerView {
+    std::string id;
     std::string name;
     std::string region;
 
@@ -51,6 +52,8 @@ class GlobedServerManager {
     void addGameServer(const std::string& serverId, const std::string& name, const std::string& address, const std::string& region);
     std::string getActiveGameServer();
     void clearGameServers();
+
+    size_t gameServerCount();
 
     uint32_t pingStart(const std::string& serverId);
     // start a ping on the active game server

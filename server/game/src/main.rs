@@ -1,4 +1,7 @@
-use std::{error::Error, sync::Arc};
+use std::{
+    error::Error,
+    sync::{atomic::AtomicU32, Arc},
+};
 
 use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
@@ -87,6 +90,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         http_client: client,
         central_url: central_url.clone(),
         central_pw: central_pw.clone(),
+        player_count: AtomicU32::new(0u32),
     }));
 
     info!("Retreiving config from the central server..");

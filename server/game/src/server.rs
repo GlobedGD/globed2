@@ -71,10 +71,6 @@ impl GameServer {
         Ok(())
     }
 
-    pub async fn get_player_count(&'static self) -> usize {
-        self.threads.read().await.len()
-    }
-
     pub async fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
         let threads = self.threads.read().await;
 
@@ -133,6 +129,11 @@ impl GameServer {
                         warn!("Client thread died ({peer}): {err}");
                     }
                 };
+
+                // decrement player count if the thread was an authenticated player
+                if thread.authenticated.load(Ordering::Relaxed) {
+                    self.state.read().await.player_count.fetch_sub(1, Ordering::Relaxed);
+                }
             });
 
             thread_cl

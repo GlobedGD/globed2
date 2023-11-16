@@ -55,15 +55,15 @@ namespace util::net {
 
     void throwLastError() {
         auto message = lastErrorString();
-        GLOBED_ASSERT_LOG(std::string("Throwing network exception: ") + message);
+        GLOBED_REQUIRE_LOG(std::string("Throwing network exception: ") + message);
         throw std::runtime_error(std::string("Network error: ") + message);
     }
 
     std::string webUserAgent() {
 #ifdef GLOBED_ROOT_NO_GEODE
-        return "globed";
+        return "globed-geode-xd";
 #else
-        return fmt::format("globed/{}", geode::Mod::get()->getVersion().toString());
+        return fmt::format("globed-geode-xd/{}", geode::Mod::get()->getVersion().toString());
 #endif
     }
 
@@ -71,12 +71,12 @@ namespace util::net {
         std::pair<std::string, unsigned short> out;
 
         size_t colon = address.find(':');
-        GLOBED_ASSERT(colon != std::string::npos && colon != 0, "invalid address, cannot split into IP and port")
+        GLOBED_REQUIRE(colon != std::string::npos && colon != 0, "invalid address, cannot split into IP and port")
 
         out.first = address.substr(0, colon);
 
         std::istringstream portStream(address.substr(colon + 1));
-        GLOBED_ASSERT(portStream >> out.second, "invalid port number")
+        GLOBED_REQUIRE(portStream >> out.second, "invalid port number")
 
         return out;
     }

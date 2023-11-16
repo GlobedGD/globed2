@@ -15,7 +15,7 @@ GLOBED_SINGLETON_DEF(DiscordManager);
 DiscordManager::DiscordManager() {
     auto result = Core::Create(DISCORD_APP_ID, DiscordCreateFlags_Default, &core);
     
-    GLOBED_ASSERT(core != nullptr, std::string("failed to initialize discord core: error ") + std::to_string((int)result));
+    GLOBED_REQUIRE(core != nullptr, std::string("failed to initialize discord core: error ") + std::to_string((int)result));
 
     geode::log::debug("created core");
 

@@ -15,7 +15,7 @@ CryptoBox::CryptoBox(byte* key) {
         SHARED_KEY_LEN // sharedKey
     ));
 
-    CRYPTO_ASSERT(memBasePtr != nullptr, "sodium_malloc returned nullptr");
+    CRYPTO_REQUIRE(memBasePtr != nullptr, "sodium_malloc returned nullptr");
 
     secretKey = memBasePtr; // base + 0
     publicKey = secretKey + SECRET_KEY_LEN; // base + 32
@@ -73,7 +73,7 @@ size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
 }
 
 size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) {
-    CRYPTO_ASSERT(size >= PREFIX_LEN, "message is too short");
+    CRYPTO_REQUIRE(size >= PREFIX_LEN, "message is too short");
 
     const byte* nonce = src;
     const byte* ciphertext = src + NONCE_LEN;

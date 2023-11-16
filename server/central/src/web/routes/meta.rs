@@ -18,3 +18,16 @@ pub async fn servers(context: &mut Context<ServerState>) -> roa::Result {
     context.write(serialized);
     Ok(())
 }
+
+pub async fn pagina_grande(context: &mut Context<ServerState>) -> roa::Result {
+    let html = include_str!("page.html");
+    context
+        .resp
+        .headers
+        .append(roa::http::header::CACHE_CONTROL, "public, max-age=86400".parse()?);
+
+    context.resp.headers.append("pagina", "grande".parse()?);
+
+    context.write(html);
+    Ok(())
+}

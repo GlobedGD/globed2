@@ -13,16 +13,38 @@ use roa::{preload::PowerBody, query::Query, throw, Context};
 
 use crate::state::{ActiveChallenge, ServerState};
 
+macro_rules! check_user_agent {
+    ($ctx:expr, $ua:ident) => {
+        let useragent = $ctx.req.headers.get(roa::http::header::USER_AGENT);
+        if useragent.is_none() {
+            throw!(StatusCode::UNAUTHORIZED, "what?");
+        }
+
+        let $ua = useragent.unwrap().to_str()?;
+        if !cfg!(debug_assertions) && !$ua.starts_with("globed-geode-xd") {
+            throw!(StatusCode::UNAUTHORIZED, "bad request");
+        }
+    };
+}
+
 pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
+    check_user_agent!(context, _ua);
+
     let account_id = &*context.must_query("aid")?;
     let account_name = &*context.must_query("aname")?;
     let code = &*context.must_query("code")?;
 
     log::trace!("totp login from {} ({}), code: {}", account_name, account_id, code);
 
+    // if account_name.to_lowercase().contains("sevenworks")
+    //     && rand::thread_rng().gen_ratio(1, 25) {
+
+    //     throw!(StatusCode::IM_A_TEAPOT);
+    // }
+
     let state = context.state_read().await;
 
-    match state.should_block(account_id) {
+    match state.should_block(account_id.parse::<i32>()?) {
         Ok(true) => throw!(StatusCode::FORBIDDEN, "<cr>You had only one shot.</c>"),
         Err(_) => throw!(StatusCode::BAD_REQUEST, "malformed parameters"),
         Ok(false) => {}
@@ -47,10 +69,18 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
 }
 
 pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result {
+    check_user_agent!(context, _ua);
+
     let account_id = &*context.must_query("aid")?;
     let account_id = account_id.parse::<i32>()?;
 
     let mut state = context.state_write().await;
+
+    match state.should_block(account_id) {
+        Ok(true) => throw!(StatusCode::FORBIDDEN, "<cr>You had only one shot.</c>"),
+        Err(_) => throw!(StatusCode::BAD_REQUEST, "malformed parameters"),
+        Ok(false) => {}
+    };
 
     let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
@@ -78,9 +108,14 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
 
     if should_return_existing {
         let rand_string = state.active_challenges.get(&account_id).unwrap().value.clone();
+        let verify = state.config.use_gd_api;
         drop(state);
 
-        context.write(format!("{}:{}", level_id, rand_string));
+        context.write(format!(
+            "{}:{}",
+            if verify { level_id.to_string() } else { "none".to_string() },
+            rand_string
+        ));
         return Ok(());
     }
 
@@ -101,15 +136,22 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     };
 
     state.active_challenges.insert(account_id, challenge);
+    let verify = state.config.use_gd_api;
 
     drop(state);
 
-    context.write(format!("{}:{}", level_id, rand_string));
+    context.write(format!(
+        "{}:{}",
+        if verify { level_id.to_string() } else { "none".to_string() },
+        rand_string
+    ));
 
     Ok(())
 }
 
 pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result {
+    check_user_agent!(context, _ua);
+
     let account_id = &*context.must_query("aid")?;
     let account_name = &*context.must_query("aname")?;
     let account_id = account_id.parse::<i32>()?;
@@ -173,12 +215,11 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         return Ok(());
     }
 
+    // reborrow as writable
     drop(state);
-
-    // now we have to request rob's servers and check if the challenge was solved
+    let mut state = context.state_write().await;
 
     // check if the user is doing it too fast
-    let mut state = context.state_write().await;
 
     // a bit ugly
     let user_ip: anyhow::Result<IpAddr> = if state.config.use_cf_ip_header {
@@ -206,6 +247,8 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     }
 
     drop(state);
+
+    // now we have to request rob's servers and check if the challenge was solved
 
     let result = http_client
         .post(req_url)

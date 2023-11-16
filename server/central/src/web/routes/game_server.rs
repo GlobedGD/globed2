@@ -21,7 +21,23 @@ fn verify_password(pwd1: &str, pwd2: &str) -> bool {
     result == 0
 }
 
+macro_rules! check_user_agent {
+    ($ctx:expr, $ua:ident) => {
+        let useragent = $ctx.req.headers.get(roa::http::header::USER_AGENT);
+        if useragent.is_none() {
+            throw!(StatusCode::UNAUTHORIZED, "what?");
+        }
+
+        let $ua = useragent.unwrap().to_str()?;
+        if !cfg!(debug_assertions) && !$ua.starts_with("globed-game-server") {
+            throw!(StatusCode::UNAUTHORIZED, "mismatched user agent");
+        }
+    };
+}
+
 pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
+    check_user_agent!(context, user_agent);
+
     let password = &*context.must_query("pw")?;
     let correct = context.state_read().await.config.game_server_password.clone();
 
@@ -33,7 +49,7 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         protocol: PROTOCOL_VERSION,
     };
 
-    info!("authenticated a game server at {}", context.remote_addr);
+    info!("authenticated {} at {}", user_agent, context.remote_addr);
 
     let bdata = serde_json::to_string(&bdata)?;
 
@@ -43,6 +59,8 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
 }
 
 pub async fn verify_token(context: &mut Context<ServerState>) -> roa::Result {
+    check_user_agent!(context, _ua);
+
     let password = &*context.must_query("pw")?;
     let correct = context.state_read().await.config.game_server_password.clone();
 

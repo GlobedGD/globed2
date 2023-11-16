@@ -55,6 +55,11 @@ void GlobedServerManager::clearGameServers() {
     data->game = "";
 }
 
+size_t GlobedServerManager::gameServerCount() {
+    auto data = _data.read();
+    return data->servers.size();
+}
+
 uint32_t GlobedServerManager::pingStart(const std::string& serverId) {
     uint32_t pingId = util::rng::Random::get().generate<uint32_t>();
 
@@ -66,7 +71,8 @@ uint32_t GlobedServerManager::pingStart(const std::string& serverId) {
         gsi.pendingPings.clear();
     }
 
-    gsi.pendingPings[pingId] = util::time::now();
+    auto now = util::time::now();
+    gsi.pendingPings[pingId] = now;
 
     return pingId;
 }
@@ -79,15 +85,17 @@ void GlobedServerManager::pingStartActive() {
 }
 
 void GlobedServerManager::pingFinish(uint32_t pingId, uint32_t playerCount) {
+    auto now = util::time::now();
+
     auto data = _data.write();
-    for (auto& server : util::collections::mapValues(data->servers)) {
-        if (server.pendingPings.contains(pingId)) {
-            auto start = server.pendingPings.at(pingId);
-            auto timeTook = util::time::now() - start;
-            server.ping = chrono::duration_cast<chrono::milliseconds>(timeTook).count();
-            server.playerCount = playerCount;
-            server.pingHistory.push(timeTook);
-            server.pendingPings.erase(pingId);
+    for (auto* server : util::collections::mapValuesBorrowed(data->servers)) {
+        if (server->pendingPings.contains(pingId)) {
+            auto start = server->pendingPings.at(pingId);
+            auto timeTook = now - start;
+            server->ping = chrono::duration_cast<chrono::milliseconds>(timeTook).count();
+            server->playerCount = playerCount;
+            server->pingHistory.push(timeTook);
+            server->pendingPings.erase(pingId);
             return;
         }
     }
@@ -103,6 +111,10 @@ GameServerView GlobedServerManager::getGameServer(const std::string& serverId) {
     auto data = _data.read();
     auto& gsi = data->servers.at(serverId);
     return GameServerView {
+        .id = serverId,
+        .name = gsi.name,
+        .region = gsi.region,
+        .address = gsi.address,
         .ping = gsi.ping,
         .playerCount = gsi.playerCount
     };
@@ -120,7 +132,9 @@ std::unordered_map<std::string, GameServerView> GlobedServerManager::extractGame
     auto data = _data.read();
     for (const auto& [serverId, gsi] : data->servers) {
         out[serverId] = GameServerView {
+            .id = serverId,
             .name = gsi.name,
+            .region = gsi.region,
             .address = gsi.address,
             .ping = gsi.ping,
             .playerCount = gsi.playerCount,

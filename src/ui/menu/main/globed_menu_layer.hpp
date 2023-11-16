@@ -3,7 +3,6 @@
 
 class GlobedMenuLayer : public cocos2d::CCLayer {
 public:
-    static constexpr float LIST_CELL_HEIGHT = 45.0f;
     static constexpr float LIST_WIDTH = 358.f;
     static constexpr float LIST_HEIGHT = 190.f;
 
@@ -12,6 +11,7 @@ public:
     void refreshServerList(float _);
     void requestServerList();
     void keyBackClicked();
+    void pingServers(float _);
 
     static GlobedMenuLayer* create() {
         auto ret = new GlobedMenuLayer;

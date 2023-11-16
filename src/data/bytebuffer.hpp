@@ -267,6 +267,6 @@ private:
     size_t _position;
 
     inline void boundsCheck(size_t readBytes) {
-        GLOBED_ASSERT(_position + readBytes <= _data.size(), "ByteBuffer out of bounds read")
+        GLOBED_REQUIRE(_position + readBytes <= _data.size(), "ByteBuffer out of bounds read")
     }
 };

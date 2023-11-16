@@ -23,7 +23,7 @@ public:
 
     void writeBit(bool value) {
         // remember - we are writing from MSB to LSB so we need to reverse the position
-        GLOBED_ASSERT(position != BitCount, "BitBuffer tried to write too many bits");
+        GLOBED_REQUIRE(position != BitCount, "BitBuffer tried to write too many bits");
         size_t actualPosition = BitCount - ++position;
 
         bitset.set(actualPosition, value);
@@ -41,7 +41,7 @@ public:
     }
 
     bool readBit() {
-        GLOBED_ASSERT(position != BitCount, "BitBuffer tried to read too many bits");
+        GLOBED_REQUIRE(position != BitCount, "BitBuffer tried to read too many bits");
         size_t actualPosition = BitCount - ++position;
 
         return bitset.test(actualPosition);

@@ -20,14 +20,14 @@ bool UdpSocket::connect(const std::string& serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
     destAddr_.sin_port = htons(port);
 
-    GLOBED_ASSERT(inet_pton(AF_INET, serverIp.c_str(), &destAddr_.sin_addr) > 0, "tried to connect to an invalid address");
+    GLOBED_REQUIRE(inet_pton(AF_INET, serverIp.c_str(), &destAddr_.sin_addr) > 0, "tried to connect to an invalid address");
 
     connected.store(true, std::memory_order::relaxed);
     return true; // No actual connection is established in UDP
 }
 
 int UdpSocket::send(const char* data, unsigned int dataSize) {
-    GLOBED_ASSERT(connected.load(std::memory_order::relaxed), "attempting to call UdpSocket::send on a disconnected socket");
+    GLOBED_REQUIRE(connected.load(std::memory_order::relaxed), "attempting to call UdpSocket::send on a disconnected socket");
     return sendto(socket_.load(std::memory_order::relaxed), data, dataSize, 0, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
 }
 

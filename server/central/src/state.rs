@@ -149,13 +149,11 @@ impl ServerStateData {
         }
     }
 
-    pub fn should_block(&self, account_id: &str) -> anyhow::Result<bool> {
-        let id = account_id.parse::<i32>()?;
-
+    pub fn should_block(&self, account_id: i32) -> anyhow::Result<bool> {
         Ok(match self.config.userlist_mode {
             UserlistMode::None => false,
-            UserlistMode::Blacklist => self.config.userlist.contains(&id),
-            UserlistMode::Whitelist => !self.config.userlist.contains(&id),
+            UserlistMode::Blacklist => self.config.userlist.contains(&account_id),
+            UserlistMode::Whitelist => !self.config.userlist.contains(&account_id),
         })
     }
 }

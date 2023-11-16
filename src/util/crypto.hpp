@@ -4,11 +4,11 @@
 #include <defs.hpp>
 #include <sodium.h>
 
-#define CRYPTO_ASSERT(condition, message) GLOBED_ASSERT(condition, "crypto error: " message)
-#define CRYPTO_ERR_CHECK(result, message) CRYPTO_ASSERT(result == 0, message)
+#define CRYPTO_REQUIRE(condition, message) GLOBED_REQUIRE(condition, "crypto error: " message)
+#define CRYPTO_ERR_CHECK(result, message) CRYPTO_REQUIRE(result == 0, message)
 
 // sodium_init returns 0 on success, 1 if already initialized, -1 on fail
-#define CRYPTO_SODIUM_INIT CRYPTO_ASSERT(sodium_init() != -1, "sodium_init failed")
+#define CRYPTO_SODIUM_INIT CRYPTO_REQUIRE(sodium_init() != -1, "sodium_init failed")
 
 namespace util::crypto {
     /*

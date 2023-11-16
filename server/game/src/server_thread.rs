@@ -45,7 +45,7 @@ pub struct GameServerThread {
     rx: Mutex<Receiver<ServerThreadMessage>>,
     tx: Sender<ServerThreadMessage>,
     awaiting_termination: AtomicBool,
-    authenticated: AtomicBool,
+    pub authenticated: AtomicBool,
     crypto_box: StdMutex<Option<ChaChaBox>>,
 
     peer: SocketAddrV4,
@@ -56,7 +56,7 @@ pub struct GameServerThread {
     last_voice_packet: StdMutex<SystemTime>,
 }
 
-macro_rules! gs_assert {
+macro_rules! gs_require {
     ($cond:expr,$msg:literal) => {
         if !($cond) {
             return Err(anyhow!($msg));
@@ -162,14 +162,14 @@ impl GameServerThread {
     /* private utilities */
 
     async fn send_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<()> {
-        let serialized = self.serialize_packet(packet).await?;
+        let serialized = self.serialize_packet(packet)?;
         self.socket.send_to(serialized.as_bytes(), self.peer).await?;
 
         Ok(())
     }
 
-    async fn parse_packet(&self, message: Vec<u8>) -> anyhow::Result<Box<dyn Packet>> {
-        gs_assert!(message.len() >= PACKET_HEADER_LEN, "packet is missing a header");
+    fn parse_packet(&self, message: Vec<u8>) -> anyhow::Result<Box<dyn Packet>> {
+        gs_require!(message.len() >= PACKET_HEADER_LEN, "packet is missing a header");
 
         let mut data = ByteReader::from_bytes(&message);
 
@@ -177,14 +177,14 @@ impl GameServerThread {
         let encrypted = data.read_u8()? != 0u8;
 
         let packet = match_packet(packet_id);
-        gs_assert!(
+        gs_require!(
             packet.is_some(),
             "packet was sent with an invalid id or the handler doesn't exist: {packet_id}"
         );
 
         let mut packet = packet.unwrap();
         if packet.get_encrypted() && !encrypted {
-            gs_assert!(false, "client sent a cleartext packet when expected an encrypted one");
+            gs_require!(false, "client sent a cleartext packet when expected an encrypted one");
         }
 
         if !packet.get_encrypted() {
@@ -194,7 +194,7 @@ impl GameServerThread {
 
         let cbox = self.crypto_box.lock().unwrap();
 
-        gs_assert!(
+        gs_require!(
             cbox.is_some(),
             "attempting to decode an encrypted packet when no cryptobox was initialized"
         );
@@ -212,7 +212,7 @@ impl GameServerThread {
         Ok(packet)
     }
 
-    async fn serialize_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<ByteBuffer> {
+    fn serialize_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<ByteBuffer> {
         let mut buf = ByteBuffer::new();
         buf.write_u16(packet.get_packet_id());
         buf.write_u8(if packet.get_encrypted() { 1u8 } else { 0u8 });
@@ -224,7 +224,7 @@ impl GameServerThread {
 
         let cbox = self.crypto_box.lock().unwrap();
 
-        gs_assert!(
+        gs_require!(
             cbox.is_some(),
             "trying to send an encrypted packet when no cryptobox was initialized"
         );
@@ -245,7 +245,7 @@ impl GameServerThread {
 
     async fn handle_message(&self, message: ServerThreadMessage) -> anyhow::Result<()> {
         match message {
-            ServerThreadMessage::Packet(message) => match self.parse_packet(message).await {
+            ServerThreadMessage::Packet(message) => match self.parse_packet(message) {
                 Ok(packet) => match self.handle_packet(packet).await {
                     Ok(_) => {}
                     Err(err) => return Err(anyhow!("failed to handle packet: {}", err.to_string())),
@@ -290,10 +290,9 @@ impl GameServerThread {
     }
 
     gs_handler!(self, handle_ping, PingPacket, packet, {
-        self.terminate(); // kill the thread immediately for efficiency
         gs_retpacket!(PingResponsePacket {
             id: packet.id,
-            player_count: self.game_server.get_player_count().await as u32
+            player_count: self.state.read().await.player_count.load(Ordering::Relaxed),
         });
     });
 
@@ -306,7 +305,7 @@ impl GameServerThread {
         }
 
         let mut cbox = self.crypto_box.lock().unwrap();
-        gs_assert!(cbox.is_none(), "attempting to initialize a cryptobox twice");
+        gs_require!(cbox.is_none(), "attempting to initialize a cryptobox twice");
 
         let sbox = ChaChaBox::new(&packet.key.pubkey, &self.secret_key);
         *cbox = Some(sbox);
@@ -322,7 +321,7 @@ impl GameServerThread {
         gs_needauth!(self);
 
         gs_retpacket!(KeepaliveResponsePacket {
-            player_count: self.game_server.get_player_count().await as u32
+            player_count: self.state.read().await.player_count.load(Ordering::Relaxed)
         })
     });
 
@@ -354,12 +353,13 @@ impl GameServerThread {
 
         let player_name = response.split_once(':').ok_or(anyhow!("central server is drunk"))?.1;
 
+        self.authenticated.store(true, Ordering::Relaxed);
+        self.account_id.store(packet.account_id, Ordering::Relaxed);
+        self.state.read().await.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
+
         let mut account_data = self.account_data.lock().unwrap();
         account_data.account_id = packet.account_id;
         account_data.name = player_name.to_string();
-
-        self.authenticated.store(true, Ordering::Relaxed);
-        self.account_id.store(packet.account_id, Ordering::Relaxed);
 
         debug!("Login successful from {player_name} ({})", packet.account_id);
 

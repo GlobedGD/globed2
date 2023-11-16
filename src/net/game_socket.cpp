@@ -18,10 +18,10 @@ GameSocket::~GameSocket() {
 
 std::shared_ptr<Packet> GameSocket::recvPacket() {
     auto received = receive(reinterpret_cast<char*>(buffer), BUF_SIZE);
-    GLOBED_ASSERT(received > 0, "failed to receive data from a socket")
+    GLOBED_REQUIRE(received > 0, "failed to receive data from a socket")
 
     // read the header, 2 bytes for packet ID, 1 byte for encrypted
-    GLOBED_ASSERT(received >= Packet::HEADER_LEN, "packet is missing a header")
+    GLOBED_REQUIRE(received >= Packet::HEADER_LEN, "packet is missing a header")
 
     ByteBuffer buf(reinterpret_cast<byte*>(buffer), received);
 
@@ -38,14 +38,14 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 
     auto packet = matchPacket(packetId);
 
-    GLOBED_ASSERT(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(packetId))
+    GLOBED_REQUIRE(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(packetId))
 
     if (packet->getEncrypted() && !encrypted) {
-        GLOBED_ASSERT(false, "server sent a cleartext packet when expected an encrypted one")
+        GLOBED_REQUIRE(false, "server sent a cleartext packet when expected an encrypted one")
     }
 
     if (encrypted) {
-        GLOBED_ASSERT(box.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
+        GLOBED_REQUIRE(box.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
         bytevector& bufvec = buf.getDataRef();
 
         messageLength = box->decryptInPlace(bufvec.data() + Packet::HEADER_LEN, messageLength);
@@ -67,7 +67,7 @@ void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
 
     bytevector& dataref = buf.getDataRef();
     if (packet->getEncrypted()) {
-        GLOBED_ASSERT(box.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
+        GLOBED_REQUIRE(box.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
         // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
         buf.grow(CryptoBox::PREFIX_LEN);
         box->encryptInPlace(dataref.data() + Packet::HEADER_LEN, packetSize);

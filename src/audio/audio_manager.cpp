@@ -7,7 +7,7 @@
 
 #define FMOD_ERR_CHECK(res, msg) \
     auto GEODE_CONCAT(__evcond, __LINE__) = (res); \
-    if (GEODE_CONCAT(__evcond, __LINE__) != FMOD_OK) GLOBED_ASSERT(false, std::string(msg) + " failed: " + std::to_string((int)GEODE_CONCAT(__evcond, __LINE__)));
+    if (GEODE_CONCAT(__evcond, __LINE__) != FMOD_OK) GLOBED_REQUIRE(false, std::string(msg) + " failed: " + std::to_string((int)GEODE_CONCAT(__evcond, __LINE__)));
 
 GLOBED_SINGLETON_DEF(GlobedAudioManager)
 
@@ -93,8 +93,8 @@ AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice(int deviceId) {
 }
 
 void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFrame&)> callback) {
-    GLOBED_ASSERT(this->recordDevice.id >= 0, "no recording device is set")
-    GLOBED_ASSERT(!isRecording(), "attempting to record when already recording");
+    GLOBED_REQUIRE(this->recordDevice.id >= 0, "no recording device is set")
+    GLOBED_REQUIRE(!isRecording(), "attempting to record when already recording");
 
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
@@ -152,7 +152,7 @@ void GlobedAudioManager::recordContinueStream() {
 }
 
 bool GlobedAudioManager::isRecording() {
-    GLOBED_ASSERT(this->recordDevice.id >= 0, "no recording device is set")
+    GLOBED_REQUIRE(this->recordDevice.id >= 0, "no recording device is set")
     bool recording;
     FMOD_ERR_CHECK(
         this->getSystem()->isRecording(this->recordDevice.id, &recording),
