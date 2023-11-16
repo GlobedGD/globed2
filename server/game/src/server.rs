@@ -11,7 +11,7 @@ use rustc_hash::FxHashMap;
 #[allow(unused_imports)]
 use tokio::sync::oneshot; // no way
 
-use log::{debug, info, warn};
+use log::{info, warn};
 use tokio::{net::UdpSocket, sync::RwLock};
 
 use crate::{
@@ -107,8 +107,6 @@ impl GameServer {
             drop(threads);
             let mut threads = self.threads.write().await;
 
-            debug!("creating new thread for {peer}");
-
             let thread = Arc::new(GameServerThread::new(
                 self.state.clone(),
                 peer,
@@ -122,7 +120,7 @@ impl GameServer {
                 match thread.run().await {
                     Ok(_) => {
                         // remove the thread from the list of threads in order to cleanup
-                        debug!("removing client: {}", peer);
+                        log::trace!("removing client: {}", peer);
                         self.remove_client(&peer).await;
                     }
                     Err(err) => {

@@ -1,10 +1,11 @@
 #include "network_manager.hpp"
 
-#include <util/net.hpp>
 #include <data/packets/all.hpp>
 #include <managers/server_manager.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/account_manager.hpp>
+#include <util/net.hpp>
+#include <util/debugging.hpp>
 
 using namespace geode::prelude;
 using namespace util::data;
@@ -30,7 +31,6 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
         GlobedServerManager::get().pingFinishActive(packet->playerCount);
-        log::debug("keepalive players: {}", packet->playerCount);
     });
 
     addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
@@ -41,6 +41,13 @@ NetworkManager::NetworkManager() {
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
         log::info("Successfully logged into the server!");
         _loggedin.store(true, std::memory_order::relaxed);
+    });
+
+    addBuiltinListener<LoginFailedPacket>([this](auto packet) {
+        ErrorQueues::get().error(fmt::format("Authentication failed! Please try connecting to the server again.\n\nReason: <cy>{}</c>", packet->message));
+        GlobedAccountManager::get().authToken.lock()->clear();
+        
+        this->disconnect(true);
     });
 
     // boot up the threads
@@ -77,7 +84,7 @@ NetworkManager::~NetworkManager() {
 
 void NetworkManager::connect(const std::string& addr, unsigned short port) {
     if (connected()) {
-        this->disconnect(true);
+        this->disconnect(false);
     }
 
     GLOBED_REQUIRE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
@@ -104,6 +111,8 @@ void NetworkManager::disconnect(bool quiet) {
 
     socket.disconnect();
     socket.cleanupBox();
+
+    GlobedServerManager::get().setActiveGameServer("");
 }
 
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
@@ -167,6 +176,7 @@ void NetworkManager::threadRecvFunc() {
         }
 
         if (!pollResult.hasNormal) {
+            // TODO fix vvv
             // maybeDisconnectIfDead();
             continue;
         }
@@ -212,11 +222,15 @@ void NetworkManager::threadTasksFunc() {
         for (auto task : taskQueue.popAll()) {
             switch (task) {
             case NetworkThreadTask::PingServers: {
-                for (auto& [serverId, server] : GlobedServerManager::get().extractGameServers()) {
+                auto& sm = GlobedServerManager::get();
+                auto activeServer = sm.getActiveGameServer();
+
+                for (auto& [serverId, server] : sm.extractGameServers()) {
+                    if (serverId == activeServer) continue;
 
                     try {
                         pingSocket.connect(server.address.ip, server.address.port);
-                        auto pingId = GlobedServerManager::get().pingStart(serverId);
+                        auto pingId = sm.pingStart(serverId);
                         pingSocket.sendPacket(PingPacket::create(pingId));
                         pingSocket.disconnect();
                     } catch (const std::exception& e) {
@@ -251,12 +265,6 @@ void NetworkManager::maybeDisconnectIfDead() {
 
 PollBothResult NetworkManager::pollBothSockets(long msDelay) {
     PollBothResult out;
-    if (!connected()) {
-        // only poll the ping socket in that case
-        out.hasNormal = false;
-        out.hasPing = pingSocket.poll(msDelay);
-        return out;
-    }
 
     GLOBED_SOCKET_POLLFD fds[2];
 
@@ -276,7 +284,6 @@ PollBothResult NetworkManager::pollBothSockets(long msDelay) {
         out.hasNormal = false;
         out.hasPing = false;
     } else {
-        // unchecked -- please verify this works in future
         out.hasNormal = (fds[0].revents & POLLIN) != 0;
         out.hasPing = (fds[1].revents & POLLIN) != 0;
     }

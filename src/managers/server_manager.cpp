@@ -44,8 +44,14 @@ void GlobedServerManager::addGameServer(const std::string& serverId, const std::
     };
 }
 
+void GlobedServerManager::setActiveGameServer(const std::string& serverId) {
+    auto data = _data.write();
+    data->game = serverId;
+}
+
 std::string GlobedServerManager::getActiveGameServer() {
-    return _data.read()->game;
+    auto data = _data.read();
+    return data->game;
 }
 
 void GlobedServerManager::clearGameServers() {
@@ -71,21 +77,29 @@ uint32_t GlobedServerManager::pingStart(const std::string& serverId) {
         gsi.pendingPings.clear();
     }
 
-    auto now = util::time::now();
+    auto now = util::time::nowMillis();
     gsi.pendingPings[pingId] = now;
 
     return pingId;
 }
 
 void GlobedServerManager::pingStartActive() {
-    auto data = _data.write();
-    if (!data->game.empty()) {
-        data->activePingId = pingStart(data->game);
+    std::string gameServer;
+
+    {
+        auto data = _data.read();
+        gameServer = data->game;
+    }
+
+    if (!gameServer.empty()) {
+        auto pingId = this->pingStart(gameServer);
+        auto data = _data.write();
+        data->activePingId = pingId;
     }
 }
 
 void GlobedServerManager::pingFinish(uint32_t pingId, uint32_t playerCount) {
-    auto now = util::time::now();
+    auto now = util::time::nowMillis();
 
     auto data = _data.write();
     for (auto* server : util::collections::mapValuesBorrowed(data->servers)) {
@@ -104,7 +118,14 @@ void GlobedServerManager::pingFinish(uint32_t pingId, uint32_t playerCount) {
 }
 
 void GlobedServerManager::pingFinishActive(uint32_t playerCount) {
-    pingFinish(_data.read()->activePingId, playerCount);
+    uint32_t pingId;
+    
+    {
+        auto data = _data.read();
+        pingId = data->activePingId;
+    }
+
+    this->pingFinish(pingId, playerCount);
 }
 
 GameServerView GlobedServerManager::getGameServer(const std::string& serverId) {

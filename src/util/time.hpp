@@ -2,12 +2,18 @@
 #include <chrono>
 
 namespace util::time {
-    inline std::chrono::milliseconds now() {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    namespace chrono = std::chrono;
+
+    inline chrono::system_clock::time_point now() {
+        return chrono::system_clock::now();
     }
 
-    inline std::chrono::microseconds nowMicros() {
-        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    inline chrono::milliseconds nowMillis() {
+        return chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch());
+    }
+
+    inline chrono::microseconds nowMicros() {
+        return chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch());
     }
 
     std::string nowPretty();

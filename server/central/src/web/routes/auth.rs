@@ -34,8 +34,6 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     let account_name = &*context.must_query("aname")?;
     let code = &*context.must_query("code")?;
 
-    log::trace!("totp login from {} ({}), code: {}", account_name, account_id, code);
-
     // if account_name.to_lowercase().contains("sevenworks")
     //     && rand::thread_rng().gen_ratio(1, 25) {
 
@@ -61,7 +59,7 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     let token = state.generate_token(account_id, account_name);
     drop(state);
 
-    debug!("totp login from {} successful", account_id);
+    debug!("totp login from {} ({}) successful", account_name, account_id);
 
     context.write(token);
 
@@ -211,7 +209,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         let authkey = state.generate_authkey(&account_id.to_string(), account_name);
         drop(state);
 
-        context.write(b64e::STANDARD.encode(authkey));
+        context.write(format!("none:{}", b64e::STANDARD.encode(authkey)));
         return Ok(());
     }
 
@@ -238,11 +236,14 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         Err(err) => throw!(StatusCode::BAD_REQUEST, err.to_string()),
     };
 
-    match state.record_login_attempt(&user_ip) {
-        Ok(_) => {}
-        Err(err) => {
-            warn!("peer is sending too many verification requests: {}", user_ip);
-            throw!(StatusCode::TOO_MANY_REQUESTS, err.to_string())
+    // no ratelimiting in debug mode
+    if !cfg!(debug_assertions) {
+        match state.record_login_attempt(&user_ip) {
+            Ok(_) => {}
+            Err(err) => {
+                warn!("peer is sending too many verification requests: {}", user_ip);
+                throw!(StatusCode::TOO_MANY_REQUESTS, err.to_string())
+            }
         }
     }
 
@@ -296,14 +297,16 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         let comment_text = comment.get("2");
         let author_name = author.get("1");
         let author_id = author.get("16");
+        let comment_id = comment.get("6");
 
-        if comment_text.is_none() || author_name.is_none() || author_id.is_none() {
+        if comment_text.is_none() || author_name.is_none() || author_id.is_none() || comment_id.is_none() {
             continue;
         }
 
         let author_id = author_id.unwrap();
         let author_name = author_name.unwrap();
         let comment_text = comment_text.unwrap();
+        let comment_id = comment_id.unwrap();
 
         if author_id.parse::<i32>()? != account_id {
             continue;
@@ -318,7 +321,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
 
         let mut state = context.state_write().await;
 
-        let result = state.verify_challenge(&challenge.value, &comment_text);
+        let result = state.verify_challenge(&challenge.value, &comment_text[..6]);
 
         // on success, delete the challenge and generate the authkey
         if result {
@@ -328,7 +331,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
             let authkey = state.generate_authkey(author_id, author_name);
             drop(state);
 
-            context.write(b64e::STANDARD.encode(authkey));
+            context.write(format!("{}:{}", comment_id, b64e::STANDARD.encode(authkey)));
             return Ok(());
         } else {
             break;

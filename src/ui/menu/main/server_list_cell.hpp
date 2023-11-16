@@ -11,6 +11,7 @@ public:
 
     bool init(const GameServerView& gsview, bool active);
     void updateWith(const GameServerView& gsview, bool active);
+    void requestTokenAndConnect();
 
     static ServerListCell* create(const GameServerView& gsview, bool active) {
         auto ret = new ServerListCell;

@@ -1,6 +1,8 @@
 #include "debugging.hpp"
 #include <string>
+
 #include <util/formatting.hpp>
+#include <util/time.hpp>
 
 namespace util::debugging {
     std::chrono::microseconds Benchmarker::end(std::string id) {
@@ -116,4 +118,8 @@ namespace util::debugging {
         GLOBED_SUICIDE;
     }
 #endif
+
+    void timedLog(const std::string& message) {
+        geode::log::info("[{}] {}", util::formatting::formatDate(util::time::now()), message);
+    }
 }

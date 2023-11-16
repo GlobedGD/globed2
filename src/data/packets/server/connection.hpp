@@ -47,3 +47,12 @@ class LoggedInPacket : public Packet {
     GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE {}
 };
+
+class LoginFailedPacket : public Packet {
+    GLOBED_PACKET(20005, false)
+
+    GLOBED_PACKET_ENCODE_UNIMPL
+    GLOBED_PACKET_DECODE { message = buf.readString(); }
+
+    std::string message;
+};

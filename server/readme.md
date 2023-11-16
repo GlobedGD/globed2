@@ -14,7 +14,7 @@ The following is a simple configuration template with descriptions of all option
 {
     "web_mountpoint": "/", // server HTTP mountpoint
     "web_address": "0.0.0.0:41000", // server address
-    "use_gd_api": true, // verify account ownership via boomlings api
+    "use_gd_api": false, // verify account ownership via boomlings api
     "gd_api": "http://www.boomlings.com/database/getGJComments21.php", // can be a proxy for the comments endpoint
     "special_users": {
         "9568205": {

@@ -334,6 +334,7 @@ impl GameServerThread {
         drop(state);
 
         let url = format!("{central_url}gs/verify");
+
         let response = client
             .post(url)
             .query(&[
@@ -348,7 +349,10 @@ impl GameServerThread {
             .await?;
 
         if !response.starts_with("status_ok:") {
-            gs_disconnect!(self, format!("failed to authenticate: {response}"));
+            self.terminate();
+            gs_retpacket!(LoginFailedPacket {
+                message: format!("authentication failed: {}", response)
+            });
         }
 
         let player_name = response.split_once(':').ok_or(anyhow!("central server is drunk"))?.1;

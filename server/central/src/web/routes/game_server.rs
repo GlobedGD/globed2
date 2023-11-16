@@ -1,5 +1,5 @@
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
-use log::{debug, info};
+use log::info;
 use reqwest::StatusCode;
 use roa::{preload::PowerBody, query::Query, throw, Context};
 
@@ -49,7 +49,11 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         protocol: PROTOCOL_VERSION,
     };
 
-    info!("authenticated {} at {}", user_agent, context.remote_addr);
+    info!(
+        "authenticated game server v{} at {}",
+        user_agent.split_once('/').unwrap_or_default().1,
+        context.remote_addr.ip()
+    );
 
     let bdata = serde_json::to_string(&bdata)?;
 
@@ -72,13 +76,6 @@ pub async fn verify_token(context: &mut Context<ServerState>) -> roa::Result {
     let token = &*context.must_query("token")?;
 
     let result = context.state_read().await.verify_token(account_id, token);
-
-    debug!(
-        "verifying a token from gameserver, account: {}, token: {}, result: {}",
-        account_id,
-        token,
-        if result.is_ok() { "success" } else { "failure" }
-    );
 
     match result {
         Ok(name) => {

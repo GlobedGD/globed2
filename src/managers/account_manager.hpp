@@ -19,6 +19,7 @@ class GlobedAccountManager {
 
     void storeAuthKey(const util::data::byte* source, size_t size);
     void storeAuthKey(const util::data::bytevector& source);
+    void clearAuthKey();
 
     bool hasAuthKey();
 

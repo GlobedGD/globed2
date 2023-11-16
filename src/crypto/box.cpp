@@ -1,6 +1,6 @@
 #include "box.hpp"
+
 #include <util/crypto.hpp>
-#include <util/rng.hpp>
 #include <stdexcept> // std::runtime_error
 #include <cstring> // std::memcpy
 
@@ -61,7 +61,7 @@ constexpr size_t CryptoBox::macLength() {
 
 size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
-    util::rng::secureRandom(nonce, NONCE_LEN);
+    util::crypto::secureRandom(nonce, NONCE_LEN);
 
     byte* ciphertext = dest + NONCE_LEN;
     CRYPTO_ERR_CHECK(func_box_easy(ciphertext, src, size, nonce, sharedKey), "func_box_easy failed");

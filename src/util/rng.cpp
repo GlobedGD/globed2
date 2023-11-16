@@ -1,5 +1,4 @@
 #include "rng.hpp"
-#include <util/crypto.hpp>
 
 #define RNG_DEF(type) \
     template type Random::generate<type>(); \
@@ -7,23 +6,12 @@
     template type Random::generate<type>(type, type)
 
 namespace util::rng {
-    data::bytevector secureRandom(size_t size) {
-        data::bytevector out(size);
-        secureRandom(out.data(), size);
-        return out;
-    }
-
-    void secureRandom(data::byte* dest, size_t size) {
-        CRYPTO_SODIUM_INIT
-        randombytes_buf(dest, size);
-    }
+    GLOBED_SINGLETON_DEF(Random)
 
     Random::Random() {
         std::random_device rdev;
         engine.seed(rdev());
     }
-
-    GLOBED_SINGLETON_DEF(Random)
 
     template <typename T>
     T Random::generate() {

@@ -1,6 +1,9 @@
 use crate::{
     bytebufferext::{decode_unimpl, empty_impl, encode_impl, ByteBufferExtWrite},
-    data::{packets::packet, types::CryptoPublicKey},
+    data::{
+        packets::{empty_server_packet, packet},
+        types::CryptoPublicKey,
+    },
 };
 
 /* PingResponsePacket - 20000 */
@@ -68,10 +71,18 @@ decode_unimpl!(ServerDisconnectPacket);
 
 /* LoggedInPacket - 20004 */
 
-packet!(LoggedInPacket, 20004, false, {});
+empty_server_packet!(LoggedInPacket, 20004);
 
-encode_impl!(LoggedInPacket, _buf, self, {});
+/* LoginFailedPacket - 20005 */
 
-empty_impl!(LoggedInPacket, Self {});
+packet!(LoginFailedPacket, 20005, false, {
+    message: String
+});
 
-decode_unimpl!(LoggedInPacket);
+encode_impl!(LoginFailedPacket, buf, self, {
+    buf.write_string(&self.message);
+});
+
+empty_impl!(LoginFailedPacket, Self { message: "".to_string() });
+
+decode_unimpl!(LoginFailedPacket);

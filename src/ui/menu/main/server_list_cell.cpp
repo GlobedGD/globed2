@@ -1,6 +1,13 @@
 #include "server_list_cell.hpp"
 
+#include <Geode/utils/web.hpp>
 #include <UIBuilder.hpp>
+
+#include <net/network_manager.hpp>
+#include <managers/account_manager.hpp>
+#include <managers/server_manager.hpp>
+#include <managers/error_queues.hpp>
+#include <util/net.hpp>
 
 using namespace geode::prelude;
 
@@ -55,7 +62,7 @@ void ServerListCell::updateWith(const GameServerView& gsview, bool active) {
     // log::debug("list cell name: {}", gsview.name);
 
     labelName->setString(gsview.name.c_str());
-    labelPing->setString(fmt::format("{} ms", gsview.ping).c_str());
+    labelPing->setString(fmt::format("{} ms", gsview.ping == -1 ? "?" : std::to_string(gsview.ping)).c_str());
     labelExtra->setString(fmt::format("Region: {}, players: {}", gsview.region, gsview.playerCount).c_str());
 
     labelName->setColor(active ? ACTIVE_COLOR : INACTIVE_COLOR);
@@ -63,16 +70,78 @@ void ServerListCell::updateWith(const GameServerView& gsview, bool active) {
 
     namePingLayer->updateLayout();
 
-    if (btnChanged && btnConnect) {
-        btnConnect->removeFromParent();
+    if (btnChanged || !btnConnect) {
+        if (btnConnect) {
+            btnConnect->removeFromParent();
+        }
 
         Build<ButtonSprite>::create(active ? "Leave" : "Join", "bigFont.fnt", active ? "GJ_button_03.png" : "GJ_button_01.png", 0.8f)
-            .intoMenuItem([this](auto) {
+            .intoMenuItem([this, active](auto) {
+                if (active) {
+                    NetworkManager::get().disconnect(false);
+                } else {
+                    // check if the token is here
+                    auto& sm = GlobedServerManager::get();
+                    auto& am = GlobedAccountManager::get();
 
+                    auto hasToken = !am.authToken.lock()->empty();
+
+                    if (hasToken) {
+                        NetworkManager::get().connect(this->gsview.address.ip, this->gsview.address.port);
+                        sm.setActiveGameServer(this->gsview.id);
+                    } else {
+                        this->requestTokenAndConnect();
+                    }
+                }
             })
             .anchorPoint(1.0f, 0.5f)
             .pos(34.f, 0.f)
             .parent(btnMenu)
             .store(btnConnect);
     }
+}
+
+void ServerListCell::requestTokenAndConnect() {
+    auto& am = GlobedAccountManager::get();
+    auto& sm = GlobedServerManager::get();
+
+    std::string authcode;
+    try {
+        authcode = am.generateAuthCode();
+    } catch (const std::exception& e) {
+        // invalid authkey? clear it so the user can relog. happens if user changes their password
+        ErrorQueues::get().error(fmt::format(
+            "Failed to generate authcode! Please try to login and connect again.\n\nReason for the error: <cy>{}</c>",
+            e.what()
+        ));
+        am.clearAuthKey();
+        return;
+    }
+
+    auto url = fmt::format(
+        "{}/totplogin?aid={}&aname={}&code={}",
+        sm.getCentral(),
+        am.accountId.load(std::memory_order::relaxed),
+        am.accountName,
+        authcode
+    );
+
+    // both callbacks should be safe even if GlobedMenuLayer was closed.
+    web::AsyncWebRequest()
+        .postRequest()
+        .userAgent(util::net::webUserAgent())
+        .fetch(url).text()
+        .then([this, &am, &sm, gsview = this->gsview](const std::string& response) {
+            *am.authToken.lock() = response;
+            NetworkManager::get().connect(gsview.address.ip, gsview.address.port);
+            sm.setActiveGameServer(gsview.id);
+        })
+        .expect([&am](const std::string& error) {
+            ErrorQueues::get().error(fmt::format(
+                "Failed to generate a session token! Please try to login and connect again.\n\nServer response: <cy>{}</c>",
+                error
+            ));
+            am.clearAuthKey();
+        })
+        .send();
 }

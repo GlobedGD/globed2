@@ -65,6 +65,32 @@ macro_rules! packet {
     };
 }
 
+macro_rules! empty_server_packet {
+    ($packet_type:ident, $packet_id:expr) => {
+        packet!($packet_type, $packet_id, false, {});
+
+        encode_impl!($packet_type, _buf, self, {});
+
+        empty_impl!($packet_type, Self {});
+
+        decode_unimpl!($packet_type);
+    };
+}
+
+macro_rules! empty_client_packet {
+    ($packet_type:ident, $packet_id:expr) => {
+        packet!($packet_type, $packet_id, false, {});
+
+        encode_unimpl!($packet_type);
+
+        empty_impl!($packet_type, Self {});
+
+        decode_impl!($packet_type, _buf, self, Ok(()));
+    };
+}
+
+pub(crate) use empty_client_packet;
+pub(crate) use empty_server_packet;
 pub(crate) use packet;
 
 pub trait Packet: Encodable + Decodable + Send + Sync {

@@ -1,10 +1,11 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include "signup_layer.hpp"
 
 class GlobedMenuLayer : public cocos2d::CCLayer {
 public:
     static constexpr float LIST_WIDTH = 358.f;
-    static constexpr float LIST_HEIGHT = 190.f;
+    static constexpr float LIST_HEIGHT = 220.f;
 
     bool init();
     cocos2d::CCArray* createServerList();
@@ -35,4 +36,5 @@ public:
 
 private:
     GJListLayer* listLayer;
+    GlobedSignupLayer* signupLayer;
 };

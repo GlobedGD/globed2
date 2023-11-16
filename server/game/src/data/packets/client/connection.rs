@@ -41,13 +41,7 @@ decode_impl!(CryptoHandshakeStartPacket, buf, self, {
 
 /* KeepalivePacket - 10002 */
 
-packet!(KeepalivePacket, 10002, false, {});
-
-encode_unimpl!(KeepalivePacket);
-
-empty_impl!(KeepalivePacket, Self {});
-
-decode_impl!(KeepalivePacket, _buf, self, Ok(()));
+empty_client_packet!(KeepalivePacket, 10002);
 
 /* LoginPacket - 10003 */
 
@@ -74,10 +68,4 @@ decode_impl!(LoginPacket, buf, self, {
 
 /* DisconnectPacket - 10004 */
 
-packet!(DisconnectPacket, 10004, false, {});
-
-encode_unimpl!(DisconnectPacket);
-
-empty_impl!(DisconnectPacket, Self {});
-
-decode_impl!(DisconnectPacket, _buf, self, Ok(()));
+empty_client_packet!(DisconnectPacket, 10004);

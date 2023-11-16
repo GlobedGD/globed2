@@ -29,13 +29,21 @@ $on_mod(Loaded) {
     });
     
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
-    geode::log::warn("=== Globed has been loaded in debug mode ===");
+    geode::log::warn("=== Globed {} has been loaded in debug mode ===", Mod::get()->getVersion().toString());
+    geode::log::info("Platform: {}", GLOBED_PLATFORM_STRING);
+    geode::log::info("FMOD support: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
+    geode::log::info("Voice support: {}", GLOBED_VOICE_SUPPORT == 0 ? "false" : "true");
+    geode::log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
+    geode::log::info("Little endian: {}", GLOBED_LITTLE_ENDIAN ? "true" : "false");
+    geode::log::info("Libsodium version: {}", SODIUM_VERSION_STRING);
+    #if GLOBED_VOICE_SUPPORT
+    geode::log::info("Opus version: {}", opus_get_version_string());
+    #endif
 #endif
 }
 
 void testFmod1();
 void testFmod2();
-void testNetworking();
 
 class $modify(MyMenuLayer, MenuLayer) {
     bool init() {
@@ -58,8 +66,6 @@ class $modify(MyMenuLayer, MenuLayer) {
     void onMoreGames(CCObject*) {
         if (NetworkManager::get().established()) {
             util::debugging::PacketLogger::get().getSummary().print();
-        } else {
-            testNetworking();
         }
 
         // nm.addListener<PingResponsePacket>([](auto* packet) {
@@ -141,78 +147,3 @@ void testFmod2() {
     });
 }
 #endif // GLOBED_VOICE_SUPPORT
-
-void testNetworking() {
-    auto& nm = NetworkManager::get();
-
-    std::string url = "http://127.0.0.1:41000";
-
-    ///// yea this is ugly code but i need it here to remember for the future
-
-    if (GlobedAccountManager::get().hasAuthKey()) {
-        GlobedAccountManager::get().setSecretKey("hello");
-        auto authcode = GlobedAccountManager::get().generateAuthCode();
-        log::debug("reusing authcode: {}", authcode);
-
-        web::AsyncWebRequest()
-            .postRequest()
-            .userAgent(util::net::webUserAgent())
-            .fetch(url + "/totplogin?aid=1&aname=dankmeme01&code=" + authcode).text()
-            .then([=](std::string response) {
-                log::debug("got token for gameserver reused!!: {}", response);
-
-                GlobedAccountManager::get().authToken.lock() = response;
-                GlobedAccountManager::get().accountId = 1;
-                GlobedAccountManager::get().accountName = "dankmeme01";
-                auto& nm = NetworkManager::get();
-                nm.connect("127.0.0.1", 41001);
-
-            }).expect([=](std::string err) { log::error("reuse /totplogin fail: {}", err); }).send();
-    } else {
-        web::AsyncWebRequest()
-            .userAgent(util::net::webUserAgent())
-            .fetch(url + "/version").text()
-            .then([=](auto response) {
-                geode::log::debug("got version: {}", response);
-
-                if (std::stoi(response) == NetworkManager::PROTOCOL_VERSION) {
-                    web::AsyncWebRequest()
-                        .postRequest()
-                        .userAgent(util::net::webUserAgent())
-                        .fetch(url + "/challenge/new?aid=1").text()
-                        .then([=](auto response) {
-                            geode::log::debug("token: {}", response);
-                            auto index = response.find(":"); // TODO check if npos
-                            auto token = response.substr(index + 1);
-
-                            auto tokenhash = util::crypto::simpleHash(token);
-                            auto code = util::crypto::simpleTOTP(tokenhash);
-
-                            web::AsyncWebRequest()
-                                .postRequest()
-                                .userAgent(util::net::webUserAgent())
-                                .fetch(url + "/challenge/verify?aid=1&aname=dankmeme01&answer=" + code).text()
-                                .then([=](std::string response) {
-                                    log::debug("finished challenge: {}", response);
-                                    auto authkey = util::crypto::base64Decode(response);
-                                    auto& am = GlobedAccountManager::get();
-                                    am.setSecretKey("hello");
-                                    am.storeAuthKey(util::crypto::simpleHash(authkey));
-                                    auto authcode = am.generateAuthCode();
-                                    log::debug("generated authcode: {}", authcode);
-
-                                    web::AsyncWebRequest()
-                                        .postRequest()
-                                        .userAgent(util::net::webUserAgent())
-                                        .fetch(url + "/totplogin?aid=1&aname=dankmeme01&code=" + authcode).text()
-                                        .then([=](std::string response) {
-                                            log::debug("got token for gameserver!!: {}", response);
-                                        }).expect([](std::string error) { log::warn("err fetching /totplogin: {}", error); }).send();
-                                }).expect([](std::string error) { log::warn("err fetching /challenge/verify: {}", error); }).send();
-                        }
-                    ).expect([](std::string error) { log::warn("err fetching /challenge/new: {}", error); }).send();
-                }
-            }
-        ).expect([](std::string error) { log::warn("err fetching /version: {}", error); }).send();
-    }
-}

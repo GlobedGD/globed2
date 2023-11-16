@@ -9,11 +9,18 @@
 #include <net/network_manager.hpp>
 #include <managers/server_manager.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/account_manager.hpp>
 
 using namespace geode::prelude;
 
 bool GlobedMenuLayer::init() {
     if (!CCLayer::init()) return false;
+
+    auto& am = GlobedAccountManager::get();
+    auto* gjam = GJAccountManager::get();
+    am.accountName = gjam->m_username;
+    am.accountId.store(gjam->m_accountID, std::memory_order::relaxed);
+    am.setSecretKey(gjam->getGJP());
 
     auto listview = Build<ListView>::create(createServerList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
@@ -22,19 +29,31 @@ bool GlobedMenuLayer::init() {
 
     Build<GJListLayer>::create(listview, "Servers", ccc4(0, 0, 0, 180), LIST_WIDTH, 220.f)
         .zOrder(2)
-        .anchorPoint({0.f, 0.f})
+        .anchorPoint(0.f, 0.f)
         .parent(this)
+        .id("server-list"_spr)
         .store(listLayer);
     
     listLayer->setPosition({winsize / 2 - listLayer->getScaledContentSize() / 2});
 
+    Build<GlobedSignupLayer>::create()
+        .zOrder(2)
+        .anchorPoint(0.f, 0.f)
+        .pos(listLayer->getPosition())
+        .parent(this)
+        .id("signup-layer")
+        .store(signupLayer);
+
+    // refresh servers btn
+
     Build<CCSprite>::createSpriteName("miniSkull_001.png")
         .scale(1.2f)
-        .pos({25.f, 25.f})
+        .pos({-250.f, -70.f})
         .intoMenuItem([this](CCObject*) {
             this->requestServerList();
         })
         .intoNewParent(CCMenu::create())
+        .id("btn-refresh-servers")
         .parent(this);
 
     util::ui::addBackground(this);
@@ -53,6 +72,8 @@ bool GlobedMenuLayer::init() {
     if (GlobedServerManager::get().gameServerCount() == 0) {
         this->requestServerList();
     }
+
+    this->refreshServerList(0.f);
 
     return true;
 }
@@ -77,6 +98,17 @@ CCArray* GlobedMenuLayer::createServerList() {
 }
 
 void GlobedMenuLayer::refreshServerList(float _) {
+    // if we do not have a session token from the central server, don't show game servers
+    auto& am = GlobedAccountManager::get();
+    if (!am.hasAuthKey()) {
+        listLayer->setVisible(false);
+        signupLayer->setVisible(true);
+        return;
+    }
+
+    listLayer->setVisible(true);
+    signupLayer->setVisible(false);
+
     // if there are pending changes, hard refresh the list
     auto& sm = GlobedServerManager::get();
     if (sm.pendingChanges.load(std::memory_order::relaxed)) {
@@ -100,15 +132,19 @@ void GlobedMenuLayer::refreshServerList(float _) {
     }
 
     auto active = sm.getActiveGameServer();
+
     bool authenticated = NetworkManager::get().authenticated();
     
     for (auto* obj : CCArrayExt<CCNode>(listCells)) {
         auto slc = static_cast<ServerListCell*>(obj->getChildren()->objectAtIndex(2));
-        slc->updateWith(sm.getGameServer(slc->gsview.id), authenticated && slc->gsview.id == active);
+        auto server = sm.getGameServer(slc->gsview.id);
+        slc->updateWith(server, authenticated && slc->gsview.id == active);
     }
 }
 
 void GlobedMenuLayer::requestServerList() {
+    NetworkManager::get().disconnect(false);
+
     auto centralUrl = GlobedServerManager::get().getCentral();
 
     web::AsyncWebRequest()

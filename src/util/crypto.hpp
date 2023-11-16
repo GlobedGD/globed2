@@ -11,10 +11,10 @@
 #define CRYPTO_SODIUM_INIT CRYPTO_REQUIRE(sodium_init() != -1, "sodium_init failed")
 
 namespace util::crypto {
-    /*
-    * pwHash is better for sensitive data, as it has a salt
-    * simpleHash is deterministic and uses Blake2b-256.
-    */
+    // generate `size` bytes of cryptographically secure random data
+    data::bytevector secureRandom(size_t size);
+    // generate `size` bytes of cryptographically secure random data into the given buffer
+    void secureRandom(data::byte* dest, size_t size);
 
     // generate a hash from this string and return it together with the salt prepended
     util::data::bytevector pwHash(const std::string& input);

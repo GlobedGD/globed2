@@ -19,7 +19,7 @@ fn default_web_address() -> String {
 }
 
 fn default_use_gd_api() -> bool {
-    true
+    false
 }
 
 fn default_gdapi() -> String {

@@ -85,4 +85,7 @@ namespace util::debugging {
     // crash the program immediately
     [[noreturn]] void suicide();
 #endif
+
+    // like geode::log::debug but with precise timestamps.
+    void timedLog(const std::string& message);
 }

@@ -50,6 +50,7 @@ class GlobedServerManager {
 
     /* game servers */
     void addGameServer(const std::string& serverId, const std::string& name, const std::string& address, const std::string& region);
+    void setActiveGameServer(const std::string& serverId);
     std::string getActiveGameServer();
     void clearGameServers();
 

@@ -1,5 +1,9 @@
 /*
 * sync.hpp is a util file for syncing things across threads.
+* NOTE: when using locks (WrappingMutex and WrappingRwLock), be very careful with the usage.
+* It's best to avoid doing `lck->lock().method()` and instead do
+* auto _lock = lck->lock();
+* _lock.method();
 */
 
 #pragma once
