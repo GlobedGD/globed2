@@ -16,11 +16,11 @@ Note that the server is written with security in mind, so many of those options 
 | `web_mountpoint` | `"/"` | ❌ | HTTP mountpoint (the prefix before every endpoint) |
 | `web_address` | `"0.0.0.0:41000"` | ❌ | HTTP address |
 | `special_users` | `{}` | ✅ | Each entry has the account ID as the key and an object with properties `name` and `color` as the value. The `color` property is used for changing the color of the name for this user |
-| `game_servers` | `[]` | ✅ | Each object has 4 keys: `id` (must be a unique string), `name`, `address` (must include the port), `region` |
+| `game_servers` | `[]` | ✅ | Each object has 4 keys: `id` (must be a unique string), `name`, `address` (in format `ip:port`), `region` |
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
 | `userlist` | `[]` | ✅ | If userlist mode is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed access |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `challenge_level` accordingly if you enable this setting |
-| `gd_api`<sup>*</sup> | `"..."` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for private servers |
+| `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for private servers |
 | `secret_key`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying authentication codes |
 | `game_server_password`<sup>*</sup> | `(random)` | ✅ | Password used to authenticate game servers |
 | `cloudflare_protection`<sup>*</sup> | `false` | ✅ | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users |
