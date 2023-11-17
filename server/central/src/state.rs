@@ -7,6 +7,7 @@ use std::{
 };
 
 use anyhow::anyhow;
+use async_rate_limit::sliding_window::SlidingWindowRateLimiter;
 use base64::{engine::general_purpose as b64e, Engine};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -31,6 +32,7 @@ pub struct ServerStateData {
     pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
     pub http_client: reqwest::Client,
     pub login_attempts: HashMap<IpAddr, Instant>,
+    pub ratelimiter: Arc<SlidingWindowRateLimiter>,
 }
 
 impl ServerStateData {
@@ -47,6 +49,10 @@ impl ServerStateData {
             active_challenges: HashMap::new(),
             http_client,
             login_attempts: HashMap::new(),
+            ratelimiter: Arc::new(SlidingWindowRateLimiter::new(
+                Duration::from_secs(config.gd_api_period),
+                config.gd_api_ratelimit,
+            )),
         }
     }
 

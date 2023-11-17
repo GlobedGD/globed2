@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::anyhow;
+use async_rate_limit::limiters::VariableCostRateLimiter;
 use base64::{engine::general_purpose as b64e, Engine as _};
 use log::{debug, info, warn};
 use rand::{distributions::Alphanumeric, Rng};
@@ -262,7 +263,12 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         }
     }
 
+    let ratelimiter = state.ratelimiter.clone();
+
     drop(state);
+
+    // boomlings ratelimit
+    ratelimiter.wait_with_cost(1).await;
 
     // now we have to request rob's servers and check if the challenge was solved
 

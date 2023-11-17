@@ -1,5 +1,6 @@
 use std::{error::Error, path::PathBuf, sync::Arc, time::Duration};
 
+use async_rate_limit::sliding_window::SlidingWindowRateLimiter;
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
 use log::{error, info, warn, LevelFilter};
@@ -62,6 +63,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mnt_point = config.web_mountpoint.clone();
 
     let state_skey = config.secret_key.clone();
+
     let state = ServerState {
         inner: Arc::new(RwLock::new(ServerStateData::new(config_path.clone(), config, state_skey))),
     };

@@ -1,7 +1,7 @@
 # This file is a list of allowed IP ranges.
 # In release mode, if the "use_cf_ip_header" option is enabled, some endpoints will block any requests
 # that are not originated from one of these IP ranges.
-# In debug or with the "use_cf_ip_header" option disabled this file has no impact on anything, no IP addresses will be blocked.
+# In debug or with the "cloudflare_protection" option disabled this file has no impact on anything, no IP addresses will be blocked.
 #
 # Use hashtags for comments and separate ranges by newlines. Start with 'v4' or 'v6' depending if it's IPv4 or IPv6
 

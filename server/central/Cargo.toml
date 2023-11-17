@@ -9,7 +9,7 @@ edition = "2021"
 globed-shared = { path = "../shared" }
 
 anyhow = "1.0.75"
-async-watcher = { git = "https://github.com/justinrubek/async-watcher", rev = "e4084be446aa7060e01ef95f128e23637286eafa" }
+async-watcher = "0.2.0"
 base64 = "0.21.5"
 blake2 = "0.10.6"
 colored = "2.0.4"
@@ -28,3 +28,4 @@ totp-rs = "5.4.0"
 lazy_static = "1.4.0"
 iprange = "0.6.7"
 ipnet = "2.9.0"
+async-rate-limit = "0.0.3"

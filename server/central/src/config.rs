@@ -26,6 +26,14 @@ fn default_gdapi() -> String {
     "http://www.boomlings.com/database/getGJComments21.php".to_string()
 }
 
+fn default_gdapi_ratelimit() -> usize {
+    5
+}
+
+fn default_gdapi_period() -> u64 {
+    5
+}
+
 fn default_game_servers() -> Vec<GameServerEntry> {
     Vec::new()
 }
@@ -128,6 +136,10 @@ pub struct ServerConfig {
     pub use_gd_api: bool,
     #[serde(default = "default_gdapi")]
     pub gd_api: String,
+    #[serde(default = "default_gdapi_ratelimit")]
+    pub gd_api_ratelimit: usize,
+    #[serde(default = "default_gdapi_period")]
+    pub gd_api_period: u64,
     #[serde(default = "default_secret_key")]
     pub secret_key: String,
     #[serde(default = "default_secret_key")]
@@ -171,6 +183,8 @@ impl ServerConfig {
             web_address: default_web_address(),
             use_gd_api: default_use_gd_api(),
             gd_api: default_gdapi(),
+            gd_api_ratelimit: default_gdapi_ratelimit(),
+            gd_api_period: default_gdapi_period(),
             game_servers: default_game_servers(),
             special_users: default_special_users(),
             userlist_mode: default_userlist_mode(),

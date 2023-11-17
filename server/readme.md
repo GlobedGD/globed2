@@ -18,9 +18,11 @@ Note that the server is written with security in mind, so many of those options 
 | `special_users` | `{}` | ✅ | Each entry has the account ID as the key and an object with properties `name` and `color` as the value. The `color` property is used for changing the color of the name for this user |
 | `game_servers` | `[]` | ✅ | Each object has 4 keys: `id` (must be a unique string), `name`, `address` (in format `ip:port`), `region` |
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
-| `userlist` | `[]` | ✅ | If userlist mode is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed access |
+| `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed access |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `challenge_level` accordingly if you enable this setting |
 | `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for private servers |
+| `gd_api_ratelimit`<sup>*</sup> | `5` | ❌ | If `use_gd_api` is enabled, sets the maximum request number per `gd_api_period` that can be made to robtop's API. Used to avoid ratelimits |
+| `gd_api_period`<sup>*</sup> | `5` | ❌ | The period for `gd_api_ratelimit`, in seconds. For example if both settings are set to 5 (the default), only 5 requests can be made in 5 seconds |
 | `secret_key`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying authentication codes |
 | `game_server_password`<sup>*</sup> | `(random)` | ✅ | Password used to authenticate game servers |
 | `cloudflare_protection`<sup>*</sup> | `false` | ✅ | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users |
