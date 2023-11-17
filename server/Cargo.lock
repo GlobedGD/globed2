@@ -582,6 +582,9 @@ dependencies = [
  "digest",
  "globed-shared",
  "hmac",
+ "ipnet",
+ "iprange",
+ "lazy_static",
  "log",
  "rand",
  "reqwest",
@@ -809,6 +812,15 @@ name = "ipnet"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f518f335dce6725a761382244631d86cf0ccb2863413590b31338feb467f9c3"
+
+[[package]]
+name = "iprange"
+version = "0.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37209be0ad225457e63814401415e748e2453a5297f9b637338f5fb8afa4ec00"
+dependencies = [
+ "ipnet",
+]
 
 [[package]]
 name = "is-terminal"

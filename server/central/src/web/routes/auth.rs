@@ -8,9 +8,9 @@ use anyhow::anyhow;
 use base64::{engine::general_purpose as b64e, Engine as _};
 use log::{debug, info, warn};
 use rand::{distributions::Alphanumeric, Rng};
-use reqwest::StatusCode;
-use roa::{preload::PowerBody, query::Query, throw, Context, Status};
+use roa::{http::StatusCode, preload::PowerBody, query::Query, throw, Context};
 
+use crate::ip_blocker::IP_BLOCKER;
 use crate::state::{ActiveChallenge, ServerState};
 
 macro_rules! check_user_agent {
@@ -27,9 +27,18 @@ macro_rules! check_user_agent {
     };
 }
 
+// if `use_cf_ip_header` is enabled, this macro gets the actual IP address of the user
+// from the CF-Connecting-IP header and puts it in $out.
+// it also checks if the request is made by actual cloudflare or if the header is just spoofed.
 macro_rules! get_user_ip {
     ($state:expr,$context:expr,$out:ident) => {
-        let user_ip: anyhow::Result<IpAddr> = if $state.config.use_cf_ip_header {
+        let user_ip: anyhow::Result<IpAddr> = if $state.config.use_cf_ip_header && !cfg!(debug_assertions) {
+            // verify if the actual peer is cloudflare
+            if !IP_BLOCKER.is_allowed(&$context.remote_addr.ip()) {
+                warn!("blocking unknown non-cloudflare address: {}", $context.remote_addr.ip());
+                throw!(StatusCode::UNAUTHORIZED, "access is denied from this IP address");
+            }
+
             let header = $context.req.headers.get("CF-Connecting-IP");
             let ip = header
                 .and_then(|val| val.to_str().ok())
@@ -110,18 +119,16 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
 
     let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
-    let mut should_remove = false;
     let mut should_return_existing = false;
     // check if there already is a challenge
-    if let Some(challenge) = state.active_challenges.get(&account_id) {
-        // if it's the same addr then it's OK, return the same challenge
-        if challenge.initiator == context.remote_addr.ip() {
+    if let Some(challenge) = state.active_challenges.get(&user_ip) {
+        // if it's the same account ID then it's OK, return the same challenge
+        if challenge.account_id == account_id {
             should_return_existing = true;
         } else {
             let passed_time = current_time - challenge.started;
-            if passed_time.as_secs() > (state.config.challenge_expiry as u64) {
-                should_remove = true;
-            } else {
+            // if it hasn't expired yet, throw an error
+            if passed_time.as_secs() < (state.config.challenge_expiry as u64) {
                 throw!(
                     StatusCode::FORBIDDEN,
                     "challenge already requested for this account ID, please wait a minute and try again"
@@ -133,7 +140,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     let level_id = state.config.challenge_level;
 
     if should_return_existing {
-        let rand_string = state.active_challenges.get(&account_id).unwrap().value.clone();
+        let rand_string = state.active_challenges.get(&user_ip).unwrap().value.clone();
         let verify = state.config.use_gd_api;
         drop(state);
 
@@ -145,10 +152,6 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
         return Ok(());
     }
 
-    if should_remove {
-        state.active_challenges.remove(&account_id);
-    }
-
     let rand_string: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(32)
@@ -158,10 +161,10 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     let challenge = ActiveChallenge {
         started: current_time,
         value: rand_string.clone(),
-        initiator: context.remote_addr.ip(),
+        account_id,
     };
 
-    state.active_challenges.insert(account_id, challenge);
+    state.active_challenges.insert(user_ip, challenge);
     let verify = state.config.use_gd_api;
 
     drop(state);
@@ -192,19 +195,20 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     );
 
     let state = context.state_read().await;
+    get_user_ip!(state, context, user_ip);
 
-    let challenge = match state.active_challenges.get(&account_id) {
+    let challenge = match state.active_challenges.get(&user_ip) {
         None => {
-            throw!(StatusCode::FORBIDDEN, "challenge does not exist for this account ID");
+            throw!(StatusCode::FORBIDDEN, "challenge does not exist for this IP address");
         }
         Some(x) => x,
     }
     .clone();
 
-    if challenge.initiator != context.remote_addr.ip() {
+    if challenge.account_id != account_id {
         throw!(
             StatusCode::UNAUTHORIZED,
-            "challenge was requested by a different IP address, not validating"
+            "challenge was requested for a different account ID, not validating"
         );
     }
 
@@ -233,7 +237,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         drop(state);
         let mut state = context.state_write().await;
 
-        state.active_challenges.remove(&account_id);
+        state.active_challenges.remove(&user_ip);
         let authkey = state.generate_authkey(&account_id.to_string(), account_name);
         drop(state);
 
@@ -246,7 +250,6 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     let mut state = context.state_write().await;
 
     // check if the user is doing it too fast
-    get_user_ip!(state, context, user_ip);
 
     // no ratelimiting in debug mode
     if !cfg!(debug_assertions) {
@@ -287,6 +290,13 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     }
     .text()
     .await?;
+
+    if response == "-1" {
+        throw!(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "RobTop's server returned -1, if GD servers are not currently down please report this issue!"
+        );
+    }
 
     let octothorpe = response.find('#');
 
@@ -339,7 +349,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         if result {
             info!("successfully generated an authkey for {} ({})", account_name, account_id);
 
-            state.active_challenges.remove(&account_id);
+            state.active_challenges.remove(&user_ip);
             let authkey = state.generate_authkey(author_id, author_name);
             drop(state);
 
@@ -353,7 +363,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     throw!(
         StatusCode::UNAUTHORIZED,
         "failed to find the comment with the correct challenge solution"
-    )
+    );
 }
 
 fn parse_robtop_string(data: &str) -> HashMap<&str, &str> {

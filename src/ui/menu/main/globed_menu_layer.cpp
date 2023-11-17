@@ -49,11 +49,23 @@ bool GlobedMenuLayer::init() {
     Build<CCSprite>::createSpriteName("miniSkull_001.png")
         .scale(1.2f)
         .pos({-250.f, -70.f})
-        .intoMenuItem([this](CCObject*) {
+        .intoMenuItem([this](auto) {
             this->requestServerList();
         })
         .intoNewParent(CCMenu::create())
         .id("btn-refresh-servers")
+        .parent(this);
+
+    // TODO remove wipe authtoken button
+
+    Build<CCSprite>::createSpriteName("d_skull01_001.png")
+        .scale(1.2f)
+        .pos(-250.f, -30.f)
+        .intoMenuItem([this](auto) {
+            GlobedAccountManager::get().clearAuthKey();
+        })
+        .intoNewParent(CCMenu::create())
+        .id("btn-clear-authtoken")
         .parent(this);
 
     util::ui::addBackground(this);

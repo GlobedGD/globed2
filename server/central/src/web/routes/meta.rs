@@ -1,5 +1,6 @@
 use globed_shared::PROTOCOL_VERSION;
-use roa::{preload::PowerBody, Context};
+use rand::Rng;
+use roa::{preload::PowerBody, throw, Context};
 
 use crate::state::ServerState;
 
@@ -9,6 +10,10 @@ pub async fn version(context: &mut Context<ServerState>) -> roa::Result {
 }
 
 pub async fn index(context: &mut Context<ServerState>) -> roa::Result {
+    if rand::thread_rng().gen_ratio(1, 100) {
+        context.resp.headers.append("Location", "/amoung_pequeno".parse()?);
+        throw!(roa::http::StatusCode::TEMPORARY_REDIRECT);
+    }
     context.write("hi there cutie :3");
     Ok(())
 }
@@ -29,5 +34,8 @@ pub async fn pagina_grande(context: &mut Context<ServerState>) -> roa::Result {
     context.resp.headers.append("pagina", "grande".parse()?);
 
     context.write(html);
+
+    context.resp.headers.remove("Content-Type");
+    context.resp.headers.append("Content-Type", "text/html".parse()?);
     Ok(())
 }

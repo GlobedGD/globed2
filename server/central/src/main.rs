@@ -9,6 +9,7 @@ use state::{ServerState, ServerStateData};
 use tokio::sync::RwLock;
 
 pub mod config;
+pub mod ip_blocker;
 pub mod logger;
 pub mod state;
 pub mod web;

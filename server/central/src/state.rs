@@ -3,7 +3,7 @@ use std::{
     net::IpAddr,
     path::PathBuf,
     sync::Arc,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use anyhow::anyhow;
@@ -19,19 +19,19 @@ use totp_rs::{Algorithm, Secret, TOTP};
 
 #[derive(Clone)]
 pub struct ActiveChallenge {
+    pub account_id: i32,
     pub value: String,
     pub started: Duration,
-    pub initiator: IpAddr,
 }
 
 pub struct ServerStateData {
     pub config_path: PathBuf,
     pub config: ServerConfig,
     pub hmac: Hmac<Sha256>,
-    pub active_challenges: HashMap<i32, ActiveChallenge>,
+    pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
     pub http_client: reqwest::Client,
     pub token_expiry: Duration,
-    pub login_attempts: HashMap<IpAddr, SystemTime>,
+    pub login_attempts: HashMap<IpAddr, Instant>,
 }
 
 impl ServerStateData {
@@ -135,7 +135,7 @@ impl ServerStateData {
         match self.login_attempts.get(addr) {
             None => false,
             Some(last) => {
-                let passed = SystemTime::now().duration_since(*last).unwrap().as_secs();
+                let passed = Instant::now().duration_since(*last).as_secs();
                 passed < self.config.challenge_ratelimit
             }
         }
@@ -146,7 +146,7 @@ impl ServerStateData {
             return Err(anyhow!("you are doing this too fast, please try again later"));
         }
 
-        self.login_attempts.insert(*addr, SystemTime::now());
+        self.login_attempts.insert(*addr, Instant::now());
         Ok(())
     }
 
