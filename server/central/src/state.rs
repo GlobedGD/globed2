@@ -131,22 +131,23 @@ impl ServerStateData {
         Ok(orig_name.to_string())
     }
 
-    pub fn record_login_attempt(&mut self, addr: &IpAddr) -> anyhow::Result<()> {
-        match self.login_attempts.get_mut(addr) {
-            None => {
-                self.login_attempts.insert(*addr, SystemTime::now());
-                Ok(())
-            }
-            Some(last_attempt) => {
-                let passed = SystemTime::now().duration_since(*last_attempt)?.as_secs();
-                if passed < self.config.challenge_ratelimit {
-                    Err(anyhow!("you are doing this too fast, please try again later"))
-                } else {
-                    last_attempt.clone_from(&SystemTime::now());
-                    Ok(())
-                }
+    pub fn is_ratelimited(&self, addr: &IpAddr) -> bool {
+        match self.login_attempts.get(addr) {
+            None => false,
+            Some(last) => {
+                let passed = SystemTime::now().duration_since(*last).unwrap().as_secs();
+                passed < self.config.challenge_ratelimit
             }
         }
+    }
+
+    pub fn record_login_attempt(&mut self, addr: &IpAddr) -> anyhow::Result<()> {
+        if self.is_ratelimited(addr) {
+            return Err(anyhow!("you are doing this too fast, please try again later"));
+        }
+
+        self.login_attempts.insert(*addr, SystemTime::now());
+        Ok(())
     }
 
     pub fn should_block(&self, account_id: i32) -> anyhow::Result<bool> {

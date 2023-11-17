@@ -9,7 +9,7 @@ use base64::{engine::general_purpose as b64e, Engine as _};
 use log::{debug, info, warn};
 use rand::{distributions::Alphanumeric, Rng};
 use reqwest::StatusCode;
-use roa::{preload::PowerBody, query::Query, throw, Context};
+use roa::{preload::PowerBody, query::Query, throw, Context, Status};
 
 use crate::state::{ActiveChallenge, ServerState};
 
@@ -27,6 +27,25 @@ macro_rules! check_user_agent {
     };
 }
 
+macro_rules! get_user_ip {
+    ($state:expr,$context:expr,$out:ident) => {
+        let user_ip: anyhow::Result<IpAddr> = if $state.config.use_cf_ip_header {
+            let header = $context.req.headers.get("CF-Connecting-IP");
+            let ip = header
+                .and_then(|val| val.to_str().ok())
+                .and_then(|val| val.parse::<IpAddr>().ok());
+
+            ip.ok_or(anyhow!("failed to parse the IP header from Cloudflare"))
+        } else {
+            Ok($context.remote_addr.ip())
+        };
+
+        let $out = match user_ip {
+            Ok(x) => x,
+            Err(err) => throw!(StatusCode::BAD_REQUEST, err.to_string()),
+        };
+    };
+}
 pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     check_user_agent!(context, _ua);
 
@@ -79,6 +98,15 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
         Err(_) => throw!(StatusCode::BAD_REQUEST, "malformed parameters"),
         Ok(false) => {}
     };
+
+    get_user_ip!(state, context, user_ip);
+
+    if state.is_ratelimited(&user_ip) {
+        throw!(
+            StatusCode::TOO_MANY_REQUESTS,
+            "you are doing this too fast, please try again later"
+        );
+    }
 
     let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
@@ -218,23 +246,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     let mut state = context.state_write().await;
 
     // check if the user is doing it too fast
-
-    // a bit ugly
-    let user_ip: anyhow::Result<IpAddr> = if state.config.use_cf_ip_header {
-        let header = context.req.headers.get("CF-Connecting-IP");
-        let ip = header
-            .and_then(|val| val.to_str().ok())
-            .and_then(|val| val.parse::<IpAddr>().ok());
-
-        ip.ok_or(anyhow!("failed to parse the IP header from Cloudflare"))
-    } else {
-        Ok(context.remote_addr.ip())
-    };
-
-    let user_ip = match user_ip {
-        Ok(x) => x,
-        Err(err) => throw!(StatusCode::BAD_REQUEST, err.to_string()),
-    };
+    get_user_ip!(state, context, user_ip);
 
     // no ratelimiting in debug mode
     if !cfg!(debug_assertions) {
