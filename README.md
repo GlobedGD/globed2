@@ -7,7 +7,7 @@ This repository contains the complete rewrite of Globed, for Geometry Dash 2.2 a
 ## Features
 
 * Real-time multiplayer
-* Voice chat and text messages with full encryption and zero storage
+* Voice chat and text messages with full encryption and zero logging
 * blazing fast server written in pure Rust 🚀
 
 ## Installation
@@ -46,5 +46,6 @@ RobTop - thank you for releasing this awesome game :)
 ## Open source acknowledgments
 
 * [Geode](https://github.com/geode-sdk/geode) - the one thing that made all of this possible :)
+* [UIBuilder](https://github.com/camila314/uibuilder) - something you should 100% use when creating GD mods
 * [Opus](https://github.com/xiph/opus) - audio codec used for audio compression
 * [libsodium](https://github.com/jedisct1/libsodium) - library used for data encryption

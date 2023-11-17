@@ -32,7 +32,7 @@ macro_rules! check_user_agent {
 // it also checks if the request is made by actual cloudflare or if the header is just spoofed.
 macro_rules! get_user_ip {
     ($state:expr,$context:expr,$out:ident) => {
-        let user_ip: anyhow::Result<IpAddr> = if $state.config.use_cf_ip_header && !cfg!(debug_assertions) {
+        let user_ip: anyhow::Result<IpAddr> = if $state.config.cloudflare_protection && !cfg!(debug_assertions) {
             // verify if the actual peer is cloudflare
             if !IP_BLOCKER.is_allowed(&$context.remote_addr.ip()) {
                 warn!("blocking unknown non-cloudflare address: {}", $context.remote_addr.ip());

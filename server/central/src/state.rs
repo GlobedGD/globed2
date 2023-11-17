@@ -30,12 +30,11 @@ pub struct ServerStateData {
     pub hmac: Hmac<Sha256>,
     pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
     pub http_client: reqwest::Client,
-    pub token_expiry: Duration,
     pub login_attempts: HashMap<IpAddr, Instant>,
 }
 
 impl ServerStateData {
-    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: String, token_expiry: Duration) -> Self {
+    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: String) -> Self {
         let skey_bytes = secret_key.as_bytes();
         let hmac_obj = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
 
@@ -47,7 +46,6 @@ impl ServerStateData {
             hmac: hmac_obj,
             active_challenges: HashMap::new(),
             http_client,
-            token_expiry,
             login_attempts: HashMap::new(),
         }
     }
@@ -116,7 +114,7 @@ impl ServerStateData {
 
         let elapsed = timestamp.duration_since(UNIX_EPOCH + Duration::from_secs(orig_ts.parse::<u64>()?))?;
 
-        if elapsed > self.token_expiry {
+        if elapsed > Duration::from_secs(self.config.token_expiry) {
             return Err(anyhow!("expired token, please reauthenticate"));
         }
 

@@ -1,8 +1,8 @@
 {
 	"geode": "1.3.5",
-	"version": "v1.0.0",
+	"version": "v1.0.0-a1",
 	"id": "dankmeme.globed2",
 	"name": "Globed",
 	"developer": "dankmeme",
-	"description": "The #1 multiplayer mod, now in 2.2"
+	"description": "Feature-rich multiplayer mod for Geometry Dash"
 }

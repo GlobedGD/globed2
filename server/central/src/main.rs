@@ -62,14 +62,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mnt_point = config.web_mountpoint.clone();
 
     let state_skey = config.secret_key.clone();
-    let token_expiry = config.token_expiry;
     let state = ServerState {
-        inner: Arc::new(RwLock::new(ServerStateData::new(
-            config_path.clone(),
-            config,
-            state_skey,
-            Duration::from_secs(token_expiry),
-        ))),
+        inner: Arc::new(RwLock::new(ServerStateData::new(config_path.clone(), config, state_skey))),
     };
 
     // config file watcher

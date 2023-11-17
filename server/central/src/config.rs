@@ -49,11 +49,11 @@ fn default_secret_key() -> String {
         .map(char::from)
         .collect();
 
-    format!("Change-Me-Please-Insecure-{}", rand_string)
+    format!("Insecure-{}", rand_string)
 }
 
 fn default_challenge_expiry() -> u32 {
-    60u32
+    30
 }
 
 fn default_challenge_level() -> i32 {
@@ -61,10 +61,10 @@ fn default_challenge_level() -> i32 {
 }
 
 fn default_challenge_ratelimit() -> u64 {
-    60 * 5
+    60
 }
 
-fn default_cf_ip_header() -> bool {
+fn default_cloudflare_protection() -> bool {
     false
 }
 
@@ -112,10 +112,6 @@ pub struct ServerConfig {
     pub web_mountpoint: String,
     #[serde(default = "default_web_address")]
     pub web_address: String,
-    #[serde(default = "default_use_gd_api")]
-    pub use_gd_api: bool,
-    #[serde(default = "default_gdapi")]
-    pub gd_api: String,
     #[serde(default = "default_game_servers")]
     pub game_servers: Vec<GameServerEntry>,
 
@@ -128,18 +124,22 @@ pub struct ServerConfig {
     pub userlist: Vec<i32>,
 
     // security
+    #[serde(default = "default_use_gd_api")]
+    pub use_gd_api: bool,
+    #[serde(default = "default_gdapi")]
+    pub gd_api: String,
     #[serde(default = "default_secret_key")]
     pub secret_key: String,
     #[serde(default = "default_secret_key")]
     pub game_server_password: String,
+    #[serde(default = "default_cloudflare_protection")]
+    pub cloudflare_protection: bool,
     #[serde(default = "default_challenge_expiry")]
     pub challenge_expiry: u32,
     #[serde(default = "default_challenge_level")]
     pub challenge_level: i32,
     #[serde(default = "default_challenge_ratelimit")]
     pub challenge_ratelimit: u64,
-    #[serde(default = "default_cf_ip_header")]
-    pub use_cf_ip_header: bool,
     #[serde(default = "default_token_expiry")]
     pub token_expiry: u64,
 }
@@ -180,7 +180,7 @@ impl ServerConfig {
             challenge_expiry: default_challenge_expiry(),
             challenge_level: default_challenge_level(),
             challenge_ratelimit: default_challenge_ratelimit(),
-            use_cf_ip_header: default_cf_ip_header(),
+            cloudflare_protection: default_cloudflare_protection(),
             token_expiry: default_token_expiry(),
         }
     }
