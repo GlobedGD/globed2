@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use crypto_box::{PublicKey, KEY_SIZE};
 
 use crate::bytebufferext::*;
@@ -18,12 +17,10 @@ empty_impl!(
 );
 
 decode_impl!(CryptoPublicKey, buf, self, {
-    let res: Result<[u8; KEY_SIZE], _> = buf.read_bytes(KEY_SIZE)?.try_into();
-    if res.is_err() {
-        return Err(anyhow!("failed to parse the public key"));
-    }
+    let mut key = [0u8; KEY_SIZE];
+    buf.read_bytes_into(&mut key)?;
 
-    self.pubkey = PublicKey::from_bytes(res.unwrap());
+    self.pubkey = PublicKey::from_bytes(key);
 
     Ok(())
 });

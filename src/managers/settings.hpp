@@ -1,11 +1,12 @@
 #pragma once
 #include <defs.hpp>
+#include <util/sync.hpp>
 
 struct CachedSettings {
     bool test;
 };
 
-// Getting a setting is thread-safe. `set`, `refreshCache` and `getCached` are only safe to call from the main thread.
+// Besides `getCached()`, this class is not guaranteed to be fully thread safe.
 class GlobedSettings {
     GLOBED_SINGLETON(GlobedSettings);
     GlobedSettings();
@@ -35,5 +36,5 @@ class GlobedSettings {
     void setFlag(const std::string& key, bool state = true);
 
 private:
-    CachedSettings cache;
+    util::sync::WrappingMutex<CachedSettings> _cache;
 };

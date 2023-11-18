@@ -6,11 +6,12 @@ GlobedSettings::GlobedSettings() {
 }
 
 CachedSettings GlobedSettings::getCached() {
-    return cache;
+    return *_cache.lock();
 }
 
 void GlobedSettings::refreshCache() {
-    cache.test = get<bool>("test");
+    auto cache = _cache.lock();
+    cache->test = get<bool>("test");
 }
 
 bool GlobedSettings::getFlag(const std::string& key) {

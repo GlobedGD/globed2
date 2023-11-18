@@ -34,7 +34,13 @@ class $modify(HookedMenuLayer, MenuLayer) {
             m_fields->m_btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
             CircleBaseSize::MediumAlt
             ))
-            .intoMenuItem([](CCObject*) {
+            .intoMenuItem([](auto) {
+                auto accountId = GJAccountManager::get()->m_accountID;
+                if (accountId <= 0) {
+                    FLAlertLayer::create("Notice", "You need to be signed into a <cg>Geometry Dash account</c> in order to play online.", "Ok")->show();
+                    return;
+                }
+
                 CCDirector::get()->pushScene(CCTransitionFade::create(0.5f, GlobedMenuLayer::scene()));
             })
             .id("main-menu-button"_spr)
@@ -48,7 +54,7 @@ class $modify(HookedMenuLayer, MenuLayer) {
         bool authenticated = NetworkManager::get().authenticated();
         if (authenticated != m_fields->m_btnActive) {
             m_fields->m_btnActive = authenticated;
-            updateGlobedButton();
+            this->updateGlobedButton();
         }
     }
 };

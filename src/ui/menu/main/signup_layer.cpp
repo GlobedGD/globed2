@@ -21,16 +21,10 @@ bool GlobedSignupLayer::init() {
 
     this->setContentSize(listLayer->getScaledContentSize());
 
-    // Build<CCLabelBMFont>::create("In order to play on the servers, you have to verify your account.\nThis procedure requires no effort from your side and has to be done only once, but it may take a few seconds to complete.", "chatFont.fnt")
-    //     .zOrder(10)
-    //     .pos(25.f, 25.f)
-    //     .scale(0.65f)
-    //     .parent(listLayer);
-
     Build<ButtonSprite>::create("Login", "goldFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this](auto) {
             if (!GlobedSettings::get().getFlag("seen-signup-notice")) {
-                geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "OK", [](auto, bool agreed){
+                geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "Ok", [](auto, bool agreed){
                     if (agreed) {
                         GlobedSettings::get().setFlag("seen-signup-notice");
                         GlobedSignupPopup::create()->show();        

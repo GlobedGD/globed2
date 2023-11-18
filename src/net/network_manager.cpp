@@ -70,7 +70,7 @@ NetworkManager::~NetworkManager() {
         this->disconnect();
     }
 
-    log::debug("waiting for threads to die..");
+    log::debug("waiting for threads to halt..");
 
     if (threadMain.joinable()) threadMain.join();
     if (threadRecv.joinable()) threadRecv.join();
@@ -178,8 +178,7 @@ void NetworkManager::threadRecvFunc() {
         }
 
         if (!pollResult.hasNormal) {
-            // TODO fix vvv
-            maybeDisconnectIfDead();
+            this->maybeDisconnectIfDead();
             continue;
         }
 

@@ -19,7 +19,7 @@ bool GlobedMenuLayer::init() {
     auto& am = GlobedAccountManager::get();
     auto* gjam = GJAccountManager::get();
     am.accountName = gjam->m_username;
-    am.accountId.store(gjam->m_accountID, std::memory_order::relaxed);
+    am.accountId = gjam->m_accountID;
     am.setSecretKey(gjam->getGJP());
 
     auto listview = Build<ListView>::create(createServerList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)

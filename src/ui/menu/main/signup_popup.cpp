@@ -48,7 +48,7 @@ bool GlobedSignupPopup::setup() {
             this->onChallengeCreated(levelId, part2);
         })
         .expect([this](const std::string& error) {
-            this->onFailure("Creating challenge failed: " + error);
+            this->onFailure("Creating challenge failed: <cy>" + error + "</c>");
         })
         .send();
 
@@ -93,7 +93,7 @@ void GlobedSignupPopup::onDelayedChallengeCompleted() {
 
 void GlobedSignupPopup::commentUploadFailed(int cid, CommentError e) {
     GameLevelManager::get()->m_commentUploadDelegate = nullptr;
-    this->onFailure(fmt::format("Comment upload failed: error {}", (int)e));
+    this->onFailure(fmt::format("Comment upload failed: <cy>error {}</c>", (int)e));
 }
 
 void GlobedSignupPopup::commentDeleteFailed(int, int) {}
@@ -130,7 +130,7 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
             }
         })
         .expect([this](const std::string& error) {
-            this->onFailure("Verifying challenge failed: " + error);
+            this->onFailure("Verifying challenge failed: <cy>" + error + "</c>");
         })
         .send();
 }

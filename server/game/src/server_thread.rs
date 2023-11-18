@@ -187,7 +187,7 @@ impl GameServerThread {
             gs_require!(false, "client sent a cleartext packet when expected an encrypted one");
         }
 
-        if !packet.get_encrypted() {
+        if !encrypted {
             packet.decode_from_reader(&mut data)?;
             return Ok(packet);
         }
