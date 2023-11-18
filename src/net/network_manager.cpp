@@ -15,18 +15,18 @@ GLOBED_SINGLETON_DEF(NetworkManager)
 NetworkManager::NetworkManager() {
     util::net::initialize();
 
-    if (!socket.create()) util::net::throwLastError();
+    if (!gameSocket.create()) util::net::throwLastError();
     if (!pingSocket.create()) util::net::throwLastError();
 
     // add builtin listeners
 
     addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
-        this->socket.box->setPeerKey(packet->data.key.data());
-        _established.store(true, std::memory_order::relaxed);
+        this->gameSocket.box->setPeerKey(packet->data.key.data());
+        _established = true;
         // and lets try to login!
         auto& am = GlobedAccountManager::get();
         auto authtoken = *am.authToken.lock();
-        this->send(LoginPacket::create(am.accountId.load(std::memory_order::relaxed), authtoken));
+        this->send(LoginPacket::create(am.accountId, authtoken));
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
@@ -40,7 +40,7 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
         log::info("Successfully logged into the server!");
-        _loggedin.store(true, std::memory_order::relaxed);
+        _loggedin = true;
     });
 
     addBuiltinListener<LoginFailedPacket>([this](auto packet) {
@@ -63,7 +63,7 @@ NetworkManager::~NetworkManager() {
     builtinListeners.lock()->clear();
 
     // wait for threads
-    _running.store(false, std::memory_order::seq_cst);
+    _running = false;
 
     if (connected()) {
         log::debug("disconnecting from the server..");
@@ -87,12 +87,14 @@ void NetworkManager::connect(const std::string& addr, unsigned short port) {
         this->disconnect(false);
     }
 
+    lastReceivedPacket = chrono::system_clock::now();
+
     GLOBED_REQUIRE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
     
-    GLOBED_REQUIRE(socket.connect(addr, port), "failed to connect to the server")
-    socket.createBox();
+    GLOBED_REQUIRE(gameSocket.connect(addr, port), "failed to connect to the server")
+    gameSocket.createBox();
 
-    auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(socket.box->extractPublicKey()));
+    auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(gameSocket.box->extractPublicKey()));
     this->send(packet);
 }
 
@@ -103,20 +105,20 @@ void NetworkManager::disconnect(bool quiet) {
 
     if (!quiet) {
         // send it directly instead of pushing to the queue
-        socket.sendPacket(DisconnectPacket::create());
+        gameSocket.sendPacket(DisconnectPacket::create());
     }
 
-    _established.store(false, std::memory_order::relaxed);
-    _loggedin.store(false, std::memory_order::relaxed);
+    _established = false;
+    _loggedin = false;
 
-    socket.disconnect();
-    socket.cleanupBox();
+    gameSocket.disconnect();
+    gameSocket.cleanupBox();
 
     GlobedServerManager::get().setActiveGameServer("");
 }
 
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
-    GLOBED_REQUIRE(socket.connected, "tried to send a packet while disconnected")
+    GLOBED_REQUIRE(connected(), "tried to send a packet while disconnected")
     packetQueue.push(packet);
 }
 
@@ -141,10 +143,10 @@ void NetworkManager::taskPingServers() {
 // threads
 
 void NetworkManager::threadMainFunc() {
-    while (_running.load(std::memory_order::relaxed)) {
+    while (_running) {
         maybeSendKeepalive();
 
-        if (!packetQueue.waitForMessages(std::chrono::seconds(1))) {
+        if (!packetQueue.waitForMessages(chrono::seconds(1))) {
             continue;
         }
 
@@ -152,7 +154,7 @@ void NetworkManager::threadMainFunc() {
 
         for (auto packet : messages) {
             try {
-                socket.sendPacket(packet);
+                gameSocket.sendPacket(packet);
             } catch (const std::exception& e) {
                 ErrorQueues::get().error(e.what());
             }
@@ -161,7 +163,7 @@ void NetworkManager::threadMainFunc() {
 }
 
 void NetworkManager::threadRecvFunc() {
-    while (_running.load(std::memory_order::relaxed)) {
+    while (_running) {
         // we wanna poll both the normal socket and the ping socket.
         auto pollResult = pollBothSockets(1000);
         if (pollResult.hasPing) {
@@ -177,16 +179,16 @@ void NetworkManager::threadRecvFunc() {
 
         if (!pollResult.hasNormal) {
             // TODO fix vvv
-            // maybeDisconnectIfDead();
+            maybeDisconnectIfDead();
             continue;
         }
 
-        lastReceivedPacket = std::chrono::system_clock::now();
+        lastReceivedPacket = chrono::system_clock::now();
 
         std::shared_ptr<Packet> packet;
 
         try {
-            packet = socket.recvPacket();
+            packet = gameSocket.recvPacket();
         } catch (const std::exception& e) {
             ErrorQueues::get().warn(fmt::format("failed to receive a packet: {}", e.what()));
             continue;
@@ -214,8 +216,8 @@ void NetworkManager::threadRecvFunc() {
 }
 
 void NetworkManager::threadTasksFunc() {
-    while (_running.load(std::memory_order::relaxed)) {
-        if (!taskQueue.waitForMessages(std::chrono::seconds(1))) {
+    while (_running) {
+        if (!taskQueue.waitForMessages(chrono::seconds(1))) {
             continue;
         }
 
@@ -244,8 +246,8 @@ void NetworkManager::threadTasksFunc() {
 }
 
 void NetworkManager::maybeSendKeepalive() {
-    if (_loggedin.load(std::memory_order::relaxed)) {
-        auto now = std::chrono::system_clock::now();
+    if (_loggedin) {
+        auto now = chrono::system_clock::now();
         if ((now - lastKeepalive) > KEEPALIVE_INTERVAL) {
             lastKeepalive = now;
             this->send(KeepalivePacket::create());
@@ -256,8 +258,8 @@ void NetworkManager::maybeSendKeepalive() {
 
 // Disconnects from the server if there has been no response for a while
 void NetworkManager::maybeDisconnectIfDead() {
-    auto now = std::chrono::system_clock::now();
-    if ((now - lastReceivedPacket) > DISCONNECT_AFTER) {
+    auto now = chrono::system_clock::now();
+    if (connected() && (now - lastReceivedPacket) > DISCONNECT_AFTER) {
         ErrorQueues::get().error("The server you were connected to is not responding to any requests. <cy>You have been disconnected.</c>");
         this->disconnect();
     }
@@ -268,10 +270,10 @@ PollBothResult NetworkManager::pollBothSockets(long msDelay) {
 
     GLOBED_SOCKET_POLLFD fds[2];
 
-    fds[0].fd = socket.socket_.load(std::memory_order::relaxed);
+    fds[0].fd = gameSocket.socket_;
     fds[0].events = POLLIN;
 
-    fds[1].fd = pingSocket.socket_.load(std::memory_order::relaxed);
+    fds[1].fd = pingSocket.socket_;
     fds[1].events = POLLIN;
 
     int result = GLOBED_SOCKET_POLL(fds, 2, (int)msDelay);
@@ -296,13 +298,13 @@ void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback callback) 
 }
 
 bool NetworkManager::connected() {
-    return socket.connected.load(std::memory_order::relaxed);
+    return gameSocket.connected;
 }
 
 bool NetworkManager::established() {
-    return connected() && _established.load(std::memory_order::relaxed);
+    return connected() && _established;
 }
 
 bool NetworkManager::authenticated() {
-    return established() && _loggedin.load(std::memory_order::relaxed);
+    return established() && _loggedin;
 }

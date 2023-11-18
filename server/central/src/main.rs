@@ -1,6 +1,5 @@
 use std::{error::Error, path::PathBuf, sync::Arc, time::Duration};
 
-use async_rate_limit::sliding_window::SlidingWindowRateLimiter;
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
 use log::{error, info, warn, LevelFilter};

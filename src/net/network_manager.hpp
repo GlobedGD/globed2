@@ -2,6 +2,7 @@
 #include "game_socket.hpp"
 #include <defs.hpp>
 #include <util/sync.hpp>
+#include <util/time.hpp>
 
 #include <functional>
 #include <unordered_map>
@@ -81,10 +82,11 @@ public:
     bool authenticated();
 
 private:
-    static constexpr std::chrono::seconds KEEPALIVE_INTERVAL = std::chrono::seconds(5);
-    static constexpr std::chrono::seconds DISCONNECT_AFTER = std::chrono::seconds(20);
 
-    GameSocket socket, pingSocket;
+    static constexpr chrono::seconds KEEPALIVE_INTERVAL = chrono::seconds(5);
+    static constexpr chrono::seconds DISCONNECT_AFTER = chrono::seconds(15);
+
+    GameSocket gameSocket, pingSocket;
 
     SmartMessageQueue<std::shared_ptr<Packet>> packetQueue;
     SmartMessageQueue<NetworkThreadTask> taskQueue;
@@ -103,9 +105,9 @@ private:
 
     // misc
 
-    std::atomic_bool _running = true;
-    std::atomic_bool _established = false;
-    std::atomic_bool _loggedin = false;
+    util::sync::AtomicBool _running = true;
+    util::sync::AtomicBool _established = false;
+    util::sync::AtomicBool _loggedin = false;
 
     std::chrono::system_clock::time_point lastKeepalive;
     std::chrono::system_clock::time_point lastReceivedPacket;

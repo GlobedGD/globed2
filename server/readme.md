@@ -1,5 +1,7 @@
 # Globed Server
 
+**Note**: the central server must be compiled with a nightly Rust toolchain, until `async fn` in traits becomes stable (which is set to be in Rust 1.75)
+
 ## Central
 
 The central server doesn't use any databases and uses a JSON file for configuration. By default, the configuration file is put in `central-conf.json` in the current working directory when you run the server, but it can be overriden with the environment variable `GLOBED_CONFIG_PATH`. The path can be a folder or a full file path.

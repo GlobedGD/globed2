@@ -34,8 +34,7 @@ std::string GlobedServerManager::getCentral() {
 
 void GlobedServerManager::addGameServer(const std::string& serverId, const std::string& name, const std::string& address, const std::string& region) {
     auto addr = util::net::splitAddress(address);
-    auto data = _data.write();
-    data->servers[serverId] = GameServerInfo {
+    _data.write()->servers[serverId] = GameServerInfo {
         .name = name,
         .region = region,
         .address = {.ip = addr.first, .port = addr.second},
@@ -45,13 +44,11 @@ void GlobedServerManager::addGameServer(const std::string& serverId, const std::
 }
 
 void GlobedServerManager::setActiveGameServer(const std::string& serverId) {
-    auto data = _data.write();
-    data->game = serverId;
+    auto data = _data.write()->game = serverId;
 }
 
 std::string GlobedServerManager::getActiveGameServer() {
-    auto data = _data.read();
-    return data->game;
+    return _data.read()->game;
 }
 
 void GlobedServerManager::clearGameServers() {
@@ -62,8 +59,7 @@ void GlobedServerManager::clearGameServers() {
 }
 
 size_t GlobedServerManager::gameServerCount() {
-    auto data = _data.read();
-    return data->servers.size();
+    return _data.read()->servers.size();
 }
 
 uint32_t GlobedServerManager::pingStart(const std::string& serverId) {
@@ -84,17 +80,11 @@ uint32_t GlobedServerManager::pingStart(const std::string& serverId) {
 }
 
 void GlobedServerManager::pingStartActive() {
-    std::string gameServer;
-
-    {
-        auto data = _data.read();
-        gameServer = data->game;
-    }
+    std::string gameServer = _data.read()->game;
 
     if (!gameServer.empty()) {
         auto pingId = this->pingStart(gameServer);
-        auto data = _data.write();
-        data->activePingId = pingId;
+        _data.write()->activePingId = pingId;
     }
 }
 
@@ -118,12 +108,7 @@ void GlobedServerManager::pingFinish(uint32_t pingId, uint32_t playerCount) {
 }
 
 void GlobedServerManager::pingFinishActive(uint32_t playerCount) {
-    uint32_t pingId;
-    
-    {
-        auto data = _data.read();
-        pingId = data->activePingId;
-    }
+    uint32_t pingId = _data.read()->activePingId;
 
     this->pingFinish(pingId, playerCount);
 }

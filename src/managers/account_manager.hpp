@@ -8,7 +8,7 @@
 class GlobedAccountManager {
     GLOBED_SINGLETON(GlobedAccountManager)
 
-    std::atomic_int accountId;
+    util::sync::AtomicInt accountId;
     std::string accountName;
     util::sync::WrappingMutex<std::string> authToken;
     

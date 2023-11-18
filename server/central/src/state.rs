@@ -11,7 +11,7 @@ use async_rate_limit::sliding_window::SlidingWindowRateLimiter;
 use base64::{engine::general_purpose as b64e, Engine};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
-use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use tokio::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use crate::config::{ServerConfig, UserlistMode};
 use blake2::{Blake2b, Digest};
@@ -32,7 +32,7 @@ pub struct ServerStateData {
     pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
     pub http_client: reqwest::Client,
     pub login_attempts: HashMap<IpAddr, Instant>,
-    pub ratelimiter: Arc<SlidingWindowRateLimiter>,
+    pub ratelimiter: Arc<Mutex<SlidingWindowRateLimiter>>,
 }
 
 impl ServerStateData {
@@ -42,6 +42,9 @@ impl ServerStateData {
 
         let http_client = reqwest::ClientBuilder::new().user_agent("").build().unwrap();
 
+        let api_rl = config.gd_api_ratelimit;
+        let api_rl_period = config.gd_api_period;
+
         Self {
             config_path,
             config,
@@ -49,10 +52,10 @@ impl ServerStateData {
             active_challenges: HashMap::new(),
             http_client,
             login_attempts: HashMap::new(),
-            ratelimiter: Arc::new(SlidingWindowRateLimiter::new(
-                Duration::from_secs(config.gd_api_period),
-                config.gd_api_ratelimit,
-            )),
+            ratelimiter: Arc::new(Mutex::new(SlidingWindowRateLimiter::new(
+                Duration::from_secs(api_rl_period),
+                api_rl,
+            ))),
         }
     }
 

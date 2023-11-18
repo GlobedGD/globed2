@@ -268,7 +268,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     drop(state);
 
     // boomlings ratelimit
-    ratelimiter.wait_with_cost(1).await;
+    ratelimiter.lock().await.wait_with_cost(1).await;
 
     // now we have to request rob's servers and check if the challenge was solved
 

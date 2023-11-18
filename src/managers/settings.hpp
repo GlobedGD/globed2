@@ -31,6 +31,9 @@ class GlobedSettings {
 
     void refreshCache();
 
+    bool getFlag(const std::string& key);
+    void setFlag(const std::string& key, bool state = true);
+
 private:
     CachedSettings cache;
 };

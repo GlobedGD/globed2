@@ -120,6 +120,6 @@ namespace util::debugging {
 #endif
 
     void timedLog(const std::string& message) {
-        geode::log::info("[{}] {}", util::formatting::formatDate(util::time::now()), message);
+        geode::log::info("[{}] {}", util::formatting::formatDateTime(util::time::now()), message);
     }
 }

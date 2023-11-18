@@ -2,11 +2,10 @@
 #include <defs.hpp>
 #include <util/sync.hpp>
 #include <util/collections.hpp>
+#include <util/time.hpp>
 
 #include <unordered_map>
 #include <chrono>
-
-namespace chrono = std::chrono;
 
 struct GameServerAddress {
     std::string ip;
@@ -69,7 +68,7 @@ class GlobedServerManager {
 
     std::unordered_map<std::string, GameServerView> extractGameServers();
 
-    std::atomic_bool pendingChanges;
+    util::sync::AtomicBool pendingChanges;
 
 private:
     struct InnerData {

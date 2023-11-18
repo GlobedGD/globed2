@@ -3,7 +3,7 @@
 #include <iomanip>
 
 namespace util::formatting {
-    std::string formatTime(chrono::microseconds time) {
+    std::string formatDuration(chrono::microseconds time) {
         auto seconds = chrono::duration_cast<chrono::seconds>(time).count();
         auto millis = chrono::duration_cast<chrono::milliseconds>(time).count();
         auto micros = time.count();
@@ -17,12 +17,11 @@ namespace util::formatting {
         }
     }
 
-    std::string formatDate(chrono::system_clock::time_point tp) {
+    std::string formatDateTime(chrono::system_clock::time_point tp) {
         auto timet = chrono::system_clock::to_time_t(tp);
         auto nowms = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;
 
-        std::tm time_info;
-        localtime_s(&time_info, &timet);
+        std::tm time_info = *std::localtime(&timet);
 
         std::ostringstream oss;
         oss << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S") << '.' << std::setfill('0') << std::setw(3) << nowms.count();

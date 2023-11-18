@@ -1,5 +1,6 @@
 #pragma once
 #include "socket.hpp"
+#include <util/sync.hpp>
 
 class UdpSocket : public Socket {
 public:
@@ -16,9 +17,9 @@ public:
     virtual void disconnect();
     bool poll(long msDelay) override;
 
-    std::atomic_bool connected = false;
+    util::sync::AtomicBool connected = false;
 protected:
-    std::atomic_int socket_ = 0;
+    util::sync::AtomicInt socket_ = 0;
 
 private:
     sockaddr_in destAddr_;

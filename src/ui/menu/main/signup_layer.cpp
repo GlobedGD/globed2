@@ -1,6 +1,7 @@
 #include "signup_layer.hpp"
 
 #include "signup_popup.hpp"
+#include <managers/settings.hpp>
 
 #include <UIBuilder.hpp>
 
@@ -28,7 +29,16 @@ bool GlobedSignupLayer::init() {
 
     Build<ButtonSprite>::create("Login", "goldFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this](auto) {
-            GlobedSignupPopup::create()->show();
+            if (!GlobedSettings::get().getFlag("seen-signup-notice")) {
+                geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "OK", [](auto, bool agreed){
+                    if (agreed) {
+                        GlobedSettings::get().setFlag("seen-signup-notice");
+                        GlobedSignupPopup::create()->show();        
+                    }
+                });
+            } else {
+                GlobedSignupPopup::create()->show();
+            }
         })
         .anchorPoint(0.5f, 0.5f)
         .pos(-listLayer->getScaledContentSize() / 4 - CCPoint{17.f, 10.f})

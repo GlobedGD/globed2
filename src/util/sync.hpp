@@ -1,18 +1,17 @@
 /*
 * sync.hpp is a util file for syncing things across threads.
-* NOTE: when using locks (WrappingMutex and WrappingRwLock), be very careful with the usage.
-* It's best to avoid doing `lck->lock().method()` and instead do
-* auto _lock = lck->lock();
-* _lock.method();
 */
 
 #pragma once
 #include <condition_variable>
+#include <atomic>
 #include <memory>
-#include <shared_mutex>
-#include <mutex>
 #include <queue>
+#include <mutex>
+#include <shared_mutex>
+
 #include <defs.hpp>
+#include <util/data.hpp>
 
 /*
 * SmartMessageQueue is a utility wrapper around std::queue,
@@ -216,5 +215,42 @@ private:
     std::shared_ptr<T> data_;
     mutable std::shared_mutex rw_mutex_;
 };
+
+// simple wrapper around atomics with the default memory order set to relaxed
+template <typename T>
+class RelaxedAtomic {
+public:
+    RelaxedAtomic(T initial = {}) : value(initial) {}
+
+    T load(std::memory_order order = std::memory_order::relaxed) const {
+        return value.load(order);
+    }
+
+    void store(T val, std::memory_order order = std::memory_order::relaxed) {
+        value.store(val, order);
+    }
+
+    operator T() const {
+        return load();
+    }
+
+    RelaxedAtomic<T>& operator=(T val) {
+        store(val);
+        return *this;
+    }
+private:
+    std::atomic<T> value;
+};
+
+using AtomicBool = RelaxedAtomic<bool>;
+using AtomicChar = RelaxedAtomic<char>;
+using AtomicByte = RelaxedAtomic<data::byte>;
+using AtomicI16 = RelaxedAtomic<int16_t>;
+using AtomicU16 = RelaxedAtomic<uint16_t>;
+using AtomicInt = RelaxedAtomic<int>;
+using AtomicI32 = RelaxedAtomic<int32_t>;
+using AtomicU32 = RelaxedAtomic<uint32_t>;
+using AtomicI64 = RelaxedAtomic<int64_t>;
+using AtomicU64 = RelaxedAtomic<uint64_t>;
 
 }

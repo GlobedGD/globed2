@@ -82,7 +82,7 @@ private:
     size_t recordChunkSize = 0;
     std::function<void(const EncodedAudioFrame&)> recordCallback;
     std::mutex recordMutex;
-    std::atomic_bool recordQueuedStop = false;
+    util::sync::AtomicBool recordQueuedStop = false;
 
     void recordContinueStream();
 
@@ -92,11 +92,11 @@ private:
     OpusCodec opus;
 
     /* misc */
-    std::atomic_bool _terminating;
+    util::sync::AtomicBool _terminating;
     FMOD::System* cachedSystem = nullptr;
 
     void audioThreadFunc();
-    std::atomic_bool audioThreadSleeping = true;
+    util::sync::AtomicBool audioThreadSleeping = true;
     std::thread audioThreadHandle;
 };
 

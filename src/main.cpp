@@ -1,8 +1,7 @@
 #include <Geode/Geode.hpp>
-#include <Geode/utils/web.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <ui/hooks/all.hpp>
-#include <UIBuilder.hpp>
+#include <ui/error_check_node.hpp>
 
 #include <crypto/box.hpp>
 #include <data/bytebuffer.hpp>
@@ -27,6 +26,10 @@ $on_mod(Loaded) {
         log::error("sodium_misuse called. we are officially screwed.");
         util::debugging::suicide();
     });
+
+    auto ecn = ErrorCheckNode::create();
+    ecn->setID("error-check-node"_spr);
+    SceneManager::get()->keepAcrossScenes(ecn);
     
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
     geode::log::warn("=== Globed {} has been loaded in debug mode ===", Mod::get()->getVersion().toString());
@@ -46,23 +49,6 @@ void testFmod1();
 void testFmod2();
 
 class $modify(MyMenuLayer, MenuLayer) {
-    bool init() {
-        MenuLayer::init();
-
-        CCScheduler::get()->scheduleSelector(schedule_selector(MyMenuLayer::Poop), this, 1.0f, false);
-        return true;
-    }
-
-    void Poop(float d) {
-        auto& eq = ErrorQueues::get();
-        for (const auto& msg : eq.getErrors()) {
-            log::warn("err: {}", msg);
-        }
-        for (const auto& msg : eq.getWarnings()) {
-            log::warn("warn: {}", msg);
-        }
-    }
-
     void onMoreGames(CCObject*) {
         if (NetworkManager::get().established()) {
             util::debugging::PacketLogger::get().getSummary().print();

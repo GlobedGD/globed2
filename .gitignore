@@ -55,21 +55,6 @@
 build.sh
 build-android.sh
 
-libs/libsodium/include
-libs/libsodium/Win32
-libs/libsodium/x64
-libs/libsodium/android-armv7
-libs/libsodium/android-armv8
-
-libs/opus/include
-libs/opus/Win32
-libs/opus/x64
-libs/opus/android-armv7
-libs/opus/android-armv8
-
-libsodium-git
-opus-git
-
 server/target
 server/central-conf.json
 server/game-conf.json
