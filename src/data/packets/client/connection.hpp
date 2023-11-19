@@ -10,7 +10,7 @@ class PingPacket : public Packet {
 
     PingPacket(uint32_t _id) : id(_id) {}
 
-    static std::shared_ptr<Packet>  create(uint32_t id) {
+    static std::shared_ptr<Packet> create(uint32_t id) {
         return std::make_shared<PingPacket>(id);
     }
 

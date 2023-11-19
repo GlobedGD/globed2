@@ -25,7 +25,8 @@ public:
     AudioStream operator=(const AudioStream& other) = delete;
 
     // allow moving
-    AudioStream(AudioStream&& other);
+    AudioStream(AudioStream&& other) noexcept = default;
+    AudioStream& operator=(AudioStream&&) noexcept = default;
 
     // start playing this stream
     void start();

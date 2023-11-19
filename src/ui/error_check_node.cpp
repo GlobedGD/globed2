@@ -26,6 +26,7 @@ void ErrorCheckNode::updateErrors(float _unused) {
 
     auto errors = ErrorQueues::get().getErrors();
     auto warnings = ErrorQueues::get().getWarnings();
+    auto notices = ErrorQueues::get().getNotices();
 
     for (auto& warn : warnings) {
         Notification::create(warn, NotificationIcon::Warning, 2.5f)->show();
@@ -37,5 +38,13 @@ void ErrorCheckNode::updateErrors(float _unused) {
 
     for (auto& error : errors) {
         FLAlertLayer::create("Globed error", error, "Ok")->show();
+    }
+
+    if (notices.size() > 2) {
+        notices.resize(2);
+    }
+
+    for (auto& notice : notices) {
+        FLAlertLayer::create("Globed notice", notice, "Ok")->show();
     }
 }

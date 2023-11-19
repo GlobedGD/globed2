@@ -4,6 +4,7 @@
 
 #include <util/time.hpp>
 #include <util/debugging.hpp>
+#include <managers/error_queues.hpp>
 
 #define FMOD_ERR_CHECK(res, msg) \
     auto GEODE_CONCAT(__evcond, __LINE__) = (res); \
@@ -23,6 +24,9 @@ GlobedAudioManager::GlobedAudioManager() {
 
 GlobedAudioManager::~GlobedAudioManager() {
     _terminating = true;
+    if (audioThreadHandle.joinable()) audioThreadHandle.join();
+
+    geode::log::debug("audio thread halted.");
 }
 
 std::vector<AudioRecordingDevice> GlobedAudioManager::getRecordingDevices() {
@@ -235,6 +239,7 @@ void GlobedAudioManager::audioThreadFunc() {
 
         if (recordQueuedStop) {
             recordQueuedStop = false;
+            audioThreadSleeping = true;
             stopRecording();
             continue;
         }
@@ -275,7 +280,7 @@ void GlobedAudioManager::audioThreadFunc() {
                 }
             } catch (const std::exception& e) {
                 delete[] tmpBuf;
-                geode::log::error("Ignoring exception in audio thread: {}", e.what());
+                ErrorQueues::get().warn(std::string("Exception in audio thread: ") + e.what());
                 continue;
             }
 
@@ -284,7 +289,7 @@ void GlobedAudioManager::audioThreadFunc() {
             try {
                 recordCallback(frame);
             } catch (const std::exception& e) {
-                geode::log::error("ignoring exception in audio callback: {}", e.what());
+                ErrorQueues::get().warn(std::string("Exception in audio callback: ") + e.what());
             }
         } else {
             std::this_thread::sleep_for(std::chrono::milliseconds(3));

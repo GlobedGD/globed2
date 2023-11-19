@@ -1,5 +1,6 @@
 #pragma once
 
+#include <defs.hpp>
 #include <cstdint>
 #include <vector>
 #include <array>
@@ -51,6 +52,15 @@ namespace util::data {
         } else if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t>) {
             return val;
         }
+    }
+
+    template <typename T>
+    inline T maybeByteswap(T val) {
+        if constexpr (GLOBED_LITTLE_ENDIAN) {
+            val = byteswap(val);
+        }
+
+        return val;
     }
 
     // Converts the bit count into bytes required to fit it.

@@ -27,7 +27,8 @@ public:
     EncodedAudioFrame operator=(const EncodedAudioFrame& other) = delete;
 
     // allow moving
-    EncodedAudioFrame(EncodedAudioFrame&& other);
+    EncodedAudioFrame(EncodedAudioFrame&& other) noexcept = default;
+    EncodedAudioFrame& operator=(EncodedAudioFrame&&) noexcept = default;
 
     // adds this audio frame to the list, returns 'true' if we are above the threshold of frames
     bool pushOpusFrame(EncodedOpusData&& frame);

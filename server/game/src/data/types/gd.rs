@@ -1,7 +1,6 @@
 use crate::bytebufferext::{decode_impl, decode_unimpl, empty_impl, encode_impl, ByteBufferExtWrite};
 
-// TODO jetpack i think??
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct PlayerIconData {
     pub cube: i32,
     pub ship: i32,
@@ -11,7 +10,24 @@ pub struct PlayerIconData {
     pub robot: i32,
     pub spider: i32,
     pub swing: i32,
+    pub jetpack: i32,
     pub death_effect: i32,
+}
+impl Default for PlayerIconData {
+    fn default() -> Self {
+        Self {
+            cube: 1,
+            ship: 1,
+            ball: 1,
+            ufo: 1,
+            wave: 1,
+            robot: 1,
+            spider: 1,
+            swing: 1,
+            jetpack: 1,
+            death_effect: 1,
+        }
+    }
 }
 
 encode_impl!(PlayerIconData, buf, self, {
@@ -23,6 +39,7 @@ encode_impl!(PlayerIconData, buf, self, {
     buf.write_i32(self.robot);
     buf.write_i32(self.spider);
     buf.write_i32(self.swing);
+    buf.write_i32(self.jetpack);
     buf.write_i32(self.death_effect);
 });
 
@@ -37,6 +54,7 @@ decode_impl!(PlayerIconData, buf, self, {
     self.robot = buf.read_i32()?;
     self.spider = buf.read_i32()?;
     self.swing = buf.read_i32()?;
+    self.jetpack = buf.read_i32()?;
     self.death_effect = buf.read_i32()?;
     Ok(())
 });

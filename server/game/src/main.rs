@@ -1,14 +1,10 @@
-use std::{
-    error::Error,
-    sync::{atomic::AtomicU32, Arc},
-};
+use std::error::Error;
 
 use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
 use log::{error, info, LevelFilter};
 use logger::Logger;
-use state::ServerStateData;
-use tokio::sync::RwLock;
+use state::ServerState;
 
 use server::GameServer;
 
@@ -86,26 +82,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build()
         .unwrap();
 
-    let state = Arc::new(RwLock::new(ServerStateData {
-        http_client: client,
-        central_url: central_url.clone(),
-        central_pw: central_pw.clone(),
-        player_count: AtomicU32::new(0u32),
-    }));
+    let state = ServerState::new(client, central_url.clone(), central_pw.clone());
 
     info!("Retreiving config from the central server..");
 
-    let state_g = state.read().await;
-    let response = state_g
+    let state_inner = state.read().await;
+
+    let response = state_inner
         .http_client
-        .post(format!("{}{}", state_g.central_url, "gs/boot"))
-        .query(&[("pw", state_g.central_pw.clone())])
+        .post(format!("{}{}", state_inner.central_url, "gs/boot"))
+        .query(&[("pw", state_inner.central_pw.clone())])
         .send()
         .await?
         .error_for_status()
         .map_err(|e| anyhow!("central server returned an error: {e}"))?;
-
-    drop(state_g);
 
     let configuration = response.text().await?;
     let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
@@ -119,7 +109,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         panic!("aborting due to incompatible protocol versions");
     }
 
-    let server = Box::leak(Box::new(GameServer::new(host_address, state.clone(), boot_data).await));
+    drop(state_inner);
+
+    let server = Box::leak(Box::new(GameServer::new(host_address, state, boot_data).await));
 
     server.run().await?;
 

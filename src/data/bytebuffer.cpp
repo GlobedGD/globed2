@@ -3,11 +3,9 @@
 
 using namespace util::data;
 
-#define READ_VALUE(type) type val = this->read<type>(); \
-    if constexpr (GLOBED_LITTLE_ENDIAN) val = util::data::byteswap<type>(val); \
-    return val;
+#define READ_VALUE(type) return util::data::maybeByteswap<type>(this->read<type>());
 
-#define WRITE_VALUE(type, value) this->write<type>(GLOBED_LITTLE_ENDIAN ? util::data::byteswap<type>(value) : value);
+#define WRITE_VALUE(type, value) this->write<type>(util::data::maybeByteswap<type>(value));
 
 #define MAKE_READ_FUNC(type, suffix) \
     type ByteBuffer::read##suffix() { READ_VALUE(type) } \

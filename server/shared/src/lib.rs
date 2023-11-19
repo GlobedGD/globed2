@@ -6,4 +6,5 @@ pub const PROTOCOL_VERSION: u16 = 1;
 pub struct GameServerBootData {
     pub protocol: u16,
     pub no_chat: Vec<i32>,
+    pub validation: bool,
 }

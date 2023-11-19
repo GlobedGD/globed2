@@ -86,3 +86,18 @@ encode_impl!(LoginFailedPacket, buf, self, {
 empty_impl!(LoginFailedPacket, Self { message: "".to_string() });
 
 decode_unimpl!(LoginFailedPacket);
+
+/* ServerNoticePacket - 20006 */
+// used to communicate a simple message to the user
+
+packet!(ServerNoticePacket, 20006, true, {
+    message: String
+});
+
+encode_impl!(ServerNoticePacket, buf, self, {
+    buf.write_string(&self.message);
+});
+
+empty_impl!(ServerNoticePacket, Self { message: "".to_string() });
+
+decode_unimpl!(ServerNoticePacket);

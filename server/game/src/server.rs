@@ -112,7 +112,6 @@ impl GameServer {
             let mut threads = self.threads.write().await;
 
             let thread = Arc::new(GameServerThread::new(
-                self.state.clone(),
                 peer,
                 self.socket.clone(),
                 self.secret_key.clone(),
@@ -134,7 +133,7 @@ impl GameServer {
 
                 // decrement player count if the thread was an authenticated player
                 if thread.authenticated.load(Ordering::Relaxed) {
-                    self.state.read().await.player_count.fetch_sub(1, Ordering::Relaxed);
+                    self.state.player_count.fetch_sub(1, Ordering::Relaxed);
                 }
             });
 

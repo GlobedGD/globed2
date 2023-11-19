@@ -29,10 +29,10 @@ class VoiceBroadcastPacket : public Packet {
     
 #if GLOBED_VOICE_SUPPORT
     GLOBED_PACKET_DECODE {
-        frame = buf.readValueUnique<EncodedAudioFrame>();
+        frame = std::move(buf.readValue<EncodedAudioFrame>());
     }
 
-    std::unique_ptr<EncodedAudioFrame> frame;
+    EncodedAudioFrame frame;
 #else
     GLOBED_PACKET_DECODE {}
 #endif // GLOBED_VOICE_SUPPORT

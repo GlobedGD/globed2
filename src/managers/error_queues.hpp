@@ -15,9 +15,12 @@ class ErrorQueues {
 
     void warn(const std::string& message, bool print = true);
     void error(const std::string& message, bool print = true);
+    // notices are messages coming directly from the server
+    void notice(const std::string& message, bool print = true);
 
     std::vector<std::string> getWarnings();
     std::vector<std::string> getErrors();
+    std::vector<std::string> getNotices();
 private:
     util::sync::SmartMessageQueue<std::string> _warns, _errors;
 };

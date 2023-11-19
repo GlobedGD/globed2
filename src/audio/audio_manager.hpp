@@ -78,7 +78,7 @@ private:
     /* recording*/
     AudioRecordingDevice recordDevice;
     FMOD::Sound* recordSound = nullptr;
-    bool recordActive = false;
+    util::sync::AtomicBool recordActive = false;
     size_t recordChunkSize = 0;
     std::function<void(const EncodedAudioFrame&)> recordCallback;
     std::mutex recordMutex;

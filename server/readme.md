@@ -22,8 +22,9 @@ Note that the server is written with security in mind, so many of those options 
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
 | `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed access |
 | `no_chat_list` | `[]` | ✅<sup>**</sup> | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |
+| `data_validation` | `true` | ✅<sup>**</sup> | Will not allow users to choose invalid icon IDs. If you have a GDPS with extra icons, disable this |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `challenge_level` accordingly if you enable this setting |
-| `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for private servers |
+| `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for GDPS owners |
 | `gd_api_ratelimit`<sup>*</sup> | `5` | ❌ | If `use_gd_api` is enabled, sets the maximum request number per `gd_api_period` that can be made to robtop's API. Used to avoid ratelimits |
 | `gd_api_period`<sup>*</sup> | `5` | ❌ | The period for `gd_api_ratelimit`, in seconds. For example if both settings are set to 5 (the default), only 5 requests can be made in 5 seconds |
 | `secret_key`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying authentication keys |
@@ -36,7 +37,7 @@ Note that the server is written with security in mind, so many of those options 
 
 <sup>*</sup> - security setting, be careful with changing it if making a public server
 
-<sup>**</sup> - `no_chat_list` doesn't require the restart of the central server to apply changes, but the game servers will have to restart to see any changes. TODO fix this btw
+<sup>**</sup> - this setting doesn't require the restart of the central server to apply changes, but the game servers will have to restart to see any changes. TODO fix this btw
 
 The minimum log level is `Warn` for other crates and `Trace` for the server itself in debug builds. In release builds, the default is `Info` and you can change it to `Warn` by defining the environment variable `GLOBED_LESS_LOG=1`
 

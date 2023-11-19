@@ -10,8 +10,8 @@ class PlayerIconData {
 public:
     // wee woo
     PlayerIconData(
-        int cube, int ship, int ball, int ufo, int wave, int robot, int spider, int swing, int deathEffect
-    ) : cube(cube), ship(ship), ball(ball), ufo(ufo), wave(wave), robot(robot), spider(spider), swing(swing), deathEffect(deathEffect) {}
+        int cube, int ship, int ball, int ufo, int wave, int robot, int spider, int swing, int jetpack, int deathEffect
+    ) : cube(cube), ship(ship), ball(ball), ufo(ufo), wave(wave), robot(robot), spider(spider), swing(swing), jetpack(jetpack), deathEffect(deathEffect) {}
 
     PlayerIconData() {}
 
@@ -24,6 +24,7 @@ public:
         buf.writeI32(robot);
         buf.writeI32(spider);
         buf.writeI32(swing);
+        buf.writeI32(jetpack);
         buf.writeI32(deathEffect);
     }
 
@@ -36,10 +37,11 @@ public:
         robot = buf.readI32();
         spider = buf.readI32();
         swing = buf.readI32();
+        jetpack = buf.readI32();
         deathEffect = buf.readI32();
     }
 
-    int cube, ship, ball, ufo, wave, robot, spider, swing, deathEffect;
+    int cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect;
 };
 
 class PlayerAccountData {

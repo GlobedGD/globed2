@@ -65,11 +65,10 @@ macro_rules! encode_unimpl {
     ($packet_type:ty) => {
         impl crate::bytebufferext::Encodable for $packet_type {
             fn encode(&self, _: &mut bytebuffer::ByteBuffer) {
-                log::warn!(
-                    "this should never happen, Encodable is not implemented for {}",
+                panic!(
+                    "Tried to call {}::encode when Encodable was not implemented for this type",
                     stringify!($packet_type)
                 );
-                unimplemented!();
             }
         }
     };

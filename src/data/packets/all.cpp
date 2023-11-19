@@ -11,6 +11,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(KeepaliveResponsePacket);
         PACKET(ServerDisconnectPacket);
         PACKET(LoggedInPacket);
+        PACKET(ServerNoticePacket);
 
         // game related
 

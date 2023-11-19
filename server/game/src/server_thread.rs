@@ -29,7 +29,6 @@ use crate::{
         types::{CryptoPublicKey, PlayerAccountData},
     },
     server::GameServer,
-    state::ServerState,
 };
 
 pub enum ServerThreadMessage {
@@ -39,7 +38,6 @@ pub enum ServerThreadMessage {
 
 pub struct GameServerThread {
     game_server: &'static GameServer,
-    state: ServerState,
     secret_key: SecretKey,
 
     rx: Mutex<Receiver<ServerThreadMessage>>,
@@ -87,7 +85,13 @@ macro_rules! gs_retpacket {
 macro_rules! gs_disconnect {
     ($self:ident,$msg:expr) => {
         $self.terminate();
-        return Ok(Some(Box::new(ServerDisconnectPacket { message: $msg })))
+        gs_retpacket!(ServerDisconnectPacket { message: $msg })
+    };
+}
+
+macro_rules! gs_notice {
+    ($msg:expr) => {
+        gs_retpacket!(ServerNoticePacket { message: $msg })
     };
 }
 
@@ -104,16 +108,9 @@ macro_rules! gs_needauth {
 impl GameServerThread {
     /* public api for the main server */
 
-    pub fn new(
-        state: ServerState,
-        peer: SocketAddrV4,
-        socket: Arc<UdpSocket>,
-        secret_key: SecretKey,
-        game_server: &'static GameServer,
-    ) -> Self {
+    pub fn new(peer: SocketAddrV4, socket: Arc<UdpSocket>, secret_key: SecretKey, game_server: &'static GameServer) -> Self {
         let (tx, rx) = mpsc::channel::<ServerThreadMessage>(8);
         Self {
-            state,
             tx,
             rx: Mutex::new(rx),
             peer,
@@ -292,19 +289,36 @@ impl GameServerThread {
     gs_handler!(self, handle_ping, PingPacket, packet, {
         gs_retpacket!(PingResponsePacket {
             id: packet.id,
-            player_count: self.state.read().await.player_count.load(Ordering::Relaxed),
+            player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
         });
     });
 
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
-        if packet.protocol != PROTOCOL_VERSION {
-            gs_disconnect!(
-                self,
-                format!("protocol mismatch! client: {}, server: {}", packet.protocol, PROTOCOL_VERSION)
-            );
+        match packet.protocol {
+            p if p > PROTOCOL_VERSION => {
+                gs_disconnect!(
+                    self,
+                    format!(
+                        "Outdated server! You are running protocol v{p} while the server is still on v{PROTOCOL_VERSION}.",
+                    )
+                );
+            }
+            p if p < PROTOCOL_VERSION => {
+                gs_disconnect!(
+                    self,
+                    format!(
+                        "Outdated client! Please update the mod in order to connect to the server. Client protocol version: v{p}, server: v{PROTOCOL_VERSION}",
+                    )
+                );
+            }
+            _ => {}
         }
 
         let mut cbox = self.crypto_box.lock().unwrap();
+
+        // as ServerThread is now tied to the SocketAddrV4 and not account id like in globed v0
+        // erroring here is not a concern, even if the user's game crashes without a disconnect packet,
+        // they would have a new randomized port when they restart and this would never fail.
         gs_require!(cbox.is_none(), "attempting to initialize a cryptobox twice");
 
         let sbox = ChaChaBox::new(&packet.key.pubkey, &self.secret_key);
@@ -321,13 +335,13 @@ impl GameServerThread {
         gs_needauth!(self);
 
         gs_retpacket!(KeepaliveResponsePacket {
-            player_count: self.state.read().await.player_count.load(Ordering::Relaxed)
+            player_count: self.game_server.state.player_count.load(Ordering::Relaxed)
         })
     });
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
         // lets verify the given token
-        let state = self.state.read().await;
+        let state = self.game_server.state.read().await;
         let client = state.http_client.clone();
         let central_url = state.central_url.clone();
         let pw = state.central_pw.clone();
@@ -359,7 +373,7 @@ impl GameServerThread {
 
         self.authenticated.store(true, Ordering::Relaxed);
         self.account_id.store(packet.account_id, Ordering::Relaxed);
-        self.state.read().await.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
+        self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
 
         let mut account_data = self.account_data.lock().unwrap();
         account_data.account_id = packet.account_id;

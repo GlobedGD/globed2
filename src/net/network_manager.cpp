@@ -44,9 +44,13 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<LoginFailedPacket>([this](auto packet) {
-        ErrorQueues::get().error(fmt::format("Authentication failed! Your credentials have been reset and you have to prove your identity again.\n\nReason: <cy>{}</c>", packet->message));
+        ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> Your credentials have been reset and you have to complete the verification again.\n\nReason: <cy>{}</c>", packet->message));
         GlobedAccountManager::get().authToken.lock()->clear();
         this->disconnect(true);
+    });
+
+    addBuiltinListener<ServerNoticePacket>([this](auto packet) {
+        ErrorQueues::get().notice(packet->message);
     });
 
     // boot up the threads

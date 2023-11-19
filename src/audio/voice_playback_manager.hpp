@@ -22,8 +22,6 @@ public:
     void releaseStaleSounds();
 
 private:
-    std::vector<std::pair<std::chrono::milliseconds, FMOD::Sound*>> activeSounds;
-
     std::unordered_map<int, std::unique_ptr<AudioStream>> streams;
 };
 

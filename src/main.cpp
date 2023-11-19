@@ -32,7 +32,7 @@ $on_mod(Loaded) {
     SceneManager::get()->keepAcrossScenes(ecn);
     
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
-    geode::log::warn("=== Globed {} has been loaded in debug mode ===", Mod::get()->getVersion().toString());
+    geode::log::warn("=== Globed v{} has been loaded in debug mode ===", Mod::get()->getVersion().toString());
     geode::log::info("Platform: {}", GLOBED_PLATFORM_STRING);
     geode::log::info("FMOD support: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
     geode::log::info("Voice support: {}", GLOBED_VOICE_SUPPORT == 0 ? "false" : "true");
@@ -91,8 +91,8 @@ void testFmod1() {
 
         bb.setPosition(0);
 
-        auto decodedFrame = bb.readValueUnique<EncodedAudioFrame>();
-        VoicePlaybackManager::get().playFrameStreamed(0, *decodedFrame.get());
+        auto decodedFrame = bb.readValue<EncodedAudioFrame>();
+        VoicePlaybackManager::get().playFrameStreamed(0, decodedFrame);
     });
 }
 
@@ -115,8 +115,8 @@ void testFmod2() {
             std::vector<float> out;
             for (size_t i = 0; i < *total; i++) {
                 log::debug("Reading frame {}", i);
-                auto encFrame = bb->readValueUnique<EncodedAudioFrame>();
-                const auto& opusFrames = encFrame->extractFrames();
+                auto encFrame = bb->readValue<EncodedAudioFrame>();
+                const auto& opusFrames = encFrame.extractFrames();
                 
                 for (const auto& opusFrame : opusFrames) {
                     auto rawFrame = vm.decodeSound(opusFrame);

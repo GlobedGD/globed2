@@ -50,6 +50,10 @@ fn default_userlist() -> Vec<i32> {
     Vec::new()
 }
 
+fn default_data_validation() -> bool {
+    true
+}
+
 fn default_secret_key() -> String {
     let rand_string: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -132,6 +136,8 @@ pub struct ServerConfig {
     pub userlist: Vec<i32>,
     #[serde(default = "default_userlist")]
     pub no_chat_list: Vec<i32>,
+    #[serde(default = "default_data_validation")]
+    pub data_validation: bool,
 
     // security
     #[serde(default = "default_use_gd_api")]
@@ -180,6 +186,7 @@ impl ServerConfig {
     }
 
     pub fn make_default() -> Self {
+        // i'm okay thanks for asking
         Self {
             web_mountpoint: default_web_mountpoint(),
             web_address: default_web_address(),
@@ -192,6 +199,7 @@ impl ServerConfig {
             userlist_mode: default_userlist_mode(),
             userlist: default_userlist(),
             no_chat_list: default_userlist(),
+            data_validation: default_data_validation(),
             secret_key: default_secret_key(),
             game_server_password: default_secret_key(),
             challenge_expiry: default_challenge_expiry(),

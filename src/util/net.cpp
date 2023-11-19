@@ -53,7 +53,7 @@ namespace util::net {
 #endif
     }
 
-    void throwLastError() {
+    [[noreturn]] void throwLastError() {
         auto message = lastErrorString();
         GLOBED_REQUIRE_LOG(std::string("Throwing network exception: ") + message);
         throw std::runtime_error(std::string("Network error: ") + message);

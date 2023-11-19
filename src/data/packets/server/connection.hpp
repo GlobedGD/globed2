@@ -56,3 +56,12 @@ class LoginFailedPacket : public Packet {
 
     std::string message;
 };
+
+class ServerNoticePacket : public Packet {
+    GLOBED_PACKET(20006, true)
+
+    GLOBED_PACKET_ENCODE_UNIMPL
+    GLOBED_PACKET_DECODE { message = buf.readString(); }
+
+    std::string message;
+};

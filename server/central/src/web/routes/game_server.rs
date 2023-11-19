@@ -45,9 +45,13 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         throw!(StatusCode::UNAUTHORIZED, "invalid gameserver credentials");
     }
 
+    let state = context.state_read().await;
+    let config = &state.config;
+
     let bdata = GameServerBootData {
         protocol: PROTOCOL_VERSION,
-        no_chat: context.state_read().await.config.no_chat_list.clone(),
+        no_chat: config.no_chat_list.clone(),
+        validation: config.data_validation,
     };
 
     info!(
@@ -58,6 +62,7 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
 
     let bdata = serde_json::to_string(&bdata)?;
 
+    drop(state);
     context.write(bdata);
 
     Ok(())

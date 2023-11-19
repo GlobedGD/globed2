@@ -105,12 +105,12 @@ private:
 
     // misc
 
-    util::sync::AtomicBool _running = true;
-    util::sync::AtomicBool _established = false;
-    util::sync::AtomicBool _loggedin = false;
+    AtomicBool _running = true;
+    AtomicBool _established = false;
+    AtomicBool _loggedin = false;
 
-    std::chrono::system_clock::time_point lastKeepalive;
-    std::chrono::system_clock::time_point lastReceivedPacket;
+    chrono::system_clock::time_point lastKeepalive;
+    chrono::system_clock::time_point lastReceivedPacket;
 
     void maybeSendKeepalive();
     void maybeDisconnectIfDead();

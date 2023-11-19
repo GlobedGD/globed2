@@ -57,7 +57,7 @@ class VoicePacket : public Packet {
 
     VoicePacket(std::unique_ptr<EncodedAudioFrame> _frame) : frame(std::move(_frame)) {}
 
-    static std::shared_ptr<Packet>  create(std::unique_ptr<EncodedAudioFrame> frame) {
+    static std::shared_ptr<Packet> create(std::unique_ptr<EncodedAudioFrame> frame) {
         return std::make_shared<VoicePacket>(std::move(frame));
     }
 

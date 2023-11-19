@@ -13,12 +13,8 @@ EncodedAudioFrame::~EncodedAudioFrame() {
     }
 }
 
-EncodedAudioFrame::EncodedAudioFrame(EncodedAudioFrame&& other) {
-    this->frames = other.frames;
-}
-
 bool EncodedAudioFrame::pushOpusFrame(EncodedOpusData&& frame) {
-    frames.push_back(frame);
+    frames.push_back(std::move(frame));
     return frames.size() >= VOICE_OPUS_FRAMES_IN_AUDIO_FRAME;
 }
 
@@ -50,7 +46,7 @@ void EncodedAudioFrame::decode(ByteBuffer& buf) {
 
         buf.readBytesInto(frame.ptr, frame.length);
 
-        frames.push_back(frame);
+        frames.push_back(std::move(frame));
     }
 }
 

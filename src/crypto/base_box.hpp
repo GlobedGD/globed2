@@ -28,7 +28,6 @@ public:
     constexpr virtual size_t macLength() = 0;
     constexpr size_t prefixLength();
 
-
     /* Encryption */
 
     // Encrypt bytes from the string `src` into `dest`. Note: the `dest` buffer must be at least `size + prefixLength()` bytes big.

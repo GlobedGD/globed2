@@ -216,7 +216,7 @@ private:
     mutable std::shared_mutex rw_mutex_;
 };
 
-// simple wrapper around atomics with the default memory order set to relaxed
+// simple wrapper around atomics with the default memory order set to relaxed instead of seqcst
 template <typename T>
 class RelaxedAtomic {
 public:

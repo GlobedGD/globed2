@@ -93,11 +93,6 @@ AudioStream::~AudioStream() {
     // if (sound) sound->release();
 }
 
-AudioStream::AudioStream(AudioStream&& other) {
-    this->sound = other.sound;
-    this->queue = other.queue;
-}
-
 void AudioStream::start() {
     GlobedAudioManager::get().playSound(sound);
 }

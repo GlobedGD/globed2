@@ -33,7 +33,7 @@ bytevector BaseCryptoBox::encrypt(const std::string& src) {
     return encrypt(reinterpret_cast<const byte*>(src.c_str()), src.size());
 }
 
-size_t BaseCryptoBox::decryptInPlace(util::data::byte* data, size_t size) {
+size_t BaseCryptoBox::decryptInPlace(byte* data, size_t size) {
     // overwriting nonce causes decryption to break
     // so we offset the destination by NONCE_LEN and then move it back
     size_t plaintext_size = decryptInto(data, data + nonceLength(), size);

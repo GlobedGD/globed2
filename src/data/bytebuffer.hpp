@@ -166,14 +166,6 @@ public:
         return std::move(value);
     }
 
-    // `readValue()` but with a unique_ptr for objects that can't be copied
-    template <Decodable T>
-    std::unique_ptr<T> readValueUnique() {
-        std::unique_ptr<T> value = std::make_unique<T>();
-        value->decode(*this);
-        return value;
-    }
-
     // Write an `Encodable` object
     template <Encodable T>
     void writeValue(const T& value) {
