@@ -59,7 +59,7 @@ macro_rules! get_user_ip {
 pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     check_user_agent!(context, _ua);
 
-    let account_id = &*context.must_query("aid")?;
+    let account_id = context.must_query("aid")?.parse::<i32>()?;
     let account_name = &*context.must_query("aname")?;
     let code = &*context.must_query("code")?;
 
@@ -71,17 +71,15 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
 
     let state = context.state_read().await;
 
-    match state.should_block(account_id.parse::<i32>()?) {
-        Ok(true) => throw!(
+    if state.should_block(account_id) {
+        throw!(
             StatusCode::FORBIDDEN,
             if state.config.userlist_mode == UserlistMode::Blacklist {
                 "<cr>You had only one shot.</c>"
             } else {
                 "This server has whitelist enabled and your account ID has not been approved."
             }
-        ),
-        Err(_) => throw!(StatusCode::BAD_REQUEST, "malformed parameters"),
-        Ok(false) => {}
+        );
     };
 
     let authkey = state.generate_authkey(account_id, account_name);
@@ -105,22 +103,19 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
 pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result {
     check_user_agent!(context, _ua);
 
-    let account_id = &*context.must_query("aid")?;
-    let account_id = account_id.parse::<i32>()?;
+    let account_id = context.must_query("aid")?.parse::<i32>()?;
 
     let mut state = context.state_write().await;
 
-    match state.should_block(account_id) {
-        Ok(true) => throw!(
+    if state.should_block(account_id) {
+        throw!(
             StatusCode::FORBIDDEN,
             if state.config.userlist_mode == UserlistMode::Blacklist {
                 "<cr>You had only one shot.</c>"
             } else {
                 "This server has whitelist enabled and your account ID has not been approved."
             }
-        ),
-        Err(_) => throw!(StatusCode::BAD_REQUEST, "malformed parameters"),
-        Ok(false) => {}
+        );
     };
 
     get_user_ip!(state, context, user_ip);
@@ -253,7 +248,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         let mut state = context.state_write().await;
 
         state.active_challenges.remove(&user_ip);
-        let authkey = state.generate_authkey(&account_id.to_string(), account_name);
+        let authkey = state.generate_authkey(account_id, account_name);
         drop(state);
 
         context.write(format!("none:{}", b64e::STANDARD.encode(authkey)));
@@ -345,16 +340,16 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
             continue;
         }
 
-        let author_id = author_id.unwrap();
+        let author_id = author_id.unwrap().parse::<i32>()?;
         let author_name = author_name.unwrap();
         let comment_text = comment_text.unwrap();
         let comment_id = comment_id.unwrap();
 
-        if author_id.parse::<i32>()? != account_id {
+        if author_id != account_id {
             continue;
         }
 
-        if author_name != account_name {
+        if author_name.to_lowercase() != account_name.to_lowercase() {
             continue;
         }
 

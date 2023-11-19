@@ -2,7 +2,7 @@ use std::{
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, Ordering},
-        Arc, Mutex as StdMutex,
+        Mutex as StdMutex,
     },
     time::{Duration, SystemTime},
 };
@@ -11,16 +11,13 @@ use anyhow::anyhow;
 use bytebuffer::{ByteBuffer, ByteReader};
 use crypto_box::{
     aead::{Aead, AeadCore, OsRng},
-    ChaChaBox, SecretKey,
+    ChaChaBox,
 };
 use globed_shared::PROTOCOL_VERSION;
 use log::{debug, warn};
-use tokio::{
-    net::UdpSocket,
-    sync::{
-        mpsc::{self, Receiver, Sender},
-        Mutex,
-    },
+use tokio::sync::{
+    mpsc::{self, Receiver, Sender},
+    Mutex,
 };
 
 use crate::{
@@ -38,7 +35,6 @@ pub enum ServerThreadMessage {
 
 pub struct GameServerThread {
     game_server: &'static GameServer,
-    secret_key: SecretKey,
 
     rx: Mutex<Receiver<ServerThreadMessage>>,
     tx: Sender<ServerThreadMessage>,
@@ -47,7 +43,6 @@ pub struct GameServerThread {
     crypto_box: StdMutex<Option<ChaChaBox>>,
 
     peer: SocketAddrV4,
-    socket: Arc<UdpSocket>,
     pub account_id: AtomicI32,
     pub account_data: StdMutex<PlayerAccountData>,
 
@@ -89,6 +84,7 @@ macro_rules! gs_disconnect {
     };
 }
 
+#[allow(unused_macros)]
 macro_rules! gs_notice {
     ($msg:expr) => {
         gs_retpacket!(ServerNoticePacket { message: $msg })
@@ -108,14 +104,12 @@ macro_rules! gs_needauth {
 impl GameServerThread {
     /* public api for the main server */
 
-    pub fn new(peer: SocketAddrV4, socket: Arc<UdpSocket>, secret_key: SecretKey, game_server: &'static GameServer) -> Self {
+    pub fn new(peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
         let (tx, rx) = mpsc::channel::<ServerThreadMessage>(8);
         Self {
             tx,
             rx: Mutex::new(rx),
             peer,
-            secret_key,
-            socket,
             crypto_box: StdMutex::new(None),
             account_id: AtomicI32::new(0),
             authenticated: AtomicBool::new(false),
@@ -160,12 +154,12 @@ impl GameServerThread {
 
     async fn send_packet(&self, packet: &dyn Packet) -> anyhow::Result<()> {
         let serialized = self.serialize_packet(packet)?;
-        self.socket.send_to(serialized.as_bytes(), self.peer).await?;
+        self.game_server.socket.send_to(serialized.as_bytes(), self.peer).await?;
 
         Ok(())
     }
 
-    fn parse_packet(&self, message: Vec<u8>) -> anyhow::Result<Box<dyn Packet>> {
+    fn parse_packet(&self, message: &[u8]) -> anyhow::Result<Box<dyn Packet>> {
         gs_require!(message.len() >= PACKET_HEADER_LEN, "packet is missing a header");
 
         let mut data = ByteReader::from_bytes(&message);
@@ -242,7 +236,7 @@ impl GameServerThread {
 
     async fn handle_message(&self, message: ServerThreadMessage) -> anyhow::Result<()> {
         match message {
-            ServerThreadMessage::Packet(message) => match self.parse_packet(message) {
+            ServerThreadMessage::Packet(message) => match self.parse_packet(&message) {
                 Ok(packet) => match self.handle_packet(&*packet).await {
                     Ok(_) => {}
                     Err(err) => return Err(anyhow!("failed to handle packet: {}", err.to_string())),
@@ -321,12 +315,12 @@ impl GameServerThread {
         // they would have a new randomized port when they restart and this would never fail.
         gs_require!(cbox.is_none(), "attempting to initialize a cryptobox twice");
 
-        let sbox = ChaChaBox::new(&packet.key.pubkey, &self.secret_key);
+        let sbox = ChaChaBox::new(&packet.key.pubkey, &self.game_server.secret_key);
         *cbox = Some(sbox);
 
         gs_retpacket!(CryptoHandshakeResponsePacket {
             key: CryptoPublicKey {
-                pubkey: self.secret_key.public_key().clone()
+                pubkey: self.game_server.secret_key.public_key().clone()
             }
         });
     });
@@ -435,7 +429,7 @@ impl GameServerThread {
         }
 
         let vpkt = VoiceBroadcastPacket {
-            player_id: self.account_id.load(Ordering::Relaxed),
+            player_id: accid,
             data: packet.data.clone(),
         };
 

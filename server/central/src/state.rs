@@ -60,7 +60,7 @@ impl ServerStateData {
     }
 
     // uses hmac-sha256 to derive an auth key from user's account ID and name
-    pub fn generate_authkey(&self, account_id: &str, account_name: &str) -> Vec<u8> {
+    pub fn generate_authkey(&self, account_id: i32, account_name: &str) -> Vec<u8> {
         let val = format!("{}:{}", account_id, account_name);
 
         let mut hmac: Hmac<Sha256> = self.hmac.clone();
@@ -86,7 +86,7 @@ impl ServerStateData {
     }
 
     // generate a token, similar to jwt but more efficient and lightweight
-    pub fn generate_token(&self, account_id: &str, account_name: &str) -> String {
+    pub fn generate_token(&self, account_id: i32, account_name: &str) -> String {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("whoops our clock went backwards")
@@ -105,7 +105,7 @@ impl ServerStateData {
     }
 
     // verify the token and return the username if it's valid
-    pub fn verify_token(&self, account_id: &str, token: &str) -> anyhow::Result<String> {
+    pub fn verify_token(&self, account_id: i32, token: &str) -> anyhow::Result<String> {
         let timestamp = SystemTime::now();
 
         let (claims, signature) = token.split_once('.').ok_or(anyhow!("malformed token"))?;
@@ -113,7 +113,7 @@ impl ServerStateData {
         let data_str = String::from_utf8(b64e::URL_SAFE_NO_PAD.decode(claims)?)?;
         let mut claims = data_str.split('.');
 
-        let orig_id = claims.next().ok_or(anyhow!("malformed token"))?;
+        let orig_id = claims.next().ok_or(anyhow!("malformed token"))?.parse::<i32>()?;
         let orig_name = claims.next().ok_or(anyhow!("malformed token"))?;
         let orig_ts = claims.next().ok_or(anyhow!("malformed token"))?;
 
@@ -157,12 +157,12 @@ impl ServerStateData {
         Ok(())
     }
 
-    pub fn should_block(&self, account_id: i32) -> anyhow::Result<bool> {
-        Ok(match self.config.userlist_mode {
+    pub fn should_block(&self, account_id: i32) -> bool {
+        match self.config.userlist_mode {
             UserlistMode::None => false,
             UserlistMode::Blacklist => self.config.userlist.contains(&account_id),
             UserlistMode::Whitelist => !self.config.userlist.contains(&account_id),
-        })
+        }
     }
 }
 

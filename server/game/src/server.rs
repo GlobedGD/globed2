@@ -23,7 +23,7 @@ use crate::{
 pub struct GameServer {
     pub address: String,
     pub state: ServerState,
-    pub socket: Arc<UdpSocket>,
+    pub socket: UdpSocket,
     pub threads: RwLock<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
     pub secret_key: SecretKey,
     pub central_conf: GameServerBootData,
@@ -36,7 +36,7 @@ impl GameServer {
         Self {
             address: address.clone(),
             state,
-            socket: Arc::new(UdpSocket::bind(&address).await.unwrap()),
+            socket: UdpSocket::bind(&address).await.unwrap(),
             threads: RwLock::new(FxHashMap::default()),
             secret_key,
             central_conf,
@@ -61,7 +61,7 @@ impl GameServer {
     /* various calls for other threads */
 
     pub async fn broadcast_voice_packet(&'static self, vpkt: &VoiceBroadcastPacket) -> anyhow::Result<()> {
-        // todo dont send it to every single thread in existence
+        // TODO dont send it to every single thread in existence
         let threads = self.threads.read().await;
         for thread in threads.values() {
             let packet = vpkt.clone();
@@ -111,12 +111,7 @@ impl GameServer {
             drop(threads);
             let mut threads = self.threads.write().await;
 
-            let thread = Arc::new(GameServerThread::new(
-                peer,
-                self.socket.clone(),
-                self.secret_key.clone(),
-                self,
-            ));
+            let thread = Arc::new(GameServerThread::new(peer, self));
             let thread_cl = thread.clone();
 
             tokio::spawn(async move {

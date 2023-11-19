@@ -51,7 +51,6 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
     let bdata = GameServerBootData {
         protocol: PROTOCOL_VERSION,
         no_chat: config.no_chat_list.clone(),
-        validation: config.data_validation,
     };
 
     info!(
@@ -79,6 +78,7 @@ pub async fn verify_token(context: &mut Context<ServerState>) -> roa::Result {
     }
 
     let account_id = &*context.must_query("account_id")?;
+    let account_id = account_id.parse::<i32>()?;
     let token = &*context.must_query("token")?;
 
     let result = context.state_read().await.verify_token(account_id, token);

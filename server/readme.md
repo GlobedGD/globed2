@@ -22,7 +22,6 @@ Note that the server is written with security in mind, so many of those options 
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
 | `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed access |
 | `no_chat_list` | `[]` | ✅<sup>**</sup> | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |
-| `data_validation` | `true` | ✅<sup>**</sup> | Will not allow users to choose invalid icon IDs. If you have a GDPS with extra icons, disable this |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `challenge_level` accordingly if you enable this setting |
 | `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for GDPS owners |
 | `gd_api_ratelimit`<sup>*</sup> | `5` | ❌ | If `use_gd_api` is enabled, sets the maximum request number per `gd_api_period` that can be made to robtop's API. Used to avoid ratelimits |
