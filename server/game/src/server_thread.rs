@@ -67,7 +67,7 @@ macro_rules! gs_require {
 macro_rules! gs_handler {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
         // Insanity if you ask me
-        async fn $name(&$self, packet: Box<dyn Packet>) -> anyhow::Result<Option<Box<dyn Packet>>> {
+        async fn $name(&$self, packet: &dyn Packet) -> anyhow::Result<Option<Box<dyn Packet>>> {
             let _tmp = packet.as_any().downcast_ref::<$pktty>();
             if _tmp.is_none() {
                 return Err(anyhow!("failed to downcast packet"));
@@ -161,7 +161,7 @@ impl GameServerThread {
 
     /* private utilities */
 
-    async fn send_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<()> {
+    async fn send_packet(&self, packet: &dyn Packet) -> anyhow::Result<()> {
         let serialized = self.serialize_packet(packet)?;
         self.socket.send_to(serialized.as_bytes(), self.peer).await?;
 
@@ -212,7 +212,7 @@ impl GameServerThread {
         Ok(packet)
     }
 
-    fn serialize_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<ByteBuffer> {
+    fn serialize_packet(&self, packet: &dyn Packet) -> anyhow::Result<ByteBuffer> {
         let mut buf = ByteBuffer::new();
         buf.write_u16(packet.get_packet_id());
         buf.write_u8(if packet.get_encrypted() { 1u8 } else { 0u8 });
@@ -246,14 +246,14 @@ impl GameServerThread {
     async fn handle_message(&self, message: ServerThreadMessage) -> anyhow::Result<()> {
         match message {
             ServerThreadMessage::Packet(message) => match self.parse_packet(message) {
-                Ok(packet) => match self.handle_packet(packet).await {
+                Ok(packet) => match self.handle_packet(&*packet).await {
                     Ok(_) => {}
                     Err(err) => return Err(anyhow!("failed to handle packet: {}", err.to_string())),
                 },
                 Err(err) => return Err(anyhow!("failed to parse packet: {}", err.to_string())),
             },
 
-            ServerThreadMessage::BroadcastVoice(voice_packet) => match self.send_packet(Box::new(voice_packet)).await {
+            ServerThreadMessage::BroadcastVoice(voice_packet) => match self.send_packet(&voice_packet).await {
                 Ok(_) => {}
                 Err(err) => {
                     warn!("failed to broadcast voice packet: {}", err.to_string())
@@ -266,7 +266,7 @@ impl GameServerThread {
 
     /* packet handlers */
 
-    async fn handle_packet(&self, packet: Box<dyn Packet>) -> anyhow::Result<()> {
+    async fn handle_packet(&self, packet: &dyn Packet) -> anyhow::Result<()> {
         let response = match packet.get_packet_id() {
             /* connection related */
             PingPacket::PACKET_ID => self.handle_ping(packet).await,
@@ -283,7 +283,7 @@ impl GameServerThread {
         }?;
 
         if let Some(response_packet) = response {
-            self.send_packet(response_packet).await?;
+            self.send_packet(&*response_packet).await?;
         }
 
         Ok(())
@@ -395,6 +395,12 @@ impl GameServerThread {
 
     gs_handler!(self, handle_voice, VoicePacket, packet, {
         gs_needauth!(self);
+
+        let accid = self.account_id.load(Ordering::Relaxed);
+        if self.game_server.chat_blocked(accid) {
+            debug!("blocking voice packet from {accid}");
+            return Ok(None);
+        }
 
         // check the throughput
         {

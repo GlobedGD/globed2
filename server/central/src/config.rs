@@ -130,6 +130,8 @@ pub struct ServerConfig {
     pub userlist_mode: UserlistMode,
     #[serde(default = "default_userlist")]
     pub userlist: Vec<i32>,
+    #[serde(default = "default_userlist")]
+    pub no_chat_list: Vec<i32>,
 
     // security
     #[serde(default = "default_use_gd_api")]
@@ -189,6 +191,7 @@ impl ServerConfig {
             special_users: default_special_users(),
             userlist_mode: default_userlist_mode(),
             userlist: default_userlist(),
+            no_chat_list: default_userlist(),
             secret_key: default_secret_key(),
             game_server_password: default_secret_key(),
             challenge_expiry: default_challenge_expiry(),

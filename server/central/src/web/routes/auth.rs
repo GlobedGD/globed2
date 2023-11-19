@@ -11,8 +11,8 @@ use log::{debug, info, warn};
 use rand::{distributions::Alphanumeric, Rng};
 use roa::{http::StatusCode, preload::PowerBody, query::Query, throw, Context};
 
-use crate::ip_blocker::IP_BLOCKER;
 use crate::state::{ActiveChallenge, ServerState};
+use crate::{config::UserlistMode, ip_blocker::IP_BLOCKER};
 
 macro_rules! check_user_agent {
     ($ctx:expr, $ua:ident) => {
@@ -72,7 +72,14 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     let state = context.state_read().await;
 
     match state.should_block(account_id.parse::<i32>()?) {
-        Ok(true) => throw!(StatusCode::FORBIDDEN, "<cr>You had only one shot.</c>"),
+        Ok(true) => throw!(
+            StatusCode::FORBIDDEN,
+            if state.config.userlist_mode == UserlistMode::Blacklist {
+                "<cr>You had only one shot.</c>"
+            } else {
+                "This server has whitelist enabled and your account ID has not been approved."
+            }
+        ),
         Err(_) => throw!(StatusCode::BAD_REQUEST, "malformed parameters"),
         Ok(false) => {}
     };
@@ -104,7 +111,14 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     let mut state = context.state_write().await;
 
     match state.should_block(account_id) {
-        Ok(true) => throw!(StatusCode::FORBIDDEN, "<cr>You had only one shot.</c>"),
+        Ok(true) => throw!(
+            StatusCode::FORBIDDEN,
+            if state.config.userlist_mode == UserlistMode::Blacklist {
+                "<cr>You had only one shot.</c>"
+            } else {
+                "This server has whitelist enabled and your account ID has not been approved."
+            }
+        ),
         Err(_) => throw!(StatusCode::BAD_REQUEST, "malformed parameters"),
         Ok(false) => {}
     };

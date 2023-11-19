@@ -44,9 +44,8 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<LoginFailedPacket>([this](auto packet) {
-        ErrorQueues::get().error(fmt::format("Authentication failed! Please try connecting to the server again.\n\nReason: <cy>{}</c>", packet->message));
+        ErrorQueues::get().error(fmt::format("Authentication failed! Your credentials have been reset and you have to prove your identity again.\n\nReason: <cy>{}</c>", packet->message));
         GlobedAccountManager::get().authToken.lock()->clear();
-        
         this->disconnect(true);
     });
 
@@ -144,7 +143,7 @@ void NetworkManager::taskPingServers() {
 
 void NetworkManager::threadMainFunc() {
     while (_running) {
-        maybeSendKeepalive();
+        this->maybeSendKeepalive();
 
         if (!packetQueue.waitForMessages(chrono::seconds(1))) {
             continue;
@@ -165,7 +164,7 @@ void NetworkManager::threadMainFunc() {
 void NetworkManager::threadRecvFunc() {
     while (_running) {
         // we wanna poll both the normal socket and the ping socket.
-        auto pollResult = pollBothSockets(1000);
+        auto pollResult = this->pollBothSockets(1000);
         if (pollResult.hasPing) {
             try {
                 auto packet = pingSocket.recvPacket();

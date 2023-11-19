@@ -84,6 +84,10 @@ impl GameServer {
             .collect()
     }
 
+    pub fn chat_blocked(&'static self, user_id: i32) -> bool {
+        self.central_conf.no_chat.contains(&user_id)
+    }
+
     /* private handling stuff */
 
     async fn recv_and_handle(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {

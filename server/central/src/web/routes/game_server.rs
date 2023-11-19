@@ -47,6 +47,7 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
 
     let bdata = GameServerBootData {
         protocol: PROTOCOL_VERSION,
+        no_chat: context.state_read().await.config.no_chat_list.clone(),
     };
 
     info!(
