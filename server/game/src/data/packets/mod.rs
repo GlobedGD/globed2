@@ -123,6 +123,10 @@ pub fn match_packet(packet_id: PacketId) -> Option<Box<dyn Packet>> {
         // game related
         SyncIconsPacket::PACKET_ID => mpacket!(SyncIconsPacket),
         RequestProfilesPacket::PACKET_ID => mpacket!(RequestProfilesPacket),
+        LevelJoinPacket::PACKET_ID => mpacket!(LevelJoinPacket),
+        LevelLeavePacket::PACKET_ID => mpacket!(LevelLeavePacket),
+        PlayerDataPacket::PACKET_ID => mpacket!(PlayerDataPacket),
+
         VoicePacket::PACKET_ID => mpacket!(VoicePacket),
         _ => None,
     }

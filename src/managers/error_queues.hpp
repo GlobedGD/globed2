@@ -22,5 +22,5 @@ class ErrorQueues {
     std::vector<std::string> getErrors();
     std::vector<std::string> getNotices();
 private:
-    util::sync::SmartMessageQueue<std::string> _warns, _errors;
+    util::sync::SmartMessageQueue<std::string> _warns, _errors, _notices;
 };

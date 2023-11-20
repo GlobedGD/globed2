@@ -1,13 +1,12 @@
 use std::{
     net::SocketAddrV4,
-    sync::{
-        atomic::{AtomicBool, AtomicI32, Ordering},
-        Mutex as StdMutex,
-    },
+    sync::atomic::{AtomicBool, AtomicI32, Ordering},
     time::{Duration, SystemTime},
 };
 
-use anyhow::anyhow;
+use parking_lot::Mutex as SyncMutex;
+
+use anyhow::{anyhow, bail};
 use bytebuffer::{ByteBuffer, ByteReader};
 use crypto_box::{
     aead::{Aead, AeadCore, OsRng},
@@ -21,9 +20,10 @@ use tokio::sync::{
 };
 
 use crate::{
+    bytebufferext::{ByteBufferExt, ByteBufferExtWrite},
     data::{
         packets::{client::*, match_packet, server::*, Packet, PacketWithId, PACKET_HEADER_LEN},
-        types::{CryptoPublicKey, PlayerAccountData},
+        types::{AssociatedPlayerData, CryptoPublicKey, PlayerAccountData},
     },
     server::GameServer,
 };
@@ -40,13 +40,14 @@ pub struct GameServerThread {
     tx: Sender<ServerThreadMessage>,
     awaiting_termination: AtomicBool,
     pub authenticated: AtomicBool,
-    crypto_box: StdMutex<Option<ChaChaBox>>,
+    crypto_box: SyncMutex<Option<ChaChaBox>>,
 
     peer: SocketAddrV4,
     pub account_id: AtomicI32,
-    pub account_data: StdMutex<PlayerAccountData>,
+    pub level_id: AtomicI32,
+    pub account_data: SyncMutex<PlayerAccountData>,
 
-    last_voice_packet: StdMutex<SystemTime>,
+    last_voice_packet: SyncMutex<SystemTime>,
 }
 
 macro_rules! gs_require {
@@ -60,7 +61,7 @@ macro_rules! gs_require {
 macro_rules! gs_handler {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
         // Insanity if you ask me
-        async fn $name(&$self, packet: &dyn Packet) -> anyhow::Result<Option<Box<dyn Packet>>> {
+        async fn $name(&$self, packet: &dyn Packet) -> anyhow::Result<()> {
             let _tmp = packet.as_any().downcast_ref::<$pktty>();
             if _tmp.is_none() {
                 return Err(anyhow!("failed to downcast packet"));
@@ -71,32 +72,25 @@ macro_rules! gs_handler {
     };
 }
 
-macro_rules! gs_retpacket {
-    ($code:expr) => {
-        return Ok(Some(Box::new($code)))
-    };
-}
-
 macro_rules! gs_disconnect {
-    ($self:ident,$msg:expr) => {
+    ($self:ident, $msg:expr) => {
         $self.terminate();
-        gs_retpacket!(ServerDisconnectPacket { message: $msg })
+        $self.send_packet(&ServerDisconnectPacket { message: $msg }).await?;
+        return Ok(());
     };
 }
 
 #[allow(unused_macros)]
 macro_rules! gs_notice {
-    ($msg:expr) => {
-        gs_retpacket!(ServerNoticePacket { message: $msg })
+    ($self:expr, $msg:expr) => {
+        $self.send_packet(&ServerNoticePacket { message: $msg }).await?;
     };
 }
 
 macro_rules! gs_needauth {
     ($self:ident) => {
         if !$self.authenticated.load(Ordering::Relaxed) {
-            return Ok(Some(Box::new(ServerDisconnectPacket {
-                message: "not logged in".to_string(),
-            })));
+            gs_disconnect!($self, "unauthorized".to_string());
         }
     };
 }
@@ -110,13 +104,14 @@ impl GameServerThread {
             tx,
             rx: Mutex::new(rx),
             peer,
-            crypto_box: StdMutex::new(None),
+            crypto_box: SyncMutex::new(None),
             account_id: AtomicI32::new(0),
+            level_id: AtomicI32::new(0),
             authenticated: AtomicBool::new(false),
             game_server,
             awaiting_termination: AtomicBool::new(false),
-            account_data: StdMutex::new(PlayerAccountData::default()),
-            last_voice_packet: StdMutex::new(SystemTime::now()),
+            account_data: SyncMutex::new(PlayerAccountData::default()),
+            last_voice_packet: SyncMutex::new(SystemTime::now()),
         }
     }
 
@@ -152,20 +147,32 @@ impl GameServerThread {
 
     /* private utilities */
 
-    async fn send_packet(&self, packet: &dyn Packet) -> anyhow::Result<()> {
+    async fn send_packet(&self, packet: &impl Packet) -> anyhow::Result<()> {
         let serialized = self.serialize_packet(packet)?;
-        self.game_server.socket.send_to(serialized.as_bytes(), self.peer).await?;
+        self.send_buffer(serialized.as_bytes()).await
+    }
 
+    async fn send_buffer(&self, buffer: &[u8]) -> anyhow::Result<()> {
+        self.game_server.socket.send_to(buffer, self.peer).await?;
         Ok(())
     }
 
-    fn parse_packet(&self, message: &[u8]) -> anyhow::Result<Box<dyn Packet>> {
+    fn parse_packet(&self, message: &[u8]) -> anyhow::Result<Option<Box<dyn Packet>>> {
         gs_require!(message.len() >= PACKET_HEADER_LEN, "packet is missing a header");
 
-        let mut data = ByteReader::from_bytes(&message);
+        let mut data = ByteReader::from_bytes(message);
 
         let packet_id = data.read_u16()?;
         let encrypted = data.read_u8()? != 0u8;
+
+        // for optimization, reject the voice packet immediately if the player is blocked from vc
+        if packet_id == VoicePacket::PACKET_ID {
+            let accid = self.account_id.load(Ordering::Relaxed);
+            if self.game_server.chat_blocked(accid) {
+                debug!("blocking voice packet from {accid}");
+                return Ok(None);
+            }
+        }
 
         let packet = match_packet(packet_id);
         gs_require!(
@@ -180,10 +187,10 @@ impl GameServerThread {
 
         if !encrypted {
             packet.decode_from_reader(&mut data)?;
-            return Ok(packet);
+            return Ok(Some(packet));
         }
 
-        let cbox = self.crypto_box.lock().unwrap();
+        let cbox = self.crypto_box.lock();
 
         gs_require!(
             cbox.is_some(),
@@ -200,20 +207,20 @@ impl GameServerThread {
         let mut packetbuf = ByteReader::from_bytes(&cleartext);
         packet.decode_from_reader(&mut packetbuf)?;
 
-        Ok(packet)
+        Ok(Some(packet))
     }
 
-    fn serialize_packet(&self, packet: &dyn Packet) -> anyhow::Result<ByteBuffer> {
+    fn serialize_packet(&self, packet: &impl Packet) -> anyhow::Result<ByteBuffer> {
         let mut buf = ByteBuffer::new();
         buf.write_u16(packet.get_packet_id());
-        buf.write_u8(if packet.get_encrypted() { 1u8 } else { 0u8 });
+        buf.write_bool(packet.get_encrypted());
 
         if !packet.get_encrypted() {
             packet.encode(&mut buf);
             return Ok(buf);
         }
 
-        let cbox = self.crypto_box.lock().unwrap();
+        let cbox = self.crypto_box.lock();
 
         gs_require!(
             cbox.is_some(),
@@ -228,6 +235,7 @@ impl GameServerThread {
 
         let encrypted = cbox.encrypt(&nonce, cltxtbuf.as_bytes())?;
 
+        #[cfg(not(rust_analyzer))] // i am so sorry
         buf.write_bytes(&nonce);
         buf.write_bytes(&encrypted);
 
@@ -237,10 +245,11 @@ impl GameServerThread {
     async fn handle_message(&self, message: ServerThreadMessage) -> anyhow::Result<()> {
         match message {
             ServerThreadMessage::Packet(message) => match self.parse_packet(&message) {
-                Ok(packet) => match self.handle_packet(&*packet).await {
+                Ok(Some(packet)) => match self.handle_packet(&*packet).await {
                     Ok(_) => {}
                     Err(err) => return Err(anyhow!("failed to handle packet: {}", err.to_string())),
                 },
+                Ok(None) => {}
                 Err(err) => return Err(anyhow!("failed to parse packet: {}", err.to_string())),
             },
 
@@ -258,7 +267,7 @@ impl GameServerThread {
     /* packet handlers */
 
     async fn handle_packet(&self, packet: &dyn Packet) -> anyhow::Result<()> {
-        let response = match packet.get_packet_id() {
+        match packet.get_packet_id() {
             /* connection related */
             PingPacket::PACKET_ID => self.handle_ping(packet).await,
             CryptoHandshakeStartPacket::PACKET_ID => self.handle_crypto_handshake(packet).await,
@@ -269,22 +278,23 @@ impl GameServerThread {
             /* game related */
             SyncIconsPacket::PACKET_ID => self.handle_sync_icons(packet).await,
             RequestProfilesPacket::PACKET_ID => self.handle_request_profiles(packet).await,
+            LevelJoinPacket::PACKET_ID => self.handle_level_join(packet).await,
+            LevelLeavePacket::PACKET_ID => self.handle_level_leave(packet).await,
+            PlayerDataPacket::PACKET_ID => self.handle_player_data(packet).await,
+
             VoicePacket::PACKET_ID => self.handle_voice(packet).await,
             x => Err(anyhow!("No handler for packet id {x}")),
-        }?;
-
-        if let Some(response_packet) = response {
-            self.send_packet(&*response_packet).await?;
         }
-
-        Ok(())
     }
 
     gs_handler!(self, handle_ping, PingPacket, packet, {
-        gs_retpacket!(PingResponsePacket {
+        self.send_packet(&PingResponsePacket {
             id: packet.id,
             player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
-        });
+        })
+        .await?;
+
+        Ok(())
     });
 
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
@@ -308,29 +318,37 @@ impl GameServerThread {
             _ => {}
         }
 
-        let mut cbox = self.crypto_box.lock().unwrap();
+        {
+            let mut cbox = self.crypto_box.lock();
 
-        // as ServerThread is now tied to the SocketAddrV4 and not account id like in globed v0
-        // erroring here is not a concern, even if the user's game crashes without a disconnect packet,
-        // they would have a new randomized port when they restart and this would never fail.
-        gs_require!(cbox.is_none(), "attempting to initialize a cryptobox twice");
+            // as ServerThread is now tied to the SocketAddrV4 and not account id like in globed v0
+            // erroring here is not a concern, even if the user's game crashes without a disconnect packet,
+            // they would have a new randomized port when they restart and this would never fail.
+            gs_require!(cbox.is_none(), "attempting to initialize a cryptobox twice");
 
-        let sbox = ChaChaBox::new(&packet.key.pubkey, &self.game_server.secret_key);
-        *cbox = Some(sbox);
+            let sbox = ChaChaBox::new(&packet.key.pubkey, &self.game_server.secret_key);
+            *cbox = Some(sbox);
+        }
 
-        gs_retpacket!(CryptoHandshakeResponsePacket {
+        self.send_packet(&CryptoHandshakeResponsePacket {
             key: CryptoPublicKey {
-                pubkey: self.game_server.secret_key.public_key().clone()
-            }
-        });
+                pubkey: self.game_server.secret_key.public_key().clone(),
+            },
+        })
+        .await?;
+
+        Ok(())
     });
 
     gs_handler!(self, handle_keepalive, KeepalivePacket, _packet, {
         gs_needauth!(self);
 
-        gs_retpacket!(KeepaliveResponsePacket {
-            player_count: self.game_server.state.player_count.load(Ordering::Relaxed)
+        self.send_packet(&KeepaliveResponsePacket {
+            player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
         })
+        .await?;
+
+        Ok(())
     });
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
@@ -358,9 +376,12 @@ impl GameServerThread {
 
         if !response.starts_with("status_ok:") {
             self.terminate();
-            gs_retpacket!(LoginFailedPacket {
-                message: format!("authentication failed: {}", response)
-            });
+            self.send_packet(&LoginFailedPacket {
+                message: format!("authentication failed: {}", response),
+            })
+            .await?;
+
+            return Ok(());
         }
 
         let player_name = response.split_once(':').ok_or(anyhow!("central server is drunk"))?.1;
@@ -369,18 +390,35 @@ impl GameServerThread {
         self.account_id.store(packet.account_id, Ordering::Relaxed);
         self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
 
-        let mut account_data = self.account_data.lock().unwrap();
-        account_data.account_id = packet.account_id;
-        account_data.name = player_name.to_string();
+        // i love std::sync::Mutex :DDDD
+        {
+            let mut account_data = self.account_data.lock();
+            account_data.account_id = packet.account_id;
+            account_data.name = player_name.to_string();
+
+            let special_user_data = self
+                .game_server
+                .central_conf
+                .read()
+                .special_users
+                .get(&packet.account_id)
+                .cloned();
+
+            if let Some(sud) = special_user_data {
+                account_data.special_user_data = Some(sud.try_into()?);
+            }
+        }
 
         debug!("Login successful from {player_name} ({})", packet.account_id);
 
-        gs_retpacket!(LoggedInPacket {})
+        self.send_packet(&LoggedInPacket {}).await?;
+
+        Ok(())
     });
 
     gs_handler!(self, handle_disconnect, DisconnectPacket, _packet, {
         self.terminate();
-        return Ok(None);
+        Ok(())
     });
 
     /* game related */
@@ -388,31 +426,110 @@ impl GameServerThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
         gs_needauth!(self);
 
-        let mut account_data = self.account_data.lock().unwrap();
+        let mut account_data = self.account_data.lock();
         account_data.icons.clone_from(&packet.icons);
-        Ok(None)
+        Ok(())
     });
 
     gs_handler!(self, handle_request_profiles, RequestProfilesPacket, packet, {
         gs_needauth!(self);
 
-        gs_retpacket!(PlayerProfilesPacket {
-            profiles: self.game_server.gather_profiles(&packet.ids).await
+        self.send_packet(&PlayerProfilesPacket {
+            profiles: self.game_server.gather_profiles(&packet.ids).await,
         })
+        .await?;
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_level_join, LevelJoinPacket, packet, {
+        gs_needauth!(self);
+
+        let account_id = self.account_id.load(Ordering::Relaxed);
+        let old_level = self.level_id.swap(packet.level_id, Ordering::Relaxed);
+
+        let mut pm = self.game_server.state.player_manager.lock();
+
+        if old_level != 0 {
+            pm.remove_from_level(old_level, account_id)
+        }
+
+        pm.add_to_level(packet.level_id, account_id);
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_level_leave, LevelLeavePacket, _packet, {
+        gs_needauth!(self);
+
+        let level_id = self.level_id.load(Ordering::Relaxed);
+        if level_id != 0 {
+            let account_id = self.account_id.load(Ordering::Relaxed);
+
+            let mut pm = self.game_server.state.player_manager.lock();
+            pm.remove_from_level(level_id, account_id);
+        }
+
+        Ok(())
+    });
+
+    // if you are seeing this. i am so sorry.
+    gs_handler!(self, handle_player_data, PlayerDataPacket, packet, {
+        gs_needauth!(self);
+
+        let level_id = self.level_id.load(Ordering::Relaxed);
+        if level_id == 0 {
+            bail!("player sending PlayerDataPacket when not on a level");
+        }
+
+        let account_id = self.account_id.load(Ordering::Relaxed);
+
+        let mut buf: ByteBuffer;
+
+        {
+            let mut pm = self.game_server.state.player_manager.lock();
+            pm.set_player_data(account_id, &packet.data);
+
+            let players = pm.get_players_on_level(level_id);
+
+            if players.is_none() {
+                return Ok(());
+            }
+
+            let players = players.unwrap();
+
+            let calc_size = PACKET_HEADER_LEN + 4 + ((players.len() - 1) * AssociatedPlayerData::encoded_size());
+            debug!("alloc with capacity: {calc_size}");
+            buf = ByteBuffer::with_capacity(calc_size);
+
+            // dont actually do this anywhere else please
+            buf.write_u16(LevelDataPacket::PACKET_ID);
+            buf.write_bool(false);
+            buf.write_u32(players.len() as u32 - 1); // minus ourselves
+
+            for player in players.iter() {
+                if player.account_id == account_id {
+                    continue;
+                }
+
+                buf.write_value(*player);
+            }
+            debug!("size at the end: {}", buf.len());
+        }
+
+        self.send_buffer(buf.as_bytes()).await?;
+
+        Ok(())
     });
 
     gs_handler!(self, handle_voice, VoicePacket, packet, {
         gs_needauth!(self);
 
         let accid = self.account_id.load(Ordering::Relaxed);
-        if self.game_server.chat_blocked(accid) {
-            debug!("blocking voice packet from {accid}");
-            return Ok(None);
-        }
 
         // check the throughput
         {
-            let mut last_voice_packet = self.last_voice_packet.lock().unwrap();
+            let mut last_voice_packet = self.last_voice_packet.lock();
             let now = SystemTime::now();
             let passed_time = now.duration_since(*last_voice_packet)?.as_millis();
             *last_voice_packet = now;
@@ -424,7 +541,7 @@ impl GameServerThread {
             debug!("voice packet throughput: {}kb/s", throughput);
             if throughput > 8f32 {
                 warn!("rejecting a voice packet, throughput above the limit: {}kb/s", throughput);
-                return Ok(None);
+                return Ok(());
             }
         }
 
@@ -435,6 +552,6 @@ impl GameServerThread {
 
         self.game_server.broadcast_voice_packet(&vpkt).await?;
 
-        Ok(None)
+        Ok(())
     });
 }

@@ -22,6 +22,14 @@ pub trait Decodable: Empty {
     fn decode_from_reader(&mut self, buf: &mut ByteReader) -> Result<()>;
 }
 
+// FastDecodable is a more efficient Decodable that has no Empty requirement,
+// so the struct is constructed with all the appropriate values immediately,
+// instead of making an ::empty() variant and then filling in the values.
+pub trait FastDecodable: Sized {
+    fn decode_fast(buf: &mut ByteBuffer) -> Result<Self>;
+    fn decode_fast_from_reader(buf: &mut ByteReader) -> Result<Self>;
+}
+
 pub trait Serializable: Encodable + Decodable {}
 
 macro_rules! encode_impl {
@@ -99,11 +107,17 @@ pub(crate) use empty_impl;
 pub(crate) use encode_impl;
 pub(crate) use encode_unimpl;
 
+pub trait ByteBufferExt {
+    fn with_capacity(capacity: usize) -> Self;
+}
+
 pub trait ByteBufferExtWrite {
+    fn write_bool(&mut self, val: bool);
     // write a byte vector, prefixed with 4 bytes indicating length
     fn write_byte_array(&mut self, vec: &ByteVec);
 
     fn write_value<T: Encodable>(&mut self, val: &T);
+    fn write_optional_value<T: Encodable>(&mut self, val: Option<&T>);
 
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
 
@@ -113,11 +127,14 @@ pub trait ByteBufferExtWrite {
 }
 
 pub trait ByteBufferExtRead {
+    fn read_bool(&mut self) -> Result<bool>;
     // read a byte vector, prefixed with 4 bytes indicating length
     fn read_byte_array(&mut self) -> Result<ByteVec>;
     fn read_bytes_into(&mut self, dest: &mut [u8]) -> Result<()>;
 
     fn read_value<T: Decodable>(&mut self) -> Result<T>;
+    fn read_value_fast<T: FastDecodable>(&mut self) -> Result<T>;
+    fn read_optional_value<T: Decodable>(&mut self) -> Result<Option<T>>;
 
     fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>>;
 
@@ -126,7 +143,19 @@ pub trait ByteBufferExtRead {
     fn read_point(&mut self) -> Result<cocos::Point>;
 }
 
+impl ByteBufferExt for ByteBuffer {
+    fn with_capacity(capacity: usize) -> Self {
+        let mut ret = Self::from_vec(Vec::with_capacity(capacity));
+        ret.set_wpos(0);
+        ret
+    }
+}
+
 impl ByteBufferExtWrite for ByteBuffer {
+    fn write_bool(&mut self, val: bool) {
+        self.write_u8(if val { 1u8 } else { 0u8 });
+    }
+
     fn write_byte_array(&mut self, vec: &ByteVec) {
         self.write_u32(vec.len() as u32);
         self.write_bytes(vec);
@@ -134,6 +163,13 @@ impl ByteBufferExtWrite for ByteBuffer {
 
     fn write_value<T: Encodable>(&mut self, val: &T) {
         val.encode(self);
+    }
+
+    fn write_optional_value<T: Encodable>(&mut self, val: Option<&T>) {
+        self.write_bool(val.is_some());
+        if let Some(val) = val {
+            self.write_value(val);
+        }
     }
 
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]) {
@@ -157,7 +193,11 @@ impl ByteBufferExtWrite for ByteBuffer {
 }
 
 macro_rules! impl_extread {
-    ($decode_fn:ident) => {
+    ($decode_fn:ident, $fast_fn:ident) => {
+        fn read_bool(&mut self) -> Result<bool> {
+            Ok(self.read_u8()? == 1u8)
+        }
+
         fn read_byte_array(&mut self) -> Result<ByteVec> {
             let length = self.read_u32()? as usize;
             Ok(self.read_bytes(length)?)
@@ -179,6 +219,17 @@ macro_rules! impl_extread {
             let mut value = T::empty();
             value.$decode_fn(self)?;
             Ok(value)
+        }
+
+        fn read_value_fast<T: FastDecodable>(&mut self) -> Result<T> {
+            T::$fast_fn(self)
+        }
+
+        fn read_optional_value<T: Decodable>(&mut self) -> Result<Option<T>> {
+            Ok(match self.read_bool()? {
+                false => None,
+                true => Some(self.read_value::<T>()?),
+            })
         }
 
         fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>> {
@@ -208,9 +259,9 @@ macro_rules! impl_extread {
 }
 
 impl ByteBufferExtRead for ByteBuffer {
-    impl_extread!(decode);
+    impl_extread!(decode, decode_fast);
 }
 
 impl<'a> ByteBufferExtRead for ByteReader<'a> {
-    impl_extread!(decode_from_reader);
+    impl_extread!(decode_from_reader, decode_fast_from_reader);
 }

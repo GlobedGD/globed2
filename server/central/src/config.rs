@@ -4,6 +4,7 @@ use std::{
     path::Path,
 };
 
+use globed_shared::SpecialUser;
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use serde_json::{ser::PrettyFormatter, Serializer};
@@ -80,20 +81,7 @@ fn default_token_expiry() -> u64 {
     60 * 60 * 24
 }
 
-// special user defaults
-
-fn default_su_color() -> String {
-    "#ffffff".to_string()
-}
-
 /* end stinky serde defaults */
-
-#[derive(Serialize, Deserialize, Default, Clone)]
-pub struct SpecialUser {
-    pub name: String,
-    #[serde(default = "default_su_color")]
-    pub color: String,
-}
 
 #[derive(PartialEq, Debug, Default, Clone, Serialize, Deserialize)]
 pub enum UserlistMode {

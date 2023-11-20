@@ -11,6 +11,7 @@ use server::GameServer;
 pub mod bytebufferext;
 pub mod data;
 pub mod logger;
+pub mod managers;
 pub mod server;
 pub mod server_thread;
 pub mod state;

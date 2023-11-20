@@ -1,7 +1,10 @@
 use std::{
     net::{SocketAddr, SocketAddrV4},
     sync::{atomic::Ordering, Arc},
+    time::Duration,
 };
+
+use parking_lot::RwLock as SyncRwLock;
 
 use anyhow::anyhow;
 use crypto_box::{aead::OsRng, SecretKey};
@@ -11,8 +14,8 @@ use rustc_hash::FxHashMap;
 #[allow(unused_imports)]
 use tokio::sync::oneshot; // no way
 
-use log::{info, warn};
-use tokio::{net::UdpSocket, sync::RwLock};
+use log::{debug, error, info, warn};
+use tokio::net::UdpSocket;
 
 use crate::{
     data::{packets::server::VoiceBroadcastPacket, types::PlayerAccountData},
@@ -24,9 +27,9 @@ pub struct GameServer {
     pub address: String,
     pub state: ServerState,
     pub socket: UdpSocket,
-    pub threads: RwLock<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
+    pub threads: SyncRwLock<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
     pub secret_key: SecretKey,
-    pub central_conf: GameServerBootData,
+    pub central_conf: SyncRwLock<GameServerBootData>,
 }
 
 impl GameServer {
@@ -37,9 +40,9 @@ impl GameServer {
             address: address.clone(),
             state,
             socket: UdpSocket::bind(&address).await.unwrap(),
-            threads: RwLock::new(FxHashMap::default()),
+            threads: SyncRwLock::new(FxHashMap::default()),
             secret_key,
-            central_conf,
+            central_conf: SyncRwLock::new(central_conf),
         }
     }
 
@@ -47,6 +50,19 @@ impl GameServer {
         let mut buf = [0u8; 65536];
 
         info!("Server launched on {}", self.address);
+
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(300));
+            interval.tick().await;
+
+            loop {
+                interval.tick().await;
+                match self.refresh_bootdata().await {
+                    Ok(_) => debug!("refreshed central server configuration"),
+                    Err(e) => error!("failed to refresh configuration from the central server: {e}"),
+                }
+            }
+        });
 
         loop {
             match self.recv_and_handle(&mut buf).await {
@@ -62,8 +78,8 @@ impl GameServer {
 
     pub async fn broadcast_voice_packet(&'static self, vpkt: &VoiceBroadcastPacket) -> anyhow::Result<()> {
         // TODO dont send it to every single thread in existence
-        let threads = self.threads.read().await;
-        for thread in threads.values() {
+        let threads: Vec<_> = self.threads.read().values().cloned().collect();
+        for thread in threads {
             let packet = vpkt.clone();
             thread.send_message(ServerThreadMessage::BroadcastVoice(packet)).await?;
         }
@@ -72,20 +88,20 @@ impl GameServer {
     }
 
     pub async fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
-        let threads = self.threads.read().await;
+        let threads = self.threads.read();
 
         ids.iter()
             .filter_map(|id| {
                 threads
                     .values()
                     .find(|thread| thread.account_id.load(Ordering::Relaxed) == *id)
-                    .map(|thread| thread.account_data.lock().unwrap().clone())
+                    .map(|thread| thread.account_data.lock().clone())
             })
             .collect()
     }
 
     pub fn chat_blocked(&'static self, user_id: i32) -> bool {
-        self.central_conf.no_chat.contains(&user_id)
+        self.central_conf.read().no_chat.contains(&user_id)
     }
 
     /* private handling stuff */
@@ -98,19 +114,11 @@ impl GameServer {
             SocketAddr::V4(x) => x,
         };
 
-        let threads = self.threads.read().await;
-        let has_thread = threads.contains_key(&peer);
+        let thread = self.threads.read().get(&peer).cloned();
 
-        if has_thread {
-            threads
-                .get(&peer)
-                .unwrap()
-                .send_message(ServerThreadMessage::Packet(buf[..len].to_vec()))
-                .await?;
+        if let Some(thread) = thread {
+            thread.send_message(ServerThreadMessage::Packet(buf[..len].to_vec())).await?;
         } else {
-            drop(threads);
-            let mut threads = self.threads.write().await;
-
             let thread = Arc::new(GameServerThread::new(peer, self));
             let thread_cl = thread.clone();
 
@@ -126,23 +134,65 @@ impl GameServer {
                     }
                 };
 
-                // decrement player count if the thread was an authenticated player
-                if thread.authenticated.load(Ordering::Relaxed) {
-                    self.state.player_count.fetch_sub(1, Ordering::Relaxed);
-                }
+                self.post_disconnect_cleanup(thread).await;
             });
 
             thread_cl
                 .send_message(ServerThreadMessage::Packet(buf[..len].to_vec()))
                 .await?;
 
-            threads.insert(peer, thread_cl);
+            self.threads.write().insert(peer, thread_cl);
         }
 
         Ok(())
     }
 
     async fn remove_client(&'static self, key: &SocketAddrV4) {
-        self.threads.write().await.remove(key);
+        self.threads.write().remove(key);
+    }
+
+    async fn post_disconnect_cleanup(&'static self, thread: Arc<GameServerThread>) {
+        if !thread.authenticated.load(Ordering::Relaxed) {
+            return;
+        }
+
+        let account_id = thread.account_id.load(Ordering::Relaxed);
+
+        // decrement player count
+        self.state.player_count.fetch_sub(1, Ordering::Relaxed);
+
+        // remove from the player manager
+        let mut pm = self.state.player_manager.lock();
+        pm.remove_player(account_id);
+
+        // remove from the level, if any
+        let level_id = thread.level_id.load(Ordering::Relaxed);
+
+        if level_id != 0 {
+            pm.remove_from_level(level_id, account_id);
+        }
+    }
+
+    async fn refresh_bootdata(&'static self) -> anyhow::Result<()> {
+        let state_inner = self.state.read().await;
+        let http_client = state_inner.http_client.clone();
+        let central_url = state_inner.central_url.clone();
+        let central_pw = state_inner.central_pw.clone();
+        drop(state_inner);
+
+        let response = http_client
+            .post(format!("{}{}", central_url, "gs/boot"))
+            .query(&[("pw", central_pw)])
+            .send()
+            .await?
+            .error_for_status()
+            .map_err(|e| anyhow!("central server returned an error: {e}"))?;
+
+        let configuration = response.text().await?;
+        let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
+
+        *self.central_conf.write() = boot_data;
+
+        Ok(())
     }
 }

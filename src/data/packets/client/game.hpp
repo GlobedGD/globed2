@@ -42,6 +42,55 @@ class RequestProfilesPacket : public Packet {
     std::vector<int32_t> ids;
 };
 
+class LevelJoinPacket : public Packet {
+    GLOBED_PACKET(11002, false)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeI32(levelId);
+    }
+
+    GLOBED_PACKET_DECODE_UNIMPL
+
+    LevelJoinPacket(int levelId) : levelId(levelId) {}
+
+    static std::shared_ptr<LevelJoinPacket> create(int levelId) {
+        return std::make_shared<LevelJoinPacket>(levelId);
+    }
+
+    int levelId;
+};
+
+class LevelLeavePacket : public Packet {
+    GLOBED_PACKET(11003, false)
+
+    GLOBED_PACKET_ENCODE {}
+    GLOBED_PACKET_DECODE_UNIMPL
+
+    LevelLeavePacket() {}
+
+    static std::shared_ptr<LevelLeavePacket> create() {
+        return std::make_shared<LevelLeavePacket>();
+    }
+};
+
+class PlayerDataPacket : public Packet {
+    GLOBED_PACKET(11004, false)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeValue(data);
+    }
+    
+    GLOBED_PACKET_DECODE_UNIMPL
+
+    PlayerDataPacket(const PlayerData& data) : data(data) {}
+
+    static std::shared_ptr<PlayerDataPacket> create(const PlayerData& data) {
+        return std::make_shared<PlayerDataPacket>(data);
+    }
+
+    PlayerData data;
+};
+
 #if GLOBED_VOICE_SUPPORT
 
 #include <audio/audio_frame.hpp>

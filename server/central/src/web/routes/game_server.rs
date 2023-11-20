@@ -1,5 +1,5 @@
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
-use log::info;
+use log::debug;
 use reqwest::StatusCode;
 use roa::{preload::PowerBody, query::Query, throw, Context};
 
@@ -51,10 +51,11 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
     let bdata = GameServerBootData {
         protocol: PROTOCOL_VERSION,
         no_chat: config.no_chat_list.clone(),
+        special_users: config.special_users.clone(),
     };
 
-    info!(
-        "authenticated game server v{} at {}",
+    debug!(
+        "boot data request from game server v{} at {}",
         user_agent.split_once('/').unwrap_or_default().1,
         context.remote_addr.ip()
     );

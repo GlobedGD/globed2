@@ -18,6 +18,18 @@ class PlayerProfilesPacket : public Packet {
     std::unordered_map<int32_t, PlayerAccountData> data;
 };
 
+class LevelDataPacket : public Packet {
+    GLOBED_PACKET(21001, false)
+
+    GLOBED_PACKET_ENCODE_UNIMPL
+
+    GLOBED_PACKET_DECODE {
+        players = buf.readValueVector<AssociatedPlayerData>();
+    }
+
+    std::vector<AssociatedPlayerData> players;
+};
+
 #if GLOBED_VOICE_SUPPORT
 #include <audio/audio_frame.hpp>
 #endif

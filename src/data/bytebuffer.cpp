@@ -39,6 +39,14 @@ void ByteBuffer::write(T value) {
     _position += sizeof(T);
 }
 
+bool ByteBuffer::readBool() {
+    return this->readU8() != 0;
+}
+
+void ByteBuffer::writeBool(bool value) {
+    this->writeU8(value ? 1 : 0);
+}
+
 MAKE_BOTH_FUNCS(uint8_t, U8)
 MAKE_BOTH_FUNCS(int8_t, I8)
 MAKE_BOTH_FUNCS(uint16_t, U16)

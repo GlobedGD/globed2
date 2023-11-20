@@ -48,6 +48,7 @@ public:
     * Read and write method for primitive types
     */
 
+    bool readBool();
     uint8_t readU8();
     int8_t readI8();
     uint16_t readU16();
@@ -59,6 +60,7 @@ public:
     float readF32();
     double readF64();
 
+    void writeBool(bool value);
     void writeU8(uint8_t value);
     void writeI8(int8_t value);
     void writeU16(uint16_t value);
@@ -172,6 +174,25 @@ public:
         value.encode(*this);
     }
 
+    // Read an `std::optional<T>` where T: Decodable
+    template <Decodable T>
+    std::optional<T> readOptionalValue() {
+        std::optional<T> value;
+        if (this->readBool()) {
+            value = this->readValue<T>();
+        }
+        
+        return std::move(value);
+    }
+
+    template <Encodable T>
+    void writeOptionalValue(const std::optional<T>& value) {
+        this->writeBool(value.has_value());
+        if (value) {
+            this->writeValue(value.value());
+        }
+    }
+
     // Read a list of `Decodable` objects, prefixed with 4 bytes indicating the count.
     template <Decodable T>
     std::vector<T> readValueVector() {
@@ -210,11 +231,11 @@ public:
         }
     }
 
+#ifndef GLOBED_ROOT_NO_GEODE
     /*
     * Cocos/GD serializable methods
     */
 
-#ifndef GLOBED_ROOT_NO_GEODE
     // Read an RGB color (3 bytes)
     cocos2d::ccColor3B readColor3();
     // Read an RGBA color (4 bytes)

@@ -17,6 +17,13 @@ empty_impl!(PlayerProfilesPacket, Self { profiles: Vec::new() });
 
 decode_unimpl!(PlayerProfilesPacket);
 
+/* LevelDataPacket - 21001
+* For optimization reasons, LevelDataPacket cannot be dynamically dispatched, and isn't defined here
+* It is directly serialized in the packet handler in server_thread.rs.
+*/
+
+empty_server_packet!(LevelDataPacket, 21001);
+
 /* VoiceBroadcastPacket - 21010 */
 
 packet!(VoiceBroadcastPacket, 21010, true, {
