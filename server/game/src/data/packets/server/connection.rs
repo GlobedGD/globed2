@@ -1,5 +1,5 @@
 use crate::{
-    bytebufferext::{decode_unimpl, empty_impl, encode_impl, ByteBufferExtWrite},
+    bytebufferext::{decode_unimpl, encode_impl, ByteBufferExtWrite},
     data::{
         packets::{empty_server_packet, packet},
         types::CryptoPublicKey,
@@ -18,8 +18,6 @@ encode_impl!(PingResponsePacket, buf, self, {
     buf.write_u32(self.player_count);
 });
 
-empty_impl!(PingResponsePacket, Self { id: 0, player_count: 0 });
-
 decode_unimpl!(PingResponsePacket);
 
 /* CryptoHandshakeResponsePacket - 20001 */
@@ -31,13 +29,6 @@ packet!(CryptoHandshakeResponsePacket, 20001, false, {
 encode_impl!(CryptoHandshakeResponsePacket, buf, self, {
     buf.write_value(&self.key);
 });
-
-empty_impl!(
-    CryptoHandshakeResponsePacket,
-    Self {
-        key: CryptoPublicKey::empty()
-    }
-);
 
 decode_unimpl!(CryptoHandshakeResponsePacket);
 
@@ -51,8 +42,6 @@ encode_impl!(KeepaliveResponsePacket, buf, self, {
     buf.write_u32(self.player_count);
 });
 
-empty_impl!(KeepaliveResponsePacket, Self { player_count: 0 });
-
 decode_unimpl!(KeepaliveResponsePacket);
 
 /* ServerDisconnectPacket - 20003 */
@@ -64,8 +53,6 @@ packet!(ServerDisconnectPacket, 20003, false, {
 encode_impl!(ServerDisconnectPacket, buf, self, {
     buf.write_string(&self.message);
 });
-
-empty_impl!(ServerDisconnectPacket, Self { message: "".to_string() });
 
 decode_unimpl!(ServerDisconnectPacket);
 
@@ -83,8 +70,6 @@ encode_impl!(LoginFailedPacket, buf, self, {
     buf.write_string(&self.message);
 });
 
-empty_impl!(LoginFailedPacket, Self { message: "".to_string() });
-
 decode_unimpl!(LoginFailedPacket);
 
 /* ServerNoticePacket - 20006 */
@@ -97,7 +82,5 @@ packet!(ServerNoticePacket, 20006, true, {
 encode_impl!(ServerNoticePacket, buf, self, {
     buf.write_string(&self.message);
 });
-
-empty_impl!(ServerNoticePacket, Self { message: "".to_string() });
 
 decode_unimpl!(ServerNoticePacket);

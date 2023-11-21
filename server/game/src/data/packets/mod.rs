@@ -3,7 +3,7 @@ pub mod server;
 
 use std::any::Any;
 
-use crate::bytebufferext::{Decodable, Empty, Encodable};
+use crate::bytebufferext::{Decodable, Encodable};
 
 use self::client::*;
 
@@ -33,10 +33,10 @@ macro_rules! packet {
             fn as_any(&self) -> &dyn std::any::Any {
                 self
             }
+        }
 
-            impl crate::data::packets::PacketWithId for $packet_type {
-                const PACKET_ID: crate::data::packets::PacketId = $packet_id;
-            }
+        impl crate::data::packets::PacketWithId for $packet_type {
+            const PACKET_ID: crate::data::packets::PacketId = $packet_id;
         }
     };
     ($packet_type:ident, $packet_id:expr, $encrypted:expr, { $($field:ident: $field_type:ty),* $(,)? }) => {
@@ -71,8 +71,6 @@ macro_rules! empty_server_packet {
 
         encode_impl!($packet_type, _buf, self, {});
 
-        empty_impl!($packet_type, Self {});
-
         decode_unimpl!($packet_type);
     };
 }
@@ -83,12 +81,12 @@ macro_rules! empty_client_packet {
 
         encode_unimpl!($packet_type);
 
-        empty_impl!($packet_type, Self {});
-
-        decode_impl!($packet_type, _buf, self, Ok(()));
+        decode_impl!($packet_type, _buf, Ok(Self {}));
     };
 }
 
+use anyhow::anyhow;
+use bytebuffer::ByteReader;
 pub(crate) use empty_client_packet;
 pub(crate) use empty_server_packet;
 pub(crate) use packet;
@@ -107,27 +105,27 @@ pub trait PacketWithId {
 pub const PACKET_HEADER_LEN: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();
 
 macro_rules! mpacket {
-    ($typ:ty) => {{
-        Some(Box::new(<$typ>::empty()))
+    ($typ:ty,$br:expr) => {{
+        Ok(Box::new(<$typ>::decode_from_reader($br)?))
     }};
 }
 
-pub fn match_packet(packet_id: PacketId) -> Option<Box<dyn Packet>> {
+pub fn match_packet(packet_id: PacketId, data: &mut ByteReader<'_>) -> anyhow::Result<Box<dyn Packet>> {
     match packet_id {
-        PingPacket::PACKET_ID => mpacket!(PingPacket),
-        CryptoHandshakeStartPacket::PACKET_ID => mpacket!(CryptoHandshakeStartPacket),
-        KeepalivePacket::PACKET_ID => mpacket!(KeepalivePacket),
-        LoginPacket::PACKET_ID => mpacket!(LoginPacket),
-        DisconnectPacket::PACKET_ID => mpacket!(DisconnectPacket),
+        PingPacket::PACKET_ID => mpacket!(PingPacket, data),
+        CryptoHandshakeStartPacket::PACKET_ID => mpacket!(CryptoHandshakeStartPacket, data),
+        KeepalivePacket::PACKET_ID => mpacket!(KeepalivePacket, data),
+        LoginPacket::PACKET_ID => mpacket!(LoginPacket, data),
+        DisconnectPacket::PACKET_ID => mpacket!(DisconnectPacket, data),
 
         // game related
-        SyncIconsPacket::PACKET_ID => mpacket!(SyncIconsPacket),
-        RequestProfilesPacket::PACKET_ID => mpacket!(RequestProfilesPacket),
-        LevelJoinPacket::PACKET_ID => mpacket!(LevelJoinPacket),
-        LevelLeavePacket::PACKET_ID => mpacket!(LevelLeavePacket),
-        PlayerDataPacket::PACKET_ID => mpacket!(PlayerDataPacket),
+        SyncIconsPacket::PACKET_ID => mpacket!(SyncIconsPacket, data),
+        RequestProfilesPacket::PACKET_ID => mpacket!(RequestProfilesPacket, data),
+        LevelJoinPacket::PACKET_ID => mpacket!(LevelJoinPacket, data),
+        LevelLeavePacket::PACKET_ID => mpacket!(LevelLeavePacket, data),
+        PlayerDataPacket::PACKET_ID => mpacket!(PlayerDataPacket, data),
 
-        VoicePacket::PACKET_ID => mpacket!(VoicePacket),
-        _ => None,
+        VoicePacket::PACKET_ID => mpacket!(VoicePacket, data),
+        _ => Err(anyhow!("no matching packet in 'match_packet' with id {packet_id}")),
     }
 }

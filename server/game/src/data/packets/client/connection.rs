@@ -8,14 +8,9 @@ packet!(PingPacket, 10000, false, {
     id: u32,
 });
 
-empty_impl!(PingPacket, Self { id: 0 });
-
 encode_unimpl!(PingPacket);
 
-decode_impl!(PingPacket, buf, self, {
-    self.id = buf.read_u32()?;
-    Ok(())
-});
+decode_impl!(PingPacket, buf, Ok(Self { id: buf.read_u32()? }));
 
 /* CryptoHandshakeStartPacket - 10001 */
 
@@ -26,17 +21,10 @@ packet!(CryptoHandshakeStartPacket, 10001, false, {
 
 encode_unimpl!(CryptoHandshakeStartPacket);
 
-empty_impl!(CryptoHandshakeStartPacket, {
-    Self {
-        protocol: 0,
-        key: CryptoPublicKey::empty(),
-    }
-});
-
-decode_impl!(CryptoHandshakeStartPacket, buf, self, {
-    self.protocol = buf.read_u16()?;
-    self.key = buf.read_value()?;
-    Ok(())
+decode_impl!(CryptoHandshakeStartPacket, buf, {
+    let protocol = buf.read_u16()?;
+    let key = buf.read_value()?;
+    Ok(Self { protocol, key })
 });
 
 /* KeepalivePacket - 10002 */
@@ -52,18 +40,10 @@ packet!(LoginPacket, 10003, true, {
 
 encode_unimpl!(LoginPacket);
 
-empty_impl!(
-    LoginPacket,
-    Self {
-        account_id: 0,
-        token: "".to_string(),
-    }
-);
-
-decode_impl!(LoginPacket, buf, self, {
-    self.account_id = buf.read_i32()?;
-    self.token = buf.read_string()?;
-    Ok(())
+decode_impl!(LoginPacket, buf, {
+    let account_id = buf.read_i32()?;
+    let token = buf.read_string()?;
+    Ok(Self { account_id, token })
 });
 
 /* DisconnectPacket - 10004 */

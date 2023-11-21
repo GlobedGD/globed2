@@ -1,9 +1,6 @@
-use bytebuffer::{ByteBuffer, ByteReader};
 use globed_shared::SpecialUser;
 
-use crate::bytebufferext::{
-    decode_impl, decode_unimpl, empty_impl, encode_impl, ByteBufferExtWrite, Encodable, FastDecodable,
-};
+use crate::bytebufferext::{decode_impl, decode_unimpl, encode_impl, ByteBufferExtWrite};
 
 use super::Color3B;
 
@@ -57,22 +54,33 @@ encode_impl!(PlayerIconData, buf, self, {
     buf.write_i32(self.color2);
 });
 
-empty_impl!(PlayerIconData, Self::default());
-
-decode_impl!(PlayerIconData, buf, self, {
-    self.cube = buf.read_i32()?;
-    self.ship = buf.read_i32()?;
-    self.ball = buf.read_i32()?;
-    self.ufo = buf.read_i32()?;
-    self.wave = buf.read_i32()?;
-    self.robot = buf.read_i32()?;
-    self.spider = buf.read_i32()?;
-    self.swing = buf.read_i32()?;
-    self.jetpack = buf.read_i32()?;
-    self.death_effect = buf.read_i32()?;
-    self.color1 = buf.read_i32()?;
-    self.color2 = buf.read_i32()?;
-    Ok(())
+decode_impl!(PlayerIconData, buf, {
+    let cube = buf.read_i32()?;
+    let ship = buf.read_i32()?;
+    let ball = buf.read_i32()?;
+    let ufo = buf.read_i32()?;
+    let wave = buf.read_i32()?;
+    let robot = buf.read_i32()?;
+    let spider = buf.read_i32()?;
+    let swing = buf.read_i32()?;
+    let jetpack = buf.read_i32()?;
+    let death_effect = buf.read_i32()?;
+    let color1 = buf.read_i32()?;
+    let color2 = buf.read_i32()?;
+    Ok(Self {
+        cube,
+        ship,
+        ball,
+        ufo,
+        wave,
+        robot,
+        spider,
+        swing,
+        jetpack,
+        death_effect,
+        color1,
+        color2,
+    })
 });
 
 impl PlayerIconData {
@@ -100,8 +108,6 @@ impl Default for SpecialUserData {
 encode_impl!(SpecialUserData, buf, self, {
     buf.write_color3(self.name_color);
 });
-
-empty_impl!(SpecialUserData, Self::default());
 
 decode_unimpl!(SpecialUserData);
 
@@ -131,8 +137,6 @@ encode_impl!(PlayerAccountData, buf, self, {
     buf.write_optional_value(self.special_user_data.as_ref());
 });
 
-empty_impl!(PlayerAccountData, Self::default());
-
 decode_unimpl!(PlayerAccountData);
 
 /* PlayerData */
@@ -142,16 +146,7 @@ pub struct PlayerData {}
 
 encode_impl!(PlayerData, _buf, self, {});
 
-impl FastDecodable for PlayerData {
-    fn decode_fast(buf: &mut ByteBuffer) -> anyhow::Result<Self> {
-        let mut br = ByteReader::from_bytes(buf.as_bytes());
-        Self::decode_fast_from_reader(&mut br)
-    }
-
-    fn decode_fast_from_reader(_buf: &mut ByteReader) -> anyhow::Result<Self> {
-        Ok(Self {})
-    }
-}
+decode_impl!(PlayerData, _buf, Ok(Self {}));
 
 impl PlayerData {
     const fn encoded_size() -> usize {
@@ -167,12 +162,10 @@ pub struct AssociatedPlayerData {
     pub data: PlayerData,
 }
 
-impl Encodable for AssociatedPlayerData {
-    fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_i32(self.account_id);
-        buf.write_value(&self.data);
-    }
-}
+encode_impl!(AssociatedPlayerData, buf, self, {
+    buf.write_i32(self.account_id);
+    buf.write_value(&self.data);
+});
 
 impl AssociatedPlayerData {
     pub const fn encoded_size() -> usize {

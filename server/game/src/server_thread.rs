@@ -20,7 +20,7 @@ use tokio::sync::{
 };
 
 use crate::{
-    bytebufferext::{ByteBufferExt, ByteBufferExtWrite},
+    bytebufferext::{ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite},
     data::{
         packets::{client::*, match_packet, server::*, Packet, PacketWithId, PACKET_HEADER_LEN},
         types::{AssociatedPlayerData, CryptoPublicKey, PlayerAccountData},
@@ -29,7 +29,7 @@ use crate::{
 };
 
 pub enum ServerThreadMessage {
-    Packet(Vec<u8>),
+    Packet(Box<dyn Packet>),
     BroadcastVoice(VoiceBroadcastPacket),
 }
 
@@ -145,25 +145,13 @@ impl GameServerThread {
         self.awaiting_termination.store(true, Ordering::Relaxed);
     }
 
-    /* private utilities */
-
-    async fn send_packet(&self, packet: &impl Packet) -> anyhow::Result<()> {
-        let serialized = self.serialize_packet(packet)?;
-        self.send_buffer(serialized.as_bytes()).await
-    }
-
-    async fn send_buffer(&self, buffer: &[u8]) -> anyhow::Result<()> {
-        self.game_server.socket.send_to(buffer, self.peer).await?;
-        Ok(())
-    }
-
-    fn parse_packet(&self, message: &[u8]) -> anyhow::Result<Option<Box<dyn Packet>>> {
+    pub fn parse_packet(&self, message: &[u8]) -> anyhow::Result<Option<Box<dyn Packet>>> {
         gs_require!(message.len() >= PACKET_HEADER_LEN, "packet is missing a header");
 
         let mut data = ByteReader::from_bytes(message);
 
         let packet_id = data.read_u16()?;
-        let encrypted = data.read_u8()? != 0u8;
+        let encrypted = data.read_bool()?;
 
         // for optimization, reject the voice packet immediately if the player is blocked from vc
         if packet_id == VoicePacket::PACKET_ID {
@@ -174,40 +162,44 @@ impl GameServerThread {
             }
         }
 
-        let packet = match_packet(packet_id);
-        gs_require!(
-            packet.is_some(),
-            "packet was sent with an invalid id or the handler doesn't exist: {packet_id}"
-        );
+        let cleartext_vec;
+        if encrypted {
+            let cbox = self.crypto_box.lock();
 
-        let mut packet = packet.unwrap();
+            gs_require!(
+                cbox.is_some(),
+                "attempting to decode an encrypted packet when no cryptobox was initialized"
+            );
+
+            let encrypted_data = data.read_bytes(data.len() - data.get_rpos())?;
+            let nonce = &encrypted_data[..24];
+            let rest = &encrypted_data[24..];
+
+            let cbox = cbox.as_ref().unwrap();
+            cleartext_vec = cbox.decrypt(nonce.into(), rest)?;
+
+            data = ByteReader::from_bytes(&cleartext_vec);
+        }
+
+        let packet = match_packet(packet_id, &mut data)?;
+
         if packet.get_encrypted() && !encrypted {
             gs_require!(false, "client sent a cleartext packet when expected an encrypted one");
         }
 
-        if !encrypted {
-            packet.decode_from_reader(&mut data)?;
-            return Ok(Some(packet));
-        }
-
-        let cbox = self.crypto_box.lock();
-
-        gs_require!(
-            cbox.is_some(),
-            "attempting to decode an encrypted packet when no cryptobox was initialized"
-        );
-
-        let encrypted_data = data.read_bytes(data.len() - data.get_rpos())?;
-        let nonce = &encrypted_data[..24];
-        let rest = &encrypted_data[24..];
-
-        let cbox = cbox.as_ref().unwrap();
-        let cleartext = cbox.decrypt(nonce.into(), rest)?;
-
-        let mut packetbuf = ByteReader::from_bytes(&cleartext);
-        packet.decode_from_reader(&mut packetbuf)?;
-
         Ok(Some(packet))
+    }
+
+    /* private utilities */
+
+    async fn send_packet(&self, packet: &impl Packet) -> anyhow::Result<()> {
+        let serialized = self.serialize_packet(packet)?;
+        self.send_buffer(serialized.as_bytes()).await
+    }
+
+    async fn send_buffer(&self, buffer: &[u8]) -> anyhow::Result<()> {
+        self.game_server.socket.send_to(buffer, self.peer).await?;
+        Ok(())
     }
 
     fn serialize_packet(&self, packet: &impl Packet) -> anyhow::Result<ByteBuffer> {
@@ -244,13 +236,9 @@ impl GameServerThread {
 
     async fn handle_message(&self, message: ServerThreadMessage) -> anyhow::Result<()> {
         match message {
-            ServerThreadMessage::Packet(message) => match self.parse_packet(&message) {
-                Ok(Some(packet)) => match self.handle_packet(&*packet).await {
-                    Ok(_) => {}
-                    Err(err) => return Err(anyhow!("failed to handle packet: {}", err.to_string())),
-                },
-                Ok(None) => {}
-                Err(err) => return Err(anyhow!("failed to parse packet: {}", err.to_string())),
+            ServerThreadMessage::Packet(packet) => match self.handle_packet(&*packet).await {
+                Ok(_) => {}
+                Err(err) => return Err(anyhow!("failed to handle packet: {}", err.to_string())),
             },
 
             ServerThreadMessage::BroadcastVoice(voice_packet) => match self.send_packet(&voice_packet).await {
@@ -422,7 +410,6 @@ impl GameServerThread {
     });
 
     /* game related */
-
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
         gs_needauth!(self);
 

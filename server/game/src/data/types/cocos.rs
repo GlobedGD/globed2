@@ -1,6 +1,6 @@
 use anyhow::bail;
 
-use crate::bytebufferext::{decode_impl, empty_impl, encode_impl};
+use crate::bytebufferext::{decode_impl, encode_impl};
 
 #[derive(Copy, Clone, Default)]
 pub struct Color3B {
@@ -15,13 +15,11 @@ encode_impl!(Color3B, buf, self, {
     buf.write_u8(self.b);
 });
 
-empty_impl!(Color3B, Self::default());
-
-decode_impl!(Color3B, buf, self, {
-    self.r = buf.read_u8()?;
-    self.g = buf.read_u8()?;
-    self.b = buf.read_u8()?;
-    Ok(())
+decode_impl!(Color3B, buf, {
+    let r = buf.read_u8()?;
+    let g = buf.read_u8()?;
+    let b = buf.read_u8()?;
+    Ok(Self { r, g, b })
 });
 
 impl TryFrom<String> for Color3B {
@@ -58,14 +56,12 @@ encode_impl!(Color4B, buf, self, {
     buf.write_u8(self.a);
 });
 
-empty_impl!(Color4B, Self::default());
-
-decode_impl!(Color4B, buf, self, {
-    self.r = buf.read_u8()?;
-    self.g = buf.read_u8()?;
-    self.b = buf.read_u8()?;
-    self.a = buf.read_u8()?;
-    Ok(())
+decode_impl!(Color4B, buf, {
+    let r = buf.read_u8()?;
+    let g = buf.read_u8()?;
+    let b = buf.read_u8()?;
+    let a = buf.read_u8()?;
+    Ok(Self { r, g, b, a })
 });
 
 impl TryFrom<String> for Color4B {
@@ -103,10 +99,8 @@ encode_impl!(Point, buf, self, {
     buf.write_f32(self.y);
 });
 
-empty_impl!(Point, Self::default());
-
-decode_impl!(Point, buf, self, {
-    self.x = buf.read_f32()?;
-    self.y = buf.read_f32()?;
-    Ok(())
+decode_impl!(Point, buf, {
+    let x = buf.read_f32()?;
+    let y = buf.read_f32()?;
+    Ok(Self { x, y })
 });

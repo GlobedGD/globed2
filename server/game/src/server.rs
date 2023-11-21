@@ -116,8 +116,8 @@ impl GameServer {
 
         let thread = self.threads.read().get(&peer).cloned();
 
-        if let Some(thread) = thread {
-            thread.send_message(ServerThreadMessage::Packet(buf[..len].to_vec())).await?;
+        let thread = if let Some(thread) = thread {
+            thread
         } else {
             let thread = Arc::new(GameServerThread::new(peer, self));
             let thread_cl = thread.clone();
@@ -137,11 +137,13 @@ impl GameServer {
                 self.post_disconnect_cleanup(thread).await;
             });
 
+            self.threads.write().insert(peer, thread_cl.clone());
             thread_cl
-                .send_message(ServerThreadMessage::Packet(buf[..len].to_vec()))
-                .await?;
+        };
 
-            self.threads.write().insert(peer, thread_cl);
+        let packet = thread.parse_packet(&buf[..len]).map_err(|e| anyhow!("parsing failed: {e}"))?;
+        if let Some(packet) = packet {
+            thread.send_message(ServerThreadMessage::Packet(packet)).await?;
         }
 
         Ok(())

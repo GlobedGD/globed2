@@ -12,17 +12,13 @@ packet!(SyncIconsPacket, 11000, false, {
 
 encode_unimpl!(SyncIconsPacket);
 
-empty_impl!(
+decode_impl!(
     SyncIconsPacket,
-    Self {
-        icons: PlayerIconData::default()
-    }
+    buf,
+    Ok(Self {
+        icons: buf.read_value()?
+    })
 );
-
-decode_impl!(SyncIconsPacket, buf, self, {
-    self.icons = buf.read_value()?;
-    Ok(())
-});
 
 /* RequestProfilesPacket - 11001 */
 
@@ -32,15 +28,14 @@ packet!(RequestProfilesPacket, 11001, false, {
 
 encode_unimpl!(RequestProfilesPacket);
 
-empty_impl!(RequestProfilesPacket, Self { ids: Vec::new() });
-
-decode_impl!(RequestProfilesPacket, buf, self, {
+decode_impl!(RequestProfilesPacket, buf, {
     let len = buf.read_u32()?;
+    let mut ids = Vec::new();
     for _ in 0..len {
-        self.ids.push(buf.read_i32()?);
+        ids.push(buf.read_i32()?);
     }
 
-    Ok(())
+    Ok(Self { ids })
 });
 
 /* LevelJoinPacket - 11002 */
@@ -51,11 +46,10 @@ packet!(LevelJoinPacket, 11002, false, {
 
 encode_unimpl!(LevelJoinPacket);
 
-empty_impl!(LevelJoinPacket, Self { level_id: 0 });
-
-decode_impl!(LevelJoinPacket, buf, self, {
-    self.level_id = buf.read_i32()?;
-    Ok(())
+decode_impl!(LevelJoinPacket, buf, {
+    Ok(Self {
+        level_id: buf.read_i32()?,
+    })
 });
 
 /* LevelLeavePacket - 11003 */
@@ -70,17 +64,7 @@ packet!(PlayerDataPacket, 11004, false, {
 
 encode_unimpl!(PlayerDataPacket);
 
-empty_impl!(
-    PlayerDataPacket,
-    Self {
-        data: PlayerData::default() // :(
-    }
-);
-
-decode_impl!(PlayerDataPacket, buf, self, {
-    self.data = buf.read_value_fast()?;
-    Ok(())
-});
+decode_impl!(PlayerDataPacket, buf, Ok(Self { data: buf.read_value()? }));
 
 /* VoicePacket - 11010 */
 
@@ -90,13 +74,4 @@ packet!(VoicePacket, 11010, true, {
 
 encode_unimpl!(VoicePacket);
 
-empty_impl!(VoicePacket, {
-    Self {
-        data: EncodedAudioFrame::empty(),
-    }
-});
-
-decode_impl!(VoicePacket, buf, self, {
-    self.data = buf.read_value()?;
-    Ok(())
-});
+decode_impl!(VoicePacket, buf, Ok(Self { data: buf.read_value()? }));

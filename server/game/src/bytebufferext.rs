@@ -1,7 +1,5 @@
-use std::io::Read;
-
 use crate::data::types::cocos;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use bytebuffer::{ByteBuffer, ByteReader};
 
 type ByteVec = Vec<u8>;
@@ -10,27 +8,14 @@ pub trait Encodable {
     fn encode(&self, buf: &mut ByteBuffer);
 }
 
-// empty is similar to default but default does silly things i think
-pub trait Empty {
-    fn empty() -> Self
+pub trait Decodable {
+    fn decode(buf: &mut ByteBuffer) -> Result<Self>
+    where
+        Self: Sized;
+    fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
     where
         Self: Sized;
 }
-
-pub trait Decodable: Empty {
-    fn decode(&mut self, buf: &mut ByteBuffer) -> Result<()>;
-    fn decode_from_reader(&mut self, buf: &mut ByteReader) -> Result<()>;
-}
-
-// FastDecodable is a more efficient Decodable that has no Empty requirement,
-// so the struct is constructed with all the appropriate values immediately,
-// instead of making an ::empty() variant and then filling in the values.
-pub trait FastDecodable: Sized {
-    fn decode_fast(buf: &mut ByteBuffer) -> Result<Self>;
-    fn decode_fast_from_reader(buf: &mut ByteReader) -> Result<Self>;
-}
-
-pub trait Serializable: Encodable + Decodable {}
 
 macro_rules! encode_impl {
     ($packet_type:ty, $buf:ident, $self:ident, $encode:expr) => {
@@ -43,27 +28,14 @@ macro_rules! encode_impl {
 }
 
 macro_rules! decode_impl {
-    ($packet_type:ty, $buf:ident, $self:ident, $decode:expr) => {
+    ($packet_type:ty, $buf:ident, $decode:expr) => {
         impl crate::bytebufferext::Decodable for $packet_type {
-            fn decode(&mut $self, $buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<()> {
+            fn decode($buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
                 $decode
             }
 
-            fn decode_from_reader(&mut $self, $buf: &mut bytebuffer::ByteReader) -> anyhow::Result<()> {
+            fn decode_from_reader($buf: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
                 $decode
-            }
-        }
-    };
-}
-
-macro_rules! empty_impl {
-    ($typ:ty, $empty:expr) => {
-        impl crate::bytebufferext::Empty for $typ {
-            fn empty() -> Self
-            where
-                Self: Sized,
-            {
-                $empty
             }
         }
     };
@@ -85,14 +57,14 @@ macro_rules! encode_unimpl {
 macro_rules! decode_unimpl {
     ($packet_type:ty) => {
         impl crate::bytebufferext::Decodable for $packet_type {
-            fn decode(&mut self, _: &mut bytebuffer::ByteBuffer) -> anyhow::Result<()> {
+            fn decode(_: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
                 Err(anyhow::anyhow!(
                     "decoding unimplemented for {}",
                     stringify!($packet_type)
                 ))
             }
 
-            fn decode_from_reader(&mut self, _: &mut bytebuffer::ByteReader) -> anyhow::Result<()> {
+            fn decode_from_reader(_: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
                 Err(anyhow::anyhow!(
                     "decoding unimplemented for {}",
                     stringify!($packet_type)
@@ -101,9 +73,9 @@ macro_rules! decode_unimpl {
         }
     };
 }
+
 pub(crate) use decode_impl;
 pub(crate) use decode_unimpl;
-pub(crate) use empty_impl;
 pub(crate) use encode_impl;
 pub(crate) use encode_unimpl;
 
@@ -130,10 +102,8 @@ pub trait ByteBufferExtRead {
     fn read_bool(&mut self) -> Result<bool>;
     // read a byte vector, prefixed with 4 bytes indicating length
     fn read_byte_array(&mut self) -> Result<ByteVec>;
-    fn read_bytes_into(&mut self, dest: &mut [u8]) -> Result<()>;
 
     fn read_value<T: Decodable>(&mut self) -> Result<T>;
-    fn read_value_fast<T: FastDecodable>(&mut self) -> Result<T>;
     fn read_optional_value<T: Decodable>(&mut self) -> Result<Option<T>>;
 
     fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>>;
@@ -193,7 +163,7 @@ impl ByteBufferExtWrite for ByteBuffer {
 }
 
 macro_rules! impl_extread {
-    ($decode_fn:ident, $fast_fn:ident) => {
+    ($decode_fn:ident) => {
         fn read_bool(&mut self) -> Result<bool> {
             Ok(self.read_u8()? == 1u8)
         }
@@ -203,26 +173,8 @@ macro_rules! impl_extread {
             Ok(self.read_bytes(length)?)
         }
 
-        fn read_bytes_into(&mut self, dest: &mut [u8]) -> Result<()> {
-            self.flush_bits();
-
-            if self.get_rpos() + dest.len() > self.len() {
-                return Err(anyhow!("could not read enough bytes from buffer"));
-            }
-
-            self.read_exact(dest)?;
-
-            Ok(())
-        }
-
         fn read_value<T: Decodable>(&mut self) -> Result<T> {
-            let mut value = T::empty();
-            value.$decode_fn(self)?;
-            Ok(value)
-        }
-
-        fn read_value_fast<T: FastDecodable>(&mut self) -> Result<T> {
-            T::$fast_fn(self)
+            T::$decode_fn(self)
         }
 
         fn read_optional_value<T: Decodable>(&mut self) -> Result<Option<T>> {
@@ -236,9 +188,7 @@ macro_rules! impl_extread {
             let mut out = Vec::new();
             let length = self.read_u32()? as usize;
             for _ in 0..length {
-                let mut value = T::empty();
-                value.$decode_fn(self)?;
-                out.push(value);
+                out.push(self.read_value()?);
             }
 
             Ok(out)
@@ -259,9 +209,9 @@ macro_rules! impl_extread {
 }
 
 impl ByteBufferExtRead for ByteBuffer {
-    impl_extread!(decode, decode_fast);
+    impl_extread!(decode);
 }
 
 impl<'a> ByteBufferExtRead for ByteReader<'a> {
-    impl_extread!(decode_from_reader, decode_fast_from_reader);
+    impl_extread!(decode_from_reader);
 }
