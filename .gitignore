@@ -55,7 +55,7 @@
 build.sh
 build-android.sh
 
+server/bench-client
 server/target
 server/central-conf.json
-server/game-conf.json
 server/Cargo.lock
