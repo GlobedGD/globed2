@@ -5,8 +5,6 @@ use std::any::Any;
 
 use crate::bytebufferext::{Decodable, Encodable};
 
-use self::client::*;
-
 type PacketId = u16;
 
 /*
@@ -85,8 +83,6 @@ macro_rules! empty_client_packet {
     };
 }
 
-use anyhow::anyhow;
-use bytebuffer::ByteReader;
 pub(crate) use empty_client_packet;
 pub(crate) use empty_server_packet;
 pub(crate) use packet;
@@ -103,29 +99,3 @@ pub trait PacketWithId {
 }
 
 pub const PACKET_HEADER_LEN: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();
-
-macro_rules! mpacket {
-    ($typ:ty,$br:expr) => {{
-        Ok(Box::new(<$typ>::decode_from_reader($br)?))
-    }};
-}
-
-pub fn match_packet(packet_id: PacketId, data: &mut ByteReader<'_>) -> anyhow::Result<Box<dyn Packet>> {
-    match packet_id {
-        PingPacket::PACKET_ID => mpacket!(PingPacket, data),
-        CryptoHandshakeStartPacket::PACKET_ID => mpacket!(CryptoHandshakeStartPacket, data),
-        KeepalivePacket::PACKET_ID => mpacket!(KeepalivePacket, data),
-        LoginPacket::PACKET_ID => mpacket!(LoginPacket, data),
-        DisconnectPacket::PACKET_ID => mpacket!(DisconnectPacket, data),
-
-        // game related
-        SyncIconsPacket::PACKET_ID => mpacket!(SyncIconsPacket, data),
-        RequestProfilesPacket::PACKET_ID => mpacket!(RequestProfilesPacket, data),
-        LevelJoinPacket::PACKET_ID => mpacket!(LevelJoinPacket, data),
-        LevelLeavePacket::PACKET_ID => mpacket!(LevelLeavePacket, data),
-        PlayerDataPacket::PACKET_ID => mpacket!(PlayerDataPacket, data),
-
-        VoicePacket::PACKET_ID => mpacket!(VoicePacket, data),
-        _ => Err(anyhow!("no matching packet in 'match_packet' with id {packet_id}")),
-    }
-}

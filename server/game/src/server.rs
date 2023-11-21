@@ -47,8 +47,6 @@ impl GameServer {
     }
 
     pub async fn run(&'static self) -> anyhow::Result<()> {
-        let mut buf = [0u8; 65536];
-
         info!("Server launched on {}", self.address);
 
         tokio::spawn(async move {
@@ -65,7 +63,7 @@ impl GameServer {
         });
 
         loop {
-            match self.recv_and_handle(&mut buf).await {
+            match self.recv_and_handle().await {
                 Ok(_) => {}
                 Err(err) => {
                     warn!("Failed to handle a packet: {err}");
@@ -106,8 +104,9 @@ impl GameServer {
 
     /* private handling stuff */
 
-    async fn recv_and_handle(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {
-        let (len, peer) = self.socket.recv_from(buf).await?;
+    async fn recv_and_handle(&'static self) -> anyhow::Result<()> {
+        let mut buf = [0u8; 65536];
+        let (len, peer) = self.socket.recv_from(&mut buf).await?;
 
         let peer = match peer {
             SocketAddr::V6(_) => return Err(anyhow!("rejecting request from ipv6 host")),
@@ -141,10 +140,7 @@ impl GameServer {
             thread_cl
         };
 
-        let packet = thread.parse_packet(&buf[..len]).map_err(|e| anyhow!("parsing failed: {e}"))?;
-        if let Some(packet) = packet {
-            thread.send_message(ServerThreadMessage::Packet(packet)).await?;
-        }
+        thread.send_message(ServerThreadMessage::Packet(buf[..len].to_vec())).await?;
 
         Ok(())
     }
