@@ -27,7 +27,7 @@ Known issues:
 
 ## Hosting a server
 
-todo
+todo!
 
 ## Building
 
