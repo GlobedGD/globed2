@@ -2,9 +2,9 @@
 #include "bitbuffer.hpp"
 #include <defs.hpp>
 #include <util/data.hpp>
+#include <type_traits>
 
 class ByteBuffer;
-
 
 // Represents a data type that can be easily written to a ByteBuffer
 template <typename T>
@@ -22,10 +22,9 @@ concept Decodable = requires(T t, ByteBuffer& buf) {
 template <typename T>
 concept Serializable = Encodable<T> && Decodable<T>;
 
+// helper macros so you can do GLOBED_ENCODE {...} in serializable structs or packets
 #define GLOBED_ENCODE void encode(ByteBuffer& buf) const
 #define GLOBED_DECODE void decode(ByteBuffer& buf)
-
-// helper macros so you can do GLOBED_ENCODE {...} in serializable structs or packets
 
 class ByteBuffer {
 public:
@@ -213,6 +212,8 @@ public:
         for (size_t i = 0; i < Count; i++) {
             out[i] = this->readValue<T>();
         }
+
+        return out;
     }
 
     // Write a list of `Encodable` objects, prefixed with 4 bytes indicating the count.
@@ -229,6 +230,81 @@ public:
         for (const T& value : values) {
             value.encode(*this);
         }
+    }
+
+    // Read a generic primitive number (like read<T> but with endianness checks)
+    template <typename T>
+    T readPrimitive() {
+        static_assert(util::data::IsPrimitive<T>, "Unsupported type for readPrimitive, must be a primitive");
+
+        if constexpr (std::is_same_v<T, uint16_t>) {
+            return readU16();
+        } else if constexpr (std::is_same_v<T, uint32_t>) {
+            return readU32();
+        } else if constexpr (std::is_same_v<T, uint64_t>) {
+            return readU64();
+        } else if constexpr (std::is_same_v<T, float>) {
+            return readF32();
+        } else if constexpr (std::is_same_v<T, double>) {
+            return readF64();
+        } else if constexpr (std::is_same_v<T, int16_t>) {
+            return readI16();
+        } else if constexpr (std::is_same_v<T, int32_t>) {
+            return readI32();
+        } else if constexpr (std::is_same_v<T, int64_t>) {
+            return readI64();
+        } else if constexpr (std::is_same_v<T, uint8_t>) {
+            return readU8();
+        } else if constexpr(std::is_same_v<T, int8_t>) {
+            return readI8();
+        }
+    }
+
+    // Write a generic primitive number (like read<T> but with endianness checks)
+    template <typename T>
+    void writePrimitive(T value) {
+        static_assert(util::data::IsPrimitive<T>, "Unsupported type for writePrimitive, must be a primitive");
+
+        if constexpr (std::is_same_v<T, uint16_t>) {
+            writeU16(value);
+        } else if constexpr (std::is_same_v<T, uint32_t>) {
+            writeU32(value);
+        } else if constexpr (std::is_same_v<T, uint64_t>) {
+            writeU64(value);
+        } else if constexpr (std::is_same_v<T, float>) {
+            writeF32(value);
+        } else if constexpr (std::is_same_v<T, double>) {
+            writeF64(value);
+        } else if constexpr (std::is_same_v<T, int16_t>) {
+            writeI16(value);
+        } else if constexpr (std::is_same_v<T, int32_t>) {
+            writeI32(value);
+        } else if constexpr (std::is_same_v<T, int64_t>) {
+            writeI64(value);
+        } else if constexpr (std::is_same_v<T, uint8_t>) {
+            writeU8(value);
+        } else if constexpr(std::is_same_v<T, int8_t>) {
+            writeI8(value);
+        }
+    }
+
+    // Write an enum
+    template <typename E>
+    void writeEnum(const E& val) {
+        using P = std::underlying_type<E>::type;
+        static_assert(util::data::IsPrimitive<P>, "enum underlying type must be a primitive");
+
+        this->writePrimitive<P>(static_cast<P>(val));
+    }
+
+    // Read an enum
+    // TODO no validation, likely not planning to add but still important to know
+    template <typename E>
+    E readEnum() {
+        using P = std::underlying_type<E>::type;
+        static_assert(util::data::IsPrimitive<P>, "enum underlying type must be a primitive");
+
+        return static_cast<E>(this->readPrimitive<P>());
     }
 
 #ifndef GLOBED_ROOT_NO_GEODE

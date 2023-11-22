@@ -116,7 +116,7 @@ void testFmod2() {
             for (size_t i = 0; i < *total; i++) {
                 log::debug("Reading frame {}", i);
                 auto encFrame = bb->readValue<EncodedAudioFrame>();
-                const auto& opusFrames = encFrame.extractFrames();
+                const auto& opusFrames = encFrame.getFrames();
                 
                 for (const auto& opusFrame : opusFrames) {
                     auto rawFrame = vm.decodeSound(opusFrame);

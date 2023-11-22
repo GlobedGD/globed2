@@ -4,9 +4,9 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-const size_t VOICE_TARGET_SAMPLERATE = 24000;
-const size_t VOICE_TARGET_FRAMESIZE = 1440; // for opus, 60ms per single opus frame
-const float VOICE_CHUNK_RECORD_TIME = 1.2f; // the audio buffer that will be sent in a single packet in seconds
+constexpr size_t VOICE_TARGET_SAMPLERATE = 24000;
+constexpr size_t VOICE_TARGET_FRAMESIZE = 1440; // for opus, 60ms per single opus frame
+constexpr float VOICE_CHUNK_RECORD_TIME = 1.2f; // the audio buffer that will be sent in a single packet in seconds
 
 #include "opus_codec.hpp"
 #include <data/bytebuffer.hpp>
@@ -14,7 +14,7 @@ const float VOICE_CHUNK_RECORD_TIME = 1.2f; // the audio buffer that will be sen
 // Represents an audio frame (usually around a second long) that contains multiple opus frames
 class EncodedAudioFrame {
 public:
-    static const size_t VOICE_OPUS_FRAMES_IN_AUDIO_FRAME =
+    static constexpr size_t VOICE_OPUS_FRAMES_IN_AUDIO_FRAME =
         static_cast<size_t>(
             VOICE_CHUNK_RECORD_TIME *
             static_cast<float>(VOICE_TARGET_SAMPLERATE) / static_cast<float>(VOICE_TARGET_FRAMESIZE)
@@ -31,10 +31,10 @@ public:
     EncodedAudioFrame& operator=(EncodedAudioFrame&&) noexcept = default;
 
     // adds this audio frame to the list, returns 'true' if we are above the threshold of frames
-    bool pushOpusFrame(EncodedOpusData&& frame);
+    void pushOpusFrame(EncodedOpusData&& frame);
 
     // extract all frames
-    const std::vector<EncodedOpusData>& extractFrames() const;
+    const std::array<EncodedOpusData, EncodedAudioFrame::VOICE_OPUS_FRAMES_IN_AUDIO_FRAME>& getFrames() const;
 
     // implement Serializable
 
@@ -42,7 +42,8 @@ public:
     void decode(ByteBuffer& buf);
 
 protected:
-    std::vector<EncodedOpusData> frames;
+    std::array<EncodedOpusData, VOICE_OPUS_FRAMES_IN_AUDIO_FRAME> frames;
+    size_t frameCount = 0;
 };
 
 

@@ -101,7 +101,7 @@ void AudioStream::writeData(const EncodedAudioFrame& frame) {
     auto& vm = GlobedAudioManager::get();
     FMOD_RESULT res;
 
-    const auto& frames = frame.extractFrames();
+    const auto& frames = frame.getFrames();
     for (const auto& opusFrame : frames) {
         auto decodedFrame = vm.decodeSound(opusFrame);
 

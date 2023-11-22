@@ -1,6 +1,9 @@
 use std::{
     net::SocketAddrV4,
-    sync::atomic::{AtomicBool, AtomicI32, Ordering},
+    sync::{
+        atomic::{AtomicBool, AtomicI32, Ordering},
+        Arc,
+    },
     time::{Duration, SystemTime},
 };
 
@@ -28,9 +31,13 @@ use crate::{
     server::GameServer,
 };
 
+pub const SMALL_PACKET_LIMIT: usize = 128;
+const CHANNEL_BUFFER: usize = 4;
+
 pub enum ServerThreadMessage {
     Packet(Vec<u8>),
-    BroadcastVoice(VoiceBroadcastPacket),
+    SmallPacket([u8; SMALL_PACKET_LIMIT]),
+    BroadcastVoice(Arc<VoiceBroadcastPacket>),
 }
 
 pub struct GameServerThread {
@@ -60,7 +67,6 @@ macro_rules! gs_require {
 
 macro_rules! gs_handler {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
-        // Insanity if you ask me
         async fn $name(&$self, buf: &mut ByteReader<'_>) -> anyhow::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
             $code
@@ -95,7 +101,7 @@ impl GameServerThread {
     /* public api for the main server */
 
     pub fn new(peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
-        let (tx, rx) = mpsc::channel::<ServerThreadMessage>(8);
+        let (tx, rx) = mpsc::channel::<ServerThreadMessage>(CHANNEL_BUFFER);
         Self {
             tx,
             rx: Mutex::new(rx),
@@ -188,12 +194,17 @@ impl GameServerThread {
 
     async fn handle_message(&self, message: ServerThreadMessage) -> anyhow::Result<()> {
         match message {
-            ServerThreadMessage::Packet(data) => match self.handle_packet(data).await {
+            ServerThreadMessage::Packet(data) => match self.handle_packet(&data).await {
                 Ok(_) => {}
                 Err(err) => bail!("failed to handle packet: {err}"),
             },
 
-            ServerThreadMessage::BroadcastVoice(voice_packet) => match self.send_packet(&voice_packet).await {
+            ServerThreadMessage::SmallPacket(data) => match self.handle_packet(&data).await {
+                Ok(_) => {}
+                Err(err) => bail!("failed to handle packet: {err}"),
+            },
+
+            ServerThreadMessage::BroadcastVoice(voice_packet) => match self.send_packet(&*voice_packet).await {
                 Ok(_) => {}
                 Err(err) => bail!("failed to broadcast voice packet: {err}"),
             },
@@ -204,11 +215,11 @@ impl GameServerThread {
 
     /* packet handlers */
 
-    async fn handle_packet(&self, message: Vec<u8>) -> anyhow::Result<()> {
+    async fn handle_packet(&self, message: &[u8]) -> anyhow::Result<()> {
         #[cfg(debug_assertions)]
         gs_require!(message.len() >= PACKET_HEADER_LEN, "packet is missing a header");
 
-        let mut data = ByteReader::from_bytes(&message);
+        let mut data = ByteReader::from_bytes(message);
 
         let packet_id = data.read_u16()?;
         let encrypted = data.read_bool()?;
@@ -336,20 +347,17 @@ impl GameServerThread {
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
         // lets verify the given token
-        let state = self.game_server.state.read().await;
-        let client = state.http_client.clone();
-        let central_url = state.central_url.clone();
-        let pw = state.central_pw.clone();
-        drop(state);
+        let url = format!("{}gs/verify", self.game_server.config.central_url);
 
-        let url = format!("{central_url}gs/verify");
-
-        let response = client
+        let response = self
+            .game_server
+            .config
+            .http_client
             .post(url)
             .query(&[
                 ("account_id", packet.account_id.to_string()),
                 ("token", packet.token.clone()),
-                ("pw", pw),
+                ("pw", self.game_server.config.central_pw.clone()),
             ])
             .send()
             .await?
@@ -381,7 +389,7 @@ impl GameServerThread {
             let special_user_data = self
                 .game_server
                 .central_conf
-                .read()
+                .lock()
                 .special_users
                 .get(&packet.account_id)
                 .cloned();
@@ -521,12 +529,12 @@ impl GameServerThread {
             }
         }
 
-        let vpkt = VoiceBroadcastPacket {
+        let vpkt = Arc::new(VoiceBroadcastPacket {
             player_id: accid,
             data: packet.data.clone(),
-        };
+        });
 
-        self.game_server.broadcast_voice_packet(&vpkt).await?;
+        self.game_server.broadcast_voice_packet(vpkt).await?;
 
         Ok(())
     });

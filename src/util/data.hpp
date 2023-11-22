@@ -12,6 +12,14 @@ namespace util::data {
     template <size_t Count>
     using bytearray = std::array<byte, Count>;
 
+
+    template <typename T>
+    concept IsPrimitive = std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> ||
+                    std::is_same_v<T, uint64_t> || std::is_same_v<T, float> ||
+                    std::is_same_v<T, double> || std::is_same_v<T, int16_t> ||
+                    std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
+                    std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t>;
+
     uint16_t byteswapU16(uint16_t val);
     uint32_t byteswapU32(uint32_t val);
     uint64_t byteswapU64(uint64_t val);
@@ -25,13 +33,7 @@ namespace util::data {
 
     template <typename T>
     inline T byteswap(T val) {
-        // I am so sorry
-        static_assert(std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> ||
-                  std::is_same_v<T, uint64_t> || std::is_same_v<T, float> ||
-                  std::is_same_v<T, double> || std::is_same_v<T, int16_t> ||
-                  std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
-                  std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t>,
-                  "Unsupported type for byteswap");
+        static_assert(IsPrimitive<T>, "Unsupported type for byteswap");
 
         if constexpr (std::is_same_v<T, uint16_t>) {
             return byteswapU16(val);

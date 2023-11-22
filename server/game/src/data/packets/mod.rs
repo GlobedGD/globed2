@@ -1,8 +1,6 @@
 pub mod client;
 pub mod server;
 
-use std::any::Any;
-
 use crate::bytebufferext::{Decodable, Encodable};
 
 type PacketId = u16;
@@ -14,7 +12,6 @@ type PacketId = u16;
 *    packet!(PacketName, id, enc)
 *
 * followed by packet_encode! and packet_decode! or their _unimpl versions
-* the empty_impl! also must be added which is basically Default but less silly i guess?
 */
 
 macro_rules! packet {
@@ -26,10 +23,6 @@ macro_rules! packet {
 
             fn get_encrypted(&self) -> bool {
                 $encrypted
-            }
-
-            fn as_any(&self) -> &dyn std::any::Any {
-                self
             }
         }
 
@@ -50,10 +43,6 @@ macro_rules! packet {
 
             fn get_encrypted(&self) -> bool {
                 $encrypted
-            }
-
-            fn as_any(&self) -> &dyn std::any::Any {
-                self
             }
         }
 
@@ -90,7 +79,6 @@ pub(crate) use packet;
 pub trait Packet: Encodable + Decodable + Send + Sync {
     fn get_packet_id(&self) -> PacketId;
     fn get_encrypted(&self) -> bool;
-    fn as_any(&self) -> &dyn Any;
 }
 
 // god i hate this

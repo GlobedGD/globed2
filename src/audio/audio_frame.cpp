@@ -2,52 +2,46 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-const size_t VOICE_MAX_BYTES_IN_FRAME = 1500; // TODO ??? adjust later
-
 using namespace util::data;
 
-EncodedAudioFrame::EncodedAudioFrame() {}
+EncodedAudioFrame::EncodedAudioFrame() {
+    // TODO remove tracking
+    geode::log::debug("constructing audio frame");
+}
+
 EncodedAudioFrame::~EncodedAudioFrame() {
-    for (const EncodedOpusData& frame : frames) {
-        OpusCodec::freeData(frame);
+    // TODO remove tracking
+    geode::log::debug("destructing audio frame ({} frames)", frameCount);
+    for (size_t i = 0; i < frameCount; i++) {
+        OpusCodec::freeData(frames[i]);
     }
 }
 
-bool EncodedAudioFrame::pushOpusFrame(EncodedOpusData&& frame) {
-    frames.push_back(std::move(frame));
-    return frames.size() >= VOICE_OPUS_FRAMES_IN_AUDIO_FRAME;
+void EncodedAudioFrame::pushOpusFrame(EncodedOpusData&& frame) {
+    if (frameCount >= VOICE_OPUS_FRAMES_IN_AUDIO_FRAME) {
+        geode::log::warn("tried to push an extra frame into EncodedAudioFrame, 20 is the max");
+        return;
+    }
+
+    frames[frameCount++] = std::move(frame);
 }
 
-const std::vector<EncodedOpusData>& EncodedAudioFrame::extractFrames() const {
+// riveting
+const std::array<EncodedOpusData, EncodedAudioFrame::VOICE_OPUS_FRAMES_IN_AUDIO_FRAME>& EncodedAudioFrame::getFrames() const {
     return frames;
 }
 
 void EncodedAudioFrame::encode(ByteBuffer& buf) const {
-    buf.writeU16(frames.size());
-    for (const EncodedOpusData& frame : frames) {
-        buf.writeByteArray(frame.ptr, frame.length);
-    }
+    GLOBED_REQUIRE(
+        frameCount == VOICE_OPUS_FRAMES_IN_AUDIO_FRAME,
+        fmt::format("tried to encode an EncodedAudioFrame with {} frames when {} is needed", VOICE_OPUS_FRAMES_IN_AUDIO_FRAME)
+    )
+
+    buf.writeValueArray(frames);
 }
 
 void EncodedAudioFrame::decode(ByteBuffer& buf) {
-    // when it comes to arbitrary allocation, DO NOT trust the other clients' data
-    size_t length = buf.readU16();
-
-    GLOBED_REQUIRE(length < (VOICE_OPUS_FRAMES_IN_AUDIO_FRAME + 2), fmt::format("Rejecting audio packet, too many frames ({})", length));
-
-    for (size_t i = 0; i < length; i++) {
-        EncodedOpusData frame;
-        size_t frameDataSize = buf.readU32();
-
-        GLOBED_REQUIRE(frameDataSize <= VOICE_MAX_BYTES_IN_FRAME, fmt::format("Rejecting audio packet, frame size too large ({})", length));
-
-        frame.ptr = new byte[frameDataSize];
-        frame.length = frameDataSize;
-
-        buf.readBytesInto(frame.ptr, frame.length);
-
-        frames.push_back(std::move(frame));
-    }
+    frames = buf.readValueArray<EncodedOpusData, VOICE_OPUS_FRAMES_IN_AUDIO_FRAME>();
 }
 
 #endif // GLOBED_VOICE_SUPPORT

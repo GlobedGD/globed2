@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use parking_lot::RwLock as SyncRwLock;
+use parking_lot::{Mutex as SyncMutex, RwLock as SyncRwLock};
 
 use anyhow::anyhow;
 use crypto_box::{aead::OsRng, SecretKey};
@@ -19,9 +19,17 @@ use tokio::net::UdpSocket;
 
 use crate::{
     data::{packets::server::VoiceBroadcastPacket, types::PlayerAccountData},
-    server_thread::{GameServerThread, ServerThreadMessage},
+    server_thread::{GameServerThread, ServerThreadMessage, SMALL_PACKET_LIMIT},
     state::ServerState,
 };
+
+const MAX_PACKET_SIZE: usize = 8192;
+
+pub struct GameServerConfiguration {
+    pub http_client: reqwest::Client,
+    pub central_url: String,
+    pub central_pw: String,
+}
 
 pub struct GameServer {
     pub address: String,
@@ -29,11 +37,17 @@ pub struct GameServer {
     pub socket: UdpSocket,
     pub threads: SyncRwLock<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
     pub secret_key: SecretKey,
-    pub central_conf: SyncRwLock<GameServerBootData>,
+    pub central_conf: SyncMutex<GameServerBootData>,
+    pub config: GameServerConfiguration,
 }
 
 impl GameServer {
-    pub async fn new(address: String, state: ServerState, central_conf: GameServerBootData) -> Self {
+    pub async fn new(
+        address: String,
+        state: ServerState,
+        central_conf: GameServerBootData,
+        config: GameServerConfiguration,
+    ) -> Self {
         let secret_key = SecretKey::generate(&mut OsRng);
 
         Self {
@@ -42,7 +56,8 @@ impl GameServer {
             socket: UdpSocket::bind(&address).await.unwrap(),
             threads: SyncRwLock::new(FxHashMap::default()),
             secret_key,
-            central_conf: SyncRwLock::new(central_conf),
+            central_conf: SyncMutex::new(central_conf),
+            config,
         }
     }
 
@@ -74,12 +89,11 @@ impl GameServer {
 
     /* various calls for other threads */
 
-    pub async fn broadcast_voice_packet(&'static self, vpkt: &VoiceBroadcastPacket) -> anyhow::Result<()> {
+    pub async fn broadcast_voice_packet(&'static self, vpkt: Arc<VoiceBroadcastPacket>) -> anyhow::Result<()> {
         // TODO dont send it to every single thread in existence
         let threads: Vec<_> = self.threads.read().values().cloned().collect();
         for thread in threads {
-            let packet = vpkt.clone();
-            thread.send_message(ServerThreadMessage::BroadcastVoice(packet)).await?;
+            thread.send_message(ServerThreadMessage::BroadcastVoice(vpkt.clone())).await?;
         }
 
         Ok(())
@@ -99,13 +113,13 @@ impl GameServer {
     }
 
     pub fn chat_blocked(&'static self, user_id: i32) -> bool {
-        self.central_conf.read().no_chat.contains(&user_id)
+        self.central_conf.lock().no_chat.contains(&user_id)
     }
 
     /* private handling stuff */
 
     async fn recv_and_handle(&'static self) -> anyhow::Result<()> {
-        let mut buf = [0u8; 65536];
+        let mut buf = [0u8; MAX_PACKET_SIZE];
         let (len, peer) = self.socket.recv_from(&mut buf).await?;
 
         let peer = match peer {
@@ -140,7 +154,17 @@ impl GameServer {
             thread_cl
         };
 
-        thread.send_message(ServerThreadMessage::Packet(buf[..len].to_vec())).await?;
+        // don't heap allocate for small packets
+        thread
+            .send_message(if len <= SMALL_PACKET_LIMIT {
+                let mut smallbuf = [0u8; SMALL_PACKET_LIMIT];
+                smallbuf[..len].copy_from_slice(&buf[..len]);
+
+                ServerThreadMessage::SmallPacket(smallbuf)
+            } else {
+                ServerThreadMessage::Packet(buf[..len].to_vec())
+            })
+            .await?;
 
         Ok(())
     }
@@ -172,15 +196,11 @@ impl GameServer {
     }
 
     async fn refresh_bootdata(&'static self) -> anyhow::Result<()> {
-        let state_inner = self.state.read().await;
-        let http_client = state_inner.http_client.clone();
-        let central_url = state_inner.central_url.clone();
-        let central_pw = state_inner.central_pw.clone();
-        drop(state_inner);
-
-        let response = http_client
-            .post(format!("{}{}", central_url, "gs/boot"))
-            .query(&[("pw", central_pw)])
+        let response = self
+            .config
+            .http_client
+            .post(format!("{}{}", self.config.central_url, "gs/boot"))
+            .query(&[("pw", self.config.central_pw.clone())])
             .send()
             .await?
             .error_for_status()
@@ -189,7 +209,7 @@ impl GameServer {
         let configuration = response.text().await?;
         let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
 
-        *self.central_conf.write() = boot_data;
+        *self.central_conf.lock() = boot_data;
 
         Ok(())
     }

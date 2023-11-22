@@ -4,6 +4,7 @@ use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
 use log::{error, info, LevelFilter};
 use logger::Logger;
+use server::GameServerConfiguration;
 use state::ServerState;
 
 use server::GameServer;
@@ -83,16 +84,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build()
         .unwrap();
 
-    let state = ServerState::new(client, central_url.clone(), central_pw.clone());
+    let config = GameServerConfiguration {
+        http_client: client,
+        central_url,
+        central_pw,
+    };
+
+    let state = ServerState::new();
 
     info!("Retreiving config from the central server..");
 
-    let state_inner = state.read().await;
-
-    let response = state_inner
+    let response = config
         .http_client
-        .post(format!("{}{}", state_inner.central_url, "gs/boot"))
-        .query(&[("pw", state_inner.central_pw.clone())])
+        .post(format!("{}{}", config.central_url, "gs/boot"))
+        .query(&[("pw", config.central_pw.clone())])
         .send()
         .await?
         .error_for_status()
@@ -110,9 +115,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         panic!("aborting due to incompatible protocol versions");
     }
 
-    drop(state_inner);
-
-    let server = Box::leak(Box::new(GameServer::new(host_address, state, boot_data).await));
+    let server = Box::leak(Box::new(GameServer::new(host_address, state, boot_data, config).await));
 
     server.run().await?;
 
