@@ -127,7 +127,7 @@ impl ByteBufferExt for ByteBuffer {
 
 impl ByteBufferExtWrite for ByteBuffer {
     fn write_bool(&mut self, val: bool) {
-        self.write_u8(if val { 1u8 } else { 0u8 });
+        self.write_u8(u8::from(val));
     }
 
     fn write_byte_array(&mut self, val: &[u8]) {
@@ -152,25 +152,25 @@ impl ByteBufferExtWrite for ByteBuffer {
 
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]) {
         self.write_u32(val.len() as u32);
-        for elem in val.iter() {
+        for elem in val {
             elem.encode(self);
         }
     }
 
     fn write_enum<E: Into<B>, B: Encodable>(&mut self, val: E) {
-        self.write_value(&val.into())
+        self.write_value(&val.into());
     }
 
     fn write_color3(&mut self, val: cocos::Color3B) {
-        self.write_value(&val)
+        self.write_value(&val);
     }
 
     fn write_color4(&mut self, val: cocos::Color4B) {
-        self.write_value(&val)
+        self.write_value(&val);
     }
 
     fn write_point(&mut self, val: cocos::Point) {
-        self.write_value(&val)
+        self.write_value(&val);
     }
 }
 

@@ -58,7 +58,7 @@ fn default_secret_key() -> String {
         .map(char::from)
         .collect();
 
-    format!("Insecure-{}", rand_string)
+    format!("Insecure-{rand_string}")
 }
 
 fn default_challenge_expiry() -> u32 {

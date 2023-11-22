@@ -10,10 +10,10 @@ const TIME_FORMAT: &str = "[year]-[month]-[day] [hour]:[minute]:[second].[subsec
 
 impl log::Log for Logger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
-        if !metadata.target().starts_with("globed_game_server") {
-            metadata.level() <= Level::Warn
-        } else {
+        if metadata.target().starts_with("globed_game_server") {
             true
+        } else {
+            metadata.level() <= Level::Warn
         }
     }
 
@@ -37,7 +37,7 @@ impl log::Log for Logger {
                 Level::Trace => (record.level().to_string().black(), record.args().to_string().black()),
             };
 
-            println!("[{}] [{}] - {}", formatted_time, level, args,)
+            println!("[{formatted_time}] [{level}] - {args}");
         }
     }
 

@@ -7,7 +7,7 @@
 * misc.hpp - x2xxx - misc
 *
 * 2. in your class, inherit Packet and add GLOBED_PACKET(id, encrypt), encrypt should be true for packets that are important.
-* 3. add GLOBED_ENCODE and GLOBED_DECODE (you can replcae either with the _UNIMPL version if not meant to be used)
+* 3. add GLOBED_ENCODE and GLOBED_DECODE (you can replace either with the _UNIMPL version if not meant to be used)
 * 4. For client packets, you may also choose to add a ::create(...) function and/or a constructor
 * 5. For server packets, in `all.cpp` add the packet to the switch as PACKET(id, cls).
 */

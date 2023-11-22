@@ -10,42 +10,42 @@ class PlayerIconData {
 public:
     // wee woo
     PlayerIconData(
-        int cube, int ship, int ball, int ufo, int wave, int robot, int spider, int swing, int jetpack, int deathEffect, int color1, int color2
+        int16_t cube, int16_t ship, int16_t ball, int16_t ufo, int16_t wave, int16_t robot, int16_t spider, int16_t swing, int16_t jetpack, int16_t deathEffect, int16_t color1, int16_t color2
     ) : cube(cube), ship(ship), ball(ball), ufo(ufo), wave(wave), robot(robot), spider(spider), swing(swing), jetpack(jetpack), deathEffect(deathEffect), color1(color1), color2(color2) {}
 
     PlayerIconData() {}
 
     GLOBED_ENCODE {
-        buf.writeI32(cube);
-        buf.writeI32(ship);
-        buf.writeI32(ball);
-        buf.writeI32(ufo);
-        buf.writeI32(wave);
-        buf.writeI32(robot);
-        buf.writeI32(spider);
-        buf.writeI32(swing);
-        buf.writeI32(jetpack);
-        buf.writeI32(deathEffect);
-        buf.writeI32(color1);
-        buf.writeI32(color2);
+        buf.writeI16(cube);
+        buf.writeI16(ship);
+        buf.writeI16(ball);
+        buf.writeI16(ufo);
+        buf.writeI16(wave);
+        buf.writeI16(robot);
+        buf.writeI16(spider);
+        buf.writeI16(swing);
+        buf.writeI16(jetpack);
+        buf.writeI16(deathEffect);
+        buf.writeI16(color1);
+        buf.writeI16(color2);
     }
 
     GLOBED_DECODE {
-        cube = buf.readI32();
-        ship = buf.readI32();
-        ball = buf.readI32();
-        ufo = buf.readI32();
-        wave = buf.readI32();
-        robot = buf.readI32();
-        spider = buf.readI32();
-        swing = buf.readI32();
-        jetpack = buf.readI32();
-        deathEffect = buf.readI32();
-        color1 = buf.readI32();
-        color2 = buf.readI32();
+        cube = buf.readI16();
+        ship = buf.readI16();
+        ball = buf.readI16();
+        ufo = buf.readI16();
+        wave = buf.readI16();
+        robot = buf.readI16();
+        spider = buf.readI16();
+        swing = buf.readI16();
+        jetpack = buf.readI16();
+        deathEffect = buf.readI16();
+        color1 = buf.readI16();
+        color2 = buf.readI16();
     }
 
-    int cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2;
+    int16_t cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2;
 };
 
 class SpecialUserData {

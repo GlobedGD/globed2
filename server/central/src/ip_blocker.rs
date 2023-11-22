@@ -10,7 +10,7 @@ pub struct IpBlocker {
 }
 
 impl IpBlocker {
-    pub fn new(v4: Vec<String>, v6: Vec<String>) -> Self {
+    pub fn new(v4: &[String], v6: &[String]) -> Self {
         let range_v4 = v4.iter().map(|s| s.parse().unwrap()).collect();
         let range_v6 = v6.iter().map(|s| s.parse().unwrap()).collect();
 
@@ -44,10 +44,10 @@ lazy_static! {
             } else if proto == "v6" {
                 v6.push(range.to_string());
             } else {
-                eprintln!("ignoring invalid IP address entry: {}", line);
+                eprintln!("ignoring invalid IP address entry: {line}");
             }
         }
 
-        IpBlocker::new(v4, v6)
+        IpBlocker::new(&v4, &v6)
     };
 }

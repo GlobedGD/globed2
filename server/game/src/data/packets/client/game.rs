@@ -29,13 +29,9 @@ packet!(RequestProfilesPacket, 11001, false, {
 encode_unimpl!(RequestProfilesPacket);
 
 decode_impl!(RequestProfilesPacket, buf, {
-    let len = buf.read_u32()?;
-    let mut ids = Vec::new();
-    for _ in 0..len {
-        ids.push(buf.read_i32()?);
-    }
-
-    Ok(Self { ids })
+    Ok(Self {
+        ids: buf.read_value_vec()?,
+    })
 });
 
 /* LevelJoinPacket - 11002 */
@@ -65,6 +61,10 @@ packet!(PlayerDataPacket, 11004, false, {
 encode_unimpl!(PlayerDataPacket);
 
 decode_impl!(PlayerDataPacket, buf, Ok(Self { data: buf.read_value()? }));
+
+/* RequestPlayerListPacket - 11005 */
+
+empty_client_packet!(RequestPlayerListPacket, 11005);
 
 /* VoicePacket - 11010 */
 

@@ -22,6 +22,18 @@ decode_unimpl!(PlayerProfilesPacket);
 
 empty_server_packet!(LevelDataPacket, 21001);
 
+/* PlayerListPacket - 21002 */
+
+packet!(PlayerListPacket, 21002, false, {
+    profiles: Vec<PlayerAccountData>,
+});
+
+encode_impl!(PlayerListPacket, buf, self, {
+    buf.write_value_vec(&self.profiles);
+});
+
+decode_unimpl!(PlayerListPacket);
+
 /* VoiceBroadcastPacket - 21010 */
 
 packet!(VoiceBroadcastPacket, 21010, true, {

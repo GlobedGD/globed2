@@ -6,18 +6,18 @@ use super::Color3B;
 
 #[derive(Clone)]
 pub struct PlayerIconData {
-    pub cube: i32,
-    pub ship: i32,
-    pub ball: i32,
-    pub ufo: i32,
-    pub wave: i32,
-    pub robot: i32,
-    pub spider: i32,
-    pub swing: i32,
-    pub jetpack: i32,
-    pub death_effect: i32,
-    pub color1: i32,
-    pub color2: i32,
+    pub cube: i16,
+    pub ship: i16,
+    pub ball: i16,
+    pub ufo: i16,
+    pub wave: i16,
+    pub robot: i16,
+    pub spider: i16,
+    pub swing: i16,
+    pub jetpack: i16,
+    pub death_effect: i16,
+    pub color1: i16,
+    pub color2: i16,
 }
 
 impl Default for PlayerIconData {
@@ -40,33 +40,33 @@ impl Default for PlayerIconData {
 }
 
 encode_impl!(PlayerIconData, buf, self, {
-    buf.write_i32(self.cube);
-    buf.write_i32(self.ship);
-    buf.write_i32(self.ball);
-    buf.write_i32(self.ufo);
-    buf.write_i32(self.wave);
-    buf.write_i32(self.robot);
-    buf.write_i32(self.spider);
-    buf.write_i32(self.swing);
-    buf.write_i32(self.jetpack);
-    buf.write_i32(self.death_effect);
-    buf.write_i32(self.color1);
-    buf.write_i32(self.color2);
+    buf.write_i16(self.cube);
+    buf.write_i16(self.ship);
+    buf.write_i16(self.ball);
+    buf.write_i16(self.ufo);
+    buf.write_i16(self.wave);
+    buf.write_i16(self.robot);
+    buf.write_i16(self.spider);
+    buf.write_i16(self.swing);
+    buf.write_i16(self.jetpack);
+    buf.write_i16(self.death_effect);
+    buf.write_i16(self.color1);
+    buf.write_i16(self.color2);
 });
 
 decode_impl!(PlayerIconData, buf, {
-    let cube = buf.read_i32()?;
-    let ship = buf.read_i32()?;
-    let ball = buf.read_i32()?;
-    let ufo = buf.read_i32()?;
-    let wave = buf.read_i32()?;
-    let robot = buf.read_i32()?;
-    let spider = buf.read_i32()?;
-    let swing = buf.read_i32()?;
-    let jetpack = buf.read_i32()?;
-    let death_effect = buf.read_i32()?;
-    let color1 = buf.read_i32()?;
-    let color2 = buf.read_i32()?;
+    let cube = buf.read_i16()?;
+    let ship = buf.read_i16()?;
+    let ball = buf.read_i16()?;
+    let ufo = buf.read_i16()?;
+    let wave = buf.read_i16()?;
+    let robot = buf.read_i16()?;
+    let spider = buf.read_i16()?;
+    let swing = buf.read_i16()?;
+    let jetpack = buf.read_i16()?;
+    let death_effect = buf.read_i16()?;
+    let color1 = buf.read_i16()?;
+    let color2 = buf.read_i16()?;
     Ok(Self {
         cube,
         ship,

@@ -59,17 +59,18 @@ macro_rules! get_user_ip {
 pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     check_user_agent!(context, _ua);
 
+    let state = context.state_read().await;
+    get_user_ip!(state, context, _ip);
+
     let account_id = context.must_query("aid")?.parse::<i32>()?;
     let account_name = &*context.must_query("aname")?;
     let code = &*context.must_query("code")?;
 
     // if account_name.to_lowercase().contains("sevenworks")
-    //     && rand::thread_rng().gen_ratio(1, 25) {
-
+    //     || account_name.to_lowercase() == "7works" && rand::thread_rng().gen_ratio(1, 25)
+    // {
     //     throw!(StatusCode::IM_A_TEAPOT);
     // }
-
-    let state = context.state_read().await;
 
     if state.should_block(account_id) {
         throw!(
@@ -138,7 +139,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
         } else {
             let passed_time = current_time - challenge.started;
             // if it hasn't expired yet, throw an error
-            if passed_time.as_secs() < (state.config.challenge_expiry as u64) {
+            if passed_time.as_secs() < u64::from(state.config.challenge_expiry) {
                 throw!(
                     StatusCode::FORBIDDEN,
                     "challenge already requested for this account ID, please wait a minute and try again"
@@ -264,7 +265,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     // no ratelimiting in debug mode
     if !cfg!(debug_assertions) {
         match state.record_login_attempt(&user_ip) {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(err) => {
                 warn!("peer is sending too many verification requests: {}", user_ip);
                 throw!(StatusCode::TOO_MANY_REQUESTS, err.to_string())
@@ -370,8 +371,6 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
 
             context.write(format!("{}:{}", comment_id, b64e::STANDARD.encode(authkey)));
             return Ok(());
-        } else {
-            break;
         }
     }
 

@@ -91,6 +91,18 @@ class PlayerDataPacket : public Packet {
     PlayerData data;
 };
 
+class RequestPlayerListPacket : public Packet {
+    GLOBED_PACKET(11005, false)
+
+    GLOBED_PACKET_ENCODE {}
+    GLOBED_PACKET_DECODE_UNIMPL
+
+    RequestPlayerListPacket() {}
+    static std::shared_ptr<RequestPlayerListPacket> create() {
+        return std::make_shared<RequestPlayerListPacket>();
+    }
+};
+
 #if GLOBED_VOICE_SUPPORT
 
 #include <audio/audio_frame.hpp>

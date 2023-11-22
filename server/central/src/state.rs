@@ -61,7 +61,7 @@ impl ServerStateData {
 
     // uses hmac-sha256 to derive an auth key from user's account ID and name
     pub fn generate_authkey(&self, account_id: i32, account_name: &str) -> Vec<u8> {
-        let val = format!("{}:{}", account_id, account_name);
+        let val = format!("{account_id}:{account_name}");
 
         let mut hmac: Hmac<Sha256> = self.hmac.clone();
         hmac.update(val.as_bytes());
@@ -92,7 +92,7 @@ impl ServerStateData {
             .expect("whoops our clock went backwards")
             .as_secs();
 
-        let data = format!("{}.{}.{}", account_id, account_name, timestamp);
+        let data = format!("{account_id}.{account_name}.{timestamp}");
         let mut hmac = self.hmac.clone();
         hmac.update(data.as_bytes());
         let res = hmac.finalize();

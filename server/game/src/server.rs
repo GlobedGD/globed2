@@ -39,6 +39,7 @@ pub struct GameServer {
     pub secret_key: SecretKey,
     pub central_conf: SyncMutex<GameServerBootData>,
     pub config: GameServerConfiguration,
+    pub standalone: bool,
 }
 
 impl GameServer {
@@ -47,6 +48,7 @@ impl GameServer {
         state: ServerState,
         central_conf: GameServerBootData,
         config: GameServerConfiguration,
+        standalone: bool,
     ) -> Self {
         let secret_key = SecretKey::generate(&mut OsRng);
 
@@ -58,28 +60,31 @@ impl GameServer {
             secret_key,
             central_conf: SyncMutex::new(central_conf),
             config,
+            standalone,
         }
     }
 
     pub async fn run(&'static self) -> anyhow::Result<()> {
         info!("Server launched on {}", self.address);
 
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(300));
-            interval.tick().await;
-
-            loop {
+        if !self.standalone {
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(Duration::from_secs(300));
                 interval.tick().await;
-                match self.refresh_bootdata().await {
-                    Ok(_) => debug!("refreshed central server configuration"),
-                    Err(e) => error!("failed to refresh configuration from the central server: {e}"),
+
+                loop {
+                    interval.tick().await;
+                    match self.refresh_bootdata().await {
+                        Ok(()) => debug!("refreshed central server configuration"),
+                        Err(e) => error!("failed to refresh configuration from the central server: {e}"),
+                    }
                 }
-            }
-        });
+            });
+        }
 
         loop {
             match self.recv_and_handle().await {
-                Ok(_) => {}
+                Ok(()) => {}
                 Err(err) => {
                     warn!("Failed to handle a packet: {err}");
                 }
@@ -93,13 +98,13 @@ impl GameServer {
         // TODO dont send it to every single thread in existence
         let threads: Vec<_> = self.threads.read().values().cloned().collect();
         for thread in threads {
-            thread.send_message(ServerThreadMessage::BroadcastVoice(vpkt.clone())).await?;
+            thread.push_new_message(ServerThreadMessage::BroadcastVoice(vpkt.clone()))?;
         }
 
         Ok(())
     }
 
-    pub async fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
+    pub fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
         let threads = self.threads.read();
 
         ids.iter()
@@ -109,6 +114,15 @@ impl GameServer {
                     .find(|thread| thread.account_id.load(Ordering::Relaxed) == *id)
                     .map(|thread| thread.account_data.lock().clone())
             })
+            .collect()
+    }
+
+    pub fn gather_all_profiles(&'static self) -> Vec<PlayerAccountData> {
+        let threads = self.threads.read();
+        threads
+            .values()
+            .filter(|thr| thr.authenticated.load(Ordering::Relaxed))
+            .map(|thread| thread.account_data.lock().clone())
             .collect()
     }
 
@@ -137,17 +151,17 @@ impl GameServer {
 
             tokio::spawn(async move {
                 match thread.run().await {
-                    Ok(_) => {
+                    Ok(()) => {
                         // remove the thread from the list of threads in order to cleanup
                         log::trace!("removing client: {}", peer);
-                        self.remove_client(&peer).await;
+                        self.remove_client(peer);
                     }
                     Err(err) => {
                         warn!("Client thread died ({peer}): {err}");
                     }
                 };
 
-                self.post_disconnect_cleanup(thread).await;
+                self.post_disconnect_cleanup(&thread);
             });
 
             self.threads.write().insert(peer, thread_cl.clone());
@@ -155,25 +169,23 @@ impl GameServer {
         };
 
         // don't heap allocate for small packets
-        thread
-            .send_message(if len <= SMALL_PACKET_LIMIT {
-                let mut smallbuf = [0u8; SMALL_PACKET_LIMIT];
-                smallbuf[..len].copy_from_slice(&buf[..len]);
+        thread.push_new_message(if len <= SMALL_PACKET_LIMIT {
+            let mut smallbuf = [0u8; SMALL_PACKET_LIMIT];
+            smallbuf[..len].copy_from_slice(&buf[..len]);
 
-                ServerThreadMessage::SmallPacket(smallbuf)
-            } else {
-                ServerThreadMessage::Packet(buf[..len].to_vec())
-            })
-            .await?;
+            ServerThreadMessage::SmallPacket(smallbuf)
+        } else {
+            ServerThreadMessage::Packet(buf[..len].to_vec())
+        })?;
 
         Ok(())
     }
 
-    async fn remove_client(&'static self, key: &SocketAddrV4) {
-        self.threads.write().remove(key);
+    fn remove_client(&'static self, key: SocketAddrV4) {
+        self.threads.write().remove(&key);
     }
 
-    async fn post_disconnect_cleanup(&'static self, thread: Arc<GameServerThread>) {
+    fn post_disconnect_cleanup(&'static self, thread: &GameServerThread) {
         if !thread.authenticated.load(Ordering::Relaxed) {
             return;
         }

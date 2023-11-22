@@ -27,13 +27,14 @@ Known issues:
 
 ## Hosting a server
 
-todo!
+See the [server readme](./server/readme.md) for more information about the server and how you can host it.
 
 ## Building
 
-Building should be the same as any other mod!
-
-todo macaroni os
+```sh
+cmake -DCMAKE_BUILD_TYPE=Release -B build
+cmake --build build --config Release
+```
 
 ## Credit
 

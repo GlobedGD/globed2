@@ -1,8 +1,8 @@
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
-use log::{error, info, LevelFilter};
+use log::{error, info, warn, LevelFilter};
 use logger::Logger;
 use server::GameServerConfiguration;
 use state::ServerState;
@@ -33,36 +33,36 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    let mut host_address: String = "".to_string();
-    let mut central_url: String = "".to_string();
-    let mut central_pw: String = "".to_string();
+    let mut host_address = String::new();
+    let mut central_url = String::new();
+    let mut central_pw = String::new();
 
     let mut args = std::env::args();
     let exe_name = args.next().unwrap(); // skip executable
-    let arg1 = args.next();
-    let arg2 = args.next();
-    let arg3 = args.next();
+    let arg_hostaddr = args.next();
+    let arg_central = args.next();
+    let arg_password = args.next();
 
-    if arg1.is_some() {
-        host_address = arg1.unwrap();
-        if arg2.is_some() {
-            central_url = arg2.unwrap();
-            if arg3.is_some() {
-                central_pw = arg3.unwrap();
+    if arg_hostaddr.is_some() {
+        host_address = arg_hostaddr.unwrap();
+        if arg_central.is_some() {
+            central_url = arg_central.unwrap();
+            if arg_password.is_some() {
+                central_pw = arg_password.unwrap();
             }
         }
     }
 
     if host_address.is_empty() {
-        host_address = std::env::var("GLOBED_GS_ADDRESS").unwrap_or("".to_string());
+        host_address = std::env::var("GLOBED_GS_ADDRESS").unwrap_or_default();
     }
 
     if central_url.is_empty() {
-        central_url = std::env::var("GLOBED_GS_CENTRAL_URL").unwrap_or("".to_string());
+        central_url = std::env::var("GLOBED_GS_CENTRAL_URL").unwrap_or_default();
     }
 
     if central_pw.is_empty() {
-        central_pw = std::env::var("GLOBED_GS_CENTRAL_PASSWORD").unwrap_or("".to_string());
+        central_pw = std::env::var("GLOBED_GS_CENTRAL_PASSWORD").unwrap_or_default();
     }
 
     if central_url.is_empty() || central_pw.is_empty() || host_address.is_empty() {
@@ -75,7 +75,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         panic!("aborting due to misconfiguration");
     }
 
-    if !central_url.ends_with('/') {
+    if central_url != "none" && !central_url.ends_with('/') {
         central_url += "/";
     }
 
@@ -92,30 +92,45 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let state = ServerState::new();
 
-    info!("Retreiving config from the central server..");
+    let (gsbd, standalone) = if config.central_url == "none" {
+        warn!("Starting in standalone mode, authentication is disabled");
 
-    let response = config
-        .http_client
-        .post(format!("{}{}", config.central_url, "gs/boot"))
-        .query(&[("pw", config.central_pw.clone())])
-        .send()
-        .await?
-        .error_for_status()
-        .map_err(|e| anyhow!("central server returned an error: {e}"))?;
+        (
+            GameServerBootData {
+                protocol: PROTOCOL_VERSION,
+                no_chat: Vec::new(),
+                special_users: HashMap::new(),
+            },
+            true,
+        )
+    } else {
+        info!("Retreiving config from the central server..");
 
-    let configuration = response.text().await?;
-    let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
+        let response = config
+            .http_client
+            .post(format!("{}{}", config.central_url, "gs/boot"))
+            .query(&[("pw", config.central_pw.clone())])
+            .send()
+            .await?
+            .error_for_status()
+            .map_err(|e| anyhow!("central server returned an error: {e}"))?;
 
-    if boot_data.protocol != PROTOCOL_VERSION {
-        error!("Incompatible protocol versions!");
-        error!(
-            "This game server is on {}, while the central server uses {}",
-            PROTOCOL_VERSION, boot_data.protocol
-        );
-        panic!("aborting due to incompatible protocol versions");
-    }
+        let configuration = response.text().await?;
+        let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
 
-    let server = Box::leak(Box::new(GameServer::new(host_address, state, boot_data, config).await));
+        if boot_data.protocol != PROTOCOL_VERSION {
+            error!("Incompatible protocol versions!");
+            error!(
+                "This game server is on {}, while the central server uses {}",
+                PROTOCOL_VERSION, boot_data.protocol
+            );
+            panic!("aborting due to incompatible protocol versions");
+        }
+
+        (boot_data, false)
+    };
+
+    let server = Box::leak(Box::new(GameServer::new(host_address, state, gsbd, config, standalone).await));
 
     server.run().await?;
 

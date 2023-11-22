@@ -32,9 +32,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // config file
 
-    let mut config_path = std::env::var("GLOBED_CONFIG_PATH")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| std::env::current_dir().unwrap());
+    let mut config_path =
+        std::env::var("GLOBED_CONFIG_PATH").map_or_else(|_| std::env::current_dir().unwrap(), PathBuf::from);
 
     if config_path.is_dir() {
         config_path = config_path.join("central-conf.json");
@@ -80,7 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut state = watcher_state.state_write().await;
             let cpath = state.config_path.clone();
             match state.config.reload_in_place(&cpath) {
-                Ok(_) => {
+                Ok(()) => {
                     info!("Successfully reloaded the configuration");
                 }
                 Err(err) => {
@@ -93,8 +92,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // roa your favorite web app
 
     let router = web::routes::build_router();
-    let routes = router.routes(Box::leak(Box::new(mnt_point)))?;
-    let app = App::state(state).end(routes);
+    let route_list = router.routes(Box::leak(Box::new(mnt_point)))?;
+    let app = App::state(state).end(route_list);
 
     app.listen(mnt_addr, |addr| {
         info!("Globed central server launched on {addr}");

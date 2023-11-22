@@ -30,7 +30,7 @@ macro_rules! check_user_agent {
 
         let $ua = useragent.unwrap().to_str()?;
         if !cfg!(debug_assertions) && !$ua.starts_with("globed-game-server") {
-            throw!(StatusCode::UNAUTHORIZED, "mismatched user agent");
+            throw!(StatusCode::UNAUTHORIZED, "bad request");
         }
     };
 }
