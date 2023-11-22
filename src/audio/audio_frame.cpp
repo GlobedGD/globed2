@@ -34,7 +34,7 @@ const std::array<EncodedOpusData, EncodedAudioFrame::VOICE_OPUS_FRAMES_IN_AUDIO_
 void EncodedAudioFrame::encode(ByteBuffer& buf) const {
     GLOBED_REQUIRE(
         frameCount == VOICE_OPUS_FRAMES_IN_AUDIO_FRAME,
-        fmt::format("tried to encode an EncodedAudioFrame with {} frames when {} is needed", VOICE_OPUS_FRAMES_IN_AUDIO_FRAME)
+        fmt::format("tried to encode an EncodedAudioFrame with {} frames when {} is needed", frameCount, VOICE_OPUS_FRAMES_IN_AUDIO_FRAME)
     )
 
     buf.writeValueArray(frames);
