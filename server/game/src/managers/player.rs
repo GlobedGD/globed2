@@ -48,7 +48,14 @@ impl PlayerManager {
     }
 
     pub fn remove_from_level(&mut self, level_id: i32, account_id: i32) {
-        self.levels.get_mut(&level_id).map(|level| level.remove(&account_id));
+        let should_remove_level = self.levels.get_mut(&level_id).is_some_and(|level| {
+            level.remove(&account_id);
+            level.is_empty()
+        });
+
+        if should_remove_level {
+            self.levels.remove(&level_id);
+        }
     }
 }
 

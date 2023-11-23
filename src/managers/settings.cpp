@@ -2,7 +2,7 @@
 
 GLOBED_SINGLETON_DEF(GlobedSettings)
 GlobedSettings::GlobedSettings() {
-    refreshCache();
+    this->refreshCache();
 }
 
 CachedSettings GlobedSettings::getCached() {
@@ -11,7 +11,7 @@ CachedSettings GlobedSettings::getCached() {
 
 void GlobedSettings::refreshCache() {
     auto cache = _cache.lock();
-    cache->test = get<bool>("test");
+    cache->test = this->get<bool>("test");
 }
 
 bool GlobedSettings::getFlag(const std::string& key) {

@@ -26,7 +26,7 @@ bool GlobedSignupPopup::setup() {
         .store(statusMessage)
         .parent(m_mainLayer);
 
-    auto url = sm.getCentral() + "/challenge/new?aid=" + std::to_string(am.accountId.load(std::memory_order::relaxed));
+    auto url = sm.getCentral() + "/challenge/new?aid=" + std::to_string(am.gdData.lock()->accountId);
 
     web::AsyncWebRequest()
         .postRequest()
@@ -104,10 +104,12 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
 
     statusMessage->setString("Verifying..");
 
+    auto gdData = am.gdData.lock();
+
     auto url = sm.getCentral() + 
         fmt::format("/challenge/verify?aid={}&aname={}&answer={}",
-                    am.accountId.load(std::memory_order::relaxed),
-                    am.accountName,
+                    gdData->accountId,
+                    gdData->accountName,
                     authcode);
 
     web::AsyncWebRequest()

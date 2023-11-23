@@ -22,6 +22,7 @@ struct PollBothResult {
     bool hasPing;
 };
 
+// This class is fully thread safe..?
 class NetworkManager {
 public:
     using PacketCallback = std::function<void(std::shared_ptr<Packet>)>;

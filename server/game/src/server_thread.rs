@@ -28,7 +28,7 @@ use crate::{
     server::GameServer,
 };
 
-// TODO adjust this to PlayerData size in the future
+// TODO adjust this to PlayerData size in the future plus some headroom
 pub const SMALL_PACKET_LIMIT: usize = 128;
 const CHANNEL_BUFFER_SIZE: usize = 4;
 
@@ -100,7 +100,7 @@ macro_rules! gs_notice {
 macro_rules! gs_needauth {
     ($self:ident) => {
         if !$self.authenticated.load(Ordering::Relaxed) {
-            gs_disconnect!($self, "unauthorized".to_string());
+            gs_disconnect!($self, "unauthorized, please try connecting again".to_string());
         }
     };
 }
@@ -125,7 +125,7 @@ impl GameServerThread {
         }
     }
 
-    pub async fn run(&self) -> anyhow::Result<()> {
+    pub async fn run(&self) {
         let mut rx = self.rx.lock().await;
 
         loop {
@@ -141,8 +141,6 @@ impl GameServerThread {
                 Ok(None) | Err(_) => break, // sender closed | timeout
             };
         }
-
-        Ok(())
     }
 
     pub fn push_new_message(&self, data: ServerThreadMessage) -> anyhow::Result<()> {
@@ -512,7 +510,6 @@ impl GameServerThread {
             let players = pm.get_players_on_level(level_id).unwrap();
 
             let calc_size = PACKET_HEADER_LEN + 4 + ((players.len() - 1) * AssociatedPlayerData::encoded_size());
-            debug!("alloca with capacity: {calc_size}");
 
             alloca::with_alloca(calc_size, move |data| {
                 // safety: 'data' will have garbage data but that is considered safe for all our intents and purposes
@@ -538,10 +535,9 @@ impl GameServerThread {
                     buf.write_value(*player);
                 }
 
-                // see if we can send it right there and then
                 let data = buf.as_bytes();
-                debug!("size at the end: {}", data.len());
 
+                // see if we can send it right there and then
                 let retval: Result<Option<Vec<u8>>, anyhow::Error> = match self.send_buffer_immediate(data) {
                     // if we cant send without blocking, accept our defeat and clone the data to a vec
                     Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(Some(data.to_vec())),

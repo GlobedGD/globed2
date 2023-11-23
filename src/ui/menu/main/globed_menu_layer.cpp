@@ -18,9 +18,9 @@ bool GlobedMenuLayer::init() {
 
     auto& am = GlobedAccountManager::get();
     auto* gjam = GJAccountManager::get();
-    am.accountName = gjam->m_username;
-    am.accountId = gjam->m_accountID;
-    am.setSecretKey(gjam->getGJP());
+    auto& sm = GlobedServerManager::get();
+
+    am.initialize(gjam->m_username, gjam->m_accountID, gjam->getGJP(), sm.getCentral());
 
     auto listview = Build<ListView>::create(createServerList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
@@ -56,7 +56,7 @@ bool GlobedMenuLayer::init() {
         .id("btn-refresh-servers")
         .parent(this);
 
-    // TODO remove wipe authtoken button
+    // TODO prod remove wipe authtoken button
 
     Build<CCSprite>::createSpriteName("d_skull01_001.png")
         .scale(1.2f)

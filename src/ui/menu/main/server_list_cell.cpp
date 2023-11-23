@@ -118,11 +118,13 @@ void ServerListCell::requestTokenAndConnect() {
         return;
     }
 
+    auto gdData = am.gdData.lock();
+
     auto url = fmt::format(
         "{}/totplogin?aid={}&aname={}&code={}",
         sm.getCentral(),
-        am.accountId.load(std::memory_order::relaxed),
-        am.accountName,
+        gdData->accountId,
+        gdData->accountName,
         authcode
     );
 

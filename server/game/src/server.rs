@@ -163,18 +163,13 @@ impl GameServer {
             let thread_cl = thread.clone();
 
             tokio::spawn(async move {
-                match thread.run().await {
-                    Ok(()) => {
-                        // remove the thread from the list of threads in order to cleanup
-                        log::trace!("removing client: {}", peer);
-                        self.remove_client(peer);
-                    }
-                    Err(err) => {
-                        warn!("Client thread died ({peer}): {err}");
-                    }
-                };
-
-                self.post_disconnect_cleanup(&thread);
+                // `thread.run()` will return in either one of those 3 conditions:
+                // 1. no messages sent by the peer for 60 seconds
+                // 2. the channel was closed (normally impossible for that to happen)
+                // 3. `thread.terminate()` was called on that thread (due to a disconnect from either side)
+                thread.run().await;
+                log::trace!("removing client: {}", peer);
+                self.post_disconnect_cleanup(&thread, peer);
             });
 
             self.threads.lock().insert(peer, thread_cl.clone());
@@ -196,26 +191,22 @@ impl GameServer {
         Ok(())
     }
 
-    fn remove_client(&'static self, key: SocketAddrV4) {
-        self.threads.lock().remove(&key);
-    }
+    fn post_disconnect_cleanup(&'static self, thread: &GameServerThread, peer: SocketAddrV4) {
+        self.threads.lock().remove(&peer);
 
-    fn post_disconnect_cleanup(&'static self, thread: &GameServerThread) {
         if !thread.authenticated.load(Ordering::Relaxed) {
             return;
         }
 
         let account_id = thread.account_id.load(Ordering::Relaxed);
+        let level_id = thread.level_id.load(Ordering::Relaxed);
 
         // decrement player count
         self.state.player_count.fetch_sub(1, Ordering::Relaxed);
 
-        // remove from the player manager
+        // remove from the player manager and the level if they are on one
         let mut pm = self.state.player_manager.lock();
         pm.remove_player(account_id);
-
-        // remove from the level, if any
-        let level_id = thread.level_id.load(Ordering::Relaxed);
 
         if level_id != 0 {
             pm.remove_from_level(level_id, account_id);

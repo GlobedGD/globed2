@@ -75,7 +75,7 @@ public:
     * Read and write methods for dynamic-sized types
     */
 
-    // TODO strings might be broken if non ascii characters are sent
+    // keep in mind strings might be broken if non ascii characters are sent
 
     // Read a string, prefixed with 4 bytes indicating length
     std::string readString();
@@ -96,7 +96,7 @@ public:
     // Read a fixed-size bytevector
     util::data::bytevector readBytes(size_t size);
 
-    // Read a bytearray whose size is known at compile time
+    // Read a bytearray whose size is known at compile time (without length prefix)
     template <size_t Count>
     util::data::bytearray<Count> readBytes() {
         this->boundsCheck(Count);
@@ -111,13 +111,13 @@ public:
     // Read `size` bytes into the pointer `out`
     void readBytesInto(util::data::byte* out, size_t size);
 
-    // Write a fixed-size buffer of bytes. If the size isn't a constant,
+    // Write a fixed-size buffer of bytes without length prefix. If the size isn't a constant,
     // it is recommended to use writeByteArray instead.
     void writeBytes(const util::data::byte* data, size_t size);
-    // Write a fixed-size bytevector. If the size isn't a constant,
+    // Write a fixed-size bytevector without length prefix. If the size isn't a constant,
     // it is recommended to use writeByteArray instead.
     void writeBytes(const util::data::bytevector& vec);
-    // Write a bytearray whose size is known at compile time
+    // Write a bytearray whose size is known at compile time (without length prefix)
     template <size_t Count>
     void writeBytes(const util::data::bytearray<Count>& arr) {
         this->writeBytes(arr.data(), Count);

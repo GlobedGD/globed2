@@ -27,26 +27,28 @@ impl log::Log for Logger {
     }
 
     fn log(&self, record: &log::Record) {
-        if self.enabled(record.metadata()) {
-            let now: OffsetDateTime = SystemTime::now().into();
-            let formatted_time = now.format(&self.format_desc).unwrap();
-
-            let (level, args) = match record.level() {
-                Level::Error => (
-                    record.level().to_string().bright_red(),
-                    record.args().to_string().bright_red(),
-                ),
-                Level::Warn => (
-                    record.level().to_string().bright_yellow(),
-                    record.args().to_string().bright_yellow(),
-                ),
-                Level::Info => (record.level().to_string().cyan(), record.args().to_string().cyan()),
-                Level::Debug => (record.level().to_string().normal(), record.args().to_string().normal()),
-                Level::Trace => (record.level().to_string().black(), record.args().to_string().black()),
-            };
-
-            println!("[{formatted_time}] [{level}] - {args}");
+        if !self.enabled(record.metadata()) {
+            return;
         }
+
+        let now: OffsetDateTime = SystemTime::now().into();
+        let formatted_time = now.format(&self.format_desc).unwrap();
+
+        let (level, args) = match record.level() {
+            Level::Error => (
+                record.level().to_string().bright_red(),
+                record.args().to_string().bright_red(),
+            ),
+            Level::Warn => (
+                record.level().to_string().bright_yellow(),
+                record.args().to_string().bright_yellow(),
+            ),
+            Level::Info => (record.level().to_string().cyan(), record.args().to_string().cyan()),
+            Level::Debug => (record.level().to_string().normal(), record.args().to_string().normal()),
+            Level::Trace => (record.level().to_string().black(), record.args().to_string().black()),
+        };
+
+        println!("[{formatted_time}] [{level}] - {args}");
     }
 
     fn flush(&self) {}

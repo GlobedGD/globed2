@@ -9,7 +9,7 @@ GlobedServerManager::GlobedServerManager() {
     auto storedActive = geode::Mod::get()->getSavedValue<std::string>("active-central-server");
     if (storedActive.empty()) {
         // storedActive = "https://globed.dankmeme.dev";
-        // TODO ^^^
+        // TODO prod ^^^
         storedActive = "http://127.0.0.1:41000";
     }
 

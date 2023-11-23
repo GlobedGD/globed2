@@ -9,13 +9,10 @@ class PlayerProfilesPacket : public Packet {
     GLOBED_PACKET_ENCODE_UNIMPL
 
     GLOBED_PACKET_DECODE {
-        auto values = buf.readValueVector<PlayerAccountData>();
-        for (const auto& val : values) {
-            data[val.id] = val;
-        }
+        data = buf.readValueVector<PlayerAccountData>();
     }
 
-    std::unordered_map<int32_t, PlayerAccountData> data;
+    std::vector<PlayerAccountData> data;
 };
 
 class LevelDataPacket : public Packet {
@@ -36,13 +33,10 @@ class PlayerListPacket : public Packet {
     GLOBED_PACKET_ENCODE_UNIMPL
 
     GLOBED_PACKET_DECODE {
-        auto values = buf.readValueVector<PlayerAccountData>();
-        for (const auto& val : values) {
-            data[val.id] = val;
-        }
+        data = buf.readValueVector<PlayerAccountData>();
     }
 
-    std::unordered_map<int32_t, PlayerAccountData> data;
+    std::vector<PlayerAccountData> data;
 };
 
 #if GLOBED_VOICE_SUPPORT
@@ -56,9 +50,11 @@ class VoiceBroadcastPacket : public Packet {
     
 #if GLOBED_VOICE_SUPPORT
     GLOBED_PACKET_DECODE {
+        sender = buf.readI32();
         frame = std::move(buf.readValue<EncodedAudioFrame>());
     }
 
+    int sender;
     EncodedAudioFrame frame;
 #else
     GLOBED_PACKET_DECODE {}

@@ -6,24 +6,24 @@ struct CachedSettings {
     bool test;
 };
 
-// Besides `getCached()`, this class is not guaranteed to be fully thread safe.
+// Besides `getCached()`, this class is not thread safe (reason: getSavedValue/setSavedValue)
 class GlobedSettings {
     GLOBED_SINGLETON(GlobedSettings);
     GlobedSettings();
 
     // directly set and save the setting as json
     template <typename T>
-    void set(const std::string& key, const T& elem, bool refresh = true) {
-        geode::Mod::get()->setSavedValue<T>("gsetting-" + key);
+    inline void set(const std::string& key, const T& elem, bool refresh = true) {
+        geode::Mod::get()->setSavedValue<T>("gsetting-" + key, elem);
         
         if (refresh) {
-            refreshCache();
+            this->refreshCache();
         }
     }
 
     // directly get the setting as json
     template <typename T>
-    T get(const std::string& key) {
+    inline T get(const std::string& key) {
         return geode::Mod::get()->getSavedValue<T>("gsetting-" + key);
     }
 

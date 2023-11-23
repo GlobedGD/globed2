@@ -26,7 +26,7 @@ NetworkManager::NetworkManager() {
         // and lets try to login!
         auto& am = GlobedAccountManager::get();
         auto authtoken = *am.authToken.lock();
-        this->send(LoginPacket::create(am.accountId, authtoken));
+        this->send(LoginPacket::create(am.gdData.lock()->accountId, authtoken));
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
