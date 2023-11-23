@@ -1,9 +1,17 @@
+#![allow(
+    clippy::must_use_candidate,
+    clippy::module_name_repetitions,
+    clippy::cast_possible_truncation,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::wildcard_imports
+)]
+
 use std::{collections::HashMap, error::Error};
 
 use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
 use log::{error, info, warn, LevelFilter};
-use logger::Logger;
 use server::GameServerConfiguration;
 use state::ServerState;
 
@@ -17,11 +25,9 @@ pub mod server;
 pub mod server_thread;
 pub mod state;
 
-static LOGGER: Logger = Logger;
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    log::set_logger(&LOGGER).unwrap();
+    log::set_logger(&*logger::LOGGER_INSTANCE).unwrap();
 
     if std::env::var("GLOBED_GS_LESS_LOG").unwrap_or("0".to_string()) == "1" {
         log::set_max_level(LevelFilter::Warn);

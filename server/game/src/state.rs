@@ -4,8 +4,6 @@ use std::sync::atomic::AtomicU32;
 
 pub struct ServerState {
     pub player_count: AtomicU32,
-    // make player_manager SyncRwLock if there will be read-only operations
-    // for now everything requires write access so it's a waste
     pub player_manager: SyncMutex<PlayerManager>,
 }
 

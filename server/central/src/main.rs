@@ -1,3 +1,10 @@
+#![allow(
+    clippy::must_use_candidate,
+    clippy::module_name_repetitions,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc
+)]
+
 use std::{error::Error, path::PathBuf, sync::Arc, time::Duration};
 
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
@@ -63,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let state_skey = config.secret_key.clone();
 
     let state = ServerState {
-        inner: Arc::new(RwLock::new(ServerStateData::new(config_path.clone(), config, state_skey))),
+        inner: Arc::new(RwLock::new(ServerStateData::new(config_path.clone(), config, &state_skey))),
     };
 
     // config file watcher

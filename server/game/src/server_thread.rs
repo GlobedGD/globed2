@@ -17,15 +17,12 @@ use crypto_box::{
 };
 use globed_shared::PROTOCOL_VERSION;
 use log::{debug, warn};
-use tokio::sync::{
-    mpsc::{self, Receiver, Sender},
-    Mutex,
-};
+use tokio::sync::{mpsc, Mutex};
 
 use crate::{
     bytebufferext::*,
     data::{
-        packets::{client::*, server::*, Packet, PacketWithId, PACKET_HEADER_LEN},
+        packets::{client::*, server::*, Packet, PacketMetadata, PACKET_HEADER_LEN},
         types::*,
     },
     server::GameServer,
@@ -33,19 +30,20 @@ use crate::{
 
 // TODO adjust this to PlayerData size in the future
 pub const SMALL_PACKET_LIMIT: usize = 128;
-const CHANNEL_BUFFER: usize = 4;
+const CHANNEL_BUFFER_SIZE: usize = 4;
 
 pub enum ServerThreadMessage {
     Packet(Vec<u8>),
     SmallPacket([u8; SMALL_PACKET_LIMIT]),
     BroadcastVoice(Arc<VoiceBroadcastPacket>),
+    TerminationNotice(String),
 }
 
 pub struct GameServerThread {
     game_server: &'static GameServer,
 
-    rx: Mutex<Receiver<ServerThreadMessage>>,
-    tx: Sender<ServerThreadMessage>,
+    rx: Mutex<mpsc::Receiver<ServerThreadMessage>>,
+    tx: mpsc::Sender<ServerThreadMessage>,
     awaiting_termination: AtomicBool,
     pub authenticated: AtomicBool,
     crypto_box: SyncMutex<Option<ChaChaBox>>,
@@ -111,7 +109,7 @@ impl GameServerThread {
     /* public api for the main server */
 
     pub fn new(peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
-        let (tx, rx) = mpsc::channel::<ServerThreadMessage>(CHANNEL_BUFFER);
+        let (tx, rx) = mpsc::channel::<ServerThreadMessage>(CHANNEL_BUFFER_SIZE);
         Self {
             tx,
             rx: Mutex::new(rx),
@@ -168,6 +166,14 @@ impl GameServerThread {
         Ok(())
     }
 
+    // attempt to send a buffer immediately to the socket, but if it requires blocking then nuh uh
+    fn send_buffer_immediate(&self, buffer: &[u8]) -> std::io::Result<()> {
+        self.game_server
+            .socket
+            .try_send_to(buffer, std::net::SocketAddr::V4(self.peer))
+            .map(|_| ())
+    }
+
     fn serialize_packet(&self, packet: &impl Packet) -> anyhow::Result<ByteBuffer> {
         let mut buf = ByteBuffer::new();
         buf.write_u16(packet.get_packet_id());
@@ -217,6 +223,11 @@ impl GameServerThread {
                 Ok(()) => {}
                 Err(err) => bail!("failed to broadcast voice packet: {err}"),
             },
+
+            ServerThreadMessage::TerminationNotice(message) => {
+                self.terminate();
+                self.send_packet(&ServerDisconnectPacket { message }).await?;
+            }
         }
 
         Ok(())
@@ -352,6 +363,7 @@ impl GameServerThread {
     gs_handler!(self, handle_login, LoginPacket, packet, {
         if self.game_server.standalone {
             debug!("Bypassing login for {}", packet.account_id);
+            self.game_server.check_already_logged_in(packet.account_id)?;
             self.authenticated.store(true, Ordering::Relaxed);
             self.account_id.store(packet.account_id, Ordering::Relaxed);
             self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed);
@@ -396,6 +408,7 @@ impl GameServerThread {
 
         let player_name = response.split_once(':').ok_or(anyhow!("central server is drunk"))?.1;
 
+        self.game_server.check_already_logged_in(packet.account_id)?;
         self.authenticated.store(true, Ordering::Relaxed);
         self.account_id.store(packet.account_id, Ordering::Relaxed);
         self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
@@ -491,9 +504,7 @@ impl GameServerThread {
 
         let account_id = self.account_id.load(Ordering::Relaxed);
 
-        let mut buf: ByteBuffer;
-
-        {
+        let retval = {
             let mut pm = self.game_server.state.player_manager.lock();
             pm.set_player_data(account_id, &packet.data);
 
@@ -501,25 +512,55 @@ impl GameServerThread {
             let players = pm.get_players_on_level(level_id).unwrap();
 
             let calc_size = PACKET_HEADER_LEN + 4 + ((players.len() - 1) * AssociatedPlayerData::encoded_size());
-            debug!("alloc with capacity: {calc_size}");
-            buf = ByteBuffer::with_capacity(calc_size);
+            debug!("alloca with capacity: {calc_size}");
 
-            // dont actually do this anywhere else please
-            buf.write_u16(LevelDataPacket::PACKET_ID);
-            buf.write_bool(false);
-            buf.write_u32(players.len() as u32 - 1); // minus ourselves
+            alloca::with_alloca(calc_size, move |data| {
+                // safety: 'data' will have garbage data but that is considered safe for all our intents and purposes
+                // as `FastByteBuffer::as_bytes()` will only return what was already written.
+                let data = unsafe {
+                    let ptr = data.as_mut_ptr().cast::<u8>();
+                    let len = std::mem::size_of_val(data);
+                    std::slice::from_raw_parts_mut(ptr, len)
+                };
 
-            for player in &players {
-                if player.account_id == account_id {
-                    continue;
+                let mut buf = FastByteBuffer::new(data);
+
+                // dont actually do this anywhere else please
+                buf.write_u16(LevelDataPacket::PACKET_ID);
+                buf.write_bool(false);
+                buf.write_u32(players.len() as u32 - 1); // minus ourselves
+
+                for player in &players {
+                    if player.account_id == account_id {
+                        continue;
+                    }
+
+                    buf.write_value(*player);
                 }
 
-                buf.write_value(*player);
-            }
-            debug!("size at the end: {}", buf.len());
+                // see if we can send it right there and then
+                let data = buf.as_bytes();
+                debug!("size at the end: {}", data.len());
+
+                let retval: Result<Option<Vec<u8>>, anyhow::Error> = match self.send_buffer_immediate(data) {
+                    // if we cant send without blocking, accept our defeat and clone the data to a vec
+                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(Some(data.to_vec())),
+                    // if another error occured, propagate it up
+                    Err(e) => Err(e.into()),
+                    // if all good, do nothing
+                    Ok(()) => Ok(None),
+                };
+
+                retval
+            })
+        }?;
+
+        if let Some(data) = retval {
+            debug!("fast PlayerData response failed, issuing a blocking call");
+            self.send_buffer(&data).await?;
         }
 
-        self.send_buffer(buf.as_bytes()).await
+        Ok(())
     });
 
     gs_handler!(self, handle_request_player_list, RequestPlayerListPacket, _packet, {
@@ -545,10 +586,10 @@ impl GameServerThread {
 
             let total_size = packet.data.opus_frames.iter().map(Vec::len).sum::<usize>();
 
-            let throughput = (total_size as f32) / (passed_time as f32); // in kb/s
+            let throughput = total_size / passed_time as usize; // in kb/s
 
             debug!("voice packet throughput: {}kb/s", throughput);
-            if throughput > 8f32 {
+            if throughput > 8 {
                 warn!("rejecting a voice packet, throughput above the limit: {}kb/s", throughput);
                 return Ok(());
             }
@@ -559,7 +600,7 @@ impl GameServerThread {
             data: packet.data.clone(),
         });
 
-        self.game_server.broadcast_voice_packet(vpkt).await?;
+        self.game_server.broadcast_voice_packet(&vpkt)?;
 
         Ok(())
     });

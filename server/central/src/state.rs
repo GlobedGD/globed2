@@ -36,7 +36,7 @@ pub struct ServerStateData {
 }
 
 impl ServerStateData {
-    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: String) -> Self {
+    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: &str) -> Self {
         let skey_bytes = secret_key.as_bytes();
         let hmac_obj = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
 

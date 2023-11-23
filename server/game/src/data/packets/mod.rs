@@ -46,8 +46,9 @@ macro_rules! packet {
             }
         }
 
-        impl crate::data::packets::PacketWithId for $packet_type {
+        impl crate::data::packets::PacketMetadata for $packet_type {
             const PACKET_ID: crate::data::packets::PacketId = $packet_id;
+            const ENCRYPTED: bool = $encrypted;
         }
     };
 }
@@ -76,14 +77,15 @@ pub(crate) use empty_client_packet;
 pub(crate) use empty_server_packet;
 pub(crate) use packet;
 
-pub trait Packet: Encodable + Decodable + Send + Sync {
+pub trait Packet: Encodable + Decodable + Send + Sync + PacketMetadata {
     fn get_packet_id(&self) -> PacketId;
     fn get_encrypted(&self) -> bool;
 }
 
 // god i hate this
-pub trait PacketWithId {
+pub trait PacketMetadata {
     const PACKET_ID: PacketId;
+    const ENCRYPTED: bool;
 }
 
 pub const PACKET_HEADER_LEN: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();

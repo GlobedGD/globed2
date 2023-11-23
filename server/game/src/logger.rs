@@ -1,12 +1,21 @@
 use std::time::SystemTime;
 
 use colored::Colorize;
+use lazy_static::lazy_static;
 use log::Level;
 use time::{format_description, OffsetDateTime};
 
-pub struct Logger;
+pub struct Logger {
+    format_desc: Vec<format_description::FormatItem<'static>>,
+}
 
 const TIME_FORMAT: &str = "[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3]";
+
+lazy_static! {
+    pub static ref LOGGER_INSTANCE: Logger = Logger {
+        format_desc: format_description::parse(TIME_FORMAT).unwrap(),
+    };
+}
 
 impl log::Log for Logger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
@@ -20,8 +29,7 @@ impl log::Log for Logger {
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
             let now: OffsetDateTime = SystemTime::now().into();
-            let format_desc = format_description::parse(TIME_FORMAT).unwrap();
-            let formatted_time = now.format(&format_desc).unwrap();
+            let formatted_time = now.format(&self.format_desc).unwrap();
 
             let (level, args) = match record.level() {
                 Level::Error => (

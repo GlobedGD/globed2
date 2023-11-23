@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use parking_lot::{Mutex as SyncMutex, RwLock as SyncRwLock};
+use parking_lot::Mutex as SyncMutex;
 
 use anyhow::anyhow;
 use crypto_box::{aead::OsRng, SecretKey};
@@ -35,7 +35,7 @@ pub struct GameServer {
     pub address: String,
     pub state: ServerState,
     pub socket: UdpSocket,
-    pub threads: SyncRwLock<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
+    pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
     pub secret_key: SecretKey,
     pub central_conf: SyncMutex<GameServerBootData>,
     pub config: GameServerConfiguration,
@@ -56,7 +56,7 @@ impl GameServer {
             address: address.clone(),
             state,
             socket: UdpSocket::bind(&address).await.unwrap(),
-            threads: SyncRwLock::new(FxHashMap::default()),
+            threads: SyncMutex::new(FxHashMap::default()),
             secret_key,
             central_conf: SyncMutex::new(central_conf),
             config,
@@ -94,9 +94,9 @@ impl GameServer {
 
     /* various calls for other threads */
 
-    pub async fn broadcast_voice_packet(&'static self, vpkt: Arc<VoiceBroadcastPacket>) -> anyhow::Result<()> {
+    pub fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>) -> anyhow::Result<()> {
         // TODO dont send it to every single thread in existence
-        let threads: Vec<_> = self.threads.read().values().cloned().collect();
+        let threads: Vec<_> = self.threads.lock().values().cloned().collect();
         for thread in threads {
             thread.push_new_message(ServerThreadMessage::BroadcastVoice(vpkt.clone()))?;
         }
@@ -105,7 +105,7 @@ impl GameServer {
     }
 
     pub fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
-        let threads = self.threads.read();
+        let threads = self.threads.lock();
 
         ids.iter()
             .filter_map(|id| {
@@ -118,7 +118,7 @@ impl GameServer {
     }
 
     pub fn gather_all_profiles(&'static self) -> Vec<PlayerAccountData> {
-        let threads = self.threads.read();
+        let threads = self.threads.lock();
         threads
             .values()
             .filter(|thr| thr.authenticated.load(Ordering::Relaxed))
@@ -128,6 +128,19 @@ impl GameServer {
 
     pub fn chat_blocked(&'static self, user_id: i32) -> bool {
         self.central_conf.lock().no_chat.contains(&user_id)
+    }
+
+    pub fn check_already_logged_in(&'static self, user_id: i32) -> anyhow::Result<()> {
+        let threads = self.threads.lock();
+        let thread = threads.values().find(|thr| thr.account_id.load(Ordering::Relaxed) == user_id);
+
+        if let Some(thread) = thread {
+            thread.push_new_message(ServerThreadMessage::TerminationNotice(
+                "Someone logged into the same account from a different place.".to_string(),
+            ))?;
+        }
+
+        Ok(())
     }
 
     /* private handling stuff */
@@ -141,7 +154,7 @@ impl GameServer {
             SocketAddr::V4(x) => x,
         };
 
-        let thread = self.threads.read().get(&peer).cloned();
+        let thread = self.threads.lock().get(&peer).cloned();
 
         let thread = if let Some(thread) = thread {
             thread
@@ -164,25 +177,27 @@ impl GameServer {
                 self.post_disconnect_cleanup(&thread);
             });
 
-            self.threads.write().insert(peer, thread_cl.clone());
+            self.threads.lock().insert(peer, thread_cl.clone());
             thread_cl
         };
 
         // don't heap allocate for small packets
-        thread.push_new_message(if len <= SMALL_PACKET_LIMIT {
+        let message = if len <= SMALL_PACKET_LIMIT {
             let mut smallbuf = [0u8; SMALL_PACKET_LIMIT];
             smallbuf[..len].copy_from_slice(&buf[..len]);
 
             ServerThreadMessage::SmallPacket(smallbuf)
         } else {
             ServerThreadMessage::Packet(buf[..len].to_vec())
-        })?;
+        };
+
+        thread.push_new_message(message)?;
 
         Ok(())
     }
 
     fn remove_client(&'static self, key: SocketAddrV4) {
-        self.threads.write().remove(&key);
+        self.threads.lock().remove(&key);
     }
 
     fn post_disconnect_cleanup(&'static self, thread: &GameServerThread) {
