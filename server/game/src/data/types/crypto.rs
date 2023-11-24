@@ -2,7 +2,7 @@ use std::io::Read;
 
 use crypto_box::{PublicKey, KEY_SIZE};
 
-use crate::bytebufferext::*;
+use crate::data::bytebufferext::*;
 
 #[derive(Clone)]
 pub struct CryptoPublicKey {

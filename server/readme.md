@@ -1,12 +1,12 @@
 # Globed Server
 
-Prebuilt server binaries are available for Linux (x64 and ARM64) and Windows (x64) in every GitHub release.
+Prebuilt server binaries are available for Linux (x64 and ARM64) and Windows (x64) in every GitHub release. The server is *extremely* optimized so it is very lightweight and will run well even on weak hardware.
 
 If you want to build it yourself, do note that the central server must be compiled with a nightly Rust toolchain, until `async fn` in traits becomes stable (which is set to be in Rust 1.75).
 
 ## Central server
 
-The central server doesn't uses a single JSON file for configuration. By default, the file is put in `central-conf.json` in the current working directory when you run the server, but it can be overriden with the environment variable `GLOBED_CONFIG_PATH`. The path can be a folder or a full file path.
+The central server uses a single JSON file for configuration. By default, the file is created with the name `central-conf.json` in the current working directory when you run the server, but it can be overriden with the environment variable `GLOBED_CONFIG_PATH`. The path can be a folder or a full file path.
 
 ### Central server configuration
 
@@ -40,25 +40,28 @@ Note that the server is written with security in mind, so many of those options 
 
 <sup>**</sup> - it may take a few minutes for you to see any changes
 
-The minimum log level is `Warn` for other crates and `Trace` for the server itself in debug builds. In release builds, the default is `Info` and you can change it to `Warn` by defining the environment variable `GLOBED_LESS_LOG=1`
-
-## Game
+## Game server
 
 To bridge the servers together, you must use the password from the `game_server_password` option in the central server configuration. Then, you have 2 options whenever you start the server:
 
 ```sh
-./globed-game-server 0.0.0.0:41001 http://127.0.0.1:41000 password
+./globed-game-server.exe 0.0.0.0:41001 http://127.0.0.1:41000 password
 
-# or like this: (replace 'export' with 'set' on windows)
+# or like this:
 
-export GLOBED_GS_ADDRESS=0.0.0.0:41001
-export GLOBED_GS_CENTRAL_URL=http://127.0.0.1:41000 
-export GLOBED_GS_CENTRAL_PASSWORD=password
-./globed-game-server
+# on linux remember to replace `set` with `export` and all that
+set GLOBED_GS_ADDRESS=0.0.0.0:41001
+set GLOBED_GS_CENTRAL_URL=http://127.0.0.1:41000 
+set GLOBED_GS_CENTRAL_PASSWORD=password
+./globed-game-server.exe
 ```
 
 Replace `0.0.0.0:41001` with the address you want the game server to listen on, `http://127.0.0.1:41000` with the URL of your central server, and `password` with the password.
 
-If you want to start the game server in a standalone manner, so that it doesn't need a central server to work, replace the URL with the string "none". Do keep in mind this disables player authentication and some other features, and is only recommended for testing.
+**You can start the game server in a standalone mode (without needing a central server)**. For that, simply replace the central URL with the string `none`. Do keep in mind this disables player authentication completely and is recommended only for testing purposes.
 
-The minimum log levels are the same as in the central server, except the environment variable to change them is `GLOBED_GS_LESS_LOG`.
+## Extra
+
+In debug builds, all logging is enabled. In release builds, the `Debug` and `Trace` levels are disabled, so you will only see logs with levels `Info`, `Warn` and `Error`.
+
+This can be changed by setting the environment variable `GLOBED_LESS_LOG=1` for the central server, or `GLOBED_GS_LESS_LOG=1` for the game server. With this option, only logs with levels `Warn` and `Error` will be printed (in both debug and release builds)

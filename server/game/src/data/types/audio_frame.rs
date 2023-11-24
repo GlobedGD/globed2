@@ -1,4 +1,4 @@
-use crate::bytebufferext::{decode_impl, encode_impl, ByteBufferExtRead, ByteBufferExtWrite};
+use crate::data::bytebufferext::*;
 
 const VOICE_OPUS_FRAMES_IN_AUDIO_FRAME: usize = 20;
 

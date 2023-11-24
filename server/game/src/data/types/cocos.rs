@@ -1,6 +1,6 @@
 use anyhow::bail;
 
-use crate::bytebufferext::{decode_impl, encode_impl};
+use crate::data::bytebufferext::*;
 
 #[derive(Copy, Clone, Default)]
 pub struct Color3B {

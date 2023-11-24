@@ -1,7 +1,10 @@
 pub mod client;
 pub mod server;
 
-use crate::bytebufferext::{Decodable, Encodable};
+pub use client::*;
+pub use server::*;
+
+use crate::data::bytebufferext::*;
 
 type PacketId = u16;
 
@@ -29,29 +32,23 @@ macro_rules! packet {
         impl crate::data::packets::PacketMetadata for $packet_type {
             const PACKET_ID: crate::data::packets::PacketId = $packet_id;
             const ENCRYPTED: bool = $encrypted;
+            const NAME: &'static str = stringify!($packet_type);
+        }
+
+        impl $packet_type {
+            pub const fn header() -> crate::data::packets::PacketHeader {
+                crate::data::packets::PacketHeader::from_packet::<Self>()
+            }
         }
     };
+
     ($packet_type:ident, $packet_id:expr, $encrypted:expr, { $($field:ident: $field_type:ty),* $(,)? }) => {
         #[derive(Clone)]
         pub struct $packet_type {
             $(pub $field: $field_type),*
         }
 
-        impl crate::data::packets::Packet for $packet_type {
-            fn get_packet_id(&self) -> crate::data::packets::PacketId {
-                $packet_id
-            }
-
-            fn get_encrypted(&self) -> bool {
-                $encrypted
-            }
-        }
-
-        impl crate::data::packets::PacketMetadata for $packet_type {
-            const PACKET_ID: crate::data::packets::PacketId = $packet_id;
-            const ENCRYPTED: bool = $encrypted;
-            const NAME: &'static str = stringify!($packet_type);
-        }
+        packet!($packet_type, $packet_id, $encrypted);
     };
 }
 
@@ -93,4 +90,30 @@ pub trait PacketMetadata {
     const NAME: &'static str;
 }
 
-pub const PACKET_HEADER_LEN: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();
+pub struct PacketHeader {
+    pub packet_id: u16,
+    pub encrypted: bool,
+}
+
+impl PacketHeader {
+    #[inline]
+    pub const fn from_packet<P: PacketMetadata>() -> Self {
+        Self {
+            packet_id: P::PACKET_ID,
+            encrypted: P::ENCRYPTED,
+        }
+    }
+
+    pub const SIZE: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();
+}
+
+encode_impl!(PacketHeader, buf, self, {
+    buf.write_u16(self.packet_id);
+    buf.write_bool(self.encrypted);
+});
+
+decode_impl!(PacketHeader, buf, {
+    let packet_id = buf.read_u16()?;
+    let encrypted = buf.read_bool()?;
+    Ok(Self { packet_id, encrypted })
+});

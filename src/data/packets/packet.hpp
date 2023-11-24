@@ -32,6 +32,22 @@ public:
 
     virtual packetid_t getPacketId() const = 0;
     virtual bool getEncrypted() const = 0;
+};
 
-    static constexpr size_t HEADER_LEN = sizeof(packetid_t) + 1;
+class PacketHeader {
+public:
+    static constexpr size_t SIZE = sizeof(packetid_t) + sizeof(bool);
+
+    GLOBED_ENCODE {
+        buf.writeU16(id);
+        buf.writeBool(encrypted);
+    }
+
+    GLOBED_DECODE {
+        id = buf.readU16();
+        encrypted = buf.readBool();
+    }
+    
+    packetid_t id;
+    bool encrypted;
 };

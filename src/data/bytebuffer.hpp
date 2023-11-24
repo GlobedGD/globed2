@@ -23,8 +23,8 @@ template <typename T>
 concept Serializable = Encodable<T> && Decodable<T>;
 
 // helper macros so you can do GLOBED_ENCODE {...} in serializable structs or packets
-#define GLOBED_ENCODE void encode(ByteBuffer& buf) const
-#define GLOBED_DECODE void decode(ByteBuffer& buf)
+#define GLOBED_ENCODE inline void encode(ByteBuffer& buf) const
+#define GLOBED_DECODE inline void decode(ByteBuffer& buf)
 
 class ByteBuffer {
 public:

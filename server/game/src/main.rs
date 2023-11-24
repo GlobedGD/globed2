@@ -17,7 +17,6 @@ use state::ServerState;
 
 use server::GameServer;
 
-pub mod bytebufferext;
 pub mod data;
 pub mod logger;
 pub mod managers;
@@ -110,7 +109,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             true,
         )
     } else {
-        info!("Retreiving config from the central server..");
+        info!("Retrieving config from the central server..");
 
         let response = config
             .http_client

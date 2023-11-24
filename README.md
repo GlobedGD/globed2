@@ -24,6 +24,7 @@ Known issues:
 
 * i am silly
 * voice chat is a bit silly
+* needs more unsafe code to be even more blazinger faster 🚀🚀🚀
 
 ## Hosting a server
 
@@ -38,7 +39,7 @@ cmake --build build --config Release
 
 ## Credit
 
-ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you for being awesome, whether it's because you helped me, suggested ideas, or if I just found you awesome in general :D
+ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you for being awesome, whether it's because you helped me, suggested ideas, helped with testing, or if I just found you awesome in general :D
 
 camila314 - thank you for [UIBuilder](https://github.com/camila314/uibuilder)
 
@@ -46,7 +47,7 @@ RobTop - thank you for releasing this awesome game :)
 
 ## Open source acknowledgments
 
-* [Geode](https://github.com/geode-sdk/geode) - the one thing that made all of this possible :)
+* [Geode](https://geode-sdk.org/) - the one thing that made all of this possible :)
 * [UIBuilder](https://github.com/camila314/uibuilder) - something you should 100% use when creating GD mods
 * [Opus](https://github.com/xiph/opus) - audio codec used for audio compression
 * [libsodium](https://github.com/jedisct1/libsodium) - library used for data encryption

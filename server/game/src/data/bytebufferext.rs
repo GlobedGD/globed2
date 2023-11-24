@@ -1,4 +1,7 @@
-use crate::data::types::cocos;
+use crate::data::{
+    packets::{PacketHeader, PacketMetadata},
+    types::cocos,
+};
 use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 
@@ -26,12 +29,14 @@ pub const MAX_ENCODED_STRING_SIZE: usize = 512 + size_of_types!(u32); // 512 cha
 
 macro_rules! encode_impl {
     ($typ:ty, $buf:ident, $self:ident, $encode:expr) => {
-        impl crate::bytebufferext::Encodable for $typ {
+        impl crate::data::bytebufferext::Encodable for $typ {
+            #[inline]
             fn encode(&$self, $buf: &mut bytebuffer::ByteBuffer) {
                 $encode
             }
 
-            fn encode_fast(&$self, $buf: &mut crate::bytebufferext::FastByteBuffer) {
+            #[inline]
+            fn encode_fast(&$self, $buf: &mut crate::data::bytebufferext::FastByteBuffer) {
                 $encode
             }
         }
@@ -40,11 +45,13 @@ macro_rules! encode_impl {
 
 macro_rules! decode_impl {
     ($typ:ty, $buf:ident, $decode:expr) => {
-        impl crate::bytebufferext::Decodable for $typ {
+        impl crate::data::bytebufferext::Decodable for $typ {
+            #[inline]
             fn decode($buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
                 $decode
             }
 
+            #[inline]
             fn decode_from_reader($buf: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
                 $decode
             }
@@ -54,7 +61,7 @@ macro_rules! decode_impl {
 
 macro_rules! encode_unimpl {
     ($typ:ty) => {
-        impl crate::bytebufferext::Encodable for $typ {
+        impl crate::data::bytebufferext::Encodable for $typ {
             fn encode(&self, _: &mut bytebuffer::ByteBuffer) {
                 panic!(
                     "Tried to call {}::encode when Encodable was not implemented for this type",
@@ -62,7 +69,7 @@ macro_rules! encode_unimpl {
                 );
             }
 
-            fn encode_fast(&self, _: &mut crate::bytebufferext::FastByteBuffer) {
+            fn encode_fast(&self, _: &mut crate::data::bytebufferext::FastByteBuffer) {
                 panic!(
                     "Tried to call {}::encode_fast when Encodable was not implemented for this type",
                     stringify!($typ)
@@ -74,7 +81,7 @@ macro_rules! encode_unimpl {
 
 macro_rules! decode_unimpl {
     ($typ:ty) => {
-        impl crate::bytebufferext::Decodable for $typ {
+        impl crate::data::bytebufferext::Decodable for $typ {
             fn decode(_: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
                 Err(anyhow::anyhow!("decoding unimplemented for {}", stringify!($typ)))
             }
@@ -88,7 +95,7 @@ macro_rules! decode_unimpl {
 
 macro_rules! size_calc_impl {
     ($typ:ty, $calc:expr) => {
-        impl crate::bytebufferext::EncodableWithKnownSize for $typ {
+        impl crate::data::bytebufferext::EncodableWithKnownSize for $typ {
             const ENCODED_SIZE: usize = $calc;
         }
     };
@@ -124,6 +131,7 @@ pub trait ByteBufferExtWrite {
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
 
     fn write_enum<E: Into<B>, B: Encodable>(&mut self, val: E);
+    fn write_packet_header<T: PacketMetadata>(&mut self);
 
     fn write_color3(&mut self, val: cocos::Color3B);
     fn write_color4(&mut self, val: cocos::Color4B);
@@ -142,6 +150,7 @@ pub trait ByteBufferExtRead {
     fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>>;
 
     fn read_enum<E: TryFrom<B>, B: Decodable>(&mut self) -> Result<E>;
+    fn read_packet_header(&mut self) -> Result<PacketHeader>;
 
     fn read_color3(&mut self) -> Result<cocos::Color3B>;
     fn read_color4(&mut self) -> Result<cocos::Color4B>;
@@ -270,19 +279,23 @@ impl ByteBufferExt for ByteBuffer {
 
 macro_rules! impl_extwrite {
     ($encode_fn:ident) => {
+        #[inline]
         fn write_bool(&mut self, val: bool) {
             self.write_u8(u8::from(val));
         }
 
+        #[inline]
         fn write_byte_array(&mut self, val: &[u8]) {
             self.write_u32(val.len() as u32);
             self.write_bytes(val);
         }
 
+        #[inline]
         fn write_value<T: Encodable>(&mut self, val: &T) {
             val.$encode_fn(self);
         }
 
+        #[inline]
         fn write_optional_value<T: Encodable>(&mut self, val: Option<&T>) {
             self.write_bool(val.is_some());
             if let Some(val) = val {
@@ -290,10 +303,12 @@ macro_rules! impl_extwrite {
             }
         }
 
+        #[inline]
         fn write_value_array<T: Encodable, const N: usize>(&mut self, val: &[T; N]) {
             val.iter().for_each(|v| self.write_value(v));
         }
 
+        #[inline]
         fn write_value_vec<T: Encodable>(&mut self, val: &[T]) {
             self.write_u32(val.len() as u32);
             for elem in val {
@@ -301,18 +316,27 @@ macro_rules! impl_extwrite {
             }
         }
 
+        #[inline]
         fn write_enum<E: Into<B>, B: Encodable>(&mut self, val: E) {
             self.write_value(&val.into());
         }
 
+        #[inline]
+        fn write_packet_header<T: PacketMetadata>(&mut self) {
+            self.write_value(&PacketHeader::from_packet::<T>());
+        }
+
+        #[inline]
         fn write_color3(&mut self, val: cocos::Color3B) {
             self.write_value(&val);
         }
 
+        #[inline]
         fn write_color4(&mut self, val: cocos::Color4B) {
             self.write_value(&val);
         }
 
+        #[inline]
         fn write_point(&mut self, val: cocos::Point) {
             self.write_value(&val);
         }
@@ -321,19 +345,23 @@ macro_rules! impl_extwrite {
 
 macro_rules! impl_extread {
     ($decode_fn:ident) => {
+        #[inline]
         fn read_bool(&mut self) -> Result<bool> {
             Ok(self.read_u8()? != 0u8)
         }
 
+        #[inline]
         fn read_byte_array(&mut self) -> Result<Vec<u8>> {
             let length = self.read_u32()? as usize;
             Ok(self.read_bytes(length)?)
         }
 
+        #[inline]
         fn read_value<T: Decodable>(&mut self) -> Result<T> {
             T::$decode_fn(self)
         }
 
+        #[inline]
         fn read_optional_value<T: Decodable>(&mut self) -> Result<Option<T>> {
             Ok(match self.read_bool()? {
                 false => None,
@@ -341,10 +369,12 @@ macro_rules! impl_extread {
             })
         }
 
+        #[inline]
         fn read_value_array<T: Decodable, const N: usize>(&mut self) -> Result<[T; N]> {
             array_init::try_array_init(|_| self.read_value::<T>())
         }
 
+        #[inline]
         fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>> {
             let mut out = Vec::new();
             let length = self.read_u32()? as usize;
@@ -355,6 +385,7 @@ macro_rules! impl_extread {
             Ok(out)
         }
 
+        #[inline]
         fn read_enum<E: TryFrom<B>, B: Decodable>(&mut self) -> Result<E> {
             let val = self.read_value::<B>()?;
             let val: Result<E, _> = val.try_into();
@@ -362,14 +393,22 @@ macro_rules! impl_extread {
             val.map_err(|_| anyhow!("failed to decode enum"))
         }
 
+        #[inline]
+        fn read_packet_header(&mut self) -> Result<PacketHeader> {
+            self.read_value()
+        }
+
+        #[inline]
         fn read_color3(&mut self) -> Result<cocos::Color3B> {
             self.read_value()
         }
 
+        #[inline]
         fn read_color4(&mut self) -> Result<cocos::Color4B> {
             self.read_value()
         }
 
+        #[inline]
         fn read_point(&mut self) -> Result<cocos::Point> {
             self.read_value()
         }

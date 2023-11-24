@@ -1,6 +1,6 @@
 use globed_shared::SpecialUser;
 
-use crate::bytebufferext::*;
+use crate::data::bytebufferext::*;
 
 use super::Color3B;
 

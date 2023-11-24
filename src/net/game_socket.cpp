@@ -20,36 +20,34 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
     auto received = receive(reinterpret_cast<char*>(buffer), BUF_SIZE);
     GLOBED_REQUIRE(received > 0, "failed to receive data from a socket")
 
-    // read the header, 2 bytes for packet ID, 1 byte for encrypted
-    GLOBED_REQUIRE(received >= Packet::HEADER_LEN, "packet is missing a header")
+    GLOBED_REQUIRE(received >= PacketHeader::SIZE, "packet is missing a header")
 
     ByteBuffer buf(reinterpret_cast<byte*>(buffer), received);
 
     // read header
-    packetid_t packetId = buf.readU16();
-    bool encrypted = buf.readU8() != 0;
+    auto header = buf.readValue<PacketHeader>();
 
     // packet size without the header
-    size_t messageLength = received - Packet::HEADER_LEN;
+    size_t messageLength = received - PacketHeader::SIZE;
 
 #ifdef GLOBED_DEBUG_PACKETS
-    PacketLogger::get().record(packetId, encrypted, false, received);
+    PacketLogger::get().record(header.id, header.encrypted, false, received);
 #endif
 
-    auto packet = matchPacket(packetId);
+    auto packet = matchPacket(header.id);
 
-    GLOBED_REQUIRE(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(packetId))
+    GLOBED_REQUIRE(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(header.id))
 
-    if (packet->getEncrypted() && !encrypted) {
+    if (packet->getEncrypted() && !header.encrypted) {
         GLOBED_REQUIRE(false, "server sent a cleartext packet when expected an encrypted one")
     }
 
-    if (encrypted) {
+    if (header.encrypted) {
         GLOBED_REQUIRE(box.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
         bytevector& bufvec = buf.getDataRef();
 
-        messageLength = box->decryptInPlace(bufvec.data() + Packet::HEADER_LEN, messageLength);
-        buf.resize(messageLength + Packet::HEADER_LEN);
+        messageLength = box->decryptInPlace(bufvec.data() + PacketHeader::SIZE, messageLength);
+        buf.resize(messageLength + PacketHeader::SIZE);
     }
 
     packet->decode(buf);
@@ -59,18 +57,23 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 
 void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     ByteBuffer buf;
-    buf.writeU16(packet->getPacketId());
-    buf.writeU8(static_cast<uint8_t>(packet->getEncrypted()));
+    PacketHeader header = {
+        .id = packet->getPacketId(),
+        .encrypted = packet->getEncrypted()
+    };
+
+    buf.writeValue(header);
 
     packet->encode(buf);
-    size_t packetSize = buf.size() - Packet::HEADER_LEN;
+    
+    size_t packetSize = buf.size() - PacketHeader::SIZE;
 
     bytevector& dataref = buf.getDataRef();
     if (packet->getEncrypted()) {
         GLOBED_REQUIRE(box.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
         // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
         buf.grow(CryptoBox::PREFIX_LEN);
-        box->encryptInPlace(dataref.data() + Packet::HEADER_LEN, packetSize);
+        box->encryptInPlace(dataref.data() + PacketHeader::SIZE, packetSize);
     }
 
 #ifdef GLOBED_DEBUG_PACKETS
