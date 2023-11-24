@@ -24,7 +24,7 @@ class GlobedAccountManager {
     
     GlobedAccountManager();
 
-    // This method can be called multiple times, and in fact it is even advised that you do so.
+    // This method can be called multiple times, and in fact it is even advised that you do so often.
     // It must be called at least once before calling any other method or they will throw an exception.
     void initialize(const std::string& name, int accountId, const std::string& gjp, const std::string& central);
 
@@ -41,7 +41,7 @@ private:
 
     std::string computeGDDataHash(const std::string& name, int accountId, const std::string& gjp, const std::string& central);
 
-    // uses the precomputed hash from GDData and prepends it to the given 'key'
+    // uses the precomputed hash from GDData and appends it to the given 'key'
     // i.e. getKeyFor("auth-totp-key") => "auth-totp-key-ab12cd34ef"
     std::string getKeyFor(const std::string& key);
 };

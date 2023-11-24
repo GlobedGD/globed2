@@ -1,5 +1,5 @@
 use crate::{
-    bytebufferext::{decode_unimpl, encode_impl, ByteBufferExtWrite},
+    bytebufferext::*,
     data::{
         packets::{empty_server_packet, packet},
         types::CryptoPublicKey,
@@ -20,6 +20,8 @@ encode_impl!(PingResponsePacket, buf, self, {
 
 decode_unimpl!(PingResponsePacket);
 
+size_calc_impl!(PingResponsePacket, size_of_types!(u32, u32));
+
 /* CryptoHandshakeResponsePacket - 20001 */
 
 packet!(CryptoHandshakeResponsePacket, 20001, false, {
@@ -31,6 +33,8 @@ encode_impl!(CryptoHandshakeResponsePacket, buf, self, {
 });
 
 decode_unimpl!(CryptoHandshakeResponsePacket);
+
+size_calc_impl!(CryptoHandshakeResponsePacket, CryptoPublicKey::ENCODED_SIZE);
 
 /* KeepaliveResponsePacket - 20002 */
 
@@ -44,6 +48,8 @@ encode_impl!(KeepaliveResponsePacket, buf, self, {
 
 decode_unimpl!(KeepaliveResponsePacket);
 
+size_calc_impl!(KeepaliveResponsePacket, size_of_types!(u32));
+
 /* ServerDisconnectPacket - 20003 */
 
 packet!(ServerDisconnectPacket, 20003, false, {
@@ -55,6 +61,8 @@ encode_impl!(ServerDisconnectPacket, buf, self, {
 });
 
 decode_unimpl!(ServerDisconnectPacket);
+
+size_calc_impl!(ServerDisconnectPacket, MAX_ENCODED_STRING_SIZE);
 
 /* LoggedInPacket - 20004 */
 
@@ -72,6 +80,8 @@ encode_impl!(LoginFailedPacket, buf, self, {
 
 decode_unimpl!(LoginFailedPacket);
 
+size_calc_impl!(LoginFailedPacket, MAX_ENCODED_STRING_SIZE);
+
 /* ServerNoticePacket - 20006 */
 // used to communicate a simple message to the user
 
@@ -84,3 +94,5 @@ encode_impl!(ServerNoticePacket, buf, self, {
 });
 
 decode_unimpl!(ServerNoticePacket);
+
+size_calc_impl!(ServerNoticePacket, MAX_ENCODED_STRING_SIZE);

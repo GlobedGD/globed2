@@ -1,6 +1,6 @@
 use globed_shared::SpecialUser;
 
-use crate::bytebufferext::{decode_impl, decode_unimpl, encode_impl, ByteBufferExtWrite};
+use crate::bytebufferext::*;
 
 use super::Color3B;
 
@@ -148,11 +148,7 @@ encode_impl!(PlayerData, _buf, self, {});
 
 decode_impl!(PlayerData, _buf, Ok(Self {}));
 
-impl PlayerData {
-    const fn encoded_size() -> usize {
-        0
-    }
-}
+size_calc_impl!(PlayerData, 0);
 
 /* AssociatedPlayerData */
 
@@ -167,8 +163,4 @@ encode_impl!(AssociatedPlayerData, buf, self, {
     buf.write_value(&self.data);
 });
 
-impl AssociatedPlayerData {
-    pub const fn encoded_size() -> usize {
-        std::mem::size_of::<i32>() + PlayerData::encoded_size()
-    }
-}
+size_calc_impl!(AssociatedPlayerData, size_of_types!(i32) + PlayerData::ENCODED_SIZE);

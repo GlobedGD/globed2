@@ -189,6 +189,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     Ok(())
 }
 
+// rollercoaster of a function i'd say
 #[allow(clippy::too_many_lines)]
 pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result {
     check_user_agent!(context, _ua);

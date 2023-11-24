@@ -26,8 +26,9 @@ macro_rules! packet {
             }
         }
 
-        impl crate::data::packets::PacketWithId for $packet_type {
+        impl crate::data::packets::PacketMetadata for $packet_type {
             const PACKET_ID: crate::data::packets::PacketId = $packet_id;
+            const ENCRYPTED: bool = $encrypted;
         }
     };
     ($packet_type:ident, $packet_id:expr, $encrypted:expr, { $($field:ident: $field_type:ty),* $(,)? }) => {
@@ -49,6 +50,7 @@ macro_rules! packet {
         impl crate::data::packets::PacketMetadata for $packet_type {
             const PACKET_ID: crate::data::packets::PacketId = $packet_id;
             const ENCRYPTED: bool = $encrypted;
+            const NAME: &'static str = stringify!($packet_type);
         }
     };
 }
@@ -60,6 +62,8 @@ macro_rules! empty_server_packet {
         encode_impl!($packet_type, _buf, self, {});
 
         decode_unimpl!($packet_type);
+
+        size_calc_impl!($packet_type, 0);
     };
 }
 
@@ -86,6 +90,7 @@ pub trait Packet: Encodable + Decodable + Send + Sync + PacketMetadata {
 pub trait PacketMetadata {
     const PACKET_ID: PacketId;
     const ENCRYPTED: bool;
+    const NAME: &'static str;
 }
 
 pub const PACKET_HEADER_LEN: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();

@@ -8,7 +8,7 @@ This repository contains the complete rewrite of Globed, for Geometry Dash 2.2 a
 
 * Real-time multiplayer
 * Voice chat and text messages with full encryption and zero logging
-* blazing fast server written in pure Rust 🚀 (feauring only **one** unsafe block)
+* blazing fast server written in pure Rust 🚀 (feauring only **two** unsafe blocks so far)
 
 ## Installation
 

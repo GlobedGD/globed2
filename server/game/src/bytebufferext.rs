@@ -16,9 +16,17 @@ pub trait Decodable {
         Self: Sized;
 }
 
+// For dynamically sized types, this must be the maximum permitted size in the encoded form.
+// If encode() tries to write more bytes than this value, FastByteBuffer will panic.
+pub trait EncodableWithKnownSize: Encodable {
+    const ENCODED_SIZE: usize;
+}
+
+pub const MAX_ENCODED_STRING_SIZE: usize = 512 + size_of_types!(u32); // 512 chars
+
 macro_rules! encode_impl {
-    ($packet_type:ty, $buf:ident, $self:ident, $encode:expr) => {
-        impl crate::bytebufferext::Encodable for $packet_type {
+    ($typ:ty, $buf:ident, $self:ident, $encode:expr) => {
+        impl crate::bytebufferext::Encodable for $typ {
             fn encode(&$self, $buf: &mut bytebuffer::ByteBuffer) {
                 $encode
             }
@@ -31,8 +39,8 @@ macro_rules! encode_impl {
 }
 
 macro_rules! decode_impl {
-    ($packet_type:ty, $buf:ident, $decode:expr) => {
-        impl crate::bytebufferext::Decodable for $packet_type {
+    ($typ:ty, $buf:ident, $decode:expr) => {
+        impl crate::bytebufferext::Decodable for $typ {
             fn decode($buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
                 $decode
             }
@@ -45,19 +53,19 @@ macro_rules! decode_impl {
 }
 
 macro_rules! encode_unimpl {
-    ($packet_type:ty) => {
-        impl crate::bytebufferext::Encodable for $packet_type {
+    ($typ:ty) => {
+        impl crate::bytebufferext::Encodable for $typ {
             fn encode(&self, _: &mut bytebuffer::ByteBuffer) {
                 panic!(
                     "Tried to call {}::encode when Encodable was not implemented for this type",
-                    stringify!($packet_type)
+                    stringify!($typ)
                 );
             }
 
             fn encode_fast(&self, _: &mut crate::bytebufferext::FastByteBuffer) {
                 panic!(
                     "Tried to call {}::encode_fast when Encodable was not implemented for this type",
-                    stringify!($packet_type)
+                    stringify!($typ)
                 );
             }
         }
@@ -65,29 +73,39 @@ macro_rules! encode_unimpl {
 }
 
 macro_rules! decode_unimpl {
-    ($packet_type:ty) => {
-        impl crate::bytebufferext::Decodable for $packet_type {
+    ($typ:ty) => {
+        impl crate::bytebufferext::Decodable for $typ {
             fn decode(_: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
-                Err(anyhow::anyhow!(
-                    "decoding unimplemented for {}",
-                    stringify!($packet_type)
-                ))
+                Err(anyhow::anyhow!("decoding unimplemented for {}", stringify!($typ)))
             }
 
             fn decode_from_reader(_: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
-                Err(anyhow::anyhow!(
-                    "decoding unimplemented for {}",
-                    stringify!($packet_type)
-                ))
+                Err(anyhow::anyhow!("decoding unimplemented for {}", stringify!($typ)))
             }
         }
     };
+}
+
+macro_rules! size_calc_impl {
+    ($typ:ty, $calc:expr) => {
+        impl crate::bytebufferext::EncodableWithKnownSize for $typ {
+            const ENCODED_SIZE: usize = $calc;
+        }
+    };
+}
+
+macro_rules! size_of_types {
+    ($($t:ty),+ $(,)?) => {{
+        0 $(+ std::mem::size_of::<$t>())*
+    }};
 }
 
 pub(crate) use decode_impl;
 pub(crate) use decode_unimpl;
 pub(crate) use encode_impl;
 pub(crate) use encode_unimpl;
+pub(crate) use size_calc_impl;
+pub(crate) use size_of_types;
 
 /* ByteBuffer extensions */
 pub trait ByteBufferExt {

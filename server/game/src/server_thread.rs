@@ -1,15 +1,16 @@
 use std::{
+    fmt::Display,
+    io,
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, Ordering},
         Arc,
     },
-    time::{Duration, SystemTime},
+    time::{Duration, SystemTime, SystemTimeError},
 };
 
 use parking_lot::Mutex as SyncMutex;
 
-use anyhow::{anyhow, bail};
 use bytebuffer::{ByteBuffer, ByteReader};
 use crypto_box::{
     aead::{Aead, AeadCore, OsRng},
@@ -30,7 +31,7 @@ use crate::{
 
 // TODO adjust this to PlayerData size in the future plus some headroom
 pub const SMALL_PACKET_LIMIT: usize = 128;
-const CHANNEL_BUFFER_SIZE: usize = 4;
+const CHANNEL_BUFFER_SIZE: usize = 8;
 
 pub enum ServerThreadMessage {
     Packet(Vec<u8>),
@@ -56,18 +57,12 @@ pub struct GameServerThread {
     last_voice_packet: SyncMutex<SystemTime>,
 }
 
-macro_rules! gs_require {
-    ($cond:expr,$msg:literal) => {
-        if !($cond) {
-            bail!($msg);
-        }
-    };
-}
-
 macro_rules! gs_handler {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
-        async fn $name(&$self, buf: &mut ByteReader<'_>) -> anyhow::Result<()> {
+        async fn $name(&$self, buf: &mut ByteReader<'_>) -> Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
+            #[cfg(debug_assertions)]
+            log::debug!("Handling packet {}", <$pktty>::NAME);
             $code
         }
     };
@@ -75,8 +70,10 @@ macro_rules! gs_handler {
 
 macro_rules! gs_handler_sync {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
-        fn $name(&$self, buf: &mut ByteReader<'_>) -> anyhow::Result<()> {
+        fn $name(&$self, buf: &mut ByteReader<'_>) -> Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
+            #[cfg(debug_assertions)]
+            log::debug!("Handling packet {}", <$pktty>::NAME);
             $code
         }
     };
@@ -85,7 +82,9 @@ macro_rules! gs_handler_sync {
 macro_rules! gs_disconnect {
     ($self:ident, $msg:expr) => {
         $self.terminate();
-        $self.send_packet(&ServerDisconnectPacket { message: $msg }).await?;
+        $self
+            .send_packet_fast(&ServerDisconnectPacket { message: $msg })
+            .await?;
         return Ok(());
     };
 }
@@ -104,6 +103,26 @@ macro_rules! gs_needauth {
         }
     };
 }
+
+enum PacketHandlingError {
+    Other(String),
+    WrongCryptoBoxState,
+    EncryptionError(String),
+    DecryptionError(String),
+    IOError(io::Error),
+    MalformedMessage,
+    MalformedLoginAttempt,
+    MalformedCiphertext,
+    NoHandler(u16),
+    WebRequestError(reqwest::Error),
+    UnexpectedPlayerData,
+    SystemTimeError(SystemTimeError),
+    SocketSendFailed(io::Error),
+    SocketWouldBlock,
+    UnexpectedCentralResponse,
+}
+
+type Result<T> = core::result::Result<T, PacketHandlingError>;
 
 impl GameServerThread {
     /* public api for the main server */
@@ -154,41 +173,95 @@ impl GameServerThread {
 
     /* private utilities */
 
-    async fn send_packet(&self, packet: &impl Packet) -> anyhow::Result<()> {
+    async fn send_packet<P: Packet>(&self, packet: &P) -> Result<()> {
+        #[cfg(debug_assertions)]
+        log::debug!("Sending {}", P::NAME);
+
         let serialized = self.serialize_packet(packet)?;
         self.send_buffer(serialized.as_bytes()).await
     }
 
-    async fn send_buffer(&self, buffer: &[u8]) -> anyhow::Result<()> {
-        self.game_server.socket.send_to(buffer, self.peer).await?;
+    // fast packet sending with zero heap allocation
+    // packet must implement EncodableWithKnownSize to be fast sendable
+    // it also must **NOT** be encrypted.
+    // on average 2-3x faster than send_packet, even worst case should be faster by a bit
+    async fn send_packet_fast<P: Packet + EncodableWithKnownSize>(&self, packet: &P) -> Result<()> {
+        assert!(
+            !packet.get_encrypted(),
+            "Attempting to fast encode an encrypted packet ({})",
+            P::NAME
+        );
+
+        let to_send: Result<Option<Vec<u8>>> = alloca::with_alloca(PACKET_HEADER_LEN + P::ENCODED_SIZE, move |data| {
+            // safety: 'data' will have garbage data but that is considered safe for all our intents and purposes
+            // as `FastByteBuffer::as_bytes()` will only return what was already written.
+            let data = unsafe {
+                let ptr = data.as_mut_ptr().cast::<u8>();
+                let len = std::mem::size_of_val(data);
+                std::slice::from_raw_parts_mut(ptr, len)
+            };
+
+            let mut buf = FastByteBuffer::new(data);
+            buf.write_u16(packet.get_packet_id());
+            buf.write_bool(false);
+            buf.write_value(packet);
+
+            let send_data = buf.as_bytes();
+            match self.send_buffer_immediate(send_data) {
+                Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(send_data.to_vec())),
+                Err(e) => Err(e),
+                Ok(()) => Ok(None),
+            }
+        });
+
+        if let Some(to_send) = to_send? {
+            self.send_buffer(&to_send).await?;
+        }
+
         Ok(())
     }
 
+    async fn send_buffer(&self, buffer: &[u8]) -> Result<()> {
+        self.game_server
+            .socket
+            .send_to(buffer, self.peer)
+            .await
+            .map(|_size| ())
+            .map_err(PacketHandlingError::SocketSendFailed)
+    }
+
     // attempt to send a buffer immediately to the socket, but if it requires blocking then nuh uh
-    fn send_buffer_immediate(&self, buffer: &[u8]) -> std::io::Result<()> {
+    fn send_buffer_immediate(&self, buffer: &[u8]) -> Result<()> {
         self.game_server
             .socket
             .try_send_to(buffer, std::net::SocketAddr::V4(self.peer))
             .map(|_| ())
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::WouldBlock {
+                    PacketHandlingError::SocketWouldBlock
+                } else {
+                    PacketHandlingError::SocketSendFailed(e)
+                }
+            })
     }
 
-    fn serialize_packet(&self, packet: &impl Packet) -> anyhow::Result<ByteBuffer> {
+    fn serialize_packet<P: Packet>(&self, packet: &P) -> Result<ByteBuffer> {
         let mut buf = ByteBuffer::new();
-        buf.write_u16(packet.get_packet_id());
-        buf.write_bool(packet.get_encrypted());
+        buf.write_u16(P::PACKET_ID);
+        buf.write_bool(P::ENCRYPTED);
 
-        if !packet.get_encrypted() {
+        if !P::ENCRYPTED {
             packet.encode(&mut buf);
             return Ok(buf);
         }
 
         let cbox = self.crypto_box.lock();
 
+        // should never happen
         #[cfg(debug_assertions)]
-        gs_require!(
-            cbox.is_some(),
-            "trying to send an encrypted packet when no cryptobox was initialized"
-        );
+        if !cbox.is_some() {
+            return Err(PacketHandlingError::WrongCryptoBoxState);
+        }
 
         let mut cltxtbuf = ByteBuffer::new();
         packet.encode(&mut cltxtbuf);
@@ -196,7 +269,9 @@ impl GameServerThread {
         let cbox = cbox.as_ref().unwrap();
         let nonce = ChaChaBox::generate_nonce(&mut OsRng);
 
-        let encrypted = cbox.encrypt(&nonce, cltxtbuf.as_bytes())?;
+        let encrypted = cbox
+            .encrypt(&nonce, cltxtbuf.as_bytes())
+            .map_err(|e| PacketHandlingError::EncryptionError(e.to_string()))?;
 
         #[cfg(not(rust_analyzer))] // i am so sorry
         buf.write_bytes(&nonce);
@@ -205,23 +280,11 @@ impl GameServerThread {
         Ok(buf)
     }
 
-    async fn handle_message(&self, message: ServerThreadMessage) -> anyhow::Result<()> {
+    async fn handle_message(&self, message: ServerThreadMessage) -> Result<()> {
         match message {
-            ServerThreadMessage::Packet(data) => match self.handle_packet(&data).await {
-                Ok(()) => {}
-                Err(err) => bail!("failed to handle packet: {err}"),
-            },
-
-            ServerThreadMessage::SmallPacket(data) => match self.handle_packet(&data).await {
-                Ok(()) => {}
-                Err(err) => bail!("failed to handle packet: {err}"),
-            },
-
-            ServerThreadMessage::BroadcastVoice(voice_packet) => match self.send_packet(&*voice_packet).await {
-                Ok(()) => {}
-                Err(err) => bail!("failed to broadcast voice packet: {err}"),
-            },
-
+            ServerThreadMessage::Packet(data) => self.handle_packet(&data).await?,
+            ServerThreadMessage::SmallPacket(data) => self.handle_packet(&data).await?,
+            ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet(&*voice_packet).await?,
             ServerThreadMessage::TerminationNotice(message) => {
                 self.terminate();
                 self.send_packet(&ServerDisconnectPacket { message }).await?;
@@ -233,16 +296,23 @@ impl GameServerThread {
 
     /* packet handlers */
 
-    async fn handle_packet(&self, message: &[u8]) -> anyhow::Result<()> {
+    async fn handle_packet(&self, message: &[u8]) -> Result<()> {
         #[cfg(debug_assertions)]
-        gs_require!(message.len() >= PACKET_HEADER_LEN, "packet is missing a header");
+        if message.len() < PACKET_HEADER_LEN {
+            return Err(PacketHandlingError::MalformedMessage);
+        }
 
         let mut data = ByteReader::from_bytes(message);
 
         let packet_id = data.read_u16()?;
         let encrypted = data.read_bool()?;
 
-        // for optimization, reject the voice packet immediately if the player is blocked from vc
+        // minor optimization
+        if packet_id == PlayerDataPacket::PACKET_ID {
+            return self.handle_player_data(&mut data).await;
+        }
+
+        // also for optimization, reject the voice packet immediately if the player is blocked from vc
         if packet_id == VoicePacket::PACKET_ID {
             let accid = self.account_id.load(Ordering::Relaxed);
             if self.game_server.chat_blocked(accid) {
@@ -251,32 +321,31 @@ impl GameServerThread {
             }
         }
 
-        let cleartext_vec;
+        // reject cleartext credentials
+        if packet_id == LoginPacket::PACKET_ID && !encrypted {
+            return Err(PacketHandlingError::MalformedLoginAttempt);
+        }
+
+        let cleartext_vec: Vec<u8>;
         if encrypted {
+            if message.len() < 24 + PACKET_HEADER_LEN {
+                return Err(PacketHandlingError::MalformedCiphertext);
+            }
+
             let cbox = self.crypto_box.lock();
-
-            gs_require!(
-                cbox.is_some(),
-                "attempting to decode an encrypted packet when no cryptobox was initialized"
-            );
-
-            let encrypted_data = data.read_bytes(data.len() - data.get_rpos())?;
-            let nonce = &encrypted_data[..24];
-            let rest = &encrypted_data[24..];
+            if cbox.is_none() {
+                return Err(PacketHandlingError::WrongCryptoBoxState);
+            }
 
             let cbox = cbox.as_ref().unwrap();
-            cleartext_vec = cbox.decrypt(nonce.into(), rest)?;
 
+            let nonce = &message[PACKET_HEADER_LEN..PACKET_HEADER_LEN + 24];
+            let ciphertext = &message[PACKET_HEADER_LEN + 24..];
+
+            cleartext_vec = cbox
+                .decrypt(nonce.into(), ciphertext)
+                .map_err(|e| PacketHandlingError::DecryptionError(e.to_string()))?;
             data = ByteReader::from_bytes(&cleartext_vec);
-        }
-
-        // minor optimization
-        if packet_id == PlayerDataPacket::PACKET_ID {
-            return self.handle_player_data(&mut data).await;
-        }
-
-        if packet_id == LoginPacket::PACKET_ID && !encrypted {
-            bail!("trying to login with cleartext credentials");
         }
 
         match packet_id {
@@ -296,12 +365,14 @@ impl GameServerThread {
             RequestPlayerListPacket::PACKET_ID => self.handle_request_player_list(&mut data).await,
 
             VoicePacket::PACKET_ID => self.handle_voice(&mut data).await,
-            x => Err(anyhow!("No handler for packet id {x}")),
+            x => Err(PacketHandlingError::NoHandler(x)),
         }
     }
 
+    /* connection related */
+
     gs_handler!(self, handle_ping, PingPacket, packet, {
-        self.send_packet(&PingResponsePacket {
+        self.send_packet_fast(&PingResponsePacket {
             id: packet.id,
             player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
         })
@@ -335,13 +406,15 @@ impl GameServerThread {
             // as ServerThread is now tied to the SocketAddrV4 and not account id like in globed v0
             // erroring here is not a concern, even if the user's game crashes without a disconnect packet,
             // they would have a new randomized port when they restart and this would never fail.
-            gs_require!(cbox.is_none(), "attempting to initialize a cryptobox twice");
+            if cbox.is_some() {
+                return Err(PacketHandlingError::WrongCryptoBoxState);
+            }
 
             let new_box = ChaChaBox::new(&packet.key.pubkey, &self.game_server.secret_key);
             *cbox = Some(new_box);
         }
 
-        self.send_packet(&CryptoHandshakeResponsePacket {
+        self.send_packet_fast(&CryptoHandshakeResponsePacket {
             key: CryptoPublicKey {
                 pubkey: self.game_server.secret_key.public_key().clone(),
             },
@@ -352,7 +425,7 @@ impl GameServerThread {
     gs_handler!(self, handle_keepalive, KeepalivePacket, _packet, {
         gs_needauth!(self);
 
-        self.send_packet(&KeepaliveResponsePacket {
+        self.send_packet_fast(&KeepaliveResponsePacket {
             player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
         })
         .await
@@ -370,7 +443,7 @@ impl GameServerThread {
                 account_data.account_id = packet.account_id;
                 account_data.name = format!("Player{}", packet.account_id);
             }
-            self.send_packet(&LoggedInPacket {}).await?;
+            self.send_packet_fast(&LoggedInPacket {}).await?;
             return Ok(());
         }
 
@@ -404,7 +477,10 @@ impl GameServerThread {
             return Ok(());
         }
 
-        let player_name = response.split_once(':').ok_or(anyhow!("central server is drunk"))?.1;
+        let player_name = response
+            .split_once(':')
+            .ok_or(PacketHandlingError::UnexpectedCentralResponse)?
+            .1;
 
         self.game_server.check_already_logged_in(packet.account_id)?;
         self.authenticated.store(true, Ordering::Relaxed);
@@ -431,7 +507,7 @@ impl GameServerThread {
 
         debug!("Login successful from {player_name} ({})", packet.account_id);
 
-        self.send_packet(&LoggedInPacket {}).await?;
+        self.send_packet_fast(&LoggedInPacket {}).await?;
 
         Ok(())
     });
@@ -497,19 +573,20 @@ impl GameServerThread {
 
         let level_id = self.level_id.load(Ordering::Relaxed);
         if level_id == 0 {
-            bail!("player sending PlayerDataPacket when not on a level");
+            return Err(PacketHandlingError::UnexpectedPlayerData);
         }
 
         let account_id = self.account_id.load(Ordering::Relaxed);
 
-        let retval = {
+        let retval: Result<Option<Vec<u8>>> = {
             let mut pm = self.game_server.state.player_manager.lock();
             pm.set_player_data(account_id, &packet.data);
 
             // this unwrap should be safe
-            let players = pm.get_players_on_level(level_id).unwrap();
+            let written_players = pm.get_player_count_on_level(level_id).unwrap() - 1;
+            drop(pm);
 
-            let calc_size = PACKET_HEADER_LEN + 4 + ((players.len() - 1) * AssociatedPlayerData::encoded_size());
+            let calc_size = PACKET_HEADER_LEN + 4 + (written_players * AssociatedPlayerData::ENCODED_SIZE);
 
             alloca::with_alloca(calc_size, move |data| {
                 // safety: 'data' will have garbage data but that is considered safe for all our intents and purposes
@@ -525,33 +602,35 @@ impl GameServerThread {
                 // dont actually do this anywhere else please
                 buf.write_u16(LevelDataPacket::PACKET_ID);
                 buf.write_bool(false);
-                buf.write_u32(players.len() as u32 - 1); // minus ourselves
+                buf.write_u32(written_players as u32);
 
-                for player in &players {
-                    if player.account_id == account_id {
-                        continue;
-                    }
-
-                    buf.write_value(*player);
-                }
+                // this is scary
+                self.game_server.state.player_manager.lock().for_each_player_on_level(
+                    level_id,
+                    |player, buf| {
+                        // we do additional length check because player count may have changed since 1st lock
+                        // NOTE: this assumes encoded size of AssociatedPlayerData is a constant
+                        // change this to something else if that won't be true in the future
+                        if buf.len() != buf.capacity() && player.account_id != account_id {
+                            buf.write_value(player);
+                        }
+                    },
+                    &mut buf,
+                );
 
                 let data = buf.as_bytes();
-
-                // see if we can send it right there and then
-                let retval: Result<Option<Vec<u8>>, anyhow::Error> = match self.send_buffer_immediate(data) {
+                match self.send_buffer_immediate(data) {
                     // if we cant send without blocking, accept our defeat and clone the data to a vec
-                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(Some(data.to_vec())),
+                    Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(data.to_vec())),
                     // if another error occured, propagate it up
-                    Err(e) => Err(e.into()),
+                    Err(e) => Err(e),
                     // if all good, do nothing
                     Ok(()) => Ok(None),
-                };
-
-                retval
+                }
             })
-        }?;
+        };
 
-        if let Some(data) = retval {
+        if let Some(data) = retval? {
             debug!("fast PlayerData response failed, issuing a blocking call");
             self.send_buffer(&data).await?;
         }
@@ -600,4 +679,50 @@ impl GameServerThread {
 
         Ok(())
     });
+}
+
+impl From<anyhow::Error> for PacketHandlingError {
+    fn from(value: anyhow::Error) -> Self {
+        PacketHandlingError::Other(value.to_string())
+    }
+}
+
+impl From<reqwest::Error> for PacketHandlingError {
+    fn from(value: reqwest::Error) -> Self {
+        PacketHandlingError::WebRequestError(value)
+    }
+}
+
+impl From<SystemTimeError> for PacketHandlingError {
+    fn from(value: SystemTimeError) -> Self {
+        PacketHandlingError::SystemTimeError(value)
+    }
+}
+
+impl From<std::io::Error> for PacketHandlingError {
+    fn from(value: std::io::Error) -> Self {
+        PacketHandlingError::IOError(value)
+    }
+}
+
+impl Display for PacketHandlingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Other(msg) => f.write_str(msg),
+            Self::IOError(msg) => f.write_fmt(format_args!("IO Error: {msg}")),
+            Self::WrongCryptoBoxState => f.write_str("wrong crypto box state for the given operation"),
+            Self::EncryptionError(msg) => f.write_fmt(format_args!("Encryption failed: {msg}")),
+            Self::DecryptionError(msg) => f.write_fmt(format_args!("Decryption failed: {msg}")),
+            Self::MalformedCiphertext => f.write_str("malformed ciphertext in an encrypted packet"),
+            Self::MalformedMessage => f.write_str("malformed message structure"),
+            Self::MalformedLoginAttempt => f.write_str("malformed login attempt"),
+            Self::NoHandler(id) => f.write_fmt(format_args!("no packet handler for packet ID {id}")),
+            Self::WebRequestError(msg) => f.write_fmt(format_args!("web request error: {msg}")),
+            Self::UnexpectedPlayerData => f.write_str("received PlayerDataPacket when not on a level"),
+            Self::SystemTimeError(msg) => f.write_fmt(format_args!("system time error: {msg}")),
+            Self::SocketSendFailed(err) => f.write_fmt(format_args!("socket send failed: {err}")),
+            Self::SocketWouldBlock => f.write_str("could not do a non-blocking operation on the socket as it would block"),
+            Self::UnexpectedCentralResponse => f.write_str("got unexpected response from the central server"),
+        }
+    }
 }

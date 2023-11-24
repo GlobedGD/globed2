@@ -37,9 +37,24 @@ impl PlayerManager {
         self.levels.get(&level_id)
     }
 
+    pub fn get_player_count_on_level(&self, level_id: i32) -> Option<usize> {
+        self.levels.get(&level_id).map(FxHashSet::len)
+    }
+
     pub fn get_players_on_level(&self, level_id: i32) -> Option<Vec<&AssociatedPlayerData>> {
         let ids = self.levels.get(&level_id)?;
         Some(ids.iter().filter_map(|&key| self.players.get(&key)).collect())
+    }
+
+    pub fn for_each_player_on_level<F, A>(&self, level_id: i32, f: F, additional: &mut A)
+    where
+        F: Fn(&AssociatedPlayerData, &mut A),
+    {
+        if let Some(ids) = self.levels.get(&level_id) {
+            ids.iter().filter_map(|&key| self.players.get(&key)).for_each(|data| {
+                f(data, additional);
+            });
+        }
     }
 
     pub fn add_to_level(&mut self, level_id: i32, account_id: i32) {

@@ -24,6 +24,7 @@ class CryptoHandshakeStartPacket : public Packet {
         buf.writeU16(protocol);
         buf.writeValue(key);
     }
+    
     GLOBED_PACKET_DECODE_UNIMPL
 
     CryptoHandshakeStartPacket(uint16_t _protocol, CryptoPublicKey _key) : protocol(_protocol), key(_key) {}

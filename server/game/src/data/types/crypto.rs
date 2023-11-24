@@ -19,3 +19,5 @@ decode_impl!(CryptoPublicKey, buf, {
         pubkey: PublicKey::from_bytes(key),
     })
 });
+
+size_calc_impl!(CryptoPublicKey, KEY_SIZE);
