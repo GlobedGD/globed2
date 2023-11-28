@@ -36,7 +36,7 @@ public:
     bool waitForMessages(std::chrono::seconds timeout) {
         std::unique_lock lock(_mtx);
         if (!_iq.empty()) return true;
-        
+
         return _cvar.wait_for(lock, timeout, [this](){ return !_iq.empty(); });
     }
 
@@ -60,7 +60,7 @@ public:
     std::vector<T> popAll() {
         std::vector<T> out;
         std::lock_guard lock(_mtx);
-        
+
         while (!_iq.empty()) {
             out.push_back(_iq.front());
             _iq.pop();
@@ -141,79 +141,6 @@ public:
 private:
     std::shared_ptr<T> data_;
     std::mutex mutex_;
-};
-
-/*
-* WrappingRwLock is a readers-writer lock that holds an objecet
-* and allows you to access it via a RAII lock guard.
-*
-* Multiple threads can read the data at once, but when a thread wants to write,
-* no one else is allowed access.
-*/
-
-template <typename T>
-class WrappingRwLock {
-public:
-    WrappingRwLock() : data_(std::make_shared<T>()), rw_mutex_() {}
-    WrappingRwLock(T obj) : data_(std::make_shared<T>(obj)), rw_mutex_() {}
-
-    class ReadGuard {
-    public:
-        ReadGuard(std::shared_ptr<T> data, std::shared_mutex& rw_mutex) : rw_mutex_(rw_mutex), data_(data) {
-            rw_mutex_.lock_shared();
-        }
-
-        ~ReadGuard() {
-            rw_mutex_.unlock_shared();
-        }
-
-        const T& operator*() const {
-            return *data_;
-        }
-
-        const T* operator->() const {
-            return data_.get();
-        }
-
-    private:
-        std::shared_ptr<T> data_;
-        std::shared_mutex& rw_mutex_;
-    };
-
-    class WriteGuard {
-    public:
-        WriteGuard(std::shared_ptr<T> data, std::shared_mutex& rw_mutex) : rw_mutex_(rw_mutex), data_(data) {
-            rw_mutex_.lock();
-        }
-
-        ~WriteGuard() {
-            rw_mutex_.unlock();
-        }
-
-        T& operator*() {
-            return *data_;
-        }
-
-        T* operator->() {
-            return data_.get();
-        }
-
-    private:
-        std::shared_ptr<T> data_;
-        std::shared_mutex& rw_mutex_;
-    };
-
-    ReadGuard read() {
-        return ReadGuard(data_, rw_mutex_);
-    }
-
-    WriteGuard write() {
-        return WriteGuard(data_, rw_mutex_);
-    }
-
-private:
-    std::shared_ptr<T> data_;
-    mutable std::shared_mutex rw_mutex_;
 };
 
 // simple wrapper around atomics with the default memory order set to relaxed instead of seqcst

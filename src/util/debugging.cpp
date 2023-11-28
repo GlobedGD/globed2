@@ -25,12 +25,12 @@ namespace util::debugging {
             geode::log::debug("Encrypted packets: {} ({} cleartext, ratio: {}%)", totalEncrypted, totalCleartext, encryptedRatio * 100);
             geode::log::debug(
                 "Total bytes transferred: {} ({} sent, {} received)",
-                formatting::formatBytes(totalBytes), 
+                formatting::formatBytes(totalBytes),
                 formatting::formatBytes(totalBytesOut),
                 formatting::formatBytes(totalBytesIn)
             );
             geode::log::debug("Average bytes per packet: {}", formatting::formatBytes(bytesPerPacket));
-            
+
             // sort packets by the counts
             std::vector<std::pair<packetid_t, size_t>> pc(packetCounts.begin(), packetCounts.end());
             std::sort(pc.begin(), pc.end(), [](const auto& a, const auto& b) {
@@ -49,7 +49,7 @@ namespace util::debugging {
 
         for (auto& log : queue.extract()) {
             summary.total++;
-            
+
             summary.totalBytes += log.bytes;
             if (log.outgoing) {
                 summary.totalOut++;
@@ -58,7 +58,7 @@ namespace util::debugging {
                 summary.totalIn++;
                 summary.totalBytesIn += log.bytes;
             }
-            
+
             log.encrypted ? summary.totalEncrypted++ : summary.totalCleartext++;
 
             if (!summary.packetCounts.contains(log.id)) {
@@ -101,7 +101,7 @@ namespace util::debugging {
             + std::string(loc.function_name())
             + ")";
     }
-    
+
     [[noreturn]] void suicide(const std::source_location loc) {
         GLOBED_REQUIRE_LOG("suicide called at " + sourceLocation(loc) + ", terminating.");
 		GLOBED_REQUIRE_LOG("If you see this, something very, very bad happened.");
@@ -120,6 +120,6 @@ namespace util::debugging {
 #endif
 
     void timedLog(const std::string& message) {
-        geode::log::info("[{}] {}", util::formatting::formatDateTime(util::time::now()), message);
+        geode::log::info("\r[{}] [Globed] {}", util::formatting::formatDateTime(util::time::now()), message);
     }
 }

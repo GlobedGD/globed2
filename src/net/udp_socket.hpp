@@ -15,7 +15,7 @@ public:
     int receive(char* buffer, int bufferSize) override;
     bool close() override;
     virtual void disconnect();
-    bool poll(long msDelay) override;
+    bool poll(int msDelay) override;
 
     util::sync::AtomicBool connected = false;
 protected:

@@ -13,5 +13,5 @@ public:
     void receiveExact(char* buffer, int bufferSize);
     virtual bool close();
     virtual ~Socket();
-    virtual bool poll(long msDelay) = 0;
+    virtual bool poll(int msDelay) = 0;
 };

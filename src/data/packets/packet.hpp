@@ -6,8 +6,9 @@ using packetid_t = uint16_t;
 #define GLOBED_PACKET(id,enc) \
     public: \
     static constexpr packetid_t PACKET_ID = id; \
+    static constexpr bool ENCRYPTED = enc; \
     packetid_t getPacketId() const override { return this->PACKET_ID; } \
-    bool getEncrypted() const override { return enc; }
+    bool getEncrypted() const override { return this->ENCRYPTED; }
 
 #define GLOBED_PACKET_ENCODE_UNIMPL \
     GLOBED_PACKET_ENCODE { \

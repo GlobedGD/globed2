@@ -47,7 +47,7 @@ class VoiceBroadcastPacket : public Packet {
     GLOBED_PACKET(21010, true)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-    
+
 #if GLOBED_VOICE_SUPPORT
     GLOBED_PACKET_DECODE {
         sender = buf.readI32();
@@ -59,4 +59,18 @@ class VoiceBroadcastPacket : public Packet {
 #else
     GLOBED_PACKET_DECODE {}
 #endif // GLOBED_VOICE_SUPPORT
+};
+
+class ChatMessageBroadcastPacket : public Packet {
+    GLOBED_PACKET(21011, true)
+
+    GLOBED_PACKET_ENCODE_UNIMPL
+
+    GLOBED_PACKET_DECODE {
+        sender = buf.readI32();
+        message = buf.readString();
+    }
+
+    int sender;
+    std::string message;
 };

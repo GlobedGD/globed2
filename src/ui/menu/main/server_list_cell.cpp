@@ -87,8 +87,7 @@ void ServerListCell::updateWith(const GameServerView& gsview, bool active) {
                     auto hasToken = !am.authToken.lock()->empty();
 
                     if (hasToken) {
-                        NetworkManager::get().connect(this->gsview.address.ip, this->gsview.address.port);
-                        sm.setActiveGameServer(this->gsview.id);
+                        NetworkManager::get().connectWithView(this->gsview);
                     } else {
                         this->requestTokenAndConnect();
                     }
@@ -133,10 +132,9 @@ void ServerListCell::requestTokenAndConnect() {
         .postRequest()
         .userAgent(util::net::webUserAgent())
         .fetch(url).text()
-        .then([this, &am, &sm, gsview = this->gsview](const std::string& response) {
+        .then([&am, &sm, gsview = this->gsview](const std::string& response) {
             *am.authToken.lock() = response;
-            NetworkManager::get().connect(gsview.address.ip, gsview.address.port);
-            sm.setActiveGameServer(gsview.id);
+            NetworkManager::get().connectWithView(gsview);
         })
         .expect([&am](const std::string& error) {
             ErrorQueues::get().error(fmt::format(

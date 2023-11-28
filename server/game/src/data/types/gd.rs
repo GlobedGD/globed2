@@ -1,6 +1,6 @@
 use globed_shared::SpecialUser;
 
-use crate::data::bytebufferext::*;
+use crate::data::{bytebufferext::*, FastString};
 
 use super::Color3B;
 
@@ -49,6 +49,7 @@ encode_impl!(PlayerIconData, buf, self, {
     buf.write_i16(self.spider);
     buf.write_i16(self.swing);
     buf.write_i16(self.jetpack);
+
     buf.write_i16(self.death_effect);
     buf.write_i16(self.color1);
     buf.write_i16(self.color2);
@@ -83,6 +84,8 @@ decode_impl!(PlayerIconData, buf, {
     })
 });
 
+size_calc_impl!(PlayerIconData, size_of_types!(i16) * 12);
+
 impl PlayerIconData {
     pub fn is_valid(&self) -> bool {
         // TODO icon ids validation and stuff.. or not?
@@ -106,10 +109,12 @@ impl Default for SpecialUserData {
 }
 
 encode_impl!(SpecialUserData, buf, self, {
-    buf.write_color3(self.name_color);
+    buf.write(&self.name_color);
 });
 
 decode_unimpl!(SpecialUserData);
+
+size_calc_impl!(SpecialUserData, size_of_types!(Color3B));
 
 impl TryFrom<SpecialUser> for SpecialUserData {
     type Error = anyhow::Error;
@@ -125,19 +130,24 @@ impl TryFrom<SpecialUser> for SpecialUserData {
 #[derive(Clone, Default)]
 pub struct PlayerAccountData {
     pub account_id: i32,
-    pub name: String,
+    pub name: FastString<MAX_NAME_SIZE>,
     pub icons: PlayerIconData,
     pub special_user_data: Option<SpecialUserData>,
 }
 
 encode_impl!(PlayerAccountData, buf, self, {
     buf.write_i32(self.account_id);
-    buf.write_string(&self.name);
-    buf.write_value(&self.icons);
-    buf.write_optional_value(self.special_user_data.as_ref());
+    buf.write(&self.name);
+    buf.write(&self.icons);
+    buf.write(&self.special_user_data);
 });
 
 decode_unimpl!(PlayerAccountData);
+
+size_calc_impl!(
+    PlayerAccountData,
+    size_of_types!(i32, FastString<MAX_NAME_SIZE>, PlayerIconData, Option<SpecialUserData>)
+);
 
 /* PlayerData */
 
@@ -160,7 +170,7 @@ pub struct AssociatedPlayerData {
 
 encode_impl!(AssociatedPlayerData, buf, self, {
     buf.write_i32(self.account_id);
-    buf.write_value(&self.data);
+    buf.write(&self.data);
 });
 
-size_calc_impl!(AssociatedPlayerData, size_of_types!(i32) + PlayerData::ENCODED_SIZE);
+size_calc_impl!(AssociatedPlayerData, size_of_types!(i32, PlayerData));

@@ -10,7 +10,7 @@ The central server uses a single JSON file for configuration. By default, the fi
 
 ### Central server configuration
 
-The central server allows for configuration hot reloading, so you can modify the file and see updates in real time without restarting the server.
+The central server allows configuration hot reloading, so you can modify the file and see updates in real time without restarting the server.
 
 Note that the server is written with security in mind, so many of those options may not be exactly interesting for you. If you are hosting a small server for your friends then the defaults should be good enough, however if you are hosting a big public server, it is recommended that you adjust the settings accordingly.
 
@@ -22,7 +22,7 @@ Note that the server is written with security in mind, so many of those options 
 | `special_users` | `{}` | ✅<sup>**</sup> | Each entry has the account ID as the key and an object with properties `name` and `color` as the value. The `color` property is used for changing the color of the name for this user |
 | `game_servers` | `[]` | ✅ | Each object has 4 keys: `id` (must be a unique string), `name`, `address` (in format `ip:port`), `region` |
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
-| `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed access |
+| `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed to connect |
 | `no_chat_list` | `[]` | ✅<sup>**</sup> | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `challenge_level` accordingly if you enable this setting |
 | `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for GDPS owners |
@@ -51,7 +51,7 @@ To bridge the servers together, you must use the password from the `game_server_
 
 # on linux remember to replace `set` with `export` and all that
 set GLOBED_GS_ADDRESS=0.0.0.0:41001
-set GLOBED_GS_CENTRAL_URL=http://127.0.0.1:41000 
+set GLOBED_GS_CENTRAL_URL=http://127.0.0.1:41000
 set GLOBED_GS_CENTRAL_PASSWORD=password
 ./globed-game-server.exe
 ```

@@ -23,12 +23,12 @@ packet!(CryptoHandshakeResponsePacket, 20001, false, {
 });
 
 encode_impl!(CryptoHandshakeResponsePacket, buf, self, {
-    buf.write_value(&self.key);
+    buf.write(&self.key);
 });
 
 decode_unimpl!(CryptoHandshakeResponsePacket);
 
-size_calc_impl!(CryptoHandshakeResponsePacket, CryptoPublicKey::ENCODED_SIZE);
+size_calc_impl!(CryptoHandshakeResponsePacket, size_of_types!(CryptoPublicKey));
 
 /* KeepaliveResponsePacket - 20002 */
 
@@ -47,16 +47,16 @@ size_calc_impl!(KeepaliveResponsePacket, size_of_types!(u32));
 /* ServerDisconnectPacket - 20003 */
 
 packet!(ServerDisconnectPacket, 20003, false, {
-    message: String
+    message: FastString<MAX_NOTICE_SIZE>
 });
 
 encode_impl!(ServerDisconnectPacket, buf, self, {
-    buf.write_string(&self.message);
+    buf.write(&self.message);
 });
 
 decode_unimpl!(ServerDisconnectPacket);
 
-size_calc_impl!(ServerDisconnectPacket, MAX_ENCODED_STRING_SIZE);
+size_calc_impl!(ServerDisconnectPacket, MAX_NOTICE_SIZE);
 
 /* LoggedInPacket - 20004 */
 
@@ -65,28 +65,28 @@ empty_server_packet!(LoggedInPacket, 20004);
 /* LoginFailedPacket - 20005 */
 
 packet!(LoginFailedPacket, 20005, false, {
-    message: String
+    message: FastString<MAX_NOTICE_SIZE>
 });
 
 encode_impl!(LoginFailedPacket, buf, self, {
-    buf.write_string(&self.message);
+    buf.write(&self.message);
 });
 
 decode_unimpl!(LoginFailedPacket);
 
-size_calc_impl!(LoginFailedPacket, MAX_ENCODED_STRING_SIZE);
+size_calc_impl!(LoginFailedPacket, MAX_NOTICE_SIZE);
 
 /* ServerNoticePacket - 20006 */
 // used to communicate a simple message to the user
 
-packet!(ServerNoticePacket, 20006, true, {
-    message: String
+packet!(ServerNoticePacket, 20006, false, {
+    message: FastString<MAX_NOTICE_SIZE>
 });
 
 encode_impl!(ServerNoticePacket, buf, self, {
-    buf.write_string(&self.message);
+    buf.write(&self.message);
 });
 
 decode_unimpl!(ServerNoticePacket);
 
-size_calc_impl!(ServerNoticePacket, MAX_ENCODED_STRING_SIZE);
+size_calc_impl!(ServerNoticePacket, MAX_NOTICE_SIZE);

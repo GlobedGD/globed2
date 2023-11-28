@@ -1,7 +1,6 @@
 #include "network_manager.hpp"
 
 #include <data/packets/all.hpp>
-#include <managers/server_manager.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/account_manager.hpp>
 #include <util/net.hpp>
@@ -21,12 +20,13 @@ NetworkManager::NetworkManager() {
     // add builtin listeners
 
     addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
-        this->gameSocket.box->setPeerKey(packet->data.key.data());
+        gameSocket.box->setPeerKey(packet->data.key.data());
         _established = true;
         // and lets try to login!
         auto& am = GlobedAccountManager::get();
         auto authtoken = *am.authToken.lock();
-        this->send(LoginPacket::create(am.gdData.lock()->accountId, authtoken));
+        auto gddata = am.gdData.lock();
+        this->send(LoginPacket::create(gddata->accountId, gddata->accountName, authtoken));
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
@@ -62,13 +62,13 @@ NetworkManager::NetworkManager() {
 
 NetworkManager::~NetworkManager() {
     // clear listeners
-    removeAllListeners();
+    this->removeAllListeners();
     builtinListeners.lock()->clear();
 
     // wait for threads
     _running = false;
 
-    if (connected()) {
+    if (this->connected()) {
         log::debug("disconnecting from the server..");
         this->disconnect();
     }
@@ -86,14 +86,14 @@ NetworkManager::~NetworkManager() {
 }
 
 void NetworkManager::connect(const std::string& addr, unsigned short port) {
-    if (connected()) {
+    if (this->connected()) {
         this->disconnect(false);
     }
 
     lastReceivedPacket = chrono::system_clock::now();
 
     GLOBED_REQUIRE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
-    
+
     GLOBED_REQUIRE(gameSocket.connect(addr, port), "failed to connect to the server")
     gameSocket.createBox();
 
@@ -101,8 +101,18 @@ void NetworkManager::connect(const std::string& addr, unsigned short port) {
     this->send(packet);
 }
 
+void NetworkManager::connectWithView(const GameServerView& gsview) {
+    try {
+        this->connect(gsview.address.ip, gsview.address.port);
+        GlobedServerManager::get().setActiveGameServer(gsview.id);
+    } catch (const std::exception& e) {
+        this->disconnect(true);
+        ErrorQueues::get().error(std::string("Connection failed: ") + e.what());
+    }
+}
+
 void NetworkManager::disconnect(bool quiet) {
-    if (!connected()) {
+    if (!this->connected()) {
         return;
     }
 
@@ -121,7 +131,7 @@ void NetworkManager::disconnect(bool quiet) {
 }
 
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
-    GLOBED_REQUIRE(connected(), "tried to send a packet while disconnected")
+    GLOBED_REQUIRE(this->connected(), "tried to send a packet while disconnected")
     packetQueue.push(packet);
 }
 
@@ -261,13 +271,13 @@ void NetworkManager::maybeSendKeepalive() {
 // Disconnects from the server if there has been no response for a while
 void NetworkManager::maybeDisconnectIfDead() {
     auto now = chrono::system_clock::now();
-    if (connected() && (now - lastReceivedPacket) > DISCONNECT_AFTER) {
+    if (this->connected() && (now - lastReceivedPacket) > DISCONNECT_AFTER) {
         ErrorQueues::get().error("The server you were connected to is not responding to any requests. <cy>You have been disconnected.</c>");
         this->disconnect();
     }
 }
 
-PollBothResult NetworkManager::pollBothSockets(long msDelay) {
+PollBothResult NetworkManager::pollBothSockets(int msDelay) {
     PollBothResult out;
 
     GLOBED_SOCKET_POLLFD fds[2];
@@ -278,7 +288,7 @@ PollBothResult NetworkManager::pollBothSockets(long msDelay) {
     fds[1].fd = pingSocket.socket_;
     fds[1].events = POLLIN;
 
-    int result = GLOBED_SOCKET_POLL(fds, 2, (int)msDelay);
+    int result = GLOBED_SOCKET_POLL(fds, 2, msDelay);
 
     if (result == -1) {
         util::net::throwLastError();
@@ -304,9 +314,9 @@ bool NetworkManager::connected() {
 }
 
 bool NetworkManager::established() {
-    return connected() && _established;
+    return this->connected() && _established;
 }
 
 bool NetworkManager::authenticated() {
-    return established() && _loggedin;
+    return this->established() && _loggedin;
 }

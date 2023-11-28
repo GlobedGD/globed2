@@ -14,7 +14,7 @@ decode_unimpl!(PlayerProfilesPacket);
 
 /* LevelDataPacket - 21001
 * For optimization reasons, LevelDataPacket cannot be dynamically dispatched, and isn't defined here
-* It is directly serialized in the packet handler in server_thread.rs.
+* It is directly serialized in the packet handler in server_thread/handlers/game.rs.
 */
 
 empty_server_packet!(LevelDataPacket, 21001);
@@ -35,12 +35,28 @@ decode_unimpl!(PlayerListPacket);
 
 packet!(VoiceBroadcastPacket, 21010, true, {
     player_id: i32,
-    data: EncodedAudioFrame,
+    data: FastEncodedAudioFrame,
 });
 
 encode_impl!(VoiceBroadcastPacket, buf, self, {
     buf.write_i32(self.player_id);
-    buf.write_value(&self.data);
+    buf.write(&self.data);
 });
 
 decode_unimpl!(VoiceBroadcastPacket);
+
+/* ChatMessageBroadcastPacket - 21011 */
+
+packet!(ChatMessageBroadcastPacket, 21011, true, {
+    player_id: i32,
+    message: FastString<MAX_MESSAGE_SIZE>,
+});
+
+encode_impl!(ChatMessageBroadcastPacket, buf, self, {
+    buf.write_i32(self.player_id);
+    buf.write(&self.message);
+});
+
+decode_unimpl!(ChatMessageBroadcastPacket);
+
+size_calc_impl!(ChatMessageBroadcastPacket, size_of_types!(i32, FastString<MAX_MESSAGE_SIZE>));

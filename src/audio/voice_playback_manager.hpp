@@ -10,6 +10,7 @@
 /*
 * VoicePlaybackManager is responsible for playing voices of multiple people
 * at the same time efficiently and without memory leaks.
+* Not thread safe.
 */
 class VoicePlaybackManager {
 public:
@@ -18,8 +19,10 @@ public:
     ~VoicePlaybackManager();
 
     void playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
+    void stopAllStreams();
 
-    void releaseStaleSounds();
+    void prepareStream(int playerId);
+    void removeStream(int playerId);
 
 private:
     std::unordered_map<int, std::unique_ptr<AudioStream>> streams;

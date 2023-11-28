@@ -21,6 +21,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
 #if GLOBED_VOICE_SUPPORT
         PACKET(VoiceBroadcastPacket);
 #endif
+        PACKET(ChatMessageBroadcastPacket);
 
         default:
             return std::shared_ptr<Packet>(nullptr);

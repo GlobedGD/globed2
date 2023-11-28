@@ -1,6 +1,6 @@
 use std::{
     sync::{atomic::Ordering, Arc},
-    time::SystemTime,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use crate::{
@@ -12,22 +12,27 @@ use log::{debug, warn};
 use super::{gs_disconnect, gs_handler, gs_needauth};
 use crate::data::*;
 
+/// max voice throughput in kb/s
+const MAX_VOICE_THROUGHPUT: usize = 8;
+/// max voice packet size in bytes
+pub const MAX_VOICE_PACKET_SIZE: usize = 4096;
+
 impl GameServerThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
         gs_needauth!(self);
 
-        let mut account_data = self.account_data.lock();
-        account_data.icons.clone_from(&packet.icons);
+        self.account_data.lock().icons.clone_from(&packet.icons);
         Ok(())
     });
 
     gs_handler!(self, handle_request_profiles, RequestProfilesPacket, packet, {
         gs_needauth!(self);
 
-        self.send_packet(&PlayerProfilesPacket {
-            profiles: self.game_server.gather_profiles(&packet.ids),
-        })
-        .await
+        let profiles = self.game_server.gather_profiles(&packet.ids);
+        let encoded_size = size_of_types!(PlayerAccountData) * profiles.len();
+
+        self.send_packet_fast_rough(&PlayerProfilesPacket { profiles }, encoded_size)
+            .await
     });
 
     gs_handler!(self, handle_level_join, LevelJoinPacket, packet, {
@@ -86,7 +91,7 @@ impl GameServerThread {
 
             drop(pm);
 
-            let calc_size = PacketHeader::SIZE + 4 + (written_players * AssociatedPlayerData::ENCODED_SIZE);
+            let calc_size = size_of_types!(PacketHeader, u32) + size_of_types!(AssociatedPlayerData) * written_players;
 
             alloca::with_alloca(calc_size, move |data| {
                 // safety: 'data' will have garbage data but that is considered safe for all our intents and purposes
@@ -140,10 +145,11 @@ impl GameServerThread {
     gs_handler!(self, handle_request_player_list, RequestPlayerListPacket, _packet, {
         gs_needauth!(self);
 
-        self.send_packet(&PlayerListPacket {
-            profiles: self.game_server.gather_all_profiles(),
-        })
-        .await
+        let profiles = self.game_server.gather_all_profiles();
+        let encoded_size = size_of_types!(PlayerAccountData) * profiles.len();
+
+        self.send_packet_fast_rough(&PlayerListPacket { profiles }, encoded_size)
+            .await
     });
 
     gs_handler!(self, handle_voice, VoicePacket, packet, {
@@ -153,17 +159,27 @@ impl GameServerThread {
 
         // check the throughput
         {
-            let mut last_voice_packet = self.last_voice_packet.lock();
-            let now = SystemTime::now();
-            let passed_time = now.duration_since(*last_voice_packet)?.as_millis();
-            *last_voice_packet = now;
+            let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as u64;
+            let last_voice_packet = self.last_voice_packet.swap(now, Ordering::Relaxed);
+            let mut passed_time = now - last_voice_packet;
 
-            let total_size = packet.data.opus_frames.iter().map(Vec::len).sum::<usize>();
+            if passed_time == 0 {
+                passed_time = 1;
+            }
 
-            let throughput = total_size / passed_time as usize; // in kb/s
+            let total_size = packet.data.data.len();
 
-            debug!("voice packet throughput: {}kb/s", throughput);
-            if throughput > 8 {
+            // let total_size = packet
+            //     .data
+            //     .opus_frames
+            //     .iter()
+            //     .filter_map(|opt| opt.as_ref())
+            //     .map(Vec::len)
+            //     .sum::<usize>();
+
+            let throughput = total_size / passed_time as usize; // in kb per second
+
+            if throughput > MAX_VOICE_THROUGHPUT {
                 warn!("rejecting a voice packet, throughput above the limit: {}kb/s", throughput);
                 return Ok(());
             }
@@ -171,10 +187,27 @@ impl GameServerThread {
 
         let vpkt = Arc::new(VoiceBroadcastPacket {
             player_id: accid,
-            data: packet.data.clone(),
+            data: packet.data,
         });
 
-        self.game_server.broadcast_voice_packet(&vpkt)?;
+        self.game_server
+            .broadcast_voice_packet(&vpkt, self.level_id.load(Ordering::Relaxed))?;
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_chat_message, ChatMessagePacket, packet, {
+        gs_needauth!(self);
+
+        let accid = self.account_id.load(Ordering::Relaxed);
+
+        let cpkt = ChatMessageBroadcastPacket {
+            player_id: accid,
+            message: packet.message,
+        };
+
+        self.game_server
+            .broadcast_chat_packet(&cpkt, self.level_id.load(Ordering::Relaxed))?;
 
         Ok(())
     });

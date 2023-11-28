@@ -7,7 +7,7 @@
 #include <data/bytebuffer.hpp>
 #include <opus.h>
 
-const size_t VOICE_MAX_BYTES_IN_FRAME = 1500; // TODO ??? adjust later
+const size_t VOICE_MAX_BYTES_IN_FRAME = 1000; // on avg 200 bytes but y'know, just in case
 
 class EncodedOpusData {
 public:

@@ -47,8 +47,19 @@ bool GlobedSignupPopup::setup() {
 
             this->onChallengeCreated(levelId, part2);
         })
-        .expect([this](const std::string& error) {
-            this->onFailure("Creating challenge failed: <cy>" + error + "</c>");
+        .expect([this](std::string error) {
+            if (error.empty()) {
+                this->onFailure("Creating challenge failed: server sent an empty response.");
+            } else {
+                // prettify the error a bit
+                if (error.find("<!DOCTYPE html>") != std::string::npos) {
+                    error = "<HTML response, not showing>";
+                } else if (error.size() > 64) {
+                    error = error.substr(0, 64) + "...";
+                }
+
+                this->onFailure("Creating challenge failed: <cy>" + error + "</c>");
+            }
         })
         .send();
 
@@ -131,8 +142,18 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
                 GameLevelManager::get()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
             }
         })
-        .expect([this](const std::string& error) {
-            this->onFailure("Verifying challenge failed: <cy>" + error + "</c>");
+        .expect([this](std::string error) {
+            if (error.empty()) {
+                this->onFailure("Verifying challenge failed: server sent an empty response.");
+            } else {
+                // prettify the error a bit
+                if (error.find("<!DOCTYPE html>") != std::string::npos) {
+                    error = "<HTML response, not showing>";
+                } else if (error.size() > 64) {
+                    error = error.substr(0, 64) + "...";
+                }
+                this->onFailure("Verifying challenge failed: <cy>" + error + "</c>");
+            }
         })
         .send();
 }

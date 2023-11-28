@@ -33,7 +33,7 @@ bool GlobedMenuLayer::init() {
         .parent(this)
         .id("server-list"_spr)
         .store(listLayer);
-    
+
     listLayer->setPosition({winsize / 2 - listLayer->getScaledContentSize() / 2});
 
     Build<GlobedSignupLayer>::create()
@@ -95,7 +95,7 @@ CCArray* GlobedMenuLayer::createServerList() {
 
     auto& nm = NetworkManager::get();
     auto& sm = GlobedServerManager::get();
-    
+
     bool authenticated = nm.authenticated();
 
     auto activeServer = sm.getActiveGameServer();
@@ -121,17 +121,19 @@ void GlobedMenuLayer::refreshServerList(float _) {
     listLayer->setVisible(true);
     signupLayer->setVisible(false);
 
-    // if there are pending changes, hard refresh the list
+    // if there are pending changes, hard refresh the list and ping all servers
     auto& sm = GlobedServerManager::get();
-    if (sm.pendingChanges.load(std::memory_order::relaxed)) {
-        sm.pendingChanges.store(false, std::memory_order::relaxed);
+    if (sm.pendingChanges) {
+        sm.pendingChanges = false;
 
         listLayer->m_listView->removeFromParent();
-        
+
         auto serverList = createServerList();
         listLayer->m_listView = Build<ListView>::create(serverList, ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
             .parent(listLayer)
             .collect();
+
+        this->pingServers(0.f);
 
         return;
     }
@@ -146,7 +148,7 @@ void GlobedMenuLayer::refreshServerList(float _) {
     auto active = sm.getActiveGameServer();
 
     bool authenticated = NetworkManager::get().authenticated();
-    
+
     for (auto* obj : CCArrayExt<CCNode>(listCells)) {
         auto slc = static_cast<ServerListCell*>(obj->getChildren()->objectAtIndex(2));
         auto server = sm.getGameServer(slc->gsview.id);
@@ -181,6 +183,7 @@ void GlobedMenuLayer::requestServerList() {
                 }
             } catch (const std::exception& e) {
                 ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", e.what());
+                sm.clearGameServers();
             }
         })
         .expect([](auto error) {

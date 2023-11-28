@@ -91,7 +91,7 @@ pub trait PacketMetadata {
 }
 
 pub struct PacketHeader {
-    pub packet_id: u16,
+    pub packet_id: PacketId,
     pub encrypted: bool,
 }
 
@@ -104,7 +104,7 @@ impl PacketHeader {
         }
     }
 
-    pub const SIZE: usize = std::mem::size_of::<PacketId>() + std::mem::size_of::<bool>();
+    pub const SIZE: usize = size_of_types!(PacketId, bool);
 }
 
 encode_impl!(PacketHeader, buf, self, {
@@ -117,3 +117,5 @@ decode_impl!(PacketHeader, buf, {
     let encrypted = buf.read_bool()?;
     Ok(Self { packet_id, encrypted })
 });
+
+size_calc_impl!(PacketHeader, PacketHeader::SIZE);

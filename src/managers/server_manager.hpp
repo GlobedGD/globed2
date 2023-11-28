@@ -5,7 +5,6 @@
 #include <util/time.hpp>
 
 #include <unordered_map>
-#include <chrono>
 
 struct GameServerAddress {
     std::string ip;
@@ -78,5 +77,5 @@ private:
         uint32_t activePingId;
     };
 
-    util::sync::WrappingRwLock<InnerData> _data;
+    util::sync::WrappingMutex<InnerData> _data;
 };

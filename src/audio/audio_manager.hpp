@@ -9,8 +9,10 @@
 #include <util/sync.hpp>
 #include "opus_codec.hpp"
 #include "audio_frame.hpp"
+#include "audio_sample_queue.hpp"
 
 using util::sync::WrappingMutex;
+using util::sync::AtomicBool;
 
 struct AudioRecordingDevice {
     int id = -1;
@@ -31,6 +33,11 @@ struct AudioPlaybackDevice {
     int speakerModeChannels;
 };
 
+constexpr size_t VOICE_TARGET_SAMPLERATE = 24000;
+constexpr float VOICE_CHUNK_RECORD_TIME = 0.06f; // the audio buffer that is recorded at once (60ms)
+constexpr size_t VOICE_TARGET_FRAMESIZE = VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_RECORD_TIME; // opus framesize
+
+// This class is not thread safe. At all.
 class GlobedAudioManager {
 public:
     GLOBED_SINGLETON(GlobedAudioManager);
@@ -50,19 +57,29 @@ public:
     // get the current active playback device
     AudioPlaybackDevice getPlaybackDevice();
 
-    // start recording the voice and call the callback
+    // get if the recording device is set
+    bool isRecordingDeviceSet();
+
+    // if the current selected recording/playback is invalid (i.e. disconnected),
+    // it will be reset. if no device is selected or a valid device is selected, nothing happens.
+    void validateDevices();
+
+    // start recording the voice and call the callback once a full frame is ready.
+    // if `stopRecording()` is called at any point, the callback will be called with the remaining data.
+    // in that case it may have less than the full 10 frames.
     void startRecording(std::function<void(const EncodedAudioFrame&)> callback);
+    // tell the audio thread to stop recording
     void stopRecording();
-    // like stopRecording but is safe to call from the callback in startRecording
-    void queueStopRecording();
+    // tell the audio thread to stop recording, don't call the callback with leftover data
+    void haltRecording();
     bool isRecording();
 
-    // play a sound
-    void playSound(FMOD::Sound* sound);
+    // play a sound and return the channel associated with it
+    [[nodiscard]] FMOD::Channel* playSound(FMOD::Sound* sound);
 
     // create a sound from raw PCM data
     [[nodiscard]] FMOD::Sound* createSound(const float* pcm, size_t samples, int sampleRate = VOICE_TARGET_SAMPLERATE);
-    
+
     void setActiveRecordingDevice(int deviceId);
     void setActivePlaybackDevice(int deviceId);
 
@@ -75,28 +92,34 @@ public:
     FMOD::System* getSystem();
 
 private:
-    /* recording*/
+    /* devices */
     AudioRecordingDevice recordDevice;
+    AudioPlaybackDevice playbackDevice; // unused
+
+    /* recording */
+    AtomicBool recordActive = false;
+    AtomicBool recordQueuedStop = false;
+    AtomicBool recordQueuedHalt = false;
     FMOD::Sound* recordSound = nullptr;
-    util::sync::AtomicBool recordActive = false;
     size_t recordChunkSize = 0;
     std::function<void(const EncodedAudioFrame&)> recordCallback;
-    std::mutex recordMutex;
-    util::sync::AtomicBool recordQueuedStop = false;
+    AudioSampleQueue recordQueue;
+    unsigned int recordLastPosition = 0;
+    EncodedAudioFrame recordFrame;
 
     void recordContinueStream();
-
-    AudioPlaybackDevice playbackDevice;
+    void recordInvokeCallback();
+    void internalStopRecording();
 
     /* opus */
     OpusCodec opus;
 
     /* misc */
-    util::sync::AtomicBool _terminating;
+    AtomicBool _terminating = false;
     FMOD::System* cachedSystem = nullptr;
 
     void audioThreadFunc();
-    util::sync::AtomicBool audioThreadSleeping = true;
+    AtomicBool audioThreadSleeping = true;
     std::thread audioThreadHandle;
 };
 

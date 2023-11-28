@@ -68,11 +68,11 @@ AudioRecordingDevice GlobedAudioManager::getRecordingDevice(int deviceId) {
         deviceId, name, 256,
         &device.guid,
         &device.sampleRate,
-        &device.speakerMode, 
+        &device.speakerMode,
         &device.speakerModeChannels,
         &device.driverState
     ), "System::getRecordDriverInfo");
-    
+
     device.id = deviceId;
     device.name = std::string(name);
 
@@ -86,7 +86,7 @@ AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice(int deviceId) {
         deviceId, name, 256,
         &device.guid,
         &device.sampleRate,
-        &device.speakerMode, 
+        &device.speakerMode,
         &device.speakerModeChannels
     ), "System::getDriverInfo");
 
@@ -96,86 +96,137 @@ AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice(int deviceId) {
     return device;
 }
 
+bool GlobedAudioManager::isRecordingDeviceSet() {
+    return recordDevice.id != -1;
+}
+
+void GlobedAudioManager::validateDevices() {
+    if (recordDevice.id != -1) {
+        try {
+            recordDevice = this->getRecordingDevice(recordDevice.id);
+        } catch (const std::exception& e) {
+            geode::log::info("Invalidating recording device {}: {}", recordDevice.id, e.what());
+        }
+    }
+
+    if (playbackDevice.id != -1) {
+        try {
+            playbackDevice = this->getPlaybackDevice(playbackDevice.id);
+        } catch (const std::exception& e) {
+            geode::log::info("Invalidating playback device {}: {}", playbackDevice.id, e.what());
+        }
+    }
+}
+
 void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFrame&)> callback) {
     GLOBED_REQUIRE(this->recordDevice.id >= 0, "no recording device is set")
-    GLOBED_REQUIRE(!isRecording(), "attempting to record when already recording");
+    GLOBED_REQUIRE(!this->isRecording() && !recordActive, "attempting to record when already recording");
 
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
+    // TODO figure it out in 2.2. the size is erroneously calculated as 144 on android.
+#ifdef GLOBED_ANDROID
+    exinfo.cbsize = 140;
+#else
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
+#endif
+
     exinfo.numchannels = 1;
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
     exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
-    exinfo.length = sizeof(float) * exinfo.numchannels * (int)((float)VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_RECORD_TIME);
+    exinfo.length = sizeof(float) * exinfo.defaultfrequency * exinfo.numchannels;
 
     recordChunkSize = exinfo.length;
 
     FMOD_ERR_CHECK(
-        this->getSystem()->createSound(nullptr, FMOD_2D | FMOD_OPENUSER | FMOD_CREATESAMPLE, &exinfo, &recordSound),
+        this->getSystem()->createSound(nullptr, FMOD_2D | FMOD_OPENUSER | FMOD_LOOP_NORMAL, &exinfo, &recordSound),
         "System::createSound"
     );
 
-    std::lock_guard lock(recordMutex);
+    FMOD_ERR_CHECK(
+        this->getSystem()->recordStart(recordDevice.id, recordSound, true),
+        "System::recordStart"
+    );
 
-    recordContinueStream();
-
-    recordActive = true;
+    recordQueuedStop = false;
+    recordQueuedHalt = false;
+    recordLastPosition = 0;
     recordCallback = callback;
+    recordActive = true;
 }
 
-void GlobedAudioManager::stopRecording() {
-    recordMutex.lock();
+void GlobedAudioManager::internalStopRecording() {
+    FMOD_ERR_CHECK(
+        this->getSystem()->recordStop(recordDevice.id),
+        "System::recordStop"
+    );
 
-    recordActive = false;
-    recordCallback = [](const auto& _){};
-
-    recordMutex.unlock();
-
-    // wait for audio thread to finish tasks
-    while (!audioThreadSleeping) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    // if halting instead of stopping, don't call the callback
+    if (recordQueuedHalt) {
+        recordFrame.clear();
+        recordQueuedHalt = false;
+    } else {
+        // call the callback if there's any audio leftover
+        this->recordInvokeCallback();
     }
 
-    std::lock_guard lock(recordMutex);
+    // cleanup
+    recordCallback = [](const auto& _){};
+    recordLastPosition = 0;
+    recordChunkSize = 0;
+    recordQueue.clear();
 
     if (recordSound) {
         recordSound->release();
         recordSound = nullptr;
     }
+
+    recordActive = false;
 }
 
-void GlobedAudioManager::queueStopRecording() {
+void GlobedAudioManager::stopRecording() {
     recordQueuedStop = true;
 }
 
-void GlobedAudioManager::recordContinueStream() {
-    FMOD_ERR_CHECK(
-        this->getSystem()->recordStart(recordDevice.id, recordSound, false),
-        "System::recordStart"
-    );
+void GlobedAudioManager::haltRecording() {
+    recordQueuedStop = true;
+    recordQueuedHalt = true;
 }
 
 bool GlobedAudioManager::isRecording() {
-    GLOBED_REQUIRE(this->recordDevice.id >= 0, "no recording device is set")
+    if (this->recordDevice.id == -1) {
+        return false;
+    }
+
     bool recording;
+
     FMOD_ERR_CHECK(
         this->getSystem()->isRecording(this->recordDevice.id, &recording),
         "System::isRecording"
     );
+
     return recording;
 }
 
-void GlobedAudioManager::playSound(FMOD::Sound* sound) {
+FMOD::Channel* GlobedAudioManager::playSound(FMOD::Sound* sound) {
     FMOD::Channel* ch = nullptr;
     FMOD_ERR_CHECK(
         this->getSystem()->playSound(sound, nullptr, false, &ch),
-        "System::playSound"  
+        "System::playSound"
     );
+
+    return ch;
 }
 
 FMOD::Sound* GlobedAudioManager::createSound(const float* pcm, size_t samples, int sampleRate) {
     FMOD_CREATESOUNDEXINFO exinfo = {};
+    // TODO figure it out in 2.2. the size is erroneously calculated as 144 on android.
+#ifdef GLOBED_ANDROID
+    exinfo.cbsize = 140;
+#else
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
+#endif
+
     exinfo.numchannels = 1;
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
     exinfo.defaultfrequency = sampleRate;
@@ -221,6 +272,10 @@ AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice() {
 }
 
 void GlobedAudioManager::setActiveRecordingDevice(int deviceId) {
+    if (recordDevice.id != -1) {
+        GLOBED_REQUIRE(!this->isRecording(), "attempting to change the recording device while recording")
+    }
+
     recordDevice = this->getRecordingDevice(deviceId);
 }
 
@@ -228,72 +283,95 @@ void GlobedAudioManager::setActivePlaybackDevice(int deviceId) {
     playbackDevice = this->getPlaybackDevice(deviceId);
 }
 
+void GlobedAudioManager::recordInvokeCallback() {
+    if (recordFrame.size() == 0) return;
+
+    try {
+        recordCallback(recordFrame);
+    } catch (const std::exception& e) {
+        ErrorQueues::get().error(std::string("Exception in audio callback: ") + e.what());
+    }
+
+    recordFrame.clear();
+}
 
 void GlobedAudioManager::audioThreadFunc() {
     while (!_terminating) {
+        // if we are not recording right now, sleep
         if (!recordActive) {
             audioThreadSleeping = true;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(25));
             continue;
         }
 
+        // if someone queued us to stop recording, back to sleeping
         if (recordQueuedStop) {
             recordQueuedStop = false;
             audioThreadSleeping = true;
-            stopRecording();
+            this->internalStopRecording();
             continue;
         }
 
         audioThreadSleeping = false;
 
-        if (!this->isRecording()) {
-            // chunk is available, process it
-            std::lock_guard lock(recordMutex);
+        float* pcmData;
+        unsigned int pcmLen;
 
-            EncodedAudioFrame frame;
+        unsigned int pos;
+        FMOD_ERR_CHECK(
+            this->getSystem()->getRecordPosition(recordDevice.id, &pos),
+            "System::getRecordPosition"
+        );
 
-            float* pcmData;
-            unsigned int pcmLen;
+        // if we are at the same position, do nothing
+        if (pos == recordLastPosition) {
+            this->getSystem()->update();
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            continue;
+        }
 
-            FMOD_ERR_CHECK(
-                recordSound->lock(0, recordChunkSize, (void**)&pcmData, nullptr, &pcmLen, nullptr),
-                "Sound::lock"
-            );
+        FMOD_ERR_CHECK(
+            recordSound->lock(0, recordChunkSize, (void**)&pcmData, nullptr, &pcmLen, nullptr),
+            "Sound::lock"
+        );
 
-            float* tmpBuf = new float[pcmLen / sizeof(float)];
-            std::memcpy(tmpBuf, pcmData, pcmLen);
+        if (pos > recordLastPosition) {
+            recordQueue.writeData(pcmData + recordLastPosition, pos - recordLastPosition);
+        } else if (pos < recordLastPosition) { // we have reached the end of the buffer
+            // write the data left at the end
+            recordQueue.writeData(pcmData + recordLastPosition, pcmLen / sizeof(float) - recordLastPosition);
+            // write the data from beginning to current pos
+            recordQueue.writeData(pcmData, pos);
+        }
 
-            FMOD_ERR_CHECK(
-                recordSound->unlock(pcmData, nullptr, pcmLen, 0),
-                "Sound::unlock"
-            );
+        recordLastPosition = pos;
 
-            recordContinueStream();
+        FMOD_ERR_CHECK(
+            recordSound->unlock(pcmData, nullptr, pcmLen, 0),
+            "Sound::unlock"
+        );
+
+        if (recordQueue.size() >= VOICE_TARGET_FRAMESIZE) {
+            float pcmbuf[VOICE_TARGET_FRAMESIZE];
+            recordQueue.copyTo(pcmbuf, VOICE_TARGET_FRAMESIZE);
 
             try {
-                size_t totalOpusFrames = static_cast<float>(VOICE_TARGET_SAMPLERATE) / VOICE_TARGET_FRAMESIZE * VOICE_CHUNK_RECORD_TIME;
-
-                for (size_t i = 0; i < totalOpusFrames; i++) {
-                    const float* dataStart = tmpBuf + i * VOICE_TARGET_FRAMESIZE;
-                    auto encodedFrame = opus.encode(dataStart);
-                    frame.pushOpusFrame(std::move(encodedFrame));
-                }
+                recordFrame.pushOpusFrame(opus.encode(pcmbuf));
             } catch (const std::exception& e) {
-                delete[] tmpBuf;
-                ErrorQueues::get().warn(std::string("Exception in audio thread: ") + e.what());
+                ErrorQueues::get().error(std::string("Exception in audio thread: ") + e.what());
                 continue;
             }
-
-            delete[] tmpBuf;
-
-            try {
-                recordCallback(frame);
-            } catch (const std::exception& e) {
-                ErrorQueues::get().warn(std::string("Exception in audio callback: ") + e.what());
-            }
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
+
+        if (recordFrame.size() >= recordFrame.capacity()) {
+            this->recordInvokeCallback();
+        }
+
+        this->getSystem()->update();
+
+        // TODO maybe do something with this i dunno
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        // std::this_thread::yield();
     }
 }
 

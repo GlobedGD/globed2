@@ -26,6 +26,7 @@ impl GameServerThread {
                     format!(
                         "Outdated server! You are running protocol v{p} while the server is still on v{PROTOCOL_VERSION}.",
                     )
+                    .try_into()?
                 );
             }
             p if p < PROTOCOL_VERSION => {
@@ -33,7 +34,7 @@ impl GameServerThread {
                     self,
                     format!(
                         "Outdated client! Please update the mod in order to connect to the server. Client protocol version: v{p}, server: v{PROTOCOL_VERSION}",
-                    )
+                    ).try_into()?
                 );
             }
             _ => {}
@@ -72,7 +73,7 @@ impl GameServerThread {
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
         if self.game_server.standalone {
-            debug!("Bypassing login for {}", packet.account_id);
+            debug!("Bypassing login for {} ({})", packet.name, packet.account_id);
             self.game_server.check_already_logged_in(packet.account_id)?;
             self.authenticated.store(true, Ordering::Relaxed);
             self.account_id.store(packet.account_id, Ordering::Relaxed);
@@ -80,7 +81,7 @@ impl GameServerThread {
             {
                 let mut account_data = self.account_data.lock();
                 account_data.account_id = packet.account_id;
-                account_data.name = format!("Player{}", packet.account_id);
+                account_data.name = packet.name;
             }
             self.send_packet_fast(&LoggedInPacket {}).await?;
             return Ok(());
@@ -97,7 +98,7 @@ impl GameServerThread {
             .post(url)
             .query(&[
                 ("account_id", packet.account_id.to_string()),
-                ("token", packet.token.clone()),
+                ("token", packet.token.try_into()?),
                 ("pw", self.game_server.config.central_pw.clone()),
             ])
             .send()
@@ -108,10 +109,9 @@ impl GameServerThread {
 
         if !response.starts_with("status_ok:") {
             self.terminate();
-            self.send_packet(&LoginFailedPacket {
-                message: format!("authentication failed: {response}"),
-            })
-            .await?;
+            let mut message = FastString::from_str("authentication failed: ");
+            message.extend_safe(&response);
+            self.send_packet_fast(&LoginFailedPacket { message }).await?;
 
             return Ok(());
         }
@@ -129,7 +129,8 @@ impl GameServerThread {
         {
             let mut account_data = self.account_data.lock();
             account_data.account_id = packet.account_id;
-            account_data.name = player_name.to_string();
+            // we have packet.name but that can be spoofed so we don't trust it in non-standalone mode
+            account_data.name = FastString::from_str(player_name);
 
             let special_user_data = self
                 .game_server

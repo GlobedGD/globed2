@@ -6,7 +6,7 @@ use std::{
 
 use parking_lot::Mutex as SyncMutex;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, bail};
 use crypto_box::{aead::OsRng, SecretKey};
 use globed_shared::GameServerBootData;
 use rustc_hash::FxHashMap;
@@ -18,12 +18,12 @@ use log::{debug, error, info, warn};
 use tokio::net::UdpSocket;
 
 use crate::{
-    data::{packets::server::VoiceBroadcastPacket, types::PlayerAccountData},
+    data::{packets::server::VoiceBroadcastPacket, types::PlayerAccountData, ChatMessageBroadcastPacket, FastString},
     server_thread::{GameServerThread, ServerThreadMessage, SMALL_PACKET_LIMIT},
     state::ServerState,
 };
 
-const MAX_PACKET_SIZE: usize = 8192;
+const MAX_PACKET_SIZE: usize = 16384;
 
 pub struct GameServerConfiguration {
     pub http_client: reqwest::Client,
@@ -32,7 +32,6 @@ pub struct GameServerConfiguration {
 }
 
 pub struct GameServer {
-    pub address: String,
     pub state: ServerState,
     pub socket: UdpSocket,
     pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
@@ -50,14 +49,11 @@ impl GameServer {
         config: GameServerConfiguration,
         standalone: bool,
     ) -> Self {
-        let secret_key = SecretKey::generate(&mut OsRng);
-
         Self {
-            address: address.clone(),
             state,
             socket: UdpSocket::bind(&address).await.unwrap(),
             threads: SyncMutex::new(FxHashMap::default()),
-            secret_key,
+            secret_key: SecretKey::generate(&mut OsRng),
             central_conf: SyncMutex::new(central_conf),
             config,
             standalone,
@@ -65,7 +61,7 @@ impl GameServer {
     }
 
     pub async fn run(&'static self) -> anyhow::Result<()> {
-        info!("Server launched on {}", self.address);
+        info!("Server launched on {}", self.socket.local_addr()?);
 
         if !self.standalone {
             tokio::spawn(async move {
@@ -97,31 +93,73 @@ impl GameServer {
 
     /* various calls for other threads */
 
-    pub fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>) -> anyhow::Result<()> {
-        // TODO dont send it to every single thread in existence
-        let threads: Vec<_> = self.threads.lock().values().cloned().collect();
-        for thread in threads {
-            thread.push_new_message(ServerThreadMessage::BroadcastVoice(vpkt.clone()))?;
+    pub fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: i32) -> anyhow::Result<()> {
+        let pm = self.state.player_manager.lock();
+        let players = pm.get_level(level_id);
+
+        if let Some(players) = players {
+            let threads: Vec<_> = self
+                .threads
+                .lock()
+                .values()
+                .filter(|thread| {
+                    let account_id = thread.account_id.load(Ordering::Relaxed);
+                    account_id != vpkt.player_id && players.contains(&account_id)
+                })
+                .cloned()
+                .collect();
+
+            drop(pm);
+
+            for thread in threads {
+                thread.push_new_message(ServerThreadMessage::BroadcastVoice(vpkt.clone()))?;
+            }
         }
 
         Ok(())
     }
 
+    pub fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: i32) -> anyhow::Result<()> {
+        let pm = self.state.player_manager.lock();
+        let players = pm.get_level(level_id);
+
+        if let Some(players) = players {
+            let threads: Vec<_> = self
+                .threads
+                .lock()
+                .values()
+                .filter(|thread| {
+                    let account_id = thread.account_id.load(Ordering::Relaxed);
+                    account_id != tpkt.player_id && players.contains(&account_id)
+                })
+                .cloned()
+                .collect();
+
+            drop(pm);
+
+            for thread in threads {
+                thread.push_new_message(ServerThreadMessage::BroadcastText(tpkt.clone()))?;
+            }
+        }
+
+        Ok(())
+    }
+
+    // TODO low: look into eliminating heap allocation for these two funcs below
+    // it's just one vec bro it's not that deep
     pub fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
         let threads = self.threads.lock();
 
-        ids.iter()
-            .filter_map(|id| {
-                threads
-                    .values()
-                    .find(|thread| thread.account_id.load(Ordering::Relaxed) == *id)
-                    .map(|thread| thread.account_data.lock().clone())
-            })
+        threads
+            .values()
+            .filter(|thread| ids.contains(&thread.account_id.load(Ordering::Relaxed)))
+            .map(|thread| thread.account_data.lock().clone())
             .collect()
     }
 
     pub fn gather_all_profiles(&'static self) -> Vec<PlayerAccountData> {
         let threads = self.threads.lock();
+
         threads
             .values()
             .filter(|thr| thr.authenticated.load(Ordering::Relaxed))
@@ -134,13 +172,17 @@ impl GameServer {
     }
 
     pub fn check_already_logged_in(&'static self, user_id: i32) -> anyhow::Result<()> {
-        let threads = self.threads.lock();
-        let thread = threads.values().find(|thr| thr.account_id.load(Ordering::Relaxed) == user_id);
+        let thread = self
+            .threads
+            .lock()
+            .values()
+            .find(|thr| thr.account_id.load(Ordering::Relaxed) == user_id)
+            .cloned();
 
         if let Some(thread) = thread {
-            thread.push_new_message(ServerThreadMessage::TerminationNotice(
-                "Someone logged into the same account from a different place.".to_string(),
-            ))?;
+            thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                "Someone logged into the same account from a different place.",
+            )))?;
         }
 
         Ok(())
@@ -152,7 +194,7 @@ impl GameServer {
         let (len, peer) = self.socket.recv_from(buf).await?;
 
         let peer = match peer {
-            SocketAddr::V6(_) => return Err(anyhow!("rejecting request from ipv6 host")),
+            SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
             SocketAddr::V4(x) => x,
         };
 
@@ -169,6 +211,9 @@ impl GameServer {
                 // 1. no messages sent by the peer for 60 seconds
                 // 2. the channel was closed (normally impossible for that to happen)
                 // 3. `thread.terminate()` was called on that thread (due to a disconnect from either side)
+                // additionally, if it panics then the state of the player will be frozen forever,
+                // they won't be removed from levels or the player count and that person won't be able to connect again.
+                // so try to avoid panics please..
                 thread.run().await;
                 log::trace!("removing client: {}", peer);
                 self.post_disconnect_cleanup(&thread, peer);
@@ -183,7 +228,7 @@ impl GameServer {
             let mut smallbuf = [0u8; SMALL_PACKET_LIMIT];
             smallbuf[..len].copy_from_slice(&buf[..len]);
 
-            ServerThreadMessage::SmallPacket(smallbuf)
+            ServerThreadMessage::SmallPacket((smallbuf, len as u16))
         } else {
             ServerThreadMessage::Packet(buf[..len].to_vec())
         };

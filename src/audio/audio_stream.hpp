@@ -4,16 +4,7 @@
 #if GLOBED_VOICE_SUPPORT
 
 #include "audio_frame.hpp"
-
-class AudioSampleQueue {
-public:
-    void writeData(DecodedOpusData data);
-    size_t copyTo(float* dest, size_t samples);
-    size_t size();
-
-private:
-    std::vector<float> buf;
-};
+#include "audio_sample_queue.hpp"
 
 class AudioStream {
 public:
@@ -35,6 +26,7 @@ public:
 
 private:
     FMOD::Sound* sound = nullptr;
+    FMOD::Channel* channel = nullptr;
     AudioSampleQueue queue;
 };
 

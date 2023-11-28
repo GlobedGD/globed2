@@ -39,7 +39,7 @@ public:
     CryptoBox(const CryptoBox&) = delete;
     CryptoBox& operator=(const CryptoBox&) = delete;
     ~CryptoBox();
-    
+
     // Get our public key. The returned pointer lives as long as this `CryptoBox` object does.
     util::data::byte* getPublicKey() noexcept;
 

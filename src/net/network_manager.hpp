@@ -1,6 +1,8 @@
 #pragma once
 #include "game_socket.hpp"
 #include <defs.hpp>
+
+#include <managers/server_manager.hpp>
 #include <util/sync.hpp>
 #include <util/time.hpp>
 
@@ -22,7 +24,7 @@ struct PollBothResult {
     bool hasPing;
 };
 
-// This class is fully thread safe..?
+// This class is fully thread safe..? hell do i know..
 class NetworkManager {
 public:
     using PacketCallback = std::function<void(std::shared_ptr<Packet>)>;
@@ -38,6 +40,8 @@ public:
 
     // Connect to a server
     void connect(const std::string& addr, unsigned short port);
+    // Safer version of `connect`, sets the active game server in `GlobedServerManager` doesn't throw an exception on error
+    void connectWithView(const GameServerView& gsview);
 
     // Disconnect from a server. Does nothing if not connected
     void disconnect(bool quiet = false);
@@ -115,7 +119,7 @@ private:
 
     void maybeSendKeepalive();
     void maybeDisconnectIfDead();
-    PollBothResult pollBothSockets(long msDelay);
+    PollBothResult pollBothSockets(int msDelay);
 
     // Builtin listeners have priority above the others.
     WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;

@@ -79,7 +79,7 @@ class PlayerDataPacket : public Packet {
     GLOBED_PACKET_ENCODE {
         buf.writeValue(data);
     }
-    
+
     GLOBED_PACKET_DECODE_UNIMPL
 
     PlayerDataPacket(const PlayerData& data) : data(data) {}
@@ -116,13 +116,31 @@ class VoicePacket : public Packet {
 
     GLOBED_PACKET_DECODE_UNIMPL
 
-    VoicePacket(std::unique_ptr<EncodedAudioFrame> _frame) : frame(std::move(_frame)) {}
+    VoicePacket(std::shared_ptr<EncodedAudioFrame> _frame) : frame(std::move(_frame)) {}
 
-    static std::shared_ptr<Packet> create(std::unique_ptr<EncodedAudioFrame> frame) {
+    static std::shared_ptr<Packet> create(std::shared_ptr<EncodedAudioFrame> frame) {
         return std::make_shared<VoicePacket>(std::move(frame));
     }
 
-    std::unique_ptr<EncodedAudioFrame> frame;
+    std::shared_ptr<EncodedAudioFrame> frame;
 };
 
 #endif // GLOBED_VOICE_SUPPORT
+
+class ChatMessagePacket : public Packet {
+    GLOBED_PACKET(11011, true)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeString(message);
+    }
+
+    GLOBED_PACKET_DECODE_UNIMPL
+
+    ChatMessagePacket(const std::string& message) : message(message) {}
+
+    static std::shared_ptr<Packet> create(const std::string& message) {
+        return std::make_shared<ChatMessagePacket>(message);
+    }
+
+    std::string message;
+};

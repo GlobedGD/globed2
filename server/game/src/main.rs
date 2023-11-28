@@ -7,11 +7,15 @@
     clippy::wildcard_imports
 )]
 
-use std::{collections::HashMap, error::Error};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+};
 
 use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
 use log::{error, info, warn, LevelFilter};
+use logger::Logger;
 use server::GameServerConfiguration;
 use state::ServerState;
 
@@ -26,7 +30,7 @@ pub mod state;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    log::set_logger(&*logger::LOGGER_INSTANCE).unwrap();
+    log::set_logger(Logger::instance()).unwrap();
 
     if std::env::var("GLOBED_GS_LESS_LOG").unwrap_or("0".to_string()) == "1" {
         log::set_max_level(LevelFilter::Warn);
@@ -100,14 +104,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (gsbd, standalone) = if config.central_url == "none" {
         warn!("Starting in standalone mode, authentication is disabled");
 
-        (
-            GameServerBootData {
-                protocol: PROTOCOL_VERSION,
-                no_chat: Vec::new(),
-                special_users: HashMap::new(),
-            },
-            true,
-        )
+        let gsbd = GameServerBootData {
+            protocol: PROTOCOL_VERSION,
+            no_chat: HashSet::new(),
+            special_users: HashMap::new(),
+        };
+
+        (gsbd, true)
     } else {
         info!("Retrieving config from the central server..");
 
@@ -135,9 +138,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         (boot_data, false)
     };
 
-    let server = Box::leak(Box::new(GameServer::new(host_address, state, gsbd, config, standalone).await));
+    let server = GameServer::new(host_address, state, gsbd, config, standalone).await;
+    let server = Box::leak(Box::new(server));
 
-    server.run().await?;
+    Box::pin(server.run()).await?;
 
     Ok(())
 }

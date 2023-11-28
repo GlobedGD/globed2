@@ -25,7 +25,7 @@ CryptoBox::CryptoBox(byte* key) {
     CRYPTO_ERR_CHECK(func_box_keypair(publicKey, secretKey), "func_box_keypair failed");
 
     if (key != nullptr) {
-        setPeerKey(key);
+        this->setPeerKey(key);
     }
 }
 

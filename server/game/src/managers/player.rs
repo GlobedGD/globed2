@@ -15,37 +15,45 @@ impl PlayerManager {
         }
     }
 
+    /// get a reference to a player's `AssociatedPlayerData` given an account ID
     pub fn get_player(&self, account_id: i32) -> Option<&AssociatedPlayerData> {
         self.players.get(&account_id)
     }
 
+    /// get a `Vec` of references to `AssociatedPlayerData` given a slice of account IDs
     pub fn get_players(&self, account_ids: &[i32]) -> Vec<&AssociatedPlayerData> {
         account_ids.iter().filter_map(|&key| self.players.get(&key)).collect()
     }
 
+    /// set player's data, inserting a new entry if doesn't already exist
     pub fn set_player_data(&mut self, account_id: i32, data: &PlayerData) {
         let entry = self.players.entry(account_id).or_default();
         entry.account_id = account_id;
         entry.data.clone_from(data);
     }
 
+    /// remove the player from the list of players
     pub fn remove_player(&mut self, account_id: i32) {
         self.players.remove(&account_id);
     }
 
+    /// get a reference to a list of account IDs of players on a level given its ID
     pub fn get_level(&self, level_id: i32) -> Option<&FxHashSet<i32>> {
         self.levels.get(&level_id)
     }
 
+    /// get the amount of players on a level given its ID
     pub fn get_player_count_on_level(&self, level_id: i32) -> Option<usize> {
         self.levels.get(&level_id).map(FxHashSet::len)
     }
 
+    /// get a `Vec` of references to `AssociatedPlayerData` with all the players on a level given its ID
     pub fn get_players_on_level(&self, level_id: i32) -> Option<Vec<&AssociatedPlayerData>> {
         let ids = self.levels.get(&level_id)?;
         Some(ids.iter().filter_map(|&key| self.players.get(&key)).collect())
     }
 
+    /// run a function `f` on each player on a level given its ID, with additional data (wink wink it's always gonna be `&mut FastByteBuffer`)
     pub fn for_each_player_on_level<F, A>(&self, level_id: i32, f: F, additional: &mut A)
     where
         F: Fn(&AssociatedPlayerData, &mut A),
@@ -57,11 +65,13 @@ impl PlayerManager {
         }
     }
 
+    /// add a player to a level given a level ID and an account ID
     pub fn add_to_level(&mut self, level_id: i32, account_id: i32) {
         let players = self.levels.entry(level_id).or_default();
         players.insert(account_id);
     }
 
+    /// remove a player from a level given a level ID and an account ID
     pub fn remove_from_level(&mut self, level_id: i32, account_id: i32) {
         let should_remove_level = self.levels.get_mut(&level_id).is_some_and(|level| {
             level.remove(&account_id);

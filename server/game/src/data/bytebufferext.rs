@@ -6,43 +6,48 @@ use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 
 pub trait Encodable {
+    /// write `Self` into the given buffer
     fn encode(&self, buf: &mut ByteBuffer);
+    /// write `Self` into the given buffer, except blazingly fast this time
     fn encode_fast(&self, buf: &mut FastByteBuffer);
 }
 
 pub trait Decodable {
+    /// read `Self` from the given `ByteBuffer`
     fn decode(buf: &mut ByteBuffer) -> Result<Self>
     where
         Self: Sized;
+    /// read `Self` from the given `ByteReader`
     fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
     where
         Self: Sized;
 }
 
-// For dynamically sized types, this must be the maximum permitted size in the encoded form.
-// If encode() tries to write more bytes than this value, FastByteBuffer will panic.
 pub trait EncodableWithKnownSize: Encodable {
+    /// For dynamically sized types, this must be the maximum permitted size in the encoded form.
+    /// If `FastByteBuffer::write` tries to write more bytes than this value, it will panic.
     const ENCODED_SIZE: usize;
 }
 
-pub const MAX_ENCODED_STRING_SIZE: usize = 512 + size_of_types!(u32); // 512 chars
+/// maximum characters in a user's name (32). they can only be 15 chars max but we give headroom just in case
+pub const MAX_NAME_SIZE: usize = 32;
+/// maximum characters in a `ServerNoticePacket` or `ServerDisconnectPacket` (164)
+pub const MAX_NOTICE_SIZE: usize = 164;
+/// maximum characters in a user message (256)
+pub const MAX_MESSAGE_SIZE: usize = 256;
 
-macro_rules! encode_impl {
-    ($typ:ty, $buf:ident, $self:ident, $encode:expr) => {
-        impl crate::data::bytebufferext::Encodable for $typ {
-            #[inline]
-            fn encode(&$self, $buf: &mut bytebuffer::ByteBuffer) {
-                $encode
-            }
-
-            #[inline]
-            fn encode_fast(&$self, $buf: &mut crate::data::bytebufferext::FastByteBuffer) {
-                $encode
-            }
-        }
-    };
-}
-
+/// Simple and compact way of implementing `Decodable::decode` and `Decodable::decode_from_reader`.
+///
+/// Example usage:
+/// ```rust
+/// struct Type {
+///     some_val: String,
+/// }
+///
+/// decode_impl!(Type, buf, {
+///     Ok(Self { some_val: buf.read()? })
+/// });
+/// ```
 macro_rules! decode_impl {
     ($typ:ty, $buf:ident, $decode:expr) => {
         impl crate::data::bytebufferext::Decodable for $typ {
@@ -59,6 +64,56 @@ macro_rules! decode_impl {
     };
 }
 
+/// Implements `Decodable::decode` and `Decodable::decode_from_reader` to panic when called
+macro_rules! decode_unimpl {
+    ($typ:ty) => {
+        impl crate::data::bytebufferext::Decodable for $typ {
+            fn decode(_: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
+                panic!(
+                    "Tried to call {}::decode when Decodable was not implemented for this type",
+                    stringify!($typ)
+                );
+            }
+
+            fn decode_from_reader(_: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
+                panic!(
+                    "Tried to call {}::decode_from_reader when Decodable was not implemented for this type",
+                    stringify!($typ)
+                );
+            }
+        }
+    };
+}
+
+/// Simple and compact way of implementing `Encodable::encode` and `Encodable::encode_fast`.
+///
+/// Example usage:
+/// ```rust
+/// struct Type {
+///     some_val: String,
+/// }
+///
+/// encode_impl!(Type, buf, self, {
+///     buf.write(&self.some_val);
+/// });
+/// ```
+macro_rules! encode_impl {
+    ($typ:ty, $buf:ident, $self:ident, $encode:expr) => {
+        impl crate::data::bytebufferext::Encodable for $typ {
+            #[inline]
+            fn encode(&$self, $buf: &mut bytebuffer::ByteBuffer) {
+                $encode
+            }
+
+            #[inline]
+            fn encode_fast(&$self, $buf: &mut crate::data::bytebufferext::FastByteBuffer) {
+                $encode
+            }
+        }
+    };
+}
+
+/// Implements `Encodable::encode` and `Encodable::encode_fast` to panic when called
 macro_rules! encode_unimpl {
     ($typ:ty) => {
         impl crate::data::bytebufferext::Encodable for $typ {
@@ -79,20 +134,16 @@ macro_rules! encode_unimpl {
     };
 }
 
-macro_rules! decode_unimpl {
-    ($typ:ty) => {
-        impl crate::data::bytebufferext::Decodable for $typ {
-            fn decode(_: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
-                Err(anyhow::anyhow!("decoding unimplemented for {}", stringify!($typ)))
-            }
-
-            fn decode_from_reader(_: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
-                Err(anyhow::anyhow!("decoding unimplemented for {}", stringify!($typ)))
-            }
-        }
-    };
-}
-
+/// Simple and compact way of implementing `EncodableWithKnownSize`.
+///
+/// Example usage:
+/// ```rust
+/// struct Type {
+///     some_val: i32,
+/// }
+///
+/// size_calc_impl!(Type, 4);
+/// ```
 macro_rules! size_calc_impl {
     ($typ:ty, $calc:expr) => {
         impl crate::data::bytebufferext::EncodableWithKnownSize for $typ {
@@ -101,9 +152,27 @@ macro_rules! size_calc_impl {
     };
 }
 
-macro_rules! size_of_types {
+/// Simple way of getting total encoded size of given primitives.
+///
+/// Example usage:
+/// ```rust
+/// assert_eq!(16, size_of_primitives!(u64, i32, i16, i8, bool));
+/// ```
+macro_rules! size_of_primitives {
     ($($t:ty),+ $(,)?) => {{
         0 $(+ std::mem::size_of::<$t>())*
+    }};
+}
+
+/// Simple way of getting total (maximum) encoded size of given types that implement `Encodable` and `EncodableWithKnownSize`
+///
+/// Example usage:
+/// ```rust
+/// let size = size_of_types!(u32, Option<PlayerData>, bool);
+/// ```
+macro_rules! size_of_types {
+    ($($t:ty),+ $(,)?) => {{
+        0 $(+ <$t>::ENCODED_SIZE)*
     }};
 }
 
@@ -112,22 +181,40 @@ pub(crate) use decode_unimpl;
 pub(crate) use encode_impl;
 pub(crate) use encode_unimpl;
 pub(crate) use size_calc_impl;
+pub(crate) use size_of_primitives;
 pub(crate) use size_of_types;
 
-/* ByteBuffer extensions */
+/* ByteBuffer extensions
+*
+* With great power comes great responsibility.
+* Just because you can use .write(T) and .read<T>() for every single type,
+* even primitives (as they impl Encodable/Decodable), doesn't mean you should.
+*
+* Notable exception is Option, `write` will accept &Option<T> while `write_optional_value` will accept Option<&T>
+* so feel free to use whichever method suits you more when dealing with those.
+*/
+
 pub trait ByteBufferExt {
     fn with_capacity(capacity: usize) -> Self;
 }
 
 pub trait ByteBufferExtWrite {
+    /// alias to `write_value`
+    #[inline]
+    fn write<T: Encodable>(&mut self, val: &T) {
+        self.write_value(val);
+    }
+
     fn write_bool(&mut self, val: bool);
-    // write a byte vector, prefixed with 4 bytes indicating length
+    /// write a `&[u8]`, prefixed with 4 bytes indicating length
     fn write_byte_array(&mut self, vec: &[u8]);
 
     fn write_value<T: Encodable>(&mut self, val: &T);
     fn write_optional_value<T: Encodable>(&mut self, val: Option<&T>);
 
+    /// write an array `[T; N]`, without prefixing it with the total amount of values
     fn write_value_array<T: Encodable, const N: usize>(&mut self, val: &[T; N]);
+    /// write a `Vec<T>`, prefixed with 4 bytes indicating the amount of values
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
 
     fn write_enum<E: Into<B>, B: Encodable>(&mut self, val: E);
@@ -139,14 +226,24 @@ pub trait ByteBufferExtWrite {
 }
 
 pub trait ByteBufferExtRead {
+    /// alias to `read_value`
+    #[inline]
+    fn read<T: Decodable>(&mut self) -> Result<T> {
+        self.read_value()
+    }
+
     fn read_bool(&mut self) -> Result<bool>;
-    // read a byte vector, prefixed with 4 bytes indicating length
+    /// read a byte vector, prefixed with 4 bytes indicating length
     fn read_byte_array(&mut self) -> Result<Vec<u8>>;
+    /// read the remaining data into a Vec
+    fn read_remaining_bytes(&mut self) -> Result<Vec<u8>>;
 
     fn read_value<T: Decodable>(&mut self) -> Result<T>;
     fn read_optional_value<T: Decodable>(&mut self) -> Result<Option<T>>;
 
+    /// read an array `[T; N]`, size must be known at compile time
     fn read_value_array<T: Decodable, const N: usize>(&mut self) -> Result<[T; N]>;
+    /// read a `Vec<T>`
     fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>>;
 
     fn read_enum<E: TryFrom<B>, B: Decodable>(&mut self) -> Result<E>;
@@ -157,16 +254,15 @@ pub trait ByteBufferExtRead {
     fn read_point(&mut self) -> Result<cocos::Point>;
 }
 
-/* FastByteBuffer - zero heap allocation buffer for encoding but also limited functionality */
-// will panic on writes if there isn't enough space.
-
+/// Buffer for encoding that does zero heap allocation but also has limited functionality.
+/// It will panic on writes if there isn't enough space.
 pub struct FastByteBuffer<'a> {
     pos: usize,
     data: &'a mut [u8],
 }
 
 impl<'a> FastByteBuffer<'a> {
-    // Create a new FastByteBuffer given this mutable slice
+    /// Create a new `FastByteBuffer` given this mutable slice
     pub fn new(src: &'a mut [u8]) -> Self {
         Self { pos: 0, data: src }
     }
@@ -252,7 +348,7 @@ impl<'a> FastByteBuffer<'a> {
         self.data.len()
     }
 
-    // Panics if there is not enough capacity left to write the data.
+    /// Write the given byte slice. Panics if there is not enough capacity left to write the data.
     fn internal_write(&mut self, data: &[u8]) {
         debug_assert!(
             self.pos + data.len() <= self.capacity(),
@@ -357,6 +453,22 @@ macro_rules! impl_extread {
         }
 
         #[inline]
+        fn read_remaining_bytes(&mut self) -> Result<Vec<u8>> {
+            let remainder = self.len() - self.get_rpos();
+            let mut data = Vec::with_capacity(remainder);
+
+            // safety: we don't allow to read any unitialized memory, as we trust the return value of `Read::read`
+            unsafe {
+                let ptr = data.as_mut_ptr();
+                let mut slice = std::slice::from_raw_parts_mut(ptr, remainder);
+                let len = std::io::Read::read(self, &mut slice)?;
+                data.set_len(len);
+            }
+
+            Ok(data)
+        }
+
+        #[inline]
         fn read_value<T: Decodable>(&mut self) -> Result<T> {
             T::$decode_fn(self)
         }
@@ -435,33 +547,17 @@ impl<'a> ByteBufferExtRead for ByteReader<'a> {
 
 macro_rules! impl_primitive {
     ($typ:ty,$read:ident,$write:ident) => {
-        impl Encodable for $typ {
-            fn encode(&self, buf: &mut ByteBuffer) {
-                buf.$write(*self);
-            }
+        encode_impl!($typ, buf, self, {
+            buf.$write(*self);
+        });
 
-            fn encode_fast(&self, buf: &mut FastByteBuffer) {
-                buf.$write(*self);
-            }
-        }
+        decode_impl!($typ, buf, { buf.$read().map_err(|e| e.into()) });
 
-        impl Decodable for $typ {
-            fn decode(buf: &mut ByteBuffer) -> Result<Self>
-            where
-                Self: Sized,
-            {
-                Ok(buf.$read()?)
-            }
-            fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
-            where
-                Self: Sized,
-            {
-                Ok(buf.$read()?)
-            }
-        }
+        size_calc_impl!($typ, size_of_primitives!(Self));
     };
 }
 
+impl_primitive!(bool, read_bool, write_bool);
 impl_primitive!(u8, read_u8, write_u8);
 impl_primitive!(u16, read_u16, write_u16);
 impl_primitive!(u32, read_u32, write_u32);
@@ -470,29 +566,52 @@ impl_primitive!(i8, read_i8, write_i8);
 impl_primitive!(i16, read_i16, write_i16);
 impl_primitive!(i32, read_i32, write_i32);
 impl_primitive!(i64, read_i64, write_i64);
+impl_primitive!(f32, read_f32, write_f32);
+impl_primitive!(f64, read_f64, write_f64);
 
-impl Encodable for Vec<u8> {
+encode_impl!(Vec<u8>, buf, self, buf.write_byte_array(self));
+decode_impl!(Vec<u8>, buf, buf.read_byte_array());
+
+encode_impl!(String, buf, self, buf.write_string(self));
+decode_impl!(String, buf, Ok(buf.read_string()?));
+
+encode_impl!(&str, buf, self, buf.write_string(self));
+
+impl<T> Encodable for Option<T>
+where
+    T: Encodable,
+{
     fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_byte_array(self);
+        buf.write_optional_value(self.as_ref());
     }
 
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_byte_array(self);
+        buf.write_optional_value(self.as_ref());
     }
 }
 
-impl Decodable for Vec<u8> {
+impl<T> EncodableWithKnownSize for Option<T>
+where
+    T: EncodableWithKnownSize,
+{
+    const ENCODED_SIZE: usize = size_of_types!(bool, T);
+}
+
+impl<T> Decodable for Option<T>
+where
+    T: Decodable,
+{
     fn decode(buf: &mut ByteBuffer) -> Result<Self>
     where
         Self: Sized,
     {
-        buf.read_byte_array()
+        buf.read_optional_value()
     }
 
     fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
     where
         Self: Sized,
     {
-        buf.read_byte_array()
+        buf.read_optional_value()
     }
 }

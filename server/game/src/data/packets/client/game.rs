@@ -8,13 +8,7 @@ packet!(SyncIconsPacket, 11000, false, {
 
 encode_unimpl!(SyncIconsPacket);
 
-decode_impl!(
-    SyncIconsPacket,
-    buf,
-    Ok(Self {
-        icons: buf.read_value()?
-    })
-);
+decode_impl!(SyncIconsPacket, buf, Ok(Self { icons: buf.read()? }));
 
 /* RequestProfilesPacket - 11001 */
 
@@ -56,7 +50,7 @@ packet!(PlayerDataPacket, 11004, false, {
 
 encode_unimpl!(PlayerDataPacket);
 
-decode_impl!(PlayerDataPacket, buf, Ok(Self { data: buf.read_value()? }));
+decode_impl!(PlayerDataPacket, buf, Ok(Self { data: buf.read()? }));
 
 /* RequestPlayerListPacket - 11005 */
 
@@ -65,9 +59,19 @@ empty_client_packet!(RequestPlayerListPacket, 11005);
 /* VoicePacket - 11010 */
 
 packet!(VoicePacket, 11010, true, {
-    data: EncodedAudioFrame,
+    data: FastEncodedAudioFrame,
 });
 
 encode_unimpl!(VoicePacket);
 
-decode_impl!(VoicePacket, buf, Ok(Self { data: buf.read_value()? }));
+decode_impl!(VoicePacket, buf, Ok(Self { data: buf.read()? }));
+
+/* ChatMessagePacket - 11011 */
+
+packet!(ChatMessagePacket, 11011, true, {
+    message: FastString<MAX_MESSAGE_SIZE>,
+});
+
+encode_unimpl!(ChatMessagePacket);
+
+decode_impl!(ChatMessagePacket, buf, Ok(Self { message: buf.read()? }));

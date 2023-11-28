@@ -50,7 +50,12 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
         buf.resize(messageLength + PacketHeader::SIZE);
     }
 
-    packet->decode(buf);
+    try {
+        packet->decode(buf);
+    } catch (const std::exception& e) {
+        geode::log::warn("Decoding packet ID {} failed: {}", header.id, e.what());
+        throw;
+    }
 
     return packet;
 }
@@ -65,7 +70,7 @@ void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     buf.writeValue(header);
 
     packet->encode(buf);
-    
+
     size_t packetSize = buf.size() - PacketHeader::SIZE;
 
     bytevector& dataref = buf.getDataRef();

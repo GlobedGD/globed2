@@ -54,6 +54,10 @@
 
 build.sh
 build-android.sh
+build-android/
+
+mod-w.json
+mod-a.json
 
 server/bench-client
 server/target

@@ -19,6 +19,7 @@
 
 #include "client/connection.hpp"
 #include "client/game.hpp"
+#include "client/misc.hpp"
 
 #include "server/connection.hpp"
 #include "server/game.hpp"

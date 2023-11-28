@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::{File, OpenOptions},
     path::Path,
 };
@@ -47,8 +47,8 @@ fn default_userlist_mode() -> UserlistMode {
     UserlistMode::None
 }
 
-fn default_userlist() -> Vec<i32> {
-    Vec::new()
+fn default_userlist() -> HashSet<i32> {
+    HashSet::new()
 }
 
 fn default_secret_key() -> String {
@@ -117,9 +117,9 @@ pub struct ServerConfig {
     #[serde(default = "default_userlist_mode")]
     pub userlist_mode: UserlistMode,
     #[serde(default = "default_userlist")]
-    pub userlist: Vec<i32>,
+    pub userlist: HashSet<i32>,
     #[serde(default = "default_userlist")]
-    pub no_chat_list: Vec<i32>,
+    pub no_chat_list: HashSet<i32>,
 
     // security
     #[serde(default = "default_use_gd_api")]

@@ -5,6 +5,11 @@ GlobedSettings::GlobedSettings() {
     this->refreshCache();
 }
 
+void GlobedSettings::reset(const std::string& key) {
+    this->setFlag("_gset_-" + key, false);
+    this->refreshCache();
+}
+
 CachedSettings GlobedSettings::getCached() {
     return *_cache.lock();
 }

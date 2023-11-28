@@ -24,7 +24,7 @@ class CryptoHandshakeStartPacket : public Packet {
         buf.writeU16(protocol);
         buf.writeValue(key);
     }
-    
+
     GLOBED_PACKET_DECODE_UNIMPL
 
     CryptoHandshakeStartPacket(uint16_t _protocol, CryptoPublicKey _key) : protocol(_protocol), key(_key) {}
@@ -39,7 +39,7 @@ class CryptoHandshakeStartPacket : public Packet {
 
 class KeepalivePacket : public Packet {
     GLOBED_PACKET(10002, false)
-    
+
     GLOBED_PACKET_ENCODE {}
     GLOBED_PACKET_DECODE_UNIMPL
 
@@ -54,18 +54,20 @@ class LoginPacket : public Packet {
 
     GLOBED_PACKET_ENCODE {
         buf.writeI32(accountId);
+        buf.writeString(name);
         buf.writeString(token);
     }
 
     GLOBED_PACKET_DECODE_UNIMPL
-    
-    LoginPacket(int32_t _accid, const std::string& _token) : accountId(_accid), token(_token) {}
 
-    static std::shared_ptr<Packet> create(int32_t accid, const std::string& token) {
-        return std::make_shared<LoginPacket>(accid, token);
+    LoginPacket(int32_t accid, const std::string& name, const std::string& token) : accountId(accid), name(name), token(token) {}
+
+    static std::shared_ptr<Packet> create(int32_t accid, const std::string& name, const std::string& token) {
+        return std::make_shared<LoginPacket>(accid, name, token);
     }
 
     int32_t accountId;
+    std::string name;
     std::string token;
 };
 

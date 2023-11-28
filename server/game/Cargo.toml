@@ -14,7 +14,6 @@ array-init = "2.1.0"
 bytebuffer = "2.2.0"
 colored = "2.0.4"
 crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
-lazy_static = "1.4.0"
 log = { version = "0.4.20" }
 num_enum = "0.7.1"
 parking_lot = "0.12.1"

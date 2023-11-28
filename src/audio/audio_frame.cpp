@@ -4,44 +4,60 @@
 
 using namespace util::data;
 
-EncodedAudioFrame::EncodedAudioFrame() {
-    // TODO remove tracking
-    geode::log::debug("constructing audio frame");
-}
+EncodedAudioFrame::EncodedAudioFrame() {}
 
 EncodedAudioFrame::~EncodedAudioFrame() {
-    // TODO remove tracking
-    geode::log::debug("destructing audio frame ({} frames)", frameCount);
-    for (size_t i = 0; i < frameCount; i++) {
-        OpusCodec::freeData(frames[i]);
-    }
+    this->clear();
 }
 
 void EncodedAudioFrame::pushOpusFrame(EncodedOpusData&& frame) {
-    if (frameCount >= VOICE_OPUS_FRAMES_IN_AUDIO_FRAME) {
+    if (frames.size() >= VOICE_MAX_FRAMES_IN_AUDIO_FRAME) {
         geode::log::warn("tried to push an extra frame into EncodedAudioFrame, 20 is the max");
         return;
     }
 
-    frames[frameCount++] = std::move(frame);
+    frames.push_back(std::move(frame));
 }
 
-// riveting
-const std::array<EncodedOpusData, EncodedAudioFrame::VOICE_OPUS_FRAMES_IN_AUDIO_FRAME>& EncodedAudioFrame::getFrames() const {
+void EncodedAudioFrame::clear() {
+    for (const auto& frame : frames) {
+        OpusCodec::freeData(frame);
+    }
+
+    frames.clear();
+}
+
+size_t EncodedAudioFrame::size() const {
+    return frames.size();
+}
+
+const std::vector<EncodedOpusData>& EncodedAudioFrame::getFrames() const {
     return frames;
 }
 
 void EncodedAudioFrame::encode(ByteBuffer& buf) const {
     GLOBED_REQUIRE(
-        frameCount == VOICE_OPUS_FRAMES_IN_AUDIO_FRAME,
-        fmt::format("tried to encode an EncodedAudioFrame with {} frames when {} is needed", frameCount, VOICE_OPUS_FRAMES_IN_AUDIO_FRAME)
+        frames.size() <= VOICE_MAX_FRAMES_IN_AUDIO_FRAME,
+        fmt::format("tried to encode an EncodedAudioFrame with {} frames when at most {} is permitted", frames.size(), VOICE_MAX_FRAMES_IN_AUDIO_FRAME)
     )
 
-    buf.writeValueArray(frames);
+    // first encode all opus frames
+    for (auto& frame : frames) {
+        buf.writeOptionalValue<EncodedOpusData>(frame);
+    }
+
+    // if we have written less than 10, write nullopts
+
+    for (size_t i = frames.size(); i < VOICE_MAX_FRAMES_IN_AUDIO_FRAME; i++) {
+        buf.writeOptionalValue<EncodedOpusData>(std::nullopt);
+    }
 }
 
 void EncodedAudioFrame::decode(ByteBuffer& buf) {
-    frames = buf.readValueArray<EncodedOpusData, VOICE_OPUS_FRAMES_IN_AUDIO_FRAME>();
+    for (size_t i = 0; i < VOICE_MAX_FRAMES_IN_AUDIO_FRAME; i++) {
+        auto frame = buf.readOptionalValue<EncodedOpusData>();
+        if (frame) frames.push_back(frame.value());
+    }
 }
 
 #endif // GLOBED_VOICE_SUPPORT

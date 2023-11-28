@@ -51,13 +51,13 @@ bool UdpSocket::close() {
 #endif
 }
 
-bool UdpSocket::poll(long msDelay) {
+bool UdpSocket::poll(int msDelay) {
     GLOBED_SOCKET_POLLFD fds[1];
 
     fds[0].fd = socket_;
     fds[0].events = POLLIN;
 
-    int result = GLOBED_SOCKET_POLL(fds, 1, (int)msDelay);
+    int result = GLOBED_SOCKET_POLL(fds, 1, msDelay);
 
     if (result == -1) {
         util::net::throwLastError();

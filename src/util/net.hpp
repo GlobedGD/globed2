@@ -14,7 +14,7 @@ namespace util::net {
     // Grabs the error code from `lastErrorCode` and formats to a string
     std::string lastErrorString();
 
-    // Formats the error code to a string.
+    // Formats an error code to a string
     std::string lastErrorString(int code);
 
     // Throws an exception with the message being the value from `lastErrorString()`

@@ -1,7 +1,6 @@
-use std::time::SystemTime;
+use std::{sync::OnceLock, time::SystemTime};
 
 use colored::Colorize;
-use lazy_static::lazy_static;
 use log::Level;
 use time::{format_description, OffsetDateTime};
 
@@ -11,10 +10,13 @@ pub struct Logger {
 
 const TIME_FORMAT: &str = "[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3]";
 
-lazy_static! {
-    pub static ref LOGGER_INSTANCE: Logger = Logger {
-        format_desc: format_description::parse(TIME_FORMAT).unwrap(),
-    };
+impl Logger {
+    pub fn instance() -> &'static Self {
+        static INSTANCE: OnceLock<Logger> = OnceLock::new();
+        INSTANCE.get_or_init(|| Logger {
+            format_desc: format_description::parse(TIME_FORMAT).unwrap(),
+        })
+    }
 }
 
 impl log::Log for Logger {

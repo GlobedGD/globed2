@@ -22,6 +22,8 @@ decode_impl!(Color3B, buf, {
     Ok(Self { r, g, b })
 });
 
+size_calc_impl!(Color3B, size_of_types!(u8, u8, u8));
+
 impl TryFrom<String> for Color3B {
     type Error = anyhow::Error;
     fn try_from(value: String) -> Result<Self, Self::Error> {
@@ -64,6 +66,8 @@ decode_impl!(Color4B, buf, {
     Ok(Self { r, g, b, a })
 });
 
+size_calc_impl!(Color4B, size_of_types!(u8, u8, u8, u8));
+
 impl TryFrom<String> for Color4B {
     type Error = anyhow::Error;
     fn try_from(value: String) -> Result<Self, Self::Error> {
@@ -104,3 +108,5 @@ decode_impl!(Point, buf, {
     let y = buf.read_f32()?;
     Ok(Self { x, y })
 });
+
+size_calc_impl!(Point, size_of_types!(f32, f32));

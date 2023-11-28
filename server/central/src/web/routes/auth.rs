@@ -12,7 +12,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use roa::{http::StatusCode, preload::PowerBody, query::Query, throw, Context};
 
 use crate::state::{ActiveChallenge, ServerState};
-use crate::{config::UserlistMode, ip_blocker::IP_BLOCKER};
+use crate::{config::UserlistMode, ip_blocker::IpBlocker};
 
 macro_rules! check_user_agent {
     ($ctx:expr, $ua:ident) => {
@@ -35,7 +35,7 @@ macro_rules! get_user_ip {
     ($state:expr,$context:expr,$out:ident) => {
         let user_ip: anyhow::Result<IpAddr> = if $state.config.cloudflare_protection && !cfg!(debug_assertions) {
             // verify if the actual peer is cloudflare
-            if !IP_BLOCKER.is_allowed(&$context.remote_addr.ip()) {
+            if !IpBlocker::instance().is_allowed(&$context.remote_addr.ip()) {
                 warn!("blocking unknown non-cloudflare address: {}", $context.remote_addr.ip());
                 throw!(StatusCode::UNAUTHORIZED, "access is denied from this IP address");
             }

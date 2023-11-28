@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +18,6 @@ pub struct SpecialUser {
 #[derive(Serialize, Deserialize)]
 pub struct GameServerBootData {
     pub protocol: u16,
-    pub no_chat: Vec<i32>,
+    pub no_chat: HashSet<i32>,
     pub special_users: HashMap<i32, SpecialUser>,
 }

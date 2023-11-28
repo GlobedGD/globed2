@@ -1,5 +1,10 @@
+#include <defs.hpp>
 #include <Geode/Geode.hpp>
-#include <Geode/modify/MenuLayer.hpp>
+
+#if GLOBED_HAS_KEYBINDS
+#include <geode.custom-keybinds/include/Keybinds.hpp>
+#endif
+
 #include <ui/hooks/all.hpp>
 #include <ui/error_check_node.hpp>
 
@@ -18,35 +23,42 @@
 #include <managers/error_queues.hpp>
 #include <managers/account_manager.hpp>
 
+#include <cstdint>
+
 using namespace geode::prelude;
 
-$on_mod(Loaded) {
-    // if there is a logic error in the crypto code, sodium_misuse() gets called
-    sodium_set_misuse_handler([](){
-        log::error("sodium_misuse called. we are officially screwed.");
-        util::debugging::suicide();
-    });
+void setupSodiumMisuse();
+void setupErrorCheckNode();
+void setupCustomKeybinds();
+void printDebugInfo();
 
-    auto ecn = ErrorCheckNode::create();
-    ecn->setID("error-check-node"_spr);
-    SceneManager::get()->keepAcrossScenes(ecn);
-    
+// vvv this is for testing fmod
+// void createStreamDetour(FMOD::System* self, const char* unused1, FMOD_MODE mode, FMOD_CREATESOUNDEXINFO* exinfo, FMOD::Sound** sound) {
+//     log::debug("creating stream with mode {}", mode);
+//     log::debug("exinfo cbs: {}", exinfo->cbsize);
+//     log::debug("exinfo len: {}", exinfo->length);
+//     log::debug("exinfo channels: {}", exinfo->numchannels);
+//     log::debug("exinfo freq: {}", exinfo->defaultfrequency);
+//     log::debug("exinfo fmt: {}", exinfo->format);
+//     log::debug("exinfo stype: {}", exinfo->suggestedsoundtype);
+//     self->createStream(unused1, mode, exinfo, sound);
+// }
+
+$on_mod(Loaded) {
+    setupSodiumMisuse();
+    setupErrorCheckNode();
+    setupCustomKeybinds();
+
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
-    geode::log::warn("=== Globed v{} has been loaded in debug mode ===", Mod::get()->getVersion().toString());
-    geode::log::info("Platform: {}", GLOBED_PLATFORM_STRING);
-    geode::log::info("FMOD support: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
-    geode::log::info("Voice support: {}", GLOBED_VOICE_SUPPORT == 0 ? "false" : "true");
-    geode::log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
-    geode::log::info("Little endian: {}", GLOBED_LITTLE_ENDIAN ? "true" : "false");
-    geode::log::info("Libsodium version: {}", SODIUM_VERSION_STRING);
-    #if GLOBED_VOICE_SUPPORT
-    geode::log::info("Opus version: {}", opus_get_version_string());
-    #endif
+    printDebugInfo();
 #endif
+
+    /// vvv this is for testing fmod
+    // (void) Mod::get()->addHook(reinterpret_cast<void*>(
+    //     geode::addresser::getNonVirtual(&FMOD::System::createStream)
+    // ), &createStreamDetour, "FMOD::System::createStream", tulip::hook::TulipConvention::Default);
 }
 
-void testFmod1();
-void testFmod2();
 
 class $modify(MyMenuLayer, MenuLayer) {
     void onMoreGames(CCObject*) {
@@ -54,82 +66,62 @@ class $modify(MyMenuLayer, MenuLayer) {
             util::debugging::PacketLogger::get().getSummary().print();
         }
 
-        // nm.addListener<PingResponsePacket>([](auto* packet) {
-        //     log::debug("got ping packet with id {}, pc: {}", packet->id, packet->playerCount);
-        // });
-
-        // nm.addListener(PingResponsePacket::PACKET_ID, [](std::shared_ptr<Packet> packet) {
-        //     auto pkt = static_cast<PingResponsePacket*>(packet.get());
-        //     log::debug("got ping packet with id {}, pc: {}", pkt->id, pkt->playerCount);
-        // });
-
-        // nm.connect("127.0.0.1", 41001);
-        // nm.send(PingPacket::create(69696969));
-        
-        // DiscordManager::get().update();
-        // auto& vm = GlobedAudioManager::get();
-        // vm.setActiveRecordingDevice(2);
-        // log::debug("Listening to: {}", vm.getRecordingDevice().name);
-
-        // testFmod1();
-        // testFmod2();
-
-        // util::debugging::PacketLogger::get().getSummary().print();
-        
+        try {
+            throw std::runtime_error("oopsie");
+        } catch (std::exception e) {
+            log::debug("caught it! {}", e.what());
+        }
     }
 };
 
-#if GLOBED_VOICE_SUPPORT
-// following listens to a frame and immediately plays it
-void testFmod1() {
-    auto& vm = GlobedAudioManager::get();
-    vm.startRecording([&vm](const EncodedAudioFrame& frame){
-        util::debugging::Benchmarker bench;
-
-        ByteBuffer bb;
-        bb.writeValue(frame);
-
-        bb.setPosition(0);
-
-        auto decodedFrame = bb.readValue<EncodedAudioFrame>();
-        VoicePlaybackManager::get().playFrameStreamed(0, decodedFrame);
+// if there is a logic error in the crypto code, this lambda will be called
+void setupSodiumMisuse() {
+    sodium_set_misuse_handler([](){
+        log::error("sodium_misuse called. we are officially screwed.");
+        util::debugging::suicide();
     });
 }
 
-// following joins 5 different frames into one sound and plays it
-void testFmod2() {
-    auto& vm = GlobedAudioManager::get();
-
-    ByteBuffer* bb = new ByteBuffer;
-    int* total = new int{0};
-    
-    vm.startRecording([&vm, bb, total](const EncodedAudioFrame& frame){
-        *total = *total + 1;
-
-        bb->writeValue(frame);
-        log::debug("Frame {} recorded", static_cast<int>(*total));
-
-        if (*total > 5) { // end after 5 frames
-            vm.queueStopRecording();
-            bb->setPosition(0);
-            std::vector<float> out;
-            for (size_t i = 0; i < *total; i++) {
-                log::debug("Reading frame {}", i);
-                auto encFrame = bb->readValue<EncodedAudioFrame>();
-                const auto& opusFrames = encFrame.getFrames();
-                
-                for (const auto& opusFrame : opusFrames) {
-                    auto rawFrame = vm.decodeSound(opusFrame);
-                    out.insert(out.end(), rawFrame.ptr, rawFrame.ptr + rawFrame.length);
-                }
-            }
-
-            log::debug("total pcm samples: {}", out.size());
-
-            auto sound = vm.createSound(out.data(), out.size());
-            vm.playSound(sound);
-
-        }
-    });
+// error check node runs on every scene and shows popups/notifications if an error has occured in another thread
+void setupErrorCheckNode() {
+    auto ecn = ErrorCheckNode::create();
+    ecn->setID("error-check-node"_spr);
+    SceneManager::get()->keepAcrossScenes(ecn);
 }
-#endif // GLOBED_VOICE_SUPPORT
+
+void setupCustomKeybinds() {
+#if GLOBED_HAS_KEYBINDS
+    using namespace keybinds;
+
+    BindManager::get()->registerBindable({
+        "voice-activate"_spr,
+        "Voice",
+        "Records audio from your microphone and sends it off to other users on the level.",
+        { Keybind::create(KEY_V, Modifier::None) },
+        Category::PLAY,
+    });
+
+    BindManager::get()->registerBindable({
+        "voice-deafen"_spr,
+        "Deafen",
+        "Mutes voices of other players when toggled.",
+        { Keybind::create(KEY_B, Modifier::None) },
+        Category::PLAY,
+    });
+
+#endif // GLOBED_HAS_KEYBINDS
+}
+
+// just debug printing
+void printDebugInfo() {
+    geode::log::warn("=== Globed v{} has been loaded in debug mode ===", Mod::get()->getVersion().toString());
+    geode::log::info("Platform: {}", GLOBED_PLATFORM_STRING);
+    geode::log::info("FMOD support: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
+    geode::log::info("Voice support: {}", GLOBED_VOICE_SUPPORT == 0 ? "false" : "true");
+    geode::log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
+    geode::log::info("Little endian: {}", GLOBED_LITTLE_ENDIAN ? "true" : "false");
+    geode::log::info("Libsodium version: {} (CryptoBox algorithm: {})", SODIUM_VERSION_STRING, CryptoBox::ALGORITHM);
+    #if GLOBED_VOICE_SUPPORT
+    geode::log::info("Opus version: {}", opus_get_version_string());
+    #endif
+}
