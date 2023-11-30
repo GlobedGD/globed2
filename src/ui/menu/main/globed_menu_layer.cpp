@@ -85,6 +85,7 @@ bool GlobedMenuLayer::init() {
         this->requestServerList();
     }
 
+    sm.pendingChanges = true; // force ping all servers
     this->refreshServerList(0.f);
 
     return true;

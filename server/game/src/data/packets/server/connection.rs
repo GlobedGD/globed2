@@ -56,7 +56,7 @@ encode_impl!(ServerDisconnectPacket, buf, self, {
 
 decode_unimpl!(ServerDisconnectPacket);
 
-size_calc_impl!(ServerDisconnectPacket, MAX_NOTICE_SIZE);
+size_calc_impl!(ServerDisconnectPacket, size_of_types!(FastString<MAX_NOTICE_SIZE>));
 
 /* LoggedInPacket - 20004 */
 
@@ -74,7 +74,7 @@ encode_impl!(LoginFailedPacket, buf, self, {
 
 decode_unimpl!(LoginFailedPacket);
 
-size_calc_impl!(LoginFailedPacket, MAX_NOTICE_SIZE);
+size_calc_impl!(LoginFailedPacket, size_of_types!(FastString<MAX_NOTICE_SIZE>));
 
 /* ServerNoticePacket - 20006 */
 // used to communicate a simple message to the user
@@ -89,4 +89,4 @@ encode_impl!(ServerNoticePacket, buf, self, {
 
 decode_unimpl!(ServerNoticePacket);
 
-size_calc_impl!(ServerNoticePacket, MAX_NOTICE_SIZE);
+size_calc_impl!(ServerNoticePacket, size_of_types!(FastString<MAX_NOTICE_SIZE>));

@@ -18,6 +18,13 @@ void ErrorQueues::notice(const std::string& message, bool print) {
     _notices.push(message);
 }
 
+void ErrorQueues::debugWarn(const std::string& message, bool print) {
+    if (print) geode::log::warn(message);
+#if defined(GLOBED_DEBUG) && GLOBED_DEBUG
+    _warns.push(message);
+#endif
+}
+
 std::vector<std::string> ErrorQueues::getWarnings() {
     return _warns.popAll();
 }

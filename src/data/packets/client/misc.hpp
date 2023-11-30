@@ -9,7 +9,7 @@
 */
 class RawPacket : public Packet {
 public:
-    RawPacket(packetid_t id, bool encrypted, ByteBuffer buffer) : id(id), encrypted(encrypted), buffer(std::move(buffer)) {}
+    RawPacket(packetid_t id, bool encrypted, ByteBuffer&& buffer) : id(id), encrypted(encrypted), buffer(std::move(buffer)) {}
 
     packetid_t getPacketId() const override {
         return id;
@@ -25,7 +25,7 @@ public:
 
     GLOBED_PACKET_DECODE_UNIMPL
 
-    static std::shared_ptr<RawPacket> create(packetid_t id, bool encrypted, ByteBuffer buffer) {
+    static std::shared_ptr<RawPacket> create(packetid_t id, bool encrypted, ByteBuffer&& buffer) {
         return std::make_shared<RawPacket>(id, encrypted, std::move(buffer));
     }
 

@@ -2,7 +2,7 @@ use globed_shared::SpecialUser;
 
 use crate::data::{bytebufferext::*, FastString};
 
-use super::Color3B;
+use super::{Color3B, ColorParseError};
 
 #[derive(Clone)]
 pub struct PlayerIconData {
@@ -117,10 +117,10 @@ decode_unimpl!(SpecialUserData);
 size_calc_impl!(SpecialUserData, size_of_types!(Color3B));
 
 impl TryFrom<SpecialUser> for SpecialUserData {
-    type Error = anyhow::Error;
+    type Error = ColorParseError;
     fn try_from(value: SpecialUser) -> Result<Self, Self::Error> {
         Ok(Self {
-            name_color: value.color.try_into()?,
+            name_color: value.color.parse()?,
         })
     }
 }
@@ -149,7 +149,45 @@ size_calc_impl!(
     size_of_types!(i32, FastString<MAX_NAME_SIZE>, PlayerIconData, Option<SpecialUserData>)
 );
 
-/* PlayerData */
+impl PlayerAccountData {
+    pub fn make_preview(&self) -> PlayerPreviewAccountData {
+        PlayerPreviewAccountData {
+            account_id: self.account_id,
+            name: self.name.clone(),
+            cube: self.icons.cube,
+            color1: self.icons.color1,
+            color2: self.icons.color2,
+        }
+    }
+}
+
+/* PlayerPreviewAccountData - like PlayerAccountData but more limited, for the total player list */
+
+#[derive(Clone, Default)]
+pub struct PlayerPreviewAccountData {
+    pub account_id: i32,
+    pub name: FastString<MAX_NAME_SIZE>,
+    pub cube: i16,
+    pub color1: i16,
+    pub color2: i16,
+}
+
+encode_impl!(PlayerPreviewAccountData, buf, self, {
+    buf.write_i32(self.account_id);
+    buf.write(&self.name);
+    buf.write_i16(self.cube);
+    buf.write_i16(self.color1);
+    buf.write_i16(self.color2);
+});
+
+decode_unimpl!(PlayerPreviewAccountData);
+
+size_calc_impl!(
+    PlayerPreviewAccountData,
+    size_of_types!(i32, FastString<MAX_NAME_SIZE>, i16, i16, i16)
+);
+
+/* PlayerData (data in a level) */
 
 #[derive(Clone, Default)]
 pub struct PlayerData {}
@@ -174,3 +212,39 @@ encode_impl!(AssociatedPlayerData, buf, self, {
 });
 
 size_calc_impl!(AssociatedPlayerData, size_of_types!(i32, PlayerData));
+
+/* PlayerMetadata (things like your percentage in a level, attempt count) */
+
+#[derive(Clone, Default)]
+pub struct PlayerMetadata {
+    percentage: u16,
+    attempts: i32,
+}
+
+encode_impl!(PlayerMetadata, buf, self, {
+    buf.write_u16(self.percentage);
+    buf.write_i32(self.attempts);
+});
+
+decode_impl!(PlayerMetadata, buf, {
+    let percentage = buf.read_u16()?;
+    let attempts = buf.read_i32()?;
+    Ok(Self { percentage, attempts })
+});
+
+size_calc_impl!(PlayerMetadata, size_of_types!(u16, i32));
+
+/* AssociatedPlayerMetadata */
+
+#[derive(Clone, Default)]
+pub struct AssociatedPlayerMetadata {
+    pub account_id: i32,
+    pub data: PlayerMetadata,
+}
+
+encode_impl!(AssociatedPlayerMetadata, buf, self, {
+    buf.write_i32(self.account_id);
+    buf.write(&self.data);
+});
+
+size_calc_impl!(AssociatedPlayerMetadata, size_of_types!(i32, PlayerMetadata));

@@ -4,7 +4,7 @@ use std::fmt;
 
 use crate::data::bytebufferext::*;
 
-/// `FastString` is a string class more powerful than `&str` but doesn't use heap allocation like `String`.
+/// `FastString` is a string class that doesn't use heap allocation like `String` but also owns the string (unlike `&str`).
 /// When encoding or decoding into a byte buffer of any kind, the encoded form is identical to a normal `String`,
 /// and they can be converted between each other interchangably with `.try_into()` or `.try_from()`
 #[derive(Clone)]
@@ -133,7 +133,7 @@ impl<const N: usize> Decodable for FastString<N> {
 
 impl<const N: usize> fmt::Display for FastString<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_str().unwrap_or("<invalid UTF-8 string>"))
+        f.write_str(self.to_str().unwrap_or("<invalid UTF-8 string>"))
     }
 }
 

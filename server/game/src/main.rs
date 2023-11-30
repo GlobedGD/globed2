@@ -1,3 +1,10 @@
+/*
+* Hey there!
+* If you have to read this - first and foremost, I'm sorry.
+* Everything you see here is the exact definition of over-engineered and over-optimized.
+* Good luck.
+*/
+
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
@@ -15,18 +22,18 @@ use std::{
 use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
 use log::{error, info, warn, LevelFilter};
-use logger::Logger;
 use server::GameServerConfiguration;
 use state::ServerState;
+use util::Logger;
 
 use server::GameServer;
 
 pub mod data;
-pub mod logger;
 pub mod managers;
 pub mod server;
 pub mod server_thread;
 pub mod state;
+pub mod util;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

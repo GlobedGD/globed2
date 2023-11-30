@@ -5,13 +5,13 @@
 class UdpSocket : public Socket {
 public:
     using Socket::send;
-    using Socket::sendAll;
     UdpSocket();
     ~UdpSocket();
 
     bool create() override;
     bool connect(const std::string& serverIp, unsigned short port) override;
     int send(const char* data, unsigned int dataSize) override;
+    int sendTo(const char* data, unsigned int dataSize, const std::string& address, unsigned short port);
     int receive(char* buffer, int bufferSize) override;
     bool close() override;
     virtual void disconnect();

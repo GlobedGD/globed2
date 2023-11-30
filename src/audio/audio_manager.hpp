@@ -91,6 +91,9 @@ public:
     // get the cached system
     FMOD::System* getSystem();
 
+    static const char* fmodErrorString(FMOD_RESULT result);
+    static std::string formatFmodError(FMOD_RESULT result, const char* whatFailed);
+
 private:
     /* devices */
     AudioRecordingDevice recordDevice;

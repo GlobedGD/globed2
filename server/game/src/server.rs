@@ -18,7 +18,7 @@ use log::{debug, error, info, warn};
 use tokio::net::UdpSocket;
 
 use crate::{
-    data::{packets::server::VoiceBroadcastPacket, types::PlayerAccountData, ChatMessageBroadcastPacket, FastString},
+    data::*,
     server_thread::{GameServerThread, ServerThreadMessage, SMALL_PACKET_LIMIT},
     state::ServerState,
 };
@@ -94,77 +94,37 @@ impl GameServer {
     /* various calls for other threads */
 
     pub fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: i32) -> anyhow::Result<()> {
-        let pm = self.state.player_manager.lock();
-        let players = pm.get_level(level_id);
-
-        if let Some(players) = players {
-            let threads: Vec<_> = self
-                .threads
-                .lock()
-                .values()
-                .filter(|thread| {
-                    let account_id = thread.account_id.load(Ordering::Relaxed);
-                    account_id != vpkt.player_id && players.contains(&account_id)
-                })
-                .cloned()
-                .collect();
-
-            drop(pm);
-
-            for thread in threads {
-                thread.push_new_message(ServerThreadMessage::BroadcastVoice(vpkt.clone()))?;
-            }
-        }
-
-        Ok(())
+        self.broadcast_user_message(&ServerThreadMessage::BroadcastVoice(vpkt.clone()), vpkt.player_id, level_id)
     }
 
     pub fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: i32) -> anyhow::Result<()> {
-        let pm = self.state.player_manager.lock();
-        let players = pm.get_level(level_id);
-
-        if let Some(players) = players {
-            let threads: Vec<_> = self
-                .threads
-                .lock()
-                .values()
-                .filter(|thread| {
-                    let account_id = thread.account_id.load(Ordering::Relaxed);
-                    account_id != tpkt.player_id && players.contains(&account_id)
-                })
-                .cloned()
-                .collect();
-
-            drop(pm);
-
-            for thread in threads {
-                thread.push_new_message(ServerThreadMessage::BroadcastText(tpkt.clone()))?;
-            }
-        }
-
-        Ok(())
+        self.broadcast_user_message(&ServerThreadMessage::BroadcastText(tpkt.clone()), tpkt.player_id, level_id)
     }
 
-    // TODO low: look into eliminating heap allocation for these two funcs below
-    // it's just one vec bro it's not that deep
-    pub fn gather_profiles(&'static self, ids: &[i32]) -> Vec<PlayerAccountData> {
-        let threads = self.threads.lock();
-
-        threads
+    /// iterate over every player in this list and run F
+    pub fn for_each_player<F, A>(&'static self, ids: &[i32], f: F, additional: &mut A) -> usize
+    where
+        F: Fn(&PlayerAccountData, usize, &mut A) -> bool,
+    {
+        self.threads
+            .lock()
             .values()
             .filter(|thread| ids.contains(&thread.account_id.load(Ordering::Relaxed)))
             .map(|thread| thread.account_data.lock().clone())
-            .collect()
+            .fold(0, |count, data| count + usize::from(f(&data, count, additional)))
     }
 
-    pub fn gather_all_profiles(&'static self) -> Vec<PlayerAccountData> {
-        let threads = self.threads.lock();
-
-        threads
+    /// iterate over every authenticated player and run F
+    pub fn for_every_player_preview<F, A>(&'static self, f: F, additional: &mut A) -> usize
+    where
+        F: Fn(&PlayerPreviewAccountData, usize, &mut A) -> bool,
+    {
+        self.threads
+            .lock()
             .values()
             .filter(|thr| thr.authenticated.load(Ordering::Relaxed))
-            .map(|thread| thread.account_data.lock().clone())
-            .collect()
+            .map(|thread| thread.account_data.lock().make_preview())
+            .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
     pub fn chat_blocked(&'static self, user_id: i32) -> bool {
@@ -190,6 +150,38 @@ impl GameServer {
 
     /* private handling stuff */
 
+    /// broadcast a message to all people on the level
+    fn broadcast_user_message(
+        &'static self,
+        msg: &ServerThreadMessage,
+        origin_id: i32,
+        level_id: i32,
+    ) -> anyhow::Result<()> {
+        let pm = self.state.player_manager.lock();
+        let players = pm.get_level(level_id);
+
+        if let Some(players) = players {
+            let threads: Vec<_> = self
+                .threads
+                .lock()
+                .values()
+                .filter(|thread| {
+                    let account_id = thread.account_id.load(Ordering::Relaxed);
+                    account_id != origin_id && players.contains(&account_id)
+                })
+                .cloned()
+                .collect();
+
+            drop(pm);
+
+            for thread in threads {
+                thread.push_new_message(msg.clone())?;
+            }
+        }
+
+        Ok(())
+    }
+
     async fn recv_and_handle(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {
         let (len, peer) = self.socket.recv_from(buf).await?;
 
@@ -212,7 +204,7 @@ impl GameServer {
                 // 2. the channel was closed (normally impossible for that to happen)
                 // 3. `thread.terminate()` was called on that thread (due to a disconnect from either side)
                 // additionally, if it panics then the state of the player will be frozen forever,
-                // they won't be removed from levels or the player count and that person won't be able to connect again.
+                // they won't be removed from levels or the player count and that person has to restart the game to connect again.
                 // so try to avoid panics please..
                 thread.run().await;
                 log::trace!("removing client: {}", peer);

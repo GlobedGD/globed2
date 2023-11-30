@@ -61,6 +61,19 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 }
 
 void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
+    auto buf = this->serializePacket(packet.get());
+
+#ifdef GLOBED_DEBUG_PACKETS
+    PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
+#endif
+
+    GLOBED_REQUIRE(
+        this->send(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size()) == buf.size(),
+        "failed to send the entire buffer"
+    )
+}
+
+ByteBuffer GameSocket::serializePacket(Packet* packet) {
     ByteBuffer buf;
     PacketHeader header = {
         .id = packet->getPacketId(),
@@ -73,19 +86,27 @@ void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
 
     size_t packetSize = buf.size() - PacketHeader::SIZE;
 
-    bytevector& dataref = buf.getDataRef();
     if (packet->getEncrypted()) {
         GLOBED_REQUIRE(box.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
         // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
         buf.grow(CryptoBox::PREFIX_LEN);
-        box->encryptInPlace(dataref.data() + PacketHeader::SIZE, packetSize);
+        box->encryptInPlace(buf.getDataRef().data() + PacketHeader::SIZE, packetSize);
     }
 
+    return buf;
+}
+
+void GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const std::string& address, unsigned short port) {
+    auto buf = this->serializePacket(packet.get());
+
 #ifdef GLOBED_DEBUG_PACKETS
-    PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, dataref.size());
+    PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
 #endif
 
-    sendAll(reinterpret_cast<char*>(dataref.data()), dataref.size());
+    GLOBED_REQUIRE(
+        this->sendTo(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size(), address, port) == buf.size(),
+        "failed to send the entire buffer"
+    )
 }
 
 void GameSocket::cleanupBox() {

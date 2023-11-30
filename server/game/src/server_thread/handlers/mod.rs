@@ -62,10 +62,62 @@ macro_rules! gs_needauth {
     };
 }
 
+/// hype af (variable size stack allocation)
+macro_rules! gs_with_alloca {
+    ($size:expr, $data:ident, $code:expr) => {
+        alloca::with_alloca($size, move |data| {
+            // safety: 'data' will have garbage data but it's a &[u8] so that doesn't really matter.
+            // we pass the responsibility to the caller to make sure they don't read any uninitialized data.
+            let $data = unsafe {
+                let ptr = data.as_mut_ptr().cast::<u8>();
+                let len = std::mem::size_of_val(data);
+                std::slice::from_raw_parts_mut(ptr, len)
+            };
+
+            $code
+        })
+    };
+}
+
+/// i love over optimizing things!
+/// when invoked as `gs_inline_encode!(self, size, buf, {code})`, uses alloca to make space on the stack,
+/// and lets you encode a packet. afterwards automatically tries a non-blocking send and on failure falls back to a Vec<u8> and an async send.
+macro_rules! gs_inline_encode {
+    ($self:ident, $size:expr, $data:ident, $code:expr) => {
+        gs_inline_encode!($self, $size, $data, _rawdata, $code)
+    };
+
+    ($self:ident, $size:expr, $data:ident, $rawdata:ident, $code:expr) => {
+        let retval: Result<Option<Vec<u8>>> = {
+            gs_with_alloca!($size, $rawdata, {
+                let mut $data = FastByteBuffer::new($rawdata);
+
+                $code // user code
+
+                let data = $data.as_bytes();
+                match $self.send_buffer_immediate(data) {
+                    // if we cant send without blocking, accept our defeat and clone the data to a vec
+                    Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(data.to_vec())),
+                    // if another error occured, propagate it up
+                    Err(e) => Err(e),
+                    // if all good, do nothing
+                    Ok(()) => Ok(None),
+                }
+            })
+        };
+
+        if let Some(data) = retval? {
+            $self.send_buffer(&data).await?;
+        }
+    }
+}
+
 pub(crate) use gs_disconnect;
 pub(crate) use gs_handler;
 pub(crate) use gs_handler_sync;
+pub(crate) use gs_inline_encode;
 pub(crate) use gs_needauth;
+pub(crate) use gs_with_alloca;
 
 #[allow(unused_imports)]
 pub(crate) use gs_notice;

@@ -5,31 +5,31 @@
 using namespace util::data;
 
 OpusCodec::OpusCodec(int sampleRate, int frameSize) {
-    setSampleRate(sampleRate);
-    setFrameSize(frameSize);
+    this->setSampleRate(sampleRate);
+    this->setFrameSize(frameSize);
 }
 
 OpusCodec::~OpusCodec() {
-    cleanup();
+    this->cleanup();
 }
 
 void OpusCodec::setSampleRate(int sampleRate) {
     if (sampleRate == this->sampleRate) {
         return;
     }
-    
+
     this->sampleRate = sampleRate;
-    cleanup(); // free previous encoder and decoder
+    this->cleanup(); // free previous encoder and decoder
 
     if (sampleRate == 0) {
         return; // don't do anything
     }
 
     encoder = opus_encoder_create(sampleRate, channels, OPUS_APPLICATION_VOIP, &_res);
-    errcheck("opus_encoder_create");
+    this->errcheck("opus_encoder_create");
 
     decoder = opus_decoder_create(sampleRate, channels, &_res);
-    errcheck("opus_decoder_create");
+    this->errcheck("opus_decoder_create");
 }
 
 void OpusCodec::setFrameSize(int frameSize) {
@@ -46,7 +46,7 @@ EncodedOpusData OpusCodec::encode(const float* data) {
     if (out.length < 0) {
         delete[] out.ptr;
         _res = out.length;
-        errcheck("opus_encode_float");
+        this->errcheck("opus_encode_float");
     }
 
     return out;
@@ -57,12 +57,12 @@ DecodedOpusData OpusCodec::decode(const byte* data, size_t length) {
 
     out.length = frameSize * channels;
     out.ptr = new float[out.length];
-    
+
     _res = opus_decode_float(decoder, data, length, out.ptr, frameSize, 0);
-    
+
     if (_res < 0) {
         delete[] out.ptr;
-        errcheck("opus_decode_float");
+        this->errcheck("opus_decode_float");
     }
 
     return out;

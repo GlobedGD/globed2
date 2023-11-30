@@ -41,17 +41,19 @@ impl GameServerThread {
         }
 
         {
-            let mut cbox = self.crypto_box.lock();
-
             // as ServerThread is now tied to the SocketAddrV4 and not account id like in globed v0
             // erroring here is not a concern, even if the user's game crashes without a disconnect packet,
             // they would have a new randomized port when they restart and this would never fail.
-            if cbox.is_some() {
+            if self.crypto_box.get().is_some() {
+                self.disconnect(FastString::from_str(
+                    "attempting to perform a second handshake in one session",
+                ))
+                .await?;
                 return Err(PacketHandlingError::WrongCryptoBoxState);
             }
 
-            let new_box = ChaChaBox::new(&packet.key.pubkey, &self.game_server.secret_key);
-            *cbox = Some(new_box);
+            self.crypto_box
+                .get_or_init(|| ChaChaBox::new(&packet.key.pubkey, &self.game_server.secret_key));
         }
 
         self.send_packet_fast(&CryptoHandshakeResponsePacket {

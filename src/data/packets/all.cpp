@@ -18,6 +18,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(PlayerProfilesPacket);
         PACKET(LevelDataPacket);
         PACKET(PlayerListPacket);
+        PACKET(PlayerMetadataPacket);
 #if GLOBED_VOICE_SUPPORT
         PACKET(VoiceBroadcastPacket);
 #endif

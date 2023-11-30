@@ -35,21 +35,19 @@ AudioStream::AudioStream() {
             return FMOD_OK;
         }
 
-        // geode::log::debug("cb called, size: {}", len / sizeof(float));
-
         // write data..
 
         size_t neededSamples = len / sizeof(float);
         size_t copied = stream->queue.copyTo((float*)data, neededSamples);
 
         if (copied != neededSamples) {
-            // geode::log::debug("{}: could not match samples, needed: {}, got: {}", util::time::nowPretty(), neededSamples, copied);
+            stream->starving = true;
             // fill the rest with the void to not repeat stuff
             for (size_t i = copied; i < neededSamples; i++) {
                 ((float*)data)[i] = 0.0f;
             }
         } else {
-            // geode::log::debug("{}: pulled {} samples, queue size: {}", util::time::nowPretty(), copied, stream->queue.size());
+            stream->starving = false;
         }
 
         return FMOD_OK;
@@ -61,7 +59,7 @@ AudioStream::AudioStream() {
     auto system = vm.getSystem();
     res = system->createStream(nullptr, FMOD_OPENUSER | FMOD_2D | FMOD_LOOP_NORMAL, &exinfo, &sound);
 
-    GLOBED_REQUIRE(res == FMOD_OK, std::string("FMOD System::createStream failed: ") + std::to_string((int)res));
+    GLOBED_REQUIRE(res == FMOD_OK, GlobedAudioManager::formatFmodError(res, "System::createStream"));
 }
 
 AudioStream::~AudioStream() {

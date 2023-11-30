@@ -18,6 +18,9 @@ class ErrorQueues {
     // notices are messages coming directly from the server
     void notice(const std::string& message, bool print = true);
 
+    // debugWarn shows a warn notification in debug, in release only prints a message (noop if `print` = false)
+    void debugWarn(const std::string& message, bool print = true);
+
     std::vector<std::string> getWarnings();
     std::vector<std::string> getErrors();
     std::vector<std::string> getNotices();

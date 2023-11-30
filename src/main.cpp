@@ -114,7 +114,9 @@ void setupCustomKeybinds() {
 
 // just debug printing
 void printDebugInfo() {
-    geode::log::warn("=== Globed v{} has been loaded in debug mode ===", Mod::get()->getVersion().toString());
+    std::string version = Mod::get()->getVersion().toString();
+
+    geode::log::warn("=== Globed {} has been loaded in debug mode ===", version.starts_with('v') ? version : ("v" + version));
     geode::log::info("Platform: {}", GLOBED_PLATFORM_STRING);
     geode::log::info("FMOD support: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
     geode::log::info("Voice support: {}", GLOBED_VOICE_SUPPORT == 0 ? "false" : "true");

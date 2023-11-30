@@ -1,6 +1,30 @@
-use anyhow::bail;
+use std::{fmt::Display, num::ParseIntError, str::FromStr};
 
 use crate::data::bytebufferext::*;
+
+pub enum ColorParseError {
+    InvalidLength,
+    InvalidFormat,
+    ParseError,
+}
+
+impl Display for ColorParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ColorParseError::InvalidFormat => f.write_str("invalid hex string, expected '#' at the start"),
+            ColorParseError::InvalidLength => {
+                f.write_str("invalid length of the hex string, should start with '#' and have 6 characters for Color3B or 6/8 characters for Color4B")
+            },
+            ColorParseError::ParseError => f.write_str("invalid hex bytes encountered in the string")
+        }
+    }
+}
+
+impl From<ParseIntError> for ColorParseError {
+    fn from(_: ParseIntError) -> Self {
+        ColorParseError::ParseError
+    }
+}
 
 #[derive(Copy, Clone, Default)]
 pub struct Color3B {
@@ -24,15 +48,16 @@ decode_impl!(Color3B, buf, {
 
 size_calc_impl!(Color3B, size_of_types!(u8, u8, u8));
 
-impl TryFrom<String> for Color3B {
-    type Error = anyhow::Error;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+impl FromStr for Color3B {
+    type Err = ColorParseError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         if value.len() != 7 {
-            bail!("invalid hex string length, expected 7 characters, got {}", value.len());
+            return Err(ColorParseError::InvalidLength);
         }
 
         if !value.starts_with('#') {
-            bail!("invalid hex string, expected '#' at the start");
+            return Err(ColorParseError::InvalidFormat);
         }
 
         let r = u8::from_str_radix(&value[1..3], 16)?;
@@ -68,15 +93,16 @@ decode_impl!(Color4B, buf, {
 
 size_calc_impl!(Color4B, size_of_types!(u8, u8, u8, u8));
 
-impl TryFrom<String> for Color4B {
-    type Error = anyhow::Error;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+impl FromStr for Color4B {
+    type Err = ColorParseError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         if value.len() != 7 && value.len() != 9 {
-            bail!("invalid hex string length, expected 7 or 9 characters, got {}", value.len());
+            return Err(ColorParseError::InvalidLength);
         }
 
         if !value.starts_with('#') {
-            bail!("invalid hex string, expected '#' at the start");
+            return Err(ColorParseError::InvalidFormat);
         }
 
         let r = u8::from_str_radix(&value[1..3], 16)?;

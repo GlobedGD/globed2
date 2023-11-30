@@ -20,7 +20,7 @@ bool UdpSocket::connect(const std::string& serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
     destAddr_.sin_port = htons(port);
 
-    GLOBED_REQUIRE(inet_pton(AF_INET, serverIp.c_str(), &destAddr_.sin_addr) > 0, "tried to connect to an invalid address");
+    GLOBED_REQUIRE(inet_pton(AF_INET, serverIp.c_str(), &destAddr_.sin_addr) > 0, "tried to connect to an invalid address")
 
     connected = true;
     return true; // No actual connection is established in UDP
@@ -28,7 +28,32 @@ bool UdpSocket::connect(const std::string& serverIp, unsigned short port) {
 
 int UdpSocket::send(const char* data, unsigned int dataSize) {
     GLOBED_REQUIRE(connected, "attempting to call UdpSocket::send on a disconnected socket");
-    return sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
+
+    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
+
+    if (retval == -1) {
+        util::net::throwLastError();
+    }
+
+    return retval;
+}
+
+int UdpSocket::sendTo(const char* data, unsigned int dataSize, const std::string& address, unsigned short port) {
+    // stinky windows returns wsa error 10014 if sockaddr is a stack pointer
+    std::unique_ptr<sockaddr_in> addr = std::make_unique<sockaddr_in>();
+
+    addr->sin_family = AF_INET;
+    addr->sin_port = htons(port);
+
+    GLOBED_REQUIRE(inet_pton(AF_INET, address.c_str(), &addr->sin_addr) > 0, "tried to connect to an invalid address")
+
+    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr));
+
+    if (retval == -1) {
+        util::net::throwLastError();
+    }
+
+    return retval;
 }
 
 void UdpSocket::disconnect() {

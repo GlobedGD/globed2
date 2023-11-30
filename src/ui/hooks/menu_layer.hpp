@@ -10,28 +10,28 @@
 using namespace geode::prelude;
 
 class $modify(HookedMenuLayer, MenuLayer) {
-    bool m_btnActive = false;
-    CCMenuItemSpriteExtra* m_globedBtn = nullptr;
+    bool btnActive = false;
+    CCMenuItemSpriteExtra* globedBtn = nullptr;
 
     bool init() {
         if (!MenuLayer::init()) return false;
 
-        updateGlobedButton();
-        
+        this->updateGlobedButton();
+
         CCScheduler::get()->scheduleSelector(schedule_selector(HookedMenuLayer::maybeUpdateButton), this, 0.1f, false);
 
         return true;
     }
 
     void updateGlobedButton() {
-        if (m_fields->m_globedBtn) m_fields->m_globedBtn->removeFromParent();
+        if (m_fields->globedBtn) m_fields->globedBtn->removeFromParent();
 
         auto menu = this->getChildByID("bottom-menu");
 
         Build<CircleButtonSprite>(CircleButtonSprite::createWithSpriteFrameName(
             "miniSkull_001.png",
             1.f,
-            m_fields->m_btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
+            m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
             CircleBaseSize::MediumAlt
             ))
             .intoMenuItem([](auto) {
@@ -45,15 +45,15 @@ class $modify(HookedMenuLayer, MenuLayer) {
             })
             .id("main-menu-button"_spr)
             .parent(menu)
-            .store(m_fields->m_globedBtn);
+            .store(m_fields->globedBtn);
 
         menu->updateLayout();
     }
 
     void maybeUpdateButton(float _) {
         bool authenticated = NetworkManager::get().authenticated();
-        if (authenticated != m_fields->m_btnActive) {
-            m_fields->m_btnActive = authenticated;
+        if (authenticated != m_fields->btnActive) {
+            m_fields->btnActive = authenticated;
             this->updateGlobedButton();
         }
     }

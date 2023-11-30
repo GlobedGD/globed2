@@ -23,6 +23,7 @@ public:
 
     void prepareStream(int playerId);
     void removeStream(int playerId);
+    bool isSpeaking(int playerId);
 
 private:
     std::unordered_map<int, std::unique_ptr<AudioStream>> streams;

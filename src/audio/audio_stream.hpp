@@ -8,6 +8,8 @@
 
 class AudioStream {
 public:
+    bool starving = false; // true if there aren't enough samples in the queue
+
     AudioStream();
     ~AudioStream();
 

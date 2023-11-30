@@ -33,7 +33,7 @@ public:
     }
 
     // returns true if messages are available, otherwise false if returned because of timeout.
-    bool waitForMessages(std::chrono::seconds timeout) {
+    bool waitForMessages(std::chrono::milliseconds timeout) {
         std::unique_lock lock(_mtx);
         if (!_iq.empty()) return true;
 

@@ -91,6 +91,33 @@ public:
     std::optional<SpecialUserData> specialUserData;
 };
 
+class PlayerPreviewAccountData {
+public:
+    PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2)
+        : id(id), name(name), cube(cube), color1(color1), color2(color2) {}
+    PlayerPreviewAccountData() {}
+
+    GLOBED_ENCODE {
+        buf.writeI32(id);
+        buf.writeString(name);
+        buf.writeI16(cube);
+        buf.writeI16(color1);
+        buf.writeI16(color2);
+    }
+
+    GLOBED_DECODE {
+        id = buf.readI32();
+        name = buf.readString();
+        cube = buf.readI16();
+        color1 = buf.readI16();
+        color2 = buf.readI16();
+    }
+
+    int32_t id;
+    std::string name;
+    int16_t cube, color1, color2;
+};
+
 class PlayerData {
 public:
     PlayerData() {}
@@ -115,4 +142,42 @@ public:
 
     int accountId;
     PlayerData data;
+};
+
+class PlayerMetadata {
+public:
+    PlayerMetadata(uint16_t percentage, int32_t attempts) : percentage(percentage), attempts(attempts) {}
+    PlayerMetadata() {}
+
+    GLOBED_ENCODE {
+        buf.writeU16(percentage);
+        buf.writeI32(attempts);
+    }
+
+    GLOBED_DECODE {
+        percentage = buf.readU16();
+        attempts = buf.readI32();
+    }
+
+    uint16_t percentage;
+    int32_t attempts;
+};
+
+class AssociatedPlayerMetadata {
+public:
+    AssociatedPlayerMetadata(int accountId, PlayerMetadata data) : accountId(accountId), data(data) {}
+    AssociatedPlayerMetadata() {}
+
+    GLOBED_ENCODE {
+        buf.writeI32(accountId);
+        buf.writeValue(data);
+    }
+
+    GLOBED_DECODE {
+        accountId = buf.readI32();
+        data = buf.readValue<PlayerMetadata>();
+    }
+
+    int accountId;
+    PlayerMetadata data;
 };

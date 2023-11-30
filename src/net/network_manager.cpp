@@ -15,7 +15,6 @@ NetworkManager::NetworkManager() {
     util::net::initialize();
 
     if (!gameSocket.create()) util::net::throwLastError();
-    if (!pingSocket.create()) util::net::throwLastError();
 
     // add builtin listeners
 
@@ -57,7 +56,6 @@ NetworkManager::NetworkManager() {
 
     threadMain = std::thread(&NetworkManager::threadMainFunc, this);
     threadRecv = std::thread(&NetworkManager::threadRecvFunc, this);
-    threadTasks = std::thread(&NetworkManager::threadTasksFunc, this);
 }
 
 NetworkManager::~NetworkManager() {
@@ -77,7 +75,6 @@ NetworkManager::~NetworkManager() {
 
     if (threadMain.joinable()) threadMain.join();
     if (threadRecv.joinable()) threadRecv.join();
-    if (threadTasks.joinable()) threadTasks.join();
 
     log::debug("cleaning up..");
 
@@ -159,8 +156,27 @@ void NetworkManager::threadMainFunc() {
     while (_running) {
         this->maybeSendKeepalive();
 
-        if (!packetQueue.waitForMessages(chrono::seconds(1))) {
-            continue;
+        if (!packetQueue.waitForMessages(chrono::milliseconds(250))) {
+            // check for tasks
+            if (taskQueue.empty()) continue;
+
+            for (const auto& task : taskQueue.popAll()) {
+                if (task == NetworkThreadTask::PingServers) {
+                    auto& sm = GlobedServerManager::get();
+                    auto activeServer = sm.getActiveGameServer();
+
+                    for (auto& [serverId, server] : sm.extractGameServers()) {
+                        if (serverId == activeServer) continue;
+
+                        try {
+                            auto pingId = sm.pingStart(serverId);
+                            gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
+                        } catch (const std::exception& e) {
+                            ErrorQueues::get().warn(e.what());
+                        }
+                    }
+                }
+            }
         }
 
         auto messages = packetQueue.popAll();
@@ -177,36 +193,30 @@ void NetworkManager::threadMainFunc() {
 
 void NetworkManager::threadRecvFunc() {
     while (_running) {
-        // we wanna poll both the normal socket and the ping socket.
-        auto pollResult = this->pollBothSockets(1000);
-        if (pollResult.hasPing) {
-            try {
-                auto packet = pingSocket.recvPacket();
-                if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
-                    GlobedServerManager::get().pingFinish(pingr->id, pingr->playerCount);
-                }
-            } catch (const std::exception& e) {
-                ErrorQueues::get().warn(fmt::format("ping error: {}", e.what()));
-            }
-        }
+        auto pollResult = gameSocket.poll(1000);
 
-        if (!pollResult.hasNormal) {
+        if (!pollResult) {
             this->maybeDisconnectIfDead();
             continue;
         }
-
-        lastReceivedPacket = chrono::system_clock::now();
 
         std::shared_ptr<Packet> packet;
 
         try {
             packet = gameSocket.recvPacket();
         } catch (const std::exception& e) {
-            ErrorQueues::get().warn(fmt::format("failed to receive a packet: {}", e.what()));
+            ErrorQueues::get().debugWarn(fmt::format("failed to receive a packet: {}", e.what()));
             continue;
         }
 
         packetid_t packetId = packet->getPacketId();
+
+        if (packetId == PingResponsePacket::PACKET_ID) {
+            this->handlePingResponse(packet);
+            continue;
+        }
+
+        lastReceivedPacket = chrono::system_clock::now();
 
         auto builtin = builtinListeners.lock();
         if (builtin->contains(packetId)) {
@@ -227,33 +237,9 @@ void NetworkManager::threadRecvFunc() {
     }
 }
 
-void NetworkManager::threadTasksFunc() {
-    while (_running) {
-        if (!taskQueue.waitForMessages(chrono::seconds(1))) {
-            continue;
-        }
-
-        for (auto task : taskQueue.popAll()) {
-            switch (task) {
-            case NetworkThreadTask::PingServers: {
-                auto& sm = GlobedServerManager::get();
-                auto activeServer = sm.getActiveGameServer();
-
-                for (auto& [serverId, server] : sm.extractGameServers()) {
-                    if (serverId == activeServer) continue;
-
-                    try {
-                        pingSocket.connect(server.address.ip, server.address.port);
-                        auto pingId = sm.pingStart(serverId);
-                        pingSocket.sendPacket(PingPacket::create(pingId));
-                        pingSocket.disconnect();
-                    } catch (const std::exception& e) {
-                        ErrorQueues::get().warn(e.what());
-                    }
-                }
-            }
-            }
-        }
+void NetworkManager::handlePingResponse(std::shared_ptr<Packet> packet) {
+    if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
+        GlobedServerManager::get().pingFinish(pingr->id, pingr->playerCount);
     }
 }
 
@@ -275,34 +261,6 @@ void NetworkManager::maybeDisconnectIfDead() {
         ErrorQueues::get().error("The server you were connected to is not responding to any requests. <cy>You have been disconnected.</c>");
         this->disconnect();
     }
-}
-
-PollBothResult NetworkManager::pollBothSockets(int msDelay) {
-    PollBothResult out;
-
-    GLOBED_SOCKET_POLLFD fds[2];
-
-    fds[0].fd = gameSocket.socket_;
-    fds[0].events = POLLIN;
-
-    fds[1].fd = pingSocket.socket_;
-    fds[1].events = POLLIN;
-
-    int result = GLOBED_SOCKET_POLL(fds, 2, msDelay);
-
-    if (result == -1) {
-        util::net::throwLastError();
-    }
-
-    if (result == 0) { // timeout expired
-        out.hasNormal = false;
-        out.hasPing = false;
-    } else {
-        out.hasNormal = (fds[0].revents & POLLIN) != 0;
-        out.hasPing = (fds[1].revents & POLLIN) != 0;
-    }
-
-    return out;
 }
 
 void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback callback) {

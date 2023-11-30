@@ -34,4 +34,12 @@ void VoicePlaybackManager::removeStream(int playerId) {
     streams.erase(playerId);
 }
 
+bool VoicePlaybackManager::isSpeaking(int playerId) {
+    if (!streams.contains(playerId)) {
+        return false;
+    }
+
+    return !streams.at(playerId)->starving;
+}
+
 #endif // GLOBED_VOICE_SUPPORT

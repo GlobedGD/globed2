@@ -15,12 +15,20 @@
 #include <managers/error_queues.hpp>
 #include <net/network_manager.hpp>
 #include <data/packets/all.hpp>
+#include <util/math.hpp>
 
 using namespace geode::prelude;
+
+constexpr float DATA_SEND_INTERVAL = 1.0f / 30.f;
+constexpr float DATA_SEND_INTERVAL_MS = DATA_SEND_INTERVAL * 1000;
 
 class $modify(GlobedPlayLayer, PlayLayer) {
     bool globedReady;
     bool deafened = false;
+
+    /* speedhack detection */
+    float lastKnownTimeScale = 1.0f;
+    chrono::system_clock::time_point lastSentPacket;
 
     /* gd hooks */
 
@@ -54,14 +62,26 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
             // TODO client side blocking and stuff..
             log::debug("streaming frame from {}", packet->sender);
-            VoicePlaybackManager::get().playFrameStreamed(packet->sender, packet->frame);
+            // TODO - this decodes the sound data on the main thread. might be a bad idea, will need to benchmark.
+            try {
+                VoicePlaybackManager::get().playFrameStreamed(packet->sender, packet->frame);
+            } catch (const std::exception& e) {
+                ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + e.what());
+            }
+        });
 
+        nm.addListener<PlayerMetadataPacket>([this](PlayerMetadataPacket* packet) {
+            // TODO handle player metadata
         });
 
         // schedule stuff
+        // TODO - handle sending SyncPlayerMetadataPacket.
+        // it could be sent periodically as a lazy solution, but the best way
+        // is to only do it when the state actually changed. like we got a new best or
+        // the attempt count increased by quite a bit.
 
         auto scheduler = CCScheduler::get();
-        scheduler->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, 1.0f / 30.f, false);
+        scheduler->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, DATA_SEND_INTERVAL, false);
 
         // setup custom keybinds
 #if GLOBED_HAS_KEYBINDS
@@ -129,12 +149,11 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // selSendPlayerData - runs 30 times per second
     void selSendPlayerData(float _dt) {
         if (!this->established()) return;
-
-        auto& nm = NetworkManager::get();
+        if (!this->isCurrentPlayLayer()) return;
+        if (!this->accountForSpeedhack()) return;
 
         auto data = this->gatherPlayerData();
-
-        nm.send(PlayerDataPacket::create(data));
+        NetworkManager::get().send(PlayerDataPacket::create(data));
     }
 
     /* private utilities */
@@ -149,7 +168,11 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     void handlePlayerJoin(int playerId) {
-        VoicePlaybackManager::get().prepareStream(playerId);
+        try {
+            VoicePlaybackManager::get().prepareStream(playerId);
+        } catch (const std::exception& e) {
+            ErrorQueues::get().error(std::string("Failed to prepare audio stream: ") + e.what());
+        }
     }
 
     void handlePlayerLeave(int playerId) {
@@ -158,8 +181,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     void audioCallback(const EncodedAudioFrame& frame) {
         if (!this->established()) return;
-
-        log::debug("audio callback with {} frames", frame.size());
 
         auto& nm = NetworkManager::get();
 
@@ -172,5 +193,41 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         buf.writeValue(frame);
 
         nm.send(RawPacket::create(VoicePacket::PACKET_ID, VoicePacket::ENCRYPTED, std::move(buf)));
+    }
+
+    // With speedhack enabled, all scheduled selectors will run more often than they are supposed to.
+    // This means, if you turn up speedhack to let's say 100x, you will send 3000 packets per second. That is a big no-no.
+    // For naive speedhack implementations, we simply check CCScheduler::getTimeScale and properly reschedule our data sender.
+    //
+    // For non-naive speedhacks however, ones that don't use CCScheduler::setTimeScale, it is more complicated.
+    // We record the time of sending each packet and compare the intervals. If the interval is suspiciously small, we reject the packet.
+    // This does result in less smooth experience with non-naive speedhacks however.
+    bool accountForSpeedhack() {
+        auto sched = CCScheduler::get();
+        float ts = sched->getTimeScale();
+        if (!util::math::equal(ts, m_fields->lastKnownTimeScale)) {
+            m_fields->lastKnownTimeScale = ts;
+            auto sel = schedule_selector(GlobedPlayLayer::selSendPlayerData);
+            sched->unscheduleSelector(sel, this);
+            sched->scheduleSelector(sel, this, DATA_SEND_INTERVAL * ts, false);
+        }
+
+        auto now = util::time::now();
+        auto passed = chrono::duration_cast<chrono::milliseconds>(now - m_fields->lastSentPacket).count();
+
+        if (passed < DATA_SEND_INTERVAL_MS * 0.85f) {
+            // log::warn("dropping a packet (speedhack?), passed time is {}ms", passed);
+            return false;
+        }
+
+        m_fields->lastSentPacket = now;
+
+        return true;
+    }
+
+    // remove if impostor playlayer gets fixed
+    bool isCurrentPlayLayer() {
+        auto playLayer = getChildOfType<PlayLayer>(CCScene::get(), 0);
+        return playLayer == this;
     }
 };

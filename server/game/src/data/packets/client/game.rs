@@ -13,14 +13,14 @@ decode_impl!(SyncIconsPacket, buf, Ok(Self { icons: buf.read()? }));
 /* RequestProfilesPacket - 11001 */
 
 packet!(RequestProfilesPacket, 11001, false, {
-    ids: Vec<i32>
+    ids: [i32; MAX_PROFILES_REQUESTED]
 });
 
 encode_unimpl!(RequestProfilesPacket);
 
 decode_impl!(RequestProfilesPacket, buf, {
     Ok(Self {
-        ids: buf.read_value_vec()?,
+        ids: buf.read_value_array()?,
     })
 });
 
@@ -55,6 +55,16 @@ decode_impl!(PlayerDataPacket, buf, Ok(Self { data: buf.read()? }));
 /* RequestPlayerListPacket - 11005 */
 
 empty_client_packet!(RequestPlayerListPacket, 11005);
+
+/* SyncPlayerMetadataPacket - 11006 */
+
+packet!(SyncPlayerMetadataPacket, 11006, false, {
+    data: PlayerMetadata
+});
+
+encode_unimpl!(SyncPlayerMetadataPacket);
+
+decode_impl!(SyncPlayerMetadataPacket, buf, Ok(Self { data: buf.read()? }));
 
 /* VoicePacket - 11010 */
 

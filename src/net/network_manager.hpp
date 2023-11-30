@@ -91,7 +91,7 @@ private:
     static constexpr chrono::seconds KEEPALIVE_INTERVAL = chrono::seconds(5);
     static constexpr chrono::seconds DISCONNECT_AFTER = chrono::seconds(15);
 
-    GameSocket gameSocket, pingSocket;
+    GameSocket gameSocket;
 
     SmartMessageQueue<std::shared_ptr<Packet>> packetQueue;
     SmartMessageQueue<NetworkThreadTask> taskQueue;
@@ -102,11 +102,9 @@ private:
 
     void threadMainFunc();
     void threadRecvFunc();
-    void threadTasksFunc();
 
     std::thread threadMain;
     std::thread threadRecv;
-    std::thread threadTasks;
 
     // misc
 
@@ -117,9 +115,9 @@ private:
     chrono::system_clock::time_point lastKeepalive;
     chrono::system_clock::time_point lastReceivedPacket;
 
+    void handlePingResponse(std::shared_ptr<Packet> packet);
     void maybeSendKeepalive();
     void maybeDisconnectIfDead();
-    PollBothResult pollBothSockets(int msDelay);
 
     // Builtin listeners have priority above the others.
     WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;

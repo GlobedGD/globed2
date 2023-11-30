@@ -21,11 +21,11 @@ class SyncIconsPacket : public Packet {
     PlayerIconData icons;
 };
 
+constexpr size_t MAX_PROFILES_REQUESTED = 128;
 class RequestProfilesPacket : public Packet {
     GLOBED_PACKET(11001, false)
 
     GLOBED_PACKET_ENCODE {
-        buf.writeU32(ids.size());
         for (auto id : ids) {
             buf.writeI32(id);
         }
@@ -33,13 +33,13 @@ class RequestProfilesPacket : public Packet {
 
     GLOBED_PACKET_DECODE_UNIMPL
 
-    RequestProfilesPacket(const std::vector<int32_t>& ids) : ids(ids) {}
+    RequestProfilesPacket(const std::array<int, MAX_PROFILES_REQUESTED>& ids) : ids(ids) {}
 
-    static std::shared_ptr<Packet> create(const std::vector<int32_t>& ids) {
+    static std::shared_ptr<Packet> create(const std::array<int, MAX_PROFILES_REQUESTED>& ids) {
         return std::make_shared<RequestProfilesPacket>(ids);
     }
 
-    std::vector<int32_t> ids;
+    std::array<int, MAX_PROFILES_REQUESTED> ids;
 };
 
 class LevelJoinPacket : public Packet {
@@ -53,7 +53,7 @@ class LevelJoinPacket : public Packet {
 
     LevelJoinPacket(int levelId) : levelId(levelId) {}
 
-    static std::shared_ptr<LevelJoinPacket> create(int levelId) {
+    static std::shared_ptr<Packet> create(int levelId) {
         return std::make_shared<LevelJoinPacket>(levelId);
     }
 
@@ -68,7 +68,7 @@ class LevelLeavePacket : public Packet {
 
     LevelLeavePacket() {}
 
-    static std::shared_ptr<LevelLeavePacket> create() {
+    static std::shared_ptr<Packet> create() {
         return std::make_shared<LevelLeavePacket>();
     }
 };
@@ -84,7 +84,7 @@ class PlayerDataPacket : public Packet {
 
     PlayerDataPacket(const PlayerData& data) : data(data) {}
 
-    static std::shared_ptr<PlayerDataPacket> create(const PlayerData& data) {
+    static std::shared_ptr<Packet> create(const PlayerData& data) {
         return std::make_shared<PlayerDataPacket>(data);
     }
 
@@ -98,9 +98,28 @@ class RequestPlayerListPacket : public Packet {
     GLOBED_PACKET_DECODE_UNIMPL
 
     RequestPlayerListPacket() {}
-    static std::shared_ptr<RequestPlayerListPacket> create() {
+
+    static std::shared_ptr<Packet> create() {
         return std::make_shared<RequestPlayerListPacket>();
     }
+};
+
+class SyncPlayerMetadataPacket : public Packet {
+    GLOBED_PACKET(11006, false)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeValue(data);
+    }
+
+    GLOBED_PACKET_DECODE_UNIMPL
+
+    SyncPlayerMetadataPacket(const PlayerMetadata& data) : data(data) {}
+
+    static std::shared_ptr<Packet> create(const PlayerMetadata& data) {
+        return std::make_shared<SyncPlayerMetadataPacket>(data);
+    }
+
+    PlayerMetadata data;
 };
 
 #if GLOBED_VOICE_SUPPORT

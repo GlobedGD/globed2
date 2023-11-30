@@ -7,9 +7,9 @@ use crate::{
     data::packets::PacketHeader,
     server_thread::{GameServerThread, PacketHandlingError, Result},
 };
-use log::{debug, warn};
+use log::warn;
 
-use super::{gs_disconnect, gs_handler, gs_needauth};
+use super::*;
 use crate::data::*;
 
 /// max voice throughput in kb/s
@@ -28,11 +28,40 @@ impl GameServerThread {
     gs_handler!(self, handle_request_profiles, RequestProfilesPacket, packet, {
         gs_needauth!(self);
 
-        let profiles = self.game_server.gather_profiles(&packet.ids);
-        let encoded_size = size_of_types!(PlayerAccountData) * profiles.len();
+        // slice it until the first zero
+        let player_count = packet.ids.iter().position(|&x| x == 0).unwrap_or(packet.ids.len());
+        let ids = &packet.ids[..player_count];
 
-        self.send_packet_fast_rough(&PlayerProfilesPacket { profiles }, encoded_size)
-            .await
+        let account_id = self.account_id.load(Ordering::Relaxed);
+
+        let encoded_size = size_of_types!(PlayerAccountData) * player_count;
+
+        gs_inline_encode!(self, encoded_size, buf, {
+            buf.write_packet_header::<PlayerProfilesPacket>();
+            buf.write_u32(player_count as u32);
+
+            let written = self.game_server.for_each_player(
+                ids,
+                move |preview, count, buf| {
+                    // we do additional length check because player count may have increased since then
+                    if count < player_count && preview.account_id != account_id {
+                        buf.write_value(preview);
+                        true
+                    } else {
+                        false
+                    }
+                },
+                &mut buf,
+            );
+
+            // if the written count is less than requested, we now lied and the client will fail decoding. re-encode the actual count.
+            if written != player_count {
+                buf.set_pos(PacketHeader::SIZE);
+                buf.write_u32(written as u32);
+            }
+        });
+
+        Ok(())
     });
 
     gs_handler!(self, handle_level_join, LevelJoinPacket, packet, {
@@ -55,7 +84,7 @@ impl GameServerThread {
     gs_handler!(self, handle_level_leave, LevelLeavePacket, _packet, {
         gs_needauth!(self);
 
-        let level_id = self.level_id.load(Ordering::Relaxed);
+        let level_id = self.level_id.swap(0, Ordering::Relaxed);
         if level_id != 0 {
             let account_id = self.account_id.load(Ordering::Relaxed);
 
@@ -66,7 +95,6 @@ impl GameServerThread {
         Ok(())
     });
 
-    // if you are seeing this. i am so sorry.
     gs_handler!(self, handle_player_data, PlayerDataPacket, packet, {
         gs_needauth!(self);
 
@@ -77,67 +105,45 @@ impl GameServerThread {
 
         let account_id = self.account_id.load(Ordering::Relaxed);
 
-        let retval: Result<Option<Vec<u8>>> = {
+        let written_players = {
             let mut pm = self.game_server.state.player_manager.lock();
             pm.set_player_data(account_id, &packet.data);
-
-            // this unwrap should be safe and > 0 given that self.level_id != 0
-            let written_players = pm.get_player_count_on_level(level_id).unwrap() - 1;
-
-            // no one else on the level, no need to send a response packet
-            if written_players == 0 {
-                return Ok(());
-            }
-
-            drop(pm);
-
-            let calc_size = size_of_types!(PacketHeader, u32) + size_of_types!(AssociatedPlayerData) * written_players;
-
-            alloca::with_alloca(calc_size, move |data| {
-                // safety: 'data' will have garbage data but that is considered safe for all our intents and purposes
-                // as `FastByteBuffer::as_bytes()` will only return what was already written.
-                let data = unsafe {
-                    let ptr = data.as_mut_ptr().cast::<u8>();
-                    let len = std::mem::size_of_val(data);
-                    std::slice::from_raw_parts_mut(ptr, len)
-                };
-
-                let mut buf = FastByteBuffer::new(data);
-
-                // dont actually do this anywhere else please
-                buf.write_packet_header::<LevelDataPacket>();
-                buf.write_u32(written_players as u32);
-
-                // this is scary
-                self.game_server.state.player_manager.lock().for_each_player_on_level(
-                    level_id,
-                    |player, buf| {
-                        // we do additional length check because player count may have changed since 1st lock
-                        // NOTE: this assumes encoded size of AssociatedPlayerData is a constant
-                        // change this to something else if that won't be true in the future
-                        if buf.len() != buf.capacity() && player.account_id != account_id {
-                            buf.write_value(player);
-                        }
-                    },
-                    &mut buf,
-                );
-
-                let data = buf.as_bytes();
-                match self.send_buffer_immediate(data) {
-                    // if we cant send without blocking, accept our defeat and clone the data to a vec
-                    Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(data.to_vec())),
-                    // if another error occured, propagate it up
-                    Err(e) => Err(e),
-                    // if all good, do nothing
-                    Ok(()) => Ok(None),
-                }
-            })
+            // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
+            pm.get_player_count_on_level(level_id).unwrap_or(1) - 1
         };
 
-        if let Some(data) = retval? {
-            debug!("fast PlayerData response failed, issuing a blocking call");
-            self.send_buffer(&data).await?;
+        // no one else on the level, no need to send a response packet
+        if written_players == 0 {
+            return Ok(());
         }
+
+        let calc_size = size_of_types!(PacketHeader, u32) + size_of_types!(AssociatedPlayerData) * written_players;
+
+        gs_inline_encode!(self, calc_size, buf, {
+            buf.write_packet_header::<LevelDataPacket>();
+            buf.write_u32(written_players as u32);
+
+            // this is scary
+            let written = self.game_server.state.player_manager.lock().for_each_player_on_level(
+                level_id,
+                |player, count, buf| {
+                    // we do additional length check because player count may have increased since 1st lock
+                    if count < written_players && player.data.account_id != account_id {
+                        buf.write_value(&player.data);
+                        true
+                    } else {
+                        false
+                    }
+                },
+                &mut buf,
+            );
+
+            // if the player count has instead decreased, we now lied and the client will fail decoding. re-encode the actual count.
+            if written != written_players {
+                buf.set_pos(PacketHeader::SIZE);
+                buf.write_u32(written as u32);
+            }
+        });
 
         Ok(())
     });
@@ -145,11 +151,88 @@ impl GameServerThread {
     gs_handler!(self, handle_request_player_list, RequestPlayerListPacket, _packet, {
         gs_needauth!(self);
 
-        let profiles = self.game_server.gather_all_profiles();
-        let encoded_size = size_of_types!(PlayerAccountData) * profiles.len();
+        let account_id = self.account_id.load(Ordering::Relaxed);
 
-        self.send_packet_fast_rough(&PlayerListPacket { profiles }, encoded_size)
-            .await
+        let player_count = self.game_server.state.player_count.load(Ordering::Relaxed);
+        let encoded_size = size_of_types!(PlayerPreviewAccountData) * player_count as usize;
+
+        gs_inline_encode!(self, encoded_size, buf, {
+            buf.write_packet_header::<PlayerListPacket>();
+            buf.write_u32(player_count);
+
+            let written = self.game_server.for_every_player_preview(
+                move |preview, count, buf| {
+                    // we do additional length check because player count may have increased since then
+                    if count < player_count as usize && preview.account_id != account_id {
+                        buf.write_value(preview);
+                        true
+                    } else {
+                        false
+                    }
+                },
+                &mut buf,
+            ) as u32;
+
+            // if the player count has instead decreased, we now lied and the client will fail decoding. re-encode the actual count.
+            if written != player_count {
+                buf.set_pos(PacketHeader::SIZE);
+                buf.write_u32(written);
+            }
+        });
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_sync_player_metadata, SyncPlayerMetadataPacket, packet, {
+        gs_needauth!(self);
+
+        let level_id = self.level_id.load(Ordering::Relaxed);
+        if level_id == 0 {
+            return Err(PacketHandlingError::UnexpectedPlayerData);
+        }
+
+        let account_id = self.account_id.load(Ordering::Relaxed);
+
+        let written_players = {
+            let mut pm = self.game_server.state.player_manager.lock();
+            pm.set_player_metadata(account_id, &packet.data);
+            // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
+            pm.get_player_count_on_level(level_id).unwrap_or(1) - 1
+        };
+
+        // no one else on the level, no need to send a response packet
+        if written_players == 0 {
+            return Ok(());
+        }
+
+        let calc_size = size_of_types!(PacketHeader, u32) + size_of_types!(AssociatedPlayerMetadata) * written_players;
+
+        gs_inline_encode!(self, calc_size, buf, {
+            buf.write_packet_header::<PlayerMetadataPacket>();
+            buf.write_u32(written_players as u32);
+
+            let written = self.game_server.state.player_manager.lock().for_each_player_on_level(
+                level_id,
+                |player, count, buf| {
+                    // we do additional length check because player count may have changed since 1st lock
+                    if count < written_players && player.data.account_id != account_id {
+                        buf.write_value(&player.meta);
+                        true
+                    } else {
+                        false
+                    }
+                },
+                &mut buf,
+            );
+
+            // if the player count has instead decreased, we now lied and the client will fail decoding. re-encode the actual count.
+            if written != written_players {
+                buf.set_pos(PacketHeader::SIZE);
+                buf.write_u32(written as u32);
+            }
+        });
+
+        Ok(())
     });
 
     gs_handler!(self, handle_voice, VoicePacket, packet, {

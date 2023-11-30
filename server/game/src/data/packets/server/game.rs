@@ -13,23 +13,16 @@ encode_impl!(PlayerProfilesPacket, buf, self, {
 decode_unimpl!(PlayerProfilesPacket);
 
 /* LevelDataPacket - 21001
-* For optimization reasons, LevelDataPacket cannot be dynamically dispatched, and isn't defined here
-* It is directly serialized in the packet handler in server_thread/handlers/game.rs.
+* PlayerListPacket - 21002
+* PlayerMetadataPacket - 21003
+*
+* For optimization reasons, these 3 cannot be dynamically dispatched, and are not defined here.
+* They are encoded inline in the packet handlers in server_thread/handlers/game.rs.
 */
 
 empty_server_packet!(LevelDataPacket, 21001);
-
-/* PlayerListPacket - 21002 */
-
-packet!(PlayerListPacket, 21002, false, {
-    profiles: Vec<PlayerAccountData>,
-});
-
-encode_impl!(PlayerListPacket, buf, self, {
-    buf.write_value_vec(&self.profiles);
-});
-
-decode_unimpl!(PlayerListPacket);
+empty_server_packet!(PlayerListPacket, 21002);
+empty_server_packet!(PlayerMetadataPacket, 21003);
 
 /* VoiceBroadcastPacket - 21010 */
 
