@@ -95,7 +95,6 @@ void GlobedSignupPopup::commentUploadFinished(int _) {
             nullptr
         )
     );
-    
 }
 
 void GlobedSignupPopup::onDelayedChallengeCompleted() {
@@ -117,7 +116,7 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
 
     auto gdData = am.gdData.lock();
 
-    auto url = sm.getCentral() + 
+    auto url = sm.getCentral() +
         fmt::format("/challenge/verify?aid={}&aname={}&answer={}",
                     gdData->accountId,
                     gdData->accountName,
@@ -131,7 +130,7 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
             // we are good! the authkey has been created and can be saved now.
             auto colonPos = response.find(':');
             auto commentId = response.substr(0, colonPos);
-            
+
             log::info("Authkey created successfully, saving.");
             auto authkey = util::crypto::base64Decode(response.substr(colonPos + 1));
             am.storeAuthKey(util::crypto::simpleHash(authkey));
@@ -169,4 +168,14 @@ void GlobedSignupPopup::onFailure(const std::string& message) {
 
 void GlobedSignupPopup::keyDown(cocos2d::enumKeyCodes key) {
     // do nothing; the popup should be impossible to close manually
+}
+
+GlobedSignupPopup* GlobedSignupPopup::create() {
+    auto ret = new GlobedSignupPopup;
+    if (ret && ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+        ret->autorelease();
+        return ret;
+    }
+    CC_SAFE_DELETE(ret);
+    return nullptr;
 }

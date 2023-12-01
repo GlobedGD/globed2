@@ -6,6 +6,14 @@ public:
     constexpr static float POPUP_WIDTH = 180.f;
     constexpr static float POPUP_HEIGHT = 80.f;
 
+    static GlobedSignupPopup* create();
+
+protected:
+    cocos2d::CCLabelBMFont* statusMessage;
+
+    std::string storedAuthcode;
+    int storedLevelId;
+
     bool setup() override;
     void keyDown(cocos2d::enumKeyCodes key) override;
     void onFailure(const std::string& message);
@@ -19,20 +27,4 @@ public:
     void commentDeleteFailed(int, int) override;
 
     void onDelayedChallengeCompleted();
-
-    static GlobedSignupPopup* create() {
-        auto ret = new GlobedSignupPopup;
-        if (ret && ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
-            ret->autorelease();
-            return ret;
-        }
-        CC_SAFE_DELETE(ret);
-        return nullptr;
-    }
-
-private:
-    cocos2d::CCLabelBMFont* statusMessage;
-
-    std::string storedAuthcode;
-    int storedLevelId;
 };

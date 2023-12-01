@@ -9,19 +9,10 @@ public:
     static constexpr cocos2d::ccColor3B ACTIVE_COLOR = {0, 255, 25};
     static constexpr cocos2d::ccColor3B INACTIVE_COLOR = {255, 255, 255};
 
-    bool init(const GameServerView& gsview, bool active);
     void updateWith(const GameServerView& gsview, bool active);
     void requestTokenAndConnect();
 
-    static ServerListCell* create(const GameServerView& gsview, bool active) {
-        auto ret = new ServerListCell;
-        if (ret && ret->init(gsview, active)) {
-            return ret;
-        }
-
-        CC_SAFE_DELETE(ret);
-        return nullptr;
-    }
+    static ServerListCell* create(const GameServerView& gsview, bool active);
 
     GameServerView gsview;
     bool active;
@@ -31,4 +22,6 @@ private:
     cocos2d::CCLabelBMFont *labelName, *labelPing, *labelExtra;
     cocos2d::CCMenu* btnMenu;
     CCMenuItemSpriteExtra* btnConnect = nullptr;
+
+    bool init(const GameServerView& gsview, bool active);
 };

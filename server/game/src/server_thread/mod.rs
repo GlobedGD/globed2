@@ -1,4 +1,5 @@
 use std::{
+    cell::SyncUnsafeCell,
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering},
@@ -57,7 +58,7 @@ pub struct GameServerThread {
     pub account_data: SyncMutex<PlayerAccountData>,
 
     last_voice_packet: AtomicU64,
-    rate_limiter: SyncMutex<SimpleRateLimiter>,
+    pub rate_limiter: SyncUnsafeCell<SimpleRateLimiter>, // do NOT interact with this field oustide of GameServer.
 }
 
 impl GameServerThread {
@@ -65,6 +66,8 @@ impl GameServerThread {
 
     pub fn new(peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
         let (tx, rx) = mpsc::channel::<ServerThreadMessage>(CHANNEL_BUFFER_SIZE);
+        let rate_limiter = SimpleRateLimiter::new(SERVER_TPS + 5, Duration::from_millis(950));
+        let rate_limiter = SyncUnsafeCell::new(rate_limiter);
         Self {
             tx,
             rx: Mutex::new(rx),
@@ -77,7 +80,7 @@ impl GameServerThread {
             awaiting_termination: AtomicBool::new(false),
             account_data: SyncMutex::new(PlayerAccountData::default()),
             last_voice_packet: AtomicU64::new(0),
-            rate_limiter: SyncMutex::new(SimpleRateLimiter::new(SERVER_TPS + 5, Duration::from_millis(950))),
+            rate_limiter,
         }
     }
 
@@ -323,11 +326,6 @@ impl GameServerThread {
     async fn handle_packet(&self, message: &mut [u8]) -> Result<()> {
         if message.len() < PacketHeader::SIZE {
             return Err(PacketHandlingError::MalformedMessage);
-        }
-
-        // check if we are sending too many packets
-        if !self.rate_limiter.lock().try_tick() {
-            return Err(PacketHandlingError::Ratelimited);
         }
 
         let mut data = ByteReader::from_bytes(message);

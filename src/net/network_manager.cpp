@@ -232,7 +232,7 @@ void NetworkManager::threadRecvFunc() {
         geode::Loader::get()->queueInMainThread([this, packetId, packet]() {
             auto listeners_ = this->listeners.lock();
             if (!listeners_->contains(packetId)) {
-                ErrorQueues::get().warn(fmt::format("Unhandled packet: {}", packetId));
+                ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
             } else {
                 // xd
                 (*listeners_)[packetId](packet);

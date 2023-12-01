@@ -42,8 +42,8 @@ pub struct GameServer {
 }
 
 impl GameServer {
-    pub async fn new(
-        address: String,
+    pub fn new(
+        socket: UdpSocket,
         state: ServerState,
         central_conf: GameServerBootData,
         config: GameServerConfiguration,
@@ -51,7 +51,7 @@ impl GameServer {
     ) -> Self {
         Self {
             state,
-            socket: UdpSocket::bind(&address).await.unwrap(),
+            socket,
             threads: SyncMutex::new(FxHashMap::default()),
             secret_key: SecretKey::generate(&mut OsRng),
             central_conf: SyncMutex::new(central_conf),
@@ -60,8 +60,8 @@ impl GameServer {
         }
     }
 
-    pub async fn run(&'static self) -> anyhow::Result<()> {
-        info!("Server launched on {}", self.socket.local_addr()?);
+    pub async fn run(&'static self) -> ! {
+        info!("Server launched on {}", self.socket.local_addr().unwrap());
 
         if !self.standalone {
             tokio::spawn(async move {
@@ -78,8 +78,11 @@ impl GameServer {
             });
         }
 
+        // preallocate a buffer
+        let mut buf = [0u8; MAX_PACKET_SIZE];
+
         loop {
-            match self.recv_and_handle().await {
+            match self.recv_and_handle(&mut buf).await {
                 Ok(()) => {}
                 Err(err) => {
                     warn!("Failed to handle a packet: {err}");
@@ -120,7 +123,12 @@ impl GameServer {
             .lock()
             .values()
             .filter(|thr| thr.authenticated.load(Ordering::Relaxed))
-            .map(|thread| thread.account_data.lock().make_preview())
+            .map(|thread| {
+                thread
+                    .account_data
+                    .lock()
+                    .make_preview(thread.level_id.load(Ordering::Relaxed))
+            })
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
@@ -179,13 +187,12 @@ impl GameServer {
         Ok(())
     }
 
-    async fn recv_and_handle(&'static self) -> anyhow::Result<()> {
-        let mut buf = [0u8; MAX_PACKET_SIZE];
-        let (len, peer) = self.socket.recv_from(&mut buf).await?;
+    async fn recv_and_handle(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {
+        let (len, peer) = self.socket.recv_from(buf).await?;
 
         let peer = match peer {
-            SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
             SocketAddr::V4(x) => x,
+            SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
         };
 
         let thread = self.threads.lock().get(&peer).cloned();
@@ -212,6 +219,21 @@ impl GameServer {
             self.threads.lock().insert(peer, thread_cl.clone());
             thread_cl
         };
+
+        // check if the client is sending too many packets
+        // safety: `thread.rate_limiter` is only used here and never accessed anywhere else.
+        // it is also guaranteed to not be a nullptr, as per `UnsafeCell::get`.
+        unsafe {
+            let rate_limiter = thread.rate_limiter.get();
+            if !rate_limiter.as_mut().unwrap_unchecked().try_tick() {
+                if cfg!(debug_assertions) {
+                    bail!("{peer} is ratelimited");
+                }
+
+                // silently reject the packet in release mode
+                return Ok(());
+            }
+        }
 
         // don't heap allocate for small packets
         let message = if len <= SMALL_PACKET_LIMIT {

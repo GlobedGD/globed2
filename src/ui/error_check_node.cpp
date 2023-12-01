@@ -55,3 +55,14 @@ void ErrorCheckNode::updateErrors(float _unused) {
         FLAlertLayer::create("Globed notice", notice, "Ok")->show();
     }
 }
+
+ErrorCheckNode* ErrorCheckNode::create() {
+    auto* ret = new ErrorCheckNode;
+    if (ret && ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+
+    CC_SAFE_DELETE(ret);
+    return nullptr;
+}

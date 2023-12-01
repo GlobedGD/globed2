@@ -145,3 +145,13 @@ void ServerListCell::requestTokenAndConnect() {
         })
         .send();
 }
+
+ServerListCell* ServerListCell::create(const GameServerView& gsview, bool active) {
+    auto ret = new ServerListCell;
+    if (ret && ret->init(gsview, active)) {
+        return ret;
+    }
+
+    CC_SAFE_DELETE(ret);
+    return nullptr;
+}

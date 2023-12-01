@@ -66,8 +66,9 @@ pub const MAX_ALLOCA_SIZE: usize = 100_000;
 
 macro_rules! gs_alloca_check_size {
     ($size:expr) => {
-        if $size > crate::server_thread::handlers::MAX_ALLOCA_SIZE {
-            let err = crate::server_thread::error::PacketHandlingError::DangerousAllocation($size);
+        let size = $size;
+        if size > crate::server_thread::handlers::MAX_ALLOCA_SIZE {
+            let err = crate::server_thread::error::PacketHandlingError::DangerousAllocation(size);
             return Err(err);
         }
     };

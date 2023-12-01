@@ -150,13 +150,14 @@ size_calc_impl!(
 );
 
 impl PlayerAccountData {
-    pub fn make_preview(&self) -> PlayerPreviewAccountData {
+    pub fn make_preview(&self, level_id: i32) -> PlayerPreviewAccountData {
         PlayerPreviewAccountData {
             account_id: self.account_id,
             name: self.name.clone(),
             cube: self.icons.cube,
             color1: self.icons.color1,
             color2: self.icons.color2,
+            level_id,
         }
     }
 }
@@ -170,6 +171,7 @@ pub struct PlayerPreviewAccountData {
     pub cube: i16,
     pub color1: i16,
     pub color2: i16,
+    pub level_id: i32,
 }
 
 encode_impl!(PlayerPreviewAccountData, buf, self, {
@@ -178,6 +180,7 @@ encode_impl!(PlayerPreviewAccountData, buf, self, {
     buf.write_i16(self.cube);
     buf.write_i16(self.color1);
     buf.write_i16(self.color2);
+    buf.write_i32(self.level_id);
 });
 
 decode_unimpl!(PlayerPreviewAccountData);

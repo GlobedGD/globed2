@@ -50,7 +50,11 @@ impl log::Log for Logger {
             Level::Trace => (record.level().to_string().black(), record.args().to_string().black()),
         };
 
-        println!("[{formatted_time}] [{level}] - {args}");
+        if record.level() == Level::Error {
+            eprintln!("[{formatted_time}] [{level}] - {args}");
+        } else {
+            println!("[{formatted_time}] [{level}] - {args}");
+        }
     }
 
     fn flush(&self) {}

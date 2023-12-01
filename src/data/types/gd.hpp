@@ -93,8 +93,8 @@ public:
 
 class PlayerPreviewAccountData {
 public:
-    PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2)
-        : id(id), name(name), cube(cube), color1(color1), color2(color2) {}
+    PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int32_t levelId)
+        : id(id), name(name), cube(cube), color1(color1), color2(color2), levelId(levelId) {}
     PlayerPreviewAccountData() {}
 
     GLOBED_ENCODE {
@@ -103,6 +103,7 @@ public:
         buf.writeI16(cube);
         buf.writeI16(color1);
         buf.writeI16(color2);
+        buf.writeI32(levelId);
     }
 
     GLOBED_DECODE {
@@ -111,11 +112,13 @@ public:
         cube = buf.readI16();
         color1 = buf.readI16();
         color2 = buf.readI16();
+        levelId = buf.readI32();
     }
 
     int32_t id;
     std::string name;
     int16_t cube, color1, color2;
+    int32_t levelId;
 };
 
 class PlayerData {

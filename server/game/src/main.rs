@@ -4,7 +4,7 @@
 * Everything you see here is the exact definition of over-engineered and over-optimized.
 * Good luck.
 */
-
+#![feature(sync_unsafe_cell)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
@@ -17,13 +17,15 @@
 use std::{
     collections::{HashMap, HashSet},
     error::Error,
+    net::SocketAddr,
 };
 
-use anyhow::anyhow;
 use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
 use log::{error, info, warn, LevelFilter};
+use reqwest::StatusCode;
 use server::GameServerConfiguration;
 use state::ServerState;
+use tokio::net::UdpSocket;
 use util::Logger;
 
 use server::GameServer;
@@ -34,6 +36,86 @@ pub mod server;
 pub mod server_thread;
 pub mod state;
 pub mod util;
+
+struct StartupConfiguration {
+    bind_address: SocketAddr,
+    central_data: Option<(String, String)>,
+}
+
+fn parse_configuration() -> StartupConfiguration {
+    let mut args = std::env::args();
+    let exe_name = args.next().unwrap(); // skip executable
+    let arg = args.next();
+
+    let env_addr = std::env::var("GLOBED_GS_ADDRESS");
+    let using_env_variables: bool = env_addr.is_ok();
+
+    if arg.is_none() && !using_env_variables {
+        // standalone with default params
+        return StartupConfiguration {
+            bind_address: "0.0.0.0:41001".parse().unwrap(),
+            central_data: None,
+        };
+    }
+
+    // env variable takes precedence, otherwise grab the 1st arg from the command line
+    let bind_address = env_addr.ok().or(arg).unwrap();
+
+    let bind_address = match bind_address.parse::<SocketAddr>() {
+        Ok(x) => x,
+        Err(e) => {
+            error!("failed to parse the given IP address ({bind_address}): {e}");
+            warn!("hint: you have to pass a valid IPv4 address with a port number, for example 0.0.0.0:41000");
+            error!("aborting launch due to misconfiguration");
+            std::process::exit(1);
+        }
+    };
+
+    let arg = if using_env_variables {
+        std::env::var("GLOBED_GS_CENTRAL_URL").ok()
+    } else {
+        args.next()
+    };
+
+    if arg.is_none() {
+        // standalone with a specified bind addr
+        return StartupConfiguration {
+            bind_address,
+            central_data: None,
+        };
+    }
+
+    let mut central_url = arg.unwrap();
+    if !central_url.ends_with('/') {
+        central_url += "/";
+    }
+
+    let arg = if using_env_variables {
+        std::env::var("GLOBED_GS_CENTRAL_PASSWORD").ok()
+    } else {
+        args.next()
+    };
+
+    if arg.is_none() {
+        if using_env_variables {
+            error!("expected the environment variable 'GLOBED_GS_CENTRAL_PASSWORD', couldn't find it");
+        } else {
+            error!("not enough arguments, expected the password of the central server");
+            error!("correct usage: \"{exe_name} <address> <central-url> <central-password>\"");
+        }
+        warn!("hint: you must specify the password for connecting to the central server, see the server readme.");
+        error!("aborting launch due to misconfiguration");
+        std::process::exit(1);
+    }
+
+    let central_pw = arg.unwrap();
+
+    // full configuration with a central server
+    StartupConfiguration {
+        bind_address,
+        central_data: Some((central_url, central_pw)),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -49,106 +131,103 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    let mut host_address = String::new();
-    let mut central_url = String::new();
-    let mut central_pw = String::new();
-
-    let mut args = std::env::args();
-    let exe_name = args.next().unwrap(); // skip executable
-    let arg_hostaddr = args.next();
-    let arg_central = args.next();
-    let arg_password = args.next();
-
-    if arg_hostaddr.is_some() {
-        host_address = arg_hostaddr.unwrap();
-        if arg_central.is_some() {
-            central_url = arg_central.unwrap();
-            if arg_password.is_some() {
-                central_pw = arg_password.unwrap();
-            }
-        }
-    }
-
-    if host_address.is_empty() {
-        host_address = std::env::var("GLOBED_GS_ADDRESS").unwrap_or_default();
-    }
-
-    if central_url.is_empty() {
-        central_url = std::env::var("GLOBED_GS_CENTRAL_URL").unwrap_or_default();
-    }
-
-    if central_pw.is_empty() {
-        central_pw = std::env::var("GLOBED_GS_CENTRAL_PASSWORD").unwrap_or_default();
-    }
-
-    if central_url.is_empty() || central_pw.is_empty() || host_address.is_empty() {
-        error!("Some of the configuration values are not set, aborting launch due to misconfiguration.");
-        error!("Correct usage: {exe_name} <address> <central-url> <central-password>");
-        error!(
-            "or use the environment variables 'GLOBED_GS_ADDRESS', 'GLOBED_GS_CENTRAL_URL' and 'GLOBED_GS_CENTRAL_PASSWORD'"
-        );
-
-        panic!("aborting due to misconfiguration");
-    }
-
-    if central_url != "none" && !central_url.ends_with('/') {
-        central_url += "/";
-    }
+    let startup_config = parse_configuration();
+    let standalone = startup_config.central_data.is_none();
 
     let client = reqwest::Client::builder()
         .user_agent(format!("globed-game-server/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .unwrap();
 
-    let config = GameServerConfiguration {
+    let mut config = GameServerConfiguration {
         http_client: client,
-        central_url,
-        central_pw,
+        central_url: String::new(),
+        central_pw: String::new(),
     };
 
     let state = ServerState::new();
-
-    let (gsbd, standalone) = if config.central_url == "none" {
+    let gsbd = if standalone {
         warn!("Starting in standalone mode, authentication is disabled");
-
-        let gsbd = GameServerBootData {
+        GameServerBootData {
             protocol: PROTOCOL_VERSION,
             no_chat: HashSet::new(),
             special_users: HashMap::new(),
-        };
-
-        (gsbd, true)
+        }
     } else {
+        let (central_url, central_pw) = startup_config.central_data.unwrap();
+        config.central_url = central_url;
+        config.central_pw = central_pw;
+
         info!("Retrieving config from the central server..");
 
-        let response = config
+        let response = match config
             .http_client
             .post(format!("{}{}", config.central_url, "gs/boot"))
             .query(&[("pw", config.central_pw.clone())])
             .send()
-            .await?
-            .error_for_status()
-            .map_err(|e| anyhow!("central server returned an error: {e}"))?;
+            .await
+        {
+            Ok(x) => match x.error_for_status() {
+                Ok(x) => x,
+                Err(err) => {
+                    error!("the central server returned an error: {err}");
+                    if err.status().unwrap_or(StatusCode::OK) == StatusCode::UNAUTHORIZED {
+                        warn!("hint: there is a high chance that you have supplied a wrong password");
+                    }
+                    error!("aborting launch due to misconfiguration");
+                    std::process::exit(1);
+                }
+            },
+            Err(err) => {
+                error!("failed to make a request to the central server: {err}");
+                error!("aborting launch due to misconfiguration");
+                std::process::exit(1);
+            }
+        };
 
         let configuration = response.text().await?;
-        let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
+        let boot_data: GameServerBootData = match serde_json::from_str(&configuration) {
+            Ok(x) => x,
+            Err(err) => {
+                error!("failed to parse the data sent by the central server: {err}");
+                error!("aborting launch due to misconfiguration");
+                std::process::exit(1);
+            }
+        };
 
         if boot_data.protocol != PROTOCOL_VERSION {
-            error!("Incompatible protocol versions!");
+            error!("incompatible protocol versions!");
             error!(
-                "This game server is on {}, while the central server uses {}",
-                PROTOCOL_VERSION, boot_data.protocol
+                "this game server is on v{PROTOCOL_VERSION}, while the central server uses v{}",
+                boot_data.protocol
             );
-            panic!("aborting due to incompatible protocol versions");
+            error!("aborting launch due to incompatible protocol versions");
+            std::process::exit(1);
         }
 
-        (boot_data, false)
+        boot_data
     };
 
-    let server = GameServer::new(host_address, state, gsbd, config, standalone).await;
+    let socket = match UdpSocket::bind(&startup_config.bind_address).await {
+        Ok(x) => x,
+        Err(err) => {
+            error!(
+                "Failed to bind the socket with address {}: {err}",
+                startup_config.bind_address
+            );
+            if startup_config.bind_address.port() < 1024 {
+                warn!("hint: ports below 1024 are commonly privileged and you can't use them as a regular user");
+                warn!("hint: pick a higher port number or use port 0 to get a randomly generated port");
+            }
+            error!("aborting launch due to an unexpected error");
+            std::process::exit(1);
+        }
+    };
+
+    let server = GameServer::new(socket, state, gsbd, config, standalone);
     let server = Box::leak(Box::new(server));
 
-    Box::pin(server.run()).await?;
+    Box::pin(server.run()).await;
 
     Ok(())
 }

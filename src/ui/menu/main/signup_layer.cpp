@@ -27,7 +27,7 @@ bool GlobedSignupLayer::init() {
                 geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "Ok", [](auto, bool agreed){
                     if (agreed) {
                         GlobedSettings::get().setFlag("seen-signup-notice");
-                        GlobedSignupPopup::create()->show();        
+                        GlobedSignupPopup::create()->show();
                     }
                 });
             } else {
@@ -40,4 +40,15 @@ bool GlobedSignupLayer::init() {
         .parent(listLayer);
 
     return true;
+}
+
+GlobedSignupLayer* GlobedSignupLayer::create() {
+    auto ret = new GlobedSignupLayer;
+    if (ret && ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+
+    CC_SAFE_DELETE(ret);
+    return nullptr;
 }

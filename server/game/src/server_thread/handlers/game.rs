@@ -151,8 +151,6 @@ impl GameServerThread {
     gs_handler!(self, handle_request_player_list, RequestPlayerListPacket, _packet, {
         gs_needauth!(self);
 
-        let account_id = self.account_id.load(Ordering::Relaxed);
-
         let player_count = self.game_server.state.player_count.load(Ordering::Relaxed);
         let encoded_size = size_of_types!(PlayerPreviewAccountData) * player_count as usize;
 
@@ -163,7 +161,7 @@ impl GameServerThread {
             let written = self.game_server.for_every_player_preview(
                 move |preview, count, buf| {
                     // we do additional length check because player count may have increased since then
-                    if count < player_count as usize && preview.account_id != account_id {
+                    if count < player_count as usize {
                         buf.write_value(preview);
                         true
                     } else {

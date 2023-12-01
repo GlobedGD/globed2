@@ -4,6 +4,7 @@
 #include <UIBuilder.hpp>
 
 #include "server_list_cell.hpp"
+#include <ui/menu/player_list/player_list_popup.hpp>
 #include <util/ui.hpp>
 #include <util/net.hpp>
 #include <net/network_manager.hpp>
@@ -50,7 +51,11 @@ bool GlobedMenuLayer::init() {
         .scale(1.2f)
         .pos({-250.f, -70.f})
         .intoMenuItem([this](auto) {
-            this->requestServerList();
+            // this->requestServerList();
+            if (auto* popup = PlayerListPopup::create()) {
+                popup->m_noElasticity = true;
+                popup->show();
+            }
         })
         .intoNewParent(CCMenu::create())
         .id("btn-refresh-servers")
@@ -58,15 +63,15 @@ bool GlobedMenuLayer::init() {
 
     // TODO prod remove wipe authtoken button
 
-    Build<CCSprite>::createSpriteName("d_skull01_001.png")
-        .scale(1.2f)
-        .pos(-250.f, -30.f)
-        .intoMenuItem([this](auto) {
-            GlobedAccountManager::get().clearAuthKey();
-        })
-        .intoNewParent(CCMenu::create())
-        .id("btn-clear-authtoken")
-        .parent(this);
+    // Build<CCSprite>::createSpriteName("d_skull01_001.png")
+    //     .scale(1.2f)
+    //     .pos(-250.f, -30.f)
+    //     .intoMenuItem([this](auto) {
+    //         GlobedAccountManager::get().clearAuthKey();
+    //     })
+    //     .intoNewParent(CCMenu::create())
+    //     .id("btn-clear-authtoken")
+    //     .parent(this);
 
     util::ui::addBackground(this);
 
@@ -203,4 +208,24 @@ void GlobedMenuLayer::keyBackClicked() {
 
 void GlobedMenuLayer::pingServers(float _) {
     NetworkManager::get().taskPingServers();
+}
+
+GlobedMenuLayer* GlobedMenuLayer::create() {
+    auto ret = new GlobedMenuLayer;
+    if (ret && ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+
+    CC_SAFE_DELETE(ret);
+    return nullptr;
+}
+
+cocos2d::CCScene* GlobedMenuLayer::scene() {
+    auto layer = GlobedMenuLayer::create();
+    auto scene = cocos2d::CCScene::create();
+    layer->setPosition({0.f, 0.f});
+    scene->addChild(layer);
+
+    return scene;
 }
