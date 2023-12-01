@@ -1,5 +1,7 @@
 #include "audio_sample_queue.hpp"
 
+#if GLOBED_VOICE_SUPPORT
+
 void AudioSampleQueue::writeData(DecodedOpusData data) {
     this->writeData(data.ptr, data.length);
 }
@@ -32,3 +34,5 @@ size_t AudioSampleQueue::size() const {
 void AudioSampleQueue::clear() {
     buf.clear();
 }
+
+#endif // GLOBED_VOICE_SUPPORT

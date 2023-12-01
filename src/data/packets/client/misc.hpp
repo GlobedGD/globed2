@@ -5,7 +5,7 @@
 
 /*
 * RawPacket is a special packet. It is not an actual specific packet and has no consistent representation.
-* Example usage and explanation can be found in `ui/hooks/play_layer.hpp` in the audio callback function.
+* Example usage and explanation can be found in `ui/hooks/play_layer.hpp` in the audio callback.
 */
 class RawPacket : public Packet {
 public:

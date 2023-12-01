@@ -5,7 +5,6 @@
 
 #include "audio_frame.hpp"
 #include "audio_stream.hpp"
-#include <chrono>
 
 /*
 * VoicePlaybackManager is responsible for playing voices of multiple people

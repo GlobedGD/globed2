@@ -63,12 +63,16 @@ NetworkManager::~NetworkManager() {
     this->removeAllListeners();
     builtinListeners.lock()->clear();
 
-    // wait for threads
+    // stop threads and wait for them to return
     _running = false;
 
     if (this->connected()) {
         log::debug("disconnecting from the server..");
-        this->disconnect();
+        try {
+            this->disconnect(false);
+        } catch (const std::exception& e) {
+            log::warn("error trying to disconnect: {}", e.what());
+        }
     }
 
     log::debug("waiting for threads to halt..");
@@ -87,7 +91,7 @@ void NetworkManager::connect(const std::string& addr, unsigned short port) {
         this->disconnect(false);
     }
 
-    lastReceivedPacket = chrono::system_clock::now();
+    lastReceivedPacket = util::time::now();
 
     GLOBED_REQUIRE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
 
@@ -156,7 +160,7 @@ void NetworkManager::threadMainFunc() {
     while (_running) {
         this->maybeSendKeepalive();
 
-        if (!packetQueue.waitForMessages(chrono::milliseconds(250))) {
+        if (!packetQueue.waitForMessages(util::time::millis(250))) {
             // check for tasks
             if (taskQueue.empty()) continue;
 
@@ -216,7 +220,7 @@ void NetworkManager::threadRecvFunc() {
             continue;
         }
 
-        lastReceivedPacket = chrono::system_clock::now();
+        lastReceivedPacket = util::time::now();
 
         auto builtin = builtinListeners.lock();
         if (builtin->contains(packetId)) {
@@ -245,7 +249,7 @@ void NetworkManager::handlePingResponse(std::shared_ptr<Packet> packet) {
 
 void NetworkManager::maybeSendKeepalive() {
     if (_loggedin) {
-        auto now = chrono::system_clock::now();
+        auto now = util::time::now();
         if ((now - lastKeepalive) > KEEPALIVE_INTERVAL) {
             lastKeepalive = now;
             this->send(KeepalivePacket::create());
@@ -256,10 +260,13 @@ void NetworkManager::maybeSendKeepalive() {
 
 // Disconnects from the server if there has been no response for a while
 void NetworkManager::maybeDisconnectIfDead() {
-    auto now = chrono::system_clock::now();
-    if (this->connected() && (now - lastReceivedPacket) > DISCONNECT_AFTER) {
+    if (this->connected() && (util::time::now() - lastReceivedPacket) > DISCONNECT_AFTER) {
         ErrorQueues::get().error("The server you were connected to is not responding to any requests. <cy>You have been disconnected.</c>");
-        this->disconnect();
+        try {
+            this->disconnect();
+        } catch (const std::exception& e) {
+            log::warn("failed to disconnect from a dead server: {}", e.what());
+        }
     }
 }
 

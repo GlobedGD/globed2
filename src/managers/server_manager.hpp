@@ -18,8 +18,8 @@ struct GameServerInfo {
     GameServerAddress address;
 
     int ping;
-    std::unordered_map<uint32_t, chrono::milliseconds> pendingPings;
-    util::collections::CappedQueue<chrono::milliseconds, 100> pingHistory;
+    std::unordered_map<uint32_t, util::time::millis> pendingPings;
+    util::collections::CappedQueue<util::time::millis, 100> pingHistory;
 
     uint32_t playerCount;
 };
@@ -63,7 +63,7 @@ class GlobedServerManager {
     void pingFinishActive(uint32_t playerCount);
 
     GameServerView getGameServer(const std::string& serverId);
-    std::vector<chrono::milliseconds> getPingHistory(const std::string& serverId);
+    std::vector<util::time::millis> getPingHistory(const std::string& serverId);
 
     std::unordered_map<std::string, GameServerView> extractGameServers();
 

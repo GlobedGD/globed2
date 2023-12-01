@@ -8,8 +8,7 @@
 #include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif // GLOBED_CUSTOM_KEYBINDS
 
-#include <audio/audio_manager.hpp>
-#include <audio/voice_playback_manager.hpp>
+#include <audio/all.hpp>
 
 #include <managers/profile_cache.hpp>
 #include <managers/error_queues.hpp>
@@ -28,7 +27,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     /* speedhack detection */
     float lastKnownTimeScale = 1.0f;
-    chrono::system_clock::time_point lastSentPacket;
+    util::time::time_point lastSentPacket;
 
     /* gd hooks */
 
@@ -44,7 +43,49 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         // send LevelJoinPacket
         nm.send(LevelJoinPacket::create(m_level->m_levelID));
 
-        // add listeners
+        this->setupEventListeners();
+
+        GlobedAudioManager::get().setActiveRecordingDevice(2);
+
+        // schedule stuff
+        // TODO - handle sending SyncPlayerMetadataPacket.
+        // it could be sent periodically as a lazy solution, but the best way
+        // is to only do it when the state actually changed. like we got a new best or
+        // the attempt count increased by quite a bit.
+
+        auto scheduler = CCScheduler::get();
+        scheduler->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, DATA_SEND_INTERVAL, false);
+
+        this->setupCustomKeybinds();
+
+        return true;
+    }
+
+    void onQuit() {
+        PlayLayer::onQuit();
+
+        if (!m_fields->globedReady) return;
+
+        GlobedAudioManager::get().haltRecording();
+        VoicePlaybackManager::get().stopAllStreams();
+
+        auto& nm = NetworkManager::get();
+
+        // clean up the listeners
+        nm.removeListener<PlayerProfilesPacket>();
+        nm.removeListener<LevelDataPacket>();
+        nm.removeListener<VoiceBroadcastPacket>();
+
+        if (!nm.established()) return;
+
+        // send LevelLeavePacket
+        nm.send(LevelLeavePacket::create());
+    }
+
+    /* setup stuff to make init() cleaner */
+
+    void setupEventListeners() {
+        auto& nm = NetworkManager::get();
 
         nm.addListener<PlayerProfilesPacket>([this](PlayerProfilesPacket* packet) {
             auto& pcm = ProfileCacheManager::get();
@@ -73,17 +114,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         nm.addListener<PlayerMetadataPacket>([this](PlayerMetadataPacket* packet) {
             // TODO handle player metadata
         });
+    }
 
-        // schedule stuff
-        // TODO - handle sending SyncPlayerMetadataPacket.
-        // it could be sent periodically as a lazy solution, but the best way
-        // is to only do it when the state actually changed. like we got a new best or
-        // the attempt count increased by quite a bit.
-
-        auto scheduler = CCScheduler::get();
-        scheduler->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, DATA_SEND_INTERVAL, false);
-
-        // setup custom keybinds
+    void setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS
         // TODO let the user pick recording device somehow
         // TODO this breaks for impostor playlayers, if they won't be fixed in 2.2 then do a good old workaround
@@ -95,13 +128,23 @@ class $modify(GlobedPlayLayer, PlayLayer) {
                     // make sure the recording device is valid
                     vm.validateDevices();
                     if (!vm.isRecordingDeviceSet()) {
-                        vm.setActiveRecordingDevice(2);
-                        // ErrorQueues::get().warn("Unable to record audio, no recording device is set");
-                        // return ListenerResult::Propagate;
+                        ErrorQueues::get().warn("Unable to record audio, no recording device is set");
+                        return ListenerResult::Propagate;
                     }
 
-                    vm.startRecording([this](const auto& frame){
-                        this->audioCallback(frame);
+                    vm.startRecording([this](const auto& frame) {
+                        // (!) remember that the callback is ran from another thread (!) //
+
+                        auto& nm = NetworkManager::get();
+                        if (!nm.established()) return;
+
+                        // `frame` does not live long enough and will be destructed at the end of this callback.
+                        // so we can't pass it directly in a `VoicePacket` and we use a `RawPacket` instead.
+
+                        ByteBuffer buf;
+                        buf.writeValue(frame);
+
+                        nm.send(RawPacket::create(VoicePacket::PACKET_ID, VoicePacket::ENCRYPTED, std::move(buf)));
                     });
                 }
             } else {
@@ -119,29 +162,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             return ListenerResult::Propagate;
         }, "voice-deafen"_spr);
 #endif // GLOBED_HAS_KEYBINDS
-
-        return true;
-    }
-
-    void onQuit() {
-        PlayLayer::onQuit();
-
-        if (!m_fields->globedReady) return;
-
-        GlobedAudioManager::get().haltRecording();
-        VoicePlaybackManager::get().stopAllStreams();
-
-        auto& nm = NetworkManager::get();
-
-        // clean up the listeners
-        nm.removeListener<PlayerProfilesPacket>();
-        nm.removeListener<LevelDataPacket>();
-        nm.removeListener<VoiceBroadcastPacket>();
-
-        if (!nm.established()) return;
-
-        // send LevelLeavePacket
-        nm.send(LevelLeavePacket::create());
     }
 
     /* periodical selectors */
@@ -179,22 +199,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         VoicePlaybackManager::get().removeStream(playerId);
     }
 
-    void audioCallback(const EncodedAudioFrame& frame) {
-        if (!this->established()) return;
-
-        auto& nm = NetworkManager::get();
-
-        // we only have a const ref to EncodedAudioFrame,
-        // but we need to be able to access it inside the NetworkManager thread.
-        // so we encode it to a temporary buffer and use RawPacket.
-        // this is inefficient and copies data but ehhh
-
-        ByteBuffer buf;
-        buf.writeValue(frame);
-
-        nm.send(RawPacket::create(VoicePacket::PACKET_ID, VoicePacket::ENCRYPTED, std::move(buf)));
-    }
-
     // With speedhack enabled, all scheduled selectors will run more often than they are supposed to.
     // This means, if you turn up speedhack to let's say 100x, you will send 3000 packets per second. That is a big no-no.
     // For naive speedhack implementations, we simply check CCScheduler::getTimeScale and properly reschedule our data sender.
@@ -213,7 +217,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         }
 
         auto now = util::time::now();
-        auto passed = chrono::duration_cast<chrono::milliseconds>(now - m_fields->lastSentPacket).count();
+        auto passed = chrono::duration_cast<util::time::millis>(now - m_fields->lastSentPacket).count();
 
         if (passed < DATA_SEND_INTERVAL_MS * 0.85f) {
             // log::warn("dropping a packet (speedhack?), passed time is {}ms", passed);
@@ -225,9 +229,13 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         return true;
     }
 
-    // remove if impostor playlayer gets fixed
+    // TODO remove if impostor playlayer gets fixed
     bool isCurrentPlayLayer() {
         auto playLayer = getChildOfType<PlayLayer>(CCScene::get(), 0);
         return playLayer == this;
+    }
+
+    bool isPaused() {
+        return this->getParent()->getChildByID("PauseLayer") != nullptr; // TODO no worky on android and relies on node ids from geode
     }
 };

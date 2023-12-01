@@ -18,18 +18,19 @@ impl SimpleRateLimiter {
     }
 
     /// Returns `true` if we are not ratelimited, `false` if we are.
-    pub fn tick(&mut self) -> bool {
-        let now = Instant::now();
-        if (now - self.last_refill) > self.period {
-            self.count = self.limit;
-            self.last_refill = now;
-        }
-
+    pub fn try_tick(&mut self) -> bool {
         if self.count > 0 {
             self.count -= 1;
             true
         } else {
-            false
+            let now = Instant::now();
+            if (now - self.last_refill) > self.period {
+                self.count = self.limit;
+                self.last_refill = now;
+                true
+            } else {
+                false
+            }
         }
     }
 }

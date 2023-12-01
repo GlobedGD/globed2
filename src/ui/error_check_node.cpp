@@ -1,5 +1,6 @@
 #include "error_check_node.hpp"
 
+#include <ui/hooks/play_layer.hpp>
 #include <managers/error_queues.hpp>
 
 using namespace geode::prelude;
@@ -16,21 +17,27 @@ void ErrorCheckNode::updateErrors(float _unused) {
     if (!currentScene || !currentScene->getChildren() || currentScene->getChildrenCount() == 0) return;
 
     auto* currentLayer = currentScene->getChildren()->objectAtIndex(0);
-    
+
     // do nothing during transitions or loading
     if (typeinfo_cast<CCTransitionScene*>(currentScene) || typeinfo_cast<LoadingLayer*>(currentLayer)) {
         return;
     }
 
-    // TODO maybe dont show errors in playlayer if we aren't paused?
-
-    auto errors = ErrorQueues::get().getErrors();
     auto warnings = ErrorQueues::get().getWarnings();
-    auto notices = ErrorQueues::get().getNotices();
 
     for (auto& warn : warnings) {
         Notification::create(warn, NotificationIcon::Warning, 2.5f)->show();
     }
+
+    // if we are in PlayLayer, don't show errors unless paused
+
+    auto playlayer = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    if (playlayer != nullptr && !playlayer->isPaused()) {
+        return;
+    }
+
+    auto errors = ErrorQueues::get().getErrors();
+    auto notices = ErrorQueues::get().getNotices();
 
     if (errors.size() > 2) {
         errors.resize(2);

@@ -73,7 +73,7 @@ uint32_t GlobedServerManager::pingStart(const std::string& serverId) {
         gsi.pendingPings.clear();
     }
 
-    auto now = util::time::nowMillis();
+    auto now = util::time::sinceEpoch();
     gsi.pendingPings[pingId] = now;
 
     return pingId;
@@ -89,14 +89,14 @@ void GlobedServerManager::pingStartActive() {
 }
 
 void GlobedServerManager::pingFinish(uint32_t pingId, uint32_t playerCount) {
-    auto now = util::time::nowMillis();
+    auto now = util::time::sinceEpoch();
 
     auto data = _data.lock();
     for (auto* server : util::collections::mapValuesBorrowed(data->servers)) {
         if (server->pendingPings.contains(pingId)) {
             auto start = server->pendingPings.at(pingId);
             auto timeTook = now - start;
-            server->ping = chrono::duration_cast<chrono::milliseconds>(timeTook).count();
+            server->ping = chrono::duration_cast<util::time::millis>(timeTook).count();
             server->playerCount = playerCount;
             server->pingHistory.push(timeTook);
             server->pendingPings.erase(pingId);
@@ -126,7 +126,7 @@ GameServerView GlobedServerManager::getGameServer(const std::string& serverId) {
     };
 }
 
-std::vector<chrono::milliseconds> GlobedServerManager::getPingHistory(const std::string& serverId) {
+std::vector<util::time::millis> GlobedServerManager::getPingHistory(const std::string& serverId) {
     auto data = _data.lock();
     auto& gsi = data->servers.at(serverId);
     return gsi.pingHistory.extract();

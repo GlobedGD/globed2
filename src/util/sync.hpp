@@ -12,6 +12,7 @@
 
 #include <defs.hpp>
 #include <util/data.hpp>
+#include <util/time.hpp>
 
 /*
 * SmartMessageQueue is a utility wrapper around std::queue,
@@ -33,7 +34,8 @@ public:
     }
 
     // returns true if messages are available, otherwise false if returned because of timeout.
-    bool waitForMessages(std::chrono::milliseconds timeout) {
+    template <typename Rep, typename Period>
+    bool waitForMessages(util::time::duration<Rep, Period> timeout) {
         std::unique_lock lock(_mtx);
         if (!_iq.empty()) return true;
 

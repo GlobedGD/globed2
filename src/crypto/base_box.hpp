@@ -1,6 +1,7 @@
 #pragma once
 #include <defs.hpp>
 #include <util/data.hpp>
+#include <string>
 
 /*
 * This class contains no crypto implementation and is here just for boilerplate code.
@@ -48,7 +49,7 @@ public:
     util::data::bytevector encrypt(const std::string& src);
 
     /* Decryption */
-    
+
     // Decrypt `size` bytes from `data` into itself. Returns the length of the plaintext data.
     size_t decryptInPlace(util::data::byte* data, size_t size);
 

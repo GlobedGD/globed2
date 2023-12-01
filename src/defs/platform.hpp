@@ -7,8 +7,8 @@
 * platform macros
 * GLOBED_WIN32, GLOBED_MAC, GLOBED_ANDROID - self descriptive
 * GLOBED_UNIX - mac or android
-* GLOBED_X86_32, GLOBED_X86_64, GLOBED_ARM32, GLOBED_ARM64 - only 1 of those 4 is defined, indicating if we are 32-bit or 64-bit
-* GLOBED_X86, GLOBED_ARM - any x86 or arm
+* GLOBED_X86_32, GLOBED_X86_64, GLOBED_ARM32, GLOBED_ARM64 - only 1 of those 4 is defined, indicating the specific architecture
+* GLOBED_X86, GLOBED_ARM - both x86 and x86_64 or both arm and arm64
 *
 * GLOBED_PLATFORM_STRING_PLATFORM - string in format like "Mac", "Android", "Windows"
 * GLOBED_PLATFORM_STRING_ARCH - string in format like "x86", "x64", "armv7", "arm64"

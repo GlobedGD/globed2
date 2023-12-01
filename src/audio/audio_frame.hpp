@@ -1,5 +1,4 @@
 #pragma once
-
 #include <defs.hpp>
 
 #if GLOBED_VOICE_SUPPORT

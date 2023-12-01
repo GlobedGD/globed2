@@ -57,7 +57,7 @@ public:
     // Same as addListener(packetid_t, PacketCallback) but hacky syntax xd
     template <HasPacketID Pty>
     void addListener(PacketCallbackSpecific<Pty> callback) {
-        addListener(Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt){
+        this->addListener(Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
             callback(static_cast<Pty*>(pkt.get()));
         });
     }
@@ -68,7 +68,7 @@ public:
     // Same as removeListener(packetid_t) but hacky syntax once again
     template <HasPacketID T>
     void removeListener() {
-        removeListener(T::PACKET_ID);
+        this->removeListener(T::PACKET_ID);
     }
 
     // Removes all listeners.
@@ -112,8 +112,8 @@ private:
     AtomicBool _established = false;
     AtomicBool _loggedin = false;
 
-    chrono::system_clock::time_point lastKeepalive;
-    chrono::system_clock::time_point lastReceivedPacket;
+    util::time::time_point lastKeepalive;
+    util::time::time_point lastReceivedPacket;
 
     void handlePingResponse(std::shared_ptr<Packet> packet);
     void maybeSendKeepalive();
@@ -126,7 +126,7 @@ private:
 
     template <HasPacketID Pty>
     void addBuiltinListener(PacketCallbackSpecific<Pty> callback) {
-        addBuiltinListener(Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt){
+        this->addBuiltinListener(Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
             callback(static_cast<Pty*>(pkt.get()));
         });
     }

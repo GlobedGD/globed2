@@ -62,6 +62,17 @@ macro_rules! gs_needauth {
     };
 }
 
+pub const MAX_ALLOCA_SIZE: usize = 100_000;
+
+macro_rules! gs_alloca_check_size {
+    ($size:expr) => {
+        if $size > crate::server_thread::handlers::MAX_ALLOCA_SIZE {
+            let err = crate::server_thread::error::PacketHandlingError::DangerousAllocation($size);
+            return Err(err);
+        }
+    };
+}
+
 /// hype af (variable size stack allocation)
 macro_rules! gs_with_alloca {
     ($size:expr, $data:ident, $code:expr) => {
@@ -88,6 +99,8 @@ macro_rules! gs_inline_encode {
     };
 
     ($self:ident, $size:expr, $data:ident, $rawdata:ident, $code:expr) => {
+        gs_alloca_check_size!($size);
+
         let retval: Result<Option<Vec<u8>>> = {
             gs_with_alloca!($size, $rawdata, {
                 let mut $data = FastByteBuffer::new($rawdata);
@@ -112,6 +125,7 @@ macro_rules! gs_inline_encode {
     }
 }
 
+pub(crate) use gs_alloca_check_size;
 pub(crate) use gs_disconnect;
 pub(crate) use gs_handler;
 pub(crate) use gs_handler_sync;

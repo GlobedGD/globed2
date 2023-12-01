@@ -4,16 +4,26 @@
 namespace chrono = std::chrono;
 
 namespace util::time {
-    inline chrono::system_clock::time_point now() {
-        return chrono::system_clock::now();
+    using clock = chrono::system_clock;
+    using time_point = chrono::system_clock::time_point;
+
+    using secs = chrono::seconds;
+    using millis = chrono::milliseconds;
+    using micros = chrono::microseconds;
+
+    template <typename Rep, typename Period>
+    using duration = chrono::duration<Rep, Period>;
+
+    inline time_point now() {
+        return clock::now();
     }
 
-    inline chrono::milliseconds nowMillis() {
-        return chrono::duration_cast<chrono::milliseconds>(now().time_since_epoch());
+    inline millis sinceEpoch() {
+        return chrono::duration_cast<millis>(now().time_since_epoch());
     }
 
-    inline chrono::microseconds nowMicros() {
-        return chrono::duration_cast<chrono::microseconds>(now().time_since_epoch());
+    inline micros sinceEpochPrecise() {
+        return chrono::duration_cast<micros>(now().time_since_epoch());
     }
 
     std::string nowPretty();

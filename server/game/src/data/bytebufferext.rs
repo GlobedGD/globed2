@@ -268,6 +268,10 @@ impl<'a> FastByteBuffer<'a> {
         }
     }
 
+    pub fn new_with_length(src: &'a mut [u8], len: usize) -> Self {
+        Self { pos: 0, len, data: src }
+    }
+
     pub fn write_u8(&mut self, val: u8) {
         self.internal_write(&val.to_be_bytes());
     }

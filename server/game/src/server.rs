@@ -23,7 +23,7 @@ use crate::{
     state::ServerState,
 };
 
-const MAX_PACKET_SIZE: usize = 16384;
+const MAX_PACKET_SIZE: usize = 8192;
 
 pub struct GameServerConfiguration {
     pub http_client: reqwest::Client,
@@ -78,11 +78,8 @@ impl GameServer {
             });
         }
 
-        // we preallocate a buffer to avoid zeroing out MAX_PACKET_SIZE bytes on each packet
-        let mut buf = [0u8; MAX_PACKET_SIZE];
-
         loop {
-            match self.recv_and_handle(&mut buf).await {
+            match self.recv_and_handle().await {
                 Ok(()) => {}
                 Err(err) => {
                     warn!("Failed to handle a packet: {err}");
@@ -182,8 +179,9 @@ impl GameServer {
         Ok(())
     }
 
-    async fn recv_and_handle(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {
-        let (len, peer) = self.socket.recv_from(buf).await?;
+    async fn recv_and_handle(&'static self) -> anyhow::Result<()> {
+        let mut buf = [0u8; MAX_PACKET_SIZE];
+        let (len, peer) = self.socket.recv_from(&mut buf).await?;
 
         let peer = match peer {
             SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),

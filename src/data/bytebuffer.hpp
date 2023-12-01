@@ -132,14 +132,9 @@ public:
     template<size_t BitCount>
     BitBuffer<BitCount> readBits() {
         constexpr size_t byteCount = util::data::bitsToBytes(BitCount);
-        boundsCheck(byteCount);
+        this->boundsCheck(byteCount);
 
-        auto value = read<BitBufferUnderlyingType<BitCount>>();
-        // I am not 100% sure about it, but it appears that byteswapping is unnecessary for BitBuffer.
-
-        // if constexpr (GLOBED_LITTLE_ENDIAN) {
-        //     value = util::data::byteswap(value);
-        // }
+        auto value = this->read<BitBufferUnderlyingType<BitCount>>();
 
         return BitBuffer<BitCount>(value);
     }
@@ -147,12 +142,7 @@ public:
     // Write all bits from the given `BitBuffer` into the current `ByteBuffer`
     template<size_t BitCount>
     void writeBits(BitBuffer<BitCount> bitbuf) {
-        auto value = bitbuf.contents();
-        // if constexpr (GLOBED_LITTLE_ENDIAN) {
-        //     value = util::data::byteswap(value);
-        // }
-
-        write(value);
+        this->write(bitbuf.contents());
     }
 
     /*
@@ -180,7 +170,7 @@ public:
         if (this->readBool()) {
             value = this->readValue<T>();
         }
-        
+
         return std::move(value);
     }
 

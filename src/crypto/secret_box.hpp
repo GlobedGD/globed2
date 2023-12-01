@@ -4,7 +4,6 @@
 #include <util/data.hpp>
 
 #include <sodium.h>
-#include <string>
 
 /*
 * SecretBox - a class similar to CryptoBox, but instead of using public key cryptography,

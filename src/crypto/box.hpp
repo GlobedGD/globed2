@@ -4,7 +4,6 @@
 #include <util/data.hpp>
 
 #include <sodium.h>
-#include <string>
 
 
 class CryptoBox : public BaseCryptoBox {

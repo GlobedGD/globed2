@@ -118,7 +118,8 @@ impl GameServerThread {
                 | PacketHandlingError::ColorParseFailed(_)
                 | PacketHandlingError::UnexpectedCentralResponse
                 | PacketHandlingError::SystemTimeError(_)
-                | PacketHandlingError::WebRequestError(_) => {
+                | PacketHandlingError::WebRequestError(_)
+                | PacketHandlingError::DangerousAllocation(_) => {
                     log::error!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
@@ -168,12 +169,11 @@ impl GameServerThread {
     }
 
     /// fast packet sending with best-case zero heap allocation.
-    /// on average, this is 2-3x faster than `send_packet`, even worst case should be faster by a bit.
     /// if the packet size isn't known at compile time, calculate it and use `send_packet_fast_rough`
     async fn send_packet_fast<P: Packet + EncodableWithKnownSize>(&self, packet: &P) -> Result<()> {
-        // in theory, the size is known at compile time, however we still have to resort to using alloca
-        // because rust does not allow constant expressions with generic parameters.
-        // i.e. this would fail to compile: `let buffer = [0u8; PacketHeader::SIZE + P::ENCODED_SIZE];`
+        // in theory, the size is known at compile time, however for some reason,
+        // alloca manages to be significantly faster than a `[MaybeUninit<u8>; N]`.
+        // i have no idea why or how, but yeah.
         self.send_packet_fast_rough(packet, P::ENCODED_SIZE).await
     }
 
@@ -195,6 +195,8 @@ impl GameServerThread {
             let nonce_start = PacketHeader::SIZE;
             let mac_start = nonce_start + NONCE_SIZE;
             let raw_data_start = mac_start + MAC_SIZE;
+
+            gs_alloca_check_size!(total_size);
 
             let to_send: Result<Option<Vec<u8>>> = gs_with_alloca!(total_size, data, {
                 // write the header
@@ -295,7 +297,6 @@ impl GameServerThread {
             .encrypt(&nonce, cltxtbuf.as_bytes())
             .map_err(|_| PacketHandlingError::EncryptionError)?;
 
-        #[cfg(not(rust_analyzer))] // i am so sorry
         buf.write_bytes(&nonce);
         buf.write_bytes(&encrypted);
 
@@ -325,7 +326,7 @@ impl GameServerThread {
         }
 
         // check if we are sending too many packets
-        if !self.rate_limiter.lock().tick() {
+        if !self.rate_limiter.lock().try_tick() {
             return Err(PacketHandlingError::Ratelimited);
         }
 
@@ -359,6 +360,7 @@ impl GameServerThread {
             return Err(PacketHandlingError::MalformedLoginAttempt);
         }
 
+        // decrypt the packet in-place if encrypted
         if header.encrypted {
             if message.len() < PacketHeader::SIZE + NONCE_SIZE + MAC_SIZE {
                 return Err(PacketHandlingError::MalformedCiphertext);
@@ -366,6 +368,7 @@ impl GameServerThread {
 
             let cbox = self.crypto_box.get();
             if cbox.is_none() {
+                self.terminate();
                 return Err(PacketHandlingError::WrongCryptoBoxState);
             }
 

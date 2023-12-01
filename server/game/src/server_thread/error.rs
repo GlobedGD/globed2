@@ -20,6 +20,7 @@ pub enum PacketHandlingError {
     UnexpectedCentralResponse,         // malformed response from the central server
     ColorParseFailed(ColorParseError), // failed to parse a hex color into a Color3B struct
     Ratelimited,                       // too many packets per second
+    DangerousAllocation(usize),        // attempted to allocate a huge chunk of memory with alloca
 }
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
@@ -76,6 +77,9 @@ impl Display for PacketHandlingError {
             Self::UnexpectedCentralResponse => f.write_str("got unexpected response from the central server"),
             Self::ColorParseFailed(err) => f.write_fmt(format_args!("failed to parse a color: {err}")),
             Self::Ratelimited => f.write_str("client is sending way too many packets per second"),
+            Self::DangerousAllocation(size) => f.write_fmt(format_args!(
+                "attempted to allocate {size} bytes on the stack - that has a potential for a stack overflow!"
+            )),
         }
     }
 }

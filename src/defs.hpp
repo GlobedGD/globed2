@@ -5,6 +5,5 @@
 
 #include <defs/assert.hpp>
 #include <defs/crash.hpp>
-#include <defs/net.hpp>
 #include <defs/platform.hpp>
 #include <defs/util.hpp>

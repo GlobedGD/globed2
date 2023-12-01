@@ -2,8 +2,6 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-#include <util/time.hpp>
-#include <util/debugging.hpp>
 #include <managers/error_queues.hpp>
 
 // this is horrible i know yes
@@ -302,7 +300,7 @@ void GlobedAudioManager::audioThreadFunc() {
         // if we are not recording right now, sleep
         if (!recordActive) {
             audioThreadSleeping = true;
-            std::this_thread::sleep_for(std::chrono::milliseconds(25));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
 
@@ -328,7 +326,7 @@ void GlobedAudioManager::audioThreadFunc() {
         // if we are at the same position, do nothing
         if (pos == recordLastPosition) {
             this->getSystem()->update();
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(3));
             continue;
         }
 
@@ -372,7 +370,7 @@ void GlobedAudioManager::audioThreadFunc() {
         this->getSystem()->update();
 
         // TODO maybe do something with this i dunno
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
         // std::this_thread::yield();
     }
 }
@@ -474,7 +472,7 @@ const char* GlobedAudioManager::fmodErrorString(FMOD_RESULT result) {
     int idx = static_cast<int>(result);
 
     if (idx < 0 || idx > 81) {
-        return "Invalid FMOD result was passed; there is no corresponding error message to return";
+        return "Invalid FMOD error code was passed; there is no corresponding error message to return";
     }
 
     return values[idx];

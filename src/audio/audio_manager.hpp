@@ -67,6 +67,7 @@ public:
     // start recording the voice and call the callback once a full frame is ready.
     // if `stopRecording()` is called at any point, the callback will be called with the remaining data.
     // in that case it may have less than the full 10 frames.
+    // WARNING: the callback is called from the audio thread, not the GD/cocos thread.
     void startRecording(std::function<void(const EncodedAudioFrame&)> callback);
     // tell the audio thread to stop recording
     void stopRecording();
