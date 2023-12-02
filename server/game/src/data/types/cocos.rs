@@ -1,6 +1,6 @@
 use std::{fmt::Display, num::ParseIntError, str::FromStr};
 
-use crate::data::bytebufferext::*;
+use crate::data::*;
 
 pub enum ColorParseError {
     InvalidLength,
@@ -26,27 +26,12 @@ impl From<ParseIntError> for ColorParseError {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Encodable, Decodable, EncodableWithKnownSize)]
 pub struct Color3B {
     pub r: u8,
     pub g: u8,
     pub b: u8,
 }
-
-encode_impl!(Color3B, buf, self, {
-    buf.write_u8(self.r);
-    buf.write_u8(self.g);
-    buf.write_u8(self.b);
-});
-
-decode_impl!(Color3B, buf, {
-    let r = buf.read_u8()?;
-    let g = buf.read_u8()?;
-    let b = buf.read_u8()?;
-    Ok(Self { r, g, b })
-});
-
-size_calc_impl!(Color3B, size_of_types!(u8, u8, u8));
 
 impl FromStr for Color3B {
     type Err = ColorParseError;
@@ -68,30 +53,13 @@ impl FromStr for Color3B {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Encodable, EncodableWithKnownSize, Decodable)]
 pub struct Color4B {
     pub r: u8,
     pub g: u8,
     pub b: u8,
     pub a: u8,
 }
-
-encode_impl!(Color4B, buf, self, {
-    buf.write_u8(self.r);
-    buf.write_u8(self.g);
-    buf.write_u8(self.b);
-    buf.write_u8(self.a);
-});
-
-decode_impl!(Color4B, buf, {
-    let r = buf.read_u8()?;
-    let g = buf.read_u8()?;
-    let b = buf.read_u8()?;
-    let a = buf.read_u8()?;
-    Ok(Self { r, g, b, a })
-});
-
-size_calc_impl!(Color4B, size_of_types!(u8, u8, u8, u8));
 
 impl FromStr for Color4B {
     type Err = ColorParseError;
@@ -118,21 +86,8 @@ impl FromStr for Color4B {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Encodable, EncodableWithKnownSize, Decodable)]
 pub struct Point {
     pub x: f32,
     pub y: f32,
 }
-
-encode_impl!(Point, buf, self, {
-    buf.write_f32(self.x);
-    buf.write_f32(self.y);
-});
-
-decode_impl!(Point, buf, {
-    let x = buf.read_f32()?;
-    let y = buf.read_f32()?;
-    Ok(Self { x, y })
-});
-
-size_calc_impl!(Point, size_of_types!(f32, f32));

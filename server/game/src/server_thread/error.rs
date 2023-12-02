@@ -11,6 +11,7 @@ pub enum PacketHandlingError {
     MalformedMessage,                  // packet is missing a header
     MalformedLoginAttempt,             // LoginPacket with cleartext credentials
     MalformedCiphertext,               // missing nonce/mac in the encrypted ciphertext
+    MalformedPacketStructure,          // failed to decode the packet
     NoHandler(u16),                    // no handler found for this packet ID
     WebRequestError(reqwest::Error),   // error making a web request to the central server
     UnexpectedPlayerData,              // client sent PlayerDataPacket or SyncPlayerMetadataPacket outside of a level
@@ -66,6 +67,7 @@ impl Display for PacketHandlingError {
             Self::MalformedCiphertext => f.write_str("malformed ciphertext in an encrypted packet"),
             Self::MalformedMessage => f.write_str("malformed message structure"),
             Self::MalformedLoginAttempt => f.write_str("malformed login attempt"),
+            Self::MalformedPacketStructure => f.write_str("malformed packet structure, could not decode it"),
             Self::NoHandler(id) => f.write_fmt(format_args!("no packet handler for packet ID {id}")),
             Self::WebRequestError(msg) => f.write_fmt(format_args!("web request error: {msg}")),
             Self::UnexpectedPlayerData => {

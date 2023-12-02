@@ -1,0 +1,15 @@
+[package]
+name = "globed-derives"
+version = "1.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+darling = "0.20.3"
+proc-macro2 = "1.0.70"
+quote = "1.0.33"
+syn = { version = "2.0.39", features = ["full"] }

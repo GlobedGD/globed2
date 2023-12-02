@@ -1,92 +1,45 @@
 use crate::data::*;
 
-/* PingResponsePacket - 20000 */
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 20000, encrypted = false)]
+pub struct PingResponsePacket {
+    pub id: u32,
+    pub player_count: u32,
+}
 
-packet!(PingResponsePacket, 20000, false, {
-    id: u32,
-    player_count: u32
-});
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 20001, encrypted = false)]
+pub struct CryptoHandshakeResponsePacket {
+    pub key: PublicKey,
+}
 
-encode_impl!(PingResponsePacket, buf, self, {
-    buf.write_u32(self.id);
-    buf.write_u32(self.player_count);
-});
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 20002, encrypted = false)]
+pub struct KeepaliveResponsePacket {
+    pub player_count: u32,
+}
 
-decode_unimpl!(PingResponsePacket);
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 20003, encrypted = false)]
+pub struct ServerDisconnectPacket {
+    pub message: FastString<MAX_NOTICE_SIZE>,
+}
 
-size_calc_impl!(PingResponsePacket, size_of_types!(u32, u32));
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 20004, encrypted = false)]
+pub struct LoggedInPacket {
+    pub tps: u32,
+}
 
-/* CryptoHandshakeResponsePacket - 20001 */
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 20005, encrypted = false)]
+pub struct LoginFailedPacket {
+    pub message: FastString<MAX_NOTICE_SIZE>,
+}
 
-packet!(CryptoHandshakeResponsePacket, 20001, false, {
-    key: CryptoPublicKey,
-});
-
-encode_impl!(CryptoHandshakeResponsePacket, buf, self, {
-    buf.write(&self.key);
-});
-
-decode_unimpl!(CryptoHandshakeResponsePacket);
-
-size_calc_impl!(CryptoHandshakeResponsePacket, size_of_types!(CryptoPublicKey));
-
-/* KeepaliveResponsePacket - 20002 */
-
-packet!(KeepaliveResponsePacket, 20002, false, {
-    player_count: u32
-});
-
-encode_impl!(KeepaliveResponsePacket, buf, self, {
-    buf.write_u32(self.player_count);
-});
-
-decode_unimpl!(KeepaliveResponsePacket);
-
-size_calc_impl!(KeepaliveResponsePacket, size_of_types!(u32));
-
-/* ServerDisconnectPacket - 20003 */
-
-packet!(ServerDisconnectPacket, 20003, false, {
-    message: FastString<MAX_NOTICE_SIZE>
-});
-
-encode_impl!(ServerDisconnectPacket, buf, self, {
-    buf.write(&self.message);
-});
-
-decode_unimpl!(ServerDisconnectPacket);
-
-size_calc_impl!(ServerDisconnectPacket, size_of_types!(FastString<MAX_NOTICE_SIZE>));
-
-/* LoggedInPacket - 20004 */
-
-empty_server_packet!(LoggedInPacket, 20004);
-
-/* LoginFailedPacket - 20005 */
-
-packet!(LoginFailedPacket, 20005, false, {
-    message: FastString<MAX_NOTICE_SIZE>
-});
-
-encode_impl!(LoginFailedPacket, buf, self, {
-    buf.write(&self.message);
-});
-
-decode_unimpl!(LoginFailedPacket);
-
-size_calc_impl!(LoginFailedPacket, size_of_types!(FastString<MAX_NOTICE_SIZE>));
-
-/* ServerNoticePacket - 20006 */
 // used to communicate a simple message to the user
-
-packet!(ServerNoticePacket, 20006, false, {
-    message: FastString<MAX_NOTICE_SIZE>
-});
-
-encode_impl!(ServerNoticePacket, buf, self, {
-    buf.write(&self.message);
-});
-
-decode_unimpl!(ServerNoticePacket);
-
-size_calc_impl!(ServerNoticePacket, size_of_types!(FastString<MAX_NOTICE_SIZE>));
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 20006, encrypted = false)]
+pub struct ServerNoticePacket {
+    pub message: FastString<MAX_NOTICE_SIZE>,
+}

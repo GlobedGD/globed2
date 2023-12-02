@@ -51,6 +51,10 @@ fn default_userlist() -> HashSet<i32> {
     HashSet::new()
 }
 
+fn default_tps() -> u32 {
+    30
+}
+
 fn default_secret_key() -> String {
     let rand_string: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -121,6 +125,10 @@ pub struct ServerConfig {
     #[serde(default = "default_userlist")]
     pub no_chat_list: HashSet<i32>,
 
+    // game stuff
+    #[serde(default = "default_tps")]
+    pub tps: u32,
+
     // security
     #[serde(default = "default_use_gd_api")]
     pub use_gd_api: bool,
@@ -155,7 +163,8 @@ impl ServerConfig {
         let writer = OpenOptions::new().write(true).create(true).open(dest)?;
 
         // i hate 2 spaces i hate 2 spaces i hate 2 spaces
-        let mut serializer = Serializer::with_formatter(writer, PrettyFormatter::with_indent(b"    "));
+        let formatter = PrettyFormatter::with_indent(b"    ");
+        let mut serializer = Serializer::with_formatter(writer, formatter);
         self.serialize(&mut serializer)?;
 
         Ok(())
@@ -181,6 +190,7 @@ impl ServerConfig {
             userlist_mode: default_userlist_mode(),
             userlist: default_userlist(),
             no_chat_list: default_userlist(),
+            tps: default_tps(),
             secret_key: default_secret_key(),
             game_server_password: default_secret_key(),
             challenge_expiry: default_challenge_expiry(),

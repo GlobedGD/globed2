@@ -7,9 +7,9 @@ pub use game::MAX_VOICE_PACKET_SIZE;
 macro_rules! gs_handler {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
         pub(crate) async fn $name(&$self, buf: &mut bytebuffer::ByteReader<'_>) -> crate::server_thread::Result<()> {
-            let $pkt = <$pktty>::decode_from_reader(buf)?;
+            let $pkt = <$pktty>::decode_from_reader(buf).map_err(|_| crate::server_thread::error::PacketHandlingError::MalformedPacketStructure)?;
             #[cfg(debug_assertions)]
-            log::debug!(
+            globed_shared::logger::debug!(
                 "[{} @ {}] Handling packet {}",
                 $self.account_id.load(Ordering::Relaxed),
                 $self.peer,
@@ -24,9 +24,9 @@ macro_rules! gs_handler {
 macro_rules! gs_handler_sync {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
         pub(crate) fn $name(&$self, buf: &mut bytebuffer::ByteReader<'_>) -> crate::server_thread::Result<()> {
-            let $pkt = <$pktty>::decode_from_reader(buf)?;
+            let $pkt = <$pktty>::decode_from_reader(buf).map_err(|_| crate::server_thread::error::PacketHandlingError::MalformedPacketStructure)?;
             #[cfg(debug_assertions)]
-            log::debug!(
+            globed_shared::logger::debug!(
                 "[{} @ {}] Handling packet {}",
                 $self.account_id.load(Ordering::Relaxed),
                 $self.peer,

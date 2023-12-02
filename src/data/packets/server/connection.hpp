@@ -25,7 +25,7 @@ class CryptoHandshakeResponsePacket : public Packet {
 
 class KeepaliveResponsePacket : public Packet {
     GLOBED_PACKET(20002, false)
-    
+
     GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE { playerCount = buf.readU32(); }
 
@@ -45,7 +45,9 @@ class LoggedInPacket : public Packet {
     GLOBED_PACKET(20004, false)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-    GLOBED_PACKET_DECODE {}
+    GLOBED_PACKET_DECODE { tps = buf.readU32(); }
+
+    uint32_t tps;
 };
 
 class LoginFailedPacket : public Packet {

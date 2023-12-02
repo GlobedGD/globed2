@@ -16,7 +16,7 @@ CachedSettings GlobedSettings::getCached() {
 
 void GlobedSettings::refreshCache() {
     auto cache = _cache.lock();
-    cache->test = this->get<bool>("test");
+    cache->serverTps = this->get<uint32_t>("server-tps");
 }
 
 bool GlobedSettings::getFlag(const std::string& key) {

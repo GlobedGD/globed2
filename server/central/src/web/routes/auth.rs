@@ -7,7 +7,7 @@ use std::{
 use anyhow::anyhow;
 use async_rate_limit::limiters::VariableCostRateLimiter;
 use base64::{engine::general_purpose as b64e, Engine as _};
-use log::{debug, info, warn};
+use globed_shared::logger::{debug, info, log, warn};
 use rand::{distributions::Alphanumeric, Rng};
 use roa::{http::StatusCode, preload::PowerBody, query::Query, throw, Context};
 

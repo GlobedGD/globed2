@@ -1,87 +1,52 @@
 use crate::data::*;
 
-/* SyncIconsPacket - 11000 */
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 11000, encrypted = false)]
+pub struct SyncIconsPacket {
+    pub icons: PlayerIconData,
+}
 
-packet!(SyncIconsPacket, 11000, false, {
-    icons: PlayerIconData,
-});
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 11001, encrypted = false)]
+pub struct RequestProfilesPacket {
+    pub ids: [i32; MAX_PROFILES_REQUESTED],
+}
 
-encode_unimpl!(SyncIconsPacket);
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 11002, encrypted = false)]
+pub struct LevelJoinPacket {
+    pub level_id: i32,
+}
 
-decode_impl!(SyncIconsPacket, buf, Ok(Self { icons: buf.read()? }));
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 11003, encrypted = false)]
+pub struct LevelLeavePacket {}
 
-/* RequestProfilesPacket - 11001 */
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 11004, encrypted = false)]
+pub struct PlayerDataPacket {
+    pub data: PlayerData,
+}
 
-packet!(RequestProfilesPacket, 11001, false, {
-    ids: [i32; MAX_PROFILES_REQUESTED]
-});
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 11005, encrypted = false)]
+pub struct RequestPlayerListPacket {}
 
-encode_unimpl!(RequestProfilesPacket);
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 11006, encrypted = false)]
+pub struct SyncPlayerMetadataPacket {
+    pub data: PlayerMetadata,
+}
 
-decode_impl!(RequestProfilesPacket, buf, {
-    Ok(Self {
-        ids: buf.read_value_array()?,
-    })
-});
-
-/* LevelJoinPacket - 11002 */
-
-packet!(LevelJoinPacket, 11002, false, {
-    level_id: i32
-});
-
-encode_unimpl!(LevelJoinPacket);
-
-decode_impl!(LevelJoinPacket, buf, {
-    Ok(Self {
-        level_id: buf.read_i32()?,
-    })
-});
-
-/* LevelLeavePacket - 11003 */
-
-empty_client_packet!(LevelLeavePacket, 11003);
-
-/* PlayerDataPacket - 11004 */
-
-packet!(PlayerDataPacket, 11004, false, {
-    data: PlayerData
-});
-
-encode_unimpl!(PlayerDataPacket);
-
-decode_impl!(PlayerDataPacket, buf, Ok(Self { data: buf.read()? }));
-
-/* RequestPlayerListPacket - 11005 */
-
-empty_client_packet!(RequestPlayerListPacket, 11005);
-
-/* SyncPlayerMetadataPacket - 11006 */
-
-packet!(SyncPlayerMetadataPacket, 11006, false, {
-    data: PlayerMetadata
-});
-
-encode_unimpl!(SyncPlayerMetadataPacket);
-
-decode_impl!(SyncPlayerMetadataPacket, buf, Ok(Self { data: buf.read()? }));
-
-/* VoicePacket - 11010 */
-
-packet!(VoicePacket, 11010, true, {
-    data: FastEncodedAudioFrame,
-});
-
-encode_unimpl!(VoicePacket);
-
-decode_impl!(VoicePacket, buf, Ok(Self { data: buf.read()? }));
+#[derive(Packet, Encodable, Decodable)]
+#[packet(id = 11010, encrypted = true)]
+pub struct VoicePacket {
+    pub data: FastEncodedAudioFrame,
+}
 
 /* ChatMessagePacket - 11011 */
-
-packet!(ChatMessagePacket, 11011, true, {
-    message: FastString<MAX_MESSAGE_SIZE>,
-});
-
-encode_unimpl!(ChatMessagePacket);
-
-decode_impl!(ChatMessagePacket, buf, Ok(Self { message: buf.read()? }));
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 11011, encrypted = true)]
+pub struct ChatMessagePacket {
+    pub message: FastString<MAX_MESSAGE_SIZE>,
+}

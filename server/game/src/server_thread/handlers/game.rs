@@ -7,7 +7,8 @@ use crate::{
     data::packets::PacketHeader,
     server_thread::{GameServerThread, PacketHandlingError, Result},
 };
-use log::warn;
+
+use globed_shared::logger::*;
 
 use super::*;
 use crate::data::*;

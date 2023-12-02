@@ -54,13 +54,15 @@ class GlobedServerManager {
 
     size_t gameServerCount();
 
-    uint32_t pingStart(const std::string& serverId);
     // start a ping on the active game server
     void pingStartActive();
-
-    void pingFinish(uint32_t pingId, uint32_t playerCount);
     // finish a ping on the active game server
     void pingFinishActive(uint32_t playerCount);
+
+    // start a ping on a server given an id
+    uint32_t pingStart(const std::string& serverId);
+    // finish a ping on a server given an id
+    void pingFinish(uint32_t pingId, uint32_t playerCount);
 
     GameServerView getGameServer(const std::string& serverId);
     std::vector<util::time::millis> getPingHistory(const std::string& serverId);

@@ -6,18 +6,14 @@ use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 
 pub trait Encodable {
-    /// write `Self` into the given buffer
     fn encode(&self, buf: &mut ByteBuffer);
-    /// write `Self` into the given buffer, except blazingly fast this time
     fn encode_fast(&self, buf: &mut FastByteBuffer);
 }
 
 pub trait Decodable {
-    /// read `Self` from the given `ByteBuffer`
     fn decode(buf: &mut ByteBuffer) -> Result<Self>
     where
         Self: Sized;
-    /// read `Self` from the given `ByteReader`
     fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
     where
         Self: Sized;
@@ -64,27 +60,6 @@ macro_rules! decode_impl {
     };
 }
 
-/// Implements `Decodable::decode` and `Decodable::decode_from_reader` to panic when called
-macro_rules! decode_unimpl {
-    ($typ:ty) => {
-        impl crate::data::bytebufferext::Decodable for $typ {
-            fn decode(_: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
-                panic!(
-                    "Tried to call {}::decode when Decodable was not implemented for this type",
-                    stringify!($typ)
-                );
-            }
-
-            fn decode_from_reader(_: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
-                panic!(
-                    "Tried to call {}::decode_from_reader when Decodable was not implemented for this type",
-                    stringify!($typ)
-                );
-            }
-        }
-    };
-}
-
 /// Simple and compact way of implementing `Encodable::encode` and `Encodable::encode_fast`.
 ///
 /// Example usage:
@@ -106,27 +81,6 @@ macro_rules! encode_impl {
 
             fn encode_fast(&$self, $buf: &mut crate::data::bytebufferext::FastByteBuffer) {
                 $encode
-            }
-        }
-    };
-}
-
-/// Implements `Encodable::encode` and `Encodable::encode_fast` to panic when called
-macro_rules! encode_unimpl {
-    ($typ:ty) => {
-        impl crate::data::bytebufferext::Encodable for $typ {
-            fn encode(&self, _: &mut bytebuffer::ByteBuffer) {
-                panic!(
-                    "Tried to call {}::encode when Encodable was not implemented for this type",
-                    stringify!($typ)
-                );
-            }
-
-            fn encode_fast(&self, _: &mut crate::data::bytebufferext::FastByteBuffer) {
-                panic!(
-                    "Tried to call {}::encode_fast when Encodable was not implemented for this type",
-                    stringify!($typ)
-                );
             }
         }
     };
@@ -175,22 +129,12 @@ macro_rules! size_of_types {
 }
 
 pub(crate) use decode_impl;
-pub(crate) use decode_unimpl;
 pub(crate) use encode_impl;
-pub(crate) use encode_unimpl;
 pub(crate) use size_calc_impl;
 pub(crate) use size_of_primitives;
 pub(crate) use size_of_types;
 
-/* ByteBuffer extensions
-*
-* With great power comes great responsibility.
-* Just because you can use .write(T) and .read<T>() for every single type,
-* even primitives (as they impl Encodable/Decodable), doesn't mean you should.
-*
-* Notable exception is Option, `write` will accept &Option<T> while `write_optional_value` will accept Option<&T>
-* so feel free to use whichever method suits you more when dealing with those.
-*/
+/* ByteBuffer extensions */
 
 pub trait ByteBufferExt {
     fn with_capacity(capacity: usize) -> Self;
@@ -512,77 +456,4 @@ impl ByteBufferExtRead for ByteBuffer {
 
 impl<'a> ByteBufferExtRead for ByteReader<'a> {
     impl_extread!(decode_from_reader);
-}
-
-/* Encodable/Decodable implementations for common types */
-
-macro_rules! impl_primitive {
-    ($typ:ty,$read:ident,$write:ident) => {
-        encode_impl!($typ, buf, self, {
-            buf.$write(*self);
-        });
-
-        decode_impl!($typ, buf, { buf.$read().map_err(|e| e.into()) });
-
-        size_calc_impl!($typ, size_of_primitives!(Self));
-    };
-}
-
-impl_primitive!(bool, read_bool, write_bool);
-impl_primitive!(u8, read_u8, write_u8);
-impl_primitive!(u16, read_u16, write_u16);
-impl_primitive!(u32, read_u32, write_u32);
-impl_primitive!(u64, read_u64, write_u64);
-impl_primitive!(i8, read_i8, write_i8);
-impl_primitive!(i16, read_i16, write_i16);
-impl_primitive!(i32, read_i32, write_i32);
-impl_primitive!(i64, read_i64, write_i64);
-impl_primitive!(f32, read_f32, write_f32);
-impl_primitive!(f64, read_f64, write_f64);
-
-encode_impl!(Vec<u8>, buf, self, buf.write_byte_array(self));
-decode_impl!(Vec<u8>, buf, buf.read_byte_array());
-
-encode_impl!(String, buf, self, buf.write_string(self));
-decode_impl!(String, buf, Ok(buf.read_string()?));
-
-encode_impl!(&str, buf, self, buf.write_string(self));
-
-impl<T> Encodable for Option<T>
-where
-    T: Encodable,
-{
-    fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_optional_value(self.as_ref());
-    }
-
-    fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_optional_value(self.as_ref());
-    }
-}
-
-impl<T> EncodableWithKnownSize for Option<T>
-where
-    T: EncodableWithKnownSize,
-{
-    const ENCODED_SIZE: usize = size_of_types!(bool, T);
-}
-
-impl<T> Decodable for Option<T>
-where
-    T: Decodable,
-{
-    fn decode(buf: &mut ByteBuffer) -> Result<Self>
-    where
-        Self: Sized,
-    {
-        buf.read_optional_value()
-    }
-
-    fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
-    where
-        Self: Sized,
-    {
-        buf.read_optional_value()
-    }
 }

@@ -39,6 +39,7 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
         log::info("Successfully logged into the server!");
+        connectedTps = packet->tps;
         _loggedin = true;
     });
 

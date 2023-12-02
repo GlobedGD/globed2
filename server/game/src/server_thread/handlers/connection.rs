@@ -1,10 +1,9 @@
 use std::sync::atomic::Ordering;
 
 use crypto_box::ChaChaBox;
-use globed_shared::PROTOCOL_VERSION;
+use globed_shared::{logger::*, PROTOCOL_VERSION};
 
 use crate::server_thread::{GameServerThread, PacketHandlingError};
-use log::debug;
 
 use super::*;
 use crate::data::*;
@@ -53,13 +52,11 @@ impl GameServerThread {
             }
 
             self.crypto_box
-                .get_or_init(|| ChaChaBox::new(&packet.key.pubkey, &self.game_server.secret_key));
+                .get_or_init(|| ChaChaBox::new(&packet.key, &self.game_server.secret_key));
         }
 
         self.send_packet_fast(&CryptoHandshakeResponsePacket {
-            key: CryptoPublicKey {
-                pubkey: self.game_server.secret_key.public_key().clone(),
-            },
+            key: self.game_server.secret_key.public_key().clone(),
         })
         .await
     });
@@ -85,7 +82,8 @@ impl GameServerThread {
                 account_data.account_id = packet.account_id;
                 account_data.name = packet.name;
             }
-            self.send_packet_fast(&LoggedInPacket {}).await?;
+            let tps = self.game_server.central_conf.lock().tps;
+            self.send_packet_fast(&LoggedInPacket { tps }).await?;
             return Ok(());
         }
 
@@ -149,7 +147,8 @@ impl GameServerThread {
 
         debug!("Login successful from {player_name} ({})", packet.account_id);
 
-        self.send_packet_fast(&LoggedInPacket {}).await?;
+        let tps = self.game_server.central_conf.lock().tps;
+        self.send_packet_fast(&LoggedInPacket { tps }).await?;
 
         Ok(())
     });

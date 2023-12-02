@@ -1,16 +1,10 @@
 use crate::data::*;
 
-/* PlayerProfilesPacket - 21000 */
-
-packet!(PlayerProfilesPacket, 21000, false, {
-    profiles: Vec<PlayerAccountData>,
-});
-
-encode_impl!(PlayerProfilesPacket, buf, self, {
-    buf.write_value_vec(&self.profiles);
-});
-
-decode_unimpl!(PlayerProfilesPacket);
+#[derive(Packet, Encodable, Decodable)]
+#[packet(id = 21000, encrypted = false)]
+pub struct PlayerProfilesPacket {
+    pub message: Vec<PlayerAccountData>,
+}
 
 /* LevelDataPacket - 21001
 * PlayerListPacket - 21002
@@ -20,36 +14,28 @@ decode_unimpl!(PlayerProfilesPacket);
 * They are encoded inline in the packet handlers in server_thread/handlers/game.rs.
 */
 
-empty_server_packet!(LevelDataPacket, 21001);
-empty_server_packet!(PlayerListPacket, 21002);
-empty_server_packet!(PlayerMetadataPacket, 21003);
+#[derive(Packet, Encodable, Decodable)]
+#[packet(id = 21001, encrypted = false)]
+pub struct LevelDataPacket {}
 
-/* VoiceBroadcastPacket - 21010 */
+#[derive(Packet, Encodable, Decodable)]
+#[packet(id = 21002, encrypted = false)]
+pub struct PlayerListPacket {}
 
-packet!(VoiceBroadcastPacket, 21010, true, {
-    player_id: i32,
-    data: FastEncodedAudioFrame,
-});
+#[derive(Packet, Encodable, Decodable)]
+#[packet(id = 21003, encrypted = false)]
+pub struct PlayerMetadataPacket {}
 
-encode_impl!(VoiceBroadcastPacket, buf, self, {
-    buf.write_i32(self.player_id);
-    buf.write(&self.data);
-});
+#[derive(Packet, Encodable, Decodable)]
+#[packet(id = 21010, encrypted = true)]
+pub struct VoiceBroadcastPacket {
+    pub player_id: i32,
+    pub data: FastEncodedAudioFrame,
+}
 
-decode_unimpl!(VoiceBroadcastPacket);
-
-/* ChatMessageBroadcastPacket - 21011 */
-
-packet!(ChatMessageBroadcastPacket, 21011, true, {
-    player_id: i32,
-    message: FastString<MAX_MESSAGE_SIZE>,
-});
-
-encode_impl!(ChatMessageBroadcastPacket, buf, self, {
-    buf.write_i32(self.player_id);
-    buf.write(&self.message);
-});
-
-decode_unimpl!(ChatMessageBroadcastPacket);
-
-size_calc_impl!(ChatMessageBroadcastPacket, size_of_types!(i32, FastString<MAX_MESSAGE_SIZE>));
+#[derive(Clone, Packet, Encodable, EncodableWithKnownSize, Decodable)]
+#[packet(id = 21011, encrypted = true)]
+pub struct ChatMessageBroadcastPacket {
+    pub player_id: i32,
+    pub message: FastString<MAX_MESSAGE_SIZE>,
+}

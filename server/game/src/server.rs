@@ -8,13 +8,12 @@ use parking_lot::Mutex as SyncMutex;
 
 use anyhow::{anyhow, bail};
 use crypto_box::{aead::OsRng, SecretKey};
-use globed_shared::GameServerBootData;
+use globed_shared::{logger::*, GameServerBootData};
 use rustc_hash::FxHashMap;
 
 #[allow(unused_imports)]
 use tokio::sync::oneshot; // no way
 
-use log::{debug, error, info, warn};
 use tokio::net::UdpSocket;
 
 use crate::{
@@ -212,7 +211,7 @@ impl GameServer {
                 // they won't be removed from levels or the player count and that person has to restart the game to connect again.
                 // so try to avoid panics please..
                 thread.run().await;
-                log::trace!("removing client: {}", peer);
+                trace!("removing client: {}", peer);
                 self.post_disconnect_cleanup(&thread, peer);
             });
 
@@ -222,17 +221,14 @@ impl GameServer {
 
         // check if the client is sending too many packets
         // safety: `thread.rate_limiter` is only used here and never accessed anywhere else.
-        // it is also guaranteed to not be a nullptr, as per `UnsafeCell::get`.
-        unsafe {
-            let rate_limiter = thread.rate_limiter.get();
-            if !rate_limiter.as_mut().unwrap_unchecked().try_tick() {
-                if cfg!(debug_assertions) {
-                    bail!("{peer} is ratelimited");
-                }
-
-                // silently reject the packet in release mode
-                return Ok(());
+        let allowed = unsafe { thread.rate_limiter.try_tick() };
+        if !allowed {
+            if cfg!(debug_assertions) {
+                bail!("{peer} is ratelimited");
             }
+
+            // silently reject the packet in release mode
+            return Ok(());
         }
 
         // don't heap allocate for small packets

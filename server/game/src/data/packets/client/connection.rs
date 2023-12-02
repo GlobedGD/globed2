@@ -1,53 +1,31 @@
 use crate::data::*;
 
-/* PingPacket - 10000 */
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 10000, encrypted = false)]
+pub struct PingPacket {
+    pub id: u32,
+}
 
-packet!(PingPacket, 10000, false, {
-    id: u32,
-});
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 10001, encrypted = false)]
+pub struct CryptoHandshakeStartPacket {
+    pub protocol: u16,
+    pub key: PublicKey,
+}
 
-encode_unimpl!(PingPacket);
-
-decode_impl!(PingPacket, buf, Ok(Self { id: buf.read_u32()? }));
-
-/* CryptoHandshakeStartPacket - 10001 */
-
-packet!(CryptoHandshakeStartPacket, 10001, false, {
-    protocol: u16,
-    key: CryptoPublicKey,
-});
-
-encode_unimpl!(CryptoHandshakeStartPacket);
-
-decode_impl!(CryptoHandshakeStartPacket, buf, {
-    let protocol = buf.read_u16()?;
-    let key = buf.read()?;
-    Ok(Self { protocol, key })
-});
-
-/* KeepalivePacket - 10002 */
-
-empty_client_packet!(KeepalivePacket, 10002);
-
-/* LoginPacket - 10003 */
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 10002, encrypted = false)]
+pub struct KeepalivePacket {}
 
 pub const MAX_TOKEN_SIZE: usize = 164;
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 10003, encrypted = true)]
+pub struct LoginPacket {
+    pub account_id: i32,
+    pub name: FastString<MAX_NAME_SIZE>,
+    pub token: FastString<MAX_TOKEN_SIZE>,
+}
 
-packet!(LoginPacket, 10003, true, {
-    account_id: i32,
-    name: FastString<MAX_NAME_SIZE>,
-    token: FastString<MAX_TOKEN_SIZE>,
-});
-
-encode_unimpl!(LoginPacket);
-
-decode_impl!(LoginPacket, buf, {
-    let account_id = buf.read_i32()?;
-    let name = buf.read()?;
-    let token = buf.read()?;
-    Ok(Self { account_id, name, token })
-});
-
-/* DisconnectPacket - 10004 */
-
-empty_client_packet!(DisconnectPacket, 10004);
+#[derive(Packet, Encodable, Decodable, EncodableWithKnownSize)]
+#[packet(id = 10004, encrypted = false)]
+pub struct DisconnectPacket {}

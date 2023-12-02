@@ -1,5 +1,4 @@
 use std::{
-    cell::SyncUnsafeCell,
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering},
@@ -15,10 +14,15 @@ use crypto_box::{
     aead::{Aead, AeadCore, AeadInPlace, OsRng},
     ChaChaBox,
 };
-use log::{debug, warn};
+use globed_shared::logger::*;
 use tokio::sync::{mpsc, Mutex};
 
-use crate::{data::*, server::GameServer, server_thread::handlers::*, util::SimpleRateLimiter};
+use crate::{
+    data::*,
+    server::GameServer,
+    server_thread::handlers::*,
+    util::{rate_limiter::UnsafeRateLimiter, SimpleRateLimiter},
+};
 
 mod error;
 mod handlers;
@@ -32,7 +36,6 @@ pub const SMALL_PACKET_LIMIT: usize = 164;
 const CHANNEL_BUFFER_SIZE: usize = 8;
 const NONCE_SIZE: usize = 24;
 const MAC_SIZE: usize = 16;
-const SERVER_TPS: usize = 30; // configured amount of PlayerData per second that can be received
 
 #[derive(Clone)]
 pub enum ServerThreadMessage {
@@ -58,7 +61,7 @@ pub struct GameServerThread {
     pub account_data: SyncMutex<PlayerAccountData>,
 
     last_voice_packet: AtomicU64,
-    pub rate_limiter: SyncUnsafeCell<SimpleRateLimiter>, // do NOT interact with this field oustide of GameServer.
+    pub rate_limiter: UnsafeRateLimiter, // do NOT interact with this field oustide of GameServer.
 }
 
 impl GameServerThread {
@@ -66,8 +69,9 @@ impl GameServerThread {
 
     pub fn new(peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
         let (tx, rx) = mpsc::channel::<ServerThreadMessage>(CHANNEL_BUFFER_SIZE);
-        let rate_limiter = SimpleRateLimiter::new(SERVER_TPS + 5, Duration::from_millis(950));
-        let rate_limiter = SyncUnsafeCell::new(rate_limiter);
+        let rl_request_limit = (game_server.central_conf.lock().tps + 5) as usize;
+        let rate_limiter = SimpleRateLimiter::new(rl_request_limit, Duration::from_millis(950));
+        let rate_limiter = UnsafeRateLimiter::new(rate_limiter);
         Self {
             tx,
             rx: Mutex::new(rx),
@@ -114,7 +118,7 @@ impl GameServerThread {
                 | PacketHandlingError::EncryptionError
                 | PacketHandlingError::DecryptionError
                 | PacketHandlingError::IOError(_) => {
-                    log::warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
+                    warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
                 }
                 // these are either our fault or a fatal error somewhere
                 PacketHandlingError::SocketSendFailed(_)
@@ -123,12 +127,13 @@ impl GameServerThread {
                 | PacketHandlingError::SystemTimeError(_)
                 | PacketHandlingError::WebRequestError(_)
                 | PacketHandlingError::DangerousAllocation(_) => {
-                    log::error!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
+                    error!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
                 PacketHandlingError::MalformedMessage
                 | PacketHandlingError::MalformedCiphertext
                 | PacketHandlingError::MalformedLoginAttempt
+                | PacketHandlingError::MalformedPacketStructure
                 | PacketHandlingError::NoHandler(_)
                 | PacketHandlingError::SocketWouldBlock
                 | PacketHandlingError::Ratelimited
@@ -160,7 +165,7 @@ impl GameServerThread {
     #[allow(dead_code)]
     async fn send_packet<P: Packet>(&self, packet: &P) -> Result<()> {
         #[cfg(debug_assertions)]
-        log::debug!(
+        debug!(
             "[{} @ {}] Sending packet {} (normal)",
             self.account_id.load(Ordering::Relaxed),
             self.peer,
@@ -184,7 +189,7 @@ impl GameServerThread {
     /// you have to provide a rough estimate of the packet size, if the packet doesn't fit, the function panics.
     async fn send_packet_fast_rough<P: Packet>(&self, packet: &P, packet_size: usize) -> Result<()> {
         #[cfg(debug_assertions)]
-        log::debug!(
+        debug!(
             "[{} @ {}] Sending packet {} ({})",
             self.account_id.load(Ordering::Relaxed),
             self.peer,

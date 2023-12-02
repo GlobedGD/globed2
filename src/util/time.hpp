@@ -18,6 +18,16 @@ namespace util::time {
         return clock::now();
     }
 
+    template <typename Rep, typename Period>
+    inline long long asMillis(duration<Rep, Period> tp) {
+        return chrono::duration_cast<millis>(tp).count();
+    }
+
+    template <typename Rep, typename Period>
+    inline long long asMicros(duration<Rep, Period> tp) {
+        return chrono::duration_cast<micros>(tp).count();
+    }
+
     inline millis sinceEpoch() {
         return chrono::duration_cast<millis>(now().time_since_epoch());
     }

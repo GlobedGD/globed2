@@ -1,5 +1,4 @@
-use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
-use log::debug;
+use globed_shared::{logger::debug, GameServerBootData, PROTOCOL_VERSION};
 use reqwest::StatusCode;
 use roa::{preload::PowerBody, query::Query, throw, Context};
 
@@ -52,6 +51,7 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         protocol: PROTOCOL_VERSION,
         no_chat: config.no_chat_list.clone(),
         special_users: config.special_users.clone(),
+        tps: config.tps,
     };
 
     debug!(

@@ -35,6 +35,9 @@ public:
     static constexpr uint8_t PROTOCOL_VERSION = 1;
 
     GLOBED_SINGLETON(NetworkManager)
+
+    AtomicU32 connectedTps; // if `authenticated() == true`, this is the TPS of the current server, otherwise undefined.
+
     NetworkManager();
     ~NetworkManager();
 

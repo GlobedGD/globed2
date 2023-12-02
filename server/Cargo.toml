@@ -1,5 +1,5 @@
 [workspace]
-members = ["central", "game", "shared"]
+members = ["central", "game", "game-derives", "shared"]
 resolver = "2"
 
 [profile.release]

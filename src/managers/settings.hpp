@@ -3,12 +3,12 @@
 #include <util/sync.hpp>
 
 struct CachedSettings {
-    bool test;
+    uint32_t serverTps;
 };
 
 #define MAKE_DEFAULT(_key, value) if (key == (_key)) return (value);
 
-// Besides `getCached()`, this class is not thread safe (reason: getSavedValue/setSavedValue)
+// Besides `getCached()`, this class is not thread safe (reason: Mod::getSavedValue/Mod::setSavedValue)
 class GlobedSettings {
     GLOBED_SINGLETON(GlobedSettings);
     GlobedSettings();
@@ -41,7 +41,7 @@ class GlobedSettings {
         if (this->getFlag("_gset_-" + key)) {
             return geode::Mod::get()->getSavedValue<T>("gsetting-" + key);
         } else {
-            MAKE_DEFAULT("test", true)
+            MAKE_DEFAULT("server-tps", (uint32_t)30)
 
             return T{};
         }

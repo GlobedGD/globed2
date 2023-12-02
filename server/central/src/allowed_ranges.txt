@@ -3,7 +3,8 @@
 # that are not originated from one of these IP ranges.
 # In debug or with the "cloudflare_protection" option disabled this file has no impact on anything, no IP addresses will be blocked.
 #
-# Use hashtags for comments and separate ranges by newlines. Start with 'v4' or 'v6' depending if it's IPv4 or IPv6
+# Use hashtags for comments and separate ranges by newlines. Start with 'v4' or 'v6' depending if it's IPv4 or IPv6.
+# NOTE: these are included in the executable at compile time. If you want to change anything here, you have to recompile the server.
 
 # List of cloudflare IP ranges (from https://www.cloudflare.com/ips/):
 # Updated 2023-11-17

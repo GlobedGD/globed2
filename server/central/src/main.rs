@@ -9,29 +9,32 @@ use std::{error::Error, path::PathBuf, sync::Arc, time::Duration};
 
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
-use log::{error, info, warn, LevelFilter};
-use logger::Logger;
+use globed_shared::logger::{error, info, log, warn, LogLevelFilter, Logger};
 use roa::{tcp::Listener, App};
 use state::{ServerState, ServerStateData};
 use tokio::sync::RwLock;
 
 pub mod config;
 pub mod ip_blocker;
-pub mod logger;
 pub mod state;
 pub mod web;
 
+fn abort_misconfig() -> ! {
+    error!("aborting launch due to misconfiguration.");
+    std::process::exit(1);
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    log::set_logger(Logger::instance()).unwrap();
+    log::set_logger(Logger::instance("globed_central_server")).unwrap();
 
     if std::env::var("GLOBED_LESS_LOG").unwrap_or("0".to_string()) == "1" {
-        log::set_max_level(LevelFilter::Warn);
+        log::set_max_level(LogLevelFilter::Warn);
     } else {
         log::set_max_level(if cfg!(debug_assertions) {
-            LevelFilter::Trace
+            LogLevelFilter::Trace
         } else {
-            LevelFilter::Info
+            LogLevelFilter::Info
         });
     }
 
@@ -48,9 +51,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         match ServerConfig::load(&config_path) {
             Ok(x) => x,
             Err(err) => {
-                error!("Failed to open configuration file: {}", err.to_string());
-                error!("Please fix the mistakes in the file or delete it for a new template to be created.");
-                panic!("aborting due to broken config");
+                error!("failed to open/parse configuration file: {err}");
+                warn!("hint: if you don't have anything important there, delete the file for a new template to be created.");
+                warn!("hint: the faulty configuration resides at: {config_path:?}");
+                abort_misconfig();
             }
         }
     } else {

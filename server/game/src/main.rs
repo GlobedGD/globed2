@@ -4,6 +4,7 @@
 * Everything you see here is the exact definition of over-engineered and over-optimized.
 * Good luck.
 */
+
 #![feature(sync_unsafe_cell)]
 #![allow(
     clippy::must_use_candidate,
@@ -11,22 +12,21 @@
     clippy::cast_possible_truncation,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
-    clippy::wildcard_imports
+    clippy::wildcard_imports,
+    clippy::missing_safety_doc
 )]
 
 use std::{
     collections::{HashMap, HashSet},
     error::Error,
-    net::SocketAddr,
+    net::{IpAddr, Ipv4Addr, SocketAddr},
 };
 
-use globed_shared::{GameServerBootData, PROTOCOL_VERSION};
-use log::{error, info, warn, LevelFilter};
+use globed_shared::*;
 use reqwest::StatusCode;
 use server::GameServerConfiguration;
 use state::ServerState;
 use tokio::net::UdpSocket;
-use util::Logger;
 
 use server::GameServer;
 
@@ -40,6 +40,11 @@ pub mod util;
 struct StartupConfiguration {
     bind_address: SocketAddr,
     central_data: Option<(String, String)>,
+}
+
+fn abort_misconfig() -> ! {
+    error!("aborting launch due to misconfiguration.");
+    std::process::exit(1);
 }
 
 fn parse_configuration() -> StartupConfiguration {
@@ -63,11 +68,17 @@ fn parse_configuration() -> StartupConfiguration {
 
     let bind_address = match bind_address.parse::<SocketAddr>() {
         Ok(x) => x,
-        Err(e) => {
-            error!("failed to parse the given IP address ({bind_address}): {e}");
-            warn!("hint: you have to pass a valid IPv4 address with a port number, for example 0.0.0.0:41000");
-            error!("aborting launch due to misconfiguration");
-            std::process::exit(1);
+        Err(_) => {
+            // try to parse it as an ip addr and use a default port
+            match bind_address.parse::<Ipv4Addr>() {
+                Ok(x) => SocketAddr::new(IpAddr::V4(x), 41001),
+                Err(e) => {
+                    error!("failed to parse the given IP address ({bind_address}): {e}");
+                    warn!("hint: you have to provide a valid IPv4 address with an optional port number");
+                    warn!("hint: for example \"0.0.0.0\" or \"0.0.0.0:41001\"");
+                    abort_misconfig();
+                }
+            }
         }
     };
 
@@ -104,8 +115,7 @@ fn parse_configuration() -> StartupConfiguration {
             error!("correct usage: \"{exe_name} <address> <central-url> <central-password>\"");
         }
         warn!("hint: you must specify the password for connecting to the central server, see the server readme.");
-        error!("aborting launch due to misconfiguration");
-        std::process::exit(1);
+        abort_misconfig();
     }
 
     let central_pw = arg.unwrap();
@@ -117,17 +127,18 @@ fn parse_configuration() -> StartupConfiguration {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    log::set_logger(Logger::instance()).unwrap();
+    log::set_logger(Logger::instance("globed_game_server")).unwrap();
 
     if std::env::var("GLOBED_GS_LESS_LOG").unwrap_or("0".to_string()) == "1" {
-        log::set_max_level(LevelFilter::Warn);
+        log::set_max_level(LogLevelFilter::Warn);
     } else {
         log::set_max_level(if cfg!(debug_assertions) {
-            LevelFilter::Trace
+            LogLevelFilter::Trace
         } else {
-            LevelFilter::Info
+            LogLevelFilter::Info
         });
     }
 
@@ -152,6 +163,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             protocol: PROTOCOL_VERSION,
             no_chat: HashSet::new(),
             special_users: HashMap::new(),
+            tps: 30,
         }
     } else {
         let (central_url, central_pw) = startup_config.central_data.unwrap();
@@ -173,15 +185,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     error!("the central server returned an error: {err}");
                     if err.status().unwrap_or(StatusCode::OK) == StatusCode::UNAUTHORIZED {
                         warn!("hint: there is a high chance that you have supplied a wrong password");
+                        warn!("hint: see the server readme if you don't know what password you need to use");
                     }
-                    error!("aborting launch due to misconfiguration");
-                    std::process::exit(1);
+                    abort_misconfig();
                 }
             },
             Err(err) => {
                 error!("failed to make a request to the central server: {err}");
-                error!("aborting launch due to misconfiguration");
-                std::process::exit(1);
+                warn!("hint: make sure the URL you passed is a valid Globed central server URL.");
+                abort_misconfig();
             }
         };
 
@@ -190,8 +202,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Ok(x) => x,
             Err(err) => {
                 error!("failed to parse the data sent by the central server: {err}");
-                error!("aborting launch due to misconfiguration");
-                std::process::exit(1);
+                warn!("hint: make sure the URL you passed is a valid Globed central server URL.");
+                abort_misconfig();
             }
         };
 
@@ -201,8 +213,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 "this game server is on v{PROTOCOL_VERSION}, while the central server uses v{}",
                 boot_data.protocol
             );
-            error!("aborting launch due to incompatible protocol versions");
-            std::process::exit(1);
+            if boot_data.protocol > PROTOCOL_VERSION {
+                warn!(
+                    "hint: you are running an old version of the Globed game server (v{}), please update to the latest one.",
+                    env!("CARGO_PKG_VERSION")
+                );
+            } else {
+                warn!("hint: the central server you are using is outdated, or the game server is using a development build that is too new.");
+            }
+            abort_misconfig();
         }
 
         boot_data
@@ -219,8 +238,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 warn!("hint: ports below 1024 are commonly privileged and you can't use them as a regular user");
                 warn!("hint: pick a higher port number or use port 0 to get a randomly generated port");
             }
-            error!("aborting launch due to an unexpected error");
-            std::process::exit(1);
+            abort_misconfig();
         }
     };
 

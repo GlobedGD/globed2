@@ -6,24 +6,24 @@
 
 #if GLOBED_HAS_KEYBINDS
 #include <geode.custom-keybinds/include/Keybinds.hpp>
-#endif // GLOBED_CUSTOM_KEYBINDS
+#endif // GLOBED_HAS_KEYBINDS
 
 #include <audio/all.hpp>
 
 #include <managers/profile_cache.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/settings.hpp>
 #include <net/network_manager.hpp>
 #include <data/packets/all.hpp>
 #include <util/math.hpp>
 
 using namespace geode::prelude;
 
-constexpr float DATA_SEND_INTERVAL = 1.0f / 30.f;
-constexpr float DATA_SEND_INTERVAL_MS = DATA_SEND_INTERVAL * 1000;
-
 class $modify(GlobedPlayLayer, PlayLayer) {
     bool globedReady;
     bool deafened = false;
+    CachedSettings settings;
+    uint32_t configuredTps;
 
     /* speedhack detection */
     float lastKnownTimeScale = 1.0f;
@@ -34,11 +34,15 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) return false;
 
+        m_fields->settings = GlobedSettings::get().getCached();
+
         auto& nm = NetworkManager::get();
 
         // if not authenticated, do nothing
         m_fields->globedReady = nm.authenticated();
         if (!m_fields->globedReady) return true;
+
+        m_fields->configuredTps = std::min(nm.connectedTps.load(), m_fields->settings.serverTps);
 
         // send LevelJoinPacket
         nm.send(LevelJoinPacket::create(m_level->m_levelID));
@@ -54,7 +58,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         // the attempt count increased by quite a bit.
 
         auto scheduler = CCScheduler::get();
-        scheduler->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, DATA_SEND_INTERVAL, false);
+        this->rescheduleSender();
 
         this->setupCustomKeybinds();
 
@@ -120,7 +124,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 #if GLOBED_HAS_KEYBINDS
         // TODO let the user pick recording device somehow
         // TODO this breaks for impostor playlayers, if they won't be fixed in 2.2 then do a good old workaround
-        this->addEventListener<keybinds::InvokeBindFilter>([=](keybinds::InvokeBindEvent* event) {
+        this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
             auto& vm = GlobedAudioManager::get();
 
             if (event->isDown()) {
@@ -154,7 +158,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             return ListenerResult::Propagate;
         }, "voice-activate"_spr);
 
-        this->addEventListener<keybinds::InvokeBindFilter>([=](keybinds::InvokeBindEvent* event) {
+        this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
             if (event->isDown()) {
                 this->m_fields->deafened = !this->m_fields->deafened;
             }
@@ -207,19 +211,19 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // We record the time of sending each packet and compare the intervals. If the interval is suspiciously small, we reject the packet.
     // This does result in less smooth experience with non-naive speedhacks however.
     bool accountForSpeedhack() {
-        auto sched = CCScheduler::get();
-        float ts = sched->getTimeScale();
-        if (!util::math::equal(ts, m_fields->lastKnownTimeScale)) {
-            m_fields->lastKnownTimeScale = ts;
-            auto sel = schedule_selector(GlobedPlayLayer::selSendPlayerData);
-            sched->unscheduleSelector(sel, this);
-            sched->scheduleSelector(sel, this, DATA_SEND_INTERVAL * ts, false);
+        auto* sched = CCScheduler::get();
+        auto ts = sched->getTimeScale();
+        if (ts != m_fields->lastKnownTimeScale) {
+            sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this);
+            this->rescheduleSender();
         }
 
         auto now = util::time::now();
-        auto passed = chrono::duration_cast<util::time::millis>(now - m_fields->lastSentPacket).count();
+        auto passed = util::time::asMillis(now - m_fields->lastSentPacket);
 
-        if (passed < DATA_SEND_INTERVAL_MS * 0.85f) {
+        float cap = (1.0f / m_fields->configuredTps) * 1000;
+
+        if (passed < cap * 0.85f) {
             // log::warn("dropping a packet (speedhack?), passed time is {}ms", passed);
             return false;
         }
@@ -227,6 +231,14 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         m_fields->lastSentPacket = now;
 
         return true;
+    }
+
+    void rescheduleSender() {
+        auto* sched = CCScheduler::get();
+        float timescale = sched->getTimeScale();
+        float interval = (1.0f / m_fields->configuredTps) * timescale;
+        m_fields->lastKnownTimeScale = timescale;
+        sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, interval, false);
     }
 
     // TODO remove if impostor playlayer gets fixed
