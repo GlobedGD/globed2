@@ -1,9 +1,37 @@
+use std::fmt::Display;
+
 use crate::data::{
     packets::{PacketHeader, PacketMetadata},
     types::cocos,
 };
-use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
+
+#[derive(Debug)]
+pub enum DecodeError {
+    NotEnoughData,
+    NotEnoughCapacityString,
+    InvalidEnumValue,
+    InvalidStringValue,
+}
+
+impl Display for DecodeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotEnoughData => f.write_str("could not read enough bytes from the ByteBuffer"),
+            Self::NotEnoughCapacityString => f.write_str("not enough capacity to fit the given string into a FastString"),
+            Self::InvalidEnumValue => f.write_str("invalid enum value was passed"),
+            Self::InvalidStringValue => f.write_str("invalid string was passed, likely not properly UTF-8 encoded"),
+        }
+    }
+}
+
+impl From<std::io::Error> for DecodeError {
+    fn from(_: std::io::Error) -> Self {
+        DecodeError::NotEnoughData
+    }
+}
+
+pub type DecodeResult<T> = core::result::Result<T, DecodeError>;
 
 pub trait Encodable {
     fn encode(&self, buf: &mut ByteBuffer);
@@ -11,15 +39,15 @@ pub trait Encodable {
 }
 
 pub trait Decodable {
-    fn decode(buf: &mut ByteBuffer) -> Result<Self>
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
         Self: Sized;
-    fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized;
 }
 
-pub trait EncodableWithKnownSize: Encodable {
+pub trait KnownSize {
     /// For dynamically sized types, this must be the maximum permitted size in the encoded form.
     /// If `FastByteBuffer::write` tries to write more bytes than this value, it may panic.
     const ENCODED_SIZE: usize;
@@ -48,12 +76,12 @@ pub const MAX_PROFILES_REQUESTED: usize = 128;
 /// ```
 macro_rules! decode_impl {
     ($typ:ty, $buf:ident, $decode:expr) => {
-        impl crate::data::bytebufferext::Decodable for $typ {
-            fn decode($buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
+        impl crate::data::Decodable for $typ {
+            fn decode($buf: &mut bytebuffer::ByteBuffer) -> crate::data::DecodeResult<Self> {
                 $decode
             }
 
-            fn decode_from_reader($buf: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
+            fn decode_from_reader($buf: &mut bytebuffer::ByteReader) -> crate::data::DecodeResult<Self> {
                 $decode
             }
         }
@@ -74,19 +102,19 @@ macro_rules! decode_impl {
 /// ```
 macro_rules! encode_impl {
     ($typ:ty, $buf:ident, $self:ident, $encode:expr) => {
-        impl crate::data::bytebufferext::Encodable for $typ {
+        impl crate::data::Encodable for $typ {
             fn encode(&$self, $buf: &mut bytebuffer::ByteBuffer) {
                 $encode
             }
 
-            fn encode_fast(&$self, $buf: &mut crate::data::bytebufferext::FastByteBuffer) {
+            fn encode_fast(&$self, $buf: &mut crate::data::FastByteBuffer) {
                 $encode
             }
         }
     };
 }
 
-/// Simple and compact way of implementing `EncodableWithKnownSize`.
+/// Simple and compact way of implementing `KnownSize`.
 ///
 /// Example usage:
 /// ```rust
@@ -98,7 +126,7 @@ macro_rules! encode_impl {
 /// ```
 macro_rules! size_calc_impl {
     ($typ:ty, $calc:expr) => {
-        impl crate::data::bytebufferext::EncodableWithKnownSize for $typ {
+        impl crate::data::bytebufferext::KnownSize for $typ {
             const ENCODED_SIZE: usize = $calc;
         }
     };
@@ -116,7 +144,7 @@ macro_rules! size_of_primitives {
     }};
 }
 
-/// Simple way of getting total (maximum) encoded size of given types that implement `Encodable` and `EncodableWithKnownSize`
+/// Simple way of getting total (maximum) encoded size of given types that implement `Encodable` and `KnownSize`
 ///
 /// Example usage:
 /// ```rust
@@ -158,7 +186,6 @@ pub trait ByteBufferExtWrite {
     /// write a `Vec<T>`, prefixed with 4 bytes indicating the amount of values
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
 
-    fn write_enum<E: Into<B>, B: Encodable>(&mut self, val: E);
     fn write_packet_header<T: PacketMetadata>(&mut self);
 
     fn write_color3(&mut self, val: cocos::Color3B);
@@ -168,30 +195,29 @@ pub trait ByteBufferExtWrite {
 
 pub trait ByteBufferExtRead {
     /// alias to `read_value`
-    fn read<T: Decodable>(&mut self) -> Result<T> {
+    fn read<T: Decodable>(&mut self) -> DecodeResult<T> {
         self.read_value()
     }
 
-    fn read_bool(&mut self) -> Result<bool>;
+    fn read_bool(&mut self) -> DecodeResult<bool>;
     /// read a byte vector, prefixed with 4 bytes indicating length
-    fn read_byte_array(&mut self) -> Result<Vec<u8>>;
+    fn read_byte_array(&mut self) -> DecodeResult<Vec<u8>>;
     /// read the remaining data into a Vec
-    fn read_remaining_bytes(&mut self) -> Result<Vec<u8>>;
+    fn read_remaining_bytes(&mut self) -> DecodeResult<Vec<u8>>;
 
-    fn read_value<T: Decodable>(&mut self) -> Result<T>;
-    fn read_optional_value<T: Decodable>(&mut self) -> Result<Option<T>>;
+    fn read_value<T: Decodable>(&mut self) -> DecodeResult<T>;
+    fn read_optional_value<T: Decodable>(&mut self) -> DecodeResult<Option<T>>;
 
     /// read an array `[T; N]`, size must be known at compile time
-    fn read_value_array<T: Decodable, const N: usize>(&mut self) -> Result<[T; N]>;
+    fn read_value_array<T: Decodable, const N: usize>(&mut self) -> DecodeResult<[T; N]>;
     /// read a `Vec<T>`
-    fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>>;
+    fn read_value_vec<T: Decodable>(&mut self) -> DecodeResult<Vec<T>>;
 
-    fn read_enum<E: TryFrom<B>, B: Decodable>(&mut self) -> Result<E>;
-    fn read_packet_header(&mut self) -> Result<PacketHeader>;
+    fn read_packet_header(&mut self) -> DecodeResult<PacketHeader>;
 
-    fn read_color3(&mut self) -> Result<cocos::Color3B>;
-    fn read_color4(&mut self) -> Result<cocos::Color4B>;
-    fn read_point(&mut self) -> Result<cocos::Point>;
+    fn read_color3(&mut self) -> DecodeResult<cocos::Color3B>;
+    fn read_color4(&mut self) -> DecodeResult<cocos::Color4B>;
+    fn read_point(&mut self) -> DecodeResult<cocos::Point>;
 }
 
 /// Buffer for encoding that does zero heap allocation but also has limited functionality.
@@ -344,10 +370,6 @@ macro_rules! impl_extwrite {
             }
         }
 
-        fn write_enum<E: Into<B>, B: Encodable>(&mut self, val: E) {
-            self.write_value(&val.into());
-        }
-
         fn write_packet_header<T: PacketMetadata>(&mut self) {
             self.write_value(&PacketHeader::from_packet::<T>());
         }
@@ -368,16 +390,16 @@ macro_rules! impl_extwrite {
 
 macro_rules! impl_extread {
     ($decode_fn:ident) => {
-        fn read_bool(&mut self) -> Result<bool> {
+        fn read_bool(&mut self) -> DecodeResult<bool> {
             Ok(self.read_u8()? != 0u8)
         }
 
-        fn read_byte_array(&mut self) -> Result<Vec<u8>> {
+        fn read_byte_array(&mut self) -> DecodeResult<Vec<u8>> {
             let length = self.read_u32()? as usize;
             Ok(self.read_bytes(length)?)
         }
 
-        fn read_remaining_bytes(&mut self) -> Result<Vec<u8>> {
+        fn read_remaining_bytes(&mut self) -> DecodeResult<Vec<u8>> {
             let remainder = self.len() - self.get_rpos();
             let mut data = Vec::with_capacity(remainder);
 
@@ -392,22 +414,22 @@ macro_rules! impl_extread {
             Ok(data)
         }
 
-        fn read_value<T: Decodable>(&mut self) -> Result<T> {
+        fn read_value<T: Decodable>(&mut self) -> DecodeResult<T> {
             T::$decode_fn(self)
         }
 
-        fn read_optional_value<T: Decodable>(&mut self) -> Result<Option<T>> {
+        fn read_optional_value<T: Decodable>(&mut self) -> DecodeResult<Option<T>> {
             Ok(match self.read_bool()? {
                 false => None,
                 true => Some(self.read_value::<T>()?),
             })
         }
 
-        fn read_value_array<T: Decodable, const N: usize>(&mut self) -> Result<[T; N]> {
+        fn read_value_array<T: Decodable, const N: usize>(&mut self) -> DecodeResult<[T; N]> {
             array_init::try_array_init(|_| self.read_value::<T>())
         }
 
-        fn read_value_vec<T: Decodable>(&mut self) -> Result<Vec<T>> {
+        fn read_value_vec<T: Decodable>(&mut self) -> DecodeResult<Vec<T>> {
             let mut out = Vec::new();
             let length = self.read_u32()? as usize;
             for _ in 0..length {
@@ -417,26 +439,19 @@ macro_rules! impl_extread {
             Ok(out)
         }
 
-        fn read_enum<E: TryFrom<B>, B: Decodable>(&mut self) -> Result<E> {
-            let val = self.read_value::<B>()?;
-            let val: Result<E, _> = val.try_into();
-
-            val.map_err(|_| anyhow!("failed to decode enum"))
-        }
-
-        fn read_packet_header(&mut self) -> Result<PacketHeader> {
+        fn read_packet_header(&mut self) -> DecodeResult<PacketHeader> {
             self.read_value()
         }
 
-        fn read_color3(&mut self) -> Result<cocos::Color3B> {
+        fn read_color3(&mut self) -> DecodeResult<cocos::Color3B> {
             self.read_value()
         }
 
-        fn read_color4(&mut self) -> Result<cocos::Color4B> {
+        fn read_color4(&mut self) -> DecodeResult<cocos::Color4B> {
             self.read_value()
         }
 
-        fn read_point(&mut self) -> Result<cocos::Point> {
+        fn read_point(&mut self) -> DecodeResult<cocos::Point> {
             self.read_value()
         }
     };

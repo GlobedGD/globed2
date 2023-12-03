@@ -1,27 +1,27 @@
 use std::{fmt::Display, time::SystemTimeError};
 
-use crate::data::types::ColorParseError;
+use crate::data::{bytebufferext::DecodeError, types::ColorParseError};
 
 pub enum PacketHandlingError {
-    Other(String),                     // unknown generic error
-    WrongCryptoBoxState,               // cryptobox was either Some or None when should've been the other one
-    EncryptionError,                   // failed to encrypt data
-    DecryptionError,                   // failed to decrypt data
-    IOError(std::io::Error),           // generic IO error
-    MalformedMessage,                  // packet is missing a header
-    MalformedLoginAttempt,             // LoginPacket with cleartext credentials
-    MalformedCiphertext,               // missing nonce/mac in the encrypted ciphertext
-    MalformedPacketStructure,          // failed to decode the packet
-    NoHandler(u16),                    // no handler found for this packet ID
-    WebRequestError(reqwest::Error),   // error making a web request to the central server
-    UnexpectedPlayerData,              // client sent PlayerDataPacket or SyncPlayerMetadataPacket outside of a level
-    SystemTimeError(SystemTimeError),  // clock went backwards..?
-    SocketSendFailed(std::io::Error),  // failed to send data on a socket due to an IO error
-    SocketWouldBlock,                  // failed to send data on a socket because operation would block
-    UnexpectedCentralResponse,         // malformed response from the central server
-    ColorParseFailed(ColorParseError), // failed to parse a hex color into a Color3B struct
-    Ratelimited,                       // too many packets per second
-    DangerousAllocation(usize),        // attempted to allocate a huge chunk of memory with alloca
+    Other(String),                         // unknown generic error
+    WrongCryptoBoxState,                   // cryptobox was either Some or None when should've been the other one
+    EncryptionError,                       // failed to encrypt data
+    DecryptionError,                       // failed to decrypt data
+    IOError(std::io::Error),               // generic IO error
+    MalformedMessage,                      // packet is missing a header
+    MalformedLoginAttempt,                 // LoginPacket with cleartext credentials
+    MalformedCiphertext,                   // missing nonce/mac in the encrypted ciphertext
+    MalformedPacketStructure(DecodeError), // failed to decode the packet
+    NoHandler(u16),                        // no handler found for this packet ID
+    WebRequestError(reqwest::Error),       // error making a web request to the central server
+    UnexpectedPlayerData,                  // client sent PlayerDataPacket or SyncPlayerMetadataPacket outside of a level
+    SystemTimeError(SystemTimeError),      // clock went backwards..?
+    SocketSendFailed(std::io::Error),      // failed to send data on a socket due to an IO error
+    SocketWouldBlock,                      // failed to send data on a socket because operation would block
+    UnexpectedCentralResponse,             // malformed response from the central server
+    ColorParseFailed(ColorParseError),     // failed to parse a hex color into a Color3B struct
+    Ratelimited,                           // too many packets per second
+    DangerousAllocation(usize),            // attempted to allocate a huge chunk of memory with alloca
 }
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
@@ -56,6 +56,12 @@ impl From<ColorParseError> for PacketHandlingError {
     }
 }
 
+impl From<DecodeError> for PacketHandlingError {
+    fn from(value: DecodeError) -> Self {
+        PacketHandlingError::MalformedPacketStructure(value)
+    }
+}
+
 impl Display for PacketHandlingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -67,7 +73,7 @@ impl Display for PacketHandlingError {
             Self::MalformedCiphertext => f.write_str("malformed ciphertext in an encrypted packet"),
             Self::MalformedMessage => f.write_str("malformed message structure"),
             Self::MalformedLoginAttempt => f.write_str("malformed login attempt"),
-            Self::MalformedPacketStructure => f.write_str("malformed packet structure, could not decode it"),
+            Self::MalformedPacketStructure(err) => f.write_fmt(format_args!("could not decode a packet: {err}")),
             Self::NoHandler(id) => f.write_fmt(format_args!("no packet handler for packet ID {id}")),
             Self::WebRequestError(msg) => f.write_fmt(format_args!("web request error: {msg}")),
             Self::UnexpectedPlayerData => {

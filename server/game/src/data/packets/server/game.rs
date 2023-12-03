@@ -1,6 +1,6 @@
 use crate::data::*;
 
-#[derive(Packet, Encodable, Decodable)]
+#[derive(Packet, Encodable)]
 #[packet(id = 21000, encrypted = false)]
 pub struct PlayerProfilesPacket {
     pub message: Vec<PlayerAccountData>,
@@ -10,30 +10,29 @@ pub struct PlayerProfilesPacket {
 * PlayerListPacket - 21002
 * PlayerMetadataPacket - 21003
 *
-* For optimization reasons, these 3 cannot be dynamically dispatched, and are not defined here.
-* They are encoded inline in the packet handlers in server_thread/handlers/game.rs.
+* For optimization reasons, these 3 are encoded inline in the packet handlers in server_thread/handlers/game.rs.
 */
 
-#[derive(Packet, Encodable, Decodable)]
+#[derive(Packet, Encodable)]
 #[packet(id = 21001, encrypted = false)]
-pub struct LevelDataPacket {}
+pub struct LevelDataPacket;
 
-#[derive(Packet, Encodable, Decodable)]
+#[derive(Packet, Encodable)]
 #[packet(id = 21002, encrypted = false)]
-pub struct PlayerListPacket {}
+pub struct PlayerListPacket;
 
-#[derive(Packet, Encodable, Decodable)]
+#[derive(Packet, Encodable)]
 #[packet(id = 21003, encrypted = false)]
-pub struct PlayerMetadataPacket {}
+pub struct PlayerMetadataPacket;
 
-#[derive(Packet, Encodable, Decodable)]
+#[derive(Packet, Encodable)]
 #[packet(id = 21010, encrypted = true)]
 pub struct VoiceBroadcastPacket {
     pub player_id: i32,
     pub data: FastEncodedAudioFrame,
 }
 
-#[derive(Clone, Packet, Encodable, EncodableWithKnownSize, Decodable)]
+#[derive(Clone, Packet, Encodable, KnownSize)]
 #[packet(id = 21011, encrypted = true)]
 pub struct ChatMessageBroadcastPacket {
     pub player_id: i32,

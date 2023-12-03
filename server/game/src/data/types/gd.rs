@@ -4,7 +4,7 @@ use crate::data::*;
 
 use super::{Color3B, ColorParseError};
 
-#[derive(Clone, Encodable, EncodableWithKnownSize, Decodable)]
+#[derive(Clone, Encodable, KnownSize, Decodable)]
 pub struct PlayerIconData {
     pub cube: i16,
     pub ship: i16,
@@ -48,7 +48,7 @@ impl PlayerIconData {
 
 /* SpecialUserData */
 
-#[derive(Clone, Encodable, EncodableWithKnownSize, Decodable)]
+#[derive(Clone, Encodable, KnownSize, Decodable)]
 pub struct SpecialUserData {
     pub name_color: Color3B,
 }
@@ -72,7 +72,7 @@ impl TryFrom<SpecialUser> for SpecialUserData {
 
 /* PlayerAccountData */
 
-#[derive(Clone, Default, Encodable, EncodableWithKnownSize, Decodable)]
+#[derive(Clone, Default, Encodable, KnownSize, Decodable)]
 pub struct PlayerAccountData {
     pub account_id: i32,
     pub name: FastString<MAX_NAME_SIZE>,
@@ -95,7 +95,7 @@ impl PlayerAccountData {
 
 /* PlayerPreviewAccountData - like PlayerAccountData but more limited, for the total player list */
 
-#[derive(Clone, Default, Encodable, EncodableWithKnownSize, Decodable)]
+#[derive(Clone, Default, Encodable, KnownSize, Decodable)]
 pub struct PlayerPreviewAccountData {
     pub account_id: i32,
     pub name: FastString<MAX_NAME_SIZE>,
@@ -105,14 +105,31 @@ pub struct PlayerPreviewAccountData {
     pub level_id: i32,
 }
 
+/* IconType */
+
+#[derive(Debug, Copy, Clone, Encodable, Decodable, KnownSize)]
+#[repr(u8)]
+pub enum IconType {
+    Unknown = 0,
+    Cube = 1,
+    Ship = 2,
+    Ball = 3,
+    Ufo = 4,
+    Wave = 5,
+    Robot = 6,
+    Spider = 7,
+    Swing = 8,
+    Jetpack = 9,
+}
+
 /* PlayerData (data in a level) */
 
-#[derive(Clone, Default, Encodable, EncodableWithKnownSize, Decodable)]
+#[derive(Clone, Default, Encodable, KnownSize, Decodable)]
 pub struct PlayerData {}
 
 /* AssociatedPlayerData */
 
-#[derive(Clone, Default, Encodable, EncodableWithKnownSize, Decodable)]
+#[derive(Clone, Default, Encodable, KnownSize, Decodable)]
 pub struct AssociatedPlayerData {
     pub account_id: i32,
     pub data: PlayerData,
@@ -120,7 +137,7 @@ pub struct AssociatedPlayerData {
 
 /* PlayerMetadata (things like your percentage in a level, attempt count) */
 
-#[derive(Clone, Default, Encodable, EncodableWithKnownSize, Decodable)]
+#[derive(Clone, Default, Encodable, KnownSize, Decodable)]
 pub struct PlayerMetadata {
     percentage: u16,
     attempts: i32,
@@ -128,7 +145,7 @@ pub struct PlayerMetadata {
 
 /* AssociatedPlayerMetadata */
 
-#[derive(Clone, Default, Encodable, EncodableWithKnownSize)]
+#[derive(Clone, Default, Encodable, KnownSize)]
 pub struct AssociatedPlayerMetadata {
     pub account_id: i32,
     pub data: PlayerMetadata,

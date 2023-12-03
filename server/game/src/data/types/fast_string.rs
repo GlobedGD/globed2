@@ -1,8 +1,9 @@
-use anyhow::{bail, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
-use std::fmt;
+use std::{fmt, str::Utf8Error};
 
 use crate::data::bytebufferext::*;
+#[allow(unused_imports)]
+use globed_shared::logger::*;
 
 /// `FastString` is a string class that doesn't use heap allocation like `String` but also owns the string (unlike `&str`).
 /// When encoding or decoding into a byte buffer of any kind, the encoded form is identical to a normal `String`,
@@ -82,11 +83,11 @@ impl<const N: usize> FastString<N> {
         }
     }
 
-    pub fn to_string(&self) -> Result<String> {
+    pub fn to_string(&self) -> Result<String, Utf8Error> {
         Ok(self.to_str()?.to_owned())
     }
 
-    pub fn to_str(&self) -> Result<&str> {
+    pub fn to_str(&self) -> Result<&str, Utf8Error> {
         std::str::from_utf8(&self.buffer[..self.len]).map_err(Into::into)
     }
 }
@@ -103,25 +104,28 @@ impl<const N: usize> Encodable for FastString<N> {
     }
 }
 
-impl<const N: usize> EncodableWithKnownSize for FastString<N> {
+impl<const N: usize> KnownSize for FastString<N> {
     const ENCODED_SIZE: usize = size_of_types!(u32) + N;
 }
 
 impl<const N: usize> Decodable for FastString<N> {
-    fn decode(buf: &mut ByteBuffer) -> Result<Self>
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
         Self: Sized,
     {
         Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
     }
 
-    fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,
     {
         let len = buf.read_u32()? as usize;
         if len > N {
-            bail!("string is too long ({len} chars) to fit into a FastString with capacity {N}");
+            #[cfg(debug_assertions)]
+            warn!("string is too long ({len} chars) to fit into a FastString with capacity {N}");
+
+            return Err(DecodeError::NotEnoughCapacityString);
         }
 
         let mut buffer = [0u8; N];
@@ -138,27 +142,30 @@ impl<const N: usize> fmt::Display for FastString<N> {
 }
 
 impl<const N: usize> TryInto<String> for FastString<N> {
-    type Error = anyhow::Error;
-    fn try_into(self) -> anyhow::Result<String> {
-        self.to_string()
+    type Error = DecodeError;
+    fn try_into(self) -> DecodeResult<String> {
+        self.to_string().map_err(|_| DecodeError::InvalidStringValue)
     }
 }
 
 impl<const N: usize> TryFrom<String> for FastString<N> {
-    type Error = anyhow::Error;
-    fn try_from(value: String) -> anyhow::Result<Self> {
+    type Error = DecodeError;
+    fn try_from(value: String) -> DecodeResult<Self> {
         TryFrom::<&str>::try_from(&value)
     }
 }
 
 impl<const N: usize> TryFrom<&str> for FastString<N> {
-    type Error = anyhow::Error;
-    fn try_from(value: &str) -> anyhow::Result<Self> {
+    type Error = DecodeError;
+    fn try_from(value: &str) -> DecodeResult<Self> {
         if value.len() > N {
-            bail!(
+            #[cfg(debug_assertions)]
+            warn!(
                 "Attempting to convert a string slice with size {} into a FastString with capacity {N}",
                 value.len()
             );
+
+            return Err(DecodeError::NotEnoughCapacityString);
         }
 
         Ok(Self::from_str(value))

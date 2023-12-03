@@ -32,7 +32,7 @@ See the [server readme](./server/readme.md) for more information about the serve
 
 ## Credit
 
-ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you for being awesome, whether it's because you helped me, suggested ideas, helped with testing, or if I just found you awesome in general :D
+ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you for being awesome, whether it's because you helped me directly, suggested ideas, helped with testing, or if I just found you awesome in general :D
 
 camila314 - thank you for [UIBuilder](https://github.com/camila314/uibuilder)
 

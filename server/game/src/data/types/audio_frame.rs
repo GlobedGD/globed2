@@ -10,17 +10,7 @@ pub struct EncodedAudioFrame {
 }
 
 /// `FastEncodedAudioFrame` requires just one heap allocation as opposed to 10.
-#[derive(Clone)]
+#[derive(Clone, Encodable, Decodable)]
 pub struct FastEncodedAudioFrame {
-    pub data: Vec<u8>,
+    pub data: RemainderBytes,
 }
-
-encode_impl!(FastEncodedAudioFrame, buf, self, {
-    buf.write_bytes(&self.data);
-});
-
-decode_impl!(FastEncodedAudioFrame, buf, {
-    Ok(Self {
-        data: buf.read_remaining_bytes()?,
-    })
-});

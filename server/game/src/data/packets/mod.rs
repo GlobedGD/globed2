@@ -8,7 +8,7 @@ use crate::data::bytebufferext::*;
 
 type PacketId = u16;
 
-pub trait Packet: Encodable + Decodable + Send + Sync + PacketMetadata {
+pub trait Packet: Send + Sync + PacketMetadata {
     fn get_packet_id(&self) -> PacketId;
     fn get_encrypted(&self) -> bool;
 }

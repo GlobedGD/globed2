@@ -1,20 +1,15 @@
-/*
-* proc macros for Encodable, Decodable, EncodableWithKnownSize, and Packet traits.
-* Using the first three is as simple as `#[derive(Encodable, ...)]`, Packet is a bit more complex:
-* #[derive(Packet)]
-* #[packet(id = 10000, encrypted = false)]
-* pub struct MyPacket {}
-*/
-
 #![allow(clippy::missing_panics_doc)]
 
 use darling::FromDeriveInput;
 use proc_macro::{self, TokenStream};
-use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput};
+use quote::{quote, ToTokens};
+use syn::{parse_macro_input, punctuated::Punctuated, Data, DeriveInput, Meta, Token};
 
-/* Encodable, EncodableWithKnownSize, and Decodable derive macros */
-
+/// Implements `Encodable` for the given type. For `Encodable` to be successfully derived,
+/// for structs, all of the members of the struct must also implement `Encodable`.
+///
+/// For enums, the enum must have no associated data fields (only variants), and may have a
+/// `#[repr(u*)]` or `#[repr(i*)]` attribute to indicate the encoded type. By default it will be `i32` if omitted.
 #[proc_macro_derive(Encodable)]
 pub fn derive_encodable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -46,17 +41,37 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
                 }
             }
         }
-        _ => {
-            return TokenStream::from(quote! {
-                compile_error!("Encodable can only be derived for structs");
-            })
+        Data::Enum(_) => {
+            let repr_type = get_enum_repr_type(&input);
+
+            quote! {
+                impl Encodable for #struct_name {
+                    fn encode(&self, buf: &mut bytebuffer::ByteBuffer) {
+                        buf.write_value(&(*self as #repr_type))
+                    }
+
+                    fn encode_fast(&self, buf: &mut crate::data::FastByteBuffer) {
+                        buf.write_value(&(*self as #repr_type))
+                    }
+                }
+            }
+        }
+        Data::Union(_) => {
+            return quote! {
+                compile_error!("Encodable cannot be derived for unions");
+            }
+            .into()
         }
     };
 
     gen.into()
 }
 
-#[proc_macro_derive(EncodableWithKnownSize)]
+/// Implements `KnownSize` for the given type. For `KnownSize` to be successfully derived,
+/// for structs, all of the members of the struct must also implement `KnownSize`.
+///
+/// For enums, all the same limitations apply as in `Encodable`.
+#[proc_macro_derive(KnownSize)]
 pub fn derive_known_size(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -74,15 +89,23 @@ pub fn derive_known_size(input: TokenStream) -> TokenStream {
                 size_of_types!(#(#field_types),*)
             }
         }
-        _ => {
-            return TokenStream::from(quote! {
-                compile_error!("EncodableWithKnownSize can only be derived for structs");
-            });
+        Data::Enum(_) => {
+            let repr_type = get_enum_repr_type(&input);
+
+            quote! {
+                std::mem::size_of::<#repr_type>()
+            }
+        }
+        Data::Union(_) => {
+            return quote! {
+                compile_error!("KnownSize cannot be drived for unions");
+            }
+            .into();
         }
     };
 
     let gen = quote! {
-        impl EncodableWithKnownSize for #struct_name {
+        impl KnownSize for #struct_name {
             const ENCODED_SIZE: usize = #encoded_size;
         }
     };
@@ -91,6 +114,10 @@ pub fn derive_known_size(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
+/// Implements `Decodable` for the given type. For `Decodable` to be successfully derived,
+/// for structs, all of the members of the struct must also implement `Decodable`.
+///
+/// For enums, all the same limitations apply as in `Encodable` plus the enum must have explicitly specified values for all variants.
 #[proc_macro_derive(Decodable)]
 pub fn derive_decodable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -114,7 +141,7 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
 
             quote! {
                 impl Decodable for #struct_name {
-                    fn decode(buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self> {
+                    fn decode(buf: &mut bytebuffer::ByteBuffer) -> crate::data::DecodeResult<Self> {
                         #(#decode_fields)*
                         Ok(Self {
                             #(
@@ -123,7 +150,7 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
                         })
                     }
 
-                    fn decode_from_reader(buf: &mut bytebuffer::ByteReader) -> anyhow::Result<Self> {
+                    fn decode_from_reader(buf: &mut bytebuffer::ByteReader) -> crate::data::DecodeResult<Self> {
                         #(#decode_fields)*
                         Ok(Self {
                             #(
@@ -134,17 +161,94 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
                 }
             }
         }
-        _ => {
-            return TokenStream::from(quote! {
-                compile_error!("Decodable can only be derived for structs");
-            })
+        Data::Enum(data) => {
+            let repr_type = get_enum_repr_type(&input);
+
+            let mut err_flag: bool = false;
+            let decode_variants: Vec<_> = data
+                .variants
+                .iter()
+                .map(|variant| {
+                    let ident = &variant.ident;
+                    let variant_repr = match &variant.discriminant {
+                        Some((_, expr)) => {
+                            quote! { #expr }
+                        }
+                        None => {
+                            err_flag = true;
+                            quote! { 0 }
+                        }
+                    };
+                    quote! {
+                        #variant_repr => Ok(#struct_name::#ident),
+                    }
+                })
+                .collect();
+
+            if err_flag {
+                return quote! {
+                    compile_error!("Decodable currently cannot be derived for enums without explicitly specified discriminants");
+                }
+                .into();
+            }
+
+            quote! {
+                impl Decodable for #struct_name {
+                    fn decode(buf: &mut bytebuffer::ByteBuffer) -> crate::data::DecodeResult<Self> {
+                        let value: #repr_type = buf.read_value()?;
+                        match value {
+                            #(#decode_variants)*
+                            _ => Err(crate::data::DecodeError::InvalidEnumValue)
+                        }
+                    }
+
+                    fn decode_from_reader(buf: &mut bytebuffer::ByteReader) -> crate::data::DecodeResult<Self> {
+                        let value: #repr_type = buf.read_value()?;
+                        match value {
+                            #(#decode_variants)*
+                            _ => Err(crate::data::DecodeError::InvalidEnumValue)
+                        }
+                    }
+                }
+            }
+        }
+        Data::Union(_) => {
+            return quote! {
+                compile_error!("Decodable cannot be drived for unions");
+            }
+            .into();
         }
     };
 
     gen.into()
 }
 
-/* #[packet()] implementation */
+fn get_enum_repr_type(input: &DeriveInput) -> proc_macro2::TokenStream {
+    let mut repr_type: Option<proc_macro2::TokenStream> = None;
+    for attr in &input.attrs {
+        if attr.path().is_ident("repr") {
+            let nested = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated).unwrap();
+            for meta in nested {
+                match meta {
+                    Meta::Path(path) => {
+                        if let Some(ident) = path.get_ident() {
+                            repr_type = Some(ident.to_token_stream());
+                        }
+                    }
+                    _ => {
+                        return TokenStream::from(quote! {
+                            compile_error!("unrecognized repr attribute");
+                        })
+                        .into();
+                    }
+                }
+            }
+        }
+    }
+
+    // assume i32 by default
+    repr_type.unwrap_or(quote! { i32 })
+}
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(packet))]
@@ -153,6 +257,14 @@ struct PacketAttributes {
     encrypted: bool,
 }
 
+/// Implements `Packet`, `PacketMetadata` and the function `header() -> PacketHeader` for the given struct.
+/// You must also pass additional attributes with `#[packet]`, specifically packet ID and whether the packet should be encrypted.
+/// Example:
+/// ```rust
+/// #[derive(Packet, Encodable, Decodable)]
+/// #[packet(id = 10000, encrypted = false)]
+/// pub struct MyPacket { /* ... */ }
+/// ```
 #[proc_macro_derive(Packet, attributes(packet))]
 pub fn packet(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input);

@@ -15,13 +15,12 @@ use crypto_box::{
     ChaChaBox,
 };
 use globed_shared::logger::*;
-use tokio::sync::{mpsc, Mutex};
 
 use crate::{
     data::*,
     server::GameServer,
     server_thread::handlers::*,
-    util::{rate_limiter::UnsafeRateLimiter, SimpleRateLimiter},
+    util::{SimpleRateLimiter, UnsafeChannel, UnsafeRateLimiter},
 };
 
 mod error;
@@ -49,8 +48,7 @@ pub enum ServerThreadMessage {
 pub struct GameServerThread {
     game_server: &'static GameServer,
 
-    rx: Mutex<mpsc::Receiver<ServerThreadMessage>>,
-    tx: mpsc::Sender<ServerThreadMessage>,
+    channel: UnsafeChannel<ServerThreadMessage>,
     awaiting_termination: AtomicBool,
     pub authenticated: AtomicBool,
     crypto_box: OnceLock<ChaChaBox>,
@@ -68,13 +66,11 @@ impl GameServerThread {
     /* public api for the main server */
 
     pub fn new(peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
-        let (tx, rx) = mpsc::channel::<ServerThreadMessage>(CHANNEL_BUFFER_SIZE);
         let rl_request_limit = (game_server.central_conf.lock().tps + 5) as usize;
         let rate_limiter = SimpleRateLimiter::new(rl_request_limit, Duration::from_millis(950));
         let rate_limiter = UnsafeRateLimiter::new(rate_limiter);
         Self {
-            tx,
-            rx: Mutex::new(rx),
+            channel: UnsafeChannel::new(CHANNEL_BUFFER_SIZE),
             peer,
             crypto_box: OnceLock::new(),
             account_id: AtomicI32::new(0),
@@ -89,19 +85,17 @@ impl GameServerThread {
     }
 
     pub async fn run(&self) {
-        let mut rx = self.rx.lock().await;
-
         loop {
             if self.awaiting_termination.load(Ordering::Relaxed) {
                 break;
             }
 
-            match tokio::time::timeout(Duration::from_secs(60), rx.recv()).await {
-                Ok(Some(message)) => match self.handle_message(message).await {
+            match tokio::time::timeout(Duration::from_secs(60), self.channel.recv()).await {
+                Ok(Ok(message)) => match self.handle_message(message).await {
                     Ok(()) => {}
                     Err(err) => self.print_error(&err),
                 },
-                Ok(None) | Err(_) => break, // sender closed | timeout
+                Ok(Err(_)) | Err(_) => break, // sender closed | timeout
             };
         }
     }
@@ -133,7 +127,7 @@ impl GameServerThread {
                 PacketHandlingError::MalformedMessage
                 | PacketHandlingError::MalformedCiphertext
                 | PacketHandlingError::MalformedLoginAttempt
-                | PacketHandlingError::MalformedPacketStructure
+                | PacketHandlingError::MalformedPacketStructure(_)
                 | PacketHandlingError::NoHandler(_)
                 | PacketHandlingError::SocketWouldBlock
                 | PacketHandlingError::Ratelimited
@@ -144,7 +138,7 @@ impl GameServerThread {
 
     /// send a new message to this thread.
     pub fn push_new_message(&self, data: ServerThreadMessage) -> anyhow::Result<()> {
-        self.tx.try_send(data)?;
+        self.channel.try_send(data)?;
         Ok(())
     }
 
@@ -163,7 +157,7 @@ impl GameServerThread {
 
     /// send a packet normally. with zero extra optimizations. like a sane person typically would.
     #[allow(dead_code)]
-    async fn send_packet<P: Packet>(&self, packet: &P) -> Result<()> {
+    async fn send_packet<P: Packet + Encodable>(&self, packet: &P) -> Result<()> {
         #[cfg(debug_assertions)]
         debug!(
             "[{} @ {}] Sending packet {} (normal)",
@@ -178,7 +172,7 @@ impl GameServerThread {
 
     /// fast packet sending with best-case zero heap allocation.
     /// if the packet size isn't known at compile time, calculate it and use `send_packet_fast_rough`
-    async fn send_packet_fast<P: Packet + EncodableWithKnownSize>(&self, packet: &P) -> Result<()> {
+    async fn send_packet_fast<P: Packet + Encodable + KnownSize>(&self, packet: &P) -> Result<()> {
         // in theory, the size is known at compile time, however for some reason,
         // alloca manages to be significantly faster than a `[MaybeUninit<u8>; N]`.
         // i have no idea why or how, but yeah.
@@ -187,7 +181,7 @@ impl GameServerThread {
 
     /// like `send_packet_fast` but without the size being known at compile time.
     /// you have to provide a rough estimate of the packet size, if the packet doesn't fit, the function panics.
-    async fn send_packet_fast_rough<P: Packet>(&self, packet: &P, packet_size: usize) -> Result<()> {
+    async fn send_packet_fast_rough<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
         #[cfg(debug_assertions)]
         debug!(
             "[{} @ {}] Sending packet {} ({})",
@@ -282,7 +276,7 @@ impl GameServerThread {
 
     /// serialize (and potentially encrypt) a packet, returning a `ByteBuffer` with the output data
     #[allow(dead_code)]
-    fn serialize_packet<P: Packet>(&self, packet: &P) -> Result<ByteBuffer> {
+    fn serialize_packet<P: Packet + Encodable>(&self, packet: &P) -> Result<ByteBuffer> {
         let mut buf = ByteBuffer::new();
         buf.write_packet_header::<P>();
 

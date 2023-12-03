@@ -1,5 +1,4 @@
-use anyhow::Result;
-use std::io::Read;
+use std::{io::Read, ops::Deref};
 
 use bytebuffer::{ByteBuffer, ByteReader};
 pub use crypto_box::{PublicKey, KEY_SIZE};
@@ -52,9 +51,9 @@ where
     }
 }
 
-impl<T> EncodableWithKnownSize for Option<T>
+impl<T> KnownSize for Option<T>
 where
-    T: EncodableWithKnownSize,
+    T: KnownSize,
 {
     const ENCODED_SIZE: usize = size_of_types!(bool, T);
 }
@@ -63,14 +62,14 @@ impl<T> Decodable for Option<T>
 where
     T: Decodable,
 {
-    fn decode(buf: &mut ByteBuffer) -> Result<Self>
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
         Self: Sized,
     {
         buf.read_optional_value()
     }
 
-    fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,
     {
@@ -93,9 +92,9 @@ where
     }
 }
 
-impl<T, const N: usize> EncodableWithKnownSize for [T; N]
+impl<T, const N: usize> KnownSize for [T; N]
 where
-    T: EncodableWithKnownSize,
+    T: KnownSize,
 {
     const ENCODED_SIZE: usize = size_of_types!(T) * N;
 }
@@ -104,14 +103,14 @@ impl<T, const N: usize> Decodable for [T; N]
 where
     T: Decodable,
 {
-    fn decode(buf: &mut ByteBuffer) -> Result<Self>
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
         Self: Sized,
     {
         buf.read_value_array()
     }
 
-    fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,
     {
@@ -138,14 +137,14 @@ impl<T> Decodable for Vec<T>
 where
     T: Decodable,
 {
-    fn decode(buf: &mut ByteBuffer) -> Result<Self>
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
         Self: Sized,
     {
         buf.read_value_vec()
     }
 
-    fn decode_from_reader(buf: &mut ByteReader) -> Result<Self>
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,
     {
@@ -155,35 +154,40 @@ where
 
 /* crypto_box::PublicKey */
 
-impl Encodable for PublicKey {
-    fn encode(&self, buf: &mut bytebuffer::ByteBuffer) {
-        buf.write_bytes(self.as_bytes());
-    }
+encode_impl!(PublicKey, buf, self, {
+    buf.write_bytes(self.as_bytes());
+});
 
-    fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_bytes(self.as_bytes());
-    }
+size_calc_impl!(PublicKey, KEY_SIZE);
+
+decode_impl!(PublicKey, buf, {
+    let mut key = [0u8; KEY_SIZE];
+    buf.read_exact(&mut key)?;
+
+    Ok(Self::from_bytes(key))
+});
+
+/* RemainderBytes - wrapper around Vec<u8> that decodes with `buf.read_remaining_bytes()` and encodes with `buf.write_bytes()` */
+
+#[derive(Clone)]
+#[repr(transparent)]
+pub struct RemainderBytes {
+    data: Vec<u8>,
 }
 
-impl EncodableWithKnownSize for PublicKey {
-    const ENCODED_SIZE: usize = KEY_SIZE;
-}
+encode_impl!(RemainderBytes, buf, self, {
+    buf.write_bytes(&self.data);
+});
 
-impl Decodable for PublicKey {
-    fn decode(buf: &mut bytebuffer::ByteBuffer) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
-    }
+decode_impl!(RemainderBytes, buf, {
+    Ok(Self {
+        data: buf.read_remaining_bytes()?,
+    })
+});
 
-    fn decode_from_reader(buf: &mut ByteReader) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        let mut key = [0u8; KEY_SIZE];
-        buf.read_exact(&mut key)?;
-
-        Ok(Self::from_bytes(key))
+impl Deref for RemainderBytes {
+    type Target = Vec<u8>;
+    fn deref(&self) -> &Self::Target {
+        &self.data
     }
 }
