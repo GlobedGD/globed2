@@ -10,13 +10,8 @@ void GlobedSettings::reset(const std::string& key) {
     this->refreshCache();
 }
 
-CachedSettings GlobedSettings::getCached() {
+GlobedSettings::CachedSettings GlobedSettings::getCached() {
     return *_cache.lock();
-}
-
-void GlobedSettings::refreshCache() {
-    auto cache = _cache.lock();
-    cache->serverTps = this->get<uint32_t>("server-tps");
 }
 
 bool GlobedSettings::getFlag(const std::string& key) {

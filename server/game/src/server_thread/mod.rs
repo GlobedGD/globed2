@@ -16,12 +16,7 @@ use crypto_box::{
 };
 use globed_shared::logger::*;
 
-use crate::{
-    data::*,
-    server::GameServer,
-    server_thread::handlers::*,
-    util::{SimpleRateLimiter, UnsafeChannel, UnsafeRateLimiter},
-};
+use crate::{data::*, server::GameServer, server_thread::handlers::*, util::TokioChannel};
 
 mod error;
 mod handlers;
@@ -33,6 +28,8 @@ use self::handlers::MAX_VOICE_PACKET_SIZE;
 // TODO adjust this to PlayerData size in the future plus some headroom
 pub const SMALL_PACKET_LIMIT: usize = 164;
 const CHANNEL_BUFFER_SIZE: usize = 8;
+
+// do not touch those, encryption related
 const NONCE_SIZE: usize = 24;
 const MAC_SIZE: usize = 16;
 
@@ -48,7 +45,7 @@ pub enum ServerThreadMessage {
 pub struct GameServerThread {
     game_server: &'static GameServer,
 
-    channel: UnsafeChannel<ServerThreadMessage>,
+    channel: TokioChannel<ServerThreadMessage>,
     awaiting_termination: AtomicBool,
     pub authenticated: AtomicBool,
     crypto_box: OnceLock<ChaChaBox>,
@@ -59,18 +56,14 @@ pub struct GameServerThread {
     pub account_data: SyncMutex<PlayerAccountData>,
 
     last_voice_packet: AtomicU64,
-    pub rate_limiter: UnsafeRateLimiter, // do NOT interact with this field oustide of GameServer.
 }
 
 impl GameServerThread {
     /* public api for the main server */
 
     pub fn new(peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
-        let rl_request_limit = (game_server.central_conf.lock().tps + 5) as usize;
-        let rate_limiter = SimpleRateLimiter::new(rl_request_limit, Duration::from_millis(950));
-        let rate_limiter = UnsafeRateLimiter::new(rate_limiter);
         Self {
-            channel: UnsafeChannel::new(CHANNEL_BUFFER_SIZE),
+            channel: TokioChannel::new(CHANNEL_BUFFER_SIZE),
             peer,
             crypto_box: OnceLock::new(),
             account_id: AtomicI32::new(0),
@@ -80,7 +73,6 @@ impl GameServerThread {
             awaiting_termination: AtomicBool::new(false),
             account_data: SyncMutex::new(PlayerAccountData::default()),
             last_voice_packet: AtomicU64::new(0),
-            rate_limiter,
         }
     }
 
@@ -90,7 +82,8 @@ impl GameServerThread {
                 break;
             }
 
-            match tokio::time::timeout(Duration::from_secs(60), self.channel.recv()).await {
+            // safety: we are the only receiver for this channel.
+            match tokio::time::timeout(Duration::from_secs(60), unsafe { self.channel.recv() }).await {
                 Ok(Ok(message)) => match self.handle_message(message).await {
                     Ok(()) => {}
                     Err(err) => self.print_error(&err),

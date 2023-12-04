@@ -10,7 +10,7 @@ using namespace geode::prelude;
 
 bool PlayerListPopup::setup() {
     auto& nm = NetworkManager::get();
-    if (!nm.established()) {
+    if (!nm.handshaken()) {
         return false;
     }
 

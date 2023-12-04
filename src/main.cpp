@@ -27,7 +27,7 @@
 
 using namespace geode::prelude;
 
-void setupSodiumMisuse();
+void setupLibsodium();
 void setupErrorCheckNode();
 void setupCustomKeybinds();
 void printDebugInfo();
@@ -45,7 +45,7 @@ void printDebugInfo();
 // }
 
 $on_mod(Loaded) {
-    setupSodiumMisuse();
+    setupLibsodium();
     setupErrorCheckNode();
     setupCustomKeybinds();
 
@@ -62,7 +62,7 @@ $on_mod(Loaded) {
 
 class $modify(MyMenuLayer, MenuLayer) {
     void onMoreGames(CCObject*) {
-        if (NetworkManager::get().established()) {
+        if (NetworkManager::get().handshaken()) {
             util::debugging::PacketLogger::get().getSummary().print();
         }
 
@@ -74,8 +74,11 @@ class $modify(MyMenuLayer, MenuLayer) {
     }
 };
 
-// if there is a logic error in the crypto code, this lambda will be called
-void setupSodiumMisuse() {
+void setupLibsodium() {
+    // sodium_init returns 0 on success, 1 if already initialized, -1 on fail
+    GLOBED_REQUIRE(sodium_init() != -1, "sodium_init failed")
+
+    // if there is a logic error in the crypto code, this lambda will be called
     sodium_set_misuse_handler([](){
         log::error("sodium_misuse called. we are officially screwed.");
         util::debugging::suicide();

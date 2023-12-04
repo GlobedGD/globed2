@@ -1,14 +1,16 @@
+#![feature(proc_macro_diagnostic)]
 #![allow(clippy::missing_panics_doc)]
 
 use darling::FromDeriveInput;
-use proc_macro::{self, TokenStream};
+use proc_macro::{self, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, punctuated::Punctuated, Data, DeriveInput, Meta, Token};
 
-/// Implements `Encodable` for the given type. For `Encodable` to be successfully derived,
-/// for structs, all of the members of the struct must also implement `Encodable`.
+/// Implements `Encodable` for the given type, allowing you to serialize it into a regular `ByteBuffer`.
+/// For `Encodable` to be successfully derived, for structs, all of the members of the struct must also implement `Encodable`.
+/// The members are serialized in the same order they are laid out in the struct.
 ///
-/// For enums, the enum must have no associated data fields (only variants), and may have a
+/// For enums, the enum must derive `Copy`, must be plain (no associated data fields), and may have a
 /// `#[repr(u*)]` or `#[repr(i*)]` attribute to indicate the encoded type. By default it will be `i32` if omitted.
 #[proc_macro_derive(Encodable)]
 pub fn derive_encodable(input: TokenStream) -> TokenStream {
@@ -67,8 +69,8 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-/// Implements `KnownSize` for the given type. For `KnownSize` to be successfully derived,
-/// for structs, all of the members of the struct must also implement `KnownSize`.
+/// Implements `KnownSize` for the given type, allowing you to serialize it into a `FastByteBuffer`.
+/// For `KnownSize` to be successfully derived, for structs, all of the members of the struct must also implement `KnownSize`.
 ///
 /// For enums, all the same limitations apply as in `Encodable`.
 #[proc_macro_derive(KnownSize)]
@@ -114,8 +116,9 @@ pub fn derive_known_size(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-/// Implements `Decodable` for the given type. For `Decodable` to be successfully derived,
-/// for structs, all of the members of the struct must also implement `Decodable`.
+/// Implements `Decodable` for the given type, allowing you to deserialize it from a `ByteReader`/`ByteBuffer`.
+/// For `Decodable` to be successfully derived, for structs, all of the members of the struct must also implement `Decodable`.
+/// The members are deserialized in the same order they are laid out in the struct.
 ///
 /// For enums, all the same limitations apply as in `Encodable` plus the enum must have explicitly specified values for all variants.
 #[proc_macro_derive(Decodable)]
@@ -246,8 +249,13 @@ fn get_enum_repr_type(input: &DeriveInput) -> proc_macro2::TokenStream {
         }
     }
 
-    // assume i32 by default
-    repr_type.unwrap_or(quote! { i32 })
+    if repr_type.is_none() {
+        // if not specified, assume i32 and give a warning.
+        repr_type = Some(quote! { i32 });
+        Span::call_site().warning("enum repr type not specified - assuming i32. it is recommended to add #[repr(type)] before the enum as that makes it more explicit.").emit();
+    }
+
+    repr_type.unwrap()
 }
 
 #[derive(FromDeriveInput)]
@@ -263,37 +271,44 @@ struct PacketAttributes {
 /// ```rust
 /// #[derive(Packet, Encodable, Decodable)]
 /// #[packet(id = 10000, encrypted = false)]
-/// pub struct MyPacket { /* ... */ }
+/// pub struct MyPacket { /* fields */ }
 /// ```
 #[proc_macro_derive(Packet, attributes(packet))]
 pub fn packet(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input);
-    let opts = PacketAttributes::from_derive_input(&input).expect("wrong value passed into #[packet] derive macro");
+    let Ok(opts) = PacketAttributes::from_derive_input(&input) else {
+        return quote! {
+            compile_error!("invalid or missing signature for #[packet] attribute, please see documentation for `Packet` proc macro");
+        }
+        .into();
+    };
+
     let DeriveInput { ident, .. } = input;
 
     let id = opts.id;
     let enc = opts.encrypted;
 
-    let output = quote! {
-        impl PacketMetadata for #ident {
-            const PACKET_ID: crate::data::packets::PacketId = #id;
-            const ENCRYPTED: bool = #enc;
-            const NAME: &'static str = stringify!(#ident);
-        }
+    let output = match &input.data {
+        Data::Struct(_) => {
+            quote! {
+                impl PacketMetadata for #ident {
+                    const PACKET_ID: crate::data::packets::PacketId = #id;
+                    const ENCRYPTED: bool = #enc;
+                    const NAME: &'static str = stringify!(#ident);
+                }
 
-        impl Packet for #ident {
-            fn get_packet_id(&self) -> crate::data::packets::PacketId {
-                #id
+                impl Packet for #ident {}
+
+                impl #ident {
+                    pub const fn header() -> crate::data::packets::PacketHeader {
+                        crate::data::packets::PacketHeader::from_packet::<Self>()
+                    }
+                }
             }
-
-            fn get_encrypted(&self) -> bool {
-                #enc
-            }
         }
-
-        impl #ident {
-            pub const fn header() -> crate::data::packets::PacketHeader {
-                crate::data::packets::PacketHeader::from_packet::<Self>()
+        Data::Enum(_) | Data::Union(_) => {
+            quote! {
+                compile_error!("Packet cannot be derived for enums or unions");
             }
         }
     };

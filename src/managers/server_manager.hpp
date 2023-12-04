@@ -38,8 +38,11 @@ struct GameServerView {
 
 // This class is fully thread safe to use.
 class GlobedServerManager {
+public:
     GLOBED_SINGLETON(GlobedServerManager);
     GlobedServerManager();
+
+    static constexpr const char* STANDALONE_SERVER_ID = "__standalone_gs__";
 
     /* central server control */
 

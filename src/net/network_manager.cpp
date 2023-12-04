@@ -20,10 +20,15 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
         gameSocket.box->setPeerKey(packet->data.key.data());
-        _established = true;
+        _handshaken = true;
         // and lets try to login!
         auto& am = GlobedAccountManager::get();
-        auto authtoken = *am.authToken.lock();
+        std::string authtoken;
+
+        if (!_connectingStandalone) {
+            authtoken = *am.authToken.lock();
+        }
+
         auto gddata = am.gdData.lock();
         this->send(LoginPacket::create(gddata->accountId, gddata->accountName, authtoken));
     });
@@ -87,14 +92,18 @@ NetworkManager::~NetworkManager() {
     log::debug("Goodbye!");
 }
 
-void NetworkManager::connect(const std::string& addr, unsigned short port) {
+void NetworkManager::connect(const std::string& addr, unsigned short port, bool standalone) {
     if (this->connected()) {
         this->disconnect(false);
     }
 
+    _connectingStandalone = standalone;
+
     lastReceivedPacket = util::time::now();
 
-    GLOBED_REQUIRE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
+    if (!standalone) {
+        GLOBED_REQUIRE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
+    }
 
     GLOBED_REQUIRE(gameSocket.connect(addr, port), "failed to connect to the server")
     gameSocket.createBox();
@@ -113,6 +122,16 @@ void NetworkManager::connectWithView(const GameServerView& gsview) {
     }
 }
 
+void NetworkManager::connectStandalone(const std::string& addr, unsigned short port) {
+    try {
+        this->connect(addr, port);
+        GlobedServerManager::get().setActiveGameServer(GlobedServerManager::STANDALONE_SERVER_ID);
+    } catch (const std::exception& e) {
+        this->disconnect(true);
+        ErrorQueues::get().error(std::string("Connection failed: ") + e.what());
+    }
+}
+
 void NetworkManager::disconnect(bool quiet) {
     if (!this->connected()) {
         return;
@@ -123,8 +142,9 @@ void NetworkManager::disconnect(bool quiet) {
         gameSocket.sendPacket(DisconnectPacket::create());
     }
 
-    _established = false;
+    _handshaken = false;
     _loggedin = false;
+    _connectingStandalone = false;
 
     gameSocket.disconnect();
     gameSocket.cleanupBox();
@@ -279,10 +299,14 @@ bool NetworkManager::connected() {
     return gameSocket.connected;
 }
 
-bool NetworkManager::established() {
-    return this->connected() && _established;
+bool NetworkManager::handshaken() {
+    return _handshaken;
 }
 
-bool NetworkManager::authenticated() {
-    return this->established() && _loggedin;
+bool NetworkManager::established() {
+    return _loggedin;
+}
+
+bool NetworkManager::standalone() {
+    return _connectingStandalone;
 }

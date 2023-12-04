@@ -16,10 +16,9 @@ bytevector secureRandom(size_t size) {
 }
 
 void secureRandom(byte* dest, size_t size) {
-    CRYPTO_SODIUM_INIT;
     randombytes_buf(dest, size);
 }
-    
+
 bytevector pwHash(const std::string& input) {
     return pwHash(reinterpret_cast<const byte*>(input.c_str()), input.size());
 }
@@ -29,8 +28,6 @@ bytevector pwHash(const bytevector& input) {
 }
 
 bytevector pwHash(const byte* input, size_t len) {
-    CRYPTO_SODIUM_INIT;
-
     bytevector out(crypto_pwhash_SALTBYTES + crypto_secretbox_KEYBYTES);
     byte* salt = out.data();
     byte* key = out.data() + crypto_pwhash_SALTBYTES;
@@ -80,8 +77,6 @@ std::string simpleTOTP(const bytevector& key) {
 }
 
 std::string simpleTOTPForPeriod(const byte *key, size_t keySize, uint64_t period) {
-    CRYPTO_SODIUM_INIT;
-
     CRYPTO_REQUIRE(keySize == crypto_auth_hmacsha256_KEYBYTES, "invalid key size passed to simpleTOTPForPeriod");
 
     if constexpr (GLOBED_LITTLE_ENDIAN) {
@@ -95,7 +90,7 @@ std::string simpleTOTPForPeriod(const byte *key, size_t keySize, uint64_t period
     size_t offset = hmacResult[crypto_auth_hmacsha256_BYTES - 1] & 0x0F;
 
     // Calculate the 4-byte dynamic binary code (what the fuck is this?)
-    uint32_t binaryCode = 
+    uint32_t binaryCode =
         (hmacResult[offset] & 0x7f) << 24 |
         (hmacResult[offset + 1]) << 16 |
         (hmacResult[offset + 2]) << 8 |
@@ -221,7 +216,7 @@ std::string hexEncode(const std::string& source) {
 bytevector hexDecode(const byte* source, size_t size) {
     size_t outLen = size / 2;
     bytevector out(outLen);
-    
+
     size_t realOutLen;
 
     CRYPTO_ERR_CHECK(sodium_hex2bin(

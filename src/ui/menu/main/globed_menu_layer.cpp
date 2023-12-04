@@ -23,10 +23,12 @@ bool GlobedMenuLayer::init() {
 
     am.initialize(gjam->m_username, gjam->m_accountID, gjam->getGJP(), sm.getCentral());
 
+    auto winsize = CCDirector::get()->getWinSize();
+
+    // server list
+
     auto listview = Build<ListView>::create(createServerList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
-
-    auto winsize = CCDirector::get()->getWinSize();
 
     Build<GJListLayer>::create(listview, "Servers", ccc4(0, 0, 0, 180), LIST_WIDTH, 220.f)
         .zOrder(2)
@@ -37,12 +39,26 @@ bool GlobedMenuLayer::init() {
 
     listLayer->setPosition({winsize / 2 - listLayer->getScaledContentSize() / 2});
 
+    // standalone dummy list
+
+    auto saListview = Build<ListView>::create(createStandaloneList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
+        .collect();
+
+    Build<GJListLayer>::create(saListview, "Servers", ccc4(0, 0, 0, 180), LIST_WIDTH, 220.f)
+        .zOrder(2)
+        .anchorPoint(0.f, 0.f)
+        .parent(this)
+        .id("standalone-list"_spr)
+        .store(standaloneLayer);
+
+    standaloneLayer->setPosition({winsize / 2 - standaloneLayer->getScaledContentSize() / 2});
+
     Build<GlobedSignupLayer>::create()
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .pos(listLayer->getPosition())
         .parent(this)
-        .id("signup-layer")
+        .id("signup-layer"_spr)
         .store(signupLayer);
 
     // refresh servers btn
@@ -58,7 +74,7 @@ bool GlobedMenuLayer::init() {
             }
         })
         .intoNewParent(CCMenu::create())
-        .id("btn-refresh-servers")
+        .id("btn-refresh-servers"_spr)
         .parent(this);
 
     // TODO prod remove wipe authtoken button
@@ -72,6 +88,9 @@ bool GlobedMenuLayer::init() {
     //     .intoNewParent(CCMenu::create())
     //     .id("btn-clear-authtoken")
     //     .parent(this);
+
+    // TODO: menu for connecting to a standalone server directly with an IP and port
+    // it must call the proper func in GlobedServerManager::addGameServer then try to NM::connectStandalone
 
     util::ui::addBackground(this);
 
@@ -102,7 +121,7 @@ CCArray* GlobedMenuLayer::createServerList() {
     auto& nm = NetworkManager::get();
     auto& sm = GlobedServerManager::get();
 
-    bool authenticated = nm.authenticated();
+    bool authenticated = nm.established();
 
     auto activeServer = sm.getActiveGameServer();
 
@@ -115,17 +134,55 @@ CCArray* GlobedMenuLayer::createServerList() {
     return ret;
 }
 
+CCArray* GlobedMenuLayer::createStandaloneList() {
+    auto ret = CCArray::create();
+
+    GameServerView view = {};
+
+    auto cell = ServerListCell::create(view, false);
+    ret->addObject(cell);
+
+    return ret;
+}
+
 void GlobedMenuLayer::refreshServerList(float _) {
-    // if we do not have a session token from the central server, don't show game servers
     auto& am = GlobedAccountManager::get();
-    if (!am.hasAuthKey()) {
+    auto& nm = NetworkManager::get();
+
+    bool standalone = nm.established() && nm.standalone();
+
+    // if we do not have a session token from the central server, and are not in a standalone server, don't show game servers
+    if (!am.hasAuthKey() && !standalone) {
         listLayer->setVisible(false);
+        standaloneLayer->setVisible(false);
         signupLayer->setVisible(true);
         return;
     }
 
-    listLayer->setVisible(true);
     signupLayer->setVisible(false);
+
+    if (standalone) {
+        listLayer->setVisible(false);
+        standaloneLayer->setVisible(true);
+
+        // update the standalone cell
+        auto listCells = standaloneLayer->m_listView->m_tableView->m_contentLayer->getChildren();
+        if (listCells == nullptr) {
+            return;
+        }
+
+        auto& sm = GlobedServerManager::get();
+
+        auto* ccnodew = static_cast<CCNode*>(listCells->objectAtIndex(0));
+        auto* slc = static_cast<ServerListCell*>(ccnodew->getChildren()->objectAtIndex(2));
+
+        auto server = sm.getGameServer(GlobedServerManager::STANDALONE_SERVER_ID);
+        slc->updateWith(server, true);
+        return;
+    }
+
+    listLayer->setVisible(true);
+    standaloneLayer->setVisible(false);
 
     // if there are pending changes, hard refresh the list and ping all servers
     auto& sm = GlobedServerManager::get();
@@ -153,7 +210,7 @@ void GlobedMenuLayer::refreshServerList(float _) {
 
     auto active = sm.getActiveGameServer();
 
-    bool authenticated = NetworkManager::get().authenticated();
+    bool authenticated = NetworkManager::get().established();
 
     for (auto* obj : CCArrayExt<CCNode>(listCells)) {
         auto slc = static_cast<ServerListCell*>(obj->getChildren()->objectAtIndex(2));

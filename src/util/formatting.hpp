@@ -1,14 +1,26 @@
 #pragma once
 #include <defs.hpp>
+#include <util/time.hpp>
 
 namespace util::formatting {
-    namespace chrono = std::chrono;
-
     // example: 2.123s, 69.123ms
-    std::string formatDuration(chrono::microseconds time);
+    template <typename Rep, typename Period>
+    std::string formatDuration(time::duration<Rep, Period> time) {
+        auto seconds = time::asSecs(time);
+        auto millis = time::asMillis(time);
+        auto micros = time::asMicros(time);
+
+        if (seconds > 0) {
+            return std::to_string(seconds) + "." + std::to_string(millis % 1000) + "s";
+        } else if (millis > 0) {
+            return std::to_string(millis) + "." + std::to_string(micros % 1000) + "ms";
+        } else {
+            return std::to_string(micros) + "μs";
+        }
+    }
 
     // example: 2023-11-16 19:43:50.200
-    std::string formatDateTime(chrono::system_clock::time_point tp);
+    std::string formatDateTime(time::time_point tp);
 
     // example: 123.4KiB
     std::string formatBytes(uint64_t bytes);

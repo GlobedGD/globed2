@@ -19,6 +19,11 @@ namespace util::time {
     }
 
     template <typename Rep, typename Period>
+    inline long long asSecs(duration<Rep, Period> tp) {
+        return chrono::duration_cast<secs>(tp).count();
+    }
+
+    template <typename Rep, typename Period>
     inline long long asMillis(duration<Rep, Period> tp) {
         return chrono::duration_cast<millis>(tp).count();
     }

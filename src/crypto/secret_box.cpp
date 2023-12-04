@@ -6,8 +6,6 @@
 using namespace util::data;
 
 SecretBox::SecretBox(bytevector key) {
-    CRYPTO_SODIUM_INIT;
-    
     CRYPTO_REQUIRE(key.size() == crypto_secretbox_KEYBYTES, "provided key is too long or too short for SecretBox");
 
     this->key = reinterpret_cast<byte*>(sodium_malloc(

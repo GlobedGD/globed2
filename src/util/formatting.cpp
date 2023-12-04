@@ -3,20 +3,6 @@
 #include <iomanip>
 
 namespace util::formatting {
-    std::string formatDuration(chrono::microseconds time) {
-        auto seconds = chrono::duration_cast<chrono::seconds>(time).count();
-        auto millis = chrono::duration_cast<chrono::milliseconds>(time).count();
-        auto micros = time.count();
-
-        if (seconds > 0) {
-            return std::to_string(seconds) + "." + std::to_string(millis % 1000) + "s";
-        } else if (millis > 0) {
-            return std::to_string(millis) + "." + std::to_string(micros % 1000) + "ms";
-        } else {
-            return std::to_string(micros) + "μs";
-        }
-    }
-
     std::string formatDateTime(chrono::system_clock::time_point tp) {
         auto timet = chrono::system_clock::to_time_t(tp);
         auto nowms = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;

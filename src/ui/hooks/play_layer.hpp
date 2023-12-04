@@ -22,8 +22,8 @@ using namespace geode::prelude;
 class $modify(GlobedPlayLayer, PlayLayer) {
     bool globedReady;
     bool deafened = false;
-    CachedSettings settings;
-    uint32_t configuredTps;
+    GlobedSettings::CachedSettings settings;
+    uint32_t configuredTps = 0;
 
     /* speedhack detection */
     float lastKnownTimeScale = 1.0f;
@@ -39,10 +39,16 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         auto& nm = NetworkManager::get();
 
         // if not authenticated, do nothing
-        m_fields->globedReady = nm.authenticated();
+        m_fields->globedReady = nm.established();
         if (!m_fields->globedReady) return true;
 
-        m_fields->configuredTps = std::min(nm.connectedTps.load(), m_fields->settings.serverTps);
+        auto tpsCap = m_fields->settings.tpsCap;
+
+        if (tpsCap != 0) {
+            m_fields->configuredTps = std::min(nm.connectedTps.load(), tpsCap);
+        } else {
+            m_fields->configuredTps = nm.connectedTps;
+        }
 
         // send LevelJoinPacket
         nm.send(LevelJoinPacket::create(m_level->m_levelID));
@@ -128,15 +134,15 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             auto& vm = GlobedAudioManager::get();
 
             if (event->isDown()) {
-                if (!vm.isRecording()) {
+                if (!this->m_fields->deafened && !vm.isRecording()) {
                     // make sure the recording device is valid
                     vm.validateDevices();
                     if (!vm.isRecordingDeviceSet()) {
                         ErrorQueues::get().warn("Unable to record audio, no recording device is set");
-                        return ListenerResult::Propagate;
+                        return ListenerResult::Stop;
                     }
 
-                    vm.startRecording([this](const auto& frame) {
+                    vm.startRecording([](const auto& frame) {
                         // (!) remember that the callback is ran from another thread (!) //
 
                         auto& nm = NetworkManager::get();
@@ -152,10 +158,12 @@ class $modify(GlobedPlayLayer, PlayLayer) {
                     });
                 }
             } else {
-                vm.stopRecording();
+                if (vm.isRecording()) {
+                    vm.stopRecording();
+                }
             }
 
-            return ListenerResult::Propagate;
+            return ListenerResult::Stop;
         }, "voice-activate"_spr);
 
         this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {

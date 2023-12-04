@@ -137,6 +137,10 @@ std::unordered_map<std::string, GameServerView> GlobedServerManager::extractGame
 
     auto data = _data.lock();
     for (const auto& [serverId, gsi] : data->servers) {
+        if (serverId == STANDALONE_SERVER_ID) {
+            continue;
+        }
+
         out[serverId] = GameServerView {
             .id = serverId,
             .name = gsi.name,

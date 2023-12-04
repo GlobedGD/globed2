@@ -7,8 +7,9 @@ This repository contains the complete rewrite of Globed, for Geometry Dash 2.2 a
 ## Features
 
 * Real-time multiplayer
-* Voice chat and text messages with **full encryption and zero logging**
-* blazing fast server written in pure Rust 🚀
+* Voice chat and text messages with **full encryption and zero logging/storage**
+* Available on three of the major platforms (Windows, Mac and Android)
+* Fully open-source, including the server code
 
 ## Installation
 
@@ -23,7 +24,6 @@ Planned features:
 Known issues:
 
 * i am silly
-* voice chat is a bit silly
 * needs more unsafe code to be even more blazinger faster 🚀🚀🚀
 
 ## Hosting a server
@@ -38,9 +38,11 @@ camila314 - thank you for [UIBuilder](https://github.com/camila314/uibuilder)
 
 RobTop - thank you for releasing this awesome game :)
 
-### Used libraries
+### License
 
-* [Geode](https://geode-sdk.org/)
-* [UIBuilder](https://github.com/camila314/uibuilder)
-* [Opus](https://github.com/xiph/opus)
-* [libsodium](https://github.com/jedisct1/libsodium)
+Globed is licensed under the MIT license. All of the following libraries used in Globed have their own licenses you may want to read:
+
+* [Geode](https://geode-sdk.org/) - [BSL 1.0](https://github.com/geode-sdk/geode/blob/main/LICENSE.txt)
+* [UIBuilder](https://github.com/camila314/uibuilder) - [MIT](https://github.com/camila314/uibuilder/blob/main/LICENSE)
+* [Opus](https://github.com/xiph/opus) - [BSD 3-Clause (?)](https://github.com/xiph/opus/blob/master/COPYING)
+* [libsodium](https://github.com/jedisct1/libsodium) - [ISC](https://github.com/jedisct1/libsodium/blob/master/LICENSE)

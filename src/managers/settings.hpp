@@ -2,16 +2,14 @@
 #include <defs.hpp>
 #include <util/sync.hpp>
 
-struct CachedSettings {
-    uint32_t serverTps;
-};
-
 #define MAKE_DEFAULT(_key, value) if (key == (_key)) return (value);
 
 // Besides `getCached()`, this class is not thread safe (reason: Mod::getSavedValue/Mod::setSavedValue)
 class GlobedSettings {
     GLOBED_SINGLETON(GlobedSettings);
     GlobedSettings();
+
+    struct CachedSettings;
 
     /*
     * ok i know this is a mess but here's a rundown of how the settings work:
@@ -35,28 +33,49 @@ class GlobedSettings {
         }
     }
 
+    // reset a setting to its default value
+    void reset(const std::string& key);
+
+    // cached settings for performance & thread safety
+    CachedSettings getCached();
+
+    bool getFlag(const std::string& key);
+    void setFlag(const std::string& key, bool state = true);
+
+    /* for ease of modification, all settings and their defaults are defined in the following struct and 3 functions. */
+
+    struct CachedSettings {
+        uint32_t tpsCap;
+    };
+
     // directly get the setting as json
     template <typename T>
     inline T get(const std::string& key) {
         if (this->getFlag("_gset_-" + key)) {
             return geode::Mod::get()->getSavedValue<T>("gsetting-" + key);
         } else {
-            MAKE_DEFAULT("server-tps", (uint32_t)30)
+            MAKE_DEFAULT("tps-cap", (uint32_t)0)
 
             return T{};
         }
     }
 
-    // reset a setting to its default value
-    void reset(const std::string& key);
+    // reset all settings to their default values
+    inline void resetAll() {
+        static const char* settings[] = {
+            "tps-cap",
+        };
+        for (auto* setting : settings) {
+            this->reset(setting);
+        }
 
-    // get cached settings for performance
-    CachedSettings getCached();
+        this->refreshCache();
+    }
 
-    void refreshCache();
-
-    bool getFlag(const std::string& key);
-    void setFlag(const std::string& key, bool state = true);
+    inline void refreshCache() {
+        auto cache = _cache.lock();
+        cache->tpsCap = this->get<uint32_t>("tps-cap");
+    }
 
 private:
     util::sync::WrappingMutex<CachedSettings> _cache;

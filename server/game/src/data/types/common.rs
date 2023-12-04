@@ -34,7 +34,7 @@ impl_primitive!(f64, read_f64, write_f64);
 encode_impl!(String, buf, self, buf.write_string(self));
 decode_impl!(String, buf, Ok(buf.read_string()?));
 
-encode_impl!(&str, buf, self, buf.write_string(self));
+encode_impl!(str, buf, self, buf.write_string(self));
 
 /* Option<T> */
 

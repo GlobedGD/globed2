@@ -7,9 +7,6 @@
 #define CRYPTO_REQUIRE(condition, message) GLOBED_REQUIRE(condition, "crypto error: " message)
 #define CRYPTO_ERR_CHECK(result, message) CRYPTO_REQUIRE(result == 0, message)
 
-// sodium_init returns 0 on success, 1 if already initialized, -1 on fail
-#define CRYPTO_SODIUM_INIT CRYPTO_REQUIRE(sodium_init() != -1, "sodium_init failed")
-
 namespace util::crypto {
     // generate `size` bytes of cryptographically secure random data
     data::bytevector secureRandom(size_t size);
@@ -29,7 +26,7 @@ namespace util::crypto {
     data::bytevector simpleHash(const data::bytevector& input);
     // generate a simple, consistent hash from this buffer
     data::bytevector simpleHash(const data::byte* input, size_t size);
-    
+
     // generate a 6-digit TOTP code given the key (rfc 6238 compliant i think)
     std::string simpleTOTP(const data::byte* key, size_t keySize);
     // generate a 6-digit TOTP code given the key (rfc 6238 compliant i think)
@@ -60,13 +57,13 @@ namespace util::crypto {
     // encodes the given string into a base64 string
     std::string base64Encode(const std::string& source, Base64Variant variant = Base64Variant::STANDARD);
 
-    // decodes the given base64 buffer into a bytevector 
+    // decodes the given base64 buffer into a bytevector
     data::bytevector base64Decode(const data::byte* source, size_t size, Base64Variant variant = Base64Variant::STANDARD);
     // decodes the given base64 string into a bytevector
     data::bytevector base64Decode(const std::string& source, Base64Variant variant = Base64Variant::STANDARD);
-    // decodes the given base64 bytevector into a bytevector 
+    // decodes the given base64 bytevector into a bytevector
     data::bytevector base64Decode(const data::bytevector& source, Base64Variant variant = Base64Variant::STANDARD);
-    
+
     // encodes the given buffer into a hex string
     std::string hexEncode(const data::byte* source, size_t size);
     // encodes the given bytevector into a hex string

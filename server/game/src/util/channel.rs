@@ -1,16 +1,17 @@
-use std::cell::SyncUnsafeCell;
 use tokio::sync::mpsc;
 
+use super::LockfreeMutCell;
+
 /// Simple wrapper around `tokio::mpsc` channels except receiver does not need to be mutable.
-/// Obviously not safe to call `recv` from multiple threads.
-pub struct UnsafeChannel<T> {
+/// Obviously not safe to call `recv` from multiple threads, it's a single consumer channel duh
+pub struct TokioChannel<T> {
     pub tx: mpsc::Sender<T>,
-    pub rx: SyncUnsafeCell<mpsc::Receiver<T>>,
+    pub rx: LockfreeMutCell<mpsc::Receiver<T>>,
 }
 
 pub struct SenderDropped;
 
-impl<T> UnsafeChannel<T> {
+impl<T> TokioChannel<T> {
     pub fn new(size: usize) -> Self {
         Self::from_tx_rx(mpsc::channel(size))
     }
@@ -18,7 +19,7 @@ impl<T> UnsafeChannel<T> {
     fn from_tx_rx((tx, rx): (mpsc::Sender<T>, mpsc::Receiver<T>)) -> Self {
         Self {
             tx,
-            rx: SyncUnsafeCell::new(rx),
+            rx: LockfreeMutCell::new(rx),
         }
     }
 
@@ -30,8 +31,9 @@ impl<T> UnsafeChannel<T> {
         self.tx.send(msg).await
     }
 
-    pub async fn recv(&self) -> Result<T, SenderDropped> {
-        let chan = unsafe { self.rx.get().as_mut().unwrap() };
+    /// Safety: is guaranteed to be safe as long as you don't call it from multiple threads at once.
+    pub async unsafe fn recv(&self) -> Result<T, SenderDropped> {
+        let chan = self.rx.get_mut();
         chan.recv().await.ok_or(SenderDropped)
     }
 }

@@ -4,14 +4,11 @@ pub mod server;
 pub use client::*;
 pub use server::*;
 
-use crate::data::bytebufferext::*;
+use crate::data::*;
 
-type PacketId = u16;
+pub type PacketId = u16;
 
-pub trait Packet: Send + Sync + PacketMetadata {
-    fn get_packet_id(&self) -> PacketId;
-    fn get_encrypted(&self) -> bool;
-}
+pub trait Packet: PacketMetadata {}
 
 // god i hate this
 pub trait PacketMetadata {
@@ -20,6 +17,7 @@ pub trait PacketMetadata {
     const NAME: &'static str;
 }
 
+#[derive(Encodable, Decodable, KnownSize)]
 pub struct PacketHeader {
     pub packet_id: PacketId,
     pub encrypted: bool,
@@ -34,18 +32,5 @@ impl PacketHeader {
         }
     }
 
-    pub const SIZE: usize = size_of_types!(PacketId, bool);
+    pub const SIZE: usize = Self::ENCODED_SIZE;
 }
-
-encode_impl!(PacketHeader, buf, self, {
-    buf.write_u16(self.packet_id);
-    buf.write_bool(self.encrypted);
-});
-
-decode_impl!(PacketHeader, buf, {
-    let packet_id = buf.read_u16()?;
-    let encrypted = buf.read_bool()?;
-    Ok(Self { packet_id, encrypted })
-});
-
-size_calc_impl!(PacketHeader, PacketHeader::SIZE);

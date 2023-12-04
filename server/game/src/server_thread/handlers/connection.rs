@@ -72,7 +72,7 @@ impl GameServerThread {
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
         if self.game_server.standalone {
-            debug!("Bypassing login for {} ({})", packet.name, packet.account_id);
+            debug!("Login successful from {} ({})", packet.name, packet.account_id);
             self.game_server.check_already_logged_in(packet.account_id)?;
             self.authenticated.store(true, Ordering::Relaxed);
             self.account_id.store(packet.account_id, Ordering::Relaxed);

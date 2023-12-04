@@ -11,11 +11,12 @@ public:
     static cocos2d::CCScene* scene();
 
 private:
-    GJListLayer* listLayer;
+    GJListLayer *listLayer, *standaloneLayer;
     GlobedSignupLayer* signupLayer;
 
     bool init();
     cocos2d::CCArray* createServerList();
+    cocos2d::CCArray* createStandaloneList();
     void refreshServerList(float _);
     void requestServerList();
     void keyBackClicked();

@@ -42,9 +42,11 @@ public:
     ~NetworkManager();
 
     // Connect to a server
-    void connect(const std::string& addr, unsigned short port);
+    void connect(const std::string& addr, unsigned short port, bool standalone = false);
     // Safer version of `connect`, sets the active game server in `GlobedServerManager` doesn't throw an exception on error
     void connectWithView(const GameServerView& gsview);
+    // Is similar to `connectWithView` (does not throw exceptions) and is made specifically for standalone servers.
+    void connectStandalone(const std::string& addr, unsigned short port);
 
     // Disconnect from a server. Does nothing if not connected
     void disconnect(bool quiet = false);
@@ -83,14 +85,16 @@ public:
     // Returns true if ANY connection has been made with a server. The handshake might not have been done at this point.
     bool connected();
 
-    // Returns true ONLY if we are connected to a server and the crypto handshake has finished.
+    // Returns true ONLY if we are connected to a server and the crypto handshake has finished. We might not have logged in yet.
+    bool handshaken();
+
+    // Returns true if we have fully authenticated and are ready to rock.
     bool established();
 
-    // Returns true if we have already proved we are the account owner and are ready to rock.
-    bool authenticated();
+    // Returns true if we are connected to a standalone game server, not tied to any central server.
+    bool standalone();
 
 private:
-
     static constexpr chrono::seconds KEEPALIVE_INTERVAL = chrono::seconds(5);
     static constexpr chrono::seconds DISCONNECT_AFTER = chrono::seconds(15);
 
@@ -112,8 +116,9 @@ private:
     // misc
 
     AtomicBool _running = true;
-    AtomicBool _established = false;
+    AtomicBool _handshaken = false;
     AtomicBool _loggedin = false;
+    AtomicBool _connectingStandalone = false;
 
     util::time::time_point lastKeepalive;
     util::time::time_point lastReceivedPacket;

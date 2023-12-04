@@ -7,8 +7,6 @@
 using namespace util::data;
 
 CryptoBox::CryptoBox(byte* key) {
-    CRYPTO_SODIUM_INIT
-
     memBasePtr = reinterpret_cast<byte*>(sodium_malloc(
         KEY_LEN * 2 + // publicKey, peerPublicKey
         SECRET_KEY_LEN + // secretKey

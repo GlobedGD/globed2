@@ -1,9 +1,10 @@
 use std::{
-    net::{SocketAddr, SocketAddrV4},
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     sync::{atomic::Ordering, Arc},
     time::Duration,
 };
 
+use bytebuffer::ByteReader;
 use parking_lot::Mutex as SyncMutex;
 
 use anyhow::{anyhow, bail};
@@ -20,6 +21,7 @@ use crate::{
     data::*,
     server_thread::{GameServerThread, ServerThreadMessage, SMALL_PACKET_LIMIT},
     state::ServerState,
+    util::SimpleRateLimiter,
 };
 
 const MAX_PACKET_SIZE: usize = 8192;
@@ -34,6 +36,7 @@ pub struct GameServer {
     pub state: ServerState,
     pub socket: UdpSocket,
     pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
+    rate_limiters: SyncMutex<FxHashMap<Ipv4Addr, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
     pub central_conf: SyncMutex<GameServerBootData>,
     pub config: GameServerConfiguration,
@@ -52,6 +55,7 @@ impl GameServer {
             state,
             socket,
             threads: SyncMutex::new(FxHashMap::default()),
+            rate_limiters: SyncMutex::new(FxHashMap::default()),
             secret_key: SecretKey::generate(&mut OsRng),
             central_conf: SyncMutex::new(central_conf),
             config,
@@ -62,6 +66,7 @@ impl GameServer {
     pub async fn run(&'static self) -> ! {
         info!("Server launched on {}", self.socket.local_addr().unwrap());
 
+        // spawn central conf refresher (runs every 5 minutes)
         if !self.standalone {
             tokio::spawn(async move {
                 let mut interval = tokio::time::interval(Duration::from_secs(300));
@@ -76,6 +81,17 @@ impl GameServer {
                 }
             });
         }
+
+        // spawn stale rate limiter remover (runs once an hour)
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(3600));
+            interval.tick().await;
+
+            loop {
+                interval.tick().await;
+                self.remove_stale_rate_limiters();
+            }
+        });
 
         // preallocate a buffer
         let mut buf = [0u8; MAX_PACKET_SIZE];
@@ -194,6 +210,23 @@ impl GameServer {
             SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
         };
 
+        let ip_addr = peer.ip();
+
+        // block packets if the client is sending too many of them
+        if self.is_rate_limited(*ip_addr) {
+            if cfg!(debug_assertions) {
+                bail!("{ip_addr} is ratelimited");
+            }
+
+            // silently drop the packet in release mode
+            return Ok(());
+        }
+
+        // if it's a small packet like ping, we don't need to send it via the channel and can handle it right here
+        if self.try_fast_handle(&buf[..len], peer).await? {
+            return Ok(());
+        }
+
         let thread = self.threads.lock().get(&peer).cloned();
 
         let thread = if let Some(thread) = thread {
@@ -216,20 +249,9 @@ impl GameServer {
             });
 
             self.threads.lock().insert(peer, thread_cl.clone());
+
             thread_cl
         };
-
-        // check if the client is sending too many packets
-        // safety: `thread.rate_limiter` is only used here and never accessed anywhere else.
-        let allowed = unsafe { thread.rate_limiter.try_tick() };
-        if !allowed {
-            if cfg!(debug_assertions) {
-                bail!("{peer} is ratelimited");
-            }
-
-            // silently reject the packet in release mode
-            return Ok(());
-        }
 
         // don't heap allocate for small packets
         let message = if len <= SMALL_PACKET_LIMIT {
@@ -244,6 +266,53 @@ impl GameServer {
         thread.push_new_message(message)?;
 
         Ok(())
+    }
+
+    /// Try to fast handle a packet if the packet does not require spawning a new "thread".
+    /// Returns true if packet was successfully handled, in which case the data should be discarded.
+    async fn try_fast_handle(&'static self, data: &[u8], peer: SocketAddrV4) -> anyhow::Result<bool> {
+        let mut byte_reader = ByteReader::from_bytes(data);
+        let header = byte_reader.read_packet_header().map_err(|e| anyhow!("{e}"))?;
+
+        match header.packet_id {
+            PingPacket::PACKET_ID => {
+                let pkt = PingPacket::decode_from_reader(&mut byte_reader).map_err(|e| anyhow!("{e}"))?;
+                let response = PingResponsePacket {
+                    id: pkt.id,
+                    player_count: self.state.player_count.load(Ordering::Relaxed),
+                };
+
+                let mut buf_array = [0u8; PacketHeader::SIZE + PingResponsePacket::ENCODED_SIZE];
+                let mut buf = FastByteBuffer::new(&mut buf_array);
+                buf.write_packet_header::<PingResponsePacket>();
+                buf.write_value(&response);
+
+                let send_bytes = buf.as_bytes();
+
+                match self.socket.try_send_to(send_bytes, peer.into()) {
+                    Ok(_) => Ok(true),
+                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                        self.socket.send_to(send_bytes, peer).await?;
+                        Ok(true)
+                    }
+                    Err(e) => Err(e.into()),
+                }
+            }
+
+            _ => Ok(false),
+        }
+    }
+
+    fn is_rate_limited(&'static self, addr: Ipv4Addr) -> bool {
+        let mut limiters = self.rate_limiters.lock();
+        if let Some(limiter) = limiters.get_mut(&addr) {
+            !limiter.try_tick()
+        } else {
+            let rl_request_limit = (self.central_conf.lock().tps + 5) as usize;
+            let rate_limiter = SimpleRateLimiter::new(rl_request_limit, Duration::from_millis(950));
+            limiters.insert(addr, rate_limiter);
+            false
+        }
     }
 
     fn post_disconnect_cleanup(&'static self, thread: &GameServerThread, peer: SocketAddrV4) {
@@ -266,6 +335,12 @@ impl GameServer {
         if level_id != 0 {
             pm.remove_from_level(level_id, account_id);
         }
+    }
+
+    /// Removes rate limiters of IP addresses that haven't sent a packet in a long time (10 minutes)
+    fn remove_stale_rate_limiters(&'static self) {
+        let mut limiters = self.rate_limiters.lock();
+        limiters.retain(|_, limiter| limiter.since_last_refill() < Duration::from_secs(600));
     }
 
     async fn refresh_bootdata(&'static self) -> anyhow::Result<()> {

@@ -1,7 +1,4 @@
-use std::{
-    cell::SyncUnsafeCell,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 /// Naive rate limiter implementation, cannot sleep and is not thread safe on its own.
 pub struct SimpleRateLimiter {
@@ -37,27 +34,9 @@ impl SimpleRateLimiter {
             }
         }
     }
-}
 
-/// A ratelimiter wrapped in a `SyncUnsafeCell`, does not need to be mutable to use.
-/// If two different threads attempt to call `try_tick()` on the same instance at the same time,
-/// the behavior is undefined.
-#[repr(transparent)]
-pub struct UnsafeRateLimiter {
-    limiter: SyncUnsafeCell<SimpleRateLimiter>,
-}
-
-impl UnsafeRateLimiter {
-    pub fn new(limiter: SimpleRateLimiter) -> Self {
-        Self {
-            limiter: SyncUnsafeCell::new(limiter),
-        }
-    }
-
-    /// Returns `true` if we are not ratelimited, `false` if we are.
-    /// Calling this from multiple threads at the same time is **undefined behavior**.
-    pub unsafe fn try_tick(&self) -> bool {
-        // UnsafeCell can never be nullptr, so the unwrap is safe.
-        self.limiter.get().as_mut().unwrap_unchecked().try_tick()
+    /// Returns the amount of time since last refill
+    pub fn since_last_refill(&self) -> Duration {
+        self.last_refill.elapsed()
     }
 }

@@ -57,8 +57,8 @@ pub trait KnownSize {
 pub const MAX_NAME_SIZE: usize = 32;
 /// maximum characters in a `ServerNoticePacket` or `ServerDisconnectPacket` (164)
 pub const MAX_NOTICE_SIZE: usize = 164;
-/// maximum characters in a user message (256)
-pub const MAX_MESSAGE_SIZE: usize = 256;
+/// maximum characters in a user message (156)
+pub const MAX_MESSAGE_SIZE: usize = 156;
 /// max profiles that can be requested in `RequestProfilesPacket` (128)
 pub const MAX_PROFILES_REQUESTED: usize = 128;
 

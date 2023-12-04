@@ -1,17 +1,23 @@
 # Globed Server
 
-If you want to host a server yourself, the process is as easy as downloading the server binaries from the latest GitHub release, named `globed-central-server` and `globed-game-server`. Depending on your OS and architecture, you want the one ending in `.exe` on Windows, the `-x64` one on Linux x64, and the `-arm64` one on Linux ARM64.
+If you want to host a server yourself, first you have to download the server binaries from the latest GitHub release, named `globed-central-server` and `globed-game-server`. Depending on your OS and architecture, you want the one ending in `.exe` on Windows, the `-x64` one on Linux x64, and the `-arm64` one on Linux ARM64.
 
-If you want to build the server yourself, you need a nightly Rust toolchain. After that, it's as simple as:
-```sh
-cd server/
-rustup override set nightly # has to be done only once
-cargo build --release
-```
+After that is done, you have 2 paths:
+
+* If you want to setup a small, simple server you can jump to the [standalone section](#standalone)
+* If you want to setup a bigger or more configurable server, keep reading.
+
+First, you want to launch the central server binary. It should create a file called `central-conf.json` in the folder you ran it from. This is where you can configure everything about the server. For documentation about all the options, jump to the [configuration section](#central-server-configuration), however for now we only need the option `game_server_password`.
+
+With your central server properly setup and started, jump to the [bridged](#bridged) section of the game server configuration and launch the game server, with the password that you configured earlier.
+
+If you did everything right, you should see no errors or warnings in the console and instead you should see "Server launched on x.x.x.x". This means everything worked! Congrats :)
 
 ## Game server configuration
 
 note: if you are not on Windows, in the following examples replace `set` with `export` and replace `globed-game-server.exe` with the appropriate server binary (such as `globed-game-server-x64`)
+
+### Standalone
 
 If you want to spin up a quick, standalone game server, without needing to start a central server, then it is as simple as running the `globed-game-server.exe` executable directly.
 
@@ -21,10 +27,14 @@ If you want to change the address then you'll have to run the executable with an
 globed-game-server.exe 0.0.0.0:41001
 ```
 
-Keep in mind that this makes the configuration very limited (for example you can't blacklist/whitelist users anymore) and disables any kind of player authentication.
+To connect to your server, you want to use the Direct Connection option inside the server switcher in-game.
 
-To start the game server and bridge it together with an active central server
-you must use the password from the `game_server_password` option in the central server configuration. Then, you have 2 options whenever you start the server:
+Keep in mind that a standalone server makes the configuration very limited (for example you can't blacklist/whitelist users anymore) and disables any kind of player authentication.
+
+
+### Bridged
+
+To start the game server and bridge it together with an active central server you must use the password from the `game_server_password` option in the central server configuration. Then, you have 2 options whenever you start the server:
 
 ```sh
 globed-game-server.exe 0.0.0.0:41001 http://127.0.0.1:41000 password
@@ -49,15 +59,16 @@ By default, the file is created with the name `central-conf.json` in the current
 Note that the server is written with security in mind, so many of those options may not be exactly interesting for you. If you are hosting a small server for your friends then the defaults should be good enough, however if you are hosting a big public server, it is recommended that you adjust the settings accordingly.
 
 
-| JSON ID | Default | Hot-reloadable | Description |
+| JSON key | Default | Hot-reloadable | Description |
 |---------|---------|----------------|-------------|
 | `web_mountpoint` | `"/"` | ❌ | HTTP mountpoint (the prefix before every endpoint) |
 | `web_address` | `"0.0.0.0:41000"` | ❌ | HTTP address |
-| `special_users` | `{}` | ✅<sup>**</sup> | Each entry has the account ID as the key and an object with properties `name` and `color` as the value. The `color` property is used for changing the color of the name for this user |
-| `game_servers` | `[]` | ✅ | Each object has 4 keys: `id` (must be a unique string), `name`, `address` (in format `ip:port`), `region` |
+| `special_users` | `{}` | ✅<sup>**</sup> | List of users that have special properties, for example a unique name color (see below for the format) |
+| `game_servers` | `[]` | ✅ | List of game servers that will be sent to the clients (see below for the format) |
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
 | `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed to connect |
 | `no_chat_list` | `[]` | ✅<sup>**</sup> | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |
+| `tps` | `30` | ✅<sup>**</sup> | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth. |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `challenge_level` accordingly if you enable this setting |
 | `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for GDPS owners |
 | `gd_api_ratelimit`<sup>*</sup> | `5` | ❌ | If `use_gd_api` is enabled, sets the maximum request number per `gd_api_period` that can be made to robtop's API. Used to avoid ratelimits |
@@ -72,7 +83,38 @@ Note that the server is written with security in mind, so many of those options 
 
 <sup>*</sup> - security setting, be careful with changing it if making a public server
 
-<sup>**</sup> - it may take a few minutes for you to see any changes
+<sup>**</sup> - this setting is synced to game servers, so it may take a few minutes for you to see any changes. additionally, you may need to reconnect if you were already connected to a server.
+
+Formatting for special users:
+
+```json
+{
+    "123123": {
+        "name": "myname",
+        "color": "#ff0000",
+    }
+}
+```
+
+Formatting for game servers:
+
+```json
+{
+    "id": "my-server-id",
+    "name": "Server name",
+    "address": "127.0.0.1:41001",
+    "region": "my home i guess?"
+}
+```
+
+## Building
+
+If you want to build the server yourself, you need a nightly Rust toolchain. After that, it's as simple as:
+```sh
+cd server/
+rustup override set nightly # has to be done only once
+cargo build --release
+```
 
 ## Extra
 
