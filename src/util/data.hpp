@@ -1,7 +1,6 @@
 #pragma once
-
 #include <defs.hpp>
-#include <cstdint>
+
 #include <vector>
 #include <array>
 

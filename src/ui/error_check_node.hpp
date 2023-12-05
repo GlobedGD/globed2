@@ -1,5 +1,5 @@
 #pragma once
-#include <Geode/Geode.hpp>
+#include <defs.hpp>
 
 class ErrorCheckNode : public cocos2d::CCNode {
 public:

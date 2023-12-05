@@ -6,10 +6,10 @@
 #include <thread>
 #include <functional>
 #include <fmod.hpp>
-#include <util/sync.hpp>
-#include "opus_codec.hpp"
+
 #include "audio_frame.hpp"
 #include "audio_sample_queue.hpp"
+#include <util/sync.hpp>
 
 using util::sync::WrappingMutex;
 using util::sync::AtomicBool;

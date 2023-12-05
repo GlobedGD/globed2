@@ -1,6 +1,5 @@
 #pragma once
 #include <data/bytebuffer.hpp>
-#include <defs.hpp>
 
 using packetid_t = uint16_t;
 #define GLOBED_PACKET(id,enc) \
@@ -48,7 +47,7 @@ public:
         id = buf.readU16();
         encrypted = buf.readBool();
     }
-    
+
     packetid_t id;
     bool encrypted;
 };

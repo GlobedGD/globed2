@@ -38,4 +38,14 @@ namespace util::formatting {
 
         return oss.str();
     }
+
+    std::string formatErrorMessage(std::string message) {
+        if (message.find("<!DOCTYPE html>") != std::string::npos) {
+            message = "<HTML response, not showing>";
+        } else if (message.size() > 64) {
+            message = message.substr(0, 64) + "...";
+        }
+
+        return message;
+    }
 }

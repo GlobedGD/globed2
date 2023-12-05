@@ -1,6 +1,4 @@
 #pragma once
-#include <config.hpp>
-
 #include <defs/basic.hpp>
 
 #include <defs/assert.hpp>

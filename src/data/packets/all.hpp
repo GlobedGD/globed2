@@ -13,8 +13,6 @@
 */
 
 #pragma once
-#include <defs.hpp>
-
 #include "packet.hpp"
 
 #include "client/connection.hpp"

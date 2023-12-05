@@ -4,14 +4,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_OSX_ARCHITECTURES "x86_64")
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-# Enable LTO (2.5x less binary size, no noticable compile time hit)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-
 project(globed2 VERSION 1.0.0)
 
 option(ENABLE_DEBUG "Debug mode" OFF)
 if (ENABLE_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
+else()
+    # Enable LTO in release (2.5x less binary size, no noticable compile time hit)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 file(GLOB_RECURSE SOURCES

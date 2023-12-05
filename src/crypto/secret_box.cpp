@@ -1,7 +1,8 @@
 #include "secret_box.hpp"
 
-#include <util/crypto.hpp>
 #include <cstring> // std::memcpy
+
+#include <util/crypto.hpp>
 
 using namespace util::data;
 

@@ -1,4 +1,5 @@
 #include "game_socket.hpp"
+
 #include <data/bytebuffer.hpp>
 #include <data/packets/all.hpp>
 #include <util/debugging.hpp>

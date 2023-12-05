@@ -5,13 +5,14 @@
 
 #include <net/network_manager.hpp>
 #include <managers/account_manager.hpp>
-#include <managers/server_manager.hpp>
+#include <managers/game_server_manager.hpp>
+#include <managers/central_server_manager.hpp>
 #include <managers/error_queues.hpp>
 #include <util/net.hpp>
 
 using namespace geode::prelude;
 
-bool ServerListCell::init(const GameServerView& gsview, bool active) {
+bool ServerListCell::init(const GameServer& gsview, bool active) {
     if (!CCLayer::init()) return false;
 
     Build<CCLayer>::create()
@@ -53,7 +54,7 @@ bool ServerListCell::init(const GameServerView& gsview, bool active) {
     return true;
 }
 
-void ServerListCell::updateWith(const GameServerView& gsview, bool active) {
+void ServerListCell::updateWith(const GameServer& gsview, bool active) {
     bool btnChanged = (active != this->active);
 
     this->gsview = gsview;
@@ -80,16 +81,21 @@ void ServerListCell::updateWith(const GameServerView& gsview, bool active) {
                 if (active) {
                     NetworkManager::get().disconnect(false);
                 } else {
-                    // check if the token is here
-                    auto& sm = GlobedServerManager::get();
-                    auto& am = GlobedAccountManager::get();
+                    auto& csm = CentralServerManager::get();
 
-                    auto hasToken = !am.authToken.lock()->empty();
-
-                    if (hasToken) {
-                        NetworkManager::get().connectWithView(this->gsview);
+                    if (csm.standalone()) {
+                        NetworkManager::get().connectStandalone();
                     } else {
-                        this->requestTokenAndConnect();
+                        // check if the token is here, otherwise request it
+                        auto& am = GlobedAccountManager::get();
+
+                        auto hasToken = !am.authToken.lock()->empty();
+
+                        if (hasToken) {
+                            NetworkManager::get().connectWithView(this->gsview);
+                        } else {
+                            this->requestTokenAndConnect();
+                        }
                     }
                 }
             })
@@ -102,7 +108,7 @@ void ServerListCell::updateWith(const GameServerView& gsview, bool active) {
 
 void ServerListCell::requestTokenAndConnect() {
     auto& am = GlobedAccountManager::get();
-    auto& sm = GlobedServerManager::get();
+    auto& csm = CentralServerManager::get();
 
     std::string authcode;
     try {
@@ -121,7 +127,7 @@ void ServerListCell::requestTokenAndConnect() {
 
     auto url = fmt::format(
         "{}/totplogin?aid={}&aname={}&code={}",
-        sm.getCentral(),
+        csm.getActive()->url,
         gdData->accountId,
         gdData->accountName,
         authcode
@@ -132,7 +138,7 @@ void ServerListCell::requestTokenAndConnect() {
         .postRequest()
         .userAgent(util::net::webUserAgent())
         .fetch(url).text()
-        .then([&am, &sm, gsview = this->gsview](const std::string& response) {
+        .then([&am, gsview = this->gsview](const std::string& response) {
             *am.authToken.lock() = response;
             NetworkManager::get().connectWithView(gsview);
         })
@@ -146,7 +152,7 @@ void ServerListCell::requestTokenAndConnect() {
         .send();
 }
 
-ServerListCell* ServerListCell::create(const GameServerView& gsview, bool active) {
+ServerListCell* ServerListCell::create(const GameServer& gsview, bool active) {
     auto ret = new ServerListCell;
     if (ret && ret->init(gsview, active)) {
         return ret;

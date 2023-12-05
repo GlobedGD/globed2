@@ -1,15 +1,12 @@
 #pragma once
-#include <Geode/Geode.hpp>
-#include <Geode/modify/PlayLayer.hpp>
-
 #include <defs.hpp>
 
+#include <Geode/modify/PlayLayer.hpp>
 #if GLOBED_HAS_KEYBINDS
-#include <geode.custom-keybinds/include/Keybinds.hpp>
+# include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif // GLOBED_HAS_KEYBINDS
 
 #include <audio/all.hpp>
-
 #include <managers/profile_cache.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>

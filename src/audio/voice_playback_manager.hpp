@@ -3,7 +3,6 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-#include "audio_frame.hpp"
 #include "audio_stream.hpp"
 
 /*

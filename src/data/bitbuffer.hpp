@@ -1,8 +1,9 @@
 #pragma once
+#include <defs.hpp>
+
 #include <bitset>
 #include <vector>
 #include <cstdint>
-#include <defs.hpp>
 
 /*
 * BitBuffer - a simple interface that allows you to read/write bits

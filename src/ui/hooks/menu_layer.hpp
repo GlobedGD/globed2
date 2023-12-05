@@ -1,7 +1,7 @@
 #pragma once
-#include <Geode/Geode.hpp>
-#include <Geode/modify/MenuLayer.hpp>
+#include <defs.hpp>
 
+#include <Geode/modify/MenuLayer.hpp>
 #include <UIBuilder.hpp>
 
 #include <net/network_manager.hpp>

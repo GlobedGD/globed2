@@ -1,6 +1,6 @@
 #pragma once
-
 #include <defs.hpp>
+
 #include <crypto/secret_box.hpp>
 #include <util/sync.hpp>
 
@@ -21,12 +21,14 @@ class GlobedAccountManager {
     util::sync::AtomicBool initialized = false;
     util::sync::WrappingMutex<GDData> gdData;
     util::sync::WrappingMutex<std::string> authToken;
-    
+
     GlobedAccountManager();
 
     // This method can be called multiple times, and in fact it is even advised that you do so often.
     // It must be called at least once before calling any other method or they will throw an exception.
     void initialize(const std::string& name, int accountId, const std::string& gjp, const std::string& central);
+    // Grabs the values from other manager classes and calls `initialize` for you.
+    void autoInitialize();
 
     void storeAuthKey(const util::data::byte* source, size_t size);
     void storeAuthKey(const util::data::bytevector& source);

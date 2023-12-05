@@ -3,14 +3,13 @@
 */
 
 #pragma once
+#include <defs.hpp>
+
 #include <condition_variable>
 #include <atomic>
-#include <memory>
 #include <queue>
-#include <mutex>
 #include <shared_mutex>
 
-#include <defs.hpp>
 #include <util/data.hpp>
 #include <util/time.hpp>
 
@@ -181,5 +180,6 @@ using AtomicI32 = RelaxedAtomic<int32_t>;
 using AtomicU32 = RelaxedAtomic<uint32_t>;
 using AtomicI64 = RelaxedAtomic<int64_t>;
 using AtomicU64 = RelaxedAtomic<uint64_t>;
+using AtomicSizeT = RelaxedAtomic<size_t>;
 
 }

@@ -1,21 +1,23 @@
 #include "signup_popup.hpp"
 
-#include <Geode/utils/web.hpp>
 #include <UIBuilder.hpp>
+#include <Geode/utils/web.hpp>
 
 #include <managers/error_queues.hpp>
-#include <managers/server_manager.hpp>
+#include <managers/central_server_manager.hpp>
+#include <managers/game_server_manager.hpp>
 #include <managers/account_manager.hpp>
 #include <util/net.hpp>
+#include <util/formatting.hpp>
 #include <util/crypto.hpp>
 
 using namespace geode::prelude;
 
 bool GlobedSignupPopup::setup() {
-    m_closeBtn->setVisible(false);
     this->setTitle("Authentication");
+    m_closeBtn->setVisible(false);
 
-    auto& sm = GlobedServerManager::get();
+    auto& csm = CentralServerManager::get();
     auto& am = GlobedAccountManager::get();
 
     auto winSize = cocos2d::CCDirector::sharedDirector()->getWinSize();
@@ -26,7 +28,7 @@ bool GlobedSignupPopup::setup() {
         .store(statusMessage)
         .parent(m_mainLayer);
 
-    auto url = sm.getCentral() + "/challenge/new?aid=" + std::to_string(am.gdData.lock()->accountId);
+    auto url = csm.getActive()->url + "/challenge/new?aid=" + std::to_string(am.gdData.lock()->accountId);
 
     web::AsyncWebRequest()
         .postRequest()
@@ -47,18 +49,11 @@ bool GlobedSignupPopup::setup() {
 
             this->onChallengeCreated(levelId, part2);
         })
-        .expect([this](std::string error) {
+        .expect([this](const std::string& error) {
             if (error.empty()) {
                 this->onFailure("Creating challenge failed: server sent an empty response.");
             } else {
-                // prettify the error a bit
-                if (error.find("<!DOCTYPE html>") != std::string::npos) {
-                    error = "<HTML response, not showing>";
-                } else if (error.size() > 64) {
-                    error = error.substr(0, 64) + "...";
-                }
-
-                this->onFailure("Creating challenge failed: <cy>" + error + "</c>");
+                this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
             }
         })
         .send();
@@ -109,14 +104,14 @@ void GlobedSignupPopup::commentUploadFailed(int cid, CommentError e) {
 void GlobedSignupPopup::commentDeleteFailed(int, int) {}
 
 void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
-    auto& sm = GlobedServerManager::get();
+    auto& csm = CentralServerManager::get();
     auto& am = GlobedAccountManager::get();
 
     statusMessage->setString("Verifying..");
 
     auto gdData = am.gdData.lock();
 
-    auto url = sm.getCentral() +
+    auto url = csm.getActive()->url +
         fmt::format("/challenge/verify?aid={}&aname={}&answer={}",
                     gdData->accountId,
                     gdData->accountName,
@@ -141,17 +136,11 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
                 GameLevelManager::get()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
             }
         })
-        .expect([this](std::string error) {
+        .expect([this](const std::string& error) {
             if (error.empty()) {
                 this->onFailure("Verifying challenge failed: server sent an empty response.");
             } else {
-                // prettify the error a bit
-                if (error.find("<!DOCTYPE html>") != std::string::npos) {
-                    error = "<HTML response, not showing>";
-                } else if (error.size() > 64) {
-                    error = error.substr(0, 64) + "...";
-                }
-                this->onFailure("Verifying challenge failed: <cy>" + error + "</c>");
+                this->onFailure("Verifying challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
             }
         })
         .send();

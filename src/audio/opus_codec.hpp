@@ -3,9 +3,10 @@
 
 #if GLOBED_VOICE_SUPPORT
 
+#include <opus.h>
+
 #include <util/data.hpp>
 #include <data/bytebuffer.hpp>
-#include <opus.h>
 
 const size_t VOICE_MAX_BYTES_IN_FRAME = 1000; // on avg 200 bytes but y'know, just in case
 

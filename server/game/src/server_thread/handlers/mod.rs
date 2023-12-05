@@ -68,6 +68,15 @@ macro_rules! gs_alloca_check_size {
     ($size:expr) => {
         let size = $size;
         if size > crate::server_thread::handlers::MAX_ALLOCA_SIZE {
+            // panic in debug, return an error in release mode
+            if cfg!(debug_assertions) {
+                panic!(
+                    "attempted to allocate {} bytes on the stack - this is above the limit of {} and indicates a logic error.",
+                    size,
+                    crate::server_thread::handlers::MAX_ALLOCA_SIZE
+                );
+            }
+
             let err = crate::server_thread::error::PacketHandlingError::DangerousAllocation(size);
             return Err(err);
         }

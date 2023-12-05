@@ -1,5 +1,5 @@
 #pragma once
-#include <Geode/Geode.hpp>
+#include <defs.hpp>
 
 class GlobedSignupLayer : public cocos2d::CCLayer {
 public:

@@ -24,7 +24,12 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
                 .fields
                 .iter()
                 .map(|field| {
-                    let ident = field.ident.as_ref().unwrap();
+                    let Some(ident) = field.ident.as_ref() else {
+                        return quote! {
+                            compile_error!("Encodable cannot be derived for tuple structs");
+                        };
+                    };
+
                     quote! {
                         buf.write_value(&self.#ident);
                     }

@@ -1,7 +1,5 @@
 #pragma once
 #include "base_box.hpp"
-#include <defs.hpp>
-#include <util/data.hpp>
 
 #include <sodium.h>
 

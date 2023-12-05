@@ -1,6 +1,5 @@
 #include "ui.hpp"
 
-#ifndef GLOBED_ROOT_NO_GEODE
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
@@ -37,5 +36,3 @@ namespace util::ui {
         director->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
     }
 }
-
-#endif // GLOBED_ROOT_NO_GEODE

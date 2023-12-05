@@ -1,8 +1,9 @@
 #pragma once
-#include "data.hpp"
-
 #include <defs.hpp>
+
 #include <sodium.h>
+
+#include <util/data.hpp>
 
 #define CRYPTO_REQUIRE(condition, message) GLOBED_REQUIRE(condition, "crypto error: " message)
 #define CRYPTO_ERR_CHECK(result, message) CRYPTO_REQUIRE(result == 0, message)

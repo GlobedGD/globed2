@@ -1,9 +1,10 @@
 #pragma once
-#include <data/packets/packet.hpp>
 #include <defs.hpp>
-#include <chrono>
 #include <unordered_map>
+
+#include <data/packets/packet.hpp>
 #include <util/collections.hpp>
+#include <util/time.hpp>
 
 namespace util::debugging {
     // To use the benchmarker, create a `Benchmarker` object, call start(id), then run all the code you want to benchmark, and call end(id).
@@ -12,12 +13,12 @@ namespace util::debugging {
     public:
         Benchmarker() {}
         inline void start(std::string id) {
-            _entries[id] = std::chrono::high_resolution_clock::now();
+            _entries[id] = time::now();
         }
 
-        std::chrono::microseconds end(std::string id);
+        time::micros end(std::string id);
     private:
-        std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> _entries;
+        std::unordered_map<std::string, time::time_point> _entries;
     };
 
     struct PacketLog {
@@ -48,7 +49,6 @@ namespace util::debugging {
         void print();
     };
 
-#ifndef GLOBED_ROOT_NO_GEODE
     class PacketLogger {
     public:
         GLOBED_SINGLETON(PacketLogger)
@@ -72,8 +72,6 @@ namespace util::debugging {
     private:
         collections::CappedQueue<PacketLog, 25000> queue;
     };
-    
-#endif // GLOBED_ROOT_NO_GEODE
 
     std::string hexDumpAddress(uintptr_t addr, size_t bytes);
     std::string hexDumpAddress(void* ptr, size_t bytes);

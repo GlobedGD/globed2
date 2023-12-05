@@ -116,7 +116,6 @@ void ByteBuffer::writeBytes(const bytevector& vec) {
 }
 
 /* cocos/gd */
-#ifndef GLOBED_ROOT_NO_GEODE
 
 cocos2d::ccColor3B ByteBuffer::readColor3() {
     auto r = this->readU8();
@@ -156,8 +155,6 @@ void ByteBuffer::writePoint(cocos2d::CCPoint point) {
     this->writeF32(point.x);
     this->writeF32(point.y);
 }
-
-#endif // GLOBED_ROOT_NO_GEODE
 
 bytevector ByteBuffer::getData() const {
     return _data;

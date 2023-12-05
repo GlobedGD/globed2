@@ -1,19 +1,15 @@
 #include "debugging.hpp"
-#include <string>
 
 #include <util/formatting.hpp>
-#include <util/time.hpp>
 
 namespace util::debugging {
-    std::chrono::microseconds Benchmarker::end(std::string id) {
-        auto taken = std::chrono::high_resolution_clock::now() - _entries[id];
-        auto micros = std::chrono::duration_cast<std::chrono::microseconds>(taken);
+    time::micros Benchmarker::end(std::string id) {
+        auto micros = time::as<time::micros>(time::now() - _entries[id]);
         _entries.erase(id);
 
         return micros;
     }
 
-#ifndef GLOBED_ROOT_NO_GEODE
     GLOBED_SINGLETON_DEF(PacketLogger)
 
     void PacketLogSummary::print() {
@@ -73,7 +69,6 @@ namespace util::debugging {
 
         return summary;
     }
-#endif // GLOBED_ROOT_NO_GEODE
 
     std::string hexDumpAddress(uintptr_t addr, size_t bytes) {
         unsigned char* ptr = reinterpret_cast<unsigned char*>(addr);
@@ -103,8 +98,8 @@ namespace util::debugging {
     }
 
     [[noreturn]] void suicide(const std::source_location loc) {
-        GLOBED_REQUIRE_LOG("suicide called at " + sourceLocation(loc) + ", terminating.");
-		GLOBED_REQUIRE_LOG("If you see this, something very, very bad happened.");
+        geode::log::error("suicide called at " + sourceLocation(loc) + ", terminating.");
+		geode::log::error("If you see this, something very, very bad happened.");
         GLOBED_SUICIDE;
     }
 #else

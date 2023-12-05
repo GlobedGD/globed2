@@ -1,5 +1,5 @@
 #pragma once
-#include <Geode/Geode.hpp>
+#include <defs.hpp>
 
 class GlobedSignupPopup : public geode::Popup<>, public CommentUploadDelegate {
 public:

@@ -1,14 +1,14 @@
 #pragma once
 #include "game_socket.hpp"
-#include <defs.hpp>
-
-#include <managers/server_manager.hpp>
-#include <util/sync.hpp>
-#include <util/time.hpp>
 
 #include <functional>
 #include <unordered_map>
 #include <thread>
+
+#include <managers/game_server_manager.hpp>
+#include <managers/central_server_manager.hpp>
+#include <util/sync.hpp>
+#include <util/time.hpp>
 
 using namespace util::sync;
 
@@ -43,10 +43,11 @@ public:
 
     // Connect to a server
     void connect(const std::string& addr, unsigned short port, bool standalone = false);
-    // Safer version of `connect`, sets the active game server in `GlobedServerManager` doesn't throw an exception on error
-    void connectWithView(const GameServerView& gsview);
-    // Is similar to `connectWithView` (does not throw exceptions) and is made specifically for standalone servers.
-    void connectStandalone(const std::string& addr, unsigned short port);
+    // Safer version of `connect`, sets the active game server in `GameServerManager` on success, doesn't throw on exception on error
+    void connectWithView(const GameServer& gsview);
+    // Is similar to `connectWithView` (does not throw exceptions) but is made specifically for standalone servers.
+    // Grabs the address from the first server in `GameServerManager`
+    void connectStandalone();
 
     // Disconnect from a server. Does nothing if not connected
     void disconnect(bool quiet = false);

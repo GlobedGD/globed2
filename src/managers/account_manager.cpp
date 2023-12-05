@@ -1,5 +1,7 @@
 #include "account_manager.hpp"
 
+#include <managers/central_server_manager.hpp>
+#include <managers/game_server_manager.hpp>
 #include <util/crypto.hpp>
 
 GLOBED_SINGLETON_DEF(GlobedAccountManager)
@@ -18,6 +20,21 @@ void GlobedAccountManager::initialize(const std::string& name, int accountId, co
 
     *gdData.lock() = data;
     initialized = true;
+}
+
+void GlobedAccountManager::autoInitialize() {
+    auto* gjam = GJAccountManager::get();
+    auto& csm = CentralServerManager::get();
+    auto& gsm = GameServerManager::get();
+
+    std::string activeCentralUrl = "";
+
+    auto activeCentral = csm.getActive();
+    if (activeCentral) {
+        activeCentralUrl = activeCentral.value().url;
+    }
+
+    this->initialize(gjam->m_username, gjam->m_accountID, gjam->getGJP(), activeCentralUrl);
 }
 
 std::string GlobedAccountManager::generateAuthCode() {

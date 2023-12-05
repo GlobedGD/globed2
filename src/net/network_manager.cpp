@@ -34,7 +34,7 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
-        GlobedServerManager::get().pingFinishActive(packet->playerCount);
+        GameServerManager::get().finishKeepalive(packet->playerCount);
     });
 
     addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
@@ -112,20 +112,22 @@ void NetworkManager::connect(const std::string& addr, unsigned short port, bool 
     this->send(packet);
 }
 
-void NetworkManager::connectWithView(const GameServerView& gsview) {
+void NetworkManager::connectWithView(const GameServer& gsview) {
     try {
         this->connect(gsview.address.ip, gsview.address.port);
-        GlobedServerManager::get().setActiveGameServer(gsview.id);
+        GameServerManager::get().setActive(gsview.id);
     } catch (const std::exception& e) {
         this->disconnect(true);
         ErrorQueues::get().error(std::string("Connection failed: ") + e.what());
     }
 }
 
-void NetworkManager::connectStandalone(const std::string& addr, unsigned short port) {
+void NetworkManager::connectStandalone() {
+    auto server = GameServerManager::get().getServer(GameServerManager::STANDALONE_ID);
+
     try {
-        this->connect(addr, port);
-        GlobedServerManager::get().setActiveGameServer(GlobedServerManager::STANDALONE_SERVER_ID);
+        this->connect(server.address.ip, server.address.port, true);
+        GameServerManager::get().setActive(GameServerManager::STANDALONE_ID);
     } catch (const std::exception& e) {
         this->disconnect(true);
         ErrorQueues::get().error(std::string("Connection failed: ") + e.what());
@@ -149,7 +151,7 @@ void NetworkManager::disconnect(bool quiet) {
     gameSocket.disconnect();
     gameSocket.cleanupBox();
 
-    GlobedServerManager::get().setActiveGameServer("");
+    GameServerManager::get().clearActive();
 }
 
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
@@ -187,14 +189,14 @@ void NetworkManager::threadMainFunc() {
 
             for (const auto& task : taskQueue.popAll()) {
                 if (task == NetworkThreadTask::PingServers) {
-                    auto& sm = GlobedServerManager::get();
-                    auto activeServer = sm.getActiveGameServer();
+                    auto& sm = GameServerManager::get();
+                    auto activeServer = sm.active();
 
-                    for (auto& [serverId, server] : sm.extractGameServers()) {
+                    for (auto& [serverId, server] : sm.getAllServers()) {
                         if (serverId == activeServer) continue;
 
                         try {
-                            auto pingId = sm.pingStart(serverId);
+                            auto pingId = sm.startPing(serverId);
                             gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
                         } catch (const std::exception& e) {
                             ErrorQueues::get().warn(e.what());
@@ -264,7 +266,7 @@ void NetworkManager::threadRecvFunc() {
 
 void NetworkManager::handlePingResponse(std::shared_ptr<Packet> packet) {
     if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
-        GlobedServerManager::get().pingFinish(pingr->id, pingr->playerCount);
+        GameServerManager::get().finishPing(pingr->id, pingr->playerCount);
     }
 }
 
@@ -274,7 +276,7 @@ void NetworkManager::maybeSendKeepalive() {
         if ((now - lastKeepalive) > KEEPALIVE_INTERVAL) {
             lastKeepalive = now;
             this->send(KeepalivePacket::create());
-            GlobedServerManager::get().pingStartActive();
+            GameServerManager::get().startKeepalive();
         }
     }
 }

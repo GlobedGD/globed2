@@ -1,5 +1,5 @@
 #pragma once
-#include <Geode/Geode.hpp>
+#include <defs.hpp>
 #include <data/types/gd.hpp>
 
 class PlayerListPopup : public geode::Popup<> {

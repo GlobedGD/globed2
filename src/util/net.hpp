@@ -1,4 +1,6 @@
 #pragma once
+#include <defs.hpp>
+#include <defs/net.hpp>
 #include <string>
 
 namespace util::net {
@@ -24,5 +26,5 @@ namespace util::net {
     std::string webUserAgent();
 
     // Split an address like 127.0.0.1:4343 into pair<"127.0.0.1", 4343>
-    std::pair<std::string, unsigned short> splitAddress(const std::string& address);
+    std::pair<std::string, unsigned short> splitAddress(const std::string& address, unsigned short defaultPort = 0);
 }

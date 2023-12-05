@@ -25,11 +25,7 @@
 * GLOBED_UNIMPL - throws a runtime error as the method was not implemented and isn't meant to be called
 */
 
-#ifndef GLOBED_ROOT_NO_GEODE
-# define GLOBED_REQUIRE_LOG geode::log::error
-#endif
-
-#if GLOBED_CAN_USE_SOURCE_LOCATION && !defined(GLOBED_ROOT_NO_GEODE)
+#if GLOBED_CAN_USE_SOURCE_LOCATION
 # define GLOBED_REQUIRE(condition,message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
@@ -48,13 +44,13 @@
 # define GLOBED_REQUIRE(condition,message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
-        GLOBED_REQUIRE_LOG(std::string("Condition failed: ") + ev_msg); \
+        geode::log::error(std::string("Condition failed: ") + ev_msg); \
         throw std::runtime_error(std::string(ev_msg)); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
-        GLOBED_REQUIRE_LOG(std::string("Condition failed: ") + ev_msg); \
+        geode::log::error(std::string("Condition failed: ") + ev_msg); \
         GLOBED_SUICIDE; \
     }
 #endif

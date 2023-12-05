@@ -1,5 +1,5 @@
 [package]
-name = "globed-derives"
+name = "globed-derive"
 version = "1.0.0"
 edition = "2021"
 

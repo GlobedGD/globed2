@@ -1,7 +1,9 @@
 #pragma once
 #include <defs.hpp>
-#include <util/data.hpp>
+
 #include <string>
+
+#include <util/data.hpp>
 
 /*
 * This class contains no crypto implementation and is here just for boilerplate code.

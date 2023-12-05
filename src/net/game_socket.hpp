@@ -1,5 +1,6 @@
 #pragma once
 #include "udp_socket.hpp"
+
 #include <data/packets/packet.hpp>
 #include <crypto/box.hpp>
 

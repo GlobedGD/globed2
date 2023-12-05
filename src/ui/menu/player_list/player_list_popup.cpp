@@ -1,4 +1,5 @@
 #include "player_list_popup.hpp"
+
 #include <UIBuilder.hpp>
 
 #include "player_list_cell.hpp"
@@ -10,9 +11,11 @@ using namespace geode::prelude;
 
 bool PlayerListPopup::setup() {
     auto& nm = NetworkManager::get();
-    if (!nm.handshaken()) {
+    if (!nm.established()) {
         return false;
     }
+
+    this->setTitle("Online players");
 
     nm.addListener<PlayerListPacket>([this](PlayerListPacket* packet) {
         this->playerList = packet->data;
@@ -20,8 +23,6 @@ bool PlayerListPopup::setup() {
     });
 
     nm.send(RequestPlayerListPacket::create());
-
-    this->setTitle("Online players");
 
     // show an error popup if no response after 2 seconds
     timeoutSequence = CCSequence::create(

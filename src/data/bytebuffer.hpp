@@ -1,8 +1,10 @@
 #pragma once
-#include "bitbuffer.hpp"
 #include <defs.hpp>
-#include <util/data.hpp>
+
 #include <type_traits>
+
+#include "bitbuffer.hpp"
+#include <util/data.hpp>
 
 class ByteBuffer;
 
@@ -209,6 +211,7 @@ public:
     // Write a list of `Encodable` objects, prefixed with 4 bytes indicating the count.
     template <Encodable T>
     void writeValueVector(const std::vector<T>& values) {
+        this->writeU32(values.size());
         for (const T& value : values) {
             value.encode(*this);
         }
@@ -297,7 +300,6 @@ public:
         return static_cast<E>(this->readPrimitive<P>());
     }
 
-#ifndef GLOBED_ROOT_NO_GEODE
     /*
     * Cocos/GD serializable methods
     */
@@ -315,7 +317,6 @@ public:
     void writeColor4(cocos2d::ccColor4B color);
     // Write a CCPoint (2 floats)
     void writePoint(cocos2d::CCPoint point);
-#endif
 
     /*
     * Misc util functions

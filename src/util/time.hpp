@@ -1,4 +1,5 @@
 #pragma once
+#include <defs.hpp>
 #include <chrono>
 
 namespace chrono = std::chrono;
@@ -18,27 +19,32 @@ namespace util::time {
         return clock::now();
     }
 
+    template <typename Dest, typename Rep, typename Period>
+    inline Dest as(duration<Rep, Period> dur) {
+        return chrono::duration_cast<Dest>(dur);
+    }
+
     template <typename Rep, typename Period>
     inline long long asSecs(duration<Rep, Period> tp) {
-        return chrono::duration_cast<secs>(tp).count();
+        return as<secs>(tp).count();
     }
 
     template <typename Rep, typename Period>
     inline long long asMillis(duration<Rep, Period> tp) {
-        return chrono::duration_cast<millis>(tp).count();
+        return as<millis>(tp).count();
     }
 
     template <typename Rep, typename Period>
     inline long long asMicros(duration<Rep, Period> tp) {
-        return chrono::duration_cast<micros>(tp).count();
+        return as<micros>(tp).count();
     }
 
     inline millis sinceEpoch() {
-        return chrono::duration_cast<millis>(now().time_since_epoch());
+        return as<millis>(now().time_since_epoch());
     }
 
     inline micros sinceEpochPrecise() {
-        return chrono::duration_cast<micros>(now().time_since_epoch());
+        return as<micros>(now().time_since_epoch());
     }
 
     std::string nowPretty();

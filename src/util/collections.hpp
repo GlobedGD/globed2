@@ -1,4 +1,5 @@
 #pragma once
+#include <defs.hpp>
 #include <queue>
 #include <map>
 #include <unordered_map>
@@ -134,6 +135,18 @@ std::vector<V*> mapValuesBorrowed(std::unordered_map<K, V>& map) {
     std::vector<V*> out;
     for (auto& pair : map) {
         out.push_back(&pair.second);
+    }
+
+    return out;
+}
+
+template <typename T>
+std::vector<std::pair<size_t, T&>> enumerate(std::vector<T>& vec) {
+    std::vector<std::pair<size_t, T&>> out;
+    out.reserve(vec.size());
+
+    for (size_t i = 0; i < vec.size(); i++) {
+        out.emplace_back(i, vec[i]);
     }
 
     return out;

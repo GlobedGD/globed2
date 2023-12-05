@@ -1,5 +1,4 @@
 #pragma once
-#include <defs.hpp>
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
 

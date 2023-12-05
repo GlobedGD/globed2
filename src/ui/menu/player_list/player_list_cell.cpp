@@ -1,4 +1,5 @@
 #include "player_list_cell.hpp"
+
 #include <UIBuilder.hpp>
 
 #include "player_list_popup.hpp"
@@ -10,7 +11,7 @@ bool PlayerListCell::init(const PlayerPreviewAccountData& data) {
     this->data = data;
 
     Build<CCMenu>::create()
-        .pos({PlayerListPopup::LIST_WIDTH, CELL_HEIGHT})
+        .pos(PlayerListPopup::LIST_WIDTH, CELL_HEIGHT)
         .parent(this)
         .store(menu);
 
@@ -21,7 +22,7 @@ bool PlayerListCell::init(const PlayerPreviewAccountData& data) {
     label->setScale(label->getScale() * 0.9f);
 
     auto* btn = Build<CCMenuItemSpriteExtra>::create(label, this, menu_selector(PlayerListCell::onOpenProfile))
-        .pos({-PlayerListPopup::LIST_WIDTH + 57.f, -22.f})
+        .pos(-PlayerListPopup::LIST_WIDTH + 57.f, -22.f)
         .parent(menu)
         .collect();
 
@@ -35,7 +36,7 @@ bool PlayerListCell::init(const PlayerPreviewAccountData& data) {
         .color(gm->colorForIdx(data.color1))
         .secondColor(gm->colorForIdx(data.color2))
         .parent(this)
-        .pos({25.f, CELL_HEIGHT - 22.f})
+        .pos(25.f, CELL_HEIGHT - 22.f)
         .store(simplePlayer);
 
     // dont create the button if level id = 0
@@ -46,7 +47,7 @@ bool PlayerListCell::init(const PlayerPreviewAccountData& data) {
             // TODO OPen the level
             log::debug("here you open the level ID {}", this->data.levelId);
         })
-        .pos({-30.f, -23.f})
+        .pos(-30.f, -23.f)
         .parent(menu);
 
     return true;

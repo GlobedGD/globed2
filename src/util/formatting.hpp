@@ -1,5 +1,6 @@
 #pragma once
 #include <defs.hpp>
+
 #include <util/time.hpp>
 
 namespace util::formatting {
@@ -24,4 +25,7 @@ namespace util::formatting {
 
     // example: 123.4KiB
     std::string formatBytes(uint64_t bytes);
+
+    // format an HTTP error message into a nicer string
+    std::string formatErrorMessage(std::string message);
 }

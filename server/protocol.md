@@ -1,8 +1,10 @@
 ## Protocol
 
-this is a brief protocol description so that I don't forget what everything does :p
+if you somehow stumbled upon this file, hi! this is a brief protocol description so that I don't forget what everything does :p
 
-plus sign means encrypted packet
+plus sign means encrypted packet.
+
+i will probably forget to update this very often
 
 ### Client
 

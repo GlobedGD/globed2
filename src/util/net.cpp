@@ -1,5 +1,4 @@
 #include "net.hpp"
-#include <defs.hpp>
 
 namespace util::net {
     void initialize() {
@@ -55,28 +54,34 @@ namespace util::net {
 
     [[noreturn]] void throwLastError() {
         auto message = lastErrorString();
-        GLOBED_REQUIRE_LOG(std::string("Throwing network exception: ") + message);
+        geode::log::error(std::string("Throwing network exception: ") + message);
         throw std::runtime_error(std::string("Network error: ") + message);
     }
 
     std::string webUserAgent() {
-#ifdef GLOBED_ROOT_NO_GEODE
-        return "globed-geode-xd";
-#else
         return fmt::format("globed-geode-xd/{}", geode::Mod::get()->getVersion().toString());
-#endif
     }
 
-    std::pair<std::string, unsigned short> splitAddress(const std::string& address) {
+    std::pair<std::string, unsigned short> splitAddress(const std::string& address, unsigned short defaultPort) {
         std::pair<std::string, unsigned short> out;
 
         size_t colon = address.find(':');
-        GLOBED_REQUIRE(colon != std::string::npos && colon != 0, "invalid address, cannot split into IP and port")
+        bool hasPort = colon != std::string::npos && colon != 0;
 
-        out.first = address.substr(0, colon);
+        GLOBED_REQUIRE(hasPort || defaultPort != 0, "invalid address, cannot split into IP and port")
 
-        std::istringstream portStream(address.substr(colon + 1));
-        GLOBED_REQUIRE(portStream >> out.second, "invalid port number")
+        if (hasPort) {
+            out.first = address.substr(0, colon);
+            std::istringstream portStream(address.substr(colon + 1));
+            if (!(portStream >> out.second)) {
+                // if no default port - fail, otherwise use it
+                GLOBED_REQUIRE(defaultPort != 0, "invalid port number")
+                out.second = defaultPort;
+            }
+        } else {
+            out.first = address;
+            out.second = defaultPort;
+        }
 
         return out;
     }

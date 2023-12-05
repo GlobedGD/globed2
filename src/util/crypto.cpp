@@ -1,4 +1,5 @@
 #include "crypto.hpp"
+
 #include <sodium.h>
 #include <cstring>
 #include <cmath>
@@ -178,7 +179,7 @@ bytevector base64Decode(const byte* source, size_t size, Base64Variant variant) 
         out.data(), outMaxLen,
         reinterpret_cast<const char*>(source), size,
         nullptr, &outRealLen, nullptr, (int)variant
-    ), "sodium_base642bin failed");
+    ), "invalid base64 string");
 
     out.resize(outRealLen); // necessary
 
@@ -223,7 +224,7 @@ bytevector hexDecode(const byte* source, size_t size) {
         out.data(), outLen,
         reinterpret_cast<const char*>(source), size,
         nullptr, &realOutLen, nullptr
-    ), "sodium_hex2bin failed");
+    ), "invalid hex string");
 
     out.resize(realOutLen);
 

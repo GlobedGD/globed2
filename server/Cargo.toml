@@ -1,10 +1,7 @@
 [workspace]
-members = ["central", "game", "game-derives", "shared"]
+members = ["central", "game", "game-derive", "shared"]
 resolver = "2"
-# my observation thus far with LTO:
-# compile times -> ~100% increase
-# executable size -> ~30% decrease
-# performance -> too lazy to benchmark but probably a very minor improvement
-# so.. good enough to keep!
-# TODO Bring back in release
+
+# TODO bring back in release
+[profile.release]
 # lto = "fat"

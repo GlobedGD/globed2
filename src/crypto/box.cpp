@@ -1,8 +1,8 @@
 #include "box.hpp"
 
-#include <util/crypto.hpp>
-#include <stdexcept> // std::runtime_error
 #include <cstring> // std::memcpy
+
+#include <util/crypto.hpp>
 
 using namespace util::data;
 
