@@ -37,9 +37,7 @@ endif()
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 # enable extra warnings
-if (CMAKE_HOST_SYSTEM STREQUAL "Windows")
-else()
-    # i hate this language okay?
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-c++11-compat -Wno-c++14-compat -Wno-c++17-compat -Wno-old-style-cast -Wno-implicit-int-float-conversion -Wno-global-constructors -Wno-pre-c++20-compat-pedantic -Wno-exit-time-destructors -Wno-reserved-identifier -Wno-reserved-macro-identifier -Wno-dollar-in-identifier-extension -Wno-ctad-maybe-unsupported -Wno-unsafe-buffer-usage -Wno-newline-eof -Wno-shadow -Wno-inconsistent-missing-destructor-override -Wno-float-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-suggest-destructor-override -Wno-suggest-override -Wno-overloaded-virtual -Wno-unused-parameter -Wno-undefined-func-template -Wno-non-virtual-dtor -Wno-sign-compare -Wno-header-hygiene)
 endif()
 
