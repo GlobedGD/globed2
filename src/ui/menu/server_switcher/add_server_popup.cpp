@@ -78,6 +78,7 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
 
             // we try to connect to the server and see if the versions match
             ServerTestPopup::create(url, this)->show();
+            this->retain();
             testedName = name;
             testedUrl = url;
         })
@@ -104,12 +105,14 @@ void AddServerPopup::onTestSuccess() {
         csm.modifyServer(modifyingIndex, newServer);
     }
 
+    this->release();
     this->parent->reloadList();
     this->onClose(this);
 }
 
 void AddServerPopup::onTestFailure(const std::string& message) {
     FLAlertLayer::create("Globed error", message.c_str(), "Ok")->show();
+    this->release();
     this->onClose(this);
 }
 

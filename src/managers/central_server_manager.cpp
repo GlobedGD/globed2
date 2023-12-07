@@ -56,6 +56,10 @@ std::optional<CentralServer> CentralServerManager::getActive() {
     return servers->at(idx);
 }
 
+int CentralServerManager::getActiveIndex() {
+    return _activeIdx.load();
+}
+
 std::vector<CentralServer> CentralServerManager::getAllServers() {
     return *_servers.lock();
 }

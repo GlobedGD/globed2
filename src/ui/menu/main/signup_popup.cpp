@@ -1,8 +1,8 @@
 #include "signup_popup.hpp"
 
 #include <UIBuilder.hpp>
-#include <Geode/utils/web.hpp>
 
+#include <net/http/client.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/central_server_manager.hpp>
 #include <managers/game_server_manager.hpp>
@@ -30,30 +30,31 @@ bool GlobedSignupPopup::setup() {
 
     auto url = csm.getActive()->url + "/challenge/new?aid=" + std::to_string(am.gdData.lock()->accountId);
 
-    web::AsyncWebRequest()
-        .postRequest()
+    GHTTPRequest::post(url)
         .userAgent(util::net::webUserAgent())
-        .fetch(url).text()
-        .then([this](const std::string& response) {
-            auto colonPos = response.find(':');
-            auto part1 = response.substr(0, colonPos);
-            auto part2 = response.substr(colonPos + 1);
-
-            int levelId;
-
-            if (part1 == "none") {
-                levelId = -1;
+        .then([this](const GHTTPResponse& resp) {
+            if (resp.anyfail()) {
+                auto error = resp.anyfailmsg();
+                if (error.empty()) {
+                    this->onFailure("Creating challenge failed: server sent an empty response.");
+                } else {
+                    this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
+                }
             } else {
-                levelId = std::stoi(part1);
-            }
+                auto response = resp.response;
+                auto colonPos = response.find(':');
+                auto part1 = response.substr(0, colonPos);
+                auto part2 = response.substr(colonPos + 1);
 
-            this->onChallengeCreated(levelId, part2);
-        })
-        .expect([this](const std::string& error) {
-            if (error.empty()) {
-                this->onFailure("Creating challenge failed: server sent an empty response.");
-            } else {
-                this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
+                int levelId;
+
+                if (part1 == "none") {
+                    levelId = -1;
+                } else {
+                    levelId = std::stoi(part1);
+                }
+
+                this->onChallengeCreated(levelId, part2);
             }
         })
         .send();
@@ -117,30 +118,31 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
                     gdData->accountName,
                     authcode);
 
-    web::AsyncWebRequest()
-        .postRequest()
+    GHTTPRequest::post(url)
         .userAgent(util::net::webUserAgent())
-        .fetch(url).text()
-        .then([this, &am](const std::string& response) {
-            // we are good! the authkey has been created and can be saved now.
-            auto colonPos = response.find(':');
-            auto commentId = response.substr(0, colonPos);
-
-            log::info("Authkey created successfully, saving.");
-            auto authkey = util::crypto::base64Decode(response.substr(colonPos + 1));
-            am.storeAuthKey(util::crypto::simpleHash(authkey));
-            this->onSuccess();
-
-            // delete the comment to cleanup
-            if (commentId != "none") {
-                GameLevelManager::get()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
-            }
-        })
-        .expect([this](const std::string& error) {
-            if (error.empty()) {
-                this->onFailure("Verifying challenge failed: server sent an empty response.");
+        .then([this, &am](const GHTTPResponse& resp) {
+            if (resp.anyfail()) {
+                auto error = resp.anyfailmsg();
+                if (error.empty()) {
+                    this->onFailure("Creating challenge failed: server sent an empty response.");
+                } else {
+                    this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
+                }
             } else {
-                this->onFailure("Verifying challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
+                auto response = resp.response;
+                // we are good! the authkey has been created and can be saved now.
+                auto colonPos = response.find(':');
+                auto commentId = response.substr(0, colonPos);
+
+                log::info("Authkey created successfully, saving.");
+                auto authkey = util::crypto::base64Decode(response.substr(colonPos + 1));
+                am.storeAuthKey(util::crypto::simpleHash(authkey));
+                this->onSuccess();
+
+                // delete the comment to cleanup
+                if (commentId != "none") {
+                    GameLevelManager::get()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
+                }
             }
         })
         .send();
@@ -158,6 +160,9 @@ void GlobedSignupPopup::onFailure(const std::string& message) {
 void GlobedSignupPopup::keyDown(cocos2d::enumKeyCodes) {
     // do nothing; the popup should be impossible to close manually
 }
+void GlobedSignupPopup::keyBackClicked() {
+    // do nothing
+};
 
 GlobedSignupPopup* GlobedSignupPopup::create() {
     auto ret = new GlobedSignupPopup;

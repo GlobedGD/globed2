@@ -29,6 +29,7 @@ public:
     void setActive(int index);
     // get the current active server, thread safe
     std::optional<CentralServer> getActive();
+    int getActiveIndex();
 
     // get all central servers, thread safe
     std::vector<CentralServer> getAllServers();

@@ -68,3 +68,5 @@ server/game/perf.data
 server/game/perf.data.old
 server/game/test-flamegraph.sh
 server/game/test-bench.sh
+
+libs/openssl

@@ -76,6 +76,13 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
     Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
         .intoMenuItem([this](auto) {
             auto& csm = CentralServerManager::get();
+
+            // do nothing if we are already connected to this server
+            if (csm.getActiveIndex() == this->index) {
+                this->parent->close();
+                return;
+            }
+
             csm.setActive(this->index);
             csm.recentlySwitched = true;
 

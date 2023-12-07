@@ -166,6 +166,11 @@ public:
         store(val);
         return *this;
     }
+
+    // enable copying
+    RelaxedAtomic(RelaxedAtomic<T>& other) {
+        this->store(other.load());
+    }
 private:
     std::atomic<T> value;
 };

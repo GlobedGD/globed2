@@ -7,10 +7,11 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 project(globed2 VERSION 1.0.0)
 
 option(ENABLE_DEBUG "Debug mode" OFF)
-if (ENABLE_DEBUG)
+if (ENABLE_DEBUG OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(GLOBED_DEBUG=1)
+    add_compile_definitions(GEODE_DEBUG=1)
 else()
-    # Enable LTO in release (2.5x less binary size, no noticable compile time hit)
+    # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
@@ -29,17 +30,12 @@ if (CMAKE_HOST_SYSTEM MATCHES "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_options("-march=skylake")
 endif()
 
-# enable exceptions on android
+# enable exceptions on android (this doesn't work !!!!!!! fix me!!!)
 if (ANDROID)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
 endif()
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
-
-# enable extra warnings
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-c++11-compat -Wno-c++14-compat -Wno-c++17-compat -Wno-old-style-cast -Wno-implicit-int-float-conversion -Wno-global-constructors -Wno-pre-c++20-compat-pedantic -Wno-exit-time-destructors -Wno-reserved-identifier -Wno-reserved-macro-identifier -Wno-dollar-in-identifier-extension -Wno-ctad-maybe-unsupported -Wno-unsafe-buffer-usage -Wno-newline-eof -Wno-shadow -Wno-inconsistent-missing-destructor-override -Wno-float-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-suggest-destructor-override -Wno-suggest-override -Wno-overloaded-virtual -Wno-unused-parameter -Wno-undefined-func-template -Wno-non-virtual-dtor -Wno-sign-compare -Wno-header-hygiene)
-endif()
 
 if (NOT DEFINED ENV{GEODE_SDK})
     message(FATAL_ERROR "Unable to find Geode SDK! Please define GEODE_SDK environment variable to point to Geode")
@@ -52,13 +48,28 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
+# libcurl ssl support
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # on windows we just use schannel, no extra setup
+    set(CURL_USE_SCHANNEL ON)
+    set(CURL_USE_OPENSSL OFF)
+elseif(ANDROID)
+    # on android we use geode provided openssl library and our own headers
+    set(CURL_USE_SCHANNEL OFF)
+    set(CURL_USE_OPENSSL ON)
+    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/libs/openssl")
+    set(OPENSSL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/openssl/include")
+    set(OPENSSL_CRYPTO_LIBRARY "$ENV{GEODE_SDK}/loader/include/link/android/libcrypto.a")
+    set(OPENSSL_SSL_LIBRARY "$ENV{GEODE_SDK}/loader/include/link/android/libssl.a")
+endif()
+
 # our favorite libraries
 CPMAddPackage("gh:camila314/UIBuilder#main")
 CPMAddPackage("gh:xiph/opus#master")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
+CPMAddPackage("gh:curl/curl#curl-8_5_0")
 
-# TODO suppress -Wpointer-sign from libsodium
-target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
+target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium libcurl)
 
 # link to fmod on android
 if (ANDROID)

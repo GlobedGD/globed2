@@ -33,7 +33,7 @@ size_t GameServerManager::count() {
     return _data.lock()->servers.size();
 }
 
-void GameServerManager::setActive(const std::string id) {
+void GameServerManager::setActive(const std::string& id) {
     auto data = _data.lock();
     data->active = id;
 }

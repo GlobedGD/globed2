@@ -30,6 +30,10 @@ Known issues:
 
 See the [server readme](./server/readme.md) for more information about the server and how you can host it.
 
+## Building
+
+Building is the same as building any other Geode mod, except for Android. If you want to build the mod for Android, see the [android build readme](./android-build.md) for instructions on how to do it.
+
 ## Credit
 
 ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you for being awesome, whether it's because you helped me directly, suggested ideas, helped with testing, or if I just found you awesome in general :D
@@ -42,7 +46,8 @@ RobTop - thank you for releasing this awesome game :)
 
 Globed is licensed under the MIT license. All of the following libraries used in Globed have their own licenses you may want to read:
 
-* [Geode](https://geode-sdk.org/) - [BSL 1.0](https://github.com/geode-sdk/geode/blob/main/LICENSE.txt)
-* [UIBuilder](https://github.com/camila314/uibuilder) - [MIT](https://github.com/camila314/uibuilder/blob/main/LICENSE)
-* [Opus](https://github.com/xiph/opus) - [BSD 3-Clause (?)](https://github.com/xiph/opus/blob/master/COPYING)
-* [libsodium](https://github.com/jedisct1/libsodium) - [ISC](https://github.com/jedisct1/libsodium/blob/master/LICENSE)
+* Geode - [website](https://geode-sdk.org) - [repository](https://github.com/geode-sdk/geode) - [license](https://github.com/geode-sdk/geode/blob/main/LICENSE.txt)
+* UIBuilder - [repository](https://github.com/camila314/uibuilder) - [license](https://github.com/camila314/uibuilder/blob/main/LICENSE)
+* Opus - [website](https://opus-codec.org/) - [repository](https://github.com/xiph/opus) - [license](https://github.com/xiph/opus/blob/master/COPYING)
+* libsodium - [website](https://libsodium.gitbook.io/doc/) - [repository](https://github.com/jedisct1/libsodium) - [license](https://github.com/jedisct1/libsodium/blob/master/LICENSE)
+* Curl - [website](https://curl.se/) - [repository](https://github.com/curl/curl) - [license](https://curl.se/docs/copyright.html)

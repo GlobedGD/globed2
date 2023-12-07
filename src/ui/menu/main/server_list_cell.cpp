@@ -1,14 +1,15 @@
 #include "server_list_cell.hpp"
 
-#include <Geode/utils/web.hpp>
 #include <UIBuilder.hpp>
 
+#include <net/http/client.hpp>
 #include <net/network_manager.hpp>
 #include <managers/account_manager.hpp>
 #include <managers/game_server_manager.hpp>
 #include <managers/central_server_manager.hpp>
 #include <managers/error_queues.hpp>
 #include <util/net.hpp>
+#include <util/time.hpp>
 
 using namespace geode::prelude;
 
@@ -134,20 +135,20 @@ void ServerListCell::requestTokenAndConnect() {
     );
 
     // both callbacks should be safe even if GlobedMenuLayer was closed.
-    web::AsyncWebRequest()
-        .postRequest()
+    GHTTPRequest::post(url)
         .userAgent(util::net::webUserAgent())
-        .fetch(url).text()
-        .then([&am, gsview = this->gsview](const std::string& response) {
-            *am.authToken.lock() = response;
-            NetworkManager::get().connectWithView(gsview);
-        })
-        .expect([&am](const std::string& error) {
-            ErrorQueues::get().error(fmt::format(
-                "Failed to generate a session token! Please try to login and connect again.\n\nServer response: <cy>{}</c>",
-                error
-            ));
-            am.clearAuthKey();
+        .timeout(util::time::secs(3))
+        .then([&am, gsview = this->gsview](const GHTTPResponse& response) {
+            if (response.anyfail()) {
+                ErrorQueues::get().error(fmt::format(
+                    "Failed to generate a session token! Please try to login and connect again.\n\nServer response: <cy>{}</c>",
+                    response.anyfailmsg()
+                ));
+                am.clearAuthKey();
+            } else {
+                *am.authToken.lock() = response.response;
+                NetworkManager::get().connectWithView(gsview);
+            }
         })
         .send();
 }

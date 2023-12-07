@@ -284,7 +284,8 @@ public:
     // Write an enum
     template <typename E>
     void writeEnum(const E& val) {
-        using P = std::underlying_type<E>::type;
+        // macos clang is so fire
+        using P = typename std::underlying_type<E>::type;
         static_assert(util::data::IsPrimitive<P>, "enum underlying type must be a primitive");
 
         this->writePrimitive<P>(static_cast<P>(val));
@@ -294,7 +295,7 @@ public:
     // TODO no validation, likely not planning to add but still important to know
     template <typename E>
     E readEnum() {
-        using P = std::underlying_type<E>::type;
+        using P = typename std::underlying_type<E>::type;
         static_assert(util::data::IsPrimitive<P>, "enum underlying type must be a primitive");
 
         return static_cast<E>(this->readPrimitive<P>());

@@ -52,7 +52,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         this->setupEventListeners();
 
-        GlobedAudioManager::get().setActiveRecordingDevice(2);
+        // GlobedAudioManager::get().setActiveRecordingDevice(2);
 
         // schedule stuff
         // TODO - handle sending SyncPlayerMetadataPacket.

@@ -37,7 +37,7 @@ public:
     void clear();
     size_t count();
 
-    void setActive(const std::string id);
+    void setActive(const std::string& id);
     std::string active();
     void clearActive();
 

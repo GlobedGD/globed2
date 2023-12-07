@@ -6,6 +6,7 @@
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
 #include <util/net.hpp>
+#include <util/time.hpp>
 #include <util/formatting.hpp>
 
 using namespace geode::prelude;
@@ -21,82 +22,75 @@ bool ServerTestPopup::setup(const std::string& url, AddServerPopup* parent) {
         .scale(0.35f)
         .parent(m_mainLayer);
 
-    sentRequestHandle = web::AsyncWebRequest()
+    sentRequestHandle = GHTTPRequest::get(fmt::format("{}/version", url))
         .userAgent(util::net::webUserAgent())
-        .fetch(fmt::format("{}/version", url)).text()
-        .then([this](const std::string& response) {
+        .timeout(util::time::secs(5))
+        .then([this](const GHTTPResponse& resp) {
             sentRequestHandle = std::nullopt;
-            if (timeoutSequence) {
-                this->stopAction(timeoutSequence);
-                timeoutSequence = nullptr;
-            }
 
-            int protocol = 0;
-            std::from_chars(response.data(), response.data() + response.size(), protocol);
+            if (resp.anyfail()) {
+                std::string error;
 
-            if (protocol != NetworkManager::PROTOCOL_VERSION) {
-                this->parent->onTestFailure(fmt::format(
-                    "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
-                    NetworkManager::PROTOCOL_VERSION,
-                    protocol
-                ));
+                if (resp.resCode == CURLE_OPERATION_TIMEDOUT) {
+                    error = "Failed to contact the server, no response was received after 5 seconds.";
+                } else {
+                    auto msg = resp.anyfailmsg();
+                    if (msg.empty()) {
+                        error = "Error retrieving data from the server: server sent an empty response.";
+                    } else {
+                        error = "Error retrieving data from the server: <cy>" + util::formatting::formatErrorMessage(msg) + "</c>";
+                    }
+                }
+
+                this->parent->onTestFailure(error);
             } else {
-                this->parent->onTestSuccess();
+                auto response = resp.response;
+                int protocol = 0;
+#ifdef GLOBED_ANDROID
+                // this is such a meme im crying
+                std::istringstream iss(response);
+                iss >> protocol;
+                if (iss.fail() || !iss.eof()) {
+                    protocol = 0;
+                }
+#else
+                std::from_chars(response.data(), response.data() + response.size(), protocol);
+#endif
+
+                if (protocol != NetworkManager::PROTOCOL_VERSION) {
+                    this->parent->onTestFailure(fmt::format(
+                        "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
+                        NetworkManager::PROTOCOL_VERSION,
+                        protocol
+                    ));
+                } else {
+                    this->parent->onTestSuccess();
+                }
             }
 
-            this->onClose(this);
-        })
-        .expect([this](const std::string& error) {
-            // why the fuck does geode call the error if the request was cancelled????
-            if (error.find("was aborted by an") != std::string::npos) {
-                return;
-            }
-
-            sentRequestHandle = std::nullopt;
-            if (timeoutSequence) {
-                this->stopAction(timeoutSequence);
-                timeoutSequence = nullptr;
-            }
-
-            if (error.empty()) {
-                this->parent->onTestFailure("Failed to make a request to the server: server sent empty response.");
-            } else {
-                this->parent->onTestFailure("Failed to make a request to the server: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
-            }
             this->onClose(this);
         })
         .send();
-
-    // cancel the request after 5 seconds if no response
-    timeoutSequence = CCSequence::create(
-        CCDelayTime::create(5.0f),
-        CCCallFunc::create(this, callfunc_selector(ServerTestPopup::onTimeout)),
-        nullptr
-    );
-
-    this->runAction(timeoutSequence);
 
     return true;
 }
 
 ServerTestPopup::~ServerTestPopup() {
-    if (sentRequestHandle.has_value()) {
-        sentRequestHandle->get()->cancel();
-    }
+    this->cancelRequest();
 }
 
 void ServerTestPopup::onTimeout() {
-    if (timeoutSequence) {
-        this->stopAction(timeoutSequence);
-        timeoutSequence = nullptr;
-    }
-
-    if (sentRequestHandle.has_value()) {
-        sentRequestHandle->get()->cancel();
-    }
+    this->cancelRequest();
 
     this->parent->onTestFailure("Failed to add the server: timed out while waiting for a response.");
     this->onClose(this);
+}
+
+void ServerTestPopup::cancelRequest() {
+    if (sentRequestHandle.has_value()) {
+        sentRequestHandle->discardResult();
+        sentRequestHandle = std::nullopt;
+    }
 }
 
 ServerTestPopup* ServerTestPopup::create(const std::string& url, AddServerPopup* parent) {

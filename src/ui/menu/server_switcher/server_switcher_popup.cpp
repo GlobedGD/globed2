@@ -65,7 +65,7 @@ void ServerSwitcherPopup::reloadList() {
     auto& csm = CentralServerManager::get();
     auto servers = csm.getAllServers();
 
-    for (const auto [id, server] : util::collections::enumerate(servers)) {
+    for (const auto& [id, server] : util::collections::enumerate(servers)) {
         auto* cell = CentralServerListCell::create(server, id, this);
         cells->addObject(cell);
     }

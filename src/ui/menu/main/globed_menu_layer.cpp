@@ -1,6 +1,5 @@
 #include "globed_menu_layer.hpp"
 
-#include <Geode/utils/web.hpp>
 #include <UIBuilder.hpp>
 
 #include "server_list_cell.hpp"
@@ -126,9 +125,7 @@ bool GlobedMenuLayer::init() {
 }
 
 GlobedMenuLayer::~GlobedMenuLayer() {
-    if (serverRequestHandle.has_value()) {
-        serverRequestHandle->get()->cancel();
-    }
+    this->cancelWebRequest();
 }
 
 CCArray* GlobedMenuLayer::createServerList() {
@@ -167,6 +164,7 @@ void GlobedMenuLayer::refreshServerList(float) {
     // if we recently switched a central server, redo everything
     if (csm.recentlySwitched) {
         csm.recentlySwitched = false;
+        this->cancelWebRequest();
         this->requestServerList();
     }
 
@@ -206,9 +204,7 @@ void GlobedMenuLayer::refreshServerList(float) {
 }
 
 void GlobedMenuLayer::requestServerList() {
-    if (serverRequestHandle.has_value()) {
-        return;
-    }
+    this->cancelWebRequest();
 
     auto& csm = CentralServerManager::get();
 
@@ -224,48 +220,52 @@ void GlobedMenuLayer::requestServerList() {
         return;
     }
 
-    serverRequestHandle = web::AsyncWebRequest()
+    serverRequestHandle = GHTTPRequest::get(fmt::format("{}/servers", centralUrl.value().url))
         .userAgent(util::net::webUserAgent())
-        .fetch(fmt::format("{}/servers", centralUrl.value().url))
-        .json()
-        .then([this](json::Value response) {
+        .timeout(util::time::secs(3))
+        .then([this](const GHTTPResponse& response) {
             this->serverRequestHandle = std::nullopt;
+            if (response.anyfail()) {
+                ErrorQueues::get().error(fmt::format("Failed to fetch servers: <cy>{}</c>", response.anyfailmsg()));
 
-            auto& gsm = GameServerManager::get();
-            gsm.clear();
-            gsm.pendingChanges = true;
-
-            try {
-                auto serverList = response.as_array();
-                for (const auto& obj : serverList) {
-                    auto server = obj.as_object();
-                    gsm.addServer(
-                        server["id"].as_string(),
-                        server["name"].as_string(),
-                        server["address"].as_string(),
-                        server["region"].as_string()
-                    );
-                }
-            } catch (const std::exception& e) {
-                ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", e.what());
+                auto& gsm = GameServerManager::get();
                 gsm.clear();
+                gsm.pendingChanges = true;
+            } else {
+                auto jsonResponse = json::Value::from_str(response.response);
+
+                auto& gsm = GameServerManager::get();
+                gsm.clear();
+                gsm.pendingChanges = true;
+
+                try {
+                    auto serverList = jsonResponse.as_array();
+                    for (const auto& obj : serverList) {
+                        auto server = obj.as_object();
+                        gsm.addServer(
+                            server["id"].as_string(),
+                            server["name"].as_string(),
+                            server["address"].as_string(),
+                            server["region"].as_string()
+                        );
+                    }
+                } catch (const std::exception& e) {
+                    ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", e.what());
+                    gsm.clear();
+                }
             }
-        })
-        .expect([this](std::string error) {
-            // why the fuck does geode call the error if the request was cancelled????
-            if (error.find("was aborted by an") != std::string::npos) {
-                return;
-            }
-
-            this->serverRequestHandle = std::nullopt;
-
-            ErrorQueues::get().error(fmt::format("Failed to fetch servers: <cy>{}</c>", error));
-
-            auto& gsm = GameServerManager::get();
-            gsm.clear();
-            gsm.pendingChanges = true;
         })
         .send();
+
+    geode::log::debug("rqeuested server list");
+}
+
+void GlobedMenuLayer::cancelWebRequest() {
+    if (serverRequestHandle.has_value()) {
+        serverRequestHandle->discardResult();
+        serverRequestHandle = std::nullopt;
+        return;
+    }
 }
 
 void GlobedMenuLayer::keyBackClicked() {

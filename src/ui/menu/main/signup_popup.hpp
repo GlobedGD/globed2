@@ -16,6 +16,7 @@ protected:
 
     bool setup() override;
     void keyDown(cocos2d::enumKeyCodes key) override;
+    void keyBackClicked() override;
     void onFailure(const std::string& message);
     void onSuccess();
 

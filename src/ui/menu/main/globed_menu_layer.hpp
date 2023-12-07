@@ -1,8 +1,8 @@
 #pragma once
 #include <defs.hpp>
-#include <Geode/utils/web.hpp>
 
 #include "signup_layer.hpp"
+#include <net/http/client.hpp>
 
 class GlobedMenuLayer : public cocos2d::CCLayer {
 public:
@@ -17,12 +17,15 @@ public:
 private:
     GJListLayer* listLayer;
     GlobedSignupLayer* signupLayer;
-    std::optional<geode::utils::web::SentAsyncWebRequestHandle> serverRequestHandle;
+    std::optional<GHTTPRequestHandle> serverRequestHandle;
+    cocos2d::CCSequence* timeoutSequence;
 
     bool init();
     cocos2d::CCArray* createServerList();
-    void refreshServerList(float _);
+    void refreshServerList(float dt);
     void requestServerList();
     void keyBackClicked();
-    void pingServers(float _);
+    void pingServers(float dt);
+
+    void cancelWebRequest();
 };

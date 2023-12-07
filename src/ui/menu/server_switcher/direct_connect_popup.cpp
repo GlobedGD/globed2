@@ -50,7 +50,6 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             auto& gsm = GameServerManager::get();
             gsm.clear();
             gsm.addServer(GameServerManager::STANDALONE_ID, "Server", addr, "unknown");
-
             gsm.pendingChanges = true;
 
             auto& nm = NetworkManager::get();

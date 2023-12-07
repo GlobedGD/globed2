@@ -1,7 +1,7 @@
 #pragma once
 #include <defs.hpp>
 
-#include <Geode/utils/web.hpp>
+#include <net/http/client.hpp>
 
 class AddServerPopup;
 
@@ -17,8 +17,9 @@ public:
 
 protected:
     AddServerPopup* parent;
-    std::optional<geode::utils::web::SentAsyncWebRequestHandle> sentRequestHandle;
-    cocos2d::CCSequence* timeoutSequence;
+    std::optional<GHTTPRequestHandle> sentRequestHandle;
 
     bool setup(const std::string&, AddServerPopup* parent) override;
+
+    void cancelRequest();
 };
