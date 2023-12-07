@@ -88,7 +88,7 @@ void ServerTestPopup::onTimeout() {
 
 void ServerTestPopup::cancelRequest() {
     if (sentRequestHandle.has_value()) {
-        sentRequestHandle->discardResult();
+        sentRequestHandle->cancel();
         sentRequestHandle = std::nullopt;
     }
 }

@@ -262,7 +262,7 @@ void GlobedMenuLayer::requestServerList() {
 
 void GlobedMenuLayer::cancelWebRequest() {
     if (serverRequestHandle.has_value()) {
-        serverRequestHandle->discardResult();
+        serverRequestHandle->cancel();
         serverRequestHandle = std::nullopt;
         return;
     }

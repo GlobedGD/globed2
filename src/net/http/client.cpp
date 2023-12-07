@@ -46,6 +46,15 @@ static size_t writeCallback(void* contents, size_t size, size_t nmemb, std::ostr
     return totalSize;
 }
 
+static int progressCallback(GHTTPRequest* request, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
+    // if cancelled, abort the request
+    if (request->_cancelled) {
+        return 1;
+    }
+
+    return 0;
+}
+
 GHTTPResponse GHTTPClient::performRequest(GHTTPRequestHandle handle) {
     GHTTPResponse response;
 
@@ -68,10 +77,12 @@ GHTTPResponse GHTTPClient::performRequest(GHTTPRequestHandle handle) {
             break;
     }
 
+    // post fields
     if (!req.rData.empty()) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.rData.c_str());
     }
 
+    // generic stuff
     curl_easy_setopt(curl, CURLOPT_USERAGENT, req.rUserAgent.c_str());
     curl_easy_setopt(curl, CURLOPT_URL, req.rUrl.c_str());
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, req.rFollowRedirects);
@@ -91,12 +102,18 @@ GHTTPResponse GHTTPClient::performRequest(GHTTPRequestHandle handle) {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
     }
 
+    // data writing
     std::ostringstream ss;
-
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ss);
 
+    // cancellation
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progressCallback);
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, (void*)handle.handle.get());
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+
     response.resCode = curl_easy_perform(curl);
+    geode::log::debug("req finished");
     response.failed = response.resCode != CURLE_OK;
 
     if (response.failed) {

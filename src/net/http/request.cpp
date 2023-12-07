@@ -6,6 +6,11 @@ void GHTTPRequestHandle::discardResult() const {
     handle->_discard = true;
 }
 
+void GHTTPRequestHandle::cancel() const {
+    handle->_cancelled = true;
+    this->discardResult();
+}
+
 void GHTTPRequestHandle::maybeCallback(const GHTTPResponse& response) const {
     if (!handle->_discard) {
         handle->callcb(response);

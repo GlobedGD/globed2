@@ -1,5 +1,5 @@
 use std::{
-    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    net::{SocketAddr, SocketAddrV4},
     sync::{atomic::Ordering, Arc},
     time::Duration,
 };
@@ -36,7 +36,7 @@ pub struct GameServer {
     pub state: ServerState,
     pub socket: UdpSocket,
     pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
-    rate_limiters: SyncMutex<FxHashMap<Ipv4Addr, SimpleRateLimiter>>,
+    rate_limiters: SyncMutex<FxHashMap<SocketAddrV4, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
     pub central_conf: SyncMutex<GameServerBootData>,
     pub config: GameServerConfiguration,
@@ -210,12 +210,10 @@ impl GameServer {
             SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
         };
 
-        let ip_addr = peer.ip();
-
         // block packets if the client is sending too many of them
-        if self.is_rate_limited(*ip_addr) {
+        if self.is_rate_limited(peer) {
             if cfg!(debug_assertions) {
-                bail!("{ip_addr} is ratelimited");
+                bail!("{peer} is ratelimited");
             }
 
             // silently drop the packet in release mode
@@ -303,7 +301,7 @@ impl GameServer {
         }
     }
 
-    fn is_rate_limited(&'static self, addr: Ipv4Addr) -> bool {
+    fn is_rate_limited(&'static self, addr: SocketAddrV4) -> bool {
         let mut limiters = self.rate_limiters.lock();
         if let Some(limiter) = limiters.get_mut(&addr) {
             !limiter.try_tick()

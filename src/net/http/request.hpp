@@ -13,8 +13,12 @@ class GHTTPRequest;
 class GHTTPRequestHandle {
 public:
     GHTTPRequestHandle(std::shared_ptr<GHTTPRequest> handle) : handle(handle) {}
+    // waits for the request to complete (or for timeout to exceed), but doesn't call the callback.
     void discardResult() const;
-    // calls the callback if the `discardResult` hasn't been called earlier
+    // cancels the request outright, the callbacks are guaranteed to not be called after `cancel` has been called at least once.
+    // note that it is not possible to cancel a request immediately, there may be up to a one second delay until the actual cancellation happens.
+    void cancel() const;
+    // calls the callback if the `discardResult` or `cancel` hasn't been called earlier
     void maybeCallback(const GHTTPResponse& response) const;
 
     std::shared_ptr<GHTTPRequest> handle;
@@ -60,6 +64,8 @@ public:
     // Shorthand for GHTTPRequest::send(this)
     GHTTPRequestHandle send(GHTTPClient& client);
     GHTTPRequestHandle send();
+
+    util::sync::AtomicBool _cancelled = false;
 
 protected:
     friend class GHTTPClient;
