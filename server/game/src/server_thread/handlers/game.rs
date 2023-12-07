@@ -1,20 +1,15 @@
-use std::{
-    sync::{atomic::Ordering, Arc},
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
     data::packets::PacketHeader,
     server_thread::{GameServerThread, PacketHandlingError, Result},
 };
 
-use globed_shared::logger::*;
-
 use super::*;
 use crate::data::*;
 
 /// max voice throughput in kb/s
-const MAX_VOICE_THROUGHPUT: usize = 8;
+pub const MAX_VOICE_THROUGHPUT: usize = 8;
 /// max voice packet size in bytes
 pub const MAX_VOICE_PACKET_SIZE: usize = 4096;
 
@@ -238,34 +233,6 @@ impl GameServerThread {
         gs_needauth!(self);
 
         let accid = self.account_id.load(Ordering::Relaxed);
-
-        // check the throughput
-        {
-            let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as u64;
-            let last_voice_packet = self.last_voice_packet.swap(now, Ordering::Relaxed);
-            let mut passed_time = now - last_voice_packet;
-
-            if passed_time == 0 {
-                passed_time = 1;
-            }
-
-            let total_size = packet.data.data.len();
-
-            // let total_size = packet
-            //     .data
-            //     .opus_frames
-            //     .iter()
-            //     .filter_map(|opt| opt.as_ref())
-            //     .map(Vec::len)
-            //     .sum::<usize>();
-
-            let throughput = total_size / passed_time as usize; // in kb per second
-
-            if throughput > MAX_VOICE_THROUGHPUT {
-                warn!("rejecting a voice packet, throughput above the limit: {}kb/s", throughput);
-                return Ok(());
-            }
-        }
 
         let vpkt = Arc::new(VoiceBroadcastPacket {
             player_id: accid,

@@ -25,7 +25,7 @@ namespace util::debugging {
                 formatting::formatBytes(totalBytesOut),
                 formatting::formatBytes(totalBytesIn)
             );
-            geode::log::debug("Average bytes per packet: {}", formatting::formatBytes(bytesPerPacket));
+            geode::log::debug("Average bytes per packet: {}", formatting::formatBytes((uint64_t)bytesPerPacket));
 
             // sort packets by the counts
             std::vector<std::pair<packetid_t, size_t>> pc(packetCounts.begin(), packetCounts.end());
@@ -100,7 +100,7 @@ namespace util::debugging {
     [[noreturn]] void suicide(const std::source_location loc) {
         geode::log::error("suicide called at " + sourceLocation(loc) + ", terminating.");
 		geode::log::error("If you see this, something very, very bad happened.");
-        GLOBED_SUICIDE;
+        GLOBED_SUICIDE
     }
 #else
     std::string sourceLocation() {
@@ -110,7 +110,7 @@ namespace util::debugging {
     [[noreturn]] void suicide() {
         GLOBED_REQUIRE_LOG("suicide called at <unknown location>, terminating.");
         GLOBED_REQUIRE_LOG("If you see this, something very, very bad happened.");
-        GLOBED_SUICIDE;
+        GLOBED_SUICIDE
     }
 #endif
 

@@ -12,7 +12,7 @@
 */
 class VoicePlaybackManager {
 public:
-    GLOBED_SINGLETON(VoicePlaybackManager);
+    GLOBED_SINGLETON(VoicePlaybackManager)
     VoicePlaybackManager();
     ~VoicePlaybackManager();
 

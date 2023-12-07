@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 // module reexports
 pub use colored;
@@ -24,7 +24,7 @@ pub struct SpecialUser {
 #[derive(Serialize, Deserialize)]
 pub struct GameServerBootData {
     pub protocol: u16,
-    pub no_chat: HashSet<i32>,
+    pub no_chat: Vec<i32>,
     pub special_users: HashMap<i32, SpecialUser>,
     pub tps: u32,
 }

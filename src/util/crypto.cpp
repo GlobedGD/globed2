@@ -43,7 +43,7 @@ bytevector pwHash(const byte* input, size_t len) {
         crypto_pwhash_OPSLIMIT_INTERACTIVE,
         crypto_pwhash_MEMLIMIT_INTERACTIVE,
         crypto_pwhash_ALG_DEFAULT
-    ), "crypto_pwhash failed");
+    ), "crypto_pwhash failed")
 
     return out;
 }
@@ -63,7 +63,7 @@ bytevector simpleHash(const byte* input, size_t size) {
         crypto_generichash_BYTES,
         input, size,
         nullptr, 0
-    ), "crypto_generichash failed");
+    ), "crypto_generichash failed")
 
     return out;
 }
@@ -78,7 +78,7 @@ std::string simpleTOTP(const bytevector& key) {
 }
 
 std::string simpleTOTPForPeriod(const byte *key, size_t keySize, uint64_t period) {
-    CRYPTO_REQUIRE(keySize == crypto_auth_hmacsha256_KEYBYTES, "invalid key size passed to simpleTOTPForPeriod");
+    CRYPTO_REQUIRE(keySize == crypto_auth_hmacsha256_KEYBYTES, "invalid key size passed to simpleTOTPForPeriod")
 
     if constexpr (GLOBED_LITTLE_ENDIAN) {
         period = byteswap(period);
@@ -179,7 +179,7 @@ bytevector base64Decode(const byte* source, size_t size, Base64Variant variant) 
         out.data(), outMaxLen,
         reinterpret_cast<const char*>(source), size,
         nullptr, &outRealLen, nullptr, (int)variant
-    ), "invalid base64 string");
+    ), "invalid base64 string")
 
     out.resize(outRealLen); // necessary
 
@@ -224,7 +224,7 @@ bytevector hexDecode(const byte* source, size_t size) {
         out.data(), outLen,
         reinterpret_cast<const char*>(source), size,
         nullptr, &realOutLen, nullptr
-    ), "invalid hex string");
+    ), "invalid hex string")
 
     out.resize(realOutLen);
 

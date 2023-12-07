@@ -104,7 +104,7 @@ public:
 
     class Guard {
     public:
-        Guard(std::shared_ptr<T> data, std::mutex& mutex) : mutex_(mutex), data_(data) {
+        Guard(std::shared_ptr<T> data, std::mutex& mutex) : data_(data), mutex_(mutex) {
             mutex_.lock();
         }
         ~Guard() {

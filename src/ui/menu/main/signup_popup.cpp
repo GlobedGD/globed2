@@ -80,7 +80,7 @@ void GlobedSignupPopup::onChallengeCreated(int levelId, const std::string& chtok
     }
 }
 
-void GlobedSignupPopup::commentUploadFinished(int _) {
+void GlobedSignupPopup::commentUploadFinished(int) {
     GameLevelManager::get()->m_commentUploadDelegate = nullptr;
 
     this->runAction(
@@ -96,7 +96,7 @@ void GlobedSignupPopup::onDelayedChallengeCompleted() {
     this->onChallengeCompleted(storedAuthcode);
 }
 
-void GlobedSignupPopup::commentUploadFailed(int cid, CommentError e) {
+void GlobedSignupPopup::commentUploadFailed(int, CommentError e) {
     GameLevelManager::get()->m_commentUploadDelegate = nullptr;
     this->onFailure(fmt::format("Comment upload failed: <cy>error {}</c>", (int)e));
 }
@@ -155,7 +155,7 @@ void GlobedSignupPopup::onFailure(const std::string& message) {
     this->onClose(this);
 }
 
-void GlobedSignupPopup::keyDown(cocos2d::enumKeyCodes key) {
+void GlobedSignupPopup::keyDown(cocos2d::enumKeyCodes) {
     // do nothing; the popup should be impossible to close manually
 }
 

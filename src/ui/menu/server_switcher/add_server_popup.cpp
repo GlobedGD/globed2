@@ -53,7 +53,7 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
 
     // create button
     Build<ButtonSprite>::create(modifyingIndex == -1 ? "Create" : "Save", "bigFont.fnt", "GJ_button_01.png", 0.8f)
-        .intoMenuItem([this, modifyingIndex](auto) {
+        .intoMenuItem([this](auto) {
             static std::regex serverPattern("^(https?://[^\\s]+[.][^\\s]+)$");
 
             std::string name = this->nameNode->getString();

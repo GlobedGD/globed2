@@ -9,13 +9,33 @@ use crate::data::bytebufferext::*;
 
 macro_rules! impl_primitive {
     ($typ:ty,$read:ident,$write:ident) => {
-        encode_impl!($typ, buf, self, {
-            buf.$write(*self);
-        });
+        impl crate::data::Encodable for $typ {
+            #[inline(always)]
+            fn encode(&self, buf: &mut bytebuffer::ByteBuffer) {
+                buf.$write(*self);
+            }
 
-        decode_impl!($typ, buf, { buf.$read().map_err(|e| e.into()) });
+            #[inline(always)]
+            fn encode_fast(&self, buf: &mut crate::data::FastByteBuffer) {
+                buf.$write(*self);
+            }
+        }
 
-        size_calc_impl!($typ, size_of_primitives!(Self));
+        impl crate::data::Decodable for $typ {
+            #[inline(always)]
+            fn decode(buf: &mut bytebuffer::ByteBuffer) -> crate::data::DecodeResult<Self> {
+                buf.$read().map_err(|e| e.into())
+            }
+
+            #[inline(always)]
+            fn decode_from_reader(buf: &mut bytebuffer::ByteReader) -> crate::data::DecodeResult<Self> {
+                buf.$read().map_err(|e| e.into())
+            }
+        }
+
+        impl crate::data::KnownSize for $typ {
+            const ENCODED_SIZE: usize = std::mem::size_of::<$typ>();
+        }
     };
 }
 
@@ -167,12 +187,12 @@ decode_impl!(PublicKey, buf, {
     Ok(Self::from_bytes(key))
 });
 
-/* RemainderBytes - wrapper around Vec<u8> that decodes with `buf.read_remaining_bytes()` and encodes with `buf.write_bytes()` */
+/* RemainderBytes - wrapper around Box<[u8]> that decodes with `buf.read_remaining_bytes()` and encodes with `buf.write_bytes()` */
 
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct RemainderBytes {
-    data: Vec<u8>,
+    data: Box<[u8]>,
 }
 
 encode_impl!(RemainderBytes, buf, self, {
@@ -181,13 +201,27 @@ encode_impl!(RemainderBytes, buf, self, {
 
 decode_impl!(RemainderBytes, buf, {
     Ok(Self {
-        data: buf.read_remaining_bytes()?,
+        data: buf.read_remaining_bytes()?.into(),
     })
 });
 
 impl Deref for RemainderBytes {
-    type Target = Vec<u8>;
+    type Target = [u8];
     fn deref(&self) -> &Self::Target {
         &self.data
+    }
+}
+
+impl From<Vec<u8>> for RemainderBytes {
+    fn from(value: Vec<u8>) -> Self {
+        Self {
+            data: value.into_boxed_slice(),
+        }
+    }
+}
+
+impl From<Box<[u8]>> for RemainderBytes {
+    fn from(value: Box<[u8]>) -> Self {
+        Self { data: value }
     }
 }

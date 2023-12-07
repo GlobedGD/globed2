@@ -55,7 +55,7 @@ AudioStream::AudioStream() {
     auto system = vm.getSystem();
     res = system->createStream(nullptr, FMOD_OPENUSER | FMOD_2D | FMOD_LOOP_NORMAL, &exinfo, &sound);
 
-    GLOBED_REQUIRE(res == FMOD_OK, GlobedAudioManager::formatFmodError(res, "System::createStream"));
+    GLOBED_REQUIRE(res == FMOD_OK, GlobedAudioManager::formatFmodError(res, "System::createStream"))
 }
 
 AudioStream::~AudioStream() {
@@ -76,7 +76,6 @@ void AudioStream::start() {
 
 void AudioStream::writeData(const EncodedAudioFrame& frame) {
     auto& vm = GlobedAudioManager::get();
-    FMOD_RESULT res;
 
     const auto& frames = frame.getFrames();
     for (const auto& opusFrame : frames) {

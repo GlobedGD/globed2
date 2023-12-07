@@ -64,4 +64,9 @@ namespace util::rng {
     template<> double Random::generate<double>() {
         return generate(0.0, 1.0);
     }
+
+    bool Random::genRatio(uint32_t numerator, uint32_t denominator) {
+        double probability = static_cast<double>(numerator) / denominator;
+        return this->generate<double>() < probability;
+    }
 }

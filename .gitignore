@@ -63,3 +63,8 @@ server/bench-client
 server/target
 server/central-conf.json
 server/Cargo.lock
+server/game/flamegraph.svg
+server/game/perf.data
+server/game/perf.data.old
+server/game/test-flamegraph.sh
+server/game/test-bench.sh

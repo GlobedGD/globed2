@@ -4,7 +4,7 @@ use std::{
         atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering},
         Arc, OnceLock,
     },
-    time::Duration,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use parking_lot::Mutex as SyncMutex;
@@ -166,9 +166,9 @@ impl GameServerThread {
     /// fast packet sending with best-case zero heap allocation.
     /// if the packet size isn't known at compile time, calculate it and use `send_packet_fast_rough`
     async fn send_packet_fast<P: Packet + Encodable + KnownSize>(&self, packet: &P) -> Result<()> {
-        // in theory, the size is known at compile time, however for some reason,
-        // alloca manages to be significantly faster than a `[MaybeUninit<u8>; N]`.
-        // i have no idea why or how, but yeah.
+        // in theory, the size is known at compile time, so we could use a stack array here,
+        // instead of calling `send_packet_fast_rough` which uses alloca.
+        // however in practice, the performance difference is negligible, so we avoid code unnecessary code repetition.
         self.send_packet_fast_rough(packet, P::ENCODED_SIZE).await
     }
 
@@ -298,6 +298,44 @@ impl GameServerThread {
         Ok(buf)
     }
 
+    fn is_chat_packet_allowed(&self, voice: bool, len: usize) -> bool {
+        if !self.authenticated.load(Ordering::Relaxed) {
+            return false;
+        }
+
+        let accid = self.account_id.load(Ordering::Relaxed);
+        if self.game_server.chat_blocked(accid) {
+            return false;
+        }
+
+        if !voice {
+            return true;
+        }
+
+        if len > MAX_VOICE_PACKET_SIZE {
+            return false;
+        }
+
+        // check the throughput
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
+        let last_voice_packet = self.last_voice_packet.swap(now, Ordering::Relaxed);
+        let mut passed_time = now - last_voice_packet;
+
+        if passed_time == 0 {
+            passed_time = 1;
+        }
+
+        let throughput = len / passed_time as usize; // in kb per second
+
+        if throughput > MAX_VOICE_THROUGHPUT {
+            #[cfg(debug_assertions)]
+            warn!("rejecting a voice packet, throughput above the limit: {}kb/s", throughput);
+            return false;
+        }
+
+        true
+    }
+
     /// handle a message sent from the `GameServer`
     async fn handle_message(&self, message: ServerThreadMessage) -> Result<()> {
         match message {
@@ -329,20 +367,12 @@ impl GameServerThread {
         }
 
         // also for optimization, reject the voice packet immediately on certain conditions
-        if header.packet_id == VoicePacket::PACKET_ID || header.packet_id == ChatMessagePacket::PACKET_ID {
-            let accid = self.account_id.load(Ordering::Relaxed);
-            if self.game_server.chat_blocked(accid) {
-                debug!("blocking voice packet from {accid}");
-                return Ok(());
-            }
-
-            if header.packet_id == VoicePacket::PACKET_ID && message.len() > MAX_VOICE_PACKET_SIZE {
-                debug!(
-                    "blocking voice packet from {accid} because it's too big ({} bytes)",
-                    message.len()
-                );
-                return Ok(());
-            }
+        if (header.packet_id == VoicePacket::PACKET_ID || header.packet_id == ChatMessagePacket::PACKET_ID)
+            && !self.is_chat_packet_allowed(header.packet_id == VoicePacket::PACKET_ID, message.len())
+        {
+            #[cfg(debug_assertions)]
+            log::warn!("blocking text/voice packet from {}", self.account_id.load(Ordering::Relaxed));
+            return Ok(());
         }
 
         // reject cleartext credentials

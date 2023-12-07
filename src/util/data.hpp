@@ -69,4 +69,4 @@ namespace util::data {
     constexpr size_t bitsToBytes(size_t bits) {
         return (bits + 7) / 8;
     }
-};
+}

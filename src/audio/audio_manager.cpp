@@ -36,7 +36,7 @@ std::vector<AudioRecordingDevice> GlobedAudioManager::getRecordingDevices() {
     FMOD_ERR_CHECK(
         this->getSystem()->getRecordNumDrivers(&numDrivers, &numConnected),
         "System::getRecordNumDrivers"
-    );
+    )
 
     for (int i = 0; i < numDrivers; i++) {
         out.push_back(this->getRecordingDevice(i));
@@ -52,7 +52,7 @@ std::vector<AudioPlaybackDevice> GlobedAudioManager::getPlaybackDevices() {
     FMOD_ERR_CHECK(
         this->getSystem()->getNumDrivers(&numDrivers),
         "System::getNumDrivers"
-    );
+    )
 
     for (int i = 0; i < numDrivers; i++) {
         out.push_back(this->getPlaybackDevice(i));
@@ -71,7 +71,7 @@ AudioRecordingDevice GlobedAudioManager::getRecordingDevice(int deviceId) {
         &device.speakerMode,
         &device.speakerModeChannels,
         &device.driverState
-    ), "System::getRecordDriverInfo");
+    ), "System::getRecordDriverInfo")
 
     device.id = deviceId;
     device.name = std::string(name);
@@ -88,7 +88,7 @@ AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice(int deviceId) {
         &device.sampleRate,
         &device.speakerMode,
         &device.speakerModeChannels
-    ), "System::getDriverInfo");
+    ), "System::getDriverInfo")
 
     device.id = deviceId;
     device.name = std::string(name);
@@ -120,7 +120,7 @@ void GlobedAudioManager::validateDevices() {
 
 void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFrame&)> callback) {
     GLOBED_REQUIRE(this->recordDevice.id >= 0, "no recording device is set")
-    GLOBED_REQUIRE(!this->isRecording() && !recordActive, "attempting to record when already recording");
+    GLOBED_REQUIRE(!this->isRecording() && !recordActive, "attempting to record when already recording")
 
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
@@ -141,12 +141,12 @@ void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFra
     FMOD_ERR_CHECK(
         this->getSystem()->createSound(nullptr, FMOD_2D | FMOD_OPENUSER | FMOD_LOOP_NORMAL, &exinfo, &recordSound),
         "System::createSound"
-    );
+    )
 
     FMOD_ERR_CHECK(
         this->getSystem()->recordStart(recordDevice.id, recordSound, true),
         "System::recordStart"
-    );
+    )
 
     recordQueuedStop = false;
     recordQueuedHalt = false;
@@ -159,7 +159,7 @@ void GlobedAudioManager::internalStopRecording() {
     FMOD_ERR_CHECK(
         this->getSystem()->recordStop(recordDevice.id),
         "System::recordStop"
-    );
+    )
 
     // if halting instead of stopping, don't call the callback
     if (recordQueuedHalt) {
@@ -171,7 +171,7 @@ void GlobedAudioManager::internalStopRecording() {
     }
 
     // cleanup
-    recordCallback = [](const auto& _){};
+    recordCallback = [](const auto&){};
     recordLastPosition = 0;
     recordChunkSize = 0;
     recordQueue.clear();
@@ -203,7 +203,7 @@ bool GlobedAudioManager::isRecording() {
     FMOD_ERR_CHECK(
         this->getSystem()->isRecording(this->recordDevice.id, &recording),
         "System::isRecording"
-    );
+    )
 
     return recording;
 }
@@ -213,7 +213,7 @@ FMOD::Channel* GlobedAudioManager::playSound(FMOD::Sound* sound) {
     FMOD_ERR_CHECK(
         this->getSystem()->playSound(sound, nullptr, false, &ch),
         "System::playSound"
-    );
+    )
 
     return ch;
 }
@@ -237,20 +237,20 @@ FMOD::Sound* GlobedAudioManager::createSound(const float* pcm, size_t samples, i
     FMOD_ERR_CHECK(this->getSystem()->createSound(
         nullptr, FMOD_2D | FMOD_OPENUSER | FMOD_CREATESAMPLE, &exinfo, &sound),
         "System::createSound"
-    );
+    )
 
     float* data;
     FMOD_ERR_CHECK(
         sound->lock(0, exinfo.length, (void**)&data, nullptr, nullptr, nullptr),
         "Sound::lock"
-    );
+    )
 
     std::memcpy(data, pcm, exinfo.length);
 
     FMOD_ERR_CHECK(
         sound->unlock(data, nullptr, exinfo.length, 0),
         "Sound::unlock"
-    );
+    )
 
     return sound;
 }
@@ -321,7 +321,7 @@ void GlobedAudioManager::audioThreadFunc() {
         FMOD_ERR_CHECK(
             this->getSystem()->getRecordPosition(recordDevice.id, &pos),
             "System::getRecordPosition"
-        );
+        )
 
         // if we are at the same position, do nothing
         if (pos == recordLastPosition) {
@@ -333,7 +333,7 @@ void GlobedAudioManager::audioThreadFunc() {
         FMOD_ERR_CHECK(
             recordSound->lock(0, recordChunkSize, (void**)&pcmData, nullptr, &pcmLen, nullptr),
             "Sound::lock"
-        );
+        )
 
         if (pos > recordLastPosition) {
             recordQueue.writeData(pcmData + recordLastPosition, pos - recordLastPosition);
@@ -349,7 +349,7 @@ void GlobedAudioManager::audioThreadFunc() {
         FMOD_ERR_CHECK(
             recordSound->unlock(pcmData, nullptr, pcmLen, 0),
             "Sound::unlock"
-        );
+        )
 
         if (recordQueue.size() >= VOICE_TARGET_FRAMESIZE) {
             float pcmbuf[VOICE_TARGET_FRAMESIZE];

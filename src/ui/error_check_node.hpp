@@ -6,6 +6,6 @@ public:
     static ErrorCheckNode* create();
 
 protected:
-    bool init();
-    void updateErrors(float _unused);
+    bool init() override;
+    void updateErrors(float dt);
 };

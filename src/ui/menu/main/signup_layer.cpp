@@ -22,7 +22,7 @@ bool GlobedSignupLayer::init() {
     this->setContentSize(listLayer->getScaledContentSize());
 
     Build<ButtonSprite>::create("Login", "goldFont.fnt", "GJ_button_01.png", 0.8f)
-        .intoMenuItem([this](auto) {
+        .intoMenuItem([](auto) {
             if (!GlobedSettings::get().getFlag("seen-signup-notice")) {
                 geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "Ok", [](auto, bool agreed){
                     if (agreed) {

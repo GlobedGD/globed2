@@ -33,7 +33,7 @@ NetworkManager::NetworkManager() {
         this->send(LoginPacket::create(gddata->accountId, gddata->accountName, authtoken));
     });
 
-    addBuiltinListener<KeepaliveResponsePacket>([this](auto packet) {
+    addBuiltinListener<KeepaliveResponsePacket>([](auto packet) {
         GameServerManager::get().finishKeepalive(packet->playerCount);
     });
 
@@ -54,7 +54,7 @@ NetworkManager::NetworkManager() {
         this->disconnect(true);
     });
 
-    addBuiltinListener<ServerNoticePacket>([this](auto packet) {
+    addBuiltinListener<ServerNoticePacket>([](auto packet) {
         ErrorQueues::get().notice(packet->message);
     });
 

@@ -7,13 +7,13 @@
 using namespace util::data;
 
 SecretBox::SecretBox(bytevector key) {
-    CRYPTO_REQUIRE(key.size() == crypto_secretbox_KEYBYTES, "provided key is too long or too short for SecretBox");
+    CRYPTO_REQUIRE(key.size() == crypto_secretbox_KEYBYTES, "provided key is too long or too short for SecretBox")
 
     this->key = reinterpret_cast<byte*>(sodium_malloc(
         crypto_secretbox_KEYBYTES
     ));
 
-    CRYPTO_REQUIRE(this->key != nullptr, "sodium_malloc returned nullptr");
+    CRYPTO_REQUIRE(this->key != nullptr, "sodium_malloc returned nullptr")
 
     std::memcpy(this->key, key.data(), crypto_secretbox_KEYBYTES);
 }
@@ -42,7 +42,7 @@ size_t SecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
     util::crypto::secureRandom(nonce, NONCE_LEN);
 
     byte* ciphertext = dest + NONCE_LEN;
-    CRYPTO_ERR_CHECK(crypto_secretbox_easy(ciphertext, src, size, nonce, key), "crypto_secretbox_easy failed");
+    CRYPTO_ERR_CHECK(crypto_secretbox_easy(ciphertext, src, size, nonce, key), "crypto_secretbox_easy failed")
 
     // prepend the nonce
     std::memcpy(dest, nonce, NONCE_LEN);
@@ -51,7 +51,7 @@ size_t SecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
 }
 
 size_t SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
-    CRYPTO_REQUIRE(size >= PREFIX_LEN, "message is too short");
+    CRYPTO_REQUIRE(size >= PREFIX_LEN, "message is too short")
 
     const byte* nonce = src;
     const byte* ciphertext = src + NONCE_LEN;
@@ -59,13 +59,13 @@ size_t SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
     size_t plaintextLength = size - PREFIX_LEN;
     size_t ciphertextLength = size - NONCE_LEN;
 
-    CRYPTO_ERR_CHECK(crypto_secretbox_open_easy(dest, ciphertext, ciphertextLength, nonce, key), "crypto_secretbox_open_easy failed");
+    CRYPTO_ERR_CHECK(crypto_secretbox_open_easy(dest, ciphertext, ciphertextLength, nonce, key), "crypto_secretbox_open_easy failed")
 
     return plaintextLength;
 }
 
 void SecretBox::setKey(const util::data::bytevector& src) {
-    GLOBED_REQUIRE(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for SecretBox");
+    GLOBED_REQUIRE(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for SecretBox")
     setKey(src.data());
 }
 

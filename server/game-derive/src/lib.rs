@@ -270,7 +270,7 @@ struct PacketAttributes {
     encrypted: bool,
 }
 
-/// Implements `Packet`, `PacketMetadata` and the function `header() -> PacketHeader` for the given struct.
+/// Implements `Packet`, `PacketMetadata` and the function `const fn header() -> PacketHeader` for the given struct.
 /// You must also pass additional attributes with `#[packet]`, specifically packet ID and whether the packet should be encrypted.
 /// Example:
 /// ```rust

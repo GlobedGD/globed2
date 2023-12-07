@@ -1,9 +1,6 @@
 use std::fmt::Display;
 
-use crate::data::{
-    packets::{PacketHeader, PacketMetadata},
-    types::cocos,
-};
+use crate::data::packets::{PacketHeader, PacketMetadata};
 use bytebuffer::{ByteBuffer, ByteReader};
 
 #[derive(Debug)]
@@ -132,18 +129,6 @@ macro_rules! size_calc_impl {
     };
 }
 
-/// Simple way of getting total encoded size of given primitives.
-///
-/// Example usage:
-/// ```rust
-/// assert_eq!(16, size_of_primitives!(u64, i32, i16, i8, bool));
-/// ```
-macro_rules! size_of_primitives {
-    ($($t:ty),+ $(,)?) => {{
-        0 $(+ std::mem::size_of::<$t>())*
-    }};
-}
-
 /// Simple way of getting total (maximum) encoded size of given types that implement `Encodable` and `KnownSize`
 ///
 /// Example usage:
@@ -159,7 +144,6 @@ macro_rules! size_of_types {
 pub(crate) use decode_impl;
 pub(crate) use encode_impl;
 pub(crate) use size_calc_impl;
-pub(crate) use size_of_primitives;
 pub(crate) use size_of_types;
 
 /* ByteBuffer extensions */
@@ -187,10 +171,6 @@ pub trait ByteBufferExtWrite {
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
 
     fn write_packet_header<T: PacketMetadata>(&mut self);
-
-    fn write_color3(&mut self, val: cocos::Color3B);
-    fn write_color4(&mut self, val: cocos::Color4B);
-    fn write_point(&mut self, val: cocos::Point);
 }
 
 pub trait ByteBufferExtRead {
@@ -214,20 +194,18 @@ pub trait ByteBufferExtRead {
     fn read_value_vec<T: Decodable>(&mut self) -> DecodeResult<Vec<T>>;
 
     fn read_packet_header(&mut self) -> DecodeResult<PacketHeader>;
-
-    fn read_color3(&mut self) -> DecodeResult<cocos::Color3B>;
-    fn read_color4(&mut self) -> DecodeResult<cocos::Color4B>;
-    fn read_point(&mut self) -> DecodeResult<cocos::Point>;
 }
 
 /// Buffer for encoding that does zero heap allocation but also has limited functionality.
 /// It will panic on writes if there isn't enough space.
+/// On average, is at least 5x faster than a regular `ByteBuffer`.
 pub struct FastByteBuffer<'a> {
     pos: usize,
     len: usize,
     data: &'a mut [u8],
 }
 
+#[allow(clippy::inline_always)]
 impl<'a> FastByteBuffer<'a> {
     /// Create a new `FastByteBuffer` given this mutable slice
     pub fn new(src: &'a mut [u8]) -> Self {
@@ -242,71 +220,88 @@ impl<'a> FastByteBuffer<'a> {
         Self { pos: 0, len, data: src }
     }
 
+    #[inline(always)]
     pub fn write_u8(&mut self, val: u8) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_u16(&mut self, val: u16) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_u32(&mut self, val: u32) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_u64(&mut self, val: u64) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_i8(&mut self, val: i8) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_i16(&mut self, val: i16) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_i32(&mut self, val: i32) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_i64(&mut self, val: i64) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_f32(&mut self, val: f32) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_f64(&mut self, val: f64) {
         self.internal_write(&val.to_be_bytes());
     }
 
+    #[inline(always)]
     pub fn write_bytes(&mut self, data: &[u8]) {
         self.internal_write(data);
     }
 
+    #[inline(always)]
     pub fn write_string(&mut self, val: &str) {
         self.write_u32(val.len() as u32);
         self.write_bytes(val.as_bytes());
     }
 
+    #[inline(always)]
     pub fn as_bytes(&'a mut self) -> &'a [u8] {
         &self.data[..self.len]
     }
 
+    #[inline(always)]
     pub fn len(&self) -> usize {
         self.len
     }
 
+    #[inline(always)]
     pub fn set_pos(&mut self, pos: usize) {
         self.pos = pos;
     }
 
+    #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
+    #[inline(always)]
     pub fn capacity(&self) -> usize {
         self.data.len()
     }
@@ -373,18 +368,6 @@ macro_rules! impl_extwrite {
         fn write_packet_header<T: PacketMetadata>(&mut self) {
             self.write_value(&PacketHeader::from_packet::<T>());
         }
-
-        fn write_color3(&mut self, val: cocos::Color3B) {
-            self.write_value(&val);
-        }
-
-        fn write_color4(&mut self, val: cocos::Color4B) {
-            self.write_value(&val);
-        }
-
-        fn write_point(&mut self, val: cocos::Point) {
-            self.write_value(&val);
-        }
     };
 }
 
@@ -403,7 +386,8 @@ macro_rules! impl_extread {
             let remainder = self.len() - self.get_rpos();
             let mut data = Vec::with_capacity(remainder);
 
-            // safety: we don't allow to read any unitialized memory, as we trust the return value of `Read::read`
+            // safety: we use `Vec::set_len` appropriately so the caller won't be able to read uninitialized data.
+            // we could avoid unsafe and use io::Read::read_to_end here, but that is significantly slower.
             unsafe {
                 let ptr = data.as_mut_ptr();
                 let mut slice = std::slice::from_raw_parts_mut(ptr, remainder);
@@ -440,18 +424,6 @@ macro_rules! impl_extread {
         }
 
         fn read_packet_header(&mut self) -> DecodeResult<PacketHeader> {
-            self.read_value()
-        }
-
-        fn read_color3(&mut self) -> DecodeResult<cocos::Color3B> {
-            self.read_value()
-        }
-
-        fn read_color4(&mut self) -> DecodeResult<cocos::Color4B> {
-            self.read_value()
-        }
-
-        fn read_point(&mut self) -> DecodeResult<cocos::Point> {
             self.read_value()
         }
     };

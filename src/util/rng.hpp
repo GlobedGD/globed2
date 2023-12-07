@@ -20,6 +20,9 @@ namespace util::rng {
         template <typename T>
         T generate(T min, T max);
 
+        // Has a `(numerator/denominator)` chance of returning true.
+        bool genRatio(uint32_t numerator, uint32_t denominator);
+
     private:
         std::mt19937_64 engine;
     };

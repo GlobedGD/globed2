@@ -17,7 +17,7 @@
 )]
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     error::Error,
     net::{IpAddr, Ipv4Addr, SocketAddr},
 };
@@ -161,7 +161,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         warn!("Starting in standalone mode, authentication is disabled");
         GameServerBootData {
             protocol: PROTOCOL_VERSION,
-            no_chat: HashSet::new(),
+            no_chat: Vec::new(),
             special_users: HashMap::new(),
             tps: 30,
         }

@@ -25,7 +25,6 @@ void GlobedAccountManager::initialize(const std::string& name, int accountId, co
 void GlobedAccountManager::autoInitialize() {
     auto* gjam = GJAccountManager::get();
     auto& csm = CentralServerManager::get();
-    auto& gsm = GameServerManager::get();
 
     std::string activeCentralUrl = "";
 

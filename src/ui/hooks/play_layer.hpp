@@ -60,7 +60,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         // is to only do it when the state actually changed. like we got a new best or
         // the attempt count increased by quite a bit.
 
-        auto scheduler = CCScheduler::get();
         this->rescheduleSender();
 
         this->setupCustomKeybinds();
@@ -94,14 +93,14 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     void setupEventListeners() {
         auto& nm = NetworkManager::get();
 
-        nm.addListener<PlayerProfilesPacket>([this](PlayerProfilesPacket* packet) {
+        nm.addListener<PlayerProfilesPacket>([](PlayerProfilesPacket* packet) {
             auto& pcm = ProfileCacheManager::get();
             for (auto& player : packet->data) {
                 pcm.insert(player);
             }
         });
 
-        nm.addListener<LevelDataPacket>([this](LevelDataPacket* packet){
+        nm.addListener<LevelDataPacket>([](LevelDataPacket* packet){
             log::debug("Recv level data, {} players", packet->players.size());
         });
 
@@ -118,7 +117,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             }
         });
 
-        nm.addListener<PlayerMetadataPacket>([this](PlayerMetadataPacket* packet) {
+        nm.addListener<PlayerMetadataPacket>([](PlayerMetadataPacket*) {
             // TODO handle player metadata
         });
     }
@@ -176,7 +175,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     /* periodical selectors */
 
     // selSendPlayerData - runs 30 times per second
-    void selSendPlayerData(float _dt) {
+    void selSendPlayerData(float) {
         if (!this->established()) return;
         if (!this->isCurrentPlayLayer()) return;
         if (!this->accountForSpeedhack()) return;
@@ -218,7 +217,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     bool accountForSpeedhack() {
         auto* sched = CCScheduler::get();
         auto ts = sched->getTimeScale();
-        if (ts != m_fields->lastKnownTimeScale) {
+        if (util::math::equal(ts, m_fields->lastKnownTimeScale)) {
             sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this);
             this->rescheduleSender();
         }

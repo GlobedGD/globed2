@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     fs::{File, OpenOptions},
     path::Path,
 };
@@ -47,8 +47,8 @@ fn default_userlist_mode() -> UserlistMode {
     UserlistMode::None
 }
 
-fn default_userlist() -> HashSet<i32> {
-    HashSet::new()
+fn default_userlist() -> Vec<i32> {
+    Vec::new()
 }
 
 fn default_tps() -> u32 {
@@ -121,9 +121,9 @@ pub struct ServerConfig {
     #[serde(default = "default_userlist_mode")]
     pub userlist_mode: UserlistMode,
     #[serde(default = "default_userlist")]
-    pub userlist: HashSet<i32>,
+    pub userlist: Vec<i32>,
     #[serde(default = "default_userlist")]
-    pub no_chat_list: HashSet<i32>,
+    pub no_chat_list: Vec<i32>,
 
     // game stuff
     #[serde(default = "default_tps")]

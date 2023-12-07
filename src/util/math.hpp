@@ -5,6 +5,18 @@ namespace util::math {
     constexpr float FLOAT_ERROR_MARGIN = 0.002f;
     constexpr double DOUBLE_ERROR_MARGIN = 0.0001;
 
+    // if `val` is NaN, return a signaling NaN, otherwise return `val` unchanged
+    float snan(float val);
+    // returns a signaling NaN
+    float snan();
+
+    // Returns `true` if all passed numbers are valid. Returns `false` if at least one of them is NaN
+    template <typename... Args>
+    requires (std::floating_point<Args> && ...)
+    bool checkNotNaN(Args... args) {
+        return ((!std::isnan(args)) && ...);
+    }
+
     // `val1` == `val2`
     bool equal(float val1, float val2, float errorMargin = FLOAT_ERROR_MARGIN);
     // `val1` == `val2`

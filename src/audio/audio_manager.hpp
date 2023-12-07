@@ -40,7 +40,7 @@ constexpr size_t VOICE_TARGET_FRAMESIZE = VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_
 // This class is not thread safe. At all.
 class GlobedAudioManager {
 public:
-    GLOBED_SINGLETON(GlobedAudioManager);
+    GLOBED_SINGLETON(GlobedAudioManager)
     GlobedAudioManager();
     ~GlobedAudioManager();
 

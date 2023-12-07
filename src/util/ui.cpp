@@ -21,7 +21,7 @@ namespace util::ui {
             .parent(layer);
     }
 
-    void addBackButton(CCNode* parent, CCMenu* menu, std::function<void()> callback) {
+    void addBackButton(CCMenu* menu, std::function<void()> callback) {
         auto windowSize = CCDirector::get()->getWinSize();
         Build<CCSprite>::createSpriteName("GJ_arrow_01_001.png")
             .intoMenuItem([=](CCObject*) {

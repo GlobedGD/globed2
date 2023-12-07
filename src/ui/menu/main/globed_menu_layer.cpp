@@ -62,7 +62,7 @@ bool GlobedMenuLayer::init() {
 
     Build<CCSprite>::createSpriteName("miniSkull_001.png")
         .scale(1.2f)
-        .intoMenuItem([this](auto) {
+        .intoMenuItem([](auto) {
             // this->requestServerList();
             if (auto* popup = PlayerListPopup::create()) {
                 popup->m_noElasticity = true;
@@ -76,7 +76,7 @@ bool GlobedMenuLayer::init() {
 
     Build<CCSprite>::createSpriteName("d_skull01_001.png")
         .scale(1.2f)
-        .intoMenuItem([this](auto) {
+        .intoMenuItem([](auto) {
             GlobedAccountManager::get().clearAuthKey();
         })
         .id("btn-clear-authtoken"_spr)
@@ -86,7 +86,7 @@ bool GlobedMenuLayer::init() {
 
     Build<CCSprite>::createSpriteName("gjHand_05_001.png")
         .scale(1.2f)
-        .intoMenuItem([this](auto) {
+        .intoMenuItem([](auto) {
             if (auto* popup = ServerSwitcherPopup::create()) {
                 popup->m_noElasticity = true;
                 popup->show();
@@ -105,7 +105,7 @@ bool GlobedMenuLayer::init() {
     auto menu = CCMenu::create();
     this->addChild(menu);
 
-    util::ui::addBackButton(this, menu, util::ui::navigateBack);
+    util::ui::addBackButton(menu, util::ui::navigateBack);
 
     this->setKeyboardEnabled(true);
     this->setKeypadEnabled(true);
@@ -141,7 +141,7 @@ CCArray* GlobedMenuLayer::createServerList() {
 
     auto activeServer = gsm.active();
 
-    for (const auto [serverId, server] : gsm.getAllServers()) {
+    for (const auto& [serverId, server] : gsm.getAllServers()) {
         bool active = authenticated && serverId == activeServer;
         auto cell = ServerListCell::create(server, active);
         ret->addObject(cell);
@@ -150,9 +150,8 @@ CCArray* GlobedMenuLayer::createServerList() {
     return ret;
 }
 
-void GlobedMenuLayer::refreshServerList(float _) {
+void GlobedMenuLayer::refreshServerList(float) {
     auto& am = GlobedAccountManager::get();
-    auto& nm = NetworkManager::get();
     auto& csm = CentralServerManager::get();
 
     // if we do not have a session token from the central server, and are not in a standalone server, don't show game servers
@@ -273,7 +272,7 @@ void GlobedMenuLayer::keyBackClicked() {
     util::ui::navigateBack();
 }
 
-void GlobedMenuLayer::pingServers(float _) {
+void GlobedMenuLayer::pingServers(float) {
     NetworkManager::get().taskPingServers();
 }
 

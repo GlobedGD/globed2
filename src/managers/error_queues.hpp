@@ -11,7 +11,7 @@
 */
 
 class ErrorQueues {
-    GLOBED_SINGLETON(ErrorQueues);
+    GLOBED_SINGLETON(ErrorQueues)
     ErrorQueues();
 
     void warn(const std::string& message, bool print = true);

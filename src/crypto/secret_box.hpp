@@ -8,7 +8,7 @@
 * uses a single secret key (or derives it from a passphrase) for data encryption.
 */
 
-class SecretBox : public BaseCryptoBox {
+class SecretBox final : public BaseCryptoBox {
 public:
     static const size_t NONCE_LEN = crypto_secretbox_NONCEBYTES;
     static const size_t MAC_LEN = crypto_secretbox_MACBYTES;
@@ -21,12 +21,12 @@ public:
 
     static SecretBox withPassword(const std::string& pw);
 
-    constexpr size_t nonceLength();
-    constexpr size_t macLength();
+    constexpr size_t nonceLength() override;
+    constexpr size_t macLength() override;
     using BaseCryptoBox::prefixLength;
 
-    size_t encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
-    size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
+    size_t encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) override;
+    size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) override;
 
     void setKey(const util::data::bytevector& src);
     void setKey(const util::data::byte* src);

@@ -14,9 +14,7 @@ CentralServerManager::CentralServerManager() {
     if (empty) {
         this->addServer(CentralServer {
             .name = "Main server",
-            // .url = "https://globed.dankmeme.dev"
-            // TODO prod ^
-            .url = "http://127.0.0.1:41000"
+            .url = "https://globed.dankmeme.dev"
         });
     }
 

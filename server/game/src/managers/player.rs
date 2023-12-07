@@ -1,4 +1,4 @@
-use rustc_hash::{FxHashMap, FxHashSet};
+use nohash_hasher::IntMap;
 
 use crate::data::{
     types::{AssociatedPlayerData, PlayerData},
@@ -12,15 +12,15 @@ pub struct PlayerEntry {
 }
 
 pub struct PlayerManager {
-    players: FxHashMap<i32, PlayerEntry>,   // player id : associated data
-    levels: FxHashMap<i32, FxHashSet<i32>>, // level id : [player id]
+    players: IntMap<i32, PlayerEntry>, // player id : associated data
+    levels: IntMap<i32, Vec<i32>>,     // level id : [player id]
 }
 
 impl PlayerManager {
     pub fn new() -> Self {
         Self {
-            players: FxHashMap::default(),
-            levels: FxHashMap::default(),
+            players: IntMap::default(),
+            levels: IntMap::default(),
         }
     }
 
@@ -57,16 +57,16 @@ impl PlayerManager {
     }
 
     /// get a reference to a list of account IDs of players on a level given its ID
-    pub fn get_level(&self, level_id: i32) -> Option<&FxHashSet<i32>> {
+    pub fn get_level(&self, level_id: i32) -> Option<&Vec<i32>> {
         self.levels.get(&level_id)
     }
 
     /// get the amount of players on a level given its ID
     pub fn get_player_count_on_level(&self, level_id: i32) -> Option<usize> {
-        self.levels.get(&level_id).map(FxHashSet::len)
+        self.levels.get(&level_id).map(Vec::len)
     }
 
-    /// run a function `f` on each player on a level given its ID, with additional data (wink wink it's always gonna be `&mut FastByteBuffer`)
+    /// run a function `f` on each player on a level given its ID, with possibility to pass additional data
     pub fn for_each_player_on_level<F, A>(&self, level_id: i32, f: F, additional: &mut A) -> usize
     where
         F: Fn(&PlayerEntry, usize, &mut A) -> bool,
@@ -82,14 +82,19 @@ impl PlayerManager {
 
     /// add a player to a level given a level ID and an account ID
     pub fn add_to_level(&mut self, level_id: i32, account_id: i32) {
-        let players = self.levels.entry(level_id).or_default();
-        players.insert(account_id);
+        let players = self.levels.entry(level_id).or_insert_with(|| Vec::with_capacity(128));
+        if !players.contains(&account_id) {
+            players.push(account_id);
+        }
     }
 
     /// remove a player from a level given a level ID and an account ID
     pub fn remove_from_level(&mut self, level_id: i32, account_id: i32) {
         let should_remove_level = self.levels.get_mut(&level_id).is_some_and(|level| {
-            level.remove(&account_id);
+            if let Some(index) = level.iter().position(|&x| x == account_id) {
+                level.remove(index);
+            }
+
             level.is_empty()
         });
 

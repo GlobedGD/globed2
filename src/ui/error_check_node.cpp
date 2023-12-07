@@ -12,7 +12,7 @@ bool ErrorCheckNode::init() {
     return true;
 }
 
-void ErrorCheckNode::updateErrors(float _unused) {
+void ErrorCheckNode::updateErrors(float) {
     auto* currentScene = CCDirector::get()->getRunningScene();
     if (!currentScene || !currentScene->getChildren() || currentScene->getChildrenCount() == 0) return;
 

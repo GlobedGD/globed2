@@ -50,7 +50,7 @@ class $modify(HookedMenuLayer, MenuLayer) {
         menu->updateLayout();
     }
 
-    void maybeUpdateButton(float _) {
+    void maybeUpdateButton(float) {
         bool authenticated = NetworkManager::get().established();
         if (authenticated != m_fields->btnActive) {
             m_fields->btnActive = authenticated;

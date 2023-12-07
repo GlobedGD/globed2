@@ -3,7 +3,7 @@
 
 #include <sodium.h>
 
-class CryptoBox : public BaseCryptoBox {
+class CryptoBox final : public BaseCryptoBox {
 public:
 
 // XSalsa20 is theoretically slower and less secure, but still possible to use by defining GLOBED_USE_XSALSA20
@@ -47,11 +47,11 @@ public:
     // This precomputes the shared key and stores it for use in all future operations.
     void setPeerKey(util::data::byte* src);
 
-    constexpr size_t nonceLength();
-    constexpr size_t macLength();
+    constexpr size_t nonceLength() override;
+    constexpr size_t macLength() override;
 
-    size_t encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
-    size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
+    size_t encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) override;
+    size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) override;
 
 private: // nuh uh
     util::data::byte* memBasePtr = nullptr;

@@ -31,10 +31,10 @@ namespace util::net {
 
     std::string lastErrorString(int code) {
 #ifdef GLOBED_WIN32
-        char *s = NULL;
+        char *s = nullptr;
         if (FormatMessageA(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&s, 0, NULL)
+                nullptr, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&s, 0, nullptr)
         == 0) {
             // some errors like WSA 10038 can raise ERROR_MR_MID_NOT_FOUND (0x13D)
             // which basically means the formatted message txt doesn't exist in the OS.

@@ -6,7 +6,7 @@
 
 // Besides `getCached()`, this class is not thread safe (reason: Mod::getSavedValue/Mod::setSavedValue)
 class GlobedSettings {
-    GLOBED_SINGLETON(GlobedSettings);
+    GLOBED_SINGLETON(GlobedSettings)
     GlobedSettings();
 
     struct CachedSettings;

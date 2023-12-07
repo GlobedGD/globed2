@@ -13,7 +13,7 @@
 
 /* windows includes */
 
-# include <ws2tcpip.h>
+# include <WS2tcpip.h>
 
 #elif defined(GLOBED_UNIX) // ^ windows | v unix
 

@@ -26,7 +26,7 @@ bool UdpSocket::connect(const std::string& serverIp, unsigned short port) {
 }
 
 int UdpSocket::send(const char* data, unsigned int dataSize) {
-    GLOBED_REQUIRE(connected, "attempting to call UdpSocket::send on a disconnected socket");
+    GLOBED_REQUIRE(connected, "attempting to call UdpSocket::send on a disconnected socket")
 
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
 

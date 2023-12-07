@@ -5,6 +5,6 @@
 
 namespace util::ui {
     void addBackground(cocos2d::CCNode* layer);
-    void addBackButton(cocos2d::CCNode* parent, cocos2d::CCMenu* menu, std::function<void()> callback);
+    void addBackButton(cocos2d::CCMenu* menu, std::function<void()> callback);
     void navigateBack();
 }
