@@ -19,9 +19,17 @@ void ErrorCheckNode::updateErrors(float) {
     auto* currentLayer = currentScene->getChildren()->objectAtIndex(0);
 
     // do nothing during transitions or loading
+    // TODO mac issues..
+    /*
+    ld: undefined symbols
+      typeinfo for cocos2d::CCTransitionScene, referenced from:
+    */
+    
+#ifndef GLOBED_MAC
     if (typeinfo_cast<CCTransitionScene*>(currentScene) || typeinfo_cast<LoadingLayer*>(currentLayer)) {
         return;
     }
+#endif
 
     auto warnings = ErrorQueues::get().getWarnings();
 

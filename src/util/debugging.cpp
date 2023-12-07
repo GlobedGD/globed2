@@ -108,8 +108,8 @@ namespace util::debugging {
     }
 
     [[noreturn]] void suicide() {
-        GLOBED_REQUIRE_LOG("suicide called at <unknown location>, terminating.");
-        GLOBED_REQUIRE_LOG("If you see this, something very, very bad happened.");
+        geode::log::error("suicide called at <unknown location>, terminating.");
+        geode::log::error("If you see this, something very, very bad happened.");
         GLOBED_SUICIDE
     }
 #endif

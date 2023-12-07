@@ -24,15 +24,6 @@ bool PlayerListPopup::setup() {
 
     nm.send(RequestPlayerListPacket::create());
 
-    // show an error popup if no response after 2 seconds
-    timeoutSequence = CCSequence::create(
-        CCDelayTime::create(2.0f),
-        CCCallFunc::create(this, callfunc_selector(PlayerListPopup::onLoadTimeout)),
-        nullptr
-    );
-
-    this->runAction(timeoutSequence);
-
     auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
     listLayer = GJCommentListLayer::create(listview, "", {192, 114, 62, 255}, LIST_WIDTH, LIST_HEIGHT, false);
 
@@ -49,11 +40,6 @@ bool PlayerListPopup::setup() {
 }
 
 void PlayerListPopup::onLoaded() {
-    if (timeoutSequence) {
-        this->stopAction(timeoutSequence);
-        timeoutSequence = nullptr;
-    }
-
     this->removeLoadingCircle();
 
     auto cells = CCArray::create();
@@ -67,11 +53,6 @@ void PlayerListPopup::onLoaded() {
     listLayer->m_list = Build<ListView>::create(cells, PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .parent(listLayer)
         .collect();
-}
-
-void PlayerListPopup::onLoadTimeout() {
-    ErrorQueues::get().error("Failed to fetch the player list! This is most likely a server-side bug or a problem with your connection!");
-    this->removeLoadingCircle();
 }
 
 void PlayerListPopup::removeLoadingCircle() {

@@ -50,12 +50,15 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # libcurl ssl support
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    # on windows we just use schannel, no extra setup
+    # on windows we just use schannel (built into windows)
     set(CURL_USE_SCHANNEL ON)
     set(CURL_USE_OPENSSL OFF)
+elseif(APPLE)
+    # on mac we use sectransp (built into mac)
+    set(CURL_USE_SECTRANP ON)
+    set(CURL_USE_OPENSSL OFF)
 elseif(ANDROID)
-    # on android we use geode provided openssl library and our own headers
-    set(CURL_USE_SCHANNEL OFF)
+    # on android we use geode provided openssl library and our own headers (see android-build.md)
     set(CURL_USE_OPENSSL ON)
     set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/libs/openssl")
     set(OPENSSL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/openssl/include")

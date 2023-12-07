@@ -72,8 +72,10 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         if (!m_fields->globedReady) return;
 
+#if GLOBED_HAS_VOICE
         GlobedAudioManager::get().haltRecording();
         VoicePlaybackManager::get().stopAllStreams();
+#endif // GLOBED_VOICE_SUPPORT
 
         auto& nm = NetworkManager::get();
 
@@ -104,7 +106,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             log::debug("Recv level data, {} players", packet->players.size());
         });
 
+
         nm.addListener<VoiceBroadcastPacket>([this](VoiceBroadcastPacket* packet) {
+#if GLOBED_VOICE_SUPPORT
             if (this->m_fields->deafened) return;
 
             // TODO client side blocking and stuff..
@@ -115,6 +119,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             } catch (const std::exception& e) {
                 ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + e.what());
             }
+#endif // GLOBED_VOICE_SUPPORT
         });
 
         nm.addListener<PlayerMetadataPacket>([](PlayerMetadataPacket*) {
@@ -123,7 +128,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     void setupCustomKeybinds() {
-#if GLOBED_HAS_KEYBINDS
+#if GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
         // TODO let the user pick recording device somehow
         // TODO this breaks for impostor playlayers, if they won't be fixed in 2.2 then do a good old workaround
         this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
@@ -169,7 +174,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
             return ListenerResult::Propagate;
         }, "voice-deafen"_spr);
-#endif // GLOBED_HAS_KEYBINDS
+#endif // GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
     }
 
     /* periodical selectors */
@@ -196,15 +201,19 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     void handlePlayerJoin(int playerId) {
+#if GLOBED_VOICE_SUPPORT
         try {
             VoicePlaybackManager::get().prepareStream(playerId);
         } catch (const std::exception& e) {
             ErrorQueues::get().error(std::string("Failed to prepare audio stream: ") + e.what());
         }
+#endif // GLOBED_VOICE_SUPPORT
     }
 
     void handlePlayerLeave(int playerId) {
+#if GLOBED_VOICE_SUPPORT
         VoicePlaybackManager::get().removeStream(playerId);
+#endif // GLOBED_VOICE_SUPPORT
     }
 
     // With speedhack enabled, all scheduled selectors will run more often than they are supposed to.

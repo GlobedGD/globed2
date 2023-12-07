@@ -46,7 +46,7 @@ bool ServerTestPopup::setup(const std::string& url, AddServerPopup* parent) {
             } else {
                 auto response = resp.response;
                 int protocol = 0;
-#ifdef GLOBED_ANDROID
+#ifdef GLOBED_UNIX
                 // this is such a meme im crying
                 std::istringstream iss(response);
                 iss >> protocol;

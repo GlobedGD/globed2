@@ -21,8 +21,12 @@ void GameServerManager::addServer(const std::string& serverId, const std::string
         .playerCount = 0,
     };
 
+    GameServerManager::GameServerData gsdata = {
+        .server = server
+    };
+
     auto data = _data.lock();
-    data->servers.insert(std::make_pair(serverId, server));
+    data->servers[serverId] = gsdata;
 }
 
 void GameServerManager::clear() {

@@ -68,10 +68,14 @@ void GlobedSignupPopup::onChallengeCreated(int levelId, const std::string& chtok
 
     auto hash = util::crypto::simpleHash(chtoken);
     auto authcode = util::crypto::simpleTOTP(hash);
+    // TODO mac no worky yet, will have to find the symbols later
 
+#ifndef GLOBED_MAC
     if (levelId == -1) {
+#endif // GLOBED_MAC
         // skip posting the comment, server has it disabled
         this->onChallengeCompleted(authcode);
+#ifndef GLOBED_MAC
     } else {
         statusMessage->setString("Uploading results..");
         storedAuthcode = authcode;
@@ -79,6 +83,7 @@ void GlobedSignupPopup::onChallengeCreated(int levelId, const std::string& chtok
         GameLevelManager::get()->m_commentUploadDelegate = this;
         GameLevelManager::get()->uploadLevelComment(levelId, authcode + " ## globed verification test, if you see this you can manually delete the comment.", 0);
     }
+#endif // GLOBED_MAC
 }
 
 void GlobedSignupPopup::commentUploadFinished(int) {
@@ -139,10 +144,12 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
                 am.storeAuthKey(util::crypto::simpleHash(authkey));
                 this->onSuccess();
 
+#ifndef GLOBED_MAC
                 // delete the comment to cleanup
                 if (commentId != "none") {
                     GameLevelManager::get()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
                 }
+#endif // GLOBED_MAC
             }
         })
         .send();
