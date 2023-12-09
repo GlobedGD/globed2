@@ -2,8 +2,6 @@
 
 #include <util/time.hpp>
 
-GLOBED_SINGLETON_DEF(GHTTPClient)
-
 GHTTPClient::GHTTPClient() {
     curl = curl_easy_init();
     GLOBED_REQUIRE(curl != nullptr, "cURL failed to initialize")
@@ -113,7 +111,6 @@ GHTTPResponse GHTTPClient::performRequest(GHTTPRequestHandle handle) {
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
 
     response.resCode = curl_easy_perform(curl);
-    geode::log::debug("req finished");
     response.failed = response.resCode != CURLE_OK;
 
     if (response.failed) {

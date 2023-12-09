@@ -1,10 +1,10 @@
-#include "audio_stream.hpp"
+#include "stream.hpp"
 
 #if GLOBED_VOICE_SUPPORT
 
-#include "audio_manager.hpp"
+#include "manager.hpp"
 
-AudioStream::AudioStream() {
+AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
     // TODO figure it out in 2.2. the size is erroneously calculated as 144 on android.
@@ -75,14 +75,12 @@ void AudioStream::start() {
 }
 
 void AudioStream::writeData(const EncodedAudioFrame& frame) {
-    auto& vm = GlobedAudioManager::get();
-
     const auto& frames = frame.getFrames();
     for (const auto& opusFrame : frames) {
-        auto decodedFrame = vm.decodeSound(opusFrame);
-
+        auto decodedFrame = decoder.decode(opusFrame);
         queue.writeData(decodedFrame);
-        OpusCodec::freeData(decodedFrame);
+
+        AudioDecoder::freeData(decodedFrame);
     }
 }
 

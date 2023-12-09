@@ -3,14 +3,15 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-#include "audio_frame.hpp"
-#include "audio_sample_queue.hpp"
+#include "frame.hpp"
+#include "sample_queue.hpp"
+#include "decoder.hpp"
 
 class AudioStream {
 public:
     bool starving = false; // true if there aren't enough samples in the queue
 
-    AudioStream();
+    AudioStream(AudioDecoder&& decoder);
     ~AudioStream();
 
     // prevent copying since we manually free the sound
@@ -30,6 +31,7 @@ private:
     FMOD::Sound* sound = nullptr;
     FMOD::Channel* channel = nullptr;
     AudioSampleQueue queue;
+    AudioDecoder decoder;
 };
 
 

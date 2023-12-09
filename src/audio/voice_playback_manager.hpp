@@ -3,18 +3,16 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-#include "audio_stream.hpp"
+#include "stream.hpp"
 
 /*
 * VoicePlaybackManager is responsible for playing voices of multiple people
 * at the same time efficiently and without memory leaks.
 * Not thread safe.
 */
-class VoicePlaybackManager {
+class VoicePlaybackManager : GLOBED_SINGLETON(VoicePlaybackManager) {
 public:
-    GLOBED_SINGLETON(VoicePlaybackManager)
     VoicePlaybackManager();
-    ~VoicePlaybackManager();
 
     void playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
     void stopAllStreams();

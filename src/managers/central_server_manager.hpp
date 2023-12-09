@@ -20,9 +20,8 @@ struct CentralServer {
     }
 };
 
-class CentralServerManager {
+class CentralServerManager : GLOBED_SINGLETON(CentralServerManager) {
 public:
-    GLOBED_SINGLETON(CentralServerManager)
     CentralServerManager();
 
     // set the current active server, thread safe

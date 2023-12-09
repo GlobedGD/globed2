@@ -25,7 +25,7 @@ struct PollBothResult {
 };
 
 // This class is fully thread safe..? hell do i know..
-class NetworkManager {
+class NetworkManager : GLOBED_SINGLETON(NetworkManager) {
 public:
     using PacketCallback = std::function<void(std::shared_ptr<Packet>)>;
 
@@ -33,8 +33,6 @@ public:
     using PacketCallbackSpecific = std::function<void(Pty*)>;
 
     static constexpr uint8_t PROTOCOL_VERSION = 1;
-
-    GLOBED_SINGLETON(NetworkManager)
 
     AtomicU32 connectedTps; // if `authenticated() == true`, this is the TPS of the current server, otherwise undefined.
 

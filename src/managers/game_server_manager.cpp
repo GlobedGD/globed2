@@ -4,7 +4,6 @@
 #include <util/rng.hpp>
 #include <util/collections.hpp>
 
-GLOBED_SINGLETON_DEF(GameServerManager)
 GameServerManager::GameServerManager() {}
 
 void GameServerManager::addServer(const std::string& serverId, const std::string& name, const std::string& address, const std::string& region) {

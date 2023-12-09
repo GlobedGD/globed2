@@ -1,8 +1,9 @@
 #pragma once
 
-#include "audio_frame.hpp"
-#include "audio_manager.hpp"
-#include "audio_sample_queue.hpp"
-#include "audio_stream.hpp"
-#include "opus_codec.hpp"
+#include "decoder.hpp"
+#include "encoder.hpp"
+#include "frame.hpp"
+#include "manager.hpp"
+#include "sample_queue.hpp"
+#include "stream.hpp"
 #include "voice_playback_manager.hpp"

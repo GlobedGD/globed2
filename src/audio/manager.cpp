@@ -1,4 +1,4 @@
-#include "audio_manager.hpp"
+#include "manager.hpp"
 
 #if GLOBED_VOICE_SUPPORT
 
@@ -10,13 +10,10 @@
     if (GEODE_CONCAT(__evcond, __LINE__) != FMOD_OK) \
         GLOBED_REQUIRE(false, GlobedAudioManager::formatFmodError(GEODE_CONCAT(__evcond, __LINE__), msg));
 
-GLOBED_SINGLETON_DEF(GlobedAudioManager)
+GlobedAudioManager::GlobedAudioManager()
+    : encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
-GlobedAudioManager::GlobedAudioManager() {
     audioThreadHandle = std::thread(&GlobedAudioManager::audioThreadFunc, this);
-
-    opus.setSampleRate(VOICE_TARGET_SAMPLERATE);
-    opus.setFrameSize(VOICE_TARGET_FRAMESIZE);
 
     recordDevice = {.id = -1};
     playbackDevice = {.id = -1};
@@ -255,14 +252,6 @@ FMOD::Sound* GlobedAudioManager::createSound(const float* pcm, size_t samples, i
     return sound;
 }
 
-DecodedOpusData GlobedAudioManager::decodeSound(const EncodedOpusData& data) {
-    return opus.decode(data.ptr, data.length);
-}
-
-DecodedOpusData GlobedAudioManager::decodeSound(util::data::byte* data, size_t length) {
-    return opus.decode(data, length);
-}
-
 AudioRecordingDevice GlobedAudioManager::getRecordingDevice() {
     return recordDevice;
 }
@@ -356,7 +345,7 @@ void GlobedAudioManager::audioThreadFunc() {
             recordQueue.copyTo(pcmbuf, VOICE_TARGET_FRAMESIZE);
 
             try {
-                recordFrame.pushOpusFrame(opus.encode(pcmbuf));
+                recordFrame.pushOpusFrame(encoder.encode(pcmbuf));
             } catch (const std::exception& e) {
                 ErrorQueues::get().error(std::string("Exception in audio thread: ") + e.what());
                 continue;

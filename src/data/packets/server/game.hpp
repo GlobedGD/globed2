@@ -3,10 +3,9 @@
 #include <data/types/gd.hpp>
 
 class PlayerProfilesPacket : public Packet {
-    GLOBED_PACKET(21000, false)
+    GLOBED_PACKET(22000, false)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-
     GLOBED_PACKET_DECODE {
         data = buf.readValueVector<PlayerAccountData>();
     }
@@ -15,10 +14,9 @@ class PlayerProfilesPacket : public Packet {
 };
 
 class LevelDataPacket : public Packet {
-    GLOBED_PACKET(21001, false)
+    GLOBED_PACKET(22001, false)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-
     GLOBED_PACKET_DECODE {
         players = buf.readValueVector<AssociatedPlayerData>();
     }
@@ -26,23 +24,10 @@ class LevelDataPacket : public Packet {
     std::vector<AssociatedPlayerData> players;
 };
 
-class PlayerListPacket : public Packet {
-    GLOBED_PACKET(21002, false)
-
-    GLOBED_PACKET_ENCODE_UNIMPL
-
-    GLOBED_PACKET_DECODE {
-        data = buf.readValueVector<PlayerPreviewAccountData>();
-    }
-
-    std::vector<PlayerPreviewAccountData> data;
-};
-
 class PlayerMetadataPacket : public Packet {
-    GLOBED_PACKET(21003, false)
+    GLOBED_PACKET(22002, false)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-
     GLOBED_PACKET_DECODE {
         players = buf.readValueVector<AssociatedPlayerMetadata>();
     }
@@ -51,11 +36,11 @@ class PlayerMetadataPacket : public Packet {
 };
 
 #if GLOBED_VOICE_SUPPORT
-#include <audio/audio_frame.hpp>
+#include <audio/frame.hpp>
 #endif
 
 class VoiceBroadcastPacket : public Packet {
-    GLOBED_PACKET(21010, true)
+    GLOBED_PACKET(22010, true)
 
     GLOBED_PACKET_ENCODE_UNIMPL
 
@@ -73,10 +58,9 @@ class VoiceBroadcastPacket : public Packet {
 };
 
 class ChatMessageBroadcastPacket : public Packet {
-    GLOBED_PACKET(21011, true)
+    GLOBED_PACKET(22011, true)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-
     GLOBED_PACKET_DECODE {
         sender = buf.readI32();
         message = buf.readString();

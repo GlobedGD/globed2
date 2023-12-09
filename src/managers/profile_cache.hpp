@@ -4,8 +4,8 @@
 #include <util/sync.hpp>
 
 // This class is fully thread safe to use.
-class ProfileCacheManager {
-    GLOBED_SINGLETON(ProfileCacheManager)
+class ProfileCacheManager : GLOBED_SINGLETON(ProfileCacheManager) {
+public:
     ProfileCacheManager();
 
     void insert(PlayerAccountData data);

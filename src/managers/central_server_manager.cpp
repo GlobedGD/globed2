@@ -2,8 +2,6 @@
 
 #include <managers/error_queues.hpp>
 
-GLOBED_SINGLETON_DEF(CentralServerManager)
-
 CentralServerManager::CentralServerManager() {
     this->reload();
 

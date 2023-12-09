@@ -58,6 +58,8 @@ pub const MAX_NOTICE_SIZE: usize = 164;
 pub const MAX_MESSAGE_SIZE: usize = 156;
 /// max profiles that can be requested in `RequestProfilesPacket` (128)
 pub const MAX_PROFILES_REQUESTED: usize = 128;
+/// amount of chars in a room id string (6)
+pub const ROOM_ID_LENGTH: usize = 6;
 
 /// Simple and compact way of implementing `Decodable::decode` and `Decodable::decode_from_reader`.
 ///

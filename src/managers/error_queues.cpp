@@ -1,7 +1,6 @@
 #include "error_queues.hpp"
 
 ErrorQueues::ErrorQueues() {}
-GLOBED_SINGLETON_DEF(ErrorQueues)
 
 void ErrorQueues::warn(const std::string& message, bool print) {
     if (print) geode::log::warn(message);

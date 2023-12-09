@@ -7,8 +7,8 @@ void GHTTPRequestHandle::discardResult() const {
 }
 
 void GHTTPRequestHandle::cancel() const {
-    handle->_cancelled = true;
     this->discardResult();
+    handle->_cancelled = true;
 }
 
 void GHTTPRequestHandle::maybeCallback(const GHTTPResponse& response) const {

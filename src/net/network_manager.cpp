@@ -9,8 +9,6 @@
 using namespace geode::prelude;
 using namespace util::data;
 
-GLOBED_SINGLETON_DEF(NetworkManager)
-
 NetworkManager::NetworkManager() {
     util::net::initialize();
 

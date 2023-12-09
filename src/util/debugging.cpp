@@ -10,8 +10,6 @@ namespace util::debugging {
         return micros;
     }
 
-    GLOBED_SINGLETON_DEF(PacketLogger)
-
     void PacketLogSummary::print() {
         geode::log::debug("====== Packet summary ======");
         if (total == 0) {

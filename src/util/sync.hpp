@@ -8,19 +8,18 @@
 #include <condition_variable>
 #include <atomic>
 #include <queue>
-#include <shared_mutex>
 
 #include <util/data.hpp>
 #include <util/time.hpp>
+
+
+namespace util::sync {
 
 /*
 * SmartMessageQueue is a utility wrapper around std::queue,
 * that allows you to synchronously push/pop messages from multiple threads,
 * and additionally even block the thread until new messages are available.
 */
-
-namespace util::sync {
-
 template <typename T>
 class SmartMessageQueue {
 public:
@@ -74,7 +73,7 @@ public:
         std::lock_guard lock(_mtx);
         _iq.push(msg);
         if (notify)
-            _cvar.notify_all();
+            _cvar.notify_one();
     }
 
     template <typename Iter>
@@ -83,7 +82,7 @@ public:
         std::copy(std::begin(iterable), std::end(iterable), std::back_inserter(_iq));
 
         if (notify)
-            _cvar.notify_all();
+            _cvar.notify_one();
     }
 private:
     std::queue<T> _iq;
@@ -144,7 +143,7 @@ private:
     std::mutex mutex_;
 };
 
-// simple wrapper around atomics with the default memory order set to relaxed instead of seqcst
+// simple wrapper around atomics with the default memory order set to relaxed instead of seqcst + copy constructor
 template <typename T>
 class RelaxedAtomic {
 public:
@@ -167,7 +166,7 @@ public:
         return *this;
     }
 
-    // enable copying
+    // enable copying, it is disabled by default in std::atomic
     RelaxedAtomic(RelaxedAtomic<T>& other) {
         this->store(other.load());
     }

@@ -14,11 +14,14 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(LoginFailedPacket);
         PACKET(ServerNoticePacket);
 
+        // general
+
+        PACKET(PlayerListPacket);
+
         // game related
 
         PACKET(PlayerProfilesPacket);
         PACKET(LevelDataPacket);
-        PACKET(PlayerListPacket);
         PACKET(PlayerMetadataPacket);
 #if GLOBED_VOICE_SUPPORT
         PACKET(VoiceBroadcastPacket);

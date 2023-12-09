@@ -3,8 +3,7 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-#include "opus_codec.hpp"
-#include <data/bytebuffer.hpp>
+#include "encoder.hpp"
 
 // Represents an audio frame that contains multiple encoded opus frames
 class EncodedAudioFrame {
@@ -23,7 +22,7 @@ public:
     EncodedAudioFrame& operator=(EncodedAudioFrame&&) noexcept = default;
 
     // adds this audio frame to the list
-    void pushOpusFrame(EncodedOpusData&& frame);
+    void pushOpusFrame(const EncodedOpusData& frame);
 
     void clear();
     size_t size() const;

@@ -10,8 +10,8 @@
 * so they can be shown to the end user.
 */
 
-class ErrorQueues {
-    GLOBED_SINGLETON(ErrorQueues)
+class ErrorQueues : GLOBED_SINGLETON(ErrorQueues) {
+public:
     ErrorQueues();
 
     void warn(const std::string& message, bool print = true);

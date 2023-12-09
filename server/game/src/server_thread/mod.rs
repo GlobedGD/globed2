@@ -420,13 +420,15 @@ impl GameServerThread {
             LoginPacket::PACKET_ID => self.handle_login(&mut data).await,
             DisconnectPacket::PACKET_ID => self.handle_disconnect(&mut data),
 
-            /* game related */
+            /* general */
             SyncIconsPacket::PACKET_ID => self.handle_sync_icons(&mut data).await,
+            RequestPlayerListPacket::PACKET_ID => self.handle_request_player_list(&mut data).await,
+
+            /* game related */
             RequestProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,
             LevelJoinPacket::PACKET_ID => self.handle_level_join(&mut data).await,
             LevelLeavePacket::PACKET_ID => self.handle_level_leave(&mut data).await,
             PlayerDataPacket::PACKET_ID => self.handle_player_data(&mut data).await,
-            RequestPlayerListPacket::PACKET_ID => self.handle_request_player_list(&mut data).await,
             SyncPlayerMetadataPacket::PACKET_ID => self.handle_sync_player_metadata(&mut data).await,
 
             VoicePacket::PACKET_ID => self.handle_voice(&mut data).await,

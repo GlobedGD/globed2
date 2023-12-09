@@ -1,8 +1,8 @@
-#include "audio_sample_queue.hpp"
+#include "sample_queue.hpp"
 
 #if GLOBED_VOICE_SUPPORT
 
-void AudioSampleQueue::writeData(DecodedOpusData data) {
+void AudioSampleQueue::writeData(const DecodedOpusData& data) {
     this->writeData(data.ptr, data.length);
 }
 

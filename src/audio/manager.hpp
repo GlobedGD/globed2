@@ -7,8 +7,8 @@
 #include <functional>
 #include <fmod.hpp>
 
-#include "audio_frame.hpp"
-#include "audio_sample_queue.hpp"
+#include "frame.hpp"
+#include "sample_queue.hpp"
 #include <util/sync.hpp>
 
 using util::sync::WrappingMutex;
@@ -36,11 +36,11 @@ struct AudioPlaybackDevice {
 constexpr size_t VOICE_TARGET_SAMPLERATE = 24000;
 constexpr float VOICE_CHUNK_RECORD_TIME = 0.06f; // the audio buffer that is recorded at once (60ms)
 constexpr size_t VOICE_TARGET_FRAMESIZE = VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_RECORD_TIME; // opus framesize
+constexpr size_t VOICE_CHANNELS = 1;
 
 // This class is not thread safe. At all.
-class GlobedAudioManager {
+class GlobedAudioManager : GLOBED_SINGLETON(GlobedAudioManager) {
 public:
-    GLOBED_SINGLETON(GlobedAudioManager)
     GlobedAudioManager();
     ~GlobedAudioManager();
 
@@ -84,11 +84,6 @@ public:
     void setActiveRecordingDevice(int deviceId);
     void setActivePlaybackDevice(int deviceId);
 
-    // Decode a sound from opus into PCM-float. Not recommended to use directly unless you know what you are doing.
-    [[nodiscard]] DecodedOpusData decodeSound(util::data::byte* data, size_t length);
-    // Decode a sound from opus into PCM-float. Not recommended to use directly unless you know what you are doing.
-    [[nodiscard]] DecodedOpusData decodeSound(const EncodedOpusData& data);
-
     // get the cached system
     FMOD::System* getSystem();
 
@@ -115,8 +110,7 @@ private:
     void recordInvokeCallback();
     void internalStopRecording();
 
-    /* opus */
-    OpusCodec opus;
+    AudioEncoder encoder;
 
     /* misc */
     AtomicBool _terminating = false;

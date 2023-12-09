@@ -3,11 +3,11 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-#include "opus_codec.hpp"
+#include "decoder.hpp"
 
 class AudioSampleQueue {
 public:
-    void writeData(DecodedOpusData data);
+    void writeData(const DecodedOpusData& data);
     void writeData(float* pcm, size_t length);
     // contrary to the name, this will erase the samples from this queue after copying them to `dest`
     size_t copyTo(float* dest, size_t samples);

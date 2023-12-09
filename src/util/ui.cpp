@@ -24,7 +24,7 @@ namespace util::ui {
     void addBackButton(CCMenu* menu, std::function<void()> callback) {
         auto windowSize = CCDirector::get()->getWinSize();
         Build<CCSprite>::createSpriteName("GJ_arrow_01_001.png")
-            .intoMenuItem([=](CCObject*) {
+            .intoMenuItem([callback](CCObject*) {
                 callback();
             })
             .pos(-windowSize.width / 2 + 25.0f, windowSize.height / 2 - 25.0f)

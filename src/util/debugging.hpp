@@ -49,9 +49,8 @@ namespace util::debugging {
         void print();
     };
 
-    class PacketLogger {
+    class PacketLogger : GLOBED_SINGLETON(PacketLogger) {
     public:
-        GLOBED_SINGLETON(PacketLogger)
         PacketLogger() {}
 
         inline void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {

@@ -1,4 +1,4 @@
-#include "audio_frame.hpp"
+#include "frame.hpp"
 
 #if GLOBED_VOICE_SUPPORT
 
@@ -10,18 +10,18 @@ EncodedAudioFrame::~EncodedAudioFrame() {
     this->clear();
 }
 
-void EncodedAudioFrame::pushOpusFrame(EncodedOpusData&& frame) {
+void EncodedAudioFrame::pushOpusFrame(const EncodedOpusData& frame) {
     if (frames.size() >= VOICE_MAX_FRAMES_IN_AUDIO_FRAME) {
         geode::log::warn("tried to push an extra frame into EncodedAudioFrame, 20 is the max");
         return;
     }
 
-    frames.push_back(std::move(frame));
+    frames.push_back(frame);
 }
 
 void EncodedAudioFrame::clear() {
-    for (const auto& frame : frames) {
-        OpusCodec::freeData(frame);
+    for (auto& frame : frames) {
+        AudioEncoder::freeData(frame);
     }
 
     frames.clear();

@@ -1,6 +1,5 @@
 #include "settings.hpp"
 
-GLOBED_SINGLETON_DEF(GlobedSettings)
 GlobedSettings::GlobedSettings() {
     this->refreshCache();
 }

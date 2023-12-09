@@ -1,6 +1,5 @@
 #include "profile_cache.hpp"
 
-GLOBED_SINGLETON_DEF(ProfileCacheManager)
 ProfileCacheManager::ProfileCacheManager() {}
 
 void ProfileCacheManager::insert(PlayerAccountData data) {

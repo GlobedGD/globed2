@@ -2,27 +2,9 @@
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
 
-class SyncIconsPacket : public Packet {
-    GLOBED_PACKET(11000, false)
-
-    GLOBED_PACKET_ENCODE {
-        buf.writeValue(icons);
-    }
-
-    GLOBED_PACKET_DECODE_UNIMPL
-
-    SyncIconsPacket(const PlayerIconData& icons) : icons(icons) {}
-
-    static std::shared_ptr<Packet> create(const PlayerIconData& icons) {
-        return std::make_shared<SyncIconsPacket>(icons);
-    }
-
-    PlayerIconData icons;
-};
-
 constexpr size_t MAX_PROFILES_REQUESTED = 128;
 class RequestProfilesPacket : public Packet {
-    GLOBED_PACKET(11001, false)
+    GLOBED_PACKET(12000, false)
 
     GLOBED_PACKET_ENCODE {
         for (auto id : ids) {
@@ -42,7 +24,7 @@ class RequestProfilesPacket : public Packet {
 };
 
 class LevelJoinPacket : public Packet {
-    GLOBED_PACKET(11002, false)
+    GLOBED_PACKET(12001, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeI32(levelId);
@@ -60,7 +42,7 @@ class LevelJoinPacket : public Packet {
 };
 
 class LevelLeavePacket : public Packet {
-    GLOBED_PACKET(11003, false)
+    GLOBED_PACKET(12002, false)
 
     GLOBED_PACKET_ENCODE {}
     GLOBED_PACKET_DECODE_UNIMPL
@@ -73,7 +55,7 @@ class LevelLeavePacket : public Packet {
 };
 
 class PlayerDataPacket : public Packet {
-    GLOBED_PACKET(11004, false)
+    GLOBED_PACKET(12003, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeValue(data);
@@ -90,21 +72,8 @@ class PlayerDataPacket : public Packet {
     PlayerData data;
 };
 
-class RequestPlayerListPacket : public Packet {
-    GLOBED_PACKET(11005, false)
-
-    GLOBED_PACKET_ENCODE {}
-    GLOBED_PACKET_DECODE_UNIMPL
-
-    RequestPlayerListPacket() {}
-
-    static std::shared_ptr<Packet> create() {
-        return std::make_shared<RequestPlayerListPacket>();
-    }
-};
-
 class SyncPlayerMetadataPacket : public Packet {
-    GLOBED_PACKET(11006, false)
+    GLOBED_PACKET(12004, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeValue(data);
@@ -123,10 +92,10 @@ class SyncPlayerMetadataPacket : public Packet {
 
 #if GLOBED_VOICE_SUPPORT
 
-#include <audio/audio_frame.hpp>
+#include <audio/frame.hpp>
 
 class VoicePacket : public Packet {
-    GLOBED_PACKET(11010, true)
+    GLOBED_PACKET(12010, true)
 
     GLOBED_PACKET_ENCODE {
         buf.writeValue(*frame.get());
@@ -146,7 +115,7 @@ class VoicePacket : public Packet {
 #endif // GLOBED_VOICE_SUPPORT
 
 class ChatMessagePacket : public Packet {
-    GLOBED_PACKET(11011, true)
+    GLOBED_PACKET(12011, true)
 
     GLOBED_PACKET_ENCODE {
         buf.writeString(message);

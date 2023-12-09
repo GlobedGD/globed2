@@ -5,8 +5,8 @@
 #define MAKE_DEFAULT(_key, value) if (key == (_key)) return (value);
 
 // Besides `getCached()`, this class is not thread safe (reason: Mod::getSavedValue/Mod::setSavedValue)
-class GlobedSettings {
-    GLOBED_SINGLETON(GlobedSettings)
+class GlobedSettings : GLOBED_SINGLETON(GlobedSettings) {
+public:
     GlobedSettings();
 
     struct CachedSettings;
@@ -15,7 +15,7 @@ class GlobedSettings {
     * ok i know this is a mess but here's a rundown of how the settings work:
     * say we have a setting that is an int called 'hello'.
     * when retreiving, we first attempt to read `gflag-_gset_-hello` via getFlag()
-    * if the flag is false, we return a default value (defaults reside in `get`).
+    * if the flag is false, we return a default value (defaults reside in `getValue`).
     * otherwise, we return `gsetting-hello`.
     *
     * upon saving, we explicitly set the flag described earlier to true and save the value.
@@ -24,7 +24,7 @@ class GlobedSettings {
 
     // directly set and save the setting as json
     template <typename T>
-    inline void set(const std::string& key, const T& elem, bool refresh = true) {
+    inline void setValue(const std::string& key, const T& elem, bool refresh = true) {
         this->setFlag("_gset_-" + key);
         geode::Mod::get()->setSavedValue<T>("gsetting-" + key, elem);
 
@@ -50,7 +50,7 @@ class GlobedSettings {
 
     // directly get the setting as json
     template <typename T>
-    inline T get(const std::string& key) {
+    inline T getValue(const std::string& key) {
         if (this->getFlag("_gset_-" + key)) {
             return geode::Mod::get()->getSavedValue<T>("gsetting-" + key);
         } else {
@@ -74,7 +74,7 @@ class GlobedSettings {
 
     inline void refreshCache() {
         auto cache = _cache.lock();
-        cache->tpsCap = this->get<uint32_t>("tps-cap");
+        cache->tpsCap = this->getValue<uint32_t>("tps-cap");
     }
 
 private:

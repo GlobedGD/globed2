@@ -6,8 +6,6 @@
     template type Random::generate<type>(type, type)
 
 namespace util::rng {
-    GLOBED_SINGLETON_DEF(Random)
-
     Random::Random() {
         std::random_device rdev;
         engine.seed(rdev());
@@ -66,6 +64,7 @@ namespace util::rng {
     }
 
     bool Random::genRatio(uint32_t numerator, uint32_t denominator) {
+        GLOBED_REQUIRE(denominator != 0, "attempt to call Random::genRatio with denominator set to 0")
         double probability = static_cast<double>(numerator) / denominator;
         return this->generate<double>() < probability;
     }

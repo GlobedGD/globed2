@@ -4,7 +4,6 @@
 #include <managers/game_server_manager.hpp>
 #include <util/crypto.hpp>
 
-GLOBED_SINGLETON_DEF(GlobedAccountManager)
 GlobedAccountManager::GlobedAccountManager() : box(SecretBox::withPassword("")) {}
 
 void GlobedAccountManager::initialize(const std::string& name, int accountId, const std::string& gjp, const std::string& central) {

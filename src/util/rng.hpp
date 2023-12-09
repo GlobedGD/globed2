@@ -6,9 +6,8 @@
 #include <util/data.hpp>
 
 namespace util::rng {
-    class Random {
+    class Random : GLOBED_SINGLETON(Random) {
     public:
-        GLOBED_SINGLETON(Random)
         Random();
 
         template <typename T>

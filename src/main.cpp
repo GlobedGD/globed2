@@ -7,21 +7,7 @@
 
 #include <ui/hooks/all.hpp>
 #include <ui/error_check_node.hpp>
-
-#include <crypto/box.hpp>
-#include <data/bytebuffer.hpp>
 #include <util/all.hpp>
-#include <bit>
-
-#include <audio/opus_codec.hpp>
-#include <audio/audio_manager.hpp>
-#include <audio/voice_playback_manager.hpp>
-#include <discord/manager.hpp>
-#include <net/network_manager.hpp>
-
-#include <data/packets/all.hpp>
-#include <managers/error_queues.hpp>
-#include <managers/account_manager.hpp>
 
 #include <cstdint>
 

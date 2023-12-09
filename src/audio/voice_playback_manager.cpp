@@ -2,13 +2,9 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-#include "audio_manager.hpp"
-
-GLOBED_SINGLETON_DEF(VoicePlaybackManager);
+#include "manager.hpp"
 
 VoicePlaybackManager::VoicePlaybackManager() {}
-
-VoicePlaybackManager::~VoicePlaybackManager() {}
 
 void VoicePlaybackManager::playFrameStreamed(int playerId, const EncodedAudioFrame& frame) {
     // if the stream doesn't exist yet, create it
@@ -25,7 +21,9 @@ void VoicePlaybackManager::stopAllStreams() {
 }
 
 void VoicePlaybackManager::prepareStream(int playerId) {
-    auto stream = std::make_unique<AudioStream>();
+    AudioDecoder decoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS);
+
+    auto stream = std::make_unique<AudioStream>(std::move(decoder));
     stream->start();
     streams.insert(std::make_pair(playerId, std::move(stream)));
 }

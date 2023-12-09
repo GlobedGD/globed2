@@ -7,8 +7,8 @@
 #include "request.hpp"
 #include <util/sync.hpp>
 
-class GHTTPClient {
-    GLOBED_SINGLETON(GHTTPClient)
+class GHTTPClient : GLOBED_SINGLETON(GHTTPClient) {
+public:
     GHTTPClient();
     ~GHTTPClient();
 

@@ -24,9 +24,8 @@ struct GameServer {
 };
 
 // This class is fully thread safe to use.
-class GameServerManager {
+class GameServerManager : GLOBED_SINGLETON(GameServerManager) {
 public:
-    GLOBED_SINGLETON(GameServerManager)
     GameServerManager();
 
     constexpr static const char* STANDALONE_ID = "__standalone__server_id__";
