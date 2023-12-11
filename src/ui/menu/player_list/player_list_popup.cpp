@@ -17,12 +17,12 @@ bool PlayerListPopup::setup() {
 
     this->setTitle("Online players");
 
-    nm.addListener<PlayerListPacket>([this](PlayerListPacket* packet) {
+    nm.addListener<GlobalPlayerListPacket>([this](GlobalPlayerListPacket* packet) {
         this->playerList = packet->data;
         this->onLoaded();
     });
 
-    nm.send(RequestPlayerListPacket::create());
+    nm.send(RequestGlobalPlayerListPacket::create());
 
     auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
     listLayer = GJCommentListLayer::create(listview, "", {192, 114, 62, 255}, LIST_WIDTH, LIST_HEIGHT, false);
@@ -63,7 +63,7 @@ void PlayerListPopup::removeLoadingCircle() {
 }
 
 PlayerListPopup::~PlayerListPopup() {
-    NetworkManager::get().removeListener<PlayerListPacket>();
+    NetworkManager::get().removeListener<GlobalPlayerListPacket>();
 }
 
 PlayerListPopup* PlayerListPopup::create() {

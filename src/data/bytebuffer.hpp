@@ -184,17 +184,30 @@ public:
         }
     }
 
+    template <typename T>
+    void writeOptionalValue(const std::optional<T>& value, std::function<void(ByteBuffer&, const T& val)> encodeFunc) {
+        this->writeBool(value.has_value());
+        if (value) {
+            encodeFunc(*this, value.value());
+        }
+    }
+
     // Read a list of `Decodable` objects, prefixed with 4 bytes indicating the count.
     template <Decodable T>
     std::vector<T> readValueVector() {
         std::vector<T> out;
+        this->readValueVectorInto(out);
+        return out;
+    }
+
+    // Same as `readValueVector` but you get to specify the destination
+    template <Decodable T>
+    void readValueVectorInto(std::vector<T>& out) {
         auto length = this->readU32();
 
         for (size_t i = 0; i < length; i++) {
             out.push_back(this->readValue<T>());
         }
-
-        return out;
     }
 
     // Read an array of `Decodable` objects, the count must be known at compile time.

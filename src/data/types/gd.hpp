@@ -48,6 +48,20 @@ public:
     int16_t cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2;
 };
 
+inline bool operator==(const PlayerIconData& lhs, const PlayerIconData& rhs) {
+    return lhs.cube == rhs.cube
+    && lhs.ship == rhs.ship
+    && lhs.ball == rhs.ball
+    && lhs.ufo == rhs.ufo
+    && lhs.wave == rhs.wave
+    && lhs.robot == rhs.robot
+    && lhs.spider == rhs.spider
+    && lhs.swing == rhs.swing
+    && lhs.jetpack == rhs.jetpack
+    && lhs.color1 == rhs.color1
+    && lhs.color2 == rhs.color2;
+}
+
 class SpecialUserData {
 public:
     SpecialUserData(cocos2d::ccColor3B nameColor) : nameColor(nameColor) {}
@@ -94,8 +108,35 @@ public:
 class PlayerPreviewAccountData {
 public:
     PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int32_t levelId)
-        : id(id), name(name), cube(cube), color1(color1), color2(color2), levelId(levelId) {}
+        : id(id), name(name), cube(cube), color1(color1), color2(color2) {}
     PlayerPreviewAccountData() {}
+
+    GLOBED_ENCODE {
+        buf.writeI32(id);
+        buf.writeString(name);
+        buf.writeI16(cube);
+        buf.writeI16(color1);
+        buf.writeI16(color2);
+    }
+
+    GLOBED_DECODE {
+        id = buf.readI32();
+        name = buf.readString();
+        cube = buf.readI16();
+        color1 = buf.readI16();
+        color2 = buf.readI16();
+    }
+
+    int32_t id;
+    std::string name;
+    int16_t cube, color1, color2;
+};
+
+class PlayerRoomPreviewAccountData {
+public:
+    PlayerRoomPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int32_t levelId)
+        : id(id), name(name), cube(cube), color1(color1), color2(color2), levelId(levelId) {}
+    PlayerRoomPreviewAccountData() {}
 
     GLOBED_ENCODE {
         buf.writeI32(id);
@@ -166,21 +207,21 @@ public:
     int32_t attempts;
 };
 
-class AssociatedPlayerMetadata {
+class FullPlayerMetadata {
 public:
-    AssociatedPlayerMetadata(int accountId, PlayerMetadata data) : accountId(accountId), data(data) {}
-    AssociatedPlayerMetadata() {}
+    FullPlayerMetadata(const PlayerAccountData& accountData, const PlayerMetadata& metadata) : accountData(accountData), metadata(metadata) {}
+    FullPlayerMetadata() {}
 
     GLOBED_ENCODE {
-        buf.writeI32(accountId);
-        buf.writeValue(data);
+        buf.writeValue(accountData);
+        buf.writeValue(metadata);
     }
 
     GLOBED_DECODE {
-        accountId = buf.readI32();
-        data = buf.readValue<PlayerMetadata>();
+        accountData = buf.readValue<PlayerAccountData>();
+        metadata = buf.readValue<PlayerMetadata>();
     }
 
-    int accountId;
-    PlayerMetadata data;
+    PlayerAccountData accountData;
+    PlayerMetadata metadata;
 };

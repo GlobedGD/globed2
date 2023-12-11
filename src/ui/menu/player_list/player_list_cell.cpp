@@ -39,16 +39,16 @@ bool PlayerListCell::init(const PlayerPreviewAccountData& data) {
         .pos(25.f, CELL_HEIGHT - 22.f)
         .store(simplePlayer);
 
-    // dont create the button if level id = 0
-    auto* cbs = CircleButtonSprite::createWithSpriteFrameName("d_skull01_001.png", 1.f, CircleBaseColor::Green, CircleBaseSize::Medium);
-    Build<CircleButtonSprite>(cbs)
-        .scale(0.75f)
-        .intoMenuItem([this](auto) {
-            // TODO OPen the level
-            log::debug("here you open the level ID {}", this->data.levelId);
-        })
-        .pos(-30.f, -23.f)
-        .parent(menu);
+    // // dont create the button if level id = 0
+    // auto* cbs = CircleButtonSprite::createWithSpriteFrameName("d_skull01_001.png", 1.f, CircleBaseColor::Green, CircleBaseSize::Medium);
+    // Build<CircleButtonSprite>(cbs)
+    //     .scale(0.75f)
+    //     .intoMenuItem([this](auto) {
+    //         // TODO OPen the level
+    //         log::debug("here you open the level ID {}", this->data.levelId);
+    //     })
+    //     .pos(-30.f, -23.f)
+    //     .parent(menu);
 
     return true;
 }

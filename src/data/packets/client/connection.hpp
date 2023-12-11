@@ -1,6 +1,7 @@
 #pragma once
 #include <data/packets/packet.hpp>
 #include <data/types/crypto.hpp>
+#include <data/types/gd.hpp>
 
 class PingPacket : public Packet {
     GLOBED_PACKET(10000, false)
@@ -56,19 +57,22 @@ class LoginPacket : public Packet {
         buf.writeI32(accountId);
         buf.writeString(name);
         buf.writeString(token);
+        buf.writeValue(icons);
     }
 
     GLOBED_PACKET_DECODE_UNIMPL
 
-    LoginPacket(int32_t accid, const std::string& name, const std::string& token) : accountId(accid), name(name), token(token) {}
+    LoginPacket(int32_t accid, const std::string& name, const std::string& token, const PlayerIconData& icons)
+        : accountId(accid), name(name), token(token), icons(icons) {}
 
-    static std::shared_ptr<Packet> create(int32_t accid, const std::string& name, const std::string& token) {
-        return std::make_shared<LoginPacket>(accid, name, token);
+    static std::shared_ptr<Packet> create(int32_t accid, const std::string& name, const std::string& token, const PlayerIconData& icons) {
+        return std::make_shared<LoginPacket>(accid, name, token, icons);
     }
 
     int32_t accountId;
     std::string name;
     std::string token;
+    PlayerIconData icons;
 };
 
 class DisconnectPacket : public Packet {

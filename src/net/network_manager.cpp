@@ -3,6 +3,7 @@
 #include <data/packets/all.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/account_manager.hpp>
+#include <managers/profile_cache.hpp>
 #include <util/net.hpp>
 #include <util/debugging.hpp>
 
@@ -27,8 +28,13 @@ NetworkManager::NetworkManager() {
             authtoken = *am.authToken.lock();
         }
 
+        auto& pcm = ProfileCacheManager::get();
+        pcm.setOwnDataAuto();
+        pcm.pendingChanges = false;
+
         auto gddata = am.gdData.lock();
-        this->send(LoginPacket::create(gddata->accountId, gddata->accountName, authtoken));
+        auto pkt = LoginPacket::create(gddata->accountId, gddata->accountName, authtoken, pcm.getOwnData());
+        this->send(pkt);
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([](auto packet) {

@@ -12,8 +12,8 @@
     clippy::cast_possible_truncation,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
-    clippy::wildcard_imports,
-    clippy::missing_safety_doc
+    clippy::missing_safety_doc,
+    clippy::wildcard_imports
 )]
 
 use std::{

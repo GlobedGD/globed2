@@ -81,8 +81,8 @@ pub struct PlayerAccountData {
 }
 
 impl PlayerAccountData {
-    pub fn make_preview(&self, level_id: i32) -> PlayerPreviewAccountData {
-        PlayerPreviewAccountData {
+    pub fn make_room_preview(&self, level_id: i32) -> PlayerRoomPreviewAccountData {
+        PlayerRoomPreviewAccountData {
             account_id: self.account_id,
             name: self.name.clone(),
             cube: self.icons.cube,
@@ -91,12 +91,33 @@ impl PlayerAccountData {
             level_id,
         }
     }
+
+    pub fn make_preview(&self) -> PlayerPreviewAccountData {
+        PlayerPreviewAccountData {
+            account_id: self.account_id,
+            name: self.name.clone(),
+            cube: self.icons.cube,
+            color1: self.icons.color1,
+            color2: self.icons.color2,
+        }
+    }
 }
 
 /* PlayerPreviewAccountData - like PlayerAccountData but more limited, for the total player list */
 
 #[derive(Clone, Default, Encodable, KnownSize, Decodable)]
 pub struct PlayerPreviewAccountData {
+    pub account_id: i32,
+    pub name: FastString<MAX_NAME_SIZE>,
+    pub cube: i16,
+    pub color1: i16,
+    pub color2: i16,
+}
+
+/* PlayerRoomPreviewAccountData - similar to previous one but for rooms, the only difference is that it includes a level ID */
+
+#[derive(Clone, Default, Encodable, KnownSize, Decodable)]
+pub struct PlayerRoomPreviewAccountData {
     pub account_id: i32,
     pub name: FastString<MAX_NAME_SIZE>,
     pub cube: i16,
@@ -137,16 +158,16 @@ pub struct AssociatedPlayerData {
 
 /* PlayerMetadata (things like your percentage in a level, attempt count) */
 
-#[derive(Clone, Default, Encodable, KnownSize, Decodable)]
+#[derive(Copy, Clone, Default, Encodable, KnownSize, Decodable)]
 pub struct PlayerMetadata {
     percentage: u16,
     attempts: i32,
 }
 
-/* AssociatedPlayerMetadata */
+/* FullPlayerMetadata */
 
 #[derive(Clone, Default, Encodable, KnownSize)]
-pub struct AssociatedPlayerMetadata {
-    pub account_id: i32,
-    pub data: PlayerMetadata,
+pub struct FullPlayerMetadata {
+    pub account_data: PlayerAccountData,
+    pub metadata: PlayerMetadata,
 }

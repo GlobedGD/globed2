@@ -17,16 +17,16 @@ class SyncIconsPacket : public Packet {
     PlayerIconData icons;
 };
 
-class RequestPlayerListPacket : public Packet {
+class RequestGlobalPlayerListPacket : public Packet {
     GLOBED_PACKET(11001, false)
 
     GLOBED_PACKET_ENCODE {}
     GLOBED_PACKET_DECODE_UNIMPL
 
-    RequestPlayerListPacket() {}
+    RequestGlobalPlayerListPacket() {}
 
     static std::shared_ptr<Packet> create() {
-        return std::make_shared<RequestPlayerListPacket>();
+        return std::make_shared<RequestGlobalPlayerListPacket>();
     }
 };
 
@@ -46,16 +46,16 @@ class CreateRoomPacket : public Packet {
 class JoinRoomPacket : public Packet {
     GLOBED_PACKET(11003, false)
 
-    GLOBED_PACKET_ENCODE { buf.writeString(roomId); }
+    GLOBED_PACKET_ENCODE { buf.writeU32(roomId); }
     GLOBED_PACKET_DECODE_UNIMPL
 
-    JoinRoomPacket(const std::string& roomId) : roomId(roomId) {}
+    JoinRoomPacket(uint32_t roomId) : roomId(roomId) {}
 
-    static std::shared_ptr<Packet> create(const std::string& roomId) {
+    static std::shared_ptr<Packet> create(uint32_t roomId) {
         return std::make_shared<JoinRoomPacket>(roomId);
     }
 
-    std::string roomId;
+    uint32_t roomId;
 };
 
 class LeaveRoomPacket : public Packet {
@@ -68,5 +68,18 @@ class LeaveRoomPacket : public Packet {
 
     static std::shared_ptr<Packet> create() {
         return std::make_shared<LeaveRoomPacket>();
+    }
+};
+
+class RequestRoomPlayerListPacket : public Packet {
+    GLOBED_PACKET(11005, false)
+
+    GLOBED_PACKET_ENCODE {}
+    GLOBED_PACKET_DECODE_UNIMPL
+
+    RequestRoomPlayerListPacket() {}
+
+    static std::shared_ptr<Packet> create() {
+        return std::make_shared<RequestRoomPlayerListPacket>();
     }
 };

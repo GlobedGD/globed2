@@ -2,41 +2,45 @@ use nohash_hasher::IntMap;
 
 use crate::data::{
     types::{AssociatedPlayerData, PlayerData},
-    AssociatedPlayerMetadata, PlayerMetadata,
+    PlayerMetadata,
 };
 
 #[derive(Default)]
 pub struct PlayerEntry {
     pub data: AssociatedPlayerData,
-    pub meta: AssociatedPlayerMetadata,
+    pub meta: PlayerMetadata,
 }
 
+#[derive(Default)]
 pub struct PlayerManager {
-    players: IntMap<i32, PlayerEntry>, // player id : associated data
-    levels: IntMap<i32, Vec<i32>>,     // level id : [player id]
+    pub players: IntMap<i32, PlayerEntry>, // player id : associated data
+    pub levels: IntMap<i32, Vec<i32>>,     // level id : [player id]
 }
 
 impl PlayerManager {
     pub fn new() -> Self {
-        Self {
-            players: IntMap::default(),
-            levels: IntMap::default(),
-        }
+        Self::default()
     }
 
     pub fn get_player_data(&self, account_id: i32) -> Option<&AssociatedPlayerData> {
         self.players.get(&account_id).map(|entry| &entry.data)
     }
 
-    pub fn get_player_metadata(&self, account_id: i32) -> Option<&AssociatedPlayerMetadata> {
+    pub fn get_player_metadata(&self, account_id: i32) -> Option<&PlayerMetadata> {
         self.players.get(&account_id).map(|entry| &entry.meta)
+    }
+
+    pub fn create_player(&mut self, account_id: i32) {
+        let mut entry = PlayerEntry::default();
+        entry.data.account_id = account_id;
+
+        self.players.insert(account_id, entry);
     }
 
     fn get_or_create_player(&mut self, account_id: i32) -> &mut PlayerEntry {
         self.players.entry(account_id).or_insert_with(|| {
             let mut entry = PlayerEntry::default();
             entry.data.account_id = account_id;
-            entry.meta.account_id = account_id;
             entry
         })
     }
@@ -48,7 +52,7 @@ impl PlayerManager {
 
     /// set player's metadata, inserting a new entry if it doesn't already exist
     pub fn set_player_metadata(&mut self, account_id: i32, data: &PlayerMetadata) {
-        self.get_or_create_player(account_id).meta.data.clone_from(data);
+        self.get_or_create_player(account_id).meta.clone_from(data);
     }
 
     /// remove the player from the list of players
@@ -66,6 +70,11 @@ impl PlayerManager {
         self.levels.get(&level_id).map(Vec::len)
     }
 
+    /// get the total amount of players
+    pub fn get_total_player_count(&self) -> usize {
+        self.players.len()
+    }
+
     /// run a function `f` on each player on a level given its ID, with possibility to pass additional data
     pub fn for_each_player_on_level<F, A>(&self, level_id: i32, f: F, additional: &mut A) -> usize
     where
@@ -78,6 +87,16 @@ impl PlayerManager {
         } else {
             0
         }
+    }
+
+    /// run a function `f` on each player in this `PlayerManager`, with possibility to pass additional data
+    pub fn for_each_player<F, A>(&self, f: F, additional: &mut A) -> usize
+    where
+        F: Fn(&PlayerEntry, usize, &mut A) -> bool,
+    {
+        self.players
+            .values()
+            .fold(0, |count, data| count + usize::from(f(data, count, additional)))
     }
 
     /// add a player to a level given a level ID and an account ID
@@ -101,11 +120,5 @@ impl PlayerManager {
         if should_remove_level {
             self.levels.remove(&level_id);
         }
-    }
-}
-
-impl Default for PlayerManager {
-    fn default() -> Self {
-        Self::new()
     }
 }

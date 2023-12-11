@@ -68,7 +68,7 @@ impl GameServer {
 
         // spawn central conf refresher (runs every 5 minutes)
         if !self.standalone {
-            tokio::spawn(async move {
+            tokio::spawn(async {
                 let mut interval = tokio::time::interval(Duration::from_secs(300));
                 interval.tick().await;
 
@@ -83,7 +83,7 @@ impl GameServer {
         }
 
         // spawn stale rate limiter remover (runs once an hour)
-        tokio::spawn(async move {
+        tokio::spawn(async {
             let mut interval = tokio::time::interval(Duration::from_secs(3600));
             interval.tick().await;
 
@@ -108,12 +108,32 @@ impl GameServer {
 
     /* various calls for other threads */
 
-    pub fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: i32) -> anyhow::Result<()> {
-        self.broadcast_user_message(&ServerThreadMessage::BroadcastVoice(vpkt.clone()), vpkt.player_id, level_id)
+    pub fn broadcast_voice_packet(
+        &'static self,
+        vpkt: &Arc<VoiceBroadcastPacket>,
+        level_id: i32,
+        room_id: u32,
+    ) -> anyhow::Result<()> {
+        self.broadcast_user_message(
+            &ServerThreadMessage::BroadcastVoice(vpkt.clone()),
+            vpkt.player_id,
+            level_id,
+            room_id,
+        )
     }
 
-    pub fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: i32) -> anyhow::Result<()> {
-        self.broadcast_user_message(&ServerThreadMessage::BroadcastText(tpkt.clone()), tpkt.player_id, level_id)
+    pub fn broadcast_chat_packet(
+        &'static self,
+        tpkt: &ChatMessageBroadcastPacket,
+        level_id: i32,
+        room_id: u32,
+    ) -> anyhow::Result<()> {
+        self.broadcast_user_message(
+            &ServerThreadMessage::BroadcastText(tpkt.clone()),
+            tpkt.player_id,
+            level_id,
+            room_id,
+        )
     }
 
     /// iterate over every player in this list and run F
@@ -138,13 +158,39 @@ impl GameServer {
             .lock()
             .values()
             .filter(|thr| thr.authenticated.load(Ordering::Relaxed))
-            .map(|thread| {
-                thread
-                    .account_data
-                    .lock()
-                    .make_preview(thread.level_id.load(Ordering::Relaxed))
-            })
+            .map(|thread| thread.account_data.lock().make_preview())
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
+    }
+
+    // this is truly a dank_meme moment
+    pub fn for_every_room_player_preview<F, A>(&'static self, room_id: u32, f: F, additional: &mut A) -> usize
+    where
+        F: Fn(&PlayerRoomPreviewAccountData, usize, &mut A) -> bool,
+    {
+        self.state.room_manager.with_any(room_id, |pm| {
+            self.threads
+                .lock()
+                .values()
+                .filter(|thr| {
+                    thr.authenticated.load(Ordering::Relaxed)
+                        && pm.players.contains_key(&thr.account_id.load(Ordering::Relaxed))
+                })
+                .map(|thread| {
+                    thread
+                        .account_data
+                        .lock()
+                        .make_room_preview(thread.level_id.load(Ordering::Relaxed))
+                })
+                .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
+        })
+    }
+
+    pub fn get_player_account_data(&'static self, account_id: i32) -> Option<PlayerAccountData> {
+        self.threads
+            .lock()
+            .values()
+            .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
+            .map(|thr| thr.account_data.lock().clone())
     }
 
     pub fn chat_blocked(&'static self, user_id: i32) -> bool {
@@ -176,27 +222,28 @@ impl GameServer {
         msg: &ServerThreadMessage,
         origin_id: i32,
         level_id: i32,
+        room_id: u32,
     ) -> anyhow::Result<()> {
-        let pm = self.state.player_manager.lock();
-        let players = pm.get_level(level_id);
+        let threads = self.state.room_manager.with_any(room_id, |pm| {
+            let players = pm.get_level(level_id);
 
-        if let Some(players) = players {
-            let threads: Vec<_> = self
-                .threads
-                .lock()
-                .values()
-                .filter(|thread| {
-                    let account_id = thread.account_id.load(Ordering::Relaxed);
-                    account_id != origin_id && players.contains(&account_id)
-                })
-                .cloned()
-                .collect();
-
-            drop(pm);
-
-            for thread in threads {
-                thread.push_new_message(msg.clone())?;
+            if let Some(players) = players {
+                self.threads
+                    .lock()
+                    .values()
+                    .filter(|thread| {
+                        let account_id = thread.account_id.load(Ordering::Relaxed);
+                        account_id != origin_id && players.contains(&account_id)
+                    })
+                    .cloned()
+                    .collect()
+            } else {
+                Vec::new()
             }
+        });
+
+        for thread in threads {
+            thread.push_new_message(msg.clone())?;
         }
 
         Ok(())
@@ -316,22 +363,30 @@ impl GameServer {
     fn post_disconnect_cleanup(&'static self, thread: &GameServerThread, peer: SocketAddrV4) {
         self.threads.lock().remove(&peer);
 
-        if !thread.authenticated.load(Ordering::Relaxed) {
+        let account_id = thread.account_id.load(Ordering::Relaxed);
+
+        if account_id == 0 {
             return;
         }
 
-        let account_id = thread.account_id.load(Ordering::Relaxed);
         let level_id = thread.level_id.load(Ordering::Relaxed);
+        let room_id = thread.room_id.load(Ordering::Relaxed);
 
         // decrement player count
         self.state.player_count.fetch_sub(1, Ordering::Relaxed);
 
         // remove from the player manager and the level if they are on one
-        let mut pm = self.state.player_manager.lock();
-        pm.remove_player(account_id);
 
-        if level_id != 0 {
-            pm.remove_from_level(level_id, account_id);
+        self.state.room_manager.with_any(room_id, |pm| {
+            pm.remove_player(account_id);
+
+            if level_id != 0 {
+                pm.remove_from_level(level_id, account_id);
+            }
+        });
+
+        if room_id != 0 {
+            self.state.room_manager.maybe_remove_room(room_id);
         }
     }
 

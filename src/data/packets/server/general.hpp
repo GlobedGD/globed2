@@ -2,11 +2,11 @@
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
 
-class PlayerListPacket : public Packet {
+class GlobalPlayerListPacket : public Packet {
     GLOBED_PACKET(21000, false)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-    GLOBED_PACKET_DECODE { data = buf.readValueVector<PlayerPreviewAccountData>(); }
+    GLOBED_PACKET_DECODE { buf.readValueVectorInto<PlayerPreviewAccountData>(data); }
 
     std::vector<PlayerPreviewAccountData> data;
 };
@@ -15,9 +15,9 @@ class RoomCreatedPacket : public Packet {
     GLOBED_PACKET(21001, false)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-    GLOBED_PACKET_DECODE { roomId = buf.readString(); }
+    GLOBED_PACKET_DECODE { roomId = buf.readU32(); }
 
-    std::string roomId;
+    uint32_t roomId;
 };
 
 class RoomJoinedPacket : public Packet {
@@ -30,4 +30,13 @@ class RoomJoinFailedPacket : public Packet {
     GLOBED_PACKET(21003, false)
     GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE {}
+};
+
+class RoomPlayerListPacket : public Packet {
+    GLOBED_PACKET(21004, false)
+
+    GLOBED_PACKET_ENCODE_UNIMPL
+    GLOBED_PACKET_DECODE { buf.readValueVectorInto<PlayerRoomPreviewAccountData>(data); }
+
+    std::vector<PlayerRoomPreviewAccountData> data;
 };

@@ -24,7 +24,7 @@ void ErrorCheckNode::updateErrors(float) {
     ld: undefined symbols
       typeinfo for cocos2d::CCTransitionScene, referenced from:
     */
-    
+
 #ifndef GLOBED_MAC
     if (typeinfo_cast<CCTransitionScene*>(currentScene) || typeinfo_cast<LoadingLayer*>(currentLayer)) {
         return;

@@ -24,6 +24,7 @@ pub struct LoginPacket {
     pub account_id: i32,
     pub name: FastString<MAX_NAME_SIZE>,
     pub token: FastString<MAX_TOKEN_SIZE>,
+    pub icons: PlayerIconData,
 }
 
 #[derive(Packet, Decodable)]

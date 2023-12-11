@@ -29,18 +29,18 @@ Connection related
 General
 
 * 11000^ - SyncIconsPacket - store client's icons
-* 11001? - RequestPlayerListPacket - request list of all people in the given room (response 21000)
-* 11002& - CreateRoomPacket - create a room
-* 11003& - JoinRoomPacket - join a room
-* 11004& - LeaveRoomPacket - leave a room (no need for a response)
+* 11001 - RequestGlobalPlayerListPacket - request list of all people in the server (response 21000)
+* 11002^ - CreateRoomPacket - create a room
+* 11003^ - JoinRoomPacket - join a room
+* 11004^ - LeaveRoomPacket - leave a room (no need for a response)
+* 11005 - RequestRoomPlayerListPacket - request list of all people in the given room (response 21004)
 
 Game related
 
-* 12000^ - RequestProfilesPacket - request icons of other players (response 21000)
 * 12001 - LevelJoinPacket - join a level
 * 12002 - LevelLeavePacket - leave a level
 * 12003 - PlayerDataPacket - player data
-* 12004^ - SyncPlayerMetadataPacket - request player metadata
+* 12004^ - SyncPlayerMetadataPacket - request player account data & metadata and sync own
 * 12010+ - VoicePacket - voice frame
 * 12011?^+ - ChatMessagePacket - chat message
 
@@ -59,14 +59,14 @@ Connection related
 
 General
 
-* 21000 - PlayerListPacket - list of all people on the game server
-* 21001& - RoomCreatedPacket - returns room id (returns existing one if already in a room)
-* 21002& - RoomJoinedPacket - returns nothing ig?? just indicates success
-* 21003& - RoomJoinFailedPacket - also nothing, the only possible error is no such room id exists
+* 21000 - GlobalPlayerListPacket - list of people in the server
+* 21001^ - RoomCreatedPacket - returns room id (returns existing one if already in a room)
+* 21002^ - RoomJoinedPacket - returns nothing ig?? just indicates success
+* 21003^ - RoomJoinFailedPacket - also nothing, the only possible error is no such room id exists
+* 21004^ - RoomPlayerListPacket - list of people in the room
 
 Game related
 
-* 22000 - PlayerProfilesPacket - list of players' names and icons
 * 22001 - LevelDataPacket - level data
 * 22002 - PlayerMetadataPacket - list of player metadata
 * 22010+ - VoiceBroadcastPacket - voice frame from another user

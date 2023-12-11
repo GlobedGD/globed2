@@ -2,27 +2,6 @@
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
 
-constexpr size_t MAX_PROFILES_REQUESTED = 128;
-class RequestProfilesPacket : public Packet {
-    GLOBED_PACKET(12000, false)
-
-    GLOBED_PACKET_ENCODE {
-        for (auto id : ids) {
-            buf.writeI32(id);
-        }
-    }
-
-    GLOBED_PACKET_DECODE_UNIMPL
-
-    RequestProfilesPacket(const std::array<int, MAX_PROFILES_REQUESTED>& ids) : ids(ids) {}
-
-    static std::shared_ptr<Packet> create(const std::array<int, MAX_PROFILES_REQUESTED>& ids) {
-        return std::make_shared<RequestProfilesPacket>(ids);
-    }
-
-    std::array<int, MAX_PROFILES_REQUESTED> ids;
-};
-
 class LevelJoinPacket : public Packet {
     GLOBED_PACKET(12001, false)
 
@@ -77,17 +56,25 @@ class SyncPlayerMetadataPacket : public Packet {
 
     GLOBED_PACKET_ENCODE {
         buf.writeValue(data);
+
+        // what a dogshit fucking language that refuses to work unless i write down a whole essay in my variable declaration
+        std::function<void(ByteBuffer&, const int&)> ef = [](auto& buf, const int& val) {
+            buf.writeI32(val);
+        };
+
+        buf.writeOptionalValue(requested, ef);
     }
 
     GLOBED_PACKET_DECODE_UNIMPL
 
-    SyncPlayerMetadataPacket(const PlayerMetadata& data) : data(data) {}
+    SyncPlayerMetadataPacket(const PlayerMetadata& data, const std::optional<int>& requested) : data(data), requested(requested) {}
 
-    static std::shared_ptr<Packet> create(const PlayerMetadata& data) {
-        return std::make_shared<SyncPlayerMetadataPacket>(data);
+    static std::shared_ptr<Packet> create(const PlayerMetadata& data, const std::optional<int>& requested) {
+        return std::make_shared<SyncPlayerMetadataPacket>(data, requested);
     }
 
     PlayerMetadata data;
+    std::optional<int> requested;
 };
 
 #if GLOBED_VOICE_SUPPORT

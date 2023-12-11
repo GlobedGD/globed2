@@ -1,11 +1,5 @@
 use crate::data::*;
 
-#[derive(Packet, Encodable)]
-#[packet(id = 22000, encrypted = false)]
-pub struct PlayerProfilesPacket {
-    pub message: Vec<PlayerAccountData>,
-}
-
 /*
 * For optimization reasons, these 2 are encoded inline in the packet handlers in server_thread/handlers/game.rs.
 */

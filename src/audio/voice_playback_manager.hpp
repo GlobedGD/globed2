@@ -7,7 +7,7 @@
 
 /*
 * VoicePlaybackManager is responsible for playing voices of multiple people
-* at the same time efficiently and without memory leaks.
+* at the same time efficiently and without memory leaks (?).
 * Not thread safe.
 */
 class VoicePlaybackManager : GLOBED_SINGLETON(VoicePlaybackManager) {

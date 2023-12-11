@@ -46,6 +46,7 @@ public:
 
     struct CachedSettings {
         uint32_t tpsCap;
+        int audioDevice;
     };
 
     // directly get the setting as json
@@ -55,6 +56,7 @@ public:
             return geode::Mod::get()->getSavedValue<T>("gsetting-" + key);
         } else {
             MAKE_DEFAULT("tps-cap", (uint32_t)0)
+            MAKE_DEFAULT("audio-device", 0)
 
             return T{};
         }
@@ -64,7 +66,9 @@ public:
     inline void resetAll() {
         static const char* settings[] = {
             "tps-cap",
+            "audio-device",
         };
+
         for (auto* setting : settings) {
             this->reset(setting);
         }
@@ -75,6 +79,7 @@ public:
     inline void refreshCache() {
         auto cache = _cache.lock();
         cache->tpsCap = this->getValue<uint32_t>("tps-cap");
+        cache->audioDevice = this->getValue<int>("audio-device");
     }
 
 private:

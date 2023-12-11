@@ -16,11 +16,14 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
 
         // general
 
-        PACKET(PlayerListPacket);
+        PACKET(GlobalPlayerListPacket);
+        PACKET(RoomCreatedPacket);
+        PACKET(RoomJoinedPacket);
+        PACKET(RoomJoinFailedPacket);
+        PACKET(RoomPlayerListPacket);
 
         // game related
 
-        PACKET(PlayerProfilesPacket);
         PACKET(LevelDataPacket);
         PACKET(PlayerMetadataPacket);
 #if GLOBED_VOICE_SUPPORT

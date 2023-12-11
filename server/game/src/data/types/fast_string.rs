@@ -177,3 +177,15 @@ impl<const N: usize> Default for FastString<N> {
         Self::new()
     }
 }
+
+impl<const N: usize> PartialEq for FastString<N> {
+    fn eq(&self, other: &Self) -> bool {
+        if other.len != self.len {
+            return false;
+        }
+
+        self.buffer.iter().take(self.len).eq(other.buffer.iter().take(other.len))
+    }
+}
+
+impl<const N: usize> Eq for FastString<N> {}

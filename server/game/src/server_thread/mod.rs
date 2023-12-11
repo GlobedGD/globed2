@@ -1,7 +1,7 @@
 use std::{
     net::SocketAddrV4,
     sync::{
-        atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicU64, Ordering},
         Arc, OnceLock,
     },
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -53,6 +53,7 @@ pub struct GameServerThread {
     peer: SocketAddrV4,
     pub account_id: AtomicI32,
     pub level_id: AtomicI32,
+    pub room_id: AtomicU32,
     pub account_data: SyncMutex<PlayerAccountData>,
 
     last_voice_packet: AtomicU64,
@@ -68,6 +69,7 @@ impl GameServerThread {
             crypto_box: OnceLock::new(),
             account_id: AtomicI32::new(0),
             level_id: AtomicI32::new(0),
+            room_id: AtomicU32::new(0),
             authenticated: AtomicBool::new(false),
             game_server,
             awaiting_termination: AtomicBool::new(false),
@@ -422,10 +424,13 @@ impl GameServerThread {
 
             /* general */
             SyncIconsPacket::PACKET_ID => self.handle_sync_icons(&mut data).await,
-            RequestPlayerListPacket::PACKET_ID => self.handle_request_player_list(&mut data).await,
+            RequestGlobalPlayerListPacket::PACKET_ID => self.handle_request_global_list(&mut data).await,
+            CreateRoomPacket::PACKET_ID => self.handle_create_room(&mut data).await,
+            JoinRoomPacket::PACKET_ID => self.handle_join_room(&mut data).await,
+            LeaveRoomPacket::PACKET_ID => self.handle_leave_room(&mut data).await,
+            RequestRoomPlayerListPacket::PACKET_ID => self.handle_request_room_list(&mut data).await,
 
             /* game related */
-            RequestProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,
             LevelJoinPacket::PACKET_ID => self.handle_level_join(&mut data).await,
             LevelLeavePacket::PACKET_ID => self.handle_level_leave(&mut data).await,
             PlayerDataPacket::PACKET_ID => self.handle_player_data(&mut data).await,

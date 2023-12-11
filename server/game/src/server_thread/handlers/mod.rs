@@ -56,11 +56,15 @@ macro_rules! gs_notice {
 
 /// if the client isn't authenticated, invoke `gs_disconnect!` and exit the handler
 macro_rules! gs_needauth {
-    ($self:ident) => {
-        if !$self.authenticated.load(Ordering::Relaxed) {
+    ($self:ident) => {{
+        let account_id = $self.account_id.load(Ordering::Relaxed);
+
+        if account_id == 0 {
             gs_disconnect!($self, FastString::from_str("unauthorized, please try connecting again"));
         }
-    };
+
+        account_id
+    }};
 }
 
 pub const MAX_ALLOCA_SIZE: usize = 100_000;

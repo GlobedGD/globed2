@@ -1,12 +1,6 @@
 use crate::data::*;
 
 #[derive(Packet, Decodable)]
-#[packet(id = 12000, encrypted = false)]
-pub struct RequestProfilesPacket {
-    pub ids: [i32; MAX_PROFILES_REQUESTED],
-}
-
-#[derive(Packet, Decodable)]
 #[packet(id = 12001, encrypted = false)]
 pub struct LevelJoinPacket {
     pub level_id: i32,
@@ -26,6 +20,7 @@ pub struct PlayerDataPacket {
 #[packet(id = 12004, encrypted = false)]
 pub struct SyncPlayerMetadataPacket {
     pub data: PlayerMetadata,
+    pub requested: Option<i32>,
 }
 
 #[derive(Packet, Decodable)]

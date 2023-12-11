@@ -62,7 +62,7 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_keepalive, KeepalivePacket, _packet, {
-        gs_needauth!(self);
+        let _ = gs_needauth!(self);
 
         self.send_packet_fast(&KeepaliveResponsePacket {
             player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
@@ -81,6 +81,7 @@ impl GameServerThread {
                 let mut account_data = self.account_data.lock();
                 account_data.account_id = packet.account_id;
                 account_data.name = packet.name;
+                account_data.icons.clone_from(&packet.icons);
             }
             let tps = self.game_server.central_conf.lock().tps;
             self.send_packet_fast(&LoggedInPacket { tps }).await?;
@@ -129,6 +130,7 @@ impl GameServerThread {
         {
             let mut account_data = self.account_data.lock();
             account_data.account_id = packet.account_id;
+            account_data.icons.clone_from(&packet.icons);
             // we have packet.name but that can be spoofed so we don't trust it in non-standalone mode
             account_data.name = FastString::from_str(player_name);
 
@@ -144,6 +146,13 @@ impl GameServerThread {
                 account_data.special_user_data = Some(sud.try_into()?);
             }
         }
+
+        // add them to the global room
+        self.game_server
+            .state
+            .room_manager
+            .get_global()
+            .create_player(packet.account_id);
 
         debug!("Login successful from {player_name} ({})", packet.account_id);
 
