@@ -37,10 +37,10 @@ General
 
 Game related
 
+* 12000 - RequestPlayerProfilesPacket - request account data of another player (or all people on the level)
 * 12001 - LevelJoinPacket - join a level
 * 12002 - LevelLeavePacket - leave a level
 * 12003 - PlayerDataPacket - player data
-* 12004^ - SyncPlayerMetadataPacket - request player account data & metadata and sync own
 * 12010+ - VoicePacket - voice frame
 * 12011?^+ - ChatMessagePacket - chat message
 
@@ -67,7 +67,7 @@ General
 
 Game related
 
+* 22000 - PlayerProfilesPacket - list of requested profiles
 * 22001 - LevelDataPacket - level data
-* 22002 - PlayerMetadataPacket - list of player metadata
 * 22010+ - VoiceBroadcastPacket - voice frame from another user
 * 22011+ - ChatMessageBroadcastPacket - chat message from another user

@@ -126,8 +126,8 @@ void CentralServerManager::reload() {
 
         ByteBuffer buf(decoded);
         *servers = buf.readValueVector<CentralServer>();
-    } catch (const std::exception& e) {
-        ErrorQueues::get().warn(std::string("failed to load servers: ") + e.what());
+    } CATCH {
+        ErrorQueues::get().warn(std::string("failed to load servers: ") + CATCH_GET_EXC);
     }
 }
 

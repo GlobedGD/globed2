@@ -2,11 +2,11 @@
 
 ProfileCacheManager::ProfileCacheManager() {}
 
-void ProfileCacheManager::insert(const FullPlayerMetadata& data) {
-    cache[data.accountData.id] = data;
+void ProfileCacheManager::insert(const PlayerAccountData& data) {
+    cache[data.id] = data;
 }
 
-std::optional<FullPlayerMetadata> ProfileCacheManager::getData(int32_t accountId) {
+std::optional<PlayerAccountData> ProfileCacheManager::getData(int32_t accountId) {
     if (cache.contains(accountId)) {
         return cache.at(accountId);
     }

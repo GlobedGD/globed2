@@ -53,9 +53,9 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
 
     try {
         packet->decode(buf);
-    } catch (const std::exception& e) {
-        geode::log::warn("Decoding packet ID {} failed: {}", header.id, e.what());
-        throw;
+    } CATCH {
+        auto msg = fmt::format("Decoding packet ID {} failed: {}", header.id, CATCH_GET_EXC);
+        THROW(std::runtime_error(msg));
     }
 
     return packet;

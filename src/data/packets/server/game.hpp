@@ -2,6 +2,17 @@
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
 
+class PlayerProfilesPacket : public Packet {
+    GLOBED_PACKET(22000, false)
+
+    GLOBED_PACKET_ENCODE_UNIMPL
+    GLOBED_PACKET_DECODE {
+        players = buf.readValueVector<PlayerAccountData>();
+    }
+
+    std::vector<PlayerAccountData> players;
+};
+
 class LevelDataPacket : public Packet {
     GLOBED_PACKET(22001, false)
 
@@ -11,17 +22,6 @@ class LevelDataPacket : public Packet {
     }
 
     std::vector<AssociatedPlayerData> players;
-};
-
-class PlayerMetadataPacket : public Packet {
-    GLOBED_PACKET(22002, false)
-
-    GLOBED_PACKET_ENCODE_UNIMPL
-    GLOBED_PACKET_DECODE {
-        players = buf.readValueVector<FullPlayerMetadata>();
-    }
-
-    std::vector<FullPlayerMetadata> players;
 };
 
 #if GLOBED_VOICE_SUPPORT

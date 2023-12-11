@@ -164,9 +164,27 @@ public:
 
 class PlayerData {
 public:
+    PlayerData(
+        uint16_t percentage,
+        int32_t attempts
+    )
+    : percentage(percentage),
+      attempts(attempts)
+    {}
+
     PlayerData() {}
-    GLOBED_ENCODE {}
-    GLOBED_DECODE {}
+    GLOBED_ENCODE {
+        buf.writeU16(percentage);
+        buf.writeI32(attempts);
+    }
+
+    GLOBED_DECODE {
+        percentage = buf.readU16();
+        attempts = buf.readI32();
+    }
+
+    uint16_t percentage;
+    int32_t attempts;
 };
 
 class AssociatedPlayerData {
@@ -186,42 +204,4 @@ public:
 
     int accountId;
     PlayerData data;
-};
-
-class PlayerMetadata {
-public:
-    PlayerMetadata(uint16_t percentage, int32_t attempts) : percentage(percentage), attempts(attempts) {}
-    PlayerMetadata() {}
-
-    GLOBED_ENCODE {
-        buf.writeU16(percentage);
-        buf.writeI32(attempts);
-    }
-
-    GLOBED_DECODE {
-        percentage = buf.readU16();
-        attempts = buf.readI32();
-    }
-
-    uint16_t percentage;
-    int32_t attempts;
-};
-
-class FullPlayerMetadata {
-public:
-    FullPlayerMetadata(const PlayerAccountData& accountData, const PlayerMetadata& metadata) : accountData(accountData), metadata(metadata) {}
-    FullPlayerMetadata() {}
-
-    GLOBED_ENCODE {
-        buf.writeValue(accountData);
-        buf.writeValue(metadata);
-    }
-
-    GLOBED_DECODE {
-        accountData = buf.readValue<PlayerAccountData>();
-        metadata = buf.readValue<PlayerMetadata>();
-    }
-
-    PlayerAccountData accountData;
-    PlayerMetadata metadata;
 };

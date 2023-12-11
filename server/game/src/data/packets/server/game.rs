@@ -5,12 +5,12 @@ use crate::data::*;
 */
 
 #[derive(Packet, Encodable)]
-#[packet(id = 22001, encrypted = false)]
-pub struct LevelDataPacket;
+#[packet(id = 22000, encrypted = false)]
+pub struct PlayerProfilesPacket;
 
 #[derive(Packet, Encodable)]
-#[packet(id = 22002, encrypted = false)]
-pub struct PlayerMetadataPacket;
+#[packet(id = 22001, encrypted = false)]
+pub struct LevelDataPacket;
 
 #[derive(Packet, Encodable)]
 #[packet(id = 22010, encrypted = true)]

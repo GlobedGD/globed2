@@ -95,7 +95,13 @@ fn managers(c: &mut Criterion) {
             for level_id in 0..100 {
                 for account_id in 0..10 {
                     manager.add_to_level(level_id, level_id * 10 + account_id);
-                    manager.set_player_data(level_id * 10 + account_id, &PlayerData {});
+                    manager.set_player_data(
+                        level_id * 10 + account_id,
+                        &PlayerData {
+                            percentage: 0,
+                            attempts: 0,
+                        },
+                    );
                 }
             }
 

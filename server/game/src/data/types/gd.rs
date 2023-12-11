@@ -146,7 +146,10 @@ pub enum IconType {
 /* PlayerData (data in a level) */
 
 #[derive(Clone, Default, Encodable, KnownSize, Decodable)]
-pub struct PlayerData {}
+pub struct PlayerData {
+    pub percentage: u16,
+    pub attempts: i32,
+}
 
 /* AssociatedPlayerData */
 
@@ -154,20 +157,4 @@ pub struct PlayerData {}
 pub struct AssociatedPlayerData {
     pub account_id: i32,
     pub data: PlayerData,
-}
-
-/* PlayerMetadata (things like your percentage in a level, attempt count) */
-
-#[derive(Copy, Clone, Default, Encodable, KnownSize, Decodable)]
-pub struct PlayerMetadata {
-    percentage: u16,
-    attempts: i32,
-}
-
-/* FullPlayerMetadata */
-
-#[derive(Clone, Default, Encodable, KnownSize)]
-pub struct FullPlayerMetadata {
-    pub account_data: PlayerAccountData,
-    pub metadata: PlayerMetadata,
 }

@@ -1,20 +1,11 @@
 use nohash_hasher::IntMap;
 
-use crate::data::{
-    types::{AssociatedPlayerData, PlayerData},
-    PlayerMetadata,
-};
-
-#[derive(Default)]
-pub struct PlayerEntry {
-    pub data: AssociatedPlayerData,
-    pub meta: PlayerMetadata,
-}
+use crate::data::types::{AssociatedPlayerData, PlayerData};
 
 #[derive(Default)]
 pub struct PlayerManager {
-    pub players: IntMap<i32, PlayerEntry>, // player id : associated data
-    pub levels: IntMap<i32, Vec<i32>>,     // level id : [player id]
+    pub players: IntMap<i32, AssociatedPlayerData>, // player id : associated data
+    pub levels: IntMap<i32, Vec<i32>>,              // level id : [player id]
 }
 
 impl PlayerManager {
@@ -23,36 +14,29 @@ impl PlayerManager {
     }
 
     pub fn get_player_data(&self, account_id: i32) -> Option<&AssociatedPlayerData> {
-        self.players.get(&account_id).map(|entry| &entry.data)
-    }
-
-    pub fn get_player_metadata(&self, account_id: i32) -> Option<&PlayerMetadata> {
-        self.players.get(&account_id).map(|entry| &entry.meta)
+        self.players.get(&account_id)
     }
 
     pub fn create_player(&mut self, account_id: i32) {
-        let mut entry = PlayerEntry::default();
-        entry.data.account_id = account_id;
-
-        self.players.insert(account_id, entry);
+        self.players.insert(
+            account_id,
+            AssociatedPlayerData {
+                account_id,
+                ..Default::default()
+            },
+        );
     }
 
-    fn get_or_create_player(&mut self, account_id: i32) -> &mut PlayerEntry {
-        self.players.entry(account_id).or_insert_with(|| {
-            let mut entry = PlayerEntry::default();
-            entry.data.account_id = account_id;
-            entry
+    fn get_or_create_player(&mut self, account_id: i32) -> &mut AssociatedPlayerData {
+        self.players.entry(account_id).or_insert_with(|| AssociatedPlayerData {
+            account_id,
+            ..Default::default()
         })
     }
 
     /// set player's data, inserting a new entry if doesn't already exist
     pub fn set_player_data(&mut self, account_id: i32, data: &PlayerData) {
-        self.get_or_create_player(account_id).data.data.clone_from(data);
-    }
-
-    /// set player's metadata, inserting a new entry if it doesn't already exist
-    pub fn set_player_metadata(&mut self, account_id: i32, data: &PlayerMetadata) {
-        self.get_or_create_player(account_id).meta.clone_from(data);
+        self.get_or_create_player(account_id).data.clone_from(data);
     }
 
     /// remove the player from the list of players
@@ -78,7 +62,7 @@ impl PlayerManager {
     /// run a function `f` on each player on a level given its ID, with possibility to pass additional data
     pub fn for_each_player_on_level<F, A>(&self, level_id: i32, f: F, additional: &mut A) -> usize
     where
-        F: Fn(&PlayerEntry, usize, &mut A) -> bool,
+        F: Fn(&AssociatedPlayerData, usize, &mut A) -> bool,
     {
         if let Some(ids) = self.levels.get(&level_id) {
             ids.iter()
@@ -92,7 +76,7 @@ impl PlayerManager {
     /// run a function `f` on each player in this `PlayerManager`, with possibility to pass additional data
     pub fn for_each_player<F, A>(&self, f: F, additional: &mut A) -> usize
     where
-        F: Fn(&PlayerEntry, usize, &mut A) -> bool,
+        F: Fn(&AssociatedPlayerData, usize, &mut A) -> bool,
     {
         self.players
             .values()

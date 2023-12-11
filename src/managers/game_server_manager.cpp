@@ -62,7 +62,7 @@ std::optional<GameServer> GameServerManager::getActiveServer() {
 GameServer GameServerManager::getServer(const std::string& id) {
     auto data = _data.lock();
     if (!data->servers.contains(id)) {
-        throw std::runtime_error(std::string("invalid server ID, no such server exists: ") + id);
+        THROW(std::runtime_error(std::string("invalid server ID, no such server exists: ") + id));
     }
 
     return data->servers.at(id).server;

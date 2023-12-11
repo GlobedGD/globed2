@@ -1,5 +1,7 @@
 #pragma once
 #include "basic.hpp"
+#include "platform.hpp"
+#include <stdexcept>
 
 // singleton classes
 
@@ -20,3 +22,52 @@ protected:
 };
 
 #define GLOBED_SINGLETON(cls) public SingletonBase<cls>
+
+// exception handler (i cannot handle this language anymore dude)
+// explanation for people with sanity:
+// tl;dr - https://discord.com/channels/911701438269386882/979402752121765898/1183817498668318891
+//
+// on android, for some reason, exception handlers crash in various weird circumstances.
+// adding -fexceptions doesn't work, and neither does anything else i've tried.
+// thanks to this workaround, whenever you throw an exception, it sets a global variable to the exception message string,
+// so that you can do `catch(...)` (shorthand - CATCH) but still get the exception message via shorthand `CATCH_GET_EXC`.
+// That makes it not thread safe, and therefore not the best practice.
+// But let's be honest, what are the odds of 2 exceptions occurring in two threads at the same time? ;)
+
+#ifdef GLOBED_ANDROID
+
+class _GExceptionStore {
+public:
+    static void throw_exc(const char* err) {
+        if (what != nullptr) {
+            delete[] what;
+        }
+
+        auto len = strlen(err);
+        what = new char[len + 1];
+        strcpy(what, err);
+        what[len] = '\0';
+    }
+
+    static const char* get() {
+        return what ? what : "no error";
+    }
+
+private:
+    inline static char* what = nullptr;
+};
+
+#define THROW(x) {\
+    ::_GExceptionStore::throw_exc(x.what()); \
+    throw 0; } // throwing 0 instead of x has a higher chance of working
+
+#define CATCH catch(...)
+#define CATCH_GET_EXC ::_GExceptionStore::get()
+
+#else // GLOBED_ANDROID
+
+#define THROW(x) throw x;
+#define CATCH catch(const std::runtime_error& _caughtException)
+#define CATCH_GET_EXC _caughtException.what()
+
+#endif // GLOBED_ANDROID

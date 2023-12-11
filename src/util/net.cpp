@@ -55,7 +55,7 @@ namespace util::net {
     [[noreturn]] void throwLastError() {
         auto message = lastErrorString();
         geode::log::error(std::string("Throwing network exception: ") + message);
-        throw std::runtime_error(std::string("Network error: ") + message);
+        THROW(std::runtime_error(std::string("Network error: ") + message));
     }
 
     std::string webUserAgent() {

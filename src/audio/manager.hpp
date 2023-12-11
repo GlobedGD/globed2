@@ -48,9 +48,9 @@ public:
     std::vector<AudioPlaybackDevice> getPlaybackDevices();
 
     // get the record device by device ID
-    AudioRecordingDevice getRecordingDevice(int deviceId);
+    std::optional<AudioRecordingDevice> getRecordingDevice(int deviceId);
     // get the playback device by device ID
-    AudioPlaybackDevice getPlaybackDevice(int deviceId);
+    std::optional<AudioPlaybackDevice> getPlaybackDevice(int deviceId);
 
     // get the current active record device
     AudioRecordingDevice getRecordingDevice();

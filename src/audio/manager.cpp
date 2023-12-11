@@ -36,7 +36,10 @@ std::vector<AudioRecordingDevice> GlobedAudioManager::getRecordingDevices() {
     )
 
     for (int i = 0; i < numDrivers; i++) {
-        out.push_back(this->getRecordingDevice(i));
+        auto dev = this->getRecordingDevice(i);
+        if (dev.has_value()) {
+            out.push_back(dev.value());
+        }
     }
 
     return out;
@@ -52,23 +55,28 @@ std::vector<AudioPlaybackDevice> GlobedAudioManager::getPlaybackDevices() {
     )
 
     for (int i = 0; i < numDrivers; i++) {
-        out.push_back(this->getPlaybackDevice(i));
+        auto dev = this->getPlaybackDevice(i);
+        if (dev.has_value()) {
+            out.push_back(dev.value());
+        }
     }
 
     return out;
 }
 
-AudioRecordingDevice GlobedAudioManager::getRecordingDevice(int deviceId) {
+std::optional<AudioRecordingDevice> GlobedAudioManager::getRecordingDevice(int deviceId) {
     AudioRecordingDevice device;
     char name[256];
-    FMOD_ERR_CHECK(this->getSystem()->getRecordDriverInfo(
+    if (this->getSystem()->getRecordDriverInfo(
         deviceId, name, 256,
         &device.guid,
         &device.sampleRate,
         &device.speakerMode,
         &device.speakerModeChannels,
         &device.driverState
-    ), "System::getRecordDriverInfo")
+    ) != FMOD_OK) {
+        return std::nullopt;
+    }
 
     device.id = deviceId;
     device.name = std::string(name);
@@ -76,16 +84,18 @@ AudioRecordingDevice GlobedAudioManager::getRecordingDevice(int deviceId) {
     return device;
 }
 
-AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice(int deviceId) {
+std::optional<AudioPlaybackDevice> GlobedAudioManager::getPlaybackDevice(int deviceId) {
     AudioPlaybackDevice device;
     char name[256];
-    FMOD_ERR_CHECK(this->getSystem()->getDriverInfo(
+    if (this->getSystem()->getDriverInfo(
         deviceId, name, 256,
         &device.guid,
         &device.sampleRate,
         &device.speakerMode,
         &device.speakerModeChannels
-    ), "System::getDriverInfo")
+    ) != FMOD_OK) {
+        return std::nullopt;
+    }
 
     device.id = deviceId;
     device.name = std::string(name);
@@ -99,18 +109,16 @@ bool GlobedAudioManager::isRecordingDeviceSet() {
 
 void GlobedAudioManager::validateDevices() {
     if (recordDevice.id != -1) {
-        try {
-            recordDevice = this->getRecordingDevice(recordDevice.id);
-        } catch (const std::exception& e) {
-            geode::log::info("Invalidating recording device {}: {}", recordDevice.id, e.what());
+        this->setActiveRecordingDevice(recordDevice.id);
+        if (recordDevice.id == -1) {
+            geode::log::info("Invalidating recording device {}", recordDevice.id);
         }
     }
 
     if (playbackDevice.id != -1) {
-        try {
-            playbackDevice = this->getPlaybackDevice(playbackDevice.id);
-        } catch (const std::exception& e) {
-            geode::log::info("Invalidating playback device {}: {}", playbackDevice.id, e.what());
+        this->setActivePlaybackDevice(playbackDevice.id);
+        if (playbackDevice.id == -1) {
+            geode::log::info("Invalidating playback device {}", playbackDevice.id);
         }
     }
 }
@@ -265,11 +273,21 @@ void GlobedAudioManager::setActiveRecordingDevice(int deviceId) {
         GLOBED_REQUIRE(!this->isRecording(), "attempting to change the recording device while recording")
     }
 
-    recordDevice = this->getRecordingDevice(deviceId);
+    auto dev = this->getRecordingDevice(deviceId);
+    if (dev.has_value()) {
+        recordDevice = dev.value();
+    } else {
+        recordDevice.id = -1;
+    }
 }
 
 void GlobedAudioManager::setActivePlaybackDevice(int deviceId) {
-    playbackDevice = this->getPlaybackDevice(deviceId);
+    auto dev = this->getPlaybackDevice(deviceId);
+    if (dev.has_value()) {
+        playbackDevice = dev.value();
+    } else {
+        playbackDevice.id = -1;
+    }
 }
 
 void GlobedAudioManager::recordInvokeCallback() {
@@ -277,8 +295,8 @@ void GlobedAudioManager::recordInvokeCallback() {
 
     try {
         recordCallback(recordFrame);
-    } catch (const std::exception& e) {
-        ErrorQueues::get().error(std::string("Exception in audio callback: ") + e.what());
+    } CATCH {
+        ErrorQueues::get().error(std::string("Exception in audio callback: ") + CATCH_GET_EXC);
     }
 
     recordFrame.clear();
@@ -346,8 +364,8 @@ void GlobedAudioManager::audioThreadFunc() {
 
             try {
                 recordFrame.pushOpusFrame(encoder.encode(pcmbuf));
-            } catch (const std::exception& e) {
-                ErrorQueues::get().error(std::string("Exception in audio thread: ") + e.what());
+            } CATCH {
+                ErrorQueues::get().error(std::string("Exception in audio thread: ") + CATCH_GET_EXC);
                 continue;
             }
         }

@@ -7,8 +7,8 @@ class ProfileCacheManager : GLOBED_SINGLETON(ProfileCacheManager) {
 public:
     ProfileCacheManager();
 
-    void insert(const FullPlayerMetadata& data);
-    std::optional<FullPlayerMetadata> getData(int32_t accountId);
+    void insert(const PlayerAccountData& data);
+    std::optional<PlayerAccountData> getData(int32_t accountId);
     void clear();
 
     // gather player's icons and call `setOwnData`;
@@ -18,6 +18,6 @@ public:
 
     bool pendingChanges = false;
 private:
-    std::unordered_map<int32_t, FullPlayerMetadata> cache;
+    std::unordered_map<int32_t, PlayerAccountData> cache;
     PlayerIconData ownData;
 };

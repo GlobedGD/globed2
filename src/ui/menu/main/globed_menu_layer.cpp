@@ -249,8 +249,8 @@ void GlobedMenuLayer::requestServerList() {
                             server["region"].as_string()
                         );
                     }
-                } catch (const std::exception& e) {
-                    ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", e.what());
+                } CATCH {
+                    ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", CATCH_GET_EXC);
                     gsm.clear();
                 }
             }

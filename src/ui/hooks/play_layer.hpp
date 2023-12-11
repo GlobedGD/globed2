@@ -50,16 +50,16 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         // set the audio device
         try {
             GlobedAudioManager::get().setActiveRecordingDevice(m_fields->settings.audioDevice);
-        } catch (const std::exception& e) {
+        } CATCH {
             // try default device, if we have no mic then just do nothing
             try {
                 GlobedAudioManager::get().setActiveRecordingDevice(0);
-            } catch (const std::exception& e) {}
+            } CATCH {}
         }
 
-        // send LevelJoinPacket and SyncPlayerMetadataPacket
+        // send LevelJoinPacket and RequestPlayerProfilesPacket
         nm.send(LevelJoinPacket::create(m_level->m_levelID));
-        nm.send(SyncPlayerMetadataPacket::create(this->gatherPlayerMeta(), std::nullopt));
+        nm.send(RequestPlayerProfilesPacket::create(0));
 
         // send SyncIconsPacket if our icons have changed since the last time we sent it
         auto& pcm = ProfileCacheManager::get();
@@ -91,7 +91,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         auto& nm = NetworkManager::get();
 
         // clean up the listeners
-        nm.removeListener<PlayerMetadataPacket>();
+        nm.removeListener<PlayerProfilesPacket>();
         nm.removeListener<LevelDataPacket>();
         nm.removeListener<VoiceBroadcastPacket>();
 
@@ -106,7 +106,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     void setupEventListeners() {
         auto& nm = NetworkManager::get();
 
-        nm.addListener<PlayerMetadataPacket>([](PlayerMetadataPacket* packet) {
+        nm.addListener<PlayerProfilesPacket>([](PlayerProfilesPacket* packet) {
             auto& pcm = ProfileCacheManager::get();
             for (auto& player : packet->players) {
                 pcm.insert(player);
@@ -195,15 +195,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         NetworkManager::get().send(PlayerDataPacket::create(this->gatherPlayerData()));
     }
 
-    // selSendSyncMeta - runs once a minute
-    void selSendSyncMeta(float) {
-        if (!this->established()) return;
-        if (!this->isCurrentPlayLayer()) return;
-        if (!this->accountForSpeedhack(1, 60.0f, 0.95f))
-
-        NetworkManager::get().send(SyncPlayerMetadataPacket::create(this->gatherPlayerMeta(), std::nullopt));
-    }
-
     /* private utilities */
 
     bool established() {
@@ -212,11 +203,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     PlayerData gatherPlayerData() {
-        return PlayerData();
-    }
-
-    PlayerMetadata gatherPlayerMeta() {
-        return PlayerMetadata(m_level->m_normalPercent.value(), m_level->m_attempts); // TODO verify this is correct
+        return PlayerData(m_level->m_normalPercent.value(), m_level->m_attempts);
     }
 
     void handlePlayerJoin(int playerId) {
@@ -227,8 +214,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             ErrorQueues::get().error(std::string("Failed to prepare audio stream: ") + e.what());
         }
 #endif // GLOBED_VOICE_SUPPORT
-
-        NetworkManager::get().send(SyncPlayerMetadataPacket::create(this->gatherPlayerMeta(), playerId));
+        NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
     }
 
     void handlePlayerLeave(int playerId) {
@@ -249,11 +235,16 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         auto ts = sched->getTimeScale();
         if (!util::math::equal(ts, m_fields->lastKnownTimeScale)) {
             sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this);
-            sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendSyncMeta), this);
             this->rescheduleSenders();
         }
 
         auto now = util::time::now();
+
+        if (!m_fields->lastSentPacket.contains(uniqueKey)) {
+            m_fields->lastSentPacket[uniqueKey] = now;
+            return true;
+        }
+
         auto lastSent = m_fields->lastSentPacket[uniqueKey];
 
         auto passed = util::time::asMillis(now - lastSent);
@@ -274,10 +265,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         m_fields->lastKnownTimeScale = timescale;
 
         float pdInterval = (1.0f / m_fields->configuredTps) * timescale;
-        float smInterval = 60.0f * timescale;
 
         sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, pdInterval, false);
-        sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendSyncMeta), this, smInterval, false);
     }
 
     // TODO remove if impostor playlayer gets fixed

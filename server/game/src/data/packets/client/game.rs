@@ -1,6 +1,12 @@
 use crate::data::*;
 
 #[derive(Packet, Decodable)]
+#[packet(id = 12000, encrypted = false)]
+pub struct RequestPlayerProfilesPacket {
+    pub requested: i32, // 0 to get all ppl on the level
+}
+
+#[derive(Packet, Decodable)]
 #[packet(id = 12001, encrypted = false)]
 pub struct LevelJoinPacket {
     pub level_id: i32,
@@ -14,13 +20,6 @@ pub struct LevelLeavePacket;
 #[packet(id = 12003, encrypted = false)]
 pub struct PlayerDataPacket {
     pub data: PlayerData,
-}
-
-#[derive(Packet, Decodable)]
-#[packet(id = 12004, encrypted = false)]
-pub struct SyncPlayerMetadataPacket {
-    pub data: PlayerMetadata,
-    pub requested: Option<i32>,
 }
 
 #[derive(Packet, Decodable)]

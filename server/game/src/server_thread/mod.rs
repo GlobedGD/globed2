@@ -431,10 +431,10 @@ impl GameServerThread {
             RequestRoomPlayerListPacket::PACKET_ID => self.handle_request_room_list(&mut data).await,
 
             /* game related */
+            RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,
             LevelJoinPacket::PACKET_ID => self.handle_level_join(&mut data).await,
             LevelLeavePacket::PACKET_ID => self.handle_level_leave(&mut data).await,
             PlayerDataPacket::PACKET_ID => self.handle_player_data(&mut data).await,
-            SyncPlayerMetadataPacket::PACKET_ID => self.handle_sync_player_metadata(&mut data).await,
 
             VoicePacket::PACKET_ID => self.handle_voice(&mut data).await,
             ChatMessagePacket::PACKET_ID => self.handle_chat_message(&mut data).await,
