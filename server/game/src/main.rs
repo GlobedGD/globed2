@@ -17,7 +17,6 @@
 )]
 
 use std::{
-    collections::HashMap,
     error::Error,
     net::{IpAddr, Ipv4Addr, SocketAddr},
 };
@@ -159,12 +158,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let state = ServerState::new();
     let gsbd = if standalone {
         warn!("Starting in standalone mode, authentication is disabled");
-        GameServerBootData {
-            protocol: PROTOCOL_VERSION,
-            no_chat: Vec::new(),
-            special_users: HashMap::new(),
-            tps: 30,
-        }
+        GameServerBootData::default()
     } else {
         let (central_url, central_pw) = startup_config.central_data.unwrap();
         config.central_url = central_url;

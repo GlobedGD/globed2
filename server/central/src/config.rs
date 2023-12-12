@@ -1,10 +1,9 @@
 use std::{
-    collections::HashMap,
     fs::{File, OpenOptions},
     path::Path,
 };
 
-use globed_shared::SpecialUser;
+use globed_shared::{IntMap, SpecialUser};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use serde_json::{ser::PrettyFormatter, Serializer};
@@ -39,8 +38,12 @@ fn default_game_servers() -> Vec<GameServerEntry> {
     Vec::new()
 }
 
-fn default_special_users() -> HashMap<i32, SpecialUser> {
-    HashMap::new()
+fn default_maintenance() -> bool {
+    false
+}
+
+fn default_special_users() -> IntMap<i32, SpecialUser> {
+    IntMap::default()
 }
 
 fn default_userlist_mode() -> UserlistMode {
@@ -114,10 +117,12 @@ pub struct ServerConfig {
     pub web_address: String,
     #[serde(default = "default_game_servers")]
     pub game_servers: Vec<GameServerEntry>,
+    #[serde(default = "default_maintenance")]
+    pub maintenance: bool,
 
     // special users and "special" users
     #[serde(default = "default_special_users")]
-    pub special_users: HashMap<i32, SpecialUser>,
+    pub special_users: IntMap<i32, SpecialUser>,
     #[serde(default = "default_userlist_mode")]
     pub userlist_mode: UserlistMode,
     #[serde(default = "default_userlist")]
@@ -177,27 +182,7 @@ impl ServerConfig {
     }
 
     pub fn make_default() -> Self {
-        // i'm okay thanks for asking
-        Self {
-            web_mountpoint: default_web_mountpoint(),
-            web_address: default_web_address(),
-            use_gd_api: default_use_gd_api(),
-            gd_api: default_gdapi(),
-            gd_api_ratelimit: default_gdapi_ratelimit(),
-            gd_api_period: default_gdapi_period(),
-            game_servers: default_game_servers(),
-            special_users: default_special_users(),
-            userlist_mode: default_userlist_mode(),
-            userlist: default_userlist(),
-            no_chat_list: default_userlist(),
-            tps: default_tps(),
-            secret_key: default_secret_key(),
-            game_server_password: default_secret_key(),
-            challenge_expiry: default_challenge_expiry(),
-            challenge_level: default_challenge_level(),
-            challenge_ratelimit: default_challenge_ratelimit(),
-            cloudflare_protection: default_cloudflare_protection(),
-            token_expiry: default_token_expiry(),
-        }
+        // i'm just so cool like that
+        serde_json::from_str("{}").unwrap()
     }
 }

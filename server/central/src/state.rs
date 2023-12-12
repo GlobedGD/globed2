@@ -2,7 +2,10 @@ use std::{
     collections::HashMap,
     net::IpAddr,
     path::PathBuf,
-    sync::Arc,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
@@ -171,15 +174,30 @@ impl ServerStateData {
 
 #[derive(Clone)]
 pub struct ServerState {
-    pub inner: Arc<RwLock<ServerStateData>>,
+    pub inner: Arc<(RwLock<ServerStateData>, AtomicBool)>,
 }
 
 impl ServerState {
+    pub fn new(ssd: ServerStateData) -> Self {
+        let maintenance = ssd.config.maintenance;
+        ServerState {
+            inner: Arc::new((RwLock::new(ssd), AtomicBool::new(maintenance))),
+        }
+    }
+
     pub async fn state_read(&self) -> RwLockReadGuard<'_, ServerStateData> {
-        self.inner.read().await
+        self.inner.0.read().await
     }
 
     pub async fn state_write(&self) -> RwLockWriteGuard<'_, ServerStateData> {
-        self.inner.write().await
+        self.inner.0.write().await
+    }
+
+    pub fn maintenance(&self) -> bool {
+        self.inner.1.load(Ordering::Relaxed)
+    }
+
+    pub fn set_maintenance(&self, state: bool) {
+        self.inner.1.store(state, Ordering::Relaxed);
     }
 }

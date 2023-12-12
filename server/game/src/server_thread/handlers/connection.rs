@@ -88,6 +88,14 @@ impl GameServerThread {
             return Ok(());
         }
 
+        // disconnect if server is under maintenance
+        if self.game_server.central_conf.lock().maintenance {
+            gs_disconnect!(
+                self,
+                FastString::from_str("The server is currently under maintenance, please try connecting again later.")
+            );
+        }
+
         // lets verify the given token
 
         let url = format!("{}gs/verify", self.game_server.config.central_url);

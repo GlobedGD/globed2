@@ -1,4 +1,4 @@
-use nohash_hasher::IntMap;
+use globed_shared::IntMap;
 use parking_lot::{Mutex as SyncMutex, MutexGuard as SyncMutexGuard};
 use rand::Rng;
 

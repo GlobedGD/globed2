@@ -96,9 +96,6 @@ bool GlobedMenuLayer::init() {
 
     leftButtonMenu->updateLayout();
 
-    // TODO: menu for connecting to a standalone server directly with an IP and port
-    // it must call the proper func in GlobedServerManager::addGameServer then try to NM::connectStandalone
-
     util::ui::addBackground(this);
 
     auto menu = CCMenu::create();

@@ -409,8 +409,21 @@ impl GameServer {
 
         let configuration = response.text().await?;
         let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
+        let mut conf = self.central_conf.lock();
 
-        *self.central_conf.lock() = boot_data;
+        let is_now_under_maintenance = !conf.maintenance && boot_data.maintenance;
+
+        *conf = boot_data;
+
+        // if we are now under maintenance, disconnect everyone who's still connected
+        if is_now_under_maintenance {
+            let threads: Vec<_> = self.threads.lock().values().cloned().collect();
+            for thread in threads {
+                thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                    "The server is now under maintenance, please try connecting again later",
+                )))?;
+            }
+        }
 
         Ok(())
     }

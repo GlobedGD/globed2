@@ -1,4 +1,4 @@
-use nohash_hasher::IntMap;
+use globed_shared::IntMap;
 
 use crate::data::types::{AssociatedPlayerData, PlayerData};
 

@@ -42,8 +42,8 @@ namespace util::formatting {
     std::string formatErrorMessage(std::string message) {
         if (message.find("<!DOCTYPE html>") != std::string::npos) {
             message = "<HTML response, not showing>";
-        } else if (message.size() > 64) {
-            message = message.substr(0, 64) + "...";
+        } else if (message.size() > 128) {
+            message = message.substr(0, 128) + "...";
         }
 
         return message;

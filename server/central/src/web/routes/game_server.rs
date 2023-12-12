@@ -52,6 +52,7 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         no_chat: config.no_chat_list.clone(),
         special_users: config.special_users.clone(),
         tps: config.tps,
+        maintenance: config.maintenance,
     };
 
     debug!(

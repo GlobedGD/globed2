@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
+// import reexports
+pub use nohash_hasher::IntMap;
 // module reexports
 pub use colored;
 pub use time;
@@ -25,6 +26,19 @@ pub struct SpecialUser {
 pub struct GameServerBootData {
     pub protocol: u16,
     pub no_chat: Vec<i32>,
-    pub special_users: HashMap<i32, SpecialUser>,
+    pub special_users: IntMap<i32, SpecialUser>,
     pub tps: u32,
+    pub maintenance: bool,
+}
+
+impl Default for GameServerBootData {
+    fn default() -> Self {
+        Self {
+            protocol: PROTOCOL_VERSION,
+            no_chat: Vec::new(),
+            special_users: IntMap::default(),
+            tps: 30,
+            maintenance: false,
+        }
+    }
 }

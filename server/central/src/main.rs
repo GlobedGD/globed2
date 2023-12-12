@@ -5,14 +5,13 @@
     clippy::missing_panics_doc
 )]
 
-use std::{error::Error, path::PathBuf, sync::Arc, time::Duration};
+use std::{error::Error, path::PathBuf, time::Duration};
 
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
 use globed_shared::logger::{error, info, log, warn, LogLevelFilter, Logger};
 use roa::{tcp::Listener, App};
 use state::{ServerState, ServerStateData};
-use tokio::sync::RwLock;
 
 pub mod config;
 pub mod ip_blocker;
@@ -71,9 +70,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let state_skey = config.secret_key.clone();
 
-    let state = ServerState {
-        inner: Arc::new(RwLock::new(ServerStateData::new(config_path.clone(), config, &state_skey))),
-    };
+    let state = ServerState::new(ServerStateData::new(config_path.clone(), config, &state_skey));
 
     // config file watcher
 
@@ -90,6 +87,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             match state.config.reload_in_place(&cpath) {
                 Ok(()) => {
                     info!("Successfully reloaded the configuration");
+                    // set the maintenance flag appropriately
+                    watcher_state.set_maintenance(state.config.maintenance);
                 }
                 Err(err) => {
                     warn!("Failed to reload configuration: {}", err.to_string());

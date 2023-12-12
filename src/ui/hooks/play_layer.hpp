@@ -136,7 +136,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     void setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
-        // TODO let the user pick recording device somehow
         // TODO this breaks for impostor playlayers, if they won't be fixed in 2.2 then do a good old workaround
         this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
             auto& vm = GlobedAudioManager::get();

@@ -57,17 +57,19 @@ private:
     inline static char* what = nullptr;
 };
 
-#define THROW(x) {\
-    ::_GExceptionStore::throw_exc(x.what()); \
-    throw 0; } // throwing 0 instead of x has a higher chance of working
+# define THROW(x) { \
+    auto exc = (x); \
+    ::_GExceptionStore::throw_exc(exc.what()); \
+    /* std::rethrow_exception(std::make_exception_ptr(exc)); */ \
+    throw 0; } // throwing 0 instead of exc has a higher chance of working
 
-#define CATCH catch(...)
-#define CATCH_GET_EXC ::_GExceptionStore::get()
+# define CATCH catch(...)
+# define CATCH_GET_EXC ::_GExceptionStore::get()
 
 #else // GLOBED_ANDROID
 
-#define THROW(x) throw x;
-#define CATCH catch(const std::runtime_error& _caughtException)
-#define CATCH_GET_EXC _caughtException.what()
+# define THROW(x) throw x;
+# define CATCH catch(const std::runtime_error& _caughtException)
+# define CATCH_GET_EXC _caughtException.what()
 
 #endif // GLOBED_ANDROID

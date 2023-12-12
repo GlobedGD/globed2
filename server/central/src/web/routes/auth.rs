@@ -11,8 +11,11 @@ use globed_shared::logger::{debug, info, log, warn};
 use rand::{distributions::Alphanumeric, Rng};
 use roa::{http::StatusCode, preload::PowerBody, query::Query, throw, Context};
 
-use crate::state::{ActiveChallenge, ServerState};
 use crate::{config::UserlistMode, ip_blocker::IpBlocker};
+use crate::{
+    state::{ActiveChallenge, ServerState},
+    web::routes::check_maintenance,
+};
 
 macro_rules! check_user_agent {
     ($ctx:expr, $ua:ident) => {
@@ -57,6 +60,7 @@ macro_rules! get_user_ip {
     };
 }
 pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
+    check_maintenance!(context);
     check_user_agent!(context, _ua);
 
     let state = context.state_read().await;
@@ -102,6 +106,7 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
 }
 
 pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result {
+    check_maintenance!(context);
     check_user_agent!(context, _ua);
 
     let account_id = context.must_query("aid")?.parse::<i32>()?;
@@ -192,6 +197,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
 // rollercoaster of a function i'd say
 #[allow(clippy::too_many_lines)]
 pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result {
+    check_maintenance!(context);
     check_user_agent!(context, _ua);
 
     let account_id = &*context.must_query("aid")?;

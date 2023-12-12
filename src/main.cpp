@@ -52,6 +52,7 @@ class $modify(MyMenuLayer, MenuLayer) {
             util::debugging::PacketLogger::get().getSummary().print();
         }
 
+        // check in 2.2 that this is fine on android
         try {
             throw std::runtime_error("oopsie");
         } catch (std::exception e) {
@@ -106,13 +107,13 @@ void printDebugInfo() {
     std::string version = Mod::get()->getVersion().toString();
 
     geode::log::warn("=== Globed {} has been loaded in debug mode ===", version.starts_with('v') ? version : ("v" + version));
-    geode::log::info("Platform: {}", GLOBED_PLATFORM_STRING);
-    geode::log::info("FMOD support: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
-    geode::log::info("Voice support: {}", GLOBED_VOICE_SUPPORT == 0 ? "false" : "true");
+    geode::log::info("Platform: {} ({}-endian)", GLOBED_PLATFORM_STRING, GLOBED_LITTLE_ENDIAN ? "little" : "big");
+    geode::log::info("FMOD linkage: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
+#if GLOBED_VOICE_SUPPORT
+    geode::log::info("Voice chat support: true (opus version: {})", opus_get_version_string());
+#else
+    geode::log::info("Voice chat support: false");
+#endif
     geode::log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
-    geode::log::info("Little endian: {}", GLOBED_LITTLE_ENDIAN ? "true" : "false");
     geode::log::info("Libsodium version: {} (CryptoBox algorithm: {})", SODIUM_VERSION_STRING, CryptoBox::ALGORITHM);
-    #if GLOBED_VOICE_SUPPORT
-    geode::log::info("Opus version: {}", opus_get_version_string());
-    #endif
 }
