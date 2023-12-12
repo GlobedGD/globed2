@@ -47,6 +47,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             m_fields->configuredTps = nm.connectedTps;
         }
 
+#if GLOBED_VOICE_SUPPORT
         // set the audio device
         try {
             GlobedAudioManager::get().setActiveRecordingDevice(m_fields->settings.audioDevice);
@@ -56,6 +57,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
                 GlobedAudioManager::get().setActiveRecordingDevice(0);
             } CATCH {}
         }
+#endif // GLOBED_VOICE_SUPPORT
 
         // send LevelJoinPacket and RequestPlayerProfilesPacket
         nm.send(LevelJoinPacket::create(m_level->m_levelID));
