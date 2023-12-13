@@ -1,7 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use crypto_box::ChaChaBox;
-use globed_shared::{logger::*, PROTOCOL_VERSION};
+use globed_shared::{crypto_box::ChaChaBox, logger::*, PROTOCOL_VERSION};
 
 use crate::server_thread::{GameServerThread, PacketHandlingError};
 

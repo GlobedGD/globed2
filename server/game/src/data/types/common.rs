@@ -1,7 +1,7 @@
 use std::{io::Read, ops::Deref};
 
 use bytebuffer::{ByteBuffer, ByteReader};
-pub use crypto_box::{PublicKey, KEY_SIZE};
+pub use globed_shared::crypto_box::{PublicKey, KEY_SIZE};
 
 use crate::data::bytebufferext::*;
 

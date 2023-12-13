@@ -46,30 +46,32 @@ protected:
 
 class _GExceptionStore {
 public:
-    static void throw_exc(const char* err) {
-        if (what != nullptr) {
-            delete[] what;
-        }
-
-        auto len = strlen(err);
-        what = new char[len + 1];
-        strcpy(what, err);
+    static void store_exc(const char* err) {
+        auto len = min(strlen(err), BUF_LEN - 1);
+        strncpy(what, err, len);
         what[len] = '\0';
+        initialized = true;
     }
 
     static const char* get() {
-        return what ? what : "no error";
+        if (!initialized) {
+            return "no error";
+        }
+
+        return what;
     }
 
 private:
-    inline static char* what = nullptr;
+    static constexpr size_t BUF_LEN = 512;
+    inline static char what[BUF_LEN];
+    inline static bool initialized = false;
 };
 
 # define THROW(x) { \
     auto exc = (x); \
-    ::_GExceptionStore::throw_exc(exc.what()); \
+    ::_GExceptionStore::store_exc(exc.what()); \
     /* std::rethrow_exception(std::make_exception_ptr(exc)); */ \
-    throw 0; } // throwing 0 instead of exc has a higher chance of working
+    throw 0; } // throwing 0 instead of throwing or rethrowing exc has a higher chance of working
 
 # define CATCH catch(...)
 # define CATCH_GET_EXC ::_GExceptionStore::get()

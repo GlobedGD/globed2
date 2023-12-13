@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub use nohash_hasher::IntMap;
 // module reexports
 pub use colored;
+pub use crypto_box;
 pub use time;
 // our reexports
 pub use logger::*;

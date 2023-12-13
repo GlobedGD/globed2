@@ -13,14 +13,13 @@ alloca = "0.4.0"
 anyhow = "1.0.75"
 array-init = "2.1.0"
 bytebuffer = "2.2.0"
-crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
 parking_lot = "0.12.1"
+rand = "0.8.5"
 reqwest = "0.11.22"
 rustc-hash = "1.1.0"
 serde = { version = "1.0.193", features = ["serde_derive"] }
 serde_json = "1.0.108"
 tokio = { version = "1.35.0", features = ["full"] }
-rand = "0.8.5"
 
 [dev-dependencies]
 criterion = "0.5.1"

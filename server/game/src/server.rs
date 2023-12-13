@@ -8,7 +8,7 @@ use bytebuffer::ByteReader;
 use parking_lot::Mutex as SyncMutex;
 
 use anyhow::{anyhow, bail};
-use crypto_box::{aead::OsRng, SecretKey};
+use globed_shared::crypto_box::{aead::OsRng, SecretKey};
 use globed_shared::{logger::*, GameServerBootData};
 use rustc_hash::FxHashMap;
 

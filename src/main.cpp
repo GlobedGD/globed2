@@ -106,14 +106,18 @@ void setupCustomKeybinds() {
 void printDebugInfo() {
     std::string version = Mod::get()->getVersion().toString();
 
-    geode::log::warn("=== Globed {} has been loaded in debug mode ===", version.starts_with('v') ? version : ("v" + version));
-    geode::log::info("Platform: {} ({}-endian)", GLOBED_PLATFORM_STRING, GLOBED_LITTLE_ENDIAN ? "little" : "big");
-    geode::log::info("FMOD linkage: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
+    log::warn("=== Globed {} has been loaded in debug mode ===", version.starts_with('v') ? version : ("v" + version));
+    log::info("Platform: {} ({}-endian)", GLOBED_PLATFORM_STRING, GLOBED_LITTLE_ENDIAN ? "little" : "big");
+    log::info("FMOD linkage: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
 #if GLOBED_VOICE_SUPPORT
-    geode::log::info("Voice chat support: true (opus version: {})", opus_get_version_string());
+    log::info("Voice chat support: true (opus version: {})", opus_get_version_string());
 #else
-    geode::log::info("Voice chat support: false");
+    log::info("Voice chat support: false");
 #endif
-    geode::log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
-    geode::log::info("Libsodium version: {} (CryptoBox algorithm: {})", SODIUM_VERSION_STRING, CryptoBox::ALGORITHM);
+    log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
+    log::info("Libsodium version: {} (CryptoBox algorithm: {})", SODIUM_VERSION_STRING, CryptoBox::ALGORITHM);
+
+    auto cvi = curl_version_info(CURLVERSION_NOW);
+
+    log::info("cURL version: {}, {}", curl_version(), (cvi->features & CURL_VERSION_SSL) ? "with SSL" : "without SSL (!)");
 }

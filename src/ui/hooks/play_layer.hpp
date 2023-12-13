@@ -40,7 +40,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         if (!m_fields->globedReady) return true;
 
         // set the configured tps
-        auto tpsCap = m_fields->settings.tpsCap;
+        auto tpsCap = m_fields->settings.globed.tpsCap;
         if (tpsCap != 0) {
             m_fields->configuredTps = std::min(nm.connectedTps.load(), tpsCap);
         } else {
@@ -50,7 +50,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 #if GLOBED_VOICE_SUPPORT
         // set the audio device
         try {
-            GlobedAudioManager::get().setActiveRecordingDevice(m_fields->settings.audioDevice);
+            GlobedAudioManager::get().setActiveRecordingDevice(m_fields->settings.globed.audioDevice);
         } CATCH {
             // try default device, if we have no mic then just do nothing
             try {
@@ -122,7 +122,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         nm.addListener<VoiceBroadcastPacket>([this](VoiceBroadcastPacket* packet) {
 #if GLOBED_VOICE_SUPPORT
-            if (this->m_fields->deafened) return;
+            // if deafened or voice is disabled, do nothing
+            if (this->m_fields->deafened || !this->m_fields->settings.communication.voiceEnabled) return;
 
             // TODO client side blocking and stuff..
             log::debug("streaming frame from {}", packet->sender);
@@ -138,6 +139,11 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     void setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
+        // the only keybinds used are for voice chat, so if voice is disabled, do nothing
+        if (!m_fields->settings.communication.voiceEnabled) {
+            return;
+        }
+
         // TODO this breaks for impostor playlayers, if they won't be fixed in 2.2 then do a good old workaround
         this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
             auto& vm = GlobedAudioManager::get();

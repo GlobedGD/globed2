@@ -41,7 +41,7 @@ pub struct ServerStateData {
 impl ServerStateData {
     pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: &str) -> Self {
         let skey_bytes = secret_key.as_bytes();
-        let hmac_obj = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
+        let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
 
         let http_client = reqwest::ClientBuilder::new().user_agent("").build().unwrap();
 
@@ -51,7 +51,7 @@ impl ServerStateData {
         Self {
             config_path,
             config,
-            hmac: hmac_obj,
+            hmac,
             active_challenges: HashMap::new(),
             http_client,
             login_attempts: HashMap::new(),

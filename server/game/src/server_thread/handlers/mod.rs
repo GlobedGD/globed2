@@ -9,13 +9,17 @@ macro_rules! gs_handler {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
         pub(crate) async fn $name(&$self, buf: &mut bytebuffer::ByteReader<'_>) -> crate::server_thread::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
-            #[cfg(debug_assertions)]
-            globed_shared::logger::debug!(
-                "[{} @ {}] Handling packet {}",
-                $self.account_id.load(Ordering::Relaxed),
-                $self.peer,
-                <$pktty>::NAME
-            );
+
+            if <$pktty>::PACKET_ID != PlayerDataPacket::PACKET_ID && <$pktty>::PACKET_ID != KeepalivePacket::PACKET_ID {
+                #[cfg(debug_assertions)]
+                globed_shared::logger::trace!(
+                    "[{} @ {}] Handling packet {}",
+                    $self.account_id.load(Ordering::Relaxed),
+                    $self.peer,
+                    <$pktty>::NAME
+                );
+            }
+
             $code
         }
     };
@@ -27,7 +31,7 @@ macro_rules! gs_handler_sync {
         pub(crate) fn $name(&$self, buf: &mut bytebuffer::ByteReader<'_>) -> crate::server_thread::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
             #[cfg(debug_assertions)]
-            globed_shared::logger::debug!(
+            globed_shared::logger::trace!(
                 "[{} @ {}] Handling packet {}",
                 $self.account_id.load(Ordering::Relaxed),
                 $self.peer,

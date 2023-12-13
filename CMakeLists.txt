@@ -6,6 +6,7 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(globed2 VERSION 1.0.0)
 
+# Debug/Release options
 option(ENABLE_DEBUG "Debug mode" OFF)
 if (ENABLE_DEBUG OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(GLOBED_DEBUG=1)
@@ -19,7 +20,7 @@ file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
 
-# Include winsock
+# Windows - Include winsock
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
     add_definitions(/FI"WinSock2.h")
@@ -30,9 +31,10 @@ if (CMAKE_HOST_SYSTEM MATCHES "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_options("-march=skylake")
 endif()
 
-# enable exceptions on android (this doesn't work !!!!!!! fix me!!!)
+# Android - enable exceptions and set various options
 if (ANDROID)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+    set(ANDROID_PLATFORM "android-24") # android 7, `fseeko` does not exist on earlier sdk versions and is needed for cURL
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions") # (this doesn't work !!!!!!! fix me!!!)
 endif()
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
@@ -75,7 +77,7 @@ CPMAddPackage("gh:curl/curl#curl-8_5_0")
 
 target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium libcurl)
 
-# link to fmod on android
+# Android - link to fmod
 if (ANDROID)
     target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod.so)
 endif()

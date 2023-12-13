@@ -29,12 +29,22 @@ public:
         geode::Mod::get()->setSavedValue<T>("gsetting-" + key, elem);
 
         if (refresh) {
-            this->refreshCache();
+            _cache.lock()->refresh(*this);
+        }
+    }
+
+    // directly get the setting as json, or return a default value if not set
+    template <typename T>
+    inline T getValue(const std::string& key, T defaultopt = T{}) {
+        if (this->getFlag("_gset_-" + key)) {
+            return geode::Mod::get()->getSavedValue<T>("gsetting-" + key);
+        } else {
+            return defaultopt;
         }
     }
 
     // reset a setting to its default value
-    void reset(const std::string& key);
+    void reset(const std::string& key, bool refreshCache = true);
 
     // cached settings for performance & thread safety
     CachedSettings getCached();
@@ -42,44 +52,48 @@ public:
     bool getFlag(const std::string& key);
     void setFlag(const std::string& key, bool state = true);
 
-    /* for ease of modification, all settings and their defaults are defined in the following struct and 3 functions. */
+    class CachedSettings {
+    public:
+        void refresh(GlobedSettings&);
 
-    struct CachedSettings {
-        uint32_t tpsCap;
-        int audioDevice;
+        struct Globed {
+            uint32_t tpsCap;
+            int audioDevice;
+            bool autoconnect; // TODO unimpl
+        };
+
+        struct Overlay {};
+        struct Communication {
+            bool voiceEnabled;
+        };
+
+        struct LevelUI {};
+        struct Players {};
+        struct Advanced {};
+
+        Globed globed;
+        Overlay overlay;
+        Communication communication;
+        LevelUI levelUi;
+        Players players;
+        Advanced advanced;
     };
-
-    // directly get the setting as json
-    template <typename T>
-    inline T getValue(const std::string& key) {
-        if (this->getFlag("_gset_-" + key)) {
-            return geode::Mod::get()->getSavedValue<T>("gsetting-" + key);
-        } else {
-            MAKE_DEFAULT("tps-cap", (uint32_t)0)
-            MAKE_DEFAULT("audio-device", 0)
-
-            return T{};
-        }
-    }
 
     // reset all settings to their default values
     inline void resetAll() {
         static const char* settings[] = {
             "tps-cap",
             "audio-device",
+            "autoconnect",
+
+            "comms-voice-enabled",
         };
 
         for (auto* setting : settings) {
-            this->reset(setting);
+            this->reset(setting, false);
         }
 
-        this->refreshCache();
-    }
-
-    inline void refreshCache() {
-        auto cache = _cache.lock();
-        cache->tpsCap = this->getValue<uint32_t>("tps-cap");
-        cache->audioDevice = this->getValue<int>("audio-device");
+        _cache.lock()->refresh(*this);
     }
 
 private:

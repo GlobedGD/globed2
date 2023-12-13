@@ -32,4 +32,4 @@ after you stop seeing lines that look similar to these:
 
 you can Ctrl+C and stop the build. **If `make` fails and shows an error, that is fine! As long as the headers were generated properly, there is no need to worry.**
 
-after that's done you just proceed to build the mod like any other android mod. **make sure to set minimum SDK version to 24, or you will get linker errors!**
+after that's done you just proceed to build the mod like any other android mod.

@@ -10,7 +10,7 @@ use std::{
 use parking_lot::Mutex as SyncMutex;
 
 use bytebuffer::{ByteBuffer, ByteReader};
-use crypto_box::{
+use globed_shared::crypto_box::{
     aead::{Aead, AeadCore, AeadInPlace, OsRng},
     ChaChaBox,
 };
@@ -177,14 +177,16 @@ impl GameServerThread {
     /// like `send_packet_fast` but without the size being known at compile time.
     /// you have to provide a rough estimate of the packet size, if the packet doesn't fit, the function panics.
     async fn send_packet_fast_rough<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
-        #[cfg(debug_assertions)]
-        debug!(
-            "[{} @ {}] Sending packet {} ({})",
-            self.account_id.load(Ordering::Relaxed),
-            self.peer,
-            P::NAME,
-            if P::ENCRYPTED { "fast + encrypted" } else { "fast" }
-        );
+        if P::PACKET_ID != KeepaliveResponsePacket::PACKET_ID {
+            #[cfg(debug_assertions)]
+            trace!(
+                "[{} @ {}] Sending packet {} ({})",
+                self.account_id.load(Ordering::Relaxed),
+                self.peer,
+                P::NAME,
+                if P::ENCRYPTED { "fast + encrypted" } else { "fast" }
+            );
+        }
 
         if P::ENCRYPTED {
             // gs_inline_encode! doesn't work here because the borrow checker is silly :(

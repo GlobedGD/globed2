@@ -9,7 +9,7 @@ This repository contains the complete rewrite of Globed, for Geometry Dash 2.2 a
 * Real-time multiplayer
 * Voice chat and text messages with **full encryption and zero logging/storage**
 * Available on three of the major platforms (Windows, Mac and Android)
-* Fully open-source, including the server code
+* Fully open-source, including the server
 
 ## Installation
 

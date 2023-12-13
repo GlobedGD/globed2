@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 colored = "2.1.0"
+crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
 log = { version = "0.4.20" }
 nohash-hasher = "0.2.0"
 serde = { version = "1.0.193", features = ["serde_derive"] }
