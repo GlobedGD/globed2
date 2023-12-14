@@ -2,7 +2,7 @@
 
 #include <data/packets/all.hpp>
 #include <managers/error_queues.hpp>
-#include <managers/account_manager.hpp>
+#include <managers/account.hpp>
 #include <managers/profile_cache.hpp>
 #include <util/net.hpp>
 #include <util/debugging.hpp>
@@ -53,7 +53,7 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<LoginFailedPacket>([this](auto packet) {
-        ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> Your credentials have been reset and you have to complete the verification again.\n\nReason: <cy>{}</c>", packet->message));
+        ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> Please try to connect again, if it still doesn't work then reset your authtoken in settings.\n\nReason: <cy>{}</c>", packet->message));
         GlobedAccountManager::get().authToken.lock()->clear();
         this->disconnect(true);
     });
@@ -96,7 +96,12 @@ NetworkManager::~NetworkManager() {
     log::debug("Goodbye!");
 }
 
-void NetworkManager::connect(const std::string& addr, unsigned short port, bool standalone) {
+bool NetworkManager::connect(const std::string& addr, unsigned short port, bool standalone) {
+    if (this->connected() && !this->handshaken()) {
+        ErrorQueues::get().debugWarn("already trying to connect, please wait");
+        return false;
+    }
+
     if (this->connected()) {
         this->disconnect(false);
     }
@@ -114,12 +119,15 @@ void NetworkManager::connect(const std::string& addr, unsigned short port, bool 
 
     auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(gameSocket.box->extractPublicKey()));
     this->send(packet);
+
+    return true;
 }
 
 void NetworkManager::connectWithView(const GameServer& gsview) {
     try {
-        this->connect(gsview.address.ip, gsview.address.port);
-        GameServerManager::get().setActive(gsview.id);
+        if (this->connect(gsview.address.ip, gsview.address.port)) {
+            GameServerManager::get().setActive(gsview.id);
+        }
     } CATCH {
         this->disconnect(true);
         ErrorQueues::get().error(std::string("Connection failed: ") + CATCH_GET_EXC);
@@ -130,8 +138,9 @@ void NetworkManager::connectStandalone() {
     auto server = GameServerManager::get().getServer(GameServerManager::STANDALONE_ID);
 
     try {
-        this->connect(server.address.ip, server.address.port, true);
-        GameServerManager::get().setActive(GameServerManager::STANDALONE_ID);
+        if (this->connect(server.address.ip, server.address.port, true)) {
+            GameServerManager::get().setActive(GameServerManager::STANDALONE_ID);
+        }
     } CATCH {
         this->disconnect(true);
         ErrorQueues::get().error(std::string("Connection failed: ") + CATCH_GET_EXC);
@@ -224,14 +233,12 @@ void NetworkManager::threadMainFunc() {
 
 void NetworkManager::threadRecvFunc() {
     while (_running) {
-        auto pollResult = gameSocket.poll(1000);
-
-        if (!pollResult) {
+        if (!gameSocket.poll(1000)) {
             this->maybeDisconnectIfDead();
             continue;
         }
 
-        std::shared_ptr<Packet> packet;
+        GameSocket::IncomingPacket packet;
 
         try {
             packet = gameSocket.recvPacket();
@@ -240,18 +247,23 @@ void NetworkManager::threadRecvFunc() {
             continue;
         }
 
-        packetid_t packetId = packet->getPacketId();
+        packetid_t packetId = packet.packet->getPacketId();
 
         if (packetId == PingResponsePacket::PACKET_ID) {
-            this->handlePingResponse(packet);
+            this->handlePingResponse(packet.packet);
             continue;
+        }
+
+        // if it's not a ping packet, and it's NOT from the currently connected server, we reject it
+        if (!packet.fromServer) {
+            return;
         }
 
         lastReceivedPacket = util::time::now();
 
         auto builtin = builtinListeners.lock();
         if (builtin->contains(packetId)) {
-            (*builtin)[packetId](packet);
+            (*builtin)[packetId](packet.packet);
             continue;
         }
 
@@ -262,7 +274,7 @@ void NetworkManager::threadRecvFunc() {
                 ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
             } else {
                 // xd
-                (*listeners_)[packetId](packet);
+                (*listeners_)[packetId](packet.packet);
             }
         });
     }
@@ -287,7 +299,15 @@ void NetworkManager::maybeSendKeepalive() {
 
 // Disconnects from the server if there has been no response for a while
 void NetworkManager::maybeDisconnectIfDead() {
-    if (this->connected() && (util::time::now() - lastReceivedPacket) > DISCONNECT_AFTER) {
+    if (!this->connected()) return;
+
+    auto elapsed = util::time::now() - lastReceivedPacket;
+
+    // if we haven't had a handshake response in 5 seconds, assume the server is dead
+    if (!this->handshaken() && elapsed > util::time::secs(5)) {
+        ErrorQueues::get().error("Failed to connect to the server. No response was received after 5 seconds.");
+        this->disconnect(true);
+    } else if (elapsed > DISCONNECT_AFTER) {
         ErrorQueues::get().error("The server you were connected to is not responding to any requests. <cy>You have been disconnected.</c>");
         try {
             this->disconnect();

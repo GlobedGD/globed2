@@ -1,9 +1,6 @@
-use bytebuffer::{ByteBuffer, ByteReader};
 use std::{fmt, str::Utf8Error};
 
-use crate::data::bytebufferext::*;
-#[allow(unused_imports)]
-use globed_shared::logger::*;
+use crate::*;
 
 /// `FastString` is a string class that doesn't use heap allocation like `String` but also owns the string (unlike `&str`).
 /// When encoding or decoding into a byte buffer of any kind, the encoded form is identical to a normal `String`,
@@ -93,7 +90,7 @@ impl<const N: usize> FastString<N> {
 }
 
 impl<const N: usize> Encodable for FastString<N> {
-    fn encode(&self, buf: &mut bytebuffer::ByteBuffer) {
+    fn encode(&self, buf: &mut crate::ByteBuffer) {
         buf.write_u32(self.len as u32);
         buf.write_bytes(&self.buffer[..self.len]);
     }
@@ -122,9 +119,6 @@ impl<const N: usize> Decodable for FastString<N> {
     {
         let len = buf.read_u32()? as usize;
         if len > N {
-            #[cfg(debug_assertions)]
-            warn!("string is too long ({len} chars) to fit into a FastString with capacity {N}");
-
             return Err(DecodeError::NotEnoughCapacityString);
         }
 
@@ -159,12 +153,6 @@ impl<const N: usize> TryFrom<&str> for FastString<N> {
     type Error = DecodeError;
     fn try_from(value: &str) -> DecodeResult<Self> {
         if value.len() > N {
-            #[cfg(debug_assertions)]
-            warn!(
-                "Attempting to convert a string slice with size {} into a FastString with capacity {N}",
-                value.len()
-            );
-
             return Err(DecodeError::NotEnoughCapacityString);
         }
 

@@ -6,7 +6,7 @@ UdpSocket::UdpSocket() : socket_(0) {
 }
 
 UdpSocket::~UdpSocket() {
-    close();
+    this->close();
 }
 
 bool UdpSocket::create() {
@@ -59,9 +59,21 @@ void UdpSocket::disconnect() {
     connected = false;
 }
 
-int UdpSocket::receive(char* buffer, int bufferSize) {
-    socklen_t addrLen = sizeof(destAddr_);
-    return recvfrom(socket_, buffer, bufferSize, 0, reinterpret_cast<struct sockaddr*>(&destAddr_), &addrLen);
+RecvResult UdpSocket::receive(char* buffer, int bufferSize) {
+    sockaddr_in source;
+    socklen_t addrLen = sizeof(source);
+
+    int result = recvfrom(socket_, buffer, bufferSize, 0, reinterpret_cast<struct sockaddr*>(&source), &addrLen);
+
+    bool fromServer = false;
+    if (this->connected) {
+        fromServer = util::net::sameSockaddr(source, destAddr_);
+    }
+
+    return RecvResult {
+        .fromServer = fromServer,
+        .result = result,
+    };
 }
 
 bool UdpSocket::close() {

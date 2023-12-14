@@ -2,16 +2,16 @@
 
 #include <UIBuilder.hpp>
 
-#include "player_list_popup.hpp"
+#include "room_popup.hpp"
 
 using namespace geode::prelude;
 
-bool PlayerListCell::init(const PlayerPreviewAccountData& data) {
+bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     if (!CCLayer::init()) return false;
     this->data = data;
 
     Build<CCMenu>::create()
-        .pos(PlayerListPopup::LIST_WIDTH, CELL_HEIGHT)
+        .pos(RoomPopup::LIST_WIDTH, CELL_HEIGHT)
         .parent(this)
         .store(menu);
 
@@ -22,7 +22,7 @@ bool PlayerListCell::init(const PlayerPreviewAccountData& data) {
     label->setScale(label->getScale() * 0.9f);
 
     auto* btn = Build<CCMenuItemSpriteExtra>::create(label, this, menu_selector(PlayerListCell::onOpenProfile))
-        .pos(-PlayerListPopup::LIST_WIDTH + 57.f, -22.f)
+        .pos(-RoomPopup::LIST_WIDTH + 57.f, -22.f)
         .parent(menu)
         .collect();
 
@@ -39,16 +39,17 @@ bool PlayerListCell::init(const PlayerPreviewAccountData& data) {
         .pos(25.f, CELL_HEIGHT - 22.f)
         .store(simplePlayer);
 
-    // // dont create the button if level id = 0
-    // auto* cbs = CircleButtonSprite::createWithSpriteFrameName("d_skull01_001.png", 1.f, CircleBaseColor::Green, CircleBaseSize::Medium);
-    // Build<CircleButtonSprite>(cbs)
-    //     .scale(0.75f)
-    //     .intoMenuItem([this](auto) {
-    //         // TODO OPen the level
-    //         log::debug("here you open the level ID {}", this->data.levelId);
-    //     })
-    //     .pos(-30.f, -23.f)
-    //     .parent(menu);
+    if (this->data.levelId != 0) {
+        auto* cbs = CircleButtonSprite::createWithSpriteFrameName("d_skull01_001.png", 1.f, CircleBaseColor::Green, CircleBaseSize::Medium);
+        Build<CircleButtonSprite>(cbs)
+            .scale(0.75f)
+            .intoMenuItem([this](auto) {
+                // TODO OPen the level
+                log::debug("here you open the level ID {}", this->data.levelId);
+            })
+            .pos(-30.f, -23.f)
+            .parent(menu);
+    }
 
     return true;
 }
@@ -57,7 +58,7 @@ void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
     ProfilePage::create(data.id, false)->show();
 }
 
-PlayerListCell* PlayerListCell::create(const PlayerPreviewAccountData& data) {
+PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data) {
     auto ret = new PlayerListCell;
     if (ret && ret->init(data)) {
         return ret;

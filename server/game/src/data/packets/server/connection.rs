@@ -10,7 +10,7 @@ pub struct PingResponsePacket {
 #[derive(Packet, Encodable, KnownSize)]
 #[packet(id = 20001, encrypted = false)]
 pub struct CryptoHandshakeResponsePacket {
-    pub key: PublicKey,
+    pub key: CryptoPublicKey,
 }
 
 #[derive(Packet, Encodable, KnownSize)]

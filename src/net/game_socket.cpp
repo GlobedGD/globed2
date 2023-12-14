@@ -17,8 +17,10 @@ GameSocket::~GameSocket() {
     delete[] buffer;
 }
 
-std::shared_ptr<Packet> GameSocket::recvPacket() {
-    auto received = receive(reinterpret_cast<char*>(buffer), BUF_SIZE);
+GameSocket::IncomingPacket GameSocket::recvPacket() {
+    auto recvres = this->receive(reinterpret_cast<char*>(buffer), BUF_SIZE);
+    int received = recvres.result;
+
     GLOBED_REQUIRE(received > 0, "failed to receive data from a socket")
 
     GLOBED_REQUIRE(received >= PacketHeader::SIZE, "packet is missing a header")
@@ -58,7 +60,10 @@ std::shared_ptr<Packet> GameSocket::recvPacket() {
         THROW(std::runtime_error(msg));
     }
 
-    return packet;
+    return IncomingPacket {
+        .packet = packet,
+        .fromServer = recvres.fromServer
+    };
 }
 
 void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {

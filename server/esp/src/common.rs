@@ -1,39 +1,40 @@
-use std::{io::Read, ops::Deref};
-
-use bytebuffer::{ByteBuffer, ByteReader};
-pub use globed_shared::crypto_box::{PublicKey, KEY_SIZE};
-
-use crate::data::bytebufferext::*;
-
 /* Encodable/Decodable implementations for common types */
+
+use crate::*;
+use std::{
+    collections::HashMap,
+    hash::{BuildHasher, Hash},
+    net::{Ipv4Addr, SocketAddrV4},
+    ops::Deref,
+};
 
 macro_rules! impl_primitive {
     ($typ:ty,$read:ident,$write:ident) => {
-        impl crate::data::Encodable for $typ {
+        impl crate::Encodable for $typ {
             #[inline(always)]
             fn encode(&self, buf: &mut bytebuffer::ByteBuffer) {
                 buf.$write(*self);
             }
 
             #[inline(always)]
-            fn encode_fast(&self, buf: &mut crate::data::FastByteBuffer) {
+            fn encode_fast(&self, buf: &mut crate::FastByteBuffer) {
                 buf.$write(*self);
             }
         }
 
-        impl crate::data::Decodable for $typ {
+        impl crate::Decodable for $typ {
             #[inline(always)]
-            fn decode(buf: &mut bytebuffer::ByteBuffer) -> crate::data::DecodeResult<Self> {
+            fn decode(buf: &mut bytebuffer::ByteBuffer) -> crate::DecodeResult<Self> {
                 buf.$read().map_err(|e| e.into())
             }
 
             #[inline(always)]
-            fn decode_from_reader(buf: &mut bytebuffer::ByteReader) -> crate::data::DecodeResult<Self> {
+            fn decode_from_reader(buf: &mut bytebuffer::ByteReader) -> crate::DecodeResult<Self> {
                 buf.$read().map_err(|e| e.into())
             }
         }
 
-        impl crate::data::KnownSize for $typ {
+        impl crate::KnownSize for $typ {
             const ENCODED_SIZE: usize = std::mem::size_of::<$typ>();
         }
     };
@@ -172,20 +173,58 @@ where
     }
 }
 
-/* crypto_box::PublicKey */
+/* HashMap<K, V, [S]> */
 
-encode_impl!(PublicKey, buf, self, {
-    buf.write_bytes(self.as_bytes());
-});
+impl<K, V, S: BuildHasher> Encodable for HashMap<K, V, S>
+where
+    K: Encodable,
+    V: Encodable,
+{
+    fn encode(&self, buf: &mut ByteBuffer) {
+        buf.write_u32(self.len() as u32);
+        for (k, v) in self {
+            buf.write_value(k);
+            buf.write_value(v);
+        }
+    }
 
-size_calc_impl!(PublicKey, KEY_SIZE);
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_u32(self.len() as u32);
+        for (k, v) in self {
+            buf.write_value(k);
+            buf.write_value(v);
+        }
+    }
+}
 
-decode_impl!(PublicKey, buf, {
-    let mut key = [0u8; KEY_SIZE];
-    buf.read_exact(&mut key)?;
+impl<K, V, S: BuildHasher + Default> Decodable for HashMap<K, V, S>
+where
+    K: Decodable + Hash + Eq + PartialEq,
+    V: Decodable,
+{
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
+    }
 
-    Ok(Self::from_bytes(key))
-});
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        let entries = buf.read_u32()?;
+        let mut map = Self::default();
+
+        for _ in 0..entries {
+            let key = buf.read_value()?;
+            let val = buf.read_value()?;
+            map.insert(key, val);
+        }
+
+        Ok(map)
+    }
+}
 
 /* RemainderBytes - wrapper around Box<[u8]> that decodes with `buf.read_remaining_bytes()` and encodes with `buf.write_bytes()` */
 
@@ -225,3 +264,34 @@ impl From<Box<[u8]>> for RemainderBytes {
         Self { data: value }
     }
 }
+
+/* Ipv4Addr */
+
+encode_impl!(Ipv4Addr, buf, self, {
+    let octets = self.octets();
+    buf.write_u8(octets[0]);
+    buf.write_u8(octets[1]);
+    buf.write_u8(octets[2]);
+    buf.write_u8(octets[3]);
+});
+
+decode_impl!(Ipv4Addr, buf, {
+    let octets = [buf.read_u8()?, buf.read_u8()?, buf.read_u8()?, buf.read_u8()?];
+    Ok(Self::from(octets))
+});
+
+size_calc_impl!(Ipv4Addr, size_of_types!(u8) * 4);
+
+/* SocketAddrV4 */
+
+encode_impl!(SocketAddrV4, buf, self, {
+    buf.write_value(self.ip());
+    buf.write_u16(self.port());
+});
+
+decode_impl!(SocketAddrV4, buf, {
+    let ip = buf.read_value()?;
+    Ok(Self::new(ip, buf.read_u16()?))
+});
+
+size_calc_impl!(SocketAddrV4, size_of_types!(Ipv4Addr, u16));

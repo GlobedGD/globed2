@@ -6,13 +6,13 @@ class PlayerListCell : public cocos2d::CCLayer {
 public:
     static constexpr float CELL_HEIGHT = 45.0f;
 
-    static PlayerListCell* create(const PlayerPreviewAccountData& data);
+    static PlayerListCell* create(const PlayerRoomPreviewAccountData& data);
 
 protected:
-    bool init(const PlayerPreviewAccountData& data);
+    bool init(const PlayerRoomPreviewAccountData& data);
     void onOpenProfile(cocos2d::CCObject*);
 
-    PlayerPreviewAccountData data;
+    PlayerRoomPreviewAccountData data;
 
     cocos2d::CCMenu* menu;
     // CCMenuItemSpriteExtra* btnOpenLevel;

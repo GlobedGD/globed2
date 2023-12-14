@@ -21,6 +21,7 @@ use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
 };
 
+use esp::{ByteBufferExtRead, ByteReader};
 use globed_shared::*;
 use reqwest::StatusCode;
 use server::GameServerConfiguration;
@@ -191,12 +192,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         };
 
-        let configuration = response.text().await?;
-        let boot_data: GameServerBootData = match serde_json::from_str(&configuration) {
+        let configuration = response.bytes().await?;
+
+        let boot_data: GameServerBootData = match ByteReader::from_bytes(&configuration).read_value() {
             Ok(x) => x,
             Err(err) => {
                 error!("failed to parse the data sent by the central server: {err}");
-                warn!("hint: make sure the URL you passed is a valid Globed central server URL.");
+                warn!("hint: make sure the URL you passed is a valid Globed central server URL");
+                warn!("hint: also make sure that both the central and the game servers are on the latest version");
                 abort_misconfig();
             }
         };
@@ -218,6 +221,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
             abort_misconfig();
         }
 
+        debug!("Configuration:");
+        debug!("* TPS: {}", boot_data.tps);
+        debug!("* No chat users: {}", boot_data.no_chat.len());
+        debug!("* Special users: {}", boot_data.special_users.len());
+        debug!("* Token expiry: {}", boot_data.token_expiry);
+        debug!("* Maintenance: {}", if boot_data.maintenance { "yes" } else { "no" });
+
+        // print first 4 chars, rest is censored
+        if boot_data.secret_key2.len() > 4 {
+            debug!(
+                "* Token secret key: {}{}",
+                &boot_data.secret_key2[..4],
+                "*".repeat(boot_data.secret_key2.len() - 4)
+            );
+        } else {
+            debug!("* Token secret key: {}", boot_data.secret_key2);
+        }
+
         boot_data
     };
 
@@ -230,7 +251,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             );
             if startup_config.bind_address.port() < 1024 {
                 warn!("hint: ports below 1024 are commonly privileged and you can't use them as a regular user");
-                warn!("hint: pick a higher port number or use port 0 to get a randomly generated port");
+                warn!("hint: pick a higher port number or leave it out completely to use the default port number (41001)");
             }
             abort_misconfig();
         }

@@ -1,6 +1,6 @@
 // this doc is mostly for flamegraphs
 #![allow(clippy::wildcard_imports)]
-use bytebuffer::{ByteBuffer, ByteReader};
+use esp::{ByteBuffer, ByteReader};
 use globed_game_server::{data::*, managers::PlayerManager};
 use std::hint::black_box;
 

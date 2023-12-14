@@ -1,4 +1,4 @@
-#include "player_list_popup.hpp"
+#include "room_popup.hpp"
 
 #include <UIBuilder.hpp>
 
@@ -6,23 +6,23 @@
 #include <data/packets/all.hpp>
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/room.hpp>
 
 using namespace geode::prelude;
 
-bool PlayerListPopup::setup() {
+bool RoomPopup::setup() {
     auto& nm = NetworkManager::get();
     if (!nm.established()) {
         return false;
     }
 
-    this->setTitle("Online players");
+    auto& rm = RoomManager::get();
 
-    nm.addListener<GlobalPlayerListPacket>([this](GlobalPlayerListPacket* packet) {
+    nm.addListener<RoomPlayerListPacket>([this](RoomPlayerListPacket* packet) {
         this->playerList = packet->data;
+        RoomManager::get().setRoom(packet->roomId);
         this->onLoaded();
     });
-
-    nm.send(RequestGlobalPlayerListPacket::create());
 
     auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
     listLayer = GJCommentListLayer::create(listview, "", {192, 114, 62, 255}, LIST_WIDTH, LIST_HEIGHT, false);
@@ -31,15 +31,12 @@ bool PlayerListPopup::setup() {
     listLayer->setPosition({xpos, 50.f});
     m_mainLayer->addChild(listLayer);
 
-    loadingCircle = LoadingCircle::create();
-    loadingCircle->setParentLayer(listLayer);
-    loadingCircle->setPosition(-listLayer->getPosition());
-    loadingCircle->show();
+    this->reloadPlayerList();
 
     return true;
 }
 
-void PlayerListPopup::onLoaded() {
+void RoomPopup::onLoaded() {
     this->removeLoadingCircle();
 
     auto cells = CCArray::create();
@@ -53,21 +50,42 @@ void PlayerListPopup::onLoaded() {
     listLayer->m_list = Build<ListView>::create(cells, PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .parent(listLayer)
         .collect();
+
+    auto& rm = RoomManager::get();
+    this->setTitle(rm.isInGlobal() ? "Global room" : fmt::format("Room {}", rm.roomId));
 }
 
-void PlayerListPopup::removeLoadingCircle() {
+void RoomPopup::removeLoadingCircle() {
     if (loadingCircle) {
         loadingCircle->fadeAndRemove();
         loadingCircle = nullptr;
     }
 }
 
-PlayerListPopup::~PlayerListPopup() {
-    NetworkManager::get().removeListener<GlobalPlayerListPacket>();
+void RoomPopup::reloadPlayerList() {
+    // remove loading circle and existing list
+    this->removeLoadingCircle();
+
+    listLayer->m_list->removeFromParent();
+    listLayer->m_list = Build<ListView>::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
+        .parent(listLayer)
+        .collect();
+
+    // send the request and show a new loading circle
+    NetworkManager::get().send(RequestRoomPlayerListPacket::create());
+
+    loadingCircle = LoadingCircle::create();
+    loadingCircle->setParentLayer(listLayer);
+    loadingCircle->setPosition(-listLayer->getPosition());
+    loadingCircle->show();
 }
 
-PlayerListPopup* PlayerListPopup::create() {
-    auto ret = new PlayerListPopup;
+RoomPopup::~RoomPopup() {
+    NetworkManager::get().removeListener<RoomPlayerListPacket>();
+}
+
+RoomPopup* RoomPopup::create() {
+    auto ret = new RoomPopup;
     if (ret && ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;

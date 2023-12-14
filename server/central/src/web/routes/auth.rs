@@ -6,8 +6,10 @@ use std::{
 
 use anyhow::anyhow;
 use async_rate_limit::limiters::VariableCostRateLimiter;
-use base64::{engine::general_purpose as b64e, Engine as _};
-use globed_shared::logger::{debug, info, log, warn};
+use globed_shared::{
+    base64::{engine::general_purpose as b64e, Engine as _},
+    logger::*,
+};
 use rand::{distributions::Alphanumeric, Rng};
 use roa::{http::StatusCode, preload::PowerBody, query::Query, throw, Context};
 
@@ -95,7 +97,7 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
         throw!(StatusCode::UNAUTHORIZED, "login failed");
     }
 
-    let token = state.generate_token(account_id, account_name);
+    let token = state.token_issuer.generate(account_id, account_name);
     drop(state);
 
     debug!("totp login from {} ({}) successful", account_name, account_id);

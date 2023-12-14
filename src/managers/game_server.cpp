@@ -1,4 +1,4 @@
-#include "game_server_manager.hpp"
+#include "game_server.hpp"
 
 #include <util/net.hpp>
 #include <util/rng.hpp>

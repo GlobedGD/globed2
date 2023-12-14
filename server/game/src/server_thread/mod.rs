@@ -9,14 +9,14 @@ use std::{
 
 use parking_lot::Mutex as SyncMutex;
 
-use bytebuffer::{ByteBuffer, ByteReader};
+use esp::{ByteBuffer, ByteReader};
 use globed_shared::crypto_box::{
     aead::{Aead, AeadCore, AeadInPlace, OsRng},
     ChaChaBox,
 };
 use globed_shared::logger::*;
 
-use crate::{data::*, server::GameServer, server_thread::handlers::*, util::TokioChannel};
+use crate::{data::*, make_uninit, server::GameServer, server_thread::handlers::*, util::TokioChannel};
 
 mod error;
 mod handlers;
@@ -47,7 +47,6 @@ pub struct GameServerThread {
 
     channel: TokioChannel<ServerThreadMessage>,
     awaiting_termination: AtomicBool,
-    pub authenticated: AtomicBool,
     crypto_box: OnceLock<ChaChaBox>,
 
     peer: SocketAddrV4,
@@ -70,7 +69,6 @@ impl GameServerThread {
             account_id: AtomicI32::new(0),
             level_id: AtomicI32::new(0),
             room_id: AtomicU32::new(0),
-            authenticated: AtomicBool::new(false),
             game_server,
             awaiting_termination: AtomicBool::new(false),
             account_data: SyncMutex::new(PlayerAccountData::default()),
@@ -95,8 +93,25 @@ impl GameServerThread {
         }
     }
 
+    pub fn authenticated(&self) -> bool {
+        self.account_id.load(Ordering::Relaxed) != 0
+    }
+
+    /// send a new message to this thread.
+    pub fn push_new_message(&self, data: ServerThreadMessage) -> anyhow::Result<()> {
+        self.channel.try_send(data)?;
+        Ok(())
+    }
+
+    /// schedule the thread to terminate as soon as possible.
+    pub fn terminate(&self) {
+        self.awaiting_termination.store(true, Ordering::Relaxed);
+    }
+
+    /* private utilities */
+
     /// the error printing is different in release and debug. some errors have higher severity than others.
-    pub fn print_error(&self, error: &PacketHandlingError) {
+    fn print_error(&self, error: &PacketHandlingError) {
         if cfg!(debug_assertions) {
             warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
         } else {
@@ -131,18 +146,28 @@ impl GameServerThread {
         }
     }
 
-    /// send a new message to this thread.
-    pub fn push_new_message(&self, data: ServerThreadMessage) -> anyhow::Result<()> {
-        self.channel.try_send(data)?;
-        Ok(())
+    #[inline]
+    #[cfg(debug_assertions)]
+    fn print_packet<P: PacketMetadata>(&self, sending: bool, ptype: Option<&str>) {
+        trace!(
+            "[{}] {} packet {}{}",
+            {
+                let name = self.account_data.lock().name.clone();
+                if name.is_empty() {
+                    self.peer.to_string()
+                } else {
+                    format!("{name} @ {}", self.peer)
+                }
+            },
+            if sending { "Sending" } else { "Handling" },
+            P::NAME,
+            ptype.map_or(String::new(), |pt| format!(" ({pt})"))
+        );
     }
 
-    /// schedule the thread to terminate as soon as possible.
-    pub fn terminate(&self) {
-        self.awaiting_termination.store(true, Ordering::Relaxed);
-    }
-
-    /* private utilities */
+    #[inline]
+    #[cfg(not(debug_assertions))]
+    fn print_packet<P: PacketMetadata>(&self, _sending: bool, _ptype: Option<&str>) {}
 
     /// call `self.terminate()` and send a message to the user
     async fn disconnect(&self, message: FastString<MAX_NOTICE_SIZE>) -> Result<()> {
@@ -153,13 +178,7 @@ impl GameServerThread {
     /// send a packet normally. with zero extra optimizations. like a sane person typically would.
     #[allow(dead_code)]
     async fn send_packet<P: Packet + Encodable>(&self, packet: &P) -> Result<()> {
-        #[cfg(debug_assertions)]
-        debug!(
-            "[{} @ {}] Sending packet {} (normal)",
-            self.account_id.load(Ordering::Relaxed),
-            self.peer,
-            P::NAME
-        );
+        self.print_packet::<P>(true, None);
 
         let serialized = self.serialize_packet(packet)?;
         self.send_buffer(serialized.as_bytes()).await
@@ -178,14 +197,7 @@ impl GameServerThread {
     /// you have to provide a rough estimate of the packet size, if the packet doesn't fit, the function panics.
     async fn send_packet_fast_rough<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
         if P::PACKET_ID != KeepaliveResponsePacket::PACKET_ID {
-            #[cfg(debug_assertions)]
-            trace!(
-                "[{} @ {}] Sending packet {} ({})",
-                self.account_id.load(Ordering::Relaxed),
-                self.peer,
-                P::NAME,
-                if P::ENCRYPTED { "fast + encrypted" } else { "fast" }
-            );
+            self.print_packet::<P>(true, Some(if P::ENCRYPTED { "fast + encrypted" } else { "fast" }));
         }
 
         if P::ENCRYPTED {
@@ -303,20 +315,24 @@ impl GameServerThread {
     }
 
     fn is_chat_packet_allowed(&self, voice: bool, len: usize) -> bool {
-        if !self.authenticated.load(Ordering::Relaxed) {
+        let accid = self.account_id.load(Ordering::Relaxed);
+        if accid == 0 {
+            // unauthorized
             return false;
         }
 
-        let accid = self.account_id.load(Ordering::Relaxed);
         if self.game_server.chat_blocked(accid) {
+            // blocked from chat
             return false;
         }
 
         if !voice {
+            // chat packet - is permitted at this point
             return true;
         }
 
         if len > MAX_VOICE_PACKET_SIZE {
+            // voice packet is too big
             return false;
         }
 
@@ -403,11 +419,11 @@ impl GameServerThread {
             let ciphertext_start = mac_start + MAC_SIZE;
 
             let mut nonce = [0u8; NONCE_SIZE];
-            nonce[..NONCE_SIZE].clone_from_slice(&message[nonce_start..mac_start]);
+            nonce.clone_from_slice(&message[nonce_start..mac_start]);
             let nonce = nonce.into();
 
             let mut mac = [0u8; MAC_SIZE];
-            mac[..MAC_SIZE].clone_from_slice(&message[mac_start..ciphertext_start]);
+            mac.clone_from_slice(&message[mac_start..ciphertext_start]);
             let mac = mac.into();
 
             cbox.decrypt_in_place_detached(&nonce, b"", &mut message[ciphertext_start..], &mac)

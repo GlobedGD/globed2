@@ -85,4 +85,13 @@ namespace util::net {
 
         return out;
     }
+
+    bool sameSockaddr(const sockaddr_in& s1, const sockaddr_in& s2) {
+        if (s1.sin_family != s2.sin_family || s1.sin_port != s2.sin_port) {
+            return false;
+        }
+
+        return std::memcmp(&s1.sin_addr, &s2.sin_addr, sizeof(s1.sin_addr)) == 0;
+    }
 }
+

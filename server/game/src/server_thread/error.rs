@@ -1,6 +1,6 @@
 use std::{fmt::Display, time::SystemTimeError};
 
-use crate::data::{bytebufferext::DecodeError, types::ColorParseError};
+use crate::data::{types::ColorParseError, DecodeError};
 
 pub enum PacketHandlingError {
     Other(String),                         // unknown generic error

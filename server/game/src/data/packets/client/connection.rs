@@ -10,7 +10,7 @@ pub struct PingPacket {
 #[packet(id = 10001, encrypted = false)]
 pub struct CryptoHandshakeStartPacket {
     pub protocol: u16,
-    pub key: PublicKey,
+    pub key: CryptoPublicKey,
 }
 
 #[derive(Packet, Decodable)]

@@ -1,7 +1,28 @@
-use std::fmt::Display;
+//! esp - Binary serialization protocol library.
+//! Provides traits `Encodable`, `Decodable` and `KnownSize` and implementations of those traits for many core types.
+//!
+//! Also re-exports `ByteBuffer` and `ByteReader` (extended w/ traits `ByteBufferReadExt` and `ByteBufferWriteExt`),
+//! and its own `FastByteBuffer` which makes zero allocation on its own and can be used with stack/alloca arrays.
+//!
+//! esp also provides optimized types such as `FastString` that will be more computation- and space-efficient,
+//! and shall be used for encoding instead of the alternatives when possible.
 
-use crate::data::packets::{PacketHeader, PacketMetadata};
-use bytebuffer::{ByteBuffer, ByteReader};
+#![allow(
+    clippy::must_use_candidate,
+    clippy::cast_possible_truncation,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::missing_safety_doc,
+    clippy::wildcard_imports
+)]
+use std::fmt::Display;
+mod common;
+mod fastbuffer;
+pub mod types;
+
+pub use bytebuffer::{ByteBuffer, ByteReader, Endian};
+pub use common::*;
+pub use fastbuffer::FastByteBuffer;
 
 #[derive(Debug)]
 pub enum DecodeError {
@@ -50,15 +71,6 @@ pub trait KnownSize {
     const ENCODED_SIZE: usize;
 }
 
-/// maximum characters in a user's name (24). they can only be 15 chars max but we give headroom just in case
-pub const MAX_NAME_SIZE: usize = 24;
-/// maximum characters in a `ServerNoticePacket` or `ServerDisconnectPacket` (164)
-pub const MAX_NOTICE_SIZE: usize = 164;
-/// maximum characters in a user message (156)
-pub const MAX_MESSAGE_SIZE: usize = 156;
-/// amount of chars in a room id string (6)
-pub const ROOM_ID_LENGTH: usize = 6;
-
 /// Simple and compact way of implementing `Decodable::decode` and `Decodable::decode_from_reader`.
 ///
 /// Example usage:
@@ -71,14 +83,16 @@ pub const ROOM_ID_LENGTH: usize = 6;
 ///     Ok(Self { some_val: buf.read()? })
 /// });
 /// ```
+#[macro_export]
 macro_rules! decode_impl {
     ($typ:ty, $buf:ident, $decode:expr) => {
-        impl crate::data::Decodable for $typ {
-            fn decode($buf: &mut bytebuffer::ByteBuffer) -> crate::data::DecodeResult<Self> {
+        impl $crate::Decodable for $typ {
+            #[inline]
+            fn decode($buf: &mut $crate::ByteBuffer) -> $crate::DecodeResult<Self> {
                 $decode
             }
-
-            fn decode_from_reader($buf: &mut bytebuffer::ByteReader) -> crate::data::DecodeResult<Self> {
+            #[inline]
+            fn decode_from_reader($buf: &mut $crate::ByteReader) -> $crate::DecodeResult<Self> {
                 $decode
             }
         }
@@ -97,14 +111,16 @@ macro_rules! decode_impl {
 ///     buf.write(&self.some_val);
 /// });
 /// ```
+#[macro_export]
 macro_rules! encode_impl {
     ($typ:ty, $buf:ident, $self:ident, $encode:expr) => {
-        impl crate::data::Encodable for $typ {
-            fn encode(&$self, $buf: &mut bytebuffer::ByteBuffer) {
+        impl $crate::Encodable for $typ {
+            #[inline]
+            fn encode(&$self, $buf: &mut $crate::ByteBuffer) {
                 $encode
             }
-
-            fn encode_fast(&$self, $buf: &mut crate::data::FastByteBuffer) {
+            #[inline]
+            fn encode_fast(&$self, $buf: &mut $crate::FastByteBuffer) {
                 $encode
             }
         }
@@ -121,9 +137,10 @@ macro_rules! encode_impl {
 ///
 /// size_calc_impl!(Type, 4);
 /// ```
+#[macro_export]
 macro_rules! size_calc_impl {
     ($typ:ty, $calc:expr) => {
-        impl crate::data::bytebufferext::KnownSize for $typ {
+        impl $crate::KnownSize for $typ {
             const ENCODED_SIZE: usize = $calc;
         }
     };
@@ -135,16 +152,12 @@ macro_rules! size_calc_impl {
 /// ```rust
 /// let size = size_of_types!(u32, Option<PlayerData>, bool);
 /// ```
+#[macro_export]
 macro_rules! size_of_types {
     ($($t:ty),+ $(,)?) => {{
         0 $(+ <$t>::ENCODED_SIZE)*
     }};
 }
-
-pub(crate) use decode_impl;
-pub(crate) use encode_impl;
-pub(crate) use size_calc_impl;
-pub(crate) use size_of_types;
 
 /* ByteBuffer extensions */
 
@@ -169,8 +182,6 @@ pub trait ByteBufferExtWrite {
     fn write_value_array<T: Encodable, const N: usize>(&mut self, val: &[T; N]);
     /// write a `Vec<T>`, prefixed with 4 bytes indicating the amount of values
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
-
-    fn write_packet_header<T: PacketMetadata>(&mut self);
 }
 
 pub trait ByteBufferExtRead {
@@ -192,134 +203,6 @@ pub trait ByteBufferExtRead {
     fn read_value_array<T: Decodable, const N: usize>(&mut self) -> DecodeResult<[T; N]>;
     /// read a `Vec<T>`
     fn read_value_vec<T: Decodable>(&mut self) -> DecodeResult<Vec<T>>;
-
-    fn read_packet_header(&mut self) -> DecodeResult<PacketHeader>;
-}
-
-/// Buffer for encoding that does zero heap allocation but also has limited functionality.
-/// It will panic on writes if there isn't enough space.
-/// On average, is at least 5x faster than a regular `ByteBuffer`.
-pub struct FastByteBuffer<'a> {
-    pos: usize,
-    len: usize,
-    data: &'a mut [u8],
-}
-
-#[allow(clippy::inline_always)]
-impl<'a> FastByteBuffer<'a> {
-    /// Create a new `FastByteBuffer` given this mutable slice
-    pub fn new(src: &'a mut [u8]) -> Self {
-        Self {
-            pos: 0,
-            len: 0,
-            data: src,
-        }
-    }
-
-    pub fn new_with_length(src: &'a mut [u8], len: usize) -> Self {
-        Self { pos: 0, len, data: src }
-    }
-
-    #[inline(always)]
-    pub fn write_u8(&mut self, val: u8) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_u16(&mut self, val: u16) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_u32(&mut self, val: u32) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_u64(&mut self, val: u64) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_i8(&mut self, val: i8) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_i16(&mut self, val: i16) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_i32(&mut self, val: i32) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_i64(&mut self, val: i64) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_f32(&mut self, val: f32) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_f64(&mut self, val: f64) {
-        self.internal_write(&val.to_be_bytes());
-    }
-
-    #[inline(always)]
-    pub fn write_bytes(&mut self, data: &[u8]) {
-        self.internal_write(data);
-    }
-
-    #[inline(always)]
-    pub fn write_string(&mut self, val: &str) {
-        self.write_u32(val.len() as u32);
-        self.write_bytes(val.as_bytes());
-    }
-
-    #[inline(always)]
-    pub fn as_bytes(&'a mut self) -> &'a [u8] {
-        &self.data[..self.len]
-    }
-
-    #[inline(always)]
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    #[inline(always)]
-    pub fn set_pos(&mut self, pos: usize) {
-        self.pos = pos;
-    }
-
-    #[inline(always)]
-    pub fn is_empty(&self) -> bool {
-        self.len == 0
-    }
-
-    #[inline(always)]
-    pub fn capacity(&self) -> usize {
-        self.data.len()
-    }
-
-    /// Write the given byte slice. Panics if there is not enough capacity left to write the data.
-    fn internal_write(&mut self, data: &[u8]) {
-        debug_assert!(
-            self.pos + data.len() <= self.capacity(),
-            "not enough space to write data into FastByteBuffer, capacity: {}, pos: {}, attempted write size: {}",
-            self.capacity(),
-            self.pos,
-            data.len()
-        );
-
-        self.data[self.pos..self.pos + data.len()].copy_from_slice(data);
-        self.pos += data.len();
-        self.len = self.len.max(self.pos);
-    }
 }
 
 /* ByteBuffer extension implementation for ByteBuffer, ByteReader and FastByteBuffer */
@@ -334,19 +217,23 @@ impl ByteBufferExt for ByteBuffer {
 
 macro_rules! impl_extwrite {
     ($encode_fn:ident) => {
+        #[inline]
         fn write_bool(&mut self, val: bool) {
             self.write_u8(u8::from(val));
         }
 
+        #[inline]
         fn write_byte_array(&mut self, val: &[u8]) {
             self.write_u32(val.len() as u32);
             self.write_bytes(val);
         }
 
+        #[inline]
         fn write_value<T: Encodable>(&mut self, val: &T) {
             val.$encode_fn(self);
         }
 
+        #[inline]
         fn write_optional_value<T: Encodable>(&mut self, val: Option<&T>) {
             self.write_bool(val.is_some());
             if let Some(val) = val {
@@ -354,34 +241,35 @@ macro_rules! impl_extwrite {
             }
         }
 
+        #[inline]
         fn write_value_array<T: Encodable, const N: usize>(&mut self, val: &[T; N]) {
             val.iter().for_each(|v| self.write_value(v));
         }
 
+        #[inline]
         fn write_value_vec<T: Encodable>(&mut self, val: &[T]) {
             self.write_u32(val.len() as u32);
             for elem in val {
                 elem.$encode_fn(self);
             }
         }
-
-        fn write_packet_header<T: PacketMetadata>(&mut self) {
-            self.write_value(&PacketHeader::from_packet::<T>());
-        }
     };
 }
 
 macro_rules! impl_extread {
     ($decode_fn:ident) => {
+        #[inline]
         fn read_bool(&mut self) -> DecodeResult<bool> {
             Ok(self.read_u8()? != 0u8)
         }
 
+        #[inline]
         fn read_byte_array(&mut self) -> DecodeResult<Vec<u8>> {
             let length = self.read_u32()? as usize;
             Ok(self.read_bytes(length)?)
         }
 
+        #[inline]
         fn read_remaining_bytes(&mut self) -> DecodeResult<Vec<u8>> {
             let remainder = self.len() - self.get_rpos();
             let mut data = Vec::with_capacity(remainder);
@@ -398,10 +286,12 @@ macro_rules! impl_extread {
             Ok(data)
         }
 
+        #[inline]
         fn read_value<T: Decodable>(&mut self) -> DecodeResult<T> {
             T::$decode_fn(self)
         }
 
+        #[inline]
         fn read_optional_value<T: Decodable>(&mut self) -> DecodeResult<Option<T>> {
             Ok(match self.read_bool()? {
                 false => None,
@@ -409,10 +299,12 @@ macro_rules! impl_extread {
             })
         }
 
+        #[inline]
         fn read_value_array<T: Decodable, const N: usize>(&mut self) -> DecodeResult<[T; N]> {
             array_init::try_array_init(|_| self.read_value::<T>())
         }
 
+        #[inline]
         fn read_value_vec<T: Decodable>(&mut self) -> DecodeResult<Vec<T>> {
             let mut out = Vec::new();
             let length = self.read_u32()? as usize;
@@ -421,10 +313,6 @@ macro_rules! impl_extread {
             }
 
             Ok(out)
-        }
-
-        fn read_packet_header(&mut self) -> DecodeResult<PacketHeader> {
-            self.read_value()
         }
     };
 }

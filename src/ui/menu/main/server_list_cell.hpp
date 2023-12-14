@@ -1,6 +1,6 @@
 #pragma once
 #include <defs.hpp>
-#include <managers/game_server_manager.hpp>
+#include <managers/game_server.hpp>
 
 class ServerListCell : public cocos2d::CCLayer {
 public:

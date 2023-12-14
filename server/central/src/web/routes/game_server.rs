@@ -1,4 +1,8 @@
-use globed_shared::{logger::debug, GameServerBootData, PROTOCOL_VERSION};
+use globed_shared::{
+    esp::{ByteBuffer, ByteBufferExtWrite},
+    logger::debug,
+    GameServerBootData, PROTOCOL_VERSION,
+};
 use reqwest::StatusCode;
 use roa::{preload::PowerBody, query::Query, throw, Context};
 
@@ -53,6 +57,8 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         special_users: config.special_users.clone(),
         tps: config.tps,
         maintenance: config.maintenance,
+        secret_key2: config.secret_key2.clone(),
+        token_expiry: config.token_expiry,
     };
 
     debug!(
@@ -61,38 +67,15 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         context.remote_addr.ip()
     );
 
-    let bdata = serde_json::to_string(&bdata)?;
+    let mut bb = ByteBuffer::new();
+    bb.write_value(&bdata);
 
     drop(state);
-    context.write(bdata);
-
-    Ok(())
-}
-
-pub async fn verify_token(context: &mut Context<ServerState>) -> roa::Result {
-    check_user_agent!(context, _ua);
-
-    let password = &*context.must_query("pw")?;
-    let correct = context.state_read().await.config.game_server_password.clone();
-
-    if !verify_password(password, &correct) {
-        throw!(StatusCode::UNAUTHORIZED, "invalid gameserver credentials");
-    }
-
-    let account_id = &*context.must_query("account_id")?;
-    let account_id = account_id.parse::<i32>()?;
-    let token = &*context.must_query("token")?;
-
-    let result = context.state_read().await.verify_token(account_id, token);
-
-    match result {
-        Ok(name) => {
-            context.write(format!("status_ok:{name}"));
-        }
-        Err(e) => {
-            context.write(e.to_string());
-        }
-    }
+    context.write(bb.into_vec());
+    context
+        .resp
+        .headers
+        .insert(roa::http::header::CONTENT_TYPE, "application/octet-stream".parse().unwrap());
 
     Ok(())
 }

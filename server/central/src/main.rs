@@ -2,10 +2,16 @@
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
-    clippy::missing_panics_doc
+    clippy::missing_panics_doc,
+    clippy::wildcard_imports
 )]
 
-use std::{error::Error, path::PathBuf, time::Duration};
+use std::{
+    error::Error,
+    net::{IpAddr, SocketAddr},
+    path::PathBuf,
+    time::Duration,
+};
 
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
@@ -69,8 +75,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mnt_point = config.web_mountpoint.clone();
 
     let state_skey = config.secret_key.clone();
+    let state_skey2 = config.secret_key2.clone();
 
-    let state = ServerState::new(ServerStateData::new(config_path.clone(), config, &state_skey));
+    let state = ServerState::new(ServerStateData::new(config_path.clone(), config, &state_skey, &state_skey2));
 
     // config file watcher
 
@@ -103,10 +110,36 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let route_list = router.routes(Box::leak(Box::new(mnt_point)))?;
     let app = App::state(state).end(route_list);
 
-    app.listen(mnt_addr, |addr| {
+    let listen_addr = match mnt_addr.parse::<SocketAddr>() {
+        Ok(x) => x,
+        Err(err) => {
+            // try parse it as an IP address and use port 41000
+            if let Ok(x) = mnt_addr.parse::<IpAddr>() {
+                SocketAddr::new(x, 41000)
+            } else {
+                error!("failed to parse the HTTP bind address: {err}");
+                warn!("hint: the address must be a valid IPv4/IPv6 address with an optional port number");
+                warn!("hint: examples include \"127.0.0.1\", \"0.0.0.0:41000\"");
+                abort_misconfig();
+            }
+        }
+    };
+
+    let server = match app.listen(listen_addr, |addr| {
         info!("Globed central server launched on {addr}");
-    })?
-    .await?;
+    }) {
+        Ok(x) => x,
+        Err(e) => {
+            error!("failed to setup the HTTP server with address {listen_addr}: {e}");
+            if listen_addr.port() < 1024 {
+                warn!("hint: ports below 1024 are commonly privileged and you can't use them as a regular user");
+                warn!("hint: pick a higher port number or leave it out completely to use the default port number (41000)");
+            }
+            abort_misconfig();
+        }
+    };
+
+    server.await?;
 
     Ok(())
 }

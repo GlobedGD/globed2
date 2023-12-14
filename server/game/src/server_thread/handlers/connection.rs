@@ -51,11 +51,11 @@ impl GameServerThread {
             }
 
             self.crypto_box
-                .get_or_init(|| ChaChaBox::new(&packet.key, &self.game_server.secret_key));
+                .get_or_init(|| ChaChaBox::new(&packet.key.0, &self.game_server.secret_key));
         }
 
         self.send_packet_fast(&CryptoHandshakeResponsePacket {
-            key: self.game_server.secret_key.public_key().clone(),
+            key: self.game_server.public_key.clone().into(),
         })
         .await
     });
@@ -70,23 +70,6 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
-        if self.game_server.standalone {
-            debug!("Login successful from {} ({})", packet.name, packet.account_id);
-            self.game_server.check_already_logged_in(packet.account_id)?;
-            self.authenticated.store(true, Ordering::Relaxed);
-            self.account_id.store(packet.account_id, Ordering::Relaxed);
-            self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed);
-            {
-                let mut account_data = self.account_data.lock();
-                account_data.account_id = packet.account_id;
-                account_data.name = packet.name;
-                account_data.icons.clone_from(&packet.icons);
-            }
-            let tps = self.game_server.central_conf.lock().tps;
-            self.send_packet_fast(&LoggedInPacket { tps }).await?;
-            return Ok(());
-        }
-
         // disconnect if server is under maintenance
         if self.game_server.central_conf.lock().maintenance {
             gs_disconnect!(
@@ -95,62 +78,56 @@ impl GameServerThread {
             );
         }
 
-        // lets verify the given token
+        // skip authentication if standalone
+        let standalone = self.game_server.standalone;
+        let player_name = if standalone {
+            packet.name
+        } else {
+            // lets verify the given token
+            match self
+                .game_server
+                .token_issuer
+                .validate(packet.account_id, packet.token.to_str().unwrap())
+            {
+                Ok(x) => FastString::from_str(&x),
+                Err(err) => {
+                    self.terminate();
+                    let mut message = FastString::from_str("authentication failed: ");
+                    message.extend(err.error_message()); // no need to use extend_safe as the messages are pretty short
+                    self.send_packet_fast(&LoginFailedPacket { message }).await?;
 
-        let url = format!("{}gs/verify", self.game_server.config.central_url);
-
-        let response = self
-            .game_server
-            .config
-            .http_client
-            .post(url)
-            .query(&[
-                ("account_id", packet.account_id.to_string()),
-                ("token", packet.token.try_into()?),
-                ("pw", self.game_server.config.central_pw.clone()),
-            ])
-            .send()
-            .await?
-            .error_for_status()?
-            .text()
-            .await?;
-
-        if !response.starts_with("status_ok:") {
-            self.terminate();
-            let mut message = FastString::from_str("authentication failed: ");
-            message.extend_safe(&response);
-            self.send_packet_fast(&LoginFailedPacket { message }).await?;
-
-            return Ok(());
-        }
-
-        let player_name = response
-            .split_once(':')
-            .ok_or(PacketHandlingError::UnexpectedCentralResponse)?
-            .1;
+                    return Ok(());
+                }
+            }
+        };
 
         self.game_server.check_already_logged_in(packet.account_id)?;
-        self.authenticated.store(true, Ordering::Relaxed);
         self.account_id.store(packet.account_id, Ordering::Relaxed);
         self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
+
+        info!(
+            "Login successful from {player_name} (account ID: {}, address: {})",
+            packet.account_id, self.peer
+        );
 
         {
             let mut account_data = self.account_data.lock();
             account_data.account_id = packet.account_id;
             account_data.icons.clone_from(&packet.icons);
-            // we have packet.name but that can be spoofed so we don't trust it in non-standalone mode
-            account_data.name = FastString::from_str(player_name);
+            account_data.name = player_name;
 
-            let special_user_data = self
-                .game_server
-                .central_conf
-                .lock()
-                .special_users
-                .get(&packet.account_id)
-                .cloned();
+            if !standalone {
+                let special_user_data = self
+                    .game_server
+                    .central_conf
+                    .lock()
+                    .special_users
+                    .get(&packet.account_id)
+                    .cloned();
 
-            if let Some(sud) = special_user_data {
-                account_data.special_user_data = Some(sud.try_into()?);
+                if let Some(sud) = special_user_data {
+                    account_data.special_user_data = Some(sud.try_into()?);
+                }
             }
         }
 
@@ -160,8 +137,6 @@ impl GameServerThread {
             .room_manager
             .get_global()
             .create_player(packet.account_id);
-
-        debug!("Login successful from {player_name} ({})", packet.account_id);
 
         let tps = self.game_server.central_conf.lock().tps;
         self.send_packet_fast(&LoggedInPacket { tps }).await?;

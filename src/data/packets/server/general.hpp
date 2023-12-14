@@ -36,7 +36,11 @@ class RoomPlayerListPacket : public Packet {
     GLOBED_PACKET(21004, false)
 
     GLOBED_PACKET_ENCODE_UNIMPL
-    GLOBED_PACKET_DECODE { buf.readValueVectorInto<PlayerRoomPreviewAccountData>(data); }
+    GLOBED_PACKET_DECODE {
+        roomId = buf.readU32();
+        buf.readValueVectorInto<PlayerRoomPreviewAccountData>(data);
+    }
 
+    uint32_t roomId;
     std::vector<PlayerRoomPreviewAccountData> data;
 };

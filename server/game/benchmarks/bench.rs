@@ -1,7 +1,7 @@
 #![allow(clippy::wildcard_imports)]
-use bytebuffer::{ByteBuffer, ByteReader};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use globed_game_server::{data::*, managers::PlayerManager};
+use esp::{ByteBuffer, ByteReader};
+use globed_game_server::{data::*, make_uninit, managers::PlayerManager, new_uninit};
 use rand::RngCore;
 
 fn buffers(c: &mut Criterion) {
@@ -17,10 +17,7 @@ fn buffers(c: &mut Criterion) {
     c.bench_function("alloca-byte-buffer", |b| {
         b.iter(black_box(|| {
             alloca::with_alloca(PlayerAccountData::ENCODED_SIZE * 64, |data_| {
-                let stackarray = unsafe {
-                    let ptr = data_.as_mut_ptr().cast::<u8>();
-                    std::slice::from_raw_parts_mut(ptr, std::mem::size_of_val(data_))
-                };
+                let stackarray = unsafe { make_uninit!(data_) };
 
                 let mut buf = FastByteBuffer::new(stackarray);
                 for _ in 0..64 {
@@ -39,6 +36,21 @@ fn buffers(c: &mut Criterion) {
         b.iter(black_box(|| {
             let mut stackarray = [0u8; PlayerAccountData::ENCODED_SIZE * 64];
             let mut buf = FastByteBuffer::new(&mut stackarray);
+            for _ in 0..64 {
+                buf.write_value(&data);
+            }
+
+            // let mut buf = ByteReader::from_bytes(&stackarray);
+            // for _ in 0..64 {
+            //     assert_eq!(buf.read_value::<PlayerAccountData>().unwrap().account_id, data.account_id);
+            // }
+        }));
+    });
+
+    c.bench_function("fast-byte-buffer-uninit", |b| {
+        b.iter(black_box(|| {
+            let stackarray = unsafe { new_uninit!(PlayerAccountData::ENCODED_SIZE * 64) };
+            let mut buf = FastByteBuffer::new(stackarray);
             for _ in 0..64 {
                 buf.write_value(&data);
             }

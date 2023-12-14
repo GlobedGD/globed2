@@ -1,5 +1,5 @@
 [workspace]
-members = ["central", "game", "game-derive", "shared"]
+members = ["central", "esp", "game", "derive", "shared"]
 resolver = "2"
 
 # TODO bring back in release

@@ -5,8 +5,8 @@
 
 #include "server_switcher_popup.hpp"
 #include <net/network_manager.hpp>
-#include <managers/central_server_manager.hpp>
-#include <managers/game_server_manager.hpp>
+#include <managers/central_server.hpp>
+#include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
 
 using namespace geode::prelude;
@@ -25,7 +25,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
         .parent(m_mainLayer);
 
     // address input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "127.0.0.1:41001", "chatFont.fnt", std::string("123467890.:"), 21)
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "127.0.0.1:41001", "chatFont.fnt", std::string("1234567890.:"), 21)
         .pos(popupCenter, POPUP_HEIGHT - 40.f)
         .parent(m_mainLayer)
         .id("direct-connection-addr"_spr)

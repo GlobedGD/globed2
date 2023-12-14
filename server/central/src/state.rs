@@ -6,14 +6,16 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant},
 };
 
 use anyhow::anyhow;
 use async_rate_limit::sliding_window::SlidingWindowRateLimiter;
-use base64::{engine::general_purpose as b64e, Engine};
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
+use globed_shared::{
+    hmac::{Hmac, Mac},
+    sha2::Sha256,
+    TokenIssuer,
+};
 use tokio::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use crate::config::{ServerConfig, UserlistMode};
@@ -32,6 +34,7 @@ pub struct ServerStateData {
     pub config_path: PathBuf,
     pub config: ServerConfig,
     pub hmac: Hmac<Sha256>,
+    pub token_issuer: TokenIssuer,
     pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
     pub http_client: reqwest::Client,
     pub login_attempts: HashMap<IpAddr, Instant>,
@@ -39,7 +42,7 @@ pub struct ServerStateData {
 }
 
 impl ServerStateData {
-    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: &str) -> Self {
+    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: &str, token_secret_key: &str) -> Self {
         let skey_bytes = secret_key.as_bytes();
         let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
 
@@ -47,11 +50,13 @@ impl ServerStateData {
 
         let api_rl = config.gd_api_ratelimit;
         let api_rl_period = config.gd_api_period;
+        let token_expiry = Duration::from_secs(config.token_expiry);
 
         Self {
             config_path,
             config,
             hmac,
+            token_issuer: TokenIssuer::new(token_secret_key, token_expiry),
             active_challenges: HashMap::new(),
             http_client,
             login_attempts: HashMap::new(),
@@ -86,59 +91,6 @@ impl ServerStateData {
 
     pub fn verify_challenge(&self, orig_value: &str, answer: &str) -> bool {
         self.verify_totp(orig_value.as_bytes(), answer)
-    }
-
-    // generate a token, similar to jwt but more efficient and lightweight
-    pub fn generate_token(&self, account_id: i32, account_name: &str) -> String {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("whoops our clock went backwards")
-            .as_secs();
-
-        let data = format!("{account_id}.{account_name}.{timestamp}");
-        let mut hmac = self.hmac.clone();
-        hmac.update(data.as_bytes());
-        let res = hmac.finalize();
-
-        format!(
-            "{}.{}",
-            b64e::URL_SAFE_NO_PAD.encode(data),
-            b64e::URL_SAFE_NO_PAD.encode(res.into_bytes())
-        )
-    }
-
-    // verify the token and return the username if it's valid
-    pub fn verify_token(&self, account_id: i32, token: &str) -> anyhow::Result<String> {
-        let timestamp = SystemTime::now();
-
-        let (claims, signature) = token.split_once('.').ok_or(anyhow!("malformed token"))?;
-
-        let data_str = String::from_utf8(b64e::URL_SAFE_NO_PAD.decode(claims)?)?;
-        let mut claims = data_str.split('.');
-
-        let orig_id = claims.next().ok_or(anyhow!("malformed token"))?.parse::<i32>()?;
-        let orig_name = claims.next().ok_or(anyhow!("malformed token"))?;
-        let orig_ts = claims.next().ok_or(anyhow!("malformed token"))?;
-
-        if orig_id != account_id {
-            return Err(anyhow!("token validation failed"));
-        }
-
-        let elapsed = timestamp.duration_since(UNIX_EPOCH + Duration::from_secs(orig_ts.parse::<u64>()?))?;
-
-        if elapsed > Duration::from_secs(self.config.token_expiry) {
-            return Err(anyhow!("expired token, please reauthenticate"));
-        }
-
-        // verify the signature
-        let mut hmac = self.hmac.clone();
-        hmac.update(data_str.as_bytes());
-
-        let signature = b64e::URL_SAFE_NO_PAD.decode(signature)?;
-
-        hmac.verify_slice(&signature)?;
-
-        Ok(orig_name.to_string())
     }
 
     pub fn is_ratelimited(&self, addr: &IpAddr) -> bool {

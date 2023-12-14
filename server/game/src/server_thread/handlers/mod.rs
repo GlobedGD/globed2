@@ -2,22 +2,17 @@ mod connection;
 mod game;
 mod general;
 
+use crate::make_uninit;
 pub use game::{MAX_VOICE_PACKET_SIZE, MAX_VOICE_THROUGHPUT};
 
 /// packet handler for a specific packet type
 macro_rules! gs_handler {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
-        pub(crate) async fn $name(&$self, buf: &mut bytebuffer::ByteReader<'_>) -> crate::server_thread::Result<()> {
+        pub(crate) async fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::server_thread::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
 
             if <$pktty>::PACKET_ID != PlayerDataPacket::PACKET_ID && <$pktty>::PACKET_ID != KeepalivePacket::PACKET_ID {
-                #[cfg(debug_assertions)]
-                globed_shared::logger::trace!(
-                    "[{} @ {}] Handling packet {}",
-                    $self.account_id.load(Ordering::Relaxed),
-                    $self.peer,
-                    <$pktty>::NAME
-                );
+                $self.print_packet::<$pktty>(false, None);
             }
 
             $code
@@ -28,15 +23,9 @@ macro_rules! gs_handler {
 /// packet handler except not async
 macro_rules! gs_handler_sync {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
-        pub(crate) fn $name(&$self, buf: &mut bytebuffer::ByteReader<'_>) -> crate::server_thread::Result<()> {
+        pub(crate) fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::server_thread::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
-            #[cfg(debug_assertions)]
-            globed_shared::logger::trace!(
-                "[{} @ {}] Handling packet {}",
-                $self.account_id.load(Ordering::Relaxed),
-                $self.peer,
-                <$pktty>::NAME
-            );
+            $self.print_packet::<$pktty>(false, Some("sync"));
             $code
         }
     };
@@ -98,11 +87,7 @@ macro_rules! gs_with_alloca {
         alloca::with_alloca($size, move |data| {
             // safety: 'data' will have garbage data but it's a &[u8] so that doesn't really matter.
             // we pass the responsibility to the caller to make sure they don't read any uninitialized data.
-            let $data = unsafe {
-                let ptr = data.as_mut_ptr().cast::<u8>();
-                let len = std::mem::size_of_val(data);
-                std::slice::from_raw_parts_mut(ptr, len)
-            };
+            let $data = unsafe { make_uninit!(data) };
 
             $code
         })

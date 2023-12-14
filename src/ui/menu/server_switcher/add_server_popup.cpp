@@ -5,7 +5,7 @@
 
 #include "server_switcher_popup.hpp"
 #include "server_test_popup.hpp"
-#include <managers/central_server_manager.hpp>
+#include <managers/central_server.hpp>
 
 using namespace geode::prelude;
 

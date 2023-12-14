@@ -4,9 +4,9 @@
 
 #include <net/http/client.hpp>
 #include <managers/error_queues.hpp>
-#include <managers/central_server_manager.hpp>
-#include <managers/game_server_manager.hpp>
-#include <managers/account_manager.hpp>
+#include <managers/central_server.hpp>
+#include <managers/game_server.hpp>
+#include <managers/account.hpp>
 #include <util/net.hpp>
 #include <util/formatting.hpp>
 #include <util/crypto.hpp>

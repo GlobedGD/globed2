@@ -4,9 +4,9 @@
 
 #include <net/http/client.hpp>
 #include <net/network_manager.hpp>
-#include <managers/account_manager.hpp>
-#include <managers/game_server_manager.hpp>
-#include <managers/central_server_manager.hpp>
+#include <managers/account.hpp>
+#include <managers/game_server.hpp>
+#include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
 #include <util/net.hpp>
 #include <util/time.hpp>
@@ -60,8 +60,6 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
 
     this->gsview = gsview;
     this->active = active;
-
-    // log::debug("list cell name: {}", gsview.name);
 
     labelName->setString(gsview.name.c_str());
     labelPing->setString(fmt::format("{} ms", gsview.ping == -1 ? "?" : std::to_string(gsview.ping)).c_str());
@@ -141,7 +139,7 @@ void ServerListCell::requestTokenAndConnect() {
         .then([&am, gsview = this->gsview](const GHTTPResponse& response) {
             if (response.anyfail()) {
                 ErrorQueues::get().error(fmt::format(
-                    "Failed to generate a session token! Please try to login and connect again.\n\nServer response: <cy>{}</c>",
+                    "Failed to generate a session token! Please try to login and connect again.\n\nReason: <cy>{}</c>",
                     response.anyfailmsg()
                 ));
                 am.clearAuthKey();

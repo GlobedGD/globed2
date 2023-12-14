@@ -37,12 +37,14 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
                 .collect();
 
             quote! {
+                use esp::ByteBufferExtWrite as _;
                 impl Encodable for #struct_name {
-                    fn encode(&self, buf: &mut bytebuffer::ByteBuffer) {
+                    #[inline]
+                    fn encode(&self, buf: &mut esp::ByteBuffer) {
                         #(#encode_fields)*
                     }
-
-                    fn encode_fast(&self, buf: &mut crate::data::FastByteBuffer) {
+                    #[inline]
+                    fn encode_fast(&self, buf: &mut esp::FastByteBuffer) {
                         #(#encode_fields)*
                     }
                 }
@@ -52,12 +54,14 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
             let repr_type = get_enum_repr_type(&input);
 
             quote! {
+                use esp::ByteBufferExtWrite as _;
                 impl Encodable for #struct_name {
-                    fn encode(&self, buf: &mut bytebuffer::ByteBuffer) {
+                    #[inline]
+                    fn encode(&self, buf: &mut esp::ByteBuffer) {
                         buf.write_value(&(*self as #repr_type))
                     }
-
-                    fn encode_fast(&self, buf: &mut crate::data::FastByteBuffer) {
+                    #[inline]
+                    fn encode_fast(&self, buf: &mut esp::FastByteBuffer) {
                         buf.write_value(&(*self as #repr_type))
                     }
                 }
@@ -148,8 +152,10 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
             let field_names: Vec<_> = field_names.collect();
 
             quote! {
+                use esp::ByteBufferExtRead as _;
                 impl Decodable for #struct_name {
-                    fn decode(buf: &mut bytebuffer::ByteBuffer) -> crate::data::DecodeResult<Self> {
+                    #[inline]
+                    fn decode(buf: &mut esp::ByteBuffer) -> esp::DecodeResult<Self> {
                         #(#decode_fields)*
                         Ok(Self {
                             #(
@@ -157,8 +163,8 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
                             )*
                         })
                     }
-
-                    fn decode_from_reader(buf: &mut bytebuffer::ByteReader) -> crate::data::DecodeResult<Self> {
+                    #[inline]
+                    fn decode_from_reader(buf: &mut esp::ByteReader) -> esp::DecodeResult<Self> {
                         #(#decode_fields)*
                         Ok(Self {
                             #(
@@ -201,20 +207,22 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
             }
 
             quote! {
+                use esp::ByteBufferExtRead as _;
                 impl Decodable for #struct_name {
-                    fn decode(buf: &mut bytebuffer::ByteBuffer) -> crate::data::DecodeResult<Self> {
+                    #[inline]
+                    fn decode(buf: &mut esp::ByteBuffer) -> esp::DecodeResult<Self> {
                         let value: #repr_type = buf.read_value()?;
                         match value {
                             #(#decode_variants)*
-                            _ => Err(crate::data::DecodeError::InvalidEnumValue)
+                            _ => Err(esp::DecodeError::InvalidEnumValue)
                         }
                     }
-
-                    fn decode_from_reader(buf: &mut bytebuffer::ByteReader) -> crate::data::DecodeResult<Self> {
+                    #[inline]
+                    fn decode_from_reader(buf: &mut esp::ByteReader) -> esp::DecodeResult<Self> {
                         let value: #repr_type = buf.read_value()?;
                         match value {
                             #(#decode_variants)*
-                            _ => Err(crate::data::DecodeError::InvalidEnumValue)
+                            _ => Err(esp::DecodeError::InvalidEnumValue)
                         }
                     }
                 }
@@ -305,6 +313,7 @@ pub fn packet(input: TokenStream) -> TokenStream {
                 impl Packet for #ident {}
 
                 impl #ident {
+                    #[inline]
                     pub const fn header() -> crate::data::packets::PacketHeader {
                         crate::data::packets::PacketHeader::from_packet::<Self>()
                     }

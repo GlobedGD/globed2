@@ -1,6 +1,6 @@
 #pragma once
 #include <defs.hpp>
-#include <managers/central_server_manager.hpp>
+#include <managers/central_server.hpp>
 
 class ServerSwitcherPopup;
 

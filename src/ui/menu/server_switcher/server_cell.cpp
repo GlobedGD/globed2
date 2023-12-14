@@ -5,8 +5,8 @@
 #include "server_switcher_popup.hpp"
 #include "add_server_popup.hpp"
 #include <net/network_manager.hpp>
-#include <managers/game_server_manager.hpp>
-#include <managers/account_manager.hpp>
+#include <managers/game_server.hpp>
+#include <managers/account.hpp>
 
 using namespace geode::prelude;
 
@@ -83,6 +83,11 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
                 return;
             }
 
+            // clear the authtoken
+            auto& gam = GlobedAccountManager::get();
+            gam.authToken.lock()->clear();
+
+            // do all the other stuff
             csm.setActive(this->index);
             csm.recentlySwitched = true;
 
@@ -93,7 +98,6 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
             auto& nm = NetworkManager::get();
             nm.disconnect(false);
 
-            auto& gam = GlobedAccountManager::get();
             gam.autoInitialize();
 
             this->parent->close();

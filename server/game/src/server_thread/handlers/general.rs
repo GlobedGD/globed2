@@ -126,10 +126,12 @@ impl GameServerThread {
             .room_manager
             .with_any(room_id, |room| room.get_total_player_count());
 
-        let encoded_size = size_of_types!(PacketHeader, u32) + size_of_types!(PlayerRoomPreviewAccountData) * player_count;
+        let encoded_size =
+            size_of_types!(PacketHeader, u32, u32) + size_of_types!(PlayerRoomPreviewAccountData) * player_count;
 
         gs_inline_encode!(self, encoded_size, buf, {
             buf.write_packet_header::<RoomPlayerListPacket>();
+            buf.write_u32(room_id);
             buf.write_u32(player_count as u32);
 
             let written = self.game_server.for_every_room_player_preview(
@@ -148,7 +150,7 @@ impl GameServerThread {
 
             // if the player count has instead decreased, we now lied and the client will fail decoding. re-encode the actual count.
             if written != player_count {
-                buf.set_pos(PacketHeader::SIZE);
+                buf.set_pos(size_of_types!(PacketHeader, u32));
                 buf.write_u32(written as u32);
             }
         });

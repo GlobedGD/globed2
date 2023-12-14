@@ -146,6 +146,8 @@ pub struct ServerConfig {
     #[serde(default = "default_secret_key")]
     pub secret_key: String,
     #[serde(default = "default_secret_key")]
+    pub secret_key2: String,
+    #[serde(default = "default_secret_key")]
     pub game_server_password: String,
     #[serde(default = "default_cloudflare_protection")]
     pub cloudflare_protection: bool,

@@ -3,13 +3,13 @@
 #include <UIBuilder.hpp>
 
 #include "server_list_cell.hpp"
-#include <ui/menu/player_list/player_list_popup.hpp>
+#include <ui/menu/room/room_popup.hpp>
 #include <ui/menu/server_switcher/server_switcher_popup.hpp>
 #include <util/ui.hpp>
 #include <util/net.hpp>
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
-#include <managers/account_manager.hpp>
+#include <managers/account.hpp>
 
 using namespace geode::prelude;
 
@@ -63,7 +63,7 @@ bool GlobedMenuLayer::init() {
         .scale(1.2f)
         .intoMenuItem([](auto) {
             // this->requestServerList();
-            if (auto* popup = PlayerListPopup::create()) {
+            if (auto* popup = RoomPopup::create()) {
                 popup->m_noElasticity = true;
                 popup->show();
             }

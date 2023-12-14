@@ -19,7 +19,6 @@ pub mod routes {
             .on("/challenge/verify", post(auth::challenge_finish))
             /* game-server api, not for the end user */
             .on("/gs/boot", post(game_server::boot))
-            .on("/gs/verify", post(game_server::verify_token))
     }
 
     macro_rules! check_maintenance {

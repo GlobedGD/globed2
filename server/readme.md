@@ -59,31 +59,38 @@ By default, the file is created with the name `central-conf.json` in the current
 Note that the server is written with security in mind, so many of those options may not be exactly interesting for you. If you are hosting a small server for your friends then the defaults should be good enough, however if you are hosting a big public server, it is recommended that you adjust the settings accordingly.
 
 
-| JSON key | Default | Hot-reloadable | Description |
+| JSON key | Default | Hot-reloadable<sup>**</sup> | Description |
 |---------|---------|----------------|-------------|
 | `web_mountpoint` | `"/"` | ❌ | HTTP mountpoint (the prefix before every endpoint) |
 | `web_address` | `"0.0.0.0:41000"` | ❌ | HTTP address |
-| `special_users` | `{}` | ✅<sup>**</sup> | List of users that have special properties, for example a unique name color (see below for the format) |
+| `special_users` | `{}` | ⏳ | List of users that have special properties, for example a unique name color (see below for the format) |
 | `game_servers` | `[]` | ✅ | List of game servers that will be sent to the clients (see below for the format) |
+| `maintenance` | `false` | ⏳ | When enabled, anyone trying to connect will get an appropriate error message saying that the server is under maintenance |
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
 | `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed to connect |
-| `no_chat_list` | `[]` | ✅<sup>**</sup> | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |
-| `tps` | `30` | ✅<sup>**</sup> | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth. |
+| `no_chat_list` | `[]` | ⏳ | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |
+| `tps` | `30` | ⏳ | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth. |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `challenge_level` accordingly if you enable this setting |
 | `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for GDPS owners |
 | `gd_api_ratelimit`<sup>*</sup> | `5` | ❌ | If `use_gd_api` is enabled, sets the maximum request number per `gd_api_period` that can be made to robtop's API. Used to avoid ratelimits |
 | `gd_api_period`<sup>*</sup> | `5` | ❌ | The period for `gd_api_ratelimit`, in seconds. For example if both settings are set to 5 (the default), only 5 requests can be made in 5 seconds |
 | `secret_key`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying authentication keys |
+| `secret_key2`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying session tokens |
 | `game_server_password`<sup>*</sup> | `(random)` | ✅ | Password used to authenticate game servers |
 | `cloudflare_protection`<sup>*</sup> | `false` | ✅ | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users |
 | `challenge_expiry`<sup>*</sup> | `30` | ✅ | Amount of seconds before an authentication challenge expires and a new one can be requested |
 | `challenge_level`<sup>*</sup> | `1` | ✅ | If `use_gd_api` is enabled, this must be set to a valid non-unlisted level ID that will be used for verification purposes |
 | `challenge_ratelimit`<sup>*</sup> | `60` | ✅ | Amount of seconds to block the user for if they failed the authentication challenge |
-| `token_expiry`<sup>*</sup> | `86400` (1 day) | ✅ | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
+| `token_expiry`<sup>*</sup> | `86400` (1 day) | ⚠️ | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
 
 <sup>*</sup> - security setting, be careful with changing it if making a public server
 
-<sup>**</sup> - this setting is synced to game servers, so it may take a few minutes for you to see any changes. additionally, you may need to reconnect if you were already connected to a server.
+<sup>**</sup> - meanings of different values in the Hot-reloadable column:
+
+* ✅ - fully hot-reloadable, changes should apply immediately
+* ⏳ - fully hot-reloadable, however this setting is synced with game servers, so you may have to wait a few minutes for them to update their configuration
+* ⚠️ - partly hot-reloadable, the central server does **not** need to be restarted, but game servers do
+* ❌ - not hot-reloadable, you must restart the central server to see changes
 
 Formatting for special users:
 

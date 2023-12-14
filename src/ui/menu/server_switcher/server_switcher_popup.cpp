@@ -5,7 +5,7 @@
 #include "server_cell.hpp"
 #include "add_server_popup.hpp"
 #include "direct_connect_popup.hpp"
-#include <managers/central_server_manager.hpp>
+#include <managers/central_server.hpp>
 #include <util/collections.hpp>
 
 using namespace geode::prelude;

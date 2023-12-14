@@ -4,12 +4,15 @@ use std::{
     time::Duration,
 };
 
-use bytebuffer::ByteReader;
 use parking_lot::Mutex as SyncMutex;
 
 use anyhow::{anyhow, bail};
-use globed_shared::crypto_box::{aead::OsRng, SecretKey};
-use globed_shared::{logger::*, GameServerBootData};
+use globed_shared::{
+    crypto_box::{aead::OsRng, PublicKey, SecretKey},
+    esp::ByteBufferExtWrite as _,
+    logger::*,
+    GameServerBootData, TokenIssuer,
+};
 use rustc_hash::FxHashMap;
 
 #[allow(unused_imports)]
@@ -38,9 +41,11 @@ pub struct GameServer {
     pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
     rate_limiters: SyncMutex<FxHashMap<SocketAddrV4, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
+    pub public_key: PublicKey,
     pub central_conf: SyncMutex<GameServerBootData>,
     pub config: GameServerConfiguration,
     pub standalone: bool,
+    pub token_issuer: TokenIssuer,
 }
 
 impl GameServer {
@@ -51,15 +56,21 @@ impl GameServer {
         config: GameServerConfiguration,
         standalone: bool,
     ) -> Self {
+        let secret_key = SecretKey::generate(&mut OsRng);
+        let public_key = secret_key.public_key();
+        let token_issuer = TokenIssuer::new(&central_conf.secret_key2, Duration::from_secs(central_conf.token_expiry));
+
         Self {
             state,
             socket,
             threads: SyncMutex::new(FxHashMap::default()),
             rate_limiters: SyncMutex::new(FxHashMap::default()),
-            secret_key: SecretKey::generate(&mut OsRng),
+            secret_key,
+            public_key,
             central_conf: SyncMutex::new(central_conf),
             config,
             standalone,
+            token_issuer,
         }
     }
 
@@ -157,32 +168,26 @@ impl GameServer {
         self.threads
             .lock()
             .values()
-            .filter(|thr| thr.authenticated.load(Ordering::Relaxed))
+            .filter(|thr| thr.authenticated())
             .map(|thread| thread.account_data.lock().make_preview())
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
-    // this is truly a dank_meme moment
     pub fn for_every_room_player_preview<F, A>(&'static self, room_id: u32, f: F, additional: &mut A) -> usize
     where
         F: Fn(&PlayerRoomPreviewAccountData, usize, &mut A) -> bool,
     {
-        self.state.room_manager.with_any(room_id, |pm| {
-            self.threads
-                .lock()
-                .values()
-                .filter(|thr| {
-                    thr.authenticated.load(Ordering::Relaxed)
-                        && pm.players.contains_key(&thr.account_id.load(Ordering::Relaxed))
-                })
-                .map(|thread| {
-                    thread
-                        .account_data
-                        .lock()
-                        .make_room_preview(thread.level_id.load(Ordering::Relaxed))
-                })
-                .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
-        })
+        self.threads
+            .lock()
+            .values()
+            .filter(|thr| thr.room_id.load(Ordering::Relaxed) == room_id)
+            .map(|thread| {
+                thread
+                    .account_data
+                    .lock()
+                    .make_room_preview(thread.level_id.load(Ordering::Relaxed))
+            })
+            .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
     pub fn get_player_account_data(&'static self, account_id: i32) -> Option<PlayerAccountData> {
@@ -197,6 +202,7 @@ impl GameServer {
         self.central_conf.lock().no_chat.contains(&user_id)
     }
 
+    /// If someone is already logged in under the given account ID, logs them out.
     pub fn check_already_logged_in(&'static self, user_id: i32) -> anyhow::Result<()> {
         let thread = self
             .threads
@@ -407,8 +413,11 @@ impl GameServer {
             .error_for_status()
             .map_err(|e| anyhow!("central server returned an error: {e}"))?;
 
-        let configuration = response.text().await?;
-        let boot_data: GameServerBootData = serde_json::from_str(&configuration)?;
+        let configuration = response.bytes().await?;
+        let boot_data: GameServerBootData = ByteReader::from_bytes(&configuration)
+            .read_value()
+            .map_err(|e| anyhow!("central server sent malformed response: {e}"))?;
+
         let mut conf = self.central_conf.lock();
 
         let is_now_under_maintenance = !conf.maintenance && boot_data.maintenance;

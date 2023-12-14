@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <thread>
 
-#include <managers/game_server_manager.hpp>
-#include <managers/central_server_manager.hpp>
+#include <managers/game_server.hpp>
+#include <managers/central_server.hpp>
 #include <util/sync.hpp>
 #include <util/time.hpp>
 
@@ -18,11 +18,6 @@ enum class NetworkThreadTask {
 
 template <typename T>
 concept HasPacketID = requires { T::PACKET_ID; };
-
-struct PollBothResult {
-    bool hasNormal;
-    bool hasPing;
-};
 
 // This class is fully thread safe..? hell do i know..
 class NetworkManager : GLOBED_SINGLETON(NetworkManager) {
@@ -40,7 +35,7 @@ public:
     ~NetworkManager();
 
     // Connect to a server
-    void connect(const std::string& addr, unsigned short port, bool standalone = false);
+    bool connect(const std::string& addr, unsigned short port, bool standalone = false);
     // Safer version of `connect`, sets the active game server in `GameServerManager` on success, doesn't throw on exception on error
     void connectWithView(const GameServer& gsview);
     // Is similar to `connectWithView` (does not throw exceptions) but is made specifically for standalone servers.
