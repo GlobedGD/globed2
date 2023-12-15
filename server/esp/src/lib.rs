@@ -4,7 +4,7 @@
 //! Also re-exports `ByteBuffer` and `ByteReader` (extended w/ traits `ByteBufferReadExt` and `ByteBufferWriteExt`),
 //! and its own `FastByteBuffer` which makes zero allocation on its own and can be used with stack/alloca arrays.
 //!
-//! esp also provides optimized types such as `FastString` that will be more computation- and space-efficient,
+//! esp also provides optimized types such as `FastString` that will be more efficient in encoding/decoding,
 //! and shall be used for encoding instead of the alternatives when possible.
 
 #![allow(

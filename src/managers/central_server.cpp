@@ -1,6 +1,7 @@
 #include "central_server.hpp"
 
 #include <managers/error_queues.hpp>
+#include <managers/game_server.hpp>
 
 CentralServerManager::CentralServerManager() {
     this->reload();
@@ -26,6 +27,17 @@ CentralServerManager::CentralServerManager() {
 
         if (idx > 0 && idx < _servers.lock()->size()) {
             this->setActive(idx);
+        } else if (idx == STANDALONE_IDX) {
+            auto& gsm = GameServerManager::get();
+
+            auto addr = gsm.loadStandalone();
+            if (!addr.empty()) {
+                gsm.clear();
+                gsm.addServer(GameServerManager::STANDALONE_ID, "Server", addr, "unknown");
+                gsm.pendingChanges = true;
+
+                this->setStandalone();
+            }
         }
     }
 }

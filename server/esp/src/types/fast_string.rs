@@ -5,7 +5,7 @@ use crate::*;
 /// `FastString` is a string class that doesn't use heap allocation like `String` but also owns the string (unlike `&str`).
 /// When encoding or decoding into a byte buffer of any kind, the encoded form is identical to a normal `String`,
 /// and they can be converted between each other interchangably with `.try_into()` or `.try_from()`
-#[derive(Clone)]
+#[derive(Clone, Eq)]
 pub struct FastString<const N: usize> {
     buffer: [u8; N],
     len: usize,
@@ -21,7 +21,7 @@ impl<const N: usize> FastString<N> {
     }
 
     pub fn from_slice(data: &[u8]) -> Self {
-        assert!(
+        debug_assert!(
             data.len() <= N,
             "Attempting to create a FastString with {} bytes which is more than the capacity ({N})",
             data.len()
@@ -41,14 +41,17 @@ impl<const N: usize> FastString<N> {
         Self::from_slice(data.as_bytes())
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
 
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
+    #[inline]
     pub const fn capacity() -> usize {
         N
     }
@@ -63,6 +66,7 @@ impl<const N: usize> FastString<N> {
         }
     }
 
+    #[inline]
     pub fn extend(&mut self, data: &str) {
         for char in data.as_bytes() {
             self.push(*char);
@@ -70,6 +74,7 @@ impl<const N: usize> FastString<N> {
     }
 
     /// like `extend` but will simply truncate the data instead of panicking if the string doesn't fit
+    #[inline]
     pub fn extend_safe(&mut self, data: &str) {
         for char in data.as_bytes() {
             if self.len >= N {
@@ -80,32 +85,33 @@ impl<const N: usize> FastString<N> {
         }
     }
 
+    #[inline]
     pub fn to_string(&self) -> Result<String, Utf8Error> {
-        Ok(self.to_str()?.to_owned())
+        self.to_str().map(str::to_owned)
     }
 
+    #[inline]
     pub fn to_str(&self) -> Result<&str, Utf8Error> {
-        std::str::from_utf8(&self.buffer[..self.len]).map_err(Into::into)
+        std::str::from_utf8(&self.buffer[..self.len])
     }
 }
 
 impl<const N: usize> Encodable for FastString<N> {
+    #[inline]
     fn encode(&self, buf: &mut crate::ByteBuffer) {
         buf.write_u32(self.len as u32);
         buf.write_bytes(&self.buffer[..self.len]);
     }
 
+    #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
         buf.write_u32(self.len as u32);
         buf.write_bytes(&self.buffer[..self.len]);
     }
 }
 
-impl<const N: usize> KnownSize for FastString<N> {
-    const ENCODED_SIZE: usize = size_of_types!(u32) + N;
-}
-
 impl<const N: usize> Decodable for FastString<N> {
+    #[inline]
     fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
         Self: Sized,
@@ -113,6 +119,7 @@ impl<const N: usize> Decodable for FastString<N> {
         Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
     }
 
+    #[inline]
     fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,
@@ -127,6 +134,10 @@ impl<const N: usize> Decodable for FastString<N> {
 
         Ok(Self::from_buffer(buffer, len))
     }
+}
+
+impl<const N: usize> KnownSize for FastString<N> {
+    const ENCODED_SIZE: usize = size_of_types!(u32) + N;
 }
 
 impl<const N: usize> fmt::Display for FastString<N> {
@@ -175,5 +186,3 @@ impl<const N: usize> PartialEq for FastString<N> {
         self.buffer.iter().take(self.len).eq(other.buffer.iter().take(other.len))
     }
 }
-
-impl<const N: usize> Eq for FastString<N> {}

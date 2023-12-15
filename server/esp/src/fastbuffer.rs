@@ -1,6 +1,6 @@
 /// Buffer for encoding that does zero heap allocation but also has limited functionality.
 /// It will panic on writes if there isn't enough space.
-/// On average, is at least 5x faster than a regular `ByteBuffer`.
+/// On average, is at least 4-5x faster than a regular `ByteBuffer`.
 pub struct FastByteBuffer<'a> {
     pos: usize,
     len: usize,
@@ -83,27 +83,27 @@ impl<'a> FastByteBuffer<'a> {
         self.write_bytes(val.as_bytes());
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn as_bytes(&'a mut self) -> &'a [u8] {
         &self.data[..self.len]
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn set_pos(&mut self, pos: usize) {
         self.pos = pos;
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn capacity(&self) -> usize {
         self.data.len()
     }

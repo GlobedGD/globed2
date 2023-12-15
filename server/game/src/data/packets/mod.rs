@@ -6,20 +6,18 @@ pub use server::*;
 
 use crate::data::*;
 
-pub type PacketId = u16;
-
 pub trait Packet: PacketMetadata {}
 
 // god i hate this
 pub trait PacketMetadata {
-    const PACKET_ID: PacketId;
+    const PACKET_ID: u16;
     const ENCRYPTED: bool;
     const NAME: &'static str;
 }
 
 #[derive(Encodable, Decodable, KnownSize)]
 pub struct PacketHeader {
-    pub packet_id: PacketId,
+    pub packet_id: u16,
     pub encrypted: bool,
 }
 

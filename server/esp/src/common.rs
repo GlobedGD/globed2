@@ -63,12 +63,35 @@ impl<T> Encodable for Option<T>
 where
     T: Encodable,
 {
+    #[inline]
     fn encode(&self, buf: &mut ByteBuffer) {
         buf.write_optional_value(self.as_ref());
     }
 
+    #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
         buf.write_optional_value(self.as_ref());
+    }
+}
+
+impl<T> Decodable for Option<T>
+where
+    T: Decodable,
+{
+    #[inline]
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        buf.read_optional_value()
+    }
+
+    #[inline]
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        buf.read_optional_value()
     }
 }
 
@@ -79,37 +102,41 @@ where
     const ENCODED_SIZE: usize = size_of_types!(bool, T);
 }
 
-impl<T> Decodable for Option<T>
-where
-    T: Decodable,
-{
-    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        buf.read_optional_value()
-    }
-
-    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        buf.read_optional_value()
-    }
-}
-
 /* [T; N] */
 
 impl<T, const N: usize> Encodable for [T; N]
 where
     T: Encodable,
 {
+    #[inline]
     fn encode(&self, buf: &mut ByteBuffer) {
         buf.write_value_array(self);
     }
 
+    #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
         buf.write_value_array(self);
+    }
+}
+
+impl<T, const N: usize> Decodable for [T; N]
+where
+    T: Decodable,
+{
+    #[inline]
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        buf.read_value_array()
+    }
+
+    #[inline]
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        buf.read_value_array()
     }
 }
 
@@ -120,35 +147,18 @@ where
     const ENCODED_SIZE: usize = size_of_types!(T) * N;
 }
 
-impl<T, const N: usize> Decodable for [T; N]
-where
-    T: Decodable,
-{
-    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        buf.read_value_array()
-    }
-
-    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        buf.read_value_array()
-    }
-}
-
 /* Vec<T> */
 
 impl<T> Encodable for Vec<T>
 where
     T: Encodable,
 {
+    #[inline]
     fn encode(&self, buf: &mut ByteBuffer) {
         buf.write_value_vec(self);
     }
 
+    #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
         buf.write_value_vec(self);
     }
@@ -158,6 +168,7 @@ impl<T> Decodable for Vec<T>
 where
     T: Decodable,
 {
+    #[inline]
     fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
         Self: Sized,
@@ -165,6 +176,7 @@ where
         buf.read_value_vec()
     }
 
+    #[inline]
     fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,
@@ -180,6 +192,7 @@ where
     K: Encodable,
     V: Encodable,
 {
+    #[inline]
     fn encode(&self, buf: &mut ByteBuffer) {
         buf.write_u32(self.len() as u32);
         for (k, v) in self {
@@ -188,6 +201,7 @@ where
         }
     }
 
+    #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
         buf.write_u32(self.len() as u32);
         for (k, v) in self {
@@ -202,6 +216,7 @@ where
     K: Decodable + Hash + Eq + PartialEq,
     V: Decodable,
 {
+    #[inline]
     fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
         Self: Sized,
@@ -209,6 +224,7 @@ where
         Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
     }
 
+    #[inline]
     fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,

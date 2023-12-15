@@ -81,6 +81,13 @@ std::unordered_map<std::string, GameServer> GameServerManager::getAllServers() {
     return out;
 }
 
+void GameServerManager::saveStandalone(const std::string& addr) {
+    geode::Mod::get()->setSavedValue(STANDALONE_SETTING_KEY, addr);
+}
+
+std::string GameServerManager::loadStandalone() {
+    return geode::Mod::get()->getSavedValue<std::string>(STANDALONE_SETTING_KEY);
+}
 
 uint32_t GameServerManager::startPing(const std::string& serverId) {
     auto pingId = util::rng::Random::get().generate<uint32_t>();

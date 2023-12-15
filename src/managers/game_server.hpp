@@ -29,6 +29,7 @@ public:
     GameServerManager();
 
     constexpr static const char* STANDALONE_ID = "__standalone__server_id__";
+    constexpr static const char* STANDALONE_SETTING_KEY = "_last-standalone-addr";
 
     util::sync::AtomicBool pendingChanges;
 
@@ -43,6 +44,10 @@ public:
     std::optional<GameServer> getActiveServer();
     GameServer getServer(const std::string& id);
     std::unordered_map<std::string, GameServer> getAllServers();
+
+    // save the given address as a last connected standalone address
+    void saveStandalone(const std::string& addr);
+    std::string loadStandalone();
 
     /* pings */
 

@@ -78,53 +78,6 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-/// Implements `KnownSize` for the given type, allowing you to serialize it into a `FastByteBuffer`.
-/// For `KnownSize` to be successfully derived, for structs, all of the members of the struct must also implement `KnownSize`.
-///
-/// For enums, all the same limitations apply as in `Encodable`.
-#[proc_macro_derive(KnownSize)]
-pub fn derive_known_size(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-
-    let struct_name = &input.ident;
-
-    let encoded_size = match &input.data {
-        Data::Struct(data) if data.fields.is_empty() => {
-            // If the struct has no fields, encoded size is 0
-            quote! { 0 }
-        }
-        Data::Struct(data) => {
-            let field_types: Vec<_> = data.fields.iter().map(|field| &field.ty).collect();
-
-            quote! {
-                size_of_types!(#(#field_types),*)
-            }
-        }
-        Data::Enum(_) => {
-            let repr_type = get_enum_repr_type(&input);
-
-            quote! {
-                std::mem::size_of::<#repr_type>()
-            }
-        }
-        Data::Union(_) => {
-            return quote! {
-                compile_error!("KnownSize cannot be drived for unions");
-            }
-            .into();
-        }
-    };
-
-    let gen = quote! {
-        impl KnownSize for #struct_name {
-            const ENCODED_SIZE: usize = #encoded_size;
-        }
-    };
-
-    // Return the generated implementation as a TokenStream
-    gen.into()
-}
-
 /// Implements `Decodable` for the given type, allowing you to deserialize it from a `ByteReader`/`ByteBuffer`.
 /// For `Decodable` to be successfully derived, for structs, all of the members of the struct must also implement `Decodable`.
 /// The members are deserialized in the same order they are laid out in the struct.
@@ -239,36 +192,51 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-fn get_enum_repr_type(input: &DeriveInput) -> proc_macro2::TokenStream {
-    let mut repr_type: Option<proc_macro2::TokenStream> = None;
-    for attr in &input.attrs {
-        if attr.path().is_ident("repr") {
-            let nested = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated).unwrap();
-            for meta in nested {
-                match meta {
-                    Meta::Path(path) => {
-                        if let Some(ident) = path.get_ident() {
-                            repr_type = Some(ident.to_token_stream());
-                        }
-                    }
-                    _ => {
-                        return TokenStream::from(quote! {
-                            compile_error!("unrecognized repr attribute");
-                        })
-                        .into();
-                    }
-                }
+/// Implements `KnownSize` for the given type, allowing you to serialize it into a `FastByteBuffer`.
+/// For `KnownSize` to be successfully derived, for structs, all of the members of the struct must also implement `KnownSize`.
+///
+/// For enums, all the same limitations apply as in `Encodable`.
+#[proc_macro_derive(KnownSize)]
+pub fn derive_known_size(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    let struct_name = &input.ident;
+
+    let encoded_size = match &input.data {
+        Data::Struct(data) if data.fields.is_empty() => {
+            // If the struct has no fields, encoded size is 0
+            quote! { 0 }
+        }
+        Data::Struct(data) => {
+            let field_types: Vec<_> = data.fields.iter().map(|field| &field.ty).collect();
+
+            quote! {
+                size_of_types!(#(#field_types),*)
             }
         }
-    }
+        Data::Enum(_) => {
+            let repr_type = get_enum_repr_type(&input);
 
-    if repr_type.is_none() {
-        // if not specified, assume i32 and give a warning.
-        repr_type = Some(quote! { i32 });
-        Span::call_site().warning("enum repr type not specified - assuming i32. it is recommended to add #[repr(type)] before the enum as that makes it more explicit.").emit();
-    }
+            quote! {
+                std::mem::size_of::<#repr_type>()
+            }
+        }
+        Data::Union(_) => {
+            return quote! {
+                compile_error!("KnownSize cannot be drived for unions");
+            }
+            .into();
+        }
+    };
 
-    repr_type.unwrap()
+    let gen = quote! {
+        impl KnownSize for #struct_name {
+            const ENCODED_SIZE: usize = #encoded_size;
+        }
+    };
+
+    // Return the generated implementation as a TokenStream
+    gen.into()
 }
 
 #[derive(FromDeriveInput)]
@@ -305,7 +273,7 @@ pub fn packet(input: TokenStream) -> TokenStream {
         Data::Struct(_) => {
             quote! {
                 impl PacketMetadata for #ident {
-                    const PACKET_ID: crate::data::packets::PacketId = #id;
+                    const PACKET_ID: u16 = #id;
                     const ENCRYPTED: bool = #enc;
                     const NAME: &'static str = stringify!(#ident);
                 }
@@ -328,4 +296,34 @@ pub fn packet(input: TokenStream) -> TokenStream {
     };
 
     output.into()
+}
+
+/// Get the repr type of an enum as a token
+fn get_enum_repr_type(input: &DeriveInput) -> proc_macro2::TokenStream {
+    let mut repr_type: Option<proc_macro2::TokenStream> = None;
+    for attr in &input.attrs {
+        if attr.path().is_ident("repr") {
+            let nested = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated).unwrap();
+            for meta in nested {
+                match meta {
+                    Meta::Path(path) => {
+                        if let Some(ident) = path.get_ident() {
+                            repr_type = Some(ident.to_token_stream());
+                        }
+                    }
+                    _ => {
+                        return TokenStream::from(quote! {
+                            compile_error!("unrecognized repr attribute");
+                        })
+                        .into();
+                    }
+                }
+            }
+        }
+    }
+
+    repr_type.unwrap_or_else(|| {
+        Span::call_site().warning("enum repr type not specified - assuming i32. it is recommended to add #[repr(type)] before the enum as that makes it more explicit.").emit();
+        quote! { i32 }
+    })
 }
