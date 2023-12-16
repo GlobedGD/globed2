@@ -9,9 +9,9 @@ use std::{
 
 use parking_lot::Mutex as SyncMutex;
 
-use esp::{ByteBuffer, ByteReader};
+use esp::ByteReader;
 use globed_shared::crypto_box::{
-    aead::{Aead, AeadCore, AeadInPlace, OsRng},
+    aead::{AeadCore, AeadInPlace, OsRng},
     ChaChaBox,
 };
 use globed_shared::logger::*;
@@ -110,7 +110,7 @@ impl GameServerThread {
 
     /* private utilities */
 
-    /// the error printing is different in release and debug. some errors have higher severity than others.
+    // the error printing is different in release and debug. some errors have higher severity than others.
     fn print_error(&self, error: &PacketHandlingError) {
         if cfg!(debug_assertions) {
             warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
@@ -146,7 +146,6 @@ impl GameServerThread {
         }
     }
 
-    #[inline]
     #[cfg(debug_assertions)]
     fn print_packet<P: PacketMetadata>(&self, sending: bool, ptype: Option<&str>) {
         trace!(
@@ -169,33 +168,29 @@ impl GameServerThread {
     #[cfg(not(debug_assertions))]
     fn print_packet<P: PacketMetadata>(&self, _sending: bool, _ptype: Option<&str>) {}
 
-    /// call `self.terminate()` and send a message to the user
-    async fn disconnect(&self, message: FastString<MAX_NOTICE_SIZE>) -> Result<()> {
+    /// call `self.terminate()` and send a message to the user with the reason
+    async fn disconnect<'a>(&self, message: &'a str) -> Result<()> {
         self.terminate();
-        self.send_packet_fast(&ServerDisconnectPacket { message }).await
+        self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
 
-    /// send a packet normally. with zero extra optimizations. like a sane person typically would.
-    #[allow(dead_code)]
-    async fn send_packet<P: Packet + Encodable>(&self, packet: &P) -> Result<()> {
-        self.print_packet::<P>(true, None);
-
-        let serialized = self.serialize_packet(packet)?;
-        self.send_buffer(serialized.as_bytes()).await
-    }
-
-    /// fast packet sending with best-case zero heap allocation.
-    /// if the packet size isn't known at compile time, calculate it and use `send_packet_fast_rough`
-    async fn send_packet_fast<P: Packet + Encodable + KnownSize>(&self, packet: &P) -> Result<()> {
-        // in theory, the size is known at compile time, so we could use a stack array here,
-        // instead of calling `send_packet_fast_rough` which uses alloca.
+    /// fast packet sending with best-case zero heap allocation. requires the packet to implement `StaticSize`.
+    /// if the packet size isn't known at compile time, derive/implement `DynamicSize` and use `send_packet_dynamic` instead.
+    async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
+        // in theory, the size is known at compile time, so we could use a stack array here, instead of using alloca.
         // however in practice, the performance difference is negligible, so we avoid code unnecessary code repetition.
-        self.send_packet_fast_rough(packet, P::ENCODED_SIZE).await
+        self.send_packet_alloca(packet, P::ENCODED_SIZE).await
     }
 
-    /// like `send_packet_fast` but without the size being known at compile time.
-    /// you have to provide a rough estimate of the packet size, if the packet doesn't fit, the function panics.
-    async fn send_packet_fast_rough<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
+    /// version of `send_packet_static` that does not require the size to be known at compile time.
+    /// you are still required to derive/implement `DynamicSize` so the size can be computed at runtime.
+    async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
+        self.send_packet_alloca(packet, packet.encoded_size()).await
+    }
+
+    /// use alloca to encode the packet on the stack, and try a non-blocking send, on failure clones to a Vec and a blocking send.
+    /// be very careful if using this directly, miscalculating the size will cause a runtime panic.
+    async fn send_packet_alloca<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
         if P::PACKET_ID != KeepaliveResponsePacket::PACKET_ID {
             self.print_packet::<P>(true, Some(if P::ENCRYPTED { "fast + encrypted" } else { "fast" }));
         }
@@ -283,37 +278,6 @@ impl GameServerThread {
             })
     }
 
-    /// serialize (and potentially encrypt) a packet, returning a `ByteBuffer` with the output data
-    #[allow(dead_code)]
-    fn serialize_packet<P: Packet + Encodable>(&self, packet: &P) -> Result<ByteBuffer> {
-        let mut buf = ByteBuffer::new();
-        buf.write_packet_header::<P>();
-
-        if !P::ENCRYPTED {
-            buf.write_value(packet);
-            return Ok(buf);
-        }
-
-        // this unwrap is safe, as an encrypted packet can only be sent downstream after the handshake is established.
-        let cbox = self.crypto_box.get().unwrap();
-
-        // encode the packet into a temp buf, encrypt the data and write to the initial buf
-
-        let mut cltxtbuf = ByteBuffer::new();
-        cltxtbuf.write_value(packet);
-
-        let nonce = ChaChaBox::generate_nonce(&mut OsRng);
-
-        let encrypted = cbox
-            .encrypt(&nonce, cltxtbuf.as_bytes())
-            .map_err(|_| PacketHandlingError::EncryptionError)?;
-
-        buf.write_bytes(&nonce);
-        buf.write_bytes(&encrypted);
-
-        Ok(buf)
-    }
-
     fn is_chat_packet_allowed(&self, voice: bool, len: usize) -> bool {
         let accid = self.account_id.load(Ordering::Relaxed);
         if accid == 0 {
@@ -361,12 +325,9 @@ impl GameServerThread {
         match message {
             ServerThreadMessage::Packet(mut data) => self.handle_packet(&mut data).await?,
             ServerThreadMessage::SmallPacket((mut data, len)) => self.handle_packet(&mut data[..len as usize]).await?,
-            ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_fast(&text_packet).await?,
-            ServerThreadMessage::BroadcastVoice(voice_packet) => {
-                let calc_size = voice_packet.data.data.len() + size_of_types!(u32);
-                self.send_packet_fast_rough(&*voice_packet, calc_size).await?;
-            }
-            ServerThreadMessage::TerminationNotice(message) => self.disconnect(message).await?,
+            ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_static(&text_packet).await?,
+            ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet_dynamic(&*voice_packet).await?,
+            ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
         }
 
         Ok(())

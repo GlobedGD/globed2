@@ -7,7 +7,6 @@ class PingPacket : public Packet {
     GLOBED_PACKET(10000, false)
 
     GLOBED_PACKET_ENCODE { buf.writeU32(id); }
-    GLOBED_PACKET_DECODE_UNIMPL
 
     PingPacket(uint32_t _id) : id(_id) {}
 
@@ -26,8 +25,6 @@ class CryptoHandshakeStartPacket : public Packet {
         buf.writeValue(key);
     }
 
-    GLOBED_PACKET_DECODE_UNIMPL
-
     CryptoHandshakeStartPacket(uint16_t _protocol, CryptoPublicKey _key) : protocol(_protocol), key(_key) {}
 
     static std::shared_ptr<Packet> create(uint16_t protocol, CryptoPublicKey key) {
@@ -42,7 +39,6 @@ class KeepalivePacket : public Packet {
     GLOBED_PACKET(10002, false)
 
     GLOBED_PACKET_ENCODE {}
-    GLOBED_PACKET_DECODE_UNIMPL
 
     KeepalivePacket() {}
     static std::shared_ptr<Packet> create() {
@@ -59,8 +55,6 @@ class LoginPacket : public Packet {
         buf.writeString(token);
         buf.writeValue(icons);
     }
-
-    GLOBED_PACKET_DECODE_UNIMPL
 
     LoginPacket(int32_t accid, const std::string& name, const std::string& token, const PlayerIconData& icons)
         : accountId(accid), name(name), token(token), icons(icons) {}
@@ -79,7 +73,6 @@ class DisconnectPacket : public Packet {
     GLOBED_PACKET(10004, false)
 
     GLOBED_PACKET_ENCODE {}
-    GLOBED_PACKET_DECODE_UNIMPL
 
     DisconnectPacket() {}
     static std::shared_ptr<Packet> create() {

@@ -5,7 +5,6 @@
 class PingResponsePacket : public Packet {
     GLOBED_PACKET(20000, false)
 
-    GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE {
         id = buf.readU32();
         playerCount = buf.readU32();
@@ -17,7 +16,6 @@ class PingResponsePacket : public Packet {
 class CryptoHandshakeResponsePacket : public Packet {
     GLOBED_PACKET(20001, false)
 
-    GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE { data = buf.readValue<CryptoPublicKey>(); }
 
     CryptoPublicKey data;
@@ -26,7 +24,6 @@ class CryptoHandshakeResponsePacket : public Packet {
 class KeepaliveResponsePacket : public Packet {
     GLOBED_PACKET(20002, false)
 
-    GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE { playerCount = buf.readU32(); }
 
     uint32_t playerCount;
@@ -35,7 +32,6 @@ class KeepaliveResponsePacket : public Packet {
 class ServerDisconnectPacket : public Packet {
     GLOBED_PACKET(20003, false)
 
-    GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE { message = buf.readString(); }
 
     std::string message;
@@ -44,7 +40,6 @@ class ServerDisconnectPacket : public Packet {
 class LoggedInPacket : public Packet {
     GLOBED_PACKET(20004, false)
 
-    GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE { tps = buf.readU32(); }
 
     uint32_t tps;
@@ -53,7 +48,6 @@ class LoggedInPacket : public Packet {
 class LoginFailedPacket : public Packet {
     GLOBED_PACKET(20005, false)
 
-    GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE { message = buf.readString(); }
 
     std::string message;
@@ -62,8 +56,15 @@ class LoginFailedPacket : public Packet {
 class ServerNoticePacket : public Packet {
     GLOBED_PACKET(20006, false)
 
-    GLOBED_PACKET_ENCODE_UNIMPL
     GLOBED_PACKET_DECODE { message = buf.readString(); }
 
     std::string message;
+};
+
+class ProtocolMismatchPacket : public Packet {
+    GLOBED_PACKET(20007, false)
+
+    GLOBED_PACKET_DECODE { serverProtocol = buf.readU16(); }
+
+    uint16_t serverProtocol;
 };

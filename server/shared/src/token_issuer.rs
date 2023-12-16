@@ -21,7 +21,7 @@ pub enum TokenValidationFailure {
 }
 
 impl TokenValidationFailure {
-    pub fn error_message(&self) -> &'static str {
+    pub const fn error_message(&self) -> &'static str {
         match self {
             Self::Missing => "no token provided",
             Self::MalformedStructure => "malformed token structure",

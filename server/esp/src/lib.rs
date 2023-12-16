@@ -1,5 +1,5 @@
 //! esp - Binary serialization protocol library.
-//! Provides traits `Encodable`, `Decodable` and `KnownSize` and implementations of those traits for many core types.
+//! Provides traits `Encodable`, `Decodable` and `StaticSize` and implementations of those traits for many core types.
 //!
 //! Also re-exports `ByteBuffer` and `ByteReader` (extended w/ traits `ByteBufferReadExt` and `ByteBufferWriteExt`),
 //! and its own `FastByteBuffer` which makes zero allocation on its own and can be used with stack/alloca arrays.
@@ -65,10 +65,16 @@ pub trait Decodable {
         Self: Sized;
 }
 
-pub trait KnownSize {
+pub trait StaticSize {
     /// For dynamically sized types, this must be the maximum permitted size in the encoded form.
     /// If `FastByteBuffer::write` tries to write more bytes than this value, it may panic.
     const ENCODED_SIZE: usize;
+}
+
+pub trait DynamicSize {
+    /// For types that have an unpredicatble size at compile time (`Vec`, `String`, `HashMap`, etc.),
+    /// this trait can be used to calculate the maximum permitted encoded size at runtime.
+    fn encoded_size(&self) -> usize;
 }
 
 /// Simple and compact way of implementing `Decodable::decode` and `Decodable::decode_from_reader`.
@@ -127,7 +133,7 @@ macro_rules! encode_impl {
     };
 }
 
-/// Simple and compact way of implementing `KnownSize`.
+/// Simple and compact way of implementing `StaticSize`.
 ///
 /// Example usage:
 /// ```rust
@@ -135,18 +141,37 @@ macro_rules! encode_impl {
 ///     some_val: i32,
 /// }
 ///
-/// size_calc_impl!(Type, 4);
+/// static_size_calc_impl!(Type, 4);
 /// ```
 #[macro_export]
-macro_rules! size_calc_impl {
+macro_rules! static_size_calc_impl {
     ($typ:ty, $calc:expr) => {
-        impl $crate::KnownSize for $typ {
+        impl $crate::StaticSize for $typ {
             const ENCODED_SIZE: usize = $calc;
+        }
+
+        impl $crate::DynamicSize for $typ {
+            #[inline(always)]
+            fn encoded_size(&self) -> usize {
+                Self::ENCODED_SIZE
+            }
         }
     };
 }
 
-/// Simple way of getting total (maximum) encoded size of given types that implement `Encodable` and `KnownSize`
+#[macro_export]
+macro_rules! dynamic_size_calc_impl {
+    ($typ:ty, $self:ident, $calc:expr) => {
+        impl $crate::DynamicSize for $typ {
+            #[inline(always)]
+            fn encoded_size(&$self) -> usize {
+                $calc
+            }
+        }
+    };
+}
+
+/// Simple way of getting total (maximum) encoded size of given types that implement `Encodable` and `StaticSize`
 ///
 /// Example usage:
 /// ```rust
@@ -156,6 +181,13 @@ macro_rules! size_calc_impl {
 macro_rules! size_of_types {
     ($($t:ty),+ $(,)?) => {{
         0 $(+ <$t>::ENCODED_SIZE)*
+    }};
+}
+
+#[macro_export]
+macro_rules! size_of_dynamic_types {
+    ($($t:expr),+ $(,)?) => {{
+        0 $(+ DynamicSize::encoded_size($t))*
     }};
 }
 

@@ -4,11 +4,11 @@
 
 #include <managers/error_queues.hpp>
 
-// this is horrible i know yes
 #define FMOD_ERR_CHECK(res, msg) \
-    auto GEODE_CONCAT(__evcond, __LINE__) = (res); \
-    if (GEODE_CONCAT(__evcond, __LINE__) != FMOD_OK) \
-        GLOBED_REQUIRE(false, GlobedAudioManager::formatFmodError(GEODE_CONCAT(__evcond, __LINE__), msg));
+    do { \
+        auto _res = (res); \
+        GLOBED_REQUIRE(_res == FMOD_OK, GlobedAudioManager::formatFmodError(_res, msg)); \
+    } while (0); \
 
 GlobedAudioManager::GlobedAudioManager()
     : encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {

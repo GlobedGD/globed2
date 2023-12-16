@@ -1,103 +1,93 @@
 #pragma once
 #include <defs.hpp>
-#include <util/sync.hpp>
 
-#define MAKE_DEFAULT(_key, value) if (key == (_key)) return (value);
+#define GSETTING(ty,name) ty name = defaultFor<ty>(#name)
+#define GDEFAULT(name, val) if (std::string_view(#name) == std::string_view(key)) return val
 
-// Besides `getCached()`, this class is not thread safe (reason: Mod::getSavedValue/Mod::setSavedValue)
+// This class should only be accessed from the main thread.
 class GlobedSettings : GLOBED_SINGLETON(GlobedSettings) {
 public:
-    GlobedSettings();
-
-    struct CachedSettings;
-
-    /*
-    * ok i know this is a mess but here's a rundown of how the settings work:
-    * say we have a setting that is an int called 'hello'.
-    * when retreiving, we first attempt to read `gflag-_gset_-hello` via getFlag()
-    * if the flag is false, we return a default value (defaults reside in `getValue`).
-    * otherwise, we return `gsetting-hello`.
-    *
-    * upon saving, we explicitly set the flag described earlier to true and save the value.
-    * i hope this isn't confusing!
-    */
-
-    // directly set and save the setting as json
-    template <typename T>
-    inline void setValue(const std::string& key, const T& elem, bool refresh = true) {
-        this->setFlag("_gset_-" + key);
-        geode::Mod::get()->setSavedValue<T>("gsetting-" + key, elem);
-
-        if (refresh) {
-            _cache.lock()->refresh(*this);
-        }
-    }
-
-    // directly get the setting as json, or return a default value if not set
-    template <typename T>
-    inline T getValue(const std::string& key, T defaultopt = T{}) {
-        if (this->getFlag("_gset_-" + key)) {
-            return geode::Mod::get()->getSavedValue<T>("gsetting-" + key);
-        } else {
-            return defaultopt;
-        }
-    }
-
-    // reset a setting to its default value
-    void reset(const std::string& key, bool refreshCache = true);
-
-    // cached settings for performance & thread safety
-    CachedSettings getCached();
-
-    bool getFlag(const std::string& key);
-    void setFlag(const std::string& key, bool state = true);
-
-    class CachedSettings {
-    public:
-        void refresh(GlobedSettings&);
-
-        struct Globed {
-            uint32_t tpsCap;
-            int audioDevice;
-            bool autoconnect; // TODO unimpl
-        };
-
-        struct Overlay {};
-        struct Communication {
-            bool voiceEnabled;
-        };
-
-        struct LevelUI {};
-        struct Players {};
-        struct Advanced {};
-
-        Globed globed;
-        Overlay overlay;
-        Communication communication;
-        LevelUI levelUi;
-        Players players;
-        Advanced advanced;
+    struct Globed {
+        GSETTING(uint32_t, tpsCap);
+        GSETTING(int, audioDevice);
+        GSETTING(bool, autoconnect); // todo unimpl
     };
 
-    // reset all settings to their default values
-    inline void resetAll() {
-        static const char* settings[] = {
-            "tps-cap",
-            "audio-device",
-            "autoconnect",
+    struct Overlay {};
+    struct Communication {
+        GSETTING(bool, voiceEnabled);
+    };
 
-            "comms-voice-enabled",
-        };
+    struct LevelUI {};
+    struct Players {};
+    struct Advanced {};
 
-        for (auto* setting : settings) {
-            this->reset(setting, false);
-        }
+    struct Flags {
+        bool seenSignupNotice = false;
+    };
 
-        _cache.lock()->refresh(*this);
-    }
+    Globed globed;
+    Overlay overlay;
+    Communication communication;
+    LevelUI levelUi;
+    Players players;
+    Advanced advanced;
+    Flags flags;
+
+    GlobedSettings();
+
+    void save();
+    void reload();
+    void resetToDefaults();
+    void clear(const std::string& key);
 
 private:
-    util::sync::WrappingMutex<CachedSettings> _cache;
+    template <typename T>
+    static constexpr T defaultFor(const char* key) {
+        GDEFAULT(tpsCap, 0);
+        GDEFAULT(audioDevice, 0);
+        GDEFAULT(autoconnect, false);
+
+        GDEFAULT(voiceEnabled, true);
+
+        geode::log::warn("warning: invalid default opt was requested: {}", key);
+
+        return {};
+    }
+
+    template <typename T>
+    void store(const std::string& key, const T& val) {
+        geode::Mod::get()->setSavedValue(key, val);
+    }
+
+    bool has(const std::string& key) {
+        return geode::Mod::get()->hasSavedValue(key)
+            && !geode::Mod::get()->getSaveContainer().as_object()[key].is_null();
+    }
+
+    template <typename T>
+    T load(const std::string& key) {
+        return geode::Mod::get()->getSavedValue<T>(key);
+    }
+
+    // If setting is present, loads into `into`. Otherwise does nothing.
+    template <typename T>
+    void loadOptionalInto(const std::string& key, T& into) {
+        if (this->has(key)) {
+            auto val = this->load<T>(key);
+        }
+    }
+
+    template <typename T>
+    std::optional<T> loadOptional(const std::string& key) {
+        return this->has(key) ? this->load<T>(key) : std::nullopt;
+    }
+
+    template <typename T>
+    T loadOrDefault(const std::string& key, const T defaultval) {
+        return this->has(key) ? this->load<T>(key) : defaultval;
+    }
 };
 
-#undef MAKE_DEFAULT
+#undef GSETTING
+#undef GDEFAULT

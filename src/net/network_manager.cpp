@@ -15,7 +15,7 @@ NetworkManager::NetworkManager() {
 
     if (!gameSocket.create()) util::net::throwLastError();
 
-    // add builtin listeners
+    // add builtin listeners for connection related packets
 
     addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
         gameSocket.box->setPeerKey(packet->data.key.data());
@@ -60,6 +60,24 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<ServerNoticePacket>([](auto packet) {
         ErrorQueues::get().notice(packet->message);
+    });
+
+    addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
+        std::string message;
+        if (packet->serverProtocol < PROTOCOL_VERSION) {
+            message = fmt::format(
+                "Outdated server! This server uses protocol <cy>v{}</c>, while your client is using protocol <cy>v{}</c>. Downgrade the mod to an older version or ask the server owner to update their server.",
+                packet->serverProtocol, PROTOCOL_VERSION
+            );
+        } else {
+            message = fmt::format(
+                "Outdated client! Please update the mod to the latest version in order to connect. The server is using protocol <cy>v{}</c>, while this version of the mod only supports protocol <cy>v{}</c>.",
+                packet->serverProtocol, PROTOCOL_VERSION
+            );
+        }
+
+        ErrorQueues::get().error(message);
+        this->disconnect(true);
     });
 
     // boot up the threads

@@ -61,14 +61,14 @@ impl GameServerThread {
             self.room_id.store(room_id, Ordering::Relaxed);
         }
 
-        self.send_packet_fast(&RoomCreatedPacket { room_id }).await
+        self.send_packet_static(&RoomCreatedPacket { room_id }).await
     });
 
     gs_handler!(self, handle_join_room, JoinRoomPacket, packet, {
         let account_id = gs_needauth!(self);
 
         if !self.game_server.state.room_manager.is_valid_room(packet.room_id) {
-            return self.send_packet_fast(&RoomJoinFailedPacket).await;
+            return self.send_packet_static(&RoomJoinFailedPacket).await;
         }
 
         let old_room_id = self.room_id.swap(packet.room_id, Ordering::Relaxed);
@@ -86,7 +86,7 @@ impl GameServerThread {
             pm.create_player(account_id);
         });
 
-        self.send_packet_fast(&RoomJoinedPacket).await
+        self.send_packet_static(&RoomJoinedPacket).await
     });
 
     gs_handler!(self, handle_leave_room, LeaveRoomPacket, _packet, {

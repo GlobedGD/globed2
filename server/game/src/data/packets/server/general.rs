@@ -9,17 +9,17 @@ use crate::data::*;
 #[packet(id = 21000, encrypted = false)]
 pub struct GlobalPlayerListPacket;
 
-#[derive(Packet, Encodable, KnownSize)]
+#[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 21001, encrypted = false)]
 pub struct RoomCreatedPacket {
     pub room_id: u32,
 }
 
-#[derive(Packet, Encodable, KnownSize)]
+#[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 21002, encrypted = false)]
 pub struct RoomJoinedPacket;
 
-#[derive(Packet, Encodable, KnownSize)]
+#[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 21003, encrypted = false)]
 pub struct RoomJoinFailedPacket;
 

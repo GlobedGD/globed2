@@ -41,14 +41,14 @@ namespace util::net {
             // i call this a windows moment because like what the fuck???
             auto le = GetLastError();
             geode::log::error("FormatMessageA failed formatting error code {}, last error: {}", code, le);
-            return std::string("[Unknown windows error ") + std::to_string(code) + "]: formatting failed because of: " + std::to_string(le);
+            return fmt::format("[Unknown windows error {}]: formatting failed because of: {}", code, le);
         }
 
-        std::string formatted = std::string("[Win error ") + std::to_string(code) + "]: " + std::string(s);
+        std::string formatted = fmt::format("[Win error {}]: {}", code, s);
         LocalFree(s);
         return formatted;
 #else
-        return std::string("[Unix error ") + std::to_string(code) + "]: " + std::string(strerror(code));
+        return fmt::format("[Unix error {}]: {}", code, strerror(code));
 #endif
     }
 

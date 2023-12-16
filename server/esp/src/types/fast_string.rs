@@ -12,14 +12,17 @@ pub struct FastString<const N: usize> {
 }
 
 impl<const N: usize> FastString<N> {
+    #[inline]
     pub fn new() -> Self {
         Self::from_buffer([0; N], 0)
     }
 
+    #[inline]
     pub fn from_buffer(buffer: [u8; N], len: usize) -> Self {
         Self { buffer, len }
     }
 
+    #[inline]
     pub fn from_slice(data: &[u8]) -> Self {
         debug_assert!(
             data.len() <= N,
@@ -68,9 +71,16 @@ impl<const N: usize> FastString<N> {
 
     #[inline]
     pub fn extend(&mut self, data: &str) {
-        for char in data.as_bytes() {
-            self.push(*char);
-        }
+        debug_assert!(
+            self.len + data.len() < Self::capacity(),
+            "FastString buffer overflow (current size is {}/{}, cannot extend with a string of length {})",
+            self.len,
+            Self::capacity(),
+            data.len()
+        );
+
+        self.buffer[self.len..self.len + data.len()].copy_from_slice(data.as_bytes());
+        self.len += data.len();
     }
 
     /// like `extend` but will simply truncate the data instead of panicking if the string doesn't fit
@@ -93,6 +103,28 @@ impl<const N: usize> FastString<N> {
     #[inline]
     pub fn to_str(&self) -> Result<&str, Utf8Error> {
         std::str::from_utf8(&self.buffer[..self.len])
+    }
+
+    /// Attempts to convert this string to a string slice, on failure returns "\<invalid UTF-8 string\>"
+    #[inline]
+    pub fn try_to_str(&self) -> &str {
+        self.to_str().unwrap_or("<invalid UTF-8 string>")
+    }
+
+    /// Converts this string to a string slice, without doing any UTF-8 checks.
+    /// If the string is not a valid UTF-8 string, the behavior is undefined.
+    #[inline]
+    pub unsafe fn to_str_unchecked(&self) -> &str {
+        // in debug mode we still do a sanity check, a panic will indicate a *massive* logic error somewhere in the code.
+        #[cfg(debug_assertions)]
+        let ret = self
+            .to_str()
+            .expect("Attempted to unsafely convert a non-UTF-8 FastString into a string slice");
+
+        #[cfg(not(debug_assertions))]
+        let ret = std::str::from_utf8_unchecked(&self.buffer[..self.len]);
+
+        ret
     }
 }
 
@@ -136,7 +168,7 @@ impl<const N: usize> Decodable for FastString<N> {
     }
 }
 
-impl<const N: usize> KnownSize for FastString<N> {
+impl<const N: usize> StaticSize for FastString<N> {
     const ENCODED_SIZE: usize = size_of_types!(u32) + N;
 }
 

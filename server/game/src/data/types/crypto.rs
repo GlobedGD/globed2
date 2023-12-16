@@ -15,7 +15,7 @@ encode_impl!(CryptoPublicKey, buf, self, {
     buf.write_bytes(self.0.as_bytes());
 });
 
-size_calc_impl!(CryptoPublicKey, KEY_SIZE);
+static_size_calc_impl!(CryptoPublicKey, KEY_SIZE);
 
 decode_impl!(CryptoPublicKey, buf, {
     let mut key = [0u8; KEY_SIZE];

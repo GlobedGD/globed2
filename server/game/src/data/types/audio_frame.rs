@@ -10,7 +10,7 @@ pub struct EncodedAudioFrame {
 }
 
 /// `FastEncodedAudioFrame` requires just one heap allocation as opposed to 10.
-#[derive(Clone, Encodable, Decodable)]
+#[derive(Clone, Encodable, Decodable, DynamicSize)]
 pub struct FastEncodedAudioFrame {
     pub data: RemainderBytes,
 }

@@ -9,8 +9,6 @@ class RequestPlayerProfilesPacket : public Packet {
         buf.writeI32(requested);
     }
 
-    GLOBED_PACKET_DECODE_UNIMPL
-
     RequestPlayerProfilesPacket(int requested) : requested(requested) {}
 
     static std::shared_ptr<Packet> create(int requested) {
@@ -27,8 +25,6 @@ class LevelJoinPacket : public Packet {
         buf.writeI32(levelId);
     }
 
-    GLOBED_PACKET_DECODE_UNIMPL
-
     LevelJoinPacket(int levelId) : levelId(levelId) {}
 
     static std::shared_ptr<Packet> create(int levelId) {
@@ -42,7 +38,6 @@ class LevelLeavePacket : public Packet {
     GLOBED_PACKET(12002, false)
 
     GLOBED_PACKET_ENCODE {}
-    GLOBED_PACKET_DECODE_UNIMPL
 
     LevelLeavePacket() {}
 
@@ -57,8 +52,6 @@ class PlayerDataPacket : public Packet {
     GLOBED_PACKET_ENCODE {
         buf.writeValue(data);
     }
-
-    GLOBED_PACKET_DECODE_UNIMPL
 
     PlayerDataPacket(const PlayerData& data) : data(data) {}
 
@@ -80,8 +73,6 @@ class VoicePacket : public Packet {
         buf.writeValue(*frame.get());
     }
 
-    GLOBED_PACKET_DECODE_UNIMPL
-
     VoicePacket(std::shared_ptr<EncodedAudioFrame> _frame) : frame(std::move(_frame)) {}
 
     static std::shared_ptr<Packet> create(std::shared_ptr<EncodedAudioFrame> frame) {
@@ -99,8 +90,6 @@ class ChatMessagePacket : public Packet {
     GLOBED_PACKET_ENCODE {
         buf.writeString(message);
     }
-
-    GLOBED_PACKET_DECODE_UNIMPL
 
     ChatMessagePacket(const std::string& message) : message(message) {}
 

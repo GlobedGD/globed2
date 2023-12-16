@@ -9,7 +9,7 @@ use crate::data::*;
 
 impl GameServerThread {
     gs_handler!(self, handle_ping, PingPacket, packet, {
-        self.send_packet_fast(&PingResponsePacket {
+        self.send_packet_static(&PingResponsePacket {
             id: packet.id,
             player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
         })
@@ -17,25 +17,13 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
-        match packet.protocol {
-            p if p > PROTOCOL_VERSION => {
-                gs_disconnect!(
-                    self,
-                    format!(
-                        "Outdated server! You are running protocol v{p} while the server is still on v{PROTOCOL_VERSION}.",
-                    )
-                    .try_into()?
-                );
-            }
-            p if p < PROTOCOL_VERSION => {
-                gs_disconnect!(
-                    self,
-                    format!(
-                        "Outdated client! Please update the mod in order to connect to the server. Client protocol version: v{p}, server: v{PROTOCOL_VERSION}",
-                    ).try_into()?
-                );
-            }
-            _ => {}
+        if packet.protocol != PROTOCOL_VERSION {
+            self.terminate();
+            self.send_packet_static(&ProtocolMismatchPacket {
+                protocol: PROTOCOL_VERSION,
+            })
+            .await?;
+            return Ok(());
         }
 
         {
@@ -43,10 +31,8 @@ impl GameServerThread {
             // erroring here is not a concern, even if the user's game crashes without a disconnect packet,
             // they would have a new randomized port when they restart and this would never fail.
             if self.crypto_box.get().is_some() {
-                self.disconnect(FastString::from_str(
-                    "attempting to perform a second handshake in one session",
-                ))
-                .await?;
+                self.disconnect("attempting to perform a second handshake in one session")
+                    .await?;
                 return Err(PacketHandlingError::WrongCryptoBoxState);
             }
 
@@ -54,7 +40,7 @@ impl GameServerThread {
                 .get_or_init(|| ChaChaBox::new(&packet.key.0, &self.game_server.secret_key));
         }
 
-        self.send_packet_fast(&CryptoHandshakeResponsePacket {
+        self.send_packet_static(&CryptoHandshakeResponsePacket {
             key: self.game_server.public_key.clone().into(),
         })
         .await
@@ -63,7 +49,7 @@ impl GameServerThread {
     gs_handler!(self, handle_keepalive, KeepalivePacket, _packet, {
         let _ = gs_needauth!(self);
 
-        self.send_packet_fast(&KeepaliveResponsePacket {
+        self.send_packet_static(&KeepaliveResponsePacket {
             player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
         })
         .await
@@ -74,7 +60,7 @@ impl GameServerThread {
         if self.game_server.central_conf.lock().maintenance {
             gs_disconnect!(
                 self,
-                FastString::from_str("The server is currently under maintenance, please try connecting again later.")
+                "The server is currently under maintenance, please try connecting again later."
             );
         }
 
@@ -92,10 +78,15 @@ impl GameServerThread {
                 Ok(x) => FastString::from_str(&x),
                 Err(err) => {
                     self.terminate();
-                    let mut message = FastString::from_str("authentication failed: ");
-                    message.extend(err.error_message()); // no need to use extend_safe as the messages are pretty short
-                    self.send_packet_fast(&LoginFailedPacket { message }).await?;
 
+                    let mut message = FastString::<80>::from_str("authentication failed: ");
+                    message.extend(err.error_message()); // no need to use extend_safe as the messages are pretty short
+
+                    self.send_packet_dynamic(&LoginFailedPacket {
+                        // safety: we have created the string ourselves, we know for certain it is valid UTF-8.
+                        message: unsafe { message.to_str_unchecked() },
+                    })
+                    .await?;
                     return Ok(());
                 }
             }
@@ -139,7 +130,7 @@ impl GameServerThread {
             .create_player(packet.account_id);
 
         let tps = self.game_server.central_conf.lock().tps;
-        self.send_packet_fast(&LoggedInPacket { tps }).await?;
+        self.send_packet_static(&LoggedInPacket { tps }).await?;
 
         Ok(())
     });

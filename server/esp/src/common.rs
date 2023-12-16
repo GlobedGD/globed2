@@ -34,8 +34,15 @@ macro_rules! impl_primitive {
             }
         }
 
-        impl crate::KnownSize for $typ {
+        impl crate::StaticSize for $typ {
             const ENCODED_SIZE: usize = std::mem::size_of::<$typ>();
+        }
+
+        impl crate::DynamicSize for $typ {
+            #[inline(always)]
+            fn encoded_size(&self) -> usize {
+                Self::ENCODED_SIZE
+            }
         }
     };
 }
@@ -52,10 +59,16 @@ impl_primitive!(i64, read_i64, write_i64);
 impl_primitive!(f32, read_f32, write_f32);
 impl_primitive!(f64, read_f64, write_f64);
 
+/* strings */
+
 encode_impl!(String, buf, self, buf.write_string(self));
 decode_impl!(String, buf, Ok(buf.read_string()?));
+dynamic_size_calc_impl!(String, self, size_of_types!(u32) + self.len());
 
+encode_impl!(&str, buf, self, buf.write_string(self));
 encode_impl!(str, buf, self, buf.write_string(self));
+dynamic_size_calc_impl!(&str, self, size_of_types!(u32) + self.len());
+dynamic_size_calc_impl!(str, self, size_of_types!(u32) + self.len());
 
 /* Option<T> */
 
@@ -95,9 +108,9 @@ where
     }
 }
 
-impl<T> KnownSize for Option<T>
+impl<T> StaticSize for Option<T>
 where
-    T: KnownSize,
+    T: StaticSize,
 {
     const ENCODED_SIZE: usize = size_of_types!(bool, T);
 }
@@ -140,9 +153,9 @@ where
     }
 }
 
-impl<T, const N: usize> KnownSize for [T; N]
+impl<T, const N: usize> StaticSize for [T; N]
 where
-    T: KnownSize,
+    T: StaticSize,
 {
     const ENCODED_SIZE: usize = size_of_types!(T) * N;
 }
@@ -182,6 +195,16 @@ where
         Self: Sized,
     {
         buf.read_value_vec()
+    }
+}
+
+impl<T> DynamicSize for Vec<T>
+where
+    T: StaticSize,
+{
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        size_of_types!(u32) + size_of_types!(T) * self.len()
     }
 }
 
@@ -242,6 +265,17 @@ where
     }
 }
 
+impl<K, V, S> DynamicSize for HashMap<K, V, S>
+where
+    K: StaticSize,
+    V: StaticSize,
+{
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        size_of_types!(u32) + size_of_types!(K, V) * self.len()
+    }
+}
+
 /* RemainderBytes - wrapper around Box<[u8]> that decodes with `buf.read_remaining_bytes()` and encodes with `buf.write_bytes()` */
 
 #[derive(Clone)]
@@ -259,6 +293,8 @@ decode_impl!(RemainderBytes, buf, {
         data: buf.read_remaining_bytes()?.into(),
     })
 });
+
+dynamic_size_calc_impl!(RemainderBytes, self, self.data.len());
 
 impl Deref for RemainderBytes {
     type Target = [u8];
@@ -296,7 +332,7 @@ decode_impl!(Ipv4Addr, buf, {
     Ok(Self::from(octets))
 });
 
-size_calc_impl!(Ipv4Addr, size_of_types!(u8) * 4);
+static_size_calc_impl!(Ipv4Addr, size_of_types!(u8) * 4);
 
 /* SocketAddrV4 */
 
@@ -310,4 +346,4 @@ decode_impl!(SocketAddrV4, buf, {
     Ok(Self::new(ip, buf.read_u16()?))
 });
 
-size_calc_impl!(SocketAddrV4, size_of_types!(Ipv4Addr, u16));
+static_size_calc_impl!(SocketAddrV4, size_of_types!(Ipv4Addr, u16));

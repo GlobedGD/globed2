@@ -19,7 +19,7 @@ using namespace geode::prelude;
 class $modify(GlobedPlayLayer, PlayLayer) {
     bool globedReady;
     bool deafened = false;
-    GlobedSettings::CachedSettings settings;
+    GlobedSettings& settings = GlobedSettings::get();
     uint32_t configuredTps = 0;
 
     /* speedhack detection */
@@ -30,8 +30,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) return false;
-
-        m_fields->settings = GlobedSettings::get().getCached();
 
         auto& nm = NetworkManager::get();
 

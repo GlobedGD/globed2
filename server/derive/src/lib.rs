@@ -6,7 +6,7 @@ use proc_macro::{self, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, punctuated::Punctuated, Data, DeriveInput, Meta, Token};
 
-/// Implements `Encodable` for the given type, allowing you to serialize it into a regular `ByteBuffer`.
+/// Implements `Encodable` for the given type, allowing you to serialize it into a `ByteBuffer` or a `FastByteBuffer`.
 /// For `Encodable` to be successfully derived, for structs, all of the members of the struct must also implement `Encodable`.
 /// The members are serialized in the same order they are laid out in the struct.
 ///
@@ -17,6 +17,7 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let struct_name = &input.ident;
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let gen = match &input.data {
         Data::Struct(data) => {
@@ -38,7 +39,7 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
 
             quote! {
                 use esp::ByteBufferExtWrite as _;
-                impl Encodable for #struct_name {
+                impl #impl_generics Encodable for #struct_name #ty_generics #where_clause {
                     #[inline]
                     fn encode(&self, buf: &mut esp::ByteBuffer) {
                         #(#encode_fields)*
@@ -55,7 +56,7 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
 
             quote! {
                 use esp::ByteBufferExtWrite as _;
-                impl Encodable for #struct_name {
+                impl #impl_generics Encodable for #struct_name #ty_generics #where_clause {
                     #[inline]
                     fn encode(&self, buf: &mut esp::ByteBuffer) {
                         buf.write_value(&(*self as #repr_type))
@@ -192,12 +193,14 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-/// Implements `KnownSize` for the given type, allowing you to serialize it into a `FastByteBuffer`.
-/// For `KnownSize` to be successfully derived, for structs, all of the members of the struct must also implement `KnownSize`.
+/// Implements `StaticSize` for the given type, allowing you to compute the encoded size of the value at compile time.
+/// For `StaticSize` to be successfully derived, for structs, all of the members of the struct must also implement `StaticSize`.
 ///
 /// For enums, all the same limitations apply as in `Encodable`.
-#[proc_macro_derive(KnownSize)]
-pub fn derive_known_size(input: TokenStream) -> TokenStream {
+///
+/// **Note**: This will also automatically derive `DynamicSize` for the given type, for ease of use.
+#[proc_macro_derive(StaticSize)]
+pub fn derive_static_size(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let struct_name = &input.ident;
@@ -211,7 +214,7 @@ pub fn derive_known_size(input: TokenStream) -> TokenStream {
             let field_types: Vec<_> = data.fields.iter().map(|field| &field.ty).collect();
 
             quote! {
-                size_of_types!(#(#field_types),*)
+                esp::size_of_types!(#(#field_types),*)
             }
         }
         Data::Enum(_) => {
@@ -223,15 +226,73 @@ pub fn derive_known_size(input: TokenStream) -> TokenStream {
         }
         Data::Union(_) => {
             return quote! {
-                compile_error!("KnownSize cannot be drived for unions");
+                compile_error!("StaticSize cannot be drived for unions");
             }
             .into();
         }
     };
 
     let gen = quote! {
-        impl KnownSize for #struct_name {
+        impl StaticSize for #struct_name {
             const ENCODED_SIZE: usize = #encoded_size;
+        }
+
+        impl DynamicSize for #struct_name {
+            #[inline]
+            fn encoded_size(&self) -> usize {
+                Self::ENCODED_SIZE
+            }
+        }
+    };
+
+    // Return the generated implementation as a TokenStream
+    gen.into()
+}
+
+/// Implements `DynamicSize` for the given type, allowing you to compute the encoded size of the value at runtime.
+/// For `DynamicSize` to be successfully derived, for structs, all of the members of the struct must also implement `DynamicSize`.
+///
+/// For enums, all the same limitations apply as in `Encodable`.
+#[proc_macro_derive(DynamicSize)]
+pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    let struct_name = &input.ident;
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+
+    let encoded_size = match &input.data {
+        Data::Struct(data) if data.fields.is_empty() => {
+            // If the struct has no fields, encoded size is 0
+            quote! { 0 }
+        }
+        Data::Struct(data) => {
+            let field_names: Vec<_> = data.fields.iter().map(|field| &field.ident).collect();
+
+            quote! {
+                esp::size_of_dynamic_types!(#(&self.#field_names),*)
+            }
+        }
+        Data::Enum(_) => {
+            let repr_type = get_enum_repr_type(&input);
+
+            quote! {
+                std::mem::size_of::<#repr_type>()
+            }
+        }
+        Data::Union(_) => {
+            return quote! {
+                compile_error!("DynamicSize cannot be drived for unions");
+            }
+            .into();
+        }
+    };
+
+    let gen = quote! {
+        impl #impl_generics DynamicSize for #struct_name #ty_generics #where_clause {
+            #[inline]
+            fn encoded_size(&self) -> usize {
+                #encoded_size
+            }
         }
     };
 
@@ -268,19 +329,20 @@ pub fn packet(input: TokenStream) -> TokenStream {
 
     let id = opts.id;
     let enc = opts.encrypted;
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let output = match &input.data {
         Data::Struct(_) => {
             quote! {
-                impl PacketMetadata for #ident {
+                impl #impl_generics PacketMetadata for #ident #ty_generics #where_clause {
                     const PACKET_ID: u16 = #id;
                     const ENCRYPTED: bool = #enc;
                     const NAME: &'static str = stringify!(#ident);
                 }
 
-                impl Packet for #ident {}
+                impl #impl_generics Packet for #ident #ty_generics #where_clause {}
 
-                impl #ident {
+                impl #impl_generics #ident #ty_generics #where_clause {
                     #[inline]
                     pub const fn header() -> crate::data::packets::PacketHeader {
                         crate::data::packets::PacketHeader::from_packet::<Self>()

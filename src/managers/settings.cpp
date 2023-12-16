@@ -1,32 +1,80 @@
 #include "settings.hpp"
 
+#define SKEY(sstr) "_gsetting-" #sstr
+#define SFLAGKEY(sstr) "_gflag-" #sstr
+#define STOREV(cat, sstr) \
+    do { \
+        static auto _defaultFor##cat##sstr = defaultFor<decltype(cat.sstr)>(#sstr); \
+        if ((cat.sstr) != _defaultFor##cat##sstr) { \
+            this->store(SKEY(sstr), cat.sstr);\
+        } else { \
+            this->clear(SKEY(sstr));\
+        } \
+    } while (0) \
+
+#define LOADV(cat, sstr) \
+    this->loadOptionalInto(SKEY(sstr), cat.sstr)
+
+#define STOREF(sstr) this->store(SFLAGKEY(sstr), flags.sstr)
+#define LOADF(sstr) this->loadOptionalInto(SFLAGKEY(sstr), flags.sstr)
+
+#define RESET_SETTINGS(...) \
+    do { \
+        static const char* args[] = { __VA_ARGS__ }; \
+        for (const char* arg : args) { \
+            this->clear(arg);\
+        } \
+    } while (0) \
+
 GlobedSettings::GlobedSettings() {
-    _cache.lock()->refresh(*this);
+    this->reload();
 }
 
-void GlobedSettings::reset(const std::string& key, bool refreshCache) {
-    this->setFlag("_gset_-" + key, false);
-    if (refreshCache) {
-        _cache.lock()->refresh(*this);
+void GlobedSettings::save() {
+    // The reason we do macro fuckery is because we don't want to save values that haven't been changed by the user,
+    // aka are at their defaults. So if the defaults get changed in the future, the user will be affected by the change too.
+
+    STOREV(globed, tpsCap);
+    STOREV(globed, audioDevice);
+    STOREV(globed, autoconnect);
+
+    STOREV(communication, voiceEnabled);
+
+    // store flags
+
+    STOREF(seenSignupNotice);
+}
+
+void GlobedSettings::reload() {
+    LOADV(globed, tpsCap);
+    LOADV(globed, audioDevice);
+    LOADV(globed, autoconnect);
+
+    LOADV(communication, voiceEnabled);
+
+    // load flags
+
+    LOADF(seenSignupNotice);
+}
+
+void GlobedSettings::resetToDefaults() {
+    RESET_SETTINGS(
+        SKEY(tpsCap),
+        SKEY(audioDevice),
+        SKEY(autoconnect),
+
+        SKEY(voiceEnabled)
+    );
+
+    this->reload();
+}
+
+void GlobedSettings::clear(const std::string& key) {
+    auto& container = geode::Mod::get()->getSaveContainer();
+    auto& obj = container.as_object();
+
+    if (obj.contains(key)) {
+        // we cant remove objects in matjson so we just set it to null
+        obj[key] = json::Value(nullptr);
     }
-}
-
-GlobedSettings::CachedSettings GlobedSettings::getCached() {
-    return *_cache.lock();
-}
-
-bool GlobedSettings::getFlag(const std::string& key) {
-    return geode::Mod::get()->getSavedValue<int64_t>("gflag-" + key) == 2;
-}
-
-void GlobedSettings::setFlag(const std::string& key, bool state) {
-    geode::Mod::get()->setSavedValue("gflag-" + key, static_cast<int64_t>(state ? 2 : 0));
-}
-
-void GlobedSettings::CachedSettings::refresh(GlobedSettings& gs) {
-    this->globed.tpsCap = gs.getValue<uint32_t>("tps-cap", 0);
-    this->globed.audioDevice = gs.getValue("audio-device", 0);
-    this->globed.autoconnect = gs.getValue<bool>("autoconnect", false);
-
-    this->communication.voiceEnabled = gs.getValue<bool>("comms-voice-enabled", true);
 }

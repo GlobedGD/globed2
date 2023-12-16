@@ -43,7 +43,9 @@ macro_rules! gs_disconnect {
 /// send a `ServerNoticePacket` to the client with the given message
 macro_rules! gs_notice {
     ($self:expr, $msg:expr) => {
-        $self.send_packet_fast(&ServerNoticePacket { message: $msg }).await?;
+        $self
+            .send_packet_fast_dynamic(&ServerNoticePacket { message: $msg })
+            .await?;
     };
 }
 
@@ -53,7 +55,7 @@ macro_rules! gs_needauth {
         let account_id = $self.account_id.load(Ordering::Relaxed);
 
         if account_id == 0 {
-            gs_disconnect!($self, FastString::from_str("unauthorized, please try connecting again"));
+            gs_disconnect!($self, "unauthorized, please try connecting again");
         }
 
         account_id

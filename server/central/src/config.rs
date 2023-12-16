@@ -35,7 +35,12 @@ fn default_gdapi_period() -> u64 {
 }
 
 fn default_game_servers() -> Vec<GameServerEntry> {
-    Vec::new()
+    vec![GameServerEntry {
+        id: "example-server-you-can-delete-it".to_owned(),
+        name: "Server name".to_owned(),
+        address: "127.0.0.0:41001".to_owned(),
+        region: "the nether".to_owned(),
+    }]
 }
 
 fn default_maintenance() -> bool {
@@ -43,7 +48,15 @@ fn default_maintenance() -> bool {
 }
 
 fn default_special_users() -> IntMap<i32, SpecialUser> {
-    IntMap::default()
+    let mut map = IntMap::default();
+    map.insert(
+        71,
+        SpecialUser {
+            name: "RobTop".to_owned(),
+            color: "#ffaabb".to_owned(),
+        },
+    );
+    map
 }
 
 fn default_userlist_mode() -> UserlistMode {

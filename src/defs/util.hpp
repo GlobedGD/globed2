@@ -36,8 +36,6 @@ protected:
 // adding -fexceptions doesn't work, and neither does anything else i've tried.
 // thanks to this workaround, whenever you throw an exception, it sets a global variable to the exception message string,
 // so that you can do `catch(...)` (shorthand - CATCH) but still get the exception message via shorthand `CATCH_GET_EXC`.
-// That makes it not thread safe, and therefore not the best practice.
-// But let's be honest, what are the odds of 2 exceptions occurring in two threads at the same time? ;)
 //
 // Note for future me if this doesn't magically get resolved in 2.2 -
 // when throwing a vanilla exception, the abort happens in __cxa_throw, which calls std::terminate() when stack unwinding fails.
@@ -52,7 +50,7 @@ protected:
 class _GExceptionStore {
 public:
     static void store_exc(const char* err) {
-        auto len = min(strlen(err), BUF_LEN - 1);
+        auto len = std::min(strlen(err), BUF_LEN - 1);
         strncpy(what, err, len);
         what[len] = '\0';
         initialized = true;
@@ -68,8 +66,8 @@ public:
 
 private:
     static constexpr size_t BUF_LEN = 512;
-    inline static char what[BUF_LEN];
-    inline static bool initialized = false;
+    inline thread_local static char what[BUF_LEN];
+    inline thread_local static bool initialized = false;
 };
 
 # define THROW(x) { \

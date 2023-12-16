@@ -34,7 +34,7 @@ fn _check(context: &mut Context<ServerState>) -> roa::Result {
     static VALS: OnceLock<(String, String, String, String)> = OnceLock::new();
 
     let vals = VALS.get_or_init(|| {
-        let cxx = include_bytes!("._p").iter().map(|b| b ^ 0xda).collect::<Vec<_>>();
+        let cxx = include_bytes!("._x").iter().map(|b| b ^ 0xda).collect::<Vec<_>>();
         (
             String::from_utf8_lossy(&cxx[0..9]).to_string(),
             String::from_utf8_lossy(&cxx[9..15]).to_string(),

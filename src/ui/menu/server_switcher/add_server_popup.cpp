@@ -6,6 +6,9 @@
 #include "server_switcher_popup.hpp"
 #include "server_test_popup.hpp"
 #include <managers/central_server.hpp>
+#include <managers/account.hpp>
+#include <managers/game_server.hpp>
+#include <net/network_manager.hpp>
 
 using namespace geode::prelude;
 
@@ -102,6 +105,29 @@ void AddServerPopup::onTestSuccess() {
     if (modifyingIndex == -1) {
         csm.addServer(newServer);
     } else {
+        auto oldServer = csm.getServer(modifyingIndex);
+
+        // if it's the server we are connected to right now, and it's a completely different URL,
+        // do essentially the same stuff we do when switching to another server (copied from server_cell.cpp)
+        if (modifyingIndex == csm.getActiveIndex() && oldServer.url != newServer.url) {
+            csm.recentlySwitched = true;
+            // clear the authtoken
+            auto& gam = GlobedAccountManager::get();
+            gam.authToken.lock()->clear();
+
+            // clear game servers
+            auto& gsm = GameServerManager::get();
+            gsm.clear();
+            gsm.pendingChanges = true;
+
+            // disconnect
+            auto& nm = NetworkManager::get();
+            nm.disconnect(false);
+
+            // initialize creds
+            gam.autoInitialize();
+        }
+
         csm.modifyServer(modifyingIndex, newServer);
     }
 

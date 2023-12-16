@@ -103,6 +103,10 @@ public:
 
     class Guard {
     public:
+        // no copy
+        Guard(const Guard&) = delete;
+        Guard& operator=(const Guard&) = delete;
+
         Guard(std::shared_ptr<T> data, std::mutex& mutex) : data_(data), mutex_(mutex) {
             mutex_.lock();
         }
@@ -185,5 +189,32 @@ using AtomicU32 = RelaxedAtomic<uint32_t>;
 using AtomicI64 = RelaxedAtomic<int64_t>;
 using AtomicU64 = RelaxedAtomic<uint64_t>;
 using AtomicSizeT = RelaxedAtomic<size_t>;
+
+// thread safe singleton class.
+// when possible, it is recommended to avoid using and just use GLOBED_SINGLETON instead.
+// it will allow you to implement a more robust and more efficient sync approach,
+// rather than locking up the entire instance and preventing access while in use.
+
+template <typename Derived>
+class SyncSingletonBase {
+public:
+    // no copy
+    SyncSingletonBase(const SyncSingletonBase&) = delete;
+    SyncSingletonBase& operator=(const SyncSingletonBase&) = delete;
+    // no move
+    SyncSingletonBase(SyncSingletonBase&&) = delete;
+    SyncSingletonBase& operator=(SyncSingletonBase&&) = delete;
+
+    static WrappingMutex<Derived>::Guard lock() {
+        static WrappingMutex<Derived> instance;
+        return instance.lock();
+    }
+
+protected:
+    SyncSingletonBase() = default;
+    virtual ~SyncSingletonBase() = default;
+};
+
+#define GLOBED_SYNC_SINGLETON(cls) public ::util::sync::SyncSingletonBase<cls>
 
 }

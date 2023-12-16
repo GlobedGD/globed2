@@ -32,6 +32,7 @@ bool GlobedSignupPopup::setup() {
 
     GHTTPRequest::post(url)
         .userAgent(util::net::webUserAgent())
+        .timeout(util::time::secs(5))
         .then([this](const GHTTPResponse& resp) {
             if (resp.anyfail()) {
                 auto error = resp.anyfailmsg();
@@ -125,6 +126,7 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
 
     GHTTPRequest::post(url)
         .userAgent(util::net::webUserAgent())
+        .timeout(util::time::secs(5))
         .then([this, &am](const GHTTPResponse& resp) {
             if (resp.anyfail()) {
                 auto error = resp.anyfailmsg();

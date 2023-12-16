@@ -15,7 +15,7 @@ pub trait PacketMetadata {
     const NAME: &'static str;
 }
 
-#[derive(Encodable, Decodable, KnownSize)]
+#[derive(Encodable, Decodable, StaticSize)]
 pub struct PacketHeader {
     pub packet_id: u16,
     pub encrypted: bool,

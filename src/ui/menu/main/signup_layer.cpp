@@ -23,10 +23,12 @@ bool GlobedSignupLayer::init() {
 
     Build<ButtonSprite>::create("Login", "goldFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([](auto) {
-            if (!GlobedSettings::get().getFlag("seen-signup-notice")) {
-                geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "Ok", [](auto, bool agreed){
+            auto& gs = GlobedSettings::get();
+            if (!gs.flags.seenSignupNotice) {
+                geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "Ok", [&gs](auto, bool agreed){
                     if (agreed) {
-                        GlobedSettings::get().setFlag("seen-signup-notice");
+                        gs.flags.seenSignupNotice = true;
+                        gs.save();
                         GlobedSignupPopup::create()->show();
                     }
                 });

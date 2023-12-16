@@ -12,14 +12,14 @@ pub struct PlayerProfilesPacket;
 #[packet(id = 22001, encrypted = false)]
 pub struct LevelDataPacket;
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 22010, encrypted = true)]
 pub struct VoiceBroadcastPacket {
     pub player_id: i32,
     pub data: FastEncodedAudioFrame,
 }
 
-#[derive(Clone, Packet, Encodable, KnownSize)]
+#[derive(Clone, Packet, Encodable, StaticSize)]
 #[packet(id = 22011, encrypted = true)]
 pub struct ChatMessageBroadcastPacket {
     pub player_id: i32,

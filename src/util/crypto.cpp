@@ -152,11 +152,13 @@ bool stringsEqual(const std::string& s1, const std::string& s2) {
 
 std::string base64Encode(const byte* source, size_t size, Base64Variant variant) {
     size_t length = sodium_base64_ENCODED_LEN(size, (int)variant);
-    char* out = new char[length];
-    sodium_bin2base64(out, length, source, size, (int)variant);
 
-    auto ret = std::string(out);
-    delete[] out;
+    std::string ret;
+    ret.resize(length);
+
+    sodium_bin2base64(ret.data(), length, source, size, (int)variant);
+
+    ret.resize(length - 1); // get rid of the trailing null byte
 
     return ret;
 }
@@ -196,12 +198,13 @@ bytevector base64Decode(const bytevector& source, Base64Variant variant) {
 
 std::string hexEncode(const byte* source, size_t size) {
     auto outLen = size * 2 + 1;
-    char* out = new char[outLen];
 
-    sodium_bin2hex(out, outLen, source, size);
+    std::string ret;
+    ret.resize(outLen);
 
-    std::string ret(out);
-    delete[] out;
+    sodium_bin2hex(ret.data(), outLen, source, size);
+
+    ret.resize(outLen - 1); // get rid of the trailing null byte
 
     return ret;
 }
