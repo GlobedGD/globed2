@@ -2,9 +2,6 @@ name: Build Geode Mod
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "main"
 
 jobs:
   build:
