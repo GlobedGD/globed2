@@ -195,26 +195,26 @@ using AtomicSizeT = RelaxedAtomic<size_t>;
 // it will allow you to implement a more robust and more efficient sync approach,
 // rather than locking up the entire instance and preventing access while in use.
 
-template <typename Derived>
-class SyncSingletonBase {
-public:
-    // no copy
-    SyncSingletonBase(const SyncSingletonBase&) = delete;
-    SyncSingletonBase& operator=(const SyncSingletonBase&) = delete;
-    // no move
-    SyncSingletonBase(SyncSingletonBase&&) = delete;
-    SyncSingletonBase& operator=(SyncSingletonBase&&) = delete;
+// template <typename Derived>
+// class SyncSingletonBase {
+// public:
+//     // no copy
+//     SyncSingletonBase(const SyncSingletonBase&) = delete;
+//     SyncSingletonBase& operator=(const SyncSingletonBase&) = delete;
+//     // no move
+//     SyncSingletonBase(SyncSingletonBase&&) = delete;
+//     SyncSingletonBase& operator=(SyncSingletonBase&&) = delete;
 
-    static WrappingMutex<Derived>::Guard lock() {
-        static WrappingMutex<Derived> instance;
-        return instance.lock();
-    }
+//     static WrappingMutex<Derived>::Guard lock() {
+//         static WrappingMutex<Derived> instance;
+//         return instance.lock();
+//     }
 
-protected:
-    SyncSingletonBase() = default;
-    virtual ~SyncSingletonBase() = default;
-};
+// protected:
+//     SyncSingletonBase() = default;
+//     virtual ~SyncSingletonBase() = default;
+// };
 
-#define GLOBED_SYNC_SINGLETON(cls) public ::util::sync::SyncSingletonBase<cls>
+// #define GLOBED_SYNC_SINGLETON(cls) public ::util::sync::SyncSingletonBase<cls>
 
 }
