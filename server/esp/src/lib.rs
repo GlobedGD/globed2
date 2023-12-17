@@ -345,13 +345,26 @@ macro_rules! impl_extread {
             // [(); N].try_map(|_| self.read_value::<T>())
             // ^^ i would love to only use safe rust but a ~10% performance difference is a bit too big to ignore
 
-            let mut a = MaybeUninit::<T>::uninit_array::<N>();
+            let mut arr = MaybeUninit::<T>::uninit_array::<N>();
             for i in 0..N {
-                a[i].write(self.read_value::<T>()?);
+                match self.read_value::<T>() {
+                    Ok(val) => arr[i].write(val),
+                    Err(err) => {
+                        // cleanup the previous values and return the error
+                        for j in 0..i {
+                            // safety: we know that `j < i`, and we know that all elements in `arr` that are before `arr[i]` must already be initialized
+                            unsafe {
+                                arr[j].assume_init_drop();
+                            }
+                        }
+
+                        return Err(err);
+                    }
+                };
             }
 
             // safety: we have initialized all values as seen above. if decoding failed at any moment, this step woudln't be reachable.
-            Ok(a.map(|x| unsafe { x.assume_init() }))
+            Ok(arr.map(|x| unsafe { x.assume_init() }))
         }
 
         #[inline]
