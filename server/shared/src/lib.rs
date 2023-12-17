@@ -26,6 +26,8 @@ pub mod logger;
 pub mod token_issuer;
 
 pub const PROTOCOL_VERSION: u16 = 1;
+pub const SERVER_MAGIC: &[u8] = b"\xda\xeeglobed\xda\xee";
+pub const SERVER_MAGIC_LEN: usize = SERVER_MAGIC.len();
 
 fn default_su_color() -> String {
     "#ffffff".to_string()

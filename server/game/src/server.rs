@@ -11,7 +11,7 @@ use globed_shared::{
     crypto_box::{aead::OsRng, PublicKey, SecretKey},
     esp::ByteBufferExtWrite as _,
     logger::*,
-    GameServerBootData, TokenIssuer,
+    GameServerBootData, TokenIssuer, SERVER_MAGIC_LEN,
 };
 use rustc_hash::FxHashMap;
 
@@ -414,7 +414,11 @@ impl GameServer {
             .map_err(|e| anyhow!("central server returned an error: {e}"))?;
 
         let configuration = response.bytes().await?;
-        let boot_data: GameServerBootData = ByteReader::from_bytes(&configuration)
+
+        let mut reader = ByteReader::from_bytes(&configuration);
+        reader.skip(SERVER_MAGIC_LEN);
+
+        let boot_data: GameServerBootData = reader
             .read_value()
             .map_err(|e| anyhow!("central server sent malformed response: {e}"))?;
 

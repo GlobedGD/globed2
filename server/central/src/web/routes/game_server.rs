@@ -1,7 +1,7 @@
 use globed_shared::{
     esp::{ByteBuffer, ByteBufferExtWrite},
     logger::debug,
-    GameServerBootData, PROTOCOL_VERSION,
+    GameServerBootData, PROTOCOL_VERSION, SERVER_MAGIC,
 };
 use reqwest::StatusCode;
 use roa::{preload::PowerBody, query::Query, throw, Context};
@@ -68,6 +68,7 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
     );
 
     let mut bb = ByteBuffer::new();
+    bb.write_bytes(SERVER_MAGIC);
     bb.write_value(&bdata);
 
     drop(state);

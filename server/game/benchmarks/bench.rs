@@ -146,6 +146,24 @@ fn managers(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, buffers, structs, managers);
-// criterion_group!(benches, structs);
+fn read_value_array(c: &mut Criterion) {
+    c.bench_function("read-value-array", |b| {
+        let mut buf = ByteBuffer::new();
+        for _ in 0..1024 {
+            buf.write_value_array(&black_box([69u8; 128]));
+        }
+
+        b.iter(black_box(|| {
+            buf.set_rpos(0);
+            for _ in 0..1024 {
+                let v = black_box(buf.read_value_array::<u8, 128>()).unwrap();
+                assert_eq!(v[0], v[127]);
+                assert_eq!(v[0], 69u8);
+            }
+        }));
+    });
+}
+
+criterion_group!(benches, buffers, structs, managers, read_value_array);
+// criterion_group!(benches, read_value_array);
 criterion_main!(benches);

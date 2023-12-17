@@ -7,6 +7,7 @@
 //! esp also provides optimized types such as `FastString` that will be more efficient in encoding/decoding,
 //! and shall be used for encoding instead of the alternatives when possible.
 
+#![feature(maybe_uninit_uninit_array)]
 #![allow(
     clippy::must_use_candidate,
     clippy::cast_possible_truncation,
@@ -15,7 +16,7 @@
     clippy::missing_safety_doc,
     clippy::wildcard_imports
 )]
-use std::fmt::Display;
+use std::{fmt::Display, mem::MaybeUninit};
 mod common;
 mod fastbuffer;
 pub mod types;
@@ -222,6 +223,9 @@ pub trait ByteBufferExtRead {
         self.read_value()
     }
 
+    /// skip the next `n` bytes
+    fn skip(&mut self, n: usize);
+
     fn read_bool(&mut self) -> DecodeResult<bool>;
     /// read a byte vector, prefixed with 4 bytes indicating length
     fn read_byte_array(&mut self) -> DecodeResult<Vec<u8>>;
@@ -241,9 +245,7 @@ pub trait ByteBufferExtRead {
 
 impl ByteBufferExt for ByteBuffer {
     fn with_capacity(capacity: usize) -> Self {
-        let mut ret = Self::from_vec(Vec::with_capacity(capacity));
-        ret.set_wpos(0);
-        ret
+        Self::from_vec(Vec::with_capacity(capacity))
     }
 }
 
@@ -275,14 +277,16 @@ macro_rules! impl_extwrite {
 
         #[inline]
         fn write_value_array<T: Encodable, const N: usize>(&mut self, val: &[T; N]) {
-            val.iter().for_each(|v| self.write_value(v));
+            for elem in val {
+                self.write_value(elem);
+            }
         }
 
         #[inline]
         fn write_value_vec<T: Encodable>(&mut self, val: &[T]) {
             self.write_u32(val.len() as u32);
             for elem in val {
-                elem.$encode_fn(self);
+                self.write_value(elem);
             }
         }
     };
@@ -290,6 +294,11 @@ macro_rules! impl_extwrite {
 
 macro_rules! impl_extread {
     ($decode_fn:ident) => {
+        #[inline]
+        fn skip(&mut self, n: usize) {
+            self.set_rpos(self.get_rpos() + n);
+        }
+
         #[inline]
         fn read_bool(&mut self) -> DecodeResult<bool> {
             Ok(self.read_u8()? != 0u8)
@@ -333,7 +342,16 @@ macro_rules! impl_extread {
 
         #[inline]
         fn read_value_array<T: Decodable, const N: usize>(&mut self) -> DecodeResult<[T; N]> {
-            array_init::try_array_init(|_| self.read_value::<T>())
+            // [(); N].try_map(|_| self.read_value::<T>())
+            // ^^ i would love to only use safe rust but a ~10% performance difference is a bit too big to ignore
+
+            let mut a = MaybeUninit::<T>::uninit_array::<N>();
+            for i in 0..N {
+                a[i].write(self.read_value::<T>()?);
+            }
+
+            // safety: we have initialized all values as seen above. if decoding failed at any moment, this step woudln't be reachable.
+            Ok(a.map(|x| unsafe { x.assume_init() }))
         }
 
         #[inline]

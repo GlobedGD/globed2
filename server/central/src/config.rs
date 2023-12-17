@@ -122,7 +122,7 @@ pub struct GameServerEntry {
     pub region: String,
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ServerConfig {
     #[serde(default = "default_web_mountpoint")]
     pub web_mountpoint: String,
@@ -195,8 +195,10 @@ impl ServerConfig {
         self.clone_from(&conf);
         Ok(())
     }
+}
 
-    pub fn make_default() -> Self {
+impl Default for ServerConfig {
+    fn default() -> Self {
         // i'm just so cool like that
         serde_json::from_str("{}").unwrap()
     }

@@ -1,4 +1,4 @@
-use std::{fmt, str::Utf8Error};
+use std::{fmt, ops::Deref, str::Utf8Error};
 
 use crate::*;
 
@@ -172,9 +172,16 @@ impl<const N: usize> StaticSize for FastString<N> {
     const ENCODED_SIZE: usize = size_of_types!(u32) + N;
 }
 
+impl<const N: usize> Deref for FastString<N> {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        self.try_to_str()
+    }
+}
+
 impl<const N: usize> fmt::Display for FastString<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.to_str().unwrap_or("<invalid UTF-8 string>"))
+        f.write_str(self)
     }
 }
 

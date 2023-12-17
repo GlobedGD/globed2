@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     } else {
         info!("Configuration file does not exist by given path, creating a template one.");
-        ServerConfig::make_default()
+        ServerConfig::default()
     };
 
     config.save(&config_path)?;

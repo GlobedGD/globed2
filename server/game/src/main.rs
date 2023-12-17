@@ -19,6 +19,7 @@
 use std::{
     error::Error,
     net::{IpAddr, Ipv4Addr, SocketAddr},
+    time::Duration,
 };
 
 use esp::{ByteBufferExtRead, ByteReader};
@@ -146,6 +147,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let standalone = startup_config.central_data.is_none();
 
     let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
         .user_agent(format!("globed-game-server/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .unwrap();
@@ -193,13 +195,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
         };
 
         let configuration = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&configuration);
 
-        let boot_data: GameServerBootData = match ByteReader::from_bytes(&configuration).read_value() {
+        // verify that the magic bytes match
+        let valid_magic = reader
+            .read_value_array::<u8, SERVER_MAGIC_LEN>()
+            .map_or(false, |magic| magic.iter().eq(SERVER_MAGIC.iter()));
+
+        if !valid_magic {
+            error!("got unexpected response from the specified central server");
+            warn!("hint: make sure the URL you passed is a valid Global central server URL");
+            warn!("hint: here is the response that was received from the specified URL:");
+            let txt = String::from_utf8(reader.as_bytes().to_vec()).unwrap_or("<invalid UTF-8 string>".to_owned());
+            warn!("{}", &txt[..txt.len().min(512)]);
+            abort_misconfig();
+        }
+
+        let boot_data: GameServerBootData = match reader.read_value() {
             Ok(x) => x,
             Err(err) => {
                 error!("failed to parse the data sent by the central server: {err}");
-                warn!("hint: make sure the URL you passed is a valid Globed central server URL");
-                warn!("hint: also make sure that both the central and the game servers are on the latest version");
+                warn!("hint: this is supposedly a valid Globed central server, as the sent magic string was correct, but data decoding still failed");
+                warn!("hint: make sure that both the central and the game servers are on the latest version");
                 abort_misconfig();
             }
         };
