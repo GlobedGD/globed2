@@ -169,7 +169,7 @@ impl GameServerThread {
     fn print_packet<P: PacketMetadata>(&self, _sending: bool, _ptype: Option<&str>) {}
 
     /// call `self.terminate()` and send a message to the user with the reason
-    async fn disconnect<'a>(&self, message: &'a str) -> Result<()> {
+    async fn disconnect(&self, message: &str) -> Result<()> {
         self.terminate();
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
@@ -342,12 +342,12 @@ impl GameServerThread {
         let mut data = ByteReader::from_bytes(message);
         let header = data.read_packet_header()?;
 
-        // minor optimization
+        // by far the most common packet, so we try it early
         if header.packet_id == PlayerDataPacket::PACKET_ID {
             return self.handle_player_data(&mut data).await;
         }
 
-        // also for optimization, reject the voice packet immediately on certain conditions
+        // also for optimization, reject the voice/text packet immediately on certain conditions
         if (header.packet_id == VoicePacket::PACKET_ID || header.packet_id == ChatMessagePacket::PACKET_ID)
             && !self.is_chat_packet_allowed(header.packet_id == VoicePacket::PACKET_ID, message.len())
         {

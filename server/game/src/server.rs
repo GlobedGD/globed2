@@ -27,7 +27,7 @@ use crate::{
     util::SimpleRateLimiter,
 };
 
-const MAX_PACKET_SIZE: usize = 8192;
+const MAX_PACKET_SIZE: usize = 4096;
 
 pub struct GameServerConfiguration {
     pub http_client: reqwest::Client,

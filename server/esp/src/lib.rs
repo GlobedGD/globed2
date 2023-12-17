@@ -67,14 +67,14 @@ pub trait Decodable {
 }
 
 pub trait StaticSize {
-    /// For dynamically sized types, this must be the maximum permitted size in the encoded form.
+    /// For dynamically sized types, this is the maximum permitted size in the encoded form.
     /// If `FastByteBuffer::write` tries to write more bytes than this value, it may panic.
     const ENCODED_SIZE: usize;
 }
 
 pub trait DynamicSize {
     /// For types that have an unpredicatble size at compile time (`Vec`, `String`, `HashMap`, etc.),
-    /// this trait can be used to calculate the maximum permitted encoded size at runtime.
+    /// this method can be used to calculate the maximum permitted encoded size at runtime.
     fn encoded_size(&self) -> usize;
 }
 
