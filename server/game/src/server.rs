@@ -6,8 +6,8 @@ use std::{
 
 use parking_lot::Mutex as SyncMutex;
 
-use anyhow::{anyhow, bail};
 use globed_shared::{
+    anyhow::{self, anyhow, bail},
     crypto_box::{aead::OsRng, PublicKey, SecretKey},
     esp::ByteBufferExtWrite as _,
     logger::*,

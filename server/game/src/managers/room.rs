@@ -1,6 +1,5 @@
-use globed_shared::IntMap;
+use globed_shared::{rand, rand::Rng, IntMap};
 use parking_lot::{Mutex as SyncMutex, MutexGuard as SyncMutexGuard};
-use rand::Rng;
 
 use crate::data::ROOM_ID_LENGTH;
 

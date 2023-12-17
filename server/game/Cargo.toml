@@ -11,16 +11,13 @@ globed-derive = { path = "../derive" }
 esp = { path = "../esp" }
 
 alloca = "0.4.0"
-anyhow = "1.0.75"
 parking_lot = "0.12.1"
-rand = "0.8.5"
 reqwest = "0.11.22"
 rustc-hash = "1.1.0"
 tokio = { version = "1.35.0", features = ["full"] }
 
 [dev-dependencies]
 criterion = "0.5.1"
-rand = "0.8.5"
 
 [[bench]]
 name = "globed-bench"

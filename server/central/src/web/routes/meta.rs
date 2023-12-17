@@ -1,7 +1,6 @@
 use std::sync::OnceLock;
 
-use globed_shared::PROTOCOL_VERSION;
-use rand::Rng;
+use globed_shared::{rand, rand::Rng, PROTOCOL_VERSION};
 use roa::{preload::PowerBody, throw, Context};
 
 use crate::state::ServerState;

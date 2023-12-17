@@ -3,8 +3,11 @@ use std::{
     path::Path,
 };
 
-use globed_shared::{IntMap, SpecialUser};
-use rand::{distributions::Alphanumeric, Rng};
+use globed_shared::{
+    anyhow,
+    rand::{self, distributions::Alphanumeric, Rng},
+    IntMap, SpecialUser,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{ser::PrettyFormatter, Serializer};
 

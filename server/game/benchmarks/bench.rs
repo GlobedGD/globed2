@@ -2,7 +2,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use esp::{ByteBuffer, ByteReader};
 use globed_game_server::{data::*, make_uninit, managers::PlayerManager, new_uninit};
-use rand::RngCore;
+use globed_shared::{rand, rand::RngCore};
 
 fn buffers(c: &mut Criterion) {
     let data = PlayerAccountData {

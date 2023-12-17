@@ -8,14 +8,12 @@ edition = "2021"
 [dependencies]
 globed-shared = { path = "../shared" }
 
-anyhow = "1.0.75"
 async-rate-limit = "0.0.3"
 async-watcher = "0.2.0"
 blake2 = "0.10.6"
 digest = "0.10.7"
 ipnet = "2.9.0"
 iprange = "0.6.7"
-rand = "0.8.5"
 reqwest = "0.11.22"
 roa = { version = "0.6.1", features = ["router"] }
 serde = { version = "1.0.193", features = ["serde_derive"] }

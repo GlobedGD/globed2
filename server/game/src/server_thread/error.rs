@@ -26,8 +26,8 @@ pub enum PacketHandlingError {
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
 
-impl From<anyhow::Error> for PacketHandlingError {
-    fn from(value: anyhow::Error) -> Self {
+impl From<globed_shared::anyhow::Error> for PacketHandlingError {
+    fn from(value: globed_shared::anyhow::Error) -> Self {
         PacketHandlingError::Other(value.to_string())
     }
 }

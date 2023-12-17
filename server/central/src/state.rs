@@ -9,9 +9,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::anyhow;
 use async_rate_limit::sliding_window::SlidingWindowRateLimiter;
 use globed_shared::{
+    anyhow::{self, anyhow},
     hmac::{Hmac, Mac},
     sha2::Sha256,
     TokenIssuer,
