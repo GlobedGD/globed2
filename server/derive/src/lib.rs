@@ -240,13 +240,37 @@ pub fn derive_static_size(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
+#[derive(FromDeriveInput)]
+#[darling(attributes(dynamic_size))]
+struct DynamicSizeAttributes {
+    as_static: Option<bool>,
+}
+
 /// Implements `DynamicSize` for the given type, allowing you to compute the encoded size of the value at runtime.
 /// For `DynamicSize` to be successfully derived, for structs, all of the members of the struct must also implement `DynamicSize`.
 ///
 /// For enums, all the same limitations apply as in `Encodable`.
-#[proc_macro_derive(DynamicSize)]
+///
+/// If your struct also implements `StaticSize`, for efficiency purposes you can add the attribute `#[dynamic_size(as_static = true)]`, like so:
+/// ```rust
+/// #[derive(StaticSize, DynamicSize)]
+/// #[dynamic_size(as_static = true)]
+/// pub struct MyStruct { val: u32 }
+/// ```
+///
+/// This will cause `MyStruct::encoded_size` to evaluate to a constant `Self::ENCODED_SIZE` instead of the function call `self.val.encoded_size()`
+#[proc_macro_derive(DynamicSize, attributes(dynamic_size))]
 pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+    let as_static = match DynamicSizeAttributes::from_derive_input(&input) {
+        Ok(x) => x.as_static,
+        Err(_) => {
+            return quote! {
+                compile_error!("invalid or missing signature for #[dynamic_size] attribute, please see documentation for `DynamicSize` proc macro");
+            }
+            .into();
+        }
+    }.unwrap_or(false);
 
     let struct_name = &input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
@@ -259,8 +283,14 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
         Data::Struct(data) => {
             let field_names: Vec<_> = data.fields.iter().map(|field| &field.ident).collect();
 
-            quote! {
-                esp::size_of_dynamic_types!(#(&self.#field_names),*)
+            if as_static {
+                quote! {
+                    Self::ENCODED_SIZE
+                }
+            } else {
+                quote! {
+                    esp::size_of_dynamic_types!(#(&self.#field_names),*)
+                }
             }
         }
         Data::Enum(_) => {

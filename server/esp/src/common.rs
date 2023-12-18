@@ -412,7 +412,7 @@ decode_impl!(Ipv4Addr, buf, {
 });
 
 static_size_calc_impl!(Ipv4Addr, size_of_types!(u8) * 4);
-dynamic_size_calc_impl!(Ipv4Addr, self, Self::ENCODED_SIZE);
+dynamic_size_as_static_impl!(Ipv4Addr);
 
 /* SocketAddrV4 */
 
@@ -427,4 +427,4 @@ decode_impl!(SocketAddrV4, buf, {
 });
 
 static_size_calc_impl!(SocketAddrV4, size_of_types!(Ipv4Addr, u16));
-dynamic_size_calc_impl!(SocketAddrV4, self, Self::ENCODED_SIZE);
+dynamic_size_as_static_impl!(SocketAddrV4);

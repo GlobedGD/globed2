@@ -185,6 +185,13 @@ macro_rules! size_of_dynamic_types {
     }};
 }
 
+#[macro_export]
+macro_rules! dynamic_size_as_static_impl {
+    ($typ:ty) => {
+        dynamic_size_calc_impl!($typ, self, Self::ENCODED_SIZE);
+    };
+}
+
 /* ByteBuffer extensions */
 
 pub trait ByteBufferExt {

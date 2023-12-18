@@ -5,6 +5,7 @@ use crate::data::*;
 use super::{Color3B, ColorParseError};
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
 pub struct PlayerIconData {
     pub cube: i16,
     pub ship: i16,
@@ -49,6 +50,7 @@ impl PlayerIconData {
 /* SpecialUserData */
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
 pub struct SpecialUserData {
     pub name_color: Color3B,
 }
@@ -129,6 +131,7 @@ pub struct PlayerRoomPreviewAccountData {
 /* IconType */
 
 #[derive(Debug, Copy, Clone, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
 #[repr(u8)]
 pub enum IconType {
     Unknown = 0,
@@ -146,6 +149,7 @@ pub enum IconType {
 /* PlayerData (data in a level) */
 
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
 pub struct PlayerData {
     pub percentage: u16,
     pub attempts: i32,
@@ -154,6 +158,7 @@ pub struct PlayerData {
 /* AssociatedPlayerData */
 
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
 pub struct AssociatedPlayerData {
     pub account_id: i32,
     pub data: PlayerData,

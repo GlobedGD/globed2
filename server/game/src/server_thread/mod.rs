@@ -375,6 +375,7 @@ impl GameServerThread {
 
     /// low level version of other `send_packet_xxx` methods. there is no bound for `Encodable`, `StaticSize` or `DynamicSize`,
     /// but you have to provide a closure that handles packet encoding, and you must specify the appropriate packet size.
+    /// you do **not** have to encode the packet header or include its size in the `packet_size` argument, that will be done for you automatically.
     #[inline]
     async fn send_packet_alloca_with<P: Packet, F>(&self, packet_size: usize, encode_fn: F) -> Result<()>
     where
