@@ -150,13 +150,6 @@ macro_rules! static_size_calc_impl {
         impl $crate::StaticSize for $typ {
             const ENCODED_SIZE: usize = $calc;
         }
-
-        impl $crate::DynamicSize for $typ {
-            #[inline(always)]
-            fn encoded_size(&self) -> usize {
-                Self::ENCODED_SIZE
-            }
-        }
     };
 }
 
@@ -164,7 +157,7 @@ macro_rules! static_size_calc_impl {
 macro_rules! dynamic_size_calc_impl {
     ($typ:ty, $self:ident, $calc:expr) => {
         impl $crate::DynamicSize for $typ {
-            #[inline(always)]
+            #[inline]
             fn encoded_size(&$self) -> usize {
                 $calc
             }

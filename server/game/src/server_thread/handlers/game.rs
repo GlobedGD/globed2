@@ -1,12 +1,10 @@
 use std::sync::{atomic::Ordering, Arc};
 
-use crate::{
-    data::packets::PacketHeader,
-    server_thread::{GameServerThread, PacketHandlingError, Result},
-};
-
 use super::*;
-use crate::data::*;
+use crate::{
+    data::*,
+    server_thread::{GameServerThread, PacketHandlingError},
+};
 
 /// max voice throughput in kb/s
 pub const MAX_VOICE_THROUGHPUT: usize = 8;
@@ -67,37 +65,27 @@ impl GameServerThread {
             return Ok(());
         }
 
-        let calc_size = size_of_types!(PacketHeader, u32) + size_of_types!(AssociatedPlayerData) * written_players;
+        let calc_size = size_of_types!(u32) + size_of_types!(AssociatedPlayerData) * written_players;
 
-        gs_inline_encode!(self, calc_size, buf, {
-            buf.write_packet_header::<LevelDataPacket>();
-            buf.write_u32(written_players as u32);
-
-            // this is very scary
-            let written = self.game_server.state.room_manager.with_any(room_id, |pm| {
-                pm.for_each_player_on_level(
-                    level_id,
-                    |player, count, buf| {
-                        // we do additional length check because player count may have increased since 1st lock
-                        if count < written_players && player.account_id != account_id {
-                            buf.write_value(player);
-                            true
-                        } else {
-                            false
-                        }
-                    },
-                    &mut buf,
-                )
+        self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| {
+            self.game_server.state.room_manager.with_any(room_id, |pm| {
+                buf.write_list_with(written_players, |buf| {
+                    pm.for_each_player_on_level(
+                        level_id,
+                        |player, count, buf| {
+                            if count < written_players && player.account_id != account_id {
+                                buf.write_value(player);
+                                true
+                            } else {
+                                false
+                            }
+                        },
+                        buf,
+                    )
+                });
             });
-
-            // if the player count has instead decreased, we now lied and the client will fail decoding. re-encode the actual count.
-            if written != written_players {
-                buf.set_pos(PacketHeader::SIZE);
-                buf.write_u32(written as u32);
-            }
-        });
-
-        Ok(())
+        })
+        .await
     });
 
     gs_handler!(self, handle_request_profiles, RequestPlayerProfilesPacket, packet, {
@@ -122,48 +110,40 @@ impl GameServerThread {
 
         let written_players = if packet.requested != 0 { 1 } else { total_players };
 
-        let calc_size = size_of_types!(PacketHeader, u32) + size_of_types!(PlayerAccountData) * written_players;
+        let calc_size = size_of_types!(u32) + size_of_types!(PlayerAccountData) * written_players;
 
-        gs_inline_encode!(self, calc_size, buf, {
-            buf.write_packet_header::<PlayerProfilesPacket>();
-            buf.write_u32(written_players as u32);
-
-            // if they requested one specific player, encode just them (if we find them)
-            let written = if packet.requested != 0 {
-                let account_data = self.game_server.get_player_account_data(packet.requested);
-                if let Some(data) = account_data {
-                    buf.write_value(&data);
-                    1
+        self.send_packet_alloca_with::<PlayerProfilesPacket, _>(calc_size, |buf| {
+            buf.write_list_with(written_players, |buf| {
+                // if we requested a specific player, encode them (if we find them)
+                if packet.requested != 0 {
+                    let account_data = self.game_server.get_player_account_data(packet.requested);
+                    if let Some(data) = account_data {
+                        buf.write_value(&data);
+                        1
+                    } else {
+                        0
+                    }
                 } else {
-                    0
-                }
-            } else {
-                self.game_server.state.room_manager.with_any(room_id, |pm| {
                     // otherwise, encode everyone on the level
-                    pm.for_each_player_on_level(
-                        level_id,
-                        |player, count, buf| {
-                            // we do additional length check because player count may have changed since 1st lock
-                            if count < written_players && player.account_id != account_id {
-                                let account_data = self.game_server.get_player_account_data(player.account_id);
-                                account_data.map(|data| buf.write_value(&data)).is_some()
-                            } else {
-                                false
-                            }
-                        },
-                        &mut buf,
-                    )
-                })
-            };
-
-            // if the player count has instead decreased, we now lied and the client will fail decoding. re-encode the actual count.
-            if written != written_players {
-                buf.set_pos(PacketHeader::SIZE);
-                buf.write_u32(written as u32);
-            }
-        });
-
-        Ok(())
+                    self.game_server.state.room_manager.with_any(room_id, |pm| {
+                        pm.for_each_player_on_level(
+                            level_id,
+                            |player, count, buf| {
+                                // we do additional length check because player count may have changed since 1st lock
+                                if count < written_players && player.account_id != account_id {
+                                    let account_data = self.game_server.get_player_account_data(player.account_id);
+                                    account_data.map(|data| buf.write_value(&data)).is_some()
+                                } else {
+                                    false
+                                }
+                            },
+                            buf,
+                        )
+                    })
+                }
+            });
+        })
+        .await
     });
 
     gs_handler!(self, handle_voice, VoicePacket, packet, {

@@ -110,22 +110,7 @@ void AddServerPopup::onTestSuccess() {
         // if it's the server we are connected to right now, and it's a completely different URL,
         // do essentially the same stuff we do when switching to another server (copied from server_cell.cpp)
         if (modifyingIndex == csm.getActiveIndex() && oldServer.url != newServer.url) {
-            csm.recentlySwitched = true;
-            // clear the authtoken
-            auto& gam = GlobedAccountManager::get();
-            gam.authToken.lock()->clear();
-
-            // clear game servers
-            auto& gsm = GameServerManager::get();
-            gsm.clear();
-            gsm.pendingChanges = true;
-
-            // disconnect
-            auto& nm = NetworkManager::get();
-            nm.disconnect(false);
-
-            // initialize creds
-            gam.autoInitialize();
+            csm.switchRoutine(modifyingIndex, true);
         }
 
         csm.modifyServer(modifyingIndex, newServer);

@@ -1,12 +1,7 @@
 use std::sync::atomic::Ordering;
 
-use crate::{
-    data::packets::PacketHeader,
-    server_thread::{GameServerThread, PacketHandlingError, Result},
-};
-
 use super::*;
-use crate::data::*;
+use crate::{data::*, server_thread::GameServerThread};
 
 impl GameServerThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
@@ -19,35 +14,26 @@ impl GameServerThread {
     gs_handler!(self, handle_request_global_list, RequestGlobalPlayerListPacket, _packet, {
         let _ = gs_needauth!(self);
 
-        let player_count = self.game_server.state.player_count.load(Ordering::Relaxed);
-        let encoded_size =
-            size_of_types!(PacketHeader, u32) + size_of_types!(PlayerPreviewAccountData) * player_count as usize;
+        let player_count = self.game_server.state.player_count.load(Ordering::Relaxed) as usize;
+        let encoded_size = size_of_types!(u32) + size_of_types!(PlayerPreviewAccountData) * player_count;
 
-        gs_inline_encode!(self, encoded_size, buf, {
-            buf.write_packet_header::<GlobalPlayerListPacket>();
-            buf.write_u32(player_count);
-
-            let written = self.game_server.for_every_player_preview(
-                move |preview, count, buf| {
-                    // we do additional length check because player count may have increased since then
-                    if count < player_count as usize {
-                        buf.write_value(preview);
-                        true
-                    } else {
-                        false
-                    }
-                },
-                &mut buf,
-            ) as u32;
-
-            // if the player count has instead decreased, we now lied and the client will fail decoding. re-encode the actual count.
-            if written != player_count {
-                buf.set_pos(PacketHeader::SIZE);
-                buf.write_u32(written);
-            }
-        });
-
-        Ok(())
+        self.send_packet_alloca_with::<GlobalPlayerListPacket, _>(encoded_size, |buf| {
+            buf.write_list_with(player_count, |buf| {
+                self.game_server.for_every_player_preview(
+                    move |preview, count, buf| {
+                        // we do additional length check because player count may have increased since then
+                        if count < player_count {
+                            buf.write_value(preview);
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                    buf,
+                )
+            });
+        })
+        .await
     });
 
     gs_handler!(self, handle_create_room, CreateRoomPacket, _packet, {
@@ -126,35 +112,26 @@ impl GameServerThread {
             .room_manager
             .with_any(room_id, |room| room.get_total_player_count());
 
-        let encoded_size =
-            size_of_types!(PacketHeader, u32, u32) + size_of_types!(PlayerRoomPreviewAccountData) * player_count;
+        let encoded_size = size_of_types!(u32, u32) + size_of_types!(PlayerRoomPreviewAccountData) * player_count;
 
-        gs_inline_encode!(self, encoded_size, buf, {
-            buf.write_packet_header::<RoomPlayerListPacket>();
+        self.send_packet_alloca_with::<RoomPlayerListPacket, _>(encoded_size, |buf| {
             buf.write_u32(room_id);
-            buf.write_u32(player_count as u32);
-
-            let written = self.game_server.for_every_room_player_preview(
-                room_id,
-                move |preview, count, buf| {
-                    // we do additional length check because player count may have increased since then
-                    if count < player_count {
-                        buf.write_value(preview);
-                        true
-                    } else {
-                        false
-                    }
-                },
-                &mut buf,
-            );
-
-            // if the player count has instead decreased, we now lied and the client will fail decoding. re-encode the actual count.
-            if written != player_count {
-                buf.set_pos(size_of_types!(PacketHeader, u32));
-                buf.write_u32(written as u32);
-            }
-        });
-
-        Ok(())
+            buf.write_list_with(player_count, |buf| {
+                self.game_server.for_every_room_player_preview(
+                    room_id,
+                    move |preview, count, buf| {
+                        // we do additional length check because player count may have increased since then
+                        if count < player_count {
+                            buf.write_value(preview);
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                    buf,
+                )
+            });
+        })
+        .await
     });
 }

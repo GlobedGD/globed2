@@ -20,6 +20,11 @@ bool GlobedSignupPopup::setup() {
     auto& csm = CentralServerManager::get();
     auto& am = GlobedAccountManager::get();
 
+    auto activeServer = csm.getActive();
+    if (!activeServer.has_value()) {
+        return false;
+    }
+
     auto winSize = cocos2d::CCDirector::sharedDirector()->getWinSize();
 
     Build<CCLabelBMFont>::create("Requesting challenge..", "bigFont.fnt")
@@ -28,7 +33,7 @@ bool GlobedSignupPopup::setup() {
         .store(statusMessage)
         .parent(m_mainLayer);
 
-    auto url = csm.getActive()->url + "/challenge/new?aid=" + std::to_string(am.gdData.lock()->accountId);
+    auto url = activeServer->url + "/challenge/new?aid=" + std::to_string(am.gdData.lock()->accountId);
 
     GHTTPRequest::post(url)
         .userAgent(util::net::webUserAgent())

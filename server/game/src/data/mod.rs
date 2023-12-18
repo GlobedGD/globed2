@@ -17,28 +17,75 @@ pub trait ByteBufferExtRead2 {
 
 pub trait ByteBufferExtWrite2 {
     fn write_packet_header<T: PacketMetadata>(&mut self);
+    fn write_list_with<FLoop>(&mut self, upper_bound: usize, fs: FLoop) -> usize
+    where
+        FLoop: FnOnce(&mut Self) -> usize;
 }
 
 impl ByteBufferExtRead2 for ByteBuffer {
+    #[inline]
     fn read_packet_header(&mut self) -> DecodeResult<PacketHeader> {
         self.read_value()
     }
 }
 
 impl<'a> ByteBufferExtRead2 for ByteReader<'a> {
+    #[inline]
     fn read_packet_header(&mut self) -> DecodeResult<PacketHeader> {
         self.read_value()
     }
 }
 
 impl ByteBufferExtWrite2 for ByteBuffer {
+    #[inline]
     fn write_packet_header<T: PacketMetadata>(&mut self) {
         self.write_value(&PacketHeader::from_packet::<T>());
+    }
+
+    #[inline]
+    fn write_list_with<FLoop>(&mut self, upper_bound: usize, fs: FLoop) -> usize
+    where
+        FLoop: FnOnce(&mut Self) -> usize,
+    {
+        let lenpos = self.get_wpos();
+        self.write_u32(upper_bound as u32);
+
+        let written = fs(self);
+
+        if written != upper_bound {
+            let endpos = self.get_wpos();
+            self.set_wpos(lenpos);
+            self.write_u32(written as u32);
+            self.set_wpos(endpos);
+        }
+
+        written
     }
 }
 
 impl<'a> ByteBufferExtWrite2 for FastByteBuffer<'a> {
+    #[inline]
     fn write_packet_header<T: PacketMetadata>(&mut self) {
         self.write_value(&PacketHeader::from_packet::<T>());
+    }
+
+    #[inline]
+    fn write_list_with<FLoop>(&mut self, upper_bound: usize, fs: FLoop) -> usize
+    where
+        FLoop: FnOnce(&mut Self) -> usize,
+    {
+        let lenpos = self.get_pos();
+        self.write_u32(upper_bound as u32);
+
+        let written = fs(self);
+
+        if written != upper_bound {
+            let endpos = self.get_pos();
+            self.set_pos(lenpos);
+            self.write_u32(written as u32);
+            self.set_pos(endpos);
+        }
+
+        written
     }
 }

@@ -52,6 +52,9 @@ public:
     // reload all saved central servers, only call from main thread
     void reload();
 
+    // clear the active authtoken, reinitialize account manager, clear game servers, and switch to a central server by its ID
+    void switchRoutine(int index, bool force = false);
+
     util::sync::AtomicBool recentlySwitched = false;
 
 protected:

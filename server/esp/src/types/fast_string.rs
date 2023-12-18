@@ -172,6 +172,13 @@ impl<const N: usize> StaticSize for FastString<N> {
     const ENCODED_SIZE: usize = size_of_types!(u32) + N;
 }
 
+impl<const N: usize> DynamicSize for FastString<N> {
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        size_of_types!(u32) + self.len
+    }
+}
+
 impl<const N: usize> Deref for FastString<N> {
     type Target = str;
     fn deref(&self) -> &Self::Target {

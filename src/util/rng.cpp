@@ -66,6 +66,14 @@ namespace util::rng {
     bool Random::genRatio(uint32_t numerator, uint32_t denominator) {
         GLOBED_REQUIRE(denominator != 0, "attempt to call Random::genRatio with denominator set to 0")
         double probability = static_cast<double>(numerator) / denominator;
-        return this->generate<double>() < probability;
+        return this->genRatio(probability);
+    }
+
+    bool Random::genRatio(float ratio) {
+        return this->generate<float>() < ratio;
+    }
+
+    bool Random::genRatio(double ratio) {
+        return this->generate<double>() < ratio;
     }
 }

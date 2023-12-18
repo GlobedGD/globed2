@@ -17,16 +17,21 @@
 using namespace geode::prelude;
 
 class $modify(GlobedPlayLayer, PlayLayer) {
-    bool globedReady;
-    bool deafened = false;
+    // setup stuff
     GlobedSettings& settings = GlobedSettings::get();
+    bool globedReady;
     uint32_t configuredTps = 0;
 
-    /* speedhack detection */
+    // in game stuff
+    bool deafened = false;
+    uint32_t totalSentPackets = 0;
+    std::unordered_map<int, std::monostate> players; // TODO
+
+    // speedhack detection
     float lastKnownTimeScale = 1.0f;
     std::unordered_map<int, util::time::time_point> lastSentPacket;
 
-    /* gd hooks */
+    // gd hooks
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) return false;
@@ -196,6 +201,10 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         if (!this->established()) return;
         if (!this->isCurrentPlayLayer()) return;
         if (!this->accountForSpeedhack(0, 1.0f / m_fields->configuredTps, 0.8f)) return;
+
+        m_fields->totalSentPackets++;
+        // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
+        if (m_fields->players.empty() && m_fields->totalSentPackets % 30 != 15) return;
 
         NetworkManager::get().send(PlayerDataPacket::create(this->gatherPlayerData()));
     }

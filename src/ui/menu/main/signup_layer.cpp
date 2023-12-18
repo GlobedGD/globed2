@@ -29,11 +29,15 @@ bool GlobedSignupLayer::init() {
                     if (agreed) {
                         gs.flags.seenSignupNotice = true;
                         gs.save();
-                        GlobedSignupPopup::create()->show();
+                        if (auto* popup = GlobedSignupPopup::create()) {
+                            popup->show();
+                        }
                     }
                 });
             } else {
-                GlobedSignupPopup::create()->show();
+                if (auto* popup = GlobedSignupPopup::create()) {
+                    popup->show();
+                }
             }
         })
         .anchorPoint(0.5f, 0.5f)

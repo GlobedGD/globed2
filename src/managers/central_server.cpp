@@ -2,6 +2,8 @@
 
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
+#include <managers/account.hpp>
+#include <net/network_manager.hpp>
 
 CentralServerManager::CentralServerManager() {
     this->reload();
@@ -105,11 +107,27 @@ void CentralServerManager::removeServer(int index) {
     // we may want to recalculate the active server index if there's an active server right now
 
     int active = _activeIdx.load();
-    if (active >= 0 && active < servers->size() && active >= index) {
+
+    bool doSwitchRoutine = false;
+
+    // if we are removing the current active server, perform the switch routine
+    if (index == active) {
+        // if this is the last server in the list decrement by 1, otherwise keep the id
+        if (index == servers->size() - 1) {
+            _activeIdx = active - 1;
+        }
+
+        doSwitchRoutine = true;
+    } else if (active >= 0 && active < servers->size() && active >= index) {
         _activeIdx = active - 1;
     }
 
     servers->erase(servers->begin() + index);
+    servers.unlock();
+
+    if (doSwitchRoutine) {
+        this->switchRoutine(_activeIdx, true);
+    }
 }
 
 void CentralServerManager::modifyServer(int index, const CentralServer& data) {
@@ -123,6 +141,29 @@ void CentralServerManager::modifyServer(int index, const CentralServer& data) {
     servers.unlock();
 
     this->save();
+}
+
+void CentralServerManager::switchRoutine(int index, bool force) {
+    if (!force && this->getActiveIndex() == index) return;
+
+    this->setActive(index);
+    recentlySwitched = true;
+
+    // clear the authtoken
+    auto& gam = GlobedAccountManager::get();
+    gam.authToken.lock()->clear();
+
+    // clear game servers
+    auto& gsm = GameServerManager::get();
+    gsm.clear();
+    gsm.pendingChanges = true;
+
+    // disconnect from the server if any
+    auto& nm = NetworkManager::get();
+    nm.disconnect(false);
+
+    // auto reinitialize account manager
+    gam.autoInitialize();
 }
 
 void CentralServerManager::reload() {

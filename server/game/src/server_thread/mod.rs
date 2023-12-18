@@ -177,85 +177,6 @@ impl GameServerThread {
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
 
-    /// fast packet sending with best-case zero heap allocation. requires the packet to implement `StaticSize`.
-    /// if the packet size isn't known at compile time, derive/implement `DynamicSize` and use `send_packet_dynamic` instead.
-    async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
-        // in theory, the size is known at compile time, so we could use a stack array here, instead of using alloca.
-        // however in practice, the performance difference is negligible, so we avoid code unnecessary code repetition.
-        self.send_packet_alloca(packet, P::ENCODED_SIZE).await
-    }
-
-    /// version of `send_packet_static` that does not require the size to be known at compile time.
-    /// you are still required to derive/implement `DynamicSize` so the size can be computed at runtime.
-    async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
-        self.send_packet_alloca(packet, packet.encoded_size()).await
-    }
-
-    /// use alloca to encode the packet on the stack, and try a non-blocking send, on failure clones to a Vec and a blocking send.
-    /// be very careful if using this directly, miscalculating the size will cause a runtime panic.
-    async fn send_packet_alloca<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
-        if P::PACKET_ID != KeepaliveResponsePacket::PACKET_ID {
-            self.print_packet::<P>(true, Some(if P::ENCRYPTED { "fast + encrypted" } else { "fast" }));
-        }
-
-        if P::ENCRYPTED {
-            // gs_inline_encode! doesn't work here because the borrow checker is silly :(
-            let total_size = PacketHeader::SIZE + NONCE_SIZE + MAC_SIZE + packet_size;
-            let nonce_start = PacketHeader::SIZE;
-            let mac_start = nonce_start + NONCE_SIZE;
-            let raw_data_start = mac_start + MAC_SIZE;
-
-            gs_alloca_check_size!(total_size);
-
-            let to_send: Result<Option<Vec<u8>>> = gs_with_alloca!(total_size, data, {
-                // write the header
-                let mut buf = FastByteBuffer::new(data);
-                buf.write_packet_header::<P>();
-
-                // first encode the packet
-                let mut buf = FastByteBuffer::new(&mut data[raw_data_start..raw_data_start + packet_size]);
-                buf.write_value(packet);
-
-                // if the written size isn't equal to `packet_size`, we use buffer length instead
-                let raw_data_end = raw_data_start + buf.len();
-
-                // this unwrap is safe, as an encrypted packet can only be sent downstream after the handshake is established.
-                let cbox = self.crypto_box.get().unwrap();
-
-                // encrypt in place
-                let nonce = ChaChaBox::generate_nonce(&mut OsRng);
-                let tag = cbox
-                    .encrypt_in_place_detached(&nonce, b"", &mut data[raw_data_start..raw_data_end])
-                    .map_err(|_| PacketHandlingError::EncryptionError)?;
-
-                // prepend the nonce
-                data[nonce_start..mac_start].copy_from_slice(&nonce);
-
-                // prepend the mac tag
-                data[mac_start..raw_data_start].copy_from_slice(&tag);
-
-                // we try a non-blocking send if we can, otherwise fallback to a Vec<u8> and an async send
-                let send_data = &data[..raw_data_end];
-                match self.send_buffer_immediate(send_data) {
-                    Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(send_data.to_vec())),
-                    Err(e) => Err(e),
-                    Ok(()) => Ok(None),
-                }
-            });
-
-            if let Some(to_send) = to_send? {
-                self.send_buffer(&to_send).await?;
-            }
-        } else {
-            gs_inline_encode!(self, PacketHeader::SIZE + packet_size, buf, {
-                buf.write_packet_header::<P>();
-                buf.write_value(packet);
-            });
-        }
-
-        Ok(())
-    }
-
     /// sends a buffer to our peer via the socket
     async fn send_buffer(&self, buffer: &[u8]) -> Result<()> {
         self.game_server
@@ -422,5 +343,105 @@ impl GameServerThread {
             ChatMessagePacket::PACKET_ID => self.handle_chat_message(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
+    }
+
+    // packet encoding and sending functions
+
+    /// fast packet sending with best-case zero heap allocation. requires the packet to implement `StaticSize`.
+    /// if the packet size isn't known at compile time, derive/implement `DynamicSize` and use `send_packet_dynamic` instead.
+    #[inline(never)]
+    async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
+        // in theory, the size is known at compile time, so we could use a stack array here, instead of using alloca.
+        // however in practice, the performance difference is negligible, so we avoid code unnecessary code repetition.
+        self.send_packet_alloca(packet, P::ENCODED_SIZE).await
+    }
+
+    /// version of `send_packet_static` that does not require the size to be known at compile time.
+    /// you are still required to derive/implement `DynamicSize` so the size can be computed at runtime.
+    #[inline(never)]
+    async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
+        self.send_packet_alloca(packet, packet.encoded_size()).await
+    }
+
+    /// use alloca to encode the packet on the stack, and try a non-blocking send, on failure clones to a Vec and a blocking send.
+    /// be very careful if using this directly, miscalculating the size will cause a runtime panic.
+    #[inline]
+    async fn send_packet_alloca<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
+        self.send_packet_alloca_with::<P, _>(packet_size, |buf| {
+            buf.write_value(packet);
+        })
+        .await
+    }
+
+    /// low level version of other `send_packet_xxx` methods. there is no bound for `Encodable`, `StaticSize` or `DynamicSize`,
+    /// but you have to provide a closure that handles packet encoding, and you must specify the appropriate packet size.
+    #[inline]
+    async fn send_packet_alloca_with<P: Packet, F>(&self, packet_size: usize, encode_fn: F) -> Result<()>
+    where
+        F: FnOnce(&mut FastByteBuffer),
+    {
+        if cfg!(debug_assertions)
+            && P::PACKET_ID != KeepaliveResponsePacket::PACKET_ID
+            && P::PACKET_ID != LevelDataPacket::PACKET_ID
+        {
+            self.print_packet::<P>(true, Some(if P::ENCRYPTED { "fast + encrypted" } else { "fast" }));
+        }
+
+        if P::ENCRYPTED {
+            // gs_inline_encode! doesn't work here because the borrow checker is silly :(
+            let total_size = PacketHeader::SIZE + NONCE_SIZE + MAC_SIZE + packet_size;
+            let nonce_start = PacketHeader::SIZE;
+            let mac_start = nonce_start + NONCE_SIZE;
+            let raw_data_start = mac_start + MAC_SIZE;
+
+            gs_alloca_check_size!(total_size);
+
+            let to_send: Result<Option<Vec<u8>>> = gs_with_alloca!(total_size, data, {
+                // write the header
+                let mut buf = FastByteBuffer::new(data);
+                buf.write_packet_header::<P>();
+
+                // first encode the packet
+                let mut buf = FastByteBuffer::new(&mut data[raw_data_start..raw_data_start + packet_size]);
+                encode_fn(&mut buf);
+
+                // if the written size isn't equal to `packet_size`, we use buffer length instead
+                let raw_data_end = raw_data_start + buf.len();
+
+                // this unwrap is safe, as an encrypted packet can only be sent downstream after the handshake is established.
+                let cbox = self.crypto_box.get().unwrap();
+
+                // encrypt in place
+                let nonce = ChaChaBox::generate_nonce(&mut OsRng);
+                let tag = cbox
+                    .encrypt_in_place_detached(&nonce, b"", &mut data[raw_data_start..raw_data_end])
+                    .map_err(|_| PacketHandlingError::EncryptionError)?;
+
+                // prepend the nonce
+                data[nonce_start..mac_start].copy_from_slice(&nonce);
+
+                // prepend the mac tag
+                data[mac_start..raw_data_start].copy_from_slice(&tag);
+
+                // we try a non-blocking send if we can, otherwise fallback to a Vec<u8> and an async send
+                let send_data = &data[..raw_data_end];
+                match self.send_buffer_immediate(send_data) {
+                    Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(send_data.to_vec())),
+                    Err(e) => Err(e),
+                    Ok(()) => Ok(None),
+                }
+            });
+
+            if let Some(to_send) = to_send? {
+                self.send_buffer(&to_send).await?;
+            }
+        } else {
+            gs_inline_encode!(self, PacketHeader::SIZE + packet_size, buf, {
+                buf.write_packet_header::<P>();
+                encode_fn(&mut buf);
+            });
+        }
+
+        Ok(())
     }
 }

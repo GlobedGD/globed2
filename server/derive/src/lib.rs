@@ -197,8 +197,6 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
 /// For `StaticSize` to be successfully derived, for structs, all of the members of the struct must also implement `StaticSize`.
 ///
 /// For enums, all the same limitations apply as in `Encodable`.
-///
-/// **Note**: This will also automatically derive `DynamicSize` for the given type, for ease of use.
 #[proc_macro_derive(StaticSize)]
 pub fn derive_static_size(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -235,13 +233,6 @@ pub fn derive_static_size(input: TokenStream) -> TokenStream {
     let gen = quote! {
         impl StaticSize for #struct_name {
             const ENCODED_SIZE: usize = #encoded_size;
-        }
-
-        impl DynamicSize for #struct_name {
-            #[inline]
-            fn encoded_size(&self) -> usize {
-                Self::ENCODED_SIZE
-            }
         }
     };
 

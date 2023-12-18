@@ -165,5 +165,5 @@ fn read_value_array(c: &mut Criterion) {
 }
 
 criterion_group!(benches, buffers, structs, managers, read_value_array);
-// criterion_group!(benches, read_value_array);
+// criterion_group!(benches, buffers);
 criterion_main!(benches);

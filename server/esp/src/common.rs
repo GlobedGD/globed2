@@ -65,10 +65,42 @@ encode_impl!(String, buf, self, buf.write_string(self));
 decode_impl!(String, buf, Ok(buf.read_string()?));
 dynamic_size_calc_impl!(String, self, size_of_types!(u32) + self.len());
 
-encode_impl!(&str, buf, self, buf.write_string(self));
 encode_impl!(str, buf, self, buf.write_string(self));
-dynamic_size_calc_impl!(&str, self, size_of_types!(u32) + self.len());
 dynamic_size_calc_impl!(str, self, size_of_types!(u32) + self.len());
+
+/* references (yes, that is really needed) */
+
+impl<T> Encodable for &T
+where
+    T: Encodable + ?Sized,
+{
+    #[inline]
+    fn encode(&self, buf: &mut ByteBuffer) {
+        T::encode(self, buf);
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        T::encode_fast(self, buf);
+    }
+}
+
+impl<T> StaticSize for &T
+where
+    T: StaticSize + ?Sized,
+{
+    const ENCODED_SIZE: usize = T::ENCODED_SIZE;
+}
+
+impl<T> DynamicSize for &T
+where
+    T: DynamicSize + ?Sized,
+{
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        T::encoded_size(self)
+    }
+}
 
 /* Option<T> */
 
@@ -113,6 +145,16 @@ where
     T: StaticSize,
 {
     const ENCODED_SIZE: usize = size_of_types!(bool, T);
+}
+
+impl<T> DynamicSize for Option<T>
+where
+    T: DynamicSize,
+{
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        size_of_types!(bool) + self.as_ref().map_or(0, T::encoded_size)
+    }
 }
 
 /* [T; N] */
@@ -160,6 +202,43 @@ where
     const ENCODED_SIZE: usize = size_of_types!(T) * N;
 }
 
+impl<T, const N: usize> DynamicSize for [T; N]
+where
+    T: DynamicSize,
+{
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        self.iter().map(T::encoded_size).sum()
+    }
+}
+
+/* [T] */
+
+impl<T> Encodable for [T]
+where
+    T: Encodable,
+{
+    #[inline]
+    fn encode(&self, buf: &mut ByteBuffer) {
+        buf.write_value_vec(self);
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_value_vec(self);
+    }
+}
+
+impl<T> DynamicSize for [T]
+where
+    T: DynamicSize,
+{
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        size_of_types!(u32) + self.iter().map(T::encoded_size).sum::<usize>()
+    }
+}
+
 /* Vec<T> */
 
 impl<T> Encodable for Vec<T>
@@ -200,11 +279,11 @@ where
 
 impl<T> DynamicSize for Vec<T>
 where
-    T: StaticSize,
+    T: DynamicSize,
 {
     #[inline]
     fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + size_of_types!(T) * self.len()
+        size_of_types!(u32) + self.iter().map(T::encoded_size).sum::<usize>()
     }
 }
 
@@ -267,12 +346,12 @@ where
 
 impl<K, V, S> DynamicSize for HashMap<K, V, S>
 where
-    K: StaticSize,
-    V: StaticSize,
+    K: DynamicSize,
+    V: DynamicSize,
 {
     #[inline]
     fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + size_of_types!(K, V) * self.len()
+        size_of_types!(u32) + self.iter().map(|(k, v)| k.encoded_size() + v.encoded_size()).sum::<usize>()
     }
 }
 
@@ -333,6 +412,7 @@ decode_impl!(Ipv4Addr, buf, {
 });
 
 static_size_calc_impl!(Ipv4Addr, size_of_types!(u8) * 4);
+dynamic_size_calc_impl!(Ipv4Addr, self, Self::ENCODED_SIZE);
 
 /* SocketAddrV4 */
 
@@ -347,3 +427,4 @@ decode_impl!(SocketAddrV4, buf, {
 });
 
 static_size_calc_impl!(SocketAddrV4, size_of_types!(Ipv4Addr, u16));
+dynamic_size_calc_impl!(SocketAddrV4, self, Self::ENCODED_SIZE);

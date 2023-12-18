@@ -2,7 +2,6 @@ mod connection;
 mod game;
 mod general;
 
-use crate::make_uninit;
 pub use game::{MAX_VOICE_PACKET_SIZE, MAX_VOICE_THROUGHPUT};
 
 /// packet handler for a specific packet type

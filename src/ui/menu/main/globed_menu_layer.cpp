@@ -229,13 +229,12 @@ void GlobedMenuLayer::requestServerList() {
                 gsm.clear();
                 gsm.pendingChanges = true;
             } else {
-                auto jsonResponse = json::Value::from_str(response.response);
-
                 auto& gsm = GameServerManager::get();
                 gsm.clear();
                 gsm.pendingChanges = true;
 
                 try {
+                    auto jsonResponse = json::Value::from_str(response.response);
                     auto serverList = jsonResponse.as_array();
                     for (const auto& obj : serverList) {
                         auto server = obj.as_object();

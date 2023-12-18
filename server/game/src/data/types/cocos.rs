@@ -26,7 +26,7 @@ impl From<ParseIntError> for ColorParseError {
     }
 }
 
-#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize)]
+#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct Color3B {
     pub r: u8,
     pub g: u8,
@@ -53,7 +53,7 @@ impl FromStr for Color3B {
     }
 }
 
-#[derive(Copy, Clone, Default, Encodable, StaticSize, Decodable)]
+#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct Color4B {
     pub r: u8,
     pub g: u8,
@@ -86,7 +86,7 @@ impl FromStr for Color4B {
     }
 }
 
-#[derive(Copy, Clone, Default, Encodable, StaticSize, Decodable)]
+#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct Point {
     pub x: f32,
     pub y: f32,

@@ -76,29 +76,7 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
     Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
         .intoMenuItem([this](auto) {
             auto& csm = CentralServerManager::get();
-
-            // do nothing if we are already connected to this server
-            if (csm.getActiveIndex() == this->index) {
-                this->parent->close();
-                return;
-            }
-
-            // clear the authtoken
-            auto& gam = GlobedAccountManager::get();
-            gam.authToken.lock()->clear();
-
-            // do all the other stuff
-            csm.setActive(this->index);
-            csm.recentlySwitched = true;
-
-            auto& gsm = GameServerManager::get();
-            gsm.clear();
-            gsm.pendingChanges = true;
-
-            auto& nm = NetworkManager::get();
-            nm.disconnect(false);
-
-            gam.autoInitialize();
+            csm.switchRoutine(this->index);
 
             this->parent->close();
         })
