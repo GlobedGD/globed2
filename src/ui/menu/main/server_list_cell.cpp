@@ -153,10 +153,10 @@ void ServerListCell::requestTokenAndConnect() {
 
 ServerListCell* ServerListCell::create(const GameServer& gsview, bool active) {
     auto ret = new ServerListCell;
-    if (ret && ret->init(gsview, active)) {
+    if (ret->init(gsview, active)) {
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }

@@ -86,10 +86,11 @@ RoomPopup::~RoomPopup() {
 
 RoomPopup* RoomPopup::create() {
     auto ret = new RoomPopup;
-    if (ret && ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
+
+    delete ret;
     return nullptr;
 }

@@ -60,10 +60,10 @@ void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
 
 PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data) {
     auto ret = new PlayerListCell;
-    if (ret && ret->init(data)) {
+    if (ret->init(data)) {
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }

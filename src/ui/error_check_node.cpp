@@ -66,11 +66,11 @@ void ErrorCheckNode::updateErrors(float) {
 
 ErrorCheckNode* ErrorCheckNode::create() {
     auto* ret = new ErrorCheckNode;
-    if (ret && ret->init()) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }

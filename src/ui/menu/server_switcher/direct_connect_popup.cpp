@@ -71,11 +71,11 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
 
 DirectConnectionPopup* DirectConnectionPopup::create(ServerSwitcherPopup* parent) {
     auto ret = new DirectConnectionPopup;
-    if (ret && ret->init(POPUP_WIDTH, POPUP_HEIGHT, parent)) {
+    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, parent)) {
         ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }

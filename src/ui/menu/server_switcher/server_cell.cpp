@@ -91,10 +91,10 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
 
 CentralServerListCell* CentralServerListCell::create(const CentralServer& data, int index, ServerSwitcherPopup* parent) {
     auto ret = new CentralServerListCell;
-    if (ret && ret->init(data, index, parent)) {
+    if (ret->init(data, index, parent)) {
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }

@@ -50,11 +50,11 @@ bool GlobedSignupLayer::init() {
 
 GlobedSignupLayer* GlobedSignupLayer::create() {
     auto ret = new GlobedSignupLayer;
-    if (ret && ret->init()) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }

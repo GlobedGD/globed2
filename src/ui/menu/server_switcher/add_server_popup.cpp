@@ -129,11 +129,11 @@ void AddServerPopup::onTestFailure(const std::string& message) {
 
 AddServerPopup* AddServerPopup::create(int modifyingIndex, ServerSwitcherPopup* parent) {
     auto ret = new AddServerPopup;
-    if (ret && ret->init(POPUP_WIDTH, POPUP_HEIGHT, modifyingIndex, parent)) {
+    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, modifyingIndex, parent)) {
         ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }

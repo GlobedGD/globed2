@@ -258,7 +258,7 @@ struct DynamicSizeAttributes {
 /// pub struct MyStruct { val: u32 }
 /// ```
 ///
-/// This will cause `MyStruct::encoded_size` to evaluate to a constant `Self::ENCODED_SIZE` instead of the function call `self.val.encoded_size()`
+/// This will cause `MyStruct::encoded_size` to evaluate to a constant `u32::ENCODED_SIZE` instead of the function call `self.val.encoded_size()`
 #[proc_macro_derive(DynamicSize, attributes(dynamic_size))]
 pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -266,7 +266,7 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
         Ok(x) => x.as_static,
         Err(_) => {
             return quote! {
-                compile_error!("invalid or missing signature for #[dynamic_size] attribute, please see documentation for `DynamicSize` proc macro");
+                compile_error!("invalid signature for #[dynamic_size] attribute, please see documentation for `DynamicSize` proc macro");
             }
             .into();
         }

@@ -95,11 +95,11 @@ void ServerTestPopup::cancelRequest() {
 
 ServerTestPopup* ServerTestPopup::create(const std::string& url, AddServerPopup* parent) {
     auto ret = new ServerTestPopup;
-    if (ret && ret->init(POPUP_WIDTH, POPUP_HEIGHT, url, parent)) {
+    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, url, parent)) {
         ret->autorelease();
         return ret;
     }
 
-    CC_SAFE_DELETE(ret);
+    delete ret;
     return nullptr;
 }

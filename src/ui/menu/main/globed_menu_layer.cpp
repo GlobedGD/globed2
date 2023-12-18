@@ -272,17 +272,6 @@ void GlobedMenuLayer::pingServers(float) {
     NetworkManager::get().taskPingServers();
 }
 
-GlobedMenuLayer* GlobedMenuLayer::create() {
-    auto ret = new GlobedMenuLayer;
-    if (ret && ret->init()) {
-        ret->autorelease();
-        return ret;
-    }
-
-    CC_SAFE_DELETE(ret);
-    return nullptr;
-}
-
 cocos2d::CCScene* GlobedMenuLayer::scene() {
     auto layer = GlobedMenuLayer::create();
     auto scene = cocos2d::CCScene::create();
@@ -290,4 +279,15 @@ cocos2d::CCScene* GlobedMenuLayer::scene() {
     scene->addChild(layer);
 
     return scene;
+}
+
+GlobedMenuLayer* GlobedMenuLayer::create() {
+    auto ret = new GlobedMenuLayer;
+    if (ret->init()) {
+        ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
 }

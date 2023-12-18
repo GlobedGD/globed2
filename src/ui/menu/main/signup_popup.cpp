@@ -180,10 +180,11 @@ void GlobedSignupPopup::keyBackClicked() {
 
 GlobedSignupPopup* GlobedSignupPopup::create() {
     auto ret = new GlobedSignupPopup;
-    if (ret && ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }
-    CC_SAFE_DELETE(ret);
+
+    delete ret;
     return nullptr;
 }
