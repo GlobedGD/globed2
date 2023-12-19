@@ -94,13 +94,10 @@ impl ServerStateData {
     }
 
     pub fn is_ratelimited(&self, addr: &IpAddr) -> bool {
-        match self.login_attempts.get(addr) {
-            None => false,
-            Some(last) => {
-                let passed = Instant::now().duration_since(*last).as_secs();
-                passed < self.config.challenge_ratelimit
-            }
-        }
+        self.login_attempts.get(addr).map_or(false, |last| {
+            let passed = Instant::now().duration_since(*last).as_secs();
+            passed < self.config.challenge_ratelimit
+        })
     }
 
     pub fn record_login_attempt(&mut self, addr: &IpAddr) -> anyhow::Result<()> {
@@ -132,7 +129,7 @@ pub struct ServerState {
 impl ServerState {
     pub fn new(ssd: ServerStateData) -> Self {
         let maintenance = ssd.config.maintenance;
-        ServerState {
+        Self {
             inner: Arc::new((RwLock::new(ssd), AtomicBool::new(maintenance))),
         }
     }

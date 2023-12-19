@@ -21,7 +21,7 @@ fn default_web_address() -> String {
     "0.0.0.0:41000".to_string()
 }
 
-fn default_use_gd_api() -> bool {
+const fn default_use_gd_api() -> bool {
     false
 }
 
@@ -29,11 +29,11 @@ fn default_gdapi() -> String {
     "http://www.boomlings.com/database/getGJComments21.php".to_string()
 }
 
-fn default_gdapi_ratelimit() -> usize {
+const fn default_gdapi_ratelimit() -> usize {
     5
 }
 
-fn default_gdapi_period() -> u64 {
+const fn default_gdapi_period() -> u64 {
     5
 }
 
@@ -46,7 +46,7 @@ fn default_game_servers() -> Vec<GameServerEntry> {
     }]
 }
 
-fn default_maintenance() -> bool {
+const fn default_maintenance() -> bool {
     false
 }
 
@@ -62,15 +62,15 @@ fn default_special_users() -> IntMap<i32, SpecialUser> {
     map
 }
 
-fn default_userlist_mode() -> UserlistMode {
+const fn default_userlist_mode() -> UserlistMode {
     UserlistMode::None
 }
 
-fn default_userlist() -> Vec<i32> {
+const fn default_userlist() -> Vec<i32> {
     Vec::new()
 }
 
-fn default_tps() -> u32 {
+const fn default_tps() -> u32 {
     30
 }
 
@@ -84,29 +84,29 @@ fn default_secret_key() -> String {
     format!("Insecure-{rand_string}")
 }
 
-fn default_challenge_expiry() -> u32 {
+const fn default_challenge_expiry() -> u32 {
     30
 }
 
-fn default_challenge_level() -> i32 {
+const fn default_challenge_level() -> i32 {
     1
 }
 
-fn default_challenge_ratelimit() -> u64 {
+const fn default_challenge_ratelimit() -> u64 {
     60
 }
 
-fn default_cloudflare_protection() -> bool {
+const fn default_cloudflare_protection() -> bool {
     false
 }
 
-fn default_token_expiry() -> u64 {
+const fn default_token_expiry() -> u64 {
     60 * 60 * 24
 }
 
 /* end stinky serde defaults */
 
-#[derive(PartialEq, Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub enum UserlistMode {
     #[serde(rename = "blacklist")]
     Blacklist,
@@ -194,7 +194,7 @@ impl ServerConfig {
     }
 
     pub fn reload_in_place(&mut self, source: &Path) -> anyhow::Result<()> {
-        let conf = ServerConfig::load(source)?;
+        let conf = Self::load(source)?;
         self.clone_from(&conf);
         Ok(())
     }

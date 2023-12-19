@@ -5,6 +5,14 @@ namespace util::math {
     constexpr float FLOAT_ERROR_MARGIN = 0.002f;
     constexpr double DOUBLE_ERROR_MARGIN = 0.0001;
 
+    // Calculates the distance between two points in a 2D space
+    inline float distance(const cocos2d::CCPoint& a, const cocos2d::CCPoint& b) {
+        auto dx = std::abs(a.x - b.x);
+        auto dy = std::abs(a.y - b.y);
+
+        return std::sqrt(dx * dx + dy * dy);
+    }
+
     // returns a signaling NaN
     inline float snan() {
         return std::numeric_limits<float>::signaling_NaN();
@@ -21,6 +29,8 @@ namespace util::math {
     bool checkNotNaN(Args... args) {
         return ((!std::isnan(args)) && ...);
     }
+
+    // floating point math is fun
 
     // `val1` == `val2`
     inline bool equal(float val1, float val2, float errorMargin = FLOAT_ERROR_MARGIN) {

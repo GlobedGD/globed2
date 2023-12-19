@@ -17,7 +17,7 @@ impl Logger {
     #[allow(clippy::missing_panics_doc)]
     pub fn instance(self_crate_name: &'static str) -> &'static Self {
         static INSTANCE: OnceLock<Logger> = OnceLock::new();
-        INSTANCE.get_or_init(|| Logger {
+        INSTANCE.get_or_init(|| Self {
             format_desc: format_description::parse_borrowed::<2>(TIME_FORMAT).unwrap(),
             self_crate_name,
         })

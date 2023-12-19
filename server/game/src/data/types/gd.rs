@@ -41,7 +41,7 @@ impl Default for PlayerIconData {
 }
 
 impl PlayerIconData {
-    pub fn is_valid(&self) -> bool {
+    pub const fn is_valid(&self) -> bool {
         // TODO icon ids validation and stuff.. or not?
         true
     }

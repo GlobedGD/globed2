@@ -33,7 +33,7 @@ impl IpBlocker {
                 }
             }
 
-            IpBlocker::new(&v4, &v6)
+            Self::new(&v4, &v6)
         })
     }
 

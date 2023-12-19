@@ -117,12 +117,10 @@ impl GameServerThread {
                 // if we requested a specific player, encode them (if we find them)
                 if packet.requested != 0 {
                     let account_data = self.game_server.get_player_account_data(packet.requested);
-                    if let Some(data) = account_data {
+                    account_data.map_or(0, |data| {
                         buf.write_value(&data);
                         1
-                    } else {
-                        0
-                    }
+                    })
                 } else {
                     // otherwise, encode everyone on the level
                     self.game_server.state.room_manager.with_any(room_id, |pm| {

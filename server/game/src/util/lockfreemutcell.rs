@@ -7,7 +7,7 @@ pub struct LockfreeMutCell<T> {
 }
 
 impl<T> LockfreeMutCell<T> {
-    pub fn new(data: T) -> Self {
+    pub const fn new(data: T) -> Self {
         Self {
             cell: SyncUnsafeCell::new(data),
         }

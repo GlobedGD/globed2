@@ -89,12 +89,12 @@ impl<'a> FastByteBuffer<'a> {
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.len
     }
 
     #[inline]
-    pub fn get_pos(&self) -> usize {
+    pub const fn get_pos(&self) -> usize {
         self.pos
     }
 
@@ -104,7 +104,7 @@ impl<'a> FastByteBuffer<'a> {
     }
 
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
 

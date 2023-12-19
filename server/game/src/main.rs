@@ -133,7 +133,7 @@ fn parse_configuration() -> StartupConfiguration {
 async fn main() -> Result<(), Box<dyn Error>> {
     log::set_logger(Logger::instance("globed_game_server")).unwrap();
 
-    if std::env::var("GLOBED_GS_LESS_LOG").unwrap_or("0".to_string()) == "1" {
+    if std::env::var("GLOBED_GS_LESS_LOG").unwrap_or_else(|_| "0".to_string()) == "1" {
         log::set_max_level(LogLevelFilter::Warn);
     } else {
         log::set_max_level(if cfg!(debug_assertions) {
@@ -206,7 +206,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             error!("got unexpected response from the specified central server");
             warn!("hint: make sure the URL you passed is a valid Global central server URL");
             warn!("hint: here is the response that was received from the specified URL:");
-            let txt = String::from_utf8(reader.as_bytes().to_vec()).unwrap_or("<invalid UTF-8 string>".to_owned());
+            let txt = String::from_utf8(reader.as_bytes().to_vec()).unwrap_or_else(|_| "<invalid UTF-8 string>".to_owned());
             warn!("{}", &txt[..txt.len().min(512)]);
             abort_misconfig();
         }

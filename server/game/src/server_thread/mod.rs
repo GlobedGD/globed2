@@ -346,10 +346,12 @@ impl GameServerThread {
     }
 
     // packet encoding and sending functions
+    // static and dynamic are marked as #[inline(never)] because they are by far the most used send funcs,
+    // and they already inline
 
     /// fast packet sending with best-case zero heap allocation. requires the packet to implement `StaticSize`.
     /// if the packet size isn't known at compile time, derive/implement `DynamicSize` and use `send_packet_dynamic` instead.
-    #[inline(never)]
+    // #[inline(never)] // let llvm decide it for now
     async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
         // in theory, the size is known at compile time, so we could use a stack array here, instead of using alloca.
         // however in practice, the performance difference is negligible, so we avoid code unnecessary code repetition.
@@ -358,7 +360,7 @@ impl GameServerThread {
 
     /// version of `send_packet_static` that does not require the size to be known at compile time.
     /// you are still required to derive/implement `DynamicSize` so the size can be computed at runtime.
-    #[inline(never)]
+    // #[inline(never)] // let llvm decide it for now
     async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
         self.send_packet_alloca(packet, packet.encoded_size()).await
     }
@@ -374,7 +376,7 @@ impl GameServerThread {
     }
 
     /// low level version of other `send_packet_xxx` methods. there is no bound for `Encodable`, `StaticSize` or `DynamicSize`,
-    /// but you have to provide a closure that handles packet encoding, and you must specify the appropriate packet size.
+    /// but you have to provide a closure that handles packet encoding, and you must specify the appropriate packet size (upper bound).
     /// you do **not** have to encode the packet header or include its size in the `packet_size` argument, that will be done for you automatically.
     #[inline]
     async fn send_packet_alloca_with<P: Packet, F>(&self, packet_size: usize, encode_fn: F) -> Result<()>

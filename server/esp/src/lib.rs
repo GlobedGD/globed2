@@ -46,7 +46,7 @@ impl Display for DecodeError {
 
 impl From<std::io::Error> for DecodeError {
     fn from(_: std::io::Error) -> Self {
-        DecodeError::NotEnoughData
+        Self::NotEnoughData
     }
 }
 

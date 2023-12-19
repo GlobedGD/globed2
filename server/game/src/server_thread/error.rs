@@ -28,37 +28,37 @@ pub type Result<T> = core::result::Result<T, PacketHandlingError>;
 
 impl From<globed_shared::anyhow::Error> for PacketHandlingError {
     fn from(value: globed_shared::anyhow::Error) -> Self {
-        PacketHandlingError::Other(value.to_string())
+        Self::Other(value.to_string())
     }
 }
 
 impl From<reqwest::Error> for PacketHandlingError {
     fn from(value: reqwest::Error) -> Self {
-        PacketHandlingError::WebRequestError(value)
+        Self::WebRequestError(value)
     }
 }
 
 impl From<SystemTimeError> for PacketHandlingError {
     fn from(value: SystemTimeError) -> Self {
-        PacketHandlingError::SystemTimeError(value)
+        Self::SystemTimeError(value)
     }
 }
 
 impl From<std::io::Error> for PacketHandlingError {
     fn from(value: std::io::Error) -> Self {
-        PacketHandlingError::IOError(value)
+        Self::IOError(value)
     }
 }
 
 impl From<ColorParseError> for PacketHandlingError {
     fn from(value: ColorParseError) -> Self {
-        PacketHandlingError::ColorParseFailed(value)
+        Self::ColorParseFailed(value)
     }
 }
 
 impl From<DecodeError> for PacketHandlingError {
     fn from(value: DecodeError) -> Self {
-        PacketHandlingError::MalformedPacketStructure(value)
+        Self::MalformedPacketStructure(value)
     }
 }
 

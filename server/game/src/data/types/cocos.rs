@@ -11,18 +11,18 @@ pub enum ColorParseError {
 impl Display for ColorParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ColorParseError::InvalidFormat => f.write_str("invalid hex string, expected '#' at the start"),
-            ColorParseError::InvalidLength => {
+            Self::InvalidFormat => f.write_str("invalid hex string, expected '#' at the start"),
+            Self::InvalidLength => {
                 f.write_str("invalid length of the hex string, should start with '#' and have 6 characters for Color3B or 6/8 characters for Color4B")
             },
-            ColorParseError::ParseError => f.write_str("invalid hex bytes encountered in the string")
+            Self::ParseError => f.write_str("invalid hex bytes encountered in the string")
         }
     }
 }
 
 impl From<ParseIntError> for ColorParseError {
     fn from(_: ParseIntError) -> Self {
-        ColorParseError::ParseError
+        Self::ParseError
     }
 }
 

@@ -13,12 +13,12 @@ pub struct FastString<const N: usize> {
 
 impl<const N: usize> FastString<N> {
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self::from_buffer([0; N], 0)
     }
 
     #[inline]
-    pub fn from_buffer(buffer: [u8; N], len: usize) -> Self {
+    pub const fn from_buffer(buffer: [u8; N], len: usize) -> Self {
         Self { buffer, len }
     }
 
@@ -45,12 +45,12 @@ impl<const N: usize> FastString<N> {
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.len
     }
 
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
 
