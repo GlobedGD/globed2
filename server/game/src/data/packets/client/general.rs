@@ -1,29 +1,29 @@
 use crate::data::*;
 
 #[derive(Packet, Decodable)]
-#[packet(id = 11000, encrypted = false)]
+#[packet(id = 11000)]
 pub struct SyncIconsPacket {
     pub icons: PlayerIconData,
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 11001, encrypted = false)]
+#[packet(id = 11001)]
 pub struct RequestGlobalPlayerListPacket;
 
 #[derive(Packet, Decodable)]
-#[packet(id = 11002, encrypted = false)]
+#[packet(id = 11002)]
 pub struct CreateRoomPacket;
 
 #[derive(Packet, Decodable)]
-#[packet(id = 11003, encrypted = false)]
+#[packet(id = 11003)]
 pub struct JoinRoomPacket {
     pub room_id: u32,
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 11004, encrypted = false)]
+#[packet(id = 11004)]
 pub struct LeaveRoomPacket;
 
 #[derive(Packet, Decodable)]
-#[packet(id = 11005, encrypted = false)]
+#[packet(id = 11005)]
 pub struct RequestRoomPlayerListPacket;

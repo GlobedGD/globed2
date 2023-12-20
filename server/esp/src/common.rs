@@ -8,6 +8,14 @@ use std::{
     ops::Deref,
 };
 
+const fn constmax(a: usize, b: usize) -> usize {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
 macro_rules! impl_primitive {
     ($typ:ty,$read:ident,$write:ident) => {
         impl crate::Encodable for $typ {
@@ -154,6 +162,81 @@ where
     #[inline]
     fn encoded_size(&self) -> usize {
         size_of_types!(bool) + self.as_ref().map_or(0, T::encoded_size)
+    }
+}
+
+/* Result<T, E> */
+
+impl<T, E> Encodable for Result<T, E>
+where
+    T: Encodable,
+    E: Encodable,
+{
+    #[inline]
+    fn encode(&self, buf: &mut ByteBuffer) {
+        buf.write_bool(self.is_ok());
+        match self {
+            Ok(x) => buf.write_value(x),
+            Err(e) => buf.write_value(e),
+        }
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_bool(self.is_ok());
+        match self {
+            Ok(x) => buf.write_value(x),
+            Err(e) => buf.write_value(e),
+        }
+    }
+}
+
+impl<T, E> Decodable for Result<T, E>
+where
+    T: Decodable,
+    E: Decodable,
+{
+    #[inline]
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
+    }
+
+    #[inline]
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Ok(if buf.read_bool()? {
+            Ok(buf.read_value::<T>()?)
+        } else {
+            Err(buf.read_value::<E>()?)
+        })
+    }
+}
+
+// not sure if this one makes any sense
+impl<T, E> StaticSize for Result<T, E>
+where
+    T: StaticSize,
+    E: StaticSize,
+{
+    const ENCODED_SIZE: usize = size_of_types!(bool) + constmax(T::ENCODED_SIZE, E::ENCODED_SIZE);
+}
+
+impl<T, E> DynamicSize for Result<T, E>
+where
+    T: DynamicSize,
+    E: DynamicSize,
+{
+    fn encoded_size(&self) -> usize {
+        size_of_types!(bool)
+            + match self.as_ref() {
+                Ok(x) => x.encoded_size(),
+                Err(e) => e.encoded_size(),
+            }
     }
 }
 

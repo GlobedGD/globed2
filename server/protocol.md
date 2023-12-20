@@ -38,6 +38,10 @@ Game related
 * 12010+ - VoicePacket - voice frame
 * 12011^+ - ChatMessagePacket - chat message
 
+Admin related
+
+* 19000^+ - AdminAuthPacket - admin auth
+* 19001^ - AdminSendNoticePacket - send notice to everyone or a specific connected person
 
 ### Server
 
@@ -66,3 +70,7 @@ Game related
 * 22001 - LevelDataPacket - level data
 * 22010+ - VoiceBroadcastPacket - voice frame from another user
 * 22011+ - ChatMessageBroadcastPacket - chat message from another user
+
+Admin related
+
+* 29000 - AdminAuthSuccessPacket - admin auth successful

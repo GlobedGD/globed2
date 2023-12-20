@@ -325,15 +325,15 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
 #[darling(attributes(packet))]
 struct PacketAttributes {
     id: u16,
-    encrypted: bool,
+    encrypted: Option<bool>,
 }
 
 /// Implements `Packet`, `PacketMetadata` and the function `const fn header() -> PacketHeader` for the given struct.
-/// You must also pass additional attributes with `#[packet]`, specifically packet ID and whether the packet should be encrypted.
+/// You must also pass additional attributes with `#[packet]`, specifically packet ID and optionally, whether the packet should be encrypted.
 /// Example:
 /// ```rust
 /// #[derive(Packet, Encodable, Decodable)]
-/// #[packet(id = 10000, encrypted = false)]
+/// #[packet(id = 10000, encrypted = false)] // 'encrypted = false' is optional
 /// pub struct MyPacket { /* fields */ }
 /// ```
 #[proc_macro_derive(Packet, attributes(packet))]
@@ -349,7 +349,7 @@ pub fn packet(input: TokenStream) -> TokenStream {
     let DeriveInput { ident, .. } = input;
 
     let id = opts.id;
-    let enc = opts.encrypted;
+    let enc = opts.encrypted.unwrap_or(false);
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let output = match &input.data {

@@ -69,7 +69,8 @@ Note that the server is written with security in mind, so many of those options 
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
 | `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed to connect |
 | `no_chat_list` | `[]` | ⏳ | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |
-| `tps` | `30` | ⏳ | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth. |
+| `tps` | `30` | ⏳ | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
+| `admin_key`<sup>*</sup> | `(random)` | ⏳ | The password used to unlock the admin panel in-game, must be 16 characters or less |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `challenge_level` accordingly if you enable this setting |
 | `gd_api`<sup>*</sup> | `(...)` | ✅ | Link to robtop's API that will be used if `use_gd_api` is enabled. This setting is useful for GDPS owners |
 | `gd_api_ratelimit`<sup>*</sup> | `5` | ❌ | If `use_gd_api` is enabled, sets the maximum request number per `gd_api_period` that can be made to robtop's API. Used to avoid ratelimits |

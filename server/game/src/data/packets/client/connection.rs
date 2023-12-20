@@ -1,20 +1,20 @@
 use crate::data::*;
 
 #[derive(Packet, Decodable)]
-#[packet(id = 10000, encrypted = false)]
+#[packet(id = 10000)]
 pub struct PingPacket {
     pub id: u32,
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 10001, encrypted = false)]
+#[packet(id = 10001)]
 pub struct CryptoHandshakeStartPacket {
     pub protocol: u16,
     pub key: CryptoPublicKey,
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 10002, encrypted = false)]
+#[packet(id = 10002)]
 pub struct KeepalivePacket;
 
 pub const MAX_TOKEN_SIZE: usize = 164;
@@ -28,5 +28,5 @@ pub struct LoginPacket {
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 10004, encrypted = false)]
+#[packet(id = 10004)]
 pub struct DisconnectPacket;

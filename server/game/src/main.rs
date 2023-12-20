@@ -48,6 +48,14 @@ fn abort_misconfig() -> ! {
     std::process::exit(1);
 }
 
+fn censor_key(key: &str, keep_first_n_chars: usize) -> String {
+    if key.len() <= keep_first_n_chars {
+        return "*".repeat(key.len());
+    }
+
+    format!("{}{}", &key[..keep_first_n_chars], "*".repeat(key.len() - keep_first_n_chars))
+}
+
 fn parse_configuration() -> StartupConfiguration {
     let mut args = std::env::args();
     let exe_name = args.next().unwrap(); // skip executable
@@ -238,26 +246,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
             abort_misconfig();
         }
 
-        debug!("Configuration:");
-        debug!("* TPS: {}", boot_data.tps);
-        debug!("* No chat users: {}", boot_data.no_chat.len());
-        debug!("* Special users: {}", boot_data.special_users.len());
-        debug!("* Token expiry: {}", boot_data.token_expiry);
-        debug!("* Maintenance: {}", if boot_data.maintenance { "yes" } else { "no" });
-
-        // print first 4 chars, rest is censored
-        if boot_data.secret_key2.len() > 4 {
-            debug!(
-                "* Token secret key: {}{}",
-                &boot_data.secret_key2[..4],
-                "*".repeat(boot_data.secret_key2.len() - 4)
-            );
-        } else {
-            debug!("* Token secret key: {}", boot_data.secret_key2);
-        }
-
         boot_data
     };
+
+    debug!("Configuration:");
+    debug!("* TPS: {}", gsbd.tps);
+    debug!("* No chat users: {}", gsbd.no_chat.len());
+    debug!("* Special users: {}", gsbd.special_users.len());
+    debug!("* Token expiry: {}", gsbd.token_expiry);
+    debug!("* Maintenance: {}", if gsbd.maintenance { "yes" } else { "no" });
+
+    debug!("* Token secret key: {}", censor_key(&gsbd.secret_key2, 4));
+
+    if standalone {
+        debug!("* Admin key: {}", gsbd.admin_key);
+    } else {
+        // print first 4 chars, rest is censored
+        debug!("* Admin key: {}", censor_key(&gsbd.admin_key, 4));
+    }
 
     let socket = match UdpSocket::bind(&startup_config.bind_address).await {
         Ok(x) => x,

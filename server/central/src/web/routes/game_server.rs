@@ -1,5 +1,5 @@
 use globed_shared::{
-    esp::{ByteBuffer, ByteBufferExtWrite},
+    esp::{types::FastString, ByteBuffer, ByteBufferExtWrite},
     logger::debug,
     GameServerBootData, PROTOCOL_VERSION, SERVER_MAGIC,
 };
@@ -59,6 +59,7 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         maintenance: config.maintenance,
         secret_key2: config.secret_key2.clone(),
         token_expiry: config.token_expiry,
+        admin_key: FastString::from_str(&config.admin_key),
     };
 
     debug!(

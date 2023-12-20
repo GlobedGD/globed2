@@ -53,6 +53,7 @@ pub struct GameServerThread {
     crypto_box: OnceLock<ChaChaBox>,
 
     peer: SocketAddrV4,
+    pub is_admin: AtomicBool,
     pub account_id: AtomicI32,
     pub level_id: AtomicI32,
     pub room_id: AtomicU32,
@@ -69,6 +70,7 @@ impl GameServerThread {
             channel: TokioChannel::new(CHANNEL_BUFFER_SIZE),
             peer,
             crypto_box: OnceLock::new(),
+            is_admin: AtomicBool::new(false),
             account_id: AtomicI32::new(0),
             level_id: AtomicI32::new(0),
             room_id: AtomicU32::new(0),
@@ -341,13 +343,15 @@ impl GameServerThread {
 
             VoicePacket::PACKET_ID => self.handle_voice(&mut data).await,
             ChatMessagePacket::PACKET_ID => self.handle_chat_message(&mut data).await,
+
+            /* admin related */
+            AdminAuthPacket::PACKET_ID => self.handle_admin_auth(&mut data).await,
+            AdminSendNoticePacket::PACKET_ID => self.handle_admin_send_notice(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }
 
     // packet encoding and sending functions
-    // static and dynamic are marked as #[inline(never)] because they are by far the most used send funcs,
-    // and they already inline
 
     /// fast packet sending with best-case zero heap allocation. requires the packet to implement `StaticSize`.
     /// if the packet size isn't known at compile time, derive/implement `DynamicSize` and use `send_packet_dynamic` instead.

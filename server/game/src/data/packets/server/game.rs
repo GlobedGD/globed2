@@ -5,11 +5,11 @@ use crate::data::*;
 */
 
 #[derive(Packet, Encodable)]
-#[packet(id = 22000, encrypted = false)]
+#[packet(id = 22000)]
 pub struct PlayerProfilesPacket;
 
 #[derive(Packet, Encodable)]
-#[packet(id = 22001, encrypted = false)]
+#[packet(id = 22001)]
 pub struct LevelDataPacket;
 
 #[derive(Packet, Encodable, DynamicSize)]

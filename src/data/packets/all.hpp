@@ -15,14 +15,16 @@
 #pragma once
 #include "packet.hpp"
 
+#include "client/admin.hpp"
 #include "client/connection.hpp"
 #include "client/game.hpp"
 #include "client/general.hpp"
 #include "client/misc.hpp"
 
+#include "server/admin.hpp"
 #include "server/connection.hpp"
 #include "server/general.hpp"
 #include "server/game.hpp"
 
-// Matches a packet by packet ID, returns nullptr if not found. Otherwise returns an Packet* with uninitialized data
+// Matches a packet by packet ID, returns nullptr if not found. Otherwise returns an Packet pointer with uninitialized data
 std::shared_ptr<Packet> matchPacket(packetid_t packetId);

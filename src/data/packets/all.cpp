@@ -31,6 +31,10 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
 #endif
         PACKET(ChatMessageBroadcastPacket);
 
+        // admin related
+
+        PACKET(AdminAuthSuccessPacket);
+
         default:
             return std::shared_ptr<Packet>(nullptr);
     }

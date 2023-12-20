@@ -126,6 +126,23 @@ impl<const N: usize> FastString<N> {
 
         ret
     }
+
+    /// Compares this string to `other` in constant time
+    pub fn constant_time_compare(&self, other: &FastString<N>) -> bool {
+        if self.len != other.len {
+            return false;
+        }
+
+        let mut result = 0u8;
+
+        self.buffer
+            .iter()
+            .take(self.len)
+            .zip(other.buffer.iter().take(other.len))
+            .for_each(|(c1, c2)| result |= c1 ^ c2);
+
+        result == 0
+    }
 }
 
 impl<const N: usize> Encodable for FastString<N> {

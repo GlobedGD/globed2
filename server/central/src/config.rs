@@ -4,9 +4,9 @@ use std::{
 };
 
 use globed_shared::{
-    anyhow,
+    anyhow::{self, anyhow},
     rand::{self, distributions::Alphanumeric, Rng},
-    IntMap, SpecialUser,
+    IntMap, SpecialUser, ADMIN_KEY_LENGTH,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{ser::PrettyFormatter, Serializer};
@@ -19,6 +19,14 @@ fn default_web_mountpoint() -> String {
 
 fn default_web_address() -> String {
     "0.0.0.0:41000".to_string()
+}
+
+fn default_admin_key() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(ADMIN_KEY_LENGTH)
+        .map(char::from)
+        .collect()
 }
 
 const fn default_use_gd_api() -> bool {
@@ -151,6 +159,8 @@ pub struct ServerConfig {
     pub tps: u32,
 
     // security
+    #[serde(default = "default_admin_key")]
+    pub admin_key: String,
     #[serde(default = "default_use_gd_api")]
     pub use_gd_api: bool,
     #[serde(default = "default_gdapi")]
@@ -195,6 +205,14 @@ impl ServerConfig {
 
     pub fn reload_in_place(&mut self, source: &Path) -> anyhow::Result<()> {
         let conf = Self::load(source)?;
+
+        // Do validation
+        if conf.admin_key.len() > ADMIN_KEY_LENGTH {
+            return Err(anyhow!(
+                "Invalid admin key size, must be {ADMIN_KEY_LENGTH} characters or less"
+            ));
+        }
+
         self.clone_from(&conf);
         Ok(())
     }

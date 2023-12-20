@@ -5,8 +5,9 @@
     clippy::missing_panics_doc
 )]
 
-use esp::{Decodable, Encodable};
+use esp::{types::FastString, Decodable, Encodable};
 use globed_derive::{Decodable, Encodable};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 // import reexports
@@ -30,6 +31,8 @@ pub mod token_issuer;
 pub const PROTOCOL_VERSION: u16 = 1;
 pub const SERVER_MAGIC: &[u8] = b"\xda\xeeglobed\xda\xee";
 pub const SERVER_MAGIC_LEN: usize = SERVER_MAGIC.len();
+/// amount of chars in an admin key (16)
+pub const ADMIN_KEY_LENGTH: usize = 16;
 
 fn default_su_color() -> String {
     "#ffffff".to_string()
@@ -51,6 +54,7 @@ pub struct GameServerBootData {
     pub maintenance: bool,
     pub secret_key2: String,
     pub token_expiry: u64,
+    pub admin_key: FastString<ADMIN_KEY_LENGTH>,
 }
 
 impl Default for GameServerBootData {
@@ -63,6 +67,7 @@ impl Default for GameServerBootData {
             maintenance: false,
             secret_key2: String::new(),
             token_expiry: 0,
+            admin_key: FastString::from_buffer(rand::thread_rng().gen(), 16),
         }
     }
 }
