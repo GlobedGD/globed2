@@ -56,7 +56,7 @@ CPMAddPackage("gh:dankmeme01/uibuilder#main")
 CPMAddPackage("gh:xiph/opus#master")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 
-target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium) # TODO libcurl on mac
+target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
 
 # Android - link to fmod and libcurl
 if (ANDROID)

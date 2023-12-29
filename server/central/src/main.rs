@@ -125,9 +125,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    let server = match app.listen(listen_addr, |addr| {
+    let server = app.listen(listen_addr, |addr| {
         info!("Globed central server launched on {addr}");
-    }) {
+    });
+
+    let server = match server {
         Ok(x) => x,
         Err(e) => {
             error!("failed to setup the HTTP server with address {listen_addr}: {e}");

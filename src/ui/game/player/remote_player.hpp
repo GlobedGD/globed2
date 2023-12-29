@@ -12,6 +12,10 @@ public:
 
     void updateData(const PlayerData& data);
 
+    unsigned int getDefaultTicks();
+    void setDefaultTicks(unsigned int ticks);
+    void incDefaultTicks();
+
     bool isValidPlayer();
 
     static RemotePlayer* create(const PlayerAccountData& data);
@@ -19,6 +23,7 @@ public:
 protected:
     VisualPlayer* player1;
     VisualPlayer* player2;
+    unsigned int defaultTicks = 0;
 
     PlayerAccountData accountData;
 };

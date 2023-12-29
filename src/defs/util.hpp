@@ -45,7 +45,7 @@ protected:
 // which is worse because it's an actual segfault and not a call to std::terminate().
 // additionally, when throwing anything else (e.g. `throw 1;`) the entire stack may get fucked up and you'll get a useless stack trace.
 
-#ifdef GLOBED_ANDROID
+#if 0
 
 // TODO none of this works on android !!!!!!!
 

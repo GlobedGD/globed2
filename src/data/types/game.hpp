@@ -18,6 +18,11 @@ struct SpecificIconData {
         buf.writeEnum(iconType);
         buf.writePoint(position);
         buf.writeF32(rotation);
+
+        BitBuffer<8> flagByte;
+        flagByte.writeBit(isVisible);
+
+        buf.writeBits(flagByte);
     }
 
     GLOBED_DECODE {
@@ -29,21 +34,30 @@ struct SpecificIconData {
 
         position = buf.readPoint();
         rotation = buf.readF32();
+
+        auto flagByte = buf.readBits<8>();
+        isVisible = flagByte.readBit();
     }
 
     PlayerIconType iconType;
     cocos2d::CCPoint position;
     float rotation;
+
+    bool isVisible;
 };
 
 class PlayerData {
 public:
     PlayerData(
         uint16_t percentage,
-        int32_t attempts
+        int32_t attempts,
+        const SpecificIconData& player1,
+        const SpecificIconData& player2
     )
     : percentage(percentage),
-      attempts(attempts)
+      attempts(attempts),
+      player1(player1),
+      player2(player2)
     {}
 
     PlayerData() {}

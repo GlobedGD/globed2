@@ -25,7 +25,7 @@ void GameServerManager::addServer(const std::string& serverId, const std::string
     };
 
     auto data = _data.lock();
-    data->servers[serverId] = gsdata;
+    data->servers.emplace(serverId, gsdata);
 }
 
 void GameServerManager::clear() {

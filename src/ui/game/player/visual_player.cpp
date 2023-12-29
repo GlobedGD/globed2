@@ -48,6 +48,8 @@ void VisualPlayer::updateData(const SpecificIconData& data) {
     if (data.iconType != playerIconType) {
         this->updateIconType(data.iconType);
     }
+
+    this->setVisible(data.isVisible);
 }
 
 void VisualPlayer::updateIconType(PlayerIconType newType) {

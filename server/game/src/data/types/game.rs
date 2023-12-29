@@ -2,10 +2,11 @@ use crate::data::*;
 
 /* PlayerIconType */
 
-#[derive(Debug, Copy, Clone, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Default, Debug, Copy, Clone, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
 #[repr(u8)]
 pub enum PlayerIconType {
+    #[default]
     Unknown = 0,
     Cube = 1,
     Ship = 2,
@@ -25,6 +26,7 @@ pub struct SpecificIconData {
     pub icon_type: PlayerIconType,
     pub position: Point,
     pub rotation: f32,
+    pub flag_byte: u8,
 }
 
 /* PlayerData (data in a level) */
@@ -34,4 +36,7 @@ pub struct SpecificIconData {
 pub struct PlayerData {
     pub percentage: u16,
     pub attempts: i32,
+
+    pub player1: SpecificIconData,
+    pub player2: SpecificIconData,
 }

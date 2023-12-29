@@ -95,7 +95,7 @@ namespace util::net {
     }
 
     std::string getaddrinfo(const std::string& hostname) {
-        // TODO i have no fucking clue how this compiles on both windows and unix but i'm sitll not sure if this behaves as intended so please test it
+        // TODO i have no fucking clue how this compiles on both windows and unix but i'm still not sure if this behaves as intended so please test it
         struct addrinfo hints = {};
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;

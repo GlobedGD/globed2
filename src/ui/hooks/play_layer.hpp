@@ -12,6 +12,7 @@
 #include <managers/settings.hpp>
 #include <net/network_manager.hpp>
 #include <data/packets/all.hpp>
+#include <ui/game/player/remote_player.hpp>
 #include <util/math.hpp>
 
 using namespace geode::prelude;
@@ -25,7 +26,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // in game stuff
     bool deafened = false;
     uint32_t totalSentPackets = 0;
-    std::unordered_map<int, std::monostate> players; // TODO
+    std::unordered_map<int, RemotePlayer*> players;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;
@@ -77,7 +78,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         this->setupEventListeners();
         this->setupCustomKeybinds();
 
-        this->rescheduleSenders();
+        this->rescheduleSelectors();
 
         return true;
     }
@@ -118,10 +119,17 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             }
         });
 
-        nm.addListener<LevelDataPacket>([](LevelDataPacket* packet){
+        nm.addListener<LevelDataPacket>([this](LevelDataPacket* packet){
             log::debug("Recv level data, {} players", packet->players.size());
-        });
+            for (const auto& player : packet->players) {
+                if (!this->m_fields->players.contains(player.accountId)) {
+                    // new player joined
+                    this->handlePlayerJoin(player.accountId);
+                }
 
+                this->m_fields->players.at(player.accountId)->updateData(player.data);
+            }
+        });
 
         nm.addListener<VoiceBroadcastPacket>([this](VoiceBroadcastPacket* packet) {
 #if GLOBED_VOICE_SUPPORT
@@ -206,7 +214,33 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
         if (m_fields->players.empty() && m_fields->totalSentPackets % 30 != 15) return;
 
-        NetworkManager::get().send(PlayerDataPacket::create(this->gatherPlayerData()));
+        auto data = this->gatherPlayerData();
+        NetworkManager::get().send(PlayerDataPacket::create(data));
+    }
+
+    // selUpdateProfiles - runs 4 times a second, updates profiles of other people
+    void selUpdateProfiles(float) {
+        if (!this->established()) return;
+        if (!this->isCurrentPlayLayer()) return;
+
+        auto& pcm = ProfileCacheManager::get();
+
+        for (const auto [playerId, remotePlayer] : m_fields->players) {
+            if (!remotePlayer->isValidPlayer()) {
+                auto data = pcm.getData(playerId);
+                if (data.has_value()) {
+                    // if the profile data already exists in cache, use it
+                    remotePlayer->updateAccountData(data.value());
+                } else if (remotePlayer->getDefaultTicks() >= 12) {
+                    // if it has been 3 seconds and we still don't have them in cache, request again
+                    remotePlayer->setDefaultTicks(0);
+                    NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
+                } else {
+                    // if it has been less than 3 seconds, just increment the tick counter
+                    remotePlayer->incDefaultTicks();
+                }
+            }
+        }
     }
 
     /* private utilities */
@@ -216,8 +250,22 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         return m_fields->globedReady && NetworkManager::get().established();
     }
 
+    SpecificIconData gatherSpecificIconData(PlayerObject* player) {
+        // TODO
+        return SpecificIconData {
+            .iconType = PlayerIconType::Cube,
+            .position = {10.f, 10.f},
+            .rotation = 0.f
+        };
+    }
+
     PlayerData gatherPlayerData() {
-        return PlayerData(m_level->m_normalPercent, m_level->m_attempts);
+        return PlayerData(
+            m_level->m_normalPercent,
+            m_level->m_attempts,
+            this->gatherSpecificIconData(nullptr),
+            this->gatherSpecificIconData(nullptr)
+        );
     }
 
     void handlePlayerJoin(int playerId) {
@@ -229,12 +277,28 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         }
 #endif // GLOBED_VOICE_SUPPORT
         NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
+
+        auto* rp = RemotePlayer::create();
+        auto nodeid = fmt::format("remote-player-{}", playerId);
+
+        rp->setID(Mod::get()->expandSpriteName(nodeid.c_str()));
+        // TODO `this` should be m_objectLayer in GJBGL
+        this->addChild(rp);
+
+        m_fields->players.emplace(playerId, rp);
+
+        log::debug("Player joined: {}", playerId);
     }
 
     void handlePlayerLeave(int playerId) {
 #if GLOBED_VOICE_SUPPORT
         VoicePlaybackManager::get().removeStream(playerId);
 #endif // GLOBED_VOICE_SUPPORT
+
+        if (!m_fields->players.contains(playerId)) return;
+
+        m_fields->players.at(playerId)->removeFromParent();
+        m_fields->players.erase(playerId);
     }
 
     // With speedhack enabled, all scheduled selectors will run more often than they are supposed to.
@@ -248,18 +312,18 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         auto* sched = CCScheduler::get();
         auto ts = sched->getTimeScale();
         if (!util::math::equal(ts, m_fields->lastKnownTimeScale)) {
-            sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this);
-            this->rescheduleSenders();
+            this->unscheduleSelectors();
+            this->rescheduleSelectors();
         }
 
         auto now = util::time::now();
 
         if (!m_fields->lastSentPacket.contains(uniqueKey)) {
-            m_fields->lastSentPacket[uniqueKey] = now;
+            m_fields->lastSentPacket.emplace(uniqueKey, now);
             return true;
         }
 
-        auto lastSent = m_fields->lastSentPacket[uniqueKey];
+        auto lastSent = m_fields->lastSentPacket.at(uniqueKey);
 
         auto passed = util::time::asMillis(now - lastSent);
 
@@ -268,19 +332,27 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             return false;
         }
 
-        m_fields->lastSentPacket[uniqueKey] = now;
+        m_fields->lastSentPacket.emplace(uniqueKey, now);
 
         return true;
     }
 
-    void rescheduleSenders() {
+    void unscheduleSelectors() {
+        auto* sched = CCScheduler::get();
+        sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this);
+        sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateProfiles), this);
+    }
+
+    void rescheduleSelectors() {
         auto* sched = CCScheduler::get();
         float timescale = sched->getTimeScale();
         m_fields->lastKnownTimeScale = timescale;
 
         float pdInterval = (1.0f / m_fields->configuredTps) * timescale;
+        float updpInterval = 0.25f * timescale;
 
         sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, pdInterval, false);
+        sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateProfiles), this, pdInterval, false);
     }
 
     // TODO remove if impostor playlayer gets fixed

@@ -64,6 +64,12 @@ impl GameServerThread {
             );
         }
 
+        if packet.account_id <= 0 {
+            self.terminate();
+            self.send_packet_dynamic(&LoginFailedPacket { message: "Invalid account ID was sent. Please note that you must be signed into a Geometry Dash account before connecting." }).await?;
+            return Ok(());
+        }
+
         // skip authentication if standalone
         let standalone = self.game_server.standalone;
         let player_name = if standalone {
