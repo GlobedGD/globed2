@@ -55,7 +55,7 @@ namespace util::net {
     [[noreturn]] void throwLastError() {
         auto message = lastErrorString();
         geode::log::error(std::string("Throwing network exception: ") + message);
-        THROW(std::runtime_error(std::string("Network error: ") + message));
+        throw(std::runtime_error(std::string("Network error: ") + message));
     }
 
     std::string webUserAgent() {
@@ -92,6 +92,33 @@ namespace util::net {
         }
 
         return std::memcmp(&s1.sin_addr, &s2.sin_addr, sizeof(s1.sin_addr)) == 0;
+    }
+
+    std::string getaddrinfo(const std::string& hostname) {
+        // TODO i have no fucking clue how this compiles on both windows and unix but i'm sitll not sure if this behaves as intended so please test it
+        struct addrinfo hints = {};
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_DGRAM;
+        hints.ai_protocol = IPPROTO_UDP;
+
+        struct addrinfo* result;
+
+        if (0 != ::getaddrinfo(hostname.c_str(), nullptr, &hints, &result)) {
+            util::net::throwLastError();
+        }
+
+        GLOBED_REQUIRE(result->ai_family == AF_INET, "getaddrinfo returned invalid address family")
+        GLOBED_REQUIRE(result->ai_socktype == SOCK_DGRAM, "getaddrinfo returned invalid socket type")
+        GLOBED_REQUIRE(result->ai_protocol == IPPROTO_UDP, "getaddrinfo returned invalid ip protocol")
+        auto* ipaddr = (struct sockaddr_in*) result->ai_addr;
+
+        std::string out;
+        out.resize(16);
+
+        inet_ntop(AF_INET, &ipaddr->sin_addr, out.data(), 16);
+
+        ::freeaddrinfo(result);
+        return out;
     }
 }
 

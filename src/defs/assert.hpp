@@ -31,7 +31,7 @@
         auto ev_msg = (message); \
         auto loc = GLOBED_SOURCE; \
         geode::log::warn("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
-        THROW(std::runtime_error(std::string(ev_msg))); \
+        throw(std::runtime_error(std::string(ev_msg))); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) [[unlikely]] { \
@@ -45,7 +45,7 @@
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
         geode::log::error(std::string("Condition failed: ") + ev_msg); \
-        THROW(std::runtime_error(std::string(ev_msg))); \
+        throw(std::runtime_error(std::string(ev_msg))); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) [[unlikely]] { \

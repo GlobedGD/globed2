@@ -35,7 +35,7 @@ class $modify(HookedMenuLayer, MenuLayer) {
             CircleBaseSize::MediumAlt
             ))
             .intoMenuItem([](auto) {
-                auto accountId = GJAccountManager::get()->m_accountID;
+                auto accountId = GJAccountManager::sharedState()->m_accountID;
                 if (accountId <= 0) {
                     FLAlertLayer::create("Notice", "You need to be signed into a <cg>Geometry Dash account</c> in order to play online.", "Ok")->show();
                     return;

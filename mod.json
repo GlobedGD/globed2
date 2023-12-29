@@ -1,15 +1,9 @@
 {
-    "geode": "1.3.5",
+    "geode": "2.0.0",
     "version": "v1.0.0-alpha.1",
     "id": "dankmeme.globed2",
     "name": "Globed",
     "developer": "dankmeme",
     "description": "Feature-rich multiplayer mod for Geometry Dash",
-    "dependencies": [
-        {
-            "id": "geode.custom-keybinds",
-            "version": ">=v1.2.2",
-            "importance": "required"
-        }
-    ]
+    "dependencies": []
 }

@@ -10,6 +10,7 @@
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/account.hpp>
+#include <data/types/misc.hpp>
 
 using namespace geode::prelude;
 
@@ -25,7 +26,7 @@ bool GlobedMenuLayer::init() {
     auto listview = Build<ListView>::create(createServerList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
-    Build<GJListLayer>::create(listview, "Servers", ccc4(0, 0, 0, 180), LIST_WIDTH, 220.f)
+    Build<GJListLayer>::create(listview, "Servers", ccc4(0, 0, 0, 180), LIST_WIDTH, 220.f, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .parent(this)
@@ -234,19 +235,39 @@ void GlobedMenuLayer::requestServerList() {
                 gsm.pendingChanges = true;
 
                 try {
-                    auto jsonResponse = json::Value::from_str(response.response);
-                    auto serverList = jsonResponse.as_array();
-                    for (const auto& obj : serverList) {
-                        auto server = obj.as_object();
+                    auto decoded = util::crypto::base64Decode(response.response);
+                    if (decoded.size() < sizeof(NetworkManager::SERVER_MAGIC)) {
+                        throw(std::runtime_error("invalid response sent from the server"));
+                    }
+
+                    ByteBuffer buf(std::move(decoded));
+                    auto magic = buf.readBytes(10);
+
+                    // compare it with the needed magic
+                    bool correct = true;
+                    for (size_t i = 0; i < sizeof(NetworkManager::SERVER_MAGIC); i++) {
+                        if (magic[i] != NetworkManager::SERVER_MAGIC[i]) {
+                            correct = false;
+                            break;
+                        }
+                    }
+
+                    if (!correct) {
+                        throw(std::runtime_error("invalid response sent from the server"));
+                    }
+
+                    auto serverList = buf.readValueVector<GameServerEntry>();
+
+                    for (const auto& server : serverList) {
                         gsm.addServer(
-                            server["id"].as_string(),
-                            server["name"].as_string(),
-                            server["address"].as_string(),
-                            server["region"].as_string()
+                            server.id,
+                            server.name,
+                            server.address,
+                            server.region
                         );
                     }
-                } CATCH {
-                    ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", CATCH_GET_EXC);
+                } catch(e) {
+                    ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", e.what());
                     gsm.clear();
                 }
             }

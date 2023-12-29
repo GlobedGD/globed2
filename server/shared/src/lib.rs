@@ -6,8 +6,8 @@
 )]
 
 use esp::{types::FastString, Decodable, Encodable};
-use globed_derive::{Decodable, Encodable};
-use rand::Rng;
+pub use globed_derive::{Decodable, Encodable};
+use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 
 // import reexports
@@ -57,6 +57,14 @@ pub struct GameServerBootData {
     pub admin_key: FastString<ADMIN_KEY_LENGTH>,
 }
 
+pub fn generate_alphanum_string(n: usize) -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(n)
+        .map(char::from)
+        .collect()
+}
+
 impl Default for GameServerBootData {
     fn default() -> Self {
         Self {
@@ -67,7 +75,9 @@ impl Default for GameServerBootData {
             maintenance: false,
             secret_key2: String::new(),
             token_expiry: 0,
-            admin_key: FastString::from_buffer(rand::thread_rng().gen(), 16),
+            admin_key: generate_alphanum_string(ADMIN_KEY_LENGTH)
+                .try_into()
+                .expect("failed to convert admin key String into FastString"),
         }
     }
 }

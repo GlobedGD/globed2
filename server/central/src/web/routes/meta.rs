@@ -1,6 +1,12 @@
 use std::sync::OnceLock;
 
-use globed_shared::{rand, rand::Rng, PROTOCOL_VERSION};
+use globed_shared::{
+    base64::{engine::general_purpose as b64e, Engine as _},
+    esp::{ByteBuffer, ByteBufferExt, ByteBufferExtWrite},
+    rand,
+    rand::Rng,
+    PROTOCOL_VERSION, SERVER_MAGIC,
+};
 use roa::{preload::PowerBody, throw, Context};
 
 use crate::state::ServerState;
@@ -24,8 +30,19 @@ pub async fn index(context: &mut Context<ServerState>) -> roa::Result {
 
 pub async fn servers(context: &mut Context<ServerState>) -> roa::Result {
     check_maintenance!(context);
-    let serialized = serde_json::to_string(&context.state_read().await.config.game_servers)?;
-    context.write(serialized);
+
+    let state = context.state_read().await;
+    let servers = &state.config.game_servers;
+
+    let mut buf = ByteBuffer::with_capacity(servers.len() * 128);
+    buf.write_bytes(SERVER_MAGIC);
+    buf.write_value_vec(servers);
+
+    drop(state);
+
+    let encoded = b64e::STANDARD.encode(buf.as_bytes());
+    context.write(encoded);
+
     Ok(())
 }
 

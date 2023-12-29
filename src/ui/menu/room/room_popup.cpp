@@ -75,7 +75,9 @@ void RoomPopup::reloadPlayerList() {
     NetworkManager::get().send(RequestRoomPlayerListPacket::create());
 
     loadingCircle = LoadingCircle::create();
-    loadingCircle->setParentLayer(listLayer);
+    // TODO 2.2 ??
+    // loadingCircle->setParentLayer(listLayer);
+    this->addChild(listLayer);
     loadingCircle->setPosition(-listLayer->getPosition());
     loadingCircle->show();
 }

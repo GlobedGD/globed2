@@ -4,14 +4,16 @@
 
 #pragma once
 #include <data/bytebuffer.hpp>
-#include <util/data.hpp>
+#include "game.hpp"
 
 class PlayerIconData {
 public:
+    static const PlayerIconData DEFAULT_ICONS;
+
     // wee woo
     PlayerIconData(
-        int16_t cube, int16_t ship, int16_t ball, int16_t ufo, int16_t wave, int16_t robot, int16_t spider, int16_t swing, int16_t jetpack, int16_t deathEffect, int16_t color1, int16_t color2
-    ) : cube(cube), ship(ship), ball(ball), ufo(ufo), wave(wave), robot(robot), spider(spider), swing(swing), jetpack(jetpack), deathEffect(deathEffect), color1(color1), color2(color2) {}
+        int16_t cube, int16_t ship, int16_t ball, int16_t ufo, int16_t wave, int16_t robot, int16_t spider, int16_t swing, int16_t jetpack, int16_t deathEffect, int16_t color1, int16_t color2, int16_t glowColor
+    ) : cube(cube), ship(ship), ball(ball), ufo(ufo), wave(wave), robot(robot), spider(spider), swing(swing), jetpack(jetpack), deathEffect(deathEffect), color1(color1), color2(color2), glowColor(glowColor) {}
 
     PlayerIconData() {}
 
@@ -28,6 +30,7 @@ public:
         buf.writeI16(deathEffect);
         buf.writeI16(color1);
         buf.writeI16(color2);
+        buf.writeI16(glowColor);
     }
 
     GLOBED_DECODE {
@@ -43,10 +46,15 @@ public:
         deathEffect = buf.readI16();
         color1 = buf.readI16();
         color2 = buf.readI16();
+        glowColor = buf.readI16();
     }
 
-    int16_t cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2;
+    int16_t cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2, glowColor;
 };
+
+inline const PlayerIconData PlayerIconData::DEFAULT_ICONS = PlayerIconData(
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, -1
+);
 
 inline bool operator==(const PlayerIconData& lhs, const PlayerIconData& rhs) {
     return lhs.cube == rhs.cube
@@ -80,6 +88,8 @@ public:
 
 class PlayerAccountData {
 public:
+    static const PlayerAccountData DEFAULT_DATA;
+
     PlayerAccountData(int32_t id, const std::string& name, const PlayerIconData& icons)
         : id(id), name(name), icons(icons) {}
 
@@ -105,10 +115,16 @@ public:
     std::optional<SpecialUserData> specialUserData;
 };
 
+inline const PlayerAccountData PlayerAccountData::DEFAULT_DATA = PlayerAccountData(
+    0,
+    "Player",
+    PlayerIconData::DEFAULT_ICONS
+);
+
 class PlayerPreviewAccountData {
 public:
-    PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int32_t levelId)
-        : id(id), name(name), cube(cube), color1(color1), color2(color2) {}
+    PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
+        : id(id), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor) {}
     PlayerPreviewAccountData() {}
 
     GLOBED_ENCODE {
@@ -117,6 +133,7 @@ public:
         buf.writeI16(cube);
         buf.writeI16(color1);
         buf.writeI16(color2);
+        buf.writeI16(glowColor);
     }
 
     GLOBED_DECODE {
@@ -125,17 +142,18 @@ public:
         cube = buf.readI16();
         color1 = buf.readI16();
         color2 = buf.readI16();
+        glowColor = buf.readI16();
     }
 
     int32_t id;
     std::string name;
-    int16_t cube, color1, color2;
+    int16_t cube, color1, color2, glowColor;
 };
 
 class PlayerRoomPreviewAccountData {
 public:
-    PlayerRoomPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int32_t levelId)
-        : id(id), name(name), cube(cube), color1(color1), color2(color2), levelId(levelId) {}
+    PlayerRoomPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
+        : id(id), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId) {}
     PlayerRoomPreviewAccountData() {}
 
     GLOBED_ENCODE {
@@ -144,6 +162,7 @@ public:
         buf.writeI16(cube);
         buf.writeI16(color1);
         buf.writeI16(color2);
+        buf.writeI16(glowColor);
         buf.writeI32(levelId);
     }
 
@@ -153,38 +172,14 @@ public:
         cube = buf.readI16();
         color1 = buf.readI16();
         color2 = buf.readI16();
+        glowColor = buf.readI16();
         levelId = buf.readI32();
     }
 
     int32_t id;
     std::string name;
-    int16_t cube, color1, color2;
+    int16_t cube, color1, color2, glowColor;
     int32_t levelId;
-};
-
-class PlayerData {
-public:
-    PlayerData(
-        uint16_t percentage,
-        int32_t attempts
-    )
-    : percentage(percentage),
-      attempts(attempts)
-    {}
-
-    PlayerData() {}
-    GLOBED_ENCODE {
-        buf.writeU16(percentage);
-        buf.writeI32(attempts);
-    }
-
-    GLOBED_DECODE {
-        percentage = buf.readU16();
-        attempts = buf.readI32();
-    }
-
-    uint16_t percentage;
-    int32_t attempts;
 };
 
 class AssociatedPlayerData {

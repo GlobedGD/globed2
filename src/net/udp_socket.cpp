@@ -19,7 +19,13 @@ bool UdpSocket::connect(const std::string& serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
     destAddr_.sin_port = htons(port);
 
-    GLOBED_REQUIRE(inet_pton(AF_INET, serverIp.c_str(), &destAddr_.sin_addr) > 0, "tried to connect to an invalid address")
+    bool validIp = (inet_pton(AF_INET, serverIp.c_str(), &destAddr_.sin_addr) > 0);
+    // if not a valid IPv4, assume it's a domain and try getaddrinfo
+    if (!validIp) {
+        auto ip = util::net::getaddrinfo(serverIp);
+        validIp = (inet_pton(AF_INET, ip.c_str(), &destAddr_.sin_addr) > 0);
+        GLOBED_REQUIRE(validIp, "invalid address was returned as result of getaddrinfo")
+    }
 
     connected = true;
     return true; // No actual connection is established in UDP

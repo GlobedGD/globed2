@@ -33,6 +33,7 @@ endif()
 
 # Android - enable exceptions and set various options
 if (ANDROID)
+    # TODO this does nothing vvvvv
     set(ANDROID_PLATFORM "android-24") # android 7, `fseeko` does not exist on earlier sdk versions and is needed for cURL
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions") # (this doesn't work !!!!!!! fix me!!!)
 endif()
@@ -50,36 +51,23 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
-# libcurl ssl support
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    # on windows we just use schannel (built into windows)
-    set(CURL_USE_SCHANNEL ON)
-    set(CURL_USE_OPENSSL OFF)
-elseif(APPLE)
-    # on mac we use secure transport (built into mac)
-    set(CURL_USE_SECTRANSP ON)
-    set(CURL_CA_PATH none)
-    set(CURL_USE_OPENSSL OFF)
-elseif(ANDROID)
-    # on android we use geode provided openssl library and our own headers (see android-build.md)
-    set(CURL_USE_OPENSSL ON)
-    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/libs/openssl")
-    set(OPENSSL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/openssl/include")
-    set(OPENSSL_CRYPTO_LIBRARY "$ENV{GEODE_SDK}/loader/include/link/android/libcrypto.a")
-    set(OPENSSL_SSL_LIBRARY "$ENV{GEODE_SDK}/loader/include/link/android/libssl.a")
-endif()
-
 # our favorite libraries
-CPMAddPackage("gh:camila314/UIBuilder#main")
+CPMAddPackage("gh:dankmeme01/uibuilder#main")
 CPMAddPackage("gh:xiph/opus#master")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
-CPMAddPackage("gh:curl/curl#curl-8_5_0")
 
-target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium libcurl)
+target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium) # TODO libcurl on mac
 
-# Android - link to fmod
+# Android - link to fmod and libcurl
 if (ANDROID)
-    target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod.so)
+    target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod.so $ENV{GEODE_SDK}/loader/include/link/android32/libcurl.a) # TODO replace with the proper fmod, and armv8 too
 endif()
+
+# Windows - link to libcurl
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(${PROJECT_NAME} $ENV{GEODE_SDK}/loader/include/link/libcurl.lib)
+endif()
+
+# TODO mac - link to libcurl
 
 setup_geode_mod(${PROJECT_NAME})

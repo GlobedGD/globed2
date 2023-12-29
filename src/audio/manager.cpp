@@ -129,13 +129,7 @@ void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFra
 
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
-    // TODO figure it out in 2.2. the size is erroneously calculated as 144 on android.
-#ifdef GLOBED_ANDROID
-    exinfo.cbsize = 140;
-#else
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
-#endif
-
     exinfo.numchannels = 1;
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
     exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
@@ -225,13 +219,8 @@ FMOD::Channel* GlobedAudioManager::playSound(FMOD::Sound* sound) {
 
 FMOD::Sound* GlobedAudioManager::createSound(const float* pcm, size_t samples, int sampleRate) {
     FMOD_CREATESOUNDEXINFO exinfo = {};
-    // TODO figure it out in 2.2. the size is erroneously calculated as 144 on android.
-#ifdef GLOBED_ANDROID
-    exinfo.cbsize = 140;
-#else
-    exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
-#endif
 
+    exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     exinfo.numchannels = 1;
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
     exinfo.defaultfrequency = sampleRate;
@@ -295,8 +284,8 @@ void GlobedAudioManager::recordInvokeCallback() {
 
     try {
         recordCallback(recordFrame);
-    } CATCH {
-        ErrorQueues::get().error(std::string("Exception in audio callback: ") + CATCH_GET_EXC);
+    } catch(e) {
+        ErrorQueues::get().error(std::string("Exception in audio callback: ") + e.what());
     }
 
     recordFrame.clear();
@@ -364,8 +353,8 @@ void GlobedAudioManager::audioThreadFunc() {
 
             try {
                 recordFrame.pushOpusFrame(encoder.encode(pcmbuf));
-            } CATCH {
-                ErrorQueues::get().error(std::string("Exception in audio thread: ") + CATCH_GET_EXC);
+            } catch(e) {
+                ErrorQueues::get().error(std::string("Exception in audio thread: ") + e.what());
                 continue;
             }
         }

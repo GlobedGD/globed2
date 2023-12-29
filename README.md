@@ -36,9 +36,9 @@ Building is the same as building any other Geode mod, except for Android. If you
 
 ## Credit
 
-ca7x3, Firee, Croozington, Coloride, Cvolton, mat, alk, maki, xTymon - thank you for being awesome, whether it's because you helped me directly, suggested ideas, helped with testing, or if I just found you awesome in general :D
+**mat, alk, and the rest of the Geode team** - thank you for creating Geode and for helping me with the issues I had using it. None of this would've been possible without your awesome efforts, and I really appreciate the work you've put in <3
 
-camila314 - thank you for [UIBuilder](https://github.com/camila314/uibuilder)
+ca7x3, Firee, Croozington, Coloride, Cvolton, maki, xTymon - thank you for being awesome, whether it's because you helped me with development, suggested ideas, helped with testing, or if I just found you awesome in general :D
 
 RobTop - thank you for releasing this awesome game :)
 

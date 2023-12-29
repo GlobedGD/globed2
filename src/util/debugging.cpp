@@ -3,11 +3,34 @@
 #include <util/formatting.hpp>
 
 namespace util::debugging {
-    time::micros Benchmarker::end(std::string id) {
+    time::micros Benchmarker::end(const std::string& id) {
         auto micros = time::as<time::micros>(time::now() - _entries[id]);
         _entries.erase(id);
 
         return micros;
+    }
+
+    std::vector<size_t> DataWatcher::updateLastData(DataWatcher::WatcherEntry& entry) {
+        std::vector<size_t> changedBytes;
+
+        for (size_t off = 0; off < entry.size; off++) {
+            auto rbyte = *(data::byte*)(entry.address + off);
+            if (rbyte != entry.lastData[off]) {
+                changedBytes.push_back(off);
+                entry.lastData[off] = rbyte;
+            }
+        }
+
+        return changedBytes;
+    }
+
+    void DataWatcher::updateAll() {
+        for (auto& [key, value] : _entries) {
+            auto modified = this->updateLastData(value);
+            if (modified.empty()) continue;
+
+            geode::log::debug("[DW] {} modified - {}, hexdump: {}", key, modified, hexDumpAddress(value.address, value.size));
+        }
     }
 
     void PacketLogSummary::print() {

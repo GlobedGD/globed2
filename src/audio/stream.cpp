@@ -7,13 +7,7 @@
 AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
-    // TODO figure it out in 2.2. the size is erroneously calculated as 144 on android.
-#ifdef GLOBED_ANDROID
-    exinfo.cbsize = 140;
-#else
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
-#endif
-
     exinfo.numchannels = 1;
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
     exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;

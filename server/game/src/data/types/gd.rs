@@ -19,6 +19,7 @@ pub struct PlayerIconData {
     pub death_effect: i16,
     pub color1: i16,
     pub color2: i16,
+    pub glow_color: i16,
 }
 
 impl Default for PlayerIconData {
@@ -36,6 +37,7 @@ impl Default for PlayerIconData {
             death_effect: 1,
             color1: 1,
             color2: 3,
+            glow_color: -1, // -1 is glow disabled
         }
     }
 }
@@ -90,6 +92,7 @@ impl PlayerAccountData {
             cube: self.icons.cube,
             color1: self.icons.color1,
             color2: self.icons.color2,
+            glow_color: self.icons.glow_color,
             level_id,
         }
     }
@@ -101,6 +104,7 @@ impl PlayerAccountData {
             cube: self.icons.cube,
             color1: self.icons.color1,
             color2: self.icons.color2,
+            glow_color: self.icons.glow_color,
         }
     }
 }
@@ -114,6 +118,7 @@ pub struct PlayerPreviewAccountData {
     pub cube: i16,
     pub color1: i16,
     pub color2: i16,
+    pub glow_color: i16,
 }
 
 /* PlayerRoomPreviewAccountData - similar to previous one but for rooms, the only difference is that it includes a level ID */
@@ -125,34 +130,8 @@ pub struct PlayerRoomPreviewAccountData {
     pub cube: i16,
     pub color1: i16,
     pub color2: i16,
+    pub glow_color: i16,
     pub level_id: i32,
-}
-
-/* IconType */
-
-#[derive(Debug, Copy, Clone, Encodable, Decodable, StaticSize, DynamicSize)]
-#[dynamic_size(as_static = true)]
-#[repr(u8)]
-pub enum IconType {
-    Unknown = 0,
-    Cube = 1,
-    Ship = 2,
-    Ball = 3,
-    Ufo = 4,
-    Wave = 5,
-    Robot = 6,
-    Spider = 7,
-    Swing = 8,
-    Jetpack = 9,
-}
-
-/* PlayerData (data in a level) */
-
-#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
-#[dynamic_size(as_static = true)]
-pub struct PlayerData {
-    pub percentage: u16,
-    pub attempts: i32,
 }
 
 /* AssociatedPlayerData */

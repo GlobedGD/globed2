@@ -44,7 +44,7 @@ static size_t writeCallback(void* contents, size_t size, size_t nmemb, std::ostr
     return totalSize;
 }
 
-static int progressCallback(GHTTPRequest* request, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
+static int progressCallback(GHTTPRequest* request, double dltotal, double dlnow, double ultotal, double ulnow) {
     // if cancelled, abort the request
     if (request->_cancelled) {
         return 1;
@@ -106,8 +106,8 @@ GHTTPResponse GHTTPClient::performRequest(GHTTPRequestHandle handle) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ss);
 
     // cancellation
-    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progressCallback);
-    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, (void*)handle.handle.get());
+    curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progressCallback);
+    curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, (void*)handle.handle.get());
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
 
     response.resCode = curl_easy_perform(curl);

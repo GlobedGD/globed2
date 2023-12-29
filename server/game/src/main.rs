@@ -253,16 +253,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     debug!("* TPS: {}", gsbd.tps);
     debug!("* No chat users: {}", gsbd.no_chat.len());
     debug!("* Special users: {}", gsbd.special_users.len());
-    debug!("* Token expiry: {}", gsbd.token_expiry);
+    debug!("* Token expiry: {} seconds", gsbd.token_expiry);
     debug!("* Maintenance: {}", if gsbd.maintenance { "yes" } else { "no" });
 
-    debug!("* Token secret key: {}", censor_key(&gsbd.secret_key2, 4));
+    debug!("* Token secret key: '{}'", censor_key(&gsbd.secret_key2, 4));
 
     if standalone {
-        debug!("* Admin key: {}", gsbd.admin_key);
+        debug!("* Admin key: '{}'", gsbd.admin_key);
     } else {
         // print first 4 chars, rest is censored
-        debug!("* Admin key: {}", censor_key(&gsbd.admin_key, 4));
+        debug!("* Admin key: '{}'", censor_key(&gsbd.admin_key, 4));
     }
 
     let socket = match UdpSocket::bind(&startup_config.bind_address).await {

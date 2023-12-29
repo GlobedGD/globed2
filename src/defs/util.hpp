@@ -47,42 +47,79 @@ protected:
 
 #ifdef GLOBED_ANDROID
 
-class _GExceptionStore {
+// TODO none of this works on android !!!!!!!
+
+# include <stack>
+# include <cstring>
+# include <csetjmp>
+
+static inline thread_local std::jmp_buf _globedErrJumpBuf;
+
+struct _JMPBufWrapper {
+    std::jmp_buf buf;
+};
+
+class _JMPBufStack {
 public:
-    static void store_exc(const char* err) {
-        auto len = std::min(strlen(err), BUF_LEN - 1);
-        strncpy(what, err, len);
-        what[len] = '\0';
+    static bool push(std::jmp_buf buf) {
+        _stack.push(_JMPBufWrapper {.buf = { buf[0] }});
+        return true;
+    }
+
+    static _JMPBufWrapper pop() {
+        auto buf = _stack.top();
+        _stack.pop();
+        return buf;
+    }
+
+private:
+    inline static std::stack<_JMPBufWrapper> _stack;
+};
+
+struct _GExceptionWrapper {
+public:
+    static void store(const char* err) {
+        auto len = std::min(std::strlen(err), BUF_LEN - 1);
+        strncpy(whatbuf, err, len);
+        whatbuf[len] = '\0';
         initialized = true;
     }
 
-    static const char* get() {
-        if (!initialized) {
-            return "no error";
-        }
+    static const char* what() {
+        return whatbuf;
+    }
 
-        return what;
+    operator bool() {
+        return true;
     }
 
 private:
     static constexpr size_t BUF_LEN = 512;
-    inline thread_local static char what[BUF_LEN];
-    inline thread_local static bool initialized = false;
+    inline static char whatbuf[BUF_LEN];
+    inline static bool initialized = false;
 };
 
-# define THROW(x) { \
-    auto exc = (x); \
-    ::_GExceptionStore::store_exc(exc.what()); \
-    /* std::rethrow_exception(std::make_exception_ptr(exc)); */ \
-    throw 0; } // throwing 0 instead of throwing or rethrowing exc has a higher chance of working
+class _GExceptionStore {
+public:
+    static void store(const char* err) {
+        exception.store(err);
+    }
 
-# define CATCH catch(...)
-# define CATCH_GET_EXC ::_GExceptionStore::get()
+    static _GExceptionWrapper get() {
+        return exception;
+    }
+
+private:
+    inline thread_local static _GExceptionWrapper exception;
+};
+
+# define try if (setjmp(_globedErrJumpBuf) == 0 && _JMPBufStack::push(_globedErrJumpBuf)) {
+# define catch(evar) ; _JMPBufStack::pop(); } else if (auto evar = _GExceptionStore::get())
+# define throw(exc) { auto _gtexc = (exc); _GExceptionStore::store(_gtexc.what()); std::longjmp(_JMPBufStack::pop().buf, 1); }
 
 #else // GLOBED_ANDROID
 
-# define THROW(x) throw x;
-# define CATCH catch(const std::exception& _caughtException)
-# define CATCH_GET_EXC _caughtException.what()
+# define catch(evar) catch(const std::exception& evar)
+# define throw(x) throw x
 
 #endif // GLOBED_ANDROID

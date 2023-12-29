@@ -39,6 +39,16 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         .pos(25.f, CELL_HEIGHT - 22.f)
         .store(simplePlayer);
 
+    if (data.glowColor == -1) {
+        simplePlayer->m_hasGlowOutline = false;
+        simplePlayer->disableCustomGlowColor();
+    } else {
+        simplePlayer->m_hasGlowOutline = true;
+        simplePlayer->enableCustomGlowColor(gm->colorForIdx(data.glowColor));
+    }
+
+    simplePlayer->updateColors(); // may be redundant
+
     if (this->data.levelId != 0) {
         auto* cbs = CircleButtonSprite::createWithSpriteFrameName("d_skull01_001.png", 1.f, CircleBaseColor::Green, CircleBaseSize::Medium);
         Build<CircleButtonSprite>(cbs)

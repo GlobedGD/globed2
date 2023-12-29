@@ -30,4 +30,7 @@ namespace util::net {
 
     // Check if two sockaddr structures are equal
     bool sameSockaddr(const sockaddr_in& s1, const sockaddr_in& s2);
+
+    // getaddrinfo
+    std::string getaddrinfo(const std::string& hostname);
 }

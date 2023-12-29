@@ -51,13 +51,6 @@ class $modify(MyMenuLayer, MenuLayer) {
         if (NetworkManager::get().handshaken()) {
             util::debugging::PacketLogger::get().getSummary().print();
         }
-
-        // check in 2.2 that this is fine on android
-        try {
-            throw std::runtime_error("oopsie");
-        } catch (std::exception e) {
-            log::debug("caught it! {}", e.what());
-        }
     }
 };
 

@@ -86,14 +86,14 @@ void GlobedSignupPopup::onChallengeCreated(int levelId, const std::string& chtok
         statusMessage->setString("Uploading results..");
         storedAuthcode = authcode;
         storedLevelId = levelId;
-        GameLevelManager::get()->m_commentUploadDelegate = this;
-        GameLevelManager::get()->uploadLevelComment(levelId, authcode + " ## globed verification test, if you see this you can manually delete the comment.", 0);
+        GameLevelManager::sharedState()->m_commentUploadDelegate = this;
+        GameLevelManager::sharedState()->uploadLevelComment(levelId, authcode + " ## globed verification test, if you see this you can manually delete the comment.", 0);
     }
 #endif // GLOBED_MAC
 }
 
 void GlobedSignupPopup::commentUploadFinished(int) {
-    GameLevelManager::get()->m_commentUploadDelegate = nullptr;
+    GameLevelManager::sharedState()->m_commentUploadDelegate = nullptr;
 
     this->runAction(
         CCSequence::create(
@@ -109,7 +109,7 @@ void GlobedSignupPopup::onDelayedChallengeCompleted() {
 }
 
 void GlobedSignupPopup::commentUploadFailed(int, CommentError e) {
-    GameLevelManager::get()->m_commentUploadDelegate = nullptr;
+    GameLevelManager::sharedState()->m_commentUploadDelegate = nullptr;
     this->onFailure(fmt::format("Comment upload failed: <cy>error {}</c>", (int)e));
 }
 
@@ -154,7 +154,7 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
 #ifndef GLOBED_MAC
                 // delete the comment to cleanup
                 if (commentId != "none") {
-                    GameLevelManager::get()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
+                    GameLevelManager::sharedState()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
                 }
 #endif // GLOBED_MAC
             }

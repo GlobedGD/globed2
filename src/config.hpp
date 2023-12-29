@@ -31,7 +31,7 @@
 
 /* platform-specific: Android */
 
-#define GLOBED_FMOD_ANDROID 1
+#define GLOBED_FMOD_ANDROID 0
 #define GLOBED_DRPC_ANDROID 0
 
 

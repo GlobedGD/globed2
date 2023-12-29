@@ -5,8 +5,8 @@ use std::{
 
 use globed_shared::{
     anyhow::{self, anyhow},
-    rand::{self, distributions::Alphanumeric, Rng},
-    IntMap, SpecialUser, ADMIN_KEY_LENGTH,
+    esp::{self, Decodable, Encodable},
+    generate_alphanum_string, Decodable, Encodable, IntMap, SpecialUser, ADMIN_KEY_LENGTH,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{ser::PrettyFormatter, Serializer};
@@ -22,11 +22,7 @@ fn default_web_address() -> String {
 }
 
 fn default_admin_key() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(ADMIN_KEY_LENGTH)
-        .map(char::from)
-        .collect()
+    generate_alphanum_string(ADMIN_KEY_LENGTH)
 }
 
 const fn default_use_gd_api() -> bool {
@@ -83,11 +79,7 @@ const fn default_tps() -> u32 {
 }
 
 fn default_secret_key() -> String {
-    let rand_string: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(32)
-        .map(char::from)
-        .collect();
+    let rand_string = generate_alphanum_string(32);
 
     format!("Insecure-{rand_string}")
 }
@@ -125,7 +117,7 @@ pub enum UserlistMode {
     None,
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Encodable, Decodable, Default, Clone)]
 pub struct GameServerEntry {
     pub id: String,
     pub name: String,

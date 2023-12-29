@@ -33,8 +33,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     // gd hooks
 
-    bool init(GJGameLevel* level) {
-        if (!PlayLayer::init(level)) return false;
+    bool init(GJGameLevel* level, bool p1, bool p2) {
+        if (!PlayLayer::init(level, p1, p2)) return false;
 
         auto& nm = NetworkManager::get();
 
@@ -54,16 +54,16 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         // set the audio device
         try {
             GlobedAudioManager::get().setActiveRecordingDevice(m_fields->settings.globed.audioDevice);
-        } CATCH {
+        } catch(e) {
             // try default device, if we have no mic then just do nothing
             try {
                 GlobedAudioManager::get().setActiveRecordingDevice(0);
-            } CATCH {}
+            } catch(_e) {}
         }
 #endif // GLOBED_VOICE_SUPPORT
 
         // send LevelJoinPacket and RequestPlayerProfilesPacket
-        nm.send(LevelJoinPacket::create(m_level->m_levelID));
+        nm.send(LevelJoinPacket::create(level->m_levelID));
         nm.send(RequestPlayerProfilesPacket::create(0));
 
         // send SyncIconsPacket if our icons have changed since the last time we sent it
@@ -133,7 +133,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             // TODO - this decodes the sound data on the main thread. might be a bad idea, will need to benchmark.
             try {
                 VoicePlaybackManager::get().playFrameStreamed(packet->sender, packet->frame);
-            } catch (const std::exception& e) {
+            } catch(e) {
                 ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + e.what());
             }
 #endif // GLOBED_VOICE_SUPPORT
@@ -217,14 +217,14 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     PlayerData gatherPlayerData() {
-        return PlayerData(m_level->m_normalPercent.value(), m_level->m_attempts);
+        return PlayerData(m_level->m_normalPercent, m_level->m_attempts);
     }
 
     void handlePlayerJoin(int playerId) {
 #if GLOBED_VOICE_SUPPORT
         try {
             VoicePlaybackManager::get().prepareStream(playerId);
-        } catch (const std::exception& e) {
+        } catch (e) {
             ErrorQueues::get().error(std::string("Failed to prepare audio stream: ") + e.what());
         }
 #endif // GLOBED_VOICE_SUPPORT

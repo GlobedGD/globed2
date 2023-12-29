@@ -1,8 +1,6 @@
 #pragma once
 
-extern "C" {
-#include <curl/curl.h>
-}
+#include <Geode/cocos/platform/IncludeCurl.h>
 
 struct GHTTPResponse {
     // curlcode indicating the result, is always set

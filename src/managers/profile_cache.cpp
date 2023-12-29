@@ -29,11 +29,12 @@ void ProfileCacheManager::setOwnDataAuto() {
         gm->m_playerDart,
         gm->m_playerRobot,
         gm->m_playerSpider,
-        0, // todo swing
-        0, // TODO jetpack
+        gm->m_playerSwing,
+        gm->m_playerJetpack,
         gm->m_playerDeathEffect,
         gm->m_playerColor,
-        gm->m_playerColor2
+        gm->m_playerColor2,
+        gm->m_playerGlowColor // TODO figure out the bool in gamemanager responsible for setting if glow is enabled or no, use -1 here if not
     );
 
     this->setOwnData(data);

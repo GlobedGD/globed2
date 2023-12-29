@@ -9,16 +9,47 @@
 namespace util::debugging {
     // To use the benchmarker, create a `Benchmarker` object, call start(id), then run all the code you want to benchmark, and call end(id).
     // It will return the number of microseconds the code took to run.
-    class Benchmarker {
+    class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
     public:
-        Benchmarker() {}
-        inline void start(std::string id) {
+        inline void start(const std::string& id) {
             _entries[id] = time::now();
         }
 
-        time::micros end(std::string id);
+        time::micros end(const std::string& id);
     private:
         std::unordered_map<std::string, time::time_point> _entries;
+    };
+
+    class DataWatcher : GLOBED_SINGLETON(DataWatcher) {
+    public:
+        struct WatcherEntry {
+            uintptr_t address;
+            size_t size;
+            data::bytevector lastData;
+        };
+
+        inline void start(const std::string& id, uintptr_t address, size_t size) {
+            _entries[id] = WatcherEntry {
+                .address = address,
+                .size = size,
+                .lastData = data::bytevector(size)
+            };
+
+            this->updateLastData(_entries[id]);
+        }
+
+        inline void start(const std::string& id, void* address, size_t size) {
+            this->start(id, (uintptr_t)address, size);
+        }
+
+        // returns the indexes of bytes that were modified since last read
+        std::vector<size_t> updateLastData(WatcherEntry& entry);
+
+        void updateAll();
+
+    private:
+
+        std::unordered_map<std::string, WatcherEntry> _entries;
     };
 
     struct PacketLog {

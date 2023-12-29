@@ -37,6 +37,8 @@ public:
     ByteBuffer(const util::data::bytevector& data);
     ByteBuffer(const util::data::byte* data, size_t length);
 
+    ByteBuffer(util::data::bytevector&& data);
+
     // Read a primitive type T. It is highly advised not to use this directly, as it performs no endianness conversions.
     template<typename T>
     T read();

@@ -460,12 +460,14 @@ dynamic_size_calc_impl!(RemainderBytes, self, self.data.len());
 
 impl Deref for RemainderBytes {
     type Target = [u8];
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.data
     }
 }
 
 impl From<Vec<u8>> for RemainderBytes {
+    #[inline]
     fn from(value: Vec<u8>) -> Self {
         Self {
             data: value.into_boxed_slice(),
@@ -474,6 +476,7 @@ impl From<Vec<u8>> for RemainderBytes {
 }
 
 impl From<Box<[u8]>> for RemainderBytes {
+    #[inline]
     fn from(value: Box<[u8]>) -> Self {
         Self { data: value }
     }

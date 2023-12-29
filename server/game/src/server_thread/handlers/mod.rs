@@ -63,7 +63,7 @@ macro_rules! gs_needauth {
     }};
 }
 
-pub const MAX_ALLOCA_SIZE: usize = 100_000;
+pub const MAX_ALLOCA_SIZE: usize = 65536;
 
 macro_rules! gs_alloca_check_size {
     ($size:expr) => {
@@ -72,7 +72,7 @@ macro_rules! gs_alloca_check_size {
             // panic in debug, return an error in release mode
             if cfg!(debug_assertions) {
                 panic!(
-                    "attempted to allocate {} bytes on the stack - this is above the limit of {} and indicates a logic error.",
+                    "attempted to allocate {} bytes on the stack - this is above the limit of {} and indicates a likely logic error.",
                     size,
                     crate::server_thread::handlers::MAX_ALLOCA_SIZE
                 );

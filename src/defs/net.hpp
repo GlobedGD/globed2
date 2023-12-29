@@ -25,8 +25,9 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <unistd.h>
-# include <cerrno>
 # include <arpa/inet.h>
 # include <poll.h>
+# include <netdb.h> // struct addrinfo
+# include <cerrno>
 
 #endif
