@@ -13,6 +13,21 @@
 
 using namespace geode::prelude;
 
+
+// globed member checks
+
+#if defined(GLOBED_ANDROID) && GLOBED_ANDROID
+static_assert(offsetof(GJBaseGameLayer, m_level) == 0x5f0);
+static_assert(offsetof(GJBaseGameLayer, m_player1) == 0x884);
+static_assert(offsetof(GJBaseGameLayer, m_player2) == 0x888);
+#else
+static_assert(offsetof(GJBaseGameLayer, m_level) == 0x5d8);
+static_assert(offsetof(GJBaseGameLayer, m_gameState) == 0x148);
+static_assert(offsetof(GJBaseGameLayer, m_player1) == 0x870);
+static_assert(offsetof(GJBaseGameLayer, m_player2) == 0x874);
+static_assert(offsetof(GJBaseGameLayer, m_objectLayer) == 0x9b0);
+#endif
+
 void setupLibsodium();
 void setupErrorCheckNode();
 void setupCustomKeybinds();

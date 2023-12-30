@@ -254,8 +254,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         // TODO
         return SpecificIconData {
             .iconType = PlayerIconType::Cube,
-            .position = {10.f, 10.f},
-            .rotation = 0.f
+            .position = player->getPosition(),
+            .rotation = player->getRotation(),
+            .isVisible = player->isVisible(),
         };
     }
 
@@ -263,8 +264,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         return PlayerData(
             m_level->m_normalPercent,
             m_level->m_attempts,
-            this->gatherSpecificIconData(nullptr),
-            this->gatherSpecificIconData(nullptr)
+            this->gatherSpecificIconData(m_player1),
+            this->gatherSpecificIconData(m_player2)
         );
     }
 
@@ -279,12 +280,13 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
 
         auto* rp = RemotePlayer::create();
+        rp->setZOrder(10); // TODO temp
+
         auto nodeid = fmt::format("remote-player-{}", playerId);
 
         rp->setID(Mod::get()->expandSpriteName(nodeid.c_str()));
-        // TODO `this` should be m_objectLayer in GJBGL
-        this->addChild(rp);
 
+        m_objectLayer->addChild(rp);
         m_fields->players.emplace(playerId, rp);
 
         log::debug("Player joined: {}", playerId);
@@ -352,7 +354,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         float updpInterval = 0.25f * timescale;
 
         sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, pdInterval, false);
-        sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateProfiles), this, pdInterval, false);
+        sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateProfiles), this, updpInterval, false);
     }
 
     // TODO remove if impostor playlayer gets fixed
