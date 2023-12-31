@@ -21,85 +21,88 @@ void GHTTPRequest::callcb(const GHTTPResponse& response) const {
     callback(response);
 }
 
-GHTTPRequest::GHTTPRequest(GHTTPRequestType type) : rType(type) {}
+GHTTPRequest::GHTTPRequest(GHTTPRequestType type) {
+    reqData.reqType = type;
+}
+
 GHTTPRequest::GHTTPRequest() {}
 
 GHTTPRequest GHTTPRequest::get() {
-    return GHTTPRequest(GHTTPRequestType::GET);
+    return GHTTPRequest(GHTTPRequestType::Get);
 }
 
 GHTTPRequest GHTTPRequest::get(const std::string& url) {
-    auto req = GHTTPRequest(GHTTPRequestType::GET);
-    req.rUrl = url;
+    auto req = GHTTPRequest(GHTTPRequestType::Get);
+    req.reqData.url = url;
     return req;
 }
 
 GHTTPRequest GHTTPRequest::post() {
-    return GHTTPRequest(GHTTPRequestType::POST);
+    return GHTTPRequest(GHTTPRequestType::Post);
 }
 
 GHTTPRequest GHTTPRequest::post(const std::string& url) {
-    auto req = GHTTPRequest(GHTTPRequestType::POST);
-    req.rUrl = url;
+    auto req = GHTTPRequest(GHTTPRequestType::Post);
+    req.reqData.url = url;
     return req;
 }
 
 GHTTPRequest GHTTPRequest::post(const std::string& url, const std::string& data) {
-    auto req = GHTTPRequest(GHTTPRequestType::POST);
-    req.rUrl = url;
-    req.rData = data;
+    auto req = GHTTPRequest(GHTTPRequestType::Post);
+    req.reqData.url = url;
+    req.reqData.payload = data;
     return req;
 }
 
 GHTTPRequest GHTTPRequest::put() {
-    return GHTTPRequest(GHTTPRequestType::PUT);
+    return GHTTPRequest(GHTTPRequestType::Put);
 }
 
 GHTTPRequest GHTTPRequest::put(const std::string& url) {
-    auto req = GHTTPRequest(GHTTPRequestType::PUT);
-    req.rUrl = url;
+    auto req = GHTTPRequest(GHTTPRequestType::Put);
+    req.reqData.url = url;
     return req;
 }
 
 GHTTPRequest GHTTPRequest::put(const std::string& url, const std::string& data) {
-    auto req = GHTTPRequest(GHTTPRequestType::PUT);
-    req.rUrl = url;
-    req.rData = data;
+    auto req = GHTTPRequest(GHTTPRequestType::Put);
+    req.reqData.url = url;
+    req.reqData.payload = data;
     return req;
 }
 
 GHTTPRequest GHTTPRequest::delete_() {
-    return GHTTPRequest(GHTTPRequestType::DELETE_);
+    return GHTTPRequest(GHTTPRequestType::Delete);
 }
 
 GHTTPRequest GHTTPRequest::delete_(const std::string& url) {
-    auto req = GHTTPRequest(GHTTPRequestType::DELETE_);
-    req.rUrl = url;
+    auto req = GHTTPRequest(GHTTPRequestType::Delete);
+    req.reqData.url = url;
     return req;
 }
 
 GHTTPRequest& GHTTPRequest::url(const std::string& addr) {
-    rUrl = addr;
+    reqData.url = addr;
     return *this;
 }
 
 GHTTPRequest& GHTTPRequest::userAgent(const std::string& agent) {
-    rUserAgent = agent;
+    reqData.userAgent = agent;
     return *this;
 }
 
 GHTTPRequest& GHTTPRequest::followRedirects(bool follow) {
-    rFollowRedirects = follow;
+    reqData.followRedirects = follow;
     return *this;
 }
 
 GHTTPRequest& GHTTPRequest::data(const std::string& dataStr) {
-    rData = dataStr;
+    reqData.payload = dataStr;
     return *this;
 }
 
 GHTTPRequest& GHTTPRequest::timeout(uint32_t timeoutMs) {
-    rTimeout = timeoutMs;
+    reqData.timeout = timeoutMs;
     return *this;
 }
 
@@ -110,16 +113,16 @@ GHTTPRequest& GHTTPRequest::contentType(const std::string& ctype) {
 GHTTPRequest& GHTTPRequest::contentType(GHTTPContentType ctype) {
     const char* headerValue;
     switch (ctype) {
-    case GHTTPContentType::FORM_URLENCODED:
+    case GHTTPContentType::FormUrlencoded:
         headerValue = "application/x-www-form-urlencoded";
         break;
-    case GHTTPContentType::JSON:
+    case GHTTPContentType::Json:
         headerValue = "application/json";
         break;
-    case GHTTPContentType::TEXT:
+    case GHTTPContentType::Text:
         headerValue = "text/plain";
         break;
-    case GHTTPContentType::DATA:
+    case GHTTPContentType::Data:
         headerValue = "application/octet-stream";
         break;
     }
@@ -132,7 +135,7 @@ GHTTPRequest& GHTTPRequest::header(const std::string& key, const std::string& va
 }
 
 GHTTPRequest& GHTTPRequest::header(const std::string& header) {
-    rHeaders.push_back(header);
+    reqData.headers.push_back(header);
     return *this;
 }
 

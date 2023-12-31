@@ -1,5 +1,6 @@
 #pragma once
 #include <defs.hpp>
+#include <fmt/ranges.h>
 
 #include <util/time.hpp>
 

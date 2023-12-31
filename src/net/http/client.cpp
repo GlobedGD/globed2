@@ -61,30 +61,30 @@ GHTTPResponse GHTTPClient::performRequest(GHTTPRequestHandle handle) {
     // clear leftover data from previous request
     curl_easy_reset(curl);
 
-    switch (req.rType) {
-        case GHTTPRequestType::GET:
+    switch (req.reqData.reqType) {
+        case GHTTPRequestType::Get:
             break;
-        case GHTTPRequestType::POST:
+        case GHTTPRequestType::Post:
             curl_easy_setopt(curl, CURLOPT_POST, 1L);
             break;
-        case GHTTPRequestType::PUT:
+        case GHTTPRequestType::Put:
             curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
             break;
-        case GHTTPRequestType::DELETE_:
+        case GHTTPRequestType::Delete:
             curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
             break;
     }
 
     // post fields
-    if (!req.rData.empty()) {
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.rData.c_str());
+    if (!req.reqData.payload.empty()) {
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.reqData.payload.c_str());
     }
 
     // generic stuff
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, req.rUserAgent.c_str());
-    curl_easy_setopt(curl, CURLOPT_URL, req.rUrl.c_str());
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, req.rFollowRedirects);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, (long)req.rTimeout);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, req.reqData.userAgent.c_str());
+    curl_easy_setopt(curl, CURLOPT_URL, req.reqData.url.c_str());
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, req.reqData.followRedirects);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, (long)req.reqData.timeout);
 
     // security is for nerds
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
@@ -92,8 +92,8 @@ GHTTPResponse GHTTPClient::performRequest(GHTTPRequestHandle handle) {
 
     // http headers
     struct curl_slist* headerList = nullptr;
-    if (!req.rHeaders.empty()) {
-        for (const auto& header: req.rHeaders) {
+    if (!req.reqData.headers.empty()) {
+        for (const auto& header: req.reqData.headers) {
             headerList = curl_slist_append(headerList, header.c_str());
         }
 

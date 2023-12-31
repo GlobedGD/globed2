@@ -61,11 +61,11 @@ void AudioDecoder::remakeDecoder() {
     // if we are reinitializing, free the previous decoder
     if (decoder) {
         opus_decoder_destroy(decoder);
+        decoder = nullptr;
     }
 
     // sampleRate 0 is valid and considered as a cleanup of the decoder
     if (sampleRate == 0) {
-        decoder = nullptr;
         return;
     }
 

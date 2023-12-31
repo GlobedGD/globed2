@@ -119,7 +119,7 @@ namespace util::debugging {
     }
 
     [[noreturn]] void suicide(const std::source_location loc) {
-        geode::log::error("suicide called at " + sourceLocation(loc) + ", terminating.");
+        geode::log::error("suicide called at {}, terminating.", sourceLocation(loc));
 		geode::log::error("If you see this, something very, very bad happened.");
         GLOBED_SUICIDE
     }

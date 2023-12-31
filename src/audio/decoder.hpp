@@ -61,7 +61,7 @@ private:
     void resetState();
 
 protected:
-    OpusDecoder* decoder;
+    OpusDecoder* decoder = nullptr;
 
     int _res;
     int sampleRate, frameSize, channels;

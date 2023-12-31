@@ -28,12 +28,20 @@ struct GHTTPResponse {
 };
 
 enum class GHTTPRequestType {
-    GET, POST, PUT, DELETE_
+    Get, Post, Put, Delete
 };
 
 enum class GHTTPContentType {
-    FORM_URLENCODED,
-    DATA,
-    JSON,
-    TEXT,
+    FormUrlencoded,
+    Data,
+    Json,
+    Text
+};
+
+struct GHTTPRequestData {
+    GHTTPRequestType reqType;
+    std::string url, userAgent = "GHTTPClient/1.0", payload;
+    uint32_t timeout = 0;
+    std::vector<std::string> headers;
+    bool followRedirects = true;
 };

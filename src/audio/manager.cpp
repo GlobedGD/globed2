@@ -380,7 +380,7 @@ FMOD::System* GlobedAudioManager::getSystem() {
 }
 
 const char* GlobedAudioManager::fmodErrorString(FMOD_RESULT result) {
-    const char* values[] = {
+    static constexpr const char* values[] = {
         "No error",
         "Tried to call a function on a data type that does not allow this type of functionality",
         "Error trying to allocate a Channel",

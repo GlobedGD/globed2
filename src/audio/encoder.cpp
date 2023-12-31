@@ -71,11 +71,11 @@ void AudioEncoder::remakeEncoder() {
     // if we are reinitializing, free the previous encoder
     if (encoder) {
         opus_encoder_destroy(encoder);
+        encoder = nullptr;
     }
 
     // sampleRate 0 is valid and considered as a cleanup of the encoder
     if (sampleRate == 0) {
-        encoder = nullptr;
         return;
     }
 

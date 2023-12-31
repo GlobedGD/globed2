@@ -86,7 +86,7 @@ private:
     void setVariableBitrate(bool variablebr = true);
 
 protected:
-    OpusEncoder* encoder;
+    OpusEncoder* encoder = nullptr;
 
     int _res;
     int sampleRate, frameSize, channels;

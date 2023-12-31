@@ -3,6 +3,8 @@
 #include "platform.hpp"
 #include <stdexcept>
 
+#define GLOBED_MBO(src, type, offset) *(type*)((char*)src + offset)
+
 // singleton classes
 
 // there was no reason to do this other than for me to learn crtp

@@ -34,7 +34,7 @@ void ProfileCacheManager::setOwnDataAuto() {
         gm->m_playerDeathEffect,
         gm->m_playerColor,
         gm->m_playerColor2,
-        gm->m_playerGlowColor // TODO figure out the bool in gamemanager responsible for setting if glow is enabled or no, use -1 here if not
+        gm->getPlayerGlow() ? gm->m_playerGlowColor : -1
     );
 
     this->setOwnData(data);

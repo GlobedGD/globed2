@@ -45,7 +45,7 @@ void ErrorCheckNode::updateErrors(float) {
 
     // if we are in PlayLayer, don't show errors unless paused
 
-    auto playlayer = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto playlayer = static_cast<GlobedPlayLayer*>(GameManager::get()->m_gameLayer);
     if (playlayer != nullptr && !playlayer->isPaused()) {
         return;
     }

@@ -27,6 +27,7 @@ bool VisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 void VisualPlayer::updateIcons(const PlayerIconData& icons) {
     auto* gm = GameManager::get();
 
+    this->updateIconType(playerIconType);
     playerIcon->setColor(gm->colorForIdx(icons.color1));
     playerIcon->setSecondColor(gm->colorForIdx(icons.color2));
 
@@ -38,7 +39,7 @@ void VisualPlayer::updateIcons(const PlayerIconData& icons) {
         playerIcon->disableCustomGlowColor();
     }
 
-    playerIcon->updateColors();
+    // playerIcon->updateColors();
 }
 
 void VisualPlayer::updateData(const SpecificIconData& data) {

@@ -14,6 +14,7 @@
 #include <data/packets/all.hpp>
 #include <ui/game/player/remote_player.hpp>
 #include <util/math.hpp>
+#include <util/debugging.hpp>
 
 using namespace geode::prelude;
 
@@ -63,10 +64,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         }
 #endif // GLOBED_VOICE_SUPPORT
 
-        // send LevelJoinPacket and RequestPlayerProfilesPacket
-        nm.send(LevelJoinPacket::create(level->m_levelID));
-        nm.send(RequestPlayerProfilesPacket::create(0));
-
         // send SyncIconsPacket if our icons have changed since the last time we sent it
         auto& pcm = ProfileCacheManager::get();
         pcm.setOwnDataAuto();
@@ -75,7 +72,11 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             nm.send(SyncIconsPacket::create(pcm.getOwnData()));
         }
 
-        this->setupEventListeners();
+        // send LevelJoinPacket and RequestPlayerProfilesPacket
+        nm.send(LevelJoinPacket::create(level->m_levelID));
+        nm.send(RequestPlayerProfilesPacket::create(0));
+
+        this->setupPacketListeners();
         this->setupCustomKeybinds();
 
         this->rescheduleSelectors();
@@ -109,7 +110,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     /* setup stuff to make init() cleaner */
 
-    void setupEventListeners() {
+    void setupPacketListeners() {
         auto& nm = NetworkManager::get();
 
         nm.addListener<PlayerProfilesPacket>([](PlayerProfilesPacket* packet) {
@@ -120,7 +121,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         });
 
         nm.addListener<LevelDataPacket>([this](LevelDataPacket* packet){
-            log::debug("Recv level data, {} players", packet->players.size());
             for (const auto& player : packet->players) {
                 if (!this->m_fields->players.contains(player.accountId)) {
                     // new player joined
@@ -210,6 +210,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         if (!this->isCurrentPlayLayer()) return;
         if (!this->accountForSpeedhack(0, 1.0f / m_fields->configuredTps, 0.8f)) return;
 
+
         m_fields->totalSentPackets++;
         // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
         if (m_fields->players.empty() && m_fields->totalSentPackets % 30 != 15) return;
@@ -252,9 +253,18 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     SpecificIconData gatherSpecificIconData(PlayerObject* player) {
         // TODO
+        PlayerIconType iconType = PlayerIconType::Cube;
+        if (player->m_isShip) iconType = PlayerIconType::Ship;
+        else if (player->m_isBird) iconType = PlayerIconType::Ufo;
+        else if (player->m_isBall) iconType = PlayerIconType::Ball;
+        else if (player->m_isDart) iconType = PlayerIconType::Wave;
+        else if (player->m_isRobot) iconType = PlayerIconType::Robot;
+        else if (player->m_isSpider) iconType = PlayerIconType::Spider;
+        else if (player->m_isSwing) iconType = PlayerIconType::Swing;
+
         return SpecificIconData {
-            .iconType = PlayerIconType::Cube,
-            .position = player->getPosition(),
+            .iconType = iconType,
+            .position = player->m_position, // TODO maybe use getPosition ?
             .rotation = player->getRotation(),
             .isVisible = player->isVisible(),
         };

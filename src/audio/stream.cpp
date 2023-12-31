@@ -65,6 +65,10 @@ AudioStream::~AudioStream() {
 }
 
 void AudioStream::start() {
+    if (this->channel) {
+        return;
+    }
+
     this->channel = GlobedAudioManager::get().playSound(sound);
 }
 

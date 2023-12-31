@@ -72,11 +72,7 @@ protected:
     friend class GHTTPRequestHandle;
 
     CallbackFunc callback;
-    GHTTPRequestType rType;
-    std::string rUrl, rUserAgent = "GHTTPClient/1.0", rData;
-    uint32_t rTimeout = 0;
-    std::vector<std::string> rHeaders;
-    bool rFollowRedirects = true;
+    GHTTPRequestData reqData;
     util::sync::AtomicBool _discard = false;
 
     GHTTPRequest(GHTTPRequestType type);

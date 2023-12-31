@@ -52,7 +52,7 @@ void RoomPopup::onLoaded() {
         .collect();
 
     auto& rm = RoomManager::get();
-    this->setTitle(rm.isInGlobal() ? "Global room" : fmt::format("Room {}", rm.roomId));
+    this->setTitle(rm.isInGlobal() ? "Global room" : fmt::format("Room {}", rm.roomId.load()));
 }
 
 void RoomPopup::removeLoadingCircle() {

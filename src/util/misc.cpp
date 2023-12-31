@@ -12,7 +12,7 @@ namespace util::misc {
         case IconType::Wave: return PlayerIconType::Wave;
         case IconType::Robot: return PlayerIconType::Robot;
         case IconType::Spider: return PlayerIconType::Spider;
-        // TODO swing is not in geode enum
+        case IconType::Swing: return PlayerIconType::Swing;
         default: return PlayerIconType::Cube;
         }
     }
@@ -27,7 +27,7 @@ namespace util::misc {
         case PlayerIconType::Wave: return IconType::Wave;
         case PlayerIconType::Robot: return IconType::Robot;
         case PlayerIconType::Spider: return IconType::Spider;
-        // TODO swing is not in geode enum
+        case PlayerIconType::Swing: return IconType::Swing;
         default: return IconType::Cube;
         }
     }
