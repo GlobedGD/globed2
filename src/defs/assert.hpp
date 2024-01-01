@@ -44,13 +44,13 @@
 # define GLOBED_REQUIRE(condition,message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
-        geode::log::error(std::string("Condition failed: ") + ev_msg); \
+        geode::log::error("Condition failed: {}", ev_msg); \
         throw(std::runtime_error(std::string(ev_msg))); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
-        geode::log::error(std::string("Condition failed: ") + ev_msg); \
+        geode::log::error("Condition failed: {}", ev_msg); \
         GLOBED_SUICIDE; \
     }
 #endif

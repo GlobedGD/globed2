@@ -14,13 +14,13 @@ namespace util::net {
     int lastErrorCode();
 
     // Grabs the error code from `lastErrorCode` and formats to a string
-    std::string lastErrorString();
+    std::string lastErrorString(bool gai = false);
 
     // Formats an error code to a string
-    std::string lastErrorString(int code);
+    std::string lastErrorString(int code, bool gai = false);
 
     // Throws an exception with the message being the value from `lastErrorString()`
-    [[noreturn]] void throwLastError();
+    [[noreturn]] void throwLastError(bool gai = false);
 
     // Returns the user agent for use in web requests
     std::string webUserAgent();

@@ -25,7 +25,7 @@ void VoicePlaybackManager::prepareStream(int playerId) {
 
     auto stream = std::make_unique<AudioStream>(std::move(decoder));
     stream->start();
-    streams.insert(std::make_pair(playerId, std::move(stream)));
+    streams.emplace(playerId, std::move(stream));
 }
 
 void VoicePlaybackManager::removeStream(int playerId) {

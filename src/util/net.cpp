@@ -25,11 +25,11 @@ namespace util::net {
 #endif
     }
 
-    std::string lastErrorString() {
-        return lastErrorString(lastErrorCode());
+    std::string lastErrorString(bool gai) {
+        return lastErrorString(lastErrorCode(), gai);
     }
 
-    std::string lastErrorString(int code) {
+    std::string lastErrorString(int code, bool gai) {
 #ifdef GLOBED_WIN32
         char *s = nullptr;
         if (FormatMessageA(
@@ -48,12 +48,13 @@ namespace util::net {
         LocalFree(s);
         return formatted;
 #else
+        if (gai) return fmt::format("[Unix gai error {}]: {}", code, gai_strerror(code));
         return fmt::format("[Unix error {}]: {}", code, strerror(code));
 #endif
     }
 
-    [[noreturn]] void throwLastError() {
-        auto message = lastErrorString();
+    [[noreturn]] void throwLastError(bool gai) {
+        auto message = lastErrorString(gai);
         geode::log::error("Throwing network exception: {}", message);
         throw(std::runtime_error(std::string("Network error: ") + message));
     }
@@ -104,7 +105,7 @@ namespace util::net {
         struct addrinfo* result;
 
         if (0 != ::getaddrinfo(hostname.c_str(), nullptr, &hints, &result)) {
-            util::net::throwLastError();
+            util::net::throwLastError(true);
         }
 
         GLOBED_REQUIRE(result->ai_family == AF_INET, "getaddrinfo returned invalid address family")

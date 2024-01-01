@@ -13,7 +13,7 @@ if (ENABLE_DEBUG OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(GEODE_DEBUG=1)
 else()
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 file(GLOB_RECURSE SOURCES
