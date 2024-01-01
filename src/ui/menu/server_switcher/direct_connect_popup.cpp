@@ -8,7 +8,6 @@
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
-#include <util/net.hpp>
 
 using namespace geode::prelude;
 
@@ -40,7 +39,8 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             // TODO inputnode is broken rn
             std::string addr = this->addressNode->getString();
             // std::string addr = "192.168.0.100:41001";
-            log::debug("addr: {}, gai: {}", addr, util::net::getaddrinfo(addr));
+
+            log::debug("addr: {}", addr);
 
             if (addr.empty() || !std::regex_match(addr, pattern)) {
                 FLAlertLayer::create("Error", "Invalid address was passed. It must be an IPv4 address or a domain name with an optional port at the end (like <cy>127.0.0.1:41001</c> or <cy>globed.example.com:41001</c>)", "Ok")->show();

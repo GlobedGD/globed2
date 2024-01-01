@@ -54,6 +54,15 @@
 # error "Unknown architecture"
 #endif
 
+/* define GLOBED_IS_ANDROID32 and GLOBED_IS_ANDROID64 */
+#ifdef GLOBED_ANDROID
+# ifdef GLOBED_ARM32
+#  define GLOBED_ANDROID32 1
+# else
+#  define GLOBED_ANDROID64 1
+# endif
+#endif
+
 #define GLOBED_PLATFORM_STRING GLOBED_PLATFORM_STRING_PLATFORM " " GLOBED_PLATFORM_STRING_ARCH
 
 /* platform-specific:

@@ -112,7 +112,7 @@ void ServerListCell::requestTokenAndConnect() {
     std::string authcode;
     try {
         authcode = am.generateAuthCode();
-    } catch(e) {
+    } catch(const std::exception& e) {
         // invalid authkey? clear it so the user can relog. happens if user changes their password
         ErrorQueues::get().error(fmt::format(
             "Failed to generate authcode! Please try to login and connect again.\n\nReason for the error: <cy>{}</c>",

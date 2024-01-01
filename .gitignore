@@ -55,6 +55,8 @@
 build.sh
 build-android.sh
 build-android/
+build-armv8.sh
+build-armv8/
 
 mod-w.json
 mod-a.json

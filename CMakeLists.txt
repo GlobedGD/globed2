@@ -13,7 +13,7 @@ if (ENABLE_DEBUG OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(GEODE_DEBUG=1)
 else()
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
-#    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 file(GLOB_RECURSE SOURCES
@@ -60,7 +60,11 @@ target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
 
 # Android - link to fmod and libcurl
 if (ANDROID)
-    target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod.so $ENV{GEODE_SDK}/loader/include/link/android32/libcurl.a) # TODO replace with the proper fmod, and armv8 too
+    if (CMAKE_SIZE_OF_VOID_P EQUAL 4)
+        target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod32.so $ENV{GEODE_SDK}/loader/include/link/android32/libcurl.a) # TODO replace with the proper fmod
+    else()
+        target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod64.so $ENV{GEODE_SDK}/loader/include/link/android64/libcurl.a) # TODO replace with the proper fmod
+    endif()
 endif()
 
 # Windows - link to libcurl

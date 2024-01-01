@@ -98,7 +98,7 @@ NetworkManager::~NetworkManager() {
         log::debug("disconnecting from the server..");
         try {
             this->disconnect(false);
-        } catch(e) {
+        } catch(const std::exception& e) {
             log::warn("error trying to disconnect: {}", e.what());
         }
     }
@@ -146,7 +146,7 @@ void NetworkManager::connectWithView(const GameServer& gsview) {
         if (this->connect(gsview.address.ip, gsview.address.port)) {
             GameServerManager::get().setActive(gsview.id);
         }
-    } catch(e) {
+    } catch(const std::exception& e) {
         this->disconnect(true);
         ErrorQueues::get().error(std::string("Connection failed: ") + e.what());
     }
@@ -159,7 +159,7 @@ void NetworkManager::connectStandalone() {
         if (this->connect(server.address.ip, server.address.port, true)) {
             GameServerManager::get().setActive(GameServerManager::STANDALONE_ID);
         }
-    } catch (e) {
+    } catch (const std::exception& e) {
         this->disconnect(true);
         ErrorQueues::get().error(std::string("Connection failed: ") + e.what());
     }
@@ -229,7 +229,7 @@ void NetworkManager::threadMainFunc() {
                         try {
                             auto pingId = sm.startPing(serverId);
                             gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
-                        } catch (e) {
+                        } catch (const std::exception& e) {
                             ErrorQueues::get().warn(e.what());
                         }
                     }
@@ -242,7 +242,7 @@ void NetworkManager::threadMainFunc() {
         for (auto packet : messages) {
             try {
                 gameSocket.sendPacket(packet);
-            } catch (e) {
+            } catch (const std::exception& e) {
                 ErrorQueues::get().error(e.what());
             }
         }
@@ -260,7 +260,7 @@ void NetworkManager::threadRecvFunc() {
 
         try {
             packet = gameSocket.recvPacket();
-        } catch (e) {
+        } catch (const std::exception& e) {
             ErrorQueues::get().debugWarn(fmt::format("failed to receive a packet: {}", e.what()));
             continue;
         }
@@ -329,7 +329,7 @@ void NetworkManager::maybeDisconnectIfDead() {
         ErrorQueues::get().error("The server you were connected to is not responding to any requests. <cy>You have been disconnected.</c>");
         try {
             this->disconnect();
-        } catch (e) {
+        } catch (const std::exception& e) {
             log::warn("failed to disconnect from a dead server: {}", e.what());
         }
     }
