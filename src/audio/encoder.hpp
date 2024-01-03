@@ -47,8 +47,29 @@ public:
     AudioEncoder(const AudioEncoder&) = delete;
     AudioEncoder& operator=(const AudioEncoder&) = delete;
 
-    AudioEncoder(AudioEncoder&&) = default;
-    AudioEncoder& operator=(AudioEncoder&&) = default;
+    AudioEncoder(AudioEncoder&& other) noexcept {
+        encoder = other.encoder;
+        other.encoder = nullptr;
+
+        channels = other.channels;
+        sampleRate = other.sampleRate;
+        frameSize = other.frameSize;
+    }
+
+    AudioEncoder& operator=(AudioEncoder&& other) {
+        if (this != &other) {
+            opus_encoder_destroy(this->encoder);
+
+            this->encoder = other.encoder;
+            other.encoder = nullptr;
+
+            channels = other.channels;
+            sampleRate = other.sampleRate;
+            frameSize = other.frameSize;
+        }
+
+        return *this;
+    }
 
     // Encode the given PCM samples with Opus. The amount of samples passed must be equal to `frameSize` passed in the constructor.
     // After you no longer need the encoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioEncoder::freeData(data)`

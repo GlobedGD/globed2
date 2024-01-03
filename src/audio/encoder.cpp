@@ -14,7 +14,6 @@ AudioEncoder::AudioEncoder(int sampleRate, int frameSize, int channels) {
 AudioEncoder::~AudioEncoder() {
     if (encoder) {
         opus_encoder_destroy(encoder);
-        encoder = nullptr;
     }
 }
 

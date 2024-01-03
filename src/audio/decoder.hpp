@@ -31,8 +31,29 @@ public:
     AudioDecoder(const AudioDecoder&) = delete;
     AudioDecoder& operator=(const AudioDecoder&) = delete;
 
-    AudioDecoder(AudioDecoder&&) = default;
-    AudioDecoder& operator=(AudioDecoder&&) = default;
+    AudioDecoder(AudioDecoder&& other) noexcept {
+        decoder = other.decoder;
+        other.decoder = nullptr;
+
+        channels = other.channels;
+        sampleRate = other.sampleRate;
+        frameSize = other.frameSize;
+    }
+
+    AudioDecoder& operator=(AudioDecoder&& other) {
+        if (this != &other) {
+            opus_decoder_destroy(this->decoder);
+
+            this->decoder = other.decoder;
+            other.decoder = nullptr;
+
+            channels = other.channels;
+            sampleRate = other.sampleRate;
+            frameSize = other.frameSize;
+        }
+
+        return *this;
+    }
 
     // Decodes the given Opus data into PCM float samples. `length` must be the size of the input data in bytes.
     // After you no longer need the decoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioDecoder::freeData(data)`

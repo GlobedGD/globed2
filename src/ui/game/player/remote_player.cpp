@@ -36,9 +36,10 @@ const PlayerAccountData& RemotePlayer::getAccountData() const {
     return accountData;
 }
 
-void RemotePlayer::updateData(const PlayerData& data) {
+void RemotePlayer::updateData(const PlayerData& data, float updateCounter) {
     player1->updateData(data.player1);
     player2->updateData(data.player2);
+    this->updateCounter = updateCounter;
 }
 
 unsigned int RemotePlayer::getDefaultTicks() {

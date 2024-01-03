@@ -28,6 +28,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     bool deafened = false;
     uint32_t totalSentPackets = 0;
     std::unordered_map<int, RemotePlayer*> players;
+    float timeCounter = 0.f;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;
@@ -81,6 +82,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         this->rescheduleSelectors();
 
+        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selIncreaseCounter), this, 0.0f, false);
+
         return true;
     }
 
@@ -127,7 +130,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
                     this->handlePlayerJoin(player.accountId);
                 }
 
-                this->m_fields->players.at(player.accountId)->updateData(player.data);
+                this->m_fields->players.at(player.accountId)->updateData(player.data, m_fields->timeCounter);
             }
         });
 
@@ -218,14 +221,21 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         NetworkManager::get().send(PlayerDataPacket::create(data));
     }
 
-    // selUpdateProfiles - runs 4 times a second, updates profiles of other people
+    // selUpdateProfiles - runs 4 times a second, updates profiles of other people and removes dead players
     void selUpdateProfiles(float) {
         if (!this->established()) return;
         if (!this->isCurrentPlayLayer()) return;
 
         auto& pcm = ProfileCacheManager::get();
 
+        std::vector<int> toRemove;
+
         for (const auto [playerId, remotePlayer] : m_fields->players) {
+            if (m_fields->timeCounter - remotePlayer->updateCounter > 0.75f && remotePlayer->updateCounter != 0.f) {
+                toRemove.push_back(playerId);
+                continue;
+            }
+
             if (!remotePlayer->isValidPlayer()) {
                 auto data = pcm.getData(playerId);
                 if (data.has_value()) {
@@ -241,6 +251,15 @@ class $modify(GlobedPlayLayer, PlayLayer) {
                 }
             }
         }
+
+        for (int id : toRemove) {
+            this->handlePlayerLeave(id);
+        }
+    }
+
+    // selIncreaseCounter - runs every frame and increments the non-decreasing time counter
+    void selIncreaseCounter(float dt) {
+        m_fields->timeCounter += dt;
     }
 
     /* private utilities */
@@ -309,6 +328,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         m_fields->players.at(playerId)->removeFromParent();
         m_fields->players.erase(playerId);
+
+        log::debug("Player removed: {}", playerId);
     }
 
     // With speedhack enabled, all scheduled selectors will run more often than they are supposed to.
