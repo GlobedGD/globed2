@@ -104,6 +104,21 @@ impl GameServer {
             }
         });
 
+        // print some useful stats every once in a bit
+        let interval = self.central_conf.lock().status_print_interval;
+
+        if interval != 0 {
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(Duration::from_secs(interval));
+                interval.tick().await;
+
+                loop {
+                    interval.tick().await;
+                    self.print_server_status();
+                }
+            });
+        }
+
         // preallocate a buffer
         let mut buf = [0u8; MAX_PACKET_SIZE];
 
@@ -400,6 +415,21 @@ impl GameServer {
     fn remove_stale_rate_limiters(&'static self) {
         let mut limiters = self.rate_limiters.lock();
         limiters.retain(|_, limiter| limiter.since_last_refill() < Duration::from_secs(600));
+    }
+
+    fn print_server_status(&'static self) {
+        info!("Current server stats (printed once an hour)");
+        info!(
+            "Player threads: {}, player count: {}",
+            self.threads.lock().len(),
+            self.state.player_count.load(Ordering::Relaxed)
+        );
+        info!("Amount of rooms: {}", self.state.room_manager.get_rooms().len());
+        info!(
+            "People in the global room: {}",
+            self.state.room_manager.get_global().get_total_player_count()
+        );
+        info!("-------------------------------------------");
     }
 
     async fn refresh_bootdata(&'static self) -> anyhow::Result<()> {

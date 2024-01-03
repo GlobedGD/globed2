@@ -8,15 +8,20 @@
 using namespace geode::prelude;
 
 bool VisualPlayer::init(RemotePlayer* parent, bool isSecond) {
-    if (!CCNode::init()) return false;
-    this->parent = parent;
-    this->isSecond = isSecond;
+    if (!CCNode::init() || !BaseVisualPlayer::init(parent, isSecond)) return false;
+
+    this->playLayer = PlayLayer::get();
 
     auto& data = parent->getAccountData();
 
     Build<SimplePlayer>::create(data.icons.cube)
         .playerFrame(data.icons.cube, IconType::Cube)
         .store(playerIcon)
+        .parent(this);
+
+    Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
+        .store(playerName)
+        .pos(0.f, 25.f)
         .parent(this);
 
     this->updateIcons(data.icons);
@@ -38,13 +43,17 @@ void VisualPlayer::updateIcons(const PlayerIconData& icons) {
         playerIcon->m_hasGlowOutline = false;
         playerIcon->disableCustomGlowColor();
     }
-
-    // playerIcon->updateColors();
 }
 
 void VisualPlayer::updateData(const SpecificIconData& data) {
     this->setPosition(data.position);
-    this->setRotation(data.rotation);
+    playerIcon->setRotation(data.rotation);
+
+    PlayerIconType iconType = data.iconType;
+    // in platformer, jetpack is serialized as ship so we make sure to show the right icon
+    if (iconType == PlayerIconType::Ship && playLayer->m_level->isPlatformer()) {
+        iconType = PlayerIconType::Jetpack;
+    }
 
     if (data.iconType != playerIconType) {
         this->updateIconType(data.iconType);
@@ -53,24 +62,18 @@ void VisualPlayer::updateData(const SpecificIconData& data) {
     this->setVisible(data.isVisible);
 }
 
+void VisualPlayer::updateName() {
+    playerName->setString(parent->getAccountData().name.c_str());
+    auto& sud = parent->getAccountData().specialUserData;
+    sud.has_value() ? playerName->setColor(sud->nameColor) : playerName->setColor({255, 255, 255});
+}
+
 void VisualPlayer::updateIconType(PlayerIconType newType) {
     playerIconType = newType;
-    int newIcon = 1;
 
     const auto& accountData = parent->getAccountData();
     const auto& icons = accountData.icons;
-
-    switch (newType) {
-        case PlayerIconType::Cube: newIcon = icons.cube; break;
-        case PlayerIconType::Ship: newIcon = icons.ship; break;
-        case PlayerIconType::Ball: newIcon = icons.ball; break;
-        case PlayerIconType::Ufo: newIcon = icons.ufo; break;
-        case PlayerIconType::Wave: newIcon = icons.wave; break;
-        case PlayerIconType::Robot: newIcon = icons.robot; break;
-        case PlayerIconType::Spider: newIcon = icons.spider; break;
-        case PlayerIconType::Swing: newIcon = icons.swing; break;
-        default: newIcon = icons.cube; break;
-    };
+    int newIcon = this->getIconWithType(icons, playerIconType);
 
     playerIcon->updatePlayerFrame(newIcon, util::misc::convertEnum<IconType>(newType));
 }

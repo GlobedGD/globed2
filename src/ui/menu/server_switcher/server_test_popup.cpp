@@ -45,17 +45,7 @@ bool ServerTestPopup::setup(const std::string& url, AddServerPopup* parent) {
                 this->parent->onTestFailure(error);
             } else {
                 auto response = resp.response;
-                int protocol = 0;
-#ifdef GLOBED_UNIX
-                // this is such a meme im crying
-                std::istringstream iss(response);
-                iss >> protocol;
-                if (iss.fail() || !iss.eof()) {
-                    protocol = 0;
-                }
-#else
-                std::from_chars(response.data(), response.data() + response.size(), protocol);
-#endif
+                int protocol = util::formatting::parse<int>(response).value_or(0);
 
                 if (protocol != NetworkManager::PROTOCOL_VERSION) {
                     this->parent->onTestFailure(fmt::format(

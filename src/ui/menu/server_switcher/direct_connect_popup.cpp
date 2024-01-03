@@ -21,8 +21,8 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
     Build<CCLabelBMFont>::create("Server address", "bigFont.fnt")
         .scale(0.3f)
         .pos(popupCenter, POPUP_HEIGHT - 20.f)
-        .id("direct-connection-addr-hint"_spr)
-        .parent(m_mainLayer);
+        .parent(m_mainLayer)
+        .id("direct-connection-addr-hint"_spr);
 
     // address input node
     Build<InputNode>::create(POPUP_WIDTH * 0.75f, "127.0.0.1:41001", "chatFont.fnt", std::string("1234567890.:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"), 21)

@@ -54,6 +54,10 @@ const fn default_maintenance() -> bool {
     false
 }
 
+const fn default_status_print_interval() -> u64 {
+    7200 // 2 hours
+}
+
 fn default_special_users() -> IntMap<i32, SpecialUser> {
     let mut map = IntMap::default();
     map.insert(
@@ -135,6 +139,8 @@ pub struct ServerConfig {
     pub game_servers: Vec<GameServerEntry>,
     #[serde(default = "default_maintenance")]
     pub maintenance: bool,
+    #[serde(default = "default_status_print_interval")]
+    pub status_print_interval: u64,
 
     // special users and "special" users
     #[serde(default = "default_special_users")]

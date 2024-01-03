@@ -1,21 +1,19 @@
 #pragma once
-#include <defs.hpp>
+#include "base_visual_player.hpp"
 
-#include <data/types/gd.hpp>
-
-class RemotePlayer;
-
-class VisualPlayer : public cocos2d::CCNode {
+class VisualPlayer : public cocos2d::CCNode, public BaseVisualPlayer {
 public:
-    bool init(RemotePlayer* parent, bool isSecond);
-    void updateIcons(const PlayerIconData& icons);
-    void updateData(const SpecificIconData& data);
-    void updateIconType(PlayerIconType newType);
+    bool init(RemotePlayer* parent, bool isSecond) override;
+    void updateIcons(const PlayerIconData& icons) override;
+    void updateData(const SpecificIconData& data) override;
+    void updateName() override;
+    void updateIconType(PlayerIconType newType) override;
 
     static VisualPlayer* create(RemotePlayer* parent, bool isSecond);
+
 protected:
-    RemotePlayer* parent;
+    PlayLayer* playLayer;
     SimplePlayer* playerIcon;
-    bool isSecond;
     PlayerIconType playerIconType;
+    cocos2d::CCLabelBMFont* playerName;
 };

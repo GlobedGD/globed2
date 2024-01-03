@@ -21,7 +21,7 @@
 
 /* platform-specific: Windows */
 
-#define GLOBED_FMOD_WINDOWS 0 // TODO
+#define GLOBED_FMOD_WINDOWS 1
 #define GLOBED_DRPC_WINDOWS 0
 
 /* platform-specific: Mac */
@@ -31,7 +31,7 @@
 
 /* platform-specific: Android */
 
-#define GLOBED_FMOD_ANDROID 0
+#define GLOBED_FMOD_ANDROID 1
 #define GLOBED_DRPC_ANDROID 0
 
 

@@ -370,7 +370,7 @@ impl GameServerThread {
     }
 
     /// use alloca to encode the packet on the stack, and try a non-blocking send, on failure clones to a Vec and a blocking send.
-    /// be very careful if using this directly, miscalculating the size will cause a runtime panic.
+    /// be very careful if using this directly, miscalculating the size may cause a runtime panic.
     #[inline]
     async fn send_packet_alloca<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
         self.send_packet_alloca_with::<P, _>(packet_size, |buf| {

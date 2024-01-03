@@ -13,6 +13,7 @@ namespace util::misc {
         case IconType::Robot: return PlayerIconType::Robot;
         case IconType::Spider: return PlayerIconType::Spider;
         case IconType::Swing: return PlayerIconType::Swing;
+        case IconType::Jetpack: return PlayerIconType::Jetpack;
         default: return PlayerIconType::Cube;
         }
     }
@@ -28,6 +29,7 @@ namespace util::misc {
         case PlayerIconType::Robot: return IconType::Robot;
         case PlayerIconType::Spider: return IconType::Spider;
         case PlayerIconType::Swing: return IconType::Swing;
+        case PlayerIconType::Jetpack: return IconType::Jetpack;
         default: return IconType::Cube;
         }
     }

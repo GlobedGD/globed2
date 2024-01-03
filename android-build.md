@@ -1,5 +1,7 @@
 ## android building
 
+this is outdated uhh yeah todo and stuff none of this is needed
+
 first it's time to clone openssl:
 
 ```sh

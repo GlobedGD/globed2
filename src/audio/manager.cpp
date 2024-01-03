@@ -284,7 +284,7 @@ void GlobedAudioManager::recordInvokeCallback() {
 
     try {
         recordCallback(recordFrame);
-    } catch(e) {
+    } catch(const std::exception& e) {
         ErrorQueues::get().error(std::string("Exception in audio callback: ") + e.what());
     }
 
@@ -353,7 +353,7 @@ void GlobedAudioManager::audioThreadFunc() {
 
             try {
                 recordFrame.pushOpusFrame(encoder.encode(pcmbuf));
-            } catch(e) {
+            } catch (const std::exception& e) {
                 ErrorQueues::get().error(std::string("Exception in audio thread: ") + e.what());
                 continue;
             }

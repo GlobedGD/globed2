@@ -59,6 +59,7 @@ pub async fn boot(context: &mut Context<ServerState>) -> roa::Result {
         maintenance: config.maintenance,
         secret_key2: config.secret_key2.clone(),
         token_expiry: config.token_expiry,
+        status_print_interval: config.status_print_interval,
         admin_key: FastString::from_str(&config.admin_key),
     };
 

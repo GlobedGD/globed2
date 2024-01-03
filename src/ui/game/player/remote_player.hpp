@@ -21,8 +21,8 @@ public:
     static RemotePlayer* create(const PlayerAccountData& data);
     static RemotePlayer* create();
 protected:
-    VisualPlayer* player1;
-    VisualPlayer* player2;
+    BaseVisualPlayer* player1;
+    BaseVisualPlayer* player2;
     unsigned int defaultTicks = 0;
 
     PlayerAccountData accountData;

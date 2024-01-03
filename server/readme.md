@@ -66,6 +66,7 @@ Note that the server is written with security in mind, so many of those options 
 | `special_users` | `{}` | ⏳ | List of users that have special properties, for example a unique name color (see below for the format) |
 | `game_servers` | `[]` | ✅ | List of game servers that will be sent to the clients (see below for the format) |
 | `maintenance` | `false` | ⏳ | When enabled, anyone trying to connect will get an appropriate error message saying that the server is under maintenance |
+| `status_print_interval` | `7200` | ⚠️ | How often (in seconds) the game servers will print various status information to the console, 0 to disable |
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
 | `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed to connect |
 | `no_chat_list` | `[]` | ⏳ | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |

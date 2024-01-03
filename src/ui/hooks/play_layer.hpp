@@ -56,11 +56,11 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         // set the audio device
         try {
             GlobedAudioManager::get().setActiveRecordingDevice(m_fields->settings.globed.audioDevice);
-        } catch(e) {
+        } catch(const std::exception& e) {
             // try default device, if we have no mic then just do nothing
             try {
                 GlobedAudioManager::get().setActiveRecordingDevice(0);
-            } catch(_e) {}
+            } catch(const std::exception& _e) {}
         }
 #endif // GLOBED_VOICE_SUPPORT
 
@@ -141,7 +141,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             // TODO - this decodes the sound data on the main thread. might be a bad idea, will need to benchmark.
             try {
                 VoicePlaybackManager::get().playFrameStreamed(packet->sender, packet->frame);
-            } catch(e) {
+            } catch(const std::exception& e) {
                 ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + e.what());
             }
 #endif // GLOBED_VOICE_SUPPORT
@@ -210,7 +210,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         if (!this->isCurrentPlayLayer()) return;
         if (!this->accountForSpeedhack(0, 1.0f / m_fields->configuredTps, 0.8f)) return;
 
-
         m_fields->totalSentPackets++;
         // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
         if (m_fields->players.empty() && m_fields->totalSentPackets % 30 != 15) return;
@@ -252,7 +251,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     SpecificIconData gatherSpecificIconData(PlayerObject* player) {
-        // TODO
         PlayerIconType iconType = PlayerIconType::Cube;
         if (player->m_isShip) iconType = PlayerIconType::Ship;
         else if (player->m_isBird) iconType = PlayerIconType::Ufo;
@@ -275,7 +273,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             m_level->m_normalPercent,
             m_level->m_attempts,
             this->gatherSpecificIconData(m_player1),
-            this->gatherSpecificIconData(m_player2)
+            this->gatherSpecificIconData(m_player2) // TODO detect isDualMode
         );
     }
 
@@ -283,7 +281,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 #if GLOBED_VOICE_SUPPORT
         try {
             VoicePlaybackManager::get().prepareStream(playerId);
-        } catch (e) {
+        } catch (const std::exception& e) {
             ErrorQueues::get().error(std::string("Failed to prepare audio stream: ") + e.what());
         }
 #endif // GLOBED_VOICE_SUPPORT

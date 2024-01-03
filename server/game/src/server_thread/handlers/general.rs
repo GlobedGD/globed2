@@ -98,14 +98,19 @@ impl GameServerThread {
         // maybe delete the old room if there are no more players there
         self.game_server.state.room_manager.maybe_remove_room(room_id);
 
-        Ok(())
+        // respond with the global room list
+        self._respond_with_room_list(0).await
     });
 
     gs_handler!(self, handle_request_room_list, RequestRoomPlayerListPacket, _packet, {
         let _ = gs_needauth!(self);
 
         let room_id = self.room_id.load(Ordering::Relaxed);
+        self._respond_with_room_list(room_id).await
+    });
 
+    #[inline]
+    async fn _respond_with_room_list(&self, room_id: u32) -> crate::server_thread::Result<()> {
         let player_count = self
             .game_server
             .state
@@ -133,5 +138,5 @@ impl GameServerThread {
             });
         })
         .await
-    });
+    }
 }

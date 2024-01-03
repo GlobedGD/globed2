@@ -11,6 +11,7 @@ enum class PlayerIconType : uint8_t {
     Robot = 6,
     Spider = 7,
     Swing = 8,
+    Jetpack = 9,
 };
 
 struct SpecificIconData {

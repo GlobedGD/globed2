@@ -8,15 +8,15 @@ bool RemotePlayer::init(const PlayerAccountData& data) {
     if (!CCNode::init()) return false;
     this->accountData = data;
 
-    Build<VisualPlayer>::create(this, false)
+    this->player1 = Build<VisualPlayer>::create(this, false)
         .parent(this)
         .id("visual-player1"_spr)
-        .store(this->player1);
+        .collect();
 
-    Build<VisualPlayer>::create(this, true)
+    this->player2 = Build<VisualPlayer>::create(this, true)
         .parent(this)
         .id("visual-player2"_spr)
-        .store(this->player2);
+        .collect();
 
     return true;
 }
@@ -25,6 +25,10 @@ void RemotePlayer::updateAccountData(const PlayerAccountData& data) {
     this->accountData = data;
     player1->updateIcons(data.icons);
     player2->updateIcons(data.icons);
+
+    player1->updateName();
+    player2->updateName();
+
     defaultTicks = 0;
 }
 

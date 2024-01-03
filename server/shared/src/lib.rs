@@ -54,6 +54,7 @@ pub struct GameServerBootData {
     pub maintenance: bool,
     pub secret_key2: String,
     pub token_expiry: u64,
+    pub status_print_interval: u64,
     pub admin_key: FastString<ADMIN_KEY_LENGTH>,
 }
 
@@ -67,6 +68,11 @@ pub fn generate_alphanum_string(n: usize) -> String {
 
 impl Default for GameServerBootData {
     fn default() -> Self {
+        #[cfg(debug_assertions)]
+        let status_print_interval = 60 * 15; // 15 min
+        #[cfg(not(debug_assertions))]
+        let status_print_interval = 7200; // 2 hours
+
         Self {
             protocol: PROTOCOL_VERSION,
             no_chat: Vec::new(),
@@ -75,6 +81,7 @@ impl Default for GameServerBootData {
             maintenance: false,
             secret_key2: String::new(),
             token_expiry: 0,
+            status_print_interval,
             admin_key: generate_alphanum_string(ADMIN_KEY_LENGTH)
                 .try_into()
                 .expect("failed to convert admin key String into FastString"),
