@@ -56,9 +56,11 @@ public:
         frameSize = other.frameSize;
     }
 
-    AudioEncoder& operator=(AudioEncoder&& other) {
+    AudioEncoder& operator=(AudioEncoder&& other) noexcept {
         if (this != &other) {
-            opus_encoder_destroy(this->encoder);
+            if (this->encoder) {
+                opus_encoder_destroy(this->encoder);
+            }
 
             this->encoder = other.encoder;
             other.encoder = nullptr;

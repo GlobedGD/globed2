@@ -19,8 +19,38 @@ public:
     AudioStream operator=(const AudioStream& other) = delete;
 
     // allow moving
-    AudioStream(AudioStream&& other) noexcept = default;
-    AudioStream& operator=(AudioStream&&) noexcept = default;
+    AudioStream(AudioStream&& other) noexcept {
+        sound = other.sound;
+        channel = other.channel;
+        other.sound = nullptr;
+        other.channel = nullptr;
+
+        queue = std::move(other.queue);
+        decoder = std::move(other.decoder);
+    }
+
+    AudioStream& operator=(AudioStream&& other) noexcept {
+        if (this != &other) {
+            if (this->sound) {
+                this->sound->release();
+            }
+
+            if (this->channel) {
+                this->channel->stop();
+            }
+
+            this->sound = other.sound;
+            this->channel = other.channel;
+
+            other.sound = nullptr;
+            other.channel = nullptr;
+
+            queue = std::move(other.queue);
+            decoder = std::move(other.decoder);
+        }
+
+        return *this;
+    }
 
     // start playing this stream
     void start();

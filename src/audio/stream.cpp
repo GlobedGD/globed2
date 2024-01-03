@@ -55,12 +55,10 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
 AudioStream::~AudioStream() {
     if (channel) {
         channel->stop();
-        channel = nullptr;
     }
 
     if (sound) {
         sound->release();
-        sound = nullptr;
     }
 }
 
