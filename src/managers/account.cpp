@@ -32,7 +32,7 @@ void GlobedAccountManager::autoInitialize() {
         activeCentralUrl = activeCentral.value().url;
     }
 
-    this->initialize(gjam->m_username, gjam->m_accountID, gjam->m_gjp2, activeCentralUrl);
+    this->initialize(gjam->m_username, gjam->m_accountID, gjam->m_GJP2, activeCentralUrl);
 }
 
 std::string GlobedAccountManager::generateAuthCode() {

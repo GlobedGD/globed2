@@ -61,8 +61,7 @@ private:
     }
 
     bool has(const std::string& key) {
-        return geode::Mod::get()->hasSavedValue(key)
-            && !geode::Mod::get()->getSaveContainer().as_object()[key].is_null();
+        return geode::Mod::get()->hasSavedValue(key);
     }
 
     template <typename T>
