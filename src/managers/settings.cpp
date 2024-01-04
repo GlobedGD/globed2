@@ -75,6 +75,6 @@ void GlobedSettings::clear(const std::string& key) {
 
     if (obj.contains(key)) {
         // we cant remove objects in matjson so we just set it to null
-        obj[key] = json::Value(nullptr);
+        obj[key] = matjson::Value(nullptr);
     }
 }

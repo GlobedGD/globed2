@@ -6,7 +6,7 @@
 
 /* platform: any */
 
-// disable voice if you have skill issues setting up opus
+// disable voice
 // #define GLOBED_DISABLE_VOICE_SUPPORT
 
 // various debugging options

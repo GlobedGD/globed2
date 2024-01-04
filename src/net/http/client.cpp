@@ -78,6 +78,9 @@ GHTTPResponse GHTTPClient::performRequest(GHTTPRequestHandle handle) {
     // post fields
     if (!req.reqData.payload.empty()) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.reqData.payload.c_str());
+    } else if (req.reqData.reqType == GHTTPRequestType::Post) {
+        // we dont talk about this
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "secret=Wmfd2893gb7");
     }
 
     // generic stuff
