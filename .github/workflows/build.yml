@@ -2,7 +2,7 @@ name: Build Geode Mod
 
 on:
   workflow_dispatch:
-
+      
 jobs:
   build:
     strategy:
@@ -11,9 +11,15 @@ jobs:
         config:
         - name: Windows
           os: windows-latest
-          
+          target: Win32
         - name: MacOS
           os: macos-latest
+        - name: Android32
+          os: ubuntu-latest
+          target: Android32
+        - name: Android64
+          os: ubuntu-latest
+          target: Android64
 
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
@@ -25,7 +31,8 @@ jobs:
         uses: geode-sdk/build-geode-mod@main
         with:
           combine: true
-          sdk: 'nightly' 
+          sdk: 'nightly'
+          target: ${{ matrix.config.target }}
       
   package:
     name: Package builds
