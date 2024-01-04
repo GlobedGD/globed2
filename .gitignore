@@ -72,3 +72,6 @@ server/game/test-flamegraph.sh
 server/game/test-bench.sh
 
 libs/openssl
+
+!libs/libfmod32.so
+!libs/libfmod64.so
