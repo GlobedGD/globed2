@@ -13,15 +13,15 @@
 GlobedAudioManager::GlobedAudioManager()
     : encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
-    audioThreadHandle = std::thread(&GlobedAudioManager::audioThreadFunc, this);
+    audioThreadHandle.setLoopFunction(&GlobedAudioManager::audioThreadFunc);
+    audioThreadHandle.start(this);
 
     recordDevice = {.id = -1};
     playbackDevice = {.id = -1};
 }
 
 GlobedAudioManager::~GlobedAudioManager() {
-    _terminating = true;
-    if (audioThreadHandle.joinable()) audioThreadHandle.join();
+    audioThreadHandle.stopAndWait();
 
     geode::log::debug("audio thread halted.");
 }
@@ -292,83 +292,81 @@ void GlobedAudioManager::recordInvokeCallback() {
 }
 
 void GlobedAudioManager::audioThreadFunc() {
-    while (!_terminating) {
-        // if we are not recording right now, sleep
-        if (!recordActive) {
-            audioThreadSleeping = true;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            continue;
-        }
-
-        // if someone queued us to stop recording, back to sleeping
-        if (recordQueuedStop) {
-            recordQueuedStop = false;
-            audioThreadSleeping = true;
-            this->internalStopRecording();
-            continue;
-        }
-
-        audioThreadSleeping = false;
-
-        float* pcmData;
-        unsigned int pcmLen;
-
-        unsigned int pos;
-        FMOD_ERR_CHECK(
-            this->getSystem()->getRecordPosition(recordDevice.id, &pos),
-            "System::getRecordPosition"
-        )
-
-        // if we are at the same position, do nothing
-        if (pos == recordLastPosition) {
-            this->getSystem()->update();
-            std::this_thread::sleep_for(std::chrono::milliseconds(3));
-            continue;
-        }
-
-        FMOD_ERR_CHECK(
-            recordSound->lock(0, recordChunkSize, (void**)&pcmData, nullptr, &pcmLen, nullptr),
-            "Sound::lock"
-        )
-
-        if (pos > recordLastPosition) {
-            recordQueue.writeData(pcmData + recordLastPosition, pos - recordLastPosition);
-        } else if (pos < recordLastPosition) { // we have reached the end of the buffer
-            // write the data left at the end
-            recordQueue.writeData(pcmData + recordLastPosition, pcmLen / sizeof(float) - recordLastPosition);
-            // write the data from beginning to current pos
-            recordQueue.writeData(pcmData, pos);
-        }
-
-        recordLastPosition = pos;
-
-        FMOD_ERR_CHECK(
-            recordSound->unlock(pcmData, nullptr, pcmLen, 0),
-            "Sound::unlock"
-        )
-
-        if (recordQueue.size() >= VOICE_TARGET_FRAMESIZE) {
-            float pcmbuf[VOICE_TARGET_FRAMESIZE];
-            recordQueue.copyTo(pcmbuf, VOICE_TARGET_FRAMESIZE);
-
-            try {
-                recordFrame.pushOpusFrame(encoder.encode(pcmbuf));
-            } catch (const std::exception& e) {
-                ErrorQueues::get().error(std::string("Exception in audio thread: ") + e.what());
-                continue;
-            }
-        }
-
-        if (recordFrame.size() >= recordFrame.capacity()) {
-            this->recordInvokeCallback();
-        }
-
-        this->getSystem()->update();
-
-        // TODO maybe do something with this i dunno
-        std::this_thread::sleep_for(std::chrono::milliseconds(3));
-        // std::this_thread::yield();
+    // if we are not recording right now, sleep
+    if (!recordActive) {
+        audioThreadSleeping = true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        return;
     }
+
+    // if someone queued us to stop recording, back to sleeping
+    if (recordQueuedStop) {
+        recordQueuedStop = false;
+        audioThreadSleeping = true;
+        this->internalStopRecording();
+        return;
+    }
+
+    audioThreadSleeping = false;
+
+    float* pcmData;
+    unsigned int pcmLen;
+
+    unsigned int pos;
+    FMOD_ERR_CHECK(
+        this->getSystem()->getRecordPosition(recordDevice.id, &pos),
+        "System::getRecordPosition"
+    )
+
+    // if we are at the same position, do nothing
+    if (pos == recordLastPosition) {
+        this->getSystem()->update();
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+        return;
+    }
+
+    FMOD_ERR_CHECK(
+        recordSound->lock(0, recordChunkSize, (void**)&pcmData, nullptr, &pcmLen, nullptr),
+        "Sound::lock"
+    )
+
+    if (pos > recordLastPosition) {
+        recordQueue.writeData(pcmData + recordLastPosition, pos - recordLastPosition);
+    } else if (pos < recordLastPosition) { // we have reached the end of the buffer
+        // write the data left at the end
+        recordQueue.writeData(pcmData + recordLastPosition, pcmLen / sizeof(float) - recordLastPosition);
+        // write the data from beginning to current pos
+        recordQueue.writeData(pcmData, pos);
+    }
+
+    recordLastPosition = pos;
+
+    FMOD_ERR_CHECK(
+        recordSound->unlock(pcmData, nullptr, pcmLen, 0),
+        "Sound::unlock"
+    )
+
+    if (recordQueue.size() >= VOICE_TARGET_FRAMESIZE) {
+        float pcmbuf[VOICE_TARGET_FRAMESIZE];
+        recordQueue.copyTo(pcmbuf, VOICE_TARGET_FRAMESIZE);
+
+        try {
+            recordFrame.pushOpusFrame(encoder.encode(pcmbuf));
+        } catch (const std::exception& e) {
+            ErrorQueues::get().error(std::string("Exception in audio thread: ") + e.what());
+            return;
+        }
+    }
+
+    if (recordFrame.size() >= recordFrame.capacity()) {
+        this->recordInvokeCallback();
+    }
+
+    this->getSystem()->update();
+
+    // TODO maybe do something with this i dunno
+    std::this_thread::sleep_for(std::chrono::milliseconds(3));
+    // std::this_thread::yield();
 }
 
 FMOD::System* GlobedAudioManager::getSystem() {

@@ -190,31 +190,53 @@ using AtomicI64 = RelaxedAtomic<int64_t>;
 using AtomicU64 = RelaxedAtomic<uint64_t>;
 using AtomicSizeT = RelaxedAtomic<size_t>;
 
-// thread safe singleton class.
-// when possible, it is recommended to avoid using and just use GLOBED_SINGLETON instead.
-// it will allow you to implement a more robust and more efficient sync approach,
-// rather than locking up the entire instance and preventing access while in use.
+template<typename... TFuncArgs>
+class SmartThread {
+    using TFunc = std::function<void (TFuncArgs...)>;
+public:
+    SmartThread() {}
 
-// template <typename Derived>
-// class SyncSingletonBase {
-// public:
-//     // no copy
-//     SyncSingletonBase(const SyncSingletonBase&) = delete;
-//     SyncSingletonBase& operator=(const SyncSingletonBase&) = delete;
-//     // no move
-//     SyncSingletonBase(SyncSingletonBase&&) = delete;
-//     SyncSingletonBase& operator=(SyncSingletonBase&&) = delete;
+    SmartThread(TFunc&& func) {
+        this->setLoopFunction(std::move(func));
+    }
 
-//     static WrappingMutex<Derived>::Guard lock() {
-//         static WrappingMutex<Derived> instance;
-//         return instance.lock();
-//     }
+    void setLoopFunction(TFunc&& func) {
+        loopFunc = std::move(func);
+    }
 
-// protected:
-//     SyncSingletonBase() = default;
-//     virtual ~SyncSingletonBase() = default;
-// };
+    void start(TFuncArgs... args) {
+        _running = true;
+        _handle = std::thread([this](TFuncArgs... args) {
+            while (_running) {
+                loopFunc(args...);
+            }
+        }, args...);
+    }
 
-// #define GLOBED_SYNC_SINGLETON(cls) public ::util::sync::SyncSingletonBase<cls>
+    // Request the thread to be stopped as soon as possible
+    void stop() {
+        _running = false;
+    }
+
+    // Join the thread if possible, else do nothing
+    void join() {
+        if (_handle.joinable()) _handle.join();
+    }
+
+    // Stop the thread and wait for it to terminate
+    void stopAndWait() {
+        this->stop();
+        this->join();
+    }
+
+    ~SmartThread() {
+        this->stopAndWait();
+    }
+
+private:
+    std::thread _handle;
+    AtomicBool _running = false;
+    TFunc loopFunc;
+};
 
 }

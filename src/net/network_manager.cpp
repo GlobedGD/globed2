@@ -82,35 +82,34 @@ NetworkManager::NetworkManager() {
 
     // boot up the threads
 
-    threadMain = std::thread(&NetworkManager::threadMainFunc, this);
-    threadRecv = std::thread(&NetworkManager::threadRecvFunc, this);
+    threadMain.setLoopFunction(&NetworkManager::threadMainFunc);
+    threadMain.start(this);
+
+    threadRecv.setLoopFunction(&NetworkManager::threadRecvFunc);
+    threadRecv.start(this);
 }
 
 NetworkManager::~NetworkManager() {
+    log::debug("cleaning up..");
+
     // clear listeners
     this->removeAllListeners();
     builtinListeners.lock()->clear();
 
-    // stop threads and wait for them to return
-    _running = false;
+    threadMain.stopAndWait();
+    threadRecv.stopAndWait();
 
     if (this->connected()) {
         log::debug("disconnecting from the server..");
         try {
-            this->disconnect(false);
-        } catch(const std::exception& e) {
+            this->disconnect(false, true);
+        } catch (const std::exception& e) {
             log::warn("error trying to disconnect: {}", e.what());
         }
     }
 
-    log::debug("waiting for threads to halt..");
-
-    if (threadMain.joinable()) threadMain.join();
-    if (threadRecv.joinable()) threadRecv.join();
-
-    log::debug("cleaning up..");
-
     util::net::cleanup();
+
     log::debug("Goodbye!");
 }
 
@@ -165,7 +164,7 @@ void NetworkManager::connectStandalone() {
     }
 }
 
-void NetworkManager::disconnect(bool quiet) {
+void NetworkManager::disconnect(bool quiet, bool noclear) {
     if (!this->connected()) {
         return;
     }
@@ -182,7 +181,10 @@ void NetworkManager::disconnect(bool quiet) {
     gameSocket.disconnect();
     gameSocket.cleanupBox();
 
-    GameServerManager::get().clearActive();
+    // GameServerManager could have been destructed before NetworkManager, so this could be UB
+    if (!noclear) {
+        GameServerManager::get().clearActive();
+    }
 }
 
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
@@ -211,91 +213,87 @@ void NetworkManager::taskPingServers() {
 // threads
 
 void NetworkManager::threadMainFunc() {
-    while (_running) {
-        this->maybeSendKeepalive();
+    this->maybeSendKeepalive();
 
-        if (!packetQueue.waitForMessages(util::time::millis(250))) {
-            // check for tasks
-            if (taskQueue.empty()) continue;
+    if (!packetQueue.waitForMessages(util::time::millis(250))) {
+        // check for tasks
+        if (taskQueue.empty()) return;
 
-            for (const auto& task : taskQueue.popAll()) {
-                if (task == NetworkThreadTask::PingServers) {
-                    auto& sm = GameServerManager::get();
-                    auto activeServer = sm.active();
+        for (const auto& task : taskQueue.popAll()) {
+            if (task == NetworkThreadTask::PingServers) {
+                auto& sm = GameServerManager::get();
+                auto activeServer = sm.active();
 
-                    for (auto& [serverId, server] : sm.getAllServers()) {
-                        if (serverId == activeServer) continue;
+                for (auto& [serverId, server] : sm.getAllServers()) {
+                    if (serverId == activeServer) continue;
 
-                        try {
-                            auto pingId = sm.startPing(serverId);
-                            gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
-                        } catch (const std::exception& e) {
-                            ErrorQueues::get().warn(e.what());
-                        }
+                    try {
+                        auto pingId = sm.startPing(serverId);
+                        gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
+                    } catch (const std::exception& e) {
+                        ErrorQueues::get().warn(e.what());
                     }
                 }
             }
         }
+    }
 
-        auto messages = packetQueue.popAll();
+    auto messages = packetQueue.popAll();
 
-        for (auto packet : messages) {
-            try {
-                gameSocket.sendPacket(packet);
-            } catch (const std::exception& e) {
-                ErrorQueues::get().error(e.what());
-            }
+    for (auto packet : messages) {
+        try {
+            gameSocket.sendPacket(packet);
+        } catch (const std::exception& e) {
+            ErrorQueues::get().error(e.what());
         }
     }
 }
 
 void NetworkManager::threadRecvFunc() {
-    while (_running) {
-        if (!gameSocket.poll(1000)) {
-            this->maybeDisconnectIfDead();
-            continue;
-        }
-
-        GameSocket::IncomingPacket packet;
-
-        try {
-            packet = gameSocket.recvPacket();
-        } catch (const std::exception& e) {
-            ErrorQueues::get().debugWarn(fmt::format("failed to receive a packet: {}", e.what()));
-            continue;
-        }
-
-        packetid_t packetId = packet.packet->getPacketId();
-
-        if (packetId == PingResponsePacket::PACKET_ID) {
-            this->handlePingResponse(packet.packet);
-            continue;
-        }
-
-        // if it's not a ping packet, and it's NOT from the currently connected server, we reject it
-        if (!packet.fromServer) {
-            return;
-        }
-
-        lastReceivedPacket = util::time::now();
-
-        auto builtin = builtinListeners.lock();
-        if (builtin->contains(packetId)) {
-            (*builtin)[packetId](packet.packet);
-            continue;
-        }
-
-        // this is scary
-        geode::Loader::get()->queueInMainThread([this, packetId, packet]() {
-            auto listeners_ = this->listeners.lock();
-            if (!listeners_->contains(packetId)) {
-                ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
-            } else {
-                // xd
-                (*listeners_)[packetId](packet.packet);
-            }
-        });
+    if (!gameSocket.poll(1000)) {
+        this->maybeDisconnectIfDead();
+        return;
     }
+
+    GameSocket::IncomingPacket packet;
+
+    try {
+        packet = gameSocket.recvPacket();
+    } catch (const std::exception& e) {
+        ErrorQueues::get().debugWarn(fmt::format("failed to receive a packet: {}", e.what()));
+        return;
+    }
+
+    packetid_t packetId = packet.packet->getPacketId();
+
+    if (packetId == PingResponsePacket::PACKET_ID) {
+        this->handlePingResponse(packet.packet);
+        return;
+    }
+
+    // if it's not a ping packet, and it's NOT from the currently connected server, we reject it
+    if (!packet.fromServer) {
+        return;
+    }
+
+    lastReceivedPacket = util::time::now();
+
+    auto builtin = builtinListeners.lock();
+    if (builtin->contains(packetId)) {
+        (*builtin)[packetId](packet.packet);
+        return;
+    }
+
+    // this is scary
+    geode::Loader::get()->queueInMainThread([this, packetId, packet]() {
+        auto listeners_ = this->listeners.lock();
+        if (!listeners_->contains(packetId)) {
+            ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
+        } else {
+            // xd
+            (*listeners_)[packetId](packet.packet);
+        }
+    });
 }
 
 void NetworkManager::handlePingResponse(std::shared_ptr<Packet> packet) {

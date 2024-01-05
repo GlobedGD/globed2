@@ -11,8 +11,6 @@
 #include "sample_queue.hpp"
 #include <util/sync.hpp>
 
-using util::sync::WrappingMutex;
-using util::sync::AtomicBool;
 
 struct AudioRecordingDevice {
     int id = -1;
@@ -96,9 +94,9 @@ private:
     AudioPlaybackDevice playbackDevice; // unused
 
     /* recording */
-    AtomicBool recordActive = false;
-    AtomicBool recordQueuedStop = false;
-    AtomicBool recordQueuedHalt = false;
+    util::sync::AtomicBool recordActive = false;
+    util::sync::AtomicBool recordQueuedStop = false;
+    util::sync::AtomicBool recordQueuedHalt = false;
     FMOD::Sound* recordSound = nullptr;
     size_t recordChunkSize = 0;
     std::function<void(const EncodedAudioFrame&)> recordCallback;
@@ -113,12 +111,11 @@ private:
     AudioEncoder encoder;
 
     /* misc */
-    AtomicBool _terminating = false;
     FMOD::System* cachedSystem = nullptr;
 
     void audioThreadFunc();
-    AtomicBool audioThreadSleeping = true;
-    std::thread audioThreadHandle;
+    util::sync::AtomicBool audioThreadSleeping = true;
+    util::sync::SmartThread<GlobedAudioManager*> audioThreadHandle;
 };
 
 #endif // GLOBED_VOICE_SUPPORT

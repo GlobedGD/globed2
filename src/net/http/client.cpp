@@ -6,12 +6,12 @@ GHTTPClient::GHTTPClient() {
     curl = curl_easy_init();
     GLOBED_REQUIRE(curl != nullptr, "cURL failed to initialize")
 
-    threadHandle = std::thread(&GHTTPClient::threadFunc, this);
+    threadHandle.setLoopFunction(&GHTTPClient::threadFunc);
+    threadHandle.start(this);
 }
 
 GHTTPClient::~GHTTPClient() {
-    _running = false;
-    if (threadHandle.joinable()) threadHandle.join();
+    threadHandle.stopAndWait();
 
     if (curl) {
         curl_easy_cleanup(curl);
@@ -26,16 +26,14 @@ void GHTTPClient::send(GHTTPRequestHandle request) {
 }
 
 void GHTTPClient::threadFunc() {
-    while (_running) {
-        if (!requests.waitForMessages(util::time::secs(1))) continue;
+    if (!requests.waitForMessages(util::time::secs(1))) return;
 
-        auto request = requests.pop();
-        auto response = this->performRequest(request);
+    auto request = requests.pop();
+    auto response = this->performRequest(request);
 
-        geode::Loader::get()->queueInMainThread([response, request] {
-            request.maybeCallback(response);
-        });
-    }
+    geode::Loader::get()->queueInMainThread([response, request] {
+        request.maybeCallback(response);
+    });
 }
 
 static size_t writeCallback(void* contents, size_t size, size_t nmemb, std::ostringstream* stream) {

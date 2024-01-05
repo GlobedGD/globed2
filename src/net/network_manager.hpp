@@ -44,7 +44,7 @@ public:
     void connectStandalone();
 
     // Disconnect from a server. Does nothing if not connected
-    void disconnect(bool quiet = false);
+    void disconnect(bool quiet = false, bool noclear = false);
 
     // Sends a packet to the currently established connection. Throws if disconnected.
     void send(std::shared_ptr<Packet> packet);
@@ -105,12 +105,11 @@ private:
     void threadMainFunc();
     void threadRecvFunc();
 
-    std::thread threadMain;
-    std::thread threadRecv;
+    SmartThread<NetworkManager*> threadMain;
+    SmartThread<NetworkManager*> threadRecv;
 
     // misc
 
-    AtomicBool _running = true;
     AtomicBool _handshaken = false;
     AtomicBool _loggedin = false;
     AtomicBool _connectingStandalone = false;

@@ -17,9 +17,8 @@ public:
 
 protected:
     CURL* curl;
-    std::thread threadHandle;
 
-    util::sync::AtomicBool _running = true;
+    util::sync::SmartThread<GHTTPClient*> threadHandle;
     util::sync::SmartMessageQueue<GHTTPRequestHandle> requests;
 
     void threadFunc();

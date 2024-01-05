@@ -40,7 +40,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         .store(simplePlayer);
 
     if (data.glowColor == -1) {
-        simplePlayer->disableGlowOutline(); // TODO fix this and remove later
+        simplePlayer->disableGlowOutline();
     } else {
         simplePlayer->setGlowOutline(gm->colorForIdx(data.glowColor));
     }
