@@ -7,6 +7,7 @@
 #endif // GLOBED_HAS_KEYBINDS
 
 #include <audio/all.hpp>
+#include <game/interpolator.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
@@ -29,6 +30,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     uint32_t totalSentPackets = 0;
     std::unordered_map<int, RemotePlayer*> players;
     float timeCounter = 0.f;
+    float lastServerUpdate = 0.f;
+    std::shared_ptr<PlayerInterpolator> interpolator;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;
@@ -82,7 +85,13 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         this->rescheduleSelectors();
 
-        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selIncreaseCounter), this, 0.0f, false);
+        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this, 0.0f, false);
+
+        // interpolator
+        m_fields->interpolator = std::make_shared<PlayerInterpolator>(InterpolatorSettings {
+            .realtime = true,
+            .isPlatformer = m_level->isPlatformer()
+        });
 
         return true;
     }
@@ -130,7 +139,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
                     this->handlePlayerJoin(player.accountId);
                 }
 
-                this->m_fields->players.at(player.accountId)->updateData(player.data, m_fields->timeCounter);
+                this->m_fields->lastServerUpdate = this->m_fields->timeCounter;
+                this->m_fields->interpolator->updatePlayer(player.accountId, player.data, this->m_fields->lastServerUpdate);
             }
         });
 
@@ -231,7 +241,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         std::vector<int> toRemove;
 
         for (const auto [playerId, remotePlayer] : m_fields->players) {
-            if (m_fields->timeCounter - remotePlayer->updateCounter > 0.75f && remotePlayer->updateCounter != 0.f) {
+            if (m_fields->interpolator->isPlayerStale(playerId, m_fields->lastServerUpdate)) {
                 toRemove.push_back(playerId);
                 continue;
             }
@@ -257,9 +267,16 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         }
     }
 
-    // selIncreaseCounter - runs every frame and increments the non-decreasing time counter
-    void selIncreaseCounter(float dt) {
+    // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
+    void selUpdate(float dt) {
+        log::debug("ran update {}", util::time::nowPretty());
         m_fields->timeCounter += dt;
+        m_fields->interpolator->tick(dt);
+
+        for (const auto [playerId, remotePlayer] : m_fields->players) {
+            const auto& vstate = m_fields->interpolator->getPlayerState(playerId);
+            remotePlayer->updateData(vstate);
+        }
     }
 
     /* private utilities */
@@ -315,6 +332,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         m_objectLayer->addChild(rp);
         m_fields->players.emplace(playerId, rp);
+        m_fields->interpolator->addPlayer(playerId);
 
         log::debug("Player joined: {}", playerId);
     }
@@ -328,6 +346,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         m_fields->players.at(playerId)->removeFromParent();
         m_fields->players.erase(playerId);
+        m_fields->interpolator->removePlayer(playerId);
 
         log::debug("Player removed: {}", playerId);
     }

@@ -1,18 +1,17 @@
 #pragma once
 #include <defs.hpp>
 
-#include <data/types/gd.hpp>
 #include "visual_player.hpp"
+#include <data/types/gd.hpp>
+#include <game/visual_state.hpp>
 
 class RemotePlayer : public cocos2d::CCNode {
 public:
-    float updateCounter = 0.f;
-
     bool init(const PlayerAccountData& data);
     void updateAccountData(const PlayerAccountData& data);
     const PlayerAccountData& getAccountData() const;
 
-    void updateData(const PlayerData& data, float updateCounter);
+    void updateData(const VisualPlayerState& data);
 
     unsigned int getDefaultTicks();
     void setDefaultTicks(unsigned int ticks);
