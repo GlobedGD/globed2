@@ -31,7 +31,7 @@ public:
     // Get the current interpolated visual state of the player. This is what you pass into `RemotePlayer::updateData`
     const VisualPlayerState& getPlayerState(uint32_t playerId);
 
-    // returns `true` if no the player has supposedly left the level
+    // returns `true` if the given time of the last packet doesn't match the last update time of the player
     bool isPlayerStale(uint32_t playerId, float lastServerPacket);
 
 private:
