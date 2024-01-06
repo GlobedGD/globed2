@@ -7,13 +7,13 @@
 struct InterpolatorSettings {
     bool realtime;      // no interpolation at all
     bool isPlatformer;  // platformer duh
+    float expectedDelta;
 };
 
 class PlayerInterpolator {
-private:
+public:
     struct PlayerState;
 
-public:
     PlayerInterpolator(const InterpolatorSettings& settings);
 
     PlayerInterpolator(PlayerInterpolator&) = delete;
@@ -37,9 +37,22 @@ public:
 private:
     std::unordered_map<uint32_t, PlayerState> players;
     InterpolatorSettings settings;
+    float deltaAllowance;
+
+public:
+    struct LerpFrame {
+        LerpFrame();
+        LerpFrame(const PlayerData& pd);
+
+        float timestamp;
+        VisualPlayerState visual;
+    };
 
     struct PlayerState {
-        float updateCounter;
-        VisualPlayerState visualState;
+        float updateCounter = 0.0f;
+        float timeCounter = 0.0f;
+
+        LerpFrame olderFrame, newerFrame;
+        VisualPlayerState interpolatedState;
     };
 };

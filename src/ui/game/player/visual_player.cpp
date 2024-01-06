@@ -48,6 +48,7 @@ void VisualPlayer::updateIcons(const PlayerIconData& icons) {
 void VisualPlayer::updateData(const SpecificIconData& data) {
     this->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
+    playerIcon->setFlipX(data.isLookingLeft);
 
     PlayerIconType iconType = data.iconType;
     // in platformer, jetpack is serialized as ship so we make sure to show the right icon

@@ -18,7 +18,7 @@ int BaseVisualPlayer::getIconWithType(const PlayerIconData& icons, PlayerIconTyp
         case PlayerIconType::Robot: newIcon = icons.robot; break;
         case PlayerIconType::Spider: newIcon = icons.spider; break;
         case PlayerIconType::Swing: newIcon = icons.swing; break;
-        case PlayerIconType::Jetpack: newIcon = icons.jetpack;
+        case PlayerIconType::Jetpack: newIcon = icons.jetpack; break;
         default: newIcon = icons.cube; break;
     };
 

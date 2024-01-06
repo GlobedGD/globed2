@@ -8,6 +8,7 @@
 #include <ui/hooks/all.hpp>
 #include <ui/error_check_node.hpp>
 #include <util/all.hpp>
+#include <game/lerp_logger.hpp>
 
 #include <cstdint>
 
@@ -52,6 +53,9 @@ class $modify(MyMenuLayer, MenuLayer) {
         if (NetworkManager::get().handshaken()) {
             util::debugging::PacketLogger::get().getSummary().print();
         }
+
+        auto dumpPath = Mod::get()->getSaveDir() / "globed-lerp-log.bin";
+        LerpLogger::get().makeDump(dumpPath);
     }
 };
 

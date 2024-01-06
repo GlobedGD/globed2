@@ -89,8 +89,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         // interpolator
         m_fields->interpolator = std::make_shared<PlayerInterpolator>(InterpolatorSettings {
-            .realtime = true,
-            .isPlatformer = m_level->isPlatformer()
+            .realtime = false,
+            .isPlatformer = m_level->isPlatformer(),
+            .expectedDelta = (1.0f / m_fields->configuredTps)
         });
 
         return true;
@@ -236,6 +237,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         if (!this->established()) return;
         if (!this->isCurrentPlayLayer()) return;
 
+        log::debug("we looking left: {}", m_player1->m_isGoingLeft);
+
         auto& pcm = ProfileCacheManager::get();
 
         std::vector<int> toRemove;
@@ -269,7 +272,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
     void selUpdate(float dt) {
-        log::debug("ran update {}", util::time::nowPretty());
         m_fields->timeCounter += dt;
         m_fields->interpolator->tick(dt);
 
@@ -301,11 +303,13 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             .position = player->m_position, // TODO maybe use getPosition ?
             .rotation = player->getRotation(),
             .isVisible = player->isVisible(),
+            .isLookingLeft = player->m_isGoingLeft,
         };
     }
 
     PlayerData gatherPlayerData() {
         return PlayerData(
+            m_fields->timeCounter,
             m_level->m_normalPercent,
             m_level->m_attempts,
             this->gatherSpecificIconData(m_player1),

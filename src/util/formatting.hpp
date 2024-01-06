@@ -3,6 +3,7 @@
 
 #include <fmt/ranges.h>
 #include <sstream>
+#include <charconv>
 
 #include <util/time.hpp>
 
@@ -36,19 +37,12 @@ namespace util::formatting {
     template <typename T>
     inline std::optional<T> parse(const std::string_view src) {
         T output;
-#ifdef GLOBED_UNIX
-        // this is such a meme im crying how do neither apple nor android have this c++17 function
-        auto iss = std::istringstream(std::string(src));
-        iss >> output;
-        if (iss.fail() || !iss.eof()) {
-            return std::nullopt;
-        }
-#else
+
         auto result = std::from_chars(&*src.begin(), &*src.end(), output);
         if (result.ec != std::errc()) {
             return std::nullopt;
         }
-#endif
+
         return output;
     }
 }

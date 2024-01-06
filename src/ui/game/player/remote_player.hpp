@@ -2,6 +2,7 @@
 #include <defs.hpp>
 
 #include "visual_player.hpp"
+#include "complex_visual_player.hpp"
 #include <data/types/gd.hpp>
 #include <game/visual_state.hpp>
 

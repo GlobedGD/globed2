@@ -21,7 +21,7 @@ struct SpecificIconData {
         buf.writeF32(rotation);
 
         BitBuffer<8> flagByte;
-        flagByte.writeBit(isVisible);
+        flagByte.writeBits(isVisible, isLookingLeft);
 
         buf.writeBits(flagByte);
     }
@@ -38,6 +38,7 @@ struct SpecificIconData {
 
         auto flagByte = buf.readBits<8>();
         isVisible = flagByte.readBit();
+        isLookingLeft = flagByte.readBit();
     }
 
     PlayerIconType iconType;
@@ -45,17 +46,20 @@ struct SpecificIconData {
     float rotation;
 
     bool isVisible;
+    bool isLookingLeft;
 };
 
 class PlayerData {
 public:
     PlayerData(
+        float timestamp,
         uint16_t percentage,
         int32_t attempts,
         const SpecificIconData& player1,
         const SpecificIconData& player2
     )
-    : percentage(percentage),
+    : timestamp(timestamp),
+      percentage(percentage),
       attempts(attempts),
       player1(player1),
       player2(player2)
@@ -63,6 +67,7 @@ public:
 
     PlayerData() {}
     GLOBED_ENCODE {
+        buf.writeF32(timestamp);
         buf.writeU16(percentage);
         buf.writeI32(attempts);
         buf.writeValue(player1);
@@ -70,12 +75,14 @@ public:
     }
 
     GLOBED_DECODE {
+        timestamp = buf.readF32();
         percentage = buf.readU16();
         attempts = buf.readI32();
         player1 = buf.readValue<SpecificIconData>();
         player2 = buf.readValue<SpecificIconData>();
     }
 
+    float timestamp;
     uint16_t percentage;
     int32_t attempts;
 

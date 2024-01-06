@@ -34,6 +34,7 @@ pub struct SpecificIconData {
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
 pub struct PlayerData {
+    pub timestamp: f32,
     pub percentage: u16,
     pub attempts: i32,
 

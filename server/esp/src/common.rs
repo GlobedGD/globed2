@@ -514,3 +514,63 @@ decode_impl!(SocketAddrV4, buf, {
 
 static_size_calc_impl!(SocketAddrV4, size_of_types!(Ipv4Addr, u16));
 dynamic_size_as_static_impl!(SocketAddrV4);
+
+/* tuples (only 2 elements because i cant figure out how to make it a macro lmao) */
+/* if you feel bored, feel free to make your attempt at making a macro for this */
+
+impl<A, B> Encodable for (A, B)
+where
+    A: Encodable,
+    B: Encodable,
+{
+    #[inline]
+    fn encode(&self, buf: &mut ByteBuffer) {
+        buf.write_value(&self.0);
+        buf.write_value(&self.1);
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_value(&self.0);
+        buf.write_value(&self.1);
+    }
+}
+
+impl<A, B> Decodable for (A, B)
+where
+    A: Decodable,
+    B: Decodable,
+{
+    #[inline]
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Ok((buf.read_value()?, buf.read_value()?))
+    }
+
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Ok((buf.read_value()?, buf.read_value()?))
+    }
+}
+
+impl<A, B> StaticSize for (A, B)
+where
+    A: StaticSize,
+    B: StaticSize,
+{
+    const ENCODED_SIZE: usize = size_of_types!(A, B);
+}
+
+impl<A, B> DynamicSize for (A, B)
+where
+    A: DynamicSize,
+    B: DynamicSize,
+{
+    fn encoded_size(&self) -> usize {
+        self.0.encoded_size() + self.1.encoded_size()
+    }
+}

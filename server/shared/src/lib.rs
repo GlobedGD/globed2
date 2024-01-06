@@ -77,7 +77,7 @@ impl Default for GameServerBootData {
             protocol: PROTOCOL_VERSION,
             no_chat: Vec::new(),
             special_users: IntMap::default(),
-            tps: 120,
+            tps: 30,
             maintenance: false,
             secret_key2: String::new(),
             token_expiry: 0,
