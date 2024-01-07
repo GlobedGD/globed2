@@ -19,7 +19,14 @@ mod structs;
 mod visualizer;
 
 fn filter_noise(log: &mut PlayerLog) {
-    log.lerped.retain(|data| data.position.0 > 5.0 && data.position.1 > 5.0);
+    let min: f32 = 5.0;
+
+    log.lerped.retain(|data| data.position.0 > min && data.position.1 > min);
+    log.real.retain(|data| data.position.0 > min && data.position.1 > min);
+    log.real_extrapolated.retain(|data| {
+        data.0.position.0 > min && data.0.position.1 > min && data.1.position.0 > min && data.1.position.1 > min
+    });
+    log.lerp_skipped.retain(|data| data.position.0 > min && data.position.1 > min);
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -36,10 +43,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut player_log = reader.read_value::<HashMap<i32, PlayerLog>>().map_err(|e| e.to_string())?;
 
     let player_log = if player_log.len() > 1 {
-        let ids = player_log.keys().map(ToString::to_string).collect::<Vec<_>>().join(" ");
+        let ids = player_log.keys().map(ToString::to_string).collect::<Vec<_>>().join(", ");
 
-        println!("Multiple players found: {ids}");
+        println!("Multiple players found, enter ID: {ids}");
         print!("> ");
+        std::io::stdout().flush()?;
 
         let mut input = String::new();
         std::io::stdin().read_line(&mut input)?;
@@ -70,8 +78,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     data += "-----Real data points-----\n";
     for (n, point) in player_log.real.iter().enumerate() {
         data += format!(
-            "[{n}] {} - x: {}, y: {}, rot: {}\n",
-            point.timestamp, point.position.0, point.position.1, point.rotation
+            "[{n}] [{}, {}, d: {}] - x: {}, y: {}, rot: {}\n",
+            point.local_timestamp,
+            point.timestamp,
+            (point.timestamp - point.local_timestamp).abs(),
+            point.position.0,
+            point.position.1,
+            point.rotation
         )
         .as_str();
     }
@@ -79,14 +92,24 @@ fn main() -> Result<(), Box<dyn Error>> {
     data += "\n\n\n-----Extrapolated data points-----\n";
     for (n, (real, extp)) in player_log.real_extrapolated.iter().enumerate() {
         data += format!(
-            "[{n} real] {} - x: {}, y: {}, rot: {}\n",
-            real.timestamp, real.position.0, real.position.1, real.rotation
+            "[{n} real] [{}, {}, d: {}] - x: {}, y: {}, rot: {}\n",
+            real.local_timestamp,
+            real.timestamp,
+            (real.timestamp - real.local_timestamp).abs(),
+            real.position.0,
+            real.position.1,
+            real.rotation
         )
         .as_str();
 
         data += format!(
-            "[{n} extp] {} - x: {}, y: {}, rot: {}\n",
-            extp.timestamp, extp.position.0, extp.position.1, extp.rotation
+            "[{n} extp] [{}, {}, d: {}] - x: {}, y: {}, rot: {}\n",
+            extp.local_timestamp,
+            extp.timestamp,
+            (extp.timestamp - extp.local_timestamp).abs(),
+            extp.position.0,
+            extp.position.1,
+            extp.rotation
         )
         .as_str();
     }
@@ -94,8 +117,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     data += "\n\n\n-----Interpolated data points-----\n";
     for (n, point) in player_log.lerped.iter().enumerate() {
         data += format!(
-            "[{n}] {} - x: {}, y: {}, rot: {}\n",
-            point.timestamp, point.position.0, point.position.1, point.rotation
+            "[{n}] [{}, {}, d: {}] - x: {}, y: {}, rot: {}\n",
+            point.local_timestamp,
+            point.timestamp,
+            (point.timestamp - point.local_timestamp).abs(),
+            point.position.0,
+            point.position.1,
+            point.rotation
         )
         .as_str();
     }
@@ -103,8 +131,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     data += "\n\n\n-----Skipped data points-----\n";
     for (n, point) in player_log.lerp_skipped.iter().enumerate() {
         data += format!(
-            "[{n}] {} - x: {}, y: {}, rot: {}\n",
-            point.timestamp, point.position.0, point.position.1, point.rotation
+            "[{n}] [{}, {}, d: {}] - x: {}, y: {}, rot: {}\n",
+            point.local_timestamp,
+            point.timestamp,
+            (point.timestamp - point.local_timestamp).abs(),
+            point.position.0,
+            point.position.1,
+            point.rotation
         )
         .as_str();
     }

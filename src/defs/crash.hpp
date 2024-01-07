@@ -11,7 +11,7 @@
 * the while(1) is inserted so compiler doesn't complain about [[noreturn]] function returning
 */
 
-#define GLOBED_CRASH_SIGSEGV while(1) { *((volatile int*)nullptr) = 0x69; }
+#define GLOBED_CRASH_SIGSEGV while(1) { *((volatile int*)0x69) = 0x69; }
 
 #ifdef GLOBED_UNIX
 # include <signal.h>

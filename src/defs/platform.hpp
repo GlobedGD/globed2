@@ -26,9 +26,6 @@
 # define GLOBED_ANDROID 1
 # define GLOBED_UNIX 1
 # define GLOBED_PLATFORM_STRING_PLATFORM "Android"
-#elif defined(GLOBED_TESTING)
-# define GLOBED_UNIX 1
-# define GLOBED_PLATFORM_STRING_PLATFORM "N/A"
 #else
 # error "Unknown platform"
 #endif
@@ -40,13 +37,13 @@
 #  define GLOBED_PLATFORM_STRING_ARCH "x64"
 # else
 #  define GLOBED_X86_32 1
-#  define GLOBED_PLATFORM_STRING_ARCH "x32"
+#  define GLOBED_PLATFORM_STRING_ARCH "x86"
 # endif
-#elif defined(__aarch64__) || defined(_M_ARM64)
+#elif defined(GEODE_IS_ANDROID64)
 # define GLOBED_ARM 1
 # define GLOBED_ARM64 1
 # define GLOBED_PLATFORM_STRING_ARCH "arm64"
-#elif defined(__ARM_ARCH_7S__) || defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7R__) || defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7S__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7R__) || defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7S__) || defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7R__) || defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7S__)
+#elif defined(GEODE_IS_ANDROID32)
 # define GLOBED_ARM 1
 # define GLOBED_ARM32 1
 # define GLOBED_PLATFORM_STRING_ARCH "armv7"
@@ -82,7 +79,6 @@
 # define GLOBED_HAS_FMOD GLOBED_FMOD_ANDROID
 # define GLOBED_HAS_DRPC GLOBED_DRPC_ANDROID
 # define GLOBED_HAS_KEYBINDS 0
-#elif defined(GLOBED_TESTING)
 #else
 # error "what"
 #endif

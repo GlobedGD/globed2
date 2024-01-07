@@ -1,7 +1,6 @@
 #pragma once
 #include "basic.hpp"
 #include "platform.hpp"
-#include <stdexcept>
 
 #define GLOBED_MBO(src, type, offset) *(type*)((char*)src + offset)
 

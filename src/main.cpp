@@ -9,6 +9,7 @@
 #include <ui/error_check_node.hpp>
 #include <util/all.hpp>
 #include <game/lerp_logger.hpp>
+#include <Geode/utils/web.hpp>
 
 #include <cstdint>
 

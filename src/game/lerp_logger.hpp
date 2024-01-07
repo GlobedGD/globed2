@@ -10,12 +10,12 @@ public:
     void reset(uint32_t player);
 
     // real frames logging
-    void logRealFrame(uint32_t player, float timeCounter, const SpecificIconData& data);
-    void logExtrapolatedRealFrame(uint32_t player, float realTime, float timeCounter, const SpecificIconData& realData, const SpecificIconData& extrapolatedData);
+    void logRealFrame(uint32_t player, float localts, float timeCounter, const SpecificIconData& data);
+    void logExtrapolatedRealFrame(uint32_t player, float localts, float realTime, float timeCounter, const SpecificIconData& realData, const SpecificIconData& extrapolatedData);
 
     // interpolated frames logging
-    void logLerpOperation(uint32_t player, float timeCounter, const SpecificIconData& data);
-    void logLerpSkip(uint32_t player, float timeCounter, const SpecificIconData& data);
+    void logLerpOperation(uint32_t player, float localts, float timeCounter, const SpecificIconData& data);
+    void logLerpSkip(uint32_t player, float localts, float timeCounter, const SpecificIconData& data);
 
     void makeDump(const ghc::filesystem::path path);
 
@@ -24,15 +24,17 @@ private:
     struct PlayerLogData;
 
     PlayerLog& ensureExists(uint32_t player);
-    PlayerLogData makeLogData(const SpecificIconData& data, float timeCounter);
+    PlayerLogData makeLogData(const SpecificIconData& data, float localts, float timeCounter);
 
     struct PlayerLogData {
         GLOBED_ENCODE {
+            buf.writeF32(localTimestamp);
             buf.writeF32(timestamp);
             buf.writePoint(position);
             buf.writeF32(rotation);
         }
 
+        float localTimestamp;
         float timestamp;
         cocos2d::CCPoint position;
         float rotation;

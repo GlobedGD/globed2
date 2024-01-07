@@ -3,6 +3,7 @@ use globed_derive::*;
 
 #[derive(Decodable, Clone)]
 pub struct PlayerLogData {
+    pub local_timestamp: f32,
     pub timestamp: f32,
     pub position: (f32, f32),
     pub rotation: f32,

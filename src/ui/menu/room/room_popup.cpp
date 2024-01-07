@@ -164,9 +164,7 @@ void RoomPopup::reloadPlayerList(bool sendPacket) {
 
     // show the circle
     loadingCircle = LoadingCircle::create();
-    // TODO 2.2 ??
-    // loadingCircle->setParentLayer(listLayer);
-    this->addChild(loadingCircle);
+    loadingCircle->setParentLayer(listLayer);
     loadingCircle->setPosition(-listLayer->getPosition());
     loadingCircle->show();
 }

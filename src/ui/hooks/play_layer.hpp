@@ -6,6 +6,7 @@
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif // GLOBED_HAS_KEYBINDS
 
+#include "pause_layer.hpp"
 #include <audio/all.hpp>
 #include <game/interpolator.hpp>
 #include <managers/profile_cache.hpp>
@@ -22,7 +23,7 @@ using namespace geode::prelude;
 class $modify(GlobedPlayLayer, PlayLayer) {
     // setup stuff
     GlobedSettings& settings = GlobedSettings::get();
-    bool globedReady;
+    bool globedReady = false;
     uint32_t configuredTps = 0;
 
     // in game stuff
@@ -45,7 +46,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         auto& nm = NetworkManager::get();
 
         // if not authenticated, do nothing
-        m_fields->globedReady = nm.established();
+        m_fields->globedReady = nm.established() && this->isCurrentPlayLayer(); // TODO idk if thats best practice
         if (!m_fields->globedReady) return true;
 
         // set the configured tps
@@ -85,14 +86,15 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         this->rescheduleSelectors();
 
-        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this, 0.0f, false);
-
         // interpolator
         m_fields->interpolator = std::make_shared<PlayerInterpolator>(InterpolatorSettings {
             .realtime = false,
             .isPlatformer = m_level->isPlatformer(),
             .expectedDelta = (1.0f / m_fields->configuredTps)
         });
+
+        // update
+        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this, 0.0f, false);
 
         return true;
     }
@@ -169,7 +171,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             return;
         }
 
-        // TODO this breaks for impostor playlayers, if they won't be fixed in 2.2 then do a good old workaround
         this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
             auto& vm = GlobedAudioManager::get();
 
@@ -237,13 +238,26 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         if (!this->established()) return;
         if (!this->isCurrentPlayLayer()) return;
 
-        log::debug("we looking left: {}", m_player1->m_isGoingLeft);
-
         auto& pcm = ProfileCacheManager::get();
 
-        std::vector<int> toRemove;
+        util::collections::SmallVector<int, 16> toRemove;
 
-        for (const auto [playerId, remotePlayer] : m_fields->players) {
+
+        // if there has been no server update for a while, likely there are no players on the level
+        if (m_fields->timeCounter - m_fields->lastServerUpdate > 1.0f) {
+            for (const auto& [playerId, _] : m_fields->players) {
+                toRemove.push_back(playerId);
+            }
+
+            for (int id : toRemove) {
+                this->handlePlayerLeave(id);
+            }
+
+            return;
+        }
+
+        for (const auto& [playerId, remotePlayer] : m_fields->players) {
+            // if the player doesnt exist in last LevelData packet, they have left the level
             if (m_fields->interpolator->isPlayerStale(playerId, m_fields->lastServerUpdate)) {
                 toRemove.push_back(playerId);
                 continue;
@@ -272,7 +286,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
     void selUpdate(float dt) {
+        dt = this->adjustDelta(dt);
         m_fields->timeCounter += dt;
+
         m_fields->interpolator->tick(dt);
 
         for (const auto [playerId, remotePlayer] : m_fields->players) {
@@ -409,7 +425,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateProfiles), this, updpInterval, false);
     }
 
-    // TODO remove if impostor playlayer gets fixed
     bool isCurrentPlayLayer() {
         auto playLayer = getChildOfType<PlayLayer>(CCScene::get(), 0);
         return playLayer == this;
@@ -417,5 +432,10 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     bool isPaused() {
         return this->getParent()->getChildByID("PauseLayer") != nullptr; // TODO no worky on android and relies on node ids from geode
+    }
+
+    inline float adjustDelta(float dt) {
+        // i fucking hate this i cannot do this anymore i want to die
+        return CCDirector::get()->getAnimationInterval();
     }
 };

@@ -62,10 +62,10 @@ target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
 if (ANDROID)
     if (ANDROID_ABI STREQUAL "arm64-v8a")
         message(STATUS "Building for 64-bit android")
-        target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod64.so $ENV{GEODE_SDK}/loader/include/link/android64/libcurl.a) # TODO replace with the proper fmod
+        target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod64.so $ENV{GEODE_SDK}/loader/include/link/android64/libcurl.a)
     else()
         message(STATUS "Building for 32-bit android")
-        target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod32.so $ENV{GEODE_SDK}/loader/include/link/android32/libcurl.a) # TODO replace with the proper fmod
+        target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod32.so $ENV{GEODE_SDK}/loader/include/link/android32/libcurl.a)
     endif()
 endif()
 

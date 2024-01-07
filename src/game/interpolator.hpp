@@ -27,6 +27,7 @@ public:
 
     // Interpolate the player state. Should preferrably be called every frame.
     void tick(float dt);
+    void tickWithRatio(float ratio);
 
     // Get the current interpolated visual state of the player. This is what you pass into `RemotePlayer::updateData`
     const VisualPlayerState& getPlayerState(uint32_t playerId);
@@ -34,10 +35,14 @@ public:
     // returns `true` if the given time of the last packet doesn't match the last update time of the player
     bool isPlayerStale(uint32_t playerId, float lastServerPacket);
 
+    float getLocalTs();
+
 private:
     std::unordered_map<uint32_t, PlayerState> players;
     InterpolatorSettings settings;
     float deltaAllowance;
+
+    constexpr static bool EXTRAPOLATION = false;
 
 public:
     struct LerpFrame {
@@ -46,6 +51,7 @@ public:
 
         float timestamp;
         VisualPlayerState visual;
+        bool artificial;
     };
 
     struct PlayerState {
@@ -54,5 +60,6 @@ public:
 
         LerpFrame olderFrame, newerFrame;
         VisualPlayerState interpolatedState;
+        bool pendingRealFrame = false;
     };
 };

@@ -10,34 +10,34 @@ void LerpLogger::reset(uint32_t id) {
 #endif
 }
 
-void LerpLogger::logRealFrame(uint32_t id, float timeCounter, const SpecificIconData& data) {
+void LerpLogger::logRealFrame(uint32_t id, float localts, float timeCounter, const SpecificIconData& data) {
 #ifdef GLOBED_DEBUG_INTERPOLATION
     auto& player = this->ensureExists(id);
-    player.realFrames.push_back(this->makeLogData(data, timeCounter));
+    player.realFrames.push_back(this->makeLogData(data, localts, timeCounter));
 #endif
 }
 
-void LerpLogger::logExtrapolatedRealFrame(uint32_t id, float realTime, float timeCounter, const SpecificIconData& realData, const SpecificIconData& extrapolatedData) {
+void LerpLogger::logExtrapolatedRealFrame(uint32_t id, float localts, float realTime, float timeCounter, const SpecificIconData& realData, const SpecificIconData& extrapolatedData) {
 #ifdef GLOBED_DEBUG_INTERPOLATION
     auto& player = this->ensureExists(id);
     player.realExtrapolatedFrames.push_back(std::make_pair(
-        this->makeLogData(realData, realTime),
-        this->makeLogData(extrapolatedData, timeCounter)
+        this->makeLogData(realData, localts, realTime),
+        this->makeLogData(extrapolatedData, localts, timeCounter)
     ));
 #endif
 }
 
-void LerpLogger::logLerpOperation(uint32_t id, float timeCounter, const SpecificIconData& data) {
+void LerpLogger::logLerpOperation(uint32_t id, float localts, float timeCounter, const SpecificIconData& data) {
 #ifdef GLOBED_DEBUG_INTERPOLATION
     auto& player = this->ensureExists(id);
-    player.lerpedFrames.push_back(this->makeLogData(data, timeCounter));
+    player.lerpedFrames.push_back(this->makeLogData(data, localts, timeCounter));
 #endif
 }
 
-void LerpLogger::logLerpSkip(uint32_t id, float timeCounter, const SpecificIconData& data) {
+void LerpLogger::logLerpSkip(uint32_t id, float localts, float timeCounter, const SpecificIconData& data) {
 #ifdef GLOBED_DEBUG_INTERPOLATION
     auto& player = this->ensureExists(id);
-    player.lerpSkippedFrames.push_back(this->makeLogData(data, timeCounter));
+    player.lerpSkippedFrames.push_back(this->makeLogData(data, localts, timeCounter));
 #endif
 }
 
@@ -51,8 +51,9 @@ LerpLogger::PlayerLog& LerpLogger::ensureExists(uint32_t id) {
 #endif
 }
 
-LerpLogger::PlayerLogData LerpLogger::makeLogData(const SpecificIconData& data, float timeCounter) {
+LerpLogger::PlayerLogData LerpLogger::makeLogData(const SpecificIconData& data, float localts, float timeCounter) {
     return PlayerLogData {
+        .localTimestamp = localts,
         .timestamp = timeCounter,
         .position = data.position,
         .rotation = data.rotation,
