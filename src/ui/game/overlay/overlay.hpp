@@ -6,9 +6,11 @@ public:
     bool init();
 
     void updatePing(uint32_t ms);
+    void updateWithDisconnected();
+    void updateWithEditor();
 
     static GlobedOverlay* create();
 
 private:
-    cocos2d::CCLabelBMFont* pingLabel;
+    cocos2d::CCLabelBMFont* pingLabel = nullptr;
 };

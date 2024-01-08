@@ -25,7 +25,9 @@ using namespace geode::prelude;
 
 inline float adjustLerpTimeDelta(float dt) {
     // i fucking hate this i cannot do this anymore i want to die
-    return CCDirector::get()->getAnimationInterval();
+    auto* dir = CCDirector::get();
+    // TODO idk if timescale is needed here i will need to test with speedhack
+    return dir->getAnimationInterval(); // * CCScheduler::get()->getTimeScale();
 
     // uncomment and watch the world blow up
     // return dt;
@@ -59,11 +61,25 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     bool init(GJGameLevel* level, bool p1, bool p2) {
         if (!PlayLayer::init(level, p1, p2)) return false;
 
+        auto winSize = CCDirector::get()->getWinSize();
+
+        // overlay
+        Build<GlobedOverlay>::create()
+            .pos(0.f, winSize.height) // TODO configurable pos
+            .anchorPoint(0.f, 1.f)
+            .zOrder(11)
+            .id("game-overlay"_spr)
+            .parent(this)
+            .store(m_fields->overlay);
+
         auto& nm = NetworkManager::get();
 
         // if not authenticated, do nothing
         m_fields->globedReady = nm.established() && this->isCurrentPlayLayer(); // TODO idk if thats best practice
-        if (!m_fields->globedReady) return true;
+        if (!m_fields->globedReady) {
+            m_fields->overlay->updateWithDisconnected(); // TODO in an editor level do updateWithEditor
+            return true;
+        };
 
         GlobedSettings& settings = GlobedSettings::get();
 
@@ -113,16 +129,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         // update
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this, 0.0f, false);
-
-        auto winSize = CCDirector::get()->getWinSize();
-
-        // overlay
-        Build<GlobedOverlay>::create()
-            .pos(0.f, winSize.height) // TODO configurable pos
-            .anchorPoint(0.f, 1.f)
-            .id("game-overlay"_spr)
-            .parent(this)
-            .store(m_fields->overlay);
 
         return true;
     }

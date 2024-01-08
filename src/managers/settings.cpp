@@ -1,18 +1,18 @@
 #include "settings.hpp"
 
-#define SKEY(sstr) "_gsetting-" #sstr
+#define SKEY(cat, sstr) "_gsetting-" #cat #sstr
 #define SFLAGKEY(sstr) "_gflag-" #sstr
 #define STOREV(cat, sstr) \
     do { \
-        constexpr static auto _skey = SKEY(sstr); \
+        constexpr static auto _skey = SKEY(cat, sstr); \
         \
-        if (this->has(_skey) || ((cat.sstr) != _DefaultFor##sstr)) { \
+        if (this->has(_skey) || ((cat.sstr) != (cat._DefaultFor##sstr))) { \
             this->store(_skey, cat.sstr); \
         } \
     } while (0) \
 
 #define LOADV(cat, sstr) \
-    this->loadOptionalInto(SKEY(sstr), cat.sstr)
+    this->loadOptionalInto(SKEY(cat, sstr), cat.sstr)
 
 #define STOREF(sstr) this->store(SFLAGKEY(sstr), flags.sstr)
 #define LOADF(sstr) this->loadOptionalInto(SFLAGKEY(sstr), flags.sstr)
@@ -36,7 +36,9 @@ void GlobedSettings::save() {
     STOREV(globed, autoconnect);
 
     // overlay
-    STOREV(overlay, overlayOpacity);
+    STOREV(overlay, opacity);
+    STOREV(overlay, enabled);
+    STOREV(overlay, hideConditionally);
 
     // communication
     STOREV(communication, voiceEnabled);
@@ -53,7 +55,9 @@ void GlobedSettings::reload() {
     LOADV(globed, autoconnect);
 
     // overlay
-    LOADV(overlay, overlayOpacity);
+    LOADV(overlay, opacity);
+    LOADV(overlay, enabled);
+    LOADV(overlay, hideConditionally);
 
     // communication
     LOADV(communication, voiceEnabled);
@@ -65,16 +69,17 @@ void GlobedSettings::reload() {
 
 void GlobedSettings::resetToDefaults() {
     RESET_SETTINGS(
-        // globed
-        SKEY(tpsCap),
-        SKEY(audioDevice),
-        SKEY(autoconnect),
+        SKEY(globed, tpsCap),
+        SKEY(globed, audioDevice),
+        SKEY(globed, autoconnect),
 
         // overlay
-        SKEY(overlayOpacity),
+        SKEY(overlay, opacity),
+        SKEY(overlay, enabled),
+        SKEY(overlay, hideConditionally),
 
         // communication
-        SKEY(voiceEnabled)
+        SKEY(communication, voiceEnabled)
     );
 
     this->reload();

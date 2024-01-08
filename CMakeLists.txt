@@ -34,7 +34,6 @@ endif()
 # Android - enable exceptions and set various options
 if (ANDROID)
     # TODO this does nothing vvvvv
-    set(ANDROID_PLATFORM "android-24") # android 7, `fseeko` does not exist on earlier sdk versions and is needed for cURL
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions") # (this doesn't work !!!!!!! fix me!!!)
 endif()
 

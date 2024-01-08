@@ -12,18 +12,48 @@ bool GlobedOverlay::init() {
     auto& gs = GlobedSettings::get();
     auto& settings = gs.overlay;
 
-    Build<CCLabelBMFont>::create("", "bigFont.fnt")
-        .opacity(settings.overlayOpacity)
-        .store(pingLabel)
-        .parent(this)
-        .id("ping-label"_spr);
+    if (settings.enabled) {
+        Build<CCLabelBMFont>::create("", "bigFont.fnt")
+            .opacity(settings.opacity)
+            .store(pingLabel)
+            .parent(this)
+            .id("ping-label"_spr);
+    }
 
     return true;
 }
 
 void GlobedOverlay::updatePing(uint32_t ms) {
+    auto& settings = GlobedSettings::get();
+    if (!settings.overlay.enabled) return;
+
     auto fmted = fmt::format("{} ms", ms);
     pingLabel->setString(fmted.c_str());
+    this->setVisible(true);
+}
+
+void GlobedOverlay::updateWithDisconnected() {
+    auto& settings = GlobedSettings::get();
+    if (!settings.overlay.enabled) return;
+
+    if (settings.overlay.hideConditionally) {
+        this->setVisible(false);
+        return;
+    }
+
+    pingLabel->setString("Not connected");
+}
+
+void GlobedOverlay::updateWithEditor() {
+    auto& settings = GlobedSettings::get();
+    if (!settings.overlay.enabled) return;
+
+    if (settings.overlay.hideConditionally) {
+        this->setVisible(false);
+        return;
+    }
+
+    pingLabel->setString("N/A (Local level)");
 }
 
 GlobedOverlay* GlobedOverlay::create() {

@@ -1,25 +1,28 @@
 #pragma once
 #include <defs.hpp>
 
-#define GSETTING(ty,name) ty name = _DefaultFor##name
-// #define GDEFAULT(name, val) if (std::string_view(#name) == std::string_view(key)) return val
 #define GDEFAULT(name, type, val) static constexpr type _DefaultFor##name = val;
+#define GSETTING(ty,name, default) \
+    GDEFAULT(name, ty, default); \
+    ty name = _DefaultFor##name; \
 
 // This class should only be accessed from the main thread.
 class GlobedSettings : GLOBED_SINGLETON(GlobedSettings) {
 public:
     struct Globed {
-        GSETTING(uint32_t, tpsCap);
-        GSETTING(int, audioDevice);
-        GSETTING(bool, autoconnect); // todo unimpl
+        GSETTING(uint32_t, tpsCap, 0);
+        GSETTING(int, audioDevice, 0);
+        GSETTING(bool, autoconnect, false); // TODO unimpl
     };
 
     struct Overlay {
-        GSETTING(float, overlayOpacity);
+        GSETTING(float, opacity, 0.5f);
+        GSETTING(bool, enabled, true);
+        GSETTING(bool, hideConditionally, false);
     };
 
     struct Communication {
-        GSETTING(bool, voiceEnabled);
+        GSETTING(bool, voiceEnabled, true);
     };
 
     struct LevelUI {};
@@ -46,21 +49,6 @@ public:
     void clear(const std::string_view key);
 
 private:
-    /* defaults */
-
-    // globed
-    GDEFAULT(tpsCap, uint32_t, 0);
-    GDEFAULT(audioDevice, int, 0);
-    GDEFAULT(autoconnect, bool, false);
-
-    // overlay
-    GDEFAULT(overlayOpacity, float, 0.5f);
-
-    // communication
-    GDEFAULT(voiceEnabled, bool, true);
-
-    /* funcs */
-
     template <typename T>
     void store(const std::string_view key, const T& val) {
         geode::Mod::get()->setSavedValue(key, val);

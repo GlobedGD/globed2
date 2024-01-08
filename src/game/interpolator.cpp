@@ -66,7 +66,7 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
     player.updateCounter = updateCounter;
     player.pendingRealFrame = true;
 
-    if (player.lastDeathTimestamp != data.lastDeathTimestamp) {
+    if (!util::math::equal(player.lastDeathTimestamp, data.lastDeathTimestamp)) {
         player.lastDeathTimestamp = data.lastDeathTimestamp;
         if (!player.firstTick) {
             player.pendingDeath = true;
