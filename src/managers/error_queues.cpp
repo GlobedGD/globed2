@@ -2,25 +2,25 @@
 
 ErrorQueues::ErrorQueues() {}
 
-void ErrorQueues::warn(const std::string& message, bool print) {
+void ErrorQueues::warn(const std::string_view message, bool print) {
     if (print) geode::log::warn("{}", message);
-    _warns.push(message);
+    _warns.push(std::string(message));
 }
 
-void ErrorQueues::error(const std::string& message, bool print) {
+void ErrorQueues::error(const std::string_view message, bool print) {
     if (print) geode::log::error("{}", message);
-    _errors.push(message);
+    _errors.push(std::string(message));
 }
 
-void ErrorQueues::notice(const std::string& message, bool print) {
+void ErrorQueues::notice(const std::string_view message, bool print) {
     if (print) geode::log::warn("[Server notice] {}", message);
-    _notices.push(message);
+    _notices.push(std::string(message));
 }
 
-void ErrorQueues::debugWarn(const std::string& message, bool print) {
+void ErrorQueues::debugWarn(const std::string_view message, bool print) {
     if (print) geode::log::warn("{}", message);
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
-    _warns.push(message);
+    _warns.push(std::string(message));
 #endif
 }
 

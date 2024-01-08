@@ -102,7 +102,7 @@ ByteBuffer GameSocket::serializePacket(Packet* packet) {
     return buf;
 }
 
-void GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const std::string& address, unsigned short port) {
+void GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const std::string_view address, unsigned short port) {
     auto buf = this->serializePacket(packet.get());
 
 #ifdef GLOBED_DEBUG_PACKETS

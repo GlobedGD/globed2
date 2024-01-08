@@ -121,8 +121,8 @@ void AddServerPopup::onTestSuccess() {
     this->onClose(this);
 }
 
-void AddServerPopup::onTestFailure(const std::string& message) {
-    FLAlertLayer::create("Globed error", message.c_str(), "Ok")->show();
+void AddServerPopup::onTestFailure(const std::string_view message) {
+    FLAlertLayer::create("Globed error", message.data(), "Ok")->show();
     this->release();
     this->onClose(this);
 }

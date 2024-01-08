@@ -4,11 +4,10 @@
 #define SFLAGKEY(sstr) "_gflag-" #sstr
 #define STOREV(cat, sstr) \
     do { \
-        static auto _defaultFor##cat##sstr = defaultFor<decltype(cat.sstr)>(#sstr); \
-        if ((cat.sstr) != _defaultFor##cat##sstr) { \
-            this->store(SKEY(sstr), cat.sstr);\
-        } else { \
-            this->clear(SKEY(sstr));\
+        constexpr static auto _skey = SKEY(sstr); \
+        \
+        if (this->has(_skey) || ((cat.sstr) != _DefaultFor##sstr)) { \
+            this->store(_skey, cat.sstr); \
         } \
     } while (0) \
 
@@ -31,13 +30,15 @@ GlobedSettings::GlobedSettings() {
 }
 
 void GlobedSettings::save() {
-    // The reason we do macro fuckery is because we don't want to save values that haven't been changed by the user,
-    // aka are at their defaults. So if the defaults get changed in the future, the user will be affected by the change too.
-
+    // globed
     STOREV(globed, tpsCap);
     STOREV(globed, audioDevice);
     STOREV(globed, autoconnect);
 
+    // overlay
+    STOREV(overlay, overlayOpacity);
+
+    // communication
     STOREV(communication, voiceEnabled);
 
     // store flags
@@ -46,10 +47,15 @@ void GlobedSettings::save() {
 }
 
 void GlobedSettings::reload() {
+    // globed
     LOADV(globed, tpsCap);
     LOADV(globed, audioDevice);
     LOADV(globed, autoconnect);
 
+    // overlay
+    LOADV(overlay, overlayOpacity);
+
+    // communication
     LOADV(communication, voiceEnabled);
 
     // load flags
@@ -59,17 +65,22 @@ void GlobedSettings::reload() {
 
 void GlobedSettings::resetToDefaults() {
     RESET_SETTINGS(
+        // globed
         SKEY(tpsCap),
         SKEY(audioDevice),
         SKEY(autoconnect),
 
+        // overlay
+        SKEY(overlayOpacity),
+
+        // communication
         SKEY(voiceEnabled)
     );
 
     this->reload();
 }
 
-void GlobedSettings::clear(const std::string& key) {
+void GlobedSettings::clear(const std::string_view key) {
     auto& container = geode::Mod::get()->getSaveContainer();
     auto& obj = container.as_object();
 

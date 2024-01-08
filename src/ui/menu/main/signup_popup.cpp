@@ -68,7 +68,7 @@ bool GlobedSignupPopup::setup() {
     return true;
 }
 
-void GlobedSignupPopup::onChallengeCreated(int levelId, const std::string& chtoken) {
+void GlobedSignupPopup::onChallengeCreated(int levelId, const std::string_view chtoken) {
     // what are you cooking 😟
     // - xTymon 12.11.2023 19:03 CET
 
@@ -115,7 +115,7 @@ void GlobedSignupPopup::commentUploadFailed(int, CommentError e) {
 
 void GlobedSignupPopup::commentDeleteFailed(int, int) {}
 
-void GlobedSignupPopup::onChallengeCompleted(const std::string& authcode) {
+void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
     auto& csm = CentralServerManager::get();
     auto& am = GlobedAccountManager::get();
 
@@ -166,7 +166,7 @@ void GlobedSignupPopup::onSuccess() {
     this->onClose(this);
 }
 
-void GlobedSignupPopup::onFailure(const std::string& message) {
+void GlobedSignupPopup::onFailure(const std::string_view message) {
     ErrorQueues::get().error(message);
     this->onClose(this);
 }

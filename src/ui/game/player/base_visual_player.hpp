@@ -12,6 +12,7 @@ public:
     virtual void updateName() = 0;
     virtual void updateData(const SpecificIconData& data) = 0;
     virtual void updateIconType(PlayerIconType newType) = 0;
+    virtual void playDeathEffect() = 0;
 
     static int getIconWithType(const PlayerIconData& data, PlayerIconType type);
 

@@ -3,10 +3,9 @@
 
 #include <bitset>
 #include <vector>
-#include <cstdint>
 
 /*
-* BitBuffer - a simple interface that allows you to read/write bits
+* BitBuffer - a simple interface that allows you to read/write bits (MSB to LSB)
 */
 template <size_t BitCount> requires (BitCount <= 64 && BitCount > 0)
 class BitBuffer {
@@ -16,11 +15,16 @@ public:
                  std::conditional_t<(BitCount <= 32), uint32_t,
                  std::conditional_t<(BitCount <= 64), uint64_t, void>>>>;
 
-    BitBuffer(UnderlyingType val) {
+    explicit BitBuffer(UnderlyingType val) {
         bitset = std::bitset<BitCount>(val);
     }
 
     BitBuffer() {}
+
+    template <typename... Args> requires (std::same_as<Args, bool> && ...)
+    BitBuffer(Args... args) {
+        this->writeBits(args...);
+    }
 
     void writeBit(bool value) {
         // remember - we are writing from MSB to LSB so we need to reverse the position
@@ -46,6 +50,15 @@ public:
         size_t actualPosition = BitCount - ++position;
 
         return bitset.test(actualPosition);
+    }
+
+    void readBitInto(bool& out) {
+        out = readBit();
+    }
+
+    template <typename... Args> requires (std::same_as<Args, bool> && ...)
+    void readBitsInto(Args&... args) {
+        (readBitInto(args), ...);
     }
 
     UnderlyingType contents() const {

@@ -20,8 +20,8 @@ void secureRandom(byte* dest, size_t size) {
     randombytes_buf(dest, size);
 }
 
-bytevector pwHash(const std::string& input) {
-    return pwHash(reinterpret_cast<const byte*>(input.c_str()), input.size());
+bytevector pwHash(const std::string_view input) {
+    return pwHash(reinterpret_cast<const byte*>(input.data()), input.size());
 }
 
 bytevector pwHash(const bytevector& input) {
@@ -48,8 +48,8 @@ bytevector pwHash(const byte* input, size_t len) {
     return out;
 }
 
-bytevector simpleHash(const std::string& input) {
-    return simpleHash(reinterpret_cast<const byte*>(input.c_str()), input.size());
+bytevector simpleHash(const std::string_view input) {
+    return simpleHash(reinterpret_cast<const byte*>(input.data()), input.size());
 }
 
 bytevector simpleHash(const bytevector& input) {
@@ -107,7 +107,7 @@ std::string simpleTOTPForPeriod(const byte *key, size_t keySize, uint64_t period
     return otpStream.str();
 }
 
-bool simpleTOTPVerify(const std::string& code, const byte* key, size_t keySize, size_t skew) {
+bool simpleTOTPVerify(const std::string_view code, const byte* key, size_t keySize, size_t skew) {
     uint64_t curPeriod = std::time(nullptr) / 30;
     auto curTotp = simpleTOTPForPeriod(key, keySize, curPeriod);
     if (stringsEqual(code, curTotp)) {
@@ -133,11 +133,11 @@ bool simpleTOTPVerify(const std::string& code, const byte* key, size_t keySize, 
     return false;
 }
 
-bool simpleTOTPVerify(const std::string& code, const bytevector& key, size_t skew) {
+bool simpleTOTPVerify(const std::string_view code, const bytevector& key, size_t skew) {
     return simpleTOTPVerify(code, key.data(), key.size(), skew);
 }
 
-bool stringsEqual(const std::string& s1, const std::string& s2) {
+bool stringsEqual(const std::string_view s1, const std::string_view s2) {
     if (s1.size() != s2.size()) {
         return false;
     }
@@ -167,8 +167,8 @@ std::string base64Encode(const bytevector& source, Base64Variant variant) {
     return base64Encode(source.data(), source.size(), variant);
 }
 
-std::string base64Encode(const std::string& source, Base64Variant variant) {
-    return base64Encode(reinterpret_cast<const byte*>(source.c_str()), source.size(), variant);
+std::string base64Encode(const std::string_view source, Base64Variant variant) {
+    return base64Encode(reinterpret_cast<const byte*>(source.data()), source.size(), variant);
 }
 
 bytevector base64Decode(const byte* source, size_t size, Base64Variant variant) {
@@ -188,8 +188,8 @@ bytevector base64Decode(const byte* source, size_t size, Base64Variant variant) 
     return out;
 }
 
-bytevector base64Decode(const std::string& source, Base64Variant variant) {
-    return base64Decode(reinterpret_cast<const byte*>(source.c_str()), source.size(), variant);
+bytevector base64Decode(const std::string_view source, Base64Variant variant) {
+    return base64Decode(reinterpret_cast<const byte*>(source.data()), source.size(), variant);
 }
 
 bytevector base64Decode(const bytevector& source, Base64Variant variant) {
@@ -213,8 +213,8 @@ std::string hexEncode(const bytevector& source) {
     return hexEncode(source.data(), source.size());
 }
 
-std::string hexEncode(const std::string& source) {
-    return hexEncode(reinterpret_cast<const byte*>(source.c_str()), source.size());
+std::string hexEncode(const std::string_view source) {
+    return hexEncode(reinterpret_cast<const byte*>(source.data()), source.size());
 }
 
 bytevector hexDecode(const byte* source, size_t size) {
@@ -234,8 +234,8 @@ bytevector hexDecode(const byte* source, size_t size) {
     return out;
 }
 
-bytevector hexDecode(const std::string& source) {
-    return hexDecode(reinterpret_cast<const byte*>(source.c_str()), source.size());
+bytevector hexDecode(const std::string_view source) {
+    return hexDecode(reinterpret_cast<const byte*>(source.data()), source.size());
 }
 
 bytevector hexDecode(const bytevector& source) {

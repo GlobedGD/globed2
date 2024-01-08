@@ -36,6 +36,7 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     playerIcon->togglePlatformerMode(playLayer->m_level->isPlatformer());
 
     storedIcons = icons;
+    // TODO set death effect somehow?
 
     this->updatePlayerObjectIcons();
     this->updateIconType(playerIconType);
@@ -80,6 +81,10 @@ void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
     }
 
     this->callUpdateWith(newType, this->getIconWithType(icons, newType));
+}
+
+void ComplexVisualPlayer::playDeathEffect() {
+    playerIcon->playDeathEffect();
 }
 
 void ComplexVisualPlayer::updatePlayerObjectIcons() {

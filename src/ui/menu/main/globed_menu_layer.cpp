@@ -134,7 +134,7 @@ CCArray* GlobedMenuLayer::createServerList() {
 
     bool authenticated = nm.established();
 
-    auto activeServer = gsm.active();
+    auto activeServer = gsm.getActive();
 
     for (const auto& [serverId, server] : gsm.getAllServers()) {
         bool active = authenticated && serverId == activeServer;
@@ -190,7 +190,7 @@ void GlobedMenuLayer::refreshServerList(float) {
         return;
     }
 
-    auto active = gsm.active();
+    auto active = gsm.getActive();
 
     bool authenticated = NetworkManager::get().established();
 

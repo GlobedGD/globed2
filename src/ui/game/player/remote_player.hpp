@@ -12,7 +12,7 @@ public:
     void updateAccountData(const PlayerAccountData& data);
     const PlayerAccountData& getAccountData() const;
 
-    void updateData(const VisualPlayerState& data);
+    void updateData(const VisualPlayerState& data, bool playDeathEffect);
 
     unsigned int getDefaultTicks();
     void setDefaultTicks(unsigned int ticks);

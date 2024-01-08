@@ -113,7 +113,7 @@ NetworkManager::~NetworkManager() {
     log::debug("Goodbye!");
 }
 
-bool NetworkManager::connect(const std::string& addr, unsigned short port, bool standalone) {
+bool NetworkManager::connect(const std::string_view addr, unsigned short port, bool standalone) {
     if (this->connected() && !this->handshaken()) {
         ErrorQueues::get().debugWarn("already trying to connect, please wait");
         return false;
@@ -222,7 +222,7 @@ void NetworkManager::threadMainFunc() {
         for (const auto& task : taskQueue.popAll()) {
             if (task == NetworkThreadTask::PingServers) {
                 auto& sm = GameServerManager::get();
-                auto activeServer = sm.active();
+                auto activeServer = sm.getActiveId();
 
                 for (auto& [serverId, server] : sm.getAllServers()) {
                     if (serverId == activeServer) continue;

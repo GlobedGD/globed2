@@ -17,9 +17,8 @@ void ErrorCheckNode::updateErrors(float) {
     // TODO getrunningscene is broken for now
     // TODO temp datawatcher
     util::debugging::DataWatcher::get().updateAll();
-    CCScene* currentScene = nullptr;
-    return;
-    // auto* currentScene = CCDirector::get()->getRunningScene();
+
+    auto* currentScene = CCDirector::get()->getRunningScene();
     if (!currentScene || !currentScene->getChildren() || currentScene->getChildrenCount() == 0) return;
 
     auto* currentLayer = currentScene->getChildren()->objectAtIndex(0);

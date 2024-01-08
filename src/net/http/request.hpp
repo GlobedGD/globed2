@@ -30,20 +30,20 @@ public:
 
     // the functions you call at the start
     static GHTTPRequest get();
-    static GHTTPRequest get(const std::string& url);
+    static GHTTPRequest get(const std::string_view url);
     static GHTTPRequest post();
-    static GHTTPRequest post(const std::string& url);
-    static GHTTPRequest post(const std::string& url, const std::string& data);
+    static GHTTPRequest post(const std::string_view url);
+    static GHTTPRequest post(const std::string_view url, const std::string_view data);
     static GHTTPRequest put();
-    static GHTTPRequest put(const std::string& url);
-    static GHTTPRequest put(const std::string& url, const std::string& data);
+    static GHTTPRequest put(const std::string_view url);
+    static GHTTPRequest put(const std::string_view url, const std::string_view data);
     static GHTTPRequest delete_();
-    static GHTTPRequest delete_(const std::string& url);
+    static GHTTPRequest delete_(const std::string_view url);
 
-    GHTTPRequest& url(const std::string& addr);
-    GHTTPRequest& userAgent(const std::string& agent);
+    GHTTPRequest& url(const std::string_view addr);
+    GHTTPRequest& userAgent(const std::string_view agent);
     GHTTPRequest& followRedirects(bool follow = true);
-    GHTTPRequest& data(const std::string& dataStr);
+    GHTTPRequest& data(const std::string_view dataStr);
     template <typename Rep, typename Period>
     GHTTPRequest& timeout(util::time::duration<Rep, Period> duration) {
         return this->timeout(util::time::asMillis(duration));
@@ -51,12 +51,12 @@ public:
     GHTTPRequest& timeout(uint32_t timeoutMs);
 
     // these two set the Content-Type header
-    GHTTPRequest& contentType(const std::string& ctype);
+    GHTTPRequest& contentType(const std::string_view ctype);
     GHTTPRequest& contentType(GHTTPContentType ctype);
 
     // for header() either pass two args for key and value, or one in format "Authorization: xxx"
-    GHTTPRequest& header(const std::string& key, const std::string& value);
-    GHTTPRequest& header(const std::string& header);
+    GHTTPRequest& header(const std::string_view key, const std::string_view value);
+    GHTTPRequest& header(const std::string_view header);
 
     // set the callback
     GHTTPRequest& then(CallbackFunc cbFunc);

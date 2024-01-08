@@ -40,4 +40,8 @@ pub struct PlayerData {
 
     pub player1: SpecificIconData,
     pub player2: SpecificIconData,
+
+    pub last_death_timestamp: f32,
+
+    pub flag_byte: u8,
 }

@@ -91,9 +91,9 @@ class ChatMessagePacket : public Packet {
         buf.writeString(message);
     }
 
-    ChatMessagePacket(const std::string& message) : message(message) {}
+    ChatMessagePacket(const std::string_view message) : message(message) {}
 
-    static std::shared_ptr<Packet> create(const std::string& message) {
+    static std::shared_ptr<Packet> create(const std::string_view message) {
         return std::make_shared<ChatMessagePacket>(message);
     }
 

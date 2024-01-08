@@ -87,7 +87,7 @@ public:
     util::data::bytevector readByteArray();
 
     // Write a string, prefixed with 4 bytes indicating length
-    void writeString(const std::string& str);
+    void writeString(const std::string_view str);
     // Write a bytevector, prefixed with 4 bytes indicating length
     void writeByteArray(const util::data::bytevector& vec);
     // Write bytes from a buffer, prefixed with 4 bytes indicating length

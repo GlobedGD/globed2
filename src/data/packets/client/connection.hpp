@@ -56,10 +56,10 @@ class LoginPacket : public Packet {
         buf.writeValue(icons);
     }
 
-    LoginPacket(int32_t accid, const std::string& name, const std::string& token, const PlayerIconData& icons)
+    LoginPacket(int32_t accid, const std::string_view name, const std::string_view token, const PlayerIconData& icons)
         : accountId(accid), name(name), token(token), icons(icons) {}
 
-    static std::shared_ptr<Packet> create(int32_t accid, const std::string& name, const std::string& token, const PlayerIconData& icons) {
+    static std::shared_ptr<Packet> create(int32_t accid, const std::string_view name, const std::string_view token, const PlayerIconData& icons) {
         return std::make_shared<LoginPacket>(accid, name, token, icons);
     }
 

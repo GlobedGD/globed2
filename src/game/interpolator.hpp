@@ -30,7 +30,10 @@ public:
     void tickWithRatio(float ratio);
 
     // Get the current interpolated visual state of the player. This is what you pass into `RemotePlayer::updateData`
-    const VisualPlayerState& getPlayerState(uint32_t playerId);
+    VisualPlayerState& getPlayerState(uint32_t playerId);
+
+    // returns `true` if death animation needs to be played and sets the flag back to false (so next call won't return `true` again)
+    bool swapDeathStatus(uint32_t playerId);
 
     // returns `true` if the given time of the last packet doesn't match the last update time of the player
     bool isPlayerStale(uint32_t playerId, float lastServerPacket);
@@ -57,9 +60,12 @@ public:
     struct PlayerState {
         float updateCounter = 0.0f;
         float timeCounter = 0.0f;
+        float lastDeathTimestamp = 0.0f;
 
         LerpFrame olderFrame, newerFrame;
         VisualPlayerState interpolatedState;
         bool pendingRealFrame = false;
+        bool pendingDeath = false;
+        bool firstTick = true;
     };
 };

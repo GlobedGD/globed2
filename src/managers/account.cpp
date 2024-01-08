@@ -6,12 +6,12 @@
 
 GlobedAccountManager::GlobedAccountManager() : box(SecretBox::withPassword("")) {}
 
-void GlobedAccountManager::initialize(const std::string& name, int accountId, const std::string& gjp, const std::string& central) {
+void GlobedAccountManager::initialize(const std::string_view name, int accountId, const std::string_view gjp, const std::string_view central) {
     GDData data = {
-        .accountName = name,
+        .accountName = std::string(name),
         .accountId = accountId,
-        .gjp = gjp,
-        .central = central,
+        .gjp = std::string(gjp),
+        .central = std::string(central),
         .precomputedHash = this->computeGDDataHash(name, accountId, gjp, central)
     };
 
@@ -76,7 +76,7 @@ bool GlobedAccountManager::hasAuthKey() {
     return !b64Token.empty();
 }
 
-std::string GlobedAccountManager::computeGDDataHash(const std::string& name, int accountId, const std::string& gjp, const std::string& central) {
+std::string GlobedAccountManager::computeGDDataHash(const std::string_view name, int accountId, const std::string_view gjp, const std::string_view central) {
     auto hash = util::crypto::simpleHash(fmt::format(
         "{}-{}-{}-{}", name, accountId, gjp, central
     ));
@@ -85,6 +85,6 @@ std::string GlobedAccountManager::computeGDDataHash(const std::string& name, int
 }
 
 // NOTE: this does not check for initialized, callers must do it themselves
-std::string GlobedAccountManager::getKeyFor(const std::string& key) {
-    return key + "-" + gdData.lock()->precomputedHash;
+std::string GlobedAccountManager::getKeyFor(const std::string_view key) {
+    return std::string(key) + "-" + gdData.lock()->precomputedHash;
 }

@@ -66,6 +66,15 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
     player.updateCounter = updateCounter;
     player.pendingRealFrame = true;
 
+    if (player.lastDeathTimestamp != data.lastDeathTimestamp) {
+        player.lastDeathTimestamp = data.lastDeathTimestamp;
+        if (!player.firstTick) {
+            player.pendingDeath = true;
+        }
+    }
+
+    player.firstTick = false;
+
     if (settings.realtime) {
         player.interpolatedState.player1 = data.player1;
         player.interpolatedState.player2 = data.player2;
@@ -198,8 +207,16 @@ void PlayerInterpolator::tickWithRatio(float ratio) {
     }
 }
 
-const VisualPlayerState& PlayerInterpolator::getPlayerState(uint32_t playerId) {
+VisualPlayerState& PlayerInterpolator::getPlayerState(uint32_t playerId) {
     return players.at(playerId).interpolatedState;
+}
+
+bool PlayerInterpolator::swapDeathStatus(uint32_t playerId) {
+    auto& state = players.at(playerId);
+    bool death = state.pendingDeath;
+    state.pendingDeath = false;
+
+    return death;
 }
 
 bool PlayerInterpolator::isPlayerStale(uint32_t playerId, float lastServerPacket) {

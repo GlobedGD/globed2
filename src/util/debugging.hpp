@@ -11,11 +11,11 @@ namespace util::debugging {
     // It will return the number of microseconds the code took to run.
     class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
     public:
-        inline void start(const std::string& id) {
-            _entries[id] = time::now();
+        inline void start(const std::string_view id) {
+            _entries[std::string(id)] = time::now();
         }
 
-        time::micros end(const std::string& id);
+        time::micros end(const std::string_view id);
     private:
         std::unordered_map<std::string, time::time_point> _entries;
     };
@@ -28,17 +28,17 @@ namespace util::debugging {
             data::bytevector lastData;
         };
 
-        inline void start(const std::string& id, uintptr_t address, size_t size) {
-            _entries[id] = WatcherEntry {
+        inline void start(const std::string_view id, uintptr_t address, size_t size) {
+            _entries[std::string(id)] = WatcherEntry {
                 .address = address,
                 .size = size,
                 .lastData = data::bytevector(size)
             };
 
-            this->updateLastData(_entries[id]);
+            this->updateLastData(_entries[std::string(id)]);
         }
 
-        inline void start(const std::string& id, void* address, size_t size) {
+        inline void start(const std::string_view id, void* address, size_t size) {
             this->start(id, (uintptr_t)address, size);
         }
 
@@ -117,5 +117,5 @@ namespace util::debugging {
 #endif
 
     // like geode::log::debug but with precise timestamps.
-    void timedLog(const std::string& message);
+    void timedLog(const std::string_view message);
 }

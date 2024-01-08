@@ -19,7 +19,7 @@ public:
     SecretBox& operator=(const SecretBox&) = delete;
     ~SecretBox();
 
-    static SecretBox withPassword(const std::string& pw);
+    static SecretBox withPassword(const std::string_view pw);
 
     constexpr size_t nonceLength() override;
     constexpr size_t macLength() override;
@@ -31,7 +31,7 @@ public:
     void setKey(const util::data::bytevector& src);
     void setKey(const util::data::byte* src);
     // hashes the password and initializes the secret key with the hash
-    void setPassword(const std::string& pw);
+    void setPassword(const std::string_view pw);
 
 private:
     util::data::byte* key = nullptr;

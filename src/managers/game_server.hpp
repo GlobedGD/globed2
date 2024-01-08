@@ -33,25 +33,28 @@ public:
 
     util::sync::AtomicBool pendingChanges;
 
-    void addServer(const std::string& serverId, const std::string& name, const std::string& address, const std::string& region);
+    void addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
     void clear();
     size_t count();
 
-    void setActive(const std::string& id);
-    std::string active();
+    void setActive(const std::string_view id);
+    std::string getActiveId();
     void clearActive();
 
     std::optional<GameServer> getActiveServer();
-    GameServer getServer(const std::string& id);
+    GameServer getServer(const std::string_view id);
     std::unordered_map<std::string, GameServer> getAllServers();
 
+    // return ping on the active server
+    uint32_t getActivePing();
+
     // save the given address as a last connected standalone address
-    void saveStandalone(const std::string& addr);
+    void saveStandalone(const std::string_view addr);
     std::string loadStandalone();
 
     /* pings */
 
-    uint32_t startPing(const std::string& serverId);
+    uint32_t startPing(const std::string_view serverId);
     void finishPing(uint32_t pingId, uint32_t playerCount);
 
     void startKeepalive();

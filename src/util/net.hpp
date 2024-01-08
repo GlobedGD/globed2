@@ -26,11 +26,11 @@ namespace util::net {
     std::string webUserAgent();
 
     // Split an address like 127.0.0.1:4343 into pair("127.0.0.1", 4343)
-    std::pair<std::string, unsigned short> splitAddress(const std::string& address, unsigned short defaultPort = 0);
+    std::pair<std::string, unsigned short> splitAddress(const std::string_view address, unsigned short defaultPort = 0);
 
     // Check if two sockaddr structures are equal
     bool sameSockaddr(const sockaddr_in& s1, const sockaddr_in& s2);
 
     // getaddrinfo
-    std::string getaddrinfo(const std::string& hostname);
+    std::string getaddrinfo(const std::string_view hostname);
 }

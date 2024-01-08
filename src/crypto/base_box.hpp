@@ -35,7 +35,7 @@ public:
 
     // Encrypt bytes from the string `src` into `dest`. Note: the `dest` buffer must be at least `size + prefixLength()` bytes big.
     // Returns the length of the encrypted data.
-    size_t encryptInto(const std::string& src, util::data::byte* dest);
+    size_t encryptInto(const std::string_view src, util::data::byte* dest);
     // Encrypt bytes from the bytevector `src` into `dest`. Note: the `dest` buffer must be at least `src.size() + prefixLength()` bytes big.
     // Returns the length of the encrypted data.
     size_t encryptInto(const util::data::bytevector& src, util::data::byte* dest);
@@ -48,7 +48,7 @@ public:
     // Encrypt `size` bytes from byte buffer `src` and return a bytevector with the encrypted data.
     util::data::bytevector encrypt(const util::data::byte* src, size_t size);
     // Encrypt bytes from the string `src` and return a bytevector with the encrypted data.
-    util::data::bytevector encrypt(const std::string& src);
+    util::data::bytevector encrypt(const std::string_view src);
 
     /* Decryption */
 

@@ -7,8 +7,8 @@ constexpr size_t BaseCryptoBox::prefixLength() {
     return nonceLength() + macLength();
 }
 
-size_t BaseCryptoBox::encryptInto(const std::string& src, byte* dest) {
-    return encryptInto(reinterpret_cast<const byte*>(src.c_str()), dest, src.size());
+size_t BaseCryptoBox::encryptInto(const std::string_view src, byte* dest) {
+    return encryptInto(reinterpret_cast<const byte*>(src.data()), dest, src.size());
 }
 
 size_t BaseCryptoBox::encryptInto(const bytevector& src, byte* dest) {
@@ -29,8 +29,8 @@ bytevector BaseCryptoBox::encrypt(const byte* src, size_t size) {
     return output;
 }
 
-bytevector BaseCryptoBox::encrypt(const std::string& src) {
-    return encrypt(reinterpret_cast<const byte*>(src.c_str()), src.size());
+bytevector BaseCryptoBox::encrypt(const std::string_view src) {
+    return encrypt(reinterpret_cast<const byte*>(src.data()), src.size());
 }
 
 size_t BaseCryptoBox::decryptInPlace(byte* data, size_t size) {

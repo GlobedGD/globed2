@@ -6,6 +6,8 @@
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif // GLOBED_HAS_KEYBINDS
 
+#include <UIBuilder.hpp>
+
 #include "pause_layer.hpp"
 #include <audio/all.hpp>
 #include <game/interpolator.hpp>
@@ -15,24 +17,38 @@
 #include <net/network_manager.hpp>
 #include <data/packets/all.hpp>
 #include <ui/game/player/remote_player.hpp>
+#include <ui/game/overlay/overlay.hpp>
 #include <util/math.hpp>
 #include <util/debugging.hpp>
 
 using namespace geode::prelude;
 
+inline float adjustLerpTimeDelta(float dt) {
+    // i fucking hate this i cannot do this anymore i want to die
+    return CCDirector::get()->getAnimationInterval();
+
+    // uncomment and watch the world blow up
+    // return dt;
+}
+
 class $modify(GlobedPlayLayer, PlayLayer) {
     // setup stuff
-    GlobedSettings& settings = GlobedSettings::get();
     bool globedReady = false;
     uint32_t configuredTps = 0;
 
     // in game stuff
     bool deafened = false;
     uint32_t totalSentPackets = 0;
-    std::unordered_map<int, RemotePlayer*> players;
     float timeCounter = 0.f;
     float lastServerUpdate = 0.f;
     std::shared_ptr<PlayerInterpolator> interpolator;
+
+    bool isCurrentlyDead = false;
+    float lastDeathTimestamp = 0.f;
+
+    // ui elements
+    GlobedOverlay* overlay = nullptr;
+    std::unordered_map<int, RemotePlayer*> players;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;
@@ -49,8 +65,10 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         m_fields->globedReady = nm.established() && this->isCurrentPlayLayer(); // TODO idk if thats best practice
         if (!m_fields->globedReady) return true;
 
+        GlobedSettings& settings = GlobedSettings::get();
+
         // set the configured tps
-        auto tpsCap = m_fields->settings.globed.tpsCap;
+        auto tpsCap = settings.globed.tpsCap;
         if (tpsCap != 0) {
             m_fields->configuredTps = std::min(nm.connectedTps.load(), tpsCap);
         } else {
@@ -60,7 +78,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 #if GLOBED_VOICE_SUPPORT
         // set the audio device
         try {
-            GlobedAudioManager::get().setActiveRecordingDevice(m_fields->settings.globed.audioDevice);
+            GlobedAudioManager::get().setActiveRecordingDevice(settings.globed.audioDevice);
         } catch(const std::exception& e) {
             // try default device, if we have no mic then just do nothing
             try {
@@ -95,6 +113,16 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         // update
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this, 0.0f, false);
+
+        auto winSize = CCDirector::get()->getWinSize();
+
+        // overlay
+        Build<GlobedOverlay>::create()
+            .pos(0.f, winSize.height) // TODO configurable pos
+            .anchorPoint(0.f, 1.f)
+            .id("game-overlay"_spr)
+            .parent(this)
+            .store(m_fields->overlay);
 
         return true;
     }
@@ -150,7 +178,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         nm.addListener<VoiceBroadcastPacket>([this](VoiceBroadcastPacket* packet) {
 #if GLOBED_VOICE_SUPPORT
             // if deafened or voice is disabled, do nothing
-            if (this->m_fields->deafened || !this->m_fields->settings.communication.voiceEnabled) return;
+            auto& settings = GlobedSettings::get();
+            if (this->m_fields->deafened || !settings.communication.voiceEnabled) return;
 
             // TODO client side blocking and stuff..
             log::debug("streaming frame from {}", packet->sender);
@@ -219,7 +248,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     /* periodical selectors */
 
-    // selSendPlayerData - runs 30 times per second
+    // selSendPlayerData - runs tps (default 30) times per second
     void selSendPlayerData(float) {
         if (!this->established()) return;
         if (!this->isCurrentPlayLayer()) return;
@@ -233,8 +262,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         NetworkManager::get().send(PlayerDataPacket::create(data));
     }
 
-    // selUpdateProfiles - runs 4 times a second, updates profiles of other people and removes dead players
-    void selUpdateProfiles(float) {
+    // selPeriodicalUpdate - runs 4 times a second, does various stuff
+    void selPeriodicalUpdate(float) {
         if (!this->established()) return;
         if (!this->isCurrentPlayLayer()) return;
 
@@ -242,8 +271,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         util::collections::SmallVector<int, 16> toRemove;
 
-
-        // if there has been no server update for a while, likely there are no players on the level
+        // if there has been no server update for a while, likely there are no players on the level, kick everyone
         if (m_fields->timeCounter - m_fields->lastServerUpdate > 1.0f) {
             for (const auto& [playerId, _] : m_fields->players) {
                 toRemove.push_back(playerId);
@@ -256,6 +284,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             return;
         }
 
+        // kick players that have left the level
         for (const auto& [playerId, remotePlayer] : m_fields->players) {
             // if the player doesnt exist in last LevelData packet, they have left the level
             if (m_fields->interpolator->isPlayerStale(playerId, m_fields->lastServerUpdate)) {
@@ -282,18 +311,21 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         for (int id : toRemove) {
             this->handlePlayerLeave(id);
         }
+
+        // update the overlay
+        m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
     }
 
     // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
     void selUpdate(float dt) {
-        dt = this->adjustDelta(dt);
+        dt = adjustLerpTimeDelta(dt);
         m_fields->timeCounter += dt;
 
         m_fields->interpolator->tick(dt);
 
         for (const auto [playerId, remotePlayer] : m_fields->players) {
             const auto& vstate = m_fields->interpolator->getPlayerState(playerId);
-            remotePlayer->updateData(vstate);
+            remotePlayer->updateData(vstate, m_fields->interpolator->swapDeathStatus(playerId));
         }
     }
 
@@ -318,19 +350,37 @@ class $modify(GlobedPlayLayer, PlayLayer) {
             .iconType = iconType,
             .position = player->m_position, // TODO maybe use getPosition ?
             .rotation = player->getRotation(),
+
             .isVisible = player->isVisible(),
             .isLookingLeft = player->m_isGoingLeft,
+            .isUpsideDown = false, // TODO
+            .isDashing = false, // TODO
         };
     }
 
     PlayerData gatherPlayerData() {
-        return PlayerData(
-            m_fields->timeCounter,
-            m_level->m_normalPercent,
-            m_level->m_attempts,
-            this->gatherSpecificIconData(m_player1),
-            this->gatherSpecificIconData(m_player2) // TODO detect isDualMode
-        );
+        bool isDead = false; // TODO
+        if (isDead && !m_fields->isCurrentlyDead) {
+            m_fields->isCurrentlyDead = true;
+            m_fields->lastDeathTimestamp = m_fields->timeCounter;
+        } else if (!isDead) {
+            m_fields->isCurrentlyDead = false;
+        }
+
+        return PlayerData {
+            .timestamp = m_fields->timeCounter,
+            .percentage = static_cast<uint16_t>(m_level->m_normalPercent),
+            .attempts = m_level->m_attempts,
+
+            .player1 = this->gatherSpecificIconData(m_player1),
+            .player2 = this->gatherSpecificIconData(m_player2), // TODO detect isDualMode
+
+            .lastDeathTimestamp = m_fields->lastDeathTimestamp,
+
+            .isDead = isDead,
+            .isPaused = this->isPaused(),
+            .isPracticing = false, // TODO
+        };
     }
 
     void handlePlayerJoin(int playerId) {
@@ -410,7 +460,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     void unscheduleSelectors() {
         auto* sched = CCScheduler::get();
         sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this);
-        sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateProfiles), this);
+        sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this);
     }
 
     void rescheduleSelectors() {
@@ -422,7 +472,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         float updpInterval = 0.25f * timescale;
 
         sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, pdInterval, false);
-        sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateProfiles), this, updpInterval, false);
+        sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this, updpInterval, false);
     }
 
     bool isCurrentPlayLayer() {
@@ -432,10 +482,5 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     bool isPaused() {
         return this->getParent()->getChildByID("PauseLayer") != nullptr; // TODO no worky on android and relies on node ids from geode
-    }
-
-    inline float adjustDelta(float dt) {
-        // i fucking hate this i cannot do this anymore i want to die
-        return CCDirector::get()->getAnimationInterval();
     }
 };

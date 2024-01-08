@@ -17,11 +17,11 @@ protected:
     bool setup() override;
     void keyDown(cocos2d::enumKeyCodes key) override;
     void keyBackClicked() override;
-    void onFailure(const std::string& message);
+    void onFailure(const std::string_view message);
     void onSuccess();
 
-    void onChallengeCreated(int levelId, const std::string& chtoken);
-    void onChallengeCompleted(const std::string& authcode);
+    void onChallengeCreated(int levelId, const std::string_view chtoken);
+    void onChallengeCompleted(const std::string_view authcode);
 
     void commentUploadFinished(int) override;
     void commentUploadFailed(int, CommentError) override;

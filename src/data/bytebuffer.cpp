@@ -91,7 +91,7 @@ void ByteBuffer::readBytesInto(byte* out, size_t size) {
     _position += size;
 }
 
-void ByteBuffer::writeString(const std::string& str) {
+void ByteBuffer::writeString(const std::string_view str) {
     this->writeU32(str.size());
     _data.insert(_data.end(), str.begin(), str.end());
     _position += str.size();

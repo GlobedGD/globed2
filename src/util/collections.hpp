@@ -274,47 +274,6 @@ std::vector<V> mapValues(const std::unordered_map<K, V>& map) {
 
 /* borrowed versions of the above functions */
 
-
-template <typename K, typename V>
-std::vector<K*> mapKeysBorrowed(std::map<K, V>& map) {
-    std::vector<K*> out;
-    for (auto& pair : map) {
-        out.push_back(&pair.first);
-    }
-
-    return out;
-}
-
-template <typename K, typename V>
-std::vector<K*> mapKeysBorrowed(std::unordered_map<K, V>& map) {
-    std::vector<K*> out;
-    for (auto& pair : map) {
-        out.push_back(&pair.first);
-    }
-
-    return out;
-}
-
-template <typename K, typename V>
-std::vector<V*> mapValuesBorrowed(std::map<K, V>& map) {
-    std::vector<V*> out;
-    for (auto& pair : map) {
-        out.push_back(&pair.second);
-    }
-
-    return out;
-}
-
-template <typename K, typename V>
-std::vector<V*> mapValuesBorrowed(std::unordered_map<K, V>& map) {
-    std::vector<V*> out;
-    for (auto& pair : map) {
-        out.push_back(&pair.second);
-    }
-
-    return out;
-}
-
 template <typename T>
 std::vector<std::pair<size_t, T&>> enumerate(std::vector<T>& vec) {
     std::vector<std::pair<size_t, T&>> out;

@@ -18,7 +18,7 @@ SecretBox::SecretBox(bytevector key) {
     std::memcpy(this->key, key.data(), crypto_secretbox_KEYBYTES);
 }
 
-SecretBox SecretBox::withPassword(const std::string& pw) {
+SecretBox SecretBox::withPassword(const std::string_view pw) {
     auto key = util::crypto::simpleHash(pw);
     return SecretBox(key);
 }
@@ -73,7 +73,7 @@ void SecretBox::setKey(const util::data::byte* src) {
     std::memcpy(this->key, src, crypto_secretbox_KEYBYTES);
 }
 
-void SecretBox::setPassword(const std::string& pw) {
+void SecretBox::setPassword(const std::string_view pw) {
     auto key = util::crypto::simpleHash(pw);
     setKey(key);
 }

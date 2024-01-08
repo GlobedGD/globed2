@@ -36,7 +36,7 @@ public:
     ~NetworkManager();
 
     // Connect to a server
-    bool connect(const std::string& addr, unsigned short port, bool standalone = false);
+    bool connect(const std::string_view addr, unsigned short port, bool standalone = false);
     // Safer version of `connect`, sets the active game server in `GameServerManager` on success, doesn't throw on exception on error
     void connectWithView(const GameServer& gsview);
     // Is similar to `connectWithView` (does not throw exceptions) but is made specifically for standalone servers.

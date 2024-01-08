@@ -6,12 +6,12 @@
 
 GameServerManager::GameServerManager() {}
 
-void GameServerManager::addServer(const std::string& serverId, const std::string& name, const std::string& address, const std::string& region) {
+void GameServerManager::addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region) {
     auto addr = util::net::splitAddress(address, 41001);
     GameServer server = {
-        .id = serverId,
-        .name = name,
-        .region = region,
+        .id = std::string(serverId),
+        .name = std::string(name),
+        .region = std::string(region),
         .address = GameServerAddress {
             .ip = addr.first,
             .port = addr.second
@@ -36,7 +36,7 @@ size_t GameServerManager::count() {
     return _data.lock()->servers.size();
 }
 
-void GameServerManager::setActive(const std::string& id) {
+void GameServerManager::setActive(const std::string_view id) {
     auto data = _data.lock();
     data->active = id;
 }
@@ -46,12 +46,12 @@ void GameServerManager::clearActive() {
     data->active.clear();
 }
 
-std::string GameServerManager::active() {
+std::string GameServerManager::getActiveId() {
     return _data.lock()->active;
 }
 
 std::optional<GameServer> GameServerManager::getActiveServer() {
-    auto active = this->active();
+    auto active = this->getActiveId();
     if (active.empty()) {
         return std::nullopt;
     }
@@ -59,7 +59,9 @@ std::optional<GameServer> GameServerManager::getActiveServer() {
     return this->getServer(active);
 }
 
-GameServer GameServerManager::getServer(const std::string& id) {
+GameServer GameServerManager::getServer(const std::string_view id_) {
+    std::string id(id_);
+
     auto data = _data.lock();
     if (!data->servers.contains(id)) {
         throw(std::runtime_error(std::string("invalid server ID, no such server exists: ") + id));
@@ -70,18 +72,24 @@ GameServer GameServerManager::getServer(const std::string& id) {
 
 std::unordered_map<std::string, GameServer> GameServerManager::getAllServers() {
     auto data = _data.lock();
-    auto values = util::collections::mapValuesBorrowed(data->servers);
 
     std::unordered_map<std::string, GameServer> out;
 
-    for (auto* gsd : values) {
-        out.insert(std::make_pair(gsd->server.id, gsd->server));
+    for (const auto& [_, gsd] : data->servers) {
+        out.insert(std::make_pair(gsd.server.id, gsd.server));
     }
 
     return out;
 }
 
-void GameServerManager::saveStandalone(const std::string& addr) {
+uint32_t GameServerManager::getActivePing() {
+    auto server = this->getActiveServer();
+    GLOBED_REQUIRE(server.has_value(), "tried to request ping of the active server when not connected to any")
+
+    return server.value().ping;
+}
+
+void GameServerManager::saveStandalone(const std::string_view addr) {
     geode::Mod::get()->setSavedValue(STANDALONE_SETTING_KEY, addr);
 }
 
@@ -89,11 +97,11 @@ std::string GameServerManager::loadStandalone() {
     return geode::Mod::get()->getSavedValue<std::string>(STANDALONE_SETTING_KEY);
 }
 
-uint32_t GameServerManager::startPing(const std::string& serverId) {
+uint32_t GameServerManager::startPing(const std::string_view serverId) {
     auto pingId = util::rng::Random::get().generate<uint32_t>();
 
     auto data = _data.lock();
-    auto& gsdata = data->servers.at(serverId);
+    auto& gsdata = data->servers.at(std::string(serverId));
 
     if (gsdata.pendingPings.size() > 50) {
         geode::log::warn("over 50 pending pings for the game server {}, clearing", serverId);
@@ -111,14 +119,14 @@ void GameServerManager::finishPing(uint32_t pingId, uint32_t playerCount) {
 
     auto data = _data.lock();
 
-    for (auto* server : util::collections::mapValuesBorrowed(data->servers)) {
-        if (server->pendingPings.contains(pingId)) {
-            auto start = server->pendingPings.at(pingId);
+    for (auto& [_, server] : data->servers) {
+        if (server.pendingPings.contains(pingId)) {
+            auto start = server.pendingPings.at(pingId);
             auto timeTook = util::time::asMillis(now - start);
 
-            server->server.ping = timeTook;
-            server->server.playerCount = playerCount;
-            server->pendingPings.erase(pingId);
+            server.server.ping = timeTook;
+            server.server.playerCount = playerCount;
+            server.pendingPings.erase(pingId);
             return;
         }
     }

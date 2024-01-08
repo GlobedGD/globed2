@@ -27,6 +27,7 @@ public:
     void updateData(const SpecificIconData& data) override;
     void updateName() override;
     void updateIconType(PlayerIconType newType) override;
+    void playDeathEffect() override;
 
     void updatePlayerObjectIcons();
     void toggleAllOff();

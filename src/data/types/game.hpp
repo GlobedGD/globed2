@@ -20,10 +20,7 @@ struct SpecificIconData {
         buf.writePoint(position);
         buf.writeF32(rotation);
 
-        BitBuffer<8> flagByte;
-        flagByte.writeBits(isVisible, isLookingLeft);
-
-        buf.writeBits(flagByte);
+        buf.writeBits(BitBuffer<8>(isVisible, isLookingLeft, isUpsideDown, isDashing));
     }
 
     GLOBED_DECODE {
@@ -36,9 +33,7 @@ struct SpecificIconData {
         position = buf.readPoint();
         rotation = buf.readF32();
 
-        auto flagByte = buf.readBits<8>();
-        isVisible = flagByte.readBit();
-        isLookingLeft = flagByte.readBit();
+        buf.readBits<8>().readBitsInto(isVisible, isLookingLeft, isUpsideDown, isDashing);
     }
 
     PlayerIconType iconType;
@@ -47,39 +42,35 @@ struct SpecificIconData {
 
     bool isVisible;
     bool isLookingLeft;
+    bool isUpsideDown;
+    bool isDashing;
 };
 
-class PlayerData {
-public:
-    PlayerData(
-        float timestamp,
-        uint16_t percentage,
-        int32_t attempts,
-        const SpecificIconData& player1,
-        const SpecificIconData& player2
-    )
-    : timestamp(timestamp),
-      percentage(percentage),
-      attempts(attempts),
-      player1(player1),
-      player2(player2)
-    {}
-
-    PlayerData() {}
+struct PlayerData {
     GLOBED_ENCODE {
         buf.writeF32(timestamp);
         buf.writeU16(percentage);
         buf.writeI32(attempts);
+
         buf.writeValue(player1);
         buf.writeValue(player2);
+
+        buf.writeF32(lastDeathTimestamp);
+
+        buf.writeBits(BitBuffer<8>(isDead));
     }
 
     GLOBED_DECODE {
         timestamp = buf.readF32();
         percentage = buf.readU16();
         attempts = buf.readI32();
+
         player1 = buf.readValue<SpecificIconData>();
         player2 = buf.readValue<SpecificIconData>();
+
+        lastDeathTimestamp = buf.readF32();
+
+        buf.readBits<8>().readBitsInto(isDead, isPaused, isPracticing);
     }
 
     float timestamp;
@@ -88,4 +79,10 @@ public:
 
     SpecificIconData player1;
     SpecificIconData player2;
+
+    float lastDeathTimestamp;
+
+    bool isDead;
+    bool isPaused;
+    bool isPracticing;
 };

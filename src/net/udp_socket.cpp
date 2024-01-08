@@ -15,11 +15,11 @@ bool UdpSocket::create() {
     return sock != -1;
 }
 
-bool UdpSocket::connect(const std::string& serverIp, unsigned short port) {
+bool UdpSocket::connect(const std::string_view serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
     destAddr_.sin_port = htons(port);
 
-    bool validIp = (inet_pton(AF_INET, serverIp.c_str(), &destAddr_.sin_addr) > 0);
+    bool validIp = (inet_pton(AF_INET, serverIp.data(), &destAddr_.sin_addr) > 0);
     // if not a valid IPv4, assume it's a domain and try getaddrinfo
     if (!validIp) {
         auto ip = util::net::getaddrinfo(serverIp);
@@ -43,14 +43,14 @@ int UdpSocket::send(const char* data, unsigned int dataSize) {
     return retval;
 }
 
-int UdpSocket::sendTo(const char* data, unsigned int dataSize, const std::string& address, unsigned short port) {
+int UdpSocket::sendTo(const char* data, unsigned int dataSize, const std::string_view address, unsigned short port) {
     // stinky windows returns wsa error 10014 if sockaddr is a stack pointer
     std::unique_ptr<sockaddr_in> addr = std::make_unique<sockaddr_in>();
 
     addr->sin_family = AF_INET;
     addr->sin_port = htons(port);
 
-    GLOBED_REQUIRE(inet_pton(AF_INET, address.c_str(), &addr->sin_addr) > 0, "tried to connect to an invalid address")
+    GLOBED_REQUIRE(inet_pton(AF_INET, address.data(), &addr->sin_addr) > 0, "tried to connect to an invalid address")
 
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr));
 

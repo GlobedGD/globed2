@@ -3,9 +3,10 @@
 #include <util/formatting.hpp>
 
 namespace util::debugging {
-    time::micros Benchmarker::end(const std::string& id) {
-        auto micros = time::as<time::micros>(time::now() - _entries[id]);
-        _entries.erase(id);
+    time::micros Benchmarker::end(const std::string_view id) {
+        auto idstr = std::string(id);
+        auto micros = time::as<time::micros>(time::now() - _entries[idstr]);
+        _entries.erase(idstr);
 
         return micros;
     }
@@ -135,7 +136,7 @@ namespace util::debugging {
     }
 #endif
 
-    void timedLog(const std::string& message) {
+    void timedLog(const std::string_view message) {
         geode::log::info("\r[{}] [Globed] {}", util::formatting::formatDateTime(util::time::now()), message);
     }
 }

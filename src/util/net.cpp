@@ -1,5 +1,7 @@
 #include "net.hpp"
 
+#include <util/formatting.hpp>
+
 namespace util::net {
     void initialize() {
 #ifdef GLOBED_WIN32
@@ -63,7 +65,7 @@ namespace util::net {
         return fmt::format("globed-geode-xd/{}", geode::Mod::get()->getVersion().toString());
     }
 
-    std::pair<std::string, unsigned short> splitAddress(const std::string& address, unsigned short defaultPort) {
+    std::pair<std::string, unsigned short> splitAddress(const std::string_view address, unsigned short defaultPort) {
         std::pair<std::string, unsigned short> out;
 
         size_t colon = address.find(':');
@@ -73,12 +75,13 @@ namespace util::net {
 
         if (hasPort) {
             out.first = address.substr(0, colon);
-            std::istringstream portStream(address.substr(colon + 1));
-            if (!(portStream >> out.second)) {
-                // if no default port - fail, otherwise use it
-                GLOBED_REQUIRE(defaultPort != 0, "invalid port number")
-                out.second = defaultPort;
+            auto portResult = util::formatting::parse<unsigned short>(address.substr(colon + 1));
+
+            if (!portResult.has_value() && defaultPort == 0) {
+                GLOBED_REQUIRE(false, "invalid port number")
             }
+
+            out.second = portResult.value_or(defaultPort);
         } else {
             out.first = address;
             out.second = defaultPort;
@@ -95,7 +98,7 @@ namespace util::net {
         return std::memcmp(&s1.sin_addr, &s2.sin_addr, sizeof(s1.sin_addr)) == 0;
     }
 
-    std::string getaddrinfo(const std::string& hostname) {
+    std::string getaddrinfo(const std::string_view hostname) {
         // TODO i have no fucking clue how this compiles on both windows and unix but i'm still not sure if this behaves as intended so please test it
         struct addrinfo hints = {};
         hints.ai_family = AF_INET;
@@ -104,7 +107,7 @@ namespace util::net {
 
         struct addrinfo* result;
 
-        if (0 != ::getaddrinfo(hostname.c_str(), nullptr, &hints, &result)) {
+        if (0 != ::getaddrinfo(hostname.data(), nullptr, &hints, &result)) {
             util::net::throwLastError(true);
         }
 

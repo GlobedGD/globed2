@@ -6,9 +6,9 @@ class AdminAuthPacket : public Packet {
 
     GLOBED_PACKET_ENCODE { buf.writeString(key); }
 
-    AdminAuthPacket(const std::string& key) : key(key) {}
+    AdminAuthPacket(const std::string_view key) : key(key) {}
 
-    static std::shared_ptr<Packet> create(const std::string& key) {
+    static std::shared_ptr<Packet> create(const std::string_view key) {
         return std::make_shared<AdminAuthPacket>(key);
     }
 
@@ -32,10 +32,10 @@ class AdminSendNoticePacket : public Packet {
         buf.writeString(message);
     }
 
-    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, int levelId, int playerId, const std::string& message)
+    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, int levelId, int playerId, const std::string_view message)
         : ptype(ptype), roomId(roomId), levelId(levelId), playerId(playerId), message(message) {}
 
-    static std::shared_ptr<Packet> create(AdminSendNoticeType ptype, uint32_t roomId, int levelId, int playerId, const std::string& message) {
+    static std::shared_ptr<Packet> create(AdminSendNoticeType ptype, uint32_t roomId, int levelId, int playerId, const std::string_view message) {
         return std::make_shared<AdminSendNoticePacket>(ptype, roomId, levelId, playerId, message);
     }
 

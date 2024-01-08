@@ -1,8 +1,8 @@
 #include "socket.hpp"
 #include <util/net.hpp>
 
-int Socket::send(const std::string& data) {
-    return send(data.c_str(), data.size());
+int Socket::send(const std::string_view data) {
+    return send(data.data(), data.size());
 }
 
 bool Socket::close() {
