@@ -90,7 +90,7 @@ uint32_t GameServerManager::getActivePing() {
 }
 
 void GameServerManager::saveStandalone(const std::string_view addr) {
-    geode::Mod::get()->setSavedValue(STANDALONE_SETTING_KEY, addr);
+    geode::Mod::get()->setSavedValue(STANDALONE_SETTING_KEY, std::string(addr));
 }
 
 std::string GameServerManager::loadStandalone() {

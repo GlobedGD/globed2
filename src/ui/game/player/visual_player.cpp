@@ -79,6 +79,10 @@ void VisualPlayer::updateIconType(PlayerIconType newType) {
     playerIcon->updatePlayerFrame(newIcon, util::misc::convertEnum<IconType>(newType));
 }
 
+void VisualPlayer::playDeathEffect() {
+    GLOBED_UNIMPL("VisualPlayer::playDeathEffect")
+}
+
 VisualPlayer* VisualPlayer::create(RemotePlayer* parent, bool isSecond) {
     auto* ret = new VisualPlayer;
     if (ret->init(parent, isSecond)) {

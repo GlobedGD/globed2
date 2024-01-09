@@ -55,7 +55,7 @@ private:
     }
 
     bool has(const std::string_view key) {
-        return geode::Mod::get()->getSaveContainer().contains(key);
+        return geode::Mod::get()->hasSavedValue(key);
     }
 
     template <typename T>

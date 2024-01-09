@@ -26,6 +26,17 @@ GlobedAudioManager::~GlobedAudioManager() {
     geode::log::debug("audio thread halted.");
 }
 
+void GlobedAudioManager::preInitialize() {
+#ifdef GLOBED_ANDROID
+    // the first call to FMOD::System::getRecordDriverInfo for some reason can take half a second on android,
+    // causing a freeze when the user first opens the playlayer.
+    // to avoid that, we call this once upon loading the mod, so the freeze happens on the loading screen instead.
+    try {
+        this->getRecordingDevice(0);
+    } catch (const std::exception _e) {}
+#endif
+}
+
 std::vector<AudioRecordingDevice> GlobedAudioManager::getRecordingDevices() {
     std::vector<AudioRecordingDevice> out;
 
@@ -67,6 +78,7 @@ std::vector<AudioPlaybackDevice> GlobedAudioManager::getPlaybackDevices() {
 std::optional<AudioRecordingDevice> GlobedAudioManager::getRecordingDevice(int deviceId) {
     AudioRecordingDevice device;
     char name[256];
+
     if (this->getSystem()->getRecordDriverInfo(
         deviceId, name, 256,
         &device.guid,

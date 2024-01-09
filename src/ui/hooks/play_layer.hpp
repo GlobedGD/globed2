@@ -75,7 +75,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         auto& nm = NetworkManager::get();
 
         // if not authenticated, do nothing
-        m_fields->globedReady = nm.established() && this->isCurrentPlayLayer(); // TODO idk if thats best practice
+        m_fields->globedReady = nm.established();
         if (!m_fields->globedReady) {
             m_fields->overlay->updateWithDisconnected(); // TODO in an editor level do updateWithEditor
             return true;

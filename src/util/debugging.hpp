@@ -12,7 +12,7 @@ namespace util::debugging {
     class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
     public:
         inline void start(const std::string_view id) {
-            _entries[std::string(id)] = time::now();
+            _entries.emplace(std::string(id), time::now());
         }
 
         time::micros end(const std::string_view id);
@@ -29,13 +29,14 @@ namespace util::debugging {
         };
 
         inline void start(const std::string_view id, uintptr_t address, size_t size) {
-            _entries[std::string(id)] = WatcherEntry {
+            auto idstr = std::string(id);
+            _entries.emplace(std::string(idstr), WatcherEntry {
                 .address = address,
                 .size = size,
                 .lastData = data::bytevector(size)
-            };
+            });
 
-            this->updateLastData(_entries[std::string(id)]);
+            this->updateLastData(_entries.at(idstr));
         }
 
         inline void start(const std::string_view id, void* address, size_t size) {

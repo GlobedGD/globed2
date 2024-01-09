@@ -42,6 +42,9 @@ public:
     GlobedAudioManager();
     ~GlobedAudioManager();
 
+    // preinitialization, for more info open the implementation
+    void preInitialize();
+
     std::vector<AudioRecordingDevice> getRecordingDevices();
     std::vector<AudioPlaybackDevice> getPlaybackDevices();
 

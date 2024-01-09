@@ -38,6 +38,8 @@ $on_mod(Loaded) {
     setupErrorCheckNode();
     setupCustomKeybinds();
 
+    GlobedAudioManager::get().preInitialize();
+
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
     printDebugInfo();
 #endif
@@ -47,7 +49,6 @@ $on_mod(Loaded) {
     //     geode::addresser::getNonVirtual(&FMOD::System::createStream)
     // ), &createStreamDetour, "FMOD::System::createStream", tulip::hook::TulipConvention::Default);
 }
-
 
 class $modify(MyMenuLayer, MenuLayer) {
     void onMoreGames(CCObject*) {
