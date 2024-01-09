@@ -14,10 +14,13 @@ bool GlobedOverlay::init() {
 
     if (settings.enabled) {
         Build<CCLabelBMFont>::create("", "bigFont.fnt")
-            .opacity(settings.opacity)
+            .opacity(static_cast<uint8_t>(settings.opacity * 255))
+            .anchorPoint(0.f, 0.f)
             .store(pingLabel)
             .parent(this)
             .id("ping-label"_spr);
+
+        this->setContentSize(pingLabel->getContentSize());
     }
 
     return true;
@@ -29,6 +32,7 @@ void GlobedOverlay::updatePing(uint32_t ms) {
 
     auto fmted = fmt::format("{} ms", ms);
     pingLabel->setString(fmted.c_str());
+    this->setContentSize(pingLabel->getContentSize());
     this->setVisible(true);
 }
 
@@ -42,6 +46,7 @@ void GlobedOverlay::updateWithDisconnected() {
     }
 
     pingLabel->setString("Not connected");
+    this->setContentSize(pingLabel->getContentSize());
 }
 
 void GlobedOverlay::updateWithEditor() {
@@ -54,6 +59,7 @@ void GlobedOverlay::updateWithEditor() {
     }
 
     pingLabel->setString("N/A (Local level)");
+    this->setContentSize(pingLabel->getContentSize());
 }
 
 GlobedOverlay* GlobedOverlay::create() {

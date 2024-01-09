@@ -158,7 +158,7 @@ public:
     T readValue() {
         T value;
         value.decode(*this);
-        return std::move(value);
+        return value;
     }
 
     // Write an `Encodable` object
@@ -175,7 +175,7 @@ public:
             value = this->readValue<T>();
         }
 
-        return std::move(value);
+        return value;
     }
 
     template <Encodable T>

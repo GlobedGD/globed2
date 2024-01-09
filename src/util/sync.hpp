@@ -197,11 +197,11 @@ public:
     SmartThread() {}
 
     SmartThread(TFunc&& func) {
-        this->setLoopFunction(std::move(func));
+        this->setLoopFunction(std::forward(func));
     }
 
     void setLoopFunction(TFunc&& func) {
-        loopFunc = std::move(func);
+        loopFunc = func;
     }
 
     void start(TFuncArgs... args) {

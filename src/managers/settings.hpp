@@ -1,10 +1,11 @@
 #pragma once
 #include <defs.hpp>
 
-#define GDEFAULT(name, type, val) static constexpr type _DefaultFor##name = val;
-#define GSETTING(ty,name, default) \
-    GDEFAULT(name, ty, default); \
-    ty name = _DefaultFor##name; \
+#define GDEFAULTKEY(name) _DefaultFor##name
+#define GDEFAULT(name, type, val) static constexpr type GDEFAULTKEY(name) = val;
+#define GSETTING(ty, name, default_) \
+    GDEFAULT(name, ty, default_); \
+    ty name = GDEFAULTKEY(name); \
 
 // This class should only be accessed from the main thread.
 class GlobedSettings : GLOBED_SINGLETON(GlobedSettings) {
@@ -12,11 +13,11 @@ public:
     struct Globed {
         GSETTING(uint32_t, tpsCap, 0);
         GSETTING(int, audioDevice, 0);
-        GSETTING(bool, autoconnect, false); // TODO unimpl
+        GSETTING(bool, autoconnect, true); // TODO unimpl
     };
 
     struct Overlay {
-        GSETTING(float, opacity, 0.5f);
+        GSETTING(float, opacity, 0.3f);
         GSETTING(bool, enabled, true);
         GSETTING(bool, hideConditionally, false);
     };
@@ -82,5 +83,6 @@ private:
     }
 };
 
-#undef GSETTING
+#undef GDEFAULTKEY
 #undef GDEFAULT
+#undef GSETTING

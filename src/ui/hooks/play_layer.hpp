@@ -65,8 +65,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
         // overlay
         Build<GlobedOverlay>::create()
-            .pos(0.f, winSize.height) // TODO configurable pos
+            .pos(2.f, winSize.height - 2.f) // TODO configurable pos
             .anchorPoint(0.f, 1.f)
+            .scale(0.4f)
             .zOrder(11)
             .id("game-overlay"_spr)
             .parent(this)
@@ -79,7 +80,10 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         if (!m_fields->globedReady) {
             m_fields->overlay->updateWithDisconnected(); // TODO in an editor level do updateWithEditor
             return true;
-        };
+        }
+
+        // else update the overlay with ping
+        m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
 
         GlobedSettings& settings = GlobedSettings::get();
 
@@ -273,6 +277,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         if (!this->established()) return;
         if (!this->isCurrentPlayLayer()) return;
 
+        // update the overlay
+        m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
+
         auto& pcm = ProfileCacheManager::get();
 
         util::collections::SmallVector<int, 16> toRemove;
@@ -317,9 +324,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         for (int id : toRemove) {
             this->handlePlayerLeave(id);
         }
-
-        // update the overlay
-        m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
     }
 
     // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players

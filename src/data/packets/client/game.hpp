@@ -73,10 +73,10 @@ class VoicePacket : public Packet {
         buf.writeValue(*frame.get());
     }
 
-    VoicePacket(std::shared_ptr<EncodedAudioFrame> _frame) : frame(std::move(_frame)) {}
+    VoicePacket(std::shared_ptr<EncodedAudioFrame> _frame) : frame(_frame) {}
 
     static std::shared_ptr<Packet> create(std::shared_ptr<EncodedAudioFrame> frame) {
-        return std::make_shared<VoicePacket>(std::move(frame));
+        return std::make_shared<VoicePacket>(std::forward<std::shared_ptr<EncodedAudioFrame>>(frame));
     }
 
     std::shared_ptr<EncodedAudioFrame> frame;
