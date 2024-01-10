@@ -201,7 +201,7 @@ public:
     }
 
     void setLoopFunction(TFunc&& func) {
-        loopFunc = func;
+        loopFunc = std::move(func);
     }
 
     void start(TFuncArgs... args) {

@@ -2,7 +2,7 @@
 
 #include <UIBuilder.hpp>
 
-#include <net/http/client.hpp>
+#include <Geode/utils/web.hpp>
 #include <net/network_manager.hpp>
 #include <managers/account.hpp>
 #include <managers/game_server.hpp>
@@ -133,20 +133,21 @@ void ServerListCell::requestTokenAndConnect() {
     );
 
     // both callbacks should be safe even if GlobedMenuLayer was closed.
-    GHTTPRequest::post(url)
+    web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::secs(3))
-        .then([&am, gsview = this->gsview](const GHTTPResponse& response) {
-            if (response.anyfail()) {
-                ErrorQueues::get().error(fmt::format(
-                    "Failed to generate a session token! Please try to login and connect again.\n\nReason: <cy>{}</c>",
-                    response.anyfailmsg()
-                ));
-                am.clearAuthKey();
-            } else {
-                *am.authToken.lock() = response.response;
-                NetworkManager::get().connectWithView(gsview);
-            }
+        .post(url)
+        .text()
+        .then([&am, gsview = this->gsview](std::string& response) {
+            *am.authToken.lock() = response;
+            NetworkManager::get().connectWithView(gsview);
+        })
+        .expect([&am](std::string error) {
+            ErrorQueues::get().error(fmt::format(
+                "Failed to generate a session token! Please try to login and connect again.\n\nReason: <cy>{}</c>",
+                error
+            ));
+            am.clearAuthKey();
         })
         .send();
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include <defs.hpp>
 
-#include <net/http/client.hpp>
+#include <Geode/utils/web.hpp>
 
 class AddServerPopup;
 
@@ -17,7 +17,7 @@ public:
 
 protected:
     AddServerPopup* parent;
-    std::optional<GHTTPRequestHandle> sentRequestHandle;
+    std::optional<geode::utils::web::SentAsyncWebRequestHandle> sentRequestHandle;
 
     bool setup(const std::string_view, AddServerPopup* parent) override;
 

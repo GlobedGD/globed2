@@ -78,7 +78,7 @@ public:
     [[nodiscard]] EncodedOpusData encode(const float* data);
 
     // Free the underlying buffer of the encoded frame
-    static inline void freeData(EncodedOpusData& data) {
+    static void freeData(EncodedOpusData& data) {
         data.freeData();
     }
 

@@ -22,42 +22,38 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
         .scale(0.35f)
         .parent(m_mainLayer);
 
-    sentRequestHandle = GHTTPRequest::get(fmt::format("{}/version", url))
+    sentRequestHandle = web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::secs(5))
-        .then([this](const GHTTPResponse& resp) {
+        .get(fmt::format("{}/version", url))
+        .text()
+        .then([this](std::string& resp) {
             sentRequestHandle = std::nullopt;
 
-            if (resp.anyfail()) {
-                std::string error;
+            int protocol = util::formatting::parse<int>(resp).value_or(0);
 
-                if (resp.resCode == CURLE_OPERATION_TIMEDOUT) {
-                    error = "Failed to contact the server, no response was received after 5 seconds.";
-                } else {
-                    auto msg = resp.anyfailmsg();
-                    if (msg.empty()) {
-                        error = "Error retrieving data from the server: server sent an empty response.";
-                    } else {
-                        error = "Error retrieving data from the server: <cy>" + util::formatting::formatErrorMessage(msg) + "</c>";
-                    }
-                }
-
-                this->parent->onTestFailure(error);
+            if (protocol != NetworkManager::PROTOCOL_VERSION) {
+                this->parent->onTestFailure(fmt::format(
+                    "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
+                    NetworkManager::PROTOCOL_VERSION,
+                    protocol
+                ));
             } else {
-                auto response = resp.response;
-                int protocol = util::formatting::parse<int>(response).value_or(0);
-
-                if (protocol != NetworkManager::PROTOCOL_VERSION) {
-                    this->parent->onTestFailure(fmt::format(
-                        "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
-                        NetworkManager::PROTOCOL_VERSION,
-                        protocol
-                    ));
-                } else {
-                    this->parent->onTestSuccess();
-                }
+                this->parent->onTestSuccess();
             }
 
+            this->onClose(this);
+        })
+        .expect([this](std::string error) {
+            sentRequestHandle = std::nullopt;
+
+            if (error.empty()) {
+                error = "Error retrieving data from the server: server sent an empty response.";
+            } else {
+                error = "Error retrieving data from the server: <cy>" + util::formatting::formatErrorMessage(error) + "</c>";
+            }
+
+            this->parent->onTestFailure(error);
             this->onClose(this);
         })
         .send();
@@ -78,7 +74,7 @@ void ServerTestPopup::onTimeout() {
 
 void ServerTestPopup::cancelRequest() {
     if (sentRequestHandle.has_value()) {
-        sentRequestHandle->cancel();
+        sentRequestHandle->get()->cancel();
         sentRequestHandle = std::nullopt;
     }
 }

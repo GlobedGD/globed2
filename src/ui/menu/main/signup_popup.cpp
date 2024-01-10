@@ -2,7 +2,7 @@
 
 #include <UIBuilder.hpp>
 
-#include <net/http/client.hpp>
+#include <Geode/utils/web.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
@@ -35,32 +35,26 @@ bool GlobedSignupPopup::setup() {
 
     auto url = activeServer->url + "/challenge/new?aid=" + std::to_string(am.gdData.lock()->accountId);
 
-    GHTTPRequest::post(url)
+    web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::secs(5))
-        .then([this](const GHTTPResponse& resp) {
-            if (resp.anyfail()) {
-                auto error = resp.anyfailmsg();
-                if (error.empty()) {
-                    this->onFailure("Creating challenge failed: server sent an empty response.");
-                } else {
-                    this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
-                }
+        .post(url)
+        .text()
+        .then([this](std::string& response) {
+            auto colonPos = response.find(':');
+            auto part1 = response.substr(0, colonPos);
+            auto part2 = response.substr(colonPos + 1);
+
+            // we accept -1 as the default ()
+            int levelId = util::formatting::parse<int>(part1).value_or(-1);
+
+            this->onChallengeCreated(levelId, part2);
+        })
+        .expect([this](std::string error) {
+            if (error.empty()) {
+                this->onFailure("Creating challenge failed: server sent an empty response.");
             } else {
-                auto response = resp.response;
-                auto colonPos = response.find(':');
-                auto part1 = response.substr(0, colonPos);
-                auto part2 = response.substr(colonPos + 1);
-
-                int levelId;
-
-                if (part1 == "none") {
-                    levelId = -1;
-                } else {
-                    levelId = std::stoi(part1);
-                }
-
-                this->onChallengeCreated(levelId, part2);
+                this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
             }
         })
         .send();
@@ -129,34 +123,33 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
                     gdData->accountName,
                     authcode);
 
-    GHTTPRequest::post(url)
+    web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::secs(5))
-        .then([this, &am](const GHTTPResponse& resp) {
-            if (resp.anyfail()) {
-                auto error = resp.anyfailmsg();
-                if (error.empty()) {
-                    this->onFailure("Creating challenge failed: server sent an empty response.");
-                } else {
-                    this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
-                }
-            } else {
-                auto response = resp.response;
-                // we are good! the authkey has been created and can be saved now.
-                auto colonPos = response.find(':');
-                auto commentId = response.substr(0, colonPos);
+        .post(url)
+        .text()
+        .then([this, &am](std::string& response) {
+            // we are good! the authkey has been created and can be saved now.
+            auto colonPos = response.find(':');
+            auto commentId = response.substr(0, colonPos);
 
-                log::info("Authkey created successfully, saving.");
-                auto authkey = util::crypto::base64Decode(response.substr(colonPos + 1));
-                am.storeAuthKey(util::crypto::simpleHash(authkey));
-                this->onSuccess();
+            log::info("Authkey created successfully, saving.");
+            auto authkey = util::crypto::base64Decode(response.substr(colonPos + 1));
+            am.storeAuthKey(util::crypto::simpleHash(authkey));
+            this->onSuccess();
 
 #ifndef GLOBED_MAC
-                // delete the comment to cleanup
-                if (commentId != "none") {
-                    GameLevelManager::sharedState()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
-                }
+            // delete the comment to cleanup
+            if (commentId != "none") {
+                GameLevelManager::sharedState()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
+            }
 #endif // GLOBED_MAC
+        })
+        .expect([this](std::string error) {
+            if (error.empty()) {
+                this->onFailure("Creating challenge failed: server sent an empty response.");
+            } else {
+                this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
             }
         })
         .send();

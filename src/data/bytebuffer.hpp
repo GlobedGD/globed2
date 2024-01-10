@@ -362,7 +362,7 @@ private:
     util::data::bytevector _data;
     size_t _position;
 
-    inline void boundsCheck(size_t readBytes) {
+    void boundsCheck(size_t readBytes) {
         GLOBED_REQUIRE(_position + readBytes <= _data.size(), "ByteBuffer out of bounds read")
     }
 };

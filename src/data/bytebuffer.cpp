@@ -21,7 +21,7 @@ using namespace util::data;
 ByteBuffer::ByteBuffer() : _position(0) {}
 ByteBuffer::ByteBuffer(const bytevector& data) : _data(data), _position(0) {}
 ByteBuffer::ByteBuffer(const byte* data, size_t length) : _data(bytevector(data, data + length)), _position(0) {}
-ByteBuffer::ByteBuffer(util::data::bytevector&& data) : _data(data), _position(0) {}
+ByteBuffer::ByteBuffer(util::data::bytevector&& data) : _data(std::move(data)), _position(0) {}
 
 template <typename T>
 T ByteBuffer::read() {

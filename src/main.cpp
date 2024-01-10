@@ -5,16 +5,15 @@
 #include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif
 
+#include <Geode/cocos/platform/IncludeCurl.h>
+
+#include <audio/manager.hpp>
 #include <ui/hooks/all.hpp>
 #include <ui/error_check_node.hpp>
 #include <util/all.hpp>
 #include <game/lerp_logger.hpp>
-#include <Geode/utils/web.hpp>
-
-#include <cstdint>
 
 using namespace geode::prelude;
-
 
 void setupLibsodium();
 void setupErrorCheckNode();

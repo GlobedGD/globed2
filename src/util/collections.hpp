@@ -102,7 +102,7 @@ public:
         return this->at(index);
     }
 private:
-    inline bool heapBacked() {
+    bool heapBacked() {
         return capacity_ != N;
     }
 

@@ -7,6 +7,8 @@
 
 #include <ui/hooks/play_layer.hpp>
 
+using namespace geode::prelude;
+
 PlayerInterpolator::PlayerInterpolator(const InterpolatorSettings& settings) : settings(settings) {
     deltaAllowance = settings.expectedDelta * 0.2f;
 }

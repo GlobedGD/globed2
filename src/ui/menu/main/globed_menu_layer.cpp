@@ -218,59 +218,61 @@ void GlobedMenuLayer::requestServerList() {
         return;
     }
 
-    serverRequestHandle = GHTTPRequest::get(fmt::format("{}/servers", centralUrl.value().url))
+    serverRequestHandle = web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::secs(3))
-        .then([this](const GHTTPResponse& response) {
+        .get(fmt::format("{}/servers", centralUrl.value().url))
+        .text()
+        .then([this](std::string& response) {
             this->serverRequestHandle = std::nullopt;
-            if (response.anyfail()) {
-                ErrorQueues::get().error(fmt::format("Failed to fetch servers: <cy>{}</c>", response.anyfailmsg()));
+            auto& gsm = GameServerManager::get();
+            gsm.clear();
+            gsm.pendingChanges = true;
 
-                auto& gsm = GameServerManager::get();
-                gsm.clear();
-                gsm.pendingChanges = true;
-            } else {
-                auto& gsm = GameServerManager::get();
-                gsm.clear();
-                gsm.pendingChanges = true;
-
-                try {
-                    auto decoded = util::crypto::base64Decode(response.response);
-                    if (decoded.size() < sizeof(NetworkManager::SERVER_MAGIC)) {
-                        throw(std::runtime_error("invalid response sent from the server"));
-                    }
-
-                    ByteBuffer buf(std::move(decoded));
-                    auto magic = buf.readBytes(10);
-
-                    // compare it with the needed magic
-                    bool correct = true;
-                    for (size_t i = 0; i < sizeof(NetworkManager::SERVER_MAGIC); i++) {
-                        if (magic[i] != NetworkManager::SERVER_MAGIC[i]) {
-                            correct = false;
-                            break;
-                        }
-                    }
-
-                    if (!correct) {
-                        throw(std::runtime_error("invalid response sent from the server"));
-                    }
-
-                    auto serverList = buf.readValueVector<GameServerEntry>();
-
-                    for (const auto& server : serverList) {
-                        gsm.addServer(
-                            server.id,
-                            server.name,
-                            server.address,
-                            server.region
-                        );
-                    }
-                } catch(const std::exception& e) {
-                    ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", e.what());
-                    gsm.clear();
+            try {
+                auto decoded = util::crypto::base64Decode(response);
+                if (decoded.size() < sizeof(NetworkManager::SERVER_MAGIC)) {
+                    throw std::runtime_error("invalid response sent from the server");
                 }
+
+                ByteBuffer buf(std::move(decoded));
+                auto magic = buf.readBytes(10);
+
+                // compare it with the needed magic
+                bool correct = true;
+                for (size_t i = 0; i < sizeof(NetworkManager::SERVER_MAGIC); i++) {
+                    if (magic[i] != NetworkManager::SERVER_MAGIC[i]) {
+                        correct = false;
+                        break;
+                    }
+                }
+
+                if (!correct) {
+                    throw std::runtime_error("invalid response sent from the server");
+                }
+
+                auto serverList = buf.readValueVector<GameServerEntry>();
+
+                for (const auto& server : serverList) {
+                    gsm.addServer(
+                        server.id,
+                        server.name,
+                        server.address,
+                        server.region
+                    );
+                }
+            } catch (const std::exception& e) {
+                ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", e.what());
+                gsm.clear();
             }
+        })
+        .expect([this](std::string error) {
+            this->serverRequestHandle = std::nullopt;
+            ErrorQueues::get().error(fmt::format("Failed to fetch servers: <cy>{}</c>", error));
+
+            auto& gsm = GameServerManager::get();
+            gsm.clear();
+            gsm.pendingChanges = true;
         })
         .send();
 
@@ -279,7 +281,7 @@ void GlobedMenuLayer::requestServerList() {
 
 void GlobedMenuLayer::cancelWebRequest() {
     if (serverRequestHandle.has_value()) {
-        serverRequestHandle->cancel();
+        serverRequestHandle->get()->cancel();
         serverRequestHandle = std::nullopt;
         return;
     }

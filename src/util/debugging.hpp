@@ -11,7 +11,7 @@ namespace util::debugging {
     // It will return the number of microseconds the code took to run.
     class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
     public:
-        inline void start(const std::string_view id) {
+        void start(const std::string_view id) {
             _entries.emplace(std::string(id), time::now());
         }
 
@@ -28,7 +28,7 @@ namespace util::debugging {
             data::bytevector lastData;
         };
 
-        inline void start(const std::string_view id, uintptr_t address, size_t size) {
+        void start(const std::string_view id, uintptr_t address, size_t size) {
             auto idstr = std::string(id);
             _entries.emplace(std::string(idstr), WatcherEntry {
                 .address = address,
@@ -39,7 +39,7 @@ namespace util::debugging {
             this->updateLastData(_entries.at(idstr));
         }
 
-        inline void start(const std::string_view id, void* address, size_t size) {
+        void start(const std::string_view id, void* address, size_t size) {
             this->start(id, (uintptr_t)address, size);
         }
 
@@ -85,7 +85,7 @@ namespace util::debugging {
     public:
         PacketLogger() {}
 
-        inline void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {
+        void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {
 # ifdef GLOBED_DEBUG_PACKETS
 #  ifdef GLOBED_DEBUG_PACKETS_PRINT
             geode::log::debug("{} packet {}, encrypted: {}, bytes: {}", outgoing ? "Sending" : "Receiving", id, encrypted ? "true" : "false", bytes);

@@ -8,7 +8,7 @@
 */
 class RawPacket : public Packet {
 public:
-    RawPacket(packetid_t id, bool encrypted, ByteBuffer&& buffer) : id(id), encrypted(encrypted), buffer(buffer) {}
+    RawPacket(packetid_t id, bool encrypted, ByteBuffer&& buffer) : id(id), encrypted(encrypted), buffer(std::move(buffer)) {}
 
     packetid_t getPacketId() const override {
         return id;

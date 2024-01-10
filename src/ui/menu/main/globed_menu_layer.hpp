@@ -2,7 +2,7 @@
 #include <defs.hpp>
 
 #include "signup_layer.hpp"
-#include <net/http/client.hpp>
+#include <Geode/utils/web.hpp>
 
 class GlobedMenuLayer : public cocos2d::CCLayer {
 public:
@@ -17,7 +17,7 @@ public:
 private:
     GJListLayer* listLayer;
     GlobedSignupLayer* signupLayer;
-    std::optional<GHTTPRequestHandle> serverRequestHandle;
+    std::optional<geode::utils::web::SentAsyncWebRequestHandle> serverRequestHandle;
     cocos2d::CCSequence* timeoutSequence;
 
     bool init();

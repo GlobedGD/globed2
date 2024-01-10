@@ -192,8 +192,8 @@ void NetworkManager::send(std::shared_ptr<Packet> packet) {
     packetQueue.push(packet);
 }
 
-void NetworkManager::addListener(packetid_t id, PacketCallback callback) {
-    (*listeners.lock())[id] = callback;
+void NetworkManager::addListener(packetid_t id, PacketCallback&& callback) {
+    (*listeners.lock()).emplace(id, std::forward<PacketCallback>(callback));
 }
 
 void NetworkManager::removeListener(packetid_t id) {
@@ -213,6 +213,11 @@ void NetworkManager::taskPingServers() {
 // threads
 
 void NetworkManager::threadMainFunc() {
+    if (_suspended) {
+        std::this_thread::sleep_for(util::time::millis(250));
+        return;
+    }
+
     this->maybeSendKeepalive();
 
     if (!packetQueue.waitForMessages(util::time::millis(250))) {
@@ -250,6 +255,11 @@ void NetworkManager::threadMainFunc() {
 }
 
 void NetworkManager::threadRecvFunc() {
+    if (_suspended) {
+        std::this_thread::sleep_for(util::time::millis(250));
+        return;
+    }
+
     if (!gameSocket.poll(1000)) {
         this->maybeDisconnectIfDead();
         return;
@@ -351,4 +361,12 @@ bool NetworkManager::established() {
 
 bool NetworkManager::standalone() {
     return _connectingStandalone;
+}
+
+void NetworkManager::suspend() {
+    _suspended = true;
+}
+
+void NetworkManager::resume() {
+    _suspended = false;
 }

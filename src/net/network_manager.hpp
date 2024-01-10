@@ -52,11 +52,11 @@ public:
     // Adds a packet listener and calls your callback function when a packet with `id` is received.
     // If there already was a callback with this packet ID, it gets replaced.
     // All callbacks are ran in the main (GD) thread.
-    void addListener(packetid_t id, PacketCallback callback);
+    void addListener(packetid_t id, PacketCallback&& callback);
 
     // Same as addListener(packetid_t, PacketCallback) but hacky syntax xd
     template <HasPacketID Pty>
-    void addListener(PacketCallbackSpecific<Pty> callback) {
+    void addListener(PacketCallbackSpecific<Pty>&& callback) {
         this->addListener(Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
             callback(static_cast<Pty*>(pkt.get()));
         });
@@ -89,6 +89,9 @@ public:
     // Returns true if we are connected to a standalone game server, not tied to any central server.
     bool standalone();
 
+    void suspend();
+    void resume();
+
 private:
     static constexpr chrono::seconds KEEPALIVE_INTERVAL = chrono::seconds(5);
     static constexpr chrono::seconds DISCONNECT_AFTER = chrono::seconds(15);
@@ -113,6 +116,7 @@ private:
     AtomicBool _handshaken = false;
     AtomicBool _loggedin = false;
     AtomicBool _connectingStandalone = false;
+    AtomicBool _suspended = false;
 
     util::time::time_point lastKeepalive;
     util::time::time_point lastReceivedPacket;

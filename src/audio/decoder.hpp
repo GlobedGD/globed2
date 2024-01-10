@@ -65,7 +65,7 @@ public:
     // After you no longer need the decoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioDecoder::freeData(data)`
     [[nodiscard]] DecodedOpusData decode(const EncodedOpusData& data);
 
-    static inline void freeData(DecodedOpusData& data) {
+    static void freeData(DecodedOpusData& data) {
         data.freeData();
     }
 
