@@ -7,7 +7,7 @@
 GameServerManager::GameServerManager() {}
 
 void GameServerManager::addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region) {
-    auto addr = util::net::splitAddress(address, 41001);
+    auto addr = util::net::splitAddress(address, DEFAULT_PORT);
     GameServer server = {
         .id = std::string(serverId),
         .name = std::string(name),
@@ -39,11 +39,15 @@ size_t GameServerManager::count() {
 void GameServerManager::setActive(const std::string_view id) {
     auto data = _data.lock();
     data->active = id;
+
+    this->saveLastConnected(id);
 }
 
 void GameServerManager::clearActive() {
     auto data = _data.lock();
     data->active.clear();
+
+    this->saveLastConnected("");
 }
 
 std::string GameServerManager::getActiveId() {
@@ -95,6 +99,14 @@ void GameServerManager::saveStandalone(const std::string_view addr) {
 
 std::string GameServerManager::loadStandalone() {
     return geode::Mod::get()->getSavedValue<std::string>(STANDALONE_SETTING_KEY);
+}
+
+void GameServerManager::saveLastConnected(const std::string_view addr) {
+    geode::Mod::get()->setSavedValue(LAST_CONNECTED_SETTING_KEY, std::string(addr));
+}
+
+std::string GameServerManager::loadLastConnected() {
+    return geode::Mod::get()->getSavedValue<std::string>(LAST_CONNECTED_SETTING_KEY);
 }
 
 uint32_t GameServerManager::startPing(const std::string_view serverId) {

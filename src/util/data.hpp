@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <array>
+#include <bit>
 
 namespace util::data {
     using byte = uint8_t;
@@ -19,6 +20,25 @@ namespace util::data {
                     std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
                     std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t>;
 
+    // macos github actions runner has no std::bit_cast support
+#ifdef __cpp_lib_bit_cast
+    template <typename To, typename From>
+    inline constexpr To bit_cast(From value) noexcept {
+        return std::bit_cast<To, From>(value);
+    }
+#else
+    template <typename To, typename From>
+    std::enable_if_t<sizeof(To) == sizeof(From) && std::is_trivially_copyable_v<From> && std::is_trivially_copyable_v<To>, To>
+    inline bit_cast(From value) noexcept {
+        static_assert(std::is_trivially_constructible_v<To>, "destination template argument for bit_cast must be trivially constructible");
+
+        To dest;
+        std::memcpy(&dest, &value, sizeof(To));
+        return dest;
+    }
+#endif
+
+#ifndef __cpp_lib_byteswap
     uint16_t byteswapU16(uint16_t val);
     uint32_t byteswapU32(uint32_t val);
     uint64_t byteswapU64(uint64_t val);
@@ -54,6 +74,21 @@ namespace util::data {
             return val;
         }
     }
+
+#else // __cpp_lib_byteswap
+    template <typename T>
+    inline constexpr T byteswap(T val) {
+        static_assert(IsPrimitive<T>, "Unsupported type for byteswap");
+
+        if constexpr (std::is_same_v<T, float>) {
+            return bit_cast<float>(std::byteswap(bit_cast<uint32_t>(val)));
+        } else if constexpr (std::is_same_v<T, double>) {
+            return bit_cast<double>(std::byteswap(bit_cast<uint64_t>(val)));
+        } else {
+            return std::byteswap(val);
+        }
+    }
+#endif
 
     template <typename T>
     inline T maybeByteswap(T val) {

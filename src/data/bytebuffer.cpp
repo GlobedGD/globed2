@@ -67,7 +67,6 @@ std::string ByteBuffer::readString() {
     std::string str(reinterpret_cast<const char*>(_data.data() + _position), length);
     _position += length;
 
-
     return str;
 }
 

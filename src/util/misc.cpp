@@ -1,6 +1,8 @@
 #include "misc.hpp"
 #include <data/types/game.hpp>
 
+#include <util/sync.hpp>
+
 namespace util::misc {
     // IconType -> PlayerIconType
     template<> PlayerIconType convertEnum<PlayerIconType, IconType>(IconType value) {
@@ -32,5 +34,23 @@ namespace util::misc {
         case PlayerIconType::Jetpack: return IconType::Jetpack;
         default: return IconType::Cube;
         }
+    }
+
+    void callOnce(const char* key, std::function<void()> func) {
+        static std::unordered_set<const char*> called;
+
+        if (called.contains(key)) {
+            return;
+        }
+
+        called.insert(key);
+        func();
+    }
+
+    void callOnceSync(const char* key, std::function<void()> func) {
+        static util::sync::WrappingMutex<void> mtx;
+
+        auto guard = mtx.lock();
+        callOnce(key, func);
     }
 }

@@ -132,24 +132,9 @@ void ServerListCell::requestTokenAndConnect() {
         authcode
     );
 
-    // both callbacks should be safe even if GlobedMenuLayer was closed.
-    web::AsyncWebRequest()
-        .userAgent(util::net::webUserAgent())
-        .timeout(util::time::secs(3))
-        .post(url)
-        .text()
-        .then([&am, gsview = this->gsview](std::string& response) {
-            *am.authToken.lock() = response;
-            NetworkManager::get().connectWithView(gsview);
-        })
-        .expect([&am](std::string error) {
-            ErrorQueues::get().error(fmt::format(
-                "Failed to generate a session token! Please try to login and connect again.\n\nReason: <cy>{}</c>",
-                error
-            ));
-            am.clearAuthKey();
-        })
-        .send();
+    am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [gsview = this->gsview]{
+        NetworkManager::get().connectWithView(gsview);
+    });
 }
 
 ServerListCell* ServerListCell::create(const GameServer& gsview, bool active) {

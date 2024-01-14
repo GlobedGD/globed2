@@ -49,7 +49,6 @@ namespace util::debugging {
         void updateAll();
 
     private:
-
         std::unordered_map<std::string, WatcherEntry> _entries;
     };
 

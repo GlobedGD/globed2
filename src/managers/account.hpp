@@ -1,6 +1,8 @@
 #pragma once
 #include <defs.hpp>
 
+#include <Geode/utils/web.hpp>
+
 #include <crypto/secret_box.hpp>
 #include <util/sync.hpp>
 
@@ -37,8 +39,18 @@ public:
 
     std::string generateAuthCode();
 
+    void requestAuthToken(const std::string_view baseUrl,
+                          int accountId,
+                          const std::string_view accountName,
+                          const std::string_view authcode,
+                          std::optional<std::function<void()>> callback
+    );
+
 private:
     SecretBox box;
+    std::optional<geode::utils::web::SentAsyncWebRequestHandle> requestHandle;
+
+    void cancelAuthTokenRequest();
 
     std::string computeGDDataHash(const std::string_view name, int accountId, const std::string_view gjp, const std::string_view central);
 

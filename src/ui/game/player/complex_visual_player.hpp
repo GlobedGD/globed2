@@ -1,24 +1,7 @@
 #pragma once
-#include <Geode/modify/PlayerObject.hpp>
 
 #include "base_visual_player.hpp"
-
-class $modify(ComplexPlayerObject, PlayerObject) {
-    // those are needed so that our changes don't impact actual PlayerObject instances
-    bool isGlobedPlayer = false;
-
-    void setRemoteState() {
-        m_fields->isGlobedPlayer = true;
-    }
-
-    bool vanilla() {
-        return !m_fields->isGlobedPlayer;
-    }
-
-    void incrementJumps() {
-        if (vanilla()) PlayerObject::incrementJumps();
-    }
-};
+#include <ui/hooks/player_object.hpp>
 
 class ComplexVisualPlayer : public cocos2d::CCNode, public BaseVisualPlayer {
 public:

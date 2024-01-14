@@ -14,24 +14,7 @@
 #endif
 
 namespace util::data {
-    // macos github actions runner has no std::bit_cast support
-#ifdef __cpp_lib_bit_cast
-    template <typename To, typename From>
-    inline constexpr To bit_cast(From value) noexcept {
-        return std::bit_cast<To, From>(value);
-    }
-#else
-    template <typename To, typename From>
-    std::enable_if_t<sizeof(To) == sizeof(From) && std::is_trivially_copyable_v<From> && std::is_trivially_copyable_v<To>, To>
-    inline bit_cast(From value) noexcept {
-        static_assert(std::is_trivially_constructible_v<To>, "destination template argument for bit_cast must be trivially constructible");
-
-        To dest;
-        std::memcpy(&dest, &value, sizeof(To));
-        return dest;
-    }
-#endif
-
+#ifndef __cpp_lib_byteswap
     uint16_t byteswapU16(uint16_t val) {
         return BSWAP16(val);
     }
@@ -63,6 +46,7 @@ namespace util::data {
     double byteswapF64(double value) {
         return bit_cast<double>(byteswapU64(bit_cast<uint64_t>(value)));
     }
+#endif // __cpp_lib_byteswap
 };
 
 #undef BSWAP16

@@ -2,13 +2,68 @@
 
 #include <UIBuilder.hpp>
 
+#include <managers/account.hpp>
+#include <managers/central_server.hpp>
+#include <managers/error_queues.hpp>
+#include <managers/game_server.hpp>
+#include <managers/settings.hpp>
 #include <net/network_manager.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
+#include <util/misc.hpp>
+#include <util/net.hpp>
 
 using namespace geode::prelude;
 
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
+
+    // auto connect
+    util::misc::callOnce("menu-layer-init-autoconnect", []{
+        if (!GlobedSettings::get().globed.autoconnect) return;
+
+        auto& csm = CentralServerManager::get();
+        auto& gsm = GameServerManager::get();
+        auto& am = GlobedAccountManager::get();
+
+        auto lastaddr = gsm.loadLastConnected();
+        if (lastaddr.empty()) return;
+
+        if (csm.standalone()) {
+            am.autoInitialize();
+            NetworkManager::get().connectStandalone();
+        } else {
+            std::string ip;
+            unsigned short port;
+
+            try {
+                // this is the first time i am genuinely amazed by a utility function of this language
+                std::tie(ip, port) = util::net::splitAddress(lastaddr, GameServerManager::DEFAULT_PORT);
+            } catch (...) {
+                return;
+            }
+
+            am.autoInitialize();
+
+            std::string authcode;
+            try {
+                authcode = am.generateAuthCode();
+            } catch (const std::exception& e) {
+                // invalid authkey? clear it so the user can relog. happens if user changes their password
+                ErrorQueues::get().debugWarn(fmt::format(
+                    "Failed to generate authcode: {}",
+                    e.what()
+                ));
+                am.clearAuthKey();
+                return;
+            }
+
+            auto gdData = am.gdData.lock();
+            log::debug("gd data: {}, {}", gdData->accountId, gdData->accountName);
+            am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [ip = std::move(ip), port] {
+                NetworkManager::get().connect(ip, port, false);
+            });
+        }
+    });
 
     this->updateGlobedButton();
 

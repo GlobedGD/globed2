@@ -19,7 +19,12 @@ public:
 
     util::sync::AtomicBool connected = false;
 protected:
-    util::sync::AtomicInt socket_ = 0;
+
+#ifdef GLOBED_UNIX
+    util::sync::AtomicI32 socket_ = 0;
+#else
+    util::sync::AtomicU32 socket_ = 0;
+#endif
 
 private:
     sockaddr_in destAddr_;

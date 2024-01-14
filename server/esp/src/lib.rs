@@ -363,7 +363,7 @@ macro_rules! impl_extread {
                 };
             }
 
-            // safety: we have initialized all values as seen above. if decoding failed at any moment, this step woudln't be reachable.
+            // safety: we have initialized all values as seen above. if decoding failed at any moment, this step wouldn't be reachable.
             Ok(arr.map(|x| unsafe { x.assume_init() }))
         }
 

@@ -13,7 +13,7 @@ namespace util::collections {
 template <typename T, size_t MaxSize>
 class CappedQueue {
 public:
-    void push(const T& element) {
+    void push(T&& element) {
         if (queue.size() >= MaxSize) {
             queue.pop();
         }

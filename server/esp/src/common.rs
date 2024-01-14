@@ -8,8 +8,9 @@ use std::{
     ops::Deref,
 };
 
+// this is bizarre
 const fn constmax(a: usize, b: usize) -> usize {
-    if a > b {
+    if a >= b {
         a
     } else {
         b

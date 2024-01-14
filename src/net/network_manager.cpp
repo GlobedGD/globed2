@@ -181,7 +181,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     gameSocket.disconnect();
     gameSocket.cleanupBox();
 
-    // GameServerManager could have been destructed before NetworkManager, so this could be UB
+    // GameServerManager could have been destructed before NetworkManager, so this could be UB. Additionally will break autoconnect.
     if (!noclear) {
         GameServerManager::get().clearActive();
     }
@@ -189,7 +189,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
 
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
     GLOBED_REQUIRE(this->connected(), "tried to send a packet while disconnected")
-    packetQueue.push(packet);
+    packetQueue.push(std::move(packet));
 }
 
 void NetworkManager::addListener(packetid_t id, PacketCallback&& callback) {

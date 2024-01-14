@@ -30,6 +30,8 @@ public:
 
     constexpr static const char* STANDALONE_ID = "__standalone__server_id__";
     constexpr static const char* STANDALONE_SETTING_KEY = "_last-standalone-addr";
+    constexpr static const char* LAST_CONNECTED_SETTING_KEY = "_last-connected-addr";
+    constexpr static unsigned short DEFAULT_PORT = 41001;
 
     util::sync::AtomicBool pendingChanges;
 
@@ -51,6 +53,9 @@ public:
     // save the given address as a last connected standalone address
     void saveStandalone(const std::string_view addr);
     std::string loadStandalone();
+
+    void saveLastConnected(const std::string_view addr);
+    std::string loadLastConnected();
 
     /* pings */
 
