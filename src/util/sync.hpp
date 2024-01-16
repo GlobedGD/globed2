@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <queue>
+#include <utility>
 
 #include <util/data.hpp>
 #include <util/time.hpp>
@@ -71,7 +72,7 @@ public:
 
     void push(T&& msg, bool notify = true) {
         std::lock_guard lock(_mtx);
-        _iq.push(std::forward(msg));
+        _iq.push(std::forward<T>(msg));
         if (notify)
             _cvar.notify_one();
     }

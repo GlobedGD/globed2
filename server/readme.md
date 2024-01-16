@@ -49,6 +49,10 @@ globed-game-server.exe
 
 Replace `0.0.0.0:41001` with the address you want the game server to listen on, `http://127.0.0.1:41000` with the URL of your central server, and `password` with the password.
 
+### Additional parameters
+
+`GLOBED_GS_NO_FILE_LOG` - if set to 1, don't create a log file and only log to the console.
+
 ## Central server configuration
 
 The central server allows configuration hot reloading, so you can modify the configuration file and see updates in real time without restarting the server.
@@ -130,3 +134,4 @@ cargo build --release
 In release builds, the `Debug` and `Trace` levels are disabled, so you will only see logs with levels `Info`, `Warn` and `Error`.
 
 This can be changed by setting the environment variable `GLOBED_LESS_LOG=1` for the central server, or `GLOBED_GS_LESS_LOG=1` for the game server. With this option, only logs with levels `Warn` and `Error` will be printed.
+

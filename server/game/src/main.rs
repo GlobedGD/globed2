@@ -23,7 +23,7 @@ use std::{
 };
 
 use esp::{ByteBufferExtRead, ByteReader};
-use globed_shared::*;
+use globed_shared::{log::Log, *};
 use reqwest::StatusCode;
 use server::GameServerConfiguration;
 use state::ServerState;
@@ -139,7 +139,20 @@ fn parse_configuration() -> StartupConfiguration {
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    log::set_logger(Logger::instance("globed_game_server")).unwrap();
+    // set the interrupt handler to flush the logfile and exit
+    ctrlc::set_handler(move || {
+        warn!("Interrupt signal received, terminating the server");
+        Logger::instance("globed_game_server", true).flush();
+        std::process::exit(1);
+    })
+    .expect("error setting interrupt handler");
+
+    let write_to_file = std::env::var("GLOBED_GS_NO_FILE_LOG")
+        .map(|p| p.parse::<i32>().unwrap())
+        .unwrap_or(0)
+        == 0;
+
+    log::set_logger(Logger::instance("globed_game_server", write_to_file)).unwrap();
 
     if std::env::var("GLOBED_GS_LESS_LOG").unwrap_or_else(|_| "0".to_string()) == "1" {
         log::set_max_level(LogLevelFilter::Warn);

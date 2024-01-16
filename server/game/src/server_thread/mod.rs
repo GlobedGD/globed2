@@ -7,8 +7,6 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use parking_lot::Mutex as SyncMutex;
-
 use esp::ByteReader;
 use globed_shared::{
     anyhow,
@@ -17,6 +15,7 @@ use globed_shared::{
         ChaChaBox,
     },
     logger::*,
+    SyncMutex,
 };
 
 use crate::{data::*, make_uninit, server::GameServer, server_thread::handlers::*, util::TokioChannel};

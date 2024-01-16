@@ -70,6 +70,7 @@ server/game/perf.data
 server/game/perf.data.old
 server/game/test-flamegraph.sh
 server/game/test-bench.sh
+server/globed_game_server.log
 
 libs/openssl
 

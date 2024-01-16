@@ -31,7 +31,7 @@ fn abort_misconfig() -> ! {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    log::set_logger(Logger::instance("globed_central_server")).unwrap();
+    log::set_logger(Logger::instance("globed_central_server", false)).unwrap();
 
     if std::env::var("GLOBED_LESS_LOG").unwrap_or("0".to_string()) == "1" {
         log::set_max_level(LogLevelFilter::Warn);

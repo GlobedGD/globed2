@@ -7,7 +7,7 @@ namespace util::misc {
     template <typename To, typename From>
     To convertEnum(From value);
 
-    // On first call, simply calls `func`. On repetaed calls, given the same `key`, the function will not be called again. Not thread safe.
+    // On first call, simply calls `func`. On repeated calls, given the same `key`, the function will not be called again. Not thread safe.
     void callOnce(const char* key, std::function<void()> func);
 
     // Same as `callOnce` but guaranteed to be thread-safe. Though, if another place ever calls the non-safe version, no guarantees are made.

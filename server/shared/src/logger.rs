@@ -1,4 +1,10 @@
-use std::{sync::OnceLock, time::SystemTime};
+use crate::SyncMutex;
+use std::{
+    fs::File,
+    io::{BufWriter, Write},
+    sync::OnceLock,
+    time::SystemTime,
+};
 
 use colored::Colorize;
 use time::{format_description, OffsetDateTime};
@@ -9,17 +15,31 @@ pub use log::{debug, error, info, trace, warn, Level as LogLevel, LevelFilter as
 pub struct Logger {
     format_desc: Vec<format_description::FormatItem<'static>>,
     self_crate_name: &'static str,
+    file_writer: Option<SyncMutex<BufWriter<File>>>,
 }
 
 const TIME_FORMAT: &str = "[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3]";
+const LOG_BUFFER_CAPACITY: usize = 2048;
 
 impl Logger {
     #[allow(clippy::missing_panics_doc)]
-    pub fn instance(self_crate_name: &'static str) -> &'static Self {
+    pub fn instance(self_crate_name: &'static str, write_to_file: bool) -> &'static Self {
         static INSTANCE: OnceLock<Logger> = OnceLock::new();
         INSTANCE.get_or_init(|| Self {
             format_desc: format_description::parse_borrowed::<2>(TIME_FORMAT).unwrap(),
             self_crate_name,
+            file_writer: if write_to_file {
+                let file = File::create(std::env::current_dir().unwrap().join(format!("{self_crate_name}.log")));
+
+                if let Ok(file) = file {
+                    Some(SyncMutex::new(BufWriter::with_capacity(LOG_BUFFER_CAPACITY, file)))
+                } else {
+                    eprintln!("failed to open log file for writing: {}", file.unwrap_err());
+                    None
+                }
+            } else {
+                None
+            },
         })
     }
 }
@@ -40,6 +60,13 @@ impl log::Log for Logger {
 
         let now: OffsetDateTime = SystemTime::now().into();
         let formatted_time = now.format(&self.format_desc).unwrap();
+
+        if let Some(file) = self.file_writer.as_ref() {
+            let mut file = file.lock();
+            if let Err(e) = writeln!(file, "[{formatted_time}] [{}] - {}", record.level(), record.args()) {
+                eprintln!("Failed to write to the logfile: {e}");
+            }
+        }
 
         let (level, args) = match record.level() {
             LogLevel::Error => (
@@ -62,5 +89,7 @@ impl log::Log for Logger {
         }
     }
 
-    fn flush(&self) {}
+    fn flush(&self) {
+        self.file_writer.as_ref().map(|w| w.lock().flush());
+    }
 }

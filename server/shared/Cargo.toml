@@ -16,6 +16,7 @@ crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
 hmac = "0.12.1"
 log = { version = "0.4.20" }
 nohash-hasher = "0.2.0"
+parking_lot = "0.12.1"
 rand = "0.8.5"
 serde = { version = "1.0.193", features = ["serde_derive"] }
 serde_json = "1.0.108"

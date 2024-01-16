@@ -4,14 +4,12 @@ use std::{
     time::Duration,
 };
 
-use parking_lot::Mutex as SyncMutex;
-
 use globed_shared::{
     anyhow::{self, anyhow, bail},
     crypto_box::{aead::OsRng, PublicKey, SecretKey},
     esp::ByteBufferExtWrite as _,
     logger::*,
-    GameServerBootData, TokenIssuer, SERVER_MAGIC_LEN,
+    GameServerBootData, SyncMutex, TokenIssuer, SERVER_MAGIC_LEN,
 };
 use rustc_hash::FxHashMap;
 
