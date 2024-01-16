@@ -18,7 +18,7 @@ public:
             queue.pop();
         }
 
-        queue.push(element);
+        queue.push(std::move(element));
     }
 
     size_t size() const {
