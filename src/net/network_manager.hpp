@@ -128,11 +128,11 @@ private:
     // Builtin listeners have priority above the others.
     WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;
 
-    void addBuiltinListener(packetid_t id, PacketCallback callback);
+    void addBuiltinListener(packetid_t id, PacketCallback&& callback);
 
     template <HasPacketID Pty>
-    void addBuiltinListener(PacketCallbackSpecific<Pty> callback) {
-        this->addBuiltinListener(Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
+    void addBuiltinListener(PacketCallbackSpecific<Pty>&& callback) {
+        this->addBuiltinListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
             callback(static_cast<Pty*>(pkt.get()));
         });
     }

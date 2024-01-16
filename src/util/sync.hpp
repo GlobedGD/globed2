@@ -70,9 +70,9 @@ public:
         return out;
     }
 
-    void push(T&& msg, bool notify = true) {
+    void push(const T& msg, bool notify = true) {
         std::lock_guard lock(_mtx);
-        _iq.push(std::forward<T>(msg));
+        _iq.push(msg);
         if (notify)
             _cvar.notify_one();
     }
@@ -100,7 +100,7 @@ template <typename T>
 class WrappingMutex {
 public:
     WrappingMutex(): data_(std::make_shared<T>()), mutex_() {}
-    WrappingMutex(T&& obj) : data_(std::make_shared(std::forward(obj))), mutex_() {}
+    WrappingMutex(T&& obj) : data_(std::make_shared(std::move(obj))), mutex_() {}
 
     class Guard {
     public:
@@ -286,20 +286,20 @@ public:
     SmartThread() {}
 
     SmartThread(TFunc&& func) {
-        this->setLoopFunction(std::forward(func));
+        this->setLoopFunction(std::move(func));
     }
 
     void setLoopFunction(TFunc&& func) {
-        loopFunc = std::move(func);
+        loopFunc = func;
     }
 
-    void start(TFuncArgs... args) {
+    void start(TFuncArgs&&... args) {
         _stopped.clear();
         _handle = std::thread([this](TFuncArgs... args) {
             while (!_stopped) {
                 loopFunc(args...);
             }
-        }, args...);
+        }, std::move(args...));
     }
 
     // Request the thread to be stopped as soon as possible

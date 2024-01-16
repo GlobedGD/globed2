@@ -23,7 +23,7 @@ public:
     }
 
     static std::shared_ptr<RawPacket> create(packetid_t id, bool encrypted, ByteBuffer&& buffer) {
-        return std::make_shared<RawPacket>(id, encrypted, std::forward<ByteBuffer>(buffer));
+        return std::make_shared<RawPacket>(id, encrypted, std::move(buffer));
     }
 
     packetid_t id;

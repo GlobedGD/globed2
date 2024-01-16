@@ -193,7 +193,7 @@ void NetworkManager::send(std::shared_ptr<Packet> packet) {
 }
 
 void NetworkManager::addListener(packetid_t id, PacketCallback&& callback) {
-    (*listeners.lock()).emplace(id, std::forward<PacketCallback>(callback));
+    (*listeners.lock()).emplace(id, std::move(callback));
 }
 
 void NetworkManager::removeListener(packetid_t id) {
@@ -343,8 +343,8 @@ void NetworkManager::maybeDisconnectIfDead() {
     }
 }
 
-void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback callback) {
-    (*builtinListeners.lock())[id] = callback;
+void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback) {
+    (*builtinListeners.lock()).emplace(id, std::move(callback));
 }
 
 bool NetworkManager::connected() {
