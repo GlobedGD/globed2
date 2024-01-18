@@ -12,8 +12,6 @@
 
 class ErrorQueues : GLOBED_SINGLETON(ErrorQueues) {
 public:
-    ErrorQueues();
-
     void warn(const std::string_view message, bool print = true);
     void error(const std::string_view message, bool print = true);
     // notices are messages coming directly from the server

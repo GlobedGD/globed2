@@ -42,6 +42,7 @@ void GlobedSettings::save() {
 
     // communication
     STOREV(communication, voiceEnabled);
+    STOREV(communication, lowerAudioLatency);
 
     // store flags
 
@@ -61,6 +62,7 @@ void GlobedSettings::reload() {
 
     // communication
     LOADV(communication, voiceEnabled);
+    LOADV(communication, lowerAudioLatency);
 
     // load flags
 
@@ -79,7 +81,8 @@ void GlobedSettings::resetToDefaults() {
         SKEY(overlay, hideConditionally),
 
         // communication
-        SKEY(communication, voiceEnabled)
+        SKEY(communication, voiceEnabled),
+        SKEY(communication, lowerAudioLatency),
     );
 
     this->reload();

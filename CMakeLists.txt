@@ -50,6 +50,14 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
+# Windows - presume SSE/AVX
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(OPUS_X86_PRESUME_SSE ON)
+    set(OPUS_X86_PRESUME_SSE2 ON)
+    set(OPUS_X86_PRESUME_SSE4_1 ON)
+    set(OPUS_X86_PRESUME_AVX ON)
+endif()
+
 # our favorite libraries
 CPMAddPackage("gh:dankmeme01/uibuilder#main")
 CPMAddPackage("gh:xiph/opus#master")

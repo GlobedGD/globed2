@@ -4,19 +4,28 @@
 
 using namespace util::data;
 
-EncodedAudioFrame::EncodedAudioFrame() {}
+EncodedAudioFrame::EncodedAudioFrame() : _capacity(VOICE_MAX_FRAMES_IN_AUDIO_FRAME) {}
+EncodedAudioFrame::EncodedAudioFrame(size_t capacity) : _capacity(capacity) {}
 
 EncodedAudioFrame::~EncodedAudioFrame() {
     this->clear();
 }
 
 void EncodedAudioFrame::pushOpusFrame(const EncodedOpusData& frame) {
-    if (frames.size() >= VOICE_MAX_FRAMES_IN_AUDIO_FRAME) {
-        geode::log::warn("tried to push an extra frame into EncodedAudioFrame, 20 is the max");
+    if (frames.size() >= _capacity) {
+        geode::log::warn("tried to push an extra frame into EncodedAudioFrame, {} is the max", _capacity);
         return;
     }
 
     frames.push_back(frame);
+}
+
+void EncodedAudioFrame::setCapacity(size_t frames_) {
+    _capacity = frames_;
+    while (frames.size() > _capacity) {
+        AudioEncoder::freeData(frames.back());
+        frames.pop_back();
+    }
 }
 
 void EncodedAudioFrame::clear() {
@@ -37,8 +46,8 @@ const std::vector<EncodedOpusData>& EncodedAudioFrame::getFrames() const {
 
 void EncodedAudioFrame::encode(ByteBuffer& buf) const {
     GLOBED_REQUIRE(
-        frames.size() <= VOICE_MAX_FRAMES_IN_AUDIO_FRAME,
-        fmt::format("tried to encode an EncodedAudioFrame with {} frames when at most {} is permitted", frames.size(), VOICE_MAX_FRAMES_IN_AUDIO_FRAME)
+        frames.size() <= _capacity,
+        fmt::format("tried to encode an EncodedAudioFrame with {} frames when at most {} is permitted", frames.size(), _capacity)
     )
 
     // first encode all opus frames
@@ -46,7 +55,7 @@ void EncodedAudioFrame::encode(ByteBuffer& buf) const {
         buf.writeOptionalValue<EncodedOpusData>(frame);
     }
 
-    // if we have written less than 10, write nullopts
+    // if we have written less than the absolute max, write nullopts
 
     for (size_t i = frames.size(); i < VOICE_MAX_FRAMES_IN_AUDIO_FRAME; i++) {
         buf.writeOptionalValue<EncodedOpusData>(std::nullopt);

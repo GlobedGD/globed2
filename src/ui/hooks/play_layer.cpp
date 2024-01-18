@@ -66,14 +66,18 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
 #if GLOBED_VOICE_SUPPORT
     // set the audio device
+    auto& vm = GlobedAudioManager::get();
     try {
-        GlobedAudioManager::get().setActiveRecordingDevice(settings.globed.audioDevice);
+        vm.setActiveRecordingDevice(settings.globed.audioDevice);
     } catch(const std::exception& e) {
         // try default device, if we have no mic then just do nothing
         try {
-            GlobedAudioManager::get().setActiveRecordingDevice(0);
+            vm.setActiveRecordingDevice(0);
         } catch(const std::exception& _e) {}
     }
+
+    // set the record buffer size
+    vm.setRecordBufferCapacity(settings.communication.lowerAudioLatency ? EncodedAudioFrame::LIMIT_LOW_LATENCY : EncodedAudioFrame::LIMIT_REGULAR);
 #endif // GLOBED_VOICE_SUPPORT
 
     // send SyncIconsPacket if our icons have changed since the last time we sent it

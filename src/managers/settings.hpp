@@ -9,6 +9,10 @@
 
 // This class should only be accessed from the main thread.
 class GlobedSettings : GLOBED_SINGLETON(GlobedSettings) {
+protected:
+    friend class SingletonBase;
+    GlobedSettings();
+
 public:
     struct Globed {
         GSETTING(uint32_t, tpsCap, 0);
@@ -24,6 +28,7 @@ public:
 
     struct Communication {
         GSETTING(bool, voiceEnabled, true);
+        GSETTING(bool, lowerAudioLatency, false);
     };
 
     struct LevelUI {};
@@ -41,8 +46,6 @@ public:
     Players players;
     Advanced advanced;
     Flags flags;
-
-    GlobedSettings();
 
     void save();
     void reload();

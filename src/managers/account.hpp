@@ -10,6 +10,10 @@
 // user-specific and central-server-specific, so that switching server or accounts doesn't reset authkeys.
 // This class is not guaranteed to be fully thread safe (reason: getSavedValue/setSavedValue)
 class GlobedAccountManager : GLOBED_SINGLETON(GlobedAccountManager) {
+protected:
+    friend class SingletonBase;
+    GlobedAccountManager();
+
 public:
     struct GDData {
         std::string accountName;
@@ -22,8 +26,6 @@ public:
     util::sync::AtomicBool initialized = false;
     util::sync::WrappingMutex<GDData> gdData;
     util::sync::WrappingMutex<std::string> authToken;
-
-    GlobedAccountManager();
 
     // This method can be called multiple times, and in fact it is even advised that you do so often.
     // It must be called at least once before calling any other method or they will throw an exception.

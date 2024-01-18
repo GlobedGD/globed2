@@ -21,6 +21,11 @@ concept HasPacketID = requires { T::PACKET_ID; };
 
 // This class is fully thread safe..? hell do i know..
 class NetworkManager : GLOBED_SINGLETON(NetworkManager) {
+protected:
+    friend class SingletonBase;
+    NetworkManager();
+    ~NetworkManager();
+
 public:
     using PacketCallback = std::function<void(std::shared_ptr<Packet>)>;
 
@@ -31,9 +36,6 @@ public:
     static constexpr util::data::byte SERVER_MAGIC[10] = {0xda, 0xee, 'g', 'l', 'o', 'b', 'e', 'd', 0xda, 0xee};
 
     AtomicU32 connectedTps; // if `authenticated() == true`, this is the TPS of the current server, otherwise undefined.
-
-    NetworkManager();
-    ~NetworkManager();
 
     // Connect to a server
     bool connect(const std::string_view addr, unsigned short port, bool standalone = false);

@@ -5,8 +5,6 @@
 
 class ProfileCacheManager : GLOBED_SINGLETON(ProfileCacheManager) {
 public:
-    ProfileCacheManager();
-
     void insert(const PlayerAccountData& data);
     std::optional<PlayerAccountData> getData(int32_t accountId);
     void clear();

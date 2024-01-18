@@ -7,8 +7,6 @@
 #include <util/time.hpp>
 
 namespace util::debugging {
-    // To use the benchmarker, create a `Benchmarker` object, call start(id), then run all the code you want to benchmark, and call end(id).
-    // It will return the number of microseconds the code took to run.
     class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
     public:
         void start(const std::string_view id) {
@@ -82,8 +80,6 @@ namespace util::debugging {
 
     class PacketLogger : GLOBED_SINGLETON(PacketLogger) {
     public:
-        PacketLogger() {}
-
         void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {
 # ifdef GLOBED_DEBUG_PACKETS
 #  ifdef GLOBED_DEBUG_PACKETS_PRINT

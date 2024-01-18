@@ -4,8 +4,6 @@
 
 #include "manager.hpp"
 
-VoicePlaybackManager::VoicePlaybackManager() {}
-
 void VoicePlaybackManager::playFrameStreamed(int playerId, const EncodedAudioFrame& frame) {
     // if the stream doesn't exist yet, create it
     if (!streams.contains(playerId)) {

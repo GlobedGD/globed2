@@ -1,7 +1,5 @@
 #include "error_queues.hpp"
 
-ErrorQueues::ErrorQueues() {}
-
 void ErrorQueues::warn(const std::string_view message, bool print) {
     if (print) geode::log::warn("{}", message);
     _warns.push(std::string(message));

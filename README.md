@@ -30,10 +30,6 @@ Known issues:
 
 See the [server readme](./server/readme.md) for more information about the server and how you can host it.
 
-## Building
-
-Building is the same as building any other Geode mod, except for Android. If you want to build the mod for Android, see the [android build readme](./android-build.md) for instructions on how to do it.
-
 ## Credit
 
 **mat, alk, and the rest of the Geode team** - thank you for creating Geode and for helping me with the issues I had using it. None of this would've been possible without your awesome efforts, and I really appreciate the work you've put in <3

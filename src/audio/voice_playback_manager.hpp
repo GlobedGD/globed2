@@ -12,8 +12,6 @@
 */
 class VoicePlaybackManager : GLOBED_SINGLETON(VoicePlaybackManager) {
 public:
-    VoicePlaybackManager();
-
     void playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
     void stopAllStreams();
 

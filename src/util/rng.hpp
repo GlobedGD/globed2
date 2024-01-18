@@ -7,9 +7,11 @@
 
 namespace util::rng {
     class Random : GLOBED_SINGLETON(Random) {
-    public:
+    protected:
+        friend class SingletonBase;
         Random();
 
+    public:
         template <typename T>
         T generate();
 

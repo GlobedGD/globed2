@@ -1,7 +1,5 @@
 #include "profile_cache.hpp"
 
-ProfileCacheManager::ProfileCacheManager() {}
-
 void ProfileCacheManager::insert(const PlayerAccountData& data) {
     cache.emplace(data.id, data);
 }

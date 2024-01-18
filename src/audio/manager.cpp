@@ -135,6 +135,10 @@ void GlobedAudioManager::validateDevices() {
     }
 }
 
+void GlobedAudioManager::setRecordBufferCapacity(size_t frames) {
+    recordFrame.setCapacity(frames);
+}
+
 void GlobedAudioManager::startRecording(std::function<void(const EncodedAudioFrame&)> callback) {
     GLOBED_REQUIRE(this->recordDevice.id >= 0, "no recording device is set")
     GLOBED_REQUIRE(!this->isRecording() && !recordActive, "attempting to record when already recording")

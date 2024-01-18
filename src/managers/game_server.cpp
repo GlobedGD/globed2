@@ -4,8 +4,6 @@
 #include <util/rng.hpp>
 #include <util/collections.hpp>
 
-GameServerManager::GameServerManager() {}
-
 void GameServerManager::addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region) {
     auto addr = util::net::splitAddress(address, DEFAULT_PORT);
     GameServer server = {

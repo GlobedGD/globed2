@@ -5,8 +5,6 @@
 
 class LerpLogger : GLOBED_SINGLETON(LerpLogger) {
 public:
-    LerpLogger() {}
-
     void reset(uint32_t player);
 
     // real frames logging

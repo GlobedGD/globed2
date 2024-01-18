@@ -38,10 +38,12 @@ constexpr size_t VOICE_CHANNELS = 1;
 
 // This class is not thread safe. At all.
 class GlobedAudioManager : GLOBED_SINGLETON(GlobedAudioManager) {
-public:
+protected:
+    friend class SingletonBase;
     GlobedAudioManager();
     ~GlobedAudioManager();
 
+public:
     // preinitialization, for more info open the implementation
     void preInitialize();
 
@@ -64,6 +66,9 @@ public:
     // if the current selected recording/playback is invalid (i.e. disconnected),
     // it will be reset. if no device is selected or a valid device is selected, nothing happens.
     void validateDevices();
+
+    // set the amount of record frames in a buffer (used by the lowerAudioLatency setting)
+    void setRecordBufferCapacity(size_t frames);
 
     // start recording the voice and call the callback once a full frame is ready.
     // if `stopRecording()` is called at any point, the callback will be called with the remaining data.

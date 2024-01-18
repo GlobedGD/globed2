@@ -21,9 +21,11 @@ struct CentralServer {
 };
 
 class CentralServerManager : GLOBED_SINGLETON(CentralServerManager) {
-public:
+protected:
+    friend class SingletonBase;
     CentralServerManager();
 
+public:
     // set the current active server, thread safe
     void setActive(int index);
     // get the current active server, thread safe
