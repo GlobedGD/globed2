@@ -40,6 +40,10 @@ size_t EncodedAudioFrame::size() const {
     return frames.size();
 }
 
+size_t EncodedAudioFrame::capacity() const {
+    return _capacity;
+}
+
 const std::vector<EncodedOpusData>& EncodedAudioFrame::getFrames() const {
     return frames;
 }
