@@ -6,6 +6,7 @@
 #include <defs.hpp>
 
 #include <condition_variable>
+#include <thread>
 #include <atomic>
 #include <queue>
 #include <utility>

@@ -27,4 +27,23 @@ namespace util::misc {
             return true;
         }
     };
+
+    template <typename Ret, typename Func>
+    concept OnceCellFunction = requires(Func func) {
+        { std::is_invocable_r_v<Ret, Func> };
+    };
+
+    // On first call to `getOrInit`, create the value with the given initializer. On next calls, just return the created value.
+    template <typename Ret>
+    class OnceCell {
+    public:
+        OnceCell() {}
+
+        template <typename Initer>
+        requires OnceCellFunction<Ret, Initer>
+        Ret& getOrInit(const Initer& initer) {
+            static Ret val = initer();
+            return val;
+        }
+    };
 }

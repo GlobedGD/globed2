@@ -5,6 +5,9 @@
 #include <data/packets/packet.hpp>
 #include <util/collections.hpp>
 #include <util/time.hpp>
+#ifdef GEODE_IS_ANDROID
+# include <cxxabi.h>
+#endif
 
 namespace util::debugging {
     class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
@@ -114,4 +117,14 @@ namespace util::debugging {
 
     // like geode::log::debug but with precise timestamps.
     void timedLog(const std::string_view message);
+
+    struct ProcMapEntry {
+        ptrdiff_t size;
+        bool readable;
+    };
+
+    std::string getTypename(void* address);
+    std::string getTypenameFromVtable(void* address);
+
+    void dumpStruct(void* address, size_t size);
 }

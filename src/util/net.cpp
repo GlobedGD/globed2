@@ -39,8 +39,7 @@ namespace util::net {
                 nullptr, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&s, 0, nullptr)
         == 0) {
             // some errors like WSA 10038 can raise ERROR_MR_MID_NOT_FOUND (0x13D)
-            // which basically means the formatted message txt doesn't exist in the OS.
-            // i call this a windows moment because like what the fuck???
+            // which basically means the formatted message txt doesn't exist in the OS. (wine issue?)
             auto le = GetLastError();
             geode::log::error("FormatMessageA failed formatting error code {}, last error: {}", code, le);
             return fmt::format("[Unknown windows error {}]: formatting failed because of: {}", code, le);
