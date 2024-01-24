@@ -307,18 +307,22 @@ namespace util::debugging {
 
             auto name = getTypename((void*)nodeValue);
 
-            std::string prefix = fmt::format("0x{:X}", node);
+#if UINTPTR_MAX > 0xffffffff
+            std::string prefix = fmt::format("0x{:X} : {:016X}", node, nodeValue);
+#else
+            std::string prefix = fmt::format("0x{:X} : {:08X}", node, nodeValue);
+#endif
 
             // valid type with a known typeinfo
             if (!name.starts_with("<Unknown")) {
-                geode::log::debug("{} : {:X} ({}*)", prefix, nodeValue, name);
+                geode::log::debug("{} ({}*)", prefix, name);
                 continue;
             }
 
             // vtable ptr
             name = getTypenameFromVtable((void*)nodeValue);
             if (!name.starts_with("<Unknown")) {
-                geode::log::debug("{} : {:X} (vtable for {})", prefix, nodeValue, name);
+                geode::log::debug("{} (vtable for {})", prefix, name);
                 continue;
             }
 
@@ -330,30 +334,30 @@ namespace util::debugging {
             // i hate endianness
             bool float1 = likelyFloat(lowerValue), float2 = likelyFloat(higherValue);
             if (float1 && float2) {
-                geode::log::debug("{} : {:X} ({}f and {}f)", prefix, nodeValue, util::data::bit_cast<float>(higherValue), util::data::bit_cast<float>(lowerValue));
+                geode::log::debug("{} ({}f and {}f)", prefix, util::data::bit_cast<float>(higherValue), util::data::bit_cast<float>(lowerValue));
                 continue;
             } else if (float1 && !float2) {
-                geode::log::debug("{} : {:X} ({}f and {})", prefix, nodeValue, higherValue, util::data::bit_cast<float>(lowerValue));
+                geode::log::debug("{} ({}f and {})", prefix, higherValue, util::data::bit_cast<float>(lowerValue));
                 continue;
             } else if (!float1 && float2) {
-                geode::log::debug("{} : {:X} ({} and {}f)", prefix, nodeValue, util::data::bit_cast<float>(higherValue), lowerValue);
+                geode::log::debug("{} ({} and {}f)", prefix, util::data::bit_cast<float>(higherValue), lowerValue);
                 continue;
             }
 #else
             if (likelyFloat(nodeValue)) {
-                geode::log::debug("{} : {:X} ({}f)", prefix, nodeValue, util::data::bit_cast<float>(nodeValue));
+                geode::log::debug("{} ({}f)", prefix, util::data::bit_cast<float>(nodeValue));
                 continue;
             }
 #endif
 
             // valid heap pointer
             if (canReadPointer(nodeValue)) {
-                geode::log::debug("{} : {:X} ({}) (ptr)", prefix, nodeValue, nodeValue);
+                geode::log::debug("{} ({}) (ptr)", prefix, nodeValue);
                 continue;
             }
 
             // anything tbh
-            geode::log::debug("0x{:X} : {:X} ({})", node, nodeValue, nodeValue);
+            geode::log::debug("{} ({})", prefix, nodeValue);
         }
     }
 }
