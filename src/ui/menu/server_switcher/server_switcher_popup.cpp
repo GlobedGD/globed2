@@ -74,6 +74,8 @@ void ServerSwitcherPopup::reloadList() {
     listLayer->m_list = Build<ListView>::create(cells, CentralServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .parent(listLayer)
         .collect();
+
+    geode::cocos::handleTouchPriority(this);
 }
 
 void ServerSwitcherPopup::close() {

@@ -3,7 +3,7 @@
 #include <util/formatting.hpp>
 #include <util/misc.hpp>
 
-#ifdef GLOBED_WIN32
+#ifdef GEODE_IS_WINDOWS
 # include <dbghelp.h>
 # pragma comment(lib, "dbghelp.lib")
 #endif
@@ -146,14 +146,29 @@ namespace util::debugging {
         geode::log::info("\r[{}] [Globed] {}", util::formatting::formatDateTime(util::time::now()), message);
     }
 
-#ifdef GLOBED_WIN32
+#ifdef GEODE_IS_WINDOWS
     static int exceptionDummy() {
         return EXCEPTION_EXECUTE_HANDLER;
     }
 #endif
 
-    bool canReadPointer(uintptr_t address) {
-#ifdef GLOBED_ANDROID
+    static uintptr_t adjustPointerForMaps(uintptr_t ptr) {
+#ifdef GEODE_IS_ANDROID64
+        // xd
+        const uint64_t mask = 0xFF00000000000000;
+        return ptr & ~mask;
+#else
+        return ptr;
+#endif
+    }
+
+    bool canReadPointer(uintptr_t address, size_t align = 1) {
+        if (address < 4096) return false;
+        if (address % align != 0) return false;
+
+#ifdef GEODE_IS_ANDROID
+        address = adjustPointerForMaps(address);
+
         static misc::OnceCell<std::unordered_map<size_t, ProcMapEntry>> _maps;
         auto& maps = _maps.getOrInit([] {
             std::unordered_map<size_t, ProcMapEntry> entries;
@@ -193,7 +208,7 @@ namespace util::debugging {
         }
 
         return false;
-#elif defined(GLOBED_WIN32)
+#elif defined(GEODE_IS_WINDOWS)
         bool isBad = IsBadReadPtr((void*)address, 4);
         if (isBad) return false;
         return true;
@@ -207,11 +222,12 @@ namespace util::debugging {
 #endif
     }
 
-#ifdef GLOBED_ANDROID
+#ifdef GEODE_IS_ANDROID
     struct Typeinfo {
-        unsigned int _unkptr, namePtr;
+        void* _unkptr;
+        const char* namePtr;
     };
-#elif defined(GLOBED_WIN32)
+#elif defined(GEODE_IS_WINDOWS)
     struct TypeDescriptor {
         void *pVFTable, *spare;
         char name[];
@@ -224,37 +240,26 @@ namespace util::debugging {
 #endif
 
     std::string getTypename(void* address) {
-        // is this even a proper virtual class? prevent sigbus
-        if ((uintptr_t)address % 4 != 0) return "<Unknown, invalid pointer>";
-
         // geode::log::debug("getting typename of {:X}", (uintptr_t)address - geode::base::get());
-        if (!canReadPointer((uintptr_t)address)) return "<Unknown, invalid address>";
+        if (!canReadPointer((uintptr_t)address, 4)) return "<Unknown, invalid address>";
 
         void* vtablePtr = *(void**)(address);
         return getTypenameFromVtable(vtablePtr);
     }
 
     std::string getTypenameFromVtable(void* address) {
-        // is this even a properly aligned vtable?
-        if ((uintptr_t)address % 4 != 0) return "<Unknown, invalid pointer>";
+        if (!canReadPointer((uintptr_t)address, 4)) return "<Unknown, invalid vtable>";
 
-        // geode::log::debug("vtable ptr: {:X}", (uintptr_t)address - geode::base::get());
-        if ((uintptr_t)address % 4 != 0) return "<Unknown, invalid vtable>";
-        if (!canReadPointer((uintptr_t)address)) return "<Unknown, invalid vtable>";
-
-        Typeinfo** typeinfoPtrPtr = (Typeinfo**)((uintptr_t)address - 4);
-        if ((uintptr_t)typeinfoPtrPtr % 4 != 0) return "<Unknown, invalid typeinfo>";
-        if (!canReadPointer((uintptr_t)typeinfoPtrPtr)) return "<Unknown, invalid typeinfo>";
+        Typeinfo** typeinfoPtrPtr = (Typeinfo**)((uintptr_t)address - sizeof(void*));
+        if (!canReadPointer((uintptr_t)typeinfoPtrPtr, 4)) return "<Unknown, invalid typeinfo>";
         Typeinfo* typeinfoPtr = *typeinfoPtrPtr;
-        if ((uintptr_t)typeinfoPtr % 4 != 0) return "<Unknown, invalid typeinfo>";
-        if (!canReadPointer((uintptr_t)typeinfoPtr)) return "<Unknown, invalid typeinfo>";
+        if (!canReadPointer((uintptr_t)typeinfoPtr, 4)) return "<Unknown, invalid typeinfo>";
         Typeinfo typeinfo = *typeinfoPtr;
 
-#ifdef GLOBED_ANDROID
-        const char* namePtr = (const char*)(typeinfo.namePtr);
+#ifdef GEODE_IS_ANDROID
+        const char* namePtr = typeinfo.namePtr;
         // geode::log::debug("name ptr: {:X}", (uintptr_t)namePtr - geode::base::get());
-        if ((uintptr_t)namePtr % 4 != 0) return "<Unknown, invalid class name>";
-        if (!canReadPointer((uintptr_t)namePtr)) return "<Unknown, invalid class name>";
+        if (!canReadPointer((uintptr_t)namePtr, 4)) return "<Unknown, invalid class name>";
 
         int status;
         std::string demangled = abi::__cxa_demangle(namePtr, nullptr, nullptr, &status);
@@ -263,12 +268,11 @@ namespace util::debugging {
         }
 
         return demangled;
-#elif defined(GLOBED_WIN32)
+#elif defined(GEODE_IS_WINDOWS)
 
-        if (!canReadPointer((uintptr_t)typeinfo.descriptor)) return "<Unknown, invalid descriptor>";
+        if (!canReadPointer((uintptr_t)typeinfo.descriptor, 4)) return "<Unknown, invalid descriptor>";
         const char* namePtr = typeinfo.descriptor->name;
 
-        if ((uintptr_t)namePtr % 4 != 0) return "<Unknown, invalid class name>";
         if (!canReadPointer((uintptr_t)namePtr)) return "<Unknown, invalid class name>";
 
         std::string demangledName;
@@ -299,7 +303,7 @@ namespace util::debugging {
     void dumpStruct(void* address, size_t size) {
         geode::log::debug("Struct {}", getTypename(address));
         for (uintptr_t node = 0; node < size; node += sizeof(void*)) {
-            uint32_t nodeValue = *(uint32_t*)((uintptr_t)address + node);
+            uintptr_t nodeValue = *(uintptr_t*)((uintptr_t)address + node);
 
             auto name = getTypename((void*)nodeValue);
 
@@ -319,10 +323,28 @@ namespace util::debugging {
             }
 
             // float?
+#if UINTPTR_MAX > 0xffffffff
+            uint32_t lowerValue = (uint32_t)(nodeValue & 0xffffffff);
+            uint32_t higherValue = (uint32_t)((nodeValue >> 32) & 0xffffffff);
+
+            // i hate endianness
+            bool float1 = likelyFloat(lowerValue), float2 = likelyFloat(higherValue);
+            if (float1 && float2) {
+                geode::log::debug("{} : {:X} ({}f and {}f)", prefix, nodeValue, util::data::bit_cast<float>(higherValue), util::data::bit_cast<float>(lowerValue));
+                continue;
+            } else if (float1 && !float2) {
+                geode::log::debug("{} : {:X} ({}f and {})", prefix, nodeValue, higherValue, util::data::bit_cast<float>(lowerValue));
+                continue;
+            } else if (!float1 && float2) {
+                geode::log::debug("{} : {:X} ({} and {}f)", prefix, nodeValue, util::data::bit_cast<float>(higherValue), lowerValue);
+                continue;
+            }
+#else
             if (likelyFloat(nodeValue)) {
                 geode::log::debug("{} : {:X} ({}f)", prefix, nodeValue, util::data::bit_cast<float>(nodeValue));
                 continue;
             }
+#endif
 
             // valid heap pointer
             if (canReadPointer(nodeValue)) {

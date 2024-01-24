@@ -4,7 +4,7 @@
 
 namespace util::net {
     void initialize() {
-#ifdef GLOBED_WIN32
+#ifdef GEODE_IS_WINDOWS
         WSADATA wsaData;
         bool success = WSAStartup(MAKEWORD(2, 2), &wsaData) == 0;
         if (!success) {
@@ -14,13 +14,13 @@ namespace util::net {
     }
 
     void cleanup() {
-#ifdef GLOBED_WIN32
+#ifdef GEODE_IS_WINDOWS
         WSACleanup();
 #endif
     }
 
     int lastErrorCode() {
-#ifdef GLOBED_WIN32
+#ifdef GEODE_IS_WINDOWS
         return WSAGetLastError();
 #else
         return errno;
@@ -32,7 +32,7 @@ namespace util::net {
     }
 
     std::string lastErrorString(int code, bool gai) {
-#ifdef GLOBED_WIN32
+#ifdef GEODE_IS_WINDOWS
         char *s = nullptr;
         if (FormatMessageA(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,

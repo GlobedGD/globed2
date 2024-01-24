@@ -6,7 +6,7 @@
 * GLOBED_SOCKET_POLLFD - pollfd structure
 */
 
-#ifdef GLOBED_WIN32
+#ifdef GEODE_IS_WINDOWS
 # pragma comment(lib, "ws2_32.lib")
 # define GLOBED_SOCKET_POLL WSAPoll
 # define GLOBED_SOCKET_POLLFD WSAPOLLFD
@@ -15,7 +15,7 @@
 
 # include <WS2tcpip.h>
 
-#elif defined(GLOBED_UNIX) // ^ windows | v unix
+#elif defined(GLOBED_IS_UNIX) // ^ windows | v unix
 
 # define GLOBED_SOCKET_POLL ::poll
 # define GLOBED_SOCKET_POLLFD struct pollfd

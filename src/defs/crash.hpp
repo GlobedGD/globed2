@@ -13,7 +13,7 @@
 
 #define GLOBED_CRASH_SIGSEGV while(1) { *((volatile int*)0x69) = 0x69; }
 
-#ifdef GLOBED_UNIX
+#ifdef GLOBED_IS_UNIX
 # include <signal.h>
 # define GLOBED_CRASH_SIGTRAP while(1) { raise(SIGTRAP); }
 #else

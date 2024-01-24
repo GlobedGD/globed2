@@ -27,7 +27,7 @@ GlobedAudioManager::~GlobedAudioManager() {
 }
 
 void GlobedAudioManager::preInitialize() {
-#ifdef GLOBED_ANDROID
+#ifdef GLOBED_IS_ANDROID
     // the first call to FMOD::System::getRecordDriverInfo for some reason can take half a second on android,
     // causing a freeze when the user first opens the playlayer.
     // to avoid that, we call this once upon loading the mod, so the freeze happens on the loading screen instead.
