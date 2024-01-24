@@ -37,7 +37,9 @@ $on_mod(Loaded) {
     setupErrorCheckNode();
     setupCustomKeybinds();
 
+#if GLOBED_VOICE_SUPPORT
     GlobedAudioManager::get().preInitialize();
+#endif
 
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
     printDebugInfo();
@@ -60,13 +62,13 @@ class $modify(MyMenuLayer, MenuLayer) {
     }
 };
 
-#include <Geode/modify/PlayerObject.hpp>
-class $modify(PlayerObject) {
-    void incrementJumps() {
-        PlayerObject::incrementJumps();
-        // util::debugging::dumpStruct(this, sizeof(PlayerObject));
-    }
-};
+// #include <Geode/modify/PlayerObject.hpp>
+// class $modify(PlayerObject) {
+//     void incrementJumps() {
+//         PlayerObject::incrementJumps();
+//         // util::debugging::dumpStruct(this, sizeof(PlayerObject));
+//     }
+// };
 
 void setupLibsodium() {
     // sodium_init returns 0 on success, 1 if already initialized, -1 on fail
