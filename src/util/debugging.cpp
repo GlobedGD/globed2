@@ -334,13 +334,13 @@ namespace util::debugging {
             // i hate endianness
             bool float1 = likelyFloat(lowerValue), float2 = likelyFloat(higherValue);
             if (float1 && float2) {
-                geode::log::debug("{} ({}f and {}f)", prefix, util::data::bit_cast<float>(higherValue), util::data::bit_cast<float>(lowerValue));
+                geode::log::debug("{} ({}f and {}f)", prefix, util::data::bit_cast<float>(lowerValue), util::data::bit_cast<float>(higherValue));
                 continue;
             } else if (float1 && !float2) {
-                geode::log::debug("{} ({}f and {})", prefix, higherValue, util::data::bit_cast<float>(lowerValue));
+                geode::log::debug("{} ({} and {}f)", prefix, util::data::bit_cast<float>(lowerValue), higherValue);
                 continue;
             } else if (!float1 && float2) {
-                geode::log::debug("{} ({} and {}f)", prefix, util::data::bit_cast<float>(higherValue), lowerValue);
+                geode::log::debug("{} ({}f and {})", prefix, lowerValue, util::data::bit_cast<float>(higherValue));
                 continue;
             }
 #else
