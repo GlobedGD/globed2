@@ -59,7 +59,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     // set the configured tps
     auto tpsCap = settings.globed.tpsCap;
     if (tpsCap != 0) {
-        m_fields->configuredTps = std::min(nm.connectedTps.load(), tpsCap);
+        m_fields->configuredTps = std::min(nm.connectedTps.load(), (uint32_t)tpsCap);
     } else {
         m_fields->configuredTps = nm.connectedTps;
     }
@@ -68,7 +68,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     // set the audio device
     auto& vm = GlobedAudioManager::get();
     try {
-        vm.setActiveRecordingDevice(settings.globed.audioDevice);
+        vm.setActiveRecordingDevice(settings.communication.audioDevice);
     } catch(const std::exception& e) {
         // try default device, if we have no mic then just do nothing
         try {

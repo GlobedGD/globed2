@@ -15,20 +15,20 @@ protected:
 
 public:
     struct Globed {
-        GSETTING(uint32_t, tpsCap, 0);
-        GSETTING(int, audioDevice, 0);
         GSETTING(bool, autoconnect, true); // TODO unimpl
+        GSETTING(int, tpsCap, 0);
     };
 
     struct Overlay {
-        GSETTING(float, opacity, 0.3f);
         GSETTING(bool, enabled, true);
+        GSETTING(float, opacity, 0.3f);
         GSETTING(bool, hideConditionally, false);
     };
 
     struct Communication {
         GSETTING(bool, voiceEnabled, true);
         GSETTING(bool, lowerAudioLatency, false);
+        GSETTING(int, audioDevice, 0);
     };
 
     struct LevelUI {};

@@ -5,6 +5,7 @@
 #include "server_list_cell.hpp"
 #include <ui/menu/room/room_popup.hpp>
 #include <ui/menu/server_switcher/server_switcher_popup.hpp>
+#include <ui/menu/settings/settings_layer.hpp>
 #include <util/ui.hpp>
 #include <util/net.hpp>
 #include <net/network_manager.hpp>
@@ -93,6 +94,16 @@ bool GlobedMenuLayer::init() {
             }
         })
         .id("btn-open-server-switcher"_spr)
+        .parent(leftButtonMenu);
+
+    // settings button
+
+    Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
+        .scale(1.0f)
+        .intoMenuItem([](auto) {
+            GlobedSettingsLayer::scene();
+        })
+        .id("btn-open-settings"_spr)
         .parent(leftButtonMenu);
 
     leftButtonMenu->updateLayout();

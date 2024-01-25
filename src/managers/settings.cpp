@@ -32,7 +32,6 @@ GlobedSettings::GlobedSettings() {
 void GlobedSettings::save() {
     // globed
     STOREV(globed, tpsCap);
-    STOREV(globed, audioDevice);
     STOREV(globed, autoconnect);
 
     // overlay
@@ -43,6 +42,7 @@ void GlobedSettings::save() {
     // communication
     STOREV(communication, voiceEnabled);
     STOREV(communication, lowerAudioLatency);
+    STOREV(communication, audioDevice);
 
     // store flags
 
@@ -52,7 +52,6 @@ void GlobedSettings::save() {
 void GlobedSettings::reload() {
     // globed
     LOADV(globed, tpsCap);
-    LOADV(globed, audioDevice);
     LOADV(globed, autoconnect);
 
     // overlay
@@ -63,6 +62,7 @@ void GlobedSettings::reload() {
     // communication
     LOADV(communication, voiceEnabled);
     LOADV(communication, lowerAudioLatency);
+    LOADV(communication, audioDevice);
 
     // load flags
 
@@ -72,7 +72,6 @@ void GlobedSettings::reload() {
 void GlobedSettings::resetToDefaults() {
     RESET_SETTINGS(
         SKEY(globed, tpsCap),
-        SKEY(globed, audioDevice),
         SKEY(globed, autoconnect),
 
         // overlay
@@ -83,6 +82,7 @@ void GlobedSettings::resetToDefaults() {
         // communication
         SKEY(communication, voiceEnabled),
         SKEY(communication, lowerAudioLatency),
+        SKEY(communication, audioDevice),
     );
 
     this->reload();

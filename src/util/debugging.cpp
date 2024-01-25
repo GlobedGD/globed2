@@ -213,6 +213,7 @@ namespace util::debugging {
         if (isBad) return false;
         return true;
 
+        // this one doesnt work
         __try {
             (void) *(volatile char*)(address);
             return true;
