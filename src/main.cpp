@@ -62,23 +62,18 @@ class $modify(MyMenuLayer, MenuLayer) {
     }
 };
 
-// #include <Geode/modify/PlayerObject.hpp>
-// class $modify(PlayerObject) {
-//     void incrementJumps() {
-//         PlayerObject::incrementJumps();
-//         util::debugging::dumpStruct(this, sizeof(PlayerObject));
-//     }
-// };
-
 void setupLibsodium() {
     // sodium_init returns 0 on success, 1 if already initialized, -1 on fail
     GLOBED_REQUIRE(sodium_init() != -1, "sodium_init failed")
 
     // if there is a logic error in the crypto code, this lambda will be called
-    sodium_set_misuse_handler([](){
+    sodium_set_misuse_handler([] {
         log::error("sodium_misuse called. we are officially screwed.");
         util::debugging::suicide();
     });
+
+    // util::debugging::nop(0x366759, 5 + 3);
+    // (void) Mod::get()->patch((void*) (geode::base::get() + 0x366754), {0x6a, 0x00, 0x90, 0x90, 0x90});
 }
 
 // error check node runs on every scene and shows popups/notifications if an error has occured in another thread
@@ -92,7 +87,9 @@ void setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS
     using namespace keybinds;
 
-    BindManager::get()->registerBindable({
+    geode::log::debug("registering binds");
+
+    bool r1 = BindManager::get()->registerBindable({
         "voice-activate"_spr,
         "Voice",
         "Records audio from your microphone and sends it off to other users on the level.",
@@ -100,13 +97,15 @@ void setupCustomKeybinds() {
         Category::PLAY,
     });
 
-    BindManager::get()->registerBindable({
+    bool r2 = BindManager::get()->registerBindable({
         "voice-deafen"_spr,
         "Deafen",
         "Mutes voices of other players when toggled.",
         { Keybind::create(KEY_B, Modifier::None) },
         Category::PLAY,
     });
+
+    geode::log::debug("results: {} and {}", r1, r2);
 
 #endif // GLOBED_HAS_KEYBINDS
 }

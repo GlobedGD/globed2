@@ -35,4 +35,8 @@ void AudioSampleQueue::clear() {
     buf.clear();
 }
 
+float* AudioSampleQueue::data() {
+    return buf.data();
+}
+
 #endif // GLOBED_VOICE_SUPPORT

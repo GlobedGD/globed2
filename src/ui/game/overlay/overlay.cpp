@@ -1,7 +1,5 @@
 #include "overlay.hpp"
 
-#include <UIBuilder.hpp>
-
 #include <managers/settings.hpp>
 
 using namespace geode::prelude;

@@ -11,7 +11,6 @@
 #include "sample_queue.hpp"
 #include <util/sync.hpp>
 
-
 struct AudioRecordingDevice {
     int id = -1;
     std::string name;
@@ -74,7 +73,11 @@ public:
     // if `stopRecording()` is called at any point, the callback will be called with the remaining data.
     // in that case it may have less than the full 10 frames.
     // WARNING: the callback is called from the audio thread, not the GD/cocos thread.
-    void startRecording(std::function<void(const EncodedAudioFrame&)> callback);
+    geode::Result<> startRecording(std::function<void(const EncodedAudioFrame&)> callback);
+    // start recording the voice and call the callback whenever new data is ready.
+    // same rules apply as with `startRecording`, except the callback includes raw PCM samples,
+    // and is called much more often.
+    geode::Result<> startRecordingRaw(std::function<void(const float*, size_t)> callback);
     // tell the audio thread to stop recording
     void stopRecording();
     // tell the audio thread to stop recording, don't call the callback with leftover data
@@ -88,7 +91,9 @@ public:
     [[nodiscard]] FMOD::Sound* createSound(const float* pcm, size_t samples, int sampleRate = VOICE_TARGET_SAMPLERATE);
 
     void setActiveRecordingDevice(int deviceId);
+    void setActiveRecordingDevice(const AudioRecordingDevice& device);
     void setActivePlaybackDevice(int deviceId);
+    void setActivePlaybackDevice(const AudioPlaybackDevice& device);
 
     // get the cached system
     FMOD::System* getSystem();
@@ -105,15 +110,19 @@ private:
     util::sync::AtomicBool recordActive = false;
     util::sync::AtomicBool recordQueuedStop = false;
     util::sync::AtomicBool recordQueuedHalt = false;
+    util::sync::AtomicBool recordingRaw = false;
     FMOD::Sound* recordSound = nullptr;
     size_t recordChunkSize = 0;
     std::function<void(const EncodedAudioFrame&)> recordCallback;
+    std::function<void(const float*, size_t)> recordRawCallback;
     AudioSampleQueue recordQueue;
     unsigned int recordLastPosition = 0;
     EncodedAudioFrame recordFrame;
 
+    geode::Result<> startRecordingInternal();
     void recordContinueStream();
     void recordInvokeCallback();
+    void recordInvokeRawCallback(float* pcm, size_t samples);
     void internalStopRecording();
 
     AudioEncoder encoder;

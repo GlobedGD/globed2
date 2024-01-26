@@ -1,7 +1,5 @@
 #include "globed_menu_layer.hpp"
 
-#include <UIBuilder.hpp>
-
 #include "server_list_cell.hpp"
 #include <ui/menu/room/room_popup.hpp>
 #include <ui/menu/server_switcher/server_switcher_popup.hpp>
@@ -133,7 +131,8 @@ bool GlobedMenuLayer::init() {
     return true;
 }
 
-GlobedMenuLayer::~GlobedMenuLayer() {
+void GlobedMenuLayer::onExit() {
+    CCLayer::onExit();
     this->cancelWebRequest();
 }
 

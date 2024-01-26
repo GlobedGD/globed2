@@ -265,6 +265,36 @@ private:
     std::atomic_flag value;
 };
 
+template <>
+class RelaxedAtomic<float, std::atomic<uint32_t>> {
+public:
+    RelaxedAtomic(float initial = {}) : value(data::bit_cast<uint32_t>(initial)) {}
+
+    float load(std::memory_order order = std::memory_order::relaxed) const {
+        return data::bit_cast<float>(value.load(order));
+    }
+
+    void store(float val, std::memory_order order = std::memory_order::relaxed) {
+        value.store(data::bit_cast<uint32_t>(val), order);
+    }
+
+    operator float() const {
+        return this->load();
+    }
+
+    RelaxedAtomic<float, std::atomic<uint32_t>>& operator=(float val) {
+        this->store(val);
+        return *this;
+    }
+
+    // enable copying, it is disabled by default in std::atomic
+    RelaxedAtomic(RelaxedAtomic<float, std::atomic<uint32_t>>& other) {
+        this->store(other.load());
+    }
+private:
+    std::atomic<uint32_t> value;
+};
+
 using AtomicFlag = RelaxedAtomic<void, std::atomic_flag>;
 using AtomicBool = RelaxedAtomic<bool>;
 using AtomicChar = RelaxedAtomic<char>;
@@ -278,6 +308,7 @@ using AtomicI32 = RelaxedAtomic<int32_t>;
 using AtomicU32 = RelaxedAtomic<uint32_t>;
 using AtomicI64 = RelaxedAtomic<int64_t>;
 using AtomicU64 = RelaxedAtomic<uint64_t>;
+using AtomicF32 = RelaxedAtomic<float, std::atomic<uint32_t>>;
 using AtomicSizeT = RelaxedAtomic<size_t>;
 
 template<typename... TFuncArgs>

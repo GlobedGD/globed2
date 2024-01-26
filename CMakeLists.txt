@@ -79,8 +79,11 @@ endif()
 # Windows - link to libcurl
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(${PROJECT_NAME} $ENV{GEODE_SDK}/loader/include/link/libcurl.lib)
+
+    # TODO temp
+    target_link_libraries(${PROJECT_NAME} "/home/dankpc/gddir/geode/unzipped/geode.custom-keybinds/geode.custom-keybinds.lib")
 endif()
 
 # TODO mac - link to libcurl
 
-setup_geode_mod(${PROJECT_NAME})
+setup_geode_mod(${PROJECT_NAME} EXTERNALS geode.custom-keybinds:1.2.3)

@@ -9,7 +9,7 @@ public:
     static constexpr float LIST_WIDTH = 358.f;
     static constexpr float LIST_HEIGHT = 220.f;
 
-    ~GlobedMenuLayer();
+    void onExit() override;
 
     static GlobedMenuLayer* create();
     static cocos2d::CCScene* scene();
@@ -20,11 +20,11 @@ private:
     std::optional<geode::utils::web::SentAsyncWebRequestHandle> serverRequestHandle;
     cocos2d::CCSequence* timeoutSequence;
 
-    bool init();
+    bool init() override;
     cocos2d::CCArray* createServerList();
     void refreshServerList(float dt);
     void requestServerList();
-    void keyBackClicked();
+    void keyBackClicked() override;
     void pingServers(float dt);
 
     void cancelWebRequest();

@@ -4,8 +4,6 @@
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif // GLOBED_HAS_KEYBINDS
 
-#include <UIBuilder.hpp>
-
 #include "pause_layer.hpp"
 #include <audio/all.hpp>
 #include <managers/profile_cache.hpp>
@@ -177,7 +175,7 @@ void GlobedPlayLayer::setupPacketListeners() {
 void GlobedPlayLayer::setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
     // the only keybinds used are for voice chat, so if voice is disabled, do nothing
-    if (!m_fields->settings.communication.voiceEnabled) {
+    if (!GlobedSettings::get().communication.voiceEnabled) {
         return;
     }
 
@@ -193,7 +191,7 @@ void GlobedPlayLayer::setupCustomKeybinds() {
                     return ListenerResult::Stop;
                 }
 
-                vm.startRecording([](const auto& frame) {
+                auto result = vm.startRecording([](const auto& frame) {
                     // (!) remember that the callback is ran from another thread (!) //
 
                     auto& nm = NetworkManager::get();
@@ -207,6 +205,11 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 
                     nm.send(RawPacket::create(VoicePacket::PACKET_ID, VoicePacket::ENCRYPTED, std::move(buf)));
                 });
+
+                if (result.isErr()) {
+                    ErrorQueues::get().warn("Unable to record audio, an error has occurred");
+                    geode::log::warn("unable to record audio: {}", result.unwrapErr());
+                }
             }
         } else {
             if (vm.isRecording()) {

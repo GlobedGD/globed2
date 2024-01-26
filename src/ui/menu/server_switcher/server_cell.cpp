@@ -1,7 +1,5 @@
 #include "server_cell.hpp"
 
-#include <UIBuilder.hpp>
-
 #include "server_switcher_popup.hpp"
 #include "add_server_popup.hpp"
 #include <net/network_manager.hpp>

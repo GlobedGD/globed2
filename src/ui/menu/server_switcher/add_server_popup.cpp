@@ -1,6 +1,5 @@
 #include "add_server_popup.hpp"
 
-#include <UIBuilder.hpp>
 #include <regex>
 
 #include "server_switcher_popup.hpp"

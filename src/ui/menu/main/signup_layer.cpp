@@ -1,7 +1,5 @@
 #include "signup_layer.hpp"
 
-#include <UIBuilder.hpp>
-
 #include "signup_popup.hpp"
 #include <managers/settings.hpp>
 

@@ -16,6 +16,8 @@ protected:
     GJListLayer* listLayer;
 
     bool init() override;
+    void keyBackClicked() override;
+
     cocos2d::CCArray* createSettingsCells();
 
     template <typename T>

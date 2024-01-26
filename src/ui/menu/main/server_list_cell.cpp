@@ -1,7 +1,5 @@
 #include "server_list_cell.hpp"
 
-#include <UIBuilder.hpp>
-
 #include <Geode/utils/web.hpp>
 #include <net/network_manager.hpp>
 #include <managers/account.hpp>

@@ -18,6 +18,7 @@ public:
     size_t copyTo(float* dest, size_t samples);
     size_t size() const;
     void clear();
+    float* data();
 
 private:
     std::vector<float> buf;

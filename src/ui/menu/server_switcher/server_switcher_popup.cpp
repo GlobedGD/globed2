@@ -1,7 +1,5 @@
 #include "server_switcher_popup.hpp"
 
-#include <UIBuilder.hpp>
-
 #include "server_cell.hpp"
 #include "add_server_popup.hpp"
 #include "direct_connect_popup.hpp"

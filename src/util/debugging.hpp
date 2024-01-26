@@ -118,6 +118,9 @@ namespace util::debugging {
     // like geode::log::debug but with precise timestamps.
     void timedLog(const std::string_view message);
 
+    // nop X bytes at offset
+    void nop(ptrdiff_t offset, size_t bytes);
+
     struct ProcMapEntry {
         ptrdiff_t size;
         bool readable;

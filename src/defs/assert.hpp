@@ -21,6 +21,7 @@
 
 /*
 * GLOBED_REQUIRE - throws a runtime error if condition fails
+* GLOBED_REQUIRE_SAFE - returns a Result with an Err value if condition fails
 * GLOBED_HARD_ASSERT - terminates the program if condition fails. Don't use it unless the condition indicates a hard logic error in the code.
 * GLOBED_UNIMPL - throws a runtime error as the method was not implemented and isn't meant to be called
 */
@@ -40,6 +41,13 @@
         geode::log::error("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
         GLOBED_SUICIDE; \
     }
+# define GLOBED_REQUIRE_SAFE(condition, message) \
+    if (!(condition)) [[unlikely]] { \
+        auto ev_msg = (message); \
+        auto loc = GLOBED_SOURCE; \
+        geode::log::warn("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
+        return geode::Err(std::string(ev_msg)); \
+    }
 #else
 # define GLOBED_REQUIRE(condition,message) \
     if (!(condition)) [[unlikely]] { \
@@ -52,6 +60,13 @@
         auto ev_msg = (message); \
         geode::log::error("Condition failed: {}", ev_msg); \
         GLOBED_SUICIDE; \
+    }
+# define GLOBED_REQUIRE_SAFE(condition, message) \
+    if (!(condition)) [[unlikely]] { \
+        auto ev_msg = (message); \
+        auto loc = GLOBED_SOURCE; \
+        geode::log::warn("Condition failed: {}", ev_msg); \
+        return geode::Err(std::string(ev_msg)); \
     }
 #endif
 

@@ -1,7 +1,5 @@
 #include "menu_layer.hpp"
 
-#include <UIBuilder.hpp>
-
 #include <managers/account.hpp>
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>

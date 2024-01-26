@@ -1,7 +1,5 @@
 #include "ui.hpp"
 
-#include <UIBuilder.hpp>
-
 using namespace geode::prelude;
 
 namespace util::ui {

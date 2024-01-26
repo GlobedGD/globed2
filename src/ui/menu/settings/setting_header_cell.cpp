@@ -2,7 +2,12 @@
 
 bool GlobedSettingHeaderCell::init(const char* name) {
     if (!CCLayer::init()) return false;
-    this->name = name;
+
+    Build<cocos2d::CCLabelBMFont>::create(name, "goldFont.fnt")
+        .scale(0.8f)
+        .pos(CELL_WIDTH / 2, CELL_HEIGHT / 2)
+        .parent(this)
+        .store(label);
 
     return true;
 }

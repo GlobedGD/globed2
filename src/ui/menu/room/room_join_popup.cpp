@@ -1,7 +1,5 @@
 #include "room_join_popup.hpp"
 
-#include <UIBuilder.hpp>
-
 #include <util/formatting.hpp>
 #include <net/network_manager.hpp>
 #include <data/packets/client/general.hpp>

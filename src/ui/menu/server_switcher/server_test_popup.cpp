@@ -1,7 +1,5 @@
 #include "server_test_popup.hpp"
 
-#include <UIBuilder.hpp>
-
 #include "add_server_popup.hpp"
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>

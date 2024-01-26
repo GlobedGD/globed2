@@ -1,7 +1,5 @@
 #include "complex_visual_player.hpp"
 
-#include <UIBuilder.hpp>
-
 #include "remote_player.hpp"
 #include <util/misc.hpp>
 

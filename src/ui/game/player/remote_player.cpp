@@ -1,7 +1,5 @@
 #include "remote_player.hpp"
 
-#include <UIBuilder.hpp>
-
 using namespace geode::prelude;
 
 bool RemotePlayer::init(const PlayerAccountData& data) {

@@ -1,7 +1,5 @@
 #include "signup_popup.hpp"
 
-#include <UIBuilder.hpp>
-
 #include <Geode/utils/web.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/central_server.hpp>
