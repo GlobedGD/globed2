@@ -2,6 +2,8 @@
 
 #include <util/formatting.hpp>
 
+using namespace geode::prelude;
+
 namespace util::net {
     void initialize() {
 #ifdef GEODE_IS_WINDOWS
@@ -64,20 +66,20 @@ namespace util::net {
         return fmt::format("globed-geode-xd/{}", geode::Mod::get()->getVersion().toString());
     }
 
-    std::pair<std::string, unsigned short> splitAddress(const std::string_view address, unsigned short defaultPort) {
+    Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort) {
         std::pair<std::string, unsigned short> out;
 
         size_t colon = address.find(':');
         bool hasPort = colon != std::string::npos && colon != 0;
 
-        GLOBED_REQUIRE(hasPort || defaultPort != 0, "invalid address, cannot split into IP and port")
+        GLOBED_REQUIRE_SAFE(hasPort || defaultPort != 0, "invalid address, cannot split into IP and port")
 
         if (hasPort) {
             out.first = address.substr(0, colon);
             auto portResult = util::formatting::parse<unsigned short>(address.substr(colon + 1));
 
             if (!portResult.has_value() && defaultPort == 0) {
-                GLOBED_REQUIRE(false, "invalid port number")
+                GLOBED_REQUIRE_SAFE(false, "invalid port number")
             }
 
             out.second = portResult.value_or(defaultPort);
@@ -86,7 +88,7 @@ namespace util::net {
             out.second = defaultPort;
         }
 
-        return out;
+        return Ok(out);
     }
 
     bool sameSockaddr(const sockaddr_in& s1, const sockaddr_in& s2) {

@@ -207,7 +207,7 @@ void GlobedPlayLayer::setupCustomKeybinds() {
                 });
 
                 if (result.isErr()) {
-                    ErrorQueues::get().warn("Unable to record audio, an error has occurred");
+                    ErrorQueues::get().warn(result.unwrapErr());
                     geode::log::warn("unable to record audio: {}", result.unwrapErr());
                 }
             }

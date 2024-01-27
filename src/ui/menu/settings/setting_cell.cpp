@@ -112,6 +112,30 @@ void GlobedSettingCell::onSliderChanged(cocos2d::CCObject*) {
 void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
     if (settingType == Type::AudioDevice) {
 #if GLOBED_VOICE_SUPPORT
+# ifdef GEODE_IS_ANDROID
+        // check for permission
+        bool perm = geode::utils::permission::getPermissionStatus("android.permission.RECORD_AUDIO");
+
+        if (!perm) {
+            geode::createQuickPopup(
+                "No permission",
+                "Globed currently does not have permission to use your microphone. Do you want to grant the permission?",
+                "Cancel", "Grant", [] (FLAlertLayer*, bool btn2) {
+
+                if (btn2) {
+                    geode::utils::permission::requestPermission("android.permission.RECORD_AUDIO", [](bool granted) {
+                        if (granted) {
+                            AudioSetupPopup::create()->show();
+                        } else {
+                            geode::log::warn("permission denied when requesting audio access");
+                        }
+                    });
+                }
+            });
+
+            return;
+        }
+# endif
         AudioSetupPopup::create()->show();
 #endif // GLOBED_VOICE_SUPPORT
     } else {

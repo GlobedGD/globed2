@@ -57,7 +57,7 @@ GameSocket::IncomingPacket GameSocket::recvPacket() {
         packet->decode(buf);
     } catch(const std::exception& e) {
         auto msg = fmt::format("Decoding packet ID {} failed: {}", header.id, e.what());
-        throw(std::runtime_error(msg));
+        throw std::runtime_error(msg);
     }
 
     return IncomingPacket {

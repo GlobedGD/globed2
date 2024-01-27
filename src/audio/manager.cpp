@@ -36,13 +36,19 @@ GlobedAudioManager::~GlobedAudioManager() {
 }
 
 void GlobedAudioManager::preInitialize() {
-#ifdef GLOBED_IS_ANDROID
+#ifdef GEODE_IS_ANDROID
     // the first call to FMOD::System::getRecordDriverInfo for some reason can take half a second on android,
     // causing a freeze when the user first opens the playlayer.
     // to avoid that, we call this once upon loading the mod, so the freeze happens on the loading screen instead.
     try {
         this->getRecordingDevice(0);
     } catch (const std::exception _e) {}
+
+    // also check perms on android
+
+    if (!geode::utils::permission::getPermissionStatus("android.permission.RECORD_AUDIO")) {
+        GlobedSettings::get().communication.audioDevice = false;
+    }
 #endif
 
     // load the previously selected device
@@ -164,6 +170,12 @@ void GlobedAudioManager::setRecordBufferCapacity(size_t frames) {
 }
 
 Result<> GlobedAudioManager::startRecordingInternal() {
+#ifdef GEODE_IS_ANDROID
+    if (!geode::utils::permission::getPermissionStatus("android.permission.RECORD_AUDIO")) {
+        return Err("Recording failed, please give microphone permission in Globed settings");
+    }
+#endif
+
     GLOBED_REQUIRE_SAFE(this->recordDevice.id >= 0, "no recording device is set")
     GLOBED_REQUIRE_SAFE(!this->isRecording() && !recordActive, "attempting to record when already recording")
 

@@ -46,15 +46,20 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
                 return;
             }
 
+            auto& gsm = GameServerManager::get();
+            auto result = gsm.addServer(GameServerManager::STANDALONE_ID, "Server", addr, "unknown");
+            if (result.isErr()) {
+                FLAlertLayer::create("Error", "Failed to connect to the server: " + result.unwrapErr(), "Ok")->show();
+                return;
+            }
+
             auto& csm = CentralServerManager::get();
             csm.setStandalone();
             csm.recentlySwitched = true;
 
-            auto& gsm = GameServerManager::get();
-            gsm.clear();
-            gsm.addServer(GameServerManager::STANDALONE_ID, "Server", addr, "unknown");
-            gsm.saveStandalone(addr);
+            gsm.clearAllExcept(GameServerManager::STANDALONE_ID);
             gsm.pendingChanges = true;
+            gsm.saveStandalone(addr);
 
             auto& nm = NetworkManager::get();
             nm.connectStandalone();

@@ -71,3 +71,6 @@
 #endif
 
 #define GLOBED_UNIMPL(message) GLOBED_REQUIRE(false, std::string("unimplemented: ") + (message))
+#define GLOBED_UNWRAP_INTO(value, dest) \
+    if (value.isErr()) return geode::Err(value.unwrapErr()); \
+    dest = value.unwrap();

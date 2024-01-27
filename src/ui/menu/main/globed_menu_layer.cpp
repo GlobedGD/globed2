@@ -239,41 +239,44 @@ void GlobedMenuLayer::requestServerList() {
             gsm.clear();
             gsm.pendingChanges = true;
 
-            try {
-                auto decoded = util::crypto::base64Decode(response);
-                if (decoded.size() < sizeof(NetworkManager::SERVER_MAGIC)) {
-                    throw std::runtime_error("invalid response sent from the server");
-                }
-
-                ByteBuffer buf(std::move(decoded));
-                auto magic = buf.readBytes(10);
-
-                // compare it with the needed magic
-                bool correct = true;
-                for (size_t i = 0; i < sizeof(NetworkManager::SERVER_MAGIC); i++) {
-                    if (magic[i] != NetworkManager::SERVER_MAGIC[i]) {
-                        correct = false;
-                        break;
-                    }
-                }
-
-                if (!correct) {
-                    throw std::runtime_error("invalid response sent from the server");
-                }
-
-                auto serverList = buf.readValueVector<GameServerEntry>();
-
-                for (const auto& server : serverList) {
-                    gsm.addServer(
-                        server.id,
-                        server.name,
-                        server.address,
-                        server.region
-                    );
-                }
-            } catch (const std::exception& e) {
-                ErrorQueues::get().error("Failed to parse server list: <cy>{}</c>", e.what());
+            auto decoded = util::crypto::base64Decode(response);
+            if (decoded.size() < sizeof(NetworkManager::SERVER_MAGIC)) {
+                ErrorQueues::get().error("Failed to parse server list: invalid response sent by the server (no magic)");
                 gsm.clear();
+                return;
+            }
+
+            ByteBuffer buf(std::move(decoded));
+            auto magic = buf.readBytes(10);
+
+            // compare it with the needed magic
+            bool correct = true;
+            for (size_t i = 0; i < sizeof(NetworkManager::SERVER_MAGIC); i++) {
+                if (magic[i] != NetworkManager::SERVER_MAGIC[i]) {
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (!correct) {
+                ErrorQueues::get().error("Failed to parse server list: invalid response sent by the server (invalid magic)");
+                gsm.clear();
+                return;
+            }
+
+            auto serverList = buf.readValueVector<GameServerEntry>();
+
+            for (const auto& server : serverList) {
+                auto result = gsm.addServer(
+                    server.id,
+                    server.name,
+                    server.address,
+                    server.region
+                );
+
+                if (result.isErr()) {
+                    geode::log::warn("invalid server found when parsing response: {}", server.id);
+                }
             }
         })
         .expect([this](std::string error) {

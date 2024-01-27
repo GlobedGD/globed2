@@ -4,8 +4,12 @@
 #include <util/rng.hpp>
 #include <util/collections.hpp>
 
-void GameServerManager::addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region) {
-    auto addr = util::net::splitAddress(address, DEFAULT_PORT);
+using namespace geode::prelude;
+
+Result<> GameServerManager::addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region) {
+    auto ares = util::net::splitAddress(address, DEFAULT_PORT);
+    GLOBED_UNWRAP_INTO(ares, auto addr);
+
     GameServer server = {
         .id = std::string(serverId),
         .name = std::string(name),
@@ -24,6 +28,8 @@ void GameServerManager::addServer(const std::string_view serverId, const std::st
 
     auto data = _data.lock();
     data->servers.emplace(serverId, gsdata);
+
+    return Ok();
 }
 
 void GameServerManager::clear() {
@@ -46,6 +52,15 @@ void GameServerManager::clearActive() {
     data->active.clear();
 
     this->saveLastConnected("");
+}
+
+void GameServerManager::clearAllExcept(const std::string_view id) {
+    auto data = _data.lock();
+
+    auto key = std::string(id);
+    auto value = data->servers.at(key);
+    data->servers.clear();
+    data->servers.emplace(std::move(key), std::move(value));
 }
 
 std::string GameServerManager::getActiveId() {

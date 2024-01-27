@@ -33,12 +33,11 @@ bool HookedMenuLayer::init() {
             std::string ip;
             unsigned short port;
 
-            try {
-                // this is the first time i am genuinely amazed by a utility function of this language
-                std::tie(ip, port) = util::net::splitAddress(lastaddr, GameServerManager::DEFAULT_PORT);
-            } catch (...) {
-                return;
-            }
+            auto res = util::net::splitAddress(lastaddr, GameServerManager::DEFAULT_PORT);
+            if (res.isErr()) return;
+
+            // this is the first time i am genuinely amazed by a utility function of this language
+            std::tie(ip, port) = res.unwrap();
 
             am.autoInitialize();
 

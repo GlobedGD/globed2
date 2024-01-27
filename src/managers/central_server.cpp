@@ -35,10 +35,14 @@ CentralServerManager::CentralServerManager() {
             auto addr = gsm.loadStandalone();
             if (!addr.empty()) {
                 gsm.clear();
-                gsm.addServer(GameServerManager::STANDALONE_ID, "Server", addr, "unknown");
-                gsm.pendingChanges = true;
 
-                this->setStandalone();
+                if (gsm.addServer(GameServerManager::STANDALONE_ID, "Server", addr, "unknown").isOk()) {
+                    this->setStandalone();
+                } else {
+                    _activeIdx = 0;
+                }
+
+                gsm.pendingChanges = true;
             }
         }
     }

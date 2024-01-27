@@ -65,6 +65,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     bool isPaused() {
+        if (!isCurrentPlayLayer()) return false;
+
         return this->getParent()->getChildByID("PauseLayer") != nullptr; // TODO no worky on android and relies on node ids from geode
     }
 

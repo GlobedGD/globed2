@@ -33,13 +33,16 @@ public:
 
     util::sync::AtomicBool pendingChanges;
 
-    void addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
+    geode::Result<> addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
     void clear();
     size_t count();
 
     void setActive(const std::string_view id);
     std::string getActiveId();
     void clearActive();
+
+    // remove all servers except the one with the given id
+    void clearAllExcept(const std::string_view id);
 
     std::optional<GameServer> getActiveServer();
     GameServer getServer(const std::string_view id);
