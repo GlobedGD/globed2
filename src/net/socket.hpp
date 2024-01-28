@@ -10,7 +10,7 @@ struct RecvResult {
 class Socket {
 public:
     virtual bool create() = 0;
-    virtual bool connect(const std::string_view serverIp, unsigned short port) = 0;
+    virtual geode::Result<> connect(const std::string_view serverIp, unsigned short port) = 0;
     virtual int send(const char* data, unsigned int dataSize) = 0;
     int send(const std::string_view data);
     virtual RecvResult receive(char* buffer, int bufferSize) = 0;

@@ -126,8 +126,8 @@ namespace util::debugging {
         bool readable;
     };
 
-    std::string getTypename(void* address);
-    std::string getTypenameFromVtable(void* address);
+    geode::Result<std::string> getTypename(void* address);
+    geode::Result<std::string> getTypenameFromVtable(void* address);
 
     void dumpStruct(void* address, size_t size);
 }

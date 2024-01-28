@@ -26,9 +26,14 @@ bool HookedMenuLayer::init() {
         auto lastaddr = gsm.loadLastConnected();
         if (lastaddr.empty()) return;
 
+        log::debug("last connected addr: {}", lastaddr);
+
         if (csm.standalone()) {
             am.autoInitialize();
-            NetworkManager::get().connectStandalone();
+            auto result = NetworkManager::get().connectStandalone();
+            if (result.isErr()) {
+                ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));
+            }
         } else {
             std::string ip;
             unsigned short port;
@@ -57,7 +62,10 @@ bool HookedMenuLayer::init() {
             auto gdData = am.gdData.lock();
             log::debug("gd data: {}, {}", gdData->accountId, gdData->accountName);
             am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [ip = std::move(ip), port] {
-                NetworkManager::get().connect(ip, port, false);
+                auto result = NetworkManager::get().connect(ip, port, false);
+                if (result.isErr()) {
+                    ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));
+                }
             });
         }
     });

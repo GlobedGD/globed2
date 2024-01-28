@@ -99,7 +99,8 @@ namespace util::net {
         return std::memcmp(&s1.sin_addr, &s2.sin_addr, sizeof(s1.sin_addr)) == 0;
     }
 
-    std::string getaddrinfo(const std::string_view hostname) {
+    Result<std::string> getaddrinfo(const std::string_view hostname) {
+        geode::log::debug("calling getaddrinfo for {}", hostname);
         // TODO i have no fucking clue how this compiles on both windows and unix but i'm still not sure if this behaves as intended so please test it
         struct addrinfo hints = {};
         hints.ai_family = AF_INET;
@@ -109,12 +110,12 @@ namespace util::net {
         struct addrinfo* result;
 
         if (0 != ::getaddrinfo(hostname.data(), nullptr, &hints, &result)) {
-            util::net::throwLastError(true);
+            return Err(util::net::lastErrorString());
         }
 
-        GLOBED_REQUIRE(result->ai_family == AF_INET, "getaddrinfo returned invalid address family")
-        GLOBED_REQUIRE(result->ai_socktype == SOCK_DGRAM, "getaddrinfo returned invalid socket type")
-        GLOBED_REQUIRE(result->ai_protocol == IPPROTO_UDP, "getaddrinfo returned invalid ip protocol")
+        GLOBED_REQUIRE_SAFE(result->ai_family == AF_INET, "getaddrinfo returned invalid address family")
+        GLOBED_REQUIRE_SAFE(result->ai_socktype == SOCK_DGRAM, "getaddrinfo returned invalid socket type")
+        GLOBED_REQUIRE_SAFE(result->ai_protocol == IPPROTO_UDP, "getaddrinfo returned invalid ip protocol")
         auto* ipaddr = (struct sockaddr_in*) result->ai_addr;
 
         std::string out;
@@ -123,7 +124,7 @@ namespace util::net {
         inet_ntop(AF_INET, &ipaddr->sin_addr, out.data(), 16);
 
         ::freeaddrinfo(result);
-        return out;
+        return Ok(out);
     }
 }
 

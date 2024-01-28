@@ -37,7 +37,7 @@ bool AudioSetupPopup::setup() {
                     sum += static_cast<double>(std::abs(pcm[i]));
                 }
 
-                this->audioLevel = static_cast<float>(sum / static_cast<double>(samples));
+                this->audioLevel = 5.f * static_cast<float>(sum / static_cast<double>(samples));
             });
 
             if (result.isErr()) {

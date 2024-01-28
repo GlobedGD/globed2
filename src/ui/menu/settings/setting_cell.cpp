@@ -5,6 +5,8 @@
 #include <managers/settings.hpp>
 
 using namespace geode::prelude;
+namespace permission = geode::utils::permission;
+using permission::Permission;
 
 bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char* nameText, const char* descText, const Limits& limits) {
     if (!CCLayer::init()) return false;
@@ -114,16 +116,16 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
 #if GLOBED_VOICE_SUPPORT
 # ifdef GEODE_IS_ANDROID
         // check for permission
-        bool perm = geode::utils::permission::getPermissionStatus("android.permission.RECORD_AUDIO");
+        bool perm = permission::getPermissionStatus(Permission::RecordAudio);
 
         if (!perm) {
             geode::createQuickPopup(
                 "No permission",
-                "Globed currently does not have permission to use your microphone. Do you want to grant the permission?",
+                "Globed does not currently have permission to use your microphone. Do you want to grant the permission?",
                 "Cancel", "Grant", [] (FLAlertLayer*, bool btn2) {
 
                 if (btn2) {
-                    geode::utils::permission::requestPermission("android.permission.RECORD_AUDIO", [](bool granted) {
+                    permission::requestPermission(Permission::RecordAudio, [](bool granted) {
                         if (granted) {
                             AudioSetupPopup::create()->show();
                         } else {

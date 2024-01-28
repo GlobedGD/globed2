@@ -32,5 +32,5 @@ namespace util::net {
     bool sameSockaddr(const sockaddr_in& s1, const sockaddr_in& s2);
 
     // getaddrinfo
-    std::string getaddrinfo(const std::string_view hostname);
+    geode::Result<std::string> getaddrinfo(const std::string_view hostname);
 }

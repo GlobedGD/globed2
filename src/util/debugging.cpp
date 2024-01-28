@@ -7,6 +7,9 @@
 # include <dbghelp.h>
 # pragma comment(lib, "dbghelp.lib")
 #endif
+#include <any>
+
+using namespace geode::prelude;
 
 namespace util::debugging {
     time::micros Benchmarker::end(const std::string_view id) {
@@ -167,7 +170,7 @@ namespace util::debugging {
 
     static uintptr_t adjustPointerForMaps(uintptr_t ptr) {
 #ifdef GEODE_IS_ANDROID64
-        // xd
+        // remove the tag (msb)
         const uint64_t mask = 0xFF00000000000000;
         return ptr & ~mask;
 #else
@@ -175,8 +178,16 @@ namespace util::debugging {
 #endif
     }
 
+    static uintptr_t isPointerTagged(uintptr_t ptr) {
+#ifdef GEODE_IS_ANDROID64
+        return (ptr >> 56) == 0xb4;
+#else
+        return true;
+#endif
+    }
+
     bool canReadPointer(uintptr_t address, size_t align = 1) {
-        if (address < 4096) return false;
+        if (address < 0x1000) return false;
         if (address % align != 0) return false;
 
 #ifdef GEODE_IS_ANDROID
@@ -253,57 +264,58 @@ namespace util::debugging {
     };
 #endif
 
-    std::string getTypename(void* address) {
-        // geode::log::debug("getting typename of {:X}", (uintptr_t)address - geode::base::get());
-        if (!canReadPointer((uintptr_t)address, 4)) return "<Unknown, invalid address>";
+    geode::Result<std::string> getTypename(void* address) {
+        if (!canReadPointer((uintptr_t)address, 4)) return Err("invalid address");
 
         void* vtablePtr = *(void**)(address);
         return getTypenameFromVtable(vtablePtr);
     }
 
-    std::string getTypenameFromVtable(void* address) {
-        if (!canReadPointer((uintptr_t)address, 4)) return "<Unknown, invalid vtable>";
+    geode::Result<std::string> getTypenameFromVtable(void* address) {
+        // TODO make this faster, dont use string <Unknown> and use Result
+        if (!canReadPointer((uintptr_t)address, 4)) return Err("invalid vtable");
 
         Typeinfo** typeinfoPtrPtr = (Typeinfo**)((uintptr_t)address - sizeof(void*));
-        if (!canReadPointer((uintptr_t)typeinfoPtrPtr, 4)) return "<Unknown, invalid typeinfo>";
+        if (!canReadPointer((uintptr_t)typeinfoPtrPtr, 4)) return Err("invalid typeinfo");
         Typeinfo* typeinfoPtr = *typeinfoPtrPtr;
-        if (!canReadPointer((uintptr_t)typeinfoPtr, 4)) return "<Unknown, invalid typeinfo>";
+        if (!canReadPointer((uintptr_t)typeinfoPtr, 4)) return Err("invalid typeinfo");
         Typeinfo typeinfo = *typeinfoPtr;
 
 #ifdef GEODE_IS_ANDROID
         const char* namePtr = typeinfo.namePtr;
         // geode::log::debug("name ptr: {:X}", (uintptr_t)namePtr - geode::base::get());
-        if (!canReadPointer((uintptr_t)namePtr, 4)) return "<Unknown, invalid class name>";
+        if (!canReadPointer((uintptr_t)namePtr, 4)) return Err("invalid class name");
 
         int status;
-        std::string demangled = abi::__cxa_demangle(namePtr, nullptr, nullptr, &status);
+        char* demangledBuf = abi::__cxa_demangle(namePtr, nullptr, nullptr, &status);
         if (status != 0) {
-            return "<Unknown, demangle failed>";
+            return Err("demangle failed");
         }
 
-        return demangled;
+        std::string demangled(demangledBuf);
+        free(demangledBuf);
+
+        return Ok(demangled);
 #elif defined(GEODE_IS_WINDOWS)
 
-        if (!canReadPointer((uintptr_t)typeinfo.descriptor, 4)) return "<Unknown, invalid descriptor>";
+        if (!canReadPointer((uintptr_t)typeinfo.descriptor, 4)) return Err("invalid descriptor");
         const char* namePtr = typeinfo.descriptor->name;
 
-        if (!canReadPointer((uintptr_t)namePtr)) return "<Unknown, invalid class name>";
+        if (!canReadPointer((uintptr_t)namePtr)) return Err("invalid class name");
 
-        std::string demangledName;
+        // TODO windows: check if the name is proper
 
         if (!namePtr || namePtr[0] == '\0' || namePtr[1] == '\0') {
-            demangledName = "<Unknown>";
+            return Err("failed to demangle");
         } else {
             char demangledBuf[256];
             size_t written = UnDecorateSymbolName(namePtr + 1, demangledBuf, 256, UNDNAME_NO_ARGUMENTS);
             if (written == 0) {
-                demangledName = "<Unknown>";
+                return Err("failed to demangle;");
             } else {
-                demangledName = std::string(demangledBuf, demangledBuf + written);
+                return Ok(std::string(demangledBuf, demangledBuf + written));
             }
         }
-
-        return demangledName; // TODO
 #endif
     }
 
@@ -314,64 +326,221 @@ namespace util::debugging {
         return std::isfinite(value) && absv <= 100000.f && absv > 0.001f;
     }
 
-    void dumpStruct(void* address, size_t size) {
-        geode::log::debug("Struct {}", getTypename(address));
-        for (uintptr_t node = 0; node < size; node += sizeof(void*)) {
-            uintptr_t nodeValue = *(uintptr_t*)((uintptr_t)address + node);
+    static bool likelyDouble(uint64_t bits) {
+        double value = util::data::bit_cast<double>(bits);
+        double absv = std::abs(value);
 
-            auto name = getTypename((void*)nodeValue);
+        return std::isfinite(value) && absv <= 1000000.0 && absv > 0.0001;
+    }
 
-#if UINTPTR_MAX > 0xffffffff
-            std::string prefix = fmt::format("0x{:X} : {:016X}", node, nodeValue);
-#else
-            std::string prefix = fmt::format("0x{:X} : {:08X}", node, nodeValue);
+    static bool likelySeedValue(uint32_t val1, uint32_t val2, uint32_t val3) {
+        size_t invalids = 0;
+        invalids += val1 == 0 | val1 == 0xffffffff;
+        invalids += val2 == 0 | val2 == 0xffffffff;
+        invalids += val3 == 0 | val3 == 0xffffffff;
+
+        if (invalids > 1) return false;
+
+        return val1 + val2 == val3 || val1 + val3 == val2 || val2 + val3 == val1;
+    }
+
+    static bool likelyString(uintptr_t address) {
+        // cursed code
+        const unsigned char* data = (unsigned char*)address;
+
+        size_t asciiBytes = 0;
+        while (*data != '\0') {
+            if (*data <= 127) {
+                asciiBytes++;
+            } else break;
+
+            data++;
+        };
+
+        return asciiBytes > 2 && data[asciiBytes] == '\0';
+    }
+
+    enum class ScanItemType {
+        Float, Double, SeedValue, HeapPointer, String, EmptyString
+    };
+
+#ifdef GEODE_IS_ANDROID
 #endif
+    uintptr_t getEmptyString() {
+        static misc::OnceCell<uintptr_t> _internalstr;
+        return _internalstr.getOrInit([] {
+            // thank you matcool from run info
+            auto* cc = new CCString();
+            uintptr_t address = (uintptr_t)*(const char**) &cc->m_sString;
+            delete cc;
+            return address;
+        });
+    }
 
-            // valid type with a known typeinfo
-            if (!name.starts_with("<Unknown")) {
-                geode::log::debug("{} ({}*)", prefix, name);
-                continue;
-            }
-
-            // vtable ptr
-            name = getTypenameFromVtable((void*)nodeValue);
-            if (!name.starts_with("<Unknown")) {
-                geode::log::debug("{} (vtable for {})", prefix, name);
-                continue;
-            }
-
-            // float?
-#if UINTPTR_MAX > 0xffffffff
-            uint32_t lowerValue = (uint32_t)(nodeValue & 0xffffffff);
-            uint32_t higherValue = (uint32_t)((nodeValue >> 32) & 0xffffffff);
-
-            // i hate endianness
-            bool float1 = likelyFloat(lowerValue), float2 = likelyFloat(higherValue);
-            if (float1 && float2) {
-                geode::log::debug("{} ({}f and {}f)", prefix, util::data::bit_cast<float>(lowerValue), util::data::bit_cast<float>(higherValue));
-                continue;
-            } else if (float1 && !float2) {
-                geode::log::debug("{} ({} and {}f)", prefix, util::data::bit_cast<float>(lowerValue), higherValue);
-                continue;
-            } else if (!float1 && float2) {
-                geode::log::debug("{} ({}f and {})", prefix, lowerValue, util::data::bit_cast<float>(higherValue));
-                continue;
-            }
-#else
+    static std::unordered_map<ptrdiff_t, ScanItemType> scanMemory(void* address, size_t size) {
+        // 4-byte pass
+        std::unordered_map<ptrdiff_t, ScanItemType> out;
+        for (ptrdiff_t node = 0; node < size; node += 4) {
+            uint32_t nodeValue = *(uint32_t*)((uintptr_t)address + node);
             if (likelyFloat(nodeValue)) {
-                geode::log::debug("{} ({}f)", prefix, util::data::bit_cast<float>(nodeValue));
+                out.emplace(node, ScanItemType::Float);
                 continue;
             }
-#endif
 
-            // valid heap pointer
-            if (canReadPointer(nodeValue)) {
-                geode::log::debug("{} ({}) (ptr)", prefix, nodeValue);
+#if UINTPTR_MAX <= 0xffffffff
+# ifdef GEODE_IS_ANDROID
+            if (getEmptyString() == nodeValue) {
+                out.emplace(node, ScanItemType::String);
+                continue;
+            } else if (canReadPointer((uintptr_t)nodeValue)) {
+                if (likelyString((uintptr_t)nodeValue)) {
+                    out.emplace(node, ScanItemType::String);
+                } else {
+                    out.emplace(node, ScanItemType::HeapPointer);
+                }
+                continue;
+            }
+# else // GEODE_IS_ANDROID
+            if (canReadPointer((uintptr_t)nodeValue)) {
+                if (likelyString((uintptr_t)nodeValue)) {
+                    out.emplace(node, ScanItemType::String);
+                } else {
+                    out.emplace(node, ScanItemType::HeapPointer);
+                }
+                continue;
+            }
+# endif // GEODE_IS_ANDROID
+#endif
+        }
+
+        // 8-byte pass
+        for (ptrdiff_t node = 0; node < size; node += 4) {
+            uint64_t nodeValue = *(uint64_t*)((uintptr_t)address + node);
+            if (nodeValue % alignof(double) == 0 && !out.contains(node) && !out.contains(node + 4) && likelyDouble(nodeValue)) {
+                out.emplace(node, ScanItemType::Double);
+                continue;
+            }
+
+#if UINTPTR_MAX > 0xffffffff
+            if (node % alignof(void*) == 0) {
+# ifdef GEODE_IS_ANDROID
+                if (getEmptyString() == nodeValue) {
+                    out.emplace(node, ScanItemType::EmptyString);
+                    continue;
+                } else if (canReadPointer((uintptr_t)nodeValue)) {
+                    if (likelyString((uintptr_t)nodeValue)) {
+                        out.emplace(node, ScanItemType::String);
+                    } else {
+                        out.emplace(node, ScanItemType::HeapPointer);
+                    }
+                    continue;
+                }
+# else // GEODE_IS_ANDROID
+                if (canReadPointer((uintptr_t)nodeValue)) {
+                    if (likelyString((uintptr_t)nodeValue)) {
+                        out.emplace(node, ScanItemType::String);
+                    } else {
+                        out.emplace(node, ScanItemType::HeapPointer);
+                    }
+                    continue;
+                }
+# endif // GEODE_IS_ANDROID
+            }
+#endif // UINTPTR_MAX > 0xffffffff
+        }
+
+        // seed value pass
+        for (ptrdiff_t node = 8; node < size; node += 4) {
+            uint32_t nodeValue1 = *(uint32_t*)((uintptr_t)address + node - 8);
+            uint32_t nodeValue2 = *(uint32_t*)((uintptr_t)address + node - 4);
+            uint32_t nodeValue3 = *(uint32_t*)((uintptr_t)address + node);
+
+            if (!out.contains(node - 8) && !out.contains(node - 4) && !out.contains(node) && likelySeedValue(nodeValue1, nodeValue2, nodeValue3)) {
+                out.emplace(node - 8, ScanItemType::SeedValue);
+                node += 8;
+            }
+        }
+
+        return out;
+    }
+
+    void dumpStruct(void* address, size_t size) {
+        auto typenameResult = getTypename(address);
+
+        if (typenameResult.isErr()) {
+            geode::log::warn("Failed to dump struct: {}", typenameResult.unwrapErr());
+            return;
+        }
+
+        geode::log::debug("Struct {}", typenameResult.unwrap());
+        auto scanResult = scanMemory(address, size);
+
+        for (uintptr_t node = 0; node < size; node += 4) {
+            uint32_t nodeValue32 = *(uint32_t*)((uintptr_t)address + node);
+            uint64_t nodeValue64 = *(uint64_t*)((uintptr_t)address + node);
+            uintptr_t nodeValuePtr = *(uintptr_t*)((uintptr_t)address + node);
+
+            std::string prefix32 = fmt::format("0x{:X} : {:08X}", node, nodeValue32);
+            std::string prefix64 = fmt::format("0x{:X} : {:016X}", node, nodeValue64);
+            std::string& prefixPtr = sizeof(void*) == 4 ? prefix32 : prefix64;
+
+            if (node % alignof(void*) == 0 && canReadPointer(nodeValuePtr)) {
+                auto name = getTypename((void*)nodeValuePtr);
+
+                // valid type with a known typeinfo
+                if (name.isOk()) {
+                    geode::log::debug("{} ({}*)", prefixPtr, name.unwrap());
+                    node += sizeof(void*) - 4;
+                    continue;
+                }
+
+                // vtable ptr
+                name = getTypenameFromVtable((void*)nodeValuePtr);
+                if (name.isOk()) {
+                    geode::log::debug("{} (vtable for {})", prefixPtr, name.unwrap());
+                    node += sizeof(void*) - 4;
+                    continue;
+                }
+            }
+
+            // pre analyzed stuff
+            if (scanResult.contains(node)) {
+                auto type = scanResult.at(node);
+                switch (type) {
+                case ScanItemType::Float:
+                    geode::log::debug("{} ({}f)", prefix32, data::bit_cast<float>(nodeValue32));
+                    break;
+                case ScanItemType::Double:
+                    geode::log::debug("{} ({}d)", prefix64, data::bit_cast<double>(nodeValue64));
+                    node += 4;
+                    break;
+                case ScanItemType::HeapPointer:
+                    geode::log::debug("{} ({}) (ptr)", prefixPtr, nodeValuePtr);
+                    node += sizeof(void*) - 4;
+                    break;
+                case ScanItemType::String:
+                    geode::log::debug("{} ({}) (string: \"{}\")", prefixPtr, nodeValuePtr, (const char*)nodeValuePtr);
+                    node += sizeof(void*) - 4;
+                    break;
+                case ScanItemType::EmptyString:
+                    geode::log::debug("{} ({}) (string: \"\")", prefixPtr, nodeValuePtr);
+                    node += sizeof(void*) - 4;
+                    break;
+                case ScanItemType::SeedValue: {
+                    uint32_t valueNext = *(uint32_t*)((uintptr_t)address + node + 4);
+                    uint32_t valueNext2 = *(uint32_t*)((uintptr_t)address + node + 8);
+                    std::string prefix96 = fmt::format("0x{:X} : {:024X}", node, nodeValue64);
+                    geode::log::debug("0x{:X} : ({:08X} {:08X} {:08X}) seed value: {}, {}, {}", node, nodeValue32, valueNext, valueNext2, nodeValue32, valueNext, valueNext2);
+                    node += 8;
+                    break;
+                }
+                }
+
                 continue;
             }
 
             // anything tbh
-            geode::log::debug("{} ({})", prefix, nodeValue);
+            geode::log::debug("{} ({})", prefix32, nodeValue32);
         }
     }
 }

@@ -62,9 +62,11 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             gsm.saveStandalone(addr);
 
             auto& nm = NetworkManager::get();
-            nm.connectStandalone();
+            result = nm.connectStandalone();
+            if (result.isErr()) {
+                FLAlertLayer::create("Error", result.unwrapErr(), "Ok")->show();
+            }
 
-            this->parent->reloadList();
             this->onClose(this);
             this->parent->close();
         })

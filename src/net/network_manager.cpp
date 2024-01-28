@@ -113,10 +113,9 @@ NetworkManager::~NetworkManager() {
     log::debug("Goodbye!");
 }
 
-bool NetworkManager::connect(const std::string_view addr, unsigned short port, bool standalone) {
+Result<> NetworkManager::connect(const std::string_view addr, unsigned short port, bool standalone) {
     if (this->connected() && !this->handshaken()) {
-        ErrorQueues::get().debugWarn("already trying to connect, please wait");
-        return false;
+        return Err("already trying to connect, please wait");
     }
 
     if (this->connected()) {
@@ -128,39 +127,38 @@ bool NetworkManager::connect(const std::string_view addr, unsigned short port, b
     lastReceivedPacket = util::time::now();
 
     if (!standalone) {
-        GLOBED_REQUIRE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
+        GLOBED_REQUIRE_SAFE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
     }
 
-    GLOBED_REQUIRE(gameSocket.connect(addr, port), "failed to connect to the server")
+    GLOBED_UNWRAP(gameSocket.connect(addr, port));
     gameSocket.createBox();
 
     auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(gameSocket.box->extractPublicKey()));
     this->send(packet);
 
-    return true;
+    return Ok();
 }
 
-void NetworkManager::connectWithView(const GameServer& gsview) {
-    try {
-        if (this->connect(gsview.address.ip, gsview.address.port)) {
-            GameServerManager::get().setActive(gsview.id);
-        }
-    } catch(const std::exception& e) {
+Result<> NetworkManager::connectWithView(const GameServer& gsview) {
+    auto result = this->connect(gsview.address.ip, gsview.address.port);
+    if (result.isOk()) {
+        GameServerManager::get().setActive(gsview.id);
+        return Ok();
+    } else {
         this->disconnect(true);
-        ErrorQueues::get().error(std::string("Connection failed: ") + e.what());
+        return Err(result.unwrapErr());
     }
 }
 
-void NetworkManager::connectStandalone() {
+Result<> NetworkManager::connectStandalone() {
     auto server = GameServerManager::get().getServer(GameServerManager::STANDALONE_ID);
-
-    try {
-        if (this->connect(server.address.ip, server.address.port, true)) {
-            GameServerManager::get().setActive(GameServerManager::STANDALONE_ID);
-        }
-    } catch (const std::exception& e) {
+    auto result = this->connect(server.address.ip, server.address.port, true);
+    if (result.isOk()) {
+        GameServerManager::get().setActive(GameServerManager::STANDALONE_ID);
+        return Ok();
+    } else {
         this->disconnect(true);
-        ErrorQueues::get().error(std::string("Connection failed: ") + e.what());
+        return Err(result.unwrapErr());
     }
 }
 

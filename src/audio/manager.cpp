@@ -6,6 +6,8 @@
 #include <managers/settings.hpp>
 
 using namespace geode::prelude;
+namespace permission = geode::utils::permission;
+using permission::Permission;
 
 #define FMOD_ERR_CHECK(res, msg) \
     do { \
@@ -46,7 +48,7 @@ void GlobedAudioManager::preInitialize() {
 
     // also check perms on android
 
-    if (!geode::utils::permission::getPermissionStatus("android.permission.RECORD_AUDIO")) {
+    if (!permission::getPermissionStatus(Permission::RecordAudio)) {
         GlobedSettings::get().communication.audioDevice = false;
     }
 #endif
@@ -171,8 +173,8 @@ void GlobedAudioManager::setRecordBufferCapacity(size_t frames) {
 
 Result<> GlobedAudioManager::startRecordingInternal() {
 #ifdef GEODE_IS_ANDROID
-    if (!geode::utils::permission::getPermissionStatus("android.permission.RECORD_AUDIO")) {
-        return Err("Recording failed, please give microphone permission in Globed settings");
+    if (!permission::getPermissionStatus(Permission::RecordAudio)) {
+        return Err("Recording failed, please grant microphone permission in Globed settings");
     }
 #endif
 

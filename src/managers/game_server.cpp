@@ -41,10 +41,14 @@ size_t GameServerManager::count() {
 }
 
 void GameServerManager::setActive(const std::string_view id) {
+    auto idstr = std::string(id);
     auto data = _data.lock();
+    if (!data->servers.contains(idstr)) return;
+
     data->active = id;
 
-    this->saveLastConnected(id);
+    auto serverAddress = data->servers.at(idstr).server.address;
+    this->saveLastConnected(fmt::format("{}:{}", serverAddress.ip, serverAddress.port));
 }
 
 void GameServerManager::clearActive() {

@@ -38,12 +38,12 @@ public:
     AtomicU32 connectedTps; // if `authenticated() == true`, this is the TPS of the current server, otherwise undefined.
 
     // Connect to a server
-    bool connect(const std::string_view addr, unsigned short port, bool standalone = false);
+    geode::Result<> connect(const std::string_view addr, unsigned short port, bool standalone = false);
     // Safer version of `connect`, sets the active game server in `GameServerManager` on success, doesn't throw on exception on error
-    void connectWithView(const GameServer& gsview);
+    geode::Result<> connectWithView(const GameServer& gsview);
     // Is similar to `connectWithView` (does not throw exceptions) but is made specifically for standalone servers.
     // Grabs the address from the first server in `GameServerManager`
-    void connectStandalone();
+    geode::Result<> connectStandalone();
 
     // Disconnect from a server. Does nothing if not connected
     void disconnect(bool quiet = false, bool noclear = false);

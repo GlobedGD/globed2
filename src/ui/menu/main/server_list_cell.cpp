@@ -81,7 +81,7 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                     auto& csm = CentralServerManager::get();
 
                     if (csm.standalone()) {
-                        NetworkManager::get().connectStandalone();
+                        GLOBED_RESULT_ERRC(NetworkManager::get().connectStandalone());
                     } else {
                         // check if the token is here, otherwise request it
                         auto& am = GlobedAccountManager::get();
@@ -89,7 +89,7 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                         auto hasToken = !am.authToken.lock()->empty();
 
                         if (hasToken) {
-                            NetworkManager::get().connectWithView(this->gsview);
+                            GLOBED_RESULT_ERRC(NetworkManager::get().connectWithView(this->gsview));
                         } else {
                             this->requestTokenAndConnect();
                         }
@@ -131,7 +131,7 @@ void ServerListCell::requestTokenAndConnect() {
     );
 
     am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [gsview = this->gsview]{
-        NetworkManager::get().connectWithView(gsview);
+        GLOBED_RESULT_ERRC(NetworkManager::get().connectWithView(gsview));
     });
 }
 

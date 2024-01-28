@@ -24,6 +24,11 @@
 * GLOBED_REQUIRE_SAFE - returns a Result with an Err value if condition fails
 * GLOBED_HARD_ASSERT - terminates the program if condition fails. Don't use it unless the condition indicates a hard logic error in the code.
 * GLOBED_UNIMPL - throws a runtime error as the method was not implemented and isn't meant to be called
+* GLOBED_UNWRAP - return Err if a result is Err, otherwise do nothing
+* GLOBED_UNWRAP_INTO - return Err if a result is Err, otherwise put the value into the destination
+* GLOBED_RESULT_ERRC - call ErrorQueues::error() if result is Err, discard the value
+* GLOBED_RESULT_WARNC - call ErrorQueues::warn() if result is Err, discard the value
+* GLOBED_RESULT_DBGWARNC - call ErrorQueues::debugWarn() if result is Err, discard the value
 */
 
 #if GLOBED_CAN_USE_SOURCE_LOCATION
@@ -71,6 +76,33 @@
 #endif
 
 #define GLOBED_UNIMPL(message) GLOBED_REQUIRE(false, std::string("unimplemented: ") + (message))
+#define GLOBED_UNWRAP(value) \
+    if (value.isErr()) return geode::Err(value.unwrapErr())
+
 #define GLOBED_UNWRAP_INTO(value, dest) \
     if (value.isErr()) return geode::Err(value.unwrapErr()); \
     dest = value.unwrap();
+
+#define GLOBED_RESULT_ERRC(value) \
+    do { \
+        auto __result = (value); \
+        if (__result.isErr()) { \
+            ErrorQueues::get().error(__result.unwrapErr()); \
+        } \
+    } while (false);
+
+#define GLOBED_RESULT_WARNC(value) \
+    do { \
+        auto __result = (value); \
+        if (__result.isErr()) { \
+            ErrorQueues::get().warn(__result.unwrapErr()); \
+        } \
+    } while (false);
+
+#define GLOBED_RESULT_DBGWARNC(value) \
+    do { \
+        auto __result = (value); \
+        if (__result.isErr()) { \
+            ErrorQueues::get().debugWarn(__result.unwrapErr()); \
+        } \
+    } while (false);

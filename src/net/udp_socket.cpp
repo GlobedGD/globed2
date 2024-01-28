@@ -1,6 +1,8 @@
 #include "udp_socket.hpp"
 #include <util/net.hpp>
 
+using namespace geode::prelude;
+
 UdpSocket::UdpSocket() : socket_(0) {
     memset(&destAddr_, 0, sizeof(destAddr_));
 }
@@ -15,20 +17,22 @@ bool UdpSocket::create() {
     return sock != -1;
 }
 
-bool UdpSocket::connect(const std::string_view serverIp, unsigned short port) {
+Result<> UdpSocket::connect(const std::string_view serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
     destAddr_.sin_port = htons(port);
 
     bool validIp = (inet_pton(AF_INET, serverIp.data(), &destAddr_.sin_addr) > 0);
     // if not a valid IPv4, assume it's a domain and try getaddrinfo
     if (!validIp) {
-        auto ip = util::net::getaddrinfo(serverIp);
+        auto result = util::net::getaddrinfo(serverIp);
+        GLOBED_UNWRAP_INTO(result, auto ip);
+
         validIp = (inet_pton(AF_INET, ip.c_str(), &destAddr_.sin_addr) > 0);
-        GLOBED_REQUIRE(validIp, "invalid address was returned as result of getaddrinfo")
+        GLOBED_REQUIRE_SAFE(validIp, "invalid address was returned by getaddrinfo")
     }
 
     connected = true;
-    return true; // No actual connection is established in UDP
+    return Ok();
 }
 
 int UdpSocket::send(const char* data, unsigned int dataSize) {
