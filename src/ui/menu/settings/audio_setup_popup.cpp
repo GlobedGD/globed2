@@ -1,5 +1,7 @@
 #include "audio_setup_popup.hpp"
 
+#if GLOBED_VOICE_SUPPORT
+
 #include "audio_device_cell.hpp"
 #include <audio/manager.hpp>
 #include <managers/settings.hpp>
@@ -210,3 +212,5 @@ AudioSetupPopup* AudioSetupPopup::create() {
     delete ret;
     return nullptr;
 }
+
+#endif // GLOBED_VOICE_SUPPORT
