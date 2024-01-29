@@ -67,6 +67,7 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
     auto& player = players.at(playerId);
     player.updateCounter = updateCounter;
     player.pendingRealFrame = true;
+    player.totalFrames++;
 
     if (!util::math::equal(player.lastDeathTimestamp, data.lastDeathTimestamp)) {
         player.lastDeathTimestamp = data.lastDeathTimestamp;
@@ -116,12 +117,13 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
 
     // funny stuff
     if (player.timeCounter - player.olderFrame.timestamp > settings.expectedDelta) {
-        log::debug("correcting very wrong delta");
+        // log::debug("correcting very wrong delta");
         player.timeCounter = player.olderFrame.timestamp;
     } else if (player.timeCounter - player.olderFrame.timestamp > 0.f) {
         // player.timeCounter
         // do nothing??
-    } else {
+    } else if (player.totalFrames < 60 || player.totalFrames % 240 == 0) {
+        // i dont even know anymore
         player.timeCounter = player.olderFrame.timestamp;
     }
 }

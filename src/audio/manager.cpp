@@ -25,6 +25,7 @@ GlobedAudioManager::GlobedAudioManager()
     : encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
     audioThreadHandle.setLoopFunction(&GlobedAudioManager::audioThreadFunc);
+    audioThreadHandle.setName("Audio Thread");
     audioThreadHandle.start(this);
 
     recordDevice = {.id = -1};
@@ -45,13 +46,12 @@ void GlobedAudioManager::preInitialize() {
     try {
         this->getRecordingDevice(0);
     } catch (const std::exception _e) {}
+#endif
 
     // also check perms on android
-
     if (!permission::getPermissionStatus(Permission::RecordAudio)) {
         GlobedSettings::get().communication.audioDevice = false;
     }
-#endif
 
     // load the previously selected device
     auto& settings = GlobedSettings::get();

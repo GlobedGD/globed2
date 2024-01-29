@@ -23,28 +23,21 @@ bool HookedMenuLayer::init() {
         auto& gsm = GameServerManager::get();
         auto& am = GlobedAccountManager::get();
 
-        auto lastaddr = gsm.loadLastConnected();
-        if (lastaddr.empty()) return;
+        auto lastId = gsm.loadLastConnected();
+        if (lastId.empty()) return;
 
-        log::debug("last connected addr: {}", lastaddr);
+        log::debug("last connected server: {}", lastId);
+
+        am.autoInitialize();
 
         if (csm.standalone()) {
-            am.autoInitialize();
             auto result = NetworkManager::get().connectStandalone();
             if (result.isErr()) {
                 ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));
             }
         } else {
-            std::string ip;
-            unsigned short port;
-
-            auto res = util::net::splitAddress(lastaddr, GameServerManager::DEFAULT_PORT);
-            if (res.isErr()) return;
-
-            // this is the first time i am genuinely amazed by a utility function of this language
-            std::tie(ip, port) = res.unwrap();
-
-            am.autoInitialize();
+            auto lastServer = gsm.getServer(lastId);
+            if (!lastServer.has_value()) return;
 
             std::string authcode;
             try {
@@ -60,9 +53,8 @@ bool HookedMenuLayer::init() {
             }
 
             auto gdData = am.gdData.lock();
-            log::debug("gd data: {}, {}", gdData->accountId, gdData->accountName);
-            am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [ip = std::move(ip), port] {
-                auto result = NetworkManager::get().connect(ip, port, false);
+            am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [lastServer] {
+                auto result = NetworkManager::get().connectWithView(lastServer.value());
                 if (result.isErr()) {
                     ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));
                 }

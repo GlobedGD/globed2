@@ -475,7 +475,8 @@ namespace util::debugging {
         geode::log::debug("Struct {}", typenameResult.unwrap());
         auto scanResult = scanMemory(address, size);
 
-        for (uintptr_t node = 0; node < size; node += 4) {
+        const size_t INCREMENT = 4;
+        for (uintptr_t node = 0; node < size; node += INCREMENT) {
             uint32_t nodeValue32 = *(uint32_t*)((uintptr_t)address + node);
             uint64_t nodeValue64 = *(uint64_t*)((uintptr_t)address + node);
             uintptr_t nodeValuePtr = *(uintptr_t*)((uintptr_t)address + node);
@@ -490,7 +491,7 @@ namespace util::debugging {
                 // valid type with a known typeinfo
                 if (name.isOk()) {
                     geode::log::debug("{} ({}*)", prefixPtr, name.unwrap());
-                    node += sizeof(void*) - 4;
+                    node += sizeof(void*) - INCREMENT;
                     continue;
                 }
 
@@ -498,7 +499,7 @@ namespace util::debugging {
                 name = getTypenameFromVtable((void*)nodeValuePtr);
                 if (name.isOk()) {
                     geode::log::debug("{} (vtable for {})", prefixPtr, name.unwrap());
-                    node += sizeof(void*) - 4;
+                    node += sizeof(void*) - INCREMENT;
                     continue;
                 }
             }
@@ -512,26 +513,26 @@ namespace util::debugging {
                     break;
                 case ScanItemType::Double:
                     geode::log::debug("{} ({}d)", prefix64, data::bit_cast<double>(nodeValue64));
-                    node += 4;
+                    node += sizeof(double) - INCREMENT;
                     break;
                 case ScanItemType::HeapPointer:
                     geode::log::debug("{} ({}) (ptr)", prefixPtr, nodeValuePtr);
-                    node += sizeof(void*) - 4;
+                    node += sizeof(void*) - INCREMENT;
                     break;
                 case ScanItemType::String:
                     geode::log::debug("{} ({}) (string: \"{}\")", prefixPtr, nodeValuePtr, (const char*)nodeValuePtr);
-                    node += sizeof(void*) - 4;
+                    node += sizeof(void*) - INCREMENT;
                     break;
                 case ScanItemType::EmptyString:
                     geode::log::debug("{} ({}) (string: \"\")", prefixPtr, nodeValuePtr);
-                    node += sizeof(void*) - 4;
+                    node += sizeof(void*) - INCREMENT;
                     break;
                 case ScanItemType::SeedValue: {
                     uint32_t valueNext = *(uint32_t*)((uintptr_t)address + node + 4);
                     uint32_t valueNext2 = *(uint32_t*)((uintptr_t)address + node + 8);
                     std::string prefix96 = fmt::format("0x{:X} : {:024X}", node, nodeValue64);
                     geode::log::debug("0x{:X} : ({:08X} {:08X} {:08X}) seed value: {}, {}, {}", node, nodeValue32, valueNext, valueNext2, nodeValue32, valueNext, valueNext2);
-                    node += 8;
+                    node += 3*4 - INCREMENT;
                     break;
                 }
                 }

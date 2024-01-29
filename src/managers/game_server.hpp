@@ -45,7 +45,7 @@ public:
     void clearAllExcept(const std::string_view id);
 
     std::optional<GameServer> getActiveServer();
-    GameServer getServer(const std::string_view id);
+    std::optional<GameServer> getServer(const std::string_view id);
     std::unordered_map<std::string, GameServer> getAllServers();
 
     // return ping on the active server

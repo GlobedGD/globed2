@@ -47,8 +47,7 @@ void GameServerManager::setActive(const std::string_view id) {
 
     data->active = id;
 
-    auto serverAddress = data->servers.at(idstr).server.address;
-    this->saveLastConnected(fmt::format("{}:{}", serverAddress.ip, serverAddress.port));
+    this->saveLastConnected(id);
 }
 
 void GameServerManager::clearActive() {
@@ -80,12 +79,12 @@ std::optional<GameServer> GameServerManager::getActiveServer() {
     return this->getServer(active);
 }
 
-GameServer GameServerManager::getServer(const std::string_view id_) {
+std::optional<GameServer> GameServerManager::getServer(const std::string_view id_) {
     std::string id(id_);
 
     auto data = _data.lock();
     if (!data->servers.contains(id)) {
-        throw(std::runtime_error(std::string("invalid server ID, no such server exists: ") + id));
+        return std::nullopt;
     }
 
     return data->servers.at(id).server;

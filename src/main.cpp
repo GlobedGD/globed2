@@ -20,18 +20,6 @@ void setupErrorCheckNode();
 void setupCustomKeybinds();
 void printDebugInfo();
 
-// vvv this is for testing fmod
-// void createStreamDetour(FMOD::System* self, const char* unused1, FMOD_MODE mode, FMOD_CREATESOUNDEXINFO* exinfo, FMOD::Sound** sound) {
-//     log::debug("creating stream with mode {}", mode);
-//     log::debug("exinfo cbs: {}", exinfo->cbsize);
-//     log::debug("exinfo len: {}", exinfo->length);
-//     log::debug("exinfo channels: {}", exinfo->numchannels);
-//     log::debug("exinfo freq: {}", exinfo->defaultfrequency);
-//     log::debug("exinfo fmt: {}", exinfo->format);
-//     log::debug("exinfo stype: {}", exinfo->suggestedsoundtype);
-//     self->createStream(unused1, mode, exinfo, sound);
-// }
-
 $on_mod(Loaded) {
     setupLibsodium();
     setupErrorCheckNode();
@@ -44,11 +32,6 @@ $on_mod(Loaded) {
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
     printDebugInfo();
 #endif
-
-    /// vvv this is for testing fmod
-    // (void) Mod::get()->addHook(reinterpret_cast<void*>(
-    //     geode::addresser::getNonVirtual(&FMOD::System::createStream)
-    // ), &createStreamDetour, "FMOD::System::createStream", tulip::hook::TulipConvention::Default);
 }
 
 class $modify(MyMenuLayer, MenuLayer) {

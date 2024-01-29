@@ -317,7 +317,16 @@ class SmartThread {
 public:
     SmartThread() {}
 
+    SmartThread(const std::string_view name) {
+        this->setName(name);
+    }
+
     SmartThread(TFunc&& func) {
+        this->setLoopFunction(std::move(func));
+    }
+
+    SmartThread(const std::string_view name, TFunc&& func) {
+        this->setName(name);
         this->setLoopFunction(std::move(func));
     }
 
@@ -325,9 +334,18 @@ public:
         loopFunc = std::move(func);
     }
 
+    // change the name of the thread
+    void setName(const std::string_view name) {
+        threadName = name;
+    }
+
     void start(TFuncArgs&&... args) {
         _stopped.clear();
         _handle = std::thread([this](TFuncArgs... args) {
+            if (!threadName.empty()) {
+                geode::utils::thread::setName(threadName);
+            }
+
             while (!_stopped) {
                 loopFunc(args...);
             }
@@ -358,6 +376,7 @@ private:
     std::thread _handle;
     AtomicFlag _stopped;
     TFunc loopFunc;
+    std::string threadName;
 };
 
 }

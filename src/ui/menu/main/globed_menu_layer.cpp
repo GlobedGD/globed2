@@ -207,7 +207,9 @@ void GlobedMenuLayer::refreshServerList(float) {
     for (auto* obj : CCArrayExt<CCNode*>(listCells)) {
         auto slc = static_cast<ServerListCell*>(obj->getChildren()->objectAtIndex(2));
         auto server = gsm.getServer(slc->gsview.id);
-        slc->updateWith(server, authenticated && slc->gsview.id == active);
+        if (server.has_value()) {
+            slc->updateWith(server.value(), authenticated && slc->gsview.id == active);
+        }
     }
 }
 

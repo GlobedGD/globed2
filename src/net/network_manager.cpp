@@ -83,9 +83,11 @@ NetworkManager::NetworkManager() {
     // boot up the threads
 
     threadMain.setLoopFunction(&NetworkManager::threadMainFunc);
+    threadMain.setName("Network (out) Thread");
     threadMain.start(this);
 
     threadRecv.setLoopFunction(&NetworkManager::threadRecvFunc);
+    threadRecv.setName("Network (in) Thread");
     threadRecv.start(this);
 }
 
@@ -151,7 +153,13 @@ Result<> NetworkManager::connectWithView(const GameServer& gsview) {
 }
 
 Result<> NetworkManager::connectStandalone() {
-    auto server = GameServerManager::get().getServer(GameServerManager::STANDALONE_ID);
+    auto _server = GameServerManager::get().getServer(GameServerManager::STANDALONE_ID);
+    if (!_server.has_value()) {
+        return Err(fmt::format("failed to find server by standalone ID"));
+    }
+
+    auto server = _server.value();
+
     auto result = this->connect(server.address.ip, server.address.port, true);
     if (result.isOk()) {
         GameServerManager::get().setActive(GameServerManager::STANDALONE_ID);
