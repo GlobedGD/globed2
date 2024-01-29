@@ -247,7 +247,7 @@ namespace util::debugging {
 #endif
     }
 
-#ifdef GEODE_IS_ANDROID
+#ifdef GLOBED_IS_UNIX
     struct Typeinfo {
         void* _unkptr;
         const char* namePtr;
@@ -281,7 +281,7 @@ namespace util::debugging {
         if (!canReadPointer((uintptr_t)typeinfoPtr, 4)) return Err("invalid typeinfo");
         Typeinfo typeinfo = *typeinfoPtr;
 
-#ifdef GEODE_IS_ANDROID
+#ifdef GLOBED_IS_UNIX
         const char* namePtr = typeinfo.namePtr;
         // geode::log::debug("name ptr: {:X}", (uintptr_t)namePtr - geode::base::get());
         if (!canReadPointer((uintptr_t)namePtr, 4)) return Err("invalid class name");
@@ -365,7 +365,6 @@ namespace util::debugging {
     };
 
 #ifdef GEODE_IS_ANDROID
-#endif
     uintptr_t getEmptyString() {
         static misc::OnceCell<uintptr_t> _internalstr;
         return _internalstr.getOrInit([] {
@@ -376,6 +375,7 @@ namespace util::debugging {
             return address;
         });
     }
+#endif
 
     static std::unordered_map<ptrdiff_t, ScanItemType> scanMemory(void* address, size_t size) {
         // 4-byte pass
