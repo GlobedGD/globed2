@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base_visual_player.hpp"
-#include <ui/hooks/player_object.hpp>
+#include <hooks/player_object.hpp>
 
 class ComplexVisualPlayer : public cocos2d::CCNode, public BaseVisualPlayer {
 public:

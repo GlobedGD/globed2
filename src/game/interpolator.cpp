@@ -5,7 +5,7 @@
 # include "lerp_logger.hpp"
 #endif
 
-#include <ui/hooks/play_layer.hpp>
+#include <hooks/play_layer.hpp>
 
 using namespace geode::prelude;
 
