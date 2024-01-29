@@ -1,6 +1,6 @@
 #include "error_check_node.hpp"
 
-#include <ui/hooks/play_layer.hpp>
+#include <hooks/play_layer.hpp>
 #include <managers/error_queues.hpp>
 #include <util/debugging.hpp>
 
@@ -29,7 +29,15 @@ void ErrorCheckNode::updateErrors(float) {
         return;
     }
 
-    auto warnings = ErrorQueues::get().getWarnings();
+    std::vector<std::string> warnings;
+
+    try {
+        warnings = ErrorQueues::get().getWarnings();
+    } catch (const std::system_error& e) {
+        // sometimes, when exiting the game, macos will do weird stuff and crash trying to lock a mutex.
+        // we want to prevent that.
+        return;
+    }
 
     for (auto& warn : warnings) {
         Notification::create(warn, NotificationIcon::Warning, 2.5f)->show();

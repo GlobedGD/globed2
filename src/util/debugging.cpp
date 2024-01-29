@@ -190,7 +190,7 @@ namespace util::debugging {
         if (address < 0x1000) return false;
         if (address % align != 0) return false;
 
-#ifdef GEODE_IS_ANDROID
+#ifdef GLOBED_IS_UNIX
         address = adjustPointerForMaps(address);
 
         static misc::OnceCell<std::unordered_map<size_t, ProcMapEntry>> _maps;
