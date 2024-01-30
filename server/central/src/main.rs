@@ -15,7 +15,10 @@ use std::{
 
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
-use globed_shared::logger::{error, info, log, warn, LogLevelFilter, Logger};
+use globed_shared::{
+    get_log_level,
+    logger::{error, info, log, warn, Logger},
+};
 use roa::{tcp::Listener, App};
 use state::{ServerState, ServerStateData};
 
@@ -33,14 +36,12 @@ fn abort_misconfig() -> ! {
 async fn main() -> Result<(), Box<dyn Error>> {
     log::set_logger(Logger::instance("globed_central_server", false)).unwrap();
 
-    if std::env::var("GLOBED_LESS_LOG").unwrap_or("0".to_string()) == "1" {
-        log::set_max_level(LogLevelFilter::Warn);
+    if let Some(log_level) = get_log_level("GLOBED_LOG_LEVEL") {
+        log::set_max_level(log_level);
     } else {
-        log::set_max_level(if cfg!(debug_assertions) {
-            LogLevelFilter::Trace
-        } else {
-            LogLevelFilter::Info
-        });
+        error!("invalid value for the log level environment varaible");
+        warn!("hint: possible values are 'trace', 'debug', 'info', 'warn', 'error', and 'none'.");
+        abort_misconfig();
     }
 
     // config file

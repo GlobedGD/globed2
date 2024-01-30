@@ -23,9 +23,9 @@ pub enum PlayerIconType {
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
 pub struct SpecificIconData {
-    pub icon_type: PlayerIconType,
     pub position: Point,
     pub rotation: f32,
+    pub icon_type: PlayerIconType,
     pub flag_byte: u8,
 }
 

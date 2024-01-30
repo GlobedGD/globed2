@@ -131,7 +131,6 @@ cargo build --release
 
 ## Extra
 
-In release builds, the `Debug` and `Trace` levels are disabled, so you will only see logs with levels `Info`, `Warn` and `Error`.
+In release builds, by default, the `Debug` and `Trace` log levels are disabled, so you will only see logs with levels `Info`, `Warn` and `Error`.
 
-This can be changed by setting the environment variable `GLOBED_LESS_LOG=1` for the central server, or `GLOBED_GS_LESS_LOG=1` for the game server. With this option, only logs with levels `Warn` and `Error` will be printed.
-
+This can be changed by setting the environment variable `GLOBED_LOG_LEVEL` for the central server, or `GLOBED_GS_LOG_LEVEL` for the game server. The appropriate values are: `trace`, `debug`, `info`, `warn`, `error`, `none`.
