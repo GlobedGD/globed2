@@ -143,13 +143,14 @@ void GlobedPlayLayer::setupPacketListeners() {
     });
 
     nm.addListener<LevelDataPacket>([this](LevelDataPacket* packet){
+        this->m_fields->lastServerUpdate = this->m_fields->timeCounter;
+
         for (const auto& player : packet->players) {
             if (!this->m_fields->players.contains(player.accountId)) {
                 // new player joined
                 this->handlePlayerJoin(player.accountId);
             }
 
-            this->m_fields->lastServerUpdate = this->m_fields->timeCounter;
             this->m_fields->interpolator->updatePlayer(player.accountId, player.data, this->m_fields->lastServerUpdate);
         }
     });
@@ -299,8 +300,8 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
 }
 
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
-void GlobedPlayLayer::selUpdate(float dt) {
-    dt = adjustLerpTimeDelta(dt);
+void GlobedPlayLayer::selUpdate(float rawdt) {
+    float dt = adjustLerpTimeDelta(rawdt);
     m_fields->timeCounter += dt;
 
     m_fields->interpolator->tick(dt);

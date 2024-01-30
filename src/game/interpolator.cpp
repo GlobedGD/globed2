@@ -1,17 +1,14 @@
 #include "interpolator.hpp"
 
-#include <util/math.hpp>
-#ifdef GLOBED_DEBUG_INTERPOLATION
 # include "lerp_logger.hpp"
-#endif
-
 #include <hooks/play_layer.hpp>
+#include <util/math.hpp>
+#include <util/debugging.hpp>
+#include <util/formatting.hpp>
 
 using namespace geode::prelude;
 
-PlayerInterpolator::PlayerInterpolator(const InterpolatorSettings& settings) : settings(settings) {
-    deltaAllowance = settings.expectedDelta * 0.2f;
-}
+PlayerInterpolator::PlayerInterpolator(const InterpolatorSettings& settings) : settings(settings) {}
 
 void PlayerInterpolator::addPlayer(uint32_t playerId) {
     players.emplace(playerId, PlayerState {});
@@ -24,45 +21,6 @@ void PlayerInterpolator::removePlayer(uint32_t playerId) {
     players.erase(playerId);
 }
 
-static inline void lerpSpecific(
-    const SpecificIconData& older,
-    const SpecificIconData& newer,
-    SpecificIconData& output,
-    float lerpDelta,
-    bool skipLerpX,
-    bool isSecond
-) {
-    output.rotation = std::lerp(older.rotation, newer.rotation, lerpDelta);
-
-    if (skipLerpX) {
-        // output.position.y = std::lerp(older.position.y, newer.position.y, lerpDelta);
-        output.position.y = older.position.y;
-        output.position.x = older.position.x;
-    } else {
-        output.position = older.position.lerp(newer.position, lerpDelta);
-    }
-
-    output.iconType = newer.iconType;
-    output.isVisible = newer.isVisible;
-    output.isLookingLeft = newer.isLookingLeft;
-}
-
-static inline PlayerInterpolator::LerpFrame extrapolateFrame(
-    const PlayerInterpolator::LerpFrame& older,
-    const PlayerInterpolator::LerpFrame& newer
-) {
-    PlayerInterpolator::LerpFrame output;
-
-    lerpSpecific(older.visual.player1, newer.visual.player1, output.visual.player1, 2.0f, false, false);
-    lerpSpecific(older.visual.player2, newer.visual.player2, output.visual.player2, 2.0f, false, true);
-
-    // extrapolate the timestamp too
-    output.timestamp = std::lerp(older.timestamp, newer.timestamp, 2.0f);
-    output.artificial = true;
-
-    return output;
-}
-
 void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data, float updateCounter) {
     auto& player = players.at(playerId);
     player.updateCounter = updateCounter;
@@ -71,141 +29,78 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
 
     if (!util::math::equal(player.lastDeathTimestamp, data.lastDeathTimestamp)) {
         player.lastDeathTimestamp = data.lastDeathTimestamp;
-        if (!player.firstTick) {
+        if (player.totalFrames > 1) {
             player.pendingDeath = true;
         }
     }
 
-    player.firstTick = false;
+    LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
 
     if (settings.realtime) {
         player.interpolatedState.player1 = data.player1;
         player.interpolatedState.player2 = data.player2;
-
-#ifdef GLOBED_DEBUG_INTERPOLATION
-        LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
-#endif
         return;
     }
 
-    // if there's a repeated frame, replace with an extrapolated one
-    if (EXTRAPOLATION && data.timestamp == player.newerFrame.timestamp && !player.newerFrame.artificial) {
-        auto extrapolated = extrapolateFrame(player.olderFrame, player.newerFrame);
-        player.olderFrame = player.newerFrame;
-        player.newerFrame = extrapolated;
+    player.olderFrame = player.newerFrame;
+    player.newerFrame = data;
 
-#ifdef GLOBED_DEBUG_INTERPOLATION
-        LerpLogger::get().logExtrapolatedRealFrame(playerId, this->getLocalTs(), data.timestamp, extrapolated.timestamp, data.player1, extrapolated.visual.player1);
-#endif
+    // TODO potential place for improvement - doing this every packet may or may not be stupid.
+    // but for now it seems to work fine.
+    player.timeCounter = player.olderFrame.timestamp;
+}
 
-    } else if (data.timestamp - player.newerFrame.timestamp < deltaAllowance) {
-        // correct the course
-        player.newerFrame = data;
+static inline void lerpSpecific(
+    const SpecificIconData& older,
+    const SpecificIconData& newer,
+    SpecificIconData& out,
+    float lerpRatio
+    ) {
 
-#ifdef GLOBED_DEBUG_INTERPOLATION
-        LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
-#endif
-        return;
-    } else {
-        player.olderFrame = player.newerFrame;
-        player.newerFrame = data;
+    // misc variables
+    out.iconType = older.iconType;
+    out.isDashing = older.isDashing;
+    out.isLookingLeft = older.isLookingLeft;
+    out.isUpsideDown = older.isUpsideDown;
+    out.isVisible = older.isVisible;
 
-#ifdef GLOBED_DEBUG_INTERPOLATION
-        LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
-#endif
-    }
+    // main stuff
+    out.position = older.position.lerp(newer.position, lerpRatio);
+    out.rotation = std::lerp(older.rotation, newer.rotation, lerpRatio);
+}
 
-    // funny stuff
-    if (player.timeCounter - player.olderFrame.timestamp > settings.expectedDelta) {
-        // log::debug("correcting very wrong delta");
-        player.timeCounter = player.olderFrame.timestamp;
-    } else if (player.timeCounter - player.olderFrame.timestamp > 0.f) {
-        // player.timeCounter
-        // do nothing??
-    } else if (player.totalFrames < 60 || player.totalFrames % 240 == 0) {
-        // i dont even know anymore
-        player.timeCounter = player.olderFrame.timestamp;
-    }
+static inline void lerpPlayer(
+    const VisualPlayerState& older,
+    const VisualPlayerState& newer,
+    VisualPlayerState& out,
+    float lerpRatio
+    ) {
+
+    lerpSpecific(older.player1, newer.player1, out.player1, lerpRatio);
+    lerpSpecific(older.player2, newer.player2, out.player2, lerpRatio);
 }
 
 void PlayerInterpolator::tick(float dt) {
-    if ((volatile void*)this == nullptr) {
-        log::debug("wtf player interpolator is nullptr");
-    }
-
     if (settings.realtime) return;
 
     for (auto& [playerId, player] : players) {
+        if (player.totalFrames < 2) continue;
 
-        // time difference between 2 last real frames (most often is the same)
-        float frameDiff = player.newerFrame.timestamp - player.olderFrame.timestamp;
-
-        // if we dont have both frames yet, do nothing (maybe change behavior in future)
-        if (std::isnan(frameDiff) || frameDiff <= 0.f) {
-#ifdef GLOBED_DEBUG_INTERPOLATION
+        float realFrameDelta = player.newerFrame.timestamp - player.olderFrame.timestamp;
+        // this makes absolutely no sense im fucking fuming right now
+        // why the fuck does a static non-changing number work better than an actual calculation
+        float fakeFrameDelta = settings.expectedDelta;
+        if (realFrameDelta == 0.f) {
             LerpLogger::get().logLerpSkip(playerId, this->getLocalTs(), player.timeCounter, player.interpolatedState.player1);
-#endif
             continue;
         }
 
-        // time difference between current interpolated frame and the older real frame
-        float diffFromOlder = player.timeCounter - player.olderFrame.timestamp;
+        float lerpRatio = (player.timeCounter - player.olderFrame.timestamp) / fakeFrameDelta;
+        util::debugging::Benchmarker bb;
 
-        // time delta, usually is from 0.0 to 1.0, passed as 3rd arg to lerp(x1, x2, t)
-        float lerpDelta = util::math::snan(diffFromOlder / frameDiff);
-        bool skipLerpX = false;
+        lerpPlayer(player.olderFrame.visual, player.newerFrame.visual, player.interpolatedState, lerpRatio);
 
-        if (player.pendingRealFrame) {
-            player.pendingRealFrame = false;
-            skipLerpX = false;
-        }
-
-        lerpSpecific(player.olderFrame.visual.player1, player.newerFrame.visual.player1, player.interpolatedState.player1, lerpDelta, skipLerpX, false);
-        lerpSpecific(player.olderFrame.visual.player2, player.newerFrame.visual.player2, player.interpolatedState.player2, lerpDelta, skipLerpX, true);
-
-#ifdef GLOBED_DEBUG_INTERPOLATION
         LerpLogger::get().logLerpOperation(playerId, this->getLocalTs(), player.timeCounter, player.interpolatedState.player1);
-#endif
-
-        player.timeCounter += dt;
-    }
-}
-
-void PlayerInterpolator::tickWithRatio(float ratio) {
-    if (settings.realtime) return;
-
-    for (auto& [playerId, player] : players) {
-        // time difference between 2 last real frames (most often is the same)
-        float frameDiff = player.newerFrame.timestamp - player.olderFrame.timestamp;
-
-        // if we dont have both frames yet, do nothing (maybe change behavior in future)
-        if (std::isnan(frameDiff) || frameDiff <= 0.f) {
-#ifdef GLOBED_DEBUG_INTERPOLATION
-            LerpLogger::get().logLerpSkip(playerId, this->getLocalTs(), player.timeCounter, player.interpolatedState.player1);
-#endif
-            continue;
-        }
-
-        float dt = frameDiff / ratio;
-
-        // time difference between current interpolated frame and the older real frame
-        float diffFromOlder = player.timeCounter - player.olderFrame.timestamp;
-
-        // time delta, usually is from 0.0 to 1.0, passed as 3rd arg to lerp(x1, x2, t)
-        float lerpDelta = util::math::snan(diffFromOlder / frameDiff);
-        bool skipLerpX = false;
-
-        if (player.pendingRealFrame) {
-            player.pendingRealFrame = false;
-            skipLerpX = false;
-        }
-
-        lerpSpecific(player.olderFrame.visual.player1, player.newerFrame.visual.player1, player.interpolatedState.player1, lerpDelta, skipLerpX, false);
-        lerpSpecific(player.olderFrame.visual.player2, player.newerFrame.visual.player2, player.interpolatedState.player2, lerpDelta, skipLerpX, true);
-
-#ifdef GLOBED_DEBUG_INTERPOLATION
-        LerpLogger::get().logLerpOperation(playerId, this->getLocalTs(), player.timeCounter, player.interpolatedState.player1);
-#endif
 
         player.timeCounter += dt;
     }
@@ -234,13 +129,13 @@ float PlayerInterpolator::getLocalTs() {
     return gpl->m_fields->timeCounter;
 }
 
-PlayerInterpolator::LerpFrame::LerpFrame(const PlayerData& pd) {
-    timestamp = pd.timestamp;
-    visual.player1 = pd.player1;
-    visual.player2 = pd.player2;
-    artificial = false;
+PlayerInterpolator::LerpFrame::LerpFrame() {
+    timestamp = 0.f;
+    visual = {};
 }
 
-PlayerInterpolator::LerpFrame::LerpFrame() {
-    timestamp = 0.0f;
+PlayerInterpolator::LerpFrame::LerpFrame(const PlayerData& data) {
+    timestamp = data.timestamp;
+    visual.player1 = data.player1;
+    visual.player2 = data.player2;
 }

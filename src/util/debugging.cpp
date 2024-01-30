@@ -146,7 +146,7 @@ namespace util::debugging {
 #endif
 
     void timedLog(const std::string_view message) {
-        geode::log::info("\r[{}] [Globed] {}", util::formatting::formatDateTime(util::time::now()), message);
+        geode::log::info("\r[{}] [Globed] {}", util::formatting::formatDateTime(util::time::systemNow()), message);
     }
 
     void nop(ptrdiff_t offset, size_t bytes) {

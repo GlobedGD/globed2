@@ -3,8 +3,8 @@
 #include <iomanip>
 
 namespace util::formatting {
-    std::string formatDateTime(chrono::system_clock::time_point tp) {
-        auto timet = chrono::system_clock::to_time_t(tp);
+    std::string formatDateTime(time::system_time_point tp) {
+        auto timet = time::sysclock::to_time_t(tp);
         auto nowms = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;
 
         std::tm time_info = *std::localtime(&timet);

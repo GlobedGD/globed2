@@ -27,7 +27,6 @@ public:
 
     // Interpolate the player state. Should preferrably be called every frame.
     void tick(float dt);
-    void tickWithRatio(float ratio);
 
     // Get the current interpolated visual state of the player. This is what you pass into `RemotePlayer::updateData`
     VisualPlayerState& getPlayerState(uint32_t playerId);
@@ -43,7 +42,6 @@ public:
 private:
     std::unordered_map<uint32_t, PlayerState> players;
     InterpolatorSettings settings;
-    float deltaAllowance;
 
     constexpr static bool EXTRAPOLATION = false;
 
@@ -54,7 +52,6 @@ public:
 
         float timestamp;
         VisualPlayerState visual;
-        bool artificial;
     };
 
     struct PlayerState {
@@ -67,6 +64,5 @@ public:
         VisualPlayerState interpolatedState;
         bool pendingRealFrame = false;
         bool pendingDeath = false;
-        bool firstTick = true;
     };
 };
