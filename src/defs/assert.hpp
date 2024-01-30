@@ -69,7 +69,6 @@
 # define GLOBED_REQUIRE_SAFE(condition, message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
-        auto loc = GLOBED_SOURCE; \
         geode::log::warn("Condition failed: {}", ev_msg); \
         return geode::Err(std::string(ev_msg)); \
     }
