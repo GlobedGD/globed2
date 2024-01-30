@@ -78,8 +78,8 @@ impl log::Log for Logger {
                 record.args().to_string().bright_yellow(),
             ),
             LogLevel::Info => (record.level().to_string().cyan(), record.args().to_string().cyan()),
-            LogLevel::Debug => (record.level().to_string().normal(), record.args().to_string().white()),
-            LogLevel::Trace => (record.level().to_string().black(), record.args().to_string().normal()),
+            LogLevel::Debug => (record.level().to_string().white(), record.args().to_string().white()),
+            LogLevel::Trace => (record.level().to_string().normal(), record.args().to_string().normal()),
         };
 
         if record.level() == LogLevel::Error {

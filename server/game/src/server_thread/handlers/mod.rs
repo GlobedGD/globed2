@@ -12,9 +12,10 @@ macro_rules! gs_handler {
         pub(crate) async fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::server_thread::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
 
-            if <$pktty>::PACKET_ID != PlayerDataPacket::PACKET_ID && <$pktty>::PACKET_ID != KeepalivePacket::PACKET_ID {
-                $self.print_packet::<$pktty>(false, None);
-            }
+            // if <$pktty>::PACKET_ID != PlayerDataPacket::PACKET_ID && <$pktty>::PACKET_ID != KeepalivePacket::PACKET_ID {
+            //     $self.print_packet::<$pktty>(false, None);
+            // }
+            $self.print_packet::<$pktty>(false, None);
 
             $code
         }
