@@ -39,18 +39,18 @@ void GlobedAccountManager::autoInitialize() {
     this->initialize(gjam->m_username, gjam->m_accountID, gjam->m_GJP2, activeCentralUrl);
 }
 
-std::string GlobedAccountManager::generateAuthCode() {
-    GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::generateAuthCode before initializing the instance")
+geode::Result<std::string> GlobedAccountManager::generateAuthCode() {
+    GLOBED_REQUIRE_SAFE(initialized, "Attempting to call GlobedAccountManager::generateAuthCode before initializing the instance")
 
     auto jsonkey = this->getKeyFor("auth-totp-key");
     auto b64Token = geode::Mod::get()->getSavedValue<std::string>(jsonkey);
 
-    GLOBED_REQUIRE(!b64Token.empty(), "unable to generate auth code: no token")
+    GLOBED_REQUIRE_SAFE(!b64Token.empty(), "unable to generate auth code: no token")
 
     auto encToken = util::crypto::base64Decode(b64Token);
     auto decToken = box.decrypt(encToken);
 
-    return util::crypto::simpleTOTP(decToken);
+    return Ok(util::crypto::simpleTOTP(decToken));
 }
 
 void GlobedAccountManager::storeAuthKey(const util::data::byte* source, size_t size) {

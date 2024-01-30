@@ -97,7 +97,7 @@ bool UdpSocket::close() {
 #endif
 }
 
-bool UdpSocket::poll(int msDelay) {
+geode::Result<bool> UdpSocket::poll(int msDelay) {
     GLOBED_SOCKET_POLLFD fds[1];
 
     fds[0].fd = socket_;
@@ -106,8 +106,8 @@ bool UdpSocket::poll(int msDelay) {
     int result = GLOBED_SOCKET_POLL(fds, 1, msDelay);
 
     if (result == -1) {
-        util::net::throwLastError();
+        return Err(util::net::lastErrorString());
     }
 
-    return result > 0;
+    return Ok(result > 0);
 }

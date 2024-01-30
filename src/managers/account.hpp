@@ -39,7 +39,7 @@ public:
 
     bool hasAuthKey();
 
-    std::string generateAuthCode();
+    geode::Result<std::string> generateAuthCode();
 
     void requestAuthToken(const std::string_view baseUrl,
                           int accountId,

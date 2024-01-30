@@ -3,8 +3,14 @@
 #include <util/net.hpp>
 #include <util/rng.hpp>
 #include <util/collections.hpp>
+#include <net/network_manager.hpp>
+#include <data/types/misc.hpp>
 
 using namespace geode::prelude;
+
+GameServerManager::GameServerManager() {
+    this->updateCache(Mod::get()->getSavedValue<std::string>(SERVER_RESPONSE_CACHE_KEY));
+}
 
 Result<> GameServerManager::addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region) {
     auto ares = util::net::splitAddress(address, DEFAULT_PORT);
@@ -110,19 +116,69 @@ uint32_t GameServerManager::getActivePing() {
 }
 
 void GameServerManager::saveStandalone(const std::string_view addr) {
-    geode::Mod::get()->setSavedValue(STANDALONE_SETTING_KEY, std::string(addr));
+    Mod::get()->setSavedValue(STANDALONE_SETTING_KEY, std::string(addr));
 }
 
 std::string GameServerManager::loadStandalone() {
-    return geode::Mod::get()->getSavedValue<std::string>(STANDALONE_SETTING_KEY);
+    return Mod::get()->getSavedValue<std::string>(STANDALONE_SETTING_KEY);
 }
 
 void GameServerManager::saveLastConnected(const std::string_view addr) {
-    geode::Mod::get()->setSavedValue(LAST_CONNECTED_SETTING_KEY, std::string(addr));
+    Mod::get()->setSavedValue(LAST_CONNECTED_SETTING_KEY, std::string(addr));
 }
 
 std::string GameServerManager::loadLastConnected() {
-    return geode::Mod::get()->getSavedValue<std::string>(LAST_CONNECTED_SETTING_KEY);
+    return Mod::get()->getSavedValue<std::string>(LAST_CONNECTED_SETTING_KEY);
+}
+
+void GameServerManager::updateCache(const std::string_view response) {
+    _data.lock()->cachedServerResponse = response;
+    Mod::get()->setSavedValue(SERVER_RESPONSE_CACHE_KEY, std::string(response));
+}
+
+void GameServerManager::clearCache() {
+    this->updateCache("");
+}
+
+Result<> GameServerManager::loadFromCache() {
+    const size_t MAGIC_LEN = sizeof(NetworkManager::SERVER_MAGIC);
+
+    std::string response = _data.lock()->cachedServerResponse;
+
+    auto decoded = util::crypto::base64Decode(response);
+    GLOBED_REQUIRE_SAFE(decoded.size() >= MAGIC_LEN, fmt::format("invalid response sent by the server (missing magic)"));
+
+    ByteBuffer buf(std::move(decoded));
+    auto magic = buf.readBytes(MAGIC_LEN);
+
+    // compare it with the needed magic
+    bool correct = true;
+    for (size_t i = 0; i < MAGIC_LEN; i++) {
+        if (magic[i] != NetworkManager::SERVER_MAGIC[i]) {
+            correct = false;
+            break;
+        }
+    }
+
+    GLOBED_REQUIRE_SAFE(correct, "invalid response sent by the server (invalid magic)");
+
+    auto serverList = buf.readValueVector<GameServerEntry>();
+
+    for (const auto& server : serverList) {
+        auto result = this->addServer(
+            server.id,
+            server.name,
+            server.address,
+            server.region
+        );
+
+        if (result.isErr()) {
+            this->clear();
+            return Err("invalid game server found when parsing server response");
+        }
+    }
+
+    return Ok();
 }
 
 uint32_t GameServerManager::startPing(const std::string_view serverId) {
@@ -132,7 +188,7 @@ uint32_t GameServerManager::startPing(const std::string_view serverId) {
     auto& gsdata = data->servers.at(std::string(serverId));
 
     if (gsdata.pendingPings.size() > 50) {
-        geode::log::warn("over 50 pending pings for the game server {}, clearing", serverId);
+        log::warn("over 50 pending pings for the game server {}, clearing", serverId);
         gsdata.pendingPings.clear();
     }
 

@@ -266,7 +266,13 @@ void NetworkManager::threadRecvFunc() {
         return;
     }
 
-    if (!gameSocket.poll(1000)) {
+    auto result = gameSocket.poll(1000);
+    if (result.isErr()) {
+        ErrorQueues::get().debugWarn(fmt::format("poll failed: {}", result.unwrapErr()));
+        return;
+    }
+
+    if (!result.unwrap()) {
         this->maybeDisconnectIfDead();
         return;
     }

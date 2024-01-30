@@ -16,5 +16,5 @@ public:
     virtual RecvResult receive(char* buffer, int bufferSize) = 0;
     virtual bool close();
     virtual ~Socket();
-    virtual bool poll(int msDelay) = 0;
+    virtual geode::Result<bool> poll(int msDelay) = 0;
 };

@@ -107,18 +107,18 @@ void ServerListCell::requestTokenAndConnect() {
     auto& am = GlobedAccountManager::get();
     auto& csm = CentralServerManager::get();
 
-    std::string authcode;
-    try {
-        authcode = am.generateAuthCode();
-    } catch(const std::exception& e) {
+    auto result = am.generateAuthCode();
+    if (result.isErr()) {
         // invalid authkey? clear it so the user can relog. happens if user changes their password
         ErrorQueues::get().error(fmt::format(
             "Failed to generate authcode! Please try to login and connect again.\n\nReason for the error: <cy>{}</c>",
-            e.what()
+            result.unwrapErr()
         ));
         am.clearAuthKey();
         return;
     }
+
+    std::string authcode = result.unwrap();
 
     auto gdData = am.gdData.lock();
 

@@ -238,54 +238,19 @@ void GlobedMenuLayer::requestServerList() {
         .then([this](std::string& response) {
             this->serverRequestHandle = std::nullopt;
             auto& gsm = GameServerManager::get();
-            gsm.clear();
+            gsm.updateCache(response);
+            auto result = gsm.loadFromCache();
+            if (result.isErr()) {
+                ErrorQueues::get().error(fmt::format("Failed to parse server list: {}", result.unwrapErr()));
+            }
             gsm.pendingChanges = true;
-
-            auto decoded = util::crypto::base64Decode(response);
-            if (decoded.size() < sizeof(NetworkManager::SERVER_MAGIC)) {
-                ErrorQueues::get().error("Failed to parse server list: invalid response sent by the server (no magic)");
-                gsm.clear();
-                return;
-            }
-
-            ByteBuffer buf(std::move(decoded));
-            auto magic = buf.readBytes(10);
-
-            // compare it with the needed magic
-            bool correct = true;
-            for (size_t i = 0; i < sizeof(NetworkManager::SERVER_MAGIC); i++) {
-                if (magic[i] != NetworkManager::SERVER_MAGIC[i]) {
-                    correct = false;
-                    break;
-                }
-            }
-
-            if (!correct) {
-                ErrorQueues::get().error("Failed to parse server list: invalid response sent by the server (invalid magic)");
-                gsm.clear();
-                return;
-            }
-
-            auto serverList = buf.readValueVector<GameServerEntry>();
-
-            for (const auto& server : serverList) {
-                auto result = gsm.addServer(
-                    server.id,
-                    server.name,
-                    server.address,
-                    server.region
-                );
-
-                if (result.isErr()) {
-                    geode::log::warn("invalid server found when parsing response: {}", server.id);
-                }
-            }
         })
         .expect([this](std::string error) {
             this->serverRequestHandle = std::nullopt;
             ErrorQueues::get().error(fmt::format("Failed to fetch servers: <cy>{}</c>", error));
 
             auto& gsm = GameServerManager::get();
+            gsm.clearCache();
             gsm.clear();
             gsm.pendingChanges = true;
         })

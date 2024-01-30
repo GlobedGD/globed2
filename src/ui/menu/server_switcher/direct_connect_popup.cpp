@@ -60,6 +60,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             gsm.clearAllExcept(GameServerManager::STANDALONE_ID);
             gsm.pendingChanges = true;
             gsm.saveStandalone(addr);
+            gsm.clearCache();
 
             auto& nm = NetworkManager::get();
             result = nm.connectStandalone();

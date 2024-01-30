@@ -15,7 +15,7 @@ public:
     RecvResult receive(char* buffer, int bufferSize) override;
     bool close() override;
     virtual void disconnect();
-    bool poll(int msDelay) override;
+    geode::Result<bool> poll(int msDelay) override;
 
     util::sync::AtomicBool connected = false;
 protected:

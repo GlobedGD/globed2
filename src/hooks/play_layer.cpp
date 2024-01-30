@@ -147,7 +147,6 @@ void GlobedPlayLayer::setupPacketListeners() {
 
     nm.addListener<LevelDataPacket>([this](LevelDataPacket* packet){
         this->m_fields->lastServerUpdate = this->m_fields->timeCounter;
-        geode::log::debug("received level data, players: {}", packet->players.size());
 
         for (const auto& player : packet->players) {
             if (!this->m_fields->players.contains(player.accountId)) {
@@ -239,8 +238,6 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 void GlobedPlayLayer::selSendPlayerData(float) {
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
-    geode::log::debug("sending packet yay: {}", self->isCurrentPlayLayer());
-
     if (!self->established()) return;
     if (!self->isCurrentPlayLayer()) return;
     if (!self->accountForSpeedhack(0, 1.0f / self->m_fields->configuredTps, 0.8f)) return;
@@ -251,7 +248,6 @@ void GlobedPlayLayer::selSendPlayerData(float) {
 
     auto data = self->gatherPlayerData();
     NetworkManager::get().send(PlayerDataPacket::create(data));
-    geode::log::debug("went through with {}", data.player1.position.x);
 }
 
 // selPeriodicalUpdate - runs 4 times a second, does various stuff

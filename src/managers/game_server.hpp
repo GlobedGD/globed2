@@ -25,10 +25,15 @@ struct GameServer {
 
 // This class is fully thread safe to use.
 class GameServerManager : GLOBED_SINGLETON(GameServerManager) {
+protected:
+    friend class SingletonBase;
+    GameServerManager();
+
 public:
     constexpr static const char* STANDALONE_ID = "__standalone__server_id__";
     constexpr static const char* STANDALONE_SETTING_KEY = "_last-standalone-addr";
     constexpr static const char* LAST_CONNECTED_SETTING_KEY = "_last-connected-addr";
+    constexpr static const char* SERVER_RESPONSE_CACHE_KEY = "_last-cached-servers-response";
     constexpr static unsigned short DEFAULT_PORT = 41001;
 
     util::sync::AtomicBool pendingChanges;
@@ -58,6 +63,10 @@ public:
     void saveLastConnected(const std::string_view addr);
     std::string loadLastConnected();
 
+    void updateCache(const std::string_view response);
+    void clearCache();
+    geode::Result<> loadFromCache();
+
     /* pings */
 
     uint32_t startPing(const std::string_view serverId);
@@ -77,6 +86,7 @@ protected:
         std::unordered_map<std::string, GameServerData> servers;
         std::string active; // current game server ID
         uint32_t activePingId;
+        std::string cachedServerResponse;
     };
 
     util::sync::WrappingMutex<InnerData> _data;

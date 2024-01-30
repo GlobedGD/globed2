@@ -36,21 +36,31 @@ bool HookedMenuLayer::init() {
                 ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));
             }
         } else {
-            auto lastServer = gsm.getServer(lastId);
-            if (!lastServer.has_value()) return;
+            auto cacheResult = gsm.loadFromCache();
+            if (cacheResult.isErr()) {
+                ErrorQueues::get().debugWarn(fmt::format("failed to autoconnect: {}", cacheResult.unwrapErr()));
+                return;
+            }
 
-            std::string authcode;
-            try {
-                authcode = am.generateAuthCode();
-            } catch (const std::exception& e) {
+            auto lastServer = gsm.getServer(lastId);
+
+            if (!lastServer.has_value()) {
+                ErrorQueues::get().debugWarn("failed to autoconnect, game server not found");
+                return;
+            };
+
+            auto result = am.generateAuthCode();
+            if (result.isErr()) {
                 // invalid authkey? clear it so the user can relog. happens if user changes their password
                 ErrorQueues::get().debugWarn(fmt::format(
                     "Failed to generate authcode: {}",
-                    e.what()
+                    result.unwrapErr()
                 ));
                 am.clearAuthKey();
                 return;
             }
+
+            std::string authcode = result.unwrap();
 
             auto gdData = am.gdData.lock();
             am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [lastServer] {
