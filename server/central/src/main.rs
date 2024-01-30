@@ -18,6 +18,7 @@ use config::ServerConfig;
 use globed_shared::{
     get_log_level,
     logger::{error, info, log, warn, Logger},
+    LogLevelFilter,
 };
 use roa::{tcp::Listener, App};
 use state::{ServerState, ServerStateData};
@@ -39,6 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     if let Some(log_level) = get_log_level("GLOBED_LOG_LEVEL") {
         log::set_max_level(log_level);
     } else {
+        log::set_max_level(LogLevelFilter::Warn); // we have to print these logs somehow lol
         error!("invalid value for the log level environment varaible");
         warn!("hint: possible values are 'trace', 'debug', 'info', 'warn', 'error', and 'none'.");
         abort_misconfig();
