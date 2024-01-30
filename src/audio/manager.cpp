@@ -172,11 +172,9 @@ void GlobedAudioManager::setRecordBufferCapacity(size_t frames) {
 }
 
 Result<> GlobedAudioManager::startRecordingInternal() {
-#ifdef GEODE_IS_ANDROID
     if (!permission::getPermissionStatus(Permission::RecordAudio)) {
         return Err("Recording failed, please grant microphone permission in Globed settings");
     }
-#endif
 
     GLOBED_REQUIRE_SAFE(this->recordDevice.id >= 0, "no recording device is set")
     GLOBED_REQUIRE_SAFE(!this->isRecording() && !recordActive, "attempting to record when already recording")

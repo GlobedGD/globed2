@@ -16,34 +16,35 @@ enum class PlayerIconType : uint8_t {
 
 struct SpecificIconData {
     GLOBED_ENCODE {
-        buf.writeEnum(iconType);
         buf.writePoint(position);
         buf.writeF32(rotation);
 
-        buf.writeBits(BitBuffer<8>(isVisible, isLookingLeft, isUpsideDown, isDashing));
+        buf.writeEnum(iconType);
+        buf.writeBits(BitBuffer<8>(isVisible, isLookingLeft, isUpsideDown, isDashing, isMini));
     }
 
     GLOBED_DECODE {
+        position = buf.readPoint();
+        rotation = buf.readF32();
+
         iconType = buf.readEnum<PlayerIconType>();
         GLOBED_REQUIRE(iconType >= PlayerIconType::Unknown && iconType <= PlayerIconType::Swing, "invalid PlayerIconType value encountered when decoding SpecificIconData")
         if (iconType == PlayerIconType::Unknown) {
             iconType = PlayerIconType::Cube;
         }
 
-        position = buf.readPoint();
-        rotation = buf.readF32();
-
-        buf.readBits<8>().readBitsInto(isVisible, isLookingLeft, isUpsideDown, isDashing);
+        buf.readBits<8>().readBitsInto(isVisible, isLookingLeft, isUpsideDown, isDashing, isMini);
     }
 
-    PlayerIconType iconType;
     cocos2d::CCPoint position;
     float rotation;
 
+    PlayerIconType iconType;
     bool isVisible;
     bool isLookingLeft;
     bool isUpsideDown;
     bool isDashing;
+    bool isMini;
 };
 
 struct PlayerData {

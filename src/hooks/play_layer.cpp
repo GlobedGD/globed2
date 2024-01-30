@@ -93,8 +93,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     this->setupPacketListeners();
     this->setupCustomKeybinds();
 
-    this->rescheduleSelectors();
-
     // interpolator
     m_fields->interpolator = std::make_shared<PlayerInterpolator>(InterpolatorSettings {
         .realtime = false,
@@ -103,7 +101,10 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     });
 
     // update
-    CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this, 0.0f, false);
+    Loader::get()->queueInMainThread([this] {
+        this->rescheduleSelectors();
+        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this->getParent(), 0.0f, false);
+    });
 
     return true;
 }
@@ -135,6 +136,8 @@ void GlobedPlayLayer::onQuit() {
 void GlobedPlayLayer::setupPacketListeners() {
     auto& nm = NetworkManager::get();
 
+    geode::log::debug("adding listeners!");
+
     nm.addListener<PlayerProfilesPacket>([](PlayerProfilesPacket* packet) {
         auto& pcm = ProfileCacheManager::get();
         for (auto& player : packet->players) {
@@ -144,6 +147,7 @@ void GlobedPlayLayer::setupPacketListeners() {
 
     nm.addListener<LevelDataPacket>([this](LevelDataPacket* packet){
         this->m_fields->lastServerUpdate = this->m_fields->timeCounter;
+        geode::log::debug("received level data, players: {}", packet->players.size());
 
         for (const auto& player : packet->players) {
             if (!this->m_fields->players.contains(player.accountId)) {
@@ -233,47 +237,54 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 // selSendPlayerData - runs tps (default 30) times per second
 
 void GlobedPlayLayer::selSendPlayerData(float) {
-    if (!this->established()) return;
-    if (!this->isCurrentPlayLayer()) return;
-    if (!this->accountForSpeedhack(0, 1.0f / m_fields->configuredTps, 0.8f)) return;
+    auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
-    m_fields->totalSentPackets++;
+    geode::log::debug("sending packet yay: {}", self->isCurrentPlayLayer());
+
+    if (!self->established()) return;
+    if (!self->isCurrentPlayLayer()) return;
+    if (!self->accountForSpeedhack(0, 1.0f / self->m_fields->configuredTps, 0.8f)) return;
+
+    self->m_fields->totalSentPackets++;
     // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
-    if (m_fields->players.empty() && m_fields->totalSentPackets % 30 != 15) return;
+    if (self->m_fields->players.empty() && self->m_fields->totalSentPackets % 30 != 15) return;
 
-    auto data = this->gatherPlayerData();
+    auto data = self->gatherPlayerData();
     NetworkManager::get().send(PlayerDataPacket::create(data));
+    geode::log::debug("went through with {}", data.player1.position.x);
 }
 
 // selPeriodicalUpdate - runs 4 times a second, does various stuff
 void GlobedPlayLayer::selPeriodicalUpdate(float) {
-    if (!this->established()) return;
-    if (!this->isCurrentPlayLayer()) return;
+    auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+
+    if (!self->established()) return;
+    if (!self->isCurrentPlayLayer()) return;
 
     // update the overlay
-    m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
+    self->m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
 
     auto& pcm = ProfileCacheManager::get();
 
     util::collections::SmallVector<int, 16> toRemove;
 
     // if there has been no server update for a while, likely there are no players on the level, kick everyone
-    if (m_fields->timeCounter - m_fields->lastServerUpdate > 1.0f) {
-        for (const auto& [playerId, _] : m_fields->players) {
+    if (self->m_fields->timeCounter - self->m_fields->lastServerUpdate > 1.0f) {
+        for (const auto& [playerId, _] : self->m_fields->players) {
             toRemove.push_back(playerId);
         }
 
         for (int id : toRemove) {
-            this->handlePlayerLeave(id);
+            self->handlePlayerLeave(id);
         }
 
         return;
     }
 
     // kick players that have left the level
-    for (const auto& [playerId, remotePlayer] : m_fields->players) {
+    for (const auto& [playerId, remotePlayer] : self->m_fields->players) {
         // if the player doesnt exist in last LevelData packet, they have left the level
-        if (m_fields->interpolator->isPlayerStale(playerId, m_fields->lastServerUpdate)) {
+        if (self->m_fields->interpolator->isPlayerStale(playerId, self->m_fields->lastServerUpdate)) {
             toRemove.push_back(playerId);
             continue;
         }
@@ -295,20 +306,22 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
     }
 
     for (int id : toRemove) {
-        this->handlePlayerLeave(id);
+        self->handlePlayerLeave(id);
     }
 }
 
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
 void GlobedPlayLayer::selUpdate(float rawdt) {
+    auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+
     float dt = adjustLerpTimeDelta(rawdt);
-    m_fields->timeCounter += dt;
+    self->m_fields->timeCounter += dt;
 
-    m_fields->interpolator->tick(dt);
+    self->m_fields->interpolator->tick(dt);
 
-    for (const auto [playerId, remotePlayer] : m_fields->players) {
-        const auto& vstate = m_fields->interpolator->getPlayerState(playerId);
-        remotePlayer->updateData(vstate, m_fields->interpolator->swapDeathStatus(playerId));
+    for (const auto [playerId, remotePlayer] : self->m_fields->players) {
+        const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
+        remotePlayer->updateData(vstate, self->m_fields->interpolator->swapDeathStatus(playerId));
     }
 }
 
@@ -325,14 +338,15 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
     else if (player->m_isSwing) iconType = PlayerIconType::Swing;
 
     return SpecificIconData {
-        .iconType = iconType,
-        .position = player->m_position, // TODO maybe use getPosition ?
+        .position = player->getPosition(), // TODO maybe use m_position
         .rotation = player->getRotation(),
 
+        .iconType = iconType,
         .isVisible = player->isVisible(),
         .isLookingLeft = player->m_isGoingLeft,
-        .isUpsideDown = false, // TODO
-        .isDashing = false, // TODO
+        .isUpsideDown = player->m_isUpsideDown,
+        .isDashing = player->m_isDashing,
+        .isMini = player->m_vehicleSize != 1.0f
     };
 }
 
@@ -430,8 +444,8 @@ bool GlobedPlayLayer::accountForSpeedhack(size_t uniqueKey, float cap, float all
 
 void GlobedPlayLayer::unscheduleSelectors() {
     auto* sched = CCScheduler::get();
-    sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this);
-    sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this);
+    sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this->getParent());
+    sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this->getParent());
 }
 
 void GlobedPlayLayer::rescheduleSelectors() {
@@ -442,6 +456,6 @@ void GlobedPlayLayer::rescheduleSelectors() {
     float pdInterval = (1.0f / m_fields->configuredTps) * timescale;
     float updpInterval = 0.25f * timescale;
 
-    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this, pdInterval, false);
-    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this, updpInterval, false);
+    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this->getParent(), pdInterval, false);
+    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this->getParent(), updpInterval, false);
 }

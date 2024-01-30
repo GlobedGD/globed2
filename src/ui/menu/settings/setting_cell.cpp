@@ -114,7 +114,6 @@ void GlobedSettingCell::onSliderChanged(cocos2d::CCObject*) {
 void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
     if (settingType == Type::AudioDevice) {
 #if GLOBED_VOICE_SUPPORT
-# ifdef GEODE_IS_ANDROID
         // check for permission
         bool perm = permission::getPermissionStatus(Permission::RecordAudio);
 
@@ -137,7 +136,6 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
 
             return;
         }
-# endif
         AudioSetupPopup::create()->show();
 #endif // GLOBED_VOICE_SUPPORT
     } else {
