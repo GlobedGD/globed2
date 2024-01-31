@@ -1,5 +1,7 @@
 #include "player_object.hpp"
 
+#include <util/debugging.hpp>
+
 static inline void* const MAGIC_CONSTANT = (void*)0xdc00cd00;
 
 void ComplexPlayerObject::setRemoteState() {

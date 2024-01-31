@@ -2,9 +2,13 @@
 
 using namespace geode::prelude;
 
-bool RemotePlayer::init(const PlayerAccountData& data) {
+bool RemotePlayer::init(PlayerProgressIcon* progressIcon, const PlayerAccountData& data) {
     if (!CCNode::init()) return false;
     this->accountData = data;
+    this->progressIcon = progressIcon;
+
+    this->progressIcon->setPositionY(progressIcon->getParent()->getScaledContentSize().height);
+    this->progressIcon->setAnchorPoint({0.5f, 1.f});
 
     this->player1 = Build<ComplexVisualPlayer>::create(this, false)
         .parent(this)
@@ -41,6 +45,12 @@ void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffec
     if (playDeathEffect) {
         player1->playDeathEffect();
     }
+
+    lastXPosition = data.player1.position.x;
+}
+
+void RemotePlayer::updateProgressIcon() {
+    progressIcon->updatePosition(lastXPosition);
 }
 
 unsigned int RemotePlayer::getDefaultTicks() {
@@ -59,9 +69,9 @@ bool RemotePlayer::isValidPlayer() {
     return accountData.id != 0;
 }
 
-RemotePlayer* RemotePlayer::create(const PlayerAccountData& data) {
+RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, const PlayerAccountData& data) {
     auto ret = new RemotePlayer;
-    if (ret->init(data)) {
+    if (ret->init(progressIcon, data)) {
         ret->autorelease();
         return ret;
     }
@@ -70,6 +80,6 @@ RemotePlayer* RemotePlayer::create(const PlayerAccountData& data) {
     return nullptr;
 }
 
-RemotePlayer* RemotePlayer::create() {
-    return create(PlayerAccountData::DEFAULT_DATA);
+RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon) {
+    return create(progressIcon, PlayerAccountData::DEFAULT_DATA);
 }

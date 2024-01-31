@@ -130,4 +130,11 @@ namespace util::debugging {
     geode::Result<std::string> getTypenameFromVtable(void* address);
 
     void dumpStruct(void* address, size_t size);
+
+    std::optional<ptrdiff_t> searchMember(const void* structptr, const uint8_t* bits, size_t length, size_t alignment, size_t maxSize);
+
+    template <typename T>
+    std::optional<ptrdiff_t> searchMember(const void* structptr, const T& value, size_t maxSize) {
+        return searchMember(structptr, reinterpret_cast<const uint8_t*>(&value), sizeof(T), alignof(T), maxSize);
+    }
 }

@@ -97,6 +97,12 @@ public:
     void suspend();
     void resume();
 
+    template <HasPacketID Packet, typename Rep, typename Period>
+    void suppressUnhandledFor(util::time::duration<Rep, Period> duration) {
+        auto endPoint = util::time::systemNow() + duration;
+        suppressed.lock()->emplace(Packet::PACKET_ID, endPoint);
+    }
+
 private:
     static constexpr chrono::seconds KEEPALIVE_INTERVAL = chrono::seconds(5);
     static constexpr chrono::seconds DISCONNECT_AFTER = chrono::seconds(15);
@@ -107,6 +113,7 @@ private:
     SmartMessageQueue<NetworkThreadTask> taskQueue;
 
     WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> listeners;
+    WrappingMutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
 
     // threads
 

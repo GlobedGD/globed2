@@ -313,7 +313,7 @@ namespace util::debugging {
             char demangledBuf[256];
             size_t written = UnDecorateSymbolName(namePtr + 1, demangledBuf, 256, UNDNAME_NO_ARGUMENTS);
             if (written == 0) {
-                return Err("failed to demangle;");
+                return Err("failed to demangle");
             } else {
                 return Ok(std::string(demangledBuf, demangledBuf + written));
             }
@@ -545,5 +545,28 @@ namespace util::debugging {
             // anything tbh
             geode::log::debug("{} ({})", prefix32, nodeValue32);
         }
+    }
+
+    std::optional<ptrdiff_t> searchMember(const void* structptr, const uint8_t* bits, size_t length, size_t alignment, size_t maxSize) {
+        uintptr_t startPos = reinterpret_cast<uintptr_t>(structptr);
+        uintptr_t endPos = startPos + maxSize;
+
+        for (uintptr_t currentPos = startPos; currentPos < endPos; currentPos += alignment) {
+            uint8_t* targetBits = reinterpret_cast<uint8_t*>(currentPos);
+            // compare
+            bool match = true;
+            for (size_t i = 0; i < length; i++) {
+                if (targetBits[i] != bits[i]) {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) {
+                return currentPos - startPos;
+            }
+        }
+
+        return std::nullopt;
     }
 }

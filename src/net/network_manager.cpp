@@ -316,7 +316,14 @@ void NetworkManager::threadRecvFunc() {
     geode::Loader::get()->queueInMainThread([this, packetId, packet]() {
         auto listeners_ = this->listeners.lock();
         if (!listeners_->contains(packetId)) {
-            ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
+            auto suppressed_ = suppressed.lock();
+            if (suppressed_->contains(packetId) && util::time::systemNow() > suppressed_->at(packetId)) {
+                suppressed_->erase(packetId);
+            }
+
+            if (!suppressed_->contains(packetId)) {
+                ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
+            }
         } else {
             // xd
             (*listeners_)[packetId](packet.packet);

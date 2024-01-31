@@ -71,7 +71,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         // try default device, if we have no mic then just do nothing
         try {
             vm.setActiveRecordingDevice(0);
-        } catch(const std::exception& _e) {}
+        } catch (const std::exception& _e) {}
     }
 
     // set the record buffer size
@@ -106,6 +106,11 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this->getParent(), 0.0f, false);
     });
 
+    m_fields->selfProgressIcon = Build<PlayerProgressIcon>::create(m_levelLength)
+        .parent(m_progressBar)
+        .id("self-player-progress"_spr)
+        .collect();
+
     return true;
 }
 
@@ -131,6 +136,11 @@ void GlobedPlayLayer::onQuit() {
 
     // send LevelLeavePacket
     nm.send(LevelLeavePacket::create());
+
+    // if we a have a higher ping, there may still be some inbound packets. suppress them for the next second.
+    nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::secs(1));
+    nm.suppressUnhandledFor<LevelDataPacket>(util::time::secs(1));
+    nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::secs(1));
 }
 
 void GlobedPlayLayer::setupPacketListeners() {
@@ -231,8 +241,8 @@ void GlobedPlayLayer::setupCustomKeybinds() {
     }, "voice-deafen"_spr);
 #endif // GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
 }
-// selSendPlayerData - runs tps (default 30) times per second
 
+// selSendPlayerData - runs tps (default 30) times per second
 void GlobedPlayLayer::selSendPlayerData(float) {
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
@@ -316,7 +326,13 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
         remotePlayer->updateData(vstate, self->m_fields->interpolator->swapDeathStatus(playerId));
+
+        if (self->m_progressBar->isVisible()) {
+            remotePlayer->updateProgressIcon();
+        }
     }
+
+    self->m_fields->selfProgressIcon->updatePosition(self->m_player1->m_position.x); // idk maybe use getPosition().x
 }
 
 /* private utilities */
@@ -383,12 +399,16 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
 #endif // GLOBED_VOICE_SUPPORT
     NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
 
-    auto* rp = RemotePlayer::create();
-    rp->setZOrder(10); // TODO temp
+    auto* progressIcon = Build<PlayerProgressIcon>::create(m_levelLength)
+        .zOrder(2)
+        .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
+        .parent(m_progressBar)
+        .collect();
 
-    auto nodeid = fmt::format("remote-player-{}", playerId);
-
-    rp->setID(Mod::get()->expandSpriteName(nodeid.c_str()));
+    auto* rp = Build<RemotePlayer>::create(progressIcon)
+        .zOrder(10) // TODO temp
+        .id(Mod::get()->expandSpriteName(fmt::format("remote-player-{}", playerId).c_str()))
+        .collect();
 
     m_objectLayer->addChild(rp);
     m_fields->players.emplace(playerId, rp);

@@ -13,5 +13,5 @@ void GlobedLevelCell::updatePlayerCount(int count) {
             .store(m_fields->playerCountLabel);
     }
 
-    m_fields->playerCountLabel->setString(fmt::format("{} {}", count, count == 1 ? "player" : "players").c_str(), "goldFont.fnt");
+    m_fields->playerCountLabel->setString(fmt::format("{} {}", count, count == 1 ? "player" : "players").c_str());
 }

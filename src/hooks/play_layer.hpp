@@ -7,6 +7,7 @@
 #include <net/network_manager.hpp>
 #include <ui/game/player/remote_player.hpp>
 #include <ui/game/overlay/overlay.hpp>
+#include <ui/game/progress/progress_icon.hpp>
 
 float adjustLerpTimeDelta(float dt);
 
@@ -28,6 +29,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // ui elements
     GlobedOverlay* overlay = nullptr;
     std::unordered_map<int, RemotePlayer*> players;
+    PlayerProgressIcon* selfProgressIcon = nullptr;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;
