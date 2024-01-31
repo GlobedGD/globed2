@@ -82,7 +82,7 @@ bool AdminPopup::setup() {
             .store(levelIdInput);
 
         Build<InputNode>::create(sendRoomLevel->getScaledContentSize().width, "room ID", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 10)
-            .pos(right.width - 40.f, bottom.height + 110.f)
+            .pos(right.width - 40.f, bottom.height + 105.f)
             .parent(m_mainLayer)
             .store(roomIdInput);
     }
