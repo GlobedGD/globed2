@@ -8,6 +8,7 @@
 #include <managers/account.hpp>
 #include <managers/game_server.hpp>
 #include <net/network_manager.hpp>
+#include <util/misc.hpp>
 
 using namespace geode::prelude;
 
@@ -39,7 +40,7 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
         .parent(m_mainLayer);
 
     // url input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "Server URL", "chatFont.fnt", std::string("abcdefghijklmnopqrstuvwxyz1234567890.:/"), 50)
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "Server URL", "chatFont.fnt", std::string(util::misc::STRING_URL), 50)
         .pos(popupCenter, POPUP_HEIGHT - 100.f)
         .parent(m_mainLayer)
         .id("add-server-url"_spr)

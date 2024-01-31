@@ -88,6 +88,9 @@ public:
     // Returns true if we have fully authenticated and are ready to rock.
     bool established();
 
+    // Returns true if we are connected to a server and authorized as an admin
+    bool isAuthorizedAdmin();
+
     // Returns true if we are connected to a standalone game server, not tied to any central server.
     bool standalone();
 
@@ -117,6 +120,7 @@ private:
 
     AtomicBool _handshaken = false;
     AtomicBool _loggedin = false;
+    AtomicBool _adminAuthorized = false;
     AtomicBool _connectingStandalone = false;
     AtomicBool _suspended = false;
 

@@ -3,6 +3,7 @@
 #include "audio_setup_popup.hpp"
 #include "string_input_popup.hpp"
 #include <managers/settings.hpp>
+#include <util/misc.hpp>
 
 using namespace geode::prelude;
 namespace permission = geode::utils::permission;
@@ -84,7 +85,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     } break;
     case Type::Int: {
         int currentValue = *(int*)(settingStorage);
-        Build<InputNode>::create(CELL_WIDTH * 0.2f, "", "chatFont.fnt", std::string("01234567890"), 10)
+        Build<InputNode>::create(CELL_WIDTH * 0.2f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 10)
             .anchorPoint(1.f, 0.5f)
             .pos(CELL_WIDTH - 10.f, CELL_HEIGHT / 2)
             .id("input-field"_spr)

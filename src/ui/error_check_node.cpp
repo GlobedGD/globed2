@@ -9,7 +9,7 @@ using namespace geode::prelude;
 bool ErrorCheckNode::init() {
     if (!CCNode::init()) return false;
 
-    CCScheduler::get()->scheduleSelector(schedule_selector(ErrorCheckNode::updateErrors), this, 0.25f, false);
+    CCScheduler::get()->scheduleSelector(schedule_selector(ErrorCheckNode::updateErrors), this, 0.2f, false);
     return true;
 }
 
@@ -27,10 +27,11 @@ void ErrorCheckNode::updateErrors(float) {
         return;
     }
 
-    std::vector<std::string> warnings;
+    std::vector<std::string> warnings, successes;
 
     try {
         warnings = ErrorQueues::get().getWarnings();
+        successes = ErrorQueues::get().getSuccesses();
     } catch (const std::system_error& e) {
         // sometimes, when exiting the game, macos will do weird stuff and throw an exception trying to lock a mutex.
         // we want to prevent that.
@@ -42,6 +43,10 @@ void ErrorCheckNode::updateErrors(float) {
 
     for (auto& warn : warnings) {
         Notification::create(warn, NotificationIcon::Warning, 2.5f)->show();
+    }
+
+    for (auto& success : successes) {
+        Notification::create(success, NotificationIcon::Success, 2.5f)->show();
     }
 
     // if we are in PlayLayer, don't show errors unless paused

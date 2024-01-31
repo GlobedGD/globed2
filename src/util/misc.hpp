@@ -1,8 +1,30 @@
 #pragma once
 #include <defs.hpp>
+
 #include <functional>
 
+// i hate c++
+#define _GLOBED_STRNUM "1234567890"
+#define _GLOBED_STRLOWER "abcdefghijklmnopqrstuvwxyz"
+#define _GLOBED_STRUPPER "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define _GLOBED_STRALPHA _GLOBED_STRLOWER _GLOBED_STRUPPER
+#define _GLOBED_STRALPHANUM _GLOBED_STRNUM _GLOBED_STRALPHA
+#define _GLOBED_STRSPECIAL "@$#&* {}[],=-().+;'/\"!%^_\\:<>?`~"
+#define _GLOBED_STRPRINTABLEINPUT _GLOBED_STRALPHANUM _GLOBED_STRSPECIAL
+#define _GLOBED_STRPRINTABLE _GLOBED_STRPRINTABLEINPUT "\r\t\n"
+#define _GLOBED_STRURL _GLOBED_STRALPHANUM ":/%._-?#"
+
 namespace util::misc {
+    constexpr std::string_view STRING_DIGITS = _GLOBED_STRNUM;
+    constexpr std::string_view STRING_LOWERCASE = _GLOBED_STRLOWER;
+    constexpr std::string_view STRING_UPPERCASE = _GLOBED_STRUPPER;
+    constexpr std::string_view STRING_ALPHABET = _GLOBED_STRALPHA;
+    constexpr std::string_view STRING_ALPHANUMERIC = _GLOBED_STRALPHANUM;
+    constexpr std::string_view STRING_SPECIAL_CHARS = _GLOBED_STRSPECIAL;
+    constexpr std::string_view STRING_PRINTABLE = _GLOBED_STRPRINTABLE;
+    constexpr std::string_view STRING_PRINTABLE_INPUT = _GLOBED_STRPRINTABLEINPUT;
+    constexpr std::string_view STRING_URL = _GLOBED_STRURL;
+
     // Utility function for converting various enums between each other, is specialized separately for different enums
     template <typename To, typename From>
     To convertEnum(From value);

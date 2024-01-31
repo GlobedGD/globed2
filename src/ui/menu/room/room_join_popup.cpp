@@ -1,8 +1,9 @@
 #include "room_join_popup.hpp"
 
-#include <util/formatting.hpp>
 #include <net/network_manager.hpp>
 #include <data/packets/client/general.hpp>
+#include <util/formatting.hpp>
+#include <util/misc.hpp>
 
 using namespace geode::prelude;
 
@@ -19,7 +20,7 @@ bool RoomJoinPopup::setup() {
         .id("join-room-id-hint"_spr);
 
     // room id input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt", std::string("1234567890"), 6)
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 6)
         .pos(popupCenter, POPUP_HEIGHT + 25.f)
         .parent(m_mainLayer)
         .id("join-room-id"_spr)

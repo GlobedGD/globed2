@@ -80,6 +80,11 @@ NetworkManager::NetworkManager() {
         this->disconnect(true);
     });
 
+    addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
+        _adminAuthorized = true;
+        ErrorQueues::get().success("Successfully authorized");
+    });
+
     // boot up the threads
 
     threadMain.setLoopFunction(&NetworkManager::threadMainFunc);
@@ -183,6 +188,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     _handshaken = false;
     _loggedin = false;
     _connectingStandalone = false;
+    _adminAuthorized = false;
 
     gameSocket.disconnect();
     gameSocket.cleanupBox();
@@ -369,6 +375,10 @@ bool NetworkManager::handshaken() {
 
 bool NetworkManager::established() {
     return _loggedin;
+}
+
+bool NetworkManager::isAuthorizedAdmin() {
+    return _adminAuthorized;
 }
 
 bool NetworkManager::standalone() {

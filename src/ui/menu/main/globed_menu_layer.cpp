@@ -5,6 +5,7 @@
 #include <ui/menu/server_switcher/server_switcher_popup.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
 #include <ui/menu/level_list/level_list_layer.hpp>
+#include <ui/menu/admin/admin_popup.hpp>
 #include <util/ui.hpp>
 #include <util/net.hpp>
 #include <net/network_manager.hpp>
@@ -274,6 +275,14 @@ void GlobedMenuLayer::cancelWebRequest() {
 
 void GlobedMenuLayer::keyBackClicked() {
     util::ui::navigateBack();
+}
+
+void GlobedMenuLayer::keyDown(enumKeyCodes key) {
+    if (key == enumKeyCodes::KEY_F8) {
+        AdminPopup::create()->show();
+    } else {
+        CCLayer::keyDown(key);
+    }
 }
 
 void GlobedMenuLayer::pingServers(float) {

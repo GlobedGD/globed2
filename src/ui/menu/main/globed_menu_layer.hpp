@@ -27,6 +27,7 @@ private:
     void refreshServerList(float dt);
     void requestServerList();
     void keyBackClicked() override;
+    void keyDown(cocos2d::enumKeyCodes key) override;
     void pingServers(float dt);
 
     void cancelWebRequest();

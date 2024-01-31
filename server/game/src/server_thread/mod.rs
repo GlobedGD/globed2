@@ -387,13 +387,9 @@ impl GameServerThread {
     where
         F: FnOnce(&mut FastByteBuffer),
     {
-        // if cfg!(debug_assertions)
-        //     && P::PACKET_ID != KeepaliveResponsePacket::PACKET_ID
-        //     && P::PACKET_ID != LevelDataPacket::PACKET_ID
-        // {
-        //     self.print_packet::<P>(true, Some(if P::ENCRYPTED { "fast + encrypted" } else { "fast" }));
-        // }
-        self.print_packet::<P>(true, Some(if P::ENCRYPTED { "fast + encrypted" } else { "fast" }));
+        if cfg!(debug_assertions) && P::PACKET_ID != KeepaliveResponsePacket::PACKET_ID {
+            self.print_packet::<P>(true, Some(if P::ENCRYPTED { "fast + encrypted" } else { "fast" }));
+        }
 
         if P::ENCRYPTED {
             // gs_inline_encode! doesn't work here because the borrow checker is silly :(

@@ -91,6 +91,10 @@ impl GameServerThread {
             }
 
             AdminSendNoticeType::RoomOrLevel => {
+                if packet.room_id != 0 && !self.game_server.state.room_manager.is_valid_room(packet.room_id) {
+                    return Ok(());
+                }
+
                 let player_ids = self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
                     let mut player_ids = Vec::with_capacity(128);
                     if packet.level_id == 0 {

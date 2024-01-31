@@ -10,6 +10,11 @@ void ErrorQueues::error(const std::string_view message, bool print) {
     _errors.push(std::string(message));
 }
 
+void ErrorQueues::success(const std::string_view message, bool print) {
+    if (print) geode::log::info("{}", message);
+    _successes.push(std::string(message));
+}
+
 void ErrorQueues::notice(const std::string_view message, bool print) {
     if (print) geode::log::warn("[Server notice] {}", message);
     _notices.push(std::string(message));
@@ -28,6 +33,10 @@ std::vector<std::string> ErrorQueues::getWarnings() {
 
 std::vector<std::string> ErrorQueues::getErrors() {
     return _errors.popAll();
+}
+
+std::vector<std::string> ErrorQueues::getSuccesses() {
+    return _successes.popAll();
 }
 
 std::vector<std::string> ErrorQueues::getNotices() {
