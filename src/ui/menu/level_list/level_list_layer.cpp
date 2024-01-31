@@ -17,7 +17,7 @@ bool GlobedLevelListLayer::init() {
     auto listview = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
-    Build<GJListLayer>::create(listview, "Levels", ccc4(0, 0, 0, 180), LIST_WIDTH, LIST_HEIGHT, 0)
+    Build<GJListLayer>::create(listview, "Levels", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .parent(this)
@@ -59,7 +59,11 @@ GlobedLevelListLayer::~GlobedLevelListLayer() {
 void GlobedLevelListLayer::onLevelsReceived() {
     loadingState = LoadingState::WaitingRobtop;
 
-    log::debug("downloading {} levels", levelList.size());
+    // if empty, don't make a request
+    if (levelList.empty()) {
+        this->loadLevelsFinished(CCArray::create(), "");
+        return;
+    }
 
     std::ostringstream oss;
 
@@ -130,7 +134,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
 void GlobedLevelListLayer::loadLevelsFailed(char const* p0, int p1) {
     this->loadListCommon();
-    ErrorQueues::get().warn(p0);
+    log::warn("failed to load levels: {}, {}", p1, p0);
 }
 
 void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) {
@@ -146,10 +150,12 @@ void GlobedLevelListLayer::setupPageInfo(gd::string p0, const char* p1) {}
 void GlobedLevelListLayer::refreshLevels() {
     if (loadingState != LoadingState::Idle) return;
 
+    auto& nm = NetworkManager::get();
+    if (!nm.established()) return;
+
     loadingState = LoadingState::WaitingServer;
 
     // request the level list from the server
-    auto& nm = NetworkManager::get();
     nm.send(RequestLevelListPacket::create());
 
     // remove existing listview and put a loading circle

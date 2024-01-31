@@ -197,7 +197,7 @@ namespace util::debugging {
         auto& maps = _maps.getOrInit([] {
             auto start = util::time::now();
 
-            std::unordered_map<size_t, ProcMapEntry> entries;
+            std::map<size_t, ProcMapEntry> entries;
 
             std::ifstream maps("/proc/self/maps");
 

@@ -13,7 +13,7 @@ bool GlobedSettingsLayer::init() {
     auto listview = Build<ListView>::create(createSettingsCells(), GlobedSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
-    Build<GJListLayer>::create(listview, "Settings", ccc4(0, 0, 0, 180), LIST_WIDTH, 220.f, 0)
+    Build<GJListLayer>::create(listview, "Settings", util::ui::BG_COLOR_TRANSPARENT, LIST_WIDTH, 220.f, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .parent(this)

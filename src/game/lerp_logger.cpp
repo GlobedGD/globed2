@@ -49,6 +49,8 @@ LerpLogger::PlayerLog& LerpLogger::ensureExists(uint32_t id) {
 
     return players.at(id);
 #endif
+
+    _globedUnreachable(); // ensureExists is a private function, should never be callable if lerp debug is disabled
 }
 
 LerpLogger::PlayerLogData LerpLogger::makeLogData(const SpecificIconData& data, float localts, float timeCounter) {

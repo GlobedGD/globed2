@@ -59,11 +59,11 @@ namespace util::net {
     [[noreturn]] void throwLastError(bool gai) {
         auto message = lastErrorString(gai);
         geode::log::error("Throwing network exception: {}", message);
-        throw(std::runtime_error(std::string("Network error: ") + message));
+        throw std::runtime_error(std::string("Network error: ") + message);
     }
 
     std::string webUserAgent() {
-        return fmt::format("globed-geode-xd/{}", geode::Mod::get()->getVersion().toString());
+        return fmt::format("globed-geode-xd/{}; {}", geode::Mod::get()->getVersion().toString(), GLOBED_PLATFORM_STRING);
     }
 
     Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort) {

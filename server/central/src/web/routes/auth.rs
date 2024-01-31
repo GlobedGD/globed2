@@ -62,6 +62,7 @@ macro_rules! get_user_ip {
         };
     };
 }
+
 pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     check_maintenance!(context);
     check_user_agent!(context, _ua);

@@ -131,12 +131,10 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
             am.storeAuthKey(util::crypto::simpleHash(authkey));
             this->onSuccess();
 
-#ifndef GLOBED_MAC
             // delete the comment to cleanup
             if (commentId != "none") {
                 GameLevelManager::sharedState()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
             }
-#endif // GLOBED_MAC
         })
         .expect([this](std::string error) {
             if (error.empty()) {
@@ -160,9 +158,10 @@ void GlobedSignupPopup::onFailure(const std::string_view message) {
 void GlobedSignupPopup::keyDown(cocos2d::enumKeyCodes) {
     // do nothing; the popup should be impossible to close manually
 }
+
 void GlobedSignupPopup::keyBackClicked() {
     // do nothing
-};
+}
 
 GlobedSignupPopup* GlobedSignupPopup::create() {
     auto ret = new GlobedSignupPopup;

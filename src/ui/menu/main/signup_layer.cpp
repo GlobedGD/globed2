@@ -2,6 +2,7 @@
 
 #include "signup_popup.hpp"
 #include <managers/settings.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -10,7 +11,7 @@ bool GlobedSignupLayer::init() {
 
     auto listview = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT).collect();
 
-    auto listLayer = Build<GJListLayer>::create(listview, "Authentication", ccc4(194, 114, 62, 255), LIST_WIDTH, 220.f, 0)
+    auto listLayer = Build<GJListLayer>::create(listview, "Authentication", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .pos(0.f, 0.f)
@@ -22,6 +23,10 @@ bool GlobedSignupLayer::init() {
     Build<ButtonSprite>::create("Login", "goldFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([](auto) {
             auto& gs = GlobedSettings::get();
+
+            // TODO maybe re-enable the notice in the future.
+            gs.flags.seenSignupNotice = true;
+
             if (!gs.flags.seenSignupNotice) {
                 geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "Ok", [&gs](auto, bool agreed){
                     if (agreed) {

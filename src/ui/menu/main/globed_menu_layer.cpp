@@ -26,7 +26,7 @@ bool GlobedMenuLayer::init() {
     auto listview = Build<ListView>::create(createServerList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
-    Build<GJListLayer>::create(listview, "Servers", ccc4(0, 0, 0, 180), LIST_WIDTH, 220.f, 0)
+    Build<GJListLayer>::create(listview, "Servers", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .parent(this)
@@ -45,7 +45,7 @@ bool GlobedMenuLayer::init() {
 
     // left button menu
 
-    auto* leftButtonMenu = Build<CCMenu>::create()
+    Build<CCMenu>::create()
         .layout(
             ColumnLayout::create()
                 ->setAutoScale(true)
@@ -56,24 +56,18 @@ bool GlobedMenuLayer::init() {
         .pos(15.f, 15.f)
         .parent(this)
         .id("left-button-menu"_spr)
-        .collect();
+        .store(leftButtonMenu);
 
-    // refresh servers btn
-
-    Build<CCSprite>::createSpriteName("miniSkull_001.png")
-        .scale(1.2f)
+    // settings button
+    Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
+        .scale(1.0f)
         .intoMenuItem([](auto) {
-            // this->requestServerList();
-            if (auto* popup = RoomPopup::create()) {
-                popup->m_noElasticity = true;
-                popup->show();
-            }
+            util::ui::switchToScene(GlobedSettingsLayer::create());
         })
-        .id("btn-refresh-servers"_spr)
+        .id("btn-open-settings"_spr)
         .parent(leftButtonMenu);
 
     // server switcher button
-
     Build<CCSprite>::createSpriteName("gjHand_05_001.png")
         .scale(1.2f)
         .intoMenuItem([](auto) {
@@ -85,25 +79,27 @@ bool GlobedMenuLayer::init() {
         .id("btn-open-server-switcher"_spr)
         .parent(leftButtonMenu);
 
-    // settings button
-
-    Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
-        .scale(1.0f)
+    // room popup button
+    roomButton = Build<CCSprite>::createSpriteName("miniSkull_001.png")
+        .scale(1.2f)
         .intoMenuItem([](auto) {
-            util::ui::switchToScene(GlobedSettingsLayer::create());
+            // this->requestServerList();
+            if (auto* popup = RoomPopup::create()) {
+                popup->m_noElasticity = true;
+                popup->show();
+            }
         })
-        .id("btn-open-settings"_spr)
-        .parent(leftButtonMenu);
+        .id("btn-refresh-servers"_spr)
+        .collect();
 
     // level list button
-
-    Build<CCSprite>::createSpriteName("GJ_menuBtn_001.png")
+    levelListButton = Build<CCSprite>::createSpriteName("GJ_menuBtn_001.png")
         .scale(0.8f)
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedLevelListLayer::create());
         })
         .id("btn-open-level-list"_spr)
-        .parent(leftButtonMenu);
+        .collect();
 
     leftButtonMenu->updateLayout();
 
@@ -151,6 +147,22 @@ CCArray* GlobedMenuLayer::createServerList() {
 void GlobedMenuLayer::refreshServerList(float) {
     auto& am = GlobedAccountManager::get();
     auto& csm = CentralServerManager::get();
+    auto& nm = NetworkManager::get();
+
+    // also update the buttons
+    if (nm.established() != currentlyShowingButtons) {
+        currentlyShowingButtons = nm.established();
+
+        if (currentlyShowingButtons) {
+            leftButtonMenu->addChild(levelListButton);
+            leftButtonMenu->addChild(roomButton);
+        } else {
+            levelListButton->removeFromParent();
+            roomButton->removeFromParent();
+        }
+
+        leftButtonMenu->updateLayout();
+    }
 
     // if we do not have a session token from the central server, and are not in a standalone server, don't show game servers
     if (!csm.standalone() && !am.hasAuthKey()) {
