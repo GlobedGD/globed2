@@ -136,8 +136,6 @@ void GlobedPlayLayer::onQuit() {
 void GlobedPlayLayer::setupPacketListeners() {
     auto& nm = NetworkManager::get();
 
-    geode::log::debug("adding listeners!");
-
     nm.addListener<PlayerProfilesPacket>([](PlayerProfilesPacket* packet) {
         auto& pcm = ProfileCacheManager::get();
         for (auto& player : packet->players) {
@@ -333,14 +331,18 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
     else if (player->m_isSpider) iconType = PlayerIconType::Spider;
     else if (player->m_isSwing) iconType = PlayerIconType::Swing;
 
+    auto* pobjInner = static_cast<CCNode*>(player->getChildren()->objectAtIndex(0));
+
+    float rot = player->getRotation() + pobjInner->getRotation();
+
     return SpecificIconData {
         .position = player->getPosition(), // TODO maybe use m_position
-        .rotation = player->getRotation(),
+        .rotation = rot,
 
         .iconType = iconType,
         .isVisible = player->isVisible(),
         .isLookingLeft = player->m_isGoingLeft,
-        .isUpsideDown = player->m_isUpsideDown,
+        .isUpsideDown = pobjInner->getScaleY() == -1.0f,
         .isDashing = player->m_isDashing,
         .isMini = player->m_vehicleSize != 1.0f
     };
@@ -367,7 +369,7 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
 
         .isDead = isDead,
         .isPaused = this->isPaused(),
-        .isPracticing = false, // TODO
+        .isPracticing = m_isPracticeMode
     };
 }
 

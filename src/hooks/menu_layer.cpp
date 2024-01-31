@@ -9,6 +9,7 @@
 #include <ui/menu/main/globed_menu_layer.hpp>
 #include <util/misc.hpp>
 #include <util/net.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -72,9 +73,10 @@ bool HookedMenuLayer::init() {
         }
     });
 
+    m_fields->btnActive = NetworkManager::get().established();
     this->updateGlobedButton();
 
-    CCScheduler::get()->scheduleSelector(schedule_selector(HookedMenuLayer::maybeUpdateButton), this, 0.1f, false);
+    CCScheduler::get()->scheduleSelector(schedule_selector(HookedMenuLayer::maybeUpdateButton), this, 0.25f, false);
 
     return true;
 }
@@ -97,7 +99,7 @@ void HookedMenuLayer::updateGlobedButton() {
                 return;
             }
 
-            CCDirector::get()->pushScene(CCTransitionFade::create(0.5f, GlobedMenuLayer::scene()));
+            util::ui::switchToScene(GlobedMenuLayer::create());
         })
         .id("main-menu-button"_spr)
         .parent(menu)

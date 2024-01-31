@@ -67,7 +67,13 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     bool isPaused() {
         if (!isCurrentPlayLayer()) return false;
 
-        return this->getParent()->getChildByID("PauseLayer") != nullptr; // TODO no worky on android and relies on node ids from geode
+        for (CCNode* child : geode::cocos::CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
+            if (geode::cast::typeinfo_cast<PauseLayer*>(child)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     SpecificIconData gatherSpecificIconData(PlayerObject* player);

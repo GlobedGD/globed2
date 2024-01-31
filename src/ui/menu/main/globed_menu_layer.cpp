@@ -4,6 +4,7 @@
 #include <ui/menu/room/room_popup.hpp>
 #include <ui/menu/server_switcher/server_switcher_popup.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
+#include <ui/menu/level_list/level_list_layer.hpp>
 #include <util/ui.hpp>
 #include <util/net.hpp>
 #include <net/network_manager.hpp>
@@ -71,16 +72,6 @@ bool GlobedMenuLayer::init() {
         .id("btn-refresh-servers"_spr)
         .parent(leftButtonMenu);
 
-    // TODO prod remove wipe authtoken button
-
-    Build<CCSprite>::createSpriteName("d_skull01_001.png")
-        .scale(1.2f)
-        .intoMenuItem([](auto) {
-            GlobedAccountManager::get().clearAuthKey();
-        })
-        .id("btn-clear-authtoken"_spr)
-        .parent(leftButtonMenu);
-
     // server switcher button
 
     Build<CCSprite>::createSpriteName("gjHand_05_001.png")
@@ -99,22 +90,24 @@ bool GlobedMenuLayer::init() {
     Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
         .scale(1.0f)
         .intoMenuItem([](auto) {
-            GlobedSettingsLayer::scene();
+            util::ui::switchToScene(GlobedSettingsLayer::create());
         })
         .id("btn-open-settings"_spr)
         .parent(leftButtonMenu);
 
+    // level list button
+
+    Build<CCSprite>::createSpriteName("GJ_menuBtn_001.png")
+        .scale(0.8f)
+        .intoMenuItem([](auto) {
+            util::ui::switchToScene(GlobedLevelListLayer::create());
+        })
+        .id("btn-open-level-list"_spr)
+        .parent(leftButtonMenu);
+
     leftButtonMenu->updateLayout();
 
-    util::ui::addBackground(this);
-
-    auto menu = CCMenu::create();
-    this->addChild(menu);
-
-    util::ui::addBackButton(menu, util::ui::navigateBack);
-
-    this->setKeyboardEnabled(true);
-    this->setKeypadEnabled(true);
+    util::ui::prepareLayer(this);
 
     CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::refreshServerList), this, 0.1f, false);
     CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::pingServers), this, 5.0f, false);
@@ -273,15 +266,6 @@ void GlobedMenuLayer::keyBackClicked() {
 
 void GlobedMenuLayer::pingServers(float) {
     NetworkManager::get().taskPingServers();
-}
-
-cocos2d::CCScene* GlobedMenuLayer::scene() {
-    auto layer = GlobedMenuLayer::create();
-    auto scene = cocos2d::CCScene::create();
-    layer->setPosition({0.f, 0.f});
-    scene->addChild(layer);
-
-    return scene;
 }
 
 GlobedMenuLayer* GlobedMenuLayer::create() {

@@ -26,3 +26,7 @@ pub struct RoomJoinFailedPacket;
 #[derive(Packet, Encodable)]
 #[packet(id = 21004)]
 pub struct RoomPlayerListPacket;
+
+#[derive(Packet, Encodable)]
+#[packet(id = 21005)]
+pub struct LevelListPacket;

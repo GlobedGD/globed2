@@ -10,7 +10,6 @@ public:
     static constexpr float LIST_HEIGHT = 220.f;
 
     static GlobedSettingsLayer* create();
-    static void scene();
 
 protected:
     GJListLayer* listLayer;

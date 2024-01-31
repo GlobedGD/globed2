@@ -3,6 +3,26 @@
 using namespace geode::prelude;
 
 namespace util::ui {
+    void switchToScene(cocos2d::CCLayer* layer) {
+        // massive geode L
+        // uses replaceScene instead of pushScene
+        auto scene = CCScene::create();
+        scene->addChild(layer);
+        CCDirector::get()->pushScene(CCTransitionFade::create(.5f, scene));
+    }
+
+    void prepareLayer(cocos2d::CCLayer* layer) {
+        util::ui::addBackground(layer);
+
+        auto menu = CCMenu::create();
+        layer->addChild(menu);
+
+        util::ui::addBackButton(menu, util::ui::navigateBack);
+
+        layer->setKeyboardEnabled(true);
+        layer->setKeypadEnabled(true);
+    }
+
     void addBackground(cocos2d::CCNode* layer) {
         auto windowSize = CCDirector::get()->getWinSize();
 

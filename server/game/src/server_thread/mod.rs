@@ -333,6 +333,7 @@ impl GameServerThread {
             JoinRoomPacket::PACKET_ID => self.handle_join_room(&mut data).await,
             LeaveRoomPacket::PACKET_ID => self.handle_leave_room(&mut data).await,
             RequestRoomPlayerListPacket::PACKET_ID => self.handle_request_room_list(&mut data).await,
+            RequestLevelListPacket::PACKET_ID => self.handle_request_level_list(&mut data).await,
 
             /* game related */
             RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,

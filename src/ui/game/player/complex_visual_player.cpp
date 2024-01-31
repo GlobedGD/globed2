@@ -45,6 +45,7 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data) {
     playerIcon->setRotation(data.rotation);
     // setFlipX doesnt work here for jetpack and stuff
     playerIcon->setScaleX(data.isLookingLeft ? -1.0f : 1.0f);
+    playerIcon->setScaleY(data.isUpsideDown ? -1.0f : 1.0f);
 
     PlayerIconType iconType = data.iconType;
     // in platformer, jetpack is serialized as ship so we make sure to show the right icon

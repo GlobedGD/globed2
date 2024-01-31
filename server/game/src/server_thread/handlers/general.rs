@@ -109,6 +109,42 @@ impl GameServerThread {
         self._respond_with_room_list(room_id).await
     });
 
+    gs_handler!(self, handle_request_level_list, RequestLevelListPacket, _packet, {
+        let _ = gs_needauth!(self);
+
+        let room_id = self.room_id.load(Ordering::Relaxed);
+
+        let level_count = self
+            .game_server
+            .state
+            .room_manager
+            .with_any(room_id, |room| room.get_level_count());
+
+        let encoded_size = size_of_types!(u32) + size_of_types!(GlobedLevel) * level_count;
+
+        self.send_packet_alloca_with::<LevelListPacket, _>(encoded_size, |buf| {
+            self.game_server.state.room_manager.with_any(room_id, |pm| {
+                buf.write_list_with(level_count, |buf| {
+                    pm.for_each_level(
+                        |(level_id, players), count, buf| {
+                            if count < level_count {
+                                buf.write_value(&GlobedLevel {
+                                    level_id,
+                                    player_count: players.len() as u16,
+                                });
+                                true
+                            } else {
+                                false
+                            }
+                        },
+                        buf,
+                    )
+                });
+            });
+        })
+        .await
+    });
+
     #[inline]
     async fn _respond_with_room_list(&self, room_id: u32) -> crate::server_thread::Result<()> {
         let player_count = self

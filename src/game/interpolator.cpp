@@ -63,9 +63,15 @@ static inline void lerpSpecific(
     out.isLookingLeft = older.isLookingLeft;
     out.isUpsideDown = older.isUpsideDown;
     out.isVisible = older.isVisible;
+    out.isMini = older.isMini;
 
-    // main stuff
-    out.position = older.position.lerp(newer.position, lerpRatio);
+    // i hate spider
+    if (out.iconType == PlayerIconType::Spider && std::abs(older.position.y - newer.position.y) >= 33.f) {
+        out.position.x = std::lerp(older.position.x, newer.position.x, lerpRatio);
+        out.position.y = older.position.y;
+    } else {
+        out.position = older.position.lerp(newer.position, lerpRatio);
+    }
     out.rotation = std::lerp(older.rotation, newer.rotation, lerpRatio);
 }
 

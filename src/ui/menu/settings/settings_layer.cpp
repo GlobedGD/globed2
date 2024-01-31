@@ -22,14 +22,7 @@ bool GlobedSettingsLayer::init() {
 
     listLayer->setPosition({winsize / 2 - listLayer->getScaledContentSize() / 2});
 
-    util::ui::addBackground(this);
-
-    auto menu = CCMenu::create();
-    this->addChild(menu);
-    util::ui::addBackButton(menu, util::ui::navigateBack);
-
-    this->setKeyboardEnabled(true);
-    this->setKeypadEnabled(true);
+    util::ui::prepareLayer(this);
 
     return true;
 }
@@ -84,14 +77,4 @@ GlobedSettingsLayer* GlobedSettingsLayer::create() {
 
     delete ret;
     return nullptr;
-}
-
-void GlobedSettingsLayer::scene() {
-    if (auto* layer = create()) {
-        auto scene = CCScene::create();
-        layer->setPosition(0.f, 0.f);
-        scene->addChild(layer);
-
-        CCDirector::get()->pushScene(CCTransitionFade::create(0.5f, scene));
-    }
 }

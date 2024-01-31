@@ -49,6 +49,11 @@ impl PlayerManager {
         self.levels.get(&level_id)
     }
 
+    /// get amount of levels in the room
+    pub fn get_level_count(&self) -> usize {
+        self.levels.len()
+    }
+
     /// get the amount of players on a level given its ID
     pub fn get_player_count_on_level(&self, level_id: i32) -> Option<usize> {
         self.levels.get(&level_id).map(Vec::len)
@@ -81,6 +86,16 @@ impl PlayerManager {
         self.players
             .values()
             .fold(0, |count, data| count + usize::from(f(data, count, additional)))
+    }
+
+    /// run a function `f` on each level in this `PlayerManager`, with possibility to pass additional data
+    pub fn for_each_level<F, A>(&self, f: F, additional: &mut A) -> usize
+    where
+        F: Fn((i32, &Vec<i32>), usize, &mut A) -> bool,
+    {
+        self.levels.iter().fold(0, |count, (id, players)| {
+            count + usize::from(f((*id, players), count, additional))
+        })
     }
 
     /// add a player to a level given a level ID and an account ID

@@ -12,7 +12,6 @@ public:
     void onExit() override;
 
     static GlobedMenuLayer* create();
-    static cocos2d::CCScene* scene();
 
 private:
     GJListLayer* listLayer;

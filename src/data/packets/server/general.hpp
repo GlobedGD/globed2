@@ -1,6 +1,7 @@
 #pragma once
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
+#include <data/types/misc.hpp>
 
 class GlobalPlayerListPacket : public Packet {
     GLOBED_PACKET(21000, false)
@@ -38,4 +39,14 @@ class RoomPlayerListPacket : public Packet {
 
     uint32_t roomId;
     std::vector<PlayerRoomPreviewAccountData> data;
+};
+
+class LevelListPacket : public Packet {
+    GLOBED_PACKET(21005, false)
+
+    GLOBED_PACKET_DECODE {
+        buf.readValueVectorInto<GlobedLevel>(levels);
+    }
+
+    std::vector<GlobedLevel> levels;
 };

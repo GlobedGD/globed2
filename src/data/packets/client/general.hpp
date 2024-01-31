@@ -77,3 +77,15 @@ class RequestRoomPlayerListPacket : public Packet {
         return std::make_shared<RequestRoomPlayerListPacket>();
     }
 };
+
+class RequestLevelListPacket : public Packet {
+    GLOBED_PACKET(11006, false)
+
+    GLOBED_PACKET_ENCODE {}
+
+    RequestLevelListPacket() {}
+
+    static std::shared_ptr<Packet> create() {
+        return std::make_shared<RequestLevelListPacket>();
+    }
+};

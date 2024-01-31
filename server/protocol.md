@@ -28,6 +28,7 @@ General
 * 11003^ - JoinRoomPacket - join a room
 * 11004^ - LeaveRoomPacket - leave a room (no need for a response)
 * 11005 - RequestRoomPlayerListPacket - request list of all people in the given room (response 21004)
+* 11006 - RequestLevelListPacket - request list of all levels people are playing right now (response 21005)
 
 Game related
 
@@ -63,6 +64,7 @@ General
 * 21002^ - RoomJoinedPacket - returns nothing ig?? just indicates success
 * 21003^ - RoomJoinFailedPacket - also nothing, the only possible error is no such room id exists
 * 21004 - RoomPlayerListPacket - list of people in the room
+* 21005 - LevelListPacket - list of all levels in the room
 
 Game related
 

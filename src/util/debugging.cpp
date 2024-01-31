@@ -193,15 +193,16 @@ namespace util::debugging {
 #ifdef GLOBED_IS_UNIX
         address = adjustPointerForMaps(address);
 
-        static misc::OnceCell<std::unordered_map<size_t, ProcMapEntry>> _maps;
+        static misc::OnceCell<std::map<size_t, ProcMapEntry>> _maps;
         auto& maps = _maps.getOrInit([] {
+            auto start = util::time::now();
+
             std::unordered_map<size_t, ProcMapEntry> entries;
 
             std::ifstream maps("/proc/self/maps");
 
             std::string line;
             while (std::getline(maps, line, '\n')) {
-                geode::log::debug("{}", line);
                 size_t spacePos = line.find(' ');
                 auto addressRange = line.substr(0, spacePos);
 
@@ -223,6 +224,8 @@ namespace util::debugging {
 
             }
 
+            geode::log::debug("took {} to parse proc maps", util::formatting::formatDuration(util::time::now() - start));
+
             return entries;
         });
 
@@ -233,7 +236,7 @@ namespace util::debugging {
 
         return false;
 #elif defined(GEODE_IS_WINDOWS)
-        bool isBad = IsBadReadPtr((void*)address, 4);
+        bool isBad = IsBadReadPtr((void*)address, align);
         if (isBad) return false;
         return true;
 
@@ -272,7 +275,6 @@ namespace util::debugging {
     }
 
     geode::Result<std::string> getTypenameFromVtable(void* address) {
-        // TODO make this faster, dont use string <Unknown> and use Result
         if (!canReadPointer((uintptr_t)address, 4)) return Err("invalid vtable");
 
         Typeinfo** typeinfoPtrPtr = (Typeinfo**)((uintptr_t)address - sizeof(void*));

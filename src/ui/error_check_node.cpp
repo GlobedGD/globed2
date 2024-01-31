@@ -14,8 +14,6 @@ bool ErrorCheckNode::init() {
 }
 
 void ErrorCheckNode::updateErrors(float) {
-    // TODO getrunningscene is broken for now
-    // TODO temp datawatcher
     util::debugging::DataWatcher::get().updateAll();
 
     auto* currentScene = CCScene::get();
@@ -34,7 +32,7 @@ void ErrorCheckNode::updateErrors(float) {
     try {
         warnings = ErrorQueues::get().getWarnings();
     } catch (const std::system_error& e) {
-        // sometimes, when exiting the game, macos will do weird stuff and crash trying to lock a mutex.
+        // sometimes, when exiting the game, macos will do weird stuff and throw an exception trying to lock a mutex.
         // we want to prevent that.
 #ifndef GEODE_IS_MACOS
         geode::log::warn("failed to pop the warnings: {}", e.what());

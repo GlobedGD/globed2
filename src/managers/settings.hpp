@@ -15,7 +15,7 @@ protected:
 
 public:
     struct Globed {
-        GSETTING(bool, autoconnect, true); // TODO unimpl
+        GSETTING(bool, autoconnect, true);
         GSETTING(int, tpsCap, 0);
     };
 

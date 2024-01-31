@@ -27,3 +27,7 @@ pub struct LeaveRoomPacket;
 #[derive(Packet, Decodable)]
 #[packet(id = 11005)]
 pub struct RequestRoomPlayerListPacket;
+
+#[derive(Packet, Decodable)]
+#[packet(id = 11006)]
+pub struct RequestLevelListPacket;
