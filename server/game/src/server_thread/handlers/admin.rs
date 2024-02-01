@@ -70,7 +70,15 @@ impl GameServerThread {
                     .threads
                     .lock()
                     .values()
-                    .find(|thr| thr.account_id.load(Ordering::Relaxed) == packet.player_id)
+                    .find(|thr| {
+                        // if it's a valid int, assume it's an account ID
+                        if let Ok(account_id) = packet.player.parse::<i32>() {
+                            thr.account_id.load(Ordering::Relaxed) == account_id
+                        } else {
+                            // else assume it's a player name
+                            thr.account_data.lock().name.eq_ignore_ascii_case(&packet.player)
+                        }
+                    })
                     .cloned();
 
                 info!(

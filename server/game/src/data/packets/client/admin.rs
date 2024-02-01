@@ -21,6 +21,6 @@ pub struct AdminSendNoticePacket {
     pub notice_type: AdminSendNoticeType,
     pub room_id: u32,
     pub level_id: i32,
-    pub player_id: i32,
+    pub player: FastString<MAX_NAME_SIZE>,
     pub message: FastString<MAX_NOTICE_SIZE>,
 }

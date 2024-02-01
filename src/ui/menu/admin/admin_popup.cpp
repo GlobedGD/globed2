@@ -53,7 +53,7 @@ bool AdminPopup::setup() {
             .pos(bottom.width, bottom.height + 30.f)
             .parent(menu);
 
-        // send to a specific account ID
+        // send to a specific account ID or username
         auto sendAccId = Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
             .intoMenuItem([this](auto) {
                 this->commonSend(AdminSendNoticeType::Person);
@@ -62,10 +62,10 @@ bool AdminPopup::setup() {
             .parent(menu)
             .collect();
 
-        Build<InputNode>::create(sendAccId->getScaledContentSize().width, "account ID", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 10)
+        Build<InputNode>::create(sendAccId->getScaledContentSize().width, "player", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 10)
             .pos(left.width + 40.f, bottom.height + 70.f)
             .parent(m_mainLayer)
-            .store(accountIdInput);
+            .store(playerInput);
 
         // send to a specific room/level
         auto sendRoomLevel = Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
@@ -92,16 +92,14 @@ bool AdminPopup::setup() {
 
 void AdminPopup::commonSend(AdminSendNoticeType type) {
     uint32_t roomId = 0;
-    int levelId = 0, playerId = 0;
+    int levelId = 0;
 
-    if (type == AdminSendNoticeType::Person) {
-        playerId = util::formatting::parse<int>(accountIdInput->getString()).value_or(0);
-    } else if (type == AdminSendNoticeType::RoomOrLevel) {
+    if (type == AdminSendNoticeType::RoomOrLevel) {
         levelId = util::formatting::parse<int>(levelIdInput->getString()).value_or(0);
         roomId = util::formatting::parse<uint32_t>(roomIdInput->getString()).value_or(0);
     }
 
-    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, playerId, messageInput->getString());
+    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, playerInput->getString(), messageInput->getString());
     NetworkManager::get().send(packet);
 }
 

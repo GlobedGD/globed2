@@ -28,20 +28,20 @@ class AdminSendNoticePacket : public Packet {
         buf.writeEnum(ptype);
         buf.writeU32(roomId);
         buf.writeI32(levelId);
-        buf.writeI32(playerId);
+        buf.writeString(player);
         buf.writeString(message);
     }
 
-    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, int levelId, int playerId, const std::string_view message)
-        : ptype(ptype), roomId(roomId), levelId(levelId), playerId(playerId), message(message) {}
+    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, int levelId, const std::string_view player, const std::string_view message)
+        : ptype(ptype), roomId(roomId), levelId(levelId), player(player), message(message) {}
 
-    static std::shared_ptr<Packet> create(AdminSendNoticeType ptype, uint32_t roomId, int levelId, int playerId, const std::string_view message) {
-        return std::make_shared<AdminSendNoticePacket>(ptype, roomId, levelId, playerId, message);
+    static std::shared_ptr<Packet> create(AdminSendNoticeType ptype, uint32_t roomId, int levelId, const std::string_view player, const std::string_view message) {
+        return std::make_shared<AdminSendNoticePacket>(ptype, roomId, levelId, player, message);
     }
 
     AdminSendNoticeType ptype;
     uint32_t roomId;
     int levelId;
-    int playerId;
+    std::string player;
     std::string message;
 };

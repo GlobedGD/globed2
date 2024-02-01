@@ -13,7 +13,7 @@ public:
 private:
     geode::InputNode* passwordInput = nullptr;
 
-    geode::InputNode *messageInput = nullptr, *accountIdInput = nullptr, *roomIdInput = nullptr, *levelIdInput = nullptr;
+    geode::InputNode *messageInput = nullptr, *playerInput = nullptr, *roomIdInput = nullptr, *levelIdInput = nullptr;
 
     bool setup() override;
     void commonSend(AdminSendNoticeType type);
