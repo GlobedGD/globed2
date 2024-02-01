@@ -97,7 +97,7 @@ bool UdpSocket::close() {
 #endif
 }
 
-geode::Result<bool> UdpSocket::poll(int msDelay) {
+Result<bool> UdpSocket::poll(int msDelay) {
     GLOBED_SOCKET_POLLFD fds[1];
 
     fds[0].fd = socket_;

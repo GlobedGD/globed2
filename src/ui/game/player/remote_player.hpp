@@ -24,10 +24,11 @@ public:
 
     static RemotePlayer* create(PlayerProgressIcon* progressIcon, const PlayerAccountData& data);
     static RemotePlayer* create(PlayerProgressIcon* progressIcon);
+
+    geode::Ref<PlayerProgressIcon> progressIcon;
 protected:
     BaseVisualPlayer* player1;
     BaseVisualPlayer* player2;
-    geode::Ref<PlayerProgressIcon> progressIcon;
     unsigned int defaultTicks = 0;
     float lastXPosition = 0.f;
 

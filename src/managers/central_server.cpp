@@ -23,7 +23,7 @@ CentralServerManager::CentralServerManager() {
 
     _activeIdx = 0;
 
-    auto storedActive = geode::Mod::get()->getSavedValue<std::string>(ACTIVE_SERVER_KEY);
+    auto storedActive = Mod::get()->getSavedValue<std::string>(ACTIVE_SERVER_KEY);
     if (!storedActive.empty()) {
         int idx = std::stoi(storedActive);
 
@@ -50,7 +50,7 @@ CentralServerManager::CentralServerManager() {
 
 void CentralServerManager::setActive(int index) {
     _activeIdx = index;
-    geode::Mod::get()->setSavedValue(ACTIVE_SERVER_KEY, std::to_string(index));
+    Mod::get()->setSavedValue(ACTIVE_SERVER_KEY, std::to_string(index));
 }
 
 std::optional<CentralServer> CentralServerManager::getActive() {
@@ -175,7 +175,7 @@ void CentralServerManager::reload() {
     servers->clear();
 
     try {
-        auto b64value = geode::Mod::get()->getSavedValue<std::string>(SETTING_KEY);
+        auto b64value = Mod::get()->getSavedValue<std::string>(SETTING_KEY);
         if (b64value.empty()) return;
 
         auto decoded = util::crypto::base64Decode(b64value);
@@ -196,8 +196,8 @@ void CentralServerManager::save() {
     buf.writeValueVector(*servers);
     auto data = util::crypto::base64Encode(buf.getDataRef());
 
-    geode::Mod::get()->setSavedValue(SETTING_KEY, data);
+    Mod::get()->setSavedValue(SETTING_KEY, data);
 
-    geode::Mod::get()->setSavedValue(ACTIVE_SERVER_KEY, std::to_string(_activeIdx.load()));
+    Mod::get()->setSavedValue(ACTIVE_SERVER_KEY, std::to_string(_activeIdx.load()));
 }
 

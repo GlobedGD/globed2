@@ -39,24 +39,24 @@ namespace util::debugging {
             auto modified = this->updateLastData(value);
             if (modified.empty()) continue;
 
-            geode::log::debug("[DW] {} modified - {}, hexdump: {}", key, modified, hexDumpAddress(value.address, value.size));
+            log::debug("[DW] {} modified - {}, hexdump: {}", key, modified, hexDumpAddress(value.address, value.size));
         }
     }
 
     void PacketLogSummary::print() {
-        geode::log::debug("====== Packet summary ======");
+        log::debug("====== Packet summary ======");
         if (total == 0) {
-            geode::log::debug("No packets have been sent during this period.");
+            log::debug("No packets have been sent during this period.");
         } else {
-            geode::log::debug("Total packets: {} ({} sent, {} received)", total, totalOut, totalIn);
-            geode::log::debug("Encrypted packets: {} ({} cleartext, ratio: {}%)", totalEncrypted, totalCleartext, encryptedRatio * 100);
-            geode::log::debug(
+            log::debug("Total packets: {} ({} sent, {} received)", total, totalOut, totalIn);
+            log::debug("Encrypted packets: {} ({} cleartext, ratio: {}%)", totalEncrypted, totalCleartext, encryptedRatio * 100);
+            log::debug(
                 "Total bytes transferred: {} ({} sent, {} received)",
                 formatting::formatBytes(totalBytes),
                 formatting::formatBytes(totalBytesOut),
                 formatting::formatBytes(totalBytesIn)
             );
-            geode::log::debug("Average bytes per packet: {}", formatting::formatBytes((uint64_t)bytesPerPacket));
+            log::debug("Average bytes per packet: {}", formatting::formatBytes((uint64_t)bytesPerPacket));
 
             // sort packets by the counts
             std::vector<std::pair<packetid_t, size_t>> pc(packetCounts.begin(), packetCounts.end());
@@ -65,10 +65,10 @@ namespace util::debugging {
             });
 
             for (const auto& [id, count] : pc) {
-                geode::log::debug("Packet {} - {} occurrences", id, count);
+                log::debug("Packet {} - {} occurrences", id, count);
             }
         }
-        geode::log::debug("==== Packet summary end ====");
+        log::debug("==== Packet summary end ====");
     }
 
     PacketLogSummary PacketLogger::getSummary() {
@@ -129,8 +129,8 @@ namespace util::debugging {
     }
 
     [[noreturn]] void suicide(const std::source_location loc) {
-        geode::log::error("suicide called at {}, terminating.", sourceLocation(loc));
-		geode::log::error("If you see this, something very, very bad happened.");
+        log::error("suicide called at {}, terminating.", sourceLocation(loc));
+		log::error("If you see this, something very, very bad happened.");
         GLOBED_SUICIDE
     }
 #else
@@ -139,14 +139,14 @@ namespace util::debugging {
     }
 
     [[noreturn]] void suicide() {
-        geode::log::error("suicide called at <unknown location>, terminating.");
-        geode::log::error("If you see this, something very, very bad happened.");
+        log::error("suicide called at <unknown location>, terminating.");
+        log::error("If you see this, something very, very bad happened.");
         GLOBED_SUICIDE
     }
 #endif
 
     void timedLog(const std::string_view message) {
-        geode::log::info("\r[{}] [Globed] {}", util::formatting::formatDateTime(util::time::systemNow()), message);
+        log::info("\r[{}] [Globed] {}", util::formatting::formatDateTime(util::time::systemNow()), message);
     }
 
     void nop(ptrdiff_t offset, size_t bytes) {
@@ -156,7 +156,7 @@ namespace util::debugging {
             bytevec.push_back(0x90);
         }
 
-        (void) geode::Mod::get()->patch(reinterpret_cast<void*>(geode::base::get() + offset), bytevec);
+        (void) Mod::get()->patch(reinterpret_cast<void*>(geode::base::get() + offset), bytevec);
 #else
         throw std::runtime_error("nop not implemented");
 #endif
@@ -224,7 +224,7 @@ namespace util::debugging {
 
             }
 
-            geode::log::debug("took {} to parse proc maps", util::formatting::formatDuration(util::time::now() - start));
+            log::debug("took {} to parse proc maps", util::formatting::formatDuration(util::time::now() - start));
 
             return entries;
         });
@@ -267,14 +267,14 @@ namespace util::debugging {
     };
 #endif
 
-    geode::Result<std::string> getTypename(void* address) {
+    Result<std::string> getTypename(void* address) {
         if (!canReadPointer((uintptr_t)address, 4)) return Err("invalid address");
 
         void* vtablePtr = *(void**)(address);
         return getTypenameFromVtable(vtablePtr);
     }
 
-    geode::Result<std::string> getTypenameFromVtable(void* address) {
+    Result<std::string> getTypenameFromVtable(void* address) {
         if (!canReadPointer((uintptr_t)address, 4)) return Err("invalid vtable");
 
         Typeinfo** typeinfoPtrPtr = (Typeinfo**)((uintptr_t)address - sizeof(void*));
@@ -285,7 +285,7 @@ namespace util::debugging {
 
 #ifdef GLOBED_IS_UNIX
         const char* namePtr = typeinfo.namePtr;
-        // geode::log::debug("name ptr: {:X}", (uintptr_t)namePtr - geode::base::get());
+        // log::debug("name ptr: {:X}", (uintptr_t)namePtr - geode::base::get());
         if (!canReadPointer((uintptr_t)namePtr, 4)) return Err("invalid class name");
 
         int status;
@@ -470,11 +470,11 @@ namespace util::debugging {
         auto typenameResult = getTypename(address);
 
         if (typenameResult.isErr()) {
-            geode::log::warn("Failed to dump struct: {}", typenameResult.unwrapErr());
+            log::warn("Failed to dump struct: {}", typenameResult.unwrapErr());
             return;
         }
 
-        geode::log::debug("Struct {}", typenameResult.unwrap());
+        log::debug("Struct {}", typenameResult.unwrap());
         auto scanResult = scanMemory(address, size);
 
         const size_t INCREMENT = 4;
@@ -492,7 +492,7 @@ namespace util::debugging {
 
                 // valid type with a known typeinfo
                 if (name.isOk()) {
-                    geode::log::debug("{} ({}*)", prefixPtr, name.unwrap());
+                    log::debug("{} ({}*)", prefixPtr, name.unwrap());
                     node += sizeof(void*) - INCREMENT;
                     continue;
                 }
@@ -500,7 +500,7 @@ namespace util::debugging {
                 // vtable ptr
                 name = getTypenameFromVtable((void*)nodeValuePtr);
                 if (name.isOk()) {
-                    geode::log::debug("{} (vtable for {})", prefixPtr, name.unwrap());
+                    log::debug("{} (vtable for {})", prefixPtr, name.unwrap());
                     node += sizeof(void*) - INCREMENT;
                     continue;
                 }
@@ -511,29 +511,29 @@ namespace util::debugging {
                 auto type = scanResult.at(node);
                 switch (type) {
                 case ScanItemType::Float:
-                    geode::log::debug("{} ({}f)", prefix32, data::bit_cast<float>(nodeValue32));
+                    log::debug("{} ({}f)", prefix32, data::bit_cast<float>(nodeValue32));
                     break;
                 case ScanItemType::Double:
-                    geode::log::debug("{} ({}d)", prefix64, data::bit_cast<double>(nodeValue64));
+                    log::debug("{} ({}d)", prefix64, data::bit_cast<double>(nodeValue64));
                     node += sizeof(double) - INCREMENT;
                     break;
                 case ScanItemType::HeapPointer:
-                    geode::log::debug("{} ({}) (ptr)", prefixPtr, nodeValuePtr);
+                    log::debug("{} ({}) (ptr)", prefixPtr, nodeValuePtr);
                     node += sizeof(void*) - INCREMENT;
                     break;
                 case ScanItemType::String:
-                    geode::log::debug("{} ({}) (string: \"{}\")", prefixPtr, nodeValuePtr, (const char*)nodeValuePtr);
+                    log::debug("{} ({}) (string: \"{}\")", prefixPtr, nodeValuePtr, (const char*)nodeValuePtr);
                     node += sizeof(void*) - INCREMENT;
                     break;
                 case ScanItemType::EmptyString:
-                    geode::log::debug("{} ({}) (string: \"\")", prefixPtr, nodeValuePtr);
+                    log::debug("{} ({}) (string: \"\")", prefixPtr, nodeValuePtr);
                     node += sizeof(void*) - INCREMENT;
                     break;
                 case ScanItemType::SeedValue: {
                     uint32_t valueNext = *(uint32_t*)((uintptr_t)address + node + 4);
                     uint32_t valueNext2 = *(uint32_t*)((uintptr_t)address + node + 8);
                     std::string prefix96 = fmt::format("0x{:X} : {:024X}", node, nodeValue64);
-                    geode::log::debug("0x{:X} : ({:08X} {:08X} {:08X}) seed value: {}, {}, {}", node, nodeValue32, valueNext, valueNext2, nodeValue32, valueNext, valueNext2);
+                    log::debug("0x{:X} : ({:08X} {:08X} {:08X}) seed value: {}, {}, {}", node, nodeValue32, valueNext, valueNext2, nodeValue32, valueNext, valueNext2);
                     node += 3*4 - INCREMENT;
                     break;
                 }
@@ -543,12 +543,13 @@ namespace util::debugging {
             }
 
             // anything tbh
-            geode::log::debug("{} ({})", prefix32, nodeValue32);
+            log::debug("{} ({})", prefix32, nodeValue32);
         }
     }
 
     std::optional<ptrdiff_t> searchMember(const void* structptr, const uint8_t* bits, size_t length, size_t alignment, size_t maxSize) {
-        uintptr_t startPos = reinterpret_cast<uintptr_t>(structptr);
+        // align the pos
+        uintptr_t startPos = (reinterpret_cast<uintptr_t>(structptr) / alignment) * alignment;
         uintptr_t endPos = startPos + maxSize;
 
         for (uintptr_t currentPos = startPos; currentPos < endPos; currentPos += alignment) {

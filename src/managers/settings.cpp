@@ -89,7 +89,7 @@ void GlobedSettings::resetToDefaults() {
 }
 
 void GlobedSettings::clear(const std::string_view key) {
-    auto& container = geode::Mod::get()->getSaveContainer();
+    auto& container = Mod::get()->getSaveContainer();
     auto& obj = container.as_object();
 
     if (obj.contains(key)) {

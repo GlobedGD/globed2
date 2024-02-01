@@ -73,11 +73,11 @@ public:
     // if `stopRecording()` is called at any point, the callback will be called with the remaining data.
     // in that case it may have less than the full 10 frames.
     // WARNING: the callback is called from the audio thread, not the GD/cocos thread.
-    geode::Result<> startRecording(std::function<void(const EncodedAudioFrame&)> callback);
+    Result<> startRecording(std::function<void(const EncodedAudioFrame&)> callback);
     // start recording the voice and call the callback whenever new data is ready.
     // same rules apply as with `startRecording`, except the callback includes raw PCM samples,
     // and is called much more often.
-    geode::Result<> startRecordingRaw(std::function<void(const float*, size_t)> callback);
+    Result<> startRecordingRaw(std::function<void(const float*, size_t)> callback);
     // tell the audio thread to stop recording
     void stopRecording();
     // tell the audio thread to stop recording, don't call the callback with leftover data
@@ -119,7 +119,7 @@ private:
     unsigned int recordLastPosition = 0;
     EncodedAudioFrame recordFrame;
 
-    geode::Result<> startRecordingInternal();
+    Result<> startRecordingInternal();
     void recordContinueStream();
     void recordInvokeCallback();
     void recordInvokeRawCallback(float* pcm, size_t samples);

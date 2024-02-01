@@ -31,12 +31,6 @@ if (CMAKE_HOST_SYSTEM MATCHES "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_options("-march=skylake")
 endif()
 
-# Android - enable exceptions and set various options
-if (ANDROID)
-    # TODO this does nothing vvvvv
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions") # (this doesn't work !!!!!!! fix me!!!)
-endif()
-
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 if (NOT DEFINED ENV{GEODE_SDK})
@@ -69,10 +63,10 @@ target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
 if (ANDROID)
     if (ANDROID_ABI STREQUAL "arm64-v8a")
         message(STATUS "Building for 64-bit android")
-        target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod64.so $ENV{GEODE_SDK}/loader/include/link/android64/libcurl.a)
+        target_link_libraries(${PROJECT_NAME} $ENV{GEODE_SDK}/loader/include/link/android64/libcurl.a)
     else()
         message(STATUS "Building for 32-bit android")
-        target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libs/libfmod32.so $ENV{GEODE_SDK}/loader/include/link/android32/libcurl.a)
+        target_link_libraries(${PROJECT_NAME} $ENV{GEODE_SDK}/loader/include/link/android32/libcurl.a)
     endif()
 endif()
 

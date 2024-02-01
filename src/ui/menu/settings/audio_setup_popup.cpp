@@ -43,7 +43,7 @@ bool AudioSetupPopup::setup() {
             });
 
             if (result.isErr()) {
-                geode::log::warn("failed to start recording: {}", result.unwrapErr());
+                log::warn("failed to start recording: {}", result.unwrapErr());
                 Notification::create(result.unwrapErr(), NotificationIcon::Error)->show();
                 return;
             }

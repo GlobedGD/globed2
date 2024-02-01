@@ -55,16 +55,16 @@ public:
 private:
     template <typename T>
     void store(const std::string_view key, const T& val) {
-        geode::Mod::get()->setSavedValue(key, val);
+        Mod::get()->setSavedValue(key, val);
     }
 
     bool has(const std::string_view key) {
-        return geode::Mod::get()->hasSavedValue(key);
+        return Mod::get()->hasSavedValue(key);
     }
 
     template <typename T>
     T load(const std::string_view key) {
-        return geode::Mod::get()->getSavedValue<T>(key);
+        return Mod::get()->getSavedValue<T>(key);
     }
 
     // If setting is present, loads into `into`. Otherwise does nothing.

@@ -35,7 +35,7 @@ GlobedAudioManager::GlobedAudioManager()
 GlobedAudioManager::~GlobedAudioManager() {
     audioThreadHandle.stopAndWait();
 
-    geode::log::debug("audio thread halted.");
+    log::debug("audio thread halted.");
 }
 
 void GlobedAudioManager::preInitialize() {
@@ -155,14 +155,14 @@ void GlobedAudioManager::validateDevices() {
     if (recordDevice.id != -1) {
         this->setActiveRecordingDevice(recordDevice.id);
         if (recordDevice.id == -1) {
-            geode::log::info("Invalidating recording device {}", recordDevice.id);
+            log::info("Invalidating recording device {}", recordDevice.id);
         }
     }
 
     if (playbackDevice.id != -1) {
         this->setActivePlaybackDevice(playbackDevice.id);
         if (playbackDevice.id == -1) {
-            geode::log::info("Invalidating playback device {}", playbackDevice.id);
+            log::info("Invalidating playback device {}", playbackDevice.id);
         }
     }
 }

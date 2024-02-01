@@ -28,3 +28,13 @@ protected:
 };
 
 #define GLOBED_SINGLETON(cls) public SingletonBase<cls>
+
+// using decls to avoid polluting the namespace in headers
+namespace log = geode::log;
+using geode::Result;
+using geode::Loader;
+using geode::Mod;
+using geode::Ok;
+using geode::Err;
+using geode::cocos::CCArrayExt;
+using geode::cast::typeinfo_cast;

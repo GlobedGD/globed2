@@ -70,7 +70,7 @@ void setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS
     using namespace keybinds;
 
-    geode::log::debug("registering binds");
+    log::debug("registering binds");
 
     bool r1 = BindManager::get()->registerBindable({
         "voice-activate"_spr,
@@ -88,7 +88,7 @@ void setupCustomKeybinds() {
         Category::PLAY,
     });
 
-    geode::log::debug("results: {} and {}", r1, r2);
+    log::debug("results: {} and {}", r1, r2);
 
 #endif // GLOBED_HAS_KEYBINDS
 }

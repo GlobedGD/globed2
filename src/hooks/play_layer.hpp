@@ -29,7 +29,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // ui elements
     GlobedOverlay* overlay = nullptr;
     std::unordered_map<int, RemotePlayer*> players;
-    PlayerProgressIcon* selfProgressIcon = nullptr;
+    geode::Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
+    geode::Ref<CCNode> progressBarWrapper = nullptr;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;
@@ -69,8 +70,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     bool isPaused() {
         if (!isCurrentPlayLayer()) return false;
 
-        for (CCNode* child : geode::cocos::CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
-            if (geode::cast::typeinfo_cast<PauseLayer*>(child)) {
+        for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
+            if (typeinfo_cast<PauseLayer*>(child)) {
                 return true;
             }
         }

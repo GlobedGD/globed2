@@ -36,7 +36,7 @@ void ErrorCheckNode::updateErrors(float) {
         // sometimes, when exiting the game, macos will do weird stuff and throw an exception trying to lock a mutex.
         // we want to prevent that.
 #ifndef GEODE_IS_MACOS
-        geode::log::warn("failed to pop the warnings: {}", e.what());
+        log::warn("failed to pop the warnings: {}", e.what());
 #endif
         return;
     }

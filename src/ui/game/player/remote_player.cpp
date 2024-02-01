@@ -7,9 +7,6 @@ bool RemotePlayer::init(PlayerProgressIcon* progressIcon, const PlayerAccountDat
     this->accountData = data;
     this->progressIcon = progressIcon;
 
-    this->progressIcon->setPositionY(progressIcon->getParent()->getScaledContentSize().height);
-    this->progressIcon->setAnchorPoint({0.5f, 1.f});
-
     this->player1 = Build<ComplexVisualPlayer>::create(this, false)
         .parent(this)
         .id("visual-player1"_spr)
@@ -30,6 +27,10 @@ void RemotePlayer::updateAccountData(const PlayerAccountData& data) {
 
     player1->updateName();
     player2->updateName();
+
+    if (progressIcon) {
+        progressIcon->updateIcons(data.icons);
+    }
 
     defaultTicks = 0;
 }

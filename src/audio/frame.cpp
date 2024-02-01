@@ -13,7 +13,7 @@ EncodedAudioFrame::~EncodedAudioFrame() {
 
 void EncodedAudioFrame::pushOpusFrame(const EncodedOpusData& frame) {
     if (frames.size() >= _capacity) {
-        geode::log::warn("tried to push an extra frame into EncodedAudioFrame, {} is the max", _capacity);
+        log::warn("tried to push an extra frame into EncodedAudioFrame, {} is the max", _capacity);
         return;
     }
 

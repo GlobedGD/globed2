@@ -43,7 +43,7 @@ namespace util::net {
             // some errors like WSA 10038 can raise ERROR_MR_MID_NOT_FOUND (0x13D)
             // which basically means the formatted message txt doesn't exist in the OS. (wine issue?)
             auto le = GetLastError();
-            geode::log::error("FormatMessageA failed formatting error code {}, last error: {}", code, le);
+            log::error("FormatMessageA failed formatting error code {}, last error: {}", code, le);
             return fmt::format("[Unknown windows error {}]: formatting failed because of: {}", code, le);
         }
 
@@ -58,12 +58,12 @@ namespace util::net {
 
     [[noreturn]] void throwLastError(bool gai) {
         auto message = lastErrorString(gai);
-        geode::log::error("Throwing network exception: {}", message);
+        log::error("Throwing network exception: {}", message);
         throw std::runtime_error(std::string("Network error: ") + message);
     }
 
     std::string webUserAgent() {
-        return fmt::format("globed-geode-xd/{}; {}", geode::Mod::get()->getVersion().toString(), GLOBED_PLATFORM_STRING);
+        return fmt::format("globed-geode-xd/{}; {}", Mod::get()->getVersion().toString(), GLOBED_PLATFORM_STRING);
     }
 
     Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort) {

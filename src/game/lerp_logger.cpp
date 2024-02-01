@@ -74,6 +74,6 @@ void LerpLogger::makeDump(const ghc::filesystem::path path) {
 
     std::ofstream file(path, std::ios::binary);
     file.write(reinterpret_cast<const char*>(bb.getDataRef().data()), bb.size());
-    geode::log::debug("dumped interpolation data to {} ({} bytes)", path, bb.size());
+    log::debug("dumped interpolation data to {} ({} bytes)", path, bb.size());
 #endif
 }

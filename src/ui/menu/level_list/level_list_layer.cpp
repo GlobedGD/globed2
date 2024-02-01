@@ -29,7 +29,7 @@ bool GlobedLevelListLayer::init() {
         .intoMenuItem([this](auto) {
             this->refreshLevels();
         })
-        .pos(winSize.width - 40.f, 40.f)
+        .pos(winSize.width - 35.f, 35.f)
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
         .parent(this);

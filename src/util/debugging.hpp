@@ -86,7 +86,7 @@ namespace util::debugging {
         void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {
 # ifdef GLOBED_DEBUG_PACKETS
 #  ifdef GLOBED_DEBUG_PACKETS_PRINT
-            geode::log::debug("{} packet {}, encrypted: {}, bytes: {}", outgoing ? "Sending" : "Receiving", id, encrypted ? "true" : "false", bytes);
+            log::debug("{} packet {}, encrypted: {}, bytes: {}", outgoing ? "Sending" : "Receiving", id, encrypted ? "true" : "false", bytes);
 #  endif // GLOBED_DEBUG_PACKETS_PRINT
             queue.push(PacketLog {
                 .id = id,
@@ -115,7 +115,7 @@ namespace util::debugging {
     [[noreturn]] void suicide();
 #endif
 
-    // like geode::log::debug but with precise timestamps.
+    // like log::debug but with precise timestamps.
     void timedLog(const std::string_view message);
 
     // nop X bytes at offset
@@ -126,8 +126,8 @@ namespace util::debugging {
         bool readable;
     };
 
-    geode::Result<std::string> getTypename(void* address);
-    geode::Result<std::string> getTypenameFromVtable(void* address);
+    Result<std::string> getTypename(void* address);
+    Result<std::string> getTypenameFromVtable(void* address);
 
     void dumpStruct(void* address, size_t size);
 

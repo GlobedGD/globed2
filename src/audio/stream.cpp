@@ -14,14 +14,14 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
     exinfo.userdata = this;
     exinfo.length = sizeof(float) * exinfo.numchannels * exinfo.defaultfrequency * (VOICE_CHUNK_RECORD_TIME * EncodedAudioFrame::VOICE_MAX_FRAMES_IN_AUDIO_FRAME);
 
-    // geode::log::debug("{}: creating stream, length: {}", util::time::nowPretty(), exinfo.length);
+    // log::debug("{}: creating stream, length: {}", util::time::nowPretty(), exinfo.length);
     exinfo.pcmreadcallback = [](FMOD_SOUND* sound_, void* data, unsigned int len) -> FMOD_RESULT {
         FMOD::Sound* sound = reinterpret_cast<FMOD::Sound*>(sound_);
         AudioStream* stream = nullptr;
         sound->getUserData((void**)&stream);
 
         if (!stream) {
-            geode::log::debug("audio stream is nullptr in cb, ignoring");
+            log::debug("audio stream is nullptr in cb, ignoring");
             return FMOD_OK;
         }
 

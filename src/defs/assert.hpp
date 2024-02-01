@@ -36,40 +36,40 @@
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
         auto loc = GLOBED_SOURCE; \
-        geode::log::warn("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
+        log::warn("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
         throw(std::runtime_error(std::string(ev_msg))); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
         auto loc = GLOBED_SOURCE; \
-        geode::log::error("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
+        log::error("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
         GLOBED_SUICIDE; \
     }
 # define GLOBED_REQUIRE_SAFE(condition, message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
         auto loc = GLOBED_SOURCE; \
-        geode::log::warn("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
+        log::warn("Condition failed at {}: {}", fmt::format("{}:{} ({})", loc.file_name(), loc.line(), loc.function_name()), ev_msg); \
         return geode::Err(std::string(ev_msg)); \
     }
 #else
 # define GLOBED_REQUIRE(condition,message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
-        geode::log::error("Condition failed: {}", ev_msg); \
+        log::error("Condition failed: {}", ev_msg); \
         throw(std::runtime_error(std::string(ev_msg))); \
     }
 # define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
-        geode::log::error("Condition failed: {}", ev_msg); \
+        log::error("Condition failed: {}", ev_msg); \
         GLOBED_SUICIDE; \
     }
 # define GLOBED_REQUIRE_SAFE(condition, message) \
     if (!(condition)) [[unlikely]] { \
         auto ev_msg = (message); \
-        geode::log::warn("Condition failed: {}", ev_msg); \
+        log::warn("Condition failed: {}", ev_msg); \
         return geode::Err(std::string(ev_msg)); \
     }
 #endif

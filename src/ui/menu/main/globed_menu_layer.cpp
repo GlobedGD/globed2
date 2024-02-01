@@ -262,7 +262,7 @@ void GlobedMenuLayer::requestServerList() {
         })
         .send();
 
-    geode::log::debug("rqeuested server list");
+    log::debug("rqeuested server list");
 }
 
 void GlobedMenuLayer::cancelWebRequest() {

@@ -129,7 +129,7 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
                         if (granted) {
                             AudioSetupPopup::create()->show();
                         } else {
-                            geode::log::warn("permission denied when requesting audio access");
+                            log::warn("permission denied when requesting audio access");
                         }
                     });
                 }

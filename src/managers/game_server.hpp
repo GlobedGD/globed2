@@ -38,7 +38,7 @@ public:
 
     util::sync::AtomicBool pendingChanges;
 
-    geode::Result<> addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
+    Result<> addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
     void clear();
     size_t count();
 
@@ -65,7 +65,7 @@ public:
 
     void updateCache(const std::string_view response);
     void clearCache();
-    geode::Result<> loadFromCache();
+    Result<> loadFromCache();
 
     /* pings */
 

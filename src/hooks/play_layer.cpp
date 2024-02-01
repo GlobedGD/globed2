@@ -106,10 +106,17 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this->getParent(), 0.0f, false);
     });
 
+    m_fields->progressBarWrapper = Build<CCNode>::create()
+        .id("progress-bar-wrapper"_spr)
+        .zOrder(-1)
+        .collect();
+
     m_fields->selfProgressIcon = Build<PlayerProgressIcon>::create(m_levelLength)
-        .parent(m_progressBar)
+        .parent(m_fields->progressBarWrapper)
         .id("self-player-progress"_spr)
         .collect();
+
+    m_fields->selfProgressIcon->updateIcons(ProfileCacheManager::get().getOwnData());
 
     return true;
 }
@@ -220,7 +227,7 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 
                 if (result.isErr()) {
                     ErrorQueues::get().warn(result.unwrapErr());
-                    geode::log::warn("unable to record audio: {}", result.unwrapErr());
+                    log::warn("unable to record audio: {}", result.unwrapErr());
                 }
             }
         } else {
@@ -323,16 +330,28 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
 
     self->m_fields->interpolator->tick(dt);
 
+    if (self->m_fields->progressBarWrapper->getParent() != nullptr) {
+        self->m_fields->selfProgressIcon->updatePosition(self->m_player1->getPositionX());
+    } else if (self->m_progressBar) {
+        // for some reason, the progressbar is sometimes initialized later than PlayLayer::init
+        // it always should exist, even in levels with no actual progress bar (i.e. platformer levels)
+        // but it can randomly get initialized late.
+        // why robtop????????
+        self->m_progressBar->addChild(self->m_fields->progressBarWrapper);
+        // this one is a banger too
+        self->m_fields->selfProgressIcon->updateMaxLevelX(self->m_levelLength);
+    }
+
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
         remotePlayer->updateData(vstate, self->m_fields->interpolator->swapDeathStatus(playerId));
 
-        if (self->m_progressBar->isVisible()) {
+        if (self->m_progressBar && self->m_progressBar->isVisible()) {
             remotePlayer->updateProgressIcon();
         }
     }
 
-    self->m_fields->selfProgressIcon->updatePosition(self->m_player1->m_position.x); // idk maybe use getPosition().x
+    // log::debug("x pos: {} out of {}", self->m_player1->getPositionX(), self->m_levelLength);
 }
 
 /* private utilities */
@@ -399,10 +418,10 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
 #endif // GLOBED_VOICE_SUPPORT
     NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
 
-    auto* progressIcon = Build<PlayerProgressIcon>::create(m_levelLength)
+    PlayerProgressIcon* progressIcon = Build<PlayerProgressIcon>::create(m_levelLength)
         .zOrder(2)
         .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
-        .parent(m_progressBar)
+        .parent(m_fields->progressBarWrapper)
         .collect();
 
     auto* rp = Build<RemotePlayer>::create(progressIcon)
@@ -424,7 +443,10 @@ void GlobedPlayLayer::handlePlayerLeave(int playerId) {
 
     if (!m_fields->players.contains(playerId)) return;
 
-    m_fields->players.at(playerId)->removeFromParent();
+    auto rp = m_fields->players.at(playerId);
+    rp->progressIcon->removeFromParent();
+    rp->removeFromParent();
+
     m_fields->players.erase(playerId);
     m_fields->interpolator->removePlayer(playerId);
 
