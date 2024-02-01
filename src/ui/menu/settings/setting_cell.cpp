@@ -17,7 +17,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     this->limits = limits;
 
     Build<CCLabelBMFont>::create(nameText, "bigFont.fnt")
-        .scale(0.7f)
+        .scale(0.6f)
         .anchorPoint(0.f, 0.5f)
         .pos(10.f, CELL_HEIGHT / 2)
         .parent(this)
@@ -53,13 +53,23 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         inpCheckbox->toggle(*(bool*)(settingStorage));
     } break;
     case Type::Float: {
-        // TODO i give up trying to make this slider smaller
-        Build<Slider>::create(this, menu_selector(GlobedSettingCell::onSliderChanged), .5f)
+        Build<Slider>::create(this, menu_selector(GlobedSettingCell::onSliderChanged), 0.3f)
             .anchorPoint(1.f, 0.5f)
-            .pos(CELL_WIDTH - 60.f, CELL_HEIGHT / 2)
+            .pos(CELL_WIDTH - 45.f, CELL_HEIGHT / 2)
             .parent(this)
             .id("input-slider"_spr)
             .store(inpSlider);
+
+        // my ass
+        inpSlider->m_groove->setScaleY(0.75f);
+        auto thumbs1 = (CCNode*)(inpSlider->getThumb()->getChildren()->objectAtIndex(0));
+        auto thumbs2 = (CCNode*)(inpSlider->getThumb()->getChildren()->objectAtIndex(1));
+
+        thumbs1->setScale(1.5f);
+        thumbs2->setScale(1.5f);
+
+        thumbs1->setPositionY(thumbs1->getPositionY() - 10.f);
+        thumbs2->setPositionY(thumbs2->getPositionY() - 10.f);
 
         float value = *(float*)(settingStorage);
         float relativeValue = value / (limits.floatMax - limits.floatMin);
@@ -68,7 +78,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     case Type::String: [[fallthrough]];
     case Type::AudioDevice: {
         Build<CCMenuItemSpriteExtra>::create(
-            Build<ButtonSprite>::create("Set", "goldFont.fnt", "GJ_button_04.png", .8f).collect(),
+            Build<ButtonSprite>::create("Set", "goldFont.fnt", "GJ_button_04.png", .7f).collect(),
             this,
             menu_selector(GlobedSettingCell::onInteractiveButton)
         )
@@ -96,6 +106,9 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
             .parent(this);
 
         inpField->setString(std::to_string(currentValue));
+    } break;
+    case Type::Corner: {
+        this->recreateCornerButton();
     } break;
     }
 
@@ -150,6 +163,45 @@ void GlobedSettingCell::onStringChanged(const std::string_view text) {
     this->storeAndSave(text);
 }
 
+void GlobedSettingCell::recreateCornerButton() {
+    if (cornerButton) {
+        cornerButton->getParent()->removeFromParent();
+        cornerButton->removeFromParent();
+    }
+
+    int currentValue = *(int*)(settingStorage);
+
+    ButtonSprite* theButton;
+
+    Build<ButtonSprite>::create("000", "bigFont.fnt", "GJ_button_04.png", 0.4f)
+        .scale(0.75f)
+        .store(theButton)
+        .intoMenuItem([this, currentValue](auto) {
+            int cv = currentValue;
+            cv++;
+            if (cv > 3) {
+                cv = 0;
+            }
+
+            this->storeAndSave(cv);
+            this->recreateCornerButton();
+        })
+        .anchorPoint(0.5f, 0.5f)
+        .pos(CELL_WIDTH - 25.f, CELL_HEIGHT / 2)
+        .id("input-field"_spr)
+        .store(cornerButton)
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .id("input-menu"_spr)
+        .parent(this);
+
+    // kill me
+    float xOff = 9.f * ((currentValue % 2 == 1) ? 1.f : -1.f);
+    float yOff = 8.f * ((currentValue < 2) ? 1.f : -1.f);
+    theButton->m_label->setPosition(theButton->m_label->getPosition() + ccp(1.f, 0.f) + ccp(xOff, yOff));
+    theButton->m_label->setString("0");
+}
+
 void GlobedSettingCell::storeAndSave(std::any value) {
     // banger
     switch (settingType) {
@@ -160,6 +212,7 @@ void GlobedSettingCell::storeAndSave(std::any value) {
     case Type::String:
         *(std::string*)(settingStorage) = std::any_cast<std::string>(value); break;
     case Type::AudioDevice: [[fallthrough]];
+    case Type::Corner: [[fallthrough]];
     case Type::Int:
         *(int*)(settingStorage) = std::any_cast<int>(value); break;
     }

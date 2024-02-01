@@ -1,6 +1,7 @@
 #include "complex_visual_player.hpp"
 
 #include "remote_player.hpp"
+#include <managers/settings.hpp>
 #include <util/misc.hpp>
 
 using namespace geode::prelude;
@@ -12,13 +13,18 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     auto& data = parent->getAccountData();
 
+    auto& settings = GlobedSettings::get();
+
     playerIcon = static_cast<ComplexPlayerObject*>(Build<PlayerObject>::create(1, 1, this->playLayer, this->playLayer->m_objectLayer, false)
+        .opacity(static_cast<unsigned char>(settings.players.playerOpacity * 255.f))
         .parent(this)
         .collect());
 
     playerIcon->setRemoteState();
 
     Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
+        .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
+        .visible(settings.players.showNames && (!isSecond || settings.players.dualName))
         .store(playerName)
         .pos(0.f, 25.f)
         .parent(this);
@@ -30,11 +36,16 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
 void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     auto* gm = GameManager::get();
+    auto& settings = GlobedSettings::get();
 
     playerIcon->togglePlatformerMode(playLayer->m_level->isPlatformer());
 
     storedIcons = icons;
-    // TODO set death effect somehow?
+    if (settings.players.defaultDeathEffect) {
+        // set the default one.. (aka do nothing ig?)
+    } else {
+        // TODO set death effect somehow?
+    }
 
     this->updatePlayerObjectIcons();
     this->updateIconType(playerIconType);

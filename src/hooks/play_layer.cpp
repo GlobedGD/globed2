@@ -28,11 +28,15 @@ float adjustLerpTimeDelta(float dt) {
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
+    GlobedSettings& settings = GlobedSettings::get();
+
     auto winSize = CCDirector::get()->getWinSize();
+    float overlayBaseY = settings.overlay.position < 2 ? winSize.height - 2.f : 2.f;
+    float overlayBaseX = (settings.overlay.position % 2 == 1) ? 2.f : winSize.width - 2.f;
 
     // overlay
     Build<GlobedOverlay>::create()
-        .pos(2.f, winSize.height - 2.f) // TODO configurable pos
+        .pos(overlayBaseX, overlayBaseY) // TODO configurable pos
         .anchorPoint(0.f, 1.f)
         .scale(0.4f)
         .zOrder(11)
@@ -51,8 +55,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     // else update the overlay with ping
     m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
-
-    GlobedSettings& settings = GlobedSettings::get();
 
     // set the configured tps
     auto tpsCap = settings.globed.tpsCap;
@@ -108,6 +110,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     m_fields->progressBarWrapper = Build<CCNode>::create()
         .id("progress-bar-wrapper"_spr)
+        .visible(settings.levelUi.progressIndicators)
         .zOrder(-1)
         .collect();
 

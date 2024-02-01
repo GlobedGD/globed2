@@ -17,6 +17,7 @@ protected:
     bool init() override;
     void keyBackClicked() override;
 
+    void remakeList();
     cocos2d::CCArray* createSettingsCells();
 
     template <typename T>

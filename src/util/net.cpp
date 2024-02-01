@@ -38,7 +38,7 @@ namespace util::net {
         char *s = nullptr;
         if (FormatMessageA(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                nullptr, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&s, 0, nullptr)
+                nullptr, code, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPSTR)&s, 0, nullptr)
         == 0) {
             // some errors like WSA 10038 can raise ERROR_MR_MID_NOT_FOUND (0x13D)
             // which basically means the formatted message txt doesn't exist in the OS. (wine issue?)
@@ -79,7 +79,7 @@ namespace util::net {
             auto portResult = util::formatting::parse<unsigned short>(address.substr(colon + 1));
 
             if (!portResult.has_value() && defaultPort == 0) {
-                GLOBED_REQUIRE_SAFE(false, "invalid port number")
+                return Err("invalid port number");
             }
 
             out.second = portResult.value_or(defaultPort);

@@ -23,16 +23,30 @@ public:
         GSETTING(bool, enabled, true);
         GSETTING(float, opacity, 0.3f);
         GSETTING(bool, hideConditionally, false);
+        GSETTING(int, position, 3); // 0-3 topleft, topright, bottomleft, bottomright
     };
 
     struct Communication {
         GSETTING(bool, voiceEnabled, true);
+        GSETTING(bool, onlyFriends, false); // TODO
         GSETTING(bool, lowerAudioLatency, false);
         GSETTING(int, audioDevice, 0);
     };
 
-    struct LevelUI {};
-    struct Players {};
+    struct LevelUI {
+        GSETTING(bool, progressIndicators, true);
+    };
+
+    struct Players {
+        GSETTING(float, playerOpacity, 1.0f);
+        GSETTING(bool, showNames, true);
+        GSETTING(bool, dualName, true);
+        GSETTING(float, nameOpacity, 1.0f);
+        GSETTING(bool, statusIcons, true); // TODO
+        GSETTING(bool, deathEffects, true);
+        GSETTING(bool, defaultDeathEffect, false);
+    };
+
     struct Advanced {};
 
     struct Flags {
@@ -53,6 +67,8 @@ public:
     void clear(const std::string_view key);
 
 private:
+    void hardReset();
+
     template <typename T>
     void store(const std::string_view key, const T& val) {
         Mod::get()->setSavedValue(key, val);

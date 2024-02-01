@@ -1,5 +1,7 @@
 #include "remote_player.hpp"
 
+#include <managers/settings.hpp>
+
 using namespace geode::prelude;
 
 bool RemotePlayer::init(PlayerProgressIcon* progressIcon, const PlayerAccountData& data) {
@@ -43,7 +45,7 @@ void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffec
     player1->updateData(data.player1);
     player2->updateData(data.player2);
 
-    if (playDeathEffect) {
+    if (playDeathEffect && GlobedSettings::get().players.deathEffects) {
         player1->playDeathEffect();
     }
 
