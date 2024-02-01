@@ -33,7 +33,7 @@ Result<> GameServerManager::addServer(const std::string_view serverId, const std
     };
 
     auto data = _data.lock();
-    data->servers.emplace(serverId, gsdata);
+    data->servers[std::string(serverId)] = gsdata;
 
     return Ok();
 }

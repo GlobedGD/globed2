@@ -205,7 +205,7 @@ void NetworkManager::send(std::shared_ptr<Packet> packet) {
 }
 
 void NetworkManager::addListener(packetid_t id, PacketCallback&& callback) {
-    (*listeners.lock()).emplace(id, std::move(callback));
+    (*listeners.lock())[id] = std::move(callback);
 }
 
 void NetworkManager::removeListener(packetid_t id) {
@@ -317,6 +317,7 @@ void NetworkManager::threadRecvFunc() {
         auto listeners_ = this->listeners.lock();
         if (!listeners_->contains(packetId)) {
             auto suppressed_ = suppressed.lock();
+
             if (suppressed_->contains(packetId) && util::time::systemNow() > suppressed_->at(packetId)) {
                 suppressed_->erase(packetId);
             }
@@ -369,7 +370,7 @@ void NetworkManager::maybeDisconnectIfDead() {
 }
 
 void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback) {
-    (*builtinListeners.lock()).emplace(id, std::move(callback));
+    (*builtinListeners.lock())[id] = std::move(callback);
 }
 
 bool NetworkManager::connected() {

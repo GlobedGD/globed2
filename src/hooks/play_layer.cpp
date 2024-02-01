@@ -477,7 +477,7 @@ bool GlobedPlayLayer::accountForSpeedhack(size_t uniqueKey, float cap, float all
         return false;
     }
 
-    m_fields->lastSentPacket.emplace(uniqueKey, now);
+    m_fields->lastSentPacket[uniqueKey] = now;
 
     return true;
 }

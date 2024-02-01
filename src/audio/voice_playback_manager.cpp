@@ -19,6 +19,8 @@ void VoicePlaybackManager::stopAllStreams() {
 }
 
 void VoicePlaybackManager::prepareStream(int playerId) {
+    if (streams.contains(playerId)) return;
+
     AudioDecoder decoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS);
 
     auto stream = std::make_unique<AudioStream>(std::move(decoder));

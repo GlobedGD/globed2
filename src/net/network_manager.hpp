@@ -9,6 +9,7 @@
 #include <managers/central_server.hpp>
 #include <util/sync.hpp>
 #include <util/time.hpp>
+#include <util/formatting.hpp>
 
 using namespace util::sync;
 
@@ -100,7 +101,7 @@ public:
     template <HasPacketID Packet, typename Rep, typename Period>
     void suppressUnhandledFor(util::time::duration<Rep, Period> duration) {
         auto endPoint = util::time::systemNow() + duration;
-        suppressed.lock()->emplace(Packet::PACKET_ID, endPoint);
+        (*suppressed.lock())[Packet::PACKET_ID] = endPoint;
     }
 
 private:

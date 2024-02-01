@@ -1,7 +1,7 @@
 #include "profile_cache.hpp"
 
 void ProfileCacheManager::insert(const PlayerAccountData& data) {
-    cache.emplace(data.id, data);
+    cache[data.id] = data;
 }
 
 std::optional<PlayerAccountData> ProfileCacheManager::getData(int32_t accountId) {
