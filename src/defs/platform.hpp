@@ -54,6 +54,11 @@
 # error "what"
 #endif
 
+#ifdef GLOBED_DISABLE_CUSTOM_KEYBINDS
+# undef GLOBED_HAS_KEYBINDS
+# define GLOBED_HAS_KEYBINDS 0
+#endif
+
 #if GLOBED_HAS_FMOD && !defined(GLOBED_DISABLE_VOICE_SUPPORT)
 # define GLOBED_VOICE_SUPPORT 1
 #else

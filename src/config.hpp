@@ -9,6 +9,9 @@
 // disable voice
 // #define GLOBED_DISABLE_VOICE_SUPPORT
 
+// disalbe custom keybinds
+#define GLOBED_DISABLE_CUSTOM_KEYBINDS
+
 // various debugging options
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
 

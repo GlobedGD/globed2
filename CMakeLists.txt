@@ -30,7 +30,7 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_compile_options("-Wno-inaccessible-base")
-    add_compile_options("-Wpointer-sign")
+    add_compile_options("-Wno-pointer-sign")
 
     # thank you hjfod
     add_compile_options("-Wno-deprecated-declarations")
