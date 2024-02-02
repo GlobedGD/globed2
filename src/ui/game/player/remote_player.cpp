@@ -42,8 +42,8 @@ const PlayerAccountData& RemotePlayer::getAccountData() const {
 }
 
 void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffect) {
-    player1->updateData(data.player1);
-    player2->updateData(data.player2);
+    player1->updateData(data.player1, data.isDead);
+    player2->updateData(data.player2, data.isDead);
 
     if (playDeathEffect && GlobedSettings::get().players.deathEffects) {
         player1->playDeathEffect();

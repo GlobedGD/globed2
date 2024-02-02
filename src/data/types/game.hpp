@@ -58,7 +58,7 @@ struct PlayerData {
 
         buf.writeF32(lastDeathTimestamp);
 
-        buf.writeBits(BitBuffer<8>(isDead));
+        buf.writeBits(BitBuffer<8>(isDead, isPaused, isPracticing));
     }
 
     GLOBED_DECODE {

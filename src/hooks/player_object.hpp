@@ -5,8 +5,11 @@
 
 class $modify(ComplexPlayerObject, PlayerObject) {
     // those are needed so that our changes don't impact actual PlayerObject instances
-    void setRemoteState();
     bool vanilla();
 
+    void setRemoteState();
+    void setDeathEffect(int deathEffect);
+
     void incrementJumps();
+    void playDeathEffect();
 };

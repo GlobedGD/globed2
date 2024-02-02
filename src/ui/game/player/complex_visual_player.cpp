@@ -44,19 +44,23 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     if (settings.players.defaultDeathEffect) {
         // set the default one.. (aka do nothing ig?)
     } else {
-        // TODO set death effect somehow?
+        playerIcon->setDeathEffect(icons.deathEffect);
     }
 
     this->updatePlayerObjectIcons();
     this->updateIconType(playerIconType);
 }
 
-void ComplexVisualPlayer::updateData(const SpecificIconData& data) {
+void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead) {
     this->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
     // setFlipX doesnt work here for jetpack and stuff
     playerIcon->setScaleX(data.isLookingLeft ? -1.0f : 1.0f);
     playerIcon->setScaleY(data.isUpsideDown ? -1.0f : 1.0f);
+
+    if (!isDead && playerIcon->getOpacity() == 0) {
+        playerIcon->setOpacity(static_cast<unsigned char>(GlobedSettings::get().players.playerOpacity * 255.f));
+    }
 
     PlayerIconType iconType = data.iconType;
     // in platformer, jetpack is serialized as ship so we make sure to show the right icon
@@ -94,7 +98,9 @@ void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
 }
 
 void ComplexVisualPlayer::playDeathEffect() {
-    playerIcon->playDeathEffect();
+    // todo, doing simply ->playDeathEffect causes the hook to execute twice
+    // if you figure out why then i love you
+    playerIcon->PlayerObject::playDeathEffect();
 }
 
 void ComplexVisualPlayer::updatePlayerObjectIcons() {

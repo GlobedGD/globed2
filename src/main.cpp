@@ -18,12 +18,14 @@ using namespace geode::prelude;
 void setupLibsodium();
 void setupErrorCheckNode();
 void setupCustomKeybinds();
+void loadDeathEffects();
 void printDebugInfo();
 
 $on_mod(Loaded) {
     setupLibsodium();
     setupErrorCheckNode();
     setupCustomKeybinds();
+    loadDeathEffects();
 
 #if GLOBED_VOICE_SUPPORT
     GlobedAudioManager::get().preInitialize();
@@ -91,6 +93,19 @@ void setupCustomKeybinds() {
     log::debug("results: {} and {}", r1, r2);
 
 #endif // GLOBED_HAS_KEYBINDS
+}
+
+void loadDeathEffects() {
+    log::debug("Loading death effects..");
+    for (int i = 1; i < 18; i++) {
+        log::debug("Loading death effect {}", i);
+        try {
+            GameManager::get()->loadDeathEffect(i);
+        } catch (const std::exception& e) {
+            log::warn("Failed to load death effect: {}", e.what());
+        }
+    }
+    log::debug("Finished loading death effects");
 }
 
 // just debug printing

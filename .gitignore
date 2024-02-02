@@ -57,6 +57,8 @@ build-android.sh
 build-android/
 build-armv8.sh
 build-armv8/
+build-android64
+build-android32
 
 mod-w.json
 mod-a.json
@@ -73,6 +75,3 @@ server/game/test-bench.sh
 server/globed_game_server.log
 
 libs/openssl
-
-!libs/libfmod32.so
-!libs/libfmod64.so

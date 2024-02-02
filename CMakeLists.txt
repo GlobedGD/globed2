@@ -20,18 +20,26 @@ file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
 
+add_library(${PROJECT_NAME} SHARED ${SOURCES})
+
 # Windows - Include winsock
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
     add_definitions(/FI"WinSock2.h")
 endif()
 
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    add_compile_options("-Wno-inaccessible-base")
+    add_compile_options("-Wpointer-sign")
+
+    # thank you hjfod
+    add_compile_options("-Wno-deprecated-declarations")
+endif()
+
 # i am crying so hard right now
 if (CMAKE_HOST_SYSTEM MATCHES "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_options("-march=skylake")
 endif()
-
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 if (NOT DEFINED ENV{GEODE_SDK})
     message(FATAL_ERROR "Unable to find Geode SDK! Please define GEODE_SDK environment variable to point to Geode")
@@ -59,25 +67,4 @@ CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 
 target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
 
-# Android - link to fmod and libcurl
-if (ANDROID)
-    if (ANDROID_ABI STREQUAL "arm64-v8a")
-        message(STATUS "Building for 64-bit android")
-        target_link_libraries(${PROJECT_NAME} $ENV{GEODE_SDK}/loader/include/link/android64/libcurl.a)
-    else()
-        message(STATUS "Building for 32-bit android")
-        target_link_libraries(${PROJECT_NAME} $ENV{GEODE_SDK}/loader/include/link/android32/libcurl.a)
-    endif()
-endif()
-
-# Windows - link to libcurl
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_link_libraries(${PROJECT_NAME} $ENV{GEODE_SDK}/loader/include/link/libcurl.lib)
-
-    # TODO temp
-    target_link_libraries(${PROJECT_NAME} "/home/dankpc/gddir/geode/unzipped/geode.custom-keybinds/geode.custom-keybinds.lib")
-endif()
-
-# TODO mac - link to libcurl
-
-setup_geode_mod(${PROJECT_NAME} EXTERNALS geode.custom-keybinds:1.2.3)
+setup_geode_mod(${PROJECT_NAME})

@@ -69,7 +69,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     auto& vm = GlobedAudioManager::get();
     try {
         vm.setActiveRecordingDevice(settings.communication.audioDevice);
-    } catch(const std::exception& e) {
+    } catch (const std::exception& e) {
         // try default device, if we have no mic then just do nothing
         try {
             vm.setActiveRecordingDevice(0);
@@ -353,8 +353,6 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
             remotePlayer->updateProgressIcon();
         }
     }
-
-    // log::debug("x pos: {} out of {}", self->m_player1->getPositionX(), self->m_levelLength);
 }
 
 /* private utilities */
@@ -387,7 +385,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
 }
 
 PlayerData GlobedPlayLayer::gatherPlayerData() {
-    bool isDead = false; // TODO
+    bool isDead = m_player1->m_isDead || m_player2->m_isDead; // TODO
     if (isDead && !m_fields->isCurrentlyDead) {
         m_fields->isCurrentlyDead = true;
         m_fields->lastDeathTimestamp = m_fields->timeCounter;

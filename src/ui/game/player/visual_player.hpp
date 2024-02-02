@@ -5,7 +5,7 @@ class VisualPlayer : public cocos2d::CCNode, public BaseVisualPlayer {
 public:
     bool init(RemotePlayer* parent, bool isSecond) override;
     void updateIcons(const PlayerIconData& icons) override;
-    void updateData(const SpecificIconData& data) override;
+    void updateData(const SpecificIconData& data, bool isDead) override;
     void updateName() override;
     void updateIconType(PlayerIconType newType) override;
     void playDeathEffect() override;

@@ -4,4 +4,7 @@
 struct VisualPlayerState {
     SpecificIconData player1;
     SpecificIconData player2;
+    bool isDead;
+    bool isPaused;
+    bool isPracticing;
 };

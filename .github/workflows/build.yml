@@ -2,7 +2,7 @@ name: Build Geode Mod
 
 on:
   workflow_dispatch:
-      
+
 jobs:
   build:
     strategy:
@@ -26,14 +26,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-          
+
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
         with:
           combine: true
           sdk: 'nightly'
           target: ${{ matrix.config.target }}
-      
+          bindings: "dankmeme01/bindings"
+
   package:
     name: Package builds
     runs-on: ubuntu-latest

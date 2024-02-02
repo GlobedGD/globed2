@@ -43,7 +43,7 @@ void VisualPlayer::updateIcons(const PlayerIconData& icons) {
     }
 }
 
-void VisualPlayer::updateData(const SpecificIconData& data) {
+void VisualPlayer::updateData(const SpecificIconData& data, bool isDead) {
     this->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
     playerIcon->setFlipX(data.isLookingLeft);

@@ -9,7 +9,7 @@ using namespace geode::prelude;
 bool ErrorCheckNode::init() {
     if (!CCNode::init()) return false;
 
-    CCScheduler::get()->scheduleSelector(schedule_selector(ErrorCheckNode::updateErrors), this, 0.2f, false);
+    CCScheduler::get()->scheduleSelector(schedule_selector(ErrorCheckNode::updateErrors), this, 0.1f, false);
     return true;
 }
 
