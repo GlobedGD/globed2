@@ -30,7 +30,14 @@ protected:
 #define GLOBED_SINGLETON(cls) public SingletonBase<cls>
 
 // using decls to avoid polluting the namespace in headers
-namespace log = geode::log;
+
+// ugly workaround because MSVC sucks ass
+namespace __globed_log_namespace_shut_up_msvc {
+    namespace log = geode::log;
+}
+
+using namespace __globed_log_namespace_shut_up_msvc;
+
 using geode::Result;
 using geode::Loader;
 using geode::Mod;

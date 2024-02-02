@@ -28,7 +28,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(/FI"WinSock2.h")
 endif()
 
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options("-Wno-inaccessible-base")
     add_compile_options("-Wno-pointer-sign")
 
