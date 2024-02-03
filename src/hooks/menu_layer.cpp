@@ -87,7 +87,7 @@ void HookedMenuLayer::updateGlobedButton() {
     auto menu = this->getChildByID("bottom-menu");
 
     Build<CircleButtonSprite>(CircleButtonSprite::createWithSpriteFrameName(
-        "miniSkull_001.png",
+        "menuicon.png"_spr,
         1.f,
         m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
         CircleBaseSize::MediumAlt

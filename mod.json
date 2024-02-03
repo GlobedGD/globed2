@@ -6,6 +6,14 @@
         "android": "2.205",
         "mac": "2.200"
     },
+    "resources": {
+        "spritesheets": {
+            "globedsheet1": [
+                "resources/menuicon.png",
+                "resources/void.png"
+            ]
+        }
+    },
     "id": "dankmeme.globed2",
     "name": "Globed",
     "developer": "dankmeme",
