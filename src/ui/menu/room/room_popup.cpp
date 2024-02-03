@@ -20,8 +20,10 @@ bool RoomPopup::setup() {
 
     nm.addListener<RoomPlayerListPacket>([this](RoomPlayerListPacket* packet) {
         this->playerList = packet->data;
-        RoomManager::get().setRoom(packet->roomId);
-        this->onLoaded();
+        auto& rm = RoomManager::get();
+        bool changed = rm.roomId != packet->roomId;
+        rm.setRoom(packet->roomId);
+        this->onLoaded(changed || !roomBtnMenu);
     });
 
     nm.addListener<RoomJoinFailedPacket>([this](auto) {
@@ -47,7 +49,7 @@ bool RoomPopup::setup() {
         )};
 
         RoomManager::get().setRoom(packet->roomId);
-        this->onLoaded();
+        this->onLoaded(true);
     });
 
     auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
@@ -68,7 +70,7 @@ void RoomPopup::selReloadPlayerList(float) {
     this->reloadPlayerList(true);
 }
 
-void RoomPopup::onLoaded() {
+void RoomPopup::onLoaded(bool stateChanged) {
     this->removeLoadingCircle();
 
     auto cells = CCArray::create();
@@ -83,9 +85,11 @@ void RoomPopup::onLoaded() {
         .parent(listLayer)
         .collect();
 
-    auto& rm = RoomManager::get();
-    this->setTitle(rm.isInGlobal() ? "Global room" : fmt::format("Room {}", rm.roomId.load()));
-    this->addButtons();
+    if (stateChanged) {
+        auto& rm = RoomManager::get();
+        this->setTitle(rm.isInGlobal() ? "Global room" : fmt::format("Room {}", rm.roomId.load()));
+        this->addButtons();
+    }
 }
 
 void RoomPopup::addButtons() {

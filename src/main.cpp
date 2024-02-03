@@ -72,9 +72,7 @@ void setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS
     using namespace keybinds;
 
-    log::debug("registering binds");
-
-    bool r1 = BindManager::get()->registerBindable({
+    BindManager::get()->registerBindable({
         "voice-activate"_spr,
         "Voice",
         "Records audio from your microphone and sends it off to other users on the level.",
@@ -82,15 +80,13 @@ void setupCustomKeybinds() {
         Category::PLAY,
     });
 
-    bool r2 = BindManager::get()->registerBindable({
+    BindManager::get()->registerBindable({
         "voice-deafen"_spr,
         "Deafen",
         "Mutes voices of other players when toggled.",
         { Keybind::create(KEY_B, Modifier::None) },
         Category::PLAY,
     });
-
-    log::debug("results: {} and {}", r1, r2);
 
 #endif // GLOBED_HAS_KEYBINDS
 }

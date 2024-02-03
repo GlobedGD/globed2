@@ -4,6 +4,8 @@
 
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
+#include <util/debugging.hpp>
+#include <util/formatting.hpp>
 
 using namespace geode::prelude;
 namespace permission = geode::utils::permission;
@@ -199,11 +201,7 @@ Result<> GlobedAudioManager::startRecordingInternal() {
         "System::createSound"
     )
 
-    FMOD_ERR_CHECK_SAFE(
-        this->getSystem()->recordStart(recordDevice.id, recordSound, true),
-        "System::recordStart"
-    )
-
+    recordStartDeferred = true;
     recordQueuedStop = false;
     recordQueuedHalt = false;
     recordLastPosition = 0;
@@ -261,6 +259,8 @@ void GlobedAudioManager::internalStopRecording() {
     }
 
     recordActive = false;
+    recordStartDeferred = false;
+    recordQueuedStop = false;
 }
 
 void GlobedAudioManager::stopRecording() {
@@ -393,7 +393,7 @@ void GlobedAudioManager::audioThreadFunc() {
     // if we are not recording right now, sleep
     if (!recordActive) {
         audioThreadSleeping = true;
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
         return;
     }
 
@@ -407,11 +407,34 @@ void GlobedAudioManager::audioThreadFunc() {
 
     audioThreadSleeping = false;
 
+    auto result = this->audioThreadWork();
+
+    if (result.isErr()) {
+        ErrorQueues::get().warn(result.unwrapErr());
+        audioThreadSleeping = true;
+        this->internalStopRecording();
+    }
+}
+
+Result<> GlobedAudioManager::audioThreadWork() {
+    // start recording if we haven't already.
+    // the reason this is deferred is because this call will actually block for a bit,
+    // and we want to avoid freezing the main thread for 5-15ms.
+
+    if (recordStartDeferred) {
+        recordStartDeferred = false;
+
+        FMOD_ERR_CHECK_SAFE(
+            this->getSystem()->recordStart(recordDevice.id, recordSound, true),
+            "System::recordStart"
+        );
+    }
+
     float* pcmData;
     unsigned int pcmLen;
 
     unsigned int pos;
-    FMOD_ERR_CHECK(
+    FMOD_ERR_CHECK_SAFE(
         this->getSystem()->getRecordPosition(recordDevice.id, &pos),
         "System::getRecordPosition"
     )
@@ -420,10 +443,10 @@ void GlobedAudioManager::audioThreadFunc() {
     if (pos == recordLastPosition) {
         this->getSystem()->update();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        return;
+        return Ok();
     }
 
-    FMOD_ERR_CHECK(
+    FMOD_ERR_CHECK_SAFE(
         recordSound->lock(0, recordChunkSize, (void**)&pcmData, nullptr, &pcmLen, nullptr),
         "Sound::lock"
     )
@@ -439,7 +462,7 @@ void GlobedAudioManager::audioThreadFunc() {
 
     recordLastPosition = pos;
 
-    FMOD_ERR_CHECK(
+    FMOD_ERR_CHECK_SAFE(
         recordSound->unlock(pcmData, nullptr, pcmLen, 0),
         "Sound::unlock"
     )
@@ -456,12 +479,7 @@ void GlobedAudioManager::audioThreadFunc() {
             float pcmbuf[VOICE_TARGET_FRAMESIZE];
             recordQueue.copyTo(pcmbuf, VOICE_TARGET_FRAMESIZE);
 
-            try {
-                recordFrame.pushOpusFrame(encoder.encode(pcmbuf));
-            } catch (const std::exception& e) {
-                ErrorQueues::get().error(std::string("Exception in audio thread: ") + e.what());
-                return;
-            }
+            GLOBED_UNWRAP(recordFrame.pushOpusFrame(encoder.encode(pcmbuf)));
         }
 
         if (recordFrame.size() >= recordFrame.capacity()) {
@@ -474,6 +492,8 @@ void GlobedAudioManager::audioThreadFunc() {
     // TODO maybe do something with this i dunno
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
     // std::this_thread::yield();
+
+    return Ok();
 }
 
 FMOD::System* GlobedAudioManager::getSystem() {

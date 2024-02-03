@@ -11,13 +11,13 @@ EncodedAudioFrame::~EncodedAudioFrame() {
     this->clear();
 }
 
-void EncodedAudioFrame::pushOpusFrame(const EncodedOpusData& frame) {
+Result<> EncodedAudioFrame::pushOpusFrame(const EncodedOpusData& frame) {
     if (frames.size() >= _capacity) {
-        log::warn("tried to push an extra frame into EncodedAudioFrame, {} is the max", _capacity);
-        return;
+        return Err("tried to push an extra frame into EncodedAudioFrame, {} is the max", _capacity);
     }
 
     frames.push_back(frame);
+    return Ok();
 }
 
 void EncodedAudioFrame::setCapacity(size_t frames_) {

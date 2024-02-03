@@ -3,7 +3,7 @@
 using namespace geode::prelude;
 
 namespace util::ui {
-    void switchToScene(cocos2d::CCLayer* layer) {
+    void switchToScene(CCLayer* layer) {
         // massive geode L
         // uses replaceScene instead of pushScene
         auto scene = CCScene::create();
@@ -11,7 +11,7 @@ namespace util::ui {
         CCDirector::get()->pushScene(CCTransitionFade::create(.5f, scene));
     }
 
-    void prepareLayer(cocos2d::CCLayer* layer) {
+    void prepareLayer(CCLayer* layer) {
         util::ui::addBackground(layer);
 
         auto menu = CCMenu::create();
@@ -23,7 +23,7 @@ namespace util::ui {
         layer->setKeypadEnabled(true);
     }
 
-    void addBackground(cocos2d::CCNode* layer) {
+    void addBackground(CCNode* layer) {
         auto windowSize = CCDirector::get()->getWinSize();
 
         auto bg = CCSprite::create("GJ_gradientBG.png");

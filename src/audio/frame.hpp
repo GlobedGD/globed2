@@ -30,7 +30,7 @@ public:
     EncodedAudioFrame& operator=(EncodedAudioFrame&&) noexcept = default;
 
     // adds this audio frame to the list
-    void pushOpusFrame(const EncodedOpusData& frame);
+    Result<> pushOpusFrame(const EncodedOpusData& frame);
 
     // set the capacity of the audio frame, in individual opus frames
     void setCapacity(size_t frames);

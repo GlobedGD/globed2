@@ -23,7 +23,7 @@ protected:
 
 
     bool setup() override;
-    void onLoaded();
+    void onLoaded(bool stateChanged);
     void removeLoadingCircle();
     void reloadPlayerList(bool sendPacket = true);
     void addButtons();

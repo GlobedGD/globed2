@@ -1,6 +1,7 @@
 #include "debugging.hpp"
 
 #include <util/formatting.hpp>
+#include <util/rng.hpp>
 #include <util/misc.hpp>
 
 #ifdef GEODE_IS_WINDOWS
@@ -12,12 +13,29 @@
 using namespace geode::prelude;
 
 namespace util::debugging {
+    void Benchmarker::start(const std::string_view id) {
+        _entries.emplace(std::string(id), time::now());
+    }
+
     time::micros Benchmarker::end(const std::string_view id) {
         auto idstr = std::string(id);
         auto micros = time::as<time::micros>(time::now() - _entries[idstr]);
         _entries.erase(idstr);
 
         return micros;
+    }
+
+    time::micros Benchmarker::run(std::function<void()>&& func) {
+        auto& random = rng::Random::get();
+        auto id = fmt::format("bb-rng-{}", random.generate<uint32_t>());
+        this->start(id);
+        func();
+        return this->end(id);
+    }
+
+    void Benchmarker::runAndLog(std::function<void()>&& func, const std::string_view identifier) {
+        auto took = this->run(std::move(func));
+        log::debug("{} took {} to run", identifier, util::formatting::formatDuration(took));
     }
 
     std::vector<size_t> DataWatcher::updateLastData(DataWatcher::WatcherEntry& entry) {

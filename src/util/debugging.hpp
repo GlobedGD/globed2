@@ -15,11 +15,11 @@
 namespace util::debugging {
     class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
     public:
-        void start(const std::string_view id) {
-            _entries.emplace(std::string(id), time::now());
-        }
-
+        void start(const std::string_view id);
         time::micros end(const std::string_view id);
+        time::micros run(std::function<void()>&& func);
+        void runAndLog(std::function<void()>&& func, const std::string_view identifier);
+
     private:
         std::unordered_map<std::string, time::time_point> _entries;
     };

@@ -110,6 +110,7 @@ private:
     util::sync::AtomicBool recordActive = false;
     util::sync::AtomicBool recordQueuedStop = false;
     util::sync::AtomicBool recordQueuedHalt = false;
+    util::sync::AtomicBool recordStartDeferred = false;
     util::sync::AtomicBool recordingRaw = false;
     FMOD::Sound* recordSound = nullptr;
     size_t recordChunkSize = 0;
@@ -131,6 +132,8 @@ private:
     FMOD::System* cachedSystem = nullptr;
 
     void audioThreadFunc();
+    Result<> audioThreadWork();
+
     util::sync::AtomicBool audioThreadSleeping = true;
     util::sync::SmartThread<GlobedAudioManager*> audioThreadHandle;
 };
