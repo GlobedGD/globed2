@@ -38,9 +38,10 @@ namespace __globed_log_namespace_shut_up_msvc {
 
 using namespace __globed_log_namespace_shut_up_msvc;
 
-using geode::Result;
+using geode::Ref;
 using geode::Loader;
 using geode::Mod;
+using geode::Result;
 using geode::Ok;
 using geode::Err;
 using geode::cocos::CCArrayExt;

@@ -29,8 +29,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // ui elements
     GlobedOverlay* overlay = nullptr;
     std::unordered_map<int, RemotePlayer*> players;
-    geode::Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
-    geode::Ref<CCNode> progressBarWrapper = nullptr;
+    Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
+    Ref<CCNode> progressBarWrapper = nullptr;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;

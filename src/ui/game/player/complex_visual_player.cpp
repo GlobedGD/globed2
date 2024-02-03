@@ -31,6 +31,16 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     this->updateIcons(data.icons);
 
+    if (!isSecond && settings.players.statusIcons) {
+        statusIcons = Build<PlayerStatusIcons>::create()
+            .scale(0.8f)
+            .anchorPoint(0.5f, 0.f)
+            .pos(0.f, settings.players.showNames ? 40.f : 25.f)
+            .parent(this)
+            .id("status-icons"_spr)
+            .collect();
+    }
+
     return true;
 }
 
@@ -51,7 +61,7 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     this->updateIconType(playerIconType);
 }
 
-void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead) {
+void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing) {
     this->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
     // setFlipX doesnt work here for jetpack and stuff
@@ -70,6 +80,10 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead) 
 
     if (iconType != playerIconType) {
         this->updateIconType(iconType);
+    }
+
+    if (statusIcons) {
+        statusIcons->updateStatus(isPaused, isPracticing);
     }
 
     this->setVisible(data.isVisible);
@@ -101,6 +115,11 @@ void ComplexVisualPlayer::playDeathEffect() {
     // todo, doing simply ->playDeathEffect causes the hook to execute twice
     // if you figure out why then i love you
     playerIcon->PlayerObject::playDeathEffect();
+
+    // TODO temp, we remove the small cube pieces because theyre buggy in my testing
+    if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {
+        ein->removeFromParent();
+    }
 }
 
 void ComplexVisualPlayer::updatePlayerObjectIcons() {

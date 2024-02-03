@@ -37,9 +37,7 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
     LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
 
     if (settings.realtime) {
-        player.interpolatedState.player1 = data.player1;
-        player.interpolatedState.player2 = data.player2;
-        player.interpolatedState.isDead = data.isDead;
+        player.interpolatedState = data;
         return;
     }
 
@@ -85,7 +83,10 @@ static inline void lerpPlayer(
 
     lerpSpecific(older.player1, newer.player1, out.player1, lerpRatio);
     lerpSpecific(older.player2, newer.player2, out.player2, lerpRatio);
+
     out.isDead = older.isDead;
+    out.isPaused = older.isPaused;
+    out.isPracticing = older.isPracticing;
 }
 
 void PlayerInterpolator::tick(float dt) {
@@ -104,7 +105,6 @@ void PlayerInterpolator::tick(float dt) {
         }
 
         float lerpRatio = (player.timeCounter - player.olderFrame.timestamp) / fakeFrameDelta;
-        util::debugging::Benchmarker bb;
 
         lerpPlayer(player.olderFrame.visual, player.newerFrame.visual, player.interpolatedState, lerpRatio);
 
@@ -144,9 +144,5 @@ PlayerInterpolator::LerpFrame::LerpFrame() {
 
 PlayerInterpolator::LerpFrame::LerpFrame(const PlayerData& data) {
     timestamp = data.timestamp;
-    visual.player1 = data.player1;
-    visual.player2 = data.player2;
-    visual.isDead = data.isDead;
-    visual.isPaused = data.isPaused;
-    visual.isPracticing = data.isPracticing;
+    visual = data;
 }

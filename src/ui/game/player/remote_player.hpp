@@ -25,7 +25,7 @@ public:
     static RemotePlayer* create(PlayerProgressIcon* progressIcon, const PlayerAccountData& data);
     static RemotePlayer* create(PlayerProgressIcon* progressIcon);
 
-    geode::Ref<PlayerProgressIcon> progressIcon;
+    Ref<PlayerProgressIcon> progressIcon;
 protected:
     BaseVisualPlayer* player1;
     BaseVisualPlayer* player2;

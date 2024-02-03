@@ -220,9 +220,36 @@ public:
 
     // enable copying, it is disabled by default in std::atomic
     template <typename U = T, std::enable_if_t<!std::is_void_v<U>, U> = 0>
-    RelaxedAtomic(RelaxedAtomic<T, Inner>& other) {
+    RelaxedAtomic(const RelaxedAtomic<T, Inner>& other) {
         this->store(other.load());
     }
+
+    template <typename U = T, std::enable_if_t<!std::is_void_v<U>, U> = 0>
+    RelaxedAtomic<T, Inner>& operator=(const RelaxedAtomic<T, Inner>& other) {
+        if (this != &other) {
+            this->store(other.load());
+        }
+
+        return *this;
+    }
+
+    // enable moving
+    template <typename U = T, std::enable_if_t<!std::is_void_v<U>, U> = 0>
+    RelaxedAtomic(RelaxedAtomic<T, Inner>&& other) {
+        this->store(other.load());
+    }
+
+    template <typename U = T, std::enable_if_t<!std::is_void_v<U>, U> = 0>
+    RelaxedAtomic& operator=(RelaxedAtomic<T, Inner>&& other) {
+        if (this != &other) {
+            this->store(other.load());
+        }
+
+        return *this;
+    }
+
+    // enable move
+
 private:
     Inner value;
 };
@@ -258,9 +285,31 @@ public:
     }
 
     // copying
-    RelaxedAtomic(RelaxedAtomic<void, std::atomic_flag>& other) {
+    RelaxedAtomic(const RelaxedAtomic<void, std::atomic_flag>& other) {
         other.test() ? this->set() : this->clear();
     }
+
+    RelaxedAtomic<void, std::atomic_flag>& operator=(const RelaxedAtomic<void, std::atomic_flag>& other) {
+        if (this != &other) {
+            other.test() ? this->set() : this->clear();
+        }
+
+        return *this;
+    }
+
+    // moving
+    RelaxedAtomic(RelaxedAtomic<void, std::atomic_flag>&& other) {
+        other.test() ? this->set() : this->clear();
+    }
+
+    RelaxedAtomic<void, std::atomic_flag>& operator=(RelaxedAtomic<void, std::atomic_flag>&& other) {
+        if (this != &other) {
+            other.test() ? this->set() : this->clear();
+        }
+
+        return *this;
+    }
+
 private:
     std::atomic_flag value;
 };
@@ -291,6 +340,27 @@ public:
     RelaxedAtomic(RelaxedAtomic<float, std::atomic<uint32_t>>& other) {
         this->store(other.load());
     }
+
+    RelaxedAtomic<float, std::atomic<uint32_t>>& operator=(const RelaxedAtomic<float, std::atomic<uint32_t>>& other) {
+        if (this != &other) {
+            this->store(other.load());
+        }
+
+        return *this;
+    }
+
+    // moving
+    RelaxedAtomic(RelaxedAtomic<float, std::atomic<uint32_t>>&& other) {
+        this->store(other.load());
+    }
+
+    RelaxedAtomic<float, std::atomic<uint32_t>>& operator=(RelaxedAtomic<float, std::atomic<uint32_t>>&& other) {
+        if (this != &other) {
+            this->store(other.load());
+        }
+
+        return *this;
+    }
 private:
     std::atomic<uint32_t> value;
 };
@@ -315,7 +385,28 @@ template<typename... TFuncArgs>
 class SmartThread {
     using TFunc = std::function<void (TFuncArgs...)>;
 public:
-    SmartThread() {}
+    SmartThread() {
+        _storage = new Storage;
+    }
+
+    SmartThread(const SmartThread&) = delete;
+    SmartThread& operator=(const SmartThread&) = delete;
+
+    SmartThread(SmartThread&& other) noexcept :
+        _handle(std::move(other._handle)),
+        _storage(other._storage) {
+            other._storage = nullptr;
+        }
+
+    SmartThread& operator=(SmartThread&& other) {
+        if (this != &other) {
+            _handle = std::move(other._handle);
+            _storage = other._storage;
+            other._storage = nullptr;
+        }
+
+        return *this;
+    }
 
     SmartThread(const std::string_view name) {
         this->setName(name);
@@ -331,30 +422,32 @@ public:
     }
 
     void setLoopFunction(TFunc&& func) {
-        loopFunc = std::move(func);
+        _storage->loopFunc = std::move(func);
     }
 
-    // change the name of the thread
+    // Change the name of the thread. Must be called before the thread is started.
     void setName(const std::string_view name) {
-        threadName = name;
+        _storage->threadName = name;
     }
 
     void start(TFuncArgs&&... args) {
-        _stopped.clear();
-        _handle = std::thread([this](TFuncArgs... args) {
-            if (!threadName.empty()) {
-                geode::utils::thread::setName(threadName);
+        _storage->_stopped.clear();
+        _handle = std::thread([_storage = _storage](TFuncArgs&&... args) {
+            if (!_storage->threadName.empty()) {
+                geode::utils::thread::setName(_storage->threadName);
             }
 
-            while (!_stopped) {
-                loopFunc(args...);
+            while (!_storage->_stopped) {
+                _storage->loopFunc(args...);
             }
-        }, std::move(args...));
+        }, std::forward<TFuncArgs>(args)...);
     }
 
     // Request the thread to be stopped as soon as possible
     void stop() {
-        _stopped.set();
+        if (_storage) {
+            _storage->_stopped.set();
+        }
     }
 
     // Join the thread if possible, else do nothing
@@ -368,15 +461,32 @@ public:
         this->join();
     }
 
+    // Detach the thread and let it execute even after this `SmartThread` object is destructed.
+    // NOTE: this leaks resources. Only call this method if you actually want the thread to run forever.
+    void detach() {
+        if (_handle.joinable()) _handle.detach();
+        _handle = {};
+        // leak the storage
+        _storage = nullptr;
+    }
+
     ~SmartThread() {
         this->stopAndWait();
+        delete _storage;
     }
 
 private:
+    struct Storage {
+        AtomicFlag _stopped;
+        TFunc loopFunc;
+        std::string threadName;
+    };
+
     std::thread _handle;
-    AtomicFlag _stopped;
-    TFunc loopFunc;
-    std::string threadName;
+    Storage* _storage = nullptr;
 };
+
+template <>
+void SmartThread<>::start();
 
 }

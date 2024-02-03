@@ -29,11 +29,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options("-Wno-inaccessible-base")
-    add_compile_options("-Wno-pointer-sign")
+    add_definitions("-Wno-inaccessible-base")
+    add_definitions("-Wno-pointer-sign")
 
     # thank you hjfod
-    add_compile_options("-Wno-deprecated-declarations")
+    add_definitions("-Wno-deprecated-declarations")
 endif()
 
 # i am crying so hard right now

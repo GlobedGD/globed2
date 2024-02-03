@@ -17,7 +17,7 @@ public:
     static AudioSetupPopup* create();
 
 private:
-    geode::Ref<CCMenuItemSpriteExtra> recordButton, stopRecordButton;
+    Ref<CCMenuItemSpriteExtra> recordButton, stopRecordButton;
     GJCommentListLayer* listLayer;
     FMODLevelVisualizer* audioVisualizer;
     util::sync::AtomicF32 audioLevel;

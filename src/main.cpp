@@ -97,6 +97,12 @@ void setupCustomKeybinds() {
 
 void loadDeathEffects() {
     log::debug("Loading death effects..");
+    // --geode:globed-skip-death-effects=true
+    if (Loader::get()->getLaunchFlag("globed-skip-death-effects")) {
+        log::info("Skipped death effect loading due to a launch flag.");
+        return;
+    }
+
     for (int i = 1; i < 18; i++) {
         log::debug("Loading death effect {}", i);
         try {

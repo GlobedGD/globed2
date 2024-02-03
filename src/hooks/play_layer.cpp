@@ -34,10 +34,13 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     float overlayBaseY = settings.overlay.position < 2 ? winSize.height - 2.f : 2.f;
     float overlayBaseX = (settings.overlay.position % 2 == 1) ? 2.f : winSize.width - 2.f;
 
+    float overlayAnchorY = (settings.overlay.position < 2) ? 1.f : 0.f;
+    float overlayAnchorX = (settings.overlay.position % 2 == 1) ? 1.f : 0.f;
+
     // overlay
     Build<GlobedOverlay>::create()
         .pos(overlayBaseX, overlayBaseY) // TODO configurable pos
-        .anchorPoint(0.f, 1.f)
+        .anchorPoint(overlayAnchorX, overlayAnchorY)
         .scale(0.4f)
         .zOrder(11)
         .id("game-overlay"_spr)
