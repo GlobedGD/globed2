@@ -4,7 +4,7 @@
 struct VisualPlayerState {
     SpecificIconData player1 = {};
     SpecificIconData player2 = {};
-    uint8_t currentPercentage;
+    float currentPercentage;
     bool isDead = false;
     bool isPaused = false;
     bool isPracticing = false;

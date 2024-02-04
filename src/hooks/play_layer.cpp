@@ -337,7 +337,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     self->m_fields->interpolator->tick(dt);
 
     if (self->m_fields->progressBarWrapper->getParent() != nullptr) {
-        self->m_fields->selfProgressIcon->updatePosition(static_cast<float>(self->getCurrentPercentInt()));
+        self->m_fields->selfProgressIcon->updatePosition(self->getCurrentPercent() / 100.f);
     } else if (self->m_progressBar) {
         // for some reason, the progressbar is sometimes initialized later than PlayLayer::init
         // it always should exist, even in levels with no actual progress bar (i.e. platformer levels)
@@ -394,7 +394,7 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         m_fields->isCurrentlyDead = false;
     }
 
-    float percentage = static_cast<float>(std::clamp(this->getCurrentPercentInt(), 0, 100)) * 2.55f;
+    float percentage = this->getCurrentPercent();
 
     return PlayerData {
         .timestamp = m_fields->timeCounter,
@@ -406,7 +406,7 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
 
         .lastDeathTimestamp = m_fields->lastDeathTimestamp,
 
-        .currentPercentage = static_cast<uint8_t>(percentage),
+        .currentPercentage = this->getCurrentPercentInt() / 100.f,
 
         .isDead = isDead,
         .isPaused = this->isPaused(),
