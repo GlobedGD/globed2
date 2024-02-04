@@ -2,9 +2,8 @@
 
 using namespace geode::prelude;
 
-bool PlayerProgressIcon::init(float maxLevelX) {
+bool PlayerProgressIcon::init() {
     if (!CCNode::init()) return false;
-    maxX = maxLevelX;
 
     this->updateIcons(PlayerAccountData::DEFAULT_DATA.icons);
 
@@ -38,15 +37,10 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
     }
 }
 
-void PlayerProgressIcon::updateMaxLevelX(float maxLevelX) {
-    maxX = maxLevelX;
-}
-
-void PlayerProgressIcon::updatePosition(float xPosition) {
+void PlayerProgressIcon::updatePosition(float progress) {
     auto parent = this->getParent()->getParent();
     if (!parent) return;
 
-    float progress = this->calculateRatio(xPosition, maxX);
     CCSize pbSize = parent->getScaledContentSize();
     float prOffset = (pbSize.width - 2.f) * progress;
 
@@ -59,9 +53,9 @@ void PlayerProgressIcon::toggleLine(bool enabled) {
     line->setVisible(enabled);
 }
 
-PlayerProgressIcon* PlayerProgressIcon::create(float maxLevelX) {
+PlayerProgressIcon* PlayerProgressIcon::create() {
     auto ret = new PlayerProgressIcon;
-    if (ret->init(maxLevelX)) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }

@@ -176,10 +176,17 @@ bool RoomPopup::isLoading() {
 }
 
 RoomPopup::~RoomPopup() {
-    NetworkManager::get().removeListener<RoomPlayerListPacket>();
-    NetworkManager::get().removeListener<RoomJoinedPacket>();
-    NetworkManager::get().removeListener<RoomJoinFailedPacket>();
-    NetworkManager::get().removeListener<RoomCreatedPacket>();
+    auto& nm = NetworkManager::get();
+
+    nm.removeListener<RoomPlayerListPacket>();
+    nm.removeListener<RoomJoinedPacket>();
+    nm.removeListener<RoomJoinFailedPacket>();
+    nm.removeListener<RoomCreatedPacket>();
+
+    nm.suppressUnhandledFor<RoomPlayerListPacket>(util::time::secs(1));
+    nm.suppressUnhandledFor<RoomJoinedPacket>(util::time::secs(1));
+    nm.suppressUnhandledFor<RoomJoinFailedPacket>(util::time::secs(1));
+    nm.suppressUnhandledFor<RoomCreatedPacket>(util::time::secs(1));
 }
 
 RoomPopup* RoomPopup::create() {

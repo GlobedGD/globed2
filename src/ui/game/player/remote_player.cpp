@@ -49,11 +49,11 @@ void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffec
         player1->playDeathEffect();
     }
 
-    lastXPosition = data.player1.position.x;
+    lastPercentage = data.currentPercentage;
 }
 
 void RemotePlayer::updateProgressIcon() {
-    progressIcon->updatePosition(lastXPosition);
+    progressIcon->updatePosition(static_cast<float>(lastPercentage) / 255.f);
 }
 
 unsigned int RemotePlayer::getDefaultTicks() {

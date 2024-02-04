@@ -117,7 +117,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         .zOrder(-1)
         .collect();
 
-    m_fields->selfProgressIcon = Build<PlayerProgressIcon>::create(m_levelLength)
+    m_fields->selfProgressIcon = Build<PlayerProgressIcon>::create()
         .parent(m_fields->progressBarWrapper)
         .id("self-player-progress"_spr)
         .collect();
@@ -337,15 +337,13 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     self->m_fields->interpolator->tick(dt);
 
     if (self->m_fields->progressBarWrapper->getParent() != nullptr) {
-        self->m_fields->selfProgressIcon->updatePosition(self->m_player1->getPositionX());
+        self->m_fields->selfProgressIcon->updatePosition(static_cast<float>(self->getCurrentPercentInt()));
     } else if (self->m_progressBar) {
         // for some reason, the progressbar is sometimes initialized later than PlayLayer::init
         // it always should exist, even in levels with no actual progress bar (i.e. platformer levels)
         // but it can randomly get initialized late.
         // why robtop????????
         self->m_progressBar->addChild(self->m_fields->progressBarWrapper);
-        // this one is a banger too
-        self->m_fields->selfProgressIcon->updateMaxLevelX(self->m_levelLength);
     }
 
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
@@ -396,6 +394,8 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         m_fields->isCurrentlyDead = false;
     }
 
+    float percentage = static_cast<float>(std::clamp(this->getCurrentPercentInt(), 0, 100)) * 2.55f;
+
     return PlayerData {
         .timestamp = m_fields->timeCounter,
         .percentage = static_cast<uint16_t>(m_level->m_normalPercent),
@@ -405,6 +405,8 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         .player2 = this->gatherSpecificIconData(m_player2), // TODO detect isDualMode
 
         .lastDeathTimestamp = m_fields->lastDeathTimestamp,
+
+        .currentPercentage = static_cast<uint8_t>(percentage),
 
         .isDead = isDead,
         .isPaused = this->isPaused(),
@@ -422,7 +424,7 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
 #endif // GLOBED_VOICE_SUPPORT
     NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
 
-    PlayerProgressIcon* progressIcon = Build<PlayerProgressIcon>::create(m_levelLength)
+    PlayerProgressIcon* progressIcon = Build<PlayerProgressIcon>::create()
         .zOrder(2)
         .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
         .parent(m_fields->progressBarWrapper)

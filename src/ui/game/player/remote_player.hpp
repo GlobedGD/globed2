@@ -30,7 +30,7 @@ protected:
     BaseVisualPlayer* player1;
     BaseVisualPlayer* player2;
     unsigned int defaultTicks = 0;
-    float lastXPosition = 0.f;
+    float lastPercentage = 0.f;
 
     PlayerAccountData accountData;
 };

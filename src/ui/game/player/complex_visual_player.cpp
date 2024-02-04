@@ -65,8 +65,9 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
     this->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
     // setFlipX doesnt work here for jetpack and stuff
-    playerIcon->setScaleX(data.isLookingLeft ? -1.0f : 1.0f);
-    playerIcon->setScaleY(data.isUpsideDown ? -1.0f : 1.0f);
+    float mult = data.isMini ? 0.6f : 1.0f;
+    playerIcon->setScaleX((data.isLookingLeft ? -1.0f : 1.0f) * mult);
+    playerIcon->setScaleY((data.isUpsideDown ? -1.0f : 1.0f) * mult);
 
     if (!isDead && playerIcon->getOpacity() == 0) {
         playerIcon->setOpacity(static_cast<unsigned char>(GlobedSettings::get().players.playerOpacity * 255.f));
@@ -139,13 +140,14 @@ void ComplexVisualPlayer::updatePlayerObjectIcons() {
     playerIcon->updatePlayerFrame(storedIcons.cube);
 
     if (storedIcons.glowColor != -1) {
-        // playerIcon->m_hasGlowOutline = true;
+        playerIcon->m_hasGlow = true;
         playerIcon->enableCustomGlowColor(gm->colorForIdx(storedIcons.glowColor));
     } else {
-        // playerIcon->m_hasGlowOutline = false;
+        playerIcon->m_hasGlow = false;
         playerIcon->disableCustomGlowColor();
     }
 
+    playerIcon->updateGlowColor();
     playerIcon->updatePlayerGlow();
 }
 

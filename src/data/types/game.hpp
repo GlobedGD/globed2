@@ -58,6 +58,8 @@ struct PlayerData {
 
         buf.writeF32(lastDeathTimestamp);
 
+        buf.writeU8(currentPercentage);
+
         buf.writeBits(BitBuffer<8>(isDead, isPaused, isPracticing));
     }
 
@@ -71,6 +73,8 @@ struct PlayerData {
 
         lastDeathTimestamp = buf.readF32();
 
+        currentPercentage = buf.readU8();
+
         buf.readBits<8>().readBitsInto(isDead, isPaused, isPracticing);
     }
 
@@ -82,6 +86,8 @@ struct PlayerData {
     SpecificIconData player2;
 
     float lastDeathTimestamp;
+
+    uint8_t currentPercentage;
 
     bool isDead;
     bool isPaused;
