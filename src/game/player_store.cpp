@@ -7,6 +7,10 @@ void PlayerStore::insertOrUpdate(int playerId, int32_t attempts, uint16_t percen
     };
 }
 
+void PlayerStore::removePlayer(int playerId) {
+    _data.erase(playerId);
+}
+
 std::optional<PlayerStore::Entry> PlayerStore::get(int playerId) {
     return _data.contains(playerId) ? std::nullopt : std::optional(_data.at(playerId));
 }

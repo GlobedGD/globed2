@@ -2,12 +2,12 @@
 
 #include <data/bytebuffer.hpp>
 #include <data/packets/all.hpp>
-#include <util/debugging.hpp>
+#include <util/debug.hpp>
 
 const size_t BUF_SIZE = 65536;
 
 using namespace util::data;
-using namespace util::debugging;
+using namespace util::debug;
 
 GameSocket::GameSocket() {
     buffer = new byte[BUF_SIZE];

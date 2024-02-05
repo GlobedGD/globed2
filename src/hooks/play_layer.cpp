@@ -11,7 +11,7 @@
 #include <managers/settings.hpp>
 #include <data/packets/all.hpp>
 #include <util/math.hpp>
-#include <util/debugging.hpp>
+#include <util/debug.hpp>
 
 using namespace geode::prelude;
 
@@ -104,6 +104,9 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         .isPlatformer = m_level->isPlatformer(),
         .expectedDelta = (1.0f / m_fields->configuredTps)
     });
+
+    // player store
+    m_fields->playerStore = std::make_shared<PlayerStore>();
 
     // update
     Loader::get()->queueInMainThread([this] {
@@ -333,6 +336,14 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
 void GlobedPlayLayer::selUpdate(float rawdt) {
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
+    // update ourselves
+    auto accountId = GJAccountManager::get()->m_accountID;
+    self->m_fields->playerStore->insertOrUpdate(
+        accountId,
+        self->m_level->m_attempts,
+        static_cast<uint16_t>(self->m_level->m_normalPercent)
+    );
+
     float dt = adjustLerpTimeDelta(rawdt);
     self->m_fields->timeCounter += dt;
 
@@ -455,6 +466,7 @@ void GlobedPlayLayer::handlePlayerLeave(int playerId) {
 
     m_fields->players.erase(playerId);
     m_fields->interpolator->removePlayer(playerId);
+    m_fields->playerStore->removePlayer(playerId);
 
     log::debug("Player removed: {}", playerId);
 }

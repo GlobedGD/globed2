@@ -1,8 +1,8 @@
-#include "formatting.hpp"
+#include "format.hpp"
 #include <cmath>
 #include <iomanip>
 
-namespace util::formatting {
+namespace util::format {
     std::string formatDateTime(time::system_time_point tp) {
         auto timet = time::sysclock::to_time_t(tp);
         auto nowms = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;

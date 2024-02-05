@@ -2,7 +2,7 @@
 
 #include <net/network_manager.hpp>
 #include <util/misc.hpp>
-#include <util/formatting.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 
@@ -95,8 +95,8 @@ void AdminPopup::commonSend(AdminSendNoticeType type) {
     int levelId = 0;
 
     if (type == AdminSendNoticeType::RoomOrLevel) {
-        levelId = util::formatting::parse<int>(levelIdInput->getString()).value_or(0);
-        roomId = util::formatting::parse<uint32_t>(roomIdInput->getString()).value_or(0);
+        levelId = util::format::parse<int>(levelIdInput->getString()).value_or(0);
+        roomId = util::format::parse<uint32_t>(roomIdInput->getString()).value_or(0);
     }
 
     auto packet = AdminSendNoticePacket::create(type, roomId, levelId, playerInput->getString(), messageInput->getString());

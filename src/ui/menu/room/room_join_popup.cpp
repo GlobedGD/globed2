@@ -2,7 +2,7 @@
 
 #include <net/network_manager.hpp>
 #include <data/packets/client/general.hpp>
-#include <util/formatting.hpp>
+#include <util/format.hpp>
 #include <util/misc.hpp>
 
 using namespace geode::prelude;
@@ -29,7 +29,7 @@ bool RoomJoinPopup::setup() {
     Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this](auto) {
             std::string codestr = this->roomIdInput->getString();
-            uint32_t code = util::formatting::parse<uint32_t>(codestr).value_or(0);
+            uint32_t code = util::format::parse<uint32_t>(codestr).value_or(0);
 
             if (code < 100000 || code > 999999) {
                 Notification::create("Invalid room ID", NotificationIcon::Warning)->show();

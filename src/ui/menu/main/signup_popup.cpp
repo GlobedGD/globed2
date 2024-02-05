@@ -6,7 +6,7 @@
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
 #include <util/net.hpp>
-#include <util/formatting.hpp>
+#include <util/format.hpp>
 #include <util/crypto.hpp>
 
 using namespace geode::prelude;
@@ -44,7 +44,7 @@ bool GlobedSignupPopup::setup() {
             auto part2 = response.substr(colonPos + 1);
 
             // we accept -1 as the default ()
-            int levelId = util::formatting::parse<int>(part1).value_or(-1);
+            int levelId = util::format::parse<int>(part1).value_or(-1);
 
             this->onChallengeCreated(levelId, part2);
         })
@@ -52,7 +52,7 @@ bool GlobedSignupPopup::setup() {
             if (error.empty()) {
                 this->onFailure("Creating challenge failed: server sent an empty response.");
             } else {
-                this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
+                this->onFailure("Creating challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
             }
         })
         .send();
@@ -140,7 +140,7 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
             if (error.empty()) {
                 this->onFailure("Creating challenge failed: server sent an empty response.");
             } else {
-                this->onFailure("Creating challenge failed: <cy>" + util::formatting::formatErrorMessage(error) + "</c>");
+                this->onFailure("Creating challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
             }
         })
         .send();

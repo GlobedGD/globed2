@@ -12,7 +12,7 @@
 #include <util/sync.hpp>
 #include <util/misc.hpp>
 
-namespace util::debugging {
+namespace util::debug {
     class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
     public:
         void start(const std::string_view id);
@@ -144,9 +144,6 @@ namespace util::debugging {
 
         mq.push(fmt::format(fmtString, std::forward<Args>(args)...));
     }
-
-    // nop X bytes at offset
-    void nop(ptrdiff_t offset, size_t bytes);
 
     struct ProcMapEntry {
         ptrdiff_t size;

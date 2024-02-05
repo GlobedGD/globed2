@@ -3,8 +3,8 @@
 # include "lerp_logger.hpp"
 #include <hooks/play_layer.hpp>
 #include <util/math.hpp>
-#include <util/debugging.hpp>
-#include <util/formatting.hpp>
+#include <util/debug.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 

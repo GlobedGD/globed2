@@ -4,8 +4,8 @@
 
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
-#include <util/debugging.hpp>
-#include <util/formatting.hpp>
+#include <util/debug.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 namespace permission = geode::utils::permission;

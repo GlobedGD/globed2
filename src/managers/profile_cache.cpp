@@ -39,12 +39,34 @@ void ProfileCacheManager::setOwnDataAuto() {
 }
 
 void ProfileCacheManager::setOwnData(const PlayerIconData& data) {
-    if (ownData != data) {
-        ownData = data;
-        pendingChanges = true;
+    auto accountId = GJAccountManager::get()->m_accountID;
+    auto& name = GJAccountManager::get()->m_username;
+
+    bool changes = false;
+    if (ownData.id != accountId) {
+        ownData.id = accountId;
+        changes = true;
     }
+
+    if (std::string_view(ownData.name) != name) {
+        ownData.name = name;
+        changes = true;
+    }
+
+    if (ownData.icons != data) {
+        ownData.icons = data;
+        changes = true;
+    }
+
+    // no special user data
+
+    pendingChanges = changes;
 }
 
 PlayerIconData ProfileCacheManager::getOwnData() {
+    return ownData.icons;
+}
+
+PlayerAccountData& ProfileCacheManager::getOwnAccountData() {
     return ownData;
 }

@@ -1,7 +1,9 @@
 #include "player_object.hpp"
 
-#include <util/debugging.hpp>
+#include <util/debug.hpp>
+#include <util/lowlevel.hpp>
 #include <Geode/Utils.hpp>
+
 #if UINTPTR_MAX > 0xffffffff
 static inline constexpr uintptr_t MAGIC_CONSTANT = 0xdc00cd00dc00cd00;
 #else
@@ -11,17 +13,15 @@ static inline constexpr uintptr_t MAGIC_CONSTANT = 0xdc00cd00;
 void ComplexPlayerObject::setRemoteState() {
     this->setUserData((void*)MAGIC_CONSTANT);
 
-    // TODO yeah this is more or less temporary, very ugly solution
-    void** vtable = *reinterpret_cast<void***>(this);
-
-    auto bytes = geode::toByteArray(&ComplexPlayerObject::getPositionHook);
-    bytes.resize(sizeof(void*));
-
 #ifdef GEODE_IS_WINDOWS
-    (void) Mod::get()->patch(&vtable[25], bytes);
+    constexpr size_t getPositionIdx = 25;
+#elif defined(GEODE_IS_ANDROID)
+    constexpr size_t getPositionIdx = 24;
 #else
-    (void) Mod::get()->patch(&vtable[24], bytes);
+# error getPosition unimpl
 #endif
+
+    util::lowlevel::vmtHook(&ComplexPlayerObject::getPositionHook, this, getPositionIdx);
 }
 
 void ComplexPlayerObject::setDeathEffect(int deathEffect) {

@@ -5,7 +5,7 @@
 #include <managers/account.hpp>
 #include <managers/profile_cache.hpp>
 #include <util/net.hpp>
-#include <util/debugging.hpp>
+#include <util/debug.hpp>
 
 using namespace geode::prelude;
 using namespace util::data;

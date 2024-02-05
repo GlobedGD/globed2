@@ -2,7 +2,7 @@
 
 #include <hooks/play_layer.hpp>
 #include <managers/error_queues.hpp>
-#include <util/debugging.hpp>
+#include <util/debug.hpp>
 
 using namespace geode::prelude;
 
@@ -14,7 +14,7 @@ bool ErrorCheckNode::init() {
 }
 
 void ErrorCheckNode::updateErrors(float) {
-    util::debugging::DataWatcher::get().updateAll();
+    util::debug::DataWatcher::get().updateAll();
 
     auto* currentScene = CCScene::get();
     if (!currentScene || !currentScene->getChildren() || currentScene->getChildrenCount() == 0) return;

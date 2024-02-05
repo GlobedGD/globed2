@@ -1,6 +1,6 @@
-#include "debugging.hpp"
+#include "debug.hpp"
 
-#include <util/formatting.hpp>
+#include <util/format.hpp>
 #include <util/rng.hpp>
 #include <util/misc.hpp>
 
@@ -12,7 +12,7 @@
 
 using namespace geode::prelude;
 
-namespace util::debugging {
+namespace util::debug {
     void Benchmarker::start(const std::string_view id) {
         _entries.emplace(std::string(id), time::now());
     }
@@ -35,7 +35,7 @@ namespace util::debugging {
 
     void Benchmarker::runAndLog(std::function<void()>&& func, const std::string_view identifier) {
         auto took = this->run(std::move(func));
-        log::debug("{} took {} to run", identifier, util::formatting::formatDuration(took));
+        log::debug("{} took {} to run", identifier, util::format::formatDuration(took));
     }
 
     std::vector<size_t> DataWatcher::updateLastData(DataWatcher::WatcherEntry& entry) {
@@ -70,11 +70,11 @@ namespace util::debugging {
             log::debug("Encrypted packets: {} ({} cleartext, ratio: {}%)", totalEncrypted, totalCleartext, encryptedRatio * 100);
             log::debug(
                 "Total bytes transferred: {} ({} sent, {} received)",
-                formatting::formatBytes(totalBytes),
-                formatting::formatBytes(totalBytesOut),
-                formatting::formatBytes(totalBytesIn)
+                format::formatBytes(totalBytes),
+                format::formatBytes(totalBytesOut),
+                format::formatBytes(totalBytesIn)
             );
-            log::debug("Average bytes per packet: {}", formatting::formatBytes((uint64_t)bytesPerPacket));
+            log::debug("Average bytes per packet: {}", format::formatBytes((uint64_t)bytesPerPacket));
 
             // sort packets by the counts
             std::vector<std::pair<packetid_t, size_t>> pc(packetCounts.begin(), packetCounts.end());
@@ -164,20 +164,7 @@ namespace util::debugging {
 #endif
 
     void timedLog(const std::string_view message) {
-        log::info("\r[{}] [Globed] {}", util::formatting::formatDateTime(util::time::systemNow()), message);
-    }
-
-    void nop(ptrdiff_t offset, size_t bytes) {
-#ifdef GEODE_IS_WINDOWS
-        std::vector<uint8_t> bytevec;
-        for (size_t i = 0; i < bytes; i++) {
-            bytevec.push_back(0x90);
-        }
-
-        (void) Mod::get()->patch(reinterpret_cast<void*>(geode::base::get() + offset), bytevec);
-#else
-        throw std::runtime_error("nop not implemented");
-#endif
+        log::info("\r[{}] [Globed] {}", util::format::formatDateTime(util::time::systemNow()), message);
     }
 
 #ifdef GEODE_IS_WINDOWS
@@ -242,7 +229,7 @@ namespace util::debugging {
 
             }
 
-            log::debug("took {} to parse proc maps", util::formatting::formatDuration(util::time::now() - start));
+            log::debug("took {} to parse proc maps", util::format::formatDuration(util::time::now() - start));
 
             return entries;
         });

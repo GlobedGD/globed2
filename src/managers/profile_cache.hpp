@@ -13,9 +13,11 @@ public:
     void setOwnDataAuto();
     void setOwnData(const PlayerIconData& data);
     PlayerIconData getOwnData();
+    PlayerAccountData& getOwnAccountData();
 
     bool pendingChanges = false;
+
 private:
     std::unordered_map<int32_t, PlayerAccountData> cache;
-    PlayerIconData ownData;
+    PlayerAccountData ownData;
 };

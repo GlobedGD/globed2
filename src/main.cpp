@@ -21,6 +21,7 @@ void setupCustomKeybinds();
 void loadDeathEffects();
 void printDebugInfo();
 
+
 $on_mod(Loaded) {
     setupLibsodium();
     setupErrorCheckNode();
@@ -39,7 +40,7 @@ $on_mod(Loaded) {
 class $modify(MyMenuLayer, MenuLayer) {
     void onMoreGames(CCObject*) {
         if (NetworkManager::get().handshaken()) {
-            util::debugging::PacketLogger::get().getSummary().print();
+            util::debug::PacketLogger::get().getSummary().print();
         }
 
         auto dumpPath = Mod::get()->getSaveDir() / "globed-lerp-log.bin";
@@ -54,10 +55,10 @@ void setupLibsodium() {
     // if there is a logic error in the crypto code, this lambda will be called
     sodium_set_misuse_handler([] {
         log::error("sodium_misuse called. we are officially screwed.");
-        util::debugging::suicide();
+        util::debug::suicide();
     });
 
-    // util::debugging::nop(0x366759, 5 + 3);
+    // util::debug::nop(0x366759, 5 + 3);
     // (void) Mod::get()->patch((void*) (geode::base::get() + 0x366754), {0x6a, 0x00, 0x90, 0x90, 0x90});
 }
 

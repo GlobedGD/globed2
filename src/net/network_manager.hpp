@@ -9,7 +9,7 @@
 #include <managers/central_server.hpp>
 #include <util/sync.hpp>
 #include <util/time.hpp>
-#include <util/formatting.hpp>
+#include <util/format.hpp>
 
 using namespace util::sync;
 

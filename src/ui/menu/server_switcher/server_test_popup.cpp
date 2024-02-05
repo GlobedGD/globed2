@@ -5,7 +5,7 @@
 #include <managers/error_queues.hpp>
 #include <util/net.hpp>
 #include <util/time.hpp>
-#include <util/formatting.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 
@@ -28,7 +28,7 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
         .then([this](std::string& resp) {
             sentRequestHandle = std::nullopt;
 
-            int protocol = util::formatting::parse<int>(resp).value_or(0);
+            int protocol = util::format::parse<int>(resp).value_or(0);
 
             if (protocol != NetworkManager::PROTOCOL_VERSION) {
                 this->parent->onTestFailure(fmt::format(
@@ -48,7 +48,7 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
             if (error.empty()) {
                 error = "Error retrieving data from the server: server sent an empty response.";
             } else {
-                error = "Error retrieving data from the server: <cy>" + util::formatting::formatErrorMessage(error) + "</c>";
+                error = "Error retrieving data from the server: <cy>" + util::format::formatErrorMessage(error) + "</c>";
             }
 
             this->parent->onTestFailure(error);

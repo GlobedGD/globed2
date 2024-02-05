@@ -7,7 +7,7 @@
 
 #include <util/time.hpp>
 
-namespace util::formatting {
+namespace util::format {
     // example: 2.123s, 69.123ms
     template <typename Rep, typename Period>
     std::string formatDuration(time::duration<Rep, Period> time) {

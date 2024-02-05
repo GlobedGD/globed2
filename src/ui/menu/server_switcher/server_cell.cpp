@@ -78,8 +78,6 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
     auto btnspr = Build<CCSprite>::createSpriteName(isActive ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
         .collect();
 
-    log::debug("btn sprite: {}", btnspr);
-
     util::ui::rescaleToMatch(btnspr, btnModify);
 
     Build<CCSprite>(btnspr)

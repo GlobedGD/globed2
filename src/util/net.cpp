@@ -1,6 +1,6 @@
 #include "net.hpp"
 
-#include <util/formatting.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 
@@ -76,7 +76,7 @@ namespace util::net {
 
         if (hasPort) {
             out.first = address.substr(0, colon);
-            auto portResult = util::formatting::parse<unsigned short>(address.substr(colon + 1));
+            auto portResult = util::format::parse<unsigned short>(address.substr(colon + 1));
 
             if (!portResult.has_value() && defaultPort == 0) {
                 return Err("invalid port number");
