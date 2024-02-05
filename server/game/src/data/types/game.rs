@@ -44,5 +44,6 @@ pub struct PlayerData {
     pub last_death_timestamp: f32,
 
     pub current_percentage: f32,
+
     pub flag_byte: u8,
 }

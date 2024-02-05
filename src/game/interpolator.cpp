@@ -50,10 +50,10 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
 }
 
 static inline void lerpSpecific(
-    const SpecificIconData& older,
-    const SpecificIconData& newer,
-    SpecificIconData& out,
-    float lerpRatio
+        const SpecificIconData& older,
+        const SpecificIconData& newer,
+        SpecificIconData& out,
+        float lerpRatio
     ) {
 
     // misc variables
@@ -75,15 +75,16 @@ static inline void lerpSpecific(
 }
 
 static inline void lerpPlayer(
-    const VisualPlayerState& older,
-    const VisualPlayerState& newer,
-    VisualPlayerState& out,
-    float lerpRatio
+        const VisualPlayerState& older,
+        const VisualPlayerState& newer,
+        VisualPlayerState& out,
+        float lerpRatio
     ) {
 
     lerpSpecific(older.player1, newer.player1, out.player1, lerpRatio);
     lerpSpecific(older.player2, newer.player2, out.player2, lerpRatio);
 
+    out.currentPercentage = older.currentPercentage;
     out.isDead = older.isDead;
     out.isPaused = older.isPaused;
     out.isPracticing = older.isPracticing;

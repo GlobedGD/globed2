@@ -15,6 +15,5 @@ protected:
     PlayerRoomPreviewAccountData data;
 
     cocos2d::CCMenu* menu;
-    // CCMenuItemSpriteExtra* btnOpenLevel;
     SimplePlayer* simplePlayer;
 };

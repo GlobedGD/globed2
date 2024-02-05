@@ -12,4 +12,7 @@ namespace util::ui {
     void addBackground(cocos2d::CCNode* layer);
     void addBackButton(cocos2d::CCMenu* menu, std::function<void()> callback);
     void navigateBack();
+
+    // set the scale for `node` in a way that `node->getScaledContentSize()` will match `target->getScaledContentSize()`
+    void rescaleToMatch(cocos2d::CCNode* node, cocos2d::CCNode* target, bool stretch = false);
 }

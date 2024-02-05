@@ -59,17 +59,8 @@ bool GlobedMenuLayer::init() {
         .id("left-button-menu"_spr)
         .store(leftButtonMenu);
 
-    // settings button
-    Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
-        .scale(1.0f)
-        .intoMenuItem([](auto) {
-            util::ui::switchToScene(GlobedSettingsLayer::create());
-        })
-        .id("btn-open-settings"_spr)
-        .parent(leftButtonMenu);
-
     // server switcher button
-    Build<CCSprite>::createSpriteName("gjHand_05_001.png")
+    Build<CCSprite>::createSpriteName("gj_folderBtn_001.png")
         .scale(1.2f)
         .intoMenuItem([](auto) {
             if (auto* popup = ServerSwitcherPopup::create()) {
@@ -80,9 +71,18 @@ bool GlobedMenuLayer::init() {
         .id("btn-open-server-switcher"_spr)
         .parent(leftButtonMenu);
 
+    // settings button
+    Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
+        .scale(1.0f)
+        .intoMenuItem([](auto) {
+            util::ui::switchToScene(GlobedSettingsLayer::create());
+        })
+        .id("btn-open-settings"_spr)
+        .parent(leftButtonMenu);
+
     // room popup button
-    roomButton = Build<CCSprite>::createSpriteName("miniSkull_001.png")
-        .scale(1.2f)
+    roomButton = Build<CCSprite>::createSpriteName("GJ_profileButton_001.png")
+        .scale(0.875f)
         .intoMenuItem([](auto) {
             // this->requestServerList();
             if (auto* popup = RoomPopup::create()) {

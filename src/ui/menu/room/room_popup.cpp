@@ -156,6 +156,12 @@ void RoomPopup::removeLoadingCircle() {
 }
 
 void RoomPopup::reloadPlayerList(bool sendPacket) {
+    auto& nm = NetworkManager::get();
+    if (!nm.established()) {
+        this->onClose(this);
+        return;
+    }
+
     // remove loading circle and existing list
     this->removeLoadingCircle();
 

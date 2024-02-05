@@ -5,6 +5,7 @@
 #include <net/network_manager.hpp>
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -71,12 +72,22 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
 
     // switch to server btn
 
-    Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
-        .intoMenuItem([this](auto) {
-            auto& csm = CentralServerManager::get();
-            csm.switchRoutine(this->index);
+    auto& csm = CentralServerManager::get();
+    bool isActive = csm.getActiveIndex() == index;
 
-            this->parent->close();
+    auto btnspr = Build<CCSprite>::createSpriteName(isActive ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
+        .collect();
+
+    log::debug("btn sprite: {}", btnspr);
+
+    util::ui::rescaleToMatch(btnspr, btnModify);
+
+    Build<CCSprite>(btnspr)
+        .intoMenuItem([this, &csm, isActive](auto) {
+            if (!isActive) {
+                csm.switchRoutine(this->index);
+                this->parent->close();
+            }
         })
         .parent(menu)
         .id("server-list-cell-switch"_spr)

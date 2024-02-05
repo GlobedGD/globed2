@@ -53,4 +53,17 @@ namespace util::ui {
         auto director = CCDirector::get();
         director->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
     }
+
+    void rescaleToMatch(cocos2d::CCNode* node, cocos2d::CCNode* target, bool stretch) {
+        auto targetSize = target->getScaledContentSize();
+        auto nodeSize = node->getContentSize();
+
+        if (!stretch) {
+            float scale = targetSize.width / nodeSize.width;
+            node->setScale(scale);
+        } else {
+            node->setScaleX(targetSize.width / nodeSize.width);
+            node->setScaleY(targetSize.height / nodeSize.height);
+        }
+    }
 }

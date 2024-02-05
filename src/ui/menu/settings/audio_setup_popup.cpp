@@ -5,6 +5,7 @@
 #include "audio_device_cell.hpp"
 #include <audio/manager.hpp>
 #include <managers/settings.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -96,7 +97,7 @@ bool AudioSetupPopup::setup() {
     audioVisualizer->setPosition({visualizerSize.height / 2, visualizerSize.width / 2});
     this->toggleButtons(false);
 
-    listLayer = GJCommentListLayer::create(nullptr, "", {192, 114, 62, 255}, LIST_WIDTH, LIST_HEIGHT, false);
+    listLayer = GJCommentListLayer::create(nullptr, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
     this->refreshList();
 
     float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;

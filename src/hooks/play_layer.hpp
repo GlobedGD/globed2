@@ -4,6 +4,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 #include <game/interpolator.hpp>
+#include <game/player_store.hpp>
 #include <net/network_manager.hpp>
 #include <ui/game/player/remote_player.hpp>
 #include <ui/game/overlay/overlay.hpp>
@@ -22,6 +23,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     float timeCounter = 0.f;
     float lastServerUpdate = 0.f;
     std::shared_ptr<PlayerInterpolator> interpolator;
+    std::shared_ptr<PlayerStore> playerStore;
 
     bool isCurrentlyDead = false;
     float lastDeathTimestamp = 0.f;

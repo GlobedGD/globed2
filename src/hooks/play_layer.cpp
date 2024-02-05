@@ -175,6 +175,8 @@ void GlobedPlayLayer::setupPacketListeners() {
                 this->handlePlayerJoin(player.accountId);
             }
 
+            this->m_fields->playerStore->insertOrUpdate(player.accountId, player.data.attempts, player.data.percentage);
+
             this->m_fields->interpolator->updatePlayer(player.accountId, player.data, this->m_fields->lastServerUpdate);
         }
     });
@@ -394,8 +396,6 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         m_fields->isCurrentlyDead = false;
     }
 
-    float percentage = this->getCurrentPercent();
-
     return PlayerData {
         .timestamp = m_fields->timeCounter,
         .percentage = static_cast<uint16_t>(m_level->m_normalPercent),
@@ -406,7 +406,7 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
 
         .lastDeathTimestamp = m_fields->lastDeathTimestamp,
 
-        .currentPercentage = this->getCurrentPercentInt() / 100.f,
+        .currentPercentage = this->getCurrentPercent() / 100.f,
 
         .isDead = isDead,
         .isPaused = this->isPaused(),
