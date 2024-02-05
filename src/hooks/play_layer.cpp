@@ -41,7 +41,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     // overlay
     Build<GlobedOverlay>::create()
-        .pos(overlayBaseX, overlayBaseY) // TODO configurable pos
+        .pos(overlayBaseX, overlayBaseY)
         .anchorPoint(overlayAnchorX, overlayAnchorY)
         .scale(0.4f)
         .zOrder(11)
@@ -52,9 +52,14 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     auto& nm = NetworkManager::get();
 
     // if not authenticated, do nothing
-    m_fields->globedReady = nm.established();
-    if (!m_fields->globedReady) {
-        m_fields->overlay->updateWithDisconnected(); // TODO in an editor level do updateWithEditor
+    bool isEditor = m_level->m_levelType == GJLevelType::Editor;
+    m_fields->globedReady = nm.established() && !isEditor;
+
+    if (!nm.established()) {
+        m_fields->overlay->updateWithDisconnected();
+        return true;
+    } else if (isEditor) {
+        m_fields->overlay->updateWithEditor();
         return true;
     }
 
@@ -350,7 +355,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     self->m_fields->playerStore->insertOrUpdate(
         accountId,
         self->m_level->m_attempts,
-        static_cast<uint32_t>(self->m_level->isPlatformer() ? self->m_level->m_normalPercent : self->m_level->m_bestTime)
+        static_cast<uint32_t>(self->m_level->isPlatformer() ? self->m_level->m_bestTime : self->m_level->m_normalPercent)
     );
 
     float dt = adjustLerpTimeDelta(rawdt);
@@ -408,7 +413,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
     float rot = player->getRotation() + pobjInner->getRotation();
 
     return SpecificIconData {
-        .position = player->getPosition(), // TODO maybe use m_position
+        .position = player->getPosition(),
         .rotation = rot,
 
         .iconType = iconType,
@@ -421,7 +426,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
 }
 
 PlayerData GlobedPlayLayer::gatherPlayerData() {
-    bool isDead = m_player1->m_isDead || m_player2->m_isDead; // TODO
+    bool isDead = m_player1->m_isDead || m_player2->m_isDead;
     if (isDead && !m_fields->isCurrentlyDead) {
         m_fields->isCurrentlyDead = true;
         m_fields->lastDeathTimestamp = m_fields->timeCounter;

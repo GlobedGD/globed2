@@ -18,7 +18,6 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
     auto color1 = gm->colorForIdx(data.color1);
     auto color2 = gm->colorForIdx(data.color2);
 
-    // TODO just put this behind the progress bar for gods sake
     Build<CCLayerColor>::create(ccc4(color1.r, color1.g, color1.b, 255), 2.f, 8.f)
         .pos(0.f, 3.f)
         .parent(this)

@@ -101,7 +101,6 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(p0)) {
         level->m_gauntletLevel = false;
         level->m_gauntletLevel2 = false;
-        // TODO globed 2.1 did some caching of gjgamelevels here, not sure if it's really needed
 
         sortedLevels.push_back(level);
     }

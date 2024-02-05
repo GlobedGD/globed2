@@ -12,8 +12,6 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     playerId = data.id;
 
-    // TODO finish this
-
     auto winSize = CCDirector::get()->getWinSize();
 
     auto gm = GameManager::get();

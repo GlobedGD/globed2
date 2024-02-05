@@ -1,11 +1,14 @@
 #include "pause_layer.hpp"
 
+#include <hooks/play_layer.hpp>
 #include <ui/game/userlist/userlist.hpp>
 
 using namespace geode::prelude;
 
 void GlobedPauseLayer::customSetup() {
     PauseLayer::customSetup();
+
+    if (!static_cast<GlobedPlayLayer*>(PlayLayer::get())->m_fields->globedReady) return;
 
     // TODO temp button placement!
 

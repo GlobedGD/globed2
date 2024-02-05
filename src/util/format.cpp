@@ -51,9 +51,9 @@ namespace util::format {
 
     std::string formatPlatformerTime(uint32_t ms) {
         auto dur = time::millis(ms);
-        auto hours = time::as<time::hours>(dur).count();
-        auto minutes = time::as<time::minutes>(dur).count();
-        auto seconds = time::as<time::seconds>(dur).count();
+        auto hours = time::as<time::hours>(dur).count() % 24;
+        auto minutes = time::as<time::minutes>(dur).count() % 60;
+        auto seconds = time::as<time::seconds>(dur).count() % 60;
         auto millis = ms % 1000;
 
         if (hours > 0) {
