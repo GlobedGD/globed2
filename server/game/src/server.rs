@@ -216,7 +216,8 @@ impl GameServer {
     }
 
     /// If someone is already logged in under the given account ID, logs them out.
-    pub fn check_already_logged_in(&'static self, user_id: i32) -> anyhow::Result<()> {
+    /// Additionally, blocks until the appropriate cleanup has been done.
+    pub async fn check_already_logged_in(&'static self, user_id: i32) -> anyhow::Result<()> {
         let thread = self
             .threads
             .lock()
@@ -228,6 +229,9 @@ impl GameServer {
             thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
                 "Someone logged into the same account from a different place.",
             )))?;
+
+            let _mtx = thread.cleanup_mutex.lock().await;
+            thread.cleanup_notify.notified().await;
         }
 
         Ok(())
@@ -310,6 +314,9 @@ impl GameServer {
                 thread.run().await;
                 trace!("removing client: {}", peer);
                 self.post_disconnect_cleanup(&thread, peer);
+
+                // if any thread was waiting for us to terminate, tell them it's finally time.
+                thread.cleanup_notify.notify_waiters();
             });
 
             self.threads.lock().insert(peer, thread_cl.clone());

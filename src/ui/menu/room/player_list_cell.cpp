@@ -1,6 +1,7 @@
 #include "player_list_cell.hpp"
 
 #include "room_popup.hpp"
+#include "download_level_popup.hpp"
 
 using namespace geode::prelude;
 
@@ -43,13 +44,13 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         simplePlayer->setGlowOutline(gm->colorForIdx(data.glowColor));
     }
 
-    if (this->data.levelId != 0) {
-        auto* cbs = CircleButtonSprite::createWithSpriteFrameName("d_skull01_001.png", 1.f, CircleBaseColor::Green, CircleBaseSize::Medium);
-        Build<CircleButtonSprite>(cbs)
-            .scale(0.75f)
+    if (this->data.levelId != 1) {
+        Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
+            .scale(0.4f)
             .intoMenuItem([this](auto) {
-                // TODO OPen the level
-                log::debug("here you open the level ID {}", this->data.levelId);
+                if (auto popup = DownloadLevelPopup::create(44777641)) {
+                    popup->show();
+                }
             })
             .pos(-30.f, -23.f)
             .parent(menu);

@@ -350,7 +350,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     self->m_fields->playerStore->insertOrUpdate(
         accountId,
         self->m_level->m_attempts,
-        static_cast<uint16_t>(self->m_level->m_normalPercent)
+        static_cast<uint32_t>(self->m_level->isPlatformer() ? self->m_level->m_normalPercent : self->m_level->m_bestTime)
     );
 
     float dt = adjustLerpTimeDelta(rawdt);

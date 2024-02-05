@@ -19,6 +19,7 @@ bool RoomPopup::setup() {
     auto& rm = RoomManager::get();
 
     nm.addListener<RoomPlayerListPacket>([this](RoomPlayerListPacket* packet) {
+        log::debug("got room list packet: {}", packet->data.size());
         this->playerList = packet->data;
         auto& rm = RoomManager::get();
         bool changed = rm.roomId != packet->roomId;

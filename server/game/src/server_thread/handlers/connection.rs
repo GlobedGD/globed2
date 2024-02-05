@@ -98,7 +98,7 @@ impl GameServerThread {
             }
         };
 
-        self.game_server.check_already_logged_in(packet.account_id)?;
+        self.game_server.check_already_logged_in(packet.account_id).await?;
         self.account_id.store(packet.account_id, Ordering::Relaxed);
         self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
 

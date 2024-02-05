@@ -17,6 +17,7 @@ use globed_shared::{
     logger::*,
     SyncMutex,
 };
+use tokio::sync::{Mutex, Notify};
 
 use crate::{data::*, make_uninit, server::GameServer, server_thread::handlers::*, util::TokioChannel};
 
@@ -59,6 +60,8 @@ pub struct GameServerThread {
     pub account_data: SyncMutex<PlayerAccountData>,
 
     last_voice_packet: AtomicU64,
+    pub cleanup_notify: Notify,
+    pub cleanup_mutex: Mutex<()>,
 }
 
 impl GameServerThread {
@@ -77,6 +80,8 @@ impl GameServerThread {
             awaiting_termination: AtomicBool::new(false),
             account_data: SyncMutex::new(PlayerAccountData::default()),
             last_voice_packet: AtomicU64::new(0),
+            cleanup_notify: Notify::new(),
+            cleanup_mutex: Mutex::new(()),
         }
     }
 
