@@ -1,9 +1,9 @@
 #include "player_store.hpp"
 
-void PlayerStore::insertOrUpdate(int playerId, int32_t attempts, uint16_t percentage) {
+void PlayerStore::insertOrUpdate(int playerId, int32_t attempts, uint32_t localBest) {
     auto& entry = _data[playerId] = Entry {
         .attempts = attempts,
-        .percentage = percentage
+        .localBest = localBest
     };
 }
 

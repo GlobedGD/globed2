@@ -20,7 +20,7 @@ struct CentralServer {
     }
 };
 
-class CentralServerManager : GLOBED_SINGLETON(CentralServerManager) {
+class CentralServerManager : public SingletonBase<CentralServerManager> {
 protected:
     friend class SingletonBase;
     CentralServerManager();

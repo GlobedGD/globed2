@@ -6,7 +6,7 @@
 #include <util/data.hpp>
 
 namespace util::rng {
-    class Random : GLOBED_SINGLETON(Random) {
+    class Random : public SingletonBase<Random> {
     protected:
         friend class SingletonBase;
         Random();

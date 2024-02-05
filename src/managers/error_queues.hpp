@@ -10,7 +10,7 @@
 * so they can be shown to the end user.
 */
 
-class ErrorQueues : GLOBED_SINGLETON(ErrorQueues) {
+class ErrorQueues : public SingletonBase<ErrorQueues> {
 public:
     void warn(const std::string_view message, bool print = true);
     void error(const std::string_view message, bool print = true);

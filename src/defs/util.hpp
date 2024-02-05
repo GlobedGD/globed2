@@ -27,8 +27,6 @@ protected:
     virtual ~SingletonBase() = default;
 };
 
-#define GLOBED_SINGLETON(cls) public SingletonBase<cls>
-
 // using decls to avoid polluting the namespace in headers
 
 // ugly workaround because MSVC sucks ass

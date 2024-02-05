@@ -35,7 +35,7 @@ pub struct SpecificIconData {
 #[dynamic_size(as_static = true)]
 pub struct PlayerData {
     pub timestamp: f32,
-    pub percentage: u16,
+    pub local_best: u32, // percentage or milliseconds in platformer
     pub attempts: i32,
 
     pub player1: SpecificIconData,

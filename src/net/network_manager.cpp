@@ -356,7 +356,7 @@ void NetworkManager::maybeDisconnectIfDead() {
     auto elapsed = util::time::now() - lastReceivedPacket;
 
     // if we haven't had a handshake response in 5 seconds, assume the server is dead
-    if (!this->handshaken() && elapsed > util::time::secs(5)) {
+    if (!this->handshaken() && elapsed > util::time::seconds(5)) {
         ErrorQueues::get().error("Failed to connect to the server. No response was received after 5 seconds.");
         this->disconnect(true);
     } else if (elapsed > DISCONNECT_AFTER) {

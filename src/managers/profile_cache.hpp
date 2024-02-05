@@ -3,7 +3,7 @@
 #include <data/types/gd.hpp>
 #include <util/sync.hpp>
 
-class ProfileCacheManager : GLOBED_SINGLETON(ProfileCacheManager) {
+class ProfileCacheManager : public SingletonBase<ProfileCacheManager> {
 public:
     void insert(const PlayerAccountData& data);
     std::optional<PlayerAccountData> getData(int32_t accountId);

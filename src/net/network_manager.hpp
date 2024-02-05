@@ -21,7 +21,7 @@ template <typename T>
 concept HasPacketID = requires { T::PACKET_ID; };
 
 // This class is fully thread safe..? hell do i know..
-class NetworkManager : GLOBED_SINGLETON(NetworkManager) {
+class NetworkManager : public SingletonBase<NetworkManager> {
 protected:
     friend class SingletonBase;
     NetworkManager();

@@ -50,7 +50,7 @@ struct SpecificIconData {
 struct PlayerData {
     GLOBED_ENCODE {
         buf.writeF32(timestamp);
-        buf.writeU16(percentage);
+        buf.writeU32(localBest);
         buf.writeI32(attempts);
 
         buf.writeValue(player1);
@@ -65,7 +65,7 @@ struct PlayerData {
 
     GLOBED_DECODE {
         timestamp = buf.readF32();
-        percentage = buf.readU16();
+        localBest = buf.readU32();
         attempts = buf.readI32();
 
         player1 = buf.readValue<SpecificIconData>();
@@ -79,7 +79,7 @@ struct PlayerData {
     }
 
     float timestamp;
-    uint16_t percentage;
+    uint32_t localBest;
     int32_t attempts;
 
     SpecificIconData player1;

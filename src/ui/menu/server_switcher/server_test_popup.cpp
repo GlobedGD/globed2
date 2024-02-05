@@ -22,7 +22,7 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
 
     sentRequestHandle = web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
-        .timeout(util::time::secs(5))
+        .timeout(util::time::seconds(5))
         .get(fmt::format("{}/version", url))
         .text()
         .then([this](std::string& resp) {

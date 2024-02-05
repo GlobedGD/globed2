@@ -10,7 +10,7 @@
 * at the same time efficiently and without memory leaks (?).
 * Not thread safe.
 */
-class VoicePlaybackManager : GLOBED_SINGLETON(VoicePlaybackManager) {
+class VoicePlaybackManager : public SingletonBase<VoicePlaybackManager> {
 public:
     void playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
     void stopAllStreams();

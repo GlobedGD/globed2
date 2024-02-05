@@ -16,9 +16,11 @@ public:
 
 private:
     cocos2d::CCLabelBMFont* percentageLabel;
-    uint16_t lastPercentage = static_cast<uint16_t>(-1);
+    cocos2d::CCMenu* menu;
+    CCMenuItemSpriteExtra* blockButton = nullptr;
     PlayerStore::Entry _data;
 
     bool init(const PlayerStore::Entry& entry, const PlayerAccountData& data);
     void onOpenProfile(cocos2d::CCObject*);
+    void makeBlockButton();
 };

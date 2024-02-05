@@ -189,10 +189,10 @@ RoomPopup::~RoomPopup() {
     nm.removeListener<RoomJoinFailedPacket>();
     nm.removeListener<RoomCreatedPacket>();
 
-    nm.suppressUnhandledFor<RoomPlayerListPacket>(util::time::secs(1));
-    nm.suppressUnhandledFor<RoomJoinedPacket>(util::time::secs(1));
-    nm.suppressUnhandledFor<RoomJoinFailedPacket>(util::time::secs(1));
-    nm.suppressUnhandledFor<RoomCreatedPacket>(util::time::secs(1));
+    nm.suppressUnhandledFor<RoomPlayerListPacket>(util::time::seconds(1));
+    nm.suppressUnhandledFor<RoomJoinedPacket>(util::time::seconds(1));
+    nm.suppressUnhandledFor<RoomJoinFailedPacket>(util::time::seconds(1));
+    nm.suppressUnhandledFor<RoomCreatedPacket>(util::time::seconds(1));
 }
 
 RoomPopup* RoomPopup::create() {

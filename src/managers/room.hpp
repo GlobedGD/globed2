@@ -3,7 +3,7 @@
 
 #include <util/sync.hpp>
 
-class RoomManager : GLOBED_SINGLETON(RoomManager) {
+class RoomManager : public SingletonBase<RoomManager> {
 public:
     util::sync::AtomicU32 roomId = 0;
 

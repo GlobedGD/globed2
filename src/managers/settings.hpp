@@ -8,7 +8,7 @@
     ty name = GDEFAULTKEY(name); \
 
 // This class should only be accessed from the main thread.
-class GlobedSettings : GLOBED_SINGLETON(GlobedSettings) {
+class GlobedSettings : public SingletonBase<GlobedSettings> {
 protected:
     friend class SingletonBase;
     GlobedSettings();
@@ -28,13 +28,14 @@ public:
 
     struct Communication {
         GSETTING(bool, voiceEnabled, true);
-        GSETTING(bool, onlyFriends, false); // TODO
+        GSETTING(bool, onlyFriends, false);
         GSETTING(bool, lowerAudioLatency, false);
         GSETTING(int, audioDevice, 0);
     };
 
     struct LevelUI {
         GSETTING(bool, progressIndicators, true);
+        GSETTING(bool, progressPointers, true); // TODO
     };
 
     struct Players {
@@ -42,7 +43,7 @@ public:
         GSETTING(bool, showNames, true);
         GSETTING(bool, dualName, true);
         GSETTING(float, nameOpacity, 1.0f);
-        GSETTING(bool, statusIcons, true); // TODO
+        GSETTING(bool, statusIcons, true);
         GSETTING(bool, deathEffects, true);
         GSETTING(bool, defaultDeathEffect, false);
     };

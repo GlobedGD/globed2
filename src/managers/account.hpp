@@ -9,7 +9,7 @@
 // all methods of GlobedAccountManager will store/load values with keys that are
 // user-specific and central-server-specific, so that switching server or accounts doesn't reset authkeys.
 // This class is not guaranteed to be fully thread safe (reason: getSavedValue/setSavedValue)
-class GlobedAccountManager : GLOBED_SINGLETON(GlobedAccountManager) {
+class GlobedAccountManager : public SingletonBase<GlobedAccountManager> {
 protected:
     friend class SingletonBase;
     GlobedAccountManager();

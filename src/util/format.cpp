@@ -48,4 +48,20 @@ namespace util::format {
 
         return message;
     }
+
+    std::string formatPlatformerTime(uint32_t ms) {
+        auto dur = time::millis(ms);
+        auto hours = time::as<time::hours>(dur).count();
+        auto minutes = time::as<time::minutes>(dur).count();
+        auto seconds = time::as<time::seconds>(dur).count();
+        auto millis = ms % 1000;
+
+        if (hours > 0) {
+            return fmt::format("{}:{:02}:{:02}.{:03}", hours, minutes, seconds, millis);
+        } else if (minutes > 0) {
+            return fmt::format("{}:{:02}.{:03}", minutes, seconds, millis);
+        } else {
+            return fmt::format("{}.{:03}", seconds, millis);
+        }
+    }
 }

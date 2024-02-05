@@ -1,6 +1,9 @@
 #include "user_cell.hpp"
 
 #include "userlist.hpp"
+#include <managers/block_list.hpp>
+#include <hooks/play_layer.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 
@@ -24,10 +27,10 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .id("player-icon"_spr)
         .collect();
 
-    auto* menu = Build<CCMenu>::create()
+    Build<CCMenu>::create()
         .pos(0.f, 0.f)
         .parent(this)
-        .collect();
+        .store(menu);
 
     auto* nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
         .limitLabelWidth(150.f, 0.7f, 0.1f)
@@ -53,6 +56,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .id("percentage-label"_spr)
         .store(percentageLabel);
 
+    this->makeBlockButton();
+
     this->refreshData(entry);
 
     return true;
@@ -61,13 +66,40 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
     if (_data != entry) {
         _data = entry;
-        percentageLabel->setString(fmt::format("{}%", lastPercentage).c_str());
-    }
 
+        bool platformer = PlayLayer::get()->m_level->isPlatformer();
+        if (platformer && _data.localBest != 0) {
+            percentageLabel->setString(util::format::formatPlatformerTime(_data.localBest).c_str());
+        } else if (!platformer) {
+            percentageLabel->setString(fmt::format("{}%", _data.localBest).c_str());
+        }
+    }
+}
+
+void GlobedUserCell::makeBlockButton() {
+    if (blockButton) blockButton->removeFromParent();
+    if (playerId == GJAccountManager::get()->m_accountID) return;
+
+    // mute/unmute button
+    auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    bool isUnblocked = pl->shouldLetMessageThrough(playerId);
+
+    Build<CCSprite>::createSpriteName(isUnblocked ? "GJ_fxOnBtn_001.png" : "GJ_fxOffBtn_001.png")
+        .scale(0.8f)
+        .intoMenuItem([isUnblocked, this](auto) {
+            auto& bl = BlockListMangaer::get();
+            isUnblocked ? bl.blacklist(this->playerId) : bl.whitelist(this->playerId);
+            this->makeBlockButton();
+        })
+        .pos(GlobedUserListPopup::LIST_WIDTH - 25.f, CELL_HEIGHT / 2.f)
+        .parent(menu)
+        .id("block-button"_spr)
+        .store(blockButton);
+    log::debug("mbl 4");
 }
 
 void GlobedUserCell::onOpenProfile(CCObject*) {
-    ProfilePage::create(playerId, false)->show();
+    ProfilePage::create(playerId, playerId == GJAccountManager::get()->m_accountID)->show();
 }
 
 GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data) {

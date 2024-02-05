@@ -81,6 +81,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         return false;
     }
 
+    bool shouldLetMessageThrough(int playerId);
+
     SpecificIconData gatherSpecificIconData(PlayerObject* player);
     PlayerData gatherPlayerData();
 

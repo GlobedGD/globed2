@@ -6,8 +6,10 @@
 
 #include "pause_layer.hpp"
 #include <audio/all.hpp>
-#include <managers/profile_cache.hpp>
+#include <managers/block_list.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/friend_list.hpp>
+#include <managers/profile_cache.hpp>
 #include <managers/settings.hpp>
 #include <data/packets/all.hpp>
 #include <util/math.hpp>
@@ -127,6 +129,11 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     m_fields->selfProgressIcon->updateIcons(ProfileCacheManager::get().getOwnData());
 
+    auto& flm = FriendListManager::get();
+    if (!flm.isLoaded()) {
+        flm.load();
+    }
+
     return true;
 }
 
@@ -154,9 +161,9 @@ void GlobedPlayLayer::onQuit() {
     nm.send(LevelLeavePacket::create());
 
     // if we a have a higher ping, there may still be some inbound packets. suppress them for the next second.
-    nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::secs(1));
-    nm.suppressUnhandledFor<LevelDataPacket>(util::time::secs(1));
-    nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::secs(1));
+    nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::seconds(1));
+    nm.suppressUnhandledFor<LevelDataPacket>(util::time::seconds(1));
+    nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::seconds(1));
 }
 
 void GlobedPlayLayer::setupPacketListeners() {
@@ -178,7 +185,7 @@ void GlobedPlayLayer::setupPacketListeners() {
                 this->handlePlayerJoin(player.accountId);
             }
 
-            this->m_fields->playerStore->insertOrUpdate(player.accountId, player.data.attempts, player.data.percentage);
+            this->m_fields->playerStore->insertOrUpdate(player.accountId, player.data.attempts, player.data.localBest);
 
             this->m_fields->interpolator->updatePlayer(player.accountId, player.data, this->m_fields->lastServerUpdate);
         }
@@ -188,10 +195,12 @@ void GlobedPlayLayer::setupPacketListeners() {
 #if GLOBED_VOICE_SUPPORT
         // if deafened or voice is disabled, do nothing
         auto& settings = GlobedSettings::get();
-        if (this->m_fields->deafened || !settings.communication.voiceEnabled) return;
 
-        // TODO client side blocking and stuff..
-        log::debug("streaming frame from {}", packet->sender);
+        if (this->m_fields->deafened || !settings.communication.voiceEnabled) return;
+        if (!this->shouldLetMessageThrough(packet->sender)) return;
+
+        log::debug("playing voice message from {}", packet->sender);
+
         // TODO - this decodes the sound data on the main thread. might be a bad idea, will need to benchmark.
         try {
             VoicePlaybackManager::get().playFrameStreamed(packet->sender, packet->frame);
@@ -371,6 +380,19 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
 
 /* private utilities */
 
+bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {
+    auto& settings = GlobedSettings::get();
+    auto& flm = FriendListManager::get();
+    auto& bl = BlockListMangaer::get();
+
+    if (bl.isExplicitlyBlocked(playerId)) return false;
+    if (bl.isExplicitlyAllowed(playerId)) return true;
+
+    if (settings.communication.onlyFriends && !flm.isFriend(playerId)) return false;
+
+    return true;
+}
+
 SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
     PlayerIconType iconType = PlayerIconType::Cube;
     if (player->m_isShip) iconType = PlayerIconType::Ship;
@@ -407,9 +429,16 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         m_fields->isCurrentlyDead = false;
     }
 
+    uint32_t localBest;
+    if (m_level->isPlatformer()) {
+        localBest = static_cast<uint32_t>(m_level->m_bestTime);
+    } else {
+        localBest = static_cast<uint32_t>(m_level->m_normalPercent);
+    }
+
     return PlayerData {
         .timestamp = m_fields->timeCounter,
-        .percentage = static_cast<uint16_t>(m_level->m_normalPercent),
+        .localBest = localBest,
         .attempts = m_level->m_attempts,
 
         .player1 = this->gatherSpecificIconData(m_player1),

@@ -3,7 +3,7 @@
 
 #include <data/types/game.hpp>
 
-class LerpLogger : GLOBED_SINGLETON(LerpLogger) {
+class LerpLogger : public SingletonBase<LerpLogger> {
 public:
     void reset(uint32_t player);
 

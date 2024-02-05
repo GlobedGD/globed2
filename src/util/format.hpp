@@ -11,7 +11,7 @@ namespace util::format {
     // example: 2.123s, 69.123ms
     template <typename Rep, typename Period>
     std::string formatDuration(time::duration<Rep, Period> time) {
-        auto seconds = time::asSecs(time);
+        auto seconds = time::asSeconds(time);
         auto millis = time::asMillis(time);
         auto micros = time::asMicros(time);
 
@@ -32,6 +32,9 @@ namespace util::format {
 
     // format an HTTP error message into a nicer string
     std::string formatErrorMessage(std::string message);
+
+    // format milliseconds into a string like 45.200, 1:20.300, 3:01:40.500
+    std::string formatPlatformerTime(uint32_t ms);
 
     // parse a string to an integer
     template <typename T>

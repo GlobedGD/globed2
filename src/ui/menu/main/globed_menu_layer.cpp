@@ -238,7 +238,7 @@ void GlobedMenuLayer::requestServerList() {
 
     serverRequestHandle = web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
-        .timeout(util::time::secs(3))
+        .timeout(util::time::seconds(3))
         .get(fmt::format("{}/servers", centralUrl.value().url))
         .text()
         .then([this](std::string& response) {

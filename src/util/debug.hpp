@@ -13,7 +13,7 @@
 #include <util/misc.hpp>
 
 namespace util::debug {
-    class Benchmarker : GLOBED_SINGLETON(Benchmarker) {
+    class Benchmarker : public SingletonBase<Benchmarker> {
     public:
         void start(const std::string_view id);
         time::micros end(const std::string_view id);
@@ -24,7 +24,7 @@ namespace util::debug {
         std::unordered_map<std::string, time::time_point> _entries;
     };
 
-    class DataWatcher : GLOBED_SINGLETON(DataWatcher) {
+    class DataWatcher : public SingletonBase<DataWatcher> {
     public:
         struct WatcherEntry {
             uintptr_t address;
@@ -84,7 +84,7 @@ namespace util::debug {
         void print();
     };
 
-    class PacketLogger : GLOBED_SINGLETON(PacketLogger) {
+    class PacketLogger : public SingletonBase<PacketLogger> {
     public:
         void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {
 # ifdef GLOBED_DEBUG_PACKETS

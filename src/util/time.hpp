@@ -10,7 +10,9 @@ namespace util::time {
     using time_point = clock::time_point;
     using system_time_point = sysclock::time_point;
 
-    using secs = chrono::seconds;
+    using hours = chrono::hours;
+    using minutes = chrono::minutes;
+    using seconds = chrono::seconds;
     using millis = chrono::milliseconds;
     using micros = chrono::microseconds;
 
@@ -31,8 +33,8 @@ namespace util::time {
     }
 
     template <typename Rep, typename Period>
-    inline long long asSecs(duration<Rep, Period> tp) {
-        return as<secs>(tp).count();
+    inline long long asSeconds(duration<Rep, Period> tp) {
+        return as<seconds>(tp).count();
     }
 
     template <typename Rep, typename Period>

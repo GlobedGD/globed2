@@ -92,7 +92,8 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
 #endif // GLOBED_VOICE_SUPPORT
 
     MAKE_HEADER("Level UI");
-    MAKE_SETTING(levelUi, progressIndicators, "Progressbar icons", "Show the small icons under the progressbar, indicating how far other players are in the level.");
+    MAKE_SETTING(levelUi, progressIndicators, "Progress icons", "Show the small icons under the progressbar, indicating how far other players are in the level.");
+    MAKE_SETTING(levelUi, progressPointers, "Player arrows", "In platformer, show small arrows indicating where other players are.");
 
     MAKE_HEADER("Players");
     MAKE_SETTING_LIM(players, playerOpacity, "Opacity", "Opacity of other players.", {

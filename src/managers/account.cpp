@@ -99,7 +99,7 @@ void GlobedAccountManager::requestAuthToken(
 
     requestHandle = web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
-        .timeout(util::time::secs(3))
+        .timeout(util::time::seconds(3))
         .post(url)
         .text()
         .then([this, callback](std::string& response) {

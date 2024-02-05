@@ -24,7 +24,7 @@ struct GameServer {
 };
 
 // This class is fully thread safe to use.
-class GameServerManager : GLOBED_SINGLETON(GameServerManager) {
+class GameServerManager : public SingletonBase<GameServerManager> {
 protected:
     friend class SingletonBase;
     GameServerManager();
