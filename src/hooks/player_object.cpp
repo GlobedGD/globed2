@@ -12,16 +12,6 @@ static inline constexpr uintptr_t MAGIC_CONSTANT = 0xdc00cd00;
 
 void ComplexPlayerObject::setRemoteState() {
     this->setUserData((void*)MAGIC_CONSTANT);
-
-#ifdef GEODE_IS_WINDOWS
-    constexpr size_t getPositionIdx = 25;
-#elif defined(GEODE_IS_ANDROID)
-    constexpr size_t getPositionIdx = 24;
-#else
-# error getPosition unimpl
-#endif
-
-    util::lowlevel::vmtHook(&ComplexPlayerObject::getPositionHook, this, getPositionIdx);
 }
 
 void ComplexPlayerObject::setDeathEffect(int deathEffect) {
@@ -52,25 +42,4 @@ bool ComplexPlayerObject::vanilla() {
 
 void ComplexPlayerObject::incrementJumps() {
     if (vanilla()) PlayerObject::incrementJumps();
-}
-
-void ComplexPlayerObject::setPosition(const cocos2d::CCPoint& p) {
-    if (vanilla()) {
-        return PlayerObject::setPosition(p);
-    }
-
-    // do nothing.
-}
-
-const cocos2d::CCPoint& ComplexPlayerObject::getPositionHook() {
-    if (vanilla()) {
-        return this->CCNode::getPosition();
-    }
-
-    auto parent = this->getParent();
-    if (parent == nullptr) {
-        return this->CCNode::getPosition();
-    }
-
-    return parent->getPosition();
 }

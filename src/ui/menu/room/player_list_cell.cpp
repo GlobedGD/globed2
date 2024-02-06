@@ -44,11 +44,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         simplePlayer->setGlowOutline(gm->colorForIdx(data.glowColor));
     }
 
-    if (this->data.levelId != 1) {
+    if (this->data.levelId != 0) {
         Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
             .scale(0.4f)
             .intoMenuItem([this](auto) {
-                if (auto popup = DownloadLevelPopup::create(44777641)) {
+                if (auto popup = DownloadLevelPopup::create(this->data.levelId)) {
                     popup->show();
                 }
             })

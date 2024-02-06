@@ -34,7 +34,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     auto winSize = CCDirector::get()->getWinSize();
     float overlayBaseY = settings.overlay.position < 2 ? winSize.height - 2.f : 2.f;
-    float overlayBaseX = (settings.overlay.position % 2 == 1) ? 2.f : winSize.width - 2.f;
+    float overlayBaseX = (settings.overlay.position % 2 == 1) ? winSize.width - 2.f : 2.f;
 
     float overlayAnchorY = (settings.overlay.position < 2) ? 1.f : 0.f;
     float overlayAnchorX = (settings.overlay.position % 2 == 1) ? 1.f : 0.f;

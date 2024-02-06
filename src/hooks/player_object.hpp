@@ -12,7 +12,4 @@ class $modify(ComplexPlayerObject, PlayerObject) {
 
     void incrementJumps();
     void playDeathEffect();
-
-    void setPosition(const cocos2d::CCPoint&);
-    const cocos2d::CCPoint& getPositionHook();
 };

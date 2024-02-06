@@ -62,8 +62,15 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
 }
 
 void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing) {
-    this->setPosition(data.position);
+    playerIcon->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
+
+    // set the pos for status icons and name (ask rob not me)
+    playerName->setPosition(data.position + CCPoint{0.f, 25.f});
+    if (statusIcons) {
+        statusIcons->setPosition(data.position + CCPoint{0.f, playerName->isVisible() ? 40.f : 25.f});
+    }
+
     // setFlipX doesnt work here for jetpack and stuff
     float mult = data.isMini ? 0.6f : 1.0f;
     playerIcon->setScaleX((data.isLookingLeft ? -1.0f : 1.0f) * mult);
