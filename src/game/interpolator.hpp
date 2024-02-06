@@ -19,32 +19,33 @@ public:
     PlayerInterpolator(PlayerInterpolator&) = delete;
     PlayerInterpolator& operator=(PlayerInterpolator&) = delete;
 
-    void addPlayer(uint32_t playerId);
-    void removePlayer(uint32_t playerId);
+    void addPlayer(int playerId);
+    void removePlayer(int playerId);
+    bool hasPlayer(int playerId);
 
     // Update the last known state of the player. Should be called only when new data is received.
-    void updatePlayer(uint32_t playerId, const PlayerData& data, float updateCounter);
+    void updatePlayer(int playerId, const PlayerData& data, float updateCounter);
 
     // Interpolate the player state. Should preferrably be called every frame.
     void tick(float dt);
 
     // Get the current interpolated visual state of the player. This is what you pass into `RemotePlayer::updateData`
-    VisualPlayerState& getPlayerState(uint32_t playerId);
+    VisualPlayerState& getPlayerState(int playerId);
 
     // returns `true` if death animation needs to be played and sets the flag back to false (so next call won't return `true` again)
-    bool swapDeathStatus(uint32_t playerId);
+    bool swapDeathStatus(int playerId);
 
     // like `swapDeathStatus` but for spider teleports.
-    std::optional<SpiderTeleportData> swapP1Teleport(uint32_t playerId);
-    std::optional<SpiderTeleportData> swapP2Teleport(uint32_t playerId);
+    std::optional<SpiderTeleportData> swapP1Teleport(int playerId);
+    std::optional<SpiderTeleportData> swapP2Teleport(int playerId);
 
     // returns `true` if the given time of the last packet doesn't match the last update time of the player
-    bool isPlayerStale(uint32_t playerId, float lastServerPacket);
+    bool isPlayerStale(int playerId, float lastServerPacket);
 
     float getLocalTs();
 
 private:
-    std::unordered_map<uint32_t, PlayerState> players;
+    std::unordered_map<int, PlayerState> players;
     InterpolatorSettings settings;
 
     constexpr static bool EXTRAPOLATION = false;

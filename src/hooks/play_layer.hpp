@@ -34,6 +34,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     std::unordered_map<int, RemotePlayer*> players;
     Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
     Ref<CCNode> progressBarWrapper = nullptr;
+    Ref<PlayerStatusIcons> selfStatusIcons = nullptr;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;

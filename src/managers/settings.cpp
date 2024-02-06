@@ -42,6 +42,7 @@ void GlobedSettings::save() {
 
     // communication
     STOREV(communication, voiceEnabled);
+    STOREV(communication, voiceProximity);
     STOREV(communication, onlyFriends);
     STOREV(communication, lowerAudioLatency);
     STOREV(communication, audioDevice);
@@ -77,6 +78,7 @@ void GlobedSettings::reload() {
 
     // communication
     LOADV(communication, voiceEnabled);
+    LOADV(communication, voiceProximity);
     LOADV(communication, onlyFriends);
     LOADV(communication, lowerAudioLatency);
     LOADV(communication, audioDevice);
@@ -112,6 +114,7 @@ void GlobedSettings::resetToDefaults() {
 
         // communication
         SKEY(communication, voiceEnabled),
+        SKEY(communication, voiceProximity),
         SKEY(communication, onlyFriends),
         SKEY(communication, lowerAudioLatency),
         SKEY(communication, audioDevice),

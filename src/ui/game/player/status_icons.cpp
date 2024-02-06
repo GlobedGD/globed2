@@ -7,17 +7,18 @@ using namespace geode::prelude;
 bool PlayerStatusIcons::init() {
     if (!CCNode::init()) return false;
 
-    this->updateStatus(false, false);
+    this->updateStatus(false, false, false);
 
     return true;
 }
 
-void PlayerStatusIcons::updateStatus(bool paused, bool practicing) {
-    if (wasPaused == paused && wasPracticing == practicing) return;
+void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking) {
+    if (wasPaused == paused && wasPracticing == practicing && wasSpeaking == speaking) return;
     wasPaused = paused;
     wasPracticing = practicing;
+    wasSpeaking = speaking;
 
-    if (!wasPaused && !wasPracticing) {
+    if (!wasPaused && !wasPracticing && !wasSpeaking) {
         this->setVisible(false);
         return;
     }
@@ -33,6 +34,8 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing) {
                     ->setGap(6.5f))
         .parent(this);
 
+    size_t count = 0;
+
     if (wasPaused) {
         auto pauseSpr = Build<CCSprite>::createSpriteName("GJ_pauseBtn_clean_001.png")
             .zOrder(1)
@@ -42,6 +45,7 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing) {
             .collect();
 
         width += pauseSpr->getScaledContentSize().width;
+        count++;
     }
 
     if (wasPracticing) {
@@ -53,11 +57,22 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing) {
             .collect();
 
         width += practiceSpr->getScaledContentSize().width;
+        count++;
     }
 
-    if (wasPaused && wasPracticing) {
-        width += static_cast<RowLayout*>(iconWrapper->getLayout())->getGap();
+    if (wasSpeaking) {
+        auto speakSpr = Build<CCSprite>::createSpriteName("speaker-icon.png"_spr)
+            .zOrder(1)
+            .scale(0.8f)
+            .id("icon-speaking"_spr)
+            .parent(iconWrapper)
+            .collect();
+
+        width += speakSpr->getScaledContentSize().width;
+        count++;
     }
+
+    width += static_cast<RowLayout*>(iconWrapper->getLayout())->getGap() * (count - 1);
 
     auto cc9s = Build<CCScale9Sprite>::create("square02_001.png")
         .contentSize({ width * 3.f, 40.f * 3.f })

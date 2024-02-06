@@ -76,4 +76,14 @@ namespace util::rng {
     bool Random::genRatio(double ratio) {
         return this->generate<double>() < ratio;
     }
+
+    std::string Random::genString(const std::string_view alphabet, size_t size) {
+        std::string out(size, '\0');
+        for (size_t i = 0; i < size; i++) {
+            auto idx = this->generate<size_t>(0, alphabet.size() - 1);
+            out[i] = alphabet[idx];
+        }
+
+        return out;
+    }
 }

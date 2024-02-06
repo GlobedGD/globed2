@@ -43,8 +43,8 @@ class $modify(MyMenuLayer, MenuLayer) {
             util::debug::PacketLogger::get().getSummary().print();
         }
 
-        auto dumpPath = Mod::get()->getSaveDir() / "globed-lerp-log.bin";
-        LerpLogger::get().makeDump(dumpPath);
+        // auto dumpPath = Mod::get()->getSaveDir() / "globed-lerp-log.bin";
+        // LerpLogger::get().makeDump(dumpPath);
     }
 };
 

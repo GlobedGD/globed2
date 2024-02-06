@@ -86,6 +86,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
     MAKE_HEADER("Communication");
 #if GLOBED_VOICE_SUPPORT
     MAKE_SETTING(communication, voiceEnabled, "Voice chat", "Enables in-game voice chat.");
+    MAKE_SETTING(communication, voiceProximity, "Voice proximity", "In platformer mode, the loudness of other players will be determined by how close they are to you.");
     MAKE_SETTING(communication, onlyFriends, "Only friends", "When enabled, you won't hear players that are not on your friend list in-game.");
     MAKE_SETTING(communication, lowerAudioLatency, "Lower audio latency", "Decreases the audio buffer size by 2 times, reducing the latency but potentially causing audio issues.");
     MAKE_SETTING_TYPE(communication, audioDevice, Type::AudioDevice, "Audio device", "The input device used for recording your voice.");

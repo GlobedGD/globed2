@@ -17,6 +17,9 @@
 
 using namespace geode::prelude;
 
+// how many units before the voice disappears
+constexpr float PROXIMITY_VOICE_LIMIT = 1250.f;
+
 float adjustLerpTimeDelta(float dt) {
     // i fucking hate this i cannot do this anymore i want to die
     auto* dir = CCDirector::get();
@@ -133,6 +136,16 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         .collect();
 
     m_fields->selfProgressIcon->updateIcons(ProfileCacheManager::get().getOwnData());
+
+    if (settings.players.statusIcons) {
+        m_fields->selfStatusIcons = Build<PlayerStatusIcons>::create()
+            .scale(0.8f)
+            .anchorPoint(0.5f, 0.f)
+            .pos(0.f, 25.f)
+            .parent(m_objectLayer)
+            .id("self-status-icon"_spr)
+            .collect();
+    }
 
     auto& flm = FriendListManager::get();
     if (!flm.isLoaded()) {
@@ -253,11 +266,20 @@ void GlobedPlayLayer::setupCustomKeybinds() {
                 if (result.isErr()) {
                     ErrorQueues::get().warn(result.unwrapErr());
                     log::warn("unable to record audio: {}", result.unwrapErr());
+                    return;
+                }
+
+                if (m_fields->selfStatusIcons) {
+                    m_fields->selfStatusIcons->updateStatus(false, false, true);
                 }
             }
         } else {
             if (vm.isRecording()) {
                 vm.stopRecording();
+
+                if (m_fields->selfStatusIcons) {
+                    m_fields->selfStatusIcons->updateStatus(false, false, false);
+                }
             }
         }
 
@@ -377,6 +399,10 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         self->m_progressBar->addChild(self->m_fields->progressBarWrapper);
     }
 
+    auto& vpm = VoicePlaybackManager::get();
+    auto& settings = GlobedSettings::get();
+    auto mePosition = self->m_player1->getPosition();
+
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
 
@@ -384,11 +410,26 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         auto p1tp = self->m_fields->interpolator->swapP1Teleport(playerId);
         auto p2tp = self->m_fields->interpolator->swapP2Teleport(playerId);
 
-        remotePlayer->updateData(vstate, playDeathEffect, p1tp, p2tp);
+        bool isSpeaking = vpm.isSpeaking(playerId);
+        remotePlayer->updateData(vstate, playDeathEffect, isSpeaking, p1tp, p2tp);
 
         if (self->m_progressBar && self->m_progressBar->isVisible()) {
             remotePlayer->updateProgressIcon();
         }
+
+        // update voice proximity
+        if (self->m_level->isPlatformer() && settings.communication.voiceProximity) {
+            auto theyPos1 = vstate.player1.position;
+            auto theyPos2 = vstate.player2.position;
+            float distance = std::min(cocos2d::ccpDistance(mePosition, theyPos1), cocos2d::ccpDistance(mePosition, theyPos2));
+
+            float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
+            vpm.setVolume(playerId, volume);
+        }
+    }
+
+    if (self->m_fields->selfStatusIcons) {
+        self->m_fields->selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
     }
 }
 

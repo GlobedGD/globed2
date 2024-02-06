@@ -15,9 +15,11 @@ namespace util::rng {
         template <typename T>
         T generate();
 
+        // Generate a number `[0, max]`
         template <typename T>
         T generate(T max);
 
+        // Generate a number `[min, max]`
         template <typename T>
         T generate(T min, T max);
 
@@ -28,6 +30,8 @@ namespace util::rng {
         bool genRatio(float ratio);
         // Has a `ratio%` chance of returning true. 1.0 is 100%, 0.0 is 0%
         bool genRatio(double ratio);
+
+        std::string genString(const std::string_view alphabet, size_t size);
 
     private:
         std::mt19937_64 engine;

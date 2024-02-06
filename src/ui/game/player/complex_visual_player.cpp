@@ -61,7 +61,7 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     this->updateIconType(playerIconType);
 }
 
-void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing) {
+void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing, bool isSpeaking) {
     playerIcon->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
 
@@ -101,7 +101,7 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
     }
 
     if (statusIcons) {
-        statusIcons->updateStatus(isPaused, isPracticing);
+        statusIcons->updateStatus(isPaused, isPracticing, isSpeaking);
     }
 
     // animate robot and spider

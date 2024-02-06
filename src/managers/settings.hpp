@@ -28,6 +28,7 @@ public:
 
     struct Communication {
         GSETTING(bool, voiceEnabled, true);
+        GSETTING(bool, voiceProximity, true);
         GSETTING(bool, onlyFriends, false);
         GSETTING(bool, lowerAudioLatency, false);
         GSETTING(int, audioDevice, 0);
