@@ -325,11 +325,12 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
             continue;
         }
 
+        auto data = pcm.getData(playerId);
+
         if (!remotePlayer->isValidPlayer()) {
-            auto data = pcm.getData(playerId);
             if (data.has_value()) {
                 // if the profile data already exists in cache, use it
-                remotePlayer->updateAccountData(data.value());
+                remotePlayer->updateAccountData(data.value(), true);
             } else if (remotePlayer->getDefaultTicks() >= 12) {
                 // if it has been 3 seconds and we still don't have them in cache, request again
                 remotePlayer->setDefaultTicks(0);
@@ -338,6 +339,9 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
                 // if it has been less than 3 seconds, just increment the tick counter
                 remotePlayer->incDefaultTicks();
             }
+        } else if (data.has_value()) {
+            // still try to see if the cache has changed
+            remotePlayer->updateAccountData(data.value());
         }
     }
 
@@ -490,6 +494,12 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
         .zOrder(10) // TODO temp
         .id(Mod::get()->expandSpriteName(fmt::format("remote-player-{}", playerId).c_str()))
         .collect();
+
+    auto& pcm = ProfileCacheManager::get();
+    auto pcmData = pcm.getData(playerId);
+    if (pcmData.has_value()) {
+        rp->updateAccountData(pcmData.value(), true);
+    }
 
     m_objectLayer->addChild(rp);
     m_fields->players.emplace(playerId, rp);

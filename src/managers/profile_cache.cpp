@@ -32,7 +32,7 @@ void ProfileCacheManager::setOwnDataAuto() {
         gm->m_playerDeathEffect,
         gm->m_playerColor,
         gm->m_playerColor2,
-        gm->getPlayerGlow() ? gm->m_playerGlowColor : -1
+        gm->getPlayerGlow() ? gm->m_playerGlowColor.value() : -1
     );
 
     this->setOwnData(data);

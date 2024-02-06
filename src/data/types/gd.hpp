@@ -17,6 +17,8 @@ public:
 
     PlayerIconData() {}
 
+    bool operator==(const PlayerIconData&) const = default;
+
     GLOBED_ENCODE {
         buf.writeI16(cube);
         buf.writeI16(ship);
@@ -56,24 +58,12 @@ inline const PlayerIconData PlayerIconData::DEFAULT_ICONS = PlayerIconData(
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, -1
 );
 
-inline bool operator==(const PlayerIconData& lhs, const PlayerIconData& rhs) {
-    return lhs.cube == rhs.cube
-    && lhs.ship == rhs.ship
-    && lhs.ball == rhs.ball
-    && lhs.ufo == rhs.ufo
-    && lhs.wave == rhs.wave
-    && lhs.robot == rhs.robot
-    && lhs.spider == rhs.spider
-    && lhs.swing == rhs.swing
-    && lhs.jetpack == rhs.jetpack
-    && lhs.color1 == rhs.color1
-    && lhs.color2 == rhs.color2;
-}
-
 class SpecialUserData {
 public:
     SpecialUserData(cocos2d::ccColor3B nameColor) : nameColor(nameColor) {}
     SpecialUserData() {}
+
+    bool operator==(const SpecialUserData&) const = default;
 
     GLOBED_ENCODE {
         buf.writeColor3(nameColor);
@@ -94,6 +84,8 @@ public:
         : id(id), name(name), icons(icons) {}
 
     PlayerAccountData() {}
+
+    bool operator==(const PlayerAccountData&) const = default;
 
     GLOBED_ENCODE {
         buf.writeI32(id);

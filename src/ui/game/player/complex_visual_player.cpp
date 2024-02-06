@@ -320,6 +320,14 @@ void ComplexVisualPlayer::updatePlayerObjectIcons() {
     playerIcon->setColor(storedMainColor);
     playerIcon->setSecondColor(storedSecondaryColor);
 
+    if (storedIcons.glowColor != -1) {
+        playerIcon->m_hasGlow = true;
+        playerIcon->enableCustomGlowColor(gm->colorForIdx(storedIcons.glowColor));
+    } else {
+        playerIcon->m_hasGlow = false;
+        playerIcon->disableCustomGlowColor();
+    }
+
     playerIcon->updatePlayerShipFrame(storedIcons.ship);
     playerIcon->updatePlayerRollFrame(storedIcons.ball);
     playerIcon->updatePlayerBirdFrame(storedIcons.ufo);
@@ -329,14 +337,6 @@ void ComplexVisualPlayer::updatePlayerObjectIcons() {
     playerIcon->updatePlayerSwingFrame(storedIcons.swing);
     playerIcon->updatePlayerJetpackFrame(storedIcons.jetpack);
     playerIcon->updatePlayerFrame(storedIcons.cube);
-
-    if (storedIcons.glowColor != -1) {
-        playerIcon->m_hasGlow = true;
-        playerIcon->enableCustomGlowColor(gm->colorForIdx(storedIcons.glowColor));
-    } else {
-        playerIcon->m_hasGlow = false;
-        playerIcon->disableCustomGlowColor();
-    }
 
     playerIcon->updateGlowColor();
     playerIcon->updatePlayerGlow();

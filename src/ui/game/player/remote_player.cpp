@@ -22,7 +22,12 @@ bool RemotePlayer::init(PlayerProgressIcon* progressIcon, const PlayerAccountDat
     return true;
 }
 
-void RemotePlayer::updateAccountData(const PlayerAccountData& data) {
+void RemotePlayer::updateAccountData(const PlayerAccountData& data, bool force) {
+    if (!force && this->accountData == data) {
+        defaultTicks = 0;
+        return;
+    }
+
     this->accountData = data;
     player1->updateIcons(data.icons);
     player2->updateIcons(data.icons);
