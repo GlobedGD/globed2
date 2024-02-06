@@ -18,6 +18,14 @@ pub enum PlayerIconType {
     Swing = 8,
 }
 
+/* SpiderTeleportData (spider teleport data) */
+#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
+pub struct SpiderTeleportData {
+    pub from: Point,
+    pub to: Point,
+}
+
 /* SpecificIconData (specific player data) */
 
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
@@ -27,6 +35,7 @@ pub struct SpecificIconData {
     pub rotation: f32,
     pub icon_type: PlayerIconType,
     pub flags: u16, // bit-field with various flags, see the client-side structure for more info
+    pub spider_teleport_data: Option<SpiderTeleportData>,
 }
 
 /* PlayerData (data in a level) */

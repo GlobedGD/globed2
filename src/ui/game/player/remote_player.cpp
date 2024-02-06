@@ -41,7 +41,7 @@ const PlayerAccountData& RemotePlayer::getAccountData() const {
     return accountData;
 }
 
-void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffect, bool playP1Teleport, bool playP2Teleport) {
+void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffect, std::optional<SpiderTeleportData> p1tp, std::optional<SpiderTeleportData> p2tp) {
     player1->updateData(data.player1, data.isDead, data.isPaused, data.isPracticing);
     player2->updateData(data.player2, data.isDead, data.isPaused, data.isPracticing);
 
@@ -49,12 +49,12 @@ void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffec
         player1->playDeathEffect();
     }
 
-    if (playP1Teleport) {
-        player1->playSpiderTeleport();
+    if (p1tp) {
+        player1->playSpiderTeleport(p1tp.value());
     }
 
-    if (playP2Teleport) {
-        player2->playSpiderTeleport();
+    if (p2tp) {
+        player2->playSpiderTeleport(p2tp.value());
     }
 
     lastPercentage = data.currentPercentage;

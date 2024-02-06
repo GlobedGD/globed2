@@ -377,10 +377,10 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
 
         bool playDeathEffect = self->m_fields->interpolator->swapDeathStatus(playerId);
-        bool playP1Teleport = self->m_fields->interpolator->swapP1Teleport(playerId);
-        bool playP2Teleport = self->m_fields->interpolator->swapP2Teleport(playerId);
+        auto p1tp = self->m_fields->interpolator->swapP1Teleport(playerId);
+        auto p2tp = self->m_fields->interpolator->swapP2Teleport(playerId);
 
-        remotePlayer->updateData(vstate, playDeathEffect, playP1Teleport, playP2Teleport);
+        remotePlayer->updateData(vstate, playDeathEffect, p1tp, p2tp);
 
         if (self->m_progressBar && self->m_progressBar->isVisible()) {
             remotePlayer->updateProgressIcon();
@@ -417,7 +417,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
 
     float rot = player->getRotation() + pobjInner->getRotation();
 
-    bool hasJustTeleported = player == m_player1 ? util::misc::swapFlag(m_fields->p1JustTeleported) : util::misc::swapFlag(m_fields->p2JustTeleported);
+    auto spiderTeleportData = player == m_player1 ? util::misc::swapOptional(m_fields->spiderTp1) : util::misc::swapOptional(m_fields->spiderTp2);
 
     return SpecificIconData {
         .position = player->getPosition(),
@@ -432,7 +432,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
         .isGrounded = player->m_isOnGround,
         .isStationary = std::abs(player->m_platformerXVelocity) < 0.1,
         .isFalling = player->m_yVelocity < 0.0,
-        .hasJustTeleported = hasJustTeleported,
+        .spiderTeleportData = spiderTeleportData
     };
 }
 

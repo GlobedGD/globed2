@@ -28,6 +28,18 @@ namespace util::misc {
     // If `target` is false, returns false. If `target` is true, modifies `target` to false and returns true.
     bool swapFlag(bool& target);
 
+    // Like `swapFlag` but for optional types
+    template <typename T>
+    std::optional<T> swapOptional(std::optional<T>& val) {
+        if (!val.has_value()) {
+            return std::nullopt;
+        }
+
+        T copy = val.value();
+        val.reset();
+        return copy;
+    }
+
     // Utility function for converting various enums between each other, is specialized separately for different enums
     template <typename To, typename From>
     To convertEnum(From value);

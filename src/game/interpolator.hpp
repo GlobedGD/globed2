@@ -35,8 +35,8 @@ public:
     bool swapDeathStatus(uint32_t playerId);
 
     // like `swapDeathStatus` but for spider teleports.
-    bool swapP1Teleport(uint32_t playerId);
-    bool swapP2Teleport(uint32_t playerId);
+    std::optional<SpiderTeleportData> swapP1Teleport(uint32_t playerId);
+    std::optional<SpiderTeleportData> swapP2Teleport(uint32_t playerId);
 
     // returns `true` if the given time of the last packet doesn't match the last update time of the player
     bool isPlayerStale(uint32_t playerId, float lastServerPacket);
@@ -68,7 +68,6 @@ public:
         VisualPlayerState interpolatedState;
         bool pendingRealFrame = false;
         bool pendingDeath = false;
-        bool pendingP1Teleport = false;
-        bool pendingP2Teleport = false;
+        std::optional<SpiderTeleportData> pendingP1Teleport, pendingP2Teleport;
     };
 };

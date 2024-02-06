@@ -12,7 +12,7 @@ public:
     void updateName() override;
     void updateIconType(PlayerIconType newType) override;
     void playDeathEffect() override;
-    void playSpiderTeleport() override;
+    void playSpiderTeleport(const SpiderTeleportData& data) override;
 
     void updatePlayerObjectIcons();
     void toggleAllOff();
@@ -33,9 +33,6 @@ protected:
     bool wasGrounded = false;
     bool wasStationary = true;
     bool wasFalling = false;
-
-    // used in spider teleport anim
-    cocos2d::CCPoint lastPosition;
 
     // used in swing anims
     bool wasUpsideDown = false;

@@ -62,8 +62,6 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
 }
 
 void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing) {
-    lastPosition = playerIcon->getPosition();
-
     playerIcon->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
 
@@ -184,8 +182,9 @@ void ComplexVisualPlayer::playDeathEffect() {
     }
 }
 
-void ComplexVisualPlayer::playSpiderTeleport() {
-    playerIcon->playSpiderDashEffect(lastPosition, playerIcon->getPosition());
+void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
+    log::debug("playing spider teleport from {} to {}", data.from, data.to);
+    playerIcon->playSpiderDashEffect(data.from, data.to);
 }
 
 void ComplexVisualPlayer::updateRobotAnimation() {

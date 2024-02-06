@@ -14,6 +14,20 @@ enum class PlayerIconType : uint8_t {
     Jetpack = 9,
 };
 
+struct SpiderTeleportData {
+    cocos2d::CCPoint from, to;
+
+    GLOBED_ENCODE {
+        buf.writePoint(from);
+        buf.writePoint(to);
+    }
+
+    GLOBED_DECODE {
+        from = buf.readPoint();
+        to = buf.readPoint();
+    }
+};
+
 struct SpecificIconData {
     GLOBED_ENCODE {
         buf.writePoint(position);
@@ -28,9 +42,10 @@ struct SpecificIconData {
             isMini,
             isGrounded,
             isStationary,
-            isFalling,
-            hasJustTeleported
+            isFalling
         ));
+
+        buf.writeOptionalValue(spiderTeleportData);
     }
 
     GLOBED_DECODE {
@@ -51,9 +66,10 @@ struct SpecificIconData {
             isMini,
             isGrounded,
             isStationary,
-            isFalling,
-            hasJustTeleported
+            isFalling
         );
+
+        spiderTeleportData = buf.readOptionalValue<SpiderTeleportData>();
     }
 
     void copyFlagsFrom(const SpecificIconData& other) {
@@ -66,7 +82,6 @@ struct SpecificIconData {
         isGrounded = other.isGrounded;
         isStationary = other.isStationary;
         isFalling = other.isFalling;
-        // hasJustTeleported intentionally not copied.
     }
 
     cocos2d::CCPoint position;
@@ -81,7 +96,8 @@ struct SpecificIconData {
     bool isGrounded;        // true if player is on the ground currently
     bool isStationary;      // true if player is not moving currently (in platformer)
     bool isFalling;         // when !isGrounded, true if falling, false if jumping upwards
-    bool hasJustTeleported; // true for one frame when the player is a spider and they just teleported
+
+    std::optional<SpiderTeleportData> spiderTeleportData;
 };
 
 struct PlayerData {

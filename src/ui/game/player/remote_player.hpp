@@ -12,7 +12,7 @@ public:
     void updateAccountData(const PlayerAccountData& data);
     const PlayerAccountData& getAccountData() const;
 
-    void updateData(const VisualPlayerState& data, bool playDeathEffect, bool playP1Teleport, bool playP2Teleport);
+    void updateData(const VisualPlayerState& data, bool playDeathEffect, std::optional<SpiderTeleportData> p1tp, std::optional<SpiderTeleportData> p2tp);
     void updateProgressIcon();
 
     unsigned int getDefaultTicks();

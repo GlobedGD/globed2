@@ -34,13 +34,8 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
         }
     }
 
-    if (data.player1.hasJustTeleported) {
-        player.pendingP1Teleport = true;
-    }
-
-    if (data.player2.hasJustTeleported) {
-        player.pendingP2Teleport = true;
-    }
+    player.pendingP1Teleport = data.player1.spiderTeleportData;
+    player.pendingP2Teleport = data.player2.spiderTeleportData;
 
     LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
 
@@ -126,14 +121,14 @@ bool PlayerInterpolator::swapDeathStatus(uint32_t playerId) {
     return util::misc::swapFlag(state.pendingDeath);
 }
 
-bool PlayerInterpolator::swapP1Teleport(uint32_t playerId) {
+std::optional<SpiderTeleportData> PlayerInterpolator::swapP1Teleport(uint32_t playerId) {
     auto& state = players.at(playerId);
-    return util::misc::swapFlag(state.pendingP1Teleport);
+    return util::misc::swapOptional(state.pendingP1Teleport);
 }
 
-bool PlayerInterpolator::swapP2Teleport(uint32_t playerId) {
+std::optional<SpiderTeleportData> PlayerInterpolator::swapP2Teleport(uint32_t playerId) {
     auto& state = players.at(playerId);
-    return util::misc::swapFlag(state.pendingP2Teleport);
+    return util::misc::swapOptional(state.pendingP2Teleport);
 }
 
 bool PlayerInterpolator::isPlayerStale(uint32_t playerId, float lastServerPacket) {

@@ -26,8 +26,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     std::shared_ptr<PlayerStore> playerStore;
 
     bool isCurrentlyDead = false;
-    bool p1JustTeleported = false;
-    bool p2JustTeleported = false;
+    std::optional<SpiderTeleportData> spiderTp1, spiderTp2;
     float lastDeathTimestamp = 0.f;
 
     // ui elements
