@@ -183,8 +183,53 @@ void ComplexVisualPlayer::playDeathEffect() {
 }
 
 void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
-    log::debug("playing spider teleport from {} to {}", data.from, data.to);
+    playerIcon->m_unk65c = true;
     playerIcon->playSpiderDashEffect(data.from, data.to);
+    playerIcon->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
+    tpColorDelta = 0.f;
+
+    this->spiderTeleportUpdateColor();
+}
+
+static inline ccColor3B lerpColor(ccColor3B from, ccColor3B to, float delta) {
+    delta = std::clamp(delta, 0.f, 1.f);
+
+    ccColor3B out;
+    out.r = std::lerp(from.r, to.r, delta);
+    out.g = std::lerp(from.g, to.g, delta);
+    out.b = std::lerp(from.b, to.b, delta);
+
+    return out;
+}
+
+void ComplexVisualPlayer::spiderTeleportUpdateColor() {
+    constexpr float MAX_TIME = 0.4f;
+
+    tpColorDelta += (1.f / 60.f);
+
+    float delta = tpColorDelta / MAX_TIME;
+
+    if (delta >= 1.f) {
+        playerIcon->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
+        playerIcon->setColor(storedMainColor);
+        playerIcon->setSecondColor(storedSecondaryColor);
+        return;
+    }
+
+    auto main = lerpColor(ccColor3B{255, 255, 255}, storedMainColor, delta);
+    auto secondary = lerpColor(ccColor3B{255, 255, 255}, storedSecondaryColor, delta);
+
+    playerIcon->setColor(main);
+    playerIcon->setSecondColor(secondary);
+
+    auto* seq = CCSequence::create(
+        CCDelayTime::create(1.f / 60.f),
+        CCCallFunc::create(this, callfunc_selector(ComplexVisualPlayer::spiderTeleportUpdateColor)),
+        nullptr
+    );
+    seq->setTag(SPIDER_TELEPORT_COLOR_ACTION);
+
+    this->runAction(seq);
 }
 
 void ComplexVisualPlayer::updateRobotAnimation() {
@@ -269,8 +314,11 @@ void ComplexVisualPlayer::onAnimateRobotFireOut() {
 void ComplexVisualPlayer::updatePlayerObjectIcons() {
     auto* gm = GameManager::get();
 
-    playerIcon->setColor(gm->colorForIdx(storedIcons.color1));
-    playerIcon->setSecondColor(gm->colorForIdx(storedIcons.color2));
+    storedMainColor = gm->colorForIdx(storedIcons.color1);
+    storedSecondaryColor = gm->colorForIdx(storedIcons.color2);
+
+    playerIcon->setColor(storedMainColor);
+    playerIcon->setSecondColor(storedSecondaryColor);
 
     playerIcon->updatePlayerShipFrame(storedIcons.ship);
     playerIcon->updatePlayerRollFrame(storedIcons.ball);

@@ -28,19 +28,25 @@ protected:
     cocos2d::CCLabelBMFont* playerName;
     Ref<PlayerStatusIcons> statusIcons;
 
-
     // these 3 used in robot and spider anims
     bool wasGrounded = false;
     bool wasStationary = true;
     bool wasFalling = false;
+
+    // used in spider anims
+    cocos2d::ccColor3B storedMainColor, storedSecondaryColor;
+    float tpColorDelta = 0.f;
 
     // used in swing anims
     bool wasUpsideDown = false;
 
     PlayerIconData storedIcons;
 
-    static constexpr int ROBOT_FIRE_ACTION = 727;
-    static constexpr int SWING_FIRE_ACTION = 728;
+    static constexpr int ROBOT_FIRE_ACTION = 1000727;
+    static constexpr int SWING_FIRE_ACTION = 1000728;
+    static constexpr int SPIDER_TELEPORT_COLOR_ACTION = 1000729;
+
+    void spiderTeleportUpdateColor();
 
     void updateRobotAnimation();
     void updateSpiderAnimation();
