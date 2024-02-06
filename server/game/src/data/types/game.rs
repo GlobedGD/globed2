@@ -26,7 +26,7 @@ pub struct SpecificIconData {
     pub position: Point,
     pub rotation: f32,
     pub icon_type: PlayerIconType,
-    pub flag_byte: u8,
+    pub flags: u16, // bit-field with various flags, see the client-side structure for more info
 }
 
 /* PlayerData (data in a level) */
@@ -45,5 +45,5 @@ pub struct PlayerData {
 
     pub current_percentage: f32,
 
-    pub flags: u16, // bit-field with various flags, see the client-side structure for more info
+    pub flags: u8, // also a bit-field
 }
