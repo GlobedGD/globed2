@@ -14,7 +14,7 @@ using namespace geode::prelude;
 
 namespace util::debug {
     void Benchmarker::start(const std::string_view id) {
-        _entries.emplace(std::string(id), time::now());
+        _entries[std::string(id)] = time::now();
     }
 
     time::micros Benchmarker::end(const std::string_view id) {
@@ -23,6 +23,10 @@ namespace util::debug {
         _entries.erase(idstr);
 
         return micros;
+    }
+
+    void Benchmarker::endAndLog(const std::string_view id) {
+        log::debug("{} took {} to run", id, util::format::formatDuration(this->end(id)));
     }
 
     time::micros Benchmarker::run(std::function<void()>&& func) {

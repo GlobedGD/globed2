@@ -34,6 +34,14 @@ void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data,
         }
     }
 
+    if (data.player1.hasJustTeleported) {
+        player.pendingP1Teleport = true;
+    }
+
+    if (data.player2.hasJustTeleported) {
+        player.pendingP2Teleport = true;
+    }
+
     LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
 
     if (settings.realtime) {
@@ -56,13 +64,7 @@ static inline void lerpSpecific(
         float lerpRatio
     ) {
 
-    // misc variables
-    out.iconType = older.iconType;
-    out.isDashing = older.isDashing;
-    out.isLookingLeft = older.isLookingLeft;
-    out.isUpsideDown = older.isUpsideDown;
-    out.isVisible = older.isVisible;
-    out.isMini = older.isMini;
+    out.copyFlagsFrom(older);
 
     // i hate spider
     if (out.iconType == PlayerIconType::Spider && std::abs(older.position.y - newer.position.y) >= 33.f) {
@@ -121,10 +123,17 @@ VisualPlayerState& PlayerInterpolator::getPlayerState(uint32_t playerId) {
 
 bool PlayerInterpolator::swapDeathStatus(uint32_t playerId) {
     auto& state = players.at(playerId);
-    bool death = state.pendingDeath;
-    state.pendingDeath = false;
+    return util::misc::swapFlag(state.pendingDeath);
+}
 
-    return death;
+bool PlayerInterpolator::swapP1Teleport(uint32_t playerId) {
+    auto& state = players.at(playerId);
+    return util::misc::swapFlag(state.pendingP1Teleport);
+}
+
+bool PlayerInterpolator::swapP2Teleport(uint32_t playerId) {
+    auto& state = players.at(playerId);
+    return util::misc::swapFlag(state.pendingP2Teleport);
 }
 
 bool PlayerInterpolator::isPlayerStale(uint32_t playerId, float lastServerPacket) {

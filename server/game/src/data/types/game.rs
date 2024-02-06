@@ -45,5 +45,5 @@ pub struct PlayerData {
 
     pub current_percentage: f32,
 
-    pub flag_byte: u8,
+    pub flags: u16, // bit-field with various flags, see the client-side structure for more info
 }

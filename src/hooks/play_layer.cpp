@@ -375,7 +375,12 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
 
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
-        remotePlayer->updateData(vstate, self->m_fields->interpolator->swapDeathStatus(playerId));
+
+        bool playDeathEffect = self->m_fields->interpolator->swapDeathStatus(playerId);
+        bool playP1Teleport = self->m_fields->interpolator->swapP1Teleport(playerId);
+        bool playP2Teleport = self->m_fields->interpolator->swapP2Teleport(playerId);
+
+        remotePlayer->updateData(vstate, playDeathEffect, playP1Teleport, playP2Teleport);
 
         if (self->m_progressBar && self->m_progressBar->isVisible()) {
             remotePlayer->updateProgressIcon();
@@ -412,6 +417,8 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
 
     float rot = player->getRotation() + pobjInner->getRotation();
 
+    bool hasJustTeleported = player == m_player1 ? util::misc::swapFlag(m_fields->p1JustTeleported) : util::misc::swapFlag(m_fields->p2JustTeleported);
+
     return SpecificIconData {
         .position = player->getPosition(),
         .rotation = rot,
@@ -419,9 +426,13 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
         .iconType = iconType,
         .isVisible = player->isVisible(),
         .isLookingLeft = player->m_isGoingLeft,
-        .isUpsideDown = pobjInner->getScaleY() == -1.0f,
+        .isUpsideDown = player->m_isSwing ? player->m_isUpsideDown : pobjInner->getScaleY() == -1.0f,
         .isDashing = player->m_isDashing,
-        .isMini = player->m_vehicleSize != 1.0f
+        .isMini = player->m_vehicleSize != 1.0f,
+        .isGrounded = player->m_isOnGround,
+        .isStationary = std::abs(player->m_platformerXVelocity) < 0.1,
+        .isFalling = player->m_yVelocity < 0.0,
+        .hasJustTeleported = hasJustTeleported,
     };
 }
 
@@ -455,7 +466,7 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
 
         .isDead = isDead,
         .isPaused = this->isPaused(),
-        .isPracticing = m_isPracticeMode
+        .isPracticing = m_isPracticeMode,
     };
 }
 

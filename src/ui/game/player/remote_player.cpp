@@ -41,12 +41,20 @@ const PlayerAccountData& RemotePlayer::getAccountData() const {
     return accountData;
 }
 
-void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffect) {
+void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffect, bool playP1Teleport, bool playP2Teleport) {
     player1->updateData(data.player1, data.isDead, data.isPaused, data.isPracticing);
     player2->updateData(data.player2, data.isDead, data.isPaused, data.isPracticing);
 
     if (playDeathEffect && GlobedSettings::get().players.deathEffects) {
         player1->playDeathEffect();
+    }
+
+    if (playP1Teleport) {
+        player1->playSpiderTeleport();
+    }
+
+    if (playP2Teleport) {
+        player2->playSpiderTeleport();
     }
 
     lastPercentage = data.currentPercentage;

@@ -5,14 +5,6 @@
 using namespace geode::prelude;
 
 bool DownloadLevelPopup::setup(int levelId) {
-    auto* glm = GameLevelManager::sharedState();
-    auto cachedLevel = glm->getSavedLevel(levelId);
-    if (cachedLevel) {
-        log::debug("loading level from cache: {}", levelId);
-        util::ui::switchToScene(LevelInfoLayer::create(cachedLevel, false));
-        return false;
-    }
-
     this->setTitle("Downloading level");
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -23,6 +15,7 @@ bool DownloadLevelPopup::setup(int levelId) {
         .parent(m_mainLayer)
         .store(statusLabel);
 
+    auto* glm = GameLevelManager::sharedState();
     glm->m_levelManagerDelegate = this;
     glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(levelId)));
 

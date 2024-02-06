@@ -53,6 +53,7 @@ bool GlobedLevelListLayer::init() {
 
 GlobedLevelListLayer::~GlobedLevelListLayer() {
     NetworkManager::get().removeListener<LevelListPacket>();
+    NetworkManager::get().suppressUnhandledFor<LevelListPacket>(util::time::seconds(1));
     GameLevelManager::sharedState()->m_levelManagerDelegate = nullptr;
 }
 

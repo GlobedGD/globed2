@@ -13,11 +13,11 @@ namespace util::lowlevel {
         auto bytes = geode::toByteArray(detour);
         bytes.resize(sizeof(void*));
 
-    #ifdef GEODE_IS_WINDOWS
+#ifdef GEODE_IS_WINDOWS
         (void) Mod::get()->patch(&vtable[index], bytes);
-    #else
+#else
         (void) Mod::get()->patch(&vtable[index], bytes);
-    #endif
+#endif
     }
 
     // perform a VMT hook. Note that on windows, this will only be able to hook functions in the main vtable.

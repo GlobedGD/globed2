@@ -20,7 +20,7 @@ use tokio::net::UdpSocket;
 
 use crate::{
     data::*,
-    server_thread::{GameServerThread, ServerThreadMessage, SMALL_PACKET_LIMIT},
+    server_thread::{GameServerThread, ServerThreadMessage},
     state::ServerState,
     util::SimpleRateLimiter,
 };

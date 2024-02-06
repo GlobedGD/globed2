@@ -44,7 +44,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         simplePlayer->setGlowOutline(gm->colorForIdx(data.glowColor));
     }
 
-    if (this->data.levelId != 0) {
+    if (this->data.levelId != 0 && this->data.levelId > 64) {
         Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
             .scale(0.4f)
             .intoMenuItem([this](auto) {

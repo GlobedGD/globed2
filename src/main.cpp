@@ -100,7 +100,7 @@ void loadDeathEffects() {
         return;
     }
 
-    for (int i = 1; i < 18; i++) {
+    for (int i = 1; i < 21; i++) {
         log::debug("Loading death effect {}", i);
         try {
             GameManager::get()->loadDeathEffect(i);

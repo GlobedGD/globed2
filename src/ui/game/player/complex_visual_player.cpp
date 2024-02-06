@@ -62,6 +62,8 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
 }
 
 void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing) {
+    lastPosition = playerIcon->getPosition();
+
     playerIcon->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
 
@@ -70,11 +72,6 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
     if (statusIcons) {
         statusIcons->setPosition(data.position + CCPoint{0.f, playerName->isVisible() ? 40.f : 25.f});
     }
-
-    // setFlipX doesnt work here for jetpack and stuff
-    float mult = data.isMini ? 0.6f : 1.0f;
-    playerIcon->setScaleX((data.isLookingLeft ? -1.0f : 1.0f) * mult);
-    playerIcon->setScaleY((data.isUpsideDown ? -1.0f : 1.0f) * mult);
 
     if (!isDead && playerIcon->getOpacity() == 0) {
         playerIcon->setOpacity(static_cast<unsigned char>(GlobedSettings::get().players.playerOpacity * 255.f));
@@ -86,12 +83,69 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
         iconType = PlayerIconType::Jetpack;
     }
 
-    if (iconType != playerIconType) {
+    // setFlipX doesnt work here for jetpack and stuff
+    float mult = data.isMini ? 0.6f : 1.0f;
+    playerIcon->setScaleX((data.isLookingLeft ? -1.0f : 1.0f) * mult);
+
+    // swing is not flipped
+    if (iconType == PlayerIconType::Swing) {
+        playerIcon->setScaleY(mult);
+    } else {
+        playerIcon->setScaleY((data.isUpsideDown ? -1.0f : 1.0f) * mult);
+    }
+
+    bool switchedMode = iconType != playerIconType;
+
+    bool turningOffSwing = (playerIconType == PlayerIconType::Swing && switchedMode);
+
+    if (switchedMode) {
         this->updateIconType(iconType);
     }
 
     if (statusIcons) {
         statusIcons->updateStatus(isPaused, isPracticing);
+    }
+
+    // animate robot and spider
+    if (iconType == PlayerIconType::Robot || iconType == PlayerIconType::Spider) {
+        if (wasGrounded != data.isGrounded || wasStationary != data.isStationary || wasFalling != data.isFalling || switchedMode) {
+            wasGrounded = data.isGrounded;
+            wasStationary = data.isStationary;
+            wasFalling = data.isFalling;
+
+            iconType == PlayerIconType::Robot ? this->updateRobotAnimation() : this->updateSpiderAnimation();
+        }
+    }
+
+    // animate swing fire
+    else if (iconType == PlayerIconType::Swing) {
+        // if we just switched to swing, enable all fires
+        if (switchedMode) {
+            playerIcon->m_swingFireTop->setVisible(true);
+            playerIcon->m_swingFireMiddle->setVisible(true);
+            playerIcon->m_swingFireBottom->setVisible(true);
+
+            playerIcon->m_swingFireMiddle->animateFireIn();
+        }
+
+        if (wasUpsideDown != data.isUpsideDown || switchedMode) {
+            wasUpsideDown = data.isUpsideDown;
+            log::debug("animating swing fire: going down {}", !wasUpsideDown);
+            this->animateSwingFire(!wasUpsideDown);
+        }
+
+        // now depending on the gravity, toggle either the bottom or top fire
+    }
+
+    // remove swing fire
+    else if (turningOffSwing) {
+        playerIcon->m_swingFireTop->setVisible(false);
+        playerIcon->m_swingFireMiddle->setVisible(false);
+        playerIcon->m_swingFireBottom->setVisible(false);
+
+        playerIcon->m_swingFireTop->animateFireOut();
+        playerIcon->m_swingFireMiddle->animateFireOut();
+        playerIcon->m_swingFireBottom->animateFireOut();
     }
 
     this->setVisible(data.isVisible);
@@ -128,6 +182,89 @@ void ComplexVisualPlayer::playDeathEffect() {
     if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {
         ein->removeFromParent();
     }
+}
+
+void ComplexVisualPlayer::playSpiderTeleport() {
+    playerIcon->playSpiderDashEffect(lastPosition, playerIcon->getPosition());
+}
+
+void ComplexVisualPlayer::updateRobotAnimation() {
+    if (wasGrounded && wasStationary) {
+        // if on ground and not moving, play the idle animation
+        playerIcon->m_robotSprite->tweenToAnimation("idle01", 0.1f);
+        this->animateRobotFire(false);
+    } else if (wasGrounded && !wasStationary) {
+        // if on ground and moving, play the running animation
+        playerIcon->m_robotSprite->tweenToAnimation("run", 0.1f);
+        this->animateRobotFire(false);
+    } else if (wasFalling) {
+        // if in the air and falling, play falling animation
+        playerIcon->m_robotSprite->tweenToAnimation("fall_loop", 0.1f);
+        this->animateRobotFire(false);
+    } else if (!wasFalling) {
+        // if in the air and not falling, play jumping animation
+        playerIcon->m_robotSprite->tweenToAnimation("jump_loop", 0.1f);
+        this->animateRobotFire(true);
+    }
+}
+
+void ComplexVisualPlayer::updateSpiderAnimation() {
+    // this is practically the same as the robot animation
+
+    // TODO: teleport effect?
+    if (!wasGrounded && wasFalling) {
+        playerIcon->m_spiderSprite->tweenToAnimation("fall_loop", 0.1f);
+    } else if (!wasGrounded && !wasFalling) {
+        playerIcon->m_spiderSprite->tweenToAnimation("jump_loop", 0.1f);
+    } else if (wasGrounded && wasStationary) {
+        playerIcon->m_spiderSprite->tweenToAnimation("idle01", 0.1f);
+    } else if (wasGrounded && !wasStationary) {
+        playerIcon->m_spiderSprite->tweenToAnimation("run", 0.1f);
+    }
+}
+
+void ComplexVisualPlayer::animateRobotFire(bool enable) {
+    playerIcon->m_robotFire->stopActionByTag(ROBOT_FIRE_ACTION);
+
+    CCSequence* seq;
+    if (enable) {
+        seq = CCSequence::create(
+            CCDelayTime::create(0.15f),
+            CCCallFunc::create(this, callfunc_selector(ComplexVisualPlayer::onAnimateRobotFireIn)),
+            nullptr
+        );
+
+        playerIcon->m_robotFire->setVisible(true);
+    } else {
+        seq = CCSequence::create(
+            CCDelayTime::create(0.1f),
+            CCCallFunc::create(this, callfunc_selector(ComplexVisualPlayer::onAnimateRobotFireOut)),
+            nullptr
+        );
+
+        playerIcon->m_robotFire->animateFireOut();
+    }
+
+    seq->setTag(ROBOT_FIRE_ACTION);
+    playerIcon->m_robotFire->runAction(seq);
+}
+
+void ComplexVisualPlayer::onAnimateRobotFireIn() {
+    playerIcon->m_robotFire->animateFireIn();
+}
+
+void ComplexVisualPlayer::animateSwingFire(bool goingDown) {
+    if (goingDown) {
+        playerIcon->m_swingFireTop->animateFireIn();
+        playerIcon->m_swingFireBottom->animateFireOut();
+    } else {
+        playerIcon->m_swingFireTop->animateFireOut();
+        playerIcon->m_swingFireBottom->animateFireIn();
+    }
+}
+
+void ComplexVisualPlayer::onAnimateRobotFireOut() {
+    playerIcon->m_robotFire->setVisible(false);
 }
 
 void ComplexVisualPlayer::updatePlayerObjectIcons() {

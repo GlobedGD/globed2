@@ -1,8 +1,8 @@
 #include "player_object.hpp"
 
+#include <hooks/play_layer.hpp>
 #include <util/debug.hpp>
 #include <util/lowlevel.hpp>
-#include <Geode/Utils.hpp>
 
 #if UINTPTR_MAX > 0xffffffff
 static inline constexpr uintptr_t MAGIC_CONSTANT = 0xdc00cd00dc00cd00;
@@ -16,7 +16,6 @@ void ComplexPlayerObject::setRemoteState() {
 
 void ComplexPlayerObject::setDeathEffect(int deathEffect) {
     // there was no reason for me to do this
-    log::debug("setting death effect to {}", deathEffect);
     this->setUserData((void*)(MAGIC_CONSTANT | static_cast<unsigned char>(deathEffect)));
 }
 
@@ -42,4 +41,16 @@ bool ComplexPlayerObject::vanilla() {
 
 void ComplexPlayerObject::incrementJumps() {
     if (vanilla()) PlayerObject::incrementJumps();
+}
+
+
+void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CCPoint to) {
+    auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    if (this == gpl->m_player1) {
+        gpl->m_fields->p1JustTeleported = true;
+    } else if (this == gpl->m_player2) {
+        gpl->m_fields->p2JustTeleported = true;
+    }
+
+    PlayerObject::playSpiderDashEffect(from, to);
 }

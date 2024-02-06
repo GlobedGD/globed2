@@ -28,8 +28,6 @@ pub use error::{PacketHandlingError, Result};
 
 use self::handlers::MAX_VOICE_PACKET_SIZE;
 
-// TODO adjust this to PlayerData size in the future plus some headroom
-pub const SMALL_PACKET_LIMIT: usize = 164;
 const CHANNEL_BUFFER_SIZE: usize = 8;
 
 // do not touch those, encryption related
@@ -130,6 +128,7 @@ impl GameServerThread {
                 | PacketHandlingError::WrongCryptoBoxState
                 | PacketHandlingError::EncryptionError
                 | PacketHandlingError::DecryptionError
+                | PacketHandlingError::NoHandler(_)
                 | PacketHandlingError::IOError(_) => {
                     warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
                 }
@@ -147,7 +146,6 @@ impl GameServerThread {
                 | PacketHandlingError::MalformedCiphertext
                 | PacketHandlingError::MalformedLoginAttempt
                 | PacketHandlingError::MalformedPacketStructure(_)
-                | PacketHandlingError::NoHandler(_)
                 | PacketHandlingError::SocketWouldBlock
                 | PacketHandlingError::Ratelimited
                 | PacketHandlingError::UnexpectedPlayerData => {}

@@ -4,6 +4,12 @@
 #include <util/sync.hpp>
 
 namespace util::misc {
+    bool swapFlag(bool& target) {
+        bool state = target;
+        target = false;
+        return state;
+    }
+
     // IconType -> PlayerIconType
     template<> PlayerIconType convertEnum<PlayerIconType, IconType>(IconType value) {
         switch (value) {

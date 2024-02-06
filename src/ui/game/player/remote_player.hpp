@@ -1,7 +1,6 @@
 #pragma once
 #include <defs.hpp>
 
-#include "visual_player.hpp"
 #include "complex_visual_player.hpp"
 #include <ui/game/progress/progress_icon.hpp>
 #include <data/types/gd.hpp>
@@ -13,7 +12,7 @@ public:
     void updateAccountData(const PlayerAccountData& data);
     const PlayerAccountData& getAccountData() const;
 
-    void updateData(const VisualPlayerState& data, bool playDeathEffect);
+    void updateData(const VisualPlayerState& data, bool playDeathEffect, bool playP1Teleport, bool playP2Teleport);
     void updateProgressIcon();
 
     unsigned int getDefaultTicks();

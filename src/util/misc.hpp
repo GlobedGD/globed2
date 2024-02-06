@@ -25,6 +25,9 @@ namespace util::misc {
     constexpr std::string_view STRING_PRINTABLE_INPUT = _GLOBED_STRPRINTABLEINPUT;
     constexpr std::string_view STRING_URL = _GLOBED_STRURL;
 
+    // If `target` is false, returns false. If `target` is true, modifies `target` to false and returns true.
+    bool swapFlag(bool& target);
+
     // Utility function for converting various enums between each other, is specialized separately for different enums
     template <typename To, typename From>
     To convertEnum(From value);

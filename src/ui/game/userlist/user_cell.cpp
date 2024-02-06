@@ -93,7 +93,6 @@ void GlobedUserCell::makeBlockButton() {
         .parent(menu)
         .id("block-button"_spr)
         .store(blockButton);
-    log::debug("mbl 4");
 }
 
 void GlobedUserCell::onOpenProfile(CCObject*) {

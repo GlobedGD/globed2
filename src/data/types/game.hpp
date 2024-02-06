@@ -20,7 +20,17 @@ struct SpecificIconData {
         buf.writeF32(rotation);
 
         buf.writeEnum(iconType);
-        buf.writeBits(BitBuffer<8>(isVisible, isLookingLeft, isUpsideDown, isDashing, isMini));
+        buf.writeBits(BitBuffer<16>(
+            isVisible,
+            isLookingLeft,
+            isUpsideDown,
+            isDashing,
+            isMini,
+            isGrounded,
+            isStationary,
+            isFalling,
+            hasJustTeleported
+        ));
     }
 
     GLOBED_DECODE {
@@ -33,18 +43,45 @@ struct SpecificIconData {
             iconType = PlayerIconType::Cube;
         }
 
-        buf.readBits<8>().readBitsInto(isVisible, isLookingLeft, isUpsideDown, isDashing, isMini);
+        buf.readBits<16>().readBitsInto(
+            isVisible,
+            isLookingLeft,
+            isUpsideDown,
+            isDashing,
+            isMini,
+            isGrounded,
+            isStationary,
+            isFalling,
+            hasJustTeleported
+        );
+    }
+
+    void copyFlagsFrom(const SpecificIconData& other) {
+        iconType = other.iconType;
+        isDashing = other.isDashing;
+        isLookingLeft = other.isLookingLeft;
+        isUpsideDown = other.isUpsideDown;
+        isVisible = other.isVisible;
+        isMini = other.isMini;
+        isGrounded = other.isGrounded;
+        isStationary = other.isStationary;
+        isFalling = other.isFalling;
+        // hasJustTeleported intentionally not copied.
     }
 
     cocos2d::CCPoint position;
     float rotation;
 
     PlayerIconType iconType;
-    bool isVisible;
-    bool isLookingLeft;
-    bool isUpsideDown;
-    bool isDashing;
-    bool isMini;
+    bool isVisible;         // self-explanatory
+    bool isLookingLeft;     // true if player is going to the left side (in platformer)
+    bool isUpsideDown;      // true if player is upside down
+    bool isDashing;         // true if player is dashing
+    bool isMini;            // true if player is mini
+    bool isGrounded;        // true if player is on the ground currently
+    bool isStationary;      // true if player is not moving currently (in platformer)
+    bool isFalling;         // when !isGrounded, true if falling, false if jumping upwards
+    bool hasJustTeleported; // true for one frame when the player is a spider and they just teleported
 };
 
 struct PlayerData {
