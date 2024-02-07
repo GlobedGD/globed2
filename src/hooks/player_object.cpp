@@ -45,6 +45,12 @@ void ComplexPlayerObject::incrementJumps() {
 
 
 void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CCPoint to) {
+    // if we are in the editor, do nothing
+    if (PlayLayer::get() == nullptr) {
+        PlayerObject::playSpiderDashEffect(from, to);
+        return;
+    }
+
     auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
     if (this == gpl->m_player1) {
         gpl->m_fields->spiderTp1 = SpiderTeleportData { .from = from, .to = to };

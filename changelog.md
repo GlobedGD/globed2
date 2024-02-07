@@ -1,4 +1,5 @@
-## v1.0.1
+## v1.0.2
 
-* Use github actions for releases (no more crashes on old CPUs)
-* Add a proper warning for people with unsynced system clocks
+* Use github actions for releases (hopefully no more crashes on old CPUs)
+* Add a volume slider for voice chat
+* Fixed a crash in the editor
