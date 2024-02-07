@@ -220,7 +220,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     let state = context.state_read().await;
     get_user_ip!(state, context, user_ip);
 
-    let challenge = match state.active_challenges.get(&user_ip) {
+    let challenge: ActiveChallenge = match state.active_challenges.get(&user_ip) {
         None => {
             throw!(StatusCode::FORBIDDEN, "challenge does not exist for this IP address");
         }
