@@ -18,7 +18,6 @@ public:
     struct GDData {
         std::string accountName;
         int accountId;
-        std::string gjp;
         std::string central;
         std::string precomputedHash;
     };
@@ -29,7 +28,7 @@ public:
 
     // This method can be called multiple times, and in fact it is even advised that you do so often.
     // It must be called at least once before calling any other method or they will throw an exception.
-    void initialize(const std::string_view name, int accountId, const std::string_view gjp, const std::string_view central);
+    void initialize(const std::string_view name, int accountId, const std::string_view central);
     // Grabs the values from other manager classes and calls `initialize` for you.
     void autoInitialize();
 
@@ -49,12 +48,11 @@ public:
     );
 
 private:
-    SecretBox box;
     std::optional<geode::utils::web::SentAsyncWebRequestHandle> requestHandle;
 
     void cancelAuthTokenRequest();
 
-    std::string computeGDDataHash(const std::string_view name, int accountId, const std::string_view gjp, const std::string_view central);
+    std::string computeGDDataHash(const std::string_view name, int accountId, const std::string_view central);
 
     // uses the precomputed hash from GDData and appends it to the given 'key'
     // i.e. getKeyFor("auth-totp-key") => "auth-totp-key-ab12cd34ef"

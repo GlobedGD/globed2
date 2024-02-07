@@ -50,7 +50,7 @@ bool GlobedMenuLayer::init() {
         .layout(
             ColumnLayout::create()
                 ->setAutoScale(true)
-                ->setGap(5.0f)
+                ->setGap(3.0f)
                 ->setAxisAlignment(AxisAlignment::Start)
         )
         .anchorPoint(0.f, 0.f)
@@ -61,7 +61,7 @@ bool GlobedMenuLayer::init() {
 
     // server switcher button
     Build<CCSprite>::createSpriteName("gj_folderBtn_001.png")
-        .scale(1.2f)
+        .scale(1.1f)
         .intoMenuItem([](auto) {
             if (auto* popup = ServerSwitcherPopup::create()) {
                 popup->m_noElasticity = true;
@@ -71,9 +71,21 @@ bool GlobedMenuLayer::init() {
         .id("btn-open-server-switcher"_spr)
         .parent(leftButtonMenu);
 
+    // discord button
+    Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
+        .scale(1.3f)
+        .intoMenuItem([](auto) {
+            geode::createQuickPopup("Open Discord", "Join our <cp>Discord</c> server?", "No", "Yes", [] (auto fl, bool btn2) {
+                if (btn2)
+                    geode::utils::web::openLinkInBrowser("https://discord.gg/d56q5Dkdm3");
+            });
+        })
+        .id("btn-open-discord"_spr)
+        .parent(leftButtonMenu);
+
     // settings button
     Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
-        .scale(1.0f)
+        .scale(0.9f)
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedSettingsLayer::create());
         })
@@ -82,7 +94,7 @@ bool GlobedMenuLayer::init() {
 
     // room popup button
     roomButton = Build<CCSprite>::createSpriteName("GJ_profileButton_001.png")
-        .scale(0.875f)
+        .scale(0.775f)
         .intoMenuItem([](auto) {
             // this->requestServerList();
             if (auto* popup = RoomPopup::create()) {
@@ -95,7 +107,7 @@ bool GlobedMenuLayer::init() {
 
     // level list button
     levelListButton = Build<CCSprite>::createSpriteName("GJ_menuBtn_001.png")
-        .scale(0.8f)
+        .scale(0.7f)
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedLevelListLayer::create());
         })

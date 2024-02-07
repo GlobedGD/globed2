@@ -8,18 +8,15 @@
 
 using namespace geode::prelude;
 
-GlobedAccountManager::GlobedAccountManager() : box(SecretBox::withPassword("")) {}
+GlobedAccountManager::GlobedAccountManager() {}
 
-void GlobedAccountManager::initialize(const std::string_view name, int accountId, const std::string_view gjp, const std::string_view central) {
+void GlobedAccountManager::initialize(const std::string_view name, int accountId, const std::string_view central) {
     GDData data = {
         .accountName = std::string(name),
         .accountId = accountId,
-        .gjp = std::string(gjp),
         .central = std::string(central),
-        .precomputedHash = this->computeGDDataHash(name, accountId, gjp, central)
+        .precomputedHash = this->computeGDDataHash(name, accountId, central)
     };
-
-    box.setPassword(gjp);
 
     *gdData.lock() = data;
     initialized = true;
@@ -36,7 +33,7 @@ void GlobedAccountManager::autoInitialize() {
         activeCentralUrl = activeCentral.value().url;
     }
 
-    this->initialize(gjam->m_username, gjam->m_accountID, gjam->m_GJP2, activeCentralUrl);
+    this->initialize(gjam->m_username, gjam->m_accountID, activeCentralUrl);
 }
 
 Result<std::string> GlobedAccountManager::generateAuthCode() {
@@ -47,8 +44,7 @@ Result<std::string> GlobedAccountManager::generateAuthCode() {
 
     GLOBED_REQUIRE_SAFE(!b64Token.empty(), "unable to generate auth code: no token")
 
-    auto encToken = util::crypto::base64Decode(b64Token);
-    auto decToken = box.decrypt(encToken);
+    auto decToken = util::crypto::base64Decode(b64Token);
 
     return Ok(util::crypto::simpleTOTP(decToken));
 }
@@ -56,8 +52,7 @@ Result<std::string> GlobedAccountManager::generateAuthCode() {
 void GlobedAccountManager::storeAuthKey(const util::data::byte* source, size_t size) {
     GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::storeAuthKey before initializing the instance")
 
-    auto encrypted = box.encrypt(source, size);
-    auto encoded = util::crypto::base64Encode(encrypted);
+    auto encoded = util::crypto::base64Encode(source, size);
 
     Mod::get()->setSavedValue(this->getKeyFor("auth-totp-key"), encoded);
 }
@@ -131,9 +126,9 @@ void GlobedAccountManager::cancelAuthTokenRequest() {
     }
 }
 
-std::string GlobedAccountManager::computeGDDataHash(const std::string_view name, int accountId, const std::string_view gjp, const std::string_view central) {
+std::string GlobedAccountManager::computeGDDataHash(const std::string_view name, int accountId, const std::string_view central) {
     auto hash = util::crypto::simpleHash(fmt::format(
-        "{}-{}-{}-{}", name, accountId, gjp, central
+        "{}-{}-{}", name, accountId, central
     ));
 
     return util::crypto::hexEncode(hash);
