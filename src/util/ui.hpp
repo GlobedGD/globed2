@@ -15,4 +15,7 @@ namespace util::ui {
 
     // set the scale for `node` in a way that `node->getScaledContentSize()` will match `target->getScaledContentSize()`
     void rescaleToMatch(cocos2d::CCNode* node, cocos2d::CCNode* target, bool stretch = false);
+
+    // set the scale for `node` in a way that `node->getScaledContentSize()` will match `targetSize`
+    void rescaleToMatch(cocos2d::CCNode *node, cocos2d::CCSize targetSize, bool stretch = false);
 }

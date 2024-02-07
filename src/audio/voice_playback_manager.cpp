@@ -40,4 +40,12 @@ bool VoicePlaybackManager::isSpeaking(int playerId) {
     return !streams.at(playerId)->starving;
 }
 
+void VoicePlaybackManager::setVolume(int playerId, float volume) {
+    if (!streams.contains(playerId)) {
+        return;
+    }
+
+    streams.at(playerId)->setVolume(volume);
+}
+
 #endif // GLOBED_VOICE_SUPPORT

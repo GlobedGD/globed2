@@ -57,6 +57,9 @@ public:
     // write an audio frame to this stream
     void writeData(const EncodedAudioFrame& frame);
 
+    // set the volume of the stream (0.0f - 1.0f)
+    void setVolume(float volume);
+
 private:
     FMOD::Sound* sound = nullptr;
     FMOD::Channel* channel = nullptr;

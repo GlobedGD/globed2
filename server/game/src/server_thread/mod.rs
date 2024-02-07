@@ -90,7 +90,7 @@ impl GameServerThread {
             }
 
             // safety: we are the only receiver for this channel.
-            match tokio::time::timeout(Duration::from_secs(60), unsafe { self.channel.recv() }).await {
+            match tokio::time::timeout(Duration::from_secs(90), unsafe { self.channel.recv() }).await {
                 Ok(Ok(message)) => match self.handle_message(message).await {
                     Ok(()) => {}
                     Err(err) => self.print_error(&err),

@@ -63,7 +63,7 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
     if (wasSpeaking) {
         auto speakSpr = Build<CCSprite>::createSpriteName("speaker-icon.png"_spr)
             .zOrder(1)
-            .scale(0.8f)
+            .scale(0.85f)
             .id("icon-speaking"_spr)
             .parent(iconWrapper)
             .collect();

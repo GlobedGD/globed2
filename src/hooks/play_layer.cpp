@@ -122,6 +122,10 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     Loader::get()->queueInMainThread([this] {
         this->rescheduleSelectors();
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this->getParent(), 0.0f, false);
+
+        m_fields->tempArrow = Build<PlayerProgressArrow>::create()
+            .parent(this->getParent())
+            .collect();
     });
 
     m_fields->progressBarWrapper = Build<CCNode>::create()
@@ -266,7 +270,7 @@ void GlobedPlayLayer::setupCustomKeybinds() {
                 if (result.isErr()) {
                     ErrorQueues::get().warn(result.unwrapErr());
                     log::warn("unable to record audio: {}", result.unwrapErr());
-                    return;
+                    return ListenerResult::Stop;
                 }
 
                 if (m_fields->selfStatusIcons) {
@@ -376,6 +380,11 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
 void GlobedPlayLayer::selUpdate(float rawdt) {
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
+    auto camOrigin = self->m_gameState.m_unk20c; // or m_unk2c0, same values
+    auto camCoverage = CCDirector::get()->getWinSize() / self->m_objectLayer->getScale();
+
+    self->m_fields->tempArrow->updatePosition(camOrigin, camCoverage, self->m_player1->getPosition());
+
     // update ourselves
     auto accountId = GJAccountManager::get()->m_accountID;
     self->m_fields->playerStore->insertOrUpdate(
@@ -464,6 +473,11 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
 
     auto spiderTeleportData = player == m_player1 ? util::misc::swapOptional(m_fields->spiderTp1) : util::misc::swapOptional(m_fields->spiderTp2);
 
+    bool isStationary = false;
+    if (m_level->isPlatformer()) {
+        isStationary = std::abs(player->m_platformerXVelocity) < 0.1;
+    }
+
     return SpecificIconData {
         .position = player->getPosition(),
         .rotation = rot,
@@ -475,7 +489,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
         .isDashing = player->m_isDashing,
         .isMini = player->m_vehicleSize != 1.0f,
         .isGrounded = player->m_isOnGround,
-        .isStationary = std::abs(player->m_platformerXVelocity) < 0.1,
+        .isStationary = isStationary,
         .isFalling = player->m_yVelocity < 0.0,
         .spiderTeleportData = spiderTeleportData
     };

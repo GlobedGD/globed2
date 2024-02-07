@@ -56,6 +56,10 @@ namespace util::ui {
 
     void rescaleToMatch(cocos2d::CCNode* node, cocos2d::CCNode* target, bool stretch) {
         auto targetSize = target->getScaledContentSize();
+        rescaleToMatch(node, targetSize, stretch);
+    }
+
+    void rescaleToMatch(cocos2d::CCNode *node, cocos2d::CCSize targetSize, bool stretch) {
         auto nodeSize = node->getContentSize();
 
         if (!stretch) {

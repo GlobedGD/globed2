@@ -80,4 +80,10 @@ void AudioStream::writeData(const EncodedAudioFrame& frame) {
     }
 }
 
+void AudioStream::setVolume(float volume) {
+    if (channel) {
+        channel->setVolume(volume);
+    }
+}
+
 #endif // GLOBED_VOICE_SUPPORT

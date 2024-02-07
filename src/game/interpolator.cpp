@@ -10,18 +10,18 @@ using namespace geode::prelude;
 
 PlayerInterpolator::PlayerInterpolator(const InterpolatorSettings& settings) : settings(settings) {}
 
-void PlayerInterpolator::addPlayer(uint32_t playerId) {
+void PlayerInterpolator::addPlayer(int playerId) {
     players.emplace(playerId, PlayerState {});
 #ifdef GLOBED_DEBUG_INTERPOLATION
     LerpLogger::get().reset(playerId);
 #endif
 }
 
-void PlayerInterpolator::removePlayer(uint32_t playerId) {
+void PlayerInterpolator::removePlayer(int playerId) {
     players.erase(playerId);
 }
 
-void PlayerInterpolator::updatePlayer(uint32_t playerId, const PlayerData& data, float updateCounter) {
+void PlayerInterpolator::updatePlayer(int playerId, const PlayerData& data, float updateCounter) {
     auto& player = players.at(playerId);
     player.updateCounter = updateCounter;
     player.pendingRealFrame = true;
@@ -112,26 +112,26 @@ void PlayerInterpolator::tick(float dt) {
     }
 }
 
-VisualPlayerState& PlayerInterpolator::getPlayerState(uint32_t playerId) {
+VisualPlayerState& PlayerInterpolator::getPlayerState(int playerId) {
     return players.at(playerId).interpolatedState;
 }
 
-bool PlayerInterpolator::swapDeathStatus(uint32_t playerId) {
+bool PlayerInterpolator::swapDeathStatus(int playerId) {
     auto& state = players.at(playerId);
     return util::misc::swapFlag(state.pendingDeath);
 }
 
-std::optional<SpiderTeleportData> PlayerInterpolator::swapP1Teleport(uint32_t playerId) {
+std::optional<SpiderTeleportData> PlayerInterpolator::swapP1Teleport(int playerId) {
     auto& state = players.at(playerId);
     return util::misc::swapOptional(state.pendingP1Teleport);
 }
 
-std::optional<SpiderTeleportData> PlayerInterpolator::swapP2Teleport(uint32_t playerId) {
+std::optional<SpiderTeleportData> PlayerInterpolator::swapP2Teleport(int playerId) {
     auto& state = players.at(playerId);
     return util::misc::swapOptional(state.pendingP2Teleport);
 }
 
-bool PlayerInterpolator::isPlayerStale(uint32_t playerId, float lastServerPacket) {
+bool PlayerInterpolator::isPlayerStale(int playerId, float lastServerPacket) {
     auto uc = players.at(playerId).updateCounter;
 
     return uc != 0.f && !util::math::equal(uc, lastServerPacket);

@@ -2,6 +2,8 @@
 
 #include "room_popup.hpp"
 #include "download_level_popup.hpp"
+#include <hooks/gjgamelevel.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -44,11 +46,24 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         simplePlayer->setGlowOutline(gm->colorForIdx(data.glowColor));
     }
 
-    if (this->data.levelId != 0 && this->data.levelId > 64) {
+    this->data.levelId = 5001;
+    if (this->data.levelId != 0) {
         Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
             .scale(0.4f)
-            .intoMenuItem([this](auto) {
-                if (auto popup = DownloadLevelPopup::create(this->data.levelId)) {
+            .intoMenuItem([levelId = this->data.levelId](auto) {
+                auto* glm = GameLevelManager::sharedState();
+                auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
+
+                // if it's a main level, just create a playlayer
+                if (mlevel != nullptr) {
+                    auto level = static_cast<HookedGJGameLevel*>(glm->getMainLevel(levelId, false));
+                    level->m_fields->shouldTransitionWithPopScene = true;
+                    auto pl = PlayLayer::create(level, false, false);
+                    util::ui::switchToScene(pl);
+                    return;
+                }
+
+                if (auto popup = DownloadLevelPopup::create(levelId)) {
                     popup->show();
                 }
             })
