@@ -1,6 +1,6 @@
 {
     "geode": "2.0.0",
-    "version": "v1.0.0-alpha.1",
+    "version": "v1.0.0",
     "gd": {
         "win": "2.204",
         "android": "2.205",
@@ -10,7 +10,7 @@
         "spritesheets": {
             "globedsheet1": [
                 "resources/menuicon.png",
-                "resources/void.png"
+                "resources/speaker-icon.png"
             ]
         }
     },
@@ -18,5 +18,11 @@
     "name": "Globed",
     "developer": "dankmeme",
     "description": "Feature-rich multiplayer mod for Geometry Dash",
-    "dependencies": []
+    "dependencies": [
+        {
+            "id": "geode.custom-keybinds",
+            "version": ">=v1.2.3",
+            "importance": "required"
+        }
+    ]
 }
