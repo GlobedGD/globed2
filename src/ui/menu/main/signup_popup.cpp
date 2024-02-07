@@ -138,9 +138,9 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
         })
         .expect([this](std::string error) {
             if (error.empty()) {
-                this->onFailure("Creating challenge failed: server sent an empty response.");
+                this->onFailure("Completing challenge failed: server sent an empty response.");
             } else {
-                this->onFailure("Creating challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
+                this->onFailure("Completing challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
             }
         })
         .send();
