@@ -118,6 +118,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     let mut state = context.state_write().await;
 
     if state.should_block(account_id) {
+        trace!("rejecting start, user is banned: {account_id}");
         throw!(
             StatusCode::FORBIDDEN,
             if state.config.userlist_mode == UserlistMode::Blacklist {
@@ -131,6 +132,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     get_user_ip!(state, context, user_ip);
 
     if state.is_ratelimited(&user_ip) {
+        trace!("rejecting start, user is ratelimited: {user_ip}");
         throw!(
             StatusCode::TOO_MANY_REQUESTS,
             "you are doing this too fast, please try again later"
@@ -149,6 +151,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
             let passed_time = current_time - challenge.started;
             // if it hasn't expired yet, throw an error
             if passed_time.as_secs() < u64::from(state.config.challenge_expiry) {
+                trace!("rejecting start, challenge already requested: {user_ip}");
                 throw!(
                     StatusCode::FORBIDDEN,
                     "challenge already requested for this account ID, please wait a minute and try again"
@@ -189,6 +192,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
 
     drop(state);
 
+    trace!("sending challenge to {user_ip} with {rand_string}");
     context.write(format!(
         "{}:{}",
         if verify { level_id.to_string() } else { "none".to_string() },
@@ -234,6 +238,8 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
             "challenge was requested for a different account ID, not validating"
         );
     }
+
+    trace!("verifying challenge: {}", challenge.value);
 
     let result = state.verify_challenge(&challenge.value, ch_answer);
 
