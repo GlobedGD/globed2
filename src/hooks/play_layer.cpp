@@ -187,15 +187,6 @@ void GlobedPlayLayer::onQuit() {
     nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::seconds(1));
 }
 
-void GlobedPlayLayer::destructor() {
-    if (PlayLayer::get() == this) {
-        GameManager::get()->m_playLayer = nullptr;
-        GameManager::get()->m_gameLayer = nullptr;
-    }
-
-    PlayLayer::~PlayLayer();
-}
-
 void GlobedPlayLayer::setupPacketListeners() {
     auto& nm = NetworkManager::get();
 
@@ -310,7 +301,7 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 void GlobedPlayLayer::selSendPlayerData(float) {
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
-    if (!self->established()) return;
+    if (!self || !self->established()) return;
     if (!self->isCurrentPlayLayer()) return;
     if (!self->accountForSpeedhack(0, 1.0f / self->m_fields->configuredTps, 0.8f)) return;
 
@@ -326,7 +317,7 @@ void GlobedPlayLayer::selSendPlayerData(float) {
 void GlobedPlayLayer::selPeriodicalUpdate(float) {
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
-    if (!self->established()) return;
+    if (!self || !self->established()) return;
     if (!self->isCurrentPlayLayer()) return;
 
     // update the overlay
@@ -385,6 +376,8 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
 void GlobedPlayLayer::selUpdate(float rawdt) {
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+
+    if (!self) return;
 
     auto visibleOrigin = CCPoint{0.f, 0.f};
     auto visibleCoverage = CCDirector::get()->getWinSize();
