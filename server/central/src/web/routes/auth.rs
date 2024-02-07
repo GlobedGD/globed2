@@ -167,6 +167,8 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
         let verify = state.config.use_gd_api;
         drop(state);
 
+        trace!("sending existing challenge to {user_ip} with {rand_string}");
+
         context.write(format!(
             "{}:{}",
             if verify { level_id.to_string() } else { "none".to_string() },
@@ -215,7 +217,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     let ch_answer = &*context.must_query("answer")?;
 
     log::trace!(
-        "challenge finish from {} ({}) with answer: {}",
+        "challenge finish from {} ({}) with answer yay: {}",
         account_name,
         account_id,
         ch_answer
