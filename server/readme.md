@@ -2,6 +2,8 @@
 
 If you want to host a server yourself, first you have to download the server binaries from the latest GitHub release, named `globed-central-server` and `globed-game-server`. Depending on your OS and architecture, you want the one ending in `.exe` on Windows, the `-x64` one on Linux x64, and the `-arm64` one on Linux ARM64.
 
+(todo: actually upload the binaries lmao)
+
 After that is done, you have 2 paths:
 
 * If you want to setup a small, simple server you can jump to the [standalone section](#standalone)
