@@ -119,9 +119,12 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     m_fields->playerStore = std::make_shared<PlayerStore>();
 
     // update
-    Loader::get()->queueInMainThread([this] {
-        this->rescheduleSelectors();
-        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this->getParent(), 0.0f, false);
+    Loader::get()->queueInMainThread([] {
+        auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+        if (!self) return;
+
+        self->rescheduleSelectors();
+        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), self->getParent(), 0.0f, false);
     });
 
     m_fields->progressBarWrapper = Build<CCNode>::create()
@@ -182,6 +185,15 @@ void GlobedPlayLayer::onQuit() {
     nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::seconds(1));
     nm.suppressUnhandledFor<LevelDataPacket>(util::time::seconds(1));
     nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::seconds(1));
+}
+
+void GlobedPlayLayer::destructor() {
+    if (PlayLayer::get() == this) {
+        GameManager::get()->m_playLayer = nullptr;
+        GameManager::get()->m_gameLayer = nullptr;
+    }
+
+    PlayLayer::~PlayLayer();
 }
 
 void GlobedPlayLayer::setupPacketListeners() {

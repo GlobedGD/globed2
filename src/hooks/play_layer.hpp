@@ -45,6 +45,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     bool init(GJGameLevel* level, bool p1, bool p2);
     void onQuit();
+    void destructor();
 
     /* setup stuff to make init() cleaner */
 
