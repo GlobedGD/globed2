@@ -431,7 +431,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
             float distance = cocos2d::ccpDistance(mePosition, theyPos1);
 
             float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
-            vpm.setVolume(playerId, volume);
+            vpm.setVolume(playerId, volume * settings.communication.voiceVolume);
         }
     }
 
@@ -528,16 +528,20 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
 }
 
 void GlobedPlayLayer::handlePlayerJoin(int playerId) {
+    auto& settings = GlobedSettings::get();
+
 #if GLOBED_VOICE_SUPPORT
+    auto& vpm = VoicePlaybackManager::get();
     try {
-        VoicePlaybackManager::get().prepareStream(playerId);
+        vpm.prepareStream(playerId);
+        if (!m_level->isPlatformer()) {
+            vpm.setVolume(playerId, settings.communication.voiceVolume);
+        }
     } catch (const std::exception& e) {
         ErrorQueues::get().error(std::string("Failed to prepare audio stream: ") + e.what());
     }
 #endif // GLOBED_VOICE_SUPPORT
     NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
-
-    auto& settings = GlobedSettings::get();
 
     PlayerProgressIcon* progressIcon = nullptr;
     PlayerProgressArrow* progressArrow = nullptr;

@@ -216,6 +216,32 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
 
     let ch_answer = &*context.must_query("answer")?;
 
+    let local_time = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock went backwards!")
+        .as_secs();
+
+    let sys_time = context
+        .query("systime")
+        .and_then(|time| time.parse::<u64>().ok())
+        .unwrap_or(0);
+
+    // if they didnt pass any time, it's alright, don't verify the clock
+    if sys_time != 0 {
+        let time_difference = if sys_time > local_time {
+            sys_time - local_time
+        } else {
+            local_time - sys_time
+        };
+
+        if time_difference > 45 {
+            throw!(
+                StatusCode::BAD_REQUEST,
+                format!("your system clock seems to be out of sync, please adjust it in your system settings")
+            );
+        }
+    }
+
     log::trace!(
         "challenge finish from {} ({}) with answer yay: {}",
         account_name,

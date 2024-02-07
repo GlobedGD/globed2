@@ -85,7 +85,7 @@ impl ServerStateData {
 
         let secret = Secret::Raw(output.to_vec()).to_bytes().unwrap();
 
-        let totp = TOTP::new_unchecked(Algorithm::SHA256, 6, 1, 30, secret);
+        let totp = TOTP::new_unchecked(Algorithm::SHA256, 6, 2, 30, secret);
         totp.check_current(code).unwrap_or(false)
     }
 

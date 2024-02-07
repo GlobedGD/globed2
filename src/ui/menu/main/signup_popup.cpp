@@ -111,10 +111,12 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
     auto gdData = am.gdData.lock();
 
     auto url = csm.getActive()->url +
-        fmt::format("/challenge/verify?aid={}&aname={}&answer={}",
+        fmt::format("/challenge/verify?aid={}&aname={}&answer={}&systime={}",
                     gdData->accountId,
                     gdData->accountName,
-                    authcode);
+                    authcode,
+                    std::time(nullptr)
+        );
 
     web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
