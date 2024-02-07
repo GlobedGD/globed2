@@ -36,7 +36,7 @@ public:
 
     struct LevelUI {
         GSETTING(bool, progressIndicators, true);
-        GSETTING(bool, progressPointers, true); // TODO
+        GSETTING(bool, progressPointers, true); // unused
     };
 
     struct Players {

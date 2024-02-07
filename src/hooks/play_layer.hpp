@@ -36,7 +36,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
     Ref<CCNode> progressBarWrapper = nullptr;
     Ref<PlayerStatusIcons> selfStatusIcons = nullptr;
-    Ref<PlayerProgressArrow> tempArrow;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;

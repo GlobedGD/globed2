@@ -27,8 +27,6 @@ bool HookedMenuLayer::init() {
         auto lastId = gsm.loadLastConnected();
         if (lastId.empty()) return;
 
-        log::debug("last connected server: {}", lastId);
-
         am.autoInitialize();
 
         if (csm.standalone()) {

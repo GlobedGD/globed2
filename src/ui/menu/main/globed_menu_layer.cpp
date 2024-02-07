@@ -261,8 +261,6 @@ void GlobedMenuLayer::requestServerList() {
             gsm.pendingChanges = true;
         })
         .send();
-
-    log::debug("rqeuested server list");
 }
 
 void GlobedMenuLayer::cancelWebRequest() {

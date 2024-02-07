@@ -4,4 +4,4 @@ resolver = "2"
 
 # TODO bring back in release
 [profile.release]
-# lto = "fat"
+lto = "fat"

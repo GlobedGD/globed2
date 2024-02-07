@@ -13,6 +13,7 @@ public:
     void updateIconType(PlayerIconType newType) override;
     void playDeathEffect() override;
     void playSpiderTeleport(const SpiderTeleportData& data) override;
+    cocos2d::CCPoint getPlayerPosition() override;
 
     void updatePlayerObjectIcons();
     void toggleAllOff();

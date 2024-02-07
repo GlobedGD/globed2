@@ -44,8 +44,9 @@ bool GlobedSignupLayer::init() {
             }
         })
         .anchorPoint(0.5f, 0.5f)
-        .pos(-listLayer->getScaledContentSize() / 4 - CCPoint{17.f, 10.f})
+        .pos(listLayer->m_listView->getScaledContentSize() / 2.f)
         .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
         .parent(listLayer);
 
     return true;

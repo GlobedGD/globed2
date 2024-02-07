@@ -7,73 +7,80 @@ using namespace geode::prelude;
 bool PlayerProgressArrow::init() {
     if (!CCNode::init()) return false;
 
+    this->updateIcons(PlayerAccountData::DEFAULT_DATA.icons);
+
     return true;
 }
 
-void PlayerProgressArrow::updatePosition(CCPoint cameraOrigin, CCSize cameraCoverage, CCPoint playerPosition) {
+void PlayerProgressArrow::updateIcons(const PlayerIconData& data) {
+    if (playerIcon) playerIcon->removeFromParent();
+
+    auto gm = GameManager::get();
+    auto color1 = gm->colorForIdx(data.color1);
+    auto color2 = gm->colorForIdx(data.color2);
+
+    Build<SimplePlayer>::create(data.cube)
+        .color(color1)
+        .secondColor(color2)
+        .scale(0.5f)
+        .parent(this)
+        .store(playerIcon);
+
+    if (data.glowColor != -1) {
+        playerIcon->setGlowOutline(gm->colorForIdx(data.glowColor));
+    }
+}
+
+void PlayerProgressArrow::updatePosition(
+        cocos2d::CCPoint cameraOrigin,
+        cocos2d::CCSize cameraCoverage,
+        cocos2d::CCPoint visibleOrigin,
+        cocos2d::CCSize visibleCoverage,
+        cocos2d::CCPoint playerPosition,
+        float zoom
+) {
+    auto cameraCenter = cameraOrigin + cameraCoverage / 2.f;
+    float cameraLeft = cameraOrigin.x;
+    float cameraRight = cameraOrigin.x + cameraCoverage.width;
+    float cameraBottom = cameraOrigin.y;
+    float cameraTop = cameraOrigin.y + cameraCoverage.height;
+
+    auto visibleCenter = visibleOrigin + visibleCoverage / 2.f;
+    float visibleLeft = visibleOrigin.x;
+    float visibleRight = visibleOrigin.x + visibleCoverage.width;
+    float visibleBottom = visibleOrigin.y;
+    float visibleTop = visibleOrigin.y + visibleCoverage.height;
+
     // is the player visible? then dont show the arrow
     bool inCameraCoverage = (
-        playerPosition.x >= cameraOrigin.x &&
-        playerPosition.x <= cameraOrigin.x + cameraCoverage.width &&
-        playerPosition.y >= cameraOrigin.y &&
-        playerPosition.y <= cameraOrigin.y + cameraCoverage.height
+        playerPosition.x >= cameraLeft &&
+        playerPosition.x <= cameraRight &&
+        playerPosition.y >= cameraBottom &&
+        playerPosition.y <= cameraTop
     );
 
     if (inCameraCoverage) {
-        // this->setVisible(false);
-        // return;
+        this->setVisible(false);
+        return;
     }
 
     this->setVisible(true);
 
-    auto cameraCenter = cameraOrigin + cameraCoverage / 2;
+    float angle = std::atan2(playerPosition.y - cameraCenter.y, playerPosition.x - cameraCenter.x);
+    float angleDegrees = angle * (180.0f / M_PI);
+    float distance = std::sqrt(std::pow(playerPosition.x - cameraCenter.x, 2) + std::pow(playerPosition.y - cameraCenter.y, 2));
 
-    float dx = playerPosition.x - cameraCenter.x;
-    float dy = playerPosition.y - cameraCenter.y;
+    distance *= zoom;
 
-    float angle = std::atan2(dy, dx);
-    float angleDeg = angle * (180.f / M_PI);
+    float indicatorX = visibleCenter.x + distance * std::cos(angle);
+    float indicatorY = visibleCenter.y + distance * std::sin(angle);
 
-    if (angleDeg < 0.f) {
-        angleDeg += 360.f;
-    }
+    indicatorX = std::max(visibleLeft + 10.f, std::min(visibleRight - 10.f, indicatorX));
+    indicatorY = std::max(visibleBottom + 10.f, std::min(visibleTop - 10.f, indicatorY));
 
-    // right - 0 degrees
-    // top - 90 degrees
-    // left - 180 degrees
-    // bottom - 270 degrees
+    this->setPosition(indicatorX, indicatorY);
 
-    // log::debug("angle: {} degrees", angleDeg);
-
-    // i'll be honest i do not understand any of this
-
-    float edgeX, edgeY;
-
-    float halfw = cameraCoverage.width / 2.0f;
-    float halfh = cameraCoverage.height / 2.0f;
-    float slope = std::tan(angle);
-
-    if (util::math::equal(angle, 0) || util::math::equal(angle, (float)M_PI) || util::math::equal(angle, (float)-M_PI)) {
-        // horizontal line
-        edgeX = cameraOrigin.x + halfw;
-        edgeY = cameraOrigin.y;
-    } else if (util::math::equal(angle, (float)M_PI / 2.f) || util::math::equal(angle, (float)-M_PI / 2.f)) {
-        // vertical line
-        edgeX = cameraOrigin.x;
-        edgeY = cameraOrigin.y + halfh;
-    } else {
-        float yLeft = cameraOrigin.y + halfw * slope;
-        if (yLeft >= cameraOrigin.y - halfh && yLeft <= cameraOrigin.y + halfh) {
-            edgeX = cameraOrigin.x - halfw;
-            edgeY = yLeft;
-        } else {
-            float yRight = cameraOrigin.y - halfw * slope;
-            edgeX = cameraOrigin.x + halfw;
-            edgeY = yRight;
-        }
-    }
-
-    this->setPosition(edgeX, edgeY);
+    // arrowWrapper->setRotation(angleDegrees);
 }
 
 PlayerProgressArrow* PlayerProgressArrow::create() {

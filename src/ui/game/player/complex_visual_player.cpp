@@ -128,7 +128,6 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
 
         if (wasUpsideDown != data.isUpsideDown || switchedMode) {
             wasUpsideDown = data.isUpsideDown;
-            log::debug("animating swing fire: going down {}", !wasUpsideDown);
             this->animateSwingFire(!wasUpsideDown);
         }
 
@@ -255,7 +254,6 @@ void ComplexVisualPlayer::updateRobotAnimation() {
 void ComplexVisualPlayer::updateSpiderAnimation() {
     // this is practically the same as the robot animation
 
-    // TODO: teleport effect?
     if (!wasGrounded && wasFalling) {
         playerIcon->m_spiderSprite->tweenToAnimation("fall_loop", 0.1f);
     } else if (!wasGrounded && !wasFalling) {
@@ -379,6 +377,10 @@ void ComplexVisualPlayer::callUpdateWith(PlayerIconType type, int icon) {
     case PlayerIconType::Jetpack: playerIcon->updatePlayerJetpackFrame(icon); break;
     case PlayerIconType::Unknown: break;
     }
+}
+
+cocos2d::CCPoint ComplexVisualPlayer::getPlayerPosition() {
+    return playerIcon->getPosition();
 }
 
 ComplexVisualPlayer* ComplexVisualPlayer::create(RemotePlayer* parent, bool isSecond) {

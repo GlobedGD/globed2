@@ -122,10 +122,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     Loader::get()->queueInMainThread([this] {
         this->rescheduleSelectors();
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), this->getParent(), 0.0f, false);
-
-        m_fields->tempArrow = Build<PlayerProgressArrow>::create()
-            .parent(this->getParent())
-            .collect();
     });
 
     m_fields->progressBarWrapper = Build<CCNode>::create()
@@ -220,8 +216,6 @@ void GlobedPlayLayer::setupPacketListeners() {
 
         if (this->m_fields->deafened || !settings.communication.voiceEnabled) return;
         if (!this->shouldLetMessageThrough(packet->sender)) return;
-
-        log::debug("playing voice message from {}", packet->sender);
 
         // TODO - this decodes the sound data on the main thread. might be a bad idea, will need to benchmark.
         try {
@@ -380,10 +374,12 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
 void GlobedPlayLayer::selUpdate(float rawdt) {
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
-    auto camOrigin = self->m_gameState.m_unk20c; // or m_unk2c0, same values
-    auto camCoverage = CCDirector::get()->getWinSize() / self->m_objectLayer->getScale();
+    auto visibleOrigin = CCPoint{0.f, 0.f};
+    auto visibleCoverage = CCDirector::get()->getWinSize();
 
-    self->m_fields->tempArrow->updatePosition(camOrigin, camCoverage, self->m_player1->getPosition());
+    auto camOrigin = self->m_gameState.m_unk20c; // m_unk20c or m_unk2c0, same values
+    auto zoom = self->m_objectLayer->getScale();
+    auto camCoverage = visibleCoverage / zoom;
 
     // update ourselves
     auto accountId = GJAccountManager::get()->m_accountID;
@@ -412,6 +408,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     auto& settings = GlobedSettings::get();
     auto mePosition = self->m_player1->getPosition();
 
+
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
 
@@ -422,15 +419,16 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         bool isSpeaking = vpm.isSpeaking(playerId);
         remotePlayer->updateData(vstate, playDeathEffect, isSpeaking, p1tp, p2tp);
 
-        if (self->m_progressBar && self->m_progressBar->isVisible()) {
+        if (self->m_progressBar && self->m_progressBar->isVisible() && remotePlayer->progressIcon) {
             remotePlayer->updateProgressIcon();
+        } else if (remotePlayer->progressArrow) {
+            remotePlayer->updateProgressArrow(camOrigin, camCoverage, visibleOrigin, visibleCoverage, zoom);
         }
 
         // update voice proximity
         if (self->m_level->isPlatformer() && settings.communication.voiceProximity) {
             auto theyPos1 = vstate.player1.position;
-            auto theyPos2 = vstate.player2.position;
-            float distance = std::min(cocos2d::ccpDistance(mePosition, theyPos1), cocos2d::ccpDistance(mePosition, theyPos2));
+            float distance = cocos2d::ccpDistance(mePosition, theyPos1);
 
             float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
             vpm.setVolume(playerId, volume);
@@ -539,13 +537,28 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
 #endif // GLOBED_VOICE_SUPPORT
     NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
 
-    PlayerProgressIcon* progressIcon = Build<PlayerProgressIcon>::create()
-        .zOrder(2)
-        .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
-        .parent(m_fields->progressBarWrapper)
-        .collect();
+    auto& settings = GlobedSettings::get();
 
-    auto* rp = Build<RemotePlayer>::create(progressIcon)
+    PlayerProgressIcon* progressIcon = nullptr;
+    PlayerProgressArrow* progressArrow = nullptr;
+
+    bool platformer = m_level->isPlatformer();
+
+    if (!platformer && settings.levelUi.progressIndicators) {
+        Build<PlayerProgressIcon>::create()
+            .zOrder(2)
+            .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
+            .parent(m_fields->progressBarWrapper)
+            .store(progressIcon);
+    } else if (platformer && settings.levelUi.progressIndicators) {
+        Build<PlayerProgressArrow>::create()
+            .zOrder(2)
+            .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
+            .parent(this->getParent())
+            .store(progressArrow);
+    }
+
+    auto* rp = Build<RemotePlayer>::create(progressIcon, progressArrow)
         .zOrder(10) // TODO temp
         .id(Mod::get()->expandSpriteName(fmt::format("remote-player-{}", playerId).c_str()))
         .collect();
@@ -560,7 +573,7 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
     m_fields->players.emplace(playerId, rp);
     m_fields->interpolator->addPlayer(playerId);
 
-    log::debug("Player joined: {}", playerId);
+    // log::debug("Player joined: {}", playerId);
 }
 
 void GlobedPlayLayer::handlePlayerLeave(int playerId) {
@@ -571,14 +584,14 @@ void GlobedPlayLayer::handlePlayerLeave(int playerId) {
     if (!m_fields->players.contains(playerId)) return;
 
     auto rp = m_fields->players.at(playerId);
-    rp->progressIcon->removeFromParent();
+    rp->removeProgressIndicators();
     rp->removeFromParent();
 
     m_fields->players.erase(playerId);
     m_fields->interpolator->removePlayer(playerId);
     m_fields->playerStore->removePlayer(playerId);
 
-    log::debug("Player removed: {}", playerId);
+    // log::debug("Player removed: {}", playerId);
 }
 
 bool GlobedPlayLayer::accountForSpeedhack(size_t uniqueKey, float cap, float allowance) { // TODO test if this still works for classic speedhax

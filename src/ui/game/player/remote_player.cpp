@@ -4,10 +4,11 @@
 
 using namespace geode::prelude;
 
-bool RemotePlayer::init(PlayerProgressIcon* progressIcon, const PlayerAccountData& data) {
+bool RemotePlayer::init(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data) {
     if (!CCNode::init()) return false;
     this->accountData = data;
     this->progressIcon = progressIcon;
+    this->progressArrow = progressArrow;
 
     this->player1 = Build<ComplexVisualPlayer>::create(this, false)
         .parent(this)
@@ -39,6 +40,10 @@ void RemotePlayer::updateAccountData(const PlayerAccountData& data, bool force) 
         progressIcon->updateIcons(data.icons);
     }
 
+    if (progressArrow) {
+        progressArrow->updateIcons(data.icons);
+    }
+
     defaultTicks = 0;
 }
 
@@ -66,7 +71,21 @@ void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffec
 }
 
 void RemotePlayer::updateProgressIcon() {
-    progressIcon->updatePosition(lastPercentage);
+    if (progressIcon) {
+        progressIcon->updatePosition(lastPercentage);
+    }
+}
+
+void RemotePlayer::updateProgressArrow(
+        cocos2d::CCPoint cameraOrigin,
+        cocos2d::CCSize cameraCoverage,
+        cocos2d::CCPoint visibleOrigin,
+        cocos2d::CCSize visibleCoverage,
+        float zoom
+) {
+    if (progressArrow) {
+        progressArrow->updatePosition(cameraOrigin, cameraCoverage, visibleOrigin, visibleCoverage, player1->getPlayerPosition(), zoom);
+    }
 }
 
 unsigned int RemotePlayer::getDefaultTicks() {
@@ -85,9 +104,21 @@ bool RemotePlayer::isValidPlayer() {
     return accountData.id != 0;
 }
 
-RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, const PlayerAccountData& data) {
+void RemotePlayer::removeProgressIndicators() {
+    if (progressIcon) {
+        progressIcon->removeFromParent();
+        progressIcon = nullptr;
+    }
+
+    if (progressArrow) {
+        progressArrow->removeFromParent();
+        progressArrow = nullptr;
+    }
+}
+
+RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data) {
     auto ret = new RemotePlayer;
-    if (ret->init(progressIcon, data)) {
+    if (ret->init(progressIcon, progressArrow, data)) {
         ret->autorelease();
         return ret;
     }
@@ -96,6 +127,6 @@ RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, const Playe
     return nullptr;
 }
 
-RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon) {
-    return create(progressIcon, PlayerAccountData::DEFAULT_DATA);
+RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow) {
+    return create(progressIcon, progressArrow, PlayerAccountData::DEFAULT_DATA);
 }
