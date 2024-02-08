@@ -245,11 +245,11 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 
     this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
         auto& vm = GlobedAudioManager::get();
+        vm.validateDevices();
 
         if (event->isDown()) {
             if (!this->m_fields->deafened && !vm.isRecording()) {
                 // make sure the recording device is valid
-                vm.validateDevices();
                 if (!vm.isRecordingDeviceSet()) {
                     ErrorQueues::get().warn("Unable to record audio, no recording device is set");
                     return ListenerResult::Stop;
@@ -338,10 +338,10 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
 
     auto& pcm = ProfileCacheManager::get();
 
-    util::collections::SmallVector<int, 16> toRemove;
+    util::collections::SmallVector<int, 32> toRemove;
 
-    // if there has been no server update for a while, likely there are no players on the level, kick everyone
-    if (self->m_fields->timeCounter - self->m_fields->lastServerUpdate > 1.0f) {
+    // if more than a second passed and there was only 1 player, they probably left
+    if (self->m_fields->timeCounter - self->m_fields->lastServerUpdate > 1.0f && self->m_fields->players.size() < 2) {
         for (const auto& [playerId, _] : self->m_fields->players) {
             toRemove.push_back(playerId);
         }

@@ -2,6 +2,7 @@
 
 * Change the volume slider to be ranged from 0% to 200% instead of 100%
 * You can now hear yourself when testing audio in settings
+* Make asset preloading optional (if you have weird texture bugs, disable it in settings!)
 
 ## v1.0.4
 

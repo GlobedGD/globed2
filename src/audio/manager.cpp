@@ -154,18 +154,28 @@ bool GlobedAudioManager::isRecordingDeviceSet() {
 }
 
 void GlobedAudioManager::validateDevices() {
-    if (recordDevice.id != -1) {
-        this->setActiveRecordingDevice(recordDevice.id);
-        if (recordDevice.id == -1) {
-            log::info("Invalidating recording device {}", recordDevice.id);
+    try {
+        if (recordDevice.id != -1) {
+            this->setActiveRecordingDevice(recordDevice.id);
+            if (recordDevice.id == -1) {
+                log::info("Invalidating recording device {}", recordDevice.id);
+            }
         }
+    } catch (const std::exception& e) {
+        log::info("Invalidating recording device {}: {}", recordDevice.id, e.what());
+        recordDevice.id = -1;
     }
 
-    if (playbackDevice.id != -1) {
-        this->setActivePlaybackDevice(playbackDevice.id);
-        if (playbackDevice.id == -1) {
-            log::info("Invalidating playback device {}", playbackDevice.id);
+    try {
+        if (playbackDevice.id != -1) {
+            this->setActivePlaybackDevice(playbackDevice.id);
+            if (playbackDevice.id == -1) {
+                log::info("Invalidating playback device {}", playbackDevice.id);
+            }
         }
+    } catch (const std::exception& e) {
+        log::info("Invalidating playback device {}: {}", playbackDevice.id, e.what());
+        playbackDevice.id = -1;
     }
 }
 

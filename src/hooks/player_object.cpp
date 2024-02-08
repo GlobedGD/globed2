@@ -31,6 +31,10 @@ void ComplexPlayerObject::playDeathEffect() {
     // we need to do this because the orig func reads the death effect ID from GameManager
     int oldEffect = gm->getPlayerDeathEffect();
     gm->setPlayerDeathEffect(deathEffect);
+
+    // also make sure the death effect is properly loaded
+    gm->loadDeathEffect(deathEffect);
+
     PlayerObject::playDeathEffect();
     gm->setPlayerDeathEffect(oldEffect);
 }

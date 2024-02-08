@@ -17,6 +17,7 @@ public:
     struct Globed {
         GSETTING(bool, autoconnect, true);
         GSETTING(int, tpsCap, 0);
+        GSETTING(bool, preloadAssets, true);
     };
 
     struct Overlay {

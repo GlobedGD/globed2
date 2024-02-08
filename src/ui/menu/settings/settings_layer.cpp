@@ -73,6 +73,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
         .intMin = 1,
         .intMax = 240,
     });
+    MAKE_SETTING(globed, preloadAssets, "Preload assets", "Makes the loading screen take more time but prevents most of the random lagspikes when in a level.");
 
     MAKE_HEADER("Overlay");
     MAKE_SETTING(overlay, enabled, "Ping overlay", "Show a small overlay when in a level, displaying the current latency to the server.");
@@ -83,8 +84,8 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
     MAKE_SETTING(overlay, hideConditionally, "Hide conditionally", "Hide the ping overlay when not connected to a server or in a non-uploaded level, instead of showing a substitute message.");
     MAKE_SETTING_TYPE(overlay, position, Type::Corner, "Position", "Position of the overlay on the screen.");
 
-    MAKE_HEADER("Communication");
 #if GLOBED_VOICE_SUPPORT
+    MAKE_HEADER("Communication");
     MAKE_SETTING(communication, voiceEnabled, "Voice chat", "Enables in-game voice chat. To talk, hold V when in a level. (keybind can be changed in game settings)");
     MAKE_SETTING(communication, voiceProximity, "Voice proximity", "In platformer mode, the loudness of other players will be determined by how close they are to you.");
     MAKE_SETTING_LIM(communication, voiceVolume, "Voice volume", "Controls how loud other players are.", {

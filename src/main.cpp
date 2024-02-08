@@ -7,25 +7,25 @@
 
 #include <Geode/cocos/platform/IncludeCurl.h>
 
-#include <audio/manager.hpp>
 #include <hooks/all.hpp>
+#include <audio/manager.hpp>
+#include <managers/settings.hpp>
 #include <ui/error_check_node.hpp>
 #include <util/all.hpp>
-#include <game/lerp_logger.hpp>
 
 using namespace geode::prelude;
 
 void setupLibsodium();
 void setupErrorCheckNode();
 void setupCustomKeybinds();
-void loadDeathEffects();
+void preloadAssets();
 void printDebugInfo();
 
 $on_mod(Loaded) {
     setupLibsodium();
     setupErrorCheckNode();
     setupCustomKeybinds();
-    loadDeathEffects();
+    preloadAssets();
 
 #if GLOBED_VOICE_SUPPORT
     GlobedAudioManager::get().preInitialize();
@@ -77,13 +77,16 @@ void setupCustomKeybinds() {
 #endif // GLOBED_HAS_KEYBINDS
 }
 
-void loadDeathEffects() {
-    log::debug("Loading death effects..");
-    // --geode:globed-skip-death-effects=true
-    if (Loader::get()->getLaunchFlag("globed-skip-death-effects")) {
-        log::info("Skipped death effect loading due to a launch flag.");
+void preloadAssets() {
+    if (Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects")) {
+        log::warn("Asset preloading is disabled. Not loading anything.");
         return;
     }
+
+    auto& settings = GlobedSettings::get();
+    if (!settings.globed.preloadAssets) return;
+
+    log::debug("Loading death effects..");
 
     for (int i = 1; i < 21; i++) {
         log::debug("Loading death effect {}", i);
@@ -93,6 +96,7 @@ void loadDeathEffects() {
             log::warn("Failed to load death effect: {}", e.what());
         }
     }
+
     log::debug("Finished loading death effects");
 }
 
