@@ -19,6 +19,8 @@ public:
     void removeStream(int playerId);
     bool isSpeaking(int playerId);
     void setVolume(int playerId, float volume);
+    void muteEveryone();
+    void setVolumeAll(float volume);
 
 private:
     std::unordered_map<int, std::unique_ptr<AudioStream>> streams;

@@ -48,4 +48,16 @@ void VoicePlaybackManager::setVolume(int playerId, float volume) {
     streams.at(playerId)->setVolume(volume);
 }
 
+void VoicePlaybackManager::muteEveryone() {
+    for (const auto& [playerId, stream] : streams) {
+        stream->setVolume(0.f);
+    }
+}
+
+void VoicePlaybackManager::setVolumeAll(float volume) {
+    for (const auto& [playerId, stream] : streams) {
+        stream->setVolume(volume);
+    }
+}
+
 #endif // GLOBED_VOICE_SUPPORT

@@ -20,6 +20,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     // in game stuff
     bool deafened = false;
+    bool isVoiceProximity = false;
     uint32_t totalSentPackets = 0;
     float timeCounter = 0.f;
     float lastServerUpdate = 0.f;

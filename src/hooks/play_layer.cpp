@@ -66,6 +66,8 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         return true;
     }
 
+    m_fields->isVoiceProximity = level->isPlatformer() && settings.communication.voiceProximity;
+
     // else update the overlay with ping
     m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
 
@@ -235,7 +237,9 @@ void GlobedPlayLayer::setupPacketListeners() {
 void GlobedPlayLayer::setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
     // the only keybinds used are for voice chat, so if voice is disabled, do nothing
-    if (!GlobedSettings::get().communication.voiceEnabled) {
+
+    auto& settings = GlobedSettings::get();
+    if (!settings.communication.voiceEnabled) {
         return;
     }
 
@@ -289,9 +293,16 @@ void GlobedPlayLayer::setupCustomKeybinds() {
         return ListenerResult::Stop;
     }, "voice-activate"_spr);
 
-    this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
+    this->addEventListener<keybinds::InvokeBindFilter>([this, &settings](keybinds::InvokeBindEvent* event) {
+        auto& vpm = VoicePlaybackManager::get();
+
         if (event->isDown()) {
             this->m_fields->deafened = !this->m_fields->deafened;
+            if (this->m_fields->deafened) {
+                vpm.muteEveryone();
+            } else if (!this->m_fields->isVoiceProximity) {
+                vpm.setVolumeAll(settings.communication.voiceVolume);
+            }
         }
 
         return ListenerResult::Propagate;
@@ -415,7 +426,6 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     auto& settings = GlobedSettings::get();
     auto mePosition = self->m_player1->getPosition();
 
-
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
 
@@ -433,7 +443,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         }
 
         // update voice proximity
-        if (self->m_level->isPlatformer() && settings.communication.voiceProximity) {
+        if (!self->m_fields->deafened && self->m_fields->isVoiceProximity) {
             auto theyPos1 = vstate.player1.position;
             float distance = cocos2d::ccpDistance(mePosition, theyPos1);
 
