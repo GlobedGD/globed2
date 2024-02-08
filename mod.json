@@ -1,6 +1,6 @@
 {
     "geode": "2.0.0-beta.15",
-    "version": "v1.0.2",
+    "version": "v1.0.3",
     "gd": {
         "win": "2.204",
         "android": "2.205",
@@ -23,6 +23,13 @@
             "id": "geode.custom-keybinds",
             "version": ">=v1.2.3",
             "importance": "required"
+        }
+    ],
+    "incompatibilities": [
+        {
+            "id": "thesillydoggo.moretags",
+            "importance": "breaking",
+            "version": "*"
         }
     ],
     "repository": "https://github.com/dankmeme01/globed2",

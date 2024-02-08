@@ -334,7 +334,7 @@ impl GameServer {
             ServerThreadMessage::Packet(buf[..len].to_vec())
         };
 
-        thread.push_new_message(message)?;
+        thread.push_new_message(message).map_err(|e| anyhow!("[{peer}] {e}"))?;
 
         Ok(())
     }

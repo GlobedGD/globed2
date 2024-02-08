@@ -54,6 +54,7 @@ public:
 
     struct Flags {
         bool seenSignupNotice = false;
+        bool seenVoiceChatPTTNotice = false;
     };
 
     Globed globed;

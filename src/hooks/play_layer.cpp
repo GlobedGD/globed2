@@ -101,11 +101,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         nm.send(SyncIconsPacket::create(pcm.getOwnData()));
     }
 
-    // send LevelJoinPacket and RequestPlayerProfilesPacket
-    nm.send(LevelJoinPacket::create(level->m_levelID));
-    nm.send(RequestPlayerProfilesPacket::create(0));
-
-    this->setupPacketListeners();
     this->setupCustomKeybinds();
 
     // interpolator
@@ -119,9 +114,16 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     m_fields->playerStore = std::make_shared<PlayerStore>();
 
     // update
-    Loader::get()->queueInMainThread([] {
+    Loader::get()->queueInMainThread([&nm] {
         auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
         if (!self) return;
+
+        // here we run the stuff that must run on a valid playlayer
+        self->setupPacketListeners();
+
+        // send LevelJoinPacket and RequestPlayerProfilesPacket
+        nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
+        nm.send(RequestPlayerProfilesPacket::create(0));
 
         self->rescheduleSelectors();
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), self->getParent(), 0.0f, false);

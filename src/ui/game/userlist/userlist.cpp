@@ -26,6 +26,8 @@ bool GlobedUserListPopup::setup() {
 
 void GlobedUserListPopup::reloadList(float) {
     auto playLayer = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    if (!playLayer) return;
+
     auto& playerStore = playLayer->m_fields->playerStore->getAll();
     auto& pcm = ProfileCacheManager::get();
 
