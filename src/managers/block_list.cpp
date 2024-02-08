@@ -37,7 +37,15 @@ void BlockListMangaer::load() {
     auto val = Mod::get()->getSavedValue<std::string>(SETTING_KEY);
     if (val.empty()) return;
 
-    auto data = util::crypto::base64Decode(val);
+    util::data::bytevector data;
+
+    try {
+        data = util::crypto::base64Decode(val);
+    } catch (const std::exception& e) {
+        log::warn("Failed to load blocklist: {}", e.what());
+        return;
+    }
+
     if (data.empty()) return;
 
     ByteBuffer bb(std::move(data));

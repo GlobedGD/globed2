@@ -129,7 +129,14 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
             auto commentId = response.substr(0, colonPos);
 
             log::info("Authkey created successfully, saving.");
-            auto authkey = util::crypto::base64Decode(response.substr(colonPos + 1));
+            util::data::bytevector authkey;
+            try {
+                authkey = util::crypto::base64Decode(response.substr(colonPos + 1));
+            } catch (const std::exception& e) {
+                this->onFailure("Completing challenge failed: server sent an invalid response.");
+                return;
+            }
+
             am.storeAuthKey(util::crypto::simpleHash(authkey));
             this->onSuccess();
 

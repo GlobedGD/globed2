@@ -44,7 +44,12 @@ Result<std::string> GlobedAccountManager::generateAuthCode() {
 
     GLOBED_REQUIRE_SAFE(!b64Token.empty(), "unable to generate auth code: no token")
 
-    auto decToken = util::crypto::base64Decode(b64Token);
+    util::data::bytevector decToken;
+    try {
+        decToken = util::crypto::base64Decode(b64Token);
+    } catch (const std::exception& e) {
+        return Err(e.what());
+    }
 
     return Ok(util::crypto::simpleTOTP(decToken));
 }
