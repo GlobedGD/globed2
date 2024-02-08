@@ -1,6 +1,8 @@
-## v1.0.3
+## v1.0.4
 
 * Make incompatible with More Level Tags (the issues were too hard to fix sorry)
+* Make deafening immediate (you will stop hearing others as soon as you press B, no need to wait)
+* Fix crashes on old CPUs, now for real
 
 ## v1.0.2
 
