@@ -13,6 +13,7 @@
 class VoicePlaybackManager : public SingletonBase<VoicePlaybackManager> {
 public:
     void playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
+    void playRawDataStreamed(int playerId, const float* pcm, size_t samples);
     void stopAllStreams();
 
     void prepareStream(int playerId);

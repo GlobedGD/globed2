@@ -56,8 +56,10 @@ public:
     void start();
     // write an audio frame to this stream
     void writeData(const EncodedAudioFrame& frame);
+    // write raw audio data to this stream
+    void writeData(const float* pcm, size_t samples);
 
-    // set the volume of the stream (0.0f - 1.0f)
+    // set the volume of the stream (0.0f - 1.0f, beyond 1.0f amplifies)
     void setVolume(float volume);
 
 private:

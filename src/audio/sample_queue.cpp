@@ -6,7 +6,7 @@ void AudioSampleQueue::writeData(const DecodedOpusData& data) {
     this->writeData(data.ptr, data.length);
 }
 
-void AudioSampleQueue::writeData(float* pcm, size_t length) {
+void AudioSampleQueue::writeData(const float* pcm, size_t length) {
     buf.insert(buf.end(), pcm, pcm + length);
 }
 

@@ -80,6 +80,10 @@ void AudioStream::writeData(const EncodedAudioFrame& frame) {
     }
 }
 
+void AudioStream::writeData(const float* pcm, size_t samples) {
+    queue.writeData(pcm, samples);
+}
+
 void AudioStream::setVolume(float volume) {
     if (channel) {
         channel->setVolume(volume);

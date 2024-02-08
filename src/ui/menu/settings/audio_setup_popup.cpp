@@ -4,6 +4,7 @@
 
 #include "audio_device_cell.hpp"
 #include <audio/manager.hpp>
+#include <audio/voice_playback_manager.hpp>
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
 
@@ -31,16 +32,22 @@ bool AudioSetupPopup::setup() {
     recordButton = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
         .scale(0.485f)
         .intoMenuItem([this](auto) {
+            auto& vpm = VoicePlaybackManager::get();
+            vpm.prepareStream(-1);
+
             auto& vm = GlobedAudioManager::get();
             vm.setRecordBufferCapacity(1);
-            auto result = vm.startRecordingRaw([this](const float* pcm, size_t samples) {
+            auto result = vm.startRecordingRaw([this, &vpm](const float* pcm, size_t samples) {
                 // calculate the avg audio volume
                 double sum = 0.0f;
                 for (size_t i = 0; i < samples; i++) {
                     sum += static_cast<double>(std::abs(pcm[i]));
                 }
 
-                this->audioLevel = 5.f * static_cast<float>(sum / static_cast<double>(samples));
+                this->audioLevel = 3.f * static_cast<float>(sum / static_cast<double>(samples));
+
+                // play back the audio
+                vpm.playRawDataStreamed(-1, pcm, samples);
             });
 
             if (result.isErr()) {
@@ -63,6 +70,9 @@ bool AudioSetupPopup::setup() {
 
             auto& vm = GlobedAudioManager::get();
             vm.haltRecording();
+
+            auto& vpm = VoicePlaybackManager::get();
+            vpm.removeStream(-1);
         })
         .parent(visualizerLayout)
         .id("stop-recording-button"_spr)

@@ -1,3 +1,8 @@
+## v1.0.5
+
+* Change the volume slider to be ranged from 0% to 200% instead of 100%
+* You can now hear yourself when testing audio in settings
+
 ## v1.0.4
 
 * Make incompatible with More Level Tags (the issues were too hard to fix sorry)

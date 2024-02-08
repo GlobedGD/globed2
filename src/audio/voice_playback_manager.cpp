@@ -14,6 +14,15 @@ void VoicePlaybackManager::playFrameStreamed(int playerId, const EncodedAudioFra
     stream->writeData(frame);
 }
 
+void VoicePlaybackManager::playRawDataStreamed(int playerId, const float* pcm, size_t samples) {
+    if (!streams.contains(playerId)) {
+        this->prepareStream(playerId);
+    }
+
+    auto& stream = streams.at(playerId);
+    stream->writeData(pcm, samples);
+}
+
 void VoicePlaybackManager::stopAllStreams() {
     streams.clear();
 }
