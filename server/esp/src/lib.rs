@@ -14,7 +14,8 @@
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
     clippy::missing_safety_doc,
-    clippy::wildcard_imports
+    clippy::wildcard_imports,
+    clippy::module_name_repetitions
 )]
 use std::{fmt::Display, mem::MaybeUninit};
 mod common;
@@ -31,6 +32,7 @@ pub enum DecodeError {
     NotEnoughCapacityString,
     InvalidEnumValue,
     InvalidStringValue,
+    NonFiniteValue,
 }
 
 impl Display for DecodeError {
@@ -40,6 +42,7 @@ impl Display for DecodeError {
             Self::NotEnoughCapacityString => f.write_str("not enough capacity to fit the given string into a FastString"),
             Self::InvalidEnumValue => f.write_str("invalid enum value was passed"),
             Self::InvalidStringValue => f.write_str("invalid string was passed, likely not properly UTF-8 encoded"),
+            Self::NonFiniteValue => f.write_str("NaN or inf was passed as a data field expecting a finite f32 or f64 value"),
         }
     }
 }

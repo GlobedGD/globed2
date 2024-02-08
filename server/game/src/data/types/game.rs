@@ -32,7 +32,7 @@ pub struct SpiderTeleportData {
 #[dynamic_size(as_static = true)]
 pub struct SpecificIconData {
     pub position: Point,
-    pub rotation: f32,
+    pub rotation: FiniteF32,
     pub icon_type: PlayerIconType,
     pub flags: u16, // bit-field with various flags, see the client-side structure for more info
     pub spider_teleport_data: Option<SpiderTeleportData>,
@@ -43,16 +43,16 @@ pub struct SpecificIconData {
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
 pub struct PlayerData {
-    pub timestamp: f32,
+    pub timestamp: FiniteF32,
     pub local_best: u32, // percentage or milliseconds in platformer
     pub attempts: i32,
 
     pub player1: SpecificIconData,
     pub player2: SpecificIconData,
 
-    pub last_death_timestamp: f32,
+    pub last_death_timestamp: FiniteF32,
 
-    pub current_percentage: f32,
+    pub current_percentage: FiniteF32,
 
     pub flags: u8, // also a bit-field
 }

@@ -89,7 +89,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
     MAKE_SETTING(communication, voiceProximity, "Voice proximity", "In platformer mode, the loudness of other players will be determined by how close they are to you.");
     MAKE_SETTING_LIM(communication, voiceVolume, "Voice volume", "Controls how loud other players are.", {
         .floatMin = 0.f,
-        .floatMax = 1.f,
+        .floatMax = 2.f,
     });
     MAKE_SETTING(communication, onlyFriends, "Only friends", "When enabled, you won't hear players that are not on your friend list in-game.");
     MAKE_SETTING(communication, lowerAudioLatency, "Lower audio latency", "Decreases the audio buffer size by 2 times, reducing the latency but potentially causing audio issues.");
