@@ -5,6 +5,7 @@
 * Make asset preloading optional (if you have weird texture bugs, disable it in settings!)
 * Hopefully fix a crash when disconnecting the active audio input device
 * Fix some crashes caused by corrupted data
+* No more disconnecting when you minimize the game
 
 ## v1.0.4
 
