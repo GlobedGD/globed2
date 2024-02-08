@@ -12,9 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        - name: Windows
-          os: windows-latest
-          target: Win32
+        - name: Android
+          os: Android
+          target: android64
         # - name: MacOS
         #   os: macos-latest
         # - name: Android32
