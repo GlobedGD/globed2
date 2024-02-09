@@ -15,7 +15,7 @@ public:
     void playSpiderTeleport(const SpiderTeleportData& data) override;
     cocos2d::CCPoint getPlayerPosition() override;
 
-    void updatePlayerObjectIcons();
+    void updatePlayerObjectIcons(bool skipFrames = false);
     void toggleAllOff();
     void callToggleWith(PlayerIconType type, bool arg1, bool arg2);
     void callUpdateWith(PlayerIconType type, int icon);

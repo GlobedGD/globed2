@@ -4,6 +4,7 @@
 #include <managers/settings.hpp>
 #include <util/misc.hpp>
 #include <util/rng.hpp>
+#include <util/debug.hpp>
 
 using namespace geode::prelude;
 
@@ -310,7 +311,7 @@ void ComplexVisualPlayer::onAnimateRobotFireOut() {
     playerIcon->m_robotFire->setVisible(false);
 }
 
-void ComplexVisualPlayer::updatePlayerObjectIcons() {
+void ComplexVisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
     auto* gm = GameManager::get();
 
     storedMainColor = gm->colorForIdx(storedIcons.color1);
@@ -327,15 +328,17 @@ void ComplexVisualPlayer::updatePlayerObjectIcons() {
         playerIcon->disableCustomGlowColor();
     }
 
-    playerIcon->updatePlayerShipFrame(storedIcons.ship);
-    playerIcon->updatePlayerRollFrame(storedIcons.ball);
-    playerIcon->updatePlayerBirdFrame(storedIcons.ufo);
-    playerIcon->updatePlayerDartFrame(storedIcons.wave);
-    playerIcon->updatePlayerRobotFrame(storedIcons.robot);
-    playerIcon->updatePlayerSpiderFrame(storedIcons.spider);
-    playerIcon->updatePlayerSwingFrame(storedIcons.swing);
-    playerIcon->updatePlayerJetpackFrame(storedIcons.jetpack);
-    playerIcon->updatePlayerFrame(storedIcons.cube);
+    if (!skipFrames) {
+        playerIcon->updatePlayerShipFrame(storedIcons.ship);
+        playerIcon->updatePlayerRollFrame(storedIcons.ball);
+        playerIcon->updatePlayerBirdFrame(storedIcons.ufo);
+        playerIcon->updatePlayerDartFrame(storedIcons.wave);
+        playerIcon->updatePlayerRobotFrame(storedIcons.robot);
+        playerIcon->updatePlayerSpiderFrame(storedIcons.spider);
+        playerIcon->updatePlayerSwingFrame(storedIcons.swing);
+        playerIcon->updatePlayerJetpackFrame(storedIcons.jetpack);
+        playerIcon->updatePlayerFrame(storedIcons.cube);
+    }
 
     playerIcon->updateGlowColor();
     playerIcon->updatePlayerGlow();
@@ -439,7 +442,7 @@ void ComplexVisualPlayer::onFinishedLoadingIconAsync() {
         // if all icons loaded, we good
         iconsLoaded = 0;
 
-        this->updatePlayerObjectIcons();
+        this->updatePlayerObjectIcons(true);
         this->updateIconType(playerIconType);
     }
 }
