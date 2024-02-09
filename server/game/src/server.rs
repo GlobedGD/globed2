@@ -193,7 +193,7 @@ impl GameServer {
         self.threads
             .lock()
             .values()
-            .filter(|thr| thr.room_id.load(Ordering::Relaxed) == room_id)
+            .filter(|thr| thr.authenticated() && thr.room_id.load(Ordering::Relaxed) == room_id)
             .map(|thread| {
                 thread
                     .account_data
