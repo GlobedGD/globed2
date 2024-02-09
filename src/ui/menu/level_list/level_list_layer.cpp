@@ -108,6 +108,8 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     // compare by player count (descending)
     auto comparator = [this](GJGameLevel* a, GJGameLevel* b) {
+        if (!this->levelList.contains(a->m_levelID) || !this->levelList.contains(b->m_levelID)) return false;
+
         auto aVal = this->levelList.at(a->m_levelID);
         auto bVal = this->levelList.at(b->m_levelID);
 
@@ -128,7 +130,10 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     // guys we are about to do a funny
     for (LevelCell* cell : CCArrayExt<LevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
-        static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(cell->m_level->m_levelID.value()));
+        int levelId = cell->m_level->m_levelID.value();
+        if (!levelList.contains(levelId)) continue;
+
+        static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));
     }
 }
 
