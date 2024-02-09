@@ -35,7 +35,7 @@ void DownloadLevelPopup::loadLevelsFinished(cocos2d::CCArray* levels, char const
 
     glm->m_levelManagerDelegate = nullptr;
     glm->m_levelDownloadDelegate = this;
-    glm->downloadLevel(level->m_levelID, true); // TODO idk this bool arg
+    glm->downloadLevel(level->m_levelID, false);
 }
 
 void DownloadLevelPopup::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) {
@@ -54,8 +54,6 @@ void DownloadLevelPopup::loadLevelsFailed(char const* p0) {
 void DownloadLevelPopup::setupPageInfo(gd::string p0, char const* p1) {}
 
 void DownloadLevelPopup::levelDownloadFinished(GJGameLevel* level) {
-    level->m_gauntletLevel = false;
-    level->m_gauntletLevel2 = false;
     this->onClose(this);
     util::ui::switchToScene(LevelInfoLayer::create(level, false));
 }

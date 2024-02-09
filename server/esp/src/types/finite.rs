@@ -49,6 +49,7 @@ impl DynamicSize for FiniteF32 {
     }
 }
 
+#[derive(Copy, Clone, Default, Debug)]
 pub struct FiniteF64(f64);
 
 impl Encodable for FiniteF64 {

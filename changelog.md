@@ -1,11 +1,12 @@
 ## v1.0.5
 
+* No more disconnecting when you minimize the game
 * Change the volume slider to be ranged from 0% to 200% instead of 100%
 * You can now hear yourself when testing audio in settings
 * Make asset preloading optional (if you have weird texture bugs, disable it in settings!)
 * Hopefully fix a crash when disconnecting the active audio input device
 * Fix some crashes caused by corrupted data
-* No more disconnecting when you minimize the game
+* Fix gauntlet levels sometimes being broken
 
 ## v1.0.4
 
