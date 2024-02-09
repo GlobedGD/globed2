@@ -43,6 +43,16 @@ protected:
 
     PlayerIconData storedIcons;
 
+    // used for async icon loading
+    struct AsyncLoadRequest {
+        int key;
+        int iconId;
+        PlayerIconType iconType;
+    };
+
+    int iconsLoaded = 0;
+    std::unordered_map<int, AsyncLoadRequest> asyncLoadRequests;
+
     static constexpr int ROBOT_FIRE_ACTION = 1000727;
     static constexpr int SWING_FIRE_ACTION = 1000728;
     static constexpr int SPIDER_TELEPORT_COLOR_ACTION = 1000729;
@@ -58,4 +68,9 @@ protected:
 
     void animateSwingFire(bool goingDown);
     void updateOpacity();
+
+    void tryLoadIconsAsync();
+    void onFinishedLoadingIconAsync();
+    // fucking hell i hate this
+    void asyncIconLoadedIntermediary(cocos2d::CCObject*);
 };

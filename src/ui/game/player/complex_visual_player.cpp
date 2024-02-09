@@ -3,6 +3,7 @@
 #include "remote_player.hpp"
 #include <managers/settings.hpp>
 #include <util/misc.hpp>
+#include <util/rng.hpp>
 
 using namespace geode::prelude;
 
@@ -57,8 +58,7 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
         playerIcon->setDeathEffect(icons.deathEffect);
     }
 
-    this->updatePlayerObjectIcons();
-    this->updateIconType(playerIconType);
+    this->tryLoadIconsAsync();
 }
 
 void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing, bool isSpeaking) {
@@ -393,6 +393,78 @@ void ComplexVisualPlayer::callUpdateWith(PlayerIconType type, int icon) {
 
 cocos2d::CCPoint ComplexVisualPlayer::getPlayerPosition() {
     return playerIcon->getPosition();
+}
+
+void ComplexVisualPlayer::tryLoadIconsAsync() {
+    if (iconsLoaded != 0) return;
+    auto* gm = GameManager::get();
+    auto* textureCache = CCTextureCache::sharedTextureCache();
+    auto* sfCache = CCSpriteFrameCache::sharedSpriteFrameCache();
+
+    for (auto type = PlayerIconType::Cube; type <= PlayerIconType::Jetpack; type = (PlayerIconType)((int)type + 1)) {
+        auto iconId = this->getIconWithType(storedIcons, type);
+        std::string sheetName = gm->sheetNameForIcon(storedIcons.cube, (int)IconType::Cube);
+
+        if (!sheetName.empty()) {
+            int key = gm->keyForIcon(iconId, (int)util::misc::convertEnum<IconType>(type));
+            // essentially addIconDelegate
+            gm->m_iconDelegates[key].push_back(this);
+
+            if (!gm->m_isIconBeingLoaded[key]) {
+                gm->m_isIconBeingLoaded[key] = true;
+
+                auto uniqueId = util::rng::Random::get().generate<int>();
+                asyncLoadRequests[uniqueId] = AsyncLoadRequest {
+                    .key = key,
+                    .iconId = iconId,
+                    .iconType = type
+                };
+
+                textureCache->addImageAsync(
+                    (sheetName + ".png").c_str(),
+                    this,
+                    menu_selector(ComplexVisualPlayer::asyncIconLoadedIntermediary),
+                    uniqueId,
+                    kCCTexture2DPixelFormat_RGBA8888
+                );
+            }
+        }
+    }
+}
+
+void ComplexVisualPlayer::onFinishedLoadingIconAsync() {
+    iconsLoaded++;
+
+    if (iconsLoaded == (int)PlayerIconType::Jetpack) {
+        // if all icons loaded, we good
+        iconsLoaded = 0;
+
+        this->updatePlayerObjectIcons();
+        this->updateIconType(playerIconType);
+    }
+}
+
+void ComplexVisualPlayer::asyncIconLoadedIntermediary(cocos2d::CCObject* obj) {
+    auto* texture = static_cast<CCTexture2D*>(obj);
+    int uniqueId = texture->getTag();
+    if (!asyncLoadRequests.contains(uniqueId)) {
+        log::warn("async load requests does not contain the tag: {}", uniqueId);
+        return;
+    }
+
+    auto request = asyncLoadRequests[uniqueId];
+    asyncLoadRequests.erase(uniqueId);
+
+    auto* gm = GameManager::get();
+    gm->loadIcon(request.iconId, (int)util::misc::convertEnum<IconType>(request.iconType), -1);
+    gm->m_isIconBeingLoaded[request.key] = 0;
+
+    // log::debug("loaded icon, now: {}, icon: {}. calling {} delegates", iconsLoaded, obj, gm->m_iconDelegates.at(request.key).size());
+    for (const auto delegate : gm->m_iconDelegates[request.key]) {
+        static_cast<ComplexVisualPlayer*>(delegate)->onFinishedLoadingIconAsync();
+    }
+
+    gm->m_iconDelegates.erase(request.key);
 }
 
 ComplexVisualPlayer* ComplexVisualPlayer::create(RemotePlayer* parent, bool isSecond) {
