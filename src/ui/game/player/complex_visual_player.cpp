@@ -72,7 +72,7 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
     }
 
     if (!isDead && playerIcon->getOpacity() == 0) {
-        playerIcon->setOpacity(static_cast<unsigned char>(GlobedSettings::get().players.playerOpacity * 255.f));
+        this->updateOpacity();
     }
 
     PlayerIconType iconType = data.iconType;
@@ -98,6 +98,7 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
 
     if (switchedMode) {
         this->updateIconType(iconType);
+        this->updateOpacity();
     }
 
     if (statusIcons) {
@@ -338,6 +339,18 @@ void ComplexVisualPlayer::updatePlayerObjectIcons() {
 
     playerIcon->updateGlowColor();
     playerIcon->updatePlayerGlow();
+
+    // set opacities
+    this->updateOpacity();
+}
+
+void ComplexVisualPlayer::updateOpacity() {
+    unsigned char opacity = static_cast<unsigned char>(GlobedSettings::get().players.playerOpacity * 255.f);
+
+    playerIcon->setOpacity(opacity);
+    playerIcon->m_spiderSprite->GJRobotSprite::setOpacity(opacity);
+    playerIcon->m_robotSprite->GJRobotSprite::setOpacity(opacity);
+    log::debug("setting opacity to {}", opacity);
 }
 
 void ComplexVisualPlayer::toggleAllOff() {

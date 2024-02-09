@@ -11,6 +11,7 @@
 * Maybe fixed death effects crashing the game
 * Fix some crashes caused by corrupted data
 * Fix gauntlet levels sometimes being broken
+* Fix player opacity not working properly on spider and robot
 
 ## v1.0.4
 

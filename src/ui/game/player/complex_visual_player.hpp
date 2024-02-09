@@ -57,4 +57,5 @@ protected:
     void onAnimateRobotFireOut();
 
     void animateSwingFire(bool goingDown);
+    void updateOpacity();
 };
