@@ -25,8 +25,11 @@ namespace util::debug {
         return micros;
     }
 
-    void Benchmarker::endAndLog(const std::string_view id) {
-        log::debug("{} took {} to run", id, util::format::formatDuration(this->end(id)));
+    void Benchmarker::endAndLog(const std::string_view id, bool ignoreSmall) {
+        auto took = this->end(id);
+        if (took > util::time::micros(250)) {
+            log::debug("{} took {} to run", id, util::format::formatDuration(took));
+        }
     }
 
     time::micros Benchmarker::run(std::function<void()>&& func) {

@@ -21,7 +21,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .color(gm->colorForIdx(data.icons.color1))
         .secondColor(gm->colorForIdx(data.icons.color2))
         .parent(this)
-        .pos(25.f, CELL_HEIGHT - 22.f)
+        .pos(25.f, CELL_HEIGHT / 2.f)
         .id("player-icon"_spr)
         .collect();
 
@@ -34,10 +34,11 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .limitLabelWidth(150.f, 0.7f, 0.1f)
         .collect();
 
-    Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
+    auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
         // goodness
         .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
-        .parent(menu);
+        .parent(menu)
+        .collect();
 
     if (data.icons.glowColor != -1) {
         sp->setGlowOutline(gm->colorForIdx(data.icons.glowColor));
@@ -47,7 +48,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
-        .pos(nameLabel->getPosition() / 2 + nameLabel->getScaledContentSize() + CCPoint{15.f, -2.f})
+        .pos(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{3.f, -3.f})
         .anchorPoint({0.f, 0.5f})
         .scale(0.4f)
         .parent(this)

@@ -6,7 +6,7 @@
 
 class GlobedUserCell : public cocos2d::CCLayer {
 public:
-    static constexpr float CELL_HEIGHT = 45.f;
+    static constexpr float CELL_HEIGHT = 40.f;
 
     void refreshData(const PlayerStore::Entry& entry);
 

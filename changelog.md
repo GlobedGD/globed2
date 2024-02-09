@@ -1,5 +1,6 @@
 ## v1.0.5
 
+* Preload icons on the loading screen (longer loading time but hopefully a lot less lagspikes in-game now)
 * Fix disconnecting when minimizing the game
 * Room popup now doesn't auto refresh, and sorts players alphabetically (also your friends are now shown before everyone else!)
 * ^ same applies for the in-game player list popup

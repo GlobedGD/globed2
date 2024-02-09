@@ -3,6 +3,7 @@
 #include "user_cell.hpp"
 #include <hooks/play_layer.hpp>
 #include <managers/profile_cache.hpp>
+#include <managers/friend_list.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -87,7 +88,36 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
     auto& pcm = ProfileCacheManager::get();
     auto& ownData = pcm.getOwnAccountData();
 
-    for (const auto& [playerId, entry] : playerStore) {
+    std::vector<int> playerIds;
+
+    for (const auto& [playerId, _] : playerStore) {
+        playerIds.push_back(playerId);
+    }
+
+    auto& flm = FriendListManager::get();
+    std::sort(playerIds.begin(), playerIds.end(), [&flm, &pcm, &playerStore](const auto& p1, const auto& p2) -> bool {
+        bool isFriend1 = flm.isFriend(p1);
+        bool isFriend2 = flm.isFriend(p2);
+
+        if (isFriend1 != isFriend2) {
+            return isFriend1;
+        } else {
+            auto accData1 = pcm.getData(p1);
+            auto accData2 = pcm.getData(p2);
+            if (!accData1 || !accData2) return false;
+            // convert both names to lowercase
+            std::string name1 = accData1.value().name, name2 = accData2.value().name;
+            std::transform(name1.begin(), name1.end(), name1.begin(), ::tolower);
+            std::transform(name2.begin(), name2.end(), name2.begin(), ::tolower);
+
+            // sort alphabetically
+            return name1 < name2;
+        }
+    });
+
+    for (const auto playerId : playerIds) {
+        auto& entry = playerStore.at(playerId);
+
         GlobedUserCell* cell;
         if (playerId == ownData.id) {
             cell = GlobedUserCell::create(entry, ownData);

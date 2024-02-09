@@ -20,7 +20,7 @@ bool GlobedMenuLayer::init() {
 
     GlobedAccountManager::get().autoInitialize();
 
-    auto winsize = CCDirector::get()->getWinSize();
+    auto winSize = CCDirector::get()->getWinSize();
 
     // server list
 
@@ -34,7 +34,7 @@ bool GlobedMenuLayer::init() {
         .id("server-list"_spr)
         .store(listLayer);
 
-    listLayer->setPosition({winsize / 2 - listLayer->getScaledContentSize() / 2});
+    listLayer->setPosition({winSize / 2 - listLayer->getScaledContentSize() / 2});
 
     Build<GlobedSignupLayer>::create()
         .zOrder(2)
@@ -115,6 +115,18 @@ bool GlobedMenuLayer::init() {
         .collect();
 
     leftButtonMenu->updateLayout();
+
+    // info button
+    Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+        .scale(1.0f)
+        .intoMenuItem([](auto) {
+            FLAlertLayer::create("Voice chat guide", "In order to talk with other people in-game, hold <cp>V</c>. In order to deafen (stop hearing everyone), press <cr>B</c>. Both keybinds can be changed in Geometry Dash settings.", "Ok")->show();
+        })
+        .id("btn-show-voice-chat-popup"_spr)
+        .pos(winSize.width - 20.f, 20.f)
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .parent(this);
 
     util::ui::prepareLayer(this);
 

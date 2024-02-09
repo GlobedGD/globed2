@@ -23,7 +23,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     label->setScale(label->getScale() * 0.9f);
 
     auto* btn = Build<CCMenuItemSpriteExtra>::create(label, this, menu_selector(PlayerListCell::onOpenProfile))
-        .pos(-RoomPopup::LIST_WIDTH + 57.f, -22.f)
+        .pos(-RoomPopup::LIST_WIDTH + 57.f, -CELL_HEIGHT / 2.f)
         .parent(menu)
         .collect();
 
@@ -37,7 +37,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         .color(gm->colorForIdx(data.color1))
         .secondColor(gm->colorForIdx(data.color2))
         .parent(this)
-        .pos(25.f, CELL_HEIGHT - 22.f)
+        .pos(25.f, CELL_HEIGHT / 2.f)
         .store(simplePlayer);
 
     if (data.glowColor == -1) {
@@ -66,7 +66,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
                     popup->show();
                 }
             })
-            .pos(-30.f, -23.f)
+            .pos(-30.f, -CELL_HEIGHT / 2.f)
             .parent(menu);
     }
 

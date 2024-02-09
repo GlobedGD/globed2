@@ -16,7 +16,7 @@ namespace util::debug {
     class Benchmarker : public SingletonBase<Benchmarker> {
     public:
         void start(const std::string_view id);
-        void endAndLog(const std::string_view id);
+        void endAndLog(const std::string_view id, bool ignoreSmall = false);
         time::micros end(const std::string_view id);
         time::micros run(std::function<void()>&& func);
         void runAndLog(std::function<void()>&& func, const std::string_view identifier);

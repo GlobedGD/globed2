@@ -245,13 +245,18 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 
     this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
         auto& vm = GlobedAudioManager::get();
-        vm.validateDevices();
 
         if (event->isDown()) {
+            vm.validateDevices();
+
             if (!this->m_fields->deafened && !vm.isRecording()) {
                 // make sure the recording device is valid
                 if (!vm.isRecordingDeviceSet()) {
                     ErrorQueues::get().warn("Unable to record audio, no recording device is set");
+                    return ListenerResult::Stop;
+                }
+
+                if (vm.isRecording()) {
                     return ListenerResult::Stop;
                 }
 
@@ -353,6 +358,8 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
         return;
     }
 
+    util::collections::SmallVector<int, 512> ids;
+
     // kick players that have left the level
     for (const auto& [playerId, remotePlayer] : self->m_fields->players) {
         // if the player doesnt exist in last LevelData packet, they have left the level
@@ -370,7 +377,7 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
             } else if (remotePlayer->getDefaultTicks() >= 12) {
                 // if it has been 3 seconds and we still don't have them in cache, request again
                 remotePlayer->setDefaultTicks(0);
-                NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
+                ids.push_back(playerId);
             } else {
                 // if it has been less than 3 seconds, just increment the tick counter
                 remotePlayer->incDefaultTicks();
@@ -378,6 +385,15 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
         } else if (data.has_value()) {
             // still try to see if the cache has changed
             remotePlayer->updateAccountData(data.value());
+        }
+    }
+
+    // TODO make this just send a goddamn list
+    if (ids.size() > 6) {
+        NetworkManager::get().send(RequestPlayerProfilesPacket::create(0));
+    } else {
+        for (int id : ids) {
+            NetworkManager::get().send(RequestPlayerProfilesPacket::create(id));
         }
     }
 
@@ -558,7 +574,6 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
         ErrorQueues::get().error(std::string("Failed to prepare audio stream: ") + e.what());
     }
 #endif // GLOBED_VOICE_SUPPORT
-    NetworkManager::get().send(RequestPlayerProfilesPacket::create(playerId));
 
     PlayerProgressIcon* progressIcon = nullptr;
     PlayerProgressArrow* progressArrow = nullptr;

@@ -1,10 +1,10 @@
 #include "complex_visual_player.hpp"
 
 #include "remote_player.hpp"
+#include <hooks/game_manager.hpp>
 #include <managers/settings.hpp>
 #include <util/misc.hpp>
 #include <util/rng.hpp>
-#include <util/debug.hpp>
 
 using namespace geode::prelude;
 
@@ -17,10 +17,13 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     auto& settings = GlobedSettings::get();
 
+    auto* hgm = static_cast<HookedGameManager*>(GameManager::get());
+
     playerIcon = static_cast<ComplexPlayerObject*>(Build<PlayerObject>::create(1, 1, this->playLayer, this->playLayer->m_objectLayer, false)
         .opacity(static_cast<unsigned char>(settings.players.playerOpacity * 255.f))
         .parent(this)
         .collect());
+
 
     playerIcon->setRemoteState();
 
@@ -42,6 +45,9 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
             .id("status-icons"_spr)
             .collect();
     }
+
+    this->updatePlayerObjectIcons(false);
+    this->updateIconType(playerIconType);
 
     return true;
 }

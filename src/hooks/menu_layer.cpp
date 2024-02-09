@@ -5,6 +5,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
+#include <managers/friend_list.hpp>
 #include <net/network_manager.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
 #include <util/misc.hpp>
@@ -15,6 +16,11 @@ using namespace geode::prelude;
 
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
+
+    if (GJAccountManager::sharedState()->m_accountID > 0) {
+        auto& flm = FriendListManager::get();
+        flm.maybeLoad();
+    }
 
     // auto connect
     util::misc::callOnce("menu-layer-init-autoconnect", []{

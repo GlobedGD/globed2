@@ -1,6 +1,9 @@
 #include "ui.hpp"
 
-#include "misc.hpp"
+#include <util/format.hpp>
+#include <util/misc.hpp>
+#include <util/time.hpp>
+#include <util/math.hpp>
 
 using namespace geode::prelude;
 
@@ -75,20 +78,51 @@ namespace util::ui {
 
     float getScrollPos(BoomListView* listView) {
         auto* cl = listView->m_tableView->m_contentLayer;
+        if (cl->getPositionY() > 0.f) return 99999.f;
         return cl->getScaledContentSize().height + cl->getPositionY();
     }
 
     void setScrollPos(BoomListView* listView, float pos) {
+        if (util::math::equal(pos, 99999.f)) return;
+
         auto* cl = listView->m_tableView->m_contentLayer;
         float actualPos = pos - cl->getScaledContentSize().height;
 
         cl->setPositionY(std::min(actualPos, 0.f));
     }
 
+// [from; to]
+#define LOAD_ICON_RANGE(type, from, to) \
+    for (int i = from; i <= to; i++) { \
+        gm->loadIcon(i, (int)IconType::type, -1); \
+    }
+
     void preloadAssets() {
+        auto start = util::time::now();
+        log::debug("Preloading death effects..");
         for (int i = 1; i < 21; i++) {
             tryLoadDeathEffect(i);
         }
+
+        log::debug("Took {}.", util::format::formatDuration(util::time::now() - start));
+        auto start2 = util::time::now();
+        log::debug("Preloading icons..");
+
+        auto* gm = GameManager::get();
+        LOAD_ICON_RANGE(Cube, 0, 484);
+        LOAD_ICON_RANGE(Ship, 0, 169);
+        LOAD_ICON_RANGE(Ball, 0, 118);
+        LOAD_ICON_RANGE(Ufo, 0, 149);
+        LOAD_ICON_RANGE(Wave, 0, 96);
+        LOAD_ICON_RANGE(Robot, 0, 68);
+        LOAD_ICON_RANGE(Spider, 0, 69);
+        LOAD_ICON_RANGE(Swing, 0, 43);
+        LOAD_ICON_RANGE(Jetpack, 0, 5);
+
+        auto end = util::time::now();
+        log::debug("Took {}.", util::format::formatDuration(end - start2));
+        log::debug("Preloading finished in {}.", util::format::formatDuration(end - start));
+        // robot and spider idk if necessary
     }
 
     void tryLoadDeathEffect(int id) {
@@ -101,7 +135,6 @@ namespace util::ui {
         auto plistKey = fmt::format("PlayerExplosion_{:02}.plist", id - 1);
 
         if (textureCache->textureForKey(pngKey.c_str()) == nullptr) {
-            log::debug("Loading death effect {}", id);
             textureCache->addImage(pngKey.c_str(), false);
             sfCache->addSpriteFramesWithFile(plistKey.c_str());
         }

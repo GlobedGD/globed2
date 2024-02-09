@@ -4,7 +4,7 @@
 
 class PlayerListCell : public cocos2d::CCLayer {
 public:
-    static constexpr float CELL_HEIGHT = 45.0f;
+    static constexpr float CELL_HEIGHT = 40.0f;
 
     static PlayerListCell* create(const PlayerRoomPreviewAccountData& data);
 
