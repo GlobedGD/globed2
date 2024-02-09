@@ -45,7 +45,7 @@ fn default_game_servers() -> Vec<GameServerEntry> {
     vec![GameServerEntry {
         id: "example-server-you-can-delete-it".to_owned(),
         name: "Server name".to_owned(),
-        address: "127.0.0.0:41001".to_owned(),
+        address: "127.0.0.1:41001".to_owned(),
         region: "the nether".to_owned(),
     }]
 }
