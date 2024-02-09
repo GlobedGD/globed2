@@ -1,8 +1,7 @@
 #include "player_object.hpp"
 
 #include <hooks/play_layer.hpp>
-#include <util/debug.hpp>
-#include <util/lowlevel.hpp>
+#include <util/ui.hpp>
 
 #if UINTPTR_MAX > 0xffffffff
 static inline constexpr uintptr_t MAGIC_CONSTANT = 0xdc00cd00dc00cd00;
@@ -33,7 +32,7 @@ void ComplexPlayerObject::playDeathEffect() {
     gm->setPlayerDeathEffect(deathEffect);
 
     // also make sure the death effect is properly loaded
-    gm->loadDeathEffect(deathEffect);
+    util::ui::tryLoadDeathEffect(deathEffect);
 
     PlayerObject::playDeathEffect();
     gm->setPlayerDeathEffect(oldEffect);

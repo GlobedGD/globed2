@@ -73,7 +73,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
         .intMin = 1,
         .intMax = 240,
     });
-    MAKE_SETTING(globed, preloadAssets, "Preload assets", "Makes the loading screen take more time but prevents most of the random lagspikes when in a level.");
+    MAKE_SETTING(globed, preloadAssets, "Preload assets", "Makes the loading screen take more time but prevents some of the random lagspikes when in a level.");
 
     MAKE_HEADER("Overlay");
     MAKE_SETTING(overlay, enabled, "Ping overlay", "Show a small overlay when in a level, displaying the current latency to the server.");

@@ -21,4 +21,7 @@ namespace util::ui {
 
     float getScrollPos(BoomListView* listView);
     void setScrollPos(BoomListView* listView, float pos);
+
+    void preloadAssets();
+    void tryLoadDeathEffect(int id);
 }

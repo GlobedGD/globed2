@@ -18,14 +18,12 @@ using namespace geode::prelude;
 void setupLibsodium();
 void setupErrorCheckNode();
 void setupCustomKeybinds();
-void preloadAssets();
 void printDebugInfo();
 
 $on_mod(Loaded) {
     setupLibsodium();
     setupErrorCheckNode();
     setupCustomKeybinds();
-    preloadAssets();
 
 #if GLOBED_VOICE_SUPPORT
     GlobedAudioManager::get().preInitialize();
@@ -75,29 +73,6 @@ void setupCustomKeybinds() {
     });
 
 #endif // GLOBED_HAS_KEYBINDS
-}
-
-void preloadAssets() {
-    if (Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects")) {
-        log::warn("Asset preloading is disabled. Not loading anything.");
-        return;
-    }
-
-    auto& settings = GlobedSettings::get();
-    if (!settings.globed.preloadAssets) return;
-
-    log::debug("Loading death effects..");
-
-    for (int i = 1; i < 21; i++) {
-        log::debug("Loading death effect {}", i);
-        try {
-            GameManager::get()->loadDeathEffect(i);
-        } catch (const std::exception& e) {
-            log::warn("Failed to load death effect: {}", e.what());
-        }
-    }
-
-    log::debug("Finished loading death effects");
 }
 
 // just debug printing

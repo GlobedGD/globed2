@@ -1,5 +1,7 @@
 #include "ui.hpp"
 
+#include "misc.hpp"
+
 using namespace geode::prelude;
 
 namespace util::ui {
@@ -81,5 +83,27 @@ namespace util::ui {
         float actualPos = pos - cl->getScaledContentSize().height;
 
         cl->setPositionY(std::min(actualPos, 0.f));
+    }
+
+    void preloadAssets() {
+        for (int i = 1; i < 21; i++) {
+            tryLoadDeathEffect(i);
+        }
+    }
+
+    void tryLoadDeathEffect(int id) {
+        if (id == 1) return;
+
+        auto textureCache = CCTextureCache::sharedTextureCache();
+        auto sfCache  = CCSpriteFrameCache::sharedSpriteFrameCache();
+
+        auto pngKey = fmt::format("PlayerExplosion_{:02}.png", id - 1);
+        auto plistKey = fmt::format("PlayerExplosion_{:02}.plist", id - 1);
+
+        if (textureCache->textureForKey(pngKey.c_str()) == nullptr) {
+            log::debug("Loading death effect {}", id);
+            textureCache->addImage(pngKey.c_str(), false);
+            sfCache->addSpriteFramesWithFile(plistKey.c_str());
+        }
     }
 }
