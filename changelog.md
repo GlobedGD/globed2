@@ -12,6 +12,7 @@
 * Fix some crashes caused by corrupted data
 * Fix gauntlet levels sometimes being broken
 * Fix player opacity not working properly on spider and robot
+* Add a message indicating how to use voice chat
 
 ## v1.0.4
 

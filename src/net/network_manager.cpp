@@ -51,12 +51,6 @@ NetworkManager::NetworkManager() {
         log::info("Successfully logged into the server!");
         connectedTps = packet->tps;
         _loggedin = true;
-
-        // additionally, preload the friendlist
-        auto& flm = FriendListManager::get();
-        if (!flm.isLoaded()) {
-            flm.load();
-        }
     });
 
     addBuiltinListener<LoginFailedPacket>([this](auto packet) {

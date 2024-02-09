@@ -1,7 +1,11 @@
-# Server changelog
+# server changelog
 
-this is a bit more nerdy than the main changelog.md and idk why you would want to read it but I find it fun to write these :D
+least chaotic thing about this repo tbh
 
-## Protocol 1
+## central v1.0.1
 
-from nothing to everything!
+* change the template game server ip address from `127.0.0.0` to `127.0.0.1` (oops)
+
+## game v1.0.1
+
+* don't include unauthenticated players in the room packet

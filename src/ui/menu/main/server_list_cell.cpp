@@ -6,6 +6,7 @@
 #include <managers/game_server.hpp>
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/settings.hpp>
 #include <util/net.hpp>
 #include <util/time.hpp>
 
@@ -78,6 +79,15 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                 if (active) {
                     NetworkManager::get().disconnect(false);
                 } else {
+                    auto& settings = GlobedSettings::get();
+                    if (!settings.flags.seenVoiceChatPTTNotice) {
+                        settings.flags.seenVoiceChatPTTNotice = true;
+                        settings.save();
+
+                        FLAlertLayer::create("Notice", "Be advised that Globed has voice chat (it can be disabled in settings if you wish). You can hold V to talk to other people.", "Ok")->show();
+                        return;
+                    }
+
                     auto& csm = CentralServerManager::get();
 
                     if (csm.standalone()) {

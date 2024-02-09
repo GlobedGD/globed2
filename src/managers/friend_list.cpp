@@ -16,6 +16,12 @@ bool FriendListManager::isLoaded() {
     return loaded;
 }
 
+void FriendListManager::maybeLoad() {
+    if (!this->isLoaded()) {
+        this->load();
+    }
+}
+
 void FriendListManager::invalidate() {
     friends.clear();
     loaded = false;

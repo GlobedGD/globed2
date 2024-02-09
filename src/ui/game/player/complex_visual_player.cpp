@@ -350,7 +350,6 @@ void ComplexVisualPlayer::updateOpacity() {
     playerIcon->setOpacity(opacity);
     playerIcon->m_spiderSprite->GJRobotSprite::setOpacity(opacity);
     playerIcon->m_robotSprite->GJRobotSprite::setOpacity(opacity);
-    log::debug("setting opacity to {}", opacity);
 }
 
 void ComplexVisualPlayer::toggleAllOff() {

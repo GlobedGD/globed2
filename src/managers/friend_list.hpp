@@ -20,6 +20,8 @@ public:
     // makes an async request to gd servers and fetches the current friendlist
     void load();
     bool isLoaded();
+    // call `load()` if `isLoaded() == false`
+    void maybeLoad();
 
     // reset the friend list and ensure `isLoaded()` will return `false` until reloaded again.
     void invalidate();

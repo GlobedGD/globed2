@@ -18,6 +18,8 @@ bool RoomPopup::setup() {
         return false;
     }
 
+    FriendListManager::get().maybeLoad();
+
     auto& rm = RoomManager::get();
 
     nm.addListener<RoomPlayerListPacket>([this](RoomPlayerListPacket* packet) {
