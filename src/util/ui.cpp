@@ -70,4 +70,16 @@ namespace util::ui {
             node->setScaleY(targetSize.height / nodeSize.height);
         }
     }
+
+    float getScrollPos(BoomListView* listView) {
+        auto* cl = listView->m_tableView->m_contentLayer;
+        return cl->getScaledContentSize().height + cl->getPositionY();
+    }
+
+    void setScrollPos(BoomListView* listView, float pos) {
+        auto* cl = listView->m_tableView->m_contentLayer;
+        float actualPos = pos - cl->getScaledContentSize().height;
+
+        cl->setPositionY(std::min(actualPos, 0.f));
+    }
 }

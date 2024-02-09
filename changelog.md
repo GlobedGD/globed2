@@ -1,6 +1,9 @@
 ## v1.0.5
 
-* No more disconnecting when you minimize the game
+* No more disconnecting when minimizing the game
+* Room popup now doesn't auto refresh, and sorts players alphabetically (also your friends are now shown before everyone else!)
+* ^ same applies for the in-game player list popup
+* Scroll position no longer resets when refreshing a list
 * Change the volume slider to be ranged from 0% to 200% instead of 100%
 * You can now hear yourself when testing audio in settings
 * Make asset preloading optional (if you have weird texture bugs, disable it in settings!)

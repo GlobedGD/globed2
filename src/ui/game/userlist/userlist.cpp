@@ -17,9 +17,17 @@ bool GlobedUserListPopup::setup() {
         .parent(m_mainLayer)
         .store(listLayer);
 
-    this->schedule(schedule_selector(GlobedUserListPopup::reloadList), 0.1f);
-
     this->hardRefresh();
+
+    Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
+        .scale(0.9f)
+        .intoMenuItem([this](auto) {
+            this->hardRefresh();
+        })
+        .pos(m_size.width / 2.f - 3.f, -m_size.height / 2.f + 3.f)
+        .id("reload-btn"_spr)
+        .intoNewParent(CCMenu::create())
+        .parent(m_mainLayer);
 
     return true;
 }
@@ -56,11 +64,19 @@ void GlobedUserListPopup::reloadList(float) {
 }
 
 void GlobedUserListPopup::hardRefresh() {
-    if (listLayer->m_list) listLayer->m_list->removeFromParent();
+    float lastScrollPos = -1.f;
+    if (listLayer->m_list) {
+        lastScrollPos = util::ui::getScrollPos(listLayer->m_list);
+        listLayer->m_list->removeFromParent();
+    }
 
     listLayer->m_list = Build<ListView>::create(createPlayerCells(), GlobedUserCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .parent(listLayer)
         .collect();
+
+    if (lastScrollPos != -1.f) {
+        util::ui::setScrollPos(listLayer->m_list, lastScrollPos);
+    }
 }
 
 CCArray* GlobedUserListPopup::createPlayerCells() {

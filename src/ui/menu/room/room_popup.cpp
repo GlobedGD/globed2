@@ -6,7 +6,9 @@
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/profile_cache.hpp>
+#include <managers/friend_list.hpp>
 #include <managers/room.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -19,7 +21,10 @@ bool RoomPopup::setup() {
     auto& rm = RoomManager::get();
 
     nm.addListener<RoomPlayerListPacket>([this](RoomPlayerListPacket* packet) {
+        // log::debug("guys i received it");
+        this->isWaiting = false;
         this->playerList = packet->data;
+        this->sortPlayerList();
         auto& rm = RoomManager::get();
         bool changed = rm.roomId != packet->roomId;
         rm.setRoom(packet->roomId);
@@ -61,13 +66,17 @@ bool RoomPopup::setup() {
 
     this->reloadPlayerList();
 
-    CCScheduler::get()->scheduleSelector(schedule_selector(RoomPopup::selReloadPlayerList), this, 2.5f, false);
+    Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
+        .scale(0.9f)
+        .intoMenuItem([this](auto) {
+            this->reloadPlayerList(true);
+        })
+        .pos(m_size.width / 2.f - 3.f, -m_size.height / 2.f + 3.f)
+        .id("reload-btn"_spr)
+        .intoNewParent(CCMenu::create())
+        .parent(m_mainLayer);
 
     return true;
-}
-
-void RoomPopup::selReloadPlayerList(float) {
-    this->reloadPlayerList(true);
 }
 
 void RoomPopup::onLoaded(bool stateChanged) {
@@ -80,10 +89,18 @@ void RoomPopup::onLoaded(bool stateChanged) {
         cells->addObject(cell);
     }
 
+    // preserve scroll position
+    float scrollPos = util::ui::getScrollPos(listLayer->m_list);
+    int previousCellCount = listLayer->m_list->m_entries->count();
+
     listLayer->m_list->removeFromParent();
     listLayer->m_list = Build<ListView>::create(cells, PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .parent(listLayer)
         .collect();
+
+    if (previousCellCount != 0) {
+        util::ui::setScrollPos(listLayer->m_list, scrollPos);
+    }
 
     if (stateChanged) {
         auto& rm = RoomManager::get();
@@ -162,12 +179,16 @@ void RoomPopup::reloadPlayerList(bool sendPacket) {
         return;
     }
 
-    // remove loading circle and existing list
+    // remove loading circle
     this->removeLoadingCircle();
 
     // send the request
     if (sendPacket) {
-        NetworkManager::get().send(RequestRoomPlayerListPacket::create());
+        // log::debug("requesting player list");
+        if (!isWaiting) {
+            NetworkManager::get().send(RequestRoomPlayerListPacket::create());
+            isWaiting = true;
+        }
     }
 
     // show the circle
@@ -179,6 +200,33 @@ void RoomPopup::reloadPlayerList(bool sendPacket) {
 
 bool RoomPopup::isLoading() {
     return loadingCircle != nullptr;
+}
+
+void RoomPopup::sortPlayerList() {
+    auto& flm = FriendListManager::get();
+
+    // filter out the weird people (old game server used to send unauthenticated people too)
+    playerList.erase(std::remove_if(playerList.begin(), playerList.end(), [](const auto& player) {
+        return player.id == 0;
+    }), playerList.end());
+
+    // show friends before everyone else, and sort everyone alphabetically by the name
+    std::sort(playerList.begin(), playerList.end(), [&flm](const auto& p1, const auto& p2) -> bool {
+        bool isFriend1 = flm.isFriend(p1.id);
+        bool isFriend2 = flm.isFriend(p2.id);
+
+        if (isFriend1 != isFriend2) {
+            return isFriend1;
+        } else {
+            // convert both names to lowercase
+            std::string name1 = p1.name, name2 = p2.name;
+            std::transform(name1.begin(), name1.end(), name1.begin(), ::tolower);
+            std::transform(name2.begin(), name2.end(), name2.begin(), ::tolower);
+
+            // sort alphabetically
+            return name1 < name2;
+        }
+    });
 }
 
 RoomPopup::~RoomPopup() {

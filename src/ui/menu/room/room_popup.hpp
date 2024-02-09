@@ -10,7 +10,6 @@ public:
     constexpr static float LIST_HEIGHT = 180.f;
 
     ~RoomPopup();
-    void selReloadPlayerList(float);
 
     static RoomPopup* create();
 
@@ -20,6 +19,7 @@ protected:
     GJCommentListLayer* listLayer = nullptr;
 
     cocos2d::CCMenu* roomBtnMenu = nullptr;
+    bool isWaiting = false;
 
     bool setup() override;
     void onLoaded(bool stateChanged);
@@ -27,4 +27,5 @@ protected:
     void reloadPlayerList(bool sendPacket = true);
     void addButtons();
     bool isLoading();
+    void sortPlayerList();
 };
