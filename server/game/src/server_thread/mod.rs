@@ -291,6 +291,7 @@ impl GameServerThread {
         }
 
         // connection test only in debug mode
+        #[cfg(not(debug_assertions))]
         if header.packet_id == ConnectionTestPacket::PACKET_ID {
             return Err(PacketHandlingError::DebugOnlyPacket);
         }
