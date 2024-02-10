@@ -1,5 +1,7 @@
 #include "ui.hpp"
 
+#include <hooks/game_manager.hpp>
+#include <managers/settings.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
 #include <util/time.hpp>
@@ -123,6 +125,24 @@ namespace util::ui {
         log::debug("Took {}.", util::format::formatDuration(end - start2));
         log::debug("Preloading finished in {}.", util::format::formatDuration(end - start));
         // robot and spider idk if necessary
+    }
+
+    void maybePreloadAssets() {
+        log::debug("preloading assets");
+
+        auto* gm = GameManager::get();
+        auto* hgm = static_cast<HookedGameManager*>(gm);
+        hgm->m_fields->iconCache.clear();
+
+        if (Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects")) {
+            log::warn("Asset preloading is disabled. Not loading anything.");
+            return;
+        }
+
+        auto& settings = GlobedSettings::get();
+        if (!settings.globed.preloadAssets) return;
+
+        preloadAssets();
     }
 
     void tryLoadDeathEffect(int id) {

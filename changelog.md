@@ -1,3 +1,8 @@
+## v1.0.6
+
+* (Maybe) fix crash when applying a texture pack with Texture Loader
+* Fix the TPS cap setting being impossible to change
+
 ## v1.0.5
 
 * Preload icons on the loading screen (longer loading time but hopefully a lot less lagspikes in-game now)

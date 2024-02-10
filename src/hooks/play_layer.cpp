@@ -165,14 +165,6 @@ void GlobedPlayLayer::onQuit() {
 
     if (!m_fields->globedReady) return;
 
-#if GLOBED_VOICE_SUPPORT
-    // stop voice recording and playback
-    GlobedAudioManager::get().haltRecording();
-
-    // TODO: this can freeze for up to a second on a level with 100 people LMAO
-    VoicePlaybackManager::get().stopAllStreams();
-#endif // GLOBED_VOICE_SUPPORT
-
     auto& nm = NetworkManager::get();
 
     // clean up the listeners
@@ -185,10 +177,18 @@ void GlobedPlayLayer::onQuit() {
     // send LevelLeavePacket
     nm.send(LevelLeavePacket::create());
 
-    // if we a have a higher ping, there may still be some inbound packets. suppress them for the next second.
-    nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::seconds(1));
-    nm.suppressUnhandledFor<LevelDataPacket>(util::time::seconds(1));
-    nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::seconds(1));
+    // if we a have a higher ping, there may still be some inbound packets. suppress them for the next 3 seconds.
+    nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::seconds(3));
+    nm.suppressUnhandledFor<LevelDataPacket>(util::time::seconds(3));
+    nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::seconds(3));
+
+#if GLOBED_VOICE_SUPPORT
+    // stop voice recording and playback
+    GlobedAudioManager::get().haltRecording();
+
+    // TODO: this can freeze for up to a second on a level with 100 people LMAO
+    VoicePlaybackManager::get().stopAllStreams();
+#endif // GLOBED_VOICE_SUPPORT
 }
 
 void GlobedPlayLayer::setupPacketListeners() {
