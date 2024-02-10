@@ -8,7 +8,6 @@ void HookedLoadingLayer::loadingFinished() {
 
     LoadingLayer::loadingFinished();
 
-
     if (Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects")) {
         log::warn("Asset preloading is disabled. Not loading anything.");
         return;

@@ -79,3 +79,20 @@ class DisconnectPacket : public Packet {
         return std::make_shared<DisconnectPacket>();
     }
 };
+
+class ConnectionTestPacket : public Packet {
+    GLOBED_PACKET(10010, false)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeU32(uid);
+        buf.writeByteArray(data);
+    }
+
+    ConnectionTestPacket(uint32_t uid, util::data::bytevector&& vec) : uid(uid), data(std::move(vec)) {}
+    static std::shared_ptr<Packet> create(uint32_t uid, util::data::bytevector&& vec) {
+        return std::make_shared<ConnectionTestPacket>(uid, std::move(vec));
+    }
+
+    uint32_t uid;
+    util::data::bytevector data;
+};

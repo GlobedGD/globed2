@@ -49,3 +49,10 @@ pub struct ServerNoticePacket<'a> {
 pub struct ProtocolMismatchPacket {
     pub protocol: u16,
 }
+
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 20010)]
+pub struct ConnectionTestResponsePacket {
+    pub uid: u32,
+    pub data: Vec<u8>,
+}

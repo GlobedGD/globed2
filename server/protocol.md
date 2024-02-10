@@ -19,6 +19,7 @@ Connection related
 * 10002 - KeepalivePacket - keepalive
 * 10003+ - LoginPacket - authentication
 * 10004 - DisconnectPacket - client disconnection
+* 10010 - ConnectionTestPacket - connection test (response 20010)
 
 General
 
@@ -56,6 +57,7 @@ Connection related
 * 20005 - LoginFailedPacket - bad auth (has error message)
 * 20006 - ServerNoticePacket - message popup for the user
 * 20007 - ProtocolMismatchPacket - protocol version mismatch
+* 20010 - ConnectionTestResponsePacket - connection test response
 
 General
 

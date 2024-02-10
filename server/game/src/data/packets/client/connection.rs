@@ -30,3 +30,10 @@ pub struct LoginPacket {
 #[derive(Packet, Decodable)]
 #[packet(id = 10004)]
 pub struct DisconnectPacket;
+
+#[derive(Packet, Decodable)]
+#[packet(id = 10010)]
+pub struct ConnectionTestPacket {
+    pub uid: u32,
+    pub data: Vec<u8>,
+}

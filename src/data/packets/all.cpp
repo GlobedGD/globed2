@@ -13,6 +13,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(LoggedInPacket);
         PACKET(LoginFailedPacket);
         PACKET(ServerNoticePacket);
+        PACKET(ConnectionTestResponsePacket);
 
         // general
 

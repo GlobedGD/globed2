@@ -68,3 +68,15 @@ class ProtocolMismatchPacket : public Packet {
 
     uint16_t serverProtocol;
 };
+
+class ConnectionTestResponsePacket : public Packet {
+    GLOBED_PACKET(20010, false)
+
+    GLOBED_PACKET_DECODE {
+        uid = buf.readU32();
+        data = buf.readByteArray();
+    }
+
+    uint32_t uid;
+    util::data::bytevector data;
+};

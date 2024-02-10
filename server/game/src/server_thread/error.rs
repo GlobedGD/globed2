@@ -22,6 +22,7 @@ pub enum PacketHandlingError {
     ColorParseFailed(ColorParseError),     // failed to parse a hex color into a Color3B struct
     Ratelimited,                           // too many packets per second
     DangerousAllocation(usize),            // attempted to allocate a huge chunk of memory with alloca
+    DebugOnlyPacket,                       // packet can only be handled in debug mode
 }
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
@@ -88,6 +89,7 @@ impl Display for PacketHandlingError {
             Self::DangerousAllocation(size) => f.write_fmt(format_args!(
                 "attempted to allocate {size} bytes on the stack - that has a potential for a stack overflow!"
             )),
+            Self::DebugOnlyPacket => f.write_str("this packet can only be handled in debug mode"),
         }
     }
 }

@@ -1,5 +1,4 @@
 #include <defs.hpp>
-#include <Geode/Geode.hpp>
 
 #if GLOBED_HAS_KEYBINDS
 #include <geode.custom-keybinds/include/Keybinds.hpp>

@@ -145,4 +145,12 @@ impl GameServerThread {
         self.terminate();
         Ok(())
     });
+
+    gs_handler!(self, handle_connection_test, ConnectionTestPacket, packet, {
+        self.send_packet_dynamic(&ConnectionTestResponsePacket {
+            uid: packet.uid,
+            data: packet.data,
+        })
+        .await
+    });
 }

@@ -129,7 +129,8 @@ impl GameServerThread {
                 | PacketHandlingError::EncryptionError
                 | PacketHandlingError::DecryptionError
                 | PacketHandlingError::NoHandler(_)
-                | PacketHandlingError::IOError(_) => {
+                | PacketHandlingError::IOError(_)
+                | PacketHandlingError::DebugOnlyPacket => {
                     warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
                 }
                 // these are either our fault or a fatal error somewhere
@@ -289,6 +290,11 @@ impl GameServerThread {
             return Err(PacketHandlingError::MalformedLoginAttempt);
         }
 
+        // connection test only in debug mode
+        if header.packet_id == ConnectionTestPacket::PACKET_ID {
+            return Err(PacketHandlingError::DebugOnlyPacket);
+        }
+
         // decrypt the packet in-place if encrypted
         if header.encrypted {
             if message.len() < PacketHeader::SIZE + NONCE_SIZE + MAC_SIZE {
@@ -328,6 +334,7 @@ impl GameServerThread {
             KeepalivePacket::PACKET_ID => self.handle_keepalive(&mut data).await,
             LoginPacket::PACKET_ID => self.handle_login(&mut data).await,
             DisconnectPacket::PACKET_ID => self.handle_disconnect(&mut data),
+            ConnectionTestPacket::PACKET_ID => self.handle_connection_test(&mut data).await,
 
             /* general */
             SyncIconsPacket::PACKET_ID => self.handle_sync_icons(&mut data).await,
