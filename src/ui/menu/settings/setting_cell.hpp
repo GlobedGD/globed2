@@ -3,7 +3,7 @@
 
 #include <any>
 
-class GlobedSettingCell : public cocos2d::CCLayer {
+class GlobedSettingCell : public cocos2d::CCLayer, public TextInputDelegate {
 public:
     enum class Type {
         Bool, Int, Float, String, AudioDevice, Corner
@@ -45,4 +45,12 @@ private:
     void onStringChanged(const std::string_view);
 
     void recreateCornerButton();
+
+    void textChanged(CCTextInputNode* p0);
+    void textInputOpened(CCTextInputNode* p0);
+    void textInputClosed(CCTextInputNode* p0);
+    void textInputShouldOffset(CCTextInputNode* p0, float p1);
+    void textInputReturn(CCTextInputNode* p0);
+    bool allowTextInput(CCTextInputNode* p0);
+    void enterPressed(CCTextInputNode* p0);
 };

@@ -3,6 +3,7 @@
 #include "audio_setup_popup.hpp"
 #include "string_input_popup.hpp"
 #include <managers/settings.hpp>
+#include <util/format.hpp>
 #include <util/misc.hpp>
 
 using namespace geode::prelude;
@@ -105,6 +106,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
             .id("input-menu"_spr)
             .parent(this);
 
+        inpField->getInput()->setDelegate(this);
         inpField->setString(std::to_string(currentValue));
     } break;
     case Type::Corner: {
@@ -219,6 +221,21 @@ void GlobedSettingCell::storeAndSave(std::any value) {
 
     GlobedSettings::get().save();
 }
+
+
+void GlobedSettingCell::textChanged(CCTextInputNode* p0) {
+    auto val = util::format::parse<int>(p0->getString());
+    if (val) {
+        this->storeAndSave(val.value());
+    }
+}
+
+void GlobedSettingCell::textInputOpened(CCTextInputNode* p0) {}
+void GlobedSettingCell::textInputClosed(CCTextInputNode* p0) {}
+void GlobedSettingCell::textInputShouldOffset(CCTextInputNode* p0, float p1) {}
+void GlobedSettingCell::textInputReturn(CCTextInputNode* p0) {}
+bool GlobedSettingCell::allowTextInput(CCTextInputNode* p0) { return true; }
+void GlobedSettingCell::enterPressed(CCTextInputNode* p0) {}
 
 GlobedSettingCell* GlobedSettingCell::create(void* settingStorage, Type settingType, const char* name, const char* desc, const Limits& limits) {
     auto ret = new GlobedSettingCell;
