@@ -100,7 +100,7 @@ void RoomPopup::onLoaded(bool stateChanged) {
         .parent(listLayer)
         .collect();
 
-    if (previousCellCount != 0) {
+    if (previousCellCount != 0 && !stateChanged) {
         util::ui::setScrollPos(listLayer->m_list, scrollPos);
     }
 
