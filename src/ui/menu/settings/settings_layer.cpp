@@ -95,6 +95,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
     MAKE_SETTING(communication, onlyFriends, "Only friends", "When enabled, you won't hear players that are not on your friend list in-game.");
     MAKE_SETTING(communication, lowerAudioLatency, "Lower audio latency", "Decreases the audio buffer size by 2 times, reducing the latency but potentially causing audio issues.");
     MAKE_SETTING_TYPE(communication, audioDevice, Type::AudioDevice, "Audio device", "The input device used for recording your voice.");
+    // MAKE_SETTING(communication, voiceLoopback, "Voice loopback", "When enabled, you will hear your own voice as you speak.");
 #endif // GLOBED_VOICE_SUPPORT
 
     MAKE_HEADER("Level UI");

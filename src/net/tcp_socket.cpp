@@ -43,7 +43,7 @@ Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port
     // im crying why does this actually poll for double the length????
     GLOBED_UNWRAP_INTO(this->poll(2500, false), auto pollResult);
 
-    GLOBED_REQUIRE_SAFE(pollResult, "tcp socket connection failed")
+    GLOBED_REQUIRE_SAFE(pollResult, "tcp connection timed out, failed to connect after 5 seconds.")
 
     connected = true;
     return Ok();

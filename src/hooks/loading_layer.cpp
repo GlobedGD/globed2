@@ -12,6 +12,13 @@ using namespace geode::prelude;
         gm->loadIcon(i, (int)IconType::type, -1); \
     } }
 
+// [from; to]
+#define LOAD_DEATH_EFFECT_RANGE(from, to) { \
+    for (int i = from; i < to; i++) { \
+        util::ui::tryLoadDeathEffect(i); \
+    } \
+}
+
 void HookedLoadingLayer::loadingFinished() {
     if (m_fields->preloadingStage == 0) {
         m_fields->loadingStartedTime = util::time::systemNow();
@@ -37,7 +44,7 @@ void HookedLoadingLayer::loadingFinished() {
         }
 
         // start the stage 1 - load death effects
-        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage1), 0.05f);
+        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.05f);
         return;
     } else if (m_fields->preloadingStage == 1000) {
         log::debug("Asset preloading finished in {}.", util::format::formatDuration(util::time::systemNow() - m_fields->loadingStartedTime));
@@ -56,15 +63,33 @@ void HookedLoadingLayer::setLabelText(const std::string_view text) {
 void HookedLoadingLayer::setLabelTextForStage() {
     int stage = m_fields->preloadingStage;
     switch (stage) {
-    case 2: this->setLabelText("Globed: preloading cube icons"); break;
-    case 3: this->setLabelText("Globed: preloading ship icons"); break;
-    case 4: this->setLabelText("Globed: preloading ball icons"); break;
-    case 5: this->setLabelText("Globed: preloading UFO icons"); break;
-    case 6: this->setLabelText("Globed: preloading wave icons"); break;
-    case 7: this->setLabelText("Globed: preloading robot icons"); break;
-    case 8: this->setLabelText("Globed: preloading spider icons"); break;
-    case 9: this->setLabelText("Globed: preloading swing icons"); break;
-    case 10: this->setLabelText("Globed: preloading jetpack icons"); break;
+    case 1: [[fallthrough]];
+    case 2: [[fallthrough]];
+    case 3: [[fallthrough]];
+    case 4: this->setLabelText("Globed: preloading death effects"); break;
+
+    case 5: [[fallthrough]];
+    case 6: [[fallthrough]];
+    case 7: [[fallthrough]];
+    case 8: [[fallthrough]];
+    case 9: this->setLabelText("Globed: preloading cube icons"); break;
+
+    case 10: [[fallthrough]];
+    case 11: this->setLabelText("Globed: preloading ship icons"); break;
+
+    case 12: [[fallthrough]];
+    case 13: this->setLabelText("Globed: preloading ball icons"); break;
+
+    case 14: [[fallthrough]];
+    case 15: this->setLabelText("Globed: preloading UFO icons"); break;
+
+    case 16: [[fallthrough]];
+    case 17: this->setLabelText("Globed: preloading wave icons"); break;
+
+    case 18: this->setLabelText("Globed: preloading robot icons"); break;
+    case 19: this->setLabelText("Globed: preloading spider icons"); break;
+    case 20: this->setLabelText("Globed: preloading swing icons"); break;
+    case 21: this->setLabelText("Globed: preloading jetpack icons"); break;
     }
 }
 
@@ -87,16 +112,34 @@ void HookedLoadingLayer::preloadingStage2(float) {
     auto* gm = GameManager::get();
 
     switch (m_fields->preloadingStage) {
-    case 2: LOAD_ICON_RANGE(Cube, 0, 484); break;
-    case 3: LOAD_ICON_RANGE(Ship, 0, 169); break;
-    case 4: LOAD_ICON_RANGE(Ball, 0, 118); break;
-    case 5: LOAD_ICON_RANGE(Ufo, 0, 149); break;
-    case 6: LOAD_ICON_RANGE(Wave, 0, 96); break;
-    case 7: LOAD_ICON_RANGE(Robot, 0, 68); break;
-    case 8: LOAD_ICON_RANGE(Spider, 0, 69); break;
-    case 9: LOAD_ICON_RANGE(Swing, 0, 43); break;
-    case 10: LOAD_ICON_RANGE(Jetpack, 0, 5); break;
-    case 11: {
+    case 1: LOAD_DEATH_EFFECT_RANGE(1, 5); break;
+    case 2: LOAD_DEATH_EFFECT_RANGE(6, 11); break;
+    case 3: LOAD_DEATH_EFFECT_RANGE(12, 16); break;
+    case 4: LOAD_DEATH_EFFECT_RANGE(17, 21); break;
+
+    case 5: LOAD_ICON_RANGE(Cube, 0, 100); break;
+    case 6: LOAD_ICON_RANGE(Cube, 101, 200); break;
+    case 7: LOAD_ICON_RANGE(Cube, 201, 300); break;
+    case 8: LOAD_ICON_RANGE(Cube, 301, 400); break;
+    case 9: LOAD_ICON_RANGE(Cube, 401, 484); break;
+
+    case 10: LOAD_ICON_RANGE(Ship, 0, 80); break;
+    case 11: LOAD_ICON_RANGE(Ship, 81, 169); break;
+
+    case 12: LOAD_ICON_RANGE(Ball, 0, 60); break;
+    case 13: LOAD_ICON_RANGE(Ball, 61, 118); break;
+
+    case 14: LOAD_ICON_RANGE(Ufo, 0, 75); break;
+    case 15: LOAD_ICON_RANGE(Ufo, 76, 149); break;
+
+    case 16: LOAD_ICON_RANGE(Wave, 0, 50); break;
+    case 17: LOAD_ICON_RANGE(Wave, 51, 96); break;
+
+    case 18: LOAD_ICON_RANGE(Robot, 0, 68); break;
+    case 19: LOAD_ICON_RANGE(Spider, 0, 69); break;
+    case 20: LOAD_ICON_RANGE(Swing, 0, 43); break;
+    case 21: LOAD_ICON_RANGE(Jetpack, 0, 5); break;
+    case 22: {
         this->finishLoading();
         return;
     }
@@ -106,9 +149,9 @@ void HookedLoadingLayer::preloadingStage2(float) {
     this->setLabelTextForStage();
 
     if (m_fields->preloadingStage % 2 == 1) {
-        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage3), 0.05f);
-    } else {
         this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.05f);
+    } else {
+        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage3), 0.05f);
     }
 }
 
