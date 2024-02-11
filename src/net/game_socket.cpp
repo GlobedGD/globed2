@@ -79,14 +79,14 @@ std::shared_ptr<Packet> GameSocket::recvPacket(bool onActive) {
     return packet;
 }
 
-void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
+Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     auto buf = this->serializePacket(packet.get(), true);
 
 #ifdef GLOBED_DEBUG_PACKETS
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
 #endif
 
-    (void) this->tcpSocket.sendAll(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size()).unwrap();
+    return this->tcpSocket.sendAll(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size());
 }
 
 ByteBuffer GameSocket::serializePacket(Packet* packet, bool withPrefixedLength) {

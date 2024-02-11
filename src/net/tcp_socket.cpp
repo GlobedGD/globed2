@@ -32,9 +32,18 @@ Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port
 
     GLOBED_REQUIRE_SAFE(sock != -1, "failed to create a tcp socket: socket failed");
 
-    // attempt a connection
-    auto result = ::connect(socket_, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
-    GLOBED_REQUIRE_SAFE(result == 0, "tcp socket connection failed")
+    // attempt a connection with a 5 second timeout
+    this->setNonBlocking(true);
+
+    // on a non-blocking socket this always errors with EWOULDBLOCK, ignore the status code
+    (void) ::connect(socket_, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
+
+    this->setNonBlocking(false);
+
+    // im crying why does this actually poll for double the length????
+    GLOBED_UNWRAP_INTO(this->poll(2500, false), auto pollResult);
+
+    GLOBED_REQUIRE_SAFE(pollResult, "tcp socket connection failed")
 
     connected = true;
     return Ok();
@@ -104,11 +113,11 @@ bool TcpSocket::close() {
     return res;
 }
 
-Result<bool> TcpSocket::poll(int msDelay) {
+Result<bool> TcpSocket::poll(int msDelay, bool in) {
     GLOBED_SOCKET_POLLFD fds[1];
 
     fds[0].fd = socket_;
-    fds[0].events = POLLIN;
+    fds[0].events = in ? POLLIN : POLLOUT;
 
     int result = GLOBED_SOCKET_POLL(fds, 1, msDelay);
 
@@ -118,4 +127,19 @@ Result<bool> TcpSocket::poll(int msDelay) {
 
     return Ok(result > 0);
 
+}
+
+void TcpSocket::setNonBlocking(bool nb) {
+#ifdef GEODE_IS_WINDOWS
+    unsigned long mode = nb ? 1 : 0;
+    if (SOCKET_ERROR == ioctlsocket(socket_, FIONBIO, &mode)) util::net::throwLastError();
+#else
+    int flags = fcntl(socket_, F_GETFL);
+
+    if (nb) {
+        if (fcntl(socket_, F_SETFL, flags | O_NONBLOCK) < 0) util::net::throwLastError();
+    } else {
+        if (fcntl(socket_, F_SETFL, flags & (~O_NONBLOCK)) < 0) util::net::throwLastError();
+    }
+#endif
 }

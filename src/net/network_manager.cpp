@@ -119,8 +119,8 @@ NetworkManager::~NetworkManager() {
     log::debug("Goodbye!");
 }
 
-Result<> NetworkManager::connect(const std::string_view addr, unsigned short port, bool standalone) {
-    if (this->connected() && !this->handshaken()) {
+Result<> NetworkManager::connect(const std::string_view addr, unsigned short port, const std::string_view serverId, bool standalone) {
+    if (_deferredConnect || (this->connected() && !this->handshaken())) {
         return Err("already trying to connect, please wait");
     }
 
@@ -136,24 +136,16 @@ Result<> NetworkManager::connect(const std::string_view addr, unsigned short por
         GLOBED_REQUIRE_SAFE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
     }
 
-    GLOBED_UNWRAP(gameSocket.tcpSocket.connect(addr, port));
-    gameSocket.createBox();
-
-    auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(gameSocket.box->extractPublicKey()));
-    this->send(packet);
+    _deferredConnect = true;
+    _deferredAddr = addr;
+    _deferredPort = port;
+    _deferredServerId = serverId;
 
     return Ok();
 }
 
 Result<> NetworkManager::connectWithView(const GameServer& gsview) {
-    auto result = this->connect(gsview.address.ip, gsview.address.port);
-    if (result.isOk()) {
-        GameServerManager::get().setActive(gsview.id);
-        return Ok();
-    } else {
-        this->disconnect(true);
-        return Err(result.unwrapErr());
-    }
+    return this->connect(gsview.address.ip, gsview.address.port, gsview.id);
 }
 
 Result<> NetworkManager::connectStandalone() {
@@ -164,14 +156,7 @@ Result<> NetworkManager::connectStandalone() {
 
     auto server = _server.value();
 
-    auto result = this->connect(server.address.ip, server.address.port, true);
-    if (result.isOk()) {
-        GameServerManager::get().setActive(GameServerManager::STANDALONE_ID);
-        return Ok();
-    } else {
-        this->disconnect(true);
-        return Err(result.unwrapErr());
-    }
+    return this->connect(server.address.ip, server.address.port, GameServerManager::STANDALONE_ID, true);
 }
 
 void NetworkManager::disconnect(bool quiet, bool noclear) {
@@ -181,7 +166,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
 
     if (!quiet) {
         // send it directly instead of pushing to the queue
-        gameSocket.sendPacket(DisconnectPacket::create());
+        (void) gameSocket.sendPacket(DisconnectPacket::create());
     }
 
     _handshaken = false;
@@ -229,6 +214,24 @@ void NetworkManager::threadMainFunc() {
         return;
     }
 
+    if (_deferredConnect) {
+        auto result = gameSocket.tcpSocket.connect(_deferredAddr, _deferredPort);
+        _deferredConnect = false;
+
+        if (result) {
+            // successful connection
+            GameServerManager::get().setActive(_deferredServerId);
+            gameSocket.createBox();
+
+            auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(gameSocket.box->extractPublicKey()));
+            this->send(packet);
+        } else {
+            this->disconnect(true);
+            ErrorQueues::get().error(fmt::format("Failed to connect: <cy>{}</c>", result.unwrapErr()));
+            return;
+        }
+    }
+
     this->maybeSendKeepalive();
 
     if (!packetQueue.waitForMessages(util::time::millis(250))) {
@@ -258,8 +261,14 @@ void NetworkManager::threadMainFunc() {
 
     for (auto packet : messages) {
         try {
-            gameSocket.sendPacket(packet);
+            auto result = gameSocket.sendPacket(packet);
+            if (!result) {
+                ErrorQueues::get().error(fmt::format("Failed to send packet: {}", result.unwrapErr()));
+                this->disconnect(true, false);
+            }
+
         } catch (const std::exception& e) {
+            log::debug("sending packet failed");
             ErrorQueues::get().error(e.what());
             this->disconnect(true, false);
         }
@@ -267,7 +276,7 @@ void NetworkManager::threadMainFunc() {
 }
 
 void NetworkManager::threadRecvFunc() {
-    if (_suspended) {
+    if (_suspended || _deferredConnect) {
         std::this_thread::sleep_for(util::time::millis(250));
         return;
     }

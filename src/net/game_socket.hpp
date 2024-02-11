@@ -17,7 +17,7 @@ public:
     ~GameSocket();
 
     std::shared_ptr<Packet> recvPacket(bool onActive);
-    void sendPacket(std::shared_ptr<Packet> packet);
+    Result<> sendPacket(std::shared_ptr<Packet> packet);
     void sendPacketTo(std::shared_ptr<Packet> packet, const std::string_view address, unsigned short port);
 
     ByteBuffer serializePacket(Packet* packet, bool withPrefixedLength);

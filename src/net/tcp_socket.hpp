@@ -16,7 +16,8 @@ public:
 
     bool close() override;
     virtual void disconnect();
-    Result<bool> poll(int msDelay) override;
+    Result<bool> poll(int msDelay, bool in = true) override;
+    void setNonBlocking(bool nb) override;
 
     util::sync::AtomicBool connected = false;
 

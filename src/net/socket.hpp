@@ -15,5 +15,6 @@ public:
     virtual RecvResult receive(char* buffer, int bufferSize) = 0;
     virtual bool close();
     virtual ~Socket();
-    virtual Result<bool> poll(int msDelay) = 0;
+    virtual Result<bool> poll(int msDelay, bool in = true) = 0;
+    virtual void setNonBlocking(bool nb) = 0;
 };

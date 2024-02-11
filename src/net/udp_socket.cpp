@@ -93,11 +93,11 @@ bool UdpSocket::close() {
 #endif
 }
 
-Result<bool> UdpSocket::poll(int msDelay) {
+Result<bool> UdpSocket::poll(int msDelay, bool in) {
     GLOBED_SOCKET_POLLFD fds[1];
 
     fds[0].fd = socket_;
-    fds[0].events = POLLIN;
+    fds[0].events = in ? POLLIN : POLLOUT;
 
     int result = GLOBED_SOCKET_POLL(fds, 1, msDelay);
 
@@ -106,4 +106,8 @@ Result<bool> UdpSocket::poll(int msDelay) {
     }
 
     return Ok(result > 0);
+}
+
+void UdpSocket::setNonBlocking(bool nb) {
+    GLOBED_UNIMPL("UdpSocket::setNonBlocking")
 }

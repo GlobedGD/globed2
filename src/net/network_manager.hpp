@@ -39,7 +39,7 @@ public:
     AtomicU32 connectedTps; // if `authenticated() == true`, this is the TPS of the current server, otherwise undefined.
 
     // Connect to a server
-    Result<> connect(const std::string_view addr, unsigned short port, bool standalone = false);
+    Result<> connect(const std::string_view addr, unsigned short port, const std::string_view serverId, bool standalone = false);
     // Safer version of `connect`, sets the active game server in `GameServerManager` on success, doesn't throw on exception on error
     Result<> connectWithView(const GameServer& gsview);
     // Is similar to `connectWithView` (does not throw exceptions) but is made specifically for standalone servers.
@@ -131,6 +131,10 @@ private:
     AtomicBool _adminAuthorized = false;
     AtomicBool _connectingStandalone = false;
     AtomicBool _suspended = false;
+    AtomicBool _deferredConnect = false;
+
+    std::string _deferredAddr, _deferredServerId;
+    unsigned short _deferredPort;
 
     util::time::time_point lastKeepalive;
     util::time::time_point lastReceivedPacket;
