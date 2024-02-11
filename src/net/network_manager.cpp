@@ -14,8 +14,6 @@ using namespace util::data;
 NetworkManager::NetworkManager() {
     util::net::initialize();
 
-    if (!gameSocket.create()) util::net::throwLastError();
-
     // add builtin listeners for connection related packets
 
     addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
@@ -138,7 +136,7 @@ Result<> NetworkManager::connect(const std::string_view addr, unsigned short por
         GLOBED_REQUIRE_SAFE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
     }
 
-    GLOBED_UNWRAP(gameSocket.connect(addr, port));
+    GLOBED_UNWRAP(gameSocket.tcpSocket.connect(addr, port));
     gameSocket.createBox();
 
     auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(gameSocket.box->extractPublicKey()));
@@ -191,7 +189,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     _connectingStandalone = false;
     _adminAuthorized = false;
 
-    gameSocket.disconnect();
+    gameSocket.tcpSocket.disconnect();
     gameSocket.cleanupBox();
 
     // GameServerManager could have been destructed before NetworkManager, so this could be UB. Additionally will break autoconnect.
@@ -273,35 +271,38 @@ void NetworkManager::threadRecvFunc() {
         return;
     }
 
-    auto result = gameSocket.poll(1000);
-    if (result.isErr()) {
-        ErrorQueues::get().debugWarn(fmt::format("poll failed: {}", result.unwrapErr()));
+    auto result_ = gameSocket.pollEither(1000);
+    if (result_.isErr()) {
+        ErrorQueues::get().debugWarn(fmt::format("poll failed: {}", result_.unwrapErr()));
         return;
     }
 
-    if (!result.unwrap()) {
+    auto result = result_.unwrap();
+
+    if (result == GameSocket::PollResult::None) {
         this->maybeDisconnectIfDead();
         return;
     }
 
-    GameSocket::IncomingPacket packet;
+    std::shared_ptr<Packet> packet;
+    bool onActive = result != GameSocket::PollResult::Udp;
 
     try {
-        packet = gameSocket.recvPacket();
+        packet = gameSocket.recvPacket(onActive);
     } catch (const std::exception& e) {
         ErrorQueues::get().debugWarn(fmt::format("failed to receive a packet: {}", e.what()));
         return;
     }
 
-    packetid_t packetId = packet.packet->getPacketId();
+    packetid_t packetId = packet->getPacketId();
 
     if (packetId == PingResponsePacket::PACKET_ID) {
-        this->handlePingResponse(packet.packet);
+        this->handlePingResponse(packet);
         return;
     }
 
     // if it's not a ping packet, and it's NOT from the currently connected server, we reject it
-    if (!packet.fromServer) {
+    if (!onActive) {
         return;
     }
 
@@ -309,7 +310,7 @@ void NetworkManager::threadRecvFunc() {
 
     auto builtin = builtinListeners.lock();
     if (builtin->contains(packetId)) {
-        (*builtin)[packetId](packet.packet);
+        (*builtin)[packetId](packet);
         return;
     }
 
@@ -328,7 +329,7 @@ void NetworkManager::threadRecvFunc() {
             }
         } else {
             // xd
-            (*listeners_)[packetId](packet.packet);
+            (*listeners_)[packetId](packet);
         }
     });
 }
@@ -375,7 +376,7 @@ void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback
 }
 
 bool NetworkManager::connected() {
-    return gameSocket.connected;
+    return gameSocket.tcpSocket.connected;
 }
 
 bool NetworkManager::handshaken() {

@@ -35,7 +35,6 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
 }
 
 void HookedGameManager::reloadAllStep2() {
-    log::debug("cleared icon cache");
     m_fields->iconCache.clear();
     GameManager::reloadAllStep2();
 }

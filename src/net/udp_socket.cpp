@@ -1,20 +1,16 @@
 #include "udp_socket.hpp"
 #include <util/net.hpp>
 
-using namespace geode::prelude;
-
 UdpSocket::UdpSocket() : socket_(0) {
     memset(&destAddr_, 0, sizeof(destAddr_));
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    socket_ = sock;
+
+    GLOBED_REQUIRE(sock != -1, "failed to create a udp socket: socket failed");
 }
 
 UdpSocket::~UdpSocket() {
     this->close();
-}
-
-bool UdpSocket::create() {
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    socket_ = sock;
-    return sock != -1;
 }
 
 Result<> UdpSocket::connect(const std::string_view serverIp, unsigned short port) {

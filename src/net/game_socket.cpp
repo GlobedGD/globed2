@@ -3,8 +3,9 @@
 #include <data/bytebuffer.hpp>
 #include <data/packets/all.hpp>
 #include <util/debug.hpp>
+#include <util/net.hpp>
 
-const size_t BUF_SIZE = 65536;
+constexpr size_t BUF_SIZE = 2 << 17;
 
 using namespace util::data;
 using namespace util::debug;
@@ -17,9 +18,23 @@ GameSocket::~GameSocket() {
     delete[] buffer;
 }
 
-GameSocket::IncomingPacket GameSocket::recvPacket() {
-    auto recvres = this->receive(reinterpret_cast<char*>(buffer), BUF_SIZE);
-    int received = recvres.result;
+std::shared_ptr<Packet> GameSocket::recvPacket(bool onActive) {
+    int received;
+    if (onActive) {
+        ByteBuffer bb;
+        bb.grow(4);
+
+        // receive packet size
+        tcpSocket.recvExact(reinterpret_cast<char*>(bb.getDataRef().data()), 4);
+
+        auto packetSize = bb.readU32();
+        GLOBED_REQUIRE(packetSize < BUF_SIZE, "packet is too big, rejecting")
+
+        tcpSocket.recvExact(reinterpret_cast<char*>(buffer), packetSize);
+        received = packetSize;
+    } else {
+        received = udpSocket.receive(reinterpret_cast<char*>(buffer), BUF_SIZE).result;
+    }
 
     GLOBED_REQUIRE(received > 0, "failed to receive data from a socket")
 
@@ -60,10 +75,7 @@ GameSocket::IncomingPacket GameSocket::recvPacket() {
         throw std::runtime_error(msg);
     }
 
-    return IncomingPacket {
-        .packet = packet,
-        .fromServer = recvres.fromServer
-    };
+    return packet;
 }
 
 void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
@@ -74,7 +86,7 @@ void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
 #endif
 
     GLOBED_REQUIRE(
-        this->send(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size()) == buf.size(),
+        this->tcpSocket.send(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size()) == buf.size(),
         "failed to send the entire buffer"
     )
 }
@@ -110,7 +122,7 @@ void GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const std::string_
 #endif
 
     GLOBED_REQUIRE(
-        this->sendTo(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size(), address, port) == buf.size(),
+        this->udpSocket.sendTo(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size(), address, port) == buf.size(),
         "failed to send the entire buffer"
     )
 }
@@ -121,4 +133,37 @@ void GameSocket::cleanupBox() {
 
 void GameSocket::createBox() {
     box = std::make_unique<CryptoBox>();
+}
+
+Result<GameSocket::PollResult> GameSocket::pollEither(int msDelay) {
+    if (!tcpSocket.connected) {
+        GLOBED_UNWRAP_INTO(udpSocket.poll(msDelay), auto res);
+        return Ok(res ? PollResult::Udp : PollResult::None);
+    }
+
+    GLOBED_SOCKET_POLLFD fds[2];
+
+    fds[0].fd = tcpSocket.socket_;
+    fds[0].events = POLLIN;
+    fds[1].fd = udpSocket.socket_;
+    fds[1].events = POLLIN;
+
+    int result = GLOBED_SOCKET_POLL(fds, 2, msDelay);
+
+    if (result == -1) {
+        return Err(util::net::lastErrorString());
+    }
+
+    bool tcp = fds[0].revents & POLLIN;
+    bool udp = fds[1].revents & POLLIN;
+
+    if (tcp && udp) {
+        return Ok(PollResult::Both);
+    } else if (tcp) {
+        return Ok(PollResult::Tcp);
+    } else if (udp) {
+        return Ok(PollResult::Udp);
+    } else {
+        return Ok(PollResult::None);
+    }
 }

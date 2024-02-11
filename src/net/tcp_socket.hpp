@@ -2,16 +2,18 @@
 #include "socket.hpp"
 #include <util/sync.hpp>
 
-class UdpSocket : public Socket {
+class TcpSocket : public Socket {
 public:
     using Socket::send;
-    UdpSocket();
-    ~UdpSocket();
+    TcpSocket();
+    ~TcpSocket();
 
     Result<> connect(const std::string_view serverIp, unsigned short port) override;
     int send(const char* data, unsigned int dataSize) override;
-    int sendTo(const char* data, unsigned int dataSize, const std::string_view address, unsigned short port);
+    Result<> sendAll(const char* data, unsigned int dataSize);
     RecvResult receive(char* buffer, int bufferSize) override;
+    void recvExact(char* buffer, int bufferSize);
+
     bool close() override;
     virtual void disconnect();
     Result<bool> poll(int msDelay) override;
