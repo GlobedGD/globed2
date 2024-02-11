@@ -36,7 +36,19 @@ T ByteBuffer::read() {
 template <typename T>
 void ByteBuffer::write(T value) {
     const byte* bytes = reinterpret_cast<const byte*>(&value);
-    _data.insert(_data.end(), bytes, bytes + sizeof(T));
+
+    // if we can't fit (i.e. writing at the end, just use insert)
+    if (_position + sizeof(T) > _data.size()) {
+        _data.insert(_data.begin() + _position, bytes, bytes + sizeof(T));
+        // remove leftover elements
+        _data.reserve(_position + sizeof(T));
+    } else {
+        // otherwise, overwrite existing elements
+        for (size_t i = 0; i < sizeof(T); i++) {
+            _data.data()[_position + i] = bytes[i];
+        }
+    }
+
     _position += sizeof(T);
 }
 

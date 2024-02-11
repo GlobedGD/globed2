@@ -25,6 +25,7 @@ bool HookedMenuLayer::init() {
     // auto connect
     util::misc::callOnce("menu-layer-init-autoconnect", []{
         if (!GlobedSettings::get().globed.autoconnect) return;
+        return; // TODO breaks with tcp??
 
         auto& csm = CentralServerManager::get();
         auto& gsm = GameServerManager::get();

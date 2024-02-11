@@ -271,7 +271,7 @@ void NetworkManager::threadRecvFunc() {
         return;
     }
 
-    auto result_ = gameSocket.pollEither(1000);
+    auto result_ = gameSocket.pollEither(100);
     if (result_.isErr()) {
         ErrorQueues::get().debugWarn(fmt::format("poll failed: {}", result_.unwrapErr()));
         return;

@@ -4,6 +4,7 @@
 #include <data/packets/all.hpp>
 #include <util/debug.hpp>
 #include <util/net.hpp>
+#include <util/crypto.hpp>
 
 constexpr size_t BUF_SIZE = 2 << 17;
 
@@ -107,13 +108,17 @@ ByteBuffer GameSocket::serializePacket(Packet* packet, bool withPrefixedLength) 
 
     packet->encode(buf);
 
-    size_t packetSize = buf.size() - PacketHeader::SIZE;
-
     if (packet->getEncrypted()) {
         GLOBED_REQUIRE(box.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
         // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
         buf.grow(CryptoBox::PREFIX_LEN);
-        box->encryptInPlace(buf.getDataRef().data() + PacketHeader::SIZE, packetSize);
+        uint32_t headerSize = PacketHeader::SIZE;
+        if (withPrefixedLength) {
+            headerSize += sizeof(uint32_t);
+        }
+
+        auto rawSize = buf.size() - headerSize - CryptoBox::PREFIX_LEN;
+        box->encryptInPlace(buf.getDataRef().data() + headerSize, rawSize);
     }
 
     // write the length prefix

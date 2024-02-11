@@ -112,7 +112,17 @@ macro_rules! gs_inline_encode {
             gs_with_alloca!($size, $rawdata, {
                 let mut $data = FastByteBuffer::new($rawdata);
 
+                // reserve space for packet length
+                $data.write_u32(0);
+
                 $code // user code
+
+                // write the packet length
+                let packet_len = $data.len() - size_of_types!(u32);
+                let pos = $data.get_pos();
+                $data.set_pos(0);
+                $data.write_u32(packet_len as u32);
+                $data.set_pos(pos);
 
                 let data = $data.as_bytes();
                 match $self.send_buffer_immediate(data) {

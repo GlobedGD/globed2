@@ -289,7 +289,6 @@ impl GameServerThread {
             let read_bytes = socket.take(message_size as u64).read_to_end(&mut heap_buf).await?;
             data = &mut heap_buf[..read_bytes];
         }
-
         self.handle_packet(data).await?;
 
         Ok(())
@@ -308,6 +307,7 @@ impl GameServerThread {
 
     /// handle an incoming packet
     async fn handle_packet(&self, message: &mut [u8]) -> Result<()> {
+        trace!("handling packet: {:?}", message);
         if message.len() < PacketHeader::SIZE {
             return Err(PacketHandlingError::MalformedMessage);
         }
@@ -509,7 +509,7 @@ impl GameServerThread {
                 self.send_buffer(&to_send).await?;
             }
         } else {
-            gs_inline_encode!(self, PacketHeader::SIZE + packet_size, buf, {
+            gs_inline_encode!(self, size_of_types!(u32) + PacketHeader::SIZE + packet_size, buf, {
                 buf.write_packet_header::<P>();
                 encode_fn(&mut buf);
             });
