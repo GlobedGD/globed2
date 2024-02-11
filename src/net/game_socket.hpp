@@ -20,7 +20,7 @@ public:
     void sendPacket(std::shared_ptr<Packet> packet);
     void sendPacketTo(std::shared_ptr<Packet> packet, const std::string_view address, unsigned short port);
 
-    ByteBuffer serializePacket(Packet* packet);
+    ByteBuffer serializePacket(Packet* packet, bool withPrefixedLength);
 
     void cleanupBox();
     void createBox();

@@ -30,7 +30,7 @@ pub use token_issuer::TokenIssuer;
 pub mod logger;
 pub mod token_issuer;
 
-pub const PROTOCOL_VERSION: u16 = 1;
+pub const PROTOCOL_VERSION: u16 = 2;
 pub const SERVER_MAGIC: &[u8] = b"\xda\xeeglobed\xda\xee";
 pub const SERVER_MAGIC_LEN: usize = SERVER_MAGIC.len();
 /// amount of chars in an admin key (16)

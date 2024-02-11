@@ -121,7 +121,14 @@ macro_rules! gs_inline_encode {
                     // if another error occured, propagate it up
                     Err(e) => Err(e),
                     // if all good, do nothing
-                    Ok(()) => Ok(None),
+                    Ok(written) => {
+                        if written == data.len() {
+                            Ok(None)
+                        } else {
+                            // send leftover data
+                            Ok(Some(data[written..data.len()].to_vec()))
+                        }
+                    },
                 }
             })
         };

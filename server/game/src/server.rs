@@ -16,7 +16,7 @@ use rustc_hash::FxHashMap;
 #[allow(unused_imports)]
 use tokio::sync::oneshot; // no way
 
-use tokio::net::UdpSocket;
+use tokio::net::{TcpListener, UdpSocket};
 
 use crate::{
     data::*,
@@ -24,8 +24,6 @@ use crate::{
     state::ServerState,
     util::SimpleRateLimiter,
 };
-
-const MAX_PACKET_SIZE: usize = 65536;
 
 pub struct GameServerConfiguration {
     pub http_client: reqwest::Client,
@@ -35,7 +33,8 @@ pub struct GameServerConfiguration {
 
 pub struct GameServer {
     pub state: ServerState,
-    pub socket: UdpSocket,
+    pub tcp_socket: TcpListener,
+    pub udp_socket: UdpSocket,
     pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
     rate_limiters: SyncMutex<FxHashMap<SocketAddrV4, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
@@ -48,7 +47,8 @@ pub struct GameServer {
 
 impl GameServer {
     pub fn new(
-        socket: UdpSocket,
+        tcp_socket: TcpListener,
+        udp_socket: UdpSocket,
         state: ServerState,
         central_conf: GameServerBootData,
         config: GameServerConfiguration,
@@ -60,7 +60,8 @@ impl GameServer {
 
         Self {
             state,
-            socket,
+            tcp_socket,
+            udp_socket,
             threads: SyncMutex::new(FxHashMap::default()),
             rate_limiters: SyncMutex::new(FxHashMap::default()),
             secret_key,
@@ -73,7 +74,7 @@ impl GameServer {
     }
 
     pub async fn run(&'static self) -> ! {
-        info!("Server launched on {}", self.socket.local_addr().unwrap());
+        info!("Server launched on {}", self.tcp_socket.local_addr().unwrap());
 
         // spawn central conf refresher (runs every 5 minutes)
         if !self.standalone {
@@ -117,22 +118,73 @@ impl GameServer {
             });
         }
 
-        // preallocate a buffer
-        let mut buf = [0u8; MAX_PACKET_SIZE];
+        // spawn the udp ping handler
+
+        tokio::spawn(async move {
+            let mut buf = [0u8; 128];
+
+            loop {
+                match self.recv_and_handle_udp(&mut buf).await {
+                    Ok(()) => {}
+                    Err(e) => {
+                        warn!("failed to handle udp packet: {e}");
+                    }
+                }
+            }
+        });
 
         loop {
-            match self.recv_and_handle(&mut buf).await {
+            match self.accept_connection().await {
                 Ok(()) => {}
                 Err(err) => {
-                    warn!("Failed to handle a packet: {err}");
+                    error!("Failed to accept a connection: {err}");
                 }
             }
         }
     }
 
+    async fn accept_connection(&'static self) -> anyhow::Result<()> {
+        let (socket, peer) = self.tcp_socket.accept().await?;
+
+        let peer = match peer {
+            SocketAddr::V4(x) => x,
+            SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
+        };
+
+        debug!("accepting tcp connection from {peer}");
+
+        let thread = Arc::new(GameServerThread::new(socket, peer, self));
+        self.threads.lock().insert(peer, thread.clone());
+
+        tokio::spawn(async move {
+            // `thread.run()` will return in either one of those 3 conditions:
+            // 1. no messages sent by the peer for 60 seconds
+            // 2. the channel was closed (normally impossible for that to happen)
+            // 3. `thread.terminate()` was called on that thread (due to a disconnect from either side)
+            // additionally, if it panics then the state of the player will be frozen forever,
+            // they won't be removed from levels or the player count and that person has to restart the game to connect again.
+            // so try to avoid panics please..
+            thread.run().await;
+            trace!("removing client: {}", peer);
+            self.post_disconnect_cleanup(&thread, peer);
+
+            // if any thread was waiting for us to terminate, tell them it's finally time.
+            thread.cleanup_notify.notify_waiters();
+        });
+
+        Ok(())
+    }
+
+    async fn recv_and_handle_udp(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {
+        let (len, peer) = self.udp_socket.recv_from(buf).await?;
+        self.try_udp_handle(&buf[..len], peer).await?;
+
+        Ok(())
+    }
+
     /* various calls for other threads */
 
-    pub fn broadcast_voice_packet(
+    pub async fn broadcast_voice_packet(
         &'static self,
         vpkt: &Arc<VoiceBroadcastPacket>,
         level_id: i32,
@@ -144,9 +196,10 @@ impl GameServer {
             level_id,
             room_id,
         )
+        .await
     }
 
-    pub fn broadcast_chat_packet(
+    pub async fn broadcast_chat_packet(
         &'static self,
         tpkt: &ChatMessageBroadcastPacket,
         level_id: i32,
@@ -158,6 +211,7 @@ impl GameServer {
             level_id,
             room_id,
         )
+        .await
     }
 
     /// iterate over every player in this list and run F
@@ -226,9 +280,11 @@ impl GameServer {
             .cloned();
 
         if let Some(thread) = thread {
-            thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
-                "Someone logged into the same account from a different place.",
-            )))?;
+            thread
+                .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                    "Someone logged into the same account from a different place.",
+                )))
+                .await;
 
             let _mtx = thread.cleanup_mutex.lock().await;
             thread.cleanup_notify.notified().await;
@@ -240,7 +296,7 @@ impl GameServer {
     /* private handling stuff */
 
     /// broadcast a message to all people on the level
-    fn broadcast_user_message(
+    async fn broadcast_user_message(
         &'static self,
         msg: &ServerThreadMessage,
         origin_id: i32,
@@ -266,82 +322,14 @@ impl GameServer {
         });
 
         for thread in threads {
-            thread.push_new_message(msg.clone())?;
+            thread.push_new_message(msg.clone()).await;
         }
 
         Ok(())
     }
 
-    async fn recv_and_handle(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {
-        let (len, peer) = self.socket.recv_from(buf).await?;
-
-        let peer = match peer {
-            SocketAddr::V4(x) => x,
-            SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
-        };
-
-        // block packets if the client is sending too many of them
-        if self.is_rate_limited(peer) {
-            if cfg!(debug_assertions) {
-                bail!("{peer} is ratelimited");
-            }
-
-            // silently drop the packet in release mode
-            return Ok(());
-        }
-
-        // if it's a small packet like ping, we don't need to send it via the channel and can handle it right here
-        if self.try_fast_handle(&buf[..len], peer).await? {
-            return Ok(());
-        }
-
-        let thread = self.threads.lock().get(&peer).cloned();
-
-        let thread = if let Some(thread) = thread {
-            thread
-        } else {
-            let thread = Arc::new(GameServerThread::new(peer, self));
-            let thread_cl = thread.clone();
-
-            tokio::spawn(async move {
-                // `thread.run()` will return in either one of those 3 conditions:
-                // 1. no messages sent by the peer for 60 seconds
-                // 2. the channel was closed (normally impossible for that to happen)
-                // 3. `thread.terminate()` was called on that thread (due to a disconnect from either side)
-                // additionally, if it panics then the state of the player will be frozen forever,
-                // they won't be removed from levels or the player count and that person has to restart the game to connect again.
-                // so try to avoid panics please..
-                thread.run().await;
-                trace!("removing client: {}", peer);
-                self.post_disconnect_cleanup(&thread, peer);
-
-                // if any thread was waiting for us to terminate, tell them it's finally time.
-                thread.cleanup_notify.notify_waiters();
-            });
-
-            self.threads.lock().insert(peer, thread_cl.clone());
-
-            thread_cl
-        };
-
-        // don't heap allocate for small packets
-        let message = if len <= SMALL_PACKET_LIMIT {
-            let mut smallbuf = [0u8; SMALL_PACKET_LIMIT];
-            smallbuf[..len].copy_from_slice(&buf[..len]);
-
-            ServerThreadMessage::SmallPacket((smallbuf, len as u16))
-        } else {
-            ServerThreadMessage::Packet(buf[..len].to_vec())
-        };
-
-        thread.push_new_message(message).map_err(|e| anyhow!("[{peer}] {e}"))?;
-
-        Ok(())
-    }
-
-    /// Try to fast handle a packet if the packet does not require spawning a new "thread".
-    /// Returns true if packet was successfully handled, in which case the data should be discarded.
-    async fn try_fast_handle(&'static self, data: &[u8], peer: SocketAddrV4) -> anyhow::Result<bool> {
+    /// Try to handle a ping packet on a UDP connection.
+    async fn try_udp_handle(&'static self, data: &[u8], peer: SocketAddr) -> anyhow::Result<bool> {
         let mut byte_reader = ByteReader::from_bytes(data);
         let header = byte_reader.read_packet_header().map_err(|e| anyhow!("{e}"))?;
 
@@ -360,10 +348,10 @@ impl GameServer {
 
                 let send_bytes = buf.as_bytes();
 
-                match self.socket.try_send_to(send_bytes, peer.into()) {
+                match self.udp_socket.try_send_to(send_bytes, peer) {
                     Ok(_) => Ok(true),
                     Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                        self.socket.send_to(send_bytes, peer).await?;
+                        self.udp_socket.send_to(send_bytes, peer).await?;
                         Ok(true)
                     }
                     Err(e) => Err(e.into()),
@@ -457,19 +445,22 @@ impl GameServer {
             .read_value()
             .map_err(|e| anyhow!("central server sent malformed response: {e}"))?;
 
-        let mut conf = self.central_conf.lock();
-
-        let is_now_under_maintenance = !conf.maintenance && boot_data.maintenance;
-
-        *conf = boot_data;
+        let is_now_under_maintenance;
+        {
+            let mut conf = self.central_conf.lock();
+            is_now_under_maintenance = !conf.maintenance && boot_data.maintenance;
+            *conf = boot_data;
+        }
 
         // if we are now under maintenance, disconnect everyone who's still connected
         if is_now_under_maintenance {
             let threads: Vec<_> = self.threads.lock().values().cloned().collect();
             for thread in threads {
-                thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
-                    "The server is now under maintenance, please try connecting again later",
-                )))?;
+                thread
+                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                        "The server is now under maintenance, please try connecting again later",
+                    )))
+                    .await;
             }
         }
 

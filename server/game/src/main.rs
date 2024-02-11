@@ -27,7 +27,7 @@ use globed_shared::{log::Log, *};
 use reqwest::StatusCode;
 use server::GameServerConfiguration;
 use state::ServerState;
-use tokio::net::UdpSocket;
+use tokio::net::{TcpListener, UdpSocket};
 
 use server::GameServer;
 
@@ -277,11 +277,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         debug!("* Admin key: '{}'", censor_key(&gsbd.admin_key, 4));
     }
 
-    let socket = match UdpSocket::bind(&startup_config.bind_address).await {
+    let udp_socket = match UdpSocket::bind(&startup_config.bind_address).await {
         Ok(x) => x,
         Err(err) => {
             error!(
-                "Failed to bind the socket with address {}: {err}",
+                "Failed to bind the UDP socket with address {}: {err}",
                 startup_config.bind_address
             );
             if startup_config.bind_address.port() < 1024 {
@@ -292,7 +292,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    let server = GameServer::new(socket, state, gsbd, config, standalone);
+    let tcp_socket = match TcpListener::bind(&startup_config.bind_address).await {
+        Ok(x) => x,
+        Err(err) => {
+            error!(
+                "Failed to bind the TCP socket with address {}: {err}",
+                startup_config.bind_address
+            );
+
+            abort_misconfig();
+        }
+    };
+
+    let server = GameServer::new(tcp_socket, udp_socket, state, gsbd, config, standalone);
     let server = Box::leak(Box::new(server));
 
     Box::pin(server.run()).await;

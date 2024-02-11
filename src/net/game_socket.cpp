@@ -79,7 +79,7 @@ std::shared_ptr<Packet> GameSocket::recvPacket(bool onActive) {
 }
 
 void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
-    auto buf = this->serializePacket(packet.get());
+    auto buf = this->serializePacket(packet.get(), true);
 
 #ifdef GLOBED_DEBUG_PACKETS
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
@@ -91,12 +91,17 @@ void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     )
 }
 
-ByteBuffer GameSocket::serializePacket(Packet* packet) {
+ByteBuffer GameSocket::serializePacket(Packet* packet, bool withPrefixedLength) {
     ByteBuffer buf;
     PacketHeader header = {
         .id = packet->getPacketId(),
         .encrypted = packet->getEncrypted()
     };
+
+    // reserve space for length
+    if (withPrefixedLength) {
+        buf.writeU32(0);
+    }
 
     buf.writeValue(header);
 
@@ -111,11 +116,19 @@ ByteBuffer GameSocket::serializePacket(Packet* packet) {
         box->encryptInPlace(buf.getDataRef().data() + PacketHeader::SIZE, packetSize);
     }
 
+    // write the length prefix
+    if (withPrefixedLength) {
+        size_t lastPos = buf.getPosition();
+        buf.setPosition(0);
+        buf.writeU32(buf.size() - sizeof(uint32_t));
+        buf.setPosition(lastPos);
+    }
+
     return buf;
 }
 
 void GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const std::string_view address, unsigned short port) {
-    auto buf = this->serializePacket(packet.get());
+    auto buf = this->serializePacket(packet.get(), false);
 
 #ifdef GLOBED_DEBUG_PACKETS
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());

@@ -8,4 +8,4 @@ pub const MAX_MESSAGE_SIZE: usize = 156;
 pub const ROOM_ID_LENGTH: usize = 6;
 
 // this should be the PlayerData size plus some headroom
-pub const SMALL_PACKET_LIMIT: usize = 80;
+pub const SMALL_PACKET_LIMIT: usize = 96;
