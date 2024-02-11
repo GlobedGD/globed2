@@ -261,6 +261,7 @@ void NetworkManager::threadMainFunc() {
             gameSocket.sendPacket(packet);
         } catch (const std::exception& e) {
             ErrorQueues::get().error(e.what());
+            this->disconnect(true, false);
         }
     }
 }
@@ -367,6 +368,7 @@ void NetworkManager::maybeDisconnectIfDead() {
             this->disconnect();
         } catch (const std::exception& e) {
             log::warn("failed to disconnect from a dead server: {}", e.what());
+            this->disconnect(true);
         }
     }
 }

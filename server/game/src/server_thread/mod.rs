@@ -33,7 +33,7 @@ pub use error::{PacketHandlingError, Result};
 use self::handlers::MAX_VOICE_PACKET_SIZE;
 
 const INLINE_BUFFER_SIZE: usize = 164;
-const MAX_PACKET_SIZE: usize = 16384;
+const MAX_PACKET_SIZE: usize = 65536;
 
 // do not touch those, encryption related
 const NONCE_SIZE: usize = 24;
@@ -307,7 +307,6 @@ impl GameServerThread {
 
     /// handle an incoming packet
     async fn handle_packet(&self, message: &mut [u8]) -> Result<()> {
-        trace!("handling packet: {:?}", message);
         if message.len() < PacketHeader::SIZE {
             return Err(PacketHandlingError::MalformedMessage);
         }

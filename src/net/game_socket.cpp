@@ -86,10 +86,7 @@ void GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
 #endif
 
-    GLOBED_REQUIRE(
-        this->tcpSocket.send(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size()) == buf.size(),
-        "failed to send the entire buffer"
-    )
+    (void) this->tcpSocket.sendAll(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size()).unwrap();
 }
 
 ByteBuffer GameSocket::serializePacket(Packet* packet, bool withPrefixedLength) {
