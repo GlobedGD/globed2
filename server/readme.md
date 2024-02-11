@@ -128,6 +128,8 @@ Formatting for game servers:
 }
 ```
 
+Note that the `address` key must be the publicly visible IP address for other players to be able to connect, not a local address.
+
 ## Building
 
 If you want to build the server yourself, you need a nightly Rust toolchain. After that, it's as simple as:

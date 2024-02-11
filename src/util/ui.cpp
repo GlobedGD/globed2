@@ -93,58 +93,6 @@ namespace util::ui {
         cl->setPositionY(std::min(actualPos, 0.f));
     }
 
-// [from; to]
-#define LOAD_ICON_RANGE(type, from, to) \
-    for (int i = from; i <= to; i++) { \
-        gm->loadIcon(i, (int)IconType::type, -1); \
-    }
-
-    void preloadAssets() {
-        auto start = util::time::now();
-        log::debug("Preloading death effects..");
-        for (int i = 1; i < 21; i++) {
-            tryLoadDeathEffect(i);
-        }
-
-        log::debug("Took {}.", util::format::formatDuration(util::time::now() - start));
-        auto start2 = util::time::now();
-        log::debug("Preloading icons..");
-
-        auto* gm = GameManager::get();
-        LOAD_ICON_RANGE(Cube, 0, 484);
-        LOAD_ICON_RANGE(Ship, 0, 169);
-        LOAD_ICON_RANGE(Ball, 0, 118);
-        LOAD_ICON_RANGE(Ufo, 0, 149);
-        LOAD_ICON_RANGE(Wave, 0, 96);
-        LOAD_ICON_RANGE(Robot, 0, 68);
-        LOAD_ICON_RANGE(Spider, 0, 69);
-        LOAD_ICON_RANGE(Swing, 0, 43);
-        LOAD_ICON_RANGE(Jetpack, 0, 5);
-
-        auto end = util::time::now();
-        log::debug("Took {}.", util::format::formatDuration(end - start2));
-        log::debug("Preloading finished in {}.", util::format::formatDuration(end - start));
-        // robot and spider idk if necessary
-    }
-
-    void maybePreloadAssets() {
-        log::debug("preloading assets");
-
-        auto* gm = GameManager::get();
-        auto* hgm = static_cast<HookedGameManager*>(gm);
-        hgm->m_fields->iconCache.clear();
-
-        if (Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects")) {
-            log::warn("Asset preloading is disabled. Not loading anything.");
-            return;
-        }
-
-        auto& settings = GlobedSettings::get();
-        if (!settings.globed.preloadAssets) return;
-
-        preloadAssets();
-    }
-
     void tryLoadDeathEffect(int id) {
         if (id == 1) return;
 
