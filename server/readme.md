@@ -1,5 +1,13 @@
 # Globed Server
 
+## Prerequisites
+
+Before trying to setup a server, it is **recommended** that you understand what it involves. You will likely need to either setup port forwarding or use a VPN tool like Radmin VPN if you are hosting the server on your PC, and that won't be covered in this guide.
+
+In case you are familiar with [Pterodactyl](https://pterodactyl.io/), there are eggs available for the [central](https://github.com/DumbCaveSpider/globed-central-egg) and [game](https://github.com/DumbCaveSpider/globed-game-egg) servers that could simplify the setup (thanks to @DumbCaveSpider)
+
+## Setup
+
 If you want to host a server yourself, first you have to download the server binaries from the latest GitHub release, named `globed-central-server` and `globed-game-server`. Depending on your OS and architecture, you want the one ending in `.exe` on Windows, the `-x64` one on Linux x64, and the `-arm64` one on Linux ARM64.
 
 After that is done, you have 2 paths:

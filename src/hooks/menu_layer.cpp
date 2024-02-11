@@ -14,18 +14,21 @@
 
 using namespace geode::prelude;
 
+// TODO: remove in the future
+void removeFaultyGauntletLevels();
+
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
 
     if (GJAccountManager::sharedState()->m_accountID > 0) {
         auto& flm = FriendListManager::get();
         flm.maybeLoad();
+        removeFaultyGauntletLevels();
     }
 
     // auto connect
     util::misc::callOnce("menu-layer-init-autoconnect", []{
         if (!GlobedSettings::get().globed.autoconnect) return;
-        return; // TODO breaks with tcp??
 
         auto& csm = CentralServerManager::get();
         auto& gsm = GameServerManager::get();
@@ -118,5 +121,80 @@ void HookedMenuLayer::maybeUpdateButton(float) {
     if (authenticated != m_fields->btnActive) {
         m_fields->btnActive = authenticated;
         this->updateGlobedButton();
+    }
+}
+
+void removeFaultyGauntletLevels() {
+    static std::set<int> gauntletLevels = {
+        // fire
+        27732941, 28200611, 27483789, 28225110, 27448202,
+        // ice
+        20635816, 28151870, 25969464, 24302376, 27399722,
+        // poison
+        28179535, 29094196, 29071134, 26317634, 12107595,
+        // shadow
+        26949498, 26095850, 27973097, 27694897, 26070995,
+        // lava
+        18533341, 28794068, 28127292, 4243988, 28677296,
+        // bonus
+        28255647, 27929950, 16437345, 28270854, 29394058,
+        // chaos
+        25886024, 4259126, 26897899, 7485599, 19862531,
+        // demon
+        18025697, 23189196, 27786218, 27728679, 25706351,
+        // time
+        40638411, 32614529, 31037168, 40937291, 35165900,
+        // crystal
+        37188385, 35280911, 37187779, 36301959, 36792656,
+        // magic
+        37269362, 29416734, 36997718, 39853981, 39853458,
+        // spike
+        27873500, 34194741, 34851342, 36500807, 39749578,
+        // monster
+        43908596, 41736289, 42843431, 44063088, 44131636,
+        // doom
+        38427291, 38514054, 36966088, 38398923, 36745142,
+        // death
+        44121158, 43923301, 43537990, 33244195, 35418014,
+        // castle
+        80218929, 95436164, 64302902, 65044525, 66960655,
+        // world
+        83313115, 83325036, 83302544, 83325083, 81451870,
+        // galaxy
+        83294687, 83323867, 83320529, 83315343, 83324930,
+        // universe
+        83323273, 83025300, 83296274, 83256789, 83323659,
+        // discord
+        89521875, 90475659, 90117883, 88266256, 88775556,
+        // split
+        90459731, 90475597, 90471222, 90251922, 90475473
+    };
+
+    auto* gsm = GameStatsManager::sharedState();
+    auto* glm = GameLevelManager::sharedState();
+
+    std::vector<gd::string> toDelete;
+    std::vector<std::string> toDeleteNames;
+
+    for (const auto& [key, value] : geode::cocos::CCDictionaryExt<gd::string, cocos2d::CCObject*>(glm->m_gauntletLevels)) {
+        auto levelId = std::stoi(key);
+        if (!gauntletLevels.contains(levelId)) {
+            toDelete.push_back(key);
+            toDeleteNames.push_back(static_cast<GJGameLevel*>(value)->m_levelName);
+        }
+    }
+
+    if (toDeleteNames.empty()) return;
+
+    std::string allLevels = toDeleteNames[0];
+
+    for (size_t i = 1; i < toDeleteNames.size(); i++) {
+        allLevels += ", " + toDeleteNames[i];
+    }
+
+    log::debug("removing bad gauntlet levels: {}", allLevels);
+
+    for (const auto& del : toDelete) {
+        glm->m_gauntletLevels->removeObjectForKey(del);
     }
 }

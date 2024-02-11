@@ -111,7 +111,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
         .floatMin = 0.f,
         .floatMax = 1.f
     });
-    MAKE_SETTING(players, statusIcons, "Status icons", "Show an icon above a player if they are paused or in practice mode.");
+    MAKE_SETTING(players, statusIcons, "Status icons", "Show an icon above a player if they are paused, in practice mode, or currently speaking.");
     MAKE_SETTING(players, deathEffects, "Death effects", "Play a death effect whenever a player dies.");
     MAKE_SETTING(players, defaultDeathEffect, "Default death effect", "Replaces the death effects of all players with a default explosion effect.");
 

@@ -1,7 +1,9 @@
 #include "user_cell.hpp"
 
 #include "userlist.hpp"
+#include <audio/voice_playback_manager.hpp>
 #include <managers/block_list.hpp>
+#include <managers/settings.hpp>
 #include <hooks/play_layer.hpp>
 #include <util/format.hpp>
 
@@ -88,6 +90,16 @@ void GlobedUserCell::makeBlockButton() {
         .intoMenuItem([isUnblocked, this](auto) {
             auto& bl = BlockListMangaer::get();
             isUnblocked ? bl.blacklist(this->playerId) : bl.whitelist(this->playerId);
+            // mute them immediately
+            auto& settings = GlobedSettings::get();
+            auto& vpm = VoicePlaybackManager::get();
+
+            if (isUnblocked) {
+                vpm.setVolume(this->playerId, 0.f);
+            } else {
+                vpm.setVolume(this->playerId, settings.communication.voiceVolume);
+            }
+
             this->makeBlockButton();
         })
         .pos(GlobedUserListPopup::LIST_WIDTH - 25.f, CELL_HEIGHT / 2.f)
