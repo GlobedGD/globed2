@@ -1,10 +1,3 @@
-/*
-* Hey there!
-* If you have to read this - first and foremost, I'm sorry.
-* Everything you see here is the exact definition of over-engineered and over-optimized.
-* Good luck.
-*/
-
 #![feature(sync_unsafe_cell)]
 #![allow(
     clippy::must_use_candidate,

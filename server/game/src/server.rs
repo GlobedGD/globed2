@@ -22,7 +22,6 @@ use crate::{
     data::*,
     server_thread::{GameServerThread, ServerThreadMessage},
     state::ServerState,
-    util::SimpleRateLimiter,
 };
 
 pub struct GameServerConfiguration {
@@ -36,7 +35,6 @@ pub struct GameServer {
     pub tcp_socket: TcpListener,
     pub udp_socket: UdpSocket,
     pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
-    rate_limiters: SyncMutex<FxHashMap<SocketAddrV4, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
     pub public_key: PublicKey,
     pub central_conf: SyncMutex<GameServerBootData>,
@@ -63,7 +61,6 @@ impl GameServer {
             tcp_socket,
             udp_socket,
             threads: SyncMutex::new(FxHashMap::default()),
-            rate_limiters: SyncMutex::new(FxHashMap::default()),
             secret_key,
             public_key,
             central_conf: SyncMutex::new(central_conf),
@@ -91,17 +88,6 @@ impl GameServer {
                 }
             });
         }
-
-        // spawn stale rate limiter remover (runs once an hour)
-        tokio::spawn(async {
-            let mut interval = tokio::time::interval(Duration::from_secs(3600));
-            interval.tick().await;
-
-            loop {
-                interval.tick().await;
-                self.remove_stale_rate_limiters();
-            }
-        });
 
         // print some useful stats every once in a bit
         let interval = self.central_conf.lock().status_print_interval;
@@ -362,18 +348,6 @@ impl GameServer {
         }
     }
 
-    fn is_rate_limited(&'static self, addr: SocketAddrV4) -> bool {
-        let mut limiters = self.rate_limiters.lock();
-        if let Some(limiter) = limiters.get_mut(&addr) {
-            !limiter.try_tick()
-        } else {
-            let rl_request_limit = (self.central_conf.lock().tps + 5) as usize;
-            let rate_limiter = SimpleRateLimiter::new(rl_request_limit, Duration::from_millis(950));
-            limiters.insert(addr, rate_limiter);
-            false
-        }
-    }
-
     fn post_disconnect_cleanup(&'static self, thread: &GameServerThread, peer: SocketAddrV4) {
         self.threads.lock().remove(&peer);
 
@@ -402,12 +376,6 @@ impl GameServer {
         if room_id != 0 {
             self.state.room_manager.maybe_remove_room(room_id);
         }
-    }
-
-    /// Removes rate limiters of IP addresses that haven't sent a packet in a long time (10 minutes)
-    fn remove_stale_rate_limiters(&'static self) {
-        let mut limiters = self.rate_limiters.lock();
-        limiters.retain(|_, limiter| limiter.since_last_refill() < Duration::from_secs(600));
     }
 
     fn print_server_status(&'static self) {

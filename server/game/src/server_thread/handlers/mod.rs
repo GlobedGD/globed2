@@ -4,7 +4,7 @@ mod game;
 mod general;
 
 pub use game::{MAX_VOICE_PACKET_SIZE, MAX_VOICE_THROUGHPUT};
-use std::sync::atomic::Ordering;
+use std::{mem::MaybeUninit, sync::atomic::Ordering};
 
 /// packet handler for a specific packet type
 macro_rules! gs_handler {
@@ -97,6 +97,33 @@ macro_rules! gs_with_alloca {
     };
 }
 
+pub fn with_heap_vec<R>(size: usize, f: impl FnOnce(&mut [MaybeUninit<u8>]) -> R) -> R {
+    let mut vec = Vec::<MaybeUninit<u8>>::with_capacity(size);
+    unsafe {
+        vec.set_len(size);
+        let ptr = vec.as_mut_ptr();
+        let slice = std::slice::from_raw_parts_mut(ptr, size);
+
+        f(slice)
+    }
+}
+
+/// like `gs_with_alloca!` but falls back to heap on large sizes to prevent stack overflows
+macro_rules! gs_with_alloca_guarded {
+    ($size:expr, $data:ident, $code:expr) => {
+        if $size > crate::server_thread::handlers::MAX_ALLOCA_SIZE {
+            crate::server_thread::handlers::with_heap_vec($size, move |data| {
+                // safety: read `gs_with_alloca!`
+                let $data = unsafe { make_uninit!(data) };
+
+                $code
+            })
+        } else {
+            gs_with_alloca!($size, $data, $code)
+        }
+    };
+}
+
 /// i love over optimizing things!
 /// when invoked as `gs_inline_encode!(self, size, buf, {code})`, uses alloca to make space on the stack,
 /// and lets you encode a packet. afterwards automatically tries a non-blocking send and on failure falls back to a Vec<u8> and an async send.
@@ -109,7 +136,7 @@ macro_rules! gs_inline_encode {
         gs_alloca_check_size!($size);
 
         let retval: Result<Option<Vec<u8>>> = {
-            gs_with_alloca!($size, $rawdata, {
+            gs_with_alloca_guarded!($size, $rawdata, {
                 let mut $data = FastByteBuffer::new($rawdata);
 
                 // reserve space for packet length
@@ -156,6 +183,7 @@ pub(crate) use gs_handler_sync;
 pub(crate) use gs_inline_encode;
 pub(crate) use gs_needauth;
 pub(crate) use gs_with_alloca;
+pub(crate) use gs_with_alloca_guarded;
 
 #[allow(unused_imports)]
 pub(crate) use gs_notice;

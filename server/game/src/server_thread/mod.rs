@@ -23,7 +23,13 @@ use tokio::{
     sync::{Mutex, Notify},
 };
 
-use crate::{data::*, make_uninit, server::GameServer, server_thread::handlers::*, util::LockfreeMutCell};
+use crate::{
+    data::*,
+    make_uninit,
+    server::GameServer,
+    server_thread::handlers::*,
+    util::{LockfreeMutCell, SimpleRateLimiter},
+};
 
 mod error;
 mod handlers;
@@ -69,12 +75,16 @@ pub struct GameServerThread {
     pub cleanup_mutex: Mutex<()>,
 
     message_queue: Mutex<VecDeque<ServerThreadMessage>>,
+    rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
 }
 
 impl GameServerThread {
     /* public api for the main server */
 
     pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
+        let rl_request_limit = (game_server.central_conf.lock().tps + 6) as usize;
+        let rate_limiter = SimpleRateLimiter::new(rl_request_limit, Duration::from_millis(925));
+
         Self {
             game_server,
             socket: LockfreeMutCell::new(socket),
@@ -90,6 +100,7 @@ impl GameServerThread {
             cleanup_notify: Notify::new(),
             cleanup_mutex: Mutex::new(()),
             message_queue: Mutex::new(VecDeque::new()),
+            rate_limiter: LockfreeMutCell::new(rate_limiter),
         }
     }
 
@@ -293,6 +304,13 @@ impl GameServerThread {
             let read_bytes = socket.take(message_size as u64).read_to_end(&mut heap_buf).await?;
             data = &mut heap_buf[..read_bytes];
         }
+
+        // if we are ratelimited, just discard the packet.
+        // safety: only we can use this ratelimiter.
+        if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
+            return Err(PacketHandlingError::Ratelimited);
+        }
+
         self.handle_packet(data).await?;
 
         Ok(())
