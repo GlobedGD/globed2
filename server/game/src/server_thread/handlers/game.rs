@@ -156,7 +156,7 @@ impl GameServerThread {
             &vpkt,
             self.level_id.load(Ordering::Relaxed),
             self.room_id.load(Ordering::Relaxed),
-        )?;
+        );
 
         Ok(())
     });
@@ -173,7 +173,7 @@ impl GameServerThread {
             &cpkt,
             self.level_id.load(Ordering::Relaxed),
             self.room_id.load(Ordering::Relaxed),
-        )?;
+        );
 
         Ok(())
     });

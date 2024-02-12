@@ -170,32 +170,22 @@ impl GameServer {
 
     /* various calls for other threads */
 
-    pub fn broadcast_voice_packet(
-        &'static self,
-        vpkt: &Arc<VoiceBroadcastPacket>,
-        level_id: i32,
-        room_id: u32,
-    ) -> anyhow::Result<()> {
+    pub fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: i32, room_id: u32) {
         self.broadcast_user_message(
             &ServerThreadMessage::BroadcastVoice(vpkt.clone()),
             vpkt.player_id,
             level_id,
             room_id,
-        )
+        );
     }
 
-    pub fn broadcast_chat_packet(
-        &'static self,
-        tpkt: &ChatMessageBroadcastPacket,
-        level_id: i32,
-        room_id: u32,
-    ) -> anyhow::Result<()> {
+    pub fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: i32, room_id: u32) {
         self.broadcast_user_message(
             &ServerThreadMessage::BroadcastText(tpkt.clone()),
             tpkt.player_id,
             level_id,
             room_id,
-        )
+        );
     }
 
     /// iterate over every player in this list and run F
@@ -294,13 +284,7 @@ impl GameServer {
     /* private handling stuff */
 
     /// broadcast a message to all people on the level
-    fn broadcast_user_message(
-        &'static self,
-        msg: &ServerThreadMessage,
-        origin_id: i32,
-        level_id: i32,
-        room_id: u32,
-    ) -> anyhow::Result<()> {
+    fn broadcast_user_message(&'static self, msg: &ServerThreadMessage, origin_id: i32, level_id: i32, room_id: u32) {
         let threads = self.state.room_manager.with_any(room_id, |pm| {
             let players = pm.get_level(level_id);
 
@@ -322,8 +306,6 @@ impl GameServer {
         for thread in threads {
             thread.push_new_message(msg.clone());
         }
-
-        Ok(())
     }
 
     /// Try to handle a ping packet on a UDP connection.

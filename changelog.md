@@ -12,7 +12,7 @@ Additional changes include:
 * Fix the freezes/crashes on the loading screen and update the message text at the bottom when loading icons
 * (Maybe) fix crash when applying a texture pack with Texture Loader
 * Fix audio crash
-* Add a volume indicator in the pause menu player list (it's a lie i haven't done it yet)
+* Add a volume indicator in the pause menu player list
 * Fix the TPS cap setting being impossible to change
 * Make the mute button work immediately instead of with a delay
 * Add an automatic rollback system for a certain save bug related to gauntlets

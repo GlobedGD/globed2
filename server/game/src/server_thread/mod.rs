@@ -241,7 +241,11 @@ impl GameServerThread {
     fn send_buffer_immediate(&self, buffer: &[u8]) -> Result<usize> {
         // safety: only we can send data to our client.
         let socket = unsafe { self.socket.get_mut() };
-        Ok(socket.try_write(buffer)?)
+        match socket.try_write(buffer) {
+            Ok(x) => Ok(x),
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => Err(PacketHandlingError::SocketWouldBlock),
+            Err(e) => Err(e.into()),
+        }
     }
 
     fn is_chat_packet_allowed(&self, voice: bool, len: usize) -> bool {
