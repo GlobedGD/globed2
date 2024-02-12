@@ -17,7 +17,8 @@ public:
 private:
     cocos2d::CCLabelBMFont* percentageLabel;
     cocos2d::CCMenu* menu;
-    CCMenuItemSpriteExtra* blockButton = nullptr;
+    CCMenuItemSpriteExtra *blockButton = nullptr, *kickButton = nullptr;
+    cocos2d::CCMenu* buttonsWrapper = nullptr;
     PlayerStore::Entry _data;
 
     bool init(const PlayerStore::Entry& entry, const PlayerAccountData& data);

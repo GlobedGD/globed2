@@ -2,9 +2,11 @@
 
 #include "userlist.hpp"
 #include <audio/voice_playback_manager.hpp>
+#include <data/packets/client/admin.hpp>
 #include <managers/block_list.hpp>
 #include <managers/settings.hpp>
 #include <hooks/play_layer.hpp>
+#include <ui/general/ask_input_popup.hpp>
 #include <util/format.hpp>
 
 using namespace geode::prelude;
@@ -78,34 +80,58 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
 }
 
 void GlobedUserCell::makeBlockButton() {
-    if (blockButton) blockButton->removeFromParent();
-    if (playerId == GJAccountManager::get()->m_accountID) return;
-
-    // mute/unmute button
-    auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
-    bool isUnblocked = pl->shouldLetMessageThrough(playerId);
-
-    Build<CCSprite>::createSpriteName(isUnblocked ? "GJ_fxOnBtn_001.png" : "GJ_fxOffBtn_001.png")
-        .scale(0.8f)
-        .intoMenuItem([isUnblocked, this](auto) {
-            auto& bl = BlockListMangaer::get();
-            isUnblocked ? bl.blacklist(this->playerId) : bl.whitelist(this->playerId);
-            // mute them immediately
-            auto& settings = GlobedSettings::get();
-            auto& vpm = VoicePlaybackManager::get();
-
-            if (isUnblocked) {
-                vpm.setVolume(this->playerId, 0.f);
-            } else {
-                vpm.setVolume(this->playerId, settings.communication.voiceVolume);
-            }
-
-            this->makeBlockButton();
-        })
+    if (buttonsWrapper) buttonsWrapper->removeFromParent();
+    Build<CCMenu>::create()
+        .anchorPoint(0.f, 0.f)
         .pos(GlobedUserListPopup::LIST_WIDTH - 25.f, CELL_HEIGHT / 2.f)
+        .layout(RowLayout::create()
+                    ->setGap(5.f)
+                    ->setAutoScale(false))
         .parent(menu)
-        .id("block-button"_spr)
-        .store(blockButton);
+        .store(buttonsWrapper);
+
+    if (playerId != GJAccountManager::get()->m_accountID) {
+        // mute/unmute button
+        auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+        bool isUnblocked = pl->shouldLetMessageThrough(playerId);
+
+        Build<CCSprite>::createSpriteName(isUnblocked ? "GJ_fxOnBtn_001.png" : "GJ_fxOffBtn_001.png")
+            .scale(0.8f)
+            .intoMenuItem([isUnblocked, this](auto) {
+                auto& bl = BlockListMangaer::get();
+                isUnblocked ? bl.blacklist(this->playerId) : bl.whitelist(this->playerId);
+                // mute them immediately
+                auto& settings = GlobedSettings::get();
+                auto& vpm = VoicePlaybackManager::get();
+
+                if (isUnblocked) {
+                    vpm.setVolume(this->playerId, 0.f);
+                } else {
+                    vpm.setVolume(this->playerId, settings.communication.voiceVolume);
+                }
+
+                this->makeBlockButton();
+            })
+            .parent(buttonsWrapper)
+            .id("block-button"_spr)
+            .store(blockButton);
+    }
+
+    // kick button for admins
+    if (NetworkManager::get().isAuthorizedAdmin()) {
+        Build<CCSprite>::createSpriteName("accountBtn_blocked_001.png")
+            .scale(0.7f)
+            .intoMenuItem([this](auto) {
+                AskInputPopup::create("Kick player", [this](const auto message) {
+                    auto& nm = NetworkManager::get();
+                    auto packet = AdminDisconnectPacket::create(std::to_string(this->playerId), message);
+                    nm.send(packet);
+                }, 64, "reason..", util::misc::STRING_PRINTABLE_INPUT)->show();
+            })
+            .parent(buttonsWrapper)
+            .id("kick-button"_spr)
+            .store(kickButton);
+    }
 }
 
 void GlobedUserCell::onOpenProfile(CCObject*) {

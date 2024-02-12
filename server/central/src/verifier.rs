@@ -189,16 +189,21 @@ impl AccountVerifier {
             bail!("boomlings returned -1!");
         }
 
+        let mut msg_cache = self.message_cache.lock();
+        msg_cache.clear();
+
         *self.last_update.lock() = SystemTime::now();
+
+        if response == "-2" {
+            // -2 means no messages
+            return Ok(());
+        }
 
         let octothorpe = response.find('#');
 
         if let Some(octothorpe) = octothorpe {
             response = response.split_at(octothorpe).0.to_string();
         }
-
-        let mut msg_cache = self.message_cache.lock();
-        msg_cache.clear();
 
         let message_strings = response.split('|');
         for string in message_strings {
