@@ -72,7 +72,7 @@ bool HookedMenuLayer::init() {
             std::string authcode = result.unwrap();
 
             auto gdData = am.gdData.lock();
-            am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [lastServer] {
+            am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->userId, gdData->accountName, authcode, [lastServer] {
                 auto result = NetworkManager::get().connectWithView(lastServer.value());
                 if (result.isErr()) {
                     ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));

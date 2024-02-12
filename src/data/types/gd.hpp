@@ -80,8 +80,8 @@ class PlayerAccountData {
 public:
     static const PlayerAccountData DEFAULT_DATA;
 
-    PlayerAccountData(int32_t id, const std::string_view name, const PlayerIconData& icons)
-        : id(id), name(name), icons(icons) {}
+    PlayerAccountData(int32_t id, int32_t userId, const std::string_view name, const PlayerIconData& icons)
+        : id(id), userId(userId), name(name), icons(icons) {}
 
     PlayerAccountData() {}
 
@@ -89,6 +89,7 @@ public:
 
     GLOBED_ENCODE {
         buf.writeI32(id);
+        buf.writeI32(userId);
         buf.writeString(name);
         buf.writeValue(icons);
         buf.writeOptionalValue(specialUserData);
@@ -96,18 +97,20 @@ public:
 
     GLOBED_DECODE {
         id = buf.readI32();
+        userId = buf.readI32();
         name = buf.readString();
         icons = buf.readValue<PlayerIconData>();
         specialUserData = buf.readOptionalValue<SpecialUserData>();
     }
 
-    int32_t id;
+    int32_t id, userId;
     std::string name;
     PlayerIconData icons;
     std::optional<SpecialUserData> specialUserData;
 };
 
 inline const PlayerAccountData PlayerAccountData::DEFAULT_DATA = PlayerAccountData(
+    0,
     0,
     "Player",
     PlayerIconData::DEFAULT_ICONS
@@ -144,12 +147,13 @@ public:
 
 class PlayerRoomPreviewAccountData {
 public:
-    PlayerRoomPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
-        : id(id), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId) {}
+    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
+        : id(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId) {}
     PlayerRoomPreviewAccountData() {}
 
     GLOBED_ENCODE {
         buf.writeI32(id);
+        buf.writeI32(userId);
         buf.writeString(name);
         buf.writeI16(cube);
         buf.writeI16(color1);
@@ -160,6 +164,7 @@ public:
 
     GLOBED_DECODE {
         id = buf.readI32();
+        userId = buf.readI32();
         name = buf.readString();
         cube = buf.readI16();
         color1 = buf.readI16();
@@ -168,7 +173,7 @@ public:
         levelId = buf.readI32();
     }
 
-    int32_t id;
+    int32_t id, userId;
     std::string name;
     int16_t cube, color1, color2, glowColor;
     int32_t levelId;

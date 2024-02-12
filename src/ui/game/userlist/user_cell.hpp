@@ -13,6 +13,8 @@ public:
     static GlobedUserCell* create(const PlayerStore::Entry& entry, const PlayerAccountData& data);
 
     int playerId;
+    int userId;
+    std::string username;
 
 private:
     cocos2d::CCLabelBMFont* percentageLabel;

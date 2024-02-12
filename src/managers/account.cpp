@@ -10,12 +10,13 @@ using namespace geode::prelude;
 
 GlobedAccountManager::GlobedAccountManager() {}
 
-void GlobedAccountManager::initialize(const std::string_view name, int accountId, const std::string_view central) {
+void GlobedAccountManager::initialize(const std::string_view name, int accountId, int userId, const std::string_view central) {
     GDData data = {
         .accountName = std::string(name),
         .accountId = accountId,
+        .userId = userId,
         .central = std::string(central),
-        .precomputedHash = this->computeGDDataHash(name, accountId, central)
+        .precomputedHash = this->computeGDDataHash(name, accountId, userId, central)
     };
 
     *gdData.lock() = data;
@@ -33,7 +34,7 @@ void GlobedAccountManager::autoInitialize() {
         activeCentralUrl = activeCentral.value().url;
     }
 
-    this->initialize(gjam->m_username, gjam->m_accountID, activeCentralUrl);
+    this->initialize(gjam->m_username, gjam->m_accountID, GameManager::get()->m_playerUserID.value(), activeCentralUrl);
 }
 
 Result<std::string> GlobedAccountManager::generateAuthCode() {
@@ -83,14 +84,16 @@ bool GlobedAccountManager::hasAuthKey() {
 void GlobedAccountManager::requestAuthToken(
     const std::string_view baseUrl,
     int accountId,
+    int userId,
     const std::string_view accountName,
     const std::string_view authcode,
     std::optional<std::function<void()>> callback
 ) {
     auto url = fmt::format(
-        "{}/totplogin?aid={}&aname={}&code={}",
+        "{}/totplogin?aid={}&uid={}&aname={}&code={}",
         baseUrl,
         accountId,
+        userId,
         accountName,
         authcode
     );
@@ -131,9 +134,9 @@ void GlobedAccountManager::cancelAuthTokenRequest() {
     }
 }
 
-std::string GlobedAccountManager::computeGDDataHash(const std::string_view name, int accountId, const std::string_view central) {
+std::string GlobedAccountManager::computeGDDataHash(const std::string_view name, int accountId, int userId, const std::string_view central) {
     auto hash = util::crypto::simpleHash(fmt::format(
-        "{}-{}-{}", name, accountId, central
+        "{}-{}-{}-{}", name, accountId, userId, central
     ));
 
     return util::crypto::hexEncode(hash);

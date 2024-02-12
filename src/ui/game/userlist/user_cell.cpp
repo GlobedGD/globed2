@@ -15,6 +15,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     if (!CCLayer::init()) return false;
 
     playerId = data.id;
+    userId = data.userId;
+    username = data.name;
 
     auto winSize = CCDirector::get()->getWinSize();
 
@@ -135,7 +137,12 @@ void GlobedUserCell::makeBlockButton() {
 }
 
 void GlobedUserCell::onOpenProfile(CCObject*) {
-    ProfilePage::create(playerId, playerId == GJAccountManager::get()->m_accountID)->show();
+    bool myself = playerId == GJAccountManager::get()->m_accountID;
+    if (!myself) {
+        GameLevelManager::sharedState()->storeUserName(userId, playerId, username);
+    }
+
+    ProfilePage::create(playerId, myself)->show();
 }
 
 GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data) {

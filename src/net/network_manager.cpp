@@ -32,7 +32,7 @@ NetworkManager::NetworkManager() {
         pcm.pendingChanges = false;
 
         auto gddata = am.gdData.lock();
-        auto pkt = LoginPacket::create(gddata->accountId, gddata->accountName, authtoken, pcm.getOwnData());
+        auto pkt = LoginPacket::create(gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData());
         this->send(pkt);
     });
 

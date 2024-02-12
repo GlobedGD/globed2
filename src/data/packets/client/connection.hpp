@@ -51,19 +51,21 @@ class LoginPacket : public Packet {
 
     GLOBED_PACKET_ENCODE {
         buf.writeI32(accountId);
+        buf.writeI32(userId);
         buf.writeString(name);
         buf.writeString(token);
         buf.writeValue(icons);
     }
 
-    LoginPacket(int32_t accid, const std::string_view name, const std::string_view token, const PlayerIconData& icons)
-        : accountId(accid), name(name), token(token), icons(icons) {}
+    LoginPacket(int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons)
+        : accountId(accid), userId(userId), name(name), token(token), icons(icons) {}
 
-    static std::shared_ptr<Packet> create(int32_t accid, const std::string_view name, const std::string_view token, const PlayerIconData& icons) {
-        return std::make_shared<LoginPacket>(accid, name, token, icons);
+    static std::shared_ptr<Packet> create(int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons) {
+        return std::make_shared<LoginPacket>(accid, userId, name, token, icons);
     }
 
     int32_t accountId;
+    int32_t userId;
     std::string name;
     std::string token;
     PlayerIconData icons;

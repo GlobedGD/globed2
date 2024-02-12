@@ -65,6 +65,7 @@ void GlobedSettings::save() {
     // store flags
 
     STOREF(seenSignupNotice);
+    STOREF(seenSignupNoticev2);
     STOREF(seenVoiceChatPTTNotice);
 }
 
@@ -104,6 +105,7 @@ void GlobedSettings::reload() {
     // load flags
 
     LOADF(seenSignupNotice);
+    LOADF(seenSignupNoticev2);
     LOADF(seenVoiceChatPTTNotice);
 }
 

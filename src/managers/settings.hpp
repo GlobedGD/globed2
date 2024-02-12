@@ -56,6 +56,7 @@ public:
 
     struct Flags {
         bool seenSignupNotice = false;
+        bool seenSignupNoticev2 = false;
         bool seenVoiceChatPTTNotice = false;
     };
 

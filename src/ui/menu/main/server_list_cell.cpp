@@ -140,7 +140,7 @@ void ServerListCell::requestTokenAndConnect() {
         authcode
     );
 
-    am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->accountName, authcode, [gsview = this->gsview]{
+    am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->userId, gdData->accountName, authcode, [gsview = this->gsview]{
         GLOBED_RESULT_ERRC(NetworkManager::get().connectWithView(gsview));
     });
 }

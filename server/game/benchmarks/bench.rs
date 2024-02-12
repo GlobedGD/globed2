@@ -7,6 +7,7 @@ use globed_shared::{rand, rand::RngCore};
 fn buffers(c: &mut Criterion) {
     let data = PlayerAccountData {
         account_id: 234_234_234,
+        user_id: 234_234_234,
         name: FastString::from_str("hit his is my name"),
         icons: PlayerIconData::default(),
         special_user_data: Some(SpecialUserData {

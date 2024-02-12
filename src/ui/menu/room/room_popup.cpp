@@ -47,6 +47,7 @@ bool RoomPopup::setup() {
 
         this->playerList = {PlayerRoomPreviewAccountData(
             gjam->m_accountID,
+            GameManager::get()->m_playerUserID.value(),
             gjam->m_username,
             ownData.cube,
             ownData.color1,

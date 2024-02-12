@@ -64,7 +64,7 @@ impl GameServerThread {
             );
         }
 
-        if packet.account_id <= 0 {
+        if packet.account_id <= 0 || packet.user_id <= 0 {
             self.terminate();
             self.send_packet_dynamic(&LoginFailedPacket { message: "Invalid account ID was sent. Please note that you must be signed into a Geometry Dash account before connecting." }).await?;
             return Ok(());
@@ -79,7 +79,7 @@ impl GameServerThread {
             match self
                 .game_server
                 .token_issuer
-                .validate(packet.account_id, packet.token.to_str().unwrap())
+                .validate(packet.account_id, packet.user_id, packet.token.to_str().unwrap())
             {
                 Ok(x) => FastString::from_str(&x),
                 Err(err) => {
@@ -110,6 +110,7 @@ impl GameServerThread {
         {
             let mut account_data = self.account_data.lock();
             account_data.account_id = packet.account_id;
+            account_data.user_id = packet.user_id;
             account_data.icons.clone_from(&packet.icons);
             account_data.name = player_name;
 

@@ -69,6 +69,7 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
     get_user_ip!(state, context, _ip);
 
     let account_id = context.must_query("aid")?.parse::<i32>()?;
+    let user_id = context.must_query("uid")?.parse::<i32>()?;
     let account_name = &*context.must_query("aname")?;
     let code = &*context.must_query("code")?;
 
@@ -89,7 +90,7 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
         );
     };
 
-    let authkey = state.generate_authkey(account_id, account_name);
+    let authkey = state.generate_authkey(account_id, user_id, account_name);
     let valid = state.verify_totp(&authkey, code);
 
     if !valid {
@@ -97,7 +98,7 @@ pub async fn totp_login(context: &mut Context<ServerState>) -> roa::Result {
         throw!(StatusCode::UNAUTHORIZED, "login failed");
     }
 
-    let token = state.token_issuer.generate(account_id, account_name);
+    let token = state.token_issuer.generate(account_id, user_id, account_name);
     drop(state);
 
     debug!("totp login from {} ({}) successful", account_name, account_id);
@@ -112,6 +113,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
     check_user_agent!(context, _ua);
 
     let account_id = context.must_query("aid")?.parse::<i32>()?;
+    let user_id = context.must_query("uid")?.parse::<i32>()?;
 
     let mut state = context.state_write().await;
 
@@ -180,6 +182,7 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
         started: current_time,
         value: rand_string.clone(),
         account_id,
+        user_id,
     };
 
     state.active_challenges.insert(user_ip, challenge);
@@ -204,9 +207,9 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     check_maintenance!(context);
     check_user_agent!(context, _ua);
 
-    let account_id = &*context.must_query("aid")?;
+    let account_id = context.must_query("aid")?.parse::<i32>()?;
+    let user_id = context.must_query("uid")?.parse::<i32>()?;
     let account_name = &*context.must_query("aname")?;
-    let account_id = account_id.parse::<i32>()?;
 
     let ch_answer = &*context.must_query("answer")?;
 
@@ -254,10 +257,10 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     }
     .clone();
 
-    if challenge.account_id != account_id {
+    if challenge.account_id != account_id || challenge.user_id != user_id {
         throw!(
             StatusCode::UNAUTHORIZED,
-            "challenge was requested for a different account ID, not validating"
+            "challenge was requested for a different account/user ID, not validating"
         );
     }
 
@@ -276,7 +279,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         let result = context
             .inner
             .verifier
-            .verify_account(account_id, account_name, ch_answer.parse::<u32>()?)
+            .verify_account(account_id, user_id, account_name, ch_answer.parse::<u32>()?)
             .await;
 
         if let Some(id) = result {
@@ -295,7 +298,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
 
     let mut state = context.state_write().await;
     state.active_challenges.remove(&user_ip);
-    let authkey = state.generate_authkey(account_id, account_name);
+    let authkey = state.generate_authkey(account_id, user_id, account_name);
     drop(state);
 
     context.write(format!(

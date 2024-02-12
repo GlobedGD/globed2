@@ -170,7 +170,7 @@ impl GameServer {
 
     /* various calls for other threads */
 
-    pub async fn broadcast_voice_packet(
+    pub fn broadcast_voice_packet(
         &'static self,
         vpkt: &Arc<VoiceBroadcastPacket>,
         level_id: i32,
@@ -182,10 +182,9 @@ impl GameServer {
             level_id,
             room_id,
         )
-        .await
     }
 
-    pub async fn broadcast_chat_packet(
+    pub fn broadcast_chat_packet(
         &'static self,
         tpkt: &ChatMessageBroadcastPacket,
         level_id: i32,
@@ -197,7 +196,6 @@ impl GameServer {
             level_id,
             room_id,
         )
-        .await
     }
 
     /// iterate over every player in this list and run F
@@ -296,7 +294,7 @@ impl GameServer {
     /* private handling stuff */
 
     /// broadcast a message to all people on the level
-    async fn broadcast_user_message(
+    fn broadcast_user_message(
         &'static self,
         msg: &ServerThreadMessage,
         origin_id: i32,

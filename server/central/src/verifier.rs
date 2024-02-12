@@ -16,6 +16,7 @@ const DELETER_PERIOD: Duration = Duration::from_mins(10);
 #[derive(Clone)]
 struct AccountEntry {
     pub account_id: i32,
+    pub user_id: i32,
     pub name: String,
     pub authcode: u32,
     pub message_id: i32,
@@ -49,7 +50,7 @@ impl AccountVerifier {
         self.is_enabled.store(state, Ordering::Relaxed);
     }
 
-    pub async fn verify_account(&self, account_id: i32, account_name: &str, authcode: u32) -> Option<i32> {
+    pub async fn verify_account(&self, account_id: i32, user_id: i32, account_name: &str, authcode: u32) -> Option<i32> {
         if !self.is_enabled.load(Ordering::Relaxed) {
             return Some(0);
         }
@@ -67,7 +68,11 @@ impl AccountVerifier {
 
         let cache = self.message_cache.lock();
         for msg in &*cache {
-            if msg.account_id == account_id && msg.name.eq_ignore_ascii_case(account_name) && msg.authcode == authcode {
+            if msg.account_id == account_id
+                && msg.user_id == user_id
+                && msg.name.eq_ignore_ascii_case(account_name)
+                && msg.authcode == authcode
+            {
                 return Some(msg.message_id);
             }
         }
@@ -216,9 +221,16 @@ impl AccountVerifier {
             let title = values.get("4");
             let author_name = values.get("6");
             let author_id = values.get("2");
+            let author_user_id = values.get("3");
             let age = values.get("7");
 
-            if message_id.is_none() || title.is_none() || author_name.is_none() || author_id.is_none() || age.is_none() {
+            if message_id.is_none()
+                || title.is_none()
+                || author_name.is_none()
+                || author_id.is_none()
+                || age.is_none()
+                || author_user_id.is_none()
+            {
                 warn!("ignoring invalid message: one of the attrs is none");
                 continue;
             }
@@ -229,6 +241,7 @@ impl AccountVerifier {
             let message_id = message_id.unwrap().parse::<i32>()?;
             let author_name = author_name.unwrap();
             let author_id = author_id.unwrap().parse::<i32>()?;
+            let author_user_id = author_user_id.unwrap().parse::<i32>()?;
             let age = age.unwrap();
 
             // if the message is old, queue it for deletion
@@ -248,6 +261,7 @@ impl AccountVerifier {
 
             msg_cache.push(AccountEntry {
                 account_id: author_id,
+                user_id: author_user_id,
                 name: (*author_name).to_string(),
                 authcode,
                 message_id,

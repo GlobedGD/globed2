@@ -10,6 +10,7 @@ const ITERS: usize = 500_000;
 fn test_alloca_buffer() {
     let data = PlayerAccountData {
         account_id: 234_234_234,
+        user_id: 234_234_234,
         name: FastString::from_str("hit his is my name"),
         icons: PlayerIconData::default(),
         special_user_data: Some(SpecialUserData {
@@ -45,6 +46,7 @@ fn test_alloca_buffer() {
 fn test_fast_buffer() {
     let data = PlayerAccountData {
         account_id: 234_234_234,
+        user_id: 234_234_234,
         name: FastString::from_str("hit his is my name"),
         icons: PlayerIconData::default(),
         special_user_data: Some(SpecialUserData {
@@ -74,6 +76,7 @@ fn test_fast_buffer() {
 fn test_slow_buffer() {
     let data = PlayerAccountData {
         account_id: 234_234_234,
+        user_id: 234_234_234,
         name: FastString::from_str("hit his is my name"),
         icons: PlayerIconData::default(),
         special_user_data: Some(SpecialUserData {

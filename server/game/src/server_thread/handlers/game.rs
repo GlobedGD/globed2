@@ -152,13 +152,11 @@ impl GameServerThread {
             data: packet.data,
         });
 
-        self.game_server
-            .broadcast_voice_packet(
-                &vpkt,
-                self.level_id.load(Ordering::Relaxed),
-                self.room_id.load(Ordering::Relaxed),
-            )
-            .await?;
+        self.game_server.broadcast_voice_packet(
+            &vpkt,
+            self.level_id.load(Ordering::Relaxed),
+            self.room_id.load(Ordering::Relaxed),
+        )?;
 
         Ok(())
     });
@@ -171,13 +169,11 @@ impl GameServerThread {
             message: packet.message,
         };
 
-        self.game_server
-            .broadcast_chat_packet(
-                &cpkt,
-                self.level_id.load(Ordering::Relaxed),
-                self.room_id.load(Ordering::Relaxed),
-            )
-            .await?;
+        self.game_server.broadcast_chat_packet(
+            &cpkt,
+            self.level_id.load(Ordering::Relaxed),
+            self.room_id.load(Ordering::Relaxed),
+        )?;
 
         Ok(())
     });

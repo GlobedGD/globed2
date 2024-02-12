@@ -27,6 +27,7 @@ use totp_rs::{Algorithm, Secret, TOTP};
 #[derive(Clone)]
 pub struct ActiveChallenge {
     pub account_id: i32,
+    pub user_id: i32,
     pub value: String,
     pub started: Duration,
 }
@@ -58,8 +59,8 @@ impl ServerStateData {
     }
 
     // uses hmac-sha256 to derive an auth key from user's account ID and name
-    pub fn generate_authkey(&self, account_id: i32, account_name: &str) -> Vec<u8> {
-        let val = format!("{account_id}:{account_name}");
+    pub fn generate_authkey(&self, account_id: i32, user_id: i32, account_name: &str) -> Vec<u8> {
+        let val = format!("{account_id}:{user_id}:{account_name}");
 
         let mut hmac: Hmac<Sha256> = self.hmac.clone();
         hmac.update(val.as_bytes());

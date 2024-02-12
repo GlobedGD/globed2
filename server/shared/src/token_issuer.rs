@@ -47,13 +47,13 @@ impl TokenIssuer {
     }
 
     /// Generates a new session token for the given account ID and username
-    pub fn generate(&self, account_id: i32, account_name: &str) -> String {
+    pub fn generate(&self, account_id: i32, user_id: i32, account_name: &str) -> String {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("whoops our clock went backwards")
             .as_secs();
 
-        let data = format!("{account_id}.{account_name}.{timestamp}");
+        let data = format!("{account_id}.{user_id}.{account_name}.{timestamp}");
         let mut hmac = self.hmac.clone();
         hmac.update(data.as_bytes());
         let res = hmac.finalize();
@@ -66,7 +66,7 @@ impl TokenIssuer {
     }
 
     /// Validates a token, returns the name of the user if successful
-    pub fn validate(&self, account_id: i32, token: &str) -> Result<String, TokenValidationFailure> {
+    pub fn validate(&self, account_id: i32, user_id: i32, token: &str) -> Result<String, TokenValidationFailure> {
         if token.is_empty() {
             return Err(TokenValidationFailure::Missing);
         }
@@ -90,6 +90,12 @@ impl TokenIssuer {
             .parse::<i32>()
             .map_err(|_| TokenValidationFailure::MalformedStructure)?;
 
+        let orig_user_id = claims
+            .next()
+            .ok_or(TokenValidationFailure::MalformedStructure)?
+            .parse::<i32>()
+            .map_err(|_| TokenValidationFailure::MalformedStructure)?;
+
         let orig_name = claims.next().ok_or(TokenValidationFailure::MalformedStructure)?;
 
         let orig_ts = claims
@@ -99,6 +105,10 @@ impl TokenIssuer {
             .map_err(|_| TokenValidationFailure::MalformedStructure)?;
 
         if orig_id != account_id {
+            return Err(TokenValidationFailure::Impersonation);
+        }
+
+        if orig_user_id != user_id {
             return Err(TokenValidationFailure::Impersonation);
         }
 

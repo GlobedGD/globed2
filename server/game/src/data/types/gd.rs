@@ -78,6 +78,7 @@ impl TryFrom<SpecialUser> for SpecialUserData {
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct PlayerAccountData {
     pub account_id: i32,
+    pub user_id: i32,
     pub name: FastString<MAX_NAME_SIZE>,
     pub icons: PlayerIconData,
     pub special_user_data: Option<SpecialUserData>,
@@ -87,6 +88,7 @@ impl PlayerAccountData {
     pub fn make_room_preview(&self, level_id: i32) -> PlayerRoomPreviewAccountData {
         PlayerRoomPreviewAccountData {
             account_id: self.account_id,
+            user_id: self.user_id,
             name: self.name.clone(),
             cube: self.icons.cube,
             color1: self.icons.color1,
@@ -125,6 +127,7 @@ pub struct PlayerPreviewAccountData {
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct PlayerRoomPreviewAccountData {
     pub account_id: i32,
+    pub user_id: i32,
     pub name: FastString<MAX_NAME_SIZE>,
     pub cube: i16,
     pub color1: i16,
