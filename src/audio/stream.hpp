@@ -62,11 +62,16 @@ public:
     // set the volume of the stream (0.0f - 1.0f, beyond 1.0f amplifies)
     void setVolume(float volume);
 
+    // get how loud the sound is being played
+    float getLoudness();
+
 private:
     FMOD::Sound* sound = nullptr;
     FMOD::Channel* channel = nullptr;
     AudioSampleQueue queue;
     AudioDecoder decoder;
+    float volume = 0.f;
+    float loudness = 0.f;
 };
 
 

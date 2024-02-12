@@ -59,4 +59,13 @@ namespace util::misc {
         auto guard = mtx.lock();
         callOnce(key, func);
     }
+
+    float calculatePcmVolume(const float* pcm, float samples) {
+        double sum = 0.0f;
+        for (size_t i = 0; i < samples; i++) {
+            sum += static_cast<double>(std::abs(pcm[i]));
+        }
+
+        return static_cast<float>(sum / static_cast<double>(samples));
+    }
 }

@@ -85,4 +85,6 @@ namespace util::misc {
             return val;
         }
     };
+
+    float calculatePcmVolume(const float* pcm, float samples);
 }

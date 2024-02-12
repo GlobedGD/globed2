@@ -133,9 +133,10 @@ void ServerListCell::requestTokenAndConnect() {
     auto gdData = am.gdData.lock();
 
     auto url = fmt::format(
-        "{}/totplogin?aid={}&aname={}&code={}",
+        "{}/totplogin?aid={}&uid={}&aname={}&code={}",
         csm.getActive()->url,
         gdData->accountId,
+        gdData->userId,
         gdData->accountName,
         authcode
     );

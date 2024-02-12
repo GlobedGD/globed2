@@ -12,8 +12,6 @@ private:
     bool init();
 
     static constexpr const char* CONSENT_MESSAGE =
-        "For verification purposes, this action will cause your account to leave a <cy>comment</c> on a certain level. "
-        "There is nothing else that has to be done from your side, and once the verification is complete, "
-        "the comment will be <cg>automatically deleted</c>. "
+        "For verification purposes, this action will send a <cy>direct message</c> to a bot account, and delete it afterwards. "
         "If you <cr>do not consent</c> to this action, press 'Cancel'.";
 };

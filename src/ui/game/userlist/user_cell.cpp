@@ -37,7 +37,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .store(menu);
 
     auto* nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
-        .limitLabelWidth(150.f, 0.7f, 0.1f)
+        .limitLabelWidth(140.f, 0.6f, 0.1f)
         .collect();
 
     auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
@@ -64,6 +64,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     this->makeBlockButton();
 
     this->refreshData(entry);
+    this->scheduleUpdate();
 
     return true;
 }
@@ -81,16 +82,26 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
     }
 }
 
+void GlobedUserCell::update(float dt) {
+    if (audioVisualizer) {
+        auto& vpm = VoicePlaybackManager::get();
+        audioVisualizer->setVolume(vpm.getLoudness(playerId));
+    }
+}
+
 void GlobedUserCell::makeBlockButton() {
     if (buttonsWrapper) buttonsWrapper->removeFromParent();
     Build<CCMenu>::create()
-        .anchorPoint(0.f, 0.f)
-        .pos(GlobedUserListPopup::LIST_WIDTH - 25.f, CELL_HEIGHT / 2.f)
+        .anchorPoint(1.0f, 0.5f)
+        .pos(GlobedUserListPopup::LIST_WIDTH - 7.f, CELL_HEIGHT / 2.f)
         .layout(RowLayout::create()
                     ->setGap(5.f)
-                    ->setAutoScale(false))
+                    ->setAutoScale(false)
+                    ->setAxisReverse(true))
         .parent(menu)
         .store(buttonsWrapper);
+
+    auto maxWidth = 0.f;
 
     if (playerId != GJAccountManager::get()->m_accountID) {
         // mute/unmute button
@@ -117,7 +128,10 @@ void GlobedUserCell::makeBlockButton() {
             .parent(buttonsWrapper)
             .id("block-button"_spr)
             .store(blockButton);
+
+        maxWidth += blockButton->getScaledContentSize().width + 5.f;
     }
+
 
     // kick button for admins
     if (NetworkManager::get().isAuthorizedAdmin()) {
@@ -133,7 +147,30 @@ void GlobedUserCell::makeBlockButton() {
             .parent(buttonsWrapper)
             .id("kick-button"_spr)
             .store(kickButton);
+
+        maxWidth += kickButton->getScaledContentSize().width + 5.f;
     }
+
+
+    if (playerId != GJAccountManager::get()->m_accountID) {
+        // audio visualizer
+        Build<GlobedAudioVisualizer>::create()
+            .parent(buttonsWrapper)
+            .id("audio-visualizer"_spr)
+            .store(audioVisualizer);
+
+        // do not try this at home
+        audioVisualizer->setScaleX(0.5f);
+        auto batchnode = getChildOfType<CCSpriteBatchNode>(audioVisualizer->visNode, 0);
+        auto border = static_cast<CCSprite*>(batchnode->getChildren()->objectAtIndex(0));
+        border->setScaleY(103.f);
+
+        maxWidth += audioVisualizer->getScaledContentSize().width;
+    }
+
+    buttonsWrapper->setContentSize({maxWidth, 20.f});
+
+    buttonsWrapper->updateLayout();
 }
 
 void GlobedUserCell::onOpenProfile(CCObject*) {

@@ -6,6 +6,7 @@
 #include <audio/manager.hpp>
 #include <audio/voice_playback_manager.hpp>
 #include <managers/settings.hpp>
+#include <util/misc.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -39,12 +40,7 @@ bool AudioSetupPopup::setup() {
             vm.setRecordBufferCapacity(1);
             auto result = vm.startRecordingRaw([this, &vpm](const float* pcm, size_t samples) {
                 // calculate the avg audio volume
-                double sum = 0.0f;
-                for (size_t i = 0; i < samples; i++) {
-                    sum += static_cast<double>(std::abs(pcm[i]));
-                }
-
-                this->audioLevel = 3.f * static_cast<float>(sum / static_cast<double>(samples));
+                this->audioLevel = util::misc::calculatePcmVolume(pcm, samples);
 
                 // play back the audio
                 vpm.playRawDataStreamed(-1, pcm, samples);
@@ -57,7 +53,7 @@ bool AudioSetupPopup::setup() {
             }
 
             this->toggleButtons(true);
-            maxVolume = 0.f;
+            this->audioVisualizer->resetMaxVolume();
         })
         .parent(visualizerLayout)
         .id("record-button"_spr)
@@ -87,24 +83,11 @@ bool AudioSetupPopup::setup() {
         .parent(menu)
         .id("refresh-btn"_spr);
 
-    // this is so laughably bad
-    auto* visualizerWrapper = Build<FMODLevelVisualizer>::create()
-        .anchorPoint(0.5f, 0.f)
-        .rotation(90.0f)
-        .store(audioVisualizer)
-        .intoNewParent(CCNode::create())
+    Build<GlobedAudioVisualizer>::create()
         .parent(visualizerLayout)
         .id("audio-visualizer"_spr)
-        .collect();
+        .store(audioVisualizer);
 
-    // TODO this is so hacky and so bad no one please modify this stupid ass class
-    CCSize visualizerSize;
-    auto batchnode = (CCNode*)audioVisualizer->getChildren()->objectAtIndex(0);
-    CCSprite* bigBar = (CCSprite*)batchnode->getChildren()->objectAtIndex(0);
-    visualizerSize = bigBar->getScaledContentSize();
-
-    visualizerWrapper->setContentSize({visualizerSize.height, visualizerSize.width});
-    audioVisualizer->setPosition({visualizerSize.height / 2, visualizerSize.width / 2});
     this->toggleButtons(false);
 
     listLayer = GJCommentListLayer::create(nullptr, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
@@ -120,10 +103,7 @@ bool AudioSetupPopup::setup() {
 }
 
 void AudioSetupPopup::update(float) {
-    float volume = this->audioLevel;
-    maxVolume = std::max(maxVolume, volume);
-    // current, max, idk
-    audioVisualizer->updateVisualizer(volume, maxVolume, 0.f);
+    audioVisualizer->setVolume(audioLevel);
 }
 
 cocos2d::CCArray* AudioSetupPopup::createDeviceCells() {

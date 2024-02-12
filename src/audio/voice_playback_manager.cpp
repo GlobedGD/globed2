@@ -69,4 +69,10 @@ void VoicePlaybackManager::setVolumeAll(float volume) {
     }
 }
 
+float VoicePlaybackManager::getLoudness(int playerId) {
+    if (!streams.contains(playerId)) return 0.f;
+
+    return streams.at(playerId)->getLoudness();
+}
+
 #endif // GLOBED_VOICE_SUPPORT

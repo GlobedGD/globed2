@@ -367,7 +367,7 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
         return;
     }
 
-    util::collections::SmallVector<int, 512> ids;
+    util::collections::SmallVector<int, 256> ids;
 
     // kick players that have left the level
     for (const auto& [playerId, remotePlayer] : self->m_fields->players) {

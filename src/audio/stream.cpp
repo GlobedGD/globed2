@@ -3,6 +3,7 @@
 #if GLOBED_VOICE_SUPPORT
 
 #include "manager.hpp"
+#include <util/misc.hpp>
 
 AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
     FMOD_CREATESOUNDEXINFO exinfo = {};
@@ -20,7 +21,7 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
         AudioStream* stream = nullptr;
         sound->getUserData((void**)&stream);
 
-        if (!stream) {
+        if (!stream || !data) {
             log::debug("audio stream is nullptr in cb, ignoring");
             return FMOD_OK;
         }
@@ -39,6 +40,10 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
         } else {
             stream->starving = false;
         }
+
+        float pcmVolume = util::misc::calculatePcmVolume(reinterpret_cast<const float*>(data), neededSamples);
+        stream->loudness = stream->volume * pcmVolume;
+        log::debug("setting loudness to {} * {} = {}", stream->volume, pcmVolume, stream->loudness);
 
         return FMOD_OK;
     };
@@ -93,6 +98,12 @@ void AudioStream::setVolume(float volume) {
     if (channel) {
         channel->setVolume(volume);
     }
+
+    this->volume = volume;
+}
+
+float AudioStream::getLoudness() {
+    return loudness;
 }
 
 #endif // GLOBED_VOICE_SUPPORT

@@ -23,6 +23,8 @@ public:
     void muteEveryone();
     void setVolumeAll(float volume);
 
+    float getLoudness(int playerId);
+
 private:
     std::unordered_map<int, std::unique_ptr<AudioStream>> streams;
 };

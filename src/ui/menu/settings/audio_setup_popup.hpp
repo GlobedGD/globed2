@@ -3,6 +3,7 @@
 
 #if GLOBED_VOICE_SUPPORT
 
+#include <ui/general/audio_visualizer.hpp>
 #include <util/sync.hpp>
 
 class AudioSetupPopup : public geode::Popup<> {
@@ -19,9 +20,8 @@ public:
 private:
     Ref<CCMenuItemSpriteExtra> recordButton, stopRecordButton;
     GJCommentListLayer* listLayer;
-    FMODLevelVisualizer* audioVisualizer;
+    GlobedAudioVisualizer* audioVisualizer;
     util::sync::AtomicF32 audioLevel;
-    float maxVolume = 0.f;
     cocos2d::CCMenu* visualizerLayout;
 
     bool setup() override;
