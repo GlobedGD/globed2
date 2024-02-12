@@ -12,6 +12,13 @@ impl GameServerThread {
             .key
             .constant_time_compare(&self.game_server.central_conf.lock().admin_key)
         {
+            info!(
+                "[{} ({}) @ {}] just failed to login to the admin panel with password: {}",
+                self.account_data.lock().name,
+                account_id,
+                self.peer,
+                packet.key
+            );
             return Ok(());
         }
 

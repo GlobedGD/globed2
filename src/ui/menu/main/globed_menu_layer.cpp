@@ -272,7 +272,9 @@ void GlobedMenuLayer::requestServerList() {
             gsm.updateCache(response);
             auto result = gsm.loadFromCache();
             if (result.isErr()) {
-                ErrorQueues::get().error(fmt::format("Failed to parse server list: {}", result.unwrapErr()));
+                log::warn("failed to parse server list: {}", result.unwrapErr());
+                log::warn("{}", response);
+                ErrorQueues::get().error(fmt::format("Failed to parse server list: <cy>{}</c>", result.unwrapErr()));
             }
             gsm.pendingChanges = true;
         })

@@ -13,6 +13,7 @@
 #define _GLOBED_STRPRINTABLEINPUT _GLOBED_STRALPHANUM _GLOBED_STRSPECIAL
 #define _GLOBED_STRPRINTABLE _GLOBED_STRPRINTABLEINPUT "\r\t\n"
 #define _GLOBED_STRURL _GLOBED_STRALPHANUM ":/%._-?#"
+#define _GLOBED_STRWHITESPACE " \t\n\r\x0b\x0c"
 
 namespace util::misc {
     constexpr std::string_view STRING_DIGITS = _GLOBED_STRNUM;
@@ -24,6 +25,7 @@ namespace util::misc {
     constexpr std::string_view STRING_PRINTABLE = _GLOBED_STRPRINTABLE;
     constexpr std::string_view STRING_PRINTABLE_INPUT = _GLOBED_STRPRINTABLEINPUT;
     constexpr std::string_view STRING_URL = _GLOBED_STRURL;
+    constexpr std::string_view STRING_WHITESPACE = _GLOBED_STRWHITESPACE;
 
     // If `target` is false, returns false. If `target` is true, modifies `target` to false and returns true.
     bool swapFlag(bool& target);

@@ -10,7 +10,9 @@ The game server now primarily uses TCP, although a UDP socket is still opened on
 
 ## central v1.0.2
 
-no changes, just bumped the protocol version to v2 to be compatible.
+* bumped the protocol version to v2 to be compatible with the game server update.
+* change the way account verification is done, removed some of the related settings and added new ones.
+* allow writing comments in the JSON configuration file
 
 ## game v1.0.2
 

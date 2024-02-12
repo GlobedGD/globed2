@@ -8,8 +8,9 @@ If you are a server owner, please read the [server changelog](https://github.com
 
 Additional changes include:
 
+* Improve the account verification system (and enable it on the main server)
+* Fix the freezes/crashes on the loading screen and update the message text at the bottom when loading icons
 * (Maybe) fix crash when applying a texture pack with Texture Loader
-* Fix the freeze on the loading screen and update the message text at the bottom when loading icons
 * Fix the TPS cap setting being impossible to change
 * Make the mute button work immediately instead of with a delay
 * Add an automatic rollback system for a certain save bug related to gauntlets

@@ -8,6 +8,7 @@ use globed_shared::{
     esp::{self, Decodable, Encodable},
     generate_alphanum_string, Decodable, Encodable, IntMap, SpecialUser, ADMIN_KEY_LENGTH,
 };
+use json_comments::StripComments;
 use serde::{Deserialize, Serialize};
 use serde_json::{ser::PrettyFormatter, Serializer};
 
@@ -29,16 +30,12 @@ const fn default_use_gd_api() -> bool {
     false
 }
 
-fn default_gdapi() -> String {
-    "http://www.boomlings.com/database/getGJComments21.php".to_string()
+const fn default_gd_api_account() -> i32 {
+    0
 }
 
-const fn default_gdapi_ratelimit() -> usize {
-    5
-}
-
-const fn default_gdapi_period() -> u64 {
-    5
+fn default_gd_api_gjp() -> String {
+    String::new()
 }
 
 fn default_game_servers() -> Vec<GameServerEntry> {
@@ -90,14 +87,6 @@ fn default_secret_key() -> String {
 
 const fn default_challenge_expiry() -> u32 {
     30
-}
-
-const fn default_challenge_level() -> i32 {
-    1
-}
-
-const fn default_challenge_ratelimit() -> u64 {
-    60
 }
 
 const fn default_cloudflare_protection() -> bool {
@@ -161,12 +150,10 @@ pub struct ServerConfig {
     pub admin_key: String,
     #[serde(default = "default_use_gd_api")]
     pub use_gd_api: bool,
-    #[serde(default = "default_gdapi")]
-    pub gd_api: String,
-    #[serde(default = "default_gdapi_ratelimit")]
-    pub gd_api_ratelimit: usize,
-    #[serde(default = "default_gdapi_period")]
-    pub gd_api_period: u64,
+    #[serde(default = "default_gd_api_account")]
+    pub gd_api_account: i32,
+    #[serde(default = "default_gd_api_gjp")]
+    pub gd_api_gjp: String,
     #[serde(default = "default_secret_key")]
     pub secret_key: String,
     #[serde(default = "default_secret_key")]
@@ -177,21 +164,20 @@ pub struct ServerConfig {
     pub cloudflare_protection: bool,
     #[serde(default = "default_challenge_expiry")]
     pub challenge_expiry: u32,
-    #[serde(default = "default_challenge_level")]
-    pub challenge_level: i32,
-    #[serde(default = "default_challenge_ratelimit")]
-    pub challenge_ratelimit: u64,
     #[serde(default = "default_token_expiry")]
     pub token_expiry: u64,
 }
 
 impl ServerConfig {
     pub fn load(source: &Path) -> anyhow::Result<Self> {
-        Ok(serde_json::from_reader(File::open(source)?)?)
+        let file = File::open(source)?;
+        let stripped = StripComments::new(file);
+
+        Ok(serde_json::from_reader(stripped)?)
     }
 
     pub fn save(&self, dest: &Path) -> anyhow::Result<()> {
-        let writer = OpenOptions::new().write(true).create(true).open(dest)?;
+        let writer = OpenOptions::new().write(true).create(true).truncate(true).open(dest)?;
 
         // i hate 2 spaces i hate 2 spaces i hate 2 spaces
         let formatter = PrettyFormatter::with_indent(b"    ");

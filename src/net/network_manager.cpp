@@ -41,8 +41,7 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
-        ErrorQueues::get().error(fmt::format("You have been disconnected from the active server.\n\nReason: <cy>{}</c>", packet->message));
-        this->disconnect(true);
+        this->disconnectWithMessage(packet->message);
     });
 
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
@@ -160,6 +159,12 @@ Result<> NetworkManager::connectStandalone() {
 }
 
 void NetworkManager::disconnect(bool quiet, bool noclear) {
+    _handshaken = false;
+    _loggedin = false;
+    _connectingStandalone = false;
+    _adminAuthorized = false;
+    _deferredConnect = false;
+
     if (!this->connected()) {
         return;
     }
@@ -169,11 +174,6 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
         (void) gameSocket.sendPacket(DisconnectPacket::create());
     }
 
-    _handshaken = false;
-    _loggedin = false;
-    _connectingStandalone = false;
-    _adminAuthorized = false;
-
     gameSocket.tcpSocket.disconnect();
     gameSocket.cleanupBox();
 
@@ -181,6 +181,11 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     if (!noclear) {
         GameServerManager::get().clearActive();
     }
+}
+
+void NetworkManager::disconnectWithMessage(const std::string_view message, bool quiet) {
+    ErrorQueues::get().error(fmt::format("You have been disconnected from the active server.\n\nReason: <cy>{}</c>", message));
+    this->disconnect(quiet);
 }
 
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
@@ -263,8 +268,9 @@ void NetworkManager::threadMainFunc() {
         try {
             auto result = gameSocket.sendPacket(packet);
             if (!result) {
-                ErrorQueues::get().error(fmt::format("Failed to send packet: {}", result.unwrapErr()));
-                this->disconnect(true, false);
+                log::debug("failed to send packet: {}", result.unwrapErr());
+                this->disconnectWithMessage(result.unwrapErr());
+                return;
             }
 
         } catch (const std::exception& e) {

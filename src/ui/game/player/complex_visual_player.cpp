@@ -65,7 +65,10 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
         playerIcon->setDeathEffect(icons.deathEffect);
     }
 
+    // TODO: broken on android due to gd::map
+#ifndef GEODE_IS_ANDROID
     this->tryLoadIconsAsync();
+#endif
 }
 
 void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing, bool isSpeaking) {

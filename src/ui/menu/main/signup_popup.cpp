@@ -44,9 +44,9 @@ bool GlobedSignupPopup::setup() {
             auto part2 = response.substr(colonPos + 1);
 
             // we accept -1 as the default ()
-            int levelId = util::format::parse<int>(part1).value_or(-1);
+            int accountId = util::format::parse<int>(part1).value_or(-1);
 
-            this->onChallengeCreated(levelId, part2);
+            this->onChallengeCreated(accountId, part2);
         })
         .expect([this](std::string error) {
             if (error.empty()) {
@@ -60,27 +60,24 @@ bool GlobedSignupPopup::setup() {
     return true;
 }
 
-void GlobedSignupPopup::onChallengeCreated(int levelId, const std::string_view chtoken) {
-    // what are you cooking 😟
-    // - xTymon 12.11.2023 19:03 CET
-
+void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view chtoken) {
     auto hash = util::crypto::simpleHash(chtoken);
     auto authcode = util::crypto::simpleTOTP(hash);
 
-    if (levelId == -1) {
-        // skip posting the comment, server has it disabled
+    if (accountId == -1) {
+        // skip the account verification, server has it disabled
         this->onChallengeCompleted(authcode);
     } else {
         statusMessage->setString("Uploading results..");
         storedAuthcode = authcode;
-        storedLevelId = levelId;
-        GameLevelManager::sharedState()->m_commentUploadDelegate = this;
-        GameLevelManager::sharedState()->uploadLevelComment(levelId, authcode + " ## globed verification test, if you see this you can manually delete the comment.", 0);
+        storedAccountId = accountId;
+        GameLevelManager::sharedState()->m_uploadMessageDelegate = this;
+        GameLevelManager::sharedState()->uploadUserMessage(storedAccountId, fmt::format("##c## {}", authcode), "hi this is a globed verification test, please delete this message if you see it.");
     }
 }
 
-void GlobedSignupPopup::commentUploadFinished(int) {
-    GameLevelManager::sharedState()->m_commentUploadDelegate = nullptr;
+void GlobedSignupPopup::uploadMessageFinished(int) {
+    GameLevelManager::sharedState()->m_uploadMessageDelegate = nullptr;
 
     this->runAction(
         CCSequence::create(
@@ -91,16 +88,14 @@ void GlobedSignupPopup::commentUploadFinished(int) {
     );
 }
 
+void GlobedSignupPopup::uploadMessageFailed(int e) {
+    GameLevelManager::sharedState()->m_uploadMessageDelegate = nullptr;
+    this->onFailure(fmt::format("Message upload failed: <cy>error {}</c>", (int)e));
+}
+
 void GlobedSignupPopup::onDelayedChallengeCompleted() {
     this->onChallengeCompleted(storedAuthcode);
 }
-
-void GlobedSignupPopup::commentUploadFailed(int, CommentError e) {
-    GameLevelManager::sharedState()->m_commentUploadDelegate = nullptr;
-    this->onFailure(fmt::format("Comment upload failed: <cy>error {}</c>", (int)e));
-}
-
-void GlobedSignupPopup::commentDeleteFailed(int, int) {}
 
 void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
     auto& csm = CentralServerManager::get();
@@ -126,14 +121,24 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
         .then([this, &am](std::string& response) {
             // we are good! the authkey has been created and can be saved now.
             auto colonPos = response.find(':');
-            auto commentId = response.substr(0, colonPos);
+            auto messageId = response.substr(0, colonPos);
+
+            if (colonPos == std::string::npos) {
+                log::warn("invalid challenge finish response: {}", response);
+                this->onFailure("Completing challenge failed: <cy>invalid response from the server (no ':' found)</c>");
+                return;
+            }
+
+            auto encodedAuthkey = response.substr(colonPos + 1);
 
             log::info("Authkey created successfully, saving.");
             util::data::bytevector authkey;
             try {
-                authkey = util::crypto::base64Decode(response.substr(colonPos + 1));
+                authkey = util::crypto::base64Decode(encodedAuthkey);
             } catch (const std::exception& e) {
-                this->onFailure("Completing challenge failed: server sent an invalid response.");
+                log::warn("failed to decode authkey: {}", e.what());
+                log::warn("authkey: {}", encodedAuthkey);
+                this->onFailure("Completing challenge failed: <cy>invalid response from the server (couldn't decode base64)</c>");
                 return;
             }
 
@@ -141,8 +146,12 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
             this->onSuccess();
 
             // delete the comment to cleanup
-            if (commentId != "none") {
-                GameLevelManager::sharedState()->deleteComment(std::stoi(commentId), CommentType::Level, storedLevelId);
+            if (messageId != "none") {
+                auto message = GJUserMessage::create();
+                message->m_messageID = util::format::parse<int>(messageId).value_or(-1);
+                if (message->m_messageID == -1) return;
+
+                GameLevelManager::sharedState()->deleteUserMessages(message, nullptr, true);
             }
         })
         .expect([this](std::string error) {

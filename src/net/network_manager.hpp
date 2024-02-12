@@ -49,6 +49,9 @@ public:
     // Disconnect from a server. Does nothing if not connected
     void disconnect(bool quiet = false, bool noclear = false);
 
+    // Call `disconnect` and show an error popup with a message
+    void disconnectWithMessage(const std::string_view message, bool quiet = true);
+
     // Sends a packet to the currently established connection. Throws if disconnected.
     void send(std::shared_ptr<Packet> packet);
 

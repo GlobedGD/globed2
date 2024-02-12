@@ -9,16 +9,17 @@ use std::{
     time::{Duration, Instant},
 };
 
-use async_rate_limit::sliding_window::SlidingWindowRateLimiter;
 use globed_shared::{
-    anyhow::{self, anyhow},
     hmac::{Hmac, Mac},
     sha2::Sha256,
     TokenIssuer,
 };
-use tokio::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use crate::config::{ServerConfig, UserlistMode};
+use crate::{
+    config::{ServerConfig, UserlistMode},
+    verifier::AccountVerifier,
+};
 use blake2::{Blake2b, Digest};
 use digest::consts::U32;
 use totp_rs::{Algorithm, Secret, TOTP};
@@ -36,9 +37,7 @@ pub struct ServerStateData {
     pub hmac: Hmac<Sha256>,
     pub token_issuer: TokenIssuer,
     pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
-    pub http_client: reqwest::Client,
     pub login_attempts: HashMap<IpAddr, Instant>,
-    pub ratelimiter: Arc<Mutex<SlidingWindowRateLimiter>>,
 }
 
 impl ServerStateData {
@@ -46,10 +45,6 @@ impl ServerStateData {
         let skey_bytes = secret_key.as_bytes();
         let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
 
-        let http_client = reqwest::ClientBuilder::new().user_agent("").build().unwrap();
-
-        let api_rl = config.gd_api_ratelimit;
-        let api_rl_period = config.gd_api_period;
         let token_expiry = Duration::from_secs(config.token_expiry);
 
         Self {
@@ -58,12 +53,7 @@ impl ServerStateData {
             hmac,
             token_issuer: TokenIssuer::new(token_secret_key, token_expiry),
             active_challenges: HashMap::new(),
-            http_client,
             login_attempts: HashMap::new(),
-            ratelimiter: Arc::new(Mutex::new(SlidingWindowRateLimiter::new(
-                Duration::from_secs(api_rl_period),
-                api_rl,
-            ))),
         }
     }
 
@@ -93,22 +83,6 @@ impl ServerStateData {
         self.verify_totp(orig_value.as_bytes(), answer)
     }
 
-    pub fn is_ratelimited(&self, addr: &IpAddr) -> bool {
-        self.login_attempts.get(addr).map_or(false, |last| {
-            let passed = Instant::now().duration_since(*last).as_secs();
-            passed < self.config.challenge_ratelimit
-        })
-    }
-
-    pub fn record_login_attempt(&mut self, addr: &IpAddr) -> anyhow::Result<()> {
-        if self.is_ratelimited(addr) {
-            return Err(anyhow!("you are doing this too fast, please try again later"));
-        }
-
-        self.login_attempts.insert(*addr, Instant::now());
-        Ok(())
-    }
-
     pub fn should_block(&self, account_id: i32) -> bool {
         match self.config.userlist_mode {
             UserlistMode::None => false,
@@ -121,32 +95,63 @@ impl ServerStateData {
 // both roa::Context and RwLock have the methods read() and write()
 // so doing Context<RwLock<..>> will break some things, hence we make a wrapper
 
+pub struct InnerServerState {
+    pub data: RwLock<ServerStateData>,
+    pub maintenance: AtomicBool,
+    pub verifier: AccountVerifier,
+}
+
+impl InnerServerState {
+    pub fn new(ssd: ServerStateData, maintenance: bool) -> Self {
+        let gd_api_account = ssd.config.gd_api_account;
+        let gd_api_gjp = ssd.config.gd_api_gjp.clone();
+        let use_gd_api = ssd.config.use_gd_api;
+
+        Self {
+            data: RwLock::new(ssd),
+            maintenance: AtomicBool::new(maintenance),
+            verifier: AccountVerifier::new(gd_api_account, gd_api_gjp, use_gd_api),
+        }
+    }
+
+    pub async fn state_read(&self) -> RwLockReadGuard<'_, ServerStateData> {
+        self.data.read().await
+    }
+
+    pub async fn state_write(&self) -> RwLockWriteGuard<'_, ServerStateData> {
+        self.data.write().await
+    }
+}
+
 #[derive(Clone)]
 pub struct ServerState {
-    pub inner: Arc<(RwLock<ServerStateData>, AtomicBool)>,
+    pub inner: Arc<InnerServerState>,
 }
 
 impl ServerState {
     pub fn new(ssd: ServerStateData) -> Self {
         let maintenance = ssd.config.maintenance;
-        Self {
-            inner: Arc::new((RwLock::new(ssd), AtomicBool::new(maintenance))),
-        }
+        let inner = InnerServerState::new(ssd, maintenance);
+        Self { inner: Arc::new(inner) }
     }
 
     pub async fn state_read(&self) -> RwLockReadGuard<'_, ServerStateData> {
-        self.inner.0.read().await
+        self.inner.state_read().await
     }
 
     pub async fn state_write(&self) -> RwLockWriteGuard<'_, ServerStateData> {
-        self.inner.0.write().await
+        self.inner.state_write().await
     }
 
     pub fn maintenance(&self) -> bool {
-        self.inner.1.load(Ordering::Relaxed)
+        self.inner.maintenance.load(Ordering::Relaxed)
     }
 
     pub fn set_maintenance(&self, state: bool) {
-        self.inner.1.store(state, Ordering::Relaxed);
+        self.inner.maintenance.store(state, Ordering::Relaxed);
+    }
+
+    pub fn get_verifier(&self) -> &AccountVerifier {
+        &self.inner.verifier
     }
 }

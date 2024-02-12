@@ -47,7 +47,7 @@ namespace util::net {
             return fmt::format("[Unknown windows error {}]: formatting failed because of: {}", code, le);
         }
 
-        std::string formatted = fmt::format("[Win error {}]: {}", code, s);
+        std::string formatted = fmt::format("[Win error {}]: {}", code, util::format::trim(s));
         LocalFree(s);
         return formatted;
 #else

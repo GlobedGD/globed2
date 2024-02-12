@@ -1,3 +1,4 @@
+#![feature(duration_constructors)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
@@ -26,6 +27,7 @@ use state::{ServerState, ServerStateData};
 pub mod config;
 pub mod ip_blocker;
 pub mod state;
+pub mod verifier;
 pub mod web;
 
 fn abort_misconfig() -> ! {
@@ -70,8 +72,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ServerConfig::default()
     };
 
-    config.save(&config_path)?;
-
     // stupid rust
 
     let mnt_addr = config.web_address.clone();
@@ -99,12 +99,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     info!("Successfully reloaded the configuration");
                     // set the maintenance flag appropriately
                     watcher_state.set_maintenance(state.config.maintenance);
+                    watcher_state.inner.verifier.set_enabled(state.config.use_gd_api);
                 }
                 Err(err) => {
                     warn!("Failed to reload configuration: {}", err.to_string());
                 }
             }
         }
+    });
+
+    // account verification stuff
+    let av_state = state.inner.clone();
+    let av_state2 = state.inner.clone();
+    tokio::spawn(async move {
+        av_state.verifier.run_refresher().await;
+    });
+
+    tokio::spawn(async move {
+        av_state2.verifier.run_deleter().await;
     });
 
     // roa your favorite web app

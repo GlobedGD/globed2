@@ -40,7 +40,7 @@ namespace util::format {
     }
 
     std::string formatErrorMessage(std::string message) {
-        if (message.find("<!DOCTYPE html>") != std::string::npos) {
+        if (message.find("<html>") != std::string::npos) {
             message = "<HTML response, not showing>";
         } else if (message.size() > 128) {
             message = message.substr(0, 128) + "...";
@@ -63,5 +63,31 @@ namespace util::format {
         } else {
             return fmt::format("{}.{:03}", seconds, millis);
         }
+    }
+
+    std::string rtrim(const std::string_view str, const std::string_view filter) {
+        size_t start = 0;
+        size_t end = str.length();
+
+        while (end > start && filter.find(str[end - 1]) != std::string::npos) {
+            --end;
+        }
+
+        return std::string(str.substr(0, end));
+    }
+
+    std::string ltrim(const std::string_view str, const std::string_view filter) {
+        size_t start = 0;
+        size_t end = str.length();
+
+        while (start < end && filter.find(str[start]) != std::string::npos) {
+            ++start;
+        }
+
+        return std::string(str.substr(start));
+    }
+
+    std::string trim(const std::string_view str, const std::string_view filter) {
+        return ltrim(rtrim(str, filter), filter);
     }
 }

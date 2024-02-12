@@ -14,7 +14,7 @@ using namespace geode::prelude;
 
 // [from; to]
 #define LOAD_DEATH_EFFECT_RANGE(from, to) { \
-    for (int i = from; i < to; i++) { \
+    for (int i = from; i <= to; i++) { \
         util::ui::tryLoadDeathEffect(i); \
     } \
 }

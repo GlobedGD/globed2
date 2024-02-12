@@ -1,10 +1,8 @@
 use std::{
-    collections::HashMap,
     net::IpAddr,
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use async_rate_limit::limiters::VariableCostRateLimiter;
 use globed_shared::{
     anyhow::{self, anyhow},
     base64::{engine::general_purpose as b64e, Engine as _},
@@ -131,14 +129,6 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
 
     get_user_ip!(state, context, user_ip);
 
-    if state.is_ratelimited(&user_ip) {
-        trace!("rejecting start, user is ratelimited: {user_ip}");
-        throw!(
-            StatusCode::TOO_MANY_REQUESTS,
-            "you are doing this too fast, please try again later"
-        );
-    }
-
     let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
     let mut should_return_existing = false;
@@ -160,18 +150,21 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
         }
     }
 
-    let level_id = state.config.challenge_level;
-
     if should_return_existing {
         let rand_string = state.active_challenges.get(&user_ip).unwrap().value.clone();
         let verify = state.config.use_gd_api;
+        let gd_api_account = state.config.gd_api_account;
         drop(state);
 
         trace!("sending existing challenge to {user_ip} with {rand_string}");
 
         context.write(format!(
             "{}:{}",
-            if verify { level_id.to_string() } else { "none".to_string() },
+            if verify {
+                gd_api_account.to_string()
+            } else {
+                "none".to_string()
+            },
             rand_string
         ));
         return Ok(());
@@ -191,21 +184,22 @@ pub async fn challenge_start(context: &mut Context<ServerState>) -> roa::Result 
 
     state.active_challenges.insert(user_ip, challenge);
     let verify = state.config.use_gd_api;
+    let gd_api_account = state.config.gd_api_account;
 
     drop(state);
-
-    trace!("sending challenge to {user_ip} with {rand_string}");
     context.write(format!(
         "{}:{}",
-        if verify { level_id.to_string() } else { "none".to_string() },
+        if verify {
+            gd_api_account.to_string()
+        } else {
+            "none".to_string()
+        },
         rand_string
     ));
 
     Ok(())
 }
 
-// rollercoaster of a function i'd say
-#[allow(clippy::too_many_lines)]
 pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result {
     check_maintenance!(context);
     check_user_agent!(context, _ua);
@@ -237,13 +231,13 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         if time_difference > 45 {
             throw!(
                 StatusCode::BAD_REQUEST,
-                format!("your system clock seems to be out of sync, please adjust it in your system settings")
+                format!("your system clock seems to be out of sync, please adjust it in your system settings (time difference: {time_difference} seconds)")
             );
         }
     }
 
-    log::trace!(
-        "challenge finish from {} ({}) with answer yay: {}",
+    trace!(
+        "challenge finish from {} ({}) with answer: {}",
         account_name,
         account_id,
         ch_answer
@@ -267,178 +261,48 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         );
     }
 
-    trace!("verifying challenge: {}", challenge.value);
-
     let result = state.verify_challenge(&challenge.value, ch_answer);
 
     if !result {
-        throw!(
-            StatusCode::UNAUTHORIZED,
-            "invalid answer to the challenge in the query parameter"
-        );
+        throw!(StatusCode::UNAUTHORIZED, "failed to solve the authentication challenge");
     }
 
-    let challenge_level = state.config.challenge_level;
-    let req_url = state.config.gd_api.clone();
+    let use_gd_api = state.config.use_gd_api;
 
-    let http_client = state.http_client.clone();
-
-    if !state.config.use_gd_api {
-        // return early
-        info!(
-            "(bypassed) successfully generated an authkey for {} ({})",
-            account_name, account_id
-        );
-
-        // reborrow as writable
-        drop(state);
-        let mut state = context.state_write().await;
-
-        state.active_challenges.remove(&user_ip);
-        let authkey = state.generate_authkey(account_id, account_name);
-        drop(state);
-
-        context.write(format!("none:{}", b64e::STANDARD.encode(authkey)));
-        return Ok(());
-    }
-
-    // reborrow as writable
+    // drop the state because `verify_account` can intentionally block for a few seconds
     drop(state);
+
+    let message_id = if use_gd_api {
+        let result = context
+            .inner
+            .verifier
+            .verify_account(account_id, account_name, ch_answer.parse::<u32>()?)
+            .await;
+
+        if let Some(id) = result {
+            Some(id)
+        } else {
+            throw!(
+                StatusCode::UNAUTHORIZED,
+                "failed to authenticate the user, challenge solution was not found"
+            );
+        }
+    } else {
+        None
+    };
+
+    info!("successfully generated an authkey for {} ({})", account_name, account_id);
+
     let mut state = context.state_write().await;
-
-    // check if the user is doing it too fast
-
-    // no ratelimiting in debug mode
-    if !cfg!(debug_assertions) {
-        match state.record_login_attempt(&user_ip) {
-            Ok(()) => {}
-            Err(err) => {
-                warn!("peer is sending too many verification requests: {}", user_ip);
-                throw!(StatusCode::TOO_MANY_REQUESTS, err.to_string())
-            }
-        }
-    }
-
-    let ratelimiter = state.ratelimiter.clone();
-
+    state.active_challenges.remove(&user_ip);
+    let authkey = state.generate_authkey(account_id, account_name);
     drop(state);
 
-    // boomlings ratelimit
-    ratelimiter.lock().await.wait_with_cost(1).await;
+    context.write(format!(
+        "{}:{}",
+        message_id.map_or_else(|| "none".to_owned(), |x| x.to_string()),
+        b64e::STANDARD.encode(authkey)
+    ));
 
-    // now we have to request rob's servers and check if the challenge was solved
-
-    let result = http_client
-        .post(req_url)
-        .form(&[
-            ("levelID", challenge_level.to_string()),
-            ("page", "0".to_string()),
-            ("secret", "Wmfd2893gb7".to_string()),
-            ("gameVersion", "22".to_string()),
-            ("binaryVersion", "38".to_string()),
-            ("gdw", "0".to_string()),
-            ("mode", "0".to_string()),
-            ("total", "0".to_string()),
-        ])
-        .send()
-        .await;
-
-    let mut response = match result {
-        Err(err) => {
-            warn!("Failed to make a request to boomlings: {}", err.to_string());
-            throw!(StatusCode::INTERNAL_SERVER_ERROR, err.to_string());
-        }
-        Ok(x) => x,
-    }
-    .text()
-    .await?;
-
-    if response == "-1" {
-        throw!(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "RobTop's server returned -1, if GD servers are not currently down please report this issue!"
-        );
-    }
-
-    let octothorpe = response.find('#');
-
-    if let Some(octothorpe) = octothorpe {
-        response = response.split_at(octothorpe).0.to_string();
-    }
-
-    let comment_strings = response.split('|');
-    for string in comment_strings {
-        let colon = string.find(':');
-        if colon.is_none() {
-            continue;
-        }
-
-        let (comment_str, author_str) = string.split_at(colon.unwrap());
-        // parse them
-        let comment = parse_robtop_string(comment_str);
-        let author = parse_robtop_string(&author_str[1..]); // we ignore the colon at the start
-
-        let comment_text = comment.get("2");
-        let author_name = author.get("1");
-        let author_id = author.get("16");
-        let comment_id = comment.get("6");
-
-        if comment_text.is_none() || author_name.is_none() || author_id.is_none() || comment_id.is_none() {
-            continue;
-        }
-
-        let author_id = author_id.unwrap().parse::<i32>()?;
-        let author_name = author_name.unwrap();
-        let comment_text = comment_text.unwrap();
-        let comment_id = comment_id.unwrap();
-
-        if author_id != account_id {
-            continue;
-        }
-
-        if author_name.to_lowercase() != account_name.to_lowercase() {
-            continue;
-        }
-
-        let decoded = b64e::URL_SAFE.decode(comment_text)?;
-        let comment_text = String::from_utf8_lossy(&decoded);
-
-        let mut state = context.state_write().await;
-
-        let result = state.verify_challenge(&challenge.value, &comment_text[..6]);
-
-        // on success, delete the challenge and generate the authkey
-        if result {
-            info!("successfully generated an authkey for {} ({})", account_name, account_id);
-
-            state.active_challenges.remove(&user_ip);
-            let authkey = state.generate_authkey(author_id, author_name);
-            drop(state);
-
-            context.write(format!("{}:{}", comment_id, b64e::STANDARD.encode(authkey)));
-            return Ok(());
-        }
-    }
-
-    throw!(
-        StatusCode::UNAUTHORIZED,
-        "failed to find the comment with the correct challenge solution"
-    );
-}
-
-fn parse_robtop_string(data: &str) -> HashMap<&str, &str> {
-    let separator = '~';
-
-    let pairs: Vec<&str> = data.split(separator).collect();
-    let mut map = HashMap::new();
-
-    for i in (0..pairs.len()).step_by(2) {
-        if let Some(key) = pairs.get(i) {
-            if let Some(value) = pairs.get(i + 1) {
-                map.insert(*key, *value);
-            }
-        }
-    }
-
-    map
+    Ok(())
 }

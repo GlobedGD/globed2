@@ -11,7 +11,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 
 // import reexports
-pub use nohash_hasher::IntMap;
+pub use nohash_hasher::{IntMap, IntSet};
 pub use parking_lot::{Mutex as SyncMutex, MutexGuard as SyncMutexGuard};
 // module reexports
 pub use anyhow;

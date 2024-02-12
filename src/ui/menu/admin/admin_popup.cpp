@@ -62,7 +62,7 @@ bool AdminPopup::setup() {
             .parent(menu)
             .collect();
 
-        Build<InputNode>::create(sendAccId->getScaledContentSize().width, "player", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 10)
+        Build<InputNode>::create(sendAccId->getScaledContentSize().width, "player", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 16)
             .pos(left.width + 40.f, bottom.height + 70.f)
             .parent(m_mainLayer)
             .store(playerInput);

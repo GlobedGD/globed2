@@ -6,6 +6,7 @@
 #include <charconv>
 
 #include <util/time.hpp>
+#include <util/misc.hpp>
 
 namespace util::format {
     // example: 2.123s, 69.123ms
@@ -48,4 +49,8 @@ namespace util::format {
 
         return output;
     }
+
+    std::string rtrim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);
+    std::string ltrim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);
+    std::string trim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);
 }
