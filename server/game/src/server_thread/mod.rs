@@ -74,7 +74,7 @@ pub struct GameServerThread {
     pub cleanup_notify: Notify,
     pub cleanup_mutex: Mutex<()>,
 
-    message_queue: Mutex<VecDeque<ServerThreadMessage>>,
+    message_queue: SyncMutex<VecDeque<ServerThreadMessage>>,
     rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
 }
 
@@ -99,7 +99,7 @@ impl GameServerThread {
             last_voice_packet: AtomicU64::new(0),
             cleanup_notify: Notify::new(),
             cleanup_mutex: Mutex::new(()),
-            message_queue: Mutex::new(VecDeque::new()),
+            message_queue: SyncMutex::new(VecDeque::new()),
             rate_limiter: LockfreeMutCell::new(rate_limiter),
         }
     }
@@ -110,15 +110,19 @@ impl GameServerThread {
                 break;
             }
 
-            // check for tasks
-            let mut mq = self.message_queue.lock().await;
-            while !mq.is_empty() {
-                let message = mq.pop_front();
+            loop {
+                let message = {
+                    let mut mtx = self.message_queue.lock();
+                    mtx.pop_front()
+                };
+
                 if let Some(message) = message {
                     match self.handle_message(message).await {
                         Ok(()) => {}
                         Err(e) => self.print_error(&e),
                     }
+                } else {
+                    break;
                 }
             }
 
@@ -152,8 +156,8 @@ impl GameServerThread {
         self.awaiting_termination.store(true, Ordering::Relaxed);
     }
 
-    pub async fn push_new_message(&self, message: ServerThreadMessage) {
-        self.message_queue.lock().await.push_back(message);
+    pub fn push_new_message(&self, message: ServerThreadMessage) {
+        self.message_queue.lock().push_back(message);
     }
 
     /* private utilities */
@@ -423,6 +427,7 @@ impl GameServerThread {
             /* admin related */
             AdminAuthPacket::PACKET_ID => self.handle_admin_auth(&mut data).await,
             AdminSendNoticePacket::PACKET_ID => self.handle_admin_send_notice(&mut data).await,
+            AdminDisconnectPacket::PACKET_ID => self.handle_admin_disconnect(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }

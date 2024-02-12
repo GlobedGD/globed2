@@ -11,12 +11,10 @@ void AudioSampleQueue::writeData(const float* pcm, size_t length) {
 }
 
 size_t AudioSampleQueue::copyTo(float* dest, size_t samples) {
-    size_t total;
-
     if (buf.size() < samples) {
-        total = buf.size();
+        size_t total = buf.size();
 
-        std::copy(buf.data(), buf.data() + buf.size(), dest);
+        std::copy(buf.data(), buf.data() + total, dest);
         buf.clear();
         return total;
     }

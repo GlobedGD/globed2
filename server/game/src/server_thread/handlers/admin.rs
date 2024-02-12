@@ -1,6 +1,9 @@
 use globed_shared::info;
 
-use crate::{data::*, server_thread::GameServerThread};
+use crate::{
+    data::*,
+    server_thread::{GameServerThread, ServerThreadMessage},
+};
 
 use super::*;
 
@@ -72,21 +75,7 @@ impl GameServerThread {
             }
 
             AdminSendNoticeType::Person => {
-                let thread = self
-                    .game_server
-                    .threads
-                    .lock()
-                    .values()
-                    .find(|thr| {
-                        // if it's a valid int, assume it's an account ID
-                        if let Ok(account_id) = packet.player.parse::<i32>() {
-                            thr.account_id.load(Ordering::Relaxed) == account_id
-                        } else {
-                            // else assume it's a player name
-                            thr.account_data.lock().name.eq_ignore_ascii_case(&packet.player)
-                        }
-                    })
-                    .cloned();
+                let thread = self.game_server.get_user_by_name_or_id(&packet.player);
 
                 info!(
                     "[{} ({}) @ {}] is sending the message to {}: \"{}\"",
@@ -156,6 +145,20 @@ impl GameServerThread {
                     thread.send_packet_dynamic(&notice_packet).await?;
                 }
             }
+        }
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_admin_disconnect, AdminDisconnectPacket, packet, {
+        let _ = gs_needauth!(self);
+
+        if !self.is_admin.load(Ordering::Relaxed) {
+            return Ok(());
+        }
+
+        if let Some(thread) = self.game_server.get_user_by_name_or_id(&packet.player) {
+            thread.push_new_message(ServerThreadMessage::TerminationNotice(packet.message));
         }
 
         Ok(())

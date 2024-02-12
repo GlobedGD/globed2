@@ -33,17 +33,47 @@ bool AdminPopup::setup() {
             .parent(m_mainLayer);
     } else {
         // actual admin ui
-        Build<InputNode>::create(m_size.width * 0.75f, "message", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 160)
-            .pos(center.width, center.height + 30.f)
+
+        auto dcMenu = Build<CCMenu>::create()
+            .layout(RowLayout::create()
+                        ->setGap(3.f))
+            .anchorPoint(0.5f, 0.f)
+            .pos(center.width, center.height)
             .parent(m_mainLayer)
-            .id("admin-message-input"_spr)
-            .store(messageInput);
+            .id("admin-dc-menu"_spr)
+            .collect();
+
+        // user disconnect input box
+        Build<InputNode>::create(m_size.width * 0.25f, "user", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 16)
+            .parent(dcMenu)
+            .id("admin-dc-input"_spr)
+            .store(disconnectUserInput);
+
+        // disconnect button
+        Build<ButtonSprite>::create("Kick", "bigFont.fnt", "GJ_button_01.png", 0.5f)
+            .intoMenuItem([this](auto) {
+                auto user = this->disconnectUserInput->getString();
+                auto message = this->messageInput->getString();
+
+                auto packet = AdminDisconnectPacket::create(user, message);
+                NetworkManager::get().send(packet);
+            })
+            .parent(dcMenu);
+
+        dcMenu->updateLayout();
 
         auto menu = Build<CCMenu>::create()
             .pos(0.f, 0.f)
             .parent(m_mainLayer)
             .id("admin-buttons-menu"_spr)
             .collect();
+
+        // message input box
+        Build<InputNode>::create(m_size.width * 0.75f, "message", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 160)
+            .pos(center.width, center.height + 60.f)
+            .parent(m_mainLayer)
+            .id("admin-message-input"_spr)
+            .store(messageInput);
 
         // send to everyone
         Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
@@ -91,6 +121,8 @@ bool AdminPopup::setup() {
 }
 
 void AdminPopup::commonSend(AdminSendNoticeType type) {
+    if (messageInput->getString().empty()) return;
+
     uint32_t roomId = 0;
     int levelId = 0;
 

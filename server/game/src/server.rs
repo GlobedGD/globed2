@@ -266,11 +266,9 @@ impl GameServer {
             .cloned();
 
         if let Some(thread) = thread {
-            thread
-                .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
-                    "Someone logged into the same account from a different place.",
-                )))
-                .await;
+            thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                "Someone logged into the same account from a different place.",
+            )));
 
             let _mtx = thread.cleanup_mutex.lock().await;
             thread.cleanup_notify.notified().await;
@@ -279,6 +277,22 @@ impl GameServer {
         Ok(())
     }
 
+    /// If the passed string is numeric, tries to find a user by account ID, else by their account name.
+    pub fn get_user_by_name_or_id(&'static self, name: &str) -> Option<Arc<GameServerThread>> {
+        self.threads
+            .lock()
+            .values()
+            .find(|thr| {
+                // if it's a valid int, assume it's an account ID
+                if let Ok(account_id) = name.parse::<i32>() {
+                    thr.account_id.load(Ordering::Relaxed) == account_id
+                } else {
+                    // else assume it's a player name
+                    thr.account_data.lock().name.eq_ignore_ascii_case(name)
+                }
+            })
+            .cloned()
+    }
     /* private handling stuff */
 
     /// broadcast a message to all people on the level
@@ -308,7 +322,7 @@ impl GameServer {
         });
 
         for thread in threads {
-            thread.push_new_message(msg.clone()).await;
+            thread.push_new_message(msg.clone());
         }
 
         Ok(())
@@ -424,11 +438,9 @@ impl GameServer {
         if is_now_under_maintenance {
             let threads: Vec<_> = self.threads.lock().values().cloned().collect();
             for thread in threads {
-                thread
-                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
-                        "The server is now under maintenance, please try connecting again later",
-                    )))
-                    .await;
+                thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                    "The server is now under maintenance, please try connecting again later",
+                )));
             }
         }
 

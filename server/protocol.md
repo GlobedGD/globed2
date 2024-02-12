@@ -44,6 +44,7 @@ Admin related
 
 * 19000+ - AdminAuthPacket - admin auth
 * 19001 - AdminSendNoticePacket - send notice to everyone or a specific connected person
+* 19002 - AdminDisconnectPacket - disconnect a user with a specific message
 
 ### Server
 

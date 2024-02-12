@@ -45,3 +45,21 @@ class AdminSendNoticePacket : public Packet {
     std::string player;
     std::string message;
 };
+
+class AdminDisconnectPacket : public Packet {
+    GLOBED_PACKET(19002, true)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeString(player);
+        buf.writeString(message);
+    }
+
+    AdminDisconnectPacket(const std::string_view player, const std::string_view message)
+        : player(player), message(message) {}
+
+    static std::shared_ptr<Packet> create(const std::string_view player, const std::string_view message) {
+        return std::make_shared<AdminDisconnectPacket>(player, message);
+    }
+
+    std::string player, message;
+};

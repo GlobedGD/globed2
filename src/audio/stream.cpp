@@ -28,7 +28,7 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
         // write data..
 
         size_t neededSamples = len / sizeof(float);
-        size_t copied = stream->queue.copyTo((float*)data, neededSamples);
+        size_t copied = stream->queue.copyTo(reinterpret_cast<float*>(data), neededSamples);
 
         if (copied != neededSamples) {
             stream->starving = true;
@@ -53,6 +53,11 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
 }
 
 AudioStream::~AudioStream() {
+    // honestly idk if this even does anything but i'm hoping it fixes a weird crash
+    if (sound) {
+        sound->setUserData(nullptr);
+    }
+
     if (channel) {
         channel->stop();
     }

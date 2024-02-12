@@ -24,3 +24,10 @@ pub struct AdminSendNoticePacket {
     pub player: FastString<MAX_NAME_SIZE>,
     pub message: FastString<MAX_NOTICE_SIZE>,
 }
+
+#[derive(Packet, Decodable)]
+#[packet(id = 19002)]
+pub struct AdminDisconnectPacket {
+    pub player: FastString<MAX_NAME_SIZE>,
+    pub message: FastString<MAX_NOTICE_SIZE>,
+}
