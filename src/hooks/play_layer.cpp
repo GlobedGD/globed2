@@ -86,9 +86,14 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         vm.setActiveRecordingDevice(settings.communication.audioDevice);
     } catch (const std::exception& e) {
         // try default device, if we have no mic then just do nothing
+        settings.save();
         try {
             vm.setActiveRecordingDevice(0);
-        } catch (const std::exception& _e) {}
+        } catch (const std::exception& _e) {
+            settings.communication.audioDevice = -1;
+        }
+
+        settings.communication.audioDevice = 0;
     }
 
     // set the record buffer size
@@ -247,6 +252,10 @@ void GlobedPlayLayer::setupCustomKeybinds() {
         auto& vm = GlobedAudioManager::get();
 
         if (event->isDown()) {
+            if (vm.isRecording()) {
+                return ListenerResult::Stop;
+            }
+
             vm.validateDevices();
 
             if (!this->m_fields->deafened && !vm.isRecording()) {

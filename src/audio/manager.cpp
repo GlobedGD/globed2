@@ -289,10 +289,10 @@ bool GlobedAudioManager::isRecording() {
 
     bool recording;
 
-    FMOD_ERR_CHECK(
-        this->getSystem()->isRecording(this->recordDevice.id, &recording),
-        "System::isRecording"
-    )
+    if (FMOD_OK != this->getSystem()->isRecording(this->recordDevice.id, &recording)) {
+        this->recordDevice.id = -1;
+        return false;
+    }
 
     return recording;
 }
