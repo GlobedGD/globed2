@@ -311,9 +311,9 @@ impl GameServerThread {
 
         // if we are ratelimited, just discard the packet.
         // safety: only we can use this ratelimiter.
-        if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
-            return Err(PacketHandlingError::Ratelimited);
-        }
+        // if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
+        //     return Err(PacketHandlingError::Ratelimited);
+        // }
 
         self.handle_packet(data).await?;
 
