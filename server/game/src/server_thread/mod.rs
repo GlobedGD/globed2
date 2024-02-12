@@ -469,10 +469,11 @@ impl GameServerThread {
 
         if P::ENCRYPTED {
             // gs_inline_encode! doesn't work here because the borrow checker is silly :(
-            let total_size = size_of_types!(u32) + PacketHeader::SIZE + NONCE_SIZE + MAC_SIZE + packet_size;
-            let nonce_start = size_of_types!(u32) + PacketHeader::SIZE;
+            let header_start = size_of_types!(u32);
+            let nonce_start = header_start + PacketHeader::SIZE;
             let mac_start = nonce_start + NONCE_SIZE;
             let raw_data_start = mac_start + MAC_SIZE;
+            let total_size = raw_data_start + packet_size;
 
             gs_alloca_check_size!(total_size);
 
@@ -507,7 +508,7 @@ impl GameServerThread {
                 data[mac_start..raw_data_start].copy_from_slice(&tag);
 
                 // write total packet length
-                let packet_len = (raw_data_end - raw_data_start) as u32;
+                let packet_len = (raw_data_end - header_start) as u32;
                 data[..size_of_types!(u32)].copy_from_slice(&packet_len.to_be_bytes());
 
                 // we try a non-blocking send if we can, otherwise fallback to a Vec<u8> and an async send
