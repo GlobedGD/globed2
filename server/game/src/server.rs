@@ -142,11 +142,7 @@ impl GameServer {
             SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
         };
 
-        debug!(
-            "accepting tcp connection from {peer}, thread count: {}, unclaimed: {}",
-            self.threads.lock().len(),
-            self.unclaimed_threads.lock().len()
-        );
+        debug!("accepting tcp connection from {peer}");
 
         let thread = Arc::new(GameServerThread::new(socket, peer, self));
         self.unclaimed_threads.lock().push_back(thread.clone());
