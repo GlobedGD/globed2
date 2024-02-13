@@ -63,7 +63,7 @@ macro_rules! gs_needauth {
     }};
 }
 
-pub const MAX_ALLOCA_SIZE: usize = 128;
+pub const MAX_ALLOCA_SIZE: usize = 65536;
 
 macro_rules! gs_alloca_check_size {
     ($size:expr) => {

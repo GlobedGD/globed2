@@ -74,7 +74,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
         .intMax = 240,
     });
     MAKE_SETTING(globed, preloadAssets, "Preload assets", "Makes the loading screen take more time but prevents some of the random lagspikes when in a level.");
-    MAKE_SETTING_TYPE(globed, fragmentationLimit, Type::PacketFragmentation, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a levle.");
+    MAKE_SETTING_TYPE(globed, fragmentationLimit, Type::PacketFragmentation, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.");
 
     MAKE_HEADER("Overlay");
     MAKE_SETTING(overlay, enabled, "Ping overlay", "Show a small overlay when in a level, displaying the current latency to the server.");
