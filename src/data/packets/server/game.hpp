@@ -3,7 +3,7 @@
 #include <data/types/gd.hpp>
 
 class PlayerProfilesPacket : public Packet {
-    GLOBED_PACKET(22000, false)
+    GLOBED_PACKET(22000, false, false)
 
     GLOBED_PACKET_DECODE {
         players = buf.readValueVector<PlayerAccountData>();
@@ -13,7 +13,7 @@ class PlayerProfilesPacket : public Packet {
 };
 
 class LevelDataPacket : public Packet {
-    GLOBED_PACKET(22001, false)
+    GLOBED_PACKET(22001, false, false)
 
     GLOBED_PACKET_DECODE {
         players = buf.readValueVector<AssociatedPlayerData>();
@@ -27,7 +27,7 @@ class LevelDataPacket : public Packet {
 #endif
 
 class VoiceBroadcastPacket : public Packet {
-    GLOBED_PACKET(22010, true)
+    GLOBED_PACKET(22010, true, false)
 
 #if GLOBED_VOICE_SUPPORT
     GLOBED_PACKET_DECODE {
@@ -43,7 +43,7 @@ class VoiceBroadcastPacket : public Packet {
 };
 
 class ChatMessageBroadcastPacket : public Packet {
-    GLOBED_PACKET(22011, true)
+    GLOBED_PACKET(22011, true, false)
 
     GLOBED_PACKET_DECODE {
         sender = buf.readI32();

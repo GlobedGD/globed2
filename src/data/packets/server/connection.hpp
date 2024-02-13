@@ -3,7 +3,7 @@
 #include <data/types/crypto.hpp>
 
 class PingResponsePacket : public Packet {
-    GLOBED_PACKET(20000, false)
+    GLOBED_PACKET(20000, false, false)
 
     GLOBED_PACKET_DECODE {
         id = buf.readU32();
@@ -14,7 +14,7 @@ class PingResponsePacket : public Packet {
 };
 
 class CryptoHandshakeResponsePacket : public Packet {
-    GLOBED_PACKET(20001, false)
+    GLOBED_PACKET(20001, false, false)
 
     GLOBED_PACKET_DECODE { data = buf.readValue<CryptoPublicKey>(); }
 
@@ -22,7 +22,7 @@ class CryptoHandshakeResponsePacket : public Packet {
 };
 
 class KeepaliveResponsePacket : public Packet {
-    GLOBED_PACKET(20002, false)
+    GLOBED_PACKET(20002, false, false)
 
     GLOBED_PACKET_DECODE { playerCount = buf.readU32(); }
 
@@ -30,7 +30,7 @@ class KeepaliveResponsePacket : public Packet {
 };
 
 class ServerDisconnectPacket : public Packet {
-    GLOBED_PACKET(20003, false)
+    GLOBED_PACKET(20003, false, false)
 
     GLOBED_PACKET_DECODE { message = buf.readString(); }
 
@@ -38,7 +38,7 @@ class ServerDisconnectPacket : public Packet {
 };
 
 class LoggedInPacket : public Packet {
-    GLOBED_PACKET(20004, false)
+    GLOBED_PACKET(20004, false, false)
 
     GLOBED_PACKET_DECODE { tps = buf.readU32(); }
 
@@ -46,7 +46,7 @@ class LoggedInPacket : public Packet {
 };
 
 class LoginFailedPacket : public Packet {
-    GLOBED_PACKET(20005, false)
+    GLOBED_PACKET(20005, false, false)
 
     GLOBED_PACKET_DECODE { message = buf.readString(); }
 
@@ -54,7 +54,7 @@ class LoginFailedPacket : public Packet {
 };
 
 class ServerNoticePacket : public Packet {
-    GLOBED_PACKET(20006, false)
+    GLOBED_PACKET(20006, false, false)
 
     GLOBED_PACKET_DECODE { message = buf.readString(); }
 
@@ -62,7 +62,7 @@ class ServerNoticePacket : public Packet {
 };
 
 class ProtocolMismatchPacket : public Packet {
-    GLOBED_PACKET(20007, false)
+    GLOBED_PACKET(20007, false, false)
 
     GLOBED_PACKET_DECODE { serverProtocol = buf.readU16(); }
 
@@ -70,7 +70,7 @@ class ProtocolMismatchPacket : public Packet {
 };
 
 class ConnectionTestResponsePacket : public Packet {
-    GLOBED_PACKET(20010, false)
+    GLOBED_PACKET(20010, false, false)
 
     GLOBED_PACKET_DECODE {
         uid = buf.readU32();
