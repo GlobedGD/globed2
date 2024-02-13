@@ -231,11 +231,14 @@ impl GameServerThread {
     /// sends a buffer to our peer via the socket
     async fn send_buffer(&self, buffer: &[u8]) -> Result<()> {
         // safety: only we can send data to our client.
-        unsafe { self.socket.get_mut() }
+        let socket = unsafe { self.socket.get_mut() };
+        socket
             .write_all(buffer)
             .await
-            .map(|_size| ())
-            .map_err(PacketHandlingError::SocketSendFailed)
+            .map_err(PacketHandlingError::SocketSendFailed)?;
+
+        socket.flush().await?;
+        Ok(())
     }
 
     fn send_buffer_immediate(&self, buffer: &[u8]) -> Result<usize> {
@@ -315,9 +318,9 @@ impl GameServerThread {
 
         // if we are ratelimited, just discard the packet.
         // safety: only we can use this ratelimiter.
-        // if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
-        //     return Err(PacketHandlingError::Ratelimited);
-        // }
+        if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
+            return Err(PacketHandlingError::Ratelimited);
+        }
 
         self.handle_packet(data).await?;
 
@@ -544,6 +547,10 @@ impl GameServerThread {
                 buf.write_packet_header::<P>();
                 encode_fn(&mut buf);
             });
+        }
+
+        unsafe {
+            self.socket.get_mut().flush().await?;
         }
 
         Ok(())
