@@ -8,8 +8,6 @@ use crate::{
 
 use globed_shared::debug;
 
-/// max voice throughput in kb/s
-pub const MAX_VOICE_THROUGHPUT: usize = 8;
 /// max voice packet size in bytes
 pub const MAX_VOICE_PACKET_SIZE: usize = 4096;
 

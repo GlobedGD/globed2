@@ -2,10 +2,10 @@ use std::{
     collections::VecDeque,
     net::SocketAddrV4,
     sync::{
-        atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
         Arc, OnceLock,
     },
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::Duration,
 };
 
 use esp::ByteReader;
@@ -73,7 +73,6 @@ pub struct GameServerThread {
     pub room_id: AtomicU32,
     pub account_data: SyncMutex<PlayerAccountData>,
 
-    last_voice_packet: AtomicU64,
     pub cleanup_notify: Notify,
     pub cleanup_mutex: Mutex<()>,
     fragmentation_limit: AtomicU16,
@@ -104,7 +103,6 @@ impl GameServerThread {
             room_id: AtomicU32::new(0),
             awaiting_termination: AtomicBool::new(false),
             account_data: SyncMutex::new(PlayerAccountData::default()),
-            last_voice_packet: AtomicU64::new(0),
             cleanup_notify: Notify::new(),
             cleanup_mutex: Mutex::new(()),
             fragmentation_limit: AtomicU16::new(0),
@@ -333,23 +331,6 @@ impl GameServerThread {
 
         if len > MAX_VOICE_PACKET_SIZE {
             // voice packet is too big
-            return false;
-        }
-
-        // check the throughput
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
-        let last_voice_packet = self.last_voice_packet.swap(now, Ordering::Relaxed);
-        let mut passed_time = now - last_voice_packet;
-
-        if passed_time == 0 {
-            passed_time = 1;
-        }
-
-        let throughput = len / passed_time as usize; // in kb per second
-
-        if throughput > MAX_VOICE_THROUGHPUT {
-            #[cfg(debug_assertions)]
-            warn!("rejecting a voice packet, throughput above the limit: {}kb/s", throughput);
             return false;
         }
 

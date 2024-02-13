@@ -3,7 +3,7 @@ mod connection;
 mod game;
 mod general;
 
-pub use game::{MAX_VOICE_PACKET_SIZE, MAX_VOICE_THROUGHPUT};
+pub use game::MAX_VOICE_PACKET_SIZE;
 use std::{mem::MaybeUninit, sync::atomic::Ordering};
 
 /// packet handler for a specific packet type
