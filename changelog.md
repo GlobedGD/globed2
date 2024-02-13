@@ -1,6 +1,6 @@
 ## v1.1.0
 
-Globed now uses a different networking protocol (TCP instead of UDP). This should fix **many (but not all!) of the connection related issues**, such as players not loading in a level, or the player list popup taking an infinite amount of time to load.
+Globed now uses a different networking protocol (hybrid TCP/UDP instead of just UDP). This should fix **many (but not all!) of the connection related issues**, such as players not loading in a level, or the player list popup taking an infinite amount of time to load.
 
 That means this is a **required** update which bumps the protocol version to 2. You will not be able to connect to an updated server without updating the mod to this version.
 
@@ -8,12 +8,13 @@ If you are a server owner, please read the [server changelog](https://github.com
 
 Additional changes include:
 
-* Improve the account verification system (and enable it on the main server)
+* Improve the **account verification** system (and enable it on the main server)
 * Fix the freezes/crashes on the loading screen and update the message text at the bottom when loading icons
 * (Maybe) fix crash when applying a texture pack with Texture Loader
 * Fix audio crash
 * Add a volume indicator in the pause menu player list
 * Fix the TPS cap setting being impossible to change
+* Fix bug with blank names when clicking on a user to open their profile
 * Make the mute button work immediately instead of with a delay
 * Add an automatic rollback system for a certain save bug related to gauntlets
 *  ^ in versions before v1.0.5 there used to be a bug that would cause your savefile to have some invalid levels. Now those will be automatically removed on startup.

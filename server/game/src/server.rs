@@ -1,4 +1,5 @@
 use std::{
+    collections::VecDeque,
     net::{SocketAddr, SocketAddrV4},
     sync::{atomic::Ordering, Arc},
     time::Duration,
@@ -20,9 +21,11 @@ use tokio::net::{TcpListener, UdpSocket};
 
 use crate::{
     data::*,
-    server_thread::{GameServerThread, ServerThreadMessage},
+    server_thread::{GameServerThread, ServerThreadMessage, INLINE_BUFFER_SIZE},
     state::ServerState,
 };
+
+const MAX_UDP_PACKET_SIZE: usize = 2048;
 
 pub struct GameServerConfiguration {
     pub http_client: reqwest::Client,
@@ -35,6 +38,7 @@ pub struct GameServer {
     pub tcp_socket: TcpListener,
     pub udp_socket: UdpSocket,
     pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
+    pub unclaimed_threads: SyncMutex<VecDeque<Arc<GameServerThread>>>,
     pub secret_key: SecretKey,
     pub public_key: PublicKey,
     pub central_conf: SyncMutex<GameServerBootData>,
@@ -61,6 +65,7 @@ impl GameServer {
             tcp_socket,
             udp_socket,
             threads: SyncMutex::new(FxHashMap::default()),
+            unclaimed_threads: SyncMutex::new(VecDeque::new()),
             secret_key,
             public_key,
             central_conf: SyncMutex::new(central_conf),
@@ -104,10 +109,10 @@ impl GameServer {
             });
         }
 
-        // spawn the udp ping handler
+        // spawn the udp packet handler
 
         tokio::spawn(async move {
-            let mut buf = [0u8; 128];
+            let mut buf = [0u8; MAX_UDP_PACKET_SIZE];
 
             loop {
                 match self.recv_and_handle_udp(&mut buf).await {
@@ -137,10 +142,14 @@ impl GameServer {
             SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
         };
 
-        debug!("accepting tcp connection from {peer}");
+        debug!(
+            "accepting tcp connection from {peer}, thread count: {}, unclaimed: {}",
+            self.threads.lock().len(),
+            self.unclaimed_threads.lock().len()
+        );
 
         let thread = Arc::new(GameServerThread::new(socket, peer, self));
-        self.threads.lock().insert(peer, thread.clone());
+        self.unclaimed_threads.lock().push_back(thread.clone());
 
         tokio::spawn(async move {
             // `thread.run()` will return in either one of those 3 conditions:
@@ -154,7 +163,7 @@ impl GameServer {
             trace!("removing client: {}", peer);
             self.post_disconnect_cleanup(&thread, peer);
 
-            // if any thread was waiting for us to terminate, tell them it's finally time.
+            // if any thread was waiting for us to terminate, tell them it's finally time.l
             thread.cleanup_notify.notify_waiters();
         });
 
@@ -163,29 +172,67 @@ impl GameServer {
 
     async fn recv_and_handle_udp(&'static self, buf: &mut [u8]) -> anyhow::Result<()> {
         let (len, peer) = self.udp_socket.recv_from(buf).await?;
-        self.try_udp_handle(&buf[..len], peer).await?;
+
+        let peer = match peer {
+            SocketAddr::V4(x) => x,
+            SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
+        };
+
+        // if it's a ping packet, we can handle it here. otherwise we send it to the appropriate thread.
+        if !self.try_udp_handle(&buf[..len], peer).await? {
+            let thread = { self.threads.lock().get(&peer).cloned() };
+            if let Some(thread) = thread {
+                thread
+                    .push_new_message(if len <= INLINE_BUFFER_SIZE {
+                        let mut inline_buf = [0u8; INLINE_BUFFER_SIZE];
+                        inline_buf[..len].clone_from_slice(&buf[..len]);
+
+                        ServerThreadMessage::SmallPacket((inline_buf, len))
+                    } else {
+                        ServerThreadMessage::Packet(buf[..len].to_vec())
+                    })
+                    .await;
+            }
+        }
 
         Ok(())
     }
 
     /* various calls for other threads */
 
-    pub fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: i32, room_id: u32) {
+    pub fn claim_thread(&'static self, udp_addr: SocketAddrV4, secret_key: u32) {
+        let mut unclaimed = self.unclaimed_threads.lock();
+        let idx = unclaimed.iter().position(|thr| {
+            thr.claim_secret_key.load(Ordering::Relaxed) == secret_key && !thr.claimed.load(Ordering::Relaxed)
+        });
+
+        if let Some(idx) = idx {
+            if let Some(thread) = unclaimed.remove(idx) {
+                *thread.udp_peer.lock() = udp_addr;
+                thread.claimed.store(true, Ordering::Relaxed);
+                self.threads.lock().insert(udp_addr, thread);
+            }
+        }
+    }
+
+    pub async fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: i32, room_id: u32) {
         self.broadcast_user_message(
             &ServerThreadMessage::BroadcastVoice(vpkt.clone()),
             vpkt.player_id,
             level_id,
             room_id,
-        );
+        )
+        .await;
     }
 
-    pub fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: i32, room_id: u32) {
+    pub async fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: i32, room_id: u32) {
         self.broadcast_user_message(
             &ServerThreadMessage::BroadcastText(tpkt.clone()),
             tpkt.player_id,
             level_id,
             room_id,
-        );
+        )
+        .await;
     }
 
     /// iterate over every player in this list and run F
@@ -254,9 +301,11 @@ impl GameServer {
             .cloned();
 
         if let Some(thread) = thread {
-            thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
-                "Someone logged into the same account from a different place.",
-            )));
+            thread
+                .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                    "Someone logged into the same account from a different place.",
+                )))
+                .await;
 
             let _mtx = thread.cleanup_mutex.lock().await;
             thread.cleanup_notify.notified().await;
@@ -284,7 +333,7 @@ impl GameServer {
     /* private handling stuff */
 
     /// broadcast a message to all people on the level
-    fn broadcast_user_message(&'static self, msg: &ServerThreadMessage, origin_id: i32, level_id: i32, room_id: u32) {
+    async fn broadcast_user_message(&'static self, msg: &ServerThreadMessage, origin_id: i32, level_id: i32, room_id: u32) {
         let threads = self.state.room_manager.with_any(room_id, |pm| {
             let players = pm.get_level(level_id);
 
@@ -304,12 +353,12 @@ impl GameServer {
         });
 
         for thread in threads {
-            thread.push_new_message(msg.clone());
+            thread.push_new_message(msg.clone()).await;
         }
     }
 
-    /// Try to handle a ping packet on a UDP connection.
-    async fn try_udp_handle(&'static self, data: &[u8], peer: SocketAddr) -> anyhow::Result<bool> {
+    /// Try to handle a packet that is not addresses to a specific thread, but to the game server.
+    async fn try_udp_handle(&'static self, data: &[u8], peer: SocketAddrV4) -> anyhow::Result<bool> {
         let mut byte_reader = ByteReader::from_bytes(data);
         let header = byte_reader.read_packet_header().map_err(|e| anyhow!("{e}"))?;
 
@@ -328,7 +377,7 @@ impl GameServer {
 
                 let send_bytes = buf.as_bytes();
 
-                match self.udp_socket.try_send_to(send_bytes, peer) {
+                match self.udp_socket.try_send_to(send_bytes, SocketAddr::V4(peer)) {
                     Ok(_) => Ok(true),
                     Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                         self.udp_socket.send_to(send_bytes, peer).await?;
@@ -338,12 +387,35 @@ impl GameServer {
                 }
             }
 
+            ClaimThreadPacket::PACKET_ID => {
+                let pkt = ClaimThreadPacket::decode_from_reader(&mut byte_reader).map_err(|e| anyhow!("{e}"))?;
+                self.claim_thread(peer, pkt.secret_key);
+                Ok(true)
+            }
+
             _ => Ok(false),
         }
     }
 
-    fn post_disconnect_cleanup(&'static self, thread: &GameServerThread, peer: SocketAddrV4) {
-        self.threads.lock().remove(&peer);
+    fn post_disconnect_cleanup(&'static self, thread: &Arc<GameServerThread>, tcp_peer: SocketAddrV4) {
+        if thread.claimed.load(Ordering::Relaxed) {
+            // self.threads.lock().retain(|_udp_peer, thread| thread.tcp_peer != tcp_peer);
+            let mut threads = self.threads.lock();
+            let udp_peer = threads
+                .iter()
+                .find(|(_udp, thread)| thread.tcp_peer == tcp_peer)
+                .map(|x| *x.0);
+
+            if let Some(udp_peer) = udp_peer {
+                threads.remove(&udp_peer);
+            }
+        } else {
+            let mut unclaimed = self.unclaimed_threads.lock();
+            let idx = unclaimed.iter().position(|thr| Arc::ptr_eq(thr, thread));
+            if let Some(idx) = idx {
+                unclaimed.remove(idx);
+            }
+        }
 
         let account_id = thread.account_id.load(Ordering::Relaxed);
 
@@ -418,9 +490,11 @@ impl GameServer {
         if is_now_under_maintenance {
             let threads: Vec<_> = self.threads.lock().values().cloned().collect();
             for thread in threads {
-                thread.push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
-                    "The server is now under maintenance, please try connecting again later",
-                )));
+                thread
+                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                        "The server is now under maintenance, please try connecting again later",
+                    )))
+                    .await;
             }
         }
 

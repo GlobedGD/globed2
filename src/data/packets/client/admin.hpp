@@ -2,7 +2,7 @@
 #include <data/packets/packet.hpp>
 
 class AdminAuthPacket : public Packet {
-    GLOBED_PACKET(19000, true)
+    GLOBED_PACKET(19000, true, true)
 
     GLOBED_PACKET_ENCODE { buf.writeString(key); }
 
@@ -22,7 +22,7 @@ enum class AdminSendNoticeType : uint8_t {
 };
 
 class AdminSendNoticePacket : public Packet {
-    GLOBED_PACKET(19001, true)
+    GLOBED_PACKET(19001, true, true)
 
     GLOBED_PACKET_ENCODE {
         buf.writeEnum(ptype);
@@ -47,7 +47,7 @@ class AdminSendNoticePacket : public Packet {
 };
 
 class AdminDisconnectPacket : public Packet {
-    GLOBED_PACKET(19002, true)
+    GLOBED_PACKET(19002, true, true)
 
     GLOBED_PACKET_ENCODE {
         buf.writeString(player);

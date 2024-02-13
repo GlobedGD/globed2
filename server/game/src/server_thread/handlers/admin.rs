@@ -19,7 +19,7 @@ impl GameServerThread {
                 "[{} ({}) @ {}] just failed to login to the admin panel with password: {}",
                 self.account_data.lock().name,
                 account_id,
-                self.peer,
+                self.tcp_peer,
                 packet.key
             );
             return Ok(());
@@ -31,7 +31,7 @@ impl GameServerThread {
             "[{} ({}) @ {}] just logged into the admin panel",
             self.account_data.lock().name,
             account_id,
-            self.peer
+            self.tcp_peer
         );
 
         self.send_packet_static(&AdminAuthSuccessPacket).await
@@ -64,7 +64,7 @@ impl GameServerThread {
                     "[{} ({}) @ {}] is sending the message to all {} people on the server: \"{}\"",
                     self.account_data.lock().name,
                     account_id,
-                    self.peer,
+                    self.tcp_peer,
                     threads.len(),
                     notice_packet.message,
                 );
@@ -81,7 +81,7 @@ impl GameServerThread {
                     "[{} ({}) @ {}] is sending the message to {}: \"{}\"",
                     self.account_data.lock().name,
                     account_id,
-                    self.peer,
+                    self.tcp_peer,
                     thread.as_ref().map_or_else(
                         || "<invalid player>".to_owned(),
                         |thr| thr.account_data.lock().name.try_to_str().to_owned()
@@ -136,7 +136,7 @@ impl GameServerThread {
                     "[{} ({}) @ {}] is sending the message to {} people: \"{}\"",
                     self.account_data.lock().name,
                     account_id,
-                    self.peer,
+                    self.tcp_peer,
                     threads.len(),
                     notice_packet.message,
                 );
@@ -158,7 +158,9 @@ impl GameServerThread {
         }
 
         if let Some(thread) = self.game_server.get_user_by_name_or_id(&packet.player) {
-            thread.push_new_message(ServerThreadMessage::TerminationNotice(packet.message));
+            thread
+                .push_new_message(ServerThreadMessage::TerminationNotice(packet.message))
+                .await;
         }
 
         Ok(())

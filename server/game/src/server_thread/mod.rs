@@ -38,7 +38,7 @@ pub use error::{PacketHandlingError, Result};
 
 use self::handlers::MAX_VOICE_PACKET_SIZE;
 
-const INLINE_BUFFER_SIZE: usize = 164;
+pub const INLINE_BUFFER_SIZE: usize = 164;
 
 #[cfg(debug_assertions)]
 const MAX_PACKET_SIZE: usize = 65536;
@@ -51,6 +51,8 @@ const MAC_SIZE: usize = 16;
 
 #[derive(Clone)]
 pub enum ServerThreadMessage {
+    SmallPacket(([u8; INLINE_BUFFER_SIZE], usize)),
+    Packet(Vec<u8>),
     BroadcastVoice(Arc<VoiceBroadcastPacket>),
     BroadcastText(ChatMessageBroadcastPacket),
     TerminationNotice(FastString<MAX_NOTICE_SIZE>),
@@ -60,10 +62,14 @@ pub struct GameServerThread {
     game_server: &'static GameServer,
     socket: LockfreeMutCell<TcpStream>,
 
+    pub claimed: AtomicBool,
+    pub claim_secret_key: AtomicU32,
+
     awaiting_termination: AtomicBool,
     crypto_box: OnceLock<ChaChaBox>,
 
-    peer: SocketAddrV4,
+    pub tcp_peer: SocketAddrV4,
+    pub udp_peer: SyncMutex<SocketAddrV4>,
     pub is_admin: AtomicBool,
     pub account_id: AtomicI32,
     pub level_id: AtomicI32,
@@ -74,7 +80,8 @@ pub struct GameServerThread {
     pub cleanup_notify: Notify,
     pub cleanup_mutex: Mutex<()>,
 
-    message_queue: SyncMutex<VecDeque<ServerThreadMessage>>,
+    message_queue: Mutex<VecDeque<ServerThreadMessage>>,
+    message_notify: Notify,
     rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
 }
 
@@ -88,7 +95,10 @@ impl GameServerThread {
         Self {
             game_server,
             socket: LockfreeMutCell::new(socket),
-            peer,
+            claimed: AtomicBool::new(false),
+            claim_secret_key: AtomicU32::new(0),
+            tcp_peer: peer,
+            udp_peer: SyncMutex::new(peer),
             crypto_box: OnceLock::new(),
             is_admin: AtomicBool::new(false),
             account_id: AtomicI32::new(0),
@@ -99,9 +109,24 @@ impl GameServerThread {
             last_voice_packet: AtomicU64::new(0),
             cleanup_notify: Notify::new(),
             cleanup_mutex: Mutex::new(()),
-            message_queue: SyncMutex::new(VecDeque::new()),
+            message_queue: Mutex::new(VecDeque::new()),
+            message_notify: Notify::new(),
             rate_limiter: LockfreeMutCell::new(rate_limiter),
         }
+    }
+
+    async fn poll_for_messages(&self) -> Option<ServerThreadMessage> {
+        self.message_notify.notified().await;
+        self.message_queue.lock().await.pop_front()
+    }
+
+    async fn poll_for_tcp_data(&self) -> Result<usize> {
+        let tcp_socket = unsafe { self.socket.get_mut() };
+
+        let mut length_buf = [0u8; 4];
+        tcp_socket.read_exact(&mut length_buf).await?;
+
+        Ok(u32::from_be_bytes(length_buf) as usize)
     }
 
     pub async fn run(&self) {
@@ -110,39 +135,27 @@ impl GameServerThread {
                 break;
             }
 
-            loop {
-                let message = {
-                    let mut mtx = self.message_queue.lock();
-                    mtx.pop_front()
-                };
-
-                if let Some(message) = message {
-                    match self.handle_message(message).await {
-                        Ok(()) => {}
-                        Err(e) => self.print_error(&e),
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            let mut length_buf = [0u8; 4];
-
-            // safety: only we can receive data from our client.
-            match tokio::time::timeout(
-                Duration::from_secs(90),
-                unsafe { self.socket.get_mut() }.read_exact(&mut length_buf),
-            )
-            .await
-            {
-                Ok(Ok(_)) => {
-                    let message_size = u32::from_be_bytes(length_buf);
-                    match self.recv_and_handle(message_size as usize).await {
-                        Ok(()) => {}
-                        Err(e) => self.print_error(&e),
+            tokio::select! {
+                message = self.poll_for_messages() => {
+                    if let Some(message) = message {
+                        match self.handle_message(message).await {
+                            Ok(()) => {}
+                            Err(e) => self.print_error(&e),
+                        }
                     }
                 }
-                Ok(Err(_)) | Err(_) => break, // failed to read | timeout
+
+                message_len = self.poll_for_tcp_data() => match message_len {
+                    Ok(message_len) => {
+                        match self.recv_and_handle(message_len).await {
+                            Ok(()) => {}
+                            Err(e) => self.print_error(&e),
+                        }
+                    }
+                    Err(err) => {
+                        self.print_error(&err);
+                    }
+                }
             };
         }
     }
@@ -156,8 +169,9 @@ impl GameServerThread {
         self.awaiting_termination.store(true, Ordering::Relaxed);
     }
 
-    pub fn push_new_message(&self, message: ServerThreadMessage) {
-        self.message_queue.lock().push_back(message);
+    pub async fn push_new_message(&self, message: ServerThreadMessage) {
+        self.message_queue.lock().await.push_back(message);
+        self.message_notify.notify_one();
     }
 
     /* private utilities */
@@ -165,7 +179,12 @@ impl GameServerThread {
     // the error printing is different in release and debug. some errors have higher severity than others.
     fn print_error(&self, error: &PacketHandlingError) {
         if cfg!(debug_assertions) {
-            warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
+            warn!(
+                "[{} @ {}] err: {}",
+                self.account_id.load(Ordering::Relaxed),
+                self.tcp_peer,
+                error
+            );
         } else {
             match error {
                 // these are for the client being silly
@@ -177,7 +196,12 @@ impl GameServerThread {
                 | PacketHandlingError::IOError(_)
                 | PacketHandlingError::DebugOnlyPacket
                 | PacketHandlingError::PacketTooLong(_) => {
-                    warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
+                    warn!(
+                        "[{} @ {}] err: {}",
+                        self.account_id.load(Ordering::Relaxed),
+                        self.tcp_peer,
+                        error
+                    );
                 }
                 // these are either our fault or a fatal error somewhere
                 PacketHandlingError::SocketSendFailed(_)
@@ -186,7 +210,12 @@ impl GameServerThread {
                 | PacketHandlingError::SystemTimeError(_)
                 | PacketHandlingError::WebRequestError(_)
                 | PacketHandlingError::DangerousAllocation(_) => {
-                    error!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.peer, error);
+                    error!(
+                        "[{} @ {}] err: {}",
+                        self.account_id.load(Ordering::Relaxed),
+                        self.tcp_peer,
+                        error
+                    );
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
                 PacketHandlingError::MalformedMessage
@@ -207,9 +236,9 @@ impl GameServerThread {
             {
                 let name = self.account_data.lock().name.clone();
                 if name.is_empty() {
-                    self.peer.to_string()
+                    self.tcp_peer.to_string()
                 } else {
-                    format!("{name} @ {}", self.peer)
+                    format!("{name} @ {}", self.tcp_peer)
                 }
             },
             if sending { "Sending" } else { "Handling" },
@@ -228,8 +257,8 @@ impl GameServerThread {
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
 
-    /// sends a buffer to our peer via the socket
-    async fn send_buffer(&self, buffer: &[u8]) -> Result<()> {
+    /// sends a buffer to our peer via the tcp socket
+    async fn send_buffer_tcp(&self, buffer: &[u8]) -> Result<()> {
         // safety: only we can send data to our client.
         let socket = unsafe { self.socket.get_mut() };
         socket
@@ -237,11 +266,11 @@ impl GameServerThread {
             .await
             .map_err(PacketHandlingError::SocketSendFailed)?;
 
-        socket.flush().await?;
         Ok(())
     }
 
-    fn send_buffer_immediate(&self, buffer: &[u8]) -> Result<usize> {
+    /// non async version of `send_buffer_tcp`
+    fn send_buffer_tcp_immediate(&self, buffer: &[u8]) -> Result<usize> {
         // safety: only we can send data to our client.
         let socket = unsafe { self.socket.get_mut() };
         match socket.try_write(buffer) {
@@ -249,6 +278,32 @@ impl GameServerThread {
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => Err(PacketHandlingError::SocketWouldBlock),
             Err(e) => Err(e.into()),
         }
+    }
+
+    /// sends a buffer to our peer via the udp socket
+    async fn send_buffer_udp(&self, buffer: &[u8]) -> Result<()> {
+        let udp_addr = { *self.udp_peer.lock() };
+
+        self.game_server
+            .udp_socket
+            .send_to(buffer, udp_addr)
+            .await
+            .map(|_size| ())
+            .map_err(PacketHandlingError::SocketSendFailed)
+    }
+
+    /// non async version of `send_buffer_udp`
+    fn send_buffer_udp_immediate(&self, buffer: &[u8]) -> Result<usize> {
+        self.game_server
+            .udp_socket
+            .try_send_to(buffer, std::net::SocketAddr::V4(*self.udp_peer.lock()))
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::WouldBlock {
+                    PacketHandlingError::SocketWouldBlock
+                } else {
+                    PacketHandlingError::SocketSendFailed(e)
+                }
+            })
     }
 
     fn is_chat_packet_allowed(&self, voice: bool, len: usize) -> bool {
@@ -316,12 +371,6 @@ impl GameServerThread {
             data = &mut heap_buf[..read_bytes];
         }
 
-        // if we are ratelimited, just discard the packet.
-        // safety: only we can use this ratelimiter.
-        if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
-            return Err(PacketHandlingError::Ratelimited);
-        }
-
         self.handle_packet(data).await?;
 
         Ok(())
@@ -330,6 +379,8 @@ impl GameServerThread {
     /// handle a message sent from the `GameServer`
     async fn handle_message(&self, message: ServerThreadMessage) -> Result<()> {
         match message {
+            ServerThreadMessage::Packet(mut packet) => self.handle_packet(&mut packet).await?,
+            ServerThreadMessage::SmallPacket((mut packet, len)) => self.handle_packet(&mut packet[..len]).await?,
             ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_static(&text_packet).await?,
             ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet_dynamic(&*voice_packet).await?,
             ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
@@ -342,6 +393,12 @@ impl GameServerThread {
     async fn handle_packet(&self, message: &mut [u8]) -> Result<()> {
         if message.len() < PacketHeader::SIZE {
             return Err(PacketHandlingError::MalformedMessage);
+        }
+
+        // if we are ratelimited, just discard the packet.
+        // safety: only we can use this ratelimiter.
+        if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
+            return Err(PacketHandlingError::Ratelimited);
         }
 
         let mut data = ByteReader::from_bytes(message);
@@ -443,7 +500,6 @@ impl GameServerThread {
 
     /// fast packet sending with best-case zero heap allocation. requires the packet to implement `StaticSize`.
     /// if the packet size isn't known at compile time, derive/implement `DynamicSize` and use `send_packet_dynamic` instead.
-    // #[inline(never)] // let llvm decide it for now
     async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
         // in theory, the size is known at compile time, so we could use a stack array here, instead of using alloca.
         // however in practice, the performance difference is negligible, so we avoid code unnecessary code repetition.
@@ -452,7 +508,6 @@ impl GameServerThread {
 
     /// version of `send_packet_static` that does not require the size to be known at compile time.
     /// you are still required to derive/implement `DynamicSize` so the size can be computed at runtime.
-    // #[inline(never)] // let llvm decide it for now
     async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
         self.send_packet_alloca(packet, packet.encoded_size()).await
     }
@@ -481,7 +536,8 @@ impl GameServerThread {
 
         if P::ENCRYPTED {
             // gs_inline_encode! doesn't work here because the borrow checker is silly :(
-            let header_start = size_of_types!(u32);
+            let header_start = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { 0usize };
+
             let nonce_start = header_start + PacketHeader::SIZE;
             let mac_start = nonce_start + NONCE_SIZE;
             let raw_data_start = mac_start + MAC_SIZE;
@@ -491,8 +547,11 @@ impl GameServerThread {
 
             let to_send: Result<Option<Vec<u8>>> = gs_with_alloca!(total_size, data, {
                 let mut buf = FastByteBuffer::new(data);
-                // reserve space for packet length
-                buf.write_u32(0);
+
+                if P::SHOULD_USE_TCP {
+                    // reserve space for packet length
+                    buf.write_u32(0);
+                }
 
                 // write the header
                 buf.write_packet_header::<P>();
@@ -519,13 +578,22 @@ impl GameServerThread {
                 // prepend the mac tag
                 data[mac_start..raw_data_start].copy_from_slice(&tag);
 
-                // write total packet length
-                let packet_len = (raw_data_end - header_start) as u32;
-                data[..size_of_types!(u32)].copy_from_slice(&packet_len.to_be_bytes());
+                if P::SHOULD_USE_TCP {
+                    // write total packet length
+                    let packet_len = (raw_data_end - header_start) as u32;
+                    data[..size_of_types!(u32)].copy_from_slice(&packet_len.to_be_bytes());
+                }
 
                 // we try a non-blocking send if we can, otherwise fallback to a Vec<u8> and an async send
                 let send_data = &data[..raw_data_end];
-                match self.send_buffer_immediate(send_data) {
+
+                let res = if P::SHOULD_USE_TCP {
+                    self.send_buffer_tcp_immediate(send_data)
+                } else {
+                    self.send_buffer_udp_immediate(send_data)
+                };
+
+                match res {
                     Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(send_data.to_vec())),
                     Err(e) => Err(e),
                     Ok(written) => {
@@ -540,17 +608,25 @@ impl GameServerThread {
             });
 
             if let Some(to_send) = to_send? {
-                self.send_buffer(&to_send).await?;
+                if P::SHOULD_USE_TCP {
+                    self.send_buffer_tcp(&to_send).await?;
+                } else {
+                    self.send_buffer_udp(&to_send).await?;
+                }
             }
         } else {
-            gs_inline_encode!(self, size_of_types!(u32) + PacketHeader::SIZE + packet_size, buf, {
+            let prefix_sz = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { 0usize };
+
+            gs_inline_encode!(self, prefix_sz + PacketHeader::SIZE + packet_size, buf, P::SHOULD_USE_TCP, {
                 buf.write_packet_header::<P>();
                 encode_fn(&mut buf);
             });
         }
 
-        unsafe {
-            self.socket.get_mut().flush().await?;
+        if P::SHOULD_USE_TCP {
+            unsafe {
+                self.socket.get_mut().flush().await?;
+            }
         }
 
         Ok(())

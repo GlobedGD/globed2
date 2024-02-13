@@ -128,31 +128,39 @@ macro_rules! gs_with_alloca_guarded {
 /// when invoked as `gs_inline_encode!(self, size, buf, {code})`, uses alloca to make space on the stack,
 /// and lets you encode a packet. afterwards automatically tries a non-blocking send and on failure falls back to a Vec<u8> and an async send.
 macro_rules! gs_inline_encode {
-    ($self:ident, $size:expr, $data:ident, $code:expr) => {
-        gs_inline_encode!($self, $size, $data, _rawdata, $code)
+    ($self:ident, $size:expr, $data:ident, $tcp:expr, $code:expr) => {
+        gs_inline_encode!($self, $size, $data, $tcp, _rawdata, $code)
     };
 
-    ($self:ident, $size:expr, $data:ident, $rawdata:ident, $code:expr) => {
-        gs_alloca_check_size!($size);
-
+    ($self:ident, $size:expr, $data:ident, $tcp:expr, $rawdata:ident, $code:expr) => {
         let retval: Result<Option<Vec<u8>>> = {
             gs_with_alloca_guarded!($size, $rawdata, {
                 let mut $data = FastByteBuffer::new($rawdata);
 
-                // reserve space for packet length
-                $data.write_u32(0);
+                if $tcp {
+                    // reserve space for packet length
+                    $data.write_u32(0);
+                }
 
                 $code // user code
 
-                // write the packet length
-                let packet_len = $data.len() - size_of_types!(u32);
-                let pos = $data.get_pos();
-                $data.set_pos(0);
-                $data.write_u32(packet_len as u32);
-                $data.set_pos(pos);
+                if $tcp {
+                    // write the packet length
+                    let packet_len = $data.len() - size_of_types!(u32);
+                    let pos = $data.get_pos();
+                    $data.set_pos(0);
+                    $data.write_u32(packet_len as u32);
+                    $data.set_pos(pos);
+                }
 
                 let data = $data.as_bytes();
-                match $self.send_buffer_immediate(data) {
+                let res = if $tcp {
+                    $self.send_buffer_tcp_immediate(data)
+                } else {
+                    $self.send_buffer_udp_immediate(data)
+                };
+
+                match res {
                     // if we cant send without blocking, accept our defeat and clone the data to a vec
                     Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(data.to_vec())),
                     // if another error occured, propagate it up
@@ -171,7 +179,11 @@ macro_rules! gs_inline_encode {
         };
 
         if let Some(data) = retval? {
-            $self.send_buffer(&data).await?;
+            if $tcp {
+                $self.send_buffer_tcp(&data).await?;
+            } else {
+                $self.send_buffer_udp(&data).await?;
+            }
         }
     }
 }

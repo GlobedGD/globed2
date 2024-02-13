@@ -12,6 +12,7 @@ pub trait Packet: PacketMetadata {}
 pub trait PacketMetadata {
     const PACKET_ID: u16;
     const ENCRYPTED: bool;
+    const SHOULD_USE_TCP: bool;
     const NAME: &'static str;
 }
 

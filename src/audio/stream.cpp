@@ -43,7 +43,6 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
 
         float pcmVolume = util::misc::calculatePcmVolume(reinterpret_cast<const float*>(data), neededSamples);
         stream->loudness = stream->volume * pcmVolume;
-        log::debug("setting loudness to {} * {} = {}", stream->volume, pcmVolume, stream->loudness);
 
         return FMOD_OK;
     };

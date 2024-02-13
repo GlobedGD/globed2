@@ -8,10 +8,14 @@
 */
 class RawPacket : public Packet {
 public:
-    RawPacket(packetid_t id, bool encrypted, ByteBuffer&& buffer) : id(id), encrypted(encrypted), buffer(std::move(buffer)) {}
+    RawPacket(packetid_t id, bool encrypted, bool tcp, ByteBuffer&& buffer) : id(id), encrypted(encrypted), tcp(tcp), buffer(std::move(buffer)) {}
 
     packetid_t getPacketId() const override {
         return id;
+    }
+
+    bool getUseTcp() const override {
+        return tcp;
     }
 
     bool getEncrypted() const override {
@@ -22,11 +26,12 @@ public:
         buf.writeBytes(buffer.getDataRef());
     }
 
-    static std::shared_ptr<RawPacket> create(packetid_t id, bool encrypted, ByteBuffer&& buffer) {
-        return std::make_shared<RawPacket>(id, encrypted, std::move(buffer));
+    static std::shared_ptr<RawPacket> create(packetid_t id, bool encrypted, bool tcp, ByteBuffer&& buffer) {
+        return std::make_shared<RawPacket>(id, encrypted, tcp, std::move(buffer));
     }
 
     packetid_t id;
     bool encrypted;
+    bool tcp;
     mutable ByteBuffer buffer;
 };

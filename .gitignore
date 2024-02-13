@@ -74,5 +74,10 @@ server/game/test-flamegraph.sh
 server/game/test-bench.sh
 server/globed_game_server.log
 server/out
+server/build-all.sh
+
+# it'll be left a relic
+server/rustc-ice-*.txt
 
 libs/openssl
+globed-lerp-log.bin

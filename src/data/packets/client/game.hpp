@@ -3,7 +3,7 @@
 #include <data/types/gd.hpp>
 
 class RequestPlayerProfilesPacket : public Packet {
-    GLOBED_PACKET(12000, false)
+    GLOBED_PACKET(12000, false, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeI32(requested);
@@ -19,7 +19,7 @@ class RequestPlayerProfilesPacket : public Packet {
 };
 
 class LevelJoinPacket : public Packet {
-    GLOBED_PACKET(12001, false)
+    GLOBED_PACKET(12001, false, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeI32(levelId);
@@ -35,7 +35,7 @@ class LevelJoinPacket : public Packet {
 };
 
 class LevelLeavePacket : public Packet {
-    GLOBED_PACKET(12002, false)
+    GLOBED_PACKET(12002, false, false)
 
     GLOBED_PACKET_ENCODE {}
 
@@ -47,7 +47,7 @@ class LevelLeavePacket : public Packet {
 };
 
 class PlayerDataPacket : public Packet {
-    GLOBED_PACKET(12003, false)
+    GLOBED_PACKET(12003, false, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeValue(data);
@@ -67,7 +67,7 @@ class PlayerDataPacket : public Packet {
 #include <audio/frame.hpp>
 
 class VoicePacket : public Packet {
-    GLOBED_PACKET(12010, true)
+    GLOBED_PACKET(12010, true, true)
 
     GLOBED_PACKET_ENCODE {
         buf.writeValue(*frame.get());
@@ -85,7 +85,7 @@ class VoicePacket : public Packet {
 #endif // GLOBED_VOICE_SUPPORT
 
 class ChatMessagePacket : public Packet {
-    GLOBED_PACKET(12011, true)
+    GLOBED_PACKET(12011, true, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeString(message);

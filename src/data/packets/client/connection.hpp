@@ -4,7 +4,7 @@
 #include <data/types/gd.hpp>
 
 class PingPacket : public Packet {
-    GLOBED_PACKET(10000, false)
+    GLOBED_PACKET(10000, false, false)
 
     GLOBED_PACKET_ENCODE { buf.writeU32(id); }
 
@@ -18,7 +18,7 @@ class PingPacket : public Packet {
 };
 
 class CryptoHandshakeStartPacket : public Packet {
-    GLOBED_PACKET(10001, false)
+    GLOBED_PACKET(10001, false, true)
 
     GLOBED_PACKET_ENCODE {
         buf.writeU16(protocol);
@@ -36,7 +36,7 @@ class CryptoHandshakeStartPacket : public Packet {
 };
 
 class KeepalivePacket : public Packet {
-    GLOBED_PACKET(10002, false)
+    GLOBED_PACKET(10002, false, false)
 
     GLOBED_PACKET_ENCODE {}
 
@@ -47,9 +47,10 @@ class KeepalivePacket : public Packet {
 };
 
 class LoginPacket : public Packet {
-    GLOBED_PACKET(10003, true)
+    GLOBED_PACKET(10003, true, true)
 
     GLOBED_PACKET_ENCODE {
+        buf.writeU32(secretKey);
         buf.writeI32(accountId);
         buf.writeI32(userId);
         buf.writeString(name);
@@ -57,13 +58,14 @@ class LoginPacket : public Packet {
         buf.writeValue(icons);
     }
 
-    LoginPacket(int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons)
-        : accountId(accid), userId(userId), name(name), token(token), icons(icons) {}
+    LoginPacket(uint32_t secretKey, int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons)
+        : secretKey(secretKey), accountId(accid), userId(userId), name(name), token(token), icons(icons) {}
 
-    static std::shared_ptr<Packet> create(int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons) {
-        return std::make_shared<LoginPacket>(accid, userId, name, token, icons);
+    static std::shared_ptr<Packet> create(uint32_t secretKey, int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons) {
+        return std::make_shared<LoginPacket>(secretKey, accid, userId, name, token, icons);
     }
 
+    uint32_t secretKey;
     int32_t accountId;
     int32_t userId;
     std::string name;
@@ -72,7 +74,7 @@ class LoginPacket : public Packet {
 };
 
 class DisconnectPacket : public Packet {
-    GLOBED_PACKET(10004, false)
+    GLOBED_PACKET(10004, false, false)
 
     GLOBED_PACKET_ENCODE {}
 
@@ -82,8 +84,24 @@ class DisconnectPacket : public Packet {
     }
 };
 
+class ClaimThreadPacket : public Packet {
+    GLOBED_PACKET(10005, false, false)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeU32(secretKey);
+    }
+
+    ClaimThreadPacket(uint32_t secretKey) : secretKey(secretKey) {}
+
+    static std::shared_ptr<Packet> create(uint32_t secretKey) {
+        return std::make_shared<ClaimThreadPacket>(secretKey);
+    }
+
+    uint32_t secretKey;
+};
+
 class ConnectionTestPacket : public Packet {
-    GLOBED_PACKET(10010, false)
+    GLOBED_PACKET(10010, false, true)
 
     GLOBED_PACKET_ENCODE {
         buf.writeU32(uid);
