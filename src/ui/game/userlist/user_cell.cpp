@@ -64,7 +64,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     this->makeBlockButton();
 
     this->refreshData(entry);
-    this->scheduleUpdate();
+    this->schedule(schedule_selector(GlobedUserCell::updateVisualizer), 1.f / 60.f);
 
     return true;
 }
@@ -82,10 +82,12 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
     }
 }
 
-void GlobedUserCell::update(float dt) {
+void GlobedUserCell::updateVisualizer(float dt) {
     if (audioVisualizer) {
         auto& vpm = VoicePlaybackManager::get();
-        audioVisualizer->setVolume(vpm.getLoudness(playerId));
+
+        float loudness = vpm.getLoudness(playerId);
+        audioVisualizer->setVolume(loudness);
     }
 }
 

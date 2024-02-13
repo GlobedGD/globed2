@@ -5,7 +5,9 @@
 #include "manager.hpp"
 #include <util/misc.hpp>
 
-AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
+AudioStream::AudioStream(AudioDecoder&& decoder)
+    : decoder(std::move(decoder)),
+      estimator(VOICE_TARGET_SAMPLERATE) {
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
@@ -13,7 +15,7 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
     exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
     exinfo.userdata = this;
-    exinfo.length = sizeof(float) * exinfo.numchannels * exinfo.defaultfrequency * (VOICE_CHUNK_RECORD_TIME * EncodedAudioFrame::VOICE_MAX_FRAMES_IN_AUDIO_FRAME);
+    exinfo.length = sizeof(float) * exinfo.numchannels * exinfo.defaultfrequency * (VOICE_CHUNK_RECORD_TIME * 1); // TODO maybe bring back the 10 multiplier
 
     // log::debug("{}: creating stream, length: {}", util::time::nowPretty(), exinfo.length);
     exinfo.pcmreadcallback = [](FMOD_SOUND* sound_, void* data, unsigned int len) -> FMOD_RESULT {
@@ -30,6 +32,7 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
 
         size_t neededSamples = len / sizeof(float);
         size_t copied = stream->queue.copyTo(reinterpret_cast<float*>(data), neededSamples);
+        stream->estimator.feedData(reinterpret_cast<const float*>(data), neededSamples);
 
         if (copied != neededSamples) {
             stream->starving = true;
@@ -40,9 +43,6 @@ AudioStream::AudioStream(AudioDecoder&& decoder) : decoder(std::move(decoder)) {
         } else {
             stream->starving = false;
         }
-
-        float pcmVolume = util::misc::calculatePcmVolume(reinterpret_cast<const float*>(data), neededSamples);
-        stream->loudness = stream->volume * pcmVolume;
 
         return FMOD_OK;
     };
@@ -102,7 +102,7 @@ void AudioStream::setVolume(float volume) {
 }
 
 float AudioStream::getLoudness() {
-    return loudness;
+    return estimator.getVolume() * this->volume;
 }
 
 #endif // GLOBED_VOICE_SUPPORT

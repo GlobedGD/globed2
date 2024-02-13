@@ -11,7 +11,7 @@ pub struct LevelDataPacket {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 22010, encrypted = true, tcp = true)]
+#[packet(id = 22010, encrypted = true, tcp = false)]
 pub struct VoiceBroadcastPacket {
     pub player_id: i32,
     pub data: FastEncodedAudioFrame,

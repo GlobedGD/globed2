@@ -8,6 +8,9 @@
 class AudioSampleQueue {
 public:
     AudioSampleQueue() {};
+    // enable copying
+    AudioSampleQueue(const AudioSampleQueue&) = default;
+    AudioSampleQueue& operator=(const AudioSampleQueue&) = default;
     // enable moving
     AudioSampleQueue(AudioSampleQueue&&) = default;
     AudioSampleQueue& operator=(AudioSampleQueue&&) = default;

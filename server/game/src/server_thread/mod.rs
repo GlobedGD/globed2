@@ -160,6 +160,8 @@ impl GameServerThread {
                     }
                     Err(err) => {
                         self.print_error(&err);
+                        // connection closed i guess
+                        break;
                     }
                 }
             };

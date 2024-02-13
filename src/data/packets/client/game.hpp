@@ -67,7 +67,7 @@ class PlayerDataPacket : public Packet {
 #include <audio/frame.hpp>
 
 class VoicePacket : public Packet {
-    GLOBED_PACKET(12010, true, true)
+    GLOBED_PACKET(12010, true, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeValue(*frame.get());

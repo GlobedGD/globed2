@@ -6,6 +6,7 @@
 #include "frame.hpp"
 #include "sample_queue.hpp"
 #include "decoder.hpp"
+#include "volume_estimator.hpp"
 
 class AudioStream {
 public:
@@ -27,6 +28,7 @@ public:
 
         queue = std::move(other.queue);
         decoder = std::move(other.decoder);
+        estimator = std::move(other.estimator);
     }
 
     AudioStream& operator=(AudioStream&& other) noexcept {
@@ -47,6 +49,7 @@ public:
 
             queue = std::move(other.queue);
             decoder = std::move(other.decoder);
+            estimator = std::move(other.estimator);
         }
 
         return *this;
@@ -70,8 +73,8 @@ private:
     FMOD::Channel* channel = nullptr;
     AudioSampleQueue queue;
     AudioDecoder decoder;
+    VolumeEstimator estimator;
     float volume = 0.f;
-    float loudness = 0.f;
 };
 
 

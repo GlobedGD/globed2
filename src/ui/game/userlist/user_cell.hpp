@@ -10,7 +10,7 @@ public:
     static constexpr float CELL_HEIGHT = 40.f;
 
     void refreshData(const PlayerStore::Entry& entry);
-    void update(float dt) override;
+    void updateVisualizer(float dt);
 
     static GlobedUserCell* create(const PlayerStore::Entry& entry, const PlayerAccountData& data);
 
