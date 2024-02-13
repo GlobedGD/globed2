@@ -135,6 +135,7 @@ private:
     AtomicBool _connectingStandalone = false;
     AtomicBool _suspended = false;
     AtomicBool _deferredConnect = false;
+    uint32_t secretKey = 0;
 
     std::string _deferredAddr, _deferredServerId;
     unsigned short _deferredPort;

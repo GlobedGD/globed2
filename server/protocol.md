@@ -19,6 +19,7 @@ Connection related
 * 10002 - KeepalivePacket - keepalive
 * 10003+ - LoginPacket - authentication
 * 10004 - DisconnectPacket - client disconnection
+* 10005 - ClaimThreadPacket - claim a tcp thread from a udp connection
 * 10010 - ConnectionTestPacket - connection test (response 20010)
 
 General

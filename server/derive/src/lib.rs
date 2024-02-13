@@ -326,14 +326,15 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
 struct PacketAttributes {
     id: u16,
     encrypted: Option<bool>,
+    tcp: Option<bool>,
 }
 
 /// Implements `Packet`, `PacketMetadata` and the function `const fn header() -> PacketHeader` for the given struct.
-/// You must also pass additional attributes with `#[packet]`, specifically packet ID and optionally, whether the packet should be encrypted.
+/// You must also pass additional attributes with `#[packet]`, specifically packet ID and optionally, encryption and whether to use TCP or UDP (only applicable when sending).
 /// Example:
 /// ```rust
 /// #[derive(Packet, Encodable, Decodable)]
-/// #[packet(id = 10000, encrypted = false)] // 'encrypted = false' is optional
+/// #[packet(id = 10000, encrypted = false, tcp = false)] // 'encrypted' and 'tcp' are optional and off by deafult
 /// pub struct MyPacket { /* fields */ }
 /// ```
 #[proc_macro_derive(Packet, attributes(packet))]
@@ -350,6 +351,7 @@ pub fn packet(input: TokenStream) -> TokenStream {
 
     let id = opts.id;
     let enc = opts.encrypted.unwrap_or(false);
+    let tcp = opts.tcp.unwrap_or(false);
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let output = match &input.data {
@@ -358,6 +360,7 @@ pub fn packet(input: TokenStream) -> TokenStream {
                 impl #impl_generics PacketMetadata for #ident #ty_generics #where_clause {
                     const PACKET_ID: u16 = #id;
                     const ENCRYPTED: bool = #enc;
+                    const SHOULD_USE_TCP: bool = #tcp;
                     const NAME: &'static str = stringify!(#ident);
                 }
 

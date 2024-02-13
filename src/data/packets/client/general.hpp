@@ -3,7 +3,7 @@
 #include <data/types/gd.hpp>
 
 class SyncIconsPacket : public Packet {
-    GLOBED_PACKET(11000, false)
+    GLOBED_PACKET(11000, false, false)
 
     GLOBED_PACKET_ENCODE { buf.writeValue(icons); }
 
@@ -17,7 +17,7 @@ class SyncIconsPacket : public Packet {
 };
 
 class RequestGlobalPlayerListPacket : public Packet {
-    GLOBED_PACKET(11001, false)
+    GLOBED_PACKET(11001, false, false)
 
     GLOBED_PACKET_ENCODE {}
 
@@ -29,7 +29,7 @@ class RequestGlobalPlayerListPacket : public Packet {
 };
 
 class CreateRoomPacket : public Packet {
-    GLOBED_PACKET(11002, false)
+    GLOBED_PACKET(11002, false, false)
 
     GLOBED_PACKET_ENCODE {}
 
@@ -41,7 +41,7 @@ class CreateRoomPacket : public Packet {
 };
 
 class JoinRoomPacket : public Packet {
-    GLOBED_PACKET(11003, false)
+    GLOBED_PACKET(11003, false, false)
 
     GLOBED_PACKET_ENCODE { buf.writeU32(roomId); }
 
@@ -55,7 +55,7 @@ class JoinRoomPacket : public Packet {
 };
 
 class LeaveRoomPacket : public Packet {
-    GLOBED_PACKET(11004, false)
+    GLOBED_PACKET(11004, false, false)
 
     GLOBED_PACKET_ENCODE {}
 
@@ -67,7 +67,7 @@ class LeaveRoomPacket : public Packet {
 };
 
 class RequestRoomPlayerListPacket : public Packet {
-    GLOBED_PACKET(11005, false)
+    GLOBED_PACKET(11005, false, false)
 
     GLOBED_PACKET_ENCODE {}
 
@@ -79,7 +79,7 @@ class RequestRoomPlayerListPacket : public Packet {
 };
 
 class RequestLevelListPacket : public Packet {
-    GLOBED_PACKET(11006, false)
+    GLOBED_PACKET(11006, false, false)
 
     GLOBED_PACKET_ENCODE {}
 

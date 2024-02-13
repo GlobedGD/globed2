@@ -100,11 +100,12 @@ impl GameServerThread {
 
         self.game_server.check_already_logged_in(packet.account_id).await?;
         self.account_id.store(packet.account_id, Ordering::Relaxed);
+        self.claim_secret_key.store(packet.secret_key, Ordering::Relaxed);
         self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
 
         info!(
             "Login successful from {player_name} (account ID: {}, address: {})",
-            packet.account_id, self.peer
+            packet.account_id, self.tcp_peer
         );
 
         {

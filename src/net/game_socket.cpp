@@ -19,29 +19,30 @@ GameSocket::~GameSocket() {
     delete[] buffer;
 }
 
-std::shared_ptr<Packet> GameSocket::recvPacket(bool onActive) {
+Result<std::shared_ptr<Packet>> GameSocket::recvPacket(bool onTcpConnection, bool& fromConnected) {
     int received;
-    if (onActive) {
+
+    if (onTcpConnection) {
         ByteBuffer bb;
         bb.grow(4);
 
-        // receive packet size
+        // receive the packet length
         tcpSocket.recvExact(reinterpret_cast<char*>(bb.getDataRef().data()), 4);
 
         auto packetSize = bb.readU32();
-        GLOBED_REQUIRE(packetSize < BUF_SIZE, "packet is too big, rejecting")
+        GLOBED_REQUIRE_SAFE(packetSize < BUF_SIZE, "packet is too big, rejecting")
 
         tcpSocket.recvExact(reinterpret_cast<char*>(buffer), packetSize);
         received = packetSize;
     } else {
-        received = udpSocket.receive(reinterpret_cast<char*>(buffer), BUF_SIZE).result;
+        auto recvResult = udpSocket.receive(reinterpret_cast<char*>(buffer), BUF_SIZE);
+        received = recvResult.result;
+        fromConnected = recvResult.fromServer;
     }
 
-    GLOBED_REQUIRE(received > 0, "failed to receive data from a socket")
+    GLOBED_REQUIRE_SAFE(received >= PacketHeader::SIZE, "packet is missing a header")
 
-    GLOBED_REQUIRE(received >= PacketHeader::SIZE, "packet is missing a header")
-
-    ByteBuffer buf(reinterpret_cast<byte*>(buffer), received);
+    ByteBuffer buf(buffer, received);
 
     // read header
     auto header = buf.readValue<PacketHeader>();
@@ -55,17 +56,17 @@ std::shared_ptr<Packet> GameSocket::recvPacket(bool onActive) {
 
     auto packet = matchPacket(header.id);
 
-    GLOBED_REQUIRE(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(header.id))
+    GLOBED_REQUIRE_SAFE(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(header.id))
 
     if (packet->getEncrypted() && !header.encrypted) {
-        GLOBED_REQUIRE(false, "server sent a cleartext packet when expected an encrypted one")
+        GLOBED_REQUIRE_SAFE(false, "server sent a cleartext packet when expected an encrypted one")
     }
 
     if (header.encrypted) {
-        GLOBED_REQUIRE(box.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
+        GLOBED_REQUIRE_SAFE(cryptoBox.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
         bytevector& bufvec = buf.getDataRef();
 
-        messageLength = box->decryptInPlace(bufvec.data() + PacketHeader::SIZE, messageLength);
+        messageLength = cryptoBox->decryptInPlace(bufvec.data() + PacketHeader::SIZE, messageLength);
         buf.resize(messageLength + PacketHeader::SIZE);
     }
 
@@ -76,83 +77,138 @@ std::shared_ptr<Packet> GameSocket::recvPacket(bool onActive) {
         throw std::runtime_error(msg);
     }
 
-    return packet;
+    return Ok(packet);
+}
+
+Result<std::shared_ptr<Packet>> GameSocket::recvPacket(int timeoutMs, bool& fromConnected, bool& timedOut) {
+    timedOut = false;
+    fromConnected = false;
+
+    auto pollResult_ = this->poll(timeoutMs);
+
+    GLOBED_UNWRAP_INTO(pollResult_, auto pollResult);
+
+    if (pollResult == PollResult::None) {
+        timedOut = true;
+        return Err("timed out");
+    }
+
+    // prioritize TCP, if the result is Tcp or Both, we care about TCP.
+    if (pollResult != PollResult::Udp) {
+        fromConnected = true;
+        bool _unused;
+        return this->recvPacket(true, _unused);
+    }
+
+    // else it's a udp packet
+    return this->recvPacket(false, fromConnected);
 }
 
 Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
-    auto buf = this->serializePacket(packet.get(), true);
+    GLOBED_REQUIRE_SAFE(this->isConnected(), "attempting to send a packet while disconnected")
+
+    ByteBuffer buf;
+    GLOBED_UNWRAP(this->serializePacket(packet.get(), buf))
 
 #ifdef GLOBED_DEBUG_PACKETS
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
 #endif
 
-    return this->tcpSocket.sendAll(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size());
+    if (packet->getUseTcp()) {
+        GLOBED_UNWRAP(tcpSocket.sendAll(reinterpret_cast<const char*>(buf.getDataRef().data()), buf.size()));
+    } else {
+        udpSocket.send(reinterpret_cast<const char*>(buf.getDataRef().data()), buf.size());
+    }
+
+    return Ok();
 }
 
-ByteBuffer GameSocket::serializePacket(Packet* packet, bool withPrefixedLength) {
+Result<> GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const std::string_view address, unsigned short port) {
+    GLOBED_REQUIRE_SAFE(!packet->getUseTcp(), "cannot send a TCP packet to a UDP connection")
+
     ByteBuffer buf;
+    GLOBED_UNWRAP(this->serializePacket(packet.get(), buf))
+
+#ifdef GLOBED_DEBUG_PACKETS
+    PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
+#endif
+
+    GLOBED_REQUIRE_SAFE(
+        buf.size() == udpSocket.sendTo(reinterpret_cast<const char*>(buf.getDataRef().data()), buf.size(), address, port),
+        "failed to send the entire buffer"
+    )
+
+    return Ok();
+}
+
+bool GameSocket::isConnected() {
+    return tcpSocket.connected;
+}
+
+Result<> GameSocket::connect(const std::string_view address, unsigned short port) {
+    GLOBED_UNWRAP(tcpSocket.connect(address, port))
+    GLOBED_UNWRAP(udpSocket.connect(address, port))
+
+    return Ok();
+}
+
+void GameSocket::disconnect() {
+    tcpSocket.disconnect();
+    udpSocket.disconnect();
+}
+
+void GameSocket::cleanupBox() {
+    cryptoBox = std::unique_ptr<CryptoBox>(nullptr);
+}
+
+void GameSocket::createBox() {
+    cryptoBox = std::make_unique<CryptoBox>();
+}
+
+Result<> GameSocket::serializePacket(Packet* packet, ByteBuffer& buffer) {
     PacketHeader header = {
         .id = packet->getPacketId(),
         .encrypted = packet->getEncrypted()
     };
 
-    // reserve space for length
-    if (withPrefixedLength) {
-        buf.writeU32(0);
+    bool tcp = packet->getUseTcp();
+    // reserve space for packet length
+
+    size_t startPos = buffer.getPosition();
+    if (tcp) {
+        buffer.writeU32(0);
     }
 
-    buf.writeValue(header);
-
-    packet->encode(buf);
+    buffer.writeValue(header);
+    packet->encode(buffer);
 
     if (packet->getEncrypted()) {
-        GLOBED_REQUIRE(box.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
+        GLOBED_REQUIRE_SAFE(cryptoBox.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
+
         // grow the vector by CryptoBox::PREFIX_LEN extra bytes to do in-place encryption
-        buf.grow(CryptoBox::PREFIX_LEN);
+        buffer.grow(CryptoBox::PREFIX_LEN);
         uint32_t headerSize = PacketHeader::SIZE;
-        if (withPrefixedLength) {
+        if (tcp) {
             headerSize += sizeof(uint32_t);
         }
 
-        auto rawSize = buf.size() - headerSize - CryptoBox::PREFIX_LEN;
-        box->encryptInPlace(buf.getDataRef().data() + headerSize, rawSize);
+        auto rawSize = buffer.size() - headerSize - startPos - CryptoBox::PREFIX_LEN;
+        cryptoBox->encryptInPlace(buffer.getDataRef().data() + startPos + headerSize, rawSize);
     }
 
-    // write the length prefix
-    if (withPrefixedLength) {
-        size_t lastPos = buf.getPosition();
-        buf.setPosition(0);
-        buf.writeU32(buf.size() - sizeof(uint32_t));
-        buf.setPosition(lastPos);
+    if (tcp) {
+        size_t lastPos = buffer.getPosition();
+        buffer.setPosition(startPos);
+        buffer.writeU32(buffer.size() - sizeof(uint32_t) - startPos);
+        buffer.setPosition(lastPos);
     }
 
-    return buf;
+    return Ok();
 }
 
-void GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const std::string_view address, unsigned short port) {
-    auto buf = this->serializePacket(packet.get(), false);
-
-#ifdef GLOBED_DEBUG_PACKETS
-    PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
-#endif
-
-    GLOBED_REQUIRE(
-        this->udpSocket.sendTo(reinterpret_cast<char*>(buf.getDataRef().data()), buf.size(), address, port) == buf.size(),
-        "failed to send the entire buffer"
-    )
-}
-
-void GameSocket::cleanupBox() {
-    box = std::unique_ptr<CryptoBox>(nullptr);
-}
-
-void GameSocket::createBox() {
-    box = std::make_unique<CryptoBox>();
-}
-
-Result<GameSocket::PollResult> GameSocket::pollEither(int msDelay) {
+Result<GameSocket::PollResult> GameSocket::poll(int timeoutMs) {
     if (!tcpSocket.connected) {
-        GLOBED_UNWRAP_INTO(udpSocket.poll(msDelay), auto res);
+        GLOBED_UNWRAP_INTO(udpSocket.poll(timeoutMs), auto res);
         return Ok(res ? PollResult::Udp : PollResult::None);
     }
 
@@ -163,7 +219,7 @@ Result<GameSocket::PollResult> GameSocket::pollEither(int msDelay) {
     fds[1].fd = udpSocket.socket_;
     fds[1].events = POLLIN;
 
-    int result = GLOBED_SOCKET_POLL(fds, 2, msDelay);
+    int result = GLOBED_SOCKET_POLL(fds, 2, timeoutMs);
 
     if (result == -1) {
         return Err(util::net::lastErrorString());
