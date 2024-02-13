@@ -157,8 +157,12 @@ impl GameServerThread {
                         }
                     }
                     Err(err) => {
-                        self.print_error(&err);
-                        // connection closed i guess
+                        // early eof means the client has disconnected (closed their part of the socketS)
+                        if let PacketHandlingError::IOError(ref ioerror) = err {
+                            if ioerror.kind() != std::io::ErrorKind::UnexpectedEof {
+                                self.print_error(&err);
+                            }
+                        }
                         break;
                     }
                 }
