@@ -1,16 +1,14 @@
 use crate::data::*;
 
-/*
-* For optimization reasons, these 2 are encoded inline in the packet handlers in server_thread/handlers/game.rs.
-*/
-
 #[derive(Packet, Encodable)]
 #[packet(id = 22000, tcp = true)]
 pub struct PlayerProfilesPacket;
 
 #[derive(Packet, Encodable)]
 #[packet(id = 22001, tcp = false)]
-pub struct LevelDataPacket;
+pub struct LevelDataPacket {
+    pub players: Vec<AssociatedPlayerData>,
+}
 
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 22010, encrypted = true, tcp = true)]

@@ -27,6 +27,7 @@ pub struct LoginPacket {
     pub name: FastString<MAX_NAME_SIZE>,
     pub token: FastString<MAX_TOKEN_SIZE>,
     pub icons: PlayerIconData,
+    pub fragmentation_limit: u16,
 }
 
 #[derive(Packet, Decodable)]

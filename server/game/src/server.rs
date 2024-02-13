@@ -25,7 +25,7 @@ use crate::{
     state::ServerState,
 };
 
-const MAX_UDP_PACKET_SIZE: usize = 2048;
+const MAX_UDP_PACKET_SIZE: usize = 65536;
 
 pub struct GameServerConfiguration {
     pub http_client: reqwest::Client,

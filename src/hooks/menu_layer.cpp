@@ -58,6 +58,11 @@ bool HookedMenuLayer::init() {
                 return;
             };
 
+            if (!am.hasAuthKey()) {
+                // no authkey, don't autoconnect
+                return;
+            }
+
             auto result = am.generateAuthCode();
             if (result.isErr()) {
                 // invalid authkey? clear it so the user can relog. happens if user changes their password

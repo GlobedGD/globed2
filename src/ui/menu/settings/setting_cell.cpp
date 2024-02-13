@@ -1,8 +1,10 @@
 #include "setting_cell.hpp"
 
 #include "audio_setup_popup.hpp"
+#include "frag_calibration_popup.hpp"
 #include "string_input_popup.hpp"
 #include <managers/settings.hpp>
+#include <net/network_manager.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
 
@@ -77,9 +79,10 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         inpSlider->setValue(relativeValue);
     } break;
     case Type::String: [[fallthrough]];
+    case Type::PacketFragmentation: [[fallthrough]];
     case Type::AudioDevice: {
         Build<CCMenuItemSpriteExtra>::create(
-            Build<ButtonSprite>::create("Set", "goldFont.fnt", "GJ_button_04.png", .7f).collect(),
+            Build<ButtonSprite>::create(settingType == Type::PacketFragmentation ? "Test" : "Set", "goldFont.fnt", "GJ_button_04.png", .7f).collect(),
             this,
             menu_selector(GlobedSettingCell::onInteractiveButton)
         )
@@ -154,6 +157,12 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
         }
         AudioSetupPopup::create()->show();
 #endif // GLOBED_VOICE_SUPPORT
+    } else if (settingType == Type::PacketFragmentation) {
+        if (NetworkManager::get().established()) {
+            FragmentationCalibartionPopup::create()->show();
+        } else {
+            FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
+        }
     } else {
         StringInputPopup::create([this](const std::string_view text) {
             this->onStringChanged(text);
@@ -215,6 +224,7 @@ void GlobedSettingCell::storeAndSave(std::any value) {
         *(std::string*)(settingStorage) = std::any_cast<std::string>(value); break;
     case Type::AudioDevice: [[fallthrough]];
     case Type::Corner: [[fallthrough]];
+    case Type::PacketFragmentation: [[fallthrough]];
     case Type::Int:
         *(int*)(settingStorage) = std::any_cast<int>(value); break;
     }

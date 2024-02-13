@@ -1,7 +1,6 @@
 #include "globed_menu_layer.hpp"
 
 #include "server_list_cell.hpp"
-#include <ui/menu/main/connection_test_popup.hpp>
 #include <ui/menu/room/room_popup.hpp>
 #include <ui/menu/server_switcher/server_switcher_popup.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
@@ -305,10 +304,6 @@ void GlobedMenuLayer::keyBackClicked() {
 void GlobedMenuLayer::keyDown(enumKeyCodes key) {
     if (key == enumKeyCodes::KEY_F8) {
         AdminPopup::create()->show();
-    } else if (key == enumKeyCodes::KEY_F9) {
-        if (NetworkManager::get().established()) {
-            ConnectionTestPopup::create()->show();
-        }
     } else {
         CCLayer::keyDown(key);
     }

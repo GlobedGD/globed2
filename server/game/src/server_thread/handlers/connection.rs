@@ -64,6 +64,18 @@ impl GameServerThread {
             );
         }
 
+        if packet.fragmentation_limit < 1400 {
+            gs_disconnect!(
+                self,
+                &format!(
+                    "The client fragmentation limit is too low ({} bytes) to be accepted",
+                    packet.fragmentation_limit
+                )
+            );
+        }
+
+        self.fragmentation_limit.store(packet.fragmentation_limit, Ordering::Relaxed);
+
         if packet.account_id <= 0 || packet.user_id <= 0 {
             self.terminate();
             self.send_packet_dynamic(&LoginFailedPacket { message: "Invalid account ID was sent. Please note that you must be signed into a Geometry Dash account before connecting." }).await?;

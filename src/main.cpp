@@ -19,7 +19,23 @@ void setupErrorCheckNode();
 void setupCustomKeybinds();
 void printDebugInfo();
 
+static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAGS flags, void* dd) {
+    log::debug("fmod system init hooked, changing to {} channels", MAX_AUDIO_CHANNELS);
+    system->init(MAX_AUDIO_CHANNELS, flags, dd);
+}
+
 $on_mod(Loaded) {
+    (void) Mod::get()->hook(
+        reinterpret_cast<void*>(
+            geode::addresser::getNonVirtual(
+                &FMOD::System::init
+            )
+        ),
+        &FMODSystemInitHook,
+        "FMOD::System::init",
+        tulip::hook::TulipConvention::Stdcall
+    ).expect("failed to hook fmod").unwrap();
+
     setupLibsodium();
     setupErrorCheckNode();
     setupCustomKeybinds();

@@ -13,13 +13,10 @@ using packetid_t = uint16_t;
     bool getEncrypted() const override { return this->ENCRYPTED; }
 
 #define GLOBED_PACKET2(id, enc) \
-    public: \
-    static constexpr packetid_t PACKET_ID = id; \
-    static constexpr bool SHOULD_USE_TCP = false; \
-    static constexpr bool ENCRYPTED = enc; \
-    packetid_t getPacketId() const override { return this->PACKET_ID; } \
-    bool getUseTcp() const override { return this->SHOULD_USE_TCP; } \
-    bool getEncrypted() const override { return this->ENCRYPTED; }
+    GLOBED_PACKET3(id, enc, false)
+
+#define GLOBED_PACKETMACRO(_1, _2, _3, NAME, ...) NAME
+#define GLOBED_PACKET(...) GLOBED_PACKETMACRO(__VA_ARGS__, GLOBED_PACKET3, GLOBED_PACKET2)(__VA_ARGS__)
 
 #define GLOBED_PACKET_ENCODE void encode(ByteBuffer& buf) const override
 #define GLOBED_PACKET_DECODE void decode(ByteBuffer& buf) override

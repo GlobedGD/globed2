@@ -5,6 +5,7 @@
 #include <managers/account.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
+#include <managers/settings.hpp>
 #include <util/net.hpp>
 #include <util/rng.hpp>
 #include <util/debug.hpp>
@@ -32,8 +33,10 @@ NetworkManager::NetworkManager() {
         pcm.setOwnDataAuto();
         pcm.pendingChanges = false;
 
+        auto& settings = GlobedSettings::get();
+
         auto gddata = am.gdData.lock();
-        auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData());
+        auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
         this->send(pkt);
     });
 
@@ -310,7 +313,6 @@ void NetworkManager::threadRecvFunc() {
     }
 
     auto packet = packet_.unwrap();
-    log::debug("received packet: {}", packet->getPacketId());
 
     packetid_t packetId = packet->getPacketId();
 

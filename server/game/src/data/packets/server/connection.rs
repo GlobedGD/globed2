@@ -51,7 +51,7 @@ pub struct ProtocolMismatchPacket {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 20010, tcp = true)]
+#[packet(id = 20010, tcp = false)]
 pub struct ConnectionTestResponsePacket {
     pub uid: u32,
     pub data: Vec<u8>,

@@ -18,6 +18,7 @@ public:
         GSETTING(bool, autoconnect, true);
         GSETTING(int, tpsCap, 0);
         GSETTING(bool, preloadAssets, true);
+        GSETTING(int, fragmentationLimit, 60000);
     };
 
     struct Overlay {

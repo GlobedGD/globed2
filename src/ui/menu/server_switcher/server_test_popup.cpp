@@ -42,11 +42,11 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
 
             this->onClose(this);
         })
-        .expect([this](std::string error) {
+        .expect([this](std::string error, int statusCode) {
             sentRequestHandle = std::nullopt;
 
             if (error.empty()) {
-                error = "Error retrieving data from the server: server sent an empty response.";
+                error = fmt::format("Error retrieving data from the server: server sent an empty response with code {}.", statusCode);
             } else {
                 error = "Error retrieving data from the server: <cy>" + util::format::formatErrorMessage(error) + "</c>";
             }

@@ -35,5 +35,6 @@
     "repository": "https://github.com/dankmeme01/globed2",
     "tags": [
         "Online"
-    ]
+    ],
+    "early-load": true
 }

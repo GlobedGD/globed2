@@ -23,6 +23,7 @@ using permission::Permission;
         GLOBED_REQUIRE_SAFE(_res == FMOD_OK, GlobedAudioManager::formatFmodError(_res, msg)); \
     } while (0); \
 
+
 GlobedAudioManager::GlobedAudioManager()
     : encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
@@ -50,13 +51,14 @@ void GlobedAudioManager::preInitialize() {
     } catch (const std::exception _e) {}
 #endif
 
+    auto& settings = GlobedSettings::get();
+
     // also check perms on android
     if (!permission::getPermissionStatus(Permission::RecordAudio)) {
-        GlobedSettings::get().communication.audioDevice = false;
+        settings.communication.voiceEnabled = false;
     }
 
     // load the previously selected device
-    auto& settings = GlobedSettings::get();
     auto device = this->getRecordingDevice(settings.communication.audioDevice);
 
     if (device.has_value()) {
@@ -67,6 +69,7 @@ void GlobedAudioManager::preInitialize() {
             this->setActiveRecordingDevice(device.value());
         } else {
             // give up.
+            recordDevice.id = -1;
         }
     }
 }

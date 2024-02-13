@@ -1,13 +1,14 @@
-#include "connection_test_popup.hpp"
+#include "frag_calibration_popup.hpp"
 
 #include <data/packets/client/connection.hpp>
 #include <net/network_manager.hpp>
+#include <managers/settings.hpp>
 #include <util/crypto.hpp>
 #include <util/rng.hpp>
 
 using namespace geode::prelude;
 
-bool ConnectionTestPopup::setup() {
+bool FragmentationCalibartionPopup::setup() {
     this->setTitle("Connection test");
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -31,16 +32,17 @@ bool ConnectionTestPopup::setup() {
         this->nextStep();
     });
 
-    currentSize = 512;
+    currentSizeIdx = 0;
+    currentSize = TEST_PACKET_SIZES[currentSizeIdx];
 
     this->nextStep();
 
-    this->schedule(schedule_selector(ConnectionTestPopup::checkForUpdates), 0.25f);
+    this->schedule(schedule_selector(FragmentationCalibartionPopup::checkForUpdates), 0.25f);
 
     return true;
 }
 
-void ConnectionTestPopup::checkForUpdates(float) {
+void FragmentationCalibartionPopup::checkForUpdates(float) {
     if (util::time::systemNow() - lastPacket > util::time::millis(2500)) {
         currentAttempt--;
         failedAttempts++;
@@ -48,7 +50,11 @@ void ConnectionTestPopup::checkForUpdates(float) {
 
         // if no response 3 times in a row, abort
         if (failedAttempts > 2) {
-            FLAlertLayer::create("Error", fmt::format("Test failed with packet size = {}. No response received after 3 attempts.", currentSize), "Ok")->show();
+            auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
+            auto& settings = GlobedSettings::get();
+            settings.globed.fragmentationLimit = newFragLimit;
+            settings.save();
+            FLAlertLayer::create("Notice", fmt::format("Test failed with packet size = {}. Setting the maximum packet size to {}. Reconnect to the server in order to see any change.", currentSize, newFragLimit), "Ok")->show();
             this->closeDelayed();
             return;
         }
@@ -57,14 +63,20 @@ void ConnectionTestPopup::checkForUpdates(float) {
     }
 }
 
-void ConnectionTestPopup::nextStep() {
+void FragmentationCalibartionPopup::nextStep() {
     if (currentAttempt > 4) {
         currentAttempt = 0;
-        log::debug("upgrading from {} to {}", currentSize, currentSize * 1.5);
-        currentSize *= 1.5;
+        auto newSize = TEST_PACKET_SIZES[++currentSizeIdx];
+        log::debug("upgrading from {} to {}", currentSize, newSize);
+        currentSize = newSize;
     }
 
-    if (currentSize > 55555) {
+    if (currentSize == 0) {
+        // calibration was fully successful, user can send up to 64kb
+        auto& settings = GlobedSettings::get();
+        settings.globed.fragmentationLimit = 65000;
+        settings.save();
+
         FLAlertLayer::create("Success", "Connection test succeeded. No issues found.", "Ok")->show();
         this->closeDelayed();
         return;
@@ -84,7 +96,7 @@ void ConnectionTestPopup::nextStep() {
     statusLabel->setString(fmt::format("Attempt {} with size = {}", currentAttempt, currentSize).c_str());
 }
 
-void ConnectionTestPopup::onClose(cocos2d::CCObject* obj) {
+void FragmentationCalibartionPopup::onClose(cocos2d::CCObject* obj) {
     Popup::onClose(obj);
 
     auto& nm = NetworkManager::get();
@@ -92,15 +104,15 @@ void ConnectionTestPopup::onClose(cocos2d::CCObject* obj) {
     nm.suppressUnhandledFor<ConnectionTestResponsePacket>(util::time::seconds(1));
 }
 
-void ConnectionTestPopup::closeDelayed() {
+void FragmentationCalibartionPopup::closeDelayed() {
     // this is needed because we cant call NetworkManager::removeListener inside of a listener callback.
     Loader::get()->queueInMainThread([this] {
         this->onClose(this);
     });
 }
 
-ConnectionTestPopup* ConnectionTestPopup::create() {
-    auto ret = new ConnectionTestPopup;
+FragmentationCalibartionPopup* FragmentationCalibartionPopup::create() {
+    auto ret = new FragmentationCalibartionPopup;
     if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;

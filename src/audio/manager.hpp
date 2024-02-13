@@ -34,6 +34,7 @@ constexpr size_t VOICE_TARGET_SAMPLERATE = 24000;
 constexpr float VOICE_CHUNK_RECORD_TIME = 0.06f; // the audio buffer that is recorded at once (60ms)
 constexpr size_t VOICE_TARGET_FRAMESIZE = VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_RECORD_TIME; // opus framesize
 constexpr size_t VOICE_CHANNELS = 1;
+constexpr int MAX_AUDIO_CHANNELS = 512;
 
 // This class is not thread safe. At all.
 class GlobedAudioManager : public SingletonBase<GlobedAudioManager> {

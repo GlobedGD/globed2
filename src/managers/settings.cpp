@@ -34,6 +34,7 @@ void GlobedSettings::save() {
     STOREV(globed, tpsCap);
     STOREV(globed, autoconnect);
     STOREV(globed, preloadAssets);
+    STOREV(globed, fragmentationLimit);
 
     // overlay
     STOREV(overlay, opacity);
@@ -74,6 +75,7 @@ void GlobedSettings::reload() {
     LOADV(globed, tpsCap);
     LOADV(globed, autoconnect);
     LOADV(globed, preloadAssets);
+    LOADV(globed, fragmentationLimit);
 
     // overlay
     LOADV(overlay, opacity);
@@ -114,6 +116,7 @@ void GlobedSettings::resetToDefaults() {
         SKEY(globed, tpsCap),
         SKEY(globed, autoconnect),
         SKEY(players, preloadAssets),
+        SKEY(globed, fragmentationLimit),
 
         // overlay
         SKEY(overlay, opacity),

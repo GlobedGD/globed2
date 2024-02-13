@@ -56,13 +56,14 @@ class LoginPacket : public Packet {
         buf.writeString(name);
         buf.writeString(token);
         buf.writeValue(icons);
+        buf.writeU16(fragmentationLimit);
     }
 
-    LoginPacket(uint32_t secretKey, int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons)
-        : secretKey(secretKey), accountId(accid), userId(userId), name(name), token(token), icons(icons) {}
+    LoginPacket(uint32_t secretKey, int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons, uint16_t fragmentationLimit)
+        : secretKey(secretKey), accountId(accid), userId(userId), name(name), token(token), icons(icons), fragmentationLimit(fragmentationLimit) {}
 
-    static std::shared_ptr<Packet> create(uint32_t secretKey, int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons) {
-        return std::make_shared<LoginPacket>(secretKey, accid, userId, name, token, icons);
+    static std::shared_ptr<Packet> create(uint32_t secretKey, int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons, uint16_t fragmentationLimit) {
+        return std::make_shared<LoginPacket>(secretKey, accid, userId, name, token, icons, fragmentationLimit);
     }
 
     uint32_t secretKey;
@@ -71,6 +72,7 @@ class LoginPacket : public Packet {
     std::string name;
     std::string token;
     PlayerIconData icons;
+    uint16_t fragmentationLimit;
 };
 
 class DisconnectPacket : public Packet {
@@ -101,7 +103,7 @@ class ClaimThreadPacket : public Packet {
 };
 
 class ConnectionTestPacket : public Packet {
-    GLOBED_PACKET(10010, false, true)
+    GLOBED_PACKET(10010, false, false)
 
     GLOBED_PACKET_ENCODE {
         buf.writeU32(uid);

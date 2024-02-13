@@ -2,7 +2,7 @@ use std::{
     collections::VecDeque,
     net::SocketAddrV4,
     sync::{
-        atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, AtomicU64, Ordering},
         Arc, OnceLock,
     },
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -40,10 +40,7 @@ use self::handlers::MAX_VOICE_PACKET_SIZE;
 
 pub const INLINE_BUFFER_SIZE: usize = 164;
 
-#[cfg(debug_assertions)]
 const MAX_PACKET_SIZE: usize = 65536;
-#[cfg(not(debug_assertions))]
-const MAX_PACKET_SIZE: usize = 16384;
 
 // do not touch those, encryption related
 const NONCE_SIZE: usize = 24;
@@ -79,6 +76,7 @@ pub struct GameServerThread {
     last_voice_packet: AtomicU64,
     pub cleanup_notify: Notify,
     pub cleanup_mutex: Mutex<()>,
+    fragmentation_limit: AtomicU16,
 
     message_queue: Mutex<VecDeque<ServerThreadMessage>>,
     message_notify: Notify,
@@ -109,6 +107,7 @@ impl GameServerThread {
             last_voice_packet: AtomicU64::new(0),
             cleanup_notify: Notify::new(),
             cleanup_mutex: Mutex::new(()),
+            fragmentation_limit: AtomicU16::new(0),
             message_queue: Mutex::new(VecDeque::new()),
             message_notify: Notify::new(),
             rate_limiter: LockfreeMutCell::new(rate_limiter),
@@ -116,6 +115,13 @@ impl GameServerThread {
     }
 
     async fn poll_for_messages(&self) -> Option<ServerThreadMessage> {
+        {
+            let mut mq = self.message_queue.lock().await;
+            if !mq.is_empty() {
+                return mq.pop_front();
+            }
+        }
+
         self.message_notify.notified().await;
         self.message_queue.lock().await.pop_front()
     }
@@ -421,12 +427,6 @@ impl GameServerThread {
         // reject cleartext credentials
         if header.packet_id == LoginPacket::PACKET_ID && !header.encrypted {
             return Err(PacketHandlingError::MalformedLoginAttempt);
-        }
-
-        // connection test only in debug mode
-        #[cfg(not(debug_assertions))]
-        if header.packet_id == ConnectionTestPacket::PACKET_ID {
-            return Err(PacketHandlingError::DebugOnlyPacket);
         }
 
         // decrypt the packet in-place if encrypted

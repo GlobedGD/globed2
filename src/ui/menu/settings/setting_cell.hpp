@@ -6,7 +6,7 @@
 class GlobedSettingCell : public cocos2d::CCLayer, public TextInputDelegate {
 public:
     enum class Type {
-        Bool, Int, Float, String, AudioDevice, Corner
+        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation
     };
 
     struct Limits {

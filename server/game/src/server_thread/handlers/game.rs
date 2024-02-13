@@ -6,6 +6,8 @@ use crate::{
     server_thread::{GameServerThread, PacketHandlingError},
 };
 
+use globed_shared::debug;
+
 /// max voice throughput in kb/s
 pub const MAX_VOICE_THROUGHPUT: usize = 8;
 /// max voice packet size in bytes
@@ -66,26 +68,64 @@ impl GameServerThread {
         }
 
         let calc_size = size_of_types!(u32) + size_of_types!(AssociatedPlayerData) * written_players;
+        let fragmentation_limit = self.fragmentation_limit.load(Ordering::Relaxed) as usize;
 
-        self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| {
-            self.game_server.state.room_manager.with_any(room_id, |pm| {
-                buf.write_list_with(written_players, |buf| {
-                    pm.for_each_player_on_level(
-                        level_id,
-                        |player, count, buf| {
-                            if count < written_players && player.account_id != account_id {
-                                buf.write_value(player);
-                                true
-                            } else {
-                                false
-                            }
-                        },
-                        buf,
-                    )
+        // if we can fit in one packet, then just send it as-is
+        if calc_size <= fragmentation_limit {
+            self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| {
+                self.game_server.state.room_manager.with_any(room_id, |pm| {
+                    buf.write_list_with(written_players, |buf| {
+                        pm.for_each_player_on_level(
+                            level_id,
+                            |player, count, buf| {
+                                if count < written_players && player.account_id != account_id {
+                                    buf.write_value(player);
+                                    true
+                                } else {
+                                    false
+                                }
+                            },
+                            buf,
+                        )
+                    });
                 });
-            });
-        })
-        .await
+            })
+            .await?;
+
+            return Ok(());
+        }
+
+        // get all players into a vec
+        let total_fragments = (calc_size + fragmentation_limit - 1) / fragmentation_limit;
+
+        let mut players = Vec::with_capacity(written_players + 4);
+
+        self.game_server.state.room_manager.with_any(room_id, |pm| {
+            pm.for_each_player_on_level(
+                level_id,
+                |player, _, players| {
+                    if player.account_id == account_id {
+                        false
+                    } else {
+                        players.push(player.clone());
+                        true
+                    }
+                },
+                &mut players,
+            )
+        });
+
+        let players_per_fragment = (players.len() + total_fragments - 1) / total_fragments;
+        let calc_size = size_of_types!(u32) + size_of_types!(AssociatedPlayerData) * players_per_fragment;
+
+        debug!("sending a fragmented packet (lim: {fragmentation_limit}, per: {players_per_fragment}, frags: {total_fragments}, fragsize: {calc_size})");
+
+        for chunk in players.chunks(players_per_fragment) {
+            self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value_vec(chunk))
+                .await?;
+        }
+
+        Ok(())
     });
 
     gs_handler!(self, handle_request_profiles, RequestPlayerProfilesPacket, packet, {

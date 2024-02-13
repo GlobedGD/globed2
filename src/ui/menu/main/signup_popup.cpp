@@ -49,9 +49,9 @@ bool GlobedSignupPopup::setup() {
 
             this->onChallengeCreated(accountId, part2);
         })
-        .expect([this](std::string error) {
+        .expect([this](std::string error, int statusCode) {
             if (error.empty()) {
-                this->onFailure("Creating challenge failed: server sent an empty response.");
+                this->onFailure(fmt::format("Creating challenge failed: server sent an empty response with code {}.", statusCode));
             } else {
                 this->onFailure("Creating challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
             }
@@ -156,9 +156,9 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
                 GameLevelManager::sharedState()->deleteUserMessages(message, nullptr, true);
             }
         })
-        .expect([this](std::string error) {
+        .expect([this](std::string error, int statusCode) {
             if (error.empty()) {
-                this->onFailure("Completing challenge failed: server sent an empty response.");
+                this->onFailure(fmt::format("Completing challenge failed: server sent an empty response with code {}.", statusCode));
             } else {
                 this->onFailure("Completing challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
             }
