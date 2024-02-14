@@ -1,6 +1,6 @@
 {
     "geode": "2.0.0-beta.15",
-    "version": "v1.0.5",
+    "version": "v1.1.0",
     "gd": {
         "win": "2.204",
         "android": "2.205",
@@ -35,6 +35,5 @@
     "repository": "https://github.com/dankmeme01/globed2",
     "tags": [
         "Online"
-    ],
-    "early-load": true
+    ]
 }
