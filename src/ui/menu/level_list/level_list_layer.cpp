@@ -66,10 +66,29 @@ void GlobedLevelListLayer::onLevelsReceived() {
         return;
     }
 
+    // get a list of level ids and sort by player count descending
+    std::vector<int> levelIdList;
+
+    for (const auto& [levelId, _] : levelList) {
+        levelIdList.push_back(levelId);
+    }
+
+    auto comparator = [this](int a, int b) {
+        if (!this->levelList.contains(a) || !this->levelList.contains(b)) return false;
+
+        auto aVal = this->levelList.at(a);
+        auto bVal = this->levelList.at(b);
+
+        return aVal > bVal;
+    };
+
+    std::sort(levelIdList.begin(), levelIdList.end(), comparator);
+
+    // now join them to a comma separated string
     std::ostringstream oss;
 
     bool first = true;
-    for (const auto& [levelId, _] : levelList) {
+    for (const auto& levelId: levelIdList) {
         if (first) {
             first = false;
         } else {

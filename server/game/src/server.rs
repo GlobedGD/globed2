@@ -128,7 +128,13 @@ impl GameServer {
             match self.accept_connection().await {
                 Ok(()) => {}
                 Err(err) => {
+                    let err_string = err.to_string();
                     error!("Failed to accept a connection: {err}");
+                    // if it's a fd limit issue, sleep until things get better
+                    if err_string.contains("Too many open files") {
+                        tokio::time::sleep(Duration::from_millis(250)).await;
+                        warn!("fd limit exceeded, sleeping for 250ms.");
+                    }
                 }
             }
         }
@@ -443,8 +449,9 @@ impl GameServer {
     fn print_server_status(&'static self) {
         info!("Current server stats (printed once an hour)");
         info!(
-            "Player threads: {}, player count: {}",
+            "Player threads: {} (unclaimed: {}), player count: {}",
             self.threads.lock().len(),
+            self.unclaimed_threads.lock().len(),
             self.state.player_count.load(Ordering::Relaxed)
         );
         info!("Amount of rooms: {}", self.state.room_manager.get_rooms().len());
