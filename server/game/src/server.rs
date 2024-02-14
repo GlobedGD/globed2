@@ -129,7 +129,7 @@ impl GameServer {
                 Ok(()) => {}
                 Err(err) => {
                     let err_string = err.to_string();
-                    error!("Failed to accept a connection: {err}");
+                    error!("Failed to accept a connection: {err_string}");
                     // if it's a fd limit issue, sleep until things get better
                     if err_string.contains("Too many open files") {
                         tokio::time::sleep(Duration::from_millis(250)).await;
@@ -162,7 +162,7 @@ impl GameServer {
             // they won't be removed from levels or the player count and that person has to restart the game to connect again.
             // so try to avoid panics please..
             thread.run().await;
-            trace!("removing client: {}", peer);
+            debug!("removing client: {}", peer);
             self.post_disconnect_cleanup(&thread, peer);
 
             // if any thread was waiting for us to terminate, tell them it's finally time.l

@@ -69,7 +69,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     } else {
         info!("Configuration file does not exist by given path, creating a template one.");
-        ServerConfig::default()
+
+        let conf = ServerConfig::default();
+        conf.save(&config_path)?;
+
+        conf
     };
 
     // stupid rust

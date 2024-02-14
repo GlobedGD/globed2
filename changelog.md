@@ -1,3 +1,7 @@
+## v1.1.1
+
+* Improve the online level list
+
 ## v1.1.0
 
 Globed now uses a different networking protocol (hybrid TCP/UDP instead of just UDP). This should fix **many (but not all!) of the connection related issues**, such as players not loading in a level, or the player list popup taking an infinite amount of time to load.

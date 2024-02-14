@@ -271,12 +271,18 @@ impl GameServerThread {
     async fn send_buffer_tcp(&self, buffer: &[u8]) -> Result<()> {
         // safety: only we can send data to our client.
         let socket = unsafe { self.socket.get_mut() };
-        socket
-            .write_all(buffer)
-            .await
-            .map_err(PacketHandlingError::SocketSendFailed)?;
 
-        Ok(())
+        match tokio::time::timeout(Duration::from_secs(5), socket.write_all(buffer)).await {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(err)) => Err(PacketHandlingError::SocketSendFailed(err)),
+            Err(_) => {
+                // timed out
+                Err(PacketHandlingError::SocketSendFailed(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    "TCP send timed out (waited for 5 seconds)",
+                )))
+            }
+        }
     }
 
     /// non async version of `send_buffer_tcp`
