@@ -69,6 +69,12 @@ class ProtocolMismatchPacket : public Packet {
     uint16_t serverProtocol;
 };
 
+class KeepaliveTCPResponsePacket : public Packet {
+    GLOBED_PACKET(20008, false, false)
+
+    GLOBED_PACKET_DECODE {}
+};
+
 class ConnectionTestResponsePacket : public Packet {
     GLOBED_PACKET(20010, false, false)
 

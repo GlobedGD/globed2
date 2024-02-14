@@ -41,6 +41,10 @@ pub struct ClaimThreadPacket {
 }
 
 #[derive(Packet, Decodable)]
+#[packet(id = 10006)]
+pub struct KeepaliveTCPPacket;
+
+#[derive(Packet, Decodable)]
 #[packet(id = 10010)]
 pub struct ConnectionTestPacket {
     pub uid: u32,

@@ -1,6 +1,7 @@
 ## v1.1.1
 
 * Improve the online level list
+* Fix some more network related issues (specifically keeping the TCP connection alive)
 
 ## v1.1.0
 

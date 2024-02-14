@@ -50,6 +50,10 @@ pub struct ProtocolMismatchPacket {
     pub protocol: u16,
 }
 
+#[derive(Packet, Encodable, StaticSize)]
+#[packet(id = 20008, tcp = true)]
+pub struct KeepaliveTCPResponsePacket;
+
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 20010, tcp = false)]
 pub struct ConnectionTestResponsePacket {

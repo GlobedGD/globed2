@@ -160,6 +160,12 @@ impl GameServerThread {
         Ok(())
     });
 
+    gs_handler!(self, handle_keepalive_tcp, KeepaliveTCPPacket, _packet, {
+        let _ = gs_needauth!(self);
+
+        self.send_packet_static(&KeepaliveTCPResponsePacket).await
+    });
+
     gs_handler!(self, handle_connection_test, ConnectionTestPacket, packet, {
         self.send_packet_dynamic(&ConnectionTestResponsePacket {
             uid: packet.uid,

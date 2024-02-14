@@ -102,6 +102,17 @@ class ClaimThreadPacket : public Packet {
     uint32_t secretKey;
 };
 
+class KeepaliveTCPPacket : public Packet {
+    GLOBED_PACKET(10006, false, true)
+
+    GLOBED_PACKET_ENCODE {}
+
+    KeepaliveTCPPacket() {}
+    static std::shared_ptr<Packet> create() {
+        return std::make_shared<KeepaliveTCPPacket>();
+    }
+};
+
 class ConnectionTestPacket : public Packet {
     GLOBED_PACKET(10010, false, false)
 

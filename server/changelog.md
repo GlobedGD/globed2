@@ -2,6 +2,10 @@
 
 least chaotic thing about this repo tbh
 
+## game v1.1.2
+
+Added a TCP keepalive packet.
+
 ## game v1.1.0
 
 Protocol version is bumped to v2, so people on older versions of the mod won't be able to connect anymore.

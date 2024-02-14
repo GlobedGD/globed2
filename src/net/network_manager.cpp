@@ -19,6 +19,8 @@ NetworkManager::NetworkManager() {
     // add builtin listeners for connection related packets
 
     addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
+        log::debug("handshake successful, logging in");
+
         gameSocket.cryptoBox->setPeerKey(packet->data.key.data());
         _handshaken = true;
         // and lets try to login!
@@ -44,6 +46,8 @@ NetworkManager::NetworkManager() {
         GameServerManager::get().finishKeepalive(packet->playerCount);
     });
 
+    addBuiltinListener<KeepaliveTCPResponsePacket>([](auto) {});
+
     addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
         this->disconnectWithMessage(packet->message);
     });
@@ -53,10 +57,7 @@ NetworkManager::NetworkManager() {
         connectedTps = packet->tps;
         _loggedin = true;
 
-        // delay by 1 frame to not deadlock
-        Loader::get()->queueInMainThread([this] {
-            this->send(ClaimThreadPacket::create(this->secretKey));
-        });
+        this->send(ClaimThreadPacket::create(this->secretKey));
     });
 
     addBuiltinListener<LoginFailedPacket>([this](auto packet) {
@@ -233,6 +234,7 @@ void NetworkManager::threadMainFunc() {
         _deferredConnect = false;
 
         if (result) {
+            log::debug("tcp connection successful, sending the handshake");
             // successful connection
             GameServerManager::get().setActive(_deferredServerId);
             gameSocket.createBox();
@@ -367,6 +369,12 @@ void NetworkManager::maybeSendKeepalive() {
             lastKeepalive = now;
             this->send(KeepalivePacket::create());
             GameServerManager::get().startKeepalive();
+        }
+
+        // this is only done to keep the nat hole open
+        if ((now - lastTcpKeepalive) > TCP_KEEPALIVE_INTERVAL) {
+            lastTcpKeepalive = now;
+            this->send(KeepaliveTCPPacket::create());
         }
     }
 }

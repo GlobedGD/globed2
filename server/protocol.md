@@ -20,6 +20,7 @@ Connection related
 * 10003+ - LoginPacket - authentication
 * 10004 - DisconnectPacket - client disconnection
 * 10005 - ClaimThreadPacket - claim a tcp thread from a udp connection
+* 10006 - KeepaliveTCPPacket - keepalive but for the tcp connection
 * 10010 - ConnectionTestPacket - connection test (response 20010)
 
 General
@@ -59,6 +60,7 @@ Connection related
 * 20005 - LoginFailedPacket - bad auth (has error message)
 * 20006 - ServerNoticePacket - message popup for the user
 * 20007 - ProtocolMismatchPacket - protocol version mismatch
+* 20008 - KeepaliveTCPResponsePacket - keepalive response but for tcp
 * 20010 - ConnectionTestResponsePacket - connection test response
 
 General

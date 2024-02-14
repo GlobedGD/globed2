@@ -109,6 +109,7 @@ public:
 
 private:
     static constexpr chrono::seconds KEEPALIVE_INTERVAL = chrono::seconds(5);
+    static constexpr chrono::seconds TCP_KEEPALIVE_INTERVAL = chrono::seconds(60);
     static constexpr chrono::seconds DISCONNECT_AFTER = chrono::seconds(15);
 
     GameSocket gameSocket;
@@ -141,6 +142,7 @@ private:
     unsigned short _deferredPort;
 
     util::time::time_point lastKeepalive;
+    util::time::time_point lastTcpKeepalive;
     util::time::time_point lastReceivedPacket;
 
     void handlePingResponse(std::shared_ptr<Packet> packet);

@@ -469,6 +469,7 @@ impl GameServerThread {
             LoginPacket::PACKET_ID => self.handle_login(&mut data).await,
             DisconnectPacket::PACKET_ID => self.handle_disconnect(&mut data),
             ConnectionTestPacket::PACKET_ID => self.handle_connection_test(&mut data).await,
+            KeepaliveTCPPacket::PACKET_ID => self.handle_keepalive_tcp(&mut data).await,
 
             /* general */
             SyncIconsPacket::PACKET_ID => self.handle_sync_icons(&mut data).await,
