@@ -67,7 +67,6 @@ void FragmentationCalibartionPopup::nextStep() {
     if (currentAttempt > 4) {
         currentAttempt = 0;
         auto newSize = TEST_PACKET_SIZES[++currentSizeIdx];
-        log::debug("upgrading from {} to {}", currentSize, newSize);
         currentSize = newSize;
     }
 
