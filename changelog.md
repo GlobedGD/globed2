@@ -10,6 +10,7 @@ Additional changes include:
 
 * Improve the **account verification** system (and enable it on the main server)
 * Fix the freezes/crashes on the loading screen and update the message text at the bottom when loading icons
+* Add a connection calibration button in settings (try to use it if you have connection issues)
 * (Maybe) fix crash when applying a texture pack with Texture Loader
 * Fix audio crash
 * Add a volume indicator in the pause menu player list
