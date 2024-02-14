@@ -271,8 +271,11 @@ impl GameServerThread {
     async fn send_buffer_tcp(&self, buffer: &[u8]) -> Result<()> {
         // safety: only we can send data to our client.
         let socket = unsafe { self.socket.get_mut() };
+        let result = tokio::time::timeout(Duration::from_secs(5), socket.write_all(buffer)).await;
 
-        match tokio::time::timeout(Duration::from_secs(5), socket.write_all(buffer)).await {
+        trace!("sending tcp {} bytes: {result:?}", buffer.len());
+
+        match result {
             Ok(Ok(())) => Ok(()),
             Ok(Err(err)) => Err(PacketHandlingError::SocketSendFailed(err)),
             Err(_) => {
@@ -289,7 +292,11 @@ impl GameServerThread {
     fn send_buffer_tcp_immediate(&self, buffer: &[u8]) -> Result<usize> {
         // safety: only we can send data to our client.
         let socket = unsafe { self.socket.get_mut() };
-        match socket.try_write(buffer) {
+        let result = socket.try_write(buffer);
+
+        trace!("sending tcp immediate {} bytes: {result:?}", buffer.len());
+
+        match result {
             Ok(x) => Ok(x),
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => Err(PacketHandlingError::SocketWouldBlock),
             Err(e) => Err(e.into()),
