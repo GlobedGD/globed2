@@ -79,11 +79,22 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
                 url.pop_back();
             }
 
-            // we try to connect to the server and see if the versions match
-            ServerTestPopup::create(url, this)->show();
-            this->retain();
-            testedName = name;
-            testedUrl = url;
+            auto& csm = CentralServerManager::get();
+            auto server = csm.getServer(this->modifyingIndex);
+
+            if (this->modifyingIndex == -1 || server.url != url) {
+                // we try to connect to the server and see if the versions match
+                ServerTestPopup::create(url, this)->show();
+                this->retain();
+                testedName = name;
+                testedUrl = url;
+            } else {
+                // if we just changed the name of an existing server, simply update it
+                testedName = name;
+                testedUrl = url;
+                this->onTestSuccess();
+            }
+
         })
         .id("add-server-button"_spr)
         .intoNewParent(CCMenu::create())

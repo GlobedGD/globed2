@@ -7,6 +7,8 @@
 * Fix some audio related issues
 * Fix the mute button not working immediately in platformer
 * Fix the cube icon being default in levels starting with a non-cube gamemode
+* Allow editing the server name even if the server is offline
+* Fix being able to quit/resume the level while having the user popup opened on the pause menu
 
 ## v1.1.0
 

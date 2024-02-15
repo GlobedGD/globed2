@@ -26,3 +26,18 @@ void GlobedPauseLayer::customSetup() {
         .pos(0.f, 0.f)
         .parent(this);
 }
+
+#define REPLACE(method) \
+    void GlobedPauseLayer::method(CCObject* s) {\
+        if (getChildOfType<GlobedUserListPopup>(this->getParent(), 0) == nullptr) { \
+            PauseLayer::method(s); \
+        } \
+    }
+
+REPLACE(onQuit);
+REPLACE(onResume);
+REPLACE(onRestart);
+REPLACE(onRestartFull);
+REPLACE(onEdit);
+REPLACE(onNormalMode);
+REPLACE(onPracticeMode);
