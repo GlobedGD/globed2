@@ -209,7 +209,8 @@ impl GameServerThread {
                 | PacketHandlingError::NoHandler(_)
                 | PacketHandlingError::IOError(_)
                 | PacketHandlingError::DebugOnlyPacket
-                | PacketHandlingError::PacketTooLong(_) => {
+                | PacketHandlingError::PacketTooLong(_)
+                | PacketHandlingError::SocketSendFailed(_) => {
                     warn!(
                         "[{} @ {}] err: {}",
                         self.account_id.load(Ordering::Relaxed),
@@ -218,8 +219,7 @@ impl GameServerThread {
                     );
                 }
                 // these are either our fault or a fatal error somewhere
-                PacketHandlingError::SocketSendFailed(_)
-                | PacketHandlingError::ColorParseFailed(_)
+                PacketHandlingError::ColorParseFailed(_)
                 | PacketHandlingError::UnexpectedCentralResponse
                 | PacketHandlingError::SystemTimeError(_)
                 | PacketHandlingError::WebRequestError(_)

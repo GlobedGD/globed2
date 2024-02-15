@@ -54,6 +54,7 @@ impl RoomManager {
         pm.create_player(account_id);
 
         rooms.insert(room_id, pm);
+        self.get_global().remove_player(account_id);
 
         room_id
     }
