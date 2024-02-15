@@ -20,7 +20,7 @@ pub struct KeepaliveResponsePacket {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 20003, tcp = false)]
+#[packet(id = 20003, tcp = true)]
 pub struct ServerDisconnectPacket<'a> {
     pub message: &'a str,
 }
