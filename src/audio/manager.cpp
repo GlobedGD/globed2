@@ -437,10 +437,12 @@ Result<> GlobedAudioManager::audioThreadWork() {
     if (recordStartDeferred) {
         recordStartDeferred = false;
 
-        FMOD_ERR_CHECK_SAFE(
-            this->getSystem()->recordStart(recordDevice.id, recordSound, true),
-            "System::recordStart"
-        );
+        FMOD_RESULT res = this->getSystem()->recordStart(recordDevice.id, recordSound, true);
+
+        // invalid device most likely
+        if (res == FMOD_ERR_RECORD) {
+            return Err("Invalid audio device selected, unable to record");
+        }
     }
 
     float* pcmData;

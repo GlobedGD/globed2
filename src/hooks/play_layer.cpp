@@ -296,10 +296,10 @@ void GlobedPlayLayer::setupCustomKeybinds() {
         } else {
             if (vm.isRecording()) {
                 vm.stopRecording();
+            }
 
-                if (m_fields->selfStatusIcons) {
-                    m_fields->selfStatusIcons->updateStatus(false, false, false);
-                }
+            if (m_fields->selfStatusIcons) {
+                m_fields->selfStatusIcons->updateStatus(false, false, false);
             }
         }
 
