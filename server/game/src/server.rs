@@ -17,7 +17,10 @@ use rustc_hash::FxHashMap;
 #[allow(unused_imports)]
 use tokio::sync::oneshot; // no way
 
-use tokio::net::{TcpListener, UdpSocket};
+use tokio::{
+    io::AsyncWriteExt,
+    net::{TcpListener, UdpSocket},
+};
 
 use crate::{
     data::*,
@@ -165,8 +168,12 @@ impl GameServer {
             debug!("removing client: {}", peer);
             self.post_disconnect_cleanup(&thread, peer);
 
-            // if any thread was waiting for us to terminate, tell them it's finally time.l
-            thread.cleanup_notify.notify_waiters();
+            // safety: the thread no longer runs and we are the only ones who can access the socket
+            let socket = unsafe { thread.socket.get_mut() };
+            let _ = socket.shutdown().await;
+
+            // if any thread was waiting for us to terminate, tell them it's finally time.
+            thread.cleanup_notify.notify_one();
         });
 
         Ok(())
@@ -309,8 +316,15 @@ impl GameServer {
                 )))
                 .await;
 
-            let _mtx = thread.cleanup_mutex.lock().await;
-            thread.cleanup_notify.notified().await;
+            let fut = async move {
+                let _ = thread.cleanup_mutex.lock().await;
+                thread.cleanup_notify.notified().await;
+            };
+
+            match tokio::time::timeout(Duration::from_secs(10), fut).await {
+                Ok(()) => {}
+                Err(_) => return Err(anyhow!("timed out waiting for the thread to disconnect")),
+            }
         }
 
         Ok(())

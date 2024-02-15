@@ -57,7 +57,7 @@ pub enum ServerThreadMessage {
 
 pub struct GameServerThread {
     game_server: &'static GameServer,
-    socket: LockfreeMutCell<TcpStream>,
+    pub socket: LockfreeMutCell<TcpStream>,
 
     pub claimed: AtomicBool,
     pub claim_secret_key: AtomicU32,
@@ -149,20 +149,24 @@ impl GameServerThread {
                     }
                 }
 
-                message_len = self.poll_for_tcp_data() => match message_len {
-                    Ok(message_len) => {
+                timeout_res = tokio::time::timeout(Duration::from_secs(90), self.poll_for_tcp_data()) => match timeout_res {
+                    Ok(Ok(message_len)) => {
                         match self.recv_and_handle(message_len).await {
                             Ok(()) => {}
                             Err(e) => self.print_error(&e),
                         }
                     }
-                    Err(err) => {
+                    Ok(Err(err)) => {
                         // early eof means the client has disconnected (closed their part of the socketS)
                         if let PacketHandlingError::IOError(ref ioerror) = err {
                             if ioerror.kind() != std::io::ErrorKind::UnexpectedEof {
                                 self.print_error(&err);
                             }
                         }
+                        break;
+                    }
+                    Err(_) => {
+                        debug!("tcp connection not responding for 90 seconds, terminating");
                         break;
                     }
                 }
