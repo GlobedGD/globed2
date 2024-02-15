@@ -171,21 +171,10 @@ void GlobedPlayLayer::onQuit() {
     if (!m_fields->globedReady) return;
 
     auto& nm = NetworkManager::get();
-
-    // clean up the listeners
-    nm.removeListener<PlayerProfilesPacket>();
-    nm.removeListener<LevelDataPacket>();
-    nm.removeListener<VoiceBroadcastPacket>();
-
     if (!nm.established()) return;
 
     // send LevelLeavePacket
     nm.send(LevelLeavePacket::create());
-
-    // if we a have a higher ping, there may still be some inbound packets. suppress them for the next 3 seconds.
-    nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::seconds(3));
-    nm.suppressUnhandledFor<LevelDataPacket>(util::time::seconds(3));
-    nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::seconds(3));
 
 #if GLOBED_VOICE_SUPPORT
     // stop voice recording and playback
@@ -194,6 +183,16 @@ void GlobedPlayLayer::onQuit() {
     // TODO: this can freeze for up to a second on a level with 100 people LMAO
     VoicePlaybackManager::get().stopAllStreams();
 #endif // GLOBED_VOICE_SUPPORT
+
+    // clean up the listeners
+    nm.removeListener<PlayerProfilesPacket>();
+    nm.removeListener<LevelDataPacket>();
+    nm.removeListener<VoiceBroadcastPacket>();
+
+    // if we a have a higher ping, there may still be some inbound packets. suppress them for the next 3 seconds.
+    nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::seconds(3));
+    nm.suppressUnhandledFor<LevelDataPacket>(util::time::seconds(3));
+    nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::seconds(3));
 }
 
 void GlobedPlayLayer::setupPacketListeners() {
@@ -570,18 +569,6 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
 
 void GlobedPlayLayer::handlePlayerJoin(int playerId) {
     auto& settings = GlobedSettings::get();
-
-#if GLOBED_VOICE_SUPPORT
-    auto& vpm = VoicePlaybackManager::get();
-    try {
-        vpm.prepareStream(playerId);
-        if (!m_level->isPlatformer()) {
-            vpm.setVolume(playerId, settings.communication.voiceVolume);
-        }
-    } catch (const std::exception& e) {
-        ErrorQueues::get().error(std::string("Failed to prepare audio stream: ") + e.what());
-    }
-#endif // GLOBED_VOICE_SUPPORT
 
     PlayerProgressIcon* progressIcon = nullptr;
     PlayerProgressArrow* progressArrow = nullptr;
