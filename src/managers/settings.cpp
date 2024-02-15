@@ -60,6 +60,7 @@ void GlobedSettings::save() {
     STOREV(players, dualName);
     STOREV(players, nameOpacity);
     STOREV(players, statusIcons);
+    STOREV(players, hideNearby);
     STOREV(players, deathEffects);
     STOREV(players, defaultDeathEffect);
 
@@ -101,6 +102,7 @@ void GlobedSettings::reload() {
     LOADV(players, dualName);
     LOADV(players, nameOpacity);
     LOADV(players, statusIcons);
+    LOADV(players, hideNearby);
     LOADV(players, deathEffects);
     LOADV(players, defaultDeathEffect);
 

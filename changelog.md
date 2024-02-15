@@ -1,6 +1,7 @@
 ## v1.1.1
 
-* Add pages to the online level list
+* Add pages to the online level list (and fix some levels not appearing)
+* Add a Hide Nearby Players setting that allows you to make nearby players transparent
 * Fix some more network related issues (specifically keeping the TCP connection alive)
 * Fix huge lag related to packet limit & fragmentation
 * Fix huge lag when exiting a level

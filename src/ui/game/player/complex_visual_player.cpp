@@ -70,6 +70,8 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
 }
 
 void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing, bool isSpeaking) {
+    auto& settings = GlobedSettings::get();
+
     playerIcon->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
 
@@ -106,6 +108,9 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
 
     if (switchedMode) {
         this->updateIconType(iconType);
+    }
+
+    if (switchedMode || settings.players.hideNearby) {
         this->updateOpacity();
     }
 
@@ -355,11 +360,33 @@ void ComplexVisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
 }
 
 void ComplexVisualPlayer::updateOpacity() {
-    unsigned char opacity = static_cast<unsigned char>(GlobedSettings::get().players.playerOpacity * 255.f);
+    auto& settings = GlobedSettings::get();
+
+    float mult = 1.f;
+    if (settings.players.hideNearby) {
+        // calculate distance
+        auto* pl = PlayLayer::get();
+        auto p1pos = pl->m_player1->getPosition();
+        auto p2pos = pl->m_player2->getPosition();
+        auto ourPos = this->getPlayerPosition();
+
+        float distance = std::min(cocos2d::ccpDistance(ourPos, p1pos), cocos2d::ccpDistance(ourPos, p2pos));
+
+        // range of 150 units (5 blocks)
+        distance = std::clamp(distance, 0.f, 150.f);
+        mult = distance / 150.f;
+    }
+
+    unsigned char opacity = static_cast<unsigned char>(settings.players.playerOpacity * mult * 255.f);
 
     playerIcon->setOpacity(opacity);
     playerIcon->m_spiderSprite->GJRobotSprite::setOpacity(opacity);
     playerIcon->m_robotSprite->GJRobotSprite::setOpacity(opacity);
+
+    // set name opacity too if hideNearby is enabled
+    if (settings.players.hideNearby) {
+        playerName->setOpacity(static_cast<unsigned char>(settings.players.nameOpacity * mult * 255.f));
+    }
 }
 
 void ComplexVisualPlayer::toggleAllOff() {
@@ -401,7 +428,7 @@ void ComplexVisualPlayer::callUpdateWith(PlayerIconType type, int icon) {
     }
 }
 
-cocos2d::CCPoint ComplexVisualPlayer::getPlayerPosition() {
+CCPoint ComplexVisualPlayer::getPlayerPosition() {
     return playerIcon->getPosition();
 }
 

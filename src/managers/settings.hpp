@@ -51,6 +51,7 @@ public:
         GSETTING(bool, statusIcons, true);
         GSETTING(bool, deathEffects, true);
         GSETTING(bool, defaultDeathEffect, false);
+        GSETTING(bool, hideNearby, false);
     };
 
     struct Advanced {};

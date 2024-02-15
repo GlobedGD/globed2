@@ -116,6 +116,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
     MAKE_SETTING(players, statusIcons, "Status icons", "Show an icon above a player if they are paused, in practice mode, or currently speaking.");
     MAKE_SETTING(players, deathEffects, "Death effects", "Play a death effect whenever a player dies.");
     MAKE_SETTING(players, defaultDeathEffect, "Default death effect", "Replaces the death effects of all players with a default explosion effect.");
+    MAKE_SETTING(players, hideNearby, "Hide nearby players", "Increases the transparency of players as they get closer to you, so that they don't obstruct your view.");
 
     return cells;
 }
