@@ -273,8 +273,6 @@ impl GameServerThread {
         let socket = unsafe { self.socket.get_mut() };
         let result = tokio::time::timeout(Duration::from_secs(5), socket.write_all(buffer)).await;
 
-        trace!("sending tcp {} bytes: {result:?}", buffer.len());
-
         match result {
             Ok(Ok(())) => Ok(()),
             Ok(Err(err)) => Err(PacketHandlingError::SocketSendFailed(err)),
@@ -293,8 +291,6 @@ impl GameServerThread {
         // safety: only we can send data to our client.
         let socket = unsafe { self.socket.get_mut() };
         let result = socket.try_write(buffer);
-
-        trace!("sending tcp immediate {} bytes: {result:?}", buffer.len());
 
         match result {
             Ok(x) => Ok(x),

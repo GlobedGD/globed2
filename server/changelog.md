@@ -4,7 +4,8 @@ least chaotic thing about this repo tbh
 
 ## game v1.1.2
 
-Added a TCP keepalive packet.
+* added a TCP keepalive packet.
+* added ability to kick everyone on the server in the admin panel (literally type `@everyone` as the name)
 
 ## game v1.1.0
 

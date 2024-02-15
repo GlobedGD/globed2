@@ -14,6 +14,7 @@ class $modify(HookedLoadingLayer, LoadingLayer) {
         (void) self.setHookPriority("LoadingLayer::loadAssets", -99999999);
     }
 
+    $override
     void loadingFinished();
 
     void setLabelText(const std::string_view text);

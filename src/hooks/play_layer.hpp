@@ -44,7 +44,10 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     // gd hooks
 
+    $override
     bool init(GJGameLevel* level, bool p1, bool p2);
+
+    $override
     void onQuit();
 
     /* setup stuff to make init() cleaner */

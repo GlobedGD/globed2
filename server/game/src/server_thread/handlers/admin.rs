@@ -157,6 +157,17 @@ impl GameServerThread {
             return Ok(());
         }
 
+        if &*packet.player == "@everyone" {
+            let threads: Vec<_> = self.game_server.threads.lock().values().cloned().collect();
+            for thread in threads {
+                thread
+                    .push_new_message(ServerThreadMessage::TerminationNotice(packet.message.clone()))
+                    .await;
+            }
+
+            return Ok(());
+        }
+
         if let Some(thread) = self.game_server.get_user_by_name_or_id(&packet.player) {
             thread
                 .push_new_message(ServerThreadMessage::TerminationNotice(packet.message))

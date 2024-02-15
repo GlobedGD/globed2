@@ -44,7 +44,7 @@ bool AdminPopup::setup() {
             .collect();
 
         // user disconnect input box
-        Build<InputNode>::create(m_size.width * 0.25f, "user", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 16)
+        Build<InputNode>::create(m_size.width * 0.25f, "user", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC) + "@", 16)
             .parent(dcMenu)
             .id("admin-dc-input"_spr)
             .store(disconnectUserInput);

@@ -91,7 +91,7 @@ void GlobedSignupPopup::uploadMessageFinished(int) {
 
 void GlobedSignupPopup::uploadMessageFailed(int e) {
     GameLevelManager::sharedState()->m_uploadMessageDelegate = nullptr;
-    this->onFailure(fmt::format("Message upload failed: <cy>error {}</c>", (int)e));
+    this->onFailure(fmt::format("Message upload failed due to an unknown reason. Please try to open account settings and refresh login."));
 }
 
 void GlobedSignupPopup::onDelayedChallengeCompleted() {

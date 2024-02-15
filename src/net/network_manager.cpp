@@ -279,7 +279,7 @@ void NetworkManager::threadMainFunc() {
         try {
             auto result = gameSocket.sendPacket(packet);
             if (!result) {
-                log::debug("failed to send packet: {}", result.unwrapErr());
+                log::debug("failed to send packet {}: {}", packet->getPacketId(), result.unwrapErr());
                 this->disconnectWithMessage(result.unwrapErr());
                 return;
             }
