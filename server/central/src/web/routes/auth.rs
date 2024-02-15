@@ -267,7 +267,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
     let result = state.verify_challenge(&challenge.value, ch_answer);
 
     if !result {
-        throw!(StatusCode::UNAUTHORIZED, "challenge solution proof not found");
+        throw!(StatusCode::UNAUTHORIZED, "incorrect challenge solution was provided");
     }
 
     let use_gd_api = state.config.use_gd_api;
@@ -285,7 +285,7 @@ pub async fn challenge_finish(context: &mut Context<ServerState>) -> roa::Result
         if let Some(id) = result {
             Some(id)
         } else {
-            throw!(StatusCode::UNAUTHORIZED, "challenge solution was not found");
+            throw!(StatusCode::UNAUTHORIZED, "challenge solution proof not found");
         }
     } else {
         None

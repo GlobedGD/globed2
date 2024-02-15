@@ -52,7 +52,7 @@ void VoiceRecordingManager::threadFunc() {
                 ByteBuffer buf;
                 buf.writeValue(frame);
 
-                nm.send(RawPacket::create(VoicePacket::PACKET_ID, VoicePacket::ENCRYPTED, VoicePacket::SHOULD_USE_TCP, std::move(buf)));
+                nm.send(RawPacket::create<VoicePacket>(std::move(buf)));
             });
 
             if (result.isErr()) {

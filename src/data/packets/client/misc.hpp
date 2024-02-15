@@ -26,8 +26,13 @@ public:
         buf.writeBytes(buffer.getDataRef());
     }
 
-    static std::shared_ptr<RawPacket> create(packetid_t id, bool encrypted, bool tcp, ByteBuffer&& buffer) {
+    static std::shared_ptr<Packet> create(packetid_t id, bool encrypted, bool tcp, ByteBuffer&& buffer) {
         return std::make_shared<RawPacket>(id, encrypted, tcp, std::move(buffer));
+    }
+
+    template <typename T>
+    static std::shared_ptr<Packet> create(ByteBuffer&& buffer) {
+        return std::make_shared<RawPacket>(T::PACKET_ID, T::ENCRYPTED, T::SHOULD_USE_TCP, std::move(buffer));
     }
 
     packetid_t id;
