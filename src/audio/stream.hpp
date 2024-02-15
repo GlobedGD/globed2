@@ -65,6 +65,8 @@ public:
     // set the volume of the stream (0.0f - 1.0f, beyond 1.0f amplifies)
     void setVolume(float volume);
 
+    float getVolume();
+
     // get how loud the sound is being played
     float getLoudness();
 

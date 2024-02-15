@@ -1,10 +1,12 @@
 ## v1.1.1
 
-* Improve the online level list
+* Add pages to the online level list
 * Fix some more network related issues (specifically keeping the TCP connection alive)
 * Fix huge lag related to packet limit & fragmentation
 * Fix huge lag when exiting a level
 * Fix some audio related issues
+* Fix the mute button not working immediately in platformer
+* Fix the cube icon being default in levels starting with a non-cube gamemode
 
 ## v1.1.0
 

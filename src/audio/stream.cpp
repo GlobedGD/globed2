@@ -101,6 +101,10 @@ void AudioStream::setVolume(float volume) {
     this->volume = volume;
 }
 
+float AudioStream::getVolume() {
+    return volume;
+}
+
 float AudioStream::getLoudness() {
     return estimator.getVolume() * this->volume;
 }

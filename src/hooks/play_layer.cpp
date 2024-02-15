@@ -445,6 +445,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         self->m_progressBar->addChild(self->m_fields->progressBarWrapper);
     }
 
+    auto& bl = BlockListMangaer::get();
     auto& vpm = VoicePlaybackManager::get();
     auto& settings = GlobedSettings::get();
     auto mePosition = self->m_player1->getPosition();
@@ -471,7 +472,10 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
             float distance = cocos2d::ccpDistance(mePosition, theyPos1);
 
             float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
-            vpm.setVolume(playerId, volume * settings.communication.voiceVolume);
+
+            if (this->shouldLetMessageThrough(playerId)) {
+                vpm.setVolume(playerId, volume * settings.communication.voiceVolume);
+            }
         }
     }
 

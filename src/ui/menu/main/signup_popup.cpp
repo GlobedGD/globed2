@@ -159,6 +159,8 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
         .expect([this](std::string error, int statusCode) {
             if (error.empty()) {
                 this->onFailure(fmt::format("Completing challenge failed: server sent an empty response with code {}.", statusCode));
+            } else if (statusCode == 401) {
+                this->onFailure("Completing challenge failed: account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>" + util::format::formatErrorMessage(error) + "</c>");
             } else {
                 this->onFailure("Completing challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
             }

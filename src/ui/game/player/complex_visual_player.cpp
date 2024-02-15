@@ -46,6 +46,8 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
             .collect();
     }
 
+    // preload the cube icon so the passengers are correct
+    this->updateIconType(PlayerIconType::Cube);
     this->updateIconType(playerIconType);
 
     return true;
@@ -334,6 +336,7 @@ void ComplexVisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
     }
 
     if (!skipFrames) {
+        playerIcon->updatePlayerFrame(storedIcons.cube);
         playerIcon->updatePlayerShipFrame(storedIcons.ship);
         playerIcon->updatePlayerRollFrame(storedIcons.ball);
         playerIcon->updatePlayerBirdFrame(storedIcons.ufo);
@@ -342,7 +345,6 @@ void ComplexVisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
         playerIcon->updatePlayerSpiderFrame(storedIcons.spider);
         playerIcon->updatePlayerSwingFrame(storedIcons.swing);
         playerIcon->updatePlayerJetpackFrame(storedIcons.jetpack);
-        playerIcon->updatePlayerFrame(storedIcons.cube);
     }
 
     playerIcon->updateGlowColor();

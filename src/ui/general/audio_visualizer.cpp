@@ -23,7 +23,7 @@ bool GlobedAudioVisualizer::init() {
 }
 
 void GlobedAudioVisualizer::setVolume(float val) {
-    this->setVolumeRaw(val * 3.f);
+    this->setVolumeRaw(val * 2.f);
 }
 
 void GlobedAudioVisualizer::setVolumeRaw(float val) {

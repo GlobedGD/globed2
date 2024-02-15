@@ -6,6 +6,7 @@ class GlobedLevelListLayer : public cocos2d::CCLayer, LevelManagerDelegate {
 public:
     static constexpr float LIST_WIDTH = 358.f;
     static constexpr float LIST_HEIGHT = 220.f;
+    static constexpr size_t PAGE_SIZE = 100; // levels on 1 page
 
     static GlobedLevelListLayer* create();
     ~GlobedLevelListLayer();
@@ -19,15 +20,21 @@ private:
 
     GJListLayer* listLayer = nullptr;
     LoadingCircle* loadingCircle = nullptr;
+    CCMenuItemSpriteExtra *btnPagePrev = nullptr, *btnPageNext = nullptr;
     std::unordered_map<int, unsigned short> levelList;
-    LoadingState loadingState = LoadingState::Idle;
+    std::vector<int> sortedLevelIds;
+    std::vector<std::vector<Ref<GJGameLevel>>> levelPages;
+    int currentPage = 0;
+    bool loading = false;
 
     bool init() override;
     void keyBackClicked() override;
     void refreshLevels();
-    void onLevelsReceived();
+    void reloadPage();
 
     void loadListCommon();
+    void removeLoadingCircle();
+    void showLoadingUi();
 
 	void loadLevelsFinished(cocos2d::CCArray*, char const*) override;
 	void loadLevelsFailed(char const*) override;

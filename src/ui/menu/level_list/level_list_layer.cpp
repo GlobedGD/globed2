@@ -34,16 +34,63 @@ bool GlobedLevelListLayer::init() {
         .pos(0.f, 0.f)
         .parent(this);
 
+    constexpr float pageBtnPadding = 20.f;
+
+    // pages buttons
+    Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
+        .intoMenuItem([this](auto) {
+            this->currentPage--;
+            this->reloadPage();
+        })
+        .pos(pageBtnPadding, winSize.height / 2)
+        .store(btnPagePrev)
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .parent(this);
+
+    CCSprite* btnSprite;
+    Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
+        .store(btnSprite)
+        .intoMenuItem([this](auto) {
+            this->currentPage++;
+            this->reloadPage();
+        })
+        .pos(winSize.width - pageBtnPadding, winSize.height / 2)
+        .store(btnPageNext)
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .parent(this);
+
+    btnSprite->setFlipX(true);
+
     listLayer->setPosition(winSize / 2 - listLayer->getScaledContentSize() / 2);
 
     util::ui::prepareLayer(this);
 
     NetworkManager::get().addListener<LevelListPacket>([this](LevelListPacket* packet) {
         this->levelList.clear();
+        this->levelPages.clear();
+        this->sortedLevelIds.clear();
+
         for (const auto& level : packet->levels) {
             this->levelList.emplace(level.levelId, level.playerCount);
+            this->sortedLevelIds.push_back(level.levelId);
         }
-        this->onLevelsReceived();
+
+        // sort the levels
+        auto comparator = [this](int a, int b) {
+            if (!this->levelList.contains(a) || !this->levelList.contains(b)) return false;
+
+            auto aVal = this->levelList.at(a);
+            auto bVal = this->levelList.at(b);
+
+            return aVal > bVal;
+        };
+
+        std::sort(sortedLevelIds.begin(), sortedLevelIds.end(), comparator);
+
+        this->currentPage = 0;
+        this->reloadPage();
     });
 
     this->refreshLevels();
@@ -57,8 +104,13 @@ GlobedLevelListLayer::~GlobedLevelListLayer() {
     GameLevelManager::sharedState()->m_levelManagerDelegate = nullptr;
 }
 
-void GlobedLevelListLayer::onLevelsReceived() {
-    loadingState = LoadingState::WaitingRobtop;
+void GlobedLevelListLayer::reloadPage() {
+    loading = true;
+
+    this->showLoadingUi();
+
+    btnPagePrev->setVisible(false);
+    btnPageNext->setVisible(false);
 
     // if empty, don't make a request
     if (levelList.empty()) {
@@ -66,36 +118,33 @@ void GlobedLevelListLayer::onLevelsReceived() {
         return;
     }
 
-    // get a list of level ids and sort by player count descending
-    std::vector<int> levelIdList;
+    // if cached, reuse it
+    if (currentPage < levelPages.size()) {
+        auto& page = levelPages.at(currentPage);
+        auto array = CCArray::create();
+        for (const auto elem : page) {
+            array->addObject(elem);
+        }
 
-    for (const auto& [levelId, _] : levelList) {
-        levelIdList.push_back(levelId);
+        this->loadLevelsFinished(array, "");
+        return;
     }
 
-    auto comparator = [this](int a, int b) {
-        if (!this->levelList.contains(a) || !this->levelList.contains(b)) return false;
-
-        auto aVal = this->levelList.at(a);
-        auto bVal = this->levelList.at(b);
-
-        return aVal > bVal;
-    };
-
-    std::sort(levelIdList.begin(), levelIdList.end(), comparator);
+    size_t startIdx = currentPage * PAGE_SIZE;
+    size_t endIdx = std::min((currentPage + 1) * PAGE_SIZE, sortedLevelIds.size());
 
     // now join them to a comma separated string
     std::ostringstream oss;
 
     bool first = true;
-    for (const auto& levelId: levelIdList) {
+    for (size_t i = startIdx; i < endIdx; i++) {
         if (first) {
             first = false;
         } else {
             oss << ",";
         }
 
-        oss << levelId;
+        oss << sortedLevelIds[i];
     }
 
     auto glm = GameLevelManager::sharedState();
@@ -104,10 +153,32 @@ void GlobedLevelListLayer::onLevelsReceived() {
 }
 
 void GlobedLevelListLayer::loadListCommon() {
-    loadingState = LoadingState::Idle;
-    loadingCircle->fadeAndRemove();
-    loadingCircle = nullptr;
+    loading = false;
+    this->removeLoadingCircle();
     GameLevelManager::sharedState()->m_levelManagerDelegate = nullptr;
+}
+
+void GlobedLevelListLayer::removeLoadingCircle() {
+    if (loadingCircle) {
+        loadingCircle->fadeAndRemove();
+        loadingCircle = nullptr;
+    }
+}
+
+void GlobedLevelListLayer::showLoadingUi() {
+    if (!loadingCircle) {
+        Build<LoadingCircle>::create()
+            .pos(0.f, 0.f)
+            .store(loadingCircle);
+
+        loadingCircle->setParentLayer(this);
+        loadingCircle->show();
+    }
+
+    if (listLayer->m_listView) listLayer->m_listView->removeFromParent();
+    listLayer->m_listView = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT)
+        .parent(listLayer)
+        .collect();
 }
 
 void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) {
@@ -115,7 +186,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     // guys im not gonna try and sort a ccarray manually
 
-    std::vector<GJGameLevel*> sortedLevels;
+    std::vector<Ref<GJGameLevel>> sortedLevels;
     sortedLevels.reserve(p0->count());
 
     for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(p0)) {
@@ -137,6 +208,9 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     std::sort(sortedLevels.begin(), sortedLevels.end(), comparator);
 
+    // add to cache
+    levelPages.push_back(sortedLevels);
+
     CCArray* finalArray = CCArray::create();
     for (GJGameLevel* level : sortedLevels) {
         finalArray->addObject(level);
@@ -153,6 +227,15 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
         if (!levelList.contains(levelId)) continue;
 
         static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));
+    }
+
+    // show the buttons
+    if (currentPage > 0) {
+        btnPagePrev->setVisible(true);
+    }
+
+    if (currentPage < (sortedLevelIds.size() / PAGE_SIZE)) {
+        btnPageNext->setVisible(true);
     }
 }
 
@@ -172,28 +255,20 @@ void GlobedLevelListLayer::loadLevelsFailed(char const* p0) {
 void GlobedLevelListLayer::setupPageInfo(gd::string p0, const char* p1) {}
 
 void GlobedLevelListLayer::refreshLevels() {
-    if (loadingState != LoadingState::Idle) return;
+    if (loading) return;
+
+    loading = true;
+    btnPagePrev->setVisible(false);
+    btnPageNext->setVisible(false);
 
     auto& nm = NetworkManager::get();
     if (!nm.established()) return;
-
-    loadingState = LoadingState::WaitingServer;
 
     // request the level list from the server
     nm.send(RequestLevelListPacket::create());
 
     // remove existing listview and put a loading circle
-    if (listLayer->m_listView) listLayer->m_listView->removeFromParent();
-    listLayer->m_listView = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT)
-        .parent(listLayer)
-        .collect();
-
-    Build<LoadingCircle>::create()
-        .pos(0.f, 0.f)
-        .store(loadingCircle);
-
-    loadingCircle->setParentLayer(this);
-    loadingCircle->show();
+    this->showLoadingUi();
 }
 
 void GlobedLevelListLayer::keyBackClicked() {

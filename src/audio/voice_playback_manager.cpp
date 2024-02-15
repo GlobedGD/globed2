@@ -57,6 +57,14 @@ void VoicePlaybackManager::setVolume(int playerId, float volume) {
     streams.at(playerId)->setVolume(volume);
 }
 
+float VoicePlaybackManager::getVolume(int playerId) {
+    if (!streams.contains(playerId)) {
+        return 0.f;
+    }
+
+    return streams.at(playerId)->getVolume();
+}
+
 void VoicePlaybackManager::muteEveryone() {
     for (const auto& [playerId, stream] : streams) {
         stream->setVolume(0.f);

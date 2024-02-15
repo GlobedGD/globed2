@@ -20,6 +20,7 @@ public:
     void removeStream(int playerId);
     bool isSpeaking(int playerId);
     void setVolume(int playerId, float volume);
+    float getVolume(int playerId);
     void muteEveryone();
     void setVolumeAll(float volume);
 
