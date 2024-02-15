@@ -9,6 +9,7 @@
 * Fix the cube icon being default in levels starting with a non-cube gamemode
 * Allow editing the server name even if the server is offline
 * Fix being able to quit/resume the level while having the user popup opened on the pause menu
+* Fix some lagspikes when recording audio
 
 ## v1.1.0
 

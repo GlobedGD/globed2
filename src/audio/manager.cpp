@@ -214,7 +214,15 @@ Result<> GlobedAudioManager::startRecordingInternal() {
         "System::createSound"
     )
 
-    recordStartDeferred = true;
+    FMOD_RESULT res = this->getSystem()->recordStart(recordDevice.id, recordSound, true);
+
+    // invalid device most likely
+    if (res == FMOD_ERR_RECORD) {
+        return Err("Invalid audio device selected, unable to record");
+    }
+
+    FMOD_ERR_CHECK_SAFE(res, "System::recordStart")
+
     recordQueuedStop = false;
     recordQueuedHalt = false;
     recordLastPosition = 0;
@@ -272,7 +280,6 @@ void GlobedAudioManager::internalStopRecording() {
     }
 
     recordActive = false;
-    recordStartDeferred = false;
     recordQueuedStop = false;
 }
 
@@ -430,21 +437,6 @@ void GlobedAudioManager::audioThreadFunc() {
 }
 
 Result<> GlobedAudioManager::audioThreadWork() {
-    // start recording if we haven't already.
-    // the reason this is deferred is because this call will actually block for a bit,
-    // and we want to avoid freezing the main thread for 5-15ms.
-
-    if (recordStartDeferred) {
-        recordStartDeferred = false;
-
-        FMOD_RESULT res = this->getSystem()->recordStart(recordDevice.id, recordSound, true);
-
-        // invalid device most likely
-        if (res == FMOD_ERR_RECORD) {
-            return Err("Invalid audio device selected, unable to record");
-        }
-    }
-
     float* pcmData;
     unsigned int pcmLen;
 

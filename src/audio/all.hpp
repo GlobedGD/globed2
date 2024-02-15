@@ -7,3 +7,4 @@
 #include "sample_queue.hpp"
 #include "stream.hpp"
 #include "voice_playback_manager.hpp"
+#include "voice_record_manager.hpp"

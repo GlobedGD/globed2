@@ -248,59 +248,14 @@ void GlobedPlayLayer::setupCustomKeybinds() {
     }
 
     this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
-        auto& vm = GlobedAudioManager::get();
+        auto& vrm = VoiceRecordingManager::get();
 
         if (event->isDown()) {
-            if (vm.isRecording()) {
-                return ListenerResult::Stop;
-            }
-
-            vm.validateDevices();
-
-            if (!this->m_fields->deafened && !vm.isRecording()) {
-                // make sure the recording device is valid
-                if (!vm.isRecordingDeviceSet()) {
-                    ErrorQueues::get().warn("Unable to record audio, no recording device is set");
-                    return ListenerResult::Stop;
-                }
-
-                if (vm.isRecording()) {
-                    return ListenerResult::Stop;
-                }
-
-                auto result = vm.startRecording([](const auto& frame) {
-                    // (!) remember that the callback is ran from another thread (!) //
-
-                    auto& nm = NetworkManager::get();
-                    if (!nm.established()) return;
-
-                    // `frame` does not live long enough and will be destructed at the end of this callback.
-                    // so we can't pass it directly in a `VoicePacket` and we use a `RawPacket` instead.
-
-                    ByteBuffer buf;
-                    buf.writeValue(frame);
-
-                    nm.send(RawPacket::create(VoicePacket::PACKET_ID, VoicePacket::ENCRYPTED, VoicePacket::SHOULD_USE_TCP, std::move(buf)));
-                });
-
-                if (result.isErr()) {
-                    ErrorQueues::get().warn(result.unwrapErr());
-                    log::warn("unable to record audio: {}", result.unwrapErr());
-                    return ListenerResult::Stop;
-                }
-
-                if (m_fields->selfStatusIcons) {
-                    m_fields->selfStatusIcons->updateStatus(false, false, true);
-                }
+            if (!this->m_fields->deafened) {
+                vrm.startRecording();
             }
         } else {
-            if (vm.isRecording()) {
-                vm.stopRecording();
-            }
-
-            if (m_fields->selfStatusIcons) {
-                m_fields->selfStatusIcons->updateStatus(false, false, false);
-            }
+            vrm.stopRecording();
         }
 
         return ListenerResult::Stop;
@@ -308,11 +263,13 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 
     this->addEventListener<keybinds::InvokeBindFilter>([this, &settings](keybinds::InvokeBindEvent* event) {
         auto& vpm = VoicePlaybackManager::get();
+        auto& vrm = VoiceRecordingManager::get();
 
         if (event->isDown()) {
             this->m_fields->deafened = !this->m_fields->deafened;
             if (this->m_fields->deafened) {
                 vpm.muteEveryone();
+                vrm.stopRecording();
             } else if (!this->m_fields->isVoiceProximity) {
                 vpm.setVolumeAll(settings.communication.voiceVolume);
             }
@@ -481,6 +438,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
 
     if (self->m_fields->selfStatusIcons) {
         self->m_fields->selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
+        self->m_fields->selfStatusIcons->updateStatus(false, false, VoiceRecordingManager::get().recording);
     }
 }
 
