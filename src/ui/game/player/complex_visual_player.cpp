@@ -5,6 +5,7 @@
 #include <managers/settings.hpp>
 #include <util/misc.hpp>
 #include <util/rng.hpp>
+#include <util/debug.hpp>
 
 using namespace geode::prelude;
 
@@ -23,7 +24,6 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
         .opacity(static_cast<unsigned char>(settings.players.playerOpacity * 255.f))
         .parent(this)
         .collect());
-
 
     playerIcon->setRemoteState();
 
@@ -46,7 +46,6 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
             .collect();
     }
 
-    this->updatePlayerObjectIcons(false);
     this->updateIconType(playerIconType);
 
     return true;

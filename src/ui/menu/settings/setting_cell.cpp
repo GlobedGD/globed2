@@ -236,6 +236,11 @@ void GlobedSettingCell::storeAndSave(std::any value) {
 void GlobedSettingCell::textChanged(CCTextInputNode* p0) {
     auto val = util::format::parse<int>(p0->getString());
     if (val) {
+        int vval = val.value();
+        if (limits.intMax != 0 && limits.intMin != 0) {
+            vval = std::clamp(vval, limits.intMin, limits.intMax);
+        }
+
         this->storeAndSave(val.value());
     }
 }

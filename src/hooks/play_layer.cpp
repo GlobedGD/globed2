@@ -216,7 +216,6 @@ void GlobedPlayLayer::setupPacketListeners() {
             }
 
             this->m_fields->playerStore->insertOrUpdate(player.accountId, player.data.attempts, player.data.localBest);
-
             this->m_fields->interpolator->updatePlayer(player.accountId, player.data, this->m_fields->lastServerUpdate);
         }
     });
@@ -229,9 +228,10 @@ void GlobedPlayLayer::setupPacketListeners() {
         if (this->m_fields->deafened || !settings.communication.voiceEnabled) return;
         if (!this->shouldLetMessageThrough(packet->sender)) return;
 
-        // TODO - this decodes the sound data on the main thread. might be a bad idea, will need to benchmark.
+        auto& vpm = VoicePlaybackManager::get();
         try {
-            VoicePlaybackManager::get().playFrameStreamed(packet->sender, packet->frame);
+            vpm.setVolume(packet->sender, settings.communication.voiceVolume);
+            vpm.playFrameStreamed(packet->sender, packet->frame);
         } catch(const std::exception& e) {
             ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + e.what());
         }
@@ -397,8 +397,7 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
         }
     }
 
-    // TODO make this just send a goddamn list
-    if (ids.size() > 6) {
+    if (ids.size() > 3) {
         NetworkManager::get().send(RequestPlayerProfilesPacket::create(0));
     } else {
         for (int id : ids) {

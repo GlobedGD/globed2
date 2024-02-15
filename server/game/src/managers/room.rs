@@ -38,7 +38,7 @@ impl RoomManager {
         self.rooms.lock()
     }
 
-    /// Creates a new room, adds the given player and returns the room ID
+    /// Creates a new room, adds the given player, removes them from the global room, and returns the room ID
     pub fn create_room(&self, account_id: i32) -> u32 {
         let mut rooms = self.rooms.lock();
 

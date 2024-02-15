@@ -134,7 +134,7 @@ std::optional<SpiderTeleportData> PlayerInterpolator::swapP2Teleport(int playerI
 bool PlayerInterpolator::isPlayerStale(int playerId, float lastServerPacket) {
     auto uc = players.at(playerId).updateCounter;
 
-    return uc != 0.f && !util::math::equal(uc, lastServerPacket);
+    return uc != 0.f && std::abs(uc - lastServerPacket) > 0.5f;
 }
 
 float PlayerInterpolator::getLocalTs() {

@@ -337,7 +337,7 @@ void NetworkManager::threadRecvFunc() {
     }
 
     // this is scary
-    Loader::get()->queueInMainThread([this, packetId, packet]() {
+    Loader::get()->queueInMainThread([this, packetId, packet] {
         auto listeners_ = this->listeners.lock();
         if (!listeners_->contains(packetId)) {
             auto suppressed_ = suppressed.lock();
