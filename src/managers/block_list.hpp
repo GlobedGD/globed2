@@ -1,10 +1,10 @@
 #pragma once
 #include <defs.hpp>
 
-class BlockListMangaer : public SingletonBase<BlockListMangaer> {
+class BlockListManager : public SingletonBase<BlockListManager> {
 protected:
     friend class SingletonBase;
-    BlockListMangaer();
+    BlockListManager();
 
     static constexpr std::string_view SETTING_KEY = "_globed-blocklist-manager-vals";
 

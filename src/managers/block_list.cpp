@@ -3,7 +3,7 @@
 #include <data/bytebuffer.hpp>
 #include <util/crypto.hpp>
 
-BlockListMangaer::BlockListMangaer() {
+BlockListManager::BlockListManager() {
     try {
         this->load();
     } catch (const std::exception& e) {
@@ -12,7 +12,7 @@ BlockListMangaer::BlockListMangaer() {
     }
 }
 
-void BlockListMangaer::save() {
+void BlockListManager::save() {
     // guys laugh at me all you want but in c++ this is easier and faster than using comma as a separator
     ByteBuffer bb;
     bb.writeU32(_bl.size());
@@ -30,7 +30,7 @@ void BlockListMangaer::save() {
     Mod::get()->setSavedValue(SETTING_KEY, data);
 }
 
-void BlockListMangaer::load() {
+void BlockListManager::load() {
     _bl.clear();
     _wl.clear();
 
@@ -61,15 +61,15 @@ void BlockListMangaer::load() {
     }
 }
 
-bool BlockListMangaer::isExplicitlyBlocked(int playerId) {
+bool BlockListManager::isExplicitlyBlocked(int playerId) {
     return _bl.contains(playerId);
 }
 
-bool BlockListMangaer::isExplicitlyAllowed(int playerId) {
+bool BlockListManager::isExplicitlyAllowed(int playerId) {
     return _wl.contains(playerId);
 }
 
-void BlockListMangaer::blacklist(int playerId) {
+void BlockListManager::blacklist(int playerId) {
     if (_wl.contains(playerId)) {
         _wl.erase(playerId);
     }
@@ -77,7 +77,7 @@ void BlockListMangaer::blacklist(int playerId) {
     this->save();
 }
 
-void BlockListMangaer::whitelist(int playerId) {
+void BlockListManager::whitelist(int playerId) {
     if (_bl.contains(playerId)) {
         _bl.erase(playerId);
     }

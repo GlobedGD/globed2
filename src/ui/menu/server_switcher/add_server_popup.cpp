@@ -80,9 +80,8 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
             }
 
             auto& csm = CentralServerManager::get();
-            auto server = csm.getServer(this->modifyingIndex);
 
-            if (this->modifyingIndex == -1 || server.url != url) {
+            if (this->modifyingIndex == -1 || csm.getServer(this->modifyingIndex).url != url) {
                 // we try to connect to the server and see if the versions match
                 ServerTestPopup::create(url, this)->show();
                 this->retain();

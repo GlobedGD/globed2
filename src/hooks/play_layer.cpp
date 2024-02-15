@@ -402,7 +402,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         self->m_progressBar->addChild(self->m_fields->progressBarWrapper);
     }
 
-    auto& bl = BlockListMangaer::get();
+    auto& bl = BlockListManager::get();
     auto& vpm = VoicePlaybackManager::get();
     auto& settings = GlobedSettings::get();
     auto mePosition = self->m_player1->getPosition();
@@ -447,7 +447,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
 bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {
     auto& settings = GlobedSettings::get();
     auto& flm = FriendListManager::get();
-    auto& bl = BlockListMangaer::get();
+    auto& bl = BlockListManager::get();
 
     if (bl.isExplicitlyBlocked(playerId)) return false;
     if (bl.isExplicitlyAllowed(playerId)) return true;

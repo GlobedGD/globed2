@@ -113,7 +113,7 @@ void GlobedUserCell::makeBlockButton() {
         Build<CCSprite>::createSpriteName(isUnblocked ? "GJ_fxOnBtn_001.png" : "GJ_fxOffBtn_001.png")
             .scale(0.8f)
             .intoMenuItem([isUnblocked, this](auto) {
-                auto& bl = BlockListMangaer::get();
+                auto& bl = BlockListManager::get();
                 isUnblocked ? bl.blacklist(this->playerId) : bl.whitelist(this->playerId);
                 // mute them immediately
                 auto& settings = GlobedSettings::get();
