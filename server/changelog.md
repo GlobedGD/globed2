@@ -7,6 +7,10 @@ least chaotic thing about this repo tbh
 * added a TCP keepalive packet.
 * added ability to kick everyone on the server in the admin panel (literally type `@everyone` as the name)
 
+## central v1.1.1
+
+* fix (?) the configuration file not being created and reword some error messages
+
 ## game v1.1.0
 
 Protocol version is bumped to v2, so people on older versions of the mod won't be able to connect anymore.
