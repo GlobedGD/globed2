@@ -6,7 +6,7 @@ class GlobedLevelListLayer : public cocos2d::CCLayer, LevelManagerDelegate {
 public:
     static constexpr float LIST_WIDTH = 358.f;
     static constexpr float LIST_HEIGHT = 220.f;
-    static constexpr size_t PAGE_SIZE = 100; // levels on 1 page
+    static constexpr size_t LIST_PAGE_SIZE = 100; // levels on 1 page
 
     static GlobedLevelListLayer* create();
     ~GlobedLevelListLayer();
