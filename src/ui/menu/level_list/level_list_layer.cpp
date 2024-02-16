@@ -209,7 +209,9 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     std::sort(sortedLevels.begin(), sortedLevels.end(), comparator);
 
     // add to cache
-    levelPages.push_back(sortedLevels);
+    if (levelPages.size() <= currentPage) {
+        levelPages.push_back(sortedLevels);
+    }
 
     CCArray* finalArray = CCArray::create();
     for (GJGameLevel* level : sortedLevels) {
