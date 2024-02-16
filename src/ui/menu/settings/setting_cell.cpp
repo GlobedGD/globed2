@@ -176,6 +176,13 @@ void GlobedSettingCell::onStringChanged(const std::string_view text) {
 
 void GlobedSettingCell::recreateCornerButton() {
     if (cornerButton) {
+        // workaround for a funny bug - the button gets freed but CCMenuItem::activate still tried to access a member
+        // so we delay the actual deletion by 1 frame
+        cornerButton->retain();
+        Loader::get()->queueInMainThread([cornerButton = cornerButton] {
+            cornerButton->release();
+        });
+
         cornerButton->getParent()->removeFromParent();
         cornerButton->removeFromParent();
     }

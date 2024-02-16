@@ -179,8 +179,6 @@ void GlobedPlayLayer::onQuit() {
 #if GLOBED_VOICE_SUPPORT
     // stop voice recording and playback
     GlobedAudioManager::get().haltRecording();
-
-    // TODO: this can freeze for up to a second on a level with 100 people LMAO
     VoicePlaybackManager::get().stopAllStreams();
 #endif // GLOBED_VOICE_SUPPORT
 

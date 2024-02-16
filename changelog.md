@@ -1,6 +1,7 @@
 ## v1.1.2
 
 * Fix rare audio crashes caused by data races
+* Fix crash when changing the Position setting
 
 ## v1.1.1
 
