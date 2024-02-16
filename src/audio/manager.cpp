@@ -55,7 +55,7 @@ void GlobedAudioManager::preInitialize() {
 
     // also check perms on android
     if (!permission::getPermissionStatus(Permission::RecordAudio)) {
-        settings.communication.voiceEnabled = false;
+        settings.communication.audioDevice = -1;
     }
 
     // load the previously selected device

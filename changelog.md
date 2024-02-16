@@ -1,3 +1,7 @@
+## v1.1.2
+
+* Fix rare audio crashes caused by data races
+
 ## v1.1.1
 
 * Add pages to the online level list (and fix some levels not appearing)
