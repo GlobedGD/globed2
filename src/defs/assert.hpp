@@ -78,12 +78,13 @@
 #define GLOBED_UNWRAP(value) \
     do { \
         auto __resv = (value); \
-        if (__resv.isErr()) return geode::Err(__resv.unwrapErr()); \
+        if (__resv.isErr()) return geode::Err(std::move(__resv.unwrapErr())); \
     } while (0); \
 
 #define GLOBED_UNWRAP_INTO(value, dest) \
-    if (value.isErr()) return geode::Err(value.unwrapErr()); \
-    dest = value.unwrap();
+    auto GEODE_CONCAT(_uval_, __LINE__) = (value); \
+    if (GEODE_CONCAT(_uval_, __LINE__).isErr()) return geode::Err(std::move(GEODE_CONCAT(_uval_, __LINE__).unwrapErr())); \
+    dest = GEODE_CONCAT(_uval_, __LINE__).unwrap();
 
 #define GLOBED_RESULT_ERRC(value) \
     do { \

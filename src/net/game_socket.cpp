@@ -133,8 +133,10 @@ Result<> GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const std::str
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
 #endif
 
+    GLOBED_UNWRAP_INTO(udpSocket.sendTo(reinterpret_cast<const char*>(buf.getDataRef().data()), buf.size(), address, port), auto res)
+
     GLOBED_REQUIRE_SAFE(
-        buf.size() == udpSocket.sendTo(reinterpret_cast<const char*>(buf.getDataRef().data()), buf.size(), address, port),
+        res == buf.size(),
         "failed to send the entire buffer"
     )
 

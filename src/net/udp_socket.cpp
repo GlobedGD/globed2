@@ -43,22 +43,22 @@ int UdpSocket::send(const char* data, unsigned int dataSize) {
     return retval;
 }
 
-int UdpSocket::sendTo(const char* data, unsigned int dataSize, const std::string_view address, unsigned short port) {
+Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const std::string_view address, unsigned short port) {
     // stinky windows returns wsa error 10014 if sockaddr is a stack pointer
     std::unique_ptr<sockaddr_in> addr = std::make_unique<sockaddr_in>();
 
     addr->sin_family = AF_INET;
     addr->sin_port = htons(port);
 
-    GLOBED_REQUIRE(inet_pton(AF_INET, address.data(), &addr->sin_addr) > 0, "tried to connect to an invalid address")
+    GLOBED_REQUIRE_SAFE(inet_pton(AF_INET, std::string(address).c_str(), &addr->sin_addr) > 0, "tried to connect to an invalid address")
 
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr));
 
     if (retval == -1) {
-        util::net::throwLastError();
+        return Err(util::net::lastErrorString());
     }
 
-    return retval;
+    return Ok(retval);
 }
 
 void UdpSocket::disconnect() {
