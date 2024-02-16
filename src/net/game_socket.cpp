@@ -27,12 +27,12 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacket(bool onTcpConnection, boo
         bb.grow(4);
 
         // receive the packet length
-        tcpSocket.recvExact(reinterpret_cast<char*>(bb.getDataRef().data()), 4);
+        GLOBED_UNWRAP(tcpSocket.recvExact(reinterpret_cast<char*>(bb.getDataRef().data()), 4));
 
         auto packetSize = bb.readU32();
         GLOBED_REQUIRE_SAFE(packetSize < BUF_SIZE, "packet is too big, rejecting")
 
-        tcpSocket.recvExact(reinterpret_cast<char*>(buffer), packetSize);
+        GLOBED_UNWRAP(tcpSocket.recvExact(reinterpret_cast<char*>(buffer), packetSize));
         received = packetSize;
     } else {
         auto recvResult = udpSocket.receive(reinterpret_cast<char*>(buffer), BUF_SIZE);

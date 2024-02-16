@@ -89,14 +89,16 @@ RecvResult TcpSocket::receive(char* buffer, int bufferSize) {
     };
 }
 
-void TcpSocket::recvExact(char* buffer, int bufferSize) {
+Result<> TcpSocket::recvExact(char* buffer, int bufferSize) {
     unsigned int received = 0;
 
     do {
         int result = this->receive(buffer + received, bufferSize - received).result;
-        if (result <= 0) util::net::throwLastError();
+        if (result <= 0) return Err(util::net::lastErrorString());
         received += result;
     } while (received < bufferSize);
+
+    return Ok();
 }
 
 bool TcpSocket::close() {

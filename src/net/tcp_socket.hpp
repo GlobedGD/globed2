@@ -12,7 +12,7 @@ public:
     int send(const char* data, unsigned int dataSize) override;
     Result<> sendAll(const char* data, unsigned int dataSize);
     RecvResult receive(char* buffer, int bufferSize) override;
-    void recvExact(char* buffer, int bufferSize);
+    Result<> recvExact(char* buffer, int bufferSize);
 
     bool close() override;
     virtual void disconnect();
