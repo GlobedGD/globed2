@@ -11,6 +11,7 @@
 * Allow editing the server name even if the server is offline
 * Fix being able to quit/resume the level while having the user popup opened on the pause menu
 * Fix some lagspikes when recording audio
+* Fix crash when connecting to an invalid server
 
 ## v1.1.0
 
