@@ -13,6 +13,8 @@ struct DecodedOpusData {
     size_t length;
 
     void freeData() {
+        GLOBED_REQUIRE(ptr != nullptr, "attempting to double free an instance of DecodedOpusData")
+
         delete[] ptr;
 #ifdef GLOBED_DEBUG
         // to try and prevent misuse

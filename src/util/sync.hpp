@@ -101,7 +101,7 @@ template <typename T>
 class WrappingMutex {
 public:
     WrappingMutex(): data_(std::make_shared<T>()), mutex_() {}
-    WrappingMutex(T&& obj) : data_(std::make_shared(std::move(obj))), mutex_() {}
+    WrappingMutex(T&& obj) : data_(std::make_shared<T>(std::move(obj))), mutex_() {}
 
     class Guard {
     public:

@@ -8,9 +8,11 @@
 #include "decoder.hpp"
 #include "volume_estimator.hpp"
 
+#include <util/sync.hpp>
+
 class AudioStream {
 public:
-    bool starving = false; // true if there aren't enough samples in the queue
+    util::sync::AtomicBool starving = false; // true if there aren't enough samples in the queue
 
     AudioStream(AudioDecoder&& decoder);
     ~AudioStream();
@@ -26,9 +28,9 @@ public:
         other.sound = nullptr;
         other.channel = nullptr;
 
-        queue = std::move(other.queue);
+        *queue.lock() = std::move(*other.queue.lock());
         decoder = std::move(other.decoder);
-        estimator = std::move(other.estimator);
+        *estimator.lock() = std::move(*other.estimator.lock());
     }
 
     AudioStream& operator=(AudioStream&& other) noexcept {
@@ -47,9 +49,9 @@ public:
             other.sound = nullptr;
             other.channel = nullptr;
 
-            queue = std::move(other.queue);
+            *queue.lock() = std::move(*other.queue.lock());
             decoder = std::move(other.decoder);
-            estimator = std::move(other.estimator);
+            *estimator.lock() = std::move(*other.estimator.lock());
         }
 
         return *this;
@@ -73,9 +75,9 @@ public:
 private:
     FMOD::Sound* sound = nullptr;
     FMOD::Channel* channel = nullptr;
-    AudioSampleQueue queue;
+    util::sync::WrappingMutex<AudioSampleQueue> queue;
     AudioDecoder decoder;
-    VolumeEstimator estimator;
+    util::sync::WrappingMutex<VolumeEstimator> estimator;
     float volume = 0.f;
 };
 

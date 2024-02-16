@@ -15,6 +15,8 @@ public:
     int64_t length;
 
     void freeData() {
+        GLOBED_REQUIRE(ptr != nullptr, "attempting to double free an instance of EncodedOpusData")
+
         delete[] ptr;
 
 #ifdef GLOBED_DEBUG

@@ -7,7 +7,7 @@
 
 AudioStream::AudioStream(AudioDecoder&& decoder)
     : decoder(std::move(decoder)),
-      estimator(VOICE_TARGET_SAMPLERATE) {
+      estimator(std::move(VolumeEstimator(VOICE_TARGET_SAMPLERATE))) {
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
@@ -17,7 +17,6 @@ AudioStream::AudioStream(AudioDecoder&& decoder)
     exinfo.userdata = this;
     exinfo.length = sizeof(float) * exinfo.numchannels * exinfo.defaultfrequency * (VOICE_CHUNK_RECORD_TIME * 1); // TODO maybe bring back the 10 multiplier
 
-    // log::debug("{}: creating stream, length: {}", util::time::nowPretty(), exinfo.length);
     exinfo.pcmreadcallback = [](FMOD_SOUND* sound_, void* data, unsigned int len) -> FMOD_RESULT {
         FMOD::Sound* sound = reinterpret_cast<FMOD::Sound*>(sound_);
         AudioStream* stream = nullptr;
@@ -31,8 +30,8 @@ AudioStream::AudioStream(AudioDecoder&& decoder)
         // write data..
 
         size_t neededSamples = len / sizeof(float);
-        size_t copied = stream->queue.copyTo(reinterpret_cast<float*>(data), neededSamples);
-        stream->estimator.feedData(reinterpret_cast<const float*>(data), neededSamples);
+        size_t copied = stream->queue.lock()->copyTo(reinterpret_cast<float*>(data), neededSamples);
+        stream->estimator.lock()->feedData(reinterpret_cast<const float*>(data), copied);
 
         if (copied != neededSamples) {
             stream->starving = true;
@@ -83,14 +82,14 @@ void AudioStream::writeData(const EncodedAudioFrame& frame) {
     const auto& frames = frame.getFrames();
     for (const auto& opusFrame : frames) {
         auto decodedFrame = decoder.decode(opusFrame);
-        queue.writeData(decodedFrame);
+        queue.lock()->writeData(decodedFrame);
 
         AudioDecoder::freeData(decodedFrame);
     }
 }
 
 void AudioStream::writeData(const float* pcm, size_t samples) {
-    queue.writeData(pcm, samples);
+    queue.lock()->writeData(pcm, samples);
 }
 
 void AudioStream::setVolume(float volume) {
@@ -106,7 +105,7 @@ float AudioStream::getVolume() {
 }
 
 float AudioStream::getLoudness() {
-    return estimator.getVolume() * this->volume;
+    return estimator.lock()->getVolume() * this->volume;
 }
 
 #endif // GLOBED_VOICE_SUPPORT
