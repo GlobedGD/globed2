@@ -18,7 +18,7 @@
 using namespace geode::prelude;
 
 // how many units before the voice disappears
-constexpr float PROXIMITY_VOICE_LIMIT = 1250.f;
+constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
 
 float adjustLerpTimeDelta(float dt) {
     // i fucking hate this i cannot do this anymore i want to die
@@ -232,9 +232,11 @@ void GlobedPlayLayer::setupPacketListeners() {
 
         auto& vpm = VoicePlaybackManager::get();
         try {
+            vpm.prepareStream(packet->sender);
+
             vpm.setVolume(packet->sender, settings.communication.voiceVolume);
-            vpm.playFrameStreamed(packet->sender, packet->frame);
             this->updateProximityVolume(packet->sender);
+            vpm.playFrameStreamed(packet->sender, packet->frame);
         } catch(const std::exception& e) {
             ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + e.what());
         }
