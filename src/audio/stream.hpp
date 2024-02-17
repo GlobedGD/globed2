@@ -69,6 +69,7 @@ public:
 
     float getVolume();
 
+    void updateEstimator(float dt);
     // get how loud the sound is being played
     float getLoudness();
 

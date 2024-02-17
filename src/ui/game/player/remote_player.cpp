@@ -51,9 +51,16 @@ const PlayerAccountData& RemotePlayer::getAccountData() const {
     return accountData;
 }
 
-void RemotePlayer::updateData(const VisualPlayerState& data, bool playDeathEffect, bool speaking, std::optional<SpiderTeleportData> p1tp, std::optional<SpiderTeleportData> p2tp) {
-    player1->updateData(data.player1, data.isDead, data.isPaused, data.isPracticing, speaking);
-    player2->updateData(data.player2, data.isDead, data.isPaused, data.isPracticing, speaking);
+void RemotePlayer::updateData(
+        const VisualPlayerState& data,
+        bool playDeathEffect,
+        bool speaking,
+        std::optional<SpiderTeleportData> p1tp,
+        std::optional<SpiderTeleportData> p2tp,
+        float loudness
+) {
+    player1->updateData(data.player1, data.isDead, data.isPaused, data.isPracticing, speaking, loudness);
+    player2->updateData(data.player2, data.isDead, data.isPaused, data.isPracticing, speaking, loudness);
 
     if (playDeathEffect && GlobedSettings::get().players.deathEffects) {
         player1->playDeathEffect();

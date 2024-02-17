@@ -19,10 +19,14 @@ public:
 
     void feedData(const float* pcm, size_t samples);
 
-    // call me 60 times a second
+    void update(float dt);
+
     float getVolume();
 
 private:
+    static constexpr float BUFFER_SIZE = 1.0f;
+
+    float volume;
     size_t sampleRate;
     AudioSampleQueue sampleQueue;
 };

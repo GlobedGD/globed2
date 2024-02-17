@@ -21,6 +21,10 @@ void PlayerInterpolator::removePlayer(int playerId) {
     players.erase(playerId);
 }
 
+bool PlayerInterpolator::hasPlayer(int playerId) {
+    return players.contains(playerId);
+}
+
 void PlayerInterpolator::updatePlayer(int playerId, const PlayerData& data, float updateCounter) {
     auto& player = players.at(playerId);
     player.updateCounter = updateCounter;

@@ -27,9 +27,9 @@ bool AskInputPopup::setup(const std::string_view title, std::function<void(const
     return true;
 }
 
-AskInputPopup* AskInputPopup::create(const std::string_view title, std::function<void(const std::string_view)> function, size_t chars, const std::string_view placeholder, const std::string_view filter) {
+AskInputPopup* AskInputPopup::create(const std::string_view title, std::function<void(const std::string_view)> function, size_t chars, const std::string_view placeholder, const std::string_view filter, float widthMult) {
     auto ret = new AskInputPopup;
-    if (ret->init(POPUP_PADDING * 2 + 4.f * chars, POPUP_HEIGHT, title, function, chars, placeholder, filter)) {
+    if (ret->init(POPUP_PADDING * 2 + 4.f * chars * widthMult, POPUP_HEIGHT, title, function, chars, placeholder, filter)) {
         ret->autorelease();
         return ret;
     }

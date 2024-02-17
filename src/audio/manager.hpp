@@ -67,6 +67,8 @@ public:
     // it will be reset. if no device is selected or a valid device is selected, nothing happens.
     void validateDevices();
 
+    /* Recording API */
+
     // set the amount of record frames in a buffer (used by the lowerAudioLatency setting)
     void setRecordBufferCapacity(size_t frames);
 
@@ -84,6 +86,17 @@ public:
     // tell the audio thread to stop recording, don't call the callback with leftover data
     void haltRecording();
     bool isRecording();
+
+    /* Background recording API */
+
+    // start recording, similar to `startRecording` but the callback is not automatically called,
+    // unless `resumePassiveRecording` has been called.
+    Result<> startPassiveRecording(std::function<void(const EncodedAudioFrame&)> callback);
+
+    void resumePassiveRecording();
+    void pausePassiveRecording();
+
+    /* Misc */
 
     // play a sound and return the channel associated with it
     [[nodiscard]] FMOD::Channel* playSound(FMOD::Sound* sound);
@@ -112,6 +125,8 @@ private:
     util::sync::AtomicBool recordQueuedStop = false;
     util::sync::AtomicBool recordQueuedHalt = false;
     util::sync::AtomicBool recordingRaw = false;
+    util::sync::AtomicBool recordingPassive = false;
+    util::sync::AtomicBool recordingPassiveActive = false;
     FMOD::Sound* recordSound = nullptr;
     size_t recordChunkSize = 0;
     std::function<void(const EncodedAudioFrame&)> recordCallback;
@@ -120,7 +135,7 @@ private:
     unsigned int recordLastPosition = 0;
     EncodedAudioFrame recordFrame;
 
-    Result<> startRecordingInternal();
+    Result<> startRecordingInternal(bool passive = false);
     void recordContinueStream();
     void recordInvokeCallback();
     void recordInvokeRawCallback(float* pcm, size_t samples);

@@ -229,6 +229,7 @@ void GlobedPlayLayer::setupPacketListeners() {
         try {
             vpm.setVolume(packet->sender, settings.communication.voiceVolume);
             vpm.playFrameStreamed(packet->sender, packet->frame);
+            this->updateProximityVolume(packet->sender);
         } catch(const std::exception& e) {
             ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + e.what());
         }
@@ -403,7 +404,9 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     auto& bl = BlockListManager::get();
     auto& vpm = VoicePlaybackManager::get();
     auto& settings = GlobedSettings::get();
-    auto mePosition = self->m_player1->getPosition();
+
+    // update volume estimators
+    vpm.updateAllEstimators(rawdt);
 
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
@@ -413,7 +416,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         auto p2tp = self->m_fields->interpolator->swapP2Teleport(playerId);
 
         bool isSpeaking = vpm.isSpeaking(playerId);
-        remotePlayer->updateData(vstate, playDeathEffect, isSpeaking, p1tp, p2tp);
+        remotePlayer->updateData(vstate, playDeathEffect, isSpeaking, p1tp, p2tp, isSpeaking ? vpm.getLoudness(playerId) : 0.f);
 
         if (self->m_progressBar && self->m_progressBar->isVisible() && remotePlayer->progressIcon) {
             remotePlayer->updateProgressIcon();
@@ -422,21 +425,12 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         }
 
         // update voice proximity
-        if (!self->m_fields->deafened && self->m_fields->isVoiceProximity) {
-            auto theyPos1 = vstate.player1.position;
-            float distance = cocos2d::ccpDistance(mePosition, theyPos1);
-
-            float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
-
-            if (this->shouldLetMessageThrough(playerId)) {
-                vpm.setVolume(playerId, volume * settings.communication.voiceVolume);
-            }
-        }
+        self->updateProximityVolume(playerId);
     }
 
     if (self->m_fields->selfStatusIcons) {
         self->m_fields->selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
-        self->m_fields->selfStatusIcons->updateStatus(false, false, VoiceRecordingManager::get().recording);
+        self->m_fields->selfStatusIcons->updateStatus(false, false, VoiceRecordingManager::get().recording, 0.f);
     }
 }
 
@@ -453,6 +447,29 @@ bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {
     if (settings.communication.onlyFriends && !flm.isFriend(playerId)) return false;
 
     return true;
+}
+
+void GlobedPlayLayer::updateProximityVolume(int playerId) {
+    if (m_fields->deafened || !m_fields->isVoiceProximity) return;
+
+    auto& vpm = VoicePlaybackManager::get();
+
+    if (!m_fields->interpolator->hasPlayer(playerId)) {
+        // if we have no knowledge on the player, set volume to 0
+        vpm.setVolume(playerId, 0.f);
+        return;
+    }
+
+    auto& vstate = m_fields->interpolator->getPlayerState(playerId);
+
+    float distance = cocos2d::ccpDistance(m_player1->getPosition(), vstate.player1.position);
+    float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
+
+    auto& settings = GlobedSettings::get();
+
+    if (this->shouldLetMessageThrough(playerId)) {
+        vpm.setVolume(playerId, volume * settings.communication.voiceVolume);
+    }
 }
 
 SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {

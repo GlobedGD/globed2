@@ -186,7 +186,7 @@ void GlobedAudioManager::setRecordBufferCapacity(size_t frames) {
     recordFrame.setCapacity(frames);
 }
 
-Result<> GlobedAudioManager::startRecordingInternal() {
+Result<> GlobedAudioManager::startRecordingInternal(bool passive) {
     if (!permission::getPermissionStatus(Permission::RecordAudio)) {
         return Err("Recording failed, please grant microphone permission in Globed settings");
     }
@@ -227,6 +227,7 @@ Result<> GlobedAudioManager::startRecordingInternal() {
     recordQueuedHalt = false;
     recordLastPosition = 0;
     recordActive = true;
+    recordingPassive = passive;
 
     return Ok();
 }
@@ -272,6 +273,8 @@ void GlobedAudioManager::internalStopRecording() {
     recordLastPosition = 0;
     recordChunkSize = 0;
     recordingRaw = false;
+    recordingPassive = false;
+    recordingPassiveActive = false;
     recordQueue.clear();
 
     if (recordSound) {
@@ -306,6 +309,25 @@ bool GlobedAudioManager::isRecording() {
 
     return recording;
 }
+
+Result<> GlobedAudioManager::startPassiveRecording(std::function<void(const EncodedAudioFrame&)> callback) {
+    auto result = this->startRecordingInternal(true);
+    if (result.isErr()) return result;
+
+    recordCallback = callback;
+    recordingRaw = false;
+
+    return Ok();
+}
+
+void GlobedAudioManager::resumePassiveRecording() {
+    recordingPassiveActive = true;
+}
+
+void GlobedAudioManager::pausePassiveRecording() {
+    recordingPassiveActive = false;
+}
+
 
 FMOD::Channel* GlobedAudioManager::playSound(FMOD::Sound* sound) {
     FMOD::Channel* ch = nullptr;

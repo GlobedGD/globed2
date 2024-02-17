@@ -12,13 +12,13 @@ VolumeEstimator::VolumeEstimator(size_t sampleRate) {
 void VolumeEstimator::feedData(const float* pcm, size_t samples) {
     sampleQueue.writeData(pcm, samples);
 
-    if (sampleQueue.size() > 24000) {
+    if (sampleQueue.size() > static_cast<float>(sampleRate) * BUFFER_SIZE) {
         sampleQueue.clear();
     }
 }
 
-float VolumeEstimator::getVolume() {
-    constexpr size_t needed = VOICE_TARGET_SAMPLERATE / 60;
+void VolumeEstimator::update(float dt) {
+    const size_t needed = static_cast<size_t>(static_cast<float>(sampleRate) * BUFFER_SIZE * dt);
 
     float buf[needed];
     size_t copied = sampleQueue.copyTo(buf, needed);
@@ -30,7 +30,11 @@ float VolumeEstimator::getVolume() {
         }
     }
 
-    return util::misc::calculatePcmVolume(buf, needed);
+    volume = util::misc::calculatePcmVolume(buf, needed);
+}
+
+float VolumeEstimator::getVolume() {
+    return volume;
 }
 
 

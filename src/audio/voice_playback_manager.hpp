@@ -24,6 +24,9 @@ public:
     void muteEveryone();
     void setVolumeAll(float volume);
 
+    void updateEstimator(int playerId, float dt);
+    void updateAllEstimators(float dt);
+
     float getLoudness(int playerId);
 
 private:

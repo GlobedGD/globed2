@@ -10,7 +10,7 @@ public:
     static constexpr float POPUP_HEIGHT = 80.f;
     static FragmentationCalibartionPopup* create();
     static constexpr size_t TEST_PACKET_SIZES[] = {
-        1000, 1400, 1450, 2000, 4000, 7000, 10000, 13000, 18000, 25000, 30000, 40000, 50000, 60000, 65000, 0
+        1000, 1300, 1400, 1450, 2000, 4000, 7000, 10000, 13000, 18000, 25000, 30000, 40000, 50000, 60000, 65000, 0
     };
 
 private:

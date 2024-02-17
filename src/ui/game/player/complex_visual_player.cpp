@@ -69,7 +69,14 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     this->tryLoadIconsAsync();
 }
 
-void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, bool isPaused, bool isPracticing, bool isSpeaking) {
+void ComplexVisualPlayer::updateData(
+        const SpecificIconData& data,
+        bool isDead,
+        bool isPaused,
+        bool isPracticing,
+        bool isSpeaking,
+        float loudness
+) {
     auto& settings = GlobedSettings::get();
 
     playerIcon->setPosition(data.position);
@@ -115,7 +122,10 @@ void ComplexVisualPlayer::updateData(const SpecificIconData& data, bool isDead, 
     }
 
     if (statusIcons) {
-        statusIcons->updateStatus(isPaused, isPracticing, isSpeaking);
+        if (isSpeaking) {
+            log::debug("{} loudness: {}", parent->getAccountData().name, loudness);
+        }
+        statusIcons->updateStatus(isPaused, isPracticing, isSpeaking, loudness);
     }
 
     // animate robot and spider

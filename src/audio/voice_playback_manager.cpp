@@ -77,6 +77,18 @@ void VoicePlaybackManager::setVolumeAll(float volume) {
     }
 }
 
+void VoicePlaybackManager::updateEstimator(int playerId, float dt) {
+    if (streams.contains(playerId)) {
+        streams.at(playerId)->updateEstimator(dt);
+    }
+}
+
+void VoicePlaybackManager::updateAllEstimators(float dt) {
+    for (const auto& [_, stream] : streams) {
+        stream->updateEstimator(dt);
+    }
+}
+
 float VoicePlaybackManager::getLoudness(int playerId) {
     if (!streams.contains(playerId)) return 0.f;
 

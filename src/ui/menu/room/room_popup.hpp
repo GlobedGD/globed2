@@ -15,8 +15,11 @@ public:
 
 protected:
     std::vector<PlayerRoomPreviewAccountData> playerList;
+    std::vector<PlayerRoomPreviewAccountData> filteredPlayerList;
+
     LoadingCircle* loadingCircle = nullptr;
     GJCommentListLayer* listLayer = nullptr;
+    CCMenuItemSpriteExtra* clearSearchButton = nullptr;
 
     cocos2d::CCMenu* roomBtnMenu = nullptr;
     bool isWaiting = false;
@@ -28,4 +31,5 @@ protected:
     void addButtons();
     bool isLoading();
     void sortPlayerList();
+    void applyFilter(const std::string_view input);
 };

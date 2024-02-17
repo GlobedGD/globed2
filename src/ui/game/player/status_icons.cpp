@@ -7,13 +7,24 @@ using namespace geode::prelude;
 bool PlayerStatusIcons::init() {
     if (!CCNode::init()) return false;
 
-    this->updateStatus(false, false, false);
+    this->updateStatus(false, false, false, 0.f);
+    this->schedule(schedule_selector(PlayerStatusIcons::updateLoudnessIcon), 0.25f);
 
     return true;
 }
 
-void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking) {
-    if (wasPaused == paused && wasPracticing == practicing && wasSpeaking == speaking) return;
+void PlayerStatusIcons::updateLoudnessIcon(float dt) {
+    Loudness lcat = this->loudnessToCategory(lastLoudness * 2.f);
+    if (lcat != wasLoudness) {
+        wasLoudness = lcat;
+        this->updateStatus(wasPaused, wasPracticing, wasSpeaking, lastLoudness, true);
+    }
+}
+
+void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking, float loudness, bool force) {
+    lastLoudness = loudness;
+
+    if (!force && wasPaused == paused && wasPracticing == practicing && wasSpeaking == speaking) return;
     wasPaused = paused;
     wasPracticing = practicing;
     wasSpeaking = speaking;
@@ -61,7 +72,14 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
     }
 
     if (wasSpeaking) {
-        auto speakSpr = Build<CCSprite>::createSpriteName("speaker-icon.png"_spr)
+        std::string sprite;
+        switch (wasLoudness) {
+            case Loudness::Low: sprite = "speaker-icon.png"_spr; break;
+            case Loudness::Medium: sprite = "speaker-icon-yellow.png"_spr; break;
+            case Loudness::High: sprite = "speaker-icon-red.png"_spr; break;
+        }
+
+        auto speakSpr = Build<CCSprite>::createSpriteName(sprite.c_str())
             .zOrder(1)
             .scale(0.85f)
             .id("icon-speaking"_spr)
@@ -87,6 +105,16 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
     iconWrapper->setContentSize(cc9s->getScaledContentSize());
     iconWrapper->setPositionY(cc9s->getScaledContentSize().height / 2);
     iconWrapper->updateLayout();
+}
+
+PlayerStatusIcons::Loudness PlayerStatusIcons::loudnessToCategory(float loudness) {
+    if (loudness < 0.5f) {
+        return Loudness::Low;
+    } else if (loudness < 0.75f) {
+        return Loudness::Medium;
+    } else {
+        return Loudness::High;
+    }
 }
 
 PlayerStatusIcons* PlayerStatusIcons::create() {

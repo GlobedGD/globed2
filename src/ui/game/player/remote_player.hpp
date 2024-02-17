@@ -13,7 +13,14 @@ public:
     void updateAccountData(const PlayerAccountData& data, bool force = false);
     const PlayerAccountData& getAccountData() const;
 
-    void updateData(const VisualPlayerState& data, bool playDeathEffect, bool speaking, std::optional<SpiderTeleportData> p1tp, std::optional<SpiderTeleportData> p2tp);
+    void updateData(
+        const VisualPlayerState& data,
+        bool playDeathEffect,
+        bool speaking,
+        std::optional<SpiderTeleportData> p1tp,
+        std::optional<SpiderTeleportData> p2tp,
+        float loudness
+    );
     void updateProgressIcon();
     void updateProgressArrow(
         cocos2d::CCPoint cameraOrigin,

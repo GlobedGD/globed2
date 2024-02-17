@@ -8,6 +8,7 @@
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/room.hpp>
+#include <ui/general/ask_input_popup.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -26,6 +27,7 @@ bool RoomPopup::setup() {
         // log::debug("guys i received it");
         this->isWaiting = false;
         this->playerList = packet->data;
+        this->applyFilter("");
         this->sortPlayerList();
         auto& rm = RoomManager::get();
         bool changed = rm.roomId != packet->roomId;
@@ -55,6 +57,7 @@ bool RoomPopup::setup() {
             ownData.glowColor,
             0
         )};
+        this->applyFilter("");
 
         RoomManager::get().setRoom(packet->roomId);
         this->onLoaded(true);
@@ -79,6 +82,38 @@ bool RoomPopup::setup() {
         .intoNewParent(CCMenu::create())
         .parent(m_mainLayer);
 
+    CCMenuItemSpriteExtra* filterBtn = nullptr;
+
+    Build<CCSprite>::createSpriteName("gj_findBtn_001.png")
+        .scale(0.9f)
+        .intoMenuItem([this](auto) {
+            AskInputPopup::create("Search player", [this](const std::string_view input) {
+                this->applyFilter(input);
+                this->sortPlayerList();
+                this->onLoaded(true);
+            }, 16, "player name", util::misc::STRING_ALPHANUMERIC, 3.f)->show();
+        })
+        .pos(m_size.width / 2.f - 21.f, m_size.height / 2.f - 22.f)
+        .id("search-btn"_spr)
+        .store(filterBtn)
+        .intoNewParent(CCMenu::create())
+        .parent(m_mainLayer);
+
+    // clear search button
+    Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
+        .scale(0.9f)
+        .intoMenuItem([this](auto) {
+            this->applyFilter("");
+            this->sortPlayerList();
+            this->onLoaded(true);
+        })
+        .visible(false)
+        .pos(m_size.width / 2.f - 21.f, m_size.height / 2.f - 40.f - filterBtn->getScaledContentSize().height / 2)
+        .id("search-clear-btn"_spr)
+        .store(clearSearchButton)
+        .intoNewParent(CCMenu::create())
+        .parent(m_mainLayer);
+
     return true;
 }
 
@@ -87,7 +122,7 @@ void RoomPopup::onLoaded(bool stateChanged) {
 
     auto cells = CCArray::create();
 
-    for (const auto& pdata : playerList) {
+    for (const auto& pdata : filteredPlayerList) {
         auto* cell = PlayerListCell::create(pdata);
         cells->addObject(cell);
     }
@@ -209,12 +244,12 @@ void RoomPopup::sortPlayerList() {
     auto& flm = FriendListManager::get();
 
     // filter out the weird people (old game server used to send unauthenticated people too)
-    playerList.erase(std::remove_if(playerList.begin(), playerList.end(), [](const auto& player) {
+    filteredPlayerList.erase(std::remove_if(filteredPlayerList.begin(), filteredPlayerList.end(), [](const auto& player) {
         return player.id == 0;
-    }), playerList.end());
+    }), filteredPlayerList.end());
 
     // show friends before everyone else, and sort everyone alphabetically by the name
-    std::sort(playerList.begin(), playerList.end(), [&flm](const auto& p1, const auto& p2) -> bool {
+    std::sort(filteredPlayerList.begin(), filteredPlayerList.end(), [&flm](const auto& p1, const auto& p2) -> bool {
         bool isFriend1 = flm.isFriend(p1.id);
         bool isFriend2 = flm.isFriend(p2.id);
 
@@ -230,6 +265,30 @@ void RoomPopup::sortPlayerList() {
             return name1 < name2;
         }
     });
+}
+
+void RoomPopup::applyFilter(const std::string_view input) {
+    filteredPlayerList.clear();
+
+    if (input.empty()) {
+        for (const auto& item : playerList) {
+            filteredPlayerList.push_back(item);
+        }
+
+        clearSearchButton->setVisible(false);
+        return;
+    }
+
+    auto filt = util::format::toLowercase(input);
+
+    for (const auto& item : playerList) {
+        auto name = util::format::toLowercase(item.name);
+        if (name.find(filt) != std::string::npos) {
+            filteredPlayerList.push_back(item);
+        }
+    }
+
+    clearSearchButton->setVisible(true);
 }
 
 RoomPopup::~RoomPopup() {

@@ -90,4 +90,22 @@ namespace util::format {
     std::string trim(const std::string_view str, const std::string_view filter) {
         return ltrim(rtrim(str, filter), filter);
     }
+
+    std::string toLowercase(const std::string_view str) {
+        std::string result;
+        for (char c : str) {
+            result += std::tolower(c);
+        }
+
+        return result;
+    }
+
+    std::string toUppercase(const std::string_view str) {
+        std::string result;
+        for (char c : str) {
+            result += std::toupper(c);
+        }
+
+        return result;
+    }
 }

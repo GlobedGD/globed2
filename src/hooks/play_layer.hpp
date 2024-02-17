@@ -89,6 +89,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     bool shouldLetMessageThrough(int playerId);
+    void updateProximityVolume(int playerId);
 
     SpecificIconData gatherSpecificIconData(PlayerObject* player);
     PlayerData gatherPlayerData();

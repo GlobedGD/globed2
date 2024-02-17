@@ -12,7 +12,7 @@ public:
     static constexpr float POPUP_PADDING = 10.f;
     static constexpr float POPUP_HEIGHT = 140.f;
 
-    static AskInputPopup* create(const std::string_view title, std::function<void(const std::string_view)> function, size_t chars, const std::string_view placeholder, const std::string_view filter);
+    static AskInputPopup* create(const std::string_view title, std::function<void(const std::string_view)> function, size_t chars, const std::string_view placeholder, const std::string_view filter, float widthMult = 1.f);
 
 private:
     std::function<void(const std::string_view)> function;

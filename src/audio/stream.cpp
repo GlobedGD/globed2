@@ -104,6 +104,10 @@ float AudioStream::getVolume() {
     return volume;
 }
 
+void AudioStream::updateEstimator(float dt) {
+    estimator.lock()->update(dt);
+}
+
 float AudioStream::getLoudness() {
     return estimator.lock()->getVolume() * this->volume;
 }

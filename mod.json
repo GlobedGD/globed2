@@ -10,7 +10,9 @@
         "spritesheets": {
             "globedsheet1": [
                 "resources/menuicon.png",
-                "resources/speaker-icon.png"
+                "resources/speaker-icon.png",
+                "resources/speaker-icon-yellow.png",
+                "resources/speaker-icon-red.png"
             ]
         }
     },
