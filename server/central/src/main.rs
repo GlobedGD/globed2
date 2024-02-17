@@ -7,24 +7,21 @@
     clippy::wildcard_imports
 )]
 
-use std::{
-    error::Error,
-    net::{IpAddr, SocketAddr},
-    path::PathBuf,
-    time::Duration,
-};
+use std::{error::Error, path::PathBuf, time::Duration};
 
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
+use db::GlobedDb;
 use globed_shared::{
     get_log_level,
     logger::{error, info, log, warn, Logger},
     LogLevelFilter,
 };
-use roa::{tcp::Listener, App};
+use rocket::fairing::AdHoc;
 use state::{ServerState, ServerStateData};
 
 pub mod config;
+pub mod db;
 pub mod ip_blocker;
 pub mod state;
 pub mod verifier;
@@ -36,6 +33,7 @@ fn abort_misconfig() -> ! {
 }
 
 #[tokio::main]
+#[allow(clippy::too_many_lines)]
 async fn main() -> Result<(), Box<dyn Error>> {
     log::set_logger(Logger::instance("globed_central_server", false)).unwrap();
 
@@ -78,7 +76,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // stupid rust
 
-    let mnt_addr = config.web_address.clone();
     let mnt_point = config.web_mountpoint.clone();
 
     let state_skey = config.secret_key.clone();
@@ -123,44 +120,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
         av_state2.verifier.run_deleter().await;
     });
 
-    // roa your favorite web app
+    // start up rocket
 
-    let router = web::routes::build_router();
-    let route_list = router.routes(Box::leak(Box::new(mnt_point)))?;
-    let app = App::state(state).end(route_list);
-
-    let listen_addr = match mnt_addr.parse::<SocketAddr>() {
-        Ok(x) => x,
-        Err(err) => {
-            // try parse it as an IP address and use port 41000
-            if let Ok(x) = mnt_addr.parse::<IpAddr>() {
-                SocketAddr::new(x, 41000)
-            } else {
-                error!("failed to parse the HTTP bind address: {err}");
-                warn!("hint: the address must be a valid IPv4/IPv6 address with an optional port number");
-                warn!("hint: examples include \"127.0.0.1\", \"0.0.0.0:41000\"");
-                abort_misconfig();
-            }
-        }
-    };
-
-    let server = app.listen(listen_addr, |addr| {
-        info!("Globed central server launched on {addr}");
-    });
-
-    let server = match server {
-        Ok(x) => x,
-        Err(e) => {
-            error!("failed to setup the HTTP server with address {listen_addr}: {e}");
-            if listen_addr.port() < 1024 {
-                warn!("hint: ports below 1024 are commonly privileged and you can't use them as a regular user");
-                warn!("hint: pick a higher port number or leave it out completely to use the default port number (41000)");
-            }
-            abort_misconfig();
-        }
-    };
-
-    server.await?;
+    let rocket = rocket::build()
+        .mount(mnt_point, web::routes::build_router())
+        .manage(state)
+        .attach(GlobedDb::fairing())
+        .attach(AdHoc::on_liftoff("Database migrations", |rocket| {
+            Box::pin(async move {
+                log::info!("Running migrations");
+                let db = GlobedDb::get_one(rocket).await.unwrap();
+                match db::run_migrations(&db).await {
+                    Ok(()) => {}
+                    Err(err) => {
+                        error!("failed to run migrations: {err}");
+                    }
+                }
+            })
+        }));
+    rocket.launch().await?;
 
     Ok(())
 }

@@ -18,10 +18,6 @@ fn default_web_mountpoint() -> String {
     "/".to_string()
 }
 
-fn default_web_address() -> String {
-    "0.0.0.0:41000".to_string()
-}
-
 fn default_admin_key() -> String {
     generate_alphanum_string(ADMIN_KEY_LENGTH)
 }
@@ -122,8 +118,6 @@ pub struct GameServerEntry {
 pub struct ServerConfig {
     #[serde(default = "default_web_mountpoint")]
     pub web_mountpoint: String,
-    #[serde(default = "default_web_address")]
-    pub web_address: String,
     #[serde(default = "default_game_servers")]
     pub game_servers: Vec<GameServerEntry>,
     #[serde(default = "default_maintenance")]

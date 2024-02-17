@@ -7,31 +7,36 @@ use globed_shared::{
     rand::Rng,
     PROTOCOL_VERSION, SERVER_MAGIC,
 };
-use roa::{preload::PowerBody, throw, Context};
+
+use rocket::{
+    get,
+    http::{ContentType, Status},
+    State,
+};
 
 use crate::state::ServerState;
 
-use super::check_maintenance;
+use super::*;
 
-pub async fn version(context: &mut Context<ServerState>) -> roa::Result {
-    check_maintenance!(context);
-    context.write(PROTOCOL_VERSION.to_string());
-    Ok(())
+#[get("/version")]
+pub fn version() -> String {
+    PROTOCOL_VERSION.to_string()
 }
 
-pub async fn index(context: &mut Context<ServerState>) -> roa::Result {
+#[get("/")]
+pub fn index() -> (Status, (ContentType, String)) {
     if rand::thread_rng().gen_ratio(1, 0xaa) {
-        return _check(context);
+        return _check();
     }
 
-    context.write("hi there cutie :3");
-    Ok(())
+    (Status::Ok, (ContentType::Text, "hi there cutie :3".to_owned()))
 }
 
-pub async fn servers(context: &mut Context<ServerState>) -> roa::Result {
-    check_maintenance!(context);
+#[get("/servers")]
+pub async fn servers(state: &State<ServerState>) -> Result<String, GenericErrorResponder<String>> {
+    check_maintenance!(state);
 
-    let state = context.state_read().await;
+    let state = state.state_read().await;
     let servers = &state.config.game_servers;
 
     let mut buf = ByteBuffer::with_capacity(servers.len() * 128);
@@ -41,12 +46,11 @@ pub async fn servers(context: &mut Context<ServerState>) -> roa::Result {
     drop(state);
 
     let encoded = b64e::STANDARD.encode(buf.as_bytes());
-    context.write(encoded);
 
-    Ok(())
+    Ok(encoded)
 }
 
-fn _check(context: &mut Context<ServerState>) -> roa::Result {
+fn _check() -> (Status, (ContentType, String)) {
     static VALS: OnceLock<(String, String, String, String)> = OnceLock::new();
 
     let vals = VALS.get_or_init(|| {
@@ -59,16 +63,5 @@ fn _check(context: &mut Context<ServerState>) -> roa::Result {
         )
     });
 
-    context
-        .resp
-        .headers
-        .append(roa::http::header::CACHE_CONTROL, "public, max-age=1".parse()?);
-
-    context.resp.headers.append(vals.1.as_str(), vals.2.parse()?);
-
-    context.write(vals.3.as_str());
-
-    context.resp.headers.remove("Content-Type");
-    context.resp.headers.append("Content-Type", vals.0.parse()?);
-    Ok(())
+    (Status::Ok, (ContentType::HTML, vals.3.clone()))
 }

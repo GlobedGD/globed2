@@ -74,7 +74,6 @@ Note that the server is written with security in mind, so many of those options 
 | JSON key | Default | Hot-reloadable<sup>**</sup> | Description |
 |---------|---------|----------------|-------------|
 | `web_mountpoint` | `"/"` | ❌ | HTTP mountpoint (the prefix before every endpoint) |
-| `web_address` | `"0.0.0.0:41000"` | ❌ | HTTP address |
 | `special_users` | `{}` | ⏳ | List of users that have special properties, for example a unique name color (see below for the format) |
 | `game_servers` | `[]` | ✅ | List of game servers that will be sent to the clients (see below for the format) |
 | `maintenance` | `false` | ⏳ | When enabled, anyone trying to connect will get an appropriate error message saying that the server is under maintenance |

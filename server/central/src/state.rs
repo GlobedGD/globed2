@@ -28,6 +28,7 @@ use totp_rs::{Algorithm, Secret, TOTP};
 pub struct ActiveChallenge {
     pub account_id: i32,
     pub user_id: i32,
+    pub name: String,
     pub value: String,
     pub started: Duration,
 }

@@ -32,7 +32,7 @@ bool GlobedSignupPopup::setup() {
         .parent(m_mainLayer);
 
     auto gdData = am.gdData.lock();
-    auto url = fmt::format("{}/challenge/new?aid={}&uid={}", activeServer->url, gdData->accountId, gdData->userId);
+    auto url = fmt::format("{}/challenge/new?aid={}&uid={}&aname={}", activeServer->url, gdData->accountId, gdData->userId, gdData->accountName);
 
     web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
