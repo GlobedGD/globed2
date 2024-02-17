@@ -91,6 +91,7 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
                 // if we just changed the name of an existing server, simply update it
                 testedName = name;
                 testedUrl = url;
+                this->retain();
                 this->onTestSuccess();
             }
 
