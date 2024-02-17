@@ -120,11 +120,11 @@ void AddServerPopup::onTestSuccess() {
 
         // if it's the server we are connected to right now, and it's a completely different URL,
         // do essentially the same stuff we do when switching to another server (copied from server_cell.cpp)
+        csm.modifyServer(modifyingIndex, newServer);
+
         if (modifyingIndex == csm.getActiveIndex() && oldServer.url != newServer.url) {
             csm.switchRoutine(modifyingIndex, true);
         }
-
-        csm.modifyServer(modifyingIndex, newServer);
     }
 
     this->release();

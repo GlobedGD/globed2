@@ -5,6 +5,8 @@
 * Fix rare audio crashes caused by data races
 * Fix crash when changing the Position setting
 * Fix crash when editing a central server
+* Fix robot fire sometimes randomly appearing in a level
+* Fix login failed issue when changing the url of a server
 
 ## v1.1.1
 

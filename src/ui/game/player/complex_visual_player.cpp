@@ -112,6 +112,7 @@ void ComplexVisualPlayer::updateData(
     bool switchedMode = iconType != playerIconType;
 
     bool turningOffSwing = (playerIconType == PlayerIconType::Swing && switchedMode);
+    bool turningOffRobot = (playerIconType == PlayerIconType::Robot && switchedMode);
 
     if (switchedMode) {
         this->updateIconType(iconType);
@@ -164,6 +165,11 @@ void ComplexVisualPlayer::updateData(
         playerIcon->m_swingFireTop->animateFireOut();
         playerIcon->m_swingFireMiddle->animateFireOut();
         playerIcon->m_swingFireBottom->animateFireOut();
+    }
+
+    // remove robot fire
+    else if (turningOffRobot) {
+        this->animateRobotFire(false);
     }
 
     this->setVisible(data.isVisible);
