@@ -300,6 +300,10 @@ bool GlobedAudioManager::isRecording() {
         return false;
     }
 
+    if (recordActive && recordingPassive) {
+        return recordingPassiveActive;
+    }
+
     bool recording;
 
     if (FMOD_OK != this->getSystem()->isRecording(this->recordDevice.id, &recording)) {
@@ -327,7 +331,6 @@ void GlobedAudioManager::resumePassiveRecording() {
 void GlobedAudioManager::pausePassiveRecording() {
     recordingPassiveActive = false;
 }
-
 
 FMOD::Channel* GlobedAudioManager::playSound(FMOD::Sound* sound) {
     FMOD::Channel* ch = nullptr;
@@ -480,13 +483,16 @@ Result<> GlobedAudioManager::audioThreadWork() {
         "Sound::lock"
     )
 
-    if (pos > recordLastPosition) {
-        recordQueue.writeData(pcmData + recordLastPosition, pos - recordLastPosition);
-    } else if (pos < recordLastPosition) { // we have reached the end of the buffer
-        // write the data left at the end
-        recordQueue.writeData(pcmData + recordLastPosition, pcmLen / sizeof(float) - recordLastPosition);
-        // write the data from beginning to current pos
-        recordQueue.writeData(pcmData, pos);
+    // don't write any data if we are in passive recording and not currently recording
+    if (!recordingPassive || recordingPassiveActive) {
+        if (pos > recordLastPosition) {
+            recordQueue.writeData(pcmData + recordLastPosition, pos - recordLastPosition);
+        } else if (pos < recordLastPosition) { // we have reached the end of the buffer
+            // write the data left at the end
+            recordQueue.writeData(pcmData + recordLastPosition, pcmLen / sizeof(float) - recordLastPosition);
+            // write the data from beginning to current pos
+            recordQueue.writeData(pcmData, pos);
+        }
     }
 
     recordLastPosition = pos;
@@ -511,7 +517,8 @@ Result<> GlobedAudioManager::audioThreadWork() {
             GLOBED_UNWRAP(recordFrame.pushOpusFrame(encoder.encode(pcmbuf)));
         }
 
-        if (recordFrame.size() >= recordFrame.capacity()) {
+        // if we are at capacity, or we just stopped passive recording, call the callback
+        if (recordFrame.size() >= recordFrame.capacity() || (recordFrame.size() > 0 && recordingPassive && !recordingPassiveActive)) {
             this->recordInvokeCallback();
         }
     }

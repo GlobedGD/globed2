@@ -98,6 +98,11 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     // set the record buffer size
     vm.setRecordBufferCapacity(settings.communication.lowerAudioLatency ? EncodedAudioFrame::LIMIT_LOW_LATENCY : EncodedAudioFrame::LIMIT_REGULAR);
+
+    // start passive voice recording
+    auto& vrm = VoiceRecordingManager::get();
+    vrm.startRecording();
+
 #endif // GLOBED_VOICE_SUPPORT
 
     // send SyncIconsPacket if our icons have changed since the last time we sent it
@@ -247,14 +252,12 @@ void GlobedPlayLayer::setupCustomKeybinds() {
     }
 
     this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
-        auto& vrm = VoiceRecordingManager::get();
-
         if (event->isDown()) {
             if (!this->m_fields->deafened) {
-                vrm.startRecording();
+                GlobedAudioManager::get().resumePassiveRecording();
             }
         } else {
-            vrm.stopRecording();
+            GlobedAudioManager::get().pausePassiveRecording();
         }
 
         return ListenerResult::Stop;
@@ -262,13 +265,12 @@ void GlobedPlayLayer::setupCustomKeybinds() {
 
     this->addEventListener<keybinds::InvokeBindFilter>([this, &settings](keybinds::InvokeBindEvent* event) {
         auto& vpm = VoicePlaybackManager::get();
-        auto& vrm = VoiceRecordingManager::get();
 
         if (event->isDown()) {
             this->m_fields->deafened = !this->m_fields->deafened;
             if (this->m_fields->deafened) {
                 vpm.muteEveryone();
-                vrm.stopRecording();
+                GlobedAudioManager::get().pausePassiveRecording();
             } else if (!this->m_fields->isVoiceProximity) {
                 vpm.setVolumeAll(settings.communication.voiceVolume);
             }

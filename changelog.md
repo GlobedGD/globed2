@@ -1,6 +1,7 @@
 ## v1.1.2
 
 * Add player searching in the player list menu
+* Fix lag when activating voice chat
 * Fix rare audio crashes caused by data races
 * Fix crash when changing the Position setting
 * Fix crash when editing a central server

@@ -42,7 +42,7 @@ void VoiceRecordingManager::threadFunc() {
                 return;
             }
 
-            auto result = vm.startRecording([](const auto& frame) {
+            auto result = vm.startPassiveRecording([](const auto& frame) {
                 auto& nm = NetworkManager::get();
                 if (!nm.established()) return;
 
@@ -62,9 +62,9 @@ void VoiceRecordingManager::threadFunc() {
                 return;
             }
         }
-
-        this->resetBools(true);
     }
+
+    this->resetBools(vm.isRecording());
 
     std::this_thread::sleep_for(util::time::millis(10));
 }
