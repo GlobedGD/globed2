@@ -66,6 +66,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
     void selUpdate(float dt);
 
+    // setlUpdateEstimators - runs 30 times a second, updates volume estimators
+    void selUpdateEstimators(float);
+
     bool established() {
         // the 2nd check is in case we disconnect while being in a level somehow
         return m_fields->globedReady && NetworkManager::get().established();

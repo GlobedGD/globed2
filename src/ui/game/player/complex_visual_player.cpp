@@ -122,9 +122,6 @@ void ComplexVisualPlayer::updateData(
     }
 
     if (statusIcons) {
-        if (isSpeaking) {
-            log::debug("{} loudness: {}", parent->getAccountData().name, loudness);
-        }
         statusIcons->updateStatus(isPaused, isPracticing, isSpeaking, loudness);
     }
 
@@ -506,7 +503,6 @@ void ComplexVisualPlayer::asyncIconLoadedIntermediary(cocos2d::CCObject* obj) {
     gm->loadIcon(request.iconId, (int)util::misc::convertEnum<IconType>(request.iconType), -1);
     gm->m_isIconBeingLoaded[request.key] = 0;
 
-    // log::debug("loaded icon, now: {}, icon: {}. calling {} delegates", iconsLoaded, obj, gm->m_iconDelegates.at(request.key).size());
     for (const auto delegate : gm->m_iconDelegates[request.key]) {
         static_cast<ComplexVisualPlayer*>(delegate)->onFinishedLoadingIconAsync();
     }

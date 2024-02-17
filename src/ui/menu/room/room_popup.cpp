@@ -24,7 +24,6 @@ bool RoomPopup::setup() {
     auto& rm = RoomManager::get();
 
     nm.addListener<RoomPlayerListPacket>([this](RoomPlayerListPacket* packet) {
-        // log::debug("guys i received it");
         this->isWaiting = false;
         this->playerList = packet->data;
         this->applyFilter("");
@@ -222,7 +221,6 @@ void RoomPopup::reloadPlayerList(bool sendPacket) {
 
     // send the request
     if (sendPacket) {
-        // log::debug("requesting player list");
         if (!isWaiting) {
             NetworkManager::get().send(RequestRoomPlayerListPacket::create());
             isWaiting = true;

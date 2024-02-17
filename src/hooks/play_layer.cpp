@@ -407,9 +407,6 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     auto& vpm = VoicePlaybackManager::get();
     auto& settings = GlobedSettings::get();
 
-    // update volume estimators
-    vpm.updateAllEstimators(rawdt);
-
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
 
@@ -434,6 +431,11 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         self->m_fields->selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
         self->m_fields->selfStatusIcons->updateStatus(false, false, VoiceRecordingManager::get().recording, 0.f);
     }
+}
+
+void GlobedPlayLayer::selUpdateEstimators(float dt) {
+    // update volume estimators
+    VoicePlaybackManager::get().updateAllEstimators(dt);
 }
 
 /* private utilities */
@@ -637,6 +639,7 @@ void GlobedPlayLayer::unscheduleSelectors() {
     auto* sched = CCScheduler::get();
     sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this->getParent());
     sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this->getParent());
+    sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateEstimators), this->getParent());
 }
 
 void GlobedPlayLayer::rescheduleSelectors() {
@@ -646,7 +649,9 @@ void GlobedPlayLayer::rescheduleSelectors() {
 
     float pdInterval = (1.0f / m_fields->configuredTps) * timescale;
     float updpInterval = 0.25f * timescale;
+    float updeInterval = (1.0f / 30.f) * timescale;
 
     sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this->getParent(), pdInterval, false);
     sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this->getParent(), updpInterval, false);
+    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateEstimators), this->getParent(), updeInterval, false);
 }

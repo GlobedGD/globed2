@@ -108,13 +108,15 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
 }
 
 PlayerStatusIcons::Loudness PlayerStatusIcons::loudnessToCategory(float loudness) {
-    if (loudness < 0.5f) {
-        return Loudness::Low;
-    } else if (loudness < 0.75f) {
-        return Loudness::Medium;
-    } else {
-        return Loudness::High;
-    }
+    // TODO
+    return Loudness::Low;
+    // if (loudness < 0.5f) {
+    //     return Loudness::Low;
+    // } else if (loudness < 0.75f) {
+    //     return Loudness::Medium;
+    // } else {
+    //     return Loudness::High;
+    // }
 }
 
 PlayerStatusIcons* PlayerStatusIcons::create() {
