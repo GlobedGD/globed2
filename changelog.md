@@ -1,3 +1,8 @@
+## v1.2.0
+
+* Fix deadlock on packet limit test failure
+* Fix stack overflow due to high deltatime
+
 ## v1.1.2
 
 * Add player searching in the player list menu
