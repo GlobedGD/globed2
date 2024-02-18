@@ -31,6 +31,23 @@ public:
     virtual packetid_t getPacketId() const = 0;
     virtual bool getUseTcp() const = 0;
     virtual bool getEncrypted() const = 0;
+
+    template <typename T>
+    requires std::is_base_of_v<Packet, T>
+    bool isInstanceOf() {
+        return this->getPacketId() == T::PACKET_ID;
+    }
+
+    // Downcast a `Packet*` to a specific instance. Returns `nullptr` if this packet is not an instance of `T`
+    template <typename T>
+    requires std::is_base_of_v<Packet, T>
+    T* tryDowncast() {
+        if (!this->isInstanceOf<T>()) {
+            return nullptr;
+        }
+
+        return static_cast<T*>(this);
+    }
 };
 
 class PacketHeader {

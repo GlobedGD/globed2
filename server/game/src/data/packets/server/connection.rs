@@ -32,7 +32,7 @@ pub struct LoggedInPacket {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 20005, tcp = false)]
+#[packet(id = 20005, tcp = true)]
 pub struct LoginFailedPacket<'a> {
     pub message: &'a str,
 }
@@ -45,7 +45,7 @@ pub struct ServerNoticePacket<'a> {
 }
 
 #[derive(Packet, Encodable, StaticSize)]
-#[packet(id = 20007, tcp = false)]
+#[packet(id = 20007, tcp = true)]
 pub struct ProtocolMismatchPacket {
     pub protocol: u16,
 }

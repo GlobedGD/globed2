@@ -28,6 +28,7 @@
 # include <arpa/inet.h>
 # include <poll.h>
 # include <netdb.h> // struct addrinfo
+# include <fcntl.h> // fcntl, F_GETFL, F_SETFL, O_NONBLOCK
 # include <cerrno>
 
 #endif

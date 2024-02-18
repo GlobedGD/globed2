@@ -357,7 +357,7 @@ void NetworkManager::threadRecvFunc() {
 }
 
 void NetworkManager::handlePingResponse(std::shared_ptr<Packet> packet) {
-    if (PingResponsePacket* pingr = dynamic_cast<PingResponsePacket*>(packet.get())) {
+    if (auto* pingr = packet->tryDowncast<PingResponsePacket>()) {
         GameServerManager::get().finishPing(pingr->id, pingr->playerCount);
     }
 }
