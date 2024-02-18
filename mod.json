@@ -24,7 +24,10 @@
         {
             "id": "geode.custom-keybinds",
             "version": ">=v1.2.3",
-            "importance": "required"
+            "importance": "required",
+            "platforms": [
+                "windows"
+            ]
         }
     ],
     "incompatibilities": [
