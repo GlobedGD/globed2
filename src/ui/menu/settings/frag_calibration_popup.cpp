@@ -55,9 +55,6 @@ void FragmentationCalibartionPopup::checkForUpdates(float) {
         // if no response 3 times in a row, abort
         if (failedAttempts > 2) {
             auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
-            auto& settings = GlobedSettings::get();
-            settings.globed.fragmentationLimit = newFragLimit;
-            settings.save();
             FLAlertLayer::create("Notice", fmt::format("Test failed with packet size = {}. Setting the maximum packet size to {}. Reconnect to the server in order to see any change.", currentSize, newFragLimit), "Ok")->show();
             this->closeDelayed();
             return;
@@ -76,10 +73,6 @@ void FragmentationCalibartionPopup::nextStep() {
 
     if (currentSize == 0) {
         // calibration was fully successful, user can send up to 64kb
-        auto& settings = GlobedSettings::get();
-        settings.globed.fragmentationLimit = 65000;
-        settings.save();
-
         FLAlertLayer::create("Success", "Connection test succeeded. No issues found.", "Ok")->show();
         this->closeDelayed();
         return;
@@ -107,6 +100,15 @@ void FragmentationCalibartionPopup::nextStep() {
 
 void FragmentationCalibartionPopup::onClose(cocos2d::CCObject* obj) {
     Popup::onClose(obj);
+
+    if (currentSizeIdx > 0) {
+        auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
+        if (newFragLimit > 1300) {
+            auto& settings = GlobedSettings::get();
+            settings.globed.fragmentationLimit = newFragLimit;
+            settings.save();
+        }
+    }
 
     auto& nm = NetworkManager::get();
     nm.removeListener<ConnectionTestResponsePacket>();
