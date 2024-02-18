@@ -22,8 +22,12 @@ bool FragmentationCalibartionPopup::setup() {
     auto& nm = NetworkManager::get();
     nm.addListener<ConnectionTestResponsePacket>([this] (ConnectionTestResponsePacket* packet) {
         if (packet->uid != this->uid) {
-            FLAlertLayer::create("Error", "Test failed. Server sent invalid unique packet ID.", "Ok")->show();
-            this->onClose(this);
+            auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
+            auto& settings = GlobedSettings::get();
+            settings.globed.fragmentationLimit = newFragLimit;
+            settings.save();
+            FLAlertLayer::create("Error", fmt::format("Test failed fatally. Server sent invalid unique packet ID. Setting maximum packet size to {}.", newFragLimit), "Ok")->show();
+            this->closeDelayed();
             return;
         }
         // discard the data
