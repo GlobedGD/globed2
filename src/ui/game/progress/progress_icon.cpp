@@ -44,12 +44,20 @@ void PlayerProgressIcon::updatePosition(float progress) {
     float prOffset = (pbSize.width - 2.f) * progress;
 
     this->toggleLine(progress > 0.01f && progress < 0.99f);
-    this->setZOrder((int)(progress * 10000)); // straight from globed1
+    if (forceOnTop) {
+        this->setZOrder(100000);
+    } else {
+        this->setZOrder((int)(progress * 10000)); // straight from globed1
+    }
     this->setPositionX(prOffset);
 }
 
 void PlayerProgressIcon::toggleLine(bool enabled) {
     line->setVisible(enabled);
+}
+
+void PlayerProgressIcon::setForceOnTop(bool state) {
+    this->forceOnTop = state;
 }
 
 PlayerProgressIcon* PlayerProgressIcon::create() {

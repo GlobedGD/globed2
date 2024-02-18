@@ -31,7 +31,7 @@ void HookedLoadingLayer::loadingFinished() {
         auto* hgm = static_cast<HookedGameManager*>(gm);
         hgm->m_fields->iconCache.clear();
 
-        if (Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects")) {
+        if (Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects") || Mod::get()->getSettingValue<bool>("force-skip-preload")) {
             log::warn("Asset preloading is disabled. Not loading anything.");
             this->finishLoading();
             return;

@@ -2,6 +2,8 @@
 
 * Fix deadlock on packet limit test failure
 * Fix stack overflow due to high deltatime
+* Add a geode setting to disable asset preloading (in case the game doesn't launch)
+* Make own icon being above everyone else on the progress bar
 
 ## v1.1.2
 

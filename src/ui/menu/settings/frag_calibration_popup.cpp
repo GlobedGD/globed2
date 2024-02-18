@@ -91,6 +91,12 @@ void FragmentationCalibartionPopup::nextStep() {
     auto data = util::crypto::secureRandom(currentSize);
 
     auto& nm = NetworkManager::get();
+    if (!nm.established()) {
+        FLAlertLayer::create("Failed", "Fatal failure. Disconnected during the test.", "Ok")->show();
+        this->closeDelayed();
+        return;
+    }
+
     nm.send(ConnectionTestPacket::create(uid, std::move(data)));
     lastPacket = util::time::systemNow();
 

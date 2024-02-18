@@ -153,6 +153,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         .collect();
 
     m_fields->selfProgressIcon->updateIcons(ProfileCacheManager::get().getOwnData());
+    m_fields->selfProgressIcon->setForceOnTop(true);
 
     if (settings.players.statusIcons) {
         m_fields->selfStatusIcons = Build<PlayerStatusIcons>::create()

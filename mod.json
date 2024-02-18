@@ -37,5 +37,13 @@
     "repository": "https://github.com/dankmeme01/globed2",
     "tags": [
         "Online"
-    ]
+    ],
+    "settings": {
+        "force-skip-preload": {
+            "default": false,
+            "name": "Skip preload assets",
+            "description": "Skip preloading assets on the loading screen. Enable this only if you are experiencing crashes during loading.",
+            "type": "bool"
+        }
+    }
 }
