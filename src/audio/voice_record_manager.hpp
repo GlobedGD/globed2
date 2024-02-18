@@ -9,13 +9,16 @@ protected:
     friend class SingletonBase;
 
 public:
+#if GLOBED_VOICE_SUPPORT
     util::sync::SmartThread<VoiceRecordingManager*> thread;
     util::sync::AtomicBool queuedStop = false, queuedStart = false, recording = false;
 
     void threadFunc();
+#endif // GLOBED_VOICE_SUPPORT
 
     void startRecording();
     void stopRecording();
+    bool isRecording();
 
 private:
     void resetBools(bool recording);

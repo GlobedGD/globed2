@@ -431,7 +431,9 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
 
     if (self->m_fields->selfStatusIcons) {
         self->m_fields->selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
-        self->m_fields->selfStatusIcons->updateStatus(false, false, VoiceRecordingManager::get().recording, 0.f);
+        bool recording = VoiceRecordingManager::get().isRecording();
+
+        self->m_fields->selfStatusIcons->updateStatus(false, false, recording, 0.f);
     }
 }
 
@@ -591,9 +593,7 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
 }
 
 void GlobedPlayLayer::handlePlayerLeave(int playerId) {
-#if GLOBED_VOICE_SUPPORT
     VoicePlaybackManager::get().removeStream(playerId);
-#endif // GLOBED_VOICE_SUPPORT
 
     if (!m_fields->players.contains(playerId)) return;
 

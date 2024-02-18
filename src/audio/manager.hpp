@@ -153,4 +153,16 @@ private:
     util::sync::SmartThread<GlobedAudioManager*> audioThreadHandle;
 };
 
+#else
+
+class GlobedAudioManager : public SingletonBase<GlobedAudioManager> {
+protected:
+    friend class SingletonBase;
+    GlobedAudioManager();
+    ~GlobedAudioManager();
+
+public:
+    bool isRecording();
+};
+
 #endif // GLOBED_VOICE_SUPPORT

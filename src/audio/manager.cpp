@@ -639,4 +639,10 @@ std::string GlobedAudioManager::formatFmodError(FMOD_RESULT result, const char* 
     return fmt::format("{} failed: [FMOD error {}] {}", whatFailed, (int)result, fmodErrorString(result));
 }
 
+#else // GLOBED_VOICE_SUPPORT
+
+bool GlobedAudioManager::isRecording() {
+    return false;
+}
+
 #endif // GLOBED_VOICE_SUPPORT

@@ -23,7 +23,7 @@ class LevelDataPacket : public Packet {
 };
 
 #if GLOBED_VOICE_SUPPORT
-#include <audio/frame.hpp>
+# include <audio/frame.hpp>
 #endif
 
 class VoiceBroadcastPacket : public Packet {
