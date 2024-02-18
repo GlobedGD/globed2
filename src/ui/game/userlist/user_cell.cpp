@@ -83,12 +83,14 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
 }
 
 void GlobedUserCell::updateVisualizer(float dt) {
+#if GLOBED_VOICE_SUPPORT
     if (audioVisualizer) {
         auto& vpm = VoicePlaybackManager::get();
 
         float loudness = vpm.getLoudness(playerId);
         audioVisualizer->setVolume(loudness);
     }
+#endif // GLOBED_VOICE_SUPPORT
 }
 
 void GlobedUserCell::makeBlockButton() {
@@ -157,6 +159,9 @@ void GlobedUserCell::makeBlockButton() {
     if (playerId != GJAccountManager::get()->m_accountID) {
         // audio visualizer
         Build<GlobedAudioVisualizer>::create()
+#if !GLOBED_VOICE_SUPPORT
+            .visible(false)
+#endif // GLOBED_VOICE_SUPPORT
             .parent(buttonsWrapper)
             .id("audio-visualizer"_spr)
             .store(audioVisualizer);

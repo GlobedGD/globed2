@@ -1,8 +1,8 @@
 #include "voice_playback_manager.hpp"
 
-#if GLOBED_VOICE_SUPPORT
-
 #include "manager.hpp"
+
+#if GLOBED_VOICE_SUPPORT
 
 void VoicePlaybackManager::playFrameStreamed(int playerId, const EncodedAudioFrame& frame) {
     // if the stream doesn't exist yet, create it
@@ -93,6 +93,27 @@ float VoicePlaybackManager::getLoudness(int playerId) {
     if (!streams.contains(playerId)) return 0.f;
 
     return streams.at(playerId)->getLoudness();
+}
+
+#else
+
+void VoicePlaybackManager::playRawDataStreamed(int playerId, const float* pcm, size_t samples) {}
+void VoicePlaybackManager::stopAllStreams() {}
+void VoicePlaybackManager::prepareStream(int playerId) {}
+void VoicePlaybackManager::removeStream(int playerId) {}
+bool VoicePlaybackManager::isSpeaking(int playerId) {
+    return false;
+}
+void VoicePlaybackManager::setVolume(int playerId, float volume) {}
+float VoicePlaybackManager::getVolume(int playerId) {
+    return 0.f;
+}
+void VoicePlaybackManager::muteEveryone() {}
+void VoicePlaybackManager::setVolumeAll(float volume) {}
+void VoicePlaybackManager::updateEstimator(int playerId, float dt) {}
+void VoicePlaybackManager::updateAllEstimators(float dt) {}
+float VoicePlaybackManager::getLoudness(int playerId) {
+    return 0.f;
 }
 
 #endif // GLOBED_VOICE_SUPPORT

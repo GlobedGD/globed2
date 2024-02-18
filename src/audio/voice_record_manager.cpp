@@ -1,5 +1,7 @@
 #include "voice_record_manager.hpp"
 
+#if GLOBED_VOICE_SUPPORT
+
 #include <data/packets/client/misc.hpp>
 #include <data/packets/client/game.hpp>
 #include <managers/error_queues.hpp>
@@ -74,3 +76,19 @@ void VoiceRecordingManager::resetBools(bool recording) {
     queuedStart = false;
     queuedStop = false;
 }
+
+bool VoiceRecordingManager::isRecording() {
+    return recording;
+}
+
+#else
+
+VoiceRecordingManager::VoiceRecordingManager() {}
+void VoiceRecordingManager::startRecording() {}
+void VoiceRecordingManager::stopRecording() {}
+void VoiceRecordingManager::resetBools(bool recording) {}
+bool VoiceRecordingManager::isRecording() {
+    return false;
+}
+
+#endif // GLOBED_VOICE_SUPPORT

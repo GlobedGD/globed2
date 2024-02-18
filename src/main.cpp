@@ -19,12 +19,15 @@ void setupErrorCheckNode();
 void setupCustomKeybinds();
 void printDebugInfo();
 
+#if GLOBED_VOICE_SUPPORT
 static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAGS flags, void* dd) {
     log::debug("fmod system init hooked, changing to {} channels", MAX_AUDIO_CHANNELS);
     system->init(MAX_AUDIO_CHANNELS, flags, dd);
 }
+#endif // GLOBED_VOICE_SUPPORT
 
 $on_mod(Loaded) {
+#if GLOBED_VOICE_SUPPORT
     (void) Mod::get()->hook(
         reinterpret_cast<void*>(
             geode::addresser::getNonVirtual(
@@ -35,6 +38,7 @@ $on_mod(Loaded) {
         "FMOD::System::init",
         tulip::hook::TulipConvention::Stdcall
     ).expect("failed to hook fmod").unwrap();
+#endif // GLOBED_VOICE_SUPPORT
 
     setupLibsodium();
     setupErrorCheckNode();

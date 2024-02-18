@@ -1,8 +1,6 @@
 #pragma once
 #include <defs.hpp>
 
-#if GLOBED_VOICE_SUPPORT
-
 #include "stream.hpp"
 
 /*
@@ -12,7 +10,9 @@
 */
 class VoicePlaybackManager : public SingletonBase<VoicePlaybackManager> {
 public:
+#if GLOBED_VOICE_SUPPORT
     void playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
+#endif
     void playRawDataStreamed(int playerId, const float* pcm, size_t samples);
     void stopAllStreams();
 
@@ -30,7 +30,7 @@ public:
     float getLoudness(int playerId);
 
 private:
+#if GLOBED_VOICE_SUPPORT
     std::unordered_map<int, std::unique_ptr<AudioStream>> streams;
+#endif
 };
-
-#endif // GLOBED_VOICE_SUPPORT
