@@ -2,6 +2,7 @@
 #include <data/types/game.hpp>
 
 #include <util/sync.hpp>
+#include <util/lowlevel.hpp>
 
 namespace util::misc {
     bool swapFlag(bool& target) {
@@ -60,12 +61,7 @@ namespace util::misc {
         callOnce(key, func);
     }
 
-    float calculatePcmVolume(const float* pcm, float samples) {
-        double sum = 0.0f;
-        for (size_t i = 0; i < samples; i++) {
-            sum += static_cast<double>(std::abs(pcm[i]));
-        }
-
-        return static_cast<float>(sum / static_cast<double>(samples));
+    float calculatePcmVolume(const float* pcm, size_t samples) {
+        return lowlevel::pcmVolumeFast(pcm, samples);
     }
 }

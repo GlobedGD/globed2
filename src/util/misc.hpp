@@ -86,5 +86,5 @@ namespace util::misc {
         }
     };
 
-    float calculatePcmVolume(const float* pcm, float samples);
+    float calculatePcmVolume(const float* pcm, size_t samples);
 }

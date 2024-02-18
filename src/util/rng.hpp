@@ -33,6 +33,13 @@ namespace util::rng {
 
         std::string genString(const std::string_view alphabet, size_t size);
 
+        template <typename T>
+        void fill(T* ptr, size_t count) {
+            for (size_t i = 0; i < count; i++) {
+                ptr[i] = this->generate<T>();
+            }
+        }
+
     private:
         std::mt19937_64 engine;
     };

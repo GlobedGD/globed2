@@ -7,4 +7,5 @@ CREATE TABLE users (
     is_banned SMALLINT,
     is_muted SMALLINT,
     is_whitelisted SMALLINT,
+    admin_password TEXT,
 );
