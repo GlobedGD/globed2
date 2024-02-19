@@ -1,5 +1,5 @@
 use crate::data::*;
-use globed_shared::ADMIN_KEY_LENGTH;
+use globed_shared::{UserEntry, ADMIN_KEY_LENGTH};
 
 #[derive(Packet, Decodable)]
 #[packet(id = 19000, encrypted = true)]
@@ -30,4 +30,17 @@ pub struct AdminSendNoticePacket {
 pub struct AdminDisconnectPacket {
     pub player: FastString<MAX_NAME_SIZE>,
     pub message: FastString<MAX_NOTICE_SIZE>,
+}
+
+#[derive(Packet, Decodable)]
+#[packet(id = 19003)]
+pub struct AdminGetUserStatePacket {
+    pub player: FastString<MAX_NAME_SIZE>,
+}
+
+#[derive(Packet, Decodable)]
+#[packet(id = 19004)]
+pub struct AdminUpdateUserPacket {
+    pub player: FastString<MAX_NAME_SIZE>,
+    pub user_entry: UserEntry,
 }

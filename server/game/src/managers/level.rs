@@ -2,13 +2,14 @@ use globed_shared::IntMap;
 
 use crate::data::types::{AssociatedPlayerData, PlayerData};
 
+// Manages an entire room (all levels and players inside of it).
 #[derive(Default)]
-pub struct PlayerManager {
+pub struct LevelManager {
     pub players: IntMap<i32, AssociatedPlayerData>, // player id : associated data
     pub levels: IntMap<i32, Vec<i32>>,              // level id : [player id]
 }
 
-impl PlayerManager {
+impl LevelManager {
     pub fn new() -> Self {
         Self::default()
     }

@@ -77,6 +77,9 @@ server/out
 server/build-all.sh
 server/central/central-conf.json
 server/central/db.sqlite
+server/central/db.sqlite-shm
+server/central/db.sqlite-wal
+server/central/.env
 
 # it'll be left a relic
 server/rustc-ice-*.txt

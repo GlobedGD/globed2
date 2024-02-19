@@ -3,13 +3,12 @@ use std::net::IpAddr;
 use globed_shared::{
     esp::{types::FastString, ByteBuffer, ByteBufferExtWrite},
     logger::debug,
-    GameServerBootData, PROTOCOL_VERSION, SERVER_MAGIC,
+    GameServerBootData, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC,
 };
 
-use rocket::{post, State};
+use rocket::{get, post, State};
 
-use crate::state::ServerState;
-use crate::web::*;
+use crate::{config::UserlistMode, db::GlobedDb, state::ServerState, web::*};
 
 fn verify_password(pwd1: &str, pwd2: &str) -> bool {
     if pwd1.len() != pwd2.len() {
@@ -33,11 +32,11 @@ pub async fn boot(
     pw: &str,
     ip_address: IpAddr,
     user_agent: GameServerUserAgentGuard<'_>,
-) -> Result<Vec<u8>, GenericErrorResponder<String>> {
+) -> WebResult<Vec<u8>> {
     let correct = state.state_read().await.config.game_server_password.clone();
 
     if !verify_password(pw, &correct) {
-        return Err(UnauthorizedResponder::new("invalid gameserver credentials".to_owned()).into());
+        unauthorized!("invalid gameserver credentials");
     }
 
     let state = state.state_read().await;
@@ -45,14 +44,13 @@ pub async fn boot(
 
     let bdata = GameServerBootData {
         protocol: PROTOCOL_VERSION,
-        no_chat: config.no_chat_list.clone(),
-        special_users: config.special_users.clone(),
         tps: config.tps,
         maintenance: config.maintenance,
         secret_key2: config.secret_key2.clone(),
         token_expiry: config.token_expiry,
         status_print_interval: config.status_print_interval,
         admin_key: FastString::from_str(&config.admin_key),
+        whitelist: config.userlist_mode == UserlistMode::Whitelist,
     };
 
     debug!("boot data request from game server {} at {}", user_agent.0, ip_address);
@@ -63,4 +61,44 @@ pub async fn boot(
 
     drop(state);
     Ok(bb.into_vec())
+}
+
+#[get("/gs/user/<account_id>?<pw>")]
+pub async fn get_user(
+    state: &State<ServerState>,
+    pw: &str,
+    database: &GlobedDb,
+    account_id: i32,
+    _user_agent: GameServerUserAgentGuard<'_>,
+) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !verify_password(pw, &correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    let user = database
+        .get_user(account_id)
+        .await?
+        .unwrap_or_else(|| UserEntry::new(account_id));
+
+    Ok(CheckedEncodableResponder::new(user))
+}
+
+#[post("/gs/user/update?<pw>", data = "<userdata>")]
+pub async fn update_user(
+    state: &State<ServerState>,
+    pw: &str,
+    database: &GlobedDb,
+    userdata: CheckedDecodableGuard<UserEntry>,
+) -> WebResult<()> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !verify_password(pw, &correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    database.update_user(userdata.0.account_id, &userdata.0).await?;
+
+    Ok(())
 }

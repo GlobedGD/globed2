@@ -15,7 +15,7 @@ use globed_shared::{
         ChaChaBox,
     },
     logger::*,
-    SyncMutex,
+    SyncMutex, UserEntry,
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -52,6 +52,7 @@ pub enum ServerThreadMessage {
     Packet(Vec<u8>),
     BroadcastVoice(Arc<VoiceBroadcastPacket>),
     BroadcastText(ChatMessageBroadcastPacket),
+    BroadcastNotice(ServerNoticePacket),
     TerminationNotice(FastString<MAX_NOTICE_SIZE>),
 }
 
@@ -67,11 +68,12 @@ pub struct GameServerThread {
 
     pub tcp_peer: SocketAddrV4,
     pub udp_peer: SyncMutex<SocketAddrV4>,
-    pub is_admin: AtomicBool,
+    pub is_authorized_admin: AtomicBool,
     pub account_id: AtomicI32,
     pub level_id: AtomicI32,
     pub room_id: AtomicU32,
     pub account_data: SyncMutex<PlayerAccountData>,
+    pub user_entry: SyncMutex<UserEntry>,
 
     pub cleanup_notify: Notify,
     pub cleanup_mutex: Mutex<()>,
@@ -86,7 +88,7 @@ impl GameServerThread {
     /* public api for the main server */
 
     pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
-        let rl_request_limit = (game_server.central_conf.lock().tps + 6) as usize;
+        let rl_request_limit = (game_server.bridge.central_conf.lock().tps + 6) as usize;
         let rate_limiter = SimpleRateLimiter::new(rl_request_limit, Duration::from_millis(925));
 
         Self {
@@ -97,12 +99,13 @@ impl GameServerThread {
             tcp_peer: peer,
             udp_peer: SyncMutex::new(peer),
             crypto_box: OnceLock::new(),
-            is_admin: AtomicBool::new(false),
+            is_authorized_admin: AtomicBool::new(false),
             account_id: AtomicI32::new(0),
             level_id: AtomicI32::new(0),
             room_id: AtomicU32::new(0),
             awaiting_termination: AtomicBool::new(false),
             account_data: SyncMutex::new(PlayerAccountData::default()),
+            user_entry: SyncMutex::new(UserEntry::default()),
             cleanup_notify: Notify::new(),
             cleanup_mutex: Mutex::new(()),
             fragmentation_limit: AtomicU16::new(0),
@@ -336,7 +339,7 @@ impl GameServerThread {
             return false;
         }
 
-        if self.game_server.chat_blocked(accid) {
+        if self.user_entry.lock().is_muted {
             // blocked from chat
             return false;
         }
@@ -389,6 +392,7 @@ impl GameServerThread {
             ServerThreadMessage::SmallPacket((mut packet, len)) => self.handle_packet(&mut packet[..len]).await?,
             ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_static(&text_packet).await?,
             ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet_dynamic(&*voice_packet).await?,
+            ServerThreadMessage::BroadcastNotice(packet) => self.send_packet_static(&packet).await?,
             ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
         }
 
@@ -493,6 +497,8 @@ impl GameServerThread {
             AdminAuthPacket::PACKET_ID => self.handle_admin_auth(&mut data).await,
             AdminSendNoticePacket::PACKET_ID => self.handle_admin_send_notice(&mut data).await,
             AdminDisconnectPacket::PACKET_ID => self.handle_admin_disconnect(&mut data).await,
+            AdminGetUserStatePacket::PACKET_ID => self.handle_admin_get_user_state(&mut data).await,
+            AdminUpdateUserPacket::PACKET_ID => self.handle_admin_update_user(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }
@@ -574,6 +580,7 @@ impl GameServerThread {
                     .map_err(|_| PacketHandlingError::EncryptionError)?;
 
                 // prepend the nonce
+                #[cfg(not(rust_analyzer))] // don't ask about it
                 data[nonce_start..mac_start].copy_from_slice(&nonce);
 
                 // prepend the mac tag

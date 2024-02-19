@@ -1,7 +1,7 @@
 // this doc is mostly for flamegraphs
 #![allow(clippy::wildcard_imports)]
 use esp::{ByteBuffer, ByteReader};
-use globed_game_server::{data::*, managers::PlayerManager};
+use globed_game_server::{data::*, managers::LevelManager};
 use std::hint::black_box;
 
 const ITERS: usize = 500_000;
@@ -104,7 +104,7 @@ fn test_slow_buffer() {
 
 #[test]
 fn test_player_manager() {
-    let mut manager = PlayerManager::new();
+    let mut manager = LevelManager::new();
 
     for level_id in 0..100 {
         for account_id in 0..100 {

@@ -15,6 +15,8 @@ pub mod routes {
             meta::servers,
             meta::index,
             game_server::boot,
+            game_server::get_user,
+            game_server::update_user,
             auth::totp_login,
             auth::challenge_start,
             auth::challenge_finish

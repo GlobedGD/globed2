@@ -46,6 +46,18 @@ impl TokenIssuer {
         Self { hmac, expiration_period }
     }
 
+    /// Change the secret key of this token issuer.
+    pub fn set_secret_key(&mut self, secret_key: &str) {
+        let skey_bytes = secret_key.as_bytes();
+        let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
+
+        self.hmac = hmac;
+    }
+
+    pub fn set_expiration_period(&mut self, period: Duration) {
+        self.expiration_period = period;
+    }
+
     /// Generates a new session token for the given account ID and username
     pub fn generate(&self, account_id: i32, user_id: i32, account_name: &str) -> String {
         let timestamp = SystemTime::now()

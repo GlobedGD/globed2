@@ -1,8 +1,6 @@
-use globed_shared::SpecialUser;
-
 use crate::data::*;
 
-use super::{Color3B, ColorParseError};
+use super::Color3B;
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
@@ -61,15 +59,6 @@ impl Default for SpecialUserData {
         Self {
             name_color: Color3B { r: 255, g: 255, b: 255 },
         }
-    }
-}
-
-impl TryFrom<SpecialUser> for SpecialUserData {
-    type Error = ColorParseError;
-    fn try_from(value: SpecialUser) -> Result<Self, Self::Error> {
-        Ok(Self {
-            name_color: value.color.parse()?,
-        })
     }
 }
 

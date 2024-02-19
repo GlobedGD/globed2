@@ -33,7 +33,7 @@ pub fn index() -> (Status, (ContentType, String)) {
 }
 
 #[get("/servers")]
-pub async fn servers(state: &State<ServerState>) -> Result<String, GenericErrorResponder<String>> {
+pub async fn servers(state: &State<ServerState>) -> WebResult<String> {
     check_maintenance!(state);
 
     let state = state.state_read().await;

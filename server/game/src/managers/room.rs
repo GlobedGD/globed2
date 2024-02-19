@@ -2,12 +2,12 @@ use globed_shared::{rand, rand::Rng, IntMap, SyncMutex, SyncMutexGuard};
 
 use crate::data::ROOM_ID_LENGTH;
 
-use super::PlayerManager;
+use super::LevelManager;
 
 #[derive(Default)]
 pub struct RoomManager {
-    rooms: SyncMutex<IntMap<u32, PlayerManager>>,
-    global: SyncMutex<PlayerManager>,
+    rooms: SyncMutex<IntMap<u32, LevelManager>>,
+    global: SyncMutex<LevelManager>,
 }
 
 // i.e. if ROOM_ID_LENGTH is 6 we should have a range 100_000..1_000_000
@@ -20,7 +20,7 @@ impl RoomManager {
     }
 
     /// Try to find a room by given ID, if equal to 0 or not found, runs the provided closure with the global room
-    pub fn with_any<F: FnOnce(&mut PlayerManager) -> R, R>(&self, room_id: u32, f: F) -> R {
+    pub fn with_any<F: FnOnce(&mut LevelManager) -> R, R>(&self, room_id: u32, f: F) -> R {
         if room_id == 0 {
             f(&mut self.get_global())
         } else if let Some(room) = self.get_rooms().get_mut(&room_id) {
@@ -30,11 +30,11 @@ impl RoomManager {
         }
     }
 
-    pub fn get_global(&self) -> SyncMutexGuard<'_, PlayerManager> {
+    pub fn get_global(&self) -> SyncMutexGuard<'_, LevelManager> {
         self.global.lock()
     }
 
-    pub fn get_rooms(&self) -> SyncMutexGuard<'_, IntMap<u32, PlayerManager>> {
+    pub fn get_rooms(&self) -> SyncMutexGuard<'_, IntMap<u32, LevelManager>> {
         self.rooms.lock()
     }
 
@@ -50,7 +50,7 @@ impl RoomManager {
             }
         };
 
-        let mut pm = PlayerManager::new();
+        let mut pm = LevelManager::new();
         pm.create_player(account_id);
 
         rooms.insert(room_id, pm);

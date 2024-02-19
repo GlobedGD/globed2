@@ -114,6 +114,12 @@ impl<const N: usize> FastString<N> {
         self.to_str().unwrap_or("<invalid UTF-8 string>")
     }
 
+    #[inline]
+    pub fn try_to_string(&self) -> String {
+        self.to_str()
+            .map_or_else(|_| "<invalid UTF-8 string>".to_owned(), ToOwned::to_owned)
+    }
+
     /// Converts this string to a string slice, without doing any UTF-8 checks.
     /// If the string is not a valid UTF-8 string, the behavior is undefined.
     #[inline]

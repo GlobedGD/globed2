@@ -10,6 +10,7 @@ use std::{
 };
 
 use globed_shared::{
+    anyhow,
     hmac::{Hmac, Mac},
     sha2::Sha256,
     TokenIssuer,
@@ -18,6 +19,7 @@ use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use crate::{
     config::{ServerConfig, UserlistMode},
+    db::GlobedDb,
     verifier::AccountVerifier,
 };
 use blake2::{Blake2b, Digest};
@@ -85,11 +87,13 @@ impl ServerStateData {
         self.verify_totp(orig_value.as_bytes(), answer)
     }
 
-    pub fn should_block(&self, account_id: i32) -> bool {
+    pub async fn should_block(&self, db: &GlobedDb, account_id: i32) -> anyhow::Result<bool> {
+        let user = db.get_user(account_id).await?;
+
         match self.config.userlist_mode {
-            UserlistMode::None => false,
-            UserlistMode::Blacklist => self.config.userlist.contains(&account_id),
-            UserlistMode::Whitelist => !self.config.userlist.contains(&account_id),
+            UserlistMode::None => Ok(false),
+            UserlistMode::Blacklist => Ok(user.is_some_and(|x| x.is_banned)),
+            UserlistMode::Whitelist => Ok(!user.is_some_and(|x| x.is_whitelisted)),
         }
     }
 }

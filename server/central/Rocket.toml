@@ -4,6 +4,6 @@ port = 41000
 cli_colors = true
 
 [global.databases.globed_db]
-url = "sqlite://db.sqlite"
-pool_size = 10
-timeout = 5
+url = "sqlite://db.sqlite?mode=rwc"
+pool_size = 25
+timeout = 10

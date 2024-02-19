@@ -84,7 +84,7 @@ impl<'a> FastByteBuffer<'a> {
     }
 
     #[inline]
-    pub fn as_bytes(&'a mut self) -> &'a [u8] {
+    pub fn as_bytes(&'a self) -> &'a [u8] {
         &self.data[..self.len]
     }
 
@@ -127,5 +127,10 @@ impl<'a> FastByteBuffer<'a> {
         self.data[self.pos..self.pos + data.len()].copy_from_slice(data);
         self.pos += data.len();
         self.len = self.len.max(self.pos);
+    }
+
+    #[inline]
+    pub fn to_vec(&self) -> Vec<u8> {
+        self.as_bytes().to_vec()
     }
 }

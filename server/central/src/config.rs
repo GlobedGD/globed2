@@ -6,7 +6,7 @@ use std::{
 use globed_shared::{
     anyhow::{self, anyhow},
     esp::{self, Decodable, Encodable},
-    generate_alphanum_string, Decodable, Encodable, IntMap, SpecialUser, ADMIN_KEY_LENGTH,
+    generate_alphanum_string, Decodable, Encodable, ADMIN_KEY_LENGTH,
 };
 use json_comments::StripComments;
 use serde::{Deserialize, Serialize};
@@ -51,24 +51,8 @@ const fn default_status_print_interval() -> u64 {
     7200 // 2 hours
 }
 
-fn default_special_users() -> IntMap<i32, SpecialUser> {
-    let mut map = IntMap::default();
-    map.insert(
-        71,
-        SpecialUser {
-            name: "RobTop".to_owned(),
-            color: "#ffaabb".to_owned(),
-        },
-    );
-    map
-}
-
 const fn default_userlist_mode() -> UserlistMode {
     UserlistMode::None
-}
-
-const fn default_userlist() -> Vec<i32> {
-    Vec::new()
 }
 
 const fn default_tps() -> u32 {
@@ -103,7 +87,7 @@ pub enum UserlistMode {
     Whitelist,
     #[default]
     #[serde(rename = "none")]
-    None,
+    None, // same as blacklist
 }
 
 #[derive(Serialize, Deserialize, Encodable, Decodable, Default, Clone)]
@@ -126,14 +110,8 @@ pub struct ServerConfig {
     pub status_print_interval: u64,
 
     // special users and "special" users
-    #[serde(default = "default_special_users")]
-    pub special_users: IntMap<i32, SpecialUser>,
     #[serde(default = "default_userlist_mode")]
     pub userlist_mode: UserlistMode,
-    #[serde(default = "default_userlist")]
-    pub userlist: Vec<i32>,
-    #[serde(default = "default_userlist")]
-    pub no_chat_list: Vec<i32>,
 
     // game stuff
     #[serde(default = "default_tps")]

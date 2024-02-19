@@ -1,7 +1,7 @@
 #![allow(clippy::wildcard_imports)]
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use esp::{ByteBuffer, ByteReader};
-use globed_game_server::{data::*, make_uninit, managers::PlayerManager, new_uninit};
+use globed_game_server::{data::*, make_uninit, managers::LevelManager, new_uninit};
 use globed_shared::{rand, rand::RngCore};
 
 fn buffers(c: &mut Criterion) {
@@ -103,7 +103,7 @@ fn structs(c: &mut Criterion) {
 fn managers(c: &mut Criterion) {
     c.bench_function("player-manager", |b| {
         b.iter(black_box(|| {
-            let mut manager = PlayerManager::new();
+            let mut manager = LevelManager::new();
 
             for level_id in 0..100 {
                 for account_id in 0..10 {

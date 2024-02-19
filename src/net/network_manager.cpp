@@ -37,6 +37,10 @@ NetworkManager::NetworkManager() {
 
         auto& settings = GlobedSettings::get();
 
+        if (settings.globed.fragmentationLimit == 0) {
+            settings.globed.fragmentationLimit = 65000;
+        }
+
         auto gddata = am.gdData.lock();
         auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
         this->send(pkt);

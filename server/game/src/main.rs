@@ -12,18 +12,17 @@
 use std::{
     error::Error,
     net::{IpAddr, Ipv4Addr, SocketAddr},
-    time::Duration,
 };
 
-use esp::{ByteBufferExtRead, ByteReader};
+use bridge::{CentralBridge, CentralBridgeError};
 use globed_shared::{log::Log, *};
 use reqwest::StatusCode;
-use server::GameServerConfiguration;
 use state::ServerState;
 use tokio::net::{TcpListener, UdpSocket};
 
 use server::GameServer;
 
+pub mod bridge;
 pub mod data;
 pub mod managers;
 pub mod server;
@@ -159,115 +158,83 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let startup_config = parse_configuration();
     let standalone = startup_config.central_data.is_none();
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(5))
-        .user_agent(format!("globed-game-server/{}", env!("CARGO_PKG_VERSION")))
-        .build()
-        .unwrap();
-
-    let mut config = GameServerConfiguration {
-        http_client: client,
-        central_url: String::new(),
-        central_pw: String::new(),
-    };
-
     let state = ServerState::new();
-    let gsbd = if standalone {
+    let bridge = if standalone {
         warn!("Starting in standalone mode, authentication is disabled");
-        GameServerBootData::default()
+        CentralBridge::new("", "")
     } else {
         let (central_url, central_pw) = startup_config.central_data.unwrap();
-        config.central_url = central_url;
-        config.central_pw = central_pw;
+
+        let bridge = CentralBridge::new(&central_url, &central_pw);
 
         info!("Retrieving config from the central server..");
 
-        let response = match config
-            .http_client
-            .post(format!("{}{}", config.central_url, "gs/boot"))
-            .query(&[("pw", config.central_pw.clone())])
-            .send()
-            .await
-        {
-            Ok(x) => match x.error_for_status() {
-                Ok(x) => x,
-                Err(err) => {
-                    error!("the central server returned an error: {err}");
-                    if err.status().unwrap_or(StatusCode::OK) == StatusCode::UNAUTHORIZED {
-                        warn!("hint: there is a high chance that you have supplied a wrong password");
-                        warn!("hint: see the server readme if you don't know what password you need to use");
-                    }
-                    abort_misconfig();
-                }
-            },
-            Err(err) => {
+        let central_conf = match bridge.request_boot_data().await {
+            Ok(x) => x,
+            Err(CentralBridgeError::RequestError(err)) => {
                 error!("failed to make a request to the central server: {err}");
                 warn!("hint: make sure the URL you passed is a valid Globed central server URL.");
                 abort_misconfig();
             }
-        };
-
-        let configuration = response.bytes().await?;
-        let mut reader = ByteReader::from_bytes(&configuration);
-
-        // verify that the magic bytes match
-        let valid_magic = reader
-            .read_value_array::<u8, SERVER_MAGIC_LEN>()
-            .map_or(false, |magic| magic.iter().eq(SERVER_MAGIC.iter()));
-
-        if !valid_magic {
-            error!("got unexpected response from the specified central server");
-            warn!("hint: make sure the URL you passed is a valid Global central server URL");
-            warn!("hint: here is the response that was received from the specified URL:");
-            let txt = String::from_utf8(reader.as_bytes().to_vec()).unwrap_or_else(|_| "<invalid UTF-8 string>".to_owned());
-            warn!("{}", &txt[..txt.len().min(512)]);
-            abort_misconfig();
-        }
-
-        let boot_data: GameServerBootData = match reader.read_value() {
-            Ok(x) => x,
-            Err(err) => {
+            Err(CentralBridgeError::CentralError((code, response))) => {
+                error!("the central server returned an error: {response}");
+                if code == StatusCode::UNAUTHORIZED {
+                    warn!("hint: there is a high chance that you have supplied a wrong password");
+                    warn!("hint: see the server readme if you don't know what password you need to use");
+                }
+                abort_misconfig();
+            }
+            Err(CentralBridgeError::InvalidMagic(response)) => {
+                error!("got unexpected response from the specified central server");
+                warn!("hint: make sure the URL you passed is a valid Global central server URL");
+                warn!("hint: here is the response that was received from the specified URL:");
+                warn!("{}", &response[..response.len().min(512)]);
+                abort_misconfig();
+            }
+            Err(CentralBridgeError::MalformedData(err)) => {
                 error!("failed to parse the data sent by the central server: {err}");
                 warn!("hint: this is supposedly a valid Globed central server, as the sent magic string was correct, but data decoding still failed");
                 warn!("hint: make sure that both the central and the game servers are on the latest version");
                 abort_misconfig();
             }
+            Err(CentralBridgeError::ProtocolMismatch(protocol)) => {
+                error!("incompatible protocol versions!");
+                error!(
+                    "this game server is on v{PROTOCOL_VERSION}, while the central server uses v{}",
+                    protocol
+                );
+                if protocol > PROTOCOL_VERSION {
+                    warn!(
+                        "hint: you are running an old version of the Globed game server (v{}), please update to the latest one.",
+                        env!("CARGO_PKG_VERSION")
+                    );
+                } else {
+                    warn!("hint: the central server you are using is outdated, or the game server is using a development build that is too new.");
+                }
+                abort_misconfig();
+            }
         };
 
-        if boot_data.protocol != PROTOCOL_VERSION {
-            error!("incompatible protocol versions!");
-            error!(
-                "this game server is on v{PROTOCOL_VERSION}, while the central server uses v{}",
-                boot_data.protocol
-            );
-            if boot_data.protocol > PROTOCOL_VERSION {
-                warn!(
-                    "hint: you are running an old version of the Globed game server (v{}), please update to the latest one.",
-                    env!("CARGO_PKG_VERSION")
-                );
-            } else {
-                warn!("hint: the central server you are using is outdated, or the game server is using a development build that is too new.");
-            }
-            abort_misconfig();
-        }
-
-        boot_data
+        bridge.set_boot_data(central_conf);
+        bridge
     };
 
-    debug!("Configuration:");
-    debug!("* TPS: {}", gsbd.tps);
-    debug!("* No chat users: {}", gsbd.no_chat.len());
-    debug!("* Special users: {}", gsbd.special_users.len());
-    debug!("* Token expiry: {} seconds", gsbd.token_expiry);
-    debug!("* Maintenance: {}", if gsbd.maintenance { "yes" } else { "no" });
+    {
+        let gsbd = bridge.central_conf.lock();
 
-    debug!("* Token secret key: '{}'", censor_key(&gsbd.secret_key2, 4));
+        debug!("Configuration:");
+        debug!("* TPS: {}", gsbd.tps);
+        debug!("* Token expiry: {} seconds", gsbd.token_expiry);
+        debug!("* Maintenance: {}", if gsbd.maintenance { "yes" } else { "no" });
 
-    if standalone {
-        debug!("* Admin key: '{}'", gsbd.admin_key);
-    } else {
-        // print first 4 chars, rest is censored
-        debug!("* Admin key: '{}'", censor_key(&gsbd.admin_key, 4));
+        debug!("* Token secret key: '{}'", censor_key(&gsbd.secret_key2, 4));
+
+        if standalone {
+            debug!("* Admin key: '{}'", gsbd.admin_key);
+        } else {
+            // print first 4 chars, rest is censored
+            debug!("* Admin key: '{}'", censor_key(&gsbd.admin_key, 4));
+        }
     }
 
     let udp_socket = match UdpSocket::bind(&startup_config.bind_address).await {
@@ -297,7 +264,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    let server = GameServer::new(tcp_socket, udp_socket, state, gsbd, config, standalone);
+    let server = GameServer::new(tcp_socket, udp_socket, state, bridge, standalone);
     let server = Box::leak(Box::new(server));
 
     Box::pin(server.run()).await;

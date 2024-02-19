@@ -74,15 +74,12 @@ Note that the server is written with security in mind, so many of those options 
 | JSON key | Default | Hot-reloadable<sup>**</sup> | Description |
 |---------|---------|----------------|-------------|
 | `web_mountpoint` | `"/"` | ❌ | HTTP mountpoint (the prefix before every endpoint) |
-| `special_users` | `{}` | ⏳ | List of users that have special properties, for example a unique name color (see below for the format) |
 | `game_servers` | `[]` | ✅ | List of game servers that will be sent to the clients (see below for the format) |
 | `maintenance` | `false` | ⏳ | When enabled, anyone trying to connect will get an appropriate error message saying that the server is under maintenance |
 | `status_print_interval` | `7200` | ⚠️ | How often (in seconds) the game servers will print various status information to the console, 0 to disable |
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
-| `userlist` | `[]` | ✅ | If `userlist_mode` is set to `blacklist`, block account IDs in this list. If set to `whitelist`, only the users in the list will be allowed to connect |
-| `no_chat_list` | `[]` | ⏳ | List of account IDs of users who are able to connect and play, but have cannot send text/voice messages |
 | `tps` | `30` | ⏳ | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
-| `admin_key`<sup>*</sup> | `(random)` | ⏳ | The password used to unlock the admin panel in-game, must be 16 characters or less |
+| `admin_key`<sup>*</sup> | `(random)` | ⏳ | The password used to unlock the admin panel in-game, must be 32 characters or less |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `gd_api_credentials` accordingly if you enable this setting |
 | `gd_api_account`<sup>*</sup> | `0` | ✅ | Account ID of a bot account that will be used to verify account ownership |
 | `gd_api_gjp`<sup>*</sup> | `(empty)` | ✅ | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
@@ -91,7 +88,7 @@ Note that the server is written with security in mind, so many of those options 
 | `game_server_password`<sup>*</sup> | `(random)` | ✅ | Password used to authenticate game servers |
 | `cloudflare_protection`<sup>*</sup> | `false` | ✅ | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users. If your server is proxied through cloudflare, you **must** turn on this option. |
 | `challenge_expiry`<sup>*</sup> | `30` | ✅ | Amount of seconds before an authentication challenge expires and a new one can be requested |
-| `token_expiry`<sup>*</sup> | `86400` (1 day) | ⚠️ | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
+| `token_expiry`<sup>*</sup> | `86400` (1 day) | ⏳ | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
 
 <sup>*</sup> - security setting, be careful with changing it if making a public server
 

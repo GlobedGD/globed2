@@ -4,7 +4,8 @@
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
-    clippy::wildcard_imports
+    clippy::wildcard_imports,
+    clippy::no_effect_underscore_binding
 )]
 
 use std::{error::Error, path::PathBuf, time::Duration};
@@ -17,7 +18,7 @@ use globed_shared::{
     logger::{error, info, log, warn, Logger},
     LogLevelFilter,
 };
-use rocket::fairing::AdHoc;
+use rocket_db_pools::Database;
 use state::{ServerState, ServerStateData};
 
 pub mod config;
@@ -32,7 +33,7 @@ fn abort_misconfig() -> ! {
     std::process::exit(1);
 }
 
-#[tokio::main]
+#[rocket::main]
 #[allow(clippy::too_many_lines)]
 async fn main() -> Result<(), Box<dyn Error>> {
     log::set_logger(Logger::instance("globed_central_server", false)).unwrap();
@@ -125,19 +126,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let rocket = rocket::build()
         .mount(mnt_point, web::routes::build_router())
         .manage(state)
-        .attach(GlobedDb::fairing())
-        .attach(AdHoc::on_liftoff("Database migrations", |rocket| {
-            Box::pin(async move {
-                log::info!("Running migrations");
-                let db = GlobedDb::get_one(rocket).await.unwrap();
-                match db::run_migrations(&db).await {
-                    Ok(()) => {}
-                    Err(err) => {
-                        error!("failed to run migrations: {err}");
-                    }
-                }
-            })
-        }));
+        .attach(GlobedDb::init())
+        .attach(db::migration_fairing());
+
     rocket.launch().await?;
 
     Ok(())

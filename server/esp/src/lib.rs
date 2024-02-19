@@ -33,6 +33,7 @@ pub enum DecodeError {
     InvalidEnumValue,
     InvalidStringValue,
     NonFiniteValue,
+    ChecksumMismatch,
 }
 
 impl Display for DecodeError {
@@ -43,6 +44,7 @@ impl Display for DecodeError {
             Self::InvalidEnumValue => f.write_str("invalid enum value was passed"),
             Self::InvalidStringValue => f.write_str("invalid string was passed, likely not properly UTF-8 encoded"),
             Self::NonFiniteValue => f.write_str("NaN or inf was passed as a data field expecting a finite f32 or f64 value"),
+            Self::ChecksumMismatch => f.write_str("data checksum was invalid"),
         }
     }
 }
@@ -218,6 +220,9 @@ pub trait ByteBufferExtWrite {
     fn write_value_array<T: Encodable, const N: usize>(&mut self, val: &[T; N]);
     /// write a `Vec<T>`, prefixed with 4 bytes indicating the amount of values
     fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
+
+    /// calculate the checksum of the entire buffer and write it at the current position (4 bytes)
+    fn append_self_checksum(&mut self);
 }
 
 pub trait ByteBufferExtRead {
@@ -242,6 +247,9 @@ pub trait ByteBufferExtRead {
     fn read_value_array<T: Decodable, const N: usize>(&mut self) -> DecodeResult<[T; N]>;
     /// read a `Vec<T>`
     fn read_value_vec<T: Decodable>(&mut self) -> DecodeResult<Vec<T>>;
+
+    /// read the checksum at the end of the buffer (4 bytes) and verify the rest of the buffer matches
+    fn validate_self_checksum(&mut self) -> DecodeResult<()>;
 }
 
 /* ByteBuffer extension implementation for ByteBuffer, ByteReader and FastByteBuffer */
@@ -291,6 +299,12 @@ macro_rules! impl_extwrite {
             for elem in val {
                 self.write_value(elem);
             }
+        }
+
+        #[inline]
+        fn append_self_checksum(&mut self) {
+            let checksum = crc32fast::hash(self.as_bytes());
+            self.write_u32(checksum);
         }
     };
 }
@@ -379,6 +393,27 @@ macro_rules! impl_extread {
             }
 
             Ok(out)
+        }
+
+        #[inline]
+        fn validate_self_checksum(&mut self) -> DecodeResult<()> {
+            if self.len() < 4 {
+                return Err(DecodeError::ChecksumMismatch);
+            }
+
+            let last_pos = self.get_rpos();
+            let before_cksum = self.len() - 4;
+
+            self.set_rpos(before_cksum);
+            let checksum = self.read_u32()?;
+            let correct_checksum = crc32fast::hash(&self.as_bytes()[..before_cksum]);
+            self.set_rpos(last_pos);
+
+            if checksum != correct_checksum {
+                return Err(DecodeError::ChecksumMismatch);
+            }
+
+            Ok(())
         }
     };
 }

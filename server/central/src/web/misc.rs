@@ -1,10 +1,14 @@
-use std::{error::Error, net::IpAddr};
+use std::{error::Error, io::Cursor, net::IpAddr};
 
+use globed_shared::esp::{ByteBuffer, ByteBufferExtRead, ByteBufferExtWrite, Decodable, DecodeError, Encodable};
 use rocket::{
-    http::Status,
+    data::{self, FromData, ToByteUnit},
+    http::{ContentType, Status},
     request::{FromRequest, Outcome},
-    Request, Responder,
+    response::{self, Responder},
+    Data, Request, Response,
 };
+use tokio::io::AsyncReadExt;
 
 #[derive(Responder)]
 #[response(status = 503, content_type = "text")]
@@ -19,10 +23,38 @@ pub struct UnauthorizedResponder {
 }
 
 impl UnauthorizedResponder {
-    pub fn new(inner: String) -> Self {
-        Self { inner }
+    pub fn new(inner: &str) -> Self {
+        Self { inner: inner.to_owned() }
     }
 }
+
+macro_rules! unauthorized {
+    ($msg:expr) => {
+        return Err(UnauthorizedResponder::new($msg).into())
+    };
+}
+
+pub(crate) use unauthorized;
+
+#[derive(Responder)]
+#[response(status = 400, content_type = "text")]
+pub struct BadRequestResponder {
+    pub inner: String,
+}
+
+impl BadRequestResponder {
+    pub fn new(inner: &str) -> Self {
+        Self { inner: inner.to_owned() }
+    }
+}
+
+macro_rules! bad_request {
+    ($msg:expr) => {
+        return Err(BadRequestResponder::new($msg).into())
+    };
+}
+
+pub(crate) use bad_request;
 
 #[derive(Responder)]
 pub struct GenericErrorResponder<T> {
@@ -45,6 +77,14 @@ impl From<UnauthorizedResponder> for GenericErrorResponder<String> {
     }
 }
 
+impl From<BadRequestResponder> for GenericErrorResponder<String> {
+    fn from(value: BadRequestResponder) -> Self {
+        GenericErrorResponder {
+            inner: (Status::BadRequest, value.inner),
+        }
+    }
+}
+
 impl<T> From<T> for GenericErrorResponder<String>
 where
     T: Error,
@@ -55,6 +95,8 @@ where
         }
     }
 }
+
+pub type WebResult<T> = Result<T, GenericErrorResponder<String>>;
 
 // game server user agent
 pub struct GameServerUserAgentGuard<'r>(pub &'r str);
@@ -102,6 +144,115 @@ impl<'r> FromRequest<'r> for CloudflareIPGuard {
                 Err(_) => Outcome::Error((Status::Unauthorized, "failed to parse the IP header from Cloudflare")),
             },
             None => Outcome::Success(CloudflareIPGuard(None)),
+        }
+    }
+}
+
+// Responder wrapper type for types that implement `esp::Encodable`.
+
+pub struct EncodableResponder {
+    data: Box<[u8]>,
+}
+
+impl EncodableResponder {
+    pub fn new<T: Encodable>(value: T) -> Self {
+        let mut buffer = ByteBuffer::new();
+        value.encode(&mut buffer);
+        Self {
+            data: buffer.into_vec().into_boxed_slice(),
+        }
+    }
+}
+
+#[rocket::async_trait]
+impl<'r> Responder<'r, 'static> for EncodableResponder {
+    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
+        Response::build()
+            .header(ContentType::Binary)
+            .sized_body(self.data.len(), Cursor::new(self.data))
+            .ok()
+    }
+}
+
+// same as `EncodableResponder` but appends the checksum at the end of the response
+
+pub struct CheckedEncodableResponder {
+    data: Box<[u8]>,
+}
+
+impl CheckedEncodableResponder {
+    pub fn new<T: Encodable>(value: T) -> Self {
+        let mut buffer = ByteBuffer::new();
+        buffer.write_value(&value);
+        buffer.append_self_checksum();
+
+        Self {
+            data: buffer.into_vec().into_boxed_slice(),
+        }
+    }
+}
+
+#[rocket::async_trait]
+impl<'r> Responder<'r, 'static> for CheckedEncodableResponder {
+    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
+        Response::build()
+            .header(ContentType::Binary)
+            .sized_body(self.data.len(), Cursor::new(self.data))
+            .ok()
+    }
+}
+
+// Request guard for types that implement `esp::Decodable`.
+
+pub struct DecodableGuard<T: Decodable>(pub T);
+
+#[rocket::async_trait]
+impl<'r, T: Decodable> FromData<'r> for DecodableGuard<T> {
+    type Error = DecodeError;
+
+    async fn from_data(_req: &'r Request<'_>, data: Data<'r>) -> data::Outcome<'r, Self> {
+        let mut stream = data.open(1.mebibytes());
+
+        let mut vec = Vec::new();
+        match stream.read_to_end(&mut vec).await {
+            Ok(_) => {}
+            Err(_) => return data::Outcome::Error((Status::BadRequest, DecodeError::NotEnoughData)),
+        }
+
+        let mut buffer = ByteBuffer::from_vec(vec);
+        match buffer.read_value() {
+            Ok(value) => data::Outcome::Success(Self(value)),
+            Err(err) => data::Outcome::Error((Status::BadRequest, err)),
+        }
+    }
+}
+
+// Same as `DecodableGuard` but reads a checksum at the end of the response and validates it
+
+pub struct CheckedDecodableGuard<T: Decodable>(pub T);
+
+#[rocket::async_trait]
+impl<'r, T: Decodable> FromData<'r> for CheckedDecodableGuard<T> {
+    type Error = DecodeError;
+
+    async fn from_data(_req: &'r Request<'_>, data: Data<'r>) -> data::Outcome<'r, Self> {
+        let mut stream = data.open(1.mebibytes());
+
+        let mut vec = Vec::new();
+        match stream.read_to_end(&mut vec).await {
+            Ok(_) => {}
+            Err(_) => return data::Outcome::Error((Status::BadRequest, DecodeError::NotEnoughData)),
+        }
+
+        let mut buffer = ByteBuffer::from_vec(vec);
+        match buffer.validate_self_checksum() {
+            Ok(()) => {}
+            Err(err) => return data::Outcome::Error((Status::BadRequest, err)),
+        }
+
+        match buffer.read_value() {
+            Ok(value) => data::Outcome::Success(Self(value)),
+            Err(err) => data::Outcome::Error((Status::BadRequest, err)),
         }
     }
 }

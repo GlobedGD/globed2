@@ -9,6 +9,7 @@
     clippy::wildcard_imports
 )]
 
+pub mod bridge;
 pub mod data;
 pub mod managers;
 pub mod server;

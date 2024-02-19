@@ -10,7 +10,7 @@ use globed_shared::{
     crypto_box::{aead::OsRng, PublicKey, SecretKey},
     esp::ByteBufferExtWrite as _,
     logger::*,
-    GameServerBootData, SyncMutex, TokenIssuer, SERVER_MAGIC_LEN,
+    SyncMutex, UserEntry,
 };
 use rustc_hash::FxHashMap;
 
@@ -23,18 +23,13 @@ use tokio::{
 };
 
 use crate::{
+    bridge::{self, CentralBridge},
     data::*,
     server_thread::{GameServerThread, ServerThreadMessage, INLINE_BUFFER_SIZE},
     state::ServerState,
 };
 
 const MAX_UDP_PACKET_SIZE: usize = 65536;
-
-pub struct GameServerConfiguration {
-    pub http_client: reqwest::Client,
-    pub central_url: String,
-    pub central_pw: String,
-}
 
 pub struct GameServer {
     pub state: ServerState,
@@ -44,10 +39,8 @@ pub struct GameServer {
     pub unclaimed_threads: SyncMutex<VecDeque<Arc<GameServerThread>>>,
     pub secret_key: SecretKey,
     pub public_key: PublicKey,
-    pub central_conf: SyncMutex<GameServerBootData>,
-    pub config: GameServerConfiguration,
+    pub bridge: CentralBridge,
     pub standalone: bool,
-    pub token_issuer: TokenIssuer,
 }
 
 impl GameServer {
@@ -55,13 +48,11 @@ impl GameServer {
         tcp_socket: TcpListener,
         udp_socket: UdpSocket,
         state: ServerState,
-        central_conf: GameServerBootData,
-        config: GameServerConfiguration,
+        bridge: CentralBridge,
         standalone: bool,
     ) -> Self {
         let secret_key = SecretKey::generate(&mut OsRng);
         let public_key = secret_key.public_key();
-        let token_issuer = TokenIssuer::new(&central_conf.secret_key2, Duration::from_secs(central_conf.token_expiry));
 
         Self {
             state,
@@ -71,10 +62,8 @@ impl GameServer {
             unclaimed_threads: SyncMutex::new(VecDeque::new()),
             secret_key,
             public_key,
-            central_conf: SyncMutex::new(central_conf),
-            config,
+            bridge,
             standalone,
-            token_issuer,
         }
     }
 
@@ -98,7 +87,7 @@ impl GameServer {
         }
 
         // print some useful stats every once in a bit
-        let interval = self.central_conf.lock().status_print_interval;
+        let interval = self.bridge.central_conf.lock().status_print_interval;
 
         if interval != 0 {
             tokio::spawn(async move {
@@ -209,7 +198,7 @@ impl GameServer {
 
     /* various calls for other threads */
 
-    pub fn claim_thread(&'static self, udp_addr: SocketAddrV4, secret_key: u32) {
+    pub fn claim_thread(&'static self, udp_addr: SocketAddrV4, secret_key: u32) -> bool {
         let mut unclaimed = self.unclaimed_threads.lock();
         let idx = unclaimed.iter().position(|thr| {
             thr.claim_secret_key.load(Ordering::Relaxed) == secret_key && !thr.claimed.load(Ordering::Relaxed)
@@ -220,8 +209,12 @@ impl GameServer {
                 *thread.udp_peer.lock() = udp_addr;
                 thread.claimed.store(true, Ordering::Relaxed);
                 self.threads.lock().insert(udp_addr, thread);
+
+                return true;
             }
         }
+
+        false
     }
 
     pub async fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: i32, room_id: u32) {
@@ -295,10 +288,6 @@ impl GameServer {
             .map(|thr| thr.account_data.lock().clone())
     }
 
-    pub fn chat_blocked(&'static self, user_id: i32) -> bool {
-        self.central_conf.lock().no_chat.contains(&user_id)
-    }
-
     /// If someone is already logged in under the given account ID, logs them out.
     /// Additionally, blocks until the appropriate cleanup has been done.
     pub async fn check_already_logged_in(&'static self, user_id: i32) -> anyhow::Result<()> {
@@ -331,7 +320,7 @@ impl GameServer {
     }
 
     /// If the passed string is numeric, tries to find a user by account ID, else by their account name.
-    pub fn get_user_by_name_or_id(&'static self, name: &str) -> Option<Arc<GameServerThread>> {
+    pub fn find_user(&'static self, name: &str) -> Option<Arc<GameServerThread>> {
         self.threads
             .lock()
             .values()
@@ -346,6 +335,39 @@ impl GameServer {
             })
             .cloned()
     }
+
+    /// Try to find a user by name or account ID, invoke the passed closure, and if it returns `true`,
+    /// send a request to the central server to update the account.
+    pub async fn find_and_update_user<F: FnOnce(&mut UserEntry) -> bool>(
+        &'static self,
+        name: &str,
+        f: F,
+    ) -> anyhow::Result<()> {
+        if let Some(thread) = self.find_user(name) {
+            self.update_user(&thread, f).await
+        } else {
+            Err(anyhow!("failed to find the user"))
+        }
+    }
+
+    pub async fn update_user<F: FnOnce(&mut UserEntry) -> bool>(
+        &'static self,
+        thread: &GameServerThread,
+        f: F,
+    ) -> anyhow::Result<()> {
+        let result = {
+            let mut data = thread.user_entry.lock();
+            f(&mut data)
+        };
+
+        if result {
+            let user_entry = thread.user_entry.lock().clone();
+            self.bridge.update_user_data(&user_entry).await?;
+        }
+
+        Ok(())
+    }
+
     /* private handling stuff */
 
     /// broadcast a message to all people on the level
@@ -405,7 +427,12 @@ impl GameServer {
 
             ClaimThreadPacket::PACKET_ID => {
                 let pkt = ClaimThreadPacket::decode_from_reader(&mut byte_reader).map_err(|e| anyhow!("{e}"))?;
-                self.claim_thread(peer, pkt.secret_key);
+                if !self.claim_thread(peer, pkt.secret_key) {
+                    warn!(
+                        "udp peer {peer} tried to claim an invalid thread (with key {})",
+                        pkt.secret_key
+                    );
+                }
                 Ok(true)
             }
 
@@ -461,12 +488,12 @@ impl GameServer {
     }
 
     fn print_server_status(&'static self) {
-        info!("Current server stats (printed once an hour)");
+        info!("Current server stats");
         info!(
-            "Player threads: {} (unclaimed: {}), player count: {}",
+            "Player count: {} (threads: {}, unclaimed: {})",
+            self.state.player_count.load(Ordering::Relaxed),
             self.threads.lock().len(),
             self.unclaimed_threads.lock().len(),
-            self.state.player_count.load(Ordering::Relaxed)
         );
         info!("Amount of rooms: {}", self.state.room_manager.get_rooms().len());
         info!(
@@ -476,35 +503,11 @@ impl GameServer {
         info!("-------------------------------------------");
     }
 
-    async fn refresh_bootdata(&'static self) -> anyhow::Result<()> {
-        let response = self
-            .config
-            .http_client
-            .post(format!("{}{}", self.config.central_url, "gs/boot"))
-            .query(&[("pw", self.config.central_pw.clone())])
-            .send()
-            .await?
-            .error_for_status()
-            .map_err(|e| anyhow!("central server returned an error: {e}"))?;
-
-        let configuration = response.bytes().await?;
-
-        let mut reader = ByteReader::from_bytes(&configuration);
-        reader.skip(SERVER_MAGIC_LEN);
-
-        let boot_data: GameServerBootData = reader
-            .read_value()
-            .map_err(|e| anyhow!("central server sent malformed response: {e}"))?;
-
-        let is_now_under_maintenance;
-        {
-            let mut conf = self.central_conf.lock();
-            is_now_under_maintenance = !conf.maintenance && boot_data.maintenance;
-            *conf = boot_data;
-        }
+    async fn refresh_bootdata(&'static self) -> bridge::Result<()> {
+        self.bridge.refresh_boot_data().await?;
 
         // if we are now under maintenance, disconnect everyone who's still connected
-        if is_now_under_maintenance {
+        if self.bridge.is_maintenance() {
             let threads: Vec<_> = self.threads.lock().values().cloned().collect();
             for thread in threads {
                 thread

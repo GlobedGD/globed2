@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use globed_shared::{crypto_box::ChaChaBox, logger::*, PROTOCOL_VERSION};
+use globed_shared::{anyhow::anyhow, crypto_box::ChaChaBox, logger::*, PROTOCOL_VERSION};
 
 use crate::server_thread::{GameServerThread, PacketHandlingError};
 
@@ -57,14 +57,14 @@ impl GameServerThread {
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
         // disconnect if server is under maintenance
-        if self.game_server.central_conf.lock().maintenance {
+        if self.game_server.bridge.central_conf.lock().maintenance {
             gs_disconnect!(
                 self,
                 "The server is currently under maintenance, please try connecting again later."
             );
         }
 
-        if packet.fragmentation_limit < 1400 {
+        if packet.fragmentation_limit < 1300 {
             gs_disconnect!(
                 self,
                 &format!(
@@ -88,11 +88,15 @@ impl GameServerThread {
             packet.name
         } else {
             // lets verify the given token
-            match self
-                .game_server
-                .token_issuer
-                .validate(packet.account_id, packet.user_id, packet.token.to_str().unwrap())
-            {
+            let result = {
+                self.game_server.bridge.token_issuer.lock().validate(
+                    packet.account_id,
+                    packet.user_id,
+                    packet.token.to_str().unwrap(),
+                )
+            };
+
+            match result {
                 Ok(x) => FastString::from_str(&x),
                 Err(err) => {
                     self.terminate();
@@ -110,7 +114,54 @@ impl GameServerThread {
             }
         };
 
+        // check if the user is already logged in, kick the other instance
         self.game_server.check_already_logged_in(packet.account_id).await?;
+
+        // fetch data from the central
+        if !standalone {
+            let user_entry = match self.game_server.bridge.get_user_data(packet.account_id).await {
+                Ok(user) if user.is_banned => {
+                    self.terminate();
+                    self.send_packet_dynamic(&LoginFailedPacket {
+                        message: &format!(
+                            "Banned from the server. Reason: {}",
+                            user.violation_reason
+                                .as_ref()
+                                .map_or_else(|| "no reason given", |str| str.try_to_str())
+                        ),
+                    })
+                    .await?;
+
+                    return Ok(());
+                }
+                Ok(user) if self.game_server.bridge.is_whitelist() && !user.is_whitelisted => {
+                    self.terminate();
+                    self.send_packet_dynamic(&LoginFailedPacket {
+                        message: "This server has whitelist enabled and your account has not been allowed.",
+                    })
+                    .await?;
+
+                    return Ok(());
+                }
+                Ok(user) => user,
+                Err(err) => {
+                    self.terminate();
+
+                    let mut message = FastString::<256>::from_str("failed to fetch user data: ");
+                    message.extend(&err.to_string());
+
+                    self.send_packet_dynamic(&LoginFailedPacket {
+                        // safety: same as above
+                        message: unsafe { message.to_str_unchecked() },
+                    })
+                    .await?;
+                    return Ok(());
+                }
+            };
+
+            *self.user_entry.lock() = user_entry;
+        }
+
         self.account_id.store(packet.account_id, Ordering::Relaxed);
         self.claim_secret_key.store(packet.secret_key, Ordering::Relaxed);
         self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
@@ -127,18 +178,14 @@ impl GameServerThread {
             account_data.icons.clone_from(&packet.icons);
             account_data.name = player_name;
 
-            if !standalone {
-                let special_user_data = self
-                    .game_server
-                    .central_conf
-                    .lock()
-                    .special_users
-                    .get(&packet.account_id)
-                    .cloned();
-
-                if let Some(sud) = special_user_data {
-                    account_data.special_user_data = Some(sud.try_into()?);
-                }
+            let name_color = self.user_entry.lock().name_color.clone();
+            if let Some(name_color) = name_color {
+                account_data.special_user_data = Some(SpecialUserData {
+                    name_color: name_color
+                        .to_str()
+                        .map_err(|e| anyhow!("failed to parse color: {e}"))?
+                        .parse()?,
+                });
             }
         }
 
@@ -149,7 +196,7 @@ impl GameServerThread {
             .get_global()
             .create_player(packet.account_id);
 
-        let tps = self.game_server.central_conf.lock().tps;
+        let tps = self.game_server.bridge.central_conf.lock().tps;
         self.send_packet_static(&LoggedInPacket { tps }).await?;
 
         Ok(())
