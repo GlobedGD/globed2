@@ -1,8 +1,6 @@
 #pragma once
 #include <defs.hpp>
 
-#include <data/packets/client/admin.hpp>
-
 class AdminPopup : public geode::Popup<> {
 public:
     static constexpr float POPUP_WIDTH = 400.f;
@@ -11,15 +9,9 @@ public:
     static AdminPopup* create();
 
 private:
-    geode::InputNode* passwordInput = nullptr;
+    geode::InputNode *messageInput;
 
-    geode::InputNode
-        *messageInput = nullptr,
-        *playerInput = nullptr,
-        *roomIdInput = nullptr,
-        *levelIdInput = nullptr,
-        *disconnectUserInput = nullptr;
+    void onClose(cocos2d::CCObject*) override;
 
     bool setup() override;
-    void commonSend(AdminSendNoticeType type);
 };

@@ -6,6 +6,7 @@
 #include <ui/menu/settings/settings_layer.hpp>
 #include <ui/menu/level_list/level_list_layer.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
+#include <ui/menu/admin/admin_login_popup.hpp>
 #include <util/ui.hpp>
 #include <util/net.hpp>
 #include <net/network_manager.hpp>
@@ -303,7 +304,12 @@ void GlobedMenuLayer::keyBackClicked() {
 
 void GlobedMenuLayer::keyDown(enumKeyCodes key) {
     if (key == enumKeyCodes::KEY_F8) {
-        AdminPopup::create()->show();
+        bool authorized = NetworkManager::get().isAuthorizedAdmin();
+        if (authorized) {
+            AdminPopup::create()->show();
+        } else {
+            AdminLoginPopup::create()->show();
+        }
     } else {
         CCLayer::keyDown(key);
     }

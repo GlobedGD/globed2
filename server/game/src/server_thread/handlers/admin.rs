@@ -13,7 +13,6 @@ use super::*;
 // 2 - can do all above, change is_banned, is_whitelisted, violation_reason, violation_expiry, name_color, send notices
 // 100 - can do all above, change user_role, admin_password, send notices to everyone, disconnect everyone
 
-const ROLE_USER: i32 = 0;
 const ROLE_HELPER: i32 = 1;
 const ROLE_MOD: i32 = 2;
 const ROLE_ADMIN: i32 = 100;
@@ -136,15 +135,17 @@ impl GameServerThread {
             AdminSendNoticeType::Person => {
                 let thread = self.game_server.find_user(&packet.player);
 
+                let player_name = thread.as_ref().map_or_else(
+                    || "<invalid player>".to_owned(),
+                    |thr| thr.account_data.lock().name.try_to_str().to_owned(),
+                );
+
                 info!(
                     "[{} ({}) @ {}] is sending the message to {}: \"{}\"",
                     self.account_data.lock().name,
                     account_id,
                     self.tcp_peer,
-                    thread.as_ref().map_or_else(
-                        || "<invalid player>".to_owned(),
-                        |thr| thr.account_data.lock().name.try_to_str().to_owned()
-                    ),
+                    player_name,
                     notice_packet.message,
                 );
 
@@ -343,6 +344,15 @@ impl GameServerThread {
 
         match result {
             Ok(()) => {
+                let player_name = thread.account_data.lock().name.clone();
+
+                info!(
+                    "[{} @ {}] just updated the profile of {}",
+                    self.account_data.lock().name,
+                    self.tcp_peer,
+                    player_name
+                );
+
                 self.send_packet_dynamic(&AdminSuccessMessagePacket {
                     message: "Successfully updated the user",
                 })

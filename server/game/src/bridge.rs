@@ -147,9 +147,10 @@ impl CentralBridge {
     pub fn set_boot_data(&self, data: GameServerBootData) {
         self.maintenance.store(data.maintenance, Ordering::Relaxed);
         self.whitelist.store(data.whitelist, Ordering::Relaxed);
-        self.token_issuer
-            .lock()
-            .set_expiration_period(Duration::from_secs(data.token_expiry));
+        let mut issuer = self.token_issuer.lock();
+
+        issuer.set_expiration_period(Duration::from_secs(data.token_expiry));
+        issuer.set_secret_key(&data.secret_key2);
 
         *self.central_conf.lock() = data;
     }

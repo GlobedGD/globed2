@@ -1,5 +1,6 @@
 #pragma once
 #include <data/packets/packet.hpp>
+#include <data/types/admin.hpp>
 
 class AdminAuthPacket : public Packet {
     GLOBED_PACKET(19000, true, true)
@@ -47,7 +48,7 @@ class AdminSendNoticePacket : public Packet {
 };
 
 class AdminDisconnectPacket : public Packet {
-    GLOBED_PACKET(19002, true, true)
+    GLOBED_PACKET(19002, false, true)
 
     GLOBED_PACKET_ENCODE {
         buf.writeString(player);
@@ -62,4 +63,36 @@ class AdminDisconnectPacket : public Packet {
     }
 
     std::string player, message;
+};
+
+class AdminGetUserStatePacket : public Packet {
+    GLOBED_PACKET(19003, false, true)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeString(player);
+    }
+
+    AdminGetUserStatePacket(const std::string_view player) : player(player) {}
+
+    static std::shared_ptr<Packet> create(const std::string_view player) {
+        return std::make_shared<AdminGetUserStatePacket>(player);
+    }
+
+    std::string player;
+};
+
+class AdminUpdateUserPacket : public Packet {
+    GLOBED_PACKET(19004, true, true)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeValue(userEntry);
+    }
+
+    AdminUpdateUserPacket(const UserEntry& entry) : userEntry(entry) {}
+
+    std::shared_ptr<Packet> create(const UserEntry& entry) {
+        return std::make_shared<AdminUpdateUserPacket>(entry);
+    }
+
+    UserEntry userEntry;
 };

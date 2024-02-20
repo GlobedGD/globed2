@@ -42,11 +42,11 @@ void ErrorCheckNode::updateErrors(float) {
     }
 
     for (auto& warn : warnings) {
-        Notification::create(warn, NotificationIcon::Warning, 2.5f)->show();
+        Notification::create(warn, NotificationIcon::Warning, 1.5f)->show();
     }
 
     for (auto& success : successes) {
-        Notification::create(success, NotificationIcon::Success, 2.5f)->show();
+        Notification::create(success, NotificationIcon::Success, 1.25f)->show();
     }
 
     // if we are in PlayLayer, don't show errors unless paused

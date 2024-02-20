@@ -23,4 +23,15 @@ namespace util::ui {
     void setScrollPos(BoomListView* listView, float pos);
 
     void tryLoadDeathEffect(int id);
+
+    // small wrapper with precalculated sizes to make ui easier
+    struct PopupLayout {
+        cocos2d::CCSize winSize;
+        float left, right, bottom, top;
+
+        cocos2d::CCSize center, centerLeft, centerTop, centerRight, centerBottom;
+        cocos2d::CCSize bottomLeft, topLeft, bottomRight, topRight;
+    };
+
+    PopupLayout getPopupLayout(cocos2d::CCSize popupSize);
 }

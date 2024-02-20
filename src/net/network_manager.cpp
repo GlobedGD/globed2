@@ -6,6 +6,7 @@
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
+#include <ui/menu/admin/admin_popup.hpp>
 #include <util/net.hpp>
 #include <util/rng.hpp>
 #include <util/debug.hpp>
@@ -95,6 +96,7 @@ NetworkManager::NetworkManager() {
     addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
         _adminAuthorized = true;
         ErrorQueues::get().success("Successfully authorized");
+        AdminPopup::create()->show();
     });
 
     // boot up the threads

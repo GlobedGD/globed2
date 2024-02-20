@@ -107,4 +107,28 @@ namespace util::ui {
             sfCache->addSpriteFramesWithFile(plistKey.c_str());
         }
     }
+
+    PopupLayout getPopupLayout(CCSize popupSize) {
+        PopupLayout layout;
+
+        layout.winSize = CCDirector::get()->getWinSize();
+        layout.center = CCSize{layout.winSize.width / 2, layout.winSize.height / 2};
+
+        layout.left = layout.center.width - popupSize.width / 2;
+        layout.bottom = layout.center.height - popupSize.height / 2;
+        layout.right = layout.center.width + popupSize.width / 2;
+        layout.top = layout.center.height + popupSize.height / 2;
+
+        layout.centerLeft = CCSize{layout.left, layout.center.height};
+        layout.centerRight = CCSize{layout.right, layout.center.height};
+        layout.centerTop = CCSize{layout.center.width, layout.top};
+        layout.centerBottom = CCSize{layout.center.width, layout.bottom};
+
+        layout.bottomLeft = CCSize{layout.left, layout.bottom};
+        layout.topLeft = CCSize{layout.left, layout.top};
+        layout.bottomRight = CCSize{layout.right, layout.bottom};
+        layout.topRight = CCSize{layout.right, layout.top};
+
+        return layout;
+    }
 }

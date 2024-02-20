@@ -1,5 +1,9 @@
 #include "admin_popup.hpp"
 
+#include "send_notice_popup.hpp"
+#include <data/packets/client/admin.hpp>
+#include <data/packets/server/admin.hpp>
+#include <managers/error_queues.hpp>
 #include <net/network_manager.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>
@@ -15,124 +19,52 @@ bool AdminPopup::setup() {
     CCSize left{center.width - m_size.width / 2, center.height};
     CCSize right{center.width + m_size.width / 2, center.height};
 
-    bool authorized = NetworkManager::get().isAuthorizedAdmin();
-    if (!authorized) {
-        Build<InputNode>::create(POPUP_WIDTH * 0.75f, "password", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 32)
-            .pos(center.width, center.height + 30.f)
-            .parent(m_mainLayer)
-            .store(passwordInput);
+    auto& nm = NetworkManager::get();
+    bool authorized = nm.isAuthorizedAdmin();
+    if (!authorized) return false;
 
-        Build<ButtonSprite>::create("Login", "bigFont.fnt", "GJ_button_01.png", 0.8f)
-            .intoMenuItem([this](auto) {
-                NetworkManager::get().send(AdminAuthPacket::create(this->passwordInput->getString()));
-                this->onClose(this);
-            })
-            .pos(center.width, center.height - 20.f)
-            .intoNewParent(CCMenu::create())
-            .pos(0.f, 0.f)
-            .parent(m_mainLayer);
-    } else {
-        // actual admin ui
+    nm.addListener<AdminSuccessMessagePacket>([](auto packet) {
+        ErrorQueues::get().success(packet->message);
+    });
 
-        auto dcMenu = Build<CCMenu>::create()
-            .layout(RowLayout::create()
-                        ->setGap(3.f))
-            .anchorPoint(0.5f, 0.f)
-            .pos(center.width, center.height)
-            .parent(m_mainLayer)
-            .id("admin-dc-menu"_spr)
-            .collect();
+    nm.addListener<AdminErrorPacket>([](auto packet) {
+        ErrorQueues::get().warn(packet->message);
+    });
 
-        // user disconnect input box
-        Build<InputNode>::create(m_size.width * 0.25f, "user", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC) + "@", 16)
-            .parent(dcMenu)
-            .id("admin-dc-input"_spr)
-            .store(disconnectUserInput);
+    // send notice menu
+    auto* sendNoticeWrapper = Build<CCMenu>::create()
+        .layout(RowLayout::create()->setGap(5.f))
+        .pos(center.width, center.height - 100.f)
+        .parent(m_mainLayer)
+        .collect();
 
-        // disconnect button
-        Build<ButtonSprite>::create("Kick", "bigFont.fnt", "GJ_button_01.png", 0.5f)
-            .intoMenuItem([this](auto) {
-                auto user = this->disconnectUserInput->getString();
-                auto message = this->messageInput->getString();
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "message", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 160)
+        .parent(sendNoticeWrapper)
+        .store(messageInput);
 
-                auto packet = AdminDisconnectPacket::create(user, message);
-                NetworkManager::get().send(packet);
-            })
-            .parent(dcMenu);
+    Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
+        .intoMenuItem([this](auto) {
+            auto message = this->messageInput->getString();
+            if (!message.empty()) {
+                AdminSendNoticePopup::create(message)->show();
+            }
+        })
+        .parent(sendNoticeWrapper);
 
-        dcMenu->updateLayout();
-
-        auto menu = Build<CCMenu>::create()
-            .pos(0.f, 0.f)
-            .parent(m_mainLayer)
-            .id("admin-buttons-menu"_spr)
-            .collect();
-
-        // message input box
-        Build<InputNode>::create(m_size.width * 0.75f, "message", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 160)
-            .pos(center.width, center.height + 60.f)
-            .parent(m_mainLayer)
-            .id("admin-message-input"_spr)
-            .store(messageInput);
-
-        // send to everyone
-        Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
-            .intoMenuItem([this](auto) {
-                this->commonSend(AdminSendNoticeType::Everyone);
-            })
-            .pos(bottom.width, bottom.height + 30.f)
-            .parent(menu);
-
-        // send to a specific account ID or username
-        auto sendAccId = Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
-            .intoMenuItem([this](auto) {
-                this->commonSend(AdminSendNoticeType::Person);
-            })
-            .pos(left.width + 40.f, bottom.height + 30.f)
-            .parent(menu)
-            .collect();
-
-        Build<InputNode>::create(sendAccId->getScaledContentSize().width, "player", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 16)
-            .pos(left.width + 40.f, bottom.height + 70.f)
-            .parent(m_mainLayer)
-            .store(playerInput);
-
-        // send to a specific room/level
-        auto sendRoomLevel = Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
-            .intoMenuItem([this](auto) {
-                this->commonSend(AdminSendNoticeType::RoomOrLevel);
-            })
-            .pos(right.width - 40.f, bottom.height + 30.f)
-            .parent(menu)
-            .collect();
-
-        Build<InputNode>::create(sendRoomLevel->getScaledContentSize().width, "level ID", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 10)
-            .pos(right.width - 40.f, bottom.height + 70.f)
-            .parent(m_mainLayer)
-            .store(levelIdInput);
-
-        Build<InputNode>::create(sendRoomLevel->getScaledContentSize().width, "room ID", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 10)
-            .pos(right.width - 40.f, bottom.height + 105.f)
-            .parent(m_mainLayer)
-            .store(roomIdInput);
-    }
+    sendNoticeWrapper->updateLayout();
 
     return true;
 }
 
-void AdminPopup::commonSend(AdminSendNoticeType type) {
-    if (messageInput->getString().empty()) return;
+void AdminPopup::onClose(cocos2d::CCObject* sender) {
+    Popup::onClose(sender);
 
-    uint32_t roomId = 0;
-    int levelId = 0;
+    auto& nm = NetworkManager::get();
+    nm.removeListener<AdminSuccessMessagePacket>();
+    nm.removeListener<AdminErrorPacket>();
 
-    if (type == AdminSendNoticeType::RoomOrLevel) {
-        levelId = util::format::parse<int>(levelIdInput->getString()).value_or(0);
-        roomId = util::format::parse<uint32_t>(roomIdInput->getString()).value_or(0);
-    }
-
-    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, playerInput->getString(), messageInput->getString());
-    NetworkManager::get().send(packet);
+    nm.suppressUnhandledFor<AdminSuccessMessagePacket>(util::time::seconds(3));
+    nm.suppressUnhandledFor<AdminErrorPacket>(util::time::seconds(3));
 }
 
 AdminPopup* AdminPopup::create() {
