@@ -39,16 +39,21 @@ namespace util::format {
 
     // parse a string to an integer
     template <typename T>
-    inline std::optional<T> parse(const std::string_view src) {
+    inline std::optional<T> parse(const std::string_view src, int base = 10) {
         T output;
 
-        auto result = std::from_chars(&*src.begin(), &*src.end(), output);
+        auto result = std::from_chars(&*src.begin(), &*src.end(), output, base);
         if (result.ec != std::errc()) {
             return std::nullopt;
         }
 
         return output;
     }
+
+    Result<cocos2d::ccColor3B> parseColor(const std::string_view hex);
+
+    std::string colorToHex(cocos2d::ccColor3B);
+    std::string colorToHex(cocos2d::ccColor4B);
 
     std::string rtrim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);
     std::string ltrim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);

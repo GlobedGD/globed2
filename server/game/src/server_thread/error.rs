@@ -1,6 +1,7 @@
 use std::{fmt::Display, time::SystemTimeError};
 
 use crate::data::{types::ColorParseError, DecodeError};
+use globed_shared::reqwest;
 
 pub enum PacketHandlingError {
     Other(String),                         // unknown generic error

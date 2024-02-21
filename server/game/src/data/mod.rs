@@ -6,6 +6,7 @@ pub mod types;
 pub use consts::*;
 pub use esp::*;
 pub use globed_derive::*;
+pub use globed_shared::MAX_NAME_SIZE;
 pub use packets::*;
 pub use types::*;
 

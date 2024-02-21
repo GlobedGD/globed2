@@ -1,35 +1,60 @@
 #include "admin_login_popup.hpp"
 
+#include <managers/account.hpp>
+#include <managers/settings.hpp>
 #include <net/network_manager.hpp>
 #include <util/misc.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
 bool AdminLoginPopup::setup() {
-    auto winSize = CCDirector::get()->getWinSize();
-    auto center = winSize / 2;
-
-    // i hate cocos ui
-    CCSize bottom{center.width, center.height - m_size.height / 2};
-    CCSize left{center.width - m_size.width / 2, center.height};
-    CCSize right{center.width + m_size.width / 2, center.height};
+    auto sizes = util::ui::getPopupLayout(m_size);
 
     Build<InputNode>::create(POPUP_WIDTH * 0.75f, "password", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 32)
-        .pos(center.width, center.height + 30.f)
+        .pos(sizes.center.width, sizes.center.height + 30.f)
         .parent(m_mainLayer)
         .store(passwordInput);
 
-    Build<ButtonSprite>::create("Login", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+    auto* btnLayout = Build<CCMenu>::create()
+        .pos(sizes.center.width, sizes.center.height - 20.f)
+        .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false))
+        .parent(m_mainLayer)
+        .collect();
+
+    Build<ButtonSprite>::create("Login", "bigFont.fnt", "geode.loader/GE_button_04.png", 0.8f)
         .intoMenuItem([this](auto) {
-            NetworkManager::get().send(AdminAuthPacket::create(this->passwordInput->getString()));
-            this->onClose(this);
+            auto& settings = GlobedSettings::get();
+
+            auto password = this->passwordInput->getString();
+            if (!password.empty()) {
+                if (settings.admin.rememberPassword) {
+                    GlobedAccountManager::get().storeAdminPassword(password);
+                }
+
+                NetworkManager::get().send(AdminAuthPacket::create(password));
+                this->onClose(this);
+            }
         })
-        .pos(center.width, center.height - 20.f)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(m_mainLayer);
+        .parent(btnLayout);
+
+    auto* rememberPwd = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(AdminLoginPopup::onRememberPassword), 0.75f);
+    rememberPwd->toggle(GlobedSettings::get().admin.rememberPassword);
+    btnLayout->addChild(rememberPwd);
+
+    Build<CCLabelBMFont>::create("Remember", "bigFont.fnt")
+        .scale(0.5f)
+        .parent(btnLayout);
+
+    btnLayout->updateLayout();
 
     return true;
+}
+
+void AdminLoginPopup::onRememberPassword(cocos2d::CCObject* sender) {
+    auto& settings = GlobedSettings::get();
+    settings.admin.rememberPassword = static_cast<CCMenuItemToggler*>(sender)->isOn();
+    settings.save();
 }
 
 AdminLoginPopup* AdminLoginPopup::create() {

@@ -292,15 +292,10 @@ void RoomPopup::applyFilter(const std::string_view input) {
 RoomPopup::~RoomPopup() {
     auto& nm = NetworkManager::get();
 
-    nm.removeListener<RoomPlayerListPacket>();
-    nm.removeListener<RoomJoinedPacket>();
-    nm.removeListener<RoomJoinFailedPacket>();
-    nm.removeListener<RoomCreatedPacket>();
-
-    nm.suppressUnhandledFor<RoomPlayerListPacket>(util::time::seconds(1));
-    nm.suppressUnhandledFor<RoomJoinedPacket>(util::time::seconds(1));
-    nm.suppressUnhandledFor<RoomJoinFailedPacket>(util::time::seconds(1));
-    nm.suppressUnhandledFor<RoomCreatedPacket>(util::time::seconds(1));
+    nm.removeListener<RoomPlayerListPacket>(util::time::seconds(2));
+    nm.removeListener<RoomJoinedPacket>(util::time::seconds(2));
+    nm.removeListener<RoomJoinFailedPacket>(util::time::seconds(2));
+    nm.removeListener<RoomCreatedPacket>(util::time::seconds(2));
 }
 
 RoomPopup* RoomPopup::create() {

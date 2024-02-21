@@ -22,6 +22,7 @@ pub use esp;
 pub use hmac;
 pub use parking_lot;
 pub use rand;
+pub use reqwest;
 pub use sha2;
 pub use time;
 // our reexports
@@ -37,6 +38,9 @@ pub const SERVER_MAGIC: &[u8] = b"\xda\xeeglobed\xda\xee";
 pub const SERVER_MAGIC_LEN: usize = SERVER_MAGIC.len();
 /// amount of chars in an admin key (32)
 pub const ADMIN_KEY_LENGTH: usize = 32;
+/// maximum characters in a user's name (24). they can only be 15 chars max but we give headroom just in case
+pub const MAX_NAME_SIZE: usize = 24;
+pub const VIOLATION_REASON_LENGTH: usize = 128;
 
 pub fn generate_alphanum_string(n: usize) -> String {
     rand::thread_rng()

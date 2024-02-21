@@ -9,7 +9,7 @@ public:
     static AdminPopup* create();
 
 private:
-    geode::InputNode *messageInput;
+    geode::InputNode *messageInput, *userInput;
 
     void onClose(cocos2d::CCObject*) override;
 

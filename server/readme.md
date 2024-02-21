@@ -84,7 +84,7 @@ Note that the server is written with security in mind, so many of those options 
 | `gd_api_account`<sup>*</sup> | `0` | ✅ | Account ID of a bot account that will be used to verify account ownership |
 | `gd_api_gjp`<sup>*</sup> | `(empty)` | ✅ | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
 | `secret_key`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying authentication keys |
-| `secret_key2`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying session tokens |
+| `secret_key2`<sup>*</sup> | `(random)` | ⏳ | Secret key for generating and verifying session tokens |
 | `game_server_password`<sup>*</sup> | `(random)` | ✅ | Password used to authenticate game servers |
 | `cloudflare_protection`<sup>*</sup> | `false` | ✅ | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users. If your server is proxied through cloudflare, you **must** turn on this option. |
 | `challenge_expiry`<sup>*</sup> | `30` | ✅ | Amount of seconds before an authentication challenge expires and a new one can be requested |
@@ -99,17 +99,6 @@ Note that the server is written with security in mind, so many of those options 
 * ⚠️ - partly hot-reloadable, the central server does **not** need to be restarted, but game servers do
 * ❌ - not hot-reloadable, you must restart the central server to see changes
 
-Formatting for special users:
-
-```json
-{
-    "123123": {
-        "name": "myname",
-        "color": "#ff0000",
-    }
-}
-```
-
 Formatting for game servers:
 
 ```json
@@ -122,6 +111,8 @@ Formatting for game servers:
 ```
 
 Note that the `address` key must be the publicly visible IP address for other players to be able to connect, not a local address.
+
+Additionally, when first starting up a server, a `Rocket.toml` file will be created from a template. By default, it will be put in the current working directory, or `ROCKET_CONFIG` if specified.
 
 ## Building
 

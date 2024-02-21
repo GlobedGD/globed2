@@ -20,6 +20,11 @@ enum class NetworkThreadTask {
 template <typename T>
 concept HasPacketID = requires { T::PACKET_ID; };
 
+constexpr int ROLE_USER = 0;
+constexpr int ROLE_HELPER = 1;
+constexpr int ROLE_MOD = 2;
+constexpr int ROLE_ADMIN = 100;
+
 // This class is fully thread safe..? hell do i know..
 class NetworkManager : public SingletonBase<NetworkManager> {
 protected:
@@ -77,6 +82,13 @@ public:
         this->removeListener(T::PACKET_ID);
     }
 
+    // Same as `removeListener<T>` and `suppressUnhandledFor<T>(duration)` combined
+    template <HasPacketID T, typename Rep, typename Period>
+    void removeListener(util::time::duration<Rep, Period> duration) {
+        this->removeListener<T>();
+        this->suppressUnhandledFor<T>(duration);
+    }
+
     // Removes all listeners.
     void removeAllListeners();
 
@@ -94,6 +106,10 @@ public:
 
     // Returns true if we are connected to a server and authorized as an admin
     bool isAuthorizedAdmin();
+
+    void clearAdminStatus();
+
+    int getAdminRole();
 
     // Returns true if we are connected to a standalone game server, not tied to any central server.
     bool standalone();
@@ -133,6 +149,7 @@ private:
     AtomicBool _handshaken = false;
     AtomicBool _loggedin = false;
     AtomicBool _adminAuthorized = false;
+    AtomicI32 _adminRole = ROLE_USER;
     AtomicBool _connectingStandalone = false;
     AtomicBool _suspended = false;
     AtomicBool _deferredConnect = false;
@@ -154,6 +171,7 @@ private:
 
     void addBuiltinListener(packetid_t id, PacketCallback&& callback);
 
+    // Callbacks are NOT ran from the main thread.
     template <HasPacketID Pty>
     void addBuiltinListener(PacketCallbackSpecific<Pty>&& callback) {
         this->addBuiltinListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {

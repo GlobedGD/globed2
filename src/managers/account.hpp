@@ -49,8 +49,16 @@ public:
                           std::optional<std::function<void()>> callback
     );
 
+    // admin password stuff
+
+    void storeAdminPassword(const std::string_view password);
+    void clearAdminPassword();
+    bool hasAdminPassword();
+    std::optional<std::string> getAdminPassword();
+
 private:
     std::optional<geode::utils::web::SentAsyncWebRequestHandle> requestHandle;
+    std::unique_ptr<SecretBox> cryptoBox;
 
     void cancelAuthTokenRequest();
 

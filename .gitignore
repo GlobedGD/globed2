@@ -80,6 +80,7 @@ server/central/db.sqlite
 server/central/db.sqlite-shm
 server/central/db.sqlite-wal
 server/central/.env
+server/central/Rocket.toml
 
 # it'll be left a relic
 server/rustc-ice-*.txt

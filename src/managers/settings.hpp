@@ -56,6 +56,10 @@ public:
 
     struct Advanced {};
 
+    struct Admin {
+        GSETTING(bool, rememberPassword, false);
+    };
+
     struct Flags {
         bool seenSignupNotice = false;
         bool seenSignupNoticev2 = false;
@@ -68,6 +72,7 @@ public:
     LevelUI levelUi;
     Players players;
     Advanced advanced;
+    Admin admin;
     Flags flags;
 
     void save();

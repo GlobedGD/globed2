@@ -65,6 +65,36 @@ namespace util::format {
         }
     }
 
+    Result<cocos2d::ccColor3B> parseColor(const std::string_view hex) {
+        std::string_view subview;
+
+        size_t hashPos = hex.find('#');
+        if (hashPos == std::string::npos) {
+            subview = hex;
+        } else {
+            subview = hex.substr(hashPos + 1);
+        }
+
+        auto result = parse<unsigned int>(subview, 16);
+        GLOBED_REQUIRE_SAFE(result.has_value(), "failed to parse the hex color")
+
+        int rgb = result.value();
+
+        return Ok(cocos2d::ccColor3B {
+            .r = static_cast<uint8_t>((rgb >> 16) & 0xff),
+            .g = static_cast<uint8_t>((rgb >> 8) & 0xff),
+            .b = static_cast<uint8_t>(rgb & 0xff)
+        });
+    }
+
+    std::string colorToHex(cocos2d::ccColor3B color) {
+        return fmt::format("{:02X}{:02X}{:02X}", color.r, color.g, color.b);
+    }
+
+    std::string colorToHex(cocos2d::ccColor4B color) {
+        return fmt::format("{:02X}{:02X}{:02X}{:02X}", color.r, color.g, color.b, color.a);
+    }
+
     std::string rtrim(const std::string_view str, const std::string_view filter) {
         size_t start = 0;
         size_t end = str.length();

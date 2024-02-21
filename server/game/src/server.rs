@@ -319,6 +319,15 @@ impl GameServer {
         Ok(())
     }
 
+    /// Find a thread by account ID
+    pub fn get_user_by_id(&'static self, account_id: i32) -> Option<Arc<GameServerThread>> {
+        self.threads
+            .lock()
+            .values()
+            .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
+            .cloned()
+    }
+
     /// If the passed string is numeric, tries to find a user by account ID, else by their account name.
     pub fn find_user(&'static self, name: &str) -> Option<Arc<GameServerThread>> {
         self.threads

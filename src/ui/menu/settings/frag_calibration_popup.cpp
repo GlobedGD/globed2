@@ -55,7 +55,7 @@ void FragmentationCalibartionPopup::checkForUpdates(float) {
         // if no response 3 times in a row, abort
         if (failedAttempts > 2) {
             auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
-            FLAlertLayer::create("Notice", fmt::format("Test failed with packet size = {}. Setting the maximum packet size to {}. Reconnect to the server in order to see any change.", currentSize, newFragLimit), "Ok")->show();
+            FLAlertLayer::create("Notice", fmt::format("Test ended early with packet size = {}. Setting the maximum packet size to {}. Reconnect to the server in order to see any change.", currentSize, newFragLimit), "Ok")->show();
             this->closeDelayed();
             return;
         }

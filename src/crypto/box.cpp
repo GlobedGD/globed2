@@ -43,7 +43,7 @@ bytearray<CryptoBox::KEY_LEN> CryptoBox::extractPublicKey() noexcept {
     return out;
 }
 
-void CryptoBox::setPeerKey(byte* key) {
+void CryptoBox::setPeerKey(const byte* key) {
     std::memcpy(peerPublicKey, key, KEY_LEN);
 
     CRYPTO_ERR_CHECK(func_box_beforenm(sharedKey, peerPublicKey, secretKey), "func_box_beforenm failed")

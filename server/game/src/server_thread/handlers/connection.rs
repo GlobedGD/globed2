@@ -119,7 +119,7 @@ impl GameServerThread {
 
         // fetch data from the central
         if !standalone {
-            let user_entry = match self.game_server.bridge.get_user_data(packet.account_id).await {
+            let user_entry = match self.game_server.bridge.get_user_data(&packet.account_id.to_string()).await {
                 Ok(user) if user.is_banned => {
                     self.terminate();
                     self.send_packet_dynamic(&LoginFailedPacket {

@@ -189,14 +189,9 @@ void GlobedPlayLayer::onQuit() {
 #endif // GLOBED_VOICE_SUPPORT
 
     // clean up the listeners
-    nm.removeListener<PlayerProfilesPacket>();
-    nm.removeListener<LevelDataPacket>();
-    nm.removeListener<VoiceBroadcastPacket>();
-
-    // if we a have a higher ping, there may still be some inbound packets. suppress them for the next 3 seconds.
-    nm.suppressUnhandledFor<PlayerProfilesPacket>(util::time::seconds(3));
-    nm.suppressUnhandledFor<LevelDataPacket>(util::time::seconds(3));
-    nm.suppressUnhandledFor<VoiceBroadcastPacket>(util::time::seconds(3));
+    nm.removeListener<PlayerProfilesPacket>(util::time::seconds(3));
+    nm.removeListener<LevelDataPacket>(util::time::seconds(3));
+    nm.removeListener<VoiceBroadcastPacket>(util::time::seconds(3));
 }
 
 void GlobedPlayLayer::setupPacketListeners() {

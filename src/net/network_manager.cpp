@@ -19,32 +19,36 @@ NetworkManager::NetworkManager() {
 
     // add builtin listeners for connection related packets
 
-    addBuiltinListener<CryptoHandshakeResponsePacket>([this](auto packet) {
+    addBuiltinListener<CryptoHandshakeResponsePacket>([this](CryptoHandshakeResponsePacket* packet) {
         log::debug("handshake successful, logging in");
+        auto key = packet->data.key;
 
-        gameSocket.cryptoBox->setPeerKey(packet->data.key.data());
-        _handshaken = true;
-        // and lets try to login!
-        auto& am = GlobedAccountManager::get();
-        std::string authtoken;
+        // this does a bunch of stuff so do it on the main thread
+        Loader::get()->queueInMainThread([this, key = key] {
+            gameSocket.cryptoBox->setPeerKey(key.data());
+            _handshaken = true;
+            // and lets try to login!
+            auto& am = GlobedAccountManager::get();
+            std::string authtoken;
 
-        if (!_connectingStandalone) {
-            authtoken = *am.authToken.lock();
-        }
+            if (!_connectingStandalone) {
+                authtoken = *am.authToken.lock();
+            }
 
-        auto& pcm = ProfileCacheManager::get();
-        pcm.setOwnDataAuto();
-        pcm.pendingChanges = false;
+            auto& pcm = ProfileCacheManager::get();
+            pcm.setOwnDataAuto();
+            pcm.pendingChanges = false;
 
-        auto& settings = GlobedSettings::get();
+            auto& settings = GlobedSettings::get();
 
-        if (settings.globed.fragmentationLimit == 0) {
-            settings.globed.fragmentationLimit = 65000;
-        }
+            if (settings.globed.fragmentationLimit == 0) {
+                settings.globed.fragmentationLimit = 65000;
+            }
 
-        auto gddata = am.gdData.lock();
-        auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
-        this->send(pkt);
+            auto gddata = am.gdData.lock();
+            auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
+            this->send(pkt);
+        });
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([](auto packet) {
@@ -62,7 +66,17 @@ NetworkManager::NetworkManager() {
         connectedTps = packet->tps;
         _loggedin = true;
 
+        // claim the tcp thread to allow udp packets through
         this->send(ClaimThreadPacket::create(this->secretKey));
+
+        // try to login as an admin if we can
+        auto& am = GlobedAccountManager::get();
+        if (am.hasAdminPassword()) {
+            auto password = am.getAdminPassword();
+            if (password.has_value()) {
+                this->send(AdminAuthPacket::create(password.value()));
+            }
+        }
     });
 
     addBuiltinListener<LoginFailedPacket>([this](auto packet) {
@@ -95,8 +109,17 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
         _adminAuthorized = true;
+        _adminRole = packet->role;
         ErrorQueues::get().success("Successfully authorized");
-        AdminPopup::create()->show();
+    });
+
+    addBuiltinListener<AdminAuthFailedPacket>([this](auto packet) {
+        ErrorQueues::get().warn("Login failed");
+
+        Loader::get()->queueInMainThread([] {
+            auto& am = GlobedAccountManager::get();
+            am.clearAdminPassword();
+        });
     });
 
     // boot up the threads
@@ -179,8 +202,8 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     _handshaken = false;
     _loggedin = false;
     _connectingStandalone = false;
-    _adminAuthorized = false;
     _deferredConnect = false;
+    this->clearAdminStatus();
 
     if (!this->connected()) {
         return;
@@ -424,6 +447,15 @@ bool NetworkManager::established() {
 
 bool NetworkManager::isAuthorizedAdmin() {
     return _adminAuthorized;
+}
+
+void NetworkManager::clearAdminStatus() {
+    _adminAuthorized = false;
+    _adminRole = 0;
+}
+
+int NetworkManager::getAdminRole() {
+    return _adminRole;
 }
 
 bool NetworkManager::standalone() {

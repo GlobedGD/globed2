@@ -37,13 +37,14 @@ impl Default for GameServerBootData {
 #[derive(Encodable, Decodable, StaticSize, DynamicSize, Clone, Default)]
 pub struct UserEntry {
     pub account_id: i32,
+    pub user_name: Option<FastString<MAX_NAME_SIZE>>,
     pub name_color: Option<FastString<7>>,
     pub user_role: i32,
     pub is_banned: bool,
     pub is_muted: bool,
     pub is_whitelisted: bool,
-    pub admin_password: Option<FastString<32>>,
-    pub violation_reason: Option<FastString<128>>,
+    pub admin_password: Option<FastString<ADMIN_KEY_LENGTH>>,
+    pub violation_reason: Option<FastString<VIOLATION_REASON_LENGTH>>,
     pub violation_expiry: Option<i64>, // seconds since unix epoch
 }
 

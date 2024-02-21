@@ -26,7 +26,7 @@ namespace util::ui {
 
     // small wrapper with precalculated sizes to make ui easier
     struct PopupLayout {
-        cocos2d::CCSize winSize;
+        cocos2d::CCSize winSize, popupSize;
         float left, right, bottom, top;
 
         cocos2d::CCSize center, centerLeft, centerTop, centerRight, centerBottom;

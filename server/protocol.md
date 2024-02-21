@@ -47,8 +47,8 @@ Admin related
 * 19000+ - AdminAuthPacket - admin auth
 * 19001+ - AdminSendNoticePacket - send notice to everyone or a specific connected person
 * 19002 - AdminDisconnectPacket - disconnect a user with a specific message
-* 19003^ - AdminGetUserStatePacket - get user state
-* 19004+^ - AdminUpdateUserPacket - mute/ban/whitelist a user, etc.
+* 19003 - AdminGetUserStatePacket - get user state
+* 19004+ - AdminUpdateUserPacket - mute/ban/whitelist a user, etc.
 
 ### Server
 
@@ -85,5 +85,6 @@ Admin related
 
 * 29000 - AdminAuthSuccessPacket - admin auth successful
 * 29001+ - AdminErrorPacket - error happened when doing an admin action
-* 29002+^ - AdminUserDataPacket - data about the player
+* 29002+ - AdminUserDataPacket - data about the player
 * 29003+ - AdminSuccessMessagePacket - small success message about an action
+* 29004 - AdminAuthFailedPacket - admin auth failed

@@ -1,4 +1,4 @@
-use globed_shared::info;
+use globed_shared::{info, warn};
 
 use crate::{
     data::*,
@@ -9,8 +9,8 @@ use super::*;
 
 // Role documentation:
 // 0 - regular user
-// 1 - can change is_muted, disconnect people
-// 2 - can do all above, change is_banned, is_whitelisted, violation_reason, violation_expiry, name_color, send notices
+// 1 - can change is_muted, violation_reason, violation_expiry, disconnect people
+// 2 - can do all above, change is_banned, is_whitelisted, name_color, send notices
 // 100 - can do all above, change user_role, admin_password, send notices to everyone, disconnect everyone
 
 const ROLE_HELPER: i32 = 1;
@@ -46,7 +46,7 @@ impl GameServerThread {
             self.is_authorized_admin.store(true, Ordering::Relaxed);
             // give temporary admin perms
             self.user_entry.lock().user_role = ROLE_ADMIN;
-            self.send_packet_static(&AdminAuthSuccessPacket).await?;
+            self.send_packet_static(&AdminAuthSuccessPacket { role: ROLE_ADMIN }).await?;
             return Ok(());
         }
 
@@ -65,7 +65,8 @@ impl GameServerThread {
                 );
 
                 self.is_authorized_admin.store(true, Ordering::Relaxed);
-                self.send_packet_static(&AdminAuthSuccessPacket).await?;
+                let role = self.user_entry.lock().user_role;
+                self.send_packet_static(&AdminAuthSuccessPacket { role }).await?;
                 return Ok(());
             }
         }
@@ -77,7 +78,8 @@ impl GameServerThread {
             self.tcp_peer,
             packet.key
         );
-        return Ok(());
+
+        self.send_packet_static(&AdminAuthFailedPacket).await
     });
 
     gs_handler!(self, handle_admin_send_notice, AdminSendNoticePacket, packet, {
@@ -283,14 +285,36 @@ impl GameServerThread {
         }
 
         let user = self.game_server.find_user(&packet.player);
-        if let Some(user) = user {
+        let mut packet = if let Some(user) = user {
             let entry = user.user_entry.lock().clone();
-            self.send_packet_static(&AdminUserDataPacket { entry }).await?;
+            let account_data = user.account_data.lock().make_room_preview(0);
+
+            AdminUserDataPacket {
+                entry,
+                account_data: Some(account_data),
+            }
         } else {
-            admin_error!(self, "failed to find the user");
+            // they are not on the server right now, request data via the bridge
+            let user_entry = match self.game_server.bridge.get_user_data(&packet.player).await {
+                Ok(x) => x,
+                Err(err) => {
+                    warn!("error fetching data from the bridge: {err}");
+                    admin_error!(self, &err.to_string());
+                }
+            };
+
+            AdminUserDataPacket {
+                entry: user_entry,
+                account_data: None,
+            }
+        };
+
+        // only admins can see/change passwords of others
+        if role < ROLE_ADMIN {
+            packet.entry.admin_password = None;
         }
 
-        Ok(())
+        self.send_packet_static(&packet).await
     });
 
     gs_handler!(self, handle_admin_update_user, AdminUpdateUserPacket, packet, {
@@ -306,51 +330,90 @@ impl GameServerThread {
             return Ok(());
         }
 
-        // evaluate the changes
-        let thread = self.game_server.find_user(&packet.player);
-        if thread.is_none() {
-            admin_error!(self, "failed to find the user to update");
-        }
+        let target_account_id = packet.user_entry.account_id;
 
-        let thread = thread.unwrap();
-        let user_entry = thread.user_entry.lock().clone();
+        // if they are online, update them live, else get their old data from the bridge
+        let thread = self.game_server.get_user_by_id(target_account_id);
+        let user_entry = if let Some(thread) = thread.as_ref() {
+            thread.user_entry.lock().clone()
+        } else {
+            match self.game_server.bridge.get_user_data(&target_account_id.to_string()).await {
+                Ok(x) => x,
+                Err(err) => {
+                    admin_error!(self, &format!("failed to get user: {err}"));
+                }
+            }
+        };
+
+        // check what changed
+        let c_user_role = packet.user_entry.user_role != user_entry.user_role;
+        let c_admin_password = packet.user_entry.admin_password != user_entry.admin_password;
+        let c_is_banned = packet.user_entry.is_banned != user_entry.is_banned;
+        let c_is_whitelisted = packet.user_entry.is_whitelisted != user_entry.is_whitelisted;
+        let c_violation_reason = packet.user_entry.violation_reason != user_entry.violation_reason;
+        let c_violation_expiry = packet.user_entry.violation_expiry != user_entry.violation_expiry;
+        let c_name_color = packet.user_entry.name_color != user_entry.name_color;
+        let c_user_name = packet.user_entry.user_name != user_entry.user_name;
 
         // first check for actions that require admin rights
-        if role < ROLE_ADMIN
-            && (packet.user_entry.user_role != user_entry.user_role
-                || packet.user_entry.admin_password != user_entry.admin_password)
-        {
+        if role < ROLE_ADMIN && (c_user_role || c_admin_password) {
             admin_error!(self, ADMIN_REQUIRED_MESSAGE);
         }
 
         // check for actions that require mod rights
-        if role < ROLE_MOD
-            && (packet.user_entry.is_banned != user_entry.is_banned
-                || packet.user_entry.is_whitelisted != user_entry.is_whitelisted
-                || packet.user_entry.violation_reason != user_entry.violation_reason
-                || packet.user_entry.violation_expiry != user_entry.violation_expiry
-                || packet.user_entry.name_color != user_entry.name_color)
-        {
+        if role < ROLE_MOD && (c_is_banned || c_is_whitelisted || c_name_color) {
             admin_error!(self, MOD_REQUIRED_MESSAGE);
         }
 
-        let result = self
-            .game_server
-            .update_user(&thread, move |user| {
-                user.clone_from(&packet.user_entry);
-                true
-            })
-            .await;
+        // user_name intentionally left unchecked.
+        let _ = c_user_name;
+
+        // erm clippy is having a seizure on this line
+        #[allow(clippy::nonminimal_bool)]
+        if !c_user_role
+            && !c_admin_password
+            && !c_is_banned
+            && !c_is_whitelisted
+            && !c_violation_reason
+            && !c_violation_expiry
+            && !c_name_color
+        {
+            // no changes
+            return Ok(());
+        }
+
+        let mut new_user_entry = packet.user_entry;
+
+        // if not banned and not muted, clear the violation reason and duration
+        if !new_user_entry.is_banned && !new_user_entry.is_muted {
+            new_user_entry.violation_expiry = None;
+            new_user_entry.violation_reason = None;
+        }
+
+        // if online, update live
+        let result = if let Some(thread) = thread.as_ref() {
+            self.game_server
+                .update_user(thread, move |user| {
+                    user.clone_from(&new_user_entry);
+                    true
+                })
+                .await
+        } else {
+            // otherwise just make a manual bridge request
+            self.game_server
+                .bridge
+                .update_user_data(&new_user_entry)
+                .await
+                .map_err(Into::into)
+        };
 
         match result {
             Ok(()) => {
-                let player_name = thread.account_data.lock().name.clone();
-
                 info!(
                     "[{} @ {}] just updated the profile of {}",
                     self.account_data.lock().name,
                     self.tcp_peer,
-                    player_name
+                    target_account_id
                 );
 
                 self.send_packet_dynamic(&AdminSuccessMessagePacket {

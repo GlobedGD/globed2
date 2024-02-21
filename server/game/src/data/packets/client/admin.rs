@@ -41,6 +41,5 @@ pub struct AdminGetUserStatePacket {
 #[derive(Packet, Decodable)]
 #[packet(id = 19004)]
 pub struct AdminUpdateUserPacket {
-    pub player: FastString<MAX_NAME_SIZE>,
     pub user_entry: UserEntry,
 }

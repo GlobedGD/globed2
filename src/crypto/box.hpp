@@ -45,7 +45,7 @@ public:
     // The data is copied from src into a private member. You are responsible for freeing the source afterwards.
     // If the length is smaller than `CryptoBox::KEY_LEN` the behavior is undefined.
     // This precomputes the shared key and stores it for use in all future operations.
-    void setPeerKey(util::data::byte* src);
+    void setPeerKey(const util::data::byte* src);
 
     constexpr size_t nonceLength() override;
     constexpr size_t macLength() override;

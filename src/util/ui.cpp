@@ -112,6 +112,7 @@ namespace util::ui {
         PopupLayout layout;
 
         layout.winSize = CCDirector::get()->getWinSize();
+        layout.popupSize = popupSize;
         layout.center = CCSize{layout.winSize.width / 2, layout.winSize.height / 2};
 
         layout.left = layout.center.width - popupSize.width / 2;

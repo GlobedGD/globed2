@@ -64,6 +64,9 @@ void GlobedSettings::save() {
     STOREV(players, deathEffects);
     STOREV(players, defaultDeathEffect);
 
+    // admin
+    STOREV(admin, rememberPassword);
+
     // store flags
 
     STOREF(seenSignupNotice);
@@ -106,6 +109,9 @@ void GlobedSettings::reload() {
     LOADV(players, deathEffects);
     LOADV(players, defaultDeathEffect);
 
+    // admin
+    LOADV(admin, rememberPassword);
+
     // load flags
 
     LOADF(seenSignupNotice);
@@ -146,6 +152,9 @@ void GlobedSettings::resetToDefaults() {
         SKEY(players, statusIcons),
         SKEY(players, deathEffects),
         SKEY(players, defaultDeathEffect),
+
+        // admin
+        SKEY(admin, rememberPassword)
     );
 
     this->hardReset();

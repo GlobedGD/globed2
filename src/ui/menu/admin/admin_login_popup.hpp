@@ -13,5 +13,7 @@ public:
 private:
     geode::InputNode* passwordInput = nullptr;
 
+    void onRememberPassword(cocos2d::CCObject* sender);
+
     bool setup() override;
 };

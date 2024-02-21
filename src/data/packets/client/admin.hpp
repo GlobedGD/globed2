@@ -90,7 +90,7 @@ class AdminUpdateUserPacket : public Packet {
 
     AdminUpdateUserPacket(const UserEntry& entry) : userEntry(entry) {}
 
-    std::shared_ptr<Packet> create(const UserEntry& entry) {
+    static std::shared_ptr<Packet> create(const UserEntry& entry) {
         return std::make_shared<AdminUpdateUserPacket>(entry);
     }
 

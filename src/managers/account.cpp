@@ -20,6 +20,9 @@ void GlobedAccountManager::initialize(const std::string_view name, int accountId
     };
 
     *gdData.lock() = data;
+    auto cryptoKey = util::crypto::hexDecode(data.precomputedHash);
+    cryptoBox = std::make_unique<SecretBox>(cryptoKey);
+
     initialized = true;
 }
 
@@ -125,6 +128,46 @@ void GlobedAccountManager::requestAuthToken(
             requestHandle = std::nullopt;
         })
         .send();
+}
+
+void GlobedAccountManager::storeAdminPassword(const std::string_view password) {
+    GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::storeAdminPassword before initializing the instance")
+
+    auto jsonkey = this->getKeyFor("stored-admin-pw");
+
+    auto encrypted = cryptoBox->encrypt(password);
+    auto encoded = util::crypto::base64Encode(encrypted);
+
+    Mod::get()->setSavedValue(jsonkey, encoded);
+}
+
+void GlobedAccountManager::clearAdminPassword() {
+    GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::clearAdminPassword before initializing the instance")
+
+    auto jsonkey = this->getKeyFor("stored-admin-pw");
+    Mod::get()->setSavedValue<std::string>(jsonkey, "");
+}
+
+bool GlobedAccountManager::hasAdminPassword() {
+    GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::getAdminPassword before initializing the instance")
+
+    auto jsonkey = this->getKeyFor("stored-admin-pw");
+    return !Mod::get()->getSavedValue<std::string>(jsonkey).empty();
+}
+
+std::optional<std::string> GlobedAccountManager::getAdminPassword() {
+    GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::getAdminPassword before initializing the instance")
+
+    auto jsonkey = this->getKeyFor("stored-admin-pw");
+    auto b64pw = Mod::get()->getSavedValue<std::string>(jsonkey);
+    try {
+        auto data = util::crypto::base64Decode(b64pw);
+        auto adminPassword = cryptoBox->decryptToString(data);
+        return adminPassword;
+    } catch (const std::exception& e) {
+        log::warn("failed to read admin key:{ }", e.what());
+        return std::nullopt;
+    }
 }
 
 void GlobedAccountManager::cancelAuthTokenRequest() {

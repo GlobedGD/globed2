@@ -18,7 +18,13 @@ void VolumeEstimator::feedData(const float* pcm, size_t samples) {
 }
 
 void VolumeEstimator::update(float dt) {
-    const size_t needed = static_cast<size_t>(static_cast<float>(sampleRate) * BUFFER_SIZE * std::clamp(dt, 0.0f, 0.25f));
+    if (std::isnan(dt)) {
+        dt = 0.f;
+    }
+
+    dt = std::clamp(dt, 0.0f, 0.25f);
+
+    const size_t needed = static_cast<size_t>(static_cast<float>(sampleRate) * BUFFER_SIZE * dt);
 
     // TODO, this is a bit delayed when buffer size is 1.0, and overall broken when it's below that
 

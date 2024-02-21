@@ -1,9 +1,0 @@
-[default]
-address = "0.0.0.0"
-port = 41000
-cli_colors = true
-
-[global.databases.globed_db]
-url = "sqlite://db.sqlite?mode=rwc"
-pool_size = 25
-timeout = 10

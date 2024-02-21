@@ -8,8 +8,8 @@ use std::{
 use esp::{size_of_types, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, FastByteBuffer, StaticSize};
 use globed_shared::{
     GameServerBootData, SyncMutex, TokenIssuer, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC, SERVER_MAGIC_LEN,
+    reqwest::{self, StatusCode},
 };
-use reqwest::StatusCode;
 
 /// `CentralBridge` stores the configuration of the game server,
 /// and is used for making requests to the central server.
@@ -156,10 +156,10 @@ impl CentralBridge {
     }
 
     // other web requests
-    pub async fn get_user_data(&self, account_id: i32) -> Result<UserEntry> {
+    pub async fn get_user_data(&self, player: &str) -> Result<UserEntry> {
         let response = self
             .http_client
-            .get(format!("{}gs/user/{}", self.central_url, account_id))
+            .get(format!("{}gs/user/{}", self.central_url, player))
             .query(&[("pw", self.central_pw.clone())])
             .send()
             .await?;

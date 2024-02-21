@@ -63,12 +63,12 @@ pub async fn boot(
     Ok(bb.into_vec())
 }
 
-#[get("/gs/user/<account_id>?<pw>")]
+#[get("/gs/user/<user>?<pw>")]
 pub async fn get_user(
     state: &State<ServerState>,
     pw: &str,
     database: &GlobedDb,
-    account_id: i32,
+    user: &str,
     _user_agent: GameServerUserAgentGuard<'_>,
 ) -> WebResult<CheckedEncodableResponder> {
     let correct = state.state_read().await.config.game_server_password.clone();
@@ -77,10 +77,20 @@ pub async fn get_user(
         unauthorized!("invalid gameserver credentials");
     }
 
-    let user = database
-        .get_user(account_id)
-        .await?
-        .unwrap_or_else(|| UserEntry::new(account_id));
+    let user = if let Ok(account_id) = user.parse::<i32>() {
+        database
+            .get_user(account_id)
+            .await?
+            .unwrap_or_else(|| UserEntry::new(account_id))
+    } else {
+        let user = database.get_user_by_name(user).await?;
+
+        if let Some(user) = user {
+            user
+        } else {
+            bad_request!("failed to find the user by name");
+        }
+    };
 
     Ok(CheckedEncodableResponder::new(user))
 }

@@ -10,6 +10,7 @@ namespace util::time {
     using time_point = clock::time_point;
     using system_time_point = sysclock::time_point;
 
+    using days = chrono::days;
     using hours = chrono::hours;
     using minutes = chrono::minutes;
     using seconds = chrono::seconds;

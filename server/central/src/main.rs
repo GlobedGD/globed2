@@ -8,7 +8,11 @@
     clippy::no_effect_underscore_binding
 )]
 
-use std::{error::Error, path::PathBuf, time::Duration};
+use std::{
+    error::Error,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
@@ -20,6 +24,7 @@ use globed_shared::{
 };
 use rocket_db_pools::Database;
 use state::{ServerState, ServerStateData};
+use tokio::io::AsyncWriteExt;
 
 pub mod config;
 pub mod db;
@@ -45,6 +50,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
         error!("invalid value for the log level environment varaible");
         warn!("hint: possible values are 'trace', 'debug', 'info', 'warn', 'error', and 'none'.");
         abort_misconfig();
+    }
+
+    // create Rocket.toml if it doesn't exist
+    let rocket_toml =
+        std::env::var("ROCKET_CONFIG").map_or_else(|_| std::env::current_dir().unwrap().join("Rocket.toml"), PathBuf::from);
+
+    if !rocket_toml.file_name().is_some_and(|x| x == "Rocket.toml") || !rocket_toml.parent().is_some_and(Path::exists) {
+        error!("invalid value for ROCKET_CONFIG");
+        warn!("hint: the filename must be 'Rocket.toml' and the parent folder must exist on the disk");
+        abort_misconfig();
+    }
+
+    if !rocket_toml.exists() {
+        let mut file = tokio::fs::File::create(rocket_toml).await?;
+        file.write_all(include_bytes!("Rocket.toml.template")).await?;
     }
 
     // config file

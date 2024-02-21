@@ -7,6 +7,7 @@ public:
     UserEntry() {}
     UserEntry(
         int accountId,
+        std::optional<std::string> userName,
         std::optional<std::string> nameColor,
         int userRole,
         bool isBanned,
@@ -15,10 +16,15 @@ public:
         std::optional<std::string> adminPassword,
         std::optional<std::string> violationReason,
         std::optional<int64_t> violationExpiry
-    ) : accountId(accountId), nameColor(nameColor), userRole(userRole), isBanned(isBanned), isMuted(isMuted), isWhitelisted(isWhitelisted), adminPassword(adminPassword), violationReason(violationReason), violationExpiry(violationExpiry) {}
+    ) : accountId(accountId), userName(userName), nameColor(nameColor), userRole(userRole), isBanned(isBanned), isMuted(isMuted), isWhitelisted(isWhitelisted), adminPassword(adminPassword), violationReason(violationReason), violationExpiry(violationExpiry) {}
 
     GLOBED_ENCODE {
         buf.writeI32(accountId);
+        buf.writeBool(userName.has_value());
+        if (userName.has_value()) {
+            buf.writeString(userName.value());
+        }
+
         buf.writeBool(nameColor.has_value());
         if (nameColor.has_value()) {
             buf.writeString(nameColor.value());
@@ -48,6 +54,10 @@ public:
     GLOBED_DECODE {
         accountId = buf.readI32();
         if (buf.readBool()) {
+            userName = buf.readString();
+        }
+
+        if (buf.readBool()) {
             nameColor = buf.readString();
         }
 
@@ -70,6 +80,7 @@ public:
     }
 
     int accountId;
+    std::optional<std::string> userName;
     std::optional<std::string> nameColor;
     int userRole;
     bool isBanned;
