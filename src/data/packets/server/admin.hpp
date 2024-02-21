@@ -33,7 +33,7 @@ class AdminUserDataPacket : public Packet {
 };
 
 class AdminSuccessMessagePacket : public Packet {
-    GLOBED_PACKET(29003, true, false)
+    GLOBED_PACKET(29003, false, false)
     GLOBED_PACKET_DECODE {
         message = buf.readString();
     }

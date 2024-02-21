@@ -76,46 +76,6 @@ public:
     cocos2d::ccColor3B nameColor;
 };
 
-class PlayerAccountData {
-public:
-    static const PlayerAccountData DEFAULT_DATA;
-
-    PlayerAccountData(int32_t id, int32_t userId, const std::string_view name, const PlayerIconData& icons)
-        : id(id), userId(userId), name(name), icons(icons) {}
-
-    PlayerAccountData() {}
-
-    bool operator==(const PlayerAccountData&) const = default;
-
-    GLOBED_ENCODE {
-        buf.writeI32(id);
-        buf.writeI32(userId);
-        buf.writeString(name);
-        buf.writeValue(icons);
-        buf.writeOptionalValue(specialUserData);
-    }
-
-    GLOBED_DECODE {
-        id = buf.readI32();
-        userId = buf.readI32();
-        name = buf.readString();
-        icons = buf.readValue<PlayerIconData>();
-        specialUserData = buf.readOptionalValue<SpecialUserData>();
-    }
-
-    int32_t id, userId;
-    std::string name;
-    PlayerIconData icons;
-    std::optional<SpecialUserData> specialUserData;
-};
-
-inline const PlayerAccountData PlayerAccountData::DEFAULT_DATA = PlayerAccountData(
-    0,
-    0,
-    "Player",
-    PlayerIconData::DEFAULT_ICONS
-);
-
 class PlayerPreviewAccountData {
 public:
     PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
@@ -178,6 +138,52 @@ public:
     int16_t cube, color1, color2, glowColor;
     int32_t levelId;
 };
+
+class PlayerAccountData {
+public:
+    static const PlayerAccountData DEFAULT_DATA;
+
+    PlayerAccountData(int32_t id, int32_t userId, const std::string_view name, const PlayerIconData& icons)
+        : id(id), userId(userId), name(name), icons(icons) {}
+
+    PlayerAccountData() {}
+
+    bool operator==(const PlayerAccountData&) const = default;
+
+    PlayerRoomPreviewAccountData makeRoomPreview(int levelId) {
+        return PlayerRoomPreviewAccountData(
+            id, userId, name, icons.cube, icons.color1, icons.color2, icons.glowColor, levelId
+        );
+    }
+
+    GLOBED_ENCODE {
+        buf.writeI32(id);
+        buf.writeI32(userId);
+        buf.writeString(name);
+        buf.writeValue(icons);
+        buf.writeOptionalValue(specialUserData);
+    }
+
+    GLOBED_DECODE {
+        id = buf.readI32();
+        userId = buf.readI32();
+        name = buf.readString();
+        icons = buf.readValue<PlayerIconData>();
+        specialUserData = buf.readOptionalValue<SpecialUserData>();
+    }
+
+    int32_t id, userId;
+    std::string name;
+    PlayerIconData icons;
+    std::optional<SpecialUserData> specialUserData;
+};
+
+inline const PlayerAccountData PlayerAccountData::DEFAULT_DATA = PlayerAccountData(
+    0,
+    0,
+    "Player",
+    PlayerIconData::DEFAULT_ICONS
+);
 
 class AssociatedPlayerData {
 public:

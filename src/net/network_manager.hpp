@@ -89,6 +89,20 @@ public:
         this->suppressUnhandledFor<T>(duration);
     }
 
+    template <HasPacketID T>
+    void removeListenerDelayed() {
+        Loader::get()->queueInMainThread([this] {
+            this->removeListener<T>();
+        });
+    }
+
+    template <HasPacketID T, typename Rep, typename Period>
+    void removeListenerDelayed(util::time::duration<Rep, Period> duration) {
+        Loader::get()->queueInMainThread([this, duration = duration] {
+            this->removeListener<T>(duration);
+        });
+    }
+
     // Removes all listeners.
     void removeAllListeners();
 

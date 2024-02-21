@@ -51,7 +51,7 @@ void GlobedUserListPopup::reloadList(float) {
     size_t refreshed = 0;
     for (auto* cell : CCArrayExt<GlobedUserCell*>(listLayer->m_list->m_entries)) {
         for (const auto& [playerId, entry] : playerStore) {
-            if (playerId == cell->playerId) {
+            if (playerId == cell->accountData.id) {
                 cell->refreshData(entry);
                 refreshed++;
             }

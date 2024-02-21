@@ -53,7 +53,6 @@ void AdminUserPopup::onProfileLoaded() {
         .parent(nameLayout)
         .collect();
 
-    log::debug("user name color: {}", userEntry.nameColor);
     auto colorRes = util::format::parseColor(userEntry.nameColor.value_or("#ffffff"));
     auto color = colorRes.unwrapOr(ccc3(255, 255, 255));
 
@@ -100,8 +99,6 @@ void AdminUserPopup::onProfileLoaded() {
         .id("violations-layout"_spr)
         .parent(rootLayout)
         .collect();
-
-    log::debug("ay ban: {}, mute: {}, wl: {}", userEntry.isBanned, userEntry.isMuted, userEntry.isWhitelisted);
 
     auto banUnbanned = Build<CCSprite>::createSpriteName("accountBtn_blocked_001.png")
         .scale(0.75f);
@@ -283,7 +280,8 @@ void AdminUserPopup::recreateRoleModifyButton() {
         roleModifyButton = nullptr;
     }
 
-    roleModifyButton = Build<CCSprite>::createSpriteName(AdminEditRolePopup::roleToSprite(userEntry.userRole))
+    roleModifyButton = Build<CCSprite>::createSpriteName(AdminEditRolePopup::roleToSprite(userEntry.userRole).c_str())
+        .scale(0.8f)
         .intoMenuItem([this](auto) {
             AdminEditRolePopup::create(userEntry.userRole, [this](int role) {
                 userEntry.userRole = role;

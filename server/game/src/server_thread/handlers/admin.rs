@@ -18,7 +18,7 @@ const ROLE_USER: i32 = 0;
 const ROLE_HELPER: i32 = 1;
 const ROLE_MOD: i32 = 2;
 const ROLE_ADMIN: i32 = 100;
-const ROLE_SUPERADMIN: i32 = 100;
+const ROLE_SUPERADMIN: i32 = 101;
 
 const ADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, Admin role is required.";
 const MOD_REQUIRED_MESSAGE: &str = "unable to perform this action, at least Moderator role is required.";
@@ -367,7 +367,7 @@ impl GameServerThread {
         let c_user_name = packet.user_entry.user_name != user_entry.user_name;
 
         // first check for actions that require super admin rights
-        if role < ROLE_SUPERADMIN && packet.user_entry.user_role >= ROLE_ADMIN {
+        if role < ROLE_SUPERADMIN && (c_user_role && packet.user_entry.user_role >= ROLE_ADMIN) {
             admin_error!(self, SUPERADMIN_REQUIRED_MESSAGE);
         }
 

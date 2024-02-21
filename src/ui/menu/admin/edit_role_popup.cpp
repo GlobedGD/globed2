@@ -19,7 +19,7 @@ bool AdminEditRolePopup::setup(int currentRole, EditRoleCallbackFn callback) {
 
     // the buttons themselves
     for (int id : {ROLE_USER, ROLE_HELPER, ROLE_MOD, ROLE_ADMIN}) {
-        Build<CCSprite>::createSpriteName(roleToSprite(id))
+        Build<CCSprite>::createSpriteName(roleToSprite(id).c_str())
             .intoMenuItem([this, id = id](auto) {
                 this->callback(id);
                 this->onClose(this);
@@ -32,15 +32,15 @@ bool AdminEditRolePopup::setup(int currentRole, EditRoleCallbackFn callback) {
     return true;
 }
 
-const char* AdminEditRolePopup::roleToSprite(int roleId) {
-    const char* btnSprite;
+std::string AdminEditRolePopup::roleToSprite(int roleId) {
+    std::string btnSprite;
 
     switch (roleId) {
-    case ROLE_USER: btnSprite = "diffIcon_00_btn_001.png"; break;
-    case ROLE_HELPER: btnSprite = "modBadge_03_001.png"; break;
-    case ROLE_MOD: btnSprite = "modBadge_01_001.png"; break;
-    case ROLE_ADMIN: btnSprite = "modBadge_02_001.png"; break;
-    default: btnSprite = "diffIcon_00_btn_001.png"; break;
+    case ROLE_USER: btnSprite = "role-user.png"_spr; break;
+    case ROLE_HELPER: btnSprite = "role-helper.png"_spr; break;
+    case ROLE_MOD: btnSprite = "role-mod.png"_spr; break;
+    case ROLE_ADMIN: btnSprite = "role-admin.png"_spr; break;
+    default: btnSprite = "role-user.png"_spr; break;
     }
 
     return btnSprite;

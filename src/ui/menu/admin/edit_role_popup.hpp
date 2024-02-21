@@ -9,7 +9,7 @@ public:
     static constexpr float POPUP_HEIGHT = 120.f;
     static AdminEditRolePopup* create(int currentRole, EditRoleCallbackFn fn);
 
-    static const char* roleToSprite(int roleId);
+    static std::string roleToSprite(int roleId);
 
 private:
     EditRoleCallbackFn callback;

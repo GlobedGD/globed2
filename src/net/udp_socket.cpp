@@ -50,7 +50,9 @@ Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const std
     addr->sin_family = AF_INET;
     addr->sin_port = htons(port);
 
-    GLOBED_REQUIRE_SAFE(inet_pton(AF_INET, std::string(address).c_str(), &addr->sin_addr) > 0, "tried to connect to an invalid address")
+    log::debug("sendto ({}:{}, {} bytes)", address, port, dataSize);
+
+    GLOBED_REQUIRE_SAFE(inet_pton(AF_INET, std::string(address).c_str(), &addr->sin_addr) > 0, "tried a udp send to an invalid address")
 
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr));
 
