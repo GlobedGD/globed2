@@ -231,7 +231,7 @@ impl AccountVerifier {
                 || age.is_none()
                 || author_user_id.is_none()
             {
-                warn!("ignoring invalid message: one of the attrs is none");
+                warn!("ignoring invalid message: one of the attrs is none ({string})");
                 continue;
             }
 
