@@ -87,12 +87,12 @@ namespace util::format {
         });
     }
 
-    std::string colorToHex(cocos2d::ccColor3B color) {
-        return fmt::format("{:02X}{:02X}{:02X}", color.r, color.g, color.b);
+    std::string colorToHex(cocos2d::ccColor3B color, bool withHash) {
+        return fmt::format("{}{:02X}{:02X}{:02X}", withHash ? "#" : "", color.r, color.g, color.b);
     }
 
-    std::string colorToHex(cocos2d::ccColor4B color) {
-        return fmt::format("{:02X}{:02X}{:02X}{:02X}", color.r, color.g, color.b, color.a);
+    std::string colorToHex(cocos2d::ccColor4B color, bool withHash) {
+        return fmt::format("{}{:02X}{:02X}{:02X}{:02X}", withHash ? "#" : "", color.r, color.g, color.b, color.a);
     }
 
     std::string rtrim(const std::string_view str, const std::string_view filter) {

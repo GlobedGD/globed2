@@ -7,8 +7,8 @@ use std::{
 
 use esp::{size_of_types, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, FastByteBuffer, StaticSize};
 use globed_shared::{
-    GameServerBootData, SyncMutex, TokenIssuer, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC, SERVER_MAGIC_LEN,
     reqwest::{self, StatusCode},
+    GameServerBootData, SyncMutex, TokenIssuer, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
 /// `CentralBridge` stores the configuration of the game server,
@@ -38,7 +38,7 @@ impl Display for CentralBridgeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::RequestError(err) => write!(f, "error making web request: {err}"),
-            Self::CentralError((err, _)) => write!(f, "central server returned error: {err}"),
+            Self::CentralError((err, response)) => write!(f, "central server returned error {err}: {response}"),
             Self::InvalidMagic(_) => write!(f, "central server sent invalid magic"),
             Self::MalformedData(err) => write!(f, "failed to decode data sent by the central server: {err}"),
             Self::ProtocolMismatch(proto) => write!(
@@ -189,7 +189,7 @@ impl CentralBridge {
 
         let response = self
             .http_client
-            .get(format!("{}gs/user/update", self.central_url))
+            .post(format!("{}gs/user/update", self.central_url))
             .query(&[("pw", self.central_pw.clone())])
             .body(body)
             .send()

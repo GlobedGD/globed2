@@ -52,8 +52,8 @@ namespace util::format {
 
     Result<cocos2d::ccColor3B> parseColor(const std::string_view hex);
 
-    std::string colorToHex(cocos2d::ccColor3B);
-    std::string colorToHex(cocos2d::ccColor4B);
+    std::string colorToHex(cocos2d::ccColor3B, bool withHash = false);
+    std::string colorToHex(cocos2d::ccColor4B, bool withHash = false);
 
     std::string rtrim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);
     std::string ltrim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);

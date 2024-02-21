@@ -42,7 +42,7 @@ void ErrorCheckNode::updateErrors(float) {
     }
 
     for (auto& warn : warnings) {
-        Notification::create(warn, NotificationIcon::Warning, 1.5f)->show();
+        Notification::create(warn, NotificationIcon::Warning, 2.0f)->show();
     }
 
     for (auto& success : successes) {

@@ -8,7 +8,7 @@ use crate::*;
 ///
 /// Note: `FastString` is not guaranteed to hold a valid UTF-8 string at any point in time, and there are no UTF-8 checks when decoding.
 /// Checks are only done when you convert the string into a `&str` or `String`, via `.to_str`, `.try_to_str`, or `to_string`.
-#[derive(Clone, Eq)]
+#[derive(Clone, Eq, Debug)]
 pub struct FastString<const N: usize> {
     buffer: [u8; N],
     len: usize,
@@ -174,7 +174,15 @@ impl<const N: usize> Decodable for FastString<N> {
     where
         Self: Sized,
     {
-        Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
+        let len = buf.read_u32()? as usize;
+        if len > N {
+            return Err(DecodeError::NotEnoughCapacityString);
+        }
+
+        let mut buffer = [0u8; N];
+        std::io::Read::read(buf, &mut buffer[..len])?;
+
+        Ok(Self::from_buffer(buffer, len))
     }
 
     #[inline]

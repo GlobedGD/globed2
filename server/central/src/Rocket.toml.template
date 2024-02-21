@@ -12,7 +12,7 @@ form = "1KiB"
 data-form = "1KiB"
 file = "1KiB"
 json = "1KiB"
-msgpack = "1KiB
+msgpack = "1KiB"
 
 string = "2KiB"
 bytes = "8KiB"

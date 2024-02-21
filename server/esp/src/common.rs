@@ -201,7 +201,11 @@ where
     where
         Self: Sized,
     {
-        Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
+        Ok(if buf.read_bool()? {
+            Ok(buf.read_value::<T>()?)
+        } else {
+            Err(buf.read_value::<E>()?)
+        })
     }
 
     #[inline]
@@ -406,7 +410,16 @@ where
     where
         Self: Sized,
     {
-        Self::decode_from_reader(&mut ByteReader::from_bytes(buf.as_bytes()))
+        let entries = buf.read_u32()?;
+        let mut map = Self::default();
+
+        for _ in 0..entries {
+            let key = buf.read_value()?;
+            let val = buf.read_value()?;
+            map.insert(key, val);
+        }
+
+        Ok(map)
     }
 
     #[inline]

@@ -25,6 +25,7 @@ private:
     cocos2d::CCLabelBMFont* banDurationText = nullptr;
     geode::InputNode *inputReason = nullptr;
     geode::TextInput *inputAdminPassword = nullptr;
+    CCMenuItemSpriteExtra* roleModifyButton;
 
     bool setup(const UserEntry& userEntry, const std::optional<PlayerRoomPreviewAccountData>& accountData) override;
     void onProfileLoaded();

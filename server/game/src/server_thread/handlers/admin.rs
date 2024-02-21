@@ -1,4 +1,4 @@
-use globed_shared::{info, warn};
+use globed_shared::{debug, info, warn};
 
 use crate::{
     data::*,
@@ -12,13 +12,17 @@ use super::*;
 // 1 - can change is_muted, violation_reason, violation_expiry, disconnect people
 // 2 - can do all above, change is_banned, is_whitelisted, name_color, send notices
 // 100 - can do all above, change user_role, admin_password, send notices to everyone, disconnect everyone
+// 101 - can do all above, change roles of users to admin
 
+const ROLE_USER: i32 = 0;
 const ROLE_HELPER: i32 = 1;
 const ROLE_MOD: i32 = 2;
 const ROLE_ADMIN: i32 = 100;
+const ROLE_SUPERADMIN: i32 = 100;
 
 const ADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, Admin role is required.";
 const MOD_REQUIRED_MESSAGE: &str = "unable to perform this action, at least Moderator role is required.";
+const SUPERADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, Superadmin role is required.";
 
 macro_rules! admin_error {
     ($self:expr, $msg:expr) => {
@@ -45,8 +49,9 @@ impl GameServerThread {
 
             self.is_authorized_admin.store(true, Ordering::Relaxed);
             // give temporary admin perms
-            self.user_entry.lock().user_role = ROLE_ADMIN;
-            self.send_packet_static(&AdminAuthSuccessPacket { role: ROLE_ADMIN }).await?;
+            self.user_entry.lock().user_role = ROLE_SUPERADMIN;
+            self.send_packet_static(&AdminAuthSuccessPacket { role: ROLE_SUPERADMIN })
+                .await?;
             return Ok(());
         }
 
@@ -333,10 +338,13 @@ impl GameServerThread {
         let target_account_id = packet.user_entry.account_id;
 
         // if they are online, update them live, else get their old data from the bridge
+
+        debug!("trying to find thread");
         let thread = self.game_server.get_user_by_id(target_account_id);
         let user_entry = if let Some(thread) = thread.as_ref() {
             thread.user_entry.lock().clone()
         } else {
+            debug!("trying to get user: {}", target_account_id);
             match self.game_server.bridge.get_user_data(&target_account_id.to_string()).await {
                 Ok(x) => x,
                 Err(err) => {
@@ -345,17 +353,25 @@ impl GameServerThread {
             }
         };
 
+        debug!("evaluating change");
+
         // check what changed
         let c_user_role = packet.user_entry.user_role != user_entry.user_role;
         let c_admin_password = packet.user_entry.admin_password != user_entry.admin_password;
         let c_is_banned = packet.user_entry.is_banned != user_entry.is_banned;
+        let c_is_muted = packet.user_entry.is_muted != user_entry.is_muted;
         let c_is_whitelisted = packet.user_entry.is_whitelisted != user_entry.is_whitelisted;
         let c_violation_reason = packet.user_entry.violation_reason != user_entry.violation_reason;
         let c_violation_expiry = packet.user_entry.violation_expiry != user_entry.violation_expiry;
         let c_name_color = packet.user_entry.name_color != user_entry.name_color;
         let c_user_name = packet.user_entry.user_name != user_entry.user_name;
 
-        // first check for actions that require admin rights
+        // first check for actions that require super admin rights
+        if role < ROLE_SUPERADMIN && packet.user_entry.user_role >= ROLE_ADMIN {
+            admin_error!(self, SUPERADMIN_REQUIRED_MESSAGE);
+        }
+
+        // check for actions that require admin rights
         if role < ROLE_ADMIN && (c_user_role || c_admin_password) {
             admin_error!(self, ADMIN_REQUIRED_MESSAGE);
         }
@@ -363,6 +379,19 @@ impl GameServerThread {
         // check for actions that require mod rights
         if role < ROLE_MOD && (c_is_banned || c_is_whitelisted || c_name_color) {
             admin_error!(self, MOD_REQUIRED_MESSAGE);
+        }
+
+        // validation
+        let target_role = packet.user_entry.user_role;
+        if !(target_role == ROLE_USER || target_role == ROLE_HELPER || target_role == ROLE_MOD || target_role == ROLE_ADMIN)
+        {
+            admin_error!(self, "attempting to assign an invalid role");
+        }
+
+        if let Some(color) = packet.user_entry.name_color.as_ref() {
+            if color.parse::<Color3B>().is_err() {
+                admin_error!(self, &format!("attempting to assign an invalid name color: {color}"));
+            }
         }
 
         // user_name intentionally left unchecked.
@@ -373,12 +402,14 @@ impl GameServerThread {
         if !c_user_role
             && !c_admin_password
             && !c_is_banned
+            && !c_is_muted
             && !c_is_whitelisted
             && !c_violation_reason
             && !c_violation_expiry
             && !c_name_color
         {
             // no changes
+            debug!("no changes, not doing anything");
             return Ok(());
         }
 
@@ -392,6 +423,7 @@ impl GameServerThread {
 
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
+            debug!("updating user live");
             self.game_server
                 .update_user(thread, move |user| {
                     user.clone_from(&new_user_entry);
@@ -399,6 +431,7 @@ impl GameServerThread {
                 })
                 .await
         } else {
+            debug!("manual bridge request");
             // otherwise just make a manual bridge request
             self.game_server
                 .bridge
@@ -422,6 +455,7 @@ impl GameServerThread {
                 .await
             }
             Err(err) => {
+                warn!("error from bridge: {err}");
                 admin_error!(self, &err.to_string());
             }
         }

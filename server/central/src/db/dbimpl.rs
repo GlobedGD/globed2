@@ -62,7 +62,10 @@ impl GlobedDb {
         let admin_password = user.admin_password.clone().map(|x| x.try_to_string());
         let violation_reason = user.violation_reason.clone().map(|x| x.try_to_string());
 
-        query("UPDATE users SET user_name = ?, name_color = ?, user_role = ?, is_banned = ?, is_muted = ?, is_whitelisted = ?, admin_password = ?, violation_reason = ?, violation_expiry = ? WHERE account_id = ?")
+        query(
+            "INSERT OR REPLACE INTO users (account_id, user_name, name_color, user_role, is_banned, is_muted, is_whitelisted, admin_password, violation_reason, violation_expiry)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            .bind(account_id)
             .bind(user_name)
             .bind(name_color)
             .bind(user.user_role)
@@ -72,7 +75,6 @@ impl GlobedDb {
             .bind(admin_password)
             .bind(violation_reason)
             .bind(user.violation_expiry)
-            .bind(account_id)
             .execute(&self.0)
             .await
             .map(|_| ())

@@ -2,6 +2,7 @@
 
 #include <data/packets/client/admin.hpp>
 #include <net/network_manager.hpp>
+#include <ui/menu/admin/edit_role_popup.hpp>
 #include <ui/general/color_input_popup.hpp>
 #include <ui/general/slider_wrapper.hpp>
 #include <util/math.hpp>
@@ -71,8 +72,17 @@ void AdminUserPopup::onProfileLoaded() {
         })
         .parent(nameLayout);
 
+    // role modify button
     if (NetworkManager::get().getAdminRole() >= ROLE_ADMIN) {
-        // TODO some pencil button for editing the role
+        Build<CCSprite>::createSpriteName(AdminEditRolePopup::roleToSprite(userEntry.userRole))
+            .intoMenuItem([this](auto) {
+                AdminEditRolePopup::create(userEntry.userRole, [this](int role) {
+                    userEntry.userRole = role;
+                    roleModifyButton->setNormalImage(CCSprite::createWithSpriteFrameName(AdminEditRolePopup::roleToSprite(userEntry.userRole)));
+                })->show();
+            })
+            .parent(nameLayout)
+            .store(roleModifyButton);
     }
 
     nameLayout->updateLayout();
@@ -99,35 +109,45 @@ void AdminUserPopup::onProfileLoaded() {
         .parent(rootLayout)
         .collect();
 
+    log::debug("ay ban: {}, mute: {}, wl: {}", userEntry.isBanned, userEntry.isMuted, userEntry.isWhitelisted);
+
     auto banUnbanned = Build<CCSprite>::createSpriteName("accountBtn_blocked_001.png")
         .scale(0.75f);
     auto banBanned = Build<CCSprite>::createSpriteName("accountBtn_requests_001.png")
         .scale(0.75f);
-    Build<CCMenuItemToggler>(CCMenuItemToggler::create(banUnbanned, banBanned, this, menu_selector(AdminUserPopup::onViolationChanged)))
+    auto* btnBanned = Build<CCMenuItemToggler>(CCMenuItemToggler::create(banUnbanned, banBanned, this, menu_selector(AdminUserPopup::onViolationChanged)))
         .tag(TAG_BAN)
-        .parent(violationsLayout);
+        .parent(violationsLayout)
+        .collect();
+    btnBanned->toggle(userEntry.isBanned);
 
     auto muteUnmuted = Build<CCSprite>::createSpriteName("GJ_fxOnBtn_001.png")
         .scale(0.75f);
     auto muteMuted = Build<CCSprite>::createSpriteName("GJ_fxOffBtn_001.png")
         .scale(0.75f);
-    Build<CCMenuItemToggler>(CCMenuItemToggler::create(muteUnmuted, muteMuted, this, menu_selector(AdminUserPopup::onViolationChanged)))
+    auto* btnMuted = Build<CCMenuItemToggler>(CCMenuItemToggler::create(muteUnmuted, muteMuted, this, menu_selector(AdminUserPopup::onViolationChanged)))
         .tag(TAG_MUTE)
-        .parent(violationsLayout);
+        .parent(violationsLayout)
+        .collect();
+    btnMuted->toggle(userEntry.isMuted);
 
     auto whitelistOff = Build<CCSprite>::createSpriteName("GJ_listAddBtn_001.png")
         .scale(0.75f);
     auto whitelistOn = Build<CCSprite>::createSpriteName("accountBtn_myLists_001.png")
         .scale(0.75f);
-    Build<CCMenuItemToggler>(CCMenuItemToggler::create(whitelistOff, whitelistOn, this, menu_selector(AdminUserPopup::onViolationChanged)))
+    auto* btnWhitelist = Build<CCMenuItemToggler>(CCMenuItemToggler::create(whitelistOff, whitelistOn, this, menu_selector(AdminUserPopup::onViolationChanged)))
         .tag(TAG_WHITELIST)
-        .parent(violationsLayout);
+        .parent(violationsLayout)
+        .collect();
+    btnWhitelist->toggle(userEntry.isWhitelisted);
 
     auto* slider = Build<SliderWrapper>::create(
             Slider::create(this, menu_selector(AdminUserPopup::onViolationDurationChanged), 0.5f)
         )
         .parent(violationsLayout)
         .collect();
+
+    slider->slider->setValue(0.f);
 
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
         .scale(0.4f)
@@ -138,6 +158,9 @@ void AdminUserPopup::onProfileLoaded() {
     if (userEntry.violationExpiry.has_value()) {
         auto now = util::time::systemNow().time_since_epoch();
         auto expDur = util::time::seconds(userEntry.violationExpiry.value()) - now;
+
+        float sval = static_cast<float>(expDur.count()) / util::time::asSeconds(util::time::days(31));
+        slider->slider->setValue(sval);
 
         auto expiryString = fmt::format("Expires: in {:.1f} days", util::time::as<util::time::days>(expDur).count());
         banDurationText->setString(expiryString.c_str());
@@ -191,6 +214,17 @@ void AdminUserPopup::onProfileLoaded() {
     violationsLayout->updateLayout();
 
     rootLayout->updateLayout();
+
+    // apply button
+
+    Build<ButtonSprite>::create("Update", "goldFont.fnt", "GJ_button_01.png", 0.9f)
+        .intoMenuItem([this](auto) {
+            this->sendUpdateUser();
+        })
+        .pos(sizes.centerBottom + CCPoint{0.f, 20.f})
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .parent(m_mainLayer);
 }
 
 void AdminUserPopup::onOpenProfile(CCObject*) {
@@ -215,9 +249,11 @@ void AdminUserPopup::onViolationChanged(cocos2d::CCObject* sender) {
     case TAG_WHITELIST: destination = &userEntry.isWhitelisted; break;
     }
 
+
     GLOBED_REQUIRE(destination != nullptr, "invalid tag in AdminUserPopup::onViolationChanged")
 
-    *destination = static_cast<CCMenuItemToggler*>(sender)->isOn();
+    *destination = !static_cast<CCMenuItemToggler*>(sender)->isOn();
+    log::debug("setting tag {} to {}", tag, !static_cast<CCMenuItemToggler*>(sender)->isOn());
 
     // if unmuted and unbanned, hide the text label
     banDurationText->setVisible(userEntry.isBanned || userEntry.isMuted);
@@ -240,6 +276,7 @@ void AdminUserPopup::onViolationDurationChanged(cocos2d::CCObject* sender) {
 }
 
 void AdminUserPopup::sendUpdateUser() {
+    log::debug("sending banned: {}, muted: {}, wl: {}", userEntry.isBanned, userEntry.isMuted, userEntry.isWhitelisted);
     auto& nm = NetworkManager::get();
     nm.send(AdminUpdateUserPacket::create(this->userEntry));
 }

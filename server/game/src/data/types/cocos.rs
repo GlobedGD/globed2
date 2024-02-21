@@ -38,17 +38,15 @@ impl FromStr for Color3B {
     type Err = ColorParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.len() != 7 {
+        if value.len() != 7 && value.len() != 6 {
             return Err(ColorParseError::InvalidLength);
         }
 
-        if !value.starts_with('#') {
-            return Err(ColorParseError::InvalidFormat);
-        }
+        let offvalue = value.strip_prefix('#').unwrap_or(value);
 
-        let r = u8::from_str_radix(&value[1..3], 16)?;
-        let g = u8::from_str_radix(&value[3..5], 16)?;
-        let b = u8::from_str_radix(&value[5..7], 16)?;
+        let r = u8::from_str_radix(&offvalue[0..2], 16)?;
+        let g = u8::from_str_radix(&offvalue[2..4], 16)?;
+        let b = u8::from_str_radix(&offvalue[4..6], 16)?;
 
         Ok(Self { r, g, b })
     }
@@ -67,19 +65,17 @@ impl FromStr for Color4B {
     type Err = ColorParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.len() != 7 && value.len() != 9 {
+        if value.len() < 6 || value.len() > 9 {
             return Err(ColorParseError::InvalidLength);
         }
 
-        if !value.starts_with('#') {
-            return Err(ColorParseError::InvalidFormat);
-        }
+        let offvalue = value.strip_prefix('#').unwrap_or(value);
 
-        let r = u8::from_str_radix(&value[1..3], 16)?;
-        let g = u8::from_str_radix(&value[3..5], 16)?;
-        let b = u8::from_str_radix(&value[5..7], 16)?;
-        let a = if value.len() == 9 {
-            u8::from_str_radix(&value[7..9], 16)?
+        let r = u8::from_str_radix(&offvalue[0..2], 16)?;
+        let g = u8::from_str_radix(&offvalue[2..4], 16)?;
+        let b = u8::from_str_radix(&offvalue[4..6], 16)?;
+        let a = if value.len() > 7 {
+            u8::from_str_radix(&offvalue[6..8], 16)?
         } else {
             0u8
         };

@@ -46,24 +46,33 @@ bool GlobedColorInputPopup::setup(ccColor3B color, ColorInputCallbackFn fn) {
         .store(inputB);
 
     inputR->setCommonFilter(CommonFilter::Int);
+    inputR->setMaxCharCount(3);
     inputR->setCallback([this](auto text) {
-        auto r = util::format::parse<uint8_t>(text).value_or(0);
-        this->storedColor.r = r;
-        this->updateColors(true);
+        auto r = util::format::parse<uint8_t>(text);
+        if (r.has_value()) {
+            this->storedColor.r = r.value();
+            this->updateColors(true);
+        }
     });
 
     inputG->setCommonFilter(CommonFilter::Int);
+    inputG->setMaxCharCount(3);
     inputG->setCallback([this](auto text) {
-        auto g = util::format::parse<uint8_t>(text).value_or(0);
-        this->storedColor.g = g;
-        this->updateColors(true);
+        auto g = util::format::parse<uint8_t>(text);
+        if (g.has_value()) {
+            this->storedColor.g = g.value();
+            this->updateColors(true);
+        }
     });
 
     inputB->setCommonFilter(CommonFilter::Int);
+    inputB->setMaxCharCount(3);
     inputB->setCallback([this](auto text) {
-        auto b = util::format::parse<uint8_t>(text).value_or(0);
-        this->storedColor.b = b;
-        this->updateColors(true);
+        auto b = util::format::parse<uint8_t>(text);
+        if (b.has_value()) {
+            this->storedColor.b = b.value();
+            this->updateColors(true);
+        }
     });
 
     // i apologize for this hardcoded value but screw this
@@ -76,7 +85,13 @@ bool GlobedColorInputPopup::setup(ccColor3B color, ColorInputCallbackFn fn) {
         .parent(inputsRootLayout)
         .store(inputHex);
 
+    inputHex->setMaxCharCount(6);
     inputHex->setCallback([this](auto text) {
+        if (text.size() != 6) {
+            // let em cook
+            return;
+        }
+
         auto color = util::format::parseColor(text);
         if (color.isOk()) {
             this->storedColor = color.unwrap();
@@ -114,7 +129,7 @@ void GlobedColorInputPopup::updateColors(bool updateWheel) {
         colorPicker->setColorValue(storedColor);
     }
 
-    inputHex->setString(util::format::colorToHex(storedColor));
+    inputHex->setString(util::format::colorToHex(storedColor, false));
 
     inputR->setString(std::to_string(storedColor.r));
     inputG->setString(std::to_string(storedColor.g));
