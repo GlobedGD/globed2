@@ -80,7 +80,7 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<LoginFailedPacket>([this](auto packet) {
-        ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> Please try to connect again, if it still doesn't work then reset your authtoken in settings.\n\nReason: <cy>{}</c>", packet->message));
+        ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> The server rejected the login attempt.\n\nReason: <cy>{}</c>", packet->message));
         GlobedAccountManager::get().authToken.lock()->clear();
         this->disconnect(true);
     });

@@ -45,7 +45,7 @@ bool GlobedColorInputPopup::setup(ccColor3B color, ColorInputCallbackFn fn) {
         .parent(inputsRgbLayout)
         .store(inputB);
 
-    inputR->setCommonFilter(CommonFilter::Int);
+    inputR->setCommonFilter(CommonFilter::Uint);
     inputR->setMaxCharCount(3);
     inputR->setCallback([this](auto text) {
         auto r = util::format::parse<uint8_t>(text);
@@ -55,7 +55,7 @@ bool GlobedColorInputPopup::setup(ccColor3B color, ColorInputCallbackFn fn) {
         }
     });
 
-    inputG->setCommonFilter(CommonFilter::Int);
+    inputG->setCommonFilter(CommonFilter::Uint);
     inputG->setMaxCharCount(3);
     inputG->setCallback([this](auto text) {
         auto g = util::format::parse<uint8_t>(text);
@@ -65,7 +65,7 @@ bool GlobedColorInputPopup::setup(ccColor3B color, ColorInputCallbackFn fn) {
         }
     });
 
-    inputB->setCommonFilter(CommonFilter::Int);
+    inputB->setCommonFilter(CommonFilter::Uint);
     inputB->setMaxCharCount(3);
     inputB->setCallback([this](auto text) {
         auto b = util::format::parse<uint8_t>(text);
@@ -85,6 +85,7 @@ bool GlobedColorInputPopup::setup(ccColor3B color, ColorInputCallbackFn fn) {
         .parent(inputsRootLayout)
         .store(inputHex);
 
+    inputHex->setCommonFilter(CommonFilter::Hex);
     inputHex->setMaxCharCount(6);
     inputHex->setCallback([this](auto text) {
         if (text.size() != 6) {

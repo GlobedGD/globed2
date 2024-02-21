@@ -38,11 +38,11 @@ void AdminUserPopup::onProfileLoaded() {
     auto& data = accountData.value();
 
     // name layout
-    auto* nameLayout = Build<CCMenu>::create()
+    Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f))
         .pos(sizes.centerTop - CCPoint{0.f, 20.f})
         .parent(m_mainLayer)
-        .collect();
+        .store(nameLayout);
 
     // name label
     auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
@@ -74,15 +74,7 @@ void AdminUserPopup::onProfileLoaded() {
 
     // role modify button
     if (NetworkManager::get().getAdminRole() >= ROLE_ADMIN) {
-        Build<CCSprite>::createSpriteName(AdminEditRolePopup::roleToSprite(userEntry.userRole))
-            .intoMenuItem([this](auto) {
-                AdminEditRolePopup::create(userEntry.userRole, [this](int role) {
-                    userEntry.userRole = role;
-                    roleModifyButton->setNormalImage(CCSprite::createWithSpriteFrameName(AdminEditRolePopup::roleToSprite(userEntry.userRole)));
-                })->show();
-            })
-            .parent(nameLayout)
-            .store(roleModifyButton);
+        this->recreateRoleModifyButton();
     }
 
     nameLayout->updateLayout();
@@ -162,14 +154,24 @@ void AdminUserPopup::onProfileLoaded() {
         float sval = static_cast<float>(expDur.count()) / util::time::asSeconds(util::time::days(31));
         slider->slider->setValue(sval);
 
-        auto expiryString = fmt::format("Expires: in {:.1f} days", util::time::as<util::time::days>(expDur).count());
+        auto expiryString = fmt::format("Expires: in {:.1f} days", static_cast<float>(util::time::as<util::time::days>(expDur).count()));
         banDurationText->setString(expiryString.c_str());
     }
 
     // violation reason
-    Build<InputNode>::create(m_size.width * 0.5f, "reason", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 160)
+    Build<TextInput>::create(m_size.width * 0.5f, "reason", "chatFont.fnt")
         .parent(rootLayout)
         .store(inputReason);
+
+    inputReason->setCommonFilter(CommonFilter::Any);
+    inputReason->setMaxCharCount(160);
+    inputReason->setCallback([this](auto reason) {
+        if (reason.empty()) {
+            userEntry.violationReason = std::nullopt;
+        } else {
+            userEntry.violationReason = reason;
+        }
+    });
 
     if (userEntry.violationReason.has_value()) {
         inputReason->setString(userEntry.violationReason.value());
@@ -275,8 +277,26 @@ void AdminUserPopup::onViolationDurationChanged(cocos2d::CCObject* sender) {
     }
 }
 
+void AdminUserPopup::recreateRoleModifyButton() {
+    if (roleModifyButton) {
+        roleModifyButton->removeFromParent();
+        roleModifyButton = nullptr;
+    }
+
+    roleModifyButton = Build<CCSprite>::createSpriteName(AdminEditRolePopup::roleToSprite(userEntry.userRole))
+        .intoMenuItem([this](auto) {
+            AdminEditRolePopup::create(userEntry.userRole, [this](int role) {
+                userEntry.userRole = role;
+                this->recreateRoleModifyButton();
+            })->show();
+        })
+        .parent(nameLayout)
+        .collect();
+
+    nameLayout->updateLayout();
+}
+
 void AdminUserPopup::sendUpdateUser() {
-    log::debug("sending banned: {}, muted: {}, wl: {}", userEntry.isBanned, userEntry.isMuted, userEntry.isWhitelisted);
     auto& nm = NetworkManager::get();
     nm.send(AdminUpdateUserPacket::create(this->userEntry));
 }

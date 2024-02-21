@@ -1,6 +1,7 @@
 #include "admin_login_popup.hpp"
 
 #include <managers/account.hpp>
+#include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
 #include <net/network_manager.hpp>
 #include <util/misc.hpp>
@@ -28,11 +29,17 @@ bool AdminLoginPopup::setup() {
 
             auto password = this->passwordInput->getString();
             if (!password.empty()) {
+                auto& nm = NetworkManager::get();
+                if (!nm.established()) {
+                    ErrorQueues::get().warn("not connected to a server");
+                    return;
+                }
+
                 if (settings.admin.rememberPassword) {
                     GlobedAccountManager::get().storeAdminPassword(password);
                 }
 
-                NetworkManager::get().send(AdminAuthPacket::create(password));
+                nm.send(AdminAuthPacket::create(password));
                 this->onClose(this);
             }
         })

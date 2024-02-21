@@ -165,7 +165,7 @@ std::optional<std::string> GlobedAccountManager::getAdminPassword() {
         auto adminPassword = cryptoBox->decryptToString(data);
         return adminPassword;
     } catch (const std::exception& e) {
-        log::warn("failed to read admin key:{ }", e.what());
+        log::warn("failed to read admin key: {}", e.what());
         return std::nullopt;
     }
 }

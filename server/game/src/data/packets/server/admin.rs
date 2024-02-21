@@ -22,7 +22,7 @@ pub struct AdminUserDataPacket {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 29003, tcp = true, encrypted = true)]
+#[packet(id = 29003, tcp = true)]
 pub struct AdminSuccessMessagePacket<'a> {
     pub message: &'a str,
 }

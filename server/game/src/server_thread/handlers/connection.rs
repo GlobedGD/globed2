@@ -124,7 +124,7 @@ impl GameServerThread {
                     self.terminate();
                     self.send_packet_dynamic(&LoginFailedPacket {
                         message: &format!(
-                            "Banned from the server. Reason: {}",
+                            "Banned from the server: {}",
                             user.violation_reason
                                 .as_ref()
                                 .map_or_else(|| "no reason given", |str| str.try_to_str())

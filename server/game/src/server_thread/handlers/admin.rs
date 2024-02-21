@@ -399,18 +399,20 @@ impl GameServerThread {
 
         // erm clippy is having a seizure on this line
         #[allow(clippy::nonminimal_bool)]
-        if !c_user_role
-            && !c_admin_password
-            && !c_is_banned
-            && !c_is_muted
-            && !c_is_whitelisted
-            && !c_violation_reason
-            && !c_violation_expiry
-            && !c_name_color
+        if !(c_user_role
+            || c_admin_password
+            || c_is_banned
+            || c_is_muted
+            || c_is_whitelisted
+            || c_violation_reason
+            || c_violation_expiry
+            || c_name_color)
         {
             // no changes
             debug!("no changes, not doing anything");
-            return Ok(());
+            return self
+                .send_packet_dynamic(&AdminSuccessMessagePacket { message: "No changes" })
+                .await;
         }
 
         let mut new_user_entry = packet.user_entry;
@@ -424,12 +426,27 @@ impl GameServerThread {
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
             debug!("updating user live");
-            self.game_server
+
+            let is_banned = new_user_entry.is_banned;
+
+            let res = self
+                .game_server
                 .update_user(thread, move |user| {
                     user.clone_from(&new_user_entry);
                     true
                 })
-                .await
+                .await;
+
+            // if they just got banned, disconnect them
+            if is_banned && res.is_ok() {
+                thread
+                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                        "Banned from the server",
+                    )))
+                    .await;
+            }
+
+            res
         } else {
             debug!("manual bridge request");
             // otherwise just make a manual bridge request

@@ -23,9 +23,10 @@ private:
     Ref<LoadingCircle> loadingCircle = nullptr;
     ColorChannelSprite* nameColorSprite = nullptr;
     cocos2d::CCLabelBMFont* banDurationText = nullptr;
-    geode::InputNode *inputReason = nullptr;
+    geode::TextInput *inputReason = nullptr;
     geode::TextInput *inputAdminPassword = nullptr;
-    CCMenuItemSpriteExtra* roleModifyButton;
+    cocos2d::CCMenu* nameLayout;
+    Ref<CCMenuItemSpriteExtra> roleModifyButton;
 
     bool setup(const UserEntry& userEntry, const std::optional<PlayerRoomPreviewAccountData>& accountData) override;
     void onProfileLoaded();
@@ -33,6 +34,7 @@ private:
     void onColorSelected(cocos2d::ccColor3B);
     void onViolationChanged(cocos2d::CCObject* sender);
     void onViolationDurationChanged(cocos2d::CCObject* sender);
+    void recreateRoleModifyButton();
 
     void sendUpdateUser();
 
