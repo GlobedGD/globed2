@@ -87,13 +87,16 @@ impl ServerStateData {
         self.verify_totp(orig_value.as_bytes(), answer)
     }
 
-    pub async fn should_block(&self, db: &GlobedDb, account_id: i32) -> anyhow::Result<bool> {
-        let user = db.get_user(account_id).await?;
+    pub async fn is_banned(&self, db: &GlobedDb, account_id: i32) -> anyhow::Result<Option<String>> {
+        if self.config.userlist_mode == UserlistMode::Whitelist {
+            return Ok(None);
+        }
 
-        match self.config.userlist_mode {
-            UserlistMode::None => Ok(false),
-            UserlistMode::Blacklist => Ok(user.is_some_and(|x| x.is_banned)),
-            UserlistMode::Whitelist => Ok(!user.is_some_and(|x| x.is_whitelisted)),
+        let user = db.get_user(account_id).await?;
+        if let Some(user) = user {
+            Ok(user.violation_reason.map(|x| x.try_to_string()))
+        } else {
+            Ok(None)
         }
     }
 }

@@ -61,18 +61,20 @@ pub async fn totp_login(
     let state_ = state.state_read().await;
     get_user_ip!(state_, ip, cfip, _ip);
 
-    let should_block = match state_.should_block(db, aid).await {
-        Ok(x) => x,
-        Err(err) => bad_request!(&err.to_string()),
-    };
+    if state_.config.userlist_mode == UserlistMode::Whitelist {
+        if !db.get_user(aid).await?.map_or(false, |x| x.is_whitelisted) {
+            unauthorized!("This server has whitelist enabled and your account ID has not been approved.");
+        }
+    } else {
+        let ban_reason = state_.is_banned(db, aid).await;
+        if let Err(err) = ban_reason {
+            bad_request!(&format!("server error: {err}"));
+        }
 
-    if should_block {
-        unauthorized!(if state_.config.userlist_mode == UserlistMode::Blacklist {
-            "<cr>You had only one shot.</c>"
-        } else {
-            "This server has whitelist enabled and your account ID has not been approved."
-        });
-    };
+        if let Some(reason) = ban_reason.unwrap() {
+            unauthorized!(&format!("Banned from the server: {reason}"));
+        }
+    }
 
     let authkey = state_.generate_authkey(aid, uid, aname);
     let valid = state_.verify_totp(&authkey, code);
@@ -105,18 +107,20 @@ pub async fn challenge_start(
     let mut state = state.state_write().await;
     get_user_ip!(state, ip, cfip, user_ip);
 
-    let should_block = match state.should_block(db, aid).await {
-        Ok(x) => x,
-        Err(err) => bad_request!(&err.to_string()),
-    };
+    if state.config.userlist_mode == UserlistMode::Whitelist {
+        if !db.get_user(aid).await?.map_or(false, |x| x.is_whitelisted) {
+            unauthorized!("This server has whitelist enabled and your account ID has not been approved.");
+        }
+    } else {
+        let ban_reason = state.is_banned(db, aid).await;
+        if let Err(err) = ban_reason {
+            bad_request!(&format!("server error: {err}"));
+        }
 
-    if should_block {
-        unauthorized!(if state.config.userlist_mode == UserlistMode::Blacklist {
-            "<cr>You had only one shot.</c>"
-        } else {
-            "This server has whitelist enabled and your account ID has not been approved."
-        });
-    };
+        if let Some(reason) = ban_reason.unwrap() {
+            unauthorized!(&format!("Banned from the server: {reason}"));
+        }
+    }
 
     let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
