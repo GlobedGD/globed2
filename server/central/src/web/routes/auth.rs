@@ -234,8 +234,16 @@ pub async fn challenge_finish(
     }
     .clone();
 
-    if challenge.account_id != aid || challenge.user_id != uid || challenge.name != aname {
-        unauthorized!("challenge was requested for a different user, not validating");
+    if challenge.account_id != aid {
+        unauthorized!("challenge was requested for a different account id, not validating");
+    }
+
+    if challenge.user_id != uid {
+        unauthorized!("challenge was requested for a different user id, not validating");
+    }
+
+    if challenge.name != aname {
+        unauthorized!("challenge was requested for a different account name, not validating");
     }
 
     let result = state_.verify_challenge(&challenge.value, answer);

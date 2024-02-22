@@ -16,7 +16,8 @@
                 "resources/role-admin.png",
                 "resources/role-helper.png",
                 "resources/role-mod.png",
-                "resources/role-user.png"
+                "resources/role-user.png",
+                "resources/whitelist-icon.png"
             ]
         }
     },
