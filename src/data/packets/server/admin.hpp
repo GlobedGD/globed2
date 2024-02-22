@@ -42,6 +42,6 @@ class AdminSuccessMessagePacket : public Packet {
 };
 
 class AdminAuthFailedPacket : public Packet {
-    GLOBED_PACKET(29004, true, false)
+    GLOBED_PACKET(29004, false, false)
     GLOBED_PACKET_DECODE {}
 };

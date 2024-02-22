@@ -6,7 +6,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use globed_shared::{
@@ -40,8 +40,7 @@ pub struct ServerStateData {
     pub config: ServerConfig,
     pub hmac: Hmac<Sha256>,
     pub token_issuer: TokenIssuer,
-    pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
-    pub login_attempts: HashMap<IpAddr, Instant>,
+    pub active_challenges: HashMap<i32, ActiveChallenge>,
 }
 
 impl ServerStateData {
@@ -57,7 +56,6 @@ impl ServerStateData {
             hmac,
             token_issuer: TokenIssuer::new(token_secret_key, token_expiry),
             active_challenges: HashMap::new(),
-            login_attempts: HashMap::new(),
         }
     }
 
