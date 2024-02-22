@@ -57,16 +57,13 @@ void AdminUserPopup::onProfileLoaded() {
         .parent(nameLayout)
         .collect();
 
-    auto colorRes = util::format::parseColor(userEntry.nameColor.value_or("#ffffff"));
-    auto color = colorRes.unwrapOr(ccc3(255, 255, 255));
-
     // color palette button
     Build<ColorChannelSprite>::create()
         .scale(0.6f)
-        .color(color)
+        .color(this->getCurrentNameColor())
         .store(nameColorSprite)
-        .intoMenuItem([this, color = color](auto) {
-            GlobedColorInputPopup::create(color, [this](auto color) {
+        .intoMenuItem([this](auto) {
+            GlobedColorInputPopup::create(this->getCurrentNameColor(), [this](auto color) {
                 // if our role doesn't permit editing the color, don't do anything
                 if (NetworkManager::get().getAdminRole() >= ROLE_MOD) {
                     this->onColorSelected(color);
@@ -296,6 +293,12 @@ void AdminUserPopup::recreateRoleModifyButton() {
         .collect();
 
     nameLayout->updateLayout();
+}
+
+cocos2d::ccColor3B AdminUserPopup::getCurrentNameColor() {
+    auto colorRes = util::format::parseColor(userEntry.nameColor.value_or("#ffffff"));
+    auto color = colorRes.unwrapOr(ccc3(255, 255, 255));
+    return color;
 }
 
 void AdminUserPopup::sendUpdateUser() {

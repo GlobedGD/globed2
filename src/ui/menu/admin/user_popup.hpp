@@ -35,6 +35,7 @@ private:
     void onViolationChanged(cocos2d::CCObject* sender);
     void onViolationDurationChanged(cocos2d::CCObject* sender);
     void recreateRoleModifyButton();
+    cocos2d::ccColor3B getCurrentNameColor();
 
     void sendUpdateUser();
 

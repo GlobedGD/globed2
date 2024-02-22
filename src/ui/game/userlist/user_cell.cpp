@@ -150,8 +150,8 @@ void GlobedUserCell::makeBlockButton() {
                         popup->onClose(popup);
 
                         // delay the cration to avoid deadlock
-                        Loader::get()->queueInMainThread([packet = packet, accountData = accountData.makeRoomPreview(0)] {
-                            AdminUserPopup::create(packet->userEntry, accountData)->show();
+                        Loader::get()->queueInMainThread([userEntry = packet->userEntry, accountData = accountData.makeRoomPreview(0)] {
+                            AdminUserPopup::create(userEntry, accountData)->show();
                         });
                     });
                 }, [&nm, this](auto) {

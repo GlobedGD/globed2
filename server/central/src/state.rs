@@ -92,7 +92,11 @@ impl ServerStateData {
 
         let user = db.get_user(account_id).await?;
         if let Some(user) = user {
-            Ok(user.violation_reason.map(|x| x.try_to_string()))
+            if user.is_banned {
+                Ok(user.violation_reason.map(|x| x.try_to_string()))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }

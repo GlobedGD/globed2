@@ -60,7 +60,7 @@ bool AdminLoginPopup::setup() {
 
 void AdminLoginPopup::onRememberPassword(cocos2d::CCObject* sender) {
     auto& settings = GlobedSettings::get();
-    settings.admin.rememberPassword = static_cast<CCMenuItemToggler*>(sender)->isOn();
+    settings.admin.rememberPassword = !static_cast<CCMenuItemToggler*>(sender)->isOn();
     settings.save();
 }
 
