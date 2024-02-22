@@ -40,7 +40,7 @@ pub struct ServerStateData {
     pub config: ServerConfig,
     pub hmac: Hmac<Sha256>,
     pub token_issuer: TokenIssuer,
-    pub active_challenges: HashMap<i32, ActiveChallenge>,
+    pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
 }
 
 impl ServerStateData {
