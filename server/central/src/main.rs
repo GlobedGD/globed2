@@ -22,6 +22,7 @@ use globed_shared::{
     logger::{error, info, log, warn, Logger},
     LogLevelFilter,
 };
+use rocket::catchers;
 use rocket_db_pools::Database;
 use state::{ServerState, ServerStateData};
 use tokio::io::AsyncWriteExt;
@@ -144,6 +145,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // start up rocket
 
     let rocket = rocket::build()
+        .register("/", catchers![web::not_found])
         .mount(mnt_point, web::routes::build_router())
         .manage(state)
         .attach(GlobedDb::init())

@@ -1,6 +1,13 @@
 pub mod misc;
 pub use misc::*;
 
+use rocket::{catch, Request};
+
+#[catch(404)]
+pub fn not_found(_req: &Request) -> &'static str {
+    "not found"
+}
+
 pub mod routes {
     pub mod auth;
     pub mod game_server;
