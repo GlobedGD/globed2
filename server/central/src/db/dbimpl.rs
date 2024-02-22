@@ -47,8 +47,8 @@ impl GlobedDb {
     }
 
     pub async fn get_user_by_name(&self, name: &str) -> Result<Option<UserEntry>> {
-        let res: Option<UserEntryWrapper> = query_as("SELECT * FROM users WHERE user_name = ?")
-            .bind(name)
+        let res: Option<UserEntryWrapper> = query_as("SELECT * FROM users WHERE user_name LIKE ?")
+            .bind(format!("%{name}%"))
             .fetch_optional(&self.0)
             .await?;
 
