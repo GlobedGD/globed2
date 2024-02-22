@@ -1,6 +1,8 @@
 #include "user_popup.hpp"
 
 #include <data/packets/client/admin.hpp>
+#include <data/packets/server/admin.hpp>
+#include <managers/error_queues.hpp>
 #include <net/network_manager.hpp>
 #include <ui/menu/admin/edit_role_popup.hpp>
 #include <ui/general/color_input_popup.hpp>
@@ -26,6 +28,8 @@ bool AdminUserPopup::setup(const UserEntry& userEntry, const std::optional<Playe
     } else {
         this->onProfileLoaded();
     }
+
+    auto& nm = NetworkManager::get();
 
     return true;
 }
@@ -295,6 +299,15 @@ void AdminUserPopup::recreateRoleModifyButton() {
 }
 
 void AdminUserPopup::sendUpdateUser() {
+    // some validation
+    if (userEntry.nameColor.has_value() && userEntry.nameColor->size() < 6) {
+        userEntry.nameColor = std::nullopt;
+    }
+
+    if (!userEntry.userName.has_value()) {
+        userEntry.userName = accountData->name;
+    }
+
     auto& nm = NetworkManager::get();
     nm.send(AdminUpdateUserPacket::create(this->userEntry));
 }
@@ -338,8 +351,11 @@ void AdminUserPopup::getUserInfoFailed(int p0) {
 void AdminUserPopup::userInfoChanged(GJUserScore* p0) {}
 
 void AdminUserPopup::onClose(CCObject* sender) {
-    Popup::onClose(sender);
     GameLevelManager::sharedState()->m_userInfoDelegate = nullptr;
+
+    auto& nm = NetworkManager::get();
+
+    Popup::onClose(sender);
 }
 
 AdminUserPopup* AdminUserPopup::create(const UserEntry& userEntry, const std::optional<PlayerRoomPreviewAccountData>& accountData) {

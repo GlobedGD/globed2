@@ -339,12 +339,10 @@ impl GameServerThread {
 
         // if they are online, update them live, else get their old data from the bridge
 
-        debug!("trying to find thread");
         let thread = self.game_server.get_user_by_id(target_account_id);
         let user_entry = if let Some(thread) = thread.as_ref() {
             thread.user_entry.lock().clone()
         } else {
-            debug!("trying to get user: {}", target_account_id);
             match self.game_server.bridge.get_user_data(&target_account_id.to_string()).await {
                 Ok(x) => x,
                 Err(err) => {
@@ -352,8 +350,6 @@ impl GameServerThread {
                 }
             }
         };
-
-        debug!("evaluating change");
 
         // check what changed
         let c_user_role = packet.user_entry.user_role != user_entry.user_role;
@@ -409,7 +405,6 @@ impl GameServerThread {
             || c_name_color)
         {
             // no changes
-            debug!("no changes, not doing anything");
             return self
                 .send_packet_dynamic(&AdminSuccessMessagePacket { message: "No changes" })
                 .await;
@@ -425,8 +420,6 @@ impl GameServerThread {
 
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
-            debug!("updating user live");
-
             let is_banned = new_user_entry.is_banned;
 
             let res = self
@@ -448,7 +441,6 @@ impl GameServerThread {
 
             res
         } else {
-            debug!("manual bridge request");
             // otherwise just make a manual bridge request
             self.game_server
                 .bridge

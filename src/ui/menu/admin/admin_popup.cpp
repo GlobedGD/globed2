@@ -20,14 +20,6 @@ bool AdminPopup::setup() {
     bool authorized = nm.isAuthorizedAdmin();
     if (!authorized) return false;
 
-    nm.addListener<AdminSuccessMessagePacket>([](auto packet) {
-        ErrorQueues::get().success(packet->message);
-    });
-
-    nm.addListener<AdminErrorPacket>([](auto packet) {
-        ErrorQueues::get().warn(packet->message);
-    });
-
     nm.addListener<AdminUserDataPacket>([](auto packet) {
         AdminUserPopup::create(packet->userEntry, packet->accountData)->show();
     });
@@ -97,8 +89,6 @@ void AdminPopup::onClose(cocos2d::CCObject* sender) {
     Popup::onClose(sender);
 
     auto& nm = NetworkManager::get();
-    nm.removeListener<AdminSuccessMessagePacket>(util::time::seconds(3));
-    nm.removeListener<AdminErrorPacket>(util::time::seconds(3));
     nm.removeListener<AdminUserDataPacket>(util::time::seconds(3));
 }
 

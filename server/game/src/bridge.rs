@@ -38,7 +38,7 @@ impl Display for CentralBridgeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::RequestError(err) => write!(f, "error making web request: {err}"),
-            Self::CentralError((err, response)) => write!(f, "central server returned error {err}: {response}"),
+            Self::CentralError((err, response)) => write!(f, "central error {err}: {response}"),
             Self::InvalidMagic(_) => write!(f, "central server sent invalid magic"),
             Self::MalformedData(err) => write!(f, "failed to decode data sent by the central server: {err}"),
             Self::ProtocolMismatch(proto) => write!(

@@ -122,6 +122,14 @@ NetworkManager::NetworkManager() {
         });
     });
 
+    addBuiltinListener<AdminSuccessMessagePacket>([](auto packet) {
+        ErrorQueues::get().success(packet->message);
+    });
+
+    addBuiltinListener<AdminErrorPacket>([](auto packet) {
+        ErrorQueues::get().warn(packet->message);
+    });
+
     // boot up the threads
 
     threadMain.setLoopFunction(&NetworkManager::threadMainFunc);

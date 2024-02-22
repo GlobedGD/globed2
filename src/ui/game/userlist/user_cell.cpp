@@ -149,7 +149,10 @@ void GlobedUserCell::makeBlockButton() {
                     nm.addListener<AdminUserDataPacket>([this, popup = popup](auto packet) {
                         popup->onClose(popup);
 
-                        AdminUserPopup::create(packet->userEntry, accountData.makeRoomPreview(0))->show();
+                        // delay the cration to avoid deadlock
+                        Loader::get()->queueInMainThread([packet = packet, accountData = accountData.makeRoomPreview(0)] {
+                            AdminUserPopup::create(packet->userEntry, accountData)->show();
+                        });
                     });
                 }, [&nm, this](auto) {
                     nm.removeListenerDelayed<AdminUserDataPacket>(util::time::seconds(3));
