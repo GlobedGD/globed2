@@ -147,7 +147,7 @@ void AdminUserPopup::onProfileLoaded() {
         auto now = util::time::systemNow().time_since_epoch();
         auto expDur = util::time::seconds(userEntry.violationExpiry.value()) - now;
 
-        float sval = static_cast<float>(expDur.count()) / util::time::asSeconds(util::time::days(31));
+        float sval = static_cast<float>(util::time::asSeconds(expDur)) / util::time::asSeconds(util::time::days(31));
         slider->slider->setValue(sval);
 
         auto expiryString = fmt::format("Expires: in {:.1f} days", static_cast<float>(util::time::as<util::time::days>(expDur).count()));
