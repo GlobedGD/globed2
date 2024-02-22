@@ -64,6 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     if !rocket_toml.exists() {
+        info!("Creating a template Rocket.toml file");
         let mut file = tokio::fs::File::create(rocket_toml).await?;
         file.write_all(include_bytes!("Rocket.toml.template")).await?;
     }
@@ -145,7 +146,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // start up rocket
 
     let rocket = rocket::build()
-        .register("/", catchers![web::not_found])
+        .register("/", catchers![web::not_found, web::query_string])
         .mount(mnt_point, web::routes::build_router())
         .manage(state)
         .attach(GlobedDb::init())

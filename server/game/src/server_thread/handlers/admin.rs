@@ -1,4 +1,4 @@
-use globed_shared::{debug, info, warn};
+use globed_shared::{info, warn};
 
 use crate::{
     data::*,
