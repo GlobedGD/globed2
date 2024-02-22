@@ -96,7 +96,7 @@ impl CentralBridge {
         let response = self
             .http_client
             .post(format!("{}gs/boot", self.central_url))
-            .query(&[("pw", self.central_pw.clone())])
+            .header("Authorization", self.central_pw.clone())
             .send()
             .await?;
 
@@ -160,7 +160,7 @@ impl CentralBridge {
         let response = self
             .http_client
             .get(format!("{}gs/user/{}", self.central_url, player))
-            .query(&[("pw", self.central_pw.clone())])
+            .header("Authorization", self.central_pw.clone())
             .send()
             .await?;
 
@@ -190,7 +190,7 @@ impl CentralBridge {
         let response = self
             .http_client
             .post(format!("{}gs/user/update", self.central_url))
-            .query(&[("pw", self.central_pw.clone())])
+            .header("Authorization", self.central_pw.clone())
             .body(body)
             .send()
             .await?;

@@ -10,32 +10,16 @@ use rocket::{get, post, State};
 
 use crate::{config::UserlistMode, db::GlobedDb, state::ServerState, web::*};
 
-fn verify_password(pwd1: &str, pwd2: &str) -> bool {
-    if pwd1.len() != pwd2.len() {
-        return false;
-    }
-
-    let bytes1 = pwd1.as_bytes();
-    let bytes2 = pwd2.as_bytes();
-
-    let mut result = 0u8;
-    for (b1, b2) in bytes1.iter().zip(bytes2.iter()) {
-        result |= b1 ^ b2;
-    }
-
-    result == 0
-}
-
-#[post("/gs/boot?<pw>")]
+#[post("/gs/boot")]
 pub async fn boot(
     state: &State<ServerState>,
-    pw: &str,
+    password: GameServerPasswordGuard,
     ip_address: IpAddr,
     user_agent: GameServerUserAgentGuard<'_>,
 ) -> WebResult<Vec<u8>> {
     let correct = state.state_read().await.config.game_server_password.clone();
 
-    if !verify_password(pw, &correct) {
+    if !password.verify(&correct) {
         unauthorized!("invalid gameserver credentials");
     }
 
@@ -63,17 +47,17 @@ pub async fn boot(
     Ok(bb.into_vec())
 }
 
-#[get("/gs/user/<user>?<pw>")]
+#[get("/gs/user/<user>")]
 pub async fn get_user(
     state: &State<ServerState>,
-    pw: &str,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     user: &str,
     _user_agent: GameServerUserAgentGuard<'_>,
 ) -> WebResult<CheckedEncodableResponder> {
     let correct = state.state_read().await.config.game_server_password.clone();
 
-    if !verify_password(pw, &correct) {
+    if !password.verify(&correct) {
         unauthorized!("invalid gameserver credentials");
     }
 
@@ -95,16 +79,16 @@ pub async fn get_user(
     Ok(CheckedEncodableResponder::new(user))
 }
 
-#[post("/gs/user/update?<pw>", data = "<userdata>")]
+#[post("/gs/user/update?", data = "<userdata>")]
 pub async fn update_user(
     state: &State<ServerState>,
-    pw: &str,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<UserEntry>,
 ) -> WebResult<()> {
     let correct = state.state_read().await.config.game_server_password.clone();
 
-    if !verify_password(pw, &correct) {
+    if !password.verify(&correct) {
         unauthorized!("invalid gameserver credentials");
     }
 
