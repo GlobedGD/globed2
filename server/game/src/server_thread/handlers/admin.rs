@@ -20,9 +20,9 @@ const ROLE_MOD: i32 = 2;
 const ROLE_ADMIN: i32 = 100;
 const ROLE_SUPERADMIN: i32 = 101;
 
-const ADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, Admin role is required.";
-const MOD_REQUIRED_MESSAGE: &str = "unable to perform this action, at least Moderator role is required.";
-const SUPERADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, Superadmin role is required.";
+const ADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, not enough permissions.";
+const MOD_REQUIRED_MESSAGE: &str = "unable to perform this action, not enough permissions";
+const SUPERADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, not enough permissions";
 
 macro_rules! admin_error {
     ($self:expr, $msg:expr) => {

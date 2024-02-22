@@ -76,9 +76,7 @@ void AdminUserPopup::onProfileLoaded() {
         .parent(nameLayout);
 
     // role modify button
-    if (NetworkManager::get().getAdminRole() >= ROLE_ADMIN) {
-        this->recreateRoleModifyButton();
-    }
+    this->recreateRoleModifyButton();
 
     nameLayout->updateLayout();
 
@@ -287,6 +285,8 @@ void AdminUserPopup::recreateRoleModifyButton() {
     roleModifyButton = Build<CCSprite>::createSpriteName(AdminEditRolePopup::roleToSprite(userEntry.userRole).c_str())
         .scale(0.8f)
         .intoMenuItem([this](auto) {
+            if (NetworkManager::get().getAdminRole() < ROLE_ADMIN) return;
+
             AdminEditRolePopup::create(userEntry.userRole, [this](int role) {
                 userEntry.userRole = role;
                 this->recreateRoleModifyButton();
