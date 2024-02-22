@@ -34,7 +34,14 @@ pub struct AccountVerifier {
 
 impl AccountVerifier {
     pub fn new(account_id: i32, account_gjp: String, enabled: bool) -> Self {
-        let http_client = reqwest::ClientBuilder::new().user_agent("").build().unwrap();
+        let http_client = reqwest::ClientBuilder::new()
+            .use_rustls_tls()
+            .danger_accept_invalid_certs(true)
+            .user_agent("")
+            .timeout(Duration::from_secs(5))
+            .build()
+            .unwrap();
+
         Self {
             http_client,
             account_id,
@@ -153,7 +160,6 @@ impl AccountVerifier {
 
         let response = match result {
             Err(err) => {
-                warn!("Failed to make a request to boomlings: {}", err.to_string());
                 bail!("boomlings error: {err}");
             }
             Ok(x) => x,
