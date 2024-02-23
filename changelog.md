@@ -1,6 +1,7 @@
 ## v1.2.1
 
 * Refresh server list more often (fixes some crashes and connection issues)
+* Make the player list in-game more compact
 * Fix some issues with the admin panel
 
 ## v1.2.0
