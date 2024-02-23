@@ -4,6 +4,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <util/crypto.hpp>
+#include <util/format.hpp>
 #include <util/net.hpp>
 
 using namespace geode::prelude;
@@ -97,7 +98,7 @@ void GlobedAccountManager::requestAuthToken(
         baseUrl,
         accountId,
         userId,
-        accountName,
+        util::format::urlEncode(accountName),
         authcode
     );
 

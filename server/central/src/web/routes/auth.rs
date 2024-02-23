@@ -224,7 +224,7 @@ pub async fn challenge_finish(
         }
     }
 
-    trace!("challenge finish from {aname} ({aid} / userid {uid}) with answer: {answer}");
+    trace!("challenge finish from '{aname}' ({aid} / userid {uid}) with answer: {answer}");
 
     let challenge: ActiveChallenge = match state_.active_challenges.get(&user_ip) {
         None => {

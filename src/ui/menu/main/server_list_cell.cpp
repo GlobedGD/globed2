@@ -138,7 +138,7 @@ void ServerListCell::requestTokenAndConnect() {
         csm.getActive()->url,
         gdData->accountId,
         gdData->userId,
-        gdData->accountName,
+        util::format::urlEncode(gdData->accountName),
         authcode
     );
 

@@ -61,4 +61,6 @@ namespace util::format {
 
     std::string toLowercase(const std::string_view str);
     std::string toUppercase(const std::string_view str);
+
+    std::string urlEncode(const std::string_view str);
 }

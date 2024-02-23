@@ -138,4 +138,23 @@ namespace util::format {
 
         return result;
     }
+
+    std::string urlEncode(const std::string_view str) {
+        std::ostringstream ss;
+        ss.fill('0');
+        ss << std::hex;
+
+        for (char c : str) {
+            if (std::isalnum(c) || c == '-' || c== '_' || c == '.' || c == '~') {
+                ss << c;
+                continue;
+            }
+
+            ss << std::uppercase;
+            ss << '%' << std::setw(2) << static_cast<int>((unsigned char)c);
+            ss << std::nouppercase;
+        }
+
+        return ss.str();
+    }
 }
