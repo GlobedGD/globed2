@@ -390,27 +390,14 @@ class SmartThread {
     using TFunc = std::function<void (TFuncArgs...)>;
 public:
     SmartThread() {
-        _storage = new Storage;
+        _storage = std::make_unique<Storage>();
     }
 
     SmartThread(const SmartThread&) = delete;
     SmartThread& operator=(const SmartThread&) = delete;
 
-    SmartThread(SmartThread&& other) noexcept :
-        _handle(std::move(other._handle)),
-        _storage(other._storage) {
-            other._storage = nullptr;
-        }
-
-    SmartThread& operator=(SmartThread&& other) {
-        if (this != &other) {
-            _handle = std::move(other._handle);
-            _storage = other._storage;
-            other._storage = nullptr;
-        }
-
-        return *this;
-    }
+    SmartThread(SmartThread&& other) noexcept = default;
+    SmartThread& operator=(SmartThread&& other) noexcept = default;
 
     SmartThread(const std::string_view name) {
         this->setName(name);
@@ -436,7 +423,7 @@ public:
 
     void start(TFuncArgs&&... args) {
         _storage->_stopped.clear();
-        _handle = std::thread([_storage = _storage](TFuncArgs&&... args) {
+        _handle = std::thread([_storage = std::move(_storage)](TFuncArgs&&... args) {
             if (!_storage->threadName.empty()) {
                 geode::utils::thread::setName(_storage->threadName);
             }
@@ -470,18 +457,17 @@ public:
         this->join();
     }
 
-    // Detach the thread and let it execute even after this `SmartThread` object is destructed.
-    // NOTE: this leaks resources. Only call this method if you actually want the thread to run forever.
+    // Detach the thread and let it execute even after this `SmartThread` object is destructed. This `SmartThread` instance must not be used afterwards.
+    // NOTE: this intentionally leaks resources. The thread will be impossible to stop unless an exception occurs.
     void detach() {
         if (_handle.joinable()) _handle.detach();
         _handle = {};
         // leak the storage
-        _storage = nullptr;
+        _storage.release();
     }
 
     ~SmartThread() {
         this->stopAndWait();
-        delete _storage;
     }
 
 private:
@@ -492,7 +478,7 @@ private:
     };
 
     std::thread _handle;
-    Storage* _storage = nullptr;
+    std::unique_ptr<Storage> _storage = nullptr;
 };
 
 template <>
