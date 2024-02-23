@@ -1,6 +1,8 @@
 ## v1.2.2
 
 * Don't record audio if voice chat is disabled (oops)
+* Try to fix crashes that don't show an error popup
+* Fix a crash when connecting to an invalid server
 
 ## v1.2.1
 

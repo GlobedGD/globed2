@@ -40,7 +40,8 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacket(bool onTcpConnection, boo
         fromConnected = recvResult.fromServer;
     }
 
-    GLOBED_REQUIRE_SAFE(received >= PacketHeader::SIZE, "packet is missing a header")
+    GLOBED_REQUIRE_SAFE(received >= 0 && received >= PacketHeader::SIZE, "packet is missing a header")
+    GLOBED_REQUIRE_SAFE(received < BUF_SIZE, "packet is too large")
 
     ByteBuffer buf(buffer, received);
 
