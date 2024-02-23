@@ -260,7 +260,7 @@ impl AccountVerifier {
             let title = String::from_utf8(title)?;
 
             let message_id = message_id.unwrap().parse::<i32>()?;
-            let author_name = author_name.unwrap();
+            let author_name = author_name.unwrap().trim_end();
             let author_id = author_id.unwrap().parse::<i32>()?;
             let author_user_id = author_user_id.unwrap().parse::<i32>()?;
             let age = age.unwrap();

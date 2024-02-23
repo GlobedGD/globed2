@@ -123,7 +123,7 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
 
     web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
-        .timeout(util::time::seconds(5))
+        .timeout(util::time::seconds(10))
         .post(url)
         .text()
         .then([this, &am](std::string& response) {

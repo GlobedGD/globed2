@@ -49,7 +49,7 @@ pub async fn totp_login(
     state: &State<ServerState>,
     aid: i32,
     uid: i32,
-    aname: &str,
+    mut aname: &str,
     code: &str,
     db: &GlobedDb,
     ip: IpAddr,
@@ -57,6 +57,8 @@ pub async fn totp_login(
     cfip: CloudflareIPGuard,
 ) -> WebResult<String> {
     check_maintenance!(state);
+
+    aname = aname.trim_end();
 
     let state_ = state.state_read().await;
     get_user_ip!(state_, ip, cfip, _ip);
@@ -96,13 +98,15 @@ pub async fn challenge_start(
     state: &State<ServerState>,
     aid: i32,
     uid: i32,
-    aname: &str,
+    mut aname: &str,
     ip: IpAddr,
     db: &GlobedDb,
     _ua: ClientUserAgentGuard<'_>,
     cfip: CloudflareIPGuard,
 ) -> WebResult<String> {
     check_maintenance!(state);
+
+    aname = aname.trim_end();
 
     let mut state = state.state_write().await;
     get_user_ip!(state, ip, cfip, user_ip);
@@ -194,7 +198,7 @@ pub async fn challenge_finish(
     state: &State<ServerState>,
     aid: i32,
     uid: i32,
-    aname: &str,
+    mut aname: &str,
     answer: &str,
     systime: u64,
     ip: IpAddr,
@@ -202,6 +206,8 @@ pub async fn challenge_finish(
     cfip: CloudflareIPGuard,
 ) -> WebResult<String> {
     check_maintenance!(state);
+
+    aname = aname.trim_end();
 
     let state_ = state.state_read().await;
     get_user_ip!(state_, ip, cfip, user_ip);

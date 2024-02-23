@@ -3,7 +3,7 @@ use rocket::{
     fairing::{self, AdHoc},
     Build, Rocket,
 };
-use rocket_db_pools::{sqlx, Database};
+use rocket_db_pools::Database;
 
 mod dbimpl;
 

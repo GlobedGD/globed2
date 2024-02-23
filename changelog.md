@@ -3,6 +3,7 @@
 * Don't record audio if voice chat is disabled (oops)
 * Try to fix crashes that don't show an error popup
 * Fix a crash when connecting to an invalid server
+* Fix login issues when the username has spaces
 * Add a setting that lets you change opacity of the icons under the progressbar (or edge of the screen in platformer)
 * Scale down the name of a server if it's too long
 

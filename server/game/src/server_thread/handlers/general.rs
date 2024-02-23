@@ -1,5 +1,3 @@
-use std::sync::atomic::Ordering;
-
 use super::*;
 use crate::{data::*, server_thread::GameServerThread};
 
