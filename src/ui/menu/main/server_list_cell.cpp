@@ -27,7 +27,6 @@ bool ServerListCell::init(const GameServer& gsview, bool active) {
 
     Build<CCLabelBMFont>::create("", "bigFont.fnt")
         .anchorPoint(0.f, 0.f)
-        .scale(0.7f)
         .parent(namePingLayer)
         .store(labelName);
 
@@ -61,6 +60,8 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
     this->active = active;
 
     labelName->setString(gsview.name.c_str());
+    labelName->limitLabelWidth(205.f, 0.7f, 0.1f);
+
     labelPing->setString(fmt::format("{} ms", gsview.ping == -1 ? "?" : std::to_string(gsview.ping)).c_str());
     labelExtra->setString(fmt::format("Region: {}, players: {}", gsview.region, gsview.playerCount).c_str());
 

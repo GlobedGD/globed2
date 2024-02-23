@@ -3,6 +3,7 @@
 * Don't record audio if voice chat is disabled (oops)
 * Try to fix crashes that don't show an error popup
 * Fix a crash when connecting to an invalid server
+* Scale down the name of a server if it's too long
 
 ## v1.2.1
 
