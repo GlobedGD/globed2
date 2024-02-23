@@ -136,12 +136,7 @@ bool GlobedMenuLayer::init() {
 
     auto& gsm = GameServerManager::get();
 
-    if (gsm.count() == 0) {
-        this->requestServerList();
-    }
-
-    gsm.pendingChanges = true; // force ping all servers
-    this->refreshServerList(0.f);
+    this->requestServerList();
 
     return true;
 }

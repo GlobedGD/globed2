@@ -2,6 +2,14 @@
 
 least chaotic thing about this repo tbh
 
+## v1.2.0 (both)
+
+* switched to a different web framework (Rocket), now there is an additional Rocket.toml file with configuration
+* added an sqlite database for persistent storage, `special_users` and `userlist` keys in the configuration are now replaced by that
+* added a lot of admin abilities
+* fixed a loophole allowing account impersonation
+* clarified some error messages
+
 ## game v1.1.2
 
 * added a TCP keepalive packet.

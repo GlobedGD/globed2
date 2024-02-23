@@ -8,8 +8,8 @@
 
 class AdminUserPopup : public geode::Popup<const UserEntry&, const std::optional<PlayerRoomPreviewAccountData>&>, public UserInfoDelegate {
 public:
-    static constexpr float POPUP_WIDTH = 400.f;
-    static constexpr float POPUP_HEIGHT = 280.f;
+    static constexpr float POPUP_WIDTH = 300.f;
+    static constexpr float POPUP_HEIGHT = 220.f;
     static constexpr int TAG_BAN = 41;
     static constexpr int TAG_MUTE = 42;
     static constexpr int TAG_WHITELIST = 43;

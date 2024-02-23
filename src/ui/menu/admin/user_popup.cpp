@@ -94,7 +94,7 @@ void AdminUserPopup::onProfileLoaded() {
 
     // ban, mute, whitelist buttons and duration slider
     auto* violationsLayout = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setGap(3.f))
+        .layout(RowLayout::create()->setGap(5.f))
         .id("violations-layout"_spr)
         .parent(rootLayout)
         .collect();
@@ -119,7 +119,7 @@ void AdminUserPopup::onProfileLoaded() {
         .collect();
     btnMuted->toggle(userEntry.isMuted);
 
-    auto whitelistOff = Build<CCSprite>::createSpriteName("GJ_listAddBtn_001.png")
+    auto whitelistOff = Build<CCSprite>::createSpriteName("whitelist-icon.png"_spr)
         .scale(0.75f);
     auto whitelistOn = Build<CCSprite>::createSpriteName("accountBtn_myLists_001.png")
         .scale(0.75f);
@@ -216,6 +216,7 @@ void AdminUserPopup::onProfileLoaded() {
     // apply button
 
     Build<ButtonSprite>::create("Update", "goldFont.fnt", "GJ_button_01.png", 0.9f)
+        .scale(0.8f)
         .intoMenuItem([this](auto) {
             this->sendUpdateUser();
         })

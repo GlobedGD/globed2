@@ -128,7 +128,7 @@ pub async fn challenge_start(
     // check if there already is a challenge
     if let Some(challenge) = state.active_challenges.get(&user_ip) {
         // if it's the same account ID then it's OK, return the same challenge
-        if challenge.account_id == aid {
+        if challenge.account_id == aid && challenge.user_id == uid && challenge.name == aname {
             should_return_existing = true;
         } else {
             let passed_time = current_time - challenge.started;
@@ -235,14 +235,26 @@ pub async fn challenge_finish(
     .clone();
 
     if challenge.account_id != aid {
+        warn!(
+            "failed to validate challenge: requested for accountid {} but {aid} completed",
+            challenge.account_id
+        );
         unauthorized!("challenge was requested for a different account id, not validating");
     }
 
     if challenge.user_id != uid {
+        warn!(
+            "failed to validate challenge: requested for userid {} but {uid} completed",
+            challenge.user_id
+        );
         unauthorized!("challenge was requested for a different user id, not validating");
     }
 
     if challenge.name != aname {
+        warn!(
+            "failed to validate challenge: requested for {} but {aname} completed",
+            challenge.name
+        );
         unauthorized!("challenge was requested for a different account name, not validating");
     }
 

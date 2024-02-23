@@ -1,3 +1,8 @@
+## v1.2.1
+
+* Refresh server list more often (fixes some crashes and connection issues)
+* Fix some issues with the admin panel
+
 ## v1.2.0
 
 * Fix deadlock on packet limit test failure

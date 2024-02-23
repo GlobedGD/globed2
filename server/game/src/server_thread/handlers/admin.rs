@@ -335,7 +335,9 @@ impl GameServerThread {
             return Ok(());
         }
 
-        let target_account_id = packet.user_entry.account_id;
+        let mut new_user_entry = packet.user_entry;
+
+        let target_account_id = new_user_entry.account_id;
 
         // if they are online, update them live, else get their old data from the bridge
 
@@ -351,19 +353,24 @@ impl GameServerThread {
             }
         };
 
+        // if not admin, cant update others password
+        if role < ROLE_ADMIN {
+            new_user_entry.admin_password = user_entry.admin_password.clone();
+        }
+
         // check what changed
-        let c_user_role = packet.user_entry.user_role != user_entry.user_role;
-        let c_admin_password = packet.user_entry.admin_password != user_entry.admin_password;
-        let c_is_banned = packet.user_entry.is_banned != user_entry.is_banned;
-        let c_is_muted = packet.user_entry.is_muted != user_entry.is_muted;
-        let c_is_whitelisted = packet.user_entry.is_whitelisted != user_entry.is_whitelisted;
-        let c_violation_reason = packet.user_entry.violation_reason != user_entry.violation_reason;
-        let c_violation_expiry = packet.user_entry.violation_expiry != user_entry.violation_expiry;
-        let c_name_color = packet.user_entry.name_color != user_entry.name_color;
-        let c_user_name = packet.user_entry.user_name != user_entry.user_name;
+        let c_user_role = new_user_entry.user_role != user_entry.user_role;
+        let c_admin_password = new_user_entry.admin_password != user_entry.admin_password;
+        let c_is_banned = new_user_entry.is_banned != user_entry.is_banned;
+        let c_is_muted = new_user_entry.is_muted != user_entry.is_muted;
+        let c_is_whitelisted = new_user_entry.is_whitelisted != user_entry.is_whitelisted;
+        let c_violation_reason = new_user_entry.violation_reason != user_entry.violation_reason;
+        let c_violation_expiry = new_user_entry.violation_expiry != user_entry.violation_expiry;
+        let c_name_color = new_user_entry.name_color != user_entry.name_color;
+        let c_user_name = new_user_entry.user_name != user_entry.user_name;
 
         // first check for actions that require super admin rights
-        if role < ROLE_SUPERADMIN && (c_user_role && packet.user_entry.user_role >= ROLE_ADMIN) {
+        if role < ROLE_SUPERADMIN && (c_user_role && new_user_entry.user_role >= ROLE_ADMIN) {
             admin_error!(self, SUPERADMIN_REQUIRED_MESSAGE);
         }
 
@@ -378,13 +385,13 @@ impl GameServerThread {
         }
 
         // validation
-        let target_role = packet.user_entry.user_role;
+        let target_role = new_user_entry.user_role;
         if !(target_role == ROLE_USER || target_role == ROLE_HELPER || target_role == ROLE_MOD || target_role == ROLE_ADMIN)
         {
             admin_error!(self, "attempting to assign an invalid role");
         }
 
-        if let Some(color) = packet.user_entry.name_color.as_ref() {
+        if let Some(color) = new_user_entry.name_color.as_ref() {
             if color.parse::<Color3B>().is_err() {
                 admin_error!(self, &format!("attempting to assign an invalid name color: {color}"));
             }
@@ -409,8 +416,6 @@ impl GameServerThread {
                 .send_packet_dynamic(&AdminSuccessMessagePacket { message: "No changes" })
                 .await;
         }
-
-        let mut new_user_entry = packet.user_entry;
 
         // if not banned and not muted, clear the violation reason and duration
         if !new_user_entry.is_banned && !new_user_entry.is_muted {
