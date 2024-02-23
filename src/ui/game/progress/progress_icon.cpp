@@ -1,5 +1,7 @@
 #include "progress_icon.hpp"
 
+#include <managers/settings.hpp>
+
 using namespace geode::prelude;
 
 bool PlayerProgressIcon::init() {
@@ -14,6 +16,8 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
     if (line) line->removeFromParent();
     if (playerIcon) playerIcon->removeFromParent();
 
+    auto& settings = GlobedSettings::get();
+
     auto gm = GameManager::get();
     auto color1 = gm->colorForIdx(data.color1);
     auto color2 = gm->colorForIdx(data.color2);
@@ -26,6 +30,7 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
     Build<SimplePlayer>::create(data.cube)
         .color(color1)
         .secondColor(color2)
+        .opacity(forceOnTop ? 255 : static_cast<uint8_t>(settings.levelUi.progressOpacity * 255))
         .scale(0.5f)
         .pos(0.f, -10.f)
         .parent(this)
@@ -58,6 +63,8 @@ void PlayerProgressIcon::toggleLine(bool enabled) {
 
 void PlayerProgressIcon::setForceOnTop(bool state) {
     this->forceOnTop = state;
+    auto& settings = GlobedSettings::get();
+    this->playerIcon->setOpacity(forceOnTop ? 255 : static_cast<uint8_t>(settings.levelUi.progressOpacity * 255));
 }
 
 PlayerProgressIcon* PlayerProgressIcon::create() {

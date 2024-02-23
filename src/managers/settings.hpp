@@ -41,6 +41,7 @@ public:
     struct LevelUI {
         GSETTING(bool, progressIndicators, true);
         GSETTING(bool, progressPointers, true); // unused
+        GSETTING(float, progressOpacity, 1.0f);
     };
 
     struct Players {

@@ -1,5 +1,6 @@
 #include "progress_arrow.hpp"
 
+#include <managers/settings.hpp>
 #include <util/math.hpp>
 
 using namespace geode::prelude;
@@ -15,6 +16,8 @@ bool PlayerProgressArrow::init() {
 void PlayerProgressArrow::updateIcons(const PlayerIconData& data) {
     if (playerIcon) playerIcon->removeFromParent();
 
+    auto& settings = GlobedSettings::get();
+
     auto gm = GameManager::get();
     auto color1 = gm->colorForIdx(data.color1);
     auto color2 = gm->colorForIdx(data.color2);
@@ -22,6 +25,7 @@ void PlayerProgressArrow::updateIcons(const PlayerIconData& data) {
     Build<SimplePlayer>::create(data.cube)
         .color(color1)
         .secondColor(color2)
+        .opacity(static_cast<uint8_t>(settings.levelUi.progressOpacity * 255))
         .scale(0.5f)
         .parent(this)
         .store(playerIcon);
@@ -32,11 +36,11 @@ void PlayerProgressArrow::updateIcons(const PlayerIconData& data) {
 }
 
 void PlayerProgressArrow::updatePosition(
-        cocos2d::CCPoint cameraOrigin,
-        cocos2d::CCSize cameraCoverage,
-        cocos2d::CCPoint visibleOrigin,
-        cocos2d::CCSize visibleCoverage,
-        cocos2d::CCPoint playerPosition,
+        CCPoint cameraOrigin,
+        CCSize cameraCoverage,
+        CCPoint visibleOrigin,
+        CCSize visibleCoverage,
+        CCPoint playerPosition,
         float zoom
 ) {
     auto cameraCenter = cameraOrigin + cameraCoverage / 2.f;
@@ -67,7 +71,6 @@ void PlayerProgressArrow::updatePosition(
     this->setVisible(true);
 
     float angle = std::atan2(playerPosition.y - cameraCenter.y, playerPosition.x - cameraCenter.x);
-    float angleDegrees = angle * (180.0f / M_PI);
     float distance = std::sqrt(std::pow(playerPosition.x - cameraCenter.x, 2) + std::pow(playerPosition.y - cameraCenter.y, 2));
 
     distance *= zoom;
@@ -79,8 +82,6 @@ void PlayerProgressArrow::updatePosition(
     indicatorY = std::max(visibleBottom + 10.f, std::min(visibleTop - 10.f, indicatorY));
 
     this->setPosition(indicatorX, indicatorY);
-
-    // arrowWrapper->setRotation(angleDegrees);
 }
 
 PlayerProgressArrow* PlayerProgressArrow::create() {

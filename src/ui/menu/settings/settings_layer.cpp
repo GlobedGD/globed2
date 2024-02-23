@@ -101,6 +101,10 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
 
     MAKE_HEADER("Level UI");
     MAKE_SETTING(levelUi, progressIndicators, "Progress icons", "Show small icons under the progressbar (or at the edge of the screen in platformer), indicating how far other players are in the level.");
+    MAKE_SETTING_LIM(levelUi, progressOpacity, "Indicator opacity", "Changes the opacity of the icons that represent other players.", {
+        .floatMin = 0.f,
+        .floatMax = 1.f
+    });
 
     MAKE_HEADER("Players");
     MAKE_SETTING_LIM(players, playerOpacity, "Opacity", "Opacity of other players.", {
