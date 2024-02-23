@@ -101,10 +101,12 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     // start passive voice recording
     // TODO temp remove on android because it crashes the game :fire:
-#ifndef GEODE_IS_ANDROID
-    auto& vrm = VoiceRecordingManager::get();
-    vrm.startRecording();
-#endif
+# ifndef GEODE_IS_ANDROID
+    if (settings.communication.voiceEnabled) {
+        auto& vrm = VoiceRecordingManager::get();
+        vrm.startRecording();
+    }
+# endif // GEODE_IS_ANDROID
 
 #endif // GLOBED_VOICE_SUPPORT
 

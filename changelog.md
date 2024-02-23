@@ -1,3 +1,7 @@
+## v1.2.2
+
+* Don't record audio if voice chat is disabled (oops)
+
 ## v1.2.1
 
 * Refresh server list more often (fixes some crashes and connection issues)

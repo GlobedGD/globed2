@@ -25,7 +25,15 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES})
 # Windows - Include winsock
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
-    add_definitions(/FI"WinSock2.h")
+    if (MSVC)
+        add_definitions(/FI"WinSock2.h")
+    else()
+        add_definitions("-include WinSock2.h")
+        add_compile_options("-mpclmul")
+        add_compile_options("-maes")
+        add_compile_options("-mavx512f")
+        add_compile_options("-mavx512bw")
+    endif()
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
