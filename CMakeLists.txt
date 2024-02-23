@@ -29,13 +29,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         add_definitions(/FI"WinSock2.h")
     else()
         add_definitions("-include WinSock2.h")
-        add_compile_options("-mpclmul")
-        add_compile_options("-maes")
-        add_compile_options("-mavx512f")
-        add_compile_options("-mavx512bw")
+        set(GLOBED_WINDOWS_CLANG ON)
     endif()
 endif()
 
+# Clang/GCC - suppress some warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_definitions("-Wno-inaccessible-base")
     add_definitions("-Wno-pointer-sign")
@@ -64,6 +62,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 CPMAddPackage("gh:dankmeme01/uibuilder#main")
 CPMAddPackage("gh:xiph/opus#master")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
+
+# Windows Clang - ensure 32-bitness for opus and libsodium and enable additional instruction sets
+if (GLOBED_WINDOWS_CLANG)
+    target_compile_options(opus PRIVATE "-m32")
+    target_compile_options(sodium PRIVATE "-m32" "-maes" "-mpclmul" "-msse4.1")
+endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
 
