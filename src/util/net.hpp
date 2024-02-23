@@ -33,4 +33,7 @@ namespace util::net {
 
     // getaddrinfo
     Result<std::string> getaddrinfo(const std::string_view hostname);
+
+    // Given a port number and either an IP address or a domain name, initialize a sockaddr struct
+    Result<> initSockaddr(const std::string_view address, unsigned short port, sockaddr_in& dest);
 }

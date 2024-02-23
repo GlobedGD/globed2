@@ -15,17 +15,8 @@ UdpSocket::~UdpSocket() {
 
 Result<> UdpSocket::connect(const std::string_view serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
-    destAddr_.sin_port = htons(port);
 
-    bool validIp = (inet_pton(AF_INET, serverIp.data(), &destAddr_.sin_addr) > 0);
-    // if not a valid IPv4, assume it's a domain and try getaddrinfo
-    if (!validIp) {
-        auto result = util::net::getaddrinfo(serverIp);
-        GLOBED_UNWRAP_INTO(result, auto ip);
-
-        validIp = (inet_pton(AF_INET, ip.c_str(), &destAddr_.sin_addr) > 0);
-        GLOBED_REQUIRE_SAFE(validIp, "invalid address was returned by getaddrinfo")
-    }
+    GLOBED_UNWRAP(util::net::initSockaddr(serverIp, port, destAddr_))
 
     connected = true;
     return Ok();
@@ -48,11 +39,8 @@ Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const std
     std::unique_ptr<sockaddr_in> addr = std::make_unique<sockaddr_in>();
 
     addr->sin_family = AF_INET;
-    addr->sin_port = htons(port);
 
-    log::debug("sendto ({}:{}, {} bytes)", address, port, dataSize);
-
-    GLOBED_REQUIRE_SAFE(inet_pton(AF_INET, std::string(address).c_str(), &addr->sin_addr) > 0, "tried a udp send to an invalid address")
+    GLOBED_UNWRAP(util::net::initSockaddr(address, port, *addr))
 
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr));
 

@@ -100,8 +100,11 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     vm.setRecordBufferCapacity(settings.communication.lowerAudioLatency ? EncodedAudioFrame::LIMIT_LOW_LATENCY : EncodedAudioFrame::LIMIT_REGULAR);
 
     // start passive voice recording
+    // TODO temp remove on android because it crashes the game :fire:
+#ifndef GEODE_IS_ANDROID
     auto& vrm = VoiceRecordingManager::get();
     vrm.startRecording();
+#endif
 
 #endif // GLOBED_VOICE_SUPPORT
 

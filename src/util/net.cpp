@@ -107,7 +107,7 @@ namespace util::net {
 
         struct addrinfo* result;
 
-        if (0 != ::getaddrinfo(hostname.data(), nullptr, &hints, &result)) {
+        if (0 != ::getaddrinfo(std::string(hostname).c_str(), nullptr, &hints, &result)) {
             return Err(util::net::lastErrorString());
         }
 
@@ -119,10 +119,34 @@ namespace util::net {
         std::string out;
         out.resize(16);
 
-        inet_ntop(AF_INET, &ipaddr->sin_addr, out.data(), 16);
-
+        auto ntopResult = inet_ntop(AF_INET, &ipaddr->sin_addr, out.data(), 16);
         ::freeaddrinfo(result);
+
+        if (ntopResult == nullptr) {
+            return Err(util::net::lastErrorString());
+        }
+
+        out.resize(std::strlen(out.c_str()));
+
         return Ok(out);
+    }
+
+    Result<> initSockaddr(const std::string_view address, unsigned short port, sockaddr_in& dest) {
+        dest.sin_port = htons(port);
+
+        bool validIp = (inet_pton(AF_INET, std::string(address).c_str(), &dest.sin_addr) > 0);
+        if (validIp) {
+            return Ok();
+        } else {
+            // if not a valid IPv4, assume it's a domain and try getaddrinfo
+            auto result = util::net::getaddrinfo(address);
+            GLOBED_UNWRAP_INTO(result, auto ip);
+
+            validIp = (inet_pton(AF_INET, ip.c_str(), &dest.sin_addr) > 0);
+            GLOBED_REQUIRE_SAFE(validIp, "invalid address was returned by getaddrinfo")
+
+            return Ok();
+        }
     }
 }
 

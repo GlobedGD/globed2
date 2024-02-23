@@ -14,6 +14,10 @@
 #include <util/data.hpp>
 #include <util/time.hpp>
 
+// forward decl because we can't include the header
+namespace util::debug {
+    void delayedSuicide(const std::string_view);
+}
 
 namespace util::sync {
 
@@ -437,8 +441,13 @@ public:
                 geode::utils::thread::setName(_storage->threadName);
             }
 
-            while (!_storage->_stopped) {
-                _storage->loopFunc(args...);
+            try {
+                while (!_storage->_stopped) {
+                    _storage->loopFunc(args...);
+                }
+            } catch (const std::exception& e) {
+                log::error("Terminating. Uncaught exception from thread {}: {}", _storage->threadName, e.what());
+                util::debug::delayedSuicide(fmt::format("Uncaught exception from thread \"{}\": {}", _storage->threadName, e.what()));
             }
         }, std::forward<TFuncArgs>(args)...);
     }

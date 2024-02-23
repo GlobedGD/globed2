@@ -244,7 +244,7 @@ pub async fn challenge_finish(
 
     if challenge.user_id != uid {
         warn!(
-            "failed to validate challenge: requested for userid {} but {uid} completed",
+            "failed to validate challenge ({aid}): requested for userid {} but {uid} completed",
             challenge.user_id
         );
         unauthorized!("challenge was requested for a different user id, not validating");
@@ -252,7 +252,7 @@ pub async fn challenge_finish(
 
     if challenge.name != aname {
         warn!(
-            "failed to validate challenge: requested for {} but {aname} completed",
+            "failed to validate challenge ({aid}): requested for {} but {aname} completed",
             challenge.name
         );
         unauthorized!("challenge was requested for a different account name, not validating");

@@ -14,17 +14,8 @@ TcpSocket::~TcpSocket() {
 
 Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
-    destAddr_.sin_port = htons(port);
 
-    bool validIp = (inet_pton(AF_INET, serverIp.data(), &destAddr_.sin_addr) > 0);
-    // if not a valid IPv4, assume it's a domain and try getaddrinfo
-    if (!validIp) {
-        auto result = util::net::getaddrinfo(serverIp);
-        GLOBED_UNWRAP_INTO(result, auto ip)
-
-        validIp = (inet_pton(AF_INET, ip.c_str(), &destAddr_.sin_addr) > 0);
-        GLOBED_REQUIRE_SAFE(validIp, "invalid address was returned by getaddrinfo")
-    }
+    GLOBED_UNWRAP(util::net::initSockaddr(serverIp, port, destAddr_))
 
     // create socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);

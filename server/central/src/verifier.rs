@@ -100,7 +100,22 @@ impl AccountVerifier {
             }
 
             match self.flush_cache().await {
-                Ok(()) => {}
+                Ok(()) => {
+                    if cfg!(debug_assertions) {
+                        trace!("refreshed account verification cache");
+                        let cache = self.message_cache.lock();
+                        for message in &*cache {
+                            trace!(
+                                "{} ({} / userid {}): {}",
+                                message.name,
+                                message.account_id,
+                                message.user_id,
+                                message.authcode
+                            );
+                        }
+                        trace!("------------------------------------");
+                    }
+                }
                 Err(err) => {
                     warn!("failed to refresh account verification cache: {err}");
                 }

@@ -119,6 +119,8 @@ namespace util::debug {
     [[noreturn]] void suicide();
 #endif
 
+    void delayedSuicide(const std::string_view);
+
     // like log::debug but with precise timestamps.
     void timedLog(const std::string_view message);
 
@@ -162,4 +164,5 @@ namespace util::debug {
     std::optional<ptrdiff_t> searchMember(const void* structptr, const T& value, size_t maxSize) {
         return searchMember(structptr, reinterpret_cast<const uint8_t*>(&value), sizeof(T), alignof(T), maxSize);
     }
+
 }

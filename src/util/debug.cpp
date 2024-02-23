@@ -170,6 +170,12 @@ namespace util::debug {
     }
 #endif
 
+    void delayedSuicide(const std::string_view message) {
+        Loader::get()->queueInMainThread([message = std::string(message)] {
+            throw std::runtime_error(fmt::format("Globed error: {}", message));
+        });
+    }
+
     void timedLog(const std::string_view message) {
         log::info("\r[{}] [Globed] {}", util::format::formatDateTime(util::time::systemNow()), message);
     }

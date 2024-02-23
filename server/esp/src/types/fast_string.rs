@@ -43,6 +43,7 @@ impl<const N: usize> FastString<N> {
     #[allow(clippy::should_implement_trait)]
     /// Converts a string slice to a `FastString`. Panics if there isn't enough capacity to store the data.
     /// If that is undesired, use `try_into` or `try_from` instead.
+    #[inline]
     pub fn from_str(data: &str) -> Self {
         Self::from_slice(data.as_bytes())
     }
