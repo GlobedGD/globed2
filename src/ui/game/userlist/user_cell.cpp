@@ -24,6 +24,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     auto gm = GameManager::get();
 
     auto sp = Build<SimplePlayer>::create(data.icons.cube)
+        .scale(0.6f)
         .playerFrame(data.icons.cube, IconType::Cube)
         .color(gm->colorForIdx(data.icons.color1))
         .secondColor(gm->colorForIdx(data.icons.color2))
@@ -38,7 +39,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .store(menu);
 
     auto* nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
-        .limitLabelWidth(140.f, 0.6f, 0.1f)
+        .limitLabelWidth(140.f, 0.5f, 0.1f)
         .collect();
 
     auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
@@ -62,7 +63,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .id("percentage-label"_spr)
         .store(percentageLabel);
 
-    this->makeBlockButton();
+    this->makeButtons();
 
     this->refreshData(entry);
     this->schedule(schedule_selector(GlobedUserCell::updateVisualizer), 1.f / 60.f);
@@ -94,7 +95,7 @@ void GlobedUserCell::updateVisualizer(float dt) {
 #endif // GLOBED_VOICE_SUPPORT
 }
 
-void GlobedUserCell::makeBlockButton() {
+void GlobedUserCell::makeButtons() {
     if (buttonsWrapper) buttonsWrapper->removeFromParent();
     Build<CCMenu>::create()
         .anchorPoint(1.0f, 0.5f)
@@ -113,8 +114,8 @@ void GlobedUserCell::makeBlockButton() {
         auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
         bool isUnblocked = pl->shouldLetMessageThrough(accountData.id);
 
-        Build<CCSprite>::createSpriteName(isUnblocked ? "GJ_fxOnBtn_001.png" : "GJ_fxOffBtn_001.png")
-            .scale(0.8f)
+        Build<CCSprite>::createSpriteName(isUnblocked ? "icon-mute.png"_spr : "icon-unmute.png"_spr)
+            .scale(0.475f)
             .intoMenuItem([isUnblocked, this](auto) {
                 auto& bl = BlockListManager::get();
                 isUnblocked ? bl.blacklist(this->accountData.id) : bl.whitelist(this->accountData.id);
@@ -128,7 +129,7 @@ void GlobedUserCell::makeBlockButton() {
                     vpm.setVolume(this->accountData.id, settings.communication.voiceVolume);
                 }
 
-                this->makeBlockButton();
+                this->makeButtons();
             })
             .parent(buttonsWrapper)
             .id("block-button"_spr)
@@ -140,7 +141,7 @@ void GlobedUserCell::makeBlockButton() {
     // admin menu button
     if (NetworkManager::get().isAuthorizedAdmin()) {
         Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
-            .scale(0.7f)
+            .scale(0.4f)
             .intoMenuItem([this](auto) {
                 // load the data from the server
                 auto& nm = NetworkManager::get();

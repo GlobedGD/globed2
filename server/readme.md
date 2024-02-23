@@ -15,7 +15,7 @@ After that is done, you have 2 paths:
 * If you want to setup a small, simple server you can jump to the [standalone section](#standalone)
 * If you want to setup a bigger or more configurable server, keep reading.
 
-First, you want to launch the central server binary. It should create a file called `central-conf.json` in the folder you ran it from. This is where you can configure everything about the server. For documentation about all the options, jump to the [configuration section](#central-server-configuration), however for now we only need the option `game_server_password`.
+First, you want to launch the central server binary. It should create two files called `central-conf.json` and `Rocket.toml` in the folder you ran it from. This is where you can configure everything about the server. For documentation about all the options, jump to the [configuration section](#central-server-configuration), however for now we only need the option `game_server_password`.
 
 With your central server properly setup and started, jump to the [bridged](#bridged) section of the game server configuration and launch the game server, with the password that you configured earlier.
 
@@ -29,13 +29,13 @@ note: if you are not on Windows, in the following examples replace `set` with `e
 
 If you want to spin up a quick, standalone game server, without needing to start a central server, then it is as simple as running the `globed-game-server.exe` executable directly.
 
-If you want to change the address then you'll have to run the executable with an additional argument like so:
+If you want to change the port then you'll have to run the executable with an additional argument like so:
 ```sh
-# replace 0.0.0.0:41001 with your address
+# replace 0.0.0.0:41001 with your address and port
 globed-game-server.exe 0.0.0.0:41001
 ```
 
-To connect to your server, you want to use the Direct Connection option inside the server switcher in-game.
+To connect to your server, you want to use the Direct Connection option inside the server switcher in-game. (with the address `127.0.0.1:41001` if the server is running on the same device)
 
 Keep in mind that a standalone server makes the configuration very limited (for example you can't blacklist/whitelist users anymore) and disables any kind of player authentication.
 
@@ -113,6 +113,8 @@ Formatting for game servers:
 Note that the `address` key must be the publicly visible IP address for other players to be able to connect, not a local address.
 
 Additionally, when first starting up a server, a `Rocket.toml` file will be created from a template. By default, it will be put in the current working directory, or `ROCKET_CONFIG` if specified.
+
+The `Rocket.toml` is primarily used for changing the HTTP port and the path to the database, however other settings are also free to change, as per [Rocket documentation](https://rocket.rs/v0.5/guide/configuration/#rockettoml). Changing the TOML configuration is as simple as the JSON configuration, however it is *not* hot-reloadable.
 
 ## Building
 

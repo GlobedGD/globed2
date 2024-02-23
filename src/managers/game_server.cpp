@@ -13,8 +13,24 @@ GameServerManager::GameServerManager() {
 }
 
 Result<> GameServerManager::addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region) {
+    _data.lock()->servers.erase(std::string(serverId));
+    return this->addOrUpdateServer(serverId, name, address, region);
+}
+
+Result<> GameServerManager::addOrUpdateServer(const std::string_view serverId_, const std::string_view name, const std::string_view address, const std::string_view region) {
     auto ares = util::net::splitAddress(address, DEFAULT_PORT);
     GLOBED_UNWRAP_INTO(ares, auto addr);
+
+    auto serverId = std::string(serverId_);
+
+    int ping = -1;
+    uint16_t playerCount = 0;
+
+    auto data = _data.lock();
+    if (data->servers.contains(serverId)) {
+        ping = data->servers.at(serverId).server.ping;
+        playerCount = data->servers.at(serverId).server.playerCount;
+    }
 
     GameServer server = {
         .id = std::string(serverId),
@@ -24,18 +40,18 @@ Result<> GameServerManager::addServer(const std::string_view serverId, const std
             .ip = addr.first,
             .port = addr.second
         },
-        .ping = -1,
-        .playerCount = 0,
+        .ping = ping,
+        .playerCount = playerCount,
     };
 
     GameServerManager::GameServerData gsdata = {
         .server = server
     };
 
-    auto data = _data.lock();
-    data->servers[std::string(serverId)] = gsdata;
+    data->servers[serverId] = gsdata;
 
     return Ok();
+
 }
 
 void GameServerManager::clear() {
@@ -171,7 +187,7 @@ Result<> GameServerManager::loadFromCache() {
     auto serverList = buf.readValueVector<GameServerEntry>();
 
     for (const auto& server : serverList) {
-        auto result = this->addServer(
+        auto result = this->addOrUpdateServer(
             server.id,
             server.name,
             server.address,

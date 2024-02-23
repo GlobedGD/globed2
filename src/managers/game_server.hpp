@@ -39,6 +39,7 @@ public:
     util::sync::AtomicBool pendingChanges;
 
     Result<> addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
+    Result<> addOrUpdateServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
     void clear();
     size_t count();
 

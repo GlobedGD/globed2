@@ -279,18 +279,4 @@ std::vector<V> mapValues(const std::unordered_map<K, V>& map) {
     return out;
 }
 
-/* borrowed versions of the above functions */
-
-template <typename T>
-std::vector<std::pair<size_t, T&>> enumerate(std::vector<T>& vec) {
-    std::vector<std::pair<size_t, T&>> out;
-    out.reserve(vec.size());
-
-    for (size_t i = 0; i < vec.size(); i++) {
-        out.emplace_back(i, vec[i]);
-    }
-
-    return out;
-}
-
 };

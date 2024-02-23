@@ -90,6 +90,8 @@ RecvResult TcpSocket::receive(char* buffer, int bufferSize) {
 }
 
 Result<> TcpSocket::recvExact(char* buffer, int bufferSize) {
+    GLOBED_REQUIRE_SAFE(connected, "attempting to call TcpSocket::recvExact on a disconnected socket")
+
     unsigned int received = 0;
 
     do {

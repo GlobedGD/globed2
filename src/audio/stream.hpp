@@ -9,11 +9,10 @@
 #include "volume_estimator.hpp"
 
 #include <util/sync.hpp>
+#include <util/time.hpp>
 
 class AudioStream {
 public:
-    util::sync::AtomicBool starving = false; // true if there aren't enough samples in the queue
-
     AudioStream(AudioDecoder&& decoder);
     ~AudioStream();
 
@@ -73,6 +72,10 @@ public:
     // get how loud the sound is being played
     float getLoudness();
 
+    util::time::time_point getLastPlaybackTime();
+
+    util::sync::AtomicBool starving = false; // true if there aren't enough samples in the queue
+
 private:
     FMOD::Sound* sound = nullptr;
     FMOD::Channel* channel = nullptr;
@@ -80,6 +83,7 @@ private:
     AudioDecoder decoder;
     util::sync::WrappingMutex<VolumeEstimator> estimator;
     float volume = 0.f;
+    util::time::time_point lastPlaybackTime;
 };
 
 

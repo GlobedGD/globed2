@@ -41,6 +41,7 @@ AudioStream::AudioStream(AudioDecoder&& decoder)
             }
         } else {
             stream->starving = false;
+            stream->lastPlaybackTime = util::time::now();
         }
 
         return FMOD_OK;
@@ -110,6 +111,10 @@ void AudioStream::updateEstimator(float dt) {
 
 float AudioStream::getLoudness() {
     return estimator.lock()->getVolume() * this->volume;
+}
+
+util::time::time_point AudioStream::getLastPlaybackTime() {
+    return lastPlaybackTime;
 }
 
 #endif // GLOBED_VOICE_SUPPORT

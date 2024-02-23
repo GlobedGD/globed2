@@ -95,6 +95,12 @@ float VoicePlaybackManager::getLoudness(int playerId) {
     return streams.at(playerId)->getLoudness();
 }
 
+util::time::time_point VoicePlaybackManager::getLastPlaybackTime(int playerId) {
+    if (!streams.contains(playerId)) return {};
+
+    return streams.at(playerId)->getLastPlaybackTime();
+}
+
 #else
 
 void VoicePlaybackManager::playRawDataStreamed(int playerId, const float* pcm, size_t samples) {}
@@ -114,6 +120,9 @@ void VoicePlaybackManager::updateEstimator(int playerId, float dt) {}
 void VoicePlaybackManager::updateAllEstimators(float dt) {}
 float VoicePlaybackManager::getLoudness(int playerId) {
     return 0.f;
+}
+util::time::time_point VoicePlaybackManager::getLastPlaybackTime(int playerId) {
+    return {};
 }
 
 #endif // GLOBED_VOICE_SUPPORT

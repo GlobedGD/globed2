@@ -1,5 +1,5 @@
 {
-    "geode": "2.0.0-beta.15",
+    "geode": "2.0.0-beta.20",
     "version": "v1.2.0",
     "gd": {
         "win": "2.204",
@@ -17,7 +17,17 @@
                 "resources/role-helper.png",
                 "resources/role-mod.png",
                 "resources/role-user.png",
-                "resources/whitelist-icon.png"
+                "resources/icon-ban.png",
+                "resources/icon-unban.png",
+                "resources/icon-mute.png",
+                "resources/icon-unmute.png",
+                "resources/icon-whitelist.png",
+                "resources/icon-unwhitelist.png",
+                "resources/icon-logout.png",
+                "resources/icon-kick.png",
+                "resources/icon-kick-all.png",
+                "resources/icon-level-list.png",
+                "resources/icon-server-folder.png"
             ]
         }
     },

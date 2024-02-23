@@ -61,8 +61,7 @@ bool GlobedMenuLayer::init() {
         .store(leftButtonMenu);
 
     // server switcher button
-    Build<CCSprite>::createSpriteName("gj_folderBtn_001.png")
-        .scale(1.1f)
+    Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
         .intoMenuItem([](auto) {
             if (auto* popup = ServerSwitcherPopup::create()) {
                 popup->m_noElasticity = true;
@@ -74,7 +73,7 @@ bool GlobedMenuLayer::init() {
 
     // discord button
     Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
-        .scale(1.3f)
+        .scale(1.35f)
         .intoMenuItem([](auto) {
             geode::createQuickPopup("Open Discord", "Join our <cp>Discord</c> server?", "No", "Yes", [] (auto fl, bool btn2) {
                 if (btn2)
@@ -85,8 +84,7 @@ bool GlobedMenuLayer::init() {
         .parent(leftButtonMenu);
 
     // settings button
-    Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
-        .scale(0.9f)
+    Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedSettingsLayer::create());
         })
@@ -94,8 +92,7 @@ bool GlobedMenuLayer::init() {
         .parent(leftButtonMenu);
 
     // room popup button
-    roomButton = Build<CCSprite>::createSpriteName("GJ_profileButton_001.png")
-        .scale(0.775f)
+    roomButton = Build<CCSprite>::createSpriteName("accountBtn_friends_001.png")
         .intoMenuItem([](auto) {
             // this->requestServerList();
             if (auto* popup = RoomPopup::create()) {
@@ -107,8 +104,7 @@ bool GlobedMenuLayer::init() {
         .collect();
 
     // level list button
-    levelListButton = Build<CCSprite>::createSpriteName("GJ_menuBtn_001.png")
-        .scale(0.7f)
+    levelListButton = Build<CCSprite>::createSpriteName("icon-level-list.png"_spr)
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedLevelListLayer::create());
         })
@@ -216,6 +212,12 @@ void GlobedMenuLayer::refreshServerList(float) {
 
         this->pingServers(0.f);
 
+        // also disconnect from the current server if it's gone
+        auto activeId = gsm.getActiveId();
+        if (!gsm.getServer(activeId).has_value()) {
+            NetworkManager::get().disconnect(false);
+        }
+
         return;
     }
 
@@ -247,8 +249,6 @@ void GlobedMenuLayer::requestServerList() {
     if (csm.standalone()) {
         return;
     }
-
-    NetworkManager::get().disconnect(false);
 
     auto centralUrl = csm.getActive();
 

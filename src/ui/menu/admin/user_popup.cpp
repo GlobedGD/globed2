@@ -5,6 +5,7 @@
 #include <managers/error_queues.hpp>
 #include <net/network_manager.hpp>
 #include <ui/menu/admin/edit_role_popup.hpp>
+#include <ui/general/ask_input_popup.hpp>
 #include <ui/general/color_input_popup.hpp>
 #include <ui/general/slider_wrapper.hpp>
 #include <util/math.hpp>
@@ -99,47 +100,71 @@ void AdminUserPopup::onProfileLoaded() {
         .parent(rootLayout)
         .collect();
 
-    auto banUnbanned = Build<CCSprite>::createSpriteName("accountBtn_blocked_001.png")
-        .scale(0.75f);
-    auto banBanned = Build<CCSprite>::createSpriteName("accountBtn_requests_001.png")
-        .scale(0.75f);
+    constexpr float buttonScale = 0.9f;
+
+    auto banUnbanned = Build<CCSprite>::createSpriteName("icon-ban.png"_spr)
+        .scale(buttonScale);
+    auto banBanned = Build<CCSprite>::createSpriteName("icon-unban.png"_spr)
+        .scale(buttonScale);
     auto* btnBanned = Build<CCMenuItemToggler>(CCMenuItemToggler::create(banUnbanned, banBanned, this, menu_selector(AdminUserPopup::onViolationChanged)))
         .tag(TAG_BAN)
         .parent(violationsLayout)
         .collect();
     btnBanned->toggle(userEntry.isBanned);
 
-    auto muteUnmuted = Build<CCSprite>::createSpriteName("GJ_fxOnBtn_001.png")
-        .scale(0.75f);
-    auto muteMuted = Build<CCSprite>::createSpriteName("GJ_fxOffBtn_001.png")
-        .scale(0.75f);
+    auto muteUnmuted = Build<CCSprite>::createSpriteName("icon-mute.png"_spr)
+        .scale(buttonScale);
+    auto muteMuted = Build<CCSprite>::createSpriteName("icon-unmute.png"_spr)
+        .scale(buttonScale);
     auto* btnMuted = Build<CCMenuItemToggler>(CCMenuItemToggler::create(muteUnmuted, muteMuted, this, menu_selector(AdminUserPopup::onViolationChanged)))
         .tag(TAG_MUTE)
         .parent(violationsLayout)
         .collect();
     btnMuted->toggle(userEntry.isMuted);
 
-    auto whitelistOff = Build<CCSprite>::createSpriteName("whitelist-icon.png"_spr)
-        .scale(0.75f);
-    auto whitelistOn = Build<CCSprite>::createSpriteName("accountBtn_myLists_001.png")
-        .scale(0.75f);
+    auto whitelistOff = Build<CCSprite>::createSpriteName("icon-whitelist.png"_spr)
+        .scale(buttonScale);
+    auto whitelistOn = Build<CCSprite>::createSpriteName("icon-unwhitelist.png"_spr)
+        .scale(buttonScale);
     auto* btnWhitelist = Build<CCMenuItemToggler>(CCMenuItemToggler::create(whitelistOff, whitelistOn, this, menu_selector(AdminUserPopup::onViolationChanged)))
         .tag(TAG_WHITELIST)
         .parent(violationsLayout)
         .collect();
     btnWhitelist->toggle(userEntry.isWhitelisted);
 
+    // kick button
+    Build<CCSprite>::createSpriteName("icon-kick.png"_spr)
+        .scale(0.8f)
+        .intoMenuItem([this](auto) {
+            AskInputPopup::create(fmt::format("Kick {}", accountData->name), [accountId = accountData->id](auto reason) {
+                auto packet = AdminDisconnectPacket::create(std::to_string(accountId), reason);
+                NetworkManager::get().send(packet);
+            }, 120, "Kick reason", util::misc::STRING_PRINTABLE_INPUT, 0.6f)->show();
+        })
+        .parent(violationsLayout);
+
+    // notice send button
+    Build<CCSprite>::createSpriteName("GJ_chatBtn_001.png")
+        .scale(0.8f)
+        .intoMenuItem([this](auto) {
+            AskInputPopup::create(fmt::format("Send notice to {}", accountData->name), [accountId = accountData->id](auto message) {
+                auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), message);
+                NetworkManager::get().send(packet);
+            }, 160, "Message", util::misc::STRING_PRINTABLE_INPUT, 0.6f)->show();
+        })
+        .parent(violationsLayout);
+
     auto* slider = Build<SliderWrapper>::create(
             Slider::create(this, menu_selector(AdminUserPopup::onViolationDurationChanged), 0.5f)
         )
-        .parent(violationsLayout)
+        .parent(rootLayout)
         .collect();
 
     slider->slider->setValue(0.f);
 
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
         .scale(0.4f)
-        .pos(slider->getScaledContentSize() / 2 + CCPoint{0.f, 12.f})
+        .pos(slider->getScaledContentSize() / 2 + CCPoint{0.f, 10.f})
         .parent(slider)
         .store(banDurationText);
 
@@ -155,7 +180,7 @@ void AdminUserPopup::onProfileLoaded() {
     }
 
     // violation reason
-    Build<TextInput>::create(m_size.width * 0.5f, "reason", "chatFont.fnt")
+    Build<TextInput>::create(m_size.width * 0.8f, "reason", "chatFont.fnt")
         .parent(rootLayout)
         .store(inputReason);
 
@@ -181,7 +206,7 @@ void AdminUserPopup::onProfileLoaded() {
             .parent(rootLayout)
             .collect();
 
-        Build<TextInput>::create(m_size.width * 0.4f, "admin password", "bigFont.fnt")
+        Build<TextInput>::create(m_size.width * 0.65f, "admin password", "bigFont.fnt")
             .parent(layout)
             .store(inputAdminPassword);
 
@@ -194,7 +219,8 @@ void AdminUserPopup::onProfileLoaded() {
             this->userEntry.adminPassword = password;
         });
 
-        Build<ButtonSprite>::create("Copy", "bigFont.fnt", "GJ_button_01.png", 0.5f)
+        Build<ButtonSprite>::create("Copy", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+            .scale(0.6f)
             .intoMenuItem([this](auto) {
                 auto& pwd = this->userEntry.adminPassword;
                 if (pwd.has_value() && !pwd.value().empty()) {
@@ -214,13 +240,12 @@ void AdminUserPopup::onProfileLoaded() {
     rootLayout->updateLayout();
 
     // apply button
-
-    Build<ButtonSprite>::create("Update", "goldFont.fnt", "GJ_button_01.png", 0.9f)
-        .scale(0.8f)
+    Build<ButtonSprite>::create("Update", "goldFont.fnt", "GJ_button_01.png", 1.0f)
+        .scale(1.f)
         .intoMenuItem([this](auto) {
             this->sendUpdateUser();
         })
-        .pos(sizes.centerBottom + CCPoint{0.f, 20.f})
+        .pos(sizes.centerBottom + CCPoint{0.f, 25.f})
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
         .parent(m_mainLayer);

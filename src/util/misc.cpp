@@ -64,4 +64,14 @@ namespace util::misc {
     float calculatePcmVolume(const float* pcm, size_t samples) {
         return lowlevel::pcmVolumeFast(pcm, samples);
     }
+
+    bool compareName(const std::string_view nv1, const std::string_view nv2) {
+        std::string name1(nv1);
+        std::string name2(nv2);
+
+        std::transform(name1.begin(), name1.end(), name1.begin(), ::tolower);
+        std::transform(name2.begin(), name2.end(), name2.begin(), ::tolower);
+
+        return name1 < name2;
+    }
 }

@@ -287,7 +287,7 @@ void NetworkManager::threadMainFunc() {
 
     this->maybeSendKeepalive();
 
-    if (!packetQueue.waitForMessages(util::time::millis(250))) {
+    if (!packetQueue.waitForMessages(util::time::millis(200))) {
         // check for tasks
         if (taskQueue.empty()) return;
 

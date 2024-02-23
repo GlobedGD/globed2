@@ -7,7 +7,7 @@
 
 class GlobedUserCell : public cocos2d::CCLayer {
 public:
-    static constexpr float CELL_HEIGHT = 40.f;
+    static constexpr float CELL_HEIGHT = 25.f;
 
     void refreshData(const PlayerStore::Entry& entry);
     void updateVisualizer(float dt);
@@ -26,5 +26,5 @@ private:
 
     bool init(const PlayerStore::Entry& entry, const PlayerAccountData& data);
     void onOpenProfile(cocos2d::CCObject*);
-    void makeBlockButton();
+    void makeButtons();
 };

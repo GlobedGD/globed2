@@ -28,6 +28,7 @@ public:
     void updateAllEstimators(float dt);
 
     float getLoudness(int playerId);
+    util::time::time_point getLastPlaybackTime(int playerId);
 
 private:
 #if GLOBED_VOICE_SUPPORT

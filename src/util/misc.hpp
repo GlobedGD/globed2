@@ -87,4 +87,6 @@ namespace util::misc {
     };
 
     float calculatePcmVolume(const float* pcm, size_t samples);
+
+    bool compareName(const std::string_view name1, const std::string_view name2);
 }
