@@ -105,6 +105,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
         .floatMin = 0.f,
         .floatMax = 1.f
     });
+    MAKE_SETTING(levelUi, voiceOverlay, "Voice overlay", "Show a small overlay in the bottom right indicating currently speaking players.");
 
     MAKE_HEADER("Players");
     MAKE_SETTING_LIM(players, playerOpacity, "Opacity", "Opacity of other players.", {

@@ -33,6 +33,12 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .id("player-icon"_spr)
         .collect();
 
+    if (data.icons.glowColor != -1) {
+        sp->setGlowOutline(gm->colorForIdx(data.icons.glowColor));
+    } else {
+        sp->disableGlowOutline();
+    }
+
     Build<CCMenu>::create()
         .pos(0.f, 0.f)
         .parent(this)
@@ -47,12 +53,6 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
         .parent(menu)
         .collect();
-
-    if (data.icons.glowColor != -1) {
-        sp->setGlowOutline(gm->colorForIdx(data.icons.glowColor));
-    } else {
-        sp->disableGlowOutline();
-    }
 
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
@@ -177,11 +177,7 @@ void GlobedUserCell::makeButtons() {
             .id("audio-visualizer"_spr)
             .store(audioVisualizer);
 
-        // do not try this at home
         audioVisualizer->setScaleX(0.5f);
-        auto batchnode = getChildOfType<CCSpriteBatchNode>(audioVisualizer->visNode, 0);
-        auto border = static_cast<CCSprite*>(batchnode->getChildren()->objectAtIndex(0));
-        border->setScaleY(103.f);
 
         maxWidth += audioVisualizer->getScaledContentSize().width;
     }

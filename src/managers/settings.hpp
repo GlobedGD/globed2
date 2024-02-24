@@ -42,6 +42,7 @@ public:
         GSETTING(bool, progressIndicators, true);
         GSETTING(bool, progressPointers, true); // unused
         GSETTING(float, progressOpacity, 1.0f);
+        GSETTING(bool, voiceOverlay, true);
     };
 
     struct Players {

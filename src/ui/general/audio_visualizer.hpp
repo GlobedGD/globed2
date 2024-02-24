@@ -12,6 +12,8 @@ public:
 
     void resetMaxVolume();
 
+    void setScaleX(float scale) override;
+
     FMODLevelVisualizer* visNode;
     float maxVolume = 0.f;
 

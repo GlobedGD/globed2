@@ -10,6 +10,7 @@
 #include <ui/game/overlay/overlay.hpp>
 #include <ui/game/progress/progress_icon.hpp>
 #include <ui/game/progress/progress_arrow.hpp>
+#include <ui/game/voice_overlay/overlay.hpp>
 
 float adjustLerpTimeDelta(float dt);
 
@@ -37,6 +38,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
     Ref<CCNode> progressBarWrapper = nullptr;
     Ref<PlayerStatusIcons> selfStatusIcons = nullptr;
+    Ref<GlobedVoiceOverlay> voiceOverlay = nullptr;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;

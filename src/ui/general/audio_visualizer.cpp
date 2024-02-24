@@ -38,6 +38,15 @@ void GlobedAudioVisualizer::resetMaxVolume() {
     maxVolume = 0.f;
 }
 
+void GlobedAudioVisualizer::setScaleX(float scale) {
+    CCNode::setScaleX(scale);
+
+    // do not try this at home
+    auto batchnode = getChildOfType<CCSpriteBatchNode>(this->visNode, 0);
+    auto border = static_cast<CCSprite*>(batchnode->getChildren()->objectAtIndex(0));
+    border->setScaleY(100.f + 1.f / scale);
+}
+
 GlobedAudioVisualizer* GlobedAudioVisualizer::create() {
     auto ret = new GlobedAudioVisualizer;
     if (ret->init()) {

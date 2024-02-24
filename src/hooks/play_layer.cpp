@@ -20,6 +20,9 @@ using namespace geode::prelude;
 // how many units before the voice disappears
 constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
 
+constexpr float VOICE_OVERLAY_PAD_X = 2.f;
+constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
+
 float adjustLerpTimeDelta(float dt) {
     // i fucking hate this i cannot do this anymore i want to die
     auto* dir = CCDirector::get();
@@ -101,12 +104,20 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     // start passive voice recording
     // TODO temp remove on android because it crashes the game :fire:
-# ifndef GEODE_IS_ANDROID
     if (settings.communication.voiceEnabled) {
+# ifndef GEODE_IS_ANDROID
         auto& vrm = VoiceRecordingManager::get();
         vrm.startRecording();
-    }
 # endif // GEODE_IS_ANDROID
+
+        if (settings.levelUi.voiceOverlay) {
+            m_fields->voiceOverlay = Build<GlobedVoiceOverlay>::create()
+                .parent(m_uiLayer)
+                .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
+                .anchorPoint(1.f, 0.f)
+                .collect();
+        }
+    }
 
 #endif // GLOBED_VOICE_SUPPORT
 
@@ -436,11 +447,22 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
 
         self->m_fields->selfStatusIcons->updateStatus(false, false, recording, 0.f);
     }
+
+    if (self->m_fields->voiceOverlay) {
+        self->m_fields->voiceOverlay->updateOverlaySoft();
+    }
 }
 
+// selUpdateEstimators - runs 30 times a second, updates audio stuff
 void GlobedPlayLayer::selUpdateEstimators(float dt) {
+    auto* self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+
     // update volume estimators
     VoicePlaybackManager::get().updateAllEstimators(dt);
+
+    if (self->m_fields->voiceOverlay) {
+        self->m_fields->voiceOverlay->updateOverlay();
+    }
 }
 
 /* private utilities */

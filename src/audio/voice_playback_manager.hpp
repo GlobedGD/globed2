@@ -30,6 +30,8 @@ public:
     float getLoudness(int playerId);
     util::time::time_point getLastPlaybackTime(int playerId);
 
+    void forEachStream(std::function<void(int, AudioStream&)> func);
+
 private:
 #if GLOBED_VOICE_SUPPORT
     std::unordered_map<int, std::unique_ptr<AudioStream>> streams;

@@ -101,6 +101,12 @@ util::time::time_point VoicePlaybackManager::getLastPlaybackTime(int playerId) {
     return streams.at(playerId)->getLastPlaybackTime();
 }
 
+void VoicePlaybackManager::forEachStream(std::function<void(int, AudioStream&)> func) {
+    for (const auto& [accountId, stream] : streams) {
+        func(accountId, *stream);
+    }
+}
+
 #else
 
 void VoicePlaybackManager::playRawDataStreamed(int playerId, const float* pcm, size_t samples) {}
@@ -124,5 +130,6 @@ float VoicePlaybackManager::getLoudness(int playerId) {
 util::time::time_point VoicePlaybackManager::getLastPlaybackTime(int playerId) {
     return {};
 }
+void VoicePlaybackManager::forEachStream(std::function<void(int, AudioStream&)> func) {}
 
 #endif // GLOBED_VOICE_SUPPORT

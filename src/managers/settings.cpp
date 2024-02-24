@@ -54,6 +54,7 @@ void GlobedSettings::save() {
     STOREV(levelUi, progressIndicators);
     STOREV(levelUi, progressPointers);
     STOREV(levelUi, progressOpacity);
+    STOREV(levelUi, voiceOverlay);
 
     // players
     STOREV(players, playerOpacity);
@@ -100,6 +101,7 @@ void GlobedSettings::reload() {
     LOADV(levelUi, progressIndicators);
     LOADV(levelUi, progressPointers);
     LOADV(levelUi, progressOpacity);
+    LOADV(levelUi, voiceOverlay);
 
     // players
     LOADV(players, playerOpacity);
@@ -146,6 +148,7 @@ void GlobedSettings::resetToDefaults() {
         SKEY(levelUi, progressIndicators),
         SKEY(levelUi, progressPointers),
         SKEY(levelUi, progressOpacity),
+        SKEY(levelUi, voiceOverlay),
 
         // players
         SKEY(players, playerOpacity),
