@@ -40,7 +40,7 @@ void GlobedVoiceOverlay::updateOverlay() {
     this->removeAllChildren();
 
     vpm.forEachStream([this](int accountId, AudioStream& stream) {
-        if (!stream.starving && (!PlayLayer::get()->m_level->isPlatformer() || stream.getLoudness() > 0.005f)) {
+        if (!stream.starving && (!PlayLayer::get()->m_level->isPlatformer() || stream.getVolume() > 0.005f)) {
             this->addPlayer(accountId);
         }
     });
