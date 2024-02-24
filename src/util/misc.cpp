@@ -2,6 +2,7 @@
 #include <data/types/game.hpp>
 
 #include <util/sync.hpp>
+#include <util/simd.hpp>
 #include <util/lowlevel.hpp>
 
 namespace util::misc {
@@ -62,7 +63,16 @@ namespace util::misc {
     }
 
     float calculatePcmVolume(const float* pcm, size_t samples) {
-        return lowlevel::pcmVolumeFast(pcm, samples);
+        return simd::calcPcmVolume(pcm, samples);
+    }
+
+    float pcmVolumeSlow(const float* pcm, size_t samples) {
+        double sum = 0.0f;
+        for (size_t i = 0; i < samples; i++) {
+            sum += static_cast<double>(std::abs(pcm[i]));
+        }
+
+        return static_cast<float>(sum / static_cast<double>(samples));
     }
 
     bool compareName(const std::string_view nv1, const std::string_view nv2) {

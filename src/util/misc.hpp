@@ -86,7 +86,10 @@ namespace util::misc {
         }
     };
 
+    // Calculate the avergae volume of pcm samples, picking the fastest implementation
     float calculatePcmVolume(const float* pcm, size_t samples);
+
+    float pcmVolumeSlow(const float* pcm, size_t samples);
 
     bool compareName(const std::string_view name1, const std::string_view name2);
 }

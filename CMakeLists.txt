@@ -6,6 +6,8 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(globed2 VERSION 1.0.0)
 
+option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
+
 # Debug/Release options
 option(ENABLE_DEBUG "Debug mode" OFF)
 if (ENABLE_DEBUG OR CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -16,8 +18,30 @@ else()
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
+# add thingies epending on the current system
+if (ANDROID)
+    file(GLOB_RECURSE OS_SOURCES "src/platform/os/android/*.cpp")
+elseif (APPLE)
+    file(GLOB_RECURSE OS_SOURCES "src/platform/os/mac/*.cpp")
+elseif (WIN32)
+    file(GLOB_RECURSE OS_SOURCES "src/platform/os/windows/*.cpp")
+else()
+    message(FATAL_ERROR "Unsupported operating system")
+endif()
+
+# source files
 file(GLOB_RECURSE SOURCES
-	src/*.cpp
+	src/audio/*.cpp
+	src/crypto/*.cpp
+	src/data/*.cpp
+	src/game/*.cpp
+	src/hooks/*.cpp
+	src/managers/*.cpp
+	src/net/*.cpp
+	src/ui/*.cpp
+	src/util/*.cpp
+	src/main.cpp
+    ${OS_SOURCES}
 )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
@@ -31,15 +55,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         add_definitions("-include WinSock2.h")
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
-endif()
-
-# Clang/GCC - suppress some warnings
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_definitions("-Wno-inaccessible-base")
-    add_definitions("-Wno-pointer-sign")
-
-    # thank you hjfod
-    add_definitions("-Wno-deprecated-declarations")
 endif()
 
 # i am crying so hard right now
@@ -63,10 +78,23 @@ CPMAddPackage("gh:dankmeme01/uibuilder#main")
 CPMAddPackage("gh:xiph/opus#master")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 
-# Windows Clang - ensure 32-bitness for opus and libsodium and enable additional instruction sets
-if (GLOBED_WINDOWS_CLANG)
+if (GLOBED_NATIVE_ARCH)
+    # Apply native architecture
+    add_compile_options("-march=native")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # Windows Clang - ensure 32-bitness for opus and libsodium and enable additional instruction sets
+    # Note - this limits the mod to CPUs that support the AES, pclmul and SSE4.1 instruction sets,
+    # and therefore is not used in release. Release builds use MSVC which has a smarter vectorizer.
     target_compile_options(opus PRIVATE "-m32")
     target_compile_options(sodium PRIVATE "-m32" "-maes" "-mpclmul" "-msse4.1")
+endif()
+
+# Clang/GCC - suppress some warnings
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(sodium PRIVATE "-Wno-inaccessible-base" "-Wno-pointer-sign")
+
+    # thank you hjfod
+    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)

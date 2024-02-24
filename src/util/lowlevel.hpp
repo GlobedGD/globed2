@@ -26,7 +26,4 @@ namespace util::lowlevel {
         void** vtable = *reinterpret_cast<void***>(object);
         vmtHookWithTable(detour, vtable, index);
     }
-
-    float pcmVolumeFast(const float* pcm, size_t samples);
-    float pcmVolumeSlow(const float* pcm, size_t samples);
 }
