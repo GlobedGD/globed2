@@ -20,7 +20,7 @@ bool FragmentationCalibartionPopup::setup() {
         .store(statusLabel);
 
     auto& nm = NetworkManager::get();
-    nm.addListener<ConnectionTestResponsePacket>([this] (ConnectionTestResponsePacket* packet) {
+    nm.addListener<ConnectionTestResponsePacket>([this] (std::shared_ptr<ConnectionTestResponsePacket> packet) {
         if (packet->uid != this->uid) {
             auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
             auto& settings = GlobedSettings::get();

@@ -89,6 +89,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells() {
     MAKE_HEADER("Communication");
     MAKE_SETTING(communication, voiceEnabled, "Voice chat", "Enables in-game voice chat. To talk, hold V when in a level. (keybind can be changed in game settings)");
     MAKE_SETTING(communication, voiceProximity, "Voice proximity", "In platformer mode, the loudness of other players will be determined by how close they are to you.");
+    MAKE_SETTING(communication, classicProximity, "Classic proximity", "Same as voice proximity, but for classic levels (non-platformer).");
     MAKE_SETTING_LIM(communication, voiceVolume, "Voice volume", "Controls how loud other players are.", {
         .floatMin = 0.f,
         .floatMax = 2.f,

@@ -23,7 +23,7 @@ bool RoomPopup::setup() {
 
     auto& rm = RoomManager::get();
 
-    nm.addListener<RoomPlayerListPacket>([this](RoomPlayerListPacket* packet) {
+    nm.addListener<RoomPlayerListPacket>([this](std::shared_ptr<RoomPlayerListPacket> packet) {
         this->isWaiting = false;
         this->playerList = packet->data;
         this->applyFilter("");
@@ -42,7 +42,7 @@ bool RoomPopup::setup() {
         this->reloadPlayerList(true);
     });
 
-    nm.addListener<RoomCreatedPacket>([this](RoomCreatedPacket* packet) {
+    nm.addListener<RoomCreatedPacket>([this](std::shared_ptr<RoomCreatedPacket> packet) {
         auto ownData = ProfileCacheManager::get().getOwnData();
         auto* gjam = GJAccountManager::sharedState();
 

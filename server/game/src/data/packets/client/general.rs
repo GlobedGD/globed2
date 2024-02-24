@@ -31,3 +31,9 @@ pub struct RequestRoomPlayerListPacket;
 #[derive(Packet, Decodable)]
 #[packet(id = 11006)]
 pub struct RequestLevelListPacket;
+
+#[derive(Packet, Decodable)]
+#[packet(id = 11007)]
+pub struct RequestPlayerCountPacket {
+    pub level_id: i32,
+}

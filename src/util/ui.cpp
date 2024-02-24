@@ -132,4 +132,24 @@ namespace util::ui {
 
         return layout;
     }
+
+    CCNode* findChildByMenuSelectorRecursive(CCNode* node, uintptr_t function) {
+        if (auto button = typeinfo_cast<CCMenuItem*>(node)) {
+            uintptr_t btnAddr = *(uintptr_t*)&button->m_pfnSelector;
+            if (function == btnAddr) {
+                return node;
+            }
+        }
+
+        if (!node->getChildren() || node->getChildrenCount() == 0) return nullptr;
+
+        for (CCNode* child : CCArrayExt<CCNode*>(node->getChildren())) {
+            auto result = findChildByMenuSelectorRecursive(child, function);
+            if (result) {
+                return result;
+            }
+        }
+
+        return nullptr;
+    }
 }

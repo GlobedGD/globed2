@@ -25,6 +25,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(RoomJoinFailedPacket);
         PACKET(RoomPlayerListPacket);
         PACKET(LevelListPacket);
+        PACKET(LevelPlayerCountPacket);
 
         // game related
 

@@ -19,7 +19,7 @@ NetworkManager::NetworkManager() {
 
     // add builtin listeners for connection related packets
 
-    addBuiltinListener<CryptoHandshakeResponsePacket>([this](CryptoHandshakeResponsePacket* packet) {
+    addBuiltinListener<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
         log::debug("handshake successful, logging in");
         auto key = packet->data.key;
 

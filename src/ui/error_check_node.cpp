@@ -1,10 +1,13 @@
 #include "error_check_node.hpp"
 
 #include <hooks/play_layer.hpp>
+#include <hooks/flalertlayer.hpp>
 #include <managers/error_queues.hpp>
 #include <util/debug.hpp>
 
 using namespace geode::prelude;
+
+constexpr auto BLOCK_CLOSING_FOR = util::time::millis(375);
 
 bool ErrorCheckNode::init() {
     if (!CCNode::init()) return false;
@@ -59,21 +62,38 @@ void ErrorCheckNode::updateErrors(float) {
     auto errors = ErrorQueues::get().getErrors();
     auto notices = ErrorQueues::get().getNotices();
 
-    if (errors.size() > 2) {
-        errors.resize(2);
-    }
-
     for (auto& error : errors) {
-        FLAlertLayer::create("Globed error", error, "Ok")->show();
-    }
-
-    if (notices.size() > 2) {
-        notices.resize(2);
+        if (canShowFLAlert()) {
+            auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed error", error, "Ok"));
+            alert->blockClosingFor(BLOCK_CLOSING_FOR);
+            alert->show();
+        }
     }
 
     for (auto& notice : notices) {
-        FLAlertLayer::create("Globed notice", notice, "Ok")->show();
+        if (canShowFLAlert()) {
+            auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed notice", notice, "Ok"));
+            alert->blockClosingFor(BLOCK_CLOSING_FOR);
+            alert->show();
+        }
     }
+}
+
+bool ErrorCheckNode::canShowFLAlert() {
+    auto* scene = CCScene::get();
+
+    if (scene->getChildrenCount() == 0 || !scene->getChildren()) return true;
+
+    size_t flalerts = 0;
+
+    for (auto* child : CCArrayExt<CCNode*>(scene->getChildren())) {
+        if (typeinfo_cast<FLAlertLayer*>(child)) {
+            flalerts++;
+        }
+    }
+
+    // if there are already 2+ alerts on the screen, don't show any more
+    return flalerts < 2;
 }
 
 ErrorCheckNode* ErrorCheckNode::create() {

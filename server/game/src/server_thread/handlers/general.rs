@@ -143,6 +143,21 @@ impl GameServerThread {
         .await
     });
 
+    gs_handler!(self, handle_request_player_count, RequestPlayerCountPacket, packet, {
+        let _ = gs_needauth!(self);
+
+        let room_id = self.room_id.load(Ordering::Relaxed);
+        let player_count = self.game_server.state.room_manager.with_any(room_id, |pm| {
+            pm.get_player_count_on_level(packet.level_id).unwrap_or(0) as u16
+        });
+
+        self.send_packet_static(&LevelPlayerCountPacket {
+            level_id: packet.level_id,
+            player_count,
+        })
+        .await
+    });
+
     #[inline]
     async fn _respond_with_room_list(&self, room_id: u32) -> crate::server_thread::Result<()> {
         let player_count = self

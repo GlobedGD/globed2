@@ -89,3 +89,19 @@ class RequestLevelListPacket : public Packet {
         return std::make_shared<RequestLevelListPacket>();
     }
 };
+
+class RequestPlayerCountPacket : public Packet {
+    GLOBED_PACKET(11007, false, false)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeI32(levelId);
+    }
+
+    RequestPlayerCountPacket(int levelId) : levelId(levelId) {}
+
+    static std::shared_ptr<Packet> create(int levelId) {
+        return std::make_shared<RequestPlayerCountPacket>(levelId);
+    }
+
+    int levelId;
+};

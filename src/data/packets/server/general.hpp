@@ -50,3 +50,15 @@ class LevelListPacket : public Packet {
 
     std::vector<GlobedLevel> levels;
 };
+
+class LevelPlayerCountPacket : public Packet {
+    GLOBED_PACKET(21006, false, false)
+
+    GLOBED_PACKET_DECODE {
+        levelId = buf.readI32();
+        playerCount = buf.readU16();
+    }
+
+    int levelId;
+    uint16_t playerCount;
+};

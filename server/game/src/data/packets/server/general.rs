@@ -29,3 +29,10 @@ pub struct RoomPlayerListPacket;
 #[derive(Packet, Encodable)]
 #[packet(id = 21005, tcp = true)]
 pub struct LevelListPacket;
+
+#[derive(Packet, Encodable, StaticSize)]
+#[packet(id = 21006)]
+pub struct LevelPlayerCountPacket {
+    pub level_id: i32,
+    pub player_count: u16,
+}

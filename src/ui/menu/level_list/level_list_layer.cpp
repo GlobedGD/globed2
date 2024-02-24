@@ -67,7 +67,7 @@ bool GlobedLevelListLayer::init() {
 
     util::ui::prepareLayer(this);
 
-    NetworkManager::get().addListener<LevelListPacket>([this](LevelListPacket* packet) {
+    NetworkManager::get().addListener<LevelListPacket>([this](std::shared_ptr<LevelListPacket> packet) {
         this->levelList.clear();
         this->levelPages.clear();
         this->sortedLevelIds.clear();

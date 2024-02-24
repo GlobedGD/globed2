@@ -69,7 +69,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         return true;
     }
 
-    m_fields->isVoiceProximity = level->isPlatformer() && settings.communication.voiceProximity;
+    m_fields->isVoiceProximity = level->isPlatformer() ? settings.communication.voiceProximity : settings.communication.classicProximity;
 
     // else update the overlay with ping
     m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
@@ -213,14 +213,14 @@ void GlobedPlayLayer::onQuit() {
 void GlobedPlayLayer::setupPacketListeners() {
     auto& nm = NetworkManager::get();
 
-    nm.addListener<PlayerProfilesPacket>([](PlayerProfilesPacket* packet) {
+    nm.addListener<PlayerProfilesPacket>([](std::shared_ptr<PlayerProfilesPacket> packet) {
         auto& pcm = ProfileCacheManager::get();
         for (auto& player : packet->players) {
             pcm.insert(player);
         }
     });
 
-    nm.addListener<LevelDataPacket>([this](LevelDataPacket* packet){
+    nm.addListener<LevelDataPacket>([this](std::shared_ptr<LevelDataPacket> packet){
         this->m_fields->lastServerUpdate = this->m_fields->timeCounter;
 
         for (const auto& player : packet->players) {
@@ -234,7 +234,7 @@ void GlobedPlayLayer::setupPacketListeners() {
         }
     });
 
-    nm.addListener<VoiceBroadcastPacket>([this](VoiceBroadcastPacket* packet) {
+    nm.addListener<VoiceBroadcastPacket>([this](std::shared_ptr<VoiceBroadcastPacket> packet) {
 #if GLOBED_VOICE_SUPPORT
         // if deafened or voice is disabled, do nothing
         auto& settings = GlobedSettings::get();

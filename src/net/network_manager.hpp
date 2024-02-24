@@ -36,7 +36,7 @@ public:
     using PacketCallback = std::function<void(std::shared_ptr<Packet>)>;
 
     template <HasPacketID Pty>
-    using PacketCallbackSpecific = std::function<void(Pty*)>;
+    using PacketCallbackSpecific = std::function<void(std::shared_ptr<Pty>)>;
 
     static constexpr uint16_t PROTOCOL_VERSION = 3;
     static constexpr util::data::byte SERVER_MAGIC[10] = {0xda, 0xee, 'g', 'l', 'o', 'b', 'e', 'd', 0xda, 0xee};
@@ -69,7 +69,7 @@ public:
     template <HasPacketID Pty>
     void addListener(PacketCallbackSpecific<Pty>&& callback) {
         this->addListener(Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
-            callback(static_cast<Pty*>(pkt.get()));
+            callback(std::static_pointer_cast<Pty>(pkt));
         });
     }
 
@@ -189,7 +189,7 @@ private:
     template <HasPacketID Pty>
     void addBuiltinListener(PacketCallbackSpecific<Pty>&& callback) {
         this->addBuiltinListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
-            callback(static_cast<Pty*>(pkt.get()));
+            callback(std::static_pointer_cast<Pty>(pkt));
         });
     }
 };

@@ -2,6 +2,7 @@
 
 #include "overlay_cell.hpp"
 #include <audio/voice_playback_manager.hpp>
+#include <hooks/play_layer.hpp>
 #include <managers/profile_cache.hpp>
 
 using namespace geode::prelude;
@@ -39,8 +40,10 @@ void GlobedVoiceOverlay::updateOverlay() {
 
     this->removeAllChildren();
 
-    vpm.forEachStream([this](int accountId, AudioStream& stream) {
-        if (!stream.starving && (!PlayLayer::get()->m_level->isPlatformer() || stream.getVolume() > 0.005f)) {
+    bool isProximity = static_cast<GlobedPlayLayer*>(PlayLayer::get())->m_fields->isVoiceProximity;
+
+    vpm.forEachStream([this, isProximity = isProximity](int accountId, AudioStream& stream) {
+        if (!stream.starving && (!isProximity || stream.getVolume() > 0.005f)) {
             this->addPlayer(accountId);
         }
     });

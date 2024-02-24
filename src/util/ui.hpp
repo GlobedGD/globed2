@@ -34,4 +34,6 @@ namespace util::ui {
     };
 
     PopupLayout getPopupLayout(cocos2d::CCSize popupSize);
+
+    cocos2d::CCNode* findChildByMenuSelectorRecursive(cocos2d::CCNode* node, uintptr_t function);
 }

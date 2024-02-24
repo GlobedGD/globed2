@@ -1,3 +1,9 @@
+## v1.2.3
+
+* Add an option for proximity voice in non-platformer mode
+* Add a player count to levels
+* Make it harder to accidentally close an error/notice popup
+
 ## v1.2.2
 
 * Add a voice overlay to show who's currently speaking
