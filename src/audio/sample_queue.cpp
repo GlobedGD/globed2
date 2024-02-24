@@ -14,12 +14,12 @@ size_t AudioSampleQueue::copyTo(float* dest, size_t samples) {
     if (buf.size() < samples) {
         size_t total = buf.size();
 
-        std::copy(buf.data(), buf.data() + total, dest);
+        std::copy(buf.begin(), buf.begin() + total, dest);
         buf.clear();
         return total;
     }
 
-    std::copy(buf.data(), buf.data() + samples, dest);
+    std::copy(buf.begin(), buf.begin() + samples, dest);
     buf.erase(buf.begin(), buf.begin() + samples);
 
     return samples;
@@ -34,7 +34,7 @@ void AudioSampleQueue::clear() {
 }
 
 float* AudioSampleQueue::data() {
-    return buf.data();
+    return &buf.front();
 }
 
 #endif // GLOBED_VOICE_SUPPORT

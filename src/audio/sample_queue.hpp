@@ -24,7 +24,7 @@ public:
     float* data();
 
 private:
-    std::vector<float> buf;
+    std::deque<float> buf;
 };
 
 #endif // GLOBED_VOICE_SUPPORT
