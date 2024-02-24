@@ -60,7 +60,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
         .opacity(80)
         .zOrder(-1)
         .anchorPoint(0.f, 0.f)
-        .pos(-5.f, -3.f)
+        .pos(-5.f, -2.5f)
         .parent(this)
         .collect();
 
