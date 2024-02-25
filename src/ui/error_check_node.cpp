@@ -55,7 +55,7 @@ void ErrorCheckNode::updateErrors(float) {
     // if we are in PlayLayer, don't show errors unless paused
 
     auto playlayer = static_cast<GlobedPlayLayer*>(PlayLayer::get());
-    if (playlayer != nullptr && !playlayer->isPaused()) {
+    if (playlayer && !playlayer->isPaused()) {
         return;
     }
 
@@ -67,6 +67,8 @@ void ErrorCheckNode::updateErrors(float) {
             auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed error", error, "Ok"));
             alert->blockClosingFor(BLOCK_CLOSING_FOR);
             alert->show();
+        } else {
+            log::warn("cant show flalert, ignoring error: {}", error);
         }
     }
 
@@ -75,6 +77,8 @@ void ErrorCheckNode::updateErrors(float) {
             auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed notice", notice, "Ok"));
             alert->blockClosingFor(BLOCK_CLOSING_FOR);
             alert->show();
+        } else {
+            log::warn("cant show flalert, ignoring notice: {}", notice);
         }
     }
 }
