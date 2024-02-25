@@ -95,16 +95,16 @@ class RequestPlayerCountPacket : public Packet {
 
     GLOBED_PACKET_ENCODE {
         buf.writeU32(levelIds.size());
-        for (int value : levelIds) {
-            buf.writeI32(value);
+        for (LevelId value : levelIds) {
+            buf.writePrimitive(value);
         }
     }
 
-    RequestPlayerCountPacket(std::vector<int>&& levelIds) : levelIds(std::move(levelIds)) {}
+    RequestPlayerCountPacket(std::vector<LevelId>&& levelIds) : levelIds(std::move(levelIds)) {}
 
-    static std::shared_ptr<Packet> create(std::vector<int>&& levelIds) {
+    static std::shared_ptr<Packet> create(std::vector<LevelId>&& levelIds) {
         return std::make_shared<RequestPlayerCountPacket>(std::move(levelIds));
     }
 
-    std::vector<int> levelIds;
+    std::vector<LevelId> levelIds;
 };

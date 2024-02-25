@@ -3,8 +3,17 @@
 
 #include <Geode/modify/LevelBrowserLayer.hpp>
 
-// TODO
+#include <data/types/gd.hpp>
 
-class $modify(LevelBrowserLayer) {
+class $modify(HookedLevelBrowserLayer, LevelBrowserLayer) {
+    std::unordered_map<LevelId, uint16_t> levels;
 
+    $override
+    void setupLevelBrowser(cocos2d::CCArray* p0);
+
+    $override
+    void destructor();
+
+    void refreshPagePlayerCounts();
+    void updatePlayerCounts(float);
 };
