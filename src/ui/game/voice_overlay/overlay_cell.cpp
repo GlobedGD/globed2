@@ -5,7 +5,7 @@ using namespace geode::prelude;
 bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     if (!CCNode::init()) return false;
 
-    accountId = data.id;
+    accountId = data.accountId;
 
     this->setLayout(RowLayout::create()->setGap(5.f)->setAutoScale(false));
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <data/bytebuffer.hpp>
+#include "gd.hpp"
 
 class GameServerEntry {
 public:
@@ -23,15 +24,15 @@ public:
 class GlobedLevel {
 public:
     GLOBED_ENCODE {
-        buf.writeI32(levelId);
+        buf.writePrimitive(levelId);
         buf.writeU16(playerCount);
     }
 
     GLOBED_DECODE {
-        levelId = buf.readI32();
+        levelId = buf.readPrimitive<LevelId>();
         playerCount = buf.readU16();
     }
 
-    int levelId;
+    LevelId levelId;
     unsigned short playerCount;
 };

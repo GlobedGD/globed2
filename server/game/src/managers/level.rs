@@ -1,12 +1,15 @@
 use globed_shared::IntMap;
 
-use crate::data::types::{AssociatedPlayerData, PlayerData};
+use crate::data::{
+    types::{AssociatedPlayerData, PlayerData},
+    LevelId,
+};
 
 // Manages an entire room (all levels and players inside of it).
 #[derive(Default)]
 pub struct LevelManager {
     pub players: IntMap<i32, AssociatedPlayerData>, // player id : associated data
-    pub levels: IntMap<i32, Vec<i32>>,              // level id : [player id]
+    pub levels: IntMap<LevelId, Vec<i32>>,          // level id : [player id]
 }
 
 impl LevelManager {
@@ -46,7 +49,7 @@ impl LevelManager {
     }
 
     /// get a reference to a list of account IDs of players on a level given its ID
-    pub fn get_level(&self, level_id: i32) -> Option<&Vec<i32>> {
+    pub fn get_level(&self, level_id: LevelId) -> Option<&Vec<i32>> {
         self.levels.get(&level_id)
     }
 
@@ -56,7 +59,7 @@ impl LevelManager {
     }
 
     /// get the amount of players on a level given its ID
-    pub fn get_player_count_on_level(&self, level_id: i32) -> Option<usize> {
+    pub fn get_player_count_on_level(&self, level_id: LevelId) -> Option<usize> {
         self.levels.get(&level_id).map(Vec::len)
     }
 
@@ -66,7 +69,7 @@ impl LevelManager {
     }
 
     /// run a function `f` on each player on a level given its ID, with possibility to pass additional data
-    pub fn for_each_player_on_level<F, A>(&self, level_id: i32, f: F, additional: &mut A) -> usize
+    pub fn for_each_player_on_level<F, A>(&self, level_id: LevelId, f: F, additional: &mut A) -> usize
     where
         F: Fn(&AssociatedPlayerData, usize, &mut A) -> bool,
     {
@@ -92,7 +95,7 @@ impl LevelManager {
     /// run a function `f` on each level in this `PlayerManager`, with possibility to pass additional data
     pub fn for_each_level<F, A>(&self, f: F, additional: &mut A) -> usize
     where
-        F: Fn((i32, &Vec<i32>), usize, &mut A) -> bool,
+        F: Fn((LevelId, &Vec<i32>), usize, &mut A) -> bool,
     {
         self.levels.iter().fold(0, |count, (id, players)| {
             count + usize::from(f((*id, players), count, additional))
@@ -100,7 +103,7 @@ impl LevelManager {
     }
 
     /// add a player to a level given a level ID and an account ID
-    pub fn add_to_level(&mut self, level_id: i32, account_id: i32) {
+    pub fn add_to_level(&mut self, level_id: LevelId, account_id: i32) {
         let players = self.levels.entry(level_id).or_insert_with(|| Vec::with_capacity(128));
         if !players.contains(&account_id) {
             players.push(account_id);
@@ -108,7 +111,7 @@ impl LevelManager {
     }
 
     /// remove a player from a level given a level ID and an account ID
-    pub fn remove_from_level(&mut self, level_id: i32, account_id: i32) {
+    pub fn remove_from_level(&mut self, level_id: LevelId, account_id: i32) {
         let should_remove_level = self.levels.get_mut(&level_id).is_some_and(|level| {
             if let Some(index) = level.iter().position(|&x| x == account_id) {
                 level.remove(index);

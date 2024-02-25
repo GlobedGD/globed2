@@ -84,4 +84,10 @@ namespace util::misc {
 
         return name1 < name2;
     }
+
+    bool isEditorCollabLevel(LevelId levelId) {
+        const LevelId bound = std::pow(2, 32);
+
+        return levelId > bound;
+    }
 }

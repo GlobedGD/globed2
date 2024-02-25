@@ -1,4 +1,4 @@
-#![allow(clippy::wildcard_imports)]
+#![allow(clippy::wildcard_imports, clippy::cast_possible_truncation)]
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use esp::{ByteBuffer, ByteReader};
 use globed_game_server::{data::*, make_uninit, managers::LevelManager, new_uninit};
@@ -107,8 +107,8 @@ fn managers(c: &mut Criterion) {
 
             for level_id in 0..100 {
                 for account_id in 0..10 {
-                    manager.add_to_level(level_id, level_id * 10 + account_id);
-                    manager.set_player_data(level_id * 10 + account_id, &PlayerData::default());
+                    manager.add_to_level(level_id, level_id as i32 * 10 + account_id);
+                    manager.set_player_data(level_id as i32 * 10 + account_id, &PlayerData::default());
                 }
             }
 
@@ -133,8 +133,8 @@ fn managers(c: &mut Criterion) {
 
             for level_id in 0..100 {
                 for account_id in 0..10 {
-                    manager.remove_from_level(level_id, level_id * 10 + account_id);
-                    manager.remove_player(level_id * 10 + account_id);
+                    manager.remove_from_level(level_id, level_id as i32 * 10 + account_id);
+                    manager.remove_player(level_id as i32 * 10 + account_id);
                 }
             }
         }));

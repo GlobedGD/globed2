@@ -32,7 +32,7 @@ General
 * 11004 - LeaveRoomPacket - leave a room (no need for a response)
 * 11005 - RequestRoomPlayerListPacket - request list of all people in the given room (response 21004)
 * 11006 - RequestLevelListPacket - request list of all levels people are playing right now (response 21005)
-* 11007 - RequestPlayerCountPacket - request amount of people on a certain level (response 21006)
+* 11007 - RequestPlayerCountPacket - request amount of people on up to 128 different levels (response 21006)
 
 Game related
 
@@ -74,7 +74,7 @@ General
 * 21003 - RoomJoinFailedPacket - also nothing, the only possible error is no such room id exists
 * 21004 - RoomPlayerListPacket - list of people in the room
 * 21005 - LevelListPacket - list of all levels in the room
-* 21006 - LevelPlayerCountPacket - amount of players on a certain level
+* 21006 - LevelPlayerCountPacket - amount of players on certain requested levels
 
 Game related
 

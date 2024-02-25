@@ -243,13 +243,13 @@ void RoomPopup::sortPlayerList() {
 
     // filter out the weird people (old game server used to send unauthenticated people too)
     filteredPlayerList.erase(std::remove_if(filteredPlayerList.begin(), filteredPlayerList.end(), [](const auto& player) {
-        return player.id == 0;
+        return player.accountId == 0;
     }), filteredPlayerList.end());
 
     // show friends before everyone else, and sort everyone alphabetically by the name
     std::sort(filteredPlayerList.begin(), filteredPlayerList.end(), [&flm](const auto& p1, const auto& p2) -> bool {
-        bool isFriend1 = flm.isFriend(p1.id);
-        bool isFriend2 = flm.isFriend(p2.id);
+        bool isFriend1 = flm.isFriend(p1.accountId);
+        bool isFriend2 = flm.isFriend(p2.accountId);
 
         if (isFriend1 != isFriend2) {
             return isFriend1;

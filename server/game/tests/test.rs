@@ -1,5 +1,5 @@
 // this doc is mostly for flamegraphs
-#![allow(clippy::wildcard_imports)]
+#![allow(clippy::wildcard_imports, clippy::cast_possible_truncation)]
 use esp::{ByteBuffer, ByteReader};
 use globed_game_server::{data::*, managers::LevelManager};
 use std::hint::black_box;
@@ -108,8 +108,8 @@ fn test_player_manager() {
 
     for level_id in 0..100 {
         for account_id in 0..100 {
-            manager.add_to_level(level_id, level_id * 100 + account_id);
-            manager.set_player_data(level_id * 100 + account_id, &PlayerData::default());
+            manager.add_to_level(level_id, level_id as i32 * 100 + account_id);
+            manager.set_player_data(level_id as i32 * 100 + account_id, &PlayerData::default());
         }
     }
 
@@ -134,8 +134,8 @@ fn test_player_manager() {
 
     for level_id in 0..100 {
         for account_id in 0..100 {
-            manager.remove_from_level(level_id, level_id * 100 + account_id);
-            manager.remove_player(level_id * 100 + account_id);
+            manager.remove_from_level(level_id, level_id as i32 * 100 + account_id);
+            manager.remove_player(level_id as i32 * 100 + account_id);
         }
     }
 }

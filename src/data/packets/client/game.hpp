@@ -22,16 +22,16 @@ class LevelJoinPacket : public Packet {
     GLOBED_PACKET(12001, false, false)
 
     GLOBED_PACKET_ENCODE {
-        buf.writeI32(levelId);
+        buf.writePrimitive(levelId);
     }
 
-    LevelJoinPacket(int levelId) : levelId(levelId) {}
+    LevelJoinPacket(LevelId levelId) : levelId(levelId) {}
 
-    static std::shared_ptr<Packet> create(int levelId) {
+    static std::shared_ptr<Packet> create(LevelId levelId) {
         return std::make_shared<LevelJoinPacket>(levelId);
     }
 
-    int levelId;
+    LevelId levelId;
 };
 
 class LevelLeavePacket : public Packet {

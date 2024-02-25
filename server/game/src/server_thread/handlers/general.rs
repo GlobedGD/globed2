@@ -125,7 +125,8 @@ impl GameServerThread {
                 buf.write_list_with(level_count, |buf| {
                     pm.for_each_level(
                         |(level_id, players), count, buf| {
-                            if count < level_count {
+                            // skip editorcollab levels
+                            if count < level_count && !is_editorcollab_level(level_id) {
                                 buf.write_value(&GlobedLevel {
                                     level_id,
                                     player_count: players.len() as u16,
@@ -147,13 +148,21 @@ impl GameServerThread {
         let _ = gs_needauth!(self);
 
         let room_id = self.room_id.load(Ordering::Relaxed);
-        let player_count = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            pm.get_player_count_on_level(packet.level_id).unwrap_or(0) as u16
-        });
 
-        self.send_packet_static(&LevelPlayerCountPacket {
-            level_id: packet.level_id,
-            player_count,
+        // request all main levels
+        let encoded_size = size_of_types!(u32) + size_of_types!(LevelId, u16) * packet.level_ids.len();
+
+        self.send_packet_alloca_with::<LevelPlayerCountPacket, _>(encoded_size, |buf| {
+            self.game_server.state.room_manager.with_any(room_id, |pm| {
+                buf.write_list_with(packet.level_ids.len(), |buf| {
+                    for level_id in &*packet.level_ids {
+                        buf.write_value(level_id);
+                        buf.write_u16(pm.get_player_count_on_level(*level_id).unwrap_or(0) as u16);
+                    }
+
+                    packet.level_ids.len()
+                });
+            });
         })
         .await
     });

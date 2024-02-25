@@ -24,11 +24,12 @@ pub mod types;
 
 pub use bytebuffer::{ByteBuffer, ByteReader, Endian};
 pub use fastbuffer::FastByteBuffer;
+pub use types::*;
 
 #[derive(Debug)]
 pub enum DecodeError {
     NotEnoughData,
-    NotEnoughCapacityString,
+    NotEnoughCapacity,
     InvalidEnumValue,
     InvalidStringValue,
     NonFiniteValue,
@@ -39,7 +40,9 @@ impl Display for DecodeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::NotEnoughData => f.write_str("could not read enough bytes from the ByteBuffer"),
-            Self::NotEnoughCapacityString => f.write_str("not enough capacity to fit the given string into a FastString"),
+            Self::NotEnoughCapacity => {
+                f.write_str("not enough capacity to fit the given value into a FastString or FastVec")
+            }
             Self::InvalidEnumValue => f.write_str("invalid enum value was passed"),
             Self::InvalidStringValue => f.write_str("invalid string was passed, likely not properly UTF-8 encoded"),
             Self::NonFiniteValue => f.write_str("NaN or inf was passed as a data field expecting a finite f32 or f64 value"),
@@ -62,9 +65,15 @@ pub trait Encodable {
 }
 
 pub trait Decodable {
+    #[inline]
     fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
     where
-        Self: Sized;
+        Self: Sized,
+    {
+        let data = &buf.as_bytes()[buf.get_rpos()..];
+        Self::decode_from_reader(&mut ByteReader::from_bytes(data))
+    }
+
     fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized;
@@ -86,6 +95,7 @@ pub trait DynamicSize {
 ///
 /// Example usage:
 /// ```rust
+/// use esp::*;
 /// struct Type {
 ///     some_val: String,
 /// }
@@ -114,6 +124,7 @@ macro_rules! decode_impl {
 ///
 /// Example usage:
 /// ```rust
+/// use esp::*;
 /// struct Type {
 ///     some_val: String,
 /// }
@@ -142,6 +153,7 @@ macro_rules! encode_impl {
 ///
 /// Example usage:
 /// ```rust
+/// use esp::*;
 /// struct Type {
 ///     some_val: i32,
 /// }
@@ -173,7 +185,9 @@ macro_rules! dynamic_size_calc_impl {
 ///
 /// Example usage:
 /// ```rust
-/// let size = size_of_types!(u32, Option<PlayerData>, bool);
+/// use esp::*;
+///
+/// let size = size_of_types!(u32, Option<i32>, bool);
 /// ```
 #[macro_export]
 macro_rules! size_of_types {
@@ -431,4 +445,66 @@ impl ByteBufferExtRead for ByteBuffer {
 
 impl<'a> ByteBufferExtRead for ByteReader<'a> {
     impl_extread!(decode_from_reader);
+}
+
+// Tests.
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn fast_string() {
+        let mut buf = ByteBuffer::new();
+        let string = FastString::<120>::from_str("hello there, this is a basic test string!");
+
+        buf.write_value(&string);
+        buf.set_rpos(0);
+        let out = buf.read_value::<FastString<120>>();
+
+        assert!(out.is_ok(), "failed to read the string");
+        assert_eq!(out.unwrap(), string);
+    }
+
+    #[test]
+    fn checksum() {
+        let mut buf = ByteBuffer::new();
+        buf.write_u32(0x9d);
+        buf.write_u32(0x9a);
+        buf.write_u32(0x94);
+        buf.write_u32(0x91);
+        buf.append_self_checksum();
+
+        let mut reader = ByteReader::from_bytes(buf.as_bytes());
+        assert!(reader.validate_self_checksum().is_ok(), "failed to validate checksum");
+    }
+
+    #[test]
+    fn fast_vec() {
+        let mut vec = FastVec::<String, 128>::new();
+        vec.push("test string 1".to_owned());
+        vec.push("test string 2".to_owned());
+        vec.push("test string 3".to_owned());
+        vec.push("test string 4".to_owned());
+        vec.push("test string 5".to_owned());
+
+        let mut buffer = ByteBuffer::new();
+        buffer.write_value(&vec);
+
+        buffer.set_rpos(0);
+        let value = buffer.read_value::<FastVec<String, 128>>();
+
+        assert!(value.is_ok(), "failed to read FastVec");
+
+        let vec = value.unwrap();
+
+        let mut viter = vec.iter();
+        assert_eq!(viter.next().unwrap(), &"test string 1".to_owned());
+        assert_eq!(viter.next().unwrap(), &"test string 2".to_owned());
+        assert_eq!(viter.next().unwrap(), &"test string 3".to_owned());
+        assert_eq!(viter.next().unwrap(), &"test string 4".to_owned());
+        assert_eq!(viter.next().unwrap(), &"test string 5".to_owned());
+
+        assert!(viter.next().is_none(), "vector didn't end");
+    }
 }

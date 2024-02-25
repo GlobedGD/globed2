@@ -6,7 +6,7 @@ use crate::data::*;
 
 #[derive(Packet, Encodable)]
 #[packet(id = 21000, tcp = true)]
-pub struct GlobalPlayerListPacket;
+pub struct GlobalPlayerListPacket; // definition intentionally missing
 
 #[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 21001, tcp = false)]
@@ -24,15 +24,12 @@ pub struct RoomJoinFailedPacket;
 
 #[derive(Packet, Encodable)]
 #[packet(id = 21004, tcp = true)]
-pub struct RoomPlayerListPacket;
+pub struct RoomPlayerListPacket; // definition intentionally missing
 
 #[derive(Packet, Encodable)]
 #[packet(id = 21005, tcp = true)]
-pub struct LevelListPacket;
+pub struct LevelListPacket; // definition intentionally missing
 
-#[derive(Packet, Encodable, StaticSize)]
+#[derive(Packet, Encodable)]
 #[packet(id = 21006)]
-pub struct LevelPlayerCountPacket {
-    pub level_id: i32,
-    pub player_count: u16,
-}
+pub struct LevelPlayerCountPacket; // definition intentionally missing

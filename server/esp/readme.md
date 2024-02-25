@@ -55,6 +55,10 @@ When encoded, the actual representation is no different from `String` or `&str`,
 
 Do keep in mind that if you try to mutate the string and the size goes above `N`, the program will panic. To avoid that, use `extend_safe` or manually check the size and capacity of the string before mutating.
 
+### FastVec
+
+Similar to `FastString`, `FastVec<T, N>` is a class with similar API to `Vec<T>`, except it uses no heap storage and can store up to `N` elements, at which point adding any more will cause the program to panic. Just like `FastString`, it also has `safe_` APIs that instead return an error on failure.
+
 ### FiniteF32, FiniteF64
 
 Simple wrappers around `f32` and `f64` with the only difference being that they will return a `DecodeError` if the value is `nan` or `inf` when decoding.

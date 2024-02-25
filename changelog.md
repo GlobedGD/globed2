@@ -1,7 +1,7 @@
 ## v1.2.3
 
 * Add an option for proximity voice in non-platformer mode
-* Add a player count to levels
+* Add a player count to online & main levels
 * Make it harder to accidentally close an error/notice popup
 
 ## v1.2.2

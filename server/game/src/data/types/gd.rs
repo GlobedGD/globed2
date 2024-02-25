@@ -74,7 +74,7 @@ pub struct PlayerAccountData {
 }
 
 impl PlayerAccountData {
-    pub fn make_room_preview(&self, level_id: i32) -> PlayerRoomPreviewAccountData {
+    pub fn make_room_preview(&self, level_id: LevelId) -> PlayerRoomPreviewAccountData {
         PlayerRoomPreviewAccountData {
             account_id: self.account_id,
             user_id: self.user_id,
@@ -122,7 +122,7 @@ pub struct PlayerRoomPreviewAccountData {
     pub color1: i16,
     pub color2: i16,
     pub glow_color: i16,
-    pub level_id: i32,
+    pub level_id: LevelId,
 }
 
 /* AssociatedPlayerData */

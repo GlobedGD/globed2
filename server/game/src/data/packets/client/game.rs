@@ -9,7 +9,7 @@ pub struct RequestPlayerProfilesPacket {
 #[derive(Packet, Decodable)]
 #[packet(id = 12001)]
 pub struct LevelJoinPacket {
-    pub level_id: i32,
+    pub level_id: LevelId,
 }
 
 #[derive(Packet, Decodable)]

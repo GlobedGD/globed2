@@ -136,7 +136,7 @@ void AdminUserPopup::onProfileLoaded() {
     Build<CCSprite>::createSpriteName("icon-kick.png"_spr)
         .scale(0.8f)
         .intoMenuItem([this](auto) {
-            AskInputPopup::create(fmt::format("Kick {}", accountData->name), [accountId = accountData->id](auto reason) {
+            AskInputPopup::create(fmt::format("Kick {}", accountData->name), [accountId = accountData->accountId](auto reason) {
                 auto packet = AdminDisconnectPacket::create(std::to_string(accountId), reason);
                 NetworkManager::get().send(packet);
             }, 120, "Kick reason", util::misc::STRING_PRINTABLE_INPUT, 0.6f)->show();
@@ -147,7 +147,7 @@ void AdminUserPopup::onProfileLoaded() {
     Build<CCSprite>::createSpriteName("GJ_chatBtn_001.png")
         .scale(0.8f)
         .intoMenuItem([this](auto) {
-            AskInputPopup::create(fmt::format("Send notice to {}", accountData->name), [accountId = accountData->id](auto message) {
+            AskInputPopup::create(fmt::format("Send notice to {}", accountData->name), [accountId = accountData->accountId](auto message) {
                 auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), message);
                 NetworkManager::get().send(packet);
             }, 160, "Message", util::misc::STRING_PRINTABLE_INPUT, 0.6f)->show();
@@ -254,8 +254,8 @@ void AdminUserPopup::onProfileLoaded() {
 void AdminUserPopup::onOpenProfile(CCObject*) {
     auto& data = accountData.value();
 
-    GameLevelManager::sharedState()->storeUserName(data.userId, data.id, data.name);
-    ProfilePage::create(data.id, false)->show();
+    GameLevelManager::sharedState()->storeUserName(data.userId, data.accountId, data.name);
+    ProfilePage::create(data.accountId, false)->show();
 }
 
 void AdminUserPopup::onColorSelected(ccColor3B color) {

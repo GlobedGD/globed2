@@ -217,7 +217,7 @@ impl GameServer {
         false
     }
 
-    pub async fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: i32, room_id: u32) {
+    pub async fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: LevelId, room_id: u32) {
         self.broadcast_user_message(
             &ServerThreadMessage::BroadcastVoice(vpkt.clone()),
             vpkt.player_id,
@@ -227,7 +227,7 @@ impl GameServer {
         .await;
     }
 
-    pub async fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: i32, room_id: u32) {
+    pub async fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: LevelId, room_id: u32) {
         self.broadcast_user_message(
             &ServerThreadMessage::BroadcastText(tpkt.clone()),
             tpkt.player_id,
@@ -272,10 +272,14 @@ impl GameServer {
             .values()
             .filter(|thr| thr.authenticated() && thr.room_id.load(Ordering::Relaxed) == room_id)
             .map(|thread| {
-                thread
-                    .account_data
-                    .lock()
-                    .make_room_preview(thread.level_id.load(Ordering::Relaxed))
+                let mut level_id = thread.level_id.load(Ordering::Relaxed);
+
+                // if they are in editorcollab, show no level
+                if is_editorcollab_level(level_id) {
+                    level_id = 0;
+                }
+
+                thread.account_data.lock().make_room_preview(level_id)
             })
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
@@ -380,7 +384,13 @@ impl GameServer {
     /* private handling stuff */
 
     /// broadcast a message to all people on the level
-    async fn broadcast_user_message(&'static self, msg: &ServerThreadMessage, origin_id: i32, level_id: i32, room_id: u32) {
+    async fn broadcast_user_message(
+        &'static self,
+        msg: &ServerThreadMessage,
+        origin_id: i32,
+        level_id: LevelId,
+        room_id: u32,
+    ) {
         let threads = self.state.room_manager.with_any(room_id, |pm| {
             let players = pm.get_level(level_id);
 

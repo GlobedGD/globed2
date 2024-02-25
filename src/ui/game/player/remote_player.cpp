@@ -108,7 +108,7 @@ void RemotePlayer::incDefaultTicks() {
 }
 
 bool RemotePlayer::isValidPlayer() {
-    return accountData.id != 0;
+    return accountData.accountId != 0;
 }
 
 void RemotePlayer::removeProgressIndicators() {

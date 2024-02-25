@@ -74,8 +74,7 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacket(bool onTcpConnection, boo
     try {
         packet->decode(buf);
     } catch (const std::exception& e) {
-        auto msg = fmt::format("Decoding packet ID {} failed: {}", header.id, e.what());
-        throw std::runtime_error(msg);
+        return Err(fmt::format("Decoding packet ID {} failed: {}", header.id, e.what()));
     }
 
     return Ok(packet);

@@ -48,7 +48,7 @@ static float vec128sum(__m128 vec) {
     sum = _mm_hadd_ps(sum, sum);
 
     float result;
-    _mm_store_ss(&reslut, sum);
+    _mm_store_ss(&result, sum);
     return result;
 #endif
 }

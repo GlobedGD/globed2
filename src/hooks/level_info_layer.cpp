@@ -7,83 +7,88 @@
 
 using namespace geode::prelude;
 
-bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
-    if (!LevelInfoLayer::init(level, challenge)) return false;
+// bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
+//     if (!LevelInfoLayer::init(level, challenge)) return false;
 
-    auto levelId = level->m_levelID.value();
+//     auto levelId = level->m_levelID.value();
 
-    auto& nm = NetworkManager::get();
+//     auto& nm = NetworkManager::get();
 
-    if (nm.established()) {
-        log::debug("sending player count id {}", levelId);
-        nm.send(RequestPlayerCountPacket::create(levelId));
-        nm.addListener<LevelPlayerCountPacket>([this, levelId = levelId](auto packet) {
-            log::debug("got player count {}, {}", packet->levelId, packet->playerCount);
-            auto players = packet->playerCount;
-            if (levelId != packet->levelId) return;
+//     if (nm.established()) {
+//         log::debug("sending player count id {}", levelId);
+//         nm.send(RequestPlayerCountPacket::create(levelId));
+//         nm.addListener<LevelPlayerCountPacket>([this, levelId = levelId](auto packet) {
+//             log::debug("got player count {}, {}", packet->levelId, packet->playerCount);
+//             auto players = packet->playerCount;
+//             if (levelId != packet->levelId) return;
 
-            auto currentLayer = getChildOfType<LevelInfoLayer>(CCScene::get(), 0);
-            if (currentLayer && this != currentLayer) return;
+//             auto currentLayer = getChildOfType<LevelInfoLayer>(CCScene::get(), 0);
+//             if (currentLayer && this != currentLayer) return;
 
-            this->updatePlayerCountLabel(players);
-        });
+//             this->updatePlayerCountLabel(players);
+//         });
 
-        // refresh every once in a while
-    }
+//         // refresh every once in a while
+//         this->schedule(schedule_selector(HookedLevelInfoLayer::sendRequest), 5.0f);
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
-void HookedLevelInfoLayer::destructor() {
-    LevelInfoLayer::~LevelInfoLayer();
+// void HookedLevelInfoLayer::sendRequest(float) {
+//     log::debug("sending req");
+//     auto& nm = NetworkManager::get();
+//     if (nm.established()) {
+//         nm.send(RequestPlayerCountPacket::create(m_level->m_levelID));
+//     }
+// }
 
-    auto& nm = NetworkManager::get();
-    nm.removeListener<LevelPlayerCountPacket>(util::time::seconds(3));
-}
+// void HookedLevelInfoLayer::destructor() {
+//     LevelInfoLayer::~LevelInfoLayer();
 
-void HookedLevelInfoLayer::updatePlayerCountLabel(uint16_t playerCount) {
-    if (!m_fields->playerCountLabel) {
-        if (Loader::get()->isModLoaded("geode.node-ids")) {
-            auto* creatorMenu = this->getChildByID("creator-info-menu");
-            if (creatorMenu) {
-                auto* layout = static_cast<AxisLayout*>(creatorMenu->getLayout());
-                layout->setAutoScale(false);
-                layout->setGap(0.f);
+//     auto& nm = NetworkManager::get();
+//     nm.removeListener<LevelPlayerCountPacket>(util::time::seconds(3));
+// }
 
-                Build<CCLabelBMFont>::create("", "bigFont.fnt")
-                    .scale(0.4f)
-                    .parent(creatorMenu)
-                    .id("player-count-label"_spr)
-                    .store(m_fields->playerCountLabel);
+// void HookedLevelInfoLayer::updatePlayerCountLabel(uint16_t playerCount) {
+//     if (!m_fields->playerCountLabel) {
+//         if (Loader::get()->isModLoaded("geode.node-ids")) {
+//             auto* creatorMenu = this->getChildByID("creator-info-menu");
+//             if (creatorMenu) {
+//                 auto* layout = static_cast<AxisLayout*>(creatorMenu->getLayout());
+//                 layout->setAutoScale(false);
+//                 layout->setGap(0.f);
 
-                creatorMenu->setPositionY(creatorMenu->getPositionY() - 3.f);
-            }
-        }
+//                 Build<CCLabelBMFont>::create("", "goldFont.fnt")
+//                     .scale(0.4f)
+//                     .parent(creatorMenu)
+//                     .id("player-count-label"_spr)
+//                     .store(m_fields->playerCountLabel);
 
-        // fallback position
-        if (!m_fields->playerCountLabel) {
-            auto winSize = CCDirector::get()->getWinSize();
+//                 creatorMenu->setPositionY(creatorMenu->getPositionY() - 3.f);
+//             }
+//         }
 
-            Build<CCLabelBMFont>::create("", "bigFont.fnt")
-                .scale(0.4f)
-                .pos(winSize.width / 2, winSize.height - 65.f)
-                .parent(this)
-                .id("player-count-label"_spr)
-                .store(m_fields->playerCountLabel);
-        }
-    }
+//         // fallback position
+//         if (!m_fields->playerCountLabel) {
+//             auto winSize = CCDirector::get()->getWinSize();
 
-    if (playerCount == 69) {
-        m_fields->playerCountLabel->setVisible(false);
-    } else {
-        m_fields->playerCountLabel->setVisible(true);
-        m_fields->playerCountLabel->setString(fmt::format("{} players", playerCount).c_str());
-    }
+//             Build<CCLabelBMFont>::create("", "goldFont.fnt")
+//                 .scale(0.4f)
+//                 .pos(winSize.width / 2, winSize.height - 65.f)
+//                 .parent(this)
+//                 .id("player-count-label"_spr)
+//                 .store(m_fields->playerCountLabel);
+//         }
+//     }
 
-    if (Loader::get()->isModLoaded("geode.node-ids")) {
-        auto* creatorMenu = this->getChildByID("creator-info-menu");
-        if (creatorMenu) {
-            creatorMenu->updateLayout();
-        }
-    }
-}
+//     m_fields->playerCountLabel->setVisible(true);
+//     m_fields->playerCountLabel->setString(fmt::format("{} players", playerCount).c_str());
+
+//     if (Loader::get()->isModLoaded("geode.node-ids")) {
+//         auto* creatorMenu = this->getChildByID("creator-info-menu");
+//         if (creatorMenu) {
+//             creatorMenu->updateLayout();
+//         }
+//     }
+// }

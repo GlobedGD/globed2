@@ -351,6 +351,7 @@ void NetworkManager::threadRecvFunc() {
         if (connected()) {
             this->disconnectWithMessage(packet_.unwrapErr(), true);
         }
+
         return;
     }
 

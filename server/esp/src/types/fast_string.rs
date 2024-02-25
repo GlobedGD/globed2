@@ -177,7 +177,7 @@ impl<const N: usize> Decodable for FastString<N> {
     {
         let len = buf.read_u32()? as usize;
         if len > N {
-            return Err(DecodeError::NotEnoughCapacityString);
+            return Err(DecodeError::NotEnoughCapacity);
         }
 
         let mut buffer = [0u8; N];
@@ -193,7 +193,7 @@ impl<const N: usize> Decodable for FastString<N> {
     {
         let len = buf.read_u32()? as usize;
         if len > N {
-            return Err(DecodeError::NotEnoughCapacityString);
+            return Err(DecodeError::NotEnoughCapacity);
         }
 
         let mut buffer = [0u8; N];
@@ -245,7 +245,7 @@ impl<const N: usize> TryFrom<&str> for FastString<N> {
     type Error = DecodeError;
     fn try_from(value: &str) -> DecodeResult<Self> {
         if value.len() > N {
-            return Err(DecodeError::NotEnoughCapacityString);
+            return Err(DecodeError::NotEnoughCapacity);
         }
 
         Ok(Self::from_str(value))

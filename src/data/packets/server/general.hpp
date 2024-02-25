@@ -55,10 +55,13 @@ class LevelPlayerCountPacket : public Packet {
     GLOBED_PACKET(21006, false, false)
 
     GLOBED_PACKET_DECODE {
-        levelId = buf.readI32();
-        playerCount = buf.readU16();
+        size_t size = buf.readU32();
+        for (size_t i = 0; i < size; i++) {
+            auto levelId = buf.readPrimitive<LevelId>();
+            auto playerCount = buf.readU16();
+            levels.push_back(std::make_pair(levelId, playerCount));
+        }
     }
 
-    int levelId;
-    uint16_t playerCount;
+    std::vector<std::pair<LevelId, uint16_t>> levels;
 };

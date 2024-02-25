@@ -89,7 +89,7 @@ void GlobedUserCell::updateVisualizer(float dt) {
     if (audioVisualizer) {
         auto& vpm = VoicePlaybackManager::get();
 
-        float loudness = vpm.getLoudness(accountData.id);
+        float loudness = vpm.getLoudness(accountData.accountId);
         audioVisualizer->setVolume(loudness);
     }
 #endif // GLOBED_VOICE_SUPPORT
@@ -109,24 +109,24 @@ void GlobedUserCell::makeButtons() {
 
     auto maxWidth = 0.f;
 
-    if (accountData.id != GJAccountManager::get()->m_accountID) {
+    if (accountData.accountId != GJAccountManager::get()->m_accountID) {
         // mute/unmute button
         auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
-        bool isUnblocked = pl->shouldLetMessageThrough(accountData.id);
+        bool isUnblocked = pl->shouldLetMessageThrough(accountData.accountId);
 
         Build<CCSprite>::createSpriteName(isUnblocked ? "icon-mute.png"_spr : "icon-unmute.png"_spr)
             .scale(0.475f)
             .intoMenuItem([isUnblocked, this](auto) {
                 auto& bl = BlockListManager::get();
-                isUnblocked ? bl.blacklist(this->accountData.id) : bl.whitelist(this->accountData.id);
+                isUnblocked ? bl.blacklist(this->accountData.accountId) : bl.whitelist(this->accountData.accountId);
                 // mute them immediately
                 auto& settings = GlobedSettings::get();
                 auto& vpm = VoicePlaybackManager::get();
 
                 if (isUnblocked) {
-                    vpm.setVolume(this->accountData.id, 0.f);
+                    vpm.setVolume(this->accountData.accountId, 0.f);
                 } else {
-                    vpm.setVolume(this->accountData.id, settings.communication.voiceVolume);
+                    vpm.setVolume(this->accountData.accountId, settings.communication.voiceVolume);
                 }
 
                 this->makeButtons();
@@ -146,7 +146,7 @@ void GlobedUserCell::makeButtons() {
                 // load the data from the server
                 auto& nm = NetworkManager::get();
                 IntermediaryLoadingPopup::create([&nm, this](auto popup) {
-                    nm.send(AdminGetUserStatePacket::create(std::to_string(accountData.id)));
+                    nm.send(AdminGetUserStatePacket::create(std::to_string(accountData.accountId)));
                     nm.addListener<AdminUserDataPacket>([this, popup = popup](auto packet) {
                         popup->onClose(popup);
 
@@ -167,7 +167,7 @@ void GlobedUserCell::makeButtons() {
     }
 
 
-    if (accountData.id != GJAccountManager::get()->m_accountID) {
+    if (accountData.accountId != GJAccountManager::get()->m_accountID) {
         // audio visualizer
         Build<GlobedAudioVisualizer>::create()
 #if !GLOBED_VOICE_SUPPORT
@@ -188,12 +188,12 @@ void GlobedUserCell::makeButtons() {
 }
 
 void GlobedUserCell::onOpenProfile(CCObject*) {
-    bool myself = accountData.id == GJAccountManager::get()->m_accountID;
+    bool myself = accountData.accountId == GJAccountManager::get()->m_accountID;
     if (!myself) {
-        GameLevelManager::sharedState()->storeUserName(accountData.userId, accountData.id, accountData.name);
+        GameLevelManager::sharedState()->storeUserName(accountData.userId, accountData.accountId, accountData.name);
     }
 
-    ProfilePage::create(accountData.id, myself)->show();
+    ProfilePage::create(accountData.accountId, myself)->show();
 }
 
 GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data) {

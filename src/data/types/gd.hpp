@@ -6,6 +6,9 @@
 #include <data/bytebuffer.hpp>
 #include "game.hpp"
 
+// TODO: editorcollab change to i64
+using LevelId = int32_t;
+
 class PlayerIconData {
 public:
     static const PlayerIconData DEFAULT_ICONS;
@@ -79,11 +82,11 @@ public:
 class PlayerPreviewAccountData {
 public:
     PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
-        : id(id), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor) {}
+        : accountId(id), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor) {}
     PlayerPreviewAccountData() {}
 
     GLOBED_ENCODE {
-        buf.writeI32(id);
+        buf.writeI32(accountId);
         buf.writeString(name);
         buf.writeI16(cube);
         buf.writeI16(color1);
@@ -92,7 +95,7 @@ public:
     }
 
     GLOBED_DECODE {
-        id = buf.readI32();
+        accountId = buf.readI32();
         name = buf.readString();
         cube = buf.readI16();
         color1 = buf.readI16();
@@ -100,43 +103,43 @@ public:
         glowColor = buf.readI16();
     }
 
-    int32_t id;
+    int32_t accountId;
     std::string name;
     int16_t cube, color1, color2, glowColor;
 };
 
 class PlayerRoomPreviewAccountData {
 public:
-    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
-        : id(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId) {}
+    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, LevelId levelId)
+        : accountId(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId) {}
     PlayerRoomPreviewAccountData() {}
 
     GLOBED_ENCODE {
-        buf.writeI32(id);
+        buf.writeI32(accountId);
         buf.writeI32(userId);
         buf.writeString(name);
         buf.writeI16(cube);
         buf.writeI16(color1);
         buf.writeI16(color2);
         buf.writeI16(glowColor);
-        buf.writeI32(levelId);
+        buf.writePrimitive(levelId);
     }
 
     GLOBED_DECODE {
-        id = buf.readI32();
+        accountId = buf.readI32();
         userId = buf.readI32();
         name = buf.readString();
         cube = buf.readI16();
         color1 = buf.readI16();
         color2 = buf.readI16();
         glowColor = buf.readI16();
-        levelId = buf.readI32();
+        levelId = buf.readPrimitive<LevelId>();
     }
 
-    int32_t id, userId;
+    int32_t accountId, userId;
     std::string name;
     int16_t cube, color1, color2, glowColor;
-    int32_t levelId;
+    LevelId levelId;
 };
 
 class PlayerAccountData {
@@ -144,20 +147,20 @@ public:
     static const PlayerAccountData DEFAULT_DATA;
 
     PlayerAccountData(int32_t id, int32_t userId, const std::string_view name, const PlayerIconData& icons)
-        : id(id), userId(userId), name(name), icons(icons) {}
+        : accountId(id), userId(userId), name(name), icons(icons) {}
 
     PlayerAccountData() {}
 
     bool operator==(const PlayerAccountData&) const = default;
 
-    PlayerRoomPreviewAccountData makeRoomPreview(int levelId) {
+    PlayerRoomPreviewAccountData makeRoomPreview(LevelId levelId) {
         return PlayerRoomPreviewAccountData(
-            id, userId, name, icons.cube, icons.color1, icons.color2, icons.glowColor, levelId
+            accountId, userId, name, icons.cube, icons.color1, icons.color2, icons.glowColor, levelId
         );
     }
 
     GLOBED_ENCODE {
-        buf.writeI32(id);
+        buf.writeI32(accountId);
         buf.writeI32(userId);
         buf.writeString(name);
         buf.writeValue(icons);
@@ -165,14 +168,14 @@ public:
     }
 
     GLOBED_DECODE {
-        id = buf.readI32();
+        accountId = buf.readI32();
         userId = buf.readI32();
         name = buf.readString();
         icons = buf.readValue<PlayerIconData>();
         specialUserData = buf.readOptionalValue<SpecialUserData>();
     }
 
-    int32_t id, userId;
+    int32_t accountId, userId;
     std::string name;
     PlayerIconData icons;
     std::optional<SpecialUserData> specialUserData;

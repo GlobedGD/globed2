@@ -77,8 +77,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
 }
 
 void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
-    GameLevelManager::sharedState()->storeUserName(data.userId, data.id, data.name);
-    ProfilePage::create(data.id, false)->show();
+    GameLevelManager::sharedState()->storeUserName(data.userId, data.accountId, data.name);
+    ProfilePage::create(data.accountId, false)->show();
 }
 
 PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data) {

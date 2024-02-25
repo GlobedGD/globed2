@@ -3,6 +3,8 @@
 
 #include <functional>
 
+#include <data/types/gd.hpp>
+
 // i hate c++
 #define _GLOBED_STRNUM "1234567890"
 #define _GLOBED_STRLOWER "abcdefghijklmnopqrstuvwxyz"
@@ -92,4 +94,6 @@ namespace util::misc {
     float pcmVolumeSlow(const float* pcm, size_t samples);
 
     bool compareName(const std::string_view name1, const std::string_view name2);
+
+    bool isEditorCollabLevel(LevelId levelId);
 }

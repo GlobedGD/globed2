@@ -1,7 +1,7 @@
 #include "profile_cache.hpp"
 
 void ProfileCacheManager::insert(const PlayerAccountData& data) {
-    cache[data.id] = data;
+    cache[data.accountId] = data;
 }
 
 std::optional<PlayerAccountData> ProfileCacheManager::getData(int32_t accountId) {
@@ -43,8 +43,8 @@ void ProfileCacheManager::setOwnData(const PlayerIconData& data) {
     auto& name = GJAccountManager::get()->m_username;
 
     bool changes = false;
-    if (ownData.id != accountId) {
-        ownData.id = accountId;
+    if (ownData.accountId != accountId) {
+        ownData.accountId = accountId;
         changes = true;
     }
 

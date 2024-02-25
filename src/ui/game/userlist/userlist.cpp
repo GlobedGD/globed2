@@ -65,8 +65,8 @@ void GlobedUserListPopup::reorderWithVolume(float) {
     std::vector<int> cellIndices;
 
     for (auto* entry : CCArrayExt<GlobedUserCell*>(listLayer->m_list->m_entries)) {
-        cellMap[entry->accountData.id] = entry;
-        cellIndices.push_back(entry->accountData.id);
+        cellMap[entry->accountData.accountId] = entry;
+        cellIndices.push_back(entry->accountData.accountId);
     }
 
     auto now = util::time::now();
@@ -135,7 +135,7 @@ void GlobedUserListPopup::reloadList(float) {
     size_t refreshed = 0;
     for (auto* cell : CCArrayExt<GlobedUserCell*>(listLayer->m_list->m_entries)) {
         for (const auto& [playerId, entry] : playerStore) {
-            if (playerId == cell->accountData.id) {
+            if (playerId == cell->accountData.accountId) {
                 cell->refreshData(entry);
                 refreshed++;
             }
@@ -198,7 +198,7 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
         auto& entry = playerStore.at(playerId);
 
         GlobedUserCell* cell;
-        if (playerId == ownData.id) {
+        if (playerId == ownData.accountId) {
             cell = GlobedUserCell::create(entry, ownData);
         } else {
             auto pcmdata = pcm.getData(playerId);
