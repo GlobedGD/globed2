@@ -58,8 +58,8 @@ public:
 
     // start playing this stream
     void start();
-    // write an audio frame to this stream
-    void writeData(const EncodedAudioFrame& frame);
+    // write an audio frame to this stream. returns error if opus decoding failed
+    Result<> writeData(const EncodedAudioFrame& frame);
     // write raw audio data to this stream
     void writeData(const float* pcm, size_t samples);
 

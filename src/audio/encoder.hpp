@@ -77,7 +77,7 @@ public:
 
     // Encode the given PCM samples with Opus. The amount of samples passed must be equal to `frameSize` passed in the constructor.
     // After you no longer need the encoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioEncoder::freeData(data)`
-    [[nodiscard]] EncodedOpusData encode(const float* data);
+    [[nodiscard]] Result<EncodedOpusData> encode(const float* data);
 
     // Free the underlying buffer of the encoded frame
     static void freeData(EncodedOpusData& data) {
@@ -85,11 +85,11 @@ public:
     }
 
     // sets the sample rate that will be used and recreates the encoder
-    void setSampleRate(int sampleRate);
+    Result<> setSampleRate(int sampleRate);
     // sets the frame size of the data that will be used
     void setFrameSize(int frameSize);
     // sets the amount of channels that will be used and recreates the encoder
-    void setChannels(int channels);
+    Result<> setChannels(int channels);
 
 private:
     // EXPERIMENTAL ZONE
@@ -99,16 +99,16 @@ private:
     // and remove the `private:` specifier and this comment.
 
     // resets the internal state of the encoder
-    void resetState();
+    Result<> resetState();
 
     // sets the bitrate for the encoder
-    void setBitrate(int bitrate);
+    Result<> setBitrate(int bitrate);
 
     // sets the encoder complexity (1-10)
-    void setComplexity(int complexity);
+    Result<> setComplexity(int complexity);
 
     // sets whether to use VBR or CBR (if false)
-    void setVariableBitrate(bool variablebr = true);
+    Result<> setVariableBitrate(bool variablebr = true);
 
 protected:
     OpusEncoder* encoder = nullptr;
@@ -116,8 +116,8 @@ protected:
     int _res;
     int sampleRate, frameSize, channels;
 
-    void remakeEncoder();
-    void errcheck(const char* where);
+    Result<> remakeEncoder();
+    Result<> errcheck(const char* where);
 };
 
 #endif // GLOBED_VOICE_SUPPORT

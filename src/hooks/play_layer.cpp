@@ -248,7 +248,11 @@ void GlobedPlayLayer::setupPacketListeners() {
 
             vpm.setVolume(packet->sender, settings.communication.voiceVolume);
             this->updateProximityVolume(packet->sender);
-            vpm.playFrameStreamed(packet->sender, packet->frame);
+            auto result = vpm.playFrameStreamed(packet->sender, packet->frame);
+
+            if (result.isErr()) {
+                ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + result.unwrapErr());
+            }
         } catch(const std::exception& e) {
             ErrorQueues::get().debugWarn(std::string("Failed to play a voice frame: ") + e.what());
         }

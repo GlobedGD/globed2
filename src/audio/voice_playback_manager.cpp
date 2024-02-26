@@ -4,14 +4,14 @@
 
 #if GLOBED_VOICE_SUPPORT
 
-void VoicePlaybackManager::playFrameStreamed(int playerId, const EncodedAudioFrame& frame) {
+Result<> VoicePlaybackManager::playFrameStreamed(int playerId, const EncodedAudioFrame& frame) {
     // if the stream doesn't exist yet, create it
     if (!streams.contains(playerId)) {
         this->prepareStream(playerId);
     }
 
     auto& stream = streams.at(playerId);
-    stream->writeData(frame);
+    return stream->writeData(frame);
 }
 
 void VoicePlaybackManager::playRawDataStreamed(int playerId, const float* pcm, size_t samples) {

@@ -117,7 +117,7 @@ Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     if (packet->getUseTcp()) {
         GLOBED_UNWRAP(tcpSocket.sendAll(reinterpret_cast<const char*>(buf.getDataRef().data()), buf.size()));
     } else {
-        udpSocket.send(reinterpret_cast<const char*>(buf.getDataRef().data()), buf.size());
+        GLOBED_UNWRAP(udpSocket.send(reinterpret_cast<const char*>(buf.getDataRef().data()), buf.size()));
     }
 
     return Ok();

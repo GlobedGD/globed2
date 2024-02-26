@@ -8,7 +8,7 @@ AudioDecoder::AudioDecoder(int sampleRate, int frameSize, int channels) {
     this->frameSize = frameSize;
     this->sampleRate = sampleRate;
     this->channels = channels;
-    this->remakeDecoder();
+    (void) this->remakeDecoder().unwrap();
 }
 
 AudioDecoder::~AudioDecoder() {
@@ -18,7 +18,7 @@ AudioDecoder::~AudioDecoder() {
     }
 }
 
-DecodedOpusData AudioDecoder::decode(const byte* data, size_t length) {
+Result<DecodedOpusData> AudioDecoder::decode(const byte* data, size_t length) {
     DecodedOpusData out;
 
     out.length = frameSize * channels;
@@ -28,36 +28,36 @@ DecodedOpusData AudioDecoder::decode(const byte* data, size_t length) {
 
     if (_res < 0) {
         delete[] out.ptr;
-        this->errcheck("opus_decode_float");
+        GLOBED_UNWRAP(this->errcheck("opus_decode_float"));
     }
 
-    return out;
+    return Ok(out);
 }
 
-DecodedOpusData AudioDecoder::decode(const EncodedOpusData& data) {
+Result<DecodedOpusData> AudioDecoder::decode(const EncodedOpusData& data) {
     return this->decode(data.ptr, data.length);
 }
 
-void AudioDecoder::setSampleRate(int sampleRate) {
+Result<> AudioDecoder::setSampleRate(int sampleRate) {
     this->sampleRate = sampleRate;
-    this->remakeDecoder();
+    return this->remakeDecoder();
 }
 
 void AudioDecoder::setFrameSize(int frameSize) {
     this->frameSize = frameSize;
 }
 
-void AudioDecoder::setChannels(int channels) {
+Result<> AudioDecoder::setChannels(int channels) {
     this->channels = channels;
-    this->remakeDecoder();
+    return this->remakeDecoder();
 }
 
-void AudioDecoder::resetState() {
+Result<> AudioDecoder::resetState() {
     _res = opus_decoder_ctl(decoder, OPUS_RESET_STATE);
-    this->errcheck("AudioDecoder::resetState");
+    return this->errcheck("AudioDecoder::resetState");
 }
 
-void AudioDecoder::remakeDecoder() {
+Result<> AudioDecoder::remakeDecoder() {
     // if we are reinitializing, free the previous decoder
     if (decoder) {
         opus_decoder_destroy(decoder);
@@ -66,18 +66,20 @@ void AudioDecoder::remakeDecoder() {
 
     // sampleRate 0 is valid and considered as a cleanup of the decoder
     if (sampleRate == 0) {
-        return;
+        return Ok();
     }
 
     decoder = opus_decoder_create(sampleRate, channels, &_res);
-    this->errcheck("opus_decoder_create");
+    return this->errcheck("opus_decoder_create");
 }
 
-void AudioDecoder::errcheck(const char* where) {
+Result<> AudioDecoder::errcheck(const char* where) {
     if (_res != OPUS_OK) {
         const char* msg = opus_strerror(_res);
-        GLOBED_REQUIRE(false, std::string("opus error in ") + where + ": " + msg)
+        GLOBED_REQUIRE_SAFE(false, std::string("opus error in ") + where + ": " + msg)
     }
+
+    return Ok();
 }
 
 

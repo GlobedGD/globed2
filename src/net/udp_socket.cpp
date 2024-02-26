@@ -22,16 +22,16 @@ Result<> UdpSocket::connect(const std::string_view serverIp, unsigned short port
     return Ok();
 }
 
-int UdpSocket::send(const char* data, unsigned int dataSize) {
-    GLOBED_REQUIRE(connected, "attempting to call UdpSocket::send on a disconnected socket")
+Result<int> UdpSocket::send(const char* data, unsigned int dataSize) {
+    GLOBED_REQUIRE_SAFE(connected, "attempting to call UdpSocket::send on a disconnected socket")
 
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
 
     if (retval == -1) {
-        util::net::throwLastError();
+        return Err(util::net::lastErrorString());
     }
 
-    return retval;
+    return Ok(retval);
 }
 
 Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const std::string_view address, unsigned short port) {
@@ -98,6 +98,6 @@ Result<bool> UdpSocket::poll(int msDelay, bool in) {
     return Ok(result > 0);
 }
 
-void UdpSocket::setNonBlocking(bool nb) {
+Result<> UdpSocket::setNonBlocking(bool nb) {
     GLOBED_UNIMPL("UdpSocket::setNonBlocking")
 }

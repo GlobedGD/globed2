@@ -9,13 +9,13 @@ public:
     ~UdpSocket();
 
     Result<> connect(const std::string_view serverIp, unsigned short port) override;
-    int send(const char* data, unsigned int dataSize) override;
+    Result<int> send(const char* data, unsigned int dataSize) override;
     Result<int> sendTo(const char* data, unsigned int dataSize, const std::string_view address, unsigned short port);
     RecvResult receive(char* buffer, int bufferSize) override;
     bool close() override;
     virtual void disconnect();
     Result<bool> poll(int msDelay, bool in = true) override;
-    void setNonBlocking(bool nb) override;
+    Result<> setNonBlocking(bool nb) override;
 
     util::sync::AtomicBool connected = false;
 

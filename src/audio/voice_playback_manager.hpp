@@ -11,7 +11,7 @@
 class VoicePlaybackManager : public SingletonBase<VoicePlaybackManager> {
 public:
 #if GLOBED_VOICE_SUPPORT
-    void playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
+    Result<> playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
 #endif
     void playRawDataStreamed(int playerId, const float* pcm, size_t samples);
     void stopAllStreams();

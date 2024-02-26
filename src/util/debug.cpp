@@ -172,6 +172,7 @@ namespace util::debug {
 
     void delayedSuicide(const std::string_view message) {
         Loader::get()->queueInMainThread([message = std::string(message)] {
+            log::error("Globed fatal error: {}", message);
             throw std::runtime_error(fmt::format("Globed error: {}", message));
         });
     }

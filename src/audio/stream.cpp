@@ -79,14 +79,18 @@ void AudioStream::start() {
     this->channel = GlobedAudioManager::get().playSound(sound);
 }
 
-void AudioStream::writeData(const EncodedAudioFrame& frame) {
+Result<> AudioStream::writeData(const EncodedAudioFrame& frame) {
     const auto& frames = frame.getFrames();
     for (const auto& opusFrame : frames) {
-        auto decodedFrame = decoder.decode(opusFrame);
+        auto decodedFrame_ = decoder.decode(opusFrame);
+        GLOBED_UNWRAP_INTO(decodedFrame_, auto decodedFrame);
+
         queue.lock()->writeData(decodedFrame);
 
         AudioDecoder::freeData(decodedFrame);
     }
+
+    return Ok();
 }
 
 void AudioStream::writeData(const float* pcm, size_t samples) {

@@ -24,12 +24,12 @@ Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port
     GLOBED_REQUIRE_SAFE(sock != -1, "failed to create a tcp socket: socket failed");
 
     // attempt a connection with a 5 second timeout
-    this->setNonBlocking(true);
+    GLOBED_UNWRAP(this->setNonBlocking(true));
 
     // on a non-blocking socket this always errors with EWOULDBLOCK, ignore the status code
     (void) ::connect(socket_, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
 
-    this->setNonBlocking(false);
+    GLOBED_UNWRAP(this->setNonBlocking(false));
 
     // im crying why does this actually poll for double the length????
     GLOBED_UNWRAP_INTO(this->poll(2500, false), auto pollResult);
@@ -40,24 +40,27 @@ Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port
     return Ok();
 }
 
-int TcpSocket::send(const char* data, unsigned int dataSize) {
+Result<int> TcpSocket::send(const char* data, unsigned int dataSize) {
 #ifdef GLOBED_IS_UNIX
     constexpr int flags = MSG_NOSIGNAL;
 #else
     constexpr int flags = 0;
 #endif
 
-    return ::send(socket_, data, dataSize, flags);
+    auto result = ::send(socket_, data, dataSize, flags);
+    if (result == -1) {
+        return Err(util::net::lastErrorString());
+    }
+
+    return Ok(result);
 }
 
 Result<> TcpSocket::sendAll(const char* data, unsigned int dataSize) {
     unsigned int totalSent = 0;
 
     do {
-        auto result = this->send(data + totalSent, dataSize - totalSent);
-        if (result == -1) {
-            return Err(util::net::lastErrorString());
-        }
+        auto result_ = this->send(data + totalSent, dataSize - totalSent);
+        GLOBED_UNWRAP_INTO(result_, auto result);
 
         totalSent += result;
     } while (totalSent < dataSize);
@@ -70,7 +73,12 @@ void TcpSocket::disconnect() {
 }
 
 RecvResult TcpSocket::receive(char* buffer, int bufferSize) {
-    GLOBED_REQUIRE(connected, "attempting to call TcpSocket::receive on a disconnected socket")
+    if (!connected) {
+        return RecvResult {
+            .fromServer = true,
+            .result = -1
+        };
+    }
 
     int result = ::recv(socket_, buffer, bufferSize, 0);
 
@@ -87,7 +95,8 @@ Result<> TcpSocket::recvExact(char* buffer, int bufferSize) {
 
     do {
         int result = this->receive(buffer + received, bufferSize - received).result;
-        if (result <= 0) return Err(util::net::lastErrorString());
+        if (result < 0) return Err(util::net::lastErrorString());
+        if (result == 0) return Err("failed to receive data from a tcp socket");
         received += result;
     } while (received < bufferSize);
 
@@ -124,17 +133,19 @@ Result<bool> TcpSocket::poll(int msDelay, bool in) {
 
 }
 
-void TcpSocket::setNonBlocking(bool nb) {
+Result<> TcpSocket::setNonBlocking(bool nb) {
 #ifdef GEODE_IS_WINDOWS
     unsigned long mode = nb ? 1 : 0;
-    if (SOCKET_ERROR == ioctlsocket(socket_, FIONBIO, &mode)) util::net::throwLastError();
+    if (SOCKET_ERROR == ioctlsocket(socket_, FIONBIO, &mode)) return Err(util::net::lastErrorString());
 #else
     int flags = fcntl(socket_, F_GETFL);
 
     if (nb) {
-        if (fcntl(socket_, F_SETFL, flags | O_NONBLOCK) < 0) util::net::throwLastError();
+        if (fcntl(socket_, F_SETFL, flags | O_NONBLOCK) < 0) return Err(util::net::lastErrorString());
     } else {
-        if (fcntl(socket_, F_SETFL, flags & (~O_NONBLOCK)) < 0) util::net::throwLastError();
+        if (fcntl(socket_, F_SETFL, flags & (~O_NONBLOCK)) < 0) return Err(util::net::lastErrorString());
     }
 #endif
+
+    return Ok();
 }

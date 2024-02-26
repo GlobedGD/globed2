@@ -514,7 +514,8 @@ Result<> GlobedAudioManager::audioThreadWork() {
             float pcmbuf[VOICE_TARGET_FRAMESIZE];
             recordQueue.copyTo(pcmbuf, VOICE_TARGET_FRAMESIZE);
 
-            GLOBED_UNWRAP(recordFrame.pushOpusFrame(encoder.encode(pcmbuf)));
+            GLOBED_UNWRAP_INTO(encoder.encode(pcmbuf), auto opusFrame);
+            GLOBED_UNWRAP(recordFrame.pushOpusFrame(opusFrame));
         }
 
         // if we are at capacity, or we just stopped passive recording, call the callback
