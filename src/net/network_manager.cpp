@@ -371,30 +371,35 @@ void NetworkManager::threadRecvFunc() {
 
     lastReceivedPacket = util::time::now();
 
-    auto builtin = builtinListeners.lock();
-    if (builtin->contains(packetId)) {
-        (*builtin)[packetId](packet);
-        return;
-    }
-
-    // this is scary
-    Loader::get()->queueInMainThread([this, packetId, packet] {
-        auto listeners_ = this->listeners.lock();
-        if (!listeners_->contains(packetId)) {
+    // if there's a registered listener, schedule it to be called on the next frame
+    if (this->listeners.lock()->contains(packetId)) {
+        Loader::get()->queueInMainThread([this, packetId, packet] {
+            auto listeners_ = this->listeners.lock();
+            if (listeners_->contains(packetId)) {
+                // xd
+                (*listeners_)[packetId](packet);
+            }
+        });
+    } else {
+        auto builtin = builtinListeners.lock();
+        // if there's a builtin listener, run it
+        if (builtin->contains(packetId)) {
+            (*builtin)[packetId](packet);
+            return;
+        } else {
+            // if suppressed, do nothing
             auto suppressed_ = suppressed.lock();
 
             if (suppressed_->contains(packetId) && util::time::systemNow() > suppressed_->at(packetId)) {
                 suppressed_->erase(packetId);
             }
 
+            // else show a warning
             if (!suppressed_->contains(packetId)) {
                 ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
             }
-        } else {
-            // xd
-            (*listeners_)[packetId](packet);
         }
-    });
+    }
 }
 
 void NetworkManager::handlePingResponse(std::shared_ptr<Packet> packet) {

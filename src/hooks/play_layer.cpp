@@ -20,7 +20,7 @@ using namespace geode::prelude;
 // how many units before the voice disappears
 constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
 
-constexpr float VOICE_OVERLAY_PAD_X = 0.f;
+constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 
 float adjustLerpTimeDelta(float dt) {

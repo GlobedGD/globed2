@@ -198,6 +198,7 @@ void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
 }
 
 void ComplexVisualPlayer::playDeathEffect() {
+    playerIcon->m_robotFire->setVisible(false);
     // todo, doing simply ->playDeathEffect causes the hook to execute twice
     // if you figure out why then i love you
     playerIcon->PlayerObject::playDeathEffect();

@@ -8,11 +8,46 @@
 #include <managers/error_queues.hpp>
 #include <net/network_manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
+#include <ui/general/intermediary_loading_popup.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
+
+class DummyUserLoadNode : public CCNode, public LevelManagerDelegate {
+public:
+    std::function<void(CCArray*)> onSuccess;
+    std::function<void(int)> onError;
+
+    static DummyUserLoadNode* create(std::function<void(CCArray*)> onSuccess, std::function<void(int)> onError) {
+        auto ret = new DummyUserLoadNode;
+        if (ret->init(onSuccess, onError)) {
+            ret->autorelease();
+            return ret;
+        }
+
+        delete ret;
+        return nullptr;
+    }
+
+    bool init(std::function<void(CCArray*)> onSuccess, std::function<void(int)> onError) {
+        if (!CCNode::init()) return false;
+        this->onSuccess = onSuccess;
+        this->onError = onError;
+        return true;
+    }
+
+    void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) { loadLevelsFinished(p0, p1, -1); }
+    void loadLevelsFailed(char const* p0) { loadLevelsFailed(p0, -1); }
+    void setupPageInfo(gd::string p0, char const* p1) {}
+    void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) {
+        onSuccess(p0);
+    }
+    void loadLevelsFailed(char const* p0, int p1) {
+        onError(p1);
+    }
+};
 
 bool AdminPopup::setup() {
     this->setTitle("Globed Admin Panel");
@@ -25,6 +60,44 @@ bool AdminPopup::setup() {
 
     nm.addListener<AdminUserDataPacket>([](auto packet) {
         AdminUserPopup::create(packet->userEntry, packet->accountData)->show();
+    });
+
+    nm.addListener<AdminErrorPacket>([this](auto packet) {
+        // incredibly scary code
+
+        if (packet->message.find("failed to find the user by name") != std::string::npos) {
+            // try to search the user in gd
+            auto username = this->userInput->getString();
+            IntermediaryLoadingPopup::create([this, username = std::move(username)](auto popup) {
+                auto* dummyNode = DummyUserLoadNode::create([popup](CCArray* users) {
+                    if (!users || users->count() == 0) {
+                        ErrorQueues::get().warn("Unable to find the user");
+                    } else {
+                        log::debug("got user: {}", users->objectAtIndex(0));
+                        auto* user = static_cast<GJUserScore*>(users->objectAtIndex(0));
+                        auto& nm = NetworkManager::get();
+                        nm.send(AdminGetUserStatePacket::create(std::to_string(user->m_accountID)));
+                    }
+                    popup->onClose(popup);
+                }, [popup](auto error) {
+                    ErrorQueues::get().warn(fmt::format("Failed to fetch user: {}", error == -1 ? "not found" : std::to_string(error)));
+                    popup->onClose(popup);
+                });
+                dummyNode->setID("dummy-userload-node");
+                popup->addChild(dummyNode);
+
+                auto* glm = GameLevelManager::sharedState();
+                glm->m_levelManagerDelegate = dummyNode;
+                glm->getUsers(GJSearchObject::create(SearchType::Users, username));
+                log::debug("calling searchusers with {} and node = {}", username, dummyNode);
+            }, [](auto popup) {
+                popup->removeChildByID("dummy-userload-node");
+                auto* glm = GameLevelManager::sharedState();
+                glm->m_levelManagerDelegate = nullptr;
+            })->show();
+        } else {
+            ErrorQueues::get().warn(packet->message);
+        }
     });
 
     auto* topRightCorner = Build<CCMenu>::create()
@@ -115,6 +188,7 @@ void AdminPopup::onClose(cocos2d::CCObject* sender) {
 
     auto& nm = NetworkManager::get();
     nm.removeListener<AdminUserDataPacket>(util::time::seconds(3));
+    nm.removeListener<AdminErrorPacket>();
 }
 
 AdminPopup* AdminPopup::create() {

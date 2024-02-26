@@ -3,6 +3,7 @@
 bool IntermediaryLoadingPopup::setup(CallbackFn onInit, CallbackFn onCleanup) {
     circle = LoadingCircle::create();
     circle->setParentLayer(this);
+    circle->setScale(0.75f);
     circle->show();
 
     callbackCleanup = onCleanup;
