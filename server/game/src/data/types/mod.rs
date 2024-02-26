@@ -18,5 +18,7 @@ pub type LevelId = i32;
 pub type AtomicLevelId = AtomicI32;
 
 pub const fn is_editorcollab_level(id: LevelId) -> bool {
-    id > (2 as LevelId).pow(32)
+    // TODO editorcollab uncomment
+    // id > (2 as LevelId).pow(32)
+    false
 }

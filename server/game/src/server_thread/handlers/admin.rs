@@ -416,8 +416,6 @@ impl GameServerThread {
         // user_name intentionally left unchecked.
         let _ = c_user_name;
 
-        // erm clippy is having a seizure on this line
-        #[allow(clippy::nonminimal_bool)]
         if !(c_user_role
             || c_admin_password
             || c_is_banned
