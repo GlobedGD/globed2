@@ -5,9 +5,14 @@ using namespace geode::prelude;
 bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     if (!CCNode::init()) return false;
 
+    Build<CCNode>::create()
+        .parent(this)
+        .id("vc-cell-wrapper"_spr)
+        .store(nodeWrapper);
+
     accountId = data.accountId;
 
-    this->setLayout(RowLayout::create()->setGap(5.f)->setAutoScale(false));
+    nodeWrapper->setLayout(RowLayout::create()->setGap(5.f)->setAutoScale(false));
 
     auto gm = GameManager::get();
     auto color1 = gm->colorForIdx(data.icons.color1);
@@ -18,7 +23,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
         .secondColor(color2)
         .scale(0.45f)
         .pos(0.f, 0.f)
-        .parent(this)
+        .parent(nodeWrapper)
         .collect();
 
     playerIcon->setContentSize(playerIcon->m_firstLayer->getScaledContentSize());
@@ -37,26 +42,29 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     auto nameLabel = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
         .scale(0.35f)
         .color(nameColor)
-        .parent(this)
+        .parent(nodeWrapper)
         .collect();
 
     Build<GlobedAudioVisualizer>::create()
         .scale(0.5f)
-        .parent(this)
+        .parent(nodeWrapper)
         .store(visualizer);
 
     visualizer->setScaleX(0.4f);
 
-    this->setContentWidth(playerIcon->getScaledContentSize().width + 5.f + nameLabel->getScaledContentSize().width + 5.f + visualizer->getScaledContentSize().width);
+    const float heightMult = 1.3f;
+    const float widthMult = 1.1f;
 
-    this->updateLayout();
+    nodeWrapper->setContentWidth(playerIcon->getScaledContentSize().width + 5.f + nameLabel->getScaledContentSize().width + 5.f + visualizer->getScaledContentSize().width);
+    nodeWrapper->setContentHeight(playerIcon->getScaledContentSize().height * heightMult);
+    nodeWrapper->updateLayout();
 
     // background
-    auto sizeScale = this->getScaledContentSize() * CCPoint{2.7f, 2.25f};
+    auto sizeScale = CCPoint{4.f, 4.f};
     auto cc9s = Build<CCScale9Sprite>::create("square02_001.png")
-        .contentSize(this->getScaledContentSize() * sizeScale * 3.f)
-        .scaleY(1.f / (sizeScale.height * 2.25f))
-        .scaleX(1.f / (sizeScale.width * 2.7f))
+        .contentSize(nodeWrapper->getScaledContentSize() * sizeScale * CCPoint{widthMult, heightMult})
+        .scaleX(1.f / sizeScale.x)
+        .scaleY(1.f / sizeScale.y)
         .opacity(80)
         .zOrder(-1)
         .anchorPoint(0.f, 0.f)

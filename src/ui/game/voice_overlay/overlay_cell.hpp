@@ -13,6 +13,7 @@ public:
 
 private:
     GlobedAudioVisualizer* visualizer;
+    cocos2d::CCNode* nodeWrapper;
 
     bool init(const PlayerAccountData& data);
 };
