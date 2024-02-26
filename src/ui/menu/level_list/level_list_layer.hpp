@@ -12,12 +12,6 @@ public:
     ~GlobedLevelListLayer();
 
 private:
-    enum class LoadingState {
-        Idle = 0,           // not doing anything
-        WaitingServer = 1,  // waiting for the game server
-        WaitingRobtop = 2,  // waiting for the robtop server
-    };
-
     GJListLayer* listLayer = nullptr;
     LoadingCircle* loadingCircle = nullptr;
     CCMenuItemSpriteExtra *btnPagePrev = nullptr, *btnPageNext = nullptr;

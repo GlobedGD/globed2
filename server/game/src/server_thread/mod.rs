@@ -390,7 +390,10 @@ impl GameServerThread {
             ServerThreadMessage::SmallPacket((mut packet, len)) => self.handle_packet(&mut packet[..len]).await?,
             ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_static(&text_packet).await?,
             ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet_dynamic(&*voice_packet).await?,
-            ServerThreadMessage::BroadcastNotice(packet) => self.send_packet_static(&packet).await?,
+            ServerThreadMessage::BroadcastNotice(packet) => {
+                self.send_packet_static(&packet).await?;
+                info!("{} is receiving a notice: {}", self.account_data.lock().name, packet.message);
+            }
             ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
         }
 

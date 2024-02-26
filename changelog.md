@@ -4,6 +4,7 @@
 * Add a player count to main levels
 * Add player counts to the level browser
 * Make it harder to accidentally close an error/notice popup
+* Fix dual icon still being visible after exiting dual mode
 
 ## v1.2.2
 

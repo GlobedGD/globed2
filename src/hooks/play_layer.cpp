@@ -517,7 +517,9 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
 
     float rot = player->getRotation() + pobjInner->getRotation();
 
-    auto spiderTeleportData = player == m_player1 ? util::misc::swapOptional(m_fields->spiderTp1) : util::misc::swapOptional(m_fields->spiderTp2);
+    bool isPlayer1 = player == m_player1;
+
+    auto spiderTeleportData = isPlayer1 ? util::misc::swapOptional(m_fields->spiderTp1) : util::misc::swapOptional(m_fields->spiderTp2);
 
     bool isStationary = false;
     if (m_level->isPlatformer()) {
@@ -529,7 +531,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
         .rotation = rot,
 
         .iconType = iconType,
-        .isVisible = player->isVisible(),
+        .isVisible = isPlayer1 ? player->isVisible() : (m_gameState.m_isDualMode && player->isVisible()),
         .isLookingLeft = player->m_isGoingLeft,
         .isUpsideDown = player->m_isSwing ? player->m_isUpsideDown : pobjInner->getScaleY() == -1.0f,
         .isDashing = player->m_isDashing,

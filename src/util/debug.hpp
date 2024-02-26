@@ -124,30 +124,6 @@ namespace util::debug {
     // like log::debug but with precise timestamps.
     void timedLog(const std::string_view message);
 
-    // send a log to a different thread
-    template <typename... Args>
-    void fastLog(fmt::format_string<Args...> fmtString, Args&&... args) {
-        static misc::OnceCell<sync::SmartMessageQueue<std::string>> _mq;
-        sync::SmartMessageQueue<std::string>& mq = _mq.getOrInit([] {
-            return sync::SmartMessageQueue<std::string>();
-        });
-
-        util::misc::callOnceSync("log-thread-init", [&mq] {
-            sync::SmartThread<> thr;
-            thr.setName("log thread");
-            thr.setLoopFunction([&mq] {
-                auto messages = mq.popAll();
-                for (const auto& message : messages) {
-                    log::debug("{}", message);
-                }
-            });
-            thr.start();
-            thr.detach();
-        });
-
-        mq.push(fmt::format(fmtString, std::forward<Args>(args)...));
-    }
-
     struct ProcMapEntry {
         ptrdiff_t size;
         bool readable;

@@ -348,7 +348,7 @@ void NetworkManager::threadRecvFunc() {
     if (packet_.isErr()) {
         ErrorQueues::get().debugWarn(fmt::format("failed to receive a packet: {}", packet_.unwrapErr()));
 
-        if (connected()) {
+        if (this->connected()) {
             this->disconnectWithMessage(packet_.unwrapErr(), true);
         }
 

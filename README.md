@@ -20,11 +20,11 @@ See the [server readme](./server/readme.md) for more information about the serve
 
 ## Credit
 
-**mat, alk, and the rest of the Geode team** - thank you for creating Geode and for helping me with the issues I had using it. None of this would've been possible without your awesome efforts, and I really appreciate the work you've put in <3
+**mat, alk, Cvolton, and the rest of the Geode team** - thank you for creating Geode and for helping me with the issues I had using it. None of this would've been possible without your awesome efforts, and I really appreciate the work you've put in <3
 
-[availax](https://availax.xyz/), Firee, Croozington, Coloride, Cvolton, maki, xTymon - thank you for being awesome, whether it's because you helped me with development, suggested ideas, helped with testing, or if I just found you awesome in general :D
+[availax](https://availax.xyz/) - thank you for supporting me since the start and helping me with nearly everything :D
 
-RobTop - thank you for releasing this awesome game :)
+Anyone who donated, suggested ideas, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)
 
 ### License
 

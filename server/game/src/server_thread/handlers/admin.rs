@@ -48,7 +48,7 @@ impl GameServerThread {
             );
 
             self.is_authorized_admin.store(true, Ordering::Relaxed);
-            // give temporary admin perms
+            // give super admin perms
             self.user_entry.lock().user_role = ROLE_SUPERADMIN;
             self.send_packet_static(&AdminAuthSuccessPacket { role: ROLE_SUPERADMIN })
                 .await?;
@@ -299,6 +299,11 @@ impl GameServerThread {
                 account_data: Some(account_data),
             }
         } else {
+            // on a standalone server, if the user is not online we are kinda out of luck
+            if self.game_server.standalone {
+                admin_error!(self, "This cannot be done on a standalone server");
+            }
+
             // they are not on the server right now, request data via the bridge
             let user_entry = match self.game_server.bridge.get_user_data(&packet.player).await {
                 Ok(x) => x,
@@ -335,6 +340,11 @@ impl GameServerThread {
             return Ok(());
         }
 
+        // we cant use bridge in standalone so do nothing
+        if self.game_server.standalone {
+            admin_error!(self, "This cannot be done on a standalone server");
+        }
+
         let mut new_user_entry = packet.user_entry;
 
         let target_account_id = new_user_entry.account_id;
@@ -353,9 +363,10 @@ impl GameServerThread {
             }
         };
 
-        // if not admin, cant update others password
+        // if not admin, cant update others password or role
         if role < ROLE_ADMIN {
             new_user_entry.admin_password = user_entry.admin_password.clone();
+            new_user_entry.user_role = user_entry.user_role;
         }
 
         // check what changed
@@ -370,23 +381,28 @@ impl GameServerThread {
         let c_user_name = new_user_entry.user_name != user_entry.user_name;
 
         // first check for actions that require super admin rights
+        // only superadmin can assign other admins
         if role < ROLE_SUPERADMIN && (c_user_role && new_user_entry.user_role >= ROLE_ADMIN) {
             admin_error!(self, SUPERADMIN_REQUIRED_MESSAGE);
         }
 
-        // check for actions that require admin rights
+        // check for actions that require admin rights (assigning roles and changing admin passwords)
         if role < ROLE_ADMIN && (c_user_role || c_admin_password) {
             admin_error!(self, ADMIN_REQUIRED_MESSAGE);
         }
 
-        // check for actions that require mod rights
+        // check for actions that require mod rights (ban, whitelist, name color)
         if role < ROLE_MOD && (c_is_banned || c_is_whitelisted || c_name_color) {
             admin_error!(self, MOD_REQUIRED_MESSAGE);
         }
 
         // validation
         let target_role = new_user_entry.user_role;
-        if !(target_role == ROLE_USER || target_role == ROLE_HELPER || target_role == ROLE_MOD || target_role == ROLE_ADMIN)
+        if !(target_role == ROLE_USER
+            || target_role == ROLE_HELPER
+            || target_role == ROLE_MOD
+            || target_role == ROLE_ADMIN
+            || target_role == ROLE_SUPERADMIN)
         {
             admin_error!(self, "attempting to assign an invalid role");
         }
@@ -426,6 +442,13 @@ impl GameServerThread {
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
             let is_banned = new_user_entry.is_banned;
+
+            // update name color live
+            if c_name_color {
+                thread.account_data.lock().special_user_data = new_user_entry.name_color.clone().map(|x| SpecialUserData {
+                    name_color: x.parse().unwrap_or_default(),
+                });
+            }
 
             let res = self
                 .game_server

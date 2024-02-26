@@ -43,6 +43,7 @@ const util::simd::CPUFeatures& util::simd::getFeatures() {
         FEATURE(ecx, pclmulqdq, 1);
         FEATURE(ecx, ssse3, 9);
         FEATURE(ecx, sse4_1, 19);
+        FEATURE(ecx, sse4_2, 20);
         FEATURE(ecx, aes, 25);
         FEATURE(ecx, avx, 28);
         FEATURE(edx, sse, 25);

@@ -65,6 +65,7 @@ void ErrorCheckNode::updateErrors(float) {
     for (auto& error : errors) {
         if (canShowFLAlert()) {
             auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed error", error, "Ok"));
+            alert->setID("error-popup"_spr);
             alert->blockClosingFor(BLOCK_CLOSING_FOR);
             alert->show();
         } else {
@@ -75,6 +76,7 @@ void ErrorCheckNode::updateErrors(float) {
     for (auto& notice : notices) {
         if (canShowFLAlert()) {
             auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed notice", notice, "Ok"));
+            alert->setID("notice-popup"_spr);
             alert->blockClosingFor(BLOCK_CLOSING_FOR);
             alert->show();
         } else {
@@ -92,7 +94,9 @@ bool ErrorCheckNode::canShowFLAlert() {
 
     for (auto* child : CCArrayExt<CCNode*>(scene->getChildren())) {
         if (typeinfo_cast<FLAlertLayer*>(child)) {
-            flalerts++;
+            if (child->getID() == "error-popup"_spr || child->getID() == "notice-popup"_spr) {
+                flalerts++;
+            }
         }
     }
 

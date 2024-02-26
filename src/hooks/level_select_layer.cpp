@@ -10,21 +10,20 @@ bool HookedLevelSelectLayer::init(int p0) {
     if (!LevelSelectLayer::init(p0)) return false;
 
     auto& nm = NetworkManager::get();
+    nm.addListener<LevelPlayerCountPacket>([this](auto packet) {
+        auto currentLayer = getChildOfType<LevelSelectLayer>(CCScene::get(), 0);
+        if (currentLayer && this != currentLayer) return;
 
-    if (nm.established()) {
-        nm.send(RequestPlayerCountPacket::create(std::move(std::vector(MAIN_LEVELS))));
-        nm.addListener<LevelPlayerCountPacket>([this](auto packet) {
-            auto currentLayer = getChildOfType<LevelSelectLayer>(CCScene::get(), 0);
-            if (currentLayer && this != currentLayer) return;
+        m_fields->levels.clear();
+        for (const auto& level : packet->levels) {
+            m_fields->levels[level.first] = level.second;
+        }
 
-            m_fields->levels.clear();
-            for (const auto& level : packet->levels) {
-                m_fields->levels[level.first] = level.second;
-            }
+        this->updatePlayerCounts();
+    });
 
-            this->updatePlayerCounts();
-        });
-    }
+    this->schedule(schedule_selector(HookedLevelSelectLayer::sendRequest), 5.f);
+    this->sendRequest(0.f);
 
     return true;
 }
