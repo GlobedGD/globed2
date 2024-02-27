@@ -30,7 +30,7 @@
 
 /* platform-specific: Mac */
 
-#define GLOBED_FMOD_MAC 0
+#define GLOBED_FMOD_MAC 1
 #define GLOBED_DRPC_MAC 0
 
 /* platform-specific: Android */
