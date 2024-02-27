@@ -18,16 +18,12 @@ impl GameServerThread {
 
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
         if packet.protocol != PROTOCOL_VERSION {
-            // TODO: bring back ProtocolMismatchPacket in the future
-            // self.terminate();
-            // self.send_packet_static(&ProtocolMismatchPacket {
-            //     protocol: PROTOCOL_VERSION,
-            // })
-            // .await?;
-            // return Ok(());
-
-            let message = format!("Outdated version. The server is running protocol v{} while you are running protocol v{}. Please update the mod in order to connect.", PROTOCOL_VERSION, packet.protocol);
-            gs_disconnect!(self, &message);
+            self.terminate();
+            self.send_packet_static(&ProtocolMismatchPacket {
+                protocol: PROTOCOL_VERSION,
+            })
+            .await?;
+            return Ok(());
         }
 
         {

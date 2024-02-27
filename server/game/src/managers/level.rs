@@ -104,7 +104,7 @@ impl LevelManager {
 
     /// add a player to a level given a level ID and an account ID
     pub fn add_to_level(&mut self, level_id: LevelId, account_id: i32) {
-        let players = self.levels.entry(level_id).or_insert_with(|| Vec::with_capacity(128));
+        let players = self.levels.entry(level_id).or_insert_with(|| Vec::with_capacity(8));
         if !players.contains(&account_id) {
             players.push(account_id);
         }

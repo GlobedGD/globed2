@@ -66,7 +66,13 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
         playerIcon->setDeathEffect(icons.deathEffect);
     }
 
+    // TODO: async icon loading is broken on android due to a geode bug.
+#ifndef GEODE_IS_ANDROID
     this->tryLoadIconsAsync();
+#else
+    this->updatePlayerObjectIcons(true);
+    this->updateIconType(playerIconType);
+#endif
 }
 
 void ComplexVisualPlayer::updateData(
