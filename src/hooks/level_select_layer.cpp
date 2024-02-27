@@ -10,6 +10,8 @@ bool HookedLevelSelectLayer::init(int p0) {
     if (!LevelSelectLayer::init(p0)) return false;
 
     auto& nm = NetworkManager::get();
+    if (!nm.established()) return true;
+
     nm.addListener<LevelPlayerCountPacket>([this](auto packet) {
         auto currentLayer = getChildOfType<LevelSelectLayer>(CCScene::get(), 0);
         if (currentLayer && this != currentLayer) return;
@@ -68,9 +70,13 @@ void HookedLevelSelectLayer::updatePlayerCounts() {
             label->setVisible(true);
         }
 
-        if (m_fields->levels.contains(page->m_level->m_levelID)) {
+        if (!NetworkManager::get().established()) {
+            label->setVisible(false);
+        } else if (m_fields->levels.contains(page->m_level->m_levelID)) {
+            label->setVisible(true);
             label->setString(fmt::format("{} players", m_fields->levels[page->m_level->m_levelID]).c_str());
         } else {
+            label->setVisible(true);
             label->setString("? players");
         }
     }

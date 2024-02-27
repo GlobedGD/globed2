@@ -1,6 +1,8 @@
-## v1.3.0
+## v1.2.4
 
 * Add name colors to player list
+* Fix the player count label being displayed when not connected to a server
+* Fix the game not closing properly sometimes
 
 ## v1.2.3
 
