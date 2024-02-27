@@ -429,7 +429,7 @@ public:
             }
 
             try {
-                log::debug("in thread ({}) storage {}, flag: {}", _storage->threadName, _storage.get(), _storage->_stopped.test());
+                log::debug("in thread ({}) storage {}, flag: {}", _storage->threadName, (void*)_storage.get(), _storage->_stopped.test());
                 while (!_storage->_stopped) {
                     _storage->loopFunc(args...);
                 }
@@ -442,11 +442,11 @@ public:
 
     // Request the thread to be stopped as soon as possible
     void stop() {
-        log::debug("storage ({}) is not null?: {}", _storage->threadName, _storage.get());
+        log::debug("storage ({}) is not null?: {}", _storage->threadName, (void*)_storage.get());
         if (_storage) {
             _storage->_stopped.set();
         }
-        log::debug("stopped storage ({}) {}, flag: {}", _storage->threadName, _storage.get(), _storage->_stopped.test());
+        log::debug("stopped storage ({}) {}, flag: {}", _storage->threadName, (void*)_storage.get(), _storage->_stopped.test());
     }
 
     // Join the thread if possible, else do nothing
