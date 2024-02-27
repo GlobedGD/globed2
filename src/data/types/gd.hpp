@@ -6,8 +6,7 @@
 #include <data/bytebuffer.hpp>
 #include "game.hpp"
 
-// TODO: editorcollab change to i64
-using LevelId = int32_t;
+using LevelId = int64_t;
 
 class PlayerIconData {
 public:

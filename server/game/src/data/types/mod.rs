@@ -14,11 +14,9 @@ pub use esp::types::*;
 pub use game::*;
 pub use gd::*;
 pub use misc::*;
-pub type LevelId = i32;
-pub type AtomicLevelId = AtomicI32;
+pub type LevelId = i64;
+pub type AtomicLevelId = AtomicI64;
 
 pub const fn is_editorcollab_level(id: LevelId) -> bool {
-    // TODO editorcollab uncomment
-    // id > (2 as LevelId).pow(32)
-    false
+    id > (2 as LevelId).pow(32)
 }

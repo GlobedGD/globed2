@@ -40,7 +40,7 @@ void HookedLevelSelectLayer::destructor() {
 void HookedLevelSelectLayer::sendRequest(float) {
     auto& nm = NetworkManager::get();
     if (nm.established()) {
-        nm.send(RequestPlayerCountPacket::create(std::move(std::vector(MAIN_LEVELS))));
+        nm.send(RequestPlayerCountPacket::create(std::move(std::vector<LevelId>(MAIN_LEVELS.begin(), MAIN_LEVELS.end()))));
     }
 }
 
