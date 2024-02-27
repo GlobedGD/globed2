@@ -16,11 +16,10 @@ But if you want to support the developer and help us pay for server expansions, 
 
 As a sign of appreciation, you will get a nice <ca>purple</c> name in-game and a role on our discord server :)
 
-
 ## Credit
 
 **mat, alk, Cvolton, and the rest of the Geode team** - thank you for creating Geode and for helping me with the issues I had using it. None of this would've been possible without your awesome efforts, and I really appreciate the work you've put in <3
 
 [availax](https://availax.xyz/) - thank you for supporting me since the start and helping me with nearly everything :D
 
-Anyone who donated, suggested ideas, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)
+Anyone who donated, suggested ideas, helped moderate, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)

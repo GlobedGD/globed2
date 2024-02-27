@@ -24,7 +24,7 @@ See the [server readme](./server/readme.md) for more information about the serve
 
 [availax](https://availax.xyz/) - thank you for supporting me since the start and helping me with nearly everything :D
 
-Anyone who donated, suggested ideas, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)
+Anyone who donated, suggested ideas, helped moderate, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)
 
 ### License
 
