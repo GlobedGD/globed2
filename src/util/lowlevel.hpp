@@ -3,7 +3,7 @@
 
 namespace util::lowlevel {
     // nop X bytes at offset
-    void nop(ptrdiff_t offset, size_t bytes);
+    geode::Patch* nop(ptrdiff_t offset, size_t bytes);
 
     template <typename Func>
     concept FPtr = std::is_function_v<Func>;
