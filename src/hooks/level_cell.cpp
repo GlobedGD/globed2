@@ -13,5 +13,10 @@ void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
             .store(m_fields->playerCountLabel);
     }
 
-    m_fields->playerCountLabel->setString(fmt::format("{} {}", count, count == 1 ? "player" : "players").c_str());
+    if (count == 0) {
+        m_fields->playerCountLabel->setVisible(false);
+    } else {
+        m_fields->playerCountLabel->setVisible(true);
+        m_fields->playerCountLabel->setString(fmt::format("{} {}", count, count == 1 ? "player" : "players").c_str());
+    }
 }

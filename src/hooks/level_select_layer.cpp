@@ -73,8 +73,13 @@ void HookedLevelSelectLayer::updatePlayerCounts() {
         if (!NetworkManager::get().established()) {
             label->setVisible(false);
         } else if (m_fields->levels.contains(page->m_level->m_levelID)) {
-            label->setVisible(true);
-            label->setString(fmt::format("{} players", m_fields->levels[page->m_level->m_levelID]).c_str());
+            auto players = m_fields->levels[page->m_level->m_levelID];
+            if (players == 0) {
+                label->setVisible(false);
+            } else {
+                label->setVisible(true);
+                label->setString(fmt::format("{} players", players).c_str());
+            }
         } else {
             label->setVisible(true);
             label->setString("? players");
