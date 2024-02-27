@@ -23,7 +23,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     visualizer->setScaleX(0.4f);
 
     // username
-    ccColor3B nameColor = ccColor3B(255, 255, 255);
+    ccColor3B nameColor = ccc3(255, 255, 255);
     if (data.specialUserData.has_value()) {
         nameColor = data.specialUserData.value().nameColor;
     }

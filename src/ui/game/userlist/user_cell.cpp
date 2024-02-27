@@ -46,7 +46,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .store(menu);
 
     auto& pcm = ProfileCacheManager::get();
-    ccColor3B nameColor(255, 255, 255);
+    ccColor3B nameColor = ccc3(255, 255, 255);
     if (data.specialUserData.has_value()) {
         nameColor = data.specialUserData->nameColor;
     }
