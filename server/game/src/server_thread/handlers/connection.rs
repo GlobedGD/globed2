@@ -175,7 +175,7 @@ impl GameServerThread {
             packet.account_id, self.tcp_peer
         );
 
-        {
+        let special_user_data = {
             let mut account_data = self.account_data.lock();
             account_data.account_id = packet.account_id;
             account_data.user_id = packet.user_id;
@@ -183,15 +183,20 @@ impl GameServerThread {
             account_data.name = player_name;
 
             let name_color = self.user_entry.lock().name_color.clone();
-            if let Some(name_color) = name_color {
-                account_data.special_user_data = Some(SpecialUserData {
+            let sud = if let Some(name_color) = name_color {
+                Some(SpecialUserData {
                     name_color: name_color
                         .to_str()
                         .map_err(|e| anyhow!("failed to parse color: {e}"))?
                         .parse()?,
-                });
-            }
-        }
+                })
+            } else {
+                None
+            };
+
+            account_data.special_user_data = sud.clone();
+            sud
+        };
 
         // add them to the global room
         self.game_server
@@ -201,7 +206,7 @@ impl GameServerThread {
             .create_player(packet.account_id);
 
         let tps = self.game_server.bridge.central_conf.lock().tps;
-        self.send_packet_static(&LoggedInPacket { tps }).await?;
+        self.send_packet_static(&LoggedInPacket { tps, special_user_data }).await?;
 
         Ok(())
     });

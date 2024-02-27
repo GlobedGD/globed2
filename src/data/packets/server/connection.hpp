@@ -1,6 +1,7 @@
 #pragma once
 #include <data/packets/packet.hpp>
 #include <data/types/crypto.hpp>
+#include <data/types/gd.hpp>
 
 class PingResponsePacket : public Packet {
     GLOBED_PACKET(20000, false, false)
@@ -40,9 +41,13 @@ class ServerDisconnectPacket : public Packet {
 class LoggedInPacket : public Packet {
     GLOBED_PACKET(20004, false, false)
 
-    GLOBED_PACKET_DECODE { tps = buf.readU32(); }
+    GLOBED_PACKET_DECODE {
+        tps = buf.readU32();
+        specialUserData = buf.readOptionalValue<SpecialUserData>();
+    }
 
     uint32_t tps;
+    std::optional<SpecialUserData> specialUserData;
 };
 
 class LoginFailedPacket : public Packet {

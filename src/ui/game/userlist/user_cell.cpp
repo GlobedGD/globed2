@@ -6,6 +6,7 @@
 #include <data/packets/server/admin.hpp>
 #include <managers/block_list.hpp>
 #include <managers/settings.hpp>
+#include <managers/profile_cache.hpp>
 #include <hooks/play_layer.hpp>
 #include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
@@ -44,7 +45,14 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .parent(this)
         .store(menu);
 
+    auto& pcm = ProfileCacheManager::get();
+    ccColor3B nameColor(255, 255, 255);
+    if (data.specialUserData.has_value()) {
+        nameColor = data.specialUserData->nameColor;
+    }
+
     auto* nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
+        .color(nameColor)
         .limitLabelWidth(140.f, 0.5f, 0.1f)
         .collect();
 

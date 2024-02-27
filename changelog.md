@@ -1,3 +1,7 @@
+## v1.3.0
+
+* Add name colors to player list
+
 ## v1.2.3
 
 * Add an option for proximity voice in non-platformer mode
@@ -7,7 +11,7 @@
 * Fix dual icon still being visible after exiting dual mode
 * Slightly fix the layout of the voice chat overlay cells
 * Fix the robot fire staying in the air after death
-* Add name searching to admin panel
+* Fix name searching in the admin panel
 
 ## v1.2.2
 

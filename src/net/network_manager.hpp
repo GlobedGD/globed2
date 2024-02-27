@@ -38,7 +38,7 @@ public:
     template <HasPacketID Pty>
     using PacketCallbackSpecific = std::function<void(std::shared_ptr<Pty>)>;
 
-    static constexpr uint16_t PROTOCOL_VERSION = 3;
+    static constexpr uint16_t PROTOCOL_VERSION = 4;
     static constexpr util::data::byte SERVER_MAGIC[10] = {0xda, 0xee, 'g', 'l', 'o', 'b', 'e', 'd', 0xda, 0xee};
 
     AtomicU32 connectedTps; // if `authenticated() == true`, this is the TPS of the current server, otherwise undefined.

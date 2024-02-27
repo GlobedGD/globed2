@@ -66,6 +66,12 @@ NetworkManager::NetworkManager() {
         connectedTps = packet->tps;
         _loggedin = true;
 
+        // ProfileCacheManager is not thread-safe, so delay it
+        Loader::get()->queueInMainThread([specialUserData = packet->specialUserData] {
+            auto& pcm = ProfileCacheManager::get();
+            pcm.setOwnSpecialData(specialUserData);
+        });
+
         // claim the tcp thread to allow udp packets through
         this->send(ClaimThreadPacket::create(this->secretKey));
 
