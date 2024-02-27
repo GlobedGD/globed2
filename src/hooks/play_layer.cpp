@@ -111,11 +111,17 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 # endif // GEODE_IS_ANDROID
 
         if (settings.levelUi.voiceOverlay) {
-            m_fields->voiceOverlay = Build<GlobedVoiceOverlay>::create()
-                .parent(m_uiLayer)
-                .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
-                .anchorPoint(1.f, 0.f)
-                .collect();
+            auto uiLayer = getChildOfType<UILayer>(this, 0);
+            if (uiLayer) {
+                log::info("ui layer: {}", util::debug::searchMember(this, uiLayer, 0x5000));
+            } else {
+                log::info("failed to find ui layer!");
+            }
+            // m_fields->voiceOverlay = Build<GlobedVoiceOverlay>::create()
+            //     .parent(m_uiLayer)
+            //     .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
+            //     .anchorPoint(1.f, 0.f)
+            //     .collect();
         }
     }
 
