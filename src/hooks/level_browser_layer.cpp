@@ -36,6 +36,8 @@ void HookedLevelBrowserLayer::setupLevelBrowser(cocos2d::CCArray* p0) {
 }
 
 void HookedLevelBrowserLayer::refreshPagePlayerCounts() {
+    if (!m_list->m_listView) return;
+
     for (auto* cell_ : CCArrayExt<CCNode*>(m_list->m_listView->m_tableView->m_contentLayer->getChildren())) {
         if (!typeinfo_cast<LevelCell*>(cell_)) continue;
         auto* cell = static_cast<GlobedLevelCell*>(cell_);
@@ -52,7 +54,7 @@ void HookedLevelBrowserLayer::refreshPagePlayerCounts() {
 
 void HookedLevelBrowserLayer::updatePlayerCounts(float) {
     auto& nm = NetworkManager::get();
-    if (nm.established()) {
+    if (nm.established() && m_list->m_listView) {
         std::vector<LevelId> levelIds;
         for (auto* cell_ : CCArrayExt<CCNode*>(m_list->m_listView->m_tableView->m_contentLayer->getChildren())) {
             if (auto* cell = typeinfo_cast<LevelCell*>(cell_)) {
