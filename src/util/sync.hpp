@@ -390,7 +390,7 @@ class SmartThread {
     using TFunc = std::function<void (TFuncArgs...)>;
 public:
     SmartThread() {
-        _storage = std::make_unique<Storage>();
+        _storage = std::make_shared<Storage>();
     }
 
     SmartThread(const SmartThread&) = delete;
@@ -423,13 +423,12 @@ public:
 
     void start(TFuncArgs&&... args) {
         _storage->_stopped.clear();
-        _handle = std::thread([_storage = std::move(_storage)](TFuncArgs&&... args) {
+        _handle = std::thread([_storage = _storage](TFuncArgs&&... args) {
             if (!_storage->threadName.empty()) {
                 geode::utils::thread::setName(_storage->threadName);
             }
 
             try {
-                log::debug("in thread ({}) storage {}, flag: {}", _storage->threadName, (void*)_storage.get(), _storage->_stopped.test());
                 while (!_storage->_stopped) {
                     _storage->loopFunc(args...);
                 }
@@ -442,11 +441,11 @@ public:
 
     // Request the thread to be stopped as soon as possible
     void stop() {
-        log::debug("storage ({}) is not null?: {}", _storage->threadName, (void*)_storage.get());
         if (_storage) {
             _storage->_stopped.set();
+        } else {
+            log::warn("Tried to stop a detached thread");
         }
-        log::debug("stopped storage ({}) {}, flag: {}", _storage->threadName, (void*)_storage.get(), _storage->_stopped.test());
     }
 
     // Join the thread if possible, else do nothing
@@ -465,8 +464,8 @@ public:
     void detach() {
         if (_handle.joinable()) _handle.detach();
         _handle = {};
-        // leak the storage
-        _storage.release();
+        // release the ownership
+        _storage.reset();
     }
 
     ~SmartThread() {
@@ -481,7 +480,7 @@ private:
     };
 
     std::thread _handle;
-    std::unique_ptr<Storage> _storage = nullptr;
+    std::shared_ptr<Storage> _storage = nullptr;
 };
 
 template <>
