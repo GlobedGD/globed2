@@ -43,7 +43,9 @@ class LoggedInPacket : public Packet {
 
     GLOBED_PACKET_DECODE {
         tps = buf.readU32();
-        specialUserData = buf.readOptionalValue<SpecialUserData>();
+        // TODO: bring back
+        // specialUserData = buf.readOptionalValue<SpecialUserData>();
+        specialUserData = std::nullopt;
     }
 
     uint32_t tps;
