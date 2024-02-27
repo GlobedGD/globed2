@@ -3,6 +3,7 @@
 #include <arm_neon.h>
 
 static float pcmVolumeNEON(const float* pcm, size_t samples) {
+#ifdef GEODE_IS_ANDROID64
     size_t alignedSamples = samples / 4 * 4;
 
     float32x4_t sumVec = vdupq_n_f32(0.0f);
@@ -23,6 +24,9 @@ static float pcmVolumeNEON(const float* pcm, size_t samples) {
     }
 
     return sum / samples;
+#else
+    return util::misc::pcmVolumeSlow(pcm, samples);
+#endif
 }
 
 float util::simd::calcPcmVolume(const float* pcm, size_t samples) {
