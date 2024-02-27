@@ -16,4 +16,8 @@ class $modify(HookedLevelBrowserLayer, LevelBrowserLayer) {
 
     void refreshPagePlayerCounts();
     void updatePlayerCounts(float);
+
+    constexpr bool isValidLevelType(GJLevelType level) {
+        return (int)level == 3 || (int)level == 4;
+    }
 };

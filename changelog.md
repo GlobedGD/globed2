@@ -2,6 +2,7 @@
 
 * Add name colors to player list
 * Fix the player count label being displayed when not connected to a server
+* Fix player count being displayed in wrong places (like in map pack list)
 * Fix the game not closing properly sometimes
 
 ## v1.2.3

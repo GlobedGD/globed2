@@ -24,8 +24,8 @@ void GlobedAppDelegate::applicationWillEnterForeground() {
 
 #ifdef GEODE_IS_MACOS
 void GlobedAppDelegate::loadingIsFinished() {
-    // LoadingLayer::loadingFinished is inlined, so we hook a function that gets called before that,
-    // and nop out the inlined code (so the transition to menulayer doesn't happen), then call our loadingFinished hook on the next frame.
+    // LoadingLayer::loadingFinished is inlined, so we hook a function that gets called before that (AppDelegate::loadingIsFinished),
+    // nop out the inlined code (so the transition to menulayer doesn't happen), then call our loadingFinished hook on the next frame.
     static auto* patch = util::lowlevel::nop(0x38127d, 5 + 3 + 4 + 5 + 3 + 3 + 5);
     if (!patch->isEnabled()) {
         (void) patch->enable().unwrap();
