@@ -274,12 +274,8 @@ void NetworkManager::threadMainFunc() {
         return;
     }
 
-    log::debug("loop");
-
     if (_deferredConnect) {
-        log::debug("connecting");
         auto result = gameSocket.connect(_deferredAddr, _deferredPort);
-        log::debug("connected");
         _deferredConnect = false;
 
         if (result) {
@@ -288,25 +284,18 @@ void NetworkManager::threadMainFunc() {
             GameServerManager::get().setActive(_deferredServerId);
             gameSocket.createBox();
 
-            log::debug("sending packet");
             auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(gameSocket.cryptoBox->extractPublicKey()));
             this->send(packet);
-            log::debug("sent packet");
         } else {
             this->disconnect(true);
             ErrorQueues::get().error(fmt::format("Failed to connect: <cy>{}</c>", result.unwrapErr()));
-            log::debug("ah failed");
             return;
         }
     }
 
-    log::debug("maybe send");
-
     this->maybeSendKeepalive();
-    log::debug("sent");
 
     if (!packetQueue.waitForMessages(util::time::millis(200))) {
-        log::debug("waited");
         // check for tasks
         if (taskQueue.empty()) return;
 
@@ -328,15 +317,12 @@ void NetworkManager::threadMainFunc() {
             }
         }
     }
-    log::debug("popping all");
 
     auto messages = packetQueue.popAll();
 
     for (auto packet : messages) {
         try {
-            log::debug("try to send");
             auto result = gameSocket.sendPacket(packet);
-            log::debug("tried to send");
             if (!result) {
                 log::debug("failed to send packet {}: {}", packet->getPacketId(), result.unwrapErr());
                 this->disconnectWithMessage(result.unwrapErr());
@@ -344,13 +330,10 @@ void NetworkManager::threadMainFunc() {
             }
 
         } catch (const std::exception& e) {
-            log::debug("sending packet failed");
             ErrorQueues::get().error(e.what());
-            log::debug("trying to disconnect");
             this->disconnect(true, false);
         }
     }
-    log::debug("done loop");
 }
 
 void NetworkManager::threadRecvFunc() {
