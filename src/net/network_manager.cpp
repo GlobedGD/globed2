@@ -154,7 +154,9 @@ NetworkManager::~NetworkManager() {
     this->removeAllListeners();
     builtinListeners.lock()->clear();
 
+    log::debug("waiting for output thread to terminate..");
     threadMain.stopAndWait();
+    log::debug("waiting for input thread to terminate..");
     threadRecv.stopAndWait();
 
     if (this->connected()) {
