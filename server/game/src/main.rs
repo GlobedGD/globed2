@@ -184,6 +184,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 abort_misconfig();
             }
+            Err(CentralBridgeError::WebhookError((_code, _response))) => {
+                unreachable!("webhook error");
+            }
             Err(CentralBridgeError::InvalidMagic(response)) => {
                 error!("got unexpected response from the specified central server");
                 warn!("hint: make sure the URL you passed is a valid Global central server URL");
@@ -211,6 +214,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 } else {
                     warn!("hint: the central server you are using is outdated, or the game server is using a development build that is too new.");
                 }
+                abort_misconfig();
+            }
+            Err(CentralBridgeError::Other(msg)) => {
+                error!("unknown error occurred");
+                error!("{msg}");
+
                 abort_misconfig();
             }
         };

@@ -10,6 +10,7 @@ pub struct GameServerBootData {
     pub status_print_interval: u64,
     pub admin_key: FastString<ADMIN_KEY_LENGTH>,
     pub whitelist: bool,
+    pub admin_webhook_url: String,
 }
 
 impl Default for GameServerBootData {
@@ -30,6 +31,7 @@ impl Default for GameServerBootData {
                 .try_into()
                 .expect("failed to convert admin key String into FastString"),
             whitelist: false,
+            admin_webhook_url: String::new(),
         }
     }
 }

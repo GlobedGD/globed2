@@ -84,6 +84,20 @@ impl GameServerThread {
             packet.key
         );
 
+        if self.game_server.bridge.has_webhook() {
+            if let Err(err) = self
+                .game_server
+                .bridge
+                .send_webhook_message(format!(
+                    "{} just failed to login to the admin panel.",
+                    self.account_data.lock().name
+                ))
+                .await
+            {
+                warn!("webhook error: {err}");
+            }
+        }
+
         self.send_packet_static(&AdminAuthFailedPacket).await
     });
 
@@ -118,14 +132,20 @@ impl GameServerThread {
                     .cloned()
                     .collect::<Vec<_>>();
 
-                info!(
-                    "[{} ({}) @ {}] is sending the message to all {} people on the server: \"{}\"",
-                    self.account_data.lock().name,
-                    account_id,
-                    self.tcp_peer,
+                let name = self.account_data.lock().name.clone();
+                let webhook_msg = format!(
+                    "{name} is sending a notice to all {} people on the server: {}",
                     threads.len(),
                     notice_packet.message,
                 );
+
+                info!("[{account_id} @ {}] {}", self.tcp_peer, webhook_msg);
+
+                if self.game_server.bridge.has_webhook() {
+                    if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                        warn!("webhook error: {err}");
+                    }
+                }
 
                 self.send_packet_dynamic(&AdminSuccessMessagePacket {
                     message: &format!("Sent to {} people", threads.len()),
@@ -147,14 +167,20 @@ impl GameServerThread {
                     |thr| thr.account_data.lock().name.try_to_str().to_owned(),
                 );
 
-                info!(
-                    "[{} ({}) @ {}] is sending the message to {}: \"{}\"",
+                let webhook_msg = format!(
+                    "{} is sending a notice to {}: {}",
                     self.account_data.lock().name,
-                    account_id,
-                    self.tcp_peer,
                     player_name,
-                    notice_packet.message,
+                    notice_packet.message
                 );
+
+                info!("[{account_id} @ {}] {webhook_msg}", self.tcp_peer);
+
+                if self.game_server.bridge.has_webhook() {
+                    if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                        warn!("webhook error: {err}");
+                    }
+                }
 
                 if let Some(thread) = thread {
                     thread
@@ -212,14 +238,20 @@ impl GameServerThread {
                     .cloned()
                     .collect::<Vec<_>>();
 
-                info!(
-                    "[{} ({}) @ {}] is sending the message to {} people: \"{}\"",
+                let webhook_msg = format!(
+                    "{} is sending a notice to {} people: {}",
                     self.account_data.lock().name,
-                    account_id,
-                    self.tcp_peer,
                     threads.len(),
-                    notice_packet.message,
+                    notice_packet.message
                 );
+
+                info!("[{account_id} @ {}] {webhook_msg}", self.tcp_peer);
+
+                if self.game_server.bridge.has_webhook() {
+                    if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                        warn!("webhook error: {err}");
+                    }
+                }
 
                 self.send_packet_dynamic(&AdminSuccessMessagePacket {
                     message: &format!("Sent to {} people", threads.len()),
@@ -266,6 +298,21 @@ impl GameServerThread {
             thread
                 .push_new_message(ServerThreadMessage::TerminationNotice(packet.message))
                 .await;
+
+            if self.game_server.bridge.has_webhook() {
+                if let Err(err) = self
+                    .game_server
+                    .bridge
+                    .send_webhook_message(format!(
+                        "{} just kicked {} from the server",
+                        self.account_data.lock().name,
+                        thread.account_data.lock().name
+                    ))
+                    .await
+                {
+                    warn!("webhook error: {err}");
+                }
+            }
 
             self.send_packet_dynamic(&AdminSuccessMessagePacket {
                 message: &format!("Successfully kicked {}", thread.account_data.lock().name),
@@ -437,6 +484,11 @@ impl GameServerThread {
             new_user_entry.violation_reason = None;
         }
 
+        let target_user_name = new_user_entry
+            .user_name
+            .clone()
+            .unwrap_or_else(|| FastString::from_str("<unknown>"));
+
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
             let is_banned = new_user_entry.is_banned;
@@ -450,7 +502,7 @@ impl GameServerThread {
 
             let res = self
                 .game_server
-                .update_user(thread, move |user| {
+                .update_user(thread, |user| {
                     user.clone_from(&new_user_entry);
                     true
                 })
@@ -483,6 +535,102 @@ impl GameServerThread {
                     self.tcp_peer,
                     target_account_id
                 );
+
+                if self.game_server.bridge.has_webhook() {
+                    let mut webhook_msg = format!(
+                        "{} just updated the user {} ({})",
+                        self.account_data.lock().name,
+                        target_user_name,
+                        target_account_id
+                    );
+
+                    // role change
+                    if c_user_role {
+                        webhook_msg += &format!(
+                            "\n* Role change: is now **{}**",
+                            match new_user_entry.user_role {
+                                ROLE_USER => "regular user",
+                                ROLE_HELPER => "helper",
+                                ROLE_MOD => "mod",
+                                ROLE_ADMIN => "admin",
+                                _ => "unknown",
+                            }
+                        );
+                    }
+
+                    // banned message
+                    if c_is_banned {
+                        webhook_msg += &if user_entry.is_banned {
+                            "\n* **Banned** -> **Unbanned**".to_owned()
+                        } else {
+                            format!(
+                                "\n* **Banned until: {}**",
+                                if let Some(unix_seconds) = new_user_entry.violation_expiry {
+                                    format!("<t:{unix_seconds}:f>")
+                                } else {
+                                    "*permanent*".to_owned()
+                                }
+                            )
+                        };
+                    }
+                    // muted message
+                    else if c_is_muted {
+                        webhook_msg += &if user_entry.is_muted {
+                            "\n* **Muted** -> **Unmuted**".to_owned()
+                        } else {
+                            format!(
+                                "\n* **Muted until: {}**",
+                                if let Some(unix_seconds) = new_user_entry.violation_expiry {
+                                    format!("<t:{unix_seconds}:f>")
+                                } else {
+                                    "*permanent*".to_owned()
+                                }
+                            )
+                        }
+                    }
+
+                    // whitelisted
+                    if c_is_whitelisted {
+                        webhook_msg += if user_entry.is_whitelisted {
+                            "\n* **Whitelisted** -> **Not whitelisted**"
+                        } else {
+                            "\n* **Not whitelisted** -> **Whitelisted**"
+                        }
+                    }
+
+                    // changing reason or duration of a ban/mute
+                    if !c_is_banned && !c_is_muted && c_violation_expiry {
+                        webhook_msg += &format!(
+                            "\n* Ban/mute expiration changed to: {}",
+                            if let Some(unix_seconds) = new_user_entry.violation_expiry {
+                                format!("<t:{unix_seconds}:f>")
+                            } else {
+                                "*permanent*".to_owned()
+                            }
+                        );
+                    }
+
+                    if c_violation_reason {
+                        webhook_msg += &format!(
+                            "\n* Ban/mute reason: {}",
+                            new_user_entry
+                                .violation_reason
+                                .unwrap_or_else(|| FastString::from_str("<no reason given>"))
+                        );
+                    }
+
+                    // name color
+                    if c_name_color {
+                        webhook_msg += &format!(
+                            "\n* Name color change: {}",
+                            new_user_entry.name_color.clone().unwrap_or_default()
+                        );
+                    }
+
+                    if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                        warn!("webhook error: {err}");
+                    }
+                }
 
                 self.send_packet_dynamic(&AdminSuccessMessagePacket {
                     message: "Successfully updated the user",

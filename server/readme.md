@@ -79,6 +79,7 @@ Note that the server is written with security in mind, so many of those options 
 | `status_print_interval` | `7200` | ⚠️ | How often (in seconds) the game servers will print various status information to the console, 0 to disable |
 | `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
 | `tps` | `30` | ⏳ | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
+| `admin_webhook_url` | `""` | ⏳ | When enabled, admin actions (banning, muting, etc.) will send a message to the given discord webhook URL |
 | `admin_key`<sup>*</sup> | `(random)` | ⏳ | The password used to unlock the admin panel in-game, must be 32 characters or less |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `gd_api_credentials` accordingly if you enable this setting |
 | `gd_api_account`<sup>*</sup> | `0` | ✅ | Account ID of a bot account that will be used to verify account ownership |

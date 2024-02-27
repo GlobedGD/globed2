@@ -11,6 +11,8 @@ use globed_shared::{
     GameServerBootData, SyncMutex, TokenIssuer, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
+use serde::Serialize;
+
 /// `CentralBridge` stores the configuration of the game server,
 /// and is used for making requests to the central server.
 pub struct CentralBridge {
@@ -23,15 +25,18 @@ pub struct CentralBridge {
     // for performance reasons /shrug
     pub maintenance: AtomicBool,
     pub whitelist: AtomicBool,
+    pub webhook_present: AtomicBool,
 }
 
 #[derive(Debug)]
 pub enum CentralBridgeError {
     RequestError(reqwest::Error),       // error making the request
     CentralError((StatusCode, String)), // non 2xx status code
+    WebhookError((StatusCode, String)), // non 2xx status code
     InvalidMagic(String),               // invalid magic
     MalformedData(DecodeError),         // failed to decode data
     ProtocolMismatch(u16),              // protocol version mismatch
+    Other(String),
 }
 
 impl Display for CentralBridgeError {
@@ -39,12 +44,14 @@ impl Display for CentralBridgeError {
         match self {
             Self::RequestError(err) => write!(f, "error making web request: {err}"),
             Self::CentralError((err, response)) => write!(f, "central error {err}: {response}"),
+            Self::WebhookError((err, response)) => write!(f, "webhook error {err}: {response}"),
             Self::InvalidMagic(_) => write!(f, "central server sent invalid magic"),
             Self::MalformedData(err) => write!(f, "failed to decode data sent by the central server: {err}"),
             Self::ProtocolMismatch(proto) => write!(
                 f,
                 "protocol mismatch, we are on v{PROTOCOL_VERSION} while central server is on v{proto}"
             ),
+            Self::Other(err) => f.write_str(err),
         }
     }
 }
@@ -81,6 +88,7 @@ impl CentralBridge {
             central_conf: SyncMutex::new(GameServerBootData::default()),
             maintenance: AtomicBool::new(false),
             whitelist: AtomicBool::new(false),
+            webhook_present: AtomicBool::new(false),
         }
     }
 
@@ -92,6 +100,10 @@ impl CentralBridge {
         self.whitelist.load(Ordering::Relaxed)
     }
 
+    pub fn has_webhook(&self) -> bool {
+        self.webhook_present.load(Ordering::Relaxed)
+    }
+
     pub async fn request_boot_data(&self) -> Result<GameServerBootData> {
         let response = self
             .http_client
@@ -101,7 +113,7 @@ impl CentralBridge {
             .await?;
 
         let status = response.status();
-        if status != StatusCode::OK {
+        if !status.is_success() {
             let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
 
             return Err(CentralBridgeError::CentralError((status, message)));
@@ -147,6 +159,9 @@ impl CentralBridge {
     pub fn set_boot_data(&self, data: GameServerBootData) {
         self.maintenance.store(data.maintenance, Ordering::Relaxed);
         self.whitelist.store(data.whitelist, Ordering::Relaxed);
+        self.webhook_present
+            .store(!data.admin_webhook_url.is_empty(), Ordering::Relaxed);
+
         let mut issuer = self.token_issuer.lock();
 
         issuer.set_expiration_period(Duration::from_secs(data.token_expiry));
@@ -165,7 +180,7 @@ impl CentralBridge {
             .await?;
 
         let status = response.status();
-        if status != StatusCode::OK {
+        if !status.is_success() {
             let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
 
             return Err(CentralBridgeError::CentralError((status, message)));
@@ -196,7 +211,7 @@ impl CentralBridge {
             .await?;
 
         let status = response.status();
-        if status != StatusCode::OK {
+        if !status.is_success() {
             let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
 
             return Err(CentralBridgeError::CentralError((status, message)));
@@ -204,4 +219,37 @@ impl CentralBridge {
 
         Ok(())
     }
+
+    // not really bridge but it was making web requests which is sorta related i guess
+    pub async fn send_webhook_message(&self, message: String) -> Result<()> {
+        let url = self.central_conf.lock().admin_webhook_url.clone();
+
+        let opts = WebhookOpts {
+            username: "in-game actions",
+            content: message,
+        };
+
+        let response = self
+            .http_client
+            .post(url)
+            .header("Content-Type", "application/json")
+            .body(serde_json::to_string(&opts).map_err(|e| CentralBridgeError::Other(e.to_string()))?)
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+            return Err(CentralBridgeError::WebhookError((status, message)));
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Serialize)]
+struct WebhookOpts {
+    username: &'static str,
+    content: String,
 }

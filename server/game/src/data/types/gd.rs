@@ -84,7 +84,7 @@ impl PlayerAccountData {
             color2: self.icons.color2,
             glow_color: self.icons.glow_color,
             level_id,
-            // name_color: self.special_user_data.as_ref().map(|x| x.name_color),
+            name_color: self.special_user_data.as_ref().map(|x| x.name_color),
         }
     }
 
@@ -124,7 +124,7 @@ pub struct PlayerRoomPreviewAccountData {
     pub color2: i16,
     pub glow_color: i16,
     pub level_id: LevelId,
-    // pub name_color: Option<Color3B>,
+    pub name_color: Option<Color3B>,
 }
 
 /* AssociatedPlayerData */

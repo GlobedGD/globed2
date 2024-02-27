@@ -59,6 +59,10 @@ const fn default_tps() -> u32 {
     30
 }
 
+fn default_admin_webhook_url() -> String {
+    String::new()
+}
+
 fn default_secret_key() -> String {
     let rand_string = generate_alphanum_string(32);
 
@@ -116,6 +120,9 @@ pub struct ServerConfig {
     // game stuff
     #[serde(default = "default_tps")]
     pub tps: u32,
+
+    #[serde(default = "default_admin_webhook_url")]
+    pub admin_webhook_url: String,
 
     // security
     #[serde(default = "default_admin_key")]
