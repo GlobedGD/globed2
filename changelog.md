@@ -1,3 +1,7 @@
+## v1.3.0
+
+* Enable Lower audio latency by default
+
 ## v1.2.5
 
 * Fix crash when browsing levels
