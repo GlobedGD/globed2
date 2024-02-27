@@ -25,10 +25,14 @@ void GlobedAppDelegate::applicationWillEnterForeground() {
 #ifdef GEODE_IS_MACOS
 void GlobedAppDelegate::loadingIsFinished() {
     static auto* patch = util::lowlevel::nop(0x38127d, 5 + 3 + 4 + 5 + 3 + 3 + 5);
-    (void) patch->enable().unwrap();
+    if (!patch->isEnabled()) {
+        (void) patch->enable().unwrap();
+    }
 
     Loader::get()->queueInMainThread([patch = patch] {
-        (void) patch->disable().unwrap();
+        if (patch->isEnabled()) {
+            (void) patch->disable().unwrap();
+        }
         auto* ll = getChildOfType<LoadingLayer>(CCScene::get(), 0);
         log::debug("testing ll: {}", ll);
         if (ll) {
