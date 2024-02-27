@@ -20,7 +20,6 @@ using namespace geode::prelude;
 }
 
 void HookedLoadingLayer::loadingFinished() {
-    log::debug("loading finished got called!!");
     if (m_fields->preloadingStage == 0) {
         m_fields->loadingStartedTime = util::time::systemNow();
         log::debug("preloading assets");

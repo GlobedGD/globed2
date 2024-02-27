@@ -123,12 +123,12 @@ public:
         buf.writeI16(color2);
         buf.writeI16(glowColor);
         buf.writePrimitive(levelId);
-        if (nameColor.has_value()) {
-            buf.writeBool(true);
-            buf.writeColor3(nameColor.value());
-        } else {
-            buf.writeBool(false);
-        }
+        // if (nameColor.has_value()) {
+        //     buf.writeBool(true);
+        //     buf.writeColor3(nameColor.value());
+        // } else {
+        //     buf.writeBool(false);
+        // }
     }
 
     GLOBED_DECODE {
@@ -140,9 +140,9 @@ public:
         color2 = buf.readI16();
         glowColor = buf.readI16();
         levelId = buf.readPrimitive<LevelId>();
-        if (buf.readBool()) {
-            nameColor = buf.readColor3();
-        }
+        // if (buf.readBool()) {
+        //     nameColor = buf.readColor3();
+        // }
     }
 
     int32_t accountId, userId;

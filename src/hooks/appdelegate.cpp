@@ -1,6 +1,5 @@
 #include "appdelegate.hpp"
 
-#include <hooks/loading_layer.hpp>
 #include <net/network_manager.hpp>
 #include <util/lowlevel.hpp>
 
