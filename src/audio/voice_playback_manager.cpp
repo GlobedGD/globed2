@@ -109,9 +109,6 @@ void VoicePlaybackManager::forEachStream(std::function<void(int, AudioStream&)> 
 
 #else
 
-#include <util/time.hpp>
-class AudioStream;
-
 void VoicePlaybackManager::playRawDataStreamed(int playerId, const float* pcm, size_t samples) {}
 void VoicePlaybackManager::stopAllStreams() {}
 void VoicePlaybackManager::prepareStream(int playerId) {}

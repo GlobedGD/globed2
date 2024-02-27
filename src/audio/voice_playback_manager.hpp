@@ -2,6 +2,7 @@
 #include <defs.hpp>
 
 #include "stream.hpp"
+#include <util/time.hpp>
 
 /*
 * VoicePlaybackManager is responsible for playing voices of multiple people

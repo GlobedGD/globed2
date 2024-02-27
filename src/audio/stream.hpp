@@ -86,5 +86,8 @@ private:
     util::time::time_point lastPlaybackTime;
 };
 
+#else
+
+class AudioStream;
 
 #endif // GLOBED_VOICE_SUPPORT
