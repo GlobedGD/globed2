@@ -10,8 +10,6 @@ void GlobedPauseLayer::customSetup() {
 
     if (!static_cast<GlobedPlayLayer*>(PlayLayer::get())->m_fields->globedReady) return;
 
-    // TODO temp button placement!
-
     auto winSize = CCDirector::get()->getWinSize();
 
     Build<CCSprite>::createSpriteName("GJ_profileButton_001.png")

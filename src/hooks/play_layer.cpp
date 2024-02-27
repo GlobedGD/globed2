@@ -596,7 +596,7 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         .attempts = m_level->m_attempts,
 
         .player1 = this->gatherSpecificIconData(m_player1),
-        .player2 = this->gatherSpecificIconData(m_player2), // TODO detect isDualMode
+        .player2 = this->gatherSpecificIconData(m_player2),
 
         .lastDeathTimestamp = m_fields->lastDeathTimestamp,
 
@@ -631,7 +631,7 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
     }
 
     auto* rp = Build<RemotePlayer>::create(progressIcon, progressArrow)
-        .zOrder(10) // TODO temp
+        .zOrder(10)
         .id(Mod::get()->expandSpriteName(fmt::format("remote-player-{}", playerId).c_str()))
         .collect();
 

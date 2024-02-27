@@ -51,8 +51,6 @@ void PlayerInterpolator::updatePlayer(int playerId, const PlayerData& data, floa
     player.olderFrame = player.newerFrame;
     player.newerFrame = data;
 
-    // TODO potential place for improvement - doing this every packet may or may not be stupid.
-    // but for now it seems to work fine.
     player.timeCounter = player.olderFrame.timestamp;
 }
 

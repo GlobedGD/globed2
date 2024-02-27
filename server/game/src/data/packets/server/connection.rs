@@ -29,7 +29,7 @@ pub struct ServerDisconnectPacket<'a> {
 #[packet(id = 20004, tcp = true)]
 pub struct LoggedInPacket {
     pub tps: u32,
-    // pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: Option<SpecialUserData>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

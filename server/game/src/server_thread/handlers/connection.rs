@@ -206,11 +206,7 @@ impl GameServerThread {
             .create_player(packet.account_id);
 
         let tps = self.game_server.bridge.central_conf.lock().tps;
-        self.send_packet_static(&LoggedInPacket {
-            // TODO bring back
-            tps, /* special_user_data */
-        })
-        .await?;
+        self.send_packet_static(&LoggedInPacket { tps, special_user_data }).await?;
 
         Ok(())
     });

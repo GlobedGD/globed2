@@ -526,7 +526,6 @@ Result<> GlobedAudioManager::audioThreadWork() {
 
     this->getSystem()->update();
 
-    // TODO maybe do something with this i dunno
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
     // std::this_thread::yield();
 
