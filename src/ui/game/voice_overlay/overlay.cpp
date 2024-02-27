@@ -36,6 +36,7 @@ void GlobedVoiceOverlay::addPlayer(int accountId) {
 }
 
 void GlobedVoiceOverlay::updateOverlay() {
+#if GLOBED_VOICE_SUPPORT
     auto& vpm = VoicePlaybackManager::get();
 
     this->removeAllChildren();
@@ -49,6 +50,7 @@ void GlobedVoiceOverlay::updateOverlay() {
     });
 
     this->updateLayout();
+#endif // GLOBED_VOICE_SUPPORT
 }
 
 void GlobedVoiceOverlay::updateOverlaySoft() {
