@@ -9,6 +9,10 @@ using namespace geode::prelude;
 
 void HookedLevelBrowserLayer::setupLevelBrowser(cocos2d::CCArray* p0) {
     LevelBrowserLayer::setupLevelBrowser(p0);
+
+    bool inLists = typeinfo_cast<LevelListLayer*>(this) != nullptr;
+    if (inLists) return;
+
     auto& nm = NetworkManager::get();
 
     if (!p0 || !nm.established()) return;
@@ -38,6 +42,8 @@ void HookedLevelBrowserLayer::setupLevelBrowser(cocos2d::CCArray* p0) {
 void HookedLevelBrowserLayer::refreshPagePlayerCounts() {
     if (!m_list->m_listView) return;
 
+    bool inLists = typeinfo_cast<LevelListLayer*>(this) != nullptr;
+
     for (auto* cell_ : CCArrayExt<CCNode*>(m_list->m_listView->m_tableView->m_contentLayer->getChildren())) {
         if (!typeinfo_cast<LevelCell*>(cell_)) continue;
         auto* cell = static_cast<GlobedLevelCell*>(cell_);
@@ -45,9 +51,9 @@ void HookedLevelBrowserLayer::refreshPagePlayerCounts() {
         if (!isValidLevelType(cell->m_level->m_levelType)) continue;
 
         if (m_fields->levels.contains(cell->m_level->m_levelID)) {
-            cell->updatePlayerCount(m_fields->levels.at(cell->m_level->m_levelID));
+            cell->updatePlayerCount(m_fields->levels.at(cell->m_level->m_levelID), inLists);
         } else {
-            cell->updatePlayerCount(-1);
+            cell->updatePlayerCount(-1, inLists);
         }
     }
 }
@@ -70,6 +76,9 @@ void HookedLevelBrowserLayer::updatePlayerCounts(float) {
 
 void HookedLevelBrowserLayer::destructor() {
     LevelBrowserLayer::~LevelBrowserLayer();
+
+    bool inLists = typeinfo_cast<LevelListLayer*>(this) != nullptr;
+    if (inLists) return;
 
     auto& nm = NetworkManager::get();
     nm.removeListener<LevelPlayerCountPacket>(util::time::seconds(3));

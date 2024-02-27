@@ -6,5 +6,5 @@
 class $modify(GlobedLevelCell, LevelCell) {
     cocos2d::CCLabelBMFont* playerCountLabel = nullptr;
 
-    void updatePlayerCount(int count);
+    void updatePlayerCount(int count, bool inLists = false);
 };
