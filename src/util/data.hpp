@@ -1,9 +1,8 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/platform.hpp>
 
 #include <vector>
 #include <array>
-#include <bit>
 
 namespace util::data {
     using byte = uint8_t;

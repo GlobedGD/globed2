@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 #include <data/types/misc.hpp>
 
 class GlobedLevelListLayer : public cocos2d::CCLayer, LevelManagerDelegate {

@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 class GlobedSignupLayer : public cocos2d::CCLayer {
 public:

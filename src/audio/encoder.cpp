@@ -2,6 +2,8 @@
 
 #if GLOBED_VOICE_SUPPORT
 
+#include <opus.h>
+
 using namespace util::data;
 
 AudioEncoder::AudioEncoder(int sampleRate, int frameSize, int channels) {
@@ -15,6 +17,32 @@ AudioEncoder::~AudioEncoder() {
     if (encoder) {
         opus_encoder_destroy(encoder);
     }
+}
+
+AudioEncoder::AudioEncoder(AudioEncoder&& other) noexcept {
+    encoder = other.encoder;
+    other.encoder = nullptr;
+
+    channels = other.channels;
+    sampleRate = other.sampleRate;
+    frameSize = other.frameSize;
+}
+
+AudioEncoder& AudioEncoder::operator=(AudioEncoder&& other) noexcept {
+    if (this != &other) {
+        if (this->encoder) {
+            opus_encoder_destroy(this->encoder);
+        }
+
+        this->encoder = other.encoder;
+        other.encoder = nullptr;
+
+        channels = other.channels;
+        sampleRate = other.sampleRate;
+        frameSize = other.frameSize;
+    }
+
+    return *this;
 }
 
 Result<EncodedOpusData> AudioEncoder::encode(const float* data) {

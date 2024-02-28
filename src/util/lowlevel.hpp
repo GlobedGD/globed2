@@ -1,5 +1,7 @@
 #pragma once
-#include <defs.hpp>
+
+#include <Geode/utils/general.hpp>
+#include <defs/minimal_geode.hpp>
 
 namespace util::lowlevel {
     // nop X bytes at offset

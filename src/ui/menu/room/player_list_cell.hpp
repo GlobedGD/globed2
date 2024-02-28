@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 #include <data/types/gd.hpp>
 
 class PlayerListCell : public cocos2d::CCLayer {

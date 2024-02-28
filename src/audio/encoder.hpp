@@ -1,13 +1,14 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/platform.hpp>
 
 #if GLOBED_VOICE_SUPPORT
 
-#include <opus.h>
-
+#include <defs/minimal_geode.hpp>
 #include <data/bytebuffer.hpp>
 
 constexpr size_t VOICE_MAX_BYTES_IN_FRAME = 1000;
+
+struct OpusEncoder;
 
 class EncodedOpusData {
 public:
@@ -49,31 +50,8 @@ public:
     AudioEncoder(const AudioEncoder&) = delete;
     AudioEncoder& operator=(const AudioEncoder&) = delete;
 
-    AudioEncoder(AudioEncoder&& other) noexcept {
-        encoder = other.encoder;
-        other.encoder = nullptr;
-
-        channels = other.channels;
-        sampleRate = other.sampleRate;
-        frameSize = other.frameSize;
-    }
-
-    AudioEncoder& operator=(AudioEncoder&& other) noexcept {
-        if (this != &other) {
-            if (this->encoder) {
-                opus_encoder_destroy(this->encoder);
-            }
-
-            this->encoder = other.encoder;
-            other.encoder = nullptr;
-
-            channels = other.channels;
-            sampleRate = other.sampleRate;
-            frameSize = other.frameSize;
-        }
-
-        return *this;
-    }
+    AudioEncoder(AudioEncoder&& other) noexcept;
+    AudioEncoder& operator=(AudioEncoder&& other) noexcept;
 
     // Encode the given PCM samples with Opus. The amount of samples passed must be equal to `frameSize` passed in the constructor.
     // After you no longer need the encoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioEncoder::freeData(data)`

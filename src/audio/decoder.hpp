@@ -1,27 +1,20 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/platform.hpp>
 
 #if GLOBED_VOICE_SUPPORT
 
-#include <opus.h>
+#include <defs/minimal_geode.hpp>
 #include <util/data.hpp>
 
 #include "encoder.hpp"
+
+struct OpusDecoder;
 
 struct DecodedOpusData {
     float* ptr;
     size_t length;
 
-    void freeData() {
-        GLOBED_REQUIRE(ptr != nullptr, "attempting to double free an instance of DecodedOpusData")
-
-        delete[] ptr;
-#ifdef GLOBED_DEBUG
-        // to try and prevent misuse
-        ptr = nullptr;
-        length = -1; // wraps around to int max
-#endif // GLOBED_DEBUG
-    }
+    void freeData();
 };
 
 class AudioDecoder {
@@ -33,31 +26,8 @@ public:
     AudioDecoder(const AudioDecoder&) = delete;
     AudioDecoder& operator=(const AudioDecoder&) = delete;
 
-    AudioDecoder(AudioDecoder&& other) noexcept {
-        decoder = other.decoder;
-        other.decoder = nullptr;
-
-        channels = other.channels;
-        sampleRate = other.sampleRate;
-        frameSize = other.frameSize;
-    }
-
-    AudioDecoder& operator=(AudioDecoder&& other) noexcept {
-        if (this != &other) {
-            if (this->decoder) {
-                opus_decoder_destroy(this->decoder);
-            }
-
-            this->decoder = other.decoder;
-            other.decoder = nullptr;
-
-            channels = other.channels;
-            sampleRate = other.sampleRate;
-            frameSize = other.frameSize;
-        }
-
-        return *this;
-    }
+    AudioDecoder(AudioDecoder&& other) noexcept;
+    AudioDecoder& operator=(AudioDecoder&& other) noexcept;
 
     // Decodes the given Opus data into PCM float samples. `length` must be the size of the input data in bytes.
     // After you no longer need the decoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioDecoder::freeData(data)`

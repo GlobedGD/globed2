@@ -3,7 +3,7 @@
 */
 
 #pragma once
-#include <defs.hpp>
+#include <defs/essential.hpp>
 
 #include <condition_variable>
 #include <thread>
@@ -433,7 +433,6 @@ public:
                     _storage->loopFunc(args...);
                 }
             } catch (const std::exception& e) {
-                log::error("Terminating. Uncaught exception from thread {}: {}", _storage->threadName, e.what());
                 util::debug::delayedSuicide(fmt::format("Uncaught exception from thread \"{}\": {}", _storage->threadName, e.what()));
             }
         }, std::forward<TFuncArgs>(args)...);
@@ -444,7 +443,7 @@ public:
         if (_storage) {
             _storage->_stopped.set();
         } else {
-            log::warn("Tried to stop a detached thread");
+            throw std::runtime_error("tried to stop a detached SmartThread");
         }
     }
 

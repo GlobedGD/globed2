@@ -1,5 +1,4 @@
 #pragma once
-#include <defs.hpp>
 
 namespace util::simd {
     struct CPUFeatures;

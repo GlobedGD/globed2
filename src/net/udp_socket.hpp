@@ -1,5 +1,8 @@
 #pragma once
 #include "socket.hpp"
+
+#include <defs/platform.hpp>
+#include <defs/net.hpp>
 #include <util/sync.hpp>
 
 class UdpSocket : public Socket {

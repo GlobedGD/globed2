@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+#include <cmath>
+#include <limits>
 
 namespace util::math {
     constexpr float FLOAT_ERROR_MARGIN = 0.002f;

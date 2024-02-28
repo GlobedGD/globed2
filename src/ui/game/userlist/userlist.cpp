@@ -7,6 +7,7 @@
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
+#include <util/misc.hpp>
 
 using namespace geode::prelude;
 

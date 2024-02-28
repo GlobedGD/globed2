@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 class DownloadLevelPopup : public geode::Popup<int>, public LevelDownloadDelegate, public LevelManagerDelegate {
 public:

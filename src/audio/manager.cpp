@@ -2,6 +2,8 @@
 
 #if GLOBED_VOICE_SUPPORT
 
+#include <opus.h>
+
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
 #include <util/debug.hpp>
@@ -637,6 +639,10 @@ const char* GlobedAudioManager::fmodErrorString(FMOD_RESULT result) {
 
 std::string GlobedAudioManager::formatFmodError(FMOD_RESULT result, const char* whatFailed) {
     return fmt::format("{} failed: [FMOD error {}] {}", whatFailed, (int)result, fmodErrorString(result));
+}
+
+const char* GlobedAudioManager::getOpusVersion() {
+    return opus_get_version_string();
 }
 
 #else // GLOBED_VOICE_SUPPORT

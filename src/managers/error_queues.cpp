@@ -1,5 +1,7 @@
 #include "error_queues.hpp"
 
+#include <defs/minimal_geode.hpp>
+
 void ErrorQueues::warn(const std::string_view message, bool print) {
     if (print) log::warn("{}", message);
     _warns.push(std::string(message));

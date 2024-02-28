@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/platform.hpp>
+#include <defs/minimal_geode.hpp>
 
 #if GLOBED_VOICE_SUPPORT
 
@@ -21,40 +22,8 @@ public:
     AudioStream operator=(const AudioStream& other) = delete;
 
     // allow moving
-    AudioStream(AudioStream&& other) noexcept {
-        sound = other.sound;
-        channel = other.channel;
-        other.sound = nullptr;
-        other.channel = nullptr;
-
-        *queue.lock() = std::move(*other.queue.lock());
-        decoder = std::move(other.decoder);
-        *estimator.lock() = std::move(*other.estimator.lock());
-    }
-
-    AudioStream& operator=(AudioStream&& other) noexcept {
-        if (this != &other) {
-            if (this->sound) {
-                this->sound->release();
-            }
-
-            if (this->channel) {
-                this->channel->stop();
-            }
-
-            this->sound = other.sound;
-            this->channel = other.channel;
-
-            other.sound = nullptr;
-            other.channel = nullptr;
-
-            *queue.lock() = std::move(*other.queue.lock());
-            decoder = std::move(other.decoder);
-            *estimator.lock() = std::move(*other.estimator.lock());
-        }
-
-        return *this;
-    }
+    AudioStream(AudioStream&& other) noexcept;
+    AudioStream& operator=(AudioStream&& other) noexcept;
 
     // start playing this stream
     void start();

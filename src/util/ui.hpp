@@ -1,6 +1,6 @@
 #pragma once
 
-#include <defs.hpp>
+#include <defs/all.hpp>
 #include <functional>
 
 namespace util::ui {

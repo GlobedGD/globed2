@@ -9,6 +9,7 @@
 #include <managers/settings.hpp>
 #include <util/net.hpp>
 #include <util/time.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 

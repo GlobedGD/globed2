@@ -1,7 +1,5 @@
 #pragma once
-#include <defs.hpp>
-
-#include <vector>
+#include <defs/util.hpp>
 
 #include <util/sync.hpp>
 

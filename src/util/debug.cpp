@@ -1,14 +1,16 @@
 #include "debug.hpp"
 
-#include <util/format.hpp>
-#include <util/rng.hpp>
-#include <util/misc.hpp>
-
-#ifdef GEODE_IS_WINDOWS
+#if defined(GEODE_IS_ANDROID)
+# include <cxxabi.h>
+#elif defined(GEODE_IS_WINDOWS)
 # include <dbghelp.h>
 # pragma comment(lib, "dbghelp.lib")
 #endif
+
 #include <any>
+
+#include <util/format.hpp>
+#include <util/rng.hpp>
 
 using namespace geode::prelude;
 
@@ -94,6 +96,19 @@ namespace util::debug {
             }
         }
         log::debug("==== Packet summary end ====");
+    }
+    void PacketLogger::record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {
+#ifdef GLOBED_DEBUG_PACKETS
+# ifdef GLOBED_DEBUG_PACKETS_PRINT
+        log::debug("{} packet {}, encrypted: {}, bytes: {}", outgoing ? "Sending" : "Receiving", id, encrypted ? "true" : "false", bytes);
+# endif // GLOBED_DEBUG_PACKETS_PRINT
+        queue.push(PacketLog {
+            .id = id,
+            .encrypted = encrypted,
+            .outgoing = outgoing,
+            .bytes = bytes
+        });
+#endif // GLOBED_DEBUG_PACKETS
     }
 
     PacketLogSummary PacketLogger::getSummary() {

@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 #include <data/packets/server/connection.hpp>
 #include <util/time.hpp>

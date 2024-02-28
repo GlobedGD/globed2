@@ -1,6 +1,5 @@
 #pragma once
-#include <defs.hpp>
-#include <defs/net.hpp>
+#include <defs/minimal_geode.hpp>
 
 struct RecvResult {
     bool fromServer; // true if the packet comes from the currently connected server

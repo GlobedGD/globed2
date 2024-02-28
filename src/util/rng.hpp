@@ -1,9 +1,7 @@
 #pragma once
-#include <defs.hpp>
-
 #include <random>
 
-#include <util/data.hpp>
+#include <defs/util.hpp>
 
 namespace util::rng {
     class Random : public SingletonBase<Random> {

@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/platform.hpp>
+#include <defs/minimal_geode.hpp>
 
 #include "stream.hpp"
 #include <util/time.hpp>

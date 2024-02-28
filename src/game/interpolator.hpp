@@ -1,5 +1,4 @@
 #pragma once
-#include <defs.hpp>
 
 #include "visual_state.hpp"
 #include <data/types/game.hpp>

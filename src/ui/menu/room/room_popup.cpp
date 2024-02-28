@@ -10,6 +10,8 @@
 #include <managers/room.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <util/ui.hpp>
+#include <util/misc.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 

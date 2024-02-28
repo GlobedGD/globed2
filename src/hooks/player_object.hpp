@@ -1,6 +1,4 @@
 #pragma once
-#include <defs.hpp>
-
 #include <Geode/modify/PlayerObject.hpp>
 
 class $modify(ComplexPlayerObject, PlayerObject) {

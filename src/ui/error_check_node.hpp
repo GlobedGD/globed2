@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <cocos2d.h>
 
 class ErrorCheckNode : public cocos2d::CCNode {
 public:

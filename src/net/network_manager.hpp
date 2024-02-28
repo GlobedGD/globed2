@@ -1,15 +1,9 @@
 #pragma once
 #include "game_socket.hpp"
 
-#include <functional>
-#include <unordered_map>
-#include <thread>
-
 #include <managers/game_server.hpp>
-#include <managers/central_server.hpp>
 #include <util/sync.hpp>
 #include <util/time.hpp>
-#include <util/format.hpp>
 
 using namespace util::sync;
 

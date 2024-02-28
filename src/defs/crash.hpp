@@ -1,5 +1,5 @@
 #pragma once
-#include "basic.hpp"
+#include <config.hpp>
 #include "platform.hpp"
 
 /*

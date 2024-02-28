@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/geode.hpp>
 
 #include <Geode/modify/LevelSelectLayer.hpp>
 

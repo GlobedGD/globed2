@@ -1,4 +1,4 @@
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 #if GLOBED_HAS_KEYBINDS
 #include <geode.custom-keybinds/include/Keybinds.hpp>
@@ -102,7 +102,7 @@ void printDebugInfo() {
     log::info("Platform: {} ({}-endian)", GLOBED_PLATFORM_STRING, GLOBED_LITTLE_ENDIAN ? "little" : "big");
     log::info("FMOD linkage: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
 #if GLOBED_VOICE_SUPPORT
-    log::info("Voice chat support: true (opus version: {})", opus_get_version_string());
+    log::info("Voice chat support: true (opus version: {})", GlobedAudioManager::getOpusVersion());
 #else
     log::info("Voice chat support: false");
 #endif

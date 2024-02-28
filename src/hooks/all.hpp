@@ -6,7 +6,6 @@
 #include "gjgamelevel.hpp"
 #include "level_cell.hpp"
 #include "level_browser_layer.hpp"
-#include "level_info_layer.hpp"
 #include "level_select_layer.hpp"
 #include "loading_layer.hpp"
 #include "menu_layer.hpp"

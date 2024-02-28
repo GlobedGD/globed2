@@ -1,6 +1,9 @@
 #include "base_box.hpp"
 #include <cstring> // std::memmove
 
+#include <defs/assert.hpp>
+#include <defs/minimal_geode.hpp>
+
 using namespace util::data;
 
 constexpr size_t BaseCryptoBox::prefixLength() {

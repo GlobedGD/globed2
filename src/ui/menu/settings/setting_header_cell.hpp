@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 class GlobedSettingHeaderCell : public cocos2d::CCLayer {
 public:

@@ -1,10 +1,9 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/platform.hpp>
+#include <defs/util.hpp>
 
 #if GLOBED_VOICE_SUPPORT
 
-#include <thread>
-#include <functional>
 #include <fmod.hpp>
 
 #include "frame.hpp"
@@ -114,6 +113,7 @@ public:
 
     static const char* fmodErrorString(FMOD_RESULT result);
     static std::string formatFmodError(FMOD_RESULT result, const char* whatFailed);
+    static const char* getOpusVersion();
 
 private:
     /* devices */

@@ -1,6 +1,12 @@
 #include "globed_menu_layer.hpp"
 
 #include "server_list_cell.hpp"
+#include <data/types/misc.hpp>
+#include <managers/error_queues.hpp>
+#include <managers/account.hpp>
+#include <managers/central_server.hpp>
+#include <managers/game_server.hpp>
+#include <net/network_manager.hpp>
 #include <ui/menu/room/room_popup.hpp>
 #include <ui/menu/server_switcher/server_switcher_popup.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
@@ -9,10 +15,6 @@
 #include <ui/menu/admin/admin_login_popup.hpp>
 #include <util/ui.hpp>
 #include <util/net.hpp>
-#include <net/network_manager.hpp>
-#include <managers/error_queues.hpp>
-#include <managers/account.hpp>
-#include <data/types/misc.hpp>
 
 using namespace geode::prelude;
 

@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 class IntermediaryLoadingPopup : public geode::Popup<std::function<void(IntermediaryLoadingPopup*)>, std::function<void(IntermediaryLoadingPopup*)>> {
 public:

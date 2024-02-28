@@ -3,6 +3,8 @@
 #include <cstring> // std::memcpy
 
 #include <util/crypto.hpp>
+#include <defs/assert.hpp>
+#include <defs/minimal_geode.hpp>
 
 using namespace util::data;
 

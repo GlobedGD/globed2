@@ -10,6 +10,8 @@
 #include <ui/general/slider_wrapper.hpp>
 #include <util/math.hpp>
 #include <util/ui.hpp>
+#include <util/misc.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 

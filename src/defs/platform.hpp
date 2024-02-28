@@ -1,6 +1,5 @@
 #pragma once
-#include "basic.hpp"
-#include <stdint.h>
+#include <config.hpp>
 #include <bit>
 
 /*

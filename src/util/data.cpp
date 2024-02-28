@@ -1,7 +1,5 @@
 #include "data.hpp"
 
-#include <bit>
-
 #ifdef _MSC_VER
 # include <stdlib.h>
 # define BSWAP16(val) _byteswap_ushort(val)

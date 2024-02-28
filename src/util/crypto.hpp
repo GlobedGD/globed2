@@ -1,8 +1,4 @@
 #pragma once
-#include <defs.hpp>
-
-#include <sodium.h>
-
 #include <util/data.hpp>
 
 #define CRYPTO_REQUIRE(condition, message) GLOBED_REQUIRE(condition, "crypto error: " message)
@@ -45,10 +41,10 @@ namespace util::crypto {
     bool stringsEqual(const std::string_view s1, const std::string_view s2);
 
     enum class Base64Variant {
-        STANDARD = sodium_base64_VARIANT_ORIGINAL,
-        STANDARD_NO_PAD = sodium_base64_VARIANT_ORIGINAL_NO_PADDING,
-        URLSAFE = sodium_base64_VARIANT_URLSAFE,
-        URLSAFE_NO_PAD = sodium_base64_VARIANT_URLSAFE_NO_PADDING,
+        STANDARD,
+        STANDARD_NO_PAD,
+        URLSAFE,
+        URLSAFE_NO_PAD,
     };
 
     // encodes the given buffer into a base64 string
@@ -78,4 +74,7 @@ namespace util::crypto {
     data::bytevector hexDecode(const std::string_view source);
     // decodes the given hex bytevector into a bytevector
     data::bytevector hexDecode(const data::bytevector& source);
+
+    // convert a `Base64Variant` enum to an int for libsodium API
+    int base64VariantToInt(Base64Variant variant);
 };

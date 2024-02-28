@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/platform.hpp>
+#include <defs/util.hpp>
 
 #include "manager.hpp"
 

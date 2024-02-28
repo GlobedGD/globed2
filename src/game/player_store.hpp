@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+#include <unordered_map>
+#include <optional>
 
 class PlayerStore {
 public:

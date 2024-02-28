@@ -1,6 +1,4 @@
 #pragma once
-#include <defs.hpp>
-
 #include <type_traits>
 
 #include "bitbuffer.hpp"
@@ -362,7 +360,5 @@ private:
     util::data::bytevector _data;
     size_t _position;
 
-    void boundsCheck(size_t readBytes) {
-        GLOBED_REQUIRE(_position + readBytes <= _data.size(), "ByteBuffer out of bounds read")
-    }
+    void boundsCheck(size_t readBytes);
 };

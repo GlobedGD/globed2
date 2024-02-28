@@ -1,10 +1,7 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/util.hpp>
 
 #include <unordered_map>
-#ifdef GEODE_IS_ANDROID
-# include <cxxabi.h>
-#endif
 
 #include <data/packets/packet.hpp>
 #include <util/collections.hpp>
@@ -87,20 +84,7 @@ namespace util::debug {
 
     class PacketLogger : public SingletonBase<PacketLogger> {
     public:
-        void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes) {
-# ifdef GLOBED_DEBUG_PACKETS
-#  ifdef GLOBED_DEBUG_PACKETS_PRINT
-            log::debug("{} packet {}, encrypted: {}, bytes: {}", outgoing ? "Sending" : "Receiving", id, encrypted ? "true" : "false", bytes);
-#  endif // GLOBED_DEBUG_PACKETS_PRINT
-            queue.push(PacketLog {
-                .id = id,
-                .encrypted = encrypted,
-                .outgoing = outgoing,
-                .bytes = bytes
-            });
-# endif // GLOBED_DEBUG_PACKETS
-        }
-
+        void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes);
         PacketLogSummary getSummary();
     private:
         collections::CappedQueue<PacketLog, 25000> queue;

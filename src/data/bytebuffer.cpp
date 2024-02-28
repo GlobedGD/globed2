@@ -1,4 +1,7 @@
 #include "bytebuffer.hpp"
+
+#include <defs/assert.hpp>
+#include <defs/minimal_geode.hpp>
 #include <cstring> // std::memcpy
 
 using namespace util::data;
@@ -203,4 +206,8 @@ void ByteBuffer::grow(size_t bytes) {
 
 void ByteBuffer::shrink(size_t bytes) {
     this->resize(_data.size() - bytes);
+}
+
+void ByteBuffer::boundsCheck(size_t readBytes) {
+    GLOBED_REQUIRE(_position + readBytes <= _data.size(), "ByteBuffer out of bounds read")
 }

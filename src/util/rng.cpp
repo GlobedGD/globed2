@@ -1,5 +1,7 @@
 #include "rng.hpp"
 
+#include <defs/assert.hpp>
+
 #define RNG_DEF(type) \
     template type Random::generate<type>(); \
     template type Random::generate<type>(type); \
@@ -64,7 +66,10 @@ namespace util::rng {
     }
 
     bool Random::genRatio(uint32_t numerator, uint32_t denominator) {
-        GLOBED_REQUIRE(denominator != 0, "attempt to call Random::genRatio with denominator set to 0")
+        if (denominator == 0) {
+            throw std::runtime_error("attempt to call Random::genRatio with denominator set to 0");
+        }
+
         double probability = static_cast<double>(numerator) / denominator;
         return this->genRatio(probability);
     }

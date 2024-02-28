@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/util.hpp>
+#include <defs/minimal_geode.hpp>
 
 #include <unordered_map>
 

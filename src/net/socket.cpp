@@ -1,5 +1,4 @@
 #include "socket.hpp"
-#include <util/net.hpp>
 
 Result<int> Socket::send(const std::string_view data) {
     return send(data.data(), data.size());

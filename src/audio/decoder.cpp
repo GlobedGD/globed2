@@ -2,7 +2,20 @@
 
 #if GLOBED_VOICE_SUPPORT
 
+#include <opus.h>
+
 using namespace util::data;
+
+void DecodedOpusData::freeData() {
+    GLOBED_REQUIRE(ptr != nullptr, "attempting to double free an instance of DecodedOpusData")
+
+    delete[] ptr;
+#ifdef GLOBED_DEBUG
+    // to try and prevent misuse
+    ptr = nullptr;
+    length = -1; // wraps around to int max
+#endif // GLOBED_DEBUG
+}
 
 AudioDecoder::AudioDecoder(int sampleRate, int frameSize, int channels) {
     this->frameSize = frameSize;
@@ -16,6 +29,32 @@ AudioDecoder::~AudioDecoder() {
         opus_decoder_destroy(decoder);
         decoder = nullptr;
     }
+}
+
+AudioDecoder::AudioDecoder(AudioDecoder&& other) noexcept {
+    decoder = other.decoder;
+    other.decoder = nullptr;
+
+    channels = other.channels;
+    sampleRate = other.sampleRate;
+    frameSize = other.frameSize;
+}
+
+AudioDecoder& AudioDecoder::operator=(AudioDecoder&& other) noexcept {
+    if (this != &other) {
+        if (this->decoder) {
+            opus_decoder_destroy(this->decoder);
+        }
+
+        this->decoder = other.decoder;
+        other.decoder = nullptr;
+
+        channels = other.channels;
+        sampleRate = other.sampleRate;
+        frameSize = other.frameSize;
+    }
+
+    return *this;
 }
 
 Result<DecodedOpusData> AudioDecoder::decode(const byte* data, size_t length) {

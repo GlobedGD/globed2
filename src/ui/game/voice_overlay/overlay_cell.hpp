@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 #include <data/types/gd.hpp>
 #include <ui/general/audio_visualizer.hpp>

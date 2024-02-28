@@ -1,4 +1,5 @@
 #include "level_cell.hpp"
+#include <defs/geode.hpp>
 
 using namespace geode::prelude;
 

@@ -1,5 +1,7 @@
 #include "format.hpp"
+
 #include <cmath>
+#include <sstream>
 #include <iomanip>
 
 namespace util::format {

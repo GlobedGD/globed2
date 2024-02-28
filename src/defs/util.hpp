@@ -1,5 +1,5 @@
 #pragma once
-#include "basic.hpp"
+#include <config.hpp>
 #include "platform.hpp"
 
 #define GLOBED_MBO(src, type, offset) *(type*)((char*)src + offset)
@@ -26,21 +26,3 @@ protected:
     SingletonBase() = default;
     virtual ~SingletonBase() = default;
 };
-
-// using decls to avoid polluting the namespace in headers
-
-// ugly workaround because MSVC sucks ass
-namespace __globed_log_namespace_shut_up_msvc {
-    namespace log = geode::log;
-}
-
-using namespace __globed_log_namespace_shut_up_msvc;
-
-using geode::Ref;
-using geode::Loader;
-using geode::Mod;
-using geode::Result;
-using geode::Ok;
-using geode::Err;
-using geode::cocos::CCArrayExt;
-using geode::cast::typeinfo_cast;

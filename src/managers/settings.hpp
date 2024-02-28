@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/minimal_geode.hpp>
+#include <defs/util.hpp>
 
 #define GDEFAULTKEY(name) _DefaultFor##name
 #define GDEFAULT(name, type, val) static constexpr type GDEFAULTKEY(name) = val;
@@ -115,7 +116,7 @@ private:
     }
 
     template <typename T>
-    T loadOrDefault(const std::string_view key, const T defaultval) {
+    T loadOrDefault(const std::string_view key, const T& defaultval) {
         return this->has(key) ? this->load<T>(key) : defaultval;
     }
 };

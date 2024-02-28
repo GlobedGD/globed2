@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/util.hpp>
 
 class BlockListManager : public SingletonBase<BlockListManager> {
 protected:

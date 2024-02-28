@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 using EditRoleCallbackFn = std::function<void(int role)>;
 

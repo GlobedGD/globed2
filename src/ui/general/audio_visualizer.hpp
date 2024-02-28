@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 // Wrapper around FMODLevelVisualizer but horizontal (yay)
 class GlobedAudioVisualizer : public cocos2d::CCNode {

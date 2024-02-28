@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 #include "setting_cell.hpp"
 #include "setting_header_cell.hpp"

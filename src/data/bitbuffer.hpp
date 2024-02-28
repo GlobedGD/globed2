@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/assert.hpp>
+#include <defs/minimal_geode.hpp>
 
 #include <bitset>
 #include <vector>

@@ -71,6 +71,41 @@ AudioStream::~AudioStream() {
     }
 }
 
+AudioStream::AudioStream(AudioStream&& other) noexcept {
+    sound = other.sound;
+    channel = other.channel;
+    other.sound = nullptr;
+    other.channel = nullptr;
+
+    *queue.lock() = std::move(*other.queue.lock());
+    decoder = std::move(other.decoder);
+    *estimator.lock() = std::move(*other.estimator.lock());
+}
+
+AudioStream& AudioStream::operator=(AudioStream&& other) noexcept {
+    if (this != &other) {
+        if (this->sound) {
+            this->sound->release();
+        }
+
+        if (this->channel) {
+            this->channel->stop();
+        }
+
+        this->sound = other.sound;
+        this->channel = other.channel;
+
+        other.sound = nullptr;
+        other.channel = nullptr;
+
+        *queue.lock() = std::move(*other.queue.lock());
+        decoder = std::move(other.decoder);
+        *estimator.lock() = std::move(*other.estimator.lock());
+    }
+
+    return *this;
+}
+
 void AudioStream::start() {
     if (this->channel) {
         return;

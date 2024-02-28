@@ -9,6 +9,10 @@ VolumeEstimator::VolumeEstimator(size_t sampleRate) {
     this->sampleRate = sampleRate;
 }
 
+VolumeEstimator::VolumeEstimator() {
+    this->sampleRate = 0;
+}
+
 void VolumeEstimator::feedData(const float* pcm, size_t samples) {
     sampleQueue.writeData(pcm, samples);
 

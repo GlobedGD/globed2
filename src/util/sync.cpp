@@ -6,7 +6,6 @@ namespace util::sync {
 
 template <>
 void SmartThread<>::start() {
-
     _storage->_stopped.clear();
     _handle = std::thread([_storage = std::move(_storage)]() {
         if (!_storage->threadName.empty()) {

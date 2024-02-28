@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 class StringInputPopup : public geode::Popup<std::function<void(const std::string_view)>> {
 public:

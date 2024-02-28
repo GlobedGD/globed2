@@ -1,5 +1,5 @@
 #pragma once
-#include <defs.hpp>
+#include <defs/all.hpp>
 
 #include "complex_visual_player.hpp"
 #include <ui/game/progress/progress_icon.hpp>

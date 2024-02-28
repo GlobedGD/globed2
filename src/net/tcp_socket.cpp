@@ -1,8 +1,8 @@
 #include "tcp_socket.hpp"
+
 #include <util/net.hpp>
 
 using namespace geode::prelude;
-
 
 TcpSocket::TcpSocket() : socket_(0) {
     memset(&destAddr_, 0, sizeof(destAddr_));

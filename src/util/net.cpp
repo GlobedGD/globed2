@@ -1,5 +1,6 @@
 #include "net.hpp"
 
+#include <defs/geode.hpp>
 #include <util/format.hpp>
 
 using namespace geode::prelude;

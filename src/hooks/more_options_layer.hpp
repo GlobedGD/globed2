@@ -1,5 +1,6 @@
 #pragma once
-#include <defs.hpp>
+
+#include <defs/geode.hpp>
 #include <Geode/modify/MoreOptionsLayer.hpp>
 
 #ifdef GEODE_IS_ANDROID
