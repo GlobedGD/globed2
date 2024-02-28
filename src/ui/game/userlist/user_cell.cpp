@@ -8,6 +8,7 @@
 #include <managers/settings.hpp>
 #include <managers/profile_cache.hpp>
 #include <hooks/play_layer.hpp>
+#include <hooks/gjgamelevel.hpp>
 #include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/intermediary_loading_popup.hpp>
@@ -172,6 +173,27 @@ void GlobedUserCell::makeButtons() {
             .store(kickButton);
 
         maxWidth += kickButton->getScaledContentSize().width + 5.f;
+
+        if (accountData.accountId != GJAccountManager::get()->m_accountID) {
+            GlobedPlayLayer* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get()); // ggpl
+
+            Build<CCSprite>::createSpriteName("icon-teleport.png"_spr)
+                .scale(0.35f)
+                .intoMenuItem([gpl, this](auto) {
+                    static_cast<HookedGJGameLevel*>(gpl->m_level)->m_fields->shouldStopProgress = true; // turn on safe mode
+
+                    PlayerObject* po1 = gpl->m_player1;
+                    CCPoint position = {0,0}; // just in case the player has already left by the time we teleport
+                    if (gpl->m_fields->interpolator->hasPlayer(accountData.accountId)) position = gpl->m_fields->interpolator->getPlayerState(accountData.accountId).player1.position;
+
+                    po1->m_position = position;
+                })
+                .parent(buttonsWrapper)
+                .id("teleport-button"_spr)
+                .store(teleportButton);
+
+            maxWidth += teleportButton->getScaledContentSize().width + 5.f;
+        }
     }
 
 

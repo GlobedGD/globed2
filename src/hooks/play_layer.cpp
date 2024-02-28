@@ -5,6 +5,7 @@
 #endif // GLOBED_HAS_KEYBINDS
 
 #include "pause_layer.hpp"
+#include "gjgamelevel.hpp"
 #include <audio/all.hpp>
 #include <managers/block_list.hpp>
 #include <managers/error_queues.hpp>
@@ -264,6 +265,21 @@ void GlobedPlayLayer::setupPacketListeners() {
         }
 #endif // GLOBED_VOICE_SUPPORT
     });
+}
+
+void GlobedPlayLayer::resetLevel() {
+    PlayLayer::resetLevel();
+    static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = false; // turn off safe mode if it was turned on at any time
+}
+
+void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
+    // doesn't actually change any progress but this stops the NEW BEST popup from showing up while cheating/jumping to a player
+    if (!static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress) PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
+}
+
+void GlobedPlayLayer::levelComplete() {
+    if (!static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress) PlayLayer::levelComplete();
+    else GlobedPlayLayer::onQuit();
 }
 
 void GlobedPlayLayer::setupCustomKeybinds() {
