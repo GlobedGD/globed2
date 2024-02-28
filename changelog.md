@@ -1,6 +1,7 @@
 ## v1.3.0
 
 * Enable Lower audio latency by default
+* Fix crashes due to the menu button being removed by another mod
 
 ## v1.2.5
 

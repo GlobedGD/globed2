@@ -95,11 +95,28 @@ bool HookedMenuLayer::init() {
 }
 
 void HookedMenuLayer::updateGlobedButton() {
-    if (m_fields->globedBtn) m_fields->globedBtn->removeFromParent();
+    if (m_fields->globedBtn) {
+        m_fields->globedBtn->removeFromParent();
+        m_fields->globedBtn = nullptr;
+    }
 
-    auto menu = this->getChildByID("bottom-menu");
+    CCNode* parent = nullptr;
+    CCPoint pos;
 
-    Build<CircleButtonSprite>(CircleButtonSprite::createWithSpriteFrameName(
+    if ((parent = this->getChildByID("bottom-menu"))) {
+        pos = CCPoint{0.f, 0.f};
+    } else if ((parent = this->getChildByID("side-menu"))) {
+        pos = CCPoint{0.f, 0.f};
+    } else if ((parent = this->getChildByID("right-side-menu"))) {
+        pos = CCPoint{0.f, 0.f};
+    }
+
+    if (!parent) {
+        log::warn("failed to position the globed button");
+        return;
+    }
+
+    m_fields->globedBtn = Build<CircleButtonSprite>(CircleButtonSprite::createWithSpriteFrameName(
         "menuicon.png"_spr,
         1.f,
         m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
@@ -115,10 +132,10 @@ void HookedMenuLayer::updateGlobedButton() {
             util::ui::switchToScene(GlobedMenuLayer::create());
         })
         .id("main-menu-button"_spr)
-        .parent(menu)
-        .store(m_fields->globedBtn);
+        .parent(parent)
+        .collect();
 
-    menu->updateLayout();
+    parent->updateLayout();
 }
 
 void HookedMenuLayer::maybeUpdateButton(float) {

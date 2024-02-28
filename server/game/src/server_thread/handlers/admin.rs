@@ -291,6 +291,12 @@ impl GameServerThread {
                     .await;
             }
 
+            let webhook_msg = format!("{} just kicked **everyone** from the server", self.account_data.lock().name);
+
+            if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                warn!("webhook error: {err}");
+            }
+
             return Ok(());
         }
 
@@ -300,16 +306,12 @@ impl GameServerThread {
                 .await;
 
             if self.game_server.bridge.has_webhook() {
-                if let Err(err) = self
-                    .game_server
-                    .bridge
-                    .send_webhook_message(format!(
-                        "{} just kicked {} from the server",
-                        self.account_data.lock().name,
-                        thread.account_data.lock().name
-                    ))
-                    .await
-                {
+                let own_name = self.account_data.lock().name.clone();
+                let target_name = thread.account_data.lock().name.clone();
+
+                let webhook_msg = format!("{own_name} just kicked {target_name} from the server");
+
+                if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
                     warn!("webhook error: {err}");
                 }
             }

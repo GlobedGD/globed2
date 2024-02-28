@@ -5,7 +5,7 @@
 
 class $modify(HookedMenuLayer, MenuLayer) {
     bool btnActive = false;
-    CCMenuItemSpriteExtra* globedBtn = nullptr;
+    Ref<CCMenuItemSpriteExtra> globedBtn = nullptr;
 
     $override
     bool init();
