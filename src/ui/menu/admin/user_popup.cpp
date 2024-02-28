@@ -308,7 +308,7 @@ void AdminUserPopup::recreateRoleModifyButton() {
     }
 
     roleModifyButton = Build<CCSprite>::createSpriteName(AdminEditRolePopup::roleToSprite(userEntry.userRole).c_str())
-        .scale(0.8f)
+        .scale(0.5f)
         .intoMenuItem([this](auto) {
             if (NetworkManager::get().getAdminRole() < ROLE_ADMIN) return;
 

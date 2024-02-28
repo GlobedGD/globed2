@@ -159,7 +159,7 @@ std::string base64Encode(const byte* source, size_t size, Base64Variant variant)
     std::string ret;
     ret.resize(length);
 
-    sodium_bin2base64(ret.data(), length, source, size, (int)variant);
+    sodium_bin2base64(ret.data(), length, source, size, base64VariantToInt(variant));
 
     ret.resize(length - 1); // get rid of the trailing null byte
 
@@ -183,7 +183,7 @@ bytevector base64Decode(const byte* source, size_t size, Base64Variant variant) 
     CRYPTO_ERR_CHECK(sodium_base642bin(
         out.data(), outMaxLen,
         reinterpret_cast<const char*>(source), size,
-        nullptr, &outRealLen, nullptr, (int)variant
+        nullptr, &outRealLen, nullptr, base64VariantToInt(variant)
     ), "invalid base64 string")
 
     out.resize(outRealLen); // necessary

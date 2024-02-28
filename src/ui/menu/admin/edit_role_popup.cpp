@@ -20,6 +20,7 @@ bool AdminEditRolePopup::setup(int currentRole, EditRoleCallbackFn callback) {
     // the buttons themselves
     for (int id : {ROLE_USER, ROLE_HELPER, ROLE_MOD, ROLE_ADMIN}) {
         Build<CCSprite>::createSpriteName(roleToSprite(id).c_str())
+            .scale(0.65f)
             .intoMenuItem([this, id = id](auto) {
                 this->callback(id);
                 this->onClose(this);
