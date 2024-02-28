@@ -52,6 +52,15 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     $override
     void onQuit();
 
+    $override
+    void resetLevel();
+
+    $override
+    void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5);
+
+    $override
+    void levelComplete();
+
     /* setup stuff to make init() cleaner */
 
     void setupPacketListeners();
