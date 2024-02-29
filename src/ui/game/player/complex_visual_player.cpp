@@ -77,9 +77,7 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
 
 void ComplexVisualPlayer::updateData(
         const SpecificIconData& data,
-        bool isDead,
-        bool isPaused,
-        bool isPracticing,
+        const VisualPlayerState& playerData,
         bool isSpeaking,
         float loudness
 ) {
@@ -94,7 +92,7 @@ void ComplexVisualPlayer::updateData(
         statusIcons->setPosition(data.position + CCPoint{0.f, playerName->isVisible() ? 40.f : 25.f});
     }
 
-    if (!isDead && playerIcon->getOpacity() == 0) {
+    if (!playerData.isDead && playerIcon->getOpacity() == 0) {
         this->updateOpacity();
     }
 
@@ -129,7 +127,7 @@ void ComplexVisualPlayer::updateData(
     }
 
     if (statusIcons) {
-        statusIcons->updateStatus(isPaused, isPracticing, isSpeaking, loudness);
+        statusIcons->updateStatus(playerData.isPaused, playerData.isPracticing, isSpeaking, loudness);
     }
 
     // animate robot and spider
@@ -178,7 +176,11 @@ void ComplexVisualPlayer::updateData(
         this->animateRobotFire(false);
     }
 
-    this->setVisible(data.isVisible);
+    if (isSecond && !playerData.isDualMode) {
+        this->setVisible(false);
+    } else {
+        this->setVisible(data.isVisible || settings.players.forceVisibility);
+    }
 }
 
 void ComplexVisualPlayer::updateName() {

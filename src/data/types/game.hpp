@@ -103,8 +103,6 @@ struct SpecificIconData {
 struct PlayerData {
     GLOBED_ENCODE {
         buf.writeF32(timestamp);
-        buf.writeU32(localBest);
-        buf.writeI32(attempts);
 
         buf.writeValue(player1);
         buf.writeValue(player2);
@@ -113,13 +111,11 @@ struct PlayerData {
 
         buf.writeF32(currentPercentage);
 
-        buf.writeBits(BitBuffer<8>(isDead, isPaused, isPracticing));
+        buf.writeBits(BitBuffer<8>(isDead, isPaused, isPracticing, isDualMode));
     }
 
     GLOBED_DECODE {
         timestamp = buf.readF32();
-        localBest = buf.readU32();
-        attempts = buf.readI32();
 
         player1 = buf.readValue<SpecificIconData>();
         player2 = buf.readValue<SpecificIconData>();
@@ -128,12 +124,10 @@ struct PlayerData {
 
         currentPercentage = buf.readF32();
 
-        buf.readBits<8>().readBitsInto(isDead, isPaused, isPracticing);
+        buf.readBits<8>().readBitsInto(isDead, isPaused, isPracticing, isDualMode);
     }
 
     float timestamp;
-    uint32_t localBest;
-    int32_t attempts;
 
     SpecificIconData player1;
     SpecificIconData player2;
@@ -145,4 +139,19 @@ struct PlayerData {
     bool isDead;
     bool isPaused;
     bool isPracticing;
+    bool isDualMode;
+};
+
+struct PlayerMetadata {
+    GLOBED_ENCODE {
+        buf.writeU32(localBest);
+        buf.writeI32(attempts);
+    }
+
+    GLOBED_DECODE {
+        localBest = buf.readU32();
+        attempts = buf.readI32();
+    }
+    uint32_t localBest;
+    int32_t attempts;
 };

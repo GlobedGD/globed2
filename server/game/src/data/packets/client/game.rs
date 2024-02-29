@@ -23,6 +23,12 @@ pub struct PlayerDataPacket {
 }
 
 #[derive(Packet, Decodable)]
+#[packet(id = 12004)]
+pub struct PlayerMetadataPacket {
+    pub data: PlayerMetadata,
+}
+
+#[derive(Packet, Decodable)]
 #[packet(id = 12010, encrypted = true)]
 pub struct VoicePacket {
     pub data: FastEncodedAudioFrame,

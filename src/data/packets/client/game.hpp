@@ -62,6 +62,22 @@ class PlayerDataPacket : public Packet {
     PlayerData data;
 };
 
+class PlayerMetadataPacket : public Packet {
+    GLOBED_PACKET(12004, false, false)
+
+    GLOBED_PACKET_ENCODE {
+        buf.writeValue(data);
+    }
+
+    PlayerMetadataPacket(const PlayerMetadata& data) : data(data) {}
+
+    static std::shared_ptr<Packet> create(const PlayerMetadata& data) {
+        return std::make_shared<PlayerMetadataPacket>(data);
+    }
+
+    PlayerMetadata data;
+};
+
 #if GLOBED_VOICE_SUPPORT
 
 #include <audio/frame.hpp>

@@ -40,6 +40,7 @@ Game related
 * 12001 - LevelJoinPacket - join a level
 * 12002 - LevelLeavePacket - leave a level
 * 12003 - PlayerDataPacket - player data
+* 12004 - PlayerMetadataPacket - player metadata
 * 12010+ - VoicePacket - voice frame
 * 12011^+ - ChatMessagePacket - chat message
 
@@ -80,6 +81,7 @@ Game related
 
 * 22000 - PlayerProfilesPacket - list of requested profiles
 * 22001 - LevelDataPacket - level data
+* 22002 - LevelPlayerMetadataPacket - metadata of other players
 * 22010+ - VoiceBroadcastPacket - voice frame from another user
 * 22011+ - ChatMessageBroadcastPacket - chat message from another user
 

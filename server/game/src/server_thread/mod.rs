@@ -491,6 +491,7 @@ impl GameServerThread {
             LevelJoinPacket::PACKET_ID => self.handle_level_join(&mut data).await,
             LevelLeavePacket::PACKET_ID => self.handle_level_leave(&mut data).await,
             PlayerDataPacket::PACKET_ID => self.handle_player_data(&mut data).await,
+            PlayerMetadataPacket::PACKET_ID => self.handle_player_metadata(&mut data).await,
 
             VoicePacket::PACKET_ID => self.handle_voice(&mut data).await,
             ChatMessagePacket::PACKET_ID => self.handle_chat_message(&mut data).await,

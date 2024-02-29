@@ -87,6 +87,7 @@ static inline void lerpPlayer(
     out.isDead = older.isDead;
     out.isPaused = older.isPaused;
     out.isPracticing = older.isPracticing;
+    out.isDualMode = older.isDualMode;
 }
 
 void PlayerInterpolator::tick(float dt) {

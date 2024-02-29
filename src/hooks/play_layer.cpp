@@ -236,8 +236,13 @@ void GlobedPlayLayer::setupPacketListeners() {
                 this->handlePlayerJoin(player.accountId);
             }
 
-            this->m_fields->playerStore->insertOrUpdate(player.accountId, player.data.attempts, player.data.localBest);
             this->m_fields->interpolator->updatePlayer(player.accountId, player.data, this->m_fields->lastServerUpdate);
+        }
+    });
+
+    nm.addListener<LevelPlayerMetadataPacket>([this](std::shared_ptr<LevelPlayerMetadataPacket> packet) {
+        for (const auto& player : packet->players) {
+            this->m_fields->playerStore->insertOrUpdate(player.accountId, player.data.attempts, player.data.localBest);
         }
     });
 
@@ -340,6 +345,17 @@ void GlobedPlayLayer::selSendPlayerData(float) {
 
     auto data = self->gatherPlayerData();
     NetworkManager::get().send(PlayerDataPacket::create(data));
+}
+
+// selSendPlayerMetadata - runs every 5 seconds
+void GlobedPlayLayer::selSendPlayerMetadata(float) {
+    auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+
+    if (!self || !self->established()) return;
+    if (!self->isCurrentPlayLayer()) return;
+
+    auto data = self->gatherPlayerMetadata();
+    NetworkManager::get().send(PlayerMetadataPacket::create(data));
 }
 
 // selPeriodicalUpdate - runs 4 times a second, does various stuff
@@ -496,7 +512,17 @@ void GlobedPlayLayer::selUpdateEstimators(float dt) {
     }
 }
 
-/* private utilities */
+bool GlobedPlayLayer::isPaused() {
+    if (!isCurrentPlayLayer()) return false;
+
+    for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
+        if (typeinfo_cast<PauseLayer*>(child)) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {
     auto& settings = GlobedSettings::get();
@@ -562,7 +588,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
         .rotation = rot,
 
         .iconType = iconType,
-        .isVisible = isPlayer1 ? player->isVisible() : (m_gameState.m_isDualMode && player->isVisible()),
+        .isVisible = player->isVisible(),
         .isLookingLeft = player->m_isGoingLeft,
         .isUpsideDown = player->m_isSwing ? player->m_isUpsideDown : pobjInner->getScaleY() == -1.0f,
         .isDashing = player->m_isDashing,
@@ -583,17 +609,8 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         m_fields->isCurrentlyDead = false;
     }
 
-    uint32_t localBest;
-    if (m_level->isPlatformer()) {
-        localBest = static_cast<uint32_t>(m_level->m_bestTime);
-    } else {
-        localBest = static_cast<uint32_t>(m_level->m_normalPercent);
-    }
-
     return PlayerData {
         .timestamp = m_fields->timeCounter,
-        .localBest = localBest,
-        .attempts = m_level->m_attempts,
 
         .player1 = this->gatherSpecificIconData(m_player1),
         .player2 = this->gatherSpecificIconData(m_player2),
@@ -605,6 +622,21 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         .isDead = isDead,
         .isPaused = this->isPaused(),
         .isPracticing = m_isPracticeMode,
+        .isDualMode = m_gameState.m_isDualMode,
+    };
+}
+
+PlayerMetadata GlobedPlayLayer::gatherPlayerMetadata() {
+    uint32_t localBest;
+    if (m_level->isPlatformer()) {
+        localBest = static_cast<uint32_t>(m_level->m_bestTime);
+    } else {
+        localBest = static_cast<uint32_t>(m_level->m_normalPercent);
+    }
+
+    return PlayerMetadata {
+        .localBest = localBest,
+        .attempts = m_level->m_attempts,
     };
 }
 
@@ -696,6 +728,7 @@ bool GlobedPlayLayer::accountForSpeedhack(size_t uniqueKey, float cap, float all
 void GlobedPlayLayer::unscheduleSelectors() {
     auto* sched = CCScheduler::get();
     sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this->getParent());
+    sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerMetadata), this->getParent());
     sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this->getParent());
     sched->unscheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateEstimators), this->getParent());
 }
@@ -706,10 +739,12 @@ void GlobedPlayLayer::rescheduleSelectors() {
     m_fields->lastKnownTimeScale = timescale;
 
     float pdInterval = (1.0f / m_fields->configuredTps) * timescale;
+    float pmdInterval = 2.5f * timescale;
     float updpInterval = 0.25f * timescale;
     float updeInterval = (1.0f / 30.f) * timescale;
 
     sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this->getParent(), pdInterval, false);
+    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerMetadata), this->getParent(), pmdInterval, false);
     sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this->getParent(), updpInterval, false);
     sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateEstimators), this->getParent(), updeInterval, false);
 }

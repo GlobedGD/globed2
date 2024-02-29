@@ -59,8 +59,8 @@ void RemotePlayer::updateData(
         std::optional<SpiderTeleportData> p2tp,
         float loudness
 ) {
-    player1->updateData(data.player1, data.isDead, data.isPaused, data.isPracticing, speaking, loudness);
-    player2->updateData(data.player2, data.isDead, data.isPaused, data.isPracticing, speaking, loudness);
+    player1->updateData(data.player1, data, speaking, loudness);
+    player2->updateData(data.player2, data, speaking, loudness);
 
     if (playDeathEffect && GlobedSettings::get().players.deathEffects) {
         player1->playDeathEffect();

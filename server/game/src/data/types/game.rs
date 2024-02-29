@@ -27,9 +27,9 @@ pub struct SpiderTeleportData {
 }
 
 /* SpecificIconData (specific player data) */
+// 16 bytes best-case, 32 bytes worst-case (when on the same frame as spider TP).
 
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
-#[dynamic_size(as_static = true)]
 pub struct SpecificIconData {
     pub position: Point,
     pub rotation: FiniteF32,
@@ -38,14 +38,21 @@ pub struct SpecificIconData {
     pub spider_teleport_data: Option<SpiderTeleportData>,
 }
 
-/* PlayerData (data in a level) */
+/* PlayerMetadata (player things that are sent less often) */
 
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
-pub struct PlayerData {
-    pub timestamp: FiniteF32,
+pub struct PlayerMetadata {
     pub local_best: u32, // percentage or milliseconds in platformer
     pub attempts: i32,
+}
+
+/* PlayerData (data in a level) */
+// 45 bytes best-case, 77 bytes worst-case (with 2 spider teleports).
+
+#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+pub struct PlayerData {
+    pub timestamp: FiniteF32,
 
     pub player1: SpecificIconData,
     pub player2: SpecificIconData,

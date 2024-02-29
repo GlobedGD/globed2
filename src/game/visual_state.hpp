@@ -8,6 +8,7 @@ struct VisualPlayerState {
     bool isDead = false;
     bool isPaused = false;
     bool isPracticing = false;
+    bool isDualMode = false;
 
     VisualPlayerState() {}
 
@@ -18,5 +19,6 @@ struct VisualPlayerState {
         isDead = pd.isDead;
         isPaused = pd.isPaused;
         isPracticing = pd.isPracticing;
+        isDualMode = pd.isDualMode;
     }
 };

@@ -199,7 +199,7 @@ inline const PlayerAccountData PlayerAccountData::DEFAULT_DATA = PlayerAccountDa
 
 class AssociatedPlayerData {
 public:
-    AssociatedPlayerData(int accountId, PlayerData data) : accountId(accountId), data(data) {}
+    AssociatedPlayerData(int accountId, const PlayerData& data) : accountId(accountId), data(data) {}
     AssociatedPlayerData() {}
 
     GLOBED_ENCODE {
@@ -214,4 +214,23 @@ public:
 
     int accountId;
     PlayerData data;
+};
+
+class AssociatedPlayerMetadata {
+public:
+    AssociatedPlayerMetadata(int accountId, const PlayerMetadata& data) : accountId(accountId), data(data) {}
+    AssociatedPlayerMetadata() {}
+
+    GLOBED_ENCODE {
+        buf.writeI32(accountId);
+        buf.writeValue(data);
+    }
+
+    GLOBED_DECODE {
+        accountId = buf.readI32();
+        data = buf.readValue<PlayerMetadata>();
+    }
+
+    int accountId;
+    PlayerMetadata data;
 };

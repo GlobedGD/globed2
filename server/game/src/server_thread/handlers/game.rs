@@ -77,7 +77,7 @@ impl GameServerThread {
                             level_id,
                             |player, count, buf| {
                                 if count < written_players && player.account_id != account_id {
-                                    buf.write_value(player);
+                                    buf.write_value(&player.to_borrowed_associated_data());
                                     true
                                 } else {
                                     false
@@ -105,7 +105,7 @@ impl GameServerThread {
                     if player.account_id == account_id {
                         false
                     } else {
-                        players.push(player.clone());
+                        players.push(player.to_associated_data());
                         true
                     }
                 },
@@ -120,6 +120,88 @@ impl GameServerThread {
 
         for chunk in players.chunks(players_per_fragment) {
             self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value_vec(chunk))
+                .await?;
+        }
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_player_metadata, PlayerMetadataPacket, packet, {
+        let account_id = gs_needauth!(self);
+
+        let level_id = self.level_id.load(Ordering::Relaxed);
+        if level_id == 0 {
+            return Err(PacketHandlingError::UnexpectedPlayerData);
+        }
+
+        let room_id = self.room_id.load(Ordering::Relaxed);
+
+        let written_players = self.game_server.state.room_manager.with_any(room_id, |pm| {
+            pm.set_player_meta(account_id, &packet.data);
+            // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
+            pm.get_player_count_on_level(level_id).unwrap_or(1) - 1
+        });
+
+        // no one else on the level, no need to send a response packet
+        if written_players == 0 {
+            return Ok(());
+        }
+
+        let calc_size = size_of_types!(u32) + size_of_types!(AssociatedPlayerMetadata) * written_players;
+        let fragmentation_limit = self.fragmentation_limit.load(Ordering::Relaxed) as usize;
+
+        // if we can fit in one packet, then just send it as-is
+        if calc_size <= fragmentation_limit {
+            self.send_packet_alloca_with::<LevelPlayerMetadataPacket, _>(calc_size, |buf| {
+                self.game_server.state.room_manager.with_any(room_id, |pm| {
+                    buf.write_list_with(written_players, |buf| {
+                        pm.for_each_player_on_level(
+                            level_id,
+                            |player, count, buf| {
+                                if count < written_players && player.account_id != account_id {
+                                    buf.write_value(&player.to_borrowed_associated_meta());
+                                    true
+                                } else {
+                                    false
+                                }
+                            },
+                            buf,
+                        )
+                    });
+                });
+            })
+            .await?;
+
+            return Ok(());
+        }
+
+        // get all players into a vec
+        let total_fragments = (calc_size + fragmentation_limit - 1) / fragmentation_limit;
+
+        let mut players = Vec::with_capacity(written_players + 4);
+
+        self.game_server.state.room_manager.with_any(room_id, |pm| {
+            pm.for_each_player_on_level(
+                level_id,
+                |player, _, players| {
+                    if player.account_id == account_id {
+                        false
+                    } else {
+                        players.push(player.to_associated_meta());
+                        true
+                    }
+                },
+                &mut players,
+            )
+        });
+
+        let players_per_fragment = (players.len() + total_fragments - 1) / total_fragments;
+        let calc_size = size_of_types!(u32) + size_of_types!(AssociatedPlayerMetadata) * players_per_fragment;
+
+        debug!("sending a fragmented packet (meta) (lim: {fragmentation_limit}, per: {players_per_fragment}, frags: {total_fragments}, fragsize: {calc_size})");
+
+        for chunk in players.chunks(players_per_fragment) {
+            self.send_packet_alloca_with::<LevelPlayerMetadataPacket, _>(calc_size, |buf| buf.write_value_vec(chunk))
                 .await?;
         }
 

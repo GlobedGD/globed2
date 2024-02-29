@@ -71,6 +71,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // selSendPlayerData - runs tps (default 30) times per second
     void selSendPlayerData(float);
 
+    // selSendPlayerMetadata - runs every 5 seconds
+    void selSendPlayerMetadata(float);
+
     // selPeriodicalUpdate - runs 4 times a second, does various stuff
     void selPeriodicalUpdate(float);
 
@@ -90,23 +93,14 @@ class $modify(GlobedPlayLayer, PlayLayer) {
         return playLayer == this;
     }
 
-    bool isPaused() {
-        if (!isCurrentPlayLayer()) return false;
-
-        for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
-            if (typeinfo_cast<PauseLayer*>(child)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    bool isPaused();
 
     bool shouldLetMessageThrough(int playerId);
     void updateProximityVolume(int playerId);
 
     SpecificIconData gatherSpecificIconData(PlayerObject* player);
     PlayerData gatherPlayerData();
+    PlayerMetadata gatherPlayerMetadata();
 
     void handlePlayerJoin(int playerId);
     void handlePlayerLeave(int playerId);

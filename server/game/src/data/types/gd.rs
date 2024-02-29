@@ -130,8 +130,30 @@ pub struct PlayerRoomPreviewAccountData {
 /* AssociatedPlayerData */
 
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
-#[dynamic_size(as_static = true)]
 pub struct AssociatedPlayerData {
     pub account_id: i32,
     pub data: PlayerData,
+}
+
+/* AssociatedPlayerMetadata */
+
+#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
+pub struct AssociatedPlayerMetadata {
+    pub account_id: i32,
+    pub data: PlayerMetadata,
+}
+
+/* :fire: */
+
+#[derive(Clone, Encodable)]
+pub struct BorrowedAssociatedPlayerData<'a> {
+    pub account_id: i32,
+    pub data: &'a PlayerData,
+}
+
+#[derive(Clone, Encodable)]
+pub struct BorrowedAssociatedPlayerMetadata<'a> {
+    pub account_id: i32,
+    pub data: &'a PlayerMetadata,
 }

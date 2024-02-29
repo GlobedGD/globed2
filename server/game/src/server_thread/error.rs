@@ -15,7 +15,7 @@ pub enum PacketHandlingError {
     MalformedPacketStructure(DecodeError), // failed to decode the packet
     NoHandler(u16),                        // no handler found for this packet ID
     WebRequestError(reqwest::Error),       // error making a web request to the central server
-    UnexpectedPlayerData,                  // client sent PlayerDataPacket or SyncPlayerMetadataPacket outside of a level
+    UnexpectedPlayerData,                  // client sent PlayerDataPacket or PlayerMetadataPacket outside of a level
     SystemTimeError(SystemTimeError),      // clock went backwards..?
     SocketSendFailed(std::io::Error),      // failed to send data on a socket due to an IO error
     SocketWouldBlock,                      // failed to send data on a socket because operation would block

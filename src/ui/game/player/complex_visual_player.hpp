@@ -10,9 +10,7 @@ public:
     void updateIcons(const PlayerIconData& icons) override;
     void updateData(
         const SpecificIconData& data,
-        bool isDead,
-        bool isPaused,
-        bool isPracticing,
+        const VisualPlayerState& playerData,
         bool isSpeaking,
         float loudness
     ) override;

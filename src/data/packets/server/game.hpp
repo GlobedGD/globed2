@@ -22,6 +22,16 @@ class LevelDataPacket : public Packet {
     std::vector<AssociatedPlayerData> players;
 };
 
+class LevelPlayerMetadataPacket : public Packet {
+    GLOBED_PACKET(22002, false, false)
+
+    GLOBED_PACKET_DECODE {
+        players = buf.readValueVector<AssociatedPlayerMetadata>();
+    }
+
+    std::vector<AssociatedPlayerMetadata> players;
+};
+
 #if GLOBED_VOICE_SUPPORT
 # include <audio/frame.hpp>
 #endif
