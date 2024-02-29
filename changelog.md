@@ -2,6 +2,7 @@
 
 * Redesign the settings menu to be more convenient (it now has tabs!)
 * Enable Lower audio latency by default
+* Enable Hide conditionally by default (for ping overlay)
 * Fix crashes due to the menu button being removed by another mod
 
 ## v1.2.5

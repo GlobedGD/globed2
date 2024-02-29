@@ -25,7 +25,7 @@ public:
     struct Overlay {
         GSETTING(bool, enabled, true);
         GSETTING(float, opacity, 0.3f);
-        GSETTING(bool, hideConditionally, false);
+        GSETTING(bool, hideConditionally, true);
         GSETTING(int, position, 3); // 0-3 topleft, topright, bottomleft, bottomright
     };
 
