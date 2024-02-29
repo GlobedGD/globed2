@@ -11,6 +11,8 @@ use globed_shared::{
     GameServerBootData, SyncMutex, TokenIssuer, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
+use crate::server_thread::handlers::admin::*;
+
 use serde::Serialize;
 
 /// `CentralBridge` stores the configuration of the game server,
@@ -220,13 +222,262 @@ impl CentralBridge {
         Ok(())
     }
 
+    fn role_to_string(role: i32) -> String {
+        match role {
+            ROLE_USER => "User",
+            ROLE_HELPER => "Helper",
+            ROLE_MOD => "Moderator",
+            ROLE_ADMIN => "Admin",
+            _ => "Unknown",
+        }
+        .to_owned()
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
+        match message {
+            WebhookMessage::AuthFail(_user) => None,
+            WebhookMessage::NoticeToEveryone(username, _player_count, message) => Some(WebhookEmbed {
+                title: "Global notice".to_owned(),
+                color: hex_color_to_decimal("#4dace8"),
+                author: Some(WebhookAuthor {
+                    name: username,
+                    icon_url: None,
+                }),
+                description: Some(message.clone()),
+                footer: None,
+                fields: Vec::new(),
+            }),
+            WebhookMessage::NoticeToSelection(username, player_count, message) => Some(WebhookEmbed {
+                title: "Notice".to_owned(),
+                color: hex_color_to_decimal("#4dace8"),
+                author: Some(WebhookAuthor {
+                    name: username,
+                    icon_url: None,
+                }),
+                description: Some(message.clone()),
+                footer: None,
+                fields: vec![WebhookField {
+                    name: "Sent to",
+                    value: format!("{player_count} people"),
+                    inline: Some(true),
+                }],
+            }),
+            WebhookMessage::NoticeToPerson(author, target, message) => Some(WebhookEmbed {
+                title: format!("Notice for {target}"),
+                color: hex_color_to_decimal("#4dace8"),
+                author: Some(WebhookAuthor {
+                    name: author,
+                    icon_url: None,
+                }),
+                description: Some(message.clone()),
+                footer: None,
+                fields: Vec::new(),
+            }),
+            WebhookMessage::KickEveryone(username, reason) => Some(WebhookEmbed {
+                title: "Kick everyone".to_owned(),
+                color: hex_color_to_decimal("#e8d34d"),
+                author: Some(WebhookAuthor {
+                    name: username,
+                    icon_url: None,
+                }),
+                description: Some(reason.clone()),
+                footer: None,
+                fields: Vec::new(),
+            }),
+            WebhookMessage::KickPerson(username, target_username, target_id, reason) => Some(WebhookEmbed {
+                title: format!("Kick {target_username}"),
+                color: hex_color_to_decimal("#e8d34d"),
+                author: Some(WebhookAuthor {
+                    name: username,
+                    icon_url: None,
+                }),
+                description: Some(reason.clone()),
+                footer: None,
+                fields: vec![WebhookField {
+                    name: "Account ID",
+                    value: target_id.to_string(),
+                    inline: Some(true),
+                }],
+            }),
+            WebhookMessage::UserBanChanged(bmsc) => Some(WebhookEmbed {
+                title: if bmsc.new_state {
+                    "User banned".to_owned()
+                } else {
+                    "User unbanned".to_owned()
+                },
+                color: hex_color_to_decimal("#de3023"),
+                author: Some(WebhookAuthor {
+                    name: &bmsc.mod_name,
+                    icon_url: None,
+                }),
+                description: if bmsc.new_state {
+                    Some(bmsc.reason.clone().unwrap_or_else(|| "No reason given.".to_string()))
+                } else {
+                    None
+                },
+                footer: None,
+                fields: if bmsc.new_state {
+                    vec![WebhookField {
+                        name: "Expires",
+                        value: if let Some(seconds) = bmsc.expiry {
+                            format!("<t:{seconds}:f>")
+                        } else {
+                            "Permanent.".to_owned()
+                        },
+                        inline: Some(true),
+                    }]
+                } else {
+                    vec![]
+                },
+            }),
+            WebhookMessage::UserMuteChanged(bmsc) => Some(WebhookEmbed {
+                title: if bmsc.new_state {
+                    "User muted".to_owned()
+                } else {
+                    "User unmuted".to_owned()
+                },
+                color: hex_color_to_decimal("#ded823"),
+                author: Some(WebhookAuthor {
+                    name: &bmsc.mod_name,
+                    icon_url: None,
+                }),
+                description: if bmsc.new_state {
+                    Some(bmsc.reason.clone().unwrap_or_else(|| "No reason given.".to_string()))
+                } else {
+                    None
+                },
+                footer: None,
+                fields: if bmsc.new_state {
+                    vec![WebhookField {
+                        name: "Expires",
+                        value: if let Some(seconds) = bmsc.expiry {
+                            format!("<t:{seconds}:f>")
+                        } else {
+                            "Permanent.".to_owned()
+                        },
+                        inline: Some(true),
+                    }]
+                } else {
+                    vec![]
+                },
+            }),
+            WebhookMessage::UserViolationMetaChanged(mod_name, user_name, expiry, reason) => Some(WebhookEmbed {
+                title: "Ban/mute state changed".to_owned(),
+                color: hex_color_to_decimal("#de7a23"),
+                author: Some(WebhookAuthor {
+                    name: mod_name,
+                    icon_url: None,
+                }),
+                description: None,
+                footer: None,
+                fields: vec![
+                    WebhookField {
+                        name: "Username",
+                        value: user_name.clone(),
+                        inline: Some(false),
+                    },
+                    WebhookField {
+                        name: "Reason",
+                        value: reason.clone().unwrap_or_else(|| "No reason given.".to_owned()),
+                        inline: Some(false),
+                    },
+                    WebhookField {
+                        name: "Expiration",
+                        value: expiry
+                            .map(|x| format!("<t:{x}:f>"))
+                            .unwrap_or_else(|| "Permanent.".to_owned()),
+                        inline: Some(false),
+                    },
+                ],
+            }),
+            WebhookMessage::UserRoleChanged(mod_name, user_name, old_role, new_role) => Some(WebhookEmbed {
+                title: "Role change".to_owned(),
+                color: hex_color_to_decimal("#8b4de8"),
+                author: Some(WebhookAuthor {
+                    name: mod_name,
+                    icon_url: None,
+                }),
+                description: None,
+                footer: None,
+                fields: vec![
+                    WebhookField {
+                        name: "Username",
+                        value: user_name.clone(),
+                        inline: Some(true),
+                    },
+                    WebhookField {
+                        name: "Old role",
+                        value: Self::role_to_string(*old_role),
+                        inline: Some(true),
+                    },
+                    WebhookField {
+                        name: "New role",
+                        value: Self::role_to_string(*new_role),
+                        inline: Some(true),
+                    },
+                ],
+            }),
+            WebhookMessage::UserNameColorChanged(mod_name, user_name, old_color, new_color) => Some(WebhookEmbed {
+                title: "Name color change".to_owned(),
+                color: hex_color_to_decimal(new_color.as_ref().map_or_else(|| "", |x| x.as_str())),
+                author: Some(WebhookAuthor {
+                    name: mod_name,
+                    icon_url: None,
+                }),
+                description: None,
+                footer: None,
+                fields: vec![
+                    WebhookField {
+                        name: "Username",
+                        value: user_name.clone(),
+                        inline: Some(true),
+                    },
+                    WebhookField {
+                        name: "Old color",
+                        value: old_color.clone().unwrap_or_else(|| "none".to_owned()),
+                        inline: Some(true),
+                    },
+                    WebhookField {
+                        name: "New color",
+                        value: new_color.clone().unwrap_or_else(|| "none".to_owned()),
+                        inline: Some(true),
+                    },
+                ],
+            }),
+        }
+    }
+
+    #[inline]
+    pub async fn send_webhook_message(&self, message: WebhookMessage) -> Result<()> {
+        let messages = [message];
+        self.send_webhook_messages(&messages).await
+    }
+
     // not really bridge but it was making web requests which is sorta related i guess
-    pub async fn send_webhook_message(&self, message: String) -> Result<()> {
+    pub async fn send_webhook_messages(&self, messages: &[WebhookMessage]) -> Result<()> {
         let url = self.central_conf.lock().admin_webhook_url.clone();
+
+        let mut content = String::new();
+        let mut embeds = Vec::new();
+
+        for message in messages {
+            match message {
+                WebhookMessage::AuthFail(username) => {
+                    content += &format!("{username} just tried to login to the admin panel and failed.");
+                }
+                msg => {
+                    if let Some(embed) = Self::embed_for_message(msg) {
+                        embeds.push(embed);
+                    }
+                }
+            }
+        }
 
         let opts = WebhookOpts {
             username: "in-game actions",
-            content: message,
+            content: if content.is_empty() { None } else { Some(&content) },
+            embeds,
         };
 
         let response = self
@@ -248,8 +499,79 @@ impl CentralBridge {
     }
 }
 
+pub struct BanMuteStateChange {
+    pub mod_name: String,
+    pub target_name: String,
+    pub target_id: i32,
+    pub new_state: bool,
+    pub expiry: Option<i64>,
+    pub reason: Option<String>,
+}
+
+pub enum WebhookMessage {
+    AuthFail(String),                                                      // username
+    NoticeToEveryone(String, usize, String),                               // username, player count, message
+    NoticeToSelection(String, usize, String),                              // username, player count, message
+    NoticeToPerson(String, String, String),                                // author, target username, message
+    KickEveryone(String, String),                                          // mod username, reason
+    KickPerson(String, String, i32, String), // mod username, target username, target account id, reason
+    UserBanChanged(BanMuteStateChange),      // yeah
+    UserMuteChanged(BanMuteStateChange),     // yeah
+    UserViolationMetaChanged(String, String, Option<i64>, Option<String>), // mod username, username, expiry, reason
+    UserRoleChanged(String, String, i32, i32), // mod username, username, old role, new role
+    UserNameColorChanged(String, String, Option<String>, Option<String>), // mod username, username, old color, new color
+}
+
 #[derive(Serialize)]
-struct WebhookOpts {
-    username: &'static str,
-    content: String,
+struct WebhookAuthor<'a> {
+    name: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    icon_url: Option<&'a str>,
+}
+
+#[derive(Serialize)]
+struct WebhookFooter<'a> {
+    pub text: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon_url: Option<&'a str>,
+}
+
+#[derive(Serialize)]
+struct WebhookField<'a> {
+    name: &'a str,
+    value: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    inline: Option<bool>,
+}
+
+#[derive(Serialize)]
+struct WebhookEmbed<'a> {
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub author: Option<WebhookAuthor<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub footer: Option<WebhookFooter<'a>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fields: Vec<WebhookField<'a>>,
+}
+
+#[derive(Serialize)]
+struct WebhookOpts<'a> {
+    username: &'a str,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    content: Option<&'a str>,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    embeds: Vec<WebhookEmbed<'a>>,
+}
+
+fn hex_color_to_decimal(color: &str) -> Option<u32> {
+    let color = color.strip_prefix('#').unwrap_or(color);
+
+    u32::from_str_radix(color, 16).ok()
 }

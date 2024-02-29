@@ -32,7 +32,7 @@ use crate::{
 };
 
 mod error;
-mod handlers;
+pub mod handlers;
 
 pub use error::{PacketHandlingError, Result};
 

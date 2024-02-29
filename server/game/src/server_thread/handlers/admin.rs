@@ -1,6 +1,7 @@
 use globed_shared::{info, warn};
 
 use crate::{
+    bridge::{BanMuteStateChange, WebhookMessage},
     data::*,
     server_thread::{GameServerThread, ServerThreadMessage},
 };
@@ -14,11 +15,11 @@ use super::*;
 // 100 - can do all above, change user_role, admin_password, send notices to everyone, disconnect everyone
 // 101 - can do all above, change roles of users to admin
 
-const ROLE_USER: i32 = 0;
-const ROLE_HELPER: i32 = 1;
-const ROLE_MOD: i32 = 2;
-const ROLE_ADMIN: i32 = 100;
-const ROLE_SUPERADMIN: i32 = 101;
+pub const ROLE_USER: i32 = 0;
+pub const ROLE_HELPER: i32 = 1;
+pub const ROLE_MOD: i32 = 2;
+pub const ROLE_ADMIN: i32 = 100;
+pub const ROLE_SUPERADMIN: i32 = 101;
 
 const ADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, not enough permissions.";
 const MOD_REQUIRED_MESSAGE: &str = "unable to perform this action, not enough permissions";
@@ -85,13 +86,12 @@ impl GameServerThread {
         );
 
         if self.game_server.bridge.has_webhook() {
+            let name = self.account_data.lock().name.try_to_string();
+
             if let Err(err) = self
                 .game_server
                 .bridge
-                .send_webhook_message(format!(
-                    "{} just failed to login to the admin panel.",
-                    self.account_data.lock().name
-                ))
+                .send_webhook_message(WebhookMessage::AuthFail(name))
                 .await
             {
                 warn!("webhook error: {err}");
@@ -132,17 +132,26 @@ impl GameServerThread {
                     .cloned()
                     .collect::<Vec<_>>();
 
-                let name = self.account_data.lock().name.clone();
-                let webhook_msg = format!(
-                    "{name} is sending a notice to all {} people on the server: {}",
+                let name = self.account_data.lock().name.try_to_string();
+
+                info!(
+                    "[{name} ({account_id}) @ {}] sending a notice to all {} people on the server: {}",
+                    self.tcp_peer,
                     threads.len(),
                     notice_packet.message,
                 );
 
-                info!("[{account_id} @ {}] {}", self.tcp_peer, webhook_msg);
-
                 if self.game_server.bridge.has_webhook() {
-                    if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                    if let Err(err) = self
+                        .game_server
+                        .bridge
+                        .send_webhook_message(WebhookMessage::NoticeToEveryone(
+                            name,
+                            threads.len(),
+                            notice_packet.message.try_to_string(),
+                        ))
+                        .await
+                    {
                         warn!("webhook error: {err}");
                     }
                 }
@@ -167,17 +176,21 @@ impl GameServerThread {
                     |thr| thr.account_data.lock().name.try_to_str().to_owned(),
                 );
 
-                let webhook_msg = format!(
-                    "{} is sending a notice to {}: {}",
-                    self.account_data.lock().name,
-                    player_name,
-                    notice_packet.message
+                let self_name = self.account_data.lock().name.try_to_string();
+                let notice_msg = notice_packet.message.try_to_string();
+
+                info!(
+                    "[{self_name} ({account_id}) @ {}] sending a notice to {player_name}: {notice_msg}",
+                    self.tcp_peer
                 );
 
-                info!("[{account_id} @ {}] {webhook_msg}", self.tcp_peer);
-
                 if self.game_server.bridge.has_webhook() {
-                    if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                    if let Err(err) = self
+                        .game_server
+                        .bridge
+                        .send_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg))
+                        .await
+                    {
                         warn!("webhook error: {err}");
                     }
                 }
@@ -238,17 +251,22 @@ impl GameServerThread {
                     .cloned()
                     .collect::<Vec<_>>();
 
-                let webhook_msg = format!(
-                    "{} is sending a notice to {} people: {}",
-                    self.account_data.lock().name,
-                    threads.len(),
-                    notice_packet.message
+                let self_name = self.account_data.lock().name.try_to_string();
+                let notice_msg = notice_packet.message.try_to_string();
+
+                info!(
+                    "[{self_name} ({account_id}) @ {}] sending a notice to {} people: {notice_msg}",
+                    self.tcp_peer,
+                    threads.len()
                 );
 
-                info!("[{account_id} @ {}] {webhook_msg}", self.tcp_peer);
-
                 if self.game_server.bridge.has_webhook() {
-                    if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                    if let Err(err) = self
+                        .game_server
+                        .bridge
+                        .send_webhook_message(WebhookMessage::NoticeToSelection(self_name, threads.len(), notice_msg))
+                        .await
+                    {
                         warn!("webhook error: {err}");
                     }
                 }
@@ -291,9 +309,14 @@ impl GameServerThread {
                     .await;
             }
 
-            let webhook_msg = format!("{} just kicked **everyone** from the server", self.account_data.lock().name);
+            let self_name = self.account_data.lock().name.try_to_string();
 
-            if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+            if let Err(err) = self
+                .game_server
+                .bridge
+                .send_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
+                .await
+            {
                 warn!("webhook error: {err}");
             }
 
@@ -301,17 +324,27 @@ impl GameServerThread {
         }
 
         if let Some(thread) = self.game_server.find_user(&packet.player) {
+            let reason_string = packet.message.try_to_string();
+
             thread
                 .push_new_message(ServerThreadMessage::TerminationNotice(packet.message))
                 .await;
 
             if self.game_server.bridge.has_webhook() {
-                let own_name = self.account_data.lock().name.clone();
-                let target_name = thread.account_data.lock().name.clone();
+                let own_name = self.account_data.lock().name.try_to_string();
+                let target_name = thread.account_data.lock().name.try_to_string();
 
-                let webhook_msg = format!("{own_name} just kicked {target_name} from the server");
-
-                if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                if let Err(err) = self
+                    .game_server
+                    .bridge
+                    .send_webhook_message(WebhookMessage::KickPerson(
+                        own_name,
+                        target_name,
+                        thread.account_id.load(Ordering::Relaxed),
+                        reason_string,
+                    ))
+                    .await
+                {
                     warn!("webhook error: {err}");
                 }
             }
@@ -488,8 +521,8 @@ impl GameServerThread {
 
         let target_user_name = new_user_entry
             .user_name
-            .clone()
-            .unwrap_or_else(|| FastString::from_str("<unknown>"));
+            .as_ref()
+            .map_or_else(|| "<unknown>".to_owned(), FastString::try_to_string);
 
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
@@ -531,105 +564,67 @@ impl GameServerThread {
 
         match result {
             Ok(()) => {
+                let own_name = self.account_data.lock().name.try_to_string();
+
                 info!(
-                    "[{} @ {}] just updated the profile of {}",
-                    self.account_data.lock().name,
-                    self.tcp_peer,
-                    target_account_id
+                    "[{} @ {}] just updated the profile of {} ({})",
+                    own_name, self.tcp_peer, target_user_name, target_account_id
                 );
 
                 if self.game_server.bridge.has_webhook() {
-                    let mut webhook_msg = format!(
-                        "{} just updated the user {} ({})",
-                        self.account_data.lock().name,
-                        target_user_name,
-                        target_account_id
-                    );
+                    // this is crazy
+                    let mut messages = FastVec::<WebhookMessage, 4>::new();
 
-                    // role change
-                    if c_user_role {
-                        webhook_msg += &format!(
-                            "\n* Role change: is now **{}**",
-                            match new_user_entry.user_role {
-                                ROLE_USER => "regular user",
-                                ROLE_HELPER => "helper",
-                                ROLE_MOD => "mod",
-                                ROLE_ADMIN => "admin",
-                                _ => "unknown",
-                            }
-                        );
-                    }
-
-                    // banned message
                     if c_is_banned {
-                        webhook_msg += &if user_entry.is_banned {
-                            "\n* **Banned** -> **Unbanned**".to_owned()
-                        } else {
-                            format!(
-                                "\n* **Banned until: {}**",
-                                if let Some(unix_seconds) = new_user_entry.violation_expiry {
-                                    format!("<t:{unix_seconds}:f>")
-                                } else {
-                                    "*permanent*".to_owned()
-                                }
-                            )
+                        let bmsc = BanMuteStateChange {
+                            mod_name: own_name.clone(),
+                            target_name: target_user_name.clone(),
+                            target_id: new_user_entry.account_id,
+                            new_state: new_user_entry.is_banned,
+                            expiry: new_user_entry.violation_expiry,
+                            reason: new_user_entry.violation_reason.as_ref().map(FastString::try_to_string),
                         };
-                    }
-                    // muted message
-                    else if c_is_muted {
-                        webhook_msg += &if user_entry.is_muted {
-                            "\n* **Muted** -> **Unmuted**".to_owned()
-                        } else {
-                            format!(
-                                "\n* **Muted until: {}**",
-                                if let Some(unix_seconds) = new_user_entry.violation_expiry {
-                                    format!("<t:{unix_seconds}:f>")
-                                } else {
-                                    "*permanent*".to_owned()
-                                }
-                            )
-                        }
+
+                        messages.push(WebhookMessage::UserBanChanged(bmsc));
+                    } else if c_is_muted {
+                        let bmsc = BanMuteStateChange {
+                            mod_name: own_name.clone(),
+                            target_name: target_user_name.clone(),
+                            target_id: new_user_entry.account_id,
+                            new_state: new_user_entry.is_muted,
+                            expiry: new_user_entry.violation_expiry,
+                            reason: new_user_entry.violation_reason.as_ref().map(FastString::try_to_string),
+                        };
+
+                        messages.push(WebhookMessage::UserMuteChanged(bmsc));
+                    } else if c_violation_expiry || c_violation_reason {
+                        messages.push(WebhookMessage::UserViolationMetaChanged(
+                            own_name.clone(),
+                            target_user_name.clone(),
+                            new_user_entry.violation_expiry,
+                            new_user_entry.violation_reason.as_ref().map(FastString::try_to_string),
+                        ));
                     }
 
-                    // whitelisted
-                    if c_is_whitelisted {
-                        webhook_msg += if user_entry.is_whitelisted {
-                            "\n* **Whitelisted** -> **Not whitelisted**"
-                        } else {
-                            "\n* **Not whitelisted** -> **Whitelisted**"
-                        }
+                    if c_user_role {
+                        messages.push(WebhookMessage::UserRoleChanged(
+                            own_name.clone(),
+                            target_user_name.clone(),
+                            user_entry.user_role,
+                            new_user_entry.user_role,
+                        ));
                     }
 
-                    // changing reason or duration of a ban/mute
-                    if !c_is_banned && !c_is_muted && c_violation_expiry {
-                        webhook_msg += &format!(
-                            "\n* Ban/mute expiration changed to: {}",
-                            if let Some(unix_seconds) = new_user_entry.violation_expiry {
-                                format!("<t:{unix_seconds}:f>")
-                            } else {
-                                "*permanent*".to_owned()
-                            }
-                        );
-                    }
-
-                    if c_violation_reason {
-                        webhook_msg += &format!(
-                            "\n* Ban/mute reason: {}",
-                            new_user_entry
-                                .violation_reason
-                                .unwrap_or_else(|| FastString::from_str("<no reason given>"))
-                        );
-                    }
-
-                    // name color
                     if c_name_color {
-                        webhook_msg += &format!(
-                            "\n* Name color change: {}",
-                            new_user_entry.name_color.clone().unwrap_or_default()
-                        );
+                        messages.push(WebhookMessage::UserNameColorChanged(
+                            own_name.clone(),
+                            target_user_name.clone(),
+                            user_entry.name_color.as_ref().map(FastString::try_to_string),
+                            new_user_entry.name_color.as_ref().map(FastString::try_to_string),
+                        ));
                     }
 
-                    if let Err(err) = self.game_server.bridge.send_webhook_message(webhook_msg).await {
+                    if let Err(err) = self.game_server.bridge.send_webhook_messages(&messages).await {
                         warn!("webhook error: {err}");
                     }
                 }

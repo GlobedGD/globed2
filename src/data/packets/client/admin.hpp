@@ -1,6 +1,7 @@
 #pragma once
 #include <data/packets/packet.hpp>
 #include <data/types/admin.hpp>
+#include <data/types/gd.hpp>
 
 class AdminAuthPacket : public Packet {
     GLOBED_PACKET(19000, true, true)
@@ -28,21 +29,21 @@ class AdminSendNoticePacket : public Packet {
     GLOBED_PACKET_ENCODE {
         buf.writeEnum(ptype);
         buf.writeU32(roomId);
-        buf.writeI32(levelId);
+        buf.writePrimitive<LevelId>(levelId);
         buf.writeString(player);
         buf.writeString(message);
     }
 
-    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, int levelId, const std::string_view player, const std::string_view message)
+    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, const std::string_view player, const std::string_view message)
         : ptype(ptype), roomId(roomId), levelId(levelId), player(player), message(message) {}
 
-    static std::shared_ptr<Packet> create(AdminSendNoticeType ptype, uint32_t roomId, int levelId, const std::string_view player, const std::string_view message) {
+    static std::shared_ptr<Packet> create(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, const std::string_view player, const std::string_view message) {
         return std::make_shared<AdminSendNoticePacket>(ptype, roomId, levelId, player, message);
     }
 
     AdminSendNoticeType ptype;
     uint32_t roomId;
-    int levelId;
+    LevelId levelId;
     std::string player;
     std::string message;
 };

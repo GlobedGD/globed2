@@ -1,5 +1,6 @@
 ## v1.3.0
 
+* Redesign the settings menu to be more convenient (it now has tabs!)
 * Enable Lower audio latency by default
 * Fix crashes due to the menu button being removed by another mod
 
