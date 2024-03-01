@@ -311,12 +311,12 @@ void GlobedPlayLayer::setupCustomKeybinds() {
             if (this->m_fields->deafened) {
                 vpm.muteEveryone();
                 GlobedAudioManager::get().pausePassiveRecording();
-                if(settings.communication.deafenNotification) 
+                if (settings.communication.deafenNotification) 
                     Notification::create("Deafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-on.png"_spr), 0.2f)->show();
                 
             } else if (!this->m_fields->isVoiceProximity) {
                 vpm.setVolumeAll(settings.communication.voiceVolume);
-                if(settings.communication.deafenNotification)
+                if (settings.communication.deafenNotification)
                     Notification::create("Undeafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-off.png"_spr), 0.2f)->show(); 
             }
         }

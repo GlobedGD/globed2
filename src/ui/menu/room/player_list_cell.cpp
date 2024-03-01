@@ -4,6 +4,7 @@
 #include "download_level_popup.hpp"
 #include <hooks/gjgamelevel.hpp>
 #include <util/ui.hpp>
+#include "hooks/level_select_layer.hpp"
 
 using namespace geode::prelude;
 
@@ -56,10 +57,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
             .intoMenuItem([levelId = this->data.levelId](auto) {
                 auto* glm = GameLevelManager::sharedState();
                 auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
+                bool isMainLevel = std::find(HookedLevelSelectLayer::MAIN_LEVELS.begin(), HookedLevelSelectLayer::MAIN_LEVELS.end(), levelId) != HookedLevelSelectLayer::MAIN_LEVELS.end();
 
                 if (mlevel != nullptr) {
-                    if(levelId < 23) { //if its a classic main level go to that page in LevelSelectLayer
-                        auto lsl = LevelSelectLayer::create(levelId);
+                    if (isMainLevel) { //if its a classic main level go to that page in LevelSelectLayer
+                        auto lsl = LevelSelectLayer::create(levelId - 1);
                         util::ui::switchToScene(lsl);
                         return;
                     } //otherwise we just go right to playlayer
@@ -67,6 +69,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
                     level->m_fields->shouldTransitionWithPopScene = true;
                     auto pl = PlayLayer::create(level, false, false);
                     util::ui::switchToScene(pl);
+                    return;
                 }
 
                 if (auto popup = DownloadLevelPopup::create(levelId)) {
