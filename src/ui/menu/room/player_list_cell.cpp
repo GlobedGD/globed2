@@ -49,7 +49,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         .pos(simplePlayer->getPositionX() + label->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
         .parent(menu)
         .collect();
-
+    btn->m_scaleMultiplier = 1.1f;
     if (this->data.levelId != 0) {
         Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
             .scale(0.36f)
@@ -57,13 +57,16 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
                 auto* glm = GameLevelManager::sharedState();
                 auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
 
-                // if it's a main level, just create a playlayer
                 if (mlevel != nullptr) {
+                    if(levelId < 23) { //if its a classic main level go to that page in LevelSelectLayer
+                        auto lsl = LevelSelectLayer::create(levelId);
+                        util::ui::switchToScene(lsl);
+                        return;
+                    } //otherwise we just go right to playlayer
                     auto level = static_cast<HookedGJGameLevel*>(glm->getMainLevel(levelId, false));
                     level->m_fields->shouldTransitionWithPopScene = true;
                     auto pl = PlayLayer::create(level, false, false);
                     util::ui::switchToScene(pl);
-                    return;
                 }
 
                 if (auto popup = DownloadLevelPopup::create(levelId)) {

@@ -28,7 +28,9 @@
                 "resources/icon-kick-all.png",
                 "resources/icon-level-list.png",
                 "resources/icon-server-folder.png",
-                "resources/icon-teleport.png"
+                "resources/icon-teleport.png",
+                "resources/deafen-icon-off.png",
+                "resources/deafen-icon-on.png"
             ]
         }
     },

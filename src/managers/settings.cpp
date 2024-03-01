@@ -50,6 +50,7 @@ void GlobedSettings::save() {
     STOREV(communication, onlyFriends);
     STOREV(communication, lowerAudioLatency);
     STOREV(communication, audioDevice);
+    STOREV(communication, deafenNotification);
 
     // level ui
     STOREV(levelUi, progressIndicators);
@@ -98,6 +99,7 @@ void GlobedSettings::reload() {
     LOADV(communication, onlyFriends);
     LOADV(communication, lowerAudioLatency);
     LOADV(communication, audioDevice);
+    LOADV(communication, deafenNotification);
 
     // level ui
     LOADV(levelUi, progressIndicators);
@@ -146,6 +148,7 @@ void GlobedSettings::resetToDefaults() {
         SKEY(communication, onlyFriends),
         SKEY(communication, lowerAudioLatency),
         SKEY(communication, audioDevice),
+        SKEY(communication, deafenNotification),
 
         // level ui
         SKEY(levelUi, progressIndicators),

@@ -70,7 +70,7 @@ bool RoomPopup::setup() {
     m_mainLayer->addChild(listLayer);
 
     this->reloadPlayerList();
-
+    
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
         .scale(0.9f)
         .intoMenuItem([this](auto) {
@@ -86,11 +86,11 @@ bool RoomPopup::setup() {
     Build<CCSprite>::createSpriteName("gj_findBtn_001.png")
         .scale(0.9f)
         .intoMenuItem([this](auto) {
-            AskInputPopup::create("Search player", [this](const std::string_view input) {
+            AskInputPopup::create("Search Player", [this](const std::string_view input) {
                 this->applyFilter(input);
                 this->sortPlayerList();
                 this->onLoaded(true);
-            }, 16, "player name", util::misc::STRING_ALPHANUMERIC, 3.f)->show();
+            }, 16, "Username", util::misc::STRING_ALPHANUMERIC, 3.f)->show();
         })
         .pos(m_size.width / 2.f - 21.f, m_size.height / 2.f - 22.f)
         .id("search-btn"_spr)

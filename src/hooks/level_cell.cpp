@@ -7,7 +7,7 @@ void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
         Build<CCLabelBMFont>::create("", "goldFont.fnt")
             .scale(0.4f)
             .anchorPoint(1.f, 0.5f)
-            .pos(m_width - 8.f, inLists ? 40.f : 68.f)
+            .pos(CCPoint{m_width - 8.f, (m_height - m_height) + 6.5f})
             .parent(this)
             .id("player-count-label"_spr)
             .store(m_fields->playerCountLabel);
