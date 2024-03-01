@@ -4,10 +4,17 @@
 * Enable Lower audio latency by default
 * Enable Hide conditionally by default (for ping overlay)
 * Add a setting to always show players, even if they are invisible
+* Add a setting for deafen notifications
 * Add better server messages for failed login attempts
 * Slightly improve bandwidth usage by optimizing the protocol
+* Made the jump to level button jump to a main level page if it's a classic main level
 * Fix the ball icon sometimes being displayed as a cube with Default mini icons enabled
 * Fix crashes due to the menu button being removed by another mod
+* Fix player count on main levels not animating together with the button
+* Fix player count being in a wrong place with Compact Lists installed
+* Change scaling of the "Join" and "Leave" buttons
+
+Thank you [Capeling](user:18226543) and [ninXout](user:7479054) for their first contributions to the mod :)
 
 ## v1.2.5
 

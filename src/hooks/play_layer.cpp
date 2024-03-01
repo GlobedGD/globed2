@@ -272,8 +272,9 @@ void GlobedPlayLayer::setupPacketListeners() {
     });
 }
 
-void GlobedPlayLayer::resetLevel() {
-    PlayLayer::resetLevel();
+void GlobedPlayLayer::fullReset() {
+    PlayLayer::fullReset();
+    log::debug("resetting safe mode");
     static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = false; // turn off safe mode if it was turned on at any time
 }
 
@@ -283,6 +284,7 @@ void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, boo
 }
 
 void GlobedPlayLayer::levelComplete() {
+    log::debug("level complete, should stop: {}", static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress);
     if (!static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress) PlayLayer::levelComplete();
     else GlobedPlayLayer::onQuit();
 }
@@ -739,7 +741,7 @@ void GlobedPlayLayer::rescheduleSelectors() {
     m_fields->lastKnownTimeScale = timescale;
 
     float pdInterval = (1.0f / m_fields->configuredTps) * timescale;
-    float pmdInterval = 2.5f * timescale;
+    float pmdInterval = 5.f * timescale;
     float updpInterval = 0.25f * timescale;
     float updeInterval = (1.0f / 30.f) * timescale;
 
