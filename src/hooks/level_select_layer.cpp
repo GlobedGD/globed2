@@ -50,21 +50,25 @@ void HookedLevelSelectLayer::updatePlayerCounts() {
     auto* extlayer = getChildOfType<ExtendedLayer>(bsl, 0);
     if (!extlayer || extlayer->getChildrenCount() == 0) return;
 
+
     for (auto* page : CCArrayExt<LevelPage*>(extlayer->getChildren())) {
-        CCLabelBMFont* label = static_cast<CCLabelBMFont*>(page->getChildByID("player-count-label"_spr));
+        auto buttonmenu = getChildOfType<CCMenu>(page, 0);
+        auto button = getChildOfType<CCMenuItemSpriteExtra>(buttonmenu, 0);
+        CCLabelBMFont* label = static_cast<CCLabelBMFont*>(button->getChildByID("player-count-label"_spr));
 
         if (page->m_level->m_levelID < 0) {
             if (label) label->setVisible(false);
             continue;
         }
 
+
         if (!label) {
-            auto pos = getChildOfType<CCMenu>(page, 0)->getPosition() + CCPoint{0.f, -37.f};
+            auto pos = (button->getContentSize() / 2) + ccp(0.f, -37.f); //geode has ccp() which is just shorter CCPoint{}
             Build<CCLabelBMFont>::create("", "bigFont.fnt")
                 .pos(pos)
                 .scale(0.4f)
                 .id("player-count-label"_spr)
-                .parent(page)
+                .parent(button)
                 .store(label);
         } else {
             label->setVisible(true);

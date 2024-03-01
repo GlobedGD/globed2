@@ -4,6 +4,7 @@
 #include "download_level_popup.hpp"
 #include <hooks/gjgamelevel.hpp>
 #include <util/ui.hpp>
+#include "hooks/level_select_layer.hpp"
 
 using namespace geode::prelude;
 
@@ -49,16 +50,21 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         .pos(simplePlayer->getPositionX() + label->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
         .parent(menu)
         .collect();
-
+    btn->m_scaleMultiplier = 1.1f;
     if (this->data.levelId != 0) {
         Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
             .scale(0.36f)
             .intoMenuItem([levelId = this->data.levelId](auto) {
                 auto* glm = GameLevelManager::sharedState();
                 auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
+                bool isMainLevel = std::find(HookedLevelSelectLayer::MAIN_LEVELS.begin(), HookedLevelSelectLayer::MAIN_LEVELS.end(), levelId) != HookedLevelSelectLayer::MAIN_LEVELS.end();
 
-                // if it's a main level, just create a playlayer
                 if (mlevel != nullptr) {
+                    if (isMainLevel) { //if its a classic main level go to that page in LevelSelectLayer
+                        auto lsl = LevelSelectLayer::create(levelId - 1);
+                        util::ui::switchToScene(lsl);
+                        return;
+                    } //otherwise we just go right to playlayer
                     auto level = static_cast<HookedGJGameLevel*>(glm->getMainLevel(levelId, false));
                     level->m_fields->shouldTransitionWithPopScene = true;
                     auto pl = PlayLayer::create(level, false, false);
