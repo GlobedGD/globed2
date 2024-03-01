@@ -44,7 +44,6 @@ file(GLOB_RECURSE SOURCES
     ${OS_SOURCES}
 )
 
-set(GEODE_BINDINGS_REPO_PATH "S:/2.2 Mods/globed bindings/bindings-main")
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 # Windows - Include winsock
