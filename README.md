@@ -12,7 +12,7 @@ This repository contains the complete rewrite of Globed, for Geometry Dash 2.2 a
 
 ## Installation
 
-Globed is a [Geode](https://github.com/geode-sdk/geode) mod, so it requires you to install Geode first. Once that's done, simply open the mods page in-game and download it from the index.
+Globed is a [Geode](https://geode-sdk.org) mod, so it requires you to install Geode first. Once that's done, simply open the mods page in-game and download it from the index.
 
 ## Hosting a server
 
@@ -24,7 +24,7 @@ See the [server readme](./server/readme.md) for more information about the serve
 
 [availax](https://availax.xyz/) - thank you for supporting me since the start and helping me with nearly everything :D
 
-Anyone who donated, suggested ideas, helped moderate, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)
+Anyone who donated, contributed, suggested ideas, helped moderate, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)
 
 ### License
 
