@@ -97,6 +97,7 @@ bool RoomPopup::setup() {
         .store(filterBtn)
         .intoNewParent(CCMenu::create())
         .parent(m_mainLayer);
+    filterBtn->m_scaleMultiplier = 1.1f;
 
     // clear search button
     Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
@@ -112,6 +113,7 @@ bool RoomPopup::setup() {
         .store(clearSearchButton)
         .intoNewParent(CCMenu::create())
         .parent(m_mainLayer);
+    clearSearchButton->m_scaleMultiplier = 1.1f;
 
     return true;
 }
@@ -165,16 +167,18 @@ void RoomPopup::addButtons() {
             .parent(m_mainLayer)
             .store(roomBtnMenu);
 
-        Build<ButtonSprite>::create("Join room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        auto* joinRoomButton = Build<ButtonSprite>::create("Join room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .intoMenuItem([this](auto) {
                 if (!this->isLoading()) {
                     RoomJoinPopup::create()->show();
                 }
             })
             .id("join-room-btn"_spr)
-            .parent(roomBtnMenu);
+            .parent(roomBtnMenu)
+            .collect();
+        joinRoomButton->m_scaleMultiplier = 1.05f;
 
-        Build<ButtonSprite>::create("Create room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        auto* createRoomButton = Build<ButtonSprite>::create("Create room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .intoMenuItem([this](auto) {
                 if (!this->isLoading()) {
                     NetworkManager::get().send(CreateRoomPacket::create());
@@ -182,11 +186,19 @@ void RoomPopup::addButtons() {
                 }
             })
             .id("create-room-btn"_spr)
-            .parent(roomBtnMenu);
+            .parent(roomBtnMenu)
+            .collect();
+        createRoomButton->m_scaleMultiplier = 1.05f;
 
         roomBtnMenu->updateLayout();
     } else {
-        Build<ButtonSprite>::create("Leave room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        Build<CCMenu>::create()
+            .id("leave-room-btn-menu"_spr)
+            .pos(popupCenter, 55.f)
+            .parent(m_mainLayer)
+            .store(roomBtnMenu);
+        
+        auto* leaveRoomButton = Build<ButtonSprite>::create("Leave room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .intoMenuItem([this](auto) {
                 if (!this->isLoading()) {
                     NetworkManager::get().send(LeaveRoomPacket::create());
@@ -194,11 +206,9 @@ void RoomPopup::addButtons() {
                 }
             })
             .id("leave-room-btn"_spr)
-            .intoNewParent(CCMenu::create())
-            .id("leave-room-btn-menu"_spr)
-            .pos(popupCenter, 55.f)
-            .parent(m_mainLayer)
-            .store(roomBtnMenu);
+            .parent(roomBtnMenu)
+            .collect();
+        leaveRoomButton->m_scaleMultiplier = 1.1f;
     }
 }
 

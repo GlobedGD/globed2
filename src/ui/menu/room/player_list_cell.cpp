@@ -53,7 +53,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     btn->m_scaleMultiplier = 1.1f;
     if (this->data.levelId != 0) {
         Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
-            .scale(0.36f)
+            .scale(0.30f)
             .intoMenuItem([levelId = this->data.levelId](auto) {
                 auto* glm = GameLevelManager::sharedState();
                 auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
@@ -77,9 +77,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
                 }
             })
             .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
+            .store(playButton)
             .intoNewParent(CCMenu::create())
             .pos(0.f, 0.f)
             .parent(this);
+        playButton->m_scaleMultiplier = 1.1f;
     }
 
     return true;

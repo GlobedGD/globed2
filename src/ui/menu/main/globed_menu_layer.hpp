@@ -16,7 +16,7 @@ public:
 private:
     GJListLayer* listLayer;
     GlobedSignupLayer* signupLayer;
-    Ref<CCMenuItemSpriteExtra> levelListButton, roomButton;
+    Ref<CCMenuItemSpriteExtra> levelListButton, roomButton, serverSwitcherButton, discordButton, settingsButton;
     cocos2d::CCMenu* leftButtonMenu;
     std::optional<geode::utils::web::SentAsyncWebRequestHandle> serverRequestHandle;
     cocos2d::CCSequence* timeoutSequence;
