@@ -18,6 +18,7 @@ public:
     void updateIconType(PlayerIconType newType) override;
     void playDeathEffect() override;
     void playSpiderTeleport(const SpiderTeleportData& data) override;
+    void playJump() override;
     cocos2d::CCPoint getPlayerPosition() override;
 
     void updatePlayerObjectIcons(bool skipFrames = false);
@@ -33,6 +34,7 @@ protected:
     PlayerIconType playerIconType = PlayerIconType::Unknown;
     cocos2d::CCLabelBMFont* playerName;
     Ref<PlayerStatusIcons> statusIcons;
+    bool isPlatformer;
 
     // these 3 used in robot and spider anims
     bool wasGrounded = false;

@@ -13,6 +13,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     if (!CCNode::init() || !BaseVisualPlayer::init(parent, isSecond)) return false;
 
     this->playLayer = PlayLayer::get();
+    this->isPlatformer = playLayer->m_level->isPlatformer();
 
     auto& data = parent->getAccountData();
 
@@ -223,6 +224,12 @@ void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
     tpColorDelta = 0.f;
 
     this->spiderTeleportUpdateColor();
+}
+
+void ComplexVisualPlayer::playJump() {
+    if (playLayer->m_level->isPlatformer() && playerIconType == PlayerIconType::Cube) {
+        playerIcon->animatePlatformerJump(1.0f);
+    }
 }
 
 static inline ccColor3B lerpColor(ccColor3B from, ccColor3B to, float delta) {

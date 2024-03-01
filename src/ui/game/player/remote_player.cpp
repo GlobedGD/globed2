@@ -53,25 +53,31 @@ const PlayerAccountData& RemotePlayer::getAccountData() const {
 
 void RemotePlayer::updateData(
         const VisualPlayerState& data,
-        bool playDeathEffect,
+        FrameFlags frameFlags,
         bool speaking,
-        std::optional<SpiderTeleportData> p1tp,
-        std::optional<SpiderTeleportData> p2tp,
         float loudness
 ) {
     player1->updateData(data.player1, data, speaking, loudness);
     player2->updateData(data.player2, data, speaking, loudness);
 
-    if (playDeathEffect && GlobedSettings::get().players.deathEffects) {
+    if (frameFlags.pendingDeath && GlobedSettings::get().players.deathEffects) {
         player1->playDeathEffect();
     }
 
-    if (p1tp) {
-        player1->playSpiderTeleport(p1tp.value());
+    if (frameFlags.pendingP1Teleport) {
+        player1->playSpiderTeleport(frameFlags.pendingP1Teleport.value());
     }
 
-    if (p2tp) {
-        player2->playSpiderTeleport(p2tp.value());
+    if (frameFlags.pendingP2Teleport) {
+        player2->playSpiderTeleport(frameFlags.pendingP2Teleport.value());
+    }
+
+    if (frameFlags.pendingP1Jump) {
+        player1->playJump();
+    }
+
+    if (frameFlags.pendingP2Jump) {
+        player2->playJump();
     }
 
     lastPercentage = data.currentPercentage;

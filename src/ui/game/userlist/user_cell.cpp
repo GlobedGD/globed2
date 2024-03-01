@@ -196,7 +196,7 @@ void GlobedUserCell::makeButtons() {
                         return;
                     }
 
-                    static_cast<HookedGJGameLevel*>(gpl->m_level)->m_fields->shouldStopProgress = true; // turn on safe mode
+                    gpl->toggleSafeMode(true);
 
                     PlayerObject* po1 = gpl->m_player1;
                     CCPoint position = {0,0}; // just in case the player has already left by the time we teleport

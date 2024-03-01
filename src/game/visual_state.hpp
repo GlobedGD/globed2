@@ -22,3 +22,9 @@ struct VisualPlayerState {
         isDualMode = pd.isDualMode;
     }
 };
+
+struct FrameFlags {
+    bool pendingDeath = false;
+    bool pendingP1Jump = false, pendingP2Jump = false;
+    std::optional<SpiderTeleportData> pendingP1Teleport, pendingP2Teleport;
+};

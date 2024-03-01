@@ -37,6 +37,8 @@ float adjustLerpTimeDelta(float dt) {
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
+    m_fields->initialTestMode = m_isTestMode;
+
     GlobedSettings& settings = GlobedSettings::get();
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -104,20 +106,14 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     vm.setRecordBufferCapacity(settings.communication.lowerAudioLatency ? EncodedAudioFrame::LIMIT_LOW_LATENCY : EncodedAudioFrame::LIMIT_REGULAR);
 
     // start passive voice recording
-    // TODO temp remove on android because it crashes the game :fire:
+    // TODO fix it on android and mac
     if (settings.communication.voiceEnabled) {
-# ifndef GEODE_IS_ANDROID
+# ifdef GEODE_IS_WINDOWS
         auto& vrm = VoiceRecordingManager::get();
         vrm.startRecording();
-# endif // GEODE_IS_ANDROID
+# endif // GEODE_IS_WINDOWS
 
         if (settings.levelUi.voiceOverlay) {
-            // auto uiLayer = getChildOfType<UILayer>(this, 0);
-            // if (uiLayer) {
-            //     log::info("ui layer: {}", util::debug::searchMember(this, uiLayer, 0x5000));
-            // } else {
-            //     log::info("failed to find ui layer!");
-            // }
             m_fields->voiceOverlay = Build<GlobedVoiceOverlay>::create()
                 .parent(m_uiLayer)
                 .pos(winSize.width - VOICE_OVERLAY_PAD_X, VOICE_OVERLAY_PAD_Y)
@@ -159,6 +155,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         // send LevelJoinPacket and RequestPlayerProfilesPacket
         nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
         nm.send(RequestPlayerProfilesPacket::create(0));
+        self->selSendPlayerMetadata(0.f);
 
         self->rescheduleSelectors();
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), self->getParent(), 0.0f, false);
@@ -274,25 +271,26 @@ void GlobedPlayLayer::setupPacketListeners() {
 
 void GlobedPlayLayer::fullReset() {
     PlayLayer::fullReset();
-    static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = false; // turn off safe mode if it was turned on at any time
+    // turn off safe mode
+    this->toggleSafeMode(false);
 }
 
 void GlobedPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
     if (!m_level->isPlatformer()) {
         // turn off safe mode in non-platformer levels (as this counts as a full reset)
-        static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = false;
+        this->toggleSafeMode(false);
     }
 }
 
 void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
     // doesn't actually change any progress but this stops the NEW BEST popup from showing up while cheating/jumping to a player
-    if (!static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress) PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
+    if (!this->isSafeMode()) PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
 }
 
 void GlobedPlayLayer::levelComplete() {
-    log::debug("level complete, should stop: {}", static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress);
-    if (!static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress) PlayLayer::levelComplete();
+    log::debug("level complete, should stop: {}", this->isSafeMode());
+    if (!this->isSafeMode()) PlayLayer::levelComplete();
     else GlobedPlayLayer::onQuit();
 }
 
@@ -480,12 +478,15 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
 
-        bool playDeathEffect = self->m_fields->interpolator->swapDeathStatus(playerId);
-        auto p1tp = self->m_fields->interpolator->swapP1Teleport(playerId);
-        auto p2tp = self->m_fields->interpolator->swapP2Teleport(playerId);
+        auto frameFlags = self->m_fields->interpolator->swapFrameFlags(playerId);
 
         bool isSpeaking = vpm.isSpeaking(playerId);
-        remotePlayer->updateData(vstate, playDeathEffect, isSpeaking, p1tp, p2tp, isSpeaking ? vpm.getLoudness(playerId) : 0.f);
+        remotePlayer->updateData(
+            vstate,
+            frameFlags,
+            isSpeaking,
+            isSpeaking ? vpm.getLoudness(playerId) : 0.f
+        );
 
         if (self->m_progressBar && self->m_progressBar->isVisible() && remotePlayer->progressIcon) {
             remotePlayer->updateProgressIcon();
@@ -531,6 +532,19 @@ bool GlobedPlayLayer::isPaused() {
     }
 
     return false;
+}
+
+void GlobedPlayLayer::toggleSafeMode(bool enabled) {
+    static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = enabled;
+    if (enabled) {
+        m_isTestMode = true;
+    } else {
+        m_isTestMode = m_fields->initialTestMode;
+    }
+}
+
+bool GlobedPlayLayer::isSafeMode() {
+    return static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress;
 }
 
 bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {
@@ -586,6 +600,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
     bool isPlayer1 = player == m_player1;
 
     auto spiderTeleportData = isPlayer1 ? util::misc::swapOptional(m_fields->spiderTp1) : util::misc::swapOptional(m_fields->spiderTp2);
+    bool didJustJump = isPlayer1 ? util::misc::swapFlag(m_fields->didJustJumpp1) : util::misc::swapFlag(m_fields->didJustJumpp2);
 
     bool isStationary = false;
     if (m_level->isPlatformer()) {
@@ -605,6 +620,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
         .isGrounded = player->m_isOnGround,
         .isStationary = isStationary,
         .isFalling = player->m_yVelocity < 0.0,
+        .didJustJump = didJustJump,
         .spiderTeleportData = spiderTeleportData
     };
 }

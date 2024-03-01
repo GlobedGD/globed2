@@ -34,12 +34,14 @@ void PlayerInterpolator::updatePlayer(int playerId, const PlayerData& data, floa
     if (!util::math::equal(player.lastDeathTimestamp, data.lastDeathTimestamp)) {
         player.lastDeathTimestamp = data.lastDeathTimestamp;
         if (player.totalFrames > 1) {
-            player.pendingDeath = true;
+            player.frameFlags.pendingDeath = true;
         }
     }
 
-    player.pendingP1Teleport = data.player1.spiderTeleportData;
-    player.pendingP2Teleport = data.player2.spiderTeleportData;
+    player.frameFlags.pendingP1Teleport = data.player1.spiderTeleportData;
+    player.frameFlags.pendingP2Teleport = data.player2.spiderTeleportData;
+    player.frameFlags.pendingP1Jump = data.player1.didJustJump;
+    player.frameFlags.pendingP2Jump = data.player1.didJustJump;
 
     LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
 
@@ -119,19 +121,17 @@ VisualPlayerState& PlayerInterpolator::getPlayerState(int playerId) {
     return players.at(playerId).interpolatedState;
 }
 
-bool PlayerInterpolator::swapDeathStatus(int playerId) {
+FrameFlags PlayerInterpolator::swapFrameFlags(int playerId) {
     auto& state = players.at(playerId);
-    return util::misc::swapFlag(state.pendingDeath);
-}
+    FrameFlags out;
+    out.pendingDeath = util::misc::swapFlag(state.frameFlags.pendingDeath);
+    out.pendingP1Jump = util::misc::swapFlag(state.frameFlags.pendingP1Jump);
+    out.pendingP2Jump = util::misc::swapFlag(state.frameFlags.pendingP2Jump);
 
-std::optional<SpiderTeleportData> PlayerInterpolator::swapP1Teleport(int playerId) {
-    auto& state = players.at(playerId);
-    return util::misc::swapOptional(state.pendingP1Teleport);
-}
+    out.pendingP1Teleport = util::misc::swapOptional(state.frameFlags.pendingP1Teleport);
+    out.pendingP2Teleport = util::misc::swapOptional(state.frameFlags.pendingP2Teleport);
 
-std::optional<SpiderTeleportData> PlayerInterpolator::swapP2Teleport(int playerId) {
-    auto& state = players.at(playerId);
-    return util::misc::swapOptional(state.pendingP2Teleport);
+    return out;
 }
 
 bool PlayerInterpolator::isPlayerStale(int playerId, float lastServerPacket) {

@@ -3,6 +3,7 @@
 * Redesign the settings menu to be more convenient (it now has tabs!)
 * Enable Lower audio latency by default
 * Enable Hide conditionally by default (for ping overlay)
+* Add the squish animation for other players whenever they jump in platformer mode
 * Add a setting to always show players, even if they are invisible
 * Add a setting for deafen notifications
 * Add better server messages for failed login attempts

@@ -42,7 +42,8 @@ struct SpecificIconData {
             isMini,
             isGrounded,
             isStationary,
-            isFalling
+            isFalling,
+            didJustJump
         ));
 
         buf.writeOptionalValue(spiderTeleportData);
@@ -66,7 +67,8 @@ struct SpecificIconData {
             isMini,
             isGrounded,
             isStationary,
-            isFalling
+            isFalling,
+            didJustJump
         );
 
         spiderTeleportData = buf.readOptionalValue<SpiderTeleportData>();
@@ -97,6 +99,7 @@ struct SpecificIconData {
     bool isStationary;      // true if player is not moving currently (in platformer)
     bool isFalling;         // when !isGrounded, true if falling, false if jumping upwards
 
+    bool didJustJump;       // true on the next frame after the player performed a jump
     std::optional<SpiderTeleportData> spiderTeleportData;
 };
 

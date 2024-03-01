@@ -19,4 +19,7 @@ class $modify(ComplexPlayerObject, PlayerObject) {
 class $modify(HookedPlayerObject, PlayerObject) {
     $override
     void playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CCPoint to);
+
+    $override
+    void incrementJumps();
 };

@@ -17,6 +17,7 @@ float adjustLerpTimeDelta(float dt);
 class $modify(GlobedPlayLayer, PlayLayer) {
     // setup stuff
     bool globedReady = false;
+    bool initialTestMode = false;
     uint32_t configuredTps = 0;
 
     // in game stuff
@@ -30,6 +31,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     bool isCurrentlyDead = false;
     std::optional<SpiderTeleportData> spiderTp1, spiderTp2;
+    bool didJustJumpp1 = false, didJustJumpp2 = false;
     float lastDeathTimestamp = 0.f;
 
     // ui elements
@@ -97,6 +99,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     }
 
     bool isPaused();
+
+    void toggleSafeMode(bool enabled);
+    bool isSafeMode();
 
     bool shouldLetMessageThrough(int playerId);
     void updateProximityVolume(int playerId);

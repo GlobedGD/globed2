@@ -32,11 +32,7 @@ public:
     VisualPlayerState& getPlayerState(int playerId);
 
     // returns `true` if death animation needs to be played and sets the flag back to false (so next call won't return `true` again)
-    bool swapDeathStatus(int playerId);
-
-    // like `swapDeathStatus` but for spider teleports.
-    std::optional<SpiderTeleportData> swapP1Teleport(int playerId);
-    std::optional<SpiderTeleportData> swapP2Teleport(int playerId);
+    FrameFlags swapFrameFlags(int playerId);
 
     // returns `true` if the given time of the last packet doesn't match the last update time of the player
     bool isPlayerStale(int playerId, float lastServerPacket);
@@ -50,6 +46,7 @@ private:
     constexpr static bool EXTRAPOLATION = false;
 
 public:
+
     struct LerpFrame {
         LerpFrame();
         LerpFrame(const PlayerData& pd);
@@ -67,7 +64,6 @@ public:
         LerpFrame olderFrame, newerFrame;
         VisualPlayerState interpolatedState;
         bool pendingRealFrame = false;
-        bool pendingDeath = false;
-        std::optional<SpiderTeleportData> pendingP1Teleport, pendingP2Teleport;
+        FrameFlags frameFlags;
     };
 };

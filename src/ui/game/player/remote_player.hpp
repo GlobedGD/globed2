@@ -15,10 +15,8 @@ public:
 
     void updateData(
         const VisualPlayerState& data,
-        bool playDeathEffect,
+        FrameFlags frameFlags,
         bool speaking,
-        std::optional<SpiderTeleportData> p1tp,
-        std::optional<SpiderTeleportData> p2tp,
         float loudness
     );
     void updateProgressIcon();
