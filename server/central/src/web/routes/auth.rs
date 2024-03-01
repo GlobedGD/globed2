@@ -282,10 +282,9 @@ pub async fn challenge_finish(
             .verify_account(aid, uid, aname, answer.parse::<u32>()?)
             .await;
 
-        if let Some(id) = result {
-            Some(id)
-        } else {
-            unauthorized!("challenge solution proof not found");
+        match result {
+            Ok(id) => Some(id),
+            Err(err) => unauthorized!(&err),
         }
     } else {
         None

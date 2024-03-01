@@ -57,9 +57,15 @@ impl AccountVerifier {
         self.is_enabled.store(state, Ordering::Relaxed);
     }
 
-    pub async fn verify_account(&self, account_id: i32, user_id: i32, account_name: &str, authcode: u32) -> Option<i32> {
+    pub async fn verify_account(
+        &self,
+        account_id: i32,
+        user_id: i32,
+        account_name: &str,
+        authcode: u32,
+    ) -> Result<i32, String> {
         if !self.is_enabled.load(Ordering::Relaxed) {
-            return Some(0);
+            return Ok(0);
         }
 
         let request_time = SystemTime::now();
@@ -73,18 +79,44 @@ impl AccountVerifier {
             tokio::time::sleep(FLUSH_PERIOD / 2).await;
         }
 
+        // `true` if we found a message with matching authcode.
+        let mut has_matching_authcode = false;
+        // `true` if we found a message with matching authcode, account ID and user ID.
+        let mut has_matching_ids = false;
+        let mut mismatched_name: Option<String> = None;
+        let mut mismatched_id: i32 = 0;
+
         let cache = self.message_cache.lock();
         for msg in &*cache {
-            if msg.account_id == account_id
-                && msg.user_id == user_id
-                && msg.name.eq_ignore_ascii_case(account_name)
-                && msg.authcode == authcode
-            {
-                return Some(msg.message_id);
+            if msg.authcode == authcode {
+                has_matching_authcode = true;
+                if msg.account_id == account_id && msg.user_id == user_id {
+                    has_matching_ids = true;
+                    if msg.name.eq_ignore_ascii_case(account_name) {
+                        return Ok(msg.message_id);
+                    }
+
+                    // if the name didnt match, set the mismatched name
+                    mismatched_name = Some(msg.name.clone());
+                }
+
+                mismatched_id = msg.account_id;
             }
         }
 
-        None
+        if has_matching_ids {
+            Err(format!(
+                "challenge solution proof was found, but account name is mismatched: \"{}\" vs \"{}\"",
+                account_name,
+                mismatched_name.unwrap_or_default()
+            ))
+        } else if has_matching_authcode {
+            Err(format!(
+                "challenge solution proof was found, but it was sent by a different account: {account_id} vs {mismatched_id}"
+            ))
+        } else {
+            Err("challenge solution proof was not found".to_owned())
+        }
     }
 
     pub async fn run_refresher(&self) {

@@ -96,4 +96,6 @@ namespace util::misc {
     bool compareName(const std::string_view name1, const std::string_view name2);
 
     bool isEditorCollabLevel(LevelId levelId);
+
+    void syncSystemTime();
 }
