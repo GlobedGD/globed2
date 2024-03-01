@@ -4,6 +4,8 @@
 * Enable Lower audio latency by default
 * Enable Hide conditionally by default (for ping overlay)
 * Add a setting to always show players, even if they are invisible
+* Slightly improve bandwidth usage by optimizing the protocol
+* Fix the ball icon sometimes being displayed as a cube with Default mini icons enabled
 * Fix crashes due to the menu button being removed by another mod
 
 ## v1.2.5

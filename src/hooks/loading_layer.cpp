@@ -124,7 +124,12 @@ void HookedLoadingLayer::preloadingStage2(float) {
     case 9: LOAD_ICON_RANGE(Cube, 401, 484); break;
 
     case 10: LOAD_ICON_RANGE(Ship, 0, 80); break;
-    case 11: LOAD_ICON_RANGE(Ship, 81, 169); break;
+    // There are actually 169 ship icons, but for some reason, loading the last icon causes
+    // a very strange bug when you have the Default mini icons option enabled.
+    // I have no idea how loading a ship icon can cause a ball icon to become a cube,
+    // and honestly I don't care enough.
+    // https://github.com/dankmeme01/globed2/issues/93
+    case 11: LOAD_ICON_RANGE(Ship, 81, 168); break;
 
     case 12: LOAD_ICON_RANGE(Ball, 0, 60); break;
     case 13: LOAD_ICON_RANGE(Ball, 61, 118); break;
