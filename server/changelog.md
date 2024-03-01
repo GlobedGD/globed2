@@ -2,7 +2,11 @@
 
 least chaotic thing about this repo tbh
 
-## v1.2.0 (both)
+## v1.3.0
+
+* added a discord webhook configuration option
+
+## v1.2.0
 
 * switched to a different web framework (Rocket), now there is an additional Rocket.toml file with configuration
 * added an sqlite database for persistent storage, `special_users` and `userlist` keys in the configuration are now replaced by that

@@ -48,7 +48,6 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     // preload the cube icon so the passengers are correct
     this->updateIconType(PlayerIconType::Cube);
-    this->updateIconType(playerIconType);
 
     return true;
 }

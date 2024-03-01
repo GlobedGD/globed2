@@ -274,8 +274,15 @@ void GlobedPlayLayer::setupPacketListeners() {
 
 void GlobedPlayLayer::fullReset() {
     PlayLayer::fullReset();
-    log::debug("resetting safe mode");
     static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = false; // turn off safe mode if it was turned on at any time
+}
+
+void GlobedPlayLayer::resetLevel() {
+    PlayLayer::resetLevel();
+    if (!m_level->isPlatformer()) {
+        // turn off safe mode in non-platformer levels (as this counts as a full reset)
+        static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = false;
+    }
 }
 
 void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {

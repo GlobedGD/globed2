@@ -9,17 +9,17 @@ edition = "2021"
 esp = { path = "../esp" }
 globed-derive = { path = "../derive" }
 
-anyhow = "1.0.75"
-base64 = "0.21.5"
+anyhow = "1.0.80"
+base64 = "0.21.7"
 colored = "2.1.0"
 crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
 hmac = "0.12.1"
-log = { version = "0.4.20" }
+log = { version = "0.4.21" }
 nohash-hasher = "0.2.0"
 parking_lot = "0.12.1"
 rand = "0.8.5"
-reqwest = { version = "0.11.22", default-features = false, features = [
+reqwest = { version = "0.11.24", default-features = false, features = [
     "rustls-tls",
 ] }
 sha2 = "0.10.8"
-time = { version = "0.3.30", features = ["formatting"] }
+time = { version = "0.3.34", features = ["formatting"] }

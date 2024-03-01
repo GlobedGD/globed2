@@ -182,8 +182,21 @@ void GlobedUserCell::makeButtons() {
             Build<CCSprite>::createSpriteName("icon-teleport.png"_spr)
                 .scale(0.35f)
                 .intoMenuItem([gpl, this](auto) {
+                    auto& settings = GlobedSettings::get();
+                    if (!settings.flags.seenTeleportNotice)  {
+                        settings.flags.seenTeleportNotice = true;
+                        settings.save();
+
+                        FLAlertLayer::create(
+                            "Note",
+                            "Teleporting to a player will <cr>disable level progress</c> until you <cy>fully reset</c> the level.",
+                            "Ok"
+                        )->show();
+
+                        return;
+                    }
+
                     static_cast<HookedGJGameLevel*>(gpl->m_level)->m_fields->shouldStopProgress = true; // turn on safe mode
-                    log::debug("turned on safe mode");
 
                     PlayerObject* po1 = gpl->m_player1;
                     CCPoint position = {0,0}; // just in case the player has already left by the time we teleport

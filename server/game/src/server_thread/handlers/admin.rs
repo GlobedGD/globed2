@@ -1,9 +1,9 @@
 use globed_shared::{info, warn};
 
 use crate::{
-    bridge::{BanMuteStateChange, WebhookMessage},
     data::*,
     server_thread::{GameServerThread, ServerThreadMessage},
+    webhook::{BanMuteStateChange, WebhookMessage},
 };
 
 use super::*;

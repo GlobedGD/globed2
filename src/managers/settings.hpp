@@ -37,7 +37,7 @@ public:
         GSETTING(bool, onlyFriends, false);
         GSETTING(bool, lowerAudioLatency, true);
         GSETTING(int, audioDevice, 0);
-        GSETTING(bool, deafenNotification, true); 
+        GSETTING(bool, deafenNotification, true);
         GSETTING(bool, voiceLoopback, false); // TODO unimpl
     };
 
@@ -70,6 +70,7 @@ public:
         bool seenSignupNotice = false;
         bool seenSignupNoticev2 = false;
         bool seenVoiceChatPTTNotice = false;
+        bool seenTeleportNotice = false;
     };
 
     Globed globed;

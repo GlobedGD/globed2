@@ -6,6 +6,8 @@ Before trying to setup a server, it is **recommended** that you understand what 
 
 In case you are familiar with [Pterodactyl](https://pterodactyl.io/), there are eggs available for the [central](https://github.com/DumbCaveSpider/globed-central-egg) and [game](https://github.com/DumbCaveSpider/globed-game-egg) servers that could simplify the setup (thanks to [@DumbCaveSpider](https://github.com/DumbCaveSpider/))
 
+Additionally, if you are setting up a big public server, please keep in mind that the architecture is *not* stable. Big changes can be made to the server at any point, and updates to the mod can cause your server to stop working until you also update it.
+
 ## Setup
 
 If you want to host a server yourself, first you have to download the server binaries from the [latest GitHub release](https://github.com/dankmeme01/globed2/releases/latest), named `globed-central-server` and `globed-game-server`. Depending on your OS and architecture, you want the one ending in `.exe` on Windows, the `-x64` one on Linux x64, and the `-arm64` one on Linux ARM64.
