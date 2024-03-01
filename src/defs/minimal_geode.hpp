@@ -7,6 +7,7 @@ using geode::Ok;
 using geode::Err;
 using geode::Mod;
 using geode::Patch;
+using geode::Loader;
 
 // ugly workaround because MSVC sucks ass
 namespace __globed_log_namespace_shut_up_msvc {

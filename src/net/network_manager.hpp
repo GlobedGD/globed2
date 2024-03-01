@@ -1,6 +1,7 @@
 #pragma once
 #include "game_socket.hpp"
 
+#include <defs/minimal_geode.hpp>
 #include <managers/game_server.hpp>
 #include <util/sync.hpp>
 #include <util/time.hpp>
