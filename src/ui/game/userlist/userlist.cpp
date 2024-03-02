@@ -5,6 +5,7 @@
 #include <hooks/play_layer.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
+#include <managers/settings.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -39,6 +40,21 @@ bool GlobedUserListPopup::setup() {
         .pos(sizes.centerBottom + CCPoint{0.f, 20.f})
         .parent(m_mainLayer)
         .collect();
+        
+
+    volumeSlider = Build<Slider>::create(this, menu_selector(GlobedUserListPopup::onVolumeChanged))
+        .pos(sizes.topRight + ccp(-75, -30 - 7) * 0.7f + ccp(0, -5))
+        .anchorPoint(0, 0)
+        .scale(0.45f * 0.7f)
+        //.scaleX(0.35f)
+        .parent(m_mainLayer)
+        .value(GlobedSettings::get().communication.voiceVolume / 2)
+        .collect();
+
+    Build<CCLabelBMFont>::create("Voice Volume", "bigFont.fnt")
+        .pos(sizes.topRight + ccp(-75, -18) * 0.7f + ccp(0, -5))
+        .scale(0.45f * 0.7f)
+        .parent(m_mainLayer);
 
     // Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedUserListPopup::onToggleVoiceSort), 0.7f))
     //     .id("toggle-voice-sort"_spr)
@@ -214,6 +230,12 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
 
 void GlobedUserListPopup::onToggleVoiceSort(cocos2d::CCObject* sender) {
     volumeSortEnabled = !static_cast<CCMenuItemToggler*>(sender)->isOn();
+}
+
+void GlobedUserListPopup::onVolumeChanged(cocos2d::CCObject* sender) {
+    GlobedSettings::get().communication.voiceVolume = volumeSlider->getValue() * 2;
+
+    GlobedSettings::get().save();
 }
 
 GlobedUserListPopup* GlobedUserListPopup::create() {
