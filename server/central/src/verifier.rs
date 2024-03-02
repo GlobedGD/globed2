@@ -26,6 +26,7 @@ pub struct AccountVerifier {
     http_client: reqwest::Client,
     account_id: i32,
     account_gjp: String,
+    base_api_url: String,
     message_cache: SyncMutex<Vec<AccountEntry>>,
     last_update: SyncMutex<SystemTime>,
     outdated_messages: SyncMutex<IntSet<i32>>,
@@ -33,7 +34,7 @@ pub struct AccountVerifier {
 }
 
 impl AccountVerifier {
-    pub fn new(account_id: i32, account_gjp: String, enabled: bool) -> Self {
+    pub fn new(account_id: i32, account_gjp: String, mut base_api_url: String, enabled: bool) -> Self {
         let http_client = reqwest::ClientBuilder::new()
             .use_rustls_tls()
             .danger_accept_invalid_certs(true)
@@ -42,10 +43,15 @@ impl AccountVerifier {
             .build()
             .unwrap();
 
+        while base_api_url.ends_with('/') {
+            base_api_url.pop();
+        }
+
         Self {
             http_client,
             account_id,
             account_gjp,
+            base_api_url,
             message_cache: SyncMutex::new(Vec::new()),
             last_update: SyncMutex::new(SystemTime::now()),
             outdated_messages: SyncMutex::new(IntSet::default()),
@@ -195,7 +201,7 @@ impl AccountVerifier {
 
         let result = self
             .http_client
-            .post("https://www.boomlings.com/database/deleteGJMessages20.php")
+            .post(format!("{}/deleteGJMessages20.php", self.base_api_url))
             .form(&[
                 ("accountID", self.account_id.to_string()),
                 ("gjp2", self.account_gjp.clone()),
@@ -224,7 +230,7 @@ impl AccountVerifier {
     async fn flush_cache(&self) -> anyhow::Result<()> {
         let result = self
             .http_client
-            .post("https://www.boomlings.com/database/getGJMessages20.php")
+            .post(format!("{}/getGJMessages20.php", self.base_api_url))
             .form(&[
                 ("accountID", self.account_id.to_string()),
                 ("gjp2", self.account_gjp.clone()),

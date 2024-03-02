@@ -83,9 +83,10 @@ Note that the server is written with security in mind, so many of those options 
 | `tps` | `30` | ⏳ | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
 | `admin_webhook_url` | `""` | ⏳ | When enabled, admin actions (banning, muting, etc.) will send a message to the given discord webhook URL |
 | `admin_key`<sup>*</sup> | `(random)` | ⏳ | The password used to unlock the admin panel in-game, must be 32 characters or less |
-| `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `gd_api_credentials` accordingly if you enable this setting |
-| `gd_api_account`<sup>*</sup> | `0` | ✅ | Account ID of a bot account that will be used to verify account ownership |
-| `gd_api_gjp`<sup>*</sup> | `(empty)` | ✅ | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
+| `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `gd_api_account` and `gd_api_gjp` accordingly if you enable this setting |
+| `gd_api_account`<sup>*</sup> | `0` | ❌ | Account ID of a bot account that will be used to verify account ownership |
+| `gd_api_gjp`<sup>*</sup> | `(empty)` | ❌ | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
+| `gd_api_url`<sup>*</sup> | `(...)` | ❌ | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
 | `secret_key`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying authentication keys |
 | `secret_key2`<sup>*</sup> | `(random)` | ⏳ | Secret key for generating and verifying session tokens |
 | `game_server_password`<sup>*</sup> | `(random)` | ✅ | Password used to authenticate game servers |

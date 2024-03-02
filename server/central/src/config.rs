@@ -34,6 +34,10 @@ fn default_gd_api_gjp() -> String {
     String::new()
 }
 
+fn default_gd_api_url() -> String {
+    "https://www.boomlings.com/database".to_owned()
+}
+
 fn default_game_servers() -> Vec<GameServerEntry> {
     vec![GameServerEntry {
         id: "example-server-you-can-delete-it".to_owned(),
@@ -133,6 +137,8 @@ pub struct ServerConfig {
     pub gd_api_account: i32,
     #[serde(default = "default_gd_api_gjp")]
     pub gd_api_gjp: String,
+    #[serde(default = "default_gd_api_url")]
+    pub gd_api_url: String,
     #[serde(default = "default_secret_key")]
     pub secret_key: String,
     #[serde(default = "default_secret_key")]

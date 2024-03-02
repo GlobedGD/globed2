@@ -48,11 +48,6 @@ bool RoomPopup::setup() {
         auto ownData = ProfileCacheManager::get().getOwnData();
         auto ownSpecialData = ProfileCacheManager::get().getOwnSpecialData();
 
-        std::optional<ccColor3B> nameColor;
-        if (ownSpecialData) {
-            nameColor = ownSpecialData.value().nameColor;
-        }
-
         auto* gjam = GJAccountManager::sharedState();
 
         this->playerList = {PlayerRoomPreviewAccountData(
@@ -64,7 +59,7 @@ bool RoomPopup::setup() {
             ownData.color2,
             ownData.glowColor,
             0,
-            nameColor
+            ownSpecialData
         )};
         this->applyFilter("");
 
