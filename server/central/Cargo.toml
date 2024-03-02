@@ -21,4 +21,3 @@ json_comments = "0.2.2"
 rocket = "0.5.0"
 rocket_db_pools = { version = "0.1.0", features = ["sqlx_sqlite"] }
 sqlx = { version = "0.7.3", features = ["migrate"] }
-rocket_ws = "0.1.0"
