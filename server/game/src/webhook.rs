@@ -11,15 +11,15 @@ pub struct BanMuteStateChange {
 }
 
 pub enum WebhookMessage {
-    AuthFail(String),                                                      // username
-    NoticeToEveryone(String, usize, String),                               // username, player count, message
-    NoticeToSelection(String, usize, String),                              // username, player count, message
-    NoticeToPerson(String, String, String),                                // author, target username, message
-    KickEveryone(String, String),                                          // mod username, reason
+    AuthFail(String),                                                                  // username
+    NoticeToEveryone(String, usize, String),                                           // username, player count, message
+    NoticeToSelection(String, usize, String),                                          // username, player count, message
+    NoticeToPerson(String, String, String),                                            // author, target username, message
+    KickEveryone(String, String),                                                      // mod username, reason
     KickPerson(String, String, i32, String), // mod username, target username, target account id, reason
     UserBanChanged(BanMuteStateChange),      // yeah
     UserMuteChanged(BanMuteStateChange),     // yeah
-    UserViolationMetaChanged(String, String, Option<i64>, Option<String>), // mod username, username, expiry, reason
+    UserViolationMetaChanged(String, String, bool, bool, Option<i64>, Option<String>), // mod username, username, is_banned, is_muted, expiry, reason
     UserRoleChanged(String, String, i32, i32), // mod username, username, old role, new role
     UserNameColorChanged(String, String, Option<String>, Option<String>), // mod username, username, old color, new color
 }
@@ -160,7 +160,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             } else {
                 "User unbanned".to_owned()
             },
-            color: hex_color_to_decimal("#de3023"),
+            color: hex_color_to_decimal(if bmsc.new_state { "#de3023" } else { "31bd31" }),
             author: Some(WebhookAuthor {
                 name: format!("{} ({})", bmsc.target_name, bmsc.target_id),
                 icon_url: None,
@@ -202,7 +202,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             } else {
                 "User unmuted".to_owned()
             },
-            color: hex_color_to_decimal("#ded823"),
+            color: hex_color_to_decimal(if bmsc.new_state { "#ded823" } else { "#79bd31" }),
             author: Some(WebhookAuthor {
                 name: format!("{} ({})", bmsc.target_name, bmsc.target_id),
                 icon_url: None,
@@ -238,35 +238,37 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 }]
             },
         }),
-        WebhookMessage::UserViolationMetaChanged(mod_name, user_name, expiry, reason) => Some(WebhookEmbed {
-            title: "Ban/mute state changed".to_owned(),
-            color: hex_color_to_decimal("#de7a23"),
-            author: Some(WebhookAuthor {
-                name: user_name.clone(),
-                icon_url: None,
-            }),
-            description: None,
-            footer: None,
-            fields: vec![
-                WebhookField {
-                    name: "Performed by",
-                    value: mod_name.clone(),
-                    inline: Some(false),
-                },
-                WebhookField {
-                    name: "Reason",
-                    value: reason.clone().unwrap_or_else(|| "No reason given.".to_owned()),
-                    inline: Some(false),
-                },
-                WebhookField {
-                    name: "Expiration",
-                    value: expiry
-                        .map(|x| format!("<t:{x}:f>"))
-                        .unwrap_or_else(|| "Permanent.".to_owned()),
-                    inline: Some(false),
-                },
-            ],
-        }),
+        WebhookMessage::UserViolationMetaChanged(mod_name, user_name, is_banned, _is_muted, expiry, reason) => {
+            Some(WebhookEmbed {
+                title: format!("{} state changed", if *is_banned { "Ban" } else { "Mute" }),
+                color: hex_color_to_decimal("#de7a23"),
+                author: Some(WebhookAuthor {
+                    name: user_name.clone(),
+                    icon_url: None,
+                }),
+                description: None,
+                footer: None,
+                fields: vec![
+                    WebhookField {
+                        name: "Performed by",
+                        value: mod_name.clone(),
+                        inline: Some(false),
+                    },
+                    WebhookField {
+                        name: "Reason",
+                        value: reason.clone().unwrap_or_else(|| "No reason given.".to_owned()),
+                        inline: Some(false),
+                    },
+                    WebhookField {
+                        name: "Expiration",
+                        value: expiry
+                            .map(|x| format!("<t:{x}:f>"))
+                            .unwrap_or_else(|| "Permanent.".to_owned()),
+                        inline: Some(false),
+                    },
+                ],
+            })
+        }
         WebhookMessage::UserRoleChanged(mod_name, user_name, old_role, new_role) => Some(WebhookEmbed {
             title: "Role change".to_owned(),
             color: hex_color_to_decimal("#8b4de8"),
