@@ -51,17 +51,17 @@ bool GlobedMenuLayer::init() {
         .layout(
             ColumnLayout::create()
                 ->setAutoScale(true)
-                ->setGap(3.0f)
+                ->setGap(4.f)
                 ->setAxisAlignment(AxisAlignment::Start)
         )
         .anchorPoint(0.f, 0.f)
-        .pos(15.f, 15.f)
+        .pos(15.f, 20.f)
         .parent(this)
         .id("left-button-menu"_spr)
         .store(leftButtonMenu);
 
     // server switcher button
-    Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
+    serverSwitcherButton = Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
         .intoMenuItem([](auto) {
             if (auto* popup = ServerSwitcherPopup::create()) {
                 popup->m_noElasticity = true;
@@ -69,10 +69,12 @@ bool GlobedMenuLayer::init() {
             }
         })
         .id("btn-open-server-switcher"_spr)
-        .parent(leftButtonMenu);
+        .parent(leftButtonMenu)
+        .collect();
+    serverSwitcherButton->m_scaleMultiplier = 1.15f;
 
     // discord button
-    Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
+    discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
         .scale(1.35f)
         .intoMenuItem([](auto) {
             geode::createQuickPopup("Open Discord", "Join our <cp>Discord</c> server?", "No", "Yes", [] (auto fl, bool btn2) {
@@ -81,15 +83,19 @@ bool GlobedMenuLayer::init() {
             });
         })
         .id("btn-open-discord"_spr)
-        .parent(leftButtonMenu);
+        .parent(leftButtonMenu)
+        .collect();
+    discordButton->m_scaleMultiplier = 1.15f;
 
     // settings button
-    Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+    settingsButton = Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedSettingsLayer::create());
         })
         .id("btn-open-settings"_spr)
-        .parent(leftButtonMenu);
+        .parent(leftButtonMenu)
+        .collect();
+    settingsButton->m_scaleMultiplier = 1.15f;
 
     // room popup button
     roomButton = Build<CCSprite>::createSpriteName("accountBtn_friends_001.png")
@@ -102,6 +108,7 @@ bool GlobedMenuLayer::init() {
         })
         .id("btn-refresh-servers"_spr)
         .collect();
+    roomButton->m_scaleMultiplier = 1.15f;
 
     // level list button
     levelListButton = Build<CCSprite>::createSpriteName("icon-level-list.png"_spr)
@@ -110,6 +117,7 @@ bool GlobedMenuLayer::init() {
         })
         .id("btn-open-level-list"_spr)
         .collect();
+    levelListButton->m_scaleMultiplier = 1.15f;
 
     leftButtonMenu->updateLayout();
 
@@ -117,7 +125,9 @@ bool GlobedMenuLayer::init() {
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .scale(1.0f)
         .intoMenuItem([](auto) {
-            FLAlertLayer::create("Voice chat guide", "In order to talk with other people in-game, hold <cp>V</c>. In order to deafen (stop hearing everyone), press <cr>B</c>. Both keybinds can be changed in Geometry Dash settings.", "Ok")->show();
+            FLAlertLayer::create("Voice chat guide",
+            "In order to <cg>talk</c> with other people in-game, <cp>hold V</c>.\nIn order to <cr>deafen</c> (stop hearing everyone), <cb>press B</c>.\nBoth keybinds can be changed in <cy>Geometry Dash</c> settings.",
+            "Ok")->show();
         })
         .id("btn-show-voice-chat-popup"_spr)
         .pos(winSize.width - 20.f, 20.f)

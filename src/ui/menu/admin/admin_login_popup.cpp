@@ -11,9 +11,10 @@ using namespace geode::prelude;
 
 bool AdminLoginPopup::setup() {
     auto sizes = util::ui::getPopupLayout(m_size);
+    setTitle("Admin Login");
 
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "password", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 32)
-        .pos(sizes.center.width, sizes.center.height + 30.f)
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "Password", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 32)
+        .pos(sizes.center.width, sizes.center.height + 20.f)
         .parent(m_mainLayer)
         .store(passwordInput);
 
@@ -23,7 +24,7 @@ bool AdminLoginPopup::setup() {
         .parent(m_mainLayer)
         .collect();
 
-    Build<ButtonSprite>::create("Login", "bigFont.fnt", "geode.loader/GE_button_04.png", 0.8f)
+    auto* loginBtn = Build<ButtonSprite>::create("Login", "bigFont.fnt", "geode.loader/GE_button_04.png", 0.8f)
         .intoMenuItem([this](auto) {
             auto& settings = GlobedSettings::get();
 
@@ -43,7 +44,8 @@ bool AdminLoginPopup::setup() {
                 this->onClose(this);
             }
         })
-        .parent(btnLayout);
+        .parent(btnLayout)
+        .collect();
 
     auto* rememberPwd = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(AdminLoginPopup::onRememberPassword), 0.75f);
     rememberPwd->toggle(GlobedSettings::get().admin.rememberPassword);

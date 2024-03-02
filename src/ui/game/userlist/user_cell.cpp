@@ -62,6 +62,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
         .parent(menu)
         .collect();
+    nameButton->m_scaleMultiplier = 1.1f;
 
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
@@ -144,6 +145,7 @@ void GlobedUserCell::makeButtons() {
             .id("block-button"_spr)
             .store(blockButton);
 
+        blockButton->m_scaleMultiplier = 1.1f;
         maxWidth += blockButton->getScaledContentSize().width + 5.f;
     }
 
