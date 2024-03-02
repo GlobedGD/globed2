@@ -6,22 +6,29 @@
 using namespace geode::prelude;
 
 static inline util::time::system_time_point suspendedAt;
+static inline bool isSuspended = false;
 
 #ifdef GEODE_IS_ANDROID
 void GlobedAppDelegate::applicationDidEnterBackground() {
     NetworkManager::get().suspend();
     suspendedAt = util::time::systemNow();
+    isSuspended = true;
 
     AppDelegate::applicationDidEnterBackground();
 }
 
 void GlobedAppDelegate::applicationWillEnterForeground() {
     NetworkManager::get().resume();
-    auto passed = util::time::systemNow() - suspendedAt;
-    if (passed > util::time::seconds(60)) {
+
+    if (isSuspended) {
         // to avoid firing twice
-        suspendedAt = util::time::systemNow();
-        NetworkManager::get().disconnectWithMessage("connection lost, application was in the background for too long");
+        isSuspended = false;
+        auto passed = util::time::systemNow() - suspendedAt;
+
+        if (passed > util::time::seconds(60)) {
+            suspendedAt = util::time::systemNow();
+            NetworkManager::get().disconnectWithMessage("connection lost, application was in the background for too long");
+        }
     }
 
     AppDelegate::applicationWillEnterForeground();
