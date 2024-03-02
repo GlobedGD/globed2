@@ -1,21 +1,31 @@
 ## v1.3.0
 
+**Add support for Android (both 32-bit and 64-bit) and MacOS!**
+
+This is a **required** update, and you will not be able to connect to the server until you update the mod.
+
+Please note that those platforms are not as thoroughly tested, so they may have issues. Additionally, talking in voice chat is **currently impossible** on all platforms except Windows, but you will still be able to hear others.
+
+Other changes include:
+
 * Redesign the settings menu to be more convenient (it now has tabs!)
 * Enable Lower audio latency by default
 * Enable Hide conditionally by default (for ping overlay)
 * Add the squish animation for other players whenever they jump in platformer mode
 * Add a setting to always show players, even if they are invisible
-* Add a setting for deafen notifications
+* Add deafen notifications (can be disabled in settings)
 * Add better server messages for failed login attempts
+* Add a voice volume slider in the player list on the pause menu
+* Add player name colors to the room list
 * Slightly improve bandwidth usage by optimizing the protocol
 * Made the jump to level button jump to a main level page if it's a classic main level
 * Fix the ball icon sometimes being displayed as a cube with Default mini icons enabled
 * Fix crashes due to the menu button being removed by another mod
 * Fix player count on main levels not animating together with the button
 * Fix player count being in a wrong place with Compact Lists installed
-* Change scaling of the "Join" and "Leave" buttons
+* Change the scaling and pop animation of many buttons to look a bit more pretty
 
-Thank you [Capeling](user:18226543) and [ninXout](user:7479054) for their first contributions to the mod :)
+Thank you [Capeling](user:18226543), [ninXout](user:7479054) and [TheSillyDoggo](user:16778880) for their first contributions to the mod in this update :)
 
 ## v1.2.5
 

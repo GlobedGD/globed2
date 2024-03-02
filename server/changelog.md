@@ -6,6 +6,7 @@ least chaotic thing about this repo tbh
 
 * protocol bumped to v4
 * added a discord webhook configuration option
+* added a `gd_api_url` option so account verification can be used on a GDPS
 
 ## v1.2.0
 
