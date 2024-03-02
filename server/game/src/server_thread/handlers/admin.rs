@@ -601,6 +601,8 @@ impl GameServerThread {
                         messages.push(WebhookMessage::UserViolationMetaChanged(
                             own_name.clone(),
                             target_user_name.clone(),
+                            new_user_entry.is_banned,
+                            new_user_entry.is_muted,
                             new_user_entry.violation_expiry,
                             new_user_entry.violation_reason.as_ref().map(FastString::try_to_string),
                         ));
