@@ -2,8 +2,9 @@
 
 least chaotic thing about this repo tbh
 
-## v1.3.0
+## v1.2.1
 
+* protocol bumped to v4
 * added a discord webhook configuration option
 
 ## v1.2.0

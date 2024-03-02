@@ -5,21 +5,28 @@
 
 using namespace geode::prelude;
 
-void GlobedAppDelegate::applicationDidEnterBackground() {
+static inline util::time::system_time_point suspendedAt;
+
 #ifdef GEODE_IS_ANDROID
+void GlobedAppDelegate::applicationDidEnterBackground() {
     NetworkManager::get().suspend();
-#endif
+    suspendedAt = util::time::systemNow();
 
     AppDelegate::applicationDidEnterBackground();
 }
 
 void GlobedAppDelegate::applicationWillEnterForeground() {
-#ifdef GEODE_IS_ANDROID
     NetworkManager::get().resume();
-#endif
+    auto passed = util::time::systemNow() - suspendedAt;
+    if (passed > util::time::seconds(60)) {
+        // to avoid firing twice
+        suspendedAt = util::time::systemNow();
+        NetworkManager::get().disconnectWithMessage("connection lost, application was in the background for too long");
+    }
 
     AppDelegate::applicationWillEnterForeground();
 }
+#endif // GEODE_IS_ANDROID
 
 #ifdef GEODE_IS_MACOS
 void GlobedAppDelegate::loadingIsFinished() {
@@ -42,4 +49,4 @@ void GlobedAppDelegate::loadingIsFinished() {
         }
     });
 }
-#endif
+#endif // GEODE_IS_MACOS
