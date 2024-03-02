@@ -230,25 +230,17 @@ impl CentralBridge {
     pub async fn send_webhook_messages(&self, messages: &[WebhookMessage]) -> Result<()> {
         let url = self.central_conf.lock().admin_webhook_url.clone();
 
-        let mut content = String::new();
         let mut embeds = Vec::new();
 
         for message in messages {
-            match message {
-                WebhookMessage::AuthFail(username) => {
-                    content += &format!("{username} just tried to login to the admin panel and failed.");
-                }
-                msg => {
-                    if let Some(embed) = webhook::embed_for_message(msg) {
-                        embeds.push(embed);
-                    }
-                }
+            if let Some(embed) = webhook::embed_for_message(message) {
+                embeds.push(embed);
             }
         }
 
         let opts = WebhookOpts {
             username: "in-game actions",
-            content: if content.is_empty() { None } else { Some(&content) },
+            content: None,
             embeds,
         };
 
