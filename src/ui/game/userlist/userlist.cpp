@@ -41,7 +41,7 @@ bool GlobedUserListPopup::setup() {
         .pos(sizes.centerBottom + CCPoint{0.f, 20.f})
         .parent(m_mainLayer)
         .collect();
-        
+
 
     volumeSlider = Build<Slider>::create(this, menu_selector(GlobedUserListPopup::onVolumeChanged))
         .pos(sizes.topRight + ccp(-75, -30 - 7) * 0.7f + ccp(0, -5))
@@ -234,7 +234,7 @@ void GlobedUserListPopup::onToggleVoiceSort(cocos2d::CCObject* sender) {
 }
 
 void GlobedUserListPopup::onVolumeChanged(cocos2d::CCObject* sender) {
-    GlobedSettings::get().communication.voiceVolume = volumeSlider->getValue() * 2;
+    GlobedSettings::get().communication.voiceVolume = volumeSlider->getThumb()->getValue() * 2;
 
     GlobedSettings::get().save();
 }
