@@ -86,32 +86,44 @@ pub fn role_to_string(role: i32) -> String {
 #[allow(clippy::too_many_lines)]
 pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
     match message {
-        WebhookMessage::AuthFail(_user) => None,
+        WebhookMessage::AuthFail(user_name) => Some(WebhookEmbed {
+            title: "Failed login attempt".to_owned(),
+            color: hex_color_to_decimal("#fc6b03"),
+            author: None,
+            description: Some(format!("{user_name} just failed to login to the admin panel.")),
+            footer: None,
+            fields: vec![],
+        }),
         WebhookMessage::NoticeToEveryone(username, player_count, message) => Some(WebhookEmbed {
             title: format!("Global notice (for {player_count} people)"),
             color: hex_color_to_decimal("#4dace8"),
-            author: Some(WebhookAuthor {
-                name: username.clone(),
-                icon_url: None,
-            }),
+            author: None,
             description: Some(message.clone()),
             footer: None,
-            fields: Vec::new(),
+            fields: vec![WebhookField {
+                name: "Performed by",
+                value: username.clone(),
+                inline: Some(true),
+            }],
         }),
         WebhookMessage::NoticeToSelection(username, player_count, message) => Some(WebhookEmbed {
             title: "Notice".to_owned(),
             color: hex_color_to_decimal("#4dace8"),
-            author: Some(WebhookAuthor {
-                name: username.clone(),
-                icon_url: None,
-            }),
+            author: None,
             description: Some(message.clone()),
             footer: None,
-            fields: vec![WebhookField {
-                name: "Sent to",
-                value: format!("{player_count} people"),
-                inline: Some(true),
-            }],
+            fields: vec![
+                WebhookField {
+                    name: "Performed by",
+                    value: username.clone(),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: "Sent to",
+                    value: format!("{player_count} people"),
+                    inline: Some(true),
+                },
+            ],
         }),
         WebhookMessage::NoticeToPerson(author, target, message) => Some(WebhookEmbed {
             title: format!("Notice for {target}"),
@@ -131,13 +143,14 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
         WebhookMessage::KickEveryone(username, reason) => Some(WebhookEmbed {
             title: "Kick everyone".to_owned(),
             color: hex_color_to_decimal("#e8d34d"),
-            author: Some(WebhookAuthor {
-                name: username.clone(),
-                icon_url: None,
-            }),
+            author: None,
             description: Some(reason.clone()),
             footer: None,
-            fields: Vec::new(),
+            fields: vec![WebhookField {
+                name: "Performed by",
+                value: username.clone(),
+                inline: Some(true),
+            }],
         }),
         WebhookMessage::KickPerson(mod_name, user_name, target_id, reason) => Some(WebhookEmbed {
             title: "Kick user".to_owned(),
