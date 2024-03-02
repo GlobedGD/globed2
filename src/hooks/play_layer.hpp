@@ -70,6 +70,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     void setupPacketListeners();
     void setupCustomKeybinds();
+    void postInitActions(float);
 
     /* periodical selectors */
 

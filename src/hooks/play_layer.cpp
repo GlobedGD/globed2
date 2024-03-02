@@ -154,11 +154,11 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
         // send LevelJoinPacket and RequestPlayerProfilesPacket
         nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
-        nm.send(RequestPlayerProfilesPacket::create(0));
-        self->selSendPlayerMetadata(0.f);
 
         self->rescheduleSelectors();
         CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), self->getParent(), 0.0f, false);
+
+        self->scheduleOnce(schedule_selector(GlobedPlayLayer::postInitActions), 0.25f);
     });
 
     m_fields->progressBarWrapper = Build<CCNode>::create()
@@ -189,6 +189,14 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     flm.maybeLoad();
 
     return true;
+}
+
+void GlobedPlayLayer::postInitActions(float) {
+    auto& nm = NetworkManager::get();
+    nm.send(RequestPlayerProfilesPacket::create(0));
+
+    auto data = this->gatherPlayerMetadata();
+    nm.send(PlayerMetadataPacket::create(data));
 }
 
 void GlobedPlayLayer::onQuit() {
