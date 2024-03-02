@@ -363,7 +363,8 @@ void AdminUserPopup::getUserInfoFinished(GJUserScore* score) {
         score->m_color1,
         score->m_color2,
         score->m_glowEnabled ? score->m_color3 : -1,
-        0
+        0,
+        std::nullopt
     );
 
     userEntry.userName = score->m_userName;

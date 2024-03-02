@@ -12,7 +12,6 @@
 # define GLOBED_SOCKET_POLLFD WSAPOLLFD
 
 /* windows includes */
-
 # include <WS2tcpip.h>
 
 #elif defined(GLOBED_IS_UNIX) // ^ windows | v unix

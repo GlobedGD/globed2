@@ -37,7 +37,10 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         .parent(this)
         .store(menu);
 
-    auto nameColor = data.nameColor.value_or(ccc3(255, 255, 255));
+    ccColor3B nameColor = ccc3(255, 255, 255);
+    if (data.specialUserData) {
+        nameColor = data.specialUserData->nameColor;
+    }
 
     auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
         .color(nameColor)

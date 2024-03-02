@@ -46,6 +46,13 @@ bool RoomPopup::setup() {
 
     nm.addListener<RoomCreatedPacket>([this](std::shared_ptr<RoomCreatedPacket> packet) {
         auto ownData = ProfileCacheManager::get().getOwnData();
+        auto ownSpecialData = ProfileCacheManager::get().getOwnSpecialData();
+
+        std::optional<ccColor3B> nameColor;
+        if (ownSpecialData) {
+            nameColor = ownSpecialData.value().nameColor;
+        }
+
         auto* gjam = GJAccountManager::sharedState();
 
         this->playerList = {PlayerRoomPreviewAccountData(
@@ -56,7 +63,8 @@ bool RoomPopup::setup() {
             ownData.color1,
             ownData.color2,
             ownData.glowColor,
-            0
+            0,
+            nameColor
         )};
         this->applyFilter("");
 
@@ -199,7 +207,7 @@ void RoomPopup::addButtons() {
             .pos(popupCenter, 55.f)
             .parent(m_mainLayer)
             .store(roomBtnMenu);
-        
+
         auto* leaveRoomButton = Build<ButtonSprite>::create("Leave room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .intoMenuItem([this](auto) {
                 if (!this->isLoading()) {

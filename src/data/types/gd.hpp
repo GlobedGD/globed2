@@ -109,8 +109,8 @@ public:
 
 class PlayerRoomPreviewAccountData {
 public:
-    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, LevelId levelId)
-        : accountId(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId) {}
+    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, LevelId levelId, std::optional<SpecialUserData> specialUserData)
+        : accountId(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId), specialUserData(specialUserData) {}
     PlayerRoomPreviewAccountData() {}
 
     GLOBED_ENCODE {
@@ -122,12 +122,7 @@ public:
         buf.writeI16(color2);
         buf.writeI16(glowColor);
         buf.writePrimitive(levelId);
-        if (nameColor.has_value()) {
-            buf.writeBool(true);
-            buf.writeColor3(nameColor.value());
-        } else {
-            buf.writeBool(false);
-        }
+        buf.writeOptionalValue(specialUserData);
     }
 
     GLOBED_DECODE {
@@ -139,16 +134,14 @@ public:
         color2 = buf.readI16();
         glowColor = buf.readI16();
         levelId = buf.readPrimitive<LevelId>();
-        if (buf.readBool()) {
-            nameColor = buf.readColor3();
-        }
+        specialUserData = buf.readOptionalValue<SpecialUserData>();
     }
 
     int32_t accountId, userId;
     std::string name;
     int16_t cube, color1, color2, glowColor;
     LevelId levelId;
-    std::optional<cocos2d::ccColor3B> nameColor;
+    std::optional<SpecialUserData> specialUserData;
 };
 
 class PlayerAccountData {
@@ -164,7 +157,7 @@ public:
 
     PlayerRoomPreviewAccountData makeRoomPreview(LevelId levelId) {
         return PlayerRoomPreviewAccountData(
-            accountId, userId, name, icons.cube, icons.color1, icons.color2, icons.glowColor, levelId
+            accountId, userId, name, icons.cube, icons.color1, icons.color2, icons.glowColor, levelId, specialUserData
         );
     }
 
