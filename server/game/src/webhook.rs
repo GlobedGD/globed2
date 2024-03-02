@@ -25,10 +25,10 @@ pub enum WebhookMessage {
 }
 
 #[derive(Serialize)]
-pub struct WebhookAuthor<'a> {
-    pub name: &'a str,
+pub struct WebhookAuthor {
+    pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon_url: Option<&'a str>,
+    pub icon_url: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -52,7 +52,7 @@ pub struct WebhookEmbed<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub author: Option<WebhookAuthor<'a>>,
+    pub author: Option<WebhookAuthor>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -87,11 +87,11 @@ pub fn role_to_string(role: i32) -> String {
 pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
     match message {
         WebhookMessage::AuthFail(_user) => None,
-        WebhookMessage::NoticeToEveryone(username, _player_count, message) => Some(WebhookEmbed {
-            title: "Global notice".to_owned(),
+        WebhookMessage::NoticeToEveryone(username, player_count, message) => Some(WebhookEmbed {
+            title: format!("Global notice (for {player_count} people)"),
             color: hex_color_to_decimal("#4dace8"),
             author: Some(WebhookAuthor {
-                name: username,
+                name: username.clone(),
                 icon_url: None,
             }),
             description: Some(message.clone()),
@@ -102,7 +102,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             title: "Notice".to_owned(),
             color: hex_color_to_decimal("#4dace8"),
             author: Some(WebhookAuthor {
-                name: username,
+                name: username.clone(),
                 icon_url: None,
             }),
             description: Some(message.clone()),
@@ -117,36 +117,40 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             title: format!("Notice for {target}"),
             color: hex_color_to_decimal("#4dace8"),
             author: Some(WebhookAuthor {
-                name: author,
+                name: target.clone(),
                 icon_url: None,
             }),
             description: Some(message.clone()),
             footer: None,
-            fields: Vec::new(),
+            fields: vec![WebhookField {
+                name: "Performed by",
+                value: author.clone(),
+                inline: Some(true),
+            }],
         }),
         WebhookMessage::KickEveryone(username, reason) => Some(WebhookEmbed {
             title: "Kick everyone".to_owned(),
             color: hex_color_to_decimal("#e8d34d"),
             author: Some(WebhookAuthor {
-                name: username,
+                name: username.clone(),
                 icon_url: None,
             }),
             description: Some(reason.clone()),
             footer: None,
             fields: Vec::new(),
         }),
-        WebhookMessage::KickPerson(username, target_username, target_id, reason) => Some(WebhookEmbed {
-            title: format!("Kick {target_username}"),
+        WebhookMessage::KickPerson(mod_name, user_name, target_id, reason) => Some(WebhookEmbed {
+            title: "Kick user".to_owned(),
             color: hex_color_to_decimal("#e8d34d"),
             author: Some(WebhookAuthor {
-                name: username,
+                name: format!("{user_name} ({target_id})"),
                 icon_url: None,
             }),
             description: Some(reason.clone()),
             footer: None,
             fields: vec![WebhookField {
-                name: "Account ID",
-                value: target_id.to_string(),
+                name: "Performed by",
+                value: mod_name.clone(),
                 inline: Some(true),
             }],
         }),
@@ -158,7 +162,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             },
             color: hex_color_to_decimal("#de3023"),
             author: Some(WebhookAuthor {
-                name: &bmsc.mod_name,
+                name: format!("{} ({})", bmsc.target_name, bmsc.target_id),
                 icon_url: None,
             }),
             description: if bmsc.new_state {
@@ -168,17 +172,28 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             },
             footer: None,
             fields: if bmsc.new_state {
-                vec![WebhookField {
-                    name: "Expires",
-                    value: if let Some(seconds) = bmsc.expiry {
-                        format!("<t:{seconds}:f>")
-                    } else {
-                        "Permanent.".to_owned()
+                vec![
+                    WebhookField {
+                        name: "Performed by",
+                        value: bmsc.mod_name.clone(),
+                        inline: Some(true),
                     },
+                    WebhookField {
+                        name: "Expires",
+                        value: if let Some(seconds) = bmsc.expiry {
+                            format!("<t:{seconds}:f>")
+                        } else {
+                            "Permanent.".to_owned()
+                        },
+                        inline: Some(true),
+                    },
+                ]
+            } else {
+                vec![WebhookField {
+                    name: "Performed by",
+                    value: bmsc.mod_name.clone(),
                     inline: Some(true),
                 }]
-            } else {
-                vec![]
             },
         }),
         WebhookMessage::UserMuteChanged(bmsc) => Some(WebhookEmbed {
@@ -189,7 +204,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             },
             color: hex_color_to_decimal("#ded823"),
             author: Some(WebhookAuthor {
-                name: &bmsc.mod_name,
+                name: format!("{} ({})", bmsc.target_name, bmsc.target_id),
                 icon_url: None,
             }),
             description: if bmsc.new_state {
@@ -199,32 +214,43 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             },
             footer: None,
             fields: if bmsc.new_state {
-                vec![WebhookField {
-                    name: "Expires",
-                    value: if let Some(seconds) = bmsc.expiry {
-                        format!("<t:{seconds}:f>")
-                    } else {
-                        "Permanent.".to_owned()
+                vec![
+                    WebhookField {
+                        name: "Performed by",
+                        value: bmsc.mod_name.clone(),
+                        inline: Some(true),
                     },
+                    WebhookField {
+                        name: "Expires",
+                        value: if let Some(seconds) = bmsc.expiry {
+                            format!("<t:{seconds}:f>")
+                        } else {
+                            "Permanent.".to_owned()
+                        },
+                        inline: Some(true),
+                    },
+                ]
+            } else {
+                vec![WebhookField {
+                    name: "Performed by",
+                    value: bmsc.mod_name.clone(),
                     inline: Some(true),
                 }]
-            } else {
-                vec![]
             },
         }),
         WebhookMessage::UserViolationMetaChanged(mod_name, user_name, expiry, reason) => Some(WebhookEmbed {
             title: "Ban/mute state changed".to_owned(),
             color: hex_color_to_decimal("#de7a23"),
             author: Some(WebhookAuthor {
-                name: mod_name,
+                name: user_name.clone(),
                 icon_url: None,
             }),
             description: None,
             footer: None,
             fields: vec![
                 WebhookField {
-                    name: "Username",
-                    value: user_name.clone(),
+                    name: "Performed by",
+                    value: mod_name.clone(),
                     inline: Some(false),
                 },
                 WebhookField {
@@ -245,15 +271,15 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             title: "Role change".to_owned(),
             color: hex_color_to_decimal("#8b4de8"),
             author: Some(WebhookAuthor {
-                name: mod_name,
+                name: user_name.clone(),
                 icon_url: None,
             }),
             description: None,
             footer: None,
             fields: vec![
                 WebhookField {
-                    name: "Username",
-                    value: user_name.clone(),
+                    name: "Performed by",
+                    value: mod_name.clone(),
                     inline: Some(true),
                 },
                 WebhookField {
@@ -272,15 +298,15 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             title: "Name color change".to_owned(),
             color: hex_color_to_decimal(new_color.as_ref().map_or_else(|| "", |x| x.as_str())),
             author: Some(WebhookAuthor {
-                name: mod_name,
+                name: user_name.clone(),
                 icon_url: None,
             }),
             description: None,
             footer: None,
             fields: vec![
                 WebhookField {
-                    name: "Username",
-                    value: user_name.clone(),
+                    name: "Performed by",
+                    value: mod_name.clone(),
                     inline: Some(true),
                 },
                 WebhookField {
