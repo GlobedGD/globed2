@@ -2,7 +2,7 @@
 
 bool IntermediaryLoadingPopup::setup(CallbackFn onInit, CallbackFn onCleanup) {
     circle = LoadingCircle::create();
-    circle->setParentLayer(this);
+    circle->setParentLayer(m_mainLayer);
     circle->setScale(0.75f);
     circle->show();
 
