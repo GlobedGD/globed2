@@ -696,7 +696,7 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
         Build<PlayerProgressArrow>::create()
             .zOrder(2)
             .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
-            .parent(this->getParent())
+            .parent(this)
             .store(progressArrow);
     }
 
