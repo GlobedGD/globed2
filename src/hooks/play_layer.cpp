@@ -334,10 +334,13 @@ void GlobedPlayLayer::setupCustomKeybinds() {
                 if (settings.communication.deafenNotification)
                     Notification::create("Deafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-on.png"_spr), 0.2f)->show();
                 
-            } else if (!this->m_fields->isVoiceProximity) {
-                vpm.setVolumeAll(settings.communication.voiceVolume);
+            } else {
+                //before the notification would only show up if you had voice proximity off in a platformer, this fixes that
                 if (settings.communication.deafenNotification)
                     Notification::create("Undeafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-off.png"_spr), 0.2f)->show(); 
+                if (!this->m_fields->isVoiceProximity) {
+                    vpm.setVolumeAll(settings.communication.voiceVolume);
+                }
             }
         }
 
