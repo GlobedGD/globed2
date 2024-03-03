@@ -35,6 +35,26 @@ bool GlobedUserListPopup::setup() {
         .intoNewParent(CCMenu::create())
         .parent(m_mainLayer);
 
+    Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+        .scale(0.5f)
+        .intoMenuItem([this](auto) {
+            createQuickPopup(
+                "Reporting",
+                "Someone <cr>breaking</c> <cl>Globed</c> rules?\n<cg>Join</c> the <cl>Globed</c> discord and <cr>report</c> them there!",
+                "Cancel",
+                "Join",
+                [this](auto, bool btn2) {
+                    if(btn2) {
+                        CCApplication::sharedApplication()->openURL("https://discord.gg/globed");
+                    }
+                }
+            );
+        })
+        .pos(-m_size.width / 2.f + 20.f, -m_size.height / 2.f + 22.f)
+        .id("report-btn"_spr)
+        .intoNewParent(CCMenu::create())
+        .parent(m_mainLayer);
+
     // checkbox to toggle voice sorting
     auto* cbLayout = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false))
