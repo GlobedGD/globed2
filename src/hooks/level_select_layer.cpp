@@ -82,7 +82,7 @@ void HookedLevelSelectLayer::updatePlayerCounts() {
                 label->setVisible(false);
             } else {
                 label->setVisible(true);
-                label->setString(fmt::format("{} players", players).c_str());
+                label->setString(fmt::format("{} {}", players, players == 1 ? "player" : "players").c_str());
             }
         } else {
             label->setVisible(true);
