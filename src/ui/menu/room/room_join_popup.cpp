@@ -20,7 +20,7 @@ bool RoomJoinPopup::setup() {
         .id("join-room-id-hint"_spr);
 
     // room id input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 6)
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 7)
         .pos(popupCenter, POPUP_HEIGHT + 25.f)
         .parent(m_mainLayer)
         .id("join-room-id"_spr)

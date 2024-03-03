@@ -124,6 +124,7 @@ bool GlobedMenuLayer::init() {
     leftButtonMenu->updateLayout();
 
     // info button
+#ifdef GEODE_IS_WINDOWS
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .scale(1.0f)
         .intoMenuItem([](auto) {
@@ -136,6 +137,7 @@ bool GlobedMenuLayer::init() {
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
         .parent(this);
+#endif
 
     util::ui::prepareLayer(this);
 

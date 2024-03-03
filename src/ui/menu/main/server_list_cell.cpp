@@ -82,6 +82,8 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                     NetworkManager::get().disconnect(false);
                 } else {
                     auto& settings = GlobedSettings::get();
+                    // we cant really talk on other platforms
+#ifdef GEODE_IS_WINDOWS
                     if (!settings.flags.seenVoiceChatPTTNotice) {
                         settings.flags.seenVoiceChatPTTNotice = true;
                         settings.save();
@@ -89,6 +91,7 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                         FLAlertLayer::create("Notice", "Be advised that Globed has voice chat (it can be disabled in settings if you wish). You can hold V to talk to other people.", "Ok")->show();
                         return;
                     }
+#endif
 
                     auto& csm = CentralServerManager::get();
 
@@ -114,7 +117,7 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
             .store(btnConnect);
         btnConnect->m_scaleMultiplier = 1.1f;
     }
-    
+
 }
 
 void ServerListCell::requestTokenAndConnect() {
