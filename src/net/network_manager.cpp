@@ -99,16 +99,12 @@ NetworkManager::NetworkManager() {
 
     addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
         std::string message;
+        log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, PROTOCOL_VERSION);
+
         if (packet->serverProtocol < PROTOCOL_VERSION) {
-            message = fmt::format(
-                "Outdated server! This server uses protocol <cy>v{}</c>, while your client is using protocol <cy>v{}</c>. Downgrade the mod to an older version or ask the server owner to update their server.",
-                packet->serverProtocol, PROTOCOL_VERSION
-            );
+            message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
         } else {
-            message = fmt::format(
-                "Outdated client! Please update the mod to the latest version in order to connect. The server is using protocol <cy>v{}</c>, while this version of the mod only supports protocol <cy>v{}</c>.",
-                packet->serverProtocol, PROTOCOL_VERSION
-            );
+            message = "Your Globed version is <cr>outdated</c>, please <cg>update</c> Globed in order to connect.";
         }
 
         ErrorQueues::get().error(message);
