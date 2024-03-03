@@ -284,6 +284,9 @@ void GlobedPlayLayer::fullReset() {
 
 void GlobedPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
+    // this is also called upon init, so bail out if we are too early
+    if (m_fields->timeCounter < 0.25f) return;
+
     if (!m_level->isPlatformer()) {
         // turn off safe mode in non-platformer levels (as this counts as a full reset)
         this->toggleSafeMode(false);

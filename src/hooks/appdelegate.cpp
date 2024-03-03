@@ -18,15 +18,15 @@ void GlobedAppDelegate::applicationDidEnterBackground() {
 }
 
 void GlobedAppDelegate::applicationWillEnterForeground() {
-    NetworkManager::get().resume();
+    auto& nm = NetworkManager::get();
+    nm.resume();
 
     if (isSuspended) {
         // to avoid firing twice
         isSuspended = false;
         auto passed = util::time::systemNow() - suspendedAt;
 
-        if (passed > util::time::seconds(60)) {
-            suspendedAt = util::time::systemNow();
+        if (passed > util::time::seconds(60) && nm.established()) {
             NetworkManager::get().disconnectWithMessage("connection lost, application was in the background for too long");
         }
     }
