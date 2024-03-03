@@ -12,6 +12,5 @@ private:
     bool init();
 
     static constexpr const char* CONSENT_MESSAGE =
-        "For verification purposes, this action will send a <cy>direct message</c> to a bot account, and delete it afterwards. "
-        "If you <cr>do not consent</c> to this action, press 'Cancel'.";
+        "For <cl>verification</c> purposes, this action will send a <cy>direct message</c> to a <co>bot</c> account then <cp>delete</c> it right after.\nIf you <cr>do not consent</c> to this action, press <cr>'Cancel'</c>.";
 };
