@@ -1,6 +1,6 @@
 #include "voice_record_manager.hpp"
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 #include <data/packets/client/misc.hpp>
 #include <data/packets/client/game.hpp>

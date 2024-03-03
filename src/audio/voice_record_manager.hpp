@@ -10,7 +10,7 @@ protected:
     friend class SingletonBase;
 
 public:
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     util::sync::SmartThread<VoiceRecordingManager*> thread;
     util::sync::AtomicBool queuedStop = false, queuedStart = false, recording = false;
 

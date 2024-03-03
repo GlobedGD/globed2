@@ -124,7 +124,7 @@ bool GlobedMenuLayer::init() {
     leftButtonMenu->updateLayout();
 
     // info button
-#ifdef GEODE_IS_WINDOWS
+#ifdef GLOBED_VOICE_CAN_TALK
     Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .scale(1.0f)
         .intoMenuItem([](auto) {

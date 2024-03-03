@@ -36,7 +36,7 @@ void GlobedVoiceOverlay::addPlayer(int accountId) {
 }
 
 void GlobedVoiceOverlay::updateOverlay() {
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     auto& vpm = VoicePlaybackManager::get();
 
     this->removeAllChildren();

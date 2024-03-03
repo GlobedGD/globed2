@@ -2,7 +2,7 @@
 #include <defs/platform.hpp>
 #include <defs/util.hpp>
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 #include <fmod.hpp>
 

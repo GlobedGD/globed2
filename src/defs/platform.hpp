@@ -41,6 +41,7 @@
 # define GLOBED_HAS_FMOD GLOBED_FMOD_WINDOWS
 # define GLOBED_HAS_DRPC GLOBED_DRPC_WINDOWS
 # define GLOBED_HAS_KEYBINDS 1
+# define GLOBED_VOICE_CAN_TALK
 #elif defined(GEODE_IS_MACOS)
 # define GLOBED_HAS_FMOD GLOBED_FMOD_MAC
 # define GLOBED_HAS_DRPC GLOBED_DRPC_MAC
@@ -59,9 +60,9 @@
 #endif
 
 #if GLOBED_HAS_FMOD && !defined(GLOBED_DISABLE_VOICE_SUPPORT)
-# define GLOBED_VOICE_SUPPORT 1
+# define GLOBED_VOICE_SUPPORT
 #else
-# define GLOBED_VOICE_SUPPORT 0
+# undef GLOBED_VOICE_CAN_TALK
 #endif
 
 constexpr bool GLOBED_LITTLE_ENDIAN = std::endian::native == std::endian::little;

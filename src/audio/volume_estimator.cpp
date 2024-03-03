@@ -3,7 +3,7 @@
 #include "manager.hpp"
 #include <util/misc.hpp>
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 VolumeEstimator::VolumeEstimator(size_t sampleRate) {
     this->sampleRate = sampleRate;

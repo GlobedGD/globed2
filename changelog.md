@@ -2,6 +2,7 @@
 
 * Fix being unable to join a room on some Android devices (due to room ID input being limited to 5 characters)
 * Fix the "application was in the background for too long" disconnect error sometimes appearing when it shouldn't
+* Fix some voice chat crashes on Android
 * Remove voice chat hints on Android (since you can't really press V there)
 
 ## v1.3.0

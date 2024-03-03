@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/all.hpp>
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 #include <audio/manager.hpp>
 

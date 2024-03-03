@@ -2,7 +2,7 @@
 
 #include "manager.hpp"
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 Result<> VoicePlaybackManager::playFrameStreamed(int playerId, const EncodedAudioFrame& frame) {
     // if the stream doesn't exist yet, create it

@@ -12,7 +12,7 @@
 */
 class VoicePlaybackManager : public SingletonBase<VoicePlaybackManager> {
 public:
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     Result<> playFrameStreamed(int playerId, const EncodedAudioFrame& frame);
 #endif
     void playRawDataStreamed(int playerId, const float* pcm, size_t samples);
@@ -35,7 +35,7 @@ public:
     void forEachStream(std::function<void(int, AudioStream&)> func);
 
 private:
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     std::unordered_map<int, std::unique_ptr<AudioStream>> streams;
 #endif
 };

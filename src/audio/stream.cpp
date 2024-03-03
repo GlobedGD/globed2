@@ -1,6 +1,6 @@
 #include "stream.hpp"
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 #include "manager.hpp"
 #include <util/misc.hpp>

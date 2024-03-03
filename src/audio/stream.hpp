@@ -2,7 +2,7 @@
 #include <defs/platform.hpp>
 #include <defs/minimal_geode.hpp>
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 #include "frame.hpp"
 #include "sample_queue.hpp"

@@ -85,33 +85,32 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         m_fields->configuredTps = nm.connectedTps;
     }
 
-#if GLOBED_VOICE_SUPPORT
-    // set the audio device
-    auto& vm = GlobedAudioManager::get();
-    try {
-        vm.setActiveRecordingDevice(settings.communication.audioDevice);
-    } catch (const std::exception& e) {
-        // try default device, if we have no mic then just do nothing
-        settings.save();
+#ifdef GLOBED_VOICE_SUPPORT
+    if (settings.communication.voiceEnabled) {
+        auto& vm = GlobedAudioManager::get();
+# ifdef GLOBED_VOICE_CAN_TALK
+        // set the audio device
         try {
-            vm.setActiveRecordingDevice(0);
-        } catch (const std::exception& _e) {
-            settings.communication.audioDevice = -1;
+            vm.setActiveRecordingDevice(settings.communication.audioDevice);
+        } catch (const std::exception& e) {
+            // try default device, if we have no mic then just do nothing
+            settings.save();
+            try {
+                vm.setActiveRecordingDevice(0);
+            } catch (const std::exception& _e) {
+                settings.communication.audioDevice = -1;
+            }
+
+            settings.communication.audioDevice = 0;
         }
 
-        settings.communication.audioDevice = 0;
-    }
+        // set the record buffer size
+        vm.setRecordBufferCapacity(settings.communication.lowerAudioLatency ? EncodedAudioFrame::LIMIT_LOW_LATENCY : EncodedAudioFrame::LIMIT_REGULAR);
 
-    // set the record buffer size
-    vm.setRecordBufferCapacity(settings.communication.lowerAudioLatency ? EncodedAudioFrame::LIMIT_LOW_LATENCY : EncodedAudioFrame::LIMIT_REGULAR);
-
-    // start passive voice recording
-    // TODO fix it on android and mac
-    if (settings.communication.voiceEnabled) {
-# ifdef GEODE_IS_WINDOWS
+        // start passive voice recording
         auto& vrm = VoiceRecordingManager::get();
         vrm.startRecording();
-# endif // GEODE_IS_WINDOWS
+# endif // GLOBED_VOICE_CAN_TALK
 
         if (settings.levelUi.voiceOverlay) {
             m_fields->voiceOverlay = Build<GlobedVoiceOverlay>::create()
@@ -210,7 +209,7 @@ void GlobedPlayLayer::onQuit() {
     // send LevelLeavePacket
     nm.send(LevelLeavePacket::create());
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     // stop voice recording and playback
     GlobedAudioManager::get().haltRecording();
     VoicePlaybackManager::get().stopAllStreams();
@@ -252,7 +251,7 @@ void GlobedPlayLayer::setupPacketListeners() {
     });
 
     nm.addListener<VoiceBroadcastPacket>([this](std::shared_ptr<VoiceBroadcastPacket> packet) {
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
         // if deafened or voice is disabled, do nothing
         auto& settings = GlobedSettings::get();
 
@@ -303,7 +302,7 @@ void GlobedPlayLayer::levelComplete() {
 }
 
 void GlobedPlayLayer::setupCustomKeybinds() {
-#if GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
+#if GLOBED_HAS_KEYBINDS && defined(GLOBED_VOICE_SUPPORT)
     // the only keybinds used are for voice chat, so if voice is disabled, do nothing
 
     auto& settings = GlobedSettings::get();
@@ -333,11 +332,11 @@ void GlobedPlayLayer::setupCustomKeybinds() {
                 GlobedAudioManager::get().pausePassiveRecording();
                 if (settings.communication.deafenNotification)
                     Notification::create("Deafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-on.png"_spr), 0.2f)->show();
-                
+
             } else {
                 //before the notification would only show up if you had voice proximity off in a platformer, this fixes that
                 if (settings.communication.deafenNotification)
-                    Notification::create("Undeafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-off.png"_spr), 0.2f)->show(); 
+                    Notification::create("Undeafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-off.png"_spr), 0.2f)->show();
                 if (!this->m_fields->isVoiceProximity) {
                     vpm.setVolumeAll(settings.communication.voiceVolume);
                 }

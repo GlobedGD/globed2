@@ -1,6 +1,6 @@
 #include "frame.hpp"
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 using namespace util::data;
 

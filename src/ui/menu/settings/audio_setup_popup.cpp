@@ -1,6 +1,6 @@
 #include "audio_setup_popup.hpp"
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 #include "audio_device_cell.hpp"
 #include <audio/manager.hpp>

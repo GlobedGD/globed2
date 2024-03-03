@@ -95,7 +95,7 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
 }
 
 void GlobedUserCell::updateVisualizer(float dt) {
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     if (audioVisualizer) {
         auto& vpm = VoicePlaybackManager::get();
 
@@ -216,7 +216,7 @@ void GlobedUserCell::makeButtons() {
     if (accountData.accountId != GJAccountManager::get()->m_accountID) {
         // audio visualizer
         Build<GlobedAudioVisualizer>::create()
-#if !GLOBED_VOICE_SUPPORT
+#ifndef GLOBED_VOICE_SUPPORT
             .visible(false)
 #endif // GLOBED_VOICE_SUPPORT
             .parent(buttonsWrapper)

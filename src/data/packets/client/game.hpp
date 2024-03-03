@@ -78,7 +78,7 @@ class PlayerMetadataPacket : public Packet {
     PlayerMetadata data;
 };
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 
 #include <audio/frame.hpp>
 

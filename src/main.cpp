@@ -19,7 +19,7 @@ void setupErrorCheckNode();
 void setupCustomKeybinds();
 void printDebugInfo();
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
 static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAGS flags, void* dd) {
     log::debug("fmod system init hooked, changing to {} channels", MAX_AUDIO_CHANNELS);
     system->init(MAX_AUDIO_CHANNELS, flags, dd);
@@ -27,7 +27,7 @@ static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAG
 #endif // GLOBED_VOICE_SUPPORT
 
 $on_mod(Loaded) {
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     (void) Mod::get()->hook(
         reinterpret_cast<void*>(
             geode::addresser::getNonVirtual(
@@ -44,7 +44,7 @@ $on_mod(Loaded) {
     setupErrorCheckNode();
     setupCustomKeybinds();
 
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     GlobedAudioManager::get().preInitialize();
 #endif
 
@@ -101,7 +101,7 @@ void printDebugInfo() {
     log::warn("=== Globed {} has been loaded in debug mode ===", version.starts_with('v') ? version : ("v" + version));
     log::info("Platform: {} ({}-endian)", GLOBED_PLATFORM_STRING, GLOBED_LITTLE_ENDIAN ? "little" : "big");
     log::info("FMOD linkage: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
     log::info("Voice chat support: true (opus version: {})", GlobedAudioManager::getOpusVersion());
 #else
     log::info("Voice chat support: false");

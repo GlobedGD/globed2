@@ -132,7 +132,7 @@ void GlobedSettingCell::onSliderChanged(cocos2d::CCObject*) {
 
 void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
     if (settingType == Type::AudioDevice) {
-#if GLOBED_VOICE_SUPPORT
+#ifdef GLOBED_VOICE_SUPPORT
         // check for permission
         bool perm = permission::getPermissionStatus(Permission::RecordAudio);
 
