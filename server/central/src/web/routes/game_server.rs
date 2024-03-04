@@ -6,7 +6,7 @@ use globed_shared::{
     GameServerBootData, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC,
 };
 
-use rocket::{get, post, State};
+use rocket::{get, post, serde::json::Json, State};
 
 use crate::{config::UserlistMode, db::GlobedDb, state::ServerState, web::*};
 
@@ -48,6 +48,23 @@ pub async fn boot(
     Ok(bb.into_vec())
 }
 
+async fn _get_user(database: &GlobedDb, user: &str) -> WebResult<UserEntry> {
+    Ok(if let Ok(account_id) = user.parse::<i32>() {
+        database
+            .get_user(account_id)
+            .await?
+            .unwrap_or_else(|| UserEntry::new(account_id))
+    } else {
+        let user = database.get_user_by_name(user).await?;
+
+        if let Some(user) = user {
+            user
+        } else {
+            bad_request!("failed to find the user by name");
+        }
+    })
+}
+
 #[get("/gs/user/<user>")]
 pub async fn get_user(
     state: &State<ServerState>,
@@ -62,25 +79,10 @@ pub async fn get_user(
         unauthorized!("invalid gameserver credentials");
     }
 
-    let user = if let Ok(account_id) = user.parse::<i32>() {
-        database
-            .get_user(account_id)
-            .await?
-            .unwrap_or_else(|| UserEntry::new(account_id))
-    } else {
-        let user = database.get_user_by_name(user).await?;
-
-        if let Some(user) = user {
-            user
-        } else {
-            bad_request!("failed to find the user by name");
-        }
-    };
-
-    Ok(CheckedEncodableResponder::new(user))
+    Ok(CheckedEncodableResponder::new(_get_user(database, user).await?))
 }
 
-#[post("/gs/user/update?", data = "<userdata>")]
+#[post("/gs/user/update", data = "<userdata>")]
 pub async fn update_user(
     state: &State<ServerState>,
     password: GameServerPasswordGuard,
@@ -94,6 +96,43 @@ pub async fn update_user(
     }
 
     database.update_user(userdata.0.account_id, &userdata.0).await?;
+
+    Ok(())
+}
+
+/* /gsp/ apis are the same except they use JSON instead of binary encoding */
+
+#[get("/gsp/user/<user>")]
+pub async fn p_get_user(
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
+    database: &GlobedDb,
+    user: &str,
+    _user_agent: GameServerUserAgentGuard<'_>,
+) -> WebResult<Json<UserEntry>> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    Ok(Json(_get_user(database, user).await?))
+}
+
+#[post("/gsp/user/update", data = "<userdata>")]
+pub async fn p_update_user(
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
+    database: &GlobedDb,
+    userdata: Json<UserEntry>,
+) -> WebResult<()> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    database.update_user(userdata.0.account_id, &userdata).await?;
 
     Ok(())
 }

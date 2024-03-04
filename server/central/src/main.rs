@@ -17,6 +17,7 @@ use std::{
 use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
 use config::ServerConfig;
 use db::GlobedDb;
+use game_pinger::GameServerPinger;
 use globed_shared::{
     get_log_level,
     logger::{error, info, log, warn, Logger},
@@ -29,6 +30,7 @@ use tokio::io::AsyncWriteExt;
 
 pub mod config;
 pub mod db;
+pub mod game_pinger;
 pub mod ip_blocker;
 pub mod state;
 pub mod verifier;
@@ -104,7 +106,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let state_skey = config.secret_key.clone();
     let state_skey2 = config.secret_key2.clone();
 
-    let state = ServerState::new(ServerStateData::new(config_path.clone(), config, &state_skey, &state_skey2));
+    let pinger = GameServerPinger::new(&config.game_servers).await;
+    let ssd = ServerStateData::new(config_path.clone(), config, &state_skey, &state_skey2);
+    let state = ServerState::new(ssd, pinger);
 
     // config file watcher
 
@@ -141,6 +145,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     tokio::spawn(async move {
         av_state2.verifier.run_deleter().await;
+    });
+
+    // woo
+    let pinger_state = state.inner.clone();
+    tokio::spawn(async move {
+        pinger_state.pinger.run_pinger().await;
     });
 
     // start up rocket

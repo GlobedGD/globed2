@@ -5,7 +5,10 @@ use std::{
     time::Duration,
 };
 
-use esp::{size_of_types, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, FastByteBuffer, StaticSize};
+use esp::{
+    size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize,
+    StaticSize,
+};
 use globed_shared::{
     reqwest::{self, StatusCode},
     GameServerBootData, SyncMutex, TokenIssuer, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC, SERVER_MAGIC_LEN,
@@ -194,13 +197,12 @@ impl CentralBridge {
     }
 
     pub async fn update_user_data(&self, user: &UserEntry) -> Result<()> {
-        let mut rawbuf = [0u8; UserEntry::ENCODED_SIZE + size_of_types!(u32)];
-        let mut buffer = FastByteBuffer::new(&mut rawbuf);
+        let mut buffer = ByteBuffer::with_capacity(user.encoded_size() + size_of_types!(u32));
 
         buffer.write_value(user);
         buffer.append_self_checksum();
 
-        let body = buffer.to_vec();
+        let body = buffer.into_vec();
 
         let response = self
             .http_client
@@ -239,7 +241,7 @@ impl CentralBridge {
         }
 
         let opts = WebhookOpts {
-            username: "in-game actions",
+            username: None,
             content: None,
             embeds,
         };

@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use globed_shared::{anyhow::anyhow, crypto_box::ChaChaBox, logger::*, PROTOCOL_VERSION};
+use globed_shared::{crypto_box::ChaChaBox, logger::*, PROTOCOL_VERSION};
 
 use crate::server_thread::{GameServerThread, PacketHandlingError};
 
@@ -126,8 +126,7 @@ impl GameServerThread {
                         message: &format!(
                             "Banned from the server: {}",
                             user.violation_reason
-                                .as_ref()
-                                .map_or_else(|| "no reason given", |str| str.try_to_str())
+                                .map_or_else(|| "no reason given".to_owned(), |x| x.clone())
                         ),
                     })
                     .await?;
@@ -181,10 +180,7 @@ impl GameServerThread {
             let name_color = self.user_entry.lock().name_color.clone();
             let sud = if let Some(name_color) = name_color {
                 Some(SpecialUserData {
-                    name_color: name_color
-                        .to_str()
-                        .map_err(|e| anyhow!("failed to parse color: {e}"))?
-                        .parse()?,
+                    name_color: name_color.parse()?,
                 })
             } else {
                 None

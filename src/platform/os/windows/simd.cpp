@@ -184,7 +184,7 @@ static float GLOBED_FEATURE_AVX512DQ pcmVolumeAVX512(const float* pcm, size_t sa
 }
 
 float util::simd::calcPcmVolume(const float *pcm, size_t samples) {
-    auto& features = getFeatures();
+    const auto& features = getFeatures();
 
     if (features.avx512dq) {
         return pcmVolumeAVX512(pcm, samples);

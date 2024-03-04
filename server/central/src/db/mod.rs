@@ -5,7 +5,7 @@ use rocket::{
 };
 use rocket_db_pools::Database;
 
-mod dbimpl;
+pub mod dbimpl;
 
 pub async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
     match GlobedDb::fetch(&rocket) {

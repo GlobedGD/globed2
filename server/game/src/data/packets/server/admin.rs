@@ -14,7 +14,7 @@ pub struct AdminErrorPacket<'a> {
     pub message: &'a str,
 }
 
-#[derive(Packet, Encodable, StaticSize, DynamicSize)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 29002, tcp = true, encrypted = true)]
 pub struct AdminUserDataPacket {
     pub entry: UserEntry,

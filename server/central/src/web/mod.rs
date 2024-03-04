@@ -17,6 +17,7 @@ pub mod routes {
     pub mod auth;
     pub mod game_server;
     pub mod meta;
+    pub mod public;
 
     pub use super::*;
     use rocket::{routes, Route};
@@ -29,9 +30,12 @@ pub mod routes {
             game_server::boot,
             game_server::get_user,
             game_server::update_user,
+            game_server::p_get_user,
+            game_server::p_update_user,
             auth::totp_login,
             auth::challenge_start,
-            auth::challenge_finish
+            auth::challenge_finish,
+            public::player_counts,
         ]
     }
 

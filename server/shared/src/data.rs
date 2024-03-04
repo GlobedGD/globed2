@@ -1,4 +1,5 @@
 use super::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Encodable, Decodable, Clone)]
 pub struct GameServerBootData {
@@ -36,17 +37,17 @@ impl Default for GameServerBootData {
     }
 }
 
-#[derive(Encodable, Decodable, StaticSize, DynamicSize, Clone, Default)]
+#[derive(Encodable, Decodable, Serialize, Deserialize, DynamicSize, Clone, Default)]
 pub struct UserEntry {
     pub account_id: i32,
-    pub user_name: Option<FastString<MAX_NAME_SIZE>>,
-    pub name_color: Option<FastString<7>>,
+    pub user_name: Option<String>,
+    pub name_color: Option<String>,
     pub user_role: i32,
     pub is_banned: bool,
     pub is_muted: bool,
     pub is_whitelisted: bool,
-    pub admin_password: Option<FastString<ADMIN_KEY_LENGTH>>,
-    pub violation_reason: Option<FastString<VIOLATION_REASON_LENGTH>>,
+    pub admin_password: Option<String>,
+    pub violation_reason: Option<String>,
     pub violation_expiry: Option<i64>, // seconds since unix epoch
 }
 

@@ -62,7 +62,7 @@ impl GameServerThread {
         if admin_password.as_ref().is_some_and(|pwd| !pwd.is_empty()) {
             let password = admin_password.unwrap();
 
-            if packet.key.constant_time_compare(&password) {
+            if packet.key.constant_time_compare(&password.try_into()?) {
                 info!(
                     "[{} ({}) @ {}] just logged into the admin panel",
                     self.account_data.lock().name,
@@ -406,7 +406,7 @@ impl GameServerThread {
             packet.entry.admin_password = None;
         }
 
-        self.send_packet_static(&packet).await
+        self.send_packet_dynamic(&packet).await
     });
 
     gs_handler!(self, handle_admin_update_user, AdminUpdateUserPacket, packet, {
@@ -519,10 +519,7 @@ impl GameServerThread {
             new_user_entry.violation_reason = None;
         }
 
-        let target_user_name = new_user_entry
-            .user_name
-            .as_ref()
-            .map_or_else(|| "<unknown>".to_owned(), FastString::try_to_string);
+        let target_user_name = new_user_entry.user_name.clone().unwrap_or_else(|| "<unknown>".to_owned());
 
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
@@ -582,7 +579,7 @@ impl GameServerThread {
                             target_id: new_user_entry.account_id,
                             new_state: new_user_entry.is_banned,
                             expiry: new_user_entry.violation_expiry,
-                            reason: new_user_entry.violation_reason.as_ref().map(FastString::try_to_string),
+                            reason: new_user_entry.violation_reason.clone(),
                         };
 
                         messages.push(WebhookMessage::UserBanChanged(bmsc));
@@ -593,7 +590,7 @@ impl GameServerThread {
                             target_id: new_user_entry.account_id,
                             new_state: new_user_entry.is_muted,
                             expiry: new_user_entry.violation_expiry,
-                            reason: new_user_entry.violation_reason.as_ref().map(FastString::try_to_string),
+                            reason: new_user_entry.violation_reason.clone(),
                         };
 
                         messages.push(WebhookMessage::UserMuteChanged(bmsc));
@@ -604,7 +601,7 @@ impl GameServerThread {
                             new_user_entry.is_banned,
                             new_user_entry.is_muted,
                             new_user_entry.violation_expiry,
-                            new_user_entry.violation_reason.as_ref().map(FastString::try_to_string),
+                            new_user_entry.violation_reason.clone(),
                         ));
                     }
 
@@ -621,8 +618,8 @@ impl GameServerThread {
                         messages.push(WebhookMessage::UserNameColorChanged(
                             own_name.clone(),
                             target_user_name.clone(),
-                            user_entry.name_color.as_ref().map(FastString::try_to_string),
-                            new_user_entry.name_color.as_ref().map(FastString::try_to_string),
+                            user_entry.name_color.clone(),
+                            new_user_entry.name_color.clone(),
                         ));
                     }
 

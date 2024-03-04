@@ -63,7 +63,8 @@ pub struct WebhookEmbed<'a> {
 
 #[derive(Serialize)]
 pub struct WebhookOpts<'a> {
-    pub username: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub username: Option<&'a str>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<&'a str>,
@@ -86,14 +87,7 @@ pub fn role_to_string(role: i32) -> String {
 #[allow(clippy::too_many_lines)]
 pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
     match message {
-        WebhookMessage::AuthFail(user_name) => Some(WebhookEmbed {
-            title: "Failed login attempt".to_owned(),
-            color: hex_color_to_decimal("#fc6b03"),
-            author: None,
-            description: Some(format!("{user_name} just failed to login to the admin panel.")),
-            footer: None,
-            fields: vec![],
-        }),
+        WebhookMessage::AuthFail(_user_name) => None,
         WebhookMessage::NoticeToEveryone(username, player_count, message) => Some(WebhookEmbed {
             title: format!("Global notice (for {player_count} people)"),
             color: hex_color_to_decimal("#4dace8"),

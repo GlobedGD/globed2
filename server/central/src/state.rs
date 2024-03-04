@@ -20,6 +20,7 @@ use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use crate::{
     config::{ServerConfig, UserlistMode},
     db::GlobedDb,
+    game_pinger::GameServerPinger,
     verifier::AccountVerifier,
 };
 use blake2::{Blake2b, Digest};
@@ -93,7 +94,7 @@ impl ServerStateData {
         let user = db.get_user(account_id).await?;
         if let Some(user) = user {
             if user.is_banned {
-                Ok(user.violation_reason.map(|x| x.try_to_string()))
+                Ok(user.violation_reason.clone())
             } else {
                 Ok(None)
             }
@@ -110,19 +111,23 @@ pub struct InnerServerState {
     pub data: RwLock<ServerStateData>,
     pub maintenance: AtomicBool,
     pub verifier: AccountVerifier,
+    pub pinger: GameServerPinger,
 }
 
 impl InnerServerState {
-    pub fn new(ssd: ServerStateData, maintenance: bool) -> Self {
+    pub fn new(ssd: ServerStateData, pinger: GameServerPinger, maintenance: bool) -> Self {
         let gd_api_account = ssd.config.gd_api_account;
         let gd_api_gjp = ssd.config.gd_api_gjp.clone();
         let base_api_url = ssd.config.gd_api_url.clone();
         let use_gd_api = ssd.config.use_gd_api;
 
+        let verifier = AccountVerifier::new(gd_api_account, gd_api_gjp, base_api_url, use_gd_api);
+
         Self {
             data: RwLock::new(ssd),
             maintenance: AtomicBool::new(maintenance),
-            verifier: AccountVerifier::new(gd_api_account, gd_api_gjp, base_api_url, use_gd_api),
+            verifier,
+            pinger,
         }
     }
 
@@ -141,9 +146,9 @@ pub struct ServerState {
 }
 
 impl ServerState {
-    pub fn new(ssd: ServerStateData) -> Self {
+    pub fn new(ssd: ServerStateData, pinger: GameServerPinger) -> Self {
         let maintenance = ssd.config.maintenance;
-        let inner = InnerServerState::new(ssd, maintenance);
+        let inner = InnerServerState::new(ssd, pinger, maintenance);
         Self { inner: Arc::new(inner) }
     }
 

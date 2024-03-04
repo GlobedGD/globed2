@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "cocos.hpp"
 #include "collections.hpp"
 #include "crypto.hpp"
 #include "data.hpp"

@@ -18,6 +18,7 @@ serde_json = "1.0.114"
 tokio = { version = "1.36.0", features = ["full"] }
 totp-rs = "5.5.1"
 json_comments = "0.2.2"
-rocket = "0.5.0"
+rocket = { version = "0.5.0", features = ["json"] }
 rocket_db_pools = { version = "0.1.0", features = ["sqlx_sqlite"] }
 sqlx = { version = "0.7.3", features = ["migrate"] }
+rand = "0.8.5"
