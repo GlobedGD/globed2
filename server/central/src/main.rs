@@ -159,6 +159,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .register("/", catchers![web::not_found, web::query_string])
         .mount(mnt_point, web::routes::build_router())
         .manage(state)
+        .manage(
+            if std::env::var("GLOBED_DISABLE_CORS").unwrap_or_else(|_| "0".to_owned()) == "0" {
+                // keep cors enabled
+                rocket_cors::CorsOptions::default()
+                    .allowed_origins(rocket_cors::AllowedOrigins::all())
+                    .allowed_methods(vec![].into_iter().collect())
+                    .allow_credentials(false)
+                    .to_cors()?
+            } else {
+                // disable cors for GET methods
+                warn!("disabling CORS for get requests");
+                rocket_cors::CorsOptions::default()
+                    .allowed_origins(rocket_cors::AllowedOrigins::all())
+                    .allowed_methods(vec![rocket::http::Method::Get].into_iter().map(From::from).collect())
+                    .allow_credentials(false)
+                    .to_cors()?
+            },
+        )
         .attach(GlobedDb::init())
         .attach(db::migration_fairing());
 

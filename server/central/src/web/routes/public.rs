@@ -15,7 +15,12 @@ pub struct PlayerCounts {
 }
 
 #[get("/public/players?<period>")]
-pub async fn player_counts(state: &State<ServerState>, db: &GlobedDb, period: &str) -> WebResult<Json<PlayerCounts>> {
+pub async fn player_counts(
+    state: &State<ServerState>,
+    db: &GlobedDb,
+    period: &str,
+    cors: rocket_cors::Guard<'_>,
+) -> WebResult<rocket_cors::Responder<Json<PlayerCounts>>> {
     // first see if there's anything yet to be inserted in the db
     let history = state.inner.pinger.get_player_count_history();
     if !history.is_empty() {
@@ -32,7 +37,7 @@ pub async fn player_counts(state: &State<ServerState>, db: &GlobedDb, period: &s
 
     let data = db.fetch_player_count_history(SystemTime::now() - period).await?;
 
-    Ok(if data.len() <= 500 {
+    let data = if data.len() <= 500 {
         Json(PlayerCounts { data })
     } else {
         // we "compress" it into up to individual 400 data points
@@ -41,5 +46,7 @@ pub async fn player_counts(state: &State<ServerState>, db: &GlobedDb, period: &s
         let data = data.chunks(ratio).flat_map(|chunk| chunk.iter().take(1).cloned()).collect();
 
         Json(PlayerCounts { data })
-    })
+    };
+
+    Ok(cors.responder(data))
 }

@@ -5,7 +5,7 @@ pub mod game;
 pub mod gd;
 pub mod misc;
 
-use std::sync::atomic::{AtomicI32, AtomicI64};
+use std::sync::atomic::AtomicI64;
 
 pub use audio_frame::*;
 pub use cocos::*;
