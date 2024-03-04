@@ -170,6 +170,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
             .intMax = 240,
         });
         MAKE_SETTING(globed, preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
+        MAKE_SETTING(globed, increaseLevelList, "More Levels Per Page", "Increases the levels per page in the server level list from 30 to 100.");
         MAKE_SETTING_TYPE(globed, fragmentationLimit, Type::PacketFragmentation, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.");
     }
 

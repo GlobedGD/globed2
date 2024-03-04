@@ -1,12 +1,14 @@
 #pragma once
 #include <defs/all.hpp>
+#include <managers/settings.hpp>
 #include <data/types/misc.hpp>
 
 class GlobedLevelListLayer : public cocos2d::CCLayer, LevelManagerDelegate {
 public:
     static constexpr float LIST_WIDTH = 358.f;
     static constexpr float LIST_HEIGHT = 220.f;
-    static constexpr size_t LIST_PAGE_SIZE = 100; // levels on 1 page
+    static constexpr size_t INCREASED_LIST_PAGE_SIZE = 100;
+    static constexpr size_t LIST_PAGE_SIZE = 30;
 
     static GlobedLevelListLayer* create();
     ~GlobedLevelListLayer();

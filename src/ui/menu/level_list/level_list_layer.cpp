@@ -9,6 +9,8 @@
 
 using namespace geode::prelude;
 
+GlobedSettings& settings = GlobedSettings::get();
+
 bool GlobedLevelListLayer::init() {
     if (!CCLayer::init()) return false;
 
@@ -130,8 +132,10 @@ void GlobedLevelListLayer::reloadPage() {
         return;
     }
 
-    size_t startIdx = currentPage * LIST_PAGE_SIZE;
-    size_t endIdx = std::min((currentPage + 1) * LIST_PAGE_SIZE, sortedLevelIds.size());
+    size_t pageSize = settings.globed.increaseLevelList ? INCREASED_LIST_PAGE_SIZE : LIST_PAGE_SIZE;
+
+    size_t startIdx = currentPage * pageSize;
+    size_t endIdx = std::min((currentPage + 1) * pageSize, sortedLevelIds.size());
 
     // now join them to a comma separated string
     std::ostringstream oss;
@@ -236,7 +240,9 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
         btnPagePrev->setVisible(true);
     }
 
-    if (currentPage < (sortedLevelIds.size() / LIST_PAGE_SIZE)) {
+    size_t pageSize = settings.globed.increaseLevelList ? INCREASED_LIST_PAGE_SIZE : LIST_PAGE_SIZE;
+
+    if (currentPage < (sortedLevelIds.size() / pageSize)) {
         btnPageNext->setVisible(true);
     }
 }

@@ -19,6 +19,7 @@ public:
         GSETTING(bool, autoconnect, true);
         GSETTING(int, tpsCap, 0);
         GSETTING(bool, preloadAssets, true);
+        GSETTING(bool, increaseLevelList, false);
         GSETTING(int, fragmentationLimit, 60000);
     };
 
