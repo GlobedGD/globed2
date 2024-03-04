@@ -40,7 +40,7 @@ bool GlobedUserListPopup::setup() {
         .intoMenuItem([this](auto) {
             createQuickPopup(
                 "Reporting",
-                "Someone <cr>breaking</c> <cl>Globed</c> rules?\n<cg>Join</c> the <cl>Globed</c> discord and <cr>report</c> them there!",
+                "Someone <cr>breaking</c> the <cl>Globed</c> rules?\n<cg>Join</c> the <cl>Globed</c> discord and <cr>report</c> them there!",
                 "Cancel",
                 "Join",
                 [this](auto, bool btn2) {
