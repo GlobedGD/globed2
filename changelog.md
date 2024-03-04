@@ -2,6 +2,7 @@
 
 * Fix being unable to join a room on some Android devices (due to room ID input being limited to 5 characters)
 * Fix the "application was in the background for too long" disconnect error sometimes appearing when it shouldn't
+* Fix portal gauntlet progress resetting
 * Fix some voice chat crashes on Android
 * Fix progressing in levels with start positions
 * Fix undeafen notification not showing up in platformers if you had proximity chat on

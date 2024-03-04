@@ -14,9 +14,6 @@
 
 using namespace geode::prelude;
 
-// TODO: remove in the future
-void removeFaultyGauntletLevels();
-
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
 
