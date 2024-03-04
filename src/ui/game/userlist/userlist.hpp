@@ -1,5 +1,6 @@
 #pragma once
 #include <defs/all.hpp>
+#include <Geode/utils/web.hpp>
 
 class GlobedUserListPopup : public geode::Popup<> {
 public:

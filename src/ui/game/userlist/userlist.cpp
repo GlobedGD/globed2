@@ -45,7 +45,7 @@ bool GlobedUserListPopup::setup() {
                 "Join",
                 [this](auto, bool btn2) {
                     if(btn2) {
-                        CCApplication::sharedApplication()->openURL("https://discord.gg/globed");
+                        geode::utils::web::openLinkInBrowser("https://discord.gg/d56q5Dkdm3");
                     }
                 }
             );
