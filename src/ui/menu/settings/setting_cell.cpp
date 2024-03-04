@@ -133,6 +133,12 @@ void GlobedSettingCell::onSliderChanged(cocos2d::CCObject*) {
 void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
     if (settingType == Type::AudioDevice) {
 #ifdef GLOBED_VOICE_SUPPORT
+# ifndef GLOBED_VOICE_CAN_TALK
+        // if we can't talk, show an error popup
+        FLAlertLayer::create("Error", "Sorry, but recording audio is currently <cr>not possible</c> on this platform.", "Ok")->show();
+        return;
+# endif // GLOBED_VOICE_CAN_TALK
+
         // check for permission
         bool perm = permission::getPermissionStatus(Permission::RecordAudio);
 
