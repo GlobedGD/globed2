@@ -1,3 +1,7 @@
+## v1.3.2
+
+* Fix rare crash when exiting a level
+
 ## v1.3.1
 
 * Fix being unable to join a room on some Android devices (due to room ID input being limited to 5 characters)
@@ -9,7 +13,7 @@
 * Remove voice chat hints on Mac and Android (since you can't really press V there)
 * Disable audio device setting on Mac and Android
 * Added a report button in the user list that redirects to the Globed Discord
-* Server level lists now show 30 levels by default, with a new option being added to increase it back to 100
+* Server level lists now show up to 30 levels by default, with a new option being added to increase it back to 100
 
 ## v1.3.0
 

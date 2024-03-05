@@ -218,6 +218,7 @@ void GlobedPlayLayer::onQuit() {
     // clean up the listeners
     nm.removeListener<PlayerProfilesPacket>(util::time::seconds(3));
     nm.removeListener<LevelDataPacket>(util::time::seconds(3));
+    nm.removeListener<LevelPlayerMetadataPacket>(util::time::seconds(3));
     nm.removeListener<VoiceBroadcastPacket>(util::time::seconds(3));
 }
 
