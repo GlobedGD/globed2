@@ -10,7 +10,7 @@ use globed_shared::{
     *,
 };
 
-const FLUSH_PERIOD: Duration = Duration::from_secs(3);
+const FLUSH_PERIOD: Duration = Duration::from_secs(4);
 const DELETER_PERIOD: Duration = Duration::from_mins(10);
 
 #[derive(Clone)]

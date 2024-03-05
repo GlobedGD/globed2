@@ -287,9 +287,9 @@ void GlobedMenuLayer::requestServerList() {
             }
             gsm.pendingChanges = true;
         })
-        .expect([this](std::string error) {
+        .expect([this](const std::string& error, int statusCode) {
             this->serverRequestHandle = std::nullopt;
-            ErrorQueues::get().error(fmt::format("Failed to fetch servers: <cy>{}</c>", error));
+            ErrorQueues::get().error(fmt::format("Failed to fetch servers (code {}): <cy>{}</c>", statusCode, error));
 
             auto& gsm = GameServerManager::get();
             gsm.clearCache();

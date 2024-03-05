@@ -1,6 +1,7 @@
 ## v1.3.2
 
 * Fix rare crash when exiting a level
+* Fix some crashes in the level browser on android
 
 ## v1.3.1
 
