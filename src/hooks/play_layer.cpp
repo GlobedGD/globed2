@@ -204,26 +204,7 @@ void GlobedPlayLayer::postInitActions(float) {
 
 void GlobedPlayLayer::onQuit() {
     PlayLayer::onQuit();
-
-    if (!m_fields->globedReady) return;
-
-    auto& nm = NetworkManager::get();
-    if (!nm.established()) return;
-
-    // send LevelLeavePacket
-    nm.send(LevelLeavePacket::create());
-
-#ifdef GLOBED_VOICE_SUPPORT
-    // stop voice recording and playback
-    GlobedAudioManager::get().haltRecording();
-    VoicePlaybackManager::get().stopAllStreams();
-#endif // GLOBED_VOICE_SUPPORT
-
-    // clean up the listeners
-    nm.removeListener<PlayerProfilesPacket>(util::time::seconds(3));
-    nm.removeListener<LevelDataPacket>(util::time::seconds(3));
-    nm.removeListener<LevelPlayerMetadataPacket>(util::time::seconds(3));
-    nm.removeListener<VoiceBroadcastPacket>(util::time::seconds(3));
+    this->onQuitActions();
 }
 
 void GlobedPlayLayer::setupPacketListeners() {
@@ -562,6 +543,31 @@ void GlobedPlayLayer::toggleSafeMode(bool enabled) {
 
 bool GlobedPlayLayer::isSafeMode() {
     return static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress;
+}
+
+void GlobedPlayLayer::onQuitActions() {
+    auto& nm = NetworkManager::get();
+
+    if (m_fields->globedReady) {
+        if (nm.established()) {
+            // send LevelLeavePacket
+            nm.send(LevelLeavePacket::create());
+        }
+
+#ifdef GLOBED_VOICE_SUPPORT
+        // stop voice recording and playback
+        GlobedAudioManager::get().haltRecording();
+        VoicePlaybackManager::get().stopAllStreams();
+#endif // GLOBED_VOICE_SUPPORT
+
+        log::debug("remove listeberes");
+
+        // clean up the listeners
+        nm.removeListener<PlayerProfilesPacket>(util::time::seconds(3));
+        nm.removeListener<LevelDataPacket>(util::time::seconds(3));
+        nm.removeListener<LevelPlayerMetadataPacket>(util::time::seconds(3));
+        nm.removeListener<VoiceBroadcastPacket>(util::time::seconds(3));
+    }
 }
 
 bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {

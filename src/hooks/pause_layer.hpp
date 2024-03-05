@@ -10,6 +10,11 @@ class $modify(GlobedPauseLayer, PauseLayer) {
     void customSetup();
 
     $override
+    void goEdit();
+
+    // callbacks
+
+    $override
     void onQuit(cocos2d::CCObject*);
 
     $override

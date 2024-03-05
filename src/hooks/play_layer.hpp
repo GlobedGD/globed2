@@ -108,6 +108,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     void toggleSafeMode(bool enabled);
     bool isSafeMode();
 
+    void onQuitActions();
+
     bool shouldLetMessageThrough(int playerId);
     void updateProximityVolume(int playerId);
 

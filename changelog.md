@@ -4,6 +4,8 @@
 * Fix some crashes in the level browser on android
 * Make the "outdated client" message more straightforward
 * Fix progressbar icons having wrong glow when the Colored Icon Kit mod is installed
+* Try to fix progressing in levels with startpos (again)
+* Try to fix crashes when using a Level Edit hack
 
 ## v1.3.1
 

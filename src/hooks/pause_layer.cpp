@@ -25,6 +25,16 @@ void GlobedPauseLayer::customSetup() {
         .parent(this);
 }
 
+void GlobedPauseLayer::goEdit() {
+    auto* pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    if (pl) {
+        // make sure we remove listeners and stuff
+        pl->onQuitActions();
+    }
+
+    PauseLayer::goEdit();
+}
+
 #define REPLACE(method) \
     void GlobedPauseLayer::method(CCObject* s) {\
         if (getChildOfType<GlobedUserListPopup>(this->getParent(), 0) == nullptr) { \
