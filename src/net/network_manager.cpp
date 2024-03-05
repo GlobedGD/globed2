@@ -1,5 +1,7 @@
 #include "network_manager.hpp"
 
+#include <Geode/ui/GeodeUI.hpp>
+
 #include <data/packets/all.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/account.hpp>
@@ -98,16 +100,22 @@ NetworkManager::NetworkManager() {
     });
 
     addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
-        std::string message;
         log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, PROTOCOL_VERSION);
 
         if (packet->serverProtocol < PROTOCOL_VERSION) {
-            message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
+            std::string message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
+            ErrorQueues::get().error(message);
         } else {
-            message = "Your Globed version is <cr>outdated</c>, please <cg>update</c> Globed in order to connect.";
+            Loader::get()->queueInMainThread([] {
+                std::string message = "Your Globed version is <cr>outdated</c>, please <cg>update</c> Globed in order to connect. If the update doesn't appear, <cy>restart your game</c>.";
+                geode::createQuickPopup("Globed Error", message, "Cancel", "Update", [](FLAlertLayer*, bool update) {
+                    if (!update) return;
+
+                    geode::openModsList();
+                });
+            });
         }
 
-        ErrorQueues::get().error(message);
         this->disconnect(true);
     });
 

@@ -2,6 +2,7 @@
 
 * Fix rare crash when exiting a level
 * Fix some crashes in the level browser on android
+* Make the "outdated client" message more straightforward
 
 ## v1.3.1
 
