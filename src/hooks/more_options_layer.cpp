@@ -5,13 +5,14 @@
 #include <ui/menu/admin/admin_login_popup.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
 #include <net/network_manager.hpp>
+#include <util/math.hpp>
 
 using namespace geode::prelude;
 
 bool HookedMoreOptionsLayer::init() {
     if (!MoreOptionsLayer::init()) return false;
 
-    Build<ButtonSprite>::create("admin", "goldFont.fnt", "GJ_button_04.png", 0.75f)
+    m_fields->adminBtn = Build<ButtonSprite>::create("admin", "goldFont.fnt", "GJ_button_04.png", 0.75f)
         .scale(0.8f)
         .intoMenuItem([this](auto) {
             if (NetworkManager::get().isAuthorizedAdmin()) {
@@ -23,18 +24,23 @@ bool HookedMoreOptionsLayer::init() {
         .pos(-35.f, -110.f)
         .parent(m_buttonMenu)
         .visible(false)
-        .store(m_fields->adminBtn);
+        .collect();
 
     return true;
 }
 
-void HookedMoreOptionsLayer::goToPage(int x) {
-    log::debug("hii button: {}", m_fields->adminBtn);
-    if (m_fields->adminBtn) {
-        m_fields->adminBtn->setVisible(x == 4);
-    }
+void HookedMoreOptionsLayer::goToPage(int page) {
+    MoreOptionsLayer::goToPage(page);
 
-    MoreOptionsLayer::goToPage(x);
+    auto* bumpscosity = Loader::get()->getLoadedMod("colon.bumpscosity");
+    if (!bumpscosity) return;
+
+    float value = bumpscosity->getSavedValue<float>("bumpscosity");
+
+    if (m_fields->adminBtn) {
+        bool isCorrect = value >= 0.45f && value < 0.47f;
+        m_fields->adminBtn->setVisible(isCorrect && page == 4);
+    }
 }
 
 #endif // GEODE_IS_ANDROID
