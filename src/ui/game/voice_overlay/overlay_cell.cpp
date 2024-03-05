@@ -53,6 +53,8 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
 
     if (data.icons.glowColor != -1) {
         playerIcon->setGlowOutline(gm->colorForIdx(data.icons.glowColor));
+    } else {
+        playerIcon->disableGlowOutline();
     }
 
     const float heightMult = 1.3f;

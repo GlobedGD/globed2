@@ -32,6 +32,8 @@ void PlayerProgressArrow::updateIcons(const PlayerIconData& data) {
 
     if (data.glowColor != -1) {
         playerIcon->setGlowOutline(gm->colorForIdx(data.glowColor));
+    } else {
+        playerIcon->disableGlowOutline();
     }
 }
 

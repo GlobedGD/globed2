@@ -3,6 +3,7 @@
 * Fix rare crash when exiting a level
 * Fix some crashes in the level browser on android
 * Make the "outdated client" message more straightforward
+* Fix progressbar icons having wrong glow when the Colored Icon Kit mod is installed
 
 ## v1.3.1
 
