@@ -37,8 +37,6 @@ float adjustLerpTimeDelta(float dt) {
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
-    m_fields->initialTestMode = m_isTestMode;
-
     GlobedSettings& settings = GlobedSettings::get();
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -160,16 +158,16 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         self->scheduleOnce(schedule_selector(GlobedPlayLayer::postInitActions), 0.25f);
     });
 
-    m_fields->progressBarWrapper = Build<CCNode>::create()
+    Build<CCNode>::create()
         .id("progress-bar-wrapper"_spr)
         .visible(settings.levelUi.progressIndicators)
         .zOrder(-1)
-        .collect();
+        .store(m_fields->progressBarWrapper);
 
-    m_fields->selfProgressIcon = Build<PlayerProgressIcon>::create()
+    Build<PlayerProgressIcon>::create()
         .parent(m_fields->progressBarWrapper)
         .id("self-player-progress"_spr)
-        .collect();
+        .store(m_fields->selfProgressIcon);
 
     m_fields->selfProgressIcon->updateIcons(ProfileCacheManager::get().getOwnData());
     m_fields->selfProgressIcon->setForceOnTop(true);
@@ -188,6 +186,12 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     flm.maybeLoad();
 
     return true;
+}
+
+void GlobedPlayLayer::setupHasCompleted() {
+    PlayLayer::setupHasCompleted();
+    m_fields->initialTestMode = m_isTestMode;
+    m_fields->setupWasCompleted = true;
 }
 
 void GlobedPlayLayer::postInitActions(float) {
@@ -286,7 +290,7 @@ void GlobedPlayLayer::fullReset() {
 void GlobedPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
     // this is also called upon init, so bail out if we are too early
-    if (m_fields->timeCounter < 0.25f) return;
+    if (!m_fields->setupWasCompleted) return;
 
     if (!m_level->isPlatformer()) {
         // turn off safe mode in non-platformer levels (as this counts as a full reset)
@@ -300,7 +304,6 @@ void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, boo
 }
 
 void GlobedPlayLayer::levelComplete() {
-    log::debug("level complete, should stop: {}", this->isSafeMode());
     if (!this->isSafeMode()) PlayLayer::levelComplete();
     else GlobedPlayLayer::onQuit();
 }

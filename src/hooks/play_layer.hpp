@@ -18,6 +18,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // setup stuff
     bool globedReady = false;
     bool initialTestMode = false;
+    bool setupWasCompleted = false;
     uint32_t configuredTps = 0;
 
     // in game stuff
@@ -50,6 +51,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     $override
     bool init(GJGameLevel* level, bool p1, bool p2);
+
+    $override
+    void setupHasCompleted();
 
     $override
     void onQuit();
