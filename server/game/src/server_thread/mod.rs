@@ -152,6 +152,13 @@ impl GameServerThread {
 
                 timeout_res = tokio::time::timeout(Duration::from_secs(90), self.poll_for_tcp_data()) => match timeout_res {
                     Ok(Ok(message_len)) => {
+                        // try to stop silly HTTP request attempts
+                        // 0x47455420 is the ascii string "GET " and 0x504f5354 is "POST"
+                        if message_len == 0x47_45_54_20 || message_len == 0x50_4f_53_54 {
+                            warn!("received an unexpected (potential) HTTP request, disconnecting");
+                            break;
+                        }
+
                         match self.recv_and_handle(message_len).await {
                             Ok(()) => {}
                             Err(e) => self.print_error(&e),
@@ -167,7 +174,7 @@ impl GameServerThread {
                         break;
                     }
                     Err(_) => {
-                        debug!("tcp connection not responding for 90 seconds, terminating");
+                        debug!("tcp connection not responding for 90 seconds, disconnecting");
                         break;
                     }
                 }

@@ -68,7 +68,11 @@ impl GameServer {
     }
 
     pub async fn run(&'static self) -> ! {
-        info!("Server launched on {}", self.tcp_socket.local_addr().unwrap());
+        info!(
+            "Server launched on {} (version: {})",
+            self.tcp_socket.local_addr().unwrap(),
+            env!("CARGO_PKG_VERSION")
+        );
 
         // spawn central conf refresher (runs every 5 minutes)
         if !self.standalone {

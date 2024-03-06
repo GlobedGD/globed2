@@ -78,7 +78,8 @@ impl GameServerThread {
 
         if packet.account_id <= 0 || packet.user_id <= 0 {
             self.terminate();
-            self.send_packet_dynamic(&LoginFailedPacket { message: "Invalid account ID was sent. Please note that you must be signed into a Geometry Dash account before connecting." }).await?;
+            let message = format!("Invalid account/user ID was sent ({} and {}). Please note that you must be signed into a Geometry Dash account before connecting.", packet.account_id, packet.user_id);
+            self.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
             return Ok(());
         }
 

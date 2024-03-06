@@ -17,7 +17,12 @@ namespace util::net {
     }
 
     std::string webUserAgent() {
-        return fmt::format("globed-geode-xd/{}; {}", Mod::get()->getVersion().toString(), GLOBED_PLATFORM_STRING);
+        return fmt::format(
+            "globed-geode-xd/{}; {}; Loader {}",
+            Mod::get()->getVersion().toString(),
+            GLOBED_PLATFORM_STRING,
+            Loader::get()->getVersion().toString()
+        );
     }
 
     Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort) {
