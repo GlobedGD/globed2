@@ -49,6 +49,12 @@ impl DynamicSize for FiniteF32 {
     }
 }
 
+impl Display for FiniteF32 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Copy, Clone, Default, Debug)]
 pub struct FiniteF64(f64);
 
@@ -95,5 +101,11 @@ impl StaticSize for FiniteF64 {
 impl DynamicSize for FiniteF64 {
     fn encoded_size(&self) -> usize {
         Self::ENCODED_SIZE
+    }
+}
+
+impl Display for FiniteF64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
