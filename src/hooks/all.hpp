@@ -4,6 +4,7 @@
 #include "flalertlayer.hpp"
 #include "game_manager.hpp"
 #include "gjgamelevel.hpp"
+#include "level_area_inner_layer.hpp"
 #include "level_cell.hpp"
 #include "level_browser_layer.hpp"
 #include "level_select_layer.hpp"

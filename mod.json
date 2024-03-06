@@ -17,6 +17,8 @@
                 "resources/role-helper.png",
                 "resources/role-mod.png",
                 "resources/role-user.png",
+                "resources/role-booster.png",
+                "resources/role-supporter.png",
                 "resources/icon-ban.png",
                 "resources/icon-unban.png",
                 "resources/icon-mute.png",
@@ -29,6 +31,7 @@
                 "resources/icon-level-list.png",
                 "resources/icon-server-folder.png",
                 "resources/icon-teleport.png",
+                "resources/icon-person.png",
                 "resources/deafen-icon-off.png",
                 "resources/deafen-icon-on.png"
             ]

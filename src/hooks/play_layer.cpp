@@ -560,8 +560,6 @@ void GlobedPlayLayer::onQuitActions() {
         VoicePlaybackManager::get().stopAllStreams();
 #endif // GLOBED_VOICE_SUPPORT
 
-        log::debug("remove listeberes");
-
         // clean up the listeners
         nm.removeListener<PlayerProfilesPacket>(util::time::seconds(3));
         nm.removeListener<LevelDataPacket>(util::time::seconds(3));
