@@ -60,6 +60,13 @@ impl GameServerThread {
             pm.get_player_count_on_level(level_id).unwrap_or(1) - 1
         });
 
+        debug!(
+            "player data from {}: {}, {}",
+            self.account_data.lock().name,
+            packet.data.player1.position.x,
+            packet.data.player1.position.y
+        );
+
         // no one else on the level, no need to send a response packet
         if written_players == 0 {
             return Ok(());

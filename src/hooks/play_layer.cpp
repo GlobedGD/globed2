@@ -221,6 +221,7 @@ void GlobedPlayLayer::setupPacketListeners() {
         this->m_fields->lastServerUpdate = this->m_fields->timeCounter;
 
         for (const auto& player : packet->players) {
+            util::debug::timedLog(fmt::format("recv level data, {} at {}, {}", player.accountId, player.data.player1.position.x, player.data.player1.position.y));
             if (!this->m_fields->players.contains(player.accountId)) {
                 // new player joined
                 this->handlePlayerJoin(player.accountId);
@@ -342,7 +343,7 @@ void GlobedPlayLayer::selSendPlayerData(float) {
 
     if (!self || !self->established()) return;
     if (!self->isCurrentPlayLayer()) return;
-    if (!self->accountForSpeedhack(0, 1.0f / self->m_fields->configuredTps, 0.8f)) return;
+    // if (!self->accountForSpeedhack(0, 1.0f / self->m_fields->configuredTps, 0.8f)) return;
 
     self->m_fields->totalSentPackets++;
     // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
@@ -350,6 +351,7 @@ void GlobedPlayLayer::selSendPlayerData(float) {
 
     auto data = self->gatherPlayerData();
     NetworkManager::get().send(PlayerDataPacket::create(data));
+    util::debug::timedLog(fmt::format("send level data: {}, {}", data.player1.position.x, data.player1.position.y));
 }
 
 // selSendPlayerMetadata - runs every 5 seconds
