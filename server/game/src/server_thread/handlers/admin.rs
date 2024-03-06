@@ -214,7 +214,7 @@ impl GameServerThread {
                     admin_error!(self, "unable to send notice, invalid room ID");
                 }
 
-                if packet.room_id == 0 && role < ROLE_ADMIN {
+                if packet.room_id == 0 && packet.level_id == 0 && role < ROLE_ADMIN {
                     admin_error!(self, ADMIN_REQUIRED_MESSAGE);
                 }
 
