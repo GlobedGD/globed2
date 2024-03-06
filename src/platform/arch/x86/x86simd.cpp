@@ -4,6 +4,18 @@
 #include <util/crypto.hpp>
 
 namespace globed::simd::x86 {
+    void cpuid(int info[4], int infoType) {
+#ifdef GEODE_IS_WINDOWS
+        __cpuid(info, infoType);
+#else
+        __asm__ __volatile__(
+            "cpuid"
+            : "=a" (info[0]), "=b" (info[1]), "=c" (info[2]), "=d" (info[3])
+            : "a" (infoType)
+        );
+#endif
+    }
+
     const CPUFeatures& getFeatures() {
         #define FEATURE(where, name, bit) features.name = (where & (1 << bit)) != 0
 
@@ -11,7 +23,7 @@ namespace globed::simd::x86 {
         return cell.getOrInit([] {
             CPUFeatures features;
             int arr[4];
-            __cpuid(arr, 1);
+            cpuid(arr, 1);
 
             int eax = arr[0];
             int ebx = arr[1];
