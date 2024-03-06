@@ -23,6 +23,8 @@ namespace globed::simd::x86 {
 
     /* Generic functions */
 
+    void cpuid(int info[4], int infoType);
+
     const CPUFeatures& getFeatures();
 
     float vec128sum(__m128 vec);
