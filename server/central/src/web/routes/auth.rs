@@ -290,7 +290,7 @@ pub async fn challenge_finish(
         None
     };
 
-    info!("successfully generated an authkey for {} ({})", aname, aid);
+    info!("successfully generated an authkey for {aname} ({aid} / {uid})");
 
     let mut state_ = state.state_write().await;
     state_.active_challenges.remove(&user_ip);
