@@ -108,6 +108,8 @@ public:
     void setActivePlaybackDevice(int deviceId);
     void setActivePlaybackDevice(const AudioPlaybackDevice& device);
 
+    void toggleLoopbacksAllowed(bool allowed);
+
     // get the cached system
     FMOD::System* getSystem();
 
@@ -119,6 +121,8 @@ private:
     /* devices */
     AudioRecordingDevice recordDevice;
     AudioPlaybackDevice playbackDevice; // unused
+
+    util::sync::AtomicBool loopbacksAllowed = false;
 
     /* recording */
     util::sync::AtomicBool recordActive = false;

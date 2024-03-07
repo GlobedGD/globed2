@@ -7,6 +7,7 @@
 * Fix progressbar icons having wrong glow when the Colored Icon Kit mod is installed
 * Try to fix progressing in levels with startpos (again)
 * Try to fix crashes when using a Level Edit hack
+* Hide loopback devices from audio settings
 
 ## v1.3.1
 

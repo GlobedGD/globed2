@@ -132,6 +132,14 @@ std::optional<AudioRecordingDevice> GlobedAudioManager::getRecordingDevice(int d
     device.id = deviceId;
     device.name = std::string(name);
 
+    if (!loopbacksAllowed && (
+        device.name.find("[loopback]") != std::string::npos
+        || device.name.find("(loopback)") != std::string::npos
+        || device.name.find("Monitor of") != std::string::npos
+    )) {
+        return std::nullopt;
+    }
+
     return device;
 }
 
@@ -412,6 +420,10 @@ void GlobedAudioManager::setActivePlaybackDevice(int deviceId) {
 
 void GlobedAudioManager::setActivePlaybackDevice(const AudioPlaybackDevice& device) {
     playbackDevice = device;
+}
+
+void GlobedAudioManager::toggleLoopbacksAllowed(bool allowed) {
+    loopbacksAllowed = allowed;
 }
 
 void GlobedAudioManager::recordInvokeCallback() {
