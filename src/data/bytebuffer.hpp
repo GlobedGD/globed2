@@ -149,12 +149,14 @@ public:
     /* Bits */
     template <size_t N>
     void writeBits(const BitBuffer<N>& bits) {
-        this->writeValue(bits.contents());
+        // we use a raw write since we don't want any endianness conversions
+        this->rawWrite(bits.contents());
     }
 
     template <size_t N>
     DecodeResult<BitBuffer<N>> readBits() {
-        GLOBED_UNWRAP_INTO(this->readValue<BitBufferUnderlyingType<N>>(), auto underlying);
+        // we use a raw read since we don't want any endianness conversions
+        GLOBED_UNWRAP_INTO(this->rawRead<BitBufferUnderlyingType<N>>(), auto underlying);
         return Ok(BitBuffer<N>(underlying));
     }
 
