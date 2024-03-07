@@ -1,5 +1,6 @@
 #include "x86simd.hpp"
 
+#include <defs/platform.hpp>
 #include <util/misc.hpp>
 #include <util/crypto.hpp>
 
