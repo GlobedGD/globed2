@@ -26,7 +26,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
         .parent(this)
         .collect());
 
-    playerIcon->setRemoteState();
+    playerIcon->setRemotePlayer(this);
 
     Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
         .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
@@ -61,9 +61,8 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
 
     storedIcons = icons;
     if (settings.players.defaultDeathEffect) {
-        // set the default one.. (aka do nothing ig?)
-    } else {
-        playerIcon->setDeathEffect(icons.deathEffect);
+        // set the default one
+        storedIcons.deathEffect = 0;
     }
 
     // TODO: async icon loading is broken on android due to a geode bug.

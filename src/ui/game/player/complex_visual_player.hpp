@@ -29,6 +29,8 @@ public:
     static ComplexVisualPlayer* create(RemotePlayer* parent, bool isSecond);
 
 protected:
+    friend class ComplexPlayerObject;
+
     PlayLayer* playLayer;
     ComplexPlayerObject* playerIcon;
     PlayerIconType playerIconType = PlayerIconType::Unknown;

@@ -1,12 +1,16 @@
 #pragma once
 #include <Geode/modify/PlayerObject.hpp>
 
+class ComplexVisualPlayer;
+
+constexpr int COMPLEX_PLAYER_OBJECT_TAG = 3458738;
+
 class $modify(ComplexPlayerObject, PlayerObject) {
     // those are needed so that our changes don't impact actual PlayerObject instances
     bool vanilla();
 
-    void setRemoteState();
-    void setDeathEffect(int deathEffect);
+    // link this `PlayerObject` to a `ComplexVisualPlayer` instance
+    void setRemotePlayer(ComplexVisualPlayer* rp);
 
     $override
     void incrementJumps();

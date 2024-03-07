@@ -3,19 +3,11 @@
 #include <hooks/play_layer.hpp>
 #include <util/ui.hpp>
 
-#if UINTPTR_MAX > 0xffffffff
-static inline constexpr uintptr_t MAGIC_CONSTANT = 0xdc00cd00dc00cd00;
-#else
-static inline constexpr uintptr_t MAGIC_CONSTANT = 0xdc00cd00;
-#endif
+void ComplexPlayerObject::setRemotePlayer(ComplexVisualPlayer* rp) {
+    this->setUserObject(rp);
 
-void ComplexPlayerObject::setRemoteState() {
-    this->setUserData((void*)MAGIC_CONSTANT);
-}
-
-void ComplexPlayerObject::setDeathEffect(int deathEffect) {
-    // there was no reason for me to do this
-    this->setUserData((void*)(MAGIC_CONSTANT | static_cast<unsigned char>(deathEffect)));
+    // also set remote state
+    this->setTag(COMPLEX_PLAYER_OBJECT_TAG);
 }
 
 void ComplexPlayerObject::playDeathEffect() {
@@ -24,7 +16,9 @@ void ComplexPlayerObject::playDeathEffect() {
         return;
     }
 
-    int deathEffect = static_cast<int>(static_cast<unsigned char>((uintptr_t)this->getUserData() & 0xff));
+    auto* rp = static_cast<ComplexVisualPlayer*>(this->getUserObject());
+    int deathEffect = rp->storedIcons.deathEffect;
+
     auto* gm = GameManager::get();
 
     // we need to do this because the orig func reads the death effect ID from GameManager
@@ -39,7 +33,7 @@ void ComplexPlayerObject::playDeathEffect() {
 }
 
 bool ComplexPlayerObject::vanilla() {
-    return ((uintptr_t)this->getUserData() & ~0xff) != MAGIC_CONSTANT;
+    return this->getTag() != COMPLEX_PLAYER_OBJECT_TAG;
 }
 
 void ComplexPlayerObject::incrementJumps() {
