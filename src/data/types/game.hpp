@@ -14,9 +14,7 @@ enum class PlayerIconType : uint8_t {
     Jetpack = 9,
 };
 
-GLOBED_SERIALIZABLE_ENUM(PlayerIconType,
-    Unknown, Cube, Ship, Ball, Ufo, Wave, Robot, Spider, Swing, Jetpack
-);
+GLOBED_SERIALIZABLE_ENUM(PlayerIconType, Unknown, Cube, Ship, Ball, Ufo, Wave, Robot, Spider, Swing, Jetpack);
 
 struct SpiderTeleportData {
     cocos2d::CCPoint from, to;
