@@ -4,6 +4,8 @@
 #include <vector>
 #include <array>
 
+#include <util/misc.hpp>
+
 namespace util::data {
     using byte = uint8_t;
     using bytevector = std::vector<byte>;
@@ -11,13 +13,8 @@ namespace util::data {
     template <size_t Count>
     using bytearray = std::array<byte, Count>;
 
-
     template <typename T>
-    concept IsPrimitive = std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> ||
-                    std::is_same_v<T, uint64_t> || std::is_same_v<T, float> ||
-                    std::is_same_v<T, double> || std::is_same_v<T, int16_t> ||
-                    std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
-                    std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t>;
+    concept IsPrimitive = misc::is_one_of<T, bool, uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t, float, double>;
 
     // macos github actions runner has no std::bit_cast support
 #ifdef __cpp_lib_bit_cast
@@ -69,12 +66,13 @@ namespace util::data {
             return byteswapI32(val);
         } else if constexpr (std::is_same_v<T, int64_t>) {
             return byteswapI64(val);
-        } else if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t>) {
+        } else if constexpr (misc::is_one_of<T, int8_t, uint8_t, bool>) {
             return val;
         }
     }
 
 #else // __cpp_lib_byteswap
+
     template <typename T>
     inline constexpr T byteswap(T val) {
         static_assert(IsPrimitive<T>, "Unsupported type for byteswap");

@@ -1,6 +1,7 @@
 #include "x86simd.hpp"
 
 #include <defs/platform.hpp>
+#include <defs/minimal_geode.hpp>
 #include <util/misc.hpp>
 #include <util/crypto.hpp>
 

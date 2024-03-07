@@ -9,16 +9,10 @@ struct CentralServer {
     std::string name;
     std::string url;
 
-    GLOBED_ENCODE {
-        buf.writeString(name);
-        buf.writeString(url);
-    }
-
-    GLOBED_DECODE {
-        name = buf.readString();
-        url = buf.readString();
-    }
 };
+
+GLOBED_SERIALIZABLE_STRUCT(CentralServer, (name, url));
+GLOBED_VERIFY_SERIALIZED_STRUCT(CentralServer);
 
 class CentralServerManager : public SingletonBase<CentralServerManager> {
 protected:

@@ -6,62 +6,66 @@
 class GlobalPlayerListPacket : public Packet {
     GLOBED_PACKET(21000, false, false)
 
-    GLOBED_PACKET_DECODE { buf.readValueVectorInto<PlayerPreviewAccountData>(data); }
+    GlobalPlayerListPacket() {}
 
     std::vector<PlayerPreviewAccountData> data;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(GlobalPlayerListPacket, (data));
+
 class RoomCreatedPacket : public Packet {
     GLOBED_PACKET(21001, false, false)
 
-    GLOBED_PACKET_DECODE { roomId = buf.readU32(); }
+    RoomCreatedPacket() {}
 
     uint32_t roomId;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(RoomCreatedPacket, (roomId));
+
 class RoomJoinedPacket : public Packet {
     GLOBED_PACKET(21002, false, false)
-    GLOBED_PACKET_DECODE {}
+
+    RoomJoinedPacket() {}
 };
+
+GLOBED_SERIALIZABLE_STRUCT(RoomJoinedPacket, ());
 
 class RoomJoinFailedPacket : public Packet {
     GLOBED_PACKET(21003, false, false)
-    GLOBED_PACKET_DECODE {}
+
+    RoomJoinFailedPacket() {}
 };
+
+GLOBED_SERIALIZABLE_STRUCT(RoomJoinFailedPacket, ());
 
 class RoomPlayerListPacket : public Packet {
     GLOBED_PACKET(21004, false, false)
 
-    GLOBED_PACKET_DECODE {
-        roomId = buf.readU32();
-        buf.readValueVectorInto<PlayerRoomPreviewAccountData>(data);
-    }
+    RoomPlayerListPacket() {}
 
     uint32_t roomId;
     std::vector<PlayerRoomPreviewAccountData> data;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(RoomPlayerListPacket, (roomId, data));
+
 class LevelListPacket : public Packet {
     GLOBED_PACKET(21005, false, false)
 
-    GLOBED_PACKET_DECODE {
-        buf.readValueVectorInto<GlobedLevel>(levels);
-    }
+    LevelListPacket() {}
 
     std::vector<GlobedLevel> levels;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(LevelListPacket, (levels));
+
 class LevelPlayerCountPacket : public Packet {
     GLOBED_PACKET(21006, false, false)
 
-    GLOBED_PACKET_DECODE {
-        size_t size = buf.readU32();
-        for (size_t i = 0; i < size; i++) {
-            auto levelId = buf.readPrimitive<LevelId>();
-            auto playerCount = buf.readU16();
-            levels.push_back(std::make_pair(levelId, playerCount));
-        }
-    }
+    LevelPlayerCountPacket() {}
 
     std::vector<std::pair<LevelId, uint16_t>> levels;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(LevelPlayerCountPacket, (levels));

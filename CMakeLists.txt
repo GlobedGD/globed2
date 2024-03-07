@@ -77,6 +77,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 CPMAddPackage("gh:dankmeme01/uibuilder#main")
 CPMAddPackage("gh:xiph/opus#master")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
+CPMAddPackage(
+    NAME Boost
+    VERSION 1.84.0
+    URL https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.xz
+    URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
+    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
+)
 
 if (GLOBED_NATIVE_ARCH)
     # Apply native architecture
@@ -97,6 +104,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
 endif()
 
-target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium)
+target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium Boost::describe)
 
 setup_geode_mod(${PROJECT_NAME})

@@ -181,8 +181,13 @@ void CentralServerManager::reload() {
         auto decoded = util::crypto::base64Decode(b64value);
         if (decoded.empty()) return;
 
-        ByteBuffer buf(decoded);
-        *servers = buf.readValueVector<CentralServer>();
+        ByteBuffer buf(std::move(decoded));
+        auto result = buf.readValue<std::vector<CentralServer>>();
+        if (result.isErr()) {
+            ErrorQueues::get().warn(fmt::format("failed to load servers: {}", result.unwrapErr()));
+            return;
+        }
+        *servers = result.unwrap();
     } catch (const std::exception& e) {
         ErrorQueues::get().warn(std::string("failed to load servers: ") + e.what());
     }
@@ -193,8 +198,8 @@ void CentralServerManager::save() {
     auto servers = _servers.lock();
 
     ByteBuffer buf;
-    buf.writeValueVector(*servers);
-    auto data = util::crypto::base64Encode(buf.getDataRef());
+    buf.writeValue<std::vector<CentralServer>>(*servers);
+    auto data = util::crypto::base64Encode(buf.data());
 
     Mod::get()->setSavedValue(SETTING_KEY, data);
 

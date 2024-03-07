@@ -1,5 +1,6 @@
 #pragma once
 #include <defs/util.hpp>
+#include <defs/minimal_geode.hpp>
 
 class BlockListManager : public SingletonBase<BlockListManager> {
 protected:
@@ -19,5 +20,5 @@ private:
     std::set<int> _bl, _wl;
 
     void save();
-    void load();
+    Result<> load();
 };

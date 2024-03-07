@@ -6,88 +6,99 @@
 class PingResponsePacket : public Packet {
     GLOBED_PACKET(20000, false, false)
 
-    GLOBED_PACKET_DECODE {
-        id = buf.readU32();
-        playerCount = buf.readU32();
-    }
+    PingResponsePacket() {}
 
     uint32_t id, playerCount;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(PingResponsePacket, (id, playerCount));
+
 class CryptoHandshakeResponsePacket : public Packet {
     GLOBED_PACKET(20001, false, false)
 
-    GLOBED_PACKET_DECODE { data = buf.readValue<CryptoPublicKey>(); }
+    CryptoHandshakeResponsePacket() {}
 
     CryptoPublicKey data;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(CryptoHandshakeResponsePacket, (data));
+
 class KeepaliveResponsePacket : public Packet {
     GLOBED_PACKET(20002, false, false)
 
-    GLOBED_PACKET_DECODE { playerCount = buf.readU32(); }
+    KeepaliveResponsePacket() {}
 
     uint32_t playerCount;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(KeepaliveResponsePacket, (playerCount));
+
 class ServerDisconnectPacket : public Packet {
     GLOBED_PACKET(20003, false, false)
 
-    GLOBED_PACKET_DECODE { message = buf.readString(); }
+    ServerDisconnectPacket() {}
 
     std::string message;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(ServerDisconnectPacket, (message));
+
 class LoggedInPacket : public Packet {
     GLOBED_PACKET(20004, false, false)
 
-    GLOBED_PACKET_DECODE {
-        tps = buf.readU32();
-        specialUserData = buf.readOptionalValue<SpecialUserData>();
-    }
+    LoggedInPacket() {}
 
     uint32_t tps;
     std::optional<SpecialUserData> specialUserData;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(LoggedInPacket, (tps, specialUserData));
+
 class LoginFailedPacket : public Packet {
     GLOBED_PACKET(20005, false, false)
 
-    GLOBED_PACKET_DECODE { message = buf.readString(); }
+    LoginFailedPacket() {}
 
     std::string message;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(LoginFailedPacket, (message));
 
 class ServerNoticePacket : public Packet {
     GLOBED_PACKET(20006, false, false)
 
-    GLOBED_PACKET_DECODE { message = buf.readString(); }
+    ServerNoticePacket() {}
 
     std::string message;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(ServerNoticePacket, (message));
+
 class ProtocolMismatchPacket : public Packet {
     GLOBED_PACKET(20007, false, false)
 
-    GLOBED_PACKET_DECODE { serverProtocol = buf.readU16(); }
+    ProtocolMismatchPacket() {}
 
     uint16_t serverProtocol;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(ProtocolMismatchPacket, (serverProtocol));
+
 class KeepaliveTCPResponsePacket : public Packet {
     GLOBED_PACKET(20008, false, false)
 
-    GLOBED_PACKET_DECODE {}
+    KeepaliveTCPResponsePacket() {}
 };
+
+GLOBED_SERIALIZABLE_STRUCT(KeepaliveTCPResponsePacket, ());
 
 class ConnectionTestResponsePacket : public Packet {
     GLOBED_PACKET(20010, false, false)
 
-    GLOBED_PACKET_DECODE {
-        uid = buf.readU32();
-        data = buf.readByteArray();
-    }
+    ConnectionTestResponsePacket() {}
 
     uint32_t uid;
     util::data::bytevector data;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(ConnectionTestResponsePacket, (uid, data));

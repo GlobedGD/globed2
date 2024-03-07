@@ -48,29 +48,39 @@ const std::vector<EncodedOpusData>& EncodedAudioFrame::getFrames() const {
     return frames;
 }
 
-void EncodedAudioFrame::encode(ByteBuffer& buf) const {
+template<> void ByteBuffer::customEncode(const EncodedAudioFrame& frame) {
     GLOBED_REQUIRE(
-        frames.size() <= _capacity,
-        fmt::format("tried to encode an EncodedAudioFrame with {} frames when at most {} is permitted", frames.size(), _capacity)
+        frame.frames.size() <= frame._capacity,
+        fmt::format("tried to encode an EncodedAudioFrame with {} frames when at most {} is permitted", frame.frames.size(), frame._capacity)
     )
 
     // first encode all opus frames
-    for (auto& frame : frames) {
-        buf.writeOptionalValue<EncodedOpusData>(frame);
+    for (auto& frame : frame.frames) {
+        this->writeValue<std::optional<EncodedOpusData>>(frame);
     }
 
     // if we have written less than the absolute max, write nullopts
 
-    for (size_t i = frames.size(); i < VOICE_MAX_FRAMES_IN_AUDIO_FRAME; i++) {
-        buf.writeOptionalValue<EncodedOpusData>(std::nullopt);
+    for (size_t i = frame.frames.size(); i < EncodedAudioFrame::VOICE_MAX_FRAMES_IN_AUDIO_FRAME; i++) {
+        this->writeValue<std::optional<EncodedOpusData>>(std::nullopt);
     }
 }
 
-void EncodedAudioFrame::decode(ByteBuffer& buf) {
-    for (size_t i = 0; i < VOICE_MAX_FRAMES_IN_AUDIO_FRAME; i++) {
-        auto frame = buf.readOptionalValue<EncodedOpusData>();
-        if (frame) frames.push_back(frame.value());
+template<> ByteBuffer::DecodeResult<EncodedAudioFrame> ByteBuffer::customDecode() {
+    EncodedAudioFrame eframe;
+
+    for (size_t i = 0; i < EncodedAudioFrame::VOICE_MAX_FRAMES_IN_AUDIO_FRAME; i++) {
+        auto result = this->readValue<std::optional<EncodedOpusData>>();
+        if (result.isErr()) {
+            eframe.clear();
+            return Err(result.unwrapErr());
+        }
+
+        GLOBED_UNWRAP_INTO(result, auto frame);
+        if (frame) eframe.frames.push_back(frame.value());
     }
+
+    return Ok(std::move(eframe));
 }
 
 #endif // GLOBED_VOICE_SUPPORT

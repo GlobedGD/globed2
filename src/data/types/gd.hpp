@@ -6,8 +6,6 @@
 #include <data/bytebuffer.hpp>
 #include "game.hpp"
 
-using LevelId = int64_t;
-
 class PlayerIconData {
 public:
     static const PlayerIconData DEFAULT_ICONS;
@@ -21,40 +19,12 @@ public:
 
     bool operator==(const PlayerIconData&) const = default;
 
-    GLOBED_ENCODE {
-        buf.writeI16(cube);
-        buf.writeI16(ship);
-        buf.writeI16(ball);
-        buf.writeI16(ufo);
-        buf.writeI16(wave);
-        buf.writeI16(robot);
-        buf.writeI16(spider);
-        buf.writeI16(swing);
-        buf.writeI16(jetpack);
-        buf.writeI16(deathEffect);
-        buf.writeI16(color1);
-        buf.writeI16(color2);
-        buf.writeI16(glowColor);
-    }
-
-    GLOBED_DECODE {
-        cube = buf.readI16();
-        ship = buf.readI16();
-        ball = buf.readI16();
-        ufo = buf.readI16();
-        wave = buf.readI16();
-        robot = buf.readI16();
-        spider = buf.readI16();
-        swing = buf.readI16();
-        jetpack = buf.readI16();
-        deathEffect = buf.readI16();
-        color1 = buf.readI16();
-        color2 = buf.readI16();
-        glowColor = buf.readI16();
-    }
-
     int16_t cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2, glowColor;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(PlayerIconData, (
+    cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2, glowColor
+));
 
 inline const PlayerIconData PlayerIconData::DEFAULT_ICONS = PlayerIconData(
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, -1
@@ -67,16 +37,12 @@ public:
 
     bool operator==(const SpecialUserData&) const = default;
 
-    GLOBED_ENCODE {
-        buf.writeColor3(nameColor);
-    }
-
-    GLOBED_DECODE {
-        nameColor = buf.readColor3();
-    }
-
     cocos2d::ccColor3B nameColor;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(SpecialUserData, (
+    nameColor
+));
 
 class PlayerPreviewAccountData {
 public:
@@ -84,28 +50,14 @@ public:
         : accountId(id), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor) {}
     PlayerPreviewAccountData() {}
 
-    GLOBED_ENCODE {
-        buf.writeI32(accountId);
-        buf.writeString(name);
-        buf.writeI16(cube);
-        buf.writeI16(color1);
-        buf.writeI16(color2);
-        buf.writeI16(glowColor);
-    }
-
-    GLOBED_DECODE {
-        accountId = buf.readI32();
-        name = buf.readString();
-        cube = buf.readI16();
-        color1 = buf.readI16();
-        color2 = buf.readI16();
-        glowColor = buf.readI16();
-    }
-
     int32_t accountId;
     std::string name;
     int16_t cube, color1, color2, glowColor;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(PlayerPreviewAccountData, (
+    accountId, name, cube, color1, color2, glowColor
+));
 
 class PlayerRoomPreviewAccountData {
 public:
@@ -113,36 +65,16 @@ public:
         : accountId(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId), specialUserData(specialUserData) {}
     PlayerRoomPreviewAccountData() {}
 
-    GLOBED_ENCODE {
-        buf.writeI32(accountId);
-        buf.writeI32(userId);
-        buf.writeString(name);
-        buf.writeI16(cube);
-        buf.writeI16(color1);
-        buf.writeI16(color2);
-        buf.writeI16(glowColor);
-        buf.writePrimitive(levelId);
-        buf.writeOptionalValue(specialUserData);
-    }
-
-    GLOBED_DECODE {
-        accountId = buf.readI32();
-        userId = buf.readI32();
-        name = buf.readString();
-        cube = buf.readI16();
-        color1 = buf.readI16();
-        color2 = buf.readI16();
-        glowColor = buf.readI16();
-        levelId = buf.readPrimitive<LevelId>();
-        specialUserData = buf.readOptionalValue<SpecialUserData>();
-    }
-
     int32_t accountId, userId;
     std::string name;
     int16_t cube, color1, color2, glowColor;
     LevelId levelId;
     std::optional<SpecialUserData> specialUserData;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(PlayerRoomPreviewAccountData, (
+    accountId, userId, name, cube, color1, color2, glowColor, levelId, specialUserData
+));
 
 class PlayerAccountData {
 public:
@@ -161,27 +93,15 @@ public:
         );
     }
 
-    GLOBED_ENCODE {
-        buf.writeI32(accountId);
-        buf.writeI32(userId);
-        buf.writeString(name);
-        buf.writeValue(icons);
-        buf.writeOptionalValue(specialUserData);
-    }
-
-    GLOBED_DECODE {
-        accountId = buf.readI32();
-        userId = buf.readI32();
-        name = buf.readString();
-        icons = buf.readValue<PlayerIconData>();
-        specialUserData = buf.readOptionalValue<SpecialUserData>();
-    }
-
     int32_t accountId, userId;
     std::string name;
     PlayerIconData icons;
     std::optional<SpecialUserData> specialUserData;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(PlayerAccountData, (
+    accountId, userId, name, icons, specialUserData
+));
 
 inline const PlayerAccountData PlayerAccountData::DEFAULT_DATA = PlayerAccountData(
     0,
@@ -195,35 +115,23 @@ public:
     AssociatedPlayerData(int accountId, const PlayerData& data) : accountId(accountId), data(data) {}
     AssociatedPlayerData() {}
 
-    GLOBED_ENCODE {
-        buf.writeI32(accountId);
-        buf.writeValue(data);
-    }
-
-    GLOBED_DECODE {
-        accountId = buf.readI32();
-        data = buf.readValue<PlayerData>();
-    }
-
     int accountId;
     PlayerData data;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(AssociatedPlayerData, (
+    accountId, data
+));
 
 class AssociatedPlayerMetadata {
 public:
     AssociatedPlayerMetadata(int accountId, const PlayerMetadata& data) : accountId(accountId), data(data) {}
     AssociatedPlayerMetadata() {}
 
-    GLOBED_ENCODE {
-        buf.writeI32(accountId);
-        buf.writeValue(data);
-    }
-
-    GLOBED_DECODE {
-        accountId = buf.readI32();
-        data = buf.readValue<PlayerMetadata>();
-    }
-
     int accountId;
     PlayerMetadata data;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(AssociatedPlayerMetadata, (
+    accountId, data
+));

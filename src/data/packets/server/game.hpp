@@ -5,32 +5,32 @@
 class PlayerProfilesPacket : public Packet {
     GLOBED_PACKET(22000, false, false)
 
-    GLOBED_PACKET_DECODE {
-        players = buf.readValueVector<PlayerAccountData>();
-    }
+    PlayerProfilesPacket() {}
 
     std::vector<PlayerAccountData> players;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(PlayerProfilesPacket, (players));
+
 class LevelDataPacket : public Packet {
     GLOBED_PACKET(22001, false, false)
 
-    GLOBED_PACKET_DECODE {
-        players = buf.readValueVector<AssociatedPlayerData>();
-    }
+    LevelDataPacket() {}
 
     std::vector<AssociatedPlayerData> players;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(LevelDataPacket, (players));
+
 class LevelPlayerMetadataPacket : public Packet {
     GLOBED_PACKET(22002, false, false)
 
-    GLOBED_PACKET_DECODE {
-        players = buf.readValueVector<AssociatedPlayerMetadata>();
-    }
+    LevelPlayerMetadataPacket() {}
 
     std::vector<AssociatedPlayerMetadata> players;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(LevelPlayerMetadataPacket, (players));
 
 #ifdef GLOBED_VOICE_SUPPORT
 # include <audio/frame.hpp>
@@ -39,27 +39,27 @@ class LevelPlayerMetadataPacket : public Packet {
 class VoiceBroadcastPacket : public Packet {
     GLOBED_PACKET(22010, true, false)
 
-#ifdef GLOBED_VOICE_SUPPORT
-    GLOBED_PACKET_DECODE {
-        sender = buf.readI32();
-        frame = buf.readValue<EncodedAudioFrame>();
-    }
+    VoiceBroadcastPacket() {}
 
+#ifdef GLOBED_VOICE_SUPPORT
     int sender;
     EncodedAudioFrame frame;
-#else
-    GLOBED_PACKET_DECODE {}
-#endif // GLOBED_VOICE_SUPPORT
+#endif
 };
+
+#ifdef GLOBED_VOICE_SUPPORT
+    GLOBED_SERIALIZABLE_STRUCT(VoiceBroadcastPacket, (sender, frame));
+#else
+    GLOBED_SERIALIZABLE_STRUCT(VoiceBroadcastPacket, ());
+#endif // GLOBED_VOICE_SUPPORT
 
 class ChatMessageBroadcastPacket : public Packet {
     GLOBED_PACKET(22011, true, false)
 
-    GLOBED_PACKET_DECODE {
-        sender = buf.readI32();
-        message = buf.readString();
-    }
+    ChatMessageBroadcastPacket() {}
 
     int sender;
     std::string message;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(ChatMessageBroadcastPacket, (sender, message));

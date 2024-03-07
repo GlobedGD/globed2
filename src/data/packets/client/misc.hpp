@@ -8,6 +8,7 @@
 */
 class RawPacket : public Packet {
 public:
+    RawPacket() {}
     RawPacket(packetid_t id, bool encrypted, bool tcp, ByteBuffer&& buffer) : id(id), encrypted(encrypted), tcp(tcp), buffer(std::move(buffer)) {}
 
     packetid_t getPacketId() const override {
@@ -22,8 +23,12 @@ public:
         return encrypted;
     }
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeBytes(buffer.getDataRef());
+    void encode(ByteBuffer& buf) const override {
+        buf.writeValue<ByteBuffer>(buffer);
+    }
+
+    ByteBuffer::DecodeResult<> decode(ByteBuffer& buf) override {
+        throw std::runtime_error("RawPacket cannot be decoded");
     }
 
     static std::shared_ptr<Packet> create(packetid_t id, bool encrypted, bool tcp, ByteBuffer&& buffer) {
@@ -40,3 +45,5 @@ public:
     bool tcp;
     mutable ByteBuffer buffer;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(RawPacket, (buffer));

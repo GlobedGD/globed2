@@ -171,7 +171,13 @@ Result<> GameServerManager::loadFromCache() {
     GLOBED_REQUIRE_SAFE(decoded.size() >= MAGIC_LEN, fmt::format("invalid response sent by the server (missing magic)"));
 
     ByteBuffer buf(std::move(decoded));
-    auto magic = buf.readBytes(MAGIC_LEN);
+    auto magicResult = buf.readValue<util::data::bytearray<MAGIC_LEN>>();
+
+    if (magicResult.isErr()) {
+        return Err(ByteBuffer::strerror(magicResult.unwrapErr()));
+    }
+
+    auto magic = magicResult.unwrap();
 
     // compare it with the needed magic
     bool correct = true;
@@ -184,7 +190,12 @@ Result<> GameServerManager::loadFromCache() {
 
     GLOBED_REQUIRE_SAFE(correct, "invalid response sent by the server (invalid magic)");
 
-    auto serverList = buf.readValueVector<GameServerEntry>();
+    auto serverListResult = buf.readValue<std::vector<GameServerEntry>>();
+    if (serverListResult.isErr()) {
+        return Err(ByteBuffer::strerror(serverListResult.unwrapErr()));
+    }
+
+    auto serverList = serverListResult.unwrap();
 
     for (const auto& server : serverList) {
         auto result = this->addOrUpdateServer(

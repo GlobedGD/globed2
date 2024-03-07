@@ -43,7 +43,7 @@ void LerpLogger::logLerpSkip(uint32_t id, float localts, float timeCounter, cons
 #endif
 }
 
-LerpLogger::PlayerLog& LerpLogger::ensureExists(uint32_t id) {
+PlayerLog& LerpLogger::ensureExists(uint32_t id) {
 #ifdef GLOBED_DEBUG_INTERPOLATION
     if (!players.contains(id)) {
         players.emplace(id, PlayerLog {});
@@ -55,7 +55,7 @@ LerpLogger::PlayerLog& LerpLogger::ensureExists(uint32_t id) {
     _globedUnreachable(); // ensureExists is a private function, should never be callable if lerp debug is disabled
 }
 
-LerpLogger::PlayerLogData LerpLogger::makeLogData(const SpecificIconData& data, float localts, float timeCounter) {
+PlayerLogData LerpLogger::makeLogData(const SpecificIconData& data, float localts, float timeCounter) {
     return PlayerLogData {
         .localTimestamp = localts,
         .timestamp = timeCounter,
@@ -75,7 +75,7 @@ void LerpLogger::makeDump(const ghc::filesystem::path path) {
     }
 
     std::ofstream file(path, std::ios::binary);
-    file.write(reinterpret_cast<const char*>(bb.getDataRef().data()), bb.size());
+    file.write(reinterpret_cast<const char*>(bb.data().data()), bb.size());
     log::debug("dumped interpolation data to {} ({} bytes)", path, bb.size());
 #endif
 }

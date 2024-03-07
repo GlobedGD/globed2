@@ -84,7 +84,7 @@
 #define GLOBED_UNWRAP_INTO(value, dest) \
     auto GEODE_CONCAT(_uval_, __LINE__) = (value); \
     if (GEODE_CONCAT(_uval_, __LINE__).isErr()) return geode::Err(std::move(GEODE_CONCAT(_uval_, __LINE__).unwrapErr())); \
-    dest = GEODE_CONCAT(_uval_, __LINE__).unwrap();
+    dest = std::move(GEODE_CONCAT(_uval_, __LINE__).unwrap());
 
 #define GLOBED_RESULT_ERRC(value) \
     do { \

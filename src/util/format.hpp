@@ -2,6 +2,7 @@
 
 #include <charconv>
 #include <cocos2d.h>
+#include <defs/minimal_geode.hpp>
 
 #include <util/time.hpp>
 #include <util/misc.hpp>

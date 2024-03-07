@@ -5,10 +5,7 @@
 class RequestPlayerProfilesPacket : public Packet {
     GLOBED_PACKET(12000, false, false)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeI32(requested);
-    }
-
+    RequestPlayerProfilesPacket() {}
     RequestPlayerProfilesPacket(int requested) : requested(requested) {}
 
     static std::shared_ptr<Packet> create(int requested) {
@@ -18,13 +15,12 @@ class RequestPlayerProfilesPacket : public Packet {
     int requested;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(RequestPlayerProfilesPacket, (requested));
+
 class LevelJoinPacket : public Packet {
     GLOBED_PACKET(12001, false, false)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writePrimitive(levelId);
-    }
-
+    LevelJoinPacket() {}
     LevelJoinPacket(LevelId levelId) : levelId(levelId) {}
 
     static std::shared_ptr<Packet> create(LevelId levelId) {
@@ -34,10 +30,10 @@ class LevelJoinPacket : public Packet {
     LevelId levelId;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(LevelJoinPacket, (levelId));
+
 class LevelLeavePacket : public Packet {
     GLOBED_PACKET(12002, false, false)
-
-    GLOBED_PACKET_ENCODE {}
 
     LevelLeavePacket() {}
 
@@ -46,13 +42,12 @@ class LevelLeavePacket : public Packet {
     }
 };
 
+GLOBED_SERIALIZABLE_STRUCT(LevelLeavePacket, ());
+
 class PlayerDataPacket : public Packet {
     GLOBED_PACKET(12003, false, false)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeValue(data);
-    }
-
+    PlayerDataPacket() {}
     PlayerDataPacket(const PlayerData& data) : data(data) {}
 
     static std::shared_ptr<Packet> create(const PlayerData& data) {
@@ -62,13 +57,12 @@ class PlayerDataPacket : public Packet {
     PlayerData data;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(PlayerDataPacket, (data));
+
 class PlayerMetadataPacket : public Packet {
     GLOBED_PACKET(12004, false, false)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeValue(data);
-    }
-
+    PlayerMetadataPacket() {}
     PlayerMetadataPacket(const PlayerMetadata& data) : data(data) {}
 
     static std::shared_ptr<Packet> create(const PlayerMetadata& data) {
@@ -78,6 +72,8 @@ class PlayerMetadataPacket : public Packet {
     PlayerMetadata data;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(PlayerMetadataPacket, (data));
+
 #ifdef GLOBED_VOICE_SUPPORT
 
 #include <audio/frame.hpp>
@@ -85,10 +81,7 @@ class PlayerMetadataPacket : public Packet {
 class VoicePacket : public Packet {
     GLOBED_PACKET(12010, true, false)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeValue(*frame.get());
-    }
-
+    VoicePacket() {}
     VoicePacket(std::shared_ptr<EncodedAudioFrame> _frame) : frame(_frame) {}
 
     static std::shared_ptr<Packet> create(std::shared_ptr<EncodedAudioFrame> frame) {
@@ -98,15 +91,14 @@ class VoicePacket : public Packet {
     std::shared_ptr<EncodedAudioFrame> frame;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(VoicePacket, (frame));
+
 #endif // GLOBED_VOICE_SUPPORT
 
 class ChatMessagePacket : public Packet {
     GLOBED_PACKET(12011, true, false)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeString(message);
-    }
-
+    ChatMessagePacket() {}
     ChatMessagePacket(const std::string_view message) : message(message) {}
 
     static std::shared_ptr<Packet> create(const std::string_view message) {
@@ -115,3 +107,5 @@ class ChatMessagePacket : public Packet {
 
     std::string message;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(ChatMessagePacket, (message));

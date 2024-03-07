@@ -3,8 +3,6 @@
 
 #include <functional>
 
-#include <data/types/gd.hpp>
-
 // i hate c++
 #define _GLOBED_STRNUM "1234567890"
 #define _GLOBED_STRLOWER "abcdefghijklmnopqrstuvwxyz"
@@ -28,6 +26,48 @@ namespace util::misc {
     constexpr std::string_view STRING_PRINTABLE_INPUT = _GLOBED_STRPRINTABLEINPUT;
     constexpr std::string_view STRING_URL = _GLOBED_STRURL;
     constexpr std::string_view STRING_WHITESPACE = _GLOBED_STRWHITESPACE;
+
+    // mp shit
+
+    template<typename T, typename... Args>
+    constexpr bool is_one_of = std::disjunction_v<std::is_same<T, Args>...>;
+
+    template <typename>
+    struct MemberPtrToUnderlying;
+
+    template <typename R, typename C>
+    struct MemberPtrToUnderlying<R C::*> {
+        using type = R;
+    };
+
+    template <typename R, typename C>
+    struct MemberPtrToUnderlying<R C::* const> {
+        using type = R;
+    };
+
+    template <typename>
+    struct IsStdVector : std::false_type {};
+
+    template<typename T, typename A>
+    struct IsStdVector<std::vector<T, A>> : std::true_type {};
+
+    template <typename>
+    struct IsStdPair : std::false_type {};
+
+    template <typename T1, typename T2>
+    struct IsStdPair<std::pair<T1, T2>> : std::true_type {};
+
+    template <typename>
+    struct IsStdArray : std::false_type {};
+
+    template <typename T, size_t N>
+    struct IsStdArray<std::array<T, N>> : std::true_type {};
+
+    template <typename>
+    struct IsStdOptional : std::false_type {};
+
+    template <typename T>
+    struct IsStdOptional<std::optional<T>> : std::true_type {};
 
     // If `target` is false, returns false. If `target` is true, modifies `target` to false and returns true.
     bool swapFlag(bool& target);

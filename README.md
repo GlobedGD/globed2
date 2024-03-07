@@ -31,6 +31,7 @@ Anyone who donated, contributed, suggested ideas, helped moderate, reported issu
 Globed is licensed under the MIT license. All of the following libraries used in Globed have their own licenses you may want to read:
 
 * Geode - [website](https://geode-sdk.org) - [repository](https://github.com/geode-sdk/geode) - [license](https://github.com/geode-sdk/geode/blob/main/LICENSE.txt)
+* Boost - [website](https://boost.org) - [repository](https://github.com/boostorg/boost) - [license](https://github.com/boostorg/boost/blob/master/LICENSE_1_0.txt)
 * UIBuilder - [repository](https://github.com/camila314/uibuilder) - [license](https://github.com/camila314/uibuilder/blob/main/LICENSE)
 * Opus - [website](https://opus-codec.org/) - [repository](https://github.com/xiph/opus) - [license](https://github.com/xiph/opus/blob/master/COPYING)
 * libsodium - [website](https://libsodium.gitbook.io/doc/) - [repository](https://github.com/jedisct1/libsodium) - [license](https://github.com/jedisct1/libsodium/blob/master/LICENSE)

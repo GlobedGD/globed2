@@ -41,3 +41,5 @@
 
 
 #endif // GLOBED_IGNORE_CONFIG_HPP
+
+using LevelId = int64_t;

@@ -1,4 +1,7 @@
 #pragma once
+
+#include <defs/minimal_geode.hpp>
+#include <defs/assert.hpp>
 #include <data/bytebuffer.hpp>
 
 using packetid_t = uint16_t;
@@ -10,23 +13,24 @@ using packetid_t = uint16_t;
     static constexpr bool ENCRYPTED = enc; \
     packetid_t getPacketId() const override { return this->PACKET_ID; } \
     bool getUseTcp() const override { return this->SHOULD_USE_TCP; } \
-    bool getEncrypted() const override { return this->ENCRYPTED; }
-
-#define GLOBED_PACKET_ENCODE void encode(ByteBuffer& buf) const override
-#define GLOBED_PACKET_DECODE void decode(ByteBuffer& buf) override
-
+    bool getEncrypted() const override { return this->ENCRYPTED; } \
+    void encode(ByteBuffer& buf) const override { \
+        using InstTy = typename std::remove_reference_t<decltype(*this)>; \
+        using NonCvTy = typename std::remove_cv_t<InstTy>; \
+        buf.writeValue<NonCvTy>(*this); \
+    } \
+    ByteBuffer::DecodeResult<> decode(ByteBuffer& buf) override { \
+        GLOBED_UNWRAP_INTO(buf.readValue<std::remove_reference_t<decltype(*this)>>(), *this); \
+        return Ok(); \
+    }
 class Packet {
 public:
     virtual ~Packet() {}
     // Encodes the packet into a bytebuffer
-    virtual void encode(ByteBuffer& buf) const {
-        GLOBED_UNIMPL(std::string("Encoding unimplemented for packet ") + std::to_string(this->getPacketId()))
-    };
+    virtual void encode(ByteBuffer& buf) const = 0;
 
     // Decodes the packet from a bytebuffer
-    virtual void decode(ByteBuffer& buf) {
-        GLOBED_UNIMPL(std::string("Decoding unimplemented for packet ") + std::to_string(this->getPacketId()))
-    };
+    virtual ByteBuffer::DecodeResult<> decode(ByteBuffer& buf) = 0;
 
     virtual packetid_t getPacketId() const = 0;
     virtual bool getUseTcp() const = 0;
@@ -50,20 +54,11 @@ public:
     }
 };
 
-class PacketHeader {
-public:
+struct PacketHeader {
     static constexpr size_t SIZE = sizeof(packetid_t) + sizeof(bool);
-
-    GLOBED_ENCODE {
-        buf.writeU16(id);
-        buf.writeBool(encrypted);
-    }
-
-    GLOBED_DECODE {
-        id = buf.readU16();
-        encrypted = buf.readBool();
-    }
 
     packetid_t id;
     bool encrypted;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(PacketHeader, (id, encrypted));

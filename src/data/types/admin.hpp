@@ -18,67 +18,6 @@ public:
         std::optional<int64_t> violationExpiry
     ) : accountId(accountId), userName(userName), nameColor(nameColor), userRole(userRole), isBanned(isBanned), isMuted(isMuted), isWhitelisted(isWhitelisted), adminPassword(adminPassword), violationReason(violationReason), violationExpiry(violationExpiry) {}
 
-    GLOBED_ENCODE {
-        buf.writeI32(accountId);
-        buf.writeBool(userName.has_value());
-        if (userName.has_value()) {
-            buf.writeString(userName.value());
-        }
-
-        buf.writeBool(nameColor.has_value());
-        if (nameColor.has_value()) {
-            buf.writeString(nameColor.value());
-        }
-
-        buf.writeI32(userRole);
-        buf.writeBool(isBanned);
-        buf.writeBool(isMuted);
-        buf.writeBool(isWhitelisted);
-
-        buf.writeBool(adminPassword.has_value());
-        if (adminPassword.has_value()) {
-            buf.writeString(adminPassword.value());
-        }
-
-        buf.writeBool(violationReason.has_value());
-        if (violationReason.has_value()) {
-            buf.writeString(violationReason.value());
-        }
-
-        buf.writeBool(violationExpiry.has_value());
-        if (violationExpiry.has_value()) {
-            buf.writeI64(violationExpiry.value());
-        }
-    }
-
-    GLOBED_DECODE {
-        accountId = buf.readI32();
-        if (buf.readBool()) {
-            userName = buf.readString();
-        }
-
-        if (buf.readBool()) {
-            nameColor = buf.readString();
-        }
-
-        userRole = buf.readI32();
-        isBanned = buf.readBool();
-        isMuted = buf.readBool();
-        isWhitelisted = buf.readBool();
-
-        if (buf.readBool()) {
-            adminPassword = buf.readString();
-        }
-
-        if (buf.readBool()) {
-            violationReason = buf.readString();
-        }
-
-        if (buf.readBool()) {
-            violationExpiry = buf.readI64();
-        }
-    }
-
     int accountId;
     std::optional<std::string> userName;
     std::optional<std::string> nameColor;
@@ -90,3 +29,19 @@ public:
     std::optional<std::string> violationReason;
     std::optional<int64_t> violationExpiry;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(
+    UserEntry,
+    (
+        accountId,
+        userName,
+        nameColor,
+        userRole,
+        isBanned,
+        isMuted,
+        isWhitelisted,
+        adminPassword,
+        violationReason,
+        violationExpiry
+    )
+);

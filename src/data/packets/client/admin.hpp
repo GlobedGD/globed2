@@ -6,8 +6,7 @@
 class AdminAuthPacket : public Packet {
     GLOBED_PACKET(19000, true, true)
 
-    GLOBED_PACKET_ENCODE { buf.writeString(key); }
-
+    AdminAuthPacket() {}
     AdminAuthPacket(const std::string_view key) : key(key) {}
 
     static std::shared_ptr<Packet> create(const std::string_view key) {
@@ -17,23 +16,20 @@ class AdminAuthPacket : public Packet {
     std::string key;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(AdminAuthPacket, (key));
+
 enum class AdminSendNoticeType : uint8_t {
     Everyone = 0,
     RoomOrLevel = 1,
     Person = 2,
 };
 
+GLOBED_SERIALIZABLE_ENUM(AdminSendNoticeType, Everyone, RoomOrLevel, Person);
+
 class AdminSendNoticePacket : public Packet {
     GLOBED_PACKET(19001, true, true)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeEnum(ptype);
-        buf.writeU32(roomId);
-        buf.writePrimitive<LevelId>(levelId);
-        buf.writeString(player);
-        buf.writeString(message);
-    }
-
+    AdminSendNoticePacket() {}
     AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, const std::string_view player, const std::string_view message)
         : ptype(ptype), roomId(roomId), levelId(levelId), player(player), message(message) {}
 
@@ -48,14 +44,14 @@ class AdminSendNoticePacket : public Packet {
     std::string message;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(AdminSendNoticePacket, (
+    ptype, roomId, levelId, player, message
+));
+
 class AdminDisconnectPacket : public Packet {
     GLOBED_PACKET(19002, false, true)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeString(player);
-        buf.writeString(message);
-    }
-
+    AdminDisconnectPacket() {}
     AdminDisconnectPacket(const std::string_view player, const std::string_view message)
         : player(player), message(message) {}
 
@@ -66,13 +62,14 @@ class AdminDisconnectPacket : public Packet {
     std::string player, message;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(AdminDisconnectPacket, (
+    player, message
+));
+
 class AdminGetUserStatePacket : public Packet {
     GLOBED_PACKET(19003, false, true)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeString(player);
-    }
-
+    AdminGetUserStatePacket() {}
     AdminGetUserStatePacket(const std::string_view player) : player(player) {}
 
     static std::shared_ptr<Packet> create(const std::string_view player) {
@@ -82,13 +79,14 @@ class AdminGetUserStatePacket : public Packet {
     std::string player;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(AdminGetUserStatePacket, (
+    player
+));
+
 class AdminUpdateUserPacket : public Packet {
     GLOBED_PACKET(19004, true, true)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeValue(userEntry);
-    }
-
+    AdminUpdateUserPacket() {}
     AdminUpdateUserPacket(const UserEntry& entry) : userEntry(entry) {}
 
     static std::shared_ptr<Packet> create(const UserEntry& entry) {
@@ -97,3 +95,7 @@ class AdminUpdateUserPacket : public Packet {
 
     UserEntry userEntry;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(AdminUpdateUserPacket, (
+    userEntry
+));

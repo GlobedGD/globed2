@@ -15,30 +15,7 @@ public:
     util::data::byte* ptr;
     int64_t length;
 
-    void freeData() {
-        GLOBED_REQUIRE(ptr != nullptr, "attempting to double free an instance of EncodedOpusData")
-
-        delete[] ptr;
-
-#ifdef GLOBED_DEBUG
-        // to try and prevent misuse
-        ptr = nullptr;
-        length = -1;
-#endif // GLOBED_DEBUG
-    }
-
-    GLOBED_ENCODE {
-        buf.writeByteArray(ptr, length);
-    }
-
-    GLOBED_DECODE {
-        // when it comes to arbitrary allocation, DO NOT trust the sent data
-        length = buf.readU32();
-        GLOBED_REQUIRE(length <= VOICE_MAX_BYTES_IN_FRAME, fmt::format("Rejecting audio frame, size too large ({})", length))
-
-        ptr = new util::data::byte[length];
-        buf.readBytesInto(ptr, length);
-    }
+    void freeData();
 };
 
 class AudioEncoder {

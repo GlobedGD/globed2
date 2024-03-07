@@ -5,7 +5,12 @@
 
 BlockListManager::BlockListManager() {
     try {
-        this->load();
+        auto result = this->load();
+        if (result.isErr()) {
+            log::warn("Faile to load blocklist: {}", result.unwrapErr());
+            _bl.clear();
+            _wl.clear();
+        }
     } catch (const std::exception& e) {
         _bl.clear();
         _wl.clear();
@@ -25,40 +30,52 @@ void BlockListManager::save() {
         bb.writeI32(elem);
     }
 
-    auto data = util::crypto::base64Encode(bb.getDataRef());
+    auto data = util::crypto::base64Encode(bb.data());
 
     Mod::get()->setSavedValue(SETTING_KEY, data);
 }
 
-void BlockListManager::load() {
+Result<> BlockListManager::load() {
     _bl.clear();
     _wl.clear();
 
     auto val = Mod::get()->getSavedValue<std::string>(SETTING_KEY);
-    if (val.empty()) return;
+    if (val.empty()) return Err("no blocklist found");
 
     util::data::bytevector data;
 
     try {
         data = util::crypto::base64Decode(val);
     } catch (const std::exception& e) {
-        log::warn("Failed to load blocklist: {}", e.what());
-        return;
+        return Err(e.what());
     }
 
-    if (data.empty()) return;
+    if (data.empty()) return Err("base64 string was empty");
 
     ByteBuffer bb(std::move(data));
+    auto blocklistR = bb.readValue<std::vector<int>>();
+    auto whitelistR = bb.readValue<std::vector<int>>();
 
-    size_t blsize = bb.readU32();
-    for (size_t i = 0; i < blsize; i++) {
-        _bl.insert(bb.readI32());
+    if (blocklistR.isErr()) {
+        return Err(ByteBuffer::strerror(blocklistR.unwrapErr()));
     }
 
-    size_t wlsize = bb.readU32();
-    for (size_t i = 0; i < wlsize; i++) {
-        _wl.insert(bb.readI32());
+    if (whitelistR.isErr()) {
+        return Err(ByteBuffer::strerror(whitelistR.unwrapErr()));
     }
+
+    auto blocklist = blocklistR.unwrap();
+    auto whitelist = whitelistR.unwrap();
+
+    for (int elem : blocklist) {
+        _bl.insert(elem);
+    }
+
+    for (int elem : whitelist) {
+        _wl.insert(elem);
+    }
+
+    return Ok();
 }
 
 bool BlockListManager::isExplicitlyBlocked(int playerId) {

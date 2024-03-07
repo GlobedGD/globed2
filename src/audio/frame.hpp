@@ -8,6 +8,8 @@
 // Represents an audio frame that contains multiple encoded opus frames
 class EncodedAudioFrame {
 public:
+    friend class ByteBuffer;
+
     // the absolute maximum amount of opus frames that can be encoded/decoded
     static constexpr size_t VOICE_MAX_FRAMES_IN_AUDIO_FRAME = 10;
 
@@ -41,11 +43,6 @@ public:
 
     // extract all frames
     const std::vector<EncodedOpusData>& getFrames() const;
-
-    // implement Serializable
-
-    void encode(ByteBuffer& buf) const;
-    void decode(ByteBuffer& buf);
 
 protected:
     mutable std::vector<EncodedOpusData> frames;

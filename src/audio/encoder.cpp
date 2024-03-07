@@ -6,6 +6,45 @@
 
 using namespace util::data;
 
+void EncodedOpusData::freeData() {
+    GLOBED_REQUIRE(ptr != nullptr, "attempting to double free an instance of EncodedOpusData")
+
+    delete[] ptr;
+
+#ifdef GLOBED_DEBUG
+    // to try and prevent misuse
+    ptr = nullptr;
+    length = -1;
+#endif // GLOBED_DEBUG
+}
+
+template<> void ByteBuffer::customEncode(const EncodedOpusData& data) {
+    this->writeU32(data.length);
+    this->rawWriteBytes(data.ptr, data.length);
+}
+
+template<> ByteBuffer::DecodeResult<EncodedOpusData> ByteBuffer::customDecode() {
+    EncodedOpusData out;
+
+    GLOBED_UNWRAP_INTO(this->readU32(), out.length);
+
+    if (out.length > VOICE_MAX_BYTES_IN_FRAME) {
+        log::warn("Rejecting audio frame, size too large ({})", out.length);
+        return Err(DecodeError::DataTooLong);
+    }
+
+    out.ptr = new util::data::byte[out.length];
+
+    auto result = this->readBytesInto(out.ptr, out.length);
+    if (result.isErr()) {
+        delete[] out.ptr;
+        out.ptr = nullptr;
+        return Err(std::move(result.unwrapErr()));
+    }
+
+    return Ok(out);
+}
+
 AudioEncoder::AudioEncoder(int sampleRate, int frameSize, int channels) {
     this->frameSize = frameSize;
     this->sampleRate = sampleRate;

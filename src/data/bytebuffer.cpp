@@ -1,181 +1,67 @@
 #include "bytebuffer.hpp"
 
-#include <defs/assert.hpp>
-#include <defs/minimal_geode.hpp>
-#include <cstring> // std::memcpy
+#include <boost/describe.hpp>
+
+template <typename T = std::monostate>
+using DecodeResult = ByteBuffer::DecodeResult<T>;
+using DecodeError = ByteBuffer::DecodeError;
 
 using namespace util::data;
+using namespace cocos2d;
 
-#define READ_VALUE(type) return util::data::maybeByteswap<type>(this->read<type>());
+const char* ByteBuffer::strerror(DecodeError err) {
+    using Error = ByteBuffer::DecodeError;
 
-#define WRITE_VALUE(type, value) this->write<type>(util::data::maybeByteswap<type>(value));
+    switch (err) {
+        case Error::Ok: return "No error";
+        case Error::NotEnoughData: return "Could not read enough bytes from the buffer";
+        case Error::InvalidEnumValue: return "Invalid enum value was read";
+        case Error::DataTooLong: return "Received data is too long so packet decoding was halted";
+    }
 
-#define MAKE_READ_FUNC(type, suffix) \
-    type ByteBuffer::read##suffix() { READ_VALUE(type) } \
-    template type ByteBuffer::read<type>();
-
-#define MAKE_WRITE_FUNC(type, suffix) \
-    void ByteBuffer::write##suffix(type val) { WRITE_VALUE(type, val) } \
-    template void ByteBuffer::write<type>(type);
-
-#define MAKE_BOTH_FUNCS(type, suffix) MAKE_READ_FUNC(type, suffix) \
-    MAKE_WRITE_FUNC(type, suffix)
-
-ByteBuffer::ByteBuffer() : _position(0) {}
-ByteBuffer::ByteBuffer(const bytevector& data) : _data(data), _position(0) {}
-ByteBuffer::ByteBuffer(const byte* data, size_t length) : _data(bytevector(data, data + length)), _position(0) {}
-ByteBuffer::ByteBuffer(util::data::bytevector&& data) : _data(std::move(data)), _position(0) {}
-
-template <typename T>
-T ByteBuffer::read() {
-    this->boundsCheck(sizeof(T));
-
-    T value;
-    std::memcpy(&value, _data.data() + _position, sizeof(T));
-    _position += sizeof(T);
-    return value;
+    return "Unknown error";
 }
 
-template <typename T>
-void ByteBuffer::write(T value) {
-    const byte* bytes = reinterpret_cast<const byte*>(&value);
+ByteBuffer::ByteBuffer() {}
 
+ByteBuffer::ByteBuffer(const bytevector& data) : _data(data) {}
+ByteBuffer::ByteBuffer(const byte* data, size_t length)
+    : _data(bytevector(data, data + length)) {}
+
+ByteBuffer::ByteBuffer(bytevector&& data)
+    : _data(std::move(data)) {}
+
+void ByteBuffer::rawWriteBytes(const byte* bytes, size_t length) {
     // if we can't fit (i.e. writing at the end, just use insert)
-    if (_position + sizeof(T) > _data.size()) {
-        _data.insert(_data.begin() + _position, bytes, bytes + sizeof(T));
+    if (_position + length > _data.size()) {
+        _data.insert(_data.begin() + _position, bytes, bytes + length);
         // remove leftover elements
-        _data.reserve(_position + sizeof(T));
+        _data.reserve(_position + length);
     } else {
         // otherwise, overwrite existing elements
-        for (size_t i = 0; i < sizeof(T); i++) {
+        for (size_t i = 0; i < length; i++) {
             _data.data()[_position + i] = bytes[i];
         }
     }
 
-    _position += sizeof(T);
-}
-
-bool ByteBuffer::readBool() {
-    return this->readU8() != 0;
-}
-
-void ByteBuffer::writeBool(bool value) {
-    this->writeU8(value ? 1 : 0);
-}
-
-MAKE_BOTH_FUNCS(uint8_t, U8)
-MAKE_BOTH_FUNCS(int8_t, I8)
-MAKE_BOTH_FUNCS(uint16_t, U16)
-MAKE_BOTH_FUNCS(int16_t, I16)
-MAKE_BOTH_FUNCS(uint32_t, U32)
-MAKE_BOTH_FUNCS(int32_t, I32)
-MAKE_BOTH_FUNCS(uint64_t, U64)
-MAKE_BOTH_FUNCS(int64_t, I64)
-MAKE_BOTH_FUNCS(float, F32)
-MAKE_BOTH_FUNCS(double, F64)
-
-std::string ByteBuffer::readString() {
-    auto length = this->readU32();
-
-    this->boundsCheck(length);
-
-    std::string str(reinterpret_cast<const char*>(_data.data() + _position), length);
     _position += length;
-
-    return str;
 }
 
-bytevector ByteBuffer::readByteArray() {
-    auto length = this->readU32();
-    return this->readBytes(length);
+DecodeResult<> ByteBuffer::boundsCheck(size_t count) {
+    if (_position + count > _data.size()) {
+        return Err(DecodeError::NotEnoughData);
+    }
+
+    return Ok();
 }
 
-bytevector ByteBuffer::readBytes(size_t size) {
-    this->boundsCheck(size);
+/* Util methods */
 
-    bytevector vec(_data.begin() + _position, _data.begin() + _position + size);
-    _position += size;
-
-    return vec;
-}
-
-void ByteBuffer::readBytesInto(byte* out, size_t size) {
-    this->boundsCheck(size);
-    std::memcpy(out, _data.data() + _position, size);
-    _position += size;
-}
-
-void ByteBuffer::writeString(const std::string_view str) {
-    this->writeU32(str.size());
-    _data.insert(_data.end(), str.begin(), str.end());
-    _position += str.size();
-}
-
-void ByteBuffer::writeByteArray(const bytevector& vec) {
-    this->writeU32(vec.size());
-    this->writeBytes(vec);
-}
-
-void ByteBuffer::writeByteArray(const byte* data, size_t length) {
-    this->writeU32(length);
-    this->writeBytes(data, length);
-}
-
-void ByteBuffer::writeBytes(const util::data::byte* data, size_t size) {
-    _data.insert(_data.end(), data, data + size);
-    _position += size;
-}
-
-void ByteBuffer::writeBytes(const bytevector& vec) {
-    this->writeBytes(vec.data(), vec.size());
-}
-
-/* cocos/gd */
-
-cocos2d::ccColor3B ByteBuffer::readColor3() {
-    auto r = this->readU8();
-    auto g = this->readU8();
-    auto b = this->readU8();
-    return cocos2d::ccc3(r, g, b);
-}
-
-cocos2d::ccColor4B ByteBuffer::readColor4() {
-    auto r = this->readU8();
-    auto g = this->readU8();
-    auto b = this->readU8();
-    auto a = this->readU8();
-    return cocos2d::ccc4(r, g, b, a);
-}
-
-cocos2d::CCPoint ByteBuffer::readPoint() {
-    float x = this->readF32();
-    float y = this->readF32();
-    return ccp(x, y);
-}
-
-void ByteBuffer::writeColor3(cocos2d::ccColor3B color) {
-    this->writeU8(color.r);
-    this->writeU8(color.g);
-    this->writeU8(color.b);
-}
-
-void ByteBuffer::writeColor4(cocos2d::ccColor4B color) {
-    this->writeU8(color.r);
-    this->writeU8(color.g);
-    this->writeU8(color.b);
-    this->writeU8(color.a);
-}
-
-void ByteBuffer::writePoint(cocos2d::CCPoint point) {
-    this->writeF32(point.x);
-    this->writeF32(point.y);
-}
-
-bytevector ByteBuffer::getData() const {
+const bytevector& ByteBuffer::data() const {
     return _data;
 }
 
-bytevector& ByteBuffer::getDataRef() {
+bytevector& ByteBuffer::data() {
     return _data;
 }
 
@@ -190,24 +76,156 @@ size_t ByteBuffer::size() const {
 
 size_t ByteBuffer::getPosition() const {
     return _position;
-}
+};
 
 void ByteBuffer::setPosition(size_t pos) {
     _position = pos;
 }
 
-void ByteBuffer::resize(size_t bytes) {
-    _data.resize(bytes);
+void ByteBuffer::resize(size_t newSize) {
+    _data.resize(newSize);
 }
 
 void ByteBuffer::grow(size_t bytes) {
-    this->resize(_data.size() + bytes);
+    this->resize(this->size() + bytes);
 }
 
 void ByteBuffer::shrink(size_t bytes) {
-    this->resize(_data.size() - bytes);
+    this->resize(this->size() - bytes);
 }
 
-void ByteBuffer::boundsCheck(size_t readBytes) {
-    GLOBED_REQUIRE(_position + readBytes <= _data.size(), "ByteBuffer out of bounds read")
+DecodeResult<> ByteBuffer::skip(size_t bytes) {
+    GLOBED_UNWRAP(this->boundsCheck(bytes));
+    _position += bytes;
+
+    return Ok();
 }
+
+DecodeResult<> ByteBuffer::readBytesInto(byte* buf, size_t bytes) {
+    GLOBED_UNWRAP(this->boundsCheck(bytes));
+    std::memcpy(buf, _data.data() + _position, bytes);
+    _position += bytes;
+
+    return Ok();
+}
+
+/* Common encode/decode specializations */
+
+// Strings
+
+template<> void ByteBuffer::customEncode(const std::string_view& value) {
+    this->writePrimitive<uint32_t>(value.size());
+    this->rawWriteBytes(reinterpret_cast<const byte*>(value.data()), value.size());
+}
+
+template<> void ByteBuffer::customEncode(const std::string& value) {
+    this->customEncode(std::string_view(value));
+}
+
+template<> DecodeResult<std::string> ByteBuffer::customDecode() {
+    GLOBED_UNWRAP_INTO(this->readPrimitive<uint32_t>(), size_t length);
+
+    GLOBED_UNWRAP(this->boundsCheck(length));
+
+    std::string str(reinterpret_cast<const char*>(_data.data() + _position), length);
+    _position += length;
+
+    return Ok(str);
+}
+
+// CCPoint
+
+template<> void ByteBuffer::customEncode(const CCPoint& point) {
+    this->writeF32(point.x);
+    this->writeF32(point.y);
+}
+
+template<> DecodeResult<CCPoint> ByteBuffer::customDecode() {
+    GLOBED_UNWRAP_INTO(this->readF32(), float x);
+    GLOBED_UNWRAP_INTO(this->readF32(), float y);
+
+    return Ok(CCPoint { x, y });
+}
+
+// CCSize
+
+template<> void ByteBuffer::customEncode(const CCSize& size) {
+    this->writeF32(size.width);
+    this->writeF32(size.height);
+}
+
+template<> DecodeResult<CCSize> ByteBuffer::customDecode() {
+    GLOBED_UNWRAP_INTO(this->readF32(), float w);
+    GLOBED_UNWRAP_INTO(this->readF32(), float h);
+
+    return Ok(CCSize { w, h });
+}
+
+// ccColor3B
+
+template<> void ByteBuffer::customEncode(const ccColor3B& color) {
+    this->writeU8(color.r);
+    this->writeU8(color.g);
+    this->writeU8(color.b);
+}
+
+template<> DecodeResult<ccColor3B> ByteBuffer::customDecode() {
+    GLOBED_UNWRAP_INTO(this->readU8(), uint8_t r);
+    GLOBED_UNWRAP_INTO(this->readU8(), uint8_t g);
+    GLOBED_UNWRAP_INTO(this->readU8(), uint8_t b);
+
+    return Ok(ccc3(r, g, b));
+}
+
+// ccColor4B
+
+template<> void ByteBuffer::customEncode(const ccColor4B& color) {
+    this->writeU8(color.r);
+    this->writeU8(color.g);
+    this->writeU8(color.b);
+    this->writeU8(color.a);
+}
+
+template<> DecodeResult<ccColor4B> ByteBuffer::customDecode() {
+    GLOBED_UNWRAP_INTO(this->readU8(), uint8_t r);
+    GLOBED_UNWRAP_INTO(this->readU8(), uint8_t g);
+    GLOBED_UNWRAP_INTO(this->readU8(), uint8_t b);
+    GLOBED_UNWRAP_INTO(this->readU8(), uint8_t a);
+
+    return Ok(ccc4(r, g, b, a));
+}
+
+// bytearray<10>
+#define MAKE_ARRAY_FUNCS(sz) \
+    template<> void ByteBuffer::customEncode(const bytearray<sz>& data) { \
+        this->rawWriteBytes(data.data(), sz); \
+    } \
+    \
+    template<> DecodeResult<bytearray<sz>> ByteBuffer::customDecode() { \
+        bytearray<sz> out; \
+        for (size_t i = 0; i < sz; i++) { \
+            GLOBED_UNWRAP_INTO(this->readU8(), out[i]); \
+        } \
+        return Ok(out); \
+    }
+
+MAKE_ARRAY_FUNCS(10)
+MAKE_ARRAY_FUNCS(32)
+
+/* Boring ass methods */
+
+#define MAKE_METHOD(type, name) \
+    DecodeResult<type> ByteBuffer::read##name() { return this->readPrimitive<type>(); } \
+    void ByteBuffer::write##name(type value) { this->writePrimitive<type>(value); }
+
+MAKE_METHOD(bool, Bool);
+MAKE_METHOD(int8_t, I8);
+MAKE_METHOD(int16_t, I16);
+MAKE_METHOD(int32_t, I32);
+MAKE_METHOD(int64_t, I64);
+MAKE_METHOD(uint8_t, U8);
+MAKE_METHOD(uint16_t, U16);
+MAKE_METHOD(uint32_t, U32);
+MAKE_METHOD(uint64_t, U64);
+MAKE_METHOD(float, F32);
+MAKE_METHOD(double, F64);

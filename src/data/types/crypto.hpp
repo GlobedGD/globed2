@@ -12,14 +12,7 @@ public:
     CryptoPublicKey() {}
     CryptoPublicKey(util::data::bytearray<CryptoBox::KEY_LEN> key) : key(key) {}
 
-    GLOBED_ENCODE {
-        buf.writeBytes(key);
-    }
-
-    GLOBED_DECODE {
-        key = buf.readBytes<CryptoBox::KEY_LEN>();
-    }
-
     util::data::bytearray<CryptoBox::KEY_LEN> key;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(CryptoPublicKey, (key));

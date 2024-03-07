@@ -5,43 +5,49 @@
 
 class AdminAuthSuccessPacket : public Packet {
     GLOBED_PACKET(29000, false, false)
-    GLOBED_PACKET_DECODE {
-        role = buf.readI32();
-    }
+
+    AdminAuthSuccessPacket() {}
 
     int role;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(AdminAuthSuccessPacket, (role));
+
 class AdminErrorPacket : public Packet {
     GLOBED_PACKET(29001, true, false)
-    GLOBED_PACKET_DECODE {
-        message = buf.readString();
-    }
+
+    AdminErrorPacket() {}
 
     std::string message;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(AdminErrorPacket, (message));
+
 class AdminUserDataPacket : public Packet {
     GLOBED_PACKET(29002, true, false)
-    GLOBED_PACKET_DECODE {
-        userEntry = buf.readValue<UserEntry>();
-        accountData = buf.readOptionalValue<PlayerRoomPreviewAccountData>();
-    }
+
+    AdminUserDataPacket() {}
 
     UserEntry userEntry;
     std::optional<PlayerRoomPreviewAccountData> accountData;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(AdminUserDataPacket, (userEntry, accountData));
+
 class AdminSuccessMessagePacket : public Packet {
     GLOBED_PACKET(29003, false, false)
-    GLOBED_PACKET_DECODE {
-        message = buf.readString();
-    }
+
+    AdminSuccessMessagePacket() {}
 
     std::string message;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(AdminSuccessMessagePacket, (message));
+
 class AdminAuthFailedPacket : public Packet {
     GLOBED_PACKET(29004, false, false)
-    GLOBED_PACKET_DECODE {}
+
+    AdminAuthFailedPacket() {}
 };
+
+GLOBED_SERIALIZABLE_STRUCT(AdminAuthFailedPacket, ());

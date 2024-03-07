@@ -5,8 +5,7 @@
 class SyncIconsPacket : public Packet {
     GLOBED_PACKET(11000, false, false)
 
-    GLOBED_PACKET_ENCODE { buf.writeValue(icons); }
-
+    SyncIconsPacket() {}
     SyncIconsPacket(const PlayerIconData& icons) : icons(icons) {}
 
     static std::shared_ptr<Packet> create(const PlayerIconData& icons) {
@@ -16,10 +15,10 @@ class SyncIconsPacket : public Packet {
     PlayerIconData icons;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(SyncIconsPacket, (icons));
+
 class RequestGlobalPlayerListPacket : public Packet {
     GLOBED_PACKET(11001, false, false)
-
-    GLOBED_PACKET_ENCODE {}
 
     RequestGlobalPlayerListPacket() {}
 
@@ -28,10 +27,10 @@ class RequestGlobalPlayerListPacket : public Packet {
     }
 };
 
+GLOBED_SERIALIZABLE_STRUCT(RequestGlobalPlayerListPacket, ());
+
 class CreateRoomPacket : public Packet {
     GLOBED_PACKET(11002, false, false)
-
-    GLOBED_PACKET_ENCODE {}
 
     CreateRoomPacket() {}
 
@@ -40,11 +39,12 @@ class CreateRoomPacket : public Packet {
     }
 };
 
+GLOBED_SERIALIZABLE_STRUCT(CreateRoomPacket, ());
+
 class JoinRoomPacket : public Packet {
     GLOBED_PACKET(11003, false, false)
 
-    GLOBED_PACKET_ENCODE { buf.writeU32(roomId); }
-
+    JoinRoomPacket() {}
     JoinRoomPacket(uint32_t roomId) : roomId(roomId) {}
 
     static std::shared_ptr<Packet> create(uint32_t roomId) {
@@ -54,10 +54,10 @@ class JoinRoomPacket : public Packet {
     uint32_t roomId;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(JoinRoomPacket, (roomId));
+
 class LeaveRoomPacket : public Packet {
     GLOBED_PACKET(11004, false, false)
-
-    GLOBED_PACKET_ENCODE {}
 
     LeaveRoomPacket() {}
 
@@ -66,10 +66,10 @@ class LeaveRoomPacket : public Packet {
     }
 };
 
+GLOBED_SERIALIZABLE_STRUCT(LeaveRoomPacket, ());
+
 class RequestRoomPlayerListPacket : public Packet {
     GLOBED_PACKET(11005, false, false)
-
-    GLOBED_PACKET_ENCODE {}
 
     RequestRoomPlayerListPacket() {}
 
@@ -78,10 +78,10 @@ class RequestRoomPlayerListPacket : public Packet {
     }
 };
 
+GLOBED_SERIALIZABLE_STRUCT(RequestRoomPlayerListPacket, ());
+
 class RequestLevelListPacket : public Packet {
     GLOBED_PACKET(11006, false, false)
-
-    GLOBED_PACKET_ENCODE {}
 
     RequestLevelListPacket() {}
 
@@ -90,16 +90,12 @@ class RequestLevelListPacket : public Packet {
     }
 };
 
+GLOBED_SERIALIZABLE_STRUCT(RequestLevelListPacket, ());
+
 class RequestPlayerCountPacket : public Packet {
     GLOBED_PACKET(11007, false, false)
 
-    GLOBED_PACKET_ENCODE {
-        buf.writeU32(levelIds.size());
-        for (LevelId value : levelIds) {
-            buf.writePrimitive(value);
-        }
-    }
-
+    RequestPlayerCountPacket() {}
     RequestPlayerCountPacket(std::vector<LevelId>&& levelIds) : levelIds(std::move(levelIds)) {}
 
     static std::shared_ptr<Packet> create(std::vector<LevelId>&& levelIds) {
@@ -108,3 +104,5 @@ class RequestPlayerCountPacket : public Packet {
 
     std::vector<LevelId> levelIds;
 };
+
+GLOBED_SERIALIZABLE_STRUCT(RequestPlayerCountPacket, (levelIds));
