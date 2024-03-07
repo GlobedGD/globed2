@@ -47,7 +47,7 @@ namespace globed::simd::x86 {
             {
                 int arr[4];
                 arr[2] = 0;
-                __cpuid(arr, 7);
+                cpuid(arr, 7);
 
                 int eax = arr[0];
                 int ebx = arr[1];
