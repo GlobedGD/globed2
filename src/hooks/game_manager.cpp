@@ -50,6 +50,7 @@ void HookedGameManager::loadIconsBatched(int iconType, int startId, int endId) {
 
 void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ranges) {
     std::vector<std::string> toLoad;
+    std::unordered_map<int, std::unordered_map<int, size_t>> toLoadMap;
 
     for (const auto& range : ranges) {
         for (int id = range.startId; id <= range.endId; id++) {
@@ -57,6 +58,7 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
             if (sheetName.empty()) continue;
 
             toLoad.push_back(sheetName);
+            toLoadMap[range.iconType][id] = toLoad.size() - 1;
         }
     }
 
@@ -72,9 +74,9 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
     auto plistNameSuffix = util::cocos::getTextureNameSuffixPlist();
     size_t searchPathIdx = util::cocos::findSearchPathIdxForFile("icons/robot_41-hd.png");
 
-    for (const auto& range : ranges) {
-        for (int id = range.startId; id <= range.endId; id++) {
-            const auto& sheetName = toLoad[id - range.startId];
+    for (const auto& [iconType, map] : toLoadMap) {
+        for (const auto& [iconId, idx] : map) {
+            const auto& sheetName = toLoad[idx];
 
             auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName), searchPathIdx);
             if (fullpath.empty()) {
@@ -88,11 +90,16 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
             // log::debug("tex for {}: {}", transformed, tex);
 
             if (!tex) {
-                log::warn("icon failed to preload: type {}, id {}", range.iconType, id);
+                log::warn("icon failed to preload: type {}, id {}", iconType, iconId);
                 continue;
             }
 
-            m_fields->iconCache[range.iconType][id] = tex;
+            log::debug("assigning {}, {} to {} (from {})", iconType, iconId, tex, transformed);
+            if (this->getCachedIcon(iconId, iconType)) {
+                log::warn("icon already exists, overwriting");
+            }
+
+            m_fields->iconCache[iconType][iconId] = tex;
         }
     }
 }

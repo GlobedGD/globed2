@@ -164,6 +164,12 @@ namespace util::cocos {
         imgsg.unlock();
 
         for (size_t i = 0; i < imgCount; i++) {
+            // this is the slow code but is essentially equivalent to the code below
+            // auto imgState = imgStates.lock()->at(i);
+            // auto plistKey = fmt::format("{}.plist", imgState.key);
+            // auto fp = CCFileUtils::sharedFileUtils()->fullPathForFilename(plistKey.c_str(), false);
+            // sfCache->addSpriteFramesWithFile(fp.c_str());
+
             threadPool.pushTask([=, &imgStates] {
                 auto imgState = imgStates.lock()->at(i);
                 if (!imgState.texture) return;

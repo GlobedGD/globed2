@@ -139,9 +139,9 @@ void HookedLoadingLayer::preloadingStage2(float) {
     this->setLabelTextForStage();
 
     if (m_fields->preloadingStage % 2 == 1) {
-        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.05f);
+        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.0f);
     } else {
-        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage3), 0.05f);
+        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage3), 0.0f);
     }
 }
 
