@@ -78,23 +78,19 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
         for (const auto& [iconId, idx] : map) {
             const auto& sheetName = toLoad[idx];
 
-            auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName), searchPathIdx);
+            auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName), texNameSuffix, searchPathIdx);
             if (fullpath.empty()) {
                 log::warn("path empty: {}", sheetName);
                 continue;
             }
 
-            std::string transformed = util::cocos::transformPathWithQuality(fullpath, texNameSuffix);
-
-            auto* tex = static_cast<CCTexture2D*>(tc->m_pTextures->objectForKey(transformed));
-            // log::debug("tex for {}: {}", transformed, tex);
+            auto* tex = static_cast<CCTexture2D*>(tc->m_pTextures->objectForKey(fullpath));
 
             if (!tex) {
                 log::warn("icon failed to preload: type {}, id {}", iconType, iconId);
                 continue;
             }
 
-            log::debug("assigning {}, {} to {} (from {})", iconType, iconId, tex, transformed);
             if (this->getCachedIcon(iconId, iconType)) {
                 log::warn("icon already exists, overwriting");
             }

@@ -49,6 +49,8 @@ namespace util::cocos {
 
     void privAddSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2);
 
+    // god save me from this hell
+
     void loadAssetsParallel(const std::vector<std::string>& images) {
         const size_t MAX_THREADS = 25;
         static sync::ThreadPool threadPool(MAX_THREADS);
@@ -68,31 +70,48 @@ namespace util::cocos {
         sync::WrappingMutex<std::vector<ImageLoadState>> imgStates;
 
         auto texNameSuffix = getTextureNameSuffix();
-        auto plistNameSuffix = getTextureNameSuffixPlist();
 
         // this is such a hack
-        size_t searchPathIdx = findSearchPathIdxForFile("icons/robot_41-hd.png");
+        size_t searchPathIdx = findSearchPathIdxForFile("icons/player_01-uhd.png");
+        bool hasTexturePack = false;
+
+        auto* fileUtils = static_cast<HookedCCFileUtils*>(CCFileUtils::sharedFileUtils());
+        auto firstPath = fileUtils->pubGetSearchPathArray().at(0);
+
+        // if we have a texture pack, no good. just set searchPathIdx to -1
+        if (std::string(firstPath).find("geode.texture-loader") != std::string::npos) {
+            searchPathIdx = -1;
+            hasTexturePack = true;
+        }
 
         for (const auto& imgkey : images) {
             auto pathKey = fmt::format("{}.png", imgkey);
 
             // textureForKey uses slow CCFileUtils::fullPathForFilename so we reimpl it
-            auto fullpath = fullPathForFilename(pathKey, searchPathIdx);
+            std::string fullpath;
+
+            if (hasTexturePack) {
+                fullpath = fullPathForFilename(pathKey, texNameSuffix, 0);
+            }
+
+            // if we have a texture pack but resolution with idx 0 failed, try searching through everything
+            // if we don't have a texture pack, use the gd resources (as set earlier to searchPathIdx)
+            if (fullpath.empty()) {
+                fullpath = fullPathForFilename(pathKey, texNameSuffix, searchPathIdx);
+            }
 
             if (fullpath.empty()) {
                 continue;
             }
 
-            std::string transformed = transformPathWithQuality(fullpath, texNameSuffix);
-
-            if (textureCache->m_pTextures->objectForKey(transformed) != nullptr) {
+            if (textureCache->m_pTextures->objectForKey(fullpath) != nullptr) {
                 continue;
             }
 
             auto imgs = imgStates.lock();
             imgs->push_back(ImageLoadState {
                 .key = imgkey,
-                .path = transformed,
+                .path = fullpath,
                 .image = nullptr,
                 .texture = nullptr
             });
@@ -178,18 +197,16 @@ namespace util::cocos {
 
                 auto plistKey = fmt::format("{}.plist", imgState.key);
 
-                std::string fullPlistPath;
-
                 {
                     auto _ = cocosWorkMutex.lock();
-                    fullPlistPath = fullPathForFilename(plistKey, searchPathIdx);
-                    fullPlistPath = transformPathWithQualityPlist(fullPlistPath, plistNameSuffix);
 
                     if (sfCache->m_pLoadedFileNames->contains(plistKey)) {
                         log::debug("already contains, skipping");
                         return;
                     }
                 }
+
+                std::string fullPlistPath = imgState.path.substr(0, imgState.path.find(".png")) + ".plist";
 
                 std::string texturePath;
 
@@ -235,10 +252,16 @@ namespace util::cocos {
         threadPool.join();
     }
 
-    std::string fullPathForFilename(const std::string_view filename, size_t preferIdx) {
+    std::string fullPathForFilename(const std::string_view filename, const std::string_view suffix, size_t preferIdx) {
         auto* fu = static_cast<HookedCCFileUtils*>(CCFileUtils::sharedFileUtils());
 
-        std::string strFileName(filename);
+        std::string strFileName;
+        if (filename.ends_with(".plist")) {
+            strFileName = transformPathWithQualityPlist(filename, suffix);
+        } else {
+            strFileName = transformPathWithQuality(filename, suffix);
+        }
+
         if (fu->isAbsolutePath(strFileName)) {
             return strFileName;
         }
@@ -264,6 +287,9 @@ namespace util::cocos {
                     return fullpath;
                 }
             }
+
+            // on fail return empty string
+            return "";
         }
 
         for (const auto& searchPath : fu->pubGetSearchPathArray()) {
