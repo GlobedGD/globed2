@@ -14,4 +14,17 @@ class $modify(HookedGameManager, GameManager) {
 
     $override
     void reloadAllStep2();
+
+    // Load multiple icons in parallel. Range is inclusive [startId; endId]
+    void loadIconsBatched(int iconType, int startId, int endId);
+
+    struct BatchedIconRange {
+        int iconType;
+        int startId;
+        int endId;
+    };
+
+    void loadIconsBatched(const std::vector<BatchedIconRange>& ranges);
+
+    cocos2d::CCTexture2D* getCachedIcon(int iconId, int iconType);
 };

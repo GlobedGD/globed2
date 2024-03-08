@@ -24,4 +24,66 @@ void SmartThread<>::start() {
     });
 }
 
+ThreadPool::ThreadPool(size_t tc) {
+    size_t id = rand() % 1024;
+
+    for (size_t i = 0; i < tc; i++) {
+        SmartThread<> thread;
+        thread.setName(fmt::format("Thread {} (pool {})", i, id));
+        thread.setLoopFunction([this, i = i] {
+            auto& worker = this->workers.at(i);
+
+            this->taskQueue.waitForMessages();
+
+            worker.doingWork = true;
+
+            auto task = this->taskQueue.tryPop();
+            if (task) {
+                task.value()();
+            }
+
+            worker.doingWork = false;
+        });
+
+        Worker worker = {
+            .thread = std::move(thread),
+            .doingWork = false
+        };
+
+        workers.emplace_back(std::move(worker));
+    }
+
+    for (auto& worker : workers) {
+        worker.thread.start();
+    }
+}
+
+void ThreadPool::pushTask(const Task& task) {
+    taskQueue.push(task);
+}
+
+void ThreadPool::pushTask(Task&& task) {
+    taskQueue.push(std::move(task));
+}
+
+void ThreadPool::join() {
+    while (!taskQueue.empty()) {
+        std::this_thread::sleep_for(util::time::millis(10));
+    }
+
+    // wait for working threads to finish
+    bool stillWorking;
+
+    do {
+        std::this_thread::sleep_for(util::time::millis(10));
+        stillWorking = false;
+        for (const auto& worker : workers) {
+            if (worker.doingWork) {
+                stillWorking = true;
+                break;
+            }
+        }
+    } while (stillWorking);
+}
+
 }

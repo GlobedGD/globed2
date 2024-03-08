@@ -58,7 +58,16 @@ public:
 
     T pop() {
         std::lock_guard lock(_mtx);
-        auto val = _iq.front();
+        T val = std::move(_iq.front());
+        _iq.pop();
+        return val;
+    }
+
+    std::optional<T> tryPop() {
+        std::lock_guard lock(_mtx);
+        if (_iq.empty()) return std::nullopt;
+
+        T val = std::move(_iq.front());
         _iq.pop();
         return val;
     }
@@ -78,6 +87,13 @@ public:
     void push(const T& msg, bool notify = true) {
         std::lock_guard lock(_mtx);
         _iq.push(msg);
+        if (notify)
+            _cvar.notify_one();
+    }
+
+    void push(T&& msg, bool notify = true) {
+        std::lock_guard lock(_mtx);
+        _iq.push(std::move(msg));
         if (notify)
             _cvar.notify_one();
     }
@@ -396,8 +412,19 @@ public:
     SmartThread(const SmartThread&) = delete;
     SmartThread& operator=(const SmartThread&) = delete;
 
-    SmartThread(SmartThread&& other) noexcept = default;
-    SmartThread& operator=(SmartThread&& other) noexcept = default;
+    SmartThread(SmartThread&& other) noexcept {
+        _handle = std::move(other._handle);
+        _storage = std::move(other._storage);
+        other.movedFrom = true;
+    }
+
+    SmartThread& operator=(SmartThread&& other) noexcept {
+        if (this != &other) {
+            _handle = std::move(other._handle);
+            _storage = std::move(other._storage);
+            other.movedFrom = true;
+        }
+    }
 
     SmartThread(const std::string_view name) {
         this->setName(name);
@@ -468,7 +495,9 @@ public:
     }
 
     ~SmartThread() {
-        this->stopAndWait();
+        if (!movedFrom) {
+            this->stopAndWait();
+        }
     }
 
 private:
@@ -480,9 +509,35 @@ private:
 
     std::thread _handle;
     std::shared_ptr<Storage> _storage = nullptr;
+    bool movedFrom = false;
 };
 
 template <>
 void SmartThread<>::start();
+
+class ThreadPool {
+public:
+    using Task = std::function<void()>;
+
+    ThreadPool(size_t workers);
+
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
+
+    void pushTask(const Task& task);
+    void pushTask(Task&& task);
+
+    // Block the calling thread until all tasks have been completed.
+    void join();
+
+private:
+    struct Worker {
+        SmartThread<> thread;
+        AtomicBool doingWork = false;
+    };
+
+    std::vector<Worker> workers;
+    util::sync::SmartMessageQueue<Task> taskQueue;
+};
 
 }
