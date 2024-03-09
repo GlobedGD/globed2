@@ -363,9 +363,14 @@ namespace util::cocos {
 
     void loadAssetsParallel(const std::vector<std::string>& images) {
         const size_t MAX_THREADS = 25;
+        // static destructors on mac don't like mutexes and threads
+#ifndef GEODE_IS_MACOS
         static sync::ThreadPool threadPool(MAX_THREADS);
-        // mutex for things that aren't safe to do on other threads.
         static sync::WrappingMutex<void> cocosWorkMutex;
+#else
+        sync::ThreadPool threadPool(MAX_THREADS);
+        sync::WrappingMutex<void> cocosWorkMutex;
+#endif
 
         auto textureCache = CCTextureCache::sharedTextureCache();
         auto sfCache  = CCSpriteFrameCache::sharedSpriteFrameCache();
@@ -499,7 +504,7 @@ namespace util::cocos {
             // auto fp = CCFileUtils::sharedFileUtils()->fullPathForFilename(plistKey.c_str(), false);
             // sfCache->addSpriteFramesWithFile(fp.c_str());
 
-            threadPool.pushTask([=, &imgStates] {
+            threadPool.pushTask([=, GEODE_MACOS(&threadPool, &cocosWorkMutex,) &imgStates] {
                 auto imgState = imgStates.lock()->at(i);
                 if (!imgState.texture) return;
 
