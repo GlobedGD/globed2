@@ -58,6 +58,15 @@ ThreadPool::ThreadPool(size_t tc) {
     }
 }
 
+ThreadPool::~ThreadPool() {
+    try {
+        this->join();
+        this->workers.clear();
+    } catch (const std::exception& e) {
+        log::warn("failed to cleanup thread pool: {}", e.what());
+    }
+}
+
 void ThreadPool::pushTask(const Task& task) {
     taskQueue.push(task);
 }

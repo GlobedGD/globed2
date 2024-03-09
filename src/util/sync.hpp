@@ -521,6 +521,7 @@ public:
     using Task = std::function<void()>;
 
     ThreadPool(size_t workers);
+    ~ThreadPool();
 
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
