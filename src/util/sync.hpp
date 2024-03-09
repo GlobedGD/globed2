@@ -4,6 +4,7 @@
 
 #pragma once
 #include <defs/essential.hpp>
+#include <defs/geode.hpp>
 
 #include <condition_variable>
 #include <thread>
