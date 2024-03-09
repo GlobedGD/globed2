@@ -23,17 +23,7 @@ struct SpiderTeleportData {
 GLOBED_SERIALIZABLE_STRUCT(SpiderTeleportData, (from, to));
 
 struct SpecificIconData {
-    void copyFlagsFrom(const SpecificIconData& other) {
-        iconType = other.iconType;
-        isDashing = other.isDashing;
-        isLookingLeft = other.isLookingLeft;
-        isUpsideDown = other.isUpsideDown;
-        isVisible = other.isVisible;
-        isMini = other.isMini;
-        isGrounded = other.isGrounded;
-        isStationary = other.isStationary;
-        isFalling = other.isFalling;
-    }
+    void copyFlagsFrom(const SpecificIconData& other);
 
     cocos2d::CCPoint position;
     float rotation;
@@ -49,6 +39,7 @@ struct SpecificIconData {
     bool isFalling;         // when !isGrounded, true if falling, false if jumping upwards
 
     bool didJustJump;       // true on the next frame after the player performed a jump
+    bool isRotating;        // true if player is, well, rotating
     std::optional<SpiderTeleportData> spiderTeleportData;
 };
 

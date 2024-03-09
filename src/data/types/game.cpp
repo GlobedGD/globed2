@@ -4,13 +4,38 @@
 
 using namespace cocos2d;
 
+void SpecificIconData::copyFlagsFrom(const SpecificIconData& other) {
+    iconType = other.iconType;
+    isDashing = other.isDashing;
+    isLookingLeft = other.isLookingLeft;
+    isUpsideDown = other.isUpsideDown;
+    isVisible = other.isVisible;
+    isMini = other.isMini;
+    isGrounded = other.isGrounded;
+    isStationary = other.isStationary;
+    isFalling = other.isFalling;
+    didJustJump = other.didJustJump;
+    isRotating = other.isRotating;
+}
+
 template<> void ByteBuffer::customEncode(const SpecificIconData& data) {
     this->writeValue(data.position);
     this->writeValue(data.rotation);
     this->writeValue(data.iconType);
 
     BitBuffer<16> bits;
-    bits.writeBits(data.isVisible, data.isLookingLeft, data.isUpsideDown, data.isDashing, data.isMini, data.isGrounded, data.isStationary, data.isFalling, data.didJustJump);
+    bits.writeBits(
+        data.isVisible,
+        data.isLookingLeft,
+        data.isUpsideDown,
+        data.isDashing,
+        data.isMini,
+        data.isGrounded,
+        data.isStationary,
+        data.isFalling,
+        data.didJustJump,
+        data.isRotating
+    );
     this->writeBits(bits);
 
     this->writeValue(data.spiderTeleportData);
@@ -24,7 +49,18 @@ template<> ByteBuffer::DecodeResult<SpecificIconData> ByteBuffer::customDecode()
     GLOBED_UNWRAP_INTO(this->readValue<PlayerIconType>(), data.iconType);
 
     GLOBED_UNWRAP_INTO(this->readBits<16>(), auto bits);
-    bits.readBitsInto(data.isVisible, data.isLookingLeft, data.isUpsideDown, data.isDashing, data.isMini, data.isGrounded, data.isStationary, data.isFalling, data.didJustJump);
+    bits.readBitsInto(
+        data.isVisible,
+        data.isLookingLeft,
+        data.isUpsideDown,
+        data.isDashing,
+        data.isMini,
+        data.isGrounded,
+        data.isStationary,
+        data.isFalling,
+        data.didJustJump,
+        data.isRotating
+    );
 
     GLOBED_UNWRAP_INTO(this->readValue<std::optional<SpiderTeleportData>>(), data.spiderTeleportData);
 

@@ -5,6 +5,7 @@
 #include <managers/settings.hpp>
 #include <util/misc.hpp>
 #include <util/rng.hpp>
+#include <util/math.hpp>
 #include <util/debug.hpp>
 
 using namespace geode::prelude;
@@ -82,8 +83,19 @@ void ComplexVisualPlayer::updateData(
 ) {
     auto& settings = GlobedSettings::get();
 
+    wasRotating = data.isRotating;
+
     playerIcon->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
+
+    float distanceTo90deg = std::fmod(std::abs(data.rotation), 90.f);
+    if (distanceTo90deg > 45.f) {
+        distanceTo90deg = 90.f - distanceTo90deg;
+    }
+
+    if (data.isRotating || distanceTo90deg > 1.f) {
+        this->cancelPlatformerJumpAnim();
+    }
 
     // set the pos for status icons and name (ask rob not me)
     playerName->setPosition(data.position + CCPoint{0.f, 25.f});
@@ -226,8 +238,9 @@ void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
 }
 
 void ComplexVisualPlayer::playJump() {
-    if (playLayer->m_level->isPlatformer() && playerIconType == PlayerIconType::Cube) {
+    if (playLayer->m_level->isPlatformer() && playerIconType == PlayerIconType::Cube && !wasRotating) {
         playerIcon->animatePlatformerJump(1.0f);
+        didPerformPlatformerJump = true;
     }
 }
 
@@ -528,6 +541,13 @@ void ComplexVisualPlayer::asyncIconLoadedIntermediary(cocos2d::CCObject* obj) {
     }
 
     gm->m_iconDelegates.erase(request.key);
+}
+
+void ComplexVisualPlayer::cancelPlatformerJumpAnim() {
+    if (didPerformPlatformerJump) {
+        playerIcon->stopPlatformerJumpAnimation();
+        didPerformPlatformerJump = false;
+    }
 }
 
 ComplexVisualPlayer* ComplexVisualPlayer::create(RemotePlayer* parent, bool isSecond) {

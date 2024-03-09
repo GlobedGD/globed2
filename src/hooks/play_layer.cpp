@@ -642,6 +642,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
         .isStationary = isStationary,
         .isFalling = player->m_yVelocity < 0.0,
         .didJustJump = didJustJump,
+        .isRotating = player->m_isRotating,
         .spiderTeleportData = spiderTeleportData
     };
 }
@@ -655,6 +656,11 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
         m_fields->isCurrentlyDead = false;
     }
 
+    float currentPercentage = this->getCurrentPercent() / 100.f;
+    if (std::isnan(currentPercentage)) {
+        currentPercentage = 0.f;
+    }
+
     return PlayerData {
         .timestamp = m_fields->timeCounter,
 
@@ -663,7 +669,7 @@ PlayerData GlobedPlayLayer::gatherPlayerData() {
 
         .lastDeathTimestamp = m_fields->lastDeathTimestamp,
 
-        .currentPercentage = this->getCurrentPercent() / 100.f,
+        .currentPercentage = currentPercentage,
 
         .isDead = isDead,
         .isPaused = this->isPaused(),

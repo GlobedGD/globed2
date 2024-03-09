@@ -59,7 +59,7 @@ void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CC
 }
 
 void HookedPlayerObject::incrementJumps() {
-    if (PlayLayer::get() == nullptr) {
+    if (PlayLayer::get() == nullptr || m_isOnSlope) {
         PlayerObject::incrementJumps();
         return;
     }

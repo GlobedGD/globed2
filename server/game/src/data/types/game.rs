@@ -19,7 +19,7 @@ pub enum PlayerIconType {
 }
 
 /* SpiderTeleportData (spider teleport data) */
-#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Clone, Debug, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
 pub struct SpiderTeleportData {
     pub from: Point,
@@ -29,7 +29,7 @@ pub struct SpiderTeleportData {
 /* SpecificIconData (specific player data) */
 // 16 bytes best-case, 32 bytes worst-case (when on the same frame as spider TP).
 
-#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Clone, Debug, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct SpecificIconData {
     pub position: Point,
     pub rotation: FiniteF32,
@@ -50,7 +50,7 @@ pub struct PlayerMetadata {
 /* PlayerData (data in a level) */
 // 45 bytes best-case, 77 bytes worst-case (with 2 spider teleports).
 
-#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Clone, Debug, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct PlayerData {
     pub timestamp: FiniteF32,
 

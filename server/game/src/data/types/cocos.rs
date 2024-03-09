@@ -84,7 +84,7 @@ impl FromStr for Color4B {
     }
 }
 
-#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Copy, Debug, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
 pub struct Point {
     pub x: FiniteF32,

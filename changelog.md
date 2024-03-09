@@ -1,8 +1,9 @@
 ## v1.3.2
 
-* **Improve loading times** - Asset preloading is now up to **4-6 times faster** on Windows (not as fast on other platforms, but still slightly faster)
+* **Improve loading times** - Asset preloading is now up to **3-5 times faster** on Windows (not as fast on other platforms, but still slightly faster)
 * Fix rare crash when exiting a level
 * Fix some crashes in the level browser on android
+* Improve the platformer squish animation slightly
 * Make the "outdated client" message more straightforward
 * Add player counts to tower levels (**requires** Node IDs mod to be installed first to work)
 * Fix progressbar icons having wrong glow when the Colored Icon Kit mod is installed
@@ -10,6 +11,7 @@
 * Try to fix crashes when using a Level Edit hack
 * Hide loopback devices from audio settings
 * Add a way to manually set packet limit
+* Fix players not appearing in a level until you move away from the spawn position
 
 ## v1.3.1
 

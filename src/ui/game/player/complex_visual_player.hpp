@@ -50,6 +50,10 @@ protected:
     // used in swing anims
     bool wasUpsideDown = false;
 
+    // used in platformer squish anim
+    bool wasRotating = false;
+    bool didPerformPlatformerJump = false;
+
     PlayerIconData storedIcons;
 
     // used for async icon loading
@@ -82,4 +86,6 @@ protected:
     void onFinishedLoadingIconAsync();
     // fucking hell i hate this
     void asyncIconLoadedIntermediary(cocos2d::CCObject*);
+
+    void cancelPlatformerJumpAnim();
 };
