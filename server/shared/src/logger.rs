@@ -13,7 +13,7 @@ pub use log;
 pub use log::{debug, error, info, trace, warn, Level as LogLevel, LevelFilter as LogLevelFilter};
 
 pub struct Logger {
-    format_desc: Vec<format_description::FormatItem<'static>>,
+    pub format_desc: Vec<format_description::FormatItem<'static>>,
     self_crate_name: &'static str,
     file_writer: Option<SyncMutex<BufWriter<File>>>,
 }

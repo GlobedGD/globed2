@@ -6,7 +6,8 @@
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
     clippy::missing_safety_doc,
-    clippy::wildcard_imports
+    clippy::wildcard_imports,
+    clippy::redundant_closure_for_method_calls
 )]
 
 use std::{

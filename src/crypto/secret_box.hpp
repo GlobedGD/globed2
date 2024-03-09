@@ -6,12 +6,16 @@
 /*
 * SecretBox - a class similar to CryptoBox, but instead of using public key cryptography,
 * uses a single secret key (or derives it from a passphrase) for data encryption.
+*
+* Algorithm - XChaCha2020Poly1305
+* Tag implementation - prefix
 */
 
 class SecretBox final : public BaseCryptoBox {
 public:
-    static const size_t NONCE_LEN = crypto_secretbox_NONCEBYTES;
-    static const size_t MAC_LEN = crypto_secretbox_MACBYTES;
+    static const size_t NONCE_LEN = crypto_secretbox_xchacha20poly1305_NONCEBYTES;
+    static const size_t MAC_LEN = crypto_secretbox_xchacha20poly1305_MACBYTES;
+    static const size_t KEY_LEN = crypto_secretbox_xchacha20poly1305_KEYBYTES;
     static const size_t PREFIX_LEN = NONCE_LEN + MAC_LEN;
 
     SecretBox(util::data::bytevector key);

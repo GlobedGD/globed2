@@ -15,6 +15,19 @@
 #include <util/data.hpp>
 #include <util/time.hpp>
 
+#if 0
+# include <boost/thread/mutex.hpp>
+# include <boost/thread/condition_variable.hpp>
+# define GLOBED_SYNC_USING_BOOST
+using GlobedCondVar = boost::condition_variable;
+using GlobedMutex = boost::mutex;
+#define GlobedUniqueLock boost::unique_lock
+#else
+using GlobedCondVar = std::condition_variable;
+using GlobedMutex = std::mutex;
+#define GlobedUniqueLock std::unique_lock
+#endif
+
 // forward decl because we can't include the header
 namespace util::debug {
     void delayedSuicide(const std::string_view);
@@ -32,7 +45,7 @@ class SmartMessageQueue {
 public:
     SmartMessageQueue() {}
     void waitForMessages() {
-        std::unique_lock lock(_mtx);
+        GlobedUniqueLock lock(_mtx);
         if (!_iq.empty()) return;
 
         _cvar.wait(lock, [this] { return !_iq.empty(); });
@@ -41,10 +54,15 @@ public:
     // returns true if messages are available, otherwise false if returned because of timeout.
     template <typename Rep, typename Period>
     bool waitForMessages(util::time::duration<Rep, Period> timeout) {
-        std::unique_lock lock(_mtx);
+        GlobedUniqueLock lock(_mtx);
         if (!_iq.empty()) return true;
+#ifdef GLOBED_SYNC_USING_BOOST
+        auto dur = boost::chrono::milliseconds(util::time::asMillis(timeout));
 
+        return _cvar.wait_for(lock, dur, [this] { return !_iq.empty(); });
+#else
         return _cvar.wait_for(lock, timeout, [this] { return !_iq.empty(); });
+#endif
     }
 
     bool empty() const {
@@ -109,8 +127,8 @@ public:
     }
 private:
     std::queue<T> _iq;
-    mutable std::mutex _mtx;
-    std::condition_variable _cvar;
+    mutable GlobedMutex _mtx;
+    GlobedCondVar _cvar;
 };
 
 /*
@@ -130,7 +148,7 @@ public:
         Guard(const Guard&) = delete;
         Guard& operator=(const Guard&) = delete;
 
-        Guard(std::shared_ptr<T> data, std::mutex& mutex) : data_(data), mutex_(mutex) {
+        Guard(std::shared_ptr<T> data, GlobedMutex& mutex) : data_(data), mutex_(mutex) {
             mutex_.lock();
         }
         ~Guard() {
@@ -157,7 +175,7 @@ public:
 
     private:
         std::shared_ptr<T> data_;
-        std::mutex& mutex_;
+        GlobedMutex& mutex_;
         bool alreadyUnlocked = false;
     };
 
@@ -167,7 +185,7 @@ public:
 
 private:
     std::shared_ptr<T> data_;
-    std::mutex mutex_;
+    GlobedMutex mutex_;
 };
 
 template <>
@@ -181,7 +199,7 @@ public:
         Guard(const Guard&) = delete;
         Guard& operator=(const Guard&) = delete;
 
-        Guard(std::mutex& mutex) : mutex_(mutex) {
+        Guard(GlobedMutex& mutex) : mutex_(mutex) {
             mutex_.lock();
         }
 
@@ -199,7 +217,7 @@ public:
         }
 
     private:
-        std::mutex& mutex_;
+        GlobedMutex& mutex_;
         bool alreadyUnlocked = false;
     };
 
@@ -207,7 +225,7 @@ public:
         return Guard(mutex_);
     }
 private:
-    std::mutex mutex_;
+    GlobedMutex mutex_;
 };
 
 // simple wrapper around atomics with the default memory order set to relaxed instead of seqcst + copy constructor

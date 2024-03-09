@@ -9,6 +9,7 @@
 * Try to fix progressing in levels with startpos (again)
 * Try to fix crashes when using a Level Edit hack
 * Hide loopback devices from audio settings
+* Add a way to manually set packet limit
 
 ## v1.3.1
 

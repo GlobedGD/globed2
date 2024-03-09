@@ -18,6 +18,7 @@ pub use anyhow;
 pub use base64;
 pub use colored;
 pub use crypto_box;
+pub use crypto_secretbox;
 pub use esp;
 pub use hmac;
 pub use parking_lot;

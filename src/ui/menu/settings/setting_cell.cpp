@@ -5,6 +5,7 @@
 #include "string_input_popup.hpp"
 #include <managers/settings.hpp>
 #include <net/network_manager.hpp>
+#include <ui/general/ask_input_popup.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
 
@@ -82,7 +83,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     case Type::PacketFragmentation: [[fallthrough]];
     case Type::AudioDevice: {
         Build<CCMenuItemSpriteExtra>::create(
-            Build<ButtonSprite>::create(settingType == Type::PacketFragmentation ? "Test" : "Set", "goldFont.fnt", "GJ_button_04.png", .7f).collect(),
+            Build<ButtonSprite>::create(settingType == Type::PacketFragmentation ? "Auto" : "Set", "goldFont.fnt", "GJ_button_04.png", .7f).collect(),
             this,
             menu_selector(GlobedSettingCell::onInteractiveButton)
         )
@@ -115,6 +116,43 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     case Type::Corner: {
         this->recreateCornerButton();
     } break;
+    }
+
+    if (auto* menu = this->getChildByID("input-menu"_spr)) {
+        menu->setLayout(RowLayout::create()
+                            ->setAxisAlignment(AxisAlignment::End)
+                            ->setAxisReverse(true)
+                            ->setAutoScale(false));
+        menu->setContentWidth(CELL_WIDTH - 5.f);
+        menu->setAnchorPoint({0.f, 0.5f});
+        menu->setPositionY(CELL_HEIGHT / 2.f);
+
+        if (settingType == Type::PacketFragmentation) {
+            auto spr = Build<CCSprite>::createSpriteName("geode.loader/pencil.png").collect();
+            if (!spr) {
+                // placeholder icon just in case
+                spr = Build<CCSprite>::createSpriteName("GJ_sTrendingIcon_001.png").collect();
+            }
+
+            // button to manually edit packet frag
+            Build<CircleButtonSprite>::create(spr)
+                .scale(0.65f)
+                .intoMenuItem([this, settingStorage] (auto) {
+                    AskInputPopup::create("Packet limit", [this](auto input) {
+                        auto limit = util::format::parse<int>(input).value_or(0);
+                        if (limit < 1300 || limit > 65000) {
+                            FLAlertLayer::create("Error", "<cr>Invalid</c> limit was set. For best results, press the <cy>Auto</c> button instead, and only use this option if you know what you're doing.", "Ok")->show();
+                            return;
+                        }
+
+                        this->storeAndSave(limit);
+                    }, 6, std::to_string(*(int*)settingStorage), util::misc::STRING_DIGITS, 10.f)->show();
+                })
+                .id("fraglimit-manual-btn"_spr)
+                .parent(menu);
+        }
+
+        menu->updateLayout();
     }
 
     return true;
