@@ -3,6 +3,9 @@
 */
 
 #pragma once
+
+#include <Geode/utils/cocos.hpp>
+
 #include <data/bytebuffer.hpp>
 #include "game.hpp"
 

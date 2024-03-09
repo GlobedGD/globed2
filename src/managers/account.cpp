@@ -1,5 +1,7 @@
 #include "account.hpp"
 
+#include <defs/geode.hpp>
+
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
