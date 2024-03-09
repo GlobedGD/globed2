@@ -1,11 +1,13 @@
 #include "cocos.hpp"
 
 #include <filesystem>
+#ifdef GEODE_IS_WINDOWS
+# include <Geode/cocos/platform/CCSAXParser.h>
+#endif
 
 #include <util/format.hpp>
 #include <util/debug.hpp>
 #include <hooks/game_manager.hpp>
-#include <Geode/cocos/platform/CCSAXParser.h>
 
 using namespace geode::prelude;
 
@@ -47,6 +49,7 @@ class $modify(HookedCCFileUtils, CCFileUtils) {
 
 /* I am so sorry. */
 
+#ifdef GEODE_IS_WINDOWS
 namespace {
     typedef enum
     {
@@ -336,6 +339,7 @@ namespace {
         }
     };
 }
+#endif // GEODE_IS_WINDOWS
 
 namespace util::cocos {
     // big hack
@@ -518,9 +522,14 @@ namespace util::cocos {
 #ifdef GEODE_IS_ANDROID
                 auto _ccdlock = cocosWorkMutex.lock();
 #endif
+
+#ifdef GEODE_IS_WINDOWS
                 CCDictMaker tMaker;
                 CCDictionary* dict = tMaker.dictionaryWithContentsOfFile(fullPlistPath.c_str());
-                // CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
+#else
+                CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
+#endif
+
 #ifdef GEODE_IS_ANDROID
                 _ccdlock.unlock();
 #endif
