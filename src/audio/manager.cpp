@@ -5,6 +5,7 @@
 #ifdef GLOBED_VOICE_SUPPORT
 
 #include <opus.h>
+#include <Geode/utils/permission.hpp>
 
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
