@@ -4,14 +4,28 @@
 
 #include <util/format.hpp>
 #include <util/debug.hpp>
+#include <hooks/game_manager.hpp>
+#include <Geode/cocos/platform/CCSAXParser.h>
 
 using namespace geode::prelude;
 
 // all of this is needed to disrespect the privacy of ccfileutils
 #include <Geode/modify/CCFileUtils.hpp>
 class $modify(HookedCCFileUtils, CCFileUtils) {
+    static inline std::unordered_map<std::string, std::string> ourCache;
+
+    $override
+    void purgeCachedEntries() {
+        CCFileUtils::purgeCachedEntries();
+        ourCache.clear();
+    }
+
     gd::map<gd::string, gd::string>& pubGetFullPathCache() {
         return m_fullPathCache;
+    }
+
+    std::unordered_map<std::string, std::string>& ourGetFullPathCache() {
+        return ourCache;
     }
 
     gd::vector<gd::string>& pubGetSearchPathArray() {
@@ -30,6 +44,298 @@ class $modify(HookedCCFileUtils, CCFileUtils) {
         return this->getPathForFilename(filename, resolutionDirectory, searchPath);
     }
 };
+
+/* I am so sorry. */
+
+namespace {
+    typedef enum
+    {
+        SAX_NONE = 0,
+        SAX_KEY,
+        SAX_DICT,
+        SAX_INT,
+        SAX_REAL,
+        SAX_STRING,
+        SAX_ARRAY
+    }CCSAXState;
+
+    typedef enum
+    {
+        SAX_RESULT_NONE = 0,
+        SAX_RESULT_DICT,
+        SAX_RESULT_ARRAY
+    }CCSAXResult;
+
+    class CCDictMaker : public cocos2d::CCSAXDelegator
+    {
+    public:
+        CCSAXResult m_eResultType;
+        cocos2d::CCArray* m_pRootArray;
+        cocos2d::CCDictionary *m_pRootDict;
+        cocos2d::CCDictionary *m_pCurDict;
+        std::stack<cocos2d::CCDictionary*> m_tDictStack;
+        std::string m_sCurKey;   ///< parsed key
+        std::string m_sCurValue; // parsed value
+        CCSAXState m_tState;
+        cocos2d::CCArray* m_pArray;
+
+        std::stack<cocos2d::CCArray*> m_tArrayStack;
+        std::stack<CCSAXState>  m_tStateStack;
+
+    public:
+        CCDictMaker()
+            : m_eResultType(SAX_RESULT_NONE),
+            m_pRootArray(NULL),
+            m_pRootDict(NULL),
+            m_pCurDict(NULL),
+            m_tState(SAX_NONE),
+            m_pArray(NULL)
+        {
+        }
+
+        ~CCDictMaker()
+        {
+        }
+
+        cocos2d::CCDictionary* dictionaryWithContentsOfFile(const char *pFileName)
+        {
+            util::debug::Benchmarker bb;
+            m_eResultType = SAX_RESULT_DICT;
+            cocos2d::CCSAXParser parser;
+
+            if (false == parser.init("UTF-8"))
+            {
+                return NULL;
+            }
+            parser.setDelegator(this);
+
+            // we replace this line with our own impl that doesn't use CCFileUtils::getFileData
+            // parser.parse(pFileName);
+
+            bool ret = false;
+            unsigned long size = 0;
+            char* buffer = (char*)util::cocos::getFileData(pFileName, "rt", &size);
+            if (buffer && size > 0) {
+                ret = parser.parse(buffer, size);
+            }
+
+            CC_SAFE_DELETE_ARRAY(buffer);
+
+            return m_pRootDict;
+        }
+
+        cocos2d::CCArray* arrayWithContentsOfFile(const char* pFileName)
+        {
+            m_eResultType = SAX_RESULT_ARRAY;
+            cocos2d::CCSAXParser parser;
+
+            if (false == parser.init("UTF-8"))
+            {
+                return NULL;
+            }
+            parser.setDelegator(this);
+
+            parser.parse(pFileName);
+            return m_pArray;
+        }
+
+        void startElement(void *ctx, const char *name, const char **atts)
+        {
+            CC_UNUSED_PARAM(ctx);
+            CC_UNUSED_PARAM(atts);
+            std::string sName((char*)name);
+            if( sName == "dict" )
+            {
+                m_pCurDict = new cocos2d::CCDictionary();
+                if(m_eResultType == SAX_RESULT_DICT && m_pRootDict == NULL)
+                {
+                    // Because it will call m_pCurDict->release() later, so retain here.
+                    m_pRootDict = m_pCurDict;
+                    m_pRootDict->retain();
+                }
+                m_tState = SAX_DICT;
+
+                CCSAXState preState = SAX_NONE;
+                if (! m_tStateStack.empty())
+                {
+                    preState = m_tStateStack.top();
+                }
+
+                if (SAX_ARRAY == preState)
+                {
+                    // add the dictionary into the array
+                    m_pArray->addObject(m_pCurDict);
+                }
+                else if (SAX_DICT == preState)
+                {
+                    // add the dictionary into the pre dictionary
+                    CCAssert(! m_tDictStack.empty(), "The state is wrong!");
+                    cocos2d::CCDictionary* pPreDict = m_tDictStack.top();
+                    pPreDict->setObject(m_pCurDict, m_sCurKey.c_str());
+                }
+
+                m_pCurDict->release();
+
+                // record the dict state
+                m_tStateStack.push(m_tState);
+                m_tDictStack.push(m_pCurDict);
+            }
+            else if(sName == "key")
+            {
+                m_tState = SAX_KEY;
+            }
+            else if(sName == "integer")
+            {
+                m_tState = SAX_INT;
+            }
+            else if(sName == "real")
+            {
+                m_tState = SAX_REAL;
+            }
+            else if(sName == "string")
+            {
+                m_tState = SAX_STRING;
+            }
+            else if (sName == "array")
+            {
+                m_tState = SAX_ARRAY;
+                m_pArray = new cocos2d::CCArray();
+                if (m_eResultType == SAX_RESULT_ARRAY && m_pRootArray == NULL)
+                {
+                    m_pRootArray = m_pArray;
+                    m_pRootArray->retain();
+                }
+                CCSAXState preState = SAX_NONE;
+                if (! m_tStateStack.empty())
+                {
+                    preState = m_tStateStack.top();
+                }
+
+                if (preState == SAX_DICT)
+                {
+                    m_pCurDict->setObject(m_pArray, m_sCurKey.c_str());
+                }
+                else if (preState == SAX_ARRAY)
+                {
+                    CCAssert(! m_tArrayStack.empty(), "The state is wrong!");
+                    cocos2d::CCArray* pPreArray = m_tArrayStack.top();
+                    pPreArray->addObject(m_pArray);
+                }
+                m_pArray->release();
+                // record the array state
+                m_tStateStack.push(m_tState);
+                m_tArrayStack.push(m_pArray);
+            }
+            else
+            {
+                m_tState = SAX_NONE;
+            }
+        }
+
+        void endElement(void *ctx, const char *name)
+        {
+            CC_UNUSED_PARAM(ctx);
+            CCSAXState curState = m_tStateStack.empty() ? SAX_DICT : m_tStateStack.top();
+            std::string sName((char*)name);
+            if( sName == "dict" )
+            {
+                m_tStateStack.pop();
+                m_tDictStack.pop();
+                if ( !m_tDictStack.empty())
+                {
+                    m_pCurDict = m_tDictStack.top();
+                }
+            }
+            else if (sName == "array")
+            {
+                m_tStateStack.pop();
+                m_tArrayStack.pop();
+                if (! m_tArrayStack.empty())
+                {
+                    m_pArray = m_tArrayStack.top();
+                }
+            }
+            else if (sName == "true")
+            {
+                cocos2d::CCString *str = new cocos2d::CCString("1");
+                if (SAX_ARRAY == curState)
+                {
+                    m_pArray->addObject(str);
+                }
+                else if (SAX_DICT == curState)
+                {
+                    m_pCurDict->setObject(str, m_sCurKey.c_str());
+                }
+                str->release();
+            }
+            else if (sName == "false")
+            {
+                cocos2d::CCString *str = new cocos2d::CCString("0");
+                if (SAX_ARRAY == curState)
+                {
+                    m_pArray->addObject(str);
+                }
+                else if (SAX_DICT == curState)
+                {
+                    m_pCurDict->setObject(str, m_sCurKey.c_str());
+                }
+                str->release();
+            }
+            else if (sName == "string" || sName == "integer" || sName == "real")
+            {
+                cocos2d::CCString* pStrValue = new cocos2d::CCString(m_sCurValue);
+
+                if (SAX_ARRAY == curState)
+                {
+                    m_pArray->addObject(pStrValue);
+                }
+                else if (SAX_DICT == curState)
+                {
+                    m_pCurDict->setObject(pStrValue, m_sCurKey.c_str());
+                }
+
+                pStrValue->release();
+                m_sCurValue.clear();
+            }
+
+            m_tState = SAX_NONE;
+        }
+
+        void textHandler(void *ctx, const char *ch, int len)
+        {
+            CC_UNUSED_PARAM(ctx);
+            if (m_tState == SAX_NONE)
+            {
+                return;
+            }
+
+            CCSAXState curState = m_tStateStack.empty() ? SAX_DICT : m_tStateStack.top();
+            cocos2d::CCString *pText = new cocos2d::CCString(std::string((char*)ch,0,len));
+
+            switch(m_tState)
+            {
+            case SAX_KEY:
+                m_sCurKey = pText->getCString();
+                break;
+            case SAX_INT:
+            case SAX_REAL:
+            case SAX_STRING:
+                {
+                    if (curState == SAX_DICT)
+                    {
+                        CCAssert(!m_sCurKey.empty(), "key not found : <integer/real>");
+                    }
+
+                    m_sCurValue.append(pText->getCString());
+                }
+                break;
+            default:
+                break;
+            }
+            pText->release();
+        }
+    };
+}
 
 namespace util::cocos {
     // big hack
@@ -130,7 +436,7 @@ namespace util::cocos {
 #endif
 
                 unsigned long filesize = 0;
-                unsigned char* buffer = CCFileUtils::sharedFileUtils()->getFileData(imgState.path.c_str(), "rb", &filesize);
+                unsigned char* buffer = getFileData(imgState.path.c_str(), "rb", &filesize);
 
 #ifdef GEODE_IS_ANDROID
                 _rguard.unlock();
@@ -200,7 +506,7 @@ namespace util::cocos {
                 {
                     auto _ = cocosWorkMutex.lock();
 
-                    if (sfCache->m_pLoadedFileNames->contains(plistKey)) {
+                    if (static_cast<HookedGameManager*>(GameManager::get())->m_fields->loadedFrames.contains(plistKey)) {
                         log::debug("already contains, skipping");
                         return;
                     }
@@ -209,8 +515,15 @@ namespace util::cocos {
                 std::string fullPlistPath = imgState.path.substr(0, imgState.path.find(".png")) + ".plist";
 
                 std::string texturePath;
-
-                CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
+#ifdef GEODE_IS_ANDROID
+                auto _ccdlock = cocosWorkMutex.lock();
+#endif
+                CCDictMaker tMaker;
+                CCDictionary* dict = tMaker.dictionaryWithContentsOfFile(fullPlistPath.c_str());
+                // CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
+#ifdef GEODE_IS_ANDROID
+                _ccdlock.unlock();
+#endif
                 if (!dict) {
                     log::warn("dict is nullptr for: {}", fullPlistPath);
                     return;
@@ -239,10 +552,12 @@ namespace util::cocos {
                 }
 
                 // log::debug("texpath: {}, key: {}", texturePath, imgState.key);
+
                 {
                     auto _ = cocosWorkMutex.lock();
                     privAddSpriteFramesWithDictionary(dict, imgState.texture);
-                    sfCache->m_pLoadedFileNames->insert(plistKey);
+
+                    static_cast<HookedGameManager*>(GameManager::get())->m_fields->loadedFrames.insert(plistKey);
                 }
 
                 dict->release();
@@ -267,8 +582,8 @@ namespace util::cocos {
         }
 
         // Already Cached ?
-        if (fu->pubGetFullPathCache().contains(strFileName)) {
-            return fu->pubGetFullPathCache().at(strFileName);
+        if (fu->ourGetFullPathCache().find(strFileName) != fu->ourGetFullPathCache().end()) {
+            return fu->ourGetFullPathCache()[strFileName];
         }
 
         // Get the new file name.
@@ -283,7 +598,7 @@ namespace util::cocos {
                 std::string fullpath = fu->pubGetPathForFilename(newFilename, resOrder, searchPath);
 
                 if (!fullpath.empty()) {
-                    fu->pubGetFullPathCache().insert(std::make_pair(strFileName, fullpath));
+                    fu->ourGetFullPathCache().insert(std::make_pair(strFileName, fullpath));
                     return fullpath;
                 }
             }
@@ -297,7 +612,7 @@ namespace util::cocos {
                 std::string fullpath = fu->pubGetPathForFilename(newFilename, resOrder, searchPath);
 
                 if (!fullpath.empty()) {
-                    fu->pubGetFullPathCache().insert(std::make_pair(strFileName, fullpath));
+                    fu->ourGetFullPathCache().insert(std::make_pair(strFileName, fullpath));
                     return fullpath;
                 }
             }
@@ -366,5 +681,35 @@ namespace util::cocos {
         } else {
             return std::string(path.substr(0, path.find_last_of("."))) + std::string(suffix);
         }
+    }
+
+    unsigned char* getFileData(const char* fileName, const char* mode, unsigned long* size) {
+        // android sucks
+#ifdef GEODE_IS_ANDROID
+        return CCFileUtils::sharedFileUtils()->getFileData(fileName, mode, size);
+#endif
+
+        unsigned char* buffer = nullptr;
+
+        *size = 0;
+
+        std::ifstream file(fileName, std::ios::binary | std::ios::ate);
+        if (file.is_open()) {
+            *size = static_cast<unsigned long>(file.tellg());
+            file.seekg(0, std::ios::beg);
+
+            buffer = new unsigned char[*size];
+            if (!file.read(reinterpret_cast<char*>(buffer), *size)) {
+                size = 0;
+                delete[] buffer;
+                buffer = nullptr;
+            }
+        }
+
+        if (!buffer) {
+            log::warn("failed to read data from a file: {}", fileName);
+        }
+
+        return buffer;
     }
 }

@@ -20,4 +20,7 @@ namespace util::cocos {
 
     // transform a path, adding -hd or -uhd at the end depending on current tex quality
     std::string transformPathWithQualityPlist(const std::string_view path, const std::string_view suffix);
+
+    // CCFileUtils::getFileData that doesn't call fullPathForFilename. argument must be a full path.
+    unsigned char* getFileData(const char* fileName, const char* mode, unsigned long* size);
 }

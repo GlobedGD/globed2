@@ -68,14 +68,14 @@ void ThreadPool::pushTask(Task&& task) {
 
 void ThreadPool::join() {
     while (!taskQueue.empty()) {
-        std::this_thread::sleep_for(util::time::millis(10));
+        std::this_thread::sleep_for(util::time::millis(2));
     }
 
     // wait for working threads to finish
     bool stillWorking;
 
     do {
-        std::this_thread::sleep_for(util::time::millis(10));
+        std::this_thread::sleep_for(util::time::millis(2));
         stillWorking = false;
         for (const auto& worker : workers) {
             if (worker.doingWork) {

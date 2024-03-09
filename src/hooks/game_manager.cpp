@@ -35,6 +35,7 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
 
 void HookedGameManager::reloadAllStep2() {
     m_fields->iconCache.clear();
+    m_fields->loadedFrames.clear();
     GameManager::reloadAllStep2();
 }
 
@@ -62,16 +63,11 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
         }
     }
 
-    log::debug("preparing to load {} batched icons", toLoad.size());
-
     util::cocos::loadAssetsParallel(toLoad);
-
-    log::debug("loaded successfully.");
 
     auto* tc = CCTextureCache::sharedTextureCache();
 
     auto texNameSuffix = util::cocos::getTextureNameSuffix();
-    auto plistNameSuffix = util::cocos::getTextureNameSuffixPlist();
     size_t searchPathIdx = util::cocos::findSearchPathIdxForFile("icons/robot_41-hd.png");
 
     for (const auto& [iconType, map] : toLoadMap) {

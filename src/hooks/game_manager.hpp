@@ -5,6 +5,7 @@
 
 class $modify(HookedGameManager, GameManager) {
     std::unordered_map<int, std::unordered_map<int, Ref<cocos2d::CCTexture2D>>> iconCache;
+    std::unordered_set<std::string> loadedFrames;
 
     $override
     void returnToLastScene(GJGameLevel* level);
