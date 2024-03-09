@@ -1,3 +1,5 @@
+#pragma once
+#include <config.hpp>
 #include <Geode/utils/Result.hpp>
 #include <Geode/loader/Log.hpp>
 #include <Geode/loader/Mod.hpp>

@@ -1,5 +1,7 @@
 #include "manager.hpp"
 
+#include <defs/geode.hpp>
+
 #ifdef GLOBED_VOICE_SUPPORT
 
 #include <opus.h>
