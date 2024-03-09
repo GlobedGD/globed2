@@ -2,6 +2,8 @@
 #include <defs/essential.hpp>
 
 #include <functional>
+#include <string_view>
+#include <type_traits>
 
 // i hate c++
 #define _GLOBED_STRNUM "1234567890"
