@@ -9,6 +9,7 @@
 #include <util/debug.hpp>
 #include <util/format.hpp>
 #include <Geode/utils/permission.hpp>
+#include <Geode/Bindings.hpp>
 
 using namespace geode::prelude;
 namespace permission = geode::utils::permission;
