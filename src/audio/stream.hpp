@@ -1,6 +1,5 @@
 #pragma once
-#include <defs/platform.hpp>
-#include <defs/minimal_geode.hpp>
+#include <defs/essential.hpp>
 
 #ifdef GLOBED_VOICE_SUPPORT
 

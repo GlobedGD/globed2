@@ -4,3 +4,5 @@
 #include <defs/consts.hpp>
 #include <defs/platform.hpp>
 #include <defs/util.hpp>
+
+#include "geode.hpp"
