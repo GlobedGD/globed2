@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 namespace util::simd {
     float calcPcmVolume(const float* pcm, size_t samples);
