@@ -1,4 +1,5 @@
 #include "x86simd.hpp"
+#include <cmath>
 
 namespace globed::simd::x86 {
     float pcmVolumeSSE(const float* pcm, size_t samples) {
