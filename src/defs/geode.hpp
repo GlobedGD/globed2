@@ -1,7 +1,7 @@
 #pragma once
 #include "minimal_geode.hpp"
-#include <UIBuilder.hpp>
 #include <Geode/Geode.hpp>
+#include <UIBuilder.hpp>
 
 // using decls to avoid polluting the namespace in headers
 
