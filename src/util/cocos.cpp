@@ -363,11 +363,12 @@ namespace util::cocos {
 
     void loadAssetsParallel(const std::vector<std::string>& images) {
         const size_t MAX_THREADS = 25;
-        // macos is stupid so we leak the pool
 #ifndef GEODE_IS_MACOS
         static sync::ThreadPool threadPool(MAX_THREADS);
         static sync::WrappingMutex<void> cocosWorkMutex;
 #else
+        // macos is stupid so we leak the pool.
+        // otherwise we get an epic SIGABRT in std::thread::~thread during static destruction time
         static sync::ThreadPool* threadPoolPtr = new sync::ThreadPool(MAX_THREADS);
         static sync::WrappingMutex<void>* cocosWorkMutexPtr = new sync::WrappingMutex<void>();
 

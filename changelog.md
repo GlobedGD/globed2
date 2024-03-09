@@ -1,6 +1,6 @@
 ## v1.3.2
 
-* **Improve loading times** - Asset preloading is now up to **4-6 times faster** on Windows (not that fast on Android but still slightly better)
+* **Improve loading times** - Asset preloading is now up to **4-6 times faster** on Windows (not as fast on other platforms, but still slightly faster)
 * Fix rare crash when exiting a level
 * Fix some crashes in the level browser on android
 * Make the "outdated client" message more straightforward
