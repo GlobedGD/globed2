@@ -4,22 +4,25 @@
 #include <sodium.h>
 
 /*
-* SecretBox - a class similar to CryptoBox, but instead of using public key cryptography,
-* uses a single secret key (or derives it from a passphrase) for data encryption.
+* ChaChaSecretBox - SecretBox with prefix chacha algo
+*
+* Algorithm - XChaCha2020Poly1305
+* Tag implementation - prefix
 */
 
-class SecretBox final : public BaseCryptoBox {
+class ChaChaSecretBox final : public BaseCryptoBox {
 public:
-    static const size_t NONCE_LEN = crypto_secretbox_NONCEBYTES;
-    static const size_t MAC_LEN = crypto_secretbox_MACBYTES;
+    static const size_t NONCE_LEN = crypto_secretbox_xchacha20poly1305_NONCEBYTES;
+    static const size_t MAC_LEN = crypto_secretbox_xchacha20poly1305_MACBYTES;
+    static const size_t KEY_LEN = crypto_secretbox_xchacha20poly1305_KEYBYTES;
     static const size_t PREFIX_LEN = NONCE_LEN + MAC_LEN;
 
-    SecretBox(util::data::bytevector key);
-    SecretBox(const SecretBox&) = delete;
-    SecretBox& operator=(const SecretBox&) = delete;
-    ~SecretBox();
+    ChaChaSecretBox(util::data::bytevector key);
+    ChaChaSecretBox(const ChaChaSecretBox&) = delete;
+    ChaChaSecretBox& operator=(const ChaChaSecretBox&) = delete;
+    ~ChaChaSecretBox();
 
-    static SecretBox withPassword(const std::string_view pw);
+    static ChaChaSecretBox withPassword(const std::string_view pw);
 
     constexpr size_t nonceLength() override;
     constexpr size_t macLength() override;
