@@ -1,4 +1,6 @@
 #pragma once
+#include <defs/geode.hpp>
+
 #include <Geode/modify/PlayerObject.hpp>
 
 class ComplexVisualPlayer;

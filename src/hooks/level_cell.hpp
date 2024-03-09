@@ -1,4 +1,5 @@
 #pragma once
+#include <defs/geode.hpp>
 
 #include <Geode/modify/LevelCell.hpp>
 
