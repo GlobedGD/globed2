@@ -1,5 +1,6 @@
 #include "time.hpp"
 #include <iomanip>
+#include <sstream>
 
 namespace util::time {
     std::string nowPretty() {
