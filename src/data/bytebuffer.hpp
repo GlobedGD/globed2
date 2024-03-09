@@ -268,7 +268,7 @@ protected:
 
             // terrifying
             using MPT = decltype(descriptor.pointer);
-            using FT = util::misc::MemberPtrToUnderlying<MPT>::type;
+            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
 
             auto result = this->readValue<FT>();
             if (result.isErr()) {
