@@ -42,4 +42,5 @@
 
 #endif // GLOBED_IGNORE_CONFIG_HPP
 
-using LevelId = int64_t;
+using LevelId = long long; // 64-bit
+static_assert(sizeof(LevelId) == 8, "level id is not 8 bytes");
