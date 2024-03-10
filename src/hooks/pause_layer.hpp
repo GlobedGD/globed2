@@ -14,6 +14,8 @@ class $modify(GlobedPauseLayer, PauseLayer) {
     $override
     void goEdit();
 
+    void selUpdate(float dt);
+
     // callbacks
 
     $override

@@ -110,6 +110,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     void onQuitActions();
 
+    // runs every frame while paused
+    void pausedUpdate(float dt);
+
     bool shouldLetMessageThrough(int playerId);
     void updateProximityVolume(int playerId);
 

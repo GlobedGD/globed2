@@ -581,6 +581,21 @@ bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {
     return true;
 }
 
+void GlobedPlayLayer::pausedUpdate(float dt) {
+    // unpause dash effects and death effects
+    for (auto* child : CCArrayExt<CCNode*>(m_objectLayer->getChildren())) {
+        int tag1 = ComplexVisualPlayer::SPIDER_DASH_CIRCLE_WAVE_TAG;
+        int tag2 = ComplexVisualPlayer::SPIDER_DASH_SPRITE_TAG;
+        int tag3 = ComplexVisualPlayer::DEATH_EFFECT_TAG;
+
+        int ctag = child->getTag();
+
+        if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
+            child->resumeSchedulerAndActions();
+        }
+    }
+}
+
 void GlobedPlayLayer::updateProximityVolume(int playerId) {
     if (m_fields->deafened || !m_fields->isVoiceProximity) return;
 

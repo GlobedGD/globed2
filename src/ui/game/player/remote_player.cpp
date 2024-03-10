@@ -101,6 +101,10 @@ void RemotePlayer::updateProgressArrow(
     }
 }
 
+void RemotePlayer::onExit() {
+    // do nothing.
+}
+
 unsigned int RemotePlayer::getDefaultTicks() {
     return defaultTicks;
 }

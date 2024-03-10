@@ -1,3 +1,8 @@
+## v1.3.3
+
+* Death effects and spider animations of other players now play while paused
+* Fix platformer squish animation being wrong when jumping sideways from a wall
+
 ## v1.3.2
 
 * **Improve loading times** - Asset preloading is now up to **3-5 times faster** on Windows (not as fast on other platforms, but still slightly faster)

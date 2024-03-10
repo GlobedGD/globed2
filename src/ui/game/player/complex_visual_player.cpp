@@ -86,7 +86,7 @@ void ComplexVisualPlayer::updateData(
     wasRotating = data.isRotating;
 
     playerIcon->setPosition(data.position);
-    playerIcon->setRotation(data.rotation);
+    playerIcon->m_mainLayer->setRotation(data.rotation);
 
     float distanceTo90deg = std::fmod(std::abs(data.rotation), 90.f);
     if (distanceTo90deg > 45.f) {
@@ -187,6 +187,16 @@ void ComplexVisualPlayer::updateData(
         this->animateRobotFire(false);
     }
 
+    if (wasPaused != playerData.isPaused) {
+        wasPaused = playerData.isPaused;
+
+        if (wasPaused) {
+            CCNode::onExit();
+        } else {
+            CCNode::onEnter();
+        }
+    }
+
     if (isSecond && !playerData.isDualMode) {
         this->setVisible(false);
     } else {
@@ -218,6 +228,14 @@ void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
 
 void ComplexVisualPlayer::playDeathEffect() {
     playerIcon->m_robotFire->setVisible(false);
+
+    // keep track of the previous children
+    std::unordered_set<CCNode*> prevChildren;
+
+    for (auto* child : CCArrayExt<CCNode*>(playerIcon->m_parentLayer->getChildren())) {
+        prevChildren.insert(child);
+    }
+
     // todo, doing simply ->playDeathEffect causes the hook to execute twice
     // if you figure out why then i love you
     playerIcon->PlayerObject::playDeathEffect();
@@ -226,12 +244,47 @@ void ComplexVisualPlayer::playDeathEffect() {
     if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {
         ein->removeFromParent();
     }
+
+    // now, for each *new* child, we know it's something from the death effect
+    for (auto* child : CCArrayExt<CCNode*>(playerIcon->m_parentLayer->getChildren())) {
+        if (!prevChildren.contains(child)) {
+            child->setTag(DEATH_EFFECT_TAG);
+        }
+    }
 }
 
 void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
     playerIcon->m_unk65c = true;
-    playerIcon->playSpiderDashEffect(data.from, data.to);
     playerIcon->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
+
+    auto* arr = PlayLayer::get()->m_circleWaveArray;
+    size_t countBefore = arr ? arr->count() : 0;
+    playerIcon->playSpiderDashEffect(data.from, data.to);
+    size_t countAfter = arr ? arr->count() : 0;
+
+    if (countBefore != countAfter) {
+        for (size_t i = countBefore; i < countAfter; i++) {
+            static_cast<CCNode*>(arr->objectAtIndex(i))->setTag(SPIDER_DASH_CIRCLE_WAVE_TAG);
+        }
+    }
+
+    // name the sprite too
+    for (auto* child : CCArrayExt<CCNode*>(playerIcon->m_parentLayer->getChildren())) {
+        if (child->getZOrder() != 40) continue;
+        if (!child->getID().empty()) continue;
+
+        auto* sprite = typeinfo_cast<CCSprite*>(child);
+        if (!sprite) continue;
+
+        auto* sfc = CCSpriteFrameCache::get();
+        auto* spdash1 = sfc->spriteFrameByName("spiderDash_001.png")->getTexture();
+        auto* tex = sprite->getTexture();
+
+        if (tex == spdash1) {
+            sprite->setTag(SPIDER_DASH_SPRITE_TAG);
+        }
+    }
+
     tpColorDelta = 0.f;
 
     this->spiderTeleportUpdateColor();

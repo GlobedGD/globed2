@@ -6,6 +6,10 @@
 
 class ComplexVisualPlayer : public cocos2d::CCNode, public BaseVisualPlayer {
 public:
+    static constexpr int SPIDER_DASH_CIRCLE_WAVE_TAG = 234562345;
+    static constexpr int SPIDER_DASH_SPRITE_TAG = 234562347;
+    static constexpr int DEATH_EFFECT_TAG = 234562349;
+
     bool init(RemotePlayer* parent, bool isSecond) override;
     void updateIcons(const PlayerIconData& icons) override;
     void updateData(
@@ -53,6 +57,9 @@ protected:
     // used in platformer squish anim
     bool wasRotating = false;
     bool didPerformPlatformerJump = false;
+
+    // used to call onEnter, onExit
+    bool wasPaused = false;
 
     PlayerIconData storedIcons;
 

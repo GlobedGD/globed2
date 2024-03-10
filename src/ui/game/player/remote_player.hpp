@@ -9,6 +9,7 @@
 
 class RemotePlayer : public cocos2d::CCNode {
 public:
+
     bool init(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
     void updateAccountData(const PlayerAccountData& data, bool force = false);
     const PlayerAccountData& getAccountData() const;
@@ -27,6 +28,8 @@ public:
         cocos2d::CCSize visibleCoverage,
         float zoom
     );
+
+    void onExit() override;
 
     unsigned int getDefaultTicks();
     void setDefaultTicks(unsigned int ticks);

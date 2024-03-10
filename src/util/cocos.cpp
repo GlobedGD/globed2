@@ -406,7 +406,6 @@ namespace util::cocos {
         for (const auto& imgkey : images) {
             auto pathKey = fmt::format("{}.png", imgkey);
 
-            // textureForKey uses slow CCFileUtils::fullPathForFilename so we reimpl it
             std::string fullpath;
 
             if (hasTexturePack) {
@@ -423,6 +422,7 @@ namespace util::cocos {
                 continue;
             }
 
+            // textureForKey uses slow CCFileUtils::fullPathForFilename so we reimpl it
             if (textureCache->m_pTextures->objectForKey(fullpath) != nullptr) {
                 continue;
             }
@@ -547,30 +547,6 @@ namespace util::cocos {
                     return;
                 }
 
-                CCDictionary* metadataDict = static_cast<CCDictionary*>(dict->objectForKey("metadata"));
-
-                if (metadataDict) {
-                    texturePath = metadataDict->valueForKey("textureFileName")->getCString();
-                }
-
-                if (!texturePath.empty()) {
-                    // in actual cocos source, this line is not commented. but it breaks things.
-
-                    // texturePath = CCFileUtils::sharedFileUtils()->fullPathFromRelativeFile(texturePath.c_str(), plistKey.c_str());
-                    // log::debug("non empty setting to {} (from {})", texturePath, plistKey);
-                } else {
-                    texturePath = plistKey;
-
-                    // remove extension, append png
-
-                    texturePath = texturePath.erase(texturePath.find_last_of("."));
-                    texturePath = texturePath.append(".png");
-
-                    // log::debug("empty setting to {}", texturePath);
-                }
-
-                // log::debug("texpath: {}, key: {}", texturePath, imgState.key);
-
                 {
                     auto _ = cocosWorkMutex.lock();
                     privAddSpriteFramesWithDictionary(dict, imgState.texture);
@@ -582,6 +558,7 @@ namespace util::cocos {
             });
         }
 
+        // wait for the creation of sprite frames to finish.
         threadPool.join();
     }
 

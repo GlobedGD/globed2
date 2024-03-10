@@ -8,7 +8,9 @@ using namespace geode::prelude;
 void GlobedPauseLayer::customSetup() {
     PauseLayer::customSetup();
 
-    if (!static_cast<GlobedPlayLayer*>(PlayLayer::get())->m_fields->globedReady) return;
+    auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+
+    if (!gpl || !gpl->m_fields->globedReady) return;
 
     auto winSize = CCDirector::get()->getWinSize();
 
@@ -23,6 +25,16 @@ void GlobedPauseLayer::customSetup() {
         .id("playerlist-menu"_spr)
         .pos(0.f, 0.f)
         .parent(this);
+
+    this->schedule(schedule_selector(GlobedPauseLayer::selUpdate), 0.f);
+}
+
+void GlobedPauseLayer::selUpdate(float dt) {
+    auto* pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+
+    if (pl) {
+        pl->pausedUpdate(dt);
+    }
 }
 
 void GlobedPauseLayer::goEdit() {
