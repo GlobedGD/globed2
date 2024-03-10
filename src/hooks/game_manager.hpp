@@ -6,6 +6,7 @@
 class $modify(HookedGameManager, GameManager) {
     std::unordered_map<int, std::unordered_map<int, Ref<cocos2d::CCTexture2D>>> iconCache;
     std::unordered_set<std::string> loadedFrames;
+    bool assetsPreloaded = false;
 
     $override
     void returnToLastScene(GJGameLevel* level);
@@ -26,6 +27,9 @@ class $modify(HookedGameManager, GameManager) {
     };
 
     void loadIconsBatched(const std::vector<BatchedIconRange>& ranges);
+
+    bool getAssetsPreloaded();
+    void setAssetsPreloaded(bool state);
 
     cocos2d::CCTexture2D* getCachedIcon(int iconId, int iconType);
 };

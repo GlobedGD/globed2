@@ -36,6 +36,9 @@ public:
     void incDefaultTicks();
     void removeProgressIndicators();
 
+    void setForciblyHidden(bool state);
+    bool getForciblyHidden();
+
     bool isValidPlayer();
 
     static RemotePlayer* create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
@@ -48,6 +51,7 @@ protected:
     BaseVisualPlayer* player2;
     unsigned int defaultTicks = 0;
     float lastPercentage = 0.f;
+    bool isForciblyHidden = false;
 
     PlayerAccountData accountData;
 };

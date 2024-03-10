@@ -11,26 +11,21 @@ using namespace geode::prelude;
 void HookedLoadingLayer::loadingFinished() {
     if (m_fields->preloadingStage == 0) {
         m_fields->loadingStartedTime = util::time::systemNow();
-        log::debug("preloading assets");
 
         m_fields->preloadingStage++;
-        this->setLabelText("Globed: preloading death effects");
 
         auto* gm = GameManager::get();
         auto* hgm = static_cast<HookedGameManager*>(gm);
         hgm->m_fields->iconCache.clear();
 
-        if (Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects") || Mod::get()->getSettingValue<bool>("force-skip-preload")) {
-            log::warn("Asset preloading is disabled. Not loading anything.");
+        if (!util::cocos::shouldTryToPreload(true)) {
+            log::info("Asset preloading disabled/deferred, not loading anything.");
             this->finishLoading();
             return;
         }
 
-        auto& settings = GlobedSettings::get();
-        if (!settings.globed.preloadAssets) {
-            this->finishLoading();
-            return;
-        }
+        log::debug("preloading assets");
+        this->setLabelText("Globed: preloading death effects");
 
         // start the stage 1 - load death effects
         this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.05f);
@@ -74,62 +69,20 @@ void HookedLoadingLayer::preloadingStage1(float) {
 }
 
 void HookedLoadingLayer::preloadingStage2(float) {
-    using BatchedIconRange = HookedGameManager::BatchedIconRange;
-
-    auto* gm = static_cast<HookedGameManager*>(GameManager::get());
+    using util::cocos::AssetPreloadStage;
+    using util::cocos::preloadAssets;
 
     switch (m_fields->preloadingStage) {
     // death effects
-    case 1: {
-        std::vector<std::string> images;
-
-        for (size_t i = 1; i < 20; i++) {
-            auto key = fmt::format("PlayerExplosion_{:02}", i);
-            images.push_back(key);
-        }
-
-        util::cocos::loadAssetsParallel(images);
-    } break;
-
-    case 2: gm->loadIconsBatched((int)IconType::Cube, 0, 484); break;
-
-    // There are actually 169 ship icons, but for some reason, loading the last icon causes
-    // a very strange bug when you have the Default mini icons option enabled.
-    // I have no idea how loading a ship icon can cause a ball icon to become a cube,
-    // and honestly I don't care enough.
-    // https://github.com/dankmeme01/globed2/issues/93
-    case 3: gm->loadIconsBatched((int)IconType::Ship, 1, 168); break;
-
-    case 4: gm->loadIconsBatched((int)IconType::Ball, 0, 118); break;
-    case 5: gm->loadIconsBatched((int)IconType::Ufo, 1, 149); break;
-    case 6: gm->loadIconsBatched((int)IconType::Wave, 1, 96); break;
-    case 7: {
-        std::vector<BatchedIconRange> ranges = {
-            BatchedIconRange{
-                .iconType = (int)IconType::Robot,
-                .startId = 1,
-                .endId = 68
-            },
-            BatchedIconRange{
-                .iconType = (int)IconType::Spider,
-                .startId = 1,
-                .endId = 69
-            },
-            BatchedIconRange{
-                .iconType = (int)IconType::Swing,
-                .startId = 1,
-                .endId = 43
-            },
-            BatchedIconRange{
-                .iconType = (int)IconType::Jetpack,
-                .startId = 1,
-                .endId = 5
-            },
-        };
-
-        gm->loadIconsBatched(ranges);
-    } break;
+    case 1: preloadAssets(AssetPreloadStage::DeathEffect); break;
+    case 2: preloadAssets(AssetPreloadStage::Cube); break;
+    case 3: preloadAssets(AssetPreloadStage::Ship); break;
+    case 4: preloadAssets(AssetPreloadStage::Ball); break;
+    case 5: preloadAssets(AssetPreloadStage::Ufo); break;
+    case 6: preloadAssets(AssetPreloadStage::Wave); break;
+    case 7: preloadAssets(AssetPreloadStage::Other); break;
     case 8: {
+        static_cast<HookedGameManager*>(GameManager::get())->setAssetsPreloaded(true);
         this->finishLoading();
         return;
     }

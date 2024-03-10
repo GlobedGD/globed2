@@ -39,7 +39,7 @@ void VoiceRecordingManager::threadFunc() {
 
             // make sure the recording device is valid
             if (!vm.isRecordingDeviceSet()) {
-                ErrorQueues::get().warn("Unable to record audio, no recording device is set");
+                ErrorQueues::get().debugWarn("Unable to record audio, no recording device is set");
                 this->resetBools(false);
                 return;
             }

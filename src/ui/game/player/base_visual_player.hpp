@@ -21,6 +21,7 @@ public:
     virtual void playDeathEffect() = 0;
     virtual void playSpiderTeleport(const SpiderTeleportData& data) = 0;
     virtual void playJump() = 0;
+    virtual void setForciblyHidden(bool state) = 0;
     virtual cocos2d::CCPoint getPlayerPosition() = 0;
 
     static int getIconWithType(const PlayerIconData& data, PlayerIconType type);

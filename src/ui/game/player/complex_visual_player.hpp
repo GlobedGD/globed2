@@ -23,6 +23,7 @@ public:
     void playDeathEffect() override;
     void playSpiderTeleport(const SpiderTeleportData& data) override;
     void playJump() override;
+    void setForciblyHidden(bool state) override;
     cocos2d::CCPoint getPlayerPosition() override;
 
     void updatePlayerObjectIcons(bool skipFrames = false);
@@ -61,7 +62,11 @@ protected:
     // used to call onEnter, onExit
     bool wasPaused = false;
 
+    // uhh yeah forcibly hiding players
+    bool isForciblyHidden = false;
+
     PlayerIconData storedIcons;
+
 
     // used for async icon loading
     struct AsyncLoadRequest {

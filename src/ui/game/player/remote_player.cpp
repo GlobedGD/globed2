@@ -121,6 +121,24 @@ bool RemotePlayer::isValidPlayer() {
     return accountData.accountId != 0;
 }
 
+void RemotePlayer::setForciblyHidden(bool state) {
+    isForciblyHidden = state;
+    player1->setForciblyHidden(state);
+    player2->setForciblyHidden(state);
+
+    if (progressArrow) {
+        progressArrow->setVisible(!isForciblyHidden);
+    }
+
+    if (progressIcon) {
+        progressIcon->setVisible(!isForciblyHidden);
+    }
+}
+
+bool RemotePlayer::getForciblyHidden() {
+    return isForciblyHidden;
+}
+
 void RemotePlayer::removeProgressIndicators() {
     if (progressIcon) {
         progressIcon->removeFromParent();

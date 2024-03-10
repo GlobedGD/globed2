@@ -13,8 +13,11 @@
 #include <managers/profile_cache.hpp>
 #include <managers/settings.hpp>
 #include <data/packets/all.hpp>
+#include <hooks/game_manager.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
+#include <util/cocos.hpp>
+#include <util/format.hpp>
 
 using namespace geode::prelude;
 
@@ -68,6 +71,19 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     } else if (isEditor) {
         m_fields->overlay->updateWithEditor();
         return true;
+    }
+
+    // deferred asset preloading
+    if (util::cocos::shouldTryToPreload(false)) {
+        log::info("Preloading assets (deferred)");
+
+        auto start = util::time::now();
+        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::All);
+        auto took = util::time::now() - start;
+
+        log::info("Asset preloading took {}", util::format::formatDuration(took));
+
+        static_cast<HookedGameManager*>(GameManager::get())->setAssetsPreloaded(true);
     }
 
     m_fields->isVoiceProximity = level->isPlatformer() ? settings.communication.voiceProximity : settings.communication.classicProximity;
@@ -158,6 +174,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         self->scheduleOnce(schedule_selector(GlobedPlayLayer::postInitActions), 0.25f);
     });
 
+    // progress icon
     Build<CCNode>::create()
         .id("progress-bar-wrapper"_spr)
         .visible(settings.levelUi.progressIndicators)
@@ -169,19 +186,50 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         .id("self-player-progress"_spr)
         .store(m_fields->selfProgressIcon);
 
-    m_fields->selfProgressIcon->updateIcons(ProfileCacheManager::get().getOwnData());
+    m_fields->selfProgressIcon->updateIcons(pcm.getOwnData());
     m_fields->selfProgressIcon->setForceOnTop(true);
 
+    // status icons
     if (settings.players.statusIcons) {
-        m_fields->selfStatusIcons = Build<PlayerStatusIcons>::create()
+        Build<PlayerStatusIcons>::create()
             .scale(0.8f)
             .anchorPoint(0.5f, 0.f)
             .pos(0.f, 25.f)
             .parent(m_objectLayer)
             .id("self-status-icon"_spr)
-            .collect();
+            .store(m_fields->selfStatusIcons);
     }
 
+    // own name
+    if (settings.players.showNames && settings.players.ownName) {
+        auto ownData = pcm.getOwnAccountData();
+        auto ownSpecial = pcm.getOwnSpecialData();
+
+        auto color = ccc3(255, 255, 255);
+        if (ownSpecial) {
+            color = ownSpecial->nameColor;
+        }
+
+        Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
+            .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
+            .color(color)
+            .parent(m_objectLayer)
+            .id("self-name"_spr)
+            .store(m_fields->ownNameLabel);
+
+        if (settings.players.dualName) {
+            Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
+                .visible(false)
+                .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
+                .color(color)
+                .parent(m_objectLayer)
+                .id("self-name-p2"_spr)
+                .store(m_fields->ownNameLabel2);
+        }
+
+    }
+
+    // friendlist stuff
     auto& flm = FriendListManager::get();
     flm.maybeLoad();
 
@@ -506,6 +554,25 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     if (self->m_fields->voiceOverlay) {
         self->m_fields->voiceOverlay->updateOverlaySoft();
     }
+
+    // update self names
+    if (self->m_fields->ownNameLabel) {
+        if (!self->m_player1->m_isHidden) {
+            self->m_fields->ownNameLabel->setVisible(true);
+            self->m_fields->ownNameLabel->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
+        } else {
+            self->m_fields->ownNameLabel->setVisible(false);
+        }
+
+        if (self->m_fields->ownNameLabel2) {
+            if (self->m_player2->m_isHidden || !self->m_gameState.m_isDualMode) {
+                self->m_fields->ownNameLabel2->setVisible(false);
+            } else {
+                self->m_fields->ownNameLabel2->setVisible(true);
+                self->m_fields->ownNameLabel2->setPosition(self->m_player2->getPosition() + CCPoint{0.f, 25.f});
+            }
+        }
+    }
 }
 
 // selUpdateEstimators - runs 30 times a second, updates audio stuff
@@ -738,6 +805,11 @@ void GlobedPlayLayer::handlePlayerJoin(int playerId) {
     auto pcmData = pcm.getData(playerId);
     if (pcmData.has_value()) {
         rp->updateAccountData(pcmData.value(), true);
+    }
+
+    auto& bl = BlockListManager::get();
+    if (bl.isHidden(playerId)) {
+        rp->setForciblyHidden(true);
     }
 
     m_objectLayer->addChild(rp);

@@ -1,6 +1,7 @@
 #include "user_cell.hpp"
 
 #include "userlist.hpp"
+#include "actions_popup.hpp"
 #include <audio/voice_playback_manager.hpp>
 #include <data/packets/client/admin.hpp>
 #include <data/packets/server/admin.hpp>
@@ -31,7 +32,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .color(gm->colorForIdx(data.icons.color1))
         .secondColor(gm->colorForIdx(data.icons.color2))
         .parent(this)
-        .pos(25.f, CELL_HEIGHT / 2.f)
+        .pos(18.f, CELL_HEIGHT / 2.f)
         .id("player-icon"_spr)
         .collect();
 
@@ -59,7 +60,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
         // goodness
-        .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
+        .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 15.f, CELL_HEIGHT / 2.f)
         .parent(menu)
         .collect();
     nameButton->m_scaleMultiplier = 1.1f;
@@ -120,33 +121,23 @@ void GlobedUserCell::makeButtons() {
     auto maxWidth = 0.f;
 
     if (accountData.accountId != GJAccountManager::get()->m_accountID) {
-        // mute/unmute button
-        auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
-        bool isUnblocked = pl->shouldLetMessageThrough(accountData.accountId);
+        // settings button
+        Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
+            .scale(0.36f)
+            .intoMenuItem([this, id = accountData.accountId](auto) {
+                auto* pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
-        Build<CCSprite>::createSpriteName(isUnblocked ? "icon-mute.png"_spr : "icon-unmute.png"_spr)
-            .scale(0.475f)
-            .intoMenuItem([isUnblocked, this](auto) {
-                auto& bl = BlockListManager::get();
-                isUnblocked ? bl.blacklist(this->accountData.accountId) : bl.whitelist(this->accountData.accountId);
-                // mute them immediately
-                auto& settings = GlobedSettings::get();
-                auto& vpm = VoicePlaybackManager::get();
+                // if they left the level, do nothing
+                if (!pl->m_fields->players.contains(accountData.accountId)) return;
 
-                if (isUnblocked) {
-                    vpm.setVolume(this->accountData.accountId, 0.f);
-                } else {
-                    vpm.setVolume(this->accountData.accountId, settings.communication.voiceVolume);
-                }
-
-                this->makeButtons();
+                GlobedUserActionsPopup::create(id)->show();
             })
             .parent(buttonsWrapper)
-            .id("block-button"_spr)
-            .store(blockButton);
+            .id("player-actions-button"_spr)
+            .store(actionsButton);
 
-        blockButton->m_scaleMultiplier = 1.1f;
-        maxWidth += blockButton->getScaledContentSize().width + 5.f;
+        actionsButton->m_scaleMultiplier = 1.2f;
+        maxWidth += actionsButton->getScaledContentSize().width + 5.f;
     }
 
     // admin menu button
@@ -212,8 +203,9 @@ void GlobedUserCell::makeButtons() {
         }
     }
 
+    auto& settings = GlobedSettings::get();
 
-    if (accountData.accountId != GJAccountManager::get()->m_accountID) {
+    if (settings.communication.voiceEnabled && accountData.accountId != GJAccountManager::get()->m_accountID) {
         // audio visualizer
         Build<GlobedAudioVisualizer>::create()
 #ifndef GLOBED_VOICE_SUPPORT

@@ -101,3 +101,15 @@ void BlockListManager::whitelist(int playerId) {
     _wl.insert(playerId);
     this->save();
 }
+
+bool BlockListManager::isHidden(int playerId) {
+    return hiddenPlayers.contains(playerId);
+}
+
+void BlockListManager::setHidden(int playerId, bool state) {
+    if (state) {
+        hiddenPlayers.insert(playerId);
+    } else {
+        hiddenPlayers.erase(playerId);
+    }
+}

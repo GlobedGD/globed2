@@ -42,6 +42,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     Ref<CCNode> progressBarWrapper = nullptr;
     Ref<PlayerStatusIcons> selfStatusIcons = nullptr;
     Ref<GlobedVoiceOverlay> voiceOverlay = nullptr;
+    Ref<cocos2d::CCLabelBMFont> ownNameLabel = nullptr;
+    Ref<cocos2d::CCLabelBMFont> ownNameLabel2 = nullptr;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;

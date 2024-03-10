@@ -32,6 +32,8 @@
                 "resources/icon-server-folder.png",
                 "resources/icon-teleport.png",
                 "resources/icon-person.png",
+                "resources/icon-hide-player.png",
+                "resources/icon-show-player.png",
                 "resources/deafen-icon-off.png",
                 "resources/deafen-icon-on.png"
             ]

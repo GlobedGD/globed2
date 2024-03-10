@@ -34,6 +34,7 @@ void GlobedSettings::save() {
     STOREV(globed, tpsCap);
     STOREV(globed, autoconnect);
     STOREV(globed, preloadAssets);
+    STOREV(globed, deferPreloadAssets);
     STOREV(globed, increaseLevelList);
     STOREV(globed, fragmentationLimit);
 
@@ -69,6 +70,7 @@ void GlobedSettings::save() {
     STOREV(players, deathEffects);
     STOREV(players, defaultDeathEffect);
     STOREV(players, forceVisibility);
+    STOREV(players, ownName);
 
     // admin
     STOREV(admin, rememberPassword);
@@ -86,6 +88,7 @@ void GlobedSettings::reload() {
     LOADV(globed, tpsCap);
     LOADV(globed, autoconnect);
     LOADV(globed, preloadAssets);
+    LOADV(globed, deferPreloadAssets);
     LOADV(globed, increaseLevelList);
     LOADV(globed, fragmentationLimit);
 
@@ -121,6 +124,7 @@ void GlobedSettings::reload() {
     LOADV(players, deathEffects);
     LOADV(players, defaultDeathEffect);
     LOADV(players, forceVisibility);
+    LOADV(players, ownName);
 
     // admin
     LOADV(admin, rememberPassword);
@@ -138,6 +142,7 @@ void GlobedSettings::resetToDefaults() {
         SKEY(globed, tpsCap),
         SKEY(globed, autoconnect),
         SKEY(players, preloadAssets),
+        SKEY(globed, deferPreloadAssets),
         SKEY(globed, increaseLevelList),
         SKEY(globed, fragmentationLimit),
 
@@ -172,6 +177,7 @@ void GlobedSettings::resetToDefaults() {
         SKEY(players, deathEffects),
         SKEY(players, defaultDeathEffect),
         SKEY(players, forceVisibility),
+        SKEY(players, ownName),
 
         // admin
         SKEY(admin, rememberPassword)

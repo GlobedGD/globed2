@@ -19,6 +19,7 @@ public:
         GSETTING(bool, autoconnect, true);
         GSETTING(int, tpsCap, 0);
         GSETTING(bool, preloadAssets, true);
+        GSETTING(bool, deferPreloadAssets, false);
         GSETTING(bool, increaseLevelList, false);
         GSETTING(int, fragmentationLimit, 60000);
     };
@@ -59,6 +60,7 @@ public:
         GSETTING(bool, defaultDeathEffect, false);
         GSETTING(bool, hideNearby, false);
         GSETTING(bool, forceVisibility, false);
+        GSETTING(bool, ownName, false);
     };
 
     struct Advanced {};

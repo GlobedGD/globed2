@@ -6,6 +6,21 @@ namespace util::cocos {
     // This will ONLY load .png images.
     void loadAssetsParallel(const std::vector<std::string>& images);
 
+    enum class AssetPreloadStage {
+        DeathEffect,
+        Cube,
+        Ship,
+        Ball,
+        Ufo,
+        Wave,
+        Other,
+        All // all at once
+    };
+
+    void preloadAssets(AssetPreloadStage stage);
+
+    bool shouldTryToPreload(bool onLoading);
+
     std::string fullPathForFilename(const std::string_view filename, const std::string_view suffix, size_t preferIdx = -1);
     size_t findSearchPathIdxForFile(const std::string_view filename);
 

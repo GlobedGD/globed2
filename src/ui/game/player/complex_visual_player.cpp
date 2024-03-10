@@ -197,11 +197,14 @@ void ComplexVisualPlayer::updateData(
         }
     }
 
+    bool shouldBeVisible;
     if (isSecond && !playerData.isDualMode) {
-        this->setVisible(false);
+        shouldBeVisible = false;
     } else {
-        this->setVisible(data.isVisible || settings.players.forceVisibility);
+        shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden;
     }
+
+    this->setVisible(shouldBeVisible);
 }
 
 void ComplexVisualPlayer::updateName() {
@@ -295,6 +298,10 @@ void ComplexVisualPlayer::playJump() {
         playerIcon->animatePlatformerJump(1.0f);
         didPerformPlatformerJump = true;
     }
+}
+
+void ComplexVisualPlayer::setForciblyHidden(bool state) {
+    isForciblyHidden = state;
 }
 
 static inline ccColor3B lerpColor(ccColor3B from, ccColor3B to, float delta) {

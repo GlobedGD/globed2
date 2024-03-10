@@ -36,6 +36,7 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
 void HookedGameManager::reloadAllStep2() {
     m_fields->iconCache.clear();
     m_fields->loadedFrames.clear();
+    this->setAssetsPreloaded(false);
     GameManager::reloadAllStep2();
 }
 
@@ -105,4 +106,12 @@ CCTexture2D* HookedGameManager::getCachedIcon(int iconId, int iconType) {
     }
 
     return nullptr;
+}
+
+bool HookedGameManager::getAssetsPreloaded() {
+    return m_fields->assetsPreloaded;
+}
+
+void HookedGameManager::setAssetsPreloaded(bool state) {
+    m_fields->assetsPreloaded = state;
 }

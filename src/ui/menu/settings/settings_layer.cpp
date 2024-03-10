@@ -165,13 +165,14 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
 
     if (category == TAG_TAB_GLOBED) {
         MAKE_SETTING(globed, autoconnect, "Autoconnect", "Automatically connect to the last connected server on launch.");
+        MAKE_SETTING(globed, preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
+        MAKE_SETTING(globed, deferPreloadAssets, "Defer preloading", "Instead of making the loading screen longer, load assets only when you join a level while connected.");
+        MAKE_SETTING_TYPE(globed, fragmentationLimit, Type::PacketFragmentation, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.");
+        MAKE_SETTING(globed, increaseLevelList, "More Levels Per Page", "Increases the levels per page in the server level list from 30 to 100.");
         MAKE_SETTING_LIM(globed, tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.", {
             .intMin = 1,
             .intMax = 240,
         });
-        MAKE_SETTING(globed, preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
-        MAKE_SETTING(globed, increaseLevelList, "More Levels Per Page", "Increases the levels per page in the server level list from 30 to 100.");
-        MAKE_SETTING_TYPE(globed, fragmentationLimit, Type::PacketFragmentation, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.");
     }
 
     if (category == TAG_TAB_OVERLAY) {
@@ -221,10 +222,11 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
             .floatMin = 0.f,
             .floatMax = 1.f
         });
-        MAKE_SETTING(players, statusIcons, "Status icons", "Show an icon above a player if they are paused, in practice mode, or currently speaking.");
+        MAKE_SETTING(players, ownName, "Show own name", "Shows your own name above your icon as well.");
         MAKE_SETTING(players, deathEffects, "Death effects", "Play a death effect whenever a player dies.");
         MAKE_SETTING(players, defaultDeathEffect, "Default death effect", "Replaces the death effects of all players with a default explosion effect.");
         MAKE_SETTING(players, hideNearby, "Hide nearby players", "Increases the transparency of players as they get closer to you, so that they don't obstruct your view.");
+        MAKE_SETTING(players, statusIcons, "Status icons", "Show an icon above a player if they are paused, in practice mode, or currently speaking.");
     }
 
     return cells;

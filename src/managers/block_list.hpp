@@ -16,8 +16,12 @@ public:
     void blacklist(int playerId);
     void whitelist(int playerId);
 
+    bool isHidden(int playerId);
+    void setHidden(int playerId, bool state);
+
 private:
     std::set<int> _bl, _wl;
+    std::set<int> hiddenPlayers;
 
     void save();
     Result<> load();
