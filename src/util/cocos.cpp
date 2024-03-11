@@ -390,6 +390,7 @@ namespace util::cocos {
         sync::WrappingMutex<std::vector<ImageLoadState>> imgStates;
 
         auto texNameSuffix = getTextureNameSuffix();
+        auto plistNameSuffix = getTextureNameSuffixPlist();
 
         // this is such a hack
         size_t searchPathIdx = findSearchPathIdxForFile("icons/player_01-uhd.png");
@@ -528,7 +529,6 @@ namespace util::cocos {
 
                 std::string fullPlistPath = imgState.path.substr(0, imgState.path.find(".png")) + ".plist";
 
-                std::string texturePath;
 #ifdef GEODE_IS_ANDROID
                 auto _ccdlock = cocosWorkMutex.lock();
 #endif
@@ -539,14 +539,28 @@ namespace util::cocos {
 #else
                 CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
 #endif
+                if (!dict) {
+                    log::warn("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
+                    fullPlistPath = CCFileUtils::get()->fullPathForFilename(plistKey.c_str(), false);
+                    fullPlistPath = transformPathWithQualityPlist(fullPlistPath, plistNameSuffix);
+                    log::debug("attempted fallback: {}", fullPlistPath);
+
+#ifdef GEODE_IS_WINDOWS
+                    CCDictMaker tMaker;
+                    dict = tMaker.dictionaryWithContentsOfFile(fullPlistPath.c_str());
+#else
+                    dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
+#endif
+                }
+
+                if (!dict) {
+                    log::warn("failed to find the plist for {}.", fullPlistPath);
+                    return;
+                }
 
 #ifdef GEODE_IS_ANDROID
                 _ccdlock.unlock();
 #endif
-                if (!dict) {
-                    log::warn("dict is nullptr for: {}", fullPlistPath);
-                    return;
-                }
 
                 {
                     auto _ = cocosWorkMutex.lock();
