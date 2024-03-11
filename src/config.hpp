@@ -42,7 +42,7 @@
 
 #endif // GLOBED_IGNORE_CONFIG_HPP
 
-#ifdef GEODE_IS_MACOS
+#ifdef __APPLE__
 # include <stdint.h>
 #endif
 
