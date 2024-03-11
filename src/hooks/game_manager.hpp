@@ -17,6 +17,12 @@ class $modify(HookedGameManager, GameManager) {
     cocos2d::CCTexture2D* loadIcon(int iconId, int iconType, int iconRequestId);
 
     $override
+    void unloadIcon(int iconId, int iconType, int idk);
+
+    $override
+    void loadDeathEffect(int de);
+
+    $override
     void reloadAllStep2();
 
     // Load multiple icons in parallel. Range is inclusive [startId; endId]

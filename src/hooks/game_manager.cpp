@@ -22,29 +22,24 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
     CCTexture2D* texture = this->getCachedIcon(iconId, iconType);
 
     if (texture) {
-        auto sheetName = this->sheetNameForIcon(iconId, iconType);
-        this->verifyCachedData();
-
-        auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName), m_fields->cachedTexNameSuffix, m_fields->cachedSearchPathIdx);
-
-        if (!CCSpriteFrameCache::get()->m_pSpriteFrames->objectForKey(fullpath)) {
-            log::warn("player texture exists but sprite frame is invalid! id: {}, icon type: {}", iconId, iconType);
-            // this->m_fields->iconCache[iconType].erase(iconId);
-            // texture = nullptr;
-        }
-    }
-
-    if (texture) {
         return texture;
     }
 
-    texture = GameManager::loadIcon(iconId, iconType, iconRequestId);
+    texture = GameManager::loadIcon(iconId, iconType, -1);
 
     if (texture) {
         m_fields->iconCache[iconType][iconId] = texture;
     }
 
     return texture;
+}
+
+void HookedGameManager::unloadIcon(int iconId, int iconType, int idk) {
+    // do nothing.
+}
+
+void HookedGameManager::loadDeathEffect(int id) {
+    util::ui::tryLoadDeathEffect(id);
 }
 
 void HookedGameManager::reloadAllStep2() {
