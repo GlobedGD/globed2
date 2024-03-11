@@ -20,6 +20,7 @@ protected:
     LoadingCircle* loadingCircle = nullptr;
     GJCommentListLayer* listLayer = nullptr;
     CCMenuItemSpriteExtra* clearSearchButton = nullptr;
+    CCNode* roomIdButton = nullptr;
 
     cocos2d::CCMenu* roomBtnMenu = nullptr;
     bool isWaiting = false;
@@ -32,4 +33,6 @@ protected:
     bool isLoading();
     void sortPlayerList();
     void applyFilter(const std::string_view input);
+    void setRoomTitle(uint32_t id);
+    void onCopyRoomId(cocos2d::CCObject*);
 };

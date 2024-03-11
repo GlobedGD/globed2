@@ -75,7 +75,7 @@ bool RoomPopup::setup() {
     m_mainLayer->addChild(listLayer);
 
     this->reloadPlayerList();
-    
+
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
         .scale(0.9f)
         .intoMenuItem([this](auto) {
@@ -148,7 +148,7 @@ void RoomPopup::onLoaded(bool stateChanged) {
 
     if (stateChanged) {
         auto& rm = RoomManager::get();
-        this->setTitle(rm.isInGlobal() ? "Global room" : fmt::format("Room {}", rm.roomId.load()));
+        this->setRoomTitle(rm.roomId.load());
         this->addButtons();
     }
 }
@@ -302,6 +302,40 @@ void RoomPopup::applyFilter(const std::string_view input) {
     }
 
     clearSearchButton->setVisible(true);
+}
+
+void RoomPopup::setRoomTitle(uint32_t id) {
+    if (roomIdButton) roomIdButton->removeFromParent();
+
+    auto title = id == 0 ? "Global room" : fmt::format("Room {}", id);
+    auto layout = util::ui::getPopupLayout(m_size);
+
+    CCNode* elem = Build<CCLabelBMFont>::create(title.c_str(), "goldFont.fnt")
+        .scale(0.7f)
+        .collect();
+
+    if (id != 0) {
+        auto* button = CCMenuItemSpriteExtra::create(elem, this, menu_selector(RoomPopup::onCopyRoomId));
+        button->addChild(elem);
+
+        auto* menu = CCMenu::create();
+        menu->addChild(button);
+
+        elem = menu;
+    }
+
+    elem->setPosition(layout.centerTop - CCPoint{0.f, 17.f});
+    m_mainLayer->addChild(elem);
+
+    roomIdButton = elem;
+}
+
+void RoomPopup::onCopyRoomId(cocos2d::CCObject*) {
+    auto id = RoomManager::get().roomId.load();
+
+    utils::clipboard::write(std::to_string(id));
+
+    Notification::create("Copied to clipboard", NotificationIcon::Success)->show();
 }
 
 RoomPopup::~RoomPopup() {

@@ -2,7 +2,9 @@
 
 * Death effects and spider animations of other players now play while paused
 * Fix platformer squish animation looking wrong when jumping sideways from a wall
+* Fix some crashes related to asset preloading and texture packs
 * Add a way to hide specific players
+* Add ability to copy room IDs by pressing the title
 * Add an option to load assets when first joining an online level instead of on the loading screen (you're welcome Colon)
 * Add an option that shows your own name above your icon
 
