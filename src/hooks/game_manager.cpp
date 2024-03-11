@@ -20,6 +20,20 @@ void HookedGameManager::returnToLastScene(GJGameLevel* level) {
 
 CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconRequestId) {
     CCTexture2D* texture = this->getCachedIcon(iconId, iconType);
+
+    if (texture) {
+        auto sheetName = this->sheetNameForIcon(iconId, iconType);
+        this->verifyCachedData();
+
+        auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName), m_fields->cachedTexNameSuffix, m_fields->cachedSearchPathIdx);
+
+        if (!CCSpriteFrameCache::get()->m_pSpriteFrames->objectForKey(fullpath)) {
+            log::warn("player texture exists but sprite frame is invalid! id: {}, icon type: {}", iconId, iconType);
+            // this->m_fields->iconCache[iconType].erase(iconId);
+            // texture = nullptr;
+        }
+    }
+
     if (texture) {
         return texture;
     }
@@ -36,6 +50,9 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
 void HookedGameManager::reloadAllStep2() {
     m_fields->iconCache.clear();
     m_fields->loadedFrames.clear();
+    m_fields->cachedTexNameSuffix.clear();
+    m_fields->cachedSearchPathIdx = -1;
+
     this->setAssetsPreloaded(false);
     GameManager::reloadAllStep2();
 }
@@ -68,14 +85,13 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
 
     auto* tc = CCTextureCache::sharedTextureCache();
 
-    auto texNameSuffix = util::cocos::getTextureNameSuffix();
-    size_t searchPathIdx = util::cocos::findSearchPathIdxForFile("icons/robot_41-hd.png");
+    this->verifyCachedData();
 
     for (const auto& [iconType, map] : toLoadMap) {
         for (const auto& [iconId, idx] : map) {
             const auto& sheetName = toLoad[idx];
 
-            auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName), texNameSuffix, searchPathIdx);
+            auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName), m_fields->cachedTexNameSuffix, m_fields->cachedSearchPathIdx);
             if (fullpath.empty()) {
                 log::warn("path empty: {}", sheetName);
                 continue;
@@ -115,4 +131,14 @@ bool HookedGameManager::getAssetsPreloaded() {
 
 void HookedGameManager::setAssetsPreloaded(bool state) {
     m_fields->assetsPreloaded = state;
+}
+
+void HookedGameManager::verifyCachedData() {
+    if (m_fields->cachedSearchPathIdx == -1) {
+        m_fields->cachedSearchPathIdx = util::cocos::findSearchPathIdxForFile("icons/robot_41-hd.png");
+    }
+
+    if (m_fields->cachedTexNameSuffix.empty()) {
+        m_fields->cachedTexNameSuffix = util::cocos::getTextureNameSuffix();
+    }
 }
