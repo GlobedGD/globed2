@@ -550,8 +550,8 @@ namespace util::cocos {
 
                 {
                     auto _ = cocosWorkMutex.lock();
-                    privAddSpriteFramesWithDictionary(dict, imgState.texture);
 
+                    privAddSpriteFramesWithDictionary(dict, imgState.texture);
                     static_cast<HookedGameManager*>(GameManager::get())->m_fields->loadedFrames.insert(plistKey);
                 }
 

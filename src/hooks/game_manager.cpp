@@ -88,8 +88,9 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
                 continue;
             }
 
-            if (this->getCachedIcon(iconId, iconType)) {
-                log::warn("icon already exists, overwriting");
+            auto* existing = this->getCachedIcon(iconId, iconType);
+            if (existing && existing != tex) {
+                log::warn("icon already exists, overwriting (id: {}, type: {})", iconId, iconType);
             }
 
             m_fields->iconCache[iconType][iconId] = tex;
