@@ -73,7 +73,6 @@ bool AdminPopup::setup() {
                     if (!users || users->count() == 0) {
                         ErrorQueues::get().warn("Unable to find the user");
                     } else {
-                        log::debug("got user: {}", users->objectAtIndex(0));
                         auto* user = static_cast<GJUserScore*>(users->objectAtIndex(0));
                         auto& nm = NetworkManager::get();
                         nm.send(AdminGetUserStatePacket::create(std::to_string(user->m_accountID)));
@@ -89,7 +88,6 @@ bool AdminPopup::setup() {
                 auto* glm = GameLevelManager::sharedState();
                 glm->m_levelManagerDelegate = dummyNode;
                 glm->getUsers(GJSearchObject::create(SearchType::Users, username));
-                log::debug("calling searchusers with {} and node = {}", username, dummyNode);
             }, [](auto popup) {
                 popup->removeChildByID("dummy-userload-node");
                 auto* glm = GameLevelManager::sharedState();
