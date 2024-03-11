@@ -125,6 +125,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                             ->setAutoScale(false));
         menu->setContentWidth(CELL_WIDTH - 5.f);
         menu->setAnchorPoint({0.f, 0.5f});
+        menu->setPositionX(-2.f);
         menu->setPositionY(CELL_HEIGHT / 2.f);
 
         if (settingType == Type::PacketFragmentation) {
