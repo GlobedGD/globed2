@@ -85,7 +85,7 @@ bool HookedMenuLayer::init() {
     m_fields->btnActive = NetworkManager::get().established();
     this->updateGlobedButton();
 
-    CCScheduler::get()->scheduleSelector(schedule_selector(HookedMenuLayer::maybeUpdateButton), this, 0.25f, false);
+    this->schedule(schedule_selector(HookedMenuLayer::maybeUpdateButton), 0.25f);
 
     return true;
 }

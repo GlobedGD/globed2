@@ -169,7 +169,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
 
         self->rescheduleSelectors();
-        CCScheduler::get()->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdate), self->getParent(), 0.0f, false);
+        self->getParent()->schedule(schedule_selector(GlobedPlayLayer::selUpdate), 0.f);
 
         self->scheduleOnce(schedule_selector(GlobedPlayLayer::postInitActions), 0.25f);
     });
@@ -882,8 +882,8 @@ void GlobedPlayLayer::rescheduleSelectors() {
     float updpInterval = 0.25f * timescale;
     float updeInterval = (1.0f / 30.f) * timescale;
 
-    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerData), this->getParent(), pdInterval, false);
-    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selSendPlayerMetadata), this->getParent(), pmdInterval, false);
-    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), this->getParent(), updpInterval, false);
-    sched->scheduleSelector(schedule_selector(GlobedPlayLayer::selUpdateEstimators), this->getParent(), updeInterval, false);
+    this->getParent()->schedule(schedule_selector(GlobedPlayLayer::selSendPlayerData), pdInterval);
+    this->getParent()->schedule(schedule_selector(GlobedPlayLayer::selSendPlayerMetadata), pmdInterval);
+    this->getParent()->schedule(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), updpInterval);
+    this->getParent()->schedule(schedule_selector(GlobedPlayLayer::selUpdateEstimators), updeInterval);
 }

@@ -12,7 +12,8 @@ constexpr auto BLOCK_CLOSING_FOR = util::time::millis(375);
 bool ErrorCheckNode::init() {
     if (!CCNode::init()) return false;
 
-    CCScheduler::get()->scheduleSelector(schedule_selector(ErrorCheckNode::updateErrors), this, 0.1f, false);
+    this->schedule(schedule_selector(ErrorCheckNode::updateErrors), 0.1f);
+
     return true;
 }
 
