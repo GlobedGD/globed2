@@ -555,6 +555,9 @@ namespace util::cocos {
 
                 if (!dict) {
                     log::warn("failed to find the plist for {}.", fullPlistPath);
+
+                    // remove the texture.
+                    textureCache->m_pTextures->removeObjectForKey(imgState.path);
                     return;
                 }
 
