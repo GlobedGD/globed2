@@ -231,7 +231,7 @@ namespace util::cocos {
             // auto fp = CCFileUtils::sharedFileUtils()->fullPathForFilename(plistKey.c_str(), false);
             // sfCache->addSpriteFramesWithFile(fp.c_str());
 
-            threadPool.pushTask([=, GEODE_MACOS(&threadPool,) &imgStates] {
+            threadPool.pushTask([=, &imgStates] {
                 // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
                 auto& imgState = imgStates.lock()->at(i);
 
@@ -260,14 +260,24 @@ namespace util::cocos {
                 CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
                 if (!dict) {
                     log::debug("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
-                    auto fallbackPath = fullPathForFilename(plistKey.c_str());
-                    log::debug("attempted fallback: {}", fallbackPath);
+                    gd::string fallbackPath;
+                    {
+#ifndef GEODE_IS_ANDROID
+                        auto _ = cocosWorkMutex.lock();
+#endif
+                        fallbackPath = fullPathForFilename(plistKey.c_str());
+                    }
 
+                    log::debug("attempted fallback: {}", fallbackPath);
                     dict = CCDictionary::createWithContentsOfFileThreadSafe(fallbackPath.c_str());
                 }
 
                 if (!dict) {
                     log::warn("failed to find the plist for {}.", imgState.path);
+
+#ifndef GEODE_IS_ANDROID
+                    auto _ = cocosWorkMutex.lock();
+#endif
 
                     // remove the texture.
                     textureCache->m_pTextures->removeObjectForKey(imgState.path);
