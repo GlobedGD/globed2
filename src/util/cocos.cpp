@@ -17,27 +17,18 @@ class $modify(HookedFileUtils, CCFileUtils) {
         return m_searchPathArray.at(idx);
     }
 
-#ifdef GEODE_IS_ANDROID
-    // gd::map is brokey :(
-    static inline std::map<std::string, gd::string> ourFullPathCache;
-    auto& getFullPathCache() {
-        return ourFullPathCache;
-    }
-
-#else
     gd::map<gd::string, gd::string>& getFullPathCache() {
         return m_fullPathCache;
     }
-#endif
 
     // make these 2 public
 
     gd::string pGetNewFilename(const char* pfn) {
-        return CCFileUtils::getNewFilename(pfn);
+        return this->getNewFilename(pfn);
     }
 
     gd::string pGetPathForFilename(const gd::string& filename, const gd::string& resdir, const gd::string& sp) {
-        return CCFileUtils::getPathForFilename(filename, resdir, sp);
+        return this->getPathForFilename(filename, resdir, sp);
     }
 
     static HookedFileUtils& get() {
@@ -111,7 +102,7 @@ namespace util::cocos {
         log::debug("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
         log::debug("texure packs: {}", state.texturePackIndices.size());
         log::debug("game resources path ({}): {}", state.gameSearchPathIdx,
-            state.gameSearchPathIdx == -1 ? "<not found>" : CCFileUtils::get()->getSearchPaths().at(state.gameSearchPathIdx));
+            state.gameSearchPathIdx == -1 ? "<not found>" : HookedFileUtils::get().getSearchPath(state.gameSearchPathIdx));
     }
 
     void loadAssetsParallel(const std::vector<std::string>& images) {
@@ -467,8 +458,9 @@ namespace util::cocos {
         }
 
         // if cached, return the cached path
-        if (fileUtils.getFullPathCache().contains(filenameGd)) {
-            return fileUtils.getFullPathCache().at(filenameGd);
+        auto cachedIt = fileUtils.getFullPathCache().find(filenameGd);
+        if (cachedIt != fileUtils.getFullPathCache().end()) {
+            return cachedIt->second;
         }
 
         // Get the new file name.
@@ -477,21 +469,12 @@ namespace util::cocos {
         std::string fullpath = "";
 
         const auto& searchPaths = fileUtils.getSearchPaths();
-#ifdef GEODE_IS_ANDROID
-# define TRY_PATH(sp) \
-    auto _fp = getPathForFilename(newFilename, sp); \
-    if (!_fp.empty()) { \
-        fileUtils.getFullPathCache().insert(std::make_pair(std::move(filename), std::move(_fp))); \
-        return _fp; \
-    }
-#else
 # define TRY_PATH(sp) \
     auto _fp = getPathForFilename(newFilename, sp); \
     if (!_fp.empty()) { \
         fileUtils.getFullPathCache().insert(std::make_pair(std::move(filenameGd), std::move(_fp))); \
         return _fp; \
     }
-#endif
 
         // check for texture pack overrides
         for (size_t tpidx : pstate.texturePackIndices) {

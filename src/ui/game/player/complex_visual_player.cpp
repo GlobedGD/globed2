@@ -66,13 +66,9 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
         storedIcons.deathEffect = 1;
     }
 
-    // TODO: async icon loading is broken on android due to a geode bug.
-#ifndef GEODE_IS_ANDROID
+    if (static_cast<HookedGameManager*>(gm)->getAssetsPreloaded()) return;
+
     this->tryLoadIconsAsync();
-#else
-    this->updatePlayerObjectIcons(true);
-    this->updateIconType(playerIconType);
-#endif
 }
 
 void ComplexVisualPlayer::updateData(
@@ -501,30 +497,30 @@ void ComplexVisualPlayer::toggleAllOff() {
 
 void ComplexVisualPlayer::callToggleWith(PlayerIconType type, bool arg1, bool arg2) {
     switch (type) {
-    case PlayerIconType::Ship: playerIcon->toggleFlyMode(arg1, arg2); break;
-    case PlayerIconType::Ball: playerIcon->toggleRollMode(arg1, arg2); break;
-    case PlayerIconType::Ufo: playerIcon->toggleBirdMode(arg1, arg2); break;
-    case PlayerIconType::Wave: playerIcon->toggleDartMode(arg1, arg2); break;
-    case PlayerIconType::Robot: playerIcon->toggleRobotMode(arg1, arg2); break;
-    case PlayerIconType::Spider: playerIcon->toggleSpiderMode(arg1, arg2); break;
-    case PlayerIconType::Swing: playerIcon->toggleSwingMode(arg1, arg2); break;
-    case PlayerIconType::Jetpack: playerIcon->toggleFlyMode(arg1, arg2); break;
-    default: break;
+        case PlayerIconType::Ship: playerIcon->toggleFlyMode(arg1, arg2); break;
+        case PlayerIconType::Ball: playerIcon->toggleRollMode(arg1, arg2); break;
+        case PlayerIconType::Ufo: playerIcon->toggleBirdMode(arg1, arg2); break;
+        case PlayerIconType::Wave: playerIcon->toggleDartMode(arg1, arg2); break;
+        case PlayerIconType::Robot: playerIcon->toggleRobotMode(arg1, arg2); break;
+        case PlayerIconType::Spider: playerIcon->toggleSpiderMode(arg1, arg2); break;
+        case PlayerIconType::Swing: playerIcon->toggleSwingMode(arg1, arg2); break;
+        case PlayerIconType::Jetpack: playerIcon->toggleFlyMode(arg1, arg2); break;
+        default: break;
     }
 }
 
 void ComplexVisualPlayer::callUpdateWith(PlayerIconType type, int icon) {
     switch (type) {
-    case PlayerIconType::Cube: playerIcon->updatePlayerFrame(icon); break;
-    case PlayerIconType::Ship: playerIcon->updatePlayerShipFrame(icon); break;
-    case PlayerIconType::Ball: playerIcon->updatePlayerRollFrame(icon); break;
-    case PlayerIconType::Ufo: playerIcon->updatePlayerBirdFrame(icon); break;
-    case PlayerIconType::Wave: playerIcon->updatePlayerDartFrame(icon); break;
-    case PlayerIconType::Robot: playerIcon->updatePlayerRobotFrame(icon); break;
-    case PlayerIconType::Spider: playerIcon->updatePlayerSpiderFrame(icon); break;
-    case PlayerIconType::Swing: playerIcon->updatePlayerSwingFrame(icon); break;
-    case PlayerIconType::Jetpack: playerIcon->updatePlayerJetpackFrame(icon); break;
-    case PlayerIconType::Unknown: break;
+        case PlayerIconType::Cube: playerIcon->updatePlayerFrame(icon); break;
+        case PlayerIconType::Ship: playerIcon->updatePlayerShipFrame(icon); break;
+        case PlayerIconType::Ball: playerIcon->updatePlayerRollFrame(icon); break;
+        case PlayerIconType::Ufo: playerIcon->updatePlayerBirdFrame(icon); break;
+        case PlayerIconType::Wave: playerIcon->updatePlayerDartFrame(icon); break;
+        case PlayerIconType::Robot: playerIcon->updatePlayerRobotFrame(icon); break;
+        case PlayerIconType::Spider: playerIcon->updatePlayerSpiderFrame(icon); break;
+        case PlayerIconType::Swing: playerIcon->updatePlayerSwingFrame(icon); break;
+        case PlayerIconType::Jetpack: playerIcon->updatePlayerJetpackFrame(icon); break;
+        case PlayerIconType::Unknown: break;
     }
 }
 

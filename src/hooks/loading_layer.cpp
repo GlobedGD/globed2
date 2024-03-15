@@ -46,13 +46,13 @@ void HookedLoadingLayer::setLabelText(const std::string_view text) {
 void HookedLoadingLayer::setLabelTextForStage() {
     int stage = m_fields->preloadingStage;
     switch (stage) {
-    case 1: this->setLabelText("Globed: preloading death effects"); break;
-    case 2: this->setLabelText("Globed: preloading cube icons"); break;
-    case 3: this->setLabelText("Globed: preloading ship icons"); break;
-    case 4: this->setLabelText("Globed: preloading ball icons"); break;
-    case 5: this->setLabelText("Globed: preloading UFO icons"); break;
-    case 6: this->setLabelText("Globed: preloading wave icons"); break;
-    case 7: this->setLabelText("Globed: preloading other icons"); break;
+        case 1: this->setLabelText("Globed: preloading death effects"); break;
+        case 2: this->setLabelText("Globed: preloading cube icons"); break;
+        case 3: this->setLabelText("Globed: preloading ship icons"); break;
+        case 4: this->setLabelText("Globed: preloading ball icons"); break;
+        case 5: this->setLabelText("Globed: preloading UFO icons"); break;
+        case 6: this->setLabelText("Globed: preloading wave icons"); break;
+        case 7: this->setLabelText("Globed: preloading other icons"); break;
     }
 }
 
