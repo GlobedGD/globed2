@@ -48,7 +48,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     float lastKnownTimeScale = 1.0f;
     std::unordered_map<int, util::time::time_point> lastSentPacket;
 
-    static void onModify(auto& self);
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);
+    }
 
     // gd hooks
 

@@ -112,7 +112,7 @@ namespace util::cocos {
         // macos is stupid so we leak the pool.
         // otherwise we get an epic SIGABRT in std::thread::~thread during threadpool destruction
         // TODO: might be our fault though
-        static sync::ThreadPool* threadPoolPtr = new sync::ThreadPool(MAX_THREADS);
+        static sync::ThreadPool* threadPoolPtr = new sync::ThreadPool(THREAD_COUNT);
 
         auto& threadPool = *threadPoolPtr;
 #endif

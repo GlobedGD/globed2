@@ -36,10 +36,6 @@ float adjustLerpTimeDelta(float dt) {
     // return dt;
 }
 
-void GlobedPlayLayer::onModify(auto& self) {
-    (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);
-}
-
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
