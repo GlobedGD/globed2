@@ -550,6 +550,9 @@ public:
     // Block the calling thread until all tasks have been completed.
     void join();
 
+    // Returns `true` if the thread pool is currently doing any work, `false` if all threads are sleeping.
+    bool isDoingWork();
+
 private:
     struct Worker {
         SmartThread<> thread;

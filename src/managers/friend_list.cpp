@@ -60,7 +60,7 @@ void FriendListManager::DummyNode::getUserListFailed(UserListType p0, GJErrorCod
 }
 
 void FriendListManager::DummyNode::userListChanged(cocos2d::CCArray* p0, UserListType p1) {
-    log::debug("why did changed get called");
+    log::warn("why did changed get called");
     this->getUserListFinished(p0, p1);
 }
 

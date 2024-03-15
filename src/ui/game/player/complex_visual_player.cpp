@@ -63,7 +63,7 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     storedIcons = icons;
     if (settings.players.defaultDeathEffect) {
         // set the default one
-        storedIcons.deathEffect = 0;
+        storedIcons.deathEffect = 1;
     }
 
     // TODO: async icon loading is broken on android due to a geode bug.

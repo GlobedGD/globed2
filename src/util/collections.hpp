@@ -65,7 +65,7 @@ protected:
 };
 
 // i dont know if this works at all
-template<typename T, size_t N> requires std::is_move_constructible_v<T>
+template <typename T, size_t N> requires std::is_move_constructible_v<T>
 class SmallVector {
 public:
     SmallVector() : size_(0), capacity_(N) {}
@@ -237,7 +237,6 @@ public:
         return this->end();
     }
 };
-
 
 template <typename K, typename V>
 std::vector<K> mapKeys(const std::map<K, V>& map) {

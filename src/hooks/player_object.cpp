@@ -2,6 +2,9 @@
 
 #include <hooks/play_layer.hpp>
 #include <util/ui.hpp>
+#include <util/debug.hpp>
+
+using namespace geode::prelude;
 
 void ComplexPlayerObject::setRemotePlayer(ComplexVisualPlayer* rp) {
     this->setUserObject(rp);

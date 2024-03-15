@@ -43,12 +43,7 @@ void HookedGameManager::loadDeathEffect(int id) {
 }
 
 void HookedGameManager::reloadAllStep2() {
-    m_fields->iconCache.clear();
-    m_fields->loadedFrames.clear();
-    m_fields->cachedTexNameSuffix.clear();
-    m_fields->cachedSearchPathIdx = -1;
-
-    this->setAssetsPreloaded(false);
+    this->resetAssetPreloadState();
     GameManager::reloadAllStep2();
 }
 
@@ -80,13 +75,11 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
 
     auto* tc = CCTextureCache::sharedTextureCache();
 
-    this->verifyCachedData();
-
     for (const auto& [iconType, map] : toLoadMap) {
         for (const auto& [iconId, idx] : map) {
             const auto& sheetName = toLoad[idx];
 
-            auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName), m_fields->cachedTexNameSuffix, m_fields->cachedSearchPathIdx);
+            auto fullpath = util::cocos::fullPathForFilename(fmt::format("{}.png", sheetName));
             if (fullpath.empty()) {
                 log::warn("path empty: {}", sheetName);
                 continue;
@@ -128,12 +121,19 @@ void HookedGameManager::setAssetsPreloaded(bool state) {
     m_fields->assetsPreloaded = state;
 }
 
-void HookedGameManager::verifyCachedData() {
-    if (m_fields->cachedSearchPathIdx == -1) {
-        m_fields->cachedSearchPathIdx = util::cocos::findSearchPathIdxForFile("icons/robot_41-hd.png");
-    }
+bool HookedGameManager::getDeathEffectsPreloaded() {
+    return m_fields->deathEffectsPreloaded;
+}
 
-    if (m_fields->cachedTexNameSuffix.empty()) {
-        m_fields->cachedTexNameSuffix = util::cocos::getTextureNameSuffix();
-    }
+void HookedGameManager::setDeathEffectsPreloaded(bool state) {
+    m_fields->deathEffectsPreloaded = state;
+}
+
+void HookedGameManager::resetAssetPreloadState() {
+    m_fields->iconCache.clear();
+    m_fields->loadedFrames.clear();
+
+    this->setAssetsPreloaded(false);
+    this->setDeathEffectsPreloaded(false);
+    util::cocos::resetPreloadState();
 }

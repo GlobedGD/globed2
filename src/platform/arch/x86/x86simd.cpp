@@ -32,8 +32,6 @@ namespace globed::simd::x86 {
             int ecx = arr[2];
             int edx = arr[3];
 
-            log::debug("cpuid eax = {:X}, ebx = {:X}, ecx = {:X}, edx = {:X}", eax, ebx, ecx, edx);
-
             FEATURE(ecx, sse3, 0);
             FEATURE(ecx, pclmulqdq, 1);
             FEATURE(ecx, ssse3, 9);
@@ -55,8 +53,6 @@ namespace globed::simd::x86 {
                 int ecx = arr[2];
                 int edx = arr[3];
 
-                log::debug("cpuid with 7, eax = {:X}, ebx = {:X}, ecx = {:X}, edx = {:X}", eax, ebx, ecx, edx);
-
                 FEATURE(ebx, avx2, 5);
                 FEATURE(ebx, avx512, 16);
                 FEATURE(ebx, avx512dq, 17);
@@ -76,7 +72,7 @@ namespace globed::simd::x86 {
             features.avx512 ? featureList.push_back("avx512") : (void)0;
             features.avx512dq ? featureList.push_back("avx512dq") : (void)0;
 
-            log::debug("Supported cpu features: {}", featureList);
+            // log::debug("Supported cpu features: {}", featureList);
 
             return features;
         });

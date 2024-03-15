@@ -94,7 +94,7 @@ namespace util::ui {
     }
 
     void tryLoadDeathEffect(int id) {
-        if (id == 1) return;
+        if (id <= 1) return;
 
         auto textureCache = CCTextureCache::sharedTextureCache();
         auto sfCache  = CCSpriteFrameCache::sharedSpriteFrameCache();

@@ -43,7 +43,7 @@ GlobedAudioManager::GlobedAudioManager()
 GlobedAudioManager::~GlobedAudioManager() {
     audioThreadHandle.stopAndWait();
 
-    log::debug("audio thread halted.");
+    log::info("audio thread halted.");
 }
 
 void GlobedAudioManager::preInitialize() {

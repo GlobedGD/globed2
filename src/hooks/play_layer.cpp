@@ -4,7 +4,6 @@
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif // GLOBED_HAS_KEYBINDS
 
-#include "pause_layer.hpp"
 #include "gjgamelevel.hpp"
 #include <audio/all.hpp>
 #include <managers/block_list.hpp>
@@ -73,23 +72,39 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         return true;
     }
 
+    // else update the overlay with ping
+    m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
+
+    auto* gm = static_cast<HookedGameManager*>(GameManager::get());
+
     // deferred asset preloading
     if (util::cocos::shouldTryToPreload(false)) {
         log::info("Preloading assets (deferred)");
 
         auto start = util::time::now();
-        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::All);
+        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::AllWithoutDeathEffects);
         auto took = util::time::now() - start;
 
         log::info("Asset preloading took {}", util::format::formatDuration(took));
 
-        static_cast<HookedGameManager*>(GameManager::get())->setAssetsPreloaded(true);
+        gm->setAssetsPreloaded(true);
+    }
+
+    // load death effects if those were deferred too
+    bool shouldLoadDeaths = settings.players.deathEffects && !settings.players.defaultDeathEffect;
+
+    if (!util::cocos::forcedSkipPreload() && shouldLoadDeaths && !gm->getDeathEffectsPreloaded()) {
+        log::info("Preloading death effects (deferred)");
+
+        auto start = util::time::now();
+        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::DeathEffect);
+        auto took = util::time::now() - start;
+
+        log::info("Death effect preloading took {}", util::format::formatDuration(took));
+        gm->setDeathEffectsPreloaded(true);
     }
 
     m_fields->isVoiceProximity = level->isPlatformer() ? settings.communication.voiceProximity : settings.communication.classicProximity;
-
-    // else update the overlay with ping
-    m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
 
     // set the configured tps
     auto tpsCap = settings.globed.tpsCap;

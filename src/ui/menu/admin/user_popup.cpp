@@ -270,16 +270,15 @@ void AdminUserPopup::onViolationChanged(cocos2d::CCObject* sender) {
 
     bool* destination = nullptr;
     switch (tag) {
-    case TAG_BAN: destination = &userEntry.isBanned; break;
-    case TAG_MUTE: destination = &userEntry.isMuted; break;
-    case TAG_WHITELIST: destination = &userEntry.isWhitelisted; break;
+        case TAG_BAN: destination = &userEntry.isBanned; break;
+        case TAG_MUTE: destination = &userEntry.isMuted; break;
+        case TAG_WHITELIST: destination = &userEntry.isWhitelisted; break;
     }
 
 
     GLOBED_REQUIRE(destination != nullptr, "invalid tag in AdminUserPopup::onViolationChanged")
 
     *destination = !static_cast<CCMenuItemToggler*>(sender)->isOn();
-    log::debug("setting tag {} to {}", tag, !static_cast<CCMenuItemToggler*>(sender)->isOn());
 
     // if unmuted and unbanned, hide the text label
     banDurationText->setVisible(userEntry.isBanned || userEntry.isMuted);

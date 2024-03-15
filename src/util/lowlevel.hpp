@@ -50,8 +50,18 @@ namespace util::lowlevel {
     To* vtable_cast_with_obj(From* object, To* toInst) {
         if (!object || !toInst) return nullptr;
 
-        void** vtableFrom = *reinterpret_cast<void***>(object);
         void** vtableTo = *reinterpret_cast<void***>(toInst);
+
+        return vtable_cast_with_table<To>(object, vtableTo);
+    }
+
+    // Like `vtable_cast` but you provide the vtable pointer yourself.
+    template <typename To, typename From>
+    requires std::is_polymorphic_v<To> && std::is_polymorphic_v<From>
+    To* vtable_cast_with_table(From* object, void* vtableTo) {
+        if (!object || !vtableTo) return nullptr;
+
+        void** vtableFrom = *reinterpret_cast<void***>(object);
 
         if (vtableFrom == vtableTo) {
             return reinterpret_cast<To*>(object);

@@ -14,28 +14,28 @@ namespace util::cocos {
         Ufo,
         Wave,
         Other,
-        All // all at once
+        All, // all at once
+        AllWithoutDeathEffects,
     };
 
     void preloadAssets(AssetPreloadStage stage);
 
+    bool forcedSkipPreload();
     bool shouldTryToPreload(bool onLoading);
 
-    std::string fullPathForFilename(const std::string_view filename, const std::string_view suffix, size_t preferIdx = -1);
-    size_t findSearchPathIdxForFile(const std::string_view filename);
+    enum class TextureQuality {
+        Low, Medium, High
+    };
 
-    // returns ".png", "-hd.png" or "-uhd.png"
-    const char* getTextureNameSuffix();
+    TextureQuality getTextureQuality();
 
-    // returns ".plist", "-hd.plist" or "-uhd.plist"
-    const char* getTextureNameSuffixPlist();
+    // State that persists between multiple calls to `loadAssetsParallel`, but will be reset upon game reloads (i.e. changing graphics settings or texture packs)
+    struct PersistentPreloadState;
+    PersistentPreloadState& getPreloadState();
+    void resetPreloadState();
 
-    // transform a path, adding -hd or -uhd at the end depending on current tex quality
-    std::string transformPathWithQuality(const std::string_view path, const std::string_view suffix);
+    std::string fullPathForFilename(const std::string_view filename);
 
-    // transform a path, adding -hd or -uhd at the end depending on current tex quality
-    std::string transformPathWithQualityPlist(const std::string_view path, const std::string_view suffix);
-
-    // CCFileUtils::getFileData that doesn't call fullPathForFilename. argument must be a full path.
-    unsigned char* getFileData(const char* fileName, const char* mode, unsigned long* size);
+    // Like cocos' func, returns empty string if file doesn't exist.
+    std::string getPathForFilename(const gd::string& filename, const gd::string& searchPath);
 }

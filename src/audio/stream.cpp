@@ -23,7 +23,7 @@ AudioStream::AudioStream(AudioDecoder&& decoder)
         sound->getUserData((void**)&stream);
 
         if (!stream || !data) {
-            log::debug("audio stream is nullptr in cb, ignoring");
+            log::warn("audio stream is nullptr in cb, ignoring");
             return FMOD_OK;
         }
 

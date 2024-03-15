@@ -1,10 +1,6 @@
 #include "cocos.hpp"
 
-#include <filesystem>
-#ifdef GEODE_IS_WINDOWS
-# include <Geode/cocos/platform/CCSAXParser.h>
-#endif
-
+#include <defs/geode.hpp>
 #include <managers/settings.hpp>
 #include <hooks/game_manager.hpp>
 #include <util/format.hpp>
@@ -12,457 +8,171 @@
 
 using namespace geode::prelude;
 
+constexpr size_t THREAD_COUNT = 25;
+
 // all of this is needed to disrespect the privacy of ccfileutils
 #include <Geode/modify/CCFileUtils.hpp>
-class $modify(HookedCCFileUtils, CCFileUtils) {
-    static inline std::unordered_map<std::string, std::string> ourCache;
-
-    $override
-    void purgeCachedEntries() {
-        CCFileUtils::purgeCachedEntries();
-        ourCache.clear();
+class $modify(HookedFileUtils, CCFileUtils) {
+    gd::string& getSearchPath(size_t idx) {
+        return m_searchPathArray.at(idx);
     }
 
-    gd::map<gd::string, gd::string>& pubGetFullPathCache() {
+    gd::map<gd::string, gd::string>& getFullPathCache() {
         return m_fullPathCache;
     }
 
-    std::unordered_map<std::string, std::string>& ourGetFullPathCache() {
-        return ourCache;
+    gd::string getNewFilename(const char* pfn) {
+        return CCFileUtils::getNewFilename(pfn);
     }
 
-    gd::vector<gd::string>& pubGetSearchPathArray() {
-        return m_searchPathArray;
+    gd::string getPathForFilename(const gd::string& filename, const gd::string& resdir, const gd::string& sp) {
+        return CCFileUtils::getPathForFilename(filename, resdir, sp);
     }
 
-    gd::vector<gd::string>& pubGetSearchResolutionOrder() {
-        return m_searchResolutionsOrderArray;
-    }
-
-    gd::string pubGetNewFilename(const char* arg) {
-        return this->getNewFilename(arg);
-    }
-
-    gd::string pubGetPathForFilename(const gd::string &filename, const gd::string &resolutionDirectory, const gd::string &searchPath) {
-        return this->getPathForFilename(filename, resolutionDirectory, searchPath);
+    static HookedFileUtils& get() {
+        return *static_cast<HookedFileUtils*>(CCFileUtils::sharedFileUtils());
     }
 };
 
-/* I am so sorry. */
-
-#ifdef GEODE_IS_WINDOWS
-namespace {
-    typedef enum
-    {
-        SAX_NONE = 0,
-        SAX_KEY,
-        SAX_DICT,
-        SAX_INT,
-        SAX_REAL,
-        SAX_STRING,
-        SAX_ARRAY
-    }CCSAXState;
-
-    typedef enum
-    {
-        SAX_RESULT_NONE = 0,
-        SAX_RESULT_DICT,
-        SAX_RESULT_ARRAY
-    }CCSAXResult;
-
-    class CCDictMaker : public cocos2d::CCSAXDelegator
-    {
-    public:
-        CCSAXResult m_eResultType;
-        cocos2d::CCArray* m_pRootArray;
-        cocos2d::CCDictionary *m_pRootDict;
-        cocos2d::CCDictionary *m_pCurDict;
-        std::stack<cocos2d::CCDictionary*> m_tDictStack;
-        std::string m_sCurKey;   ///< parsed key
-        std::string m_sCurValue; // parsed value
-        CCSAXState m_tState;
-        cocos2d::CCArray* m_pArray;
-
-        std::stack<cocos2d::CCArray*> m_tArrayStack;
-        std::stack<CCSAXState>  m_tStateStack;
-
-    public:
-        CCDictMaker()
-            : m_eResultType(SAX_RESULT_NONE),
-            m_pRootArray(NULL),
-            m_pRootDict(NULL),
-            m_pCurDict(NULL),
-            m_tState(SAX_NONE),
-            m_pArray(NULL)
-        {
-        }
-
-        ~CCDictMaker()
-        {
-        }
-
-        cocos2d::CCDictionary* dictionaryWithContentsOfFile(const char *pFileName)
-        {
-            util::debug::Benchmarker bb;
-            m_eResultType = SAX_RESULT_DICT;
-            cocos2d::CCSAXParser parser;
-
-            if (false == parser.init("UTF-8"))
-            {
-                return NULL;
-            }
-            parser.setDelegator(this);
-
-            // we replace this line with our own impl that doesn't use CCFileUtils::getFileData
-            // parser.parse(pFileName);
-
-            bool ret = false;
-            unsigned long size = 0;
-            char* buffer = (char*)util::cocos::getFileData(pFileName, "rt", &size);
-            if (buffer && size > 0) {
-                ret = parser.parse(buffer, size);
-            }
-
-            CC_SAFE_DELETE_ARRAY(buffer);
-
-            return m_pRootDict;
-        }
-
-        cocos2d::CCArray* arrayWithContentsOfFile(const char* pFileName)
-        {
-            m_eResultType = SAX_RESULT_ARRAY;
-            cocos2d::CCSAXParser parser;
-
-            if (false == parser.init("UTF-8"))
-            {
-                return NULL;
-            }
-            parser.setDelegator(this);
-
-            parser.parse(pFileName);
-            return m_pArray;
-        }
-
-        void startElement(void *ctx, const char *name, const char **atts)
-        {
-            CC_UNUSED_PARAM(ctx);
-            CC_UNUSED_PARAM(atts);
-            std::string sName((char*)name);
-            if( sName == "dict" )
-            {
-                m_pCurDict = new cocos2d::CCDictionary();
-                if(m_eResultType == SAX_RESULT_DICT && m_pRootDict == NULL)
-                {
-                    // Because it will call m_pCurDict->release() later, so retain here.
-                    m_pRootDict = m_pCurDict;
-                    m_pRootDict->retain();
-                }
-                m_tState = SAX_DICT;
-
-                CCSAXState preState = SAX_NONE;
-                if (! m_tStateStack.empty())
-                {
-                    preState = m_tStateStack.top();
-                }
-
-                if (SAX_ARRAY == preState)
-                {
-                    // add the dictionary into the array
-                    m_pArray->addObject(m_pCurDict);
-                }
-                else if (SAX_DICT == preState)
-                {
-                    // add the dictionary into the pre dictionary
-                    CCAssert(! m_tDictStack.empty(), "The state is wrong!");
-                    cocos2d::CCDictionary* pPreDict = m_tDictStack.top();
-                    pPreDict->setObject(m_pCurDict, m_sCurKey.c_str());
-                }
-
-                m_pCurDict->release();
-
-                // record the dict state
-                m_tStateStack.push(m_tState);
-                m_tDictStack.push(m_pCurDict);
-            }
-            else if(sName == "key")
-            {
-                m_tState = SAX_KEY;
-            }
-            else if(sName == "integer")
-            {
-                m_tState = SAX_INT;
-            }
-            else if(sName == "real")
-            {
-                m_tState = SAX_REAL;
-            }
-            else if(sName == "string")
-            {
-                m_tState = SAX_STRING;
-            }
-            else if (sName == "array")
-            {
-                m_tState = SAX_ARRAY;
-                m_pArray = new cocos2d::CCArray();
-                if (m_eResultType == SAX_RESULT_ARRAY && m_pRootArray == NULL)
-                {
-                    m_pRootArray = m_pArray;
-                    m_pRootArray->retain();
-                }
-                CCSAXState preState = SAX_NONE;
-                if (! m_tStateStack.empty())
-                {
-                    preState = m_tStateStack.top();
-                }
-
-                if (preState == SAX_DICT)
-                {
-                    m_pCurDict->setObject(m_pArray, m_sCurKey.c_str());
-                }
-                else if (preState == SAX_ARRAY)
-                {
-                    CCAssert(! m_tArrayStack.empty(), "The state is wrong!");
-                    cocos2d::CCArray* pPreArray = m_tArrayStack.top();
-                    pPreArray->addObject(m_pArray);
-                }
-                m_pArray->release();
-                // record the array state
-                m_tStateStack.push(m_tState);
-                m_tArrayStack.push(m_pArray);
-            }
-            else
-            {
-                m_tState = SAX_NONE;
-            }
-        }
-
-        void endElement(void *ctx, const char *name)
-        {
-            CC_UNUSED_PARAM(ctx);
-            CCSAXState curState = m_tStateStack.empty() ? SAX_DICT : m_tStateStack.top();
-            std::string sName((char*)name);
-            if( sName == "dict" )
-            {
-                m_tStateStack.pop();
-                m_tDictStack.pop();
-                if ( !m_tDictStack.empty())
-                {
-                    m_pCurDict = m_tDictStack.top();
-                }
-            }
-            else if (sName == "array")
-            {
-                m_tStateStack.pop();
-                m_tArrayStack.pop();
-                if (! m_tArrayStack.empty())
-                {
-                    m_pArray = m_tArrayStack.top();
-                }
-            }
-            else if (sName == "true")
-            {
-                cocos2d::CCString *str = new cocos2d::CCString("1");
-                if (SAX_ARRAY == curState)
-                {
-                    m_pArray->addObject(str);
-                }
-                else if (SAX_DICT == curState)
-                {
-                    m_pCurDict->setObject(str, m_sCurKey.c_str());
-                }
-                str->release();
-            }
-            else if (sName == "false")
-            {
-                cocos2d::CCString *str = new cocos2d::CCString("0");
-                if (SAX_ARRAY == curState)
-                {
-                    m_pArray->addObject(str);
-                }
-                else if (SAX_DICT == curState)
-                {
-                    m_pCurDict->setObject(str, m_sCurKey.c_str());
-                }
-                str->release();
-            }
-            else if (sName == "string" || sName == "integer" || sName == "real")
-            {
-                cocos2d::CCString* pStrValue = new cocos2d::CCString(m_sCurValue);
-
-                if (SAX_ARRAY == curState)
-                {
-                    m_pArray->addObject(pStrValue);
-                }
-                else if (SAX_DICT == curState)
-                {
-                    m_pCurDict->setObject(pStrValue, m_sCurKey.c_str());
-                }
-
-                pStrValue->release();
-                m_sCurValue.clear();
-            }
-
-            m_tState = SAX_NONE;
-        }
-
-        void textHandler(void *ctx, const char *ch, int len)
-        {
-            CC_UNUSED_PARAM(ctx);
-            if (m_tState == SAX_NONE)
-            {
-                return;
-            }
-
-            CCSAXState curState = m_tStateStack.empty() ? SAX_DICT : m_tStateStack.top();
-            cocos2d::CCString *pText = new cocos2d::CCString(std::string((char*)ch,0,len));
-
-            switch(m_tState)
-            {
-            case SAX_KEY:
-                m_sCurKey = pText->getCString();
-                break;
-            case SAX_INT:
-            case SAX_REAL:
-            case SAX_STRING:
-                {
-                    if (curState == SAX_DICT)
-                    {
-                        CCAssert(!m_sCurKey.empty(), "key not found : <integer/real>");
-                    }
-
-                    m_sCurValue.append(pText->getCString());
-                }
-                break;
-            default:
-                break;
-            }
-            pText->release();
-        }
-    };
-}
-#endif // GEODE_IS_WINDOWS
-
 namespace util::cocos {
-    // big hack
+    // big hack to call a private cocos function
+    namespace {
+        template <typename TC>
+        using priv_method_t = void(TC::*)(CCDictionary*, CCTexture2D*);
 
-    template <typename TC>
-    using priv_method_t = void(TC::*)(CCDictionary*, CCTexture2D*);
+        template <typename TC, priv_method_t<TC> func>
+        struct priv_caller {
+            friend void _addSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2) {
+                auto* obj = CCSpriteFrameCache::sharedSpriteFrameCache();
+                (obj->*func)(p1, p2);
+            }
+        };
 
-    template <typename TC, priv_method_t<TC> func>
-    struct priv_caller {
-        friend void privAddSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2) {
-            auto* obj = CCSpriteFrameCache::sharedSpriteFrameCache();
-            (obj->*func)(p1, p2);
-        }
+        template struct priv_caller<CCSpriteFrameCache, &CCSpriteFrameCache::addSpriteFramesWithDictionary>;
+
+        void _addSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2);
+    }
+
+    struct PersistentPreloadState {
+        TextureQuality texQuality;
+        bool hasTexturePack;
+        size_t gameSearchPathIdx;
+        std::vector<size_t> texturePackIndices;
     };
 
-    template struct priv_caller<CCSpriteFrameCache, &CCSpriteFrameCache::addSpriteFramesWithDictionary>;
+    static void initPreloadState(PersistentPreloadState& state) {
+        auto startTime = util::time::now();
 
-    void privAddSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2);
+        state.texturePackIndices.clear();
 
-    // god save me from this hell
+        state.texQuality = getTextureQuality();
+
+        std::filesystem::path resourceDir(geode::dirs::getGameDir());
+        resourceDir /= "Resources";
+
+        size_t idx = 0;
+        for (const auto& path : CCFileUtils::get()->getSearchPaths()) {
+            std::string_view sv(path);
+            if (sv.find("geode.texture-loader") != std::string::npos && sv.find("unzipped") == std::string::npos) {
+                state.hasTexturePack = true;
+                state.texturePackIndices.push_back(idx);
+            }
+
+            // TODO android and mac??
+            auto fspath = std::filesystem::path(std::string(path));
+
+            std::error_code ec;
+            bool result = std::filesystem::equivalent(fspath, resourceDir, ec);
+
+            if (ec == std::error_code{} && result) {
+                state.gameSearchPathIdx = idx;
+            }
+
+            idx++;
+        }
+
+        log::debug("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
+        log::debug("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
+        log::debug("texure packs: {}", state.texturePackIndices.size());
+        log::debug("game resources path ({}): {}", state.gameSearchPathIdx, CCFileUtils::get()->getSearchPaths().at(state.gameSearchPathIdx));
+    }
 
     void loadAssetsParallel(const std::vector<std::string>& images) {
-        const size_t MAX_THREADS = 25;
 #ifndef GEODE_IS_MACOS
-        static sync::ThreadPool threadPool(MAX_THREADS);
-        static sync::WrappingMutex<void> cocosWorkMutex;
+        static sync::ThreadPool threadPool(THREAD_COUNT);
 #else
         // macos is stupid so we leak the pool.
-        // otherwise we get an epic SIGABRT in std::thread::~thread during static destruction time
+        // otherwise we get an epic SIGABRT in std::thread::~thread during threadpool destruction
+        // TODO: might be our fault though
         static sync::ThreadPool* threadPoolPtr = new sync::ThreadPool(MAX_THREADS);
-        static sync::WrappingMutex<void>* cocosWorkMutexPtr = new sync::WrappingMutex<void>();
 
         auto& threadPool = *threadPoolPtr;
-        auto& cocosWorkMutex = *cocosWorkMutexPtr;
 #endif
+
+        static sync::WrappingMutex<void> cocosWorkMutex;
 
         auto textureCache = CCTextureCache::sharedTextureCache();
         auto sfCache  = CCSpriteFrameCache::sharedSpriteFrameCache();
 
+        auto& fileUtils = HookedFileUtils::get();
+
         struct ImageLoadState {
             std::string key;
             std::string path;
-            CCImage* image = nullptr;
             CCTexture2D* texture = nullptr;
         };
 
         sync::WrappingMutex<std::vector<ImageLoadState>> imgStates;
 
-        auto texNameSuffix = getTextureNameSuffix();
-        auto plistNameSuffix = getTextureNameSuffixPlist();
-
-        // this is such a hack
-        size_t searchPathIdx = findSearchPathIdxForFile("icons/player_01-uhd.png");
-        bool hasTexturePack = false;
-
-        auto* fileUtils = static_cast<HookedCCFileUtils*>(CCFileUtils::sharedFileUtils());
-        auto firstPath = fileUtils->pubGetSearchPathArray().at(0);
-
-        // if we have a texture pack, no good. just set searchPathIdx to -1
-        if (std::string(firstPath).find("geode.texture-loader") != std::string::npos) {
-            searchPathIdx = -1;
-            hasTexturePack = true;
-        }
-
+        auto _imguard = imgStates.lock();
         for (const auto& imgkey : images) {
             auto pathKey = fmt::format("{}.png", imgkey);
 
-            std::string fullpath;
-
-            if (hasTexturePack) {
-                fullpath = fullPathForFilename(pathKey, texNameSuffix, 0);
-            }
-
-            // if we have a texture pack but resolution with idx 0 failed, try searching through everything
-            // if we don't have a texture pack, use the gd resources (as set earlier to searchPathIdx)
-            if (fullpath.empty()) {
-                fullpath = fullPathForFilename(pathKey, texNameSuffix, searchPathIdx);
-            }
+            std::string fullpath = fullPathForFilename(pathKey);
 
             if (fullpath.empty()) {
                 continue;
             }
 
-            // textureForKey uses slow CCFileUtils::fullPathForFilename so we reimpl it
             if (textureCache->m_pTextures->objectForKey(fullpath) != nullptr) {
                 continue;
             }
 
-            auto imgs = imgStates.lock();
-            imgs->push_back(ImageLoadState {
+            _imguard->emplace_back(ImageLoadState {
                 .key = imgkey,
                 .path = fullpath,
-                .image = nullptr,
                 .texture = nullptr
             });
         }
 
-        auto imgCount = imgStates.lock()->size();
+        size_t imgCount = _imguard->size();
+        _imguard.unlock();
+
+        sync::SmartMessageQueue<std::pair<size_t, CCImage*>> textureInitRequests;
 
         for (size_t i = 0; i < imgCount; i++) {
-            threadPool.pushTask([=, &imgStates] {
-                auto imgState = imgStates.lock()->at(i);
+            threadPool.pushTask([i, &fileUtils, &textureInitRequests, &imgStates] {
+                // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
+                auto& imgState = imgStates.lock()->at(i);
 
                 // on android, resources are read from the apk file, so it's NOT thread safe. add a lock.
-
 #ifdef GEODE_IS_ANDROID
                 auto _rguard = cocosWorkMutex.lock();
 #endif
 
                 unsigned long filesize = 0;
-                unsigned char* buffer = getFileData(imgState.path.c_str(), "rb", &filesize);
+                unsigned char* buffer = fileUtils.getFileData(imgState.path.c_str(), "rb", &filesize);
 
 #ifdef GEODE_IS_ANDROID
                 _rguard.unlock();
 #endif
 
+                std::unique_ptr<unsigned char[]> buf(buffer);
+
                 if (!buffer || filesize == 0) {
-                    log::warn("failed to read file: {}", imgState.path);
+                    log::warn("failed to read image file: {}", imgState.path);
                     return;
                 }
-
-                std::unique_ptr<unsigned char[]> buf(buffer);
 
                 auto* image = new CCImage;
                 if (!image->initWithImageData(buf.get(), filesize, cocos2d::CCImage::kFmtPng)) {
@@ -471,38 +181,41 @@ namespace util::cocos {
                     return;
                 }
 
-                imgStates.lock()->at(i).image = image;
+                textureInitRequests.push(std::make_pair(i, image));
             });
         }
 
-        // wait for image adding to finish
-        threadPool.join();
+        // initialize all the textures (must be done on the main thread)
+        while (true) {
+            if (textureInitRequests.empty()) {
+                if (threadPool.isDoingWork()) {
+                    std::this_thread::yield();
+                    continue;
+                } else if (textureInitRequests.empty()) {
+                    break;
+                }
+            }
 
-        // now - since textures can only be initialized on the main thread, we block for a bit to do exactly that
-        auto imgsg = imgStates.lock();
-        for (auto& img : *imgsg) {
-            if (!img.image) continue;
+            auto [idx, image] = textureInitRequests.pop();
 
             auto texture = new CCTexture2D;
-            if (!texture->initWithImage(img.image)) {
+            if (!texture->initWithImage(image)) {
                 delete texture;
-                img.image->release();
-                img.image = nullptr;
-                log::warn("failed to init texture: {}", img.path);
+                image->release();
+                log::warn("failed to init CCTexture2D: {}", imgStates.lock()->at(idx).path);
                 continue;
             }
 
-            img.texture = texture;
-            textureCache->m_pTextures->setObject(texture, img.path);
+            auto imguard = imgStates.lock();
+            imguard->at(idx).texture = texture;
+            textureCache->m_pTextures->setObject(texture, imguard->at(idx).path);
+            imguard.unlock();
 
             texture->release();
-            img.image->release();
+            image->release();
         }
 
         // now, add sprite frames
-        imgCount = imgsg->size();
-        imgsg.unlock();
-
         for (size_t i = 0; i < imgCount; i++) {
             // this is the slow code but is essentially equivalent to the code below
             // auto imgState = imgStates.lock()->at(i);
@@ -510,11 +223,11 @@ namespace util::cocos {
             // auto fp = CCFileUtils::sharedFileUtils()->fullPathForFilename(plistKey.c_str(), false);
             // sfCache->addSpriteFramesWithFile(fp.c_str());
 
-            threadPool.pushTask([=, GEODE_MACOS(&threadPool, &cocosWorkMutex,) &imgStates] {
-                auto imgState = imgStates.lock()->at(i);
-                if (!imgState.texture) return;
+            threadPool.pushTask([=, GEODE_MACOS(&threadPool,) &imgStates] {
+                // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
+                auto& imgState = imgStates.lock()->at(i);
 
-                // addSpriteFramesWithFile rewritten
+                if (!imgState.texture) return;
 
                 auto plistKey = fmt::format("{}.plist", imgState.key);
 
@@ -529,28 +242,19 @@ namespace util::cocos {
 
                 std::string fullPlistPath = imgState.path.substr(0, imgState.path.find(".png")) + ".plist";
 
+                // file reading is not thread safe on android.
+
 #ifdef GEODE_IS_ANDROID
                 auto _ccdlock = cocosWorkMutex.lock();
 #endif
 
-#ifdef GEODE_IS_WINDOWS
-                CCDictMaker tMaker;
-                CCDictionary* dict = tMaker.dictionaryWithContentsOfFile(fullPlistPath.c_str());
-#else
                 CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
-#endif
                 if (!dict) {
-                    log::warn("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
-                    fullPlistPath = CCFileUtils::get()->fullPathForFilename(plistKey.c_str(), false);
-                    fullPlistPath = transformPathWithQualityPlist(fullPlistPath, plistNameSuffix);
+                    log::debug("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
+                    fullPlistPath = fullPathForFilename(plistKey.c_str());
                     log::debug("attempted fallback: {}", fullPlistPath);
 
-#ifdef GEODE_IS_WINDOWS
-                    CCDictMaker tMaker;
-                    dict = tMaker.dictionaryWithContentsOfFile(fullPlistPath.c_str());
-#else
                     dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
-#endif
                 }
 
                 if (!dict) {
@@ -568,7 +272,7 @@ namespace util::cocos {
                 {
                     auto _ = cocosWorkMutex.lock();
 
-                    privAddSpriteFramesWithDictionary(dict, imgState.texture);
+                    _addSpriteFramesWithDictionary(dict, imgState.texture);
                     static_cast<HookedGameManager*>(GameManager::get())->m_fields->loadedFrames.insert(plistKey);
                 }
 
@@ -634,8 +338,11 @@ namespace util::cocos {
             gm->loadIconsBatched(ranges);
 
         } break;
+        case AssetPreloadStage::AllWithoutDeathEffects: [[fallthrough]];
         case AssetPreloadStage::All: {
-            preloadAssets(AssetPreloadStage::DeathEffect);
+            if (stage != AssetPreloadStage::AllWithoutDeathEffects) {
+                preloadAssets(AssetPreloadStage::DeathEffect);
+            }
             preloadAssets(AssetPreloadStage::Cube);
             preloadAssets(AssetPreloadStage::Ship);
             preloadAssets(AssetPreloadStage::Ball);
@@ -646,9 +353,15 @@ namespace util::cocos {
         }
     }
 
+    bool forcedSkipPreload() {
+        auto& settings = GlobedSettings::get();
+
+        return !settings.globed.preloadAssets || Loader::get()->getLaunchFlag("globed-skip-preload") || Mod::get()->getSettingValue<bool>("force-skip-preload");
+    }
+
     bool shouldTryToPreload(bool onLoading) {
-        bool skipFlag = Loader::get()->getLaunchFlag("globed-skip-preload") || Loader::get()->getLaunchFlag("globed-skip-death-effects") || Mod::get()->getSettingValue<bool>("force-skip-preload");
-        if (skipFlag) return false;
+        // if preloading is completely disabled, always return false
+        if (forcedSkipPreload()) return false;
 
         auto* gm = static_cast<HookedGameManager*>(GameManager::get());
 
@@ -658,10 +371,6 @@ namespace util::cocos {
         }
 
         auto& settings = GlobedSettings::get();
-        // if it's disabled, don't try at all
-        if (!settings.globed.preloadAssets) {
-            return false;
-        }
 
         // if we are on the loading screen, only load if not deferred
         if (onLoading) {
@@ -672,149 +381,133 @@ namespace util::cocos {
         return true;
     }
 
-    std::string fullPathForFilename(const std::string_view filename, const std::string_view suffix, size_t preferIdx) {
-        auto* fu = static_cast<HookedCCFileUtils*>(CCFileUtils::sharedFileUtils());
-
-        std::string strFileName;
-        if (filename.ends_with(".plist")) {
-            strFileName = transformPathWithQualityPlist(filename, suffix);
+    TextureQuality getTextureQuality() {
+        float sf = CCDirector::get()->getContentScaleFactor();
+        if (sf >= 4.f) {
+            return TextureQuality::High;
+        } else if (sf >= 2.f) {
+            return TextureQuality::Medium;
         } else {
-            strFileName = transformPathWithQuality(filename, suffix);
+            return TextureQuality::Low;
+        }
+    }
+
+    PersistentPreloadState& getPreloadState() {
+        using util::misc::Fuse;
+
+        static PersistentPreloadState state;
+        util::misc::callOnce("cocos-get-preload-state-init", [&] {
+            initPreloadState(state);
+        });
+
+        return state;
+    }
+
+    void resetPreloadState() {
+        auto& state = getPreloadState();
+        initPreloadState(state);
+    }
+
+    // transforms a string like "icon-41" into "icon-41-hd.png" depending on the current texture quality.
+    static void appendQualitySuffix(std::string& out, TextureQuality quality, bool plist) {
+        switch (quality) {
+            case TextureQuality::Low: {
+                if (plist) out.append(".plist");
+                else out.append(".png");
+            } break;
+            case TextureQuality::Medium: {
+                if (plist) out.append("-hd.plist");
+                else out.append("-hd.png");
+            } break;
+            case TextureQuality::High: {
+                if (plist) out.append("-uhd.plist");
+                else out.append("-uhd.png");
+            } break;
+        }
+    }
+
+    std::string fullPathForFilename(const std::string_view rawfilename) {
+        auto& fileUtils = HookedFileUtils::get();
+        auto& pstate = getPreloadState();
+
+        // add the quality suffix.
+        std::string filename;
+
+        if (rawfilename.ends_with(".plist")) {
+            filename = rawfilename.substr(0, rawfilename.find(".plist"));
+            appendQualitySuffix(filename, pstate.texQuality, true);
+        } else {
+            filename = rawfilename.substr(0, rawfilename.find(".png"));
+            appendQualitySuffix(filename, pstate.texQuality, false);
         }
 
-        if (fu->isAbsolutePath(strFileName)) {
-            return strFileName;
+        // if absolute path, return it
+        if (fileUtils.isAbsolutePath(filename)) {
+            return filename;
         }
 
-        // Already Cached ?
-        if (fu->ourGetFullPathCache().find(strFileName) != fu->ourGetFullPathCache().end()) {
-            return fu->ourGetFullPathCache()[strFileName];
+        // if cached, return the cached path
+        if (fileUtils.getFullPathCache().contains(filename)) {
+            return fileUtils.getFullPathCache().at(filename);
         }
 
         // Get the new file name.
-        std::string newFilename = fu->pubGetNewFilename(strFileName.c_str());
+        gd::string newFilename = fileUtils.getNewFilename(filename.c_str());
 
         std::string fullpath = "";
 
-        // if user specified an index, try it
-        if (preferIdx != -1) {
-            auto& searchPath = fu->pubGetSearchPathArray().at(preferIdx);
-            for (const auto& resOrder : fu->pubGetSearchResolutionOrder()) {
-                std::string fullpath = fu->pubGetPathForFilename(newFilename, resOrder, searchPath);
+        const auto& searchPaths = fileUtils.getSearchPaths();
 
-                if (!fullpath.empty()) {
-                    fu->ourGetFullPathCache().insert(std::make_pair(strFileName, fullpath));
-                    return fullpath;
-                }
-            }
-
-            // on fail return empty string
-            return "";
-        }
-
-        for (const auto& searchPath : fu->pubGetSearchPathArray()) {
-            for (const auto& resOrder : fu->pubGetSearchResolutionOrder()) {
-                std::string fullpath = fu->pubGetPathForFilename(newFilename, resOrder, searchPath);
-
-                if (!fullpath.empty()) {
-                    fu->ourGetFullPathCache().insert(std::make_pair(strFileName, fullpath));
-                    return fullpath;
-                }
-            }
-        }
-
-        // The file wasn't found, return the file name passed in.
-        return strFileName;
+#define TRY_PATH(sp) \
+    auto _fp = getPathForFilename(newFilename, sp); \
+    if (!_fp.empty()) { \
+        fileUtils.getFullPathCache().insert(std::make_pair(filename, _fp)); \
+        return _fp; \
     }
 
-    size_t findSearchPathIdxForFile(const std::string_view filename) {
-        auto* fu = static_cast<HookedCCFileUtils*>(CCFileUtils::sharedFileUtils());
-        std::string newFilename = fu->pubGetNewFilename(std::string(filename).c_str());
-
-        size_t idx = 0;
-        for (const auto& searchPath : fu->pubGetSearchPathArray()) {
-            for (const auto& resOrder : fu->pubGetSearchResolutionOrder()) {
-                std::string fullpath = fu->pubGetPathForFilename(newFilename, resOrder, searchPath);
-
-                if (!fullpath.empty()) {
-                    return idx;
-                }
-            }
-
-            idx++;
+        // check for texture pack overrides
+        for (size_t tpidx : pstate.texturePackIndices) {
+            const auto& spath = searchPaths.at(tpidx);
+            TRY_PATH(spath);
         }
 
-        return -1;
+        // try the gd folder
+        {
+            const auto& spath = searchPaths.at(pstate.gameSearchPathIdx);
+            TRY_PATH(spath);
+        }
+
+        log::warn("fullPathForFilename missed known paths, trying everything: {}", rawfilename);
+
+        // try every single search path
+        for (const auto& spath : searchPaths) {
+            TRY_PATH(spath);
+        }
+
+        // if all else fails, accept our defeat.
+        log::warn("fullPathForFilename failed to find full path for: {}", rawfilename);
+        log::warn("attempted transformed path was {}", newFilename);
+
+        return filename;
     }
 
-    const char* getTextureNameSuffix() {
-        std::string fp = CCFileUtils::sharedFileUtils()->fullPathForFilename("icons/robot_41.png", false);
+    std::string getPathForFilename(const gd::string& filename, const gd::string& searchPath) {
+        // i dont wanna deal with utf8 conversions lol
+        return HookedFileUtils::get().getPathForFilename(filename, "", searchPath);
+        // std::string file(filename);
+        // std::string file_path;
+        // size_t slashpos = filename.find_last_of("/");
+        // if (slashpos != std::string::npos) {
+        //     file_path = filename.substr(0, slashpos + 1);
+        //     file = filename.substr(slashpos + 1);
+        // }
 
-        if (fp.ends_with("-uhd.png")) {
-            return "-uhd.png";
-        } else if (fp.ends_with("-hd.png")) {
-            return "-hd.png";
-        } else {
-            return ".png";
-        }
-    }
+        // std::string path = std::string(searchPath) + file_path + file;
 
-    const char* getTextureNameSuffixPlist() {
-        auto* tn = getTextureNameSuffix();
-        if (strcmp(tn, "-uhd.png") == 0) {
-            return "-uhd.plist";
-        } else if (strcmp(tn, "-hd.png") == 0) {
-            return "-hd.plist";
-        } else {
-            return ".plist";
-        }
-    }
+        // if (std::filesystem::exists(path)) {
+        //     return path;
+        // }
 
-    std::string transformPathWithQuality(const std::string_view path, const std::string_view suffix) {
-        if (path.ends_with("-uhd.png") || path.ends_with("-hd.png")) {
-            auto k = path.substr(0, path.find_last_of("-"));
-            return std::string(k) + std::string(suffix);
-        } else {
-            return std::string(path.substr(0, path.find_last_of("."))) + std::string(suffix);
-        }
-    }
-
-    std::string transformPathWithQualityPlist(const std::string_view path, const std::string_view suffix) {
-        if (path.ends_with("-uhd.plist") || path.ends_with("-hd.plist")) {
-            auto k = path.substr(0, path.find_last_of("-"));
-            return std::string(k) + std::string(suffix);
-        } else {
-            return std::string(path.substr(0, path.find_last_of("."))) + std::string(suffix);
-        }
-    }
-
-    unsigned char* getFileData(const char* fileName, const char* mode, unsigned long* size) {
-        // android sucks
-#ifdef GEODE_IS_ANDROID
-        return CCFileUtils::sharedFileUtils()->getFileData(fileName, mode, size);
-#endif
-
-        unsigned char* buffer = nullptr;
-
-        *size = 0;
-
-        std::ifstream file(fileName, std::ios::binary | std::ios::ate);
-        if (file.is_open()) {
-            *size = static_cast<unsigned long>(file.tellg());
-            file.seekg(0, std::ios::beg);
-
-            buffer = new unsigned char[*size];
-            if (!file.read(reinterpret_cast<char*>(buffer), *size)) {
-                size = 0;
-                delete[] buffer;
-                buffer = nullptr;
-            }
-        }
-
-        if (!buffer) {
-            log::warn("failed to read data from a file: {}", fileName);
-        }
-
-        return buffer;
+        // return "";
     }
 }

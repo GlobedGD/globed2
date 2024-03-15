@@ -176,7 +176,7 @@ NetworkManager::~NetworkManager() {
 
     util::net::cleanup();
 
-    log::debug("Goodbye!");
+    log::info("Goodbye!");
 }
 
 Result<> NetworkManager::connect(const std::string_view addr, unsigned short port, const std::string_view serverId, bool standalone) {

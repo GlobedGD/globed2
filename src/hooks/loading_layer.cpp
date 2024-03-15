@@ -16,7 +16,6 @@ void HookedLoadingLayer::loadingFinished() {
 
         auto* gm = GameManager::get();
         auto* hgm = static_cast<HookedGameManager*>(gm);
-        hgm->m_fields->iconCache.clear();
 
         if (!util::cocos::shouldTryToPreload(true)) {
             log::info("Asset preloading disabled/deferred, not loading anything.");
@@ -24,14 +23,14 @@ void HookedLoadingLayer::loadingFinished() {
             return;
         }
 
-        log::debug("preloading assets");
+        log::info("preloading assets");
         this->setLabelText("Globed: preloading death effects");
 
         // start the stage 1 - load death effects
         this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.05f);
         return;
     } else if (m_fields->preloadingStage == 1000) {
-        log::debug("Asset preloading finished in {}.", util::format::formatDuration(util::time::systemNow() - m_fields->loadingStartedTime));
+        log::info("Asset preloading finished in {}.", util::format::formatDuration(util::time::systemNow() - m_fields->loadingStartedTime));
         LoadingLayer::loadingFinished();
     }
 }
@@ -72,9 +71,17 @@ void HookedLoadingLayer::preloadingStage2(float) {
     using util::cocos::AssetPreloadStage;
     using util::cocos::preloadAssets;
 
+    auto& settings = GlobedSettings::get();
+
     switch (m_fields->preloadingStage) {
     // death effects
-    case 1: preloadAssets(AssetPreloadStage::DeathEffect); break;
+    case 1: {
+        // only preload them if they are enabled, they take like half the loading time
+        if (settings.players.deathEffects && !settings.players.defaultDeathEffect) {
+            preloadAssets(AssetPreloadStage::DeathEffect);
+            static_cast<HookedGameManager*>(GameManager::get())->setDeathEffectsPreloaded(true);
+        }
+    } break;
     case 2: preloadAssets(AssetPreloadStage::Cube); break;
     case 3: preloadAssets(AssetPreloadStage::Ship); break;
     case 4: preloadAssets(AssetPreloadStage::Ball); break;

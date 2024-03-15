@@ -95,4 +95,16 @@ void ThreadPool::join() {
     } while (stillWorking);
 }
 
+bool ThreadPool::isDoingWork() {
+    if (!taskQueue.empty()) return true;
+
+    for (const auto& worker : workers) {
+        if (worker.doingWork) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 }

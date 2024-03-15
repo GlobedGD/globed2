@@ -100,6 +100,9 @@ namespace util::misc {
     // Used for doing something once. `Fuse<unique-number>::tripped()` is guaranteed to evaluate to true only once. (no guarantees if accessed from multiple threads)
     template <uint32_t FuseId>
     class Fuse {
+    public:
+        static constexpr uint32_t PRELOAD_STATE_ID = 213542435;
+
         static bool tripped() {
             static bool trip = false;
             if (!trip) {
