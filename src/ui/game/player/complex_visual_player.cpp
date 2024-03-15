@@ -143,7 +143,13 @@ void ComplexVisualPlayer::updateData(
 
     // animate dashing
     if (data.isDashing != wasDashing) {
-        data.isDashing ? playerIcon->startDashing(nullptr) : playerIcon->stopDashing();
+        if (data.isDashing) {
+            playerIcon->startDashing(nullptr);
+        } else {
+            playerIcon->stopDashing();
+            playerIcon->setRotation(0.f);
+        }
+
         wasDashing = data.isDashing;
     }
 
