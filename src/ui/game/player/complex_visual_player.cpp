@@ -66,8 +66,13 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
         storedIcons.deathEffect = 1;
     }
 
-    this->updatePlayerObjectIcons(true);
-    this->updateIconType(playerIconType);
+    // android is funny and quirky
+    if (static_cast<HookedGameManager*>(gm)->getAssetsPreloaded() GEODE_ANDROID(|| true)) {
+        this->updatePlayerObjectIcons(true);
+        this->updateIconType(playerIconType);
+    } else {
+        this->tryLoadIconsAsync();
+    }
 }
 
 void ComplexVisualPlayer::updateData(
