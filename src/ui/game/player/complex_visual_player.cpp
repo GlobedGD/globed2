@@ -66,9 +66,8 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
         storedIcons.deathEffect = 1;
     }
 
-    if (static_cast<HookedGameManager*>(gm)->getAssetsPreloaded()) return;
-
-    this->tryLoadIconsAsync();
+    this->updatePlayerObjectIcons(true);
+    this->updateIconType(playerIconType);
 }
 
 void ComplexVisualPlayer::updateData(
