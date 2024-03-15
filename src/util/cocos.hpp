@@ -34,8 +34,8 @@ namespace util::cocos {
     PersistentPreloadState& getPreloadState();
     void resetPreloadState();
 
-    std::string fullPathForFilename(const std::string_view filename);
+    gd::string fullPathForFilename(const std::string_view filename);
 
     // Like cocos' func, returns empty string if file doesn't exist.
-    std::string getPathForFilename(const gd::string& filename, const gd::string& searchPath);
+    gd::string getPathForFilename(const gd::string& filename, const gd::string& searchPath);
 }

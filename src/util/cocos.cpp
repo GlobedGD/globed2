@@ -17,15 +17,26 @@ class $modify(HookedFileUtils, CCFileUtils) {
         return m_searchPathArray.at(idx);
     }
 
+#ifdef GEODE_IS_ANDROID
+    // gd::map is brokey :(
+    static inline std::map<std::string, gd::string> ourFullPathCache;
+    auto& getFullPathCache() {
+        return ourFullPathCache;
+    }
+
+#else
     gd::map<gd::string, gd::string>& getFullPathCache() {
         return m_fullPathCache;
     }
+#endif
 
-    gd::string getNewFilename(const char* pfn) {
+    // make these 2 public
+
+    gd::string pGetNewFilename(const char* pfn) {
         return CCFileUtils::getNewFilename(pfn);
     }
 
-    gd::string getPathForFilename(const gd::string& filename, const gd::string& resdir, const gd::string& sp) {
+    gd::string pGetPathForFilename(const gd::string& filename, const gd::string& resdir, const gd::string& sp) {
         return CCFileUtils::getPathForFilename(filename, resdir, sp);
     }
 
@@ -56,7 +67,7 @@ namespace util::cocos {
     struct PersistentPreloadState {
         TextureQuality texQuality;
         bool hasTexturePack;
-        size_t gameSearchPathIdx;
+        size_t gameSearchPathIdx = -1;
         std::vector<size_t> texturePackIndices;
     };
 
@@ -78,7 +89,11 @@ namespace util::cocos {
                 state.texturePackIndices.push_back(idx);
             }
 
-            // TODO android and mac??
+#ifdef GEODE_IS_ANDROID
+            if (sv == "assets/") {
+                state.gameSearchPathIdx = idx;
+            }
+#else
             auto fspath = std::filesystem::path(std::string(path));
 
             std::error_code ec;
@@ -87,6 +102,7 @@ namespace util::cocos {
             if (ec == std::error_code{} && result) {
                 state.gameSearchPathIdx = idx;
             }
+#endif
 
             idx++;
         }
@@ -94,7 +110,8 @@ namespace util::cocos {
         log::debug("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
         log::debug("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
         log::debug("texure packs: {}", state.texturePackIndices.size());
-        log::debug("game resources path ({}): {}", state.gameSearchPathIdx, CCFileUtils::get()->getSearchPaths().at(state.gameSearchPathIdx));
+        log::debug("game resources path ({}): {}", state.gameSearchPathIdx,
+            state.gameSearchPathIdx == -1 ? "<not found>" : CCFileUtils::get()->getSearchPaths().at(state.gameSearchPathIdx));
     }
 
     void loadAssetsParallel(const std::vector<std::string>& images) {
@@ -118,7 +135,7 @@ namespace util::cocos {
 
         struct ImageLoadState {
             std::string key;
-            std::string path;
+            gd::string path;
             CCTexture2D* texture = nullptr;
         };
 
@@ -128,7 +145,7 @@ namespace util::cocos {
         for (const auto& imgkey : images) {
             auto pathKey = fmt::format("{}.png", imgkey);
 
-            std::string fullpath = fullPathForFilename(pathKey);
+            gd::string fullpath = fullPathForFilename(pathKey);
 
             if (fullpath.empty()) {
                 continue;
@@ -240,7 +257,8 @@ namespace util::cocos {
                     }
                 }
 
-                std::string fullPlistPath = imgState.path.substr(0, imgState.path.find(".png")) + ".plist";
+                auto pathsv = std::string_view(imgState.path);
+                std::string fullPlistPath = std::string(pathsv.substr(0, pathsv.find(".png"))) + ".plist";
 
                 // file reading is not thread safe on android.
 
@@ -251,14 +269,14 @@ namespace util::cocos {
                 CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
                 if (!dict) {
                     log::debug("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
-                    fullPlistPath = fullPathForFilename(plistKey.c_str());
-                    log::debug("attempted fallback: {}", fullPlistPath);
+                    auto fallbackPath = fullPathForFilename(plistKey.c_str());
+                    log::debug("attempted fallback: {}", fallbackPath);
 
-                    dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
+                    dict = CCDictionary::createWithContentsOfFileThreadSafe(fallbackPath.c_str());
                 }
 
                 if (!dict) {
-                    log::warn("failed to find the plist for {}.", fullPlistPath);
+                    log::warn("failed to find the plist for {}.", imgState.path);
 
                     // remove the texture.
                     textureCache->m_pTextures->removeObjectForKey(imgState.path);
@@ -426,7 +444,7 @@ namespace util::cocos {
         }
     }
 
-    std::string fullPathForFilename(const std::string_view rawfilename) {
+    gd::string fullPathForFilename(const std::string_view rawfilename) {
         auto& fileUtils = HookedFileUtils::get();
         auto& pstate = getPreloadState();
 
@@ -441,29 +459,39 @@ namespace util::cocos {
             appendQualitySuffix(filename, pstate.texQuality, false);
         }
 
+        gd::string filenameGd(filename);
+
         // if absolute path, return it
-        if (fileUtils.isAbsolutePath(filename)) {
+        if (fileUtils.isAbsolutePath(filenameGd)) {
             return filename;
         }
 
         // if cached, return the cached path
-        if (fileUtils.getFullPathCache().contains(filename)) {
-            return fileUtils.getFullPathCache().at(filename);
+        if (fileUtils.getFullPathCache().contains(filenameGd)) {
+            return fileUtils.getFullPathCache().at(filenameGd);
         }
 
         // Get the new file name.
-        gd::string newFilename = fileUtils.getNewFilename(filename.c_str());
+        gd::string newFilename = fileUtils.pGetNewFilename(filename.c_str());
 
         std::string fullpath = "";
 
         const auto& searchPaths = fileUtils.getSearchPaths();
-
-#define TRY_PATH(sp) \
+#ifdef GEODE_IS_ANDROID
+# define TRY_PATH(sp) \
     auto _fp = getPathForFilename(newFilename, sp); \
     if (!_fp.empty()) { \
-        fileUtils.getFullPathCache().insert(std::make_pair(filename, _fp)); \
+        fileUtils.getFullPathCache().insert(std::make_pair(std::move(filename), std::move(_fp))); \
         return _fp; \
     }
+#else
+# define TRY_PATH(sp) \
+    auto _fp = getPathForFilename(newFilename, sp); \
+    if (!_fp.empty()) { \
+        fileUtils.getFullPathCache().insert(std::make_pair(std::move(filenameGd), std::move(_fp))); \
+        return _fp; \
+    }
+#endif
 
         // check for texture pack overrides
         for (size_t tpidx : pstate.texturePackIndices) {
@@ -472,7 +500,7 @@ namespace util::cocos {
         }
 
         // try the gd folder
-        {
+        if (pstate.gameSearchPathIdx != -1) {
             const auto& spath = searchPaths.at(pstate.gameSearchPathIdx);
             TRY_PATH(spath);
         }
@@ -488,12 +516,12 @@ namespace util::cocos {
         log::warn("fullPathForFilename failed to find full path for: {}", rawfilename);
         log::warn("attempted transformed path was {}", newFilename);
 
-        return filename;
+        return filenameGd;
     }
 
-    std::string getPathForFilename(const gd::string& filename, const gd::string& searchPath) {
+    gd::string getPathForFilename(const gd::string& filename, const gd::string& searchPath) {
         // i dont wanna deal with utf8 conversions lol
-        return HookedFileUtils::get().getPathForFilename(filename, "", searchPath);
+        return HookedFileUtils::get().pGetPathForFilename(filename, "", searchPath);
         // std::string file(filename);
         // std::string file_path;
         // size_t slashpos = filename.find_last_of("/");
