@@ -141,6 +141,12 @@ void ComplexVisualPlayer::updateData(
         statusIcons->updateStatus(playerData.isPaused, playerData.isPracticing, isSpeaking, loudness);
     }
 
+    // animate dashing
+    if (data.isDashing != wasDashing) {
+        data.isDashing ? playerIcon->startDashing(nullptr) : playerIcon->stopDashing();
+        wasDashing = data.isDashing;
+    }
+
     // animate robot and spider
     if (iconType == PlayerIconType::Robot || iconType == PlayerIconType::Spider) {
         if (wasGrounded != data.isGrounded || wasStationary != data.isStationary || wasFalling != data.isFalling || switchedMode) {
@@ -169,12 +175,6 @@ void ComplexVisualPlayer::updateData(
         }
 
         // now depending on the gravity, toggle either the bottom or top fire
-    }
-
-    // animate dashing
-    if (data.isDashing != wasDashing) {
-        data.isDashing ? playerIcon->startDashing(nullptr) : playerIcon->stopDashing();
-        wasDashing = data.isDashing;
     }
 
     // remove swing fire
