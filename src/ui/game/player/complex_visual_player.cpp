@@ -171,6 +171,12 @@ void ComplexVisualPlayer::updateData(
         // now depending on the gravity, toggle either the bottom or top fire
     }
 
+    // animate dashing
+    if (data.isDashing != wasDashing) {
+        data.isDashing ? playerIcon->startDashing(nullptr) : playerIcon->stopDashing();
+        wasDashing = data.isDashing;
+    }
+
     // remove swing fire
     else if (turningOffSwing) {
         playerIcon->m_swingFireTop->setVisible(false);

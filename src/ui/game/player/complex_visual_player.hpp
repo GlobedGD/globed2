@@ -59,6 +59,9 @@ protected:
     bool wasRotating = false;
     bool didPerformPlatformerJump = false;
 
+    // used in dashing anim
+    bool wasDashing = false;
+
     // used to call onEnter, onExit
     bool wasPaused = false;
 
