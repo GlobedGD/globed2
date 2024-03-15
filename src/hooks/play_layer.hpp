@@ -17,7 +17,6 @@ float adjustLerpTimeDelta(float dt);
 class $modify(GlobedPlayLayer, PlayLayer) {
     // setup stuff
     bool globedReady = false;
-    bool initialTestMode = false;
     bool setupWasCompleted = false;
     uint32_t configuredTps = 0;
 
@@ -49,6 +48,8 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     float lastKnownTimeScale = 1.0f;
     std::unordered_map<int, util::time::time_point> lastSentPacket;
 
+    static void onModify(auto& self);
+
     // gd hooks
 
     $override
@@ -71,6 +72,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     $override
     void levelComplete();
+
+    $override
+    void destroyPlayer(PlayerObject* p0, GameObject* p1);
 
     /* setup stuff to make init() cleaner */
 

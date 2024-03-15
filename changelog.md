@@ -8,6 +8,7 @@
 * Death effects and spider animations of other players now play while paused
 * Fix some (but not all) crashes related to asset preloading and texture packs
 * Fix platformer squish animation looking wrong when jumping sideways from a wall
+* Fix (yet again) progressing in levels with start positions
 
 ## v1.3.2
 

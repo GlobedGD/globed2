@@ -36,6 +36,10 @@ float adjustLerpTimeDelta(float dt) {
     // return dt;
 }
 
+void GlobedPlayLayer::onModify(auto& self) {
+    (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);
+}
+
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
@@ -253,7 +257,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
 void GlobedPlayLayer::setupHasCompleted() {
     PlayLayer::setupHasCompleted();
-    m_fields->initialTestMode = m_isTestMode;
     m_fields->setupWasCompleted = true;
 }
 
@@ -332,7 +335,16 @@ void GlobedPlayLayer::fullReset() {
 }
 
 void GlobedPlayLayer::resetLevel() {
+    bool lastTestMode = m_isTestMode;
+
+    if (this->isSafeMode()) {
+        m_isTestMode = true;
+    }
+
     PlayLayer::resetLevel();
+
+    m_isTestMode = lastTestMode;
+
     // this is also called upon init, so bail out if we are too early
     if (!m_fields->setupWasCompleted) return;
 
@@ -350,6 +362,18 @@ void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, boo
 void GlobedPlayLayer::levelComplete() {
     if (!this->isSafeMode()) PlayLayer::levelComplete();
     else GlobedPlayLayer::onQuit();
+}
+
+void GlobedPlayLayer::destroyPlayer(PlayerObject* p0, GameObject* p1) {
+    bool lastTestMode = m_isTestMode;
+
+    if (this->isSafeMode()) {
+        m_isTestMode = true;
+    }
+
+    PlayLayer::destroyPlayer(p0, p1);
+
+    m_isTestMode = lastTestMode;
 }
 
 void GlobedPlayLayer::setupCustomKeybinds() {
@@ -616,11 +640,6 @@ bool GlobedPlayLayer::isPaused() {
 
 void GlobedPlayLayer::toggleSafeMode(bool enabled) {
     static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = enabled;
-    if (enabled) {
-        m_isTestMode = true;
-    } else {
-        m_isTestMode = m_fields->initialTestMode;
-    }
 }
 
 bool GlobedPlayLayer::isSafeMode() {
