@@ -98,6 +98,10 @@ void RemotePlayer::updateProgressArrow(
 ) {
     if (progressArrow) {
         progressArrow->updatePosition(cameraOrigin, cameraCoverage, visibleOrigin, visibleCoverage, player1->getPlayerPosition(), zoom);
+
+        if (isForciblyHidden) {
+            progressArrow->setVisible(false);
+        }
     }
 }
 
