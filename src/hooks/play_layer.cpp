@@ -72,6 +72,8 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         return true;
     }
 
+    m_fields->playerCollisionEnabled = true;
+
     // else update the overlay with ping
     m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
 
@@ -569,6 +571,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
             isSpeaking ? vpm.getLoudness(playerId) : 0.f
         );
 
+        // update progress icons
         if (self->m_progressBar && self->m_progressBar->isVisible() && remotePlayer->progressIcon) {
             remotePlayer->updateProgressIcon();
         } else if (remotePlayer->progressArrow) {
@@ -728,7 +731,7 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
 
     auto* pobjInner = static_cast<CCNode*>(player->getChildren()->objectAtIndex(0));
 
-    float rot = player->getRotation() + pobjInner->getRotation();
+    float rot = player->getRotation();
 
     bool isPlayer1 = player == m_player1;
 
@@ -755,6 +758,8 @@ SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
         .isFalling = player->m_yVelocity < 0.0,
         .didJustJump = didJustJump,
         .isRotating = player->m_isRotating,
+        .isSideways = player->m_isSideways,
+
         .spiderTeleportData = spiderTeleportData
     };
 }
@@ -916,4 +921,76 @@ void GlobedPlayLayer::rescheduleSelectors() {
     this->getParent()->schedule(schedule_selector(GlobedPlayLayer::selSendPlayerMetadata), pmdInterval);
     this->getParent()->schedule(schedule_selector(GlobedPlayLayer::selPeriodicalUpdate), updpInterval);
     this->getParent()->schedule(schedule_selector(GlobedPlayLayer::selUpdateEstimators), updeInterval);
+}
+
+static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& displacement) {
+    if (std::abs(displacement.x) > 10.f) {
+        displacement.x = -displacement.x;
+        displacement.y = 0;
+        return true;
+    }
+
+    return false;
+}
+
+void GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
+    GJBaseGameLayer::checkCollisions(player, dt, p2);
+
+    if ((void*)this != PlayLayer::get()) return;
+
+    // up and down hell yeah
+    auto* gpl = static_cast<GlobedPlayLayer*>(static_cast<GJBaseGameLayer*>(this));
+    if (!gpl->m_fields->playerCollisionEnabled) return;
+
+    for (const auto& [_, rp] : gpl->m_fields->players) {
+        auto* p1 = static_cast<PlayerObject*>(rp->getPlayerObject1());
+        auto* p2 = static_cast<PlayerObject*>(rp->getPlayerObject2());
+
+        auto& p1Rect = p1->getObjectRect();
+        auto& p2Rect = p2->getObjectRect();
+
+        auto& playerRect = player->getObjectRect();
+
+        CCRect p1CollRect = p1Rect;
+        CCRect p2CollRect = p2Rect;
+
+        constexpr float padding = 2.f;
+
+        // p1CollRect.origin += CCPoint{padding, padding};
+        // p1CollRect.size -= CCSize{padding * 2, padding * 2};
+
+        // p2CollRect.origin += CCPoint{padding, padding};
+        // p2CollRect.size -= CCSize{padding * 2, padding * 2};
+
+        bool intersectsP1 = playerRect.intersectsRect(p1CollRect);
+        bool intersectsP2 = playerRect.intersectsRect(p2CollRect);
+
+        if (intersectsP1) {
+            auto prev = player->getPosition();
+            player->collidedWithObject(dt, p1, p1CollRect, false);
+            auto displacement = player->getPosition() - prev;
+
+            // log::debug("p1 intersect, displacement: {}", displacement);
+
+            bool shouldRevert = shouldCorrectCollision(playerRect, p1Rect, displacement);
+
+            if (shouldRevert) {
+                player->setPosition(player->getPosition() + displacement);
+            }
+        }
+
+        if (intersectsP2) {
+            auto prev = player->getPosition();
+            player->collidedWithObject(dt, p2, p2CollRect, false);
+            auto displacement = player->getPosition() - prev;
+
+            // log::debug("p2 intersect, displacement: {}", displacement);
+
+            bool shouldRevert = shouldCorrectCollision(playerRect, p2Rect, displacement);
+
+            if (shouldRevert) {
+                player->setPosition(player->getPosition() + displacement);
+            }
+        }
+    }
 }

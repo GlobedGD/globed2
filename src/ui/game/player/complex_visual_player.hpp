@@ -25,6 +25,7 @@ public:
     void playJump() override;
     void setForciblyHidden(bool state) override;
     cocos2d::CCPoint getPlayerPosition() override;
+    cocos2d::CCNode* getPlayerObject() override;
 
     void updatePlayerObjectIcons(bool skipFrames = false);
     void toggleAllOff();

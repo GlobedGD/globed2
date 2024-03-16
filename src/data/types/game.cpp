@@ -16,6 +16,7 @@ void SpecificIconData::copyFlagsFrom(const SpecificIconData& other) {
     isFalling = other.isFalling;
     didJustJump = other.didJustJump;
     isRotating = other.isRotating;
+    isSideways = other.isSideways;
 }
 
 template<> void ByteBuffer::customEncode(const SpecificIconData& data) {
@@ -34,7 +35,8 @@ template<> void ByteBuffer::customEncode(const SpecificIconData& data) {
         data.isStationary,
         data.isFalling,
         data.didJustJump,
-        data.isRotating
+        data.isRotating,
+        data.isSideways
     );
     this->writeBits(bits);
 
@@ -59,7 +61,8 @@ template<> ByteBuffer::DecodeResult<SpecificIconData> ByteBuffer::customDecode()
         data.isStationary,
         data.isFalling,
         data.didJustJump,
-        data.isRotating
+        data.isRotating,
+        data.isSideways
     );
 
     GLOBED_UNWRAP_INTO(this->readValue<std::optional<SpiderTeleportData>>(), data.spiderTeleportData);

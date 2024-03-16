@@ -35,19 +35,20 @@ namespace util::lowlevel {
     // * will only work if `object` is an exact instance of `To`, will not work if `To` is a parent class
     // * will only work if `To` has a bound constructor
     template <typename To, typename From>
-    requires std::is_polymorphic_v<To> && std::is_polymorphic_v<From>
-    To* vtable_cast(From* object) {
+    requires std::is_pointer_v<To> && std::is_polymorphic_v<std::remove_pointer_t<To>> && std::is_polymorphic_v<From>
+    To vtable_cast(From* object) {
         if (!object) return nullptr;
+        using Inst = typename std::remove_pointer_t<To>;
 
-        To obj;
+        Inst obj;
         return vtable_cast_with_obj(object, &obj);
     }
 
     // Like `vtable_cast` but lifts the requirement of `To` having a default constructor.
     // You must provide an instance of `To`
     template <typename To, typename From>
-    requires std::is_polymorphic_v<To> && std::is_polymorphic_v<From>
-    To* vtable_cast_with_obj(From* object, To* toInst) {
+    requires std::is_pointer_v<To> && std::is_polymorphic_v<std::remove_pointer_t<To>> && std::is_polymorphic_v<From>
+    To vtable_cast_with_obj(From* object, To toInst) {
         if (!object || !toInst) return nullptr;
 
         void** vtableTo = *reinterpret_cast<void***>(toInst);
@@ -57,8 +58,8 @@ namespace util::lowlevel {
 
     // Like `vtable_cast` but you provide the vtable pointer yourself.
     template <typename To, typename From>
-    requires std::is_polymorphic_v<To> && std::is_polymorphic_v<From>
-    To* vtable_cast_with_table(From* object, void* vtableTo) {
+    requires std::is_pointer_v<To> && std::is_polymorphic_v<std::remove_pointer_t<To>> && std::is_polymorphic_v<From>
+    To vtable_cast_with_table(From* object, void* vtableTo) {
         if (!object || !vtableTo) return nullptr;
 
         void** vtableFrom = *reinterpret_cast<void***>(object);

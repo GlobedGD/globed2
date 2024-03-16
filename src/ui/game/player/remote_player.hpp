@@ -9,7 +9,6 @@
 
 class RemotePlayer : public cocos2d::CCNode {
 public:
-
     bool init(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
     void updateAccountData(const PlayerAccountData& data, bool force = false);
     const PlayerAccountData& getAccountData() const;
@@ -40,6 +39,9 @@ public:
     bool getForciblyHidden();
 
     bool isValidPlayer();
+
+    cocos2d::CCNode* getPlayerObject1();
+    cocos2d::CCNode* getPlayerObject2();
 
     static RemotePlayer* create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
     static RemotePlayer* create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow);

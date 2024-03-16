@@ -2,6 +2,7 @@
 #include <defs/geode.hpp>
 
 #include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/GJBaseGameLayer.hpp>
 
 #include <game/interpolator.hpp>
 #include <game/player_store.hpp>
@@ -29,9 +30,10 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     std::shared_ptr<PlayerInterpolator> interpolator;
     std::shared_ptr<PlayerStore> playerStore;
 
-    bool isCurrentlyDead = false;
     std::optional<SpiderTeleportData> spiderTp1, spiderTp2;
     bool didJustJumpp1 = false, didJustJumpp2 = false;
+    bool isCurrentlyDead = false;
+    bool playerCollisionEnabled = false;
     float lastDeathTimestamp = 0.f;
 
     // ui elements
@@ -142,4 +144,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     void unscheduleSelectors();
     void rescheduleSelectors();
+};
+
+class $modify(GlobedGJBGL, GJBaseGameLayer) {
+    $override
+    void checkCollisions(PlayerObject* player, float dt, bool p2);
 };

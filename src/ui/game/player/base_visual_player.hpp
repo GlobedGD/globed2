@@ -23,6 +23,7 @@ public:
     virtual void playJump() = 0;
     virtual void setForciblyHidden(bool state) = 0;
     virtual cocos2d::CCPoint getPlayerPosition() = 0;
+    virtual cocos2d::CCNode* getPlayerObject() = 0;
 
     static int getIconWithType(const PlayerIconData& data, PlayerIconType type);
 

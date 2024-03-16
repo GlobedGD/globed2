@@ -86,7 +86,10 @@ void ComplexVisualPlayer::updateData(
     wasRotating = data.isRotating;
 
     playerIcon->setPosition(data.position);
-    playerIcon->m_mainLayer->setRotation(data.rotation);
+    playerIcon->setRotation(data.rotation);
+
+    float innerRot = data.isSideways ? (data.isUpsideDown ? 90.f : -90.f) : 0.f;
+    playerIcon->m_mainLayer->setRotation(innerRot);
 
     float distanceTo90deg = std::fmod(std::abs(data.rotation), 90.f);
     if (distanceTo90deg > 45.f) {
@@ -106,6 +109,12 @@ void ComplexVisualPlayer::updateData(
     if (!playerData.isDead && playerIcon->getOpacity() == 0) {
         this->updateOpacity();
     }
+
+    // set position members for collision
+    playerIcon->m_startPosition = data.position;
+    playerIcon->m_lastPosition = data.position;
+    playerIcon->m_realXPosition = data.position.x;
+    playerIcon->m_realYPosition = data.position.y;
 
     PlayerIconType iconType = data.iconType;
     // in platformer, jetpack is serialized as ship so we make sure to show the right icon
@@ -144,6 +153,14 @@ void ComplexVisualPlayer::updateData(
     // animate dashing
     if (data.isDashing != wasDashing) {
         if (data.isDashing) {
+            // auto kf = ObjectToolbox::sharedState()->intKeyToFrame(0x6d7);
+            // log::debug("kf: {}", kf);
+            // auto* dobj = DashRingObject::create(kf);
+            // dobj->retain();
+            // rotation
+            // *(float*)((char*)dobj + 0x34c) = 115.f;
+            // *(bool*)((char*)dobj + 0x394) = false;
+            // playerIcon->m_unk65c = true;
             playerIcon->startDashing(nullptr);
         } else {
             playerIcon->stopDashing();
@@ -542,6 +559,10 @@ void ComplexVisualPlayer::callUpdateWith(PlayerIconType type, int icon) {
 
 CCPoint ComplexVisualPlayer::getPlayerPosition() {
     return playerIcon->getPosition();
+}
+
+CCNode* ComplexVisualPlayer::getPlayerObject() {
+    return playerIcon;
 }
 
 void ComplexVisualPlayer::tryLoadIconsAsync() {

@@ -40,6 +40,7 @@ struct SpecificIconData {
 
     bool didJustJump;       // true on the next frame after the player performed a jump
     bool isRotating;        // true if player is, well, rotating
+    bool isSideways;        // true if player is stuck to a wall
     std::optional<SpiderTeleportData> spiderTeleportData;
 };
 
