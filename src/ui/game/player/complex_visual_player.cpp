@@ -11,7 +11,9 @@
 using namespace geode::prelude;
 
 bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
-    if (!CCNode::init() || !BaseVisualPlayer::init(parent, isSecond)) return false;
+    if (!CCNode::init()) return false;
+    this->parent = parent;
+    this->isSecond = isSecond;
 
     this->playLayer = PlayLayer::get();
     this->isPlatformer = playLayer->m_level->isPlatformer();
@@ -85,6 +87,28 @@ void ComplexVisualPlayer::updateData(
 
     wasRotating = data.isRotating;
 
+    auto displacement = data.position - playerIcon->getPosition();
+
+    // TODO: super broken lol
+
+    // if (p1sticky) {
+    //     auto* p1 = PlayLayer::get()->m_player1;
+    //     auto newPos = p1->getPosition() + CCPoint{displacement.x, displacement.y};
+    //     p1->m_position = newPos;
+    //     p1->setPosition(newPos);
+    //     p1->m_lastPosition = newPos;
+    //     p1->m_realXPosition = newPos.x;
+    // }
+
+    // if (p2sticky) {
+    //     auto* p2 = PlayLayer::get()->m_player1;
+    //     auto newPos = p2->getPosition() + CCPoint{displacement.x, displacement.y};
+    //     p2->m_position = newPos;
+    //     p2->setPosition(newPos);
+    //     p2->m_lastPosition = newPos;
+    //     p2->m_realXPosition = newPos.x;
+    // }
+
     playerIcon->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
 
@@ -152,20 +176,21 @@ void ComplexVisualPlayer::updateData(
 
     // animate dashing
     if (data.isDashing != wasDashing) {
-        if (data.isDashing) {
-            // auto kf = ObjectToolbox::sharedState()->intKeyToFrame(0x6d7);
-            // log::debug("kf: {}", kf);
-            // auto* dobj = DashRingObject::create(kf);
-            // dobj->retain();
-            // rotation
-            // *(float*)((char*)dobj + 0x34c) = 115.f;
-            // *(bool*)((char*)dobj + 0x394) = false;
-            // playerIcon->m_unk65c = true;
-            playerIcon->startDashing(nullptr);
-        } else {
-            playerIcon->stopDashing();
-            playerIcon->setRotation(0.f);
-        }
+        // TODO: fix dash
+        // if (data.isDashing) {
+        //     // auto kf = ObjectToolbox::sharedState()->intKeyToFrame(0x6d7);
+        //     // log::debug("kf: {}", kf);
+        //     // auto* dobj = DashRingObject::create(kf);
+        //     // dobj->retain();
+        //     // rotation
+        //     // *(float*)((char*)dobj + 0x34c) = 115.f;
+        //     // *(bool*)((char*)dobj + 0x394) = false;
+        //     // playerIcon->m_unk65c = true;
+        //     playerIcon->startDashing(nullptr);
+        // } else {
+        //     playerIcon->stopDashing();
+        //     playerIcon->setRotation(0.f);
+        // }
 
         wasDashing = data.isDashing;
     }
@@ -565,6 +590,22 @@ CCNode* ComplexVisualPlayer::getPlayerObject() {
     return playerIcon;
 }
 
+void ComplexVisualPlayer::setP1StickyState(bool state) {
+    p1sticky = state;
+}
+
+void ComplexVisualPlayer::setP2StickyState(bool state) {
+    p2sticky = state;
+}
+
+bool ComplexVisualPlayer::getP1StickyState() {
+    return p1sticky;
+}
+
+bool ComplexVisualPlayer::getP2StickyState() {
+    return p2sticky;
+}
+
 void ComplexVisualPlayer::tryLoadIconsAsync() {
     if (iconsLoaded != 0) return;
     auto* gm = GameManager::get();
@@ -641,6 +682,25 @@ void ComplexVisualPlayer::cancelPlatformerJumpAnim() {
         playerIcon->stopPlatformerJumpAnimation();
         didPerformPlatformerJump = false;
     }
+}
+
+int ComplexVisualPlayer::getIconWithType(const PlayerIconData& icons, PlayerIconType type) {
+    int newIcon = icons.cube;
+
+    switch (type) {
+        case PlayerIconType::Cube: newIcon = icons.cube; break;
+        case PlayerIconType::Ship: newIcon = icons.ship; break;
+        case PlayerIconType::Ball: newIcon = icons.ball; break;
+        case PlayerIconType::Ufo: newIcon = icons.ufo; break;
+        case PlayerIconType::Wave: newIcon = icons.wave; break;
+        case PlayerIconType::Robot: newIcon = icons.robot; break;
+        case PlayerIconType::Spider: newIcon = icons.spider; break;
+        case PlayerIconType::Swing: newIcon = icons.swing; break;
+        case PlayerIconType::Jetpack: newIcon = icons.jetpack; break;
+        default: newIcon = icons.cube; break;
+    };
+
+    return newIcon;
 }
 
 ComplexVisualPlayer* ComplexVisualPlayer::create(RemotePlayer* parent, bool isSecond) {

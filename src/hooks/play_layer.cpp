@@ -72,7 +72,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         return true;
     }
 
-    m_fields->playerCollisionEnabled = true;
+    // m_fields->playerCollisionEnabled = true;
 
     // else update the overlay with ping
     m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
@@ -940,11 +940,15 @@ void GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
 
     // up and down hell yeah
     auto* gpl = static_cast<GlobedPlayLayer*>(static_cast<GJBaseGameLayer*>(this));
+
+    if (!gpl->m_fields->globedReady) return;
     if (!gpl->m_fields->playerCollisionEnabled) return;
 
+    bool isSecond = player == gpl->m_player2;
+
     for (const auto& [_, rp] : gpl->m_fields->players) {
-        auto* p1 = static_cast<PlayerObject*>(rp->getPlayerObject1());
-        auto* p2 = static_cast<PlayerObject*>(rp->getPlayerObject2());
+        auto* p1 = static_cast<PlayerObject*>(rp->player1->getPlayerObject());
+        auto* p2 = static_cast<PlayerObject*>(rp->player2->getPlayerObject());
 
         auto& p1Rect = p1->getObjectRect();
         auto& p2Rect = p2->getObjectRect();
@@ -965,6 +969,14 @@ void GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
         bool intersectsP1 = playerRect.intersectsRect(p1CollRect);
         bool intersectsP2 = playerRect.intersectsRect(p2CollRect);
 
+        if (isSecond) {
+            rp->player1->setP2StickyState(false);
+            rp->player2->setP2StickyState(false);
+        } else {
+            rp->player1->setP1StickyState(false);
+            rp->player2->setP1StickyState(false);
+        }
+
         if (intersectsP1) {
             auto prev = player->getPosition();
             player->collidedWithObject(dt, p1, p1CollRect, false);
@@ -976,6 +988,10 @@ void GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
 
             if (shouldRevert) {
                 player->setPosition(player->getPosition() + displacement);
+            }
+
+            if (std::abs(displacement.y) > 0.001f) {
+                isSecond ? rp->player1->setP2StickyState(true) : rp->player1->setP1StickyState(true);
             }
         }
 
@@ -990,6 +1006,10 @@ void GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
 
             if (shouldRevert) {
                 player->setPosition(player->getPosition() + displacement);
+            }
+
+            if (std::abs(displacement.y) > 0.001f) {
+                isSecond ? rp->player2->setP2StickyState(true) : rp->player2->setP1StickyState(true);
             }
         }
     }

@@ -151,14 +151,6 @@ void RemotePlayer::removeProgressIndicators() {
     }
 }
 
-CCNode* RemotePlayer::getPlayerObject1() {
-    return player1->getPlayerObject();
-}
-
-CCNode* RemotePlayer::getPlayerObject2() {
-    return player2->getPlayerObject();
-}
-
 RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data) {
     auto ret = new RemotePlayer;
     if (ret->init(progressIcon, progressArrow, data)) {

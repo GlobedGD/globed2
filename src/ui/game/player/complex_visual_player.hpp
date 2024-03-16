@@ -1,41 +1,56 @@
 #pragma once
 
-#include "base_visual_player.hpp"
 #include "status_icons.hpp"
 #include <hooks/player_object.hpp>
+#include <game/visual_state.hpp>
+#include <data/types/gd.hpp>
+#include <data/types/game.hpp>
 
-class ComplexVisualPlayer : public cocos2d::CCNode, public BaseVisualPlayer {
+class RemotePlayer;
+
+class ComplexVisualPlayer : public cocos2d::CCNode {
 public:
     static constexpr int SPIDER_DASH_CIRCLE_WAVE_TAG = 234562345;
     static constexpr int SPIDER_DASH_SPRITE_TAG = 234562347;
     static constexpr int DEATH_EFFECT_TAG = 234562349;
 
-    bool init(RemotePlayer* parent, bool isSecond) override;
-    void updateIcons(const PlayerIconData& icons) override;
+    bool init(RemotePlayer* parent, bool isSecond);
+    void updateIcons(const PlayerIconData& icons);
     void updateData(
         const SpecificIconData& data,
         const VisualPlayerState& playerData,
         bool isSpeaking,
         float loudness
-    ) override;
-    void updateName() override;
-    void updateIconType(PlayerIconType newType) override;
-    void playDeathEffect() override;
-    void playSpiderTeleport(const SpiderTeleportData& data) override;
-    void playJump() override;
-    void setForciblyHidden(bool state) override;
-    cocos2d::CCPoint getPlayerPosition() override;
-    cocos2d::CCNode* getPlayerObject() override;
+    );
+    void updateName();
+    void updateIconType(PlayerIconType newType);
+    void playDeathEffect();
+    void playSpiderTeleport(const SpiderTeleportData& data);
+    void playJump();
+    void setForciblyHidden(bool state);
+    cocos2d::CCPoint getPlayerPosition();
+    cocos2d::CCNode* getPlayerObject();
+
+    void setP1StickyState(bool state);
+    void setP2StickyState(bool state);
+
+    bool getP1StickyState();
+    bool getP2StickyState();
 
     void updatePlayerObjectIcons(bool skipFrames = false);
     void toggleAllOff();
     void callToggleWith(PlayerIconType type, bool arg1, bool arg2);
     void callUpdateWith(PlayerIconType type, int icon);
 
+    static int getIconWithType(const PlayerIconData& data, PlayerIconType type);
+
     static ComplexVisualPlayer* create(RemotePlayer* parent, bool isSecond);
 
 protected:
     friend class ComplexPlayerObject;
+
+    RemotePlayer* parent;
+    bool isSecond;
 
     PlayLayer* playLayer;
     ComplexPlayerObject* playerIcon;
@@ -69,8 +84,10 @@ protected:
     // uhh yeah forcibly hiding players
     bool isForciblyHidden = false;
 
-    PlayerIconData storedIcons;
+    // used for player collision stickiness
+    bool p1sticky = false, p2sticky = false;
 
+    PlayerIconData storedIcons;
 
     // used for async icon loading
     struct AsyncLoadRequest {
