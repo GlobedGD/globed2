@@ -121,6 +121,8 @@ namespace util::cocos {
         auto& threadPool = *threadPoolPtr;
 #endif
 
+        log::debug("preload: preparing {} textures", images.size());
+
         static sync::WrappingMutex<void> cocosWorkMutex;
 
         auto textureCache = CCTextureCache::sharedTextureCache();
@@ -227,6 +229,8 @@ namespace util::cocos {
             image->release();
         }
 
+        log::debug("preload: initialized textures");
+
         // now, add sprite frames
         for (size_t i = 0; i < imgCount; i++) {
             // this is the slow code but is essentially equivalent to the code below
@@ -305,10 +309,14 @@ namespace util::cocos {
 
         // wait for the creation of sprite frames to finish.
         threadPool.join();
+
+        log::debug("preload: initialized sprite frames. done.");
     }
 
     void preloadAssets(AssetPreloadStage stage) {
         using BatchedIconRange = HookedGameManager::BatchedIconRange;
+
+        log::debug("preloadAssets stage: {}", (int)stage);
 
         auto* gm = static_cast<HookedGameManager*>(GameManager::get());
 

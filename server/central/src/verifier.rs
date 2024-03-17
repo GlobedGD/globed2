@@ -235,6 +235,7 @@ impl AccountVerifier {
                 ("accountID", self.account_id.to_string()),
                 ("gjp2", self.account_gjp.clone()),
                 ("secret", "Wmfd2893gb7".to_string()),
+                ("page", "0".to_string()),
             ])
             .send()
             .await;
