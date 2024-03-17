@@ -478,6 +478,8 @@ public:
                 while (!_storage->_stopped) {
                     _storage->loopFunc(args...);
                 }
+            } catch (const singleton_use_after_dtor& e) {
+                log::warn("{}", e.what());
             } catch (const std::exception& e) {
                 util::debug::delayedSuicide(fmt::format("Uncaught exception from thread \"{}\": {}", _storage->threadName, e.what()));
             }

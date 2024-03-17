@@ -16,6 +16,8 @@ void SmartThread<>::start() {
             while (!_storage->_stopped) {
                 _storage->loopFunc();
             }
+        } catch (const singleton_use_after_dtor& e) {
+            log::warn("{}", e.what());
         } catch (const std::exception& e) {
             log::error("Terminating. Uncaught exception from thread {}: {}", _storage->threadName, e.what());
             util::debug::delayedSuicide(fmt::format("Uncaught exception from thread \"{}\": {}", _storage->threadName, e.what()));

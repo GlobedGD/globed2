@@ -4,6 +4,11 @@
 
 #define GLOBED_MBO(src, type, offset) *(type*)((char*)src + offset)
 
+class singleton_use_after_dtor : public std::runtime_error {
+public:
+    singleton_use_after_dtor() : std::runtime_error("attempting to use a singleton after static destruction") {}
+};
+
 // singleton classes
 
 // there was no reason to do this other than for me to learn crtp
@@ -19,10 +24,19 @@ public:
 
     static Derived& get() {
         static Derived instance;
+
+        if (destructed) {
+            throw singleton_use_after_dtor();
+        }
+
         return instance;
     }
 
 protected:
-    SingletonBase() = default;
-    virtual ~SingletonBase() = default;
+    static inline std::atomic_bool destructed = false;
+
+    SingletonBase() {};
+    virtual ~SingletonBase() {
+        destructed = true;
+    };
 };
