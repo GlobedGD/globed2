@@ -84,6 +84,10 @@ namespace util::cocos {
             if (sv == "assets/") {
                 state.gameSearchPathIdx = idx;
             }
+#elif defined(GEODE_IS_MACOS)
+            if (sv.empty()) {
+                state.gameSearchPathIdx = idx;
+            }
 #else
             auto fspath = std::filesystem::path(std::string(path));
 
