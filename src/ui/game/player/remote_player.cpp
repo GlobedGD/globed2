@@ -60,6 +60,11 @@ void RemotePlayer::updateData(
     player1->updateData(data.player1, data, speaking, loudness);
     player2->updateData(data.player2, data, speaking, loudness);
 
+    lastPercentage = data.currentPercentage;
+
+    // don't update any anims if hidden
+    if (isForciblyHidden) return;
+
     if (frameFlags.pendingDeath && GlobedSettings::get().players.deathEffects) {
         player1->playDeathEffect();
     }
@@ -79,8 +84,6 @@ void RemotePlayer::updateData(
     if (frameFlags.pendingP2Jump) {
         player2->playJump();
     }
-
-    lastPercentage = data.currentPercentage;
 }
 
 void RemotePlayer::updateProgressIcon() {
