@@ -1,4 +1,6 @@
 #pragma once
+#include <stdexcept>
+
 #include <config.hpp>
 #include "platform.hpp"
 
@@ -33,7 +35,7 @@ public:
     }
 
 protected:
-    static inline std::atomic_bool destructed = false;
+    static inline bool destructed = false;
 
     SingletonBase() {};
     virtual ~SingletonBase() {
