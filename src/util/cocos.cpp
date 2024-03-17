@@ -486,7 +486,7 @@ namespace util::cocos {
 # define TRY_PATH(sp) \
     auto _fp = getPathForFilename(newFilename, sp); \
     if (!_fp.empty()) { \
-        fileUtils.getFullPathCache().insert(std::make_pair(std::move(filenameGd), std::move(_fp))); \
+        fileUtils.getFullPathCache().insert(std::make_pair(std::move(filenameGd), _fp)); \
         return _fp; \
     }
 
