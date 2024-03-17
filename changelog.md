@@ -1,6 +1,6 @@
 ## v1.3.3
 
-* Speed up asset preloading even more (death effects now don't preload if they are disabled in settings)
+* Speed up asset preloading even more (death effects now don't preload if they are disabled or if Default death effects is enabled)
 * Add a way to hide specific players
 * Add an option to load assets when first joining an online level instead of on the loading screen (for Colon)
 * Add an option that shows your own name above your icon

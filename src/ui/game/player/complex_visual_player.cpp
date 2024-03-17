@@ -355,6 +355,12 @@ void ComplexVisualPlayer::playJump() {
 }
 
 void ComplexVisualPlayer::setForciblyHidden(bool state) {
+    if (state) {
+        if (playerIcon->m_regularTrail) playerIcon->m_regularTrail->setVisible(false);
+        if (playerIcon->m_waveTrail) playerIcon->m_waveTrail->setVisible(false);
+        if (playerIcon->m_ghostTrail) playerIcon->m_ghostTrail->setVisible(false);
+    }
+
     isForciblyHidden = state;
 }
 

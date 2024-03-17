@@ -14,6 +14,7 @@
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/intermediary_loading_popup.hpp>
 #include <util/format.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -108,19 +109,38 @@ void GlobedUserCell::updateVisualizer(float dt) {
 
 void GlobedUserCell::makeButtons() {
     if (buttonsWrapper) buttonsWrapper->removeFromParent();
+    const float gap = 5.f;
+
     Build<CCMenu>::create()
         .anchorPoint(1.0f, 0.5f)
         .pos(GlobedUserListPopup::LIST_WIDTH - 7.f, CELL_HEIGHT / 2.f)
         .layout(RowLayout::create()
-                    ->setGap(5.f)
+                    ->setGap(gap)
                     ->setAutoScale(false)
                     ->setAxisReverse(true))
         .parent(menu)
         .store(buttonsWrapper);
 
-    auto maxWidth = 0.f;
+    auto& settings = GlobedSettings::get();
 
-    if (accountData.accountId != GJAccountManager::get()->m_accountID) {
+    auto maxWidth = -5.f;
+
+    bool notSelf = accountData.accountId != GJAccountManager::get()->m_accountID;
+    bool createBtnSettings = notSelf;
+    bool createBtnAdmin = NetworkManager::get().isAuthorizedAdmin();
+    bool createBtnTp = createBtnAdmin && notSelf;
+    bool createVisualizer = settings.communication.voiceEnabled && notSelf;
+    bool createSettingsAlts = false;
+
+    if (!createBtnAdmin && createBtnSettings) {
+        createSettingsAlts = true;
+        createBtnSettings = false;
+    }
+
+    auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+
+
+    if (createBtnSettings) {
         // settings button
         Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
             .scale(0.36f)
@@ -137,11 +157,63 @@ void GlobedUserCell::makeButtons() {
             .store(actionsButton);
 
         actionsButton->m_scaleMultiplier = 1.2f;
-        maxWidth += actionsButton->getScaledContentSize().width + 5.f;
+        maxWidth += actionsButton->getScaledContentSize().width + gap;
+    } else if (createSettingsAlts) {
+        bool isUnblocked = pl->shouldLetMessageThrough(accountData.accountId);
+        bool isHidden = pl->m_fields->players.at(accountData.accountId)->getForciblyHidden();
+
+        Build<CCSprite>::createSpriteName(isUnblocked ? "icon-mute.png"_spr : "icon-unmute.png"_spr)
+            .scale(0.45f)
+            .intoMenuItem([this, isUnblocked, accountId = accountData.accountId](auto) {
+                auto& bl = BlockListManager::get();
+                isUnblocked ? bl.blacklist(accountId) : bl.whitelist(accountId);
+                // mute them immediately
+                auto& settings = GlobedSettings::get();
+                auto& vpm = VoicePlaybackManager::get();
+
+                if (isUnblocked) {
+                    vpm.setVolume(accountId, 0.f);
+                } else {
+                    vpm.setVolume(accountId, settings.communication.voiceVolume);
+                }
+
+                // delay by 1 frame to prevent epic ccmenuitem::activate crash
+                Loader::get()->queueInMainThread([this] {
+                    this->makeButtons();
+                });
+            })
+            .parent(buttonsWrapper)
+            .id("player-mute-button"_spr)
+            .store(muteButton);
+
+        muteButton->m_scaleMultiplier = 1.2f;
+        maxWidth += muteButton->getScaledContentSize().width + gap;
+
+        auto spr = Build<CCSprite>::createSpriteName(isHidden ? "icon-show-player.png"_spr : "icon-hide-player.png"_spr).collect();
+        util::ui::rescaleToMatch(spr, muteButton);
+
+        Build(spr)
+            .intoMenuItem([this, isHidden, pl, accountId = accountData.accountId](auto) {
+                if (!pl->m_fields->players.contains(accountId)) return;
+
+                pl->m_fields->players.at(accountId)->setForciblyHidden(!isHidden);
+                auto& bl = BlockListManager::get();
+                bl.setHidden(accountId, !isHidden);
+
+                Loader::get()->queueInMainThread([this] {
+                    this->makeButtons();
+                });
+            })
+            .parent(buttonsWrapper)
+            .id("player-hide-button"_spr)
+            .store(hideButton);
+
+        hideButton->m_scaleMultiplier = 1.2f;
+        maxWidth += hideButton->getScaledContentSize().width + gap;
     }
 
     // admin menu button
-    if (NetworkManager::get().isAuthorizedAdmin()) {
+    if (createBtnAdmin) {
         Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
             .scale(0.4f)
             .intoMenuItem([this](auto) {
@@ -165,47 +237,45 @@ void GlobedUserCell::makeButtons() {
             .id("kick-button"_spr)
             .store(kickButton);
 
-        maxWidth += kickButton->getScaledContentSize().width + 5.f;
-
-        if (accountData.accountId != GJAccountManager::get()->m_accountID) {
-            GlobedPlayLayer* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get()); // ggpl
-
-            Build<CCSprite>::createSpriteName("icon-teleport.png"_spr)
-                .scale(0.35f)
-                .intoMenuItem([gpl, this](auto) {
-                    auto& settings = GlobedSettings::get();
-                    if (!settings.flags.seenTeleportNotice)  {
-                        settings.flags.seenTeleportNotice = true;
-                        settings.save();
-
-                        FLAlertLayer::create(
-                            "Note",
-                            "Teleporting to a player will <cr>disable level progress</c> until you <cy>fully reset</c> the level.",
-                            "Ok"
-                        )->show();
-
-                        return;
-                    }
-
-                    gpl->toggleSafeMode(true);
-
-                    PlayerObject* po1 = gpl->m_player1;
-                    CCPoint position = {0,0}; // just in case the player has already left by the time we teleport
-                    if (gpl->m_fields->interpolator->hasPlayer(accountData.accountId)) position = gpl->m_fields->interpolator->getPlayerState(accountData.accountId).player1.position;
-
-                    po1->m_position = position;
-                })
-                .parent(buttonsWrapper)
-                .id("teleport-button"_spr)
-                .store(teleportButton);
-
-            maxWidth += teleportButton->getScaledContentSize().width + 5.f;
-        }
+        maxWidth += kickButton->getScaledContentSize().width + gap;
     }
 
-    auto& settings = GlobedSettings::get();
+    if (createBtnTp) {
+        GlobedPlayLayer* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get()); // ggpl
 
-    if (settings.communication.voiceEnabled && accountData.accountId != GJAccountManager::get()->m_accountID) {
+        Build<CCSprite>::createSpriteName("icon-teleport.png"_spr)
+            .scale(0.35f)
+            .intoMenuItem([gpl, this](auto) {
+                auto& settings = GlobedSettings::get();
+                if (!settings.flags.seenTeleportNotice)  {
+                    settings.flags.seenTeleportNotice = true;
+                    settings.save();
+
+                    FLAlertLayer::create(
+                        "Note",
+                        "Teleporting to a player will <cr>disable level progress</c> until you <cy>fully reset</c> the level.",
+                        "Ok"
+                    )->show();
+
+                    return;
+                }
+
+                gpl->toggleSafeMode(true);
+
+                PlayerObject* po1 = gpl->m_player1;
+                CCPoint position = {0,0}; // just in case the player has already left by the time we teleport
+                if (gpl->m_fields->interpolator->hasPlayer(accountData.accountId)) position = gpl->m_fields->interpolator->getPlayerState(accountData.accountId).player1.position;
+
+                po1->m_position = position;
+            })
+            .parent(buttonsWrapper)
+            .id("teleport-button"_spr)
+            .store(teleportButton);
+
+        maxWidth += teleportButton->getScaledContentSize().width + gap;
+    }
+
+    if (createVisualizer) {
         // audio visualizer
         Build<GlobedAudioVisualizer>::create()
 #ifndef GLOBED_VOICE_SUPPORT
@@ -217,7 +287,7 @@ void GlobedUserCell::makeButtons() {
 
         audioVisualizer->setScaleX(0.5f);
 
-        maxWidth += audioVisualizer->getScaledContentSize().width;
+        maxWidth += audioVisualizer->getScaledContentSize().width + gap;
     }
 
     buttonsWrapper->setContentSize({maxWidth, 20.f});
