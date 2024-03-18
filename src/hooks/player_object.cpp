@@ -13,6 +13,10 @@ void ComplexPlayerObject::setRemotePlayer(ComplexVisualPlayer* rp) {
     this->setTag(COMPLEX_PLAYER_OBJECT_TAG);
 }
 
+bool ComplexPlayerObject::vanilla() {
+    return this->getTag() != COMPLEX_PLAYER_OBJECT_TAG;
+}
+
 void ComplexPlayerObject::playDeathEffect() {
     if (vanilla()) {
         PlayerObject::playDeathEffect();
@@ -33,10 +37,6 @@ void ComplexPlayerObject::playDeathEffect() {
 
     PlayerObject::playDeathEffect();
     gm->setPlayerDeathEffect(oldEffect);
-}
-
-bool ComplexPlayerObject::vanilla() {
-    return this->getTag() != COMPLEX_PLAYER_OBJECT_TAG;
 }
 
 void ComplexPlayerObject::incrementJumps() {

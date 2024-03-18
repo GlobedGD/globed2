@@ -934,15 +934,15 @@ static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& 
 }
 
 void GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
-    GJBaseGameLayer::checkCollisions(player, dt, p2);
+    bool retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
 
-    if ((void*)this != PlayLayer::get()) return;
+    if ((void*)this != PlayLayer::get()) return retval;
 
     // up and down hell yeah
     auto* gpl = static_cast<GlobedPlayLayer*>(static_cast<GJBaseGameLayer*>(this));
 
-    if (!gpl->m_fields->globedReady) return;
-    if (!gpl->m_fields->playerCollisionEnabled) return;
+    if (!gpl->m_fields->globedReady) return retval;
+    if (!gpl->m_fields->playerCollisionEnabled) return retval;
 
     bool isSecond = player == gpl->m_player2;
 
@@ -1013,4 +1013,6 @@ void GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
             }
         }
     }
+
+    return retval;
 }

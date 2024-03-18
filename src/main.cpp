@@ -1,13 +1,14 @@
 #include <defs/all.hpp>
 
 #if GLOBED_HAS_KEYBINDS
-#include <geode.custom-keybinds/include/Keybinds.hpp>
+# include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif
 
 #include <Geode/cocos/platform/IncludeCurl.h>
 
 #include <hooks/all.hpp>
 #include <audio/manager.hpp>
+#include <crypto/box.hpp>
 #include <managers/settings.hpp>
 #include <ui/error_check_node.hpp>
 #include <util/all.hpp>
