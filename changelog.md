@@ -1,3 +1,7 @@
+## v1.3.4
+
+* Fix player collision being broken in the editor
+
 ## v1.3.3
 
 * Speed up asset preloading even more (death effects now don't preload if they are disabled or if Default death effects is enabled)

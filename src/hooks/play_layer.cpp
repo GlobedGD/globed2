@@ -933,7 +933,7 @@ static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& 
     return false;
 }
 
-void GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
+bool GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
     bool retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
 
     if ((void*)this != PlayLayer::get()) return retval;
