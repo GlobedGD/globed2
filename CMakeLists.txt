@@ -75,7 +75,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # our favorite libraries
 CPMAddPackage("gh:dankmeme01/uibuilder#main")
-CPMAddPackage("gh:xiph/opus#master")
+CPMAddPackage("gh:xiph/opus#main")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 CPMAddPackage(
     NAME Boost
