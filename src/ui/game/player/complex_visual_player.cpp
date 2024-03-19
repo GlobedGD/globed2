@@ -24,8 +24,10 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     auto* hgm = static_cast<HookedGameManager*>(GameManager::get());
 
+    auto playerOpacity = static_cast<unsigned char>(settings.players.playerOpacity * 255.f);
+
     playerIcon = static_cast<ComplexPlayerObject*>(Build<PlayerObject>::create(1, 1, this->playLayer, this->playLayer->m_objectLayer, false)
-        .opacity(static_cast<unsigned char>(settings.players.playerOpacity * 255.f))
+        .opacity(playerOpacity)
         .parent(this)
         .collect());
 
@@ -41,7 +43,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     this->updateIcons(data.icons);
 
     if (!isSecond && settings.players.statusIcons) {
-        statusIcons = Build<PlayerStatusIcons>::create()
+        statusIcons = Build<PlayerStatusIcons>::create(playerOpacity)
             .scale(0.8f)
             .anchorPoint(0.5f, 0.f)
             .pos(0.f, settings.players.showNames ? 40.f : 25.f)
@@ -178,14 +180,14 @@ void ComplexVisualPlayer::updateData(
     if (data.isDashing != wasDashing) {
         // TODO: fix dash
         // if (data.isDashing) {
-        //     // auto kf = ObjectToolbox::sharedState()->intKeyToFrame(0x6d7);
-        //     // log::debug("kf: {}", kf);
-        //     // auto* dobj = DashRingObject::create(kf);
-        //     // dobj->retain();
+        //     auto kf = ObjectToolbox::sharedState()->intKeyToFrame(0x6d7);
+        //     log::debug("kf: {}", kf);
+        //     auto* dobj = DashRingObject::create(kf);
+        //     dobj->retain();
         //     // rotation
-        //     // *(float*)((char*)dobj + 0x34c) = 115.f;
-        //     // *(bool*)((char*)dobj + 0x394) = false;
-        //     // playerIcon->m_unk65c = true;
+        //     *(float*)((char*)dobj + 0x34c) = 115.f;
+        //     *(bool*)((char*)dobj + 0x394) = false;
+        //     playerIcon->m_unk65c = true;
         //     playerIcon->startDashing(nullptr);
         // } else {
         //     playerIcon->stopDashing();

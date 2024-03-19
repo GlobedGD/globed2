@@ -4,8 +4,10 @@
 
 using namespace geode::prelude;
 
-bool PlayerStatusIcons::init() {
+bool PlayerStatusIcons::init(unsigned char opacity) {
     if (!CCNode::init()) return false;
+
+    this->opacity = opacity;
 
     this->updateStatus(false, false, false, 0.f);
     this->schedule(schedule_selector(PlayerStatusIcons::updateLoudnessIcon), 0.25f);
@@ -49,6 +51,7 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
 
     if (wasPaused) {
         auto pauseSpr = Build<CCSprite>::createSpriteName("GJ_pauseBtn_clean_001.png")
+            .opacity(opacity)
             .zOrder(1)
             .scale(0.8f)
             .id("icon-paused"_spr)
@@ -61,6 +64,7 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
 
     if (wasPracticing) {
         auto practiceSpr = Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
+            .opacity(opacity)
             .zOrder(1)
             .scale(0.8f)
             .id("icon-practice"_spr)
@@ -80,6 +84,7 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
         }
 
         auto speakSpr = Build<CCSprite>::createSpriteName(sprite.c_str())
+            .opacity(opacity)
             .zOrder(1)
             .scale(0.85f)
             .id("icon-speaking"_spr)
@@ -95,7 +100,7 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
     auto cc9s = Build<CCScale9Sprite>::create("square02_001.png")
         .contentSize({ width * 3.f, 40.f * 3.f })
         .scale(1.f / 3.f)
-        .opacity(80)
+        .opacity(opacity / 3)
         .zOrder(-1)
         .anchorPoint(0.f, 0.f)
         .parent(this)
@@ -119,9 +124,9 @@ PlayerStatusIcons::Loudness PlayerStatusIcons::loudnessToCategory(float loudness
     // }
 }
 
-PlayerStatusIcons* PlayerStatusIcons::create() {
+PlayerStatusIcons* PlayerStatusIcons::create(unsigned char opacity) {
     auto ret = new PlayerStatusIcons;
-    if (ret->init()) {
+    if (ret->init(opacity)) {
         ret->autorelease();
         return ret;
     }

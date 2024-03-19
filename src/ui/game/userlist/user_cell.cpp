@@ -139,6 +139,7 @@ void GlobedUserCell::makeButtons() {
 
     auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
+    if (!pl->m_fields->players.contains(accountData.accountId)) return;
 
     if (createBtnSettings) {
         // settings button

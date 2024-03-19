@@ -6,7 +6,7 @@ public:
     void updateStatus(bool paused, bool practicing, bool speaking, float loudness, bool force = false);
     void updateLoudnessIcon(float dt);
 
-    static PlayerStatusIcons* create();
+    static PlayerStatusIcons* create(unsigned char opacity);
 
 private:
     enum class Loudness {
@@ -18,8 +18,9 @@ private:
     Loudness wasLoudness = Loudness::Low;
     float lastLoudness = 0.f;
     float nameScale = 0.f;
+    unsigned char opacity = 255;
 
-    bool init() override;
+    bool init(unsigned char opacity);
 
     static Loudness loudnessToCategory(float loudness);
 };

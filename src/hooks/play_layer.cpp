@@ -208,7 +208,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     // status icons
     if (settings.players.statusIcons) {
-        Build<PlayerStatusIcons>::create()
+        Build<PlayerStatusIcons>::create(255)
             .scale(0.8f)
             .anchorPoint(0.5f, 0.f)
             .pos(0.f, 25.f)
