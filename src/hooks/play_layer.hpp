@@ -148,5 +148,5 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
 class $modify(GlobedGJBGL, GJBaseGameLayer) {
     $override
-    bool checkCollisions(PlayerObject* player, float dt, bool p2);
+    int checkCollisions(PlayerObject* player, float dt, bool p2);
 };
