@@ -51,6 +51,27 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     auto firstNode = static_cast<CCNode*>(playerIcon->getChildren()->objectAtIndex(0));
     firstNode->setPosition(playerIcon->m_firstLayer->getScaledContentSize() / 2);
 
+    auto createBadge = [&](std::string badgePNG) {
+        auto sprite = CCSprite::create(badgePNG.c_str());
+        sprite->setScale(.95f);
+        sprite->setPosition(firstNode->getPosition() + CCPoint{ -5.f, -5.f });
+        sprite->setID("globed-mod-badge");
+        this->addChild(sprite);
+    };
+
+    if (nameColor == ccc3(15, 239, 195)) {
+        createBadge("role-mod.png"_spr);
+    }
+    if (nameColor == ccc3(233, 30, 99)) {
+        createBadge("role-admin.png"_spr);
+    }
+    if (nameColor == ccc3(154, 88, 255)) {
+        createBadge("role-supporter.png"_spr);
+    }
+    if (nameColor == ccc3(248, 0, 255)) {
+        createBadge("role-booster.png"_spr);
+    }
+
     if (data.icons.glowColor != -1) {
         playerIcon->setGlowOutline(gm->colorForIdx(data.icons.glowColor));
     } else {
@@ -68,7 +89,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     auto sizeScale = 4.f;
     auto cc9s = Build<CCScale9Sprite>::create("square02_001.png")
         .contentSize(nodeWrapper->getScaledContentSize() * sizeScale + CCPoint{37.f, 25.f})
-        .scaleX(1.f / sizeScale)
+        .scaleX(1.15f / sizeScale)
         .scaleY(1.f / sizeScale)
         .opacity(80)
         .zOrder(-1)

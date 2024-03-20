@@ -48,6 +48,7 @@
 # ILY vscode
 **/.vscode
 .idea/
+.vs/
 
 # clangd
 .cache/

@@ -91,6 +91,8 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
             .parent(iconWrapper)
             .collect();
 
+        
+
         width += speakSpr->getScaledContentSize().width;
         count++;
     }

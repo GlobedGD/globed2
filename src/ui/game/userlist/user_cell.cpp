@@ -18,57 +18,8 @@
 
 using namespace geode::prelude;
 
-std::set<int> u_globedMods;
-std::set<int> u_globedAdmins;
-bool u_getAccountIDs = false;
-
-void getAllMods() {
-    auto res = web::fetch("https://unreleased.limegradient.xyz/globed/mods.txt");
-    if (!res)
-    {
-        log::info("Failed to fetch Staff!");
-    }
-    else
-    {
-        auto data = res.value();
-
-        std::istringstream iss(data);
-        int tempid;
-
-        while (iss >> tempid)
-        {
-            u_globedMods.insert(tempid);
-        }
-    }
-}
-
-void getAllAdmins() {
-    auto res = web::fetch("https://unreleased.limegradient.xyz/globed/admin.txt");
-    if (!res)
-    {
-        log::info("Failed to fetch Staff!");
-    }
-    else
-    {
-        auto data = res.value();
-
-        std::istringstream iss(data);
-        int tempid;
-
-        while (iss >> tempid)
-        {
-            u_globedAdmins.insert(tempid);
-        }
-    }
-}
-
 bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
     if (!CCLayer::init()) return false;
-    if (!u_getAccountIDs) {
-        getAllMods();
-        getAllAdmins();
-        u_getAccountIDs = true;
-    }
 
     accountData = data;
 
@@ -132,7 +83,6 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         sprite->setID("globed-mod-badge");
         this->addChild(sprite);
     };
-
     if (nameColor == ccc3(15, 239, 195)) {
         createBadge("role-mod.png"_spr);
         percentageLabel->setPositionX(percentageLabel->getPositionX() + 16.f);
@@ -141,6 +91,15 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         createBadge("role-admin.png"_spr);
         percentageLabel->setPositionX(percentageLabel->getPositionX() + 16.f);
     }
+    if (nameColor == ccc3(154, 88, 255)) {
+        createBadge("role-supporter.png"_spr);
+        percentageLabel->setPositionX(percentageLabel->getPositionX() + 16.f);
+    }
+    if (nameColor == ccc3(248, 0, 255)) {
+        createBadge("role-booster.png"_spr);
+        percentageLabel->setPositionX(percentageLabel->getPositionX() + 16.f);
+    }
+
 
     this->makeButtons();
 

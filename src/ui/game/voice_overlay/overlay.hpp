@@ -8,7 +8,6 @@ public:
     void updateOverlay();
     void updateOverlaySoft();
     void addPlayer(int accountId);
-
 private:
     bool init() override;
 };

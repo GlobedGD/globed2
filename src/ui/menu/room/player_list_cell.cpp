@@ -102,6 +102,12 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     if (nameColor == ccc3(233, 30, 99)) {
         createBadge("role-admin.png"_spr);
     }
+    if (nameColor == ccc3(154, 88, 255)) {
+        createBadge("role-supporter.png"_spr);
+    }
+    if (nameColor == ccc3(248, 0, 255)) {
+        createBadge("role-booster.png"_spr);
+    }
 
     return true;
 }

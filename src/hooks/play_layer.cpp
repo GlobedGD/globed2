@@ -557,6 +557,8 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     auto& vpm = VoicePlaybackManager::get();
     auto& settings = GlobedSettings::get();
 
+    if (vpm.isSpeaking(GameManager::get()->m_playerUserID)) log::info("you are sapeaking");
+
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
 
