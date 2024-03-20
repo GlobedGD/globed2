@@ -18,8 +18,57 @@
 
 using namespace geode::prelude;
 
+std::set<int> u_globedMods;
+std::set<int> u_globedAdmins;
+bool u_getAccountIDs = false;
+
+void getAllMods() {
+    auto res = web::fetch("https://unreleased.limegradient.xyz/globed/mods.txt");
+    if (!res)
+    {
+        log::info("Failed to fetch Staff!");
+    }
+    else
+    {
+        auto data = res.value();
+
+        std::istringstream iss(data);
+        int tempid;
+
+        while (iss >> tempid)
+        {
+            u_globedMods.insert(tempid);
+        }
+    }
+}
+
+void getAllAdmins() {
+    auto res = web::fetch("https://unreleased.limegradient.xyz/globed/admin.txt");
+    if (!res)
+    {
+        log::info("Failed to fetch Staff!");
+    }
+    else
+    {
+        auto data = res.value();
+
+        std::istringstream iss(data);
+        int tempid;
+
+        while (iss >> tempid)
+        {
+            u_globedAdmins.insert(tempid);
+        }
+    }
+}
+
 bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
     if (!CCLayer::init()) return false;
+    if (!u_getAccountIDs) {
+        getAllMods();
+        getAllAdmins();
+        u_getAccountIDs = true;
+    }
 
     accountData = data;
 
@@ -56,7 +105,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     auto* nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
         .color(nameColor)
-        .limitLabelWidth(140.f, 0.5f, 0.1f)
+        .limitLabelWidth(125.f, 0.5f, 0.1f)
         .collect();
 
     auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
@@ -68,12 +117,30 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
-        .pos(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{3.f, -3.f})
-        .anchorPoint({0.f, 0.5f})
+        .pos(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{ 3.f, -7.f })
+        .anchorPoint({ 0.f, 0.5f })
         .scale(0.4f)
         .parent(this)
         .id("percentage-label"_spr)
         .store(percentageLabel);
+
+    auto createBadge = [&](std::string badgePNG) {
+        auto sprite = CCSprite::create(badgePNG.c_str());
+        sprite->setScale(.95f);
+        sprite->setPosition(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{ 3.f, -3.f });
+        sprite->setPosition({ sprite->getPositionX() + 7.5f, sprite->getPositionY() - 5.f });
+        sprite->setID("globed-mod-badge");
+        this->addChild(sprite);
+    };
+
+    if (nameColor == ccc3(15, 239, 195)) {
+        createBadge("role-mod.png"_spr);
+        percentageLabel->setPositionX(percentageLabel->getPositionX() + 16.f);
+    }
+    if (nameColor == ccc3(233, 30, 99)) {
+        createBadge("role-admin.png"_spr);
+        percentageLabel->setPositionX(percentageLabel->getPositionX() + 16.f);
+    }
 
     this->makeButtons();
 

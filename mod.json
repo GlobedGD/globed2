@@ -7,37 +7,40 @@
         "mac": "2.200"
     },
     "resources": {
-        "spritesheets": {
-            "globedsheet1": [
-                "resources/menuicon.png",
-                "resources/speaker-icon.png",
-                "resources/speaker-icon-yellow.png",
-                "resources/speaker-icon-red.png",
-                "resources/role-admin.png",
-                "resources/role-helper.png",
-                "resources/role-mod.png",
-                "resources/role-user.png",
-                "resources/role-booster.png",
-                "resources/role-supporter.png",
-                "resources/icon-ban.png",
-                "resources/icon-unban.png",
-                "resources/icon-mute.png",
-                "resources/icon-unmute.png",
-                "resources/icon-whitelist.png",
-                "resources/icon-unwhitelist.png",
-                "resources/icon-logout.png",
-                "resources/icon-kick.png",
-                "resources/icon-kick-all.png",
-                "resources/icon-level-list.png",
-                "resources/icon-server-folder.png",
-                "resources/icon-teleport.png",
-                "resources/icon-person.png",
-                "resources/icon-hide-player.png",
-                "resources/icon-show-player.png",
-                "resources/deafen-icon-off.png",
-                "resources/deafen-icon-on.png"
-            ]
-        }
+      "spritesheets": {
+        "globedsheet1": [
+          "resources/menuicon.png",
+          "resources/speaker-icon.png",
+          "resources/speaker-icon-yellow.png",
+          "resources/speaker-icon-red.png",
+          "resources/role-admin.png",
+          "resources/role-helper.png",
+          "resources/role-mod.png",
+          "resources/role-user.png",
+          "resources/role-booster.png",
+          "resources/role-supporter.png",
+          "resources/icon-ban.png",
+          "resources/icon-unban.png",
+          "resources/icon-mute.png",
+          "resources/icon-unmute.png",
+          "resources/icon-whitelist.png",
+          "resources/icon-unwhitelist.png",
+          "resources/icon-logout.png",
+          "resources/icon-kick.png",
+          "resources/icon-kick-all.png",
+          "resources/icon-level-list.png",
+          "resources/icon-server-folder.png",
+          "resources/icon-teleport.png",
+          "resources/icon-person.png",
+          "resources/icon-hide-player.png",
+          "resources/icon-show-player.png",
+          "resources/deafen-icon-off.png",
+          "resources/deafen-icon-on.png"
+        ]
+      },
+      "sprites": [
+        "resources/*.png"
+      ]
     },
     "id": "dankmeme.globed2",
     "name": "Globed",

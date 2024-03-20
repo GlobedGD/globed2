@@ -226,7 +226,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         if (ownSpecial) {
             color = ownSpecial->nameColor;
         }
-
         Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
             .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
             .color(color)
@@ -611,6 +610,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
             }
         }
     }
+
 }
 
 // selUpdateEstimators - runs 30 times a second, updates audio stuff

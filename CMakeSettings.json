@@ -1,0 +1,16 @@
+﻿{
+  "configurations": [
+    {
+      "name": "Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "inheritEnvironments": [ "msvc_x86" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "cmakeExecutable": "C:\\Program Files\\CMake\\bin\\cmake.exe"
+    }
+  ]
+}

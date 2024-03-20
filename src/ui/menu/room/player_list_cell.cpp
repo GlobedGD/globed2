@@ -87,6 +87,22 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         playButton->m_scaleMultiplier = 1.1f;
     }
 
+    auto createBadge = [&](std::string badgePNG) {
+        auto sprite = CCSprite::create(badgePNG.c_str());
+        sprite->setScale(.95f);
+        sprite->setPosition(label->getPosition() + label->getScaledContentSize() / 2.f + CCPoint{ 3.f, 0.f });
+        sprite->setPosition({ sprite->getPositionX() + 60.f, sprite->getPositionY() - 5.f });
+        sprite->setID("globed-mod-badge");
+        this->addChild(sprite);
+    };
+
+    if (nameColor == ccc3(15, 239, 195)) {
+        createBadge("role-mod.png"_spr);
+    }
+    if (nameColor == ccc3(233, 30, 99)) {
+        createBadge("role-admin.png"_spr);
+    }
+
     return true;
 }
 
