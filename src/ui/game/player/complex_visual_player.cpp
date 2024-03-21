@@ -34,10 +34,10 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     playerIcon->setRemotePlayer(this);
 
     Build<CCNode>::create()
-        .pos(playerName->getPosition())
+        .pos({0.f, 0.f})
         .scale(1.f)
         .layout(RowLayout::create()->setGap(5.f))
-        .parent(this)
+        .parent(parent)
         .id("badge-wrapper"_spr)
         .store(badge_wrapper);
 
@@ -66,16 +66,18 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     auto& sud = parent->getAccountData().specialUserData;
 
     auto createBadge = [&](std::string badgePNG) {
+        auto last_letter = static_cast<CCNode*>(playerName->getChildren()->objectAtIndex(data.name.length()-1));
+
         Build<CCSprite>::createSpriteName(badgePNG.c_str())
-            .scale(20.95f)
-            .pos(playerName->getPosition() + CCPoint(10.f, 10.f))
+            .scale(1.f)
+            .pos()
             .id("globed-mod-badge")
             .parent(badge_wrapper);
 
         badge_wrapper->updateLayout();
     };
 
-
+    createBadge("role-mod.png"_spr);
 
     if (sud->nameColor == ccc3(15, 239, 195)) {
         createBadge("role-mod.png"_spr);
@@ -290,6 +292,8 @@ void ComplexVisualPlayer::updateData(
     }
 
     this->setVisible(shouldBeVisible);
+
+    badge_wrapper->setPosition(playerName->getPosition());
 }
 
 void ComplexVisualPlayer::updateName() {
