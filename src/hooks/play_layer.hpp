@@ -81,12 +81,20 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     void destroyPlayer(PlayerObject* p0, GameObject* p1);
 
     /* setup stuff to make init() cleaner */
+    // all are ran in this order.
 
+    void setupOverlay();
+    void setupDeferredAssetPreloading();
+    void setupAudio();
     void setupPacketListeners();
     void setupCustomKeybinds();
+    void setupMisc();
+    void setupUi();
+
+    // runs 0.25 seconds after PlayLayer::init
     void postInitActions(float);
 
-    /* periodical selectors */
+    /* selectors */
 
     // selSendPlayerData - runs tps (default 30) times per second
     void selSendPlayerData(float);
@@ -103,35 +111,31 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     // setlUpdateEstimators - runs 30 times a second, updates volume estimators
     void selUpdateEstimators(float);
 
-    bool established() {
-        // the 2nd check is in case we disconnect while being in a level somehow
-        return m_fields->globedReady && NetworkManager::get().established();
-    }
-
-    bool isCurrentPlayLayer() {
-        auto playLayer = geode::cocos::getChildOfType<PlayLayer>(cocos2d::CCScene::get(), 0);
-        return playLayer == this;
-    }
-
-    bool isPaused();
-
-    void toggleSafeMode(bool enabled);
-    bool isSafeMode();
-
-    void onQuitActions();
-
-    // runs every frame while paused
-    void pausedUpdate(float dt);
-
-    bool shouldLetMessageThrough(int playerId);
-    void updateProximityVolume(int playerId);
+    /* player related functions */
 
     SpecificIconData gatherSpecificIconData(PlayerObject* player);
     PlayerData gatherPlayerData();
     PlayerMetadata gatherPlayerMetadata();
 
+    bool shouldLetMessageThrough(int playerId);
+    void updateProximityVolume(int playerId);
+
     void handlePlayerJoin(int playerId);
     void handlePlayerLeave(int playerId);
+
+    /* misc */
+
+    bool established();
+    bool isCurrentPlayLayer();
+    bool isPaused();
+
+    bool isSafeMode();
+    void toggleSafeMode(bool enabled);
+
+    void onQuitActions();
+
+    // runs every frame while paused
+    void pausedUpdate(float dt);
 
     // With speedhack enabled, all scheduled selectors will run more often than they are supposed to.
     // This means, if you turn up speedhack to let's say 100x, you will send 3000 packets per second. That is a big no-no.

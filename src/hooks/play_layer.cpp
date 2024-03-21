@@ -27,36 +27,24 @@ constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 
 float adjustLerpTimeDelta(float dt) {
+    // TODO: fix vsync
     // i fucking hate this i cannot do this anymore i want to die
     auto* dir = CCDirector::get();
-    // TODO idk if timescale is needed here i will need to test with speedhack
-    return dir->getAnimationInterval(); // * CCScheduler::get()->getTimeScale();
+    return dir->getAnimationInterval() * CCScheduler::get()->getTimeScale();
 
     // uncomment and watch the world blow up
     // return dt;
 }
 
+/* Hooks */
+
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
     GlobedSettings& settings = GlobedSettings::get();
-
     auto winSize = CCDirector::get()->getWinSize();
-    float overlayBaseY = settings.overlay.position < 2 ? winSize.height - 2.f : 2.f;
-    float overlayBaseX = (settings.overlay.position % 2 == 1) ? winSize.width - 2.f : 2.f;
 
-    float overlayAnchorY = (settings.overlay.position < 2) ? 1.f : 0.f;
-    float overlayAnchorX = (settings.overlay.position % 2 == 1) ? 1.f : 0.f;
-
-    // overlay
-    Build<GlobedOverlay>::create()
-        .pos(overlayBaseX, overlayBaseY)
-        .anchorPoint(overlayAnchorX, overlayAnchorY)
-        .scale(0.4f)
-        .zOrder(11)
-        .id("game-overlay"_spr)
-        .parent(this)
-        .store(m_fields->overlay);
+    this->setupOverlay();
 
     auto& nm = NetworkManager::get();
 
@@ -72,14 +60,126 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         return true;
     }
 
-    // m_fields->playerCollisionEnabled = true;
-
     // else update the overlay with ping
     m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
 
+    // m_fields->playerCollisionEnabled = true;
+
+    this->setupDeferredAssetPreloading();
+
+    this->setupAudio();
+
+    this->setupCustomKeybinds();
+
+    this->setupMisc();
+
+    // update
+    Loader::get()->queueInMainThread([&nm] {
+        auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+        if (!self) return;
+
+        // here we run the stuff that must run on a valid playlayer
+        self->setupPacketListeners();
+
+        // send LevelJoinPacket and RequestPlayerProfilesPacket
+        nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
+
+        self->rescheduleSelectors();
+        self->getParent()->schedule(schedule_selector(GlobedPlayLayer::selUpdate), 0.f);
+
+        self->scheduleOnce(schedule_selector(GlobedPlayLayer::postInitActions), 0.25f);
+    });
+
+    this->setupUi();
+
+    return true;
+}
+
+void GlobedPlayLayer::setupHasCompleted() {
+    PlayLayer::setupHasCompleted();
+    m_fields->setupWasCompleted = true;
+}
+
+void GlobedPlayLayer::onQuit() {
+    PlayLayer::onQuit();
+    this->onQuitActions();
+}
+
+void GlobedPlayLayer::fullReset() {
+    PlayLayer::fullReset();
+    // turn off safe mode
+    this->toggleSafeMode(false);
+}
+
+void GlobedPlayLayer::resetLevel() {
+    bool lastTestMode = m_isTestMode;
+
+    if (this->isSafeMode()) {
+        m_isTestMode = true;
+    }
+
+    PlayLayer::resetLevel();
+
+    m_isTestMode = lastTestMode;
+
+    // this is also called upon init, so bail out if we are too early
+    if (!m_fields->setupWasCompleted) return;
+
+    if (!m_level->isPlatformer()) {
+        // turn off safe mode in non-platformer levels (as this counts as a full reset)
+        this->toggleSafeMode(false);
+    }
+}
+
+void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
+    // doesn't actually change any progress but this stops the NEW BEST popup from showing up while cheating/jumping to a player
+    if (!this->isSafeMode()) PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
+}
+
+void GlobedPlayLayer::levelComplete() {
+    if (!this->isSafeMode()) PlayLayer::levelComplete();
+    else GlobedPlayLayer::onQuit();
+}
+
+void GlobedPlayLayer::destroyPlayer(PlayerObject* p0, GameObject* p1) {
+    bool lastTestMode = m_isTestMode;
+
+    if (this->isSafeMode()) {
+        m_isTestMode = true;
+    }
+
+    PlayLayer::destroyPlayer(p0, p1);
+
+    m_isTestMode = lastTestMode;
+}
+
+/* Setup */
+
+void GlobedPlayLayer::setupOverlay() {
+    GlobedSettings& settings = GlobedSettings::get();
+
+    auto winSize = CCDirector::get()->getWinSize();
+    float overlayBaseY = settings.overlay.position < 2 ? winSize.height - 2.f : 2.f;
+    float overlayBaseX = (settings.overlay.position % 2 == 1) ? winSize.width - 2.f : 2.f;
+
+    float overlayAnchorY = (settings.overlay.position < 2) ? 1.f : 0.f;
+    float overlayAnchorX = (settings.overlay.position % 2 == 1) ? 1.f : 0.f;
+
+    Build<GlobedOverlay>::create()
+        .pos(overlayBaseX, overlayBaseY)
+        .anchorPoint(overlayAnchorX, overlayAnchorY)
+        .scale(0.4f)
+        .zOrder(11)
+        .id("game-overlay"_spr)
+        .parent(this)
+        .store(m_fields->overlay);
+}
+
+void GlobedPlayLayer::setupDeferredAssetPreloading() {
+    GlobedSettings& settings = GlobedSettings::get();
+
     auto* gm = static_cast<HookedGameManager*>(GameManager::get());
 
-    // deferred asset preloading
     if (util::cocos::shouldTryToPreload(false)) {
         log::info("Preloading assets (deferred)");
 
@@ -105,18 +205,14 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         log::info("Death effect preloading took {}", util::format::formatDuration(took));
         gm->setDeathEffectsPreloaded(true);
     }
+}
 
-    m_fields->isVoiceProximity = level->isPlatformer() ? settings.communication.voiceProximity : settings.communication.classicProximity;
-
-    // set the configured tps
-    auto tpsCap = settings.globed.tpsCap;
-    if (tpsCap != 0) {
-        m_fields->configuredTps = std::min(nm.connectedTps.load(), (uint32_t)tpsCap);
-    } else {
-        m_fields->configuredTps = nm.connectedTps;
-    }
-
+void GlobedPlayLayer::setupAudio() {
 #ifdef GLOBED_VOICE_SUPPORT
+
+    GlobedSettings& settings = GlobedSettings::get();
+    auto winSize = CCDirector::get()->getWinSize();
+
     if (settings.communication.voiceEnabled) {
         auto& vm = GlobedAudioManager::get();
 # ifdef GLOBED_VOICE_CAN_TALK
@@ -153,122 +249,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     }
 
 #endif // GLOBED_VOICE_SUPPORT
-
-    // send SyncIconsPacket if our icons have changed since the last time we sent it
-    auto& pcm = ProfileCacheManager::get();
-    pcm.setOwnDataAuto();
-    if (pcm.pendingChanges) {
-        pcm.pendingChanges = false;
-        nm.send(SyncIconsPacket::create(pcm.getOwnData()));
-    }
-
-    this->setupCustomKeybinds();
-
-    // interpolator
-    m_fields->interpolator = std::make_shared<PlayerInterpolator>(InterpolatorSettings {
-        .realtime = false,
-        .isPlatformer = m_level->isPlatformer(),
-        .expectedDelta = (1.0f / m_fields->configuredTps)
-    });
-
-    // player store
-    m_fields->playerStore = std::make_shared<PlayerStore>();
-
-    // update
-    Loader::get()->queueInMainThread([&nm] {
-        auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
-        if (!self) return;
-
-        // here we run the stuff that must run on a valid playlayer
-        self->setupPacketListeners();
-
-        // send LevelJoinPacket and RequestPlayerProfilesPacket
-        nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
-
-        self->rescheduleSelectors();
-        self->getParent()->schedule(schedule_selector(GlobedPlayLayer::selUpdate), 0.f);
-
-        self->scheduleOnce(schedule_selector(GlobedPlayLayer::postInitActions), 0.25f);
-    });
-
-    // progress icon
-    Build<CCNode>::create()
-        .id("progress-bar-wrapper"_spr)
-        .visible(settings.levelUi.progressIndicators)
-        .zOrder(-1)
-        .store(m_fields->progressBarWrapper);
-
-    Build<PlayerProgressIcon>::create()
-        .parent(m_fields->progressBarWrapper)
-        .id("self-player-progress"_spr)
-        .store(m_fields->selfProgressIcon);
-
-    m_fields->selfProgressIcon->updateIcons(pcm.getOwnData());
-    m_fields->selfProgressIcon->setForceOnTop(true);
-
-    // status icons
-    if (settings.players.statusIcons) {
-        Build<PlayerStatusIcons>::create(255)
-            .scale(0.8f)
-            .anchorPoint(0.5f, 0.f)
-            .pos(0.f, 25.f)
-            .parent(m_objectLayer)
-            .id("self-status-icon"_spr)
-            .store(m_fields->selfStatusIcons);
-    }
-
-    // own name
-    if (settings.players.showNames && settings.players.ownName) {
-        auto ownData = pcm.getOwnAccountData();
-        auto ownSpecial = pcm.getOwnSpecialData();
-
-        auto color = ccc3(255, 255, 255);
-        if (ownSpecial) {
-            color = ownSpecial->nameColor;
-        }
-
-        Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
-            .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
-            .color(color)
-            .parent(m_objectLayer)
-            .id("self-name"_spr)
-            .store(m_fields->ownNameLabel);
-
-        if (settings.players.dualName) {
-            Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
-                .visible(false)
-                .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
-                .color(color)
-                .parent(m_objectLayer)
-                .id("self-name-p2"_spr)
-                .store(m_fields->ownNameLabel2);
-        }
-
-    }
-
-    // friendlist stuff
-    auto& flm = FriendListManager::get();
-    flm.maybeLoad();
-
-    return true;
-}
-
-void GlobedPlayLayer::setupHasCompleted() {
-    PlayLayer::setupHasCompleted();
-    m_fields->setupWasCompleted = true;
-}
-
-void GlobedPlayLayer::postInitActions(float) {
-    auto& nm = NetworkManager::get();
-    nm.send(RequestPlayerProfilesPacket::create(0));
-
-    auto data = this->gatherPlayerMetadata();
-    nm.send(PlayerMetadataPacket::create(data));
-}
-
-void GlobedPlayLayer::onQuit() {
-    PlayLayer::onQuit();
-    this->onQuitActions();
 }
 
 void GlobedPlayLayer::setupPacketListeners() {
@@ -326,54 +306,6 @@ void GlobedPlayLayer::setupPacketListeners() {
     });
 }
 
-void GlobedPlayLayer::fullReset() {
-    PlayLayer::fullReset();
-    // turn off safe mode
-    this->toggleSafeMode(false);
-}
-
-void GlobedPlayLayer::resetLevel() {
-    bool lastTestMode = m_isTestMode;
-
-    if (this->isSafeMode()) {
-        m_isTestMode = true;
-    }
-
-    PlayLayer::resetLevel();
-
-    m_isTestMode = lastTestMode;
-
-    // this is also called upon init, so bail out if we are too early
-    if (!m_fields->setupWasCompleted) return;
-
-    if (!m_level->isPlatformer()) {
-        // turn off safe mode in non-platformer levels (as this counts as a full reset)
-        this->toggleSafeMode(false);
-    }
-}
-
-void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
-    // doesn't actually change any progress but this stops the NEW BEST popup from showing up while cheating/jumping to a player
-    if (!this->isSafeMode()) PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
-}
-
-void GlobedPlayLayer::levelComplete() {
-    if (!this->isSafeMode()) PlayLayer::levelComplete();
-    else GlobedPlayLayer::onQuit();
-}
-
-void GlobedPlayLayer::destroyPlayer(PlayerObject* p0, GameObject* p1) {
-    bool lastTestMode = m_isTestMode;
-
-    if (this->isSafeMode()) {
-        m_isTestMode = true;
-    }
-
-    PlayLayer::destroyPlayer(p0, p1);
-
-    m_isTestMode = lastTestMode;
-}
-
 void GlobedPlayLayer::setupCustomKeybinds() {
 #if GLOBED_HAS_KEYBINDS && defined(GLOBED_VOICE_SUPPORT)
     // the only keybinds used are for voice chat, so if voice is disabled, do nothing
@@ -420,6 +352,112 @@ void GlobedPlayLayer::setupCustomKeybinds() {
     }, "voice-deafen"_spr);
 #endif // GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
 }
+
+void GlobedPlayLayer::setupMisc() {
+    auto& settings = GlobedSettings::get();
+    auto& nm = NetworkManager::get();
+
+    m_fields->isVoiceProximity = m_level->isPlatformer() ? settings.communication.voiceProximity : settings.communication.classicProximity;
+
+    // set the configured tps
+    auto tpsCap = settings.globed.tpsCap;
+    if (tpsCap != 0) {
+        m_fields->configuredTps = std::min(nm.connectedTps.load(), (uint32_t)tpsCap);
+    } else {
+        m_fields->configuredTps = nm.connectedTps;
+    }
+
+    // interpolator
+    m_fields->interpolator = std::make_shared<PlayerInterpolator>(InterpolatorSettings {
+        .realtime = false,
+        .isPlatformer = m_level->isPlatformer(),
+        .expectedDelta = (1.0f / m_fields->configuredTps)
+    });
+
+    // player store
+    m_fields->playerStore = std::make_shared<PlayerStore>();
+
+    // send SyncIconsPacket if our icons have changed since the last time we sent it
+    auto& pcm = ProfileCacheManager::get();
+    pcm.setOwnDataAuto();
+    if (pcm.pendingChanges) {
+        pcm.pendingChanges = false;
+        nm.send(SyncIconsPacket::create(pcm.getOwnData()));
+    }
+
+    // friendlist stuff
+    auto& flm = FriendListManager::get();
+    flm.maybeLoad();
+}
+
+void GlobedPlayLayer::setupUi() {
+    auto& settings = GlobedSettings::get();
+    auto& pcm = ProfileCacheManager::get();
+
+    // progress icon
+    Build<CCNode>::create()
+        .id("progress-bar-wrapper"_spr)
+        .visible(settings.levelUi.progressIndicators)
+        .zOrder(-1)
+        .store(m_fields->progressBarWrapper);
+
+    Build<PlayerProgressIcon>::create()
+        .parent(m_fields->progressBarWrapper)
+        .id("self-player-progress"_spr)
+        .store(m_fields->selfProgressIcon);
+
+    m_fields->selfProgressIcon->updateIcons(pcm.getOwnData());
+    m_fields->selfProgressIcon->setForceOnTop(true);
+
+    // status icons
+    if (settings.players.statusIcons) {
+        Build<PlayerStatusIcons>::create(255)
+            .scale(0.8f)
+            .anchorPoint(0.5f, 0.f)
+            .pos(0.f, 25.f)
+            .parent(m_objectLayer)
+            .id("self-status-icon"_spr)
+            .store(m_fields->selfStatusIcons);
+    }
+
+    // own name
+    if (settings.players.showNames && settings.players.ownName) {
+        auto ownData = pcm.getOwnAccountData();
+        auto ownSpecial = pcm.getOwnSpecialData();
+
+        auto color = ccc3(255, 255, 255);
+        if (ownSpecial) {
+            color = ownSpecial->nameColor;
+        }
+
+        Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
+            .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
+            .color(color)
+            .parent(m_objectLayer)
+            .id("self-name"_spr)
+            .store(m_fields->ownNameLabel);
+
+        if (settings.players.dualName) {
+            Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
+                .visible(false)
+                .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
+                .color(color)
+                .parent(m_objectLayer)
+                .id("self-name-p2"_spr)
+                .store(m_fields->ownNameLabel2);
+        }
+    }
+}
+
+void GlobedPlayLayer::postInitActions(float) {
+    auto& nm = NetworkManager::get();
+    nm.send(RequestPlayerProfilesPacket::create(0));
+
+    auto data = this->gatherPlayerMetadata();
+    nm.send(PlayerMetadataPacket::create(data));
+}
+
+/* Selectors */
 
 // selSendPlayerData - runs tps (default 30) times per second
 void GlobedPlayLayer::selSendPlayerData(float) {
@@ -625,99 +663,7 @@ void GlobedPlayLayer::selUpdateEstimators(float dt) {
     }
 }
 
-bool GlobedPlayLayer::isPaused() {
-    if (!isCurrentPlayLayer()) return false;
-
-    for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
-        if (typeinfo_cast<PauseLayer*>(child)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void GlobedPlayLayer::toggleSafeMode(bool enabled) {
-    static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = enabled;
-}
-
-bool GlobedPlayLayer::isSafeMode() {
-    return static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress;
-}
-
-void GlobedPlayLayer::onQuitActions() {
-    auto& nm = NetworkManager::get();
-
-    if (m_fields->globedReady) {
-        if (nm.established()) {
-            // send LevelLeavePacket
-            nm.send(LevelLeavePacket::create());
-        }
-
-#ifdef GLOBED_VOICE_SUPPORT
-        // stop voice recording and playback
-        GlobedAudioManager::get().haltRecording();
-        VoicePlaybackManager::get().stopAllStreams();
-#endif // GLOBED_VOICE_SUPPORT
-
-        // clean up the listeners
-        nm.removeListener<PlayerProfilesPacket>(util::time::seconds(3));
-        nm.removeListener<LevelDataPacket>(util::time::seconds(3));
-        nm.removeListener<LevelPlayerMetadataPacket>(util::time::seconds(3));
-        nm.removeListener<VoiceBroadcastPacket>(util::time::seconds(3));
-    }
-}
-
-bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {
-    auto& settings = GlobedSettings::get();
-    auto& flm = FriendListManager::get();
-    auto& bl = BlockListManager::get();
-
-    if (bl.isExplicitlyBlocked(playerId)) return false;
-    if (bl.isExplicitlyAllowed(playerId)) return true;
-
-    if (settings.communication.onlyFriends && !flm.isFriend(playerId)) return false;
-
-    return true;
-}
-
-void GlobedPlayLayer::pausedUpdate(float dt) {
-    // unpause dash effects and death effects
-    for (auto* child : CCArrayExt<CCNode*>(m_objectLayer->getChildren())) {
-        int tag1 = ComplexVisualPlayer::SPIDER_DASH_CIRCLE_WAVE_TAG;
-        int tag2 = ComplexVisualPlayer::SPIDER_DASH_SPRITE_TAG;
-        int tag3 = ComplexVisualPlayer::DEATH_EFFECT_TAG;
-
-        int ctag = child->getTag();
-
-        if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
-            child->resumeSchedulerAndActions();
-        }
-    }
-}
-
-void GlobedPlayLayer::updateProximityVolume(int playerId) {
-    if (m_fields->deafened || !m_fields->isVoiceProximity) return;
-
-    auto& vpm = VoicePlaybackManager::get();
-
-    if (!m_fields->interpolator->hasPlayer(playerId)) {
-        // if we have no knowledge on the player, set volume to 0
-        vpm.setVolume(playerId, 0.f);
-        return;
-    }
-
-    auto& vstate = m_fields->interpolator->getPlayerState(playerId);
-
-    float distance = cocos2d::ccpDistance(m_player1->getPosition(), vstate.player1.position);
-    float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
-
-    auto& settings = GlobedSettings::get();
-
-    if (this->shouldLetMessageThrough(playerId)) {
-        vpm.setVolume(playerId, volume * settings.communication.voiceVolume);
-    }
-}
+/* Player related functions */
 
 SpecificIconData GlobedPlayLayer::gatherSpecificIconData(PlayerObject* player) {
     PlayerIconType iconType = PlayerIconType::Cube;
@@ -809,6 +755,42 @@ PlayerMetadata GlobedPlayLayer::gatherPlayerMetadata() {
     };
 }
 
+bool GlobedPlayLayer::shouldLetMessageThrough(int playerId) {
+    auto& settings = GlobedSettings::get();
+    auto& flm = FriendListManager::get();
+    auto& bl = BlockListManager::get();
+
+    if (bl.isExplicitlyBlocked(playerId)) return false;
+    if (bl.isExplicitlyAllowed(playerId)) return true;
+
+    if (settings.communication.onlyFriends && !flm.isFriend(playerId)) return false;
+
+    return true;
+}
+
+void GlobedPlayLayer::updateProximityVolume(int playerId) {
+    if (m_fields->deafened || !m_fields->isVoiceProximity) return;
+
+    auto& vpm = VoicePlaybackManager::get();
+
+    if (!m_fields->interpolator->hasPlayer(playerId)) {
+        // if we have no knowledge on the player, set volume to 0
+        vpm.setVolume(playerId, 0.f);
+        return;
+    }
+
+    auto& vstate = m_fields->interpolator->getPlayerState(playerId);
+
+    float distance = cocos2d::ccpDistance(m_player1->getPosition(), vstate.player1.position);
+    float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
+
+    auto& settings = GlobedSettings::get();
+
+    if (this->shouldLetMessageThrough(playerId)) {
+        vpm.setVolume(playerId, volume * settings.communication.voiceVolume);
+    }
+}
+
 void GlobedPlayLayer::handlePlayerJoin(int playerId) {
     auto& settings = GlobedSettings::get();
 
@@ -868,6 +850,74 @@ void GlobedPlayLayer::handlePlayerLeave(int playerId) {
     m_fields->playerStore->removePlayer(playerId);
 
     // log::debug("Player removed: {}", playerId);
+}
+
+bool GlobedPlayLayer::established() {
+    // the 2nd check is in case we disconnect while being in a level somehow
+    return m_fields->globedReady && NetworkManager::get().established();
+}
+
+bool GlobedPlayLayer::isCurrentPlayLayer() {
+    auto playLayer = geode::cocos::getChildOfType<PlayLayer>(cocos2d::CCScene::get(), 0);
+    return playLayer == this;
+}
+
+bool GlobedPlayLayer::isPaused() {
+    if (!isCurrentPlayLayer()) return false;
+
+    for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
+        if (typeinfo_cast<PauseLayer*>(child)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool GlobedPlayLayer::isSafeMode() {
+    return static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress;
+}
+
+void GlobedPlayLayer::toggleSafeMode(bool enabled) {
+    static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = enabled;
+}
+
+void GlobedPlayLayer::onQuitActions() {
+    auto& nm = NetworkManager::get();
+
+    if (m_fields->globedReady) {
+        if (nm.established()) {
+            // send LevelLeavePacket
+            nm.send(LevelLeavePacket::create());
+        }
+
+#ifdef GLOBED_VOICE_SUPPORT
+        // stop voice recording and playback
+        GlobedAudioManager::get().haltRecording();
+        VoicePlaybackManager::get().stopAllStreams();
+#endif // GLOBED_VOICE_SUPPORT
+
+        // clean up the listeners
+        nm.removeListener<PlayerProfilesPacket>(util::time::seconds(3));
+        nm.removeListener<LevelDataPacket>(util::time::seconds(3));
+        nm.removeListener<LevelPlayerMetadataPacket>(util::time::seconds(3));
+        nm.removeListener<VoiceBroadcastPacket>(util::time::seconds(3));
+    }
+}
+
+void GlobedPlayLayer::pausedUpdate(float dt) {
+    // unpause dash effects and death effects
+    for (auto* child : CCArrayExt<CCNode*>(m_objectLayer->getChildren())) {
+        int tag1 = ComplexVisualPlayer::SPIDER_DASH_CIRCLE_WAVE_TAG;
+        int tag2 = ComplexVisualPlayer::SPIDER_DASH_SPRITE_TAG;
+        int tag3 = ComplexVisualPlayer::DEATH_EFFECT_TAG;
+
+        int ctag = child->getTag();
+
+        if (ctag == tag1 || ctag == tag2 || ctag == tag3) {
+            child->resumeSchedulerAndActions();
+        }
+    }
 }
 
 bool GlobedPlayLayer::accountForSpeedhack(size_t uniqueKey, float cap, float allowance) { // TODO test if this still works for classic speedhax
