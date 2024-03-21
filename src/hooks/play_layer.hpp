@@ -45,6 +45,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     Ref<GlobedVoiceOverlay> voiceOverlay = nullptr;
     Ref<cocos2d::CCLabelBMFont> ownNameLabel = nullptr;
     Ref<cocos2d::CCLabelBMFont> ownNameLabel2 = nullptr;
+    Ref<cocos2d::CCNode> badge_wrapper = nullptr;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;

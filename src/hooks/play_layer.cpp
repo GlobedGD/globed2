@@ -226,10 +226,19 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
         if (ownSpecial) {
             color = ownSpecial->nameColor;
         }
+
+        Build<CCNode>::create()
+            .pos(0.f, 0.f)
+            .scale(1.f)
+            .layout(RowLayout::create()->setGap(5.f))
+            .parent(m_objectLayer)
+            .id("badge-wrapper"_spr)
+            .store(m_fields->badge_wrapper);
+
         Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
             .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
             .color(color)
-            .parent(m_objectLayer)
+            .parent(m_fields->badge_wrapper)
             .id("self-name"_spr)
             .store(m_fields->ownNameLabel);
 
@@ -238,11 +247,27 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
                 .visible(false)
                 .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
                 .color(color)
-                .parent(m_objectLayer)
+                .parent(m_fields->badge_wrapper)
                 .id("self-name-p2"_spr)
                 .store(m_fields->ownNameLabel2);
         }
+        
+        auto createBadge = [&](std::string badgePNG) {
+            Build<CCSprite>::createSpriteName(badgePNG.c_str())
+                .scale(20.95f)
+                .pos({ m_fields->ownNameLabel->getPositionX(), m_fields->ownNameLabel->getPositionY() })
+                .id("globed-mod-badge")
+                .parent(m_fields->badge_wrapper);
+            
+            m_fields->badge_wrapper->updateLayout();
+        };
 
+        if (color == ccc3(15, 239, 195)) {
+            createBadge("role-mod.png"_spr);
+        }
+        if (color == ccc3(233, 30, 99)) {
+            createBadge("role-admin.png"_spr);
+        }
     }
 
     // friendlist stuff
@@ -598,7 +623,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
     if (self->m_fields->ownNameLabel) {
         if (!self->m_player1->m_isHidden) {
             self->m_fields->ownNameLabel->setVisible(true);
-            self->m_fields->ownNameLabel->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
+            self->m_fields->badge_wrapper->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
         } else {
             self->m_fields->ownNameLabel->setVisible(false);
         }
@@ -608,7 +633,7 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
                 self->m_fields->ownNameLabel2->setVisible(false);
             } else {
                 self->m_fields->ownNameLabel2->setVisible(true);
-                self->m_fields->ownNameLabel2->setPosition(self->m_player2->getPosition() + CCPoint{0.f, 25.f});
+                self->m_fields->badge_wrapper->setPosition(self->m_player2->getPosition() + CCPoint{0.f, 25.f});
             }
         }
     }

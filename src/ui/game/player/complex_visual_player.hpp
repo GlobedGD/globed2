@@ -46,6 +46,8 @@ public:
 
     static ComplexVisualPlayer* create(RemotePlayer* parent, bool isSecond);
 
+    Ref<cocos2d::CCNode> badge_wrapper = nullptr;
+
 protected:
     friend class ComplexPlayerObject;
 

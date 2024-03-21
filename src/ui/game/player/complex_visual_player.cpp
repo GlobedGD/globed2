@@ -33,27 +33,20 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     playerIcon->setRemotePlayer(this);
 
+    Build<CCNode>::create()
+        .pos(playerName->getPosition())
+        .scale(1.f)
+        .layout(RowLayout::create()->setGap(5.f))
+        .parent(this)
+        .id("badge-wrapper"_spr)
+        .store(badge_wrapper);
+
     Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
         .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
         .visible(settings.players.showNames && (!isSecond || settings.players.dualName))
         .store(playerName)
         .pos(0.f, 25.f)
         .parent(this);
-
-    auto createBadge = [&](std::string badgePNG) {
-        auto sprite = CCSprite::create(badgePNG.c_str());
-        sprite->setScale(20.95f);
-        sprite->setPosition({ playerName->getPositionX(), playerName->getPositionY()});
-        sprite->setID("globed-mod-badge");
-        playerIcon->addChild(sprite);
-    };
-
-    if (data.specialUserData->nameColor == ccc3(15, 239, 195)) {
-        createBadge("role-mod.png"_spr);
-    }
-    if (data.specialUserData->nameColor == ccc3(233, 30, 99)) {
-        createBadge("role-admin.png"_spr);
-    }
 
     this->updateIcons(data.icons);
 
@@ -69,6 +62,27 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     // preload the cube icon so the passengers are correct
     this->updateIconType(PlayerIconType::Cube);
+
+    auto& sud = parent->getAccountData().specialUserData;
+
+    auto createBadge = [&](std::string badgePNG) {
+        Build<CCSprite>::createSpriteName(badgePNG.c_str())
+            .scale(20.95f)
+            .pos(playerName->getPosition() + CCPoint(10.f, 10.f))
+            .id("globed-mod-badge")
+            .parent(badge_wrapper);
+
+        badge_wrapper->updateLayout();
+    };
+
+
+
+    if (sud->nameColor == ccc3(15, 239, 195)) {
+        createBadge("role-mod.png"_spr);
+    }
+    if (sud->nameColor == ccc3(233, 30, 99)) {
+        createBadge("role-admin.png"_spr);
+    }
 
     return true;
 }
@@ -282,23 +296,6 @@ void ComplexVisualPlayer::updateName() {
     playerName->setString(parent->getAccountData().name.c_str());
     auto& sud = parent->getAccountData().specialUserData;
     sud.has_value() ? playerName->setColor(sud->nameColor) : playerName->setColor({255, 255, 255});
-
-    // Updating the badge with the player is hard
-    // I dont like it
-    /*auto createBadge = [&](std::string badgePNG) {
-        auto sprite = CCSprite::create(badgePNG.c_str());
-        sprite->setScale(1.f);
-        sprite->setPosition({ playerName->getPositionX() + 100.f, playerName->getPositionY() + 100.f });
-        sprite->setID("globed-mod-badge");
-        this->addChild(sprite);
-    };
-
-    if (sud->nameColor == ccc3(15, 239, 195)) {
-        createBadge("role-mod.png"_spr);
-    }
-    if (sud->nameColor == ccc3(233, 30, 99)) {
-        createBadge("role-admin.png"_spr);
-    }*/
 }
 
 void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
