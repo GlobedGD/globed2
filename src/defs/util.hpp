@@ -37,8 +37,8 @@ public:
 protected:
     static inline bool destructed = false;
 
-    SingletonBase() {};
+    SingletonBase() {}
     virtual ~SingletonBase() {
         destructed = true;
-    };
+    }
 };

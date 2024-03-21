@@ -47,17 +47,33 @@ void GlobedPauseLayer::goEdit() {
     PauseLayer::goEdit();
 }
 
+bool GlobedPauseLayer::hasPopup(bool allPopups) {
+    if (allPopups) {
+        return getChildOfType<FLAlertLayer>(this->getParent(), 0) != nullptr;
+    } else {
+        return getChildOfType<GlobedUserListPopup>(this->getParent(), 0) != nullptr;
+    }
+}
+
 #define REPLACE(method) \
     void GlobedPauseLayer::method(CCObject* s) {\
-        if (getChildOfType<GlobedUserListPopup>(this->getParent(), 0) == nullptr) { \
+        if (!this->hasPopup(false)) { \
+            PauseLayer::method(s); \
+        } \
+    }
+
+// yet another robtop bug zz
+#define REPLACE_CHECKED(method) \
+    void GlobedPauseLayer::method(CCObject* s) {\
+        if (!this->hasPopup(true)) { \
             PauseLayer::method(s); \
         } \
     }
 
 REPLACE(onQuit);
-REPLACE(onResume);
-REPLACE(onRestart);
+REPLACE_CHECKED(onResume);
+REPLACE_CHECKED(onRestart);
 REPLACE(onRestartFull);
-REPLACE(onEdit);
-REPLACE(onNormalMode);
-REPLACE(onPracticeMode);
+REPLACE_CHECKED(onEdit);
+REPLACE_CHECKED(onNormalMode);
+REPLACE_CHECKED(onPracticeMode);

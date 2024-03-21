@@ -8,6 +8,8 @@ class $modify(GlobedPauseLayer, PauseLayer) {
         (void) self.setHookPriority("PauseLayer::keyDown", -999999999);
     }
 
+    bool hasPopup(bool allPopups);
+
     $override
     void customSetup();
 
