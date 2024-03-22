@@ -30,7 +30,7 @@ float adjustLerpTimeDelta(float dt) {
     // TODO: fix vsync
     // i fucking hate this i cannot do this anymore i want to die
     auto* dir = CCDirector::get();
-    return dir->getAnimationInterval() * CCScheduler::get()->getTimeScale();
+    return dir->getAnimationInterval(); // * CCScheduler::get()->getTimeScale();
 
     // uncomment and watch the world blow up
     // return dt;
