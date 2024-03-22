@@ -7,8 +7,10 @@
 #include <util/rng.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
+using namespace util::ui;
 
 bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     if (!CCNode::init()) return false;
@@ -33,6 +35,12 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     playerIcon->setRemotePlayer(this);
 
+    Build<CCNode>::create()
+        .pos(CCPoint{0.f, 0.f})
+        .parent(this)
+        .id("badge-wrapper")
+        .store(badgeWrapper);
+
     Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
         .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
         .visible(settings.players.showNames && (!isSecond || settings.players.dualName))
@@ -54,6 +62,11 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     // preload the cube icon so the passengers are correct
     this->updateIconType(PlayerIconType::Cube);
+
+    if (data.specialUserData->nameColor == ccc3(15, 239, 195)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
+    if (data.specialUserData->nameColor == ccc3(233, 30, 99)) createBadge(createLayout("role-admin.png"_spr, 1.f, playerName->getPosition(), "globed-admin-badge", badgeWrapper)).parent(badgeWrapper);
+    if (data.specialUserData->nameColor == ccc3(154, 88, 255)) createBadge(createLayout("role-supporter.png"_spr, 1.f, playerName->getPosition(), "globed-supporter-badge", badgeWrapper)).parent(badgeWrapper);
+    if (data.specialUserData->nameColor == ccc3(248, 0, 255)) createBadge(createLayout("role-booster.png"_spr, 1.f, playerName->getPosition(), "globed-booster-badge", badgeWrapper)).parent(badgeWrapper);
 
     return true;
 }
@@ -259,6 +272,8 @@ void ComplexVisualPlayer::updateData(
     } else {
         shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden;
     }
+
+    badgeWrapper->setPosition(playerName->getPosition() + CCPoint{parent->getAccountData().name.length() + 30.f * 1.20f, -26.f});
 
     this->setVisible(shouldBeVisible);
 }
