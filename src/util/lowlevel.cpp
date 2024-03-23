@@ -2,7 +2,7 @@
 #include <defs/assert.hpp>
 
 namespace util::lowlevel {
-    static geode::Patch* patch(ptrdiff_t offset, const std::vector<uint8_t>& bytes) {
+    geode::Patch* patch(ptrdiff_t offset, const std::vector<uint8_t>& bytes) {
         return Mod::get()->patch(reinterpret_cast<void*>(geode::base::get() + offset), bytes).unwrap();
     }
 
