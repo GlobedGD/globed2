@@ -36,24 +36,35 @@ void GlobedAppDelegate::applicationWillEnterForeground() {
 #endif // GEODE_IS_ANDROID
 
 #ifdef GEODE_IS_MACOS
+constexpr ptrdiff_t INLINED_START = 0x38127d;
+constexpr ptrdiff_t REAL_LOADING_FINISHED = 0x381310;
+
 void GlobedAppDelegate::loadingIsFinished() {
     AppDelegate::loadingIsFinished();
 
-    // LoadingLayer::loadingFinished is inlined, so we hook a function that gets called before that (AppDelegate::loadingIsFinished),
-    // nop out the inlined code (so the transition to menulayer doesn't happen), then call our loadingFinished hook on the next frame.
-    static auto* patch = util::lowlevel::nop(0x38127d, 5 + 3 + 4 + 5 + 3 + 3 + 5);
+    // LoadingLayer::loadingFinished is inlined, so we hook a function that gets
+    // called before that (AppDelegate::loadingIsFinished) and patch the inlined code
+
+    // mov rdi, rbx (rbx is LoadingLayer*)
+    static auto* movPatch = util::lowlevel::patch(INLINED_START, {0x48, 0x89, 0xdf});
+    if (!movPatch->isEnabled()) {
+        (void) patch->enable().unwrap();
+    }
+
+    const ptrdiff_t callStart = INLINED_START + movPatch->getBytes().size();
+
+    // add a call to real loadingFinished
+    static auto* patch = util::lowlevel::call(callStart, REAL_LOADING_FINISHED);
     if (!patch->isEnabled()) {
         (void) patch->enable().unwrap();
     }
 
-    Loader::get()->queueInMainThread([patch = patch] {
-        if (patch->isEnabled()) {
-            (void) patch->disable().unwrap();
-        }
-        auto* ll = getChildOfType<LoadingLayer>(CCScene::get(), 0);
-        if (ll) {
-            ll->loadingFinished();
-        }
-    });
+    const ptrdiff_t nopStart = callStart + patch->getBytes().size();
+
+    // nop out the leftovers
+    static auto* nopPatch = util::lowlevel::nop(nopStart, 4 + 5 + 3 + 3 + 5);
+    if (!nopPatch->isEnabled()) {
+        (void) nopPatch->enable().unwrap();
+    }
 }
 #endif // GEODE_IS_MACOS

@@ -83,7 +83,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     /* setup stuff to make init() cleaner */
     // all are ran in this order.
 
-    void setupOverlay();
+    void setupBare();
     void setupDeferredAssetPreloading();
     void setupAudio();
     void setupPacketListeners();

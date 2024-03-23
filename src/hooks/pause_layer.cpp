@@ -48,6 +48,8 @@ void GlobedPauseLayer::goEdit() {
 }
 
 bool GlobedPauseLayer::hasPopup(bool allPopups) {
+    if (!this->getParent()) return false;
+
     if (allPopups) {
         return getChildOfType<FLAlertLayer>(this->getParent(), 0) != nullptr;
     } else {

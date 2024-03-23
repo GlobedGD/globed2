@@ -14,6 +14,7 @@ void HookedGameManager::returnToLastScene(GJGameLevel* level) {
     if (hooklevel->m_fields->shouldTransitionWithPopScene) {
         CCDirector::get()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
     } else {
+        m_sceneEnum = m_fields->lastSceneEnum;
         GameManager::returnToLastScene(level);
     }
 }
@@ -136,4 +137,12 @@ void HookedGameManager::resetAssetPreloadState() {
     this->setAssetsPreloaded(false);
     this->setDeathEffectsPreloaded(false);
     util::cocos::resetPreloadState();
+}
+
+void HookedGameManager::setLastSceneEnum(int n) {
+    if (n == -1) {
+        n = m_sceneEnum;
+    }
+
+    m_fields->lastSceneEnum = n;
 }

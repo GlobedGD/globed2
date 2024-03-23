@@ -4,8 +4,17 @@
 #include <defs/minimal_geode.hpp>
 
 namespace util::lowlevel {
+    geode::Patch* patch(ptrdiff_t offset, const std::vector<uint8_t>& bytes);
+
     // nop X bytes at offset
     geode::Patch* nop(ptrdiff_t offset, size_t bytes);
+
+    // replace the instruction at `offset` with a relative call
+    geode::Patch* relativeCall(ptrdiff_t offset, ptrdiff_t callableOffset);
+    geode::Patch* absoluteCall(ptrdiff_t offset, ptrdiff_t callableOffset);
+
+    // picks either relativeCall or absoluteCall depending on the circumstance.
+    geode::Patch* call(ptrdiff_t offset, ptrdiff_t callableOffset);
 
     template <typename Func>
     concept FPtr = std::is_function_v<Func>;
