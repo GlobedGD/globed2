@@ -30,7 +30,7 @@ float adjustLerpTimeDelta(float dt) {
     // TODO: fix vsync
     // i fucking hate this i cannot do this anymore i want to die
     auto* dir = CCDirector::get();
-    return dir->getAnimationInterval(); // * CCScheduler::get()->getTimeScale();
+    return dir->getAnimationInterval();
 
     // uncomment and watch the world blow up
     // return dt;
@@ -41,29 +41,9 @@ float adjustLerpTimeDelta(float dt) {
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     if (!PlayLayer::init(level, p1, p2)) return false;
 
-    GlobedSettings& settings = GlobedSettings::get();
-    auto winSize = CCDirector::get()->getWinSize();
+    this->setupBare();
 
-    this->setupOverlay();
-
-    auto& nm = NetworkManager::get();
-
-    // if not authenticated, do nothing
-    bool isEditor = m_level->m_levelType == GJLevelType::Editor;
-    m_fields->globedReady = nm.established() && !isEditor;
-
-    if (!nm.established()) {
-        m_fields->overlay->updateWithDisconnected();
-        return true;
-    } else if (isEditor) {
-        m_fields->overlay->updateWithEditor();
-        return true;
-    }
-
-    // else update the overlay with ping
-    m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
-
-    // m_fields->playerCollisionEnabled = true;
+    if (!m_fields->globedReady) return true;
 
     this->setupDeferredAssetPreloading();
 
@@ -72,6 +52,10 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     this->setupCustomKeybinds();
 
     this->setupMisc();
+
+    // m_fields->playerCollisionEnabled = true;
+
+    auto& nm = NetworkManager::get();
 
     // update
     Loader::get()->queueInMainThread([&nm] {
@@ -155,7 +139,8 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* p0, GameObject* p1) {
 
 /* Setup */
 
-void GlobedPlayLayer::setupOverlay() {
+// runs even if not connected to a server or in an editor level
+void GlobedPlayLayer::setupBare() {
     GlobedSettings& settings = GlobedSettings::get();
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -173,6 +158,24 @@ void GlobedPlayLayer::setupOverlay() {
         .id("game-overlay"_spr)
         .parent(this)
         .store(m_fields->overlay);
+
+    auto& nm = NetworkManager::get();
+
+    // if not authenticated, do nothing
+    bool isEditor = m_level->m_levelType == GJLevelType::Editor;
+    m_fields->globedReady = nm.established() && !isEditor;
+
+    if (!nm.established()) {
+        m_fields->overlay->updateWithDisconnected();
+    } else if (isEditor) {
+        m_fields->overlay->updateWithEditor();
+    } else {
+        // else update the overlay with ping
+        m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
+    }
+
+    auto* gm = static_cast<HookedGameManager*>(GameManager::get());
+    gm->setLastSceneEnum();
 }
 
 void GlobedPlayLayer::setupDeferredAssetPreloading() {

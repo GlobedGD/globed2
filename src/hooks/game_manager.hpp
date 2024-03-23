@@ -6,6 +6,7 @@
 class $modify(HookedGameManager, GameManager) {
     std::unordered_map<int, std::unordered_map<int, Ref<cocos2d::CCTexture2D>>> iconCache;
     std::unordered_set<std::string> loadedFrames;
+    int lastSceneEnum;
     bool assetsPreloaded = false;
     bool deathEffectsPreloaded = false;
 
@@ -44,4 +45,6 @@ class $modify(HookedGameManager, GameManager) {
     void resetAssetPreloadState();
 
     cocos2d::CCTexture2D* getCachedIcon(int iconId, int iconType);
+
+    void setLastSceneEnum(int n = -1);
 };

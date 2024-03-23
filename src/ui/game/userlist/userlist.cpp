@@ -44,7 +44,7 @@ bool GlobedUserListPopup::setup() {
                 "Cancel",
                 "Join",
                 [this](auto, bool btn2) {
-                    if(btn2) {
+                    if (btn2) {
                         geode::utils::web::openLinkInBrowser("https://discord.gg/d56q5Dkdm3");
                     }
                 }

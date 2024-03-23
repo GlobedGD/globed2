@@ -284,7 +284,6 @@ void GlobedSettingCell::storeAndSave(std::any value) {
     GlobedSettings::get().save();
 }
 
-
 void GlobedSettingCell::textChanged(CCTextInputNode* p0) {
     auto val = util::format::parse<int>(p0->getString());
     if (val) {
