@@ -64,10 +64,10 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     this->updateIconType(PlayerIconType::Cube);
 
     if (data.specialUserData->nameColor == ccc3(15, 239, 195)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
-    if (data.specialUserData->nameColor == ccc3(233, 30, 99)) createBadge(createLayout("role-admin.png"_spr, 1.f, playerName->getPosition(), "globed-admin-badge", badgeWrapper)).parent(badgeWrapper);
-    if (data.specialUserData->nameColor == ccc3(154, 88, 255)) createBadge(createLayout("role-supporter.png"_spr, 1.f, playerName->getPosition(), "globed-supporter-badge", badgeWrapper)).parent(badgeWrapper);
-    if (data.specialUserData->nameColor == ccc3(248, 0, 255)) createBadge(createLayout("role-booster.png"_spr, 1.f, playerName->getPosition(), "globed-booster-badge", badgeWrapper)).parent(badgeWrapper);
-
+    if (data.specialUserData->nameColor == ccc3(233, 30, 99)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
+    if (data.specialUserData->nameColor == ccc3(154, 88, 255)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
+    if (data.specialUserData->nameColor == ccc3(248, 0, 255)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
+    
     return true;
 }
 
@@ -273,6 +273,7 @@ void ComplexVisualPlayer::updateData(
         shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden;
     }
 
+    // Sets the badge to the right of the player name no matter the length :D
     badgeWrapper->setPosition(playerName->getPosition() + CCPoint{parent->getAccountData().name.length() + 30.f * 1.20f, -26.f});
 
     this->setVisible(shouldBeVisible);

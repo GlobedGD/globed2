@@ -68,7 +68,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     auto sizeScale = 4.f;
     auto cc9s = Build<CCScale9Sprite>::create("square02_001.png")
         .contentSize(nodeWrapper->getScaledContentSize() * sizeScale + CCPoint{37.f, 25.f})
-        .scaleX(1.f / sizeScale)
+        .scaleX(1.15f / sizeScale)
         .scaleY(1.f / sizeScale)
         .opacity(80)
         .zOrder(-1)

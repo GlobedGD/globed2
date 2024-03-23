@@ -163,40 +163,18 @@ namespace util::ui {
         return layout;
     }
 
-    BadgeLayout createLayout(std::string _badgePNG, float _scale, cocos2d::CCPoint _pos, std::string _id) {
-        BadgeLayout layout;
-        layout.badgePNG = _badgePNG;
-        layout.scale = _scale;
-        layout.pos = _pos;
-        layout.id = _id;
-        layout.badgeWrapper = nullptr;
-        return layout;
-    }
-
     uibuilder::Build<cocos2d::CCSprite> createBadge(BadgeLayout layout) {
         auto badgeSprite = Build<cocos2d::CCSprite>::createSpriteName(layout.badgePNG.c_str())
             .scale(layout.scale)
             .pos(layout.pos)
             .id(layout.id);
 
-        if (layout.badgeWrapper != nullptr) layout.badgeWrapper->updateLayout();
+        if (layout.badgeWrapper == nullptr) {
+            log::info("badge wrapper is nullptr");
+            return badgeSprite;
+        }
+        layout.badgeWrapper->updateLayout();
 
         return badgeSprite;
-    }
-
-    int checkIfSpecialColor(cocos2d::ccColor3B color) {
-        if (color == ccc3(15, 239, 195)) {
-            return 1;
-        }
-        if (color == ccc3(233, 30, 99)) {
-            return 2;
-        }
-        if (color == ccc3(154, 88, 255)) {
-            return 3;
-        }
-        if (color == ccc3(248, 0, 255)) {
-            return 4;
-        }
-        return 0;
     }
 }

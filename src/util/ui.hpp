@@ -46,9 +46,6 @@ namespace util::ui {
     };
 
     BadgeLayout createLayout(std::string _badgePNG, float _scale, cocos2d::CCPoint _pos, std::string _id, cocos2d::CCNode* _badgeWrapper);
-    BadgeLayout createLayout(std::string _badgePNG, float _scale, cocos2d::CCPoint _pos, std::string _id);
 
     uibuilder::Build<cocos2d::CCSprite> createBadge(BadgeLayout layout);
-
-    int checkIfSpecialColor(cocos2d::ccColor3B color);
 }

@@ -79,24 +79,24 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     auto last_letter = typeinfo_cast<CCNode*>(nameLabel->getChildren()->objectAtIndex(data.name.length() - 1));
 
     if (nameColor == ccc3(15, 239, 195)) {
-        createBadge(createLayout("role-mod.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-mod-badge")).parent(this);
+        createBadge(createLayout("role-mod.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-mod-badge", nullptr)).parent(this);
         percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
         percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.f);
     }
     if (nameColor == ccc3(233, 30, 99)) {
-        createBadge(createLayout("role-admin.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-admin-badge")).parent(this);
-        percentageLabel->setPositionX(percentageLabel->getPositionX() + 16.f);
-        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.5f);
+        createBadge(createLayout("role-admin.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-admin-badge", nullptr)).parent(this);
+        percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
+        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.f);
     }
     if (nameColor == ccc3(154, 88, 255)) {
-        createBadge(createLayout("role-supporter.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-supporter-badge")).parent(this);
+        createBadge(createLayout("role-supporter.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-supporter-badge", nullptr)).parent(this);
         percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
-        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.5f);
+        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.f);
     }
     if (nameColor == ccc3(248, 0, 255)) {
-        createBadge(createLayout("role-booster.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-booster-badge")).parent(this);
+        createBadge(createLayout("role-booster.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-booster-badge", nullptr)).parent(this);
         percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
-        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.5f);
+        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.f);
     }
 
     this->makeButtons();
