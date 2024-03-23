@@ -25,7 +25,7 @@ namespace util::lowlevel {
         bytes.push_back(0xe8); // rip-relative CALL
         bytes.resize(5);
 
-        uint32_t relAddress = static_cast<uint32_t>(callableOffset - offset + 5 /* size of a relative CALL instruction */);
+        uint32_t relAddress = static_cast<uint32_t>(callableOffset - offset - 5 /* size of a relative CALL instruction */);
 
         std::memcpy(bytes.data() + 1, &relAddress, sizeof(uintptr_t));
 
