@@ -48,7 +48,7 @@ void GlobedAppDelegate::loadingIsFinished() {
     // mov rdi, rbx (rbx is LoadingLayer*)
     static auto* movPatch = util::lowlevel::patch(INLINED_START, {0x48, 0x89, 0xdf});
     if (!movPatch->isEnabled()) {
-        (void) patch->enable().unwrap();
+        (void) movPatch->enable().unwrap();
     }
 
     const ptrdiff_t callStart = INLINED_START + movPatch->getBytes().size();
