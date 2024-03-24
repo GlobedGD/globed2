@@ -57,7 +57,7 @@ protected:
     PlayerIconType playerIconType = PlayerIconType::Unknown;
     cocos2d::CCLabelBMFont* playerName;
     Ref<PlayerStatusIcons> statusIcons;
-    Ref<CCNode> badgeWrapper = nullptr;
+    CCNode* badgeWrapper;
     bool isPlatformer;
 
     // these 3 used in robot and spider anims

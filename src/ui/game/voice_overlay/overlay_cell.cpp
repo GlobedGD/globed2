@@ -1,6 +1,9 @@
 #include "overlay_cell.hpp"
 
+#include <util/ui.hpp>
+
 using namespace geode::prelude;
+using namespace util::ui;
 
 bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     if (!CCNode::init()) return false;
@@ -51,6 +54,9 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     auto firstNode = static_cast<CCNode*>(playerIcon->getChildren()->objectAtIndex(0));
     firstNode->setPosition(playerIcon->m_firstLayer->getScaledContentSize() / 2);
 
+    if (data.specialUserData.has_value())
+        createBadgeIfSpecial(nameColor, createLayout("", 1.f, playerIcon->getPosition() + CCPoint{-20.f, 0.f}, "", nullptr)).parent(nodeWrapper);
+
     if (data.icons.glowColor != -1) {
         playerIcon->setGlowOutline(gm->colorForIdx(data.icons.glowColor));
     } else {
@@ -68,7 +74,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     auto sizeScale = 4.f;
     auto cc9s = Build<CCScale9Sprite>::create("square02_001.png")
         .contentSize(nodeWrapper->getScaledContentSize() * sizeScale + CCPoint{37.f, 25.f})
-        .scaleX(1.15f / sizeScale)
+        .scaleX(1.f / sizeScale)
         .scaleY(1.f / sizeScale)
         .opacity(80)
         .zOrder(-1)

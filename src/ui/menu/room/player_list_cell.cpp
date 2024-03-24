@@ -89,10 +89,9 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     }
 
     auto last_letter = typeinfo_cast<CCNode*>(label->getChildren()->objectAtIndex(data.name.length() - 1));
-    if (nameColor == ccc3(15, 239, 195)) createBadge(createLayout("role-mod.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-mod-badge", nullptr)).parent(this);
-    if (nameColor == ccc3(233, 30, 99)) createBadge(createLayout("role-admin.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-admin-badge", nullptr)).parent(this);
-    if (nameColor == ccc3(154, 88, 255)) createBadge(createLayout("role-supporter.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-supporter-badge", nullptr)).parent(this);
-    if (nameColor == ccc3(248, 0, 255)) createBadge(createLayout("role-booster.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-booster-badge", nullptr)).parent(this);
+
+    if (data.specialUserData.has_value()) 
+        createBadgeIfSpecial(nameColor, createLayout("", 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "", nullptr)).parent(this);
 
     return true;
 }

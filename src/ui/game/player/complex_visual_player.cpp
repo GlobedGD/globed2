@@ -35,11 +35,14 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     playerIcon->setRemotePlayer(this);
 
-    Build<CCNode>::create()
+    badgeWrapper = Build<CCNode>::create()
         .pos(CCPoint{0.f, 0.f})
+        .scale(1.f)
+        .contentSize(1.f, 1.f)
+        .layout(RowLayout::create()->setGap(5.f))
         .parent(this)
-        .id("badge-wrapper")
-        .store(badgeWrapper);
+        .id("badge-wrapper"_spr)
+        .collect();
 
     Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
         .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
@@ -63,11 +66,6 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     // preload the cube icon so the passengers are correct
     this->updateIconType(PlayerIconType::Cube);
 
-    if (data.specialUserData->nameColor == ccc3(15, 239, 195)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
-    if (data.specialUserData->nameColor == ccc3(233, 30, 99)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
-    if (data.specialUserData->nameColor == ccc3(154, 88, 255)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
-    if (data.specialUserData->nameColor == ccc3(248, 0, 255)) createBadge(createLayout("role-mod.png"_spr, 1.f, playerName->getPosition(), "globed-mod-badge", badgeWrapper)).parent(badgeWrapper);
-    
     return true;
 }
 
@@ -274,7 +272,8 @@ void ComplexVisualPlayer::updateData(
     }
 
     // Sets the badge to the right of the player name no matter the length :D
-    badgeWrapper->setPosition(playerName->getPosition() + CCPoint{parent->getAccountData().name.length() + 30.f * 1.20f, -26.f});
+    badgeWrapper->setPosition(playerName->getPosition() + CCPoint{parent->getAccountData().name.length() + 30.f * 1.20f, -25.f});
+    if (parent->getAccountData().name.length() >= 12) badgeWrapper->setPosition(playerName->getPosition() + CCPoint{parent->getAccountData().name.length() + 42.5f * 1.25f, -25.f});
 
     this->setVisible(shouldBeVisible);
 }
@@ -283,6 +282,9 @@ void ComplexVisualPlayer::updateName() {
     playerName->setString(parent->getAccountData().name.c_str());
     auto& sud = parent->getAccountData().specialUserData;
     sud.has_value() ? playerName->setColor(sud->nameColor) : playerName->setColor({255, 255, 255});
+
+    if (sud.has_value())
+        createBadgeIfSpecial(parent->getAccountData().specialUserData->nameColor, createLayout("", 1.f, playerName->getPosition(), "", badgeWrapper)).parent(badgeWrapper);
 }
 
 void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {

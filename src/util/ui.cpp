@@ -164,6 +164,8 @@ namespace util::ui {
     }
 
     uibuilder::Build<cocos2d::CCSprite> createBadge(BadgeLayout layout) {
+        log::info("creating badge");
+
         auto badgeSprite = Build<cocos2d::CCSprite>::createSpriteName(layout.badgePNG.c_str())
             .scale(layout.scale)
             .pos(layout.pos)
@@ -176,5 +178,12 @@ namespace util::ui {
         layout.badgeWrapper->updateLayout();
 
         return badgeSprite;
+    }
+
+    uibuilder::Build<cocos2d::CCSprite> createBadgeIfSpecial(ccColor3B color, BadgeLayout layout) {
+        if (color == ccc3(15, 239, 195)) return createBadge(createLayout("role-mod.png"_spr, 1.f, layout.pos, "globed-mod-badge", layout.badgeWrapper));
+        if (color == ccc3(233, 30, 99)) return createBadge(createLayout("role-admin.png"_spr, 1.f, layout.pos, "globed-admin-badge", layout.badgeWrapper));
+        if (color == ccc3(154, 88, 255)) return createBadge(createLayout("role-supporter.png"_spr, 1.f, layout.pos, "globed-supporter-badge", layout.badgeWrapper));
+        if (color == ccc3(248, 0, 255)) return createBadge(createLayout("role-booster.png"_spr, 1.f, layout.pos, "globed-booster-badge", layout.badgeWrapper));
     }
 }

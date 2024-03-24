@@ -78,6 +78,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     auto last_letter = typeinfo_cast<CCNode*>(nameLabel->getChildren()->objectAtIndex(data.name.length() - 1));
 
+    // No check function because of percentagelabel being moved
     if (nameColor == ccc3(15, 239, 195)) {
         createBadge(createLayout("role-mod.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-mod-badge", nullptr)).parent(this);
         percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
