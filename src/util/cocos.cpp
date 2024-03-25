@@ -69,15 +69,20 @@ namespace util::cocos {
 
         state.texQuality = getTextureQuality();
 
-        std::filesystem::path resourceDir(geode::dirs::getGameDir());
-        resourceDir /= "Resources";
+        std::filesystem::path resourceDir(geode::dirs::getGameDir() / "Resources");
+        std::filesystem::path textureLdrUnzipped(dirs::getGeodeDir() / "unzipped" / "geode.texture-loader" / "resources");
 
         size_t idx = 0;
         for (const auto& path : CCFileUtils::get()->getSearchPaths()) {
             std::string_view sv(path);
-            if (sv.find("geode.texture-loader") != std::string::npos && sv.find("unzipped") == std::string::npos) {
-                state.hasTexturePack = true;
-                state.texturePackIndices.push_back(idx);
+            auto fspath = std::filesystem::path(std::string(path));
+
+            if (sv.find("geode.texture-loader") != std::string::npos) {
+                // this might be the unzipped/ folder, if so, ignore it
+                if (!std::filesystem::equivalent(textureLdrUnzipped, fspath)) {
+                    state.hasTexturePack = true;
+                    state.texturePackIndices.push_back(idx);
+                }
             }
 
 #ifdef GEODE_IS_ANDROID
@@ -89,7 +94,6 @@ namespace util::cocos {
                 state.gameSearchPathIdx = idx;
             }
 #else
-            auto fspath = std::filesystem::path(std::string(path));
 
             std::error_code ec;
             bool result = std::filesystem::equivalent(fspath, resourceDir, ec);
@@ -104,7 +108,7 @@ namespace util::cocos {
 
         log::debug("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
         log::debug("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
-        log::debug("texure packs: {}", state.texturePackIndices.size());
+        log::debug("texture packs: {}", state.texturePackIndices.size());
         log::debug("game resources path ({}): {}", state.gameSearchPathIdx,
             state.gameSearchPathIdx == -1 ? "<not found>" : HookedFileUtils::get().getSearchPath(state.gameSearchPathIdx));
     }

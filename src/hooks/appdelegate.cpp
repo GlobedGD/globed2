@@ -43,12 +43,12 @@ void GlobedAppDelegate::loadingIsFinished() {
     AppDelegate::loadingIsFinished();
 
     // LoadingLayer::loadingFinished is inlined, so we hook a function that gets
-    // called before that (AppDelegate::loadingIsFinished) and patch the inlined code
+    // called before that (AppDelegate::loadingIsFinished) and patch the inlined code to call the original function
 
     // mov rdi, rbx (rbx is LoadingLayer*)
     static auto* movPatch = util::lowlevel::patch(INLINED_START, {0x48, 0x89, 0xdf});
     if (!movPatch->isEnabled()) {
-        (void) movPatch->enable().unwrap();
+        (void) movPatch->enable();
     }
 
     const ptrdiff_t callStart = INLINED_START + movPatch->getBytes().size();
@@ -56,7 +56,7 @@ void GlobedAppDelegate::loadingIsFinished() {
     // add a call to real loadingFinished
     static auto* patch = util::lowlevel::call(callStart, REAL_LOADING_FINISHED);
     if (!patch->isEnabled()) {
-        (void) patch->enable().unwrap();
+        (void) patch->enable();
     }
 
     const ptrdiff_t nopStart = callStart + patch->getBytes().size();
@@ -64,7 +64,7 @@ void GlobedAppDelegate::loadingIsFinished() {
     // nop out the leftovers
     static auto* nopPatch = util::lowlevel::nop(nopStart, 4 + 5 + 3 + 3 + 5);
     if (!nopPatch->isEnabled()) {
-        (void) nopPatch->enable().unwrap();
+        (void) nopPatch->enable();
     }
 }
 #endif // GEODE_IS_MACOS
