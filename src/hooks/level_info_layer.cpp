@@ -12,3 +12,12 @@ void HookedLevelInfoLayer::onPlay(CCObject* s) {
 
     LevelInfoLayer::onPlay(s);
 }
+
+void HookedLevelInfoLayer::tryCloneLevel(CCObject* s) {
+    if (PlayLayer::get() != nullptr) {
+        FLAlertLayer::create("Globed Error", "Cannot perform this action while in a level", "Ok")->show();
+        return;
+    }
+
+    LevelInfoLayer::tryCloneLevel(s);
+}

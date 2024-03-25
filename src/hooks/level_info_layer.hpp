@@ -5,4 +5,5 @@
 
 class $modify(HookedLevelInfoLayer, LevelInfoLayer) {
     void onPlay(cocos2d::CCObject*);
+    void tryCloneLevel(cocos2d::CCObject*);
 };
