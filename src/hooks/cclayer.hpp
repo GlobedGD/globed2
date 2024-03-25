@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/geode.hpp>
 
-#ifdef GEODE_IS_ANDROID
+#ifndef GEODE_IS_WINDOWS
 
 #include <Geode/modify/CCLayer.hpp>
 
@@ -9,4 +9,4 @@ class $modify(HookedCCLayer, cocos2d::CCLayer) {
     void onEnter();
 };
 
-#endif // GEODE_IS_ANDROID
+#endif // GEODE_IS_WINDOWS

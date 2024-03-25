@@ -4,7 +4,7 @@
 
 using namespace geode::prelude;
 
-#ifdef GEODE_IS_ANDROID
+#ifndef GEODE_IS_WINDOWS
 
 void HookedCCLayer::onEnter() {
     // on android, it is not possible to hook PlayLayer::onEnter by patching the vtable, due to memory protection issues.
@@ -21,4 +21,4 @@ void HookedCCLayer::onEnter() {
     }
 }
 
-#endif // GEODE_IS_ANDROID
+#endif // GEODE_IS_WINDOWS
