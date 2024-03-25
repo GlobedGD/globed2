@@ -407,10 +407,19 @@ void GlobedPlayLayer::setupMisc() {
 
     // vmt hook
 #ifdef GEODE_IS_WINDOWS
-    auto vtableidx = 85;
-    auto oevh = util::lowlevel::vmtHook(&GlobedPlayLayer::onEnterHook, this, vtableidx);
-    if (oevh.isErr()) {
-        log::warn("vmt hook failed: {}", oevh.unwrapErr());
+    static auto patch = [&]() -> Patch* {
+        auto vtableidx = 85;
+        auto p = util::lowlevel::vmtHook(&GlobedPlayLayer::onEnterHook, this, vtableidx);
+        if (p.isErr()) {
+            log::warn("vmt hook failed: {}", p.unwrapErr());
+            return nullptr;
+        } else {
+            return p.unwrap();
+        }
+    }();
+
+    if (patch && !patch->isEnabled()) {
+        (void) patch->enable();
     }
 #endif
 }
