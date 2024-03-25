@@ -149,8 +149,3 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     void unscheduleSelectors();
     void rescheduleSelectors();
 };
-
-class $modify(GlobedGJBGL, GJBaseGameLayer) {
-    $override
-    int checkCollisions(PlayerObject* player, float dt, bool p2);
-};
