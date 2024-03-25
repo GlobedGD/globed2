@@ -80,6 +80,9 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     $override
     void destroyPlayer(PlayerObject* p0, GameObject* p1);
 
+    // vmt hook
+    void onEnterHook();
+
     /* setup stuff to make init() cleaner */
     // all are ran in this order.
 
@@ -127,7 +130,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     bool established();
     bool isCurrentPlayLayer();
-    bool isPaused();
+    bool isPaused(bool checkCurrent = true);
 
     bool isSafeMode();
     void toggleSafeMode(bool enabled);

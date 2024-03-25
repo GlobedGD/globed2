@@ -17,6 +17,7 @@
 #include <util/debug.hpp>
 #include <util/cocos.hpp>
 #include <util/format.hpp>
+#include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
 
@@ -28,7 +29,6 @@ constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 
 float adjustLerpTimeDelta(float dt) {
     // TODO: fix vsync
-    // i fucking hate this i cannot do this anymore i want to die
     auto* dir = CCDirector::get();
     return dir->getAnimationInterval();
 
@@ -135,6 +135,22 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* p0, GameObject* p1) {
     PlayLayer::destroyPlayer(p0, p1);
 
     m_isTestMode = lastTestMode;
+}
+
+void GlobedPlayLayer::onEnterHook() {
+    // when unpausing regularly, this is true, otherwise false
+    auto weRunningScene = this->getParent() == CCScene::get();
+
+    if (weRunningScene) {
+        CCLayer::onEnter();
+        return;
+    }
+
+    Loader::get()->queueInMainThread([self = Ref(this)] {
+        if (!self->isPaused(false)) {
+            self->CCLayer::onEnter();
+        }
+    });
 }
 
 /* Setup */
@@ -388,6 +404,15 @@ void GlobedPlayLayer::setupMisc() {
     // friendlist stuff
     auto& flm = FriendListManager::get();
     flm.maybeLoad();
+
+    // vmt hook
+#ifdef GEODE_IS_WINDOWS
+    auto vtableidx = 85;
+    auto oevh = util::lowlevel::vmtHook(&GlobedPlayLayer::onEnterHook, this, vtableidx);
+    if (oevh.isErr()) {
+        log::warn("vmt hook failed: {}", oevh.unwrapErr());
+    }
+#endif
 }
 
 void GlobedPlayLayer::setupUi() {
@@ -862,8 +887,8 @@ bool GlobedPlayLayer::isCurrentPlayLayer() {
     return playLayer == this;
 }
 
-bool GlobedPlayLayer::isPaused() {
-    if (!isCurrentPlayLayer()) return false;
+bool GlobedPlayLayer::isPaused(bool checkCurrent) {
+    if (checkCurrent && !isCurrentPlayLayer()) return false;
 
     for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
         if (typeinfo_cast<PauseLayer*>(child)) {
