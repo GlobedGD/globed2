@@ -163,27 +163,27 @@ namespace util::ui {
         return layout;
     }
 
-    uibuilder::Build<cocos2d::CCSprite> createBadge(BadgeLayout layout) {
+    uibuilder::Build<cocos2d::CCSprite> createBadge(std::string badgePNG, cocos2d::CCPoint pos, std::string id, cocos2d::CCNode* badgeWrapper) {
         log::info("creating badge");
 
-        auto badgeSprite = Build<cocos2d::CCSprite>::createSpriteName(layout.badgePNG.c_str())
-            .scale(layout.scale)
-            .pos(layout.pos)
-            .id(layout.id);
+        auto badgeSprite = Build<cocos2d::CCSprite>::createSpriteName(badgePNG.c_str())
+            .scale(1.f)
+            .pos(pos)
+            .id(id);
 
-        if (layout.badgeWrapper == nullptr) {
+        if (badgeWrapper == nullptr) {
             log::info("badge wrapper is nullptr");
             return badgeSprite;
         }
-        layout.badgeWrapper->updateLayout();
 
         return badgeSprite;
     }
 
-    uibuilder::Build<cocos2d::CCSprite> createBadgeIfSpecial(ccColor3B color, BadgeLayout layout) {
-        if (color == ccc3(15, 239, 195)) return createBadge(createLayout("role-mod.png"_spr, 1.f, layout.pos, "globed-mod-badge", layout.badgeWrapper));
-        if (color == ccc3(233, 30, 99)) return createBadge(createLayout("role-admin.png"_spr, 1.f, layout.pos, "globed-admin-badge", layout.badgeWrapper));
-        if (color == ccc3(154, 88, 255)) return createBadge(createLayout("role-supporter.png"_spr, 1.f, layout.pos, "globed-supporter-badge", layout.badgeWrapper));
-        if (color == ccc3(248, 0, 255)) return createBadge(createLayout("role-booster.png"_spr, 1.f, layout.pos, "globed-booster-badge", layout.badgeWrapper));
+    uibuilder::Build<cocos2d::CCSprite> createBadgeIfSpecial(ccColor3B color, cocos2d::CCPoint pos, cocos2d::CCNode* badgeWrapper) {
+        if (color == ccc3(15, 239, 195)) return createBadge("role-mod.png"_spr, pos, "globed-mod-badge", badgeWrapper);
+        if (color == ccc3(233, 30, 99)) return createBadge("role-admin.png"_spr, pos, "globed-admin-badge", badgeWrapper);
+        if (color == ccc3(52, 152, 219)) return createBadge("role-helper.png"_spr, pos, "globed-helper-badge", badgeWrapper);
+        if (color == ccc3(154, 88, 255)) return createBadge("role-supporter.png"_spr, pos, "globed-supporter-badge", badgeWrapper);
+        if (color == ccc3(248, 0, 255)) return createBadge("role-booster.png"_spr, pos, "globed-booster-badge", badgeWrapper);
     }
 }

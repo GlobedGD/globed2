@@ -48,7 +48,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
         .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
         .visible(settings.players.showNames && (!isSecond || settings.players.dualName))
         .store(playerName)
-        .pos(0.f, 25.f)
+        .pos(0.f, 0.f)
         .parent(this);
 
     this->updateIcons(data.icons);
@@ -57,7 +57,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
         statusIcons = Build<PlayerStatusIcons>::create(playerOpacity)
             .scale(0.8f)
             .anchorPoint(0.5f, 0.f)
-            .pos(0.f, settings.players.showNames ? 40.f : 25.f)
+            .pos(0.f, settings.players.showNames ? 15.f : 0.f)
             .parent(this)
             .id("status-icons"_spr)
             .collect();
@@ -271,8 +271,7 @@ void ComplexVisualPlayer::updateData(
         shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden;
     }
 
-    // Sets the badge to the right of the player name no matter the length :D
-    badgeWrapper->setPosition(playerName->getPosition() + CCPoint{parent->getAccountData().name.length() + 30.f * 1.20f, -25.f});
+    badgeWrapper->setPosition(playerIcon->getPosition() + CCPoint{0.f, 25.f});
     if (parent->getAccountData().name.length() >= 12) badgeWrapper->setPosition(playerName->getPosition() + CCPoint{parent->getAccountData().name.length() + 42.5f * 1.25f, -25.f});
 
     this->setVisible(shouldBeVisible);
@@ -284,7 +283,7 @@ void ComplexVisualPlayer::updateName() {
     sud.has_value() ? playerName->setColor(sud->nameColor) : playerName->setColor({255, 255, 255});
 
     if (sud.has_value())
-        createBadgeIfSpecial(parent->getAccountData().specialUserData->nameColor, createLayout("", 1.f, playerName->getPosition(), "", badgeWrapper)).parent(badgeWrapper);
+        createBadgeIfSpecial(sud->nameColor, playerName->getPosition(), badgeWrapper).parent(badgeWrapper);
 }
 
 void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {

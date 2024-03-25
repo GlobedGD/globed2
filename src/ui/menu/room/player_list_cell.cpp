@@ -33,15 +33,20 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
 
     // name label
 
-    Build<CCMenu>::create()
-        .pos(0.f, 0.f)
-        .parent(this)
-        .store(menu);
-
     ccColor3B nameColor = ccc3(255, 255, 255);
     if (data.specialUserData) {
         nameColor = data.specialUserData->nameColor;
     }
+
+    CCMenu* badgeWrapper = Build<CCMenu>::create()
+        .pos(simplePlayer->getPositionX() + simplePlayer->m_firstLayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start))
+        .anchorPoint(0.f, 0.5f)
+        .contentSize(RoomPopup::LIST_WIDTH, CELL_HEIGHT)
+        .scale(1.f)
+        .parent(this)
+        .id("badge-wrapper"_spr)
+        .collect();
 
     auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
         .color(nameColor)
@@ -52,9 +57,15 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
 
     auto* btn = Build<CCMenuItemSpriteExtra>::create(label, this, menu_selector(PlayerListCell::onOpenProfile))
         .pos(simplePlayer->getPositionX() + label->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
-        .parent(menu)
+        .parent(badgeWrapper)
         .collect();
     btn->m_scaleMultiplier = 1.1f;
+
+    if (data.specialUserData.has_value()) {
+        createBadgeIfSpecial(nameColor, CCPoint{0.f, 0.f}, badgeWrapper).parent(badgeWrapper);
+    }
+    badgeWrapper->updateLayout();
+
     if (this->data.levelId != 0) {
         Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
             .scale(0.30f)
@@ -87,11 +98,6 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
             .parent(this);
         playButton->m_scaleMultiplier = 1.1f;
     }
-
-    auto last_letter = typeinfo_cast<CCNode*>(label->getChildren()->objectAtIndex(data.name.length() - 1));
-
-    if (data.specialUserData.has_value()) 
-        createBadgeIfSpecial(nameColor, createLayout("", 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "", nullptr)).parent(this);
 
     return true;
 }

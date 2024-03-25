@@ -2,6 +2,7 @@
 
 #include "userlist.hpp"
 #include "actions_popup.hpp"
+#include "ui/menu/room/room_popup.hpp"
 #include <audio/voice_playback_manager.hpp>
 #include <data/packets/client/admin.hpp>
 #include <data/packets/server/admin.hpp>
@@ -55,50 +56,42 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         nameColor = data.specialUserData->nameColor;
     }
 
+    badgeWrapper = Build<CCMenu>::create()
+        .pos(sp->getPositionX() + sp->m_firstLayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start))
+        .anchorPoint(0.f, 0.5f)
+        .contentSize(RoomPopup::LIST_WIDTH, CELL_HEIGHT)
+        .scale(1.f)
+        .parent(this)
+        .id("badge-wrapper"_spr)
+        .collect();
+    
     auto* nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
         .color(nameColor)
-        .limitLabelWidth(140.f, 0.5f, 0.1f)
+        .limitLabelWidth(125.f, 0.5f, 0.1f)
         .collect();
 
     auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
         // goodness
-        .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 15.f, CELL_HEIGHT / 2.f)
-        .parent(menu)
+        .pos(nameLabel->getPosition())
+        .parent(badgeWrapper)
         .collect();
     nameButton->m_scaleMultiplier = 1.1f;
 
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
-        .pos(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{3.f, -3.f})
+        .pos(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{20.f, -3.f})
         .anchorPoint({0.f, 0.5f})
         .scale(0.4f)
-        .parent(this)
+        .parent(badgeWrapper)
         .id("percentage-label"_spr)
         .store(percentageLabel);
 
-    auto last_letter = typeinfo_cast<CCNode*>(nameLabel->getChildren()->objectAtIndex(data.name.length() - 1));
+    if (data.specialUserData.has_value()) {
+        createBadgeIfSpecial(nameColor, badgeWrapper->getPosition(), badgeWrapper).parent(badgeWrapper);
+    }
 
-    // No check function because of percentagelabel being moved
-    if (nameColor == ccc3(15, 239, 195)) {
-        createBadge(createLayout("role-mod.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-mod-badge", nullptr)).parent(this);
-        percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
-        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.f);
-    }
-    if (nameColor == ccc3(233, 30, 99)) {
-        createBadge(createLayout("role-admin.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-admin-badge", nullptr)).parent(this);
-        percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
-        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.f);
-    }
-    if (nameColor == ccc3(154, 88, 255)) {
-        createBadge(createLayout("role-supporter.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-supporter-badge", nullptr)).parent(this);
-        percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
-        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.f);
-    }
-    if (nameColor == ccc3(248, 0, 255)) {
-        createBadge(createLayout("role-booster.png"_spr, 1.f, last_letter->convertToWorldSpace(getPosition()) + CCPoint{20.f, 6.f}, "globed-booster-badge", nullptr)).parent(this);
-        percentageLabel->setPosition({percentageLabel->getPositionX() + 16.f, percentageLabel->getPositionY() - 6.f});
-        percentageLabel->setPositionY(percentageLabel->getPositionY() - 2.f);
-    }
+    badgeWrapper->updateLayout();
 
     this->makeButtons();
 
@@ -319,6 +312,8 @@ void GlobedUserCell::makeButtons() {
     buttonsWrapper->setContentSize({maxWidth, 20.f});
 
     buttonsWrapper->updateLayout();
+    
+    badgeWrapper->updateLayout();
 }
 
 void GlobedUserCell::onOpenProfile(CCObject*) {
