@@ -7,6 +7,7 @@
 
 class $modify(HookedCCLayer, cocos2d::CCLayer) {
     void onEnter();
+    void onExit();
 };
 
 #endif // GEODE_IS_WINDOWS
