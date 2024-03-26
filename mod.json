@@ -37,10 +37,7 @@
                 "resources/deafen-icon-off.png",
                 "resources/deafen-icon-on.png"
             ]
-        },
-        "sprite": [
-            "resources/*.png"
-        ]
+        }
     },
     "id": "dankmeme.globed2",
     "name": "Globed",
