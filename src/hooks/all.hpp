@@ -3,6 +3,7 @@
 #include "appdelegate.hpp"
 #include "flalertlayer.hpp"
 #include "game_manager.hpp"
+#include "gjbasegamelayer.hpp"
 #include "gjgamelevel.hpp"
 #include "level_area_inner_layer.hpp"
 #include "level_cell.hpp"

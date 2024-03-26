@@ -516,7 +516,7 @@ public:
     }
 
     ~SmartThread() {
-        if (!movedFrom) {
+        if (!movedFrom && _storage != nullptr) {
             this->stopAndWait();
         }
     }

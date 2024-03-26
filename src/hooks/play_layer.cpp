@@ -17,6 +17,7 @@
 #include <util/debug.hpp>
 #include <util/cocos.hpp>
 #include <util/format.hpp>
+#include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
 
@@ -28,7 +29,6 @@ constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 
 float adjustLerpTimeDelta(float dt) {
     // TODO: fix vsync
-    // i fucking hate this i cannot do this anymore i want to die
     auto* dir = CCDirector::get();
     return dir->getAnimationInterval();
 
@@ -137,6 +137,22 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* p0, GameObject* p1) {
     m_isTestMode = lastTestMode;
 }
 
+void GlobedPlayLayer::onEnterHook() {
+    // when unpausing regularly, this is true, otherwise false
+    auto weRunningScene = this->getParent() == CCScene::get();
+
+    if (weRunningScene) {
+        CCLayer::onEnter();
+        return;
+    }
+
+    Loader::get()->queueInMainThread([self = Ref(this)] {
+        if (!self->isPaused(false)) {
+            self->CCLayer::onEnter();
+        }
+    });
+}
+
 /* Setup */
 
 // runs even if not connected to a server or in an editor level
@@ -173,9 +189,6 @@ void GlobedPlayLayer::setupBare() {
         // else update the overlay with ping
         m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
     }
-
-    auto* gm = static_cast<HookedGameManager*>(GameManager::get());
-    gm->setLastSceneEnum();
 }
 
 void GlobedPlayLayer::setupDeferredAssetPreloading() {
@@ -391,6 +404,24 @@ void GlobedPlayLayer::setupMisc() {
     // friendlist stuff
     auto& flm = FriendListManager::get();
     flm.maybeLoad();
+
+    // vmt hook
+#ifdef GEODE_IS_WINDOWS
+    static auto patch = [&]() -> Patch* {
+        auto vtableidx = 85;
+        auto p = util::lowlevel::vmtHook(&GlobedPlayLayer::onEnterHook, this, vtableidx);
+        if (p.isErr()) {
+            log::warn("vmt hook failed: {}", p.unwrapErr());
+            return nullptr;
+        } else {
+            return p.unwrap();
+        }
+    }();
+
+    if (patch && !patch->isEnabled()) {
+        (void) patch->enable();
+    }
+#endif
 }
 
 void GlobedPlayLayer::setupUi() {
@@ -865,8 +896,8 @@ bool GlobedPlayLayer::isCurrentPlayLayer() {
     return playLayer == this;
 }
 
-bool GlobedPlayLayer::isPaused() {
-    if (!isCurrentPlayLayer()) return false;
+bool GlobedPlayLayer::isPaused(bool checkCurrent) {
+    if (checkCurrent && !isCurrentPlayLayer()) return false;
 
     for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
         if (typeinfo_cast<PauseLayer*>(child)) {
@@ -976,96 +1007,3 @@ void GlobedPlayLayer::rescheduleSelectors() {
     this->getParent()->schedule(schedule_selector(GlobedPlayLayer::selUpdateEstimators), updeInterval);
 }
 
-static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& displacement) {
-    if (std::abs(displacement.x) > 10.f) {
-        displacement.x = -displacement.x;
-        displacement.y = 0;
-        return true;
-    }
-
-    return false;
-}
-
-int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
-    int retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
-
-    if ((void*)this != PlayLayer::get()) return retval;
-
-    // up and down hell yeah
-    auto* gpl = static_cast<GlobedPlayLayer*>(static_cast<GJBaseGameLayer*>(this));
-
-    if (!gpl->m_fields->globedReady) return retval;
-    if (!gpl->m_fields->playerCollisionEnabled) return retval;
-
-    bool isSecond = player == gpl->m_player2;
-
-    for (const auto& [_, rp] : gpl->m_fields->players) {
-        auto* p1 = static_cast<PlayerObject*>(rp->player1->getPlayerObject());
-        auto* p2 = static_cast<PlayerObject*>(rp->player2->getPlayerObject());
-
-        auto& p1Rect = p1->getObjectRect();
-        auto& p2Rect = p2->getObjectRect();
-
-        auto& playerRect = player->getObjectRect();
-
-        CCRect p1CollRect = p1Rect;
-        CCRect p2CollRect = p2Rect;
-
-        constexpr float padding = 2.f;
-
-        // p1CollRect.origin += CCPoint{padding, padding};
-        // p1CollRect.size -= CCSize{padding * 2, padding * 2};
-
-        // p2CollRect.origin += CCPoint{padding, padding};
-        // p2CollRect.size -= CCSize{padding * 2, padding * 2};
-
-        bool intersectsP1 = playerRect.intersectsRect(p1CollRect);
-        bool intersectsP2 = playerRect.intersectsRect(p2CollRect);
-
-        if (isSecond) {
-            rp->player1->setP2StickyState(false);
-            rp->player2->setP2StickyState(false);
-        } else {
-            rp->player1->setP1StickyState(false);
-            rp->player2->setP1StickyState(false);
-        }
-
-        if (intersectsP1) {
-            auto prev = player->getPosition();
-            player->collidedWithObject(dt, p1, p1CollRect, false);
-            auto displacement = player->getPosition() - prev;
-
-            // log::debug("p1 intersect, displacement: {}", displacement);
-
-            bool shouldRevert = shouldCorrectCollision(playerRect, p1Rect, displacement);
-
-            if (shouldRevert) {
-                player->setPosition(player->getPosition() + displacement);
-            }
-
-            if (std::abs(displacement.y) > 0.001f) {
-                isSecond ? rp->player1->setP2StickyState(true) : rp->player1->setP1StickyState(true);
-            }
-        }
-
-        if (intersectsP2) {
-            auto prev = player->getPosition();
-            player->collidedWithObject(dt, p2, p2CollRect, false);
-            auto displacement = player->getPosition() - prev;
-
-            // log::debug("p2 intersect, displacement: {}", displacement);
-
-            bool shouldRevert = shouldCorrectCollision(playerRect, p2Rect, displacement);
-
-            if (shouldRevert) {
-                player->setPosition(player->getPosition() + displacement);
-            }
-
-            if (std::abs(displacement.y) > 0.001f) {
-                isSecond ? rp->player2->setP2StickyState(true) : rp->player2->setP1StickyState(true);
-            }
-        }
-    }
-
-    return retval;
-}

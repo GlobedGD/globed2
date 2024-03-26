@@ -79,7 +79,11 @@ namespace util::cocos {
 
             if (sv.find("geode.texture-loader") != std::string::npos) {
                 // this might be the unzipped/ folder, if so, ignore it
-                if (!std::filesystem::equivalent(textureLdrUnzipped, fspath)) {
+                std::error_code ec;
+                bool result = std::filesystem::equivalent(textureLdrUnzipped, fspath, ec);
+
+                // if the check failed, or if the path isn't equivalent to unzipped, count it as a texture pack folder
+                if (ec != std::error_code{} || !result) {
                     state.hasTexturePack = true;
                     state.texturePackIndices.push_back(idx);
                 }
