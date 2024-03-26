@@ -52,8 +52,6 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
         .pos(0.f, 0.f)
         .parent(badgeWrapper);
 
-    badgeWrapper->setContentWidth(playerName->getScaledContentSize().width);
-
     this->updateIcons(data.icons);
 
     if (!isSecond && settings.players.statusIcons) {
@@ -284,6 +282,7 @@ void ComplexVisualPlayer::updateName() {
 
     if (sud.has_value()) {
         createBadgeIfSpecial(sud->nameColor, badgeWrapper->getPosition()).parent(badgeWrapper);
+        badgeWrapper->setContentWidth(playerName->getScaledContentSize().width + 5.f);
     }
 
     badgeWrapper->updateLayout();

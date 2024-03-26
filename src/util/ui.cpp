@@ -180,5 +180,7 @@ namespace util::ui {
         if (color == ccc3(52, 152, 219)) return createBadge("role-helper.png"_spr, pos, "globed-helper-badge");
         if (color == ccc3(154, 88, 255)) return createBadge("role-supporter.png"_spr, pos, "globed-supporter-badge");
         if (color == ccc3(248, 0, 255)) return createBadge("role-booster.png"_spr, pos, "globed-booster-badge");
+
+        return nullptr;
     }
 }
