@@ -1,3 +1,7 @@
+## v1.3.6
+
+* Fix crash on startup on Android
+
 ## v1.3.5
 
 * Fix crashes and other weird behavior when opening profiles of others when in a level
