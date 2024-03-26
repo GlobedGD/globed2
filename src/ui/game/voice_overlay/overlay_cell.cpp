@@ -55,7 +55,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     firstNode->setPosition(playerIcon->m_firstLayer->getScaledContentSize() / 2);
 
     if (data.specialUserData.has_value())
-        createBadgeIfSpecial(nameColor, playerIcon->getPosition() + CCPoint{-20.f, 0.f}, nullptr).parent(nodeWrapper);
+        createBadgeIfSpecial(nameColor, playerIcon->getPosition() + CCPoint{-20.f, 0.f}).parent(nodeWrapper);
 
     if (data.icons.glowColor != -1) {
         playerIcon->setGlowOutline(gm->colorForIdx(data.icons.glowColor));

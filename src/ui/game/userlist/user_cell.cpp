@@ -58,9 +58,9 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     badgeWrapper = Build<CCMenu>::create()
         .pos(sp->getPositionX() + sp->m_firstLayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
-        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start))
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start)->setAutoScale(false))
         .anchorPoint(0.f, 0.5f)
-        .contentSize(RoomPopup::LIST_WIDTH, CELL_HEIGHT)
+        .contentSize(RoomPopup::LIST_WIDTH / 2, CELL_HEIGHT / 2)
         .scale(1.f)
         .parent(this)
         .id("badge-wrapper"_spr)
@@ -72,24 +72,24 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .collect();
 
     auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
-        // goodness
+        // thank god no more
         .pos(nameLabel->getPosition())
         .parent(badgeWrapper)
         .collect();
     nameButton->m_scaleMultiplier = 1.1f;
 
+    if (data.specialUserData.has_value()) {
+        createBadgeIfSpecial(nameColor, badgeWrapper->getPosition()).parent(badgeWrapper);
+    }
+
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
-        .pos(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{20.f, -3.f})
+        .pos(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{20.f, 0.f})
         .anchorPoint({0.f, 0.5f})
         .scale(0.4f)
         .parent(badgeWrapper)
         .id("percentage-label"_spr)
         .store(percentageLabel);
-
-    if (data.specialUserData.has_value()) {
-        createBadgeIfSpecial(nameColor, badgeWrapper->getPosition(), badgeWrapper).parent(badgeWrapper);
-    }
 
     badgeWrapper->updateLayout();
 

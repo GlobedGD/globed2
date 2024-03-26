@@ -35,11 +35,12 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     playerIcon->setRemotePlayer(this);
 
-    badgeWrapper = Build<CCNode>::create()
-        .pos(CCPoint{0.f, 0.f})
+    badgeWrapper = Build<CCMenu>::create()
+        .pos(0.f, 0.f)
         .scale(1.f)
         .contentSize(1.f, 1.f)
-        .layout(RowLayout::create()->setGap(5.f))
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start)->setAutoScale(false))
+        .anchorPoint(0.f, 0.f)
         .parent(this)
         .id("badge-wrapper"_spr)
         .collect();
@@ -49,7 +50,9 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
         .visible(settings.players.showNames && (!isSecond || settings.players.dualName))
         .store(playerName)
         .pos(0.f, 0.f)
-        .parent(this);
+        .parent(badgeWrapper);
+
+    badgeWrapper->setContentWidth(playerName->getScaledContentSize().width);
 
     this->updateIcons(data.icons);
 
@@ -124,6 +127,7 @@ void ComplexVisualPlayer::updateData(
 
     playerIcon->setPosition(data.position);
     playerIcon->setRotation(data.rotation);
+    badgeWrapper->setPosition(data.position + CCPoint{0.f, 25.f});
 
     float innerRot = data.isSideways ? (data.isUpsideDown ? 90.f : -90.f) : 0.f;
     playerIcon->m_mainLayer->setRotation(innerRot);
@@ -138,7 +142,6 @@ void ComplexVisualPlayer::updateData(
     }
 
     // set the pos for status icons and name (ask rob not me)
-    playerName->setPosition(data.position + CCPoint{0.f, 25.f});
     if (statusIcons) {
         statusIcons->setPosition(data.position + CCPoint{0.f, playerName->isVisible() ? 40.f : 25.f});
     }
@@ -271,9 +274,6 @@ void ComplexVisualPlayer::updateData(
         shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden;
     }
 
-    badgeWrapper->setPosition(playerIcon->getPosition() + CCPoint{0.f, 25.f});
-    if (parent->getAccountData().name.length() >= 12) badgeWrapper->setPosition(playerName->getPosition() + CCPoint{parent->getAccountData().name.length() + 42.5f * 1.25f, -25.f});
-
     this->setVisible(shouldBeVisible);
 }
 
@@ -282,8 +282,11 @@ void ComplexVisualPlayer::updateName() {
     auto& sud = parent->getAccountData().specialUserData;
     sud.has_value() ? playerName->setColor(sud->nameColor) : playerName->setColor({255, 255, 255});
 
-    if (sud.has_value())
-        createBadgeIfSpecial(sud->nameColor, playerName->getPosition(), badgeWrapper).parent(badgeWrapper);
+    if (sud.has_value()) {
+        createBadgeIfSpecial(sud->nameColor, badgeWrapper->getPosition()).parent(badgeWrapper);
+    }
+
+    badgeWrapper->updateLayout();
 }
 
 void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
