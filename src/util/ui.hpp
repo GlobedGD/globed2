@@ -35,19 +35,9 @@ namespace util::ui {
 
     PopupLayout getPopupLayout(cocos2d::CCSize popupSize);
 
-    cocos2d::CCNode* findChildByMenuSelectorRecursive(cocos2d::CCNode* node, uintptr_t function);
-
-    struct BadgeLayout {
-        std::string badgePNG;
-        float scale;
-        cocos2d::CCPoint pos;
-        std::string id;
-        cocos2d::CCNode* badgeWrapper;
-    };
-
-    BadgeLayout createLayout(std::string _badgePNG, float _scale, cocos2d::CCPoint _pos, std::string _id, cocos2d::CCNode* _badgeWrapper);
+    cocos2d::CCNode* findChildByMenuSelectorRecursive(cocos2d::CCNode* node, uintptr_t function);   
 
     uibuilder::Build<cocos2d::CCSprite> createBadge(std::string badgePNG, cocos2d::CCPoint pos, std::string id);
 
-    uibuilder::Build<cocos2d::CCSprite> createBadgeIfSpecial(cocos2d::ccColor3B color, cocos2d::CCPoint pos);
+    cocos2d::CCSprite* createBadgeIfSpecial(cocos2d::ccColor3B color, cocos2d::CCPoint pos);
 }

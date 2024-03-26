@@ -79,7 +79,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     nameButton->m_scaleMultiplier = 1.1f;
 
     if (data.specialUserData.has_value()) {
-        createBadgeIfSpecial(nameColor, badgeWrapper->getPosition()).parent(badgeWrapper);
+        auto badge = createBadgeIfSpecial(nameColor, badgeWrapper->getPosition());
+        if (badge != nullptr) badgeWrapper->addChild(badge);
     }
 
     // percentage label

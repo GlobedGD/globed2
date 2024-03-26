@@ -62,7 +62,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     btn->m_scaleMultiplier = 1.1f;
 
     if (data.specialUserData.has_value()) {
-        createBadgeIfSpecial(nameColor, CCPoint{0.f, 0.f}).parent(badgeWrapper);
+        auto badge = createBadgeIfSpecial(nameColor, CCPoint{0.f, 0.f});
+        if (badge != nullptr) badgeWrapper->addChild(badge);
     }
     badgeWrapper->updateLayout();
 

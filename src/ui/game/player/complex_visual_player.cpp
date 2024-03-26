@@ -281,8 +281,11 @@ void ComplexVisualPlayer::updateName() {
     sud.has_value() ? playerName->setColor(sud->nameColor) : playerName->setColor({255, 255, 255});
 
     if (sud.has_value()) {
-        createBadgeIfSpecial(sud->nameColor, badgeWrapper->getPosition()).parent(badgeWrapper);
-        badgeWrapper->setContentWidth(playerName->getScaledContentSize().width + 5.f);
+        auto badge = createBadgeIfSpecial(sud->nameColor, badgeWrapper->getPosition());
+        if (badge != nullptr) {
+            badgeWrapper->setContentWidth(playerName->getScaledContentSize().width);
+            badgeWrapper->addChild(badge);
+        }
     }
 
     badgeWrapper->updateLayout();
