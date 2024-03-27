@@ -1,3 +1,7 @@
+## v1.3.7
+
+* Fix being unable to restart a level with the Confirm Restart feature in BetterPause (and other bugs similar to this)
+
 ## v1.3.6
 
 * Fix crash on startup on Android
