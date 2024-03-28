@@ -23,9 +23,7 @@ void HookedCCLayer::onEnter() {
 }
 
 void HookedCCLayer::onExit() {
-    bool nodeIds = Loader::get()->isModLoaded("geode.node-ids");
-
-    bool isPauseLayer = nodeIds ? (this->getID() == "PauseLayer" || typeinfo_cast<PauseLayer*>(this) != nullptr) : typeinfo_cast<PauseLayer*>(this) != nullptr;
+    bool isPauseLayer = this->getID() == "PauseLayer" || typeinfo_cast<PauseLayer*>(this) != nullptr;
 
     if (isPauseLayer) {
         static_cast<PauseLayerBugfix*>(static_cast<CCLayer*>(this))->onExitHook();
