@@ -55,6 +55,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         target_compile_options(${PROJECT_NAME} PRIVATE "-include WinSock2.h")
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
+    endif()
 endif()
 
 # i am crying so hard right now
