@@ -8,9 +8,15 @@ project(globed2 VERSION 1.0.0)
 
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
-# Debug/Release options
+# Check for debug build
 option(ENABLE_DEBUG "Debug mode" OFF)
-if (ENABLE_DEBUG OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}asdf" STREQUAL "asdf" OR ENABLE_DEBUG)
+    set(GLOBED_IS_DEBUG ON)
+endif()
+
+# Debug/Release options
+if (GLOBED_IS_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
     add_compile_definitions(GEODE_DEBUG=1)
 else()
@@ -56,7 +62,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
 
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}asdf" STREQUAL "asdf")
+    if (GLOBED_IS_DEBUG)
         message(STATUS "Compiling in debug, disabling iterator debugging")
         add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
     endif()
