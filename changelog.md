@@ -1,3 +1,7 @@
+## v1.3.8
+
+* Fix a missing texture crash when asset preloading is disabled
+
 ## v1.3.7
 
 * Add a mysterious button to the room menu
