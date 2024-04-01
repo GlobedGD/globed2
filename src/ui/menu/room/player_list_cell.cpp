@@ -51,9 +51,10 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
 
     auto* btn = Build<CCMenuItemSpriteExtra>::create(label, this, menu_selector(PlayerListCell::onOpenProfile))
         .pos(simplePlayer->getPositionX() + label->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
+        .scaleMult(1.1f)
         .parent(menu)
         .collect();
-    btn->m_scaleMultiplier = 1.1f;
+
     if (this->data.levelId != 0) {
         Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
             .scale(0.30f)
@@ -80,11 +81,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
                 }
             })
             .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
+            .scaleMult(1.1f)
             .store(playButton)
             .intoNewParent(CCMenu::create())
             .pos(0.f, 0.f)
             .parent(this);
-        playButton->m_scaleMultiplier = 1.1f;
     }
 
     return true;

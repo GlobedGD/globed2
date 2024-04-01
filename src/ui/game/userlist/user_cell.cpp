@@ -63,8 +63,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         // goodness
         .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 15.f, CELL_HEIGHT / 2.f)
         .parent(menu)
+        .scaleMult(1.1f)
         .collect();
-    nameButton->m_scaleMultiplier = 1.1f;
 
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
@@ -153,11 +153,11 @@ void GlobedUserCell::makeButtons() {
 
                 GlobedUserActionsPopup::create(id)->show();
             })
+            .scaleMult(1.2f)
             .parent(buttonsWrapper)
             .id("player-actions-button"_spr)
             .store(actionsButton);
 
-        actionsButton->m_scaleMultiplier = 1.2f;
         maxWidth += actionsButton->getScaledContentSize().width + gap;
     } else if (createSettingsAlts) {
         bool isUnblocked = pl->shouldLetMessageThrough(accountData.accountId);
@@ -183,11 +183,11 @@ void GlobedUserCell::makeButtons() {
                     this->makeButtons();
                 });
             })
+            .scaleMult(1.2f)
             .parent(buttonsWrapper)
             .id("player-mute-button"_spr)
             .store(muteButton);
 
-        muteButton->m_scaleMultiplier = 1.2f;
         maxWidth += muteButton->getScaledContentSize().width + gap;
 
         auto spr = Build<CCSprite>::createSpriteName(isHidden ? "icon-show-player.png"_spr : "icon-hide-player.png"_spr).collect();
@@ -205,11 +205,11 @@ void GlobedUserCell::makeButtons() {
                     this->makeButtons();
                 });
             })
+            .scaleMult(1.2f)
             .parent(buttonsWrapper)
             .id("player-hide-button"_spr)
             .store(hideButton);
 
-        hideButton->m_scaleMultiplier = 1.2f;
         maxWidth += hideButton->getScaledContentSize().width + gap;
     }
 

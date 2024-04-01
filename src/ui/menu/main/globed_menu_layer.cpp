@@ -70,10 +70,10 @@ bool GlobedMenuLayer::init() {
                 popup->show();
             }
         })
+        .scaleMult(1.15f)
         .id("btn-open-server-switcher"_spr)
         .parent(leftButtonMenu)
         .collect();
-    serverSwitcherButton->m_scaleMultiplier = 1.15f;
 
     // discord button
     discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
@@ -84,20 +84,20 @@ bool GlobedMenuLayer::init() {
                     geode::utils::web::openLinkInBrowser("https://discord.gg/d56q5Dkdm3");
             });
         })
+        .scaleMult(1.15f)
         .id("btn-open-discord"_spr)
         .parent(leftButtonMenu)
         .collect();
-    discordButton->m_scaleMultiplier = 1.15f;
 
     // settings button
     settingsButton = Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedSettingsLayer::create());
         })
+        .scaleMult(1.15f)
         .id("btn-open-settings"_spr)
         .parent(leftButtonMenu)
         .collect();
-    settingsButton->m_scaleMultiplier = 1.15f;
 
     // room popup button
     roomButton = Build<CCSprite>::createSpriteName("accountBtn_friends_001.png")
@@ -108,9 +108,9 @@ bool GlobedMenuLayer::init() {
                 popup->show();
             }
         })
+        .scaleMult(1.15f)
         .id("btn-refresh-servers"_spr)
         .collect();
-    roomButton->m_scaleMultiplier = 1.15f;
 
     auto& settings = GlobedSettings::get();
 
@@ -127,9 +127,9 @@ bool GlobedMenuLayer::init() {
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedLevelListLayer::create());
         })
+        .scaleMult(1.15f)
         .id("btn-open-level-list"_spr)
         .collect();
-    levelListButton->m_scaleMultiplier = 1.15f;
 
     leftButtonMenu->updateLayout();
 

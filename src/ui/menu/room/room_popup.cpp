@@ -225,10 +225,10 @@ void RoomPopup::addButtons() {
                     RoomJoinPopup::create()->show();
                 }
             })
+            .scaleMult(1.05f)
             .id("join-room-btn"_spr)
             .parent(roomBtnMenu)
             .collect();
-        joinRoomButton->m_scaleMultiplier = 1.05f;
 
         auto* createRoomButton = Build<ButtonSprite>::create("Create room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .intoMenuItem([this](auto) {
@@ -237,10 +237,10 @@ void RoomPopup::addButtons() {
                     this->reloadPlayerList(false);
                 }
             })
+            .scaleMult(1.05f)
             .id("create-room-btn"_spr)
             .parent(roomBtnMenu)
             .collect();
-        createRoomButton->m_scaleMultiplier = 1.05f;
 
         roomBtnMenu->updateLayout();
     } else {
@@ -257,10 +257,10 @@ void RoomPopup::addButtons() {
                     this->reloadPlayerList(false);
                 }
             })
+            .scaleMult(1.1f)
             .id("leave-room-btn"_spr)
             .parent(roomBtnMenu)
             .collect();
-        leaveRoomButton->m_scaleMultiplier = 1.1f;
     }
 }
 
