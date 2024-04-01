@@ -7,6 +7,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
+#include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <util/ui.hpp>
@@ -27,12 +28,12 @@ bool RoomPopup::setup() {
 
     nm.addListener<RoomPlayerListPacket>([this](std::shared_ptr<RoomPlayerListPacket> packet) {
         this->isWaiting = false;
-        this->playerList = packet->data;
+        this->playerList = packet->players;
         this->applyFilter("");
         this->sortPlayerList();
         auto& rm = RoomManager::get();
-        bool changed = rm.roomId != packet->roomId;
-        rm.setRoom(packet->roomId);
+        bool changed = rm.getId() != packet->info.id;
+        rm.setInfo(packet->info);
         this->onLoaded(changed || !roomBtnMenu);
     });
 
@@ -63,9 +64,18 @@ bool RoomPopup::setup() {
         )};
         this->applyFilter("");
 
-        RoomManager::get().setRoom(packet->roomId);
+        RoomManager::get().setInfo(packet->info);
         this->onLoaded(true);
     });
+
+    nm.addListener<RoomInfoPacket>([this](std::shared_ptr<RoomInfoPacket> packet) {
+        ErrorQueues::get().success("Room configuration updated");
+
+        RoomManager::get().setInfo(packet->info);
+        // idk maybe refresh or something something idk
+    });
+
+    auto popupLayout = util::ui::getPopupLayout(m_size);
 
     auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
     listLayer = GJCommentListLayer::create(listview, "", {192, 114, 62, 255}, LIST_WIDTH, LIST_HEIGHT, false);
@@ -86,10 +96,20 @@ bool RoomPopup::setup() {
         .intoNewParent(CCMenu::create())
         .parent(m_mainLayer);
 
-    CCMenuItemSpriteExtra* filterBtn = nullptr;
+    Build<CCMenu>::create()
+        .layout(ColumnLayout::create()->setGap(1.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
+        .scale(0.875f)
+        .pos(popupLayout.right - 6.f, popupLayout.top - 6.f)
+        .anchorPoint(1.f, 1.f)
+        .contentSize(30.f, POPUP_HEIGHT)
+        .parent(m_mainLayer)
+        .id("top-right-buttons"_spr)
+        .store(buttonMenu);
 
+    CCMenuItemSpriteExtra *filterBtn;
+
+    // search button
     Build<CCSprite>::createSpriteName("gj_findBtn_001.png")
-        .scale(0.9f)
         .intoMenuItem([this](auto) {
             AskInputPopup::create("Search Player", [this](const std::string_view input) {
                 this->applyFilter(input);
@@ -97,28 +117,46 @@ bool RoomPopup::setup() {
                 this->onLoaded(true);
             }, 16, "Username", util::misc::STRING_ALPHANUMERIC, 3.f)->show();
         })
-        .pos(m_size.width / 2.f - 21.f, m_size.height / 2.f - 22.f)
+        .scaleMult(1.1f)
         .id("search-btn"_spr)
-        .store(filterBtn)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
-    filterBtn->m_scaleMultiplier = 1.1f;
+        .parent(buttonMenu)
+        .store(filterBtn);
 
     // clear search button
-    Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
-        .scale(0.9f)
+    clearSearchButton = Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
         .intoMenuItem([this](auto) {
             this->applyFilter("");
             this->sortPlayerList();
             this->onLoaded(true);
         })
-        .visible(false)
-        .pos(m_size.width / 2.f - 21.f, m_size.height / 2.f - 40.f - filterBtn->getScaledContentSize().height / 2)
+        .scaleMult(1.1f)
         .id("search-clear-btn"_spr)
-        .store(clearSearchButton)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
-    clearSearchButton->m_scaleMultiplier = 1.1f;
+        .collect();
+
+    // secret button
+    secretButton = Build<CCSprite>::createSpriteName("button-secret.png"_spr)
+        .intoMenuItem([this](auto) {
+            auto& settings = GlobedSettings::get();
+            if (!settings.flags.seenAprilFoolsNotice) {
+                settings.flags.seenAprilFoolsNotice = true;
+                settings.save();
+
+                FLAlertLayer::create("Note", "Being in this room will <cr>disable any level progress</c>.\n\n<cg>Happy April Fools!</c>", "Ok")->show();
+            }
+
+            NetworkManager::get().send(JoinRoomPacket::create(777'777));
+        })
+        .zOrder(9)
+        .scaleMult(1.1f)
+        .id("secret-button"_spr)
+        .collect();
+
+    // only show it on april first
+    if (rm.getId() != 777'777 && util::time::isAprilFools()) {
+        buttonMenu->addChild(secretButton);
+    }
+
+    buttonMenu->updateLayout();
 
     return true;
 }
@@ -146,11 +184,20 @@ void RoomPopup::onLoaded(bool stateChanged) {
         util::ui::setScrollPos(listLayer->m_list, scrollPos);
     }
 
+    auto& rm = RoomManager::get();
     if (stateChanged) {
-        auto& rm = RoomManager::get();
-        this->setRoomTitle(rm.roomId.load());
+        this->setRoomTitle(rm.getId());
         this->addButtons();
     }
+
+    // remove the funny button
+    secretButton->removeFromParent();
+
+    if (rm.getId() != 777'777 && util::time::isAprilFools()) {
+        buttonMenu->addChild(secretButton);
+    }
+
+    buttonMenu->updateLayout();
 }
 
 void RoomPopup::addButtons() {
@@ -288,7 +335,7 @@ void RoomPopup::applyFilter(const std::string_view input) {
             filteredPlayerList.push_back(item);
         }
 
-        clearSearchButton->setVisible(false);
+        clearSearchButton->removeFromParent();
         return;
     }
 
@@ -300,21 +347,29 @@ void RoomPopup::applyFilter(const std::string_view input) {
             filteredPlayerList.push_back(item);
         }
     }
-
-    clearSearchButton->setVisible(true);
+    buttonMenu->addChild(clearSearchButton);
+    buttonMenu->updateLayout();
 }
 
 void RoomPopup::setRoomTitle(uint32_t id) {
     if (roomIdButton) roomIdButton->removeFromParent();
 
-    auto title = id == 0 ? "Global room" : fmt::format("Room {}", id);
+    std::string title;
+    if (id == 0) {
+        title = "Global room";
+    } else if (id == 777'777 && util::time::isAprilFools()) {
+        title = "Room ??????";
+    } else {
+        title = fmt::format("Room {}", id);
+    }
+
     auto layout = util::ui::getPopupLayout(m_size);
 
     CCNode* elem = Build<CCLabelBMFont>::create(title.c_str(), "goldFont.fnt")
         .scale(0.7f)
         .collect();
 
-    if (id != 0) {
+    if (id != 0 && (id != 777'777 || !util::time::isAprilFools())) {
         auto* button = CCMenuItemSpriteExtra::create(elem, this, menu_selector(RoomPopup::onCopyRoomId));
         button->addChild(elem);
 
@@ -331,7 +386,7 @@ void RoomPopup::setRoomTitle(uint32_t id) {
 }
 
 void RoomPopup::onCopyRoomId(cocos2d::CCObject*) {
-    auto id = RoomManager::get().roomId.load();
+    auto id = RoomManager::get().getId();
 
     utils::clipboard::write(std::to_string(id));
 

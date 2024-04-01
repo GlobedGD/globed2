@@ -1,6 +1,6 @@
 {
-    "geode": "2.0.0-beta.20",
-    "version": "v1.3.6",
+    "geode": "2.0.0-beta.23",
+    "version": "v1.3.7",
     "gd": {
         "win": "2.204",
         "android": "2.205",
@@ -35,7 +35,9 @@
                 "resources/icon-hide-player.png",
                 "resources/icon-show-player.png",
                 "resources/deafen-icon-off.png",
-                "resources/deafen-icon-on.png"
+                "resources/deafen-icon-on.png",
+                "resources/button-secret.png",
+                "resources/secret-question-mark.png"
             ]
         }
     },

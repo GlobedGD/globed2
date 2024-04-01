@@ -35,7 +35,7 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
     auto* gpl = static_cast<GlobedPlayLayer*>(static_cast<GJBaseGameLayer*>(this));
 
     if (!gpl->m_fields->globedReady) return retval;
-    if (!gpl->m_fields->playerCollisionEnabled) return retval;
+    if (!gpl->m_fields->roomSettings.collision) return retval;
 
     bool isSecond = player == gpl->m_player2;
 
@@ -108,4 +108,26 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
     }
 
     return retval;
+}
+
+void GlobedGJBGL::loadLevelSettings() {
+    LevelSettingsObject* lo = m_levelSettings;
+
+    if (!PlayLayer::get()) {
+        GJBaseGameLayer::loadLevelSettings();
+        return;
+    }
+
+    auto* gpl = static_cast<GlobedPlayLayer*>(static_cast<GJBaseGameLayer*>(this));
+    bool lastPlat = lo->m_platformerMode;
+    auto lastLength = m_level->m_levelLength;
+
+    if (gpl->m_fields->forcedPlatformer) {
+        lo->m_platformerMode = true;
+    }
+
+    GJBaseGameLayer::loadLevelSettings();
+
+    lo->m_platformerMode = lastPlat;
+    m_level->m_levelLength = lastLength;
 }

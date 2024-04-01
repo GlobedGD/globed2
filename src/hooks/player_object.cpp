@@ -77,3 +77,27 @@ void HookedPlayerObject::incrementJumps() {
 
     PlayerObject::incrementJumps();
 }
+
+void HookedPlayerObject::update(float dt) {
+    auto* pl = PlayLayer::get();
+    if (!pl) {
+        PlayerObject::update(dt);
+        return;
+    }
+
+    auto* gpl = static_cast<GlobedPlayLayer*>(pl);
+    if (gpl->m_fields->forcedPlatformer) {
+        this->togglePlatformerMode(true);
+
+#ifdef GEODE_IS_ANDROID
+        if (!m_fields->forcedPlatFlag) {
+            m_fields->forcedPlatFlag = true;
+            if (gpl->m_uiLayer) {
+                gpl->m_uiLayer->togglePlatformerMode(true);
+            }
+        }
+#endif
+    }
+
+    PlayerObject::update(dt);
+}

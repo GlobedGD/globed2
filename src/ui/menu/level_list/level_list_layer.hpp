@@ -32,9 +32,9 @@ private:
     void removeLoadingCircle();
     void showLoadingUi();
 
-	void loadLevelsFinished(cocos2d::CCArray*, char const*) override;
-	void loadLevelsFailed(char const*) override;
-	void loadLevelsFinished(cocos2d::CCArray*, char const*, int) override;
-	void loadLevelsFailed(char const*, int) override;
-	void setupPageInfo(gd::string, char const*) override;
+    void loadLevelsFinished(cocos2d::CCArray*, char const*) override;
+    void loadLevelsFailed(char const*) override;
+    void loadLevelsFinished(cocos2d::CCArray*, char const*, int) override;
+    void loadLevelsFailed(char const*, int) override;
+    void setupPageInfo(gd::string, char const*) override;
 };

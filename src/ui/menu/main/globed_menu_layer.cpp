@@ -112,6 +112,16 @@ bool GlobedMenuLayer::init() {
         .collect();
     roomButton->m_scaleMultiplier = 1.15f;
 
+    auto& settings = GlobedSettings::get();
+
+    if (util::time::isAprilFools() && !settings.flags.seenAprilFoolsNotice) {
+        Build<CCSprite>::createSpriteName("secret-question-mark.png"_spr)
+            .scale(0.6f)
+            .pos(36.f, 36.f)
+            .parent(roomButton)
+            .collect();
+    }
+
     // level list button
     levelListButton = Build<CCSprite>::createSpriteName("icon-level-list.png"_spr)
         .intoMenuItem([](auto) {

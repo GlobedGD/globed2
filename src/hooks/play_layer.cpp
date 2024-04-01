@@ -11,6 +11,7 @@
 #include <managers/friend_list.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/settings.hpp>
+#include <managers/room.hpp>
 #include <data/packets/all.hpp>
 #include <hooks/game_manager.hpp>
 #include <util/math.hpp>
@@ -39,6 +40,8 @@ float adjustLerpTimeDelta(float dt) {
 /* Hooks */
 
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
+    this->setupPreInit(level);
+
     if (!PlayLayer::init(level, p1, p2)) return false;
 
     this->setupBare();
@@ -52,8 +55,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     this->setupCustomKeybinds();
 
     this->setupMisc();
-
-    // m_fields->playerCollisionEnabled = true;
 
     auto& nm = NetworkManager::get();
 
@@ -155,6 +156,32 @@ void GlobedPlayLayer::onEnterHook() {
 
 /* Setup */
 
+// Runs before PlayLayer::init
+void GlobedPlayLayer::setupPreInit(GJGameLevel* level) {
+    auto& nm = NetworkManager::get();
+
+    bool isEditor = level->m_levelType == GJLevelType::Editor;
+    m_fields->globedReady = nm.established() && !isEditor;
+
+    if (m_fields->globedReady) {
+        // room settings
+        m_fields->roomSettings = RoomManager::get().getInfo().settings;
+
+        // collision only works in platformer, so force platformer :D
+        if (m_fields->roomSettings.collision && !level->isPlatformer()) {
+            m_fields->roomSettings.collision = false;
+
+            if (util::time::isAprilFools()) {
+                m_fields->forcedPlatformer = true;
+                m_fields->roomSettings.collision = true;
+#ifdef GEODE_IS_ANDROID
+                this->m_uiLayer->togglePlatformerMode(true);
+#endif
+            }
+        }
+    }
+}
+
 // runs even if not connected to a server or in an editor level
 void GlobedPlayLayer::setupBare() {
     GlobedSettings& settings = GlobedSettings::get();
@@ -179,7 +206,6 @@ void GlobedPlayLayer::setupBare() {
 
     // if not authenticated, do nothing
     bool isEditor = m_level->m_levelType == GJLevelType::Editor;
-    m_fields->globedReady = nm.established() && !isEditor;
 
     if (!nm.established()) {
         m_fields->overlay->updateWithDisconnected();
@@ -404,6 +430,12 @@ void GlobedPlayLayer::setupMisc() {
     // friendlist stuff
     auto& flm = FriendListManager::get();
     flm.maybeLoad();
+
+    // toggle safe mode if collision is enabled
+    if (m_fields->roomSettings.collision) {
+        m_fields->progressForciblyDisabled = true;
+        this->toggleSafeMode(true);
+    }
 
     // vmt hook
 #ifdef GEODE_IS_WINDOWS
@@ -913,6 +945,10 @@ bool GlobedPlayLayer::isSafeMode() {
 }
 
 void GlobedPlayLayer::toggleSafeMode(bool enabled) {
+    if (m_fields->progressForciblyDisabled) {
+        enabled = true;
+    }
+
     static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = enabled;
 }
 

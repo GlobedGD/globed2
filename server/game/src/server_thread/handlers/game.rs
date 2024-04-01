@@ -20,10 +20,10 @@ impl GameServerThread {
 
         self.game_server.state.room_manager.with_any(room_id, |pm| {
             if old_level != 0 {
-                pm.remove_from_level(old_level, account_id);
+                pm.manager.remove_from_level(old_level, account_id);
             }
 
-            pm.add_to_level(packet.level_id, account_id);
+            pm.manager.add_to_level(packet.level_id, account_id);
         });
 
         Ok(())
@@ -37,7 +37,7 @@ impl GameServerThread {
             let room_id = self.room_id.load(Ordering::Relaxed);
 
             self.game_server.state.room_manager.with_any(room_id, |pm| {
-                pm.remove_from_level(level_id, account_id);
+                pm.manager.remove_from_level(level_id, account_id);
             });
         }
 
@@ -55,9 +55,9 @@ impl GameServerThread {
         let room_id = self.room_id.load(Ordering::Relaxed);
 
         let written_players = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            pm.set_player_data(account_id, &packet.data);
+            pm.manager.set_player_data(account_id, &packet.data);
             // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
-            pm.get_player_count_on_level(level_id).unwrap_or(1) - 1
+            pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1
         });
 
         // no one else on the level, no need to send a response packet
@@ -73,7 +73,7 @@ impl GameServerThread {
             self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| {
                 self.game_server.state.room_manager.with_any(room_id, |pm| {
                     buf.write_list_with(written_players, |buf| {
-                        pm.for_each_player_on_level(
+                        pm.manager.for_each_player_on_level(
                             level_id,
                             |player, count, buf| {
                                 if count < written_players && player.account_id != account_id {
@@ -99,7 +99,7 @@ impl GameServerThread {
         let mut players = Vec::with_capacity(written_players + 4);
 
         self.game_server.state.room_manager.with_any(room_id, |pm| {
-            pm.for_each_player_on_level(
+            pm.manager.for_each_player_on_level(
                 level_id,
                 |player, _, players| {
                     if player.account_id == account_id {
@@ -137,9 +137,9 @@ impl GameServerThread {
         let room_id = self.room_id.load(Ordering::Relaxed);
 
         let written_players = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            pm.set_player_meta(account_id, &packet.data);
+            pm.manager.set_player_meta(account_id, &packet.data);
             // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
-            pm.get_player_count_on_level(level_id).unwrap_or(1) - 1
+            pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1
         });
 
         // no one else on the level, no need to send a response packet
@@ -155,7 +155,7 @@ impl GameServerThread {
             self.send_packet_alloca_with::<LevelPlayerMetadataPacket, _>(calc_size, |buf| {
                 self.game_server.state.room_manager.with_any(room_id, |pm| {
                     buf.write_list_with(written_players, |buf| {
-                        pm.for_each_player_on_level(
+                        pm.manager.for_each_player_on_level(
                             level_id,
                             |player, count, buf| {
                                 if count < written_players && player.account_id != account_id {
@@ -181,7 +181,7 @@ impl GameServerThread {
         let mut players = Vec::with_capacity(written_players + 4);
 
         self.game_server.state.room_manager.with_any(room_id, |pm| {
-            pm.for_each_player_on_level(
+            pm.manager.for_each_player_on_level(
                 level_id,
                 |player, _, players| {
                     if player.account_id == account_id {
@@ -220,7 +220,7 @@ impl GameServerThread {
 
         let total_players = self.game_server.state.room_manager.with_any(room_id, |pm| {
             // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
-            pm.get_player_count_on_level(level_id).unwrap_or(1) - 1
+            pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1
         });
 
         // no one else on the level, no need to send a response packet
@@ -244,7 +244,7 @@ impl GameServerThread {
                 } else {
                     // otherwise, encode everyone on the level
                     self.game_server.state.room_manager.with_any(room_id, |pm| {
-                        pm.for_each_player_on_level(
+                        pm.manager.for_each_player_on_level(
                             level_id,
                             |player, count, buf| {
                                 // we do additional length check because player count may have changed since 1st lock

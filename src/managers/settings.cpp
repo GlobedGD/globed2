@@ -81,6 +81,7 @@ void GlobedSettings::save() {
     STOREF(seenSignupNoticev2);
     STOREF(seenVoiceChatPTTNotice);
     STOREF(seenTeleportNotice);
+    STOREF(seenAprilFoolsNotice);
 }
 
 void GlobedSettings::reload() {
@@ -135,6 +136,7 @@ void GlobedSettings::reload() {
     LOADF(seenSignupNoticev2);
     LOADF(seenVoiceChatPTTNotice);
     LOADF(seenTeleportNotice);
+    LOADF(seenAprilFoolsNotice);
 }
 
 void GlobedSettings::resetToDefaults() {

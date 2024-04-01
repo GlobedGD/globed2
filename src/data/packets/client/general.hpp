@@ -1,6 +1,7 @@
 #pragma once
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
+#include <data/types/room.hpp>
 
 class SyncIconsPacket : public Packet {
     GLOBED_PACKET(11000, false, false)
@@ -106,3 +107,18 @@ class RequestPlayerCountPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RequestPlayerCountPacket, (levelIds));
+
+class UpdateRoomSettingsPacket : public Packet {
+    GLOBED_PACKET(11008, false, false)
+
+    UpdateRoomSettingsPacket() {}
+    UpdateRoomSettingsPacket(const RoomSettings& settings) : settings(settings) {}
+
+    static std::shared_ptr<Packet> create(const RoomSettings& settings) {
+        return std::make_shared<UpdateRoomSettingsPacket>(settings);
+    }
+
+    RoomSettings settings;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(UpdateRoomSettingsPacket, (settings));

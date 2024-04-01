@@ -1,25 +1,23 @@
 #pragma once
 #include <defs/util.hpp>
 
+#include <data/types/room.hpp>
 #include <util/sync.hpp>
 
 class RoomManager : public SingletonBase<RoomManager> {
+    friend class SingletonBase;
+    RoomManager();
+
 public:
-    util::sync::AtomicU32 roomId = 0;
+    RoomInfo& getInfo();
+    uint32_t getId();
 
-    bool isInGlobal() {
-        return roomId == 0;
-    }
+    bool isInGlobal();
+    bool isInRoom();
 
-    bool isInRoom() {
-        return !isInGlobal();
-    }
+    void setInfo(const RoomInfo& info);
+    void setGlobal();
 
-    void setRoom(uint32_t roomId) {
-        this->roomId = roomId;
-    }
-
-    void leaveRoom() {
-        roomId = 0;
-    }
+private:
+    RoomInfo roomInfo;
 };

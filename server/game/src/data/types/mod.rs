@@ -4,6 +4,7 @@ pub mod crypto;
 pub mod game;
 pub mod gd;
 pub mod misc;
+pub mod room;
 
 use std::sync::atomic::AtomicI64;
 
@@ -14,6 +15,7 @@ pub use esp::types::*;
 pub use game::*;
 pub use gd::*;
 pub use misc::*;
+pub use room::*;
 pub type LevelId = i64;
 pub type AtomicLevelId = AtomicI64;
 

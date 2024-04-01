@@ -278,6 +278,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let server = GameServer::new(tcp_socket, udp_socket, state, bridge, standalone);
     let server = Box::leak(Box::new(server));
 
+    // april fools thingy haha
+    server.state.room_manager.create_special_room();
+
     Box::pin(server.run()).await;
 
     Ok(())

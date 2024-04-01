@@ -34,7 +34,7 @@ pub struct SpecificIconData {
     pub position: Point,
     pub rotation: FiniteF32,
     pub icon_type: PlayerIconType,
-    pub flags: u16, // bit-field with various flags, see the client-side structure for more info
+    pub flags: Bits<2>, // bit-field with various flags, see the client-side structure for more info
     pub spider_teleport_data: Option<SpiderTeleportData>,
 }
 
@@ -61,5 +61,5 @@ pub struct PlayerData {
 
     pub current_percentage: FiniteF32,
 
-    pub flags: u8, // also a bit-field
+    pub flags: Bits<1>, // also a bit-field
 }

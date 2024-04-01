@@ -4,6 +4,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
 
+#include <data/types/room.hpp>
 #include <game/interpolator.hpp>
 #include <game/player_store.hpp>
 #include <net/network_manager.hpp>
@@ -29,11 +30,13 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     float lastServerUpdate = 0.f;
     std::shared_ptr<PlayerInterpolator> interpolator;
     std::shared_ptr<PlayerStore> playerStore;
+    RoomSettings roomSettings;
+    bool progressForciblyDisabled = false; // affected by room settings, forces safe mode
+    bool forcedPlatformer = false;
 
     std::optional<SpiderTeleportData> spiderTp1, spiderTp2;
     bool didJustJumpp1 = false, didJustJumpp2 = false;
     bool isCurrentlyDead = false;
-    bool playerCollisionEnabled = false;
     float lastDeathTimestamp = 0.f;
 
     // ui elements
@@ -86,6 +89,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     /* setup stuff to make init() cleaner */
     // all are ran in this order.
 
+    void setupPreInit(GJGameLevel* level);
     void setupBare();
     void setupDeferredAssetPreloading();
     void setupAudio();

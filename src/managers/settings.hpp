@@ -74,6 +74,7 @@ public:
         bool seenSignupNoticev2 = false;
         bool seenVoiceChatPTTNotice = false;
         bool seenTeleportNotice = false;
+        bool seenAprilFoolsNotice = false;
     };
 
     Globed globed;
