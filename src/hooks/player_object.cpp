@@ -91,8 +91,8 @@ void HookedPlayerObject::update(float dt) {
 
 #ifdef GEODE_IS_ANDROID
         if (!m_fields->forcedPlatFlag) {
-            m_fields->forcedPlatFlag = true;
             if (gpl->m_uiLayer) {
+                m_fields->forcedPlatFlag = true;
                 gpl->m_uiLayer->togglePlatformerMode(true);
             }
         }

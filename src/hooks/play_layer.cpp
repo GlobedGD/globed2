@@ -157,6 +157,7 @@ void GlobedPlayLayer::setupPreInit(GJGameLevel* level) {
     if (m_fields->globedReady) {
         // room settings
         m_fields->roomSettings = RoomManager::get().getInfo().settings;
+        log::debug("collision: {}", m_fields->roomSettings.collision);
 
         // collision only works in platformer, so force platformer :D
         if (m_fields->roomSettings.collision && !level->isPlatformer()) {
@@ -166,7 +167,9 @@ void GlobedPlayLayer::setupPreInit(GJGameLevel* level) {
                 m_fields->forcedPlatformer = true;
                 m_fields->roomSettings.collision = true;
 #ifdef GEODE_IS_ANDROID
-                this->m_uiLayer->togglePlatformerMode(true);
+                if (this->m_uiLayer) {
+                    this->m_uiLayer->togglePlatformerMode(true);
+                }
 #endif
             }
         }
@@ -935,7 +938,7 @@ bool GlobedPlayLayer::isPaused(bool checkCurrent) {
 }
 
 bool GlobedPlayLayer::isSafeMode() {
-    return static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress;
+    return m_fields->shouldStopProgress;
 }
 
 void GlobedPlayLayer::toggleSafeMode(bool enabled) {
@@ -943,7 +946,7 @@ void GlobedPlayLayer::toggleSafeMode(bool enabled) {
         enabled = true;
     }
 
-    static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = enabled;
+    m_fields->shouldStopProgress = enabled;
 }
 
 void GlobedPlayLayer::onQuitActions() {
