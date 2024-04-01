@@ -26,7 +26,7 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
         return texture;
     }
 
-    texture = GameManager::loadIcon(iconId, iconType, iconRequestId);
+    texture = GameManager::loadIcon(iconId, iconType, -1);
 
     if (texture) {
         m_fields->iconCache[iconType][iconId] = texture;
