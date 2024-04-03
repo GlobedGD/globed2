@@ -1,7 +1,7 @@
 #include "actions_popup.hpp"
 
 #include <audio/voice_playback_manager.hpp>
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/block_list.hpp>
 #include <managers/settings.hpp>
@@ -40,7 +40,7 @@ void GlobedUserActionsPopup::remakeButtons() {
         .parent(m_mainLayer)
         .store(buttonLayout);
 
-    auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto pl = GlobedGJBGL::get();
 
     bool isUnblocked = pl->shouldLetMessageThrough(accountId);
 

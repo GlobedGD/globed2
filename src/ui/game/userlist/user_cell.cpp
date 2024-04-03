@@ -8,7 +8,7 @@
 #include <managers/block_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/profile_cache.hpp>
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
@@ -137,7 +137,7 @@ void GlobedUserCell::makeButtons() {
         createBtnSettings = false;
     }
 
-    auto pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto pl = GlobedGJBGL::get();
 
     if (!pl->m_fields->players.contains(accountData.accountId)) return;
 
@@ -146,7 +146,7 @@ void GlobedUserCell::makeButtons() {
         Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
             .scale(0.36f)
             .intoMenuItem([this, id = accountData.accountId](auto) {
-                auto* pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+                auto* pl = GlobedGJBGL::get();
 
                 // if they left the level, do nothing
                 if (!pl->m_fields->players.contains(accountData.accountId)) return;
@@ -242,7 +242,7 @@ void GlobedUserCell::makeButtons() {
     }
 
     if (createBtnTp) {
-        GlobedPlayLayer* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get()); // ggpl
+        auto gpl = GlobedGJBGL::get(); // ggpl
 
         Build<CCSprite>::createSpriteName("icon-teleport.png"_spr)
             .scale(0.35f)

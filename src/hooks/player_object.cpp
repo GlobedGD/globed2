@@ -1,6 +1,6 @@
 #include "player_object.hpp"
 
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <util/ui.hpp>
 #include <util/debug.hpp>
 
@@ -51,7 +51,7 @@ void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CC
         return;
     }
 
-    auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto* gpl = GlobedGJBGL::get();
     if (this == gpl->m_player1) {
         gpl->m_fields->spiderTp1 = SpiderTeleportData { .from = from, .to = to };
     } else if (this == gpl->m_player2) {
@@ -67,7 +67,7 @@ void HookedPlayerObject::incrementJumps() {
         return;
     }
 
-    auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto* gpl = GlobedGJBGL::get();
 
     if (this == gpl->m_player1) {
         gpl->m_fields->didJustJumpp1 = true;
@@ -85,7 +85,7 @@ void HookedPlayerObject::update(float dt) {
         return;
     }
 
-    auto* gpl = static_cast<GlobedPlayLayer*>(pl);
+    auto* gpl = GlobedGJBGL::get();
     if (gpl->m_fields->forcedPlatformer) {
         this->togglePlatformerMode(true);
 

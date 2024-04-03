@@ -1,6 +1,6 @@
 #include "error_check_node.hpp"
 
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <hooks/flalertlayer.hpp>
 #include <managers/error_queues.hpp>
 #include <util/debug.hpp>
@@ -53,7 +53,7 @@ void ErrorCheckNode::updateErrors(float) {
 
     // if we are in PlayLayer, don't show errors unless paused
 
-    auto playlayer = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto playlayer = GlobedGJBGL::get();
     if (playlayer && !playlayer->isPaused()) {
         return;
     }

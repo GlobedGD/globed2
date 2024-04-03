@@ -2,7 +2,7 @@
 
 #include "user_cell.hpp"
 #include <audio/voice_playback_manager.hpp>
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
@@ -155,7 +155,7 @@ void GlobedUserListPopup::reorderWithVolume(float) {
 }
 
 void GlobedUserListPopup::reloadList(float) {
-    auto playLayer = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto playLayer = GlobedGJBGL::get();
     if (!playLayer) return;
 
     auto& playerStore = playLayer->m_fields->playerStore->getAll();
@@ -204,7 +204,7 @@ void GlobedUserListPopup::hardRefresh() {
 CCArray* GlobedUserListPopup::createPlayerCells() {
     auto cells = CCArray::create();
 
-    auto playLayer = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto playLayer = GlobedGJBGL::get();
     auto& playerStore = playLayer->m_fields->playerStore->getAll();
     auto& pcm = ProfileCacheManager::get();
     auto& ownData = pcm.getOwnAccountData();
