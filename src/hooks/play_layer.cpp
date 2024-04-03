@@ -645,14 +645,16 @@ void GlobedPlayLayer::selUpdate(float timescaledDt) {
 
     self->m_fields->interpolator->tick(dt);
 
-    if (self->m_fields->progressBarWrapper->getParent() != nullptr) {
-        self->m_fields->selfProgressIcon->updatePosition(self->getCurrentPercent() / 100.f);
-    } else if (self->m_progressBar) {
-        // for some reason, the progressbar is sometimes initialized later than PlayLayer::init
-        // it always should exist, even in levels with no actual progress bar (i.e. platformer levels)
-        // but it can randomly get initialized late.
-        // why robtop????????
-        self->m_progressBar->addChild(self->m_fields->progressBarWrapper);
+    if (auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get())) {
+        if (self->m_fields->progressBarWrapper->getParent() != nullptr) {
+            self->m_fields->selfProgressIcon->updatePosition(self->getCurrentPercent() / 100.f);
+        } else if (self->m_progressBar) {
+            // for some reason, the progressbar is sometimes initialized later than PlayLayer::init
+            // it always should exist, even in levels with no actual progress bar (i.e. platformer levels)
+            // but it can randomly get initialized late.
+            // why robtop????????
+            self->m_progressBar->addChild(self->m_fields->progressBarWrapper);
+        }
     }
 
     auto& bl = BlockListManager::get();
@@ -673,10 +675,12 @@ void GlobedPlayLayer::selUpdate(float timescaledDt) {
         );
 
         // update progress icons
-        if (self->m_progressBar && self->m_progressBar->isVisible() && remotePlayer->progressIcon) {
-            remotePlayer->updateProgressIcon();
-        } else if (remotePlayer->progressArrow) {
-            remotePlayer->updateProgressArrow(camOrigin, camCoverage, visibleOrigin, visibleCoverage, zoom);
+        if (auto self = PlayLayer::get()) {
+            if (self->m_progressBar && self->m_progressBar->isVisible() && remotePlayer->progressIcon) {
+                remotePlayer->updateProgressIcon();
+            } else if (remotePlayer->progressArrow) {
+                remotePlayer->updateProgressArrow(camOrigin, camCoverage, visibleOrigin, visibleCoverage, zoom);
+            }
         }
 
         // update voice proximity

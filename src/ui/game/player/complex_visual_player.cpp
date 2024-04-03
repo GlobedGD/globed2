@@ -313,6 +313,9 @@ void ComplexVisualPlayer::playDeathEffect() {
 }
 
 void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
+    // spider teleport effect is only played in play layer
+    if (!PlayLayer::get()) return;
+
     playerIcon->m_unk65c = true;
     playerIcon->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
 
