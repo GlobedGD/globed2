@@ -2,7 +2,7 @@
 #include <defs/util.hpp>
 
 #include <data/types/room.hpp>
-#include <util/sync.hpp>
+#include <asp/sync.hpp>
 
 class RoomManager : public SingletonBase<RoomManager> {
     friend class SingletonBase;

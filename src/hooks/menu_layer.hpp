@@ -10,6 +10,11 @@ class $modify(HookedMenuLayer, MenuLayer) {
     $override
     bool init();
 
+#if 0
+    $override
+    void onMoreGames(cocos2d::CCObject* s);
+#endif
+
     void updateGlobedButton();
     void maybeUpdateButton(float);
 };

@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/util.hpp>
 
-#include <util/sync.hpp> // mutex
+#include <asp/sync.hpp> // mutex
 #include <util/crypto.hpp> // base64
 #include <data/bytebuffer.hpp>
 
@@ -51,11 +51,11 @@ public:
     // clear the active authtoken, reinitialize account manager, clear game servers, and switch to a central server by its ID
     void switchRoutine(int index, bool force = false);
 
-    util::sync::AtomicBool recentlySwitched = false;
+    asp::AtomicBool recentlySwitched = false;
 
 protected:
-    util::sync::WrappingMutex<std::vector<CentralServer>> _servers;
-    util::sync::AtomicI32 _activeIdx = -1;
+    asp::Mutex<std::vector<CentralServer>> _servers;
+    asp::AtomicI32 _activeIdx = -1;
 
     constexpr static const char* SETTING_KEY = "_central-server-list";
     constexpr static const char* ACTIVE_SERVER_KEY = "_central-server-active";

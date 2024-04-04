@@ -27,11 +27,11 @@ NetworkManager::NetworkManager() {
     // boot up the threads
 
     threadMain.setLoopFunction(&NetworkManager::threadMainFunc);
-    threadMain.setName("Network (out) Thread");
+    threadMain.setStartFunction([] { geode::utils::thread::setName("Network (out) Thread"); });
     threadMain.start(this);
 
     threadRecv.setLoopFunction(&NetworkManager::threadRecvFunc);
-    threadRecv.setName("Network (in) Thread");
+    threadRecv.setStartFunction([] { geode::utils::thread::setName("Network (in) Thread"); });
     threadRecv.start(this);
 }
 
@@ -184,36 +184,11 @@ void NetworkManager::threadMainFunc() {
 
     this->maybeSendKeepalive();
 
-    if (!packetQueue.waitForMessages(util::time::millis(200))) {
-        // check for tasks
-        if (taskQueue.empty()) return;
-
-        for (const auto& task : taskQueue.popAll()) {
-            if (task == NetworkThreadTask::PingServers) {
-                auto& sm = GameServerManager::get();
-                auto activeServer = sm.getActiveId();
-
-                for (auto& [serverId, server] : sm.getAllServers()) {
-                    if (serverId == activeServer) continue;
-
-                    auto pingId = sm.startPing(serverId);
-                    auto result = gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
-
-                    if (result.isErr()) {
-                        ErrorQueues::get().warn(result.unwrapErr());
-                    }
-                }
-            }
-        }
-    }
-
-    auto messages = packetQueue.popAll();
-
-    for (auto packet : messages) {
+    while (auto packet = packetQueue.popTimeout(util::time::millis(200))) {
         try {
-            auto result = gameSocket.sendPacket(packet);
+            auto result = gameSocket.sendPacket(packet.value());
             if (!result) {
-                log::debug("failed to send packet {}: {}", packet->getPacketId(), result.unwrapErr());
+                log::debug("failed to send packet {}: {}", packet.value()->getPacketId(), result.unwrapErr());
                 this->disconnectWithMessage(result.unwrapErr());
                 return;
             }
@@ -223,6 +198,27 @@ void NetworkManager::threadMainFunc() {
             this->disconnect(true, false);
         }
     }
+
+    while (auto task_ = taskQueue.tryPop()) {
+        auto task = task_.value();
+        if (task == NetworkThreadTask::PingServers) {
+            auto& sm = GameServerManager::get();
+            auto activeServer = sm.getActiveId();
+
+            for (auto& [serverId, server] : sm.getAllServers()) {
+                if (serverId == activeServer) continue;
+
+                auto pingId = sm.startPing(serverId);
+                auto result = gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
+
+                if (result.isErr()) {
+                    ErrorQueues::get().warn(result.unwrapErr());
+                }
+            }
+        }
+    }
+
+    std::this_thread::yield();
 }
 
 void NetworkManager::threadRecvFunc() {

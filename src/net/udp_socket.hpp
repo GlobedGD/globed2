@@ -3,7 +3,7 @@
 
 #include <defs/platform.hpp>
 #include <defs/net.hpp>
-#include <util/sync.hpp>
+#include <asp/sync.hpp>
 
 class UdpSocket : public Socket {
 public:
@@ -20,12 +20,12 @@ public:
     Result<bool> poll(int msDelay, bool in = true) override;
     Result<> setNonBlocking(bool nb) override;
 
-    util::sync::AtomicBool connected = false;
+    asp::AtomicBool connected = false;
 
 #ifdef GLOBED_IS_UNIX
-    util::sync::AtomicI32 socket_ = 0;
+    asp::AtomicI32 socket_ = 0;
 #else
-    util::sync::AtomicU32 socket_ = 0;
+    asp::AtomicU32 socket_ = 0;
 #endif
 
 private:

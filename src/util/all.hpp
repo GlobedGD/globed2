@@ -13,6 +13,5 @@
 #include "misc.hpp"
 #include "net.hpp"
 #include "rng.hpp"
-#include "sync.hpp"
 #include "time.hpp"
 #include "ui.hpp"

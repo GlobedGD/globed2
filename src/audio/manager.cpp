@@ -33,7 +33,7 @@ GlobedAudioManager::GlobedAudioManager()
     : encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
     audioThreadHandle.setLoopFunction(&GlobedAudioManager::audioThreadFunc);
-    audioThreadHandle.setName("Audio Thread");
+    audioThreadHandle.setStartFunction([] { geode::utils::thread::setName("Audio Thread"); });
     audioThreadHandle.start(this);
 
     recordDevice = {.id = -1};

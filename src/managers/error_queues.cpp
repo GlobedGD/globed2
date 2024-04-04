@@ -30,17 +30,37 @@ void ErrorQueues::debugWarn(const std::string_view message, bool print) {
 }
 
 std::vector<std::string> ErrorQueues::getWarnings() {
-    return _warns.popAll();
+    std::vector<std::string> out;
+    while (auto msg = _warns.tryPop()) {
+        out.push_back(msg.value());
+    }
+
+    return out;
 }
 
 std::vector<std::string> ErrorQueues::getErrors() {
-    return _errors.popAll();
+    std::vector<std::string> out;
+    while (auto msg = _errors.tryPop()) {
+        out.push_back(msg.value());
+    }
+
+    return out;
 }
 
 std::vector<std::string> ErrorQueues::getSuccesses() {
-    return _successes.popAll();
+    std::vector<std::string> out;
+    while (auto msg = _successes.tryPop()) {
+        out.push_back(msg.value());
+    }
+
+    return out;
 }
 
 std::vector<std::string> ErrorQueues::getNotices() {
-    return _notices.popAll();
+    std::vector<std::string> out;
+    while (auto msg = _notices.tryPop()) {
+        out.push_back(msg.value());
+    }
+
+    return out;
 }

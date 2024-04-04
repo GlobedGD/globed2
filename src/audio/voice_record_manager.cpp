@@ -8,7 +8,7 @@
 #include <net/network_manager.hpp>
 
 VoiceRecordingManager::VoiceRecordingManager() {
-    thread.setName("Audio Record Thread");
+    thread.setStartFunction([] { geode::utils::thread::setName("Record Thread"); });
     thread.setLoopFunction(&VoiceRecordingManager::threadFunc);
     thread.start(this);
 }
