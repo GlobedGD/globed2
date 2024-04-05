@@ -11,7 +11,7 @@ pub struct GlobalPlayerListPacket; // definition intentionally missing
 #[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 21001, tcp = false)]
 pub struct RoomCreatedPacket {
-    pub room_id: u32,
+    pub info: RoomInfo,
 }
 
 #[derive(Packet, Encodable, StaticSize)]
@@ -33,3 +33,9 @@ pub struct LevelListPacket; // definition intentionally missing
 #[derive(Packet, Encodable)]
 #[packet(id = 21006)]
 pub struct LevelPlayerCountPacket; // definition intentionally missing
+
+#[derive(Packet, Encodable, StaticSize, Clone)]
+#[packet(id = 21007)]
+pub struct RoomInfoPacket {
+    pub info: RoomInfo,
+}

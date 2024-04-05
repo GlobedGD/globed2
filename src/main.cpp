@@ -6,6 +6,8 @@
 
 #include <Geode/cocos/platform/IncludeCurl.h>
 
+#include <asp/Log.hpp>
+
 #include <hooks/all.hpp>
 #include <audio/manager.hpp>
 #include <crypto/box.hpp>
@@ -26,6 +28,19 @@ static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAG
     system->init(MAX_AUDIO_CHANNELS, flags, dd);
 }
 #endif // GLOBED_VOICE_SUPPORT
+
+$execute {
+    using namespace asp;
+    asp::setLogFunction([](LogLevel level, auto message) {
+        switch (level) {
+        case LogLevel::Trace: [[fallthrough]];
+        case LogLevel::Debug: log::debug("{}", message); break;
+        case LogLevel::Info: log::info("{}", message); break;
+        case LogLevel::Warn: log::warn("{}", message); break;
+        case LogLevel::Error: log::error("{}", message); break;
+        }
+    });
+}
 
 $on_mod(Loaded) {
 #ifdef GLOBED_VOICE_SUPPORT
@@ -91,17 +106,21 @@ void setupCustomKeybinds() {
         { Keybind::create(KEY_B, Modifier::None) },
         Category::PLAY,
     });
-
 #endif // GLOBED_HAS_KEYBINDS
 }
 
 // just debug printing
 void printDebugInfo() {
     std::string version = Mod::get()->getVersion().toString();
+    unsigned int fv = 0;
+
+#if GLOBED_HAS_FMOD
+    FMODAudioEngine::sharedEngine()->m_system->getVersion(&fv);
+#endif
 
     log::warn("=== Globed {} has been loaded in debug mode ===", version.starts_with('v') ? version : ("v" + version));
     log::info("Platform: {} ({}-endian)", GLOBED_PLATFORM_STRING, GLOBED_LITTLE_ENDIAN ? "little" : "big");
-    log::info("FMOD linkage: {}", GLOBED_HAS_FMOD == 0 ? "false" : "true");
+    log::info("FMOD linkage: {}, version: {:X}", GLOBED_HAS_FMOD == 0 ? "false" : "true", fv);
 #ifdef GLOBED_VOICE_SUPPORT
     log::info("Voice chat support: true (opus version: {})", GlobedAudioManager::getOpusVersion());
 #else
@@ -114,3 +133,9 @@ void printDebugInfo() {
 
     log::info("cURL version: {}, {}", curl_version(), (cvi->features & CURL_VERSION_SSL) ? "with SSL" : "without SSL (!)");
 }
+
+#if defined(_DEBUG) && defined(GEODE_IS_WINDOWS)
+void operator delete(void* block) noexcept {
+    HeapFree(GetProcessHeap(), 0, block);
+}
+#endif

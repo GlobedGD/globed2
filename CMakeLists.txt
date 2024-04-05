@@ -8,9 +8,15 @@ project(globed2 VERSION 1.0.0)
 
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
-# Debug/Release options
+# Check for debug build
 option(ENABLE_DEBUG "Debug mode" OFF)
-if (ENABLE_DEBUG OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}asdf" STREQUAL "asdf" OR ENABLE_DEBUG)
+    set(GLOBED_IS_DEBUG ON)
+endif()
+
+# Debug/Release options
+if (GLOBED_IS_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
     add_compile_definitions(GEODE_DEBUG=1)
 else()
@@ -46,7 +52,7 @@ file(GLOB_RECURSE SOURCES
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
-# Windows - Include winsock
+# Windows - do stuff
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
     if (MSVC)
@@ -55,6 +61,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         target_compile_options(${PROJECT_NAME} PRIVATE "-include WinSock2.h")
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
+
+    if (GLOBED_IS_DEBUG)
+        message(STATUS "Compiling in debug, disabling iterator debugging")
+        add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
+    endif()
+
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
 # i am crying so hard right now
@@ -74,7 +87,7 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # our favorite libraries
-CPMAddPackage("gh:dankmeme01/uibuilder#main")
+CPMAddPackage("gh:dankmeme01/uibuilder#4d9468b")
 CPMAddPackage("gh:xiph/opus#main")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 CPMAddPackage(
@@ -84,6 +97,7 @@ CPMAddPackage(
     URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
+CPMAddPackage("gh:dankmeme01/asp#e657c64")
 
 if (GLOBED_NATIVE_ARCH)
     # Apply native architecture
@@ -104,6 +118,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
 endif()
 
-target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium Boost::describe)
+target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium Boost::describe asp)
 
 setup_geode_mod(${PROJECT_NAME})

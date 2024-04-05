@@ -5,7 +5,7 @@
 #include <Geode/utils/web.hpp>
 
 #include <crypto/secret_box.hpp>
-#include <util/sync.hpp>
+#include <asp/sync.hpp>
 
 // all methods of GlobedAccountManager will store/load values with keys that are
 // user-specific and central-server-specific, so that switching server or accounts doesn't reset authkeys.
@@ -24,9 +24,9 @@ public:
         std::string precomputedHash;
     };
 
-    util::sync::AtomicBool initialized = false;
-    util::sync::WrappingMutex<GDData> gdData;
-    util::sync::WrappingMutex<std::string> authToken;
+    asp::AtomicBool initialized = false;
+    asp::Mutex<GDData> gdData;
+    asp::Mutex<std::string> authToken;
 
     // This method can be called multiple times, and in fact it is even advised that you do so often.
     // It must be called at least once before calling any other method or they will throw an exception.

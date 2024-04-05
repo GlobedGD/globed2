@@ -11,6 +11,7 @@
 #include <managers/friend_list.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/settings.hpp>
+#include <managers/room.hpp>
 #include <data/packets/all.hpp>
 #include <hooks/game_manager.hpp>
 #include <util/math.hpp>
@@ -27,18 +28,11 @@ constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
 constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 
-float adjustLerpTimeDelta(float dt) {
-    // TODO: fix vsync
-    auto* dir = CCDirector::get();
-    return dir->getAnimationInterval();
-
-    // uncomment and watch the world blow up
-    // return dt;
-}
-
 /* Hooks */
 
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
+    this->setupPreInit(level);
+
     if (!PlayLayer::init(level, p1, p2)) return false;
 
     this->setupBare();
@@ -52,8 +46,6 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     this->setupCustomKeybinds();
 
     this->setupMisc();
-
-    // m_fields->playerCollisionEnabled = true;
 
     auto& nm = NetworkManager::get();
 
@@ -155,6 +147,35 @@ void GlobedPlayLayer::onEnterHook() {
 
 /* Setup */
 
+// Runs before PlayLayer::init
+void GlobedPlayLayer::setupPreInit(GJGameLevel* level) {
+    auto& nm = NetworkManager::get();
+
+    bool isEditor = level->m_levelType == GJLevelType::Editor;
+    m_fields->globedReady = nm.established() && !isEditor;
+
+    if (m_fields->globedReady) {
+        // room settings
+        m_fields->roomSettings = RoomManager::get().getInfo().settings;
+        log::debug("collision: {}", m_fields->roomSettings.collision);
+
+        // collision only works in platformer, so force platformer :D
+        if (m_fields->roomSettings.collision && !level->isPlatformer()) {
+            m_fields->roomSettings.collision = false;
+
+            if (util::time::isAprilFools()) {
+                m_fields->forcedPlatformer = true;
+                m_fields->roomSettings.collision = true;
+#ifdef GEODE_IS_ANDROID
+                if (this->m_uiLayer) {
+                    this->m_uiLayer->togglePlatformerMode(true);
+                }
+#endif
+            }
+        }
+    }
+}
+
 // runs even if not connected to a server or in an editor level
 void GlobedPlayLayer::setupBare() {
     GlobedSettings& settings = GlobedSettings::get();
@@ -179,7 +200,6 @@ void GlobedPlayLayer::setupBare() {
 
     // if not authenticated, do nothing
     bool isEditor = m_level->m_levelType == GJLevelType::Editor;
-    m_fields->globedReady = nm.established() && !isEditor;
 
     if (!nm.established()) {
         m_fields->overlay->updateWithDisconnected();
@@ -405,6 +425,12 @@ void GlobedPlayLayer::setupMisc() {
     auto& flm = FriendListManager::get();
     flm.maybeLoad();
 
+    // toggle safe mode if collision is enabled
+    if (m_fields->roomSettings.collision) {
+        m_fields->progressForciblyDisabled = true;
+        this->toggleSafeMode(true);
+    }
+
     // vmt hook
 #ifdef GEODE_IS_WINDOWS
     static auto patch = [&]() -> Patch* {
@@ -591,7 +617,11 @@ void GlobedPlayLayer::selPeriodicalUpdate(float) {
 }
 
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
-void GlobedPlayLayer::selUpdate(float rawdt) {
+void GlobedPlayLayer::selUpdate(float timescaledDt) {
+    // timescale silently changing dt isn't very good when doing network interpolation >_>
+    // since timeCounter needs to agree with everyone else on how long a second is!
+    float dt = timescaledDt / CCScheduler::get()->getTimeScale();
+
     auto self = static_cast<GlobedPlayLayer*>(PlayLayer::get());
 
     if (!self) return;
@@ -611,7 +641,6 @@ void GlobedPlayLayer::selUpdate(float rawdt) {
         static_cast<uint32_t>(self->m_level->isPlatformer() ? self->m_level->m_bestTime : self->m_level->m_normalPercent)
     );
 
-    float dt = adjustLerpTimeDelta(rawdt);
     self->m_fields->timeCounter += dt;
 
     self->m_fields->interpolator->tick(dt);
@@ -909,11 +938,15 @@ bool GlobedPlayLayer::isPaused(bool checkCurrent) {
 }
 
 bool GlobedPlayLayer::isSafeMode() {
-    return static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress;
+    return m_fields->shouldStopProgress;
 }
 
 void GlobedPlayLayer::toggleSafeMode(bool enabled) {
-    static_cast<HookedGJGameLevel*>(m_level)->m_fields->shouldStopProgress = enabled;
+    if (m_fields->progressForciblyDisabled) {
+        enabled = true;
+    }
+
+    m_fields->shouldStopProgress = enabled;
 }
 
 void GlobedPlayLayer::onQuitActions() {

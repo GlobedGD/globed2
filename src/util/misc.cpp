@@ -1,7 +1,7 @@
 #include "misc.hpp"
 #include <data/types/game.hpp>
 
-#include <util/sync.hpp>
+#include <asp/sync.hpp>
 #include <util/simd.hpp>
 #include <util/lowlevel.hpp>
 
@@ -56,7 +56,7 @@ namespace util::misc {
     }
 
     void callOnceSync(const char* key, std::function<void()> func) {
-        static util::sync::WrappingMutex<void> mtx;
+        static asp::Mutex<> mtx;
 
         auto guard = mtx.lock();
         callOnce(key, func);

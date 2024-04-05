@@ -112,9 +112,9 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
             })
             .anchorPoint(1.0f, 0.5f)
             .pos(34.f, 0.f)
+            .scaleMult(1.1f)
             .parent(btnMenu)
             .store(btnConnect);
-        btnConnect->m_scaleMultiplier = 1.1f;
     }
 
 }

@@ -196,6 +196,7 @@ impl GameServerThread {
             .state
             .room_manager
             .get_global()
+            .manager
             .create_player(packet.account_id);
 
         let tps = self.game_server.bridge.central_conf.lock().tps;

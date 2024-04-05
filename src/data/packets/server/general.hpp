@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
 #include <data/types/misc.hpp>
+#include <data/types/room.hpp>
 
 class GlobalPlayerListPacket : public Packet {
     GLOBED_PACKET(21000, false, false)
@@ -18,10 +19,10 @@ class RoomCreatedPacket : public Packet {
 
     RoomCreatedPacket() {}
 
-    uint32_t roomId;
+    RoomInfo info;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(RoomCreatedPacket, (roomId));
+GLOBED_SERIALIZABLE_STRUCT(RoomCreatedPacket, (info));
 
 class RoomJoinedPacket : public Packet {
     GLOBED_PACKET(21002, false, false)
@@ -44,11 +45,11 @@ class RoomPlayerListPacket : public Packet {
 
     RoomPlayerListPacket() {}
 
-    uint32_t roomId;
-    std::vector<PlayerRoomPreviewAccountData> data;
+    RoomInfo info;
+    std::vector<PlayerRoomPreviewAccountData> players;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(RoomPlayerListPacket, (roomId, data));
+GLOBED_SERIALIZABLE_STRUCT(RoomPlayerListPacket, (info, players));
 
 class LevelListPacket : public Packet {
     GLOBED_PACKET(21005, false, false)
@@ -69,3 +70,13 @@ class LevelPlayerCountPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LevelPlayerCountPacket, (levels));
+
+class RoomInfoPacket : public Packet {
+    GLOBED_PACKET(21007, false, false)
+
+    RoomInfoPacket() {}
+
+    RoomInfo info;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(RoomInfoPacket, (info));

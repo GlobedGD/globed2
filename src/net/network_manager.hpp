@@ -1,12 +1,14 @@
 #pragma once
 #include "game_socket.hpp"
 
+#include <asp/sync.hpp>
+#include <asp/thread.hpp>
+
 #include <defs/minimal_geode.hpp>
 #include <managers/game_server.hpp>
-#include <util/sync.hpp>
 #include <util/time.hpp>
 
-using namespace util::sync;
+using namespace asp::sync;
 
 enum class NetworkThreadTask {
     PingServers
@@ -33,7 +35,7 @@ public:
     template <HasPacketID Pty>
     using PacketCallbackSpecific = std::function<void(std::shared_ptr<Pty>)>;
 
-    static constexpr uint16_t PROTOCOL_VERSION = 4;
+    static constexpr uint16_t PROTOCOL_VERSION = 5;
     static constexpr util::data::byte SERVER_MAGIC[10] = {0xda, 0xee, 'g', 'l', 'o', 'b', 'e', 'd', 0xda, 0xee};
 
     AtomicU32 connectedTps; // if `authenticated() == true`, this is the TPS of the current server, otherwise undefined.
@@ -139,19 +141,19 @@ private:
 
     GameSocket gameSocket;
 
-    SmartMessageQueue<std::shared_ptr<Packet>> packetQueue;
-    SmartMessageQueue<NetworkThreadTask> taskQueue;
+    asp::Channel<std::shared_ptr<Packet>> packetQueue;
+    asp::Channel<NetworkThreadTask> taskQueue;
 
-    WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> listeners;
-    WrappingMutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
+    asp::Mutex<std::unordered_map<packetid_t, PacketCallback>> listeners;
+    asp::Mutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
 
     // threads
 
     void threadMainFunc();
     void threadRecvFunc();
 
-    SmartThread<NetworkManager*> threadMain;
-    SmartThread<NetworkManager*> threadRecv;
+    asp::Thread<NetworkManager*> threadMain;
+    asp::Thread<NetworkManager*> threadRecv;
 
     // misc
 
@@ -171,12 +173,14 @@ private:
     util::time::time_point lastTcpKeepalive;
     util::time::time_point lastReceivedPacket;
 
+    void setupBuiltinListeners();
+
     void handlePingResponse(std::shared_ptr<Packet> packet);
     void maybeSendKeepalive();
     void maybeDisconnectIfDead();
 
     // Builtin listeners have priority above the others.
-    WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;
+    asp::Mutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;
 
     void addBuiltinListener(packetid_t id, PacketCallback&& callback);
 

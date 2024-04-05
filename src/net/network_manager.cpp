@@ -9,6 +9,7 @@
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/central_server.hpp>
+#include <managers/room.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
 #include <util/net.hpp>
 #include <util/rng.hpp>
@@ -21,135 +22,16 @@ using namespace util::data;
 NetworkManager::NetworkManager() {
     util::net::initialize();
 
-    // add builtin listeners for connection related packets
-
-    addBuiltinListener<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
-        log::debug("handshake successful, logging in");
-        auto key = packet->data.key;
-
-        // this does a bunch of stuff so do it on the main thread
-        Loader::get()->queueInMainThread([this, key = key] {
-            gameSocket.cryptoBox->setPeerKey(key.data());
-            _handshaken = true;
-            // and lets try to login!
-            auto& am = GlobedAccountManager::get();
-            std::string authtoken;
-
-            if (!_connectingStandalone) {
-                authtoken = *am.authToken.lock();
-            }
-
-            auto& pcm = ProfileCacheManager::get();
-            pcm.setOwnDataAuto();
-            pcm.pendingChanges = false;
-
-            auto& settings = GlobedSettings::get();
-
-            if (settings.globed.fragmentationLimit == 0) {
-                settings.globed.fragmentationLimit = 65000;
-            }
-
-            auto gddata = am.gdData.lock();
-            auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
-            this->send(pkt);
-        });
-    });
-
-    addBuiltinListener<KeepaliveResponsePacket>([](auto packet) {
-        GameServerManager::get().finishKeepalive(packet->playerCount);
-    });
-
-    addBuiltinListener<KeepaliveTCPResponsePacket>([](auto) {});
-
-    addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
-        this->disconnectWithMessage(packet->message);
-    });
-
-    addBuiltinListener<LoggedInPacket>([this](auto packet) {
-        log::info("Successfully logged into the server!");
-        connectedTps = packet->tps;
-        _loggedin = true;
-
-        // ProfileCacheManager is not thread-safe, so delay it
-        Loader::get()->queueInMainThread([specialUserData = packet->specialUserData] {
-            auto& pcm = ProfileCacheManager::get();
-            pcm.setOwnSpecialData(specialUserData);
-        });
-
-        // claim the tcp thread to allow udp packets through
-        this->send(ClaimThreadPacket::create(this->secretKey));
-
-        // try to login as an admin if we can
-        auto& am = GlobedAccountManager::get();
-        if (am.hasAdminPassword()) {
-            auto password = am.getAdminPassword();
-            if (password.has_value()) {
-                this->send(AdminAuthPacket::create(password.value()));
-            }
-        }
-    });
-
-    addBuiltinListener<LoginFailedPacket>([this](auto packet) {
-        ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> The server rejected the login attempt.\n\nReason: <cy>{}</c>", packet->message));
-        GlobedAccountManager::get().authToken.lock()->clear();
-        this->disconnect(true);
-    });
-
-    addBuiltinListener<ServerNoticePacket>([](auto packet) {
-        ErrorQueues::get().notice(packet->message);
-    });
-
-    addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
-        log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, PROTOCOL_VERSION);
-
-        if (packet->serverProtocol < PROTOCOL_VERSION) {
-            std::string message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
-            ErrorQueues::get().error(message);
-        } else {
-            Loader::get()->queueInMainThread([] {
-                std::string message = "Your Globed version is <cr>outdated</c>, please <cg>update</c> Globed in order to connect. If the update doesn't appear, <cy>restart your game</c>.";
-                geode::createQuickPopup("Globed Error", message, "Cancel", "Update", [](FLAlertLayer*, bool update) {
-                    if (!update) return;
-
-                    geode::openModsList();
-                });
-            });
-        }
-
-        this->disconnect(true);
-    });
-
-    addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
-        _adminAuthorized = true;
-        _adminRole = packet->role;
-        ErrorQueues::get().success("Successfully authorized");
-    });
-
-    addBuiltinListener<AdminAuthFailedPacket>([this](auto packet) {
-        ErrorQueues::get().warn("Login failed");
-
-        Loader::get()->queueInMainThread([] {
-            auto& am = GlobedAccountManager::get();
-            am.clearAdminPassword();
-        });
-    });
-
-    addBuiltinListener<AdminSuccessMessagePacket>([](auto packet) {
-        ErrorQueues::get().success(packet->message);
-    });
-
-    addBuiltinListener<AdminErrorPacket>([](auto packet) {
-        ErrorQueues::get().warn(packet->message);
-    });
+    this->setupBuiltinListeners();
 
     // boot up the threads
 
     threadMain.setLoopFunction(&NetworkManager::threadMainFunc);
-    threadMain.setName("Network (out) Thread");
+    threadMain.setStartFunction([] { geode::utils::thread::setName("Network (out) Thread"); });
     threadMain.start(this);
 
     threadRecv.setLoopFunction(&NetworkManager::threadRecvFunc);
-    threadRecv.setName("Network (in) Thread");
+    threadRecv.setStartFunction([] { geode::utils::thread::setName("Network (in) Thread"); });
     threadRecv.start(this);
 }
 
@@ -226,6 +108,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     _connectingStandalone = false;
     _deferredConnect = false;
     this->clearAdminStatus();
+    RoomManager::get().setGlobal();
 
     if (!this->connected()) {
         return;
@@ -301,36 +184,11 @@ void NetworkManager::threadMainFunc() {
 
     this->maybeSendKeepalive();
 
-    if (!packetQueue.waitForMessages(util::time::millis(200))) {
-        // check for tasks
-        if (taskQueue.empty()) return;
-
-        for (const auto& task : taskQueue.popAll()) {
-            if (task == NetworkThreadTask::PingServers) {
-                auto& sm = GameServerManager::get();
-                auto activeServer = sm.getActiveId();
-
-                for (auto& [serverId, server] : sm.getAllServers()) {
-                    if (serverId == activeServer) continue;
-
-                    auto pingId = sm.startPing(serverId);
-                    auto result = gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
-
-                    if (result.isErr()) {
-                        ErrorQueues::get().warn(result.unwrapErr());
-                    }
-                }
-            }
-        }
-    }
-
-    auto messages = packetQueue.popAll();
-
-    for (auto packet : messages) {
+    while (auto packet = packetQueue.popTimeout(util::time::millis(200))) {
         try {
-            auto result = gameSocket.sendPacket(packet);
+            auto result = gameSocket.sendPacket(packet.value());
             if (!result) {
-                log::debug("failed to send packet {}: {}", packet->getPacketId(), result.unwrapErr());
+                log::debug("failed to send packet {}: {}", packet.value()->getPacketId(), result.unwrapErr());
                 this->disconnectWithMessage(result.unwrapErr());
                 return;
             }
@@ -340,6 +198,27 @@ void NetworkManager::threadMainFunc() {
             this->disconnect(true, false);
         }
     }
+
+    while (auto task_ = taskQueue.tryPop()) {
+        auto task = task_.value();
+        if (task == NetworkThreadTask::PingServers) {
+            auto& sm = GameServerManager::get();
+            auto activeServer = sm.getActiveId();
+
+            for (auto& [serverId, server] : sm.getAllServers()) {
+                if (serverId == activeServer) continue;
+
+                auto pingId = sm.startPing(serverId);
+                auto result = gameSocket.sendPacketTo(PingPacket::create(pingId), server.address.ip, server.address.port);
+
+                if (result.isErr()) {
+                    ErrorQueues::get().warn(result.unwrapErr());
+                }
+            }
+        }
+    }
+
+    std::this_thread::yield();
 }
 
 void NetworkManager::threadRecvFunc() {
@@ -413,6 +292,137 @@ void NetworkManager::threadRecvFunc() {
             }
         }
     }
+}
+
+void NetworkManager::setupBuiltinListeners() {
+    addBuiltinListener<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
+        log::debug("handshake successful, logging in");
+        auto key = packet->data.key;
+
+        // this does a bunch of stuff so do it on the main thread
+        Loader::get()->queueInMainThread([this, key = key] {
+            gameSocket.cryptoBox->setPeerKey(key.data());
+            _handshaken = true;
+            // and lets try to login!
+            auto& am = GlobedAccountManager::get();
+            std::string authtoken;
+
+            if (!_connectingStandalone) {
+                authtoken = *am.authToken.lock();
+            }
+
+            auto& pcm = ProfileCacheManager::get();
+            pcm.setOwnDataAuto();
+            pcm.pendingChanges = false;
+
+            auto& settings = GlobedSettings::get();
+
+            if (settings.globed.fragmentationLimit == 0) {
+                settings.globed.fragmentationLimit = 65000;
+            }
+
+            auto gddata = am.gdData.lock();
+            auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
+            this->send(pkt);
+        });
+    });
+
+    addBuiltinListener<KeepaliveResponsePacket>([](auto packet) {
+        GameServerManager::get().finishKeepalive(packet->playerCount);
+    });
+
+    addBuiltinListener<KeepaliveTCPResponsePacket>([](auto) {});
+
+    addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
+        this->disconnectWithMessage(packet->message);
+    });
+
+    addBuiltinListener<LoggedInPacket>([this](auto packet) {
+        log::info("Successfully logged into the server!");
+        connectedTps = packet->tps;
+        _loggedin = true;
+
+        // these are not thread-safe, so delay it
+        Loader::get()->queueInMainThread([specialUserData = packet->specialUserData] {
+            auto& pcm = ProfileCacheManager::get();
+            pcm.setOwnSpecialData(specialUserData);
+
+            RoomManager::get().setGlobal();
+        });
+
+        // claim the tcp thread to allow udp packets through
+        this->send(ClaimThreadPacket::create(this->secretKey));
+
+        // try to login as an admin if we can
+        auto& am = GlobedAccountManager::get();
+        if (am.hasAdminPassword()) {
+            auto password = am.getAdminPassword();
+            if (password.has_value()) {
+                this->send(AdminAuthPacket::create(password.value()));
+            }
+        }
+    });
+
+    addBuiltinListener<LoginFailedPacket>([this](auto packet) {
+        ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> The server rejected the login attempt.\n\nReason: <cy>{}</c>", packet->message));
+        GlobedAccountManager::get().authToken.lock()->clear();
+        this->disconnect(true);
+    });
+
+    addBuiltinListener<ServerNoticePacket>([](auto packet) {
+        ErrorQueues::get().notice(packet->message);
+    });
+
+    addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
+        log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, PROTOCOL_VERSION);
+
+        if (packet->serverProtocol < PROTOCOL_VERSION) {
+            std::string message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
+            ErrorQueues::get().error(message);
+        } else {
+            Loader::get()->queueInMainThread([] {
+                std::string message = "Your Globed version is <cr>outdated</c>, please <cg>update</c> Globed in order to connect. If the update doesn't appear, <cy>restart your game</c>.";
+                geode::createQuickPopup("Globed Error", message, "Cancel", "Update", [](FLAlertLayer*, bool update) {
+                    if (!update) return;
+
+                    geode::openModsList();
+                });
+            });
+        }
+
+        this->disconnect(true);
+    });
+
+    addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
+        _adminAuthorized = true;
+        _adminRole = packet->role;
+        ErrorQueues::get().success("Successfully authorized");
+    });
+
+    addBuiltinListener<AdminAuthFailedPacket>([this](auto packet) {
+        ErrorQueues::get().warn("Login failed");
+
+        Loader::get()->queueInMainThread([] {
+            auto& am = GlobedAccountManager::get();
+            am.clearAdminPassword();
+        });
+    });
+
+    addBuiltinListener<AdminSuccessMessagePacket>([](auto packet) {
+        ErrorQueues::get().success(packet->message);
+    });
+
+    addBuiltinListener<AdminErrorPacket>([](auto packet) {
+        ErrorQueues::get().warn(packet->message);
+    });
+
+    addBuiltinListener<RoomInfoPacket>([](auto packet) {
+        ErrorQueues::get().success("Room configuration updated");
+
+        Loader::get()->queueInMainThread([packet = std::move(packet)] {
+            RoomManager::get().setInfo(packet->info);
+        });
+    });
 }
 
 void NetworkManager::handlePingResponse(std::shared_ptr<Packet> packet) {

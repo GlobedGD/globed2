@@ -3,12 +3,13 @@
 
 #include <Geode/modify/PauseLayer.hpp>
 
+// Defines globed-related PauseLayer hooks
 class $modify(GlobedPauseLayer, PauseLayer) {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PauseLayer::keyDown", -999999999);
     }
 
-    bool hasPopup(bool allPopups);
+    bool hasPopup();
 
     $override
     void customSetup();
@@ -40,4 +41,12 @@ class $modify(GlobedPauseLayer, PauseLayer) {
 
     $override
     void onPracticeMode(cocos2d::CCObject*);
+};
+
+// Bugfix for a vanilla bug
+class $modify(PauseLayerBugfix, PauseLayer) {
+    void customSetup();
+
+    // vmt hook
+    void onExitHook();
 };

@@ -5,6 +5,7 @@
 #include <hooks/game_manager.hpp>
 #include <util/format.hpp>
 #include <util/debug.hpp>
+#include <asp/thread.hpp>
 
 using namespace geode::prelude;
 
@@ -119,19 +120,19 @@ namespace util::cocos {
 
     void loadAssetsParallel(const std::vector<std::string>& images) {
 #ifndef GEODE_IS_MACOS
-        static sync::ThreadPool threadPool(THREAD_COUNT);
+        static asp::ThreadPool threadPool(THREAD_COUNT);
 #else
         // macos is stupid so we leak the pool.
         // otherwise we get an epic SIGABRT in std::thread::~thread during threadpool destruction
         // TODO: might be our fault though
-        static sync::ThreadPool* threadPoolPtr = new sync::ThreadPool(THREAD_COUNT);
+        static asp::ThreadPool* threadPoolPtr = new asp::ThreadPool(THREAD_COUNT);
 
         auto& threadPool = *threadPoolPtr;
 #endif
 
         log::debug("preload: preparing {} textures", images.size());
 
-        static sync::WrappingMutex<void> cocosWorkMutex;
+        static asp::Mutex<> cocosWorkMutex;
 
         auto textureCache = CCTextureCache::sharedTextureCache();
         auto sfCache  = CCSpriteFrameCache::sharedSpriteFrameCache();
@@ -144,7 +145,7 @@ namespace util::cocos {
             CCTexture2D* texture = nullptr;
         };
 
-        sync::WrappingMutex<std::vector<ImageLoadState>> imgStates;
+        asp::Mutex<std::vector<ImageLoadState>> imgStates;
 
         auto _imguard = imgStates.lock();
         for (const auto& imgkey : images) {
@@ -170,7 +171,7 @@ namespace util::cocos {
         size_t imgCount = _imguard->size();
         _imguard.unlock();
 
-        sync::SmartMessageQueue<std::pair<size_t, CCImage*>> textureInitRequests;
+        asp::Channel<std::pair<size_t, CCImage*>> textureInitRequests;
 
         for (size_t i = 0; i < imgCount; i++) {
             threadPool.pushTask([i, &fileUtils, &textureInitRequests, &imgStates] {

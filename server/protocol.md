@@ -33,6 +33,7 @@ General
 * 11005 - RequestRoomPlayerListPacket - request list of all people in the given room (response 21004)
 * 11006 - RequestLevelListPacket - request list of all levels people are playing right now (response 21005)
 * 11007 - RequestPlayerCountPacket - request amount of people on up to 128 different levels (response 21006)
+* 11008 - UpdateRoomSettingsPacket - update the settings of a room
 
 Game related
 
@@ -76,6 +77,7 @@ General
 * 21004 - RoomPlayerListPacket - list of people in the room
 * 21005 - LevelListPacket - list of all levels in the room
 * 21006 - LevelPlayerCountPacket - amount of players on certain requested levels
+* 21007 - RoomInfoPacket - settings updated and stuff
 
 Game related
 

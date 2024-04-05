@@ -396,7 +396,7 @@ impl GameServer {
         room_id: u32,
     ) {
         let threads = self.state.room_manager.with_any(room_id, |pm| {
-            let players = pm.get_level(level_id);
+            let players = pm.manager.get_level(level_id);
 
             if let Some(players) = players {
                 self.threads
@@ -412,6 +412,24 @@ impl GameServer {
                 Vec::new()
             }
         });
+
+        for thread in threads {
+            thread.push_new_message(msg.clone()).await;
+        }
+    }
+
+    /// broadcast a message to all people in a room
+    pub async fn broadcast_room_message(&'static self, msg: &ServerThreadMessage, origin_id: i32, room_id: u32) {
+        let threads: Vec<_> = self
+            .threads
+            .lock()
+            .values()
+            .filter(|thread| {
+                let account_id = thread.account_id.load(Ordering::Relaxed);
+                thread.room_id.load(Ordering::Relaxed) == room_id && account_id != 0 && account_id != origin_id
+            })
+            .cloned()
+            .collect();
 
         for thread in threads {
             thread.push_new_message(msg.clone()).await;
@@ -496,18 +514,7 @@ impl GameServer {
         self.state.player_count.fetch_sub(1, Ordering::Relaxed);
 
         // remove from the player manager and the level if they are on one
-
-        self.state.room_manager.with_any(room_id, |pm| {
-            pm.remove_player(account_id);
-
-            if level_id != 0 {
-                pm.remove_from_level(level_id, account_id);
-            }
-        });
-
-        if room_id != 0 {
-            self.state.room_manager.maybe_remove_room(room_id);
-        }
+        self.state.room_manager.remove_with_any(room_id, account_id, level_id);
     }
 
     fn print_server_status(&'static self) {
@@ -521,7 +528,7 @@ impl GameServer {
         info!("Amount of rooms: {}", self.state.room_manager.get_rooms().len());
         info!(
             "People in the global room: {}",
-            self.state.room_manager.get_global().get_total_player_count()
+            self.state.room_manager.get_global().manager.get_total_player_count()
         );
         info!("-------------------------------------------");
     }

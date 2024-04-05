@@ -93,11 +93,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
                 }
             })
             .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
+            .scaleMult(1.1f)
             .store(playButton)
             .intoNewParent(CCMenu::create())
             .pos(0.f, 0.f)
             .parent(this);
-        playButton->m_scaleMultiplier = 1.1f;
     }
 
     return true;

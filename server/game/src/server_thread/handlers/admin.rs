@@ -221,7 +221,7 @@ impl GameServerThread {
                 let player_ids = self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
                     let mut player_ids = Vec::with_capacity(128);
                     if packet.level_id == 0 {
-                        pm.for_each_player(
+                        pm.manager.for_each_player(
                             |player, _, player_ids| {
                                 player_ids.push(player.account_id);
                                 true
@@ -229,7 +229,7 @@ impl GameServerThread {
                             &mut player_ids,
                         );
                     } else {
-                        pm.for_each_player_on_level(
+                        pm.manager.for_each_player_on_level(
                             packet.level_id,
                             |player, _, player_ids| {
                                 player_ids.push(player.account_id);

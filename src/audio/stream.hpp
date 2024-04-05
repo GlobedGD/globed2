@@ -8,7 +8,7 @@
 #include "decoder.hpp"
 #include "volume_estimator.hpp"
 
-#include <util/sync.hpp>
+#include <asp/sync.hpp>
 #include <util/time.hpp>
 
 class AudioStream {
@@ -42,14 +42,14 @@ public:
 
     util::time::time_point getLastPlaybackTime();
 
-    util::sync::AtomicBool starving = false; // true if there aren't enough samples in the queue
+    asp::AtomicBool starving = false; // true if there aren't enough samples in the queue
 
 private:
     FMOD::Sound* sound = nullptr;
     FMOD::Channel* channel = nullptr;
-    util::sync::WrappingMutex<AudioSampleQueue> queue;
+    asp::Mutex<AudioSampleQueue> queue;
     AudioDecoder decoder;
-    util::sync::WrappingMutex<VolumeEstimator> estimator;
+    asp::Mutex<VolumeEstimator> estimator;
     float volume = 0.f;
     util::time::time_point lastPlaybackTime;
 };

@@ -1,3 +1,13 @@
+## v1.3.8
+
+* Fix a missing texture crash when asset preloading is disabled
+
+## v1.3.7
+
+* Add a mysterious button to the room menu
+* Fix interpolation issues related to vsync
+* Fix being unable to restart a level with the Confirm Restart feature in BetterPause (and other bugs similar to this)
+
 ## v1.3.6
 
 * Fix crash on startup on Android

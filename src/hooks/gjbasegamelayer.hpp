@@ -9,4 +9,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
 
     $override
     int checkCollisions(PlayerObject* player, float dt, bool p2);
+
+    $override
+    void loadLevelSettings();
 };

@@ -141,3 +141,16 @@ void HookedMenuLayer::maybeUpdateButton(float) {
         this->updateGlobedButton();
     }
 }
+
+#if 0
+#include <util/debug.hpp>
+void HookedMenuLayer::onMoreGames(cocos2d::CCObject* s) {
+    util::debug::Benchmarker bb;
+    bb.runAndLog([&] {
+        for (size_t i = 0; i < 1 * 1024 * 1024; i++) {
+            auto x = typeinfo_cast<CCMenuItemSpriteExtra*>(s);
+            if (!x) throw "wow";
+        }
+    }, "typeinfo");
+}
+#endif

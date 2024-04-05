@@ -1,5 +1,6 @@
 #include "udp_socket.hpp"
 
+#include <defs/assert.hpp>
 #include <util/net.hpp>
 
 UdpSocket::UdpSocket() : socket_(0) {

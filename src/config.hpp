@@ -17,7 +17,7 @@
 
 // for source location, unrecommended because may break things
 # define GLOBED_FORCE_CONSTEVAL 1
-# define GLOBED_DEBUG_INTERPOLATION // dump all interpolation stuff
+// # define GLOBED_DEBUG_INTERPOLATION // dump all interpolation stuff
 // # define GLOBED_DEBUG_PACKETS // log all incoming and outgoing packets & bandwidth
 // # define GLOBED_DEBUG_PACKETS_PRINT // also print each packet
 

@@ -6,7 +6,7 @@
 #include <data/packets/packet.hpp>
 #include <util/collections.hpp>
 #include <util/time.hpp>
-#include <util/sync.hpp>
+#include <asp/sync.hpp>
 #include <util/misc.hpp>
 
 namespace util::debug {

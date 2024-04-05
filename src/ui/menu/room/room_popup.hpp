@@ -19,8 +19,9 @@ protected:
 
     LoadingCircle* loadingCircle = nullptr;
     GJCommentListLayer* listLayer = nullptr;
-    CCMenuItemSpriteExtra* clearSearchButton = nullptr;
-    CCNode* roomIdButton = nullptr;
+    cocos2d::CCMenu* buttonMenu;
+    Ref<CCMenuItemSpriteExtra> clearSearchButton, secretButton;
+    cocos2d::CCNode* roomIdButton = nullptr;
 
     cocos2d::CCMenu* roomBtnMenu = nullptr;
     bool isWaiting = false;

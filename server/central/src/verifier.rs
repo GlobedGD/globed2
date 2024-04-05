@@ -242,8 +242,8 @@ impl AccountVerifier {
 
         let mut response = match result {
             Err(err) => {
-                warn!("Failed to make a request to boomlings: {}", err.to_string());
-                bail!("boomlings error: {err}");
+                warn!("Failed to make a request to GD servers: {}", err.to_string());
+                bail!("server error: {err}");
             }
             Ok(x) => x,
         }
@@ -252,6 +252,14 @@ impl AccountVerifier {
 
         if response == "-1" {
             bail!("boomlings returned -1!");
+        }
+
+        if response.starts_with("error code:") {
+            if response == "error code: 1006" {
+                error!("received error 1006, your IP address is likely blocked by the GD servers.");
+            }
+
+            bail!("server error: {response}");
         }
 
         let mut msg_cache = self.message_cache.lock();

@@ -2,6 +2,7 @@
 
 #include <hooks/play_layer.hpp>
 #include <ui/game/userlist/userlist.hpp>
+#include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
 
@@ -47,35 +48,64 @@ void GlobedPauseLayer::goEdit() {
     PauseLayer::goEdit();
 }
 
-bool GlobedPauseLayer::hasPopup(bool allPopups) {
+bool GlobedPauseLayer::hasPopup() {
     if (!this->getParent()) return false;
 
-    if (allPopups) {
-        return getChildOfType<FLAlertLayer>(this->getParent(), 0) != nullptr;
-    } else {
-        return getChildOfType<GlobedUserListPopup>(this->getParent(), 0) != nullptr;
-    }
+    return getChildOfType<GlobedUserListPopup>(this->getParent(), 0) != nullptr;
 }
 
 #define REPLACE(method) \
     void GlobedPauseLayer::method(CCObject* s) {\
-        if (!this->hasPopup(false)) { \
-            PauseLayer::method(s); \
-        } \
-    }
-
-// yet another robtop bug zz
-#define REPLACE_CHECKED(method) \
-    void GlobedPauseLayer::method(CCObject* s) {\
-        if (!this->hasPopup(true)) { \
+        if (!this->hasPopup()) { \
             PauseLayer::method(s); \
         } \
     }
 
 REPLACE(onQuit);
-REPLACE_CHECKED(onResume);
-REPLACE_CHECKED(onRestart);
+REPLACE(onResume);
+REPLACE(onRestart);
 REPLACE(onRestartFull);
-REPLACE_CHECKED(onEdit);
-REPLACE_CHECKED(onNormalMode);
-REPLACE_CHECKED(onPracticeMode);
+REPLACE(onEdit);
+REPLACE(onNormalMode);
+REPLACE(onPracticeMode);
+
+/* bugfix */
+
+void PauseLayerBugfix::customSetup() {
+    PauseLayer::customSetup();
+
+    // vmt hook
+#ifdef GEODE_IS_WINDOWS
+    static auto patch = [&]() -> Patch* {
+        auto vtableidx = 87;
+        auto p = util::lowlevel::vmtHook(&PauseLayerBugfix::onExitHook, this, vtableidx);
+        if (p.isErr()) {
+            log::warn("vmt hook failed: {}", p.unwrapErr());
+            return nullptr;
+        } else {
+            return p.unwrap();
+        }
+    }();
+
+    if (patch && !patch->isEnabled()) {
+        (void) patch->enable();
+    }
+#endif
+}
+
+void PauseLayerBugfix::onExitHook() {
+    // close any popups
+    auto* arr = this->getParent()->getChildren();
+    for (size_t idx = arr->count(); idx > 0; idx--) {
+        auto* obj = arr->objectAtIndex(idx - 1);
+        if (auto* alert = typeinfo_cast<FLAlertLayer*>(obj)) {
+            alert->retain();
+            alert->keyBackClicked();
+            Loader::get()->queueInMainThread([alert] {
+                alert->release();
+            });
+        }
+    }
+
+    PauseLayer::onExit();
+}
