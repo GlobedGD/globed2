@@ -219,7 +219,7 @@ namespace util::cocos {
                 }
             }
 
-            auto [idx, image] = textureInitRequests.pop();
+            auto [idx, image] = textureInitRequests.popNow();
 
             auto texture = new CCTexture2D;
             if (!texture->initWithImage(image)) {
