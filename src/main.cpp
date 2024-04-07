@@ -7,6 +7,7 @@
 #include <Geode/cocos/platform/IncludeCurl.h>
 
 #include <asp/Log.hpp>
+#include <asp/async/Runtime.hpp>
 
 #include <hooks/all.hpp>
 #include <audio/manager.hpp>
@@ -31,6 +32,7 @@ static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAG
 
 $execute {
     using namespace asp;
+
     asp::setLogFunction([](LogLevel level, auto message) {
         switch (level) {
         case LogLevel::Trace: [[fallthrough]];
@@ -40,6 +42,9 @@ $execute {
         case LogLevel::Error: log::error("{}", message); break;
         }
     });
+
+    auto& rt = asp::async::Runtime::get();
+    rt.launch();
 }
 
 $on_mod(Loaded) {

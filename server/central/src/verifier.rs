@@ -10,8 +10,8 @@ use globed_shared::{
     *,
 };
 
-const FLUSH_PERIOD: Duration = Duration::from_secs(4);
-const DELETER_PERIOD: Duration = Duration::from_mins(10);
+const FLUSH_PERIOD: Duration = Duration::from_secs(2);
+const DELETER_PERIOD: Duration = Duration::from_mins(1);
 
 #[derive(Clone)]
 struct AccountEntry {
@@ -189,15 +189,16 @@ impl AccountVerifier {
                 return Ok(());
             }
 
-            // unnecessary clone but oh well
-            let cloned = mtx.clone();
-            mtx.clear();
-            drop(mtx);
-
-            cloned
+            std::mem::take(&mut *mtx)
         };
 
-        let outdated_str = outdated.into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join(",");
+        // at most 100 messages, join them to a string
+        let outdated_str = outdated
+            .into_iter()
+            .take(100)
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
 
         let result = self
             .http_client
