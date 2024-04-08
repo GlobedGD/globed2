@@ -1,6 +1,7 @@
 #include "level_list_layer.hpp"
 
 #include <hooks/level_cell.hpp>
+#include <hooks/gjgamelevel.hpp>
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/network_manager.hpp>
@@ -194,19 +195,35 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     std::vector<Ref<GJGameLevel>> sortedLevels;
     sortedLevels.reserve(p0->count());
 
-    for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(p0)) {
+    for (auto levelId : sortedLevelIds) {
+        log::debug("loading level {}", levelId);
+
+        auto arrayext = CCArrayExt<GJGameLevel*>(p0);
+        auto iter = std::find_if(arrayext.begin(), arrayext.end(), [&](auto level) {
+            return HookedGJGameLevel::getLevelIDFrom(level) == levelId;
+        });
+        GJGameLevel* level = iter != arrayext.end() ? *iter : nullptr;
+
+        using GetLevelEvent = DispatchEvent<LevelId, GJGameLevel**>;
+        using GetLevelFilter = DispatchFilter<LevelId, GJGameLevel**>;
+
+        GetLevelEvent("get-level-from-id"_spr, levelId, &level).post();
+
+        if (!level) continue;
+
         level->m_gauntletLevel = false;
         level->m_gauntletLevel2 = false;
-
         sortedLevels.push_back(level);
     }
 
     // compare by player count (descending)
     auto comparator = [this](GJGameLevel* a, GJGameLevel* b) {
-        if (!this->levelList.contains(a->m_levelID) || !this->levelList.contains(b->m_levelID)) return false;
+        LevelId levelIdA = HookedGJGameLevel::getLevelIDFrom(a);
+        LevelId levelIdB = HookedGJGameLevel::getLevelIDFrom(b);
+        if (!this->levelList.contains(levelIdA) || !this->levelList.contains(levelIdB)) return false;
 
-        auto aVal = this->levelList.at(a->m_levelID);
-        auto bVal = this->levelList.at(b->m_levelID);
+        auto aVal = this->levelList.at(levelIdA);
+        auto bVal = this->levelList.at(levelIdB);
 
         return aVal > bVal;
     };
@@ -230,7 +247,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     // guys we are about to do a funny
     for (LevelCell* cell : CCArrayExt<LevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
-        int levelId = cell->m_level->m_levelID.value();
+        int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
         if (!levelList.contains(levelId)) continue;
 
         static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));
