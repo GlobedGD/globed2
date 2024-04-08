@@ -8,8 +8,8 @@ using namespace geode::prelude;
 /* Hooks */
 
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
-    if (GlobedLevelEditorLayer::fromEditor) return PlayLayer::init(level, p1, p2);
-
+    GlobedLevelEditorLayer::fromEditor = false;
+    
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
     gjbgl->setupPreInit(level);
@@ -29,7 +29,7 @@ void GlobedPlayLayer::setupHasCompleted() {
 
 void GlobedPlayLayer::onQuit() {
     PlayLayer::onQuit();
-    if (!GlobedLevelEditorLayer::fromEditor) GlobedGJBGL::get()->onQuitActions();
+    GlobedGJBGL::get()->onQuitActions();
 }
 
 void GlobedPlayLayer::fullReset() {

@@ -1,6 +1,7 @@
 #include "gjbasegamelayer.hpp"
 
 #include "play_layer.hpp"
+#include "level_editor_layer.hpp"
 #include "game_manager.hpp"
 
 #if GLOBED_HAS_KEYBINDS
@@ -346,6 +347,7 @@ void GlobedGJBGL::setupAudio() {
 
 void GlobedGJBGL::setupPacketListeners() {
     auto& nm = NetworkManager::get();
+    log::debug("GlobedGJBGL::setupPacketListeners");
 
     nm.addListener<PlayerProfilesPacket>([](std::shared_ptr<PlayerProfilesPacket> packet) {
         auto& pcm = ProfileCacheManager::get();

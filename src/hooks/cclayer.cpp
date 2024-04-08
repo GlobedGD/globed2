@@ -1,6 +1,6 @@
 #include "cclayer.hpp"
 
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <hooks/pause_layer.hpp>
 
 using namespace geode::prelude;
