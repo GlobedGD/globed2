@@ -9,7 +9,7 @@ bool PlayerStatusIcons::init(unsigned char opacity) {
 
     this->opacity = opacity;
 
-    this->updateStatus(false, false, false, 0.f);
+    this->updateStatus(false, false, false, false, 0.f);
     this->schedule(schedule_selector(PlayerStatusIcons::updateLoudnessIcon), 0.25f);
 
     return true;
@@ -19,19 +19,20 @@ void PlayerStatusIcons::updateLoudnessIcon(float dt) {
     Loudness lcat = this->loudnessToCategory(lastLoudness * 2.f);
     if (lcat != wasLoudness) {
         wasLoudness = lcat;
-        this->updateStatus(wasPaused, wasPracticing, wasSpeaking, lastLoudness, true);
+        this->updateStatus(wasPaused, wasPracticing, wasSpeaking, wasEditing, lastLoudness, true);
     }
 }
 
-void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking, float loudness, bool force) {
+void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking, bool editing, float loudness, bool force) {
     lastLoudness = loudness;
 
-    if (!force && wasPaused == paused && wasPracticing == practicing && wasSpeaking == speaking) return;
+    if (!force && wasPaused == paused && wasPracticing == practicing && wasSpeaking == speaking && wasEditing == editing) return;
     wasPaused = paused;
     wasPracticing = practicing;
     wasSpeaking = speaking;
+    wasEditing = editing;
 
-    if (!wasPaused && !wasPracticing && !wasSpeaking) {
+    if (!wasPaused && !wasPracticing && !wasSpeaking && !wasEditing) {
         this->setVisible(false);
         return;
     }
@@ -92,6 +93,19 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
             .collect();
 
         width += speakSpr->getScaledContentSize().width;
+        count++;
+    }
+
+    if (wasEditing) {
+        auto editSpr = Build<CCSprite>::createSpriteName("GJ_hammerIcon_001.png")
+            .opacity(opacity)
+            .zOrder(1)
+            .scale(0.8f)
+            .id("icon-editing"_spr)
+            .parent(iconWrapper)
+            .collect();
+
+        width += editSpr->getScaledContentSize().width;
         count++;
     }
 

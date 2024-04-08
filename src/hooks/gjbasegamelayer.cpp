@@ -774,7 +774,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         self->m_fields->selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
         bool recording = VoiceRecordingManager::get().isRecording();
 
-        self->m_fields->selfStatusIcons->updateStatus(false, false, recording, 0.f);
+        self->m_fields->selfStatusIcons->updateStatus(false, false, recording, false, 0.f);
     }
 
     if (self->m_fields->voiceOverlay) {
@@ -907,6 +907,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         .isPaused = this->isPaused(),
         .isPracticing = m_isPracticeMode,
         .isDualMode = m_gameState.m_isDualMode,
+        .isInEditor = LevelEditorLayer::get() != nullptr,
     };
 }
 

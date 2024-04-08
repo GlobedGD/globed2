@@ -6,6 +6,7 @@
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
 #include <util/ui.hpp>
+#include <Geode/loader/Dispatch.hpp>
 
 using namespace geode::prelude;
 

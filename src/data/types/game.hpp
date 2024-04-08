@@ -58,6 +58,7 @@ struct PlayerData {
     bool isPaused;
     bool isPracticing;
     bool isDualMode;
+    bool isInEditor;
 };
 
 struct PlayerMetadata {

@@ -173,7 +173,7 @@ void ComplexVisualPlayer::updateData(
     }
 
     if (statusIcons) {
-        statusIcons->updateStatus(playerData.isPaused, playerData.isPracticing, isSpeaking, loudness);
+        statusIcons->updateStatus(playerData.isPaused, playerData.isPracticing, isSpeaking, playerData.isInEditor, loudness);
     }
 
     // animate dashing
