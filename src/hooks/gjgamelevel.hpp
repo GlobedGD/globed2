@@ -9,4 +9,6 @@ class $modify(HookedGJGameLevel, GJGameLevel) {
 
     $override
     void savePercentage(int, bool, int, int, bool);
+
+    static LevelId getLevelIDFrom(GJGameLevel* level);
 };

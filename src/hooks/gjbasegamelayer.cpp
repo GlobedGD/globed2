@@ -461,18 +461,9 @@ void GlobedGJBGL::setupUpdate() {
         self->setupPacketListeners();
 
         // send LevelJoinPacket and RequestPlayerProfilesPacket
-        
-        if (self->m_level->m_levelID) {
-            log::debug("Joining level {}", self->m_level->m_levelID.value());
-            nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
-        } else if (self->m_level->m_originalLevel) {
-            log::debug("Joining level {}", self->m_level->m_originalLevel.value());
-            nm.send(LevelJoinPacket::create(self->m_level->m_originalLevel));
-        } else {
-            // temporary fallback
-            log::debug("Joining level 44062068 (fallback)");
-            nm.send(LevelJoinPacket::create(44062068));
-        }
+
+        auto levelId = HookedGJGameLevel::getLevelIDFrom(self->m_level);
+        nm.send(LevelJoinPacket::create(levelId));
 
         self->rescheduleSelectors();
         self->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);
