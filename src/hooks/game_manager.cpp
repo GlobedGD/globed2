@@ -1,5 +1,7 @@
 #include "game_manager.hpp"
 
+#include "level_editor_layer.hpp"
+#include "gjbasegamelayer.hpp"
 #include "gjgamelevel.hpp"
 
 #include <managers/settings.hpp>
@@ -10,6 +12,11 @@
 using namespace geode::prelude;
 
 void HookedGameManager::returnToLastScene(GJGameLevel* level) {
+    if (GlobedLevelEditorLayer::fromEditor) {
+        GlobedGJBGL::get()->onQuitActions();
+        GlobedLevelEditorLayer::fromEditor = false;
+    }
+
     auto hooklevel = static_cast<HookedGJGameLevel*>(level);
     if (hooklevel->m_fields->shouldTransitionWithPopScene) {
         CCDirector::get()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);

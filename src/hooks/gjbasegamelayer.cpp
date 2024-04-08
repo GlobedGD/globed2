@@ -58,7 +58,7 @@ bool GlobedGJBGL::init() {
 int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
     int retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
 
-    if ((void*)this != PlayLayer::get()) return retval;
+    if ((void*)this != GJBaseGameLayer::get()) return retval;
 
     // up and down hell yeah
     auto* gpl = GlobedGJBGL::get();
@@ -142,7 +142,7 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
 void GlobedGJBGL::loadLevelSettings() {
     LevelSettingsObject* lo = m_levelSettings;
 
-    if (!PlayLayer::get()) {
+    if (!GJBaseGameLayer::get()) {
         GJBaseGameLayer::loadLevelSettings();
         return;
     }
@@ -188,8 +188,9 @@ GlobedGJBGL* GlobedGJBGL::get() {
 void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
     auto& nm = NetworkManager::get();
 
+    // ALK TODO:
     bool isEditor = level->m_levelType == GJLevelType::Editor;
-    m_fields->globedReady = nm.established() && !isEditor;
+    m_fields->globedReady = nm.established(); // && !isEditor;
 
     if (m_fields->globedReady) {
         // room settings
@@ -253,14 +254,15 @@ void GlobedGJBGL::setupBare() {
 
     auto& nm = NetworkManager::get();
 
+    // ALK TODO:
     // if not authenticated, do nothing
     bool isEditor = m_level->m_levelType == GJLevelType::Editor;
 
     if (!nm.established()) {
         m_fields->overlay->updateWithDisconnected();
-    } else if (isEditor) {
+    } /*else if (isEditor) {
         m_fields->overlay->updateWithEditor();
-    } else {
+    }*/ else {
         // else update the overlay with ping
         m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
     }
@@ -450,13 +452,25 @@ void GlobedGJBGL::setupUpdate() {
     // update
     Loader::get()->queueInMainThread([&nm] {
         auto self = GlobedGJBGL::get();
+        log::debug("GlobedGJBGL::setupUpdate {}", self);
         if (!self) return;
 
         // here we run the stuff that must run on a valid playlayer
         self->setupPacketListeners();
 
         // send LevelJoinPacket and RequestPlayerProfilesPacket
-        nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
+        
+        if (self->m_level->m_levelID) {
+            log::debug("Joining level {}", self->m_level->m_levelID.value());
+            nm.send(LevelJoinPacket::create(self->m_level->m_levelID));
+        } else if (self->m_level->m_originalLevel) {
+            log::debug("Joining level {}", self->m_level->m_originalLevel.value());
+            nm.send(LevelJoinPacket::create(self->m_level->m_originalLevel));
+        } else {
+            // temporary fallback
+            log::debug("Joining level 44062068 (fallback)");
+            nm.send(LevelJoinPacket::create(44062068));
+        }
 
         self->rescheduleSelectors();
         self->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);
@@ -600,7 +614,7 @@ void GlobedGJBGL::selSendPlayerData(float) {
     auto self = GlobedGJBGL::get();
 
     if (!self || !self->established()) return;
-    if (!self->isCurrentPlayLayer()) return;
+    // if (!self->isCurrentPlayLayer()) return;
     if (!self->accountForSpeedhack(0, 1.0f / self->m_fields->configuredTps, 0.8f)) return;
 
     self->m_fields->totalSentPackets++;
@@ -616,7 +630,7 @@ void GlobedGJBGL::selSendPlayerMetadata(float) {
     auto self = GlobedGJBGL::get();
 
     if (!self || !self->established()) return;
-    if (!self->isCurrentPlayLayer()) return;
+    // if (!self->isCurrentPlayLayer()) return;
 
     auto data = self->gatherPlayerMetadata();
     NetworkManager::get().send(PlayerMetadataPacket::create(data));
@@ -627,7 +641,7 @@ void GlobedGJBGL::selPeriodicalUpdate(float) {
     auto self = GlobedGJBGL::get();
 
     if (!self || !self->established()) return;
-    if (!self->isCurrentPlayLayer()) return;
+    // if (!self->isCurrentPlayLayer()) return;
 
     // update the overlay
     self->m_fields->overlay->updatePing(GameServerManager::get().getActivePing());

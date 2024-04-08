@@ -87,7 +87,7 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
     if (_data != entry) {
         _data = entry;
 
-        bool platformer = PlayLayer::get()->m_level->isPlatformer();
+        bool platformer = GJBaseGameLayer::get()->m_level->isPlatformer();
         if (platformer && _data.localBest != 0) {
             percentageLabel->setString(util::format::formatPlatformerTime(_data.localBest).c_str());
         } else if (!platformer) {

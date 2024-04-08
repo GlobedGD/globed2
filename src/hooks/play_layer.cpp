@@ -1,12 +1,15 @@
 #include "play_layer.hpp"
 
 #include "gjbasegamelayer.hpp"
+#include "level_editor_layer.hpp"
 
 using namespace geode::prelude;
 
 /* Hooks */
 
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
+    if (GlobedLevelEditorLayer::fromEditor) return PlayLayer::init(level, p1, p2);
+
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
     gjbgl->setupPreInit(level);
@@ -26,7 +29,7 @@ void GlobedPlayLayer::setupHasCompleted() {
 
 void GlobedPlayLayer::onQuit() {
     PlayLayer::onQuit();
-    GlobedGJBGL::get()->onQuitActions();
+    if (!GlobedLevelEditorLayer::fromEditor) GlobedGJBGL::get()->onQuitActions();
 }
 
 void GlobedPlayLayer::fullReset() {

@@ -23,6 +23,12 @@ void ComplexPlayerObject::playDeathEffect() {
         return;
     }
 
+    // death effect is only played in playlayer
+    if (!PlayLayer::get()) {
+        PlayerObject::playDeathEffect();
+        return;
+    }
+
     auto* rp = static_cast<ComplexVisualPlayer*>(this->getUserObject());
     int deathEffect = rp->storedIcons.deathEffect;
 
@@ -46,7 +52,7 @@ void ComplexPlayerObject::incrementJumps() {
 
 void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CCPoint to) {
     // if we are in the editor, do nothing
-    if (PlayLayer::get() == nullptr) {
+    if (GJBaseGameLayer::get() == nullptr) {
         PlayerObject::playSpiderDashEffect(from, to);
         return;
     }
@@ -62,7 +68,7 @@ void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CC
 }
 
 void HookedPlayerObject::incrementJumps() {
-    if (PlayLayer::get() == nullptr || m_isOnSlope) {
+    if (GJBaseGameLayer::get() == nullptr || m_isOnSlope) {
         PlayerObject::incrementJumps();
         return;
     }
@@ -79,8 +85,8 @@ void HookedPlayerObject::incrementJumps() {
 }
 
 void HookedPlayerObject::update(float dt) {
-    auto* pl = PlayLayer::get();
-    if (!pl) {
+    auto* gjbgl = GJBaseGameLayer::get();
+    if (!gjbgl) {
         PlayerObject::update(dt);
         return;
     }
