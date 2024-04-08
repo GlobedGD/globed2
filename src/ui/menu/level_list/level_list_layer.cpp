@@ -1,7 +1,6 @@
 #include "level_list_layer.hpp"
 
 #include <hooks/level_cell.hpp>
-#include <hooks/gjgamelevel.hpp>
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/network_manager.hpp>
@@ -195,24 +194,10 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     std::vector<Ref<GJGameLevel>> sortedLevels;
     sortedLevels.reserve(p0->count());
 
-    for (auto levelId : sortedLevelIds) {
-        log::debug("loading level {}", levelId);
-
-        auto arrayext = CCArrayExt<GJGameLevel*>(p0);
-        auto iter = std::find_if(arrayext.begin(), arrayext.end(), [&](auto level) {
-            return HookedGJGameLevel::getLevelIDFrom(level) == levelId;
-        });
-        GJGameLevel* level = iter != arrayext.end() ? *iter : nullptr;
-
-        using GetLevelEvent = DispatchEvent<LevelId, GJGameLevel**>;
-        using GetLevelFilter = DispatchFilter<LevelId, GJGameLevel**>;
-
-        GetLevelEvent("get-level-from-id"_spr, levelId, &level).post();
-
-        if (!level) continue;
-
+    for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(p0)) {
         level->m_gauntletLevel = false;
         level->m_gauntletLevel2 = false;
+
         sortedLevels.push_back(level);
     }
 
@@ -220,7 +205,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     auto comparator = [this](GJGameLevel* a, GJGameLevel* b) {
         LevelId levelIdA = HookedGJGameLevel::getLevelIDFrom(a);
         LevelId levelIdB = HookedGJGameLevel::getLevelIDFrom(b);
-        if (!this->levelList.contains(levelIdA) || !this->levelList.contains(levelIdB)) return false;
+        if (!this->levelList.contains(levelIdA) || !this->levelList.contains(B)) return false;
 
         auto aVal = this->levelList.at(levelIdA);
         auto bVal = this->levelList.at(levelIdB);
