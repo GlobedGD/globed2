@@ -39,7 +39,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             std::string addr = this->addressNode->getString();
 
             if (addr.empty() || !std::regex_match(addr, pattern)) {
-                FLAlertLayer::create("Error", "You passed an invalid address. It must be an IPv4 address or a domain name with an optional port at the end. IPv4 Example: <cy>144.72.254.213:41001</c> - Domain Example: <cy>globed.example.com:41001</c>)", "Ok")->show();
+                FLAlertLayer::create("Error", "An invalid address passed. It must be an IPv4 address or a domain name with an optional port at the end. IPv4 Example: <cy>144.72.254.213:41001</c> - Domain Example: <cy>globed.example.com:41001</c>", "Ok")->show();
                 return;
             }
 
