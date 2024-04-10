@@ -46,7 +46,7 @@ jobs:
     needs: ['build']
 
     steps:
-      - uses: Prevter/build-geode-mod@combine
+      - uses: geode-sdk/build-geode-mod@combine
         id: build
 
       - uses: actions/upload-artifact@v3
