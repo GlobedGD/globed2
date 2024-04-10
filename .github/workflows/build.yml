@@ -31,12 +31,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build the mod
-        uses: Prevter/build-geode-mod@main
+        uses: geode-sdk/build-geode-mod@v1
         with:
           combine: true
-          export-pdb: true
           sdk: 'latest'
-          build-config: RelWithDebInfo
           target: ${{ matrix.config.target }}
           # bindings: "dankmeme01/bindings"
 
