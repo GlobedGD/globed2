@@ -59,7 +59,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if (MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE /FIWinSock2.h)
     else()
-        target_compile_options(${PROJECT_NAME} PRIVATE "-include WinSock2.h")
+        target_compile_options(${PROJECT_NAME} PRIVATE -include WinSock2.h)
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
 
