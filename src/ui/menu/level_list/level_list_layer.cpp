@@ -4,6 +4,7 @@
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/network_manager.hpp>
+#include <hooks/gjgamelevel.hpp>
 #include <managers/error_queues.hpp>
 #include <util/ui.hpp>
 #include <Geode/loader/Dispatch.hpp>
@@ -205,7 +206,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     auto comparator = [this](GJGameLevel* a, GJGameLevel* b) {
         LevelId levelIdA = HookedGJGameLevel::getLevelIDFrom(a);
         LevelId levelIdB = HookedGJGameLevel::getLevelIDFrom(b);
-        if (!this->levelList.contains(levelIdA) || !this->levelList.contains(B)) return false;
+        if (!this->levelList.contains(levelIdA) || !this->levelList.contains(levelIdB)) return false;
 
         auto aVal = this->levelList.at(levelIdA);
         auto bVal = this->levelList.at(levelIdB);

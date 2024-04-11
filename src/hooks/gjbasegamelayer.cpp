@@ -189,9 +189,8 @@ GlobedGJBGL* GlobedGJBGL::get() {
 void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
     auto& nm = NetworkManager::get();
 
-    // ALK TODO:
-    bool isEditor = level->m_levelType == GJLevelType::Editor;
-    m_fields->globedReady = nm.established(); // && !isEditor;
+    auto levelId = HookedGJGameLevel::getLevelIDFrom(level);
+    m_fields->globedReady = nm.established() && levelId > 0;
 
     if (m_fields->globedReady) {
         // room settings
@@ -255,15 +254,14 @@ void GlobedGJBGL::setupBare() {
 
     auto& nm = NetworkManager::get();
 
-    // ALK TODO:
     // if not authenticated, do nothing
-    bool isEditor = m_level->m_levelType == GJLevelType::Editor;
+    auto levelId = HookedGJGameLevel::getLevelIDFrom(m_level);
 
     if (!nm.established()) {
         m_fields->overlay->updateWithDisconnected();
-    } /*else if (isEditor) {
+    } else if (levelId == 0) {
         m_fields->overlay->updateWithEditor();
-    }*/ else {
+    } else {
         // else update the overlay with ping
         m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
     }

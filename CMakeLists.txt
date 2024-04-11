@@ -117,4 +117,4 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium Boost::describe)
 
-setup_geode_mod(${PROJECT_NAME} DONT_INSTALL)
+setup_geode_mod(${PROJECT_NAME})
