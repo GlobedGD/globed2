@@ -11,8 +11,8 @@ protected:
 
 public:
 #ifdef GLOBED_VOICE_SUPPORT
-    util::sync::SmartThread<VoiceRecordingManager*> thread;
-    util::sync::AtomicBool queuedStop = false, queuedStart = false, recording = false;
+    asp::Thread<VoiceRecordingManager*> thread;
+    asp::AtomicBool queuedStop = false, queuedStart = false, recording = false;
 
     void threadFunc();
 #endif // GLOBED_VOICE_SUPPORT

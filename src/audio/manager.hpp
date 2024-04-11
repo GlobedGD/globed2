@@ -8,7 +8,8 @@
 
 #include "frame.hpp"
 #include "sample_queue.hpp"
-#include <util/sync.hpp>
+#include <asp/sync.hpp>
+#include <asp/thread.hpp>
 
 struct AudioRecordingDevice {
     int id = -1;
@@ -122,15 +123,15 @@ private:
     AudioRecordingDevice recordDevice;
     AudioPlaybackDevice playbackDevice; // unused
 
-    util::sync::AtomicBool loopbacksAllowed = false;
+    asp::AtomicBool loopbacksAllowed = false;
 
     /* recording */
-    util::sync::AtomicBool recordActive = false;
-    util::sync::AtomicBool recordQueuedStop = false;
-    util::sync::AtomicBool recordQueuedHalt = false;
-    util::sync::AtomicBool recordingRaw = false;
-    util::sync::AtomicBool recordingPassive = false;
-    util::sync::AtomicBool recordingPassiveActive = false;
+    asp::AtomicBool recordActive = false;
+    asp::AtomicBool recordQueuedStop = false;
+    asp::AtomicBool recordQueuedHalt = false;
+    asp::AtomicBool recordingRaw = false;
+    asp::AtomicBool recordingPassive = false;
+    asp::AtomicBool recordingPassiveActive = false;
     FMOD::Sound* recordSound = nullptr;
     size_t recordChunkSize = 0;
     std::function<void(const EncodedAudioFrame&)> recordCallback;
@@ -153,8 +154,8 @@ private:
     void audioThreadFunc();
     Result<> audioThreadWork();
 
-    util::sync::AtomicBool audioThreadSleeping = true;
-    util::sync::SmartThread<GlobedAudioManager*> audioThreadHandle;
+    asp::AtomicBool audioThreadSleeping = true;
+    asp::Thread<GlobedAudioManager*> audioThreadHandle;
 };
 
 #else

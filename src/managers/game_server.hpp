@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 
-#include <util/sync.hpp> // mutex
+#include <asp/sync.hpp> // mutex
 #include <util/crypto.hpp> // base64
 #include <util/time.hpp>
 
@@ -37,7 +37,7 @@ public:
     constexpr static const char* SERVER_RESPONSE_CACHE_KEY = "_last-cached-servers-response";
     constexpr static unsigned short DEFAULT_PORT = 41001;
 
-    util::sync::AtomicBool pendingChanges;
+    asp::AtomicBool pendingChanges;
 
     Result<> addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
     Result<> addOrUpdateServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
@@ -91,5 +91,5 @@ protected:
         std::string cachedServerResponse;
     };
 
-    util::sync::WrappingMutex<InnerData> _data;
+    asp::Mutex<InnerData> _data;
 };

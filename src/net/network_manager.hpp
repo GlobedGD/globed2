@@ -1,12 +1,14 @@
 #pragma once
 #include "game_socket.hpp"
 
+#include <asp/sync.hpp>
+#include <asp/thread.hpp>
+
 #include <defs/minimal_geode.hpp>
 #include <managers/game_server.hpp>
-#include <util/sync.hpp>
 #include <util/time.hpp>
 
-using namespace util::sync;
+using namespace asp::sync;
 
 enum class NetworkThreadTask {
     PingServers
@@ -139,19 +141,19 @@ private:
 
     GameSocket gameSocket;
 
-    SmartMessageQueue<std::shared_ptr<Packet>> packetQueue;
-    SmartMessageQueue<NetworkThreadTask> taskQueue;
+    asp::Channel<std::shared_ptr<Packet>> packetQueue;
+    asp::Channel<NetworkThreadTask> taskQueue;
 
-    WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> listeners;
-    WrappingMutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
+    asp::Mutex<std::unordered_map<packetid_t, PacketCallback>> listeners;
+    asp::Mutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
 
     // threads
 
     void threadMainFunc();
     void threadRecvFunc();
 
-    SmartThread<NetworkManager*> threadMain;
-    SmartThread<NetworkManager*> threadRecv;
+    asp::Thread<NetworkManager*> threadMain;
+    asp::Thread<NetworkManager*> threadRecv;
 
     // misc
 
@@ -178,7 +180,7 @@ private:
     void maybeDisconnectIfDead();
 
     // Builtin listeners have priority above the others.
-    WrappingMutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;
+    asp::Mutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;
 
     void addBuiltinListener(packetid_t id, PacketCallback&& callback);
 

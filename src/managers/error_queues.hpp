@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/util.hpp>
 
-#include <util/sync.hpp>
+#include <asp/sync.hpp>
 
 /*
 * ErrorQueues is a thread safe singleton for propagating errors to the main thread,
@@ -24,5 +24,5 @@ public:
     std::vector<std::string> getSuccesses();
     std::vector<std::string> getNotices();
 private:
-    util::sync::SmartMessageQueue<std::string> _warns, _errors, _successes, _notices;
+    asp::Channel<std::string> _warns, _errors, _successes, _notices;
 };

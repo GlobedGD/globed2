@@ -19,6 +19,7 @@ endif()
 if (GLOBED_IS_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
     add_compile_definitions(GEODE_DEBUG=1)
+    add_compile_definitions(ASP_ENABLE_DEBUG=1)
 else()
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -52,13 +53,13 @@ file(GLOB_RECURSE SOURCES
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
-# Windows - Include winsock
+# Windows - do stuff
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
     if (MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE /FIWinSock2.h)
     else()
-        target_compile_options(${PROJECT_NAME} PRIVATE "-include WinSock2.h")
+        target_compile_options(${PROJECT_NAME} PRIVATE -include WinSock2.h)
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
 
@@ -66,6 +67,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         message(STATUS "Compiling in debug, disabling iterator debugging")
         add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
     endif()
+
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
 # i am crying so hard right now
@@ -95,6 +98,7 @@ CPMAddPackage(
     URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
+CPMAddPackage("gh:dankmeme01/asp#46e7c58")
 
 if (GLOBED_NATIVE_ARCH)
     # Apply native architecture
@@ -115,6 +119,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
 endif()
 
-target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium Boost::describe)
+target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium Boost::describe asp)
 
 setup_geode_mod(${PROJECT_NAME})

@@ -6,6 +6,9 @@
 
 #include <Geode/cocos/platform/IncludeCurl.h>
 
+#include <asp/Log.hpp>
+#include <asp/async/Runtime.hpp>
+
 #include <hooks/all.hpp>
 #include <audio/manager.hpp>
 #include <crypto/box.hpp>
@@ -26,6 +29,23 @@ static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAG
     system->init(MAX_AUDIO_CHANNELS, flags, dd);
 }
 #endif // GLOBED_VOICE_SUPPORT
+
+$execute {
+    using namespace asp;
+
+    asp::setLogFunction([](LogLevel level, auto message) {
+        switch (level) {
+        case LogLevel::Trace: [[fallthrough]];
+        case LogLevel::Debug: log::debug("{}", message); break;
+        case LogLevel::Info: log::info("{}", message); break;
+        case LogLevel::Warn: log::warn("{}", message); break;
+        case LogLevel::Error: log::error("{}", message); break;
+        }
+    });
+
+    auto& rt = asp::async::Runtime::get();
+    rt.launch();
+}
 
 $on_mod(Loaded) {
 #ifdef GLOBED_VOICE_SUPPORT

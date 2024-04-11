@@ -173,6 +173,10 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
             .intMin = 1,
             .intMax = 240,
         });
+#ifdef GLOBED_DEBUG
+        // advanced settings button
+        MAKE_SETTING_TYPE(globed, autoconnect, Type::AdvancedSettings, "Advanced", "Advanced settings");
+#endif
     }
 
     if (category == TAG_TAB_OVERLAY) {
