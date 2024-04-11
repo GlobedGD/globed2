@@ -951,6 +951,9 @@ void GlobedGJBGL::updateProximityVolume(int playerId) {
 
     float distance = cocos2d::ccpDistance(m_player1->getPosition(), vstate.player1.position);
     float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
+    if (vstate.isInEditor) {
+        volume = 1.f;
+    }
 
     auto& settings = GlobedSettings::get();
 
