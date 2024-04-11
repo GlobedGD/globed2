@@ -1034,11 +1034,17 @@ bool GlobedGJBGL::isCurrentPlayLayer() {
 }
 
 bool GlobedGJBGL::isPaused(bool checkCurrent) {
-    if (checkCurrent && !isCurrentPlayLayer()) return false;
+    if (checkCurrent) return false;
 
-    for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
-        if (typeinfo_cast<PauseLayer*>(child)) {
-            return true;
+    if (LevelEditorLayer::get()) {
+        return this->m_playbackMode == PlaybackMode::Paused;
+    }
+
+    if (PlayLayer::get()) {
+        for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
+            if (typeinfo_cast<PauseLayer*>(child)) {
+                return true;
+            }
         }
     }
 
