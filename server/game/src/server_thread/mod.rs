@@ -156,7 +156,7 @@ impl GameServerThread {
                         // try to stop silly HTTP request attempts
                         // 0x47455420 is the ascii string "GET " and 0x504f5354 is "POST"
                         if message_len == 0x47_45_54_20 || message_len == 0x50_4f_53_54 {
-                            warn!("received an unexpected (potential) HTTP request, disconnecting");
+                            warn!("[{}] received an unexpected (potential) HTTP request, disconnecting", self.tcp_peer);
                             break;
                         }
 
