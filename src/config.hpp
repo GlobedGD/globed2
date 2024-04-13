@@ -42,9 +42,7 @@
 
 #endif // GLOBED_IGNORE_CONFIG_HPP
 
-#ifdef __APPLE__
-# include <stdint.h>
-#endif
+#include <stdint.h>
 
 using LevelId = int64_t; // 64-bit
 static_assert(sizeof(LevelId) == 8, "level id is not 8 bytes");

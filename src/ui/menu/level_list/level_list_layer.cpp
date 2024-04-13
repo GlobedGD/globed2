@@ -4,8 +4,10 @@
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/network_manager.hpp>
+#include <hooks/gjgamelevel.hpp>
 #include <managers/error_queues.hpp>
 #include <util/ui.hpp>
+#include <Geode/loader/Dispatch.hpp>
 
 using namespace geode::prelude;
 
@@ -202,10 +204,12 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     // compare by player count (descending)
     auto comparator = [this](GJGameLevel* a, GJGameLevel* b) {
-        if (!this->levelList.contains(a->m_levelID) || !this->levelList.contains(b->m_levelID)) return false;
+        LevelId levelIdA = HookedGJGameLevel::getLevelIDFrom(a);
+        LevelId levelIdB = HookedGJGameLevel::getLevelIDFrom(b);
+        if (!this->levelList.contains(levelIdA) || !this->levelList.contains(levelIdB)) return false;
 
-        auto aVal = this->levelList.at(a->m_levelID);
-        auto bVal = this->levelList.at(b->m_levelID);
+        auto aVal = this->levelList.at(levelIdA);
+        auto bVal = this->levelList.at(levelIdB);
 
         return aVal > bVal;
     };
@@ -229,7 +233,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     // guys we are about to do a funny
     for (LevelCell* cell : CCArrayExt<LevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
-        int levelId = cell->m_level->m_levelID.value();
+        int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
         if (!levelList.contains(levelId)) continue;
 
         static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));

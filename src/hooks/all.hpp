@@ -1,12 +1,14 @@
 #pragma once
 
 #include "appdelegate.hpp"
+#include "editor_pause_layer.hpp"
 #include "flalertlayer.hpp"
 #include "game_manager.hpp"
 #include "gjbasegamelayer.hpp"
 #include "gjgamelevel.hpp"
 #include "level_area_inner_layer.hpp"
 #include "level_cell.hpp"
+#include "level_editor_layer.hpp"
 #include "level_info_layer.hpp"
 #include "level_browser_layer.hpp"
 #include "level_select_layer.hpp"
