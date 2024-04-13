@@ -82,15 +82,24 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                     NetworkManager::get().disconnect(false);
                 } else {
                     auto& settings = GlobedSettings::get();
-#ifdef GLOBED_VOICE_CAN_TALK
+
                     if (!settings.flags.seenVoiceChatPTTNotice) {
                         settings.flags.seenVoiceChatPTTNotice = true;
                         settings.save();
 
-                        FLAlertLayer::create("Notice", "Be advised that Globed has voice chat (it can be disabled in settings if you wish). You can hold V to talk to other people.", "Ok")->show();
+                        geode::createQuickPopup("Voice chat", "Do you want to enable <cp>voice chat</c>? This can be changed later in settings.", "Disable", "Enable", [&settings](FLAlertLayer*, bool enabled) {
+                            settings.communication.voiceEnabled = enabled;
+                            settings.save();
+#ifndef GLOBED_VOICE_CAN_TALK
+                            if (enabled) {
+                                // if this is a platform that cannot use the microphone, show an additional popup
+                                FLAlertLayer::create("Notice", "Please note that talking is <cr>currently unimplemented</c> on this platform, and you will only be able to hear others. Sorry for the inconvenience.")->show();
+                            }
+#endif
+                        });
+
                         return;
                     }
-#endif
 
                     auto& csm = CentralServerManager::get();
 
