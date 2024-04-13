@@ -138,9 +138,3 @@ void printDebugInfo() {
 
     log::info("cURL version: {}, {}", curl_version(), (cvi->features & CURL_VERSION_SSL) ? "with SSL" : "without SSL (!)");
 }
-
-#if defined(_DEBUG) && defined(GEODE_IS_WINDOWS)
-void operator delete(void* block) noexcept {
-    HeapFree(GetProcessHeap(), 0, block);
-}
-#endif

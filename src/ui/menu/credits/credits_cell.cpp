@@ -10,6 +10,9 @@ bool GlobedCreditsCell::init(const char* name, bool lightBg, cocos2d::CCArray* p
     if (!CCNode::init()) return false;
 
     constexpr float cellWidth = GlobedCreditsPopup::LIST_WIDTH;
+    constexpr size_t maxPlayersInRow = 6;
+
+    size_t rows = (players->count() + maxPlayersInRow - 1) / maxPlayersInRow;
 
     auto* title = Build<CCLabelBMFont>::create(name, "bigFont.fnt")
         .scale(0.7f)
@@ -17,37 +20,54 @@ bool GlobedCreditsCell::init(const char* name, bool lightBg, cocos2d::CCArray* p
         .parent(this)
         .collect();
 
-    float wrapperWidth = cellWidth;
-    if (players->count() > 6) {
-        wrapperWidth = cellWidth / 1.15f;
-    }
-
-    float playerGap = 15.f;
-    if (players->count() < 4) {
-        playerGap = 40.f;
-    } else if (players->count() == 4) {
-        playerGap = 30.f;
-    } else if (players->count() == 5) {
-        playerGap = 25.f;
-    } else if (players->count() == 6) {
-        playerGap = 18.f;
-    } else {
-        wrapperWidth = cellWidth / 1.15f;
-        playerGap = 22.f;
-    }
-
+    const float wrapperGap = 5.f;
     auto* playerWrapper = Build<CCNode>::create()
-        .layout(RowLayout::create()->setGap(playerGap)->setGrowCrossAxis(true))
+        .layout(ColumnLayout::create()->setAxisReverse(true)->setGap(wrapperGap))
         .pos(cellWidth / 2.f, 0.f)
         .anchorPoint(0.5f, 0.0f)
-        .contentSize(wrapperWidth, 0.f)
+        .contentSize(cellWidth, 50.f)
+        .id("player-wrapper"_spr)
         .parent(this)
         .collect();
 
-    for (auto* player : CCArrayExt<GlobedCreditsPlayer*>(players)) {
-        playerWrapper->addChild(player);
+    float wrapperHeight = 0.f;
+
+    for (size_t i = 0; i < rows; i++) {
+        size_t firstIdx = i * maxPlayersInRow;
+        size_t lastIdx = std::min((i + 1) * maxPlayersInRow, players->count());
+        size_t count = lastIdx - firstIdx;
+
+        float playerGap = 15.f;
+        if (count < 4) {
+            playerGap = 40.f;
+        } else if (count == 4) {
+            playerGap = 30.f;
+        } else if (count == 5) {
+            playerGap = 25.f;
+        } else if (count == 6) {
+            playerGap = 18.f;
+        }
+
+        auto* row = Build<CCNode>::create()
+            .layout(RowLayout::create()->setGap(playerGap))
+            .id("wrapper-row"_spr)
+            .parent(playerWrapper)
+            .contentSize(cellWidth, 0.f)
+            .collect();
+
+        for (size_t i = firstIdx; i < lastIdx; i++) {
+            row->addChild(static_cast<CCNode*>(players->objectAtIndex(i)));
+        }
+
+        row->updateLayout();
+
+        wrapperHeight += row->getContentHeight();
+        if (i != 0) {
+            wrapperHeight += wrapperGap;
+        }
     }
 
+    playerWrapper->setContentSize({0.f, wrapperHeight});
     playerWrapper->updateLayout();
 
     this->setContentSize(CCSize{cellWidth, playerWrapper->getScaledContentSize().height + 5.f + title->getScaledContentSize().height});
