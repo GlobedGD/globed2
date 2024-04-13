@@ -27,20 +27,13 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
         .parent(this)
         .store(line);
 
-    Build<SimplePlayer>::create(data.cube)
-        .color(color1)
-        .secondColor(color2)
+    Build<GlobedSimplePlayer>::create(data)
         .opacity(forceOnTop ? 255 : static_cast<uint8_t>(settings.levelUi.progressOpacity * 255))
         .scale(0.5f)
+        .anchorPoint(0.5f, 0.5f)
         .pos(0.f, -10.f)
         .parent(this)
         .store(playerIcon);
-
-    if (data.glowColor != -1) {
-        playerIcon->setGlowOutline(gm->colorForIdx(data.glowColor));
-    } else {
-        playerIcon->disableGlowOutline();
-    }
 }
 
 void PlayerProgressIcon::updatePosition(float progress) {

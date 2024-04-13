@@ -23,6 +23,16 @@ namespace util::ui {
     float getScrollPos(BoomListView* listView);
     void setScrollPos(BoomListView* listView, float pos);
 
+    // scrolls to the bottom of the list view
+    void scrollToBottom(BoomListView* listView);
+    // scrolls to the bottom of the scroll layer
+    void scrollToBottom(geode::ScrollLayer* listView);
+
+    // scrolls to the top of the list view
+    void scrollToTop(BoomListView* listView);
+    // scrolls to the top of the scroll layer
+    void scrollToTop(geode::ScrollLayer* listView);
+
     void tryLoadDeathEffect(int id);
 
     // small wrapper with precalculated sizes to make ui easier

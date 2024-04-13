@@ -27,21 +27,13 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     auto gm = GameManager::get();
 
-    auto sp = Build<SimplePlayer>::create(data.icons.cube)
+    auto sp = Build<GlobedSimplePlayer>::create(data.icons)
         .scale(0.6f)
-        .playerFrame(data.icons.cube, IconType::Cube)
-        .color(gm->colorForIdx(data.icons.color1))
-        .secondColor(gm->colorForIdx(data.icons.color2))
         .parent(this)
+        .anchorPoint(0.5f, 0.5f)
         .pos(18.f, CELL_HEIGHT / 2.f)
         .id("player-icon"_spr)
         .collect();
-
-    if (data.icons.glowColor != -1) {
-        sp->setGlowOutline(gm->colorForIdx(data.icons.glowColor));
-    } else {
-        sp->disableGlowOutline();
-    }
 
     Build<CCMenu>::create()
         .pos(0.f, 0.f)

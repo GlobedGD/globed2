@@ -2,6 +2,7 @@
 #include <defs/all.hpp>
 
 #include <data/types/gd.hpp>
+#include <ui/general/simple_player.hpp>
 
 class PlayerProgressIcon : public cocos2d::CCNode {
 public:
@@ -14,7 +15,7 @@ public:
 
 private:
     cocos2d::CCLayerColor* line = nullptr;
-    SimplePlayer* playerIcon = nullptr;
+    GlobedSimplePlayer* playerIcon = nullptr;
     bool forceOnTop = false;
 
     bool init();

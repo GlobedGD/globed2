@@ -114,9 +114,7 @@ bool GlobedCreditsPopup::setup() {
     scrollLayer->m_contentLayer->updateLayout();
 
     // make the list start at the top instead of the bottom
-    scrollLayer->m_contentLayer->setPositionY(
-        scrollLayer->getScaledContentSize().height - scrollLayer->m_contentLayer->getScaledContentSize().height
-    );
+    util::ui::scrollToTop(scrollLayer);
 
     return true;
 }

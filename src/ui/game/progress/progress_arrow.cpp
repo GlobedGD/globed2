@@ -18,23 +18,12 @@ void PlayerProgressArrow::updateIcons(const PlayerIconData& data) {
 
     auto& settings = GlobedSettings::get();
 
-    auto gm = GameManager::get();
-    auto color1 = gm->colorForIdx(data.color1);
-    auto color2 = gm->colorForIdx(data.color2);
-
-    Build<SimplePlayer>::create(data.cube)
-        .color(color1)
-        .secondColor(color2)
+    Build<GlobedSimplePlayer>::create(data)
         .opacity(static_cast<uint8_t>(settings.levelUi.progressOpacity * 255))
+        .anchorPoint(0.5f, 0.5f)
         .scale(0.5f)
         .parent(this)
         .store(playerIcon);
-
-    if (data.glowColor != -1) {
-        playerIcon->setGlowOutline(gm->colorForIdx(data.glowColor));
-    } else {
-        playerIcon->disableGlowOutline();
-    }
 }
 
 void PlayerProgressArrow::updatePosition(

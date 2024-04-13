@@ -14,21 +14,19 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
 
     auto* gm = GameManager::get();
 
-    Build<SimplePlayer>::create(data.cube)
+    Build<GlobedSimplePlayer>::create(GlobedSimplePlayer::Icons {
+        .type = IconType::Cube,
+        .id = data.cube,
+        .color1 = data.color1,
+        .color2 = data.color2,
+        .color3 = data.glowColor,
+    })
         .scale(0.65f)
-        .playerFrame(data.cube, IconType::Cube)
-        .color(gm->colorForIdx(data.color1))
-        .secondColor(gm->colorForIdx(data.color2))
         .parent(this)
+        .anchorPoint(0.5f, 0.5f)
         .pos(25.f, CELL_HEIGHT / 2.f)
         .id("player-icon"_spr)
         .store(simplePlayer);
-
-    if (data.glowColor == -1) {
-        simplePlayer->disableGlowOutline();
-    } else {
-        simplePlayer->setGlowOutline(gm->colorForIdx(data.glowColor));
-    }
 
     // name label
 

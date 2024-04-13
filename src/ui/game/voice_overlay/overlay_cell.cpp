@@ -1,5 +1,7 @@
 #include "overlay_cell.hpp"
 
+#include <ui/general/simple_player.hpp>
+
 using namespace geode::prelude;
 
 bool VoiceOverlayCell::init(const PlayerAccountData& data) {
@@ -39,23 +41,12 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     auto color1 = gm->colorForIdx(data.icons.color1);
     auto color2 = gm->colorForIdx(data.icons.color2);
 
-    auto playerIcon = Build<SimplePlayer>::create(data.icons.cube)
-        .color(color1)
-        .secondColor(color2)
+    auto playerIcon = Build<GlobedSimplePlayer>::create(data.icons)
         .scale(0.45f)
         .pos(0.f, 0.f)
+        .anchorPoint(0.5f, 0.5f)
         .parent(nodeWrapper)
         .collect();
-
-    playerIcon->setContentSize(playerIcon->m_firstLayer->getScaledContentSize());
-    auto firstNode = static_cast<CCNode*>(playerIcon->getChildren()->objectAtIndex(0));
-    firstNode->setPosition(playerIcon->m_firstLayer->getScaledContentSize() / 2);
-
-    if (data.icons.glowColor != -1) {
-        playerIcon->setGlowOutline(gm->colorForIdx(data.icons.glowColor));
-    } else {
-        playerIcon->disableGlowOutline();
-    }
 
     const float heightMult = 1.3f;
     const float widthMult = 1.1f;
