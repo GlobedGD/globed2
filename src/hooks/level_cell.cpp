@@ -44,6 +44,10 @@ void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
                 .store(m_fields->playerCountIcon);
 
         m_fields->playerCountIcon->setVisible(false); // :D
+
+        if (settings.globed.compressedPlayerCount) {
+            m_fields->playerCountLabel->setPositionX(xPos - 13);
+        }
     }
 
     if (count == 0) {
@@ -53,7 +57,6 @@ void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
 
         if (settings.globed.compressedPlayerCount) {
             m_fields->playerCountIcon->setVisible(true);
-            m_fields->playerCountLabel->setPositionX(m_fields->playerCountLabel->getPositionX() - 13);
             m_fields->playerCountLabel->setString(fmt::format("{}", count).c_str());
         } else {
             m_fields->playerCountLabel->setString(fmt::format("{} {}", count, count == 1 ? "player" : "players").c_str());
