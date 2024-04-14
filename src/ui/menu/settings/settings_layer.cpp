@@ -173,6 +173,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
             .intMin = 1,
             .intMax = 240,
         });
+        MAKE_SETTING(globed, compressedPlayerCount, "Compressed Player Count", "Compress the Player Count in the Online Level List to match the Player Count in The Tower.");
 #ifdef GLOBED_DEBUG
         // advanced settings button
         MAKE_SETTING_TYPE(globed, autoconnect, Type::AdvancedSettings, "Advanced", "Advanced settings");
