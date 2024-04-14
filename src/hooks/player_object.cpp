@@ -1,6 +1,6 @@
 #include "player_object.hpp"
 
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <util/ui.hpp>
 #include <util/debug.hpp>
 
@@ -19,6 +19,12 @@ bool ComplexPlayerObject::vanilla() {
 
 void ComplexPlayerObject::playDeathEffect() {
     if (vanilla()) {
+        PlayerObject::playDeathEffect();
+        return;
+    }
+
+    // death effect is only played in playlayer
+    if (!PlayLayer::get()) {
         PlayerObject::playDeathEffect();
         return;
     }
@@ -46,12 +52,12 @@ void ComplexPlayerObject::incrementJumps() {
 
 void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CCPoint to) {
     // if we are in the editor, do nothing
-    if (PlayLayer::get() == nullptr) {
+    if (GJBaseGameLayer::get() == nullptr) {
         PlayerObject::playSpiderDashEffect(from, to);
         return;
     }
 
-    auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto* gpl = GlobedGJBGL::get();
     if (this == gpl->m_player1) {
         gpl->m_fields->spiderTp1 = SpiderTeleportData { .from = from, .to = to };
     } else if (this == gpl->m_player2) {
@@ -62,12 +68,12 @@ void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CC
 }
 
 void HookedPlayerObject::incrementJumps() {
-    if (PlayLayer::get() == nullptr || m_isOnSlope) {
+    if (GJBaseGameLayer::get() == nullptr || m_isOnSlope) {
         PlayerObject::incrementJumps();
         return;
     }
 
-    auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto* gpl = GlobedGJBGL::get();
 
     if (this == gpl->m_player1) {
         gpl->m_fields->didJustJumpp1 = true;
@@ -79,13 +85,13 @@ void HookedPlayerObject::incrementJumps() {
 }
 
 void HookedPlayerObject::update(float dt) {
-    auto* pl = PlayLayer::get();
-    if (!pl) {
+    auto* gjbgl = GJBaseGameLayer::get();
+    if (!gjbgl) {
         PlayerObject::update(dt);
         return;
     }
 
-    auto* gpl = static_cast<GlobedPlayLayer*>(pl);
+    auto* gpl = GlobedGJBGL::get();
     if (gpl->m_fields->forcedPlatformer) {
         this->togglePlatformerMode(true);
 

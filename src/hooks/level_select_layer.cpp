@@ -1,5 +1,6 @@
 #include "level_select_layer.hpp"
 
+#include <hooks/gjgamelevel.hpp>
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/network_manager.hpp>
@@ -56,7 +57,8 @@ void HookedLevelSelectLayer::updatePlayerCounts() {
         auto button = getChildOfType<CCMenuItemSpriteExtra>(buttonmenu, 0);
         CCLabelBMFont* label = static_cast<CCLabelBMFont*>(button->getChildByID("player-count-label"_spr));
 
-        if (page->m_level->m_levelID < 0) {
+        LevelId levelId = HookedGJGameLevel::getLevelIDFrom(page->m_level);
+        if (levelId < 0) {
             if (label) label->setVisible(false);
             continue;
         }
@@ -76,8 +78,8 @@ void HookedLevelSelectLayer::updatePlayerCounts() {
 
         if (!NetworkManager::get().established()) {
             label->setVisible(false);
-        } else if (m_fields->levels.contains(page->m_level->m_levelID)) {
-            auto players = m_fields->levels[page->m_level->m_levelID];
+        } else if (m_fields->levels.contains(levelId)) {
+            auto players = m_fields->levels[levelId];
             if (players == 0) {
                 label->setVisible(false);
             } else {

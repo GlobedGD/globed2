@@ -1,6 +1,7 @@
 #include "level_browser_layer.hpp"
 
 #include <hooks/level_cell.hpp>
+#include <hooks/gjgamelevel.hpp>
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/network_manager.hpp>
@@ -23,7 +24,7 @@ void HookedLevelBrowserLayer::setupLevelBrowser(cocos2d::CCArray* p0) {
 
         auto* level = static_cast<GJGameLevel*>(level_);
         if (isValidLevelType(level->m_levelType)) {
-            levelIds.push_back(level->m_levelID);
+            levelIds.push_back(HookedGJGameLevel::getLevelIDFrom(level));
         }
     }
 
@@ -50,8 +51,9 @@ void HookedLevelBrowserLayer::refreshPagePlayerCounts() {
 
         if (!isValidLevelType(cell->m_level->m_levelType)) continue;
 
-        if (m_fields->levels.contains(cell->m_level->m_levelID)) {
-            cell->updatePlayerCount(m_fields->levels.at(cell->m_level->m_levelID), inLists);
+        LevelId levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
+        if (m_fields->levels.contains(levelId)) {
+            cell->updatePlayerCount(m_fields->levels.at(levelId), inLists);
         } else {
             cell->updatePlayerCount(-1, inLists);
         }
@@ -65,7 +67,7 @@ void HookedLevelBrowserLayer::updatePlayerCounts(float) {
         for (auto* cell_ : CCArrayExt<CCNode*>(m_list->m_listView->m_tableView->m_contentLayer->getChildren())) {
             if (auto* cell = typeinfo_cast<LevelCell*>(cell_)) {
                 if (isValidLevelType(cell->m_level->m_levelType)) {
-                    levelIds.push_back(cell->m_level->m_levelID);
+                    levelIds.push_back(HookedGJGameLevel::getLevelIDFrom(cell->m_level));
                 }
             }
         }

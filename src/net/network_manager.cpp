@@ -108,7 +108,6 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     _connectingStandalone = false;
     _deferredConnect = false;
     this->clearAdminStatus();
-    RoomManager::get().setGlobal();
 
     if (!this->connected()) {
         return;
@@ -123,6 +122,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
 
     // GameServerManager could have been destructed before NetworkManager, so this could be UB. Additionally will break autoconnect.
     if (!noclear) {
+        RoomManager::get().setGlobal();
         GameServerManager::get().clearActive();
     }
 }

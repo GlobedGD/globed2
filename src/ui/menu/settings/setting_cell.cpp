@@ -3,6 +3,7 @@
 #include "audio_setup_popup.hpp"
 #include "frag_calibration_popup.hpp"
 #include "string_input_popup.hpp"
+#include "advanced_settings_popup.hpp"
 #include <managers/settings.hpp>
 #include <net/network_manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
@@ -81,9 +82,19 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     } break;
     case Type::String: [[fallthrough]];
     case Type::PacketFragmentation: [[fallthrough]];
+    case Type::AdvancedSettings: [[fallthrough]];
     case Type::AudioDevice: {
+        const char* text;
+        if (settingType == Type::PacketFragmentation) {
+            text = "Auto";
+        } else if (settingType == Type::AdvancedSettings) {
+            text = "View";
+        } else if (settingType == Type::AudioDevice) {
+            text = "Set";
+        }
+
         Build<CCMenuItemSpriteExtra>::create(
-            Build<ButtonSprite>::create(settingType == Type::PacketFragmentation ? "Auto" : "Set", "goldFont.fnt", "GJ_button_04.png", .7f).collect(),
+            Build<ButtonSprite>::create(text, "goldFont.fnt", "GJ_button_04.png", .7f).collect(),
             this,
             menu_selector(GlobedSettingCell::onInteractiveButton)
         )
@@ -208,6 +219,8 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
         } else {
             FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
         }
+    } else if (settingType == Type::AdvancedSettings) {
+        AdvancedSettingsPopup::create()->show();
     } else {
         StringInputPopup::create([this](const std::string_view text) {
             this->onStringChanged(text);

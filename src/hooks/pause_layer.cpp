@@ -1,6 +1,6 @@
 #include "pause_layer.hpp"
 
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <ui/game/userlist/userlist.hpp>
 #include <util/lowlevel.hpp>
 
@@ -9,7 +9,7 @@ using namespace geode::prelude;
 void GlobedPauseLayer::customSetup() {
     PauseLayer::customSetup();
 
-    auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto* gpl = GlobedGJBGL::get();
 
     if (!gpl || !gpl->m_fields->globedReady) return;
 
@@ -31,7 +31,7 @@ void GlobedPauseLayer::customSetup() {
 }
 
 void GlobedPauseLayer::selUpdate(float dt) {
-    auto* pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto* pl = GlobedGJBGL::get();
 
     if (pl) {
         pl->pausedUpdate(dt);
@@ -39,7 +39,7 @@ void GlobedPauseLayer::selUpdate(float dt) {
 }
 
 void GlobedPauseLayer::goEdit() {
-    auto* pl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
+    auto* pl = GlobedGJBGL::get();
     if (pl) {
         // make sure we remove listeners and stuff
         pl->onQuitActions();

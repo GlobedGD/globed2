@@ -19,6 +19,7 @@ endif()
 if (GLOBED_IS_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
     add_compile_definitions(GEODE_DEBUG=1)
+    add_compile_definitions(ASP_ENABLE_DEBUG=1)
 else()
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -58,7 +59,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if (MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE /FIWinSock2.h)
     else()
-        target_compile_options(${PROJECT_NAME} PRIVATE "-include WinSock2.h")
+        target_compile_options(${PROJECT_NAME} PRIVATE -include WinSock2.h)
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
 
@@ -97,7 +98,7 @@ CPMAddPackage(
     URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp#5992641")
+CPMAddPackage("gh:dankmeme01/asp#46e7c58")
 
 if (GLOBED_NATIVE_ARCH)
     # Apply native architecture

@@ -17,8 +17,8 @@ private:
     GJListLayer* listLayer = nullptr;
     LoadingCircle* loadingCircle = nullptr;
     CCMenuItemSpriteExtra *btnPagePrev = nullptr, *btnPageNext = nullptr;
-    std::unordered_map<int, unsigned short> levelList;
-    std::vector<int> sortedLevelIds;
+    std::unordered_map<LevelId, unsigned short> levelList;
+    std::vector<LevelId> sortedLevelIds;
     std::vector<std::vector<Ref<GJGameLevel>>> levelPages;
     int currentPage = 0;
     bool loading = false;

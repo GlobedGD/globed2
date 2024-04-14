@@ -52,7 +52,7 @@ protected:
     RemotePlayer* parent;
     bool isSecond;
 
-    PlayLayer* playLayer;
+    GJBaseGameLayer* gameLayer;
     ComplexPlayerObject* playerIcon;
     PlayerIconType playerIconType = PlayerIconType::Unknown;
     cocos2d::CCLabelBMFont* playerName;

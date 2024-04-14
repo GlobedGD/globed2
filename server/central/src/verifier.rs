@@ -11,6 +11,7 @@ use globed_shared::{
 };
 
 const FLUSH_PERIOD: Duration = Duration::from_secs(2);
+const MICRO_SLEEP_PERIOD: Duration = Duration::from_millis(250);
 const DELETER_PERIOD: Duration = Duration::from_mins(1);
 
 #[derive(Clone)]
@@ -39,7 +40,7 @@ impl AccountVerifier {
             .use_rustls_tls()
             .danger_accept_invalid_certs(true)
             .user_agent("")
-            .timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(10))
             .build()
             .unwrap();
 
@@ -75,14 +76,30 @@ impl AccountVerifier {
         }
 
         let request_time = SystemTime::now();
-        loop {
-            let last_refresh = *self.last_update.lock();
 
-            if last_refresh > request_time {
-                break;
+        let mut passed_time = Duration::new(0, 0);
+
+        // wait for 10 seconds maximum
+        while passed_time < Duration::from_secs(10) {
+            // if we haven't flushed the cache yet, keep sleeping
+            let last_update = *self.last_update.lock();
+            if last_update < request_time {
+                tokio::time::sleep(MICRO_SLEEP_PERIOD).await;
+                passed_time += MICRO_SLEEP_PERIOD;
+                continue;
             }
 
-            tokio::time::sleep(FLUSH_PERIOD / 2).await;
+            // if we found a message with the same authcode, break out
+            {
+                let msg_cache = self.message_cache.lock();
+                if msg_cache.iter().any(|x| x.authcode == authcode) {
+                    break;
+                }
+            }
+
+            // there's no message yet, wait for the next update (or for 10 seconds to elapse)
+            tokio::time::sleep(MICRO_SLEEP_PERIOD).await;
+            passed_time += MICRO_SLEEP_PERIOD;
         }
 
         // `true` if we found a message with matching authcode.

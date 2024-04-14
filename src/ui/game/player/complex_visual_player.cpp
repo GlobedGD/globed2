@@ -17,8 +17,8 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     this->parent = parent;
     this->isSecond = isSecond;
 
-    this->playLayer = PlayLayer::get();
-    this->isPlatformer = playLayer->m_level->isPlatformer();
+    this->gameLayer = GJBaseGameLayer::get();
+    this->isPlatformer = gameLayer->m_level->isPlatformer();
 
     auto& data = parent->getAccountData();
 
@@ -28,7 +28,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     auto playerOpacity = static_cast<unsigned char>(settings.players.playerOpacity * 255.f);
 
-    playerIcon = static_cast<ComplexPlayerObject*>(Build<PlayerObject>::create(1, 1, this->playLayer, this->playLayer->m_objectLayer, false)
+    playerIcon = static_cast<ComplexPlayerObject*>(Build<PlayerObject>::create(1, 1, this->gameLayer, this->gameLayer->m_objectLayer, false)
         .opacity(playerOpacity)
         .parent(this)
         .collect());
@@ -74,7 +74,7 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     auto* gm = GameManager::get();
     auto& settings = GlobedSettings::get();
 
-    playerIcon->togglePlatformerMode(playLayer->m_level->isPlatformer());
+    playerIcon->togglePlatformerMode(gameLayer->m_level->isPlatformer());
 
     storedIcons = icons;
     if (settings.players.defaultDeathEffect) {
@@ -156,7 +156,7 @@ void ComplexVisualPlayer::updateData(
 
     PlayerIconType iconType = data.iconType;
     // in platformer, jetpack is serialized as ship so we make sure to show the right icon
-    if (iconType == PlayerIconType::Ship && playLayer->m_level->isPlatformer()) {
+    if (iconType == PlayerIconType::Ship && gameLayer->m_level->isPlatformer()) {
         iconType = PlayerIconType::Jetpack;
     }
 
@@ -185,7 +185,7 @@ void ComplexVisualPlayer::updateData(
     }
 
     if (statusIcons) {
-        statusIcons->updateStatus(playerData.isPaused, playerData.isPracticing, isSpeaking, loudness);
+        statusIcons->updateStatus(playerData.isPaused, playerData.isPracticing, isSpeaking, playerData.isInEditor, loudness);
     }
 
     // animate dashing
@@ -335,6 +335,9 @@ void ComplexVisualPlayer::playDeathEffect() {
 }
 
 void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
+    // spider teleport effect is only played in play layer
+    if (!PlayLayer::get()) return;
+
     playerIcon->m_unk65c = true;
     playerIcon->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
 
@@ -372,7 +375,7 @@ void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
 }
 
 void ComplexVisualPlayer::playJump() {
-    if (playLayer->m_level->isPlatformer() && playerIconType == PlayerIconType::Cube && !wasRotating) {
+    if (gameLayer->m_level->isPlatformer() && playerIconType == PlayerIconType::Cube && !wasRotating) {
         playerIcon->animatePlatformerJump(1.0f);
         didPerformPlatformerJump = true;
     }
@@ -549,9 +552,8 @@ void ComplexVisualPlayer::updateOpacity() {
     float mult = 1.f;
     if (settings.players.hideNearby) {
         // calculate distance
-        auto* pl = PlayLayer::get();
-        auto p1pos = pl->m_player1->getPosition();
-        auto p2pos = pl->m_player2->getPosition();
+        auto p1pos = this->gameLayer->m_player1->getPosition();
+        auto p2pos = this->gameLayer->m_player2->getPosition();
         auto ourPos = this->getPlayerPosition();
 
         float distance = std::min(cocos2d::ccpDistance(ourPos, p1pos), cocos2d::ccpDistance(ourPos, p2pos));

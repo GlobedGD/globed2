@@ -1,7 +1,7 @@
 #include "interpolator.hpp"
 
 #include "lerp_logger.hpp"
-#include <hooks/play_layer.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
 #include <util/format.hpp>
@@ -90,6 +90,7 @@ static inline void lerpPlayer(
     out.isPaused = older.isPaused;
     out.isPracticing = older.isPracticing;
     out.isDualMode = older.isDualMode;
+    out.isInEditor = older.isInEditor;
 }
 
 void PlayerInterpolator::tick(float dt) {
@@ -137,8 +138,7 @@ bool PlayerInterpolator::isPlayerStale(int playerId, float lastServerPacket) {
 }
 
 float PlayerInterpolator::getLocalTs() {
-    auto* gpl = static_cast<GlobedPlayLayer*>(PlayLayer::get());
-    return gpl->m_fields->timeCounter;
+    return GlobedGJBGL::get()->m_fields->timeCounter;
 }
 
 PlayerInterpolator::LerpFrame::LerpFrame() {
