@@ -18,7 +18,6 @@ public:
 
 private:
     cocos2d::CCLabelBMFont* percentageLabel;
-    cocos2d::CCMenu* badgeWrapper;
     cocos2d::CCMenu* menu;
     CCMenuItemSpriteExtra *actionsButton = nullptr, *muteButton = nullptr, *hideButton = nullptr, *kickButton = nullptr, *teleportButton = nullptr;
     cocos2d::CCMenu* buttonsWrapper = nullptr;
