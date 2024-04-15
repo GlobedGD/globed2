@@ -91,6 +91,7 @@ static inline void lerpPlayer(
     out.isPracticing = older.isPracticing;
     out.isDualMode = older.isDualMode;
     out.isInEditor = older.isInEditor;
+    out.isEditorBuilding = older.isEditorBuilding;
 }
 
 void PlayerInterpolator::tick(float dt) {

@@ -297,7 +297,11 @@ void ComplexVisualPlayer::playDeathEffect() {
 
     // todo, doing simply ->playDeathEffect causes the hook to execute twice
     // if you figure out why then i love you
-    playerIcon->PlayerObject::playDeathEffect();
+
+    // only play the death effect in playlayer
+    if (PlayLayer::get()) {
+        playerIcon->PlayerObject::playDeathEffect();
+    }
 
     // TODO temp, we remove the small cube pieces because theyre buggy in my testing
     if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {

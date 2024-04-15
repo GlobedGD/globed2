@@ -23,12 +23,6 @@ void ComplexPlayerObject::playDeathEffect() {
         return;
     }
 
-    // death effect is only played in playlayer
-    if (!PlayLayer::get()) {
-        PlayerObject::playDeathEffect();
-        return;
-    }
-
     auto* rp = static_cast<ComplexVisualPlayer*>(this->getUserObject());
     int deathEffect = rp->storedIcons.deathEffect;
 

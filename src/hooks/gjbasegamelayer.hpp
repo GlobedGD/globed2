@@ -120,6 +120,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     bool established();
     bool isCurrentPlayLayer();
     bool isPaused(bool checkCurrent = true);
+    bool isEditor();
 
     bool isSafeMode();
     void toggleSafeMode(bool enabled);

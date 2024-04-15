@@ -891,6 +891,13 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         currentPercentage = 0.f;
     }
 
+    bool isInEditor = LevelEditorLayer::get() != nullptr;
+    bool isEditorBuilding = false;
+
+    if (isInEditor) {
+        isEditorBuilding = this->m_playbackMode == PlaybackMode::Not;
+    }
+
     return PlayerData {
         .timestamp = m_fields->timeCounter,
 
@@ -905,7 +912,8 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         .isPaused = this->isPaused(),
         .isPracticing = m_isPracticeMode,
         .isDualMode = m_gameState.m_isDualMode,
-        .isInEditor = LevelEditorLayer::get() != nullptr,
+        .isInEditor = isInEditor,
+        .isEditorBuilding = isEditorBuilding,
     };
 }
 
@@ -984,6 +992,17 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
             .store(progressArrow);
     }
 
+    // if we are in the editor, hide the progress indicators
+    if (this->isEditor()) {
+        if (progressArrow) {
+            progressArrow->setVisible(false);
+        }
+
+        if (progressIcon) {
+            progressIcon->setVisible(false);
+        }
+    }
+
     auto* rp = Build<RemotePlayer>::create(progressIcon, progressArrow)
         .zOrder(10)
         .id(Mod::get()->expandSpriteName(fmt::format("remote-player-{}", playerId).c_str()))
@@ -1034,13 +1053,13 @@ bool GlobedGJBGL::isCurrentPlayLayer() {
 }
 
 bool GlobedGJBGL::isPaused(bool checkCurrent) {
-    if (checkCurrent) return false;
-
-    if (LevelEditorLayer::get()) {
+    if (this->isEditor()) {
         return this->m_playbackMode == PlaybackMode::Paused;
     }
 
     if (PlayLayer::get()) {
+        if (checkCurrent && !isCurrentPlayLayer()) return false;
+
         for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {
             if (typeinfo_cast<PauseLayer*>(child)) {
                 return true;
@@ -1049,6 +1068,10 @@ bool GlobedGJBGL::isPaused(bool checkCurrent) {
     }
 
     return false;
+}
+
+bool GlobedGJBGL::isEditor() {
+    return (void*)LevelEditorLayer::get() == (void*)this;
 }
 
 bool GlobedGJBGL::isSafeMode() {

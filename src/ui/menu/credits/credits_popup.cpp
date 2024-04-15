@@ -62,13 +62,13 @@ bool GlobedCreditsPopup::setup() {
     ADD_PLAYER(staff, "NotTerma", 4706010, 16077956, 379, 98, 36, 43);
     ADD_PLAYER(staff, "ciyaqil", 13640460, 127054504, 84, 12, 40, 40);
     ADD_PLAYER(staff, "TheKiroshi", 6442871, 31833361, 1, 8, 11, 63);
-    ADD_PLAYER(staff, "Jiflol", 8262191, 61991331, 35, 7, 3, -1);
+    ADD_PLAYER(staff, "Jiflol", 8262191, 61991331, 135, 44, 12, -1);
     ADD_PLAYER(staff, "LimeGradient", 7214334, 42454266, 37, 2, 12, 2);
     ADD_PLAYER(staff, "ManagerMagolor", 25450870, 195501521, 101, 43, 7, -1);
+    ADD_PLAYER(staff, "skrunkly", 14462068, 146500573, 37, 17, 19, -1);
 
     ADD_PLAYER(staff, "Capeling", 18226543, 160504868, 141, 76, 40, 40);
     ADD_PLAYER(staff, "Awesomeoverkill", 7479054, 47290058, 77, 1, 5, -1);
-    ADD_PLAYER(staff, "skrunkly", 14462068, 146500573, 37, 17, 19, -1);
     ADD_PLAYER(staff, "NikoSando", 737532, 4354472, 433, 16, 6, 12);
 
     auto* cellStaff = Build<GlobedCreditsCell>::create("Staff", true, staff)
