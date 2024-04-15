@@ -22,6 +22,7 @@ public:
         GSETTING(bool, deferPreloadAssets, false);
         GSETTING(bool, increaseLevelList, false);
         GSETTING(int, fragmentationLimit, 60000);
+        GSETTING(bool, compressedPlayerCount, false);
     };
 
     struct Overlay {
