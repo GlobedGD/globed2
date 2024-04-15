@@ -93,7 +93,7 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
 #ifndef GLOBED_VOICE_CAN_TALK
                             if (enabled) {
                                 // if this is a platform that cannot use the microphone, show an additional popup
-                                FLAlertLayer::create("Notice", "Please note that talking is <cr>currently unimplemented</c> on this platform, and you will only be able to hear others. Sorry for the inconvenience.")->show();
+                                FLAlertLayer::create("Notice", "Please note that talking is <cr>currently unimplemented</c> on this platform, and you will only be able to hear others. Sorry for the inconvenience.", "Ok")->show();
                             }
 #endif
                         });
