@@ -34,7 +34,7 @@ bool GlobedCreditsCell::init(const char* name, bool lightBg, cocos2d::CCArray* p
 
     for (size_t i = 0; i < rows; i++) {
         size_t firstIdx = i * maxPlayersInRow;
-        size_t lastIdx = std::min((i + 1) * maxPlayersInRow, players->count());
+        size_t lastIdx = std::min((size_t)((i + 1) * maxPlayersInRow), (size_t)players->count());
         size_t count = lastIdx - firstIdx;
 
         float playerGap = 15.f;
