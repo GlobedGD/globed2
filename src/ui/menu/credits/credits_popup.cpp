@@ -84,6 +84,7 @@ bool GlobedCreditsPopup::setup() {
     ADD_PLAYER(contributors, "Capeling", 18226543, 160504868, 141, 76, 40, 40);
     ADD_PLAYER(contributors, "TheSillyDoggo", 16778880, 162245660, 5, 41, 40, 12);
     ADD_PLAYER(contributors, "angeld233", 28024715, 236381167, 98, 4, 12, 12);
+    ADD_PLAYER(contributors, "Uproxide", 25397826, 227796112, 296, 2, 12, 12);
 
     auto* cellContrib = Build<GlobedCreditsCell>::create("Contributor", false, contributors)
         .id("cell-contributor"_spr)
