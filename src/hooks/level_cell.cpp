@@ -8,7 +8,6 @@ using namespace geode::prelude;
 
 
 void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
-
     auto& settings = GlobedSettings::get();
 
     if (!m_fields->playerCountLabel || !m_fields->playerCountIcon) {
@@ -52,6 +51,7 @@ void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
 
     if (count == 0) {
         m_fields->playerCountLabel->setVisible(false);
+        m_fields->playerCountIcon->setVisible(false);
     } else {
         m_fields->playerCountLabel->setVisible(true);
 
