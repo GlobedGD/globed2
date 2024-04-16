@@ -5,6 +5,7 @@
 * Add integration into the level editor (thanks [alk](user:11535118))
 * Don't play effects and animations if the player is too far
 * Change the voice chat guide button and ask the user if they want voice chat to be enabled on first startup
+* Replace the Overlay settings tab with Menus and move overlay settings into Level UI
 * Fix player icons and names taking multiple seconds to load when a player joins your level
 * Fix a missing texture crash when asset preloading is disabled
 * Fix the placeholder green icon color being a slightly different shade than the actual default green
