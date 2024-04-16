@@ -37,7 +37,12 @@ bool GlobedCreditsPlayer::init(const std::string_view name, int accountId, int u
         .parent(this)
         .collect();
 
-    GameLevelManager::get()->storeUserName(userId, accountId, gd::string(std::string(name)));
+    // he likes being an exception
+    if (name == "ninXout") {
+        GameLevelManager::get()->storeUserName(userId, accountId, "Awesomeoverkill");
+    } else {
+        GameLevelManager::get()->storeUserName(userId, accountId, gd::string(std::string(name)));
+    }
 
     float width = sp->getScaledContentSize().width * 1.1f;
     float height = sp->getScaledContentSize().height * 1.1f + nameLabel->getScaledContentSize().height;

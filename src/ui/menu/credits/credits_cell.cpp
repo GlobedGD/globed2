@@ -1,6 +1,5 @@
 #include "credits_cell.hpp"
 #include "credits_popup.hpp"
-#include "credits_player.hpp"
 
 #include <util/ui.hpp>
 

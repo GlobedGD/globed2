@@ -68,7 +68,7 @@ bool GlobedCreditsPopup::setup() {
     ADD_PLAYER(staff, "skrunkly", 14462068, 146500573, 37, 17, 19, -1);
 
     ADD_PLAYER(staff, "Capeling", 18226543, 160504868, 141, 76, 40, 40);
-    ADD_PLAYER(staff, "Awesomeoverkill", 7479054, 47290058, 77, 1, 5, -1);
+    ADD_PLAYER(staff, "ninXout", 7479054, 47290058, 77, 1, 5, -1);
     ADD_PLAYER(staff, "NikoSando", 737532, 4354472, 433, 16, 6, 12);
 
     auto* cellStaff = Build<GlobedCreditsCell>::create("Staff", true, staff)
@@ -80,7 +80,7 @@ bool GlobedCreditsPopup::setup() {
 
     CCArray* contributors = CCArray::create();
 
-    ADD_PLAYER(contributors, "Awesomeoverkill", 7479054, 47290058, 77, 1, 5, -1);
+    ADD_PLAYER(contributors, "ninXout", 7479054, 47290058, 77, 1, 5, -1);
     ADD_PLAYER(contributors, "Capeling", 18226543, 160504868, 141, 76, 40, 40);
     ADD_PLAYER(contributors, "TheSillyDoggo", 16778880, 162245660, 5, 41, 40, 12);
     ADD_PLAYER(contributors, "angeld233", 28024715, 236381167, 98, 4, 12, 12);

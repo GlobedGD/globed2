@@ -2,10 +2,8 @@
 #include <defs/geode.hpp>
 
 #include <Geode/modify/PlayLayer.hpp>
-#include <Geode/modify/GJBaseGameLayer.hpp>
 
 class $modify(GlobedPlayLayer, PlayLayer) {
-
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);
     }
