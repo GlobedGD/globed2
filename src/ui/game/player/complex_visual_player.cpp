@@ -26,12 +26,29 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     auto playerOpacity = static_cast<unsigned char>(settings.players.playerOpacity * 255.f);
 
+    // // save the old streak
+    // int oldStreak = hgm->getPlayerStreak();
+    // int oldShipStreak = hgm->getPlayerShipFire();
+
+    // int streak = 6; // TODO needs protocol change
+    // int shipStreak = 6;
+
+    // // set the streak of the player
+    // hgm->setPlayerStreak(streak);
+    // hgm->setPlayerShipStreak(shipStreak);
+
+    // create the player
     playerIcon = static_cast<ComplexPlayerObject*>(Build<PlayerObject>::create(1, 1, this->gameLayer, this->gameLayer->m_objectLayer, false)
         .opacity(playerOpacity)
         .parent(this)
         .collect());
 
     playerIcon->setRemotePlayer(this);
+    // this->enableTrail();
+
+    // // restore the old streak
+    // hgm->setPlayerStreak(oldStreak);
+    // hgm->setPlayerShipStreak(oldShipStreak);
 
     Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
         .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
@@ -77,6 +94,24 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     } else {
         this->tryLoadIconsAsync();
     }
+
+    // // give ids to some of the related nodes
+    // auto& data = parent->getAccountData();
+    // if (playerIcon->m_waveTrail) {
+    //     playerIcon->m_waveTrail->setID(fmt::format("dankmeme.globed2/wave-trail-{}{}", data.accountId, isSecond ? "-second" : ""));
+    // }
+
+    // if (playerIcon->m_regularTrail) {
+    //     playerIcon->m_regularTrail->setID(fmt::format("dankmeme.globed2/regular-trail-{}{}", data.accountId, isSecond ? "-second" : ""));
+    // }
+
+    // if (playerIcon->m_ghostTrail) {
+    //     playerIcon->m_ghostTrail->setID(fmt::format("dankmeme.globed2/ghost-trail-{}{}", data.accountId, isSecond ? "-second" : ""));
+    // }
+
+    // if (playerIcon->m_shipStreak) {
+    //     playerIcon->m_shipStreak->setID(fmt::format("dankmeme.globed2/ship-trail-{}{}", data.accountId, isSecond ? "-second" : ""));
+    // }
 }
 
 void ComplexVisualPlayer::updateData(
@@ -318,9 +353,9 @@ void ComplexVisualPlayer::playDeathEffect() {
         prevChildren.insert(child);
     }
 
-    // TODO, doing simply ->playDeathEffect causes the hook to execute twice
-    // if you figure out why then i love you
-    playerIcon->PlayerObject::playDeathEffect();
+    playerIcon->m_unk65c = true;
+    playerIcon->m_isHidden = false;
+    playerIcon->playerDestroyed(false);
 
     // TODO temp, we remove the small cube pieces because theyre buggy in my testing
     if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {
@@ -717,6 +752,18 @@ void ComplexVisualPlayer::cancelPlatformerJumpAnim() {
         playerIcon->stopPlatformerJumpAnimation();
         didPerformPlatformerJump = false;
     }
+}
+
+void ComplexVisualPlayer::enableTrail() {
+    log::debug("wave trail: {}", playerIcon->m_waveTrail);
+    playerIcon->activateStreak();
+}
+
+void ComplexVisualPlayer::disableTrail() {
+    // inlined bitch
+    // playerIcon->deactivateStreak();
+    playerIcon->m_regularTrail->stopStroke();
+    playerIcon->fadeOutStreak2(0.2f);
 }
 
 bool ComplexVisualPlayer::isPlayerNearby(const GameCameraState& camState) {

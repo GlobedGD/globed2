@@ -125,6 +125,8 @@ protected:
     void asyncIconLoadedIntermediary(cocos2d::CCObject*);
 
     void cancelPlatformerJumpAnim();
+    void enableTrail();
+    void disableTrail();
 
     bool isPlayerNearby(const GameCameraState& camState);
 };
