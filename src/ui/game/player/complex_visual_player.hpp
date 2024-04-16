@@ -60,6 +60,7 @@ protected:
     cocos2d::CCSprite* badgeIcon;
     Ref<PlayerStatusIcons> statusIcons;
     bool isPlatformer;
+    bool isEditor;
 
     // these 3 used in robot and spider anims
     bool wasGrounded = false;

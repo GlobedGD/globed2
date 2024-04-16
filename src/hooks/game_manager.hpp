@@ -10,6 +10,10 @@ class $modify(HookedGameManager, GameManager) {
     bool assetsPreloaded = false;
     bool deathEffectsPreloaded = false;
 
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("GameManager::returnToLastScene", -999999999);
+    }
+
     $override
     void returnToLastScene(GJGameLevel* level);
 
