@@ -97,7 +97,7 @@ bool GlobedCreditsPopup::setup() {
 
     ADD_PLAYER(special, "MathieuAR", 3759035, 13781237, 220, 5, 9, 106);
     ADD_PLAYER(special, "HJfod", 104257, 1817908, 132, 8, 3, 40);
-    ADD_PLAYER(special, "Cvolton", 761691, 6330800, 101, 8, 12, -1);
+    ADD_PLAYER(special, "Cvolton", 761691, 6330800, 101, 19, 12, -1);
     ADD_PLAYER(special, "alk1m123", 11535118, 116938760, 102, 12, 12, -1);
     ADD_PLAYER(special, "mat4", 5568872, 19127913, 81, 0, 20, 2);
 

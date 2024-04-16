@@ -11,8 +11,6 @@ using namespace geode::prelude;
 
 namespace util::ui {
     void switchToScene(CCLayer* layer) {
-        // massive geode L
-        // uses replaceScene instead of pushScene
         auto scene = CCScene::create();
         scene->addChild(layer);
         CCDirector::get()->pushScene(CCTransitionFade::create(.5f, scene));

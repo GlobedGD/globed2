@@ -17,6 +17,7 @@
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <data/packets/all.hpp>
+#include <game/camera_state.hpp>
 #include <hooks/game_manager.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
@@ -33,18 +34,6 @@ constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 
 
-static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& displacement) {
-    if (std::abs(displacement.x) > 10.f) {
-        displacement.x = -displacement.x;
-        displacement.y = 0;
-        return true;
-    }
-
-    return false;
-}
-
-/* Hooks */
-
 bool GlobedGJBGL::init() {
     if (!GJBaseGameLayer::init()) return false;
 
@@ -54,112 +43,6 @@ bool GlobedGJBGL::init() {
     gm->setLastSceneEnum();
 
     return true;
-}
-
-int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
-    int retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
-
-    if ((void*)this != GJBaseGameLayer::get()) return retval;
-
-    // up and down hell yeah
-    auto* gpl = GlobedGJBGL::get();
-
-    if (!gpl->m_fields->globedReady) return retval;
-    if (!gpl->m_fields->roomSettings.collision) return retval;
-
-    bool isSecond = player == gpl->m_player2;
-
-    for (const auto& [_, rp] : gpl->m_fields->players) {
-        auto* p1 = static_cast<PlayerObject*>(rp->player1->getPlayerObject());
-        auto* p2 = static_cast<PlayerObject*>(rp->player2->getPlayerObject());
-
-        auto& p1Rect = p1->getObjectRect();
-        auto& p2Rect = p2->getObjectRect();
-
-        auto& playerRect = player->getObjectRect();
-
-        CCRect p1CollRect = p1Rect;
-        CCRect p2CollRect = p2Rect;
-
-        constexpr float padding = 2.f;
-
-        // p1CollRect.origin += CCPoint{padding, padding};
-        // p1CollRect.size -= CCSize{padding * 2, padding * 2};
-
-        // p2CollRect.origin += CCPoint{padding, padding};
-        // p2CollRect.size -= CCSize{padding * 2, padding * 2};
-
-        bool intersectsP1 = playerRect.intersectsRect(p1CollRect);
-        bool intersectsP2 = playerRect.intersectsRect(p2CollRect);
-
-        if (isSecond) {
-            rp->player1->setP2StickyState(false);
-            rp->player2->setP2StickyState(false);
-        } else {
-            rp->player1->setP1StickyState(false);
-            rp->player2->setP1StickyState(false);
-        }
-
-        if (intersectsP1) {
-            auto prev = player->getPosition();
-            player->collidedWithObject(dt, p1, p1CollRect, false);
-            auto displacement = player->getPosition() - prev;
-
-            // log::debug("p1 intersect, displacement: {}", displacement);
-
-            bool shouldRevert = shouldCorrectCollision(playerRect, p1Rect, displacement);
-
-            if (shouldRevert) {
-                player->setPosition(player->getPosition() + displacement);
-            }
-
-            if (std::abs(displacement.y) > 0.001f) {
-                isSecond ? rp->player1->setP2StickyState(true) : rp->player1->setP1StickyState(true);
-            }
-        }
-
-        if (intersectsP2) {
-            auto prev = player->getPosition();
-            player->collidedWithObject(dt, p2, p2CollRect, false);
-            auto displacement = player->getPosition() - prev;
-
-            // log::debug("p2 intersect, displacement: {}", displacement);
-
-            bool shouldRevert = shouldCorrectCollision(playerRect, p2Rect, displacement);
-
-            if (shouldRevert) {
-                player->setPosition(player->getPosition() + displacement);
-            }
-
-            if (std::abs(displacement.y) > 0.001f) {
-                isSecond ? rp->player2->setP2StickyState(true) : rp->player2->setP1StickyState(true);
-            }
-        }
-    }
-
-    return retval;
-}
-
-void GlobedGJBGL::loadLevelSettings() {
-    LevelSettingsObject* lo = m_levelSettings;
-
-    if (!GJBaseGameLayer::get()) {
-        GJBaseGameLayer::loadLevelSettings();
-        return;
-    }
-
-    auto* gpl = GlobedGJBGL::get();
-    bool lastPlat = lo->m_platformerMode;
-    auto lastLength = m_level->m_levelLength;
-
-    if (gpl->m_fields->forcedPlatformer) {
-        lo->m_platformerMode = true;
-    }
-
-    GJBaseGameLayer::loadLevelSettings();
-
-    lo->m_platformerMode = lastPlat;
-    m_level->m_levelLength = lastLength;
 }
 
 void GlobedGJBGL::onEnterHook() {
@@ -177,7 +60,6 @@ void GlobedGJBGL::onEnterHook() {
         }
     });
 }
-
 
 GlobedGJBGL* GlobedGJBGL::get() {
     return static_cast<GlobedGJBGL*>(GameManager::get()->m_gameLayer);
@@ -670,14 +552,19 @@ void GlobedGJBGL::selPeriodicalUpdate(float) {
             if (data.has_value()) {
                 // if the profile data already exists in cache, use it
                 remotePlayer->updateAccountData(data.value(), true);
-            } else if (remotePlayer->getDefaultTicks() >= 12) {
-                // if it has been 3 seconds and we still don't have them in cache, request again
-                remotePlayer->setDefaultTicks(0);
-                ids.push_back(playerId);
-            } else {
-                // if it has been less than 3 seconds, just increment the tick counter
-                remotePlayer->incDefaultTicks();
+                continue;
             }
+
+            // request again if it has either been 5 seconds, or if the player just joined
+            if (remotePlayer->getDefaultTicks() == 20) {
+                remotePlayer->setDefaultTicks(0);
+            }
+
+            if (remotePlayer->getDefaultTicks() == 0) {
+                ids.push_back(playerId);
+            }
+
+            remotePlayer->incDefaultTicks();
         } else if (data.has_value()) {
             // still try to see if the cache has changed
             remotePlayer->updateAccountData(data.value());
@@ -707,12 +594,11 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     if (!self) return;
 
-    auto visibleOrigin = CCPoint{0.f, 0.f};
-    auto visibleCoverage = CCDirector::get()->getWinSize();
+    self->m_fields->camState.visibleOrigin = CCPoint{0.f, 0.f};
+    self->m_fields->camState.visibleCoverage = CCDirector::get()->getWinSize();
 
-    auto camOrigin = self->m_gameState.m_unk20c; // m_unk20c or m_unk2c0, same values
-    auto zoom = self->m_objectLayer->getScale();
-    auto camCoverage = visibleCoverage / zoom;
+    self->m_fields->camState.cameraOrigin = self->m_gameState.m_unk20c; // m_unk20c or m_unk2c0, same values
+    self->m_fields->camState.zoom = self->m_objectLayer->getScale();
 
     // update ourselves
     auto accountId = GJAccountManager::get()->m_accountID;
@@ -757,10 +643,9 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
         // update progress icons
         if (auto self = PlayLayer::get()) {
-            if (self->m_progressBar && self->m_progressBar->isVisible() && remotePlayer->progressIcon) {
+            // dont update if we are in a normal level and without a progressbar
+            if (self->m_level->isPlatformer() || self->m_progressBar->isVisible()) {
                 remotePlayer->updateProgressIcon();
-            } else if (remotePlayer->progressArrow) {
-                remotePlayer->updateProgressArrow(camOrigin, camCoverage, visibleOrigin, visibleCoverage, zoom);
             }
         }
 
@@ -822,6 +707,10 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
     else if (player->m_isRobot) iconType = PlayerIconType::Robot;
     else if (player->m_isSpider) iconType = PlayerIconType::Spider;
     else if (player->m_isSwing) iconType = PlayerIconType::Swing;
+
+    if (iconType == PlayerIconType::Ship && m_level->isPlatformer()) {
+        iconType = PlayerIconType::Jetpack;
+    }
 
     auto* pobjInner = static_cast<CCNode*>(player->getChildren()->objectAtIndex(0));
 
@@ -891,7 +780,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         currentPercentage = 0.f;
     }
 
-    bool isInEditor = LevelEditorLayer::get() != nullptr;
+    bool isInEditor = this->isEditor();
     bool isEditorBuilding = false;
 
     if (isInEditor) {
@@ -1003,7 +892,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
         }
     }
 
-    auto* rp = Build<RemotePlayer>::create(progressIcon, progressArrow)
+    auto* rp = Build<RemotePlayer>::create(&m_fields->camState, progressIcon, progressArrow)
         .zOrder(10)
         .id(Mod::get()->expandSpriteName(fmt::format("remote-player-{}", playerId).c_str()))
         .collect();
@@ -1177,3 +1066,121 @@ void GlobedGJBGL::rescheduleSelectors() {
     this->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdateEstimators), updeInterval);
 }
 
+/* Collision stuff */
+
+static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& displacement) {
+    if (std::abs(displacement.x) > 10.f) {
+        displacement.x = -displacement.x;
+        displacement.y = 0;
+        return true;
+    }
+
+    return false;
+}
+
+// hooks
+
+int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
+    int retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
+
+    if ((void*)this != GJBaseGameLayer::get()) return retval;
+
+    auto* gpl = GlobedGJBGL::get();
+
+    if (!gpl->established()) return retval;
+    if (!gpl->m_fields->roomSettings.collision) return retval;
+
+    bool isSecond = player == gpl->m_player2;
+
+    for (const auto& [_, rp] : gpl->m_fields->players) {
+        auto* p1 = static_cast<PlayerObject*>(rp->player1->getPlayerObject());
+        auto* p2 = static_cast<PlayerObject*>(rp->player2->getPlayerObject());
+
+        auto& p1Rect = p1->getObjectRect();
+        auto& p2Rect = p2->getObjectRect();
+
+        auto& playerRect = player->getObjectRect();
+
+        CCRect p1CollRect = p1Rect;
+        CCRect p2CollRect = p2Rect;
+
+        constexpr float padding = 2.f;
+
+        // p1CollRect.origin += CCPoint{padding, padding};
+        // p1CollRect.size -= CCSize{padding * 2, padding * 2};
+
+        // p2CollRect.origin += CCPoint{padding, padding};
+        // p2CollRect.size -= CCSize{padding * 2, padding * 2};
+
+        bool intersectsP1 = playerRect.intersectsRect(p1CollRect);
+        bool intersectsP2 = playerRect.intersectsRect(p2CollRect);
+
+        if (isSecond) {
+            rp->player1->setP2StickyState(false);
+            rp->player2->setP2StickyState(false);
+        } else {
+            rp->player1->setP1StickyState(false);
+            rp->player2->setP1StickyState(false);
+        }
+
+        if (intersectsP1) {
+            auto prev = player->getPosition();
+            player->collidedWithObject(dt, p1, p1CollRect, false);
+            auto displacement = player->getPosition() - prev;
+
+            // log::debug("p1 intersect, displacement: {}", displacement);
+
+            bool shouldRevert = shouldCorrectCollision(playerRect, p1Rect, displacement);
+
+            if (shouldRevert) {
+                player->setPosition(player->getPosition() + displacement);
+            }
+
+            if (std::abs(displacement.y) > 0.001f) {
+                isSecond ? rp->player1->setP2StickyState(true) : rp->player1->setP1StickyState(true);
+            }
+        }
+
+        if (intersectsP2) {
+            auto prev = player->getPosition();
+            player->collidedWithObject(dt, p2, p2CollRect, false);
+            auto displacement = player->getPosition() - prev;
+
+            // log::debug("p2 intersect, displacement: {}", displacement);
+
+            bool shouldRevert = shouldCorrectCollision(playerRect, p2Rect, displacement);
+
+            if (shouldRevert) {
+                player->setPosition(player->getPosition() + displacement);
+            }
+
+            if (std::abs(displacement.y) > 0.001f) {
+                isSecond ? rp->player2->setP2StickyState(true) : rp->player2->setP1StickyState(true);
+            }
+        }
+    }
+
+    return retval;
+}
+
+void GlobedGJBGL::loadLevelSettings() {
+    LevelSettingsObject* lo = m_levelSettings;
+
+    if (!GJBaseGameLayer::get()) {
+        GJBaseGameLayer::loadLevelSettings();
+        return;
+    }
+
+    auto* gpl = GlobedGJBGL::get();
+    bool lastPlat = lo->m_platformerMode;
+    auto lastLength = m_level->m_levelLength;
+
+    if (gpl->m_fields->forcedPlatformer) {
+        lo->m_platformerMode = true;
+    }
+
+    GJBaseGameLayer::loadLevelSettings();
+
+    lo->m_platformerMode = lastPlat;
+    m_level->m_levelLength = lastLength;
+}

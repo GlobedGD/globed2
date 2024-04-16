@@ -26,12 +26,29 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     auto playerOpacity = static_cast<unsigned char>(settings.players.playerOpacity * 255.f);
 
+    // // save the old streak
+    // int oldStreak = hgm->getPlayerStreak();
+    // int oldShipStreak = hgm->getPlayerShipFire();
+
+    // int streak = 6; // TODO needs protocol change
+    // int shipStreak = 6;
+
+    // // set the streak of the player
+    // hgm->setPlayerStreak(streak);
+    // hgm->setPlayerShipStreak(shipStreak);
+
+    // create the player
     playerIcon = static_cast<ComplexPlayerObject*>(Build<PlayerObject>::create(1, 1, this->gameLayer, this->gameLayer->m_objectLayer, false)
         .opacity(playerOpacity)
         .parent(this)
         .collect());
 
     playerIcon->setRemotePlayer(this);
+    // this->enableTrail();
+
+    // // restore the old streak
+    // hgm->setPlayerStreak(oldStreak);
+    // hgm->setPlayerShipStreak(oldShipStreak);
 
     Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
         .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
@@ -81,17 +98,40 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     } else {
         this->tryLoadIconsAsync();
     }
+
+    // // give ids to some of the related nodes
+    // auto& data = parent->getAccountData();
+    // if (playerIcon->m_waveTrail) {
+    //     playerIcon->m_waveTrail->setID(fmt::format("dankmeme.globed2/wave-trail-{}{}", data.accountId, isSecond ? "-second" : ""));
+    // }
+
+    // if (playerIcon->m_regularTrail) {
+    //     playerIcon->m_regularTrail->setID(fmt::format("dankmeme.globed2/regular-trail-{}{}", data.accountId, isSecond ? "-second" : ""));
+    // }
+
+    // if (playerIcon->m_ghostTrail) {
+    //     playerIcon->m_ghostTrail->setID(fmt::format("dankmeme.globed2/ghost-trail-{}{}", data.accountId, isSecond ? "-second" : ""));
+    // }
+
+    // if (playerIcon->m_shipStreak) {
+    //     playerIcon->m_shipStreak->setID(fmt::format("dankmeme.globed2/ship-trail-{}{}", data.accountId, isSecond ? "-second" : ""));
+    // }
 }
 
 void ComplexVisualPlayer::updateData(
         const SpecificIconData& data,
         const VisualPlayerState& playerData,
+        const GameCameraState& camState,
         bool isSpeaking,
         float loudness
 ) {
     auto& settings = GlobedSettings::get();
 
     wasRotating = data.isRotating;
+
+    bool isNearby = this->isPlayerNearby(camState);
+    bool cameNearby = isNearby && !wasNearby;
+    wasNearby = isNearby;
 
     auto displacement = data.position - playerIcon->getPosition();
 
@@ -149,6 +189,7 @@ void ComplexVisualPlayer::updateData(
 
     PlayerIconType iconType = data.iconType;
     // in platformer, jetpack is serialized as ship so we make sure to show the right icon
+    // TODO: remove in next protocol bump as the statement above is false.
     if (iconType == PlayerIconType::Ship && gameLayer->m_level->isPlatformer()) {
         iconType = PlayerIconType::Jetpack;
     }
@@ -173,11 +214,11 @@ void ComplexVisualPlayer::updateData(
         this->updateIconType(iconType);
     }
 
-    if (switchedMode || settings.players.hideNearby) {
+    if (switchedMode || (settings.players.hideNearby && isNearby)) {
         this->updateOpacity();
     }
 
-    if (statusIcons) {
+    if (statusIcons && isNearby) {
         statusIcons->updateStatus(playerData.isPaused, playerData.isPracticing, isSpeaking, playerData.isInEditor, loudness);
     }
 
@@ -204,12 +245,14 @@ void ComplexVisualPlayer::updateData(
 
     // animate robot and spider
     if (iconType == PlayerIconType::Robot || iconType == PlayerIconType::Spider) {
-        if (wasGrounded != data.isGrounded || wasStationary != data.isStationary || wasFalling != data.isFalling || switchedMode) {
+        if (wasGrounded != data.isGrounded || wasStationary != data.isStationary || wasFalling != data.isFalling || switchedMode || cameNearby) {
             wasGrounded = data.isGrounded;
             wasStationary = data.isStationary;
             wasFalling = data.isFalling;
 
-            iconType == PlayerIconType::Robot ? this->updateRobotAnimation() : this->updateSpiderAnimation();
+            if (isNearby) {
+                iconType == PlayerIconType::Robot ? this->updateRobotAnimation() : this->updateSpiderAnimation();
+            }
         }
     }
 
@@ -224,28 +267,35 @@ void ComplexVisualPlayer::updateData(
             playerIcon->m_swingFireMiddle->animateFireIn();
         }
 
-        if (wasUpsideDown != data.isUpsideDown || switchedMode) {
+        if (cameNearby || ((wasUpsideDown != data.isUpsideDown || switchedMode) && isNearby)) {
             wasUpsideDown = data.isUpsideDown;
+            // now depending on the gravity, toggle either the bottom or top fire
             this->animateSwingFire(!wasUpsideDown);
         }
-
-        // now depending on the gravity, toggle either the bottom or top fire
     }
 
     // remove swing fire
     else if (turningOffSwing) {
+        // TODO: arent we immediately setting them to invisible??? the animateFireOut is useless??
         playerIcon->m_swingFireTop->setVisible(false);
         playerIcon->m_swingFireMiddle->setVisible(false);
         playerIcon->m_swingFireBottom->setVisible(false);
 
-        playerIcon->m_swingFireTop->animateFireOut();
-        playerIcon->m_swingFireMiddle->animateFireOut();
-        playerIcon->m_swingFireBottom->animateFireOut();
+        if (isNearby) {
+            playerIcon->m_swingFireTop->animateFireOut();
+            playerIcon->m_swingFireMiddle->animateFireOut();
+            playerIcon->m_swingFireBottom->animateFireOut();
+        }
     }
 
     // remove robot fire
     else if (turningOffRobot) {
-        this->animateRobotFire(false);
+        if (isNearby) {
+            this->animateRobotFire(false);
+        } else {
+            // just setVisible false
+            this->onAnimateRobotFireOut();
+        }
     }
 
     if (wasPaused != playerData.isPaused) {
@@ -292,7 +342,15 @@ void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
 }
 
 void ComplexVisualPlayer::playDeathEffect() {
-    playerIcon->m_robotFire->setVisible(false);
+    // if the player is not nearby, do nothing
+    if (!wasNearby) return;
+
+    this->onAnimateRobotFireOut();
+
+    // only play the death effect in playlayer
+    if (!PlayLayer::get()) {
+        return;
+    }
 
     // keep track of the previous children
     std::unordered_set<CCNode*> prevChildren;
@@ -301,13 +359,9 @@ void ComplexVisualPlayer::playDeathEffect() {
         prevChildren.insert(child);
     }
 
-    // todo, doing simply ->playDeathEffect causes the hook to execute twice
-    // if you figure out why then i love you
-
-    // only play the death effect in playlayer
-    if (PlayLayer::get()) {
-        playerIcon->PlayerObject::playDeathEffect();
-    }
+    playerIcon->m_unk65c = true;
+    playerIcon->m_isHidden = false;
+    playerIcon->playerDestroyed(false);
 
     // TODO temp, we remove the small cube pieces because theyre buggy in my testing
     if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {
@@ -323,8 +377,8 @@ void ComplexVisualPlayer::playDeathEffect() {
 }
 
 void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
-    // spider teleport effect is only played in play layer
-    if (!PlayLayer::get()) return;
+    // spider teleport effect is only played in play layer, and when nearby
+    if (!PlayLayer::get() || !wasNearby) return;
 
     playerIcon->m_unk65c = true;
     playerIcon->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
@@ -363,6 +417,8 @@ void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
 }
 
 void ComplexVisualPlayer::playJump() {
+    if (!wasNearby) return;
+
     if (gameLayer->m_level->isPlatformer() && playerIconType == PlayerIconType::Cube && !wasRotating) {
         playerIcon->animatePlatformerJump(1.0f);
         didPerformPlatformerJump = true;
@@ -603,7 +659,7 @@ void ComplexVisualPlayer::callUpdateWith(PlayerIconType type, int icon) {
     }
 }
 
-CCPoint ComplexVisualPlayer::getPlayerPosition() {
+const CCPoint& ComplexVisualPlayer::getPlayerPosition() {
     return playerIcon->getPosition();
 }
 
@@ -703,6 +759,43 @@ void ComplexVisualPlayer::cancelPlatformerJumpAnim() {
         playerIcon->stopPlatformerJumpAnimation();
         didPerformPlatformerJump = false;
     }
+}
+
+void ComplexVisualPlayer::enableTrail() {
+    log::debug("wave trail: {}", playerIcon->m_waveTrail);
+    // playerIcon->activateStreak();
+}
+
+void ComplexVisualPlayer::disableTrail() {
+    // inlined bitch
+    // playerIcon->deactivateStreak();
+    // playerIcon->m_regularTrail->stopStroke();
+    // playerIcon->fadeOutStreak2(0.2f);
+}
+
+bool ComplexVisualPlayer::isPlayerNearby(const GameCameraState& camState) {
+    // check if they are inside 3 screens
+    constexpr float fullScaleMult = 3.f;
+    constexpr float originMoveMult = (fullScaleMult - 1.f) / 2.f; // magic
+    CCSize origCoverage = camState.cameraCoverage();
+    CCSize cameraCoverage = origCoverage * fullScaleMult;
+    CCPoint cameraOrigin = camState.cameraOrigin - origCoverage * originMoveMult;
+
+    float cameraLeft = cameraOrigin.x;
+    float cameraRight = cameraOrigin.x + cameraCoverage.width;
+    float cameraBottom = cameraOrigin.y;
+    float cameraTop = cameraOrigin.y + cameraCoverage.height;
+
+    const auto& playerPosition = this->getPlayerPosition();
+
+    bool inCameraCoverage = (
+        playerPosition.x >= cameraLeft &&
+        playerPosition.x <= cameraRight &&
+        playerPosition.y >= cameraBottom &&
+        playerPosition.y <= cameraTop
+    );
+
+    return inCameraCoverage;
 }
 
 ComplexVisualPlayer* ComplexVisualPlayer::create(RemotePlayer* parent, bool isSecond) {

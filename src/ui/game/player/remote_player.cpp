@@ -4,11 +4,12 @@
 
 using namespace geode::prelude;
 
-bool RemotePlayer::init(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data) {
+bool RemotePlayer::init(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data) {
     if (!CCNode::init()) return false;
     this->accountData = data;
     this->progressIcon = progressIcon;
     this->progressArrow = progressArrow;
+    this->gameCameraState = gameCameraState;
 
     this->player1 = Build<ComplexVisualPlayer>::create(this, false)
         .parent(this)
@@ -57,8 +58,8 @@ void RemotePlayer::updateData(
         bool speaking,
         float loudness
 ) {
-    player1->updateData(data.player1, data, speaking, loudness);
-    player2->updateData(data.player2, data, speaking, loudness);
+    player1->updateData(data.player1, data, *gameCameraState, speaking, loudness);
+    player2->updateData(data.player2, data, *gameCameraState, speaking, loudness);
 
     isEditorBuilding = data.isEditorBuilding;
 
@@ -95,18 +96,8 @@ void RemotePlayer::updateProgressIcon() {
         if (isForciblyHidden || isEditorBuilding) {
             progressIcon->setVisible(false);
         }
-    }
-}
-
-void RemotePlayer::updateProgressArrow(
-        cocos2d::CCPoint cameraOrigin,
-        cocos2d::CCSize cameraCoverage,
-        cocos2d::CCPoint visibleOrigin,
-        cocos2d::CCSize visibleCoverage,
-        float zoom
-) {
-    if (progressArrow) {
-        progressArrow->updatePosition(cameraOrigin, cameraCoverage, visibleOrigin, visibleCoverage, player1->getPlayerPosition(), zoom);
+    } else if (progressArrow) {
+        progressArrow->updatePosition(*gameCameraState, player1->getPlayerPosition());
 
         if (isForciblyHidden || isEditorBuilding) {
             progressArrow->setVisible(false);
@@ -164,9 +155,9 @@ void RemotePlayer::removeProgressIndicators() {
     }
 }
 
-RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data) {
+RemotePlayer* RemotePlayer::create(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data) {
     auto ret = new RemotePlayer;
-    if (ret->init(progressIcon, progressArrow, data)) {
+    if (ret->init(gameCameraState, progressIcon, progressArrow, data)) {
         ret->autorelease();
         return ret;
     }
@@ -175,6 +166,6 @@ RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, PlayerProgr
     return nullptr;
 }
 
-RemotePlayer* RemotePlayer::create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow) {
-    return create(progressIcon, progressArrow, PlayerAccountData::DEFAULT_DATA);
+RemotePlayer* RemotePlayer::create(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow) {
+    return create(gameCameraState, progressIcon, progressArrow, PlayerAccountData::DEFAULT_DATA);
 }

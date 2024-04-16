@@ -91,11 +91,6 @@ bool HookedMenuLayer::init() {
 }
 
 void HookedMenuLayer::updateGlobedButton() {
-    if (m_fields->globedBtn) {
-        m_fields->globedBtn->removeFromParent();
-        m_fields->globedBtn = nullptr;
-    }
-
     CCNode* parent = nullptr;
     CCPoint pos;
 
@@ -112,24 +107,25 @@ void HookedMenuLayer::updateGlobedButton() {
         return;
     }
 
-    m_fields->globedBtn = Build<CircleButtonSprite>(CircleButtonSprite::createWithSpriteFrameName(
-        "menuicon.png"_spr,
-        1.f,
-        m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
-        CircleBaseSize::MediumAlt
-        ))
-        .intoMenuItem([](auto) {
-            auto accountId = GJAccountManager::sharedState()->m_accountID;
-            if (accountId <= 0) {
-                FLAlertLayer::create("Notice", "You need to be signed into a <cg>Geometry Dash account</c> in order to play online.", "Ok")->show();
-                return;
-            }
+    auto makeSprite = [this]{
+        return CircleButtonSprite::createWithSpriteFrameName(
+            "menuicon.png"_spr,
+            1.f,
+            m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
+            CircleBaseSize::MediumAlt
+        );
+    };
 
-            util::ui::switchToScene(GlobedMenuLayer::create());
-        })
-        .id("main-menu-button"_spr)
-        .parent(parent)
-        .collect();
+    if (!m_fields->globedBtn) {
+        m_fields->globedBtn = Build<CircleButtonSprite>(makeSprite())
+            .intoMenuItem(this, menu_selector(HookedMenuLayer::onGlobedButton))
+            .zOrder(5) // force it to be at the end of the layout for consistency
+            .id("main-menu-button"_spr)
+            .parent(parent)
+            .collect();
+    } else {
+        m_fields->globedBtn->setNormalImage(makeSprite());
+    }
 
     parent->updateLayout();
 }
@@ -140,6 +136,16 @@ void HookedMenuLayer::maybeUpdateButton(float) {
         m_fields->btnActive = authenticated;
         this->updateGlobedButton();
     }
+}
+
+void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
+    auto accountId = GJAccountManager::sharedState()->m_accountID;
+    if (accountId <= 0) {
+        FLAlertLayer::create("Notice", "You need to be signed into a <cg>Geometry Dash account</c> in order to play online.", "Ok")->show();
+        return;
+    }
+
+    util::ui::switchToScene(GlobedMenuLayer::create());
 }
 
 #if 0
