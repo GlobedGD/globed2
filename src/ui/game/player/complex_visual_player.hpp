@@ -59,6 +59,7 @@ protected:
     cocos2d::CCLabelBMFont* playerName;
     Ref<PlayerStatusIcons> statusIcons;
     bool isPlatformer;
+    bool isEditor;
 
     // these 3 used in robot and spider anims
     bool wasGrounded = false;

@@ -17,6 +17,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     this->gameLayer = GJBaseGameLayer::get();
     this->isPlatformer = gameLayer->m_level->isPlatformer();
+    this->isEditor = typeinfo_cast<LevelEditorLayer*>(this->gameLayer) != nullptr;
 
     auto& data = parent->getAccountData();
 
@@ -767,6 +768,9 @@ void ComplexVisualPlayer::disableTrail() {
 }
 
 bool ComplexVisualPlayer::isPlayerNearby(const GameCameraState& camState) {
+    // always render them in editor (cause im lazy)
+    if (isEditor) return true;
+
     // check if they are inside 3 screens
     constexpr float fullScaleMult = 3.f;
     constexpr float originMoveMult = (fullScaleMult - 1.f) / 2.f; // magic

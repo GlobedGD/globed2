@@ -976,6 +976,8 @@ void GlobedGJBGL::toggleSafeMode(bool enabled) {
 void GlobedGJBGL::onQuitActions() {
     auto& nm = NetworkManager::get();
 
+    log::debug("onQuitActions called.");
+
     if (m_fields->globedReady) {
         if (nm.established()) {
             // send LevelLeavePacket
