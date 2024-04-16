@@ -1,6 +1,6 @@
 {
     "geode": "2.0.0-beta.24",
-    "version": "v1.3.8",
+    "version": "v1.3.8-beta.1",
     "gd": {
         "win": "2.204",
         "android": "2.205",
