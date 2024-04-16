@@ -2,6 +2,7 @@
 #include <defs/all.hpp>
 
 #include <data/types/gd.hpp>
+#include <game/camera_state.hpp>
 #include <ui/general/simple_player.hpp>
 
 class PlayerProgressArrow : public cocos2d::CCNode {
@@ -11,12 +12,8 @@ public:
     // cameraOrigin is the bottom-left corner of the screen in objectLayer
     // visibleOrigin and visibleCoverage is just 0,0 and getWinSize()
     void updatePosition(
-        cocos2d::CCPoint cameraOrigin,
-        cocos2d::CCSize cameraCoverage,
-        cocos2d::CCPoint visibleOrigin,
-        cocos2d::CCSize visibleCoverage,
-        cocos2d::CCPoint playerPosition,
-        float zoom
+        const GameCameraState& camState,
+        cocos2d::CCPoint playerPosition
     );
 
     void updateIcons(const PlayerIconData& data);

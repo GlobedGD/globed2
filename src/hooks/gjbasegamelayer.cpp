@@ -17,6 +17,7 @@
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <data/packets/all.hpp>
+#include <game/camera_state.hpp>
 #include <hooks/game_manager.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
@@ -61,10 +62,9 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
 
     if ((void*)this != GJBaseGameLayer::get()) return retval;
 
-    // up and down hell yeah
     auto* gpl = GlobedGJBGL::get();
 
-    if (!gpl->m_fields->globedReady) return retval;
+    if (!gpl->established()) return retval;
     if (!gpl->m_fields->roomSettings.collision) return retval;
 
     bool isSecond = player == gpl->m_player2;
@@ -707,12 +707,11 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     if (!self) return;
 
-    auto visibleOrigin = CCPoint{0.f, 0.f};
-    auto visibleCoverage = CCDirector::get()->getWinSize();
+    self->m_fields->camState.visibleOrigin = CCPoint{0.f, 0.f};
+    self->m_fields->camState.visibleCoverage = CCDirector::get()->getWinSize();
 
-    auto camOrigin = self->m_gameState.m_unk20c; // m_unk20c or m_unk2c0, same values
-    auto zoom = self->m_objectLayer->getScale();
-    auto camCoverage = visibleCoverage / zoom;
+    self->m_fields->camState.cameraOrigin = self->m_gameState.m_unk20c; // m_unk20c or m_unk2c0, same values
+    self->m_fields->camState.zoom = self->m_objectLayer->getScale();
 
     // update ourselves
     auto accountId = GJAccountManager::get()->m_accountID;
@@ -757,10 +756,9 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
         // update progress icons
         if (auto self = PlayLayer::get()) {
-            if (self->m_progressBar && self->m_progressBar->isVisible() && remotePlayer->progressIcon) {
+            // dont update if we are in a normal level and without a progressbar
+            if (self->m_level->isPlatformer() || self->m_progressBar->isVisible()) {
                 remotePlayer->updateProgressIcon();
-            } else if (remotePlayer->progressArrow) {
-                remotePlayer->updateProgressArrow(camOrigin, camCoverage, visibleOrigin, visibleCoverage, zoom);
             }
         }
 
@@ -822,6 +820,10 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
     else if (player->m_isRobot) iconType = PlayerIconType::Robot;
     else if (player->m_isSpider) iconType = PlayerIconType::Spider;
     else if (player->m_isSwing) iconType = PlayerIconType::Swing;
+
+    if (iconType == PlayerIconType::Ship && m_level->isPlatformer()) {
+        iconType = PlayerIconType::Jetpack;
+    }
 
     auto* pobjInner = static_cast<CCNode*>(player->getChildren()->objectAtIndex(0));
 
@@ -891,7 +893,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         currentPercentage = 0.f;
     }
 
-    bool isInEditor = LevelEditorLayer::get() != nullptr;
+    bool isInEditor = this->isEditor();
     bool isEditorBuilding = false;
 
     if (isInEditor) {
@@ -1003,7 +1005,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
         }
     }
 
-    auto* rp = Build<RemotePlayer>::create(progressIcon, progressArrow)
+    auto* rp = Build<RemotePlayer>::create(&m_fields->camState, progressIcon, progressArrow)
         .zOrder(10)
         .id(Mod::get()->expandSpriteName(fmt::format("remote-player-{}", playerId).c_str()))
         .collect();

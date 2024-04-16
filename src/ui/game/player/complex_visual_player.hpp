@@ -3,6 +3,7 @@
 #include "status_icons.hpp"
 #include <hooks/player_object.hpp>
 #include <game/visual_state.hpp>
+#include <game/camera_state.hpp>
 #include <data/types/gd.hpp>
 #include <data/types/game.hpp>
 
@@ -19,6 +20,7 @@ public:
     void updateData(
         const SpecificIconData& data,
         const VisualPlayerState& playerData,
+        const GameCameraState& camState,
         bool isSpeaking,
         float loudness
     );
@@ -28,7 +30,7 @@ public:
     void playSpiderTeleport(const SpiderTeleportData& data);
     void playJump();
     void setForciblyHidden(bool state);
-    cocos2d::CCPoint getPlayerPosition();
+    const cocos2d::CCPoint& getPlayerPosition();
     cocos2d::CCNode* getPlayerObject();
 
     void setP1StickyState(bool state);
@@ -46,6 +48,7 @@ public:
 
 protected:
     friend class ComplexPlayerObject;
+    friend class RemotePlayer;
 
     RemotePlayer* parent;
     bool isSecond;
@@ -78,6 +81,9 @@ protected:
 
     // used to call onEnter, onExit
     bool wasPaused = false;
+
+    // used for many anims
+    bool wasNearby = false;
 
     // uhh yeah forcibly hiding players
     bool isForciblyHidden = false;
@@ -119,4 +125,6 @@ protected:
     void asyncIconLoadedIntermediary(cocos2d::CCObject*);
 
     void cancelPlatformerJumpAnim();
+
+    bool isPlayerNearby(const GameCameraState& camState);
 };

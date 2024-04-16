@@ -2,6 +2,7 @@
 
 * Add a credits menu
 * Add a Compressed Player Count setting which changes the "X players" label to be more compact (thanks [Uproxide](user:25397826)!)
+* Don't play effects and animations if the player is too far
 * Change the voice chat guide button and ask the user if they want voice chat to be enabled on first startup
 * Fix a missing texture crash when asset preloading is disabled
 * Some minor texture changes

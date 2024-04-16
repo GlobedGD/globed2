@@ -27,24 +27,22 @@ void PlayerProgressArrow::updateIcons(const PlayerIconData& data) {
 }
 
 void PlayerProgressArrow::updatePosition(
-        CCPoint cameraOrigin,
-        CCSize cameraCoverage,
-        CCPoint visibleOrigin,
-        CCSize visibleCoverage,
-        CCPoint playerPosition,
-        float zoom
+        const GameCameraState& camState,
+        CCPoint playerPosition
 ) {
-    auto cameraCenter = cameraOrigin + cameraCoverage / 2.f;
-    float cameraLeft = cameraOrigin.x;
-    float cameraRight = cameraOrigin.x + cameraCoverage.width;
-    float cameraBottom = cameraOrigin.y;
-    float cameraTop = cameraOrigin.y + cameraCoverage.height;
+    CCSize cameraCoverage = camState.cameraCoverage();
 
-    auto visibleCenter = visibleOrigin + visibleCoverage / 2.f;
-    float visibleLeft = visibleOrigin.x;
-    float visibleRight = visibleOrigin.x + visibleCoverage.width;
-    float visibleBottom = visibleOrigin.y;
-    float visibleTop = visibleOrigin.y + visibleCoverage.height;
+    auto cameraCenter = camState.cameraOrigin + cameraCoverage / 2.f;
+    float cameraLeft = camState.cameraOrigin.x;
+    float cameraRight = camState.cameraOrigin.x + cameraCoverage.width;
+    float cameraBottom = camState.cameraOrigin.y;
+    float cameraTop = camState.cameraOrigin.y + cameraCoverage.height;
+
+    auto visibleCenter = camState.visibleOrigin + camState.visibleCoverage / 2.f;
+    float visibleLeft = camState.visibleOrigin.x;
+    float visibleRight = camState.visibleOrigin.x + camState.visibleCoverage.width;
+    float visibleBottom = camState.visibleOrigin.y;
+    float visibleTop = camState.visibleOrigin.y + camState.visibleCoverage.height;
 
     // is the player visible? then dont show the arrow
     bool inCameraCoverage = (
@@ -64,7 +62,7 @@ void PlayerProgressArrow::updatePosition(
     float angle = std::atan2(playerPosition.y - cameraCenter.y, playerPosition.x - cameraCenter.x);
     float distance = std::sqrt(std::pow(playerPosition.x - cameraCenter.x, 2) + std::pow(playerPosition.y - cameraCenter.y, 2));
 
-    distance *= zoom;
+    distance *= camState.zoom;
 
     float indicatorX = visibleCenter.x + distance * std::cos(angle);
     float indicatorY = visibleCenter.y + distance * std::sin(angle);
