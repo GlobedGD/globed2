@@ -288,7 +288,7 @@ void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
         this->callToggleWith(newType, true, false);
     }
 
-    this->callUpdateWith(newType, this->getIconWithType(icons, newType));
+    this->callUpdateWith(newType, util::misc::getIconWithType(icons, newType));
 }
 
 void ComplexVisualPlayer::playDeathEffect() {
@@ -303,7 +303,11 @@ void ComplexVisualPlayer::playDeathEffect() {
 
     // todo, doing simply ->playDeathEffect causes the hook to execute twice
     // if you figure out why then i love you
-    playerIcon->PlayerObject::playDeathEffect();
+
+    // only play the death effect in playlayer
+    if (PlayLayer::get()) {
+        playerIcon->PlayerObject::playDeathEffect();
+    }
 
     // TODO temp, we remove the small cube pieces because theyre buggy in my testing
     if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {
@@ -630,7 +634,7 @@ void ComplexVisualPlayer::tryLoadIconsAsync() {
     auto* sfCache = CCSpriteFrameCache::sharedSpriteFrameCache();
 
     for (auto type = PlayerIconType::Cube; type <= PlayerIconType::Jetpack; type = (PlayerIconType)((int)type + 1)) {
-        auto iconId = this->getIconWithType(storedIcons, type);
+        auto iconId = util::misc::getIconWithType(storedIcons, type);
         std::string sheetName = gm->sheetNameForIcon(storedIcons.cube, (int)IconType::Cube);
 
         if (!sheetName.empty()) {
@@ -699,25 +703,6 @@ void ComplexVisualPlayer::cancelPlatformerJumpAnim() {
         playerIcon->stopPlatformerJumpAnimation();
         didPerformPlatformerJump = false;
     }
-}
-
-int ComplexVisualPlayer::getIconWithType(const PlayerIconData& icons, PlayerIconType type) {
-    int newIcon = icons.cube;
-
-    switch (type) {
-        case PlayerIconType::Cube: newIcon = icons.cube; break;
-        case PlayerIconType::Ship: newIcon = icons.ship; break;
-        case PlayerIconType::Ball: newIcon = icons.ball; break;
-        case PlayerIconType::Ufo: newIcon = icons.ufo; break;
-        case PlayerIconType::Wave: newIcon = icons.wave; break;
-        case PlayerIconType::Robot: newIcon = icons.robot; break;
-        case PlayerIconType::Spider: newIcon = icons.spider; break;
-        case PlayerIconType::Swing: newIcon = icons.swing; break;
-        case PlayerIconType::Jetpack: newIcon = icons.jetpack; break;
-        default: newIcon = icons.cube; break;
-    };
-
-    return newIcon;
 }
 
 ComplexVisualPlayer* ComplexVisualPlayer::create(RemotePlayer* parent, bool isSecond) {

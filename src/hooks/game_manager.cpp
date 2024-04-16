@@ -13,7 +13,9 @@ using namespace geode::prelude;
 
 void HookedGameManager::returnToLastScene(GJGameLevel* level) {
     if (GlobedLevelEditorLayer::fromEditor) {
-        GlobedGJBGL::get()->onQuitActions();
+        // TODO? idk what happened here
+        auto* pl = GlobedGJBGL::get();
+        if (pl) pl->onQuitActions();
         GlobedLevelEditorLayer::fromEditor = false;
     }
 

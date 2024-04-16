@@ -4,8 +4,75 @@
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/network_manager.hpp>
+#include <managers/settings.hpp>
 
 using namespace geode::prelude;
+
+class PlayerCountLabel : public CCNode {
+public:
+    bool init(bool compressed) {
+        if (!CCNode::init()) return false;
+
+        this->compressed = compressed;
+
+        if (compressed) {
+            this->setLayout(RowLayout::create()->setGap(3.f));
+            this->setContentWidth(100.f);
+
+            Build<CCLabelBMFont>::create("", "bigFont.fnt")
+                .parent(this)
+                .store(label);
+
+            Build<CCSprite>::createSpriteName("icon-person.png"_spr)
+                .parent(this)
+                .store(icon);
+        } else {
+            Build<CCLabelBMFont>::create("", "bigFont.fnt")
+                .parent(this)
+                .store(label);
+        }
+
+        return true;
+    }
+
+    void updateCount(size_t players) {
+        if (players == 0) {
+            this->setVisible(false);
+            return;
+        }
+
+        this->setVisible(true);
+
+        if (compressed) {
+            label->setString(players == -1 ? "?" : std::to_string(players).c_str());
+            this->updateLayout();
+        } else {
+            label->setString(
+                players == -1 ?
+                    "? players" :
+                    fmt::format("{} {}", players, players == 1 ? "player" : "players").c_str()
+            );
+        }
+
+        // this->setContentSize(label->getScaledContentSize());
+    }
+
+    static PlayerCountLabel* create(bool compressed) {
+        auto ret = new PlayerCountLabel;
+        if (ret->init(compressed)) {
+            ret->autorelease();
+            return ret;
+        }
+
+        delete ret;
+        return nullptr;
+    }
+
+private:
+    CCSprite* icon = nullptr;
+    CCLabelBMFont* label = nullptr;
+    bool compressed;
+};
 
 bool HookedLevelSelectLayer::init(int p0) {
     if (!LevelSelectLayer::init(p0)) return false;
@@ -51,11 +118,10 @@ void HookedLevelSelectLayer::updatePlayerCounts() {
     auto* extlayer = getChildOfType<ExtendedLayer>(bsl, 0);
     if (!extlayer || extlayer->getChildrenCount() == 0) return;
 
-
     for (auto* page : CCArrayExt<LevelPage*>(extlayer->getChildren())) {
         auto buttonmenu = getChildOfType<CCMenu>(page, 0);
         auto button = getChildOfType<CCMenuItemSpriteExtra>(buttonmenu, 0);
-        CCLabelBMFont* label = static_cast<CCLabelBMFont*>(button->getChildByID("player-count-label"_spr));
+        PlayerCountLabel* label = static_cast<PlayerCountLabel*>(button->getChildByID("player-count-label"_spr));
 
         LevelId levelId = HookedGJGameLevel::getLevelIDFrom(page->m_level);
         if (levelId < 0) {
@@ -63,32 +129,24 @@ void HookedLevelSelectLayer::updatePlayerCounts() {
             continue;
         }
 
-
         if (!label) {
-            auto pos = (button->getContentSize() / 2) + ccp(0.f, -37.f); //geode has ccp() which is just shorter CCPoint{}
-            Build<CCLabelBMFont>::create("", "bigFont.fnt")
+            auto pos = (button->getContentSize() / 2) + ccp(0.f, -37.f);
+            Build<PlayerCountLabel>::create(GlobedSettings::get().globed.compressedPlayerCount)
                 .pos(pos)
                 .scale(0.4f)
+                .anchorPoint(0.5f, 0.5f)
                 .id("player-count-label"_spr)
                 .parent(button)
                 .store(label);
-        } else {
-            label->setVisible(true);
         }
 
         if (!NetworkManager::get().established()) {
             label->setVisible(false);
         } else if (m_fields->levels.contains(levelId)) {
             auto players = m_fields->levels[levelId];
-            if (players == 0) {
-                label->setVisible(false);
-            } else {
-                label->setVisible(true);
-                label->setString(fmt::format("{} {}", players, players == 1 ? "player" : "players").c_str());
-            }
+            label->updateCount(players);
         } else {
-            label->setVisible(true);
-            label->setString("? players");
+            label->updateCount(-1);
         }
     }
 }

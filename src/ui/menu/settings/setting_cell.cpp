@@ -292,6 +292,8 @@ void GlobedSettingCell::storeAndSave(std::any value) {
     case Type::PacketFragmentation: [[fallthrough]];
     case Type::Int:
         *(int*)(settingStorage) = std::any_cast<int>(value); break;
+    case Type::AdvancedSettings:
+        break;
     }
 
     GlobedSettings::get().save();

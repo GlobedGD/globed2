@@ -2,6 +2,7 @@
 #include <defs/all.hpp>
 
 #include <data/types/gd.hpp>
+#include <ui/general/simple_player.hpp>
 
 class PlayerProgressArrow : public cocos2d::CCNode {
 public:
@@ -21,7 +22,7 @@ public:
     void updateIcons(const PlayerIconData& data);
 
 private:
-    SimplePlayer* playerIcon = nullptr;
+    GlobedSimplePlayer* playerIcon = nullptr;
 
     bool init() override;
 };

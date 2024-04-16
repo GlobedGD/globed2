@@ -37,6 +37,7 @@ void GlobedSettings::save() {
     STOREV(globed, deferPreloadAssets);
     STOREV(globed, increaseLevelList);
     STOREV(globed, fragmentationLimit);
+    STOREV(globed, compressedPlayerCount);
 
     // overlay
     STOREV(overlay, opacity);
@@ -92,6 +93,7 @@ void GlobedSettings::reload() {
     LOADV(globed, deferPreloadAssets);
     LOADV(globed, increaseLevelList);
     LOADV(globed, fragmentationLimit);
+    LOADV(globed, compressedPlayerCount);
 
     // overlay
     LOADV(overlay, opacity);
@@ -147,6 +149,7 @@ void GlobedSettings::resetToDefaults() {
         SKEY(globed, deferPreloadAssets),
         SKEY(globed, increaseLevelList),
         SKEY(globed, fragmentationLimit),
+        SKEY(globed, compressedPlayerCount),
 
         // overlay
         SKEY(overlay, opacity),

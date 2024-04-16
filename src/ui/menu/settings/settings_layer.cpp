@@ -169,6 +169,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
         MAKE_SETTING(globed, deferPreloadAssets, "Defer preloading", "Instead of making the loading screen longer, load assets only when you join a level while connected.");
         MAKE_SETTING_TYPE(globed, fragmentationLimit, Type::PacketFragmentation, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.");
         MAKE_SETTING(globed, increaseLevelList, "More Levels Per Page", "Increases the levels per page in the server level list from 30 to 100.");
+        MAKE_SETTING(globed, compressedPlayerCount, "Compressed Player Count", "Compress the Player Count label to match the Player Count in The Tower.");
         MAKE_SETTING_LIM(globed, tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.", {
             .intMin = 1,
             .intMax = 240,

@@ -1,7 +1,7 @@
 use esp::Bits;
 use globed_shared::{
     rand::{self, Rng},
-    warn, IntMap, SyncMutex, SyncMutexGuard,
+    IntMap, SyncMutex, SyncMutexGuard,
 };
 
 use crate::data::{LevelId, RoomInfo, RoomSettings, ROOM_ID_LENGTH};

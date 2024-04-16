@@ -34,10 +34,13 @@
                 "resources/icon-person.png",
                 "resources/icon-hide-player.png",
                 "resources/icon-show-player.png",
+                "resources/icon-voice-chat-guide.png",
+                "resources/icon-credits.png",
                 "resources/deafen-icon-off.png",
                 "resources/deafen-icon-on.png",
                 "resources/button-secret.png",
-                "resources/secret-question-mark.png"
+                "resources/secret-question-mark.png",
+                "resources/shadow-thing-idk.png"
             ]
         }
     },

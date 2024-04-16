@@ -17,6 +17,10 @@
 #define _GLOBED_STRURL _GLOBED_STRALPHANUM ":/%._-?#"
 #define _GLOBED_STRWHITESPACE " \t\n\r\x0b\x0c"
 
+
+struct PlayerIconData;
+enum class PlayerIconType : uint8_t;
+
 namespace util::misc {
     constexpr std::string_view STRING_DIGITS = _GLOBED_STRNUM;
     constexpr std::string_view STRING_LOWERCASE = _GLOBED_STRLOWER;
@@ -143,4 +147,7 @@ namespace util::misc {
     bool isEditorCollabLevel(LevelId levelId);
 
     void syncSystemTime();
+
+    int getIconWithType(const PlayerIconData& data, PlayerIconType type);
+    int getIconWithType(const PlayerIconData& data, IconType type);
 }

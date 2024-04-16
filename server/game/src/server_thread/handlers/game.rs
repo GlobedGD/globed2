@@ -23,7 +23,9 @@ impl GameServerThread {
                 pm.manager.remove_from_level(old_level, account_id);
             }
 
-            pm.manager.add_to_level(packet.level_id, account_id);
+            if packet.level_id != 0 {
+                pm.manager.add_to_level(packet.level_id, account_id);
+            }
         });
 
         Ok(())

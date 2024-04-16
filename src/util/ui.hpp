@@ -5,6 +5,7 @@
 
 namespace util::ui {
     constexpr cocos2d::ccColor4B BG_COLOR_BROWN = {191, 114, 62, 255};
+    constexpr cocos2d::ccColor4B BG_COLOR_DARKBROWN = {161, 88, 44, 255};
     constexpr cocos2d::ccColor4B BG_COLOR_TRANSPARENT = {0, 0, 0, 180};
 
     void switchToScene(cocos2d::CCLayer* layer);
@@ -21,6 +22,16 @@ namespace util::ui {
 
     float getScrollPos(BoomListView* listView);
     void setScrollPos(BoomListView* listView, float pos);
+
+    // scrolls to the bottom of the list view
+    void scrollToBottom(BoomListView* listView);
+    // scrolls to the bottom of the scroll layer
+    void scrollToBottom(geode::ScrollLayer* listView);
+
+    // scrolls to the top of the list view
+    void scrollToTop(BoomListView* listView);
+    // scrolls to the top of the scroll layer
+    void scrollToTop(geode::ScrollLayer* listView);
 
     void tryLoadDeathEffect(int id);
 

@@ -7,6 +7,7 @@
 class $modify(GlobedPauseLayer, PauseLayer) {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PauseLayer::keyDown", -999999999);
+        (void) self.setHookPriority("PauseLayer::goEdit", -999999999);
     }
 
     bool hasPopup();

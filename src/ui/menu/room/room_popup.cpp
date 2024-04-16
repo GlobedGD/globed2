@@ -78,7 +78,7 @@ bool RoomPopup::setup() {
     auto popupLayout = util::ui::getPopupLayout(m_size);
 
     auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
-    listLayer = GJCommentListLayer::create(listview, "", {192, 114, 62, 255}, LIST_WIDTH, LIST_HEIGHT, false);
+    listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
 
     float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;
     listLayer->setPosition({xpos, 85.f});

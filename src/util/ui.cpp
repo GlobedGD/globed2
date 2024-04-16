@@ -93,6 +93,32 @@ namespace util::ui {
         cl->setPositionY(std::min(actualPos, 0.f));
     }
 
+    static void scrollToBottom(CCContentLayer* layer) {
+        layer->setPositionY(0.f);
+    }
+
+    static void scrollToTop(CCContentLayer* layer) {
+        layer->setPositionY(
+            layer->getParent()->getScaledContentSize().height - layer->getScaledContentSize().height
+        );
+    }
+
+    void scrollToBottom(BoomListView* listView) {
+        scrollToBottom(listView->m_tableView->m_contentLayer);
+    }
+
+    void scrollToBottom(ScrollLayer* listView) {
+        scrollToBottom(listView->m_contentLayer);
+    }
+
+    void scrollToTop(BoomListView* listView) {
+        scrollToTop(listView->m_tableView->m_contentLayer);
+    }
+
+    void scrollToTop(ScrollLayer* listView) {
+        scrollToTop(listView->m_contentLayer);
+    }
+
     void tryLoadDeathEffect(int id) {
         if (id <= 1) return;
 

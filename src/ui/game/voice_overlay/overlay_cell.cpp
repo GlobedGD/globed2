@@ -2,6 +2,8 @@
 
 #include <util/ui.hpp>
 
+#include <ui/general/simple_player.hpp>
+
 using namespace geode::prelude;
 using namespace util::ui;
 
@@ -42,11 +44,10 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     auto color1 = gm->colorForIdx(data.icons.color1);
     auto color2 = gm->colorForIdx(data.icons.color2);
 
-    auto playerIcon = Build<SimplePlayer>::create(data.icons.cube)
-        .color(color1)
-        .secondColor(color2)
+    auto playerIcon = Build<GlobedSimplePlayer>::create(data.icons)
         .scale(0.45f)
         .pos(0.f, 0.f)
+        .anchorPoint(0.5f, 0.5f)
         .parent(nodeWrapper)
         .collect();
 

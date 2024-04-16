@@ -60,6 +60,8 @@ void RemotePlayer::updateData(
     player1->updateData(data.player1, data, speaking, loudness);
     player2->updateData(data.player2, data, speaking, loudness);
 
+    isEditorBuilding = data.isEditorBuilding;
+
     lastPercentage = data.currentPercentage;
 
     // don't update any anims if hidden
@@ -89,6 +91,10 @@ void RemotePlayer::updateData(
 void RemotePlayer::updateProgressIcon() {
     if (progressIcon) {
         progressIcon->updatePosition(lastPercentage);
+
+        if (isForciblyHidden || isEditorBuilding) {
+            progressIcon->setVisible(false);
+        }
     }
 }
 
@@ -102,7 +108,7 @@ void RemotePlayer::updateProgressArrow(
     if (progressArrow) {
         progressArrow->updatePosition(cameraOrigin, cameraCoverage, visibleOrigin, visibleCoverage, player1->getPlayerPosition(), zoom);
 
-        if (isForciblyHidden) {
+        if (isForciblyHidden || isEditorBuilding) {
             progressArrow->setVisible(false);
         }
     }

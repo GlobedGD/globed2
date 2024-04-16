@@ -59,6 +59,7 @@ struct PlayerData {
     bool isPracticing;
     bool isDualMode;
     bool isInEditor;
+    bool isEditorBuilding; // in the editor && not playtesting (incl. not paused)
 };
 
 struct PlayerMetadata {

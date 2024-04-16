@@ -13,6 +13,7 @@
 #include <ui/menu/level_list/level_list_layer.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
 #include <ui/menu/admin/admin_login_popup.hpp>
+#include <ui/menu/credits/credits_popup.hpp>
 #include <util/ui.hpp>
 #include <util/net.hpp>
 
@@ -63,7 +64,7 @@ bool GlobedMenuLayer::init() {
         .store(leftButtonMenu);
 
     // server switcher button
-    serverSwitcherButton = Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
+    serverSwitcherButton = Build<CCSprite>::createSpriteName("accountBtn_myLevels_001.png")
         .intoMenuItem([](auto) {
             if (auto* popup = ServerSwitcherPopup::create()) {
                 popup->m_noElasticity = true;
@@ -114,14 +115,6 @@ bool GlobedMenuLayer::init() {
 
     auto& settings = GlobedSettings::get();
 
-    if (util::time::isAprilFools() && !settings.flags.seenAprilFoolsNotice) {
-        Build<CCSprite>::createSpriteName("secret-question-mark.png"_spr)
-            .scale(0.6f)
-            .pos(36.f, 36.f)
-            .parent(roomButton)
-            .collect();
-    }
-
     // level list button
     levelListButton = Build<CCSprite>::createSpriteName("icon-level-list.png"_spr)
         .intoMenuItem([](auto) {
@@ -133,21 +126,46 @@ bool GlobedMenuLayer::init() {
 
     leftButtonMenu->updateLayout();
 
+    // right button menu
+
+    Build<CCMenu>::create()
+        .layout(
+            ColumnLayout::create()
+                ->setAutoScale(true)
+                ->setGap(4.f)
+                ->setAxisAlignment(AxisAlignment::Start)
+        )
+        .anchorPoint(1.f, 0.f)
+        .pos(winSize.width - 15.f, 20.f)
+        .parent(this)
+        .id("right-button-menu"_spr)
+        .store(rightButtonMenu);
+
+    // credits button
+    Build<CCSprite>::createSpriteName("icon-credits.png"_spr)
+        .intoMenuItem([](auto) {
+            auto* popup = GlobedCreditsPopup::create();
+            popup->m_noElasticity = true;
+            popup->show();
+        })
+        .scaleMult(1.15f)
+        .id("btn-credits"_spr)
+        .parent(rightButtonMenu);
+
     // info button
 #ifdef GLOBED_VOICE_CAN_TALK
-    Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-        .scale(1.0f)
+    Build<CCSprite>::createSpriteName("icon-voice-chat-guide.png"_spr)
         .intoMenuItem([](auto) {
             FLAlertLayer::create("Voice chat guide",
             "In order to <cg>talk</c> with other people in-game, <cp>hold V</c>.\nIn order to <cr>deafen</c> (stop hearing everyone), <cb>press B</c>.\nBoth keybinds can be changed in <cy>Geometry Dash</c> settings.",
             "Ok")->show();
         })
+        .scaleMult(1.15f)
         .id("btn-show-voice-chat-popup"_spr)
-        .pos(winSize.width - 20.f, 20.f)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(rightButtonMenu);
 #endif
+
+    rightButtonMenu->updateLayout();
 
     util::ui::prepareLayer(this);
 
