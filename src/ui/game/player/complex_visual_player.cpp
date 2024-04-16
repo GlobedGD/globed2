@@ -756,14 +756,14 @@ void ComplexVisualPlayer::cancelPlatformerJumpAnim() {
 
 void ComplexVisualPlayer::enableTrail() {
     log::debug("wave trail: {}", playerIcon->m_waveTrail);
-    playerIcon->activateStreak();
+    // playerIcon->activateStreak();
 }
 
 void ComplexVisualPlayer::disableTrail() {
     // inlined bitch
     // playerIcon->deactivateStreak();
-    playerIcon->m_regularTrail->stopStroke();
-    playerIcon->fadeOutStreak2(0.2f);
+    // playerIcon->m_regularTrail->stopStroke();
+    // playerIcon->fadeOutStreak2(0.2f);
 }
 
 bool ComplexVisualPlayer::isPlayerNearby(const GameCameraState& camState) {
