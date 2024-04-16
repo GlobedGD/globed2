@@ -227,7 +227,6 @@ void GlobedGJBGL::setupAudio() {
 
 void GlobedGJBGL::setupPacketListeners() {
     auto& nm = NetworkManager::get();
-    log::debug("GlobedGJBGL::setupPacketListeners");
 
     nm.addListener<PlayerProfilesPacket>([](std::shared_ptr<PlayerProfilesPacket> packet) {
         auto& pcm = ProfileCacheManager::get();
@@ -334,7 +333,6 @@ void GlobedGJBGL::setupUpdate() {
     // update
     Loader::get()->queueInMainThread([&nm] {
         auto self = GlobedGJBGL::get();
-        log::debug("GlobedGJBGL::setupUpdate {}", self);
         if (!self) return;
 
         // here we run the stuff that must run on a valid playlayer
