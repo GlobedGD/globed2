@@ -83,13 +83,33 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                 } else {
                     auto& settings = GlobedSettings::get();
 
+                    auto post = [this] {
+                        auto& csm = CentralServerManager::get();
+
+                        if (csm.standalone()) {
+                            GLOBED_RESULT_ERRC(NetworkManager::get().connectStandalone());
+                        } else {
+                            // check if the token is here, otherwise request it
+                            auto& am = GlobedAccountManager::get();
+
+                            auto hasToken = !am.authToken.lock()->empty();
+
+                            if (hasToken) {
+                                GLOBED_RESULT_ERRC(NetworkManager::get().connectWithView(this->gsview));
+                            } else {
+                                this->requestTokenAndConnect();
+                            }
+                        }
+                    };
+
                     if (!settings.flags.seenVoiceChatPTTNotice) {
                         settings.flags.seenVoiceChatPTTNotice = true;
                         settings.save();
 
-                        geode::createQuickPopup("Voice chat", "Do you want to enable <cp>voice chat</c>? This can be changed later in settings.", "Disable", "Enable", [&settings](FLAlertLayer*, bool enabled) {
+                        geode::createQuickPopup("Voice chat", "Do you want to enable <cp>voice chat</c>? This can be changed later in settings.", "Disable", "Enable", [&settings, post](FLAlertLayer*, bool enabled) {
                             settings.communication.voiceEnabled = enabled;
                             settings.save();
+                            post();
 #ifndef GLOBED_VOICE_CAN_TALK
                             if (enabled) {
                                 // if this is a platform that cannot use the microphone, show an additional popup
@@ -101,22 +121,7 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                         return;
                     }
 
-                    auto& csm = CentralServerManager::get();
-
-                    if (csm.standalone()) {
-                        GLOBED_RESULT_ERRC(NetworkManager::get().connectStandalone());
-                    } else {
-                        // check if the token is here, otherwise request it
-                        auto& am = GlobedAccountManager::get();
-
-                        auto hasToken = !am.authToken.lock()->empty();
-
-                        if (hasToken) {
-                            GLOBED_RESULT_ERRC(NetworkManager::get().connectWithView(this->gsview));
-                        } else {
-                            this->requestTokenAndConnect();
-                        }
-                    }
+                    post();
                 }
             })
             .anchorPoint(1.0f, 0.5f)
