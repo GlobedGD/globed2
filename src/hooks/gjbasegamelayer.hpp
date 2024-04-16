@@ -69,7 +69,6 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     // Convenience getter for static cast to GlobedGJBGL
     static GlobedGJBGL* get();
 
-
     /* setup stuff to make init() cleaner */
     // all are ran in this order.
 
