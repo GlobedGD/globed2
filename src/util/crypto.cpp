@@ -248,10 +248,10 @@ bytevector hexDecode(const bytevector& source) {
 
 int base64VariantToInt(Base64Variant variant) {
     switch (variant) {
-    case Base64Variant::STANDARD: return sodium_base64_VARIANT_ORIGINAL;
-    case Base64Variant::STANDARD_NO_PAD: return sodium_base64_VARIANT_ORIGINAL_NO_PADDING;
-    case Base64Variant::URLSAFE: return sodium_base64_VARIANT_URLSAFE;
-    case Base64Variant::URLSAFE_NO_PAD: return sodium_base64_VARIANT_URLSAFE_NO_PADDING;
+        case Base64Variant::STANDARD: return sodium_base64_VARIANT_ORIGINAL;
+        case Base64Variant::STANDARD_NO_PAD: return sodium_base64_VARIANT_ORIGINAL_NO_PADDING;
+        case Base64Variant::URLSAFE: return sodium_base64_VARIANT_URLSAFE;
+        case Base64Variant::URLSAFE_NO_PAD: return sodium_base64_VARIANT_URLSAFE_NO_PADDING;
     }
 
     return base64VariantToInt(Base64Variant::STANDARD);

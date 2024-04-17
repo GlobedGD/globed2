@@ -37,11 +37,11 @@ std::string AdminEditRolePopup::roleToSprite(int roleId) {
     std::string btnSprite;
 
     switch (roleId) {
-    case ROLE_USER: btnSprite = "role-user.png"_spr; break;
-    case ROLE_HELPER: btnSprite = "role-helper.png"_spr; break;
-    case ROLE_MOD: btnSprite = "role-mod.png"_spr; break;
-    case ROLE_ADMIN: btnSprite = "role-admin.png"_spr; break;
-    default: btnSprite = "role-user.png"_spr; break;
+        case ROLE_USER: btnSprite = "role-user.png"_spr; break;
+        case ROLE_HELPER: btnSprite = "role-helper.png"_spr; break;
+        case ROLE_MOD: btnSprite = "role-mod.png"_spr; break;
+        case ROLE_ADMIN: btnSprite = "role-admin.png"_spr; break;
+        default: btnSprite = "role-user.png"_spr; break;
     }
 
     return btnSprite;
