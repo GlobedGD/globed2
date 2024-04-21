@@ -1,9 +1,11 @@
 #pragma once
-#include <defs/essential.hpp>
+#include "../defs/essential.hpp"
+#include <defs/geode.hpp> 
 
 #include <functional>
 #include <string_view>
 #include <type_traits>
+#include <optional>
 
 // i hate c++
 #define _GLOBED_STRNUM "1234567890"
@@ -20,6 +22,7 @@
 
 struct PlayerIconData;
 enum class PlayerIconType : uint8_t;
+enum class IconType;
 
 namespace util::misc {
     constexpr std::string_view STRING_DIGITS = _GLOBED_STRNUM;

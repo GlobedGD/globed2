@@ -231,6 +231,8 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
         }
     });
 
+    this->setTitle(fmt::format("Players ({})", playerIds.size()));
+
     for (const auto playerId : playerIds) {
         auto& entry = playerStore.at(playerId);
 

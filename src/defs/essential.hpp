@@ -1,7 +1,7 @@
 #pragma once
-#include <defs/assert.hpp>
-#include <defs/crash.hpp>
-#include <defs/consts.hpp>
-#include <defs/platform.hpp>
-#include <defs/util.hpp>
+#include "assert.hpp"
+#include "crash.hpp"
+#include "consts.hpp"
+#include "platform.hpp"
+#include "util.hpp"
 
