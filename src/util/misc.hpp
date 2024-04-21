@@ -1,5 +1,5 @@
 #pragma once
-#include "../defs/essential.hpp"
+#include <defs/essential.hpp>
 #include <defs/geode.hpp> 
 
 #include <functional>
