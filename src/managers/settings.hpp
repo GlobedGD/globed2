@@ -62,6 +62,7 @@ public:
         GSETTING(bool, hideNearby, false);
         GSETTING(bool, forceVisibility, false);
         GSETTING(bool, ownName, false);
+        GSETTING(bool, hidePracticePlayers, false);
     };
 
     struct Advanced {};
