@@ -86,7 +86,7 @@ endif()
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 # set ios archs
-if ("${GEODE_TARGET_PLATFORM}" STREQUAL "iOS")
+if (${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
     message(STATUS "building for ios")
     unset(CMAKE_OSX_ARCHITECTURES)
     set(CMAKE_OSX_ARCHITECTURES "arm64")
