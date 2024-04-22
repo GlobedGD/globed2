@@ -38,6 +38,10 @@
 #define GLOBED_FMOD_ANDROID 1
 #define GLOBED_DRPC_ANDROID 0
 
+/* platform-specific: iOS */
+
+#define GLOBED_FMOD_IOS 0
+#define GLOBED_DRPC_IOS 0
 
 
 #endif // GLOBED_IGNORE_CONFIG_HPP

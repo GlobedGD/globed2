@@ -32,7 +32,11 @@ bool GlobedCreditsPopup::setup() {
 
 #define ADD_PLAYER(array, name, accountid, userid, cube, col1, col2, col3) \
     array->addObject( \
-        GlobedCreditsPlayer::create(name, accountid, userid, Icons { .type = IconType::Cube, .id = cube, .color1 = col1, .color2 = col2, .color3 = col3}) \
+        GlobedCreditsPlayer::create(name, name, accountid, userid, Icons { .type = IconType::Cube, .id = cube, .color1 = col1, .color2 = col2, .color3 = col3}) \
+    )
+#define ADD_PLAYER_NICK(array, name, nickname, accountid, userid, cube, col1, col2, col3) \
+    array->addObject( \
+        GlobedCreditsPlayer::create(name, nickname, accountid, userid, Icons { .type = IconType::Cube, .id = cube, .color1 = col1, .color2 = col2, .color3 = col3}) \
     )
 
     /* Owners */
@@ -68,7 +72,7 @@ bool GlobedCreditsPopup::setup() {
     ADD_PLAYER(staff, "skrunkly", 14462068, 146500573, 37, 17, 19, -1);
 
     ADD_PLAYER(staff, "Capeling", 18226543, 160504868, 141, 76, 40, 40);
-    ADD_PLAYER(staff, "ninXout", 7479054, 47290058, 77, 1, 5, -1);
+    ADD_PLAYER_NICK(staff, "Awesomeoverkill", "ninXout", 7479054, 47290058, 77, 1, 5, -1);
     ADD_PLAYER(staff, "NikoSando", 737532, 4354472, 433, 16, 6, 12);
 
     auto* cellStaff = Build<GlobedCreditsCell>::create("Staff", true, staff)
@@ -80,10 +84,10 @@ bool GlobedCreditsPopup::setup() {
 
     CCArray* contributors = CCArray::create();
 
-    ADD_PLAYER(contributors, "ninXout", 7479054, 47290058, 77, 1, 5, -1);
+    ADD_PLAYER_NICK(contributors, "Awesomeoverkill", "ninXout", 7479054, 47290058, 77, 1, 5, -1);
     ADD_PLAYER(contributors, "Capeling", 18226543, 160504868, 141, 76, 40, 40);
     ADD_PLAYER(contributors, "TheSillyDoggo", 16778880, 162245660, 5, 41, 40, 12);
-    ADD_PLAYER(contributors, "angeld233", 28024715, 236381167, 98, 4, 12, 12);
+    ADD_PLAYER_NICK(contributors, "angeld233", "angeld23", 28024715, 236381167, 98, 4, 12, 12);
     ADD_PLAYER(contributors, "Uproxide", 25397826, 227796112, 296, 2, 12, 12);
 
     auto* cellContrib = Build<GlobedCreditsCell>::create("Contributor", false, contributors)
