@@ -9,6 +9,7 @@
 * Fix player icons and names taking multiple seconds to load when a player joins your level
 * Fix a missing texture crash when asset preloading is disabled
 * Fix the placeholder green icon color being a slightly different shade than the actual default green
+* Fix the "already in a level" error appearing when disconnected, and add a way to forcefully open the level anyway
 * Some minor texture changes
 
 ## v1.3.7

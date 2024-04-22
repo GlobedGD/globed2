@@ -2,7 +2,7 @@
 
 using namespace geode::prelude;
 
-bool GlobedCreditsPlayer::init(const std::string_view name, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
+bool GlobedCreditsPlayer::init(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
     if (!CCNode::init()) return false;
 
     this->accountId = accountId;
@@ -22,7 +22,7 @@ bool GlobedCreditsPlayer::init(const std::string_view name, int accountId, int u
         .collect();
 
     // name
-    auto cl = Build<CCLabelBMFont>::create(std::string(name).c_str(), "goldFont.fnt")
+    auto cl = Build<CCLabelBMFont>::create(std::string(nickname).c_str(), "goldFont.fnt")
         .scale(0.45f)
         .collect();
 
@@ -56,9 +56,9 @@ void GlobedCreditsPlayer::onNameClicked(cocos2d::CCObject*) {
     ProfilePage::create(accountId, false)->show();
 }
 
-GlobedCreditsPlayer* GlobedCreditsPlayer::create(const std::string_view name, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
+GlobedCreditsPlayer* GlobedCreditsPlayer::create(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
     auto ret = new GlobedCreditsPlayer;
-    if (ret->init(name, accountId, userId, icons)) {
+    if (ret->init(name, nickname, accountId, userId, icons)) {
         ret->autorelease();
         return ret;
     }

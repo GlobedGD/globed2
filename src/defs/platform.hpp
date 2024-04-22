@@ -19,7 +19,7 @@
 * GLOBED_PLATFORM_STRING - those two above combined into one, i.e. "Windows x86"
 */
 
-#if defined(GEODE_IS_MACOS) || defined(GEODE_IS_ANDROID)
+#if !defined(GEODE_IS_WINDOWS)
 # define GLOBED_IS_UNIX 1
 #endif
 
@@ -46,6 +46,11 @@
 #  define GLOBED_PLATFORM_STRING_ARCH "armeabi-v7a"
 #  define GLOBED_IS_ARMV7
 # endif
+#elif defined(GEODE_IS_IOS)
+# define GLOBED_PLATFORM_STRING_PLATFORM "iOS"
+#  define GLOBED_PLATFORM_STRING_ARCH "arm64"
+# define GLOBED_IS_ARM 1
+# define GLOBED_IS_ARM64 1
 #endif
 
 #define GLOBED_PLATFORM_STRING GLOBED_PLATFORM_STRING_PLATFORM " " GLOBED_PLATFORM_STRING_ARCH
@@ -67,6 +72,10 @@
 #elif defined(GEODE_IS_ANDROID)
 # define GLOBED_HAS_FMOD GLOBED_FMOD_ANDROID
 # define GLOBED_HAS_DRPC GLOBED_DRPC_ANDROID
+# define GLOBED_HAS_KEYBINDS 0
+#elif defined(GEODE_IS_IOS)
+# define GLOBED_HAS_FMOD GLOBED_FMOD_IOS
+# define GLOBED_HAS_DRPC GLOBED_DRPC_IOS
 # define GLOBED_HAS_KEYBINDS 0
 #else
 # error "what"

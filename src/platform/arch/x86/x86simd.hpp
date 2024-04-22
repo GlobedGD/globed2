@@ -1,5 +1,6 @@
 #pragma once
 #include <immintrin.h>
+#include <stdint.h>
 
 // everything here was done just for fun and educational purposes don't judge me too harshly :D
 

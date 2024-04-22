@@ -312,6 +312,8 @@ void ComplexVisualPlayer::updateData(
     bool shouldBeVisible;
     if (isSecond && !playerData.isDualMode) {
         shouldBeVisible = false;
+    } else if (settings.players.hidePracticePlayers && playerData.isPracticing) {
+        shouldBeVisible = false;
     } else {
         shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden;
     }

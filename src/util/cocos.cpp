@@ -330,66 +330,66 @@ namespace util::cocos {
         auto* gm = static_cast<HookedGameManager*>(GameManager::get());
 
         switch (stage) {
-        case AssetPreloadStage::DeathEffect: {
-            std::vector<std::string> images;
+            case AssetPreloadStage::DeathEffect: {
+                std::vector<std::string> images;
 
-            for (size_t i = 1; i < 20; i++) {
-                auto key = fmt::format("PlayerExplosion_{:02}", i);
-                images.push_back(key);
-            }
+                for (size_t i = 1; i < 20; i++) {
+                    auto key = fmt::format("PlayerExplosion_{:02}", i);
+                    images.push_back(key);
+                }
 
-            loadAssetsParallel(images);
-        } break;
-        case AssetPreloadStage::Cube: gm->loadIconsBatched((int)IconType::Cube, 0, 484); break;
+                loadAssetsParallel(images);
+            } break;
+            case AssetPreloadStage::Cube: gm->loadIconsBatched((int)IconType::Cube, 0, 484); break;
 
-        // There are actually 169 ship icons, but for some reason, loading the last icon causes
-        // a very strange bug when you have the Default mini icons option enabled.
-        // I have no idea how loading a ship icon can cause a ball icon to become a cube,
-        // and honestly I don't care enough.
-        // https://github.com/dankmeme01/globed2/issues/93
-        case AssetPreloadStage::Ship: gm->loadIconsBatched((int)IconType::Ship, 1, 168); break;
-        case AssetPreloadStage::Ball: gm->loadIconsBatched((int)IconType::Ball, 0, 118); break;
-        case AssetPreloadStage::Ufo: gm->loadIconsBatched((int)IconType::Ufo, 1, 149); break;
-        case AssetPreloadStage::Wave: gm->loadIconsBatched((int)IconType::Wave, 1, 96); break;
-        case AssetPreloadStage::Other: {
-            std::vector<BatchedIconRange> ranges = {
-                BatchedIconRange{
-                    .iconType = (int)IconType::Robot,
-                    .startId = 1,
-                    .endId = 68
-                },
-                BatchedIconRange{
-                    .iconType = (int)IconType::Spider,
-                    .startId = 1,
-                    .endId = 69
-                },
-                BatchedIconRange{
-                    .iconType = (int)IconType::Swing,
-                    .startId = 1,
-                    .endId = 43
-                },
-                BatchedIconRange{
-                    .iconType = (int)IconType::Jetpack,
-                    .startId = 1,
-                    .endId = 5
-                },
-            };
+            // There are actually 169 ship icons, but for some reason, loading the last icon causes
+            // a very strange bug when you have the Default mini icons option enabled.
+            // I have no idea how loading a ship icon can cause a ball icon to become a cube,
+            // and honestly I don't care enough.
+            // https://github.com/dankmeme01/globed2/issues/93
+            case AssetPreloadStage::Ship: gm->loadIconsBatched((int)IconType::Ship, 1, 168); break;
+            case AssetPreloadStage::Ball: gm->loadIconsBatched((int)IconType::Ball, 0, 118); break;
+            case AssetPreloadStage::Ufo: gm->loadIconsBatched((int)IconType::Ufo, 1, 149); break;
+            case AssetPreloadStage::Wave: gm->loadIconsBatched((int)IconType::Wave, 1, 96); break;
+            case AssetPreloadStage::Other: {
+                std::vector<BatchedIconRange> ranges = {
+                    BatchedIconRange{
+                        .iconType = (int)IconType::Robot,
+                        .startId = 1,
+                        .endId = 68
+                    },
+                    BatchedIconRange{
+                        .iconType = (int)IconType::Spider,
+                        .startId = 1,
+                        .endId = 69
+                    },
+                    BatchedIconRange{
+                        .iconType = (int)IconType::Swing,
+                        .startId = 1,
+                        .endId = 43
+                    },
+                    BatchedIconRange{
+                        .iconType = (int)IconType::Jetpack,
+                        .startId = 1,
+                        .endId = 5
+                    },
+                };
 
-            gm->loadIconsBatched(ranges);
+                gm->loadIconsBatched(ranges);
 
-        } break;
-        case AssetPreloadStage::AllWithoutDeathEffects: [[fallthrough]];
-        case AssetPreloadStage::All: {
-            if (stage != AssetPreloadStage::AllWithoutDeathEffects) {
-                preloadAssets(AssetPreloadStage::DeathEffect);
-            }
-            preloadAssets(AssetPreloadStage::Cube);
-            preloadAssets(AssetPreloadStage::Ship);
-            preloadAssets(AssetPreloadStage::Ball);
-            preloadAssets(AssetPreloadStage::Ufo);
-            preloadAssets(AssetPreloadStage::Wave);
-            preloadAssets(AssetPreloadStage::Other);
-        } break;
+            } break;
+            case AssetPreloadStage::AllWithoutDeathEffects: [[fallthrough]];
+            case AssetPreloadStage::All: {
+                if (stage != AssetPreloadStage::AllWithoutDeathEffects) {
+                    preloadAssets(AssetPreloadStage::DeathEffect);
+                }
+                preloadAssets(AssetPreloadStage::Cube);
+                preloadAssets(AssetPreloadStage::Ship);
+                preloadAssets(AssetPreloadStage::Ball);
+                preloadAssets(AssetPreloadStage::Ufo);
+                preloadAssets(AssetPreloadStage::Wave);
+                preloadAssets(AssetPreloadStage::Other);
+            } break;
         }
     }
 

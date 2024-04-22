@@ -74,25 +74,25 @@ void HookedLoadingLayer::preloadingStage2(float) {
     auto& settings = GlobedSettings::get();
 
     switch (m_fields->preloadingStage) {
-    // death effects
-    case 1: {
-        // only preload them if they are enabled, they take like half the loading time
-        if (settings.players.deathEffects && !settings.players.defaultDeathEffect) {
-            preloadAssets(AssetPreloadStage::DeathEffect);
-            static_cast<HookedGameManager*>(GameManager::get())->setDeathEffectsPreloaded(true);
+        // death effects
+        case 1: {
+            // only preload them if they are enabled, they take like half the loading time
+            if (settings.players.deathEffects && !settings.players.defaultDeathEffect) {
+                preloadAssets(AssetPreloadStage::DeathEffect);
+                static_cast<HookedGameManager*>(GameManager::get())->setDeathEffectsPreloaded(true);
+            }
+        } break;
+        case 2: preloadAssets(AssetPreloadStage::Cube); break;
+        case 3: preloadAssets(AssetPreloadStage::Ship); break;
+        case 4: preloadAssets(AssetPreloadStage::Ball); break;
+        case 5: preloadAssets(AssetPreloadStage::Ufo); break;
+        case 6: preloadAssets(AssetPreloadStage::Wave); break;
+        case 7: preloadAssets(AssetPreloadStage::Other); break;
+        case 8: {
+            static_cast<HookedGameManager*>(GameManager::get())->setAssetsPreloaded(true);
+            this->finishLoading();
+            return;
         }
-    } break;
-    case 2: preloadAssets(AssetPreloadStage::Cube); break;
-    case 3: preloadAssets(AssetPreloadStage::Ship); break;
-    case 4: preloadAssets(AssetPreloadStage::Ball); break;
-    case 5: preloadAssets(AssetPreloadStage::Ufo); break;
-    case 6: preloadAssets(AssetPreloadStage::Wave); break;
-    case 7: preloadAssets(AssetPreloadStage::Other); break;
-    case 8: {
-        static_cast<HookedGameManager*>(GameManager::get())->setAssetsPreloaded(true);
-        this->finishLoading();
-        return;
-    }
     };
 
     m_fields->preloadingStage++;
