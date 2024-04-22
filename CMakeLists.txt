@@ -3,12 +3,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-if (IOS)
-    set(CMAKE_OSX_ARCHITECTURES "arm64")
-else()
-    set(CMAKE_OSX_ARCHITECTURES "x86_64")
-endif()
-
 project(globed2 VERSION 1.0.0)
 
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
@@ -33,6 +27,8 @@ endif()
 # add thingies epending on the current system
 if (ANDROID)
     file(GLOB_RECURSE OS_SOURCES "src/platform/os/android/*.cpp" "src/platform/arch/arm/*.cpp")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS")
+    file(GLOB_RECURSE OS_SOURCES "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp")
 elseif (APPLE)
     file(GLOB_RECURSE OS_SOURCES "src/platform/os/mac/*.cpp" "src/platform/arch/x86/*.cpp")
 elseif (WIN32)
@@ -88,6 +84,15 @@ else()
 endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
+
+# set ios archs
+if ("${GEODE_TARGET_PLATFORM}" STREQUAL "iOS")
+    set(CMAKE_OSX_ARCHITECTURES "arm64")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
+    set(CMAKE_SYSTEM_NAME "iOS")
+else()
+    set(CMAKE_OSX_ARCHITECTURES "x86_64")
+endif()
 
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
