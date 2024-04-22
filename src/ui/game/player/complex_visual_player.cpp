@@ -7,6 +7,7 @@
 #include <util/rng.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -38,11 +39,11 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
         .visible(settings.players.showNames && (!isSecond || settings.players.dualName))
         .store(playerName)
         .pos(0.f, 25.f)
-        .parent(this)
-        .intoNewSibling(CCSprite::createWithSpriteFrameName("role-helper.png"_spr))
-            .pos(playerName->getPosition() + ccp(playerName->getScaledContentSize().width / 2.f + 11.5f, 0.f))
-            .visible(playerName->isVisible())
-            .store(badgeIcon);
+        .parent(this);
+
+    if (parent->getAccountData().specialUserData.has_value()) {
+        util::ui::createBadgeIfSpecial(parent->getAccountData().specialUserData->nameColor, playerName->getPosition() + ccp(playerName->getScaledContentSize().width / 2.f + 11.5f, 0.f)).store(badgeIcon);
+    }
 
     this->updateIcons(data.icons);
 
@@ -58,7 +59,6 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     // preload the cube icon so the passengers are correct
     this->updateIconType(PlayerIconType::Cube);
-
     return true;
 }
 
@@ -132,9 +132,11 @@ void ComplexVisualPlayer::updateData(
 
     // set the pos for status icons and name (ask rob not me)
     playerName->setPosition(data.position + CCPoint{0.f, 25.f});
-    badgeIcon->setPosition(data.position + ccp(playerName->getScaledContentSize().width / 2.f + 11.5f, 25.f));
     if (statusIcons) {
         statusIcons->setPosition(data.position + CCPoint{0.f, playerName->isVisible() ? 40.f : 25.f});
+    }
+    if (parent->getAccountData().specialUserData.has_value() && badgeIcon != nullptr) {
+        badgeIcon->setPosition(data.position + ccp(playerName->getScaledContentSize().width / 2.f + 11.5f, 25.f));
     }
 
     if (!playerData.isDead && playerIcon->getOpacity() == 0) {
@@ -271,7 +273,7 @@ void ComplexVisualPlayer::updateData(
 void ComplexVisualPlayer::updateName() {
     playerName->setString(parent->getAccountData().name.c_str());
     auto& sud = parent->getAccountData().specialUserData;
-    parent->getAccountData().
+    parent->getAccountData();
     sud.has_value() ? playerName->setColor(sud->nameColor) : playerName->setColor({255, 255, 255});
 }
 

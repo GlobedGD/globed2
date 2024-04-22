@@ -52,9 +52,9 @@ protected:
 
     GJBaseGameLayer* gameLayer;
     ComplexPlayerObject* playerIcon;
+    cocos2d::CCSprite* badgeIcon;
     PlayerIconType playerIconType = PlayerIconType::Unknown;
     cocos2d::CCLabelBMFont* playerName;
-    cocos2d::CCSprite* badgeIcon;
     Ref<PlayerStatusIcons> statusIcons;
     bool isPlatformer;
 

@@ -37,7 +37,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     }
 
     CCMenu* badgeWrapper = Build<CCMenu>::create()
-        .pos(simplePlayer->getPositionX() + simplePlayer->m_firstLayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
+        .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start))
         .anchorPoint(0.f, 0.5f)
         .contentSize(RoomPopup::LIST_WIDTH, CELL_HEIGHT)
@@ -60,7 +60,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     btn->m_scaleMultiplier = 1.1f;
 
     if (data.specialUserData.has_value()) {
-        auto badge = createBadgeIfSpecial(nameColor, CCPoint{0.f, 0.f});
+        auto badge = createBadgeIfSpecial(nameColor, CCPoint{0.f, 0.f}).collect();
         if (badge != nullptr) badgeWrapper->addChild(badge);
     }
     badgeWrapper->updateLayout();
