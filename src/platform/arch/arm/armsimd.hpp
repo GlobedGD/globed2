@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstddef>
 
 namespace globed::simd::arm {
-    float pcmVolume(const float* pcm, size_t samples);
+    float pcmVolume(const float* pcm, std::size_t samples);
 }

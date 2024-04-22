@@ -3,7 +3,7 @@
 #include <util/misc.hpp>
 #include <arm_neon.h>
 
-float globed::simd::arm::pcmVolume(const float* pcm, size_t samples) {
+float globed::simd::arm::pcmVolume(const float* pcm, std::size_t samples) {
 #ifdef GLOBED_IS_64BIT
     size_t alignedSamples = samples / 4 * 4;
 
