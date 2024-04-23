@@ -55,13 +55,19 @@ bool GlobedSettingsLayer::init() {
 
     // tabs gradient (copied from geode)
 
+#ifdef GEODE_IS_IOS
+    tabsGradientNode = CCNode::create();
+#else
     tabsGradientNode = CCClippingNode::create();
+#endif
     tabsGradientNode->setContentSize(this->getContentSize());
     tabsGradientNode->setAnchorPoint({0.5f, 0.5f});
     tabsGradientNode->ignoreAnchorPointForPosition(true);
     tabsGradientNode->setZOrder(4);
+#ifndef GEODE_IS_IOS
     tabsGradientNode->setInverted(false);
     tabsGradientNode->setAlphaThreshold(0.7f);
+#endif
 
     tabsGradientSprite = CCSprite::create("geode.loader/tab-gradient.png");
     tabsGradientSprite->setPosition(tabButtonMenu->getPosition());
@@ -70,7 +76,9 @@ bool GlobedSettingsLayer::init() {
     tabsGradientStencil = CCSprite::create("geode.loader/tab-gradient-mask.png");
     tabsGradientStencil->setScale(TAB_SCALE);
     tabsGradientStencil->setAnchorPoint({0.f, 0.f});
+#ifndef GEODE_IS_IOS
     tabsGradientNode->setStencil(tabsGradientStencil);
+#endif
 
     this->addChild(tabsGradientNode);
     this->addChild(tabsGradientStencil);
