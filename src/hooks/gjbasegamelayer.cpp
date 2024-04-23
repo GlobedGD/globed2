@@ -706,9 +706,10 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
     else if (player->m_isSpider) iconType = PlayerIconType::Spider;
     else if (player->m_isSwing) iconType = PlayerIconType::Swing;
 
-    if (iconType == PlayerIconType::Ship && m_level->isPlatformer()) {
-        iconType = PlayerIconType::Jetpack;
-    }
+    // TODO: reenable with next protocol bump (when server is updated)
+    // if (iconType == PlayerIconType::Ship && m_level->isPlatformer()) {
+    //     iconType = PlayerIconType::Jetpack;
+    // }
 
     auto* pobjInner = static_cast<CCNode*>(player->getChildren()->objectAtIndex(0));
 
