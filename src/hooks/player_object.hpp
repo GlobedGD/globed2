@@ -14,11 +14,9 @@ class $modify(ComplexPlayerObject, PlayerObject) {
     // link this `PlayerObject` to a `ComplexVisualPlayer` instance
     void setRemotePlayer(ComplexVisualPlayer* rp);
 
-    $override
-    void incrementJumps();
+    $override void incrementJumps();
 
-    $override
-    void playDeathEffect();
+    $override void playDeathEffect();
 };
 
 // Unlike `ComplexPlayerObject`, this one is made specifically for vanilla player objects, so it is a separate $modify class.

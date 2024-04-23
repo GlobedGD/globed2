@@ -544,33 +544,33 @@ namespace util::debug {
             if (scanResult.contains(node)) {
                 auto type = scanResult.at(node);
                 switch (type) {
-                case ScanItemType::Float:
-                    log::debug("{} ({}f)", prefix32, data::bit_cast<float>(nodeValue32));
-                    break;
-                case ScanItemType::Double:
-                    log::debug("{} ({}d)", prefix64, data::bit_cast<double>(nodeValue64));
-                    node += sizeof(double) - INCREMENT;
-                    break;
-                case ScanItemType::HeapPointer:
-                    log::debug("{} ({}) (ptr)", prefixPtr, nodeValuePtr);
-                    node += sizeof(void*) - INCREMENT;
-                    break;
-                case ScanItemType::String:
-                    log::debug("{} ({}) (string: \"{}\")", prefixPtr, nodeValuePtr, (const char*)nodeValuePtr);
-                    node += sizeof(void*) - INCREMENT;
-                    break;
-                case ScanItemType::EmptyString:
-                    log::debug("{} ({}) (string: \"\")", prefixPtr, nodeValuePtr);
-                    node += sizeof(void*) - INCREMENT;
-                    break;
-                case ScanItemType::SeedValue: {
-                    uint32_t valueNext = *(uint32_t*)((uintptr_t)address + node + 4);
-                    uint32_t valueNext2 = *(uint32_t*)((uintptr_t)address + node + 8);
-                    std::string prefix96 = fmt::format("0x{:X} : {:024X}", node, nodeValue64);
-                    log::debug("0x{:X} : ({:08X} {:08X} {:08X}) seed value: {}, {}, {}", node, nodeValue32, valueNext, valueNext2, nodeValue32, valueNext, valueNext2);
-                    node += 3*4 - INCREMENT;
-                    break;
-                }
+                    case ScanItemType::Float:
+                        log::debug("{} ({}f)", prefix32, data::bit_cast<float>(nodeValue32));
+                        break;
+                    case ScanItemType::Double:
+                        log::debug("{} ({}d)", prefix64, data::bit_cast<double>(nodeValue64));
+                        node += sizeof(double) - INCREMENT;
+                        break;
+                    case ScanItemType::HeapPointer:
+                        log::debug("{} ({}) (ptr)", prefixPtr, nodeValuePtr);
+                        node += sizeof(void*) - INCREMENT;
+                        break;
+                    case ScanItemType::String:
+                        log::debug("{} ({}) (string: \"{}\")", prefixPtr, nodeValuePtr, (const char*)nodeValuePtr);
+                        node += sizeof(void*) - INCREMENT;
+                        break;
+                    case ScanItemType::EmptyString:
+                        log::debug("{} ({}) (string: \"\")", prefixPtr, nodeValuePtr);
+                        node += sizeof(void*) - INCREMENT;
+                        break;
+                    case ScanItemType::SeedValue: {
+                        uint32_t valueNext = *(uint32_t*)((uintptr_t)address + node + 4);
+                        uint32_t valueNext2 = *(uint32_t*)((uintptr_t)address + node + 8);
+                        std::string prefix96 = fmt::format("0x{:X} : {:024X}", node, nodeValue64);
+                        log::debug("0x{:X} : ({:08X} {:08X} {:08X}) seed value: {}, {}, {}", node, nodeValue32, valueNext, valueNext2, nodeValue32, valueNext, valueNext2);
+                        node += 3*4 - INCREMENT;
+                        break;
+                    }
                 }
 
                 continue;

@@ -12,6 +12,7 @@
 using namespace geode::prelude;
 
 void HookedGameManager::returnToLastScene(GJGameLevel* level) {
+    log::debug("returning, from editor: {}", GlobedLevelEditorLayer::fromEditor);
     if (GlobedLevelEditorLayer::fromEditor) {
         // TODO? idk what happened here
         auto* pl = GlobedGJBGL::get();

@@ -30,7 +30,7 @@ GLOBED_SERIALIZABLE_STRUCT(PlayerIconData, (
 ));
 
 inline const PlayerIconData PlayerIconData::DEFAULT_ICONS = PlayerIconData(
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, -1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, -1
 );
 
 class SpecialUserData {

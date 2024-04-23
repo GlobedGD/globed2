@@ -6,10 +6,11 @@
 #include <ui/game/progress/progress_arrow.hpp>
 #include <data/types/gd.hpp>
 #include <game/visual_state.hpp>
+#include <game/camera_state.hpp>
 
 class RemotePlayer : public cocos2d::CCNode {
 public:
-    bool init(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
+    bool init(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
     void updateAccountData(const PlayerAccountData& data, bool force = false);
     const PlayerAccountData& getAccountData() const;
 
@@ -40,8 +41,8 @@ public:
 
     bool isValidPlayer();
 
-    static RemotePlayer* create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
-    static RemotePlayer* create(PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow);
+    static RemotePlayer* create(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
+    static RemotePlayer* create(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow);
 
     Ref<PlayerProgressIcon> progressIcon;
     Ref<PlayerProgressArrow> progressArrow;
@@ -53,6 +54,8 @@ protected:
     float lastPercentage = 0.f;
     bool isForciblyHidden = false;
     bool isEditorBuilding = false;
+
+    GameCameraState* gameCameraState;
 
     PlayerAccountData accountData;
 };

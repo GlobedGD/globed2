@@ -27,9 +27,9 @@ bool GlobedSettingsLayer::init() {
         .store(tabBtn1)
         .parent(tabButtonMenu);
 
-    Build<TabButton>::create("Overlay", this, menu_selector(GlobedSettingsLayer::onTab))
+    Build<TabButton>::create("Menus", this, menu_selector(GlobedSettingsLayer::onTab))
         .scale(TAB_SCALE)
-        .tag(TAG_TAB_OVERLAY)
+        .tag(TAG_TAB_MENUS)
         .store(tabBtn2)
         .parent(tabButtonMenu);
 
@@ -143,7 +143,7 @@ void GlobedSettingsLayer::remakeList() {
     storedTabs.clear();
 
     storedTabs[TAG_TAB_GLOBED] = this->makeListLayer(TAG_TAB_GLOBED);
-    storedTabs[TAG_TAB_OVERLAY] = this->makeListLayer(TAG_TAB_OVERLAY);
+    storedTabs[TAG_TAB_MENUS] = this->makeListLayer(TAG_TAB_MENUS);
     storedTabs[TAG_TAB_COMMUNICATION] = this->makeListLayer(TAG_TAB_COMMUNICATION);
     storedTabs[TAG_TAB_LEVELUI] = this->makeListLayer(TAG_TAB_LEVELUI);
     storedTabs[TAG_TAB_PLAYERS] = this->makeListLayer(TAG_TAB_PLAYERS);
@@ -168,8 +168,6 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
         MAKE_SETTING(globed, preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
         MAKE_SETTING(globed, deferPreloadAssets, "Defer preloading", "Instead of making the loading screen longer, load assets only when you join a level while connected.");
         MAKE_SETTING_TYPE(globed, fragmentationLimit, Type::PacketFragmentation, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.");
-        MAKE_SETTING(globed, increaseLevelList, "More Levels Per Page", "Increases the levels per page in the server level list from 30 to 100.");
-        MAKE_SETTING(globed, compressedPlayerCount, "Compressed Player Count", "Compress the Player Count label to match the Player Count in The Tower.");
         MAKE_SETTING_LIM(globed, tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.", {
             .intMin = 1,
             .intMax = 240,
@@ -180,14 +178,9 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
 #endif
     }
 
-    if (category == TAG_TAB_OVERLAY) {
-        MAKE_SETTING(overlay, enabled, "Ping overlay", "Show a small overlay when in a level, displaying the current latency to the server.");
-        MAKE_SETTING_LIM(overlay, opacity, "Overlay opacity", "Opacity of the displayed overlay.", {
-            .floatMin = 0.f,
-            .floatMax = 1.f
-        });
-        MAKE_SETTING(overlay, hideConditionally, "Hide conditionally", "Hide the ping overlay when not connected to a server or in a non-uploaded level, instead of showing a substitute message.");
-        MAKE_SETTING_TYPE(overlay, position, Type::Corner, "Position", "Position of the overlay on the screen.");
+    if (category == TAG_TAB_MENUS) {
+        MAKE_SETTING(globed, increaseLevelList, "More Levels Per Page", "Increases the levels per page in the server level list from 30 to 100.");
+        MAKE_SETTING(globed, compressedPlayerCount, "Compressed Player Count", "Compress the Player Count label to match the Player Count in The Tower.");
     }
 
 #ifdef GLOBED_VOICE_SUPPORT
@@ -214,6 +207,15 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
             .floatMax = 1.f
         });
         MAKE_SETTING(levelUi, voiceOverlay, "Voice overlay", "Show a small overlay in the bottom right indicating currently speaking players.");
+
+        MAKE_HEADER("Ping overlay");
+        MAKE_SETTING(overlay, enabled, "Enabled", "Show a small overlay when in a level, displaying the current latency to the server.");
+        MAKE_SETTING_LIM(overlay, opacity, "Opacity", "Opacity of the displayed overlay.", {
+            .floatMin = 0.f,
+            .floatMax = 1.f
+        });
+        MAKE_SETTING(overlay, hideConditionally, "Hide conditionally", "Hide the ping overlay when not connected to a server or in a non-uploaded level, instead of showing a substitute message.");
+        MAKE_SETTING_TYPE(overlay, position, Type::Corner, "Position", "Position of the overlay on the screen.");
     }
 
     if (category == TAG_TAB_PLAYERS) {
@@ -232,6 +234,7 @@ CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
         MAKE_SETTING(players, defaultDeathEffect, "Default death effect", "Replaces the death effects of all players with a default explosion effect.");
         MAKE_SETTING(players, hideNearby, "Hide nearby players", "Increases the transparency of players as they get closer to you, so that they don't obstruct your view.");
         MAKE_SETTING(players, statusIcons, "Status icons", "Show an icon above a player if they are paused, in practice mode, or currently speaking.");
+        MAKE_SETTING(players, hidePracticePlayers, "Hide players in practice", "Hide players that are in practice mode.");
     }
 
     return cells;

@@ -58,29 +58,33 @@ void ErrorCheckNode::updateErrors(float) {
         return;
     }
 
-    auto errors = ErrorQueues::get().getErrors();
-    auto notices = ErrorQueues::get().getNotices();
+    try {
+        auto errors = ErrorQueues::get().getErrors();
+        auto notices = ErrorQueues::get().getNotices();
 
-    for (auto& error : errors) {
-        if (canShowFLAlert()) {
-            auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed error", error, "Ok"));
-            alert->setID("error-popup"_spr);
-            alert->blockClosingFor(BLOCK_CLOSING_FOR);
-            alert->show();
-        } else {
-            log::warn("cant show flalert, ignoring error: {}", error);
+        for (auto& error : errors) {
+            if (canShowFLAlert()) {
+                auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed error", error, "Ok"));
+                alert->setID("error-popup"_spr);
+                alert->blockClosingFor(BLOCK_CLOSING_FOR);
+                alert->show();
+            } else {
+                log::warn("cant show flalert, ignoring error: {}", error);
+            }
         }
-    }
 
-    for (auto& notice : notices) {
-        if (canShowFLAlert()) {
-            auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed notice", notice, "Ok"));
-            alert->setID("notice-popup"_spr);
-            alert->blockClosingFor(BLOCK_CLOSING_FOR);
-            alert->show();
-        } else {
-            log::warn("cant show flalert, ignoring notice: {}", notice);
+        for (auto& notice : notices) {
+            if (canShowFLAlert()) {
+                auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed notice", notice, "Ok"));
+                alert->setID("notice-popup"_spr);
+                alert->blockClosingFor(BLOCK_CLOSING_FOR);
+                alert->show();
+            } else {
+                log::warn("cant show flalert, ignoring notice: {}", notice);
+            }
         }
+    } catch (const std::exception& e) {
+        log::warn("failed to pop the errors/notices: {}", e.what());
     }
 }
 

@@ -16,6 +16,7 @@ pub enum PlayerIconType {
     Robot = 6,
     Spider = 7,
     Swing = 8,
+    Jetpack = 9,
 }
 
 /* SpiderTeleportData (spider teleport data) */

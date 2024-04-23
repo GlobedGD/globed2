@@ -153,17 +153,22 @@ bool GlobedMenuLayer::init() {
         .parent(rightButtonMenu);
 
     // info button
-#ifdef GLOBED_VOICE_CAN_TALK
-    Build<CCSprite>::createSpriteName("icon-voice-chat-guide.png"_spr)
-        .intoMenuItem([](auto) {
-            FLAlertLayer::create("Voice chat guide",
-            "In order to <cg>talk</c> with other people in-game, <cp>hold V</c>.\nIn order to <cr>deafen</c> (stop hearing everyone), <cb>press B</c>.\nBoth keybinds can be changed in <cy>Geometry Dash</c> settings.",
-            "Ok")->show();
-        })
-        .scaleMult(1.15f)
-        .id("btn-show-voice-chat-popup"_spr)
-        .parent(rightButtonMenu);
-#endif
+    if (settings.communication.voiceEnabled) {
+        Build<CCSprite>::createSpriteName("icon-voice-chat-guide.png"_spr)
+            .intoMenuItem([](auto) {
+                FLAlertLayer::create(
+                    "Voice chat guide",
+    #ifdef GLOBED_VOICE_CAN_TALK
+                    "In order to <cg>talk</c> with other people in-game, <cp>hold V</c>.\nIn order to <cr>deafen</c> (stop hearing everyone), <cb>press B</c>.\nBoth keybinds can be changed in <cy>Geometry Dash</c> settings.",
+    #else
+                    "This platform currently <cr>does not</c> support audio recording, but you can still hear others in voice chat. Sorry for the inconvenience.",
+    #endif
+                "Ok")->show();
+            })
+            .scaleMult(1.15f)
+            .id("btn-show-voice-chat-popup"_spr)
+            .parent(rightButtonMenu);
+    }
 
     rightButtonMenu->updateLayout();
 

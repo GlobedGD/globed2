@@ -17,4 +17,6 @@ class $modify(HookedMenuLayer, MenuLayer) {
 
     void updateGlobedButton();
     void maybeUpdateButton(float);
+
+    void onGlobedButton(cocos2d::CCObject*);
 };

@@ -24,6 +24,7 @@ void setupCustomKeybinds();
 void printDebugInfo();
 
 #ifdef GLOBED_VOICE_SUPPORT
+// TODO this hook kinda doesnt work bc early load and i dont even know if it would do anything
 static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAGS flags, void* dd) {
     log::debug("fmod system init hooked, changing to {} channels", MAX_AUDIO_CHANNELS);
     system->init(MAX_AUDIO_CHANNELS, flags, dd);
@@ -35,11 +36,11 @@ $execute {
 
     asp::setLogFunction([](LogLevel level, auto message) {
         switch (level) {
-        case LogLevel::Trace: [[fallthrough]];
-        case LogLevel::Debug: log::debug("{}", message); break;
-        case LogLevel::Info: log::info("{}", message); break;
-        case LogLevel::Warn: log::warn("{}", message); break;
-        case LogLevel::Error: log::error("{}", message); break;
+            case LogLevel::Trace: [[fallthrough]];
+            case LogLevel::Debug: log::debug("{}", message); break;
+            case LogLevel::Info: log::info("{}", message); break;
+            case LogLevel::Warn: log::warn("{}", message); break;
+            case LogLevel::Error: log::error("{}", message); break;
         }
     });
 
