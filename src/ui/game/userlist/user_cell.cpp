@@ -101,7 +101,7 @@ void GlobedUserCell::updateVisualizer(float dt) {
 
 void GlobedUserCell::makeButtons() {
     if (buttonsWrapper) buttonsWrapper->removeFromParent();
-    const float gap = 5.f;
+    const float gap = 3.f;
 
     Build<CCMenu>::create()
         .anchorPoint(1.0f, 0.5f)
@@ -114,13 +114,15 @@ void GlobedUserCell::makeButtons() {
         .store(buttonsWrapper);
 
     auto& settings = GlobedSettings::get();
+    auto pl = GlobedGJBGL::get();
 
     auto maxWidth = -5.f;
 
     bool notSelf = accountData.accountId != GJAccountManager::get()->m_accountID;
     bool createBtnSettings = notSelf;
     bool createBtnAdmin = NetworkManager::get().isAuthorizedAdmin();
-    bool createBtnTp = createBtnAdmin && notSelf;
+    bool createBtn2plink = pl->m_fields->roomSettings.twoPlayerMode && notSelf;
+    bool createBtnTp = createBtnAdmin && notSelf && !createBtn2plink;
     bool createVisualizer = settings.communication.voiceEnabled && notSelf;
     bool createSettingsAlts = false;
 
@@ -128,8 +130,6 @@ void GlobedUserCell::makeButtons() {
         createSettingsAlts = true;
         createBtnSettings = false;
     }
-
-    auto pl = GlobedGJBGL::get();
 
     if (!pl->m_fields->players.contains(accountData.accountId)) return;
 
@@ -234,11 +234,9 @@ void GlobedUserCell::makeButtons() {
     }
 
     if (createBtnTp) {
-        auto gpl = GlobedGJBGL::get(); // ggpl
-
         Build<CCSprite>::createSpriteName("icon-teleport.png"_spr)
             .scale(0.35f)
-            .intoMenuItem([gpl, this](auto) {
+            .intoMenuItem([pl, this](auto) {
                 auto& settings = GlobedSettings::get();
                 if (!settings.flags.seenTeleportNotice)  {
                     settings.flags.seenTeleportNotice = true;
@@ -253,11 +251,11 @@ void GlobedUserCell::makeButtons() {
                     return;
                 }
 
-                gpl->toggleSafeMode(true);
+                pl->toggleSafeMode(true);
 
-                PlayerObject* po1 = gpl->m_player1;
-                CCPoint position = {0,0}; // just in case the player has already left by the time we teleport
-                if (gpl->m_fields->interpolator->hasPlayer(accountData.accountId)) position = gpl->m_fields->interpolator->getPlayerState(accountData.accountId).player1.position;
+                PlayerObject* po1 = pl->m_player1;
+                CCPoint position = {0, 0}; // just in case the player has already left by the time we teleport
+                if (pl->m_fields->interpolator->hasPlayer(accountData.accountId)) position = pl->m_fields->interpolator->getPlayerState(accountData.accountId).player1.position;
 
                 po1->m_position = position;
             })
@@ -266,6 +264,19 @@ void GlobedUserCell::makeButtons() {
             .store(teleportButton);
 
         maxWidth += teleportButton->getScaledContentSize().width + gap;
+    }
+
+    if (createBtn2plink) {
+        Build<CCSprite>::createSpriteName("gj_linkBtn_001.png")
+            .scale(0.6f)
+            .intoMenuItem([pl, this](auto) {
+                pl->linkPlayerTo(this->accountData.accountId);
+            })
+            .parent(buttonsWrapper)
+            .id("2p-link-button"_spr)
+            .store(linkButton);
+
+        maxWidth += linkButton->getScaledContentSize().width + gap;
     }
 
     if (createVisualizer) {

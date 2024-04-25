@@ -44,8 +44,8 @@ $execute {
         }
     });
 
-    auto& rt = asp::async::Runtime::get();
-    rt.launch();
+    // auto& rt = asp::async::Runtime::get();
+    // rt.launch();
 }
 
 $on_mod(Loaded) {

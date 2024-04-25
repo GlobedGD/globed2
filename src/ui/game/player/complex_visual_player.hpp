@@ -32,6 +32,7 @@ public:
     void setForciblyHidden(bool state);
     const cocos2d::CCPoint& getPlayerPosition();
     cocos2d::CCNode* getPlayerObject();
+    RemotePlayer* getRemotePlayer();
 
     void setP1StickyState(bool state);
     void setP2StickyState(bool state);
@@ -49,8 +50,8 @@ public:
 protected:
     friend class ComplexPlayerObject;
     friend class RemotePlayer;
-
     RemotePlayer* parent;
+
     bool isSecond;
 
     GJBaseGameLayer* gameLayer;

@@ -2,6 +2,7 @@
 
 #include "player_list_cell.hpp"
 #include "room_join_popup.hpp"
+#include "room_settings_popup.hpp"
 #include <data/packets/all.hpp>
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
@@ -123,7 +124,7 @@ bool RoomPopup::setup() {
         .store(filterBtn);
 
     // clear search button
-    clearSearchButton = Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
+    Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
         .intoMenuItem([this](auto) {
             this->applyFilter("");
             this->sortPlayerList();
@@ -131,34 +132,31 @@ bool RoomPopup::setup() {
         })
         .scaleMult(1.1f)
         .id("search-clear-btn"_spr)
-        .collect();
+        .store(clearSearchButton);
 
-    // secret button
-    secretButton = Build<CCSprite>::createSpriteName("button-secret.png"_spr)
+    Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+        .scale(0.7f)
         .intoMenuItem([this](auto) {
-            auto& settings = GlobedSettings::get();
-            if (!settings.flags.seenAprilFoolsNotice) {
-                settings.flags.seenAprilFoolsNotice = true;
-                settings.save();
-
-                FLAlertLayer::create("Note", "Being in this room will <cr>disable any level progress</c>.\n\n<cg>Happy April Fools!</c>", "Ok")->show();
-            }
-
-            NetworkManager::get().send(JoinRoomPacket::create(777'777));
+            RoomSettingsPopup::create()->show();
         })
-        .zOrder(9)
         .scaleMult(1.1f)
-        .id("secret-button"_spr)
-        .collect();
-
-    // only show it on april first
-    if (rm.getId() != 777'777 && util::time::isAprilFools()) {
-        buttonMenu->addChild(secretButton);
-    }
+        .id("settings-button"_spr)
+        .pos(22.f, 23.f)
+        .visible(false)
+        .store(settingsButton)
+        .intoNewParent(CCMenu::create())
+        .pos(popupLayout.bottomLeft)
+        .parent(m_mainLayer);
 
     buttonMenu->updateLayout();
 
+    this->scheduleUpdate();
+
     return true;
+}
+
+void RoomPopup::update(float) {
+    settingsButton->setVisible(RoomManager::get().isInRoom());
 }
 
 void RoomPopup::onLoaded(bool stateChanged) {
@@ -188,13 +186,6 @@ void RoomPopup::onLoaded(bool stateChanged) {
     if (stateChanged) {
         this->setRoomTitle(rm.getId());
         this->addButtons();
-    }
-
-    // remove the funny button
-    secretButton->removeFromParent();
-
-    if (rm.getId() != 777'777 && util::time::isAprilFools()) {
-        buttonMenu->addChild(secretButton);
     }
 
     buttonMenu->updateLayout();

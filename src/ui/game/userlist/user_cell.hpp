@@ -19,7 +19,14 @@ public:
 private:
     cocos2d::CCLabelBMFont* percentageLabel;
     cocos2d::CCMenu* menu;
-    CCMenuItemSpriteExtra *actionsButton = nullptr, *muteButton = nullptr, *hideButton = nullptr, *kickButton = nullptr, *teleportButton = nullptr;
+    CCMenuItemSpriteExtra
+        *actionsButton = nullptr,
+        *muteButton = nullptr,
+        *hideButton = nullptr,
+        *kickButton = nullptr,
+        *teleportButton = nullptr,
+        *linkButton = nullptr;
+
     cocos2d::CCMenu* buttonsWrapper = nullptr;
     GlobedAudioVisualizer* audioVisualizer = nullptr;
     PlayerStore::Entry _data;
