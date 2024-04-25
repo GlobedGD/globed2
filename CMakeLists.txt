@@ -5,6 +5,18 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(globed2 VERSION 1.0.0)
 
+# set ios archs
+if (${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
+    message(STATUS "building for ios")
+    unset(CMAKE_OSX_ARCHITECTURES)
+    set(CMAKE_OSX_ARCHITECTURES "arm64")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
+    set(CMAKE_SYSTEM_NAME "iOS")
+else()
+    message(STATUS "building for mac")
+    set(CMAKE_OSX_ARCHITECTURES "x86_64")
+endif()
+
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
 # Check for debug build
@@ -84,17 +96,6 @@ else()
 endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
-
-# set ios archs
-if (${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
-    message(STATUS "building for ios")
-    unset(CMAKE_OSX_ARCHITECTURES)
-    set(CMAKE_OSX_ARCHITECTURES "arm64")
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
-    set(CMAKE_SYSTEM_NAME "iOS")
-else()
-    set(CMAKE_OSX_ARCHITECTURES "x86_64")
-endif()
 
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
