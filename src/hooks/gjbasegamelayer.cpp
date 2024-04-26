@@ -1196,7 +1196,7 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
 
     void update(float dt) {
         auto* bgl = static_cast<GlobedGJBGL*>(m_gameLayer);
-        if (!bgl || !bgl->m_fields->roomSettings.twoPlayerMode || !m_fields->lockedTo) {
+        if (!bgl || !bgl->m_fields->twopstate.active || !m_fields->lockedTo) {
             PlayerObject::update(dt);
             return;
         }
@@ -1211,9 +1211,19 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
         if (this == noclipFor) {
             PlayerObject::update(dt);
 
-            this->updateFromLockedPlayer();
+            log::debug("hiding player {}, is p1: {}", this, this == bgl->m_player1);
+
+            this->updateFromLockedPlayer(!bgl->m_fields->twopstate.isPrimary && bgl->m_gameState.m_isDualMode);
             this->setVisible(false);
+            if (bgl->m_gameState.m_isDualMode) {
+                this->m_isHidden = true;
+            }
+
+            this->m_unk65c = false;
+            this->m_regularTrail->stopStroke();
+            this->m_waveTrail->stopStroke();
         } else {
+            log::debug("not hiding player {}", this);
             PlayerObject::update(dt);
         }
     }
@@ -1226,7 +1236,7 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
         this->setLockedTo(nullptr);
     }
 
-    void updateFromLockedPlayer() {
+    void updateFromLockedPlayer(bool ignorePos) {
         RemotePlayer* rp = m_fields->lockedTo->getRemotePlayer();
         if (rp->lastFrameFlags.pendingDeath) {
             Loader::get()->queueInMainThread([] {
@@ -1234,9 +1244,24 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
             });
         }
 
-        this->setPosition(m_fields->lockedTo->getPlayerPosition());
+        if (!ignorePos) {
+            this->setPosition(m_fields->lockedTo->getPlayerPosition());
+        }
     }
 };
+
+// TODO: might not be needed now?
+void GlobedGJBGL::updateCamera(float dt) {
+    if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
+        GJBaseGameLayer::updateCamera(dt);
+        return;
+    }
+
+    auto lastPos = m_player1->getPosition();
+    m_player1->setPosition({m_player2->getPositionX(), lastPos.y});
+    GJBaseGameLayer::updateCamera(dt);
+    m_player1->setPosition(lastPos);
+}
 
 void GlobedGJBGL::linkPlayerTo(int accountId) {
     if (!m_fields->players.contains(accountId)) return;
@@ -1248,4 +1273,6 @@ void GlobedGJBGL::linkPlayerTo(int accountId) {
 
     auto* pobj = static_cast<TwoPModePlayerObject*>(ignored);
     pobj->setLockedTo(m_fields->twopstate.isPrimary ? rp->player2 : rp->player1);
+
+    m_fields->twopstate.active = true;
 }

@@ -436,6 +436,25 @@ impl GameServer {
         }
     }
 
+    /// send `RoomInfoPacket` to all players in a room
+    pub async fn broadcast_room_info(&'static self, room_id: u32) {
+        if room_id == 0 {
+            return;
+        }
+
+        let info = self
+            .state
+            .room_manager
+            .try_with_any(room_id, |room| Some(room.get_room_info(room_id)), || None);
+
+        if let Some(info) = info {
+            let pkt = RoomInfoPacket { info };
+
+            self.broadcast_room_message(&ServerThreadMessage::BroadcastRoomInfo(pkt), 0, room_id)
+                .await;
+        }
+    }
+
     /// Try to handle a packet that is not addresses to a specific thread, but to the game server.
     async fn try_udp_handle(&'static self, data: &[u8], peer: SocketAddrV4) -> anyhow::Result<bool> {
         let mut byte_reader = ByteReader::from_bytes(data);

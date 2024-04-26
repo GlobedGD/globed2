@@ -314,6 +314,10 @@ void ComplexVisualPlayer::updateData(
     }
 
     this->setVisible(shouldBeVisible);
+
+    if (!shouldBeVisible) {
+        playerIcon->m_unk65c = false;
+    }
 }
 
 void ComplexVisualPlayer::updateName() {

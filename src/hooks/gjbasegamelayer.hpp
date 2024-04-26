@@ -31,6 +31,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     std::unique_ptr<PlayerStore> playerStore;
     RoomSettings roomSettings;
     struct TwoPlayerModeState {
+        bool active = false; // true when two player mode is enabled and linked to a player
         bool isPrimary = false;
         Ref<PlayerObject> linked;
     } twopstate;
@@ -66,6 +67,9 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
 
     $override
     void loadLevelSettings();
+
+    $override
+    void updateCamera(float dt);
 
     // vmt hook
     void onEnterHook();

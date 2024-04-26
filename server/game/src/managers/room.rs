@@ -87,6 +87,17 @@ impl RoomManager {
         }
     }
 
+    /// Try to find a room by given ID and run the provided function on it. If not found, calls `default`.
+    pub fn try_with_any<F: FnOnce(&mut Room) -> R, D: FnOnce() -> R, R>(&self, room_id: u32, f: F, default: D) -> R {
+        if room_id == 0 {
+            f(&mut self.get_global())
+        } else if let Some(room) = self.get_rooms().get_mut(&room_id) {
+            f(room)
+        } else {
+            default()
+        }
+    }
+
     pub fn get_global(&self) -> SyncMutexGuard<'_, Room> {
         self.global.lock()
     }

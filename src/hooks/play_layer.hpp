@@ -6,6 +6,7 @@
 class $modify(GlobedPlayLayer, PlayLayer) {
     GameObject* antiCheat;
     bool ignoreNoclip = false;
+    bool insideDestroyPlayer = false;
 
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);

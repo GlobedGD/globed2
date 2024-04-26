@@ -39,6 +39,19 @@ void GlobedPlayLayer::fullReset() {
 }
 
 void GlobedPlayLayer::resetLevel() {
+    auto gjbgl = GlobedGJBGL::get();
+
+    // make it count as a death instead if playing 2p levels
+    if (gjbgl->m_fields->twopstate.active && gjbgl->m_fields->setupWasCompleted && !m_fields->insideDestroyPlayer) {
+        // log::debug("redirecting reset to kill");
+        this->forceKill(m_player1);
+        return;
+    }
+
+    if (m_fields->insideDestroyPlayer) {
+        m_fields->insideDestroyPlayer = false;
+    }
+
     bool lastTestMode = m_isTestMode;
 
     if (GlobedGJBGL::get()->isSafeMode()) {
@@ -48,8 +61,6 @@ void GlobedPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
 
     m_isTestMode = lastTestMode;
-
-    auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
     // this is also called upon init, so bail out if we are too early
     if (!gjbgl->m_fields->setupWasCompleted) return;
@@ -77,7 +88,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 
     auto* pl = GlobedGJBGL::get();
 
-    if (pl->m_fields->roomSettings.twoPlayerMode && !m_fields->ignoreNoclip) {
+    if (pl->m_fields->twopstate.active && !m_fields->ignoreNoclip) {
         PlayerObject* noclipFor = nullptr;
         if (pl->m_fields->twopstate.isPrimary) {
             noclipFor = m_player2;
@@ -100,6 +111,8 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
         m_isTestMode = true;
     }
 
+    // log::debug("destroying player {}", player);
+    m_fields->insideDestroyPlayer = true;
     PlayLayer::destroyPlayer(player, object);
 
     m_isTestMode = lastTestMode;
