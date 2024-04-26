@@ -159,7 +159,7 @@ impl GameServer {
             // so try to avoid panics please..
             thread.run().await;
             debug!("removing client: {}", peer);
-            self.post_disconnect_cleanup(&thread, peer);
+            self.post_disconnect_cleanup(&thread, peer).await;
 
             // safety: the thread no longer runs and we are the only ones who can access the socket
             let socket = unsafe { thread.socket.get_mut() };
@@ -500,7 +500,7 @@ impl GameServer {
         }
     }
 
-    fn post_disconnect_cleanup(&'static self, thread: &Arc<GameServerThread>, tcp_peer: SocketAddrV4) {
+    async fn post_disconnect_cleanup(&'static self, thread: &Arc<GameServerThread>, tcp_peer: SocketAddrV4) {
         if thread.claimed.load(Ordering::Relaxed) {
             // self.threads.lock().retain(|_udp_peer, thread| thread.tcp_peer != tcp_peer);
             let mut threads = self.threads.lock();
@@ -533,7 +533,12 @@ impl GameServer {
         self.state.player_count.fetch_sub(1, Ordering::Relaxed);
 
         // remove from the player manager and the level if they are on one
-        self.state.room_manager.remove_with_any(room_id, account_id, level_id);
+        let was_owner = self.state.room_manager.remove_with_any(room_id, account_id, level_id);
+
+        // also send room update i guess
+        if was_owner && room_id != 0 {
+            self.broadcast_room_info(room_id).await;
+        }
     }
 
     fn print_server_status(&'static self) {

@@ -91,10 +91,16 @@ impl GameServerThread {
 
         let level_id = self.level_id.load(Ordering::Relaxed);
 
-        self.game_server
+        let should_send_update = self
+            .game_server
             .state
             .room_manager
             .remove_with_any(room_id, account_id, level_id);
+
+        // if we were the owner, send update packets to everyone
+        if should_send_update {
+            self.game_server.broadcast_room_info(room_id).await;
+        }
 
         // add them to the global room
         self.game_server
@@ -195,21 +201,7 @@ impl GameServerThread {
 
         // send an update packet to all clients
         if success {
-            let pkt = RoomInfoPacket {
-                info: RoomInfo {
-                    id: room_id,
-                    owner: account_id,
-                    settings: packet.settings.clone(),
-                },
-            };
-
-            // send to ourselves
-            self.send_packet_static(&pkt).await?;
-
-            // send to everyone else in the room
-            self.game_server
-                .broadcast_room_message(&ServerThreadMessage::BroadcastRoomInfo(pkt), account_id, room_id)
-                .await;
+            self.game_server.broadcast_room_info(room_id).await;
         }
 
         Ok(())
