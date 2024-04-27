@@ -50,12 +50,14 @@ public:
     ComplexVisualPlayer* player2;
 
     FrameFlags lastFrameFlags;
+    VisualPlayerState lastVisualState;
 
 protected:
     unsigned int defaultTicks = 0;
     float lastPercentage = 0.f;
     bool isForciblyHidden = false;
     bool isEditorBuilding = false;
+
 
     GameCameraState* gameCameraState;
 

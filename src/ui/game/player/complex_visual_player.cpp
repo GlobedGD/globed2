@@ -317,6 +317,7 @@ void ComplexVisualPlayer::updateData(
 
     if (!shouldBeVisible) {
         playerIcon->m_unk65c = false;
+        if (playerIcon->m_regularTrail) playerIcon->m_regularTrail->setVisible(false);
     }
 }
 

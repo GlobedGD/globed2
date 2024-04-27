@@ -122,6 +122,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Wi
     # and therefore is not used in release. Release builds use MSVC which has a smarter vectorizer.
     target_compile_options(opus PRIVATE "-m32" "-msse4.1")
     target_compile_options(sodium PRIVATE "-m32" "-maes" "-mpclmul" "-msse4.1")
+    target_compile_options(asp PRIVATE "-m32")
 endif()
 
 # Clang/GCC - suppress some warnings

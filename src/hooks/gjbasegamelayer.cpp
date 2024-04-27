@@ -338,7 +338,7 @@ void GlobedGJBGL::setupUpdate() {
     // update
     Loader::get()->queueInMainThread([&nm] {
         auto self = GlobedGJBGL::get();
-        if (!self) return;
+        if (!self || !self->established()) return;
 
         // here we run the stuff that must run on a valid playlayer
         self->setupPacketListeners();
@@ -1215,13 +1215,16 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
 
             this->updateFromLockedPlayer(!bgl->m_fields->twopstate.isPrimary && bgl->m_gameState.m_isDualMode);
             this->setVisible(false);
-            if (bgl->m_gameState.m_isDualMode) {
-                this->m_isHidden = true;
-            }
+            // if (bgl->m_gameState.m_isDualMode) {
+            //     this->m_isHidden = true;
+            // }
 
             this->m_unk65c = false;
-            this->m_regularTrail->stopStroke();
-            this->m_waveTrail->stopStroke();
+            if (this->m_regularTrail) this->m_regularTrail->setVisible(false);
+            if (this->m_waveTrail) this->m_waveTrail->setVisible(false);
+            if (this->m_ghostTrail) this->m_ghostTrail->setVisible(false);
+            if (this->m_trailingParticles) this->m_trailingParticles->setVisible(false);
+            if (this->m_shipStreak) this->m_shipStreak->setVisible(false);
         } else {
             log::debug("not hiding player {}", this);
             PlayerObject::update(dt);
@@ -1244,7 +1247,7 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
             });
         }
 
-        if (!ignorePos) {
+        if (!ignorePos && !rp->lastVisualState.isDead) {
             this->setPosition(m_fields->lockedTo->getPlayerPosition());
         }
     }
