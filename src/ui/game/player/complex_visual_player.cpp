@@ -60,10 +60,6 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 		.pos(0.f, 25.f)
 		.parent(this);
 
-	if (data.specialUserData.has_value()) {
-		util::ui::createBadgeIfSpecial(data.specialUserData->nameColor, playerName->getPosition() + ccp(playerName->getScaledContentSize().width / 2.f + 11.5f, 25.f)).parent(this).store(badgeIcon);
-	}
-
 	this->updateIcons(data.icons);
 
 	if (!isSecond && settings.players.statusIcons) {
@@ -84,6 +80,10 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
 	auto* gm = GameManager::get();
 	auto& settings = GlobedSettings::get();
+
+	if (parent->getAccountData().specialUserData.has_value()) {
+		util::ui::createBadgeIfSpecial(parent->getAccountData().specialUserData->nameColor, playerName->getPosition() + ccp(playerName->getScaledContentSize().width / 2.f + 11.5f, 25.f)).parent(this).store(badgeIcon);
+	}
 
 	playerIcon->togglePlatformerMode(gameLayer->m_level->isPlatformer());
 
