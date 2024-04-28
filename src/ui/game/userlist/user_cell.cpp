@@ -18,7 +18,7 @@
 
 using namespace geode::prelude;
 
-bool GlobedUserCell::init(const PlayerStore::Entry &entry, const PlayerAccountData &data) {
+bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
 	if (!CCLayer::init())
 		return false;
 
@@ -40,18 +40,18 @@ bool GlobedUserCell::init(const PlayerStore::Entry &entry, const PlayerAccountDa
 		.parent(this)
 		.store(menu);
 
-	auto &pcm = ProfileCacheManager::get();
+	auto& pcm = ProfileCacheManager::get();
 	ccColor3B nameColor = ccc3(255, 255, 255);
 	if (data.specialUserData.has_value()) {
 		nameColor = data.specialUserData->nameColor;
 	}
 
-	auto *nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
+	auto* nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
 						  .color(nameColor)
 						  .limitLabelWidth(140.f, 0.5f, 0.1f)
 						  .collect();
 
-	auto *nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
+	auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
 						   // goodness
 						   .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 15.f, CELL_HEIGHT / 2.f)
 						   .parent(menu)
@@ -63,7 +63,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry &entry, const PlayerAccountDa
 	//     .parent(menu)
 	//     .collect();
 
-	CCSprite *badgeIcon = nullptr;
+	CCSprite* badgeIcon = nullptr;
 	if (data.specialUserData.has_value())
 		badgeIcon = util::ui::createBadgeIfSpecial(nameColor, ccp(nameButton->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameButton->getPositionY())).parent(menu).collect();
 
@@ -88,7 +88,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry &entry, const PlayerAccountDa
 	return true;
 }
 
-void GlobedUserCell::refreshData(const PlayerStore::Entry &entry) {
+void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
 	if (_data != entry) {
 		_data = entry;
 
@@ -104,7 +104,7 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry &entry) {
 void GlobedUserCell::updateVisualizer(float dt) {
 #ifdef GLOBED_VOICE_SUPPORT
 	if (audioVisualizer) {
-		auto &vpm = VoicePlaybackManager::get();
+		auto& vpm = VoicePlaybackManager::get();
 
 		float loudness = vpm.getLoudness(accountData.accountId);
 		audioVisualizer->setVolume(loudness);
@@ -127,7 +127,7 @@ void GlobedUserCell::makeButtons() {
 		.parent(menu)
 		.store(buttonsWrapper);
 
-	auto &settings = GlobedSettings::get();
+	auto& settings = GlobedSettings::get();
 
 	auto maxWidth = -5.f;
 
@@ -153,7 +153,7 @@ void GlobedUserCell::makeButtons() {
 		Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
 			.scale(0.36f)
 			.intoMenuItem([this, id = accountData.accountId](auto) {
-				auto *pl = GlobedGJBGL::get();
+				auto* pl = GlobedGJBGL::get();
 
 				// if they left the level, do nothing
 				if (!pl->m_fields->players.contains(accountData.accountId))
@@ -174,11 +174,11 @@ void GlobedUserCell::makeButtons() {
 		Build<CCSprite>::createSpriteName(isUnblocked ? "icon-mute.png"_spr : "icon-unmute.png"_spr)
 			.scale(0.45f)
 			.intoMenuItem([this, isUnblocked, accountId = accountData.accountId](auto) {
-				auto &bl = BlockListManager::get();
+				auto& bl = BlockListManager::get();
 				isUnblocked ? bl.blacklist(accountId) : bl.whitelist(accountId);
 				// mute them immediately
-				auto &settings = GlobedSettings::get();
-				auto &vpm = VoicePlaybackManager::get();
+				auto& settings = GlobedSettings::get();
+				auto& vpm = VoicePlaybackManager::get();
 
 				if (isUnblocked) {
 					vpm.setVolume(accountId, 0.f);
@@ -207,7 +207,7 @@ void GlobedUserCell::makeButtons() {
 					return;
 
 				pl->m_fields->players.at(accountId)->setForciblyHidden(!isHidden);
-				auto &bl = BlockListManager::get();
+				auto& bl = BlockListManager::get();
 				bl.setHidden(accountId, !isHidden);
 
 				Loader::get()->queueInMainThread([this] {
@@ -228,7 +228,7 @@ void GlobedUserCell::makeButtons() {
 			.scale(0.4f)
 			.intoMenuItem([this](auto) {
 				// load the data from the server
-				auto &nm = NetworkManager::get();
+				auto& nm = NetworkManager::get();
 				IntermediaryLoadingPopup::create([&nm, this](auto popup) {
                     nm.send(AdminGetUserStatePacket::create(std::to_string(accountData.accountId)));
                     nm.addListener<AdminUserDataPacket>([this, popup = popup](auto packet) {
@@ -253,7 +253,7 @@ void GlobedUserCell::makeButtons() {
 		Build<CCSprite>::createSpriteName("icon-teleport.png"_spr)
 			.scale(0.35f)
 			.intoMenuItem([gpl, this](auto) {
-				auto &settings = GlobedSettings::get();
+				auto& settings = GlobedSettings::get();
 				if (!settings.flags.seenTeleportNotice) {
 					settings.flags.seenTeleportNotice = true;
 					settings.save();
@@ -269,7 +269,7 @@ void GlobedUserCell::makeButtons() {
 
 				gpl->toggleSafeMode(true);
 
-				PlayerObject *po1 = gpl->m_player1;
+				PlayerObject* po1 = gpl->m_player1;
 				CCPoint position = {0, 0}; // just in case the player has already left by the time we teleport
 				if (gpl->m_fields->interpolator->hasPlayer(accountData.accountId))
 					position = gpl->m_fields->interpolator->getPlayerState(accountData.accountId).player1.position;
@@ -303,7 +303,7 @@ void GlobedUserCell::makeButtons() {
 	buttonsWrapper->updateLayout();
 }
 
-void GlobedUserCell::onOpenProfile(CCObject *) {
+void GlobedUserCell::onOpenProfile(CCObject*) {
 	bool myself = accountData.accountId == GJAccountManager::get()->m_accountID;
 	if (!myself) {
 		GameLevelManager::sharedState()->storeUserName(accountData.userId, accountData.accountId, accountData.name);
@@ -312,7 +312,7 @@ void GlobedUserCell::onOpenProfile(CCObject *) {
 	ProfilePage::create(accountData.accountId, myself)->show();
 }
 
-GlobedUserCell *GlobedUserCell::create(const PlayerStore::Entry &entry, const PlayerAccountData &data) {
+GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
 	auto ret = new GlobedUserCell;
 	if (ret->init(entry, data)) {
 		return ret;
