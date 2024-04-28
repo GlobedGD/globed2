@@ -51,6 +51,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .limitLabelWidth(140.f, 0.5f, 0.1f)
         .collect();
 
+
     auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
         // goodness
         .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 15.f, CELL_HEIGHT / 2.f)
@@ -58,9 +59,22 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .scaleMult(1.1f)
         .collect();
 
+    auto* badgeIcon = Build<CCSprite>::createSpriteName("role-helper.png"_spr)
+        .pos(nameButton->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameButton->getPositionY())
+        .parent(menu)
+        .collect();
+
+    bool showBadge = true;
+
+    if(!showBadge) {
+        badgeIcon->setVisible(false);
+    }
+
+    auto percentPos = showBadge ? badgeIcon->getPosition() + ccp(11.f, 6.f) : nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + ccp(3.f, -3.f);
+
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
-        .pos(nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + CCPoint{3.f, -3.f})
+        .pos(percentPos)
         .anchorPoint({0.f, 0.5f})
         .scale(0.4f)
         .parent(this)
