@@ -184,6 +184,8 @@ void GlobedGJBGL::setupDeferredAssetPreloading() {
         log::info("Death effect preloading took {}", util::format::formatDuration(took));
         gm->setDeathEffectsPreloaded(true);
     }
+
+    util::cocos::cleanupThreadPool();
 }
 
 void GlobedGJBGL::setupAudio() {

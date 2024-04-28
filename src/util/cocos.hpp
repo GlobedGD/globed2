@@ -33,6 +33,7 @@ namespace util::cocos {
     struct PersistentPreloadState;
     PersistentPreloadState& getPreloadState();
     void resetPreloadState();
+    void cleanupThreadPool();
 
     gd::string fullPathForFilename(const std::string_view filename);
 
