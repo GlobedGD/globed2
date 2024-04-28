@@ -9,7 +9,6 @@ using namespace geode::prelude;
 
 bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     GlobedLevelEditorLayer::fromEditor = false;
-    log::debug("setting fromEditor to false");
 
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
@@ -40,6 +39,19 @@ void GlobedPlayLayer::fullReset() {
 }
 
 void GlobedPlayLayer::resetLevel() {
+    auto gjbgl = GlobedGJBGL::get();
+
+    // make it count as a death instead if playing 2p levels
+    if (gjbgl->m_fields->twopstate.active && gjbgl->m_fields->setupWasCompleted && !m_fields->insideDestroyPlayer) {
+        // log::debug("redirecting reset to kill");
+        this->forceKill(m_player1);
+        return;
+    }
+
+    if (m_fields->insideDestroyPlayer) {
+        m_fields->insideDestroyPlayer = false;
+    }
+
     bool lastTestMode = m_isTestMode;
 
     if (GlobedGJBGL::get()->isSafeMode()) {
@@ -49,8 +61,6 @@ void GlobedPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
 
     m_isTestMode = lastTestMode;
-
-    auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
     // this is also called upon init, so bail out if we are too early
     if (!gjbgl->m_fields->setupWasCompleted) return;
@@ -71,14 +81,45 @@ void GlobedPlayLayer::levelComplete() {
     else GlobedPlayLayer::onQuit();
 }
 
-void GlobedPlayLayer::destroyPlayer(PlayerObject* p0, GameObject* p1) {
+void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
+    if (!m_fields->antiCheat) {
+        m_fields->antiCheat = object;
+    }
+
+    auto* pl = GlobedGJBGL::get();
+
+    if (pl->m_fields->twopstate.active && !m_fields->ignoreNoclip) {
+        PlayerObject* noclipFor = nullptr;
+        if (pl->m_fields->twopstate.isPrimary) {
+            noclipFor = m_player2;
+        } else {
+            noclipFor = m_player1;
+        }
+
+        if (m_fields->antiCheat != object && player == noclipFor) {
+            // epic noclip hack 2024 !!
+            log::debug("noclipping for {}", noclipFor == m_player1 ? "player 1" : "player 2");
+            return;
+        }
+    }
+
+    // safe mode stuff yeah
+
     bool lastTestMode = m_isTestMode;
 
     if (GlobedGJBGL::get()->isSafeMode()) {
         m_isTestMode = true;
     }
 
-    PlayLayer::destroyPlayer(p0, p1);
+    // log::debug("destroying player {}", player);
+    m_fields->insideDestroyPlayer = true;
+    PlayLayer::destroyPlayer(player, object);
 
     m_isTestMode = lastTestMode;
+}
+
+void GlobedPlayLayer::forceKill(PlayerObject* p) {
+    m_fields->ignoreNoclip = true;
+    this->PlayLayer::destroyPlayer(p, nullptr);
+    m_fields->ignoreNoclip = false;
 }

@@ -4,6 +4,7 @@
 class RoomSettings {
 public:
     bool collision;
+    bool twoPlayerMode;
 
     uint64_t reserved;
 };

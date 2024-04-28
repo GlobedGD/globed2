@@ -31,6 +31,7 @@ void HookedLoadingLayer::loadingFinished() {
         return;
     } else if (m_fields->preloadingStage == 1000) {
         log::info("Asset preloading finished in {}.", util::format::formatDuration(util::time::systemNow() - m_fields->loadingStartedTime));
+        util::cocos::cleanupThreadPool();
         LoadingLayer::loadingFinished();
     }
 }

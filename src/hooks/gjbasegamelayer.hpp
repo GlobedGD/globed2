@@ -27,9 +27,14 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     uint32_t totalSentPackets = 0;
     float timeCounter = 0.f;
     float lastServerUpdate = 0.f;
-    std::shared_ptr<PlayerInterpolator> interpolator;
-    std::shared_ptr<PlayerStore> playerStore;
+    std::unique_ptr<PlayerInterpolator> interpolator;
+    std::unique_ptr<PlayerStore> playerStore;
     RoomSettings roomSettings;
+    struct TwoPlayerModeState {
+        bool active = false; // true when two player mode is enabled and linked to a player
+        bool isPrimary = false;
+        Ref<PlayerObject> linked;
+    } twopstate;
     bool progressForciblyDisabled = false; // affected by room settings, forces safe mode
     bool forcedPlatformer = false;
     bool shouldStopProgress = false;
@@ -63,6 +68,9 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     $override
     void loadLevelSettings();
 
+    $override
+    void updateCamera(float dt);
+
     // vmt hook
     void onEnterHook();
 
@@ -73,15 +81,17 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     // all are ran in this order.
 
     void setupPreInit(GJGameLevel* level);
+
     void setupAll();
+
     void setupBare();
     void setupDeferredAssetPreloading();
     void setupAudio();
-    void setupPacketListeners();
     void setupCustomKeybinds();
     void setupMisc();
     void setupUpdate();
     void setupUi();
+    void setupPacketListeners();
 
     // runs 0.25 seconds after PlayLayer::init
     void postInitActions(float);
@@ -126,6 +136,8 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     void toggleSafeMode(bool enabled);
 
     void onQuitActions();
+
+    void linkPlayerTo(int accountId);
 
     // runs every frame while paused
     void pausedUpdate(float dt);

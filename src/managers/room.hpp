@@ -12,6 +12,9 @@ public:
     RoomInfo& getInfo();
     uint32_t getId();
 
+    // Returns 'true' if in a room and if the user is the owner of the room.
+    bool isOwner();
+
     bool isInGlobal();
     bool isInRoom();
 

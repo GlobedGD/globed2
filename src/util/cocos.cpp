@@ -61,6 +61,17 @@ namespace util::cocos {
         bool hasTexturePack;
         size_t gameSearchPathIdx = -1;
         std::vector<size_t> texturePackIndices;
+        std::unique_ptr<asp::thread::ThreadPool> threadPool;
+
+        void ensurePoolExists() {
+            if (!threadPool) {
+                threadPool = std::make_unique<asp::thread::ThreadPool>(THREAD_COUNT);
+            }
+        }
+
+        void destroyPool() {
+            threadPool = nullptr;
+        }
     };
 
     static void initPreloadState(PersistentPreloadState& state) {
@@ -111,6 +122,8 @@ namespace util::cocos {
             idx++;
         }
 
+        state.threadPool = std::make_unique<asp::thread::ThreadPool>(THREAD_COUNT);
+
         log::debug("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
         log::debug("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
         log::debug("texture packs: {}", state.texturePackIndices.size());
@@ -119,16 +132,10 @@ namespace util::cocos {
     }
 
     void loadAssetsParallel(const std::vector<std::string>& images) {
-#ifndef GEODE_IS_MACOS
-        static asp::ThreadPool threadPool(THREAD_COUNT);
-#else
-        // macos is stupid so we leak the pool.
-        // otherwise we get an epic SIGABRT in std::thread::~thread during threadpool destruction
-        // TODO: might be our fault though
-        static asp::ThreadPool* threadPoolPtr = new asp::ThreadPool(THREAD_COUNT);
+        auto& state = getPreloadState();
+        state.ensurePoolExists();
 
-        auto& threadPool = *threadPoolPtr;
-#endif
+        auto& threadPool = *state.threadPool.get();
 
         log::debug("preload: preparing {} textures", images.size());
 
@@ -446,6 +453,10 @@ namespace util::cocos {
     void resetPreloadState() {
         auto& state = getPreloadState();
         initPreloadState(state);
+    }
+
+    void cleanupThreadPool() {
+        getPreloadState().destroyPool();
     }
 
     // transforms a string like "icon-41" into "icon-41-hd.png" depending on the current texture quality.

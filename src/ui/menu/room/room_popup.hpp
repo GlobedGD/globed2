@@ -20,13 +20,14 @@ protected:
     LoadingCircle* loadingCircle = nullptr;
     GJCommentListLayer* listLayer = nullptr;
     cocos2d::CCMenu* buttonMenu;
-    Ref<CCMenuItemSpriteExtra> clearSearchButton, secretButton;
+    Ref<CCMenuItemSpriteExtra> clearSearchButton, settingsButton;
     cocos2d::CCNode* roomIdButton = nullptr;
 
     cocos2d::CCMenu* roomBtnMenu = nullptr;
     bool isWaiting = false;
 
     bool setup() override;
+    void update(float) override;
     void onLoaded(bool stateChanged);
     void removeLoadingCircle();
     void reloadPlayerList(bool sendPacket = true);

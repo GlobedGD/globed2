@@ -77,13 +77,13 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
     if (m_fields->globedReady) {
         // room settings
         m_fields->roomSettings = RoomManager::get().getInfo().settings;
-        log::debug("collision: {}", m_fields->roomSettings.collision);
 
         // collision only works in platformer, so force platformer :D
         if (m_fields->roomSettings.collision && !level->isPlatformer()) {
             m_fields->roomSettings.collision = false;
 
-            if (util::time::isAprilFools()) {
+            constexpr bool forcedPlatformer = false;
+            if (forcedPlatformer) {
                 m_fields->forcedPlatformer = true;
                 m_fields->roomSettings.collision = true;
 #ifdef GEODE_IS_ANDROID
@@ -92,6 +92,11 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
                 }
 #endif
             }
+        }
+
+        // if 2 player mode is enabled, we are the primary player if we are the room creator
+        if (m_fields->roomSettings.twoPlayerMode) {
+            m_fields->twopstate.isPrimary = RoomManager::get().isOwner();
         }
     }
 }
@@ -114,7 +119,7 @@ void GlobedGJBGL::setupAll() {
     this->setupUi();
 }
 
-// runs even if not connected to a server or in an editor level
+// runs even if not connected to a server or in a non-uploaded editor level
 void GlobedGJBGL::setupBare() {
     GlobedSettings& settings = GlobedSettings::get();
 
@@ -179,6 +184,8 @@ void GlobedGJBGL::setupDeferredAssetPreloading() {
         log::info("Death effect preloading took {}", util::format::formatDuration(took));
         gm->setDeathEffectsPreloaded(true);
     }
+
+    util::cocos::cleanupThreadPool();
 }
 
 void GlobedGJBGL::setupAudio() {
@@ -333,7 +340,7 @@ void GlobedGJBGL::setupUpdate() {
     // update
     Loader::get()->queueInMainThread([&nm] {
         auto self = GlobedGJBGL::get();
-        if (!self) return;
+        if (!self || !self->established()) return;
 
         // here we run the stuff that must run on a valid playlayer
         self->setupPacketListeners();
@@ -365,14 +372,14 @@ void GlobedGJBGL::setupMisc() {
     }
 
     // interpolator
-    m_fields->interpolator = std::make_shared<PlayerInterpolator>(InterpolatorSettings {
+    m_fields->interpolator = std::make_unique<PlayerInterpolator>(InterpolatorSettings {
         .realtime = false,
         .isPlatformer = m_level->isPlatformer(),
         .expectedDelta = (1.0f / m_fields->configuredTps)
     });
 
     // player store
-    m_fields->playerStore = std::make_shared<PlayerStore>();
+    m_fields->playerStore = std::make_unique<PlayerStore>();
 
     // send SyncIconsPacket if our icons have changed since the last time we sent it
     auto& pcm = ProfileCacheManager::get();
@@ -977,8 +984,6 @@ void GlobedGJBGL::toggleSafeMode(bool enabled) {
 void GlobedGJBGL::onQuitActions() {
     auto& nm = NetworkManager::get();
 
-    log::debug("onQuitActions called.");
-
     if (m_fields->globedReady) {
         if (nm.established()) {
             // send LevelLeavePacket
@@ -1184,4 +1189,92 @@ void GlobedGJBGL::loadLevelSettings() {
 
     lo->m_platformerMode = lastPlat;
     m_level->m_levelLength = lastLength;
+}
+
+/* 2-player mode stuff */
+
+class $modify(TwoPModePlayerObject, PlayerObject) {
+    Ref<ComplexVisualPlayer> lockedTo;
+
+    void update(float dt) {
+        auto* bgl = static_cast<GlobedGJBGL*>(m_gameLayer);
+        if (!bgl || !bgl->m_fields->twopstate.active || !m_fields->lockedTo) {
+            PlayerObject::update(dt);
+            return;
+        }
+
+        PlayerObject* noclipFor = nullptr;
+        if (bgl->m_fields->twopstate.isPrimary) {
+            noclipFor = bgl->m_player2;
+        } else {
+            noclipFor = bgl->m_player1;
+        }
+
+        if (this == noclipFor) {
+            PlayerObject::update(dt);
+
+            this->updateFromLockedPlayer(!bgl->m_fields->twopstate.isPrimary && bgl->m_gameState.m_isDualMode);
+            this->setVisible(false);
+            // if (bgl->m_gameState.m_isDualMode) {
+            //     this->m_isHidden = true;
+            // }
+
+            this->m_unk65c = false;
+            if (this->m_regularTrail) this->m_regularTrail->setVisible(false);
+            if (this->m_waveTrail) this->m_waveTrail->setVisible(false);
+            if (this->m_ghostTrail) this->m_ghostTrail->setVisible(false);
+            if (this->m_trailingParticles) this->m_trailingParticles->setVisible(false);
+            if (this->m_shipStreak) this->m_shipStreak->setVisible(false);
+        } else {
+            PlayerObject::update(dt);
+        }
+    }
+
+    void setLockedTo(ComplexVisualPlayer* player) {
+        m_fields->lockedTo = player;
+    }
+
+    void clearLockedTo() {
+        this->setLockedTo(nullptr);
+    }
+
+    void updateFromLockedPlayer(bool ignorePos) {
+        RemotePlayer* rp = m_fields->lockedTo->getRemotePlayer();
+        if (rp->lastFrameFlags.pendingDeath) {
+            Loader::get()->queueInMainThread([] {
+                static_cast<GlobedPlayLayer*>(PlayLayer::get())->forceKill(PlayLayer::get()->m_player1);
+            });
+        }
+
+        if (!ignorePos && !rp->lastVisualState.isDead) {
+            this->setPosition(m_fields->lockedTo->getPlayerPosition());
+        }
+    }
+};
+
+// TODO: might not be needed now?
+void GlobedGJBGL::updateCamera(float dt) {
+    if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
+        GJBaseGameLayer::updateCamera(dt);
+        return;
+    }
+
+    auto lastPos = m_player1->getPosition();
+    m_player1->setPosition({m_player2->getPositionX(), lastPos.y});
+    GJBaseGameLayer::updateCamera(dt);
+    m_player1->setPosition(lastPos);
+}
+
+void GlobedGJBGL::linkPlayerTo(int accountId) {
+    if (!m_fields->players.contains(accountId)) return;
+    if (!m_fields->roomSettings.twoPlayerMode) return;
+
+    RemotePlayer* rp = m_fields->players.at(accountId);
+
+    PlayerObject* ignored = m_fields->twopstate.isPrimary ? m_player2 : m_player1;
+
+    auto* pobj = static_cast<TwoPModePlayerObject*>(ignored);
+    pobj->setLockedTo(m_fields->twopstate.isPrimary ? rp->player2 : rp->player1);
+
+    m_fields->twopstate.active = true;
 }

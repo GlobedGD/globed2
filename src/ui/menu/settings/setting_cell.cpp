@@ -45,8 +45,8 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     switch (settingType) {
         case Type::Bool: {
             Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 1.0f))
-                .anchorPoint(1.f, 0.5f)
-                .pos(CELL_WIDTH - 10.f, CELL_HEIGHT / 2)
+                .anchorPoint(0.5f, 0.5f)
+                .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
                 .scale(0.8f)
                 .id("input-checkbox"_spr)
                 .store(inpCheckbox)

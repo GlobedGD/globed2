@@ -12,6 +12,10 @@ uint32_t RoomManager::getId() {
     return roomInfo.id;
 }
 
+bool RoomManager::isOwner() {
+    return this->isInRoom() && roomInfo.owner == GJAccountManager::get()->m_accountID;
+}
+
 bool RoomManager::isInGlobal() {
     return roomInfo.id == 0;
 }

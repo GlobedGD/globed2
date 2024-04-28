@@ -4,6 +4,10 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 class $modify(GlobedPlayLayer, PlayLayer) {
+    GameObject* antiCheat;
+    bool ignoreNoclip = false;
+    bool insideDestroyPlayer = false;
+
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);
     }
@@ -33,4 +37,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     $override
     void destroyPlayer(PlayerObject* p0, GameObject* p1);
+
+    void forceKill(PlayerObject* p);
 };

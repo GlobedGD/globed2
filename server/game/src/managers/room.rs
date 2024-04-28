@@ -35,9 +35,11 @@ impl Room {
         }
     }
 
-    // Removes a player, rotates the owner if `player == owner`.
-    pub fn remove_player(&mut self, player: i32) {
-        if self.owner == player {
+    // Removes a player, if the player was the owner, rotates the owner and returns `true`.
+    pub fn remove_player(&mut self, player: i32) -> bool {
+        let was_owner = self.owner == player;
+
+        if was_owner {
             // rotate the owner
             let mut rotate_to: i32 = 0;
             self.manager.for_each_player(
@@ -54,6 +56,8 @@ impl Room {
         }
 
         self.manager.remove_player(player);
+
+        was_owner
     }
 
     #[inline]
@@ -84,6 +88,17 @@ impl RoomManager {
             f(room)
         } else {
             f(&mut self.get_global())
+        }
+    }
+
+    /// Try to find a room by given ID and run the provided function on it. If not found, calls `default`.
+    pub fn try_with_any<F: FnOnce(&mut Room) -> R, D: FnOnce() -> R, R>(&self, room_id: u32, f: F, default: D) -> R {
+        if room_id == 0 {
+            f(&mut self.get_global())
+        } else if let Some(room) = self.get_rooms().get_mut(&room_id) {
+            f(room)
+        } else {
+            default()
         }
     }
 
@@ -138,18 +153,25 @@ impl RoomManager {
         }
     }
 
-    pub fn remove_with_any(&self, room_id: u32, account_id: i32, level_id: LevelId) {
-        self.with_any(room_id, |pm| {
-            pm.remove_player(account_id);
+    // Removes the player from the given room, returns `true` if the player was the owner of the room,
+    // and either a new owner has now been chosen, or the room has been deleted.
+    pub fn remove_with_any(&self, room_id: u32, account_id: i32, level_id: LevelId) -> bool {
+        let was_owner = self.with_any(room_id, |pm| {
+            let was_owner = pm.remove_player(account_id);
+
             if level_id != 0 {
                 pm.manager.remove_from_level(level_id, account_id);
             }
+
+            was_owner
         });
 
         // delete the room if there are no more players there
         if room_id != 0 {
             self.maybe_remove_room(room_id);
         }
+
+        was_owner
     }
 
     pub fn create_special_room(&self) {

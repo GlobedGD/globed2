@@ -715,6 +715,10 @@ CCNode* ComplexVisualPlayer::getPlayerObject() {
 	return playerIcon;
 }
 
+RemotePlayer* ComplexVisualPlayer::getRemotePlayer() {
+    return parent;
+}
+
 void ComplexVisualPlayer::setP1StickyState(bool state) {
 	p1sticky = state;
 }

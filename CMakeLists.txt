@@ -111,7 +111,7 @@ CPMAddPackage(
     URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp#46e7c58")
+CPMAddPackage("gh:dankmeme01/asp#d7910ff")
 
 if (GLOBED_NATIVE_ARCH)
     # Apply native architecture
@@ -122,6 +122,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Wi
     # and therefore is not used in release. Release builds use MSVC which has a smarter vectorizer.
     target_compile_options(opus PRIVATE "-m32" "-msse4.1")
     target_compile_options(sodium PRIVATE "-m32" "-maes" "-mpclmul" "-msse4.1")
+    target_compile_options(asp PRIVATE "-m32")
 endif()
 
 # Clang/GCC - suppress some warnings

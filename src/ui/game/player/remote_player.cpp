@@ -64,6 +64,8 @@ void RemotePlayer::updateData(
     isEditorBuilding = data.isEditorBuilding;
 
     lastPercentage = data.currentPercentage;
+    lastFrameFlags = frameFlags;
+    lastVisualState = data;
 
     // don't update any anims if hidden
     if (isForciblyHidden) return;
