@@ -1211,8 +1211,6 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
         if (this == noclipFor) {
             PlayerObject::update(dt);
 
-            log::debug("hiding player {}, is p1: {}", this, this == bgl->m_player1);
-
             this->updateFromLockedPlayer(!bgl->m_fields->twopstate.isPrimary && bgl->m_gameState.m_isDualMode);
             this->setVisible(false);
             // if (bgl->m_gameState.m_isDualMode) {
@@ -1226,7 +1224,6 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
             if (this->m_trailingParticles) this->m_trailingParticles->setVisible(false);
             if (this->m_shipStreak) this->m_shipStreak->setVisible(false);
         } else {
-            log::debug("not hiding player {}", this);
             PlayerObject::update(dt);
         }
     }

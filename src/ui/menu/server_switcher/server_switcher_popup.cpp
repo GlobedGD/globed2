@@ -5,6 +5,7 @@
 #include "direct_connect_popup.hpp"
 #include <managers/central_server.hpp>
 #include <util/collections.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -12,7 +13,7 @@ bool ServerSwitcherPopup::setup() {
     this->setTitle("Server switcher");
 
     auto listview = ListView::create(CCArray::create(), CentralServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
-    listLayer = GJCommentListLayer::create(listview, "", {192, 114, 62, 255}, LIST_WIDTH, LIST_HEIGHT, false);
+    listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
 
     float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;
     listLayer->setPosition({xpos, 70.f});

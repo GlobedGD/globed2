@@ -13,38 +13,26 @@ enum {
     TAG_TWO_PLAYER,
 };
 
-#define MAKE_SETTING(ttag, button, name) \
-    Build(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(RoomSettingsPopup::onSettingClicked), 0.75f)) \
-        .tag(ttag) \
-        .store(button) \
-        .intoNewParent(CCMenu::create()) \
-        .layout(RowLayout::create()->setGap(3.f)->setAutoScale(false)) \
-        .contentSize(POPUP_WIDTH, 50.f) \
-        .id("setting-wrapper") \
-        .parent(buttonLayout) \
-        .intoNewChild(CCLabelBMFont::create(name, "bigFont.fnt")) \
-        .scale(0.7f);
+#define MAKE_SETTING(name, tag, storage) \
+    { \
+        storage = RoomSettingCell::create(name, tag, this); \
+        cells->addObject(storage); \
+    }
 
 bool RoomSettingsPopup::setup() {
     auto popupLayout = util::ui::getPopupLayout(m_size);
 
-    auto* buttonLayout = Build<CCNode>::create()
-        .layout(ColumnLayout::create()->setGap(5.f))
-        .anchorPoint(0.f, 1.f)
-        .contentSize(POPUP_WIDTH, POPUP_HEIGHT)
-        .pos(popupLayout.topLeft)
+    auto* cells = CCArray::create();
+    MAKE_SETTING("Collision", TAG_COLLISION, cellCollision);
+    MAKE_SETTING("2-player mode", TAG_TWO_PLAYER, cellTwoPlayer);
+
+    auto listview = ListView::create(cells, RoomSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
+    auto* listlayer = Build(GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false))
+        .scale(0.65f)
         .parent(m_mainLayer)
-        .id("button-layout"_spr)
         .collect();
 
-    MAKE_SETTING(TAG_COLLISION, btnCollision, "Collision");
-    MAKE_SETTING(TAG_TWO_PLAYER, btnTwoPlayer, "2-player mode");
-
-    for (auto item : CCArrayExt<CCNode*>(buttonLayout->getChildren())) {
-        item->updateLayout();
-    }
-
-    buttonLayout->updateLayout();
+    listlayer->setPosition(popupLayout.center - listlayer->getContentSize() / 2);
 
     NetworkManager::get().addListener<RoomInfoPacket>([this](auto packet) {
         log::debug("room configuration updated");
@@ -86,22 +74,62 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
 }
 
 void RoomSettingsPopup::updateCheckboxes() {
-    btnCollision->toggle(currentSettings.collision);
-    btnTwoPlayer->toggle(currentSettings.twoPlayerMode);
+    cellCollision->setToggled(currentSettings.collision);
+    cellTwoPlayer->setToggled(currentSettings.twoPlayerMode);
 
     this->enableCheckboxes(RoomManager::get().isOwner());
 }
 
 void RoomSettingsPopup::enableCheckboxes(bool enabled) {
-    log::debug("{} checkboxes", enabled ? "enabling" : "disabling");
-    btnCollision->setEnabled(enabled);
-    btnTwoPlayer->setEnabled(enabled);
+    cellCollision->setEnabled(enabled);
+    cellTwoPlayer->setEnabled(enabled);
 }
 
 RoomSettingsPopup* RoomSettingsPopup::create() {
     auto ret = new RoomSettingsPopup;
     if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
+}
+
+bool RoomSettingCell::init(const char* name, int tag, RoomSettingsPopup* popup) {
+    if (!CCLayer::init()) return false;
+    this->popup = popup;
+
+    Build(CCMenuItemToggler::createWithStandardSprites(popup, menu_selector(RoomSettingsPopup::onSettingClicked), 0.7f)) \
+        .tag(tag)
+        .store(button)
+        .anchorPoint(0.5f, 0.5f)
+        .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .parent(this);
+
+    Build<CCLabelBMFont>::create(name, "bigFont.fnt")
+        .scale(0.6f)
+        .anchorPoint(0.f, 0.5f)
+        .pos(10.f, CELL_HEIGHT / 2)
+        .parent(this)
+        ;
+
+    return true;
+}
+
+void RoomSettingCell::setToggled(bool state) {
+    button->toggle(state);
+}
+
+void RoomSettingCell::setEnabled(bool state) {
+    button->setEnabled(state);
+}
+
+RoomSettingCell* RoomSettingCell::create(const char* name, int tag, RoomSettingsPopup* popup) {
+    auto ret = new RoomSettingCell;
+    if (ret->init(name, tag, popup)) {
         return ret;
     }
 
