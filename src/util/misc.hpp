@@ -1,6 +1,6 @@
 #pragma once
 #include <defs/essential.hpp>
-#include <defs/geode.hpp> 
+#include <defs/geode.hpp>
 
 #include <functional>
 #include <string_view>
@@ -88,7 +88,7 @@ namespace util::misc {
             return std::nullopt;
         }
 
-        T copy = val.value();
+        T copy = std::move(val.value());
         val.reset();
         return copy;
     }

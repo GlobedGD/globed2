@@ -19,7 +19,6 @@ private:
     Ref<CCMenuItemSpriteExtra> levelListButton, roomButton, serverSwitcherButton, discordButton, settingsButton;
     cocos2d::CCMenu *leftButtonMenu, *rightButtonMenu;
     std::optional<geode::utils::web::SentAsyncWebRequestHandle> serverRequestHandle;
-    cocos2d::CCSequence* timeoutSequence;
     bool currentlyShowingButtons = false;
 
     bool init() override;

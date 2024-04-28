@@ -55,7 +55,7 @@ protected:
 
     GJBaseGameLayer* gameLayer;
     ComplexPlayerObject* playerIcon;
-    cocos2d::CCSprite* badgeIcon;
+    cocos2d::CCSprite* badgeIcon = nullptr;
     PlayerIconType playerIconType = PlayerIconType::Unknown;
     cocos2d::CCLabelBMFont* playerName;
     Ref<PlayerStatusIcons> statusIcons;

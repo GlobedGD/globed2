@@ -3,13 +3,19 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-if (IOS)
+project(globed2 VERSION 1.0.0)
+
+# set ios archs
+if (${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
+    message(STATUS "building for ios")
+    unset(CMAKE_OSX_ARCHITECTURES)
     set(CMAKE_OSX_ARCHITECTURES "arm64")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
+    set(CMAKE_SYSTEM_NAME "iOS")
 else()
+    message(STATUS "building for mac")
     set(CMAKE_OSX_ARCHITECTURES "x86_64")
 endif()
-
-project(globed2 VERSION 1.0.0)
 
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
@@ -33,6 +39,8 @@ endif()
 # add thingies epending on the current system
 if (ANDROID)
     file(GLOB_RECURSE OS_SOURCES "src/platform/os/android/*.cpp" "src/platform/arch/arm/*.cpp")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS")
+    file(GLOB_RECURSE OS_SOURCES "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp")
 elseif (APPLE)
     file(GLOB_RECURSE OS_SOURCES "src/platform/os/mac/*.cpp" "src/platform/arch/x86/*.cpp")
 elseif (WIN32)
