@@ -2,6 +2,7 @@
 
 #include <hooks/gjbasegamelayer.hpp>
 #include <ui/game/userlist/userlist.hpp>
+#include <ui/game/chat/chatlist.hpp>
 #include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
@@ -24,6 +25,18 @@ void GlobedPauseLayer::customSetup() {
         .id("btn-open-playerlist"_spr)
         .intoNewParent(CCMenu::create())
         .id("playerlist-menu"_spr)
+        .pos(0.f, 0.f)
+        .parent(this);
+
+    Build<CCSprite>::createSpriteName("accountBtn_messages_001.png")
+        .scale(0.9f)
+        .intoMenuItem([](auto) {
+            GlobedChatListPopup::create()->show();
+        })
+        .pos(winSize.width - 50.f, 100.f)
+        .id("btn-open-chatlist"_spr)
+        .intoNewParent(CCMenu::create())
+        .id("chatlist-menu"_spr)
         .pos(0.f, 0.f)
         .parent(this);
 

@@ -261,6 +261,10 @@ void GlobedGJBGL::setupPacketListeners() {
         }
     });
 
+    nm.addListener<ChatMessageBroadcastPacket>([this](std::shared_ptr<ChatMessageBroadcastPacket> packet) {
+        this->m_fields->chatMessages.push_back({packet->sender, packet->message});
+    });
+
     nm.addListener<VoiceBroadcastPacket>([this](std::shared_ptr<VoiceBroadcastPacket> packet) {
 #ifdef GLOBED_VOICE_SUPPORT
         // if deafened or voice is disabled, do nothing

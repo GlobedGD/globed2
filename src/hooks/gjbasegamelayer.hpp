@@ -59,6 +59,9 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     float lastKnownTimeScale = 1.0f;
     std::unordered_map<int, util::time::time_point> lastSentPacket;
 
+    // chat messages (duh)
+    std::vector<std::pair<int, std::string>> chatMessages;
+
     $override
     bool init();
 
