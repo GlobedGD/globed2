@@ -177,25 +177,24 @@ namespace util::ui {
         return nullptr;
     }
 
-    uibuilder::Build<cocos2d::CCSprite> createBadge(std::string badgePNG, cocos2d::CCPoint pos, std::string id) {
+    CCSprite* createBadge(const char* badgePNG, std::string id) {
         log::info("creating badge");
         log::info("Badge type: {}", id);
 
-        auto badgeSprite = Build<cocos2d::CCSprite>::createSpriteName(badgePNG.c_str())
+        auto badgeSprite = Build<cocos2d::CCSprite>::createSpriteName(badgePNG)
             .scale(1.f)
-            .pos(pos)
             .id(id);
 
         return badgeSprite.collect();
     }
 
-    uibuilder::Build<cocos2d::CCSprite> createBadgeIfSpecial(ccColor3B color, cocos2d::CCPoint pos) {
-        if (color == ccc3(119, 255, 255)) return createBadge("role-owner.png"_spr, pos, "globed-owner-badge");
-        if (color == ccc3(15, 239, 195)) return createBadge("role-mod.png"_spr, pos, "globed-mod-badge");
-        if (color == ccc3(233, 30, 99)) return createBadge("role-admin.png"_spr, pos, "globed-admin-badge");
-        if (color == ccc3(52, 152, 219)) return createBadge("role-helper.png"_spr, pos, "globed-helper-badge");
-        if (color == ccc3(154, 88, 255)) return createBadge("role-supporter.png"_spr, pos, "globed-supporter-badge");
-        if (color == ccc3(248, 0, 255)) return createBadge("role-booster.png"_spr, pos, "globed-booster-badge");
+    CCSprite* createBadgeIfSpecial(ccColor3B color) {
+        if (color == ccc3(119, 255, 255)) return createBadge("role-owner.png"_spr, "globed-owner-badge");
+        if (color == ccc3(15, 239, 195)) return createBadge("role-mod.png"_spr, "globed-mod-badge");
+        if (color == ccc3(233, 30, 99)) return createBadge("role-admin.png"_spr, "globed-admin-badge");
+        if (color == ccc3(52, 152, 219)) return createBadge("role-helper.png"_spr, "globed-helper-badge");
+        if (color == ccc3(154, 88, 255)) return createBadge("role-supporter.png"_spr, "globed-supporter-badge");
+        if (color == ccc3(248, 0, 255)) return createBadge("role-booster.png"_spr, "globed-booster-badge");
 
         return nullptr;
     }
