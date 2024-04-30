@@ -86,6 +86,8 @@ void GlobedChatListPopup::onChat(CCObject* sender) {
 
     GlobedGJBGL::get()->m_fields->chatMessages.push_back({GAM->m_accountID, inp->getString()});
     createMessage(GAM->m_accountID, inp->getString());
+
+    inp->setString("");
 }
 
 void GlobedChatListPopup::createMessage(int accountID, std::string message) {
@@ -101,7 +103,8 @@ void GlobedChatListPopup::createMessage(int accountID, std::string message) {
     if (pcm.getData(accountID)) username = pcm.getData(accountID).value().name;
 
     auto cell = GlobedUserChatCell::create(username, accountID, message);
-    cell->setPositionY(0.f);
+    cell->setPositionY(5.f);
+    cell->setPositionX(5.f);
     scroll->m_contentLayer->addChild(cell);
     scroll->m_contentLayer->setAnchorPoint(ccp(0,1));
 

@@ -15,6 +15,11 @@
 #include <util/format.hpp>
 #include <util/ui.hpp>
 
+PlayerAccountData getAccountData(int id) {
+    if (ProfileCacheManager::get().getData(id)) return ProfileCacheManager::get().getData(id).value();
+    if (id == GJAccountManager::sharedState()->m_accountID) return ProfileCacheManager::get().getOwnAccountData();
+}
+
 bool GlobedUserChatCell::init(std::string username, int accid, std::string messageText) {
     if (!CCLayerColor::init())
         return false;
@@ -25,11 +30,11 @@ bool GlobedUserChatCell::init(std::string username, int accid, std::string messa
     auto GAM = GJAccountManager::sharedState();
 
     this->setOpacity(50);
-    this->setContentSize(ccp(280, 32));
+    this->setContentSize(ccp(290, 32));
     this->setAnchorPoint(ccp(0, 0));
 
     auto menu = CCMenu::create();
-    menu->setPosition(10,-10);
+    menu->setPosition(0,-10);
 
     auto playerBundle = CCMenu::create();
 
@@ -47,10 +52,13 @@ bool GlobedUserChatCell::init(std::string username, int accid, std::string messa
     userTxt->setScale(.5);
     userTxt->setID("playername");
 
-    auto playerIcon = SimplePlayer::create(0);
+    auto playerIcon = SimplePlayer::create(getAccountData(accid).icons.cube);
     
     playerIcon->setScale(.475);
     playerIcon->setID("playericon");
+
+    playerIcon->setColor(GameManager::get()->colorForIdx(getAccountData(accid).icons.color1));
+    playerIcon->setSecondColor(GameManager::get()->colorForIdx(getAccountData(accid).icons.color2));
     
     playerBundle->addChild(playerIcon);
     playerBundle->addChild(userTxt);
