@@ -1,6 +1,4 @@
 #include "chatlist.hpp"
-
-#include "chat_cell.hpp"
 #include <audio/voice_playback_manager.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 #include <managers/profile_cache.hpp>
@@ -103,18 +101,23 @@ void GlobedChatListPopup::createMessage(int accountID, std::string message) {
     if (pcm.getData(accountID)) username = pcm.getData(accountID).value().name;
 
     auto cell = GlobedUserChatCell::create(username, accountID, message);
-    cell->setPositionY(nextY);
+    cell->setPositionY(0.f);
     scroll->m_contentLayer->addChild(cell);
     scroll->m_contentLayer->setAnchorPoint(ccp(0,1));
-    nextY -= 35.f;
 
-    messages++;
+    for (GlobedUserChatCell* gucci : messageCells) {
+        gucci->setPositionY(gucci->getPositionY() + 35.f);
+    }
+    messageCells.push_back(cell);
+
+    float height = std::max<float>(scroll->getContentSize().height, 35 * scroll->m_contentLayer->getChildrenCount());
+    scroll->m_contentLayer->setContentSize(ccp(scroll->m_contentLayer->getContentSize().width, height));
+
+    //scroll->moveToBottom();
 }
 
 void GlobedChatListPopup::updateChat(float dt) {
-    if (GlobedGJBGL::get()->m_fields->chatMessages.size() > messages) {
-        createMessage(GlobedGJBGL::get()->m_fields->chatMessages.back().first, GlobedGJBGL::get()->m_fields->chatMessages.back().second);
-    }
+    if (GlobedGJBGL::get()->m_fields->chatMessages.size() > messageCells.size()) createMessage(GlobedGJBGL::get()->m_fields->chatMessages.back().first, GlobedGJBGL::get()->m_fields->chatMessages.back().second);
 }
 
 GlobedChatListPopup* GlobedChatListPopup::create() {

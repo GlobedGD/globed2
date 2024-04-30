@@ -2,6 +2,7 @@
 #include <defs/all.hpp>
 #include <Geode/utils/web.hpp>
 #include <Geode/ui/TextInput.hpp>
+#include "chat_cell.hpp"
 
 using namespace geode::prelude;
 
@@ -15,8 +16,9 @@ protected:
     CCLayer* layer2;
     geode::TextInput* inp;
     CCMenu* menu;
+    std::vector<GlobedUserChatCell*> messageCells;
 
-    float nextY = 113.f;
+    float nextY = 0.f;
     int messages = 0;
 
     void onChat(CCObject* sender);
