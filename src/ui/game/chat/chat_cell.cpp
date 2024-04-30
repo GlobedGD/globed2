@@ -18,6 +18,7 @@
 PlayerAccountData getAccountData(int id) {
     if (ProfileCacheManager::get().getData(id)) return ProfileCacheManager::get().getData(id).value();
     if (id == GJAccountManager::sharedState()->m_accountID) return ProfileCacheManager::get().getOwnAccountData();
+    return {};
 }
 
 bool GlobedUserChatCell::init(std::string username, int accid, std::string messageText) {
@@ -79,16 +80,17 @@ bool GlobedUserChatCell::init(std::string username, int accid, std::string messa
     usernameButton->setContentWidth(150);
 
     menu->addChild(usernameButton);
-    menu->setID("chat_messages"_spr);
+    menu->setID("chat-messages");
     this->addChild(menu);
 
-    auto revText = CCLabelBMFont::create(messageText.c_str(), "chatFont.fnt");
+    auto messageText = CCLabelBMFont::create(messageText.c_str(), "chatFont.fnt");
 
-    revText->setPosition(4, 10);
-    revText->setScale(.65);
-    revText->setAnchorPoint(ccp(0, 0.5));
+    messageText->setPosition(4, 10);
+    messageText->setScale(.65);
+    messageText->setAnchorPoint(ccp(0, 0.5));
+    messageText->setID("message-text");
 
-    this->addChild(revText);
+    this->addChild(messageText);
 
     return true;
 }

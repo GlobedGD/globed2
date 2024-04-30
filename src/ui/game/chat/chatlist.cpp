@@ -108,6 +108,7 @@ void GlobedChatListPopup::createMessage(int accountID, std::string message) {
     scroll->m_contentLayer->addChild(cell);
     scroll->m_contentLayer->setAnchorPoint(ccp(0,1));
 
+    // move all of them up to accomodate for a new message
     for (GlobedUserChatCell* gucci : messageCells) {
         gucci->setPositionY(gucci->getPositionY() + 35.f);
     }
@@ -120,6 +121,7 @@ void GlobedChatListPopup::createMessage(int accountID, std::string message) {
 }
 
 void GlobedChatListPopup::updateChat(float dt) {
+    // if we have more messages stored then the amount we have displaying, display the rest of them
     if (GlobedGJBGL::get()->m_fields->chatMessages.size() > messageCells.size()) createMessage(GlobedGJBGL::get()->m_fields->chatMessages.back().first, GlobedGJBGL::get()->m_fields->chatMessages.back().second);
 }
 
