@@ -21,9 +21,11 @@ protected:
     void onChat(CCObject* sender);
     void onClose(CCObject* sender) override;
 
+    void updateChat(float dt);
+
     virtual void keyBackClicked() override;
 
 public:
 	static GlobedChatListPopup* create();
-    void getChat();
+    void createMessage(int accountID, std::string message);
 };

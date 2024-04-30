@@ -61,24 +61,12 @@ bool GlobedChatListPopup::setup() {
     CCTouchDispatcher::get()->addTargetedDelegate(this, -129, true);
     CCTouchDispatcher::get()->addTargetedDelegate(scroll, -130, true);
 
-    auto& pcm = ProfileCacheManager::get();
-    auto& playerStore = GlobedGJBGL::get()->m_fields->playerStore->getAll();
-
     for (auto message : GlobedGJBGL::get()->m_fields->chatMessages) {
-        std::string username = "N/A";
-
-        PlayerAccountData yeah;
-        if (message.first == GJAccountManager::sharedState()->m_accountID) username = GJAccountManager::sharedState()->m_username;
-        if (pcm.getData(message.first)) username = pcm.getData(message.first).value().name;
-
-        auto cell = GlobedUserChatCell::create(username, message.first, message.second);
-        cell->setPositionY(nextY);
-        scroll->m_contentLayer->addChild(cell);
-        scroll->m_contentLayer->setAnchorPoint(ccp(0,1));
-        nextY -= 35.f;
+        createMessage(message.first, message.second);
     }
 
     this->retain();
+    this->schedule(schedule_selector(GlobedChatListPopup::updateChat));
 
     return true;
 }
@@ -99,12 +87,32 @@ void GlobedChatListPopup::onChat(CCObject* sender) {
     auto GAM = GJAccountManager::sharedState();
 
     GlobedGJBGL::get()->m_fields->chatMessages.push_back({GAM->m_accountID, inp->getString()});
+    createMessage(GAM->m_accountID, inp->getString());
+}
 
-    auto cell = GlobedUserChatCell::create(std::string(GAM->m_username), GAM->m_accountID, inp->getString());
+void GlobedChatListPopup::createMessage(int accountID, std::string message) {
+    auto& pcm = ProfileCacheManager::get();
+    auto& playerStore = GlobedGJBGL::get()->m_fields->playerStore->getAll();
+
+    std::string username = "N/A";
+
+    PlayerAccountData yeah;
+    // if account ID is ours, then display our username
+    if (accountID == GJAccountManager::sharedState()->m_accountID) username = GJAccountManager::sharedState()->m_username;
+    // if account ID is in the player cache, get the username from there
+    if (pcm.getData(accountID)) username = pcm.getData(accountID).value().name;
+
+    auto cell = GlobedUserChatCell::create(username, accountID, message);
     cell->setPositionY(nextY);
     scroll->m_contentLayer->addChild(cell);
     scroll->m_contentLayer->setAnchorPoint(ccp(0,1));
     nextY -= 35.f;
+}
+
+void GlobedChatListPopup::updateChat(float dt) {
+    if (GlobedGJBGL::get()->m_fields->chatMessages.size() > scroll->m_contentLayer->getChildren()->count()) {
+        createMessage(GlobedGJBGL::get()->m_fields->chatMessages.back().first, GlobedGJBGL::get()->m_fields->chatMessages.back().second);
+    }
 }
 
 GlobedChatListPopup* GlobedChatListPopup::create() {

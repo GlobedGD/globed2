@@ -15,5 +15,4 @@ class GlobedUserChatCell : public CCLayerColor {
         void onUser(CCObject* sender);
         bool init(std::string username, int accid, std::string messageText);
         static GlobedUserChatCell* create(std::string username, int aid, std::string messageText);
-
 };

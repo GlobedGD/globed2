@@ -29,7 +29,7 @@ bool GlobedUserChatCell::init(std::string username, int accid, std::string messa
     this->setAnchorPoint(ccp(0, 0));
 
     auto menu = CCMenu::create();
-    menu->setPosition(0,-10);
+    menu->setPosition(10,-10);
 
     auto playerBundle = CCMenu::create();
 
