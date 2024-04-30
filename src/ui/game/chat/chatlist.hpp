@@ -17,6 +17,7 @@ protected:
     CCMenu* menu;
 
     float nextY = 113.f;
+    int messages = 0;
 
     void onChat(CCObject* sender);
     void onClose(CCObject* sender) override;

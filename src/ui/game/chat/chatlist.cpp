@@ -107,10 +107,12 @@ void GlobedChatListPopup::createMessage(int accountID, std::string message) {
     scroll->m_contentLayer->addChild(cell);
     scroll->m_contentLayer->setAnchorPoint(ccp(0,1));
     nextY -= 35.f;
+
+    messages++;
 }
 
 void GlobedChatListPopup::updateChat(float dt) {
-    if (GlobedGJBGL::get()->m_fields->chatMessages.size() > scroll->m_contentLayer->getChildren()->count()) {
+    if (GlobedGJBGL::get()->m_fields->chatMessages.size() > messages) {
         createMessage(GlobedGJBGL::get()->m_fields->chatMessages.back().first, GlobedGJBGL::get()->m_fields->chatMessages.back().second);
     }
 }
