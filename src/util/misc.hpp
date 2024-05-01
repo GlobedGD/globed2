@@ -104,23 +104,6 @@ namespace util::misc {
     // When using this, it is recommended that the function does not take long to execute, due to the simplicity of the implementation.
     void callOnceSync(const char* key, std::function<void()> func);
 
-    // Used for doing something once. `Fuse<unique-number>::tripped()` is guaranteed to evaluate to true only once. (no guarantees if accessed from multiple threads)
-    template <uint32_t FuseId>
-    class Fuse {
-    public:
-        static constexpr uint32_t PRELOAD_STATE_ID = 213542435;
-
-        static bool tripped() {
-            static bool trip = false;
-            if (!trip) {
-                trip = true;
-                return false;
-            }
-
-            return true;
-        }
-    };
-
     template <typename Ret, typename Func>
     concept OnceCellFunction = requires(Func func) {
         { std::is_invocable_r_v<Ret, Func> };
