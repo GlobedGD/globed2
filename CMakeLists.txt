@@ -36,7 +36,7 @@ else()
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-# add thingies epending on the current system
+# add thingies depending on the current system
 if (ANDROID)
     file(GLOB_RECURSE OS_SOURCES "src/platform/os/android/*.cpp" "src/platform/arch/arm/*.cpp")
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS")
