@@ -50,7 +50,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
         .color(nameColor)
         .limitLabelWidth(170.f, 0.6f, 0.1f)
-        .with<CCLabelBMFont>([&labelWidth](CCLabelBMFont* label) {
+        .with([&labelWidth](CCLabelBMFont* label) {
             label->setScale(label->getScale() * 0.9f);
             labelWidth = label->getScaledContentSize().width;
         })
