@@ -12,7 +12,7 @@ void GlobedPauseLayer::customSetup() {
 
     auto* gpl = GlobedGJBGL::get();
 
-    if (!gpl || !gpl->m_fields->globedReady) return;
+    if (!gpl || !gpl->established()) return;
 
     auto winSize = CCDirector::get()->getWinSize();
 

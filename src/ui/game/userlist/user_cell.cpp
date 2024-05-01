@@ -27,18 +27,25 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     auto gm = GameManager::get();
 
-    auto sp = Build<GlobedSimplePlayer>::create(data.icons)
-        .scale(0.6f)
-        .parent(this)
-        .anchorPoint(0.5f, 0.5f)
-        .pos(18.f, CELL_HEIGHT / 2.f)
-        .id("player-icon"_spr)
-        .collect();
-
     Build<CCMenu>::create()
         .pos(0.f, 0.f)
         .parent(this)
         .store(menu);
+
+    Build<CCMenu>::create()
+        .layout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start))
+        .anchorPoint(0.f, 0.5f)
+        .pos(5.f, CELL_HEIGHT / 2.f)
+        .contentSize(GlobedUserListPopup::LIST_WIDTH, CELL_HEIGHT)
+        .parent(menu)
+        .id("name-layout"_spr)
+        .store(usernameLayout);
+
+    auto sp = Build<GlobedSimplePlayer>::create(data.icons)
+        .scale(0.6f)
+        .parent(usernameLayout)
+        .id("player-icon"_spr)
+        .collect();
 
     auto& pcm = ProfileCacheManager::get();
     ccColor3B nameColor = ccc3(255, 255, 255);
@@ -52,30 +59,25 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .collect();
 
     auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
-        // goodness
-        .pos(sp->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 15.f, CELL_HEIGHT / 2.f)
-        .parent(menu)
+        .parent(usernameLayout)
         .scaleMult(1.1f)
         .collect();
 
     CCSprite* badgeIcon = nullptr;
 	if (data.specialUserData.has_value()) {
 		badgeIcon = util::ui::createBadgeIfSpecial(nameColor);
-        badgeIcon->setPosition(ccp(nameButton->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameButton->getPositionY()));
-        menu->addChild(badgeIcon);
+        usernameLayout->addChild(badgeIcon);
     }
-
-	auto percentPos = badgeIcon ? badgeIcon->getPosition() + ccp(11.f, 6.f) : nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + ccp(3.f, -3.f);
-
 
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")
-        .pos(percentPos)
-        .anchorPoint({0.f, 0.5f})
         .scale(0.4f)
-        .parent(this)
+        .parent(usernameLayout)
         .id("percentage-label"_spr)
         .store(percentageLabel);
+
+    usernameLayout->updateLayout();
+    menu->updateLayout();
 
     this->makeButtons();
 
@@ -92,8 +94,10 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
         bool platformer = GJBaseGameLayer::get()->m_level->isPlatformer();
         if (platformer && _data.localBest != 0) {
             percentageLabel->setString(util::format::formatPlatformerTime(_data.localBest).c_str());
+            usernameLayout->updateLayout();
         } else if (!platformer) {
             percentageLabel->setString(fmt::format("{}%", _data.localBest).c_str());
+            usernameLayout->updateLayout();
         }
     }
 }

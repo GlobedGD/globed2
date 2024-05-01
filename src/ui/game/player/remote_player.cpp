@@ -34,9 +34,6 @@ void RemotePlayer::updateAccountData(const PlayerAccountData& data, bool force) 
     player1->updateIcons(data.icons);
     player2->updateIcons(data.icons);
 
-    player1->updateName();
-    player2->updateName();
-
     if (progressIcon) {
         progressIcon->updateIcons(data.icons);
     }

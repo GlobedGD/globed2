@@ -6,6 +6,7 @@
 #include <game/camera_state.hpp>
 #include <data/types/gd.hpp>
 #include <data/types/game.hpp>
+#include <ui/general/name_label.hpp>
 
 class RemotePlayer;
 
@@ -24,7 +25,6 @@ public:
         bool isSpeaking,
         float loudness
     );
-    void updateName();
     void updateIconType(PlayerIconType newType);
     void playDeathEffect();
     void playSpiderTeleport(const SpiderTeleportData& data);
@@ -56,9 +56,8 @@ protected:
 
     GJBaseGameLayer* gameLayer;
     ComplexPlayerObject* playerIcon;
-    cocos2d::CCSprite* badgeIcon = nullptr;
+    Ref<GlobedNameLabel> nameLabel;
     PlayerIconType playerIconType = PlayerIconType::Unknown;
-    cocos2d::CCLabelBMFont* playerName;
     Ref<PlayerStatusIcons> statusIcons;
     bool isPlatformer;
     bool isEditor;

@@ -177,10 +177,7 @@ namespace util::ui {
         return nullptr;
     }
 
-    CCSprite* createBadge(const char* badgePNG, std::string id) {
-        log::info("creating badge");
-        log::info("Badge type: {}", id);
-
+    CCSprite* createBadge(const char* badgePNG, const std::string& id) {
         auto badgeSprite = Build<CCSprite>::createSpriteName(badgePNG)
             .scale(1.f)
             .id(id);

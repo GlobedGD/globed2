@@ -15,6 +15,7 @@ bool GlobedSettingHeaderCell::init(const char* name) {
 GlobedSettingHeaderCell* GlobedSettingHeaderCell::create(const char* name) {
     auto ret = new GlobedSettingHeaderCell;
     if (ret->init(name)) {
+        ret->autorelease();
         return ret;
     }
 

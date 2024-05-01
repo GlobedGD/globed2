@@ -52,8 +52,8 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     Ref<CCNode> progressBarWrapper = nullptr;
     Ref<PlayerStatusIcons> selfStatusIcons = nullptr;
     Ref<GlobedVoiceOverlay> voiceOverlay = nullptr;
-    Ref<cocos2d::CCLabelBMFont> ownNameLabel = nullptr;
-    Ref<cocos2d::CCLabelBMFont> ownNameLabel2 = nullptr;
+    Ref<GlobedNameLabel> ownNameLabel = nullptr;
+    Ref<GlobedNameLabel> ownNameLabel2 = nullptr;
 
     // speedhack detection
     float lastKnownTimeScale = 1.0f;

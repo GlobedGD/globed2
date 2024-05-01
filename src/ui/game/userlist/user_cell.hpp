@@ -18,7 +18,7 @@ public:
 
 private:
     cocos2d::CCLabelBMFont* percentageLabel;
-    cocos2d::CCMenu* menu;
+    cocos2d::CCMenu *menu, *usernameLayout;
     CCMenuItemSpriteExtra
         *actionsButton = nullptr,
         *muteButton = nullptr,
@@ -34,4 +34,5 @@ private:
     bool init(const PlayerStore::Entry& entry, const PlayerAccountData& data);
     void onOpenProfile(cocos2d::CCObject*);
     void makeButtons();
+    void updateUsernameLayout();
 };

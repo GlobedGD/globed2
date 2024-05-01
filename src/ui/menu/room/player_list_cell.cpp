@@ -109,6 +109,7 @@ void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
 PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data) {
     auto ret = new PlayerListCell;
     if (ret->init(data)) {
+        ret->autorelease();
         return ret;
     }
 

@@ -440,8 +440,6 @@ namespace util::cocos {
     }
 
     PersistentPreloadState& getPreloadState() {
-        using util::misc::Fuse;
-
         static PersistentPreloadState state;
         util::misc::callOnce("cocos-get-preload-state-init", [&] {
             initPreloadState(state);
