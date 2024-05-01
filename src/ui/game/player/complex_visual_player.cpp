@@ -82,8 +82,9 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     auto& settings = GlobedSettings::get();
 
     if (parent->getAccountData().specialUserData.has_value()) {
-        this->badgeIcon = util::ui::createBadgeIfSpecial(parent->getAccountData().specialUserData->nameColor);
-        this->addChild(this->badgeIcon);
+        badgeIcon = util::ui::createBadgeIfSpecial(parent->getAccountData().specialUserData->nameColor);
+        badgeIcon->setOpacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f));
+        this->addChild(badgeIcon);
 	}
 
     playerIcon->togglePlatformerMode(gameLayer->m_level->isPlatformer());
@@ -626,7 +627,9 @@ void ComplexVisualPlayer::updateOpacity() {
 
     // set name opacity too if hideNearby is enabled
     if (settings.players.hideNearby) {
-        playerName->setOpacity(static_cast<unsigned char>(settings.players.nameOpacity * mult * 255.f));
+        unsigned char nearbyOpacity = static_cast<unsigned char>(settings.players.nameOpacity * mult * 255.f);
+        playerName->setOpacity(nearbyOpacity);
+        if (badgeIcon) badgeIcon->setOpacity(nearbyOpacity);
     }
 }
 

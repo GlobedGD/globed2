@@ -59,13 +59,14 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .collect();
 
     CCSprite* badgeIcon = nullptr;
-	if (data.specialUserData.has_value())
+	if (data.specialUserData.has_value()) {
 		badgeIcon = util::ui::createBadgeIfSpecial(nameColor);
+        badgeIcon->setPosition(ccp(nameButton->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameButton->getPositionY()));
         menu->addChild(badgeIcon);
+    }
 
-	bool showBadge = badgeIcon ? true : false; // FIXME: crashing when opening userlist
+	auto percentPos = badgeIcon ? badgeIcon->getPosition() + ccp(11.f, 6.f) : nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + ccp(3.f, -3.f);
 
-	auto percentPos = showBadge ? badgeIcon->getPosition() + ccp(11.f, 6.f) : nameButton->getPosition() + nameButton->getScaledContentSize() / 2.f + ccp(3.f, -3.f);
 
     // percentage label
     Build<CCLabelBMFont>::create("", "goldFont.fnt")

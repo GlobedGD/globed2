@@ -181,7 +181,7 @@ namespace util::ui {
         log::info("creating badge");
         log::info("Badge type: {}", id);
 
-        auto badgeSprite = Build<cocos2d::CCSprite>::createSpriteName(badgePNG)
+        auto badgeSprite = Build<CCSprite>::createSpriteName(badgePNG)
             .scale(1.f)
             .id(id);
 
