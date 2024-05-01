@@ -11,17 +11,20 @@
 #include <hooks/gjgamelevel.hpp>
 #include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
+#include <ui/general/simple_player.hpp>
 #include <ui/general/intermediary_loading_popup.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
 
+using namespace geode::prelude;
+
 PlayerAccountData getAccountData(int id) {
     if (ProfileCacheManager::get().getData(id)) return ProfileCacheManager::get().getData(id).value();
     if (id == GJAccountManager::sharedState()->m_accountID) return ProfileCacheManager::get().getOwnAccountData();
-    return {};
+    return PlayerAccountData::DEFAULT_DATA;
 }
 
-bool GlobedUserChatCell::init(std::string username, int accid, std::string messageText) {
+bool GlobedUserChatCell::init(const std::string& username, int accid, const std::string& messageText) {
     if (!CCLayerColor::init())
         return false;
 
@@ -31,57 +34,40 @@ bool GlobedUserChatCell::init(std::string username, int accid, std::string messa
     auto GAM = GJAccountManager::sharedState();
 
     this->setOpacity(50);
-    this->setContentSize(ccp(290, 32));
+    this->setContentSize(ccp(290, CELL_HEIGHT));
     this->setAnchorPoint(ccp(0, 0));
 
-    auto menu = CCMenu::create();
-    menu->setPosition(0,-10);
-
-    auto playerBundle = CCMenu::create();
-
-    playerBundle->setLayout(
-        RowLayout::create()
-        ->setGap(18)
+    auto* playerBundle = Build<CCMenu>::create()
+        .pos(0.f + 2.f, CELL_HEIGHT - 2.f)
+        .anchorPoint(0.f, 1.f)
+        .layout(RowLayout::create()
+            ->setGap(4.f)
             ->setGrowCrossAxis(true)
             ->setCrossAxisReverse(true)
             ->setAutoScale(false)
             ->setAxisAlignment(AxisAlignment::Start)
-        );
+        )
+        .parent(this)
+        .collect();
 
-    auto userTxt = CCLabelBMFont::create(username.c_str(), "goldFont.fnt");
-    
-    userTxt->setScale(.5);
-    userTxt->setID("playername");
+    Build<GlobedSimplePlayer>::create(getAccountData(accid).icons)
+        .scale(0.475f)
+        .id("playericon")
+        .parent(playerBundle);
 
-    auto playerIcon = SimplePlayer::create(getAccountData(accid).icons.cube);
-    
-    playerIcon->setScale(.475);
-    playerIcon->setID("playericon");
+    auto* nameLabel = Build<CCLabelBMFont>::create(username.c_str(), "goldFont.fnt")
+        .scale(0.5f)
+        .anchorPoint(0.f, 0.5f)
+        .id("playername")
+        .collect();
 
-    playerIcon->setColor(GameManager::get()->colorForIdx(getAccountData(accid).icons.color1));
-    playerIcon->setSecondColor(GameManager::get()->colorForIdx(getAccountData(accid).icons.color2));
-    
-    playerBundle->addChild(playerIcon);
-    playerBundle->addChild(userTxt);
-    userTxt->setAnchorPoint(ccp(0, 0.5));
+    auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserChatCell::onUser))
+        .pos(3.f, 35.f)
+        .anchorPoint(0.f, 0.5f)
+        .parent(playerBundle)
+        .collect();
+
     playerBundle->updateLayout();
-    static_cast<CCSprite*>(playerIcon->getChildren()->objectAtIndex(0))->setAnchorPoint(ccp(0, 0.6));
-
-    CCMenuItemSpriteExtra* usernameButton;
-
-    usernameButton = CCMenuItemSpriteExtra::create(
-        playerBundle,
-        this,
-        menu_selector(GlobedUserChatCell::onUser)
-    );
-
-    usernameButton->setPosition(3, 35);
-    usernameButton->setAnchorPoint(ccp(0, 0.5));
-    usernameButton->setContentWidth(150);
-
-    menu->addChild(usernameButton);
-    menu->setID("chat-messages");
-    this->addChild(menu);
 
     auto messageTextLabel = CCLabelBMFont::create(messageText.c_str(), "chatFont.fnt");
 
@@ -99,13 +85,13 @@ void GlobedUserChatCell::onUser(CCObject* sender) {
     ProfilePage::create(accountId, GJAccountManager::sharedState()->m_accountID == accountId)->show();
 }
 
-GlobedUserChatCell* GlobedUserChatCell::create(std::string username, int aid, std::string messageText) {
-    GlobedUserChatCell* pRet = new GlobedUserChatCell();
-    if (pRet && pRet->init(username, aid, messageText)) {
-        pRet->autorelease();
-        return pRet;
-    } else {
-        delete pRet;
-        return nullptr;
+GlobedUserChatCell* GlobedUserChatCell::create(const std::string& username, int aid, const std::string& messageText) {
+    auto* ret = new GlobedUserChatCell;
+    if (ret->init(username, aid, messageText)) {
+        ret->autorelease();
+        return ret;
     }
+
+    delete ret;
+    return nullptr;
 }

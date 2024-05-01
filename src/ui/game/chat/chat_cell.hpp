@@ -5,14 +5,15 @@
 #include <game/player_store.hpp>
 #include <ui/general/audio_visualizer.hpp>
 
-using namespace geode::prelude;
+class GlobedUserChatCell : public cocos2d::CCLayerColor {
+public:
+    static constexpr float CELL_HEIGHT = 32.f;
 
-class GlobedUserChatCell : public CCLayerColor {
-    public:
-        std::string user;
-        int accountId;
+    std::string user;
+    int accountId;
 
-        void onUser(CCObject* sender);
-        bool init(std::string username, int accid, std::string messageText);
-        static GlobedUserChatCell* create(std::string username, int aid, std::string messageText);
+
+    void onUser(cocos2d::CCObject* sender);
+    bool init(const std::string& username, int accid, const std::string& messageText);
+    static GlobedUserChatCell* create(const std::string& username, int aid, const std::string& messageText);
 };

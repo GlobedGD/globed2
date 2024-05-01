@@ -8,12 +8,14 @@
 #include <util/misc.hpp>
 #include <data/packets/all.hpp>
 
+using namespace geode::prelude;
+
 bool GlobedChatListPopup::setup() {
     m_noElasticity = true;
 
-	setTitle("Chat!");
-    this->m_title->setScale(.95);
-	
+	this->setTitle("Chat!");
+    this->m_title->setScale(.95f);
+
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
     scroll = ScrollLayer::create(ccp(300, 150));
@@ -30,7 +32,7 @@ bool GlobedChatListPopup::setup() {
 
     inp->setCommonFilter(CommonFilter::Any);
     inp->setMaxCharCount(40);
-    
+
     CCSprite* reviewSpr = CCSprite::createWithSpriteFrameName("GJ_chatBtn_001.png");
     reviewSpr->setScale(0.75);
 
@@ -60,21 +62,19 @@ bool GlobedChatListPopup::setup() {
     CCTouchDispatcher::get()->addTargetedDelegate(scroll, -130, true);
 
     for (auto message : GlobedGJBGL::get()->m_fields->chatMessages) {
-        createMessage(message.first, message.second);
+        this->createMessage(message.first, message.second);
     }
 
-    this->retain();
     this->schedule(schedule_selector(GlobedChatListPopup::updateChat));
 
     return true;
 }
 
 void GlobedChatListPopup::keyBackClicked()  {
-    onClose(nullptr);
+    this->onClose(nullptr);
 }
 
 void GlobedChatListPopup::onClose(CCObject*) {
-    this->release();
     this->removeFromParent();
 }
 
@@ -90,7 +90,7 @@ void GlobedChatListPopup::onChat(CCObject* sender) {
     inp->setString("");
 }
 
-void GlobedChatListPopup::createMessage(int accountID, std::string message) {
+void GlobedChatListPopup::createMessage(int accountID, const std::string& message) {
     auto& pcm = ProfileCacheManager::get();
     auto& playerStore = GlobedGJBGL::get()->m_fields->playerStore->getAll();
 
@@ -122,15 +122,20 @@ void GlobedChatListPopup::createMessage(int accountID, std::string message) {
 
 void GlobedChatListPopup::updateChat(float dt) {
     // if we have more messages stored then the amount we have displaying, display the rest of them
-    if (GlobedGJBGL::get()->m_fields->chatMessages.size() > messageCells.size()) createMessage(GlobedGJBGL::get()->m_fields->chatMessages.back().first, GlobedGJBGL::get()->m_fields->chatMessages.back().second);
+    auto& messages = GlobedGJBGL::get()->m_fields->chatMessages;
+    if (messages.size() > messageCells.size()) {
+        this->createMessage(messages.back().first, messages.back().second);
+    }
 }
 
 GlobedChatListPopup* GlobedChatListPopup::create() {
-	auto ret = new GlobedChatListPopup();
-	if (ret && ret->initAnchored(342, 240, "GJ_square01.png")) {
+	auto ret = new GlobedChatListPopup;
+
+	if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, "GJ_square01.png")) {
 		ret->autorelease();
 		return ret;
 	}
-	CC_SAFE_DELETE(ret);
+
+    delete ret;
 	return nullptr;
 }

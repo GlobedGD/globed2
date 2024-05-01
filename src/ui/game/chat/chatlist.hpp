@@ -4,25 +4,26 @@
 #include <Geode/ui/TextInput.hpp>
 #include "chat_cell.hpp"
 
-using namespace geode::prelude;
-
 class GlobedChatListPopup : public geode::Popup<> {
 protected:
+    static constexpr float POPUP_WIDTH = 342.f;
+    static constexpr float POPUP_HEIGHT = 240.f;
+
 	bool setup() override;
 
     CCMenuItemSpriteExtra* reviewButton;
-    CCScale9Sprite* background;
-    ScrollLayer* scroll = nullptr;
-    CCLayer* layer2;
+    cocos2d::extension::CCScale9Sprite* background;
+    geode::ScrollLayer* scroll = nullptr;
+    cocos2d::CCLayer* layer2;
     geode::TextInput* inp;
-    CCMenu* menu;
+    cocos2d::CCMenu* menu;
     std::vector<GlobedUserChatCell*> messageCells;
 
     float nextY = 0.f;
     int messages = 0;
 
-    void onChat(CCObject* sender);
-    void onClose(CCObject* sender) override;
+    void onChat(cocos2d::CCObject* sender);
+    void onClose(cocos2d::CCObject* sender) override;
 
     void updateChat(float dt);
 
@@ -30,5 +31,5 @@ protected:
 
 public:
 	static GlobedChatListPopup* create();
-    void createMessage(int accountID, std::string message);
+    void createMessage(int accountID, const std::string& message);
 };
