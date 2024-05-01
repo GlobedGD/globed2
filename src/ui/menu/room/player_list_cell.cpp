@@ -16,12 +16,12 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
     auto* gm = GameManager::get();
 
     Build<GlobedSimplePlayer>::create(GlobedSimplePlayer::Icons {
-        .type = IconType::Cube,
-        .id = data.cube,
-        .color1 = data.color1,
-        .color2 = data.color2,
-        .color3 = data.glowColor,
-    })
+            .type = IconType::Cube,
+            .id = data.cube,
+            .color1 = data.color1,
+            .color2 = data.color2,
+            .color3 = data.glowColor,
+        })
         .scale(0.65f)
         .parent(this)
         .anchorPoint(0.5f, 0.5f)
@@ -36,7 +36,9 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         nameColor = data.specialUserData->nameColor;
     }
 
-    CCMenu* badgeWrapper = Build<CCMenu>::create()
+    CCMenu* badgeWrapper;
+    float labelWidth;
+    Build<CCMenu>::create()
         .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start))
         .anchorPoint(0.f, 0.5f)
@@ -44,10 +46,16 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         .scale(1.f)
         .parent(this)
         .id("badge-wrapper"_spr)
-        .collect();
-
-    float labelWidth;
-    auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
+        .store(badgeWrapper)
+        // add the badge
+        .with([&](auto* menu) {
+            if (data.specialUserData.has_value()) {
+                auto badge = createBadgeIfSpecial(nameColor);
+                if (badge != nullptr) menu->addChild(badge);
+            }
+        })
+        // add the name itself
+        .intoNewChild(CCLabelBMFont::create(data.name.c_str(), "bigFont.fnt"))
         .color(nameColor)
         .limitLabelWidth(170.f, 0.6f, 0.1f)
         .with([&labelWidth](CCLabelBMFont* label) {
@@ -58,14 +66,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
             this->onOpenProfile(nullptr);
         })
         .pos(simplePlayer->getPositionX() + labelWidth / 2.f + 25.f, CELL_HEIGHT / 2.f)
-        .scaleMult(1.1f)
-        .parent(badgeWrapper)
-        .collect();
+        .scaleMult(1.1f);
 
-    if (data.specialUserData.has_value()) {
-        auto badge = createBadgeIfSpecial(nameColor);
-        if (badge != nullptr) badgeWrapper->addChild(badge);
-    }
     badgeWrapper->updateLayout();
 
     if (this->data.levelId != 0) {
