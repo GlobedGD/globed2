@@ -1,8 +1,11 @@
 #include "overlay_cell.hpp"
 
+#include <util/ui.hpp>
+
 #include <ui/general/simple_player.hpp>
 
 using namespace geode::prelude;
+using namespace util::ui;
 
 bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     if (!CCNode::init()) return false;
