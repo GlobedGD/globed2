@@ -58,7 +58,6 @@ bool GlobedUserChatCell::init(const std::string& username, int accid, const std:
 
     auto* nameLabel = Build<CCLabelBMFont>::create(username.c_str(), "goldFont.fnt")
         .scale(0.5f)
-        .anchorPoint(0.f, 0.5f)
         .id("playername")
         .zOrder(2)
         .collect();
@@ -75,12 +74,16 @@ bool GlobedUserChatCell::init(const std::string& username, int accid, const std:
 
     auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserChatCell::onUser))
         .pos(3.f, 35.f)
-        .anchorPoint(0.f, 0.5f)
         .zOrder(0)
+        .scaleMult(1.1f)
         .parent(playerBundle)
         .collect();
 
     playerBundle->updateLayout();
+
+    // set the zorder of the button to be the highest, so that when you hold it, the badge and playre icon are behind
+    // this also *must* be called after updateLayout().
+    usernameButton->setZOrder(10);
 
     auto messageTextLabel = CCLabelBMFont::create(messageText.c_str(), "chatFont.fnt");
 
