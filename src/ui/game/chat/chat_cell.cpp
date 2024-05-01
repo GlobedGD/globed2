@@ -83,14 +83,14 @@ bool GlobedUserChatCell::init(std::string username, int accid, std::string messa
     menu->setID("chat-messages");
     this->addChild(menu);
 
-    auto messageText = CCLabelBMFont::create(messageText.c_str(), "chatFont.fnt");
+    auto messageTextLabel = CCLabelBMFont::create(messageText.c_str(), "chatFont.fnt");
 
-    messageText->setPosition(4, 10);
-    messageText->setScale(.65);
-    messageText->setAnchorPoint(ccp(0, 0.5));
-    messageText->setID("message-text");
+    messageTextLabel->setPosition(4, 10);
+    messageTextLabel->setScale(.65);
+    messageTextLabel->setAnchorPoint(ccp(0, 0.5));
+    messageTextLabel->setID("message-text");
 
-    this->addChild(messageText);
+    this->addChild(messageTextLabel);
 
     return true;
 }
