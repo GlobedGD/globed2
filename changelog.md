@@ -1,5 +1,6 @@
 ## v1.3.8
 
+* Badges🔥
 * Add a credits menu
 * Add a Compressed Player Count setting which changes the "X players" label to be more compact (thanks [Uproxide](user:25397826)!)
 * Add integration into the level editor (thanks [alk](user:11535118))

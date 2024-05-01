@@ -35,7 +35,7 @@ jobs:
         with:
           combine: true
           cli: "v2.12.0"
-          sdk: 'latest'
+          sdk: 'nightly'
           target: ${{ matrix.config.target }}
           # bindings: "dankmeme01/bindings"
 

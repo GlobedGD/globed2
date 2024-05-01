@@ -606,7 +606,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     self->m_fields->camState.visibleOrigin = CCPoint{0.f, 0.f};
     self->m_fields->camState.visibleCoverage = CCDirector::get()->getWinSize();
 
-    self->m_fields->camState.cameraOrigin = self->m_gameState.m_unk20c; // m_unk20c or m_unk2c0, same values
+    self->m_fields->camState.cameraOrigin = self->m_gameState.m_cameraPosition;
     self->m_fields->camState.zoom = self->m_objectLayer->getScale();
 
     // update ourselves
