@@ -53,17 +53,30 @@ bool GlobedUserChatCell::init(const std::string& username, int accid, const std:
     Build<GlobedSimplePlayer>::create(getAccountData(accid).icons)
         .scale(0.475f)
         .id("playericon")
+        .zOrder(-1)
         .parent(playerBundle);
 
     auto* nameLabel = Build<CCLabelBMFont>::create(username.c_str(), "goldFont.fnt")
         .scale(0.5f)
         .anchorPoint(0.f, 0.5f)
         .id("playername")
+        .zOrder(2)
         .collect();
+
+    PlayerAccountData data = getAccountData(accid);
+
+    CCSprite* badgeIcon = nullptr;
+	if (data.specialUserData.has_value()) {
+		badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData->nameColor);
+        badgeIcon->setPosition(ccp(nameLabel->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameLabel->getPositionY()));
+        badgeIcon->setZOrder(1);
+        playerBundle->addChild(badgeIcon);
+    }
 
     auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserChatCell::onUser))
         .pos(3.f, 35.f)
         .anchorPoint(0.f, 0.5f)
+        .zOrder(0)
         .parent(playerBundle)
         .collect();
 

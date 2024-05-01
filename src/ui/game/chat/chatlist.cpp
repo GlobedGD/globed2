@@ -31,7 +31,7 @@ bool GlobedChatListPopup::setup() {
     menu->addChild(inp);
 
     inp->setCommonFilter(CommonFilter::Any);
-    inp->setMaxCharCount(40);
+    inp->setMaxCharCount(60);
 
     CCSprite* reviewSpr = CCSprite::createWithSpriteFrameName("GJ_chatBtn_001.png");
     reviewSpr->setScale(0.75);
@@ -96,7 +96,7 @@ void GlobedChatListPopup::createMessage(int accountID, const std::string& messag
 
     std::string username = "N/A";
 
-    PlayerAccountData yeah;
+    PlayerAccountData yeah = PlayerAccountData::DEFAULT_DATA;
     // if account ID is ours, then display our username
     if (accountID == GJAccountManager::sharedState()->m_accountID) username = GJAccountManager::sharedState()->m_username;
     // if account ID is in the player cache, get the username from there
