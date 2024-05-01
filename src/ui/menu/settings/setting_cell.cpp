@@ -323,6 +323,7 @@ void GlobedSettingCell::enterPressed(CCTextInputNode* p0) {}
 GlobedSettingCell* GlobedSettingCell::create(void* settingStorage, Type settingType, const char* name, const char* desc, const Limits& limits) {
     auto ret = new GlobedSettingCell;
     if (ret->init(settingStorage, settingType, name, desc, limits)) {
+        ret->autorelease();
         return ret;
     }
 

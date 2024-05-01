@@ -99,6 +99,7 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
 CentralServerListCell* CentralServerListCell::create(const CentralServer& data, int index, ServerSwitcherPopup* parent) {
     auto ret = new CentralServerListCell;
     if (ret->init(data, index, parent)) {
+        ret->autorelease();
         return ret;
     }
 

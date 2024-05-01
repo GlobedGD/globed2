@@ -52,12 +52,11 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     // hgm->setPlayerStreak(oldStreak);
     // hgm->setPlayerShipStreak(oldShipStreak);
 
-    Build<CCLabelBMFont>::create(data.name.c_str(), "chatFont.fnt")
-        .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
+    Build<GlobedNameLabel>::create(data.name)
         .visible(settings.players.showNames && (!isSecond || settings.players.dualName))
-        .store(playerName)
         .pos(0.f, 25.f)
-        .parent(this);
+        .parent(this)
+        .store(nameLabel);
 
     this->updateIcons(data.icons);
 
@@ -81,11 +80,10 @@ void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
     auto* gm = GameManager::get();
     auto& settings = GlobedSettings::get();
 
-    if (parent->getAccountData().specialUserData.has_value()) {
-        badgeIcon = util::ui::createBadgeIfSpecial(parent->getAccountData().specialUserData->nameColor);
-        badgeIcon->setOpacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f));
-        this->addChild(badgeIcon);
-	}
+    // update the name and the badge
+    const auto& accountData = parent->getAccountData();
+    nameLabel->updateData(accountData.name, accountData.specialUserData);
+    nameLabel->updateOpacity(settings.players.nameOpacity);
 
     playerIcon->togglePlatformerMode(gameLayer->m_level->isPlatformer());
 
@@ -175,12 +173,10 @@ void ComplexVisualPlayer::updateData(
     }
 
     // set the pos for status icons and name (ask rob not me)
-    playerName->setPosition(data.position + CCPoint{0.f, 25.f});
-
-    if (badgeIcon != nullptr) badgeIcon->setPosition(data.position + ccp(playerName->getScaledContentSize().width / 2.f + 11.5f, 25.f));
+    nameLabel->setPosition(data.position + CCPoint{0.f, 25.f});
 
     if (statusIcons) {
-        statusIcons->setPosition(data.position + CCPoint{0.f, playerName->isVisible() ? 40.f : 25.f});
+        statusIcons->setPosition(data.position + CCPoint{0.f, nameLabel->isVisible() ? 40.f : 25.f});
     }
 
     if (!playerData.isDead && playerIcon->getOpacity() == 0) {
@@ -329,12 +325,6 @@ void ComplexVisualPlayer::updateData(
         playerIcon->m_unk65c = false;
         if (playerIcon->m_regularTrail) playerIcon->m_regularTrail->setVisible(false);
     }
-}
-
-void ComplexVisualPlayer::updateName() {
-    playerName->setString(parent->getAccountData().name.c_str());
-    auto& sud = parent->getAccountData().specialUserData;
-    sud.has_value() ? playerName->setColor(sud->nameColor) : playerName->setColor({255, 255, 255});
 }
 
 void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
@@ -627,9 +617,7 @@ void ComplexVisualPlayer::updateOpacity() {
 
     // set name opacity too if hideNearby is enabled
     if (settings.players.hideNearby) {
-        unsigned char nearbyOpacity = static_cast<unsigned char>(settings.players.nameOpacity * mult * 255.f);
-        playerName->setOpacity(nearbyOpacity);
-        if (badgeIcon) badgeIcon->setOpacity(nearbyOpacity);
+        nameLabel->updateOpacity(settings.players.nameOpacity * mult);
     }
 }
 

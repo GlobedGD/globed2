@@ -59,6 +59,7 @@ void AudioDeviceCell::refreshDevice(const AudioRecordingDevice& device, int acti
 AudioDeviceCell* AudioDeviceCell::create(const AudioRecordingDevice& device, AudioSetupPopup* parent, int activeId) {
     auto ret = new AudioDeviceCell;
     if (ret->init(device, parent, activeId)) {
+        ret->autorelease();
         return ret;
     }
 

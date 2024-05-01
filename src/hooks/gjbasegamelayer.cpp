@@ -453,26 +453,21 @@ void GlobedGJBGL::setupUi() {
         auto ownData = pcm.getOwnAccountData();
         auto ownSpecial = pcm.getOwnSpecialData();
 
-        auto color = ccc3(255, 255, 255);
-        if (ownSpecial) {
-            color = ownSpecial->nameColor;
-        }
-
-        Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
-            .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
-            .color(color)
+        Build<GlobedNameLabel>::create(ownData.name, ownSpecial)
             .parent(m_objectLayer)
             .id("self-name"_spr)
             .store(m_fields->ownNameLabel);
 
+        m_fields->ownNameLabel->updateOpacity(settings.players.nameOpacity);
+
         if (settings.players.dualName) {
-            Build<CCLabelBMFont>::create(ownData.name.c_str(), "chatFont.fnt")
+            Build<GlobedNameLabel>::create(ownData.name, ownSpecial)
                 .visible(false)
-                .opacity(static_cast<unsigned char>(settings.players.nameOpacity * 255.f))
-                .color(color)
                 .parent(m_objectLayer)
                 .id("self-name-p2"_spr)
                 .store(m_fields->ownNameLabel2);
+
+            m_fields->ownNameLabel2->updateOpacity(settings.players.nameOpacity);
         }
     }
 }
@@ -671,11 +666,11 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     // update self names
     if (self->m_fields->ownNameLabel) {
-        if (!self->m_player1->m_isHidden) {
+        if (self->m_player1->m_isHidden) {
+            self->m_fields->ownNameLabel->setVisible(false);
+        } else {
             self->m_fields->ownNameLabel->setVisible(true);
             self->m_fields->ownNameLabel->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
-        } else {
-            self->m_fields->ownNameLabel->setVisible(false);
         }
 
         if (self->m_fields->ownNameLabel2) {

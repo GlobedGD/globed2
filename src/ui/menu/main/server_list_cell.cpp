@@ -169,6 +169,7 @@ void ServerListCell::requestTokenAndConnect() {
 ServerListCell* ServerListCell::create(const GameServer& gsview, bool active) {
     auto ret = new ServerListCell;
     if (ret->init(gsview, active)) {
+        ret->autorelease();
         return ret;
     }
 

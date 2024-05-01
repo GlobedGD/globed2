@@ -321,6 +321,7 @@ void GlobedUserCell::onOpenProfile(CCObject*) {
 GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
     auto ret = new GlobedUserCell;
     if (ret->init(entry, data)) {
+        ret->autorelease();
         return ret;
     }
 
