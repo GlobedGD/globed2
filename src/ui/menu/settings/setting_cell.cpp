@@ -95,11 +95,10 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 text = "String??";
             }
 
-            Build<CCMenuItemSpriteExtra>::create(
-                Build<ButtonSprite>::create(text, "goldFont.fnt", "GJ_button_04.png", .7f).collect(),
-                this,
-                menu_selector(GlobedSettingCell::onInteractiveButton)
-            )
+            Build<ButtonSprite>::create(text, "goldFont.fnt", "GJ_button_04.png", .7f)
+                .intoMenuItem([this](auto* sender) {
+                    this->onInteractiveButton(sender);
+                })
                 .anchorPoint(0.5f, 0.5f)
                 .pos(CELL_WIDTH - 10.f, CELL_HEIGHT / 2)
                 .id("input-interactive-btn"_spr)

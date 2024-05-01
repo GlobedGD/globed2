@@ -12,7 +12,5 @@ public:
 private:
     bool init(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons);
 
-    void onNameClicked(cocos2d::CCObject*);
-
     int accountId;
 };

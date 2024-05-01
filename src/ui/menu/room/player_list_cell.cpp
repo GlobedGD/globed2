@@ -46,18 +46,21 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         .id("badge-wrapper"_spr)
         .collect();
 
+    float labelWidth;
     auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
         .color(nameColor)
         .limitLabelWidth(170.f, 0.6f, 0.1f)
-        .collect();
-
-    label->setScale(label->getScale() * 0.9f);
-
-    auto* btn = Build<CCMenuItemSpriteExtra>::create(label, this, menu_selector(PlayerListCell::onOpenProfile))
-        .pos(simplePlayer->getPositionX() + label->getScaledContentSize().width / 2.f + 25.f, CELL_HEIGHT / 2.f)
+        .with<CCLabelBMFont>([&labelWidth](CCLabelBMFont* label) {
+            label->setScale(label->getScale() * 0.9f);
+            labelWidth = label->getScaledContentSize().width;
+        })
+        .intoMenuItem([this] {
+            this->onOpenProfile(nullptr);
+        })
+        .pos(simplePlayer->getPositionX() + labelWidth / 2.f + 25.f, CELL_HEIGHT / 2.f)
+        .scaleMult(1.1f)
         .parent(badgeWrapper)
         .collect();
-    btn->m_scaleMultiplier = 1.1f;
 
     if (data.specialUserData.has_value()) {
         auto badge = createBadgeIfSpecial(nameColor);

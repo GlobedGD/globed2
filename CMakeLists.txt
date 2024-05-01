@@ -101,7 +101,7 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # our favorite libraries
-CPMAddPackage("gh:dankmeme01/uibuilder#242abd2")
+CPMAddPackage("gh:camila314/uibuilder#5cf1f33")
 CPMAddPackage("gh:xiph/opus#main")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 CPMAddPackage(
