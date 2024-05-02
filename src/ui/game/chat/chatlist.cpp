@@ -7,6 +7,7 @@
 #include <util/ui.hpp>
 #include <util/misc.hpp>
 #include <data/packets/all.hpp>
+#include <ui/game/chat_overlay/overlay.hpp>
 
 using namespace geode::prelude;
 
@@ -79,15 +80,19 @@ void GlobedChatListPopup::onClose(CCObject*) {
 }
 
 void GlobedChatListPopup::onChat(CCObject* sender) {
-    auto& nm = NetworkManager::get();
-    nm.send(ChatMessagePacket::create(std::string_view(inp->getString())));
+    if (inp->getString().size() != 0) {
+        auto& nm = NetworkManager::get();
+        nm.send(ChatMessagePacket::create(std::string_view(inp->getString())));
 
-    auto GAM = GJAccountManager::sharedState();
+        auto GAM = GJAccountManager::sharedState();
 
-    GlobedGJBGL::get()->m_fields->chatMessages.push_back({GAM->m_accountID, inp->getString()});
-    createMessage(GAM->m_accountID, inp->getString());
+        GlobedGJBGL::get()->m_fields->chatMessages.push_back({GAM->m_accountID, inp->getString()});
+        createMessage(GAM->m_accountID, inp->getString());
 
-    inp->setString("");
+        GlobedGJBGL::get()->m_fields->chatOverlay->addMessage(GAM->m_accountID, inp->getString());
+
+        inp->setString("");
+    }
 }
 
 void GlobedChatListPopup::createMessage(int accountID, const std::string& message) {
