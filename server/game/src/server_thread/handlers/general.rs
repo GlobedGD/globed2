@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    data::*,
-    server_thread::{GameServerThread, ServerThreadMessage},
-};
+use crate::{data::*, server_thread::GameServerThread};
 
 impl GameServerThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {

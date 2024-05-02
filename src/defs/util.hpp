@@ -4,8 +4,6 @@
 #include <config.hpp>
 #include "platform.hpp"
 
-#define GLOBED_MBO(src, type, offset) *(type*)((char*)src + offset)
-
 class singleton_use_after_dtor : public std::runtime_error {
 public:
     singleton_use_after_dtor() : std::runtime_error("attempting to use a singleton after static destruction") {}
@@ -42,3 +40,6 @@ protected:
         destructed = true;
     }
 };
+
+// gets a string from ResourceManager
+const std::string& operator ""_gstr(const char* key, size_t size);

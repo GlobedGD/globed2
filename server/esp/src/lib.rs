@@ -20,9 +20,9 @@
 use std::{fmt::Display, mem::MaybeUninit};
 mod common;
 mod fastbuffer;
+pub mod hash;
 pub mod types;
 
-pub use adler32fast;
 pub use bytebuffer::{ByteBuffer, ByteReader, Endian};
 pub use fastbuffer::FastByteBuffer;
 pub use types::*;

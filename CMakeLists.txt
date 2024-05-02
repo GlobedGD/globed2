@@ -21,6 +21,7 @@ option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
 # Check for debug build
 option(ENABLE_DEBUG "Debug mode" OFF)
+option(GLOBED_RELEASE "Release build" OFF)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}asdf" STREQUAL "asdf" OR ENABLE_DEBUG)
     set(GLOBED_IS_DEBUG ON)
@@ -31,8 +32,9 @@ if (GLOBED_IS_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
     add_compile_definitions(GEODE_DEBUG=1)
     add_compile_definitions(ASP_ENABLE_DEBUG=1)
-else()
+elseif (GLOBED_RELEASE)
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
+    set(DB_PRODUCTION_MODE ON)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
@@ -76,11 +78,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
 
-    if (GLOBED_IS_DEBUG)
-        message(STATUS "Compiling in debug, disabling iterator debugging")
-        add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
-    endif()
-
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
@@ -112,6 +109,16 @@ CPMAddPackage(
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
 CPMAddPackage("gh:dankmeme01/asp#d7910ff")
+
+# asp debug
+if (WIN32 AND GLOBED_IS_DEBUG)
+    target_compile_definitions(asp PRIVATE _HAS_ITERATOR_DEBUGGING=0)
+endif()
+
+# embed the resource file
+CPMAddPackage("gh:batterycenter/embed#73de314")
+set(B_PRODUCTION_MODE ON)
+b_embed(${PROJECT_NAME} baked-resources.json)
 
 if (GLOBED_NATIVE_ARCH)
     # Apply native architecture
