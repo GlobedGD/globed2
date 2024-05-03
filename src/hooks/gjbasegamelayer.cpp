@@ -700,18 +700,13 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
 
 SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
     PlayerIconType iconType = PlayerIconType::Cube;
-    if (player->m_isShip) iconType = PlayerIconType::Ship;
+    if (player->m_isShip) iconType = m_level->isPlatformer() ? PlayerIconType::Jetpack : PlayerIconType::Ship;
     else if (player->m_isBird) iconType = PlayerIconType::Ufo;
     else if (player->m_isBall) iconType = PlayerIconType::Ball;
     else if (player->m_isDart) iconType = PlayerIconType::Wave;
     else if (player->m_isRobot) iconType = PlayerIconType::Robot;
     else if (player->m_isSpider) iconType = PlayerIconType::Spider;
     else if (player->m_isSwing) iconType = PlayerIconType::Swing;
-
-    // TODO: reenable with next protocol bump (when server is updated)
-    // if (iconType == PlayerIconType::Ship && m_level->isPlatformer()) {
-    //     iconType = PlayerIconType::Jetpack;
-    // }
 
     auto* pobjInner = static_cast<CCNode*>(player->getChildren()->objectAtIndex(0));
 
@@ -1014,7 +1009,7 @@ void GlobedGJBGL::pausedUpdate(float dt) {
     }
 }
 
-bool GlobedGJBGL::accountForSpeedhack(size_t uniqueKey, float cap, float allowance) { // TODO test if this still works for classic speedhax
+bool GlobedGJBGL::accountForSpeedhack(size_t uniqueKey, float cap, float allowance) {
     auto* sched = CCScheduler::get();
     auto ts = sched->getTimeScale();
     if (!util::math::equal(ts, m_fields->lastKnownTimeScale)) {
@@ -1247,7 +1242,7 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
     }
 };
 
-// TODO: might not be needed now?
+// TODO: test if still needed
 void GlobedGJBGL::updateCamera(float dt) {
     if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
         GJBaseGameLayer::updateCamera(dt);
