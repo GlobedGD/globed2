@@ -115,10 +115,11 @@ if (WIN32 AND GLOBED_IS_DEBUG)
     target_compile_definitions(asp PRIVATE _HAS_ITERATOR_DEBUGGING=0)
 endif()
 
-# embed the resource file
-CPMAddPackage("gh:batterycenter/embed#73de314")
-set(B_PRODUCTION_MODE ON)
-b_embed(${PROJECT_NAME} baked-resources.json)
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/globed-codegen")
+target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/globed-codegen")
+
+include(cmake/baked_resources_gen.cmake)
+generate_baked_resources_header("${CMAKE_CURRENT_SOURCE_DIR}/embedded-resources.json" "${CMAKE_CURRENT_BINARY_DIR}/globed-codegen/embedded_resources.hpp")
 
 if (GLOBED_NATIVE_ARCH)
     # Apply native architecture

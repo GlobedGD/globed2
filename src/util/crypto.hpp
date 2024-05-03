@@ -1,5 +1,6 @@
 #pragma once
 #include <util/data.hpp>
+#include "adler32.hpp"
 
 #define CRYPTO_REQUIRE(condition, message) GLOBED_REQUIRE(condition, "crypto error: " message)
 #define CRYPTO_ERR_CHECK(result, message) CRYPTO_REQUIRE(result == 0, message)
@@ -80,7 +81,4 @@ namespace util::crypto {
 
     // calculate the Adler-32 checksum of the given data
     uint32_t adler32(const data::byte* data, size_t length);
-
-    // scalar adler32 implementation
-    uint32_t adler32Slow(const data::byte* data, size_t length);
-};
+}
