@@ -30,8 +30,6 @@ void VolumeEstimator::update(float dt) {
 
     const size_t needed = static_cast<size_t>(static_cast<float>(sampleRate) * BUFFER_SIZE * dt);
 
-    // TODO, this is a bit delayed when buffer size is 1.0, and overall broken when it's below that
-
 #ifdef __clang__
     float buf[needed];
 #else

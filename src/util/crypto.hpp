@@ -78,7 +78,4 @@ namespace util::crypto {
 
     // convert a `Base64Variant` enum to an int for libsodium API
     int base64VariantToInt(Base64Variant variant);
-
-    // calculate the Adler-32 checksum of the given data
-    uint32_t adler32(const data::byte* data, size_t length);
 }

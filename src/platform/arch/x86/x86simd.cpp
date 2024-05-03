@@ -123,17 +123,4 @@ namespace globed::simd::x86 {
             return pcmVolumeSSE(pcm, samples);
         }
     }
-
-    uint32_t adler32(const uint8_t* data, size_t length) {
-        return util::crypto::adler32Slow(data, length);
-        // const auto& features = getFeatures();
-
-        // if (features.avx2) {
-        //     return adler32AVX2(data, length);
-        // } else if (features.sse2) {
-        //     return adler32SSE2(data, length);
-        // } else {
-        //     return adler32Slow(data, length);
-        // }
-    }
 }

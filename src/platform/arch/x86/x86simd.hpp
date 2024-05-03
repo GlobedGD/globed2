@@ -39,9 +39,6 @@ namespace globed::simd::x86 {
     // Calculate the volume of pcm samples, picking the fastest possible implementation.
     float pcmVolume(const float* pcm, size_t samples);
 
-    // Calculate the adler32 checksum of the given data, picking the fastest possible implementation
-    uint32_t adler32(const uint8_t* data, size_t length);
-
 
     /* Functions written with a specific algorithm */
 
@@ -49,8 +46,4 @@ namespace globed::simd::x86 {
     float pcmVolumeSSE(const float* pcm, size_t samples);
     float GLOBED_FEATURE_AVX2 pcmVolumeAVX2(const float* pcm, size_t samples);
     float GLOBED_FEATURE_AVX512DQ pcmVolumeAVX512(const float* pcm, size_t samples);
-
-    // TODO
-    // uint32_t adler32SSE2(const uint8_t* data, size_t length);
-    // uint32_t GLOBED_FEATURE_AVX2 adler32AVX2(const uint8_t* data, size_t length);
 }

@@ -18,7 +18,7 @@ function (generate_baked_resources_header JSON_FILE HEADER_FILE)
 
         string(JSON VALUE GET ${JSON_OBJECT} ${KEY})
 
-        string(APPEND HEADER_CONTENT "        case util::crypto::adler32Const(\"${KEY}\"): return \"${VALUE}\";\n")
+        string(APPEND HEADER_CONTENT "        case util::crypto::adler32(\"${KEY}\"): return \"${VALUE}\";\n")
     endforeach()
 
     string(APPEND HEADER_CONTENT "        default: return nullptr;\n")
