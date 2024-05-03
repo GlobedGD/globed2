@@ -266,6 +266,8 @@ impl GameServerThread {
         .await
     });
 
+    /* Note: blocking logic for voice & chat packets is not in here but in the packet receiving function */
+
     gs_handler!(self, handle_voice, VoicePacket, packet, {
         let account_id = gs_needauth!(self);
 
@@ -287,6 +289,10 @@ impl GameServerThread {
 
     gs_handler!(self, handle_chat_message, ChatMessagePacket, packet, {
         let account_id = gs_needauth!(self);
+
+        if packet.message.is_empty() {
+            return Ok(());
+        }
 
         let cpkt = ChatMessageBroadcastPacket {
             player_id: account_id,

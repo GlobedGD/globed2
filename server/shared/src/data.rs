@@ -12,6 +12,8 @@ pub struct GameServerBootData {
     pub admin_key: FastString<ADMIN_KEY_LENGTH>,
     pub whitelist: bool,
     pub admin_webhook_url: String,
+    pub chat_burst_limit: u32,
+    pub chat_burst_interval: u32,
 }
 
 impl Default for GameServerBootData {
@@ -33,6 +35,8 @@ impl Default for GameServerBootData {
                 .expect("failed to convert admin key String into FastString"),
             whitelist: false,
             admin_webhook_url: String::new(),
+            chat_burst_limit: 0,
+            chat_burst_interval: 0,
         }
     }
 }

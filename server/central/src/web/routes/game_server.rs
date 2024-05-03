@@ -36,6 +36,8 @@ pub async fn boot(
         admin_key: FastString::from_str(&config.admin_key),
         whitelist: config.userlist_mode == UserlistMode::Whitelist,
         admin_webhook_url: config.admin_webhook_url.clone(),
+        chat_burst_limit: config.chat_burst_limit,
+        chat_burst_interval: config.chat_burst_interval,
     };
 
     debug!("boot data request from game server {} at {}", user_agent.0, ip_address);
