@@ -12,7 +12,7 @@
 #include <ui/game/progress/progress_icon.hpp>
 #include <ui/game/progress/progress_arrow.hpp>
 #include <ui/game/voice_overlay/overlay.hpp>
-#include <ui/game/chat_overlay/overlay.hpp>
+//#include <ui/game/chat_overlay/overlay.hpp>
 
 float adjustLerpTimeDelta(float dt);
 
@@ -53,7 +53,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     Ref<CCNode> progressBarWrapper = nullptr;
     Ref<PlayerStatusIcons> selfStatusIcons = nullptr;
     Ref<GlobedVoiceOverlay> voiceOverlay = nullptr;
-    Ref<GlobedChatOverlay> chatOverlay = nullptr;
+    //Ref<GlobedChatOverlay> chatOverlay = nullptr;
     Ref<GlobedNameLabel> ownNameLabel = nullptr;
     Ref<GlobedNameLabel> ownNameLabel2 = nullptr;
 

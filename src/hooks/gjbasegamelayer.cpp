@@ -231,12 +231,12 @@ void GlobedGJBGL::setupAudio() {
 
 #endif // GLOBED_VOICE_SUPPORT
 
-        m_fields->chatOverlay = Build<GlobedChatOverlay>::create()
+        /*m_fields->chatOverlay = Build<GlobedChatOverlay>::create()
             .parent(m_uiLayer)
             .pos(winSize.width + 35.f, winSize.height / 2.f)
             .scale(0.7f)
             .anchorPoint(0.f, 0.f)
-            .collect();
+            .collect();*/
 }
 
 void GlobedGJBGL::setupPacketListeners() {
@@ -271,7 +271,7 @@ void GlobedGJBGL::setupPacketListeners() {
     nm.addListener<ChatMessageBroadcastPacket>([this](std::shared_ptr<ChatMessageBroadcastPacket> packet) {
         this->m_fields->chatMessages.push_back({packet->sender, packet->message});
 
-        m_fields->chatOverlay->addMessage(packet->sender, packet->message);
+        //m_fields->chatOverlay->addMessage(packet->sender, packet->message);
     });
 
     nm.addListener<VoiceBroadcastPacket>([this](std::shared_ptr<VoiceBroadcastPacket> packet) {

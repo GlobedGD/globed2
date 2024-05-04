@@ -7,7 +7,7 @@
 #include <util/ui.hpp>
 #include <util/misc.hpp>
 #include <data/packets/all.hpp>
-#include <ui/game/chat_overlay/overlay.hpp>
+//#include <ui/game/chat_overlay/overlay.hpp>
 
 using namespace geode::prelude;
 
@@ -89,7 +89,7 @@ void GlobedChatListPopup::onChat(CCObject* sender) {
         GlobedGJBGL::get()->m_fields->chatMessages.push_back({GAM->m_accountID, inp->getString()});
         createMessage(GAM->m_accountID, inp->getString());
 
-        GlobedGJBGL::get()->m_fields->chatOverlay->addMessage(GAM->m_accountID, inp->getString());
+        //GlobedGJBGL::get()->m_fields->chatOverlay->addMessage(GAM->m_accountID, inp->getString());
 
         inp->setString("");
     }
