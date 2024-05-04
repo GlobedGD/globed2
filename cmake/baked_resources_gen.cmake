@@ -2,6 +2,22 @@ function (generate_baked_resources_header JSON_FILE HEADER_FILE)
     # read the file
     file(READ ${JSON_FILE} JSON_CONTENT)
 
+    # check md5
+    string(MD5 JSON_HASH "${JSON_CONTENT}")
+
+    # do not regenerate the file unless the json was changed
+    if (EXISTS "${HEADER_FILE}" AND EXISTS "${HEADER_FILE}.md5")
+        file(READ "${HEADER_FILE}.md5" JSON_FS_HASH)
+
+        if (JSON_HASH STREQUAL JSON_FS_HASH)
+            message(STATUS "Embedded resource hash matches, not regenerating")
+            return()
+        endif()
+    endif()
+
+    message(STATUS "Generating embedded resources header")
+    file(WRITE "${HEADER_FILE}.md5" "${JSON_HASH}")
+
     string(JSON JSON_OBJECT GET ${JSON_CONTENT} strings)
 
     set(HEADER_CONTENT "#pragma once\n")
