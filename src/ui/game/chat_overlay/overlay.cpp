@@ -1,6 +1,5 @@
 #include "overlay.hpp"
 
-#include <audio/voice_playback_manager.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 #include <managers/profile_cache.hpp>
 
