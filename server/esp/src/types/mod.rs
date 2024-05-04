@@ -1,10 +1,12 @@
 mod bits;
+mod either;
 mod fast_string;
 mod fast_vec;
 mod finite;
 mod remainder_bytes;
 
 pub use bits::Bits;
+pub use either::Either;
 pub use fast_string::FastString;
 pub use fast_vec::FastVec;
 pub use finite::{FiniteF32, FiniteF64};

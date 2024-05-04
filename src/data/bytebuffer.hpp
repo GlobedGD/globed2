@@ -6,6 +6,7 @@
 #include <fmt/format.h>
 
 #include "basic.hpp"
+#include "types/basic/either.hpp"
 #include "bitbuffer.hpp"
 #include <util/data.hpp>
 #include <util/misc.hpp>
@@ -307,6 +308,8 @@ protected:
             return this->pcDecodePair<typename T::first_type, typename T::second_type>();
         } else if constexpr (util::misc::IsStdOptional<T>::value) {
             return this->pcDecodeOptional<typename T::value_type>();
+        } else if constexpr (util::misc::IsEither<T>::value) {
+            return this->pcDecodeEither<typename T::first_type, typename T::second_type>();
         } else {
             return this->customDecode<T>();
         }
@@ -320,6 +323,8 @@ protected:
             this->pcEncodePair<typename T::first_type, typename T::second_type>(value);
         } else if constexpr (util::misc::IsStdOptional<T>::value) {
             this->pcEncodeOptional<typename T::value_type>(value);
+        } else if constexpr (util::misc::IsEither<T>::value) {
+            this->pcEncodeEither(value);
         } else if constexpr (std::is_same_v<T, ByteBuffer>) {
             this->rawWriteBytes(value.data().data(), value.size());
         } else {
@@ -388,6 +393,32 @@ protected:
 
         if (opt.has_value()) {
             this->writeValue<T>(opt.value());
+        }
+    }
+
+    // Either
+
+    template <typename T, typename Y>
+    DecodeResult<Either<T, Y>> pcDecodeEither() {
+        GLOBED_UNWRAP_INTO(this->readBool(), bool isSecond);
+
+        if (isSecond) {
+            GLOBED_UNWRAP_INTO(this->readValue<Y>(), Y value);
+            return Ok(std::move(Either<T, Y>(value)));
+        } else {
+            GLOBED_UNWRAP_INTO(this->readValue<T>(), T value);
+            return Ok(std::move(Either<T, Y>(value)));
+        }
+    }
+
+    template <typename T, typename Y>
+    void pcEncodeEither(const Either<T, Y>& either) {
+        this->writeBool(either.isSecond());
+
+        if (either.isSecond()) {
+            this->writeValue<Y>(either.secondRef());
+        } else {
+            this->writeValue<T>(either.firstRef());
         }
     }
 

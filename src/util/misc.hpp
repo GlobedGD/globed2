@@ -1,6 +1,7 @@
 #pragma once
 #include <defs/essential.hpp>
 #include <defs/geode.hpp>
+#include <data/types/basic/either.hpp>
 
 #include <functional>
 #include <string_view>
@@ -77,6 +78,12 @@ namespace util::misc {
 
     template <typename T>
     struct IsStdOptional<std::optional<T>> : std::true_type {};
+
+    template <typename>
+    struct IsEither : std::false_type {};
+
+    template <typename T, typename Y>
+    struct IsEither<Either<T, Y>> : std::true_type {};
 
     // If `target` is false, returns false. If `target` is true, modifies `target` to false and returns true.
     bool swapFlag(bool& target);
