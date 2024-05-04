@@ -33,12 +33,20 @@ bool GlobedUserChatCell::init(const std::string& username, int accid, const std:
 
     auto GAM = GJAccountManager::sharedState();
 
-    this->setOpacity(50);
     this->setContentSize(ccp(290, CELL_HEIGHT));
     this->setAnchorPoint(ccp(0, 0));
 
+    // background
+    Build<CCScale9Sprite>::create("square02_001.png")
+        .contentSize(this->getContentSize() * 3.f)
+        .scale(1.f / 3.f)
+        .opacity(67)
+        .zOrder(-1)
+        .anchorPoint(0.f, 0.f)
+        .parent(this);
+
     auto* playerBundle = Build<CCMenu>::create()
-        .pos(0.f + 2.f, CELL_HEIGHT - 2.f)
+        .pos(0.f + 4.f, CELL_HEIGHT - 2.f)
         .anchorPoint(0.f, 1.f)
         .layout(RowLayout::create()
             ->setGap(4.f)

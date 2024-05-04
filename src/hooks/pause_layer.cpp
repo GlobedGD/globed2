@@ -16,6 +16,12 @@ void GlobedPauseLayer::customSetup() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
+    auto* menu = Build<CCMenu>::create()
+        .id("playerlist-menu"_spr)
+        .pos(0.f, 0.f)
+        .parent(this)
+        .collect();
+
     Build<CCSprite>::createSpriteName("icon-players.png"_spr)
         .scale(0.9f)
         .intoMenuItem([](auto) {
@@ -23,22 +29,16 @@ void GlobedPauseLayer::customSetup() {
         })
         .pos(winSize.width - 50.f, 50.f)
         .id("btn-open-playerlist"_spr)
-        .intoNewParent(CCMenu::create())
-        .id("playerlist-menu"_spr)
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(menu);
 
     Build<CCSprite>::createSpriteName("icon-chat.png"_spr)
         .scale(0.9f)
         .intoMenuItem([](auto) {
             GlobedChatListPopup::create()->show();
         })
-        .pos(winSize.width - 50.f, 100.f)
+        .pos(winSize.width - 50.f, 90.f)
         .id("btn-open-chatlist"_spr)
-        .intoNewParent(CCMenu::create())
-        .id("chatlist-menu"_spr)
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(menu);
 
     this->schedule(schedule_selector(GlobedPauseLayer::selUpdate), 0.f);
 }

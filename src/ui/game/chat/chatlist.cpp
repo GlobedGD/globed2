@@ -14,7 +14,7 @@ using namespace geode::prelude;
 bool GlobedChatListPopup::setup() {
     m_noElasticity = true;
 
-	this->setTitle("Chat!");
+	this->setTitle("Chat");
     this->m_title->setScale(.95f);
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();
@@ -28,7 +28,7 @@ bool GlobedChatListPopup::setup() {
     menu->setPosition({this->m_title->getPositionX(),25});
     this->m_mainLayer->addChild(menu);
 
-    inp = TextInput::create(260, "talk! :D", "chatFont.fnt");
+    inp = TextInput::create(260, "Message", "chatFont.fnt");
     menu->addChild(inp);
 
     inp->setCommonFilter(CommonFilter::Any);
