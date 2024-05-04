@@ -2,7 +2,6 @@
 
 #include <sodium.h>
 #include <cstring>
-#include <cmath>
 #include <iomanip>
 #include <sstream>
 
@@ -255,24 +254,6 @@ int base64VariantToInt(Base64Variant variant) {
     }
 
     return base64VariantToInt(Base64Variant::STANDARD);
-}
-
-uint32_t adler32(const data::byte* data, size_t length) {
-    /* let them pick the best implementation */
-    return util::simd::adler32(data, length);
-}
-
-uint32_t adler32Slow(const data::byte* data, size_t length) {
-    const uint32_t MOD = 65521;
-
-    uint32_t a = 1, b = 0;
-
-    for (size_t i = 0; i < length; i++) {
-        a = (a + data[i]) % MOD;
-        b = (b + a) % MOD;
-    }
-
-    return (b << 16) | a;
 }
 
 }

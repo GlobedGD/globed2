@@ -7,7 +7,7 @@
 //! esp also provides optimized types such as `FastString` that will be more efficient in encoding/decoding,
 //! and shall be used for encoding instead of the alternatives when possible.
 
-#![feature(maybe_uninit_uninit_array)]
+#![feature(maybe_uninit_uninit_array, const_for, const_trait_impl, effects, const_mut_refs)]
 #![allow(
     clippy::must_use_candidate,
     clippy::cast_possible_truncation,
@@ -20,9 +20,9 @@
 use std::{fmt::Display, mem::MaybeUninit};
 mod common;
 mod fastbuffer;
+pub mod hash;
 pub mod types;
 
-pub use adler32fast;
 pub use bytebuffer::{ByteBuffer, ByteReader, Endian};
 pub use fastbuffer::FastByteBuffer;
 pub use types::*;

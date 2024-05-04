@@ -246,6 +246,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
             // print first 4 chars, rest is censored
             debug!("* Admin key: '{}'", censor_key(&gsbd.admin_key, 4));
         }
+
+        if gsbd.chat_burst_limit == 0 || gsbd.chat_burst_interval == 0 {
+            debug!("* Text chat ratelimit: disabled");
+        } else {
+            debug!(
+                "* Text chat ratelimit: {} messages per {}ms",
+                gsbd.chat_burst_limit, gsbd.chat_burst_interval
+            );
+        }
     }
 
     let udp_socket = match UdpSocket::bind(&startup_config.bind_address).await {

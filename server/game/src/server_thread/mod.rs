@@ -81,14 +81,30 @@ pub struct GameServerThread {
     message_queue: Mutex<VecDeque<ServerThreadMessage>>,
     message_notify: Notify,
     rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
+    voice_rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
+    chat_rate_limiter: Option<LockfreeMutCell<SimpleRateLimiter>>,
 }
 
 impl GameServerThread {
     /* public api for the main server */
 
     pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
-        let rl_request_limit = (game_server.bridge.central_conf.lock().tps + 6) as usize;
-        let rate_limiter = SimpleRateLimiter::new(rl_request_limit, Duration::from_millis(925));
+        let (rate_limiter, voice_rate_limiter, chat_rate_limiter) = {
+            let conf = game_server.bridge.central_conf.lock();
+
+            (
+                SimpleRateLimiter::new(conf.tps as usize + 6, Duration::from_millis(900)),
+                SimpleRateLimiter::new(5, Duration::from_millis(1000)),
+                if conf.chat_burst_interval != 0 && conf.chat_burst_limit != 0 {
+                    Some(SimpleRateLimiter::new(
+                        conf.chat_burst_limit as usize,
+                        Duration::from_millis(u64::from(conf.chat_burst_interval)),
+                    ))
+                } else {
+                    None
+                },
+            )
+        };
 
         Self {
             game_server,
@@ -111,6 +127,8 @@ impl GameServerThread {
             message_queue: Mutex::new(VecDeque::new()),
             message_notify: Notify::new(),
             rate_limiter: LockfreeMutCell::new(rate_limiter),
+            voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
+            chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
         }
     }
 
@@ -350,14 +368,28 @@ impl GameServerThread {
             return false;
         }
 
-        if !voice {
-            // chat packet - is permitted at this point
-            return true;
-        }
+        // check for slowmode stuffs
+        if voice {
+            if len > MAX_VOICE_PACKET_SIZE {
+                // voice packet is too big
+                return false;
+            }
 
-        if len > MAX_VOICE_PACKET_SIZE {
-            // voice packet is too big
-            return false;
+            // safety: only we can access the rate limiters of our user.
+            let block = !unsafe { self.voice_rate_limiter.get_mut().try_tick() };
+            if block {
+                return false;
+            }
+        } else {
+            // if rate limiting is disabled, do not block
+            let block = !self
+                .chat_rate_limiter
+                .as_ref()
+                .map_or(true, |x| unsafe { x.get_mut().try_tick() });
+
+            if block {
+                return false;
+            }
         }
 
         true

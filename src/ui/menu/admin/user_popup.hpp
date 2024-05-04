@@ -30,7 +30,6 @@ private:
 
     bool setup(const UserEntry& userEntry, const std::optional<PlayerRoomPreviewAccountData>& accountData) override;
     void onProfileLoaded();
-    void onOpenProfile(cocos2d::CCObject*);
     void onColorSelected(cocos2d::ccColor3B);
     void onViolationChanged(cocos2d::CCObject* sender);
     void onViolationDurationChanged(cocos2d::CCObject* sender);

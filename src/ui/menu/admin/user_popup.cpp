@@ -52,11 +52,14 @@ void AdminUserPopup::onProfileLoaded() {
         .store(nameLayout);
 
     // name label
-    auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
+    Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
         .limitLabelWidth(160.f, 0.8f, 0.1f)
-        .collect();
+        .intoMenuItem([this] {
+            auto& data = accountData.value();
 
-    auto* btn = Build<CCMenuItemSpriteExtra>::create(label, this, menu_selector(AdminUserPopup::onOpenProfile))
+            GameLevelManager::sharedState()->storeUserName(data.userId, data.accountId, data.name);
+            ProfilePage::create(data.accountId, false)->show();
+        })
         .parent(nameLayout)
         .collect();
 
@@ -251,13 +254,6 @@ void AdminUserPopup::onProfileLoaded() {
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
-}
-
-void AdminUserPopup::onOpenProfile(CCObject*) {
-    auto& data = accountData.value();
-
-    GameLevelManager::sharedState()->storeUserName(data.userId, data.accountId, data.name);
-    ProfilePage::create(data.accountId, false)->show();
 }
 
 void AdminUserPopup::onColorSelected(ccColor3B color) {

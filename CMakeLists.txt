@@ -21,6 +21,7 @@ option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
 # Check for debug build
 option(ENABLE_DEBUG "Debug mode" OFF)
+option(GLOBED_RELEASE "Release build" OFF)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}asdf" STREQUAL "asdf" OR ENABLE_DEBUG)
     set(GLOBED_IS_DEBUG ON)
@@ -31,8 +32,9 @@ if (GLOBED_IS_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
     add_compile_definitions(GEODE_DEBUG=1)
     add_compile_definitions(ASP_ENABLE_DEBUG=1)
-else()
+elseif (GLOBED_RELEASE)
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
+    set(DB_PRODUCTION_MODE ON)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
@@ -76,11 +78,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
 
-    if (GLOBED_IS_DEBUG)
-        message(STATUS "Compiling in debug, disabling iterator debugging")
-        add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
-    endif()
-
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
@@ -101,7 +98,7 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # our favorite libraries
-CPMAddPackage("gh:dankmeme01/uibuilder#242abd2")
+CPMAddPackage("gh:camila314/uibuilder#ba63097")
 CPMAddPackage("gh:xiph/opus#main")
 CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
 CPMAddPackage(
@@ -112,6 +109,17 @@ CPMAddPackage(
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
 CPMAddPackage("gh:dankmeme01/asp#d7910ff")
+
+# asp debug
+if (WIN32 AND GLOBED_IS_DEBUG)
+    target_compile_definitions(asp PRIVATE _HAS_ITERATOR_DEBUGGING=0)
+endif()
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/globed-codegen")
+target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/globed-codegen")
+
+include(cmake/baked_resources_gen.cmake)
+generate_baked_resources_header("${CMAKE_CURRENT_SOURCE_DIR}/embedded-resources.json" "${CMAKE_CURRENT_BINARY_DIR}/globed-codegen/embedded_resources.hpp")
 
 if (GLOBED_NATIVE_ARCH)
     # Apply native architecture

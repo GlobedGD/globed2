@@ -32,7 +32,6 @@ private:
     PlayerStore::Entry _data;
 
     bool init(const PlayerStore::Entry& entry, const PlayerAccountData& data);
-    void onOpenProfile(cocos2d::CCObject*);
     void makeButtons();
     void updateUsernameLayout();
 };

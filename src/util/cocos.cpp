@@ -178,6 +178,8 @@ namespace util::cocos {
         size_t imgCount = _imguard->size();
         _imguard.unlock();
 
+        log::debug("preload: loading images ({} total)", imgCount);
+
         asp::Channel<std::pair<size_t, CCImage*>> textureInitRequests;
 
         for (size_t i = 0; i < imgCount; i++) {
@@ -215,6 +217,8 @@ namespace util::cocos {
             });
         }
 
+        log::debug("preload: initializing gl textures");
+
         // initialize all the textures (must be done on the main thread)
         while (true) {
             if (textureInitRequests.empty()) {
@@ -245,7 +249,7 @@ namespace util::cocos {
             image->release();
         }
 
-        log::debug("preload: initialized textures");
+        log::debug("preload: initialized textures, adding sprite frames");
 
         // now, add sprite frames
         for (size_t i = 0; i < imgCount; i++) {

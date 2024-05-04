@@ -53,14 +53,19 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         nameColor = data.specialUserData->nameColor;
     }
 
-    auto* nameLabel = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
+    auto* nameButton = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
         .color(nameColor)
         .limitLabelWidth(140.f, 0.5f, 0.1f)
-        .collect();
+        .intoMenuItem([this] {
+            bool myself = accountData.accountId == GJAccountManager::get()->m_accountID;
+            if (!myself) {
+                GameLevelManager::sharedState()->storeUserName(accountData.userId, accountData.accountId, accountData.name);
+            }
 
-    auto* nameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserCell::onOpenProfile))
-        .parent(usernameLayout)
+            ProfilePage::create(accountData.accountId, myself)->show();
+        })
         .scaleMult(1.1f)
+        .parent(usernameLayout)
         .collect();
 
     CCSprite* badgeIcon = nullptr;
@@ -311,15 +316,6 @@ void GlobedUserCell::makeButtons() {
     buttonsWrapper->setContentSize({maxWidth, 20.f});
 
     buttonsWrapper->updateLayout();
-}
-
-void GlobedUserCell::onOpenProfile(CCObject*) {
-    bool myself = accountData.accountId == GJAccountManager::get()->m_accountID;
-    if (!myself) {
-        GameLevelManager::sharedState()->storeUserName(accountData.userId, accountData.accountId, accountData.name);
-    }
-
-    ProfilePage::create(accountData.accountId, myself)->show();
 }
 
 GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data) {

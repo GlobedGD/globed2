@@ -22,14 +22,13 @@ bool GlobedCreditsPlayer::init(const std::string_view name, const std::string_vi
         .collect();
 
     // name
-    auto cl = Build<CCLabelBMFont>::create(std::string(nickname).c_str(), "goldFont.fnt")
-        .scale(0.45f)
-        .collect();
-
-    cl->limitLabelWidth(55.f, 0.45f, 0.05f);
-
     CCMenuItemSpriteExtra* nameLabel;
-    auto* menu = Build(CCMenuItemSpriteExtra::create(cl, this, menu_selector(GlobedCreditsPlayer::onNameClicked)))
+    auto menu = Build<CCLabelBMFont>::create(std::string(nickname).c_str(), "goldFont.fnt")
+        .scale(0.45f)
+        .limitLabelWidth(55.f, 0.45f, 0.05f)
+        .intoMenuItem([accountId] {
+            ProfilePage::create(accountId, false)->show();
+        })
         .pos(0.f, 24.f)
         .store(nameLabel)
         .intoNewParent(CCMenu::create())
@@ -50,10 +49,6 @@ bool GlobedCreditsPlayer::init(const std::string_view name, const std::string_vi
     menu->setPosition(menu->getPosition() + delta);
 
     return true;
-}
-
-void GlobedCreditsPlayer::onNameClicked(cocos2d::CCObject*) {
-    ProfilePage::create(accountId, false)->show();
 }
 
 GlobedCreditsPlayer* GlobedCreditsPlayer::create(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {

@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-adler32fast = "1.1.0"
+simd-adler32 = { version = "0.3.7", default-features = false }
 bytebuffer = "2.2.0"
 crc32fast = "1.4.0"

@@ -79,9 +79,11 @@ Note that the server is written with security in mind, so many of those options 
 | `game_servers` | `[]` | ✅ | List of game servers that will be sent to the clients (see below for the format) |
 | `maintenance` | `false` | ⏳ | When enabled, anyone trying to connect will get an appropriate error message saying that the server is under maintenance |
 | `status_print_interval` | `7200` | ⚠️ | How often (in seconds) the game servers will print various status information to the console, 0 to disable |
-| `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none`. See `userlist` property for more information |
+| `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none` (same as `blacklist`). When set to `whitelist`, players will need to be first whitelisted before being able to join |
 | `tps` | `30` | ⏳ | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
 | `admin_webhook_url` | `(empty)` | ⏳ | When enabled, admin actions (banning, muting, etc.) will send a message to the given discord webhook URL |
+| `chat_burst_limit` | `0` | ⏳ | Controls the amount of text chat messages users can send in a specific period of time, before getting rate limited. 0 to disable |
+| `chat_burst_interval` | `0` | ⏳ | Controls the period of time for the `chat_burst_limit_setting`. Time is in milliseconds |
 | `admin_key`<sup>*</sup> | `(random)` | ⏳ | The password used to unlock the admin panel in-game, must be 32 characters or less |
 | `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `gd_api_account` and `gd_api_gjp` accordingly if you enable this setting |
 | `gd_api_account`<sup>*</sup> | `0` | ❌ | Account ID of a bot account that will be used to verify account ownership |

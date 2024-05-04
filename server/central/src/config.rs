@@ -67,6 +67,14 @@ fn default_admin_webhook_url() -> String {
     String::new()
 }
 
+const fn default_chat_burst_limit() -> u32 {
+    2
+}
+
+const fn default_chat_burst_interval() -> u32 {
+    3000
+}
+
 fn default_secret_key() -> String {
     let rand_string = generate_alphanum_string(32);
 
@@ -127,6 +135,13 @@ pub struct ServerConfig {
 
     #[serde(default = "default_admin_webhook_url")]
     pub admin_webhook_url: String,
+
+    // chat limits
+    #[serde(default = "default_chat_burst_limit")]
+    pub chat_burst_limit: u32,
+
+    #[serde(default = "default_chat_burst_interval")]
+    pub chat_burst_interval: u32,
 
     // security
     #[serde(default = "default_admin_key")]
