@@ -24,7 +24,7 @@ PlayerAccountData getAccountData(int id) {
     return PlayerAccountData::DEFAULT_DATA;
 }
 
-bool GlobedUserChatCell::init(const std::string& username, int accid, const std::string& messageText) {
+bool GlobedChatCell::init(const std::string& username, int accid, const std::string& messageText) {
     if (!CCLayerColor::init())
         return false;
 
@@ -80,7 +80,7 @@ bool GlobedUserChatCell::init(const std::string& username, int accid, const std:
         playerBundle->addChild(badgeIcon);
     }
 
-    auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedUserChatCell::onUser))
+    auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedChatCell::onUser))
         .pos(3.f, 35.f)
         .zOrder(0)
         .scaleMult(1.1f)
@@ -97,21 +97,31 @@ bool GlobedUserChatCell::init(const std::string& username, int accid, const std:
 
     messageTextLabel->setPosition(4, 17);
     messageTextLabel->limitLabelWidth(260.0f, 0.8f, 0.0f);
-    //messageTextLabel->setScale(.65);
     messageTextLabel->setAnchorPoint(ccp(0, 0.5));
     messageTextLabel->setID("message-text");
+
+    ccColor3B textColor = ccc3(255, 255, 255);
+    if (data.specialUserData.has_value()) {
+        textColor = data.specialUserData->nameColor;
+        if (textColor == ccc3(119, 255, 255)) textColor = ccc3(194, 255, 255);
+        if (textColor == ccc3(15, 239, 195)) textColor = ccc3(255, 181, 191);
+        if (textColor == ccc3(233, 30, 99)) textColor = ccc3(185, 255, 208);
+        if (textColor == ccc3(52, 152, 219)) textColor = ccc3(172, 207, 255);
+    }
+
+    messageTextLabel->setColor(textColor);
 
     this->addChild(messageTextLabel);
 
     return true;
 }
 
-void GlobedUserChatCell::onUser(CCObject* sender) {
+void GlobedChatCell::onUser(CCObject* sender) {
     ProfilePage::create(accountId, GJAccountManager::sharedState()->m_accountID == accountId)->show();
 }
 
-GlobedUserChatCell* GlobedUserChatCell::create(const std::string& username, int aid, const std::string& messageText) {
-    auto* ret = new GlobedUserChatCell;
+GlobedChatCell* GlobedChatCell::create(const std::string& username, int aid, const std::string& messageText) {
+    auto* ret = new GlobedChatCell;
     if (ret->init(username, aid, messageText)) {
         ret->autorelease();
         return ret;

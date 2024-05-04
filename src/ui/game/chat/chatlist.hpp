@@ -17,7 +17,7 @@ protected:
     cocos2d::CCLayer* layer2;
     geode::TextInput* inp;
     cocos2d::CCMenu* menu;
-    std::vector<GlobedUserChatCell*> messageCells;
+    std::vector<GlobedChatCell*> messageCells;
 
     float nextY = 0.f;
     int messages = 0;

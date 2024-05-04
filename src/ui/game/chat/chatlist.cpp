@@ -107,20 +107,20 @@ void GlobedChatListPopup::createMessage(int accountID, const std::string& messag
     // if account ID is in the player cache, get the username from there
     if (pcm.getData(accountID)) username = pcm.getData(accountID).value().name;
 
-    auto cell = GlobedUserChatCell::create(username, accountID, message);
+    auto cell = GlobedChatCell::create(username, accountID, message);
     cell->setPositionY(5.f);
     cell->setPositionX(5.f);
     scroll->m_contentLayer->addChild(cell);
     scroll->m_contentLayer->setAnchorPoint(ccp(0, 1));
 
     // move all of them up to accomodate for a new message
-    for (GlobedUserChatCell* gucci : messageCells) {
-        gucci->setPositionY(gucci->getPositionY() + GlobedUserChatCell::CELL_HEIGHT + 3.f);
+    for (GlobedChatCell* gucci : messageCells) {
+        gucci->setPositionY(gucci->getPositionY() + GlobedChatCell::CELL_HEIGHT + 3.f);
     }
     messageCells.push_back(cell);
 
     auto cells = scroll->m_contentLayer->getChildrenCount();
-    float height = std::max<float>(scroll->getContentSize().height, GlobedUserChatCell::CELL_HEIGHT * cells + (3.f * (cells + 1)) + 3.f);
+    float height = std::max<float>(scroll->getContentSize().height, GlobedChatCell::CELL_HEIGHT * cells + (3.f * (cells + 1)) + 3.f);
     scroll->m_contentLayer->setContentSize(ccp(scroll->m_contentLayer->getContentSize().width, height));
 
     //scroll->moveToBottom();

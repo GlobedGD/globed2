@@ -5,7 +5,7 @@
 #include <game/player_store.hpp>
 #include <ui/general/audio_visualizer.hpp>
 
-class GlobedUserChatCell : public cocos2d::CCLayerColor {
+class GlobedChatCell : public cocos2d::CCLayerColor {
 public:
     static constexpr float CELL_HEIGHT = 44.f;
 
@@ -14,5 +14,5 @@ public:
 
     void onUser(cocos2d::CCObject* sender);
     bool init(const std::string& username, int accid, const std::string& messageText);
-    static GlobedUserChatCell* create(const std::string& username, int aid, const std::string& messageText);
+    static GlobedChatCell* create(const std::string& username, int aid, const std::string& messageText);
 };
