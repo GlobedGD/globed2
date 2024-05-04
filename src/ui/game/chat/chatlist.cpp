@@ -111,15 +111,16 @@ void GlobedChatListPopup::createMessage(int accountID, const std::string& messag
     cell->setPositionY(5.f);
     cell->setPositionX(5.f);
     scroll->m_contentLayer->addChild(cell);
-    scroll->m_contentLayer->setAnchorPoint(ccp(0,1));
+    scroll->m_contentLayer->setAnchorPoint(ccp(0, 1));
 
     // move all of them up to accomodate for a new message
     for (GlobedUserChatCell* gucci : messageCells) {
-        gucci->setPositionY(gucci->getPositionY() + 47.f);
+        gucci->setPositionY(gucci->getPositionY() + GlobedUserChatCell::CELL_HEIGHT + 3.f);
     }
     messageCells.push_back(cell);
 
-    float height = std::max<float>(scroll->getContentSize().height, 35 * scroll->m_contentLayer->getChildrenCount());
+    auto cells = scroll->m_contentLayer->getChildrenCount();
+    float height = std::max<float>(scroll->getContentSize().height, GlobedUserChatCell::CELL_HEIGHT * cells + (3.f * (cells + 1)) + 3.f);
     scroll->m_contentLayer->setContentSize(ccp(scroll->m_contentLayer->getContentSize().width, height));
 
     //scroll->moveToBottom();
