@@ -115,7 +115,7 @@ void GlobedChatListPopup::createMessage(int accountID, const std::string& messag
 
     // move all of them up to accomodate for a new message
     for (GlobedUserChatCell* gucci : messageCells) {
-        gucci->setPositionY(gucci->getPositionY() + 35.f);
+        gucci->setPositionY(gucci->getPositionY() + 47.f);
     }
     messageCells.push_back(cell);
 

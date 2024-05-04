@@ -16,7 +16,7 @@ void GlobedPauseLayer::customSetup() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    Build<CCSprite>::createSpriteName("GJ_profileButton_001.png")
+    Build<CCSprite>::createSpriteName("icon-players.png"_spr)
         .scale(0.9f)
         .intoMenuItem([](auto) {
             GlobedUserListPopup::create()->show();
@@ -28,7 +28,7 @@ void GlobedPauseLayer::customSetup() {
         .pos(0.f, 0.f)
         .parent(this);
 
-    Build<CCSprite>::createSpriteName("accountBtn_messages_001.png")
+    Build<CCSprite>::createSpriteName("icon-chat.png"_spr)
         .scale(0.9f)
         .intoMenuItem([](auto) {
             GlobedChatListPopup::create()->show();

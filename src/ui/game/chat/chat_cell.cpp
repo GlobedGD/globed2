@@ -87,8 +87,9 @@ bool GlobedUserChatCell::init(const std::string& username, int accid, const std:
 
     auto messageTextLabel = CCLabelBMFont::create(messageText.c_str(), "chatFont.fnt");
 
-    messageTextLabel->setPosition(4, 10);
-    messageTextLabel->setScale(.65);
+    messageTextLabel->setPosition(4, 17);
+    messageTextLabel->limitLabelWidth(260.0f, 0.8f, 0.0f);
+    //messageTextLabel->setScale(.65);
     messageTextLabel->setAnchorPoint(ccp(0, 0.5));
     messageTextLabel->setID("message-text");
 
