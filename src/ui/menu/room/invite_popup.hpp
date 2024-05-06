@@ -2,26 +2,25 @@
 #include <defs/all.hpp>
 #include <data/types/gd.hpp>
 
-class RoomPopup : public geode::Popup<> {
+class InvitePopup : public geode::Popup<> {
 public:
     constexpr static float POPUP_WIDTH = 420.f;
     constexpr static float POPUP_HEIGHT = 280.f;
     constexpr static float LIST_WIDTH = 340.f;
     constexpr static float LIST_HEIGHT = 180.f;
 
-    ~RoomPopup();
+    ~InvitePopup();
 
-    static RoomPopup* create();
+    static InvitePopup* create();
 
 protected:
-    std::vector<PlayerRoomPreviewAccountData> playerList;
-    std::vector<PlayerRoomPreviewAccountData> filteredPlayerList;
+    std::vector<PlayerPreviewAccountData> playerList;
+    std::vector<PlayerPreviewAccountData> filteredPlayerList;
 
     LoadingCircle* loadingCircle = nullptr;
     GJCommentListLayer* listLayer = nullptr;
     cocos2d::CCMenu* buttonMenu;
-    Ref<CCMenuItemSpriteExtra> clearSearchButton, settingsButton, inviteButton;
-    cocos2d::CCNode* roomIdButton = nullptr;
+    Ref<CCMenuItemSpriteExtra> clearSearchButton, settingsButton;
 
     cocos2d::CCMenu* roomBtnMenu = nullptr;
     bool isWaiting = false;
@@ -35,6 +34,5 @@ protected:
     bool isLoading();
     void sortPlayerList();
     void applyFilter(const std::string_view input);
-    void setRoomTitle(uint32_t id);
-    void onCopyRoomId(cocos2d::CCObject*);
+    void setRoomTitle();
 };

@@ -15,6 +15,7 @@
 #include <util/rng.hpp>
 #include <util/debug.hpp>
 #include <util/format.hpp>
+#include <ui/menu/room/invite_notification.hpp>
 
 using namespace geode::prelude;
 using namespace util::data;
@@ -414,6 +415,15 @@ void NetworkManager::setupBuiltinListeners() {
 
     addBuiltinListener<AdminErrorPacket>([](auto packet) {
         ErrorQueues::get().warn(packet->message);
+    });
+
+    addBuiltinListener<RoomInvitePacket>([](auto packet) {
+        Loader::get()->queueInMainThread([packet] {
+            auto* notif = InviteNotification::create(packet->roomID, packet->playerData);
+            notif->setPosition(440.f, 275.f);
+
+            CCScene::get()->addChild(notif);
+        });
     });
 
     addBuiltinListener<RoomInfoPacket>([](auto packet) {

@@ -3,6 +3,7 @@
 #include "player_list_cell.hpp"
 #include "room_join_popup.hpp"
 #include "room_settings_popup.hpp"
+#include "invite_popup.hpp"
 #include <data/packets/all.hpp>
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
@@ -133,6 +134,16 @@ bool RoomPopup::setup() {
         .scaleMult(1.1f)
         .id("search-clear-btn"_spr)
         .store(clearSearchButton);
+
+    // invite button
+    Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
+        .intoMenuItem([this](auto) {
+            InvitePopup::create()->show();
+        })
+        .scaleMult(1.1f)
+        .id("invite-btn"_spr)
+        .parent(buttonMenu)
+        .store(inviteButton);
 
     Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
         .scale(0.7f)

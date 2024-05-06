@@ -39,3 +39,10 @@ pub struct LevelPlayerCountPacket; // definition intentionally missing
 pub struct RoomInfoPacket {
     pub info: RoomInfo,
 }
+
+#[derive(Packet, Encodable, StaticSize, Clone)]
+#[packet(id = 21008)]
+pub struct RoomInvitePacket {
+    pub player_data: PlayerRoomPreviewAccountData,
+    pub room_id: u32,
+}

@@ -122,3 +122,18 @@ class UpdateRoomSettingsPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(UpdateRoomSettingsPacket, (settings));
+
+class RoomSendInvitePacket : public Packet {
+    GLOBED_PACKET(11009, false, false)
+
+    RoomSendInvitePacket() {}
+    RoomSendInvitePacket(const std::string& player) : player(player) {}
+
+    static std::shared_ptr<Packet> create(const std::string& player) {
+        return std::make_shared<RoomSendInvitePacket>(player);
+    }
+
+    std::string player;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(RoomSendInvitePacket, (player));
