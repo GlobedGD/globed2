@@ -18,6 +18,7 @@ pub struct CreateRoomPacket;
 #[packet(id = 11003)]
 pub struct JoinRoomPacket {
     pub room_id: u32,
+    pub room_token: u32,
 }
 
 #[derive(Packet, Decodable)]
@@ -47,5 +48,5 @@ pub struct UpdateRoomSettingsPacket {
 #[derive(Packet, Decodable)]
 #[packet(id = 11009)]
 pub struct RoomSendInvitePacket {
-    pub player: FastString<MAX_NAME_SIZE>,
+    pub player: i32,
 }

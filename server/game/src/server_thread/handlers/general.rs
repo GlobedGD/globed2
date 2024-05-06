@@ -1,3 +1,5 @@
+use globed_shared::debug;
+
 use super::*;
 use crate::{data::*, server_thread::GameServerThread, server_thread::ServerThreadMessage};
 
@@ -37,32 +39,56 @@ impl GameServerThread {
     gs_handler!(self, handle_create_room, CreateRoomPacket, _packet, {
         let account_id = gs_needauth!(self);
 
-        // if we are already in a room, just return the same room ID, otherwise create a new one
-        let mut room_id: u32 = self.room_id.load(Ordering::Relaxed);
+        let room_id: u32 = self.room_id.load(Ordering::Relaxed);
 
-        if room_id == 0 {
-            room_id = self.game_server.state.room_manager.create_room(account_id);
-            self.room_id.store(room_id, Ordering::Relaxed);
-        }
+        // if we are already in a room, just return the same room info, otherwise create a new one
+        let room_info = if room_id == 0 {
+            let room_info = self.game_server.state.room_manager.create_room(account_id);
 
-        self.send_packet_static(&RoomCreatedPacket {
-            info: RoomInfo {
-                id: room_id,
-                owner: account_id,
-                settings: RoomSettings::default(),
-            },
-        })
-        .await
+            self.room_id.store(room_info.id, Ordering::Relaxed);
+            room_info
+        } else {
+            self.game_server.state.room_manager.get_room_info(room_id)
+        };
+
+        self.send_packet_static(&RoomCreatedPacket { info: room_info }).await
     });
 
     gs_handler!(self, handle_join_room, JoinRoomPacket, packet, {
         let account_id = gs_needauth!(self);
 
         if !self.game_server.state.room_manager.is_valid_room(packet.room_id) {
-            return self.send_packet_static(&RoomJoinFailedPacket).await;
+            return self
+                .send_packet_dynamic(&RoomJoinFailedPacket {
+                    message: "no room found by given id",
+                })
+                .await;
+        }
+
+        // check if we are even able to join the room
+        let err_message = self.game_server.state.room_manager.try_with_any(
+            packet.room_id,
+            |room| {
+                if room.is_invite_only() && room.token != packet.room_token {
+                    Some("invite only room, unable to join")
+                } else {
+                    None
+                }
+            },
+            || Some("internal server error: room does not exist"),
+        );
+
+        if let Some(err_message) = err_message {
+            return self.send_packet_dynamic(&RoomJoinFailedPacket { message: err_message }).await;
         }
 
         let old_room_id = self.room_id.swap(packet.room_id, Ordering::Relaxed);
+
+        // if we somehow tried to join the same room, do nothing
+        if old_room_id == packet.room_id {
+            return Ok(());
+        }
+
         let level_id = self.level_id.load(Ordering::Relaxed);
 
         // remove the player from the previously connected room (or the global room)
@@ -205,15 +231,47 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_room_invitation, RoomSendInvitePacket, packet, {
-        let _account_id = gs_needauth!(self);
+        let account_id = gs_needauth!(self);
+
         let room_id = self.room_id.load(Ordering::Relaxed);
 
-        let thread = self.game_server.find_user(&packet.player);
-        let account_data = thread.as_ref().unwrap().account_data.lock().make_room_preview(0);
+        // if we are in global room, skip
+        if room_id == 0 {
+            return Ok(());
+        }
 
-        let invite_packet = RoomInvitePacket { player_data: account_data, room_id: room_id };
+        // if we don't have permission to invite, skip
+        let room_token = self.game_server.state.room_manager.with_any(room_id, |room| {
+            if room.is_invite_only() && !room.is_public_invites() && room.owner != account_id {
+                None
+            } else {
+                Some(room.token)
+            }
+        });
+
+        if room_token.is_none() {
+            #[cfg(debug_assertions)]
+            debug!("invite from {account_id} rejected, user is unable to invite");
+            return Ok(());
+        }
+
+        let thread = self.game_server.get_user_by_id(packet.player);
 
         if let Some(thread) = thread {
+            let player_data = thread.account_data.lock().make_room_preview(0);
+            let room_token = room_token.unwrap();
+
+            let invite_packet = RoomInvitePacket {
+                player_data,
+                room_id,
+                room_token,
+            };
+
+            debug!(
+                "{account_id} sent an invite to {} (room: {}, token: {})",
+                packet.player, room_id, room_token
+            );
+
             thread
                 .push_new_message(ServerThreadMessage::BroadcastInvite(invite_packet.clone()))
                 .await;

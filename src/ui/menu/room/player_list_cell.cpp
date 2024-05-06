@@ -84,7 +84,7 @@ void PlayerListCell::createInviteButton() {
     Build<CCSprite>::createSpriteName("icon-invite.png"_spr)
         .scale(0.85f)
         .intoMenuItem([accountId = this->data.accountId](auto) {
-            NetworkManager::get().send(RoomSendInvitePacket::create(std::to_string(accountId)));
+            NetworkManager::get().send(RoomSendInvitePacket::create(accountId));
         })
         .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
         .scaleMult(1.25f)

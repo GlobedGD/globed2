@@ -11,7 +11,8 @@ using namespace geode::prelude;
 enum {
     TAG_COLLISION = 454,
     TAG_TWO_PLAYER,
-    TAG_PUBLIC_INVITES
+    TAG_PUBLIC_INVITES,
+    TAG_INVITE_ONLY
 };
 
 #define MAKE_SETTING(name, tag, storage) \
@@ -24,9 +25,11 @@ bool RoomSettingsPopup::setup() {
     auto popupLayout = util::ui::getPopupLayout(m_size);
 
     auto* cells = CCArray::create();
+
+    MAKE_SETTING("Invite only", TAG_INVITE_ONLY, cellInviteOnly);
+    MAKE_SETTING("Open invites", TAG_PUBLIC_INVITES, cellPublicInvites);
     MAKE_SETTING("Collision", TAG_COLLISION, cellCollision);
     MAKE_SETTING("2-player mode", TAG_TWO_PLAYER, cellTwoPlayer);
-    MAKE_SETTING("Public invites", TAG_PUBLIC_INVITES, cellPublicInvites);
 
     auto listview = ListView::create(cells, RoomSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
     auto* listlayer = Build(GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false))
@@ -59,9 +62,10 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
     int setting = sender->getTag();
 
     switch (setting) {
+        case TAG_INVITE_ONLY: currentSettings.inviteOnly = enabled; break;
+        case TAG_PUBLIC_INVITES: currentSettings.publicInvites = enabled; break;
         case TAG_COLLISION: currentSettings.collision = enabled; break;
         case TAG_TWO_PLAYER: currentSettings.twoPlayerMode = enabled; break;
-        case TAG_PUBLIC_INVITES: currentSettings.publicInvites = enabled; break;
     }
 
     // if we are not the room owner, just revert the changes next frame

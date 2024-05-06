@@ -39,10 +39,6 @@ bool RoomPopup::setup() {
         this->onLoaded(changed || !roomBtnMenu);
     });
 
-    nm.addListener<RoomJoinFailedPacket>(this, [this](auto) {
-        FLAlertLayer::create("Globed error", "Failed to join room: no room was found by the given ID.", "Ok")->show();
-    });
-
     nm.addListener<RoomJoinedPacket>(this, [this](auto) {
         this->reloadPlayerList(true);
     });

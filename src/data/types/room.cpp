@@ -3,10 +3,10 @@
 template<> void ByteBuffer::customEncode(const RoomSettings& data) {
     BitBuffer<16> bits;
     bits.writeBits(
+        data.inviteOnly,
+        data.publicInvites,
         data.collision,
-        data.twoPlayerMode,
-        data.publicInvites
-
+        data.twoPlayerMode
     );
     this->writeBits(bits);
     this->writeU64(data.reserved);
@@ -17,9 +17,10 @@ template<> ByteBuffer::DecodeResult<RoomSettings> ByteBuffer::customDecode() {
 
     GLOBED_UNWRAP_INTO(this->readBits<16>(), auto bits);
     bits.readBitsInto(
+        data.inviteOnly,
+        data.publicInvites,
         data.collision,
-        data.twoPlayerMode,
-        data.publicInvites
+        data.twoPlayerMode
     );
 
     GLOBED_UNWRAP_INTO(this->readU64(), data.reserved);

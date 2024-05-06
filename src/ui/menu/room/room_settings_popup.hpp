@@ -24,6 +24,7 @@ private:
 
     RoomSettings currentSettings;
     RoomSettingCell
+        *cellInviteOnly,
         *cellCollision,
         *cellTwoPlayer,
         *cellPublicInvites

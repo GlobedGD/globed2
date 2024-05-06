@@ -462,7 +462,7 @@ void NetworkManager::setupBuiltinListeners() {
 
     addBuiltinListener<RoomInvitePacket>([](auto packet) {
         Loader::get()->queueInMainThread([packet] {
-            auto* notif = InviteNotification::create(packet->roomID, packet->playerData);
+            auto* notif = InviteNotification::create(packet->roomID, packet->roomToken, packet->playerData);
             notif->setPosition(440.f, 275.f);
 
             CCScene::get()->addChild(notif);
@@ -475,6 +475,10 @@ void NetworkManager::setupBuiltinListeners() {
         Loader::get()->queueInMainThread([packet = std::move(packet)] {
             RoomManager::get().setInfo(packet->info);
         });
+    });
+
+    addBuiltinListener<RoomJoinFailedPacket>([](auto packet) {
+        ErrorQueues::get().error(fmt::format("Failed to join room: {}", packet->message));
     });
 }
 

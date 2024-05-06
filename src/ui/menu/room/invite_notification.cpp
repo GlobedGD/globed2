@@ -6,17 +6,7 @@
 
 using namespace geode::prelude;
 
-InviteNotification* InviteNotification::create(uint32_t roomID, const PlayerRoomPreviewAccountData& player) {
-    auto ret = new InviteNotification();
-    if (ret && ret->init(roomID, player)) {
-        ret->autorelease();
-        return ret;
-    }
-    CC_SAFE_DELETE(ret);
-    return nullptr;
-}
-
-bool InviteNotification::init(uint32_t roomID, const PlayerRoomPreviewAccountData& player) {
+bool InviteNotification::init(uint32_t roomID, uint32_t roomToken, const PlayerRoomPreviewAccountData& player) {
     if (!CCLayer::init()) return false;
 
     auto* background = Build<CCScale9Sprite>::create("GJ_square01.png", cocos2d::CCRect { .0f, .0f, 80.0f, 80.0f, })
@@ -27,7 +17,7 @@ bool InviteNotification::init(uint32_t roomID, const PlayerRoomPreviewAccountDat
     menu = Build<CCMenu>::create()
         .pos({ background->getContentSize().width / 2, background->getContentSize().height / 2 })
         .parent(background);
-    
+
     Build<CCLabelBMFont>::create(player.name.c_str(), "goldFont.fnt")
         .pos(ccp(-111, 20))
         .scale(.5f)
@@ -43,9 +33,9 @@ bool InviteNotification::init(uint32_t roomID, const PlayerRoomPreviewAccountDat
         .parent(this);
 
     Build<ButtonSprite>::create("Accept", "bigFont.fnt", "GJ_button_01.png",  0.8f)
-        .intoMenuItem([this, roomID](auto) {
+        .intoMenuItem([this, roomID, roomToken](auto) {
             auto& nm = NetworkManager::get();
-            nm.send(JoinRoomPacket::create(roomID));
+            nm.send(JoinRoomPacket::create(roomID, roomToken));
             this->removeFromParentAndCleanup(true);
         })
         .scale(.6f)
@@ -61,4 +51,15 @@ bool InviteNotification::init(uint32_t roomID, const PlayerRoomPreviewAccountDat
         .parent(menu);
 
     return true;
+}
+
+InviteNotification* InviteNotification::create(uint32_t roomID, uint32_t roomToken, const PlayerRoomPreviewAccountData& player) {
+    auto ret = new InviteNotification();
+    if (ret->init(roomID, roomToken, player)) {
+        ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
 }

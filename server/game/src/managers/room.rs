@@ -1,4 +1,3 @@
-use esp::Bits;
 use globed_shared::{
     rand::{self, Rng},
     IntMap, SyncMutex, SyncMutexGuard,
@@ -11,6 +10,7 @@ use super::LevelManager;
 #[derive(Default)]
 pub struct Room {
     pub owner: i32,
+    pub token: u32,
     pub manager: LevelManager,
     pub settings: RoomSettings,
 }
@@ -30,6 +30,7 @@ impl Room {
     pub fn new(owner: i32, manager: LevelManager) -> Self {
         Self {
             owner,
+            token: rand::random(),
             manager,
             settings: RoomSettings::default(),
         }
@@ -69,9 +70,20 @@ impl Room {
     pub fn get_room_info(&self, id: u32) -> RoomInfo {
         RoomInfo {
             id,
+            token: self.token,
             owner: self.owner,
-            settings: self.settings.clone(),
+            settings: self.settings,
         }
+    }
+
+    #[inline]
+    pub fn is_invite_only(&self) -> bool {
+        self.settings.get_invite_only()
+    }
+
+    #[inline]
+    pub fn is_public_invites(&self) -> bool {
+        self.settings.get_public_invites()
     }
 }
 
@@ -111,7 +123,7 @@ impl RoomManager {
     }
 
     /// Creates a new room, adds the given player, removes them from the global room, and returns the room ID
-    pub fn create_room(&self, account_id: i32) -> u32 {
+    pub fn create_room(&self, account_id: i32) -> RoomInfo {
         let rooms = self.rooms.lock();
 
         // in case we accidentally generate an existing room id, keep looping until we find a suitable id
@@ -124,11 +136,11 @@ impl RoomManager {
 
         drop(rooms);
 
-        self._create_room(room_id, account_id);
+        let room = self._create_room(room_id, account_id);
 
         self.get_global().remove_player(account_id);
 
-        room_id
+        room
     }
 
     pub fn is_valid_room(&self, room_id: u32) -> bool {
@@ -174,21 +186,25 @@ impl RoomManager {
         was_owner
     }
 
-    pub fn create_special_room(&self) {
-        self._create_room(SPECIAL_ROOM, 0);
-        let mut rooms = self.rooms.lock();
-        if let Some(room) = rooms.get_mut(&SPECIAL_ROOM) {
-            let mut flags = Bits::new();
-            flags.set_bit(0);
-
-            room.set_settings(&RoomSettings {
-                flags, // set msb to true for player collision
-                reserved: 0,
-            });
-        }
+    pub fn get_room_info(&self, room_id: u32) -> RoomInfo {
+        self.try_with_any(
+            room_id,
+            |room| RoomInfo {
+                id: room_id,
+                owner: room.owner,
+                token: room.token,
+                settings: room.settings,
+            },
+            || RoomInfo {
+                id: 0,
+                owner: 0,
+                token: 0,
+                settings: RoomSettings::default(),
+            },
+        )
     }
 
-    fn _create_room(&self, room_id: u32, owner: i32) {
+    fn _create_room(&self, room_id: u32, owner: i32) -> RoomInfo {
         let mut rooms = self.rooms.lock();
 
         let mut pm = LevelManager::new();
@@ -197,6 +213,16 @@ impl RoomManager {
         }
 
         let room = Room::new(owner, pm);
+
+        let room_info = RoomInfo {
+            id: room_id,
+            owner,
+            token: room.token,
+            settings: room.settings,
+        };
+
         rooms.insert(room_id, room);
+
+        room_info
     }
 }

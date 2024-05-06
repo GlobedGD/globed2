@@ -36,7 +36,7 @@ bool RoomJoinPopup::setup() {
                 return;
             }
 
-            NetworkManager::get().send(JoinRoomPacket::create(code));
+            NetworkManager::get().send(JoinRoomPacket::create(code, 0));
             this->onClose(nullptr);
         })
         .id("join-btn"_spr)

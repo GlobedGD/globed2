@@ -1,6 +1,6 @@
 use crate::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Bits<const N: usize> {
     buffer: [u8; N],
 }
@@ -27,7 +27,7 @@ impl<const N: usize> Bits<N> {
     }
 
     #[inline]
-    pub fn get_bit(&mut self, pos: usize) -> bool {
+    pub fn get_bit(&self, pos: usize) -> bool {
         let byte = pos / 8;
         let bit = 7 - (pos % 8);
 

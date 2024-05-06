@@ -18,9 +18,11 @@ pub struct RoomCreatedPacket {
 #[packet(id = 21002, tcp = false)]
 pub struct RoomJoinedPacket;
 
-#[derive(Packet, Encodable, StaticSize)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 21003, tcp = false)]
-pub struct RoomJoinFailedPacket;
+pub struct RoomJoinFailedPacket<'a> {
+    pub message: &'a str,
+}
 
 #[derive(Packet, Encodable)]
 #[packet(id = 21004, tcp = true)]
@@ -45,4 +47,5 @@ pub struct RoomInfoPacket {
 pub struct RoomInvitePacket {
     pub player_data: PlayerRoomPreviewAccountData,
     pub room_id: u32,
+    pub room_token: u32,
 }
