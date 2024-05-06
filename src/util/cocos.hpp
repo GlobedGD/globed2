@@ -39,4 +39,6 @@ namespace util::cocos {
 
     // Like cocos' func, returns empty string if file doesn't exist.
     gd::string getPathForFilename(const gd::string& filename, const gd::string& searchPath);
+
+    std::string spr(const std::string_view s);
 }

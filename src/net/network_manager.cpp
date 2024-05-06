@@ -12,6 +12,7 @@
 #include <managers/room.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
 #include <util/net.hpp>
+#include <util/cocos.hpp>
 #include <util/rng.hpp>
 #include <util/debug.hpp>
 #include <util/format.hpp>
@@ -138,12 +139,19 @@ void NetworkManager::send(std::shared_ptr<Packet> packet) {
     packetQueue.push(std::move(packet));
 }
 
-void NetworkManager::addListener(packetid_t id, PacketCallback&& callback) {
-    (*listeners.lock())[id] = std::move(callback);
+void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback) {
+    auto* listener = PacketListener::create(id, std::move(callback));
+    target->setUserObject(util::cocos::spr(fmt::format("packet-listener-{}", id)), listener);
+
+    (*listeners.lock())[id].insert(listener);
 }
 
-void NetworkManager::removeListener(packetid_t id) {
-    listeners.lock()->erase(id);
+void NetworkManager::removeListener(CCNode* target, packetid_t id) {
+    auto key = util::cocos::spr(fmt::format("packet-listener-{}", id));
+
+    target->setUserObject(key, nullptr);
+
+    // the listener will unregister itself in the destructor.
 }
 
 void NetworkManager::removeAllListeners() {
@@ -264,34 +272,49 @@ void NetworkManager::threadRecvFunc() {
 
     lastReceivedPacket = util::time::now();
 
-    // if there's a registered listener, schedule it to be called on the next frame
-    if (this->listeners.lock()->contains(packetId)) {
-        Loader::get()->queueInMainThread([this, packetId, packet] {
-            auto listeners_ = this->listeners.lock();
-            if (listeners_->contains(packetId)) {
-                // xd
-                (*listeners_)[packetId](packet);
-            }
-        });
-    } else {
-        auto builtin = builtinListeners.lock();
-        // if there's a builtin listener, run it
-        if (builtin->contains(packetId)) {
-            (*builtin)[packetId](packet);
-            return;
-        } else {
-            // if suppressed, do nothing
-            auto suppressed_ = suppressed.lock();
+    this->callListener(packet);
+}
 
-            if (suppressed_->contains(packetId) && util::time::systemNow() > suppressed_->at(packetId)) {
-                suppressed_->erase(packetId);
-            }
+void NetworkManager::callListener(std::shared_ptr<Packet> packet) {
+    packetid_t packetId = packet->getPacketId();
 
-            // else show a warning
-            if (!suppressed_->contains(packetId)) {
-                ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
-            }
+    bool invokedBuiltin = false;
+
+    // call any builtin listeners
+    auto builtin = builtinListeners.lock();
+    if (builtin->contains(packetId)) {
+        (*builtin)[packetId](packet);
+        invokedBuiltin = true;
+    }
+
+    bool hasListeners = !(*listeners.lock())[packetId].empty();
+    if (!hasListeners) {
+        if (!invokedBuiltin) {
+            this->handleUnhandledPacket(packetId);
         }
+
+        return;
+    }
+
+    // if there are registered listeners, schedule them to be called on the next frame
+    Loader::get()->queueInMainThread([this, packetId, packet = std::move(packet)] {
+        for (auto* listener : (*listeners.lock())[packetId]) {
+            listener->invokeCallback(packet);
+        }
+    });
+}
+
+void NetworkManager::handleUnhandledPacket(packetid_t packetId) {
+    // if suppressed, do nothing
+    auto suppressed_ = suppressed.lock();
+
+    if (suppressed_->contains(packetId) && util::time::systemNow() > suppressed_->at(packetId)) {
+        suppressed_->erase(packetId);
+    }
+
+    // else show a warning
+    if (!suppressed_->contains(packetId)) {
+        ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
     }
 }
 
@@ -481,6 +504,10 @@ void NetworkManager::maybeDisconnectIfDead() {
 
 void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback) {
     (*builtinListeners.lock())[id] = std::move(callback);
+}
+
+void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener) {
+    listeners.lock()->at(packet).erase(listener);
 }
 
 bool NetworkManager::connected() {

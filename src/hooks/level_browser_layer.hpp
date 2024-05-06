@@ -11,9 +11,6 @@ class $modify(HookedLevelBrowserLayer, LevelBrowserLayer) {
     $override
     void setupLevelBrowser(cocos2d::CCArray* p0);
 
-    $override
-    void destructor();
-
     void refreshPagePlayerCounts();
     void updatePlayerCounts(float);
 

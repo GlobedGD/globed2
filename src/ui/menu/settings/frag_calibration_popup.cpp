@@ -20,7 +20,7 @@ bool FragmentationCalibartionPopup::setup() {
         .store(statusLabel);
 
     auto& nm = NetworkManager::get();
-    nm.addListener<ConnectionTestResponsePacket>([this] (std::shared_ptr<ConnectionTestResponsePacket> packet) {
+    nm.addListener<ConnectionTestResponsePacket>(this, [this] (std::shared_ptr<ConnectionTestResponsePacket> packet) {
         if (packet->uid != this->uid) {
             auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
             auto& settings = GlobedSettings::get();
@@ -109,10 +109,6 @@ void FragmentationCalibartionPopup::onClose(cocos2d::CCObject* obj) {
             settings.save();
         }
     }
-
-    auto& nm = NetworkManager::get();
-    nm.removeListener<ConnectionTestResponsePacket>();
-    nm.suppressUnhandledFor<ConnectionTestResponsePacket>(util::time::seconds(1));
 }
 
 void FragmentationCalibartionPopup::closeDelayed() {

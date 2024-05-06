@@ -19,8 +19,6 @@ class $modify(HookedLevelAreaInnerLayer, LevelAreaInnerLayer) {
     $override
     void onDoor(cocos2d::CCObject*);
 
-    void performCleanup();
-
     void sendRequest(float);
     void updatePlayerCounts();
 };

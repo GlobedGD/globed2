@@ -233,7 +233,7 @@ void GlobedUserCell::makeButtons() {
                 auto& nm = NetworkManager::get();
                 IntermediaryLoadingPopup::create([&nm, this](auto popup) {
                     nm.send(AdminGetUserStatePacket::create(std::to_string(accountData.accountId)));
-                    nm.addListener<AdminUserDataPacket>([this, popup = popup](auto packet) {
+                    nm.addListener<AdminUserDataPacket>(this, [this, popup = popup](auto packet) {
                         popup->onClose(popup);
 
                         // delay the cration to avoid deadlock
@@ -241,9 +241,7 @@ void GlobedUserCell::makeButtons() {
                             AdminUserPopup::create(userEntry, accountData)->show();
                         });
                     });
-                }, [&nm, this](auto) {
-                    nm.removeListenerDelayed<AdminUserDataPacket>(util::time::seconds(3));
-                })->show();
+                }, [](auto) {})->show();
             })
             .parent(buttonsWrapper)
             .id("kick-button"_spr)

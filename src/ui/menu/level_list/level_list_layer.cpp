@@ -71,7 +71,7 @@ bool GlobedLevelListLayer::init() {
 
     util::ui::prepareLayer(this);
 
-    NetworkManager::get().addListener<LevelListPacket>([this](std::shared_ptr<LevelListPacket> packet) {
+    NetworkManager::get().addListener<LevelListPacket>(this, [this](std::shared_ptr<LevelListPacket> packet) {
         this->levelList.clear();
         this->levelPages.clear();
         this->sortedLevelIds.clear();
@@ -103,8 +103,6 @@ bool GlobedLevelListLayer::init() {
 }
 
 GlobedLevelListLayer::~GlobedLevelListLayer() {
-    NetworkManager::get().removeListener<LevelListPacket>();
-    NetworkManager::get().suppressUnhandledFor<LevelListPacket>(util::time::seconds(1));
     GameLevelManager::sharedState()->m_levelManagerDelegate = nullptr;
 }
 

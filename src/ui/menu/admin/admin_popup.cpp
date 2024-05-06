@@ -58,11 +58,11 @@ bool AdminPopup::setup() {
     bool authorized = nm.isAuthorizedAdmin();
     if (!authorized) return false;
 
-    nm.addListener<AdminUserDataPacket>([](auto packet) {
+    nm.addListener<AdminUserDataPacket>(this, [](auto packet) {
         AdminUserPopup::create(packet->userEntry, packet->accountData)->show();
     });
 
-    nm.addListener<AdminErrorPacket>([this](auto packet) {
+    nm.addListener<AdminErrorPacket>(this, [this](auto packet) {
         // incredibly scary code
 
         if (packet->message.find("failed to find the user by name") != std::string::npos) {
@@ -180,14 +180,6 @@ bool AdminPopup::setup() {
     findUserWrapper->updateLayout();
 
     return true;
-}
-
-void AdminPopup::onClose(cocos2d::CCObject* sender) {
-    Popup::onClose(sender);
-
-    auto& nm = NetworkManager::get();
-    nm.removeListener<AdminUserDataPacket>(util::time::seconds(3));
-    nm.removeListener<AdminErrorPacket>();
 }
 
 AdminPopup* AdminPopup::create() {

@@ -23,7 +23,11 @@ private:
     friend class RoomSettingCell;
 
     RoomSettings currentSettings;
-    RoomSettingCell *cellCollision, *cellTwoPlayer;
+    RoomSettingCell
+        *cellCollision,
+        *cellTwoPlayer,
+        *cellPublicInvites
+        ;
 
     bool setup() override;
     ~RoomSettingsPopup();

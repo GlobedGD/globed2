@@ -1,5 +1,7 @@
 #pragma once
+
 #include "game_socket.hpp"
+#include "listener.hpp"
 
 #include <asp/sync.hpp>
 #include <asp/thread.hpp>
@@ -60,43 +62,43 @@ public:
     // Adds a packet listener and calls your callback function when a packet with `id` is received.
     // If there already was a callback with this packet ID, it gets replaced.
     // All callbacks are ran in the main (GD) thread.
-    void addListener(packetid_t id, PacketCallback&& callback);
+    void addListener(cocos2d::CCNode* target, packetid_t id, PacketCallback&& callback);
 
     // Same as addListener(packetid_t, PacketCallback) but hacky syntax xd
     template <HasPacketID Pty>
-    void addListener(PacketCallbackSpecific<Pty>&& callback) {
-        this->addListener(Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
+    void addListener(cocos2d::CCNode* target, PacketCallbackSpecific<Pty>&& callback) {
+        this->addListener(target, Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
             callback(std::static_pointer_cast<Pty>(pkt));
         });
     }
 
     // Removes a listener by packet ID.
-    void removeListener(packetid_t id);
+    void removeListener(cocos2d::CCNode* target, packetid_t id);
 
     // Same as removeListener(packetid_t) but hacky syntax once again
     template <HasPacketID T>
-    void removeListener() {
-        this->removeListener(T::PACKET_ID);
+    void removeListener(cocos2d::CCNode* target) {
+        this->removeListener(target, T::PACKET_ID);
     }
 
     // Same as `removeListener<T>` and `suppressUnhandledFor<T>(duration)` combined
     template <HasPacketID T, typename Rep, typename Period>
-    void removeListener(util::time::duration<Rep, Period> duration) {
-        this->removeListener<T>();
+    void removeListener(cocos2d::CCNode* target, util::time::duration<Rep, Period> duration) {
+        this->removeListener<T>(target);
         this->suppressUnhandledFor<T>(duration);
     }
 
     template <HasPacketID T>
-    void removeListenerDelayed() {
-        Loader::get()->queueInMainThread([this] {
-            this->removeListener<T>();
+    void removeListenerDelayed(cocos2d::CCNode* target) {
+        Loader::get()->queueInMainThread([this, target] {
+            this->removeListener<T>(target);
         });
     }
 
     template <HasPacketID T, typename Rep, typename Period>
-    void removeListenerDelayed(util::time::duration<Rep, Period> duration) {
-        Loader::get()->queueInMainThread([this, duration = duration] {
-            this->removeListener<T>(duration);
+    void removeListenerDelayed(cocos2d::CCNode* target, util::time::duration<Rep, Period> duration) {
+        Loader::get()->queueInMainThread([this, target, duration = duration] {
+            this->removeListener<T>(target, duration);
         });
     }
 
@@ -128,10 +130,17 @@ public:
     void suspend();
     void resume();
 
+    // Suppress the "Unhandled packet: xxx" error for a period of time
+    template <typename Rep, typename Period>
+    void suppressUnhandledFor(packetid_t packetId, util::time::duration<Rep, Period> duration) {
+        auto endPoint = util::time::systemNow() + duration;
+        (*suppressed.lock())[packetId] = endPoint;
+    }
+
+    // Suppress the "Unhandled packet: xxx" error for a period of time
     template <HasPacketID Packet, typename Rep, typename Period>
     void suppressUnhandledFor(util::time::duration<Rep, Period> duration) {
-        auto endPoint = util::time::systemNow() + duration;
-        (*suppressed.lock())[Packet::PACKET_ID] = endPoint;
+        this->suppressUnhandledFor(Packet::PACKET_ID, duration);
     }
 
 private:
@@ -144,7 +153,7 @@ private:
     asp::Channel<std::shared_ptr<Packet>> packetQueue;
     asp::Channel<NetworkThreadTask> taskQueue;
 
-    asp::Mutex<std::unordered_map<packetid_t, PacketCallback>> listeners;
+    asp::Mutex<std::unordered_map<packetid_t, std::set<PacketListener*>>> listeners;
     asp::Mutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
 
     // threads
@@ -175,6 +184,9 @@ private:
 
     void setupBuiltinListeners();
 
+    void callListener(std::shared_ptr<Packet> packet);
+    void handleUnhandledPacket(packetid_t id);
+
     void handlePingResponse(std::shared_ptr<Packet> packet);
     void maybeSendKeepalive();
     void maybeDisconnectIfDead();
@@ -184,11 +196,15 @@ private:
 
     void addBuiltinListener(packetid_t id, PacketCallback&& callback);
 
-    // Callbacks are NOT ran from the main thread.
+    // Callbacks for builtin listeners are NOT ran on the main thread.
     template <HasPacketID Pty>
     void addBuiltinListener(PacketCallbackSpecific<Pty>&& callback) {
         this->addBuiltinListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
             callback(std::static_pointer_cast<Pty>(pkt));
         });
     }
+
+    friend class PacketListener;
+
+    void unregisterPacketListener(packetid_t, PacketListener* listener);
 };

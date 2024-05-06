@@ -29,7 +29,7 @@ void HookedLevelBrowserLayer::setupLevelBrowser(cocos2d::CCArray* p0) {
     }
 
     nm.send(RequestPlayerCountPacket::create(std::move(levelIds)));
-    nm.addListener<LevelPlayerCountPacket>([this](std::shared_ptr<LevelPlayerCountPacket> packet) {
+    nm.addListener<LevelPlayerCountPacket>(this, [this](std::shared_ptr<LevelPlayerCountPacket> packet) {
         for (const auto& [levelId, playerCount] : packet->levels) {
             m_fields->levels[levelId] = playerCount;
         }
@@ -74,14 +74,4 @@ void HookedLevelBrowserLayer::updatePlayerCounts(float) {
 
         nm.send(RequestPlayerCountPacket::create(std::move(levelIds)));
     }
-}
-
-void HookedLevelBrowserLayer::destructor() {
-    LevelBrowserLayer::~LevelBrowserLayer();
-
-    bool inLists = typeinfo_cast<LevelListLayer*>(this) != nullptr;
-    if (inLists) return;
-
-    auto& nm = NetworkManager::get();
-    nm.removeListener<LevelPlayerCountPacket>(util::time::seconds(3));
 }

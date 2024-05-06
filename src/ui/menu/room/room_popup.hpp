@@ -9,8 +9,6 @@ public:
     constexpr static float LIST_WIDTH = 340.f;
     constexpr static float LIST_HEIGHT = 180.f;
 
-    ~RoomPopup();
-
     static RoomPopup* create();
 
 protected:
@@ -37,4 +35,5 @@ protected:
     void applyFilter(const std::string_view input);
     void setRoomTitle(uint32_t id);
     void onCopyRoomId(cocos2d::CCObject*);
+    void recreateInviteButton();
 };

@@ -11,7 +11,5 @@ public:
 private:
     geode::InputNode *messageInput, *userInput;
 
-    void onClose(cocos2d::CCObject*) override;
-
     bool setup() override;
 };

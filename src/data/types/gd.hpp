@@ -86,7 +86,7 @@ public:
 };
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerPreviewAccountData, (
-    accountId, name, cube, color1, color2, glowColor
+    accountId, userId, name, cube, color1, color2, glowColor, specialUserData
 ));
 
 class PlayerAccountData {

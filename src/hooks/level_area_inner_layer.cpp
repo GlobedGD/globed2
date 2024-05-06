@@ -48,7 +48,7 @@ bool HookedLevelAreaInnerLayer::init(bool p0) {
         m_fields->doorNodes[id] = wrapper;
     }
 
-    nm.addListener<LevelPlayerCountPacket>([this](auto packet) {
+    nm.addListener<LevelPlayerCountPacket>(this, [this](auto packet) {
         auto currentLayer = getChildOfType<LevelAreaInnerLayer>(CCScene::get(), 0);
         if (currentLayer && this != currentLayer) return;
 
@@ -97,15 +97,8 @@ void HookedLevelAreaInnerLayer::updatePlayerCounts() {
 
 void HookedLevelAreaInnerLayer::onBack(cocos2d::CCObject* s) {
     LevelAreaInnerLayer::onBack(s);
-    this->performCleanup();
 }
 
 void HookedLevelAreaInnerLayer::onDoor(cocos2d::CCObject* s) {
     LevelAreaInnerLayer::onDoor(s);
-    this->performCleanup();
-}
-
-void HookedLevelAreaInnerLayer::performCleanup() {
-    auto& nm = NetworkManager::get();
-    nm.removeListener<LevelPlayerCountPacket>(util::time::seconds(3));
 }

@@ -9,8 +9,6 @@ public:
     constexpr static float LIST_WIDTH = 340.f;
     constexpr static float LIST_HEIGHT = 180.f;
 
-    ~InvitePopup();
-
     static InvitePopup* create();
 
 protected:

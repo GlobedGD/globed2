@@ -242,14 +242,14 @@ void GlobedGJBGL::setupAudio() {
 void GlobedGJBGL::setupPacketListeners() {
     auto& nm = NetworkManager::get();
 
-    nm.addListener<PlayerProfilesPacket>([](std::shared_ptr<PlayerProfilesPacket> packet) {
+    nm.addListener<PlayerProfilesPacket>(this, [](std::shared_ptr<PlayerProfilesPacket> packet) {
         auto& pcm = ProfileCacheManager::get();
         for (auto& player : packet->players) {
             pcm.insert(player);
         }
     });
 
-    nm.addListener<LevelDataPacket>([this](std::shared_ptr<LevelDataPacket> packet){
+    nm.addListener<LevelDataPacket>(this, [this](std::shared_ptr<LevelDataPacket> packet){
         this->m_fields->lastServerUpdate = this->m_fields->timeCounter;
 
         for (const auto& player : packet->players) {
@@ -262,19 +262,19 @@ void GlobedGJBGL::setupPacketListeners() {
         }
     });
 
-    nm.addListener<LevelPlayerMetadataPacket>([this](std::shared_ptr<LevelPlayerMetadataPacket> packet) {
+    nm.addListener<LevelPlayerMetadataPacket>(this, [this](std::shared_ptr<LevelPlayerMetadataPacket> packet) {
         for (const auto& player : packet->players) {
             this->m_fields->playerStore->insertOrUpdate(player.accountId, player.data.attempts, player.data.localBest);
         }
     });
 
-    nm.addListener<ChatMessageBroadcastPacket>([this](std::shared_ptr<ChatMessageBroadcastPacket> packet) {
+    nm.addListener<ChatMessageBroadcastPacket>(this, [this](std::shared_ptr<ChatMessageBroadcastPacket> packet) {
         this->m_fields->chatMessages.push_back({packet->sender, packet->message});
 
         //m_fields->chatOverlay->addMessage(packet->sender, packet->message);
     });
 
-    nm.addListener<VoiceBroadcastPacket>([this](std::shared_ptr<VoiceBroadcastPacket> packet) {
+    nm.addListener<VoiceBroadcastPacket>(this, [this](std::shared_ptr<VoiceBroadcastPacket> packet) {
 #ifdef GLOBED_VOICE_SUPPORT
         // if deafened or voice is disabled, do nothing
         auto& settings = GlobedSettings::get();
@@ -998,12 +998,6 @@ void GlobedGJBGL::onQuitActions() {
         GlobedAudioManager::get().haltRecording();
         VoicePlaybackManager::get().stopAllStreams();
 #endif // GLOBED_VOICE_SUPPORT
-
-        // clean up the listeners
-        nm.removeListener<PlayerProfilesPacket>(util::time::seconds(3));
-        nm.removeListener<LevelDataPacket>(util::time::seconds(3));
-        nm.removeListener<LevelPlayerMetadataPacket>(util::time::seconds(3));
-        nm.removeListener<VoiceBroadcastPacket>(util::time::seconds(3));
     }
 }
 

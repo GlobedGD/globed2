@@ -82,12 +82,12 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
 void PlayerListCell::createInviteButton() {
     Build<CCSprite>::createSpriteName("icon-invite.png"_spr)
-        .scale(0.9f)
+        .scale(0.85f)
         .intoMenuItem([accountId = this->data.accountId](auto) {
             NetworkManager::get().send(RoomSendInvitePacket::create(std::to_string(accountId)));
         })
         .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
-        .scaleMult(1.1f)
+        .scaleMult(1.25f)
         .store(inviteButton)
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)

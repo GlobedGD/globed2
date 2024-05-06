@@ -28,7 +28,7 @@ bool RoomPopup::setup() {
 
     auto& rm = RoomManager::get();
 
-    nm.addListener<RoomPlayerListPacket>([this](std::shared_ptr<RoomPlayerListPacket> packet) {
+    nm.addListener<RoomPlayerListPacket>(this, [this](std::shared_ptr<RoomPlayerListPacket> packet) {
         this->isWaiting = false;
         this->playerList = packet->players;
         this->applyFilter("");
@@ -39,15 +39,15 @@ bool RoomPopup::setup() {
         this->onLoaded(changed || !roomBtnMenu);
     });
 
-    nm.addListener<RoomJoinFailedPacket>([this](auto) {
+    nm.addListener<RoomJoinFailedPacket>(this, [this](auto) {
         FLAlertLayer::create("Globed error", "Failed to join room: no room was found by the given ID.", "Ok")->show();
     });
 
-    nm.addListener<RoomJoinedPacket>([this](auto) {
+    nm.addListener<RoomJoinedPacket>(this, [this](auto) {
         this->reloadPlayerList(true);
     });
 
-    nm.addListener<RoomCreatedPacket>([this](std::shared_ptr<RoomCreatedPacket> packet) {
+    nm.addListener<RoomCreatedPacket>(this, [this](std::shared_ptr<RoomCreatedPacket> packet) {
         auto ownData = ProfileCacheManager::get().getOwnData();
         auto ownSpecialData = ProfileCacheManager::get().getOwnSpecialData();
 
@@ -70,11 +70,13 @@ bool RoomPopup::setup() {
         this->onLoaded(true);
     });
 
-    nm.addListener<RoomInfoPacket>([this](std::shared_ptr<RoomInfoPacket> packet) {
+    nm.addListener<RoomInfoPacket>(this, [this](std::shared_ptr<RoomInfoPacket> packet) {
         ErrorQueues::get().success("Room configuration updated");
 
         RoomManager::get().setInfo(packet->info);
         // idk maybe refresh or something something idk
+
+        this->recreateInviteButton();
     });
 
     auto popupLayout = util::ui::getPopupLayout(m_size);
@@ -86,8 +88,7 @@ bool RoomPopup::setup() {
     listLayer->setPosition({xpos, 85.f});
     m_mainLayer->addChild(listLayer);
 
-    this->reloadPlayerList();
-
+    // refresh button
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
         .scale(0.9f)
         .intoMenuItem([this](auto) {
@@ -149,6 +150,7 @@ bool RoomPopup::setup() {
         .parent(buttonMenu)
         .store(inviteButton);
 
+    // settings button
     Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
         .scale(0.7f)
         .intoMenuItem([this](auto) {
@@ -165,7 +167,10 @@ bool RoomPopup::setup() {
 
     buttonMenu->updateLayout();
 
+    this->recreateInviteButton();
     this->scheduleUpdate();
+
+    this->reloadPlayerList();
 
     return true;
 }
@@ -204,6 +209,8 @@ void RoomPopup::onLoaded(bool stateChanged) {
     }
 
     buttonMenu->updateLayout();
+
+    this->recreateInviteButton();
 }
 
 void RoomPopup::addButtons() {
@@ -300,6 +307,8 @@ void RoomPopup::reloadPlayerList(bool sendPacket) {
     loadingCircle->setParentLayer(listLayer);
     loadingCircle->setPosition(-listLayer->getPosition());
     loadingCircle->show();
+
+    this->recreateInviteButton();
 }
 
 bool RoomPopup::isLoading() {
@@ -353,6 +362,7 @@ void RoomPopup::applyFilter(const std::string_view input) {
             filteredPlayerList.push_back(item);
         }
     }
+
     buttonMenu->addChild(clearSearchButton);
     buttonMenu->updateLayout();
 }
@@ -363,8 +373,6 @@ void RoomPopup::setRoomTitle(uint32_t id) {
     std::string title;
     if (id == 0) {
         title = "Global room";
-    } else if (id == 777'777 && util::time::isAprilFools()) {
-        title = "Room ??????";
     } else {
         title = fmt::format("Room {}", id);
     }
@@ -375,7 +383,7 @@ void RoomPopup::setRoomTitle(uint32_t id) {
         .scale(0.7f)
         .collect();
 
-    if (id != 0 && (id != 777'777 || !util::time::isAprilFools())) {
+    if (id != 0) {
         auto* button = CCMenuItemSpriteExtra::create(elem, this, menu_selector(RoomPopup::onCopyRoomId));
         button->addChild(elem);
 
@@ -399,13 +407,19 @@ void RoomPopup::onCopyRoomId(cocos2d::CCObject*) {
     Notification::create("Copied to clipboard", NotificationIcon::Success)->show();
 }
 
-RoomPopup::~RoomPopup() {
-    auto& nm = NetworkManager::get();
+void RoomPopup::recreateInviteButton() {
+    inviteButton->removeFromParent();
 
-    nm.removeListener<RoomPlayerListPacket>(util::time::seconds(2));
-    nm.removeListener<RoomJoinedPacket>(util::time::seconds(2));
-    nm.removeListener<RoomJoinFailedPacket>(util::time::seconds(2));
-    nm.removeListener<RoomCreatedPacket>(util::time::seconds(2));
+    auto& rm = RoomManager::get();
+
+    if (rm.isInRoom()) {
+        bool canInvite = rm.getInfo().settings.publicInvites || rm.isOwner();
+
+        if (canInvite) {
+            buttonMenu->addChild(inviteButton);
+            buttonMenu->updateLayout();
+        }
+    }
 }
 
 RoomPopup* RoomPopup::create() {

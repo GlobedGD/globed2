@@ -80,7 +80,7 @@ bool HookedLevelSelectLayer::init(int p0) {
     auto& nm = NetworkManager::get();
     if (!nm.established()) return true;
 
-    nm.addListener<LevelPlayerCountPacket>([this](auto packet) {
+    nm.addListener<LevelPlayerCountPacket>(this, [this](auto packet) {
         auto currentLayer = getChildOfType<LevelSelectLayer>(CCScene::get(), 0);
         if (currentLayer && this != currentLayer) return;
 
@@ -97,14 +97,6 @@ bool HookedLevelSelectLayer::init(int p0) {
 
     return true;
 }
-
-void HookedLevelSelectLayer::destructor() {
-    LevelSelectLayer::~LevelSelectLayer();
-
-    auto& nm = NetworkManager::get();
-    nm.removeListener<LevelPlayerCountPacket>(util::time::seconds(3));
-}
-
 void HookedLevelSelectLayer::sendRequest(float) {
     auto& nm = NetworkManager::get();
     if (nm.established()) {

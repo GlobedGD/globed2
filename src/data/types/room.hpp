@@ -5,6 +5,7 @@ class RoomSettings {
 public:
     bool collision;
     bool twoPlayerMode;
+    bool publicInvites;
 
     uint64_t reserved;
 };

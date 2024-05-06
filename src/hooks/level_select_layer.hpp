@@ -14,9 +14,6 @@ class $modify(HookedLevelSelectLayer, LevelSelectLayer) {
     bool init(int p0);
 
     $override
-    void destructor();
-
-    $override
     void updatePageWithObject(cocos2d::CCObject* o1, cocos2d::CCObject* o2);
 
     void sendRequest(float);

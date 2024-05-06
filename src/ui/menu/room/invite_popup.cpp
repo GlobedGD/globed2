@@ -27,7 +27,7 @@ bool InvitePopup::setup() {
 
     auto& rm = RoomManager::get();
 
-    nm.addListener<GlobalPlayerListPacket>([this](std::shared_ptr<GlobalPlayerListPacket> packet) {
+    nm.addListener<GlobalPlayerListPacket>(this, [this](std::shared_ptr<GlobalPlayerListPacket> packet) {
         this->isWaiting = false;
         this->playerList = packet->data;
         this->applyFilter("");
@@ -249,12 +249,6 @@ void InvitePopup::setRoomTitle() {
 
     elem->setPosition(layout.centerTop - CCPoint{0.f, 17.f});
     m_mainLayer->addChild(elem);
-}
-
-InvitePopup::~InvitePopup() {
-    auto& nm = NetworkManager::get();
-
-    nm.removeListener<RoomPlayerListPacket>(util::time::seconds(2));
 }
 
 InvitePopup* InvitePopup::create() {
