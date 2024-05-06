@@ -9,13 +9,15 @@ public:
 
     ~PacketListener();
 
-    static PacketListener* create(packetid_t packetId, CallbackFn&& fn);
+    static PacketListener* create(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner);
 
     void invokeCallback(std::shared_ptr<Packet> packet);
+
+    cocos2d::CCObject* owner;
 
 private:
     CallbackFn callback;
     packetid_t packetId;
 
-    bool init(packetid_t packetId, CallbackFn&& fn);
+    bool init(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner);
 };

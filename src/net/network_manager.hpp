@@ -153,6 +153,8 @@ private:
     asp::Channel<std::shared_ptr<Packet>> packetQueue;
     asp::Channel<NetworkThreadTask> taskQueue;
 
+    // Note that we intentionally don't use Ref here,
+    // as we use the destructor to know if the object owning the listener has been destroyed.
     asp::Mutex<std::unordered_map<packetid_t, std::set<PacketListener*>>> listeners;
     asp::Mutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
 
@@ -174,6 +176,7 @@ private:
     AtomicBool _suspended = false;
     AtomicBool _deferredConnect = false;
     uint32_t secretKey = 0;
+    AtomicBool ignoreProtocolMismatch = false;
 
     std::string _deferredAddr, _deferredServerId;
     unsigned short _deferredPort;
@@ -190,6 +193,7 @@ private:
     void handlePingResponse(std::shared_ptr<Packet> packet);
     void maybeSendKeepalive();
     void maybeDisconnectIfDead();
+    void toggleIgnoreProtocolMismatch(bool state);
 
     // Builtin listeners have priority above the others.
     asp::Mutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;
@@ -206,5 +210,6 @@ private:
 
     friend class PacketListener;
 
+    void registerPacketListener(packetid_t, PacketListener* listener);
     void unregisterPacketListener(packetid_t, PacketListener* listener);
 };

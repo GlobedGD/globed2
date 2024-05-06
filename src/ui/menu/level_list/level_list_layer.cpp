@@ -194,9 +194,6 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     sortedLevels.reserve(p0->count());
 
     for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(p0)) {
-        level->m_gauntletLevel = false;
-        level->m_gauntletLevel2 = false;
-
         sortedLevels.push_back(level);
     }
 

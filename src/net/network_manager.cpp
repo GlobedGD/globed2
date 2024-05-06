@@ -140,10 +140,10 @@ void NetworkManager::send(std::shared_ptr<Packet> packet) {
 }
 
 void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback) {
-    auto* listener = PacketListener::create(id, std::move(callback));
+    auto* listener = PacketListener::create(id, std::move(callback), target);
     target->setUserObject(util::cocos::spr(fmt::format("packet-listener-{}", id)), listener);
 
-    (*listeners.lock())[id].insert(listener);
+    this->registerPacketListener(id, listener);
 }
 
 void NetworkManager::removeListener(CCNode* target, packetid_t id) {
@@ -182,7 +182,10 @@ void NetworkManager::threadMainFunc() {
             GameServerManager::get().setActive(_deferredServerId);
             gameSocket.createBox();
 
-            auto packet = CryptoHandshakeStartPacket::create(PROTOCOL_VERSION, CryptoPublicKey(gameSocket.cryptoBox->extractPublicKey()));
+            // if we have ignore on, use 0xffff as a magic value that bypasses protocol checks
+            uint16_t proto = ignoreProtocolMismatch ? (uint16_t)0xffff : PROTOCOL_VERSION;
+
+            auto packet = CryptoHandshakeStartPacket::create(proto, CryptoPublicKey(gameSocket.cryptoBox->extractPublicKey()));
             this->send(packet);
         } else {
             this->disconnect(true);
@@ -400,6 +403,22 @@ void NetworkManager::setupBuiltinListeners() {
     addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
         log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, PROTOCOL_VERSION);
 
+
+#ifdef GLOBED_DEBUG
+        // if we are in debug mode, allow the user to override it
+        Loader::get()->queueInMainThread([this, serverProtocol = packet->serverProtocol] {
+            geode::createQuickPopup("Globed Error",
+                fmt::format("Protocol mismatch (client: v{}, server: v{}). Override the protocol for this session and allow to connect to the server anyway? <cy>(Not recommended!)</c>", PROTOCOL_VERSION, serverProtocol),
+                "Cancel", "Yes", [this](FLAlertLayer*, bool override) {
+                    if (override) {
+                        this->toggleIgnoreProtocolMismatch(true);
+                    }
+                }
+            );
+        });
+#else
+        // if we are not in debug, show an error tleling the user to update the mod
+
         if (packet->serverProtocol < PROTOCOL_VERSION) {
             std::string message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
             ErrorQueues::get().error(message);
@@ -413,6 +432,7 @@ void NetworkManager::setupBuiltinListeners() {
                 });
             });
         }
+#endif
 
         this->disconnect(true);
     });
@@ -506,8 +526,28 @@ void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback
     (*builtinListeners.lock())[id] = std::move(callback);
 }
 
+void NetworkManager::registerPacketListener(packetid_t packet, PacketListener* listener) {
+#ifdef GLOBED_DEBUG
+    log::debug("Registering listener (id {}) for {}", packet, listener->owner);
+#endif
+
+    (*listeners.lock())[packet].insert(listener);
+}
+
 void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener) {
+#ifdef GLOBED_DEBUG
+    // note: is it safe to access listener->owner here?
+    // at the time of user object destruction, i believe the node is still valid,
+    // but we are inside of ~CCNode(), which means main vtable is set to CCNode vtable,
+    // and therefore this would always print 'class cocos2d::CCNode' instead of the real class.
+    log::debug("Unregistering listener (id {}) for {}", packet, listener->owner);
+#endif
+
     listeners.lock()->at(packet).erase(listener);
+}
+
+void NetworkManager::toggleIgnoreProtocolMismatch(bool state) {
+    ignoreProtocolMismatch = state;
 }
 
 bool NetworkManager::connected() {

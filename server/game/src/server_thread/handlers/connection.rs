@@ -17,7 +17,7 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
-        if packet.protocol != PROTOCOL_VERSION {
+        if packet.protocol != PROTOCOL_VERSION && packet.protocol != 0xffff {
             self.terminate();
             self.send_packet_static(&ProtocolMismatchPacket {
                 protocol: PROTOCOL_VERSION,
