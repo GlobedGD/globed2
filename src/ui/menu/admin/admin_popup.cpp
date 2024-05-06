@@ -136,6 +136,7 @@ bool AdminPopup::setup() {
     auto* sendNoticeWrapper = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f))
         .pos(sizes.center.width, sizes.bottom + 40.f)
+        .contentSize(POPUP_WIDTH - 50.f, 50.f)
         .parent(m_mainLayer)
         .collect();
 

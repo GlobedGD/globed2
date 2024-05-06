@@ -114,4 +114,16 @@ namespace util::misc {
     int getIconWithType(const PlayerIconData& data, IconType type) {
         return getIconWithType(data, convertEnum<PlayerIconType>(type));
     }
+
+    ScopeGuard::~ScopeGuard() {
+        f();
+    }
+
+    ScopeGuard scopeDestructor(const std::function<void()>& f) {
+        return ScopeGuard(f);
+    }
+
+    ScopeGuard scopeDestructor(std::function<void()>&& f) {
+        return ScopeGuard(std::move(f));
+    }
 }

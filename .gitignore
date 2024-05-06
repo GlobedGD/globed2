@@ -53,6 +53,7 @@
 .cache/
 
 build.sh
+build-fast.sh
 build-android.sh
 build-android/
 build-armv8.sh

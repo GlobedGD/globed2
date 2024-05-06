@@ -143,4 +143,18 @@ namespace util::misc {
 
     int getIconWithType(const PlayerIconData& data, PlayerIconType type);
     int getIconWithType(const PlayerIconData& data, IconType type);
+
+    class ScopeGuard {
+    public:
+        ScopeGuard(const std::function<void()>& f) : f(f) {}
+        ScopeGuard(std::function<void()>&& f) : f(std::move(f)) {}
+
+        ~ScopeGuard();
+
+    private:
+        std::function<void()> f;
+    };
+
+    ScopeGuard scopeDestructor(const std::function<void()>& f);
+    ScopeGuard scopeDestructor(std::function<void()>&& f);
 }
