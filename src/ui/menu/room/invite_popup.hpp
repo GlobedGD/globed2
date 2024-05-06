@@ -24,7 +24,6 @@ protected:
     bool isWaiting = false;
 
     bool setup() override;
-    void update(float) override;
     void onLoaded(bool stateChanged);
     void removeLoadingCircle();
     void reloadPlayerList(bool sendPacket = true);
@@ -32,5 +31,4 @@ protected:
     bool isLoading();
     void sortPlayerList();
     void applyFilter(const std::string_view input);
-    void setRoomTitle();
 };

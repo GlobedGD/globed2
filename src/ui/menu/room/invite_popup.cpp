@@ -1,8 +1,6 @@
 #include "invite_popup.hpp"
 
 #include "player_list_cell.hpp"
-#include "room_join_popup.hpp"
-#include "room_settings_popup.hpp"
 #include <data/packets/all.hpp>
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
@@ -22,6 +20,8 @@ bool InvitePopup::setup() {
     if (!nm.established()) {
         return false;
     }
+
+    this->setTitle("Invite Player");
 
     FriendListManager::get().maybeLoad();
 
@@ -95,13 +95,7 @@ bool InvitePopup::setup() {
 
     buttonMenu->updateLayout();
 
-    this->scheduleUpdate();
-
     return true;
-}
-
-void InvitePopup::update(float) {
-    //settingsButton->setVisible(RoomManager::get().isInRoom());
 }
 
 void InvitePopup::onLoaded(bool stateChanged) {
@@ -238,17 +232,6 @@ void InvitePopup::applyFilter(const std::string_view input) {
     }
     buttonMenu->addChild(clearSearchButton);
     buttonMenu->updateLayout();
-}
-
-void InvitePopup::setRoomTitle() {
-    auto layout = util::ui::getPopupLayout(m_size);
-
-    CCNode* elem = Build<CCLabelBMFont>::create("Invite Player", "goldFont.fnt")
-        .scale(0.7f)
-        .collect();
-
-    elem->setPosition(layout.centerTop - CCPoint{0.f, 17.f});
-    m_mainLayer->addChild(elem);
 }
 
 InvitePopup* InvitePopup::create() {

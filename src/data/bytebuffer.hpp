@@ -51,7 +51,7 @@ public:
             return this->readPrimitive<T>();
         } else if constexpr (std::is_enum_v<T>) {
             return this->readEnum<T>();
-        } else if constexpr (std::is_empty_v<T>) {
+        } else if constexpr (std::is_empty_v<T> && std::is_default_constructible_v<T>) {
             // zst, return a default constructed instance
             return Ok(T {});
         } else if constexpr (boost::describe::has_describe_members<T>::value) {

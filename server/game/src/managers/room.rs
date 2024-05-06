@@ -24,7 +24,6 @@ pub struct RoomManager {
 // i.e. if ROOM_ID_LENGTH is 6 we should have a range 100_000..1_000_000
 const ROOM_ID_START: u32 = 10_u32.pow(ROOM_ID_LENGTH as u32 - 1);
 const ROOM_ID_END: u32 = 10_u32.pow(ROOM_ID_LENGTH as u32);
-const SPECIAL_ROOM: u32 = 777_777;
 
 impl Room {
     pub fn new(owner: i32, manager: LevelManager) -> Self {
@@ -151,11 +150,6 @@ impl RoomManager {
 
     /// Deletes a room if there are no players in it
     pub fn maybe_remove_room(&self, room_id: u32) {
-        // don't remove the special room
-        if room_id == SPECIAL_ROOM {
-            return;
-        }
-
         let mut rooms = self.rooms.lock();
 
         let to_remove = rooms

@@ -7,6 +7,8 @@
 template <typename T, typename Y>
 class Either {
 public:
+    static_assert(!std::is_same_v<T, Y>, "Template arguments for Either must be different types");
+
     using first_type = T;
     using second_type = Y;
 
@@ -58,15 +60,15 @@ public:
         return this->isSecond() ? std::nullopt : std::optional(std::ref(std::get<T>(variant)));
     }
 
-    std::optional<const std::reference_wrapper<T>> firstRef() const {
-        return this->isSecond() ? std::nullopt : std::optional(std::ref(std::get<T>(variant)));
-    }
-
     std::optional<std::reference_wrapper<Y>> secondRef() {
         return this->isFirst() ? std::nullopt : std::optional(std::ref(std::get<Y>(variant)));
     }
 
-    std::optional<const std::reference_wrapper<Y>> secondRef() const {
+    std::optional<std::reference_wrapper<const T>> firstRef() const {
+        return this->isSecond() ? std::nullopt : std::optional(std::ref(std::get<T>(variant)));
+    }
+
+    std::optional<std::reference_wrapper<const Y>> secondRef() const {
         return this->isFirst() ? std::nullopt : std::optional(std::ref(std::get<Y>(variant)));
     }
 
