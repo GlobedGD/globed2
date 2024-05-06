@@ -136,11 +136,15 @@ bool RoomPopup::setup() {
         .store(clearSearchButton);
 
     // invite button
-    Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
+    Build<CCSprite>::createSpriteName("accountBtn_messages_001.png")
+        .with([this](CCSprite* spr) {
+            util::ui::rescaleToMatch(spr, clearSearchButton);
+        })
         .intoMenuItem([this](auto) {
             InvitePopup::create()->show();
         })
-        .scaleMult(1.1f)
+        .scaleMult(1.15f)
+        .zOrder(9)
         .id("invite-btn"_spr)
         .parent(buttonMenu)
         .store(inviteButton);
@@ -176,7 +180,7 @@ void RoomPopup::onLoaded(bool stateChanged) {
     auto cells = CCArray::create();
 
     for (const auto& pdata : filteredPlayerList) {
-        auto* cell = PlayerListCell::create(pdata);
+        auto* cell = PlayerListCell::create(pdata, false);
         cells->addObject(cell);
     }
 

@@ -1,6 +1,6 @@
 #include "invite_popup.hpp"
 
-#include "invite_cell.hpp"
+#include "player_list_cell.hpp"
 #include "room_join_popup.hpp"
 #include "room_settings_popup.hpp"
 #include <data/packets/all.hpp>
@@ -37,7 +37,7 @@ bool InvitePopup::setup() {
 
     auto popupLayout = util::ui::getPopupLayout(m_size);
 
-    auto listview = ListView::create(CCArray::create(), PlayerInviteCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
+    auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
     listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
 
     float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;
@@ -110,7 +110,7 @@ void InvitePopup::onLoaded(bool stateChanged) {
     auto cells = CCArray::create();
 
     for (const auto& pdata : filteredPlayerList) {
-        auto* cell = PlayerInviteCell::create(pdata);
+        auto* cell = PlayerListCell::create(pdata.makeRoomPreview(), true);
         cells->addObject(cell);
     }
 
@@ -119,7 +119,7 @@ void InvitePopup::onLoaded(bool stateChanged) {
     int previousCellCount = listLayer->m_list->m_entries->count();
 
     listLayer->m_list->removeFromParent();
-    listLayer->m_list = Build<ListView>::create(cells, PlayerInviteCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
+    listLayer->m_list = Build<ListView>::create(cells, PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .parent(listLayer)
         .collect();
 

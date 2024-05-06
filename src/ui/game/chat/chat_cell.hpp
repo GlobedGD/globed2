@@ -3,7 +3,6 @@
 
 #include <data/types/gd.hpp>
 #include <game/player_store.hpp>
-#include <ui/general/audio_visualizer.hpp>
 
 class GlobedChatCell : public cocos2d::CCLayerColor {
 public:

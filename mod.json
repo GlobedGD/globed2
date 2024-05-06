@@ -10,41 +10,7 @@
     "resources": {
         "spritesheets": {
             "globedsheet1": [
-                "resources/menuicon.png",
-                "resources/speaker-icon.png",
-                "resources/speaker-icon-yellow.png",
-                "resources/speaker-icon-red.png",
-                "resources/role-owner.png",
-                "resources/role-admin.png",
-                "resources/role-helper.png",
-                "resources/role-mod.png",
-                "resources/role-user.png",
-                "resources/role-booster.png",
-                "resources/role-supporter.png",
-                "resources/icon-ban.png",
-                "resources/icon-unban.png",
-                "resources/icon-mute.png",
-                "resources/icon-unmute.png",
-                "resources/icon-whitelist.png",
-                "resources/icon-unwhitelist.png",
-                "resources/icon-logout.png",
-                "resources/icon-kick.png",
-                "resources/icon-kick-all.png",
-                "resources/icon-level-list.png",
-                "resources/icon-server-folder.png",
-                "resources/icon-teleport.png",
-                "resources/icon-person.png",
-                "resources/icon-hide-player.png",
-                "resources/icon-show-player.png",
-                "resources/icon-voice-chat-guide.png",
-                "resources/icon-credits.png",
-                "resources/icon-chat.png",
-                "resources/icon-players.png",
-                "resources/deafen-icon-off.png",
-                "resources/deafen-icon-on.png",
-                "resources/button-secret.png",
-                "resources/secret-question-mark.png",
-                "resources/shadow-thing-idk.png"
+                "resources/*.png"
             ]
         }
     },

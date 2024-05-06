@@ -1,6 +1,5 @@
 #pragma once
 #include <defs/all.hpp>
-#include <Geode/utils/web.hpp>
 #include <Geode/ui/TextInput.hpp>
 #include "chat_cell.hpp"
 
