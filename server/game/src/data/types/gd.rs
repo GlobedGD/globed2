@@ -84,18 +84,20 @@ impl PlayerAccountData {
             color2: self.icons.color2,
             glow_color: self.icons.glow_color,
             level_id,
-            name_color: self.special_user_data.as_ref().map(|x| x.name_color),
+            special_user_data: self.special_user_data.clone(),
         }
     }
 
     pub fn make_preview(&self) -> PlayerPreviewAccountData {
         PlayerPreviewAccountData {
             account_id: self.account_id,
+            user_id: self.user_id,
             name: self.name.clone(),
             cube: self.icons.cube,
             color1: self.icons.color1,
             color2: self.icons.color2,
             glow_color: self.icons.glow_color,
+            special_user_data: self.special_user_data.clone(),
         }
     }
 }
@@ -105,11 +107,13 @@ impl PlayerAccountData {
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct PlayerPreviewAccountData {
     pub account_id: i32,
+    pub user_id: i32,
     pub name: FastString<MAX_NAME_SIZE>,
     pub cube: i16,
     pub color1: i16,
     pub color2: i16,
     pub glow_color: i16,
+    pub special_user_data: Option<SpecialUserData>,
 }
 
 /* PlayerRoomPreviewAccountData - similar to previous one but for rooms, the only difference is that it includes a level ID */
@@ -124,7 +128,7 @@ pub struct PlayerRoomPreviewAccountData {
     pub color2: i16,
     pub glow_color: i16,
     pub level_id: LevelId,
-    pub name_color: Option<Color3B>,
+    pub special_user_data: Option<SpecialUserData>,
 }
 
 /* AssociatedPlayerData */

@@ -2,14 +2,16 @@
 
 #include "room_popup.hpp"
 #include "download_level_popup.hpp"
+#include <data/packets/client/general.hpp>
+#include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
+#include <net/network_manager.hpp>
 #include <util/ui.hpp>
-#include "hooks/level_select_layer.hpp"
 
 using namespace geode::prelude;
 using namespace util::ui;
 
-bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
+bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInviting) {
     if (!CCLayer::init()) return false;
     this->data = data;
 
@@ -66,42 +68,67 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data) {
         auto badge = createBadgeIfSpecial(nameColor);
         if (badge != nullptr) badgeWrapper->addChild(badge);
     }
+
     badgeWrapper->updateLayout();
 
-    if (this->data.levelId != 0) {
-        Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
-            .scale(0.30f)
-            .intoMenuItem([levelId = this->data.levelId](auto) {
-                auto* glm = GameLevelManager::sharedState();
-                auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
-                bool isMainLevel = std::find(HookedLevelSelectLayer::MAIN_LEVELS.begin(), HookedLevelSelectLayer::MAIN_LEVELS.end(), levelId) != HookedLevelSelectLayer::MAIN_LEVELS.end();
-
-                if (mlevel != nullptr) {
-                    if (isMainLevel) { //if its a classic main level go to that page in LevelSelectLayer
-                        auto lsl = LevelSelectLayer::create(levelId - 1);
-                        util::ui::switchToScene(lsl);
-                        return;
-                    } //otherwise we just go right to playlayer
-                    auto level = static_cast<HookedGJGameLevel*>(glm->getMainLevel(levelId, false));
-                    level->m_fields->shouldTransitionWithPopScene = true;
-                    auto pl = PlayLayer::create(level, false, false);
-                    util::ui::switchToScene(pl);
-                    return;
-                }
-
-                if (auto popup = DownloadLevelPopup::create(levelId)) {
-                    popup->show();
-                }
-            })
-            .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
-            .scaleMult(1.1f)
-            .store(playButton)
-            .intoNewParent(CCMenu::create())
-            .pos(0.f, 0.f)
-            .parent(this);
+    if (forInviting) {
+        this->createInviteButton();
+    } else {
+        this->createJoinButton();
     }
 
     return true;
+}
+
+void PlayerListCell::createInviteButton() {
+    Build<CCSprite>::createSpriteName("icon-invite.png"_spr)
+        .scale(0.9f)
+        .intoMenuItem([accountId = this->data.accountId](auto) {
+            NetworkManager::get().send(RoomSendInvitePacket::create(std::to_string(accountId)));
+        })
+        .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
+        .scaleMult(1.1f)
+        .store(inviteButton)
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .parent(this);
+}
+
+void PlayerListCell::createJoinButton() {
+    if (this->data.levelId == 0) {
+        return;
+    }
+
+    Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
+        .scale(0.30f)
+        .intoMenuItem([levelId = this->data.levelId](auto) {
+            auto* glm = GameLevelManager::sharedState();
+            auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
+            bool isMainLevel = std::find(HookedLevelSelectLayer::MAIN_LEVELS.begin(), HookedLevelSelectLayer::MAIN_LEVELS.end(), levelId) != HookedLevelSelectLayer::MAIN_LEVELS.end();
+
+            if (mlevel != nullptr) {
+                if (isMainLevel) { //if its a classic main level go to that page in LevelSelectLayer
+                    auto lsl = LevelSelectLayer::create(levelId - 1);
+                    util::ui::switchToScene(lsl);
+                    return;
+                } //otherwise we just go right to playlayer
+                auto level = static_cast<HookedGJGameLevel*>(glm->getMainLevel(levelId, false));
+                level->m_fields->shouldTransitionWithPopScene = true;
+                auto pl = PlayLayer::create(level, false, false);
+                util::ui::switchToScene(pl);
+                return;
+            }
+
+            if (auto popup = DownloadLevelPopup::create(levelId)) {
+                popup->show();
+            }
+        })
+        .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
+        .scaleMult(1.1f)
+        .store(playButton)
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .parent(this);
 }
 
 void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
@@ -109,9 +136,9 @@ void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
     ProfilePage::create(data.accountId, false)->show();
 }
 
-PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data) {
+PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data, bool forInviting) {
     auto ret = new PlayerListCell;
-    if (ret->init(data)) {
+    if (ret->init(data, forInviting)) {
         ret->autorelease();
         return ret;
     }

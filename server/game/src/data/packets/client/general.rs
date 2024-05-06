@@ -43,3 +43,9 @@ pub struct RequestPlayerCountPacket {
 pub struct UpdateRoomSettingsPacket {
     pub settings: RoomSettings,
 }
+
+#[derive(Packet, Decodable)]
+#[packet(id = 11009)]
+pub struct RoomSendInvitePacket {
+    pub player: FastString<MAX_NAME_SIZE>,
+}

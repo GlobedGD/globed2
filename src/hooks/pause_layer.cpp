@@ -2,6 +2,7 @@
 
 #include <hooks/gjbasegamelayer.hpp>
 #include <ui/game/userlist/userlist.hpp>
+#include <ui/game/chat/chatlist.hpp>
 #include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
@@ -15,17 +16,29 @@ void GlobedPauseLayer::customSetup() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    Build<CCSprite>::createSpriteName("GJ_profileButton_001.png")
+    auto* menu = Build<CCMenu>::create()
+        .id("playerlist-menu"_spr)
+        .pos(0.f, 0.f)
+        .parent(this)
+        .collect();
+
+    Build<CCSprite>::createSpriteName("icon-players.png"_spr)
         .scale(0.9f)
         .intoMenuItem([](auto) {
             GlobedUserListPopup::create()->show();
         })
         .pos(winSize.width - 50.f, 50.f)
         .id("btn-open-playerlist"_spr)
-        .intoNewParent(CCMenu::create())
-        .id("playerlist-menu"_spr)
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(menu);
+
+    Build<CCSprite>::createSpriteName("icon-chat.png"_spr)
+        .scale(0.9f)
+        .intoMenuItem([](auto) {
+            GlobedChatListPopup::create()->show();
+        })
+        .pos(winSize.width - 50.f, 90.f)
+        .id("btn-open-chatlist"_spr)
+        .parent(menu);
 
     this->schedule(schedule_selector(GlobedPauseLayer::selUpdate), 0.f);
 }

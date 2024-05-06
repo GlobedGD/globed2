@@ -80,3 +80,14 @@ class RoomInfoPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RoomInfoPacket, (info));
+
+class RoomInvitePacket : public Packet {
+    GLOBED_PACKET(21008, false, false)
+
+    RoomInvitePacket() {}
+
+    PlayerRoomPreviewAccountData playerData;
+    uint32_t roomID;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(RoomInvitePacket, (playerData, roomID));

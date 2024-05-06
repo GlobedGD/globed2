@@ -51,6 +51,7 @@ pub enum ServerThreadMessage {
     BroadcastVoice(Arc<VoiceBroadcastPacket>),
     BroadcastText(ChatMessageBroadcastPacket),
     BroadcastNotice(ServerNoticePacket),
+    BroadcastInvite(RoomInvitePacket),
     BroadcastRoomInfo(RoomInfoPacket),
     TerminationNotice(FastString<MAX_NOTICE_SIZE>),
 }
@@ -434,6 +435,7 @@ impl GameServerThread {
                 self.send_packet_static(&packet).await?;
                 info!("{} is receiving a notice: {}", self.account_data.lock().name, packet.message);
             }
+            ServerThreadMessage::BroadcastInvite(packet) => self.send_packet_static(&packet).await?,
             ServerThreadMessage::BroadcastRoomInfo(packet) => {
                 self.send_packet_static(&packet).await?;
             }
@@ -529,6 +531,7 @@ impl GameServerThread {
             RequestLevelListPacket::PACKET_ID => self.handle_request_level_list(&mut data).await,
             RequestPlayerCountPacket::PACKET_ID => self.handle_request_player_count(&mut data).await,
             UpdateRoomSettingsPacket::PACKET_ID => self.handle_update_room_settings(&mut data).await,
+            RoomSendInvitePacket::PACKET_ID => self.handle_room_invitation(&mut data).await,
 
             /* game related */
             RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,

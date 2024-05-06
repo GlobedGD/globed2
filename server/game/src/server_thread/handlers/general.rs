@@ -1,5 +1,5 @@
 use super::*;
-use crate::{data::*, server_thread::GameServerThread};
+use crate::{data::*, server_thread::GameServerThread, server_thread::ServerThreadMessage};
 
 impl GameServerThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
@@ -199,6 +199,24 @@ impl GameServerThread {
         // send an update packet to all clients
         if success {
             self.game_server.broadcast_room_info(room_id).await;
+        }
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_room_invitation, RoomSendInvitePacket, packet, {
+        let _account_id = gs_needauth!(self);
+        let room_id = self.room_id.load(Ordering::Relaxed);
+
+        let thread = self.game_server.find_user(&packet.player);
+        let account_data = thread.as_ref().unwrap().account_data.lock().make_room_preview(0);
+
+        let invite_packet = RoomInvitePacket { player_data: account_data, room_id: room_id };
+
+        if let Some(thread) = thread {
+            thread
+                .push_new_message(ServerThreadMessage::BroadcastInvite(invite_packet.clone()))
+                .await;
         }
 
         Ok(())

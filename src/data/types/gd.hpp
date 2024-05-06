@@ -47,21 +47,6 @@ GLOBED_SERIALIZABLE_STRUCT(SpecialUserData, (
     nameColor
 ));
 
-class PlayerPreviewAccountData {
-public:
-    PlayerPreviewAccountData(int32_t id, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
-        : accountId(id), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor) {}
-    PlayerPreviewAccountData() {}
-
-    int32_t accountId;
-    std::string name;
-    int16_t cube, color1, color2, glowColor;
-};
-
-GLOBED_SERIALIZABLE_STRUCT(PlayerPreviewAccountData, (
-    accountId, name, cube, color1, color2, glowColor
-));
-
 class PlayerRoomPreviewAccountData {
 public:
     PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, LevelId levelId, std::optional<SpecialUserData> specialUserData)
@@ -77,6 +62,31 @@ public:
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerRoomPreviewAccountData, (
     accountId, userId, name, cube, color1, color2, glowColor, levelId, specialUserData
+));
+
+class PlayerPreviewAccountData {
+public:
+    PlayerPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
+        : accountId(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor) {}
+    PlayerPreviewAccountData() {}
+
+    int32_t accountId, userId;
+    std::string name;
+    int16_t cube, color1, color2, glowColor;
+    std::optional<SpecialUserData> specialUserData;
+
+    PlayerRoomPreviewAccountData makeRoomPreview() const {
+        return PlayerRoomPreviewAccountData(
+            accountId, userId,
+            name,
+            cube, color1, color2, glowColor,
+            0, specialUserData
+        );
+    }
+};
+
+GLOBED_SERIALIZABLE_STRUCT(PlayerPreviewAccountData, (
+    accountId, name, cube, color1, color2, glowColor
 ));
 
 class PlayerAccountData {
