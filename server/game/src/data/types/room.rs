@@ -8,14 +8,16 @@ pub struct RoomSettings {
 }
 
 impl RoomSettings {
-    #[inline]
     pub fn get_invite_only(&self) -> bool {
         self.flags.get_bit(0)
     }
 
-    #[inline]
     pub fn get_public_invites(&self) -> bool {
         self.flags.get_bit(1)
+    }
+
+    pub fn get_two_player_mode(&self) -> bool {
+        self.flags.get_bit(3)
     }
 }
 

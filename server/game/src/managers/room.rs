@@ -76,14 +76,16 @@ impl Room {
         }
     }
 
-    #[inline]
     pub fn is_invite_only(&self) -> bool {
         self.settings.get_invite_only()
     }
 
-    #[inline]
     pub fn is_public_invites(&self) -> bool {
         self.settings.get_public_invites()
+    }
+
+    pub fn is_two_player_mode(&self) -> bool {
+        self.settings.get_two_player_mode()
     }
 }
 

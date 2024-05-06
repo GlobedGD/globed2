@@ -71,6 +71,8 @@ impl GameServerThread {
             |room| {
                 if room.is_invite_only() && room.token != packet.room_token {
                     Some("invite only room, unable to join")
+                } else if room.is_two_player_mode() && room.manager.get_total_player_count() >= 2 {
+                    Some("room is full")
                 } else {
                     None
                 }
