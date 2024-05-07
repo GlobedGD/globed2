@@ -133,7 +133,7 @@ bool RoomPopup::setup() {
         .store(clearSearchButton);
 
     // invite button
-    Build<CCSprite>::createSpriteName("accountBtn_messages_001.png")
+    Build<CCSprite>::createSpriteName("icon-invite-menu.png"_spr)
         .with([this](CCSprite* spr) {
             util::ui::rescaleToMatch(spr, clearSearchButton);
         })

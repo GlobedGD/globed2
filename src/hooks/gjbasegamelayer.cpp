@@ -511,7 +511,7 @@ void GlobedGJBGL::selSendPlayerData(float) {
     NetworkManager::get().send(PlayerDataPacket::create(data));
 }
 
-// selSendPlayerMetadata - runs every 5 seconds
+// selSendPlayerMetadata - runs every 10 seconds
 void GlobedGJBGL::selSendPlayerMetadata(float) {
     auto self = GlobedGJBGL::get();
 
@@ -1059,7 +1059,7 @@ void GlobedGJBGL::rescheduleSelectors() {
     m_fields->lastKnownTimeScale = timescale;
 
     float pdInterval = (1.0f / m_fields->configuredTps) * timescale;
-    float pmdInterval = 5.f * timescale;
+    float pmdInterval = 10.f * timescale;
     float updpInterval = 0.25f * timescale;
     float updeInterval = (1.0f / 30.f) * timescale;
 
