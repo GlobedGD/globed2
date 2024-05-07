@@ -39,7 +39,7 @@ public:
     static constexpr float CELL_HEIGHT = 45.0f;
     static constexpr float CELL_WIDTH = RoomSettingsPopup::LIST_WIDTH;
 
-    static RoomSettingCell* create(const char* name, int tag, RoomSettingsPopup* popup);
+    static RoomSettingCell* create(const char* name, std::string desc, int tag, RoomSettingsPopup* popup);
 
 private:
     friend class RoomSettingsPopup;
@@ -47,7 +47,7 @@ private:
     RoomSettingsPopup* popup;
     Ref<CCMenuItemToggler> button;
 
-    bool init(const char* name, int tag, RoomSettingsPopup* popup);
+    bool init(const char* name, std::string desc, int tag, RoomSettingsPopup* popup);
 
     void setToggled(bool state);
     void setEnabled(bool state);

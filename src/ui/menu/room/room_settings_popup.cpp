@@ -15,9 +15,9 @@ enum {
     TAG_INVITE_ONLY
 };
 
-#define MAKE_SETTING(name, tag, storage) \
+#define MAKE_SETTING(name, desc, tag, storage) \
     { \
-        storage = RoomSettingCell::create(name, tag, this); \
+        storage = RoomSettingCell::create(name, desc, tag, this); \
         cells->addObject(storage); \
     }
 
@@ -26,10 +26,10 @@ bool RoomSettingsPopup::setup() {
 
     auto* cells = CCArray::create();
 
-    MAKE_SETTING("Invite only", TAG_INVITE_ONLY, cellInviteOnly);
-    MAKE_SETTING("Open invites", TAG_PUBLIC_INVITES, cellPublicInvites);
-    MAKE_SETTING("Collision", TAG_COLLISION, cellCollision);
-    MAKE_SETTING("2-player mode", TAG_TWO_PLAYER, cellTwoPlayer);
+    MAKE_SETTING("Invite only", "While enabled, new players can only join if they are invited", TAG_INVITE_ONLY, cellInviteOnly);
+    MAKE_SETTING("Open invites", "While enabled, all players in the room can invite players", TAG_PUBLIC_INVITES, cellPublicInvites);
+    MAKE_SETTING("Collision", "While enabled, players can collide with each other", TAG_COLLISION, cellCollision);
+    MAKE_SETTING("2-player mode", "While enabled, players can link with another player to play a 2-player enabled level together", TAG_TWO_PLAYER, cellTwoPlayer);
 
     auto listview = ListView::create(cells, RoomSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
     auto* listlayer = Build(GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false))
@@ -103,7 +103,7 @@ RoomSettingsPopup* RoomSettingsPopup::create() {
     return nullptr;
 }
 
-bool RoomSettingCell::init(const char* name, int tag, RoomSettingsPopup* popup) {
+bool RoomSettingCell::init(const char* name, std::string desc, int tag, RoomSettingsPopup* popup) {
     if (!CCLayer::init()) return false;
     this->popup = popup;
 
@@ -116,12 +116,42 @@ bool RoomSettingCell::init(const char* name, int tag, RoomSettingsPopup* popup) 
         .pos(0.f, 0.f)
         .parent(this);
 
-    Build<CCLabelBMFont>::create(name, "bigFont.fnt")
-        .scale(0.6f)
+    CCMenu* layout = Build<CCMenu>::create()
+        .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start))
+        .contentSize({CELL_WIDTH, CELL_HEIGHT})
         .anchorPoint(0.f, 0.5f)
         .pos(10.f, CELL_HEIGHT / 2)
         .parent(this)
+        .collect()
         ;
+
+    CCLabelBMFont* nameLabel = Build<CCLabelBMFont>::create(name, "bigFont.fnt")
+        .scale(0.6f)
+        //.anchorPoint(0.f, 0.5f)
+        //.pos(10.f, CELL_HEIGHT / 2)
+        .parent(layout)
+        .collect()
+        ;
+
+    if (!desc.empty()) {
+        Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+            .scale(0.75f)
+            .intoMenuItem([this, name, desc] {
+                FLAlertLayer::create(
+                    name,
+                    desc,
+                    "OK"
+                )->show();
+            })
+            .move(ccp(0.f, -3.f))
+            //.pos(10.f + (std::string(name).size() * 12.f), CELL_HEIGHT / 2)
+            //.intoNewParent(CCMenu::create())
+            //.pos(0.f, 0.f)
+            .parent(layout)
+            ;
+    }
+
+    layout->updateLayout();
 
     return true;
 }
@@ -134,9 +164,9 @@ void RoomSettingCell::setEnabled(bool state) {
     button->setEnabled(state);
 }
 
-RoomSettingCell* RoomSettingCell::create(const char* name, int tag, RoomSettingsPopup* popup) {
+RoomSettingCell* RoomSettingCell::create(const char* name, std::string desc, int tag, RoomSettingsPopup* popup) {
     auto ret = new RoomSettingCell;
-    if (ret->init(name, tag, popup)) {
+    if (ret->init(name, desc, tag, popup)) {
         return ret;
     }
 
