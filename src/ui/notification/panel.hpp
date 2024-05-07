@@ -19,7 +19,7 @@ public:
     void queueNotification(cocos2d::CCNode* node);
 
 private:
-    static constexpr auto NOTIFICATION_BUFFER_TIME = util::time::seconds(2);
+    static constexpr auto NOTIFICATION_BUFFER_TIME = util::time::millis(1250);
 
     util::time::time_point lastNotificationAdded;
     std::queue<Ref<cocos2d::CCNode>> queuedNotifs;

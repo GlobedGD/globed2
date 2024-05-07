@@ -1,6 +1,7 @@
 #include "panel.hpp"
 
 #include "invite.hpp"
+#include <net/network_manager.hpp>
 
 using namespace geode::prelude;
 
@@ -98,6 +99,14 @@ void GlobedNotificationPanel::queueNotification(cocos2d::CCNode* node) {
 void GlobedNotificationPanel::update(float dt) {
     // hide if in a level
     this->setVisible(PlayLayer::get() == nullptr);
+
+    // remove all invites if we disconnected
+    auto& nm = NetworkManager::get();
+    if (!nm.established()) {
+        this->removeAllChildren();
+        queuedNotifs = {};
+        return;
+    }
 
     if (queuedNotifs.empty()) return;
 

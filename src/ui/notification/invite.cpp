@@ -18,10 +18,11 @@ bool GlobedInviteNotification::init(uint32_t roomID, uint32_t roomToken, const P
         ;
 
     const auto [width, height] = bg->getScaledContentSize();
+    float targetWidth = width * 0.65f;
 
-    Build<CCLabelBMFont>::create(player.name.c_str(), "goldFont.fnt")
-        .limitLabelWidth(width * 0.7f, 0.95f, 0.3f)
-        .pos(width / 2.f + 25.f, height - 23.f)
+    Build<CCLabelBMFont>::create("availax", "goldFont.fnt")
+        .limitLabelWidth(targetWidth, 0.95f, 0.3f)
+        .pos(width / 2.f + 10.f, height - 23.f)
         .parent(this);
 
     Build<CCLabelBMFont>::create("invited you", "bigFont.fnt")
@@ -46,7 +47,10 @@ bool GlobedInviteNotification::init(uint32_t roomID, uint32_t roomToken, const P
     Build<ButtonSprite>::create("Accept", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this, roomID, roomToken](auto) {
             auto& nm = NetworkManager::get();
-            nm.send(JoinRoomPacket::create(roomID, roomToken));
+            if (nm.established()) {
+                nm.send(JoinRoomPacket::create(roomID, roomToken));
+            }
+
             this->removeFromParent();
         })
         .parent(menu)
