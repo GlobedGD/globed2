@@ -12,7 +12,10 @@
             "globedsheet1": [
                 "resources/*.png"
             ]
-        }
+        },
+        "files": [
+            "resources/*.ogg"
+        ]
     },
     "id": "dankmeme.globed2",
     "name": "Globed",

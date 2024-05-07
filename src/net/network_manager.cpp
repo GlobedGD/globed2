@@ -16,7 +16,7 @@
 #include <util/rng.hpp>
 #include <util/debug.hpp>
 #include <util/format.hpp>
-#include <ui/menu/room/invite_notification.hpp>
+#include <ui/notification/panel.hpp>
 
 using namespace geode::prelude;
 using namespace util::data;
@@ -462,10 +462,7 @@ void NetworkManager::setupBuiltinListeners() {
 
     addBuiltinListener<RoomInvitePacket>([](auto packet) {
         Loader::get()->queueInMainThread([packet] {
-            auto* notif = InviteNotification::create(packet->roomID, packet->roomToken, packet->playerData);
-            notif->setPosition(440.f, 275.f);
-
-            CCScene::get()->addChild(notif);
+            GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->roomToken, packet->playerData);
         });
     });
 
@@ -476,6 +473,8 @@ void NetworkManager::setupBuiltinListeners() {
             RoomManager::get().setInfo(packet->info);
         });
     });
+
+    addBuiltinListener<RoomJoinedPacket>([](auto packet) {});
 
     addBuiltinListener<RoomJoinFailedPacket>([](auto packet) {
         ErrorQueues::get().error(fmt::format("Failed to join room: {}", packet->message));

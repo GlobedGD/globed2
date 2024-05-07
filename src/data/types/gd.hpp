@@ -100,7 +100,7 @@ public:
 
     bool operator==(const PlayerAccountData&) const = default;
 
-    PlayerRoomPreviewAccountData makeRoomPreview(LevelId levelId) {
+    PlayerRoomPreviewAccountData makeRoomPreview(LevelId levelId) const {
         return PlayerRoomPreviewAccountData(
             accountId, userId, name, icons.cube, icons.color1, icons.color2, icons.glowColor, levelId, specialUserData
         );

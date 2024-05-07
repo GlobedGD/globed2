@@ -14,6 +14,7 @@
 #include <crypto/box.hpp>
 #include <managers/settings.hpp>
 #include <ui/error_check_node.hpp>
+#include <ui/notification/panel.hpp>
 #include <util/all.hpp>
 
 using namespace geode::prelude;
@@ -91,6 +92,10 @@ void setupErrorCheckNode() {
     auto ecn = ErrorCheckNode::create();
     ecn->setID("error-check-node"_spr);
     SceneManager::get()->keepAcrossScenes(ecn);
+
+    auto notif = GlobedNotificationPanel::create();
+    notif->setID("notification-panel"_spr);
+    notif->persist();
 }
 
 void setupCustomKeybinds() {

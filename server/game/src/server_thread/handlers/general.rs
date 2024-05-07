@@ -260,7 +260,7 @@ impl GameServerThread {
         let thread = self.game_server.get_user_by_id(packet.player);
 
         if let Some(thread) = thread {
-            let player_data = thread.account_data.lock().make_room_preview(0);
+            let player_data = self.account_data.lock().make_room_preview(0);
             let room_token = room_token.unwrap();
 
             let invite_packet = RoomInvitePacket {
