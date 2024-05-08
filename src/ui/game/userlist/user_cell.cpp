@@ -68,10 +68,11 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .parent(usernameLayout)
         .collect();
 
-    CCSprite* badgeIcon = nullptr;
 	if (data.specialUserData.has_value()) {
-		badgeIcon = util::ui::createBadgeIfSpecial(nameColor);
-        usernameLayout->addChild(badgeIcon);
+		CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(nameColor);
+        if (badgeIcon) {
+            usernameLayout->addChild(badgeIcon);
+        }
     }
 
     // percentage label
