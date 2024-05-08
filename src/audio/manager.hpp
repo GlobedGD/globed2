@@ -36,7 +36,7 @@ constexpr size_t VOICE_TARGET_FRAMESIZE = VOICE_TARGET_SAMPLERATE * VOICE_CHUNK_
 constexpr size_t VOICE_CHANNELS = 1;
 constexpr int MAX_AUDIO_CHANNELS = 512;
 
-// This class is not thread safe. At all.
+// This class might thread safe ?
 class GlobedAudioManager : public SingletonBase<GlobedAudioManager> {
 protected:
     friend class SingletonBase;

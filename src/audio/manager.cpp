@@ -4,6 +4,10 @@
 
 #ifdef GLOBED_VOICE_SUPPORT
 
+#ifdef GEODE_IS_WINDOWS
+# include <objbase.h>
+#endif
+
 #include <opus.h>
 #include <Geode/utils/permission.hpp>
 
@@ -33,7 +37,24 @@ GlobedAudioManager::GlobedAudioManager()
     : encoder(VOICE_TARGET_SAMPLERATE, VOICE_TARGET_FRAMESIZE, VOICE_CHANNELS) {
 
     audioThreadHandle.setLoopFunction(&GlobedAudioManager::audioThreadFunc);
-    audioThreadHandle.setStartFunction([] { geode::utils::thread::setName("Audio Thread"); });
+
+    // initializing COM is not necessary as FMOD will do it on its own, but FMOD docs recommend doing it anyway.
+    audioThreadHandle.setStartFunction([] {
+        geode::utils::thread::setName("Audio Thread");
+#ifdef GEODE_IS_WINDOWS
+        auto result = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        if (result != S_OK) {
+            log::error("failed to initialize COM: {:X}", result);
+        }
+#endif
+    });
+
+#ifdef GEODE_IS_WINDOWS
+    audioThreadHandle.setTerminationFunction([] {
+        CoUninitialize();
+    });
+#endif
+
     audioThreadHandle.start(this);
 
     recordDevice = {.id = -1};
