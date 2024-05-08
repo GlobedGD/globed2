@@ -139,8 +139,8 @@ void NetworkManager::send(std::shared_ptr<Packet> packet) {
     packetQueue.push(std::move(packet));
 }
 
-void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback) {
-    auto* listener = PacketListener::create(id, std::move(callback), target);
+void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback, bool overrideBuiltin) {
+    auto* listener = PacketListener::create(id, std::move(callback), target, overrideBuiltin);
     target->setUserObject(util::cocos::spr(fmt::format("packet-listener-{}", id)), listener);
 
     this->registerPacketListener(id, listener);
@@ -183,7 +183,8 @@ void NetworkManager::threadMainFunc() {
             gameSocket.createBox();
 
             // if we have ignore on, use 0xffff as a magic value that bypasses protocol checks
-            uint16_t proto = ignoreProtocolMismatch ? (uint16_t)0xffff : PROTOCOL_VERSION;
+            // TODO: actually make it 0xffff
+            uint16_t proto = ignoreProtocolMismatch ? 5 : PROTOCOL_VERSION;
 
             auto packet = CryptoHandshakeStartPacket::create(proto, CryptoPublicKey(gameSocket.cryptoBox->extractPublicKey()));
             this->send(packet);
@@ -281,16 +282,30 @@ void NetworkManager::threadRecvFunc() {
 void NetworkManager::callListener(std::shared_ptr<Packet> packet) {
     packetid_t packetId = packet->getPacketId();
 
+    bool hasListeners = !(*listeners.lock())[packetId].empty();
+    // if we have listeners, check if any of them disable builtin listeners
+
+    bool overrideBuiltin = false;
+    if (hasListeners) {
+        for (auto* listener : (*listeners.lock())[packetId]) {
+            if (listener->overrideBuiltin) {
+                overrideBuiltin = true;
+                break;
+            }
+        }
+    }
+
     bool invokedBuiltin = false;
 
     // call any builtin listeners
-    auto builtin = builtinListeners.lock();
-    if (builtin->contains(packetId)) {
-        (*builtin)[packetId](packet);
-        invokedBuiltin = true;
+    if (!overrideBuiltin) {
+        auto builtin = builtinListeners.lock();
+        if (builtin->contains(packetId)) {
+            (*builtin)[packetId](packet);
+            invokedBuiltin = true;
+        }
     }
 
-    bool hasListeners = !(*listeners.lock())[packetId].empty();
     if (!hasListeners) {
         if (!invokedBuiltin) {
             this->handleUnhandledPacket(packetId);

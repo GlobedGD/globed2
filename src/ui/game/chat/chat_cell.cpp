@@ -1,6 +1,5 @@
 #include "chat_cell.hpp"
 
-#include "chatlist.hpp"
 #include <audio/voice_playback_manager.hpp>
 #include <data/packets/client/admin.hpp>
 #include <data/packets/server/admin.hpp>
@@ -89,7 +88,7 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
 
     playerBundle->updateLayout();
 
-    // set the zorder of the button to be the highest, so that when you hold it, the badge and playre icon are behind
+    // set the zorder of the button to be the highest, so that when you hold it, the badge and player icon are behind
     // this also *must* be called after updateLayout().
     usernameButton->setZOrder(10);
 

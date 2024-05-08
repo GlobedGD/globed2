@@ -96,7 +96,7 @@ bool AdminPopup::setup() {
         } else {
             ErrorQueues::get().warn(packet->message);
         }
-    });
+    }, true);
 
     auto* topRightCorner = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f)->setAxisReverse(true))

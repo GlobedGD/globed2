@@ -3,6 +3,7 @@
 #include <hooks/gjbasegamelayer.hpp>
 #include <ui/game/userlist/userlist.hpp>
 #include <ui/game/chat/chatlist.hpp>
+#include <ui/game/chat/unread_badge.hpp>
 #include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
@@ -31,14 +32,24 @@ void GlobedPauseLayer::customSetup() {
         .id("btn-open-playerlist"_spr)
         .parent(menu);
 
-    Build<CCSprite>::createSpriteName("icon-chat.png"_spr)
+    auto* chatIcon = Build<CCSprite>::createSpriteName("icon-chat.png"_spr)
         .scale(0.9f)
         .intoMenuItem([](auto) {
             GlobedChatListPopup::create()->show();
         })
         .pos(winSize.width - 50.f, 90.f)
         .id("btn-open-chatlist"_spr)
-        .parent(menu);
+        .parent(menu)
+        .collect()
+        ;
+
+    // todo make it not 3
+    Build<UnreadMessagesBadge>::create(3)
+        .pos(chatIcon->getScaledContentSize() - CCPoint{5.f, 5.f})
+        .scale(0.7f)
+        .id("unread-messages-icon"_spr)
+        .parent(chatIcon)
+        ;
 
     this->schedule(schedule_selector(GlobedPauseLayer::selUpdate), 0.f);
 }

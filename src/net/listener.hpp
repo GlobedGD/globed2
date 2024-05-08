@@ -9,15 +9,16 @@ public:
 
     ~PacketListener();
 
-    static PacketListener* create(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner);
+    static PacketListener* create(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, bool overrideBuiltin);
 
     void invokeCallback(std::shared_ptr<Packet> packet);
 
     cocos2d::CCObject* owner;
+    bool overrideBuiltin;
+    packetid_t packetId;
 
 private:
     CallbackFn callback;
-    packetid_t packetId;
 
-    bool init(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner);
+    bool init(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, bool overrideBuiltin);
 };

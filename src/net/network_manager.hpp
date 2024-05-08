@@ -62,14 +62,14 @@ public:
     // Adds a packet listener and calls your callback function when a packet with `id` is received.
     // If there already was a callback with this packet ID, it gets replaced.
     // All callbacks are ran in the main (GD) thread.
-    void addListener(cocos2d::CCNode* target, packetid_t id, PacketCallback&& callback);
+    void addListener(cocos2d::CCNode* target, packetid_t id, PacketCallback&& callback, bool overrideBuiltin = false);
 
     // Same as addListener(packetid_t, PacketCallback) but hacky syntax xd
     template <HasPacketID Pty>
-    void addListener(cocos2d::CCNode* target, PacketCallbackSpecific<Pty>&& callback) {
+    void addListener(cocos2d::CCNode* target, PacketCallbackSpecific<Pty>&& callback, bool overrideBuiltin = false) {
         this->addListener(target, Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
             callback(std::static_pointer_cast<Pty>(pkt));
-        });
+        }, overrideBuiltin);
     }
 
     // Removes a listener by packet ID.
