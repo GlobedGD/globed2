@@ -9,35 +9,43 @@ using namespace geode::prelude;
 bool GlobedInviteNotification::init(uint32_t roomID, uint32_t roomToken, const PlayerRoomPreviewAccountData& player) {
     if (!CCLayer::init()) return false;
 
-    auto* bg = Build<CCSprite>::createSpriteName("notif-invite-bg.png"_spr)
-        .zOrder(-1)
-        .scale(0.7f)
-        .anchorPoint(0.f, 0.f)
-        .parent(this)
-        .collect()
-        ;
+    const float width = 332.5f * 0.7f;
+    const float height = 162.5f * 0.7f;
 
-    const auto [width, height] = bg->getScaledContentSize();
     float targetWidth = width * 0.65f;
 
+    // bg
+    const float cc9sw = width * 0.87f;
+    const float cc9sh = height * 0.75f;
+    const float mult = 2.f;
+    Build<CCScale9Sprite>::create("GJ_square02.png")
+        .contentSize({cc9sw * mult, cc9sh * mult})
+        .pos(width / 2 + 10.f, height / 2 - 13.f)
+        .scale(1.f / mult)
+        .opacity(167)
+        .zOrder(-1)
+        .parent(this);
+
+    // envelope icon
+    Build<CCSprite>::createSpriteName("icon-invite.png"_spr)
+        .rotation(-13.f)
+        .scale(1.25f)
+        .pos(width - cc9sw + 2.f, cc9sh - 2.f)
+        .parent(this);
+
     Build<CCLabelBMFont>::create("availax", "goldFont.fnt")
-        .limitLabelWidth(targetWidth, 0.95f, 0.3f)
-        .pos(width / 2.f + 10.f, height - 23.f)
+        .limitLabelWidth(targetWidth, 0.76f, 0.3f)
+        .pos(width / 2.f + 10.f, height - 39.f)
         .parent(this);
 
-    Build<CCLabelBMFont>::create("invited you", "bigFont.fnt")
+    Build<CCLabelBMFont>::create("invited you to a room", "bigFont.fnt")
         .scale(0.45f)
-        .pos(width / 2.f + 10.f, height / 2.f + 15.f)
-        .parent(this);
-
-    Build<CCLabelBMFont>::create("to a room", "bigFont.fnt")
-        .scale(0.45f)
-        .pos(width / 2.f + 10.f, height / 2.f)
+        .pos(width / 2.f + 10.f, height / 2.f - 4.f)
         .parent(this);
 
     auto* menu = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(10.f))
-        .pos(width / 2.f + 10.f, 25.f)
+        .pos(width / 2.f + 10.f, 23.f)
         .anchorPoint(0.5f, 0.5f)
         .contentSize(width * 0.7f, 40.f)
         .parent(this)
@@ -65,7 +73,7 @@ bool GlobedInviteNotification::init(uint32_t roomID, uint32_t roomToken, const P
 
     menu->updateLayout();
 
-    this->setContentSize(bg->getScaledContentSize());
+    this->setContentSize({width, height});
     this->setScale(0.7f);
 
     return true;

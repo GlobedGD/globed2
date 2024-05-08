@@ -38,10 +38,10 @@ $execute {
     asp::setLogFunction([](LogLevel level, auto message) {
         switch (level) {
             case LogLevel::Trace: [[fallthrough]];
-            case LogLevel::Debug: log::debug("{}", message); break;
-            case LogLevel::Info: log::info("{}", message); break;
-            case LogLevel::Warn: log::warn("{}", message); break;
-            case LogLevel::Error: log::error("{}", message); break;
+            case LogLevel::Debug: log::debug("[asp] {}", message); break;
+            case LogLevel::Info: log::info("[asp] {}", message); break;
+            case LogLevel::Warn: log::warn("[asp] {}", message); break;
+            case LogLevel::Error: log::error("[asp] {}", message); break;
         }
     });
 
