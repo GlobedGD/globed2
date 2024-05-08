@@ -1,202 +1,83 @@
 #include "settings.hpp"
 
-#define SKEY(cat, sstr) "_gsetting-" #cat #sstr
-#define SFLAGKEY(sstr) "_gflag-" #sstr
-#define STOREV(cat, sstr) \
-    do { \
-        constexpr static auto _skey = SKEY(cat, sstr); \
-        \
-        if (this->has(_skey) || ((cat.sstr) != (cat._DefaultFor##sstr))) { \
-            this->store(_skey, cat.sstr); \
-        } \
-    } while (0) \
+#include <util/misc.hpp>
 
-#define LOADV(cat, sstr) \
-    this->loadOptionalInto(SKEY(cat, sstr), cat.sstr)
-
-#define STOREF(sstr) this->store(SFLAGKEY(sstr), flags.sstr)
-#define LOADF(sstr) this->loadOptionalInto(SFLAGKEY(sstr), flags.sstr)
-
-#define RESET_SETTINGS(...) \
-    do { \
-        static const char* args[] = { __VA_ARGS__ }; \
-        for (const char* arg : args) { \
-            this->clear(arg);\
-        } \
-    } while (0) \
+using namespace geode::prelude;
 
 GlobedSettings::GlobedSettings() {
     this->reload();
 }
 
-void GlobedSettings::save() {
-    // globed
-    STOREV(globed, tpsCap);
-    STOREV(globed, autoconnect);
-    STOREV(globed, preloadAssets);
-    STOREV(globed, deferPreloadAssets);
-    STOREV(globed, increaseLevelList);
-    STOREV(globed, fragmentationLimit);
-    STOREV(globed, compressedPlayerCount);
+void GlobedSettings::reflect(TaskType taskType) {
+    using SetMd = boost::describe::describe_members<GlobedSettings, boost::describe::mod_public>;
 
-    // overlay
-    STOREV(overlay, opacity);
-    STOREV(overlay, enabled);
-    STOREV(overlay, hideConditionally);
-    STOREV(overlay, position);
+    // iterate through all categories
+    boost::mp11::mp_for_each<SetMd>([&, this](auto cd) -> void {
+        using CatType = typename util::misc::MemberPtrToUnderlying<decltype(cd.pointer)>::type;
+        auto catName = cd.name;
 
-    // communication
-    STOREV(communication, voiceEnabled);
-    STOREV(communication, voiceProximity);
-    STOREV(communication, classicProximity);
-    STOREV(communication, voiceVolume);
-    STOREV(communication, onlyFriends);
-    STOREV(communication, lowerAudioLatency);
-    STOREV(communication, audioDevice);
-    STOREV(communication, deafenNotification);
+        auto& category = this->*cd.pointer;
+        bool isFlag = std::string_view(catName) == "flags";
 
-    // level ui
-    STOREV(levelUi, progressIndicators);
-    STOREV(levelUi, progressPointers);
-    STOREV(levelUi, progressOpacity);
-    STOREV(levelUi, voiceOverlay);
+        // iterate through all settings in the category
+        using CatMd = boost::describe::describe_members<CatType, boost::describe::mod_public>;
+        boost::mp11::mp_for_each<CatMd>([&, this](auto setd) -> void {
+            using SetTy = typename util::misc::MemberPtrToUnderlying<decltype(setd.pointer)>::type;
+            using InnerType = SetTy::Type;
+            constexpr InnerType Default = SetTy::Default;
 
-    // players
-    STOREV(players, playerOpacity);
-    STOREV(players, showNames);
-    STOREV(players, dualName);
-    STOREV(players, nameOpacity);
-    STOREV(players, statusIcons);
-    STOREV(players, hideNearby);
-    STOREV(players, deathEffects);
-    STOREV(players, defaultDeathEffect);
-    STOREV(players, forceVisibility);
-    STOREV(players, ownName);
-    STOREV(players, hidePracticePlayers);
+            auto setName = setd.name;
 
-    // admin
-    STOREV(admin, rememberPassword);
+            std::string settingKey;
+            if (isFlag) {
+                settingKey = fmt::format("_gflag-{}", setName);
+            } else {
+                settingKey = fmt::format("_gsetting-{}{}", catName, setName);
+            }
 
-    // store flags
+            auto& setting = category.*setd.pointer;
 
-    STOREF(seenSignupNotice);
-    STOREF(seenSignupNoticev2);
-    STOREF(seenVoiceChatPTTNotice);
-    STOREF(seenTeleportNotice);
-    STOREF(seenAprilFoolsNotice);
-}
-
-void GlobedSettings::reload() {
-    // globed
-    LOADV(globed, tpsCap);
-    LOADV(globed, autoconnect);
-    LOADV(globed, preloadAssets);
-    LOADV(globed, deferPreloadAssets);
-    LOADV(globed, increaseLevelList);
-    LOADV(globed, fragmentationLimit);
-    LOADV(globed, compressedPlayerCount);
-
-    // overlay
-    LOADV(overlay, opacity);
-    LOADV(overlay, enabled);
-    LOADV(overlay, hideConditionally);
-    LOADV(overlay, position);
-
-    // communication
-    LOADV(communication, voiceEnabled);
-    LOADV(communication, voiceProximity);
-    LOADV(communication, classicProximity);
-    LOADV(communication, voiceVolume);
-    LOADV(communication, onlyFriends);
-    LOADV(communication, lowerAudioLatency);
-    LOADV(communication, audioDevice);
-    LOADV(communication, deafenNotification);
-
-    // level ui
-    LOADV(levelUi, progressIndicators);
-    LOADV(levelUi, progressPointers);
-    LOADV(levelUi, progressOpacity);
-    LOADV(levelUi, voiceOverlay);
-
-    // players
-    LOADV(players, playerOpacity);
-    LOADV(players, showNames);
-    LOADV(players, dualName);
-    LOADV(players, nameOpacity);
-    LOADV(players, statusIcons);
-    LOADV(players, hideNearby);
-    LOADV(players, deathEffects);
-    LOADV(players, defaultDeathEffect);
-    LOADV(players, forceVisibility);
-    LOADV(players, ownName);
-    LOADV(players, hidePracticePlayers);
-
-    // admin
-    LOADV(admin, rememberPassword);
-
-    // load flags
-
-    LOADF(seenSignupNotice);
-    LOADF(seenSignupNoticev2);
-    LOADF(seenVoiceChatPTTNotice);
-    LOADF(seenTeleportNotice);
-    LOADF(seenAprilFoolsNotice);
-}
-
-void GlobedSettings::resetToDefaults() {
-    RESET_SETTINGS(
-        SKEY(globed, tpsCap),
-        SKEY(globed, autoconnect),
-        SKEY(players, preloadAssets),
-        SKEY(globed, deferPreloadAssets),
-        SKEY(globed, increaseLevelList),
-        SKEY(globed, fragmentationLimit),
-        SKEY(globed, compressedPlayerCount),
-
-        // overlay
-        SKEY(overlay, opacity),
-        SKEY(overlay, enabled),
-        SKEY(overlay, hideConditionally),
-        SKEY(overlay, position),
-
-        // communication
-        SKEY(communication, voiceEnabled),
-        SKEY(communication, voiceProximity),
-        SKEY(communication, classicProximity),
-        SKEY(communication, voiceVolume),
-        SKEY(communication, onlyFriends),
-        SKEY(communication, lowerAudioLatency),
-        SKEY(communication, audioDevice),
-        SKEY(communication, deafenNotification),
-
-        // level ui
-        SKEY(levelUi, progressIndicators),
-        SKEY(levelUi, progressPointers),
-        SKEY(levelUi, progressOpacity),
-        SKEY(levelUi, voiceOverlay),
-
-        // players
-        SKEY(players, playerOpacity),
-        SKEY(players, showNames),
-        SKEY(players, dualName),
-        SKEY(players, nameOpacity),
-        SKEY(players, statusIcons),
-        SKEY(players, deathEffects),
-        SKEY(players, defaultDeathEffect),
-        SKEY(players, forceVisibility),
-        SKEY(players, ownName),
-        SKEY(players, hidePracticePlayers),
-
-        // admin
-        SKEY(admin, rememberPassword)
-    );
-
-    this->hardReset();
+            // now, depending on whether we are saving settings or loading them, do the appropriate thing
+            switch (taskType) {
+                case TaskType::SaveSettings: {
+                    if (this->has(settingKey) || setting.get() != Default || isFlag) {
+                        this->store(settingKey, setting.get());
+                    }
+                } break;
+                case TaskType::LoadSettings: {
+                    this->loadOptionalInto(settingKey, setting.ref());
+                } break;
+                case TaskType::ResetSettings: {
+                    // flags cant be cleared unless hard resetting
+                    if (isFlag) break;
+                } [[fallthrough]];
+                case TaskType::HardResetSettings: {
+                    setting.set(Default);
+                    this->clear(settingKey);
+                } break;
+            }
+        });
+    });
 }
 
 void GlobedSettings::hardReset() {
-    // mat
-    new (this) GlobedSettings;
+    this->reflect(TaskType::HardResetSettings);
+}
+
+void GlobedSettings::reset() {
+    this->reflect(TaskType::ResetSettings);
+}
+
+void GlobedSettings::reload() {
+    this->reflect(TaskType::LoadSettings);
+}
+
+void GlobedSettings::save() {
+    this->reflect(TaskType::SaveSettings);
+}
+
+bool GlobedSettings::has(const std::string_view key) {
+    return Mod::get()->hasSavedValue(key);
 }
 
 void GlobedSettings::clear(const std::string_view key) {

@@ -87,7 +87,7 @@ bool GlobedSettingsLayer::init() {
         .intoMenuItem([this](auto) {
             geode::createQuickPopup("Reset all settings", "Are you sure you want to reset all settings? This action is <cr>irreversible.</c>", "Cancel", "Ok", [this](auto, bool accepted) {
                 if (accepted) {
-                    GlobedSettings::get().resetToDefaults();
+                    GlobedSettings::get().reset();
                     this->remakeList();
                 }
             });
@@ -159,9 +159,9 @@ void GlobedSettingsLayer::remakeList() {
     this->onTab(tabBtn1);
 }
 
-#define MAKE_SETTING(cat, name, setname, setdesc) cells->addObject(GlobedSettingCell::create(&settings.cat.name, getCellType<decltype(settings.cat.name)>(), setname, setdesc, {}))
+#define MAKE_SETTING(cat, name, setname, setdesc) cells->addObject(GlobedSettingCell::create(&settings.cat.name, getCellType<decltype(settings.cat.name)::Type>(), setname, setdesc, {}))
 #define MAKE_SETTING_TYPE(cat, name, type, setname, setdesc) cells->addObject(GlobedSettingCell::create(&settings.cat.name, type, setname, setdesc, {}))
-#define MAKE_SETTING_LIM(cat, name, setname, setdesc, ...) cells->addObject(GlobedSettingCell::create(&settings.cat.name, getCellType<decltype(settings.cat.name)>(), setname, setdesc, __VA_ARGS__))
+#define MAKE_SETTING_LIM(cat, name, setname, setdesc, ...) cells->addObject(GlobedSettingCell::create(&settings.cat.name, getCellType<decltype(settings.cat.name)::Type>(), setname, setdesc, __VA_ARGS__))
 #define MAKE_HEADER(name) cells->addObject(GlobedSettingHeaderCell::create(name))
 
 CCArray* GlobedSettingsLayer::createSettingsCells(int category) {

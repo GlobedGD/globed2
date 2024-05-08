@@ -69,6 +69,33 @@ struct ConstexprString {
     uint32_t hash;
 };
 
+struct ConstexprFloat {
+    constexpr ConstexprFloat(unsigned char value) : value(static_cast<float>(value) / 255.f) {}
+    constexpr ConstexprFloat(float value) : value(value) {}
+
+    constexpr float asFloat() const {
+        return value;
+    }
+
+    constexpr unsigned char asByte() const {
+        return static_cast<unsigned char>(value * 255.f);
+    }
+
+    constexpr operator float() const {
+        return this->asFloat();
+    }
+
+    float& ref() {
+        return value;
+    }
+
+    const float& ref() const {
+        return value;
+    }
+
+    float value;
+};
+
 // const char* x = globed::string("key");
 template <size_t N>
 static inline constexpr const char* string(const char (&str)[N]) {

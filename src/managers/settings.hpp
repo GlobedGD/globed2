@@ -1,82 +1,132 @@
 #pragma once
-#include <defs/minimal_geode.hpp>
+
+#include <data/basic.hpp>
+#include <defs/geode.hpp>
 #include <defs/util.hpp>
 
-#define GDEFAULTKEY(name) _DefaultFor##name
-#define GDEFAULT(name, type, val) static constexpr type GDEFAULTKEY(name) = val;
-#define GSETTING(ty, name, default_) \
-    GDEFAULT(name, ty, default_); \
-    ty name = GDEFAULTKEY(name); \
+template <typename InnerTy, InnerTy DefaultV>
+class GlobedSetting {
+public:
+    constexpr static bool IsFloat = std::is_same_v<InnerTy, globed::ConstexprFloat>;
 
-// This class should only be accessed from the main thread.
+    using Type = std::conditional_t<IsFloat, float, InnerTy>;
+    constexpr static Type Default = DefaultV;
+
+    GlobedSetting() : value(Default) {}
+
+    void set(const Type& v) {
+        value = v;
+    }
+
+    Type get() const {
+        return value;
+    }
+
+    Type& ref() {
+        if constexpr (IsFloat) {
+            return value.ref();
+        } else {
+            return value;
+        }
+    }
+
+    const Type& ref() const {
+        if constexpr (IsFloat) {
+            return value.ref();
+        } else {
+            return value;
+        }
+    }
+
+    operator Type() {
+        return get();
+    }
+
+    operator float() const requires (std::is_same_v<Type, globed::ConstexprFloat>) {
+        return get().asFloat();
+    }
+
+    GlobedSetting& operator=(const Type& other) {
+        value = other;
+        return *this;
+    }
+
+private:
+    InnerTy value;
+};
+
 class GlobedSettings : public SingletonBase<GlobedSettings> {
-protected:
     friend class SingletonBase;
     GlobedSettings();
 
+    using Float = globed::ConstexprFloat;
+    using Flag = GlobedSetting<bool, false>;
+
 public:
+    /* When adding settings, please remember to also add them at the bottom of this file. */
+
     struct Globed {
-        GSETTING(bool, autoconnect, true);
-        GSETTING(int, tpsCap, 0);
-        GSETTING(bool, preloadAssets, true);
-        GSETTING(bool, deferPreloadAssets, false);
-        GSETTING(bool, increaseLevelList, false);
-        GSETTING(int, fragmentationLimit, 60000);
-        GSETTING(bool, compressedPlayerCount, false);
+        GlobedSetting<bool, true> autoconnect;
+        GlobedSetting<int, 0> tpsCap;
+        GlobedSetting<bool, true> preloadAssets;
+        GlobedSetting<bool, false> deferPreloadAssets;
+        GlobedSetting<bool, false> increaseLevelList;
+        GlobedSetting<int, 60000> fragmentationLimit;
+        GlobedSetting<bool, false> compressedPlayerCount;
     };
 
     struct Overlay {
-        GSETTING(bool, enabled, true);
-        GSETTING(float, opacity, 0.3f);
-        GSETTING(bool, hideConditionally, true);
-        GSETTING(int, position, 3); // 0-3 topleft, topright, bottomleft, bottomright
+        GlobedSetting<bool, true> enabled;
+        GlobedSetting<Float, Float(0.3f)> opacity;
+        GlobedSetting<bool, true> hideConditionally;
+        GlobedSetting<int, 3> position; // 0-3 topleft, topright, bottomleft, bottomright
     };
 
     struct Communication {
-        GSETTING(bool, voiceEnabled, true);
-        GSETTING(bool, voiceProximity, true);
-        GSETTING(bool, classicProximity, false);
-        GSETTING(float, voiceVolume, 1.0f);
-        GSETTING(bool, onlyFriends, false);
-        GSETTING(bool, lowerAudioLatency, true);
-        GSETTING(int, audioDevice, 0);
-        GSETTING(bool, deafenNotification, true);
-        GSETTING(bool, voiceLoopback, false); // TODO unimpl
+        GlobedSetting<bool, true> voiceEnabled;
+        GlobedSetting<bool, true> voiceProximity;
+        GlobedSetting<bool, false> classicProximity;
+        GlobedSetting<Float, Float(1.0f)> voiceVolume;
+        GlobedSetting<bool, false> onlyFriends;
+        GlobedSetting<bool, true> lowerAudioLatency;
+        GlobedSetting<int, 0> audioDevice;
+        GlobedSetting<bool, true> deafenNotification;
+        GlobedSetting<bool, false> voiceLoopback; // TODO unimpl
     };
 
     struct LevelUI {
-        GSETTING(bool, progressIndicators, true);
-        GSETTING(bool, progressPointers, true); // unused
-        GSETTING(float, progressOpacity, 1.0f);
-        GSETTING(bool, voiceOverlay, true);
+        GlobedSetting<bool, true> progressIndicators;
+        GlobedSetting<bool, true> progressPointers; // unused
+        GlobedSetting<Float, Float(1.0f)> progressOpacity;
+        GlobedSetting<bool, true> voiceOverlay;
     };
 
     struct Players {
-        GSETTING(float, playerOpacity, 1.0f);
-        GSETTING(bool, showNames, true);
-        GSETTING(bool, dualName, true);
-        GSETTING(float, nameOpacity, 1.0f);
-        GSETTING(bool, statusIcons, true);
-        GSETTING(bool, deathEffects, true);
-        GSETTING(bool, defaultDeathEffect, false);
-        GSETTING(bool, hideNearby, false);
-        GSETTING(bool, forceVisibility, false);
-        GSETTING(bool, ownName, false);
-        GSETTING(bool, hidePracticePlayers, false);
+        GlobedSetting<Float, Float(1.0f)> playerOpacity;
+        GlobedSetting<bool, true> showNames;
+        GlobedSetting<bool, true> dualName;
+        GlobedSetting<Float, Float(1.0f)> nameOpacity;
+        GlobedSetting<bool, true> statusIcons;
+        GlobedSetting<bool, true> deathEffects;
+        GlobedSetting<bool, false> defaultDeathEffect;
+        GlobedSetting<bool, false> hideNearby;
+        GlobedSetting<bool, false> forceVisibility;
+        GlobedSetting<bool, false> ownName;
+        GlobedSetting<bool, false> hidePracticePlayers;
     };
 
     struct Advanced {};
 
     struct Admin {
-        GSETTING(bool, rememberPassword, false);
+        GlobedSetting<bool, false> rememberPassword;
     };
 
     struct Flags {
-        bool seenSignupNotice = false;
-        bool seenSignupNoticev2 = false;
-        bool seenVoiceChatPTTNotice = false;
-        bool seenTeleportNotice = false;
-        bool seenAprilFoolsNotice = false;
+        Flag seenSignupNotice;
+        Flag seenSignupNoticev2;
+        Flag seenVoiceChatPTTNotice;
+        Flag seenTeleportNotice;
+        Flag seenAprilFoolsNotice;
     };
 
     Globed globed;
@@ -88,26 +138,35 @@ public:
     Admin admin;
     Flags flags;
 
-    void save();
-    void reload();
-    void resetToDefaults();
-    void clear(const std::string_view key);
-
-private:
+    // Reset everything, including flags
     void hardReset();
+
+    // Reset all settings, excluding flags
+    void reset();
+
+    // Reload all settings from the geode save container
+    void reload();
+
+    // Save all settings to the geode save container
+    void save();
+
+    enum class TaskType {
+        SaveSettings, LoadSettings, ResetSettings, HardResetSettings
+    };
+
+    void reflect(TaskType type);
+
+    bool has(const std::string_view key);
+    void clear(const std::string_view key);
 
     template <typename T>
     void store(const std::string_view key, const T& val) {
-        Mod::get()->setSavedValue(key, val);
-    }
-
-    bool has(const std::string_view key) {
-        return Mod::get()->hasSavedValue(key);
+        geode::Mod::get()->setSavedValue(key, val);
     }
 
     template <typename T>
     T load(const std::string_view key) {
-        return Mod::get()->getSavedValue<T>(key);
+        return geode::Mod::get()->getSavedValue<T>(key);
     }
 
     // If setting is present, loads into `into`. Otherwise does nothing.
@@ -129,6 +188,38 @@ private:
     }
 };
 
-#undef GDEFAULTKEY
-#undef GDEFAULT
-#undef GSETTING
+/* Enable reflection */
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, increaseLevelList, fragmentationLimit, compressedPlayerCount
+));
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
+    enabled, opacity, hideConditionally, position
+));
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Communication, (
+    voiceEnabled, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, deafenNotification, voiceLoopback
+));
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (
+    progressIndicators, progressPointers, progressOpacity, voiceOverlay
+));
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Players, (
+    playerOpacity, showNames, dualName, nameOpacity, statusIcons, deathEffects, defaultDeathEffect, hideNearby, forceVisibility, ownName, hidePracticePlayers
+));
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Advanced, ());
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Admin, (
+    rememberPassword
+));
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
+    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice
+));
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (
+    globed, overlay, communication, levelUi, players, advanced, admin, flags
+));
