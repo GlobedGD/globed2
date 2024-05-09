@@ -1,7 +1,6 @@
 #include "gjbasegamelayer.hpp"
 
 #include "play_layer.hpp"
-#include "level_editor_layer.hpp"
 #include "game_manager.hpp"
 
 #if GLOBED_HAS_KEYBINDS

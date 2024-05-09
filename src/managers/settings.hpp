@@ -15,11 +15,15 @@ public:
 private:
     /* Setting class */
 
+    template <typename T>
+    using TypeFixup = std::conditional_t<std::is_same_v<T, float>, globed::ConstexprFloat, T>;
+
     template <
         typename InnerTyRaw,
-        std::conditional_t<std::is_same_v<InnerTyRaw, float>, globed::ConstexprFloat, InnerTyRaw> DefaultV
+        TypeFixup<InnerTyRaw> DefaultV
     >
     class Setting {
+    protected:
         using InnerTy = decltype(DefaultV);
 
     public:
@@ -58,7 +62,7 @@ private:
             return get();
         }
 
-        operator float() const requires (std::is_same_v<Type, globed::ConstexprFloat>) {
+        operator float() const requires (IsFloat) {
             return get().asFloat();
         }
 
@@ -68,8 +72,54 @@ private:
             return *this;
         }
 
-    private:
+    protected:
         InnerTy value;
+    };
+
+    template <
+        typename InnerTyRaw,
+        TypeFixup<InnerTyRaw> DefaultV,
+        TypeFixup<InnerTyRaw> MinimumV,
+        TypeFixup<InnerTyRaw> MaximumV
+    >
+    class LimitedSetting : public Setting<InnerTyRaw, DefaultV> {
+    public:
+        using Type = Setting<InnerTyRaw, DefaultV>::Type;
+        using InnerTy = Setting<InnerTyRaw, DefaultV>::InnerTy;
+        using Setting<InnerTyRaw, DefaultV>::IsFloat;
+        using Setting<InnerTyRaw, DefaultV>::Default;
+
+        constexpr static Type Minimum = MinimumV;
+        constexpr static Type Maximum = MaximumV;
+
+        LimitedSetting() {
+            this->value = Default;
+        }
+
+        void set(const Type& v) {
+            this->value = this->clamp(v);
+        }
+
+        operator Type() {
+            return this->get();
+        }
+
+        operator float() const requires (IsFloat) {
+            return this->get().asFloat();
+        }
+
+        LimitedSetting& operator=(const Type& other) {
+            this->set(other);
+            GlobedSettings::get().save();
+            return *this;
+        }
+
+    private:
+        Type clamp(const Type& value) {
+            if (value > Maximum) return Maximum;
+            if (value < Minimum) return Minimum;
+            return value;
+        }
     };
 
     using Float = globed::ConstexprFloat;
@@ -91,16 +141,16 @@ public:
 
     struct Overlay {
         Setting<bool, true> enabled;
-        Setting<float, 0.3f> opacity;
+        LimitedSetting<float, 0.3f, 0.f, 1.f> opacity;
         Setting<bool, true> hideConditionally;
-        Setting<int, 3> position; // 0-3 topleft, topright, bottomleft, bottomright
+        LimitedSetting<int, 3, 0, 3> position; // 0-3 topleft, topright, bottomleft, bottomright
     };
 
     struct Communication {
         Setting<bool, true> voiceEnabled;
         Setting<bool, true> voiceProximity;
         Setting<bool, false> classicProximity;
-        Setting<float, 1.0f> voiceVolume;
+        LimitedSetting<float, 1.0f, 0.f, 1.f> voiceVolume;
         Setting<bool, false> onlyFriends;
         Setting<bool, true> lowerAudioLatency;
         Setting<int, 0> audioDevice;
@@ -111,15 +161,15 @@ public:
     struct LevelUI {
         Setting<bool, true> progressIndicators;
         Setting<bool, true> progressPointers; // unused
-        Setting<float, 1.0f> progressOpacity;
+        LimitedSetting<float, 1.0f, 0.f, 1.f> progressOpacity;
         Setting<bool, true> voiceOverlay;
     };
 
     struct Players {
-        Setting<float, 1.0f> playerOpacity;
+        LimitedSetting<float, 1.0f, 0.f, 1.f> playerOpacity;
         Setting<bool, true> showNames;
         Setting<bool, true> dualName;
-        Setting<float, 1.0f> nameOpacity;
+        LimitedSetting<float, 1.0f, 0.f, 1.f> nameOpacity;
         Setting<bool, true> statusIcons;
         Setting<bool, true> deathEffects;
         Setting<bool, false> defaultDeathEffect;

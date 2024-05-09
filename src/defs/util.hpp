@@ -3,7 +3,6 @@
 
 #include <config.hpp>
 #include <embedded_resources.hpp>
-#include "platform.hpp"
 
 class singleton_use_after_dtor : public std::runtime_error {
 public:
@@ -70,15 +69,10 @@ struct ConstexprString {
 };
 
 struct ConstexprFloat {
-    constexpr ConstexprFloat(unsigned char value) : value(static_cast<float>(value) / 255.f) {}
     constexpr ConstexprFloat(float value) : value(value) {}
 
     constexpr float asFloat() const {
         return value;
-    }
-
-    constexpr unsigned char asByte() const {
-        return static_cast<unsigned char>(value * 255.f);
     }
 
     constexpr operator float() const {
