@@ -15,8 +15,13 @@ public:
 private:
     /* Setting class */
 
-    template <typename InnerTy, InnerTy DefaultV>
+    template <
+        typename InnerTyRaw,
+        std::conditional_t<std::is_same_v<InnerTyRaw, float>, globed::ConstexprFloat, InnerTyRaw> DefaultV
+    >
     class Setting {
+        using InnerTy = decltype(DefaultV);
+
     public:
         constexpr static bool IsFloat = std::is_same_v<InnerTy, globed::ConstexprFloat>;
 
@@ -86,7 +91,7 @@ public:
 
     struct Overlay {
         Setting<bool, true> enabled;
-        Setting<Float, Float(0.3f)> opacity;
+        Setting<float, 0.3f> opacity;
         Setting<bool, true> hideConditionally;
         Setting<int, 3> position; // 0-3 topleft, topright, bottomleft, bottomright
     };
@@ -95,7 +100,7 @@ public:
         Setting<bool, true> voiceEnabled;
         Setting<bool, true> voiceProximity;
         Setting<bool, false> classicProximity;
-        Setting<Float, Float(1.0f)> voiceVolume;
+        Setting<float, 1.0f> voiceVolume;
         Setting<bool, false> onlyFriends;
         Setting<bool, true> lowerAudioLatency;
         Setting<int, 0> audioDevice;
@@ -106,15 +111,15 @@ public:
     struct LevelUI {
         Setting<bool, true> progressIndicators;
         Setting<bool, true> progressPointers; // unused
-        Setting<Float, Float(1.0f)> progressOpacity;
+        Setting<float, 1.0f> progressOpacity;
         Setting<bool, true> voiceOverlay;
     };
 
     struct Players {
-        Setting<Float, Float(1.0f)> playerOpacity;
+        Setting<float, 1.0f> playerOpacity;
         Setting<bool, true> showNames;
         Setting<bool, true> dualName;
-        Setting<Float, Float(1.0f)> nameOpacity;
+        Setting<float, 1.0f> nameOpacity;
         Setting<bool, true> statusIcons;
         Setting<bool, true> deathEffects;
         Setting<bool, false> defaultDeathEffect;
