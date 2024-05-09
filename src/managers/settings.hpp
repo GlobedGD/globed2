@@ -4,121 +4,124 @@
 #include <defs/geode.hpp>
 #include <defs/util.hpp>
 
-template <typename InnerTy, InnerTy DefaultV>
-class GlobedSetting {
-public:
-    constexpr static bool IsFloat = std::is_same_v<InnerTy, globed::ConstexprFloat>;
-
-    using Type = std::conditional_t<IsFloat, float, InnerTy>;
-    constexpr static Type Default = DefaultV;
-
-    GlobedSetting() : value(Default) {}
-
-    void set(const Type& v) {
-        value = v;
-    }
-
-    Type get() const {
-        return value;
-    }
-
-    Type& ref() {
-        if constexpr (IsFloat) {
-            return value.ref();
-        } else {
-            return value;
-        }
-    }
-
-    const Type& ref() const {
-        if constexpr (IsFloat) {
-            return value.ref();
-        } else {
-            return value;
-        }
-    }
-
-    operator Type() {
-        return get();
-    }
-
-    operator float() const requires (std::is_same_v<Type, globed::ConstexprFloat>) {
-        return get().asFloat();
-    }
-
-    GlobedSetting& operator=(const Type& other) {
-        value = other;
-        return *this;
-    }
-
-private:
-    InnerTy value;
-};
-
 class GlobedSettings : public SingletonBase<GlobedSettings> {
     friend class SingletonBase;
     GlobedSettings();
 
+    /* Setting class */
+
+    template <typename InnerTy, InnerTy DefaultV>
+    class Setting {
+    public:
+        constexpr static bool IsFloat = std::is_same_v<InnerTy, globed::ConstexprFloat>;
+
+        using Type = std::conditional_t<IsFloat, float, InnerTy>;
+        constexpr static Type Default = DefaultV;
+
+        Setting() : value(Default) {}
+
+        void set(const Type& v) {
+            value = v;
+        }
+
+        Type get() const {
+            return value;
+        }
+
+        Type& ref() {
+            if constexpr (IsFloat) {
+                return value.ref();
+            } else {
+                return value;
+            }
+        }
+
+        const Type& ref() const {
+            if constexpr (IsFloat) {
+                return value.ref();
+            } else {
+                return value;
+            }
+        }
+
+        operator Type() {
+            return get();
+        }
+
+        operator float() const requires (std::is_same_v<Type, globed::ConstexprFloat>) {
+            return get().asFloat();
+        }
+
+        Setting& operator=(const Type& other) {
+            value = other;
+            return *this;
+        }
+
+    private:
+        InnerTy value;
+    };
+
     using Float = globed::ConstexprFloat;
-    using Flag = GlobedSetting<bool, false>;
+    using Flag = Setting<bool, false>;
 
 public:
-    /* When adding settings, please remember to also add them at the bottom of this file. */
+    // Settings themselves, split into categories
+    // when adding settings, please remember to also add them at the bottom of this file
 
     struct Globed {
-        GlobedSetting<bool, true> autoconnect;
-        GlobedSetting<int, 0> tpsCap;
-        GlobedSetting<bool, true> preloadAssets;
-        GlobedSetting<bool, false> deferPreloadAssets;
-        GlobedSetting<bool, false> increaseLevelList;
-        GlobedSetting<int, 60000> fragmentationLimit;
-        GlobedSetting<bool, false> compressedPlayerCount;
+        Setting<bool, true> autoconnect;
+        Setting<int, 0> tpsCap;
+        Setting<bool, true> preloadAssets;
+        Setting<bool, false> deferPreloadAssets;
+        Setting<bool, false> increaseLevelList;
+        Setting<int, 60000> fragmentationLimit;
+        Setting<bool, false> compressedPlayerCount;
     };
 
     struct Overlay {
-        GlobedSetting<bool, true> enabled;
-        GlobedSetting<Float, Float(0.3f)> opacity;
-        GlobedSetting<bool, true> hideConditionally;
-        GlobedSetting<int, 3> position; // 0-3 topleft, topright, bottomleft, bottomright
+        Setting<bool, true> enabled;
+        Setting<Float, Float(0.3f)> opacity;
+        Setting<bool, true> hideConditionally;
+        Setting<int, 3> position; // 0-3 topleft, topright, bottomleft, bottomright
     };
 
     struct Communication {
-        GlobedSetting<bool, true> voiceEnabled;
-        GlobedSetting<bool, true> voiceProximity;
-        GlobedSetting<bool, false> classicProximity;
-        GlobedSetting<Float, Float(1.0f)> voiceVolume;
-        GlobedSetting<bool, false> onlyFriends;
-        GlobedSetting<bool, true> lowerAudioLatency;
-        GlobedSetting<int, 0> audioDevice;
-        GlobedSetting<bool, true> deafenNotification;
-        GlobedSetting<bool, false> voiceLoopback; // TODO unimpl
+        Setting<bool, true> voiceEnabled;
+        Setting<bool, true> voiceProximity;
+        Setting<bool, false> classicProximity;
+        Setting<Float, Float(1.0f)> voiceVolume;
+        Setting<bool, false> onlyFriends;
+        Setting<bool, true> lowerAudioLatency;
+        Setting<int, 0> audioDevice;
+        Setting<bool, true> deafenNotification;
+        Setting<bool, false> voiceLoopback; // TODO unimpl
     };
 
     struct LevelUI {
-        GlobedSetting<bool, true> progressIndicators;
-        GlobedSetting<bool, true> progressPointers; // unused
-        GlobedSetting<Float, Float(1.0f)> progressOpacity;
-        GlobedSetting<bool, true> voiceOverlay;
+        Setting<bool, true> progressIndicators;
+        Setting<bool, true> progressPointers; // unused
+        Setting<Float, Float(1.0f)> progressOpacity;
+        Setting<bool, true> voiceOverlay;
     };
 
     struct Players {
-        GlobedSetting<Float, Float(1.0f)> playerOpacity;
-        GlobedSetting<bool, true> showNames;
-        GlobedSetting<bool, true> dualName;
-        GlobedSetting<Float, Float(1.0f)> nameOpacity;
-        GlobedSetting<bool, true> statusIcons;
-        GlobedSetting<bool, true> deathEffects;
-        GlobedSetting<bool, false> defaultDeathEffect;
-        GlobedSetting<bool, false> hideNearby;
-        GlobedSetting<bool, false> forceVisibility;
-        GlobedSetting<bool, false> ownName;
-        GlobedSetting<bool, false> hidePracticePlayers;
+        Setting<Float, Float(1.0f)> playerOpacity;
+        Setting<bool, true> showNames;
+        Setting<bool, true> dualName;
+        Setting<Float, Float(1.0f)> nameOpacity;
+        Setting<bool, true> statusIcons;
+        Setting<bool, true> deathEffects;
+        Setting<bool, false> defaultDeathEffect;
+        Setting<bool, false> hideNearby;
+        Setting<bool, false> forceVisibility;
+        Setting<bool, false> ownName;
+        Setting<bool, false> hidePracticePlayers;
     };
 
     struct Advanced {};
 
     struct Admin {
-        GlobedSetting<bool, false> rememberPassword;
+        Setting<bool, false> rememberPassword;
     };
 
     struct Flags {
