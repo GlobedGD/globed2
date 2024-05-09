@@ -159,9 +159,9 @@ void GlobedSettingsLayer::remakeList() {
     this->onTab(tabBtn1);
 }
 
-#define MAKE_SETTING(cat, name, setname, setdesc) cells->addObject(GlobedSettingCell::create(&settings.cat.name, getCellType<decltype(settings.cat.name)::Type>(), setname, setdesc, {}))
-#define MAKE_SETTING_TYPE(cat, name, type, setname, setdesc) cells->addObject(GlobedSettingCell::create(&settings.cat.name, type, setname, setdesc, {}))
-#define MAKE_SETTING_LIM(cat, name, setname, setdesc, ...) cells->addObject(GlobedSettingCell::create(&settings.cat.name, getCellType<decltype(settings.cat.name)::Type>(), setname, setdesc, __VA_ARGS__))
+#define MAKE_SETTING(cat, name, setname, setdesc) cells->addObject(GlobedSettingCell::create((void*)(&settings.cat.name.ref()), getCellType<decltype(settings.cat.name)::Type>(), setname, setdesc, {}))
+#define MAKE_SETTING_TYPE(cat, name, type, setname, setdesc) cells->addObject(GlobedSettingCell::create((void*)(&settings.cat.name.ref()), type, setname, setdesc, {}))
+#define MAKE_SETTING_LIM(cat, name, setname, setdesc, ...) cells->addObject(GlobedSettingCell::create((void*)(&settings.cat.name.ref()), getCellType<decltype(settings.cat.name)::Type>(), setname, setdesc, __VA_ARGS__))
 #define MAKE_HEADER(name) cells->addObject(GlobedSettingHeaderCell::create(name))
 
 CCArray* GlobedSettingsLayer::createSettingsCells(int category) {

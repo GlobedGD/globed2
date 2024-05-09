@@ -25,7 +25,7 @@ bool FragmentationCalibartionPopup::setup() {
             auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
             auto& settings = GlobedSettings::get();
             settings.globed.fragmentationLimit = newFragLimit;
-            settings.save();
+
             FLAlertLayer::create("Error", fmt::format("Test failed fatally. Server sent invalid unique packet ID. Setting maximum packet size to {}.", newFragLimit), "Ok")->show();
             this->closeDelayed();
             return;
@@ -106,7 +106,6 @@ void FragmentationCalibartionPopup::onClose(cocos2d::CCObject* obj) {
         if (newFragLimit > 1300) {
             auto& settings = GlobedSettings::get();
             settings.globed.fragmentationLimit = newFragLimit;
-            settings.save();
         }
     }
 }

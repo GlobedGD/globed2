@@ -188,7 +188,6 @@ void AudioSetupPopup::applyAudioDevice(int id) {
     GlobedAudioManager::get().setActiveRecordingDevice(id);
     auto& settings = GlobedSettings::get();
     settings.communication.audioDevice = id;
-    settings.save();
 
     this->weakRefreshList();
 }

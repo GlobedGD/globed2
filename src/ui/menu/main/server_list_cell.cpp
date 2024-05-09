@@ -104,11 +104,9 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
 
                     if (!settings.flags.seenVoiceChatPTTNotice) {
                         settings.flags.seenVoiceChatPTTNotice = true;
-                        settings.save();
 
                         geode::createQuickPopup("Voice chat", "Do you want to enable <cp>voice chat</c>? This can be changed later in settings.", "Disable", "Enable", [&settings, post](FLAlertLayer*, bool enabled) {
                             settings.communication.voiceEnabled = enabled;
-                            settings.save();
                             post();
 #ifndef GLOBED_VOICE_CAN_TALK
                             if (enabled) {

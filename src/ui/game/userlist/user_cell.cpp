@@ -258,7 +258,6 @@ void GlobedUserCell::makeButtons() {
                 auto& settings = GlobedSettings::get();
                 if (!settings.flags.seenTeleportNotice)  {
                     settings.flags.seenTeleportNotice = true;
-                    settings.save();
 
                     FLAlertLayer::create(
                         "Note",

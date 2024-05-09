@@ -28,7 +28,6 @@ bool GlobedSignupLayer::init() {
                 geode::createQuickPopup("Notice", CONSENT_MESSAGE, "Cancel", "Submit", [&gs](auto, bool agreed){
                     if (agreed) {
                         gs.flags.seenSignupNoticev2 = true;
-                        gs.save();
                         if (auto* popup = GlobedSignupPopup::create()) {
                             popup->show();
                         }

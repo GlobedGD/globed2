@@ -257,8 +257,6 @@ void GlobedUserListPopup::onToggleVoiceSort(cocos2d::CCObject* sender) {
 
 void GlobedUserListPopup::onVolumeChanged(cocos2d::CCObject* sender) {
     GlobedSettings::get().communication.voiceVolume = volumeSlider->getThumb()->getValue() * 2;
-
-    GlobedSettings::get().save();
 }
 
 GlobedUserListPopup* GlobedUserListPopup::create() {

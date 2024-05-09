@@ -8,6 +8,11 @@ class GlobedSettings : public SingletonBase<GlobedSettings> {
     friend class SingletonBase;
     GlobedSettings();
 
+public:
+    // Save all settings to the geode save container
+    void save();
+
+private:
     /* Setting class */
 
     template <typename InnerTy, InnerTy DefaultV>
@@ -54,6 +59,7 @@ class GlobedSettings : public SingletonBase<GlobedSettings> {
 
         Setting& operator=(const Type& other) {
             value = other;
+            GlobedSettings::get().save();
             return *this;
         }
 
@@ -149,9 +155,6 @@ public:
 
     // Reload all settings from the geode save container
     void reload();
-
-    // Save all settings to the geode save container
-    void save();
 
     enum class TaskType {
         SaveSettings, LoadSettings, ResetSettings, HardResetSettings

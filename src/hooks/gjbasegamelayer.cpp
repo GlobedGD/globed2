@@ -202,7 +202,6 @@ void GlobedGJBGL::setupAudio() {
             vm.setActiveRecordingDevice(settings.communication.audioDevice);
         } catch (const std::exception& e) {
             // try default device, if we have no mic then just do nothing
-            settings.save();
             try {
                 vm.setActiveRecordingDevice(0);
             } catch (const std::exception& _e) {
