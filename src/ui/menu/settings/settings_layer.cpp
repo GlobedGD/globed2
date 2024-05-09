@@ -1,7 +1,8 @@
 #include "settings_layer.hpp"
 
-#include <util/ui.hpp>
+#include "setting_header_cell.hpp"
 #include <managers/settings.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -159,97 +160,105 @@ void GlobedSettingsLayer::remakeList() {
     this->onTab(tabBtn1);
 }
 
-#define MAKE_SETTING(cat, name, setname, setdesc) cells->addObject(GlobedSettingCell::create((void*)(&settings.cat.name.ref()), getCellType<decltype(settings.cat.name)::Type>(), setname, setdesc, {}))
-#define MAKE_SETTING_TYPE(cat, name, type, setname, setdesc) cells->addObject(GlobedSettingCell::create((void*)(&settings.cat.name.ref()), type, setname, setdesc, {}))
-#define MAKE_SETTING_LIM(cat, name, setname, setdesc, ...) cells->addObject(GlobedSettingCell::create((void*)(&settings.cat.name.ref()), getCellType<decltype(settings.cat.name)::Type>(), setname, setdesc, __VA_ARGS__))
-#define MAKE_HEADER(name) cells->addObject(GlobedSettingHeaderCell::create(name))
+template <typename SetTy>
+static void registerSetting(
+        CCArray* cells,
+        SetTy& setting,
+        const char* name,
+        const char* description,
+        GlobedSettingCell::Type stype = GlobedSettingsLayer::getCellType<typename SetTy::Type>()
+) {
+    GlobedSettingCell::Limits limits = {};
 
-CCArray* GlobedSettingsLayer::createSettingsCells(int category) {
+    // check for limits
+    if constexpr (SetTy::IsLimited) {
+        if constexpr (std::is_same_v<typename SetTy::Type, float>) {
+            limits.floatMin = SetTy::Minimum;
+            limits.floatMax = SetTy::Maximum;
+        } else if constexpr (std::is_same_v<typename SetTy::Type, int>) {
+            limits.intMin = SetTy::Minimum;
+            limits.intMax = SetTy::Maximum;
+        }
+    }
+
+    cells->addObject(GlobedSettingCell::create(&setting.ref(), stype, name, description, limits));
+}
+
+void GlobedSettingsLayer::createSettingsCells(int category) {
     using Type = GlobedSettingCell::Type;
 
-    auto cells = CCArray::create();
+    settingCells[category] = CCArray::create();
 
     auto& settings = GlobedSettings::get();
+    auto& cat = settingCells[category];
 
-    if (category == TAG_TAB_GLOBED) {
-        MAKE_SETTING(globed, autoconnect, "Autoconnect", "Automatically connect to the last connected server on launch.");
-        MAKE_SETTING(globed, preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
-        MAKE_SETTING(globed, deferPreloadAssets, "Defer preloading", "Instead of making the loading screen longer, load assets only when you join a level while connected.");
-        MAKE_SETTING_TYPE(globed, fragmentationLimit, Type::PacketFragmentation, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.");
-        MAKE_SETTING_LIM(globed, tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.", {
-            .intMin = 1,
-            .intMax = 240,
-        });
+    switch (category) {
+        case TAG_TAB_GLOBED: {
+            registerSetting(cat, settings.globed.autoconnect, "Autoconnect", "Automatically connect to the last connected server on launch.");
+            registerSetting(cat, settings.globed.preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
+            registerSetting(cat, settings.globed.deferPreloadAssets, "Defer preloading", "Instead of making the loading screen longer, load assets only when you join a level while connected.");
+            registerSetting(cat, settings.globed.fragmentationLimit, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.", Type::PacketFragmentation);
+            registerSetting(cat, settings.globed.tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.");
 #ifdef GLOBED_DEBUG
-        // advanced settings button
-        MAKE_SETTING_TYPE(globed, autoconnect, Type::AdvancedSettings, "Advanced", "Advanced settings");
+            // advanced settings button
+            registerSetting(cat, settings.globed.autoconnect, "Advanced", "Advanced settings", Type::AdvancedSettings);
 #endif
-    }
+        } break;
 
-    if (category == TAG_TAB_MENUS) {
-        MAKE_SETTING(globed, increaseLevelList, "More Levels Per Page", "Increases the levels per page in the server level list from 30 to 100.");
-        MAKE_SETTING(globed, compressedPlayerCount, "Compressed Player Count", "Compress the Player Count label to match the Player Count in The Tower.");
-    }
+        case TAG_TAB_MENUS: {
+            registerSetting(cat, settings.globed.increaseLevelList, "More Levels Per Page", "Increases the levels per page in the server level list from 30 to 100.");
+            registerSetting(cat, settings.globed.compressedPlayerCount, "Compressed Player Count", "Compress the Player Count label to match the Player Count in The Tower.");
+        } break;
 
+        case TAG_TAB_COMMUNICATION: {
 #ifdef GLOBED_VOICE_SUPPORT
-    if (category == TAG_TAB_COMMUNICATION) {
-        MAKE_SETTING(communication, voiceEnabled, "Voice chat", "Enables in-game voice chat. To talk, hold V when in a level. (keybind can be changed in game settings)");
-        MAKE_SETTING(communication, voiceProximity, "Voice proximity", "In platformer mode, the loudness of other players will be determined by how close they are to you.");
-        MAKE_SETTING(communication, classicProximity, "Classic proximity", "Same as voice proximity, but for classic levels (non-platformer).");
-        MAKE_SETTING_LIM(communication, voiceVolume, "Voice volume", "Controls how loud other players are.", {
-            .floatMin = 0.f,
-            .floatMax = 2.f,
-        });
-        MAKE_SETTING(communication, onlyFriends, "Only friends", "When enabled, you won't hear players that are not on your friend list in-game.");
-        MAKE_SETTING(communication, lowerAudioLatency, "Lower audio latency", "Decreases the audio buffer size by 2 times, reducing the latency but potentially causing audio issues.");
-        MAKE_SETTING(communication, deafenNotification, "Deafen notification", "Shows a notification when you deafen & undeafen.");
-        MAKE_SETTING_TYPE(communication, audioDevice, Type::AudioDevice, "Audio device", "The input device used for recording your voice.");
-        // MAKE_SETTING(communication, voiceLoopback, "Voice loopback", "When enabled, you will hear your own voice as you speak.");
-    }
+            registerSetting(cat, settings.communication.voiceEnabled, "Voice chat", "Enables in-game voice chat. To talk, hold V when in a level. (keybind can be changed in game settings)");
+            registerSetting(cat, settings.communication.voiceProximity, "Voice proximity", "In platformer mode, the loudness of other players will be determined by how close they are to you.");
+            registerSetting(cat, settings.communication.classicProximity, "Classic proximity", "Same as voice proximity, but for classic levels (non-platformer).");
+            registerSetting(cat, settings.communication.voiceVolume, "Voice volume", "Controls how loud other players are.");
+            registerSetting(cat, settings.communication.onlyFriends, "Only friends", "When enabled, you won't hear players that are not on your friend list in-game.");
+            registerSetting(cat, settings.communication.lowerAudioLatency, "Lower audio latency", "Decreases the audio buffer size by 2 times, reducing the latency but potentially causing audio issues.");
+            registerSetting(cat, settings.communication.deafenNotification, "Deafen notification", "Shows a notification when you deafen & undeafen.");
+            registerSetting(cat, settings.communication.audioDevice, "Audio device", "The input device used for recording your voice.", Type::AudioDevice);
+            // MAKE_SETTING(communication, voiceLoopback, "Voice loopback", "When enabled, you will hear your own voice as you speak.");
 #endif // GLOBED_VOICE_SUPPORT
+        } break;
 
-    if (category == TAG_TAB_LEVELUI) {
-        MAKE_SETTING(levelUi, progressIndicators, "Progress icons", "Show small icons under the progressbar (or at the edge of the screen in platformer), indicating how far other players are in the level.");
-        MAKE_SETTING_LIM(levelUi, progressOpacity, "Indicator opacity", "Changes the opacity of the icons that represent other players.", {
-            .floatMin = 0.f,
-            .floatMax = 1.f
-        });
-        MAKE_SETTING(levelUi, voiceOverlay, "Voice overlay", "Show a small overlay in the bottom right indicating currently speaking players.");
+        case TAG_TAB_LEVELUI: {
+            registerSetting(cat, settings.levelUi.progressIndicators, "Progress icons", "Show small icons under the progressbar (or at the edge of the screen in platformer), indicating how far other players are in the level.");
+            registerSetting(cat, settings.levelUi.progressOpacity, "Indicator opacity", "Changes the opacity of the icons that represent other players.");
+            registerSetting(cat, settings.levelUi.voiceOverlay, "Voice overlay", "Show a small overlay in the bottom right indicating currently speaking players.");
 
-        MAKE_HEADER("Ping overlay");
-        MAKE_SETTING(overlay, enabled, "Enabled", "Show a small overlay when in a level, displaying the current latency to the server.");
-        MAKE_SETTING_LIM(overlay, opacity, "Opacity", "Opacity of the displayed overlay.", {
-            .floatMin = 0.f,
-            .floatMax = 1.f
-        });
-        MAKE_SETTING(overlay, hideConditionally, "Hide conditionally", "Hide the ping overlay when not connected to a server or in a non-uploaded level, instead of showing a substitute message.");
-        MAKE_SETTING_TYPE(overlay, position, Type::Corner, "Position", "Position of the overlay on the screen.");
+            this->addHeader(category, "Ping overlay");
+            registerSetting(cat, settings.overlay.enabled, "Enabled", "Show a small overlay when in a level, displaying the current latency to the server.");
+            registerSetting(cat, settings.overlay.opacity, "Opacity", "Opacity of the displayed overlay.");
+            registerSetting(cat, settings.overlay.hideConditionally, "Hide conditionally", "Hide the ping overlay when not connected to a server or in a non-uploaded level, instead of showing a substitute message.");
+            registerSetting(cat, settings.overlay.position, "Position", "Position of the overlay on the screen.", Type::Corner);
+        } break;
+
+        case TAG_TAB_PLAYERS: {
+            registerSetting(cat, settings.players.playerOpacity, "Opacity", "Opacity of other players.");
+            registerSetting(cat, settings.players.showNames, "Player names", "Show names above players' icons.");
+            registerSetting(cat, settings.players.dualName, "Dual name", "Show the name of the player on their secondary icon as well.");
+            registerSetting(cat, settings.players.nameOpacity, "Name opacity", "Opacity of player names.");
+            registerSetting(cat, settings.players.ownName, "Show own name", "Shows your own name above your icon as well.");
+            registerSetting(cat, settings.players.deathEffects, "Death effects", "Play a death effect whenever a player dies.");
+            registerSetting(cat, settings.players.defaultDeathEffect, "Default death effect", "Replaces the death effects of all players with a default explosion effect.");
+            registerSetting(cat, settings.players.hideNearby, "Hide nearby players", "Increases the transparency of players as they get closer to you, so that they don't obstruct your view.");
+            registerSetting(cat, settings.players.statusIcons, "Status icons", "Show an icon above a player if they are paused, in practice mode, or currently speaking.");
+            registerSetting(cat, settings.players.hidePracticePlayers, "Hide players in practice", "Hide players that are in practice mode.");
+        } break;
     }
+}
 
-    if (category == TAG_TAB_PLAYERS) {
-        MAKE_SETTING_LIM(players, playerOpacity, "Opacity", "Opacity of other players.", {
-            .floatMin = 0.f,
-            .floatMax = 1.f,
-        });
-        MAKE_SETTING(players, showNames, "Player names", "Show names above players' icons.");
-        MAKE_SETTING(players, dualName, "Dual name", "Show the name of the player on their secondary icon as well.");
-        MAKE_SETTING_LIM(players, nameOpacity, "Name opacity", "Opacity of player names.", {
-            .floatMin = 0.f,
-            .floatMax = 1.f
-        });
-        MAKE_SETTING(players, ownName, "Show own name", "Shows your own name above your icon as well.");
-        MAKE_SETTING(players, deathEffects, "Death effects", "Play a death effect whenever a player dies.");
-        MAKE_SETTING(players, defaultDeathEffect, "Default death effect", "Replaces the death effects of all players with a default explosion effect.");
-        MAKE_SETTING(players, hideNearby, "Hide nearby players", "Increases the transparency of players as they get closer to you, so that they don't obstruct your view.");
-        MAKE_SETTING(players, statusIcons, "Status icons", "Show an icon above a player if they are paused, in practice mode, or currently speaking.");
-        MAKE_SETTING(players, hidePracticePlayers, "Hide players in practice", "Hide players that are in practice mode.");
-    }
-
-    return cells;
+void GlobedSettingsLayer::addHeader(int category, const char* name) {
+    settingCells[category]->addObject(GlobedSettingHeaderCell::create(name));
 }
 
 GJListLayer* GlobedSettingsLayer::makeListLayer(int category) {
-    auto listview = Build<ListView>::create(createSettingsCells(category), GlobedSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
+    createSettingsCells(category);
+
+    auto listview = Build<ListView>::create(settingCells[category], GlobedSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
     auto* listLayer = Build<GJListLayer>::create(listview, nullptr, util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)

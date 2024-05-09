@@ -12,11 +12,10 @@ public:
     // Save all settings to the geode save container
     void save();
 
-private:
-    /* Setting class */
-
     template <typename T>
     using TypeFixup = std::conditional_t<std::is_same_v<T, float>, globed::ConstexprFloat, T>;
+
+    /* Setting class */
 
     template <
         typename InnerTyRaw,
@@ -28,6 +27,7 @@ private:
 
     public:
         constexpr static bool IsFloat = std::is_same_v<InnerTy, globed::ConstexprFloat>;
+        constexpr static bool IsLimited = false;
 
         using Type = std::conditional_t<IsFloat, float, InnerTy>;
         constexpr static Type Default = DefaultV;
@@ -89,6 +89,8 @@ private:
         using Setting<InnerTyRaw, DefaultV>::IsFloat;
         using Setting<InnerTyRaw, DefaultV>::Default;
 
+        constexpr static bool IsLimited = true;
+
         constexpr static Type Minimum = MinimumV;
         constexpr static Type Maximum = MaximumV;
 
@@ -125,13 +127,12 @@ private:
     using Float = globed::ConstexprFloat;
     using Flag = Setting<bool, false>;
 
-public:
     // Settings themselves, split into categories
     // when adding settings, please remember to also add them at the bottom of this file
 
     struct Globed {
         Setting<bool, true> autoconnect;
-        Setting<int, 0> tpsCap;
+        LimitedSetting<int, 0, 0, 240> tpsCap;
         Setting<bool, true> preloadAssets;
         Setting<bool, false> deferPreloadAssets;
         Setting<bool, false> increaseLevelList;
@@ -150,7 +151,7 @@ public:
         Setting<bool, true> voiceEnabled;
         Setting<bool, true> voiceProximity;
         Setting<bool, false> classicProximity;
-        LimitedSetting<float, 1.0f, 0.f, 1.f> voiceVolume;
+        LimitedSetting<float, 1.0f, 0.f, 2.f> voiceVolume;
         Setting<bool, false> onlyFriends;
         Setting<bool, true> lowerAudioLatency;
         Setting<int, 0> audioDevice;

@@ -2,7 +2,6 @@
 #include <defs/all.hpp>
 
 #include "setting_cell.hpp"
-#include "setting_header_cell.hpp"
 
 class GlobedSettingsLayer : public cocos2d::CCLayer {
 public:
@@ -26,6 +25,7 @@ protected:
 #endif
 
     cocos2d::CCSprite *tabsGradientSprite, *tabsGradientStencil;
+    std::unordered_map<int, Ref<cocos2d::CCArray>> settingCells;
     int currentTab = -1;
 
     bool init() override;
@@ -33,11 +33,13 @@ protected:
     void onTab(cocos2d::CCObject* sender);
 
     void remakeList();
-    cocos2d::CCArray* createSettingsCells(int category);
+    void createSettingsCells(int category);
+    void addHeader(int category, const char* name);
     GJListLayer* makeListLayer(int category);
 
+public:
     template <typename T>
-    constexpr GlobedSettingCell::Type getCellType() {
+    constexpr static GlobedSettingCell::Type getCellType() {
         using Type = GlobedSettingCell::Type;
 
         if constexpr (std::is_same_v<T, bool>) {
