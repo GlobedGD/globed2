@@ -242,6 +242,7 @@ impl GameServer {
     }
 
     /// iterate over every player in this list and run F
+    #[inline]
     pub fn for_each_player<F, A>(&'static self, ids: &[i32], f: F, additional: &mut A) -> usize
     where
         F: Fn(&PlayerAccountData, usize, &mut A) -> bool,
@@ -255,6 +256,7 @@ impl GameServer {
     }
 
     /// iterate over every authenticated player and run F
+    #[inline]
     pub fn for_every_player_preview<F, A>(&'static self, f: F, additional: &mut A) -> usize
     where
         F: Fn(&PlayerPreviewAccountData, usize, &mut A) -> bool,
@@ -267,6 +269,7 @@ impl GameServer {
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
+    #[inline]
     pub fn for_every_room_player_preview<F, A>(&'static self, room_id: u32, f: F, additional: &mut A) -> usize
     where
         F: Fn(&PlayerRoomPreviewAccountData, usize, &mut A) -> bool,
@@ -288,6 +291,17 @@ impl GameServer {
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
+    #[inline]
+    pub fn for_every_public_room<F, A>(&'static self, f: F, additional: &mut A) -> usize
+    where
+        F: Fn(RoomListingInfo, usize, &mut A) -> bool,
+    {
+        self.state.room_manager.get_rooms().iter().fold(0, |count, (id, room)| {
+            count + usize::from(f(room.get_room_listing_info(*id), count, additional))
+        })
+    }
+
+    #[inline]
     pub fn get_player_account_data(&'static self, account_id: i32) -> Option<PlayerAccountData> {
         self.threads
             .lock()

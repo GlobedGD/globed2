@@ -37,3 +37,13 @@ struct RoomInfo {
 GLOBED_SERIALIZABLE_STRUCT(RoomInfo, (
     id, owner, token, settings
 ));
+
+struct RoomListingInfo {
+    uint32_t id;
+    int owner;
+    RoomSettings settings;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(RoomListingInfo, (
+    id, owner, settings
+));

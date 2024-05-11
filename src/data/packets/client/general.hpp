@@ -30,59 +30,8 @@ class RequestGlobalPlayerListPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(RequestGlobalPlayerListPacket, ());
 
-class CreateRoomPacket : public Packet {
-    GLOBED_PACKET(11002, false, false)
-
-    CreateRoomPacket() {}
-
-    static std::shared_ptr<Packet> create() {
-        return std::make_shared<CreateRoomPacket>();
-    }
-};
-
-GLOBED_SERIALIZABLE_STRUCT(CreateRoomPacket, ());
-
-class JoinRoomPacket : public Packet {
-    GLOBED_PACKET(11003, false, false)
-
-    JoinRoomPacket() {}
-    JoinRoomPacket(uint32_t roomId, uint32_t roomToken) : roomId(roomId), roomToken(roomToken) {}
-
-    static std::shared_ptr<Packet> create(uint32_t roomId, uint32_t roomToken) {
-        return std::make_shared<JoinRoomPacket>(roomId, roomToken);
-    }
-
-    uint32_t roomId, roomToken;
-};
-
-GLOBED_SERIALIZABLE_STRUCT(JoinRoomPacket, (roomId, roomToken));
-
-class LeaveRoomPacket : public Packet {
-    GLOBED_PACKET(11004, false, false)
-
-    LeaveRoomPacket() {}
-
-    static std::shared_ptr<Packet> create() {
-        return std::make_shared<LeaveRoomPacket>();
-    }
-};
-
-GLOBED_SERIALIZABLE_STRUCT(LeaveRoomPacket, ());
-
-class RequestRoomPlayerListPacket : public Packet {
-    GLOBED_PACKET(11005, false, false)
-
-    RequestRoomPlayerListPacket() {}
-
-    static std::shared_ptr<Packet> create() {
-        return std::make_shared<RequestRoomPlayerListPacket>();
-    }
-};
-
-GLOBED_SERIALIZABLE_STRUCT(RequestRoomPlayerListPacket, ());
-
 class RequestLevelListPacket : public Packet {
-    GLOBED_PACKET(11006, false, false)
+    GLOBED_PACKET(11002, false, false)
 
     RequestLevelListPacket() {}
 
@@ -94,7 +43,7 @@ class RequestLevelListPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(RequestLevelListPacket, ());
 
 class RequestPlayerCountPacket : public Packet {
-    GLOBED_PACKET(11007, false, false)
+    GLOBED_PACKET(11003, false, false)
 
     RequestPlayerCountPacket() {}
     RequestPlayerCountPacket(std::vector<LevelId>&& levelIds) : levelIds(std::move(levelIds)) {}
@@ -107,33 +56,3 @@ class RequestPlayerCountPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RequestPlayerCountPacket, (levelIds));
-
-class UpdateRoomSettingsPacket : public Packet {
-    GLOBED_PACKET(11008, false, false)
-
-    UpdateRoomSettingsPacket() {}
-    UpdateRoomSettingsPacket(const RoomSettings& settings) : settings(settings) {}
-
-    static std::shared_ptr<Packet> create(const RoomSettings& settings) {
-        return std::make_shared<UpdateRoomSettingsPacket>(settings);
-    }
-
-    RoomSettings settings;
-};
-
-GLOBED_SERIALIZABLE_STRUCT(UpdateRoomSettingsPacket, (settings));
-
-class RoomSendInvitePacket : public Packet {
-    GLOBED_PACKET(11009, false, false)
-
-    RoomSendInvitePacket() {}
-    RoomSendInvitePacket(int32_t player) : player(player) {}
-
-    static std::shared_ptr<Packet> create(int32_t player) {
-        return std::make_shared<RoomSendInvitePacket>(player);
-    }
-
-    int32_t player;
-};
-
-GLOBED_SERIALIZABLE_STRUCT(RoomSendInvitePacket, (player));

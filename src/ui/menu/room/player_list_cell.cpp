@@ -2,7 +2,7 @@
 
 #include "room_popup.hpp"
 #include "download_level_popup.hpp"
-#include <data/packets/client/general.hpp>
+#include <data/packets/client/room.hpp>
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <net/network_manager.hpp>

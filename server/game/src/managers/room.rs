@@ -3,7 +3,7 @@ use globed_shared::{
     IntMap, SyncMutex, SyncMutexGuard,
 };
 
-use crate::data::{LevelId, RoomInfo, RoomSettings, ROOM_ID_LENGTH};
+use crate::data::{LevelId, RoomInfo, RoomListingInfo, RoomSettings, ROOM_ID_LENGTH};
 
 use super::LevelManager;
 
@@ -70,6 +70,15 @@ impl Room {
         RoomInfo {
             id,
             token: self.token,
+            owner: self.owner,
+            settings: self.settings,
+        }
+    }
+
+    #[inline]
+    pub fn get_room_listing_info(&self, id: u32) -> RoomListingInfo {
+        RoomListingInfo {
+            id,
             owner: self.owner,
             settings: self.settings,
         }

@@ -27,13 +27,8 @@ General
 
 * 11000 - SyncIconsPacket - store client's icons
 * 11001! - RequestGlobalPlayerListPacket - request list of all people in the server (response 21000)
-* 11002 - CreateRoomPacket - create a room
-* 11003 - JoinRoomPacket - join a room
-* 11004 - LeaveRoomPacket - leave a room (no need for a response)
-* 11005 - RequestRoomPlayerListPacket - request list of all people in the given room (response 21004)
-* 11006 - RequestLevelListPacket - request list of all levels people are playing right now (response 21005)
-* 11007 - RequestPlayerCountPacket - request amount of people on up to 128 different levels (response 21006)
-* 11008 - UpdateRoomSettingsPacket - update the settings of a room
+* 11002 - RequestLevelListPacket - request list of all levels people are playing right now (response 21005)
+* 11003 - RequestPlayerCountPacket - request amount of people on up to 128 different levels (response 21006)
 
 Game related
 
@@ -44,6 +39,16 @@ Game related
 * 12004 - PlayerMetadataPacket - player metadata
 * 12010+ - VoicePacket - voice frame
 * 12011^+ - ChatMessagePacket - chat message
+
+Room related
+
+* 13000 - CreateRoomPacket - create a room
+* 13001 - JoinRoomPacket - join a room
+* 13002 - LeaveRoomPacket - leave a room (no need for a response)
+* 13003 - RequestRoomPlayerListPacket - request list of all people in the given room (response 21004)
+* 13004 - UpdateRoomSettingsPacket - update the settings of a room
+* 13005 - RoomSendInvitePacket - send invite to a room
+* 13006 - RequestRoomListPacket - request a list of all public rooms
 
 Admin related
 
@@ -71,13 +76,8 @@ Connection related
 General
 
 * 21000! - GlobalPlayerListPacket - list of people in the server
-* 21001 - RoomCreatedPacket - returns room id (returns existing one if already in a room)
-* 21002 - RoomJoinedPacket - returns nothing ig?? just indicates success
-* 21003 - RoomJoinFailedPacket - also nothing, the only possible error is no such room id exists
-* 21004 - RoomPlayerListPacket - list of people in the room
-* 21005 - LevelListPacket - list of all levels in the room
-* 21006 - LevelPlayerCountPacket - amount of players on certain requested levels
-* 21007 - RoomInfoPacket - settings updated and stuff
+* 21001 - LevelListPacket - list of all levels in the room
+* 21002 - LevelPlayerCountPacket - amount of players on certain requested levels
 
 Game related
 
@@ -86,6 +86,16 @@ Game related
 * 22002 - LevelPlayerMetadataPacket - metadata of other players
 * 22010+ - VoiceBroadcastPacket - voice frame from another user
 * 22011+ - ChatMessageBroadcastPacket - chat message from another user
+
+Room related
+
+* 23000 - RoomCreatedPacket - returns room id (returns existing one if already in a room)
+* 23001 - RoomJoinedPacket - returns nothing ig?? just indicates success
+* 23002 - RoomJoinFailedPacket - also nothing, the only possible error is no such room id exists
+* 23003 - RoomPlayerListPacket - list of people in the room
+* 23004 - RoomInfoPacket - settings updated and stuff
+* 23005 - RoomInvitePacket - invite from another player
+* 23006 - RoomListPacket - list of all public rooms
 
 Admin related
 

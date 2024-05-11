@@ -2,6 +2,7 @@ pub mod admin;
 pub mod connection;
 pub mod game;
 pub mod general;
+pub mod room;
 
 pub use game::MAX_VOICE_PACKET_SIZE;
 use std::{mem::MaybeUninit, sync::atomic::Ordering};

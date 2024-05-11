@@ -20,14 +20,8 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         // general
 
         PACKET(GlobalPlayerListPacket);
-        PACKET(RoomCreatedPacket);
-        PACKET(RoomJoinedPacket);
-        PACKET(RoomJoinFailedPacket);
-        PACKET(RoomPlayerListPacket);
         PACKET(LevelListPacket);
         PACKET(LevelPlayerCountPacket);
-        PACKET(RoomInfoPacket);
-        PACKET(RoomInvitePacket);
 
         // game related
 
@@ -36,6 +30,16 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(LevelPlayerMetadataPacket);
         PACKET(VoiceBroadcastPacket);
         PACKET(ChatMessageBroadcastPacket);
+
+        // room related
+
+        PACKET(RoomCreatedPacket);
+        PACKET(RoomJoinedPacket);
+        PACKET(RoomJoinFailedPacket);
+        PACKET(RoomPlayerListPacket);
+        PACKET(RoomInfoPacket);
+        PACKET(RoomInvitePacket);
+        PACKET(RoomListPacket);
 
         // admin related
 

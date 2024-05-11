@@ -1,8 +1,8 @@
 #include "room_settings_popup.hpp"
 
 #include <managers/error_queues.hpp>
-#include <data/packets/server/general.hpp>
-#include <data/packets/client/general.hpp>
+#include <data/packets/server/room.hpp>
+#include <data/packets/client/room.hpp>
 #include <net/network_manager.hpp>
 #include <util/ui.hpp>
 

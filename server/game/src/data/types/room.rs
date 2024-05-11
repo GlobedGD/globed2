@@ -25,3 +25,11 @@ pub struct RoomInfo {
     pub token: u32,
     pub settings: RoomSettings,
 }
+
+#[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
+pub struct RoomListingInfo {
+    pub id: u32,
+    pub owner: i32,
+    pub settings: RoomSettings,
+}

@@ -524,14 +524,8 @@ impl GameServerThread {
             /* general */
             SyncIconsPacket::PACKET_ID => self.handle_sync_icons(&mut data).await,
             RequestGlobalPlayerListPacket::PACKET_ID => self.handle_request_global_list(&mut data).await,
-            CreateRoomPacket::PACKET_ID => self.handle_create_room(&mut data).await,
-            JoinRoomPacket::PACKET_ID => self.handle_join_room(&mut data).await,
-            LeaveRoomPacket::PACKET_ID => self.handle_leave_room(&mut data).await,
-            RequestRoomPlayerListPacket::PACKET_ID => self.handle_request_room_list(&mut data).await,
             RequestLevelListPacket::PACKET_ID => self.handle_request_level_list(&mut data).await,
             RequestPlayerCountPacket::PACKET_ID => self.handle_request_player_count(&mut data).await,
-            UpdateRoomSettingsPacket::PACKET_ID => self.handle_update_room_settings(&mut data).await,
-            RoomSendInvitePacket::PACKET_ID => self.handle_room_invitation(&mut data).await,
 
             /* game related */
             RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,
@@ -542,6 +536,15 @@ impl GameServerThread {
 
             VoicePacket::PACKET_ID => self.handle_voice(&mut data).await,
             ChatMessagePacket::PACKET_ID => self.handle_chat_message(&mut data).await,
+
+            /* room related */
+            CreateRoomPacket::PACKET_ID => self.handle_create_room(&mut data).await,
+            JoinRoomPacket::PACKET_ID => self.handle_join_room(&mut data).await,
+            LeaveRoomPacket::PACKET_ID => self.handle_leave_room(&mut data).await,
+            RequestRoomPlayerListPacket::PACKET_ID => self.handle_request_room_players(&mut data).await,
+            UpdateRoomSettingsPacket::PACKET_ID => self.handle_update_room_settings(&mut data).await,
+            RoomSendInvitePacket::PACKET_ID => self.handle_room_invitation(&mut data).await,
+            RequestRoomListPacket::PACKET_ID => self.handle_request_room_list(&mut data).await,
 
             /* admin related */
             AdminAuthPacket::PACKET_ID => self.handle_admin_auth(&mut data).await,

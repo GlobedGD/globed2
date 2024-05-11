@@ -4,6 +4,7 @@
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif
 
+// lol
 #undef _WINSOCKAPI_
 #include <Geode/cocos/platform/IncludeCurl.h>
 
@@ -52,16 +53,16 @@ $execute {
 
 $on_mod(Loaded) {
 #ifdef GLOBED_VOICE_SUPPORT
-    (void) Mod::get()->hook(
-        reinterpret_cast<void*>(
-            geode::addresser::getNonVirtual(
-                &FMOD::System::init
-            )
-        ),
-        &FMODSystemInitHook,
-        "FMOD::System::init",
-        tulip::hook::TulipConvention::Stdcall
-    ).expect("failed to hook fmod").unwrap();
+    // (void) Mod::get()->hook(
+    //     reinterpret_cast<void*>(
+    //         geode::addresser::getNonVirtual(
+    //             &FMOD::System::init
+    //         )
+    //     ),
+    //     &FMODSystemInitHook,
+    //     "FMOD::System::init",
+    //     tulip::hook::TulipConvention::Stdcall
+    // ).expect("failed to hook fmod").unwrap();
 #endif // GLOBED_VOICE_SUPPORT
 
     setupLibsodium();

@@ -2,7 +2,7 @@
 
 #include "panel.hpp"
 #include <net/network_manager.hpp>
-#include <data/packets/client/general.hpp>
+#include <data/packets/client/room.hpp>
 
 using namespace geode::prelude;
 
