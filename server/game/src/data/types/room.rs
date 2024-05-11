@@ -1,24 +1,20 @@
 use crate::data::*;
 
 #[derive(Clone, Copy, Default, Encodable, Decodable, StaticSize, DynamicSize)]
-#[dynamic_size(as_static = true)]
-pub struct RoomSettings {
-    pub flags: Bits<2>,
-    pub reserved: u64, // space for future expansions, should be always 0
+#[bitfield(on = true, size = 2)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct RoomSettingsFlags {
+    pub invite_only: bool,
+    pub public_invites: bool,
+    pub collision: bool,
+    pub two_player: bool,
 }
 
-impl RoomSettings {
-    pub fn get_invite_only(&self) -> bool {
-        self.flags.get_bit(0)
-    }
-
-    pub fn get_public_invites(&self) -> bool {
-        self.flags.get_bit(1)
-    }
-
-    pub fn get_two_player_mode(&self) -> bool {
-        self.flags.get_bit(3)
-    }
+#[derive(Clone, Copy, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
+pub struct RoomSettings {
+    pub flags: RoomSettingsFlags,
+    pub reserved: u64, // space for future expansions, should be always 0
 }
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]

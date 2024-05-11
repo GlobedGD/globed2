@@ -8,6 +8,21 @@ name meaning - **e**fficient **s**erialization **p**rotocol + a play on the stac
 
 it's just encoding structs to binary data. or the other way around. do i really need to say more
 
+though, one special feature is bitfield structs. they are done like this:
+
+```rust
+#[derive(Encodable, Decodable, StaticSize)]
+#[bitfield(on = true, size = 2)] // size is optional and in bytes
+pub struct Flags {
+    pub b1: bool,
+    pub b2: bool,
+    pub b3: bool,
+    pub b4: bool,
+}
+
+assert!(Flags::ENCODED_SIZE == 2); // without `size = 2` would've been 1 byte, without `bitfield(...)` would've been 4 bytes
+```
+
 ## StaticSize and DynamicSize
 
 Short primer on those traits -
@@ -65,7 +80,7 @@ Essentially `Result` but with a less misleading name, indicating that both outco
 
 ### FiniteF32, FiniteF64
 
-Simple wrappers around `f32` and `f64` with the only difference being that they will return a `DecodeError` if the value is `nan` or `inf` when decoding.
+Simple wrappers around `f32` and `f64` with the only difference being that they will return a `DecodeError` if the value is `nan` or `+inf`/`-inf` when decoding.
 
 ### Bits
 

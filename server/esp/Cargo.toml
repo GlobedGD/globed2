@@ -9,3 +9,6 @@ edition = "2021"
 simd-adler32 = { version = "0.3.7", default-features = false }
 bytebuffer = "2.2.0"
 crc32fast = "1.4.0"
+
+[dev-dependencies]
+globed-derive = { path = "../derive" }

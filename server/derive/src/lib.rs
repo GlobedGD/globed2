@@ -1,10 +1,15 @@
-#![feature(proc_macro_diagnostic)]
+#![feature(proc_macro_diagnostic, if_let_guard)]
 #![allow(clippy::missing_panics_doc)]
 
+mod attrs;
+mod decode;
+mod encode;
+
+use attrs::{BitfieldAttributes, DynamicSizeAttributes, PacketAttributes};
 use darling::FromDeriveInput;
 use proc_macro::{self, Span, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{parse_macro_input, punctuated::Punctuated, Data, DeriveInput, Meta, Token};
+use syn::{parse_macro_input, punctuated::Punctuated, Data, DataStruct, DeriveInput, Meta, Token, Type};
 
 /// Implements `Encodable` for the given type, allowing you to serialize it into a `ByteBuffer` or a `FastByteBuffer`.
 /// For `Encodable` to be successfully derived, for structs, all of the members of the struct must also implement `Encodable`.
@@ -12,62 +17,26 @@ use syn::{parse_macro_input, punctuated::Punctuated, Data, DeriveInput, Meta, To
 ///
 /// For enums, the enum must derive `Copy`, must be plain (no associated data fields), and may have a
 /// `#[repr(u*)]` or `#[repr(i*)]` attribute to indicate the encoded type. By default it will be `i32` if omitted.
-#[proc_macro_derive(Encodable)]
+#[proc_macro_derive(Encodable, attributes(bitfield))]
 pub fn derive_encodable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+    let bit_attrs = BitfieldAttributes::parse(&input);
 
     let struct_name = &input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let gen = match &input.data {
-        Data::Struct(data) => {
-            let encode_fields: Vec<_> = data
-                .fields
-                .iter()
-                .map(|field| {
-                    let Some(ident) = field.ident.as_ref() else {
-                        return quote! {
-                            compile_error!("Encodable cannot be derived for tuple structs");
-                        };
-                    };
-
-                    quote! {
-                        buf.write_value(&self.#ident);
-                    }
-                })
-                .collect();
-
-            quote! {
-                use esp::ByteBufferExtWrite as _;
-                impl #impl_generics Encodable for #struct_name #ty_generics #where_clause {
-                    #[inline]
-                    fn encode(&self, buf: &mut esp::ByteBuffer) {
-                        #(#encode_fields)*
-                    }
-                    #[inline]
-                    fn encode_fast(&self, buf: &mut esp::FastByteBuffer) {
-                        #(#encode_fields)*
-                    }
-                }
-            }
+        Data::Struct(data) if let Some(bit_attrs) = bit_attrs => {
+            encode::for_bit_struct(data, bit_attrs, struct_name, &impl_generics, &ty_generics, where_clause)
         }
-        Data::Enum(_) => {
-            let repr_type = get_enum_repr_type(&input);
-
-            quote! {
-                use esp::ByteBufferExtWrite as _;
-                impl #impl_generics Encodable for #struct_name #ty_generics #where_clause {
-                    #[inline]
-                    fn encode(&self, buf: &mut esp::ByteBuffer) {
-                        buf.write_value(&(*self as #repr_type))
-                    }
-                    #[inline]
-                    fn encode_fast(&self, buf: &mut esp::FastByteBuffer) {
-                        buf.write_value(&(*self as #repr_type))
-                    }
-                }
-            }
-        }
+        Data::Struct(data) => encode::for_struct(data, struct_name, &impl_generics, &ty_generics, where_clause),
+        Data::Enum(_) => encode::for_enum(
+            struct_name,
+            &get_enum_repr_type(&input),
+            &impl_generics,
+            &ty_generics,
+            where_clause,
+        ),
         Data::Union(_) => {
             return quote! {
                 compile_error!("Encodable cannot be derived for unions");
@@ -84,104 +53,17 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
 /// The members are deserialized in the same order they are laid out in the struct.
 ///
 /// For enums, all the same limitations apply as in `Encodable` plus the enum must have explicitly specified values for all variants.
-#[proc_macro_derive(Decodable)]
+#[proc_macro_derive(Decodable, attributes(bitfield))]
 pub fn derive_decodable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+    let bit_attrs = BitfieldAttributes::parse(&input);
 
     let struct_name = &input.ident;
 
     let gen = match &input.data {
-        Data::Struct(data) => {
-            let field_names = data.fields.iter().map(|field| field.ident.as_ref().unwrap());
-
-            let decode_fields = field_names
-                .clone()
-                .map(|ident| {
-                    quote! {
-                        let #ident = buf.read()?;
-                    }
-                })
-                .collect::<Vec<_>>();
-
-            let field_names: Vec<_> = field_names.collect();
-
-            quote! {
-                use esp::ByteBufferExtRead as _;
-                impl Decodable for #struct_name {
-                    #[inline]
-                    fn decode(buf: &mut esp::ByteBuffer) -> esp::DecodeResult<Self> {
-                        #(#decode_fields)*
-                        Ok(Self {
-                            #(
-                                #field_names,
-                            )*
-                        })
-                    }
-                    #[inline]
-                    fn decode_from_reader(buf: &mut esp::ByteReader) -> esp::DecodeResult<Self> {
-                        #(#decode_fields)*
-                        Ok(Self {
-                            #(
-                                #field_names,
-                            )*
-                        })
-                    }
-                }
-            }
-        }
-        Data::Enum(data) => {
-            let repr_type = get_enum_repr_type(&input);
-
-            let mut err_flag: bool = false;
-            let decode_variants: Vec<_> = data
-                .variants
-                .iter()
-                .map(|variant| {
-                    let ident = &variant.ident;
-                    let variant_repr = match &variant.discriminant {
-                        Some((_, expr)) => {
-                            quote! { #expr }
-                        }
-                        None => {
-                            err_flag = true;
-                            quote! { 0 }
-                        }
-                    };
-                    quote! {
-                        #variant_repr => Ok(#struct_name::#ident),
-                    }
-                })
-                .collect();
-
-            if err_flag {
-                return quote! {
-                    compile_error!("Decodable currently cannot be derived for enums without explicitly specified discriminants");
-                }
-                .into();
-            }
-
-            quote! {
-                use esp::ByteBufferExtRead as _;
-                impl Decodable for #struct_name {
-                    #[inline]
-                    fn decode(buf: &mut esp::ByteBuffer) -> esp::DecodeResult<Self> {
-                        let value: #repr_type = buf.read_value()?;
-                        match value {
-                            #(#decode_variants)*
-                            _ => Err(esp::DecodeError::InvalidEnumValue)
-                        }
-                    }
-                    #[inline]
-                    fn decode_from_reader(buf: &mut esp::ByteReader) -> esp::DecodeResult<Self> {
-                        let value: #repr_type = buf.read_value()?;
-                        match value {
-                            #(#decode_variants)*
-                            _ => Err(esp::DecodeError::InvalidEnumValue)
-                        }
-                    }
-                }
-            }
-        }
+        Data::Struct(data) if let Some(bit_attrs) = bit_attrs => decode::for_bit_struct(data, bit_attrs, struct_name),
+        Data::Struct(data) => decode::for_struct(data, struct_name),
+        Data::Enum(data) => decode::for_enum(data, struct_name, &get_enum_repr_type(&input)),
         Data::Union(_) => {
             return quote! {
                 compile_error!("Decodable cannot be drived for unions");
@@ -197,9 +79,10 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
 /// For `StaticSize` to be successfully derived, for structs, all of the members of the struct must also implement `StaticSize`.
 ///
 /// For enums, all the same limitations apply as in `Encodable`.
-#[proc_macro_derive(StaticSize)]
+#[proc_macro_derive(StaticSize, attributes(bitfield))]
 pub fn derive_static_size(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+    let bit_attrs = BitfieldAttributes::parse(&input);
 
     let struct_name = &input.ident;
 
@@ -207,6 +90,10 @@ pub fn derive_static_size(input: TokenStream) -> TokenStream {
         Data::Struct(data) if data.fields.is_empty() => {
             // If the struct has no fields, encoded size is 0
             quote! { 0 }
+        }
+        Data::Struct(data) if let Some(bit_attrs) = bit_attrs => {
+            let size = bit_attrs.size.unwrap_or_else(|| get_bitfield_struct_size(data));
+            quote! { #size }
         }
         Data::Struct(data) => {
             let field_types: Vec<_> = data.fields.iter().map(|field| &field.ty).collect();
@@ -240,12 +127,6 @@ pub fn derive_static_size(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[derive(FromDeriveInput)]
-#[darling(attributes(dynamic_size))]
-struct DynamicSizeAttributes {
-    as_static: Option<bool>,
-}
-
 /// Implements `DynamicSize` for the given type, allowing you to compute the encoded size of the value at runtime.
 /// For `DynamicSize` to be successfully derived, for structs, all of the members of the struct must also implement `DynamicSize`.
 ///
@@ -259,7 +140,7 @@ struct DynamicSizeAttributes {
 /// ```
 ///
 /// This will cause `MyStruct::encoded_size` to evaluate to a constant `u32::ENCODED_SIZE` instead of the function call `self.val.encoded_size()`
-#[proc_macro_derive(DynamicSize, attributes(dynamic_size))]
+#[proc_macro_derive(DynamicSize, attributes(dynamic_size, bitfield))]
 pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let as_static = match DynamicSizeAttributes::from_derive_input(&input) {
@@ -272,6 +153,8 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
         }
     }.unwrap_or(false);
 
+    let bit_attrs = BitfieldAttributes::parse(&input);
+
     let struct_name = &input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
@@ -279,6 +162,10 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
         Data::Struct(data) if data.fields.is_empty() => {
             // If the struct has no fields, encoded size is 0
             quote! { 0 }
+        }
+        Data::Struct(data) if let Some(bit_attrs) = bit_attrs => {
+            let size = bit_attrs.size.unwrap_or_else(|| get_bitfield_struct_size(data));
+            quote! { #size }
         }
         Data::Struct(data) => {
             let field_names: Vec<_> = data.fields.iter().map(|field| &field.ident).collect();
@@ -319,14 +206,6 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
 
     // Return the generated implementation as a TokenStream
     gen.into()
-}
-
-#[derive(FromDeriveInput)]
-#[darling(attributes(packet))]
-struct PacketAttributes {
-    id: u16,
-    encrypted: Option<bool>,
-    tcp: Option<bool>,
 }
 
 /// Implements `Packet`, `PacketMetadata` and the function `const fn header() -> PacketHeader` for the given struct.
@@ -385,7 +264,7 @@ pub fn packet(input: TokenStream) -> TokenStream {
 }
 
 /// Get the repr type of an enum as a token
-fn get_enum_repr_type(input: &DeriveInput) -> proc_macro2::TokenStream {
+pub(crate) fn get_enum_repr_type(input: &DeriveInput) -> proc_macro2::TokenStream {
     let mut repr_type: Option<proc_macro2::TokenStream> = None;
     for attr in &input.attrs {
         if attr.path().is_ident("repr") {
@@ -412,4 +291,18 @@ fn get_enum_repr_type(input: &DeriveInput) -> proc_macro2::TokenStream {
         Span::call_site().warning("enum repr type not specified - assuming i32. it is recommended to add #[repr(type)] before the enum as that makes it more explicit.").emit();
         quote! { i32 }
     })
+}
+
+pub(crate) fn is_field_bool(ty: &Type) -> bool {
+    matches!(ty, Type::Path(tp) if tp.into_token_stream().to_string() == "bool")
+}
+
+/// For a struct consisting of bools, return the minimum amount of bytes can be used to fit all of the bool fields.
+pub(crate) fn get_bitfield_struct_size(input: &DataStruct) -> usize {
+    assert!(
+        input.fields.iter().all(|x| is_field_bool(&x.ty)),
+        "get_bitfield_struct_size called on a struct with fields that aren't bool"
+    );
+
+    (input.fields.len() + 7) / 8
 }

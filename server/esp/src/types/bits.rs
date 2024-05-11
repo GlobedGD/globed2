@@ -10,6 +10,7 @@ impl<const N: usize> Bits<N> {
         Self { buffer: [0u8; N] }
     }
 
+    #[inline]
     pub fn reset(&mut self) {
         for i in 0..N {
             self.buffer[i] = 0;
@@ -18,12 +19,12 @@ impl<const N: usize> Bits<N> {
 
     #[inline]
     pub fn set_bit(&mut self, pos: usize) {
-        self._assign_bit(pos, true);
+        self.assign_bit(pos, true);
     }
 
     #[inline]
     pub fn clear_bit(&mut self, pos: usize) {
-        self._assign_bit(pos, false);
+        self.assign_bit(pos, false);
     }
 
     #[inline]
@@ -35,7 +36,7 @@ impl<const N: usize> Bits<N> {
     }
 
     #[inline]
-    fn _assign_bit(&mut self, pos: usize, state: bool) {
+    pub fn assign_bit(&mut self, pos: usize, state: bool) {
         debug_assert!(
             pos < N * 8,
             "attempting to assign bit number {pos} in a bit buffer with length of {} bits",

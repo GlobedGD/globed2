@@ -463,7 +463,9 @@ impl<'a> ByteBufferExtRead for ByteReader<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate as esp;
     use crate::*;
+    use globed_derive::*;
 
     #[test]
     fn fast_string() {
@@ -518,5 +520,62 @@ mod tests {
         assert_eq!(viter.next().unwrap(), &"test string 5".to_owned());
 
         assert!(viter.next().is_none(), "vector didn't end");
+    }
+
+    #[derive(Encodable, Decodable, StaticSize, DynamicSize)]
+    #[bitfield(on = true)]
+    #[allow(clippy::struct_excessive_bools)]
+    struct FlagStruct {
+        b0: bool,
+        b1: bool,
+        b2: bool,
+        b3: bool,
+        b4: bool,
+        b5: bool,
+        b6: bool,
+        b7: bool,
+        b8: bool,
+    }
+
+    #[derive(Encodable, Decodable, StaticSize, DynamicSize)]
+    #[bitfield(on = true, size = 8)]
+    #[allow(clippy::struct_excessive_bools)]
+    struct FlagStruct2 {
+        b1: bool,
+        b2: bool,
+        b3: bool,
+        b4: bool,
+    }
+
+    #[test]
+    fn bitfield() {
+        assert_eq!(FlagStruct::ENCODED_SIZE, 2);
+        assert_eq!(FlagStruct2::ENCODED_SIZE, 8);
+
+        let mut bits = Bits::<9>::new();
+        bits.set_bit(1);
+        bits.set_bit(3);
+        bits.set_bit(5);
+        bits.set_bit(7);
+
+        let mut buf = ByteBuffer::new();
+        buf.write_value(&bits);
+
+        let flags = buf.read_value::<FlagStruct>().unwrap();
+
+        assert!(flags.b1 && flags.b3 && flags.b5 && flags.b7);
+        assert!(!flags.b0 && !flags.b2 && !flags.b4 && !flags.b6);
+
+        buf.clear();
+        buf.set_wpos(0);
+        buf.write_value(&flags);
+
+        buf.set_rpos(0);
+
+        let flags2 = buf.read_value::<FlagStruct2>();
+
+        assert_eq!(buf.len(), FlagStruct::ENCODED_SIZE);
+
+        assert!(flags2.is_err());
     }
 }

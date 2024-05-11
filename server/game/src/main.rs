@@ -163,6 +163,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let state = ServerState::new();
     let bridge = if standalone {
         warn!("Starting in standalone mode, authentication is disabled");
+        warn!("Note: use Direct Connection option in-game to connect, Add Server cannot be used.");
         CentralBridge::new("", "")
     } else {
         let (central_url, central_pw) = startup_config.central_data.unwrap();
