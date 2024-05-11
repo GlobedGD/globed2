@@ -567,10 +567,9 @@ namespace util::cocos {
     }
 
     std::string spr(const std::string_view s) {
-        static const std::string id = Mod::get()->getID();
+        static const std::string id = Mod::get()->getID() + "/";
 
-        std::string out = id;
-        out.push_back('/');
+        std::string out(id);
         out.append(s);
 
         return out;

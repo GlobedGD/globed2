@@ -1,10 +1,12 @@
 #include "settings_layer.hpp"
 
 #include "setting_header_cell.hpp"
+#include "setting_cell.hpp"
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
+using SettingType = GlobedSettingCell::Type;
 
 static constexpr float TAB_SCALE = 0.85f;
 
@@ -160,13 +162,28 @@ void GlobedSettingsLayer::remakeList() {
     this->onTab(tabBtn1);
 }
 
+template <typename T>
+constexpr static GlobedSettingCell::Type getCellType() {
+    using Type = GlobedSettingCell::Type;
+
+    if constexpr (std::is_same_v<T, bool>) {
+        return Type::Bool;
+    } else if constexpr (std::is_same_v<T, float>) {
+        return Type::Float;
+    } else if constexpr (std::is_same_v<T, int>) {
+        return Type::Int;
+    } else {
+        static_assert(std::is_same_v<T, void>, "invalid type for getCellType");
+    }
+}
+
 template <typename SetTy>
 static void registerSetting(
         CCArray* cells,
         SetTy& setting,
         const char* name,
         const char* description,
-        GlobedSettingCell::Type stype = GlobedSettingsLayer::getCellType<typename SetTy::Type>()
+        SettingType stype = getCellType<typename SetTy::Type>()
 ) {
     GlobedSettingCell::Limits limits = {};
 
@@ -185,7 +202,7 @@ static void registerSetting(
 }
 
 void GlobedSettingsLayer::createSettingsCells(int category) {
-    using Type = GlobedSettingCell::Type;
+    using Type = SettingType;
 
     settingCells[category] = CCArray::create();
 
@@ -256,7 +273,7 @@ void GlobedSettingsLayer::addHeader(int category, const char* name) {
 }
 
 GJListLayer* GlobedSettingsLayer::makeListLayer(int category) {
-    createSettingsCells(category);
+    this->createSettingsCells(category);
 
     auto listview = Build<ListView>::create(settingCells[category], GlobedSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();

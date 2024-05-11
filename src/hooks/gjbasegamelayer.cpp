@@ -877,13 +877,13 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     if (!platformer && settings.levelUi.progressIndicators) {
         Build<PlayerProgressIcon>::create()
             .zOrder(2)
-            .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
+            .id(util::cocos::spr(fmt::format("remote-player-progress-{}", playerId)))
             .parent(m_fields->progressBarWrapper)
             .store(progressIcon);
     } else if (platformer && settings.levelUi.progressIndicators) {
         Build<PlayerProgressArrow>::create()
             .zOrder(2)
-            .id(Mod::get()->expandSpriteName(fmt::format("remote-player-progress-{}", playerId).c_str()))
+            .id(util::cocos::spr(fmt::format("remote-player-progress-{}", playerId)))
             .parent(this)
             .store(progressArrow);
     }
@@ -901,7 +901,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
 
     auto* rp = Build<RemotePlayer>::create(&m_fields->camState, progressIcon, progressArrow)
         .zOrder(10)
-        .id(Mod::get()->expandSpriteName(fmt::format("remote-player-{}", playerId).c_str()))
+        .id(util::cocos::spr(fmt::format("remote-player-{}", playerId)))
         .collect();
 
     auto& pcm = ProfileCacheManager::get();
