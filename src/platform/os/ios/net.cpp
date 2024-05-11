@@ -1,5 +1,8 @@
 #include <util/net.hpp>
 
+#include <sys/types.h>
+#include <netdb.h>
+
 void util::net::initialize() {}
 void util::net::cleanup() {}
 
