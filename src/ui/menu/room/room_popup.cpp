@@ -409,7 +409,7 @@ void RoomPopup::recreateInviteButton() {
     auto& rm = RoomManager::get();
 
     if (rm.isInRoom()) {
-        bool canInvite = rm.getInfo().settings.publicInvites || rm.isOwner();
+        bool canInvite = rm.getInfo().settings.flags.publicInvites || rm.isOwner();
 
         if (canInvite) {
             buttonMenu->addChild(inviteButton);

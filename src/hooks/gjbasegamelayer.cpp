@@ -78,13 +78,13 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
         m_fields->roomSettings = RoomManager::get().getInfo().settings;
 
         // collision only works in platformer, so force platformer :D
-        if (m_fields->roomSettings.collision && !level->isPlatformer()) {
-            m_fields->roomSettings.collision = false;
+        if (m_fields->roomSettings.flags.collision && !level->isPlatformer()) {
+            m_fields->roomSettings.flags.collision = false;
 
             constexpr bool forcedPlatformer = false;
             if (forcedPlatformer) {
                 m_fields->forcedPlatformer = true;
-                m_fields->roomSettings.collision = true;
+                m_fields->roomSettings.flags.collision = true;
 #ifdef GEODE_IS_ANDROID
                 if (this->m_uiLayer) {
                     this->m_uiLayer->togglePlatformerMode(true);
@@ -94,7 +94,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
         }
 
         // if 2 player mode is enabled, we are the primary player if we are the room creator
-        if (m_fields->roomSettings.twoPlayerMode) {
+        if (m_fields->roomSettings.flags.twoPlayerMode) {
             m_fields->twopstate.isPrimary = RoomManager::get().isOwner();
         }
     }
@@ -405,7 +405,7 @@ void GlobedGJBGL::setupMisc() {
     flm.maybeLoad();
 
     // toggle safe mode if collision is enabled
-    if (m_fields->roomSettings.collision) {
+    if (m_fields->roomSettings.flags.collision) {
         m_fields->progressForciblyDisabled = true;
         this->toggleSafeMode(true);
     }
@@ -1089,7 +1089,7 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
     auto* gpl = GlobedGJBGL::get();
 
     if (!gpl->established()) return retval;
-    if (!gpl->m_fields->roomSettings.collision) return retval;
+    if (!gpl->m_fields->roomSettings.flags.collision) return retval;
 
     bool isSecond = player == gpl->m_player2;
 
@@ -1262,7 +1262,7 @@ void GlobedGJBGL::updateCamera(float dt) {
 
 void GlobedGJBGL::linkPlayerTo(int accountId) {
     if (!m_fields->players.contains(accountId)) return;
-    if (!m_fields->roomSettings.twoPlayerMode) return;
+    if (!m_fields->roomSettings.flags.twoPlayerMode) return;
 
     RemotePlayer* rp = m_fields->players.at(accountId);
 

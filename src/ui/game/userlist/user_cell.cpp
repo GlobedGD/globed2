@@ -141,7 +141,7 @@ void GlobedUserCell::makeButtons() {
     bool notSelf = accountData.accountId != GJAccountManager::get()->m_accountID;
     bool createBtnSettings = notSelf;
     bool createBtnAdmin = NetworkManager::get().isAuthorizedAdmin();
-    bool createBtn2plink = pl->m_fields->roomSettings.twoPlayerMode && notSelf;
+    bool createBtn2plink = pl->m_fields->roomSettings.flags.twoPlayerMode && notSelf;
     bool createBtnTp = createBtnAdmin && notSelf && !createBtn2plink;
     bool createVisualizer = settings.communication.voiceEnabled && notSelf;
     bool createSettingsAlts = false;

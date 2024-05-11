@@ -62,10 +62,10 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
     int setting = sender->getTag();
 
     switch (setting) {
-        case TAG_INVITE_ONLY: currentSettings.inviteOnly = enabled; break;
-        case TAG_PUBLIC_INVITES: currentSettings.publicInvites = enabled; break;
-        case TAG_COLLISION: currentSettings.collision = enabled; break;
-        case TAG_TWO_PLAYER: currentSettings.twoPlayerMode = enabled; break;
+        case TAG_INVITE_ONLY: currentSettings.flags.inviteOnly = enabled; break;
+        case TAG_PUBLIC_INVITES: currentSettings.flags.publicInvites = enabled; break;
+        case TAG_COLLISION: currentSettings.flags.collision = enabled; break;
+        case TAG_TWO_PLAYER: currentSettings.flags.twoPlayerMode = enabled; break;
     }
 
     // if we are not the room owner, just revert the changes next frame
@@ -81,8 +81,8 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
 }
 
 void RoomSettingsPopup::updateCheckboxes() {
-    cellCollision->setToggled(currentSettings.collision);
-    cellTwoPlayer->setToggled(currentSettings.twoPlayerMode);
+    cellCollision->setToggled(currentSettings.flags.collision);
+    cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);
 
     this->enableCheckboxes(RoomManager::get().isOwner());
 }

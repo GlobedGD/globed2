@@ -8,6 +8,7 @@
 #include "basic.hpp"
 #include "types/basic/either.hpp"
 #include "bitbuffer.hpp"
+#include "bitfield.hpp"
 #include <util/data.hpp>
 #include <util/misc.hpp>
 
@@ -120,6 +121,9 @@ public:
 
     // Skips the next `bytes` bytes. Returns an error if there aren't enough bytes to skip.
     DecodeResult<> skip(size_t bytes);
+
+    // Returns an error if `count` bytes cannot be read from this `ByteBuffer`
+    DecodeResult<> boundsCheck(size_t count);
 
     /* Helper methods for reading/writing a specific integer type */
 
@@ -251,10 +255,21 @@ protected:
     }
 
     // Read a value using boost reflection
-    template <typename T, class Md = boost::describe::describe_members<T, boost::describe::mod_public>>
+    template <
+        typename T,
+        class Md = boost::describe::describe_members<T, boost::describe::mod_public>,
+        class Bd = boost::describe::describe_bases<T, boost::describe::mod_any_access>
+    >
     requires std::is_default_constructible_v<T>
     DecodeResult<T> reflectionDecode() {
         static_assert(std::is_class_v<T>, "attempted to call reflectionDecode on a non-class type");
+
+        // if it's a bitfield, decode it as such
+        if constexpr (!boost::mp11::mp_empty<Bd>::value) {
+            if constexpr (std::is_same_v<typename boost::mp11::mp_first<Bd>::type, BitfieldBase>) {
+                return reflectionDecodeBitfield<T>();
+            }
+        }
 
         // create a default initialized instance
         T value;
@@ -286,17 +301,70 @@ protected:
     }
 
     // Write a value using boost reflection
-    template <typename T, class Md = boost::describe::describe_members<T, boost::describe::mod_public>>
+    template <
+        typename T,
+        class Md = boost::describe::describe_members<T, boost::describe::mod_public>,
+        class Bd = boost::describe::describe_bases<T, boost::describe::mod_any_access>
+    >
     void reflectionEncode(const T& value) {
         static_assert(std::is_class_v<T>, "attempted to call reflectionEncode on a non-class type");
+
+        // if it's a bitfield struct, encode it as such
+        if constexpr (!boost::mp11::mp_empty<Bd>::value) {
+            if (std::is_same_v<typename boost::mp11::mp_first<Bd>::type, BitfieldBase>) {
+                this->reflectionEncodeBitfield<T>(value);
+                return;
+            }
+        }
 
         boost::mp11::mp_for_each<Md>([&, this](auto descriptor) {
             this->writeValue(value.*descriptor.pointer);
         });
     }
 
-    // Returns an error if `count` bytes cannot be read from this `ByteBuffer`
-    DecodeResult<> boundsCheck(size_t count);
+    template <
+        typename T,
+        class Md = boost::describe::describe_members<T, boost::describe::mod_public>
+    >
+    DecodeResult<T> reflectionDecodeBitfield() {
+        static_assert(sizeof(T) <= 64, "unable to decode a bitfield with over 64 fields");
+
+        GLOBED_UNWRAP_INTO(this->readBits<sizeof(T)>(), auto bits);
+
+        T value;
+        boost::mp11::mp_for_each<Md>([&, this](auto descriptor) -> void {
+            using MPT = decltype(descriptor.pointer);
+            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
+
+            static_assert(std::is_same_v<FT, bool>, "bitfield struct must consist of only bools");
+
+            value.*descriptor.pointer = bits.readBit();
+        });
+
+        return Ok(std::move(value));
+    }
+
+    template <
+        typename T,
+        class Md = boost::describe::describe_members<T, boost::describe::mod_public>
+    >
+    void reflectionEncodeBitfield(const T& value) {
+        static_assert(sizeof(T) <= 64, "unable to encode a bitfield with over 64 fields");
+
+        // so evil
+        BitBuffer<sizeof(T)> bits;
+
+        boost::mp11::mp_for_each<Md>([&, this](auto descriptor) -> void {
+            using MPT = decltype(descriptor.pointer);
+            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
+
+            static_assert(std::is_same_v<FT, bool>, "bitfield struct must consist of only bools");
+
+            bits.writeBit(value.*descriptor.pointer);
+        });
+
+        this->writeBits(bits);
+    }
 
     /* Some templated specializations */
 
