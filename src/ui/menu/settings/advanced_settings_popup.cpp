@@ -1,13 +1,16 @@
 #include "advanced_settings_popup.hpp"
+
 #include <managers/account.hpp>
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
+#include <net/network_manager.hpp>
 
 using namespace geode::prelude;
 
 bool AdvancedSettingsPopup::setup() {
     auto rlayout = util::ui::getPopupLayout(m_size);
     this->setTitle("Advanced settings");
+
 
     auto* menu = Build<ButtonSprite>::create("Reset token", "bigFont.fnt", "GJ_button_01.png", 0.75f)
         .scale(0.8f)
@@ -17,7 +20,9 @@ bool AdvancedSettingsPopup::setup() {
         })
         .pos(rlayout.center)
         .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
+        .layout(ColumnLayout::create()->setAxisReverse(true))
+        .contentSize(0.f, POPUP_HEIGHT - 20.f)
+        .pos(rlayout.center - CCPoint{0.f, 10.f})
         .parent(m_mainLayer)
         .collect();
 
@@ -32,7 +37,17 @@ bool AdvancedSettingsPopup::setup() {
         .pos(rlayout.center - CCPoint{0.f, 30.f})
         .parent(menu);
 
+    Build(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(AdvancedSettingsPopup::onPacketLog), 0.7f))
+        .parent(menu);
+
+    menu->updateLayout();
+
     return true;
+}
+
+void AdvancedSettingsPopup::onPacketLog(CCObject* p) {
+    bool enabled = !static_cast<CCMenuItemToggler*>(p)->isOn();
+    NetworkManager::get().togglePacketLogging(enabled);
 }
 
 AdvancedSettingsPopup* AdvancedSettingsPopup::create() {

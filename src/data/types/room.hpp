@@ -7,7 +7,12 @@ struct RoomSettingsFlags : BitfieldBase {
     bool publicInvites;
     bool collision;
     bool twoPlayerMode;
+
+    // we need the struct to be 2 bytes
+    bool _pad1, _pad2, _pad3, _pad4, _pad5;
 };
+
+static_assert((sizeof(RoomSettingsFlags) + 7) / 8 == 2);
 
 GLOBED_SERIALIZABLE_BITFIELD(RoomSettingsFlags, (
     inviteOnly, publicInvites, collision, twoPlayerMode

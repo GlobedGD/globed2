@@ -31,6 +31,8 @@ public:
     void cleanupBox();
     void createBox();
 
+    void togglePacketLogging(bool enabled);
+
     enum class PollResult {
         None, Tcp, Udp, Both
     };

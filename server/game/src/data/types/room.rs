@@ -1,6 +1,6 @@
 use crate::data::*;
 
-#[derive(Clone, Copy, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Clone, Copy, Default, Encodable, Decodable, StaticSize, DynamicSize, Debug)]
 #[bitfield(on = true, size = 2)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct RoomSettingsFlags {
@@ -10,7 +10,7 @@ pub struct RoomSettingsFlags {
     pub two_player: bool,
 }
 
-#[derive(Clone, Copy, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Clone, Copy, Default, Encodable, Decodable, StaticSize, DynamicSize, Debug)]
 #[dynamic_size(as_static = true)]
 pub struct RoomSettings {
     pub flags: RoomSettingsFlags,

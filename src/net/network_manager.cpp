@@ -199,6 +199,10 @@ void NetworkManager::threadMainFunc() {
 
     while (auto packet = packetQueue.popTimeout(util::time::millis(200))) {
         try {
+            if (packetLogging) {
+                this->logPacketToFile(packet.value());
+            }
+
             auto result = gameSocket.sendPacket(packet.value());
             if (!result) {
                 log::debug("failed to send packet {}: {}", packet.value()->getPacketId(), result.unwrapErr());
@@ -261,6 +265,10 @@ void NetworkManager::threadRecvFunc() {
     }
 
     auto packet = packet_.unwrap();
+
+    if (packetLogging) {
+        this->logPacketToFile(packet);
+    }
 
     packetid_t packetId = packet->getPacketId();
 
@@ -566,6 +574,25 @@ void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener*
 
 void NetworkManager::toggleIgnoreProtocolMismatch(bool state) {
     ignoreProtocolMismatch = state;
+}
+
+void NetworkManager::togglePacketLogging(bool enabled) {
+    packetLogging = enabled;
+}
+
+void NetworkManager::logPacketToFile(std::shared_ptr<Packet> packet) {
+    auto folder = Mod::get()->getSaveDir() / "packets";
+    (void) geode::utils::file::createDirectoryAll(folder);
+
+    auto datetime = util::format::formatDateTime(util::time::systemNow());
+    auto filepath = folder / fmt::format("{}-{}.bin", packet->getPacketId(), datetime);
+
+    std::ofstream fs(filepath, std::ios::binary);
+    ByteBuffer data;
+    packet->encode(data);
+
+    const auto& vec = data.data();
+    fs.write(reinterpret_cast<const char*>(vec.data()), vec.size());
 }
 
 bool NetworkManager::connected() {

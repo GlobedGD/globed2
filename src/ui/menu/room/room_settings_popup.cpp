@@ -76,11 +76,14 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
         });
     } else {
         // otherwise, actually update the settings
+        log::debug("settings: {}", currentSettings.flags.inviteOnly, currentSettings.flags.publicInvites, currentSettings.flags.collision, currentSettings.flags.twoPlayerMode);
         NetworkManager::get().send(UpdateRoomSettingsPacket::create(currentSettings));
     }
 }
 
 void RoomSettingsPopup::updateCheckboxes() {
+    cellInviteOnly->setToggled(currentSettings.flags.inviteOnly);
+    cellPublicInvites->setToggled(currentSettings.flags.publicInvites);
     cellCollision->setToggled(currentSettings.flags.collision);
     cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);
 
@@ -88,6 +91,8 @@ void RoomSettingsPopup::updateCheckboxes() {
 }
 
 void RoomSettingsPopup::enableCheckboxes(bool enabled) {
+    cellInviteOnly->setEnabled(enabled);
+    cellPublicInvites->setEnabled(enabled);
     cellCollision->setEnabled(enabled);
     cellTwoPlayer->setEnabled(enabled);
 }

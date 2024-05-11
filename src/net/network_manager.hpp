@@ -120,6 +120,8 @@ public:
     // Returns true if we are connected to a server and authorized as an admin
     bool isAuthorizedAdmin();
 
+    void togglePacketLogging(bool enabled);
+
     void clearAdminStatus();
 
     int getAdminRole();
@@ -177,6 +179,7 @@ private:
     AtomicBool _deferredConnect = false;
     uint32_t secretKey = 0;
     AtomicBool ignoreProtocolMismatch = false;
+    AtomicBool packetLogging = false;
 
     std::string _deferredAddr, _deferredServerId;
     unsigned short _deferredPort;
@@ -194,6 +197,7 @@ private:
     void maybeSendKeepalive();
     void maybeDisconnectIfDead();
     void toggleIgnoreProtocolMismatch(bool state);
+    void logPacketToFile(std::shared_ptr<Packet> packet);
 
     // Builtin listeners have priority above the others.
     asp::Mutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;

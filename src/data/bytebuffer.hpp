@@ -329,7 +329,8 @@ protected:
     DecodeResult<T> reflectionDecodeBitfield() {
         static_assert(sizeof(T) <= 64, "unable to decode a bitfield with over 64 fields");
 
-        GLOBED_UNWRAP_INTO(this->readBits<sizeof(T)>(), auto bits);
+        constexpr size_t bitcount = util::data::bitsToBytes(sizeof(T)) * 8;
+        GLOBED_UNWRAP_INTO(this->readBits<bitcount>(), auto bits);
 
         T value;
         boost::mp11::mp_for_each<Md>([&, this](auto descriptor) -> void {
@@ -352,7 +353,8 @@ protected:
         static_assert(sizeof(T) <= 64, "unable to encode a bitfield with over 64 fields");
 
         // so evil
-        BitBuffer<sizeof(T)> bits;
+        constexpr size_t bitcount = util::data::bitsToBytes(sizeof(T)) * 8;
+        BitBuffer<bitcount> bits;
 
         boost::mp11::mp_for_each<Md>([&, this](auto descriptor) -> void {
             using MPT = decltype(descriptor.pointer);

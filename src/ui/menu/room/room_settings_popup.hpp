@@ -22,7 +22,7 @@ public:
 private:
     friend class RoomSettingCell;
 
-    RoomSettings currentSettings;
+    RoomSettings currentSettings = {};
     RoomSettingCell
         *cellInviteOnly,
         *cellCollision,
