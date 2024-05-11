@@ -7,7 +7,7 @@
 */
 
 #ifdef GEODE_IS_WINDOWS
-// # pragma comment(lib, "ws2_32.lib")
+
 # define GLOBED_SOCKET_POLL WSAPoll
 # define GLOBED_SOCKET_POLLFD WSAPOLLFD
 

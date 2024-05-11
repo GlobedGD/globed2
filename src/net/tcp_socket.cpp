@@ -15,7 +15,7 @@ using namespace geode::prelude;
 
 TcpSocket::TcpSocket() : socket_(0) {
     destAddr_ = std::make_unique<sockaddr_in>();
-    *destAddr_ = {};
+    std::memset(destAddr_.get(), 0, sizeof(sockaddr_in));
 }
 
 TcpSocket::~TcpSocket() {
@@ -37,7 +37,7 @@ Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port
     GLOBED_UNWRAP(this->setNonBlocking(true));
 
     // on a non-blocking socket this always errors with EWOULDBLOCK, ignore the status code
-    (void) ::connect(socket_, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
+    (void) ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
 
     GLOBED_UNWRAP(this->setNonBlocking(false));
 

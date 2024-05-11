@@ -14,7 +14,7 @@
 
 UdpSocket::UdpSocket() : socket_(0) {
     destAddr_ = std::make_unique<sockaddr_in>();
-    *destAddr_ = {};
+    std::memset(destAddr_.get(), 0, sizeof(sockaddr_in));
 
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     socket_ = sock;
@@ -38,7 +38,7 @@ Result<> UdpSocket::connect(const std::string_view serverIp, unsigned short port
 Result<int> UdpSocket::send(const char* data, unsigned int dataSize) {
     GLOBED_REQUIRE_SAFE(connected, "attempting to call UdpSocket::send on a disconnected socket")
 
-    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(&destAddr_), sizeof(destAddr_));
+    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
 
     if (retval == -1) {
         return Err(util::net::lastErrorString());
