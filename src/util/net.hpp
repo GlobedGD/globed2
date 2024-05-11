@@ -3,6 +3,8 @@
 #include <defs/net.hpp>
 #include <string>
 
+struct sockaddr_in;
+
 namespace util::net {
     // Initialize all networking libraries (calls `WSAStartup` on Windows, does nothing on other platforms)
     void initialize();

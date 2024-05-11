@@ -4,6 +4,7 @@
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif
 
+#undef _WINSOCKAPI_
 #include <Geode/cocos/platform/IncludeCurl.h>
 
 #include <asp/Log.hpp>

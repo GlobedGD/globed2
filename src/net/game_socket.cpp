@@ -6,6 +6,13 @@
 #include <util/net.hpp>
 #include <util/crypto.hpp>
 
+#ifdef GEODE_IS_WINDOWS
+# include <WinSock2.h>
+#else
+# include <sys/socket.h>
+# include <poll.h>
+#endif
+
 constexpr size_t BUF_SIZE = 2 << 17;
 
 using namespace util::data;
@@ -71,9 +78,9 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacket(bool onTcpConnection, boo
         buf.resize(messageLength + PacketHeader::SIZE);
     }
 
-    auto result = packet->decode(buf);;
+    auto result = packet->decode(buf);
     if (result.isErr()) {
-        return Err(fmt::format("Decoding packet ID {} failed: {}", header.id, result.unwrapErr()));
+        return Err(fmt::format("Decoding packet ID {} failed: {}", header.id, ByteBuffer::strerror(result.unwrapErr())));
     }
 
     return Ok(std::move(packet));

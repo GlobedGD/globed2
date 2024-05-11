@@ -2,10 +2,20 @@
 
 #include <util/net.hpp>
 
+#ifdef GEODE_IS_WINDOWS
+# include <WinSock2.h>
+#else
+# include <netinet/in.h>
+# include <fcntl.h>
+# include <poll.h>
+# include <unistd.h>
+#endif
+
 using namespace geode::prelude;
 
 TcpSocket::TcpSocket() : socket_(0) {
-    memset(&destAddr_, 0, sizeof(destAddr_));
+    destAddr_ = std::make_unique<sockaddr_in>();
+    *destAddr_ = {};
 }
 
 TcpSocket::~TcpSocket() {
@@ -13,9 +23,9 @@ TcpSocket::~TcpSocket() {
 }
 
 Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port) {
-    destAddr_.sin_family = AF_INET;
+    destAddr_->sin_family = AF_INET;
 
-    GLOBED_UNWRAP(util::net::initSockaddr(serverIp, port, destAddr_))
+    GLOBED_UNWRAP(util::net::initSockaddr(serverIp, port, *destAddr_))
 
     // create socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);

@@ -407,11 +407,16 @@ protected:
     template<typename T>
     DecodeResult<std::vector<T>> pcDecodeVector() {
         GLOBED_UNWRAP_INTO(this->readU32(), auto length);
+
         std::vector<T> out;
 
+        if (sizeof(T) * length < (2 << 15)) {
+            out.reserve(length);
+        }
+
         for (size_t i = 0; i < length; i++) {
-            GLOBED_UNWRAP_INTO(this->readValue<T>(), auto val);
-            out.push_back(std::move(val));
+            GLOBED_UNWRAP_INTO(this->readValue<T>(), T val);
+            out.emplace_back(std::move(val));
         }
 
         return Ok(out);

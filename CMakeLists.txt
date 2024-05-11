@@ -71,10 +71,7 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES})
 # Windows - do stuff
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
-    if (MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE /FIWinSock2.h)
-    else()
-        target_compile_options(${PROJECT_NAME} PRIVATE -include WinSock2.h)
+    if (NOT MSVC)
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
 
@@ -142,5 +139,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium Boost::describe asp)
+
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME} ws2_32)
+endif()
 
 setup_geode_mod(${PROJECT_NAME})

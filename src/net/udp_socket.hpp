@@ -2,8 +2,9 @@
 #include "socket.hpp"
 
 #include <defs/platform.hpp>
-#include <defs/net.hpp>
 #include <asp/sync.hpp>
+
+struct sockaddr_in;
 
 class UdpSocket : public Socket {
 public:
@@ -29,5 +30,5 @@ public:
 #endif
 
 private:
-    sockaddr_in destAddr_;
+    std::unique_ptr<sockaddr_in> destAddr_;
 };

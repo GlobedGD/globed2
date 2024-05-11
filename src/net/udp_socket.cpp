@@ -3,8 +3,19 @@
 #include <defs/assert.hpp>
 #include <util/net.hpp>
 
+#ifdef GEODE_IS_WINDOWS
+# include <Ws2tcpip.h>
+#else
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <unistd.h>
+# include <poll.h>
+#endif
+
 UdpSocket::UdpSocket() : socket_(0) {
-    memset(&destAddr_, 0, sizeof(destAddr_));
+    destAddr_ = std::make_unique<sockaddr_in>();
+    *destAddr_ = {};
+
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     socket_ = sock;
 
@@ -16,9 +27,9 @@ UdpSocket::~UdpSocket() {
 }
 
 Result<> UdpSocket::connect(const std::string_view serverIp, unsigned short port) {
-    destAddr_.sin_family = AF_INET;
+    destAddr_->sin_family = AF_INET;
 
-    GLOBED_UNWRAP(util::net::initSockaddr(serverIp, port, destAddr_))
+    GLOBED_UNWRAP(util::net::initSockaddr(serverIp, port, *destAddr_))
 
     connected = true;
     return Ok();
@@ -65,7 +76,7 @@ RecvResult UdpSocket::receive(char* buffer, int bufferSize) {
 
     bool fromServer = false;
     if (this->connected) {
-        fromServer = util::net::sameSockaddr(source, destAddr_);
+        fromServer = util::net::sameSockaddr(source, *destAddr_);
     }
 
     return RecvResult {

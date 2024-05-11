@@ -2,9 +2,10 @@
 #include "socket.hpp"
 
 #include <defs/platform.hpp>
-#include <defs/net.hpp>
 #include <defs/assert.hpp>
 #include <asp/sync.hpp>
+
+struct sockaddr_in;
 
 class TcpSocket : public Socket {
 public:
@@ -32,5 +33,5 @@ public:
 #endif
 
 private:
-    sockaddr_in destAddr_;
+    std::unique_ptr<sockaddr_in> destAddr_;
 };

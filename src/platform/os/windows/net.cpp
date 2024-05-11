@@ -1,6 +1,8 @@
 #include <util/net.hpp>
 #include <util/format.hpp>
 
+#include <WinSock2.h>
+
 void util::net::initialize() {
     WSADATA wsaData;
     bool success = WSAStartup(MAKEWORD(2, 2), &wsaData) == 0;
