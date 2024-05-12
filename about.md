@@ -20,16 +20,16 @@ As a sign of appreciation, you will get a nice <ca>purple</c> name in-game and a
 
 Globed is developed by:
 
-* [dank_meme](https://github.com/dankmeme01) - creator and main developer
-* [availax](https://availax.xyz/) - co-owner, community manager, artist, ❤️
-* [ninXout](https://github.com/ninXout/) - developer
+* [dank_meme](user:9735891) - creator and main developer
+* [availax](user:1621348) - co-owner, community manager, artist, ❤️
+* [ninXout](user:7479054) - developer
 
 and the rest of our awesome [contributors](https://github.com/dankmeme01/globed2/graphs/contributors)!
 
 Special thanks:
 
-* MathieuAR - for providing us server hosting
-* HJfod - for making [our website](https://globed.dev)
-* alk1m123 - for working together for EditorCollab interoperability
+* [MathieuAR](user:3759035) - for providing us server hosting
+* [HJfod](user:104257) - for making [our website](https://globed.dev)
+* [alk1m123](user:11535118) - for working together for EditorCollab interoperability
 * [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
 * Server staff and supporters - for helping in shaping this mod to be what it is today :)
