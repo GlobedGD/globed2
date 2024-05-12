@@ -105,11 +105,18 @@ CPMAddPackage(
     URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp#ff940e5")
+CPMAddPackage("gh:dankmeme01/asp#4dadd5d")
 
-# asp debug
-if (WIN32 AND GLOBED_IS_DEBUG)
-    target_compile_definitions(asp PRIVATE _HAS_ITERATOR_DEBUGGING=0)
+# asp defines
+if (WIN32)
+    if (GLOBED_IS_DEBUG)
+        # debug
+        target_compile_definitions(asp PRIVATE _HAS_ITERATOR_DEBUGGING=0)
+    endif()
+
+    # thingy
+    target_compile_definitions(asp PRIVATE ASP_ENABLE_FORMAT=1)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ASP_ENABLE_FORMAT=1)
 endif()
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/globed-codegen")
