@@ -32,10 +32,17 @@ pub struct AccountVerifier {
     last_update: SyncMutex<SystemTime>,
     outdated_messages: SyncMutex<IntSet<i32>>,
     is_enabled: AtomicBool,
+    ignore_name_mismatch: bool,
 }
 
 impl AccountVerifier {
-    pub fn new(account_id: i32, account_gjp: String, mut base_api_url: String, enabled: bool) -> Self {
+    pub fn new(
+        account_id: i32,
+        account_gjp: String,
+        mut base_api_url: String,
+        enabled: bool,
+        ignore_name_mismatch: bool,
+    ) -> Self {
         let http_client = reqwest::ClientBuilder::new()
             .use_rustls_tls()
             .danger_accept_invalid_certs(true)
@@ -57,6 +64,7 @@ impl AccountVerifier {
             last_update: SyncMutex::new(SystemTime::now()),
             outdated_messages: SyncMutex::new(IntSet::default()),
             is_enabled: AtomicBool::new(enabled),
+            ignore_name_mismatch,
         }
     }
 
@@ -115,7 +123,7 @@ impl AccountVerifier {
                 has_matching_authcode = true;
                 if msg.account_id == account_id && msg.user_id == user_id {
                     has_matching_ids = true;
-                    if msg.name.eq_ignore_ascii_case(account_name) {
+                    if self.ignore_name_mismatch || msg.name.eq_ignore_ascii_case(account_name) {
                         return Ok(msg.message_id);
                     }
 

@@ -120,8 +120,9 @@ impl InnerServerState {
         let gd_api_gjp = ssd.config.gd_api_gjp.clone();
         let base_api_url = ssd.config.gd_api_url.clone();
         let use_gd_api = ssd.config.use_gd_api;
+        let ignore_name_mismatch = ssd.config.skip_name_check;
 
-        let verifier = AccountVerifier::new(gd_api_account, gd_api_gjp, base_api_url, use_gd_api);
+        let verifier = AccountVerifier::new(gd_api_account, gd_api_gjp, base_api_url, use_gd_api, ignore_name_mismatch);
 
         Self {
             data: RwLock::new(ssd),

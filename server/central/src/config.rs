@@ -38,6 +38,10 @@ fn default_gd_api_url() -> String {
     "https://www.boomlings.com/database".to_owned()
 }
 
+fn default_skip_name_check() -> bool {
+    false
+}
+
 fn default_game_servers() -> Vec<GameServerEntry> {
     vec![GameServerEntry {
         id: "example-server-you-can-delete-it".to_owned(),
@@ -115,6 +119,7 @@ pub struct GameServerEntry {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct ServerConfig {
     #[serde(default = "default_web_mountpoint")]
     pub web_mountpoint: String,
@@ -154,6 +159,8 @@ pub struct ServerConfig {
     pub gd_api_gjp: String,
     #[serde(default = "default_gd_api_url")]
     pub gd_api_url: String,
+    #[serde(default = "default_skip_name_check")]
+    pub skip_name_check: bool,
     #[serde(default = "default_secret_key")]
     pub secret_key: String,
     #[serde(default = "default_secret_key")]
