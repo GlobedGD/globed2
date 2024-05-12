@@ -2,31 +2,41 @@
 
 Globed is an open-source, highly customizable multiplayer mod for Geometry Dash.
 
-This repository contains the complete rewrite of Globed, for Geometry Dash 2.2 and all future versions. If you want the 2.1 version, the [old repository](https://github.com/dankmeme01/globed) is still up, however it is no longer maintained.
+## Installation
+
+Globed is a [Geode](https://geode-sdk.org/) mod, so it requires you to install Geode first. Once that's done, simply open the mods page in-game and download it from the Geode Index.
 
 ## Features
 
 * Real-time multiplayer
-* Voice chat with **strong encryption and zero logging/storage**
-* Fully open-source, including the server
-
-## Installation
-
-Globed is a [Geode](https://geode-sdk.org) mod, so it requires you to install Geode first. Once that's done, simply open the mods page in-game and download it from the index.
+* Completely free and open-source, easy to host your own server
+* Available for Windows, Android and MacOS
+* In-game voice & text chat
+* Public & private rooms
 
 ## Hosting a server
 
-See the [server readme](./server/readme.md) for more information about the server and how you can host it.
+See the [server readme](./server/readme.md) for more information about hosting a server. If you have any troubles or suggestions, you can join our [Discord server](https://discord.gg/d56q5Dkdm3) or make an issue.
 
 ## Credit
 
-**mat, alk, Cvolton, and the rest of the Geode team** - thank you for creating Geode and for helping me with the issues I had using it. None of this would've been possible without your awesome efforts, and I really appreciate the work you've put in <3
+Globed is developed by:
 
-[availax](https://availax.xyz/) - thank you for supporting me since the start and helping me with nearly everything :D
+* [dank_meme](https://github.com/dankmeme01) - creator and main developer
+* [availax](https://availax.xyz/) - co-owner, community manager, artist, ❤️
+* [ninXout](https://github.com/ninXout/) - developer
 
-Anyone who donated, contributed, suggested ideas, helped moderate, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)
+and the rest of our awesome [contributors](https://github.com/dankmeme01/globed2/graphs/contributors)!
 
-### License
+Special thanks:
+
+* MathieuAR - for providing us server hosting
+* HJfod - for making [our website](https://globed.dev)
+* alk1m123 - for working together for EditorCollab interoperability
+* [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
+* Server staff and supporters - for helping in shaping this mod to be what it is today :)
+
+### Licenses
 
 Globed is licensed under the MIT license. All of the following libraries used in Globed have their own licenses you may want to read:
 

@@ -1,12 +1,12 @@
 # Globed
 
-Globed is an open-source, highly customizable multiplayer mod for Geometry Dash, supporting both classic and platformer mode.
+Globed is an open-source, highly customizable multiplayer mod for Geometry Dash.
 
 ## Usage
 
 In the main menu, an extra button is added to the bottom row. This button opens the Globed Menu, where you can join a server and start playing online with other people.
 
-If you have any issues, suggestions or just want to see the development of the mod, you can join the [discord server](https://discord.gg/d56q5Dkdm3)!
+If you have any issues, suggestions or just want to see the development of the mod, you can join our [discord server](https://discord.gg/d56q5Dkdm3)!
 
 ## Support
 
@@ -18,8 +18,18 @@ As a sign of appreciation, you will get a nice <ca>purple</c> name in-game and a
 
 ## Credit
 
-**mat, alk, Cvolton, and the rest of the Geode team** - thank you for creating Geode and for helping me with the issues I had using it. None of this would've been possible without your awesome efforts, and I really appreciate the work you've put in <3
+Globed is developed by:
 
-[availax](https://availax.xyz/) - thank you for supporting me since the start and helping me with nearly everything :D
+* [dank_meme](https://github.com/dankmeme01) - creator and main developer
+* [availax](https://availax.xyz/) - co-owner, community manager, artist, ❤️
+* [ninXout](https://github.com/ninXout/) - developer
 
-Anyone who donated, suggested ideas, helped moderate, reported issues, or just was a good friend along the way - thank you for being awesome and helping the mod become what it is today :)
+and the rest of our awesome [contributors](https://github.com/dankmeme01/globed2/graphs/contributors)!
+
+Special thanks:
+
+* MathieuAR - for providing us server hosting
+* HJfod - for making [our website](https://globed.dev)
+* alk1m123 - for working together for EditorCollab interoperability
+* [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
+* Server staff and supporters - for helping in shaping this mod to be what it is today :)

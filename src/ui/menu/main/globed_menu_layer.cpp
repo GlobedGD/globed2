@@ -82,7 +82,7 @@ bool GlobedMenuLayer::init() {
         .intoMenuItem([](auto) {
             geode::createQuickPopup("Open Discord", "Join our <cp>Discord</c> server?", "No", "Yes", [] (auto fl, bool btn2) {
                 if (btn2)
-                    geode::utils::web::openLinkInBrowser("https://discord.gg/d56q5Dkdm3");
+                    geode::utils::web::openLinkInBrowser(globed::string<"discord">());
             });
         })
         .scaleMult(1.15f)
