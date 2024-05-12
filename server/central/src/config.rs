@@ -38,8 +38,12 @@ fn default_gd_api_url() -> String {
     "https://www.boomlings.com/database".to_owned()
 }
 
-fn default_skip_name_check() -> bool {
+const fn default_skip_name_check() -> bool {
     false
+}
+
+const fn default_refresh_interval() -> u64 {
+    3000 // 3 seconds
 }
 
 fn default_game_servers() -> Vec<GameServerEntry> {
@@ -161,6 +165,8 @@ pub struct ServerConfig {
     pub gd_api_url: String,
     #[serde(default = "default_skip_name_check")]
     pub skip_name_check: bool,
+    #[serde(default = "default_refresh_interval")]
+    pub refresh_interval: u64,
     #[serde(default = "default_secret_key")]
     pub secret_key: String,
     #[serde(default = "default_secret_key")]

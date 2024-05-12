@@ -10,9 +10,7 @@ use globed_shared::{
     *,
 };
 
-const FLUSH_PERIOD: Duration = Duration::from_secs(2);
 const MICRO_SLEEP_PERIOD: Duration = Duration::from_millis(250);
-const DELETER_PERIOD: Duration = Duration::from_mins(1);
 
 #[derive(Clone)]
 struct AccountEntry {
@@ -33,6 +31,8 @@ pub struct AccountVerifier {
     outdated_messages: SyncMutex<IntSet<i32>>,
     is_enabled: AtomicBool,
     ignore_name_mismatch: bool,
+    flush_period: Duration,
+    delete_period: Duration,
 }
 
 impl AccountVerifier {
@@ -42,6 +42,7 @@ impl AccountVerifier {
         mut base_api_url: String,
         enabled: bool,
         ignore_name_mismatch: bool,
+        flush_period: Duration,
     ) -> Self {
         let http_client = reqwest::ClientBuilder::new()
             .use_rustls_tls()
@@ -65,6 +66,8 @@ impl AccountVerifier {
             outdated_messages: SyncMutex::new(IntSet::default()),
             is_enabled: AtomicBool::new(enabled),
             ignore_name_mismatch,
+            flush_period,
+            delete_period: flush_period * 60,
         }
     }
 
@@ -87,8 +90,8 @@ impl AccountVerifier {
 
         let mut passed_time = Duration::new(0, 0);
 
-        // wait for 10 seconds maximum
-        while passed_time < Duration::from_secs(10) {
+        // wait for max 5 flush periods
+        while passed_time < self.flush_period * 5 {
             // if we haven't flushed the cache yet, keep sleeping
             let last_update = *self.last_update.lock();
             if last_update < request_time {
@@ -151,7 +154,7 @@ impl AccountVerifier {
     }
 
     pub async fn run_refresher(&self) {
-        let mut interval = tokio::time::interval(FLUSH_PERIOD);
+        let mut interval = tokio::time::interval(self.flush_period);
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         interval.tick().await;
 
@@ -188,7 +191,7 @@ impl AccountVerifier {
 
     // run the task that periodically deletes the stale messages
     pub async fn run_deleter(&self) {
-        let mut interval = tokio::time::interval(DELETER_PERIOD);
+        let mut interval = tokio::time::interval(self.delete_period);
         interval.tick().await;
 
         loop {

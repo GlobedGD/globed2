@@ -90,6 +90,7 @@ Note that the server is written with security in mind, so many of those options 
 | `gd_api_gjp`<sup>*</sup> | `(empty)` | ❌ | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
 | `gd_api_url`<sup>*</sup> | `(...)` | ❌ | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
 | `skip_name_check`<sup>*</sup> | `false` | ❌ | Skips validation of account names when verifying accounts |
+| `refresh_interval`<sup>*</sup> | `3000` | ❌ | Controls the time (in milliseconds) between requests to the GD server for refreshing messages |
 | `secret_key`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying authentication keys |
 | `secret_key2`<sup>*</sup> | `(random)` | ⏳ | Secret key for generating and verifying session tokens |
 | `game_server_password`<sup>*</sup> | `(random)` | ✅ | Password used to authenticate game servers |
