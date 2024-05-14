@@ -13,28 +13,24 @@ pub struct FastString {
     repr: StringRepr,
 }
 
-const INLINE_CAP: usize = 63; // including null terminator
+const INLINE_CAP: usize = 64; // including null terminator
 
-#[repr(C)]
 union InnerStringRepr {
     inline: InlineRepr,
     heap: ManuallyDrop<HeapRepr>,
 }
 
-#[repr(C)]
 struct StringRepr {
     inner: InnerStringRepr,
     is_inline: bool,
 }
 
 #[derive(Copy, Clone, Debug)]
-#[repr(C)]
 struct InlineRepr {
     buf: [u8; INLINE_CAP],
 }
 
 #[derive(Debug)]
-#[repr(C)]
 struct HeapRepr {
     data: Vec<u8>,
 }
