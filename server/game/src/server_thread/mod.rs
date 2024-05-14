@@ -632,9 +632,8 @@ impl GameServerThread {
                     .encrypt_in_place_detached(&nonce, b"", &mut data[raw_data_start..raw_data_end])
                     .map_err(|_| PacketHandlingError::EncryptionError)?;
 
-                // prepend the nonce
-                #[cfg(not(rust_analyzer))] // don't ask about it
-                data[nonce_start..mac_start].copy_from_slice(&nonce);
+                // prepend the nonces
+                data[nonce_start..mac_start].copy_from_slice(nonce.as_slice());
 
                 // prepend the mac tag
                 data[mac_start..raw_data_start].copy_from_slice(&tag);

@@ -187,7 +187,7 @@ impl GameServerThread {
                 None
             };
 
-            account_data.special_user_data = sud.clone();
+            account_data.special_user_data.clone_from(&sud);
             sud
         };
 

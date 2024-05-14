@@ -1,5 +1,5 @@
 use crate::data::*;
-use globed_shared::{UserEntry, ADMIN_KEY_LENGTH};
+use globed_shared::UserEntry;
 
 #[derive(Packet, Decodable)]
 #[packet(id = 19000, encrypted = true)]

@@ -114,6 +114,10 @@ impl GameServerThread {
             admin_error!(self, MOD_REQUIRED_MESSAGE);
         }
 
+        if packet.message.len() > MAX_NOTICE_SIZE {
+            admin_error!(self, "message is too long");
+        }
+
         let notice_packet = ServerNoticePacket { message: packet.message };
 
         // i am not proud of this code
@@ -447,7 +451,7 @@ impl GameServerThread {
 
         // if not admin, cant update others password or role
         if role < ROLE_ADMIN {
-            new_user_entry.admin_password = user_entry.admin_password.clone();
+            new_user_entry.admin_password.clone_from(&user_entry.admin_password);
             new_user_entry.user_role = user_entry.user_role;
         }
 
