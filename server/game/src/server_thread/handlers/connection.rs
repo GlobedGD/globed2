@@ -98,12 +98,12 @@ impl GameServerThread {
             };
 
             match result {
-                Ok(x) => FastString::from_str(&x),
+                Ok(x) => InlineString::new(&x),
                 Err(err) => {
                     self.terminate();
 
-                    let mut message = FastString::<80>::from_str("authentication failed: ");
-                    message.extend(err.error_message()); // no need to use extend_safe as the messages are pretty short
+                    let mut message = InlineString::<80>::new("authentication failed: ");
+                    message.extend(err.error_message());
 
                     self.send_packet_dynamic(&LoginFailedPacket {
                         // safety: we have created the string ourselves, we know for certain it is valid UTF-8.
@@ -147,7 +147,7 @@ impl GameServerThread {
                 Err(err) => {
                     self.terminate();
 
-                    let mut message = FastString::<256>::from_str("failed to fetch user data: ");
+                    let mut message = InlineString::<256>::new("failed to fetch user data: ");
                     message.extend(&err.to_string());
 
                     self.send_packet_dynamic(&LoginFailedPacket {

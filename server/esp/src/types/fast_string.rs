@@ -1,115 +1,339 @@
-use std::{fmt, ops::Deref, str::Utf8Error};
+use std::mem::ManuallyDrop;
+use std::ops::Deref;
+use std::str::Utf8Error;
 
 use crate::*;
 
-/// `FastString` is a string class that doesn't use heap allocation like `String` but also owns the string (unlike `&str`).
-/// When encoding or decoding into a byte buffer of any kind, the encoded form is identical to a normal `String`,
-/// and they can be converted between each other interchangably with `.try_into()` or `.try_from()`.
+/// `FastString` is an SSO string class, that can store up to `FastString::inline_capacity()` bytes inline,
+/// and otherwise requires a heap allocation.
 ///
-/// Note: `FastString` is not guaranteed to hold a valid UTF-8 string at any point in time, and there are no UTF-8 checks when decoding.
-/// Checks are only done when you convert the string into a `&str` or `String`, via `.to_str`, `.try_to_str`, or `to_string`.
-#[derive(Clone, Eq, Debug)]
-pub struct FastString<const N: usize> {
-    buffer: [u8; N],
-    len: usize,
+/// Just like `InlineString`, it can be converted to and from a `String`.
+#[derive(Clone)]
+pub struct FastString {
+    repr: StringRepr,
 }
 
-impl<const N: usize> FastString<N> {
+const INLINE_CAP: usize = 63; // including null terminator
+
+#[repr(C)]
+union InnerStringRepr {
+    inline: InlineRepr,
+    heap: ManuallyDrop<HeapRepr>,
+}
+
+#[repr(C)]
+struct StringRepr {
+    inner: InnerStringRepr,
+    is_inline: bool,
+}
+
+#[derive(Copy, Clone, Debug)]
+#[repr(C)]
+struct InlineRepr {
+    buf: [u8; INLINE_CAP],
+}
+
+#[derive(Debug)]
+#[repr(C)]
+struct HeapRepr {
+    data: Vec<u8>,
+}
+
+impl InlineRepr {
     #[inline]
-    pub const fn new() -> Self {
-        Self::from_buffer([0; N], 0)
+    pub fn len(&self) -> usize {
+        let mut idx = 0;
+        for c in self.buf {
+            if c == 0u8 {
+                break;
+            }
+
+            idx += 1;
+        }
+
+        idx
     }
 
     #[inline]
-    pub const fn from_buffer(buffer: [u8; N], len: usize) -> Self {
-        Self { buffer, len }
+    pub fn is_empty(&self) -> bool {
+        self.buf[0] == 0u8
     }
 
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Self {
-        debug_assert!(
-            data.len() <= N,
-            "Attempting to create a FastString with {} bytes which is more than the capacity ({N})",
-            data.len()
-        );
-        let mut buffer = [0u8; N];
-        buffer[..data.len()].copy_from_slice(data);
-        Self { buffer, len: data.len() }
-    }
-
-    // this gives a warning that we should implement `std::str::FromStr::from_str` instead,
-    // however that returns a `Result<Self, _>` while we need just `Self`,
-    // as we assume that `data` is already a valid UTF-8 string.
-    #[allow(clippy::should_implement_trait)]
-    /// Converts a string slice to a `FastString`. Panics if there isn't enough capacity to store the data.
-    /// If that is undesired, use `try_into` or `try_from` instead.
-    #[inline]
-    pub fn from_str(data: &str) -> Self {
-        Self::from_slice(data.as_bytes())
-    }
-
-    #[inline]
-    pub const fn len(&self) -> usize {
-        self.len
-    }
-
-    #[inline]
-    pub const fn is_empty(&self) -> bool {
-        self.len == 0
-    }
-
-    #[inline]
-    pub const fn capacity() -> usize {
-        N
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self.buf.as_ptr(), self.len()) }
     }
 
     #[inline]
     pub fn push(&mut self, c: u8) {
-        if self.len < N {
-            self.buffer[self.len] = c;
-            self.len += 1;
+        let idx = self.len();
+        self.buf[idx] = c;
+        self.buf[idx + 1] = 0u8;
+    }
+
+    #[inline]
+    pub fn extend(&mut self, data: &str) {
+        let idx = self.len();
+
+        debug_assert!(idx + data.len() < INLINE_CAP);
+
+        unsafe { std::ptr::copy_nonoverlapping(data.as_ptr(), self.buf[idx..].as_mut_ptr(), data.len()) }
+
+        self.buf[idx + data.len()] = 0u8;
+    }
+}
+
+impl HeapRepr {
+    #[inline]
+    fn new(data: &[u8]) -> Self {
+        let len = data.len();
+        // thats a fucking thing?? i love you rust
+        let cap = len.next_power_of_two();
+
+        let mut buf = Vec::with_capacity(cap);
+
+        unsafe {
+            std::ptr::copy_nonoverlapping(data.as_ptr(), buf.as_mut_ptr(), len);
+            buf.set_len(len);
+        }
+
+        Self { data: buf }
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.data.capacity()
+    }
+
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.data
+    }
+
+    #[inline]
+    pub fn push(&mut self, c: u8) {
+        self.data.push(c);
+    }
+
+    #[inline]
+    pub fn extend(&mut self, data: &str) {
+        self.data.extend(data.as_bytes());
+    }
+}
+
+impl StringRepr {
+    #[inline]
+    fn is_inline(&self) -> bool {
+        self.is_inline
+    }
+
+    pub fn new(data: &[u8]) -> Self {
+        if data.len() >= INLINE_CAP {
+            Self::new_with_heap(data)
         } else {
-            panic!("FastString buffer overflow (writing beyond capacity of {N})");
+            Self::new_with_inline(data)
+        }
+    }
+
+    #[inline]
+    pub fn new_with_heap(data: &[u8]) -> Self {
+        Self {
+            inner: InnerStringRepr {
+                heap: ManuallyDrop::new(HeapRepr::new(data)),
+            },
+            is_inline: false,
+        }
+    }
+
+    #[inline]
+    fn new_with_inline(data: &[u8]) -> Self {
+        let len = data.len();
+
+        debug_assert!(len < INLINE_CAP);
+
+        let mut buf = [0u8; INLINE_CAP];
+
+        unsafe {
+            std::ptr::copy_nonoverlapping(data.as_ptr(), buf.as_mut_ptr(), len);
+        }
+
+        buf[len] = 0u8;
+
+        Self {
+            inner: InnerStringRepr {
+                inline: InlineRepr { buf },
+            },
+            is_inline: true,
+        }
+    }
+
+    pub const fn inline_capacity() -> usize {
+        INLINE_CAP - 1
+    }
+
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        if self.is_inline() {
+            Self::inline_capacity()
+        } else {
+            unsafe { self.inner.heap.capacity() }
+        }
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        if self.is_inline() {
+            unsafe { self.inner.inline.len() }
+        } else {
+            unsafe { self.inner.heap.len() }
+        }
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        if self.is_inline() {
+            unsafe { self.inner.inline.is_empty() }
+        } else {
+            unsafe { self.inner.heap.len() == 0 }
+        }
+    }
+
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        if self.is_inline() {
+            unsafe { self.inner.inline.as_bytes() }
+        } else {
+            unsafe { self.inner.heap.as_bytes() }
+        }
+    }
+
+    #[inline]
+    pub fn push(&mut self, c: u8) {
+        if self.is_inline() {
+            // if we don't have enough space, reallocate
+            if self.len() == Self::inline_capacity() {
+                unsafe {
+                    self.reallocate_to_heap();
+                    (*self.inner.heap).push(c);
+                }
+            } else {
+                unsafe {
+                    self.inner.inline.push(c);
+                }
+            }
+        } else {
+            unsafe { (*self.inner.heap).push(c) }
         }
     }
 
     #[inline]
     pub fn extend(&mut self, data: &str) {
-        debug_assert!(
-            self.len + data.len() < Self::capacity(),
-            "FastString buffer overflow (current size is {}/{}, cannot extend with a string of length {})",
-            self.len,
-            Self::capacity(),
-            data.len()
-        );
-
-        self.buffer[self.len..self.len + data.len()].copy_from_slice(data.as_bytes());
-        self.len += data.len();
-    }
-
-    /// like `extend` but will simply truncate the data instead of panicking if the string doesn't fit
-    #[inline]
-    pub fn extend_safe(&mut self, data: &str) {
-        for char in data.as_bytes() {
-            if self.len >= N {
-                break;
+        if self.is_inline() {
+            if self.len() + data.len() > Self::inline_capacity() {
+                unsafe {
+                    self.reallocate_to_heap();
+                    (*self.inner.heap).extend(data);
+                }
+            } else {
+                unsafe { self.inner.inline.extend(data) }
             }
-
-            self.push(*char);
+        } else {
+            unsafe { (*self.inner.heap).extend(data) }
         }
     }
 
-    #[inline]
-    pub fn to_string(&self) -> Result<String, Utf8Error> {
-        self.to_str().map(str::to_owned)
+    /// Reallocates the inline buffer to heap. Must not be called if heap is already in use.
+    unsafe fn reallocate_to_heap(&mut self) {
+        debug_assert!(self.is_inline());
+
+        self.inner.heap = ManuallyDrop::new(HeapRepr::new(self.inner.inline.as_bytes()));
+        self.is_inline = false;
+    }
+}
+
+impl Drop for StringRepr {
+    fn drop(&mut self) {
+        if !self.is_inline() {
+            unsafe {
+                let _val = ManuallyDrop::<HeapRepr>::take(&mut self.inner.heap);
+                // drop it
+            }
+        }
+    }
+}
+
+impl Clone for StringRepr {
+    fn clone(&self) -> Self {
+        if self.is_inline() {
+            Self {
+                inner: InnerStringRepr {
+                    inline: unsafe { self.inner.inline },
+                },
+                is_inline: true,
+            }
+        } else {
+            unsafe { Self::new(self.inner.heap.as_bytes()) }
+        }
+    }
+}
+
+impl FastString {
+    pub fn new(data: &str) -> Self {
+        Self::from_buffer(data.as_bytes())
     }
 
+    pub fn from_buffer(data: &[u8]) -> Self {
+        Self {
+            repr: if data.len() >= INLINE_CAP {
+                StringRepr::new_with_heap(data)
+            } else {
+                StringRepr::new_with_inline(data)
+            },
+        }
+    }
+
+    pub const fn inline_capacity() -> usize {
+        StringRepr::inline_capacity()
+    }
+
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.repr.capacity()
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.repr.len()
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.repr.is_empty()
+    }
+
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        self.repr.as_bytes()
+    }
+
+    /// Converts the string to a `&str`, returns an error if utf-8 validation fails
     #[inline]
     pub fn to_str(&self) -> Result<&str, Utf8Error> {
-        std::str::from_utf8(&self.buffer[..self.len])
+        std::str::from_utf8(self.as_bytes())
     }
 
-    /// Attempts to convert this string to a string slice, on failure returns "\<invalid UTF-8 string\>"
+    /// Converts the string to a `&str`, bypassing utf-8 validation checks
+    #[inline]
+    pub unsafe fn to_str_unchecked(&self) -> &str {
+        std::str::from_utf8_unchecked(self.as_bytes())
+    }
+
+    /// Converts the string to a `&str`, returns "<invalid UTF-8 string>"" if utf-8 validation fails
     #[inline]
     pub fn try_to_str(&self) -> &str {
         self.to_str().unwrap_or("<invalid UTF-8 string>")
@@ -121,149 +345,136 @@ impl<const N: usize> FastString<N> {
             .map_or_else(|_| "<invalid UTF-8 string>".to_owned(), ToOwned::to_owned)
     }
 
-    /// Converts this string to a string slice, without doing any UTF-8 checks.
-    /// If the string is not a valid UTF-8 string, the behavior is undefined.
     #[inline]
-    pub unsafe fn to_str_unchecked(&self) -> &str {
-        // in debug mode we still do a sanity check, a panic will indicate a *massive* logic error somewhere in the code.
-        #[cfg(debug_assertions)]
-        let ret = self
-            .to_str()
-            .expect("Attempted to unsafely convert a non-UTF-8 FastString into a string slice");
-
-        #[cfg(not(debug_assertions))]
-        let ret = std::str::from_utf8_unchecked(&self.buffer[..self.len]);
-
-        ret
+    pub fn push(&mut self, c: u8) {
+        self.repr.push(c);
     }
 
+    #[inline]
+    pub fn extend(&mut self, data: &str) {
+        self.repr.extend(data);
+    }
+
+    #[inline]
+    pub fn is_heap(&self) -> bool {
+        !self.repr.is_inline()
+    }
+
+    #[inline]
     /// Compares this string to `other` in constant time
-    pub fn constant_time_compare(&self, other: &FastString<N>) -> bool {
-        if self.len != other.len {
+    pub fn constant_time_compare(&self, other: &str) -> bool {
+        if self.len() != other.len() {
             return false;
         }
 
         let mut result = 0u8;
 
-        self.buffer
+        self.as_bytes()
             .iter()
-            .take(self.len)
-            .zip(other.buffer.iter().take(other.len))
+            .take(self.len())
+            .zip(other.as_bytes().iter().take(other.len()))
             .for_each(|(c1, c2)| result |= c1 ^ c2);
 
         result == 0
     }
 }
 
-impl<const N: usize> Encodable for FastString<N> {
-    #[inline]
-    fn encode(&self, buf: &mut crate::ByteBuffer) {
-        buf.write_u32(self.len as u32);
-        buf.write_bytes(&self.buffer[..self.len]);
-    }
-
-    #[inline]
-    fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_u32(self.len as u32);
-        buf.write_bytes(&self.buffer[..self.len]);
+impl Default for FastString {
+    fn default() -> Self {
+        Self::new("")
     }
 }
 
-impl<const N: usize> Decodable for FastString<N> {
-    #[inline]
-    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        let len = buf.read_u32()? as usize;
-        if len > N {
-            return Err(DecodeError::NotEnoughCapacity);
-        }
-
-        let mut buffer = [0u8; N];
-        std::io::Read::read(buf, &mut buffer[..len])?;
-
-        Ok(Self::from_buffer(buffer, len))
-    }
-
-    #[inline]
-    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        let len = buf.read_u32()? as usize;
-        if len > N {
-            return Err(DecodeError::NotEnoughCapacity);
-        }
-
-        let mut buffer = [0u8; N];
-        std::io::Read::read(buf, &mut buffer[..len])?;
-
-        Ok(Self::from_buffer(buffer, len))
-    }
-}
-
-impl<const N: usize> StaticSize for FastString<N> {
-    const ENCODED_SIZE: usize = size_of_types!(u32) + N;
-}
-
-impl<const N: usize> DynamicSize for FastString<N> {
-    #[inline]
-    fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + self.len
-    }
-}
-
-impl<const N: usize> Deref for FastString<N> {
+impl Deref for FastString {
     type Target = str;
+
     fn deref(&self) -> &Self::Target {
         self.try_to_str()
     }
 }
 
-impl<const N: usize> fmt::Display for FastString<N> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self)
+impl Display for FastString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.try_to_str())
     }
 }
 
-impl<const N: usize> TryInto<String> for FastString<N> {
-    type Error = DecodeError;
-    fn try_into(self) -> DecodeResult<String> {
-        self.to_string().map_err(|_| DecodeError::InvalidStringValue)
-    }
-}
-
-impl<const N: usize> TryFrom<String> for FastString<N> {
-    type Error = DecodeError;
-    fn try_from(value: String) -> DecodeResult<Self> {
-        TryFrom::<&str>::try_from(&value)
-    }
-}
-
-impl<const N: usize> TryFrom<&str> for FastString<N> {
-    type Error = DecodeError;
-    fn try_from(value: &str) -> DecodeResult<Self> {
-        if value.len() > N {
-            return Err(DecodeError::NotEnoughCapacity);
-        }
-
-        Ok(Self::from_str(value))
-    }
-}
-
-impl<const N: usize> Default for FastString<N> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<const N: usize> PartialEq for FastString<N> {
+impl PartialEq for FastString {
     fn eq(&self, other: &Self) -> bool {
-        if other.len != self.len {
+        let me_len = self.len();
+        let other_len = other.len();
+
+        if me_len != other_len {
             return false;
         }
 
-        self.buffer.iter().take(self.len).eq(other.buffer.iter().take(other.len))
+        self.as_bytes()
+            .iter()
+            .take(me_len)
+            .eq(other.as_bytes().iter().take(other_len))
+    }
+}
+
+impl Eq for FastString {}
+
+impl From<FastString> for String {
+    fn from(value: FastString) -> Self {
+        value.try_to_str().to_owned()
+    }
+}
+
+impl From<String> for FastString {
+    fn from(value: String) -> Self {
+        Self::new(value.as_str())
+    }
+}
+
+impl From<&str> for FastString {
+    fn from(value: &str) -> Self {
+        Self::new(value)
+    }
+}
+
+/* esp */
+
+impl Encodable for FastString {
+    #[inline]
+    fn encode(&self, buf: &mut crate::ByteBuffer) {
+        let len = self.len();
+        buf.write_u32(len as u32);
+        buf.write_bytes(&self.as_bytes()[..len]);
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        let len = self.len();
+        buf.write_u32(len as u32);
+        buf.write_bytes(&self.as_bytes()[..len]);
+    }
+}
+
+impl Decodable for FastString {
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        let len = buf.read_length()?;
+
+        if len < INLINE_CAP {
+            let mut buffer = [0u8; INLINE_CAP];
+            std::io::Read::read(buf, &mut buffer[..len])?;
+
+            Ok(Self::from_buffer(&buffer[..len]))
+        } else {
+            let slc = &buf.as_bytes()[buf.get_rpos()..buf.get_rpos() + len];
+
+            Ok(Self::from_buffer(slc))
+        }
+    }
+}
+
+impl DynamicSize for FastString {
+    fn encoded_size(&self) -> usize {
+        size_of_types!(u32) + self.len()
     }
 }

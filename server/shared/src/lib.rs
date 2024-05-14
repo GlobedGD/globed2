@@ -6,7 +6,7 @@
     clippy::wildcard_imports
 )]
 
-use esp::{types::FastString, Decodable, DynamicSize, Encodable};
+use esp::{Decodable, DynamicSize, Encodable};
 pub use globed_derive::{Decodable, DynamicSize, Encodable, StaticSize};
 use rand::{distributions::Alphanumeric, Rng};
 

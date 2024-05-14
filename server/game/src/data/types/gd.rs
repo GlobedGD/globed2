@@ -68,7 +68,7 @@ impl Default for SpecialUserData {
 pub struct PlayerAccountData {
     pub account_id: i32,
     pub user_id: i32,
-    pub name: FastString<MAX_NAME_SIZE>,
+    pub name: InlineString<MAX_NAME_SIZE>,
     pub icons: PlayerIconData,
     pub special_user_data: Option<SpecialUserData>,
 }
@@ -108,7 +108,7 @@ impl PlayerAccountData {
 pub struct PlayerPreviewAccountData {
     pub account_id: i32,
     pub user_id: i32,
-    pub name: FastString<MAX_NAME_SIZE>,
+    pub name: InlineString<MAX_NAME_SIZE>,
     pub cube: i16,
     pub color1: i16,
     pub color2: i16,
@@ -122,7 +122,7 @@ pub struct PlayerPreviewAccountData {
 pub struct PlayerRoomPreviewAccountData {
     pub account_id: i32,
     pub user_id: i32,
-    pub name: FastString<MAX_NAME_SIZE>,
+    pub name: InlineString<MAX_NAME_SIZE>,
     pub cube: i16,
     pub color1: i16,
     pub color2: i16,

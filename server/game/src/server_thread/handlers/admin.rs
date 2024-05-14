@@ -62,7 +62,7 @@ impl GameServerThread {
         if admin_password.as_ref().is_some_and(|pwd| !pwd.is_empty()) {
             let password = admin_password.unwrap();
 
-            if packet.key.constant_time_compare(&password.try_into()?) {
+            if packet.key.constant_time_compare(&password) {
                 info!(
                     "[{} ({}) @ {}] just logged into the admin panel",
                     self.account_data.lock().name,
@@ -543,7 +543,7 @@ impl GameServerThread {
             // if they just got banned, disconnect them
             if is_banned && res.is_ok() {
                 thread
-                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::new(
                         "Banned from the server",
                     )))
                     .await;

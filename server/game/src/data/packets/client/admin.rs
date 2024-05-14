@@ -4,7 +4,7 @@ use globed_shared::{UserEntry, ADMIN_KEY_LENGTH};
 #[derive(Packet, Decodable)]
 #[packet(id = 19000, encrypted = true)]
 pub struct AdminAuthPacket {
-    pub key: FastString<ADMIN_KEY_LENGTH>,
+    pub key: FastString,
 }
 
 #[derive(Decodable)]
@@ -21,21 +21,21 @@ pub struct AdminSendNoticePacket {
     pub notice_type: AdminSendNoticeType,
     pub room_id: u32,
     pub level_id: LevelId,
-    pub player: FastString<MAX_NAME_SIZE>,
-    pub message: FastString<MAX_NOTICE_SIZE>,
+    pub player: FastString,
+    pub message: FastString,
 }
 
 #[derive(Packet, Decodable)]
 #[packet(id = 19002)]
 pub struct AdminDisconnectPacket {
-    pub player: FastString<MAX_NAME_SIZE>,
-    pub message: FastString<MAX_NOTICE_SIZE>,
+    pub player: FastString,
+    pub message: FastString,
 }
 
 #[derive(Packet, Decodable)]
 #[packet(id = 19003)]
 pub struct AdminGetUserStatePacket {
-    pub player: FastString<MAX_NAME_SIZE>,
+    pub player: FastString,
 }
 
 #[derive(Packet, Decodable)]

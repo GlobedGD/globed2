@@ -53,7 +53,7 @@ pub enum ServerThreadMessage {
     BroadcastNotice(ServerNoticePacket),
     BroadcastInvite(RoomInvitePacket),
     BroadcastRoomInfo(RoomInfoPacket),
-    TerminationNotice(FastString<MAX_NOTICE_SIZE>),
+    TerminationNotice(FastString),
 }
 
 pub struct GameServerThread {
@@ -432,7 +432,7 @@ impl GameServerThread {
             ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_static(&text_packet).await?,
             ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet_dynamic(&*voice_packet).await?,
             ServerThreadMessage::BroadcastNotice(packet) => {
-                self.send_packet_static(&packet).await?;
+                self.send_packet_dynamic(&packet).await?;
                 info!("{} is receiving a notice: {}", self.account_data.lock().name, packet.message);
             }
             ServerThreadMessage::BroadcastInvite(packet) => self.send_packet_static(&packet).await?,

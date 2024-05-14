@@ -322,7 +322,7 @@ impl GameServer {
 
         if let Some(thread) = thread {
             thread
-                .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                .push_new_message(ServerThreadMessage::TerminationNotice(FastString::new(
                     "Someone logged into the same account from a different place.",
                 )))
                 .await;
@@ -579,7 +579,7 @@ impl GameServer {
             let threads: Vec<_> = self.threads.lock().values().cloned().collect();
             for thread in threads {
                 thread
-                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
+                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::new(
                         "The server is now under maintenance, please try connecting again later",
                     )))
                     .await;

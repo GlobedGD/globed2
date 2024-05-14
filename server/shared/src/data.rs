@@ -1,4 +1,5 @@
 use super::*;
+use esp::FastString;
 use serde::{Deserialize, Serialize};
 
 #[derive(Encodable, Decodable, Clone)]
@@ -9,7 +10,7 @@ pub struct GameServerBootData {
     pub secret_key2: String,
     pub token_expiry: u64,
     pub status_print_interval: u64,
-    pub admin_key: FastString<ADMIN_KEY_LENGTH>,
+    pub admin_key: FastString,
     pub whitelist: bool,
     pub admin_webhook_url: String,
     pub chat_burst_limit: u32,
@@ -30,9 +31,7 @@ impl Default for GameServerBootData {
             secret_key2: String::new(),
             token_expiry: 0,
             status_print_interval,
-            admin_key: generate_alphanum_string(ADMIN_KEY_LENGTH)
-                .try_into()
-                .expect("failed to convert admin key String into FastString"),
+            admin_key: generate_alphanum_string(ADMIN_KEY_LENGTH).into(),
             whitelist: false,
             admin_webhook_url: String::new(),
             chat_burst_limit: 0,

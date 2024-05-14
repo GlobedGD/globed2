@@ -4,7 +4,7 @@
 //! Also re-exports `ByteBuffer` and `ByteReader` (extended w/ traits `ByteBufferReadExt` and `ByteBufferWriteExt`),
 //! and its own `FastByteBuffer` which makes zero allocation on its own and can be used with stack/alloca arrays.
 //!
-//! esp also provides optimized types such as `FastString` that will be more efficient in encoding/decoding,
+//! esp also provides optimized types such as `InlineString` that will be more efficient in encoding/decoding,
 //! and shall be used for encoding instead of the alternatives when possible.
 
 #![feature(maybe_uninit_uninit_array, const_for, const_trait_impl, effects, const_mut_refs)]
@@ -42,7 +42,7 @@ impl Display for DecodeError {
         match self {
             Self::NotEnoughData => f.write_str("could not read enough bytes from the ByteBuffer"),
             Self::NotEnoughCapacity => {
-                f.write_str("not enough capacity to fit the given value into a FastString or FastVec")
+                f.write_str("not enough capacity to fit the given value into a InlineString or FastVec")
             }
             Self::InvalidEnumValue => f.write_str("invalid enum value was passed"),
             Self::InvalidStringValue => f.write_str("invalid string was passed, likely not properly UTF-8 encoded"),
@@ -249,6 +249,10 @@ pub trait ByteBufferExtRead {
     fn skip(&mut self, n: usize);
 
     fn read_bool(&mut self) -> DecodeResult<bool>;
+
+    /// read a number `x` of type `u32`, and return an error if there's less than `x` bytes available in the buffer
+    fn read_length(&mut self) -> DecodeResult<usize>;
+
     /// read a byte vector, prefixed with 4 bytes indicating length
     fn read_byte_array(&mut self) -> DecodeResult<Vec<u8>>;
     /// read the remaining data into a Vec
@@ -338,6 +342,17 @@ macro_rules! impl_extread {
         #[inline]
         fn read_bool(&mut self) -> DecodeResult<bool> {
             Ok(self.read_u8()? != 0u8)
+        }
+
+        #[inline]
+        fn read_length(&mut self) -> DecodeResult<usize> {
+            let len = self.read_u32()? as usize;
+
+            if self.get_rpos() + len > self.len() {
+                Err(DecodeError::NotEnoughData)
+            } else {
+                Ok(len)
+            }
         }
 
         #[inline]
@@ -468,13 +483,13 @@ mod tests {
     use globed_derive::*;
 
     #[test]
-    fn fast_string() {
+    fn inline_string() {
         let mut buf = ByteBuffer::new();
-        let string = FastString::<120>::from_str("hello there, this is a basic test string!");
+        let string = InlineString::<120>::new("hello there, this is a basic test string!");
 
         buf.write_value(&string);
         buf.set_rpos(0);
-        let out = buf.read_value::<FastString<120>>();
+        let out = buf.read_value::<InlineString<120>>();
 
         assert!(out.is_ok(), "failed to read the string");
         assert_eq!(out.unwrap(), string);
@@ -577,5 +592,27 @@ mod tests {
         assert_eq!(buf.len(), FlagStruct::ENCODED_SIZE);
 
         assert!(flags2.is_err());
+    }
+
+    #[test]
+    #[allow(clippy::char_lit_as_u8)]
+    fn fast_string() {
+        let mut s = FastString::new("test data");
+        assert!(!s.is_heap());
+        assert_eq!(s.try_to_str(), "test data");
+        assert_eq!(s.len(), 9);
+
+        s.push(' ' as u8);
+        s.extend("even more test data");
+        assert_eq!(s.len(), 29);
+
+        assert_eq!(s.try_to_str(), "test data even more test data");
+
+        assert!(!s.is_heap());
+
+        s.extend("even even even even even even even even even even even even even even even more test data");
+        assert!(s.is_heap());
+
+        assert_eq!(s.try_to_str(), "test data even more test dataeven even even even even even even even even even even even even even even more test data");
     }
 }

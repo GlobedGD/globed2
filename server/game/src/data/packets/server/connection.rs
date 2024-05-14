@@ -39,10 +39,10 @@ pub struct LoginFailedPacket<'a> {
 }
 
 // used to communicate a simple message to the user
-#[derive(Packet, Encodable, StaticSize, DynamicSize, Clone)]
+#[derive(Packet, Encodable, DynamicSize, Clone)]
 #[packet(id = 20006, tcp = false)]
 pub struct ServerNoticePacket {
-    pub message: FastString<MAX_NOTICE_SIZE>,
+    pub message: FastString,
 }
 
 #[derive(Packet, Encodable, StaticSize)]
