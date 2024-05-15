@@ -484,6 +484,7 @@ namespace util::cocos {
         }
     }
 
+    // slightly faster rewrite of ccfileutils::fullPathForFilename
     gd::string fullPathForFilename(const std::string_view rawfilename) {
         auto& fileUtils = HookedFileUtils::get();
         auto& pstate = getPreloadState();
