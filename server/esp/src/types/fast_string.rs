@@ -1,4 +1,3 @@
-use std::mem::ManuallyDrop;
 use std::ops::Deref;
 use std::str::Utf8Error;
 
@@ -13,16 +12,12 @@ pub struct FastString {
     repr: StringRepr,
 }
 
-const INLINE_CAP: usize = 64; // including null terminator
+const INLINE_CAP: usize = 63; // including null terminator
 
-union InnerStringRepr {
-    inline: InlineRepr,
-    heap: ManuallyDrop<HeapRepr>,
-}
-
-struct StringRepr {
-    inner: InnerStringRepr,
-    is_inline: bool,
+#[derive(Clone, Debug)]
+enum StringRepr {
+    Inline(InlineRepr),
+    Heap(HeapRepr),
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -30,7 +25,7 @@ struct InlineRepr {
     buf: [u8; INLINE_CAP],
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct HeapRepr {
     data: Vec<u8>,
 }
@@ -57,7 +52,7 @@ impl InlineRepr {
 
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        unsafe { std::slice::from_raw_parts(self.buf.as_ptr(), self.len()) }
+        &self.buf[..self.len()]
     }
 
     #[inline]
@@ -73,8 +68,7 @@ impl InlineRepr {
 
         debug_assert!(idx + data.len() < INLINE_CAP);
 
-        unsafe { std::ptr::copy_nonoverlapping(data.as_ptr(), self.buf[idx..].as_mut_ptr(), data.len()) }
-
+        self.buf[idx..idx + data.len()].copy_from_slice(&data.as_bytes()[..data.len()]);
         self.buf[idx + data.len()] = 0u8;
     }
 }
@@ -87,11 +81,7 @@ impl HeapRepr {
         let cap = len.next_power_of_two();
 
         let mut buf = Vec::with_capacity(cap);
-
-        unsafe {
-            std::ptr::copy_nonoverlapping(data.as_ptr(), buf.as_mut_ptr(), len);
-            buf.set_len(len);
-        }
+        buf.extend_from_slice(data);
 
         Self { data: buf }
     }
@@ -125,25 +115,15 @@ impl HeapRepr {
 impl StringRepr {
     #[inline]
     fn is_inline(&self) -> bool {
-        self.is_inline
-    }
-
-    pub fn new(data: &[u8]) -> Self {
-        if data.len() >= INLINE_CAP {
-            Self::new_with_heap(data)
-        } else {
-            Self::new_with_inline(data)
+        match self {
+            Self::Inline(_) => true,
+            Self::Heap(_) => false,
         }
     }
 
     #[inline]
-    pub fn new_with_heap(data: &[u8]) -> Self {
-        Self {
-            inner: InnerStringRepr {
-                heap: ManuallyDrop::new(HeapRepr::new(data)),
-            },
-            is_inline: false,
-        }
+    fn new_with_heap(data: &[u8]) -> Self {
+        Self::Heap(HeapRepr::new(data))
     }
 
     #[inline]
@@ -154,18 +134,10 @@ impl StringRepr {
 
         let mut buf = [0u8; INLINE_CAP];
 
-        unsafe {
-            std::ptr::copy_nonoverlapping(data.as_ptr(), buf.as_mut_ptr(), len);
-        }
-
+        buf[..len].copy_from_slice(&data[..len]);
         buf[len] = 0u8;
 
-        Self {
-            inner: InnerStringRepr {
-                inline: InlineRepr { buf },
-            },
-            is_inline: true,
-        }
+        Self::Inline(InlineRepr { buf })
     }
 
     pub const fn inline_capacity() -> usize {
@@ -174,107 +146,89 @@ impl StringRepr {
 
     #[inline]
     pub fn capacity(&self) -> usize {
-        if self.is_inline() {
-            Self::inline_capacity()
-        } else {
-            unsafe { self.inner.heap.capacity() }
+        match self {
+            Self::Inline(_) => Self::inline_capacity(),
+            Self::Heap(x) => x.capacity(),
         }
     }
 
     #[inline]
     pub fn len(&self) -> usize {
-        if self.is_inline() {
-            unsafe { self.inner.inline.len() }
-        } else {
-            unsafe { self.inner.heap.len() }
+        match self {
+            Self::Inline(x) => x.len(),
+            Self::Heap(x) => x.len(),
         }
     }
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        if self.is_inline() {
-            unsafe { self.inner.inline.is_empty() }
-        } else {
-            unsafe { self.inner.heap.len() == 0 }
+        match self {
+            Self::Inline(x) => x.is_empty(),
+            Self::Heap(x) => x.len() == 0,
         }
     }
 
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        if self.is_inline() {
-            unsafe { self.inner.inline.as_bytes() }
-        } else {
-            unsafe { self.inner.heap.as_bytes() }
+        match self {
+            Self::Inline(x) => x.as_bytes(),
+            Self::Heap(x) => x.as_bytes(),
         }
     }
 
     #[inline]
     pub fn push(&mut self, c: u8) {
-        if self.is_inline() {
-            // if we don't have enough space, reallocate
-            if self.len() == Self::inline_capacity() {
-                unsafe {
+        match self {
+            Self::Inline(x) => {
+                // if we don't have enough space, reallocate
+                if x.len() == Self::inline_capacity() {
                     self.reallocate_to_heap();
-                    (*self.inner.heap).push(c);
-                }
-            } else {
-                unsafe {
-                    self.inner.inline.push(c);
+
+                    match self {
+                        Self::Inline(_) => unsafe { std::hint::unreachable_unchecked() },
+                        Self::Heap(x) => x.push(c),
+                    }
+                } else {
+                    x.push(c);
                 }
             }
-        } else {
-            unsafe { (*self.inner.heap).push(c) }
-        }
+
+            Self::Heap(x) => {
+                x.push(c);
+            }
+        };
     }
 
     #[inline]
     pub fn extend(&mut self, data: &str) {
-        if self.is_inline() {
-            if self.len() + data.len() > Self::inline_capacity() {
-                unsafe {
+        match self {
+            Self::Inline(x) => {
+                // if we don't have enough space, reallocate
+                if x.len() + data.len() > Self::inline_capacity() {
                     self.reallocate_to_heap();
-                    (*self.inner.heap).extend(data);
+
+                    match self {
+                        Self::Inline(_) => unsafe { std::hint::unreachable_unchecked() },
+                        Self::Heap(x) => x.extend(data),
+                    }
+                } else {
+                    x.extend(data);
                 }
-            } else {
-                unsafe { self.inner.inline.extend(data) }
             }
-        } else {
-            unsafe { (*self.inner.heap).extend(data) }
+            Self::Heap(x) => {
+                x.extend(data);
+            }
         }
     }
 
     /// Reallocates the inline buffer to heap. Must not be called if heap is already in use.
-    unsafe fn reallocate_to_heap(&mut self) {
-        debug_assert!(self.is_inline());
+    fn reallocate_to_heap(&mut self) {
+        let hrepr = match self {
+            Self::Inline(x) => HeapRepr::new(x.as_bytes()),
+            Self::Heap(_) => unreachable!("called reallocate_to_heap on a heap FastString"),
+        };
 
-        self.inner.heap = ManuallyDrop::new(HeapRepr::new(self.inner.inline.as_bytes()));
-        self.is_inline = false;
-    }
-}
-
-impl Drop for StringRepr {
-    fn drop(&mut self) {
-        if !self.is_inline() {
-            unsafe {
-                let _val = ManuallyDrop::<HeapRepr>::take(&mut self.inner.heap);
-                // drop it
-            }
-        }
-    }
-}
-
-impl Clone for StringRepr {
-    fn clone(&self) -> Self {
-        if self.is_inline() {
-            Self {
-                inner: InnerStringRepr {
-                    inline: unsafe { self.inner.inline },
-                },
-                is_inline: true,
-            }
-        } else {
-            unsafe { Self::new(self.inner.heap.as_bytes()) }
-        }
+        *self = Self::Heap(hrepr);
     }
 }
 
