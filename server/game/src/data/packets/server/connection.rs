@@ -61,3 +61,10 @@ pub struct ConnectionTestResponsePacket {
     pub uid: u32,
     pub data: Vec<u8>,
 }
+
+#[derive(Packet, Encodable, DynamicSize, Clone)]
+#[packet(id = 20011, tcp = true)]
+pub struct ServerBannedPacket {
+    pub message: FastString,
+    pub timestamp: i64,
+}

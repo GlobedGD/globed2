@@ -528,6 +528,7 @@ impl GameServerThread {
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
             let is_banned = new_user_entry.is_banned;
+            let is_muted = new_user_entry.is_muted;
 
             // update name color live
             if c_name_color {
@@ -547,10 +548,37 @@ impl GameServerThread {
             // if they just got banned, disconnect them
             if is_banned && res.is_ok() {
                 thread
-                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::new(
-                        "Banned from the server",
-                    )))
-                    .await;
+                    .push_new_message(ServerThreadMessage::BannedNotice(ServerBannedPacket { message: (
+                        FastString::new(
+                            &format!(
+                                "{}",
+                                user_entry.violation_reason
+                                    .as_ref()
+                                    .map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
+                            ),
+                        )
+                    ), timestamp: (
+                        user_entry.violation_expiry.unwrap()
+                    ) 
+                }))
+                .await;
+            }
+
+            if is_muted && res.is_ok() {
+                thread
+                    .push_new_message(ServerThreadMessage::BroadcastNotice(ServerNoticePacket { message: (
+                        FastString::new(
+                            &format!(
+                                "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
+                                user_entry.violation_reason
+                                    .as_ref()
+                                    .map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
+                                user_entry.violation_expiry.unwrap()
+                            ),
+                        )
+                    ) 
+                }))
+                .await;
             }
 
             res

@@ -102,3 +102,14 @@ class ConnectionTestResponsePacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(ConnectionTestResponsePacket, (uid, data));
+
+class ServerBannedPacket : public Packet {
+    GLOBED_PACKET(20011, false, false)
+
+    ServerBannedPacket() {}
+
+    std::string message;
+    uint64_t timestamp;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(ServerBannedPacket, (message, timestamp))

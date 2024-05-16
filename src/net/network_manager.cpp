@@ -1,5 +1,7 @@
 #include "network_manager.hpp"
 
+#include <chrono>
+
 #include <Geode/ui/GeodeUI.hpp>
 
 #include <data/packets/all.hpp>
@@ -385,6 +387,13 @@ void NetworkManager::setupBuiltinListeners() {
 
     addBuiltinListener<ServerDisconnectPacket>([this](auto packet) {
         this->disconnectWithMessage(packet->message);
+    });
+
+    addBuiltinListener<ServerBannedPacket>([this](auto packet) {  
+        using namespace std::chrono;  
+        this->disconnectWithMessage(fmt::format("<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>", 
+        packet->message, 
+        util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)))));
     });
 
     addBuiltinListener<LoggedInPacket>([this](auto packet) {

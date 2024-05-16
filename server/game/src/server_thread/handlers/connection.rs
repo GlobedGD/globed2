@@ -123,13 +123,18 @@ impl GameServerThread {
             let user_entry = match self.game_server.bridge.get_user_data(&packet.account_id.to_string()).await {
                 Ok(user) if user.is_banned => {
                     self.terminate();
-                    self.send_packet_dynamic(&LoginFailedPacket {
-                        message: &format!(
-                            "Banned from the server: {}",
-                            user.violation_reason
-                                .map_or_else(|| "no reason given".to_owned(), |x| x.clone())
-                        ),
-                    })
+                    self.send_packet_dynamic(&ServerBannedPacket { message: (
+                        FastString::new(
+                            &format!(
+                                "{}",
+                                user.violation_reason
+                                    .as_ref()
+                                    .map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
+                            ),
+                        )
+                    ), timestamp: (
+                        user.violation_expiry.unwrap()
+                    )})
                     .await?;
 
                     return Ok(());
