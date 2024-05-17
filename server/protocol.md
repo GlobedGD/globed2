@@ -72,6 +72,8 @@ Connection related
 * 20007 - ProtocolMismatchPacket - protocol version mismatch
 * 20008 - KeepaliveTCPResponsePacket - keepalive response but for tcp
 * 20010 - ConnectionTestResponsePacket - connection test response
+* 20011 - ServerBannedPacket - message about being banned
+* 20012 - ServerMutedPacket - message about being muted
 
 General
 

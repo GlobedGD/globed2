@@ -124,7 +124,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
 
     gameSocket.disconnect();
 
-    // GameServerManager could have been destructed before NetworkManager, so this could be UB. Additionally will break autoconnect.
+    // singletons could have been destructed before NetworkManager, so this could be UB. Additionally will break autoconnect.
     if (!noclear) {
         RoomManager::get().setGlobal();
         GameServerManager::get().clearActive();
