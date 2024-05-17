@@ -2,6 +2,7 @@
 
 #include <data/packets/client/admin.hpp>
 #include <data/packets/server/admin.hpp>
+#include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <net/network_manager.hpp>
 #include <ui/menu/admin/edit_role_popup.hpp>
@@ -100,7 +101,7 @@ void AdminUserPopup::onProfileLoaded() {
         .intoMenuItem([this](auto) {
             GlobedColorInputPopup::create(this->getCurrentNameColor(), [this](auto color) {
                 // if our role doesn't permit editing the color, don't do anything
-                if (!NetworkManager::get().getRole().editRole) {
+                if (!AdminManager::get().getRole().editRole) {
                     this->onColorSelected(color);
                 }
             })->show();
@@ -231,7 +232,7 @@ void AdminUserPopup::onProfileLoaded() {
     }
 
     // admin password field
-    if (!NetworkManager::get().getRole().admin) {
+    if (!AdminManager::get().getRole().admin) {
         auto* layout = Build<CCMenu>::create()
             .pos(0.f, 0.f)
             .layout(RowLayout::create())
@@ -330,7 +331,7 @@ void AdminUserPopup::recreateRoleModifyButton() {
     roleModifyButton = Build<CCSprite>::createSpriteName("edit_eEdgeBtn_001.png")
         .scale(0.5f)
         .intoMenuItem([this](auto) {
-            if (!NetworkManager::get().getRole().editRole) return;
+            if (!AdminManager::get().getRole().editRole) return;
 
             AdminEditRolePopup::create(userEntry.userRoles, [this](const std::vector<std::string>& roles) {
                 userEntry.userRoles = std::move(roles);

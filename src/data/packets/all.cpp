@@ -17,6 +17,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(KeepaliveTCPResponsePacket);
         PACKET(ConnectionTestResponsePacket);
         PACKET(ServerBannedPacket);
+        PACKET(ServerMutedPacket);
 
         // general
 

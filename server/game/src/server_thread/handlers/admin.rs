@@ -1,4 +1,4 @@
-use globed_shared::{info, warn};
+use globed_shared::{debug, info, warn};
 
 use crate::{
     data::*,
@@ -70,7 +70,9 @@ impl GameServerThread {
             let role = self.game_server.state.role_manager.get_superadmin();
             self.user_role.lock().clone_from(&role);
 
-            self.send_packet_dynamic(&AdminAuthSuccessPacket { role }).await?;
+            let all_roles = self.game_server.state.role_manager.get_all_roles();
+
+            self.send_packet_dynamic(&AdminAuthSuccessPacket { role, all_roles }).await?;
 
             return Ok(());
         }
@@ -94,7 +96,9 @@ impl GameServerThread {
                 let role = self.game_server.state.role_manager.compute(&self.user_entry.lock().user_roles);
                 self.user_role.lock().clone_from(&role);
 
-                self.send_packet_dynamic(&AdminAuthSuccessPacket { role }).await?;
+                let all_roles = self.game_server.state.role_manager.get_all_roles();
+
+                self.send_packet_dynamic(&AdminAuthSuccessPacket { role, all_roles }).await?;
 
                 return Ok(());
             }
@@ -415,7 +419,7 @@ impl GameServerThread {
         let _ = gs_needauth!(self);
 
         if !self._has_perm(AdminPerm::Any) {
-            return Ok(());
+            admin_error!(self, "No permission (not a mod)");
         }
 
         // we cant use bridge in standalone so do nothing
@@ -510,9 +514,11 @@ impl GameServerThread {
             let is_muted = new_user_entry.is_muted;
 
             // update the role
-            let new_role = self.game_server.state.role_manager.compute(&new_user_entry.user_roles);
-            thread.account_data.lock().special_user_data = new_role.to_special_data();
-            *thread.user_role.lock() = new_role;
+            if c_user_roles {
+                let new_role = self.game_server.state.role_manager.compute(&new_user_entry.user_roles);
+                thread.account_data.lock().special_user_data = new_role.to_special_data();
+                *thread.user_role.lock() = new_role;
+            }
 
             let res = self
                 .game_server
@@ -526,29 +532,17 @@ impl GameServerThread {
             if is_banned && res.is_ok() {
                 thread
                     .push_new_message(ServerThreadMessage::BannedNotice(ServerBannedPacket {
-                        message: (FastString::new(&format!(
-                            "{}",
-                            user_entry
-                                .violation_reason
-                                .as_ref()
-                                .map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
-                        ))),
-                        timestamp: (user_entry.violation_expiry.unwrap()),
+                        message: FastString::new(&user_entry.violation_reason.clone().unwrap_or_default()),
+                        timestamp: user_entry.violation_expiry.unwrap_or(0),
                     }))
                     .await;
             }
 
             if is_muted && res.is_ok() {
                 thread
-                    .push_new_message(ServerThreadMessage::BroadcastNotice(ServerNoticePacket {
-                        message: (FastString::new(&format!(
-                            "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
-                            user_entry
-                                .violation_reason
-                                .as_ref()
-                                .map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
-                            user_entry.violation_expiry.unwrap()
-                        ))),
+                    .push_new_message(ServerThreadMessage::MutedNotice(ServerMutedPacket {
+                        reason: FastString::new(&user_entry.violation_reason.clone().unwrap_or_default()),
+                        timestamp: user_entry.violation_expiry.unwrap_or(0),
                     }))
                     .await;
             }

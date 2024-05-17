@@ -65,7 +65,7 @@ impl UserEntry {
     }
 }
 
-#[derive(Serialize, Deserialize, Encodable, Decodable, Clone, Default)]
+#[derive(Serialize, Deserialize, Encodable, Decodable, DynamicSize, Clone, Default)]
 pub struct ServerRole {
     pub id: String,
     pub priority: i32,

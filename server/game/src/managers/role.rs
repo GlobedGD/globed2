@@ -62,6 +62,10 @@ impl RoleManager {
         });
     }
 
+    pub fn get_all_roles(&self) -> Vec<ServerRole> {
+        self.roles.lock().values().cloned().collect()
+    }
+
     pub fn compute(&self, user_roles: &[String]) -> ComputedRole {
         let mut computed = ComputedRole::default();
         computed.priority = i32::MIN;
@@ -90,6 +94,15 @@ impl RoleManager {
                         warn!("failed to parse role name color for role {role_id}: {x}");
                         None
                     });
+
+                    // if it's white, make it None
+                    if computed
+                        .name_color
+                        .as_ref()
+                        .is_some_and(|x| x.color.as_ref().first().is_some_and(|y| *y == Color3B { r: 255, g: 255, b: 255 }))
+                    {
+                        computed.name_color = None;
+                    }
                 }
 
                 if !role.chat_color.is_empty() {
@@ -97,6 +110,11 @@ impl RoleManager {
                         warn!("failed to parse role chat color for role {role_id}: {x}");
                         None
                     });
+
+                    // if it's white, make it None
+                    if computed.chat_color.as_ref().is_some_and(|x| *x == Color3B { r: 255, g: 255, b: 255 }) {
+                        computed.chat_color = None;
+                    }
                 }
 
                 if role.admin {

@@ -7,7 +7,6 @@
 #include <asp/thread.hpp>
 
 #include <defs/minimal_geode.hpp>
-#include <data/types/user.hpp>
 #include <managers/game_server.hpp>
 #include <util/time.hpp>
 
@@ -118,14 +117,7 @@ public:
     // Returns true if we have fully authenticated and are ready to rock.
     bool established();
 
-    // Returns true if we are connected to a server and authorized as an admin
-    bool isAuthorizedAdmin();
-
     void togglePacketLogging(bool enabled);
-
-    void clearAdminStatus();
-
-    ComputedRole& getRole();
 
     // Returns true if we are connected to a standalone game server, not tied to any central server.
     bool standalone();
@@ -173,15 +165,12 @@ private:
 
     AtomicBool _handshaken = false;
     AtomicBool _loggedin = false;
-    AtomicBool _adminAuthorized = false;
     AtomicBool _connectingStandalone = false;
     AtomicBool _suspended = false;
     AtomicBool _deferredConnect = false;
     uint32_t secretKey = 0;
     AtomicBool ignoreProtocolMismatch = false;
     AtomicBool packetLogging = false;
-
-    ComputedRole role = {};
 
     std::string _deferredAddr, _deferredServerId;
     unsigned short _deferredPort;
@@ -211,6 +200,16 @@ private:
     void addBuiltinListener(PacketCallbackSpecific<Pty>&& callback) {
         this->addBuiltinListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
             callback(std::static_pointer_cast<Pty>(pkt));
+        });
+    }
+
+    // Thread-safe version of addBuiltinListener
+    template <HasPacketID Pty>
+    void addBuiltinListenerSafe(PacketCallbackSpecific<Pty>&& callback) {
+        this->addBuiltinListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
+            Loader::get()->queueInMainThread([callback = std::move(callback), pkt = std::move(pkt)] {
+                callback(std::static_pointer_cast<Pty>(pkt));
+            });
         });
     }
 

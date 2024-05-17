@@ -2,9 +2,10 @@
 
 #include "server_list_cell.hpp"
 #include <data/types/misc.hpp>
-#include <managers/error_queues.hpp>
 #include <managers/account.hpp>
+#include <managers/admin.hpp>
 #include <managers/central_server.hpp>
+#include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <net/network_manager.hpp>
 #include <ui/menu/room/room_popup.hpp>
@@ -346,7 +347,7 @@ void GlobedMenuLayer::keyBackClicked() {
 
 void GlobedMenuLayer::keyDown(enumKeyCodes key) {
     if (key == enumKeyCodes::KEY_F8) {
-        bool authorized = NetworkManager::get().isAuthorizedAdmin();
+        bool authorized = AdminManager::get().authorized();
         if (authorized) {
             AdminPopup::create()->show();
         } else {

@@ -56,6 +56,7 @@ pub enum ServerThreadMessage {
     BroadcastRoomInfo(RoomInfoPacket),
     TerminationNotice(FastString),
     BannedNotice(ServerBannedPacket),
+    MutedNotice(ServerMutedPacket),
 }
 
 pub struct GameServerThread {
@@ -290,7 +291,7 @@ impl GameServerThread {
 
     async fn ban(&self, message: FastString, timestamp: i64) -> Result<()> {
         self.terminate();
-        self.send_packet_dynamic(&ServerBannedPacket {message, timestamp}).await
+        self.send_packet_dynamic(&ServerBannedPacket { message, timestamp }).await
     }
 
     /// sends a buffer to our peer via the tcp socket
@@ -432,6 +433,7 @@ impl GameServerThread {
             }
             ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
             ServerThreadMessage::BannedNotice(packet) => self.ban(packet.message, packet.timestamp).await?,
+            ServerThreadMessage::MutedNotice(packet) => self.send_packet_dynamic(&packet).await?,
         }
 
         Ok(())

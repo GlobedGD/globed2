@@ -5,7 +5,7 @@ use crate::data::*;
 /// Structure that can represent either a single RGB color, or a combination of colors
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct RichColor {
-    color: Either<Color3B, FastVec<Color3B, 8>>,
+    pub color: Either<Color3B, FastVec<Color3B, 8>>,
 }
 
 impl RichColor {

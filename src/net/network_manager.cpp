@@ -5,6 +5,7 @@
 #include <Geode/ui/GeodeUI.hpp>
 
 #include <data/packets/all.hpp>
+#include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/account.hpp>
 #include <managers/profile_cache.hpp>
@@ -111,7 +112,6 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     _loggedin = false;
     _connectingStandalone = false;
     _deferredConnect = false;
-    this->clearAdminStatus();
 
     if (!this->connected()) {
         return;
@@ -128,6 +128,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     if (!noclear) {
         RoomManager::get().setGlobal();
         GameServerManager::get().clearActive();
+        AdminManager::get().deauthorize();
     }
 }
 
@@ -347,36 +348,33 @@ void NetworkManager::handleUnhandledPacket(packetid_t packetId) {
 }
 
 void NetworkManager::setupBuiltinListeners() {
-    addBuiltinListener<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
+    addBuiltinListenerSafe<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
         log::debug("handshake successful, logging in");
         auto key = packet->data.key;
 
-        // this does a bunch of stuff so do it on the main thread
-        Loader::get()->queueInMainThread([this, key = key] {
-            gameSocket.cryptoBox->setPeerKey(key.data());
-            _handshaken = true;
-            // and lets try to login!
-            auto& am = GlobedAccountManager::get();
-            std::string authtoken;
+        gameSocket.cryptoBox->setPeerKey(key.data());
+        _handshaken = true;
+        // and lets try to login!
+        auto& am = GlobedAccountManager::get();
+        std::string authtoken;
 
-            if (!_connectingStandalone) {
-                authtoken = *am.authToken.lock();
-            }
+        if (!_connectingStandalone) {
+            authtoken = *am.authToken.lock();
+        }
 
-            auto& pcm = ProfileCacheManager::get();
-            pcm.setOwnDataAuto();
-            pcm.pendingChanges = false;
+        auto& pcm = ProfileCacheManager::get();
+        pcm.setOwnDataAuto();
+        pcm.pendingChanges = false;
 
-            auto& settings = GlobedSettings::get();
+        auto& settings = GlobedSettings::get();
 
-            if (settings.globed.fragmentationLimit == 0) {
-                settings.globed.fragmentationLimit = 65000;
-            }
+        if (settings.globed.fragmentationLimit == 0) {
+            settings.globed.fragmentationLimit = 65000;
+        }
 
-            auto gddata = am.gdData.lock();
-            auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
-            this->send(pkt);
-        });
+        auto gddata = am.gdData.lock();
+        auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
+        this->send(pkt);
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([](auto packet) {
@@ -389,11 +387,38 @@ void NetworkManager::setupBuiltinListeners() {
         this->disconnectWithMessage(packet->message);
     });
 
-    addBuiltinListener<ServerBannedPacket>([this](auto packet) {  
-        using namespace std::chrono;  
-        this->disconnectWithMessage(fmt::format("<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>", 
-        packet->message, 
-        util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)))));
+    addBuiltinListener<ServerBannedPacket>([this](auto packet) {
+        using namespace std::chrono;
+
+        std::string reason = packet->message;
+        if (reason.empty()) {
+            reason = "No reason given";
+        }
+
+        auto msg = fmt::format(
+            "<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
+            reason,
+            packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)))
+        );
+
+        this->disconnectWithMessage(msg);
+    });
+
+    addBuiltinListener<ServerMutedPacket>([this](auto packet) {
+        using namespace std::chrono;
+
+        std::string reason = packet->reason;
+        if (reason.empty()) {
+            reason = "No reason given";
+        }
+
+        auto msg = fmt::format(
+            "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
+            reason,
+            packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)))
+        );
+
+        ErrorQueues::get().notice(msg);
     });
 
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
@@ -435,7 +460,6 @@ void NetworkManager::setupBuiltinListeners() {
     addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
         log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, PROTOCOL_VERSION);
 
-
 #ifdef GLOBED_DEBUG
         // if we are in debug mode, allow the user to override it
         Loader::get()->queueInMainThread([this, serverProtocol = packet->serverProtocol] {
@@ -470,18 +494,15 @@ void NetworkManager::setupBuiltinListeners() {
     });
 
     addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
-        _adminAuthorized = true;
-        role = std::move(packet->role);
+        AdminManager::get().setAuthorized(std::move(packet->role));
         ErrorQueues::get().success("Successfully authorized");
     });
 
-    addBuiltinListener<AdminAuthFailedPacket>([this](auto packet) {
+    addBuiltinListenerSafe<AdminAuthFailedPacket>([this](auto packet) {
         ErrorQueues::get().warn("Login failed");
 
-        Loader::get()->queueInMainThread([] {
-            auto& am = GlobedAccountManager::get();
-            am.clearAdminPassword();
-        });
+        auto& am = GlobedAccountManager::get();
+        am.clearAdminPassword();
     });
 
     addBuiltinListener<AdminSuccessMessagePacket>([](auto packet) {
@@ -492,18 +513,14 @@ void NetworkManager::setupBuiltinListeners() {
         ErrorQueues::get().warn(packet->message);
     });
 
-    addBuiltinListener<RoomInvitePacket>([](auto packet) {
-        Loader::get()->queueInMainThread([packet] {
-            GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->roomToken, packet->playerData);
-        });
+    addBuiltinListenerSafe<RoomInvitePacket>([](auto packet) {
+        GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->roomToken, packet->playerData);
     });
 
-    addBuiltinListener<RoomInfoPacket>([](auto packet) {
+    addBuiltinListenerSafe<RoomInfoPacket>([](auto packet) {
         ErrorQueues::get().success("Room configuration updated");
 
-        Loader::get()->queueInMainThread([packet = std::move(packet)] {
-            RoomManager::get().setInfo(packet->info);
-        });
+        RoomManager::get().setInfo(packet->info);
     });
 
     addBuiltinListener<RoomJoinedPacket>([](auto packet) {});
@@ -614,19 +631,6 @@ bool NetworkManager::handshaken() {
 
 bool NetworkManager::established() {
     return _loggedin;
-}
-
-bool NetworkManager::isAuthorizedAdmin() {
-    return _adminAuthorized;
-}
-
-void NetworkManager::clearAdminStatus() {
-    _adminAuthorized = false;
-    role = {};
-}
-
-ComputedRole& NetworkManager::getRole() {
-    return role;
 }
 
 bool NetworkManager::standalone() {

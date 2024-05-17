@@ -110,7 +110,18 @@ class ServerBannedPacket : public Packet {
     ServerBannedPacket() {}
 
     std::string message;
-    uint64_t timestamp;
+    int64_t timestamp;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(ServerBannedPacket, (message, timestamp))
+
+class ServerMutedPacket : public Packet {
+    GLOBED_PACKET(20012, false, false)
+
+    ServerMutedPacket() {}
+
+    std::string reason;
+    int64_t timestamp;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(ServerMutedPacket, (reason, timestamp));

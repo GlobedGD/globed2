@@ -27,7 +27,7 @@ impl From<ParseIntError> for ColorParseError {
     }
 }
 
-#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize, Debug)]
+#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize, Debug, PartialEq)]
 #[dynamic_size(as_static = true)]
 pub struct Color3B {
     pub r: u8,

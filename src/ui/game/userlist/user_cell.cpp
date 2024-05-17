@@ -5,6 +5,7 @@
 #include <audio/voice_playback_manager.hpp>
 #include <data/packets/client/admin.hpp>
 #include <data/packets/server/admin.hpp>
+#include <managers/admin.hpp>
 #include <managers/block_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/profile_cache.hpp>
@@ -135,7 +136,7 @@ void GlobedUserCell::makeButtons() {
 
     bool notSelf = accountData.accountId != GJAccountManager::get()->m_accountID;
     bool createBtnSettings = notSelf;
-    bool createBtnAdmin = NetworkManager::get().isAuthorizedAdmin();
+    bool createBtnAdmin = AdminManager::get().authorized();
     bool createBtn2plink = pl->m_fields->roomSettings.flags.twoPlayerMode && notSelf;
     bool createBtnTp = createBtnAdmin && notSelf && !createBtn2plink;
     bool createVisualizer = settings.communication.voiceEnabled && notSelf;

@@ -68,3 +68,10 @@ pub struct ServerBannedPacket {
     pub message: FastString,
     pub timestamp: i64,
 }
+
+#[derive(Packet, Encodable, DynamicSize, Clone)]
+#[packet(id = 20012)]
+pub struct ServerMutedPacket {
+    pub reason: FastString,
+    pub timestamp: i64,
+}

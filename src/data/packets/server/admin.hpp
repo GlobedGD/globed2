@@ -10,6 +10,7 @@ class AdminAuthSuccessPacket : public Packet {
     AdminAuthSuccessPacket() {}
 
     ComputedRole role;
+    std::vector<ServerRole> allRoles;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminAuthSuccessPacket, (role));
