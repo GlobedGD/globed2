@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build the mod
-        uses: dankmeme01/build-geode-mod#3e89b4f
+        uses: dankmeme01/build-geode-mod@globed
         with:
           combine: true
           cli: "v2.12.0"
