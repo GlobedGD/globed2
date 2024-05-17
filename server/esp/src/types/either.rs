@@ -8,6 +8,7 @@ const fn constmax(a: usize, b: usize) -> usize {
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum Either<T, Y> {
     First(T),
     Second(Y),

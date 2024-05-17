@@ -41,9 +41,7 @@ impl Display for DecodeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::NotEnoughData => f.write_str("could not read enough bytes from the ByteBuffer"),
-            Self::NotEnoughCapacity => {
-                f.write_str("not enough capacity to fit the given value into a InlineString or FastVec")
-            }
+            Self::NotEnoughCapacity => f.write_str("not enough capacity to fit the given value into a InlineString or FastVec"),
             Self::InvalidEnumValue => f.write_str("invalid enum value was passed"),
             Self::InvalidStringValue => f.write_str("invalid string was passed, likely not properly UTF-8 encoded"),
             Self::NonFiniteValue => f.write_str("NaN or inf was passed as a data field expecting a finite f32 or f64 value"),
@@ -613,6 +611,9 @@ mod tests {
         s.extend("even even even even even even even even even even even even even even even more test data");
         assert!(s.is_heap());
 
-        assert_eq!(s.try_to_str(), "test data even more test dataeven even even even even even even even even even even even even even even more test data");
+        assert_eq!(
+            s.try_to_str(),
+            "test data even more test dataeven even even even even even even even even even even even even even even more test data"
+        );
     }
 }

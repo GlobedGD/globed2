@@ -79,9 +79,7 @@ fn structs(c: &mut Criterion) {
 
     c.bench_function("encode-audio-frame", |b| {
         b.iter(black_box(|| {
-            let data = FastEncodedAudioFrame {
-                data: data.to_vec().into(),
-            };
+            let data = FastEncodedAudioFrame { data: data.to_vec().into() };
             let mut stack_array = [0u8; 3000 * 8];
             let mut buf = FastByteBuffer::new(&mut stack_array);
             for _ in 0..8 {

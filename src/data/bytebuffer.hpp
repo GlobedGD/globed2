@@ -491,9 +491,9 @@ protected:
         this->writeBool(either.isSecond());
 
         if (either.isSecond()) {
-            this->writeValue<Y>(either.secondRef());
+            this->writeValue<Y>(either.secondRef()->get());
         } else {
-            this->writeValue<T>(either.firstRef());
+            this->writeValue<T>(either.firstRef()->get());
         }
     }
 

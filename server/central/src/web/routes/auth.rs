@@ -154,20 +154,12 @@ pub async fn challenge_start(
 
         return Ok(format!(
             "{}:{}",
-            if verify {
-                gd_api_account.to_string()
-            } else {
-                "none".to_string()
-            },
+            if verify { gd_api_account.to_string() } else { "none".to_string() },
             rand_string
         ));
     }
 
-    let rand_string: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(32)
-        .map(char::from)
-        .collect();
+    let rand_string: String = rand::thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
 
     let challenge = ActiveChallenge {
         started: current_time,
@@ -183,11 +175,7 @@ pub async fn challenge_start(
 
     Ok(format!(
         "{}:{}",
-        if verify {
-            gd_api_account.to_string()
-        } else {
-            "none".to_string()
-        },
+        if verify { gd_api_account.to_string() } else { "none".to_string() },
         rand_string
     ))
 }
@@ -212,10 +200,7 @@ pub async fn challenge_finish(
     let state_ = state.state_read().await;
     get_user_ip!(state_, ip, cfip, user_ip);
 
-    let local_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock went backwards!")
-        .as_secs();
+    let local_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock went backwards!").as_secs();
 
     // if they didnt pass any time, it's alright, don't verify the clock
     if systime != 0 {
@@ -226,7 +211,9 @@ pub async fn challenge_finish(
         };
 
         if time_difference > 45 {
-            unauthorized!(&format!("your system clock seems to be out of sync, please adjust it in your system settings (time difference: {time_difference} seconds)"));
+            unauthorized!(&format!(
+                "your system clock seems to be out of sync, please adjust it in your system settings (time difference: {time_difference} seconds)"
+            ));
         }
     }
 
@@ -276,11 +263,7 @@ pub async fn challenge_finish(
     drop(state_);
 
     let message_id = if use_gd_api {
-        let result = state
-            .inner
-            .verifier
-            .verify_account(aid, uid, aname, answer.parse::<u32>()?)
-            .await;
+        let result = state.inner.verifier.verify_account(aid, uid, aname, answer.parse::<u32>()?).await;
 
         match result {
             Ok(id) => Some(id),

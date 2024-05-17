@@ -7,6 +7,7 @@
 #include <asp/thread.hpp>
 
 #include <defs/minimal_geode.hpp>
+#include <data/types/user.hpp>
 #include <managers/game_server.hpp>
 #include <util/time.hpp>
 
@@ -124,7 +125,7 @@ public:
 
     void clearAdminStatus();
 
-    int getAdminRole();
+    ComputedRole& getRole();
 
     // Returns true if we are connected to a standalone game server, not tied to any central server.
     bool standalone();
@@ -173,13 +174,14 @@ private:
     AtomicBool _handshaken = false;
     AtomicBool _loggedin = false;
     AtomicBool _adminAuthorized = false;
-    AtomicI32 _adminRole = ROLE_USER;
     AtomicBool _connectingStandalone = false;
     AtomicBool _suspended = false;
     AtomicBool _deferredConnect = false;
     uint32_t secretKey = 0;
     AtomicBool ignoreProtocolMismatch = false;
     AtomicBool packetLogging = false;
+
+    ComputedRole role = {};
 
     std::string _deferredAddr, _deferredServerId;
     unsigned short _deferredPort;

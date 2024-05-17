@@ -6,13 +6,26 @@ use std::{
 use globed_shared::{
     anyhow::{self, anyhow},
     esp::{self, Decodable, Encodable},
-    generate_alphanum_string, Decodable, Encodable, ADMIN_KEY_LENGTH,
+    generate_alphanum_string, Decodable, Encodable, ServerRole, ADMIN_KEY_LENGTH,
 };
 use json_comments::StripComments;
 use serde::{Deserialize, Serialize};
 use serde_json::{ser::PrettyFormatter, Serializer};
 
 /* stinky serde defaults */
+
+const fn default_false() -> bool {
+    false
+}
+
+#[allow(unused)]
+const fn default_true() -> bool {
+    true
+}
+
+fn default_string() -> String {
+    String::new()
+}
 
 fn default_web_mountpoint() -> String {
     "/".to_string()
@@ -22,24 +35,12 @@ fn default_admin_key() -> String {
     generate_alphanum_string(ADMIN_KEY_LENGTH)
 }
 
-const fn default_use_gd_api() -> bool {
-    false
-}
-
 const fn default_gd_api_account() -> i32 {
     0
 }
 
-fn default_gd_api_gjp() -> String {
-    String::new()
-}
-
 fn default_gd_api_url() -> String {
     "https://www.boomlings.com/database".to_owned()
-}
-
-const fn default_skip_name_check() -> bool {
-    false
 }
 
 const fn default_refresh_interval() -> u64 {
@@ -55,10 +56,6 @@ fn default_game_servers() -> Vec<GameServerEntry> {
     }]
 }
 
-const fn default_maintenance() -> bool {
-    false
-}
-
 const fn default_status_print_interval() -> u64 {
     7200 // 2 hours
 }
@@ -71,16 +68,37 @@ const fn default_tps() -> u32 {
     30
 }
 
-fn default_admin_webhook_url() -> String {
-    String::new()
-}
-
 const fn default_chat_burst_limit() -> u32 {
     2
 }
 
 const fn default_chat_burst_interval() -> u32 {
     3000
+}
+
+fn default_roles() -> Vec<ServerRole> {
+    vec![
+        ServerRole {
+            id: "admin".to_owned(),
+            priority: 10000,
+            badge_icon: "role-admin.png".to_owned(),
+            name_color: "#e91e63 & e91ec7".to_owned(),
+            admin: true,
+            ..Default::default()
+        },
+        ServerRole {
+            id: "mod".to_owned(),
+            priority: 1000,
+            badge_icon: "role-mod.png".to_owned(),
+            name_color: "#0fefc3".to_owned(),
+            notices: true,
+            kick: true,
+            mute: true,
+            ban: true,
+            edit_role: true,
+            ..Default::default()
+        },
+    ]
 }
 
 fn default_secret_key() -> String {
@@ -91,10 +109,6 @@ fn default_secret_key() -> String {
 
 const fn default_challenge_expiry() -> u32 {
     30
-}
-
-const fn default_cloudflare_protection() -> bool {
-    false
 }
 
 const fn default_token_expiry() -> u64 {
@@ -129,7 +143,7 @@ pub struct ServerConfig {
     pub web_mountpoint: String,
     #[serde(default = "default_game_servers")]
     pub game_servers: Vec<GameServerEntry>,
-    #[serde(default = "default_maintenance")]
+    #[serde(default = "default_false")]
     pub maintenance: bool,
     #[serde(default = "default_status_print_interval")]
     pub status_print_interval: u64,
@@ -142,28 +156,31 @@ pub struct ServerConfig {
     #[serde(default = "default_tps")]
     pub tps: u32,
 
-    #[serde(default = "default_admin_webhook_url")]
+    #[serde(default = "default_string")]
     pub admin_webhook_url: String,
 
     // chat limits
     #[serde(default = "default_chat_burst_limit")]
     pub chat_burst_limit: u32,
-
     #[serde(default = "default_chat_burst_interval")]
     pub chat_burst_interval: u32,
+
+    // roles
+    #[serde(default = "default_roles")]
+    pub roles: Vec<ServerRole>,
 
     // security
     #[serde(default = "default_admin_key")]
     pub admin_key: String,
-    #[serde(default = "default_use_gd_api")]
+    #[serde(default = "default_false")]
     pub use_gd_api: bool,
     #[serde(default = "default_gd_api_account")]
     pub gd_api_account: i32,
-    #[serde(default = "default_gd_api_gjp")]
+    #[serde(default = "default_string")]
     pub gd_api_gjp: String,
     #[serde(default = "default_gd_api_url")]
     pub gd_api_url: String,
-    #[serde(default = "default_skip_name_check")]
+    #[serde(default = "default_false")]
     pub skip_name_check: bool,
     #[serde(default = "default_refresh_interval")]
     pub refresh_interval: u64,
@@ -173,7 +190,7 @@ pub struct ServerConfig {
     pub secret_key2: String,
     #[serde(default = "default_secret_key")]
     pub game_server_password: String,
-    #[serde(default = "default_cloudflare_protection")]
+    #[serde(default = "default_false")]
     pub cloudflare_protection: bool,
     #[serde(default = "default_challenge_expiry")]
     pub challenge_expiry: u32,
@@ -205,9 +222,7 @@ impl ServerConfig {
 
         // Do validation
         if conf.admin_key.len() > ADMIN_KEY_LENGTH {
-            return Err(anyhow!(
-                "Invalid admin key size, must be {ADMIN_KEY_LENGTH} characters or less"
-            ));
+            return Err(anyhow!("Invalid admin key size, must be {ADMIN_KEY_LENGTH} characters or less"));
         }
 
         self.clone_from(&conf);

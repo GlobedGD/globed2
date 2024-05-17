@@ -15,6 +15,7 @@ pub struct GameServerBootData {
     pub admin_webhook_url: String,
     pub chat_burst_limit: u32,
     pub chat_burst_interval: u32,
+    pub roles: Vec<ServerRole>,
 }
 
 impl Default for GameServerBootData {
@@ -36,6 +37,7 @@ impl Default for GameServerBootData {
             admin_webhook_url: String::new(),
             chat_burst_limit: 0,
             chat_burst_interval: 0,
+            roles: Vec::new(),
         }
     }
 }
@@ -45,7 +47,7 @@ pub struct UserEntry {
     pub account_id: i32,
     pub user_name: Option<String>,
     pub name_color: Option<String>,
-    pub user_role: i32,
+    pub user_roles: Vec<String>,
     pub is_banned: bool,
     pub is_muted: bool,
     pub is_whitelisted: bool,
@@ -61,4 +63,34 @@ impl UserEntry {
             ..Default::default()
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Encodable, Decodable, Clone, Default)]
+pub struct ServerRole {
+    pub id: String,
+    pub priority: i32,
+    #[serde(default)]
+    pub badge_icon: String,
+    #[serde(default)]
+    pub name_color: String,
+    #[serde(default)]
+    pub chat_color: String,
+
+    // permissions
+    #[serde(default)]
+    pub notices: bool,
+    #[serde(default)]
+    pub notices_to_everyone: bool,
+    #[serde(default)]
+    pub kick: bool,
+    #[serde(default)]
+    pub kick_everyone: bool,
+    #[serde(default)]
+    pub mute: bool,
+    #[serde(default)]
+    pub ban: bool,
+    #[serde(default)]
+    pub edit_role: bool,
+    #[serde(default)]
+    pub admin: bool,
 }

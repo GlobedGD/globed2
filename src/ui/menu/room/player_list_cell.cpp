@@ -9,7 +9,6 @@
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
-using namespace util::ui;
 
 bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInviting) {
     if (!CCLayer::init()) return false;
@@ -33,10 +32,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
     // name label
 
-    ccColor3B nameColor = ccc3(255, 255, 255);
-    if (data.specialUserData) {
-        nameColor = data.specialUserData->nameColor;
-    }
+    ccColor3B nameColor = util::ui::getNameColor(data.specialUserData);
 
     CCMenu* badgeWrapper = Build<CCMenu>::create()
         .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
@@ -64,10 +60,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .parent(badgeWrapper)
         .collect();
 
-    if (data.specialUserData.has_value()) {
-        auto badge = createBadgeIfSpecial(nameColor);
-        if (badge != nullptr) badgeWrapper->addChild(badge);
-    }
+    auto badge = util::ui::createBadgeIfSpecial(data.specialUserData);
+    if (badge) badgeWrapper->addChild(badge);
 
     badgeWrapper->updateLayout();
 

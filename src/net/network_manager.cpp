@@ -471,7 +471,7 @@ void NetworkManager::setupBuiltinListeners() {
 
     addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
         _adminAuthorized = true;
-        _adminRole = packet->role;
+        role = std::move(packet->role);
         ErrorQueues::get().success("Successfully authorized");
     });
 
@@ -622,11 +622,11 @@ bool NetworkManager::isAuthorizedAdmin() {
 
 void NetworkManager::clearAdminStatus() {
     _adminAuthorized = false;
-    _adminRole = 0;
+    role = {};
 }
 
-int NetworkManager::getAdminRole() {
-    return _adminRole;
+ComputedRole& NetworkManager::getRole() {
+    return role;
 }
 
 bool NetworkManager::standalone() {

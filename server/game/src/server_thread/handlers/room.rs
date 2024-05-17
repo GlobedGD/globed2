@@ -61,10 +61,7 @@ impl GameServerThread {
         let level_id = self.level_id.load(Ordering::Relaxed);
 
         // remove the player from the previously connected room (or the global room)
-        self.game_server
-            .state
-            .room_manager
-            .remove_with_any(old_room_id, account_id, level_id);
+        self.game_server.state.room_manager.remove_with_any(old_room_id, account_id, level_id);
 
         self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
             pm.manager.create_player(account_id);
@@ -83,11 +80,7 @@ impl GameServerThread {
 
         let level_id = self.level_id.load(Ordering::Relaxed);
 
-        let should_send_update = self
-            .game_server
-            .state
-            .room_manager
-            .remove_with_any(room_id, account_id, level_id);
+        let should_send_update = self.game_server.state.room_manager.remove_with_any(room_id, account_id, level_id);
 
         // if we were the owner, send update packets to everyone
         if should_send_update {
@@ -95,12 +88,7 @@ impl GameServerThread {
         }
 
         // add them to the global room
-        self.game_server
-            .state
-            .room_manager
-            .get_global()
-            .manager
-            .create_player(account_id);
+        self.game_server.state.room_manager.get_global().manager.create_player(account_id);
 
         // respond with the global room list
         self._respond_with_room_list(0).await
@@ -181,9 +169,7 @@ impl GameServerThread {
                 packet.player, room_id, room_token
             );
 
-            thread
-                .push_new_message(ServerThreadMessage::BroadcastInvite(invite_packet.clone()))
-                .await;
+            thread.push_new_message(ServerThreadMessage::BroadcastInvite(invite_packet.clone())).await;
         }
 
         Ok(())
@@ -197,9 +183,11 @@ impl GameServerThread {
 
     #[inline]
     async fn _respond_with_room_list(&self, room_id: u32) -> crate::server_thread::Result<()> {
-        let (player_count, room_info) = self.game_server.state.room_manager.with_any(room_id, |room| {
-            (room.manager.get_total_player_count(), room.get_room_info(room_id))
-        });
+        let (player_count, room_info) = self
+            .game_server
+            .state
+            .room_manager
+            .with_any(room_id, |room| (room.manager.get_total_player_count(), room.get_room_info(room_id)));
 
         // RoomInfo, list size, list of PlayerRoomPreviewAccountData
         let encoded_size = size_of_types!(RoomInfo, u32) + size_of_types!(PlayerRoomPreviewAccountData) * player_count;

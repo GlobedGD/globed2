@@ -161,9 +161,7 @@ impl RoomManager {
     pub fn maybe_remove_room(&self, room_id: u32) {
         let mut rooms = self.rooms.lock();
 
-        let to_remove = rooms
-            .get(&room_id)
-            .is_some_and(|room| room.manager.get_total_player_count() == 0);
+        let to_remove = rooms.get(&room_id).is_some_and(|room| room.manager.get_total_player_count() == 0);
 
         if to_remove {
             rooms.remove(&room_id);

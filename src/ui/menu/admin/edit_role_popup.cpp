@@ -5,8 +5,9 @@
 
 using namespace geode::prelude;
 
-bool AdminEditRolePopup::setup(int currentRole, EditRoleCallbackFn callback) {
+bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCallbackFn callback) {
     this->callback = callback;
+    this->roles = roles;
     this->setTitle("Edit user role");
 
     auto sizes = util::ui::getPopupLayout(m_size);
@@ -18,15 +19,16 @@ bool AdminEditRolePopup::setup(int currentRole, EditRoleCallbackFn callback) {
         .collect();
 
     // the buttons themselves
-    for (int id : {ROLE_USER, ROLE_HELPER, ROLE_MOD, ROLE_ADMIN}) {
-        Build<CCSprite>::createSpriteName(roleToSprite(id).c_str())
-            .scale(0.65f)
-            .intoMenuItem([this, id = id](auto) {
-                this->callback(id);
-                this->onClose(this);
-            })
-            .parent(buttonLayout);
-    }
+    // TODO: pv6
+    // for (int id : {ROLE_USER, ROLE_HELPER, ROLE_MOD, ROLE_ADMIN}) {
+    //     Build<CCSprite>::createSpriteName(roleToSprite(id).c_str())
+    //         .scale(0.65f)
+    //         .intoMenuItem([this, id = id](auto) {
+    //             this->callback(id);
+    //             this->onClose(this);
+    //         })
+    //         .parent(buttonLayout);
+    // }
 
     buttonLayout->updateLayout();
 
@@ -47,9 +49,9 @@ std::string AdminEditRolePopup::roleToSprite(int roleId) {
     return btnSprite;
 }
 
-AdminEditRolePopup* AdminEditRolePopup::create(int currentRole, EditRoleCallbackFn fn) {
+AdminEditRolePopup* AdminEditRolePopup::create(const std::vector<std::string>& roles, EditRoleCallbackFn fn) {
     auto ret = new AdminEditRolePopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, currentRole, fn)) {
+    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, roles, fn)) {
         ret->autorelease();
         return ret;
     }

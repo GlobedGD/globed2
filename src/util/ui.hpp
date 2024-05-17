@@ -1,6 +1,7 @@
 #pragma once
 
 #include <defs/all.hpp>
+#include <data/types/gd.hpp>
 #include <functional>
 
 namespace util::ui {
@@ -50,5 +51,7 @@ namespace util::ui {
 
     cocos2d::CCSprite* createBadge(const char* badgePNG, const std::string& id);
 
-    cocos2d::CCSprite* createBadgeIfSpecial(cocos2d::ccColor3B color);
+    cocos2d::CCSprite* createBadgeIfSpecial(const std::optional<SpecialUserData>& data);
+
+    cocos2d::ccColor3B getNameColor(const std::optional<SpecialUserData>& data);
 }

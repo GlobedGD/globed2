@@ -5,10 +5,7 @@ use std::{
     time::Duration,
 };
 
-use esp::{
-    size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize,
-    StaticSize,
-};
+use esp::{size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize, StaticSize};
 use globed_shared::{
     reqwest::{self, StatusCode},
     GameServerBootData, SyncMutex, TokenIssuer, UserEntry, PROTOCOL_VERSION, SERVER_MAGIC, SERVER_MAGIC_LEN,
@@ -35,10 +32,7 @@ impl Display for CentralBridgeError {
             Self::WebhookError((err, response)) => write!(f, "webhook error {err}: {response}"),
             Self::InvalidMagic(_) => write!(f, "central server sent invalid magic"),
             Self::MalformedData(err) => write!(f, "failed to decode data sent by the central server: {err}"),
-            Self::ProtocolMismatch(proto) => write!(
-                f,
-                "protocol mismatch, we are on v{PROTOCOL_VERSION} while central server is on v{proto}"
-            ),
+            Self::ProtocolMismatch(proto) => write!(f, "protocol mismatch, we are on v{PROTOCOL_VERSION} while central server is on v{proto}"),
             Self::Other(err) => f.write_str(err),
         }
     }
@@ -148,9 +142,7 @@ impl CentralBridge {
         let data = self.request_boot_data().await?;
 
         // update various values
-        self.token_issuer
-            .lock()
-            .set_expiration_period(Duration::from_secs(data.token_expiry));
+        self.token_issuer.lock().set_expiration_period(Duration::from_secs(data.token_expiry));
 
         // set the data
         self.set_boot_data(data);
@@ -162,8 +154,7 @@ impl CentralBridge {
     pub fn set_boot_data(&self, data: GameServerBootData) {
         self.maintenance.store(data.maintenance, Ordering::Relaxed);
         self.whitelist.store(data.whitelist, Ordering::Relaxed);
-        self.webhook_present
-            .store(!data.admin_webhook_url.is_empty(), Ordering::Relaxed);
+        self.webhook_present.store(!data.admin_webhook_url.is_empty(), Ordering::Relaxed);
 
         let mut issuer = self.token_issuer.lock();
 

@@ -6,8 +6,8 @@ use crate::*;
 /// `FastString` is an SSO string class, that can store up to `FastString::inline_capacity()` bytes inline,
 /// and otherwise requires a heap allocation.
 ///
-/// Just like `InlineString`, it can be converted to and from a `String`.
-#[derive(Clone)]
+/// Just like `InlineString`, it can be converted to and from a `String` or `&str`.
+///
 pub struct FastString {
     repr: StringRepr,
 }
@@ -63,13 +63,18 @@ impl InlineRepr {
     }
 
     #[inline]
-    pub fn extend(&mut self, data: &str) {
+    pub fn extend_bytes(&mut self, data: &[u8]) {
         let idx = self.len();
 
         debug_assert!(idx + data.len() < INLINE_CAP);
 
-        self.buf[idx..idx + data.len()].copy_from_slice(&data.as_bytes()[..data.len()]);
+        self.buf[idx..idx + data.len()].copy_from_slice(&data[..data.len()]);
         self.buf[idx + data.len()] = 0u8;
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        self.buf[0] = 0u8;
     }
 }
 
@@ -107,8 +112,13 @@ impl HeapRepr {
     }
 
     #[inline]
-    pub fn extend(&mut self, data: &str) {
-        self.data.extend(data.as_bytes());
+    pub fn extend_bytes(&mut self, data: &[u8]) {
+        self.data.extend(data);
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        self.data.clear();
     }
 }
 
@@ -201,6 +211,11 @@ impl StringRepr {
 
     #[inline]
     pub fn extend(&mut self, data: &str) {
+        self.extend_bytes(data.as_bytes());
+    }
+
+    #[inline]
+    pub fn extend_bytes(&mut self, data: &[u8]) {
         match self {
             Self::Inline(x) => {
                 // if we don't have enough space, reallocate
@@ -209,15 +224,23 @@ impl StringRepr {
 
                     match self {
                         Self::Inline(_) => unsafe { std::hint::unreachable_unchecked() },
-                        Self::Heap(x) => x.extend(data),
+                        Self::Heap(x) => x.extend_bytes(data),
                     }
                 } else {
-                    x.extend(data);
+                    x.extend_bytes(data);
                 }
             }
             Self::Heap(x) => {
-                x.extend(data);
+                x.extend_bytes(data);
             }
+        }
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        match self {
+            Self::Inline(x) => x.clear(),
+            Self::Heap(x) => x.clear(),
         }
     }
 
@@ -291,8 +314,7 @@ impl FastString {
 
     #[inline]
     pub fn try_to_string(&self) -> String {
-        self.to_str()
-            .map_or_else(|_| "<invalid UTF-8 string>".to_owned(), ToOwned::to_owned)
+        self.to_str().map_or_else(|_| "<invalid UTF-8 string>".to_owned(), ToOwned::to_owned)
     }
 
     #[inline]
@@ -327,11 +349,28 @@ impl FastString {
 
         result == 0
     }
+
+    #[inline]
+    pub fn copy_from_str(&mut self, other: &str) {
+        self.repr.clear();
+        self.repr.extend_bytes(other.as_bytes());
+    }
 }
 
 impl Default for FastString {
     fn default() -> Self {
         Self::new("")
+    }
+}
+
+impl Clone for FastString {
+    fn clone(&self) -> Self {
+        Self { repr: self.repr.clone() }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        self.repr.clear();
+        self.repr.extend_bytes(source.as_bytes());
     }
 }
 
@@ -358,10 +397,7 @@ impl PartialEq for FastString {
             return false;
         }
 
-        self.as_bytes()
-            .iter()
-            .take(me_len)
-            .eq(other.as_bytes().iter().take(other_len))
+        self.as_bytes().iter().take(me_len).eq(other.as_bytes().iter().take(other_len))
     }
 }
 
@@ -382,6 +418,12 @@ impl From<String> for FastString {
 impl From<&str> for FastString {
     fn from(value: &str) -> Self {
         Self::new(value)
+    }
+}
+
+impl<const N: usize> From<InlineString<N>> for FastString {
+    fn from(value: InlineString<N>) -> Self {
+        Self::from_buffer(value.as_bytes())
     }
 }
 

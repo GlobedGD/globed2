@@ -48,10 +48,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .collect();
 
     auto& pcm = ProfileCacheManager::get();
-    ccColor3B nameColor = ccc3(255, 255, 255);
-    if (data.specialUserData.has_value()) {
-        nameColor = data.specialUserData->nameColor;
-    }
+    ccColor3B nameColor = util::ui::getNameColor(data.specialUserData);
 
     auto* nameButton = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
         .color(nameColor)
@@ -68,11 +65,9 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .parent(usernameLayout)
         .collect();
 
-	if (data.specialUserData.has_value()) {
-		CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(nameColor);
-        if (badgeIcon) {
-            usernameLayout->addChild(badgeIcon);
-        }
+    CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
+    if (badgeIcon) {
+        usernameLayout->addChild(badgeIcon);
     }
 
     // percentage label

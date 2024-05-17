@@ -26,6 +26,7 @@ use tokio::{
 use crate::{
     data::*,
     make_uninit,
+    managers::ComputedRole,
     server::GameServer,
     server_thread::handlers::*,
     util::{LockfreeMutCell, SimpleRateLimiter},
@@ -75,6 +76,7 @@ pub struct GameServerThread {
     pub room_id: AtomicU32,
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<UserEntry>,
+    pub user_role: SyncMutex<ComputedRole>,
 
     pub cleanup_notify: Notify,
     pub cleanup_mutex: Mutex<()>,
@@ -123,6 +125,7 @@ impl GameServerThread {
             awaiting_termination: AtomicBool::new(false),
             account_data: SyncMutex::new(PlayerAccountData::default()),
             user_entry: SyncMutex::new(UserEntry::default()),
+            user_role: SyncMutex::new(game_server.state.role_manager.get_default().clone()),
             cleanup_notify: Notify::new(),
             cleanup_mutex: Mutex::new(()),
             fragmentation_limit: AtomicU16::new(0),
@@ -186,7 +189,7 @@ impl GameServerThread {
                         }
                     }
                     Ok(Err(err)) => {
-                        // early eof means the client has disconnected (closed their part of the socketS)
+                        // early eof means the client has disconnected (closed their part of the socket)
                         if let PacketHandlingError::IOError(ref ioerror) = err {
                             if ioerror.kind() != std::io::ErrorKind::UnexpectedEof {
                                 self.print_error(&err);
@@ -222,12 +225,7 @@ impl GameServerThread {
     // the error printing is different in release and debug. some errors have higher severity than others.
     fn print_error(&self, error: &PacketHandlingError) {
         if cfg!(debug_assertions) {
-            warn!(
-                "[{} @ {}] err: {}",
-                self.account_id.load(Ordering::Relaxed),
-                self.tcp_peer,
-                error
-            );
+            warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.tcp_peer, error);
         } else {
             match error {
                 // these are for the client being silly
@@ -240,12 +238,7 @@ impl GameServerThread {
                 | PacketHandlingError::DebugOnlyPacket
                 | PacketHandlingError::PacketTooLong(_)
                 | PacketHandlingError::SocketSendFailed(_) => {
-                    warn!(
-                        "[{} @ {}] err: {}",
-                        self.account_id.load(Ordering::Relaxed),
-                        self.tcp_peer,
-                        error
-                    );
+                    warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.tcp_peer, error);
                 }
                 // these are either our fault or a fatal error somewhere
                 PacketHandlingError::ColorParseFailed(_)
@@ -253,12 +246,7 @@ impl GameServerThread {
                 | PacketHandlingError::SystemTimeError(_)
                 | PacketHandlingError::WebRequestError(_)
                 | PacketHandlingError::DangerousAllocation(_) => {
-                    error!(
-                        "[{} @ {}] err: {}",
-                        self.account_id.load(Ordering::Relaxed),
-                        self.tcp_peer,
-                        error
-                    );
+                    error!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.tcp_peer, error);
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
                 PacketHandlingError::MalformedMessage
@@ -389,10 +377,7 @@ impl GameServerThread {
             }
         } else {
             // if rate limiting is disabled, do not block
-            let block = !self
-                .chat_rate_limiter
-                .as_ref()
-                .map_or(true, |x| unsafe { x.get_mut().try_tick() });
+            let block = !self.chat_rate_limiter.as_ref().map_or(true, |x| unsafe { x.get_mut().try_tick() });
 
             if block {
                 return false;

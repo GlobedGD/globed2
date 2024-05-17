@@ -7,6 +7,7 @@
 #include <Geode/utils/cocos.hpp>
 
 #include <data/bytebuffer.hpp>
+#include "user.hpp"
 #include "game.hpp"
 
 class PlayerIconData {
@@ -35,12 +36,13 @@ inline const PlayerIconData PlayerIconData::DEFAULT_ICONS = PlayerIconData(
 
 class SpecialUserData {
 public:
-    SpecialUserData(cocos2d::ccColor3B nameColor) : nameColor(nameColor) {}
     SpecialUserData() {}
 
     bool operator==(const SpecialUserData&) const = default;
 
-    cocos2d::ccColor3B nameColor;
+    std::optional<std::string> badgeIcon;
+    std::optional<RichColor> nameColor;
+    std::optional<cocos2d::ccColor3B> chatColor;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(SpecialUserData, (

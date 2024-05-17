@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/crypto.hpp>
 #include <data/types/gd.hpp>
+#include <data/types/user.hpp>
 
 class PingResponsePacket : public Packet {
     GLOBED_PACKET(20000, false, false)

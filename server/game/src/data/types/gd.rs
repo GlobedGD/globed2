@@ -48,18 +48,11 @@ impl PlayerIconData {
 
 /* SpecialUserData */
 
-#[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
-#[dynamic_size(as_static = true)]
+#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct SpecialUserData {
-    pub name_color: Color3B,
-}
-
-impl Default for SpecialUserData {
-    fn default() -> Self {
-        Self {
-            name_color: Color3B { r: 255, g: 255, b: 255 },
-        }
-    }
+    pub badge_icon: Option<InlineString<32>>,
+    pub name_color: Option<RichColor>,
+    pub chat_color: Option<Color3B>,
 }
 
 /* PlayerAccountData */

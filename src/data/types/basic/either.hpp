@@ -22,6 +22,16 @@ public:
     Either(Either&&) = default;
     Either& operator=(Either&&) = default;
 
+    bool operator==(const Either<T, Y>& other) const requires (std::equality_comparable<T> && std::equality_comparable<Y>) {
+        if (this->isFirst() != other.isFirst()) return false;
+
+        if (this->isFirst()) {
+            return this->firstRef()->get() == other.firstRef()->get();
+        } else {
+            return this->secondRef()->get() == other.secondRef()->get();
+        }
+    }
+
     bool isFirst() const {
         return std::holds_alternative<T>(variant);
     }

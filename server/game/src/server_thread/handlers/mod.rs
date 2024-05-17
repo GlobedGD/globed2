@@ -45,9 +45,7 @@ macro_rules! gs_disconnect {
 /// send a `ServerNoticePacket` to the client with the given message
 macro_rules! gs_notice {
     ($self:expr, $msg:expr) => {
-        $self
-            .send_packet_fast_dynamic(&ServerNoticePacket { message: $msg })
-            .await?;
+        $self.send_packet_fast_dynamic(&ServerNoticePacket { message: $msg }).await?;
     };
 }
 

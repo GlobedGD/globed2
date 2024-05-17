@@ -1,4 +1,4 @@
-#![feature(sync_unsafe_cell)]
+#![feature(sync_unsafe_cell, duration_constructors)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,

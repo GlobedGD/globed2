@@ -16,9 +16,12 @@ pub struct RoomJoinFailedPacket<'a> {
     pub message: &'a str,
 }
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 23003, tcp = true)]
-pub struct RoomPlayerListPacket; // definition intentionally missing
+pub struct RoomPlayerListPacket {
+    pub room_info: RoomInfo,
+    pub players: Vec<PlayerRoomPreviewAccountData>,
+}
 
 #[derive(Packet, Encodable, StaticSize, Clone)]
 #[packet(id = 23004)]

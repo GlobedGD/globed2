@@ -14,7 +14,11 @@ impl<'r> FromRow<'r, SqliteRow> for UserEntryWrapper {
         let account_id = row.try_get("account_id")?;
         let user_name = row.try_get("user_name")?;
         let name_color = row.try_get("name_color")?;
-        let user_role = row.try_get("user_role")?;
+
+        let user_roles: Option<String> = row.try_get("user_roles")?;
+        let mut user_roles = user_roles.map_or(Vec::new(), |s| s.split(',').map(|x| x.to_owned()).collect::<Vec<_>>());
+        user_roles.retain(|x| !x.is_empty());
+
         let is_banned = row.try_get("is_banned")?;
         let is_muted = row.try_get("is_muted")?;
         let is_whitelisted = row.try_get("is_whitelisted")?;
@@ -26,7 +30,7 @@ impl<'r> FromRow<'r, SqliteRow> for UserEntryWrapper {
             account_id,
             user_name,
             name_color,
-            user_role,
+            user_roles,
             is_banned,
             is_muted,
             is_whitelisted,
@@ -69,12 +73,12 @@ impl GlobedDb {
 
     pub async fn update_user(&self, account_id: i32, user: &UserEntry) -> Result<()> {
         query(
-            "INSERT OR REPLACE INTO users (account_id, user_name, name_color, user_role, is_banned, is_muted, is_whitelisted, admin_password, violation_reason, violation_expiry)
+            "INSERT OR REPLACE INTO users (account_id, user_name, name_color, user_roles, is_banned, is_muted, is_whitelisted, admin_password, violation_reason, violation_expiry)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(account_id)
             .bind(&user.user_name)
             .bind(&user.name_color)
-            .bind(user.user_role)
+            .bind(user.user_roles.join(","))
             .bind(user.is_banned)
             .bind(user.is_muted)
             .bind(user.is_whitelisted)
@@ -89,10 +93,7 @@ impl GlobedDb {
     #[allow(clippy::cast_possible_wrap)]
     async fn maybe_expire_ban(&self, user: &mut UserEntry) -> Result<()> {
         let expired = user.violation_expiry.as_ref().is_some_and(|expiry| {
-            let current_time = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock went backwards")
-                .as_secs() as i64;
+            let current_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock went backwards").as_secs() as i64;
 
             current_time > *expiry
         });
@@ -134,9 +135,7 @@ impl GlobedDb {
 
         // delete logs older than 1 month
 
-        let delete_before =
-            i64::try_from((SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - Duration::from_days(31)).as_secs())
-                .unwrap_or(0);
+        let delete_before = i64::try_from((SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - Duration::from_days(31)).as_secs()).unwrap_or(0);
 
         if delete_before != 0 {
             query("DELETE FROM player_counts WHERE log_time < ?")

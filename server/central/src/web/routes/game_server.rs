@@ -38,6 +38,7 @@ pub async fn boot(
         admin_webhook_url: config.admin_webhook_url.clone(),
         chat_burst_limit: config.chat_burst_limit,
         chat_burst_interval: config.chat_burst_interval,
+        roles: config.roles.clone(),
     };
 
     debug!("boot data request from game server {} at {}", user_agent.0, ip_address);
@@ -52,10 +53,7 @@ pub async fn boot(
 
 async fn _get_user(database: &GlobedDb, user: &str) -> WebResult<UserEntry> {
     Ok(if let Ok(account_id) = user.parse::<i32>() {
-        database
-            .get_user(account_id)
-            .await?
-            .unwrap_or_else(|| UserEntry::new(account_id))
+        database.get_user(account_id).await?.unwrap_or_else(|| UserEntry::new(account_id))
     } else {
         let user = database.get_user_by_name(user).await?;
 

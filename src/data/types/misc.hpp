@@ -1,6 +1,7 @@
 #pragma once
+
 #include <data/bytebuffer.hpp>
-#include "gd.hpp"
+#include <cocos2d.h>
 
 class GameServerEntry {
 public:
@@ -73,4 +74,33 @@ public:
 
 GLOBED_SERIALIZABLE_STRUCT(CustomErrorMessage, (
     variant
+));
+
+class RichColor {
+public:
+    Either<cocos2d::ccColor3B, std::vector<cocos2d::ccColor3B>> inner;
+
+    RichColor() : inner(cocos2d::ccColor3B{255, 255, 255}) {}
+
+    bool operator==(const RichColor& other) const = default;
+
+    bool isMultiple() {
+        return inner.isSecond();
+    }
+
+    std::vector<cocos2d::ccColor3B>& getColors() {
+        GLOBED_REQUIRE(inner.isSecond(), "calling RichColor::getColors when there is only 1 color");
+
+        return inner.secondRef()->get();
+    }
+
+    cocos2d::ccColor3B getColor() {
+        GLOBED_REQUIRE(inner.isFirst(), "calling RichColor::getColor when there are multiple colors");
+
+        return inner.firstRef()->get();
+    }
+};
+
+GLOBED_SERIALIZABLE_STRUCT(RichColor, (
+    inner
 ));

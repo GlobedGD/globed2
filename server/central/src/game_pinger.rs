@@ -37,9 +37,7 @@ impl GameServerPinger {
             addresses.push(addr);
         }
 
-        let sock = UdpSocket::bind("0.0.0.0:0")
-            .await
-            .expect("failed to bind udp socket for pinger");
+        let sock = UdpSocket::bind("0.0.0.0:0").await.expect("failed to bind udp socket for pinger");
 
         Self {
             addresses,

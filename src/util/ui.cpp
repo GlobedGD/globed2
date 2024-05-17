@@ -2,6 +2,7 @@
 
 #include <hooks/game_manager.hpp>
 #include <managers/settings.hpp>
+#include <util/cocos.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
 #include <util/time.hpp>
@@ -185,14 +186,25 @@ namespace util::ui {
         return badgeSprite.collect();
     }
 
-    CCSprite* createBadgeIfSpecial(ccColor3B color) {
-        if (color == ccc3(119, 255, 255)) return createBadge("role-owner.png"_spr, "globed-owner-badge");
-        if (color == ccc3(15, 239, 195)) return createBadge("role-mod.png"_spr, "globed-mod-badge");
-        if (color == ccc3(233, 30, 99)) return createBadge("role-admin.png"_spr, "globed-admin-badge");
-        if (color == ccc3(52, 152, 219)) return createBadge("role-helper.png"_spr, "globed-helper-badge");
-        if (color == ccc3(154, 88, 255)) return createBadge("role-supporter.png"_spr, "globed-supporter-badge");
-        if (color == ccc3(248, 0, 255)) return createBadge("role-booster.png"_spr, "globed-booster-badge");
+    CCSprite* createBadgeIfSpecial(const std::optional<SpecialUserData>& data) {
+        if (!data || !data->badgeIcon) return nullptr;
 
-        return nullptr;
+        auto spr = CCSprite::createWithSpriteFrameName(util::cocos::spr(data->badgeIcon.value()).c_str());
+        if (!spr) spr = CCSprite::createWithSpriteFrameName(data->badgeIcon.value().c_str());
+
+        return spr;
+    }
+
+    ccColor3B getNameColor(const std::optional<SpecialUserData>& data) {
+        if (!data || !data->nameColor) return ccc3(255, 255, 255);
+
+        const auto& nc = data->nameColor;
+
+        if (nc->inner.isFirst()) {
+            return nc->inner.firstRef()->get();
+        } else {
+            // TODO: implement tinting names
+            return nc->inner.secondRef()->get().at(0);
+        }
     }
 }

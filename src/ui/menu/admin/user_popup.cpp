@@ -37,6 +37,35 @@ bool AdminUserPopup::setup(const UserEntry& userEntry, const std::optional<Playe
     return true;
 }
 
+// 0.f - 0 days, 1.f - 31 days, returns as unix seconds
+static uint64_t expiryFromFloatUnix(float value) {
+    auto duration = util::time::days(31) * value;
+    auto expiry = util::time::asSeconds(util::time::systemNow().time_since_epoch() + duration);
+    return expiry;
+}
+
+// converts float from 0.f to 1.f to amount of days
+static float expiryFromFloat(float value) {
+    auto duration = util::time::days(31) * value;
+    return duration.count();
+}
+
+// convert unix time into 0.f to 1.f float where 0.0 = 0 days, 1.0 = 31 days
+static float floatFromExpiry(uint64_t unixtime) {
+    auto now = util::time::systemNow().time_since_epoch();
+    auto expDur = util::time::seconds(unixtime) - now;
+
+    return static_cast<float>(util::time::asSeconds(expDur)) / util::time::asSeconds(util::time::days(31));
+}
+
+// convert unix time into amount of days as a float
+static float floatFromExpiryDays(uint64_t unixtime) {
+    auto now = util::time::systemNow().time_since_epoch();
+    auto expDur = util::time::seconds(unixtime) - now;
+
+    return static_cast<float>(util::time::asSeconds(expDur)) / util::time::asSeconds(util::time::days(1));
+}
+
 void AdminUserPopup::onProfileLoaded() {
     GLOBED_REQUIRE(accountData.has_value(), "no account data umm")
 
@@ -71,7 +100,7 @@ void AdminUserPopup::onProfileLoaded() {
         .intoMenuItem([this](auto) {
             GlobedColorInputPopup::create(this->getCurrentNameColor(), [this](auto color) {
                 // if our role doesn't permit editing the color, don't do anything
-                if (NetworkManager::get().getAdminRole() >= ROLE_MOD) {
+                if (!NetworkManager::get().getRole().editRole) {
                     this->onColorSelected(color);
                 }
             })->show();
@@ -174,13 +203,11 @@ void AdminUserPopup::onProfileLoaded() {
         .store(banDurationText);
 
     if (userEntry.violationExpiry.has_value()) {
-        auto now = util::time::systemNow().time_since_epoch();
-        auto expDur = util::time::seconds(userEntry.violationExpiry.value()) - now;
+        uint64_t expiry = userEntry.violationExpiry.value();
 
-        float sval = static_cast<float>(util::time::asSeconds(expDur)) / util::time::asSeconds(util::time::days(31));
-        slider->slider->setValue(sval);
+        slider->slider->setValue(floatFromExpiry(expiry));
 
-        auto expiryString = fmt::format("Expires: in {:.1f} days", static_cast<float>(util::time::as<util::time::days>(expDur).count()));
+        auto expiryString = fmt::format("Expires: in {:.1f} days", floatFromExpiryDays(expiry));
         banDurationText->setString(expiryString.c_str());
     }
 
@@ -204,7 +231,7 @@ void AdminUserPopup::onProfileLoaded() {
     }
 
     // admin password field
-    if (NetworkManager::get().getAdminRole() >= ROLE_ADMIN) {
+    if (!NetworkManager::get().getRole().admin) {
         auto* layout = Build<CCMenu>::create()
             .pos(0.f, 0.f)
             .layout(RowLayout::create())
@@ -287,12 +314,9 @@ void AdminUserPopup::onViolationDurationChanged(cocos2d::CCObject* sender) {
         userEntry.violationExpiry = std::nullopt;
         banDurationText->setString("Expires: never");
     } else {
-        // 0.f - 0 days, 1.f - 31 days
-        auto duration = util::time::days(31) * value;
-        auto expiry = util::time::asSeconds(util::time::systemNow().time_since_epoch() + duration);
-        userEntry.violationExpiry = expiry;
+        userEntry.violationExpiry = expiryFromFloatUnix(value);
 
-        banDurationText->setString(fmt::format("Expires: in {:.1f} days", duration.count()).c_str());
+        banDurationText->setString(fmt::format("Expires: in {:.1f} days", expiryFromFloat(value)).c_str());
     }
 }
 
@@ -302,13 +326,14 @@ void AdminUserPopup::recreateRoleModifyButton() {
         roleModifyButton = nullptr;
     }
 
-    roleModifyButton = Build<CCSprite>::createSpriteName(AdminEditRolePopup::roleToSprite(userEntry.userRole).c_str())
+    // TODO: pv6 placeholder sprite
+    roleModifyButton = Build<CCSprite>::createSpriteName("edit_eEdgeBtn_001.png")
         .scale(0.5f)
         .intoMenuItem([this](auto) {
-            if (NetworkManager::get().getAdminRole() < ROLE_ADMIN) return;
+            if (!NetworkManager::get().getRole().editRole) return;
 
-            AdminEditRolePopup::create(userEntry.userRole, [this](int role) {
-                userEntry.userRole = role;
+            AdminEditRolePopup::create(userEntry.userRoles, [this](const std::vector<std::string>& roles) {
+                userEntry.userRoles = std::move(roles);
                 this->recreateRoleModifyButton();
             })->show();
         })
@@ -333,6 +358,8 @@ void AdminUserPopup::sendUpdateUser() {
     if (!userEntry.userName.has_value()) {
         userEntry.userName = accountData->name;
     }
+
+    log::debug("user roles: {}", userEntry.userRoles);
 
     auto& nm = NetworkManager::get();
     nm.send(AdminUpdateUserPacket::create(this->userEntry));

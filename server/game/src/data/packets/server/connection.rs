@@ -25,7 +25,7 @@ pub struct ServerDisconnectPacket<'a> {
     pub message: &'a str,
 }
 
-#[derive(Packet, Encodable, StaticSize)]
+#[derive(Packet, Encodable, StaticSize, DynamicSize)]
 #[packet(id = 20004, tcp = true)]
 pub struct LoggedInPacket {
     pub tps: u32,

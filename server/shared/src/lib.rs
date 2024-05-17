@@ -44,11 +44,7 @@ pub const MAX_NAME_SIZE: usize = 24;
 pub const VIOLATION_REASON_LENGTH: usize = 128;
 
 pub fn generate_alphanum_string(n: usize) -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(n)
-        .map(char::from)
-        .collect()
+    rand::thread_rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect()
 }
 
 pub fn get_log_level(env_var: &str) -> Option<LogLevelFilter> {

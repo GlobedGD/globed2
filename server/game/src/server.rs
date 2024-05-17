@@ -44,13 +44,7 @@ pub struct GameServer {
 }
 
 impl GameServer {
-    pub fn new(
-        tcp_socket: TcpListener,
-        udp_socket: UdpSocket,
-        state: ServerState,
-        bridge: CentralBridge,
-        standalone: bool,
-    ) -> Self {
+    pub fn new(tcp_socket: TcpListener, udp_socket: UdpSocket, state: ServerState, bridge: CentralBridge, standalone: bool) -> Self {
         let secret_key = SecretKey::generate(&mut OsRng);
         let public_key = secret_key.public_key();
 
@@ -77,7 +71,7 @@ impl GameServer {
         // spawn central conf refresher (runs every 5 minutes)
         if !self.standalone {
             tokio::spawn(async {
-                let mut interval = tokio::time::interval(Duration::from_secs(300));
+                let mut interval = tokio::time::interval(Duration::from_mins(5));
                 interval.tick().await;
 
                 loop {
@@ -86,6 +80,18 @@ impl GameServer {
                         Ok(()) => debug!("refreshed central server configuration"),
                         Err(e) => error!("failed to refresh configuration from the central server: {e}"),
                     }
+                }
+            });
+
+            // spawn the role info refresher as well (slightly less common)
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(Duration::from_mins(30));
+                interval.tick().await;
+
+                loop {
+                    interval.tick().await;
+                    let cc = self.bridge.central_conf.lock();
+                    self.state.role_manager.refresh_from(&*cc)
                 }
             });
         }
@@ -204,9 +210,9 @@ impl GameServer {
 
     pub fn claim_thread(&'static self, udp_addr: SocketAddrV4, secret_key: u32) -> bool {
         let mut unclaimed = self.unclaimed_threads.lock();
-        let idx = unclaimed.iter().position(|thr| {
-            thr.claim_secret_key.load(Ordering::Relaxed) == secret_key && !thr.claimed.load(Ordering::Relaxed)
-        });
+        let idx = unclaimed
+            .iter()
+            .position(|thr| thr.claim_secret_key.load(Ordering::Relaxed) == secret_key && !thr.claimed.load(Ordering::Relaxed));
 
         if let Some(idx) = idx {
             if let Some(thread) = unclaimed.remove(idx) {
@@ -222,23 +228,13 @@ impl GameServer {
     }
 
     pub async fn broadcast_voice_packet(&'static self, vpkt: &Arc<VoiceBroadcastPacket>, level_id: LevelId, room_id: u32) {
-        self.broadcast_user_message(
-            &ServerThreadMessage::BroadcastVoice(vpkt.clone()),
-            vpkt.player_id,
-            level_id,
-            room_id,
-        )
-        .await;
+        self.broadcast_user_message(&ServerThreadMessage::BroadcastVoice(vpkt.clone()), vpkt.player_id, level_id, room_id)
+            .await;
     }
 
     pub async fn broadcast_chat_packet(&'static self, tpkt: &ChatMessageBroadcastPacket, level_id: LevelId, room_id: u32) {
-        self.broadcast_user_message(
-            &ServerThreadMessage::BroadcastText(tpkt.clone()),
-            tpkt.player_id,
-            level_id,
-            room_id,
-        )
-        .await;
+        self.broadcast_user_message(&ServerThreadMessage::BroadcastText(tpkt.clone()), tpkt.player_id, level_id, room_id)
+            .await;
     }
 
     /// iterate over every player in this list and run F
@@ -289,6 +285,22 @@ impl GameServer {
                 thread.account_data.lock().make_room_preview(level_id)
             })
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
+    }
+
+    #[inline]
+    pub fn get_room_player_previews(&'static self, room_id: u32) -> Vec<PlayerRoomPreviewAccountData> {
+        let mut vec = Vec::new();
+
+        self.for_every_room_player_preview(
+            room_id,
+            |p, _, vec| {
+                vec.push(p.clone());
+                true
+            },
+            &mut vec,
+        );
+
+        vec
     }
 
     #[inline]
@@ -369,11 +381,7 @@ impl GameServer {
 
     /// Try to find a user by name or account ID, invoke the passed closure, and if it returns `true`,
     /// send a request to the central server to update the account.
-    pub async fn find_and_update_user<F: FnOnce(&mut UserEntry) -> bool>(
-        &'static self,
-        name: &str,
-        f: F,
-    ) -> anyhow::Result<()> {
+    pub async fn find_and_update_user<F: FnOnce(&mut UserEntry) -> bool>(&'static self, name: &str, f: F) -> anyhow::Result<()> {
         if let Some(thread) = self.find_user(name) {
             self.update_user(&thread, f).await
         } else {
@@ -381,11 +389,7 @@ impl GameServer {
         }
     }
 
-    pub async fn update_user<F: FnOnce(&mut UserEntry) -> bool>(
-        &'static self,
-        thread: &GameServerThread,
-        f: F,
-    ) -> anyhow::Result<()> {
+    pub async fn update_user<F: FnOnce(&mut UserEntry) -> bool>(&'static self, thread: &GameServerThread, f: F) -> anyhow::Result<()> {
         let result = {
             let mut data = thread.user_entry.lock();
             f(&mut data)
@@ -402,13 +406,7 @@ impl GameServer {
     /* private handling stuff */
 
     /// broadcast a message to all people on the level
-    async fn broadcast_user_message(
-        &'static self,
-        msg: &ServerThreadMessage,
-        origin_id: i32,
-        level_id: LevelId,
-        room_id: u32,
-    ) {
+    async fn broadcast_user_message(&'static self, msg: &ServerThreadMessage, origin_id: i32, level_id: LevelId, room_id: u32) {
         let threads = self.state.room_manager.with_any(room_id, |pm| {
             let players = pm.manager.get_level(level_id);
 
@@ -502,10 +500,7 @@ impl GameServer {
             ClaimThreadPacket::PACKET_ID => {
                 let pkt = ClaimThreadPacket::decode_from_reader(&mut byte_reader).map_err(|e| anyhow!("{e}"))?;
                 if !self.claim_thread(peer, pkt.secret_key) {
-                    warn!(
-                        "udp peer {peer} tried to claim an invalid thread (with key {})",
-                        pkt.secret_key
-                    );
+                    warn!("udp peer {peer} tried to claim an invalid thread (with key {})", pkt.secret_key);
                 }
                 Ok(true)
             }
@@ -518,10 +513,7 @@ impl GameServer {
         if thread.claimed.load(Ordering::Relaxed) {
             // self.threads.lock().retain(|_udp_peer, thread| thread.tcp_peer != tcp_peer);
             let mut threads = self.threads.lock();
-            let udp_peer = threads
-                .iter()
-                .find(|(_udp, thread)| thread.tcp_peer == tcp_peer)
-                .map(|x| *x.0);
+            let udp_peer = threads.iter().find(|(_udp, thread)| thread.tcp_peer == tcp_peer).map(|x| *x.0);
 
             if let Some(udp_peer) = udp_peer {
                 threads.remove(&udp_peer);

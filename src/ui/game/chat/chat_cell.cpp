@@ -73,7 +73,7 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
 
     CCSprite* badgeIcon = nullptr;
 	if (data.specialUserData.has_value()) {
-		badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData->nameColor);
+		badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
         badgeIcon->setPosition(ccp(nameLabel->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameLabel->getPositionY()));
         badgeIcon->setZOrder(1);
         playerBundle->addChild(badgeIcon);
@@ -99,14 +99,7 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
     messageTextLabel->setAnchorPoint(ccp(0, 0.5));
     messageTextLabel->setID("message-text");
 
-    ccColor3B textColor = ccc3(255, 255, 255);
-    if (data.specialUserData.has_value()) {
-        textColor = data.specialUserData->nameColor;
-        if (textColor == ccc3(119, 255, 255)) textColor = ccc3(194, 255, 255);
-        if (textColor == ccc3(15, 239, 195)) textColor = ccc3(255, 181, 191);
-        if (textColor == ccc3(233, 30, 99)) textColor = ccc3(185, 255, 208);
-        if (textColor == ccc3(52, 152, 219)) textColor = ccc3(172, 207, 255);
-    }
+    ccColor3B textColor = util::ui::getNameColor(data.specialUserData);
 
     messageTextLabel->setColor(textColor);
 
