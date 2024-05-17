@@ -494,7 +494,7 @@ void NetworkManager::setupBuiltinListeners() {
     });
 
     addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
-        AdminManager::get().setAuthorized(std::move(packet->role));
+        AdminManager::get().setAuthorized(std::move(packet->role), std::move(packet->allRoles));
         ErrorQueues::get().success("Successfully authorized");
     });
 
