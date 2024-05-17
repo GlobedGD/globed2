@@ -97,7 +97,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 # our favorite libraries
 CPMAddPackage("gh:camila314/uibuilder#ba63097")
 CPMAddPackage("gh:xiph/opus#main")
-CPMAddPackage("gh:dankmeme01/libsodium-cmake#master")
+CPMAddPackage("gh:dankmeme01/libsodium-cmake#97c4301")
 CPMAddPackage(
     NAME Boost
     VERSION 1.84.0
@@ -132,8 +132,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Wi
     # Windows Clang - ensure 32-bitness for opus and libsodium and enable additional instruction sets
     # Note - this limits the mod to CPUs that support the AES, pclmul and SSE4.1 instruction sets,
     # and therefore is not used in release. Release builds use MSVC which has a smarter vectorizer.
-    target_compile_options(opus PRIVATE "-m32" "-msse4.1")
-    target_compile_options(sodium PRIVATE "-m32" "-maes" "-mpclmul" "-msse4.1")
+    target_compile_options(opus PRIVATE "-m32")
+    target_compile_options(sodium PRIVATE "-m32")
     target_compile_options(asp PRIVATE "-m32")
 endif()
 
