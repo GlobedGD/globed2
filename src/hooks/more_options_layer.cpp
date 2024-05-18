@@ -4,7 +4,7 @@
 
 #include <ui/menu/admin/admin_login_popup.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
-#include <net/network_manager.hpp>
+#include <managers/admin.hpp>
 #include <util/math.hpp>
 
 using namespace geode::prelude;
@@ -15,7 +15,7 @@ bool HookedMoreOptionsLayer::init() {
     m_fields->adminBtn = Build<ButtonSprite>::create("admin", "goldFont.fnt", "GJ_button_04.png", 0.75f)
         .scale(0.8f)
         .intoMenuItem([this](auto) {
-            if (NetworkManager::get().isAuthorizedAdmin()) {
+            if (AdminManager::get().authorized()) {
                 AdminPopup::create()->show();
             } else {
                 AdminLoginPopup::create()->show();
