@@ -46,7 +46,7 @@ public:
 };
 
 GLOBED_SERIALIZABLE_STRUCT(SpecialUserData, (
-    nameColor
+    badgeIcon, nameColor, chatColor
 ));
 
 class PlayerRoomPreviewAccountData {

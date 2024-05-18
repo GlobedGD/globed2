@@ -232,7 +232,7 @@ void AdminUserPopup::onProfileLoaded() {
     }
 
     // admin password field
-    if (!AdminManager::get().getRole().admin) {
+    if (AdminManager::get().getRole().admin) {
         auto* layout = Build<CCMenu>::create()
             .pos(0.f, 0.f)
             .layout(RowLayout::create())
@@ -327,14 +327,24 @@ void AdminUserPopup::recreateRoleModifyButton() {
         roleModifyButton = nullptr;
     }
 
-    // TODO: pv6 placeholder sprite
-    roleModifyButton = Build<CCSprite>::createSpriteName("edit_eEdgeBtn_001.png")
-        .scale(0.5f)
+    CCSprite* badgeIcon = nullptr;
+    if (accountData) {
+        badgeIcon = util::ui::createBadgeIfSpecial(accountData->specialUserData);
+    }
+
+    // make it the normal user icon
+    if (!badgeIcon) {
+        badgeIcon = CCSprite::createWithSpriteFrameName("role-user.png"_spr);
+    }
+
+    util::ui::rescaleToMatch(badgeIcon, {22.f, 22.f});
+
+    roleModifyButton = Build(badgeIcon)
         .intoMenuItem([this](auto) {
             if (!AdminManager::get().getRole().editRole) return;
 
             AdminEditRolePopup::create(userEntry.userRoles, [this](const std::vector<std::string>& roles) {
-                userEntry.userRoles = std::move(roles);
+                userEntry.userRoles = roles;
                 this->recreateRoleModifyButton();
             })->show();
         })

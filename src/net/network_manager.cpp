@@ -607,8 +607,13 @@ void NetworkManager::togglePacketLogging(bool enabled) {
 }
 
 void NetworkManager::logPacketToFile(std::shared_ptr<Packet> packet) {
+    log::debug("{} packet: {}", packet->getPacketId() < 20000 ? "Sending" : "Receiving", packet->getPacketId());
+
     auto folder = Mod::get()->getSaveDir() / "packets";
     (void) geode::utils::file::createDirectoryAll(folder);
+    util::misc::callOnce("networkmanager-log-to-file", [&] {
+        log::debug("Packet log folder: {}", folder);
+    });
 
     auto datetime = util::format::formatDateTime(util::time::systemNow());
     auto filepath = folder / fmt::format("{}-{}.bin", packet->getPacketId(), datetime);

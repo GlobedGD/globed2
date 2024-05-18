@@ -13,7 +13,7 @@ class AdminAuthSuccessPacket : public Packet {
     std::vector<ServerRole> allRoles;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(AdminAuthSuccessPacket, (role));
+GLOBED_SERIALIZABLE_STRUCT(AdminAuthSuccessPacket, (role, allRoles));
 
 class AdminErrorPacket : public Packet {
     GLOBED_PACKET(29001, true, false)

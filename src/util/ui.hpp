@@ -49,8 +49,7 @@ namespace util::ui {
 
     cocos2d::CCNode* findChildByMenuSelectorRecursive(cocos2d::CCNode* node, uintptr_t function);
 
-    cocos2d::CCSprite* createBadge(const char* badgePNG, const std::string& id);
-
+    cocos2d::CCSprite* createBadge(const std::string& sprite);
     cocos2d::CCSprite* createBadgeIfSpecial(const std::optional<SpecialUserData>& data);
 
     cocos2d::ccColor3B getNameColor(const std::optional<SpecialUserData>& data);

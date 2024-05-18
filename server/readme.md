@@ -118,6 +118,8 @@ Formatting for user roles:
 
 ```json
 {
+    // all keys except id and priority are optional.
+
     "id": "mod",
     "priority": 100, // determines which roles can edit users with other roles
     "badge_icon": "role-mod.png", // make sure it's a valid sprite! (can be empty)

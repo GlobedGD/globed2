@@ -6,8 +6,8 @@ bool AdminManager::authorized() {
 
 void AdminManager::setAuthorized(ComputedRole&& role, std::vector<ServerRole>&& allRoles) {
     authorized_ = true;
-    role = std::move(role);
-    allRoles = std::move(allRoles);
+    this->role = std::move(role);
+    this->allRoles = std::move(allRoles);
 }
 
 void AdminManager::deauthorize() {

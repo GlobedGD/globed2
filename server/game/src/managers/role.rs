@@ -58,6 +58,15 @@ impl RoleManager {
                 warn!("role id '{}' has a badge sprite of over 32 characters, this is not supported", role.id);
             }
 
+            // check if the color is valid
+            match role.name_color.parse::<RichColor>() {
+                Ok(_) => {}
+                Err(e) => {
+                    warn!("failed to parse the name color for role {}", role.id);
+                    warn!("color string: '{}', error: {e}", role.name_color);
+                }
+            }
+
             roles.insert(role.id.clone(), role.clone());
         });
     }

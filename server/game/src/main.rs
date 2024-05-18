@@ -258,6 +258,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 gsbd.chat_burst_limit, gsbd.chat_burst_interval
             );
         }
+
+        state.role_manager.refresh_from(&gsbd);
     }
 
     let udp_socket = match UdpSocket::bind(&startup_config.bind_address).await {

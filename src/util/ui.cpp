@@ -178,21 +178,19 @@ namespace util::ui {
         return nullptr;
     }
 
-    CCSprite* createBadge(const char* badgePNG, const std::string& id) {
-        auto badgeSprite = Build<CCSprite>::createSpriteName(badgePNG)
-            .scale(1.f)
-            .id(id);
+    CCSprite* createBadge(const std::string& sprite) {
+        // have multiple fallback sprites in case it's invalid
+        auto* spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr(sprite).c_str());
+        if (!spr1) spr1 = CCSprite::createWithSpriteFrameName(sprite.c_str());
+        if (!spr1) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr("button-secret.png").c_str());
 
-        return badgeSprite.collect();
+        return spr1;
     }
 
     CCSprite* createBadgeIfSpecial(const std::optional<SpecialUserData>& data) {
         if (!data || !data->badgeIcon) return nullptr;
 
-        auto spr = CCSprite::createWithSpriteFrameName(util::cocos::spr(data->badgeIcon.value()).c_str());
-        if (!spr) spr = CCSprite::createWithSpriteFrameName(data->badgeIcon.value().c_str());
-
-        return spr;
+        return createBadge(data->badgeIcon.value());
     }
 
     ccColor3B getNameColor(const std::optional<SpecialUserData>& data) {

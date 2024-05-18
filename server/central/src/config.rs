@@ -82,7 +82,7 @@ fn default_roles() -> Vec<ServerRole> {
             id: "admin".to_owned(),
             priority: 10000,
             badge_icon: "role-admin.png".to_owned(),
-            name_color: "#e91e63 & e91ec7".to_owned(),
+            name_color: "#e91e63 > e91ec7".to_owned(),
             admin: true,
             ..Default::default()
         },

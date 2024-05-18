@@ -2,6 +2,7 @@ use globed_shared::{debug, info, warn};
 
 use crate::{
     data::*,
+    managers::ComputedRole,
     server_thread::{GameServerThread, ServerThreadMessage},
     webhook::{BanMuteStateChange, WebhookMessage},
 };
@@ -53,6 +54,11 @@ impl GameServerThread {
         }
     }
 
+    fn _update_user_role(&self, from: &ComputedRole) {
+        self.user_role.lock().clone_from(&from);
+        self.account_data.lock().special_user_data = from.to_special_data();
+    }
+
     gs_handler!(self, handle_admin_auth, AdminAuthPacket, packet, {
         let account_id = gs_needauth!(self);
 
@@ -68,7 +74,7 @@ impl GameServerThread {
             self.is_authorized_admin.store(true, Ordering::Relaxed);
             // give super admin perms
             let role = self.game_server.state.role_manager.get_superadmin();
-            self.user_role.lock().clone_from(&role);
+            self._update_user_role(&role);
 
             let all_roles = self.game_server.state.role_manager.get_all_roles();
 
@@ -94,7 +100,7 @@ impl GameServerThread {
                 self.is_authorized_admin.store(true, Ordering::Relaxed);
 
                 let role = self.game_server.state.role_manager.compute(&self.user_entry.lock().user_roles);
-                self.user_role.lock().clone_from(&role);
+                self._update_user_role(&role);
 
                 let all_roles = self.game_server.state.role_manager.get_all_roles();
 
@@ -452,10 +458,6 @@ impl GameServerThread {
         let user_priority = self.game_server.state.role_manager.compute_priority(&user_entry.user_roles);
         let new_user_priority = self.game_server.state.role_manager.compute_priority(&new_user_entry.user_roles);
 
-        if new_user_priority >= my_priority && !self._has_perm(AdminPerm::Admin) {
-            admin_error!(self, "cannot promote a user to your role or higher");
-        }
-
         // if not admin, cant update others passwords
         if !self._has_perm(AdminPerm::Admin) {
             new_user_entry.admin_password.clone_from(&user_entry.admin_password);
@@ -475,6 +477,10 @@ impl GameServerThread {
         let c_violation_expiry = new_user_entry.violation_expiry != user_entry.violation_expiry;
         let c_name_color = new_user_entry.name_color != user_entry.name_color;
         // user_name intentionally left unchecked.
+
+        if c_user_roles && new_user_priority >= my_priority && !self._has_perm(AdminPerm::Admin) {
+            admin_error!(self, "cannot promote a user to your role or higher");
+        }
 
         if (c_is_banned || c_is_whitelisted) && !self._has_perm(AdminPerm::Ban) {
             admin_error!(self, "no permission to ban/whitelist");

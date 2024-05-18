@@ -1,9 +1,20 @@
 #include "edit_role_popup.hpp"
 
-#include <net/network_manager.hpp>
+#include <managers/admin.hpp>
 #include <util/ui.hpp>
+#include <util/cocos.hpp>
 
 using namespace geode::prelude;
+
+ServerRole* findRole(const std::string& id) {
+    auto& all = AdminManager::get().getAllRoles();
+
+    for (auto& role : all) {
+        if (role.id == id) return &role;
+    }
+
+    return nullptr;
+}
 
 bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCallbackFn callback) {
     this->callback = callback;
@@ -18,35 +29,47 @@ bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCa
         .parent(m_mainLayer)
         .collect();
 
-    // the buttons themselves
-    // TODO: pv6
-    // for (int id : {ROLE_USER, ROLE_HELPER, ROLE_MOD, ROLE_ADMIN}) {
-    //     Build<CCSprite>::createSpriteName(roleToSprite(id).c_str())
-    //         .scale(0.65f)
-    //         .intoMenuItem([this, id = id](auto) {
-    //             this->callback(id);
-    //             this->onClose(this);
-    //         })
-    //         .parent(buttonLayout);
-    // }
+    auto& allRoles = AdminManager::get().getAllRoles();
+    for (const auto& role : allRoles) {
+        auto* spr1 = util::ui::createBadge(role.badgeIcon);
+        if (!spr1) continue;
+
+        bool present = std::find_if(roles.begin(), roles.end(), [&](const std::string& k) { return k == role.id; }) != roles.end();
+
+        util::ui::rescaleToMatch(spr1, {22.f, 22.f});
+
+        Build(spr1)
+            .intoMenuItem([this, roleid = role.id](auto btn) {
+                auto it = std::find_if(this->roles.begin(), this->roles.end(), [&](const std::string& k) { return k == roleid; });
+
+                bool present = it != this->roles.end();
+
+                if (present) {
+                    btn->setOpacity(69);
+                    this->roles.erase(it);
+                } else {
+                    btn->setOpacity(255);
+                    this->roles.push_back(roleid);
+                }
+            })
+            .opacity(present ? 255 : 69)
+            .parent(buttonLayout);
+    }
 
     buttonLayout->updateLayout();
 
+    // button to save
+    Build<ButtonSprite>::create("Save", "goldFont.fnt", "GJ_button_01.png", 0.8f)
+        .scale(0.6f)
+        .intoMenuItem([this] {
+            this->callback(this->roles);
+        })
+        .pos(sizes.centerBottom + CCPoint{0.f, 15.f})
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .parent(m_mainLayer);
+
     return true;
-}
-
-std::string AdminEditRolePopup::roleToSprite(int roleId) {
-    std::string btnSprite;
-
-    switch (roleId) {
-        case ROLE_USER: btnSprite = "role-user.png"_spr; break;
-        case ROLE_HELPER: btnSprite = "role-helper.png"_spr; break;
-        case ROLE_MOD: btnSprite = "role-mod.png"_spr; break;
-        case ROLE_ADMIN: btnSprite = "role-admin.png"_spr; break;
-        default: btnSprite = "role-user.png"_spr; break;
-    }
-
-    return btnSprite;
 }
 
 AdminEditRolePopup* AdminEditRolePopup::create(const std::vector<std::string>& roles, EditRoleCallbackFn fn) {
