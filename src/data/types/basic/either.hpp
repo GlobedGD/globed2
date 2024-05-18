@@ -32,12 +32,16 @@ public:
         }
     }
 
+    bool isEmpty() const {
+        return variant.valueless_by_exception();
+    }
+
     bool isFirst() const {
         return std::holds_alternative<T>(variant);
     }
 
     bool isSecond() const {
-        return !isFirst();
+        return std::holds_alternative<Y>(variant);
     }
 
     T&& unwrapFirst() {

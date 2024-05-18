@@ -81,10 +81,13 @@ public:
     Either<cocos2d::ccColor3B, std::vector<cocos2d::ccColor3B>> inner;
 
     RichColor() : inner(cocos2d::ccColor3B{255, 255, 255}) {}
+    RichColor(const cocos2d::ccColor3B& col) : inner(col) {}
+    RichColor(const std::vector<cocos2d::ccColor3B>& col) : inner(col) {}
+    RichColor(std::vector<cocos2d::ccColor3B>&& col) : inner(std::move(col)) {}
 
     bool operator==(const RichColor& other) const = default;
 
-    bool isMultiple() {
+    bool isMultiple() const {
         return inner.isSecond();
     }
 
@@ -94,10 +97,30 @@ public:
         return inner.secondRef()->get();
     }
 
-    cocos2d::ccColor3B getColor() {
+    const std::vector<cocos2d::ccColor3B>& getColors() const {
+        GLOBED_REQUIRE(inner.isSecond(), "calling RichColor::getColors when there is only 1 color");
+
+        return inner.secondRef()->get();
+    }
+
+    cocos2d::ccColor3B getColor() const {
         GLOBED_REQUIRE(inner.isFirst(), "calling RichColor::getColor when there are multiple colors");
 
         return inner.firstRef()->get();
+    }
+
+    cocos2d::ccColor3B getAnyColor() const {
+        if (inner.isFirst()) {
+            return inner.firstRef()->get();
+        } else {
+            auto& colors = inner.secondRef()->get();
+
+            if (colors.empty()) {
+                return cocos2d::ccc3(255, 255, 255);
+            } else {
+                return colors.at(0);
+            }
+        }
     }
 };
 

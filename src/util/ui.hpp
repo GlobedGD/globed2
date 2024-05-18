@@ -54,4 +54,7 @@ namespace util::ui {
     cocos2d::CCSprite* createBadgeIfSpecial(const std::optional<SpecialUserData>& data);
 
     cocos2d::ccColor3B getNameColor(const std::optional<SpecialUserData>& data);
+    RichColor getNameRichColor(const std::optional<SpecialUserData>& data);
+
+    void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color);
 }

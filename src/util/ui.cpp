@@ -198,13 +198,35 @@ namespace util::ui {
     ccColor3B getNameColor(const std::optional<SpecialUserData>& data) {
         if (!data || !data->nameColor) return ccc3(255, 255, 255);
 
-        const auto& nc = data->nameColor;
+        return data->nameColor->getAnyColor();
+    }
 
-        if (nc->inner.isFirst()) {
-            return nc->inner.firstRef()->get();
-        } else {
-            // TODO: implement tinting names
-            return nc->inner.secondRef()->get().at(0);
+    RichColor getNameRichColor(const std::optional<SpecialUserData>& data) {
+        if (!data || !data->nameColor) return RichColor(ccc3(255, 255, 255));
+
+        return data->nameColor.value();
+    }
+
+    void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color) {
+        constexpr int tag = 34925671;
+
+        label->stopActionByTag(tag);
+
+        if (!color.isMultiple()) {
+            label->setColor(color.getColor());
+            return;
         }
+
+        const auto& colors = color.getColors();
+        CCArray* actions = CCArray::create();
+
+        for (const auto& color : colors) {
+            actions->addObject(CCTintTo::create(0.8f, color.r, color.g, color.b));
+        }
+
+        CCRepeat* action = CCRepeat::create(CCSequence::create(actions), 99999999);
+        action->setTag(tag);
+
+        label->runAction(action);
     }
 }

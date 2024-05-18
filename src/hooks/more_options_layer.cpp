@@ -1,6 +1,6 @@
-#include "more_options_layer.hpp"
-
 #ifdef GEODE_IS_ANDROID
+
+#include "more_options_layer.hpp"
 
 #include <ui/menu/admin/admin_login_popup.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
