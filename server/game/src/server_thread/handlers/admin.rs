@@ -476,7 +476,10 @@ impl GameServerThread {
         // user_name intentionally left unchecked.
 
         if c_user_roles && new_user_priority >= my_priority && !self._has_perm(AdminPerm::Admin) {
-            admin_error!(self, "cannot promote a user to your role or higher");
+            // if we are editing ourselves, allow to assign lower roles
+            if !(editing_self && new_user_priority == my_priority) {
+                admin_error!(self, "cannot promote a user to your role or higher");
+            }
         }
 
         if (c_is_banned || c_is_whitelisted) && !self._has_perm(AdminPerm::Ban) {

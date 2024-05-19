@@ -80,8 +80,6 @@ void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view
     try {
         auto decodedChallenge = util::crypto::base64Decode(chtoken);
         auto cryptoKey = util::crypto::base64Decode(pubkey);
-        log::debug("key: {}", pubkey);
-        log::debug("challenge: {}", chtoken);
         SecretBox box(cryptoKey);
         answer = box.decryptToString(decodedChallenge);
     } catch (const std::exception& e) {
