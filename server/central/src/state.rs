@@ -11,7 +11,12 @@ use std::{
 
 use globed_shared::{
     anyhow,
-    hmac::{Hmac, Mac},
+    base64::{engine::general_purpose::STANDARD as b64e, Engine},
+    crypto_box::aead::{generic_array::GenericArray, AeadMutInPlace},
+    crypto_secretbox::{KeyInit, XSalsa20Poly1305},
+    debug,
+    hmac::Hmac,
+    rand::{self, distributions::Alphanumeric, rngs::OsRng, Rng, RngCore},
     sha2::Sha256,
     TokenIssuer,
 };
@@ -33,6 +38,7 @@ pub struct ActiveChallenge {
     pub user_id: i32,
     pub name: String,
     pub value: String,
+    pub answer: String,
     pub started: Duration,
 }
 
@@ -42,12 +48,18 @@ pub struct ServerStateData {
     pub hmac: Hmac<Sha256>,
     pub token_issuer: TokenIssuer,
     pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
+    pub challenge_pubkey: GenericArray<u8, U32>,
+    pub challenge_box: XSalsa20Poly1305,
 }
 
 impl ServerStateData {
     pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: &str, token_secret_key: &str) -> Self {
         let skey_bytes = secret_key.as_bytes();
+
         let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
+        let mut challenge_pubkey = GenericArray::<u8, U32>::default();
+        OsRng.fill_bytes(&mut challenge_pubkey);
+        let challenge_box = XSalsa20Poly1305::new(&challenge_pubkey);
 
         let token_expiry = Duration::from_secs(config.token_expiry);
 
@@ -57,11 +69,61 @@ impl ServerStateData {
             hmac,
             token_issuer: TokenIssuer::new(token_secret_key, token_expiry),
             active_challenges: HashMap::new(),
+            challenge_pubkey,
+            challenge_box,
         }
+    }
+
+    /// create a new challenge, return the rand string the user must use to solve the challenge
+    pub fn create_challenge(
+        &mut self,
+        account_id: i32,
+        user_id: i32,
+        account_name: &str,
+        user_ip: IpAddr,
+        current_time: Duration,
+    ) -> anyhow::Result<String> {
+        let answer: String = rand::thread_rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect();
+
+        let mut nonce = [0u8; XSalsa20Poly1305::NONCE_SIZE];
+        OsRng.fill_bytes(&mut nonce);
+
+        let nonce_start = 0usize;
+        let mac_start = nonce_start + XSalsa20Poly1305::NONCE_SIZE;
+        let data_start = mac_start + XSalsa20Poly1305::TAG_SIZE;
+        let data_end = data_start + answer.len();
+
+        let mut out_vec = vec![0; data_end];
+
+        out_vec[nonce_start..mac_start].copy_from_slice(&nonce);
+        out_vec[data_start..data_end].copy_from_slice(answer.as_bytes());
+
+        let tag = self
+            .challenge_box
+            .encrypt_in_place_detached((&nonce).into(), b"", &mut out_vec[data_start..data_end])?;
+
+        out_vec[mac_start..data_start].copy_from_slice(&tag);
+
+        let challenge_str = b64e.encode(&out_vec);
+
+        let challenge = ActiveChallenge {
+            started: current_time,
+            account_id: account_id,
+            user_id: user_id,
+            value: challenge_str.clone(),
+            answer,
+            name: account_name.to_owned(),
+        };
+
+        self.active_challenges.insert(user_ip, challenge);
+
+        Ok(challenge_str)
     }
 
     // uses hmac-sha256 to derive an auth key from user's account ID and name
     pub fn generate_authkey(&self, account_id: i32, user_id: i32, account_name: &str) -> Vec<u8> {
+        use globed_shared::hmac::Mac;
+
         let val = format!("{account_id}:{user_id}:{account_name}");
 
         let mut hmac: Hmac<Sha256> = self.hmac.clone();
@@ -82,8 +144,8 @@ impl ServerStateData {
         totp.check_current(code).unwrap_or(false)
     }
 
-    pub fn verify_challenge(&self, orig_value: &str, answer: &str) -> bool {
-        self.verify_totp(orig_value.as_bytes(), answer)
+    pub fn verify_challenge(&self, orig_value: &ActiveChallenge, answer: &str) -> bool {
+        orig_value.answer == answer
     }
 
     pub async fn is_banned(&self, db: &GlobedDb, account_id: i32) -> anyhow::Result<Option<String>> {

@@ -118,6 +118,7 @@ public:
     bool established();
 
     void togglePacketLogging(bool enabled);
+    uint16_t getUsedProtocol();
 
     // Returns true if we are connected to a standalone game server, not tied to any central server.
     bool standalone();

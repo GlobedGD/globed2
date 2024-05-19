@@ -94,8 +94,8 @@ These are recommended to adjust if you're hosting a public server, otherwise the
 | `gd_api_url` | `(...)` | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
 | `skip_name_check` | `false` | Skips validation of account names when verifying accounts |
 | `refresh_interval` | `3000` | Controls the time (in milliseconds) between requests to the GD server for refreshing messages |
-| `secret_key` | `(random)` |  Secret key for generating and verifying authentication keys |
-| `secret_key2` | `(random)` | Secret key for generating and verifying session tokens |
+| `secret_key` | `(random)` | Secret key for signing authentication keys |
+| `secret_key2` | `(random)` | Secret key for signing session tokens |
 | `game_server_password` | `(random)` | Password used to authenticate game servers |
 | `cloudflare_protection` | `false` | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users. If your server is proxied through cloudflare, you **must** turn on this option. |
 | `challenge_expiry` | `30` | Amount of seconds before an authentication challenge expires and a new one can be requested |

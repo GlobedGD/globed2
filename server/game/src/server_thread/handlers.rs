@@ -62,7 +62,11 @@ macro_rules! gs_needauth {
     }};
 }
 
+// give a larger limit on unix based machines as they often have an 8mb stack
+#[cfg(windows)]
 pub const MAX_ALLOCA_SIZE: usize = 65536;
+#[cfg(not(windows))]
+pub const MAX_ALLOCA_SIZE: usize = 131072;
 
 macro_rules! gs_alloca_check_size {
     ($size:expr) => {

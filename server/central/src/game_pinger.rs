@@ -9,9 +9,9 @@ use std::{
 use globed_shared::{
     debug,
     esp::{ByteBuffer, ByteBufferExtRead, ByteBufferExtWrite, ByteReader},
+    rand::{self, Rng},
     warn, SyncMutex,
 };
-use rand::Rng;
 use tokio::net::UdpSocket;
 
 use crate::config::GameServerEntry;

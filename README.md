@@ -20,9 +20,9 @@ See the [server readme](./server/readme.md) for more information about hosting a
 
 ## Credit
 
-Globed is developed by:
+Globed is made by:
 
-* [dank_meme](https://github.com/dankmeme01) - creator and main developer
+* [dank_meme](https://github.com/dankmeme01) - owner and main developer
 * [availax](https://availax.xyz/) - co-owner, community manager, artist, ❤️
 * [ninXout](https://github.com/ninXout/) - developer
 

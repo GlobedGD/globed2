@@ -186,9 +186,7 @@ void NetworkManager::threadMainFunc() {
             GameServerManager::get().setActive(_deferredServerId);
             gameSocket.createBox();
 
-            // if we have ignore on, use 0xffff as a magic value that bypasses protocol checks
-            // TODO: actually make it 0xffff
-            uint16_t proto = ignoreProtocolMismatch ? 5 : PROTOCOL_VERSION;
+            uint16_t proto = this->getUsedProtocol();
 
             auto packet = CryptoHandshakeStartPacket::create(proto, CryptoPublicKey(gameSocket.cryptoBox->extractPublicKey()));
             this->send(packet);
@@ -460,13 +458,13 @@ void NetworkManager::setupBuiltinListeners() {
     });
 
     addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
-        log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, PROTOCOL_VERSION);
+        log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, this->getUsedProtocol());
 
 #ifdef GLOBED_DEBUG
         // if we are in debug mode, allow the user to override it
         Loader::get()->queueInMainThread([this, serverProtocol = packet->serverProtocol] {
             geode::createQuickPopup("Globed Error",
-                fmt::format("Protocol mismatch (client: v{}, server: v{}). Override the protocol for this session and allow to connect to the server anyway? <cy>(Not recommended!)</c>", PROTOCOL_VERSION, serverProtocol),
+                fmt::format("Protocol mismatch (client: v{}, server: v{}). Override the protocol for this session and allow to connect to the server anyway? <cy>(Not recommended!)</c>", this->getUsedProtocol(), serverProtocol),
                 "Cancel", "Yes", [this](FLAlertLayer*, bool override) {
                     if (override) {
                         this->toggleIgnoreProtocolMismatch(true);
@@ -475,9 +473,9 @@ void NetworkManager::setupBuiltinListeners() {
             );
         });
 #else
-        // if we are not in debug, show an error tleling the user to update the mod
+        // if we are not in debug, show an error telling the user to update the mod
 
-        if (packet->serverProtocol < PROTOCOL_VERSION) {
+        if (packet->serverProtocol < this->getUsedProtocol()) {
             std::string message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
             ErrorQueues::get().error(message);
         } else {
@@ -606,6 +604,12 @@ void NetworkManager::toggleIgnoreProtocolMismatch(bool state) {
 
 void NetworkManager::togglePacketLogging(bool enabled) {
     packetLogging = enabled;
+}
+
+uint16_t NetworkManager::getUsedProtocol() {
+    // if we have ignore on, use 0xffff as a magic value that bypasses protocol checks
+    uint16_t proto = ignoreProtocolMismatch ? 0xffff : PROTOCOL_VERSION;
+    return proto;
 }
 
 void NetworkManager::logPacketToFile(std::shared_ptr<Packet> packet) {
