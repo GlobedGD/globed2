@@ -32,3 +32,13 @@ class LevelPlayerCountPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LevelPlayerCountPacket, (levels));
+
+class RolesUpdatedPacket : public Packet {
+    GLOBED_PACKET(21003, false, false)
+
+    RolesUpdatedPacket() {}
+
+    SpecialUserData specialUserData;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(RolesUpdatedPacket, (specialUserData));

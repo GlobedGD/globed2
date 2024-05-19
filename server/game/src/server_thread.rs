@@ -54,9 +54,10 @@ pub enum ServerThreadMessage {
     BroadcastNotice(ServerNoticePacket),
     BroadcastInvite(RoomInvitePacket),
     BroadcastRoomInfo(RoomInfoPacket),
+    BroadcastBan(ServerBannedPacket),
+    BroadcastMute(ServerMutedPacket),
+    BroadcastRoleChange(RolesUpdatedPacket),
     TerminationNotice(FastString),
-    BannedNotice(ServerBannedPacket),
-    MutedNotice(ServerMutedPacket),
 }
 
 pub struct GameServerThread {
@@ -432,8 +433,8 @@ impl GameServerThread {
                 self.send_packet_static(&packet).await?;
             }
             ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
-            ServerThreadMessage::BannedNotice(packet) => self.ban(packet.message, packet.timestamp).await?,
-            ServerThreadMessage::MutedNotice(packet) => self.send_packet_dynamic(&packet).await?,
+            ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.timestamp).await?,
+            ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
         }
 
         Ok(())

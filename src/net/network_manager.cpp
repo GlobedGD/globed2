@@ -347,6 +347,8 @@ void NetworkManager::handleUnhandledPacket(packetid_t packetId) {
 }
 
 void NetworkManager::setupBuiltinListeners() {
+    /* connection */
+
     addBuiltinListenerSafe<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
         log::debug("handshake successful, logging in");
         auto key = packet->data.key;
@@ -493,6 +495,33 @@ void NetworkManager::setupBuiltinListeners() {
         this->disconnect(true);
     });
 
+    /* general */
+
+    addBuiltinListenerSafe<RolesUpdatedPacket>([](auto packet) {
+        auto& pcm = ProfileCacheManager::get();
+        pcm.setOwnSpecialData(packet->specialUserData);
+    });
+
+    /* room */
+
+    addBuiltinListenerSafe<RoomInvitePacket>([](auto packet) {
+        GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->roomToken, packet->playerData);
+    });
+
+    addBuiltinListenerSafe<RoomInfoPacket>([](auto packet) {
+        ErrorQueues::get().success("Room configuration updated");
+
+        RoomManager::get().setInfo(packet->info);
+    });
+
+    addBuiltinListener<RoomJoinedPacket>([](auto packet) {});
+
+    addBuiltinListener<RoomJoinFailedPacket>([](auto packet) {
+        ErrorQueues::get().error(fmt::format("Failed to join room: {}", packet->message));
+    });
+
+    /* admin */
+
     addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
         AdminManager::get().setAuthorized(std::move(packet->role));
         ErrorQueues::get().success("Successfully authorized");
@@ -511,22 +540,6 @@ void NetworkManager::setupBuiltinListeners() {
 
     addBuiltinListener<AdminErrorPacket>([](auto packet) {
         ErrorQueues::get().warn(packet->message);
-    });
-
-    addBuiltinListenerSafe<RoomInvitePacket>([](auto packet) {
-        GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->roomToken, packet->playerData);
-    });
-
-    addBuiltinListenerSafe<RoomInfoPacket>([](auto packet) {
-        ErrorQueues::get().success("Room configuration updated");
-
-        RoomManager::get().setInfo(packet->info);
-    });
-
-    addBuiltinListener<RoomJoinedPacket>([](auto packet) {});
-
-    addBuiltinListener<RoomJoinFailedPacket>([](auto packet) {
-        ErrorQueues::get().error(fmt::format("Failed to join room: {}", packet->message));
     });
 }
 

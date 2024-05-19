@@ -521,10 +521,15 @@ impl GameServerThread {
 
             // update the role
             if c_user_roles {
-                let new_role = self.game_server.state.role_manager.compute(&new_user_entry.user_roles);
-                thread.account_data.lock().special_user_data =
-                    SpecialUserData::from_user_entry(&new_user_entry, &self.game_server.state.role_manager);
+                let special_data = SpecialUserData::from_user_entry(&new_user_entry, &self.game_server.state.role_manager);
+                thread.account_data.lock().special_user_data.clone_from(&special_data);
 
+                // tell the user that their roles changed
+                thread.push_new_message(ServerThreadMessage::BroadcastRoleChange(RolesUpdatedPacket {
+                    special_user_data: special_data,
+                }));
+
+                let new_role = self.game_server.state.role_manager.compute(&new_user_entry.user_roles);
                 *thread.user_role.lock() = new_role;
             }
 
@@ -537,16 +542,16 @@ impl GameServerThread {
                 .await;
 
             // if they just got banned, disconnect them
-            if is_banned && res.is_ok() {
+            if c_is_banned && is_banned && res.is_ok() {
                 thread
-                    .push_new_message(ServerThreadMessage::BannedNotice(ServerBannedPacket {
+                    .push_new_message(ServerThreadMessage::BroadcastBan(ServerBannedPacket {
                         message: FastString::new(&user_entry.violation_reason.clone().unwrap_or_default()),
                         timestamp: user_entry.violation_expiry.unwrap_or(0),
                     }))
                     .await;
             }
 
-            if is_muted && res.is_ok() {
+            if c_is_muted && is_muted && res.is_ok() {
                 thread
                     .push_new_message(ServerThreadMessage::MutedNotice(ServerMutedPacket {
                         reason: FastString::new(&user_entry.violation_reason.clone().unwrap_or_default()),
