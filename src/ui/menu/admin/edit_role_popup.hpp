@@ -5,7 +5,7 @@ using EditRoleCallbackFn = std::function<void(const std::vector<std::string>& ro
 
 class AdminEditRolePopup : public geode::Popup<const std::vector<std::string>&, EditRoleCallbackFn> {
 public:
-    static constexpr float POPUP_WIDTH = 180.f;
+    static constexpr float WIDTH_PER_ROLE = 26.f;
     static constexpr float POPUP_HEIGHT = 120.f;
     static AdminEditRolePopup* create(const std::vector<std::string>& roles, EditRoleCallbackFn fn);
 

@@ -5,6 +5,7 @@
 #include <data/packets/client/room.hpp>
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
+#include <managers/admin.hpp>
 #include <net/network_manager.hpp>
 #include <util/ui.hpp>
 
@@ -65,10 +66,23 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
     badgeWrapper->updateLayout();
 
+    const float pad = 5.f;
+    Build<CCMenu>::create()
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End))
+        .anchorPoint(0.f, 0.5f)
+        .pos(pad, CELL_HEIGHT / 2.f)
+        .contentSize(RoomPopup::LIST_WIDTH - pad * 2, CELL_HEIGHT)
+        .parent(this)
+        .store(menu);
+
     if (forInviting) {
         this->createInviteButton();
     } else {
         this->createJoinButton();
+    }
+
+    if (AdminManager::get().authorized()) {
+        this->createAdminButton();
     }
 
     return true;
@@ -80,12 +94,11 @@ void PlayerListCell::createInviteButton() {
         .intoMenuItem([accountId = this->data.accountId](auto) {
             NetworkManager::get().send(RoomSendInvitePacket::create(accountId));
         })
-        .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
         .scaleMult(1.25f)
         .store(inviteButton)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(menu);
+
+    menu->updateLayout();
 }
 
 void PlayerListCell::createJoinButton() {
@@ -120,9 +133,22 @@ void PlayerListCell::createJoinButton() {
         .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
         .scaleMult(1.1f)
         .store(playButton)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(menu);
+
+    menu->updateLayout();
+}
+
+void PlayerListCell::createAdminButton() {
+    // admin menu button
+    Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+        .scale(0.4f)
+        .intoMenuItem([this](auto) {
+            AdminManager::get().openUserPopup(data);
+        })
+        .parent(menu)
+        .id("admin-button"_spr);
+
+    menu->updateLayout();
 }
 
 void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {

@@ -3,17 +3,13 @@
 #include "userlist.hpp"
 #include "actions_popup.hpp"
 #include <audio/voice_playback_manager.hpp>
-#include <data/packets/client/admin.hpp>
-#include <data/packets/server/admin.hpp>
 #include <managers/admin.hpp>
 #include <managers/block_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/profile_cache.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 #include <hooks/gjgamelevel.hpp>
-#include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
-#include <ui/general/intermediary_loading_popup.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
 
@@ -226,19 +222,7 @@ void GlobedUserCell::makeButtons() {
         Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
             .scale(0.4f)
             .intoMenuItem([this](auto) {
-                // load the data from the server
-                auto& nm = NetworkManager::get();
-                IntermediaryLoadingPopup::create([&nm, this](auto popup) {
-                    nm.send(AdminGetUserStatePacket::create(std::to_string(accountData.accountId)));
-                    nm.addListener<AdminUserDataPacket>(this, [this, popup = popup](auto packet) {
-                        popup->onClose(popup);
-
-                        // delay the cration to avoid deadlock
-                        Loader::get()->queueInMainThread([userEntry = packet->userEntry, accountData = accountData.makeRoomPreview(0)] {
-                            AdminUserPopup::create(userEntry, accountData)->show();
-                        });
-                    });
-                }, [](auto) {})->show();
+                AdminManager::get().openUserPopup(accountData.makeRoomPreview(0));
             })
             .parent(buttonsWrapper)
             .id("kick-button"_spr)

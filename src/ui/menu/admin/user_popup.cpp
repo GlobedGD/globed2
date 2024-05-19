@@ -370,8 +370,6 @@ void AdminUserPopup::sendUpdateUser() {
         userEntry.userName = accountData->name;
     }
 
-    log::debug("user roles: {}", userEntry.userRoles);
-
     auto& nm = NetworkManager::get();
     nm.send(AdminUpdateUserPacket::create(this->userEntry));
 }

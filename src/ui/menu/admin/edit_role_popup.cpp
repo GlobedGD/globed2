@@ -20,7 +20,7 @@ static GameServerRole* findRole(const std::string& id) {
 bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCallbackFn callback) {
     this->callback = callback;
     this->roles = roles;
-    this->setTitle("Edit user role");
+    this->setTitle("Edit user roles");
 
     auto sizes = util::ui::getPopupLayout(m_size);
 
@@ -52,6 +52,8 @@ bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCa
                     btn->setOpacity(255);
                     this->roles.push_back(roleid);
                 }
+
+                this->callback(this->roles);
             })
             .opacity(present ? 255 : 69)
             .parent(buttonLayout);
@@ -59,23 +61,12 @@ bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCa
 
     buttonLayout->updateLayout();
 
-    // button to save
-    Build<ButtonSprite>::create("Save", "goldFont.fnt", "GJ_button_01.png", 0.8f)
-        .scale(0.6f)
-        .intoMenuItem([this] {
-            this->callback(this->roles);
-        })
-        .pos(sizes.centerBottom + CCPoint{0.f, 15.f})
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(m_mainLayer);
-
     return true;
 }
 
 AdminEditRolePopup* AdminEditRolePopup::create(const std::vector<std::string>& roles, EditRoleCallbackFn fn) {
     auto ret = new AdminEditRolePopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, roles, fn)) {
+    if (ret->init(WIDTH_PER_ROLE * RoleManager::get().getAllRoles().size(), POPUP_HEIGHT, roles, fn)) {
         ret->autorelease();
         return ret;
     }

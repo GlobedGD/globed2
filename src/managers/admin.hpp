@@ -2,6 +2,7 @@
 
 #include <defs/util.hpp>
 #include <data/types/user.hpp>
+#include <data/types/gd.hpp>
 
 #include <asp/sync/Atomic.hpp>
 
@@ -13,6 +14,8 @@ public:
     void setAuthorized(ComputedRole&& role);
     void deauthorize();
     ComputedRole& getRole();
+
+    void openUserPopup(const PlayerRoomPreviewAccountData& rpdata);
 
 private:
     asp::sync::AtomicBool authorized_;
