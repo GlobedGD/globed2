@@ -44,13 +44,13 @@ macro_rules! get_user_ip {
 }
 
 #[allow(clippy::too_many_arguments, clippy::similar_names, clippy::no_effect_underscore_binding)]
-#[post("/totplogin?<aid>&<uid>&<aname>&<code>")]
+#[post("/totplogin?<aid>&<uid>&<aname>&<authkey>")]
 pub async fn totp_login(
     state: &State<ServerState>,
     aid: i32,
     uid: i32,
     mut aname: &str,
-    code: &str,
+    authkey: &str,
     db: &GlobedDb,
     ip: IpAddr,
     _ua: ClientUserAgentGuard<'_>,
@@ -78,8 +78,10 @@ pub async fn totp_login(
         }
     }
 
-    let authkey = state_.generate_authkey(aid, uid, aname);
-    let valid = state_.verify_totp(&authkey, code);
+    let uak_decoded = b64e::URL_SAFE.decode(authkey)?;
+    let valid_authkey = state_.generate_hashed_authkey(aid, uid, aname);
+
+    let valid = uak_decoded.len() == valid_authkey.len() && uak_decoded.iter().zip(valid_authkey.iter()).all(|(c1, c2)| *c1 == *c2);
 
     if !valid {
         unauthorized!("login failed");

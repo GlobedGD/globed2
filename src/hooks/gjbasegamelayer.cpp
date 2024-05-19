@@ -1214,7 +1214,7 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
             //     this->m_isHidden = true;
             // }
 
-            this->m_unk65c = false;
+            this->m_playEffects = false;
             if (this->m_regularTrail) this->m_regularTrail->setVisible(false);
             if (this->m_waveTrail) this->m_waveTrail->setVisible(false);
             if (this->m_ghostTrail) this->m_ghostTrail->setVisible(false);

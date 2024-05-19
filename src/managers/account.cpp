@@ -43,24 +43,6 @@ void GlobedAccountManager::autoInitialize() {
     this->initialize(gjam->m_username, gjam->m_accountID, GameManager::get()->m_playerUserID.value(), activeCentralUrl);
 }
 
-Result<std::string> GlobedAccountManager::generateAuthCode() {
-    GLOBED_REQUIRE_SAFE(initialized, "Attempting to call GlobedAccountManager::generateAuthCode before initializing the instance")
-
-    auto jsonkey = this->getKeyFor("auth-totp-key");
-    auto b64Token = Mod::get()->getSavedValue<std::string>(jsonkey);
-
-    GLOBED_REQUIRE_SAFE(!b64Token.empty(), "unable to generate auth code: no token")
-
-    util::data::bytevector decToken;
-    try {
-        decToken = util::crypto::base64Decode(b64Token);
-    } catch (const std::exception& e) {
-        return Err(e.what());
-    }
-
-    return Ok(util::crypto::simpleTOTP(decToken));
-}
-
 void GlobedAccountManager::storeAuthKey(const util::data::byte* source, size_t size) {
     GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::storeAuthKey before initializing the instance")
 
@@ -87,23 +69,32 @@ bool GlobedAccountManager::hasAuthKey() {
     return !b64Token.empty();
 }
 
+std::string GlobedAccountManager::getAuthKey() {
+    GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::getAuthKey before initializing the instance")
+
+    auto jsonkey = this->getKeyFor("auth-totp-key");
+    return Mod::get()->getSavedValue<std::string>(jsonkey);
+}
+
 void GlobedAccountManager::requestAuthToken(
     const std::string_view baseUrl,
-    int accountId,
-    int userId,
-    const std::string_view accountName,
-    const std::string_view authcode,
     std::optional<std::function<void()>> callback
 ) {
+    auto authkey = this->getAuthKey();
+    // recode as urlsafe
+    authkey = util::crypto::base64Encode(util::crypto::base64Decode(authkey), util::crypto::Base64Variant::URLSAFE);
+
+    auto gd = gdData.lock();
     auto url = fmt::format(
-        "{}/totplogin?aid={}&uid={}&aname={}&code={}",
+        "{}/totplogin?aid={}&uid={}&aname={}&authkey={}",
         baseUrl,
-        accountId,
-        userId,
-        util::format::urlEncode(accountName),
-        authcode
+        gd->accountId,
+        gd->userId,
+        util::format::urlEncode(gd->accountName),
+        authkey
     );
 
+    log::debug("step 3");
     this->cancelAuthTokenRequest();
 
     requestHandle = web::AsyncWebRequest()

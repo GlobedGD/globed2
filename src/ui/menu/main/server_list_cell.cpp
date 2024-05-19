@@ -135,31 +135,7 @@ void ServerListCell::requestTokenAndConnect() {
     auto& am = GlobedAccountManager::get();
     auto& csm = CentralServerManager::get();
 
-    auto result = am.generateAuthCode();
-    if (result.isErr()) {
-        // invalid authkey? clear it so the user can relog. happens if user changes their password
-        ErrorQueues::get().error(fmt::format(
-            "Failed to generate authcode! Please try to login and connect again.\n\nReason for the error: <cy>{}</c>",
-            result.unwrapErr()
-        ));
-        am.clearAuthKey();
-        return;
-    }
-
-    std::string authcode = result.unwrap();
-
-    auto gdData = am.gdData.lock();
-
-    auto url = fmt::format(
-        "{}/totplogin?aid={}&uid={}&aname={}&code={}",
-        csm.getActive()->url,
-        gdData->accountId,
-        gdData->userId,
-        util::format::urlEncode(gdData->accountName),
-        authcode
-    );
-
-    am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->userId, gdData->accountName, authcode, [gsview = this->gsview]{
+    am.requestAuthToken(csm.getActive()->url, [gsview = this->gsview]{
         GLOBED_RESULT_ERRC(NetworkManager::get().connectWithView(gsview));
     });
 }

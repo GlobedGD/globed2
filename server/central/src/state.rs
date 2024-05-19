@@ -29,7 +29,6 @@ use crate::{
 };
 use blake2::{Blake2b, Digest};
 use digest::consts::U32;
-use totp_rs::{Algorithm, Secret, TOTP};
 
 #[derive(Clone)]
 pub struct ActiveChallenge {
@@ -131,16 +130,15 @@ impl ServerStateData {
         res.into_bytes().to_vec()
     }
 
-    pub fn verify_totp(&self, key: &[u8], code: &str) -> bool {
-        let mut hasher = Blake2b::<U32>::new();
+    /// `generate_authkey` plus blake2b on top
+    pub fn generate_hashed_authkey(&self, account_id: i32, user_id: i32, account_name: &str) -> [u8; 32] {
+        let ak = self.generate_authkey(account_id, user_id, account_name);
 
-        hasher.update(key);
+        let mut hasher = Blake2b::<U32>::new();
+        hasher.update(&ak);
         let output = hasher.finalize();
 
-        let secret = Secret::Raw(output.to_vec()).to_bytes().unwrap();
-
-        let totp = TOTP::new_unchecked(Algorithm::SHA256, 6, 2, 30, secret);
-        totp.check_current(code).unwrap_or(false)
+        output.into()
     }
 
     pub fn verify_challenge(&self, orig_value: &ActiveChallenge, answer: &str) -> bool {
