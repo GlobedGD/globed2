@@ -230,7 +230,7 @@ pub async fn challenge_finish(
         unauthorized!("challenge was requested for a different user id, not validating");
     }
 
-    if challenge.name != aname {
+    if !challenge.name.eq_ignore_ascii_case(aname) {
         warn!(
             "failed to validate challenge ({aid}): requested for {} but {aname} completed",
             challenge.name
