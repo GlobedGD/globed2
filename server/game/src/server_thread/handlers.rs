@@ -96,27 +96,30 @@ macro_rules! gs_with_alloca {
     };
 }
 
-pub fn with_heap_vec<R>(size: usize, f: impl FnOnce(&mut [MaybeUninit<u8>]) -> R) -> R {
-    let mut vec = Vec::<MaybeUninit<u8>>::with_capacity(size);
-    unsafe {
-        vec.set_len(size);
-        let ptr = vec.as_mut_ptr();
-        let slice = std::slice::from_raw_parts_mut(ptr, size);
+pub fn with_heap_vec<R>(game_server: &GameServer, size: usize, f: impl FnOnce(&mut [u8]) -> R) -> R {
+    let mut buf = game_server.large_packet_buffer.lock();
 
-        f(slice)
+    if size > buf.len() {
+        drop(buf);
+        let mut vec = Vec::<MaybeUninit<u8>>::with_capacity(size);
+        unsafe {
+            vec.set_len(size);
+            let ptr = vec.as_mut_ptr();
+            let slice = std::slice::from_raw_parts_mut(ptr, size);
+            let data = make_uninit!(slice);
+
+            f(data)
+        }
+    } else {
+        f(&mut *buf)
     }
 }
 
 /// like `gs_with_alloca!` but falls back to heap on large sizes to prevent stack overflows
 macro_rules! gs_with_alloca_guarded {
-    ($size:expr, $data:ident, $code:expr) => {
+    ($gs:expr, $size:expr, $data:ident, $code:expr) => {
         if $size > crate::server_thread::handlers::MAX_ALLOCA_SIZE {
-            crate::server_thread::handlers::with_heap_vec($size, move |data| {
-                // safety: read `gs_with_alloca!`
-                let $data = unsafe { make_uninit!(data) };
-
-                $code
-            })
+            crate::server_thread::handlers::with_heap_vec($gs, $size, move |$data| $code)
         } else {
             gs_with_alloca!($size, $data, $code)
         }
@@ -133,7 +136,7 @@ macro_rules! gs_inline_encode {
 
     ($self:ident, $size:expr, $data:ident, $tcp:expr, $rawdata:ident, $code:expr) => {
         let retval: Result<Option<Vec<u8>>> = {
-            gs_with_alloca_guarded!($size, $rawdata, {
+            gs_with_alloca_guarded!($self.game_server, $size, $rawdata, {
                 let mut $data = FastByteBuffer::new($rawdata);
 
                 if $tcp {
@@ -198,3 +201,5 @@ pub(crate) use gs_with_alloca_guarded;
 
 #[allow(unused_imports)]
 pub(crate) use gs_notice;
+
+use crate::{make_uninit, server::GameServer};

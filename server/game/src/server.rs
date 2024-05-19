@@ -30,6 +30,7 @@ use crate::{
 };
 
 const MAX_UDP_PACKET_SIZE: usize = 65536;
+const LARGE_BUFFER_SIZE: usize = 524288; // 2^19, 0.5mb
 
 pub struct GameServer {
     pub state: ServerState,
@@ -41,6 +42,7 @@ pub struct GameServer {
     pub public_key: PublicKey,
     pub bridge: CentralBridge,
     pub standalone: bool,
+    pub large_packet_buffer: SyncMutex<Box<[u8]>>,
 }
 
 impl GameServer {
@@ -58,6 +60,7 @@ impl GameServer {
             public_key,
             bridge,
             standalone,
+            large_packet_buffer: SyncMutex::new(vec![0; LARGE_BUFFER_SIZE].into_boxed_slice()),
         }
     }
 

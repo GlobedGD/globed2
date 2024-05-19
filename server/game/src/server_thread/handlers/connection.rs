@@ -101,7 +101,7 @@ impl GameServerThread {
                     let mut message = FastString::new("authentication failed: ");
                     message.extend(err.error_message());
 
-                    self.send_packet_dynamic(&LoginFailedPacket { message: message.to_str() }).await?;
+                    self.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
                     return Ok(());
                 }
             }
@@ -142,7 +142,7 @@ impl GameServerThread {
                     let mut message = InlineString::<256>::new("failed to fetch user data: ");
                     message.extend_safe(&err.to_string());
 
-                    self.send_packet_dynamic(&LoginFailedPacket { message: message.to_str() }).await?;
+                    self.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
                     return Ok(());
                 }
             };
