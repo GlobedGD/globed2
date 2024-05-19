@@ -13,6 +13,7 @@
 #include <managers/settings.hpp>
 #include <managers/central_server.hpp>
 #include <managers/room.hpp>
+#include <managers/role.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
 #include <util/net.hpp>
 #include <util/cocos.hpp>
@@ -427,11 +428,12 @@ void NetworkManager::setupBuiltinListeners() {
         _loggedin = true;
 
         // these are not thread-safe, so delay it
-        Loader::get()->queueInMainThread([specialUserData = packet->specialUserData] {
+        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
             auto& pcm = ProfileCacheManager::get();
             pcm.setOwnSpecialData(specialUserData);
 
             RoomManager::get().setGlobal();
+            RoleManager::get().setAllRoles(allRoles);
         });
 
         // claim the tcp thread to allow udp packets through
@@ -494,7 +496,7 @@ void NetworkManager::setupBuiltinListeners() {
     });
 
     addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
-        AdminManager::get().setAuthorized(std::move(packet->role), std::move(packet->allRoles));
+        AdminManager::get().setAuthorized(std::move(packet->role));
         ErrorQueues::get().success("Successfully authorized");
     });
 

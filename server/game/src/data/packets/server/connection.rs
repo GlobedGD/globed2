@@ -1,4 +1,4 @@
-use crate::data::*;
+use crate::{data::*, managers::GameServerRole};
 
 #[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 20000, tcp = false)]
@@ -25,11 +25,12 @@ pub struct ServerDisconnectPacket<'a> {
     pub message: &'a str,
 }
 
-#[derive(Packet, Encodable, StaticSize, DynamicSize)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 20004, tcp = true)]
 pub struct LoggedInPacket {
     pub tps: u32,
-    pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: SpecialUserData,
+    pub all_roles: Vec<GameServerRole>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <defs/minimal_geode.hpp>
 #include <data/bytebuffer.hpp>
 #include <cocos2d.h>
 
@@ -84,6 +85,8 @@ public:
     RichColor(const cocos2d::ccColor3B& col) : inner(col) {}
     RichColor(const std::vector<cocos2d::ccColor3B>& col) : inner(col) {}
     RichColor(std::vector<cocos2d::ccColor3B>&& col) : inner(std::move(col)) {}
+
+    static Result<RichColor> parse(const std::string_view k);
 
     bool operator==(const RichColor& other) const = default;
 

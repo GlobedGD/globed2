@@ -71,9 +71,8 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
 
     PlayerAccountData data = getAccountData(accid);
 
-    CCSprite* badgeIcon = nullptr;
-	if (data.specialUserData.has_value()) {
-		badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
+    CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
+    if (badgeIcon) {
         badgeIcon->setPosition(ccp(nameLabel->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameLabel->getPositionY()));
         badgeIcon->setZOrder(1);
         playerBundle->addChild(badgeIcon);

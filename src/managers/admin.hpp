@@ -10,13 +10,11 @@ class AdminManager : public SingletonBase<AdminManager> {
 
 public:
     bool authorized();
-    void setAuthorized(ComputedRole&& role, std::vector<ServerRole>&& allRoles);
+    void setAuthorized(ComputedRole&& role);
     void deauthorize();
     ComputedRole& getRole();
-    std::vector<ServerRole>& getAllRoles();
 
 private:
     asp::sync::AtomicBool authorized_;
     ComputedRole role = {};
-    std::vector<ServerRole> allRoles;
 };

@@ -64,7 +64,7 @@ void ProfileCacheManager::setOwnData(const PlayerIconData& data) {
     pendingChanges = changes;
 }
 
-void ProfileCacheManager::setOwnSpecialData(const std::optional<SpecialUserData>& specialUserData) {
+void ProfileCacheManager::setOwnSpecialData(const SpecialUserData& specialUserData) {
     ownSpecialData = specialUserData;
     ownData.specialUserData = ownSpecialData;
 }
@@ -77,6 +77,6 @@ PlayerAccountData& ProfileCacheManager::getOwnAccountData() {
     return ownData;
 }
 
-std::optional<SpecialUserData>& ProfileCacheManager::getOwnSpecialData() {
+SpecialUserData& ProfileCacheManager::getOwnSpecialData() {
     return ownSpecialData;
 }

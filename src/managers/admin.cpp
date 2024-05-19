@@ -4,10 +4,9 @@ bool AdminManager::authorized() {
     return authorized_;
 }
 
-void AdminManager::setAuthorized(ComputedRole&& role, std::vector<ServerRole>&& allRoles) {
+void AdminManager::setAuthorized(ComputedRole&& role) {
     authorized_ = true;
     this->role = std::move(role);
-    this->allRoles = std::move(allRoles);
 }
 
 void AdminManager::deauthorize() {
@@ -17,8 +16,4 @@ void AdminManager::deauthorize() {
 
 ComputedRole& AdminManager::getRole() {
     return role;
-}
-
-std::vector<ServerRole>& AdminManager::getAllRoles() {
-    return allRoles;
 }

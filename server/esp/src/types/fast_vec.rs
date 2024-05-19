@@ -119,6 +119,18 @@ where
     }
 }
 
+impl<T, const N: usize> FromIterator<T> for FastVec<T, N> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut c = Self::new();
+
+        for i in iter {
+            c.push(i);
+        }
+
+        c
+    }
+}
+
 /* esp */
 
 impl<T, const N: usize> StaticSize for FastVec<T, N>

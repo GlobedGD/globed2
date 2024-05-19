@@ -1,6 +1,6 @@
-use crate::data::*;
+use globed_shared::UserEntry;
 
-use super::Color3B;
+use crate::{data::*, managers::RoleManager};
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
@@ -50,9 +50,19 @@ impl PlayerIconData {
 
 #[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct SpecialUserData {
-    pub badge_icon: Option<InlineString<32>>,
-    pub name_color: Option<RichColor>,
-    pub chat_color: Option<Color3B>,
+    pub roles: Option<FastVec<u8, 16>>,
+}
+
+impl SpecialUserData {
+    pub fn from_user_entry(user_entry: &UserEntry, role_manager: &RoleManager) -> Self {
+        if user_entry.user_roles.is_empty() {
+            Self { roles: None }
+        } else {
+            let roles = role_manager.role_ids_to_int_ids(&user_entry.user_roles);
+
+            Self { roles: Some(roles) }
+        }
+    }
 }
 
 /* PlayerAccountData */
@@ -63,7 +73,7 @@ pub struct PlayerAccountData {
     pub user_id: i32,
     pub name: InlineString<MAX_NAME_SIZE>,
     pub icons: PlayerIconData,
-    pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: SpecialUserData,
 }
 
 impl PlayerAccountData {
@@ -106,7 +116,7 @@ pub struct PlayerPreviewAccountData {
     pub color1: i16,
     pub color2: i16,
     pub glow_color: i16,
-    pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: SpecialUserData,
 }
 
 /* PlayerRoomPreviewAccountData - similar to previous one but for rooms, the only difference is that it includes a level ID */
@@ -121,7 +131,7 @@ pub struct PlayerRoomPreviewAccountData {
     pub color2: i16,
     pub glow_color: i16,
     pub level_id: LevelId,
-    pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: SpecialUserData,
 }
 
 /* AssociatedPlayerData */

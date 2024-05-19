@@ -50,10 +50,11 @@ class LoggedInPacket : public Packet {
     LoggedInPacket() {}
 
     uint32_t tps;
-    std::optional<SpecialUserData> specialUserData;
+    SpecialUserData specialUserData;
+    std::vector<GameServerRole> allRoles;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(LoggedInPacket, (tps, specialUserData));
+GLOBED_SERIALIZABLE_STRUCT(LoggedInPacket, (tps, specialUserData, allRoles));
 
 class LoginFailedPacket : public Packet {
     GLOBED_PACKET(20005, false, false)

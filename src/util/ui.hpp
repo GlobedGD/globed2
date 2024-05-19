@@ -50,10 +50,10 @@ namespace util::ui {
     cocos2d::CCNode* findChildByMenuSelectorRecursive(cocos2d::CCNode* node, uintptr_t function);
 
     cocos2d::CCSprite* createBadge(const std::string& sprite);
-    cocos2d::CCSprite* createBadgeIfSpecial(const std::optional<SpecialUserData>& data);
+    cocos2d::CCSprite* createBadgeIfSpecial(const SpecialUserData& data);
 
-    cocos2d::ccColor3B getNameColor(const std::optional<SpecialUserData>& data);
-    RichColor getNameRichColor(const std::optional<SpecialUserData>& data);
+    cocos2d::ccColor3B getNameColor(const SpecialUserData& data);
+    RichColor getNameRichColor(const SpecialUserData& data);
 
     void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color);
 }

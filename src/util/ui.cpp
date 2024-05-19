@@ -2,6 +2,7 @@
 
 #include <hooks/game_manager.hpp>
 #include <managers/settings.hpp>
+#include <managers/role.hpp>
 #include <util/cocos.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
@@ -180,29 +181,35 @@ namespace util::ui {
 
     CCSprite* createBadge(const std::string& sprite) {
         // have multiple fallback sprites in case it's invalid
-        auto* spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr(sprite).c_str());
-        if (!spr1) spr1 = CCSprite::createWithSpriteFrameName(sprite.c_str());
+        CCSprite* spr1 = nullptr;
+
+        if (!sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr(sprite).c_str());
+        if (!spr1 && !sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(sprite.c_str());
         if (!spr1) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr("button-secret.png").c_str());
 
         return spr1;
     }
 
-    CCSprite* createBadgeIfSpecial(const std::optional<SpecialUserData>& data) {
-        if (!data || !data->badgeIcon) return nullptr;
-
-        return createBadge(data->badgeIcon.value());
+    static ComputedRole compute(const SpecialUserData& data) {
+        return RoleManager::get().compute(data.roles.value());
     }
 
-    ccColor3B getNameColor(const std::optional<SpecialUserData>& data) {
-        if (!data || !data->nameColor) return ccc3(255, 255, 255);
+    CCSprite* createBadgeIfSpecial(const SpecialUserData& data) {
+        if (!data.roles) return nullptr;
 
-        return data->nameColor->getAnyColor();
+        return createBadge(compute(data).badgeIcon);
     }
 
-    RichColor getNameRichColor(const std::optional<SpecialUserData>& data) {
-        if (!data || !data->nameColor) return RichColor(ccc3(255, 255, 255));
+    ccColor3B getNameColor(const SpecialUserData& data) {
+        if (!data.roles) return ccc3(255, 255, 255);
 
-        return data->nameColor.value();
+        return compute(data).nameColor->getAnyColor();
+    }
+
+    RichColor getNameRichColor(const SpecialUserData& data) {
+        if (!data.roles) return RichColor(ccc3(255, 255, 255));
+
+        return compute(data).nameColor.value();
     }
 
     void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color) {

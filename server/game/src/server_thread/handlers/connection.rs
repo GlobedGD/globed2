@@ -101,11 +101,7 @@ impl GameServerThread {
                     let mut message = FastString::new("authentication failed: ");
                     message.extend(err.error_message());
 
-                    self.send_packet_dynamic(&LoginFailedPacket {
-                        // safety: we have created the string ourselves, we know for certain it is valid UTF-8.
-                        message: unsafe { message.to_str_unchecked() },
-                    })
-                    .await?;
+                    self.send_packet_dynamic(&LoginFailedPacket { message: message.to_str() }).await?;
                     return Ok(());
                 }
             }
@@ -144,13 +140,9 @@ impl GameServerThread {
                     self.terminate();
 
                     let mut message = InlineString::<256>::new("failed to fetch user data: ");
-                    message.extend(&err.to_string());
+                    message.extend_safe(&err.to_string());
 
-                    self.send_packet_dynamic(&LoginFailedPacket {
-                        // safety: same as above
-                        message: unsafe { message.to_str_unchecked() },
-                    })
-                    .await?;
+                    self.send_packet_dynamic(&LoginFailedPacket { message: message.to_str() }).await?;
                     return Ok(());
                 }
             };
@@ -175,8 +167,11 @@ impl GameServerThread {
             account_data.icons.clone_from(&packet.icons);
             account_data.name = player_name;
 
-            let sud = self.user_role.lock().to_special_data();
+            let user_entry = self.user_entry.lock();
+            let sud = SpecialUserData::from_user_entry(&*user_entry, &self.game_server.state.role_manager);
+
             account_data.special_user_data.clone_from(&sud);
+
             sud
         };
 
@@ -185,7 +180,14 @@ impl GameServerThread {
 
         let tps = self.game_server.bridge.central_conf.lock().tps;
 
-        self.send_packet_static(&LoggedInPacket { tps, special_user_data }).await?;
+        let all_roles = self.game_server.state.role_manager.get_all_roles();
+
+        self.send_packet_dynamic(&LoggedInPacket {
+            tps,
+            special_user_data,
+            all_roles,
+        })
+        .await?;
 
         Ok(())
     });

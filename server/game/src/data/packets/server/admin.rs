@@ -1,4 +1,4 @@
-use globed_shared::{ServerRole, UserEntry};
+use globed_shared::UserEntry;
 
 use crate::{data::*, managers::ComputedRole};
 
@@ -6,7 +6,6 @@ use crate::{data::*, managers::ComputedRole};
 #[packet(id = 29000, tcp = true)]
 pub struct AdminAuthSuccessPacket {
     pub role: ComputedRole,
-    pub all_roles: Vec<ServerRole>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

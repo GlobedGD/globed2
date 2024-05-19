@@ -21,8 +21,8 @@ void GlobedNameLabel::updateData(const std::string& name, cocos2d::CCSprite* bad
     this->updateColor(nameColor);
 }
 
-void GlobedNameLabel::updateData(const std::string& name, std::optional<SpecialUserData> sud) {
-    this->updateData(name, util::ui::createBadgeIfSpecial(sud), util::ui::getNameColor(sud));
+void GlobedNameLabel::updateData(const std::string& name, const SpecialUserData& sud) {
+    this->updateData(name, util::ui::createBadgeIfSpecial(sud), util::ui::getNameRichColor(sud));
 }
 
 void GlobedNameLabel::updateBadge(cocos2d::CCSprite* badgeSprite) {
@@ -80,12 +80,8 @@ GlobedNameLabel* GlobedNameLabel::create(const std::string& name, cocos2d::CCSpr
     return nullptr;
 }
 
-GlobedNameLabel* GlobedNameLabel::create(const std::string& name, std::optional<SpecialUserData> sud) {
-    if (sud) {
-        return create(name, util::ui::createBadgeIfSpecial(sud), util::ui::getNameRichColor(sud));
-    } else {
-        return create(name, nullptr, RichColor({255, 255, 255}));
-    }
+GlobedNameLabel* GlobedNameLabel::create(const std::string& name, const SpecialUserData& sud) {
+    return create(name, util::ui::createBadgeIfSpecial(sud), util::ui::getNameRichColor(sud));
 }
 
 GlobedNameLabel* GlobedNameLabel::create(const std::string& name) {

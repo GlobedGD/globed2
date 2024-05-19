@@ -458,9 +458,11 @@ impl Decodable for FastString {
 
             Ok(Self::from_buffer(&buffer[..len]))
         } else {
-            let slc = &buf.as_bytes()[buf.get_rpos()..buf.get_rpos() + len];
+            let end_pos = buf.get_rpos() + len;
+            let str = Self::from_buffer(&buf.as_bytes()[buf.get_rpos()..end_pos]);
+            buf.set_rpos(end_pos);
 
-            Ok(Self::from_buffer(slc))
+            Ok(str)
         }
     }
 }

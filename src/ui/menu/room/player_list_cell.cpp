@@ -17,12 +17,12 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
     auto* gm = GameManager::get();
 
     Build<GlobedSimplePlayer>::create(GlobedSimplePlayer::Icons {
-        .type = IconType::Cube,
-        .id = data.cube,
-        .color1 = data.color1,
-        .color2 = data.color2,
-        .color3 = data.glowColor,
-    })
+            .type = IconType::Cube,
+            .id = data.cube,
+            .color1 = data.color1,
+            .color2 = data.color2,
+            .color3 = data.glowColor,
+        })
         .scale(0.65f)
         .parent(this)
         .anchorPoint(0.5f, 0.5f)

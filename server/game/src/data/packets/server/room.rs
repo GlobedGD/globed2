@@ -23,13 +23,13 @@ pub struct RoomPlayerListPacket {
     pub players: Vec<PlayerRoomPreviewAccountData>,
 }
 
-#[derive(Packet, Encodable, StaticSize, Clone)]
+#[derive(Packet, Encodable, StaticSize, DynamicSize, Clone)]
 #[packet(id = 23004)]
 pub struct RoomInfoPacket {
     pub info: RoomInfo,
 }
 
-#[derive(Packet, Encodable, StaticSize, Clone)]
+#[derive(Packet, Encodable, StaticSize, DynamicSize, Clone)]
 #[packet(id = 23005)]
 pub struct RoomInvitePacket {
     pub player_data: PlayerRoomPreviewAccountData,

@@ -6,7 +6,7 @@
 class GlobedNameLabel : public cocos2d::CCNode {
 public:
     void updateData(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor);
-    void updateData(const std::string& name, std::optional<SpecialUserData> sud);
+    void updateData(const std::string& name, const SpecialUserData& sud);
     void updateBadge(cocos2d::CCSprite* badgeSprite);
     void updateName(const std::string& name);
     void updateName(const char* name);
@@ -15,7 +15,7 @@ public:
     void updateColor(const RichColor& color);
 
     static GlobedNameLabel* create(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor);
-    static GlobedNameLabel* create(const std::string& name, std::optional<SpecialUserData> sud);
+    static GlobedNameLabel* create(const std::string& name, const SpecialUserData& sud);
     static GlobedNameLabel* create(const std::string& name);
 
 private:

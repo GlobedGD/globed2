@@ -1,16 +1,17 @@
 #include "edit_role_popup.hpp"
 
 #include <managers/admin.hpp>
+#include <managers/role.hpp>
 #include <util/ui.hpp>
 #include <util/cocos.hpp>
 
 using namespace geode::prelude;
 
-ServerRole* findRole(const std::string& id) {
-    auto& all = AdminManager::get().getAllRoles();
+static GameServerRole* findRole(const std::string& id) {
+    auto& all = RoleManager::get().getAllRoles();
 
     for (auto& role : all) {
-        if (role.id == id) return &role;
+        if (role.role.id == id) return &role;
     }
 
     return nullptr;
@@ -29,17 +30,17 @@ bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCa
         .parent(m_mainLayer)
         .collect();
 
-    auto& allRoles = AdminManager::get().getAllRoles();
+    auto& allRoles = RoleManager::get().getAllRoles();
     for (const auto& role : allRoles) {
-        auto* spr1 = util::ui::createBadge(role.badgeIcon);
+        auto* spr1 = util::ui::createBadge(role.role.badgeIcon);
         if (!spr1) continue;
 
-        bool present = std::find_if(roles.begin(), roles.end(), [&](const std::string& k) { return k == role.id; }) != roles.end();
+        bool present = std::find_if(roles.begin(), roles.end(), [&](const std::string& k) { return k == role.role.id; }) != roles.end();
 
         util::ui::rescaleToMatch(spr1, {22.f, 22.f});
 
         Build(spr1)
-            .intoMenuItem([this, roleid = role.id](auto btn) {
+            .intoMenuItem([this, roleid = role.role.id](auto btn) {
                 auto it = std::find_if(this->roles.begin(), this->roles.end(), [&](const std::string& k) { return k == roleid; });
 
                 bool present = it != this->roles.end();

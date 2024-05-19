@@ -34,24 +34,21 @@ inline const PlayerIconData PlayerIconData::DEFAULT_ICONS = PlayerIconData(
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, -1
 );
 
-class SpecialUserData {
-public:
+struct SpecialUserData {
     SpecialUserData() {}
 
     bool operator==(const SpecialUserData&) const = default;
 
-    std::optional<std::string> badgeIcon;
-    std::optional<RichColor> nameColor;
-    std::optional<cocos2d::ccColor3B> chatColor;
+    std::optional<std::vector<uint8_t>> roles;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(SpecialUserData, (
-    badgeIcon, nameColor, chatColor
+    roles
 ));
 
 class PlayerRoomPreviewAccountData {
 public:
-    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, LevelId levelId, std::optional<SpecialUserData> specialUserData)
+    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, LevelId levelId, const SpecialUserData& specialUserData)
         : accountId(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId), specialUserData(specialUserData) {}
     PlayerRoomPreviewAccountData() {}
 
@@ -59,7 +56,7 @@ public:
     std::string name;
     int16_t cube, color1, color2, glowColor;
     LevelId levelId;
-    std::optional<SpecialUserData> specialUserData;
+    SpecialUserData specialUserData;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerRoomPreviewAccountData, (
@@ -75,7 +72,7 @@ public:
     int32_t accountId, userId;
     std::string name;
     int16_t cube, color1, color2, glowColor;
-    std::optional<SpecialUserData> specialUserData;
+    SpecialUserData specialUserData;
 
     PlayerRoomPreviewAccountData makeRoomPreview() const {
         return PlayerRoomPreviewAccountData(
@@ -111,7 +108,7 @@ public:
     int32_t accountId, userId;
     std::string name;
     PlayerIconData icons;
-    std::optional<SpecialUserData> specialUserData;
+    SpecialUserData specialUserData;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerAccountData, (

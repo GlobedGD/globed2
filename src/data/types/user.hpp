@@ -22,6 +22,15 @@ GLOBED_SERIALIZABLE_STRUCT(ServerRole, (
     id, priority, badgeIcon, nameColor, chatColor, notices, noticesToEveryone, kick, kickEveryone, mute, ban, editRole, admin
 ));
 
+struct GameServerRole {
+    uint8_t intId;
+    ServerRole role;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(GameServerRole, (
+    intId, role
+));
+
 struct ComputedRole {
     int32_t priority;
     std::string badgeIcon;

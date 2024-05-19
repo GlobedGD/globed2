@@ -1,4 +1,4 @@
-use globed_shared::{debug, info, warn};
+use globed_shared::{info, warn};
 
 use crate::{
     data::*,
@@ -56,7 +56,6 @@ impl GameServerThread {
 
     fn _update_user_role(&self, from: &ComputedRole) {
         self.user_role.lock().clone_from(&from);
-        self.account_data.lock().special_user_data = from.to_special_data();
     }
 
     gs_handler!(self, handle_admin_auth, AdminAuthPacket, packet, {
@@ -76,9 +75,7 @@ impl GameServerThread {
             let role = self.game_server.state.role_manager.get_superadmin();
             self._update_user_role(&role);
 
-            let all_roles = self.game_server.state.role_manager.get_all_roles();
-
-            self.send_packet_dynamic(&AdminAuthSuccessPacket { role, all_roles }).await?;
+            self.send_packet_dynamic(&AdminAuthSuccessPacket { role }).await?;
 
             return Ok(());
         }
@@ -102,9 +99,7 @@ impl GameServerThread {
                 let role = self.game_server.state.role_manager.compute(&self.user_entry.lock().user_roles);
                 self._update_user_role(&role);
 
-                let all_roles = self.game_server.state.role_manager.get_all_roles();
-
-                self.send_packet_dynamic(&AdminAuthSuccessPacket { role, all_roles }).await?;
+                self.send_packet_dynamic(&AdminAuthSuccessPacket { role }).await?;
 
                 return Ok(());
             }
@@ -422,7 +417,7 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_admin_update_user, AdminUpdateUserPacket, packet, {
-        let _ = gs_needauth!(self);
+        let self_account_id = gs_needauth!(self);
 
         if !self._has_perm(AdminPerm::Any) {
             admin_error!(self, "No permission (not a mod)");
@@ -451,6 +446,8 @@ impl GameServerThread {
             }
         };
 
+        let editing_self = self_account_id == target_account_id;
+
         // if this user has a higher priority, don't allow editing their roles
 
         new_user_entry.user_roles.retain(|x| !x.is_empty());
@@ -464,7 +461,7 @@ impl GameServerThread {
         }
 
         // if no edit role perm or the user is higher than us, cant update their roles
-        if !self._has_perm(AdminPerm::EditRoles) || (user_priority >= my_priority && !self._has_perm(AdminPerm::Admin)) {
+        if !self._has_perm(AdminPerm::EditRoles) || (user_priority >= my_priority && !self._has_perm(AdminPerm::Admin) && !editing_self) {
             new_user_entry.user_roles.clone_from(&user_entry.user_roles);
         }
 
@@ -522,7 +519,9 @@ impl GameServerThread {
             // update the role
             if c_user_roles {
                 let new_role = self.game_server.state.role_manager.compute(&new_user_entry.user_roles);
-                thread.account_data.lock().special_user_data = new_role.to_special_data();
+                thread.account_data.lock().special_user_data =
+                    SpecialUserData::from_user_entry(&new_user_entry, &self.game_server.state.role_manager);
+
                 *thread.user_role.lock() = new_role;
             }
 
