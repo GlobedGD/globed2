@@ -27,6 +27,7 @@ pub mod routes {
             meta::version,
             meta::servers,
             meta::index,
+            meta::robots,
             game_server::boot,
             game_server::get_user,
             game_server::update_user,
