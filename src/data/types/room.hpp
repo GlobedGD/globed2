@@ -3,7 +3,7 @@
 #include <data/bitfield.hpp>
 
 struct RoomSettingsFlags : BitfieldBase {
-    bool inviteOnly;
+    bool isHidden;
     bool publicInvites;
     bool collision;
     bool twoPlayerMode;
@@ -15,35 +15,38 @@ struct RoomSettingsFlags : BitfieldBase {
 static_assert((sizeof(RoomSettingsFlags) + 7) / 8 == 2);
 
 GLOBED_SERIALIZABLE_BITFIELD(RoomSettingsFlags, (
-    inviteOnly, publicInvites, collision, twoPlayerMode
+    isHidden, publicInvites, collision, twoPlayerMode
 ))
 
 struct RoomSettings {
     RoomSettingsFlags flags;
-    uint64_t reserved;
+    uint32_t playerLimit;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RoomSettings, (
-    flags, reserved
+    flags, playerLimit
 ))
 
 struct RoomInfo {
     uint32_t id;
-    int owner;
-    uint32_t token;
+    int32_t owner;
+    std::string name;
+    std::string password;
     RoomSettings settings;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RoomInfo, (
-    id, owner, token, settings
+    id, owner, name, password, settings
 ));
 
 struct RoomListingInfo {
     uint32_t id;
-    int owner;
+    int32_t owner;
+    std::string name;
+    bool hasPassword;
     RoomSettings settings;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RoomListingInfo, (
-    id, owner, settings
+    id, owner, name, hasPassword, settings
 ));

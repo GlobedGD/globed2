@@ -2,13 +2,17 @@ use crate::data::*;
 
 #[derive(Packet, Decodable)]
 #[packet(id = 13000)]
-pub struct CreateRoomPacket;
+pub struct CreateRoomPacket {
+    pub room_name: InlineString<32>,
+    pub password: InlineString<16>,
+    pub settings: RoomSettings,
+}
 
 #[derive(Packet, Decodable)]
 #[packet(id = 13001)]
 pub struct JoinRoomPacket {
     pub room_id: u32,
-    pub room_token: u32,
+    pub password: InlineString<16>,
 }
 
 #[derive(Packet, Decodable)]

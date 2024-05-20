@@ -4,7 +4,7 @@ use crate::data::*;
 #[bitfield(on = true, size = 2)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct RoomSettingsFlags {
-    pub invite_only: bool,
+    pub is_hidden: bool,
     pub public_invites: bool,
     pub collision: bool,
     pub two_player: bool,
@@ -14,7 +14,7 @@ pub struct RoomSettingsFlags {
 #[dynamic_size(as_static = true)]
 pub struct RoomSettings {
     pub flags: RoomSettingsFlags,
-    pub reserved: u64, // space for future expansions, should be always 0
+    pub player_limit: u32,
 }
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
@@ -22,7 +22,8 @@ pub struct RoomSettings {
 pub struct RoomInfo {
     pub id: u32,
     pub owner: i32,
-    pub token: u32,
+    pub name: InlineString<32>,
+    pub password: InlineString<16>,
     pub settings: RoomSettings,
 }
 
@@ -31,5 +32,7 @@ pub struct RoomInfo {
 pub struct RoomListingInfo {
     pub id: u32,
     pub owner: i32,
+    pub name: InlineString<32>,
+    pub has_password: bool,
     pub settings: RoomSettings,
 }

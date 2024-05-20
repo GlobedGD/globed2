@@ -505,7 +505,7 @@ void NetworkManager::setupBuiltinListeners() {
     /* room */
 
     addBuiltinListenerSafe<RoomInvitePacket>([](auto packet) {
-        GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->roomToken, packet->playerData);
+        GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->password, packet->playerData);
     });
 
     addBuiltinListenerSafe<RoomInfoPacket>([](auto packet) {
@@ -517,7 +517,8 @@ void NetworkManager::setupBuiltinListeners() {
     addBuiltinListener<RoomJoinedPacket>([](auto packet) {});
 
     addBuiltinListener<RoomJoinFailedPacket>([](auto packet) {
-        ErrorQueues::get().error(fmt::format("Failed to join room: {}", packet->message));
+        // TODO: handle reason
+        ErrorQueues::get().error(fmt::format("Failed to join room: among us"));
     });
 
     /* admin */

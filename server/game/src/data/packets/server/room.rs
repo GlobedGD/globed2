@@ -10,10 +10,12 @@ pub struct RoomCreatedPacket {
 #[packet(id = 23001, tcp = false)]
 pub struct RoomJoinedPacket;
 
-#[derive(Packet, Encodable, DynamicSize)]
+#[derive(Packet, Encodable, StaticSize, Default)]
 #[packet(id = 23002, tcp = false)]
-pub struct RoomJoinFailedPacket<'a> {
-    pub message: &'a str,
+pub struct RoomJoinFailedPacket {
+    pub was_invalid: bool,
+    pub was_protected: bool,
+    pub was_full: bool,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
@@ -34,7 +36,7 @@ pub struct RoomInfoPacket {
 pub struct RoomInvitePacket {
     pub player_data: PlayerRoomPreviewAccountData,
     pub room_id: u32,
-    pub room_token: u32,
+    pub room_password: InlineString<16>,
 }
 
 #[derive(Packet, Encodable)]

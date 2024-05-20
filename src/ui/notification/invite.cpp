@@ -6,7 +6,7 @@
 
 using namespace geode::prelude;
 
-bool GlobedInviteNotification::init(uint32_t roomID, uint32_t roomToken, const PlayerRoomPreviewAccountData& player) {
+bool GlobedInviteNotification::init(uint32_t roomID, const std::string_view password, const PlayerRoomPreviewAccountData& player) {
     if (!CCLayer::init()) return false;
 
     const float width = 332.5f * 0.7f;
@@ -53,10 +53,10 @@ bool GlobedInviteNotification::init(uint32_t roomID, uint32_t roomToken, const P
         ;
 
     Build<ButtonSprite>::create("Accept", "bigFont.fnt", "GJ_button_01.png", 0.8f)
-        .intoMenuItem([this, roomID, roomToken](auto) {
+        .intoMenuItem([this, roomID, password = std::string(password)](auto) {
             auto& nm = NetworkManager::get();
             if (nm.established()) {
-                nm.send(JoinRoomPacket::create(roomID, roomToken));
+                nm.send(JoinRoomPacket::create(roomID, password));
             }
 
             this->removeFromParent();
@@ -85,9 +85,9 @@ void GlobedInviteNotification::removeFromParent() {
     GlobedNotificationPanel::get()->updateLayout();
 }
 
-GlobedInviteNotification* GlobedInviteNotification::create(uint32_t roomID, uint32_t roomToken, const PlayerRoomPreviewAccountData& player) {
+GlobedInviteNotification* GlobedInviteNotification::create(uint32_t roomID, const std::string_view password, const PlayerRoomPreviewAccountData& player) {
     auto ret = new GlobedInviteNotification;
-    if (ret->init(roomID, roomToken, player)) {
+    if (ret->init(roomID, password, player)) {
         ret->autorelease();
         return ret;
     }

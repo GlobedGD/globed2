@@ -26,10 +26,10 @@ class RoomJoinFailedPacket : public Packet {
 
     RoomJoinFailedPacket() {}
 
-    std::string message;
+    bool wasInvalid, wasProtected, wasFull;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(RoomJoinFailedPacket, (message));
+GLOBED_SERIALIZABLE_STRUCT(RoomJoinFailedPacket, (wasInvalid, wasProtected, wasFull));
 
 class RoomPlayerListPacket : public Packet {
     GLOBED_PACKET(23003, false, false)
@@ -58,10 +58,11 @@ class RoomInvitePacket : public Packet {
     RoomInvitePacket() {}
 
     PlayerRoomPreviewAccountData playerData;
-    uint32_t roomID, roomToken;
+    uint32_t roomID;
+    std::string password;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(RoomInvitePacket, (playerData, roomID, roomToken));
+GLOBED_SERIALIZABLE_STRUCT(RoomInvitePacket, (playerData, roomID, password));
 
 class RoomListPacket : public Packet {
     GLOBED_PACKET(23006, false, false)

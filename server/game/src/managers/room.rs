@@ -1,3 +1,4 @@
+use esp::InlineString;
 use globed_shared::{
     rand::{self, Rng},
     IntMap, SyncMutex, SyncMutexGuard,
@@ -10,7 +11,8 @@ use super::LevelManager;
 #[derive(Default)]
 pub struct Room {
     pub owner: i32,
-    pub token: u32,
+    pub name: InlineString<32>,
+    pub password: InlineString<16>,
     pub manager: LevelManager,
     pub settings: RoomSettings,
 }
@@ -26,12 +28,13 @@ const ROOM_ID_START: u32 = 10_u32.pow(ROOM_ID_LENGTH as u32 - 1);
 const ROOM_ID_END: u32 = 10_u32.pow(ROOM_ID_LENGTH as u32);
 
 impl Room {
-    pub fn new(owner: i32, manager: LevelManager) -> Self {
+    pub fn new(owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings, manager: LevelManager) -> Self {
         Self {
             owner,
-            token: rand::random(),
+            name,
+            password,
             manager,
-            settings: RoomSettings::default(),
+            settings,
         }
     }
 
@@ -69,7 +72,8 @@ impl Room {
     pub fn get_room_info(&self, id: u32) -> RoomInfo {
         RoomInfo {
             id,
-            token: self.token,
+            name: self.name.clone(),
+            password: self.password.clone(),
             owner: self.owner,
             settings: self.settings,
         }
@@ -79,13 +83,15 @@ impl Room {
     pub fn get_room_listing_info(&self, id: u32) -> RoomListingInfo {
         RoomListingInfo {
             id,
+            name: self.name.clone(),
+            has_password: !self.password.is_empty(),
             owner: self.owner,
             settings: self.settings,
         }
     }
 
-    pub fn is_invite_only(&self) -> bool {
-        self.settings.flags.invite_only
+    pub fn is_hidden(&self) -> bool {
+        self.settings.flags.is_hidden
     }
 
     pub fn is_public_invites(&self) -> bool {
@@ -94,6 +100,24 @@ impl Room {
 
     pub fn is_two_player_mode(&self) -> bool {
         self.settings.flags.two_player
+    }
+
+    pub fn is_protected(&self) -> bool {
+        !self.password.is_empty()
+    }
+
+    pub fn verify_password(&self, pwd: &InlineString<16>) -> bool {
+        self.password.is_empty() || self.password == *pwd
+    }
+
+    pub fn is_full(&self) -> bool {
+        let player_count = self.manager.get_total_player_count();
+
+        if self.settings.flags.two_player {
+            player_count >= 2
+        } else {
+            player_count >= self.settings.player_limit as usize
+        }
     }
 }
 
@@ -133,7 +157,7 @@ impl RoomManager {
     }
 
     /// Creates a new room, adds the given player, removes them from the global room, and returns the room ID
-    pub fn create_room(&self, account_id: i32) -> RoomInfo {
+    pub fn create_room(&self, account_id: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> RoomInfo {
         let rooms = self.rooms.lock();
 
         // in case we accidentally generate an existing room id, keep looping until we find a suitable id
@@ -146,7 +170,7 @@ impl RoomManager {
 
         drop(rooms);
 
-        let room = self._create_room(room_id, account_id);
+        let room = self._create_room(room_id, account_id, name, password, settings);
 
         self.get_global().remove_player(account_id);
 
@@ -189,25 +213,11 @@ impl RoomManager {
         was_owner
     }
 
-    pub fn get_room_info(&self, room_id: u32) -> RoomInfo {
-        self.try_with_any(
-            room_id,
-            |room| RoomInfo {
-                id: room_id,
-                owner: room.owner,
-                token: room.token,
-                settings: room.settings,
-            },
-            || RoomInfo {
-                id: 0,
-                owner: 0,
-                token: 0,
-                settings: RoomSettings::default(),
-            },
-        )
+    pub fn get_room_info(&self, room_id: u32) -> Option<RoomInfo> {
+        self.try_with_any(room_id, |room| Some(room.get_room_info(room_id)), || None)
     }
 
-    fn _create_room(&self, room_id: u32, owner: i32) -> RoomInfo {
+    fn _create_room(&self, room_id: u32, owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> RoomInfo {
         let mut rooms = self.rooms.lock();
 
         let mut pm = LevelManager::new();
@@ -215,14 +225,8 @@ impl RoomManager {
             pm.create_player(owner);
         }
 
-        let room = Room::new(owner, pm);
-
-        let room_info = RoomInfo {
-            id: room_id,
-            owner,
-            token: room.token,
-            settings: room.settings,
-        };
+        let room = Room::new(owner, name, password, settings, pm);
+        let room_info = room.get_room_info(room_id);
 
         rooms.insert(room_id, room);
 

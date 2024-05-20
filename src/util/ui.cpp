@@ -223,6 +223,14 @@ namespace util::ui {
         }
 
         const auto& colors = color.getColors();
+        if (colors.empty()) {
+            return;
+        }
+
+        // set the last color
+        label->setColor(colors.at(colors.size() - 1));
+
+        // create an action to tint between the rest of the colors
         CCArray* actions = CCArray::create();
 
         for (const auto& color : colors) {

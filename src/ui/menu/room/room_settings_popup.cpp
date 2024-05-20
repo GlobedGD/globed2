@@ -62,7 +62,7 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
     int setting = sender->getTag();
 
     switch (setting) {
-        case TAG_INVITE_ONLY: currentSettings.flags.inviteOnly = enabled; break;
+        case TAG_INVITE_ONLY: currentSettings.flags.isHidden = enabled; break;
         case TAG_PUBLIC_INVITES: currentSettings.flags.publicInvites = enabled; break;
         case TAG_COLLISION: currentSettings.flags.collision = enabled; break;
         case TAG_TWO_PLAYER: currentSettings.flags.twoPlayerMode = enabled; break;
@@ -76,13 +76,13 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
         });
     } else {
         // otherwise, actually update the settings
-        log::debug("settings: {}", currentSettings.flags.inviteOnly, currentSettings.flags.publicInvites, currentSettings.flags.collision, currentSettings.flags.twoPlayerMode);
+        log::debug("settings: {}", currentSettings.flags.isHidden, currentSettings.flags.publicInvites, currentSettings.flags.collision, currentSettings.flags.twoPlayerMode);
         NetworkManager::get().send(UpdateRoomSettingsPacket::create(currentSettings));
     }
 }
 
 void RoomSettingsPopup::updateCheckboxes() {
-    cellInviteOnly->setToggled(currentSettings.flags.inviteOnly);
+    cellInviteOnly->setToggled(currentSettings.flags.isHidden);
     cellPublicInvites->setToggled(currentSettings.flags.publicInvites);
     cellCollision->setToggled(currentSettings.flags.collision);
     cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);

@@ -242,7 +242,8 @@ void RoomPopup::addButtons() {
         auto* createRoomButton = Build<ButtonSprite>::create("Create room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .intoMenuItem([this](auto) {
                 if (!this->isLoading()) {
-                    NetworkManager::get().send(CreateRoomPacket::create());
+                    // TODO: room name, password, settings should be selectable by user
+                    NetworkManager::get().send(CreateRoomPacket::create("hi", "gay", {}));
                     this->reloadPlayerList(false);
                 }
             })
