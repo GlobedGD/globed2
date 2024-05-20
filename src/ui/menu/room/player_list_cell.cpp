@@ -37,7 +37,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
     CCMenu* badgeWrapper = Build<CCMenu>::create()
         .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
-        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start))
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start)->setAutoScale(false))
         .anchorPoint(0.f, 0.5f)
         .contentSize(RoomPopup::LIST_WIDTH, CELL_HEIGHT)
         .scale(1.f)
@@ -63,7 +63,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
     auto badge = util::ui::createBadgeIfSpecial(data.specialUserData);
     if (badge) {
-        util::ui::rescaleToMatch(badge, {22.f, 22.f});
+        util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
         badgeWrapper->addChild(badge);
     }
 

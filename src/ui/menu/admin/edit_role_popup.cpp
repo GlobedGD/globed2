@@ -37,7 +37,7 @@ bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCa
 
         bool present = std::find_if(roles.begin(), roles.end(), [&](const std::string& k) { return k == role.role.id; }) != roles.end();
 
-        util::ui::rescaleToMatch(spr1, {22.f, 22.f});
+        util::ui::rescaleToMatch(spr1, util::ui::BADGE_SIZE);
 
         Build(spr1)
             .intoMenuItem([this, roleid = role.role.id](auto btn) {

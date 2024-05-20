@@ -8,7 +8,7 @@ bool GlobedNameLabel::init(const std::string& name, cocos2d::CCSprite* badgeSpri
     if (!CCNode::init()) return false;
 
     this->setAnchorPoint({0.5f, 0.5f});
-    this->setLayout(RowLayout::create()->setGap(4.f));
+    this->setLayout(RowLayout::create()->setGap(4.f)->setAutoScale(false));
     this->setContentWidth(150.f);
     this->updateData(name, badgeSprite, nameColor);
 
@@ -31,6 +31,7 @@ void GlobedNameLabel::updateBadge(cocos2d::CCSprite* badgeSprite) {
     badge = badgeSprite;
 
     if (badge) {
+        util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
         badge->setZOrder(1);
         this->addChild(badge);
     }

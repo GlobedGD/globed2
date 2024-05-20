@@ -73,7 +73,7 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
 
     CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
     if (badgeIcon) {
-        util::ui::rescaleToMatch(badgeIcon, {22.f, 22.f});
+        util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE);
         // TODO: fix this
         badgeIcon->setPosition(ccp(nameLabel->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameLabel->getPositionY()));
         badgeIcon->setZOrder(1);
