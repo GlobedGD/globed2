@@ -62,7 +62,10 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .collect();
 
     auto badge = util::ui::createBadgeIfSpecial(data.specialUserData);
-    if (badge) badgeWrapper->addChild(badge);
+    if (badge) {
+        util::ui::rescaleToMatch(badge, {22.f, 22.f});
+        badgeWrapper->addChild(badge);
+    }
 
     badgeWrapper->updateLayout();
 

@@ -66,6 +66,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
     if (badgeIcon) {
+        util::ui::rescaleToMatch(badgeIcon, {22.f, 22.f});
         usernameLayout->addChild(badgeIcon);
     }
 
