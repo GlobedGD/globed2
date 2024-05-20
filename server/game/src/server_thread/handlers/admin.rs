@@ -473,6 +473,7 @@ impl GameServerThread {
         let c_violation_reason = new_user_entry.violation_reason != user_entry.violation_reason;
         let c_violation_expiry = new_user_entry.violation_expiry != user_entry.violation_expiry;
         let c_name_color = new_user_entry.name_color != user_entry.name_color;
+        let c_admin_password = new_user_entry.admin_password != user_entry.admin_password;
         // user_name intentionally left unchecked.
 
         if c_user_roles && new_user_priority >= my_priority && !self._has_perm(AdminPerm::Admin) {
@@ -501,7 +502,15 @@ impl GameServerThread {
             }
         }
 
-        if !(c_user_roles || c_is_banned || c_is_muted || c_is_whitelisted || c_violation_reason || c_violation_expiry || c_name_color) {
+        if !(c_user_roles
+            || c_is_banned
+            || c_is_muted
+            || c_is_whitelisted
+            || c_violation_reason
+            || c_violation_expiry
+            || c_name_color
+            || c_admin_password)
+        {
             // no changes
             return self.send_packet_dynamic(&AdminSuccessMessagePacket { message: "No changes" }).await;
         }

@@ -33,7 +33,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
     // name label
 
-    ccColor3B nameColor = util::ui::getNameColor(data.specialUserData);
+    RichColor nameColor = util::ui::getNameRichColor(data.specialUserData);
 
     CCMenu* badgeWrapper = Build<CCMenu>::create()
         .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
@@ -47,11 +47,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
     float labelWidth;
     auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
-        .color(nameColor)
         .limitLabelWidth(170.f, 0.6f, 0.1f)
-        .with([&labelWidth](CCLabelBMFont* label) {
+        .with([&labelWidth, &nameColor](CCLabelBMFont* label) {
             label->setScale(label->getScale() * 0.9f);
             labelWidth = label->getScaledContentSize().width;
+            util::ui::animateLabelColorTint(label, nameColor);
         })
         .intoMenuItem([this] {
             this->onOpenProfile(nullptr);

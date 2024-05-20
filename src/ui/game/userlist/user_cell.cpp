@@ -45,10 +45,12 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .collect();
 
     auto& pcm = ProfileCacheManager::get();
-    ccColor3B nameColor = util::ui::getNameColor(data.specialUserData);
+    RichColor nameColor = util::ui::getNameRichColor(data.specialUserData);
 
     auto* nameButton = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
-        .color(nameColor)
+        .with([&nameColor](auto* label) {
+            util::ui::animateLabelColorTint(label, nameColor);
+        })
         .limitLabelWidth(140.f, 0.5f, 0.1f)
         .intoMenuItem([this] {
             bool myself = accountData.accountId == GJAccountManager::get()->m_accountID;

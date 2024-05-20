@@ -55,7 +55,8 @@ bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCa
 
                 this->callback(this->roles);
             })
-            .zOrder(role.role.priority)
+            // order more priority roles to be on the left
+            .zOrder(-role.role.priority)
             .opacity(present ? 255 : 69)
             .parent(buttonLayout);
     }
