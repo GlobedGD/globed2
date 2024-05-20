@@ -16,7 +16,7 @@ pub struct LevelListPacket; // definition intentionally missing
 #[packet(id = 21002)]
 pub struct LevelPlayerCountPacket; // definition intentionally missing
 
-#[derive(Packet, Encodable, StaticSize)]
+#[derive(Packet, Encodable, StaticSize, Clone)]
 #[packet(id = 21003)]
 pub struct RolesUpdatedPacket {
     pub special_user_data: SpecialUserData,

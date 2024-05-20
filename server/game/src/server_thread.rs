@@ -432,9 +432,10 @@ impl GameServerThread {
             ServerThreadMessage::BroadcastRoomInfo(packet) => {
                 self.send_packet_static(&packet).await?;
             }
-            ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
             ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.timestamp).await?,
             ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
+            ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
+            ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
         }
 
         Ok(())
