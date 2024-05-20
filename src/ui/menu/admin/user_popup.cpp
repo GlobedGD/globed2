@@ -337,7 +337,7 @@ void AdminUserPopup::recreateRoleModifyButton() {
         badgeIcon = CCSprite::createWithSpriteFrameName("role-user.png"_spr);
     }
 
-    util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE);
+    util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE * 1.1f);
 
     roleModifyButton = Build(badgeIcon)
         .intoMenuItem([this](auto) {

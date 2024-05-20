@@ -144,11 +144,12 @@ void PlayerListCell::createJoinButton() {
 void PlayerListCell::createAdminButton() {
     // admin menu button
     Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
-        .scale(0.4f)
+        .scale(0.525f)
         .intoMenuItem([this](auto) {
             AdminManager::get().openUserPopup(data);
         })
         .parent(menu)
+        .zOrder(-3)
         .id("admin-button"_spr);
 
     menu->updateLayout();
