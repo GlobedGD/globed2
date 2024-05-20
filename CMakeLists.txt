@@ -139,7 +139,7 @@ endif()
 
 # Clang/GCC - suppress some warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(sodium PRIVATE "-Wno-inaccessible-base" "-Wno-pointer-sign")
+    target_compile_options(sodium PRIVATE "-Wno-inaccessible-base" "-Wno-pointer-sign -Wno-#warnings")
 
     # thank you hjfod
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
