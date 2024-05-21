@@ -121,6 +121,8 @@ impl Room {
 
         if self.settings.flags.two_player {
             player_count >= 2
+        } else if self.settings.player_limit == 0 {
+            false
         } else {
             player_count >= (self.settings.player_limit as usize)
         }
