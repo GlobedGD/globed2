@@ -38,13 +38,10 @@ bool RoomJoinPopup::setup() {
             }
 
             auto& nm = NetworkManager::get();
-            if (!nm.established()) {
-                return this->onClose(nullptr);
-            }
 
             // test packet to check if pass needed (or just joining the room)
             std::string_view t(0);
-            NetworkManager::get().send(JoinRoomPacket::create(code, 0));
+            nm.send(JoinRoomPacket::create(code, t));
 
             nm.addListener<RoomJoinFailedPacket>(this, [this, code](std::shared_ptr<RoomJoinFailedPacket> packet) {
                 log::info("pass needed");
@@ -66,6 +63,25 @@ bool RoomJoinPopup::setup() {
         .id("join-btn-menu"_spr)
         .pos(popupCenter, 120.f)
         .parent(m_mainLayer);
+
+    auto& nm = NetworkManager::get();
+    if (!nm.established()) {
+        //return onClose(nullptr);
+    }
+
+    nm.addListener<RoomJoinFailedPacket>(this, [this](std::shared_ptr<RoomJoinFailedPacket> packet) {
+        log::info("pass needed");
+        if (packet->wasProtected) {
+            Loader::get()->queueInMainThread([this] {
+                RoomPasswordPopup::create(static_cast<uint32_t>(std::stoi(this->roomIdInput->getString())))->show();
+            });
+        }
+    });
+
+    nm.addListener<RoomJoinedPacket>(this, [this](std::shared_ptr<RoomJoinedPacket> packet) {
+        log::info("success");
+        this->onClose(nullptr);
+    });
 
     return true;
 }

@@ -12,22 +12,24 @@ bool RoomPasswordPopup::setup(uint32_t id) {
 
     float popupCenter = CCDirector::get()->getWinSize().width / 2;
 
-    // room id hint
+    this->setID("room-password-popup"_spr);
+
+    // room password hint
     Build<CCLabelBMFont>::create("Room Password", "bigFont.fnt")
         .scale(0.3f)
         .pos(popupCenter, POPUP_HEIGHT + 45.f)
         .parent(m_mainLayer);
 
-    // room id input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 7)
+    // room password input node
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 16)
         .pos(popupCenter, POPUP_HEIGHT + 25.f)
         .parent(m_mainLayer)
         .store(roomPassInput);
 
     Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this, id](auto) {
-            NetworkManager::get().send(JoinRoomPacket::create(id, roomPassInput->getString()));
             this->onClose(nullptr);
+            NetworkManager::get().send(JoinRoomPacket::create(id, roomPassInput->getString()));
         })
         .id("join-btn"_spr)
         .intoNewParent(CCMenu::create())

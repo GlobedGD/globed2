@@ -21,6 +21,7 @@
 #include <util/debug.hpp>
 #include <util/format.hpp>
 #include <ui/notification/panel.hpp>
+#include <ui/menu/room/room_password_popup.hpp>
 
 using namespace geode::prelude;
 using namespace util::data;
@@ -536,7 +537,9 @@ void NetworkManager::setupBuiltinListeners() {
         if (packet->wasInvalid) reason = "Room doesn't exist";
         if (packet->wasProtected) reason = "Room password is wrong";
         if (packet->wasFull) reason = "Room is full";
-        ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
+        Loader::get()->queueInMainThread([reason, packet] {
+            if (CCScene::get()->getChildByID("room-password-popup"_spr) || !packet->wasProtected) ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
+        });
     });
 
     /* admin */
