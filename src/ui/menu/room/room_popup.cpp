@@ -4,6 +4,7 @@
 #include "room_join_popup.hpp"
 #include "room_settings_popup.hpp"
 #include "invite_popup.hpp"
+#include "create_room_popup.hpp" 
 #include <data/packets/all.hpp>
 #include <net/network_manager.hpp>
 #include <managers/error_queues.hpp>
@@ -200,7 +201,7 @@ void RoomPopup::onLoaded(bool stateChanged) {
 
     auto& rm = RoomManager::get();
     if (stateChanged) {
-        this->setRoomTitle(rm.getId());
+        this->setRoomTitle(rm.getInfo().name, rm.getId());
         this->addButtons();
     }
 
@@ -242,9 +243,8 @@ void RoomPopup::addButtons() {
         auto* createRoomButton = Build<ButtonSprite>::create("Create room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .intoMenuItem([this](auto) {
                 if (!this->isLoading()) {
-                    // TODO: room name, password, settings should be selectable by user
-                    NetworkManager::get().send(CreateRoomPacket::create("hi", "gay", {}));
-                    this->reloadPlayerList(false);
+                    // TODO: do more with this
+                    CreateRoomPopup::create(this)->show();
                 }
             })
             .scaleMult(1.05f)
@@ -364,14 +364,14 @@ void RoomPopup::applyFilter(const std::string_view input) {
     buttonMenu->updateLayout();
 }
 
-void RoomPopup::setRoomTitle(uint32_t id) {
+void RoomPopup::setRoomTitle(std::string name, uint32_t id) {
     if (roomIdButton) roomIdButton->removeFromParent();
 
     std::string title;
     if (id == 0) {
         title = "Global room";
     } else {
-        title = fmt::format("Room {}", id);
+        title = fmt::format("{} ({})", name, id);
     }
 
     auto layout = util::ui::getPopupLayout(m_size);

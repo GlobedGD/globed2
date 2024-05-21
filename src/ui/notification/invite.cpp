@@ -33,7 +33,7 @@ bool GlobedInviteNotification::init(uint32_t roomID, const std::string_view pass
         .pos(width - cc9sw + 2.f, cc9sh - 2.f)
         .parent(this);
 
-    Build<CCLabelBMFont>::create("availax", "goldFont.fnt")
+    Build<CCLabelBMFont>::create(player.name.c_str(), "goldFont.fnt")
         .limitLabelWidth(targetWidth, 0.76f, 0.3f)
         .pos(width / 2.f + 10.f, height - 39.f)
         .parent(this);

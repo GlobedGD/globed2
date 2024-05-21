@@ -518,7 +518,11 @@ void NetworkManager::setupBuiltinListeners() {
 
     addBuiltinListener<RoomJoinFailedPacket>([](auto packet) {
         // TODO: handle reason
-        ErrorQueues::get().error(fmt::format("Failed to join room: among us"));
+        std::string reason = "N/A";
+        if (packet->wasInvalid) reason = "Room doesn't exist";
+        if (packet->wasProtected) reason = "Room password is wrong";
+        if (packet->wasFull) reason = "Room is full";
+        ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
     });
 
     /* admin */
