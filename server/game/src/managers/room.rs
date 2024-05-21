@@ -1,10 +1,15 @@
+use std::sync::OnceLock;
+
 use esp::InlineString;
 use globed_shared::{
     rand::{self, Rng},
     IntMap, SyncMutex, SyncMutexGuard,
 };
 
-use crate::data::{LevelId, RoomInfo, RoomListingInfo, RoomSettings, ROOM_ID_LENGTH};
+use crate::{
+    data::{LevelId, RoomInfo, RoomListingInfo, RoomSettings, ROOM_ID_LENGTH},
+    server::GameServer,
+};
 
 use super::LevelManager;
 
@@ -21,6 +26,7 @@ pub struct Room {
 pub struct RoomManager {
     rooms: SyncMutex<IntMap<u32, Room>>,
     global: SyncMutex<Room>,
+    game_server: OnceLock<&'static GameServer>,
 }
 
 // i.e. if ROOM_ID_LENGTH is 6 we should have a range 100_000..1_000_000
@@ -69,23 +75,23 @@ impl Room {
     }
 
     #[inline]
-    pub fn get_room_info(&self, id: u32) -> RoomInfo {
+    pub fn get_room_info(&self, id: u32, game_server: &GameServer) -> RoomInfo {
         RoomInfo {
             id,
             name: self.name.clone(),
             password: self.password.clone(),
-            owner: self.owner,
+            owner: game_server.get_player_preview_data(self.owner).unwrap_or_default(),
             settings: self.settings,
         }
     }
 
     #[inline]
-    pub fn get_room_listing_info(&self, id: u32) -> RoomListingInfo {
+    pub fn get_room_listing_info(&self, id: u32, game_server: &GameServer) -> RoomListingInfo {
         RoomListingInfo {
             id,
             name: self.name.clone(),
             has_password: !self.password.is_empty(),
-            owner: self.owner,
+            owner: game_server.get_player_preview_data(self.owner).unwrap_or_default(),
             settings: self.settings,
         }
     }
@@ -116,7 +122,7 @@ impl Room {
         if self.settings.flags.two_player {
             player_count >= 2
         } else {
-            player_count >= self.settings.player_limit as usize
+            player_count >= (self.settings.player_limit as usize)
         }
     }
 }
@@ -124,6 +130,22 @@ impl Room {
 impl RoomManager {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn set_game_server(&self, game_server: &'static GameServer) {
+        match self.game_server.set(game_server) {
+            Ok(()) => {}
+            Err(_) => {
+                panic!("set_game_server failed");
+            }
+        }
+    }
+
+    #[inline]
+    fn get_game_server(&self) -> &'static GameServer {
+        self.game_server
+            .get()
+            .expect("get_game_server called without a previous call to set_game_server")
     }
 
     /// Try to find a room by given ID, if equal to 0 or not found, runs the provided closure with the global room
@@ -214,7 +236,7 @@ impl RoomManager {
     }
 
     pub fn get_room_info(&self, room_id: u32) -> Option<RoomInfo> {
-        self.try_with_any(room_id, |room| Some(room.get_room_info(room_id)), || None)
+        self.try_with_any(room_id, |room| Some(room.get_room_info(room_id, self.get_game_server())), || None)
     }
 
     fn _create_room(&self, room_id: u32, owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> RoomInfo {
@@ -226,7 +248,7 @@ impl RoomManager {
         }
 
         let room = Room::new(owner, name, password, settings, pm);
-        let room_info = room.get_room_info(room_id);
+        let room_info = room.get_room_info(room_id, self.get_game_server());
 
         rooms.insert(room_id, room);
 

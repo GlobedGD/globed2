@@ -180,7 +180,7 @@ impl GameServerThread {
         let thread = self.game_server.get_user_by_id(packet.player);
 
         if let Some(thread) = thread {
-            let player_data = self.account_data.lock().make_room_preview(0);
+            let player_data = self.account_data.lock().make_preview();
 
             debug!(
                 "{account_id} sent an invite to {} (room: {}, password: {})",
@@ -207,11 +207,9 @@ impl GameServerThread {
 
     #[inline]
     async fn _respond_with_room_list(&self, room_id: u32) -> crate::server_thread::Result<()> {
-        let (player_count, room_info) = self
-            .game_server
-            .state
-            .room_manager
-            .with_any(room_id, |room| (room.manager.get_total_player_count(), room.get_room_info(room_id)));
+        let (player_count, room_info) = self.game_server.state.room_manager.with_any(room_id, |room| {
+            (room.manager.get_total_player_count(), room.get_room_info(room_id, self.game_server))
+        });
 
         // RoomInfo, list size, list of PlayerRoomPreviewAccountData
         let encoded_size = size_of_types!(RoomInfo, u32) + size_of_types!(PlayerRoomPreviewAccountData) * player_count;
