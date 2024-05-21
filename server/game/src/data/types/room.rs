@@ -21,7 +21,7 @@ pub struct RoomSettings {
 #[dynamic_size(as_static = true)]
 pub struct RoomInfo {
     pub id: u32,
-    pub owner: i32,
+    pub owner: PlayerPreviewAccountData,
     pub name: InlineString<32>,
     pub password: InlineString<16>,
     pub settings: RoomSettings,
@@ -31,7 +31,7 @@ pub struct RoomInfo {
 #[dynamic_size(as_static = true)]
 pub struct RoomListingInfo {
     pub id: u32,
-    pub owner: i32,
+    pub owner: PlayerPreviewAccountData,
     pub name: InlineString<32>,
     pub has_password: bool,
     pub settings: RoomSettings,

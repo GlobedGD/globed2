@@ -43,6 +43,7 @@ bool RoomJoinPopup::setup() {
             }
 
             // test packet to check if pass needed (or just joining the room)
+            std::string_view t(0);
             NetworkManager::get().send(JoinRoomPacket::create(code, 0));
 
             nm.addListener<RoomJoinFailedPacket>(this, [this, code](std::shared_ptr<RoomJoinFailedPacket> packet) {

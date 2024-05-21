@@ -34,7 +34,7 @@ pub struct RoomInfoPacket {
 #[derive(Packet, Encodable, StaticSize, DynamicSize, Clone)]
 #[packet(id = 23005)]
 pub struct RoomInvitePacket {
-    pub player_data: PlayerRoomPreviewAccountData,
+    pub player_data: PlayerPreviewAccountData,
     pub room_id: u32,
     pub room_password: InlineString<16>,
 }

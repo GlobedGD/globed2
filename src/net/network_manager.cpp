@@ -286,10 +286,10 @@ void NetworkManager::threadRecvFunc() {
 
     lastReceivedPacket = util::time::now();
 
-    this->callListener(packet);
+    this->callListener(std::move(packet));
 }
 
-void NetworkManager::callListener(std::shared_ptr<Packet> packet) {
+void NetworkManager::callListener(std::shared_ptr<Packet>&& packet) {
     packetid_t packetId = packet->getPacketId();
 
     bool hasListeners = !(*listeners.lock())[packetId].empty();

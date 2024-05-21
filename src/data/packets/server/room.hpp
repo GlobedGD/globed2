@@ -57,7 +57,7 @@ class RoomInvitePacket : public Packet {
 
     RoomInvitePacket() {}
 
-    PlayerRoomPreviewAccountData playerData;
+    PlayerPreviewAccountData playerData;
     uint32_t roomID;
     std::string password;
 };

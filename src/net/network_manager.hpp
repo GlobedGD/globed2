@@ -182,7 +182,7 @@ private:
 
     void setupBuiltinListeners();
 
-    void callListener(std::shared_ptr<Packet> packet);
+    void callListener(std::shared_ptr<Packet>&& packet);
     void handleUnhandledPacket(packetid_t id);
 
     void handlePingResponse(std::shared_ptr<Packet> packet);

@@ -1,4 +1,5 @@
 #pragma once
+#include <data/types/gd.hpp>
 #include <data/bytebuffer.hpp>
 #include <data/bitfield.hpp>
 
@@ -29,7 +30,7 @@ GLOBED_SERIALIZABLE_STRUCT(RoomSettings, (
 
 struct RoomInfo {
     uint32_t id;
-    int32_t owner;
+    PlayerPreviewAccountData owner;
     std::string name;
     std::string password;
     RoomSettings settings;
@@ -41,7 +42,7 @@ GLOBED_SERIALIZABLE_STRUCT(RoomInfo, (
 
 struct RoomListingInfo {
     uint32_t id;
-    int32_t owner;
+    PlayerPreviewAccountData owner;
     std::string name;
     bool hasPassword;
     RoomSettings settings;
