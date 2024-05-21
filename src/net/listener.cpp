@@ -20,6 +20,8 @@ bool PacketListener::init(packetid_t packetId, CallbackFn&& fn, CCObject* owner,
 }
 
 void PacketListener::invokeCallback(std::shared_ptr<Packet> packet) {
+    // in case something tries to free our owner, we can run into random UB. retain ourselves for the call.
+    Ref<CCObject> _(this);
     callback(packet);
 }
 
