@@ -537,9 +537,7 @@ void NetworkManager::setupBuiltinListeners() {
         if (packet->wasInvalid) reason = "Room doesn't exist";
         if (packet->wasProtected) reason = "Room password is wrong";
         if (packet->wasFull) reason = "Room is full";
-        Loader::get()->queueInMainThread([reason, packet] {
-            if (CCScene::get()->getChildByID("room-password-popup"_spr) || !packet->wasProtected) ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
-        });
+        if (!packet->wasProtected) ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason)); //TEMPORARY disable wrong password alerts
     });
 
     /* admin */

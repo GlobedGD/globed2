@@ -5,6 +5,7 @@
 #include <util/format.hpp>
 #include <util/misc.hpp>
 #include "room_password_popup.hpp"
+#include <managers/error_queues.hpp>
 
 using namespace geode::prelude;
 
@@ -46,15 +47,15 @@ bool RoomJoinPopup::setup() {
             NetworkManager::get().send(JoinRoomPacket::create(code, ""));
 
             nm.addListener<RoomJoinFailedPacket>(this, [this, code](std::shared_ptr<RoomJoinFailedPacket> packet) {
-                log::info("pass needed");
                 if (packet->wasProtected) {
-                    RoomPasswordPopup::create(code)->show();
-                    this->onClose(nullptr);
+                    Loader::get()->queueInMainThread([this, code] {
+                        RoomPasswordPopup::create(code)->show();
+                        this->onClose(nullptr);
+                    });
                 }
             });
 
             nm.addListener<RoomJoinedPacket>(this, [this](std::shared_ptr<RoomJoinedPacket> packet) {
-                log::info("success");
                 this->onClose(nullptr);
             });
 
