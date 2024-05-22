@@ -3,6 +3,7 @@
 #include "player_list_cell.hpp"
 #include "room_join_popup.hpp"
 #include "room_settings_popup.hpp"
+#include "room_listing_popup.hpp"
 #include "invite_popup.hpp"
 #include "create_room_popup.hpp" 
 #include <data/packets/all.hpp>
@@ -232,7 +233,8 @@ void RoomPopup::addButtons() {
         auto* joinRoomButton = Build<ButtonSprite>::create("Join room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .intoMenuItem([this](auto) {
                 if (!this->isLoading()) {
-                    RoomJoinPopup::create()->show();
+                    //RoomJoinPopup::create()->show();
+                    RoomListingPopup::create()->show();
                 }
             })
             .scaleMult(1.05f)

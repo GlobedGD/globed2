@@ -26,8 +26,8 @@ bool RoomSettingsPopup::setup() {
 
     auto* cells = CCArray::create();
 
-    MAKE_SETTING("Invite only", "While enabled, new players can only join if they are invited", TAG_INVITE_ONLY, cellInviteOnly);
-    MAKE_SETTING("Open invites", "While enabled, all players in the room can invite players", TAG_PUBLIC_INVITES, cellPublicInvites);
+    MAKE_SETTING("Private", "While enabled, the room can not be found on the public room listing and can only be joined by entering the room ID", TAG_INVITE_ONLY, cellInviteOnly);
+    MAKE_SETTING("Open invites", "While enabled, all players in the room can invite players instead of just the room owner", TAG_PUBLIC_INVITES, cellPublicInvites);
     MAKE_SETTING("Collision", "While enabled, players can collide with each other", TAG_COLLISION, cellCollision);
     MAKE_SETTING("2-player mode", "While enabled, players can link with another player to play a 2-player enabled level together", TAG_TWO_PLAYER, cellTwoPlayer);
 
