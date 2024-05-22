@@ -1,6 +1,7 @@
 #include "room_listing_popup.hpp"
 
 #include "room_listing_cell.hpp"
+#include "room_join_popup.hpp"
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
 #include <net/network_manager.hpp>
@@ -44,6 +45,18 @@ bool RoomListingPopup::setup() {
         })
         .pos(340.f, 3.f)
         .id("reload-btn"_spr)
+        .intoNewParent(CCMenu::create())
+        .contentSize(contentSize)
+        .pos(0.f, 0.f)
+        .parent(m_mainLayer);
+
+    Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
+        .scale(0.9f)
+        .intoMenuItem([this](auto) {
+            RoomJoinPopup::create()->show();
+        })
+        .pos(3.f, 3.f)
+        .id("add-room-btn"_spr)
         .intoNewParent(CCMenu::create())
         .contentSize(contentSize)
         .pos(0.f, 0.f)
