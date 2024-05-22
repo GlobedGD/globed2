@@ -338,12 +338,12 @@ impl GameServer {
 
     /// If someone is already logged in under the given account ID, logs them out.
     /// Additionally, blocks until the appropriate cleanup has been done.
-    pub async fn check_already_logged_in(&self, user_id: i32) -> anyhow::Result<()> {
+    pub async fn check_already_logged_in(&self, account_id: i32) -> anyhow::Result<()> {
         let thread = self
             .threads
             .lock()
             .values()
-            .find(|thr| thr.account_id.load(Ordering::Relaxed) == user_id)
+            .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
             .cloned();
 
         if let Some(thread) = thread {

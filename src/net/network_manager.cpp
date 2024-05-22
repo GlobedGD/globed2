@@ -330,27 +330,6 @@ void NetworkManager::callListener(std::shared_ptr<Packet>&& packet) {
     for (auto* listener : lsmCopy) {
         listener->release();
     }
-
-    // if there are registered listeners, schedule them to be called on the next frame
-    Loader::get()->queueInMainThread([this, packetId, packet = std::move(packet)] {
-        // we must avoid holding the lock while running callbacks, in case the listeners destruct themselves.
-        // clone all listeners into a vector.
-        auto listeners_ = listeners.lock();
-        auto& pls = (*listeners_)[packetId];
-
-        std::vector<PacketListener*> ls(pls.size());
-
-        size_t i = 0;
-        for (auto* elem : pls) {
-            ls[i++] = elem;
-        }
-
-        listeners_.unlock();
-
-        for (auto* listener : ls) {
-            listener->invokeCallback(packet);
-        }
-    });
 }
 
 void NetworkManager::handleUnhandledPacket(packetid_t packetId) {

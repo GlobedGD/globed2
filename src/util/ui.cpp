@@ -203,13 +203,19 @@ namespace util::ui {
     ccColor3B getNameColor(const SpecialUserData& data) {
         if (!data.roles) return ccc3(255, 255, 255);
 
-        return compute(data).nameColor->getAnyColor();
+        auto computed = compute(data);
+        if (computed.nameColor) return computed.nameColor->getAnyColor();
+
+        return ccc3(255, 255, 255);
     }
 
     RichColor getNameRichColor(const SpecialUserData& data) {
         if (!data.roles) return RichColor(ccc3(255, 255, 255));
 
-        return compute(data).nameColor.value();
+        auto computed = compute(data);
+        if (computed.nameColor) return computed.nameColor.value();
+
+        return RichColor(ccc3(255, 255, 255));
     }
 
     void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color) {

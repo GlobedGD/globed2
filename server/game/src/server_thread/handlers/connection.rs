@@ -52,6 +52,11 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
+        // if we have already logged in, ignore this login attempt
+        if self.authenticated() {
+            return Ok(());
+        }
+
         // disconnect if server is under maintenance
         if self.game_server.bridge.central_conf.lock().maintenance {
             gs_disconnect!(self, "The server is currently under maintenance, please try connecting again later.");
