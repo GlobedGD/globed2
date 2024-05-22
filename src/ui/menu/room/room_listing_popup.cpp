@@ -11,13 +11,12 @@ using namespace geode::prelude;
 
 bool RoomListingPopup::setup() {
 	this->setTitle("Public Rooms");
-
-    cocos2d::CCSize contentSize = {300.f, 150.f};
+    this->setID("room-listing"_spr);
 
     scroll = ScrollLayer::create(contentSize);
     scroll->setAnchorPoint(ccp(0, 0));
     scroll->ignoreAnchorPointForPosition(false);
-    scroll->setLayout(ColumnLayout::create()->setGap(5.f)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End)->setAutoGrowAxis(contentSize.height));
+    scroll->m_contentLayer->setLayout(ColumnLayout::create()->setGap(5.f)->setAxisReverse(true)->setAxisAlignment(AxisAlignment::End)->setAutoGrowAxis(contentSize.height));
     scroll->setContentSize(contentSize);
 
     auto& nm = NetworkManager::get();
@@ -67,9 +66,14 @@ void RoomListingPopup::createCells(std::vector<RoomListingInfo> rlpv) {
     scroll->m_contentLayer->removeAllChildren();
     for (RoomListingInfo rlp : rlpv) {
         RoomListingCell* rlc = RoomListingCell::create(rlp);
+        rlc->setContentSize({contentSize.width, 50.f});
         scroll->m_contentLayer->addChild(rlc);
     }
     scroll->m_contentLayer->updateLayout();
+}
+
+void RoomListingPopup::close() {
+    this->onClose(nullptr);
 }
 
 RoomListingPopup* RoomListingPopup::create() {

@@ -48,7 +48,8 @@ bool CreateRoomPopup::setup(RoomPopup* parent) {
         .intoMenuItem([this, parent](auto) {
             std::string roomName = std::string(GJAccountManager::get()->m_username) + "'s room";
             if (roomNameInput->getString().size() != 0) roomName = roomNameInput->getString();
-            uint32_t playercount = std::stoi(playerLimitInput->getString());
+            uint32_t playercount = 32;
+            if (playerLimitInput->getString() != "") playercount = std::stoi(playerLimitInput->getString());
             NetworkManager::get().send(CreateRoomPacket::create(roomName, passwordInput->getString(), RoomSettings {{}, playercount}));
             parent->reloadPlayerList(false);
             this->onClose(nullptr);

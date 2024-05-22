@@ -10,6 +10,7 @@ class RoomListingPopup : public geode::Popup<> {
 protected:
     static constexpr float POPUP_WIDTH = 342.f;
     static constexpr float POPUP_HEIGHT = 240.f;
+    const cocos2d::CCSize contentSize = {300.f, 150.f};
 
 	bool setup() override;
 
@@ -21,4 +22,5 @@ protected:
 
 public:
 	static RoomListingPopup* create();
+    void close();
 };

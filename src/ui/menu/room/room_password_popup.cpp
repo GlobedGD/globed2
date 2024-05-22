@@ -28,8 +28,8 @@ bool RoomPasswordPopup::setup(uint32_t id) {
 
     Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this, id](auto) {
-            this->onClose(nullptr);
             NetworkManager::get().send(JoinRoomPacket::create(id, roomPassInput->getString()));
+            this->onClose(nullptr);
         })
         .id("join-btn"_spr)
         .intoNewParent(CCMenu::create())
