@@ -43,15 +43,11 @@ NetworkManager::NetworkManager() {
 }
 
 NetworkManager::~NetworkManager() {
-    log::debug("cleaning up..");
-
     // clear listeners
     this->removeAllListeners();
-    builtinListeners.lock()->clear();
 
-    log::debug("waiting for output thread to terminate..");
+    log::debug("waiting for threads to terminate..");
     threadMain.stopAndWait();
-    log::debug("waiting for input thread to terminate..");
     threadRecv.stopAndWait();
 
     if (this->connected()) {
@@ -144,11 +140,25 @@ void NetworkManager::send(std::shared_ptr<Packet> packet) {
     packetQueue.push(std::move(packet));
 }
 
-void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback, bool overrideBuiltin) {
-    auto* listener = PacketListener::create(id, std::move(callback), target, overrideBuiltin);
-    target->setUserObject(util::cocos::spr(fmt::format("packet-listener-{}", id)), listener);
+std::string NetworkManager::formatListenerKey(packetid_t id) {
+    return util::cocos::spr(fmt::format("packet-listener-{}", id));
+}
+
+void NetworkManager::addListener(CCNode* target, packetid_t id, PacketListener* listener) {
+    if (target) {
+        target->setUserObject(this->formatListenerKey(id), listener);
+    } else {
+        // if target is nullptr we leak the listener,
+        // essentially saying it should live for the entire duration of the program.
+        listener->retain();
+    }
 
     this->registerPacketListener(id, listener);
+}
+
+void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback, int priority, bool mainThread, bool isFinal) {
+    auto* listener = PacketListener::create(id, std::move(callback), target, priority, mainThread, isFinal);
+    this->addListener(target, id, listener);
 }
 
 void NetworkManager::removeListener(CCNode* target, packetid_t id) {
@@ -293,36 +303,32 @@ void NetworkManager::threadRecvFunc() {
 void NetworkManager::callListener(std::shared_ptr<Packet>&& packet) {
     packetid_t packetId = packet->getPacketId();
 
-    bool hasListeners = !(*listeners.lock())[packetId].empty();
-    // if we have listeners, check if any of them disable builtin listeners
+    auto ls = listeners.lock();
+    auto& lsm = (*ls)[packetId];
 
-    bool overrideBuiltin = false;
-    if (hasListeners) {
-        for (auto* listener : (*listeners.lock())[packetId]) {
-            if (listener->overrideBuiltin) {
-                overrideBuiltin = true;
-                break;
-            }
-        }
-    }
-
-    bool invokedBuiltin = false;
-
-    // call any builtin listeners
-    if (!overrideBuiltin) {
-        auto builtin = builtinListeners.lock();
-        if (builtin->contains(packetId)) {
-            (*builtin)[packetId](packet);
-            invokedBuiltin = true;
-        }
-    }
-
-    if (!hasListeners) {
-        if (!invokedBuiltin) {
-            this->handleUnhandledPacket(packetId);
-        }
-
+    if (lsm.empty()) {
+        this->handleUnhandledPacket(packetId);
         return;
+    }
+    // in case any of the listeners try to destruct themselves (i.e. destroying thir parent),
+    // we should retain and release them after unlocking `listeners`, to prevent deadlocks.
+
+    for (auto* listener : lsm) {
+        listener->retain();
+    }
+
+    // invoke callbacks
+    for (auto* listener : lsm) {
+        listener->invokeCallback(packet);
+
+        if (listener->isFinal) break;
+    }
+
+    std::vector<PacketListener*> lsmCopy(lsm);
+    ls.unlock();
+
+    for (auto* listener : lsmCopy) {
+        listener->release();
     }
 
     // if there are registered listeners, schedule them to be called on the next frame
@@ -364,7 +370,7 @@ void NetworkManager::handleUnhandledPacket(packetid_t packetId) {
 void NetworkManager::setupBuiltinListeners() {
     /* connection */
 
-    addBuiltinListenerSafe<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
+    addBuiltinListenerSync<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
         log::debug("handshake successful, logging in");
         auto key = packet->data.key;
 
@@ -512,18 +518,18 @@ void NetworkManager::setupBuiltinListeners() {
 
     /* general */
 
-    addBuiltinListenerSafe<RolesUpdatedPacket>([](auto packet) {
+    addBuiltinListenerSync<RolesUpdatedPacket>([](auto packet) {
         auto& pcm = ProfileCacheManager::get();
         pcm.setOwnSpecialData(packet->specialUserData);
     });
 
     /* room */
 
-    addBuiltinListenerSafe<RoomInvitePacket>([](auto packet) {
+    addBuiltinListenerSync<RoomInvitePacket>([](auto packet) {
         GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->password, packet->playerData);
     });
 
-    addBuiltinListenerSafe<RoomInfoPacket>([](auto packet) {
+    addBuiltinListenerSync<RoomInfoPacket>([](auto packet) {
         ErrorQueues::get().success("Room configuration updated");
 
         RoomManager::get().setInfo(packet->info);
@@ -547,7 +553,7 @@ void NetworkManager::setupBuiltinListeners() {
         ErrorQueues::get().success("Successfully authorized");
     });
 
-    addBuiltinListenerSafe<AdminAuthFailedPacket>([this](auto packet) {
+    addBuiltinListenerSync<AdminAuthFailedPacket>([this](auto packet) {
         ErrorQueues::get().warn("Login failed");
 
         auto& am = GlobedAccountManager::get();
@@ -607,8 +613,8 @@ void NetworkManager::maybeDisconnectIfDead() {
     }
 }
 
-void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback) {
-    (*builtinListeners.lock())[id] = std::move(callback);
+void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback, bool mainThread) {
+    this->addListener(nullptr, id, std::move(callback), BUILTIN_LISTENER_PRIORITY, mainThread, false);
 }
 
 void NetworkManager::registerPacketListener(packetid_t packet, PacketListener* listener) {
@@ -616,7 +622,22 @@ void NetworkManager::registerPacketListener(packetid_t packet, PacketListener* l
     log::debug("Registering listener (id {}) for {}", packet, listener->owner);
 #endif
 
-    (*listeners.lock())[packet].insert(listener);
+    auto ls = listeners.lock();
+    auto& lsm = (*ls)[packet];
+
+    // is it already added?
+    auto it = std::find(lsm.begin(), lsm.end(), listener);
+    if (it != lsm.end()) {
+        return;
+    }
+
+    // otherwise, add it
+    lsm.push_back(listener);
+
+    // sort all elements by priority descending (higher = runs earlier)
+    std::sort(lsm.begin(), lsm.end(), [](PacketListener* a, PacketListener* b) -> bool {
+        return a->priority > b->priority;
+    });
 }
 
 void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener) {
@@ -628,7 +649,13 @@ void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener*
     log::debug("Unregistering listener (id {}) for {}", packet, listener->owner);
 #endif
 
-    listeners.lock()->at(packet).erase(listener);
+    auto ls = listeners.lock();
+    auto& lsm = (*ls)[packet];
+
+    auto it = std::find(lsm.begin(), lsm.end(), listener);
+    if (it != lsm.end()) {
+        lsm.erase(it);
+    }
 }
 
 void NetworkManager::toggleIgnoreProtocolMismatch(bool state) {

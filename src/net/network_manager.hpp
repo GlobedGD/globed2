@@ -19,17 +19,14 @@ enum class NetworkThreadTask {
 template <typename T>
 concept HasPacketID = requires { T::PACKET_ID; };
 
-constexpr int ROLE_USER = 0;
-constexpr int ROLE_HELPER = 1;
-constexpr int ROLE_MOD = 2;
-constexpr int ROLE_ADMIN = 100;
-
 // This class is fully thread safe..? hell do i know..
 class NetworkManager : public SingletonBase<NetworkManager> {
 protected:
     friend class SingletonBase;
     NetworkManager();
     ~NetworkManager();
+
+    static constexpr int BUILTIN_LISTENER_PRIORITY = -10000000;
 
 public:
     using PacketCallback = std::function<void(std::shared_ptr<Packet>)>;
@@ -59,17 +56,19 @@ public:
     // Sends a packet to the currently established connection. Throws if disconnected.
     void send(std::shared_ptr<Packet> packet);
 
+    void addListener(cocos2d::CCNode* target, packetid_t id, PacketListener* listener);
+
     // Adds a packet listener and calls your callback function when a packet with `id` is received.
     // If there already was a callback with this packet ID, it gets replaced.
     // All callbacks are ran in the main (GD) thread.
-    void addListener(cocos2d::CCNode* target, packetid_t id, PacketCallback&& callback, bool overrideBuiltin = false);
+    void addListener(cocos2d::CCNode* target, packetid_t id, PacketCallback&& callback, int priority = false, bool mainThread = true, bool isFinal = true);
 
     // Same as addListener(packetid_t, PacketCallback) but hacky syntax xd
     template <HasPacketID Pty>
-    void addListener(cocos2d::CCNode* target, PacketCallbackSpecific<Pty>&& callback, bool overrideBuiltin = false) {
-        this->addListener(target, Pty::PACKET_ID, [callback](std::shared_ptr<Packet> pkt) {
-            callback(std::static_pointer_cast<Pty>(pkt));
-        }, overrideBuiltin);
+    void addListener(cocos2d::CCNode* target, PacketCallbackSpecific<Pty>&& callback, int priority = false, bool mainThread = true, bool isFinal = true) {
+        this->addListener(target, Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
+            return callback(std::static_pointer_cast<Pty>(pkt));
+        }, priority, mainThread, isFinal);
     }
 
     // Removes a listener by packet ID.
@@ -151,7 +150,7 @@ private:
 
     // Note that we intentionally don't use Ref here,
     // as we use the destructor to know if the object owning the listener has been destroyed.
-    asp::Mutex<std::unordered_map<packetid_t, std::set<PacketListener*>>> listeners;
+    asp::Mutex<std::unordered_map<packetid_t, std::vector<PacketListener*>>> listeners;
     asp::Mutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
 
     // threads
@@ -184,6 +183,7 @@ private:
 
     void callListener(std::shared_ptr<Packet>&& packet);
     void handleUnhandledPacket(packetid_t id);
+    std::string formatListenerKey(packetid_t);
 
     void handlePingResponse(std::shared_ptr<Packet> packet);
     void maybeSendKeepalive();
@@ -191,27 +191,20 @@ private:
     void toggleIgnoreProtocolMismatch(bool state);
     void logPacketToFile(std::shared_ptr<Packet> packet);
 
-    // Builtin listeners have priority above the others.
-    asp::Mutex<std::unordered_map<packetid_t, PacketCallback>> builtinListeners;
-
-    void addBuiltinListener(packetid_t id, PacketCallback&& callback);
+    void addBuiltinListener(packetid_t id, PacketCallback&& callback, bool mainThread = false);
 
     // Callbacks for builtin listeners are NOT ran on the main thread.
     template <HasPacketID Pty>
-    void addBuiltinListener(PacketCallbackSpecific<Pty>&& callback) {
+    void addBuiltinListener(PacketCallbackSpecific<Pty>&& callback, bool mainThread = false) {
         this->addBuiltinListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
             callback(std::static_pointer_cast<Pty>(pkt));
-        });
+        }, mainThread);
     }
 
-    // Thread-safe version of addBuiltinListener
+    // Same as `addBuiltinListener(callback, true)`
     template <HasPacketID Pty>
-    void addBuiltinListenerSafe(PacketCallbackSpecific<Pty>&& callback) {
-        this->addBuiltinListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
-            Loader::get()->queueInMainThread([callback = std::move(callback), pkt = std::move(pkt)] {
-                callback(std::static_pointer_cast<Pty>(pkt));
-            });
-        });
+    void addBuiltinListenerSync(PacketCallbackSpecific<Pty>&& callback) {
+        this->addBuiltinListener<Pty>(std::move(callback), true);
     }
 
     friend class PacketListener;

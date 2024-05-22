@@ -9,16 +9,18 @@ public:
 
     ~PacketListener();
 
-    static PacketListener* create(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, bool overrideBuiltin);
+    // higher priority - runs earlier
+    static PacketListener* create(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, int priority, bool mainThread, bool isFinal);
 
     void invokeCallback(std::shared_ptr<Packet> packet);
 
-    cocos2d::CCObject* owner;
-    bool overrideBuiltin;
     packetid_t packetId;
+    cocos2d::CCObject* owner;
+    int priority;
+    bool mainThread, isFinal;
 
 private:
     CallbackFn callback;
 
-    bool init(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, bool overrideBuiltin);
+    bool init(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, int priority, bool mainThread, bool isFinal);
 };

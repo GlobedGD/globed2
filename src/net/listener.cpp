@@ -10,24 +10,33 @@ PacketListener::~PacketListener() {
     nm.suppressUnhandledFor(packetId, util::time::seconds(3));
 }
 
-bool PacketListener::init(packetid_t packetId, CallbackFn&& fn, CCObject* owner, bool overrideBuiltin) {
+bool PacketListener::init(packetid_t packetId, CallbackFn&& fn, CCObject* owner, int priority, bool mainThread, bool isFinal) {
     this->callback = std::move(fn);
     this->packetId = packetId;
     this->owner = owner;
-    this->overrideBuiltin = overrideBuiltin;
+    this->priority = priority;
+    this->mainThread = mainThread;
+    this->isFinal = isFinal;
 
     return true;
 }
 
 void PacketListener::invokeCallback(std::shared_ptr<Packet> packet) {
-    // in case something tries to free our owner, we can run into random UB. retain ourselves for the call.
-    Ref<CCObject> _(this);
-    callback(packet);
+    // this might not seem like it but it must be kept oustide of the `if { ... }`
+    Ref<CCObject> ownerRef(owner);
+
+    if (mainThread) {
+        Loader::get()->queueInMainThread([this, ownerRef = std::move(ownerRef), packet = std::move(packet)] {
+            this->callback(packet);
+        });
+    } else {
+        callback(packet);
+    }
 }
 
-PacketListener* PacketListener::create(packetid_t packetId, CallbackFn&& fn, CCObject* owner, bool overrideBuiltin) {
+PacketListener* PacketListener::create(packetid_t packetId, CallbackFn&& fn, CCObject* owner, int priority, bool mainThread, bool isFinal) {
     auto ret = new PacketListener;
-    if (ret->init(packetId, std::move(fn), owner, overrideBuiltin)) {
+    if (ret->init(packetId, std::move(fn), owner, priority, mainThread, isFinal)) {
         ret->autorelease();
         return ret;
     }
