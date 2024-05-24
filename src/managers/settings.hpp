@@ -138,6 +138,7 @@ public:
         Setting<bool, false> increaseLevelList;
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
+        Setting<bool, true> useDiscordRPC;
     };
 
     struct Overlay {
@@ -253,7 +254,7 @@ public:
 /* Enable reflection */
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, increaseLevelList, fragmentationLimit, compressedPlayerCount
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
