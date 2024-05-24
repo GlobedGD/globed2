@@ -43,17 +43,42 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     }
 
     switch (settingType) {
+        case Type::DiscordRPC: [[fallthrough]];
         case Type::Bool: {
+            bool enabled = true;
+            float opacity = 1.f;
+            bool isDRPCPossible = settingType == Type::DiscordRPC && Loader::get()->isModLoaded("techstudent10.discord_rich_presence");
+            if (!isDRPCPossible) {
+                enabled = false;
+                opacity = 0.5f;
+            }
             Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 1.0f))
                 .anchorPoint(0.5f, 0.5f)
                 .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
                 .scale(0.8f)
+                .with([&](auto* btn) {
+                    btn->m_offButton->setOpacity(static_cast<unsigned char>(255 * opacity));
+                    btn->m_onButton->setOpacity(static_cast<unsigned char>(255 * opacity));
+                })
                 .id("input-checkbox"_spr)
                 .store(inpCheckbox)
                 .intoNewParent(CCMenu::create())
                 .pos(0.f, 0.f)
                 .id("input-menu"_spr)
-                .parent(this);
+                .parent(this)
+                .enabled(enabled);
+
+            if (!isDRPCPossible) {
+                Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+                    .scale(0.4f)
+                    .intoMenuItem([](auto) {
+                        FLAlertLayer::create("Discord RPC is disabled", "Discord Rich Presence is disabled or not installed. Please enable or install it in Geode to use this option.", "OK")->show();
+                    })
+                    .pos(inpCheckbox->getPositionX() - 20.f, inpCheckbox->getPositionY() + 10.f)
+                    .intoNewParent(CCMenu::create())
+                    .pos(0.f, 0.f)
+                    .parent(this);
+            }
 
             inpCheckbox->toggle(*(bool*)(settingStorage));
         } break;
