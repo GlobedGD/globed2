@@ -11,11 +11,11 @@ globed-derive = { path = "../derive" }
 esp = { path = "../esp" }
 
 alloca = "0.4.0"
-ctrlc = "3.4.2"
+ctrlc = "3.4.4"
 rustc-hash = "1.1.0"
-tokio = { version = "1.36.0", features = ["full"] }
-serde = { version = "1.0.197", features = ["serde_derive"] }
-serde_json = "1.0.114"
+tokio = { version = "1.37.0", features = ["full"] }
+serde = { version = "1.0.202", features = ["serde_derive"] }
+serde_json = "1.0.117"
 futures-util = "0.3.30"
 
 [dev-dependencies]

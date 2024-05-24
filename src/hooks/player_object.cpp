@@ -152,7 +152,7 @@ bool HookedPlayerObject::init(int param1, int param2, GJBaseGameLayer* gameLayer
     m_unk91c = (rand() / 32767.f) * 10.f + 5.f;
     m_gameLayer = gameLayer;
     m_parentLayer = parentLayer;
-    m_unk65c = someBool;
+    m_playEffects = someBool;
     m_touchingRings = CCArray::create();
     m_touchingRings->retain();
 

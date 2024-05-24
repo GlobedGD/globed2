@@ -235,7 +235,7 @@ void ComplexVisualPlayer::updateData(
         //     // rotation
         //     *(float*)((char*)dobj + 0x34c) = 115.f;
         //     *(bool*)((char*)dobj + 0x394) = false;
-        //     playerIcon->m_unk65c = true;
+        //     playerIcon->m_playEffects = true;
         //     playerIcon->startDashing(nullptr);
         // } else {
         //     playerIcon->stopDashing();
@@ -322,7 +322,7 @@ void ComplexVisualPlayer::updateData(
     this->setVisible(shouldBeVisible);
 
     if (!shouldBeVisible) {
-        playerIcon->m_unk65c = false;
+        playerIcon->m_playEffects = false;
         if (playerIcon->m_regularTrail) playerIcon->m_regularTrail->setVisible(false);
     }
 }
@@ -361,7 +361,7 @@ void ComplexVisualPlayer::playDeathEffect() {
         prevChildren.insert(child);
     }
 
-    playerIcon->m_unk65c = true;
+    playerIcon->m_playEffects = true;
     playerIcon->m_isHidden = false;
     playerIcon->playerDestroyed(false);
 
@@ -382,7 +382,7 @@ void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
     // spider teleport effect is only played in play layer, and when nearby
     if (!PlayLayer::get() || !wasNearby) return;
 
-    playerIcon->m_unk65c = true;
+    playerIcon->m_playEffects = true;
     playerIcon->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
 
     auto* arr = PlayLayer::get()->m_circleWaveArray;

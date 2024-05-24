@@ -2,6 +2,7 @@ use std::{fmt::Display, num::ParseIntError, str::FromStr};
 
 use crate::data::*;
 
+#[derive(Debug)]
 pub enum ColorParseError {
     InvalidLength,
     InvalidFormat,
@@ -14,8 +15,8 @@ impl Display for ColorParseError {
             Self::InvalidFormat => f.write_str("invalid hex string, expected '#' at the start"),
             Self::InvalidLength => {
                 f.write_str("invalid length of the hex string, should start with '#' and have 6 characters for Color3B or 6/8 characters for Color4B")
-            },
-            Self::ParseError => f.write_str("invalid hex bytes encountered in the string")
+            }
+            Self::ParseError => f.write_str("invalid hex bytes encountered in the string"),
         }
     }
 }
@@ -26,7 +27,7 @@ impl From<ParseIntError> for ColorParseError {
     }
 }
 
-#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize, Debug, PartialEq)]
 #[dynamic_size(as_static = true)]
 pub struct Color3B {
     pub r: u8,

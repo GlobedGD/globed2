@@ -1,6 +1,6 @@
-use crate::data::*;
+use globed_shared::UserEntry;
 
-use super::Color3B;
+use crate::{data::*, managers::RoleManager};
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
@@ -48,16 +48,19 @@ impl PlayerIconData {
 
 /* SpecialUserData */
 
-#[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
-#[dynamic_size(as_static = true)]
+#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct SpecialUserData {
-    pub name_color: Color3B,
+    pub roles: Option<FastVec<u8, 16>>,
 }
 
-impl Default for SpecialUserData {
-    fn default() -> Self {
-        Self {
-            name_color: Color3B { r: 255, g: 255, b: 255 },
+impl SpecialUserData {
+    pub fn from_user_entry(user_entry: &UserEntry, role_manager: &RoleManager) -> Self {
+        if user_entry.user_roles.is_empty() {
+            Self { roles: None }
+        } else {
+            let roles = role_manager.role_ids_to_int_ids(&user_entry.user_roles);
+
+            Self { roles: Some(roles) }
         }
     }
 }
@@ -68,9 +71,9 @@ impl Default for SpecialUserData {
 pub struct PlayerAccountData {
     pub account_id: i32,
     pub user_id: i32,
-    pub name: FastString<MAX_NAME_SIZE>,
+    pub name: InlineString<MAX_NAME_SIZE>,
     pub icons: PlayerIconData,
-    pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: SpecialUserData,
 }
 
 impl PlayerAccountData {
@@ -108,12 +111,12 @@ impl PlayerAccountData {
 pub struct PlayerPreviewAccountData {
     pub account_id: i32,
     pub user_id: i32,
-    pub name: FastString<MAX_NAME_SIZE>,
+    pub name: InlineString<MAX_NAME_SIZE>,
     pub cube: i16,
     pub color1: i16,
     pub color2: i16,
     pub glow_color: i16,
-    pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: SpecialUserData,
 }
 
 /* PlayerRoomPreviewAccountData - similar to previous one but for rooms, the only difference is that it includes a level ID */
@@ -122,13 +125,13 @@ pub struct PlayerPreviewAccountData {
 pub struct PlayerRoomPreviewAccountData {
     pub account_id: i32,
     pub user_id: i32,
-    pub name: FastString<MAX_NAME_SIZE>,
+    pub name: InlineString<MAX_NAME_SIZE>,
     pub cube: i16,
     pub color1: i16,
     pub color2: i16,
     pub glow_color: i16,
     pub level_id: LevelId,
-    pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: SpecialUserData,
 }
 
 /* AssociatedPlayerData */

@@ -64,6 +64,7 @@ void ErrorCheckNode::updateErrors(float) {
 
         for (auto& error : errors) {
             if (canShowFLAlert()) {
+                log::debug("showing error: {}", error);
                 auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed error", error, "Ok"));
                 alert->setID("error-popup"_spr);
                 alert->blockClosingFor(BLOCK_CLOSING_FOR);
@@ -75,6 +76,7 @@ void ErrorCheckNode::updateErrors(float) {
 
         for (auto& notice : notices) {
             if (canShowFLAlert()) {
+                log::debug("showing notice: {}", notice);
                 auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed notice", notice, "Ok"));
                 alert->setID("notice-popup"_spr);
                 alert->blockClosingFor(BLOCK_CLOSING_FOR);

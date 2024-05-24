@@ -10,28 +10,33 @@ pub struct RoomCreatedPacket {
 #[packet(id = 23001, tcp = false)]
 pub struct RoomJoinedPacket;
 
-#[derive(Packet, Encodable, DynamicSize)]
+#[derive(Packet, Encodable, StaticSize, Default)]
 #[packet(id = 23002, tcp = false)]
-pub struct RoomJoinFailedPacket<'a> {
-    pub message: &'a str,
+pub struct RoomJoinFailedPacket {
+    pub was_invalid: bool,
+    pub was_protected: bool,
+    pub was_full: bool,
 }
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 23003, tcp = true)]
-pub struct RoomPlayerListPacket; // definition intentionally missing
+pub struct RoomPlayerListPacket {
+    pub room_info: RoomInfo,
+    pub players: Vec<PlayerRoomPreviewAccountData>,
+}
 
-#[derive(Packet, Encodable, StaticSize, Clone)]
+#[derive(Packet, Encodable, StaticSize, DynamicSize, Clone)]
 #[packet(id = 23004)]
 pub struct RoomInfoPacket {
     pub info: RoomInfo,
 }
 
-#[derive(Packet, Encodable, StaticSize, Clone)]
+#[derive(Packet, Encodable, StaticSize, DynamicSize, Clone)]
 #[packet(id = 23005)]
 pub struct RoomInvitePacket {
-    pub player_data: PlayerRoomPreviewAccountData,
+    pub player_data: PlayerPreviewAccountData,
     pub room_id: u32,
-    pub room_token: u32,
+    pub room_password: InlineString<16>,
 }
 
 #[derive(Packet, Encodable)]

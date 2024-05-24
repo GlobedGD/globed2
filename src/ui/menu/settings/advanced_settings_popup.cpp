@@ -37,8 +37,9 @@ bool AdvancedSettingsPopup::setup() {
         .pos(rlayout.center - CCPoint{0.f, 30.f})
         .parent(menu);
 
-    Build(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(AdvancedSettingsPopup::onPacketLog), 0.7f))
-        .parent(menu);
+    auto* thing = Build(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(AdvancedSettingsPopup::onPacketLog), 0.7f))
+        .parent(menu)
+        .collect();
 
     menu->updateLayout();
 

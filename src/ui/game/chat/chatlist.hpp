@@ -27,6 +27,7 @@ protected:
     void updateChat(float dt);
 
     virtual void keyBackClicked() override;
+    virtual void keyDown(cocos2d::enumKeyCodes) override;
 
 public:
 	static GlobedChatListPopup* create();

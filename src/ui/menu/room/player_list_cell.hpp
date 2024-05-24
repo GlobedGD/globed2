@@ -16,6 +16,7 @@ protected:
 
     void createInviteButton();
     void createJoinButton();
+    void createAdminButton();
 
     PlayerRoomPreviewAccountData data;
 

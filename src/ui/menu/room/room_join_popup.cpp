@@ -4,6 +4,8 @@
 #include <data/packets/client/room.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
+#include "room_password_popup.hpp"
+#include <managers/error_queues.hpp>
 
 using namespace geode::prelude;
 
@@ -36,8 +38,28 @@ bool RoomJoinPopup::setup() {
                 return;
             }
 
-            NetworkManager::get().send(JoinRoomPacket::create(code, 0));
-            this->onClose(nullptr);
+            auto& nm = NetworkManager::get();
+            if (!nm.established()) {
+                return this->onClose(nullptr);
+            }
+
+            // test packet to check if pass needed (or just joining the room)
+            NetworkManager::get().send(JoinRoomPacket::create(code, ""));
+
+            nm.addListener<RoomJoinFailedPacket>(this, [this, code](std::shared_ptr<RoomJoinFailedPacket> packet) {
+                if (packet->wasProtected) {
+                    Loader::get()->queueInMainThread([this, code] {
+                        RoomPasswordPopup::create(code)->show();
+                        this->onClose(nullptr);
+                    });
+                }
+            });
+
+            nm.addListener<RoomJoinedPacket>(this, [this](std::shared_ptr<RoomJoinedPacket> packet) {
+                this->onClose(nullptr);
+            });
+
+            //this->onClose(nullptr);
         })
         .id("join-btn"_spr)
         .intoNewParent(CCMenu::create())

@@ -5,6 +5,7 @@ pub mod game;
 pub mod gd;
 pub mod misc;
 pub mod room;
+pub mod user;
 
 use std::sync::atomic::AtomicI64;
 
@@ -16,6 +17,7 @@ pub use game::*;
 pub use gd::*;
 pub use misc::*;
 pub use room::*;
+pub use user::*;
 pub type LevelId = i64;
 pub type AtomicLevelId = AtomicI64;
 

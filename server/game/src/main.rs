@@ -1,4 +1,4 @@
-#![feature(sync_unsafe_cell)]
+#![feature(sync_unsafe_cell, duration_constructors)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
@@ -141,10 +141,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     })
     .expect("error setting interrupt handler");
 
-    let write_to_file = std::env::var("GLOBED_GS_NO_FILE_LOG")
-        .map(|p| p.parse::<i32>().unwrap())
-        .unwrap_or(0)
-        == 0;
+    let write_to_file = std::env::var("GLOBED_GS_NO_FILE_LOG").map(|p| p.parse::<i32>().unwrap()).unwrap_or(0) == 0;
 
     log::set_logger(Logger::instance("globed_game_server", write_to_file)).unwrap();
 
@@ -167,6 +164,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         CentralBridge::new("", "")
     } else {
         let (central_url, central_pw) = startup_config.central_data.unwrap();
+
+        // check if the user put a wrong url
+        if central_url.contains("http://0.0.0.0") || central_url.contains("https://0.0.0.0") {
+            error!("invalid central server URL was provided");
+            warn!("hint: 0.0.0.0 is an address that is only valid for *listening*, not *connecting*");
+            warn!("hint: try 127.0.0.1 if the server is on your local machine");
+            abort_misconfig();
+        }
 
         let bridge = CentralBridge::new(&central_url, &central_pw);
 
@@ -205,10 +210,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             Err(CentralBridgeError::ProtocolMismatch(protocol)) => {
                 error!("incompatible protocol versions!");
-                error!(
-                    "this game server is on v{PROTOCOL_VERSION}, while the central server uses v{}",
-                    protocol
-                );
+                error!("this game server is on v{PROTOCOL_VERSION}, while the central server uses v{}", protocol);
                 if protocol > PROTOCOL_VERSION {
                     warn!(
                         "hint: you are running an old version of the Globed game server (v{}), please update to the latest one.",
@@ -256,15 +258,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 gsbd.chat_burst_limit, gsbd.chat_burst_interval
             );
         }
+
+        state.role_manager.refresh_from(&gsbd);
     }
 
     let udp_socket = match UdpSocket::bind(&startup_config.bind_address).await {
         Ok(x) => x,
         Err(err) => {
-            error!(
-                "Failed to bind the UDP socket with address {}: {err}",
-                startup_config.bind_address
-            );
+            error!("Failed to bind the UDP socket with address {}: {err}", startup_config.bind_address);
             if startup_config.bind_address.port() < 1024 {
                 warn!("hint: ports below 1024 are commonly privileged and you can't use them as a regular user");
                 warn!("hint: pick a higher port number or leave it out completely to use the default port number (41001)");
@@ -276,10 +277,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let tcp_socket = match TcpListener::bind(&startup_config.bind_address).await {
         Ok(x) => x,
         Err(err) => {
-            error!(
-                "Failed to bind the TCP socket with address {}: {err}",
-                startup_config.bind_address
-            );
+            error!("Failed to bind the TCP socket with address {}: {err}", startup_config.bind_address);
 
             abort_misconfig();
         }

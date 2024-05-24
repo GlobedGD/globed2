@@ -79,9 +79,7 @@ impl Display for PacketHandlingError {
             Self::MalformedPacketStructure(err) => f.write_fmt(format_args!("could not decode a packet: {err}")),
             Self::NoHandler(id) => f.write_fmt(format_args!("no packet handler for packet ID {id}")),
             Self::WebRequestError(msg) => f.write_fmt(format_args!("web request error: {msg}")),
-            Self::UnexpectedPlayerData => {
-                f.write_str("received PlayerDataPacket or SyncPlayerMetadataPacket when not in a level")
-            }
+            Self::UnexpectedPlayerData => f.write_str("received PlayerDataPacket or SyncPlayerMetadataPacket when not in a level"),
             Self::SystemTimeError(msg) => f.write_fmt(format_args!("system time error: {msg}")),
             Self::SocketSendFailed(err) => f.write_fmt(format_args!("socket send failed: {err}")),
             Self::SocketWouldBlock => f.write_str("could not do a non-blocking operation on the socket as it would block"),

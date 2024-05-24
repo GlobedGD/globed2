@@ -16,12 +16,15 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(ProtocolMismatchPacket);
         PACKET(KeepaliveTCPResponsePacket);
         PACKET(ConnectionTestResponsePacket);
+        PACKET(ServerBannedPacket);
+        PACKET(ServerMutedPacket);
 
         // general
 
         PACKET(GlobalPlayerListPacket);
         PACKET(LevelListPacket);
         PACKET(LevelPlayerCountPacket);
+        PACKET(RolesUpdatedPacket);
 
         // game related
 

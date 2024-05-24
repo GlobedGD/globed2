@@ -26,6 +26,7 @@ use tokio::{
 use crate::{
     data::*,
     make_uninit,
+    managers::ComputedRole,
     server::GameServer,
     server_thread::handlers::*,
     util::{LockfreeMutCell, SimpleRateLimiter},
@@ -53,7 +54,10 @@ pub enum ServerThreadMessage {
     BroadcastNotice(ServerNoticePacket),
     BroadcastInvite(RoomInvitePacket),
     BroadcastRoomInfo(RoomInfoPacket),
-    TerminationNotice(FastString<MAX_NOTICE_SIZE>),
+    BroadcastBan(ServerBannedPacket),
+    BroadcastMute(ServerMutedPacket),
+    BroadcastRoleChange(RolesUpdatedPacket),
+    TerminationNotice(FastString),
 }
 
 pub struct GameServerThread {
@@ -74,6 +78,7 @@ pub struct GameServerThread {
     pub room_id: AtomicU32,
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<UserEntry>,
+    pub user_role: SyncMutex<ComputedRole>,
 
     pub cleanup_notify: Notify,
     pub cleanup_mutex: Mutex<()>,
@@ -122,6 +127,7 @@ impl GameServerThread {
             awaiting_termination: AtomicBool::new(false),
             account_data: SyncMutex::new(PlayerAccountData::default()),
             user_entry: SyncMutex::new(UserEntry::default()),
+            user_role: SyncMutex::new(game_server.state.role_manager.get_default().clone()),
             cleanup_notify: Notify::new(),
             cleanup_mutex: Mutex::new(()),
             fragmentation_limit: AtomicU16::new(0),
@@ -185,7 +191,7 @@ impl GameServerThread {
                         }
                     }
                     Ok(Err(err)) => {
-                        // early eof means the client has disconnected (closed their part of the socketS)
+                        // early eof means the client has disconnected (closed their part of the socket)
                         if let PacketHandlingError::IOError(ref ioerror) = err {
                             if ioerror.kind() != std::io::ErrorKind::UnexpectedEof {
                                 self.print_error(&err);
@@ -221,12 +227,7 @@ impl GameServerThread {
     // the error printing is different in release and debug. some errors have higher severity than others.
     fn print_error(&self, error: &PacketHandlingError) {
         if cfg!(debug_assertions) {
-            warn!(
-                "[{} @ {}] err: {}",
-                self.account_id.load(Ordering::Relaxed),
-                self.tcp_peer,
-                error
-            );
+            warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.tcp_peer, error);
         } else {
             match error {
                 // these are for the client being silly
@@ -239,12 +240,7 @@ impl GameServerThread {
                 | PacketHandlingError::DebugOnlyPacket
                 | PacketHandlingError::PacketTooLong(_)
                 | PacketHandlingError::SocketSendFailed(_) => {
-                    warn!(
-                        "[{} @ {}] err: {}",
-                        self.account_id.load(Ordering::Relaxed),
-                        self.tcp_peer,
-                        error
-                    );
+                    warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.tcp_peer, error);
                 }
                 // these are either our fault or a fatal error somewhere
                 PacketHandlingError::ColorParseFailed(_)
@@ -252,12 +248,7 @@ impl GameServerThread {
                 | PacketHandlingError::SystemTimeError(_)
                 | PacketHandlingError::WebRequestError(_)
                 | PacketHandlingError::DangerousAllocation(_) => {
-                    error!(
-                        "[{} @ {}] err: {}",
-                        self.account_id.load(Ordering::Relaxed),
-                        self.tcp_peer,
-                        error
-                    );
+                    error!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.tcp_peer, error);
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
                 PacketHandlingError::MalformedMessage
@@ -297,6 +288,11 @@ impl GameServerThread {
     async fn disconnect(&self, message: &str) -> Result<()> {
         self.terminate();
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
+    }
+
+    async fn ban(&self, message: FastString, timestamp: i64) -> Result<()> {
+        self.terminate();
+        self.send_packet_dynamic(&ServerBannedPacket { message, timestamp }).await
     }
 
     /// sends a buffer to our peer via the tcp socket
@@ -383,10 +379,7 @@ impl GameServerThread {
             }
         } else {
             // if rate limiting is disabled, do not block
-            let block = !self
-                .chat_rate_limiter
-                .as_ref()
-                .map_or(true, |x| unsafe { x.get_mut().try_tick() });
+            let block = !self.chat_rate_limiter.as_ref().map_or(true, |x| unsafe { x.get_mut().try_tick() });
 
             if block {
                 return false;
@@ -432,13 +425,16 @@ impl GameServerThread {
             ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_static(&text_packet).await?,
             ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet_dynamic(&*voice_packet).await?,
             ServerThreadMessage::BroadcastNotice(packet) => {
-                self.send_packet_static(&packet).await?;
+                self.send_packet_dynamic(&packet).await?;
                 info!("{} is receiving a notice: {}", self.account_data.lock().name, packet.message);
             }
             ServerThreadMessage::BroadcastInvite(packet) => self.send_packet_static(&packet).await?,
             ServerThreadMessage::BroadcastRoomInfo(packet) => {
                 self.send_packet_static(&packet).await?;
             }
+            ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.timestamp).await?,
+            ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
+            ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
             ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
         }
 
@@ -632,9 +628,8 @@ impl GameServerThread {
                     .encrypt_in_place_detached(&nonce, b"", &mut data[raw_data_start..raw_data_end])
                     .map_err(|_| PacketHandlingError::EncryptionError)?;
 
-                // prepend the nonce
-                #[cfg(not(rust_analyzer))] // don't ask about it
-                data[nonce_start..mac_start].copy_from_slice(&nonce);
+                // prepend the nonces
+                data[nonce_start..mac_start].copy_from_slice(nonce.as_slice());
 
                 // prepend the mac tag
                 data[mac_start..raw_data_start].copy_from_slice(&tag);

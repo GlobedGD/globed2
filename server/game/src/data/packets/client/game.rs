@@ -37,5 +37,5 @@ pub struct VoicePacket {
 #[derive(Packet, Decodable)]
 #[packet(id = 12011, encrypted = true)]
 pub struct ChatMessagePacket {
-    pub message: FastString<MAX_MESSAGE_SIZE>,
+    pub message: InlineString<MAX_MESSAGE_SIZE>,
 }

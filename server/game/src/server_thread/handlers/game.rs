@@ -118,7 +118,9 @@ impl GameServerThread {
         let players_per_fragment = (players.len() + total_fragments - 1) / total_fragments;
         let calc_size = size_of_types!(u32) + size_of_types!(AssociatedPlayerData) * players_per_fragment;
 
-        debug!("sending a fragmented packet (lim: {fragmentation_limit}, per: {players_per_fragment}, frags: {total_fragments}, fragsize: {calc_size})");
+        debug!(
+            "sending a fragmented packet (lim: {fragmentation_limit}, per: {players_per_fragment}, frags: {total_fragments}, fragsize: {calc_size})"
+        );
 
         for chunk in players.chunks(players_per_fragment) {
             self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value_vec(chunk))
@@ -277,11 +279,7 @@ impl GameServerThread {
         });
 
         self.game_server
-            .broadcast_voice_packet(
-                &vpkt,
-                self.level_id.load(Ordering::Relaxed),
-                self.room_id.load(Ordering::Relaxed),
-            )
+            .broadcast_voice_packet(&vpkt, self.level_id.load(Ordering::Relaxed), self.room_id.load(Ordering::Relaxed))
             .await;
 
         Ok(())
@@ -300,11 +298,7 @@ impl GameServerThread {
         };
 
         self.game_server
-            .broadcast_chat_packet(
-                &cpkt,
-                self.level_id.load(Ordering::Relaxed),
-                self.room_id.load(Ordering::Relaxed),
-            )
+            .broadcast_chat_packet(&cpkt, self.level_id.load(Ordering::Relaxed), self.room_id.load(Ordering::Relaxed))
             .await;
 
         Ok(())

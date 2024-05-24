@@ -14,13 +14,13 @@ Globed is a <cg>completely free</c> mod, and will never require any payment to u
 
 But if you want to support the developer and help us pay for server expansions, you can do it on our [Ko-Fi page](https://ko-fi.com/globed)!
 
-As a sign of appreciation, you will get a nice <ca>purple</c> name in-game and a role on our discord server :)
+As a sign of appreciation, you will get a nice <ca>purple</c> name and a badge in-game, and a role on our discord server :)
 
 ## Credit
 
-Globed is developed by:
+Globed is made by:
 
-* [dank_meme](user:9735891) - creator and main developer
+* [dank_meme](user:9735891) - owner and main developer
 * [availax](user:1621348) - co-owner, community manager, artist, ❤️
 * [ninXout](user:7479054) - developer
 

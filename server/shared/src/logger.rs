@@ -69,14 +69,8 @@ impl log::Log for Logger {
         }
 
         let (level, args) = match record.level() {
-            LogLevel::Error => (
-                record.level().to_string().bright_red(),
-                record.args().to_string().bright_red(),
-            ),
-            LogLevel::Warn => (
-                record.level().to_string().bright_yellow(),
-                record.args().to_string().bright_yellow(),
-            ),
+            LogLevel::Error => (record.level().to_string().bright_red(), record.args().to_string().bright_red()),
+            LogLevel::Warn => (record.level().to_string().bright_yellow(), record.args().to_string().bright_yellow()),
             LogLevel::Info => (record.level().to_string().cyan(), record.args().to_string().cyan()),
             LogLevel::Debug => (record.level().to_string().white(), record.args().to_string().white()),
             LogLevel::Trace => (record.level().to_string().normal(), record.args().to_string().normal()),

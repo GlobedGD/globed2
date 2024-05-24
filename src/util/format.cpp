@@ -159,4 +159,19 @@ namespace util::format {
 
         return ss.str();
     }
+
+    std::vector<std::string_view> split(const std::string_view s, const std::string_view sep) {
+        std::vector<std::string_view> out;
+        size_t start = 0;
+        size_t end;
+
+        while ((end = s.find(sep, start)) != std::string_view::npos) {
+            out.emplace_back(s.substr(start, end - start));
+            start = end + sep.size();
+        }
+
+        out.emplace_back(s.substr(start));
+
+        return out;
+    }
 }

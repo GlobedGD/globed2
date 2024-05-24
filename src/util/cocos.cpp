@@ -178,6 +178,11 @@ namespace util::cocos {
         size_t imgCount = _imguard->size();
         _imguard.unlock();
 
+        if (imgCount == 0) {
+            log::debug("preload: all textures already loaded, skipping pass");
+            return;
+        }
+
         log::debug("preload: loading images ({} total)", imgCount);
 
         asp::Channel<std::pair<size_t, CCImage*>> textureInitRequests;
@@ -479,6 +484,7 @@ namespace util::cocos {
         }
     }
 
+    // slightly faster rewrite of ccfileutils::fullPathForFilename
     gd::string fullPathForFilename(const std::string_view rawfilename) {
         auto& fileUtils = HookedFileUtils::get();
         auto& pstate = getPreloadState();

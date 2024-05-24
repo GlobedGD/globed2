@@ -13,15 +13,15 @@ public:
     // gather player's icons and call `setOwnData`;
     void setOwnDataAuto();
     void setOwnData(const PlayerIconData& data);
-    void setOwnSpecialData(const std::optional<SpecialUserData>& specialUserData);
+    void setOwnSpecialData(const SpecialUserData& specialUserData);
     PlayerIconData getOwnData();
     PlayerAccountData& getOwnAccountData();
-    std::optional<SpecialUserData>& getOwnSpecialData();
+    SpecialUserData& getOwnSpecialData();
 
     bool pendingChanges = false;
 
 private:
     std::unordered_map<int32_t, PlayerAccountData> cache;
     PlayerAccountData ownData;
-    std::optional<SpecialUserData> ownSpecialData;
+    SpecialUserData ownSpecialData;
 };

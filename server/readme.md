@@ -6,7 +6,7 @@ Before trying to setup a server, it is **recommended** that you understand what 
 
 In case you are familiar with [Pterodactyl](https://pterodactyl.io/), there are eggs available for the [central](https://github.com/DumbCaveSpider/globed-central-egg) and [game](https://github.com/DumbCaveSpider/globed-game-egg) servers that could simplify the setup (thanks to [@DumbCaveSpider](https://github.com/DumbCaveSpider/))
 
-Additionally, if you are setting up a big public server, please keep in mind that the architecture is *not* stable. Big changes can be made to the server at any point, and updates to the mod can cause your server to stop working until you also update it.
+Additionally, if you are setting up a public server, please keep in mind that there are no stability guarantees. Big changes to the server can be made at any time, and updates to the mod can cause your server to stop accepting users until you update it.
 
 ## Setup
 
@@ -17,7 +17,7 @@ After that is done, you have 2 paths:
 * If you want to setup a small, simple server you can jump to the [standalone section](#standalone)
 * If you want to setup a bigger or more configurable server, keep reading.
 
-First, you want to launch the central server binary. It should create two files called `central-conf.json` and `Rocket.toml` in the folder you ran it from. This is where you can configure everything about the server. For documentation about all the options, jump to the [configuration section](#central-server-configuration), however for now we only need the option `game_server_password`.
+After launching the central server binary, you should see two new files called `central-conf.json` and `Rocket.toml`. This is where you can configure everything about the server. For documentation about all the options, jump to the [configuration section](#central-server-configuration), however for now we only need the option `game_server_password`.
 
 With your central server properly setup and started, jump to the [bridged](#bridged) section of the game server configuration and launch the game server, with the password that you configured earlier.
 
@@ -37,9 +37,9 @@ If you want to change the port then you'll have to run the executable with an ad
 globed-game-server.exe 0.0.0.0:41001
 ```
 
-To connect to your server, you want to use the Direct Connection option inside the server switcher in-game. (with the address `127.0.0.1:41001` if the server is running on the same device)
+**To connect to your server, you want to use the Direct Connection option inside the server switcher in-game**. (with the address `127.0.0.1:41001` if the server is running on the same device)
 
-Keep in mind that a standalone server makes the configuration very limited (for example you can't blacklist/whitelist users anymore) and disables any kind of player authentication.
+Keep in mind that a standalone server makes the configuration very limited (for example you can't ban/mute users anymore) and disables any kind of player authentication.
 
 
 ### Bridged
@@ -59,53 +59,47 @@ globed-game-server.exe
 
 Replace `0.0.0.0:41001` with the address you want the game server to listen on, `http://127.0.0.1:41000` with the URL of your central server, and `password` with the password.
 
-### Additional parameters
+### Environment variables
 
 `GLOBED_GS_NO_FILE_LOG` - if set to 1, don't create a log file and only log to the console.
 
 ## Central server configuration
 
-The central server allows configuration hot reloading, so you can modify the configuration file and see updates in real time without restarting the server.
-
 By default, the file is created with the name `central-conf.json` in the current working directory when you run the server, but it can be overriden with the environment variable `GLOBED_CONFIG_PATH`. The path can be a folder or a full file path.
 
+### General settings
+| JSON key | Default | Description |
+|---------|---------|-----------------|
+| `web_mountpoint` | `"/"` | HTTP mountpoint (the prefix before every endpoint) |
+| `game_servers` | `[]` | List of game servers that will be sent to the clients (see below for the format) |
+| `maintenance` | `false` | When enabled, anyone trying to connect will get an appropriate error message saying that the server is under maintenance |
+| `status_print_interval` | `7200` | How often (in seconds) the game servers will print various status information to the console, 0 to disable |
+| `userlist_mode` | `"none"` | Can be `blacklist`, `whitelist`, `none` (same as `blacklist`). When set to `whitelist`, players will need to be first whitelisted before being able to join |
+| `tps` | `30` | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
+| `admin_webhook_url` | `(empty)` | When enabled, admin actions (banning, muting, etc.) will send a message to the given discord webhook URL |
+| `chat_burst_limit` | `0` | Controls the amount of text chat messages users can send in a specific period of time, before getting rate limited. 0 to disable |
+| `chat_burst_interval` | `0` | Controls the period of time for the `chat_burst_limit_setting`. Time is in milliseconds |
+| `roles` | `(...)` | Controls the roles available on the server (moderator, admin, etc.), their permissions, name colors, and various other things |
 
-Note that the server is written with security in mind, so many of those options may not be exactly interesting for you. If you are hosting a small server for your friends then the defaults should be good enough, however if you are hosting a big public server, it is recommended that you adjust the settings accordingly.
+### Security settings (the boring stuff)
 
+These are recommended to adjust if you're hosting a public server, otherwise the defaults should be fine.
 
-| JSON key | Default | Hot-reloadable<sup>**</sup> | Description |
-|---------|---------|----------------|-------------|
-| `web_mountpoint` | `"/"` | ❌ | HTTP mountpoint (the prefix before every endpoint) |
-| `game_servers` | `[]` | ✅ | List of game servers that will be sent to the clients (see below for the format) |
-| `maintenance` | `false` | ⏳ | When enabled, anyone trying to connect will get an appropriate error message saying that the server is under maintenance |
-| `status_print_interval` | `7200` | ⚠️ | How often (in seconds) the game servers will print various status information to the console, 0 to disable |
-| `userlist_mode` | `"none"` | ✅ | Can be `blacklist`, `whitelist`, `none` (same as `blacklist`). When set to `whitelist`, players will need to be first whitelisted before being able to join |
-| `tps` | `30` | ⏳ | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
-| `admin_webhook_url` | `(empty)` | ⏳ | When enabled, admin actions (banning, muting, etc.) will send a message to the given discord webhook URL |
-| `chat_burst_limit` | `0` | ⏳ | Controls the amount of text chat messages users can send in a specific period of time, before getting rate limited. 0 to disable |
-| `chat_burst_interval` | `0` | ⏳ | Controls the period of time for the `chat_burst_limit_setting`. Time is in milliseconds |
-| `admin_key`<sup>*</sup> | `(random)` | ⏳ | The password used to unlock the admin panel in-game, must be 32 characters or less |
-| `use_gd_api`<sup>*</sup> | `false` | ✅ | Use robtop's API to verify account ownership. Note that you must set `gd_api_account` and `gd_api_gjp` accordingly if you enable this setting |
-| `gd_api_account`<sup>*</sup> | `0` | ❌ | Account ID of a bot account that will be used to verify account ownership |
-| `gd_api_gjp`<sup>*</sup> | `(empty)` | ❌ | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
-| `gd_api_url`<sup>*</sup> | `(...)` | ❌ | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
-| `skip_name_check`<sup>*</sup> | `false` | ❌ | Skips validation of account names when verifying accounts |
-| `refresh_interval`<sup>*</sup> | `3000` | ❌ | Controls the time (in milliseconds) between requests to the GD server for refreshing messages |
-| `secret_key`<sup>*</sup> | `(random)` | ❌ | Secret key for generating and verifying authentication keys |
-| `secret_key2`<sup>*</sup> | `(random)` | ⏳ | Secret key for generating and verifying session tokens |
-| `game_server_password`<sup>*</sup> | `(random)` | ✅ | Password used to authenticate game servers |
-| `cloudflare_protection`<sup>*</sup> | `false` | ✅ | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users. If your server is proxied through cloudflare, you **must** turn on this option. |
-| `challenge_expiry`<sup>*</sup> | `30` | ✅ | Amount of seconds before an authentication challenge expires and a new one can be requested |
-| `token_expiry`<sup>*</sup> | `86400` (1 day) | ⏳ | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
-
-<sup>*</sup> - security setting, be careful with changing it if making a public server
-
-<sup>**</sup> - meanings of different values in the Hot-reloadable column:
-
-* ✅ - fully hot-reloadable, changes should apply immediately
-* ⏳ - fully hot-reloadable, however this setting is synced with game servers, so you may have to wait a few minutes for them to update their configuration
-* ⚠️ - partly hot-reloadable, the central server does **not** need to be restarted, but game servers do
-* ❌ - not hot-reloadable, you must restart the central server to see changes
+| JSON key | Default | Description |
+|---------|---------|-----------------|
+| `admin_key` | `(random)` | The password used to unlock the admin panel in-game, must be 32 characters or less |
+| `use_gd_api` | `false` | Verify account ownership via requests to GD servers. Note that you must set `gd_api_account` and `gd_api_gjp` accordingly if you enable this setting |
+| `gd_api_account` | `0` | Account ID of a bot account that will be used to verify account ownership |
+| `gd_api_gjp` | `(empty)` | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
+| `gd_api_url` | `(...)` | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
+| `skip_name_check` | `false` | Skips validation of account names when verifying accounts |
+| `refresh_interval` | `3000` | Controls the time (in milliseconds) between requests to the GD server for refreshing messages |
+| `secret_key` | `(random)` | Secret key for signing authentication keys |
+| `secret_key2` | `(random)` | Secret key for signing session tokens |
+| `game_server_password` | `(random)` | Password used to authenticate game servers |
+| `cloudflare_protection` | `false` | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users. If your server is proxied through cloudflare, you **must** turn on this option. |
+| `challenge_expiry` | `30` | Amount of seconds before an authentication challenge expires and a new one can be requested |
+| `token_expiry` | `86400` (1 day) | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
 
 Formatting for game servers:
 
@@ -118,7 +112,35 @@ Formatting for game servers:
 }
 ```
 
-Note that the `address` key must be the publicly visible IP address for other players to be able to connect, not a local address.
+**Note that the `address` key must be a public IP address if you want others to be able to connect. Putting 127.0.0.1 will make it possible to only connect from *your* machine.**
+
+Formatting for user roles:
+
+```json
+{
+    // all keys except id and priority are optional.
+
+    "id": "mod",
+    "priority": 100, // determines which roles can edit users with other roles
+    "badge_icon": "role-mod.png", // make sure it's a valid sprite! (can be empty)
+    "name_color": "#ff0000", // name color
+    "chat_color": "#ff0000", // color of chat messages
+
+    // permissions
+    "notices": false, // ability to send notices (popup messages)
+    "notices_to_everyone": false, // ability to send a notice to everyone on the server
+    "kick": false, // ability to disconnect users from the server
+    "kick_everyone": false, // ability to disconnect everyone from the server
+    "mute": false, // ability to mute/unmute
+    "ban": false, // ability to ban/unban & whitelist (on whitelist enabled servers)
+    "edit_role": false, // ability to change roles of a user
+    "admin": false, // implicitly enables all other permissions and also does some additional things
+}
+```
+
+There is also a special format for tinting colors, for example setting `name_color` to `#ff0000 > 00ff00 > 0000ff` would make your name fade between red, green and blue. Spaces and a `#` at the start are for clarity and are optional. (Maximum 8 colors supported in one string)
+
+### Rocket.toml
 
 Additionally, when first starting up a server, a `Rocket.toml` file will be created from a template. By default, it will be put in the current working directory, or `ROCKET_CONFIG` if specified.
 

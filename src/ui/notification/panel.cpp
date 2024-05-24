@@ -30,8 +30,8 @@ void GlobedNotificationPanel::persist() {
     instance = this;
 }
 
-void GlobedNotificationPanel::addInviteNotification(uint32_t roomID, uint32_t roomToken, const PlayerRoomPreviewAccountData& player) {
-    auto* notif = GlobedInviteNotification::create(roomID, roomToken, player);
+void GlobedNotificationPanel::addInviteNotification(uint32_t roomID, const std::string_view password, const PlayerPreviewAccountData& player) {
+    auto* notif = GlobedInviteNotification::create(roomID, password, player);
     this->slideInNotification(notif);
 
     auto* engine = FMODAudioEngine::sharedEngine();

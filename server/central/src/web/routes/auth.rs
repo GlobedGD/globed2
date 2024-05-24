@@ -7,7 +7,7 @@ use globed_shared::{
     anyhow::{self, anyhow},
     base64::{engine::general_purpose as b64e, Engine as _},
     logger::*,
-    rand::{self, distributions::Alphanumeric, Rng},
+    PROTOCOL_VERSION,
 };
 use rocket::{post, State};
 
@@ -44,13 +44,13 @@ macro_rules! get_user_ip {
 }
 
 #[allow(clippy::too_many_arguments, clippy::similar_names, clippy::no_effect_underscore_binding)]
-#[post("/totplogin?<aid>&<uid>&<aname>&<code>")]
+#[post("/totplogin?<aid>&<uid>&<aname>&<authkey>")]
 pub async fn totp_login(
     state: &State<ServerState>,
     aid: i32,
     uid: i32,
     mut aname: &str,
-    code: &str,
+    authkey: &str,
     db: &GlobedDb,
     ip: IpAddr,
     _ua: ClientUserAgentGuard<'_>,
@@ -78,8 +78,10 @@ pub async fn totp_login(
         }
     }
 
-    let authkey = state_.generate_authkey(aid, uid, aname);
-    let valid = state_.verify_totp(&authkey, code);
+    let uak_decoded = b64e::URL_SAFE.decode(authkey)?;
+    let valid_authkey = state_.generate_hashed_authkey(aid, uid, aname);
+
+    let valid = uak_decoded.len() == valid_authkey.len() && uak_decoded.iter().zip(valid_authkey.iter()).all(|(c1, c2)| *c1 == *c2);
 
     if !valid {
         unauthorized!("login failed");
@@ -93,11 +95,12 @@ pub async fn totp_login(
 }
 
 #[allow(clippy::too_many_arguments, clippy::similar_names, clippy::no_effect_underscore_binding)]
-#[post("/challenge/new?<aid>&<uid>&<aname>")]
+#[post("/challenge/new?<aid>&<uid>&<aname>&<protocol>")]
 pub async fn challenge_start(
     state: &State<ServerState>,
     aid: i32,
     uid: i32,
+    protocol: u16,
     mut aname: &str,
     ip: IpAddr,
     db: &GlobedDb,
@@ -105,6 +108,10 @@ pub async fn challenge_start(
     cfip: CloudflareIPGuard,
 ) -> WebResult<String> {
     check_maintenance!(state);
+
+    if protocol != PROTOCOL_VERSION {
+        unauthorized!("you are running an old version of Globed, please update Globed in the geode mod list");
+    }
 
     aname = aname.trim_end();
 
@@ -154,53 +161,40 @@ pub async fn challenge_start(
 
         return Ok(format!(
             "{}:{}",
-            if verify {
-                gd_api_account.to_string()
-            } else {
-                "none".to_string()
-            },
+            if verify { gd_api_account.to_string() } else { "none".to_string() },
             rand_string
         ));
     }
 
-    let rand_string: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(32)
-        .map(char::from)
-        .collect();
-
-    let challenge = ActiveChallenge {
-        started: current_time,
-        value: rand_string.clone(),
-        account_id: aid,
-        user_id: uid,
-        name: aname.to_owned(),
+    let challenge: String = match state.create_challenge(aid, uid, aname, user_ip, current_time) {
+        Ok(x) => x,
+        Err(err) => {
+            warn!("failed to create challenge: {err}");
+            bad_request!("failed to create challenge: {err}");
+        }
     };
 
-    state.active_challenges.insert(user_ip, challenge);
+    let pubkey = b64e::STANDARD.encode(state.challenge_pubkey);
+
     let verify = state.config.use_gd_api;
     let gd_api_account = state.config.gd_api_account;
 
     Ok(format!(
-        "{}:{}",
-        if verify {
-            gd_api_account.to_string()
-        } else {
-            "none".to_string()
-        },
-        rand_string
+        "{}:{}:{}",
+        if verify { gd_api_account.to_string() } else { "none".to_string() },
+        challenge,
+        pubkey
     ))
 }
 
 #[allow(clippy::too_many_arguments, clippy::similar_names, clippy::no_effect_underscore_binding)]
-#[post("/challenge/verify?<aid>&<uid>&<aname>&<answer>&<systime>")]
+#[post("/challenge/verify?<aid>&<uid>&<aname>&<answer>")]
 pub async fn challenge_finish(
     state: &State<ServerState>,
     aid: i32,
     uid: i32,
     mut aname: &str,
     answer: &str,
-    systime: u64,
     ip: IpAddr,
     _ua: ClientUserAgentGuard<'_>,
     cfip: CloudflareIPGuard,
@@ -211,24 +205,6 @@ pub async fn challenge_finish(
 
     let state_ = state.state_read().await;
     get_user_ip!(state_, ip, cfip, user_ip);
-
-    let local_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock went backwards!")
-        .as_secs();
-
-    // if they didnt pass any time, it's alright, don't verify the clock
-    if systime != 0 {
-        let time_difference = if systime > local_time {
-            systime - local_time
-        } else {
-            local_time - systime
-        };
-
-        if time_difference > 45 {
-            unauthorized!(&format!("your system clock seems to be out of sync, please adjust it in your system settings (time difference: {time_difference} seconds)"));
-        }
-    }
 
     trace!("challenge finish from '{aname}' ({aid} / userid {uid}) with answer: {answer}");
 
@@ -256,7 +232,7 @@ pub async fn challenge_finish(
         unauthorized!("challenge was requested for a different user id, not validating");
     }
 
-    if challenge.name != aname {
+    if !challenge.name.eq_ignore_ascii_case(aname) {
         warn!(
             "failed to validate challenge ({aid}): requested for {} but {aname} completed",
             challenge.name
@@ -264,7 +240,7 @@ pub async fn challenge_finish(
         unauthorized!("challenge was requested for a different account name, not validating");
     }
 
-    let result = state_.verify_challenge(&challenge.value, answer);
+    let result = state_.verify_challenge(&challenge, answer);
 
     if !result {
         unauthorized!("incorrect challenge solution was provided");
@@ -276,11 +252,7 @@ pub async fn challenge_finish(
     drop(state_);
 
     let message_id = if use_gd_api {
-        let result = state
-            .inner
-            .verifier
-            .verify_account(aid, uid, aname, answer.parse::<u32>()?)
-            .await;
+        let result = state.inner.verifier.verify_account(aid, uid, aname, answer).await;
 
         match result {
             Ok(id) => Some(id),

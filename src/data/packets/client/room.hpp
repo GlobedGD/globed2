@@ -6,28 +6,35 @@ class CreateRoomPacket : public Packet {
     GLOBED_PACKET(13000, false, false)
 
     CreateRoomPacket() {}
+    CreateRoomPacket(const std::string_view roomName, const std::string_view password, const RoomSettings& settings)
+        : roomName(roomName), password(password), settings(settings) {}
 
-    static std::shared_ptr<Packet> create() {
-        return std::make_shared<CreateRoomPacket>();
+    static std::shared_ptr<Packet> create(const std::string_view roomName, const std::string_view password, const RoomSettings& settings) {
+        return std::make_shared<CreateRoomPacket>(roomName, password, settings);
     }
+
+    std::string roomName;
+    std::string password;
+    RoomSettings settings;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(CreateRoomPacket, ());
+GLOBED_SERIALIZABLE_STRUCT(CreateRoomPacket, (roomName, password, settings));
 
 class JoinRoomPacket : public Packet {
     GLOBED_PACKET(13001, false, false)
 
     JoinRoomPacket() {}
-    JoinRoomPacket(uint32_t roomId, uint32_t roomToken) : roomId(roomId), roomToken(roomToken) {}
+    JoinRoomPacket(uint32_t roomId, const std::string_view password) : roomId(roomId), password(password) {}
 
-    static std::shared_ptr<Packet> create(uint32_t roomId, uint32_t roomToken) {
-        return std::make_shared<JoinRoomPacket>(roomId, roomToken);
+    static std::shared_ptr<Packet> create(uint32_t roomId, const std::string_view password) {
+        return std::make_shared<JoinRoomPacket>(roomId, password);
     }
 
-    uint32_t roomId, roomToken;
+    uint32_t roomId;
+    std::string password;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(JoinRoomPacket, (roomId, roomToken));
+GLOBED_SERIALIZABLE_STRUCT(JoinRoomPacket, (roomId, password));
 
 class LeaveRoomPacket : public Packet {
     GLOBED_PACKET(13002, false, false)

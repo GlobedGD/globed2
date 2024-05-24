@@ -475,25 +475,25 @@ protected:
 
     template <typename T, typename Y>
     DecodeResult<Either<T, Y>> pcDecodeEither() {
-        GLOBED_UNWRAP_INTO(this->readBool(), bool isSecond);
+        GLOBED_UNWRAP_INTO(this->readBool(), bool isFirst);
 
-        if (isSecond) {
-            GLOBED_UNWRAP_INTO(this->readValue<Y>(), Y value);
+        if (isFirst) {
+            GLOBED_UNWRAP_INTO(this->readValue<T>(), T value);
             return Ok(std::move(Either<T, Y>(value)));
         } else {
-            GLOBED_UNWRAP_INTO(this->readValue<T>(), T value);
+            GLOBED_UNWRAP_INTO(this->readValue<Y>(), Y value);
             return Ok(std::move(Either<T, Y>(value)));
         }
     }
 
     template <typename T, typename Y>
     void pcEncodeEither(const Either<T, Y>& either) {
-        this->writeBool(either.isSecond());
+        this->writeBool(either.isFirst());
 
-        if (either.isSecond()) {
-            this->writeValue<Y>(either.secondRef());
+        if (either.isFirst()) {
+            this->writeValue<T>(either.firstRef()->get());
         } else {
-            this->writeValue<T>(either.firstRef());
+            this->writeValue<Y>(either.secondRef()->get());
         }
     }
 

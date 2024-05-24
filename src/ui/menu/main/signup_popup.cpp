@@ -5,6 +5,7 @@
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
+#include <net/network_manager.hpp>
 #include <util/net.hpp>
 #include <util/format.hpp>
 #include <util/crypto.hpp>
@@ -33,11 +34,12 @@ bool GlobedSignupPopup::setup() {
 
     auto gdData = am.gdData.lock();
     auto url = fmt::format(
-        "{}/challenge/new?aid={}&uid={}&aname={}",
+        "{}/challenge/new?aid={}&uid={}&aname={}&protocol={}",
         activeServer->url,
         gdData->accountId,
         gdData->userId,
-        util::format::urlEncode(gdData->accountName)
+        util::format::urlEncode(gdData->accountName),
+        NetworkManager::get().getUsedProtocol()
     );
 
     web::AsyncWebRequest()
@@ -46,16 +48,21 @@ bool GlobedSignupPopup::setup() {
         .post(url)
         .text()
         .then([this](std::string& response) {
-            auto colonPos = response.find(':');
-            auto part1 = response.substr(0, colonPos);
-            auto part2 = response.substr(colonPos + 1);
+            auto parts = util::format::split(response, ":");
+            if (parts.size() != 3) {
+                this->onFailure("Creating challenge failed: <cy>response does not consist of 3 parts</c>");
+                return;
+            }
 
-            // we accept -1 as the default ()
-            int accountId = util::format::parse<int>(part1).value_or(-1);
+            // we accept -1 as the default
+            int accountId = util::format::parse<int>(parts[0]).value_or(-1);
 
-            this->onChallengeCreated(accountId, part2);
+            this->onChallengeCreated(accountId, parts[1], parts[2]);
         })
         .expect([this](std::string error, int statusCode) {
+            log::warn("error creating challenge");
+            log::warn("{}", error);
+
             if (error.empty()) {
                 this->onFailure(fmt::format("Creating challenge failed: server sent an empty response with code {}.", statusCode));
             } else {
@@ -67,19 +74,29 @@ bool GlobedSignupPopup::setup() {
     return true;
 }
 
-void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view chtoken) {
-    auto hash = util::crypto::simpleHash(chtoken);
-    auto authcode = util::crypto::simpleTOTP(hash);
+void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view chtoken, const std::string_view pubkey) {
+    std::string answer;
+
+    try {
+        auto decodedChallenge = util::crypto::base64Decode(chtoken);
+        auto cryptoKey = util::crypto::base64Decode(pubkey);
+        SecretBox box(cryptoKey);
+        answer = box.decryptToString(decodedChallenge);
+    } catch (const std::exception& e) {
+        log::warn("failed to complete challenge: {}", e.what());
+        this->onFailure(fmt::format("Failed to complete challenge: <cy>{}</c>", e.what()));
+        return;
+    }
 
     if (accountId == -1) {
         // skip the account verification, server has it disabled
-        this->onChallengeCompleted(authcode);
+        this->onChallengeCompleted(answer);
     } else {
         statusMessage->setString("Uploading results..");
-        storedAuthcode = authcode;
+        storedAuthcode = answer;
         storedAccountId = accountId;
         GameLevelManager::sharedState()->m_uploadMessageDelegate = this;
-        GameLevelManager::sharedState()->uploadUserMessage(storedAccountId, fmt::format("##c## {}", authcode), "hi this is a globed verification test, please delete this message if you see it.");
+        GameLevelManager::sharedState()->uploadUserMessage(storedAccountId, fmt::format("##c## {}", answer), "globed verification test, this message can be deleted");
     }
 }
 

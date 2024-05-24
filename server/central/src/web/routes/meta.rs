@@ -32,6 +32,11 @@ pub fn index() -> (Status, (ContentType, String)) {
     (Status::Ok, (ContentType::Text, "hi there cutie :3".to_owned()))
 }
 
+#[get("/robots.txt")]
+pub fn robots() -> String {
+    "User-agent: *\nDisallow: /".to_owned()
+}
+
 #[get("/servers")]
 pub async fn servers(state: &State<ServerState>) -> WebResult<String> {
     check_maintenance!(state);

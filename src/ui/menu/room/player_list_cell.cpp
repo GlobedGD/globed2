@@ -5,11 +5,11 @@
 #include <data/packets/client/room.hpp>
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
+#include <managers/admin.hpp>
 #include <net/network_manager.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
-using namespace util::ui;
 
 bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInviting) {
     if (!CCLayer::init()) return false;
@@ -18,12 +18,12 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
     auto* gm = GameManager::get();
 
     Build<GlobedSimplePlayer>::create(GlobedSimplePlayer::Icons {
-        .type = IconType::Cube,
-        .id = data.cube,
-        .color1 = data.color1,
-        .color2 = data.color2,
-        .color3 = data.glowColor,
-    })
+            .type = IconType::Cube,
+            .id = data.cube,
+            .color1 = data.color1,
+            .color2 = data.color2,
+            .color3 = data.glowColor,
+        })
         .scale(0.65f)
         .parent(this)
         .anchorPoint(0.5f, 0.5f)
@@ -33,14 +33,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
     // name label
 
-    ccColor3B nameColor = ccc3(255, 255, 255);
-    if (data.specialUserData) {
-        nameColor = data.specialUserData->nameColor;
-    }
+    RichColor nameColor = util::ui::getNameRichColor(data.specialUserData);
 
     CCMenu* badgeWrapper = Build<CCMenu>::create()
         .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
-        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start))
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start)->setAutoScale(false))
         .anchorPoint(0.f, 0.5f)
         .contentSize(RoomPopup::LIST_WIDTH, CELL_HEIGHT)
         .scale(1.f)
@@ -50,11 +47,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 
     float labelWidth;
     auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
-        .color(nameColor)
         .limitLabelWidth(170.f, 0.6f, 0.1f)
-        .with([&labelWidth](CCLabelBMFont* label) {
+        .with([&labelWidth, &nameColor](CCLabelBMFont* label) {
             label->setScale(label->getScale() * 0.9f);
             labelWidth = label->getScaledContentSize().width;
+            util::ui::animateLabelColorTint(label, nameColor);
         })
         .intoMenuItem([this] {
             this->onOpenProfile(nullptr);
@@ -64,17 +61,31 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .parent(badgeWrapper)
         .collect();
 
-    if (data.specialUserData.has_value()) {
-        auto badge = createBadgeIfSpecial(nameColor);
-        if (badge != nullptr) badgeWrapper->addChild(badge);
+    auto badge = util::ui::createBadgeIfSpecial(data.specialUserData);
+    if (badge) {
+        util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
+        badgeWrapper->addChild(badge);
     }
 
     badgeWrapper->updateLayout();
+
+    const float pad = 5.f;
+    Build<CCMenu>::create()
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End))
+        .anchorPoint(0.f, 0.5f)
+        .pos(pad, CELL_HEIGHT / 2.f)
+        .contentSize(RoomPopup::LIST_WIDTH - pad * 2, CELL_HEIGHT)
+        .parent(this)
+        .store(menu);
 
     if (forInviting) {
         this->createInviteButton();
     } else {
         this->createJoinButton();
+    }
+
+    if (AdminManager::get().authorized()) {
+        this->createAdminButton();
     }
 
     return true;
@@ -86,12 +97,11 @@ void PlayerListCell::createInviteButton() {
         .intoMenuItem([accountId = this->data.accountId](auto) {
             NetworkManager::get().send(RoomSendInvitePacket::create(accountId));
         })
-        .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
         .scaleMult(1.25f)
         .store(inviteButton)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(menu);
+
+    menu->updateLayout();
 }
 
 void PlayerListCell::createJoinButton() {
@@ -126,9 +136,23 @@ void PlayerListCell::createJoinButton() {
         .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
         .scaleMult(1.1f)
         .store(playButton)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(menu);
+
+    menu->updateLayout();
+}
+
+void PlayerListCell::createAdminButton() {
+    // admin menu button
+    Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+        .scale(0.525f)
+        .intoMenuItem([this](auto) {
+            AdminManager::get().openUserPopup(data);
+        })
+        .parent(menu)
+        .zOrder(-3)
+        .id("admin-button"_spr);
+
+    menu->updateLayout();
 }
 
 void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {

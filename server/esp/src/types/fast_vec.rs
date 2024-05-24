@@ -75,20 +75,6 @@ impl<T, const N: usize> Default for FastVec<T, N> {
     }
 }
 
-impl<T, const N: usize> Iterator for FastVec<T, N> {
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        // this is black magic imo
-        if self.length > 0 {
-            self.length -= 1;
-            Some(unsafe { self.data[self.length].as_ptr().read() })
-        } else {
-            None
-        }
-    }
-}
-
 impl<T, const N: usize> Deref for FastVec<T, N> {
     type Target = [T];
 
@@ -97,6 +83,61 @@ impl<T, const N: usize> Deref for FastVec<T, N> {
         // also fucking hell this code looks scary
         unsafe { &*(std::ptr::from_ref::<[std::mem::MaybeUninit<T>]>(&self.data[..self.length]) as *const [T]) }
     }
+}
+
+impl<T, const N: usize> TryFrom<Vec<T>> for FastVec<T, N> {
+    type Error = FastVecOverflowError;
+
+    fn try_from(value: Vec<T>) -> Result<Self, Self::Error> {
+        if value.len() > N {
+            Err(FastVecOverflowError)
+        } else {
+            let mut v = Self::new();
+
+            for val in value {
+                v.push(val);
+            }
+
+            Ok(v)
+        }
+    }
+}
+
+impl<T, const N: usize> Clone for FastVec<T, N>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        let mut inst = Self::new();
+
+        for i in 0..self.length {
+            let elem = unsafe { &*std::ptr::from_ref::<MaybeUninit<T>>(&self.data[i]).cast::<T>() };
+            inst.push(elem.clone());
+        }
+
+        inst
+    }
+}
+
+impl<T, const N: usize> FromIterator<T> for FastVec<T, N> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut c = Self::new();
+
+        for i in iter {
+            c.push(i);
+        }
+
+        c
+    }
+}
+
+/* esp */
+
+impl<T, const N: usize> StaticSize for FastVec<T, N>
+where
+    T: StaticSize,
+{
+    const ENCODED_SIZE: usize = size_of_types!(T) * N;
 }
 
 impl<T, const N: usize> DynamicSize for FastVec<T, N>

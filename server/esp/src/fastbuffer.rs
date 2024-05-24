@@ -11,11 +11,7 @@ pub struct FastByteBuffer<'a> {
 impl<'a> FastByteBuffer<'a> {
     /// Create a new `FastByteBuffer` given this mutable slice
     pub fn new(src: &'a mut [u8]) -> Self {
-        Self {
-            pos: 0,
-            len: 0,
-            data: src,
-        }
+        Self { pos: 0, len: 0, data: src }
     }
 
     pub fn new_with_length(src: &'a mut [u8], len: usize) -> Self {

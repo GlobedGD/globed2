@@ -24,8 +24,8 @@ pub struct LoginPacket {
     pub secret_key: u32,
     pub account_id: i32,
     pub user_id: i32,
-    pub name: FastString<MAX_NAME_SIZE>,
-    pub token: FastString<MAX_TOKEN_SIZE>,
+    pub name: InlineString<MAX_NAME_SIZE>,
+    pub token: FastString,
     pub icons: PlayerIconData,
     pub fragmentation_limit: u16,
 }

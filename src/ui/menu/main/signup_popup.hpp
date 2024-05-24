@@ -20,7 +20,7 @@ protected:
     void onFailure(const std::string_view message);
     void onSuccess();
 
-    void onChallengeCreated(int accountId, const std::string_view chtoken);
+    void onChallengeCreated(int accountId, const std::string_view challenge, const std::string_view pubkey);
     void onChallengeCompleted(const std::string_view authcode);
 
     void uploadMessageFinished(int) override;

@@ -59,21 +59,7 @@ bool HookedMenuLayer::init() {
                 return;
             }
 
-            auto result = am.generateAuthCode();
-            if (result.isErr()) {
-                // invalid authkey? clear it so the user can relog. happens if user changes their password
-                ErrorQueues::get().debugWarn(fmt::format(
-                    "Failed to generate authcode: {}",
-                    result.unwrapErr()
-                ));
-                am.clearAuthKey();
-                return;
-            }
-
-            std::string authcode = result.unwrap();
-
-            auto gdData = am.gdData.lock();
-            am.requestAuthToken(csm.getActive()->url, gdData->accountId, gdData->userId, gdData->accountName, authcode, [lastServer] {
+            am.requestAuthToken(csm.getActive()->url, [lastServer] {
                 auto result = NetworkManager::get().connectWithView(lastServer.value());
                 if (result.isErr()) {
                     ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));

@@ -1,16 +1,23 @@
+use std::sync::OnceLock;
+
+use esp::InlineString;
 use globed_shared::{
     rand::{self, Rng},
     IntMap, SyncMutex, SyncMutexGuard,
 };
 
-use crate::data::{LevelId, RoomInfo, RoomListingInfo, RoomSettings, ROOM_ID_LENGTH};
+use crate::{
+    data::{LevelId, RoomInfo, RoomListingInfo, RoomSettings, ROOM_ID_LENGTH},
+    server::GameServer,
+};
 
 use super::LevelManager;
 
 #[derive(Default)]
 pub struct Room {
     pub owner: i32,
-    pub token: u32,
+    pub name: InlineString<32>,
+    pub password: InlineString<16>,
     pub manager: LevelManager,
     pub settings: RoomSettings,
 }
@@ -19,6 +26,7 @@ pub struct Room {
 pub struct RoomManager {
     rooms: SyncMutex<IntMap<u32, Room>>,
     global: SyncMutex<Room>,
+    game_server: OnceLock<&'static GameServer>,
 }
 
 // i.e. if ROOM_ID_LENGTH is 6 we should have a range 100_000..1_000_000
@@ -26,12 +34,13 @@ const ROOM_ID_START: u32 = 10_u32.pow(ROOM_ID_LENGTH as u32 - 1);
 const ROOM_ID_END: u32 = 10_u32.pow(ROOM_ID_LENGTH as u32);
 
 impl Room {
-    pub fn new(owner: i32, manager: LevelManager) -> Self {
+    pub fn new(owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings, manager: LevelManager) -> Self {
         Self {
             owner,
-            token: rand::random(),
+            name,
+            password,
             manager,
-            settings: RoomSettings::default(),
+            settings,
         }
     }
 
@@ -66,26 +75,29 @@ impl Room {
     }
 
     #[inline]
-    pub fn get_room_info(&self, id: u32) -> RoomInfo {
+    pub fn get_room_info(&self, id: u32, game_server: &GameServer) -> RoomInfo {
         RoomInfo {
             id,
-            token: self.token,
-            owner: self.owner,
+            name: self.name.clone(),
+            password: self.password.clone(),
+            owner: game_server.get_player_preview_data(self.owner).unwrap_or_default(),
             settings: self.settings,
         }
     }
 
     #[inline]
-    pub fn get_room_listing_info(&self, id: u32) -> RoomListingInfo {
+    pub fn get_room_listing_info(&self, id: u32, game_server: &GameServer) -> RoomListingInfo {
         RoomListingInfo {
             id,
-            owner: self.owner,
+            name: self.name.clone(),
+            has_password: !self.password.is_empty(),
+            owner: game_server.get_player_preview_data(self.owner).unwrap_or_default(),
             settings: self.settings,
         }
     }
 
-    pub fn is_invite_only(&self) -> bool {
-        self.settings.flags.invite_only
+    pub fn is_hidden(&self) -> bool {
+        self.settings.flags.is_hidden
     }
 
     pub fn is_public_invites(&self) -> bool {
@@ -95,11 +107,47 @@ impl Room {
     pub fn is_two_player_mode(&self) -> bool {
         self.settings.flags.two_player
     }
+
+    pub fn is_protected(&self) -> bool {
+        !self.password.is_empty()
+    }
+
+    pub fn verify_password(&self, pwd: &InlineString<16>) -> bool {
+        self.password.is_empty() || self.password == *pwd
+    }
+
+    pub fn is_full(&self) -> bool {
+        let player_count = self.manager.get_total_player_count();
+
+        if self.settings.flags.two_player {
+            player_count >= 2
+        } else if self.settings.player_limit == 0 {
+            false
+        } else {
+            player_count >= (self.settings.player_limit as usize)
+        }
+    }
 }
 
 impl RoomManager {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn set_game_server(&self, game_server: &'static GameServer) {
+        match self.game_server.set(game_server) {
+            Ok(()) => {}
+            Err(_) => {
+                panic!("set_game_server failed");
+            }
+        }
+    }
+
+    #[inline]
+    fn get_game_server(&self) -> &'static GameServer {
+        self.game_server
+            .get()
+            .expect("get_game_server called without a previous call to set_game_server")
     }
 
     /// Try to find a room by given ID, if equal to 0 or not found, runs the provided closure with the global room
@@ -133,7 +181,7 @@ impl RoomManager {
     }
 
     /// Creates a new room, adds the given player, removes them from the global room, and returns the room ID
-    pub fn create_room(&self, account_id: i32) -> RoomInfo {
+    pub fn create_room(&self, account_id: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> RoomInfo {
         let rooms = self.rooms.lock();
 
         // in case we accidentally generate an existing room id, keep looping until we find a suitable id
@@ -146,7 +194,7 @@ impl RoomManager {
 
         drop(rooms);
 
-        let room = self._create_room(room_id, account_id);
+        let room = self._create_room(room_id, account_id, name, password, settings);
 
         self.get_global().remove_player(account_id);
 
@@ -161,9 +209,7 @@ impl RoomManager {
     pub fn maybe_remove_room(&self, room_id: u32) {
         let mut rooms = self.rooms.lock();
 
-        let to_remove = rooms
-            .get(&room_id)
-            .is_some_and(|room| room.manager.get_total_player_count() == 0);
+        let to_remove = rooms.get(&room_id).is_some_and(|room| room.manager.get_total_player_count() == 0);
 
         if to_remove {
             rooms.remove(&room_id);
@@ -191,25 +237,11 @@ impl RoomManager {
         was_owner
     }
 
-    pub fn get_room_info(&self, room_id: u32) -> RoomInfo {
-        self.try_with_any(
-            room_id,
-            |room| RoomInfo {
-                id: room_id,
-                owner: room.owner,
-                token: room.token,
-                settings: room.settings,
-            },
-            || RoomInfo {
-                id: 0,
-                owner: 0,
-                token: 0,
-                settings: RoomSettings::default(),
-            },
-        )
+    pub fn get_room_info(&self, room_id: u32) -> Option<RoomInfo> {
+        self.try_with_any(room_id, |room| Some(room.get_room_info(room_id, self.get_game_server())), || None)
     }
 
-    fn _create_room(&self, room_id: u32, owner: i32) -> RoomInfo {
+    fn _create_room(&self, room_id: u32, owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> RoomInfo {
         let mut rooms = self.rooms.lock();
 
         let mut pm = LevelManager::new();
@@ -217,14 +249,8 @@ impl RoomManager {
             pm.create_player(owner);
         }
 
-        let room = Room::new(owner, pm);
-
-        let room_info = RoomInfo {
-            id: room_id,
-            owner,
-            token: room.token,
-            settings: room.settings,
-        };
+        let room = Room::new(owner, name, password, settings, pm);
+        let room_info = room.get_room_info(room_id, self.get_game_server());
 
         rooms.insert(room_id, room);
 

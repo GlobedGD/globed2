@@ -1,8 +1,8 @@
 use globed_shared::IntMap;
 
 use crate::data::{
-    types::PlayerData, AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData,
-    BorrowedAssociatedPlayerMetadata, LevelId, PlayerMetadata,
+    types::PlayerData, AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata, LevelId,
+    PlayerMetadata,
 };
 
 #[derive(Default)]
@@ -139,9 +139,9 @@ impl LevelManager {
     where
         F: Fn((LevelId, &Vec<i32>), usize, &mut A) -> bool,
     {
-        self.levels.iter().fold(0, |count, (id, players)| {
-            count + usize::from(f((*id, players), count, additional))
-        })
+        self.levels
+            .iter()
+            .fold(0, |count, (id, players)| count + usize::from(f((*id, players), count, additional)))
     }
 
     /// add a player to a level given a level ID and an account ID

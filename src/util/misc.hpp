@@ -139,8 +139,6 @@ namespace util::misc {
 
     bool isEditorCollabLevel(LevelId levelId);
 
-    void syncSystemTime();
-
     int getIconWithType(const PlayerIconData& data, PlayerIconType type);
     int getIconWithType(const PlayerIconData& data, IconType type);
 

@@ -5,6 +5,7 @@
 #include <data/packets/client/admin.hpp>
 #include <data/packets/server/admin.hpp>
 #include <managers/account.hpp>
+#include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <net/network_manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
@@ -55,7 +56,9 @@ bool AdminPopup::setup() {
     auto sizes = util::ui::getPopupLayout(m_size);
 
     auto& nm = NetworkManager::get();
-    bool authorized = nm.isAuthorizedAdmin();
+    auto& am = AdminManager::get();
+
+    bool authorized = am.authorized();
     if (!authorized) return false;
 
     nm.addListener<AdminUserDataPacket>(this, [](auto packet) {
@@ -111,7 +114,7 @@ bool AdminPopup::setup() {
         .scale(1.25f)
         .intoMenuItem([this](auto) {
             GlobedAccountManager::get().clearAdminPassword();
-            NetworkManager::get().clearAdminStatus();
+            AdminManager::get().deauthorize();
             this->onClose(this);
         })
         .parent(topRightCorner);

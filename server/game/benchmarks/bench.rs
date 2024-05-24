@@ -8,7 +8,7 @@ fn buffers(c: &mut Criterion) {
     let data = PlayerAccountData {
         account_id: 234_234_234,
         user_id: 234_234_234,
-        name: FastString::from_str("hit his is my name"),
+        name: InlineString::new("hit his is my name"),
         icons: PlayerIconData::default(),
         special_user_data: Some(SpecialUserData {
             name_color: Color3B { r: 10, g: 100, b: 200 },
@@ -79,9 +79,7 @@ fn structs(c: &mut Criterion) {
 
     c.bench_function("encode-audio-frame", |b| {
         b.iter(black_box(|| {
-            let data = FastEncodedAudioFrame {
-                data: data.to_vec().into(),
-            };
+            let data = FastEncodedAudioFrame { data: data.to_vec().into() };
             let mut stack_array = [0u8; 3000 * 8];
             let mut buf = FastByteBuffer::new(&mut stack_array);
             for _ in 0..8 {

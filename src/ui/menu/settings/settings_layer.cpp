@@ -17,7 +17,7 @@ bool GlobedSettingsLayer::init() {
 
     auto* tabButtonMenu = Build<CCMenu>::create()
         .zOrder(5)
-        .layout(RowLayout::create()->setAutoScale(false)->setGap(-16.f)) // TODO set to -1.f for new index
+        .layout(RowLayout::create()->setAutoScale(false)->setGap(-1.f))
         .pos(winsize.width / 2, winsize.height / 2 + LIST_HEIGHT / 2 + 26.f)
         .contentSize(LIST_WIDTH + 40.f, 0.f)
         .parent(this)

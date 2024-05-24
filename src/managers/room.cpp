@@ -13,7 +13,7 @@ uint32_t RoomManager::getId() {
 }
 
 bool RoomManager::isOwner() {
-    return this->isInRoom() && roomInfo.owner == GJAccountManager::get()->m_accountID;
+    return this->isInRoom() && roomInfo.owner.accountId == GJAccountManager::get()->m_accountID;
 }
 
 bool RoomManager::isInGlobal() {
@@ -31,7 +31,7 @@ void RoomManager::setInfo(const RoomInfo& info) {
 void RoomManager::setGlobal() {
     this->setInfo(RoomInfo {
         .id = 0,
-        .owner = 0,
+        .owner = {},
         .settings = {}
     });
 }
