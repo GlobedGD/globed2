@@ -25,19 +25,6 @@ namespace util::crypto {
     // generate a simple, consistent hash from this buffer
     data::bytevector simpleHash(const data::byte* input, size_t size);
 
-    // generate a 6-digit TOTP code given the key (rfc 6238 compliant i think)
-    std::string simpleTOTP(const data::byte* key, size_t keySize);
-    // generate a 6-digit TOTP code given the key (rfc 6238 compliant i think)
-    std::string simpleTOTP(const data::bytevector& key);
-
-    // generate a 6-digit TOTP code given the key and the time period. use simpleTOTP instead to use current time.
-    std::string simpleTOTPForPeriod(const data::byte* key, size_t keySize, uint64_t period);
-
-    // verify the TOTP code given a key and an optional arg skew.
-    bool simpleTOTPVerify(const std::string_view code, const data::byte* key, size_t keySize, size_t skew = 1);
-    // verify the TOTP code given a key and an optional arg skew.
-    bool simpleTOTPVerify(const std::string_view code, const data::bytevector& key, size_t skew = 1);
-
     // compares two strings in constant time to prevent timing attacks
     bool stringsEqual(const std::string_view s1, const std::string_view s2);
 

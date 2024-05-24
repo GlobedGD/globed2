@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/crypto.hpp>
 #include <data/types/gd.hpp>
+#include <data/types/user.hpp>
 
 class PingResponsePacket : public Packet {
     GLOBED_PACKET(20000, false, false)
@@ -49,10 +50,11 @@ class LoggedInPacket : public Packet {
     LoggedInPacket() {}
 
     uint32_t tps;
-    std::optional<SpecialUserData> specialUserData;
+    SpecialUserData specialUserData;
+    std::vector<GameServerRole> allRoles;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(LoggedInPacket, (tps, specialUserData));
+GLOBED_SERIALIZABLE_STRUCT(LoggedInPacket, (tps, specialUserData, allRoles));
 
 class LoginFailedPacket : public Packet {
     GLOBED_PACKET(20005, false, false)
@@ -102,3 +104,25 @@ class ConnectionTestResponsePacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(ConnectionTestResponsePacket, (uid, data));
+
+class ServerBannedPacket : public Packet {
+    GLOBED_PACKET(20011, false, false)
+
+    ServerBannedPacket() {}
+
+    std::string message;
+    int64_t timestamp;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(ServerBannedPacket, (message, timestamp))
+
+class ServerMutedPacket : public Packet {
+    GLOBED_PACKET(20012, false, false)
+
+    ServerMutedPacket() {}
+
+    std::string reason;
+    int64_t timestamp;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(ServerMutedPacket, (reason, timestamp));

@@ -2,6 +2,8 @@
 
 #include <hooks/game_manager.hpp>
 #include <managers/settings.hpp>
+#include <managers/role.hpp>
+#include <util/cocos.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
 #include <util/time.hpp>
@@ -177,22 +179,73 @@ namespace util::ui {
         return nullptr;
     }
 
-    CCSprite* createBadge(const char* badgePNG, const std::string& id) {
-        auto badgeSprite = Build<CCSprite>::createSpriteName(badgePNG)
-            .scale(1.f)
-            .id(id);
+    CCSprite* createBadge(const std::string& sprite) {
+        // have multiple fallback sprites in case it's invalid
+        CCSprite* spr1 = nullptr;
 
-        return badgeSprite.collect();
+        if (!sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr(sprite).c_str());
+        if (!spr1 && !sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(sprite.c_str());
+        if (!spr1) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr("button-secret.png").c_str());
+
+        return spr1;
     }
 
-    CCSprite* createBadgeIfSpecial(ccColor3B color) {
-        if (color == ccc3(119, 255, 255)) return createBadge("role-owner.png"_spr, "globed-owner-badge");
-        if (color == ccc3(15, 239, 195)) return createBadge("role-mod.png"_spr, "globed-mod-badge");
-        if (color == ccc3(233, 30, 99)) return createBadge("role-admin.png"_spr, "globed-admin-badge");
-        if (color == ccc3(52, 152, 219)) return createBadge("role-helper.png"_spr, "globed-helper-badge");
-        if (color == ccc3(154, 88, 255)) return createBadge("role-supporter.png"_spr, "globed-supporter-badge");
-        if (color == ccc3(248, 0, 255)) return createBadge("role-booster.png"_spr, "globed-booster-badge");
+    static ComputedRole compute(const SpecialUserData& data) {
+        return RoleManager::get().compute(data.roles.value());
+    }
 
-        return nullptr;
+    CCSprite* createBadgeIfSpecial(const SpecialUserData& data) {
+        if (!data.roles) return nullptr;
+
+        return createBadge(compute(data).badgeIcon);
+    }
+
+    ccColor3B getNameColor(const SpecialUserData& data) {
+        if (!data.roles) return ccc3(255, 255, 255);
+
+        auto computed = compute(data);
+        if (computed.nameColor) return computed.nameColor->getAnyColor();
+
+        return ccc3(255, 255, 255);
+    }
+
+    RichColor getNameRichColor(const SpecialUserData& data) {
+        if (!data.roles) return RichColor(ccc3(255, 255, 255));
+
+        auto computed = compute(data);
+        if (computed.nameColor) return computed.nameColor.value();
+
+        return RichColor(ccc3(255, 255, 255));
+    }
+
+    void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color) {
+        constexpr int tag = 34925671;
+
+        label->stopActionByTag(tag);
+
+        if (!color.isMultiple()) {
+            label->setColor(color.getColor());
+            return;
+        }
+
+        const auto& colors = color.getColors();
+        if (colors.empty()) {
+            return;
+        }
+
+        // set the last color
+        label->setColor(colors.at(colors.size() - 1));
+
+        // create an action to tint between the rest of the colors
+        CCArray* actions = CCArray::create();
+
+        for (const auto& color : colors) {
+            actions->addObject(CCTintTo::create(0.8f, color.r, color.g, color.b));
+        }
+
+        CCRepeat* action = CCRepeat::create(CCSequence::create(actions), 99999999);
+        action->setTag(tag);
+
+        label->runAction(action);
     }
 }

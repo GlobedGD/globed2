@@ -19,10 +19,7 @@ impl GameServerThread {
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
         if packet.protocol != PROTOCOL_VERSION && packet.protocol != 0xffff {
             self.terminate();
-            self.send_packet_static(&ProtocolMismatchPacket {
-                protocol: PROTOCOL_VERSION,
-            })
-            .await?;
+            self.send_packet_static(&ProtocolMismatchPacket { protocol: PROTOCOL_VERSION }).await?;
             return Ok(());
         }
 
@@ -31,8 +28,7 @@ impl GameServerThread {
             // erroring here is not a concern, even if the user's game crashes without a disconnect packet,
             // they would have a new randomized port when they restart and this would never fail.
             if self.crypto_box.get().is_some() {
-                self.disconnect("attempting to perform a second handshake in one session")
-                    .await?;
+                self.disconnect("attempting to perform a second handshake in one session").await?;
                 return Err(PacketHandlingError::WrongCryptoBoxState);
             }
 
@@ -56,12 +52,14 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_login, LoginPacket, packet, {
+        // if we have already logged in, ignore this login attempt
+        if self.authenticated() {
+            return Ok(());
+        }
+
         // disconnect if server is under maintenance
         if self.game_server.bridge.central_conf.lock().maintenance {
-            gs_disconnect!(
-                self,
-                "The server is currently under maintenance, please try connecting again later."
-            );
+            gs_disconnect!(self, "The server is currently under maintenance, please try connecting again later.");
         }
 
         if packet.fragmentation_limit < 1300 {
@@ -78,7 +76,10 @@ impl GameServerThread {
 
         if packet.account_id <= 0 || packet.user_id <= 0 {
             self.terminate();
-            let message = format!("Invalid account/user ID was sent ({} and {}). Please note that you must be signed into a Geometry Dash account before connecting.", packet.account_id, packet.user_id);
+            let message = format!(
+                "Invalid account/user ID was sent ({} and {}). Please note that you must be signed into a Geometry Dash account before connecting.",
+                packet.account_id, packet.user_id
+            );
             self.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
             return Ok(());
         }
@@ -90,26 +91,22 @@ impl GameServerThread {
         } else {
             // lets verify the given token
             let result = {
-                self.game_server.bridge.token_issuer.lock().validate(
-                    packet.account_id,
-                    packet.user_id,
-                    packet.token.to_str().unwrap(),
-                )
+                self.game_server
+                    .bridge
+                    .token_issuer
+                    .lock()
+                    .validate(packet.account_id, packet.user_id, packet.token.to_str().unwrap())
             };
 
             match result {
-                Ok(x) => FastString::from_str(&x),
+                Ok(x) => InlineString::new(&x),
                 Err(err) => {
                     self.terminate();
 
-                    let mut message = FastString::<80>::from_str("authentication failed: ");
-                    message.extend(err.error_message()); // no need to use extend_safe as the messages are pretty short
+                    let mut message = FastString::new("authentication failed: ");
+                    message.extend(err.error_message());
 
-                    self.send_packet_dynamic(&LoginFailedPacket {
-                        // safety: we have created the string ourselves, we know for certain it is valid UTF-8.
-                        message: unsafe { message.to_str_unchecked() },
-                    })
-                    .await?;
+                    self.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
                     return Ok(());
                 }
             }
@@ -123,12 +120,12 @@ impl GameServerThread {
             let user_entry = match self.game_server.bridge.get_user_data(&packet.account_id.to_string()).await {
                 Ok(user) if user.is_banned => {
                     self.terminate();
-                    self.send_packet_dynamic(&LoginFailedPacket {
-                        message: &format!(
-                            "Banned from the server: {}",
-                            user.violation_reason
-                                .map_or_else(|| "no reason given".to_owned(), |x| x.clone())
-                        ),
+                    self.send_packet_dynamic(&ServerBannedPacket {
+                        message: (FastString::new(&format!(
+                            "{}",
+                            user.violation_reason.as_ref().map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
+                        ))),
+                        timestamp: (user.violation_expiry.unwrap()),
                     })
                     .await?;
 
@@ -147,18 +144,15 @@ impl GameServerThread {
                 Err(err) => {
                     self.terminate();
 
-                    let mut message = FastString::<256>::from_str("failed to fetch user data: ");
-                    message.extend(&err.to_string());
+                    let mut message = InlineString::<256>::new("failed to fetch user data: ");
+                    message.extend_safe(&err.to_string());
 
-                    self.send_packet_dynamic(&LoginFailedPacket {
-                        // safety: same as above
-                        message: unsafe { message.to_str_unchecked() },
-                    })
-                    .await?;
+                    self.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
                     return Ok(());
                 }
             };
 
+            *self.user_role.lock() = self.game_server.state.role_manager.compute(&user_entry.user_roles);
             *self.user_entry.lock() = user_entry;
         }
 
@@ -178,29 +172,27 @@ impl GameServerThread {
             account_data.icons.clone_from(&packet.icons);
             account_data.name = player_name;
 
-            let name_color = self.user_entry.lock().name_color.clone();
-            let sud = if let Some(name_color) = name_color {
-                Some(SpecialUserData {
-                    name_color: name_color.parse()?,
-                })
-            } else {
-                None
-            };
+            let user_entry = self.user_entry.lock();
+            let sud = SpecialUserData::from_user_entry(&*user_entry, &self.game_server.state.role_manager);
 
-            account_data.special_user_data = sud.clone();
+            account_data.special_user_data.clone_from(&sud);
+
             sud
         };
 
         // add them to the global room
-        self.game_server
-            .state
-            .room_manager
-            .get_global()
-            .manager
-            .create_player(packet.account_id);
+        self.game_server.state.room_manager.get_global().manager.create_player(packet.account_id);
 
         let tps = self.game_server.bridge.central_conf.lock().tps;
-        self.send_packet_static(&LoggedInPacket { tps, special_user_data }).await?;
+
+        let all_roles = self.game_server.state.role_manager.get_all_roles();
+
+        self.send_packet_dynamic(&LoggedInPacket {
+            tps,
+            special_user_data,
+            all_roles,
+        })
+        .await?;
 
         Ok(())
     });

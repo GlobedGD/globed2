@@ -3,16 +3,13 @@
 #include "userlist.hpp"
 #include "actions_popup.hpp"
 #include <audio/voice_playback_manager.hpp>
-#include <data/packets/client/admin.hpp>
-#include <data/packets/server/admin.hpp>
+#include <managers/admin.hpp>
 #include <managers/block_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/profile_cache.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 #include <hooks/gjgamelevel.hpp>
-#include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
-#include <ui/general/intermediary_loading_popup.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
 
@@ -48,13 +45,12 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .collect();
 
     auto& pcm = ProfileCacheManager::get();
-    ccColor3B nameColor = ccc3(255, 255, 255);
-    if (data.specialUserData.has_value()) {
-        nameColor = data.specialUserData->nameColor;
-    }
+    RichColor nameColor = util::ui::getNameRichColor(data.specialUserData);
 
     auto* nameButton = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
-        .color(nameColor)
+        .with([&nameColor](auto* label) {
+            util::ui::animateLabelColorTint(label, nameColor);
+        })
         .limitLabelWidth(140.f, 0.5f, 0.1f)
         .intoMenuItem([this] {
             bool myself = accountData.accountId == GJAccountManager::get()->m_accountID;
@@ -68,11 +64,10 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .parent(usernameLayout)
         .collect();
 
-	if (data.specialUserData.has_value()) {
-		CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(nameColor);
-        if (badgeIcon) {
-            usernameLayout->addChild(badgeIcon);
-        }
+    CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
+    if (badgeIcon) {
+        util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE);
+        usernameLayout->addChild(badgeIcon);
     }
 
     // percentage label
@@ -140,7 +135,7 @@ void GlobedUserCell::makeButtons() {
 
     bool notSelf = accountData.accountId != GJAccountManager::get()->m_accountID;
     bool createBtnSettings = notSelf;
-    bool createBtnAdmin = NetworkManager::get().isAuthorizedAdmin();
+    bool createBtnAdmin = AdminManager::get().authorized();
     bool createBtn2plink = pl->m_fields->roomSettings.flags.twoPlayerMode && notSelf;
     bool createBtnTp = createBtnAdmin && notSelf && !createBtn2plink;
     bool createVisualizer = settings.communication.voiceEnabled && notSelf;
@@ -230,19 +225,7 @@ void GlobedUserCell::makeButtons() {
         Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
             .scale(0.4f)
             .intoMenuItem([this](auto) {
-                // load the data from the server
-                auto& nm = NetworkManager::get();
-                IntermediaryLoadingPopup::create([&nm, this](auto popup) {
-                    nm.send(AdminGetUserStatePacket::create(std::to_string(accountData.accountId)));
-                    nm.addListener<AdminUserDataPacket>(this, [this, popup = popup](auto packet) {
-                        popup->onClose(popup);
-
-                        // delay the cration to avoid deadlock
-                        Loader::get()->queueInMainThread([userEntry = packet->userEntry, accountData = accountData.makeRoomPreview(0)] {
-                            AdminUserPopup::create(userEntry, accountData)->show();
-                        });
-                    });
-                }, [](auto) {})->show();
+                AdminManager::get().openUserPopup(accountData.makeRoomPreview(0));
             })
             .parent(buttonsWrapper)
             .id("kick-button"_spr)

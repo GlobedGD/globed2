@@ -39,14 +39,9 @@ public:
     void clearAuthKey();
 
     bool hasAuthKey();
-
-    Result<std::string> generateAuthCode();
+    std::string getAuthKey();
 
     void requestAuthToken(const std::string_view baseUrl,
-                          int accountId,
-                          int userId,
-                          const std::string_view accountName,
-                          const std::string_view authcode,
                           std::optional<std::function<void()>> callback
     );
 

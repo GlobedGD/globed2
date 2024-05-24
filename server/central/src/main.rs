@@ -57,8 +57,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // create Rocket.toml if it doesn't exist
-    let rocket_toml =
-        std::env::var("ROCKET_CONFIG").map_or_else(|_| std::env::current_dir().unwrap().join("Rocket.toml"), PathBuf::from);
+    let rocket_toml = std::env::var("ROCKET_CONFIG").map_or_else(|_| std::env::current_dir().unwrap().join("Rocket.toml"), PathBuf::from);
 
     if !rocket_toml.file_name().is_some_and(|x| x == "Rocket.toml") || !rocket_toml.parent().is_some_and(Path::exists) {
         error!("invalid value for ROCKET_CONFIG");
@@ -74,8 +73,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // config file
 
-    let mut config_path =
-        std::env::var("GLOBED_CONFIG_PATH").map_or_else(|_| std::env::current_dir().unwrap(), PathBuf::from);
+    let mut config_path = std::env::var("GLOBED_CONFIG_PATH").map_or_else(|_| std::env::current_dir().unwrap(), PathBuf::from);
 
     if config_path.is_dir() {
         config_path = config_path.join("central-conf.json");
@@ -100,6 +98,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         conf
     };
 
+    // check if the user unknowingly put 0.0.0.0 as an address, which is invalid.
+    if config.game_servers.iter().any(|gs| gs.address.contains("0.0.0.0")) {
+        error!("invalid game server address found in central-conf.json");
+        warn!("hint: 0.0.0.0 is an address that is only valid for *listening*, not *connecting*");
+        warn!("hint: try 127.0.0.1 if the server is on your local machine");
+        warn!("hint: ..or try your public IP address if you want other people to be able to connect");
+        abort_misconfig();
+    }
+
+    // validate the silly
+    if config.roles.iter().any(|role| role.id.contains(",")) {
+        error!("invalid role id found in central-conf.json");
+        warn!("hint: role ids cannot contain commas");
+        abort_misconfig();
+    }
+
     // stupid rust
 
     let mnt_point = config.web_mountpoint.clone();
@@ -113,8 +127,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // config file watcher
 
-    let (mut debouncer, mut file_events) =
-        AsyncDebouncer::new_with_channel(Duration::from_secs(1), Some(Duration::from_secs(1))).await?;
+    let (mut debouncer, mut file_events) = AsyncDebouncer::new_with_channel(Duration::from_secs(1), Some(Duration::from_secs(1))).await?;
 
     debouncer.watcher().watch(&config_path, RecursiveMode::NonRecursive)?;
 
@@ -160,24 +173,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .register("/", catchers![web::not_found, web::query_string])
         .mount(mnt_point, web::routes::build_router())
         .manage(state)
-        .manage(
-            if std::env::var("GLOBED_DISABLE_CORS").unwrap_or_else(|_| "0".to_owned()) == "0" {
-                // keep cors enabled
-                rocket_cors::CorsOptions::default()
-                    .allowed_origins(rocket_cors::AllowedOrigins::all())
-                    .allowed_methods(vec![].into_iter().collect())
-                    .allow_credentials(false)
-                    .to_cors()?
-            } else {
-                // disable cors for GET methods
-                warn!("disabling CORS for get requests");
-                rocket_cors::CorsOptions::default()
-                    .allowed_origins(rocket_cors::AllowedOrigins::all())
-                    .allowed_methods(vec![rocket::http::Method::Get].into_iter().map(From::from).collect())
-                    .allow_credentials(false)
-                    .to_cors()?
-            },
-        )
+        .manage(if std::env::var("GLOBED_DISABLE_CORS").unwrap_or_else(|_| "0".to_owned()) == "0" {
+            // keep cors enabled
+            rocket_cors::CorsOptions::default()
+                .allowed_origins(rocket_cors::AllowedOrigins::all())
+                .allowed_methods(vec![].into_iter().collect())
+                .allow_credentials(false)
+                .to_cors()?
+        } else {
+            // disable cors for GET methods
+            warn!("disabling CORS for get requests");
+            rocket_cors::CorsOptions::default()
+                .allowed_origins(rocket_cors::AllowedOrigins::all())
+                .allowed_methods(vec![rocket::http::Method::Get].into_iter().map(From::from).collect())
+                .allow_credentials(false)
+                .to_cors()?
+        })
         .attach(GlobedDb::init())
         .attach(db::migration_fairing());
 

@@ -1,21 +1,34 @@
 use super::*;
 use crate::{data::*, server_thread::GameServerThread, server_thread::ServerThreadMessage};
-use globed_shared::debug;
+use globed_shared::{debug, warn};
 
 impl GameServerThread {
-    gs_handler!(self, handle_create_room, CreateRoomPacket, _packet, {
+    gs_handler!(self, handle_create_room, CreateRoomPacket, packet, {
         let account_id = gs_needauth!(self);
 
         let room_id: u32 = self.room_id.load(Ordering::Relaxed);
 
         // if we are already in a room, just return the same room info, otherwise create a new one
         let room_info = if room_id == 0 {
-            let room_info = self.game_server.state.room_manager.create_room(account_id);
+            let room_info = self
+                .game_server
+                .state
+                .room_manager
+                .create_room(account_id, packet.room_name, packet.password, packet.settings);
 
             self.room_id.store(room_info.id, Ordering::Relaxed);
             room_info
         } else {
-            self.game_server.state.room_manager.get_room_info(room_id)
+            let room_info = self.game_server.state.room_manager.get_room_info(room_id);
+
+            if let Some(room_info) = room_info {
+                room_info
+            } else {
+                // somehow in an invalid room? shouldn't happen
+                warn!("player is in an invalid room: {}", room_id);
+                self.room_id.store(0, Ordering::Relaxed);
+                return Ok(());
+            }
         };
 
         self.send_packet_static(&RoomCreatedPacket { info: room_info }).await
@@ -26,29 +39,36 @@ impl GameServerThread {
 
         if !self.game_server.state.room_manager.is_valid_room(packet.room_id) {
             return self
-                .send_packet_dynamic(&RoomJoinFailedPacket {
-                    message: "no room found by given id",
+                .send_packet_static(&RoomJoinFailedPacket {
+                    was_invalid: true,
+                    ..Default::default()
                 })
                 .await;
         }
 
         // check if we are even able to join the room
-        let err_message = self.game_server.state.room_manager.try_with_any(
+        let (was_invalid, was_protected, was_full) = self.game_server.state.room_manager.try_with_any(
             packet.room_id,
             |room| {
-                if room.is_invite_only() && room.token != packet.room_token {
-                    Some("invite only room, unable to join")
-                } else if room.is_two_player_mode() && room.manager.get_total_player_count() >= 2 {
-                    Some("room is full")
+                if !room.verify_password(&packet.password) {
+                    (false, true, false)
+                } else if room.is_full() {
+                    (false, false, true)
                 } else {
-                    None
+                    (false, false, false)
                 }
             },
-            || Some("internal server error: room does not exist"),
+            || (true, false, false),
         );
 
-        if let Some(err_message) = err_message {
-            return self.send_packet_dynamic(&RoomJoinFailedPacket { message: err_message }).await;
+        if was_invalid || was_protected || was_full {
+            return self
+                .send_packet_static(&RoomJoinFailedPacket {
+                    was_invalid,
+                    was_protected,
+                    was_full,
+                })
+                .await;
         }
 
         let old_room_id = self.room_id.swap(packet.room_id, Ordering::Relaxed);
@@ -61,10 +81,7 @@ impl GameServerThread {
         let level_id = self.level_id.load(Ordering::Relaxed);
 
         // remove the player from the previously connected room (or the global room)
-        self.game_server
-            .state
-            .room_manager
-            .remove_with_any(old_room_id, account_id, level_id);
+        self.game_server.state.room_manager.remove_with_any(old_room_id, account_id, level_id);
 
         self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
             pm.manager.create_player(account_id);
@@ -83,11 +100,7 @@ impl GameServerThread {
 
         let level_id = self.level_id.load(Ordering::Relaxed);
 
-        let should_send_update = self
-            .game_server
-            .state
-            .room_manager
-            .remove_with_any(room_id, account_id, level_id);
+        let should_send_update = self.game_server.state.room_manager.remove_with_any(room_id, account_id, level_id);
 
         // if we were the owner, send update packets to everyone
         if should_send_update {
@@ -95,12 +108,7 @@ impl GameServerThread {
         }
 
         // add them to the global room
-        self.game_server
-            .state
-            .room_manager
-            .get_global()
-            .manager
-            .create_player(account_id);
+        self.game_server.state.room_manager.get_global().manager.create_player(account_id);
 
         // respond with the global room list
         self._respond_with_room_list(0).await
@@ -150,40 +158,42 @@ impl GameServerThread {
         }
 
         // if we don't have permission to invite, skip
-        let room_token = self.game_server.state.room_manager.with_any(room_id, |room| {
-            if room.is_invite_only() && !room.is_public_invites() && room.owner != account_id {
+        let room_password = self.game_server.state.room_manager.with_any(room_id, |room| {
+            if room.is_protected() && (room.is_public_invites() || room.owner == account_id) {
+                Some(room.password.clone())
+            } else if room.is_protected() {
                 None
             } else {
-                Some(room.token)
+                Some(InlineString::default())
             }
         });
 
-        if room_token.is_none() {
-            #[cfg(debug_assertions)]
-            debug!("invite from {account_id} rejected, user is unable to invite");
-            return Ok(());
-        }
+        let room_password = match room_password {
+            Some(x) => x,
+            None => {
+                #[cfg(debug_assertions)]
+                debug!("invite from {account_id} rejected, user is unable to invite");
+                return Ok(());
+            }
+        };
 
         let thread = self.game_server.get_user_by_id(packet.player);
 
         if let Some(thread) = thread {
-            let player_data = self.account_data.lock().make_room_preview(0);
-            let room_token = room_token.unwrap();
+            let player_data = self.account_data.lock().make_preview();
+
+            debug!(
+                "{account_id} sent an invite to {} (room: {}, password: {})",
+                packet.player, room_id, room_password
+            );
 
             let invite_packet = RoomInvitePacket {
                 player_data,
                 room_id,
-                room_token,
+                room_password,
             };
 
-            debug!(
-                "{account_id} sent an invite to {} (room: {}, token: {})",
-                packet.player, room_id, room_token
-            );
-
-            thread
-                .push_new_message(ServerThreadMessage::BroadcastInvite(invite_packet.clone()))
-                .await;
+            thread.push_new_message(ServerThreadMessage::BroadcastInvite(invite_packet.clone())).await;
         }
 
         Ok(())
@@ -198,7 +208,7 @@ impl GameServerThread {
     #[inline]
     async fn _respond_with_room_list(&self, room_id: u32) -> crate::server_thread::Result<()> {
         let (player_count, room_info) = self.game_server.state.room_manager.with_any(room_id, |room| {
-            (room.manager.get_total_player_count(), room.get_room_info(room_id))
+            (room.manager.get_total_player_count(), room.get_room_info(room_id, self.game_server))
         });
 
         // RoomInfo, list size, list of PlayerRoomPreviewAccountData
@@ -233,7 +243,7 @@ impl GameServerThread {
             .room_manager
             .get_rooms()
             .iter()
-            .filter(|(_, room)| !room.is_invite_only())
+            .filter(|(_, room)| !room.is_hidden())
             .count();
 
         let encoded_size = size_of_types!(u32) + size_of_types!(RoomListingInfo) * room_count;

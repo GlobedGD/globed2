@@ -27,5 +27,5 @@ pub struct VoiceBroadcastPacket {
 #[packet(id = 22011, encrypted = true, tcp = false)]
 pub struct ChatMessageBroadcastPacket {
     pub player_id: i32,
-    pub message: FastString<MAX_MESSAGE_SIZE>,
+    pub message: InlineString<MAX_MESSAGE_SIZE>,
 }

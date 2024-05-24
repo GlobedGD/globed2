@@ -71,75 +71,6 @@ bytevector simpleHash(const byte* input, size_t size) {
     return out;
 }
 
-
-std::string simpleTOTP(const byte* key, size_t keySize) {
-    return simpleTOTPForPeriod(key, keySize, std::time(nullptr) / 30);
-}
-
-std::string simpleTOTP(const bytevector& key) {
-    return simpleTOTP(key.data(), key.size());
-}
-
-std::string simpleTOTPForPeriod(const byte *key, size_t keySize, uint64_t period) {
-    CRYPTO_REQUIRE(keySize == crypto_auth_hmacsha256_KEYBYTES, "invalid key size passed to simpleTOTPForPeriod")
-
-    if constexpr (GLOBED_LITTLE_ENDIAN) {
-        period = byteswap(period);
-    }
-
-    byte hmacResult[crypto_auth_hmacsha256_BYTES];
-    crypto_auth_hmacsha256(hmacResult, reinterpret_cast<const byte*>(&period), sizeof(period), key);
-
-    // Calculate the offset
-    size_t offset = hmacResult[crypto_auth_hmacsha256_BYTES - 1] & 0x0F;
-
-    // Calculate the 4-byte dynamic binary code (what the fuck is this?)
-    uint32_t binaryCode =
-        (hmacResult[offset] & 0x7f) << 24 |
-        (hmacResult[offset + 1]) << 16 |
-        (hmacResult[offset + 2]) << 8 |
-        (hmacResult[offset + 3]);
-
-    // Calculate the 6-digit OTP
-    uint32_t otp = binaryCode % 1000000;
-
-    // Convert the OTP to a string with leading zeros
-    std::ostringstream otpStream;
-    otpStream << std::setw(6) << std::setfill('0') << otp;
-
-    return otpStream.str();
-}
-
-bool simpleTOTPVerify(const std::string_view code, const byte* key, size_t keySize, size_t skew) {
-    uint64_t curPeriod = std::time(nullptr) / 30;
-    auto curTotp = simpleTOTPForPeriod(key, keySize, curPeriod);
-    if (stringsEqual(code, curTotp)) {
-        return true;
-    }
-
-    // skew indicates the window where the code is still valid.
-    // so skew = 1 means current period, 1 before and 1 after, total 90 seconds.
-    // skew = 0 means only current period.
-    // using values other than 1 is really not recommended.
-    for (size_t i = 0; i < skew; i++) {
-        auto beforeTotp = simpleTOTPForPeriod(key, keySize, curPeriod - i);
-        if (stringsEqual(code, beforeTotp)) {
-            return true;
-        }
-
-        auto afterTotp = simpleTOTPForPeriod(key, keySize, curPeriod + i);
-        if (stringsEqual(code, afterTotp)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool simpleTOTPVerify(const std::string_view code, const bytevector& key, size_t skew) {
-    return simpleTOTPVerify(code, key.data(), key.size(), skew);
-}
-
 bool stringsEqual(const std::string_view s1, const std::string_view s2) {
     if (s1.size() != s2.size()) {
         return false;
@@ -153,13 +84,15 @@ bool stringsEqual(const std::string_view s1, const std::string_view s2) {
     return (result == 0);
 }
 
-std::string base64Encode(const byte* source, size_t size, Base64Variant variant) {
-    size_t length = sodium_base64_ENCODED_LEN(size, (int)variant);
+std::string base64Encode(const byte* source, size_t size, Base64Variant variant_) {
+    int variant = base64VariantToInt(variant_);
+
+    size_t length = sodium_base64_ENCODED_LEN(size, variant);
 
     std::string ret;
     ret.resize(length);
 
-    sodium_bin2base64(ret.data(), length, source, size, base64VariantToInt(variant));
+    sodium_bin2base64(ret.data(), length, source, size, variant);
 
     ret.resize(length - 1); // get rid of the trailing null byte
 

@@ -1,4 +1,3 @@
-use crate::server_thread::handlers::admin::*;
 use serde::Serialize;
 
 pub struct BanMuteStateChange {
@@ -16,12 +15,12 @@ pub enum WebhookMessage {
     NoticeToSelection(String, usize, String),                                          // username, player count, message
     NoticeToPerson(String, String, String),                                            // author, target username, message
     KickEveryone(String, String),                                                      // mod username, reason
-    KickPerson(String, String, i32, String), // mod username, target username, target account id, reason
-    UserBanChanged(BanMuteStateChange),      // yeah
-    UserMuteChanged(BanMuteStateChange),     // yeah
+    KickPerson(String, String, i32, String),                                           // mod username, target username, target account id, reason
+    UserBanChanged(BanMuteStateChange),                                                // yeah
+    UserMuteChanged(BanMuteStateChange),                                               // yeah
     UserViolationMetaChanged(String, String, bool, bool, Option<i64>, Option<String>), // mod username, username, is_banned, is_muted, expiry, reason
-    UserRoleChanged(String, String, i32, i32), // mod username, username, old role, new role
-    UserNameColorChanged(String, String, Option<String>, Option<String>), // mod username, username, old color, new color
+    UserRolesChanged(String, String, Vec<String>, Vec<String>),                        // mod username, username, old roles, new roles
+    UserNameColorChanged(String, String, Option<String>, Option<String>),              // mod username, username, old color, new color
 }
 
 #[derive(Serialize)]
@@ -71,17 +70,6 @@ pub struct WebhookOpts<'a> {
 
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub embeds: Vec<WebhookEmbed<'a>>,
-}
-
-pub fn role_to_string(role: i32) -> String {
-    match role {
-        ROLE_USER => "User",
-        ROLE_HELPER => "Helper",
-        ROLE_MOD => "Moderator",
-        ROLE_ADMIN => "Admin",
-        _ => "Unknown",
-    }
-    .to_owned()
 }
 
 #[allow(clippy::too_many_lines)]
@@ -245,38 +233,34 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 }]
             },
         }),
-        WebhookMessage::UserViolationMetaChanged(mod_name, user_name, is_banned, _is_muted, expiry, reason) => {
-            Some(WebhookEmbed {
-                title: format!("{} state changed", if *is_banned { "Ban" } else { "Mute" }),
-                color: hex_color_to_decimal("#de7a23"),
-                author: Some(WebhookAuthor {
-                    name: user_name.clone(),
-                    icon_url: None,
-                }),
-                description: None,
-                footer: None,
-                fields: vec![
-                    WebhookField {
-                        name: "Performed by",
-                        value: mod_name.clone(),
-                        inline: Some(false),
-                    },
-                    WebhookField {
-                        name: "Reason",
-                        value: reason.clone().unwrap_or_else(|| "No reason given.".to_owned()),
-                        inline: Some(false),
-                    },
-                    WebhookField {
-                        name: "Expiration",
-                        value: expiry
-                            .map(|x| format!("<t:{x}:f>"))
-                            .unwrap_or_else(|| "Permanent.".to_owned()),
-                        inline: Some(false),
-                    },
-                ],
-            })
-        }
-        WebhookMessage::UserRoleChanged(mod_name, user_name, old_role, new_role) => Some(WebhookEmbed {
+        WebhookMessage::UserViolationMetaChanged(mod_name, user_name, is_banned, _is_muted, expiry, reason) => Some(WebhookEmbed {
+            title: format!("{} state changed", if *is_banned { "Ban" } else { "Mute" }),
+            color: hex_color_to_decimal("#de7a23"),
+            author: Some(WebhookAuthor {
+                name: user_name.clone(),
+                icon_url: None,
+            }),
+            description: None,
+            footer: None,
+            fields: vec![
+                WebhookField {
+                    name: "Performed by",
+                    value: mod_name.clone(),
+                    inline: Some(false),
+                },
+                WebhookField {
+                    name: "Reason",
+                    value: reason.clone().unwrap_or_else(|| "No reason given.".to_owned()),
+                    inline: Some(false),
+                },
+                WebhookField {
+                    name: "Expiration",
+                    value: expiry.map(|x| format!("<t:{x}:f>")).unwrap_or_else(|| "Permanent.".to_owned()),
+                    inline: Some(false),
+                },
+            ],
+        }),
+        WebhookMessage::UserRolesChanged(mod_name, user_name, old_roles, new_roles) => Some(WebhookEmbed {
             title: "Role change".to_owned(),
             color: hex_color_to_decimal("#8b4de8"),
             author: Some(WebhookAuthor {
@@ -292,13 +276,13 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Old role",
-                    value: role_to_string(*old_role),
+                    name: "Old roles",
+                    value: old_roles.join(", "),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "New role",
-                    value: role_to_string(*new_role),
+                    name: "New roles",
+                    value: new_roles.join(", "),
                     inline: Some(true),
                 },
             ],

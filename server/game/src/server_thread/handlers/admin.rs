@@ -2,28 +2,12 @@ use globed_shared::{info, warn};
 
 use crate::{
     data::*,
+    managers::ComputedRole,
     server_thread::{GameServerThread, ServerThreadMessage},
     webhook::{BanMuteStateChange, WebhookMessage},
 };
 
 use super::*;
-
-// Role documentation:
-// 0 - regular user
-// 1 - can change is_muted, violation_reason, violation_expiry, disconnect people
-// 2 - can do all above, change is_banned, is_whitelisted, name_color, send notices
-// 100 - can do all above, change user_role, admin_password, send notices to everyone, disconnect everyone
-// 101 - can do all above, change roles of users to admin
-
-pub const ROLE_USER: i32 = 0;
-pub const ROLE_HELPER: i32 = 1;
-pub const ROLE_MOD: i32 = 2;
-pub const ROLE_ADMIN: i32 = 100;
-pub const ROLE_SUPERADMIN: i32 = 101;
-
-const ADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, not enough permissions.";
-const MOD_REQUIRED_MESSAGE: &str = "unable to perform this action, not enough permissions";
-const SUPERADMIN_REQUIRED_MESSAGE: &str = "unable to perform this action, not enough permissions";
 
 macro_rules! admin_error {
     ($self:expr, $msg:expr) => {
@@ -32,15 +16,53 @@ macro_rules! admin_error {
     };
 }
 
+enum AdminPerm {
+    Any,
+    Notice,
+    NoticeToEveryone,
+    Kick,
+    KickEveryone,
+    Mute,
+    Ban,
+    EditRoles,
+    Admin,
+}
+
 impl GameServerThread {
+    // check if the user is logged in as admin, and if they have the given permission
+    fn _has_perm(&self, perm: AdminPerm) -> bool {
+        if !self.is_authorized_admin.load(Ordering::Relaxed) {
+            return false;
+        }
+
+        let role = self.user_role.lock();
+
+        if role.admin {
+            return true;
+        }
+
+        match perm {
+            AdminPerm::Any => role.can_moderate(),
+            AdminPerm::Notice => role.notices,
+            AdminPerm::NoticeToEveryone => role.notices_to_everyone,
+            AdminPerm::Ban => role.ban,
+            AdminPerm::Mute => role.mute,
+            AdminPerm::Kick => role.kick,
+            AdminPerm::KickEveryone => role.kick_everyone,
+            AdminPerm::EditRoles => role.edit_role,
+            AdminPerm::Admin => false,
+        }
+    }
+
+    fn _update_user_role(&self, from: &ComputedRole) {
+        self.user_role.lock().clone_from(&from);
+    }
+
     gs_handler!(self, handle_admin_auth, AdminAuthPacket, packet, {
         let account_id = gs_needauth!(self);
 
         // test for the global password first
-        if packet
-            .key
-            .constant_time_compare(&self.game_server.bridge.central_conf.lock().admin_key)
-        {
+        if packet.key.constant_time_compare(&self.game_server.bridge.central_conf.lock().admin_key) {
             info!(
                 "[{} ({}) @ {}] just logged into the admin panel (with global password)",
                 self.account_data.lock().name,
@@ -50,9 +72,11 @@ impl GameServerThread {
 
             self.is_authorized_admin.store(true, Ordering::Relaxed);
             // give super admin perms
-            self.user_entry.lock().user_role = ROLE_SUPERADMIN;
-            self.send_packet_static(&AdminAuthSuccessPacket { role: ROLE_SUPERADMIN })
-                .await?;
+            let role = self.game_server.state.role_manager.get_superadmin();
+            self._update_user_role(&role);
+
+            self.send_packet_dynamic(&AdminAuthSuccessPacket { role }).await?;
+
             return Ok(());
         }
 
@@ -62,7 +86,7 @@ impl GameServerThread {
         if admin_password.as_ref().is_some_and(|pwd| !pwd.is_empty()) {
             let password = admin_password.unwrap();
 
-            if packet.key.constant_time_compare(&password.try_into()?) {
+            if packet.key.constant_time_compare(&password) {
                 info!(
                     "[{} ({}) @ {}] just logged into the admin panel",
                     self.account_data.lock().name,
@@ -71,8 +95,12 @@ impl GameServerThread {
                 );
 
                 self.is_authorized_admin.store(true, Ordering::Relaxed);
-                let role = self.user_entry.lock().user_role;
-                self.send_packet_static(&AdminAuthSuccessPacket { role }).await?;
+
+                let role = self.game_server.state.role_manager.compute(&self.user_entry.lock().user_roles);
+                self._update_user_role(&role);
+
+                self.send_packet_dynamic(&AdminAuthSuccessPacket { role }).await?;
+
                 return Ok(());
             }
         }
@@ -85,18 +113,14 @@ impl GameServerThread {
             packet.key
         );
 
-        if self.game_server.bridge.has_webhook() {
-            let name = self.account_data.lock().name.try_to_string();
-
-            if let Err(err) = self
-                .game_server
-                .bridge
-                .send_webhook_message(WebhookMessage::AuthFail(name))
-                .await
-            {
-                warn!("webhook error: {err}");
-            }
-        }
+        // this is silly tbh
+        // if self.game_server.bridge.has_webhook() {
+        //     let name = self.account_data.lock().name.try_to_string();
+        //
+        //     if let Err(err) = self.game_server.bridge.send_webhook_message(WebhookMessage::AuthFail(name)).await {
+        //         warn!("webhook error: {err}");
+        //     }
+        // }
 
         self.send_packet_static(&AdminAuthFailedPacket).await
     });
@@ -104,14 +128,16 @@ impl GameServerThread {
     gs_handler!(self, handle_admin_send_notice, AdminSendNoticePacket, packet, {
         let account_id = gs_needauth!(self);
 
-        if !self.is_authorized_admin.load(Ordering::Relaxed) {
+        if !self._has_perm(AdminPerm::Notice) {
             return Ok(());
         }
 
-        // require at least mod
-        let role = self.user_entry.lock().user_role;
-        if role < ROLE_MOD {
-            admin_error!(self, MOD_REQUIRED_MESSAGE);
+        if packet.message.len() > MAX_NOTICE_SIZE {
+            admin_error!(self, "message is too long");
+        }
+
+        if packet.message.is_empty() {
+            return Ok(());
         }
 
         let notice_packet = ServerNoticePacket { message: packet.message };
@@ -119,8 +145,8 @@ impl GameServerThread {
         // i am not proud of this code
         match packet.notice_type {
             AdminSendNoticeType::Everyone => {
-                if role < ROLE_ADMIN {
-                    admin_error!(self, ADMIN_REQUIRED_MESSAGE);
+                if !self._has_perm(AdminPerm::NoticeToEveryone) {
+                    admin_error!(self, "no permission");
                 }
 
                 let threads = self
@@ -162,9 +188,7 @@ impl GameServerThread {
                 .await?;
 
                 for thread in threads {
-                    thread
-                        .push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone()))
-                        .await;
+                    thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone())).await;
                 }
             }
 
@@ -196,9 +220,7 @@ impl GameServerThread {
                 }
 
                 if let Some(thread) = thread {
-                    thread
-                        .push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone()))
-                        .await;
+                    thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone())).await;
 
                     self.send_packet_dynamic(&AdminSuccessMessagePacket {
                         message: &format!("Sent notice to {}", thread.account_data.lock().name),
@@ -214,8 +236,9 @@ impl GameServerThread {
                     admin_error!(self, "unable to send notice, invalid room ID");
                 }
 
-                if packet.room_id == 0 && packet.level_id == 0 && role < ROLE_ADMIN {
-                    admin_error!(self, ADMIN_REQUIRED_MESSAGE);
+                // if this is a global room, also require the notice to everyone perm
+                if packet.room_id == 0 && !self._has_perm(AdminPerm::NoticeToEveryone) {
+                    admin_error!(self, "no permission");
                 }
 
                 let player_ids = self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
@@ -277,9 +300,7 @@ impl GameServerThread {
                 .await?;
 
                 for thread in threads {
-                    thread
-                        .push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone()))
-                        .await;
+                    thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone())).await;
                 }
             }
         }
@@ -290,18 +311,12 @@ impl GameServerThread {
     gs_handler!(self, handle_admin_disconnect, AdminDisconnectPacket, packet, {
         let _ = gs_needauth!(self);
 
-        if !self.is_authorized_admin.load(Ordering::Relaxed) {
-            return Ok(());
-        }
-
-        // require at least helper
-        let role = self.user_entry.lock().user_role;
-        if role < ROLE_HELPER {
+        if !self._has_perm(AdminPerm::Kick) {
             return Ok(());
         }
 
         // to kick everyone, require admin
-        if &*packet.player == "@everyone" && role >= ROLE_ADMIN {
+        if &*packet.player == "@everyone" && self._has_perm(AdminPerm::KickEveryone) {
             let threads: Vec<_> = self.game_server.threads.lock().values().cloned().collect();
             for thread in threads {
                 thread
@@ -326,9 +341,7 @@ impl GameServerThread {
         if let Some(thread) = self.game_server.find_user(&packet.player) {
             let reason_string = packet.message.try_to_string();
 
-            thread
-                .push_new_message(ServerThreadMessage::TerminationNotice(packet.message))
-                .await;
+            thread.push_new_message(ServerThreadMessage::TerminationNotice(packet.message)).await;
 
             if self.game_server.bridge.has_webhook() {
                 let own_name = self.account_data.lock().name.try_to_string();
@@ -361,13 +374,7 @@ impl GameServerThread {
     gs_handler!(self, handle_admin_get_user_state, AdminGetUserStatePacket, packet, {
         let _ = gs_needauth!(self);
 
-        if !self.is_authorized_admin.load(Ordering::Relaxed) {
-            return Ok(());
-        }
-
-        // require at least helper
-        let role = self.user_entry.lock().user_role;
-        if role < ROLE_HELPER {
+        if !self._has_perm(AdminPerm::Any) {
             return Ok(());
         }
 
@@ -402,7 +409,7 @@ impl GameServerThread {
         };
 
         // only admins can see/change passwords of others
-        if role < ROLE_ADMIN {
+        if !self._has_perm(AdminPerm::Admin) {
             packet.entry.admin_password = None;
         }
 
@@ -410,16 +417,10 @@ impl GameServerThread {
     });
 
     gs_handler!(self, handle_admin_update_user, AdminUpdateUserPacket, packet, {
-        let _ = gs_needauth!(self);
+        let self_account_id = gs_needauth!(self);
 
-        if !self.is_authorized_admin.load(Ordering::Relaxed) {
-            return Ok(());
-        }
-
-        // require at least helper
-        let role = self.user_entry.lock().user_role;
-        if role < ROLE_HELPER {
-            return Ok(());
+        if !self._has_perm(AdminPerm::Any) {
+            admin_error!(self, "No permission (not a mod)");
         }
 
         // we cant use bridge in standalone so do nothing
@@ -445,47 +446,53 @@ impl GameServerThread {
             }
         };
 
-        // if not admin, cant update others password or role
-        if role < ROLE_ADMIN {
-            new_user_entry.admin_password = user_entry.admin_password.clone();
-            new_user_entry.user_role = user_entry.user_role;
+        let editing_self = self_account_id == target_account_id;
+
+        // if this user has a higher priority, don't allow editing their roles
+
+        new_user_entry.user_roles.retain(|x| !x.is_empty());
+        let my_priority = self.game_server.state.role_manager.compute_priority(&self.user_entry.lock().user_roles);
+        let user_priority = self.game_server.state.role_manager.compute_priority(&user_entry.user_roles);
+        let new_user_priority = self.game_server.state.role_manager.compute_priority(&new_user_entry.user_roles);
+
+        // if not admin, cant update others passwords
+        if !self._has_perm(AdminPerm::Admin) {
+            new_user_entry.admin_password.clone_from(&user_entry.admin_password);
+        }
+
+        // if no edit role perm or the user is higher than us, cant update their roles
+        if !self._has_perm(AdminPerm::EditRoles) || (user_priority >= my_priority && !self._has_perm(AdminPerm::Admin) && !editing_self) {
+            new_user_entry.user_roles.clone_from(&user_entry.user_roles);
         }
 
         // check what changed
-        let c_user_role = new_user_entry.user_role != user_entry.user_role;
-        let c_admin_password = new_user_entry.admin_password != user_entry.admin_password;
+        let c_user_roles = new_user_entry.user_roles != user_entry.user_roles;
         let c_is_banned = new_user_entry.is_banned != user_entry.is_banned;
         let c_is_muted = new_user_entry.is_muted != user_entry.is_muted;
         let c_is_whitelisted = new_user_entry.is_whitelisted != user_entry.is_whitelisted;
         let c_violation_reason = new_user_entry.violation_reason != user_entry.violation_reason;
         let c_violation_expiry = new_user_entry.violation_expiry != user_entry.violation_expiry;
         let c_name_color = new_user_entry.name_color != user_entry.name_color;
-        let c_user_name = new_user_entry.user_name != user_entry.user_name;
+        let c_admin_password = new_user_entry.admin_password != user_entry.admin_password;
+        // user_name intentionally left unchecked.
 
-        // first check for actions that require super admin rights
-        // only superadmin can assign other admins
-        if role < ROLE_SUPERADMIN && (c_user_role && new_user_entry.user_role >= ROLE_ADMIN) {
-            admin_error!(self, SUPERADMIN_REQUIRED_MESSAGE);
+        if c_user_roles && new_user_priority >= my_priority && !self._has_perm(AdminPerm::Admin) {
+            // if we are editing ourselves, allow to assign lower roles
+            if !(editing_self && new_user_priority == my_priority) {
+                admin_error!(self, "cannot promote a user to your role or higher");
+            }
         }
 
-        // check for actions that require admin rights (assigning roles and changing admin passwords)
-        if role < ROLE_ADMIN && (c_user_role || c_admin_password) {
-            admin_error!(self, ADMIN_REQUIRED_MESSAGE);
+        if (c_is_banned || c_is_whitelisted) && !self._has_perm(AdminPerm::Ban) {
+            admin_error!(self, "no permission to ban/whitelist");
         }
 
-        // check for actions that require mod rights (ban, whitelist, name color)
-        if role < ROLE_MOD && (c_is_banned || c_is_whitelisted || c_name_color) {
-            admin_error!(self, MOD_REQUIRED_MESSAGE);
+        if c_is_muted && !self._has_perm(AdminPerm::Mute) {
+            admin_error!(self, "no permission to mute");
         }
 
-        // validation
-        let target_role = new_user_entry.user_role;
-        if !(target_role == ROLE_USER
-            || target_role == ROLE_HELPER
-            || target_role == ROLE_MOD
-            || target_role == ROLE_ADMIN
-            || target_role == ROLE_SUPERADMIN)
-        {
+        // role validation
+        if !self.game_server.state.role_manager.all_valid(&new_user_entry.user_roles) {
             admin_error!(self, "attempting to assign an invalid role");
         }
 
@@ -495,22 +502,17 @@ impl GameServerThread {
             }
         }
 
-        // user_name intentionally left unchecked.
-        let _ = c_user_name;
-
-        if !(c_user_role
-            || c_admin_password
+        if !(c_user_roles
             || c_is_banned
             || c_is_muted
             || c_is_whitelisted
             || c_violation_reason
             || c_violation_expiry
-            || c_name_color)
+            || c_name_color
+            || c_admin_password)
         {
             // no changes
-            return self
-                .send_packet_dynamic(&AdminSuccessMessagePacket { message: "No changes" })
-                .await;
+            return self.send_packet_dynamic(&AdminSuccessMessagePacket { message: "No changes" }).await;
         }
 
         // if not banned and not muted, clear the violation reason and duration
@@ -524,12 +526,22 @@ impl GameServerThread {
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
             let is_banned = new_user_entry.is_banned;
+            let is_muted = new_user_entry.is_muted;
 
-            // update name color live
-            if c_name_color {
-                thread.account_data.lock().special_user_data = new_user_entry.name_color.clone().map(|x| SpecialUserData {
-                    name_color: x.parse().unwrap_or_default(),
-                });
+            // update the role
+            if c_user_roles {
+                let special_data = SpecialUserData::from_user_entry(&new_user_entry, &self.game_server.state.role_manager);
+                thread.account_data.lock().special_user_data.clone_from(&special_data);
+
+                // tell the user that their roles changed
+                thread
+                    .push_new_message(ServerThreadMessage::BroadcastRoleChange(RolesUpdatedPacket {
+                        special_user_data: special_data,
+                    }))
+                    .await;
+
+                let new_role = self.game_server.state.role_manager.compute(&new_user_entry.user_roles);
+                *thread.user_role.lock() = new_role;
             }
 
             let res = self
@@ -541,22 +553,28 @@ impl GameServerThread {
                 .await;
 
             // if they just got banned, disconnect them
-            if is_banned && res.is_ok() {
+            if c_is_banned && is_banned && res.is_ok() {
                 thread
-                    .push_new_message(ServerThreadMessage::TerminationNotice(FastString::from_str(
-                        "Banned from the server",
-                    )))
+                    .push_new_message(ServerThreadMessage::BroadcastBan(ServerBannedPacket {
+                        message: FastString::new(&user_entry.violation_reason.clone().unwrap_or_default()),
+                        timestamp: user_entry.violation_expiry.unwrap_or(0),
+                    }))
+                    .await;
+            }
+
+            if c_is_muted && is_muted && res.is_ok() {
+                thread
+                    .push_new_message(ServerThreadMessage::BroadcastMute(ServerMutedPacket {
+                        reason: FastString::new(&user_entry.violation_reason.clone().unwrap_or_default()),
+                        timestamp: user_entry.violation_expiry.unwrap_or(0),
+                    }))
                     .await;
             }
 
             res
         } else {
             // otherwise just make a manual bridge request
-            self.game_server
-                .bridge
-                .update_user_data(&new_user_entry)
-                .await
-                .map_err(Into::into)
+            self.game_server.bridge.update_user_data(&new_user_entry).await.map_err(Into::into)
         };
 
         match result {
@@ -605,12 +623,12 @@ impl GameServerThread {
                         ));
                     }
 
-                    if c_user_role {
-                        messages.push(WebhookMessage::UserRoleChanged(
+                    if c_user_roles {
+                        messages.push(WebhookMessage::UserRolesChanged(
                             own_name.clone(),
                             target_user_name.clone(),
-                            user_entry.user_role,
-                            new_user_entry.user_role,
+                            user_entry.user_roles.clone(),
+                            new_user_entry.user_roles.clone(),
                         ));
                     }
 

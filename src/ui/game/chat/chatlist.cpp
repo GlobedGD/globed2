@@ -75,6 +75,10 @@ void GlobedChatListPopup::keyBackClicked()  {
     this->onClose(nullptr);
 }
 
+void GlobedChatListPopup::keyDown(cocos2d::enumKeyCodes key)  {
+    if (key == KEY_Enter) this->onChat(nullptr);
+}
+
 void GlobedChatListPopup::onClose(CCObject*) {
     this->removeFromParent();
 }

@@ -1,13 +1,26 @@
 #include "edit_role_popup.hpp"
 
-#include <net/network_manager.hpp>
+#include <managers/admin.hpp>
+#include <managers/role.hpp>
 #include <util/ui.hpp>
+#include <util/cocos.hpp>
 
 using namespace geode::prelude;
 
-bool AdminEditRolePopup::setup(int currentRole, EditRoleCallbackFn callback) {
+static GameServerRole* findRole(const std::string& id) {
+    auto& all = RoleManager::get().getAllRoles();
+
+    for (auto& role : all) {
+        if (role.role.id == id) return &role;
+    }
+
+    return nullptr;
+}
+
+bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCallbackFn callback) {
     this->callback = callback;
-    this->setTitle("Edit user role");
+    this->roles = roles;
+    this->setTitle("Edit user roles");
 
     auto sizes = util::ui::getPopupLayout(m_size);
 
@@ -17,14 +30,34 @@ bool AdminEditRolePopup::setup(int currentRole, EditRoleCallbackFn callback) {
         .parent(m_mainLayer)
         .collect();
 
-    // the buttons themselves
-    for (int id : {ROLE_USER, ROLE_HELPER, ROLE_MOD, ROLE_ADMIN}) {
-        Build<CCSprite>::createSpriteName(roleToSprite(id).c_str())
-            .scale(0.65f)
-            .intoMenuItem([this, id = id](auto) {
-                this->callback(id);
-                this->onClose(this);
+    auto& allRoles = RoleManager::get().getAllRoles();
+    for (const auto& role : allRoles) {
+        auto* spr1 = util::ui::createBadge(role.role.badgeIcon);
+        if (!spr1) continue;
+
+        bool present = std::find_if(roles.begin(), roles.end(), [&](const std::string& k) { return k == role.role.id; }) != roles.end();
+
+        util::ui::rescaleToMatch(spr1, util::ui::BADGE_SIZE * 1.2f);
+
+        Build(spr1)
+            .intoMenuItem([this, roleid = role.role.id](auto btn) {
+                auto it = std::find_if(this->roles.begin(), this->roles.end(), [&](const std::string& k) { return k == roleid; });
+
+                bool present = it != this->roles.end();
+
+                if (present) {
+                    btn->setOpacity(69);
+                    this->roles.erase(it);
+                } else {
+                    btn->setOpacity(255);
+                    this->roles.push_back(roleid);
+                }
+
+                this->callback(this->roles);
             })
+            // order more priority roles to be on the left
+            .zOrder(-role.role.priority)
+            .opacity(present ? 255 : 69)
             .parent(buttonLayout);
     }
 
@@ -33,23 +66,9 @@ bool AdminEditRolePopup::setup(int currentRole, EditRoleCallbackFn callback) {
     return true;
 }
 
-std::string AdminEditRolePopup::roleToSprite(int roleId) {
-    std::string btnSprite;
-
-    switch (roleId) {
-        case ROLE_USER: btnSprite = "role-user.png"_spr; break;
-        case ROLE_HELPER: btnSprite = "role-helper.png"_spr; break;
-        case ROLE_MOD: btnSprite = "role-mod.png"_spr; break;
-        case ROLE_ADMIN: btnSprite = "role-admin.png"_spr; break;
-        default: btnSprite = "role-user.png"_spr; break;
-    }
-
-    return btnSprite;
-}
-
-AdminEditRolePopup* AdminEditRolePopup::create(int currentRole, EditRoleCallbackFn fn) {
+AdminEditRolePopup* AdminEditRolePopup::create(const std::vector<std::string>& roles, EditRoleCallbackFn fn) {
     auto ret = new AdminEditRolePopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, currentRole, fn)) {
+    if (ret->init(WIDTH_PER_ROLE * RoleManager::get().getAllRoles().size(), POPUP_HEIGHT, roles, fn)) {
         ret->autorelease();
         return ret;
     }

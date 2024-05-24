@@ -1,18 +1,17 @@
 #pragma once
 #include <defs/all.hpp>
 
-using EditRoleCallbackFn = std::function<void(int role)>;
+using EditRoleCallbackFn = std::function<void(const std::vector<std::string>& role)>;
 
-class AdminEditRolePopup : public geode::Popup<int, EditRoleCallbackFn> {
+class AdminEditRolePopup : public geode::Popup<const std::vector<std::string>&, EditRoleCallbackFn> {
 public:
-    static constexpr float POPUP_WIDTH = 180.f;
+    static constexpr float WIDTH_PER_ROLE = 27.f;
     static constexpr float POPUP_HEIGHT = 120.f;
-    static AdminEditRolePopup* create(int currentRole, EditRoleCallbackFn fn);
-
-    static std::string roleToSprite(int roleId);
+    static AdminEditRolePopup* create(const std::vector<std::string>& roles, EditRoleCallbackFn fn);
 
 private:
     EditRoleCallbackFn callback;
+    std::vector<std::string> roles;
 
-    bool setup(int currentRole, EditRoleCallbackFn fn) override;
+    bool setup(const std::vector<std::string>& roles, EditRoleCallbackFn fn) override;
 };

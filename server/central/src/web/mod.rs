@@ -10,7 +10,7 @@ pub fn not_found(_req: &Request) -> &'static str {
 
 #[catch(422)]
 pub fn query_string(_req: &Request) -> &'static str {
-    "you are running an old version of the mod, please update the mod in the geode mod list"
+    "you are running an old version of Globed, please update Globed in the Geode mod list"
 }
 
 pub mod routes {
@@ -27,6 +27,7 @@ pub mod routes {
             meta::version,
             meta::servers,
             meta::index,
+            meta::robots,
             game_server::boot,
             game_server::get_user,
             game_server::update_user,

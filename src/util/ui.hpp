@@ -1,12 +1,14 @@
 #pragma once
 
 #include <defs/all.hpp>
+#include <data/types/gd.hpp>
 #include <functional>
 
 namespace util::ui {
     constexpr cocos2d::ccColor4B BG_COLOR_BROWN = {191, 114, 62, 255};
     constexpr cocos2d::ccColor4B BG_COLOR_DARKBROWN = {161, 88, 44, 255};
     constexpr cocos2d::ccColor4B BG_COLOR_TRANSPARENT = {0, 0, 0, 180};
+    const cocos2d::CCSize BADGE_SIZE = {18.f, 18.f};
 
     void switchToScene(cocos2d::CCLayer* layer);
     void prepareLayer(cocos2d::CCLayer* layer);
@@ -48,7 +50,11 @@ namespace util::ui {
 
     cocos2d::CCNode* findChildByMenuSelectorRecursive(cocos2d::CCNode* node, uintptr_t function);
 
-    cocos2d::CCSprite* createBadge(const char* badgePNG, const std::string& id);
+    cocos2d::CCSprite* createBadge(const std::string& sprite);
+    cocos2d::CCSprite* createBadgeIfSpecial(const SpecialUserData& data);
 
-    cocos2d::CCSprite* createBadgeIfSpecial(cocos2d::ccColor3B color);
+    cocos2d::ccColor3B getNameColor(const SpecialUserData& data);
+    RichColor getNameRichColor(const SpecialUserData& data);
+
+    void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color);
 }

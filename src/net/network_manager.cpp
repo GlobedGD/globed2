@@ -1,8 +1,11 @@
 #include "network_manager.hpp"
 
+#include <chrono>
+
 #include <Geode/ui/GeodeUI.hpp>
 
 #include <data/packets/all.hpp>
+#include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/account.hpp>
 #include <managers/profile_cache.hpp>
@@ -10,6 +13,7 @@
 #include <managers/settings.hpp>
 #include <managers/central_server.hpp>
 #include <managers/room.hpp>
+#include <managers/role.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
 #include <util/net.hpp>
 #include <util/cocos.hpp>
@@ -17,6 +21,7 @@
 #include <util/debug.hpp>
 #include <util/format.hpp>
 #include <ui/notification/panel.hpp>
+#include <ui/menu/room/room_password_popup.hpp>
 
 using namespace geode::prelude;
 using namespace util::data;
@@ -38,15 +43,11 @@ NetworkManager::NetworkManager() {
 }
 
 NetworkManager::~NetworkManager() {
-    log::debug("cleaning up..");
-
     // clear listeners
     this->removeAllListeners();
-    builtinListeners.lock()->clear();
 
-    log::debug("waiting for output thread to terminate..");
+    log::debug("waiting for threads to terminate..");
     threadMain.stopAndWait();
-    log::debug("waiting for input thread to terminate..");
     threadRecv.stopAndWait();
 
     if (this->connected()) {
@@ -109,7 +110,6 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     _loggedin = false;
     _connectingStandalone = false;
     _deferredConnect = false;
-    this->clearAdminStatus();
 
     if (!this->connected()) {
         return;
@@ -122,10 +122,11 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
 
     gameSocket.disconnect();
 
-    // GameServerManager could have been destructed before NetworkManager, so this could be UB. Additionally will break autoconnect.
+    // singletons could have been destructed before NetworkManager, so this could be UB. Additionally will break autoconnect.
     if (!noclear) {
         RoomManager::get().setGlobal();
         GameServerManager::get().clearActive();
+        AdminManager::get().deauthorize();
     }
 }
 
@@ -139,11 +140,25 @@ void NetworkManager::send(std::shared_ptr<Packet> packet) {
     packetQueue.push(std::move(packet));
 }
 
-void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback, bool overrideBuiltin) {
-    auto* listener = PacketListener::create(id, std::move(callback), target, overrideBuiltin);
-    target->setUserObject(util::cocos::spr(fmt::format("packet-listener-{}", id)), listener);
+std::string NetworkManager::formatListenerKey(packetid_t id) {
+    return util::cocos::spr(fmt::format("packet-listener-{}", id));
+}
+
+void NetworkManager::addListener(CCNode* target, packetid_t id, PacketListener* listener) {
+    if (target) {
+        target->setUserObject(this->formatListenerKey(id), listener);
+    } else {
+        // if target is nullptr we leak the listener,
+        // essentially saying it should live for the entire duration of the program.
+        listener->retain();
+    }
 
     this->registerPacketListener(id, listener);
+}
+
+void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback, int priority, bool mainThread, bool isFinal) {
+    auto* listener = PacketListener::create(id, std::move(callback), target, priority, mainThread, isFinal);
+    this->addListener(target, id, listener);
 }
 
 void NetworkManager::removeListener(CCNode* target, packetid_t id) {
@@ -182,9 +197,7 @@ void NetworkManager::threadMainFunc() {
             GameServerManager::get().setActive(_deferredServerId);
             gameSocket.createBox();
 
-            // if we have ignore on, use 0xffff as a magic value that bypasses protocol checks
-            // TODO: actually make it 0xffff
-            uint16_t proto = ignoreProtocolMismatch ? 5 : PROTOCOL_VERSION;
+            uint16_t proto = this->getUsedProtocol();
 
             auto packet = CryptoHandshakeStartPacket::create(proto, CryptoPublicKey(gameSocket.cryptoBox->extractPublicKey()));
             this->send(packet);
@@ -284,50 +297,39 @@ void NetworkManager::threadRecvFunc() {
 
     lastReceivedPacket = util::time::now();
 
-    this->callListener(packet);
+    this->callListener(std::move(packet));
 }
 
-void NetworkManager::callListener(std::shared_ptr<Packet> packet) {
+void NetworkManager::callListener(std::shared_ptr<Packet>&& packet) {
     packetid_t packetId = packet->getPacketId();
 
-    bool hasListeners = !(*listeners.lock())[packetId].empty();
-    // if we have listeners, check if any of them disable builtin listeners
+    auto ls = listeners.lock();
+    auto& lsm = (*ls)[packetId];
 
-    bool overrideBuiltin = false;
-    if (hasListeners) {
-        for (auto* listener : (*listeners.lock())[packetId]) {
-            if (listener->overrideBuiltin) {
-                overrideBuiltin = true;
-                break;
-            }
-        }
-    }
-
-    bool invokedBuiltin = false;
-
-    // call any builtin listeners
-    if (!overrideBuiltin) {
-        auto builtin = builtinListeners.lock();
-        if (builtin->contains(packetId)) {
-            (*builtin)[packetId](packet);
-            invokedBuiltin = true;
-        }
-    }
-
-    if (!hasListeners) {
-        if (!invokedBuiltin) {
-            this->handleUnhandledPacket(packetId);
-        }
-
+    if (lsm.empty()) {
+        this->handleUnhandledPacket(packetId);
         return;
     }
+    // in case any of the listeners try to destruct themselves (i.e. destroying thir parent),
+    // we should retain and release them after unlocking `listeners`, to prevent deadlocks.
 
-    // if there are registered listeners, schedule them to be called on the next frame
-    Loader::get()->queueInMainThread([this, packetId, packet = std::move(packet)] {
-        for (auto* listener : (*listeners.lock())[packetId]) {
-            listener->invokeCallback(packet);
-        }
-    });
+    for (auto* listener : lsm) {
+        listener->retain();
+    }
+
+    // invoke callbacks
+    for (auto* listener : lsm) {
+        listener->invokeCallback(packet);
+
+        if (listener->isFinal) break;
+    }
+
+    std::vector<PacketListener*> lsmCopy(lsm);
+    ls.unlock();
+
+    for (auto* listener : lsmCopy) {
+        listener->release();
+    }
 }
 
 void NetworkManager::handleUnhandledPacket(packetid_t packetId) {
@@ -345,36 +347,35 @@ void NetworkManager::handleUnhandledPacket(packetid_t packetId) {
 }
 
 void NetworkManager::setupBuiltinListeners() {
-    addBuiltinListener<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
+    /* connection */
+
+    addBuiltinListenerSync<CryptoHandshakeResponsePacket>([this](std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
         log::debug("handshake successful, logging in");
         auto key = packet->data.key;
 
-        // this does a bunch of stuff so do it on the main thread
-        Loader::get()->queueInMainThread([this, key = key] {
-            gameSocket.cryptoBox->setPeerKey(key.data());
-            _handshaken = true;
-            // and lets try to login!
-            auto& am = GlobedAccountManager::get();
-            std::string authtoken;
+        gameSocket.cryptoBox->setPeerKey(key.data());
+        _handshaken = true;
+        // and lets try to login!
+        auto& am = GlobedAccountManager::get();
+        std::string authtoken;
 
-            if (!_connectingStandalone) {
-                authtoken = *am.authToken.lock();
-            }
+        if (!_connectingStandalone) {
+            authtoken = *am.authToken.lock();
+        }
 
-            auto& pcm = ProfileCacheManager::get();
-            pcm.setOwnDataAuto();
-            pcm.pendingChanges = false;
+        auto& pcm = ProfileCacheManager::get();
+        pcm.setOwnDataAuto();
+        pcm.pendingChanges = false;
 
-            auto& settings = GlobedSettings::get();
+        auto& settings = GlobedSettings::get();
 
-            if (settings.globed.fragmentationLimit == 0) {
-                settings.globed.fragmentationLimit = 65000;
-            }
+        if (settings.globed.fragmentationLimit == 0) {
+            settings.globed.fragmentationLimit = 65000;
+        }
 
-            auto gddata = am.gdData.lock();
-            auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
-            this->send(pkt);
-        });
+        auto gddata = am.gdData.lock();
+        auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
+        this->send(pkt);
     });
 
     addBuiltinListener<KeepaliveResponsePacket>([](auto packet) {
@@ -387,17 +388,52 @@ void NetworkManager::setupBuiltinListeners() {
         this->disconnectWithMessage(packet->message);
     });
 
+    addBuiltinListener<ServerBannedPacket>([this](auto packet) {
+        using namespace std::chrono;
+
+        std::string reason = packet->message;
+        if (reason.empty()) {
+            reason = "No reason given";
+        }
+
+        auto msg = fmt::format(
+            "<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
+            reason,
+            packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)))
+        );
+
+        this->disconnectWithMessage(msg);
+    });
+
+    addBuiltinListener<ServerMutedPacket>([this](auto packet) {
+        using namespace std::chrono;
+
+        std::string reason = packet->reason;
+        if (reason.empty()) {
+            reason = "No reason given";
+        }
+
+        auto msg = fmt::format(
+            "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
+            reason,
+            packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)))
+        );
+
+        ErrorQueues::get().notice(msg);
+    });
+
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
         log::info("Successfully logged into the server!");
         connectedTps = packet->tps;
         _loggedin = true;
 
         // these are not thread-safe, so delay it
-        Loader::get()->queueInMainThread([specialUserData = packet->specialUserData] {
+        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
             auto& pcm = ProfileCacheManager::get();
             pcm.setOwnSpecialData(specialUserData);
 
             RoomManager::get().setGlobal();
+            RoleManager::get().setAllRoles(allRoles);
         });
 
         // claim the tcp thread to allow udp packets through
@@ -424,14 +460,13 @@ void NetworkManager::setupBuiltinListeners() {
     });
 
     addBuiltinListener<ProtocolMismatchPacket>([this](auto packet) {
-        log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, PROTOCOL_VERSION);
-
+        log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, this->getUsedProtocol());
 
 #ifdef GLOBED_DEBUG
         // if we are in debug mode, allow the user to override it
         Loader::get()->queueInMainThread([this, serverProtocol = packet->serverProtocol] {
             geode::createQuickPopup("Globed Error",
-                fmt::format("Protocol mismatch (client: v{}, server: v{}). Override the protocol for this session and allow to connect to the server anyway? <cy>(Not recommended!)</c>", PROTOCOL_VERSION, serverProtocol),
+                fmt::format("Protocol mismatch (client: v{}, server: v{}). Override the protocol for this session and allow to connect to the server anyway? <cy>(Not recommended!)</c>", this->getUsedProtocol(), serverProtocol),
                 "Cancel", "Yes", [this](FLAlertLayer*, bool override) {
                     if (override) {
                         this->toggleIgnoreProtocolMismatch(true);
@@ -440,9 +475,9 @@ void NetworkManager::setupBuiltinListeners() {
             );
         });
 #else
-        // if we are not in debug, show an error tleling the user to update the mod
+        // if we are not in debug, show an error telling the user to update the mod
 
-        if (packet->serverProtocol < PROTOCOL_VERSION) {
+        if (packet->serverProtocol < this->getUsedProtocol()) {
             std::string message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
             ErrorQueues::get().error(message);
         } else {
@@ -460,19 +495,48 @@ void NetworkManager::setupBuiltinListeners() {
         this->disconnect(true);
     });
 
+    /* general */
+
+    addBuiltinListenerSync<RolesUpdatedPacket>([](auto packet) {
+        auto& pcm = ProfileCacheManager::get();
+        pcm.setOwnSpecialData(packet->specialUserData);
+    });
+
+    /* room */
+
+    addBuiltinListenerSync<RoomInvitePacket>([](auto packet) {
+        GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->password, packet->playerData);
+    });
+
+    addBuiltinListenerSync<RoomInfoPacket>([](auto packet) {
+        ErrorQueues::get().success("Room configuration updated");
+
+        RoomManager::get().setInfo(packet->info);
+    });
+
+    addBuiltinListener<RoomJoinedPacket>([](auto packet) {});
+
+    addBuiltinListener<RoomJoinFailedPacket>([](auto packet) {
+        // TODO: handle reason
+        std::string reason = "N/A";
+        if (packet->wasInvalid) reason = "Room doesn't exist";
+        if (packet->wasProtected) reason = "Room password is wrong";
+        if (packet->wasFull) reason = "Room is full";
+        if (!packet->wasProtected) ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason)); //TEMPORARY disable wrong password alerts
+    });
+
+    /* admin */
+
     addBuiltinListener<AdminAuthSuccessPacket>([this](auto packet) {
-        _adminAuthorized = true;
-        _adminRole = packet->role;
+        AdminManager::get().setAuthorized(std::move(packet->role));
         ErrorQueues::get().success("Successfully authorized");
     });
 
-    addBuiltinListener<AdminAuthFailedPacket>([this](auto packet) {
+    addBuiltinListenerSync<AdminAuthFailedPacket>([this](auto packet) {
         ErrorQueues::get().warn("Login failed");
 
-        Loader::get()->queueInMainThread([] {
-            auto& am = GlobedAccountManager::get();
-            am.clearAdminPassword();
-        });
+        auto& am = GlobedAccountManager::get();
+        am.clearAdminPassword();
     });
 
     addBuiltinListener<AdminSuccessMessagePacket>([](auto packet) {
@@ -481,26 +545,6 @@ void NetworkManager::setupBuiltinListeners() {
 
     addBuiltinListener<AdminErrorPacket>([](auto packet) {
         ErrorQueues::get().warn(packet->message);
-    });
-
-    addBuiltinListener<RoomInvitePacket>([](auto packet) {
-        Loader::get()->queueInMainThread([packet] {
-            GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->roomToken, packet->playerData);
-        });
-    });
-
-    addBuiltinListener<RoomInfoPacket>([](auto packet) {
-        ErrorQueues::get().success("Room configuration updated");
-
-        Loader::get()->queueInMainThread([packet = std::move(packet)] {
-            RoomManager::get().setInfo(packet->info);
-        });
-    });
-
-    addBuiltinListener<RoomJoinedPacket>([](auto packet) {});
-
-    addBuiltinListener<RoomJoinFailedPacket>([](auto packet) {
-        ErrorQueues::get().error(fmt::format("Failed to join room: {}", packet->message));
     });
 }
 
@@ -548,8 +592,8 @@ void NetworkManager::maybeDisconnectIfDead() {
     }
 }
 
-void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback) {
-    (*builtinListeners.lock())[id] = std::move(callback);
+void NetworkManager::addBuiltinListener(packetid_t id, PacketCallback&& callback, bool mainThread) {
+    this->addListener(nullptr, id, std::move(callback), BUILTIN_LISTENER_PRIORITY, mainThread, false);
 }
 
 void NetworkManager::registerPacketListener(packetid_t packet, PacketListener* listener) {
@@ -557,7 +601,22 @@ void NetworkManager::registerPacketListener(packetid_t packet, PacketListener* l
     log::debug("Registering listener (id {}) for {}", packet, listener->owner);
 #endif
 
-    (*listeners.lock())[packet].insert(listener);
+    auto ls = listeners.lock();
+    auto& lsm = (*ls)[packet];
+
+    // is it already added?
+    auto it = std::find(lsm.begin(), lsm.end(), listener);
+    if (it != lsm.end()) {
+        return;
+    }
+
+    // otherwise, add it
+    lsm.push_back(listener);
+
+    // sort all elements by priority descending (higher = runs earlier)
+    std::sort(lsm.begin(), lsm.end(), [](PacketListener* a, PacketListener* b) -> bool {
+        return a->priority > b->priority;
+    });
 }
 
 void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener) {
@@ -569,7 +628,13 @@ void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener*
     log::debug("Unregistering listener (id {}) for {}", packet, listener->owner);
 #endif
 
-    listeners.lock()->at(packet).erase(listener);
+    auto ls = listeners.lock();
+    auto& lsm = (*ls)[packet];
+
+    auto it = std::find(lsm.begin(), lsm.end(), listener);
+    if (it != lsm.end()) {
+        lsm.erase(it);
+    }
 }
 
 void NetworkManager::toggleIgnoreProtocolMismatch(bool state) {
@@ -580,9 +645,20 @@ void NetworkManager::togglePacketLogging(bool enabled) {
     packetLogging = enabled;
 }
 
+uint16_t NetworkManager::getUsedProtocol() {
+    // if we have ignore on, use 0xffff as a magic value that bypasses protocol checks
+    uint16_t proto = ignoreProtocolMismatch ? 0xffff : PROTOCOL_VERSION;
+    return proto;
+}
+
 void NetworkManager::logPacketToFile(std::shared_ptr<Packet> packet) {
+    log::debug("{} packet: {}", packet->getPacketId() < 20000 ? "Sending" : "Receiving", packet->getPacketId());
+
     auto folder = Mod::get()->getSaveDir() / "packets";
     (void) geode::utils::file::createDirectoryAll(folder);
+    util::misc::callOnce("networkmanager-log-to-file", [&] {
+        log::debug("Packet log folder: {}", folder);
+    });
 
     auto datetime = util::format::formatDateTime(util::time::systemNow());
     auto filepath = folder / fmt::format("{}-{}.bin", packet->getPacketId(), datetime);
@@ -605,19 +681,6 @@ bool NetworkManager::handshaken() {
 
 bool NetworkManager::established() {
     return _loggedin;
-}
-
-bool NetworkManager::isAuthorizedAdmin() {
-    return _adminAuthorized;
-}
-
-void NetworkManager::clearAdminStatus() {
-    _adminAuthorized = false;
-    _adminRole = 0;
-}
-
-int NetworkManager::getAdminRole() {
-    return _adminRole;
 }
 
 bool NetworkManager::standalone() {

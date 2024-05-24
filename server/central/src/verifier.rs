@@ -17,7 +17,7 @@ struct AccountEntry {
     pub account_id: i32,
     pub user_id: i32,
     pub name: String,
-    pub authcode: u32,
+    pub authcode: String,
     pub message_id: i32,
 }
 
@@ -75,13 +75,7 @@ impl AccountVerifier {
         self.is_enabled.store(state, Ordering::Relaxed);
     }
 
-    pub async fn verify_account(
-        &self,
-        account_id: i32,
-        user_id: i32,
-        account_name: &str,
-        authcode: u32,
-    ) -> Result<i32, String> {
+    pub async fn verify_account(&self, account_id: i32, user_id: i32, account_name: &str, authcode: &str) -> Result<i32, String> {
         if !self.is_enabled.load(Ordering::Relaxed) {
             return Ok(0);
         }
@@ -221,12 +215,7 @@ impl AccountVerifier {
         };
 
         // at most 100 messages, join them to a string
-        let outdated_str = outdated
-            .into_iter()
-            .take(100)
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>()
-            .join(",");
+        let outdated_str = outdated.into_iter().take(100).map(|x| x.to_string()).collect::<Vec<String>>().join(",");
 
         let result = self
             .http_client
@@ -321,13 +310,7 @@ impl AccountVerifier {
             let author_user_id = values.get("3");
             let age = values.get("7");
 
-            if message_id.is_none()
-                || title.is_none()
-                || author_name.is_none()
-                || author_id.is_none()
-                || age.is_none()
-                || author_user_id.is_none()
-            {
+            if message_id.is_none() || title.is_none() || author_name.is_none() || author_id.is_none() || age.is_none() || author_user_id.is_none() {
                 warn!("ignoring invalid message: one of the attrs is none ({string})");
                 continue;
             }
@@ -349,7 +332,7 @@ impl AccountVerifier {
 
             let title = title.split_once("##c## ");
             let authcode = if let Some((_void, authcode)) = title {
-                authcode.parse::<u32>()?
+                authcode.to_owned()
             } else {
                 continue;
             };

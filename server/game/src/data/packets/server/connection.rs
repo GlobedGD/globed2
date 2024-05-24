@@ -1,4 +1,4 @@
-use crate::data::*;
+use crate::{data::*, managers::GameServerRole};
 
 #[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 20000, tcp = false)]
@@ -25,11 +25,12 @@ pub struct ServerDisconnectPacket<'a> {
     pub message: &'a str,
 }
 
-#[derive(Packet, Encodable, StaticSize)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 20004, tcp = true)]
 pub struct LoggedInPacket {
     pub tps: u32,
-    pub special_user_data: Option<SpecialUserData>,
+    pub special_user_data: SpecialUserData,
+    pub all_roles: Vec<GameServerRole>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
@@ -39,10 +40,10 @@ pub struct LoginFailedPacket<'a> {
 }
 
 // used to communicate a simple message to the user
-#[derive(Packet, Encodable, StaticSize, DynamicSize, Clone)]
+#[derive(Packet, Encodable, DynamicSize, Clone)]
 #[packet(id = 20006, tcp = false)]
 pub struct ServerNoticePacket {
-    pub message: FastString<MAX_NOTICE_SIZE>,
+    pub message: FastString,
 }
 
 #[derive(Packet, Encodable, StaticSize)]
@@ -60,4 +61,18 @@ pub struct KeepaliveTCPResponsePacket;
 pub struct ConnectionTestResponsePacket {
     pub uid: u32,
     pub data: Vec<u8>,
+}
+
+#[derive(Packet, Encodable, DynamicSize, Clone)]
+#[packet(id = 20011, tcp = true)]
+pub struct ServerBannedPacket {
+    pub message: FastString,
+    pub timestamp: i64,
+}
+
+#[derive(Packet, Encodable, DynamicSize, Clone)]
+#[packet(id = 20012)]
+pub struct ServerMutedPacket {
+    pub reason: FastString,
+    pub timestamp: i64,
 }

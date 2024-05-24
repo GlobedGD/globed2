@@ -30,10 +30,10 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
 
             int protocol = util::format::parse<int>(resp).value_or(0);
 
-            if (protocol != NetworkManager::PROTOCOL_VERSION) {
+            if (protocol != NetworkManager::get().getUsedProtocol()) {
                 this->parent->onTestFailure(fmt::format(
                     "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
-                    NetworkManager::PROTOCOL_VERSION,
+                    NetworkManager::get().getUsedProtocol(),
                     protocol
                 ));
             } else {

@@ -28,10 +28,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
     visualizer->setScaleX(0.4f);
 
     // username
-    ccColor3B nameColor = ccc3(255, 255, 255);
-    if (data.specialUserData.has_value()) {
-        nameColor = data.specialUserData.value().nameColor;
-    }
+    ccColor3B nameColor = util::ui::getNameColor(data.specialUserData);
 
     auto nameLabel = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
         .scale(0.35f)

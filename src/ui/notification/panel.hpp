@@ -14,7 +14,7 @@ public:
 
     void persist();
 
-    void addInviteNotification(uint32_t roomID, uint32_t roomToken, const PlayerRoomPreviewAccountData& player);
+    void addInviteNotification(uint32_t roomID, const std::string_view password, const PlayerPreviewAccountData& player);
     void slideInNotification(cocos2d::CCNode* node);
     void queueNotification(cocos2d::CCNode* node);
 

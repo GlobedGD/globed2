@@ -4,29 +4,25 @@
 
 using namespace geode::prelude;
 
-bool GlobedNameLabel::init(const std::string& name, cocos2d::CCSprite* badgeSprite, cocos2d::ccColor3B nameColor) {
+bool GlobedNameLabel::init(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor) {
     if (!CCNode::init()) return false;
 
     this->setAnchorPoint({0.5f, 0.5f});
-    this->setLayout(RowLayout::create()->setGap(4.f));
+    this->setLayout(RowLayout::create()->setGap(4.f)->setAutoScale(false));
     this->setContentWidth(150.f);
     this->updateData(name, badgeSprite, nameColor);
 
     return true;
 }
 
-void GlobedNameLabel::updateData(const std::string& name, cocos2d::CCSprite* badgeSprite, ccColor3B nameColor) {
+void GlobedNameLabel::updateData(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor) {
     this->updateName(name);
     this->updateBadge(badgeSprite);
     this->updateColor(nameColor);
 }
 
-void GlobedNameLabel::updateData(const std::string& name, std::optional<SpecialUserData> sud) {
-    if (sud) {
-        this->updateData(name, util::ui::createBadgeIfSpecial(sud->nameColor), sud->nameColor);
-    } else {
-        this->updateData(name, nullptr, {255, 255, 255});
-    }
+void GlobedNameLabel::updateData(const std::string& name, const SpecialUserData& sud) {
+    this->updateData(name, util::ui::createBadgeIfSpecial(sud), util::ui::getNameRichColor(sud));
 }
 
 void GlobedNameLabel::updateBadge(cocos2d::CCSprite* badgeSprite) {
@@ -35,6 +31,7 @@ void GlobedNameLabel::updateBadge(cocos2d::CCSprite* badgeSprite) {
     badge = badgeSprite;
 
     if (badge) {
+        util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
         badge->setZOrder(1);
         this->addChild(badge);
     }
@@ -67,11 +64,13 @@ void GlobedNameLabel::updateOpacity(unsigned char opacity) {
     if (badge) badge->setOpacity(opacity);
 }
 
-void GlobedNameLabel::updateColor(cocos2d::ccColor3B color) {
-    if (label) label->setColor(color);
+void GlobedNameLabel::updateColor(const RichColor& color) {
+    if (!label) return;
+
+    util::ui::animateLabelColorTint(label, color);
 }
 
-GlobedNameLabel* GlobedNameLabel::create(const std::string& name, cocos2d::CCSprite* badgeSprite, cocos2d::ccColor3B nameColor) {
+GlobedNameLabel* GlobedNameLabel::create(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor) {
     auto ret = new GlobedNameLabel;
     if (ret->init(name, badgeSprite, nameColor)) {
         ret->autorelease();
@@ -82,14 +81,10 @@ GlobedNameLabel* GlobedNameLabel::create(const std::string& name, cocos2d::CCSpr
     return nullptr;
 }
 
-GlobedNameLabel* GlobedNameLabel::create(const std::string& name, std::optional<SpecialUserData> sud) {
-    if (sud) {
-        return create(name, util::ui::createBadgeIfSpecial(sud->nameColor), sud->nameColor);
-    } else {
-        return create(name, nullptr, {255, 255, 255});
-    }
+GlobedNameLabel* GlobedNameLabel::create(const std::string& name, const SpecialUserData& sud) {
+    return create(name, util::ui::createBadgeIfSpecial(sud), util::ui::getNameRichColor(sud));
 }
 
 GlobedNameLabel* GlobedNameLabel::create(const std::string& name) {
-    return create(name, static_cast<CCSprite*>(nullptr), {255, 255, 255});
+    return create(name, static_cast<CCSprite*>(nullptr), RichColor({255, 255, 255}));
 }

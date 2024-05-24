@@ -1,11 +1,11 @@
 use globed_shared::UserEntry;
 
-use crate::data::*;
+use crate::{data::*, managers::ComputedRole};
 
-#[derive(Packet, Encodable, StaticSize)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 29000, tcp = true)]
 pub struct AdminAuthSuccessPacket {
-    pub role: i32,
+    pub role: ComputedRole,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

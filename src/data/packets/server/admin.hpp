@@ -2,13 +2,14 @@
 #include <data/packets/packet.hpp>
 #include <data/types/admin.hpp>
 #include <data/types/gd.hpp>
+#include <data/types/user.hpp>
 
 class AdminAuthSuccessPacket : public Packet {
     GLOBED_PACKET(29000, false, false)
 
     AdminAuthSuccessPacket() {}
 
-    int role;
+    ComputedRole role;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminAuthSuccessPacket, (role));

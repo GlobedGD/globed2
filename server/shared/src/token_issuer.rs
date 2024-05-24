@@ -140,8 +140,7 @@ impl TokenIssuer {
             .decode(signature)
             .map_err(|_| TokenValidationFailure::MalformedStructure)?;
 
-        hmac.verify_slice(&signature)
-            .map_err(|_| TokenValidationFailure::InvalidSignature)?;
+        hmac.verify_slice(&signature).map_err(|_| TokenValidationFailure::InvalidSignature)?;
 
         Ok(orig_name.to_string())
     }

@@ -9,9 +9,9 @@ use std::{
 use globed_shared::{
     debug,
     esp::{ByteBuffer, ByteBufferExtRead, ByteBufferExtWrite, ByteReader},
+    rand::{self, Rng},
     warn, SyncMutex,
 };
-use rand::Rng;
 use tokio::net::UdpSocket;
 
 use crate::config::GameServerEntry;
@@ -37,9 +37,7 @@ impl GameServerPinger {
             addresses.push(addr);
         }
 
-        let sock = UdpSocket::bind("0.0.0.0:0")
-            .await
-            .expect("failed to bind udp socket for pinger");
+        let sock = UdpSocket::bind("0.0.0.0:0").await.expect("failed to bind udp socket for pinger");
 
         Self {
             addresses,

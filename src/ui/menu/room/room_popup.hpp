@@ -11,6 +11,8 @@ public:
 
     static RoomPopup* create();
 
+    void reloadPlayerList(bool sendPacket = true);
+
 protected:
     std::vector<PlayerRoomPreviewAccountData> playerList;
     std::vector<PlayerRoomPreviewAccountData> filteredPlayerList;
@@ -28,12 +30,11 @@ protected:
     void update(float) override;
     void onLoaded(bool stateChanged);
     void removeLoadingCircle();
-    void reloadPlayerList(bool sendPacket = true);
     void addButtons();
     bool isLoading();
     void sortPlayerList();
     void applyFilter(const std::string_view input);
-    void setRoomTitle(uint32_t id);
+    void setRoomTitle(std::string name, uint32_t id);
     void onCopyRoomId(cocos2d::CCObject*);
     void recreateInviteButton();
 };

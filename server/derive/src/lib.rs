@@ -30,13 +30,7 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
             encode::for_bit_struct(data, bit_attrs, struct_name, &impl_generics, &ty_generics, where_clause)
         }
         Data::Struct(data) => encode::for_struct(data, struct_name, &impl_generics, &ty_generics, where_clause),
-        Data::Enum(_) => encode::for_enum(
-            struct_name,
-            &get_enum_repr_type(&input),
-            &impl_generics,
-            &ty_generics,
-            where_clause,
-        ),
+        Data::Enum(_) => encode::for_enum(struct_name, &get_enum_repr_type(&input), &impl_generics, &ty_generics, where_clause),
         Data::Union(_) => {
             return quote! {
                 compile_error!("Encodable cannot be derived for unions");
@@ -151,7 +145,8 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
             }
             .into();
         }
-    }.unwrap_or(false);
+    }
+    .unwrap_or(false);
 
     let bit_attrs = BitfieldAttributes::parse(&input);
 
@@ -288,7 +283,11 @@ pub(crate) fn get_enum_repr_type(input: &DeriveInput) -> proc_macro2::TokenStrea
     }
 
     repr_type.unwrap_or_else(|| {
-        Span::call_site().warning("enum repr type not specified - assuming i32. it is recommended to add #[repr(type)] before the enum as that makes it more explicit.").emit();
+        Span::call_site()
+            .warning(
+                "enum repr type not specified - assuming i32. it is recommended to add #[repr(type)] before the enum as that makes it more explicit.",
+            )
+            .emit();
         quote! { i32 }
     })
 }
