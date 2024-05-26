@@ -269,6 +269,8 @@ protected:
             if constexpr (std::is_same_v<typename boost::mp11::mp_first<Bd>::type, BitfieldBase>) {
                 return reflectionDecodeBitfield<T>();
             }
+        } else {
+            checkMissingFields<T>();
         }
 
         // create a default initialized instance
@@ -311,10 +313,12 @@ protected:
 
         // if it's a bitfield struct, encode it as such
         if constexpr (!boost::mp11::mp_empty<Bd>::value) {
-            if (std::is_same_v<typename boost::mp11::mp_first<Bd>::type, BitfieldBase>) {
+            if constexpr (std::is_same_v<typename boost::mp11::mp_first<Bd>::type, BitfieldBase>) {
                 this->reflectionEncodeBitfield<T>(value);
                 return;
             }
+        } else {
+            checkMissingFields<T>();
         }
 
         boost::mp11::mp_for_each<Md>([&, this](auto descriptor) {
@@ -495,6 +499,51 @@ protected:
         } else {
             this->writeValue<Y>(either.secondRef()->get());
         }
+    }
+
+    template <
+        typename T,
+        class Md = boost::describe::describe_members<T, boost::describe::mod_public>,
+        class Bd = boost::describe::describe_bases<T, boost::describe::mod_any_access>
+    >
+    constexpr static size_t calculateStructSize() {
+        size_t total = 0;
+        size_t structAlignment = 1;
+
+        // this is bad bad bad, but we assume there can only be 1 vtable.
+        if constexpr (std::is_polymorphic_v<T>) {
+            structAlignment = alignof(void*);
+            total += sizeof(void*);
+        }
+
+        boost::mp11::mp_for_each<Md>([&](auto descriptor) {
+            using MPT = decltype(descriptor.pointer);
+            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
+
+            // align first if unaligned
+            if (total % alignof(FT) != 0) {
+                total = total + (alignof(FT) - total % alignof(FT));
+            }
+
+            total += sizeof(FT);
+
+            // struct alignment is based on the largest member
+            if (alignof(FT) > structAlignment) {
+                structAlignment = alignof(FT);
+            }
+        });
+
+        // align struct
+        if (total % structAlignment != 0) {
+            total = total + (structAlignment - total % structAlignment);
+        }
+
+        return total;
+    }
+
+    template <typename T>
+    constexpr static void checkMissingFields() {
+        static_assert(calculateStructSize<T>() == sizeof(T), "size of the type does not match the sizes of all fields, make sure fields are listed in the correct order and there are no missing fields");
     }
 
 private:
