@@ -10,7 +10,7 @@ pub struct LevelDataPacket {
     pub players: Vec<AssociatedPlayerData>,
 }
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 22002, tcp = false)]
 pub struct LevelPlayerMetadataPacket {
     pub players: Vec<AssociatedPlayerMetadata>,

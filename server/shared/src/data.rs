@@ -66,6 +66,7 @@ impl UserEntry {
 }
 
 #[derive(Serialize, Deserialize, Encodable, Decodable, DynamicSize, Clone, Default)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct ServerRole {
     pub id: String,
     pub priority: i32,

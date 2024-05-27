@@ -121,11 +121,8 @@ impl GameServerThread {
                 Ok(user) if user.is_banned => {
                     self.terminate();
                     self.send_packet_dynamic(&ServerBannedPacket {
-                        message: (FastString::new(&format!(
-                            "{}",
-                            user.violation_reason.as_ref().map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
-                        ))),
-                        timestamp: (user.violation_expiry.unwrap()),
+                        message: FastString::new(&user.violation_reason.as_ref().map_or_else(|| "No reason given".to_owned(), |x| x.clone())),
+                        timestamp: user.violation_expiry.unwrap(), // TODO: fix
                     })
                     .await?;
 
@@ -173,7 +170,7 @@ impl GameServerThread {
             account_data.name = player_name;
 
             let user_entry = self.user_entry.lock();
-            let sud = SpecialUserData::from_user_entry(&*user_entry, &self.game_server.state.role_manager);
+            let sud = SpecialUserData::from_user_entry(&user_entry, &self.game_server.state.role_manager);
 
             account_data.special_user_data.clone_from(&sud);
 
