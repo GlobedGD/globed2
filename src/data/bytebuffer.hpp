@@ -13,6 +13,8 @@
 #include <util/misc.hpp>
 
 class ByteBuffer {
+    using length_t = uint16_t;
+
 public:
     // Error enum.
     enum class DecodeError {
@@ -20,6 +22,7 @@ public:
         NotEnoughData,
         InvalidEnumValue,
         DataTooLong,
+        LengthPrefixTooLong
     };
 
     BOOST_DESCRIBE_NESTED_ENUM(DecodeError, Ok, NotEnoughData, InvalidEnumValue);
@@ -138,6 +141,10 @@ public:
     DecodeResult<int64_t> readI64();
     DecodeResult<float> readF32();
     DecodeResult<double> readF64();
+    DecodeResult<size_t> readLength();
+
+    // read a length `x`, return an error if unable to read at least `x` bytes from the buffer afterwards
+    DecodeResult<size_t> readLengthCheck(size_t elemsize = 1);
 
     void writeBool(bool value);
     void writeU8(uint8_t value);
@@ -150,6 +157,7 @@ public:
     void writeI64(int64_t value);
     void writeF32(float value);
     void writeF64(double value);
+    void writeLength(size_t value);
 
     /* Bits */
     template <size_t N>
@@ -410,7 +418,7 @@ protected:
 
     template<typename T>
     DecodeResult<std::vector<T>> pcDecodeVector() {
-        GLOBED_UNWRAP_INTO(this->readU32(), auto length);
+        GLOBED_UNWRAP_INTO(this->readLength(), auto length);
 
         std::vector<T> out;
 
@@ -428,7 +436,7 @@ protected:
 
     template<typename T>
     void pcEncodeVector(const std::vector<T>& vec) {
-        this->writeU32(vec.size());
+        this->writeLength(vec.size());
 
         for (const auto& elem : vec) {
             this->writeValue<T>(elem);

@@ -433,14 +433,14 @@ impl Encodable for FastString {
     #[inline]
     fn encode(&self, buf: &mut crate::ByteBuffer) {
         let len = self.len();
-        buf.write_u32(len as u32);
+        buf.write_length(len);
         buf.write_bytes(&self.as_bytes()[..len]);
     }
 
     #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
         let len = self.len();
-        buf.write_u32(len as u32);
+        buf.write_length(len);
         buf.write_bytes(&self.as_bytes()[..len]);
     }
 }
@@ -450,7 +450,7 @@ impl Decodable for FastString {
     where
         Self: Sized,
     {
-        let len = buf.read_length()?;
+        let len = buf.read_length_check::<u8>()?;
 
         if len < INLINE_CAP {
             let mut buffer = [0u8; INLINE_CAP];
@@ -469,6 +469,6 @@ impl Decodable for FastString {
 
 impl DynamicSize for FastString {
     fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + self.len()
+        size_of_types!(VarLength) + self.len()
     }
 }
