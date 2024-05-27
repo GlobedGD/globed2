@@ -193,10 +193,8 @@ impl GameServerThread {
         }
 
         let players = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            let total_players = self.game_server.state.room_manager.with_any(room_id, |pm| {
-                // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
-                pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1
-            });
+            // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
+            let total_players = pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1;
 
             if total_players == 0 {
                 Vec::new()
