@@ -271,6 +271,19 @@ impl GameServer {
     }
 
     #[inline]
+    pub fn for_every_player_preview_in_room<F, A>(&self, room_id: u32, f: F, additional: &mut A) -> usize
+    where
+        F: Fn(&PlayerPreviewAccountData, usize, &mut A) -> bool,
+    {
+        self.threads
+            .lock()
+            .values()
+            .filter(|thr| thr.authenticated() && thr.room_id.load(Ordering::Relaxed) == room_id)
+            .map(|thread| thread.account_data.lock().make_preview())
+            .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
+    }
+
+    #[inline]
     pub fn for_every_room_player_preview<F, A>(&self, room_id: u32, f: F, additional: &mut A) -> usize
     where
         F: Fn(&PlayerRoomPreviewAccountData, usize, &mut A) -> bool,
@@ -292,11 +305,50 @@ impl GameServer {
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
+    /// get a list of all authenticated players
+    #[inline]
+    pub fn get_player_previews_for_inviting(&self) -> Vec<PlayerPreviewAccountData> {
+        let player_count = self.threads.lock().len();
+
+        let mut vec = Vec::with_capacity(player_count);
+
+        self.for_every_player_preview(
+            |p, _, vec| {
+                vec.push(p.clone());
+                true
+            },
+            &mut vec,
+        );
+
+        vec
+    }
+
+    /// get a list of all players in a room
     #[inline]
     pub fn get_room_player_previews(&self, room_id: u32) -> Vec<PlayerRoomPreviewAccountData> {
-        let mut vec = Vec::new();
+        let player_count = self.state.room_manager.with_any(room_id, |room| room.manager.get_total_player_count());
+
+        let mut vec = Vec::with_capacity(player_count);
 
         self.for_every_room_player_preview(
+            room_id,
+            |p, _, vec| {
+                vec.push(p.clone());
+                true
+            },
+            &mut vec,
+        );
+
+        vec
+    }
+
+    #[inline]
+    pub fn get_player_previews_in_room(&self, room_id: u32) -> Vec<PlayerPreviewAccountData> {
+        let player_count = self.state.room_manager.with_any(room_id, |room| room.manager.get_total_player_count());
+
+        let mut vec = Vec::with_capacity(player_count);
+
+        self.for_every_player_preview_in_room(
             room_id,
             |p, _, vec| {
                 vec.push(p.clone());

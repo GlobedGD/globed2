@@ -139,31 +139,35 @@ impl GameServerThread {
         }
 
         let room_id = self.room_id.load(Ordering::Relaxed);
-        self.send_packet_dynamic(&LevelPlayerMetadataPacket {
-            players: self.game_server.state.room_manager.with_any(room_id, |pm| {
-                pm.manager.set_player_meta(account_id, &packet.data);
+        let players = self.game_server.state.room_manager.with_any(room_id, |pm| {
+            pm.manager.set_player_meta(account_id, &packet.data);
 
-                let mut vec = Vec::new();
-                pm.manager.for_each_player_on_level(
-                    level_id,
-                    |player, _count, vec| {
-                        vec.push(AssociatedPlayerMetadata {
-                            account_id: player.account_id,
-                            data: player.meta.clone(),
-                        });
-                        true
-                    },
-                    &mut vec,
-                );
+            let mut vec = Vec::with_capacity(pm.manager.get_player_count_on_level(level_id).unwrap_or(0));
+            pm.manager.for_each_player_on_level(
+                level_id,
+                |player, _count, vec| {
+                    vec.push(AssociatedPlayerMetadata {
+                        account_id: player.account_id,
+                        data: player.meta.clone(),
+                    });
+                    true
+                },
+                &mut vec,
+            );
 
-                vec
-            }),
-        })
-        .await
+            vec
+        });
+
+        if players.is_empty() {
+            // if no players, don't send a response packet
+            Ok(())
+        } else {
+            self.send_packet_dynamic(&LevelPlayerMetadataPacket { players }).await
+        }
     });
 
     gs_handler!(self, handle_request_profiles, RequestPlayerProfilesPacket, packet, {
-        let account_id = gs_needauth!(self);
+        let _ = gs_needauth!(self);
 
         let level_id = self.level_id.load(Ordering::Relaxed);
         if level_id == 0 {
@@ -172,50 +176,50 @@ impl GameServerThread {
 
         let room_id = self.room_id.load(Ordering::Relaxed);
 
-        let total_players = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
-            pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1
-        });
+        // if they requested just one player - use the fast heapless path
+        if packet.requested != 0 {
+            let calc_size = size_of_types!(VarLength) + size_of_types!(PlayerAccountData);
+            let account_data = self.game_server.get_player_account_data(packet.requested);
 
-        // no one else on the level, no need to send a response packet
-        if total_players == 0 {
+            if let Some(account_data) = account_data {
+                return self
+                    .send_packet_alloca_with::<PlayerProfilesPacket, _>(calc_size, |buf| {
+                        buf.write_value(&account_data);
+                    })
+                    .await;
+            }
+
             return Ok(());
         }
 
-        let written_players = if packet.requested != 0 { 1 } else { total_players };
-
-        let calc_size = size_of_types!(u32) + size_of_types!(PlayerAccountData) * written_players;
-
-        self.send_packet_alloca_with::<PlayerProfilesPacket, _>(calc_size, |buf| {
-            buf.write_list_with(written_players, |buf| {
-                // if we requested a specific player, encode them (if we find them)
-                if packet.requested != 0 {
-                    let account_data = self.game_server.get_player_account_data(packet.requested);
-                    account_data.map_or(0, |data| {
-                        buf.write_value(&data);
-                        1
-                    })
-                } else {
-                    // otherwise, encode everyone on the level
-                    self.game_server.state.room_manager.with_any(room_id, |pm| {
-                        pm.manager.for_each_player_on_level(
-                            level_id,
-                            |player, count, buf| {
-                                // we do additional length check because player count may have changed since 1st lock
-                                if count < written_players && player.account_id != account_id {
-                                    let account_data = self.game_server.get_player_account_data(player.account_id);
-                                    account_data.map(|data| buf.write_value(&data)).is_some()
-                                } else {
-                                    false
-                                }
-                            },
-                            buf,
-                        )
-                    })
-                }
+        let players = self.game_server.state.room_manager.with_any(room_id, |pm| {
+            let total_players = self.game_server.state.room_manager.with_any(room_id, |pm| {
+                // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
+                pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1
             });
-        })
-        .await
+
+            if total_players == 0 {
+                Vec::new()
+            } else {
+                let mut vec = Vec::with_capacity(total_players);
+                pm.manager.for_each_player_on_level(
+                    level_id,
+                    |player, _count, vec| {
+                        let account_data = self.game_server.get_player_account_data(player.account_id);
+                        if let Some(d) = account_data {
+                            vec.push(d);
+                        }
+
+                        true
+                    },
+                    &mut vec,
+                );
+
+                vec
+            }
+        });
+
+        self.send_packet_dynamic(&PlayerProfilesPacket { players }).await
     });
 
     /* Note: blocking logic for voice & chat packets is not in here but in the packet receiving function */
