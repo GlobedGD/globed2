@@ -17,6 +17,7 @@ const char* ByteBuffer::strerror(DecodeError err) {
         case Error::NotEnoughData: return "Could not read enough bytes from the buffer";
         case Error::InvalidEnumValue: return "Invalid enum value was read";
         case Error::DataTooLong: return "Received data is too long so packet decoding was halted";
+        case Error::LengthPrefixTooLong: return "Datatype has an invalid length prefix, failed to decode packet";
     }
 
     return "Unknown error";
@@ -114,7 +115,7 @@ DecodeResult<> ByteBuffer::readBytesInto(byte* buf, size_t bytes) {
 // Strings
 
 template<> void ByteBuffer::customEncode(const std::string_view& value) {
-    this->writePrimitive<uint32_t>(value.size());
+    this->writeLength(value.size());
     this->rawWriteBytes(reinterpret_cast<const byte*>(value.data()), value.size());
 }
 
@@ -123,14 +124,14 @@ template<> void ByteBuffer::customEncode(const std::string& value) {
 }
 
 template<> DecodeResult<std::string> ByteBuffer::customDecode() {
-    GLOBED_UNWRAP_INTO(this->readPrimitive<uint32_t>(), size_t length);
+    GLOBED_UNWRAP_INTO(this->readLength(), size_t length);
 
     GLOBED_UNWRAP(this->boundsCheck(length));
 
     std::string str(reinterpret_cast<const char*>(_data.data() + _position), length);
     _position += length;
 
-    return Ok(str);
+    return Ok(std::move(str));
 }
 
 // CCPoint
@@ -195,7 +196,7 @@ template<> DecodeResult<ccColor4B> ByteBuffer::customDecode() {
     return Ok(ccc4(r, g, b, a));
 }
 
-// bytearray<10>
+// bytearray<N> LMAO
 #define MAKE_ARRAY_FUNCS(sz) \
     template<> void ByteBuffer::customEncode(const bytearray<sz>& data) { \
         this->rawWriteBytes(data.data(), sz); \
@@ -229,3 +230,26 @@ MAKE_METHOD(uint32_t, U32);
 MAKE_METHOD(uint64_t, U64);
 MAKE_METHOD(float, F32);
 MAKE_METHOD(double, F64);
+
+DecodeResult<size_t> ByteBuffer::readLength() {
+    auto v = this->readPrimitive<length_t>();
+    if (v.isOk()) {
+        return Ok(static_cast<size_t>(v.unwrap()));
+    } else {
+        return Err(v.unwrapErr());
+    }
+}
+
+DecodeResult<size_t> ByteBuffer::readLengthCheck(size_t elemsize) {
+    GLOBED_UNWRAP_INTO(this->readLength(), auto len);
+
+    if (this->getPosition() + (len * elemsize) > this->size()) {
+        return Err(DecodeError::LengthPrefixTooLong);
+    }
+
+    return Ok(len);
+}
+
+void ByteBuffer::writeLength(size_t value) {
+    this->writePrimitive<length_t>(static_cast<length_t>(value));
+}

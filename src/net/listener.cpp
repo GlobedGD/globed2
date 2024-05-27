@@ -22,16 +22,18 @@ bool PacketListener::init(packetid_t packetId, CallbackFn&& fn, CCObject* owner,
 }
 
 void PacketListener::invokeCallback(std::shared_ptr<Packet> packet) {
-    owner->retain();
+    if (owner) {
+        owner->retain();
+    }
 
     if (mainThread) {
         Loader::get()->queueInMainThread([this, packet = std::move(packet)] {
             this->callback(packet);
-            this->owner->release();
+            if (owner) this->owner->release();
         });
     } else {
         callback(packet);
-        this->owner->release();
+        if (owner) this->owner->release();
     }
 }
 

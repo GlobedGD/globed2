@@ -1247,7 +1247,7 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
     }
 };
 
-// TODO: test if still needed
+// TODO: test if still needed for 2 player mode
 void GlobedGJBGL::updateCamera(float dt) {
     if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
         GJBaseGameLayer::updateCamera(dt);

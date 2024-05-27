@@ -69,12 +69,52 @@ impl_primitive!(f64, read_f64, write_f64);
 
 /* strings */
 
-encode_impl!(String, buf, self, buf.write_string(self));
-decode_impl!(String, buf, Ok(buf.read_string()?));
-dynamic_size_calc_impl!(String, self, size_of_types!(u32) + self.len());
+impl Encodable for String {
+    fn encode(&self, buf: &mut ByteBuffer) {
+        buf.write_length(self.len());
+        buf.write_bytes(self.as_bytes());
+    }
 
-encode_impl!(str, buf, self, buf.write_string(self));
-dynamic_size_calc_impl!(str, self, size_of_types!(u32) + self.len());
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_length(self.len());
+        buf.write_bytes(self.as_bytes());
+    }
+}
+
+impl Decodable for String {
+    #[allow(clippy::string_from_utf8_as_bytes)]
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        let len = buf.read_length_check::<u8>()?;
+
+        let end_pos = buf.get_rpos() + len;
+        let str = std::str::from_utf8(&buf.as_bytes()[buf.get_rpos()..end_pos])
+            .map_err(|_| DecodeError::InvalidStringValue)?
+            .to_owned();
+
+        buf.set_rpos(end_pos);
+
+        Ok(str)
+    }
+}
+
+dynamic_size_calc_impl!(String, self, size_of_types!(VarLength) + self.len());
+
+impl Encodable for str {
+    fn encode(&self, buf: &mut ByteBuffer) {
+        buf.write_length(self.len());
+        buf.write_bytes(self.as_bytes());
+    }
+
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_length(self.len());
+        buf.write_bytes(self.as_bytes());
+    }
+}
+
+dynamic_size_calc_impl!(str, self, size_of_types!(VarLength) + self.len());
 
 /* references (yes, that is really needed) */
 
@@ -118,12 +158,18 @@ where
 {
     #[inline]
     fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_optional_value(self.as_ref());
+        buf.write_bool(self.is_some());
+        if let Some(v) = self {
+            buf.write_value(v);
+        }
     }
 
     #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_optional_value(self.as_ref());
+        buf.write_bool(self.is_some());
+        if let Some(v) = self {
+            buf.write_value(v);
+        }
     }
 }
 
@@ -132,19 +178,11 @@ where
     T: Decodable,
 {
     #[inline]
-    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        buf.read_optional_value()
-    }
-
-    #[inline]
     fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,
     {
-        buf.read_optional_value()
+        Ok(if buf.read_bool()? { Some(buf.read_value::<T>()?) } else { None })
     }
 }
 
@@ -307,12 +345,18 @@ where
 {
     #[inline]
     fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_value_vec(self);
+        buf.write_length(self.len());
+        for elem in self {
+            buf.write_value(elem);
+        }
     }
 
     #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_value_vec(self);
+        buf.write_length(self.len());
+        for elem in self {
+            buf.write_value(elem);
+        }
     }
 }
 
@@ -322,7 +366,7 @@ where
 {
     #[inline]
     fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + self.iter().map(T::encoded_size).sum::<usize>()
+        size_of_types!(VarLength) + self.iter().map(T::encoded_size).sum::<usize>()
     }
 }
 
@@ -334,12 +378,14 @@ where
 {
     #[inline]
     fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_value_vec(self);
+        // encode as &[T]
+        (**self).encode(buf);
     }
 
     #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_value_vec(self);
+        // encode as &[T]
+        (**self).encode_fast(buf);
     }
 }
 
@@ -348,19 +394,17 @@ where
     T: Decodable,
 {
     #[inline]
-    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        buf.read_value_vec()
-    }
-
-    #[inline]
     fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
     where
         Self: Sized,
     {
-        buf.read_value_vec()
+        let mut out = Vec::new();
+        let length = buf.read_length()?;
+        for _ in 0..length {
+            out.push(buf.read_value()?);
+        }
+
+        Ok(out)
     }
 }
 
@@ -370,7 +414,7 @@ where
 {
     #[inline]
     fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + self.iter().map(T::encoded_size).sum::<usize>()
+        size_of_types!(VarLength) + self.iter().map(T::encoded_size).sum::<usize>()
     }
 }
 
@@ -383,7 +427,7 @@ where
 {
     #[inline]
     fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_u32(self.len() as u32);
+        buf.write_length(self.len());
         for (k, v) in self {
             buf.write_value(k);
             buf.write_value(v);
@@ -392,7 +436,7 @@ where
 
     #[inline]
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_u32(self.len() as u32);
+        buf.write_length(self.len());
         for (k, v) in self {
             buf.write_value(k);
             buf.write_value(v);
@@ -410,7 +454,7 @@ where
     where
         Self: Sized,
     {
-        let entries = buf.read_u32()?;
+        let entries = buf.read_length()?;
         let mut map = Self::default();
 
         for _ in 0..entries {
@@ -427,7 +471,7 @@ where
     where
         Self: Sized,
     {
-        let entries = buf.read_u32()?;
+        let entries = buf.read_length()?;
         let mut map = Self::default();
 
         for _ in 0..entries {
@@ -447,7 +491,7 @@ where
 {
     #[inline]
     fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + self.iter().map(|(k, v)| k.encoded_size() + v.encoded_size()).sum::<usize>()
+        size_of_types!(VarLength) + self.iter().map(|(k, v)| k.encoded_size() + v.encoded_size()).sum::<usize>()
     }
 }
 

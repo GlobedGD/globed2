@@ -123,7 +123,7 @@ impl GameServerThread {
         );
 
         for chunk in players.chunks(players_per_fragment) {
-            self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value_vec(chunk))
+            self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value(chunk))
                 .await?;
         }
 
@@ -205,7 +205,7 @@ impl GameServerThread {
         debug!("sending a fragmented packet (meta) (lim: {fragmentation_limit}, per: {players_per_fragment}, frags: {total_fragments}, fragsize: {calc_size})");
 
         for chunk in players.chunks(players_per_fragment) {
-            self.send_packet_alloca_with::<LevelPlayerMetadataPacket, _>(calc_size, |buf| buf.write_value_vec(chunk))
+            self.send_packet_alloca_with::<LevelPlayerMetadataPacket, _>(calc_size, |buf| buf.write_value(chunk))
                 .await?;
         }
 
