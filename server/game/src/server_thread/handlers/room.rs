@@ -168,13 +168,10 @@ impl GameServerThread {
             }
         });
 
-        let room_password = match room_password {
-            Some(x) => x,
-            None => {
-                #[cfg(debug_assertions)]
-                debug!("invite from {account_id} rejected, user is unable to invite");
-                return Ok(());
-            }
+        let Some(room_password) = room_password else {
+            #[cfg(debug_assertions)]
+            debug!("invite from {account_id} rejected, user is unable to invite");
+            return Ok(());
         };
 
         let thread = self.game_server.get_user_by_id(packet.player);

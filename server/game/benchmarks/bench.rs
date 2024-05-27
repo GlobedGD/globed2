@@ -10,9 +10,7 @@ fn buffers(c: &mut Criterion) {
         user_id: 234_234_234,
         name: InlineString::new("hit his is my name"),
         icons: PlayerIconData::default(),
-        special_user_data: Some(SpecialUserData {
-            name_color: Color3B { r: 10, g: 100, b: 200 },
-        }),
+        special_user_data: SpecialUserData { roles: None },
     };
 
     c.bench_function("alloca-byte-buffer", |b| {

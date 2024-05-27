@@ -108,7 +108,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // validate the silly
-    if config.roles.iter().any(|role| role.id.contains(",")) {
+    if config.roles.iter().any(|role| role.id.contains(',')) {
         error!("invalid role id found in central-conf.json");
         warn!("hint: role ids cannot contain commas");
         abort_misconfig();

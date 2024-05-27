@@ -13,6 +13,7 @@ pub struct GameServerRole {
 }
 
 #[derive(Encodable, Decodable, DynamicSize, Default, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct ComputedRole {
     pub priority: i32,
     pub badge_icon: FastString,
@@ -91,17 +92,16 @@ impl RoleManager {
     }
 
     pub fn compute(&self, user_roles: &[String]) -> ComputedRole {
-        let mut computed = ComputedRole::default();
-        computed.priority = i32::MIN;
+        let mut computed = ComputedRole {
+            priority: i32::MIN,
+            ..Default::default()
+        };
 
         let roles = self.roles.lock();
         for role_id in user_roles {
-            let role = match roles.values().find(|x| x.id == *role_id) {
-                Some(x) => x,
-                None => {
-                    warn!("trying to assign an invalid role to a user: {role_id}");
-                    continue;
-                }
+            let Some(role) = roles.values().find(|x| x.id == *role_id) else {
+                warn!("trying to assign an invalid role to a user: {role_id}");
+                continue;
             };
 
             let is_higher = role.priority > computed.priority;
@@ -113,10 +113,13 @@ impl RoleManager {
             }
 
             if !role.name_color.is_empty() && (is_higher || computed.name_color.is_none()) {
-                computed.name_color = role.name_color.parse::<RichColor>().map(|x| Some(x)).unwrap_or_else(|x| {
-                    warn!("failed to parse role name color for role {role_id}: {x}");
-                    None
-                });
+                computed.name_color = role.name_color.parse::<RichColor>().map_or_else(
+                    |x| {
+                        warn!("failed to parse role name color for role {role_id}: {x}");
+                        None
+                    },
+                    Some,
+                );
 
                 // if it's white, make it None
                 if computed
@@ -129,10 +132,13 @@ impl RoleManager {
             }
 
             if !role.chat_color.is_empty() && (is_higher || computed.chat_color.is_none()) {
-                computed.chat_color = role.chat_color.parse::<Color3B>().map(|x| Some(x)).unwrap_or_else(|x| {
-                    warn!("failed to parse role chat color for role {role_id}: {x}");
-                    None
-                });
+                computed.chat_color = role.chat_color.parse::<Color3B>().map_or_else(
+                    |x| {
+                        warn!("failed to parse role chat color for role {role_id}: {x}");
+                        None
+                    },
+                    Some,
+                );
 
                 // if it's white, make it None
                 if computed.chat_color.as_ref().is_some_and(|x| *x == Color3B { r: 255, g: 255, b: 255 }) {
@@ -172,7 +178,7 @@ impl RoleManager {
 
         user_roles
             .iter()
-            .map(|r| roles.values().find(|role| *r == *role.id).map(|x| x.priority).unwrap_or(i32::MIN))
+            .map(|r| roles.values().find(|role| *r == *role.id).map_or(i32::MIN, |x| x.priority))
             .max()
             .unwrap_or(i32::MIN)
     }
@@ -180,7 +186,7 @@ impl RoleManager {
     // check if all provided role ids are valid and do exist
     pub fn all_valid(&self, user_roles: &[String]) -> bool {
         let roles = self.roles.lock();
-        user_roles.iter().all(|x| roles.values().find(|y| *x == *y.id).is_some())
+        user_roles.iter().all(|x| roles.values().any(|y| *x == *y.id))
     }
 
     // get the default role of an non-admin-authenticated user

@@ -30,7 +30,7 @@ use crate::{
 };
 
 const MAX_UDP_PACKET_SIZE: usize = 65536;
-const LARGE_BUFFER_SIZE: usize = 524288; // 2^19, 0.5mb
+const LARGE_BUFFER_SIZE: usize = 2usize.pow(19); // 2^19, 0.5mb
 
 pub struct GameServer {
     pub state: ServerState,
@@ -96,7 +96,7 @@ impl GameServer {
                 loop {
                     interval.tick().await;
                     let cc = self.bridge.central_conf.lock();
-                    self.state.role_manager.refresh_from(&*cc)
+                    self.state.role_manager.refresh_from(&cc);
                 }
             });
         }

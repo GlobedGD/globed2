@@ -64,9 +64,9 @@ macro_rules! gs_needauth {
 
 // give a larger limit on unix based machines as they often have an 8mb stack
 #[cfg(windows)]
-pub const MAX_ALLOCA_SIZE: usize = 65536;
+pub const MAX_ALLOCA_SIZE: usize = 2usize.pow(16);
 #[cfg(not(windows))]
-pub const MAX_ALLOCA_SIZE: usize = 131072;
+pub const MAX_ALLOCA_SIZE: usize = 2usize.pow(17);
 
 macro_rules! gs_alloca_check_size {
     ($size:expr) => {
@@ -115,7 +115,7 @@ pub fn with_heap_vec<R>(game_server: &GameServer, size: usize, f: impl FnOnce(&m
             f(data)
         }
     } else {
-        f(&mut *buf)
+        f(&mut buf)
     }
 }
 
