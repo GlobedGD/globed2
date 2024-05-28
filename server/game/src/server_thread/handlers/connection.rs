@@ -158,8 +158,8 @@ impl GameServerThread {
         self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
 
         info!(
-            "Login successful from {player_name} (account ID: {}, address: {})",
-            packet.account_id, self.tcp_peer
+            "[{} ({}) @ {}] Login successful, platform: {}",
+            player_name, packet.account_id, self.tcp_peer, packet.platform
         );
 
         let special_user_data = {

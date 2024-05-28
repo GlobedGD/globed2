@@ -374,7 +374,16 @@ void NetworkManager::setupBuiltinListeners() {
         }
 
         auto gddata = am.gdData.lock();
-        auto pkt = LoginPacket::create(this->secretKey, gddata->accountId, gddata->userId, gddata->accountName, authtoken, pcm.getOwnData(), settings.globed.fragmentationLimit);
+        auto pkt = LoginPacket::create(
+            this->secretKey,
+            gddata->accountId,
+            gddata->userId,
+            gddata->accountName,
+            authtoken,
+            pcm.getOwnData(),
+            settings.globed.fragmentationLimit,
+            util::net::loginPlatformString()
+        );
         this->send(pkt);
     });
 

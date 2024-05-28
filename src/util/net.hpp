@@ -27,6 +27,9 @@ namespace util::net {
     // Returns the user agent for use in web requests
     std::string webUserAgent();
 
+    // Returns the platform string to be sent in LoginPacket
+    std::string loginPlatformString();
+
     // Split an address like 127.0.0.1:4343 into pair("127.0.0.1", 4343)
     Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort = 0);
 

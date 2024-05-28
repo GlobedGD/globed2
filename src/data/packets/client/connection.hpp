@@ -50,11 +50,36 @@ class LoginPacket : public Packet {
     GLOBED_PACKET(10003, true, true)
 
     LoginPacket() {}
-    LoginPacket(uint32_t secretKey, int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons, uint16_t fragmentationLimit)
-        : secretKey(secretKey), accountId(accid), userId(userId), name(name), token(token), icons(icons), fragmentationLimit(fragmentationLimit) {}
+    LoginPacket(
+            uint32_t secretKey,
+            int32_t accid,
+            int32_t userId,
+            const std::string_view name,
+            const std::string_view token,
+            const PlayerIconData& icons,
+            uint16_t fragmentationLimit,
+            const std::string_view platform
+    ) :
+            secretKey(secretKey),
+            accountId(accid),
+            userId(userId),
+            name(name),
+            token(token),
+            icons(icons),
+            fragmentationLimit(fragmentationLimit),
+            platform(platform) {}
 
-    static std::shared_ptr<Packet> create(uint32_t secretKey, int32_t accid, int32_t userId, const std::string_view name, const std::string_view token, const PlayerIconData& icons, uint16_t fragmentationLimit) {
-        return std::make_shared<LoginPacket>(secretKey, accid, userId, name, token, icons, fragmentationLimit);
+    static std::shared_ptr<Packet> create(
+            uint32_t secretKey,
+            int32_t accid,
+            int32_t userId,
+            const std::string_view name,
+            const std::string_view token,
+            const PlayerIconData& icons,
+            uint16_t fragmentationLimit,
+            const std::string_view platform
+    ) {
+        return std::make_shared<LoginPacket>(secretKey, accid, userId, name, token, icons, fragmentationLimit, platform);
     }
 
     uint32_t secretKey;
@@ -64,6 +89,7 @@ class LoginPacket : public Packet {
     std::string token;
     PlayerIconData icons;
     uint16_t fragmentationLimit;
+    std::string platform;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
@@ -73,7 +99,8 @@ GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
     name,
     token,
     icons,
-    fragmentationLimit
+    fragmentationLimit,
+    platform
 ));
 
 class DisconnectPacket : public Packet {
