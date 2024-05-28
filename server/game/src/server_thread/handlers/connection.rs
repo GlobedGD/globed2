@@ -158,16 +158,16 @@ impl GameServerThread {
         self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
 
         info!(
-            "Login successful from {player_name} (account ID: {}, address: {})",
-            packet.account_id, self.tcp_peer
+            "[{} ({}) @ {}] Login successful, platform: {}",
+            player_name, packet.account_id, self.tcp_peer, packet.platform
         );
 
         let special_user_data = {
             let mut account_data = self.account_data.lock();
             account_data.account_id = packet.account_id;
             account_data.user_id = packet.user_id;
-            account_data.icons.clone_from(&packet.icons);
             account_data.name = player_name;
+            account_data.icons.clone_from(&packet.icons);
 
             let user_entry = self.user_entry.lock();
             let sud = SpecialUserData::from_user_entry(&user_entry, &self.game_server.state.role_manager);

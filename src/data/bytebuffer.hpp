@@ -511,8 +511,7 @@ protected:
 
     template <
         typename T,
-        class Md = boost::describe::describe_members<T, boost::describe::mod_public>,
-        class Bd = boost::describe::describe_bases<T, boost::describe::mod_any_access>
+        class Md = boost::describe::describe_members<T, boost::describe::mod_public>
     >
     constexpr static size_t calculateStructSize() {
         size_t total = 0;
@@ -535,7 +534,7 @@ protected:
 
             total += sizeof(FT);
 
-            // struct alignment is based on the largest member
+            // struct alignment is based on the member with the largest alignment
             if (alignof(FT) > structAlignment) {
                 structAlignment = alignof(FT);
             }

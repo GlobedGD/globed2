@@ -199,66 +199,32 @@ impl GameServerThread {
     gs_handler!(self, handle_request_room_list, RequestRoomListPacket, _packet, {
         let _ = gs_needauth!(self);
 
-        self._respond_with_list_of_rooms().await
+        let pkt = RoomListPacket {
+            rooms: self
+                .game_server
+                .state
+                .room_manager
+                .get_rooms()
+                .iter()
+                .filter(|(_, room)| !room.is_hidden())
+                .map(|(id, room)| room.get_room_listing_info(*id, self.game_server))
+                .collect(),
+        };
+
+        self.send_packet_dynamic(&pkt).await
     });
 
     #[inline]
     async fn _respond_with_room_list(&self, room_id: u32) -> crate::server_thread::Result<()> {
-        let (player_count, room_info) = self.game_server.state.room_manager.with_any(room_id, |room| {
-            (room.manager.get_total_player_count(), room.get_room_info(room_id, self.game_server))
-        });
-
-        // RoomInfo, list size, list of PlayerRoomPreviewAccountData
-        let encoded_size = size_of_types!(RoomInfo, u32) + size_of_types!(PlayerRoomPreviewAccountData) * player_count;
-
-        self.send_packet_alloca_with::<RoomPlayerListPacket, _>(encoded_size, |buf| {
-            buf.write_value(&room_info);
-            buf.write_list_with(player_count, |buf| {
-                self.game_server.for_every_room_player_preview(
-                    room_id,
-                    move |preview, count, buf| {
-                        // we do additional length check because player count may have increased since then
-                        if count < player_count {
-                            buf.write_value(preview);
-                            true
-                        } else {
-                            false
-                        }
-                    },
-                    buf,
-                )
-            });
-        })
-        .await
-    }
-
-    #[inline]
-    async fn _respond_with_list_of_rooms(&self) -> crate::server_thread::Result<()> {
-        let room_count = self
+        let room_info = self
             .game_server
             .state
             .room_manager
-            .get_rooms()
-            .iter()
-            .filter(|(_, room)| !room.is_hidden())
-            .count();
+            .with_any(room_id, |room| room.get_room_info(room_id, self.game_server));
 
-        let encoded_size = size_of_types!(u32) + size_of_types!(RoomListingInfo) * room_count;
-
-        self.send_packet_alloca_with::<RoomListPacket, _>(encoded_size, |buf| {
-            buf.write_list_with(room_count, |buf| {
-                self.game_server.for_every_public_room(
-                    move |room, count, buf| {
-                        if count < room_count {
-                            buf.write_value(&room);
-                            true
-                        } else {
-                            false
-                        }
-                    },
-                    buf,
-                )
-            });
+        self.send_packet_dynamic(&RoomPlayerListPacket {
+            room_info,
+            players: self.game_server.get_room_player_previews(room_id),
         })
         .await
     }

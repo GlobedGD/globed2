@@ -4,7 +4,7 @@
 #include <data/types/room.hpp>
 
 class RoomCreatedPacket : public Packet {
-    GLOBED_PACKET(23000, false, false)
+    GLOBED_PACKET(23000, RoomCreatedPacket, false, false)
 
     RoomCreatedPacket() {}
 
@@ -14,7 +14,7 @@ class RoomCreatedPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(RoomCreatedPacket, (info));
 
 class RoomJoinedPacket : public Packet {
-    GLOBED_PACKET(23001, false, false)
+    GLOBED_PACKET(23001, RoomJoinedPacket, false, false)
 
     RoomJoinedPacket() {}
 };
@@ -22,7 +22,7 @@ class RoomJoinedPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(RoomJoinedPacket, ());
 
 class RoomJoinFailedPacket : public Packet {
-    GLOBED_PACKET(23002, false, false)
+    GLOBED_PACKET(23002, RoomJoinFailedPacket, false, false)
 
     RoomJoinFailedPacket() {}
 
@@ -32,7 +32,7 @@ class RoomJoinFailedPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(RoomJoinFailedPacket, (wasInvalid, wasProtected, wasFull));
 
 class RoomPlayerListPacket : public Packet {
-    GLOBED_PACKET(23003, false, false)
+    GLOBED_PACKET(23003, RoomPlayerListPacket, false, false)
 
     RoomPlayerListPacket() {}
 
@@ -43,7 +43,7 @@ class RoomPlayerListPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(RoomPlayerListPacket, (info, players));
 
 class RoomInfoPacket : public Packet {
-    GLOBED_PACKET(23004, false, false)
+    GLOBED_PACKET(23004, RoomInfoPacket, false, false)
 
     RoomInfoPacket() {}
 
@@ -53,7 +53,7 @@ class RoomInfoPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(RoomInfoPacket, (info));
 
 class RoomInvitePacket : public Packet {
-    GLOBED_PACKET(23005, false, false)
+    GLOBED_PACKET(23005, RoomInvitePacket, false, false)
 
     RoomInvitePacket() {}
 
@@ -65,7 +65,7 @@ class RoomInvitePacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(RoomInvitePacket, (playerData, roomID, password));
 
 class RoomListPacket : public Packet {
-    GLOBED_PACKET(23006, false, false)
+    GLOBED_PACKET(23006, RoomListPacket, false, false)
 
     RoomListPacket() {}
 

@@ -1,8 +1,10 @@
 use crate::data::*;
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 22000, tcp = true)]
-pub struct PlayerProfilesPacket;
+pub struct PlayerProfilesPacket {
+    pub players: Vec<PlayerAccountData>,
+}
 
 #[derive(Packet, Encodable)]
 #[packet(id = 22001, tcp = false)]
@@ -11,7 +13,7 @@ pub struct LevelDataPacket {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 22002, tcp = false)]
+#[packet(id = 22002, tcp = true)]
 pub struct LevelPlayerMetadataPacket {
     pub players: Vec<AssociatedPlayerMetadata>,
 }

@@ -28,9 +28,19 @@ namespace util::net {
 
     std::string webUserAgent() {
         return fmt::format(
-            "globed-geode-xd/{}; {}; Loader {}",
+            "globed-geode-xd/{}; Globed {}; Loader {}",
             Mod::get()->getVersion().toString(),
             GLOBED_PLATFORM_STRING,
+            Loader::get()->getVersion().toString()
+        );
+    }
+
+    std::string loginPlatformString() {
+        GLOBED_PLATFORM_STRING;
+        return fmt::format(
+            "{} ({}, Geode {})",
+            GLOBED_PLATFORM_STRING,
+            Mod::get()->getVersion().toString(),
             Loader::get()->getVersion().toString()
         );
     }

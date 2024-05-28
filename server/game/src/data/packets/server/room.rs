@@ -39,8 +39,8 @@ pub struct RoomInvitePacket {
     pub room_password: InlineString<16>,
 }
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 23006)]
 pub struct RoomListPacket {
-    rooms: Vec<RoomListingInfo>,
+    pub rooms: Vec<RoomListingInfo>,
 }
