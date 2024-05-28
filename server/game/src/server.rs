@@ -17,18 +17,16 @@ use rustc_hash::FxHashMap;
 #[allow(unused_imports)]
 use tokio::sync::oneshot; // no way
 
-use tokio::{
-    io::AsyncWriteExt,
-    net::{TcpListener, UdpSocket},
-};
+use tokio::net::{TcpListener, UdpSocket};
 
 use crate::{
     bridge::{self, CentralBridge},
+    client::{ClientThread, ServerThreadMessage},
     data::*,
-    server_thread::{GameServerThread, ServerThreadMessage, INLINE_BUFFER_SIZE},
     state::ServerState,
 };
 
+const INLINE_BUFFER_SIZE: usize = 164;
 const MAX_UDP_PACKET_SIZE: usize = 65536;
 const LARGE_BUFFER_SIZE: usize = 2usize.pow(19); // 2^19, 0.5mb
 
@@ -36,8 +34,8 @@ pub struct GameServer {
     pub state: ServerState,
     pub tcp_socket: TcpListener,
     pub udp_socket: UdpSocket,
-    pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<GameServerThread>>>,
-    pub unclaimed_threads: SyncMutex<VecDeque<Arc<GameServerThread>>>,
+    pub threads: SyncMutex<FxHashMap<SocketAddrV4, Arc<ClientThread>>>,
+    pub unclaimed_threads: SyncMutex<VecDeque<Arc<ClientThread>>>,
     pub secret_key: SecretKey,
     pub public_key: PublicKey,
     pub bridge: CentralBridge,
@@ -139,8 +137,8 @@ impl GameServer {
                     error!("Failed to accept a connection: {err_string}");
                     // if it's a fd limit issue, sleep until things get better
                     if err_string.contains("Too many open files") {
-                        tokio::time::sleep(Duration::from_millis(250)).await;
-                        warn!("fd limit exceeded, sleeping for 250ms.");
+                        warn!("fd limit exceeded, sleeping for 500ms. server cannot accept any more clients unless the fd limit is raised");
+                        tokio::time::sleep(Duration::from_millis(500)).await;
                     }
                 }
             }
@@ -157,7 +155,7 @@ impl GameServer {
 
         debug!("accepting tcp connection from {peer}");
 
-        let thread = Arc::new(GameServerThread::new(socket, peer, self));
+        let thread = Arc::new(ClientThread::new(socket, peer, self));
         self.unclaimed_threads.lock().push_back(thread.clone());
 
         tokio::spawn(async move {
@@ -170,7 +168,7 @@ impl GameServer {
             // so try to avoid panics please..
             thread.run().await;
             debug!("removing client: {}", peer);
-            self.post_disconnect_cleanup(&thread, peer).await;
+            self.post_disconnect_cleanup(&thread).await;
 
             // safety: the thread no longer runs and we are the only ones who can access the socket
             let socket = unsafe { thread.socket.get_mut() };
@@ -221,7 +219,8 @@ impl GameServer {
 
         if let Some(idx) = idx {
             if let Some(thread) = unclaimed.remove(idx) {
-                *thread.udp_peer.lock() = udp_addr;
+                // safety: this is pretty unsafe
+                unsafe { thread.socket.get_mut() }.set_udp_peer(udp_addr);
                 thread.claimed.store(true, Ordering::Relaxed);
                 self.threads.lock().insert(udp_addr, thread);
 
@@ -420,7 +419,7 @@ impl GameServer {
     }
 
     /// Find a thread by account ID
-    pub fn get_user_by_id(&self, account_id: i32) -> Option<Arc<GameServerThread>> {
+    pub fn get_user_by_id(&self, account_id: i32) -> Option<Arc<ClientThread>> {
         self.threads
             .lock()
             .values()
@@ -429,7 +428,7 @@ impl GameServer {
     }
 
     /// If the passed string is numeric, tries to find a user by account ID, else by their account name.
-    pub fn find_user(&self, name: &str) -> Option<Arc<GameServerThread>> {
+    pub fn find_user(&self, name: &str) -> Option<Arc<ClientThread>> {
         self.threads
             .lock()
             .values()
@@ -455,7 +454,7 @@ impl GameServer {
         }
     }
 
-    pub async fn update_user<F: FnOnce(&mut UserEntry) -> bool>(&self, thread: &GameServerThread, f: F) -> anyhow::Result<()> {
+    pub async fn update_user<F: FnOnce(&mut UserEntry) -> bool>(&self, thread: &ClientThread, f: F) -> anyhow::Result<()> {
         let result = {
             let mut data = thread.user_entry.lock();
             f(&mut data)
@@ -575,11 +574,10 @@ impl GameServer {
         }
     }
 
-    async fn post_disconnect_cleanup(&self, thread: &Arc<GameServerThread>, tcp_peer: SocketAddrV4) {
+    async fn post_disconnect_cleanup(&self, thread: &Arc<ClientThread>) {
         if thread.claimed.load(Ordering::Relaxed) {
-            // self.threads.lock().retain(|_udp_peer, thread| thread.tcp_peer != tcp_peer);
             let mut threads = self.threads.lock();
-            let udp_peer = threads.iter().find(|(_udp, thread)| thread.tcp_peer == tcp_peer).map(|x| *x.0);
+            let udp_peer = unsafe { thread.socket.get() }.udp_peer;
 
             if let Some(udp_peer) = udp_peer {
                 threads.remove(&udp_peer);

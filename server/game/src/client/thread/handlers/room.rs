@@ -1,8 +1,6 @@
 use super::*;
-use crate::{data::*, server_thread::GameServerThread, server_thread::ServerThreadMessage};
-use globed_shared::{debug, warn};
 
-impl GameServerThread {
+impl ClientThread {
     gs_handler!(self, handle_create_room, CreateRoomPacket, packet, {
         let account_id = gs_needauth!(self);
 
@@ -215,7 +213,7 @@ impl GameServerThread {
     });
 
     #[inline]
-    async fn _respond_with_room_list(&self, room_id: u32) -> crate::server_thread::Result<()> {
+    async fn _respond_with_room_list(&self, room_id: u32) -> crate::client::Result<()> {
         let room_info = self
             .game_server
             .state

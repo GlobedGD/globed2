@@ -24,10 +24,10 @@ use tokio::net::{TcpListener, UdpSocket};
 use server::GameServer;
 
 pub mod bridge;
+pub mod client;
 pub mod data;
 pub mod managers;
 pub mod server;
-pub mod server_thread;
 pub mod state;
 pub mod util;
 pub mod webhook;

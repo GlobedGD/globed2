@@ -26,11 +26,12 @@ pub struct ServerDisconnectPacket<'a> {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 20004, tcp = true)]
+#[packet(id = 20004, encrypted = true, tcp = true)]
 pub struct LoggedInPacket {
     pub tps: u32,
     pub special_user_data: SpecialUserData,
     pub all_roles: Vec<GameServerRole>,
+    pub secret_key: u32,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
