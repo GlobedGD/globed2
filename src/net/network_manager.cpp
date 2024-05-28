@@ -661,7 +661,7 @@ uint16_t NetworkManager::getUsedProtocol() {
 }
 
 void NetworkManager::logPacketToFile(std::shared_ptr<Packet> packet) {
-    log::debug("{} packet: {}", packet->getPacketId() < 20000 ? "Sending" : "Receiving", packet->getPacketId());
+    log::debug("{} {}", packet->getPacketId() < 20000 ? "Sending" : "Receiving", packet->getPacketName());
 
     auto folder = Mod::get()->getSaveDir() / "packets";
     (void) geode::utils::file::createDirectoryAll(folder);

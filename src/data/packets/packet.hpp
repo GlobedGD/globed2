@@ -6,14 +6,16 @@
 
 using packetid_t = uint16_t;
 
-#define GLOBED_PACKET(id, enc, tcp) \
+#define GLOBED_PACKET(id, name, enc, tcp) \
     public: \
     static constexpr packetid_t PACKET_ID = id; \
     static constexpr bool SHOULD_USE_TCP = tcp; \
     static constexpr bool ENCRYPTED = enc; \
+    static constexpr const char* PACKET_NAME = #name; \
     packetid_t getPacketId() const override { return this->PACKET_ID; } \
     bool getUseTcp() const override { return this->SHOULD_USE_TCP; } \
     bool getEncrypted() const override { return this->ENCRYPTED; } \
+    const char* getPacketName() const override { return this->PACKET_NAME; } \
     void encode(ByteBuffer& buf) const override { \
         using InstTy = typename std::remove_reference_t<decltype(*this)>; \
         using NonCvTy = typename std::remove_cv_t<InstTy>; \
@@ -22,6 +24,10 @@ using packetid_t = uint16_t;
     ByteBuffer::DecodeResult<> decode(ByteBuffer& buf) override { \
         GLOBED_UNWRAP_INTO(buf.readValue<std::remove_reference_t<decltype(*this)>>(), *this); \
         return Ok(); \
+    } \
+    template <typename... Args> \
+    static std::shared_ptr<Packet> create(Args&&... args) { \
+        return std::make_shared<name>(std::forward<Args>(args)...); \
     }
 class Packet {
 public:
@@ -35,6 +41,7 @@ public:
     virtual packetid_t getPacketId() const = 0;
     virtual bool getUseTcp() const = 0;
     virtual bool getEncrypted() const = 0;
+    virtual const char* getPacketName() const = 0;
 
     template <typename T>
     requires std::is_base_of_v<Packet, T>
