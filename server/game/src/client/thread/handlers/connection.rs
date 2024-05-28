@@ -1,13 +1,10 @@
 use std::sync::atomic::Ordering;
 
-use globed_shared::{crypto_box::ChaChaBox, logger::*, PROTOCOL_VERSION};
-
-use crate::server_thread::{GameServerThread, PacketHandlingError};
+use globed_shared::{logger::*, PROTOCOL_VERSION};
 
 use super::*;
-use crate::data::*;
 
-impl GameServerThread {
+impl ClientThread {
     gs_handler!(self, handle_ping, PingPacket, packet, {
         self.send_packet_static(&PingResponsePacket {
             id: packet.id,
@@ -23,18 +20,7 @@ impl GameServerThread {
             return Ok(());
         }
 
-        {
-            // as ServerThread is now tied to the SocketAddrV4 and not account id like in globed v0
-            // erroring here is not a concern, even if the user's game crashes without a disconnect packet,
-            // they would have a new randomized port when they restart and this would never fail.
-            if self.crypto_box.get().is_some() {
-                self.disconnect("attempting to perform a second handshake in one session").await?;
-                return Err(PacketHandlingError::WrongCryptoBoxState);
-            }
-
-            self.crypto_box
-                .get_or_init(|| ChaChaBox::new(&packet.key.0, &self.game_server.secret_key));
-        }
+        unsafe { self.socket.get() }.init_crypto_box(&packet.key)?;
 
         self.send_packet_static(&CryptoHandshakeResponsePacket {
             key: self.game_server.public_key.clone().into(),
@@ -159,7 +145,10 @@ impl GameServerThread {
 
         info!(
             "[{} ({}) @ {}] Login successful, platform: {}",
-            player_name, packet.account_id, self.tcp_peer, packet.platform
+            player_name,
+            packet.account_id,
+            self.get_tcp_peer(),
+            packet.platform
         );
 
         let special_user_data = {
@@ -188,6 +177,7 @@ impl GameServerThread {
             tps,
             special_user_data,
             all_roles,
+            secret_key: 0,
         })
         .await?;
 
