@@ -39,7 +39,6 @@ class LoginPacket : public Packet {
 
     LoginPacket() {}
     LoginPacket(
-            uint32_t secretKey,
             int32_t accid,
             int32_t userId,
             const std::string_view name,
@@ -48,7 +47,6 @@ class LoginPacket : public Packet {
             uint16_t fragmentationLimit,
             const std::string_view platform
     ) :
-            secretKey(secretKey),
             accountId(accid),
             userId(userId),
             name(name),
@@ -57,7 +55,6 @@ class LoginPacket : public Packet {
             fragmentationLimit(fragmentationLimit),
             platform(platform) {}
 
-    uint32_t secretKey;
     int32_t accountId;
     int32_t userId;
     std::string name;
@@ -68,7 +65,6 @@ class LoginPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
-    secretKey,
     accountId,
     userId,
     name,

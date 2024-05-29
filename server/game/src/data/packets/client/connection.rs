@@ -21,7 +21,6 @@ pub const MAX_TOKEN_SIZE: usize = 164;
 #[derive(Packet, Decodable)]
 #[packet(id = 10003, encrypted = true)]
 pub struct LoginPacket {
-    pub secret_key: u32,
     pub account_id: i32,
     pub user_id: i32,
     pub name: InlineString<MAX_NAME_SIZE>,

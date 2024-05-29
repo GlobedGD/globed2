@@ -35,6 +35,9 @@ pub struct ClientSocket {
 const NONCE_SIZE: usize = 24;
 const MAC_SIZE: usize = 16;
 
+const MAX_PACKET_SIZE: usize = 65536;
+pub const INLINE_BUFFER_SIZE: usize = 164;
+
 impl ClientSocket {
     pub fn new(socket: TcpStream, tcp_peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
         Self {
@@ -55,6 +58,34 @@ impl ClientSocket {
         self.socket.read_exact(&mut length_buf).await?;
 
         Ok(u32::from_be_bytes(length_buf) as usize)
+    }
+
+    /// Receive `bytes` bytes from the TCP connection and invoke the given closure.
+    #[inline]
+    pub async fn recv_and_handle<F>(&mut self, bytes: usize, f: F) -> Result<()>
+    where
+        F: async FnOnce(&mut [u8]) -> Result<()>,
+    {
+        if bytes > MAX_PACKET_SIZE {
+            return Err(PacketHandlingError::PacketTooLong(bytes));
+        }
+
+        let mut inline_buf = [0u8; INLINE_BUFFER_SIZE];
+        let mut heap_buf = Vec::<u8>::new();
+
+        let use_inline = bytes <= INLINE_BUFFER_SIZE;
+
+        let data: &mut [u8] = if use_inline {
+            self.socket.read_exact(&mut inline_buf[..bytes]).await?;
+            &mut inline_buf[..bytes]
+        } else {
+            let sock = &mut self.socket;
+
+            let read_bytes = sock.take(bytes as u64).read_to_end(&mut heap_buf).await?;
+            &mut heap_buf[..read_bytes]
+        };
+
+        f(data).await
     }
 
     pub fn init_crypto_box(&self, key: &CryptoPublicKey) -> Result<()> {

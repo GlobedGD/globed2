@@ -7,6 +7,7 @@ macro_rules! gs_handler {
         pub(crate) async fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::client::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
 
+            #[cfg(debug_assertions)]
             if <$pktty>::PACKET_ID != KeepalivePacket::PACKET_ID {
                 unsafe { $self.socket.get_mut() }.print_packet::<$pktty>(false, None);
             }
@@ -21,7 +22,10 @@ macro_rules! gs_handler_sync {
     ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
         pub(crate) fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::client::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
+
+            #[cfg(debug_assertions)]
             unsafe { $self.socket.get_mut() }.print_packet::<$pktty>(false, Some("sync"));
+
             $code
         }
     };
@@ -30,7 +34,7 @@ macro_rules! gs_handler_sync {
 /// call disconnect and return from the function
 macro_rules! gs_disconnect {
     ($self:ident, $msg:expr) => {
-        $self.disconnect($msg).await?;
+        $self.kick($msg).await?;
         return Ok(());
     };
 }
