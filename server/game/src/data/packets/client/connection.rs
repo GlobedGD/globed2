@@ -28,6 +28,7 @@ pub struct LoginPacket {
     pub token: FastString,
     pub icons: PlayerIconData,
     pub fragmentation_limit: u16,
+    pub platform: InlineString<72>,
 }
 
 #[derive(Packet, Decodable)]

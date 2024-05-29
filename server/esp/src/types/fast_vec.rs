@@ -145,7 +145,7 @@ where
     T: DynamicSize,
 {
     fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + self.iter().map(T::encoded_size).sum::<usize>()
+        size_of_types!(VarLength) + self.iter().map(T::encoded_size).sum::<usize>()
     }
 }
 
@@ -154,11 +154,13 @@ where
     T: Encodable,
 {
     fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_value_vec(self);
+        // encode as &[T]
+        (**self).encode(buf);
     }
 
     fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_value_vec(self);
+        // encode as &[T]
+        (**self).encode_fast(buf);
     }
 }
 
@@ -170,7 +172,7 @@ where
     where
         Self: Sized,
     {
-        let size = buf.read_u32()? as usize;
+        let size = buf.read_length()?;
         if size > N {
             return Err(DecodeError::NotEnoughCapacity);
         }

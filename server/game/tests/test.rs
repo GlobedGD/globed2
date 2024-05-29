@@ -13,9 +13,7 @@ fn test_alloca_buffer() {
         user_id: 234_234_234,
         name: InlineString::new("hit his is my name"),
         icons: PlayerIconData::default(),
-        special_user_data: Some(SpecialUserData {
-            name_color: Color3B { r: 10, g: 100, b: 200 },
-        }),
+        special_user_data: SpecialUserData { roles: None },
     };
 
     for _ in 0..ITERS {
@@ -49,9 +47,7 @@ fn test_fast_buffer() {
         user_id: 234_234_234,
         name: InlineString::new("hit his is my name"),
         icons: PlayerIconData::default(),
-        special_user_data: Some(SpecialUserData {
-            name_color: Color3B { r: 10, g: 100, b: 200 },
-        }),
+        special_user_data: SpecialUserData { roles: None },
     };
 
     for _ in 0..ITERS {
@@ -79,9 +75,7 @@ fn test_slow_buffer() {
         user_id: 234_234_234,
         name: InlineString::new("hit his is my name"),
         icons: PlayerIconData::default(),
-        special_user_data: Some(SpecialUserData {
-            name_color: Color3B { r: 10, g: 100, b: 200 },
-        }),
+        special_user_data: SpecialUserData { roles: None },
     };
 
     for _ in 0..ITERS {

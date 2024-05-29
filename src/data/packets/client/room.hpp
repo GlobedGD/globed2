@@ -3,15 +3,11 @@
 #include <data/types/room.hpp>
 
 class CreateRoomPacket : public Packet {
-    GLOBED_PACKET(13000, false, false)
+    GLOBED_PACKET(13000, CreateRoomPacket, false, false)
 
     CreateRoomPacket() {}
     CreateRoomPacket(const std::string_view roomName, const std::string_view password, const RoomSettings& settings)
         : roomName(roomName), password(password), settings(settings) {}
-
-    static std::shared_ptr<Packet> create(const std::string_view roomName, const std::string_view password, const RoomSettings& settings) {
-        return std::make_shared<CreateRoomPacket>(roomName, password, settings);
-    }
 
     std::string roomName;
     std::string password;
@@ -21,14 +17,10 @@ class CreateRoomPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(CreateRoomPacket, (roomName, password, settings));
 
 class JoinRoomPacket : public Packet {
-    GLOBED_PACKET(13001, false, false)
+    GLOBED_PACKET(13001, JoinRoomPacket, false, false)
 
     JoinRoomPacket() {}
     JoinRoomPacket(uint32_t roomId, const std::string_view password) : roomId(roomId), password(password) {}
-
-    static std::shared_ptr<Packet> create(uint32_t roomId, const std::string_view password) {
-        return std::make_shared<JoinRoomPacket>(roomId, password);
-    }
 
     uint32_t roomId;
     std::string password;
@@ -37,38 +29,26 @@ class JoinRoomPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(JoinRoomPacket, (roomId, password));
 
 class LeaveRoomPacket : public Packet {
-    GLOBED_PACKET(13002, false, false)
+    GLOBED_PACKET(13002, LeaveRoomPacket, false, false)
 
     LeaveRoomPacket() {}
-
-    static std::shared_ptr<Packet> create() {
-        return std::make_shared<LeaveRoomPacket>();
-    }
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LeaveRoomPacket, ());
 
 class RequestRoomPlayerListPacket : public Packet {
-    GLOBED_PACKET(13003, false, false)
+    GLOBED_PACKET(13003, RequestRoomPlayerListPacket, false, false)
 
     RequestRoomPlayerListPacket() {}
-
-    static std::shared_ptr<Packet> create() {
-        return std::make_shared<RequestRoomPlayerListPacket>();
-    }
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RequestRoomPlayerListPacket, ());
 
 class UpdateRoomSettingsPacket : public Packet {
-    GLOBED_PACKET(13004, false, false)
+    GLOBED_PACKET(13004, UpdateRoomSettingsPacket, false, false)
 
     UpdateRoomSettingsPacket() {}
     UpdateRoomSettingsPacket(const RoomSettings& settings) : settings(settings) {}
-
-    static std::shared_ptr<Packet> create(const RoomSettings& settings) {
-        return std::make_shared<UpdateRoomSettingsPacket>(settings);
-    }
 
     RoomSettings settings;
 };
@@ -76,14 +56,10 @@ class UpdateRoomSettingsPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(UpdateRoomSettingsPacket, (settings));
 
 class RoomSendInvitePacket : public Packet {
-    GLOBED_PACKET(13005, false, false)
+    GLOBED_PACKET(13005, RoomSendInvitePacket, false, false)
 
     RoomSendInvitePacket() {}
     RoomSendInvitePacket(int32_t player) : player(player) {}
-
-    static std::shared_ptr<Packet> create(int32_t player) {
-        return std::make_shared<RoomSendInvitePacket>(player);
-    }
 
     int32_t player;
 };
@@ -91,13 +67,9 @@ class RoomSendInvitePacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(RoomSendInvitePacket, (player));
 
 class RequestRoomListPacket : public Packet {
-    GLOBED_PACKET(13006, false, false)
+    GLOBED_PACKET(13006, RequestRoomListPacket, false, false)
 
     RequestRoomListPacket() {}
-
-    static std::shared_ptr<Packet> create() {
-        return std::make_shared<RequestRoomListPacket>();
-    }
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RequestRoomListPacket, ());

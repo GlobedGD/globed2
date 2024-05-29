@@ -106,8 +106,8 @@ impl ServerStateData {
 
         let challenge = ActiveChallenge {
             started: current_time,
-            account_id: account_id,
-            user_id: user_id,
+            account_id,
+            user_id,
             value: challenge_str.clone(),
             answer,
             name: account_name.to_owned(),

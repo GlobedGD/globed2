@@ -154,6 +154,10 @@ bool GameSocket::isConnected() {
 }
 
 Result<> GameSocket::connect(const std::string_view address, unsigned short port) {
+#ifdef GLOBED_DEBUG
+    log::debug("Connecting to {}:{}", address, port);
+#endif
+
     GLOBED_UNWRAP(tcpSocket.connect(address, port))
     GLOBED_UNWRAP(udpSocket.connect(address, port))
 

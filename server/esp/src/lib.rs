@@ -57,6 +57,7 @@ impl From<std::io::Error> for DecodeError {
 }
 
 pub type DecodeResult<T> = core::result::Result<T, DecodeError>;
+pub type VarLength = u16;
 
 pub trait Encodable {
     fn encode(&self, buf: &mut ByteBuffer);
@@ -221,17 +222,17 @@ pub trait ByteBufferExtWrite {
         self.write_value(val);
     }
 
+    /// write a `u16`, panicking if `val` does not fit into 2 bytes.
+    fn write_length(&mut self, val: usize);
+
     fn write_bool(&mut self, val: bool);
     /// write a `&[u8]`, prefixed with 4 bytes indicating length
     fn write_byte_array(&mut self, vec: &[u8]);
 
-    fn write_value<T: Encodable>(&mut self, val: &T);
-    fn write_optional_value<T: Encodable>(&mut self, val: Option<&T>);
+    fn write_value<T: Encodable + ?Sized>(&mut self, val: &T);
 
     /// write an array `[T; N]`, without prefixing it with the total amount of values
     fn write_value_array<T: Encodable, const N: usize>(&mut self, val: &[T; N]);
-    /// write a `Vec<T>`, prefixed with 4 bytes indicating the amount of values
-    fn write_value_vec<T: Encodable>(&mut self, val: &[T]);
 
     /// calculate the checksum of the entire buffer and write it at the current position (4 bytes)
     fn append_self_checksum(&mut self);
@@ -248,8 +249,11 @@ pub trait ByteBufferExtRead {
 
     fn read_bool(&mut self) -> DecodeResult<bool>;
 
-    /// read a number `x` of type `u32`, and return an error if there's less than `x` bytes available in the buffer
+    /// read a length of a datatype (encoded as `u16`)
     fn read_length(&mut self) -> DecodeResult<usize>;
+
+    /// read a number `x` of type `u16`, and return an error if there's less than `x * sizeof(T)` bytes available in the buffer
+    fn read_length_check<T: StaticSize>(&mut self) -> DecodeResult<usize>;
 
     /// read a byte vector, prefixed with 4 bytes indicating length
     fn read_byte_array(&mut self) -> DecodeResult<Vec<u8>>;
@@ -257,12 +261,9 @@ pub trait ByteBufferExtRead {
     fn read_remaining_bytes(&mut self) -> DecodeResult<Vec<u8>>;
 
     fn read_value<T: Decodable>(&mut self) -> DecodeResult<T>;
-    fn read_optional_value<T: Decodable>(&mut self) -> DecodeResult<Option<T>>;
 
     /// read an array `[T; N]`, size must be known at compile time
     fn read_value_array<T: Decodable, const N: usize>(&mut self) -> DecodeResult<[T; N]>;
-    /// read a `Vec<T>`
-    fn read_value_vec<T: Decodable>(&mut self) -> DecodeResult<Vec<T>>;
 
     /// read the checksum at the end of the buffer (4 bytes) and verify the rest of the buffer matches
     fn validate_self_checksum(&mut self) -> DecodeResult<()>;
@@ -283,35 +284,28 @@ macro_rules! impl_extwrite {
             self.write_u8(u8::from(val));
         }
 
+        fn write_length(&mut self, val: usize) {
+            debug_assert!(
+                val < u16::MAX as usize,
+                "attempting to call write_length with a value not fitting into 2 bytes ({val})"
+            );
+
+            self.write_u16(val as u16);
+        }
+
         #[inline]
         fn write_byte_array(&mut self, val: &[u8]) {
-            self.write_u32(val.len() as u32);
+            self.write_length(val.len());
             self.write_bytes(val);
         }
 
         #[inline]
-        fn write_value<T: Encodable>(&mut self, val: &T) {
+        fn write_value<T: Encodable + ?Sized>(&mut self, val: &T) {
             val.$encode_fn(self);
         }
 
         #[inline]
-        fn write_optional_value<T: Encodable>(&mut self, val: Option<&T>) {
-            self.write_bool(val.is_some());
-            if let Some(val) = val {
-                self.write_value(val);
-            }
-        }
-
-        #[inline]
         fn write_value_array<T: Encodable, const N: usize>(&mut self, val: &[T; N]) {
-            for elem in val {
-                self.write_value(elem);
-            }
-        }
-
-        #[inline]
-        fn write_value_vec<T: Encodable>(&mut self, val: &[T]) {
-            self.write_u32(val.len() as u32);
             for elem in val {
                 self.write_value(elem);
             }
@@ -344,9 +338,14 @@ macro_rules! impl_extread {
 
         #[inline]
         fn read_length(&mut self) -> DecodeResult<usize> {
-            let len = self.read_u32()? as usize;
+            Ok(self.read_u16()? as usize)
+        }
 
-            if self.get_rpos() + len > self.len() {
+        #[inline]
+        fn read_length_check<T: StaticSize>(&mut self) -> DecodeResult<usize> {
+            let len = self.read_length()?;
+
+            if self.get_rpos() + (len * T::ENCODED_SIZE) > self.len() {
                 Err(DecodeError::NotEnoughData)
             } else {
                 Ok(len)
@@ -355,7 +354,7 @@ macro_rules! impl_extread {
 
         #[inline]
         fn read_byte_array(&mut self) -> DecodeResult<Vec<u8>> {
-            let length = self.read_u32()? as usize;
+            let length = self.read_length()? as usize;
             Ok(self.read_bytes(length)?)
         }
 
@@ -379,14 +378,6 @@ macro_rules! impl_extread {
         #[inline]
         fn read_value<T: Decodable>(&mut self) -> DecodeResult<T> {
             T::$decode_fn(self)
-        }
-
-        #[inline]
-        fn read_optional_value<T: Decodable>(&mut self) -> DecodeResult<Option<T>> {
-            Ok(match self.read_bool()? {
-                false => None,
-                true => Some(self.read_value::<T>()?),
-            })
         }
 
         #[inline]
@@ -414,17 +405,6 @@ macro_rules! impl_extread {
 
             // safety: we have initialized all values as seen above. if decoding failed at any moment, this step wouldn't be reachable.
             Ok(arr.map(|x| unsafe { x.assume_init() }))
-        }
-
-        #[inline]
-        fn read_value_vec<T: Decodable>(&mut self) -> DecodeResult<Vec<T>> {
-            let mut out = Vec::new();
-            let length = self.read_u32()? as usize;
-            for _ in 0..length {
-                out.push(self.read_value()?);
-            }
-
-            Ok(out)
         }
 
         #[inline]

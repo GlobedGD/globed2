@@ -4,7 +4,7 @@
 #include <data/types/misc.hpp>
 
 class GlobalPlayerListPacket : public Packet {
-    GLOBED_PACKET(21000, false, false)
+    GLOBED_PACKET(21000, GlobalPlayerListPacket, false, false)
 
     GlobalPlayerListPacket() {}
 
@@ -14,7 +14,7 @@ class GlobalPlayerListPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(GlobalPlayerListPacket, (data));
 
 class LevelListPacket : public Packet {
-    GLOBED_PACKET(21001, false, false)
+    GLOBED_PACKET(21001, LevelListPacket, false, false)
 
     LevelListPacket() {}
 
@@ -24,7 +24,7 @@ class LevelListPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(LevelListPacket, (levels));
 
 class LevelPlayerCountPacket : public Packet {
-    GLOBED_PACKET(21002, false, false)
+    GLOBED_PACKET(21002, LevelPlayerCountPacket, false, false)
 
     LevelPlayerCountPacket() {}
 
@@ -34,7 +34,7 @@ class LevelPlayerCountPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(LevelPlayerCountPacket, (levels));
 
 class RolesUpdatedPacket : public Packet {
-    GLOBED_PACKET(21003, false, false)
+    GLOBED_PACKET(21003, RolesUpdatedPacket, false, false)
 
     RolesUpdatedPacket() {}
 

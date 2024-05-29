@@ -49,14 +49,14 @@ impl ByteBufferExtWrite2 for ByteBuffer {
         FLoop: FnOnce(&mut Self) -> usize,
     {
         let lenpos = self.get_wpos();
-        self.write_u32(upper_bound as u32);
+        self.write_length(upper_bound);
 
         let written = fs(self);
 
         if written != upper_bound {
             let endpos = self.get_wpos();
             self.set_wpos(lenpos);
-            self.write_u32(written as u32);
+            self.write_length(written);
             self.set_wpos(endpos);
         }
 
@@ -76,14 +76,14 @@ impl<'a> ByteBufferExtWrite2 for FastByteBuffer<'a> {
         FLoop: FnOnce(&mut Self) -> usize,
     {
         let lenpos = self.get_pos();
-        self.write_u32(upper_bound as u32);
+        self.write_length(upper_bound);
 
         let written = fs(self);
 
         if written != upper_bound {
             let endpos = self.get_pos();
             self.set_pos(lenpos);
-            self.write_u32(written as u32);
+            self.write_length(written);
             self.set_pos(endpos);
         }
 

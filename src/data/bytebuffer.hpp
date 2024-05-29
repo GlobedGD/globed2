@@ -13,6 +13,8 @@
 #include <util/misc.hpp>
 
 class ByteBuffer {
+    using length_t = uint16_t;
+
 public:
     // Error enum.
     enum class DecodeError {
@@ -20,6 +22,7 @@ public:
         NotEnoughData,
         InvalidEnumValue,
         DataTooLong,
+        LengthPrefixTooLong
     };
 
     BOOST_DESCRIBE_NESTED_ENUM(DecodeError, Ok, NotEnoughData, InvalidEnumValue);
@@ -138,6 +141,10 @@ public:
     DecodeResult<int64_t> readI64();
     DecodeResult<float> readF32();
     DecodeResult<double> readF64();
+    DecodeResult<size_t> readLength();
+
+    // read a length `x`, return an error if unable to read at least `x` bytes from the buffer afterwards
+    DecodeResult<size_t> readLengthCheck(size_t elemsize = 1);
 
     void writeBool(bool value);
     void writeU8(uint8_t value);
@@ -150,6 +157,7 @@ public:
     void writeI64(int64_t value);
     void writeF32(float value);
     void writeF64(double value);
+    void writeLength(size_t value);
 
     /* Bits */
     template <size_t N>
@@ -269,6 +277,8 @@ protected:
             if constexpr (std::is_same_v<typename boost::mp11::mp_first<Bd>::type, BitfieldBase>) {
                 return reflectionDecodeBitfield<T>();
             }
+        } else {
+            checkMissingFields<T>();
         }
 
         // create a default initialized instance
@@ -311,10 +321,12 @@ protected:
 
         // if it's a bitfield struct, encode it as such
         if constexpr (!boost::mp11::mp_empty<Bd>::value) {
-            if (std::is_same_v<typename boost::mp11::mp_first<Bd>::type, BitfieldBase>) {
+            if constexpr (std::is_same_v<typename boost::mp11::mp_first<Bd>::type, BitfieldBase>) {
                 this->reflectionEncodeBitfield<T>(value);
                 return;
             }
+        } else {
+            checkMissingFields<T>();
         }
 
         boost::mp11::mp_for_each<Md>([&, this](auto descriptor) {
@@ -406,7 +418,7 @@ protected:
 
     template<typename T>
     DecodeResult<std::vector<T>> pcDecodeVector() {
-        GLOBED_UNWRAP_INTO(this->readU32(), auto length);
+        GLOBED_UNWRAP_INTO(this->readLength(), auto length);
 
         std::vector<T> out;
 
@@ -424,7 +436,7 @@ protected:
 
     template<typename T>
     void pcEncodeVector(const std::vector<T>& vec) {
-        this->writeU32(vec.size());
+        this->writeLength(vec.size());
 
         for (const auto& elem : vec) {
             this->writeValue<T>(elem);
@@ -495,6 +507,50 @@ protected:
         } else {
             this->writeValue<Y>(either.secondRef()->get());
         }
+    }
+
+    template <
+        typename T,
+        class Md = boost::describe::describe_members<T, boost::describe::mod_public>
+    >
+    constexpr static size_t calculateStructSize() {
+        size_t total = 0;
+        size_t structAlignment = 1;
+
+        // this is bad bad bad, but we assume there can only be 1 vtable.
+        if constexpr (std::is_polymorphic_v<T>) {
+            structAlignment = alignof(void*);
+            total += sizeof(void*);
+        }
+
+        boost::mp11::mp_for_each<Md>([&](auto descriptor) {
+            using MPT = decltype(descriptor.pointer);
+            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
+
+            // align first if unaligned
+            if (total % alignof(FT) != 0) {
+                total = total + (alignof(FT) - total % alignof(FT));
+            }
+
+            total += sizeof(FT);
+
+            // struct alignment is based on the member with the largest alignment
+            if (alignof(FT) > structAlignment) {
+                structAlignment = alignof(FT);
+            }
+        });
+
+        // align struct
+        if (total % structAlignment != 0) {
+            total = total + (structAlignment - total % structAlignment);
+        }
+
+        return total;
+    }
+
+    template <typename T>
+    constexpr static void checkMissingFields() {
+        static_assert(calculateStructSize<T>() == sizeof(T), "size of the type does not match the sizes of all fields, make sure fields are listed in the correct order and there are no missing fields");
     }
 
 private:

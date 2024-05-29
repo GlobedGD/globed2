@@ -135,12 +135,7 @@ impl RoomManager {
     }
 
     pub fn set_game_server(&self, game_server: &'static GameServer) {
-        match self.game_server.set(game_server) {
-            Ok(()) => {}
-            Err(_) => {
-                panic!("set_game_server failed");
-            }
-        }
+        self.game_server.set(game_server).ok().expect("set_game_server failed");
     }
 
     #[inline]

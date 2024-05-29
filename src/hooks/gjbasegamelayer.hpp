@@ -39,6 +39,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     bool progressForciblyDisabled = false; // affected by room settings, forces safe mode
     bool forcedPlatformer = false;
     bool shouldStopProgress = false;
+    bool quitting = false;
     GameCameraState camState;
 
     std::optional<SpiderTeleportData> spiderTp1, spiderTp2;

@@ -503,7 +503,8 @@ void GlobedGJBGL::selSendPlayerData(float) {
 
     self->m_fields->totalSentPackets++;
     // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
-    if (self->m_fields->players.empty() && self->m_fields->totalSentPackets % 30 != 15) return;
+    // or if we are quitting the level
+    if ((self->m_fields->players.empty() && self->m_fields->totalSentPackets % 30 != 15) || self->m_fields->quitting) return;
 
     auto data = self->gatherPlayerData();
     NetworkManager::get().send(PlayerDataPacket::create(data));
@@ -514,7 +515,8 @@ void GlobedGJBGL::selSendPlayerMetadata(float) {
     auto self = GlobedGJBGL::get();
 
     if (!self || !self->established()) return;
-    // if (!self->isCurrentPlayLayer()) return;
+    // if there are no players or we are quitting from the level, don't send the packet
+    if (self->m_fields->players.empty() || self->m_fields->quitting) return;
 
     auto data = self->gatherPlayerMetadata();
     NetworkManager::get().send(PlayerMetadataPacket::create(data));
@@ -985,6 +987,8 @@ void GlobedGJBGL::toggleSafeMode(bool enabled) {
 void GlobedGJBGL::onQuitActions() {
     auto& nm = NetworkManager::get();
 
+    m_fields->quitting = true;
+
     if (m_fields->globedReady) {
         if (nm.established()) {
             // send LevelLeavePacket
@@ -1247,7 +1251,7 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
     }
 };
 
-// TODO: test if still needed
+// TODO: test if still needed for 2 player mode
 void GlobedGJBGL::updateCamera(float dt) {
     if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
         GJBaseGameLayer::updateCamera(dt);

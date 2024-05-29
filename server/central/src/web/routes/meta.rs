@@ -3,8 +3,7 @@ use std::sync::OnceLock;
 use globed_shared::{
     base64::{engine::general_purpose as b64e, Engine as _},
     esp::{ByteBuffer, ByteBufferExt, ByteBufferExtWrite},
-    rand,
-    rand::Rng,
+    rand::{self, Rng},
     PROTOCOL_VERSION, SERVER_MAGIC,
 };
 
@@ -46,7 +45,7 @@ pub async fn servers(state: &State<ServerState>) -> WebResult<String> {
 
     let mut buf = ByteBuffer::with_capacity(servers.len() * 128);
     buf.write_bytes(SERVER_MAGIC);
-    buf.write_value_vec(servers);
+    buf.write_value(servers);
 
     drop(state);
 

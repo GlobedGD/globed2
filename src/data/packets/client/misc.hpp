@@ -23,6 +23,10 @@ public:
         return encrypted;
     }
 
+    const char* getPacketName() const override {
+        return "RawPacket";
+    }
+
     void encode(ByteBuffer& buf) const override {
         buf.writeValue<ByteBuffer>(buffer);
     }

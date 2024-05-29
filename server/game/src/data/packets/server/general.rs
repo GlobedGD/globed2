@@ -4,17 +4,23 @@ use crate::data::*;
 * For optimization reasons, most of those packets are encoded inline, and their structure is not present here.
 */
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 21000, tcp = true)]
-pub struct GlobalPlayerListPacket; // definition intentionally missing
+pub struct GlobalPlayerListPacket {
+    pub players: Vec<PlayerPreviewAccountData>,
+}
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 21001, tcp = true)]
-pub struct LevelListPacket; // definition intentionally missing
+pub struct LevelListPacket {
+    pub levels: Vec<GlobedLevel>,
+}
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 21002)]
-pub struct LevelPlayerCountPacket; // definition intentionally missing
+pub struct LevelPlayerCountPacket {
+    pub levels: Vec<(LevelId, u16)>,
+}
 
 #[derive(Packet, Encodable, StaticSize, Clone)]
 #[packet(id = 21003)]

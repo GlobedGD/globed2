@@ -3,7 +3,7 @@
 #include <data/types/gd.hpp>
 
 class PlayerProfilesPacket : public Packet {
-    GLOBED_PACKET(22000, false, false)
+    GLOBED_PACKET(22000, PlayerProfilesPacket, false, false)
 
     PlayerProfilesPacket() {}
 
@@ -13,7 +13,7 @@ class PlayerProfilesPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(PlayerProfilesPacket, (players));
 
 class LevelDataPacket : public Packet {
-    GLOBED_PACKET(22001, false, false)
+    GLOBED_PACKET(22001, LevelDataPacket, false, false)
 
     LevelDataPacket() {}
 
@@ -23,7 +23,7 @@ class LevelDataPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(LevelDataPacket, (players));
 
 class LevelPlayerMetadataPacket : public Packet {
-    GLOBED_PACKET(22002, false, false)
+    GLOBED_PACKET(22002, LevelPlayerMetadataPacket, false, false)
 
     LevelPlayerMetadataPacket() {}
 
@@ -37,7 +37,7 @@ GLOBED_SERIALIZABLE_STRUCT(LevelPlayerMetadataPacket, (players));
 #endif
 
 class VoiceBroadcastPacket : public Packet {
-    GLOBED_PACKET(22010, true, false)
+    GLOBED_PACKET(22010, VoiceBroadcastPacket, true, false)
 
     VoiceBroadcastPacket() {}
 
@@ -54,7 +54,7 @@ class VoiceBroadcastPacket : public Packet {
 #endif // GLOBED_VOICE_SUPPORT
 
 class ChatMessageBroadcastPacket : public Packet {
-    GLOBED_PACKET(22011, true, false)
+    GLOBED_PACKET(22011, ChatMessageBroadcastPacket, true, false)
 
     ChatMessageBroadcastPacket() {}
 

@@ -94,7 +94,6 @@ void GlobedAccountManager::requestAuthToken(
         authkey
     );
 
-    log::debug("step 3");
     this->cancelAuthTokenRequest();
 
     requestHandle = web::AsyncWebRequest()

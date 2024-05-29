@@ -16,6 +16,7 @@ macro_rules! admin_error {
     };
 }
 
+#[derive(Clone, Copy)]
 enum AdminPerm {
     Any,
     Notice,
@@ -55,7 +56,7 @@ impl GameServerThread {
     }
 
     fn _update_user_role(&self, from: &ComputedRole) {
-        self.user_role.lock().clone_from(&from);
+        self.user_role.lock().clone_from(from);
     }
 
     gs_handler!(self, handle_admin_auth, AdminAuthPacket, packet, {

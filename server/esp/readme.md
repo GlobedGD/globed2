@@ -53,10 +53,12 @@ You should **not** use `StaticSize`/`ENCODED_SIZE` *at all* when implementing `D
 * `[T; N]`
 * `[T]`
 * `Vec<T>`
-* `HashMap<K, V>`
+* `HashMap<K, V, S>`
 * `Ipv4Addr`
 * `SocketAddrV4`
 * `(T1, T2)`
+
+Variable-size types (strings, `Vec`, `HashMap`, etc.) are prefixed with a `esp::VarLength` (currently alias to `u16`) indicating the length. This means they cannot contain more than 65535 elements.
 
 ## New types
 

@@ -172,69 +172,6 @@ impl<const N: usize> InlineString<N> {
     }
 }
 
-impl<const N: usize> Encodable for InlineString<N> {
-    #[inline]
-    fn encode(&self, buf: &mut crate::ByteBuffer) {
-        buf.write_u32(self.len() as u32);
-        buf.write_bytes(&self.buffer[..self.len()]);
-    }
-
-    #[inline]
-    fn encode_fast(&self, buf: &mut FastByteBuffer) {
-        buf.write_u32(self.len() as u32);
-        buf.write_bytes(&self.buffer[..self.len()]);
-    }
-}
-
-impl<const N: usize> Decodable for InlineString<N> {
-    #[inline]
-    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        let len = buf.read_u32()? as usize;
-        if len > N {
-            return Err(DecodeError::NotEnoughCapacity);
-        }
-
-        let mut buffer = [0u8; N];
-        std::io::Read::read(buf, &mut buffer[..len])?;
-
-        if len < N {
-            buffer[len] = 0u8;
-        }
-
-        Ok(Self::from_buffer(buffer))
-    }
-
-    #[inline]
-    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
-    where
-        Self: Sized,
-    {
-        let len = buf.read_u32()? as usize;
-        if len > N {
-            return Err(DecodeError::NotEnoughCapacity);
-        }
-
-        let mut buffer = [0u8; N];
-        std::io::Read::read(buf, &mut buffer[..len])?;
-
-        Ok(Self::from_slice(&buffer[..len]))
-    }
-}
-
-impl<const N: usize> StaticSize for InlineString<N> {
-    const ENCODED_SIZE: usize = size_of_types!(u32) + N;
-}
-
-impl<const N: usize> DynamicSize for InlineString<N> {
-    #[inline]
-    fn encoded_size(&self) -> usize {
-        size_of_types!(u32) + self.len()
-    }
-}
-
 impl<const N: usize> Deref for InlineString<N> {
     type Target = str;
     fn deref(&self) -> &Self::Target {
@@ -303,3 +240,48 @@ impl<const N: usize> PartialEq for InlineString<N> {
 }
 
 impl<const N: usize> Eq for InlineString<N> {}
+
+/* esp */
+
+impl<const N: usize> Encodable for InlineString<N> {
+    #[inline]
+    fn encode(&self, buf: &mut crate::ByteBuffer) {
+        buf.write_length(self.len());
+        buf.write_bytes(&self.buffer[..self.len()]);
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_length(self.len());
+        buf.write_bytes(&self.buffer[..self.len()]);
+    }
+}
+
+impl<const N: usize> Decodable for InlineString<N> {
+    #[inline]
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        let len = buf.read_length()?;
+        if len > N {
+            return Err(DecodeError::NotEnoughCapacity);
+        }
+
+        let mut buffer = [0u8; N];
+        std::io::Read::read(buf, &mut buffer[..len])?;
+
+        Ok(Self::from_slice(&buffer[..len]))
+    }
+}
+
+impl<const N: usize> StaticSize for InlineString<N> {
+    const ENCODED_SIZE: usize = size_of_types!(VarLength) + N;
+}
+
+impl<const N: usize> DynamicSize for InlineString<N> {
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        size_of_types!(VarLength) + self.len()
+    }
+}
