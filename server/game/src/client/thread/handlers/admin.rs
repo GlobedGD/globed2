@@ -150,7 +150,7 @@ impl ClientThread {
 
                 let threads = self
                     .game_server
-                    .threads
+                    .clients
                     .lock()
                     .values()
                     .filter(|thr| thr.authenticated())
@@ -266,7 +266,7 @@ impl ClientThread {
 
                 let threads = self
                     .game_server
-                    .threads
+                    .clients
                     .lock()
                     .values()
                     .filter(|thr| player_ids.contains(&thr.account_id.load(Ordering::Relaxed)))
@@ -316,7 +316,7 @@ impl ClientThread {
 
         // to kick everyone, require admin
         if &*packet.player == "@everyone" && self._has_perm(AdminPerm::KickEveryone) {
-            let threads: Vec<_> = self.game_server.threads.lock().values().cloned().collect();
+            let threads: Vec<_> = self.game_server.clients.lock().values().cloned().collect();
             for thread in threads {
                 thread
                     .push_new_message(ServerThreadMessage::TerminationNotice(packet.message.clone()))

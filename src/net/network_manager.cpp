@@ -85,7 +85,6 @@ Result<> NetworkManager::connect(const std::string_view addr, unsigned short por
     _deferredAddr = addr;
     _deferredPort = port;
     _deferredServerId = serverId;
-    secretKey = util::rng::Random::get().generate<uint32_t>();
 
     return Ok();
 }
@@ -375,7 +374,6 @@ void NetworkManager::setupBuiltinListeners() {
 
         auto gddata = am.gdData.lock();
         auto pkt = LoginPacket::create(
-            this->secretKey,
             gddata->accountId,
             gddata->userId,
             gddata->accountName,
@@ -434,6 +432,7 @@ void NetworkManager::setupBuiltinListeners() {
     addBuiltinListener<LoggedInPacket>([this](auto packet) {
         log::info("Successfully logged into the server!");
         connectedTps = packet->tps;
+        secretKey = packet->secretKey;
         _loggedin = true;
 
         // these are not thread-safe, so delay it

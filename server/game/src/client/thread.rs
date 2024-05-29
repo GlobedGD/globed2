@@ -11,11 +11,7 @@ use std::{
 use esp::ByteReader;
 use globed_shared::{logger::*, SyncMutex, UserEntry};
 use handlers::game::MAX_VOICE_PACKET_SIZE;
-use tokio::{
-    io::AsyncReadExt,
-    net::TcpStream,
-    sync::{Mutex, Notify},
-};
+use tokio::sync::{Mutex, Notify};
 
 use crate::{
     data::*,
@@ -29,8 +25,6 @@ pub use super::*;
 pub mod handlers;
 
 pub const INLINE_BUFFER_SIZE: usize = 164;
-
-const MAX_PACKET_SIZE: usize = 65536;
 
 #[derive(Clone)]
 pub enum ServerThreadMessage {
@@ -50,34 +44,40 @@ pub enum ServerThreadMessage {
 pub struct ClientThread {
     game_server: &'static GameServer,
     pub socket: LockfreeMutCell<ClientSocket>,
+    connection_state: AtomicClientThreadState,
 
-    pub claimed: AtomicBool,
-    pub claim_secret_key: AtomicU32,
+    pub secret_key: u32,
 
-    awaiting_termination: AtomicBool,
-    pub is_authorized_admin: AtomicBool,
     pub account_id: AtomicI32,
     pub level_id: AtomicLevelId,
     pub room_id: AtomicU32,
+
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<UserEntry>,
     pub user_role: SyncMutex<ComputedRole>,
 
-    pub cleanup_notify: Notify,
-    pub cleanup_mutex: Mutex<()>,
     fragmentation_limit: AtomicU16,
+
+    pub is_authorized_admin: AtomicBool,
 
     message_queue: Mutex<VecDeque<ServerThreadMessage>>,
     message_notify: Notify,
     rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
     voice_rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
     chat_rate_limiter: Option<LockfreeMutCell<SimpleRateLimiter>>,
+
+    pub destruction_notify: Arc<Notify>,
+}
+
+pub enum ClientThreadOutcome {
+    Terminate,  // complete termination
+    Disconnect, // downgrade to unauthorized thread, allow the user to reconnect
 }
 
 impl ClientThread {
-    /* public api for the main server */
+    pub fn from_unauthorized(thread: UnauthorizedThread) -> Self {
+        let game_server = thread.game_server;
 
-    pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
         let (rate_limiter, voice_rate_limiter, chat_rate_limiter) = {
             let conf = game_server.bridge.central_conf.lock();
 
@@ -95,29 +95,61 @@ impl ClientThread {
             )
         };
 
+        let account_data = std::mem::take(&mut *thread.account_data.lock());
+        let user_entry = std::mem::take(&mut *thread.user_entry.lock()).expect("account data is None when upgrading thread");
+        let user_role = std::mem::take(&mut *thread.user_role.lock()).expect("account data is None when upgrading thread");
+
         Self {
             game_server,
-            socket: LockfreeMutCell::new(ClientSocket::new(socket, peer, game_server)),
-            claimed: AtomicBool::new(false),
-            claim_secret_key: AtomicU32::new(0),
+            socket: thread.socket,
+            connection_state: thread.connection_state,
+
+            secret_key: thread.secret_key,
+
+            account_id: thread.account_id,
+            level_id: thread.level_id,
+            room_id: thread.room_id,
+
+            account_data: SyncMutex::new(account_data),
+            user_entry: SyncMutex::new(user_entry),
+            user_role: SyncMutex::new(user_role),
+
+            fragmentation_limit: thread.fragmentation_limit,
+
             is_authorized_admin: AtomicBool::new(false),
-            account_id: AtomicI32::new(0),
-            level_id: AtomicLevelId::new(0),
-            room_id: AtomicU32::new(0),
-            awaiting_termination: AtomicBool::new(false),
-            account_data: SyncMutex::new(PlayerAccountData::default()),
-            user_entry: SyncMutex::new(UserEntry::default()),
-            user_role: SyncMutex::new(game_server.state.role_manager.get_default().clone()),
-            cleanup_notify: Notify::new(),
-            cleanup_mutex: Mutex::new(()),
-            fragmentation_limit: AtomicU16::new(0),
             message_queue: Mutex::new(VecDeque::new()),
             message_notify: Notify::new(),
             rate_limiter: LockfreeMutCell::new(rate_limiter),
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
+            destruction_notify: Arc::new(Notify::new()),
         }
     }
+
+    pub fn into_unauthorized(self) -> UnauthorizedThread {
+        UnauthorizedThread {
+            game_server: self.game_server,
+            socket: self.socket,
+            connection_state: AtomicClientThreadState::new(ClientThreadState::Disconnected),
+
+            secret_key: self.secret_key,
+
+            account_id: self.account_id,
+            level_id: self.level_id,
+            room_id: self.room_id,
+
+            account_data: SyncMutex::new(std::mem::take(&mut *self.account_data.lock())),
+            user_entry: SyncMutex::new(Some(std::mem::take(&mut *self.user_entry.lock()))),
+            user_role: SyncMutex::new(Some(std::mem::take(&mut *self.user_role.lock()))),
+
+            fragmentation_limit: self.fragmentation_limit,
+
+            claim_udp_peer: SyncMutex::new(None),
+            claim_udp_notify: Notify::default(),
+        }
+    }
+
+    /* public api for the main server */
 
     async fn poll_for_messages(&self) -> Option<ServerThreadMessage> {
         {
@@ -136,10 +168,15 @@ impl ClientThread {
         sock.poll_for_tcp_data().await
     }
 
-    pub async fn run(&self) {
+    pub async fn run(&self) -> ClientThreadOutcome {
         loop {
-            if self.awaiting_termination.load(Ordering::Relaxed) {
-                break;
+            let state = self.connection_state.load();
+
+            match state {
+                ClientThreadState::Disconnected | ClientThreadState::Unauthorized => break ClientThreadOutcome::Disconnect,
+                ClientThreadState::Terminating => break ClientThreadOutcome::Terminate,
+                ClientThreadState::Unclaimed => unreachable!(),
+                ClientThreadState::Established => {}
             }
 
             tokio::select! {
@@ -158,7 +195,8 @@ impl ClientThread {
                         // 0x47455420 is the ascii string "GET " and 0x504f5354 is "POST"
                         if message_len == 0x47_45_54_20 || message_len == 0x50_4f_53_54 {
                             warn!("[{}] received an unexpected (potential) HTTP request, disconnecting", self.get_tcp_peer());
-                            break;
+                            self.terminate();
+                            break ClientThreadOutcome::Terminate;
                         }
 
                         match self.recv_and_handle(message_len).await {
@@ -167,17 +205,14 @@ impl ClientThread {
                         }
                     }
                     Ok(Err(err)) => {
-                        // early eof means the client has disconnected (closed their part of the socket)
-                        if let PacketHandlingError::IOError(ref ioerror) = err {
-                            if ioerror.kind() != std::io::ErrorKind::UnexpectedEof {
-                                self.print_error(&err);
-                            }
-                        }
-                        break;
+                        self.print_error(&err);
+                        self.disconnect();
+                        break ClientThreadOutcome::Disconnect;
                     }
                     Err(_) => {
                         debug!("tcp connection not responding for 90 seconds, disconnecting");
-                        break;
+                        self.terminate();
+                        break ClientThreadOutcome::Terminate;
                     }
                 }
             };
@@ -190,7 +225,12 @@ impl ClientThread {
 
     /// schedule the thread to terminate as soon as possible.
     pub fn terminate(&self) {
-        self.awaiting_termination.store(true, Ordering::Relaxed);
+        self.connection_state.store(ClientThreadState::Terminating);
+    }
+
+    /// schedule the thread to terminate as soon as possible, but allowing reconnects
+    pub fn disconnect(&self) {
+        self.connection_state.store(ClientThreadState::Disconnected);
     }
 
     pub async fn push_new_message(&self, message: ServerThreadMessage) {
@@ -217,11 +257,16 @@ impl ClientThread {
                 | PacketHandlingError::EncryptionError
                 | PacketHandlingError::DecryptionError
                 | PacketHandlingError::NoHandler(_)
-                | PacketHandlingError::IOError(_)
                 | PacketHandlingError::DebugOnlyPacket
                 | PacketHandlingError::PacketTooLong(_)
                 | PacketHandlingError::SocketSendFailed(_) => {
                     warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
+                }
+
+                PacketHandlingError::IOError(ref e) => {
+                    if e.kind() != std::io::ErrorKind::UnexpectedEof {
+                        warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), e);
+                    }
                 }
                 // these are either our fault or a fatal error somewhere
                 PacketHandlingError::ColorParseFailed(_)
@@ -245,7 +290,7 @@ impl ClientThread {
     }
 
     /// call `self.terminate()` and send a message to the user with the reason
-    async fn disconnect(&self, message: &str) -> Result<()> {
+    async fn kick(&self, message: &str) -> Result<()> {
         self.terminate();
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
@@ -291,34 +336,11 @@ impl ClientThread {
         true
     }
 
+    #[inline]
     async fn recv_and_handle(&self, message_size: usize) -> Result<()> {
         // safety: only we can receive data from our client.
-        if message_size > MAX_PACKET_SIZE {
-            return Err(PacketHandlingError::PacketTooLong(message_size));
-        }
-
         let socket = unsafe { self.socket.get_mut() };
-
-        let data: &mut [u8];
-
-        let mut inline_buf = [0u8; INLINE_BUFFER_SIZE];
-        let mut heap_buf = Vec::<u8>::new();
-
-        let use_inline = message_size <= INLINE_BUFFER_SIZE;
-
-        if use_inline {
-            data = &mut inline_buf[..message_size];
-            socket.socket.read_exact(data).await?;
-        } else {
-            let sock = &mut socket.socket;
-
-            let read_bytes = sock.take(message_size as u64).read_to_end(&mut heap_buf).await?;
-            data = &mut heap_buf[..read_bytes];
-        }
-
-        self.handle_packet(data).await?;
-
-        Ok(())
+        socket.recv_and_handle(message_size, async |buf| self.handle_packet(buf).await).await
     }
 
     /// handle a message sent from the `GameServer`
@@ -339,7 +361,7 @@ impl ClientThread {
             ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.timestamp).await?,
             ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
             ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
-            ServerThreadMessage::TerminationNotice(message) => self.disconnect(message.try_to_str()).await?,
+            ServerThreadMessage::TerminationNotice(message) => self.kick(message.try_to_str()).await?,
         }
 
         Ok(())
@@ -347,6 +369,7 @@ impl ClientThread {
 
     /// handle an incoming packet
     async fn handle_packet(&self, message: &mut [u8]) -> Result<()> {
+        #[cfg(debug_assertions)]
         if message.len() < PacketHeader::SIZE {
             return Err(PacketHandlingError::MalformedMessage);
         }
@@ -374,11 +397,6 @@ impl ClientThread {
             return Ok(());
         }
 
-        // reject cleartext credentials
-        if header.packet_id == LoginPacket::PACKET_ID && !header.encrypted {
-            return Err(PacketHandlingError::MalformedLoginAttempt);
-        }
-
         // decrypt the packet in-place if encrypted
         if header.encrypted {
             data = unsafe { self.socket.get_mut() }.decrypt(message)?;
@@ -387,9 +405,7 @@ impl ClientThread {
         match header.packet_id {
             /* connection related */
             PingPacket::PACKET_ID => self.handle_ping(&mut data).await,
-            CryptoHandshakeStartPacket::PACKET_ID => self.handle_crypto_handshake(&mut data).await,
             KeepalivePacket::PACKET_ID => self.handle_keepalive(&mut data).await,
-            LoginPacket::PACKET_ID => self.handle_login(&mut data).await,
             DisconnectPacket::PACKET_ID => self.handle_disconnect(&mut data),
             ConnectionTestPacket::PACKET_ID => self.handle_connection_test(&mut data).await,
             KeepaliveTCPPacket::PACKET_ID => self.handle_keepalive_tcp(&mut data).await,
