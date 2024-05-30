@@ -166,7 +166,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // setup tokio-console in debug builds
 
-    if cfg!(debug_assertions) && cfg!(tokio_unstable) {
+    if cfg!(all(tokio_unstable, feature = "use_tokio_tracing")) {
         info!("Initializing tokio-console subscriber");
         console_subscriber::init();
     }

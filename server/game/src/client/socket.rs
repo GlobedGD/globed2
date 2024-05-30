@@ -9,6 +9,8 @@ use crate::tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
 };
+
+#[allow(unused_imports)]
 use globed_shared::{
     crypto_box::{
         aead::{AeadCore, AeadInPlace, OsRng},

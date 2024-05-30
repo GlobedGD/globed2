@@ -8,17 +8,11 @@
 #include <util/crypto.hpp> // base64
 #include <util/time.hpp>
 
-struct GameServerAddress {
-    std::string ip;
-    unsigned short port;
-};
-
 struct GameServer {
     std::string id;
     std::string name;
     std::string region;
-
-    GameServerAddress address;
+    std::string address;
 
     int ping;
     uint32_t playerCount;

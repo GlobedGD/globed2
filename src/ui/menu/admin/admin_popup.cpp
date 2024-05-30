@@ -7,7 +7,7 @@
 #include <managers/account.hpp>
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/intermediary_loading_popup.hpp>
 #include <util/misc.hpp>

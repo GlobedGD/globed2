@@ -3,7 +3,7 @@
 #include <managers/account.hpp>
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 
 using namespace geode::prelude;
 

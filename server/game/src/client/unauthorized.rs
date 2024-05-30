@@ -5,7 +5,7 @@ use std::{
 };
 
 use globed_shared::{
-    info,
+    debug, info,
     rand::{self, Rng},
     warn, SyncMutex, UserEntry, PROTOCOL_VERSION,
 };
@@ -47,12 +47,17 @@ pub struct UnauthorizedThread {
 
     pub claim_udp_peer: SyncMutex<Option<SocketAddrV4>>,
     pub claim_udp_notify: Notify,
+
+    pub recover_stream: SyncMutex<Option<(TcpStream, SocketAddrV4)>>,
+    pub recover_notify: Notify,
 }
 
 pub enum UnauthorizedThreadOutcome {
     Upgrade,
     Terminate,
 }
+
+const TIMEOUT: Duration = Duration::from_secs(90);
 
 impl UnauthorizedThread {
     pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
@@ -75,6 +80,35 @@ impl UnauthorizedThread {
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
+
+            recover_stream: SyncMutex::new(None),
+            recover_notify: Notify::new(),
+        }
+    }
+
+    pub fn downgrade(thread: ClientThread) -> Self {
+        Self {
+            game_server: thread.game_server,
+            socket: thread.socket,
+            connection_state: AtomicClientThreadState::new(ClientThreadState::Disconnected),
+
+            secret_key: thread.secret_key,
+
+            account_id: thread.account_id,
+            level_id: thread.level_id,
+            room_id: thread.room_id,
+
+            account_data: SyncMutex::new(std::mem::take(&mut *thread.account_data.lock())),
+            user_entry: SyncMutex::new(Some(std::mem::take(&mut *thread.user_entry.lock()))),
+            user_role: SyncMutex::new(Some(std::mem::take(&mut *thread.user_role.lock()))),
+
+            fragmentation_limit: thread.fragmentation_limit,
+
+            claim_udp_peer: SyncMutex::new(None),
+            claim_udp_notify: Notify::new(),
+
+            recover_stream: SyncMutex::new(None),
+            recover_notify: Notify::new(),
         }
     }
 
@@ -86,35 +120,72 @@ impl UnauthorizedThread {
             match state {
                 ClientThreadState::Established => break UnauthorizedThreadOutcome::Upgrade,
                 ClientThreadState::Terminating => break UnauthorizedThreadOutcome::Terminate,
-                ClientThreadState::Disconnected => unreachable!("disconnected??"),
-                ClientThreadState::Unauthorized | ClientThreadState::Unclaimed => {}
-            }
 
-            tokio::select! {
-                () = self.wait_for_claimed() => {
-                    // we just got claimed by a udp thread and can successfully terminate
-                    self.connection_state.store(ClientThreadState::Established);
-                },
+                /* disconnected state, wait until another tcp stream tries to recover us */
+                ClientThreadState::Disconnected => match tokio::time::timeout(TIMEOUT, self.wait_for_recovered()).await {
+                    Ok((stream, tcp_peer)) => {
+                        // we just got recovered yay
+                        let socket = self.get_socket();
+                        debug!(
+                            "recovered thread ({}), previous peer: {}, current: {}",
+                            self.account_id.load(Ordering::Relaxed),
+                            socket.tcp_peer,
+                            tcp_peer
+                        );
 
-                result = unsafe { self.socket.get_mut() }.poll_for_tcp_data() => match result {
-                    Ok(datalen) => {
-                        match self.recv_and_handle(datalen).await {
-                            Ok(()) => {},
-                            Err(e) => warn!("error on an unauth thread: {e}"),
+                        socket.socket = stream;
+                        socket.tcp_peer = tcp_peer;
+
+                        if let Err(e) = self.send_login_success().await {
+                            warn!("failed to send login success: {e}");
+                            self.terminate();
+                            continue;
                         }
-                    },
 
-                    Err(err) => {
-                        // terminate, an error occurred
-                        warn!("error on an unauth thread, terminating: {err}");
+                        self.connection_state.store(ClientThreadState::Unclaimed);
+                    }
+                    Err(_) => {
+                        // we did not get recovered in the given time, terminate
                         self.terminate();
-                    },
+                    }
                 },
 
-                () = tokio::time::sleep(Duration::from_secs(90)) => {
-                    // terminate, no activity for 90+ seconds
-                    self.terminate();
+                /* unauthorized state, wait until the user sends a handshake and a LoginPacket */
+                ClientThreadState::Unauthorized => {
+                    match tokio::time::timeout(TIMEOUT, self.get_socket().poll_for_tcp_data()).await {
+                        Ok(Ok(datalen)) => match self.recv_and_handle(datalen).await {
+                            Ok(()) => {}
+                            Err(e) => {
+                                warn!("error on an unauth thread: {e}");
+                                self.terminate();
+                            }
+                        },
+
+                        Ok(Err(err)) => {
+                            // terminate, an error occurred
+                            warn!("error on an unauth thread, terminating: {err}");
+                            self.terminate();
+                        }
+
+                        Err(_) => {
+                            // time is up, call quits
+                            self.terminate();
+                        }
+                    }
                 }
+
+                /* unclaimed state, wait until user sends a ClaimThreadPacket and gameserver notifies us */
+                ClientThreadState::Unclaimed => match tokio::time::timeout(TIMEOUT, self.wait_for_claimed()).await {
+                    Ok(()) => {
+                        // we just got claimed, we can leave and upgrade into a ClientThread
+                        self.connection_state.store(ClientThreadState::Established);
+                    }
+
+                    Err(_) => {
+                        // time is up, call quits
+                        self.terminate();
+                    }
+                },
             }
         }
     }
@@ -124,10 +195,15 @@ impl UnauthorizedThread {
         self.claim_udp_notify.notify_one();
     }
 
+    pub fn recover(&self, tcp_stream: TcpStream, peer: SocketAddrV4) {
+        *self.recover_stream.lock() = Some((tcp_stream, peer));
+        self.recover_notify.notify_one();
+    }
+
     #[inline]
     async fn recv_and_handle(&self, message_size: usize) -> Result<()> {
         // safety: only we can receive data from our client.
-        let socket = unsafe { self.socket.get_mut() };
+        let socket = self.get_socket();
         socket.recv_and_handle(message_size, async |buf| self.handle_packet(buf).await).await
     }
 
@@ -147,7 +223,7 @@ impl UnauthorizedThread {
 
         // decrypt the packet in-place if encrypted
         if header.encrypted {
-            data = unsafe { self.socket.get_mut() }.decrypt(message)?;
+            data = self.get_socket().decrypt(message)?;
         }
 
         match header.packet_id {
@@ -160,7 +236,7 @@ impl UnauthorizedThread {
     // packet handlers
 
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
-        let socket = unsafe { self.socket.get_mut() };
+        let socket = self.get_socket();
 
         if packet.protocol != PROTOCOL_VERSION && packet.protocol != 0xffff {
             self.terminate();
@@ -183,7 +259,7 @@ impl UnauthorizedThread {
         // if login was successful, change the status back at the end of the method body.
         self.terminate();
 
-        let socket = unsafe { self.socket.get_mut() };
+        let socket = self.get_socket();
 
         // disconnect if server is under maintenance
         if self.game_server.bridge.central_conf.lock().maintenance {
@@ -287,7 +363,7 @@ impl UnauthorizedThread {
             packet.platform
         );
 
-        let special_user_data = {
+        {
             let mut account_data = self.account_data.lock();
             account_data.account_id = packet.account_id;
             account_data.user_id = packet.user_id;
@@ -297,38 +373,41 @@ impl UnauthorizedThread {
             let user_entry = self.user_entry.lock();
             let sud = SpecialUserData::from_user_entry(user_entry.as_ref().unwrap(), &self.game_server.state.role_manager);
 
-            account_data.special_user_data.clone_from(&sud);
-
-            sud
+            account_data.special_user_data = sud;
         };
 
         // add them to the global room
         self.game_server.state.room_manager.get_global().manager.create_player(packet.account_id);
 
-        let tps = self.game_server.bridge.central_conf.lock().tps;
-
-        let all_roles = self.game_server.state.role_manager.get_all_roles();
-
-        socket
-            .send_packet_dynamic(&LoggedInPacket {
-                tps,
-                special_user_data,
-                all_roles,
-                secret_key: self.secret_key,
-            })
-            .await?;
+        self.send_login_success().await?;
 
         self.connection_state.store(ClientThreadState::Unclaimed); // as we still need ClaimThreadPacket to arrive
 
         Ok(())
     });
 
+    async fn send_login_success(&self) -> Result<()> {
+        let tps = self.game_server.bridge.central_conf.lock().tps;
+        let all_roles = self.game_server.state.role_manager.get_all_roles();
+        let special_user_data = self.account_data.lock().special_user_data.clone();
+
+        let socket = self.get_socket();
+        socket
+            .send_packet_dynamic(&LoggedInPacket {
+                tps,
+                all_roles,
+                secret_key: self.secret_key,
+                special_user_data,
+            })
+            .await
+    }
+
     /// Blocks until we get notified that we got claimed by a UDP socket.
     async fn wait_for_claimed(&self) {
         {
             let mut p = self.claim_udp_peer.lock();
             if p.is_some() {
-                unsafe { self.socket.get_mut() }.udp_peer = std::mem::take(&mut *p);
+                self.get_socket().udp_peer = std::mem::take(&mut *p);
                 return;
             }
         }
@@ -338,8 +417,27 @@ impl UnauthorizedThread {
 
             let mut p = self.claim_udp_peer.lock();
             if p.is_some() {
-                unsafe { self.socket.get_mut() }.udp_peer = std::mem::take(&mut *p);
+                self.get_socket().udp_peer = std::mem::take(&mut *p);
                 return;
+            }
+        }
+    }
+
+    /// Blocks until we get notified that we got recovered and have an assigned TCP stream
+    async fn wait_for_recovered(&self) -> (TcpStream, SocketAddrV4) {
+        {
+            let mut p = self.recover_stream.lock();
+            if p.is_some() {
+                return p.take().unwrap();
+            }
+        }
+
+        loop {
+            self.recover_notify.notified().await;
+
+            let mut p = self.recover_stream.lock();
+            if p.is_some() {
+                return p.take().unwrap();
             }
         }
     }
@@ -348,23 +446,28 @@ impl UnauthorizedThread {
         self.connection_state.store(ClientThreadState::Terminating);
     }
 
+    /// do not call from another thread unless this thread is NOT running.
+    /// otherwise always invokes undefined behavior.
+    #[allow(clippy::mut_from_ref)]
+    fn get_socket(&self) -> &mut ClientSocket {
+        unsafe { self.socket.get_mut() }
+    }
+
     /// get the tcp address of the connected peer. do not call this from another clientthread
     fn get_tcp_peer(&self) -> SocketAddrV4 {
-        unsafe { self.socket.get() }.tcp_peer
+        self.get_socket().tcp_peer
     }
 
     /// terminate and send a message to the user with the reason
     async fn kick(&self, message: &str) -> Result<()> {
         self.terminate();
-        unsafe { self.socket.get_mut() }
-            .send_packet_dynamic(&ServerDisconnectPacket { message })
-            .await
+        self.get_socket().send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
 
     pub fn upgrade(self) -> ClientThread {
         // make a couple of assertions that must always hold true before upgrading
 
-        debug_assert!(unsafe { self.socket.get() }.udp_peer.is_some(), "udp peer is None when upgrading thread");
+        debug_assert!(self.get_socket().udp_peer.is_some(), "udp peer is None when upgrading thread");
         debug_assert!(
             self.account_id.load(std::sync::atomic::Ordering::Relaxed) != 0,
             "account ID is 0 when upgrading thread"

@@ -1,6 +1,6 @@
 #include "send_notice_popup.hpp"
 
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/ui.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>

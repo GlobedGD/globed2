@@ -1,7 +1,7 @@
 #include "invite.hpp"
 
 #include "panel.hpp"
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <data/packets/client/room.hpp>
 
 using namespace geode::prelude;

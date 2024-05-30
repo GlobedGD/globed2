@@ -5,7 +5,7 @@
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/net.hpp>
 #include <util/format.hpp>
 #include <util/crypto.hpp>

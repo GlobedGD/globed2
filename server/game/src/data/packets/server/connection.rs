@@ -57,6 +57,10 @@ pub struct ProtocolMismatchPacket {
 #[packet(id = 20008, tcp = true)]
 pub struct KeepaliveTCPResponsePacket;
 
+#[derive(Packet, Encodable, StaticSize)]
+#[packet(id = 20009, tcp = false)]
+pub struct ClaimThreadFailedPacket;
+
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 20010, tcp = false)]
 pub struct ConnectionTestResponsePacket {

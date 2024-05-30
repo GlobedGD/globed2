@@ -5,7 +5,7 @@
 #include <data/packets/client/misc.hpp>
 #include <data/packets/client/game.hpp>
 #include <managers/error_queues.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 
 VoiceRecordingManager::VoiceRecordingManager() {
     thread.setStartFunction([] { geode::utils::thread::setName("Record Thread"); });

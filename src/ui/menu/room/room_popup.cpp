@@ -5,9 +5,9 @@
 #include "room_settings_popup.hpp"
 #include "room_listing_popup.hpp"
 #include "invite_popup.hpp"
-#include "create_room_popup.hpp" 
+#include "create_room_popup.hpp"
 #include <data/packets/all.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>

@@ -3,6 +3,7 @@
 #include <data/types/crypto.hpp>
 #include <data/types/gd.hpp>
 
+// 10000 - PingPacket
 class PingPacket : public Packet {
     GLOBED_PACKET(10000, PingPacket, false, false)
 
@@ -14,6 +15,7 @@ class PingPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(PingPacket, (id));
 
+// 10001 - CryptoHandshakeStartPacket
 class CryptoHandshakeStartPacket : public Packet {
     GLOBED_PACKET(10001, CryptoHandshakeStartPacket, false, true)
 
@@ -26,6 +28,7 @@ class CryptoHandshakeStartPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(CryptoHandshakeStartPacket, (protocol, key));
 
+// 10002 - KeepalivePacket
 class KeepalivePacket : public Packet {
     GLOBED_PACKET(10002, KeepalivePacket, false, false)
 
@@ -34,6 +37,7 @@ class KeepalivePacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(KeepalivePacket, ());
 
+// 10003 - LoginPacket
 class LoginPacket : public Packet {
     GLOBED_PACKET(10003, LoginPacket, true, true)
 
@@ -74,6 +78,7 @@ GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
     platform
 ));
 
+// 10004 - DisconnectPacket
 class DisconnectPacket : public Packet {
     GLOBED_PACKET(10004, DisconnectPacket, false, false)
 
@@ -82,6 +87,7 @@ class DisconnectPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(DisconnectPacket, ());
 
+// 10005 - ClaimThreadPacket
 class ClaimThreadPacket : public Packet {
     GLOBED_PACKET(10005, ClaimThreadPacket, false, false)
 
@@ -93,6 +99,7 @@ class ClaimThreadPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(ClaimThreadPacket, (secretKey));
 
+// 10006 - KeepaliveTCPPacket
 class KeepaliveTCPPacket : public Packet {
     GLOBED_PACKET(10006, KeepaliveTCPPacket, false, true)
 
@@ -101,6 +108,7 @@ class KeepaliveTCPPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(KeepaliveTCPPacket, ());
 
+// 10010 - ConnectionTestPacket
 class ConnectionTestPacket : public Packet {
     GLOBED_PACKET(10010, ConnectionTestPacket, false, false)
 

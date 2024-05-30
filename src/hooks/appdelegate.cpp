@@ -1,6 +1,6 @@
 #include "appdelegate.hpp"
 
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/lowlevel.hpp>
 
 using namespace geode::prelude;

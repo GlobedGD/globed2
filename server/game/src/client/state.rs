@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU8, Ordering};
 
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum ClientThreadState {
     Unauthorized, // has an associated TCP stream but awaiting handshake / login
     Unclaimed,    // logged in, waiting to be claimed

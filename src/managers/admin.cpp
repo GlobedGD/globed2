@@ -2,7 +2,7 @@
 
 #include <data/packets/client/admin.hpp>
 #include <data/packets/server/admin.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/audio_visualizer.hpp>
 #include <ui/general/intermediary_loading_popup.hpp>
