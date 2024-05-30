@@ -9,12 +9,14 @@ public:
     static PlayerProgressIcon* create();
 
     void updateIcons(const PlayerIconData& data);
-    void updatePosition(float xPosition);
+    void updatePosition(float xPosition, int accountId = GJAccountManager::get()->m_accountID);
     void toggleLine(bool enabled);
+    void togglePracticeSprite(bool enabled);
     void setForceOnTop(bool state);
 
 private:
     cocos2d::CCLayerColor* line = nullptr;
+    cocos2d::CCSprite* practiceSprite = nullptr;
     GlobedSimplePlayer* playerIcon = nullptr;
     bool forceOnTop = false;
 

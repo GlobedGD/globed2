@@ -90,7 +90,7 @@ void RemotePlayer::updateData(
 
 void RemotePlayer::updateProgressIcon() {
     if (progressIcon) {
-        progressIcon->updatePosition(lastPercentage);
+        progressIcon->updatePosition(lastPercentage, this->accountData.accountId);
 
         if (isForciblyHidden || isEditorBuilding) {
             progressIcon->setVisible(false);
