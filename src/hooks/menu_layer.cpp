@@ -6,7 +6,7 @@
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
 #include <managers/friend_list.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
 #include <util/misc.hpp>
 #include <util/net.hpp>
@@ -60,7 +60,7 @@ bool HookedMenuLayer::init() {
             }
 
             am.requestAuthToken(csm.getActive()->url, [lastServer] {
-                auto result = NetworkManager::get().connectWithView(lastServer.value());
+                auto result = NetworkManager::get().connect(lastServer.value());
                 if (result.isErr()) {
                     ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));
                 }

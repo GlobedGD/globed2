@@ -1,7 +1,7 @@
 #include "server_test_popup.hpp"
 
 #include "add_server_popup.hpp"
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/error_queues.hpp>
 #include <util/net.hpp>
 #include <util/time.hpp>

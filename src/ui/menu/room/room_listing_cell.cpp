@@ -1,7 +1,7 @@
 #include "room_listing_cell.hpp"
 
 #include <util/ui.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include "room_password_popup.hpp"
 #include "room_listing_popup.hpp"
 

@@ -3,7 +3,7 @@
 #include <managers/account.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/misc.hpp>
 #include <util/ui.hpp>
 

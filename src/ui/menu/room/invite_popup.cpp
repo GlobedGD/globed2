@@ -2,7 +2,7 @@
 
 #include "player_list_cell.hpp"
 #include <data/packets/all.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>

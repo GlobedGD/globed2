@@ -3,7 +3,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 
 CentralServerManager::CentralServerManager() {
     this->reload();

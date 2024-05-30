@@ -3,6 +3,7 @@
 #include <data/types/admin.hpp>
 #include <data/types/gd.hpp>
 
+// 19000 - AdminAuthPacket
 class AdminAuthPacket : public Packet {
     GLOBED_PACKET(19000, AdminAuthPacket, true, true)
 
@@ -22,6 +23,7 @@ enum class AdminSendNoticeType : uint8_t {
 
 GLOBED_SERIALIZABLE_ENUM(AdminSendNoticeType, Everyone, RoomOrLevel, Person);
 
+// 19001 - AdminSendNoticePacket
 class AdminSendNoticePacket : public Packet {
     GLOBED_PACKET(19001, AdminSendNoticePacket, true, true)
 
@@ -40,6 +42,7 @@ GLOBED_SERIALIZABLE_STRUCT(AdminSendNoticePacket, (
     ptype, roomId, levelId, player, message
 ));
 
+// 19002 - AdminDisconnectPacket
 class AdminDisconnectPacket : public Packet {
     GLOBED_PACKET(19002, AdminDisconnectPacket, false, true)
 
@@ -54,6 +57,7 @@ GLOBED_SERIALIZABLE_STRUCT(AdminDisconnectPacket, (
     player, message
 ));
 
+// 19003 - AdminGetUserStatePacket
 class AdminGetUserStatePacket : public Packet {
     GLOBED_PACKET(19003, AdminGetUserStatePacket, false, true)
 
@@ -67,6 +71,7 @@ GLOBED_SERIALIZABLE_STRUCT(AdminGetUserStatePacket, (
     player
 ));
 
+// 19004 - AdminUpdateUserPacket
 class AdminUpdateUserPacket : public Packet {
     GLOBED_PACKET(19004, AdminUpdateUserPacket, true, true)
 

@@ -4,7 +4,7 @@
 #include <data/packets/server/admin.hpp>
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/menu/admin/edit_role_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/color_input_popup.hpp>

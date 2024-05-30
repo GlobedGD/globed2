@@ -13,7 +13,7 @@ public:
     TcpSocket();
     ~TcpSocket();
 
-    Result<> connect(const std::string_view serverIp, unsigned short port) override;
+    Result<> connect(const NetworkAddress& address) override;
     Result<int> send(const char* data, unsigned int dataSize) override;
     Result<> sendAll(const char* data, unsigned int dataSize);
     RecvResult receive(char* buffer, int bufferSize) override;
@@ -34,4 +34,6 @@ public:
 
 private:
     std::unique_ptr<sockaddr_in> destAddr_;
+
+    void maybeDisconnect();
 };

@@ -3,7 +3,7 @@
 #include <regex>
 
 #include "server_switcher_popup.hpp"
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>

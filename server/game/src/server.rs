@@ -13,13 +13,17 @@ use globed_shared::{
     SyncMutex, UserEntry,
 };
 use rustc_hash::FxHashMap;
+use tokio::{io::AsyncReadExt, net::TcpStream};
 
 #[allow(unused_imports)]
 use crate::tokio::sync::oneshot; // no way
 
-use crate::tokio::{
-    self,
-    net::{TcpListener, UdpSocket},
+use crate::{
+    client::{ClientThreadState, PacketHandlingError},
+    tokio::{
+        self,
+        net::{TcpListener, UdpSocket},
+    },
 };
 
 use crate::{
@@ -32,6 +36,9 @@ use crate::{
 const INLINE_BUFFER_SIZE: usize = 164;
 const MAX_UDP_PACKET_SIZE: usize = 65536;
 const LARGE_BUFFER_SIZE: usize = 2usize.pow(19); // 2^19, 0.5mb
+
+const MARKER_CONN_INITIAL: u8 = 0xe0;
+const MARKER_CONN_RECOVERY: u8 = 0xe1;
 
 enum EitherClientThread {
     Authorized(Arc<ClientThread>),
@@ -167,18 +174,96 @@ impl GameServer {
 
         debug!("accepting tcp connection from {peer}");
 
-        let thread = Arc::new(UnauthorizedThread::new(socket, peer, self));
-
-        self.unauthorized_clients.lock().push_back(thread.clone());
-
-        tokio::spawn(self.client_loop(thread, peer));
+        tokio::spawn(self.client_loop(socket, peer));
 
         Ok(())
     }
 
-    #[allow(clippy::manual_let_else)]
-    async fn client_loop(&'static self, in_thread: Arc<UnauthorizedThread>, peer: SocketAddrV4) {
-        let mut either_thread: EitherClientThread = EitherClientThread::Unauthorized(in_thread);
+    #[allow(clippy::manual_let_else, clippy::too_many_lines)]
+    async fn client_loop(&'static self, mut socket: TcpStream, peer: SocketAddrV4) {
+        // wait for incoming data, client should tell us whether it's an initial login or a recovery.
+        let result: crate::client::Result<bool> = async {
+            match socket.read_u8().await? {
+                MARKER_CONN_INITIAL => Ok(false),
+                MARKER_CONN_RECOVERY => Ok(true),
+                _ => Err(PacketHandlingError::InvalidStreamMarker),
+            }
+        }
+        .await;
+
+        let mut either_thread: EitherClientThread;
+
+        match result {
+            Ok(true) => {
+                // if we are recovering a connection, next read account ID and secret key
+
+                let result: crate::client::Result<(i32, u32)> = async {
+                    let mut buf = [0u8; 8];
+                    socket.read_exact(&mut buf).await?;
+
+                    let mut br = ByteReader::from_bytes(&buf);
+                    let account_id = br.read_i32()?;
+                    let secret_key = br.read_u32()?;
+
+                    Ok((account_id, secret_key))
+                }
+                .await;
+
+                match result {
+                    Ok((account_id, secret_key)) => {
+                        // lets try to recover the situation.
+                        let clients = self.unauthorized_clients.lock();
+                        let thread = clients
+                            .iter()
+                            .find(|thr| thr.secret_key == secret_key && thr.account_id.load(Ordering::Relaxed) == account_id)
+                            .cloned();
+
+                        drop(clients);
+
+                        let thread = if let Some(thread) = thread {
+                            thread
+                        } else {
+                            warn!("peer ({peer}) tried to claim an invalid thread (account id: {account_id}, secret key: {secret_key})");
+                            return;
+                        };
+
+                        // check if the thread is in a valid state
+                        let cstate = thread.connection_state.load();
+                        if cstate != ClientThreadState::Disconnected {
+                            warn!("peer ({peer}) reclaiming thread with wrong connection state: {cstate:?}");
+                            return;
+                        }
+
+                        // recover the thread
+                        thread.recover(socket, peer);
+
+                        // our job is done here.
+                        // we have given up the ownership of `socket` to that thread.
+                        // now, the `client_loop` task that previously owned that thread will wake up,
+                        // and repond to ClaimThreadPacket, thus upgrading the connection.
+                        return;
+                    }
+
+                    Err(e) => {
+                        warn!("conn recovery error: {e}");
+                        return;
+                    }
+                }
+            }
+
+            Ok(false) => {
+                // initial login, just try to create an unauthorized thread
+
+                let thread = Arc::new(UnauthorizedThread::new(socket, peer, self));
+                self.unauthorized_clients.lock().push_back(thread.clone());
+                either_thread = EitherClientThread::Unauthorized(thread);
+            }
+
+            Err(e) => {
+                warn!("client loop error: {e}");
+                return;
+            }
+        };
 
         loop {
             match &mut either_thread {
@@ -646,21 +731,26 @@ impl GameServer {
 
                 let send_bytes = buf.as_bytes();
 
-                match self.udp_socket.try_send_to(send_bytes, SocketAddr::V4(peer)) {
-                    Ok(_) => Ok(true),
-                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                        self.udp_socket.send_to(send_bytes, peer).await?;
-                        Ok(true)
-                    }
-                    Err(e) => Err(e.into()),
-                }
+                self.udp_socket.send_to(send_bytes, peer).await?;
+
+                Ok(true)
             }
 
             ClaimThreadPacket::PACKET_ID => {
                 let pkt = ClaimThreadPacket::decode_from_reader(&mut byte_reader).map_err(|e| anyhow!("{e}"))?;
                 if !self.claim_thread(peer, pkt.secret_key) {
                     warn!("udp peer {peer} tried to claim an invalid thread (with key {})", pkt.secret_key);
+
+                    // send a ClaimThreadFailedPacket
+                    let mut buf_array = [0u8; PacketHeader::SIZE];
+                    let mut buf = FastByteBuffer::new(&mut buf_array);
+                    buf.write_packet_header::<ClaimThreadFailedPacket>();
+
+                    let send_bytes = buf.as_bytes();
+
+                    self.udp_socket.send_to(send_bytes, peer).await?;
                 }
+
                 Ok(true)
             }
 

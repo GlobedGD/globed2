@@ -45,7 +45,7 @@ pub enum ServerThreadMessage {
 }
 
 pub struct ClientThread {
-    game_server: &'static GameServer,
+    pub game_server: &'static GameServer,
     pub socket: LockfreeMutCell<ClientSocket>,
     connection_state: AtomicClientThreadState,
 
@@ -59,7 +59,7 @@ pub struct ClientThread {
     pub user_entry: SyncMutex<UserEntry>,
     pub user_role: SyncMutex<ComputedRole>,
 
-    fragmentation_limit: AtomicU16,
+    pub fragmentation_limit: AtomicU16,
 
     pub is_authorized_admin: AtomicBool,
 
@@ -130,26 +130,7 @@ impl ClientThread {
     }
 
     pub fn into_unauthorized(self) -> UnauthorizedThread {
-        UnauthorizedThread {
-            game_server: self.game_server,
-            socket: self.socket,
-            connection_state: AtomicClientThreadState::new(ClientThreadState::Disconnected),
-
-            secret_key: self.secret_key,
-
-            account_id: self.account_id,
-            level_id: self.level_id,
-            room_id: self.room_id,
-
-            account_data: SyncMutex::new(std::mem::take(&mut *self.account_data.lock())),
-            user_entry: SyncMutex::new(Some(std::mem::take(&mut *self.user_entry.lock()))),
-            user_role: SyncMutex::new(Some(std::mem::take(&mut *self.user_role.lock()))),
-
-            fragmentation_limit: self.fragmentation_limit,
-
-            claim_udp_peer: SyncMutex::new(None),
-            claim_udp_notify: Notify::default(),
-        }
+        UnauthorizedThread::downgrade(self)
     }
 
     /* public api for the main server */
@@ -262,7 +243,8 @@ impl ClientThread {
                 | PacketHandlingError::NoHandler(_)
                 | PacketHandlingError::DebugOnlyPacket
                 | PacketHandlingError::PacketTooLong(_)
-                | PacketHandlingError::SocketSendFailed(_) => {
+                | PacketHandlingError::SocketSendFailed(_)
+                | PacketHandlingError::InvalidStreamMarker => {
                     warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
 

@@ -1,6 +1,6 @@
 #include "listener.hpp"
 
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 
 using namespace geode::prelude;
 

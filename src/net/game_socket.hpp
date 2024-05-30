@@ -1,32 +1,48 @@
 #pragma once
 
-#include "tcp_socket.hpp"
+#include "address.hpp"
 #include "udp_socket.hpp"
+#include "tcp_socket.hpp"
 
 #include <data/packets/packet.hpp>
 #include <crypto/box.hpp>
 
 class GameSocket {
+    static constexpr uint8_t MARKER_CONN_INITIAL = 0xe0;
+    static constexpr uint8_t MARKER_CONN_RECOVERY = 0xe1;
+
 public:
     GameSocket();
     ~GameSocket();
 
-    // Receive a packet on either the TCP or the UDP connection. Will block until a packet has been received.
-    Result<std::shared_ptr<Packet>> recvPacket(bool onTcpConnection, bool& fromConnected);
+    Result<> connect(const NetworkAddress& address, bool isRecovering);
+    void disconnect();
+    bool isConnected();
 
-    // Same as `recvPacket` but with an optional timeout. If timeout is reached, `timedOut` is set to true and function returns an error.
-    Result<std::shared_ptr<Packet>> recvPacket(int timeoutMs, bool& fromConnected, bool& timedOut);
+    struct ReceivedPacket {
+        std::shared_ptr<Packet> packet;
+        bool fromConnected;
+    };
 
-    // Send a packet to the current active connection.
+    // Try to receive a packet on the TCP socket
+    Result<std::shared_ptr<Packet>> recvPacketTCP();
+
+    // Try to receive a packet on the UDP socket
+    Result<ReceivedPacket> recvPacketUDP();
+
+    // Try to receive a packet
+    Result<ReceivedPacket> recvPacket();
+
+    // Try to receive a packet, returns "timed out" if timeout is reached.
+    Result<ReceivedPacket> recvPacket(int timeoutMs);
+
+    // Send a packet to the currently active connection. Throws if disconnected
     Result<> sendPacket(std::shared_ptr<Packet> packet);
 
     // Send a UDP packet to a specific address
-    Result<> sendPacketTo(std::shared_ptr<Packet> packet, const std::string_view address, unsigned short port);
+    Result<> sendPacketTo(std::shared_ptr<Packet> packet, const NetworkAddress& address);
 
-    bool isConnected();
-
-    Result<> connect(const std::string_view address, unsigned short port);
-    void disconnect();
+    Result<> sendRecoveryData(int accountId, uint32_t secretKey);
 
     void cleanupBox();
     void createBox();
@@ -46,7 +62,15 @@ private:
     UdpSocket udpSocket;
 
     std::unique_ptr<CryptoBox> cryptoBox;
-    util::data::byte* buffer;
+    util::data::byte* dataBuffer;
 
-    Result<> serializePacket(Packet* packet, ByteBuffer& buffer);
+    bool dumpPackets = false;
+
+    // Write a packet, packet header, and optionally length if the packet is TCP to the given buffer.
+    Result<> encodePacket(Packet& packet, ByteBuffer& buffer);
+
+    // Decode a packet from a buffer
+    Result<std::shared_ptr<Packet>> decodePacket(ByteBuffer& buffer);
+
+    void dumpPacket(packetid_t id, ByteBuffer& buffer, bool sending);
 };

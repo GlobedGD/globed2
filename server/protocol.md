@@ -18,15 +18,16 @@ Connection related
 * 10001 - CryptoHandshakeStartPacket - handshake
 * 10002 - KeepalivePacket - keepalive
 * 10003+ - LoginPacket - authentication
-* 10004 - DisconnectPacket - client disconnection
+* 10004 - LoginRecoverPacket - recover a disconnected session
 * 10005 - ClaimThreadPacket - claim a tcp thread from a udp connection
-* 10006 - KeepaliveTCPPacket - keepalive but for the tcp connection
+* 10006 - DisconnectPacket - client disconnection
+* 10007 - KeepaliveTCPPacket - keepalive but for the tcp connection
 * 10010 - ConnectionTestPacket - connection test (response 20010)
 
 General
 
 * 11000 - SyncIconsPacket - store client's icons
-* 11001! - RequestGlobalPlayerListPacket - request list of all people in the server (response 21000)
+* 11001 - RequestGlobalPlayerListPacket - request list of all people in the server (response 21000)
 * 11002 - RequestLevelListPacket - request list of all levels people are playing right now (response 21005)
 * 11003 - RequestPlayerCountPacket - request amount of people on up to 128 different levels (response 21006)
 
@@ -71,6 +72,7 @@ Connection related
 * 20006 - ServerNoticePacket - message popup for the user
 * 20007 - ProtocolMismatchPacket - protocol version mismatch
 * 20008 - KeepaliveTCPResponsePacket - keepalive response but for tcp
+* 20009 - ClaimThreadFailedPacket - failed to claim thread
 * 20010 - ConnectionTestResponsePacket - connection test response
 * 20011 - ServerBannedPacket - message about being banned
 * 20012 - ServerMutedPacket - message about being muted

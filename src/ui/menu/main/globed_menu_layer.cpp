@@ -7,7 +7,7 @@
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/menu/room/room_popup.hpp>
 #include <ui/menu/server_switcher/server_switcher_popup.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
@@ -359,7 +359,7 @@ void GlobedMenuLayer::keyDown(enumKeyCodes key) {
 }
 
 void GlobedMenuLayer::pingServers(float) {
-    NetworkManager::get().taskPingServers();
+    NetworkManager::get().pingServers();
 }
 
 GlobedMenuLayer* GlobedMenuLayer::create() {

@@ -15,6 +15,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(ServerNoticePacket);
         PACKET(ProtocolMismatchPacket);
         PACKET(KeepaliveTCPResponsePacket);
+        PACKET(ClaimThreadFailedPacket);
         PACKET(ConnectionTestResponsePacket);
         PACKET(ServerBannedPacket);
         PACKET(ServerMutedPacket);

@@ -6,7 +6,7 @@
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <managers/admin.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;

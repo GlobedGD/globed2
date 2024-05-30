@@ -1,5 +1,6 @@
 #include "udp_socket.hpp"
 
+#include "address.hpp"
 #include <defs/assert.hpp>
 #include <util/net.hpp>
 
@@ -26,10 +27,10 @@ UdpSocket::~UdpSocket() {
     this->close();
 }
 
-Result<> UdpSocket::connect(const std::string_view serverIp, unsigned short port) {
+Result<> UdpSocket::connect(const NetworkAddress& address) {
     destAddr_->sin_family = AF_INET;
 
-    GLOBED_UNWRAP(util::net::initSockaddr(serverIp, port, *destAddr_))
+    GLOBED_UNWRAP_INTO(address.resolve(), *destAddr_)
 
     connected = true;
     return Ok();
@@ -47,13 +48,13 @@ Result<int> UdpSocket::send(const char* data, unsigned int dataSize) {
     return Ok(retval);
 }
 
-Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const std::string_view address, unsigned short port) {
+Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const NetworkAddress& address) {
     // stinky windows returns wsa error 10014 if sockaddr is a stack pointer
     std::unique_ptr<sockaddr_in> addr = std::make_unique<sockaddr_in>();
 
     addr->sin_family = AF_INET;
 
-    GLOBED_UNWRAP(util::net::initSockaddr(address, port, *addr))
+    GLOBED_UNWRAP_INTO(address.resolve(), *addr)
 
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr));
 

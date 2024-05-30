@@ -7,7 +7,7 @@
 #include <managers/central_server.hpp>
 #include <managers/account.hpp>
 #include <managers/game_server.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/misc.hpp>
 
 using namespace geode::prelude;

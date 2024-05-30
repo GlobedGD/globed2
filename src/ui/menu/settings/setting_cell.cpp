@@ -5,7 +5,7 @@
 #include "string_input_popup.hpp"
 #include "advanced_settings_popup.hpp"
 #include <managers/settings.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>

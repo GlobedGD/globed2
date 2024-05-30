@@ -13,6 +13,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/profile_cache.hpp>
+#include <managers/game_server.hpp>
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <data/packets/all.hpp>
@@ -377,9 +378,9 @@ void GlobedGJBGL::setupMisc() {
     // set the configured tps
     auto tpsCap = settings.globed.tpsCap;
     if (tpsCap != 0) {
-        m_fields->configuredTps = std::min(nm.connectedTps.load(), (uint32_t)tpsCap);
+        m_fields->configuredTps = std::min(nm.getServerTps(), (uint32_t)tpsCap);
     } else {
-        m_fields->configuredTps = nm.connectedTps;
+        m_fields->configuredTps = nm.getServerTps();
     }
 
     // interpolator

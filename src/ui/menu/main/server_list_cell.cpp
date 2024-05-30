@@ -1,7 +1,7 @@
 #include "server_list_cell.hpp"
 
 #include <Geode/utils/web.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/account.hpp>
 #include <managers/game_server.hpp>
 #include <managers/central_server.hpp>
@@ -95,7 +95,7 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
                             auto hasToken = !am.authToken.lock()->empty();
 
                             if (hasToken) {
-                                GLOBED_RESULT_ERRC(NetworkManager::get().connectWithView(this->gsview));
+                                GLOBED_RESULT_ERRC(NetworkManager::get().connect(this->gsview));
                             } else {
                                 this->requestTokenAndConnect();
                             }
@@ -136,7 +136,7 @@ void ServerListCell::requestTokenAndConnect() {
     auto& csm = CentralServerManager::get();
 
     am.requestAuthToken(csm.getActive()->url, [gsview = this->gsview]{
-        GLOBED_RESULT_ERRC(NetworkManager::get().connectWithView(gsview));
+        GLOBED_RESULT_ERRC(NetworkManager::get().connect(gsview));
     });
 }
 

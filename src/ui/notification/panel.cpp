@@ -1,7 +1,7 @@
 #include "panel.hpp"
 
 #include "invite.hpp"
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 
 using namespace geode::prelude;

@@ -3,7 +3,7 @@
 #include <hooks/level_cell.hpp>
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <managers/error_queues.hpp>
 #include <util/ui.hpp>

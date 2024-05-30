@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
 
+// 22000 - PlayerProfilesPacket
 class PlayerProfilesPacket : public Packet {
     GLOBED_PACKET(22000, PlayerProfilesPacket, false, false)
 
@@ -12,6 +13,7 @@ class PlayerProfilesPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerProfilesPacket, (players));
 
+// 22001 - LevelDataPacket
 class LevelDataPacket : public Packet {
     GLOBED_PACKET(22001, LevelDataPacket, false, false)
 
@@ -22,6 +24,7 @@ class LevelDataPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(LevelDataPacket, (players));
 
+// 22002 - LevelPlayerMetadataPacket
 class LevelPlayerMetadataPacket : public Packet {
     GLOBED_PACKET(22002, LevelPlayerMetadataPacket, false, false)
 
@@ -36,6 +39,7 @@ GLOBED_SERIALIZABLE_STRUCT(LevelPlayerMetadataPacket, (players));
 # include <audio/frame.hpp>
 #endif
 
+// 22010 - VoiceBroadcastPacket
 class VoiceBroadcastPacket : public Packet {
     GLOBED_PACKET(22010, VoiceBroadcastPacket, true, false)
 
@@ -53,6 +57,7 @@ class VoiceBroadcastPacket : public Packet {
     GLOBED_SERIALIZABLE_STRUCT(VoiceBroadcastPacket, ());
 #endif // GLOBED_VOICE_SUPPORT
 
+// 22011 - ChatMessageBroadcastPacket
 class ChatMessageBroadcastPacket : public Packet {
     GLOBED_PACKET(22011, ChatMessageBroadcastPacket, true, false)
 

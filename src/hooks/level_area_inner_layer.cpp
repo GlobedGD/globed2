@@ -2,7 +2,7 @@
 
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 
 using namespace geode::prelude;
 

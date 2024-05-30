@@ -4,7 +4,7 @@
 #include "room_join_popup.hpp"
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/ui.hpp>
 #include <data/packets/all.hpp>
 

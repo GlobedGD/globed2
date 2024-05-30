@@ -6,7 +6,7 @@
 #include <data/types/room.hpp>
 #include <game/interpolator.hpp>
 #include <game/player_store.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/game/player/remote_player.hpp>
 #include <ui/game/overlay/overlay.hpp>
 #include <ui/game/progress/progress_icon.hpp>
