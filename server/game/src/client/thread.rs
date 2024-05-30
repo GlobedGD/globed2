@@ -8,10 +8,13 @@ use std::{
     time::Duration,
 };
 
+use crate::tokio::{
+    self,
+    sync::{Mutex, Notify},
+};
 use esp::ByteReader;
 use globed_shared::{logger::*, SyncMutex, UserEntry};
 use handlers::game::MAX_VOICE_PACKET_SIZE;
-use tokio::sync::{Mutex, Notify};
 
 use crate::{
     data::*,

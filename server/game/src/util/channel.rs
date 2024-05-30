@@ -1,4 +1,4 @@
-use tokio::sync::mpsc;
+use crate::tokio::sync::mpsc;
 
 use super::LockfreeMutCell;
 

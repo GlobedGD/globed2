@@ -13,10 +13,16 @@ esp = { path = "../esp" }
 alloca = "0.4.0"
 ctrlc = "3.4.4"
 rustc-hash = "1.1.0"
-tokio = { version = "1.37.0", features = ["full"] }
 serde = { version = "1.0.202", features = ["serde_derive"] }
 serde_json = "1.0.117"
 futures-util = "0.3.30"
+console-subscriber = { version = "0.2.0", features = ["parking_lot"] }
+
+tokio_tracing = { package = "tokio", version = "1.37.0", features = [
+    "full",
+    "tracing",
+], optional = true }
+tokio = { version = "1.37.0", features = ["full"], optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -29,3 +35,10 @@ harness = false
 [[test]]
 name = "globed-tests"
 path = "tests/test.rs"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tokio_unstable)'] }
+
+[features]
+default = ["tokio"]
+use_tokio_tracing = ["tokio_tracing"]

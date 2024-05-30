@@ -4,16 +4,17 @@ use std::{
     time::Duration,
 };
 
+use crate::tokio::{
+    self,
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+};
 use globed_shared::{
     crypto_box::{
         aead::{AeadCore, AeadInPlace, OsRng},
         ChaChaBox,
     },
     trace,
-};
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
 };
 
 use super::{
