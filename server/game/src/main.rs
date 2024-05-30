@@ -10,6 +10,12 @@
     clippy::redundant_closure_for_method_calls
 )]
 
+#[cfg(feature = "use_tokio_tracing")]
+use tokio_tracing as tokio;
+
+#[cfg(not(feature = "use_tokio_tracing"))]
+use tokio;
+
 use std::{
     error::Error,
     net::{IpAddr, Ipv4Addr, SocketAddr},
@@ -133,13 +139,7 @@ fn parse_configuration() -> StartupConfiguration {
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // set the interrupt handler to flush the logfile and exit
-    ctrlc::set_handler(move || {
-        warn!("Interrupt signal received, terminating the server");
-        Logger::instance("globed_game_server", true).flush();
-        std::process::exit(1);
-    })
-    .expect("error setting interrupt handler");
+    // Setup logger
 
     let write_to_file = std::env::var("GLOBED_GS_NO_FILE_LOG").map(|p| p.parse::<i32>().unwrap()).unwrap_or(0) == 0;
 
@@ -153,6 +153,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
         warn!("hint: possible values are 'trace', 'debug', 'info', 'warn', 'error', and 'none'.");
         abort_misconfig();
     }
+
+    // set the interrupt handler to flush the logfile and exit
+
+    if let Err(e) = ctrlc::set_handler(move || {
+        warn!("Interrupt signal received, terminating the server");
+        Logger::instance("globed_game_server", true).flush();
+        std::process::exit(1);
+    }) {
+        warn!("error setting up interrupt handler: {e}");
+    }
+
+    // setup tokio-console in debug builds
+
+    if cfg!(debug_assertions) && cfg!(tokio_unstable) {
+        info!("Initializing tokio-console subscriber");
+        console_subscriber::init();
+    }
+
+    // parse the configuration from environment variables or command line
 
     let startup_config = parse_configuration();
     let standalone = startup_config.central_data.is_none();
@@ -234,6 +253,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     {
+        // output useful information
+
         let gsbd = bridge.central_conf.lock();
 
         debug!("Configuration:");
@@ -262,6 +283,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         state.role_manager.refresh_from(&gsbd);
     }
 
+    // bind the UDP socket
+
     let udp_socket = match UdpSocket::bind(&startup_config.bind_address).await {
         Ok(x) => x,
         Err(err) => {
@@ -274,6 +297,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
+    // bind the TCP socket
+
     let tcp_socket = match TcpListener::bind(&startup_config.bind_address).await {
         Ok(x) => x,
         Err(err) => {
@@ -282,6 +307,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             abort_misconfig();
         }
     };
+
+    // create and run the server
 
     let server = GameServer::new(tcp_socket, udp_socket, state, bridge, standalone);
     let server = Box::leak(Box::new(server));

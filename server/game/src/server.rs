@@ -15,9 +15,12 @@ use globed_shared::{
 use rustc_hash::FxHashMap;
 
 #[allow(unused_imports)]
-use tokio::sync::oneshot; // no way
+use crate::tokio::sync::oneshot; // no way
 
-use tokio::net::{TcpListener, UdpSocket};
+use crate::tokio::{
+    self,
+    net::{TcpListener, UdpSocket},
+};
 
 use crate::{
     bridge::{self, CentralBridge},
@@ -173,6 +176,7 @@ impl GameServer {
         Ok(())
     }
 
+    #[allow(clippy::manual_let_else)]
     async fn client_loop(&'static self, in_thread: Arc<UnauthorizedThread>, peer: SocketAddrV4) {
         let mut either_thread: EitherClientThread = EitherClientThread::Unauthorized(in_thread);
 

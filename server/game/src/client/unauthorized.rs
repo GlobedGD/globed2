@@ -9,10 +9,15 @@ use globed_shared::{
     rand::{self, Rng},
     warn, SyncMutex, UserEntry, PROTOCOL_VERSION,
 };
-use tokio::{net::TcpStream, sync::Notify};
 
 use super::*;
-use crate::{data::*, managers::ComputedRole, server::GameServer, util::LockfreeMutCell};
+use crate::{
+    data::*,
+    managers::ComputedRole,
+    server::GameServer,
+    tokio::{self, net::TcpStream, sync::Notify},
+    util::LockfreeMutCell,
+};
 
 /// `UnauthorizedThread` is a thread that can be formed for 2 reasons:
 /// 1. Initial connection (when a client initiates a TCP connection, an `UnauthorizedThread` is created)
