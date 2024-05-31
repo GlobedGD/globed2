@@ -1,11 +1,10 @@
 #pragma once
 
-#include <asp/util/Result.hpp>
+#include <Geode/utils/Result.hpp>
 
 #include <util/singleton.hpp>
 
 using packetid_t = uint16_t;
-using geode::Result;
 
 class PacketListener;
 class NetworkAddress;
@@ -36,9 +35,9 @@ public:
         Established,     // fully connected to a server
     };
 
-    Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone);
-    Result<> connect(const GameServer& gsview);
-    Result<> connectStandalone();
+    geode::Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone);
+    geode::Result<> connect(const GameServer& gsview);
+    geode::Result<> connectStandalone();
 
     // Disconnect from the server, does nothing if not connected
     void disconnect(bool quiet = false, bool noclear = false);
@@ -52,6 +51,7 @@ public:
     // Pings all known servers and stores the pings in `GameServerManager`
     void pingServers();
 
+    // Registers a packet listener and adds it to `target`
     void addListener(cocos2d::CCNode* target, packetid_t id, PacketListener* listener);
 
     // Adds a packet listener and calls your callback function when a packet with `id` is received.

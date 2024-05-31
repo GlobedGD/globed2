@@ -35,6 +35,8 @@ pub mod logger;
 pub mod token_issuer;
 
 pub const PROTOCOL_VERSION: u16 = 6;
+// used for communicating to the user the minimum required mod version for this protocol
+pub const MIN_CLIENT_VERSION: &str = "v1.4.0";
 pub const SERVER_MAGIC: &[u8] = b"\xdd\xeeglobed\xda\xee";
 pub const SERVER_MAGIC_LEN: usize = SERVER_MAGIC.len();
 /// amount of chars in an admin key (32)

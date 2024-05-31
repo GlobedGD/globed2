@@ -13,7 +13,10 @@ use globed_shared::{
     SyncMutex, UserEntry,
 };
 use rustc_hash::FxHashMap;
-use tokio::{io::AsyncReadExt, net::TcpStream};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+};
 
 #[allow(unused_imports)]
 use crate::tokio::sync::oneshot; // no way
@@ -212,18 +215,27 @@ impl GameServer {
                 match result {
                     Ok((account_id, secret_key)) => {
                         // lets try to recover the situation.
-                        let clients = self.unauthorized_clients.lock();
-                        let thread = clients
+                        let thread = self
+                            .unauthorized_clients
+                            .lock()
                             .iter()
                             .find(|thr| thr.secret_key == secret_key && thr.account_id.load(Ordering::Relaxed) == account_id)
                             .cloned();
 
-                        drop(clients);
-
                         let thread = if let Some(thread) = thread {
                             thread
                         } else {
-                            warn!("peer ({peer}) tried to claim an invalid thread (account id: {account_id}, secret key: {secret_key})");
+                            warn!("peer ({peer}) tried to recover an invalid thread (account id: {account_id}, secret key: {secret_key})");
+
+                            // send a ClaimThreadFailedPacket
+                            let mut buf_array = [0u8; size_of_types!(u32, PacketHeader)];
+                            let mut buf = FastByteBuffer::new(&mut buf_array);
+                            buf.write_u32(3); // tcp packet length
+                            buf.write_packet_header::<LoginRecoveryFailedPacket>();
+
+                            let send_bytes = buf.as_bytes();
+
+                            let _ = socket.write_all(send_bytes).await;
                             return;
                         };
 
@@ -294,12 +306,16 @@ impl GameServer {
                     // we are now supposedly the only reference to the thread, so this should always work
                     let thread = Arc::into_inner(thread).expect("failed to unwrap unauthorized thread");
 
+                    let socket = unsafe { thread.socket.get() };
+                    let udp_peer = socket.udp_peer.expect("upgraded thread has no udp peer assigned");
+
+                    #[cfg(debug_assertions)]
+                    debug!("upgrading thread (new peer: tcp {}, udp {})", socket.tcp_peer, udp_peer);
+
                     // upgrade to an authorized ClientThread and add it into clients map
                     let thread = Arc::new(thread.upgrade());
-                    self.clients.lock().insert(
-                        unsafe { thread.socket.get() }.udp_peer.expect("upgraded thread has no udp peer assigned"),
-                        thread.clone(),
-                    );
+
+                    self.clients.lock().insert(udp_peer, thread.clone());
 
                     either_thread = EitherClientThread::Authorized(thread);
                 }
@@ -365,7 +381,9 @@ impl GameServer {
         let socket = unsafe { socket.get_mut() };
         let _ = socket.shutdown().await;
 
+        #[cfg(debug_assertions)]
         debug!("cleaning up thread: {} (udp peer: {:?})", socket.tcp_peer, socket.udp_peer);
+
         self.post_disconnect_cleanup(either_thread).await;
     }
 

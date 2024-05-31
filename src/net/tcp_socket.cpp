@@ -95,6 +95,8 @@ RecvResult TcpSocket::receive(char* buffer, int bufferSize) {
     int result = ::recv(socket_, buffer, bufferSize, 0);
     if (result == -1) {
         this->maybeDisconnect();
+    } else if (result == 0) {
+        this->disconnect();
     }
 
     return RecvResult {

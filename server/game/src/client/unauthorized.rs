@@ -7,7 +7,7 @@ use std::{
 use globed_shared::{
     debug, info,
     rand::{self, Rng},
-    warn, SyncMutex, UserEntry, PROTOCOL_VERSION,
+    warn, SyncMutex, UserEntry, MIN_CLIENT_VERSION, PROTOCOL_VERSION,
 };
 
 use super::*;
@@ -126,6 +126,8 @@ impl UnauthorizedThread {
                     Ok((stream, tcp_peer)) => {
                         // we just got recovered yay
                         let socket = self.get_socket();
+
+                        #[cfg(debug_assertions)]
                         debug!(
                             "recovered thread ({}), previous peer: {}, current: {}",
                             self.account_id.load(Ordering::Relaxed),
@@ -241,7 +243,12 @@ impl UnauthorizedThread {
         if packet.protocol != PROTOCOL_VERSION && packet.protocol != 0xffff {
             self.terminate();
 
-            socket.send_packet_static(&ProtocolMismatchPacket { protocol: PROTOCOL_VERSION }).await?;
+            socket
+                .send_packet_dynamic(&ProtocolMismatchPacket {
+                    protocol: PROTOCOL_VERSION,
+                    min_client_version: MIN_CLIENT_VERSION,
+                })
+                .await?;
 
             return Ok(());
         }
