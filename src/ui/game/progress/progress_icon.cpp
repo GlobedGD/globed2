@@ -1,5 +1,4 @@
 #include "progress_icon.hpp"
-#include "data/types/gd.hpp"
 
 #include <managers/settings.hpp>
 
@@ -23,10 +22,9 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
     auto color1 = gm->colorForIdx(data.color1);
     auto color2 = gm->colorForIdx(data.color2);
 
-    Build<CCLayerColor>::create(ccc4(color1.r, color1.g, color1.b, 255), 2.f, 8.f)
-        .pos(0.f, 4.f)
+    Build<CCLayerColor>::create(ccc4(color1.r, color1.g, color1.b, 255), 2.f, 6.f)
+        .pos(0.f, 5.f)
         .parent(this)
-        .scaleY(.8f)
         .store(line);
         
     Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
