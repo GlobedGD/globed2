@@ -627,7 +627,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     if (auto pl = PlayLayer::get()) {
         if (self->m_fields->progressBarWrapper->getParent() != nullptr) {
-            self->m_fields->selfProgressIcon->updatePosition(pl->getCurrentPercent() / 100.f);
+            self->m_fields->selfProgressIcon->updatePosition(pl->getCurrentPercent() / 100.f, this->get()->m_isPracticeMode);
         } else if (pl->m_progressBar) {
             // for some reason, the progressbar is sometimes initialized later than PlayLayer::init
             // it always should exist, even in levels with no actual progress bar (i.e. platformer levels)
