@@ -68,6 +68,19 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 .parent(this)
                 .enabled(enabled);
 
+            if (!isDRPCPossible) {
+                Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+                    .scale(0.4f)
+                    .intoMenuItem([](auto) {
+                        FLAlertLayer::create("Discord RPC is disabled", "Discord Rich Presence is disabled or not installed. Please enable or install it in Geode to use this option.", "OK")->show();
+                    })
+                    .pos(inpCheckbox->getPositionX() - 20.f, inpCheckbox->getPositionY() + 10.f)
+                    .intoNewParent(CCMenu::create())
+                    .pos(0.f, 0.f)
+                    .parent(this)
+                .enabled(enabled);
+            }
+
             inpCheckbox->toggle(*(bool*)(settingStorage));
             if (!isDRPCPossible) {
                 Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
