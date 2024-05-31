@@ -16,6 +16,7 @@ use rustc_hash::FxHashMap;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
+    sync::Notify,
 };
 
 #[allow(unused_imports)]
@@ -587,14 +588,19 @@ impl GameServer {
     /// If someone is already logged in under the given account ID, logs them out.
     /// Additionally, blocks until the appropriate cleanup has been done.
     pub async fn check_already_logged_in(&self, account_id: i32) -> anyhow::Result<()> {
-        let thread = self
-            .clients
-            .lock()
-            .values()
-            .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
-            .cloned();
+        let wait = async |notify: Arc<Notify>| -> anyhow::Result<()> {
+            // we want to wait until the player has been removed from any managers and such.
 
-        if let Some(thread) = thread {
+            match tokio::time::timeout(Duration::from_secs(3), notify.notified()).await {
+                Ok(()) => Ok(()),
+                Err(_) => Err(anyhow!("timed out waiting for the thread to disconnect")),
+            }
+        };
+
+        while let Some(thread) = {
+            let clients = self.clients.lock();
+            clients.values().find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id).cloned()
+        } {
             thread
                 .push_new_message(ServerThreadMessage::TerminationNotice(FastString::new(
                     "Someone logged into the same account from a different place.",
@@ -604,12 +610,19 @@ impl GameServer {
             let destruction_notify = thread.destruction_notify.clone();
             drop(thread);
 
-            // we want to wait until the player has been removed from any managers and such.
+            wait(destruction_notify).await?;
+        }
 
-            match tokio::time::timeout(Duration::from_secs(3), destruction_notify.notified()).await {
-                Ok(()) => {}
-                Err(_) => return Err(anyhow!("timed out waiting for the thread to disconnect")),
-            }
+        while let Some(thread) = {
+            let clients = self.unauthorized_clients.lock();
+            clients.iter().find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id).cloned()
+        } {
+            thread.request_termination();
+
+            let destruction_notify = thread.destruction_notify.clone();
+            drop(thread);
+
+            wait(destruction_notify).await?;
         }
 
         Ok(())
@@ -787,11 +800,15 @@ impl GameServer {
                     thread.room_id.load(Ordering::Relaxed),
                 )
             }
-            EitherClientThread::Unauthorized(thread) => (
-                thread.account_id.load(Ordering::Relaxed),
-                thread.level_id.load(Ordering::Relaxed),
-                thread.room_id.load(Ordering::Relaxed),
-            ),
+            EitherClientThread::Unauthorized(thread) => {
+                thread.destruction_notify.notify_one();
+
+                (
+                    thread.account_id.load(Ordering::Relaxed),
+                    thread.level_id.load(Ordering::Relaxed),
+                    thread.room_id.load(Ordering::Relaxed),
+                )
+            }
             EitherClientThread::None => unreachable!(),
         };
 
