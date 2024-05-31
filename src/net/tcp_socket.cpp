@@ -113,7 +113,7 @@ Result<> TcpSocket::recvExact(char* buffer, int bufferSize) {
     do {
         int result = this->receive(buffer + received, bufferSize - received).result;
         if (result < 0) return Err(util::net::lastErrorString());
-        if (result == 0) return Err("failed to receive data from a tcp socket");
+        if (result == 0) return Err("connection was closed by the server");
         received += result;
     } while (received < bufferSize);
 

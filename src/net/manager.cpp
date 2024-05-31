@@ -495,6 +495,8 @@ protected:
             ErrorQueues::get().success("[Globed] Connection recovered");
         }
 
+        GameServerManager::get().setActive(connectedServerId);
+
         // these are not thread-safe, so delay it
         Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
             auto& pcm = ProfileCacheManager::get();
@@ -690,20 +692,26 @@ protected:
             return;
         }
 
+        // Initial tcp connection.
         if (state == ConnectionState::TcpConnecting && !recovering) {
-            // initiate TCP connection
+            log::debug("conn start");
+            // try to connect
             auto result = socket.connect(connectedAddress, recovering);
+            log::debug("conn end");
 
             if (!result) {
                 this->disconnect(true);
-                ErrorQueues::get().error(fmt::format("TCP connection failed: <cy>{}</c>", result.unwrapErr()));
+
+                auto reason = result.unwrapErr();
+                log::warn("TCP connection failed: <cy>{}</c>", reason);
+
+                ErrorQueues::get().error(fmt::format("Failed to connect to the server.\n\nReason: <cy>{}</c>", reason));
                 return;
             } else {
                 log::debug("tcp connection successful, sending the handshake");
                 state = ConnectionState::Authenticating;
 
                 socket.createBox();
-                GameServerManager::get().setActive(connectedServerId);
 
                 uint16_t proto = this->getUsedProtocol();
 
@@ -712,7 +720,9 @@ protected:
                     CryptoPublicKey(socket.cryptoBox->extractPublicKey())
                 ));
             }
-        } else if (state == ConnectionState::TcpConnecting && recovering) {
+        }
+        // Connection recovery loop itself
+        else if (state == ConnectionState::TcpConnecting && recovering) {
             log::debug("recovery attempt {}", recoverAttempt.load());
 
             // initiate TCP connection
@@ -757,14 +767,27 @@ protected:
                 return;
             }
         }
-
-        // detect if the tcp socket has disconnected and start recovery attempt
-        if (state == ConnectionState::Established && !socket.isConnected()) {
+        // Detect if the tcp socket has unexpectedly disconnected and start recovering the connection
+        else if (state == ConnectionState::Established && !socket.isConnected()) {
             ErrorQueues::get().warn("[Globed] connection lost, reconnecting..");
 
             state = ConnectionState::TcpConnecting;
             recovering = true;
             recoverAttempt = 0;
+            return;
+        }
+        // Detect if we disconnected while authenticating, likely the server doesn't expect us
+        else if (state == ConnectionState::Authenticating && !socket.isConnected()) {
+            this->disconnect(true);
+
+            ErrorQueues::get().error(fmt::format("Failed to connect to the server.\n\nReason: <cy>server abruptly disconnected during the handshake</c>"));
+            return;
+        }
+        // Detect if authentication is taking too long
+        else if (state == ConnectionState::Authenticating && (util::time::now() - lastReceivedPacket) > util::time::seconds(5)) {
+            this->disconnect(true);
+
+            ErrorQueues::get().error(fmt::format("Failed to connect to the server.\n\nReason: <cy>server took too long to respond to the handshake</c>"));
             return;
         }
 
@@ -830,6 +853,7 @@ protected:
             if (serverId == active) continue;
 
             NetworkAddress addr(server.address);
+
 #ifdef GLOBED_DEBUG
             auto addrString = addr.resolveToString().value_or("<unresolved>");
             log::debug("sending ping to {}", addrString);

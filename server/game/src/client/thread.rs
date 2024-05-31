@@ -99,8 +99,8 @@ impl ClientThread {
         };
 
         let account_data = std::mem::take(&mut *thread.account_data.lock());
-        let user_entry = std::mem::take(&mut *thread.user_entry.lock()).expect("account data is None when upgrading thread");
-        let user_role = std::mem::take(&mut *thread.user_role.lock()).expect("account data is None when upgrading thread");
+        let user_entry = std::mem::take(&mut *thread.user_entry.lock()).unwrap_or_default();
+        let user_role = std::mem::take(&mut *thread.user_role.lock()).unwrap_or_else(|| game_server.state.role_manager.get_default().clone());
 
         Self {
             game_server,
