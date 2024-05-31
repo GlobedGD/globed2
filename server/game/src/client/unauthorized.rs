@@ -1,6 +1,9 @@
 use std::{
     net::SocketAddrV4,
-    sync::atomic::{AtomicI32, AtomicU16, AtomicU32, Ordering},
+    sync::{
+        atomic::{AtomicI32, AtomicU16, AtomicU32, Ordering},
+        Arc,
+    },
     time::Duration,
 };
 
@@ -50,6 +53,10 @@ pub struct UnauthorizedThread {
 
     pub recover_stream: SyncMutex<Option<(TcpStream, SocketAddrV4)>>,
     pub recover_notify: Notify,
+
+    pub terminate_notify: Notify,
+
+    pub destruction_notify: Arc<Notify>,
 }
 
 pub enum UnauthorizedThreadOutcome {
@@ -83,6 +90,10 @@ impl UnauthorizedThread {
 
             recover_stream: SyncMutex::new(None),
             recover_notify: Notify::new(),
+
+            terminate_notify: Notify::new(),
+
+            destruction_notify: Arc::new(Notify::new()),
         }
     }
 
@@ -109,6 +120,10 @@ impl UnauthorizedThread {
 
             recover_stream: SyncMutex::new(None),
             recover_notify: Notify::new(),
+
+            terminate_notify: Notify::new(),
+
+            destruction_notify: thread.destruction_notify,
         }
     }
 
@@ -122,39 +137,45 @@ impl UnauthorizedThread {
                 ClientThreadState::Terminating => break UnauthorizedThreadOutcome::Terminate,
 
                 /* disconnected state, wait until another tcp stream tries to recover us */
-                ClientThreadState::Disconnected => match tokio::time::timeout(TIMEOUT, self.wait_for_recovered()).await {
-                    Ok((stream, tcp_peer)) => {
-                        // we just got recovered yay
-                        let socket = self.get_socket();
+                ClientThreadState::Disconnected => tokio::select! {
+                    x = tokio::time::timeout(TIMEOUT, self.wait_for_recovered()) => match x {
+                        Ok((stream, tcp_peer)) => {
+                            // we just got recovered yay
+                            let socket = self.get_socket();
 
-                        #[cfg(debug_assertions)]
-                        debug!(
-                            "recovered thread ({}), previous peer: {}, current: {}",
-                            self.account_id.load(Ordering::Relaxed),
-                            socket.tcp_peer,
-                            tcp_peer
-                        );
+                            #[cfg(debug_assertions)]
+                            debug!(
+                                "recovered thread ({}), previous peer: {}, current: {}",
+                                self.account_id.load(Ordering::Relaxed),
+                                socket.tcp_peer,
+                                tcp_peer
+                            );
 
-                        socket.socket = stream;
-                        socket.tcp_peer = tcp_peer;
+                            socket.socket = stream;
+                            socket.tcp_peer = tcp_peer;
 
-                        if let Err(e) = self.send_login_success().await {
-                            warn!("failed to send login success: {e}");
-                            self.terminate();
-                            continue;
+                            if let Err(e) = self.send_login_success().await {
+                                warn!("failed to send login success: {e}");
+                                self.terminate();
+                                continue;
+                            }
+
+                            self.connection_state.store(ClientThreadState::Unclaimed);
                         }
+                        Err(_) => {
+                            // we did not get recovered in the given time, terminate
+                            self.terminate();
+                        }
+                    },
 
-                        self.connection_state.store(ClientThreadState::Unclaimed);
-                    }
-                    Err(_) => {
-                        // we did not get recovered in the given time, terminate
+                    () = self.wait_for_termianted() => {
                         self.terminate();
                     }
                 },
 
                 /* unauthorized state, wait until the user sends a handshake and a LoginPacket */
-                ClientThreadState::Unauthorized => {
-                    match tokio::time::timeout(TIMEOUT, self.get_socket().poll_for_tcp_data()).await {
+                ClientThreadState::Unauthorized => tokio::select! {
+                    x = tokio::time::timeout(TIMEOUT, self.get_socket().poll_for_tcp_data()) => match x {
                         Ok(Ok(datalen)) => match self.recv_and_handle(datalen).await {
                             Ok(()) => {}
                             Err(e) => {
@@ -173,18 +194,28 @@ impl UnauthorizedThread {
                             // time is up, call quits
                             self.terminate();
                         }
+                    },
+
+                    () = self.wait_for_termianted() => {
+                        self.terminate();
                     }
-                }
+                },
 
                 /* unclaimed state, wait until user sends a ClaimThreadPacket and gameserver notifies us */
-                ClientThreadState::Unclaimed => match tokio::time::timeout(TIMEOUT, self.wait_for_claimed()).await {
-                    Ok(()) => {
-                        // we just got claimed, we can leave and upgrade into a ClientThread
-                        self.connection_state.store(ClientThreadState::Established);
-                    }
+                ClientThreadState::Unclaimed => tokio::select! {
+                    x = tokio::time::timeout(TIMEOUT, self.wait_for_claimed()) => match x {
+                        Ok(()) => {
+                            // we just got claimed, we can leave and upgrade into a ClientThread
+                            self.connection_state.store(ClientThreadState::Established);
+                        }
 
-                    Err(_) => {
-                        // time is up, call quits
+                        Err(_) => {
+                            // time is up, call quits
+                            self.terminate();
+                        }
+                    },
+
+                    () = self.wait_for_termianted() => {
                         self.terminate();
                     }
                 },
@@ -451,8 +482,17 @@ impl UnauthorizedThread {
         }
     }
 
+    /// Blocks until we get notified that our thread is being terminated
+    async fn wait_for_termianted(&self) {
+        self.terminate_notify.notified().await;
+    }
+
     fn terminate(&self) {
         self.connection_state.store(ClientThreadState::Terminating);
+    }
+
+    pub fn request_termination(&self) {
+        self.terminate_notify.notify_one();
     }
 
     /// do not call from another thread unless this thread is NOT running.

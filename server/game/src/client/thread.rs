@@ -120,12 +120,14 @@ impl ClientThread {
             fragmentation_limit: thread.fragmentation_limit,
 
             is_authorized_admin: AtomicBool::new(false),
+
             message_queue: Mutex::new(VecDeque::new()),
             message_notify: Notify::new(),
             rate_limiter: LockfreeMutCell::new(rate_limiter),
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
-            destruction_notify: Arc::new(Notify::new()),
+
+            destruction_notify: thread.destruction_notify,
         }
     }
 
