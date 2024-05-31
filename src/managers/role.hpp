@@ -1,8 +1,8 @@
 #pragma once
 
-#include <defs/util.hpp>
 #include <data/types/user.hpp>
 
+#include <util/singleton.hpp>
 
 class RoleManager : public SingletonBase<RoleManager> {
     friend class SingletonBase;

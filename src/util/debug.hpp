@@ -1,13 +1,13 @@
 #pragma once
-#include <defs/util.hpp>
-
 #include <unordered_map>
+
+#include <asp/sync.hpp>
 
 #include <data/packets/packet.hpp>
 #include <util/collections.hpp>
 #include <util/time.hpp>
-#include <asp/sync.hpp>
 #include <util/misc.hpp>
+#include <util/singleton.hpp>
 
 namespace util::debug {
     class Benchmarker : public SingletonBase<Benchmarker> {

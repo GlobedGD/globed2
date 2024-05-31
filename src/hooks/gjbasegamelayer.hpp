@@ -12,7 +12,7 @@
 #include <ui/game/progress/progress_icon.hpp>
 #include <ui/game/progress/progress_arrow.hpp>
 #include <ui/game/voice_overlay/overlay.hpp>
-//#include <ui/game/chat_overlay/overlay.hpp>
+#include <util/time.hpp>
 
 float adjustLerpTimeDelta(float dt);
 

@@ -1,8 +1,9 @@
 #pragma once
-#include <defs/util.hpp>
+#include <asp/sync.hpp>
 
 #include <data/types/room.hpp>
-#include <asp/sync.hpp>
+
+#include <util/singleton.hpp>
 
 class RoomManager : public SingletonBase<RoomManager> {
     friend class SingletonBase;

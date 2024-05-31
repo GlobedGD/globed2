@@ -1,7 +1,8 @@
 #pragma once
-#include <defs/util.hpp>
 
 #include <asp/sync.hpp>
+
+#include <util/singleton.hpp>
 
 /*
 * ErrorQueues is a thread safe singleton for propagating errors to the main thread,

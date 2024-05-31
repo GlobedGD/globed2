@@ -1,6 +1,7 @@
 #pragma once
-#include <defs/util.hpp>
 #include <defs/minimal_geode.hpp>
+
+#include <util/singleton.hpp>
 
 class BlockListManager : public SingletonBase<BlockListManager> {
 protected:

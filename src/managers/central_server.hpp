@@ -1,9 +1,10 @@
 #pragma once
-#include <defs/util.hpp>
 
 #include <asp/sync.hpp> // mutex
-#include <util/crypto.hpp> // base64
+
 #include <data/bytebuffer.hpp>
+#include <util/crypto.hpp> // base64
+#include <util/singleton.hpp>
 
 struct CentralServer {
     std::string name;

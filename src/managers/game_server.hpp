@@ -1,12 +1,12 @@
 #pragma once
-#include <defs/util.hpp>
 #include <defs/minimal_geode.hpp>
 
 #include <unordered_map>
-
 #include <asp/sync.hpp> // mutex
+
 #include <util/crypto.hpp> // base64
 #include <util/time.hpp>
+#include <util/singleton.hpp>
 
 struct GameServer {
     std::string id;

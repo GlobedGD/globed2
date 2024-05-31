@@ -1,8 +1,9 @@
 #pragma once
-#include <defs/util.hpp>
-#include <data/types/gd.hpp>
 #include <asp/sync.hpp>
+
 #include <defs/geode.hpp>
+#include <data/types/gd.hpp>
+#include <util/singleton.hpp>
 
 class ProfileCacheManager : public SingletonBase<ProfileCacheManager> {
 public:

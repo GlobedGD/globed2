@@ -1,9 +1,8 @@
 #pragma once
 
-#include <Geode/utils/Result.hpp>
+#include <asp/util/Result.hpp>
 
-#include <defs/util.hpp>
-#include <util/time.hpp>
+#include <util/singleton.hpp>
 
 using packetid_t = uint16_t;
 using geode::Result;
@@ -77,21 +76,6 @@ public:
         this->removeListener(target, T::PACKET_ID);
     }
 
-    void suppressUnhandledUntil(packetid_t, util::time::system_time_point point);
-
-    // Suppress the "Unhandled packet: xxx" error for a period of time
-    template <typename Rep, typename Period>
-    void suppressUnhandledFor(packetid_t packetId, util::time::duration<Rep, Period> duration) {
-        auto endPoint = util::time::systemNow() + duration;
-        this->suppressUnhandledUntil(packetId, endPoint);
-    }
-
-    // Suppress the "Unhandled packet: xxx" error for a period of time
-    template <HasPacketID Packet, typename Rep, typename Period>
-    void suppressUnhandledFor(util::time::duration<Rep, Period> duration) {
-        this->suppressUnhandledFor(Packet::PACKET_ID, duration);
-    }
-
     // Removes all listeners.
     void removeAllListeners();
 
@@ -123,5 +107,5 @@ private:
     Impl* impl;
 
     friend class PacketListener;
-    void unregisterPacketListener(packetid_t packet, PacketListener* listener);
+    void unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled = true);
 };
