@@ -63,15 +63,6 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
         count++;
     }
 
-    if (wasPracticing) {
-        auto practiceSpr = Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
-            .opacity(opacity)
-            .zOrder(1)
-            .scale(0.8f)
-            .id("icon-practice"_spr)
-            .parent(iconWrapper)
-            .collect();
-
         width += practiceSpr->getScaledContentSize().width;
         count++;
     }
