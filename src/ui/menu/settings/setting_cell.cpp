@@ -68,6 +68,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 .parent(this)
                 .enabled(enabled);
 
+            inpCheckbox->toggle(*(bool*)(settingStorage));
             if (!isDRPCPossible) {
                 Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
                     .scale(0.4f)
@@ -78,9 +79,10 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                     .intoNewParent(CCMenu::create())
                     .pos(0.f, 0.f)
                     .parent(this);
+
+                inpCheckbox->toggle(false);
             }
 
-            inpCheckbox->toggle(*(bool*)(settingStorage));
         } break;
         case Type::Float: {
             Build<Slider>::create(this, menu_selector(GlobedSettingCell::onSliderChanged), 0.3f)
