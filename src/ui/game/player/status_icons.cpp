@@ -62,6 +62,15 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
         width += pauseSpr->getScaledContentSize().width;
         count++;
     }
+    
+    if (wasPracticing) {
+        auto practiceSpr = Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
+            .opacity(opacity)
+            .zOrder(1)
+            .scale(0.8f)
+            .id("icon-practice"_spr)
+            .parent(iconWrapper)
+            .collect();
 
         width += practiceSpr->getScaledContentSize().width;
         count++;
@@ -110,16 +119,6 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
         .anchorPoint(0.f, 0.f)
         .parent(this)
         .collect();
-    if (practicing) {
-        auto cc9s = Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
-            .contentSize({ width * 3.f, 40.f * 3.f })
-            .scale(1.f / 3.f)
-            .opacity(opacity / 3)
-            .zOrder(-1)
-            .anchorPoint(0.f, 0.f)
-            .parent(this)
-            .collect();
-    }
 
     this->setContentSize(cc9s->getScaledContentSize());
     iconWrapper->setContentSize(cc9s->getScaledContentSize());
