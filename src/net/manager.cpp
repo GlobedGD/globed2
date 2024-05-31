@@ -4,6 +4,7 @@
 #include "listener.hpp"
 #include "game_socket.hpp"
 
+#include <Geode/ui/GeodeUI.hpp>
 #include <asp/sync.hpp>
 #include <asp/thread.hpp>
 
@@ -18,8 +19,10 @@
 #include <managers/room.hpp>
 #include <managers/role.hpp>
 #include <util/cocos.hpp>
+#include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/net.hpp>
+#include <ui/notification/panel.hpp>
 
 using namespace asp::sync;
 using namespace geode::prelude;
@@ -27,6 +30,7 @@ using ConnectionState = NetworkManager::ConnectionState;
 
 static constexpr uint16_t PROTOCOL_VERSION = 6;
 
+// yes, really
 struct AtomicConnectionState {
     AtomicInt inner;
 
@@ -53,7 +57,6 @@ protected:
 
     using Task = std::variant<TaskPingServers, TaskSendPacket>;
 
-    // yes, really
     AtomicConnectionState state;
     GameSocket socket;
     asp::Thread<NetworkManager::Impl*> threadRecv, threadMain;
@@ -76,6 +79,7 @@ protected:
     AtomicBool recovering;
     AtomicU8 recoverAttempt;
     AtomicBool ignoreProtocolMismatch;
+    AtomicBool wasFromRecovery;
     AtomicU32 secretKey;
     AtomicU32 serverTps;
 
@@ -118,8 +122,9 @@ protected:
         log::info("goodbye from networkmanager!");
     }
 
-    // connection and tasks
-    Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone) {
+    /* connection and tasks */
+
+    Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone, bool fromRecovery = false) {
         // if we are already connected, disconnect first
         if (state == ConnectionState::Established) {
             this->disconnect(false, false);
@@ -130,6 +135,7 @@ protected:
         }
 
         this->standalone = standalone;
+        this->wasFromRecovery = fromRecovery;
 
         lastReceivedPacket = util::time::now();
         lastSentKeepalive = util::time::now();
@@ -180,11 +186,6 @@ protected:
     }
 
     void onConnectionError(const std::string_view reason) {
-        if (state != ConnectionState::Established) {
-            log::warn("unable to disconnect, not established");
-            return;
-        }
-
         ErrorQueues::get().warn(reason);
     }
 
@@ -285,8 +286,29 @@ protected:
         listeners.lock()->clear();
     }
 
+    void addGlobalListener(packetid_t id, PacketCallback&& callback, bool mainThread = false) {
+        auto listener = PacketListener::create(id, std::move(callback), nullptr, BUILTIN_LISTENER_PRIORITY, mainThread, false);
+        this->addListener(nullptr, listener);
+    }
+
+    template <HasPacketID Pty>
+    void addGlobalListener(PacketCallbackSpecific<Pty>&& callback, bool mainThread = false) {
+        this->addGlobalListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
+            callback(std::static_pointer_cast<Pty>(pkt));
+        }, mainThread);
+    }
+
+    // Same as `addGlobalListener(callback, true)`
+    template <HasPacketID Pty>
+    void addGlobalListenerSync(PacketCallbackSpecific<Pty>&& callback) {
+        this->addGlobalListener<Pty>(std::move(callback), true);
+    }
+
+    /* global listeners */
+
     void setupGlobalListeners() {
         // Connection packets
+
         addGlobalListenerSync<CryptoHandshakeResponsePacket>([this](auto packet) {
             this->onCryptoHandshakeResponse(std::move(packet));
         });
@@ -311,8 +333,115 @@ protected:
             this->disconnect(true);
         });
 
+        addGlobalListener<ProtocolMismatchPacket>([this](auto packet) {
+            this->onProtocolMismatch(std::move(packet));
+        });
+
         addGlobalListener<ClaimThreadFailedPacket>([this](auto packet) {
             this->disconnectWithMessage("failed to claim udp thread");
+        });
+
+        addGlobalListener<LoginRecoveryFailecPacket>([this](auto packet) {
+            // failed to recover login, try regular connection
+            this->disconnect(true);
+            auto result = this->connect(connectedAddress, connectedServerId, standalone, true);
+
+            if (!result) {
+                log::warn("failed to reconnect: {}", result.unwrapErr());
+                this->onConnectionError("[Globed] failed to reconnect");
+            }
+        });
+
+        addGlobalListener<ServerNoticePacket>([](auto packet) {
+            ErrorQueues::get().notice(packet->message);
+        });
+
+        addGlobalListener<ServerBannedPacket>([this](auto packet) {
+            // TODO: review this
+            using namespace std::chrono;
+
+            std::string reason = packet->message;
+            if (reason.empty()) {
+                reason = "No reason given";
+            }
+
+            auto msg = fmt::format(
+                "<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
+                reason,
+                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)))
+            );
+
+            this->disconnectWithMessage(msg);
+        });
+
+        addGlobalListener<ServerMutedPacket>([](auto packet) {
+            // TODO: and this
+            using namespace std::chrono;
+
+            std::string reason = packet->reason;
+            if (reason.empty()) {
+                reason = "No reason given";
+            }
+
+            auto msg = fmt::format(
+                "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
+                reason,
+                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)))
+            );
+
+            ErrorQueues::get().notice(msg);
+        });
+
+        // General packets
+
+        addGlobalListenerSync<RolesUpdatedPacket>([](auto packet) {
+            auto& pcm = ProfileCacheManager::get();
+            pcm.setOwnSpecialData(packet->specialUserData);
+        });
+
+        // Room packets
+
+        addGlobalListenerSync<RoomInvitePacket>([](auto packet) {
+            GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->password, packet->playerData);
+        });
+
+        addGlobalListenerSync<RoomInfoPacket>([](auto packet) {
+            ErrorQueues::get().success("Room configuration updated");
+
+            RoomManager::get().setInfo(packet->info);
+        });
+
+        addGlobalListener<RoomJoinedPacket>([](auto packet) {});
+
+        addGlobalListener<RoomJoinFailedPacket>([](auto packet) {
+            // TODO: handle reason
+            std::string reason = "N/A";
+            if (packet->wasInvalid) reason = "Room doesn't exist";
+            if (packet->wasProtected) reason = "Room password is wrong";
+            if (packet->wasFull) reason = "Room is full";
+            if (!packet->wasProtected) ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason)); //TEMPORARY disable wrong password alerts
+        });
+
+        // Admin packets
+
+        addGlobalListener<AdminAuthSuccessPacket>([this](auto packet) {
+            AdminManager::get().setAuthorized(std::move(packet->role));
+            ErrorQueues::get().success("Successfully authorized");
+        });
+
+        addGlobalListenerSync<AdminAuthFailedPacket>([this](auto packet) {
+            ErrorQueues::get().warn("Login failed");
+
+            auto& am = GlobedAccountManager::get();
+            am.clearAdminPassword();
+        });
+
+        addGlobalListener<AdminSuccessMessagePacket>([](auto packet) {
+            ErrorQueues::get().success(packet->message);
+        });
+
+        addGlobalListener<AdminErrorPacket>([](auto packet) {
+            ErrorQueues::get().warn(packet->message);
         });
     }
 
@@ -358,12 +487,12 @@ protected:
         secretKey = packet->secretKey;
         state = ConnectionState::Established;
 
-        if (recovering) {
+        if (recovering || wasFromRecovery) {
             recovering = false;
             recoverAttempt = 0;
 
             log::info("connection recovered successfully!");
-            ErrorQueues::get().success("Connection recovered");
+            ErrorQueues::get().success("[Globed] Connection recovered");
         }
 
         // these are not thread-safe, so delay it
@@ -388,22 +517,45 @@ protected:
         }
     }
 
-    void addGlobalListener(packetid_t id, PacketCallback&& callback, bool mainThread = false) {
-        auto listener = PacketListener::create(id, std::move(callback), nullptr, BUILTIN_LISTENER_PRIORITY, mainThread, false);
-        this->addListener(nullptr, listener);
-    }
+    void onProtocolMismatch(std::shared_ptr<ProtocolMismatchPacket> packet) {
+        log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, this->getUsedProtocol());
 
-    template <HasPacketID Pty>
-    void addGlobalListener(PacketCallbackSpecific<Pty>&& callback, bool mainThread = false) {
-        this->addGlobalListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
-            callback(std::static_pointer_cast<Pty>(pkt));
-        }, mainThread);
-    }
+#ifdef GLOBED_DEBUG
+        // if we are in debug mode, allow the user to override it
+        Loader::get()->queueInMainThread([this, serverProtocol = packet->serverProtocol] {
+            geode::createQuickPopup("Globed Error",
+                fmt::format("Protocol mismatch (client: v{}, server: v{}). Override the protocol for this session and allow to connect to the server anyway? <cy>(Not recommended!)</c>", this->getUsedProtocol(), serverProtocol),
+                "Cancel", "Yes", [this](FLAlertLayer*, bool override) {
+                    if (override) {
+                        this->setIgnoreProtocolMismatch(true);
+                    }
+                }
+            );
+        });
+#else
+        // if we are not in debug, show an error telling the user to update the mod
 
-    // Same as `addGlobalListener(callback, true)`
-    template <HasPacketID Pty>
-    void addGlobalListenerSync(PacketCallbackSpecific<Pty>&& callback) {
-        this->addGlobalListener<Pty>(std::move(callback), true);
+        if (packet->serverProtocol < this->getUsedProtocol()) {
+            std::string message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
+            ErrorQueues::get().error(message);
+        } else {
+            Loader::get()->queueInMainThread([packet = std::move(packet)] {
+                std::string message = fmt::format(
+                    "Your Globed version is <cr>outdated</c>, please <cg>update</c> Globed in order to connect."
+                    " Installed version: <cy>{}</c>, required: <cy>{}</c> (or newer)",
+                    Mod::get()->getVersion().toString(),
+                    packet->minClientVersion
+                );
+                geode::createQuickPopup("Globed Error", message, "Cancel", "Update", [](FLAlertLayer*, bool update) {
+                    if (!update) return;
+
+                    geode::openModsList();
+                });
+            });
+        }
+#endif
+
+        this->disconnect(true);
     }
 
     /* misc */
@@ -596,15 +748,19 @@ protected:
                     return;
                 }
 
+                auto sleepPeriod = util::time::seconds(10) * attemptNumber;
+
+                log::debug("tcp connect failed, sleeping for {} before trying again", util::format::formatDuration(sleepPeriod));
+
                 // wait for a bit before trying again
-                std::this_thread::sleep_for(util::time::seconds(5) * attemptNumber);
+                std::this_thread::sleep_for(sleepPeriod);
                 return;
             }
         }
 
         // detect if the tcp socket has disconnected and start recovery attempt
         if (state == ConnectionState::Established && !socket.isConnected()) {
-            ErrorQueues::get().warn("socket has disconnected, attempting to recover the connection..");
+            ErrorQueues::get().warn("[Globed] connection lost, reconnecting..");
 
             state = ConnectionState::TcpConnecting;
             recovering = true;
@@ -636,19 +792,24 @@ protected:
 
         auto sinceLastPacket = now - lastReceivedPacket;
         auto sinceLastKeepalive = now - lastSentKeepalive;
-        auto sinceLastTcpExchane = now - lastTcpExchange;
+        auto sinceLastTcpExchange = now - lastTcpExchange;
 
         if (sinceLastPacket > util::time::seconds(20)) {
-            this->disconnectWithMessage("timed out (no response from the server after 20 seconds)");
-        } else if (sinceLastPacket > util::time::seconds(10) && sinceLastKeepalive < util::time::seconds(3)) {
+            // timed out, disconnect the tcp socket but allow to reconnect
+            log::warn("timed out, time since last received packet: {}", util::format::formatDuration(sinceLastPacket));
+            socket.disconnect();
+        } else if (sinceLastPacket > util::time::seconds(10) && sinceLastKeepalive > util::time::seconds(3)) {
             // send a keepalive
+#ifdef GLOBED_DEBUG
+            log::debug("sending keepalive");
+#endif
             this->send(KeepalivePacket::create());
             lastSentKeepalive = now;
             GameServerManager::get().startKeepalive();
         }
 
         // send a tcp keepalive to keep the nat hole open
-        if (sinceLastTcpExchane > util::time::seconds(60)) {
+        if (sinceLastTcpExchange > util::time::seconds(60)) {
             this->send(KeepaliveTCPPacket::create());
         }
     }

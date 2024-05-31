@@ -22,7 +22,7 @@ Connection related
 * 10005 - ClaimThreadPacket - claim a tcp thread from a udp connection
 * 10006 - DisconnectPacket - client disconnection
 * 10007 - KeepaliveTCPPacket - keepalive but for the tcp connection
-* 10010 - ConnectionTestPacket - connection test (response 20010)
+* 10200 - ConnectionTestPacket - connection test (response 20010)
 
 General
 
@@ -69,13 +69,14 @@ Connection related
 * 20003 - ServerDisconnectPacket - server kicked you out
 * 20004 - LoggedInPacket - successful auth
 * 20005 - LoginFailedPacket - bad auth (has error message)
-* 20006 - ServerNoticePacket - message popup for the user
-* 20007 - ProtocolMismatchPacket - protocol version mismatch
-* 20008 - KeepaliveTCPResponsePacket - keepalive response but for tcp
-* 20009 - ClaimThreadFailedPacket - failed to claim thread
-* 20010 - ConnectionTestResponsePacket - connection test response
-* 20011 - ServerBannedPacket - message about being banned
-* 20012 - ServerMutedPacket - message about being muted
+* 20006 - ProtocolMismatchPacket - protocol version mismatch
+* 20007 - KeepaliveTCPResponsePacket - keepalive response but for tcp
+* 20008 - ClaimThreadFailedPacket - failed to claim thread
+* 20009 - LoginRecoveryFailedPacket - failed to recover session
+* 20100 - ServerNoticePacket - message popup for the user
+* 20101 - ServerBannedPacket - message about being banned
+* 20102 - ServerMutedPacket - message about being muted
+* 20200 - ConnectionTestResponsePacket - connection test response
 
 General
 

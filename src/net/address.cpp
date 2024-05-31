@@ -13,8 +13,8 @@ NetworkAddress::NetworkAddress(const std::string_view address) {
     this->set(address);
 }
 
-NetworkAddress::NetworkAddress(const std::string_view ip, uint16_t port) {
-    this->set(ip, port);
+NetworkAddress::NetworkAddress(const std::string_view host, uint16_t port) {
+    this->set(host, port);
 }
 
 void NetworkAddress::set(const std::string_view address) {
@@ -27,41 +27,41 @@ void NetworkAddress::set(const std::string_view address) {
     }
 }
 
-void NetworkAddress::set(const std::string_view ip, uint16_t port) {
-    this->ip = ip;
+void NetworkAddress::set(const std::string_view host, uint16_t port) {
+    this->host = host;
     this->port = port;
 }
 
 std::string NetworkAddress::toString() const {
-    return ip + ":" + std::to_string(port);
+    return host + ":" + std::to_string(port);
 }
 
 Result<sockaddr_in> NetworkAddress::resolve() const {
-    if (ip.empty()) {
+    if (host.empty()) {
         return Err("empty IP address or domain name, cannot resolve");
     }
 
     // if it's cached then just use our cache
-    if (gaiCache.contains(ip)) {
+    if (dnsCache.contains(host)) {
         sockaddr_in out;
         out.sin_family = AF_INET;
         out.sin_port = htons(port);
-        out.sin_addr = gaiCache.at(ip);
+        out.sin_addr = dnsCache.at(host);
         return Ok(out);
     }
 
     // for some reason this must be heap allocated or windows complains
     auto addr = std::make_unique<sockaddr_in>();
 
-    bool validIp = (inet_pton(AF_INET, ip.c_str(), &addr->sin_addr) > 0);
+    bool validIp = (inet_pton(AF_INET, host.c_str(), &addr->sin_addr) > 0);
 
     // if this is not a valid IP address, try getaddrinfo
     if (!validIp) {
-        GLOBED_UNWRAP(util::net::getaddrinfo(ip, *addr));
+        GLOBED_UNWRAP(util::net::getaddrinfo(host, *addr));
     }
 
     // add to cache
-    gaiCache.emplace(std::make_pair(ip, addr->sin_addr));
+    dnsCache.emplace(std::make_pair(host, addr->sin_addr));
 
     sockaddr_in copy;
     std::memcpy(&copy, addr.get(), sizeof(sockaddr_in));
