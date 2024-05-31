@@ -49,7 +49,7 @@ public:
     std::unordered_map<std::string, GameServer> getAllServers();
 
     // return ping on the active server
-    uint32_t getActivePing();
+    int getActivePing();
 
     // save the given address as a last connected standalone address
     void saveStandalone(const std::string_view addr);
