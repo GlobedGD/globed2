@@ -229,6 +229,9 @@ void GlobedMenuLayer::refreshServerList(float) {
         leftButtonMenu->updateLayout();
     }
 
+    // update ping of the active server, if any
+    nm.updateServerPing();
+
     // if we do not have a session token from the central server, and are not in a standalone server, don't show game servers
     if (!csm.standalone() && !am.hasAuthKey()) {
         listLayer->setVisible(false);
@@ -359,7 +362,8 @@ void GlobedMenuLayer::keyDown(enumKeyCodes key) {
 }
 
 void GlobedMenuLayer::pingServers(float) {
-    NetworkManager::get().pingServers();
+    auto& nm = NetworkManager::get();
+    nm.pingServers();
 }
 
 GlobedMenuLayer* GlobedMenuLayer::create() {

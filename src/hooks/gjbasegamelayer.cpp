@@ -546,55 +546,58 @@ void GlobedGJBGL::selPeriodicalUpdate(float) {
         for (int id : toRemove) {
             self->handlePlayerLeave(id);
         }
+    } else {
+        util::collections::SmallVector<int, 256> ids;
 
-        return;
-    }
-
-    util::collections::SmallVector<int, 256> ids;
-
-    // kick players that have left the level
-    for (const auto& [playerId, remotePlayer] : self->m_fields->players) {
-        // if the player doesnt exist in last LevelData packet, they have left the level
-        if (self->m_fields->interpolator->isPlayerStale(playerId, self->m_fields->lastServerUpdate)) {
-            toRemove.push_back(playerId);
-            continue;
-        }
-
-        auto data = pcm.getData(playerId);
-
-        if (!remotePlayer->isValidPlayer()) {
-            if (data.has_value()) {
-                // if the profile data already exists in cache, use it
-                remotePlayer->updateAccountData(data.value(), true);
+        // kick players that have left the level
+        for (const auto& [playerId, remotePlayer] : self->m_fields->players) {
+            // if the player doesnt exist in last LevelData packet, they have left the level
+            if (self->m_fields->interpolator->isPlayerStale(playerId, self->m_fields->lastServerUpdate)) {
+                toRemove.push_back(playerId);
                 continue;
             }
 
-            // request again if it has either been 5 seconds, or if the player just joined
-            if (remotePlayer->getDefaultTicks() == 20) {
-                remotePlayer->setDefaultTicks(0);
-            }
+            auto data = pcm.getData(playerId);
 
-            if (remotePlayer->getDefaultTicks() == 0) {
-                ids.push_back(playerId);
-            }
+            if (!remotePlayer->isValidPlayer()) {
+                if (data.has_value()) {
+                    // if the profile data already exists in cache, use it
+                    remotePlayer->updateAccountData(data.value(), true);
+                    continue;
+                }
 
-            remotePlayer->incDefaultTicks();
-        } else if (data.has_value()) {
-            // still try to see if the cache has changed
-            remotePlayer->updateAccountData(data.value());
+                // request again if it has either been 5 seconds, or if the player just joined
+                if (remotePlayer->getDefaultTicks() == 20) {
+                    remotePlayer->setDefaultTicks(0);
+                }
+
+                if (remotePlayer->getDefaultTicks() == 0) {
+                    ids.push_back(playerId);
+                }
+
+                remotePlayer->incDefaultTicks();
+            } else if (data.has_value()) {
+                // still try to see if the cache has changed
+                remotePlayer->updateAccountData(data.value());
+            }
+        }
+
+        if (ids.size() > 3) {
+            NetworkManager::get().send(RequestPlayerProfilesPacket::create(0));
+        } else {
+            for (int id : ids) {
+                NetworkManager::get().send(RequestPlayerProfilesPacket::create(id));
+            }
+        }
+
+        for (int id : toRemove) {
+            self->handlePlayerLeave(id);
         }
     }
 
-    if (ids.size() > 3) {
-        NetworkManager::get().send(RequestPlayerProfilesPacket::create(0));
-    } else {
-        for (int id : ids) {
-            NetworkManager::get().send(RequestPlayerProfilesPacket::create(id));
-        }
-    }
-
-    for (int id : toRemove) {
-        self->handlePlayerLeave(id);
+    // update the ping to the server if overlay is enabled
+    if (GlobedSettings::get().overlay.enabled) {
+        NetworkManager::get().updateServerPing();
     }
 }
 

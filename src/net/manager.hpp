@@ -35,8 +35,13 @@ public:
         Established,     // fully connected to a server
     };
 
+    // Connect to a server
     geode::Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone);
+
+    // Connect to a server
     geode::Result<> connect(const GameServer& gsview);
+
+    // Connect to the currently selected standalone server
     geode::Result<> connectStandalone();
 
     // Disconnect from the server, does nothing if not connected
@@ -45,11 +50,17 @@ public:
     // Call `disconnect` and show an error popup with a message
     void disconnectWithMessage(const std::string_view message, bool quiet = true);
 
+    // Cancel reconnection
+    void cancelReconnect();
+
     // Sends a packet to the currently established connection. Throws if disconnected.
     void send(std::shared_ptr<Packet> packet);
 
     // Pings all known servers and stores the pings in `GameServerManager`
     void pingServers();
+
+    // If connected, pings the active server if there have been no pings for >5 seconds.
+    void updateServerPing();
 
     // Registers a packet listener and adds it to `target`
     void addListener(cocos2d::CCNode* target, packetid_t id, PacketListener* listener);
@@ -96,6 +107,9 @@ public:
 
     // Returns whether we are connected to a server and have logged in
     bool established();
+
+    // Returns whether we are currently trying to reconnect to a server due to an earlier connection break.
+    bool reconnecting();
 
     // Pause all network threads
     void suspend();

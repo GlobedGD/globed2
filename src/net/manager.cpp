@@ -54,8 +54,9 @@ protected:
     struct TaskSendPacket {
         std::shared_ptr<Packet> packet;
     };
+    struct TaskPingActive{};
 
-    using Task = std::variant<TaskPingServers, TaskSendPacket>;
+    using Task = std::variant<TaskPingServers, TaskSendPacket, TaskPingActive>;
 
     AtomicConnectionState state;
     GameSocket socket;
@@ -80,6 +81,7 @@ protected:
     AtomicU8 recoverAttempt;
     AtomicBool ignoreProtocolMismatch;
     AtomicBool wasFromRecovery;
+    AtomicBool cancellingRecovery;
     AtomicU32 secretKey;
     AtomicU32 serverTps;
 
@@ -163,6 +165,7 @@ protected:
         state = ConnectionState::Disconnected;
         standalone = false;
         recovering = false;
+        cancellingRecovery = false;
         recoverAttempt = 0;
 
         if (!quiet && prevState == ConnectionState::Established) {
@@ -185,6 +188,10 @@ protected:
         this->disconnect(quiet);
     }
 
+    void cancelReconnect() {
+        cancellingRecovery = true;
+    }
+
     void onConnectionError(const std::string_view reason) {
         ErrorQueues::get().warn(reason);
     }
@@ -197,6 +204,10 @@ protected:
 
     void pingServers() {
         taskQueue.push(TaskPingServers {});
+    }
+
+    void updateServerPing() {
+        taskQueue.push(TaskPingActive {});
     }
 
     ConnectionState getConnectionState() {
@@ -583,6 +594,10 @@ protected:
         return standalone;
     }
 
+    bool isReconnecting() {
+        return recovering;
+    }
+
     /* suspension */
 
     void suspend() {
@@ -758,12 +773,25 @@ protected:
                     return;
                 }
 
-                auto sleepPeriod = util::time::seconds(10) * attemptNumber;
+                auto sleepPeriod = util::time::millis(10000) * attemptNumber;
 
                 log::debug("tcp connect failed, sleeping for {} before trying again", util::format::formatDuration(sleepPeriod));
 
                 // wait for a bit before trying again
-                std::this_thread::sleep_for(sleepPeriod);
+
+                // we sleep 50 times because we want to check if the user cancelled the recovery
+                for (size_t i = 0; i < 50; i++) {
+                    std::this_thread::sleep_for(sleepPeriod / 50);
+
+                    if (cancellingRecovery) {
+                        log::debug("recovery attempts were cancelled.");
+                        recovering = false;
+                        recoverAttempt = 0;
+                        state = ConnectionState::Disconnected;
+                        return;
+                    }
+                }
+
                 return;
             }
         }
@@ -773,6 +801,7 @@ protected:
 
             state = ConnectionState::TcpConnecting;
             recovering = true;
+            cancellingRecovery = false;
             recoverAttempt = 0;
             return;
         }
@@ -804,6 +833,8 @@ protected:
                 this->handlePingTask();
             } else if (std::holds_alternative<TaskSendPacket>(task)) {
                 this->handleSendPacketTask(std::move(std::get<TaskSendPacket>(task)));
+            } else if (std::holds_alternative<TaskPingActive>(task)) {
+                this->handlePingActive();
             }
         }
 
@@ -822,19 +853,23 @@ protected:
             log::warn("timed out, time since last received packet: {}", util::format::formatDuration(sinceLastPacket));
             socket.disconnect();
         } else if (sinceLastPacket > util::time::seconds(10) && sinceLastKeepalive > util::time::seconds(3)) {
-            // send a keepalive
-#ifdef GLOBED_DEBUG
-            log::debug("sending keepalive");
-#endif
-            this->send(KeepalivePacket::create());
-            lastSentKeepalive = now;
-            GameServerManager::get().startKeepalive();
+            this->sendKeepalive();
         }
 
         // send a tcp keepalive to keep the nat hole open
         if (sinceLastTcpExchange > util::time::seconds(60)) {
             this->send(KeepaliveTCPPacket::create());
         }
+    }
+
+    void sendKeepalive() {
+        // send a keepalive
+#ifdef GLOBED_DEBUG
+        log::debug("sending keepalive");
+#endif
+        this->send(KeepalivePacket::create());
+        lastSentKeepalive = util::time::now();
+        GameServerManager::get().startKeepalive();
     }
 
     void failedRecovery() {
@@ -886,6 +921,17 @@ protected:
             this->onConnectionError(e.what());
         }
     }
+
+    void handlePingActive() {
+        if (!this->established()) return;
+
+        auto now = util::time::now();
+        auto sinceLastPacket = now - lastReceivedPacket;
+
+        if (sinceLastPacket > util::time::seconds(5)) {
+            this->sendKeepalive();
+        }
+    }
 };
 
 /* NetworkManager (public API) */
@@ -922,12 +968,20 @@ void NetworkManager::disconnectWithMessage(const std::string_view message, bool 
     impl->disconnectWithMessage(message, quiet);
 }
 
+void NetworkManager::cancelReconnect() {
+    impl->cancelReconnect();
+}
+
 void NetworkManager::send(std::shared_ptr<Packet> packet) {
     impl->send(std::move(packet));
 }
 
 void NetworkManager::pingServers() {
     impl->pingServers();
+}
+
+void NetworkManager::updateServerPing() {
+    impl->updateServerPing();
 }
 
 void NetworkManager::addListener(cocos2d::CCNode* target, packetid_t id, PacketListener* listener) {
@@ -969,6 +1023,10 @@ ConnectionState NetworkManager::getConnectionState() {
 
 bool NetworkManager::established() {
     return impl->established();
+}
+
+bool NetworkManager::reconnecting() {
+    return impl->isReconnecting();
 }
 
 void NetworkManager::suspend() {
