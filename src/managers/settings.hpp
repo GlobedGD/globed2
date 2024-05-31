@@ -1,8 +1,10 @@
 #pragma once
 
-#include <data/basic.hpp>
 #include <defs/geode.hpp>
 #include <defs/util.hpp>
+#include <data/basic.hpp>
+
+#include <util/singleton.hpp>
 
 class GlobedSettings : public SingletonBase<GlobedSettings> {
     friend class SingletonBase;

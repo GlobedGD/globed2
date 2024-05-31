@@ -1,10 +1,10 @@
 #pragma once
 #include <defs/platform.hpp>
 #include <defs/minimal_geode.hpp>
-#include <defs/util.hpp>
 
 #include "stream.hpp"
 #include <util/time.hpp>
+#include <util/singleton.hpp>
 
 /*
 * VoicePlaybackManager is responsible for playing voices of multiple people

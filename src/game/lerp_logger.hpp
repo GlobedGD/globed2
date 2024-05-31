@@ -1,8 +1,9 @@
 #pragma once
-#include <defs/util.hpp>
 #include <defs/geode.hpp>
 
 #include <data/types/game.hpp>
+
+#include <util/singleton.hpp>
 
 struct PlayerLogData {
     float localTimestamp;

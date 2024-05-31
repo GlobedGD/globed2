@@ -255,7 +255,7 @@ protected:
         // the listener will unregister itself in the destructor.
     }
 
-    void unregisterPacketListener(packetid_t packet, PacketListener* listener) {
+    void unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {
 #ifdef GLOBED_DEBUG
         // note: is it safe to access listener->owner here?
         // at the time of user object destruction, i believe the node is still valid,
@@ -270,6 +270,10 @@ protected:
         auto it = std::find(lsm.begin(), lsm.end(), listener);
         if (it != lsm.end()) {
             lsm.erase(it);
+        }
+
+        if (suppressUnhandled) {
+            this->suppressUnhandledUntil(packet, util::time::systemNow() + util::time::seconds(3));
         }
     }
 
@@ -754,10 +758,6 @@ void NetworkManager::removeListener(cocos2d::CCNode* target, packetid_t id) {
     impl->removeListener(target, id);
 }
 
-void NetworkManager::suppressUnhandledUntil(packetid_t id, util::time::system_time_point point) {
-    impl->suppressUnhandledUntil(id, point);
-}
-
 void NetworkManager::removeAllListeners() {
     impl->removeAllListeners();
 }
@@ -794,6 +794,6 @@ void NetworkManager::resume() {
     impl->resume();
 }
 
-void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener) {
-    impl->unregisterPacketListener(packet, listener);
+void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {
+    impl->unregisterPacketListener(packet, listener, suppressUnhandled);
 }

@@ -53,10 +53,6 @@ bool RoomSettingsPopup::setup() {
     return true;
 }
 
-RoomSettingsPopup::~RoomSettingsPopup() {
-    NetworkManager::get().suppressUnhandledFor<RoomInfoPacket>(util::time::seconds(3));
-}
-
 void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
     bool enabled = !static_cast<CCMenuItemToggler*>(sender)->isOn();
     int setting = sender->getTag();

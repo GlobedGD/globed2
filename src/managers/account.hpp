@@ -1,11 +1,12 @@
 #pragma once
-#include <defs/util.hpp>
 #include <defs/minimal_geode.hpp>
 
 #include <Geode/utils/web.hpp>
 
 #include <crypto/secret_box.hpp>
 #include <asp/sync.hpp>
+
+#include <util/singleton.hpp>
 
 // all methods of GlobedAccountManager will store/load values with keys that are
 // user-specific and central-server-specific, so that switching server or accounts doesn't reset authkeys.

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <defs/util.hpp>
+#include <asp/sync/Atomic.hpp>
+
 #include <data/types/user.hpp>
 #include <data/types/gd.hpp>
 
-#include <asp/sync/Atomic.hpp>
+#include <util/singleton.hpp>
 
 class AdminManager : public SingletonBase<AdminManager> {
     friend class SingletonBase;
