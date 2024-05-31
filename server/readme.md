@@ -31,13 +31,13 @@ note: if you are not on Windows, in the following examples replace `set` with `e
 
 If you want to spin up a quick, standalone game server, without needing to start a central server, then it is as simple as running the `globed-game-server.exe` executable directly.
 
-If you want to change the port then you'll have to run the executable with an additional argument like so:
+If you want to change the port (default is 4202) then you'll have to run the executable with an additional argument like so:
 ```sh
-# replace 0.0.0.0:41001 with your address and port
-globed-game-server.exe 0.0.0.0:41001
+# replace 4202 with your desired port
+globed-game-server.exe 0.0.0.0:4202
 ```
 
-**To connect to your server, you want to use the Direct Connection option inside the server switcher in-game**. (with the address `127.0.0.1:41001` if the server is running on the same device)
+**To connect to your server, you want to use the Direct Connection option inside the server switcher in-game**. (with the address `127.0.0.1:4202` if the server is running on the same device)
 
 Keep in mind that a standalone server makes the configuration very limited (for example you can't ban/mute users anymore) and disables any kind of player authentication.
 
@@ -47,17 +47,17 @@ Keep in mind that a standalone server makes the configuration very limited (for 
 To start the game server and bridge it together with an active central server you must use the password from the `game_server_password` option in the central server configuration. Then, you have 2 options whenever you start the server:
 
 ```sh
-globed-game-server.exe 0.0.0.0:41001 http://127.0.0.1:41000 password
+globed-game-server.exe 0.0.0.0:4202 http://127.0.0.1:4201 password
 
 # or like this:
 
-set GLOBED_GS_ADDRESS=0.0.0.0:41001
-set GLOBED_GS_CENTRAL_URL=http://127.0.0.1:41000
+set GLOBED_GS_ADDRESS=0.0.0.0:4202
+set GLOBED_GS_CENTRAL_URL=http://127.0.0.1:4201
 set GLOBED_GS_CENTRAL_PASSWORD=password
 globed-game-server.exe
 ```
 
-Replace `0.0.0.0:41001` with the address you want the game server to listen on, `http://127.0.0.1:41000` with the URL of your central server, and `password` with the password.
+Replace `0.0.0.0:4202` with the address you want the game server to listen on, `http://127.0.0.1:4201` with the URL of your central server, and `password` with the password.
 
 ### Environment variables
 
@@ -107,7 +107,7 @@ Formatting for game servers:
 {
     "id": "my-server-id",
     "name": "Server name",
-    "address": "127.0.0.1:41001",
+    "address": "127.0.0.1:4202",
     "region": "my home i guess?"
 }
 ```

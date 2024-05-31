@@ -45,6 +45,9 @@ pub const ADMIN_KEY_LENGTH: usize = 32;
 pub const MAX_NAME_SIZE: usize = 24;
 pub const VIOLATION_REASON_LENGTH: usize = 128;
 
+pub const DEFAULT_CENTRAL_SERVER_PORT: u16 = 4201;
+pub const DEFAULT_GAME_SERVER_PORT: u16 = 4202;
+
 pub fn generate_alphanum_string(n: usize) -> String {
     rand::thread_rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect()
 }

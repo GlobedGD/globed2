@@ -378,9 +378,11 @@ impl UnauthorizedThread {
             account_data.icons.clone_from(&packet.icons);
 
             let user_entry = self.user_entry.lock();
-            let sud = SpecialUserData::from_user_entry(user_entry.as_ref().unwrap(), &self.game_server.state.role_manager);
+            if let Some(user_entry) = &*user_entry {
+                let sud = SpecialUserData::from_user_entry(user_entry, &self.game_server.state.role_manager);
 
-            account_data.special_user_data = sud;
+                account_data.special_user_data = sud;
+            }
         };
 
         // add them to the global room
@@ -479,8 +481,6 @@ impl UnauthorizedThread {
             self.account_id.load(std::sync::atomic::Ordering::Relaxed) != 0,
             "account ID is 0 when upgrading thread"
         );
-        debug_assert!(self.user_entry.lock().is_some(), "account data is None when upgrading thread");
-        debug_assert!(self.user_role.lock().is_some(), "account data is None when upgrading thread");
         debug_assert!(
             self.connection_state.load() == ClientThreadState::Established,
             "connection state is not Established when upgrading thread"

@@ -1,5 +1,5 @@
 [default]
-port = 41000
+port = 4201
 cli_colors = true
 
 # These are not recommended to change unless you have a reason to

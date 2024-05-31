@@ -6,7 +6,7 @@ use std::{
 use globed_shared::{
     anyhow::{self, anyhow},
     esp::{self, Decodable, Encodable},
-    generate_alphanum_string, Decodable, Encodable, ServerRole, ADMIN_KEY_LENGTH,
+    generate_alphanum_string, Decodable, Encodable, ServerRole, ADMIN_KEY_LENGTH, DEFAULT_GAME_SERVER_PORT,
 };
 use json_comments::StripComments;
 use serde::{Deserialize, Serialize};
@@ -51,7 +51,7 @@ fn default_game_servers() -> Vec<GameServerEntry> {
     vec![GameServerEntry {
         id: "example-server-you-can-delete-it".to_owned(),
         name: "Server name".to_owned(),
-        address: "127.0.0.1:41001".to_owned(),
+        address: format!("127.0.0.1:{DEFAULT_GAME_SERVER_PORT}"),
         region: "the nether".to_owned(),
     }]
 }

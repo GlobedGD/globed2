@@ -29,7 +29,6 @@ public:
     constexpr static const char* STANDALONE_SETTING_KEY = "_last-standalone-addr";
     constexpr static const char* LAST_CONNECTED_SETTING_KEY = "_last-connected-addr";
     constexpr static const char* SERVER_RESPONSE_CACHE_KEY = "_last-cached-servers-response";
-    constexpr static unsigned short DEFAULT_PORT = 41001;
 
     asp::AtomicBool pendingChanges;
 

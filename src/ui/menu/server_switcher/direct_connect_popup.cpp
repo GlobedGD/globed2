@@ -25,7 +25,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
         .id("direct-connection-addr-hint"_spr);
 
     // address input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "127.0.0.1:41001", "chatFont.fnt", std::string(util::misc::STRING_URL), 21)
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "127.0.0.1:4202", "chatFont.fnt", std::string(util::misc::STRING_URL), 21)
         .pos(popupCenter, POPUP_HEIGHT - 40.f)
         .parent(m_mainLayer)
         .id("direct-connection-addr"_spr)
@@ -39,7 +39,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             std::string addr = this->addressNode->getString();
 
             if (addr.empty() || !std::regex_match(addr, pattern)) {
-                FLAlertLayer::create("Error", "Invalid address was passed. It must be an IPv4 address or a domain name with an optional port at the end (like <cy>127.0.0.1:41001</c> or <cy>globed.example.com:41001</c>)", "Ok")->show();
+                FLAlertLayer::create("Error", "Invalid address was passed. It must be an IPv4 address or a domain name with an optional port at the end (like <cy>127.0.0.1:4202</c> or <cy>globed.example.com:4202</c>)", "Ok")->show();
                 return;
             }
 
