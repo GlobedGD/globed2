@@ -1,7 +1,5 @@
 #include "progress_icon.hpp"
-#include "Geode/binding/GJAccountManager.hpp"
 #include "data/types/gd.hpp"
-#include "hooks/gjbasegamelayer.hpp"
 
 #include <managers/settings.hpp>
 
@@ -17,6 +15,7 @@ bool PlayerProgressIcon::init() {
 
 void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
     if (line) line->removeFromParent();
+    if (practiceSprite) practiceSprite->removeFromParent();
     if (playerIcon) playerIcon->removeFromParent();
 
     auto& settings = GlobedSettings::get();
@@ -46,28 +45,18 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
         .store(playerIcon);
 }
 
-void PlayerProgressIcon::updatePosition(float progress, int accountId) {
+void PlayerProgressIcon::updatePosition(float progress, bool isPracticing) {
     auto parent = this->getParent()->getParent();
     if (!parent) return;
 
-    bool isSelfProgressIcon = accountId == GJAccountManager::get()->m_accountID;
-    log::debug("{}", isSelfProgressIcon);
     CCSize pbSize = parent->getScaledContentSize();
     float prOffset = (pbSize.width - 2.f) * progress;
 
     bool lineIsVisible = progress > 0.01f && progress < 0.99f;
 
-    bool isPracticing = !isSelfProgressIcon ? GlobedGJBGL::get()->interpolator->getPlayerState(accountId).isPracticing : GlobedGJBGL::get()->m_isPracticeMode;
     bool practiceSpriteVisible = lineIsVisible && isPracticing;
-    // this->toggleLine(lineIsVisible);
-    log::debug("practicing: {}", GlobedGJBGL::get()->m_isPracticeMode);
     this->toggleLine(lineIsVisible);
     this->togglePracticeSprite(practiceSpriteVisible);
-    // this->practiceSprite->setOpacity(0);
-    // if (isPracticing)
-    //     this->togglePracticeSprite(practiceSpriteVisible);
-    // else
-    //     this->toggleLine(lineIsVisible);
 
     if (forceOnTop) {
         this->setZOrder(100000);
