@@ -9,7 +9,7 @@ public:
     static PlayerProgressIcon* create();
 
     void updateIcons(const PlayerIconData& data);
-    void updatePosition(float xPosition, int accountId = GJAccountManager::get()->m_accountID);
+    void updatePosition(float xPosition, bool isPracticing);
     void toggleLine(bool enabled);
     void togglePracticeSprite(bool enabled);
     void setForceOnTop(bool state);
