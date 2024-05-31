@@ -110,7 +110,7 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
     }
 
     width += static_cast<RowLayout*>(iconWrapper->getLayout())->getGap() * (count - 1);
-    
+
     auto cc9s = Build<CCScale9Sprite>::create("square02_001.png")
         .contentSize({ width * 3.f, 40.f * 3.f })
         .scale(1.f / 3.f)
