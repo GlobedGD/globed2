@@ -709,10 +709,8 @@ protected:
 
         // Initial tcp connection.
         if (state == ConnectionState::TcpConnecting && !recovering) {
-            log::debug("conn start");
             // try to connect
             auto result = socket.connect(connectedAddress, recovering);
-            log::debug("conn end");
 
             if (!result) {
                 this->disconnect(true);
@@ -926,9 +924,11 @@ protected:
         if (!this->established()) return;
 
         auto now = util::time::now();
-        auto sinceLastPacket = now - lastReceivedPacket;
+        auto sinceLastKeepalive = now - lastSentKeepalive;
 
-        if (sinceLastPacket > util::time::seconds(5)) {
+        bool isPingUnknown = GameServerManager::get().getActivePing() == -1;
+
+        if (sinceLastKeepalive > util::time::seconds(5) || isPingUnknown) {
             this->sendKeepalive();
         }
     }

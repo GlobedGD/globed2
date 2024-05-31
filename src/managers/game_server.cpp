@@ -118,7 +118,7 @@ std::unordered_map<std::string, GameServer> GameServerManager::getAllServers() {
     return out;
 }
 
-uint32_t GameServerManager::getActivePing() {
+int GameServerManager::getActivePing() {
     auto server = this->getActiveServer();
     GLOBED_REQUIRE(server.has_value(), "tried to request ping of the active server when not connected to any")
 
