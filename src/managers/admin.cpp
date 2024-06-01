@@ -28,7 +28,7 @@ ComputedRole& AdminManager::getRole() {
 void AdminManager::openUserPopup(const PlayerRoomPreviewAccountData& rpdata) {
     // load the data from the server
     auto& nm = NetworkManager::get();
-    IntermediaryLoadingPopup::create([&nm, rpdata = std::move(rpdata)](auto popup) {
+    IntermediaryLoadingPopup::create([&nm, rpdata = rpdata](auto popup) {
         nm.send(AdminGetUserStatePacket::create(std::to_string(rpdata.accountId)));
         nm.addListener<AdminUserDataPacket>(popup, [popup, rpdata = std::move(rpdata)](auto packet) {
             // delay the cration to avoid deadlock
