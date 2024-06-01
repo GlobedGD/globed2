@@ -1,17 +1,36 @@
-## v1.3.8
+## v1.4.0
 
-* Badges🔥
-* Add a credits menu
+* Add text chat in-game
+* Overhaul the room system
+* * You can now send room invites to other players
+* * Rooms have various settings, i.e. password, collision, player limit, name, invite-only
+* * Public room listing that lets you discover rooms without having to be invited
+* Add user roles
+* * Staff, supporters, etc. will have special name color, text chat color, and a badge near their name
+* Add editor compatibility
+* * If you are the creator of a level (or you use Level Edit hack), you will be able to see other people playing while in the editor
+* * When [EditorCollab by alk1m123](https://github.com/altalk23/EditorCollab) comes out, you will also be able to playtest non-uploaded levels together with others
+* * Experimental, might have issues
+* Add a way to play 2-player levels together (as a room setting!)
+* Add automatic reconnection to the server
+* Add credits to the globed menu
+* Fix all unsynced clock issues (auth no longer uses TOTP)
+* Fix most "unhandled packet" errors
+* Fix many connection related issues
+* Ask the user if they want voice chat enabled or not on first startup
 * Add a Compressed Player Count setting which changes the "X players" label to be more compact (thanks [Uproxide](user:25397826)!)
-* Add integration into the level editor (thanks [alk](user:11535118))
+* Add a voice chat guide button
+* Change textures for some icons in the menus
+* Add much better error messages for outdated clients
 * Don't play effects and animations if the player is too far
-* Change the voice chat guide button and ask the user if they want voice chat to be enabled on first startup
 * Replace the Overlay settings tab with Menus and move overlay settings into Level UI
-* Fix player icons and names taking multiple seconds to load when a player joins your level
-* Fix a missing texture crash when asset preloading is disabled
+* Fix "already inside of a level" error sometimes appearing when it shouldn't, and add a way to bypass it
+* Fix settings menu looking a bit broken due to a Geode update
 * Fix the placeholder green icon color being a slightly different shade than the actual default green
-* Fix the "already in a level" error appearing when disconnected, and add a way to forcefully open the level anyway
-* Some minor texture changes
+* Fix a missing texture crash when asset preloading is disabled
+* Lots of internal restructuring and rewrites, for improved performance and user experience
+* Protocol optimization (slightly less bandwidth usage)
+* Change the compiler used for Windows releases
 
 ## v1.3.7
 

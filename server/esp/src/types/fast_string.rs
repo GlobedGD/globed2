@@ -12,7 +12,7 @@ pub struct FastString {
     repr: StringRepr,
 }
 
-const INLINE_CAP: usize = 63; // including null terminator
+const INLINE_CAP: usize = 62;
 
 #[derive(Clone, Debug)]
 enum StringRepr {
@@ -23,6 +23,7 @@ enum StringRepr {
 #[derive(Copy, Clone, Debug)]
 struct InlineRepr {
     buf: [u8; INLINE_CAP],
+    length: u8,
 }
 
 #[derive(Clone, Debug)]
@@ -33,21 +34,12 @@ struct HeapRepr {
 impl InlineRepr {
     #[inline]
     pub fn len(&self) -> usize {
-        let mut idx = 0;
-        for c in self.buf {
-            if c == 0u8 {
-                break;
-            }
-
-            idx += 1;
-        }
-
-        idx
+        self.length as usize
     }
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.buf[0] == 0u8
+        self.len() == 0
     }
 
     #[inline]
@@ -57,24 +49,26 @@ impl InlineRepr {
 
     #[inline]
     pub fn push(&mut self, c: u8) {
+        debug_assert!(self.len() < INLINE_CAP, "FastString overflow");
+
         let idx = self.len();
         self.buf[idx] = c;
-        self.buf[idx + 1] = 0u8;
+        self.length += 1;
     }
 
     #[inline]
     pub fn extend_bytes(&mut self, data: &[u8]) {
         let idx = self.len();
 
-        debug_assert!(idx + data.len() < INLINE_CAP);
+        debug_assert!(idx + data.len() < INLINE_CAP, "FastString overflow");
 
         self.buf[idx..idx + data.len()].copy_from_slice(&data[..data.len()]);
-        self.buf[idx + data.len()] = 0u8;
+        self.length += data.len() as u8;
     }
 
     #[inline]
     pub fn clear(&mut self) {
-        self.buf[0] = 0u8;
+        self.length = 0;
     }
 }
 
@@ -145,13 +139,12 @@ impl StringRepr {
         let mut buf = [0u8; INLINE_CAP];
 
         buf[..len].copy_from_slice(&data[..len]);
-        buf[len] = 0u8;
 
-        Self::Inline(InlineRepr { buf })
+        Self::Inline(InlineRepr { buf, length: len as u8 })
     }
 
     pub const fn inline_capacity() -> usize {
-        INLINE_CAP - 1
+        INLINE_CAP
     }
 
     #[inline]
@@ -452,18 +445,11 @@ impl Decodable for FastString {
     {
         let len = buf.read_length_check::<u8>()?;
 
-        if len < INLINE_CAP {
-            let mut buffer = [0u8; INLINE_CAP];
-            std::io::Read::read(buf, &mut buffer[..len])?;
+        let end_pos = buf.get_rpos() + len;
+        let str = Self::from_buffer(&buf.as_bytes()[buf.get_rpos()..end_pos]);
+        buf.set_rpos(end_pos);
 
-            Ok(Self::from_buffer(&buffer[..len]))
-        } else {
-            let end_pos = buf.get_rpos() + len;
-            let str = Self::from_buffer(&buf.as_bytes()[buf.get_rpos()..end_pos]);
-            buf.set_rpos(end_pos);
-
-            Ok(str)
-        }
+        Ok(str)
     }
 }
 

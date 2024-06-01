@@ -10,6 +10,7 @@ use crate::*;
 /// Checks are only done when you convert the string into a `&str` or `String`, via `.to_str`, `.try_to_str`, or `to_string`.
 #[derive(Clone, Debug)]
 pub struct InlineString<const N: usize> {
+    // so this is super dumb but we store length as the last byte lol
     buffer: [u8; N],
 }
 
@@ -27,33 +28,23 @@ impl<const N: usize> InlineString<N> {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Self {
         debug_assert!(
-            data.len() <= N,
-            "Attempting to create a InlineString with {} bytes which is more than the capacity ({N})",
-            data.len()
+            data.len() <= Self::capacity(),
+            "Attempting to create a InlineString with {} bytes which is more than the capacity ({})",
+            data.len(),
+            Self::capacity(),
         );
         let mut buffer = [0u8; N];
         buffer[..data.len()].copy_from_slice(data);
 
-        // null terminate
-        if data.len() < buffer.len() {
-            buffer[data.len()] = 0u8;
-        }
+        // store length
+        buffer[N - 1] = data.len() as u8;
 
         Self { buffer }
     }
 
     #[inline]
     pub fn len(&self) -> usize {
-        let mut idx = 0;
-        for c in self.buffer {
-            if c == 0u8 {
-                break;
-            }
-
-            idx += 1;
-        }
-
-        idx
+        self.buffer[N - 1] as usize
     }
 
     #[inline]
@@ -68,15 +59,13 @@ impl<const N: usize> InlineString<N> {
 
     #[inline]
     pub fn push(&mut self, c: u8) {
-        if self.len() < N {
+        if self.len() < Self::capacity() {
             let idx = self.len();
-            self.buffer[idx] = c;
 
-            if idx + 1 < N {
-                self.buffer[idx + 1] = 0u8;
-            }
+            self.buffer[idx] = c;
+            self.buffer[N - 1] += 1; // increment length
         } else {
-            panic!("InlineString buffer overflow (writing beyond capacity of {N})");
+            panic!("InlineString buffer overflow (writing beyond capacity of {})", Self::capacity());
         }
     }
 
@@ -95,17 +84,15 @@ impl<const N: usize> InlineString<N> {
         let start = self.len();
         self.buffer[start..end].copy_from_slice(data.as_bytes());
 
-        // null terminate
-        if end < N {
-            self.buffer[end] = 0u8;
-        }
+        // store length
+        self.buffer[N - 1] += data.len() as u8;
     }
 
     /// like `extend` but will simply truncate the data instead of panicking if the string doesn't fit
     #[inline]
     pub fn extend_safe(&mut self, data: &str) {
         for char in data.as_bytes() {
-            if self.len() >= N {
+            if self.len() >= Self::capacity() {
                 break;
             }
 

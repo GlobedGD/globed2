@@ -7,6 +7,7 @@ use std::{
     time::Duration,
 };
 
+#[allow(unused_imports)]
 use globed_shared::{
     debug, info,
     rand::{self, Rng},

@@ -307,6 +307,7 @@ impl GameServer {
                     // we are now supposedly the only reference to the thread, so this should always work
                     let thread = Arc::into_inner(thread).expect("failed to unwrap unauthorized thread");
 
+                    // safety: the thread no longer runs and we are the only ones who can access the socket
                     let socket = unsafe { thread.socket.get() };
                     let udp_peer = socket.udp_peer.expect("upgraded thread has no udp peer assigned");
 

@@ -153,6 +153,7 @@ impl ClientThread {
     }
 
     async fn poll_for_tcp_data(&self) -> Result<usize> {
+        // safety: we trust this function is not called from the oustide
         let sock = unsafe { self.socket.get_mut() };
         sock.poll_for_tcp_data().await
     }
@@ -250,6 +251,7 @@ impl ClientThread {
 
     /// get the tcp address of the connected peer. do not call this from another clientthread
     fn get_tcp_peer(&self) -> SocketAddrV4 {
+        // safety: we trust this function is not called from the oustide
         unsafe { self.socket.get() }.tcp_peer
     }
 
