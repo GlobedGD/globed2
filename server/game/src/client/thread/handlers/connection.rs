@@ -6,7 +6,7 @@ impl ClientThread {
     gs_handler!(self, handle_ping, PingPacket, packet, {
         self.send_packet_static(&PingResponsePacket {
             id: packet.id,
-            player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
+            player_count: self.game_server.state.get_player_count(),
         })
         .await
     });
@@ -15,7 +15,7 @@ impl ClientThread {
         let _ = gs_needauth!(self);
 
         self.send_packet_static(&KeepaliveResponsePacket {
-            player_count: self.game_server.state.player_count.load(Ordering::Relaxed),
+            player_count: self.game_server.state.get_player_count(),
         })
         .await
     });

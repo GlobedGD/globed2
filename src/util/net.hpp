@@ -42,4 +42,8 @@ namespace util::net {
     Result<> getaddrinfo(const std::string_view hostname, sockaddr_in& out);
 
     Result<std::string> inAddrToString(const in_addr& addr);
+    Result<> stringToInAddr(const char* addr, in_addr& out);
+
+    uint16_t hostToNetworkPort(uint16_t port);
+
 }
