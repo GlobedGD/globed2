@@ -149,7 +149,7 @@ void GlobedUserCell::makeButtons() {
     if (!pl->m_fields->players.contains(accountData.accountId)) return;
 
     if (createBtnSettings) {
-        // settings buttonba
+        // settings button
         Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
             .scale(0.36f)
             .intoMenuItem([this, id = accountData.accountId](auto) {
