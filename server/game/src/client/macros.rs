@@ -124,6 +124,8 @@ pub fn with_heap_vec<R>(game_server: &GameServer, size: usize, f: impl FnOnce(&m
     if size > buf.len() {
         drop(buf);
         let mut vec = Vec::<MaybeUninit<u8>>::with_capacity(size);
+
+        // safety: uninit data
         unsafe {
             vec.set_len(size);
             let ptr = vec.as_mut_ptr();
