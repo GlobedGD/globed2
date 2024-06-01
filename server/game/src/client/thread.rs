@@ -1,5 +1,6 @@
 use std::{
     collections::VecDeque,
+    io::ErrorKind,
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
@@ -15,6 +16,7 @@ use crate::tokio::{
 use esp::ByteReader;
 use globed_shared::{logger::*, SyncMutex, UserEntry};
 use handlers::game::MAX_VOICE_PACKET_SIZE;
+use tokio::time::Instant;
 
 use crate::{
     data::*,
@@ -28,6 +30,7 @@ pub use super::*;
 pub mod handlers;
 
 pub const INLINE_BUFFER_SIZE: usize = 164;
+pub const THREAD_MICRO_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Clone)]
 pub enum ServerThreadMessage {
@@ -155,6 +158,8 @@ impl ClientThread {
     }
 
     pub async fn run(&self) -> ClientThreadOutcome {
+        let mut last_received_packet = Instant::now();
+
         loop {
             let state = self.connection_state.load();
 
@@ -165,9 +170,22 @@ impl ClientThread {
                 ClientThreadState::Established => {}
             }
 
+            // if more than 90 seconds since last packet, disonnect
+            if last_received_packet.elapsed().as_secs() > 90 {
+                break self.terminate();
+            }
+
             tokio::select! {
                 message = self.poll_for_messages() => {
                     if let Some(message) = message {
+                        match message {
+                            ServerThreadMessage::Packet(_) | ServerThreadMessage::SmallPacket(_) => {
+                                // update last received packet
+                                last_received_packet = Instant::now();
+                            },
+                            _ => {}
+                        }
+
                         match self.handle_message(message).await {
                             Ok(()) => {}
                             Err(e) => self.print_error(&e),
@@ -175,31 +193,31 @@ impl ClientThread {
                     }
                 }
 
-                timeout_res = tokio::time::timeout(Duration::from_secs(90), self.poll_for_tcp_data()) => match timeout_res {
-                    Ok(Ok(message_len)) => {
+                tcp_res = self.poll_for_tcp_data() => match tcp_res {
+                    Ok(message_len) => {
                         // try to stop silly HTTP request attempts
                         // 0x47455420 is the ascii string "GET " and 0x504f5354 is "POST"
                         if message_len == 0x47_45_54_20 || message_len == 0x50_4f_53_54 {
                             warn!("[{}] received an unexpected (potential) HTTP request, disconnecting", self.get_tcp_peer());
-                            self.terminate();
-                            break ClientThreadOutcome::Terminate;
+                            break self.terminate();
                         }
+
+                        // update last received packet
+                        last_received_packet = Instant::now();
 
                         match self.recv_and_handle(message_len).await {
                             Ok(()) => {}
                             Err(e) => self.print_error(&e),
                         }
                     }
-                    Ok(Err(err)) => {
+                    Err(err) => {
                         self.print_error(&err);
-                        self.disconnect();
-                        break ClientThreadOutcome::Disconnect;
+                        break self.disconnect();
                     }
-                    Err(_) => {
-                        debug!("tcp connection not responding for 90 seconds, disconnecting");
-                        self.terminate();
-                        break ClientThreadOutcome::Terminate;
-                    }
+                },
+
+                () = tokio::time::sleep(THREAD_MICRO_TIMEOUT) => {
+                    continue;
                 }
             };
         }
@@ -210,13 +228,17 @@ impl ClientThread {
     }
 
     /// schedule the thread to terminate as soon as possible.
-    pub fn terminate(&self) {
+    #[inline]
+    pub fn terminate(&self) -> ClientThreadOutcome {
         self.connection_state.store(ClientThreadState::Terminating);
+        ClientThreadOutcome::Terminate
     }
 
     /// schedule the thread to terminate as soon as possible, but allowing reconnects
-    pub fn disconnect(&self) {
+    #[inline]
+    pub fn disconnect(&self) -> ClientThreadOutcome {
         self.connection_state.store(ClientThreadState::Disconnected);
+        ClientThreadOutcome::Disconnect
     }
 
     pub async fn push_new_message(&self, message: ServerThreadMessage) {
@@ -234,7 +256,7 @@ impl ClientThread {
     // the error printing is different in release and debug. some errors have higher severity than others.
     fn print_error(&self, error: &PacketHandlingError) {
         if cfg!(debug_assertions) {
-            warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
+            warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
         } else {
             match error {
                 // these are for the client being silly
@@ -247,14 +269,14 @@ impl ClientThread {
                 | PacketHandlingError::PacketTooLong(_)
                 | PacketHandlingError::SocketSendFailed(_)
                 | PacketHandlingError::InvalidStreamMarker => {
-                    warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
+                    warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
 
-                PacketHandlingError::IOError(ref e) => {
-                    if e.kind() != std::io::ErrorKind::UnexpectedEof {
-                        warn!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), e);
-                    }
-                }
+                PacketHandlingError::IOError(ref e) => match e.kind() {
+                    // we ignore early eof and connection reset as they're pretty common and meaningless
+                    ErrorKind::ConnectionReset | ErrorKind::UnexpectedEof => {}
+                    _ => warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), e),
+                },
                 // these are either our fault or a fatal error somewhere
                 PacketHandlingError::ColorParseFailed(_)
                 | PacketHandlingError::UnexpectedCentralResponse
@@ -262,7 +284,7 @@ impl ClientThread {
                 | PacketHandlingError::WebRequestError(_)
                 | PacketHandlingError::DangerousAllocation(_)
                 | PacketHandlingError::UnableToSendUdp => {
-                    error!("[{} @ {}] err: {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
+                    error!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
                 PacketHandlingError::MalformedMessage
