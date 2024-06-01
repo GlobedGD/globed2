@@ -193,7 +193,7 @@ protected:
     }
 
     void onConnectionError(const std::string_view reason) {
-        ErrorQueues::get().warn(reason);
+        ErrorQueues::get().debugWarn(reason);
     }
 
     void send(std::shared_ptr<Packet> packet) {
@@ -353,6 +353,8 @@ protected:
         });
 
         addGlobalListener<LoginRecoveryFailecPacket>([this](auto packet) {
+            log::debug("Login recovery failed, retrying regular connection");
+
             // failed to recover login, try regular connection
             this->disconnect(true);
             auto result = this->connect(connectedAddress, connectedServerId, standalone, true);
@@ -616,7 +618,6 @@ protected:
             return;
         }
 
-        // TODO: keepalives?
         auto packet_ = socket.recvPacket(100);
         if (packet_.isErr()) {
             auto error = std::move(packet_.unwrapErr());
@@ -811,7 +812,7 @@ protected:
             return;
         }
         // Detect if authentication is taking too long
-        else if (state == ConnectionState::Authenticating && (util::time::now() - lastReceivedPacket) > util::time::seconds(5)) {
+        else if (state == ConnectionState::Authenticating && !recovering && (util::time::now() - lastReceivedPacket) > util::time::seconds(5)) {
             this->disconnect(true);
 
             ErrorQueues::get().error(fmt::format("Failed to connect to the server.\n\nReason: <cy>server took too long to respond to the handshake</c>"));
@@ -840,6 +841,8 @@ protected:
     }
 
     void maybeSendKeepalive() {
+        if (!this->established()) return;
+
         auto now = util::time::now();
 
         auto sinceLastPacket = now - lastReceivedPacket;
