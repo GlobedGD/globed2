@@ -68,7 +68,7 @@ fn parse_configuration() -> StartupConfiguration {
     if arg.is_none() && !using_env_variables {
         // standalone with default params
         return StartupConfiguration {
-            bind_address: "0.0.0.0:4202".parse().unwrap(),
+            bind_address: format!("0.0.0.0:{DEFAULT_GAME_SERVER_PORT}").parse().unwrap(),
             central_data: None,
         };
     }
@@ -85,7 +85,7 @@ fn parse_configuration() -> StartupConfiguration {
                 Err(e) => {
                     error!("failed to parse the given IP address ({bind_address}): {e}");
                     warn!("hint: you have to provide a valid IPv4 address with an optional port number");
-                    warn!("hint: for example \"0.0.0.0\" or \"0.0.0.0:4202\"");
+                    warn!("hint: for example \"0.0.0.0\" or \"0.0.0.0:{DEFAULT_GAME_SERVER_PORT}\"");
                     abort_misconfig();
                 }
             }
@@ -292,7 +292,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             error!("Failed to bind the UDP socket with address {}: {err}", startup_config.bind_address);
             if startup_config.bind_address.port() < 1024 {
                 warn!("hint: ports below 1024 are commonly privileged and you can't use them as a regular user");
-                warn!("hint: pick a higher port number or leave it out completely to use the default port number (4202)");
+                warn!("hint: pick a higher port number or leave it out completely to use the default port number ({DEFAULT_GAME_SERVER_PORT})");
             }
             abort_misconfig();
         }

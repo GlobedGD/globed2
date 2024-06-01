@@ -10,10 +10,11 @@
 
 // Represents an IPv4 address and a port
 class NetworkAddress {
-    static constexpr uint16_t DEFAULT_PORT = 4202;
     static inline std::unordered_map<std::string, in_addr> dnsCache;
 
 public:
+    static constexpr uint16_t DEFAULT_PORT = 4202;
+
     NetworkAddress();
 
     // Parses the given string in format `host:port`
