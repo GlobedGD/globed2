@@ -742,7 +742,7 @@ impl GameServer {
         }
     }
 
-    /// Try to handle a packet that is not addresses to a specific thread, but to the game server.
+    /// Try to handle a packet that is not addressed to a specific thread, but to the game server.
     async fn try_udp_handle(&self, data: &[u8], peer: SocketAddrV4) -> anyhow::Result<bool> {
         let mut byte_reader = ByteReader::from_bytes(data);
         let header = byte_reader.read_packet_header().map_err(|e| anyhow!("{e}"))?;
@@ -752,7 +752,7 @@ impl GameServer {
                 let pkt = PingPacket::decode_from_reader(&mut byte_reader).map_err(|e| anyhow!("{e}"))?;
                 let response = PingResponsePacket {
                     id: pkt.id,
-                    player_count: self.state.player_count.load(Ordering::Relaxed),
+                    player_count: self.state.get_player_count(),
                 };
 
                 let mut buf_array = [0u8; PacketHeader::SIZE + PingResponsePacket::ENCODED_SIZE];
@@ -817,7 +817,7 @@ impl GameServer {
         }
 
         // decrement player count
-        self.state.player_count.fetch_sub(1, Ordering::Relaxed);
+        self.state.dec_player_count();
 
         // remove from the player manager and the level if they are on one
         let was_owner = self.state.room_manager.remove_with_any(room_id, account_id, level_id);
@@ -832,7 +832,7 @@ impl GameServer {
         info!("Current server stats");
         info!(
             "Player count: {} (threads: {}, unclaimed: {})",
-            self.state.player_count.load(Ordering::Relaxed),
+            self.state.get_player_count(),
             self.clients.lock().len(),
             self.unclaimed_threads.lock().len(),
         );

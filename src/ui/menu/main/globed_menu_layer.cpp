@@ -310,7 +310,7 @@ void GlobedMenuLayer::requestServerList() {
     serverRequestHandle = web::AsyncWebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::seconds(3))
-        .get(fmt::format("{}/servers", centralUrl.value().url))
+        .get(fmt::format("{}/servers?protocol={}", centralUrl.value().url, NetworkManager::get().getUsedProtocol()))
         .text()
         .then([this](std::string& response) {
             this->serverRequestHandle = std::nullopt;
@@ -326,7 +326,7 @@ void GlobedMenuLayer::requestServerList() {
         })
         .expect([this](const std::string& error, int statusCode) {
             this->serverRequestHandle = std::nullopt;
-            ErrorQueues::get().error(fmt::format("Failed to fetch servers (code {}): <cy>{}</c>", statusCode, error));
+            ErrorQueues::get().error(fmt::format("Failed to fetch servers (code {}).\n\nReason: <cy>{}</c>", statusCode, error));
 
             auto& gsm = GameServerManager::get();
             gsm.clearCache();

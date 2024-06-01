@@ -119,12 +119,26 @@ namespace util::net {
         auto ntopResult = inet_ntop(AF_INET, &addr, out.data(), 16);
 
         if (ntopResult == nullptr) {
-            return Err(util::net::lastErrorString());
+            return Err(lastErrorString());
         }
 
         out.resize(std::strlen(out.c_str()));
 
         return Ok(std::move(out));
+    }
+
+    Result<> stringToInAddr(const char* addr, in_addr& out) {
+        auto ptonResult = inet_pton(AF_INET, addr, &out);
+
+        if (ptonResult > 0) {
+            return Ok();
+        } else {
+            return Err(lastErrorString());
+        }
+    }
+
+    uint16_t hostToNetworkPort(uint16_t port) {
+        return ::htons(port);
     }
 }
 

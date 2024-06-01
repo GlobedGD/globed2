@@ -7,7 +7,7 @@ use globed_shared::{
     anyhow::{self, anyhow},
     base64::{engine::general_purpose as b64e, Engine as _},
     logger::*,
-    PROTOCOL_VERSION,
+    MIN_CLIENT_VERSION, PROTOCOL_VERSION,
 };
 use rocket::{post, State};
 
@@ -108,10 +108,7 @@ pub async fn challenge_start(
     cfip: CloudflareIPGuard,
 ) -> WebResult<String> {
     check_maintenance!(state);
-
-    if protocol != PROTOCOL_VERSION {
-        unauthorized!("you are running an old version of Globed, please update Globed in the geode mod list");
-    }
+    check_protocol!(protocol);
 
     aname = aname.trim_end();
 

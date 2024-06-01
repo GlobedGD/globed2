@@ -1,6 +1,10 @@
 #include "address.hpp"
 
-#include <WS2tcpip.h>
+#ifdef GEODE_IS_WINDOWS
+# include <WS2tcpip.h>
+#else
+# include <netinet/in.h>
+#endif
 
 #include <util/format.hpp>
 #include <util/net.hpp>
@@ -45,18 +49,19 @@ Result<sockaddr_in> NetworkAddress::resolve() const {
     if (dnsCache.contains(host)) {
         sockaddr_in out;
         out.sin_family = AF_INET;
-        out.sin_port = htons(port);
+        out.sin_port = util::net::hostToNetworkPort(port);
         out.sin_addr = dnsCache.at(host);
         return Ok(out);
     }
 
     // for some reason this must be heap allocated or windows complains
     auto addr = std::make_unique<sockaddr_in>();
+    addr->sin_family = AF_INET;
 
-    bool validIp = (inet_pton(AF_INET, host.c_str(), &addr->sin_addr) > 0);
+    auto ipResult = util::net::stringToInAddr(host.c_str(), addr->sin_addr);
 
     // if this is not a valid IP address, try getaddrinfo
-    if (!validIp) {
+    if (!ipResult) {
         GLOBED_UNWRAP(util::net::getaddrinfo(host, *addr));
     }
 
@@ -66,7 +71,7 @@ Result<sockaddr_in> NetworkAddress::resolve() const {
     sockaddr_in copy;
     std::memcpy(&copy, addr.get(), sizeof(sockaddr_in));
     copy.sin_family = AF_INET;
-    copy.sin_port = htons(port);
+    copy.sin_port = util::net::hostToNetworkPort(port);
     return Ok(copy);
 }
 

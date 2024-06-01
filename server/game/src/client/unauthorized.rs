@@ -391,7 +391,7 @@ impl UnauthorizedThread {
         }
 
         self.account_id.store(packet.account_id, Ordering::Relaxed);
-        self.game_server.state.player_count.fetch_add(1u32, Ordering::Relaxed); // increment player count
+        self.game_server.state.inc_player_count(); // increment player count
 
         info!(
             "[{} ({}) @ {}] Login successful, platform: {}",
