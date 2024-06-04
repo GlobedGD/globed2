@@ -137,7 +137,4 @@ void printDebugInfo() {
 #endif
     log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
     log::info("Libsodium version: {} (CryptoBox algorithm: {})", SODIUM_VERSION_STRING, CryptoBox::ALGORITHM);
-
-
 }
-

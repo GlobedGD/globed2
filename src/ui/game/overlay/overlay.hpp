@@ -12,5 +12,7 @@ public:
     static GlobedOverlay* create();
 
 private:
-    cocos2d::CCLabelBMFont* pingLabel = nullptr;
+    cocos2d::CCLabelBMFont
+        *pingLabel = nullptr,
+        *versionLabel = nullptr;
 };
