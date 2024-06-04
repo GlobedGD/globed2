@@ -307,41 +307,61 @@ void GlobedMenuLayer::requestServerList() {
         return;
     }
 
-    serverRequestHandle = web::AsyncWebRequest()
+    auto request = web::WebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::seconds(3))
         .get(fmt::format("{}/servers?protocol={}", centralUrl.value().url, NetworkManager::get().getUsedProtocol()))
-        .text()
-        .then([this](std::string& response) {
-            this->serverRequestHandle = std::nullopt;
-            auto& gsm = GameServerManager::get();
-            gsm.updateCache(response);
-            auto result = gsm.loadFromCache();
-            if (result.isErr()) {
-                log::warn("failed to parse server list: {}", result.unwrapErr());
-                log::warn("{}", response);
-                ErrorQueues::get().error(fmt::format("Failed to parse server list: <cy>{}</c>", result.unwrapErr()));
-            }
-            gsm.pendingChanges = true;
-        })
-        .expect([this](const std::string& error, int statusCode) {
-            this->serverRequestHandle = std::nullopt;
-            ErrorQueues::get().error(fmt::format("Failed to fetch servers (code {}).\n\nReason: <cy>{}</c>", statusCode, error));
+        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
+            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
 
-            auto& gsm = GameServerManager::get();
-            gsm.clearCache();
-            gsm.clear();
-            gsm.pendingChanges = true;
-        })
-        .send();
+            if (resptext.empty()) {
+                return Err(fmt::format("server sent an empty response with code {}", response->code()));
+            }
+
+            if (response->ok()) {
+                return Ok(resptext);
+            } else {
+                return Err(fmt::format("code {}: {}", response->code(), resptext));
+            }
+
+        }, [](web::WebProgress*) -> std::monostate {
+            return {};
+        });
+
+    requestListener.bind(this, &GlobedMenuLayer::requestCallback);
+    requestListener.setFilter(std::move(request));
+}
+
+void GlobedMenuLayer::requestCallback(typename Task<Result<std::string, std::string>>::Event* event) {
+    if (!event || !event->getValue()) return;
+
+    if (event->getValue()->isErr()) {
+        auto& gsm = GameServerManager::get();
+        gsm.clearCache();
+        gsm.clear();
+        gsm.pendingChanges = true;
+
+        ErrorQueues::get().error(fmt::format("Failed to fetch servers.\n\nReason: <cy>{}</c>", event->getValue()->unwrapErr()));
+
+        return;
+    }
+
+    auto response = event->getValue()->unwrap();
+
+    auto& gsm = GameServerManager::get();
+    gsm.updateCache(response);
+    auto result = gsm.loadFromCache();
+    gsm.pendingChanges = true;
+
+    if (result.isErr()) {
+        log::warn("failed to parse server list: {}", result.unwrapErr());
+        log::warn("{}", response);
+        ErrorQueues::get().error(fmt::format("Failed to parse server list: <cy>{}</c>", result.unwrapErr()));
+    }
 }
 
 void GlobedMenuLayer::cancelWebRequest() {
-    if (serverRequestHandle.has_value()) {
-        serverRequestHandle->get()->cancel();
-        serverRequestHandle = std::nullopt;
-        return;
-    }
+    requestListener.getFilter().cancel();
 }
 
 void GlobedMenuLayer::keyBackClicked() {

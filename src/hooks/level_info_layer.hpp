@@ -4,7 +4,9 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 
 class $modify(HookedLevelInfoLayer, LevelInfoLayer) {
-    bool allowOpeningAnyway = false;
+    struct Fields {
+        bool allowOpeningAnyway = false;
+    };
 
     void onPlay(cocos2d::CCObject*);
     void forcePlay(cocos2d::CCObject*);

@@ -1,5 +1,7 @@
 #pragma once
+
 #include <defs/platform.hpp>
+#include <util/singleton.hpp>
 
 #ifdef GLOBED_VOICE_SUPPORT
 
@@ -10,7 +12,6 @@
 
 #include "frame.hpp"
 #include "sample_queue.hpp"
-#include <util/singleton.hpp>
 
 struct AudioRecordingDevice {
     int id = -1;

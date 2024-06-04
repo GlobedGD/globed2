@@ -26,7 +26,7 @@ public:
 #ifdef GLOBED_IS_UNIX
     asp::AtomicI32 socket_ = 0;
 #else
-    asp::AtomicU32 socket_ = 0;
+    asp::AtomicSizeT socket_ = 0; // pointer sized
 #endif
 
 private:

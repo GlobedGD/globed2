@@ -4,8 +4,10 @@
 #include <Geode/modify/MenuLayer.hpp>
 
 class $modify(HookedMenuLayer, MenuLayer) {
-    bool btnActive = false;
-    Ref<CCMenuItemSpriteExtra> globedBtn = nullptr;
+    struct Fields {
+        bool btnActive = false;
+        Ref<CCMenuItemSpriteExtra> globedBtn = nullptr;
+    };
 
     $override
     bool init();

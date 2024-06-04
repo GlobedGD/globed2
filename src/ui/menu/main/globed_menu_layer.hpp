@@ -18,7 +18,8 @@ private:
     GlobedSignupLayer* signupLayer;
     Ref<CCMenuItemSpriteExtra> levelListButton, roomButton, serverSwitcherButton, discordButton, settingsButton;
     cocos2d::CCMenu *leftButtonMenu, *rightButtonMenu;
-    std::optional<geode::utils::web::SentAsyncWebRequestHandle> serverRequestHandle;
+    geode::EventListener<geode::Task<Result<std::string, std::string>>> requestListener;
+
     bool currentlyShowingButtons = false;
 
     bool init() override;
@@ -30,4 +31,5 @@ private:
     void pingServers(float dt);
 
     void cancelWebRequest();
+    void requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
 };

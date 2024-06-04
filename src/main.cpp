@@ -4,10 +4,6 @@
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif
 
-// lol
-#undef _WINSOCKAPI_
-#include <Geode/cocos/platform/IncludeCurl.h>
-
 #include <asp/Log.hpp>
 #include <asp/async/Runtime.hpp>
 
@@ -142,7 +138,6 @@ void printDebugInfo() {
     log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
     log::info("Libsodium version: {} (CryptoBox algorithm: {})", SODIUM_VERSION_STRING, CryptoBox::ALGORITHM);
 
-    auto cvi = curl_version_info(CURLVERSION_NOW);
 
-    log::info("cURL version: {}, {}", curl_version(), (cvi->features & CURL_VERSION_SSL) ? "with SSL" : "without SSL (!)");
 }
+

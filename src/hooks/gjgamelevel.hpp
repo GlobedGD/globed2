@@ -5,7 +5,9 @@
 
 // revolutionary
 class $modify(HookedGJGameLevel, GJGameLevel) {
-    bool shouldTransitionWithPopScene = false;
+    struct Fields {
+        bool shouldTransitionWithPopScene = false;
+    };
 
     $override
     void savePercentage(int, bool, int, int, bool);
