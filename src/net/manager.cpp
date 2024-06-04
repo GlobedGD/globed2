@@ -865,9 +865,6 @@ protected:
 
     void sendKeepalive() {
         // send a keepalive
-#ifdef GLOBED_DEBUG
-        log::debug("sending keepalive");
-#endif
         this->send(KeepalivePacket::create());
         lastSentKeepalive = util::time::now();
         GameServerManager::get().startKeepalive();
