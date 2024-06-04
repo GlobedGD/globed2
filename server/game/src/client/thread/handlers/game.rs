@@ -178,6 +178,8 @@ impl ClientThread {
             if let Some(account_data) = account_data {
                 return self
                     .send_packet_alloca_with::<PlayerProfilesPacket, _>(calc_size, |buf| {
+                        // write a Vec with length 1
+                        buf.write_length(1);
                         buf.write_value(&account_data);
                     })
                     .await;
