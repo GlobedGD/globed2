@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/minimal_geode.hpp>
 
-#include <Geode/utils/web.hpp>
+#include <Geode/utils/web2.hpp>
 
 #include <crypto/secret_box.hpp>
 #include <asp/sync.hpp>
@@ -54,9 +54,11 @@ public:
     std::optional<std::string> getAdminPassword();
 
 private:
-    std::optional<geode::utils::web::SentAsyncWebRequestHandle> requestHandle;
+    geode::EventListener<geode::Task<Result<std::string, std::string>>> requestListener;
+    std::optional<std::function<void()>> requestCallbackStored;
     std::unique_ptr<SecretBox> cryptoBox;
 
+    void requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
     void cancelAuthTokenRequest();
 
     std::string computeGDDataHash(const std::string_view name, int accountId, int userId, const std::string_view central);

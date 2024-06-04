@@ -3,7 +3,14 @@
 
 namespace util::lowlevel {
     geode::Patch* patch(ptrdiff_t offset, const std::vector<uint8_t>& bytes) {
-        return Mod::get()->patch(reinterpret_cast<void*>(geode::base::get() + offset), bytes).unwrap();
+        auto p = Mod::get()->patch(reinterpret_cast<void*>(geode::base::get() + offset), bytes);
+
+        if (!p) {
+            log::error("Failed to apply patch at {:X}: {}", offset, p.unwrapErr());
+            return nullptr;
+        }
+
+        return p.unwrap();
     }
 
     geode::Patch* nop(ptrdiff_t offset, size_t bytes) {

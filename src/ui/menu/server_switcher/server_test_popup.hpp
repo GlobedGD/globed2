@@ -17,9 +17,11 @@ public:
 
 protected:
     AddServerPopup* parent;
-    std::optional<geode::utils::web::SentAsyncWebRequestHandle> sentRequestHandle;
+
+    geode::EventListener<geode::Task<Result<std::string, std::string>>> requestListener;
 
     bool setup(const std::string_view, AddServerPopup* parent) override;
 
     void cancelRequest();
+    void requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
 };

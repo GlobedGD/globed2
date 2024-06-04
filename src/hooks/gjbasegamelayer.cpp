@@ -1197,7 +1197,9 @@ void GlobedGJBGL::loadLevelSettings() {
 /* 2-player mode stuff */
 
 class $modify(TwoPModePlayerObject, PlayerObject) {
-    Ref<ComplexVisualPlayer> lockedTo;
+    struct Fields {
+        Ref<ComplexVisualPlayer> lockedTo;
+    };
 
     void update(float dt) {
         auto* bgl = static_cast<GlobedGJBGL*>(m_gameLayer);

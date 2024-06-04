@@ -10,6 +10,8 @@ public:
 
 protected:
     cocos2d::CCLabelBMFont* statusMessage;
+    geode::EventListener<geode::Task<Result<std::string, std::string>>> createListener;
+    geode::EventListener<geode::Task<Result<std::string, std::string>>> finishListener;
 
     std::string storedAuthcode;
     int storedAccountId;
@@ -27,4 +29,6 @@ protected:
     void uploadMessageFailed(int) override;
 
     void onDelayedChallengeCompleted();
+    void createCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
+    void finishCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
 };

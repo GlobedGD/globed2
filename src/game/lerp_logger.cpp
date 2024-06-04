@@ -52,7 +52,7 @@ PlayerLog& LerpLogger::ensureExists(uint32_t id) {
     return players.at(id);
 #endif
 
-    _globedUnreachable(); // ensureExists is a private function, should never be callable if lerp debug is disabled
+    globed::unreachable(); // ensureExists is a private function, should never be callable if lerp debug is disabled
 }
 
 PlayerLogData LerpLogger::makeLogData(const SpecificIconData& data, float localts, float timeCounter) {
@@ -64,7 +64,7 @@ PlayerLogData LerpLogger::makeLogData(const SpecificIconData& data, float localt
     };
 }
 
-void LerpLogger::makeDump(const ghc::filesystem::path path) {
+void LerpLogger::makeDump(const std::filesystem::path path) {
 #ifdef GLOBED_DEBUG_INTERPOLATION
     ByteBuffer bb;
 
