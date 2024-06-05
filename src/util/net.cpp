@@ -45,7 +45,7 @@ namespace util::net {
         );
 #else
         // no telemetry in release :(
-        return fmt::format("Globed {}", Mod::get()->getVersion.toString());
+        return fmt::format("Globed {}", Mod::get()->getVersion().toString());
 #endif
     }
 
