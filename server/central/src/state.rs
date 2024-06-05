@@ -222,11 +222,11 @@ impl ServerState {
     }
 
     pub fn maintenance(&self) -> bool {
-        self.inner.maintenance.load(Ordering::Relaxed)
+        self.inner.maintenance.load(Ordering::SeqCst)
     }
 
     pub fn set_maintenance(&self, state: bool) {
-        self.inner.maintenance.store(state, Ordering::Relaxed);
+        self.inner.maintenance.store(state, Ordering::SeqCst);
     }
 
     pub fn get_verifier(&self) -> &AccountVerifier {
