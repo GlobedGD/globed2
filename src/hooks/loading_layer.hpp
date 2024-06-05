@@ -20,7 +20,7 @@ class $modify(HookedLoadingLayer, LoadingLayer) {
 
 #ifndef GLOBED_LOADING_FINISHED_MIDHOOK
     static void onModify(auto& self) {
-        self.setHookPriority("LoadingLayer::loadingFinished", -99999999);
+        (void) self.setHookPriority("LoadingLayer::loadingFinished", -99999999);
     }
 
     void loadingFinished();
