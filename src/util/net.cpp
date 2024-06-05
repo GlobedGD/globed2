@@ -36,13 +36,17 @@ namespace util::net {
     }
 
     std::string loginPlatformString() {
-        GLOBED_PLATFORM_STRING;
+#ifdef GLOBED_DEBUG
         return fmt::format(
             "{} ({}, Geode {})",
             GLOBED_PLATFORM_STRING,
             Mod::get()->getVersion().toString(),
             Loader::get()->getVersion().toString()
         );
+#else
+        // no telemetry in release :(
+        return fmt::format("Globed {}", Mod::get()->getVersion.toString());
+#endif
     }
 
     Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort) {

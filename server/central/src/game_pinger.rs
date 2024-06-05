@@ -48,7 +48,7 @@ impl GameServerPinger {
     }
 
     pub fn get_player_count(&self) -> u32 {
-        self.latest_player_count.load(Ordering::Relaxed)
+        self.latest_player_count.load(Ordering::SeqCst)
     }
 
     pub fn get_player_count_history(&self) -> Vec<(SystemTime, u32)> {
@@ -81,7 +81,7 @@ impl GameServerPinger {
 
             debug!("total player count: {player_count}");
 
-            self.latest_player_count.store(player_count, Ordering::Relaxed);
+            self.latest_player_count.store(player_count, Ordering::SeqCst);
             let mut history = self.history.lock();
             history.push((SystemTime::now(), player_count));
         }

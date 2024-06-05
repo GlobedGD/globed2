@@ -12,10 +12,12 @@
 using namespace geode::prelude;
 
 namespace util::ui {
-    void switchToScene(CCLayer* layer) {
-        auto scene = CCScene::create();
-        scene->addChild(layer);
+    void switchToScene(CCScene* scene) {
         CCDirector::get()->pushScene(CCTransitionFade::create(.5f, scene));
+    }
+
+    void switchToScene(CCLayer* layer) {
+        switchToScene(Build<CCScene>::create().child(layer).collect());
     }
 
     void prepareLayer(CCLayer* layer) {

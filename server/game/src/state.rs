@@ -14,14 +14,14 @@ impl ServerState {
     }
 
     pub fn get_player_count(&self) -> u32 {
-        self.player_count.load(Ordering::Relaxed)
+        self.player_count.load(Ordering::SeqCst)
     }
 
     pub fn inc_player_count(&self) {
-        self.player_count.fetch_add(1, Ordering::Relaxed);
+        self.player_count.fetch_add(1, Ordering::SeqCst);
     }
 
     pub fn dec_player_count(&self) {
-        self.player_count.fetch_sub(1, Ordering::Relaxed);
+        self.player_count.fetch_sub(1, Ordering::SeqCst);
     }
 }

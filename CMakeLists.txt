@@ -97,7 +97,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 # our favorite libraries
 CPMAddPackage("gh:camila314/uibuilder#ba63097")
 CPMAddPackage("gh:xiph/opus#main")
-CPMAddPackage("gh:dankmeme01/libsodium-cmake#41982d7")
+CPMAddPackage("gh:dankmeme01/libsodium-cmake#226abba")
 CPMAddPackage(
     NAME Boost
     VERSION 1.84.0
