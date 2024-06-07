@@ -93,9 +93,4 @@
 # undef GLOBED_VOICE_CAN_TALK
 #endif
 
-#if defined(__LITTLE_ENDIAN__)
 constexpr bool GLOBED_LITTLE_ENDIAN = true;
-#else
-# error "big endian system, shouldnt be possible"
-constexpr bool GLOBED_LITTLE_ENDIAN = false;
-#endif
