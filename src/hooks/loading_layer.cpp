@@ -41,7 +41,7 @@ void HookedLoadingLayer::loadingFinishedHook() {
         this->setLabelText("Globed: preloading death effects");
 
         // start the stage 1 - load death effects
-        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.05f);
+        this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.0f);
         return;
     } else if (m_fields->preloadingStage == 1000) {
         log::info("Asset preloading finished in {}.", util::format::formatDuration(util::time::systemNow() - m_fields->loadingStartedTime));
@@ -126,8 +126,6 @@ void HookedLoadingLayer::preloadingStage3(float x) {
 }
 
 static void loadingFinishedCaller() {
-    log::debug("finished caller got called!!");
-
     auto* scene = CCScene::get();
     if (!scene) return loadingFinishedReimpl(false);
     if (!scene->getChildrenCount()) return loadingFinishedReimpl(false);
