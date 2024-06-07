@@ -33,19 +33,15 @@ bool GlobedSignupPopup::setup() {
         .parent(m_mainLayer);
 
     auto gdData = am.gdData.lock();
-    auto url = fmt::format(
-        "{}/challenge/new?aid={}&uid={}&aname={}&protocol={}",
-        activeServer->url,
-        gdData->accountId,
-        gdData->userId,
-        util::format::urlEncode(gdData->accountName),
-        NetworkManager::get().getUsedProtocol()
-    );
 
     auto request = web::WebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::seconds(5))
-        .post(url)
+        .param("aid", gdData->accountId)
+        .param("uid", gdData->userId)
+        .param("aname", gdData->accountName)
+        .param("protocol", NetworkManager::get().getUsedProtocol())
+        .post(fmt::format("{}/challenge/new", activeServer->url))
         .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
             GLOBED_UNWRAP_INTO(response->string(), auto resptext);
 
@@ -90,6 +86,7 @@ void GlobedSignupPopup::createCallback(typename geode::Task<Result<std::string, 
     auto parts = util::format::split(resptext, ":");
     if (parts.size() != 3) {
         this->onFailure("Creating challenge failed: <cy>response does not consist of 3 parts</c>");
+        return;
     }
 
     // we accept -1 as the default

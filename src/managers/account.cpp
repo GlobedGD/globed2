@@ -85,23 +85,20 @@ void GlobedAccountManager::requestAuthToken(
     authkey = util::crypto::base64Encode(util::crypto::base64Decode(authkey), util::crypto::Base64Variant::URLSAFE);
 
     auto gd = gdData.lock();
-    auto url = fmt::format(
-        "{}/totplogin?aid={}&uid={}&aname={}&authkey={}",
-        baseUrl,
-        gd->accountId,
-        gd->userId,
-        util::format::urlEncode(gd->accountName),
-        authkey
-    );
 
     this->cancelAuthTokenRequest();
 
     requestCallbackStored = std::move(callback);
+    log::debug("base url: {}", baseUrl);
 
     auto request = web::WebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::seconds(3))
-        .post(url)
+        .param("aid", gd->accountId)
+        .param("uid", gd->userId)
+        .param("aname", gd->accountName)
+        .param("authkey", authkey)
+        .post(fmt::format("{}/totplogin", baseUrl))
         .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
             GLOBED_UNWRAP_INTO(response->string(), auto resptext);
 
