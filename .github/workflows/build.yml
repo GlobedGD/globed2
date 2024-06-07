@@ -16,8 +16,8 @@ jobs:
         - name: Windows
           os: windows-latest
           target: Win32
-        - name: MacOS
-          os: macos-latest
+        # - name: MacOS
+        #   os: macos-latest
         - name: Android32
           os: ubuntu-latest
           target: Android32
