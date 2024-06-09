@@ -142,6 +142,15 @@ bool GlobedMenuLayer::init() {
         .id("right-button-menu"_spr)
         .store(rightButtonMenu);
 
+    // kofi button
+    Build<CCSprite>::createSpriteName("icon-kofi.png"_spr)
+        .intoMenuItem([](auto) {
+
+        })
+        .scaleMult(1.15f)
+        .id("btn-kofi"_spr)
+        .parent(rightButtonMenu);
+
     // credits button
     Build<CCSprite>::createSpriteName("icon-credits.png"_spr)
         .intoMenuItem([](auto) {

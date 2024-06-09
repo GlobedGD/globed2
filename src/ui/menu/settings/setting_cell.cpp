@@ -141,11 +141,8 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         menu->setPositionY(CELL_HEIGHT / 2.f);
 
         if (settingType == Type::PacketFragmentation) {
-            auto spr = Build<CCSprite>::createSpriteName("geode.loader/pencil.png").collect();
-            if (!spr) {
-                // placeholder icon just in case
-                spr = Build<CCSprite>::createSpriteName("GJ_sTrendingIcon_001.png").collect();
-            }
+            auto spr = Build<CCSprite>::createSpriteName("pencil.png"_spr)
+                .collect();
 
             // button to manually edit packet frag
             Build<CircleButtonSprite>::create(spr)

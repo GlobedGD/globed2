@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/minimal_geode.hpp>
 
-#include <Geode/utils/web2.hpp>
+#include <Geode/utils/web.hpp>
 
 #include <crypto/secret_box.hpp>
 #include <asp/sync.hpp>

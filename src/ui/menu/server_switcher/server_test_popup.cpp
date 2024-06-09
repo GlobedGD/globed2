@@ -1,6 +1,6 @@
 #include "server_test_popup.hpp"
 
-#include <Geode/utils/web2.hpp>
+#include <Geode/utils/web.hpp>
 
 #include "add_server_popup.hpp"
 #include <net/manager.hpp>

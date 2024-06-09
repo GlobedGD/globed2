@@ -774,7 +774,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         float percent;
 
         if (m_level->m_timestamp > 0) {
-            percent = static_cast<float>(m_gameState.m_unk1f8) / m_level->m_timestamp * 100.f;
+            percent = static_cast<float>(m_gameState.m_currentProgress) / m_level->m_timestamp * 100.f;
         } else {
             percent = m_player1->getPosition().x / m_levelLength * 100.f;
         }
