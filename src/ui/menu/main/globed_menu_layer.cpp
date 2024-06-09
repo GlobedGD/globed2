@@ -1,6 +1,7 @@
 #include "globed_menu_layer.hpp"
 
 #include "server_list_cell.hpp"
+#include "kofi_popup.hpp"
 #include <data/types/misc.hpp>
 #include <managers/account.hpp>
 #include <managers/admin.hpp>
@@ -145,7 +146,7 @@ bool GlobedMenuLayer::init() {
     // kofi button
     Build<CCSprite>::createSpriteName("icon-kofi.png"_spr)
         .intoMenuItem([](auto) {
-
+            GlobedKofiPopup::create()->show();
         })
         .scaleMult(1.15f)
         .id("btn-kofi"_spr)

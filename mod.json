@@ -10,9 +10,12 @@
     "resources": {
         "spritesheets": {
             "globedsheet1": [
-                "resources/*.png"
+                "resources/sheet1/*.png"
             ]
         },
+        "sprites": [
+            "resources/kofi-promo-bg.png"
+        ],
         "files": [
             "resources/*.ogg"
         ]
