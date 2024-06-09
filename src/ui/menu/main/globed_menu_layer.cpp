@@ -150,7 +150,12 @@ bool GlobedMenuLayer::init() {
         })
         .scaleMult(1.15f)
         .id("btn-kofi"_spr)
-        .parent(rightButtonMenu);
+        .parent(rightButtonMenu)
+        .intoNewChild(CCSprite::createWithSpriteFrameName("icon-kofi-glow.png"_spr))
+        .zOrder(-1)
+        .anchorPoint(0.f, 0.f)
+        .pos(-3.f, -5.f)
+        .scale(1.f);
 
     // credits button
     Build<CCSprite>::createSpriteName("icon-credits.png"_spr)
