@@ -2,6 +2,7 @@
 #include <defs/geode.hpp>
 
 #include <Geode/modify/GJBaseGameLayer.hpp>
+#include "Geode/loader/Dispatch.hpp"
 
 #include <data/types/room.hpp>
 #include <game/interpolator.hpp>
@@ -161,4 +162,8 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
 
     void unscheduleSelectors();
     void rescheduleSelectors();
+
+    /* Discord RPC */
+    void updateDRPC();
+    void selUpdateDRPC(float dt);
 };

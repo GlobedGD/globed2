@@ -713,6 +713,49 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
     }
 }
 
+void GlobedGJBGL::updateDRPC() {
+    if (!Loader::get()->isModLoaded("techstudent10.discord_rich_presence")) return;
+
+    if (!GlobedSettings::get().globed.useDiscordRPC) return;
+
+    // taken from drpc
+    bool isRobTopLevel = (
+        (m_level->m_levelID.value() < 128 && m_level->m_levelID.value() != 0) ||
+            m_level->m_levelID.value() == 3001 || m_level->m_levelID.value() < 5003 ||
+            m_level->m_levelID.value() > 5000
+    ) && std::string(m_level->m_creatorName) == "";
+    
+    auto state = fmt::format("{} by {}", std::string(m_level->m_levelName), (isRobTopLevel) ? "RobTopGames" : std::string(m_level->m_creatorName));
+
+    using SetRPCEvent = geode::DispatchEvent<bool>;
+    SetRPCEvent("techstudent10.discord_rich_presence/set_default_rpc_enabled", false).post();
+
+    using UpdateRPCEvent = geode::DispatchEvent<std::string>;
+    auto json = matjson::Value(matjson::Object({
+        {"modID", ""_spr},
+        {"details", "Playing in mutliplayer!"},
+        {"state", state},
+        {"smallImageKey", ""},
+        {"smallImageText", ""},
+        {"useTime", true},
+        {"shouldResetTime", false},
+        {"largeImageKey", "https://github.com/HJfod/globed-site/blob/main/public/logo.png?raw=true"},
+        {"largeImageText", ""},
+        {"joinSecret", std::to_string(m_level->m_levelID.value())},
+        {"partyMax", m_fields->players.size() + 1}
+    })).dump();
+    UpdateRPCEvent("techstudent10.discord_rich_presence/update_rpc", json).post();
+}
+
+// selUpdateDRPC - runs every 10 seconds, updates Discord RPC 
+void GlobedGJBGL::selUpdateDRPC(float dt) {
+    auto self = GlobedGJBGL::get();
+
+    if (!self || !self->established()) return;
+
+    self->updateDRPC();
+}
+
 /* Player related functions */
 
 SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
@@ -1005,6 +1048,10 @@ void GlobedGJBGL::onQuitActions() {
         VoicePlaybackManager::get().stopAllStreams();
 #endif // GLOBED_VOICE_SUPPORT
     }
+
+    // report back to the RPC mod that it can takeover again
+    using SetRPCEvent = geode::DispatchEvent<bool>;
+    SetRPCEvent("techstudent10.discord_rich_presence/set_default_rpc_enabled", true).post();
 }
 
 void GlobedGJBGL::pausedUpdate(float dt) {
@@ -1057,6 +1104,7 @@ void GlobedGJBGL::unscheduleSelectors() {
     sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selSendPlayerMetadata), this->getParent());
     sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selPeriodicalUpdate), this->getParent());
     sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selUpdateEstimators), this->getParent());
+    sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selUpdateDRPC), this->getParent());
 }
 
 void GlobedGJBGL::rescheduleSelectors() {
@@ -1068,11 +1116,13 @@ void GlobedGJBGL::rescheduleSelectors() {
     float pmdInterval = 10.f * timescale;
     float updpInterval = 0.25f * timescale;
     float updeInterval = (1.0f / 30.f) * timescale;
+    float drpcInterval = 10.f * timescale;
 
     this->getParent()->schedule(schedule_selector(GlobedGJBGL::selSendPlayerData), pdInterval);
     this->getParent()->schedule(schedule_selector(GlobedGJBGL::selSendPlayerMetadata), pmdInterval);
     this->getParent()->schedule(schedule_selector(GlobedGJBGL::selPeriodicalUpdate), updpInterval);
     this->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdateEstimators), updeInterval);
+    this->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdateDRPC), drpcInterval);
 }
 
 /* Collision stuff */

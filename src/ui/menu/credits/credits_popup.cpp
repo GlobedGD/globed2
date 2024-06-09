@@ -1,10 +1,107 @@
 #include "credits_popup.hpp"
+#include <matjson.hpp>
+#include <matjson/stl_serialize.hpp>
 #include <util/ui.hpp>
 
 #include "credits_player.hpp"
 #include "credits_cell.hpp"
 
+#include <Geode/utils/web.hpp>
+
 using namespace geode::prelude;
+
+struct CreditsUser {
+    std::string name, gameName;
+    int accountId, userId;
+    int color1, color2, color3;
+    int iconId;
+};
+
+template <>
+struct matjson::Serialize<CreditsUser> {
+    static CreditsUser from_json(const matjson::Value& value) {
+        return CreditsUser {
+            .name = value["name"].as_string(),
+            .gameName = value["gameName"].as_string(),
+            .accountId = value["accountID"].as_int(),
+            .userId = value["userID"].as_int(),
+            .color1 = value["color1"].as_int(),
+            .color2 = value["color2"].as_int(),
+            .color3 = value["color3"].as_int(),
+            .iconId = value["iconID"].as_int()
+        };
+    }
+
+    static matjson::Value to_json(const CreditsUser& user) {
+        throw std::runtime_error("unimplemented");
+    }
+
+    static bool is_json(const matjson::Value& value) {
+        if (
+            !value.contains("name")
+            || !value.contains("gameName")
+            || !value.contains("accountID")
+            || !value.contains("userID")
+            || !value.contains("color1")
+            || !value.contains("color2")
+            || !value.contains("color3")
+            || !value.contains("iconID")
+        ) {
+            return false;
+        }
+
+        return value["name"].is_string()
+            && value["gameName"].is_string()
+            && value["accountID"].is_number()
+            && value["userID"].is_number()
+            && value["color1"].is_number()
+            && value["color2"].is_number()
+            && value["color3"].is_number()
+            && value["iconID"].is_number()
+        ;
+    }
+};
+
+struct CreditsResponse {
+    std::vector<CreditsUser> owner, staff, contributors, special;
+};
+
+template <>
+struct matjson::Serialize<CreditsResponse> {
+    static CreditsResponse from_json(const matjson::Value& value) {
+        auto owner = value["owner"].as<std::vector<CreditsUser>>();
+        auto staff = value["staff"].as<std::vector<CreditsUser>>();
+        auto contributors = value["contributors"].as<std::vector<CreditsUser>>();
+        auto special = value["special"].as<std::vector<CreditsUser>>();
+
+        return CreditsResponse {
+            .owner = owner,
+            .staff = staff,
+            .contributors = contributors,
+            .special = special
+        };
+    }
+
+    static bool is_json(const matjson::Value& value) {
+        if (!value.contains("owner") || !value.contains("staff") || !value.contains("contributors") || !value.contains("special")) return false;
+
+        auto isValid = [](const matjson::Value& value) -> bool {
+            if (!value.is_array()) return false;
+
+            for (auto& elem : value.as_array()) {
+                if (!elem.is<CreditsUser>()) return false;
+            }
+
+            return true;
+        };
+
+        return
+            isValid(value["owner"])
+            && isValid(value["staff"])
+            && isValid(value["contributors"])
+            && isValid(value["special"]);
+    }
+};
 
 bool GlobedCreditsPopup::setup() {
     using Icons = GlobedSimplePlayer::Icons;
@@ -18,8 +115,9 @@ bool GlobedCreditsPopup::setup() {
         .parent(m_mainLayer)
         .collect();
 
-    auto* scrollLayer = Build(ScrollLayer::create({LIST_WIDTH, LIST_HEIGHT}))
+    Build(ScrollLayer::create({LIST_WIDTH, LIST_HEIGHT}))
         .parent(listlayer)
+        .store(scrollLayer)
         .collect();
 
     scrollLayer->m_contentLayer->setLayout(
@@ -30,21 +128,67 @@ bool GlobedCreditsPopup::setup() {
             ->setAutoScale(false)
     );
 
-#define ADD_PLAYER(array, name, accountid, userid, cube, col1, col2, col3) \
+#define ADD_PLAYER(array, obj) \
     array->addObject( \
-        GlobedCreditsPlayer::create(name, name, accountid, userid, Icons { .type = IconType::Cube, .id = cube, .color1 = col1, .color2 = col2, .color3 = col3}) \
-    )
-#define ADD_PLAYER_NICK(array, name, nickname, accountid, userid, cube, col1, col2, col3) \
-    array->addObject( \
-        GlobedCreditsPlayer::create(name, nickname, accountid, userid, Icons { .type = IconType::Cube, .id = cube, .color1 = col1, .color2 = col2, .color3 = col3}) \
+        GlobedCreditsPlayer::create(obj.gameName, obj.name, obj.accountId, obj.userId, \
+            GlobedSimplePlayer::Icons { .type = IconType::Cube, .id = obj.iconId, .color1 = obj.color1, .color2 = obj.color2, .color3 = obj.color3}) \
     )
 
-    /* Owners */
+    /* Fetch credits from server */
+
+    auto task = web::WebRequest()
+        // .get("http://credits.globed.dev/credits")
+        .get("http://127.0.0.1:8080/credits")
+        .map([](web::WebResponse* response) -> Result<std::string, std::string> {
+            GLOBED_UNWRAP_INTO(response->string(), auto resp);
+
+            if (response->ok()) {
+                return Ok(resp);
+            } else {
+                return Err(resp);
+            }
+        }, [](auto) -> std::monostate {
+            return {};
+        });
+
+    eventListener.bind(this, &GlobedCreditsPopup::requestCallback);
+    eventListener.setFilter(task);
+
+    return true;
+}
+
+void GlobedCreditsPopup::requestCallback(Task<Result<std::string, std::string>>::Event* e) {
+    if (!e || !e->getValue()) return;
+
+    auto result = e->getValue();
+    if (result->isErr()) {
+        FLAlertLayer::create("Error", fmt::format("Failed to load credits.\n\nReason: <cy>{}</c>", result->unwrapErr()), "Ok")->show();
+        return;
+    }
+
+    auto response = result->unwrap();
+
+    std::string parseError;
+    auto creditsDataOpt = matjson::parse(response, parseError);
+
+    if (creditsDataOpt && !creditsDataOpt->is<CreditsResponse>()) {
+        parseError = "invalid json response";
+    }
+
+    if (!creditsDataOpt || !parseError.empty()) {
+        FLAlertLayer::create("Error", fmt::format("Failed to parse credits response.\n\nReason: <cy>{}</c>", parseError), "Ok")->show();
+        return;
+    }
+
+    auto creditsData = creditsDataOpt.value().as<CreditsResponse>();
+
+    /* Owner */
 
     CCArray* owners = CCArray::create();
 
-    ADD_PLAYER(owners, "dankmeme01", 9735891, 88588343, 1, 41, 16, -1);
-    ADD_PLAYER(owners, "availax", 1621348, 8463710, 373, 6, 52, 52);
+    for (auto& credit : creditsData.owner) {
+        ADD_PLAYER(owners, credit);
+    }
 
     auto* cellOwners = Build<GlobedCreditsCell>::create("Owner", false, owners)
         .id("cell-owner"_spr)
@@ -55,25 +199,9 @@ bool GlobedCreditsPopup::setup() {
 
     CCArray* staff = CCArray::create();
 
-    ADD_PLAYER(staff, "Croozington", 18950870, 172707109, 120, 13, 10, 98);
-    ADD_PLAYER(staff, "Xanii", 1176802, 7500092, 4, 19, 12, 12);
-
-    ADD_PLAYER(staff, "ddest1nyy", 1249399, 8533459, 461, 96, 62, 70);
-    ADD_PLAYER(staff, "Dasshu", 1975253, 7855157, 373, 98, 12, 12);
-    ADD_PLAYER(staff, "Lxwnar", 25517837, 153455117, 132, 52, 12, 52);
-    ADD_PLAYER(staff, "BoCKTheBook", 6209270, 20531100, 272, 6, 106, -1);
-    ADD_PLAYER(staff, "ItzKiba", 4569963, 15447500, 110, 6, 10, 42);
-    ADD_PLAYER(staff, "NotTerma", 4706010, 16077956, 379, 98, 36, 43);
-    ADD_PLAYER(staff, "ciyaqil", 13640460, 127054504, 84, 12, 40, 40);
-    ADD_PLAYER(staff, "TheKiroshi", 6442871, 31833361, 1, 8, 11, 63);
-    ADD_PLAYER(staff, "Jiflol", 8262191, 61991331, 135, 44, 12, -1);
-    ADD_PLAYER(staff, "LimeGradient", 7214334, 42454266, 37, 2, 12, 2);
-    ADD_PLAYER(staff, "ManagerMagolor", 25450870, 195501521, 101, 43, 7, -1);
-    ADD_PLAYER(staff, "skrunkly", 14462068, 146500573, 37, 17, 19, -1);
-
-    ADD_PLAYER(staff, "Capeling", 18226543, 160504868, 141, 76, 40, 40);
-    ADD_PLAYER_NICK(staff, "Awesomeoverkill", "ninXout", 7479054, 47290058, 77, 1, 5, -1);
-    ADD_PLAYER(staff, "NikoSando", 737532, 4354472, 433, 16, 6, 12);
+    for (auto& credit : creditsData.staff) {
+        ADD_PLAYER(staff, credit);
+    }
 
     auto* cellStaff = Build<GlobedCreditsCell>::create("Staff", true, staff)
         .id("cell-staff"_spr)
@@ -84,13 +212,11 @@ bool GlobedCreditsPopup::setup() {
 
     CCArray* contributors = CCArray::create();
 
-    ADD_PLAYER_NICK(contributors, "Awesomeoverkill", "ninXout", 7479054, 47290058, 77, 1, 5, -1);
-    ADD_PLAYER(contributors, "Capeling", 18226543, 160504868, 141, 76, 40, 40);
-    ADD_PLAYER(contributors, "TheSillyDoggo", 16778880, 162245660, 5, 41, 40, 12);
-    ADD_PLAYER_NICK(contributors, "angeld233", "angeld23", 28024715, 236381167, 98, 4, 12, 12);
-    ADD_PLAYER(contributors, "Uproxide", 25397826, 227796112, 296, 2, 12, 12);
+    for (auto& credit : creditsData.contributors) {
+        ADD_PLAYER(contributors, credit);
+    }
 
-    auto* cellContrib = Build<GlobedCreditsCell>::create("Contributor", false, contributors)
+    auto* cellContributors = Build<GlobedCreditsCell>::create("Contributor", false, contributors)
         .id("cell-contributor"_spr)
         .parent(scrollLayer->m_contentLayer)
         .collect();
@@ -99,11 +225,9 @@ bool GlobedCreditsPopup::setup() {
 
     CCArray* special = CCArray::create();
 
-    ADD_PLAYER(special, "MathieuAR", 3759035, 13781237, 220, 5, 9, 106);
-    ADD_PLAYER(special, "HJfod", 104257, 1817908, 132, 8, 3, 40);
-    ADD_PLAYER(special, "Cvolton", 761691, 6330800, 101, 19, 12, -1);
-    ADD_PLAYER(special, "alk1m123", 11535118, 116938760, 102, 12, 12, -1);
-    ADD_PLAYER(special, "mat4", 5568872, 19127913, 81, 0, 20, 2);
+    for (auto& credit : creditsData.special) {
+        ADD_PLAYER(special, credit);
+    }
 
     auto* cellSpecial = Build<GlobedCreditsCell>::create("Special thanks", true, special)
         .id("cell-special"_spr)
@@ -113,15 +237,13 @@ bool GlobedCreditsPopup::setup() {
     scrollLayer->m_contentLayer->setContentHeight(
         cellOwners->getScaledContentSize().height
         + cellStaff->getScaledContentSize().height
-        + cellContrib->getScaledContentSize().height
+        + cellContributors->getScaledContentSize().height
         + cellSpecial->getScaledContentSize().height
     );
     scrollLayer->m_contentLayer->updateLayout();
 
     // make the list start at the top instead of the bottom
     util::ui::scrollToTop(scrollLayer);
-
-    return true;
 }
 
 GlobedCreditsPopup* GlobedCreditsPopup::create() {
