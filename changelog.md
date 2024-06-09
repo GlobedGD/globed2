@@ -7,6 +7,7 @@
 * * Public room listing that lets you discover rooms without having to be invited
 * Add user roles
 * * Staff, supporters, etc. will have special name color, text chat color, and a badge near their name
+* * Thanks to [LimeGradient](user:7214334), [Terma](user:4706010) and [Capeling](user:18226543) for help
 * Add editor compatibility
 * * If you are the creator of a level (or you use Level Edit hack), you will be able to see other people playing while in the editor
 * * When [EditorCollab by alk1m123](https://github.com/altalk23/EditorCollab) comes out, you will also be able to playtest non-uploaded levels together with others
@@ -24,12 +25,15 @@
 * Add a voice chat guide button in the menu
 * Change textures for some icons in the menus
 * Add much better error messages for outdated clients
-* Don't play effects and animations if the player is too far
+* Don't play effects and animations if the player is too far, to decrease lag
 * Replace the Overlay settings tab with Menus and move overlay settings into Level UI
+* Add a checkpoint icon on the progressbar for players that are in practice mode
 * Fix "already inside of a level" error sometimes appearing when it shouldn't, and add a way to bypass it
 * Fix settings menu looking a bit broken due to a Geode update
 * Fix the placeholder green icon color being a slightly different shade than the actual default green
 * Fix a missing texture crash when asset preloading is disabled
+* Fix progress indicator line going out of the progressbar
+
 * Lots of internal restructuring and rewrites, for improved performance and user experience
 * Protocol optimization (slightly less bandwidth usage)
 * Change the compiler used for Windows releases
