@@ -14,6 +14,7 @@
 * Add a way to play 2-player levels together (as a room setting!)
 * Add automatic reconnection to the server
 * Add credits to the globed menu (thanks [TechStudent11](user:20284359))
+* Add integration with the Discord Rich Presence mod (thanks [TechStudent11](user:20284359))
 * Fix all unsynced clock issues (auth no longer uses TOTP)
 * Fix most "unhandled packet" errors
 * Fix many connection related issues
