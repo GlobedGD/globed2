@@ -25,7 +25,7 @@ bool GlobedCreditsPlayer::init(const std::string_view name, const std::string_vi
     CCMenuItemSpriteExtra* nameLabel;
     auto menu = Build<CCLabelBMFont>::create(std::string(nickname).c_str(), "goldFont.fnt")
         .scale(0.45f)
-        .limitLabelWidth(55.f, 0.45f, 0.05f)
+        .limitLabelWidth(50.f, 0.45f, 0.05f)
         .intoMenuItem([accountId] {
             ProfilePage::create(accountId, false)->show();
         })

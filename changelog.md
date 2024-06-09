@@ -13,7 +13,7 @@
 * * Experimental, might have issues
 * Add a way to play 2-player levels together (as a room setting!)
 * Add automatic reconnection to the server
-* Add credits to the globed menu
+* Add credits to the globed menu (thanks [TechStudent11](user:20284359))
 * Fix all unsynced clock issues (auth no longer uses TOTP)
 * Fix most "unhandled packet" errors
 * Fix many connection related issues
@@ -31,6 +31,8 @@
 * Lots of internal restructuring and rewrites, for improved performance and user experience
 * Protocol optimization (slightly less bandwidth usage)
 * Change the compiler used for Windows releases
+
+Some of the features have been co-developed by [ninXout](user:7479054), who has now also become an official Globed developer :)
 
 ## v1.3.7
 

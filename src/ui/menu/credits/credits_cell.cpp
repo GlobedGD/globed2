@@ -14,8 +14,8 @@ bool GlobedCreditsCell::init(const char* name, bool lightBg, cocos2d::CCArray* p
     size_t rows = (players->count() + maxPlayersInRow - 1) / maxPlayersInRow;
 
     auto* title = Build<CCLabelBMFont>::create(name, "bigFont.fnt")
-        .scale(0.7f)
-        .pos(cellWidth / 2, 0.f)
+        .scale(0.68f)
+        .pos(cellWidth / 2, 3.f)
         .parent(this)
         .collect();
 
@@ -69,7 +69,7 @@ bool GlobedCreditsCell::init(const char* name, bool lightBg, cocos2d::CCArray* p
     playerWrapper->setContentSize({0.f, wrapperHeight});
     playerWrapper->updateLayout();
 
-    this->setContentSize(CCSize{cellWidth, playerWrapper->getScaledContentSize().height + 5.f + title->getScaledContentSize().height});
+    this->setContentSize(CCSize{cellWidth, playerWrapper->getScaledContentSize().height + 8.f + title->getScaledContentSize().height});
 
     Build<CCLayerColor>::create(lightBg ? util::ui::BG_COLOR_BROWN : util::ui::BG_COLOR_DARKBROWN)
         .id("background")

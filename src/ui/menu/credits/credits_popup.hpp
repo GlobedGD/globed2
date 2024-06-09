@@ -11,6 +11,11 @@ public:
     static GlobedCreditsPopup* create();
 
 protected:
+    geode::EventListener<geode::Task<Result<std::string, std::string>>> eventListener;
+    geode::ScrollLayer* scrollLayer;
+
+    void requestCallback(geode::Task<Result<std::string, std::string>>::Event* e);
+
     bool setup() override;
 
     cocos2d::CCArray* createCells();
