@@ -20,7 +20,8 @@
 * Fix many connection related issues
 * Ask the user if they want voice chat enabled or not on first startup
 * Add a Compressed Player Count setting which changes the "X players" label to be more compact (thanks [Uproxide](user:25397826)!)
-* Add a voice chat guide button
+* Add a support button in the menu
+* Add a voice chat guide button in the menu
 * Change textures for some icons in the menus
 * Add much better error messages for outdated clients
 * Don't play effects and animations if the player is too far
