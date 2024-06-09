@@ -64,6 +64,8 @@ void RemotePlayer::updateData(
     lastFrameFlags = frameFlags;
     lastVisualState = data;
 
+    wasPracticing = data.isPracticing;
+
     // don't update any anims if hidden
     if (isForciblyHidden) return;
 
@@ -90,7 +92,7 @@ void RemotePlayer::updateData(
 
 void RemotePlayer::updateProgressIcon() {
     if (progressIcon) {
-        progressIcon->updatePosition(lastPercentage);
+        progressIcon->updatePosition(lastPercentage, wasPracticing);
 
         if (isForciblyHidden || isEditorBuilding) {
             progressIcon->setVisible(false);
