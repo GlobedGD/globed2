@@ -19,6 +19,13 @@ endif()
 
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
+# on windows use precompiled, on other platforms compile libsodium
+if (WIN32)
+    option(GLOBED_COMPILE_SODIUM "Compile libsodium instead of using precompiled binary" OFF)
+else()
+    option(GLOBED_COMPILE_SODIUM "Compile libsodium instead of using precompiled binary" ON)
+endif()
+
 # Check for debug build
 option(ENABLE_DEBUG "Debug mode" OFF)
 option(GLOBED_RELEASE "Release build" OFF)
@@ -97,7 +104,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 # our favorite libraries
 CPMAddPackage("gh:camila314/uibuilder#ba63097")
 CPMAddPackage("gh:xiph/opus#main")
-CPMAddPackage("gh:dankmeme01/libsodium-cmake#226abba")
 CPMAddPackage(
     NAME Boost
     VERSION 1.84.0
@@ -130,22 +136,55 @@ if (GLOBED_NATIVE_ARCH)
     add_compile_options("-march=native")
 endif()
 
-# Clang/GCC - suppress some warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(sodium PRIVATE "-Wno-inaccessible-base" "-Wno-pointer-sign" "-Wno-user-defined-warnings")
-
-    # thank you hjfod
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
 
     # idk why this is necessary ?? github actions doesnt build without it
     if (WIN32)
         target_compile_options(asp PRIVATE "--target=x86_64-pc-windows-msvc")
-        target_compile_options(sodium PRIVATE "--target=x86_64-pc-windows-msvc")
         target_compile_options(opus PRIVATE "--target=x86_64-pc-windows-msvc")
     endif()
 endif()
 
-target_link_libraries(${PROJECT_NAME} UIBuilder opus sodium Boost::describe asp)
+target_link_libraries(${PROJECT_NAME} UIBuilder opus Boost::describe asp)
+
+if (GLOBED_COMPILE_SODIUM)
+    CPMAddPackage("gh:dankmeme01/libsodium-cmake#226abba")
+    target_compile_options(sodium PRIVATE "-Wno-inaccessible-base" "-Wno-pointer-sign" "-Wno-user-defined-warnings")
+    target_compile_options(sodium PRIVATE "--target=x86_64-pc-windows-msvc")
+    target_link_libraries(sodium)
+else()
+    # download headers (binaries based off of 1.0.20 too)
+    CPMAddPackage(
+        NAME sodium
+        GIT_REPOSITORY "https://github.com/jedisct1/libsodium.git"
+        GIT_TAG "1.0.20-RELEASE"
+    )
+
+    add_library(sodium STATIC IMPORTED)
+    set_target_properties(sodium PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/libs/sodium/libsodium.lib")
+
+    target_compile_definitions(${PROJECT_NAME} PRIVATE SODIUM_STATIC=1)
+    target_include_directories(${PROJECT_NAME} PRIVATE "${sodium_SOURCE_DIR}/src/libsodium/include")
+
+    set(SODIUM_VERSION_IN "${CMAKE_CURRENT_SOURCE_DIR}/libs/sodium/version.h")
+    set(SODIUM_VERSION_OUT "${sodium_SOURCE_DIR}/src/libsodium/include/sodium/")
+
+    if (NOT EXISTS "${SODIUM_VERSION_OUT}")
+        message(STATUS "Copied version.h to ${SODIUM_VERSION_OUT}")
+        file(COPY "${SODIUM_VERSION_IN}" DESTINATION "${SODIUM_VERSION_OUT}")
+    else()
+        file(READ "${SODIUM_VERSION_IN}" CONTENT_IN)
+        file(READ "${SODIUM_VERSION_OUT}" CONTENT_OUT)
+
+        if (NOT "${CONTENT_IN}" STREQUAL "${CONTENT_OUT}")
+            message(STATUS "Copied version.h to ${SODIUM_VERSION_OUT}")
+            file(COPY "${SODIUM_VERSION_IN}" DESTINATION "${SODIUM_VERSION_OUT}")
+        endif()
+    endif()
+
+    target_link_libraries(${PROJECT_NAME} sodium)
+endif()
 
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} ws2_32)

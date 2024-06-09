@@ -17,7 +17,6 @@
 
 using namespace geode::prelude;
 
-void setupLibsodium();
 void setupErrorCheckNode();
 void setupCustomKeybinds();
 void printDebugInfo();
@@ -61,7 +60,7 @@ $on_mod(Loaded) {
     // ).expect("failed to hook fmod").unwrap();
 #endif // GLOBED_VOICE_SUPPORT
 
-    setupLibsodium();
+    CryptoBox::initLibrary();
     setupErrorCheckNode();
     setupCustomKeybinds();
 
@@ -72,17 +71,6 @@ $on_mod(Loaded) {
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
     printDebugInfo();
 #endif
-}
-
-void setupLibsodium() {
-    // sodium_init returns 0 on success, 1 if already initialized, -1 on fail
-    GLOBED_REQUIRE(sodium_init() != -1, "sodium_init failed")
-
-    // if there is a logic error in the crypto code, this lambda will be called
-    sodium_set_misuse_handler([] {
-        log::error("sodium_misuse called. we are officially screwed.");
-        util::debug::suicide();
-    });
 }
 
 // error check node runs on every scene and shows popups/notifications if an error has occured in another thread
@@ -136,5 +124,5 @@ void printDebugInfo() {
     log::info("Voice chat support: false");
 #endif
     log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
-    log::info("Libsodium version: {} (CryptoBox algorithm: {})", SODIUM_VERSION_STRING, CryptoBox::ALGORITHM);
+    log::info("Libsodium version: {} (CryptoBox algorithm: {})", CryptoBox::sodiumVersion(), CryptoBox::algorithm());
 }

@@ -1,6 +1,7 @@
 #include "secret_box.hpp"
 
 #include <cstring> // std::memcpy
+#include <sodium.h>
 
 #include <util/crypto.hpp>
 #include <defs/assert.hpp>
@@ -31,14 +32,6 @@ SecretBox::~SecretBox() {
     }
 }
 
-constexpr size_t SecretBox::nonceLength() {
-    return NONCE_LEN;
-}
-
-constexpr size_t SecretBox::macLength() {
-    return MAC_LEN;
-}
-
 size_t SecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
     util::crypto::secureRandom(nonce, NONCE_LEN);
@@ -49,16 +42,16 @@ size_t SecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
     // prepend the nonce
     std::memcpy(dest, nonce, NONCE_LEN);
 
-    return size + PREFIX_LEN;
+    return size + prefixLength();
 }
 
 size_t SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
-    CRYPTO_REQUIRE(size >= PREFIX_LEN, "message is too short")
+    CRYPTO_REQUIRE(size >= prefixLength(), "message is too short")
 
     const byte* nonce = src;
     const byte* ciphertext = src + NONCE_LEN;
 
-    size_t plaintextLength = size - PREFIX_LEN;
+    size_t plaintextLength = size - prefixLength();
     size_t ciphertextLength = size - NONCE_LEN;
 
     CRYPTO_ERR_CHECK(crypto_secretbox_open_easy(dest, ciphertext, ciphertextLength, nonce, key), "crypto_secretbox_open_easy failed")

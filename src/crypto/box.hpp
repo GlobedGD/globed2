@@ -1,34 +1,19 @@
 #pragma once
 #include "base_box.hpp"
 
-#include <sodium.h>
-
-class CryptoBox final : public BaseCryptoBox {
+class CryptoBox final : public BaseCryptoBox<CryptoBox> {
 public:
+    constexpr static size_t KEY_LEN = 32;
+    constexpr static size_t NONCE_LEN = 24;
+    constexpr static size_t MAC_LEN = 24;
 
-// XSalsa20 is theoretically slower and less secure, but still possible to use by defining GLOBED_USE_XSALSA20
-#ifdef GLOBED_USE_XSALSA20
-    constexpr static const char* ALGORITHM = "XSalsa20Poly1305";
-# define CRYPTO_JOIN(arg) crypto_box_##arg
-#else
-    constexpr static const char* ALGORITHM = "XChaCha20Poly1305";
-# define CRYPTO_JOIN(arg) crypto_box_curve25519xchacha20poly1305_##arg
-#endif
+    using BaseCryptoBox<CryptoBox>::PREFIX_LEN;
 
-    // i ain't retyping crypto_box_curve25519xchacha20poly1305_open_easy_afternm, okay?
-    constexpr static size_t NONCE_LEN = CRYPTO_JOIN(NONCEBYTES);
-    constexpr static size_t MAC_LEN = CRYPTO_JOIN(MACBYTES);
+    static const char* algorithm();
+    static const char* sodiumVersion();
 
-    constexpr static size_t KEY_LEN = CRYPTO_JOIN(PUBLICKEYBYTES);
-    constexpr static size_t SECRET_KEY_LEN = CRYPTO_JOIN(SECRETKEYBYTES);
-    constexpr static size_t SHARED_KEY_LEN = CRYPTO_JOIN(BEFORENMBYTES);
-
-    constexpr static auto func_box_keypair = CRYPTO_JOIN(keypair);
-    constexpr static auto func_box_beforenm = CRYPTO_JOIN(beforenm);
-    constexpr static auto func_box_easy = CRYPTO_JOIN(easy_afternm);
-    constexpr static auto func_box_open_easy = CRYPTO_JOIN(open_easy_afternm);
-
-    constexpr static size_t PREFIX_LEN = NONCE_LEN + MAC_LEN;
+    // Should be called exactly once at startup.
+    static void initLibrary();
 
     // Initialize this `CryptoBox`, optionally set peer's public key.
     CryptoBox(util::data::byte* peerKey = nullptr);
@@ -47,11 +32,8 @@ public:
     // This precomputes the shared key and stores it for use in all future operations.
     void setPeerKey(const util::data::byte* src);
 
-    constexpr size_t nonceLength() override;
-    constexpr size_t macLength() override;
-
-    size_t encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) override;
-    size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) override;
+    size_t encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
+    size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
 
 private: // nuh uh
     util::data::byte* memBasePtr = nullptr;

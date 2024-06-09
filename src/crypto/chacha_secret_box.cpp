@@ -1,6 +1,7 @@
 #include "chacha_secret_box.hpp"
 
 #include <cstring> // std::memcpy
+#include <sodium.h>
 
 #include <util/crypto.hpp>
 #include <defs/assert.hpp>
@@ -31,14 +32,6 @@ ChaChaSecretBox::~ChaChaSecretBox() {
     }
 }
 
-constexpr size_t ChaChaSecretBox::nonceLength() {
-    return NONCE_LEN;
-}
-
-constexpr size_t ChaChaSecretBox::macLength() {
-    return MAC_LEN;
-}
-
 size_t ChaChaSecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
     util::crypto::secureRandom(nonce, NONCE_LEN);
@@ -51,13 +44,13 @@ size_t ChaChaSecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
     // prepend the nonce
     std::memcpy(dest, nonce, NONCE_LEN);
 
-    return size + PREFIX_LEN;
+    return size + prefixLength();
 }
 
 size_t ChaChaSecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
-    CRYPTO_REQUIRE(size >= PREFIX_LEN, "message is too short")
+    CRYPTO_REQUIRE(size >= prefixLength(), "message is too short")
 
-    size_t plaintextLength = size - PREFIX_LEN;
+    size_t plaintextLength = size - prefixLength();
 
     const byte* nonce = src;
     const byte* mac = src + NONCE_LEN;
