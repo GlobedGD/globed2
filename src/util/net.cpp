@@ -36,13 +36,17 @@ namespace util::net {
     }
 
     std::string loginPlatformString() {
-        GLOBED_PLATFORM_STRING;
+#ifdef GLOBED_DEBUG
         return fmt::format(
             "{} ({}, Geode {})",
             GLOBED_PLATFORM_STRING,
             Mod::get()->getVersion().toString(),
             Loader::get()->getVersion().toString()
         );
+#else
+        // no telemetry in release :(
+        return fmt::format("Globed {}", Mod::get()->getVersion().toString());
+#endif
     }
 
     Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort) {
@@ -79,6 +83,14 @@ namespace util::net {
     }
 
     Result<std::string> getaddrinfo(const std::string_view hostname) {
+        auto ipaddr = std::make_unique<sockaddr_in>();
+
+        GLOBED_UNWRAP(getaddrinfo(hostname, *ipaddr));
+
+        return inAddrToString(ipaddr->sin_addr);
+    }
+
+    Result<> getaddrinfo(const std::string_view hostname, sockaddr_in& out) {
         struct addrinfo hints = {};
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;
@@ -90,42 +102,47 @@ namespace util::net {
             return Err(util::net::lastErrorString());
         }
 
-        GLOBED_REQUIRE_SAFE(result->ai_family == AF_INET, "getaddrinfo returned invalid address family")
-        GLOBED_REQUIRE_SAFE(result->ai_socktype == SOCK_DGRAM, "getaddrinfo returned invalid socket type")
-        GLOBED_REQUIRE_SAFE(result->ai_protocol == IPPROTO_UDP, "getaddrinfo returned invalid ip protocol")
+        if (result->ai_family != AF_INET || result->ai_socktype != SOCK_DGRAM || result->ai_protocol != IPPROTO_UDP) {
+            ::freeaddrinfo(result);
+            return Err("getaddrinfo returned wrong output");
+        }
+
         auto* ipaddr = (struct sockaddr_in*) result->ai_addr;
 
+        std::memcpy(&out, ipaddr, sizeof(sockaddr_in));
+
+        ::freeaddrinfo(result);
+
+        return Ok();
+    }
+
+    Result<std::string> inAddrToString(const in_addr& addr) {
         std::string out;
         out.resize(16);
 
-        auto ntopResult = inet_ntop(AF_INET, &ipaddr->sin_addr, out.data(), 16);
-        ::freeaddrinfo(result);
+        auto ntopResult = inet_ntop(AF_INET, &addr, out.data(), 16);
 
         if (ntopResult == nullptr) {
-            return Err(util::net::lastErrorString());
+            return Err(lastErrorString());
         }
 
         out.resize(std::strlen(out.c_str()));
 
-        return Ok(out);
+        return Ok(std::move(out));
     }
 
-    Result<> initSockaddr(const std::string_view address, unsigned short port, sockaddr_in& dest) {
-        dest.sin_port = htons(port);
+    Result<> stringToInAddr(const char* addr, in_addr& out) {
+        auto ptonResult = inet_pton(AF_INET, addr, &out);
 
-        bool validIp = (inet_pton(AF_INET, std::string(address).c_str(), &dest.sin_addr) > 0);
-        if (validIp) {
+        if (ptonResult > 0) {
             return Ok();
         } else {
-            // if not a valid IPv4, assume it's a domain and try getaddrinfo
-            auto result = util::net::getaddrinfo(address);
-            GLOBED_UNWRAP_INTO(result, auto ip);
-
-            validIp = (inet_pton(AF_INET, ip.c_str(), &dest.sin_addr) > 0);
-            GLOBED_REQUIRE_SAFE(validIp, "invalid address was returned by getaddrinfo")
-
-            return Ok();
+            return Err(lastErrorString());
         }
+    }
+
+    uint16_t hostToNetworkPort(uint16_t port) {
+        return ::htons(port);
     }
 }
 

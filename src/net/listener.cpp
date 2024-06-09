@@ -1,13 +1,12 @@
 #include "listener.hpp"
 
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 
 using namespace geode::prelude;
 
 PacketListener::~PacketListener() {
     auto& nm = NetworkManager::get();
-    nm.unregisterPacketListener(packetId, this);
-    nm.suppressUnhandledFor(packetId, util::time::seconds(3));
+    nm.unregisterPacketListener(packetId, this, true);
 }
 
 bool PacketListener::init(packetid_t packetId, CallbackFn&& fn, CCObject* owner, int priority, bool mainThread, bool isFinal) {

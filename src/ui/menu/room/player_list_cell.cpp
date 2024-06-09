@@ -6,7 +6,7 @@
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <managers/admin.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -117,15 +117,16 @@ void PlayerListCell::createJoinButton() {
             bool isMainLevel = std::find(HookedLevelSelectLayer::MAIN_LEVELS.begin(), HookedLevelSelectLayer::MAIN_LEVELS.end(), levelId) != HookedLevelSelectLayer::MAIN_LEVELS.end();
 
             if (mlevel != nullptr) {
-                if (isMainLevel) { //if its a classic main level go to that page in LevelSelectLayer
-                    auto lsl = LevelSelectLayer::create(levelId - 1);
-                    util::ui::switchToScene(lsl);
+                // if its a classic main level go to that page in LevelSelectLayer
+                if (isMainLevel) {
+                    util::ui::switchToScene(LevelSelectLayer::scene(levelId - 1));
                     return;
-                } //otherwise we just go right to playlayer
+                }
+
+                // otherwise we just go right to playlayer
                 auto level = static_cast<HookedGJGameLevel*>(glm->getMainLevel(levelId, false));
                 level->m_fields->shouldTransitionWithPopScene = true;
-                auto pl = PlayLayer::create(level, false, false);
-                util::ui::switchToScene(pl);
+                util::ui::switchToScene(PlayLayer::scene(level, false, false));
                 return;
             }
 

@@ -2,8 +2,6 @@
 
 #include <sodium.h>
 #include <cstring>
-#include <iomanip>
-#include <sstream>
 
 #include <defs/assert.hpp>
 #include <defs/minimal_geode.hpp>

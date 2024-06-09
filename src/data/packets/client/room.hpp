@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/room.hpp>
 
+// 13000 - CreateRoomPacket
 class CreateRoomPacket : public Packet {
     GLOBED_PACKET(13000, CreateRoomPacket, false, false)
 
@@ -16,6 +17,7 @@ class CreateRoomPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(CreateRoomPacket, (roomName, password, settings));
 
+// 13001 - JoinRoomPacket
 class JoinRoomPacket : public Packet {
     GLOBED_PACKET(13001, JoinRoomPacket, false, false)
 
@@ -28,6 +30,7 @@ class JoinRoomPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(JoinRoomPacket, (roomId, password));
 
+// 13002 - LeaveRoomPacket
 class LeaveRoomPacket : public Packet {
     GLOBED_PACKET(13002, LeaveRoomPacket, false, false)
 
@@ -36,6 +39,7 @@ class LeaveRoomPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(LeaveRoomPacket, ());
 
+// 13003 - RequestRoomPlayerListPacket
 class RequestRoomPlayerListPacket : public Packet {
     GLOBED_PACKET(13003, RequestRoomPlayerListPacket, false, false)
 
@@ -44,6 +48,7 @@ class RequestRoomPlayerListPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(RequestRoomPlayerListPacket, ());
 
+// 13004 - UpdateRoomSettingsPacket
 class UpdateRoomSettingsPacket : public Packet {
     GLOBED_PACKET(13004, UpdateRoomSettingsPacket, false, false)
 
@@ -55,6 +60,7 @@ class UpdateRoomSettingsPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(UpdateRoomSettingsPacket, (settings));
 
+// 13005 - RoomSendInvitePacket
 class RoomSendInvitePacket : public Packet {
     GLOBED_PACKET(13005, RoomSendInvitePacket, false, false)
 
@@ -66,6 +72,7 @@ class RoomSendInvitePacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(RoomSendInvitePacket, (player));
 
+// 13006 - RequestRoomListPacket
 class RequestRoomListPacket : public Packet {
     GLOBED_PACKET(13006, RequestRoomListPacket, false, false)
 

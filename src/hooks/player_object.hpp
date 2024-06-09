@@ -21,7 +21,9 @@ class $modify(ComplexPlayerObject, PlayerObject) {
 
 // Unlike `ComplexPlayerObject`, this one is made specifically for vanilla player objects, so it is a separate $modify class.
 class $modify(HookedPlayerObject, PlayerObject) {
-    bool forcedPlatFlag = false;
+    struct Fields {
+        bool forcedPlatFlag = false;
+    };
 
     $override
     void playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CCPoint to);

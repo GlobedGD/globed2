@@ -76,6 +76,8 @@ server/game/test-bench.sh
 server/globed_game_server.log
 server/out
 server/build-all.sh
+server/run-trace.sh
+server/run.sh
 server/central/central-conf.json
 server/central/db.sqlite
 server/central/db.sqlite-shm
@@ -89,3 +91,5 @@ server/rustc-ice-*.txt
 
 libs/openssl
 globed-lerp-log.bin
+
+!libs/sodium/libsodium.lib

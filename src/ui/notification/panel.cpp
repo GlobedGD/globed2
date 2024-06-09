@@ -1,7 +1,7 @@
 #include "panel.hpp"
 
 #include "invite.hpp"
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 
 using namespace geode::prelude;
@@ -34,8 +34,10 @@ void GlobedNotificationPanel::addInviteNotification(uint32_t roomID, const std::
     auto* notif = GlobedInviteNotification::create(roomID, password, player);
     this->slideInNotification(notif);
 
+#if GLOBED_HAS_FMOD
     auto* engine = FMODAudioEngine::sharedEngine();
     engine->playEffect("invite-sound.ogg"_spr, 1.f, 1.f, 1.f);
+#endif
 }
 
 void GlobedNotificationPanel::slideInNotification(CCNode* node) {

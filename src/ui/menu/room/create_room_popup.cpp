@@ -1,6 +1,6 @@
 #include "create_room_popup.hpp"
 
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <data/packets/client/room.hpp>
 
 bool CreateRoomPopup::setup(RoomPopup* parent) {

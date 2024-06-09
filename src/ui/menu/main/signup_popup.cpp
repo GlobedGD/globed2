@@ -5,7 +5,7 @@
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <util/net.hpp>
 #include <util/format.hpp>
 #include <util/crypto.hpp>
@@ -33,45 +33,66 @@ bool GlobedSignupPopup::setup() {
         .parent(m_mainLayer);
 
     auto gdData = am.gdData.lock();
-    auto url = fmt::format(
-        "{}/challenge/new?aid={}&uid={}&aname={}&protocol={}",
-        activeServer->url,
-        gdData->accountId,
-        gdData->userId,
-        util::format::urlEncode(gdData->accountName),
-        NetworkManager::get().getUsedProtocol()
-    );
 
-    web::AsyncWebRequest()
+    auto request = web::WebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::seconds(5))
-        .post(url)
-        .text()
-        .then([this](std::string& response) {
-            auto parts = util::format::split(response, ":");
-            if (parts.size() != 3) {
-                this->onFailure("Creating challenge failed: <cy>response does not consist of 3 parts</c>");
-                return;
+        .param("aid", gdData->accountId)
+        .param("uid", gdData->userId)
+        .param("aname", gdData->accountName)
+        .param("protocol", NetworkManager::get().getUsedProtocol())
+        .post(fmt::format("{}/challenge/new", activeServer->url))
+        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
+            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
+
+            if (resptext.empty()) {
+                return Err(fmt::format("server sent an empty response with code {}", response->code()));
             }
 
-            // we accept -1 as the default
-            int accountId = util::format::parse<int>(parts[0]).value_or(-1);
-
-            this->onChallengeCreated(accountId, parts[1], parts[2]);
-        })
-        .expect([this](std::string error, int statusCode) {
-            log::warn("error creating challenge");
-            log::warn("{}", error);
-
-            if (error.empty()) {
-                this->onFailure(fmt::format("Creating challenge failed: server sent an empty response with code {}.", statusCode));
+            if (response->ok()) {
+                return Ok(resptext);
             } else {
-                this->onFailure("Creating challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
+                return Err(resptext);
             }
-        })
-        .send();
+
+        }, [](web::WebProgress*) -> std::monostate {
+            return {};
+        });
+
+    createListener.bind(this, &GlobedSignupPopup::createCallback);
+    createListener.setFilter(std::move(request));
 
     return true;
+}
+
+void GlobedSignupPopup::createCallback(typename geode::Task<Result<std::string, std::string>>::Event* event) {
+    if (!event || !event->getValue()) return;
+
+    auto evalue = event->getValue();
+
+    if (!evalue->isOk()) {
+        std::string message = evalue->unwrapErr();
+
+        log::warn("error creating challenge");
+        log::warn("{}", message);
+
+        this->onFailure("Creating challenge failed: <cy>" + util::format::formatErrorMessage(message) + "</c>");
+
+        return;
+    }
+
+    auto resptext = evalue->unwrap();
+
+    auto parts = util::format::split(resptext, ":");
+    if (parts.size() != 3) {
+        this->onFailure("Creating challenge failed: <cy>response does not consist of 3 parts</c>");
+        return;
+    }
+
+    // we accept -1 as the default
+    int accountId = util::format::parse<int>(parts[0]).value_or(-1);
+
+    this->onChallengeCreated(accountId, parts[1], parts[2]);
 }
 
 void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view chtoken, const std::string_view pubkey) {
@@ -138,57 +159,85 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
                     std::time(nullptr)
         );
 
-    web::AsyncWebRequest()
+    auto request = web::WebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::seconds(30))
         .post(url)
-        .text()
-        .then([this, &am](std::string& response) {
-            // we are good! the authkey has been created and can be saved now.
-            auto colonPos = response.find(':');
-            auto messageId = response.substr(0, colonPos);
+        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
+            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
 
-            if (colonPos == std::string::npos) {
-                log::warn("invalid challenge finish response: {}", response);
-                this->onFailure("Completing challenge failed: <cy>invalid response from the server (no ':' found)</c>");
-                return;
+            if (resptext.empty()) {
+                return Err(fmt::format("server sent an empty response with code {}", response->code()));
             }
 
-            auto encodedAuthkey = response.substr(colonPos + 1);
-
-            log::info("Authkey created successfully, saving.");
-            util::data::bytevector authkey;
-            try {
-                authkey = util::crypto::base64Decode(encodedAuthkey);
-            } catch (const std::exception& e) {
-                log::warn("failed to decode authkey: {}", e.what());
-                log::warn("authkey: {}", encodedAuthkey);
-                this->onFailure("Completing challenge failed: <cy>invalid response from the server (couldn't decode base64)</c>");
-                return;
-            }
-
-            am.storeAuthKey(util::crypto::simpleHash(authkey));
-            this->onSuccess();
-
-            // delete the comment to cleanup
-            if (messageId != "none") {
-                auto message = GJUserMessage::create();
-                message->m_messageID = util::format::parse<int>(messageId).value_or(-1);
-                if (message->m_messageID == -1) return;
-
-                GameLevelManager::sharedState()->deleteUserMessages(message, nullptr, true);
-            }
-        })
-        .expect([this](std::string error, int statusCode) {
-            if (error.empty()) {
-                this->onFailure(fmt::format("Completing challenge failed: server sent an empty response with code {}.", statusCode));
-            } else if (statusCode == 401) {
-                this->onFailure("Completing challenge failed: account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>" + util::format::formatErrorMessage(error) + "</c>");
+            if (response->ok()) {
+                return Ok(resptext);
             } else {
-                this->onFailure("Completing challenge failed: <cy>" + util::format::formatErrorMessage(error) + "</c>");
+                if (response->code() == 401) {
+                    return Err("account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>" + util::format::formatErrorMessage(resptext) + "</c>");
+                } else {
+                    return Err(util::format::formatErrorMessage(resptext));
+                }
             }
-        })
-        .send();
+
+        }, [](web::WebProgress*) -> std::monostate {
+            return {};
+        });
+
+    finishListener.bind(this, &GlobedSignupPopup::finishCallback);
+    finishListener.setFilter(std::move(request));
+}
+
+void GlobedSignupPopup::finishCallback(typename geode::Task<Result<std::string, std::string>>::Event* event) {
+    if (!event || !event->getValue()) return;
+
+    auto evalue = event->getValue();
+
+    if (!evalue->isOk()) {
+        std::string message = evalue->unwrapErr();
+
+        this->onFailure(message);
+        return;
+    }
+
+    auto response = evalue->unwrap();
+
+    // we are good! the authkey has been created and can be saved now.
+    auto colonPos = response.find(':');
+    auto messageId = response.substr(0, colonPos);
+
+    if (colonPos == std::string::npos) {
+        log::warn("invalid challenge finish response: {}", response);
+        this->onFailure("Completing challenge failed: <cy>invalid response from the server (no ':' found)</c>");
+        return;
+    }
+
+    auto encodedAuthkey = response.substr(colonPos + 1);
+
+    log::info("Authkey created successfully, saving.");
+    util::data::bytevector authkey;
+    try {
+        authkey = util::crypto::base64Decode(encodedAuthkey);
+    } catch (const std::exception& e) {
+        log::warn("failed to decode authkey: {}", e.what());
+        log::warn("authkey: {}", encodedAuthkey);
+        this->onFailure("Completing challenge failed: <cy>invalid response from the server (couldn't decode base64)</c>");
+        return;
+    }
+
+    auto& am = GlobedAccountManager::get();
+
+    am.storeAuthKey(util::crypto::simpleHash(authkey));
+    this->onSuccess();
+
+    // delete the comment to cleanup
+    if (messageId != "none") {
+        auto message = GJUserMessage::create();
+        message->m_messageID = util::format::parse<int>(messageId).value_or(-1);
+        if (message->m_messageID == -1) return;
+
+        GameLevelManager::sharedState()->deleteUserMessages(message, nullptr, true);
+    }
 }
 
 void GlobedSignupPopup::onSuccess() {

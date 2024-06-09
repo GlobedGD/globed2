@@ -5,7 +5,7 @@
 #include "string_input_popup.hpp"
 #include "advanced_settings_popup.hpp"
 #include <managers/settings.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
@@ -181,11 +181,8 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         menu->setPositionY(CELL_HEIGHT / 2.f);
 
         if (settingType == Type::PacketFragmentation) {
-            auto spr = Build<CCSprite>::createSpriteName("geode.loader/pencil.png").collect();
-            if (!spr) {
-                // placeholder icon just in case
-                spr = Build<CCSprite>::createSpriteName("GJ_sTrendingIcon_001.png").collect();
-            }
+            auto spr = Build<CCSprite>::createSpriteName("pencil.png"_spr)
+                .collect();
 
             // button to manually edit packet frag
             Build<CircleButtonSprite>::create(spr)

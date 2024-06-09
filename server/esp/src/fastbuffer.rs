@@ -73,12 +73,6 @@ impl<'a> FastByteBuffer<'a> {
         self.internal_write(data);
     }
 
-    #[inline(always)]
-    pub fn write_string(&mut self, val: &str) {
-        self.write_u32(val.len() as u32);
-        self.write_bytes(val.as_bytes());
-    }
-
     #[inline]
     pub fn as_bytes(&'a self) -> &'a [u8] {
         &self.data[..self.len]

@@ -2,7 +2,6 @@
 #include <config.hpp>
 
 #include <Geode/platform/cplatform.h>
-#include <bit>
 
 /*
 * platform macros
@@ -28,14 +27,16 @@
 #endif
 
 #ifdef GEODE_IS_MACOS
+// TODO arm ?
 # define GLOBED_PLATFORM_STRING_PLATFORM "Mac"
 # define GLOBED_PLATFORM_STRING_ARCH "x86_64"
 # define GLOBED_IS_X86_64 1
 # define GLOBED_IS_X86 1
 #elif defined(GEODE_IS_WINDOWS)
 # define GLOBED_PLATFORM_STRING_PLATFORM "Windows"
-# define GLOBED_PLATFORM_STRING_ARCH "x86"
+# define GLOBED_PLATFORM_STRING_ARCH "x86_64"
 # define GLOBED_IS_X86 1
+# define GLOBED_IS_X86_64 1
 #elif defined(GEODE_IS_ANDROID)
 # define GLOBED_PLATFORM_STRING_PLATFORM "Android"
 #  define GLOBED_IS_ARM 1
@@ -63,7 +64,7 @@
 #ifdef GEODE_IS_WINDOWS
 # define GLOBED_HAS_FMOD GLOBED_FMOD_WINDOWS
 # define GLOBED_HAS_DRPC GLOBED_DRPC_WINDOWS
-# define GLOBED_HAS_KEYBINDS 1
+# define GLOBED_HAS_KEYBINDS 0 // TODO keybinds
 # define GLOBED_VOICE_CAN_TALK
 #elif defined(GEODE_IS_MACOS)
 # define GLOBED_HAS_FMOD GLOBED_FMOD_MAC
@@ -92,4 +93,4 @@
 # undef GLOBED_VOICE_CAN_TALK
 #endif
 
-constexpr bool GLOBED_LITTLE_ENDIAN = std::endian::native == std::endian::little;
+constexpr bool GLOBED_LITTLE_ENDIAN = true;

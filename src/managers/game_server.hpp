@@ -1,24 +1,18 @@
 #pragma once
-#include <defs/util.hpp>
 #include <defs/minimal_geode.hpp>
 
 #include <unordered_map>
-
 #include <asp/sync.hpp> // mutex
+
 #include <util/crypto.hpp> // base64
 #include <util/time.hpp>
-
-struct GameServerAddress {
-    std::string ip;
-    unsigned short port;
-};
+#include <util/singleton.hpp>
 
 struct GameServer {
     std::string id;
     std::string name;
     std::string region;
-
-    GameServerAddress address;
+    std::string address;
 
     int ping;
     uint32_t playerCount;
@@ -35,7 +29,6 @@ public:
     constexpr static const char* STANDALONE_SETTING_KEY = "_last-standalone-addr";
     constexpr static const char* LAST_CONNECTED_SETTING_KEY = "_last-connected-addr";
     constexpr static const char* SERVER_RESPONSE_CACHE_KEY = "_last-cached-servers-response";
-    constexpr static unsigned short DEFAULT_PORT = 41001;
 
     asp::AtomicBool pendingChanges;
 
@@ -56,7 +49,7 @@ public:
     std::unordered_map<std::string, GameServer> getAllServers();
 
     // return ping on the active server
-    uint32_t getActivePing();
+    int getActivePing();
 
     // save the given address as a last connected standalone address
     void saveStandalone(const std::string_view addr);

@@ -31,7 +31,6 @@ private:
         ;
 
     bool setup() override;
-    ~RoomSettingsPopup();
 };
 
 class RoomSettingCell : public cocos2d::CCLayer {

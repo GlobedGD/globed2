@@ -1,8 +1,10 @@
 #pragma once
-#include <defs/util.hpp>
 #include <defs/geode.hpp>
 
+#include <filesystem>
+
 #include <data/types/game.hpp>
+#include <util/singleton.hpp>
 
 struct PlayerLogData {
     float localTimestamp;
@@ -33,7 +35,7 @@ public:
     void logLerpOperation(uint32_t player, float localts, float timeCounter, const SpecificIconData& data);
     void logLerpSkip(uint32_t player, float localts, float timeCounter, const SpecificIconData& data);
 
-    void makeDump(const ghc::filesystem::path path);
+    void makeDump(const std::filesystem::path path);
 
 private:
     PlayerLog& ensureExists(uint32_t player);

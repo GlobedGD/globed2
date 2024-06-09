@@ -4,9 +4,11 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 class $modify(GlobedPlayLayer, PlayLayer) {
-    GameObject* antiCheat;
-    bool ignoreNoclip = false;
-    bool insideDestroyPlayer = false;
+    struct Fields {
+        GameObject* antiCheat = nullptr;
+        bool ignoreNoclip = false;
+        bool insideDestroyPlayer = false;
+    };
 
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);

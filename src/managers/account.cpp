@@ -85,42 +85,61 @@ void GlobedAccountManager::requestAuthToken(
     authkey = util::crypto::base64Encode(util::crypto::base64Decode(authkey), util::crypto::Base64Variant::URLSAFE);
 
     auto gd = gdData.lock();
-    auto url = fmt::format(
-        "{}/totplogin?aid={}&uid={}&aname={}&authkey={}",
-        baseUrl,
-        gd->accountId,
-        gd->userId,
-        util::format::urlEncode(gd->accountName),
-        authkey
-    );
 
     this->cancelAuthTokenRequest();
 
-    requestHandle = web::AsyncWebRequest()
+    requestCallbackStored = std::move(callback);
+    log::debug("base url: {}", baseUrl);
+
+    auto request = web::WebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::seconds(3))
-        .post(url)
-        .text()
-        .then([this, callback](std::string& response) {
-            requestHandle = std::nullopt;
-            *this->authToken.lock() = response;
+        .param("aid", gd->accountId)
+        .param("uid", gd->userId)
+        .param("aname", gd->accountName)
+        .param("authkey", authkey)
+        .post(fmt::format("{}/totplogin", baseUrl))
+        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
+            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
 
-            if (callback.has_value()) {
-                callback.value()();
+            if (resptext.empty()) {
+                return Err(fmt::format("server sent an empty response with code {}", response->code()));
             }
-        })
-        .expect([this](std::string error) {
-            requestHandle = std::nullopt;
-            ErrorQueues::get().error(fmt::format(
-                "Failed to generate a session token! Please try to login and connect again.\n\nReason: <cy>{}</c>",
-                error
-            ));
-            this->clearAuthKey();
-        })
-        .cancelled([this](auto) {
-            requestHandle = std::nullopt;
-        })
-        .send();
+
+            if (response->ok()) {
+                return Ok(resptext);
+            } else {
+                return Err(resptext);
+            }
+
+        }, [](web::WebProgress* progress) -> std::monostate {
+            return {};
+        });
+
+    requestListener.bind(this, &GlobedAccountManager::requestCallback);
+    requestListener.setFilter(std::move(request));
+}
+
+void GlobedAccountManager::requestCallback(typename Task<Result<std::string, std::string>>::Event* event) {
+    if (!event || !event->getValue()) return;
+
+    if (event->getValue()->isOk()) {
+        *this->authToken.lock() = event->getValue()->unwrap();
+
+        if (requestCallbackStored.has_value()) {
+            requestCallbackStored.value()();
+        }
+        return;
+    }
+
+    std::string message = event->getValue()->unwrapErr();
+
+    ErrorQueues::get().error(fmt::format(
+        "Failed to generate a session token! Please try to login and connect again.\n\nReason: <cy>{}</c>",
+        message
+    ));
+
+    this->clearAuthKey();
 }
 
 void GlobedAccountManager::storeAdminPassword(const std::string_view password) {
@@ -164,10 +183,7 @@ std::optional<std::string> GlobedAccountManager::getAdminPassword() {
 }
 
 void GlobedAccountManager::cancelAuthTokenRequest() {
-    if (requestHandle.has_value()) {
-        requestHandle->get()->cancel();
-        requestHandle = std::nullopt;
-    }
+    requestListener.getFilter().cancel();
 }
 
 std::string GlobedAccountManager::computeGDDataHash(const std::string_view name, int accountId, int userId, const std::string_view central) {

@@ -2,7 +2,7 @@
 
 #include "server_switcher_popup.hpp"
 #include "add_server_popup.hpp"
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
 #include <util/ui.hpp>

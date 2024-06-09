@@ -4,11 +4,13 @@
 #include <Geode/modify/GameManager.hpp>
 
 class $modify(HookedGameManager, GameManager) {
-    std::unordered_map<int, std::unordered_map<int, Ref<cocos2d::CCTexture2D>>> iconCache;
-    std::unordered_set<std::string> loadedFrames;
-    int lastSceneEnum;
-    bool assetsPreloaded = false;
-    bool deathEffectsPreloaded = false;
+    struct Fields {
+        std::unordered_map<int, std::unordered_map<int, Ref<cocos2d::CCTexture2D>>> iconCache;
+        std::unordered_set<std::string> loadedFrames;
+        int lastSceneEnum;
+        bool assetsPreloaded = false;
+        bool deathEffectsPreloaded = false;
+    };
 
     static void onModify(auto& self) {
         (void) self.setHookPriority("GameManager::returnToLastScene", -999999999);

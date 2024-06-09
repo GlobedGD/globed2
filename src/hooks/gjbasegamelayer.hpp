@@ -7,64 +7,66 @@
 #include <data/types/room.hpp>
 #include <game/interpolator.hpp>
 #include <game/player_store.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/game/player/remote_player.hpp>
 #include <ui/game/overlay/overlay.hpp>
 #include <ui/game/progress/progress_icon.hpp>
 #include <ui/game/progress/progress_arrow.hpp>
 #include <ui/game/voice_overlay/overlay.hpp>
-//#include <ui/game/chat_overlay/overlay.hpp>
+#include <util/time.hpp>
 
 float adjustLerpTimeDelta(float dt);
 
 class $modify(GlobedGJBGL, GJBaseGameLayer) {
-    // setup stuff
-    bool globedReady = false;
-    bool setupWasCompleted = false;
-    uint32_t configuredTps = 0;
+    struct Fields {
+        // setup stuff
+        bool globedReady = false;
+        bool setupWasCompleted = false;
+        uint32_t configuredTps = 0;
 
-    // in game stuff
-    bool deafened = false;
-    bool isVoiceProximity = false;
-    uint32_t totalSentPackets = 0;
-    float timeCounter = 0.f;
-    float lastServerUpdate = 0.f;
-    std::unique_ptr<PlayerInterpolator> interpolator;
-    std::unique_ptr<PlayerStore> playerStore;
-    RoomSettings roomSettings;
-    struct TwoPlayerModeState {
-        bool active = false; // true when two player mode is enabled and linked to a player
-        bool isPrimary = false;
-        Ref<PlayerObject> linked;
-    } twopstate;
-    bool progressForciblyDisabled = false; // affected by room settings, forces safe mode
-    bool forcedPlatformer = false;
-    bool shouldStopProgress = false;
-    bool quitting = false;
-    GameCameraState camState;
+        // in game stuff
+        bool deafened = false;
+        bool isVoiceProximity = false;
+        uint32_t totalSentPackets = 0;
+        float timeCounter = 0.f;
+        float lastServerUpdate = 0.f;
+        std::unique_ptr<PlayerInterpolator> interpolator;
+        std::unique_ptr<PlayerStore> playerStore;
+        RoomSettings roomSettings;
+        struct TwoPlayerModeState {
+            bool active = false; // true when two player mode is enabled and linked to a player
+            bool isPrimary = false;
+            Ref<PlayerObject> linked;
+        } twopstate;
+        bool progressForciblyDisabled = false; // affected by room settings, forces safe mode
+        bool forcedPlatformer = false;
+        bool shouldStopProgress = false;
+        bool quitting = false;
+        GameCameraState camState;
 
-    std::optional<SpiderTeleportData> spiderTp1, spiderTp2;
-    bool didJustJumpp1 = false, didJustJumpp2 = false;
-    bool isCurrentlyDead = false;
-    float lastDeathTimestamp = 0.f;
+        std::optional<SpiderTeleportData> spiderTp1, spiderTp2;
+        bool didJustJumpp1 = false, didJustJumpp2 = false;
+        bool isCurrentlyDead = false;
+        float lastDeathTimestamp = 0.f;
 
-    // ui elements
-    GlobedOverlay* overlay = nullptr;
-    std::unordered_map<int, RemotePlayer*> players;
-    Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
-    Ref<CCNode> progressBarWrapper = nullptr;
-    Ref<PlayerStatusIcons> selfStatusIcons = nullptr;
-    Ref<GlobedVoiceOverlay> voiceOverlay = nullptr;
-    //Ref<GlobedChatOverlay> chatOverlay = nullptr;
-    Ref<GlobedNameLabel> ownNameLabel = nullptr;
-    Ref<GlobedNameLabel> ownNameLabel2 = nullptr;
+        // ui elements
+        GlobedOverlay* overlay = nullptr;
+        std::unordered_map<int, RemotePlayer*> players;
+        Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
+        Ref<CCNode> progressBarWrapper = nullptr;
+        Ref<PlayerStatusIcons> selfStatusIcons = nullptr;
+        Ref<GlobedVoiceOverlay> voiceOverlay = nullptr;
+        //Ref<GlobedChatOverlay> chatOverlay = nullptr;
+        Ref<GlobedNameLabel> ownNameLabel = nullptr;
+        Ref<GlobedNameLabel> ownNameLabel2 = nullptr;
 
-    // speedhack detection
-    float lastKnownTimeScale = 1.0f;
-    std::unordered_map<int, util::time::time_point> lastSentPacket;
+        // speedhack detection
+        float lastKnownTimeScale = 1.0f;
+        std::unordered_map<int, util::time::time_point> lastSentPacket;
 
-    // chat messages (duh)
-    std::vector<std::pair<int, std::string>> chatMessages;
+        // chat messages (duh)
+        std::vector<std::pair<int, std::string>> chatMessages;
+    };
 
     $override
     bool init();

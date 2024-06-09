@@ -1,11 +1,12 @@
 #pragma once
-#include <defs/util.hpp>
 #include <defs/minimal_geode.hpp>
 
 #include <Geode/utils/web.hpp>
 
 #include <crypto/secret_box.hpp>
 #include <asp/sync.hpp>
+
+#include <util/singleton.hpp>
 
 // all methods of GlobedAccountManager will store/load values with keys that are
 // user-specific and central-server-specific, so that switching server or accounts doesn't reset authkeys.
@@ -53,9 +54,11 @@ public:
     std::optional<std::string> getAdminPassword();
 
 private:
-    std::optional<geode::utils::web::SentAsyncWebRequestHandle> requestHandle;
+    geode::EventListener<geode::Task<Result<std::string, std::string>>> requestListener;
+    std::optional<std::function<void()>> requestCallbackStored;
     std::unique_ptr<SecretBox> cryptoBox;
 
+    void requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
     void cancelAuthTokenRequest();
 
     std::string computeGDDataHash(const std::string_view name, int accountId, int userId, const std::string_view central);

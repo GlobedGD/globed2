@@ -1,7 +1,7 @@
 #include "frag_calibration_popup.hpp"
 
 #include <data/packets/client/connection.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/settings.hpp>
 #include <util/crypto.hpp>
 #include <util/rng.hpp>

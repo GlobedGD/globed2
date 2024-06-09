@@ -1,18 +1,21 @@
 {
-    "geode": "2.0.0-beta.27",
-    "version": "v1.4.0-beta.1",
+    "geode": "3.0.0-alpha.1",
+    "version": "v1.4.0-alpha.3",
     "gd": {
-        "win": "2.204",
-        "android": "2.205",
-        "mac": "2.200",
-        "ios": "2.205"
+        "win": "2.206",
+        "android": "2.206",
+        "mac": "2.206",
+        "ios": "2.206"
     },
     "resources": {
         "spritesheets": {
             "globedsheet1": [
-                "resources/*.png"
+                "resources/sheet1/*.png"
             ]
         },
+        "sprites": [
+            "resources/kofi-promo-bg.png"
+        ],
         "files": [
             "resources/*.ogg"
         ]
@@ -26,9 +29,7 @@
             "id": "geode.custom-keybinds",
             "version": ">=v1.2.3",
             "importance": "required",
-            "platforms": [
-                "windows"
-            ]
+            "platforms": []
         }
     ],
     "incompatibilities": [
@@ -38,7 +39,11 @@
             "version": "*"
         }
     ],
-    "repository": "https://github.com/dankmeme01/globed2",
+    "links": {
+        "homepage": "https://globed.dev",
+        "source": "https://github.com/dankmeme01/globed2",
+        "community": "https://discord.gg/d56q5Dkdm3"
+    },
     "tags": [
         "Online"
     ],

@@ -5,7 +5,7 @@
 #include <iomanip>
 
 namespace util::format {
-    std::string formatDateTime(time::system_time_point tp) {
+    std::string formatDateTime(const time::system_time_point& tp) {
         auto timet = time::sysclock::to_time_t(tp);
         auto nowms = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;
 
@@ -15,6 +15,10 @@ namespace util::format {
         oss << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S") << '.' << std::setfill('0') << std::setw(3) << nowms.count();
 
         return oss.str();
+    }
+
+    std::string dateTime(const time::system_time_point& tp) {
+        return formatDateTime(tp);
     }
 
     std::string formatBytes(uint64_t bytes) {
@@ -39,6 +43,10 @@ namespace util::format {
         oss << suffixes[exp];
 
         return oss.str();
+    }
+
+    std::string bytes(uint64_t bytes) {
+        return formatBytes(bytes);
     }
 
     std::string formatErrorMessage(std::string message) {

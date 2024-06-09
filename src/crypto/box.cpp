@@ -1,12 +1,50 @@
 #include "box.hpp"
 
 #include <cstring> // std::memcpy
+#include <sodium.h>
 
 #include <util/crypto.hpp>
 #include <defs/assert.hpp>
 #include <defs/minimal_geode.hpp>
 
+#include <util/debug.hpp>
+
 using namespace util::data;
+
+// XSalsa20 is theoretically slower and less secure, but still possible to use by defining GLOBED_USE_XSALSA20
+#ifdef GLOBED_USE_XSALSA20
+constexpr static const char* ALGORITHM = "XSalsa20Poly1305";
+# define CRYPTO_JOIN(arg) crypto_box_##arg
+#else
+constexpr static const char* ALGORITHM = "XChaCha20Poly1305";
+# define CRYPTO_JOIN(arg) crypto_box_curve25519xchacha20poly1305_##arg
+#endif
+
+// i ain't retyping crypto_box_curve25519xchacha20poly1305_open_easy_afternm, okay?
+constexpr size_t NONCE_LEN = CRYPTO_JOIN(NONCEBYTES);
+constexpr size_t MAC_LEN = CRYPTO_JOIN(MACBYTES);
+
+constexpr size_t KEY_LEN = CRYPTO_JOIN(PUBLICKEYBYTES);
+constexpr size_t SECRET_KEY_LEN = CRYPTO_JOIN(SECRETKEYBYTES);
+constexpr size_t SHARED_KEY_LEN = CRYPTO_JOIN(BEFORENMBYTES);
+
+constexpr auto func_box_keypair = CRYPTO_JOIN(keypair);
+constexpr auto func_box_beforenm = CRYPTO_JOIN(beforenm);
+constexpr auto func_box_easy = CRYPTO_JOIN(easy_afternm);
+constexpr auto func_box_open_easy = CRYPTO_JOIN(open_easy_afternm);
+
+constexpr static size_t PREFIX_LEN = NONCE_LEN + MAC_LEN;
+
+void CryptoBox::initLibrary() {
+    // sodium_init returns 0 on success, 1 if already initialized, -1 on fail
+    GLOBED_REQUIRE(sodium_init() != -1, "sodium_init failed")
+
+    // if there is a logic error in the crypto code, this lambda will be called
+    sodium_set_misuse_handler([] {
+        log::error("sodium_misuse called. we are officially screwed.");
+        util::debug::suicide();
+    });
+}
 
 CryptoBox::CryptoBox(byte* key) {
     memBasePtr = reinterpret_cast<byte*>(sodium_malloc(
@@ -51,14 +89,6 @@ void CryptoBox::setPeerKey(const byte* key) {
     CRYPTO_ERR_CHECK(func_box_beforenm(sharedKey, peerPublicKey, secretKey), "func_box_beforenm failed")
 }
 
-constexpr size_t CryptoBox::nonceLength() {
-    return NONCE_LEN;
-}
-
-constexpr size_t CryptoBox::macLength() {
-    return MAC_LEN;
-}
-
 size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
     util::crypto::secureRandom(nonce, NONCE_LEN);
@@ -84,4 +114,12 @@ size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* des
     CRYPTO_ERR_CHECK(func_box_open_easy(dest, ciphertext, ciphertextLength, nonce, sharedKey), "func_box_open_easy failed")
 
     return plaintextLength;
+}
+
+const char* CryptoBox::algorithm() {
+    return ALGORITHM;
+}
+
+const char* CryptoBox::sodiumVersion() {
+    return SODIUM_VERSION_STRING;
 }

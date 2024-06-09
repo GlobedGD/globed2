@@ -1,7 +1,9 @@
 #include "server_test_popup.hpp"
 
+#include <Geode/utils/web.hpp>
+
 #include "add_server_popup.hpp"
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/error_queues.hpp>
 #include <util/net.hpp>
 #include <util/time.hpp>
@@ -20,43 +22,61 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
         .scale(0.35f)
         .parent(m_mainLayer);
 
-    sentRequestHandle = web::AsyncWebRequest()
+    auto request = web::WebRequest()
         .userAgent(util::net::webUserAgent())
         .timeout(util::time::seconds(5))
         .get(fmt::format("{}/version", url))
-        .text()
-        .then([this](std::string& resp) {
-            sentRequestHandle = std::nullopt;
+        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
+            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
 
-            int protocol = util::format::parse<int>(resp).value_or(0);
-
-            if (protocol != NetworkManager::get().getUsedProtocol()) {
-                this->parent->onTestFailure(fmt::format(
-                    "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
-                    NetworkManager::get().getUsedProtocol(),
-                    protocol
-                ));
-            } else {
-                this->parent->onTestSuccess();
+            if (resptext.empty()) {
+                return Err(fmt::format("server sent an empty response with code {}", response->code()));
             }
 
-            this->onClose(this);
-        })
-        .expect([this](std::string error, int statusCode) {
-            sentRequestHandle = std::nullopt;
-
-            if (error.empty()) {
-                error = fmt::format("Error retrieving data from the server: server sent an empty response with code {}.", statusCode);
+            if (response->ok()) {
+                return Ok(resptext);
             } else {
-                error = "Error retrieving data from the server: <cy>" + util::format::formatErrorMessage(error) + "</c>";
+                return Err("<cy>" + util::format::formatErrorMessage(resptext) + "</c>");
             }
 
-            this->parent->onTestFailure(error);
-            this->onClose(this);
-        })
-        .send();
+        }, [](web::WebProgress*) -> std::monostate {
+            return {};
+        });
+
+    requestListener.bind(this, &ServerTestPopup::requestCallback);
+    requestListener.setFilter(std::move(request));
 
     return true;
+}
+
+void ServerTestPopup::requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event) {
+    if (!event || !event->getValue()) return;
+
+    auto evalue = event->getValue();
+
+    if (!evalue->isOk()) {
+        std::string message = evalue->unwrapErr();
+
+        this->parent->onTestFailure(message);
+        this->onClose(this);
+        return;
+    }
+
+    auto resp = evalue->unwrap();
+
+    int protocol = util::format::parse<int>(resp).value_or(0);
+
+    if (protocol != NetworkManager::get().getUsedProtocol()) {
+        this->parent->onTestFailure(fmt::format(
+            "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
+            NetworkManager::get().getUsedProtocol(),
+            protocol
+        ));
+    } else {
+        this->parent->onTestSuccess();
+    }
+
+    this->onClose(this);
 }
 
 ServerTestPopup::~ServerTestPopup() {
@@ -71,10 +91,7 @@ void ServerTestPopup::onTimeout() {
 }
 
 void ServerTestPopup::cancelRequest() {
-    if (sentRequestHandle.has_value()) {
-        sentRequestHandle->get()->cancel();
-        sentRequestHandle = std::nullopt;
-    }
+    requestListener.getFilter().cancel();
 }
 
 ServerTestPopup* ServerTestPopup::create(const std::string_view url, AddServerPopup* parent) {

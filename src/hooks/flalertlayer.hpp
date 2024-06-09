@@ -5,8 +5,10 @@
 #include <util/time.hpp>
 
 class $modify(HookedFLAlertLayer, FLAlertLayer) {
-    bool blockClosing = false;
-    util::time::time_point blockClosingUntil;
+    struct Fields {
+        bool blockClosing = false;
+        util::time::time_point blockClosingUntil;
+    };
 
     $override
     void keyBackClicked() override;

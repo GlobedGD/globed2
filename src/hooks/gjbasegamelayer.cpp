@@ -13,6 +13,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/profile_cache.hpp>
+#include <managers/game_server.hpp>
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <data/packets/all.hpp>
@@ -377,9 +378,9 @@ void GlobedGJBGL::setupMisc() {
     // set the configured tps
     auto tpsCap = settings.globed.tpsCap;
     if (tpsCap != 0) {
-        m_fields->configuredTps = std::min(nm.connectedTps.load(), (uint32_t)tpsCap);
+        m_fields->configuredTps = std::min(nm.getServerTps(), (uint32_t)tpsCap);
     } else {
-        m_fields->configuredTps = nm.connectedTps;
+        m_fields->configuredTps = nm.getServerTps();
     }
 
     // interpolator
@@ -545,55 +546,58 @@ void GlobedGJBGL::selPeriodicalUpdate(float) {
         for (int id : toRemove) {
             self->handlePlayerLeave(id);
         }
+    } else {
+        util::collections::SmallVector<int, 256> ids;
 
-        return;
-    }
-
-    util::collections::SmallVector<int, 256> ids;
-
-    // kick players that have left the level
-    for (const auto& [playerId, remotePlayer] : self->m_fields->players) {
-        // if the player doesnt exist in last LevelData packet, they have left the level
-        if (self->m_fields->interpolator->isPlayerStale(playerId, self->m_fields->lastServerUpdate)) {
-            toRemove.push_back(playerId);
-            continue;
-        }
-
-        auto data = pcm.getData(playerId);
-
-        if (!remotePlayer->isValidPlayer()) {
-            if (data.has_value()) {
-                // if the profile data already exists in cache, use it
-                remotePlayer->updateAccountData(data.value(), true);
+        // kick players that have left the level
+        for (const auto& [playerId, remotePlayer] : self->m_fields->players) {
+            // if the player doesnt exist in last LevelData packet, they have left the level
+            if (self->m_fields->interpolator->isPlayerStale(playerId, self->m_fields->lastServerUpdate)) {
+                toRemove.push_back(playerId);
                 continue;
             }
 
-            // request again if it has either been 5 seconds, or if the player just joined
-            if (remotePlayer->getDefaultTicks() == 20) {
-                remotePlayer->setDefaultTicks(0);
-            }
+            auto data = pcm.getData(playerId);
 
-            if (remotePlayer->getDefaultTicks() == 0) {
-                ids.push_back(playerId);
-            }
+            if (!remotePlayer->isValidPlayer()) {
+                if (data.has_value()) {
+                    // if the profile data already exists in cache, use it
+                    remotePlayer->updateAccountData(data.value(), true);
+                    continue;
+                }
 
-            remotePlayer->incDefaultTicks();
-        } else if (data.has_value()) {
-            // still try to see if the cache has changed
-            remotePlayer->updateAccountData(data.value());
+                // request again if it has either been 5 seconds, or if the player just joined
+                if (remotePlayer->getDefaultTicks() == 20) {
+                    remotePlayer->setDefaultTicks(0);
+                }
+
+                if (remotePlayer->getDefaultTicks() == 0) {
+                    ids.push_back(playerId);
+                }
+
+                remotePlayer->incDefaultTicks();
+            } else if (data.has_value()) {
+                // still try to see if the cache has changed
+                remotePlayer->updateAccountData(data.value());
+            }
+        }
+
+        if (ids.size() > 3) {
+            NetworkManager::get().send(RequestPlayerProfilesPacket::create(0));
+        } else {
+            for (int id : ids) {
+                NetworkManager::get().send(RequestPlayerProfilesPacket::create(id));
+            }
+        }
+
+        for (int id : toRemove) {
+            self->handlePlayerLeave(id);
         }
     }
 
-    if (ids.size() > 3) {
-        NetworkManager::get().send(RequestPlayerProfilesPacket::create(0));
-    } else {
-        for (int id : ids) {
-            NetworkManager::get().send(RequestPlayerProfilesPacket::create(id));
-        }
-    }
-
-    for (int id : toRemove) {
-        self->handlePlayerLeave(id);
+    // update the ping to the server if overlay is enabled
+    if (GlobedSettings::get().overlay.enabled) {
+        NetworkManager::get().updateServerPing();
     }
 }
 
@@ -627,7 +631,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     if (auto pl = PlayLayer::get()) {
         if (self->m_fields->progressBarWrapper->getParent() != nullptr) {
-            self->m_fields->selfProgressIcon->updatePosition(pl->getCurrentPercent() / 100.f);
+            self->m_fields->selfProgressIcon->updatePosition(pl->getCurrentPercent() / 100.f, self->m_isPracticeMode);
         } else if (pl->m_progressBar) {
             // for some reason, the progressbar is sometimes initialized later than PlayLayer::init
             // it always should exist, even in levels with no actual progress bar (i.e. platformer levels)
@@ -813,7 +817,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         float percent;
 
         if (m_level->m_timestamp > 0) {
-            percent = static_cast<float>(m_gameState.m_unk1f8) / m_level->m_timestamp * 100.f;
+            percent = static_cast<float>(m_gameState.m_currentProgress) / m_level->m_timestamp * 100.f;
         } else {
             percent = m_player1->getPosition().x / m_levelLength * 100.f;
         }
@@ -1243,7 +1247,9 @@ void GlobedGJBGL::loadLevelSettings() {
 /* 2-player mode stuff */
 
 class $modify(TwoPModePlayerObject, PlayerObject) {
-    Ref<ComplexVisualPlayer> lockedTo;
+    struct Fields {
+        Ref<ComplexVisualPlayer> lockedTo;
+    };
 
     void update(float dt) {
         auto* bgl = static_cast<GlobedGJBGL*>(m_gameLayer);

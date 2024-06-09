@@ -71,7 +71,14 @@ pub trait Decodable {
         Self: Sized,
     {
         let data = &buf.as_bytes()[buf.get_rpos()..];
-        Self::decode_from_reader(&mut ByteReader::from_bytes(data))
+        let mut reader = ByteReader::from_bytes(data);
+
+        let val = Self::decode_from_reader(&mut reader);
+
+        // transfer rpos
+        buf.set_rpos(buf.get_rpos() + reader.get_rpos());
+
+        val
     }
 
     fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>

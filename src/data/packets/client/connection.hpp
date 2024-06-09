@@ -3,6 +3,7 @@
 #include <data/types/crypto.hpp>
 #include <data/types/gd.hpp>
 
+// 10000 - PingPacket
 class PingPacket : public Packet {
     GLOBED_PACKET(10000, PingPacket, false, false)
 
@@ -14,6 +15,7 @@ class PingPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(PingPacket, (id));
 
+// 10001 - CryptoHandshakeStartPacket
 class CryptoHandshakeStartPacket : public Packet {
     GLOBED_PACKET(10001, CryptoHandshakeStartPacket, false, true)
 
@@ -26,6 +28,7 @@ class CryptoHandshakeStartPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(CryptoHandshakeStartPacket, (protocol, key));
 
+// 10002 - KeepalivePacket
 class KeepalivePacket : public Packet {
     GLOBED_PACKET(10002, KeepalivePacket, false, false)
 
@@ -34,12 +37,12 @@ class KeepalivePacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(KeepalivePacket, ());
 
+// 10003 - LoginPacket
 class LoginPacket : public Packet {
     GLOBED_PACKET(10003, LoginPacket, true, true)
 
     LoginPacket() {}
     LoginPacket(
-            uint32_t secretKey,
             int32_t accid,
             int32_t userId,
             const std::string_view name,
@@ -48,7 +51,6 @@ class LoginPacket : public Packet {
             uint16_t fragmentationLimit,
             const std::string_view platform
     ) :
-            secretKey(secretKey),
             accountId(accid),
             userId(userId),
             name(name),
@@ -57,7 +59,6 @@ class LoginPacket : public Packet {
             fragmentationLimit(fragmentationLimit),
             platform(platform) {}
 
-    uint32_t secretKey;
     int32_t accountId;
     int32_t userId;
     std::string name;
@@ -68,7 +69,6 @@ class LoginPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
-    secretKey,
     accountId,
     userId,
     name,
@@ -78,14 +78,7 @@ GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
     platform
 ));
 
-class DisconnectPacket : public Packet {
-    GLOBED_PACKET(10004, DisconnectPacket, false, false)
-
-    DisconnectPacket() {}
-};
-
-GLOBED_SERIALIZABLE_STRUCT(DisconnectPacket, ());
-
+// 10005 - ClaimThreadPacket
 class ClaimThreadPacket : public Packet {
     GLOBED_PACKET(10005, ClaimThreadPacket, false, false)
 
@@ -95,18 +88,29 @@ class ClaimThreadPacket : public Packet {
     uint32_t secretKey;
 };
 
+// 10006 - DisconnectPacket
+class DisconnectPacket : public Packet {
+    GLOBED_PACKET(10006, DisconnectPacket, false, false)
+
+    DisconnectPacket() {}
+};
+
+GLOBED_SERIALIZABLE_STRUCT(DisconnectPacket, ());
+
 GLOBED_SERIALIZABLE_STRUCT(ClaimThreadPacket, (secretKey));
 
+// 10007 - KeepaliveTCPPacket
 class KeepaliveTCPPacket : public Packet {
-    GLOBED_PACKET(10006, KeepaliveTCPPacket, false, true)
+    GLOBED_PACKET(10007, KeepaliveTCPPacket, false, true)
 
     KeepaliveTCPPacket() {}
 };
 
 GLOBED_SERIALIZABLE_STRUCT(KeepaliveTCPPacket, ());
 
+// 10200 - ConnectionTestPacket
 class ConnectionTestPacket : public Packet {
-    GLOBED_PACKET(10010, ConnectionTestPacket, false, false)
+    GLOBED_PACKET(10200, ConnectionTestPacket, false, false)
 
     ConnectionTestPacket() {}
     ConnectionTestPacket(uint32_t uid, util::data::bytevector&& vec) : uid(uid), data(std::move(vec)) {}

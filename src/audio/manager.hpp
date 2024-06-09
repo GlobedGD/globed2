@@ -1,15 +1,17 @@
 #pragma once
+
 #include <defs/platform.hpp>
-#include <defs/util.hpp>
+#include <util/singleton.hpp>
 
 #ifdef GLOBED_VOICE_SUPPORT
 
 #include <fmod.hpp>
 
-#include "frame.hpp"
-#include "sample_queue.hpp"
 #include <asp/sync.hpp>
 #include <asp/thread.hpp>
+
+#include "frame.hpp"
+#include "sample_queue.hpp"
 
 struct AudioRecordingDevice {
     int id = -1;

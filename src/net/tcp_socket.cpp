@@ -1,5 +1,6 @@
 #include "tcp_socket.hpp"
 
+#include "address.hpp"
 #include <util/net.hpp>
 
 #ifdef GEODE_IS_WINDOWS
@@ -22,10 +23,10 @@ TcpSocket::~TcpSocket() {
     this->close();
 }
 
-Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port) {
+Result<> TcpSocket::connect(const NetworkAddress& address) {
     destAddr_->sin_family = AF_INET;
 
-    GLOBED_UNWRAP(util::net::initSockaddr(serverIp, port, *destAddr_))
+    GLOBED_UNWRAP_INTO(address.resolve(), *destAddr_)
 
     // create socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -44,7 +45,7 @@ Result<> TcpSocket::connect(const std::string_view serverIp, unsigned short port
     // im crying why does this actually poll for double the length????
     GLOBED_UNWRAP_INTO(this->poll(2500, false), auto pollResult);
 
-    GLOBED_REQUIRE_SAFE(pollResult, "tcp connection timed out, failed to connect after 5 seconds.")
+    GLOBED_REQUIRE_SAFE(pollResult, "connection timed out, failed to connect after 5 seconds.")
 
     connected = true;
     return Ok();
@@ -59,6 +60,7 @@ Result<int> TcpSocket::send(const char* data, unsigned int dataSize) {
 
     auto result = ::send(socket_, data, dataSize, flags);
     if (result == -1) {
+        this->maybeDisconnect();
         return Err(util::net::lastErrorString());
     }
 
@@ -91,6 +93,11 @@ RecvResult TcpSocket::receive(char* buffer, int bufferSize) {
     }
 
     int result = ::recv(socket_, buffer, bufferSize, 0);
+    if (result == -1) {
+        this->maybeDisconnect();
+    } else if (result == 0) {
+        this->disconnect();
+    }
 
     return RecvResult {
         .fromServer = true,
@@ -106,7 +113,7 @@ Result<> TcpSocket::recvExact(char* buffer, int bufferSize) {
     do {
         int result = this->receive(buffer + received, bufferSize - received).result;
         if (result < 0) return Err(util::net::lastErrorString());
-        if (result == 0) return Err("failed to receive data from a tcp socket");
+        if (result == 0) return Err("connection was closed by the server");
         received += result;
     } while (received < bufferSize);
 
@@ -158,4 +165,18 @@ Result<> TcpSocket::setNonBlocking(bool nb) {
 #endif
 
     return Ok();
+}
+
+void TcpSocket::maybeDisconnect() {
+    auto lastError = util::net::lastErrorCode();
+
+#ifdef GEODE_IS_WINDOWS
+    if (lastError != WSAEWOULDBLOCK) {
+        this->close();
+    }
+#else
+    if (lastError != EWOULDBLOCK) {
+        this->close();
+    }
+#endif
 }

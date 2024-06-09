@@ -1,17 +1,11 @@
 use std::sync::{atomic::Ordering, Arc};
 
 use super::*;
-use crate::{
-    data::*,
-    server_thread::{GameServerThread, PacketHandlingError},
-};
-
-use globed_shared::debug;
 
 /// max voice packet size in bytes
 pub const MAX_VOICE_PACKET_SIZE: usize = 4096;
 
-impl GameServerThread {
+impl ClientThread {
     gs_handler!(self, handle_level_join, LevelJoinPacket, packet, {
         let account_id = gs_needauth!(self);
 
@@ -184,6 +178,8 @@ impl GameServerThread {
             if let Some(account_data) = account_data {
                 return self
                     .send_packet_alloca_with::<PlayerProfilesPacket, _>(calc_size, |buf| {
+                        // write a Vec with length 1
+                        buf.write_length(1);
                         buf.write_value(&account_data);
                     })
                     .await;

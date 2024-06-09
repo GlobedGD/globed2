@@ -3,7 +3,7 @@
 #include <util/net.hpp>
 #include <util/rng.hpp>
 #include <util/collections.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <data/types/misc.hpp>
 
 using namespace geode::prelude;
@@ -18,9 +18,6 @@ Result<> GameServerManager::addServer(const std::string_view serverId, const std
 }
 
 Result<> GameServerManager::addOrUpdateServer(const std::string_view serverId_, const std::string_view name, const std::string_view address, const std::string_view region) {
-    auto ares = util::net::splitAddress(address, DEFAULT_PORT);
-    GLOBED_UNWRAP_INTO(ares, auto addr);
-
     auto serverId = std::string(serverId_);
 
     int ping = -1;
@@ -36,10 +33,7 @@ Result<> GameServerManager::addOrUpdateServer(const std::string_view serverId_, 
         .id = std::string(serverId),
         .name = std::string(name),
         .region = std::string(region),
-        .address = GameServerAddress {
-            .ip = addr.first,
-            .port = addr.second
-        },
+        .address = std::string(address),
         .ping = ping,
         .playerCount = playerCount,
     };
@@ -124,7 +118,7 @@ std::unordered_map<std::string, GameServer> GameServerManager::getAllServers() {
     return out;
 }
 
-uint32_t GameServerManager::getActivePing() {
+int GameServerManager::getActivePing() {
     auto server = this->getActiveServer();
     GLOBED_REQUIRE(server.has_value(), "tried to request ping of the active server when not connected to any")
 

@@ -4,6 +4,7 @@
 #include <data/types/gd.hpp>
 #include <data/types/user.hpp>
 
+// 29000 - AdminAuthSuccessPacket
 class AdminAuthSuccessPacket : public Packet {
     GLOBED_PACKET(29000, AdminAuthSuccessPacket, false, false)
 
@@ -14,6 +15,7 @@ class AdminAuthSuccessPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(AdminAuthSuccessPacket, (role));
 
+// 29001 - AdminErrorPacket
 class AdminErrorPacket : public Packet {
     GLOBED_PACKET(29001, AdminErrorPacket, true, false)
 
@@ -24,6 +26,7 @@ class AdminErrorPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(AdminErrorPacket, (message));
 
+// 29002 - AdminUserDataPacket
 class AdminUserDataPacket : public Packet {
     GLOBED_PACKET(29002, AdminUserDataPacket, true, false)
 
@@ -35,6 +38,7 @@ class AdminUserDataPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(AdminUserDataPacket, (userEntry, accountData));
 
+// 29003 - AdminSuccessMessagePacket
 class AdminSuccessMessagePacket : public Packet {
     GLOBED_PACKET(29003, AdminSuccessMessagePacket, false, false)
 
@@ -45,6 +49,7 @@ class AdminSuccessMessagePacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(AdminSuccessMessagePacket, (message));
 
+// 29004 - AdminAuthFailedPacket
 class AdminAuthFailedPacket : public Packet {
     GLOBED_PACKET(29004, AdminAuthFailedPacket, false, false)
 

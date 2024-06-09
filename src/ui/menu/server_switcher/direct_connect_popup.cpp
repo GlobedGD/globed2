@@ -3,10 +3,11 @@
 #include <regex>
 
 #include "server_switcher_popup.hpp"
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
+#include <net/address.hpp>
 #include <util/misc.hpp>
 
 using namespace geode::prelude;
@@ -25,7 +26,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
         .id("direct-connection-addr-hint"_spr);
 
     // address input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "127.0.0.1:41001", "chatFont.fnt", std::string(util::misc::STRING_URL), 21)
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, fmt::format("127.0.0.1:{}", NetworkAddress::DEFAULT_PORT).c_str(), "chatFont.fnt", std::string(util::misc::STRING_URL), 21)
         .pos(popupCenter, POPUP_HEIGHT - 40.f)
         .parent(m_mainLayer)
         .id("direct-connection-addr"_spr)
@@ -39,7 +40,15 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             std::string addr = this->addressNode->getString();
 
             if (addr.empty() || !std::regex_match(addr, pattern)) {
-                FLAlertLayer::create("Error", "Invalid address was passed. It must be an IPv4 address or a domain name with an optional port at the end (like <cy>127.0.0.1:41001</c> or <cy>globed.example.com:41001</c>)", "Ok")->show();
+                FLAlertLayer::create(
+                    "Error",
+                    fmt::format(
+                        "Invalid address was passed. It must be an IPv4 address or a domain name with an optional port at the end (like <cy>127.0.0.1:{}</c> or <cy>globed.example.com:{}</c>)",
+                        NetworkAddress::DEFAULT_PORT,
+                        NetworkAddress::DEFAULT_PORT
+                    ),
+                    "Ok"
+                )->show();
                 return;
             }
 

@@ -111,6 +111,7 @@ where
         let mut inst = Self::new();
 
         for i in 0..self.length {
+            // safety: we know that all elements up until `self.length` are initialized.
             let elem = unsafe { &*std::ptr::from_ref::<MaybeUninit<T>>(&self.data[i]).cast::<T>() };
             inst.push(elem.clone());
         }

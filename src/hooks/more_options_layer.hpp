@@ -6,7 +6,9 @@
 #ifdef GEODE_IS_ANDROID
 
 class $modify(HookedMoreOptionsLayer, MoreOptionsLayer) {
-    Ref<CCMenuItemSpriteExtra> adminBtn = nullptr;
+    struct Fields {
+        Ref<CCMenuItemSpriteExtra> adminBtn = nullptr;
+    };
 
     $override
     bool init();

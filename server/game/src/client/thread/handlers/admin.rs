@@ -1,9 +1,7 @@
 use globed_shared::{info, warn};
 
 use crate::{
-    data::*,
     managers::ComputedRole,
-    server_thread::{GameServerThread, ServerThreadMessage},
     webhook::{BanMuteStateChange, WebhookMessage},
 };
 
@@ -29,7 +27,7 @@ enum AdminPerm {
     Admin,
 }
 
-impl GameServerThread {
+impl ClientThread {
     // check if the user is logged in as admin, and if they have the given permission
     fn _has_perm(&self, perm: AdminPerm) -> bool {
         if !self.is_authorized_admin.load(Ordering::Relaxed) {
@@ -68,7 +66,7 @@ impl GameServerThread {
                 "[{} ({}) @ {}] just logged into the admin panel (with global password)",
                 self.account_data.lock().name,
                 account_id,
-                self.tcp_peer
+                self.get_tcp_peer()
             );
 
             self.is_authorized_admin.store(true, Ordering::Relaxed);
@@ -92,7 +90,7 @@ impl GameServerThread {
                     "[{} ({}) @ {}] just logged into the admin panel",
                     self.account_data.lock().name,
                     account_id,
-                    self.tcp_peer
+                    self.get_tcp_peer()
                 );
 
                 self.is_authorized_admin.store(true, Ordering::Relaxed);
@@ -110,7 +108,7 @@ impl GameServerThread {
             "[{} ({}) @ {}] just failed to login to the admin panel with password: {}",
             self.account_data.lock().name,
             account_id,
-            self.tcp_peer,
+            self.get_tcp_peer(),
             packet.key
         );
 
@@ -152,7 +150,7 @@ impl GameServerThread {
 
                 let threads = self
                     .game_server
-                    .threads
+                    .clients
                     .lock()
                     .values()
                     .filter(|thr| thr.authenticated())
@@ -163,7 +161,7 @@ impl GameServerThread {
 
                 info!(
                     "[{name} ({account_id}) @ {}] sending a notice to all {} people on the server: {}",
-                    self.tcp_peer,
+                    self.get_tcp_peer(),
                     threads.len(),
                     notice_packet.message,
                 );
@@ -206,7 +204,7 @@ impl GameServerThread {
 
                 info!(
                     "[{self_name} ({account_id}) @ {}] sending a notice to {player_name}: {notice_msg}",
-                    self.tcp_peer
+                    self.get_tcp_peer()
                 );
 
                 if self.game_server.bridge.has_webhook() {
@@ -268,7 +266,7 @@ impl GameServerThread {
 
                 let threads = self
                     .game_server
-                    .threads
+                    .clients
                     .lock()
                     .values()
                     .filter(|thr| player_ids.contains(&thr.account_id.load(Ordering::Relaxed)))
@@ -280,7 +278,7 @@ impl GameServerThread {
 
                 info!(
                     "[{self_name} ({account_id}) @ {}] sending a notice to {} people: {notice_msg}",
-                    self.tcp_peer,
+                    self.get_tcp_peer(),
                     threads.len()
                 );
 
@@ -318,7 +316,7 @@ impl GameServerThread {
 
         // to kick everyone, require admin
         if &*packet.player == "@everyone" && self._has_perm(AdminPerm::KickEveryone) {
-            let threads: Vec<_> = self.game_server.threads.lock().values().cloned().collect();
+            let threads: Vec<_> = self.game_server.clients.lock().values().cloned().collect();
             for thread in threads {
                 thread
                     .push_new_message(ServerThreadMessage::TerminationNotice(packet.message.clone()))
@@ -584,7 +582,10 @@ impl GameServerThread {
 
                 info!(
                     "[{} @ {}] just updated the profile of {} ({})",
-                    own_name, self.tcp_peer, target_user_name, target_account_id
+                    own_name,
+                    self.get_tcp_peer(),
+                    target_user_name,
+                    target_account_id
                 );
 
                 if self.game_server.bridge.has_webhook() {

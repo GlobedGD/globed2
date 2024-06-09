@@ -2,7 +2,7 @@
 
 #include <data/packets/client/admin.hpp>
 #include <data/packets/server/admin.hpp>
-#include <net/network_manager.hpp>
+#include <net/manager.hpp>
 #include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/audio_visualizer.hpp>
 #include <ui/general/intermediary_loading_popup.hpp>
@@ -28,7 +28,7 @@ ComputedRole& AdminManager::getRole() {
 void AdminManager::openUserPopup(const PlayerRoomPreviewAccountData& rpdata) {
     // load the data from the server
     auto& nm = NetworkManager::get();
-    IntermediaryLoadingPopup::create([&nm, rpdata = std::move(rpdata)](auto popup) {
+    IntermediaryLoadingPopup::create([&nm, rpdata = rpdata](auto popup) {
         nm.send(AdminGetUserStatePacket::create(std::to_string(rpdata.accountId)));
         nm.addListener<AdminUserDataPacket>(popup, [popup, rpdata = std::move(rpdata)](auto packet) {
             // delay the cration to avoid deadlock

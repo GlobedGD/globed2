@@ -1,4 +1,4 @@
-#![feature(sync_unsafe_cell, duration_constructors)]
+#![feature(sync_unsafe_cell, duration_constructors, async_closure)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
@@ -9,6 +9,13 @@
     clippy::wildcard_imports,
     clippy::redundant_closure_for_method_calls
 )]
+
+#[cfg(feature = "use_tokio_tracing")]
+use tokio_tracing as tokio;
+
+#[cfg(not(feature = "use_tokio_tracing"))]
+#[allow(clippy::single_component_path_imports)]
+use tokio;
 
 use std::{
     error::Error,
@@ -24,10 +31,10 @@ use tokio::net::{TcpListener, UdpSocket};
 use server::GameServer;
 
 pub mod bridge;
+pub mod client;
 pub mod data;
 pub mod managers;
 pub mod server;
-pub mod server_thread;
 pub mod state;
 pub mod util;
 pub mod webhook;
@@ -61,7 +68,7 @@ fn parse_configuration() -> StartupConfiguration {
     if arg.is_none() && !using_env_variables {
         // standalone with default params
         return StartupConfiguration {
-            bind_address: "0.0.0.0:41001".parse().unwrap(),
+            bind_address: format!("0.0.0.0:{DEFAULT_GAME_SERVER_PORT}").parse().unwrap(),
             central_data: None,
         };
     }
@@ -74,11 +81,11 @@ fn parse_configuration() -> StartupConfiguration {
         Err(_) => {
             // try to parse it as an ip addr and use a default port
             match bind_address.parse::<Ipv4Addr>() {
-                Ok(x) => SocketAddr::new(IpAddr::V4(x), 41001),
+                Ok(x) => SocketAddr::new(IpAddr::V4(x), DEFAULT_GAME_SERVER_PORT),
                 Err(e) => {
                     error!("failed to parse the given IP address ({bind_address}): {e}");
                     warn!("hint: you have to provide a valid IPv4 address with an optional port number");
-                    warn!("hint: for example \"0.0.0.0\" or \"0.0.0.0:41001\"");
+                    warn!("hint: for example \"0.0.0.0\" or \"0.0.0.0:{DEFAULT_GAME_SERVER_PORT}\"");
                     abort_misconfig();
                 }
             }
@@ -133,13 +140,7 @@ fn parse_configuration() -> StartupConfiguration {
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // set the interrupt handler to flush the logfile and exit
-    ctrlc::set_handler(move || {
-        warn!("Interrupt signal received, terminating the server");
-        Logger::instance("globed_game_server", true).flush();
-        std::process::exit(1);
-    })
-    .expect("error setting interrupt handler");
+    // Setup logger
 
     let write_to_file = std::env::var("GLOBED_GS_NO_FILE_LOG").map(|p| p.parse::<i32>().unwrap()).unwrap_or(0) == 0;
 
@@ -153,6 +154,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
         warn!("hint: possible values are 'trace', 'debug', 'info', 'warn', 'error', and 'none'.");
         abort_misconfig();
     }
+
+    // set the interrupt handler to flush the logfile and exit
+
+    if let Err(e) = ctrlc::set_handler(move || {
+        warn!("Interrupt signal received, terminating the server");
+        Logger::instance("globed_game_server", true).flush();
+        std::process::exit(1);
+    }) {
+        warn!("error setting up interrupt handler: {e}");
+    }
+
+    // setup tokio-console in debug builds
+
+    if cfg!(all(tokio_unstable, feature = "use_tokio_tracing")) {
+        info!("Initializing tokio-console subscriber");
+        console_subscriber::init();
+    }
+
+    // parse the configuration from environment variables or command line
 
     let startup_config = parse_configuration();
     let standalone = startup_config.central_data.is_none();
@@ -234,6 +254,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     {
+        // output useful information
+
         let gsbd = bridge.central_conf.lock();
 
         debug!("Configuration:");
@@ -262,17 +284,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
         state.role_manager.refresh_from(&gsbd);
     }
 
+    // bind the UDP socket
+
     let udp_socket = match UdpSocket::bind(&startup_config.bind_address).await {
         Ok(x) => x,
         Err(err) => {
             error!("Failed to bind the UDP socket with address {}: {err}", startup_config.bind_address);
             if startup_config.bind_address.port() < 1024 {
                 warn!("hint: ports below 1024 are commonly privileged and you can't use them as a regular user");
-                warn!("hint: pick a higher port number or leave it out completely to use the default port number (41001)");
+                warn!("hint: pick a higher port number or leave it out completely to use the default port number ({DEFAULT_GAME_SERVER_PORT})");
             }
             abort_misconfig();
         }
     };
+
+    // bind the TCP socket
 
     let tcp_socket = match TcpListener::bind(&startup_config.bind_address).await {
         Ok(x) => x,
@@ -282,6 +308,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             abort_misconfig();
         }
     };
+
+    // create and run the server
 
     let server = GameServer::new(tcp_socket, udp_socket, state, bridge, standalone);
     let server = Box::leak(Box::new(server));

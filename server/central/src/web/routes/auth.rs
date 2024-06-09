@@ -7,7 +7,7 @@ use globed_shared::{
     anyhow::{self, anyhow},
     base64::{engine::general_purpose as b64e, Engine as _},
     logger::*,
-    PROTOCOL_VERSION,
+    MIN_CLIENT_VERSION, PROTOCOL_VERSION,
 };
 use rocket::{post, State};
 
@@ -108,10 +108,7 @@ pub async fn challenge_start(
     cfip: CloudflareIPGuard,
 ) -> WebResult<String> {
     check_maintenance!(state);
-
-    if protocol != PROTOCOL_VERSION {
-        unauthorized!("you are running an old version of Globed, please update Globed in the geode mod list");
-    }
+    check_protocol!(protocol);
 
     aname = aname.trim_end();
 
@@ -155,14 +152,17 @@ pub async fn challenge_start(
         let rand_string = state.active_challenges.get(&user_ip).unwrap().value.clone();
         let verify = state.config.use_gd_api;
         let gd_api_account = state.config.gd_api_account;
+        let pubkey = b64e::STANDARD.encode(state.challenge_pubkey);
+
         drop(state);
 
         trace!("sending existing challenge to {user_ip} with {rand_string}");
 
         return Ok(format!(
-            "{}:{}",
+            "{}:{}:{}",
             if verify { gd_api_account.to_string() } else { "none".to_string() },
-            rand_string
+            rand_string,
+            pubkey
         ));
     }
 
@@ -178,7 +178,7 @@ pub async fn challenge_start(
 
     let verify = state.config.use_gd_api;
     let gd_api_account = state.config.gd_api_account;
-
+    debug!("returning challenge");
     Ok(format!(
         "{}:{}:{}",
         if verify { gd_api_account.to_string() } else { "none".to_string() },

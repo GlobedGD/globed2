@@ -190,11 +190,6 @@ void ComplexVisualPlayer::updateData(
     playerIcon->m_realYPosition = data.position.y;
 
     PlayerIconType iconType = data.iconType;
-    // in platformer, jetpack is serialized as ship so we make sure to show the right icon
-    // TODO: remove in next protocol bump as the statement above is false.
-    if (iconType == PlayerIconType::Ship && gameLayer->m_level->isPlatformer()) {
-        iconType = PlayerIconType::Jetpack;
-    }
 
     // setFlipX doesnt work here for jetpack and stuff
     float mult = data.isMini ? 0.6f : 1.0f;

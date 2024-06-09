@@ -18,10 +18,10 @@ pub struct CryptoHandshakeStartPacket {
 pub struct KeepalivePacket;
 
 pub const MAX_TOKEN_SIZE: usize = 164;
+
 #[derive(Packet, Decodable)]
 #[packet(id = 10003, encrypted = true)]
 pub struct LoginPacket {
-    pub secret_key: u32,
     pub account_id: i32,
     pub user_id: i32,
     pub name: InlineString<MAX_NAME_SIZE>,
@@ -32,10 +32,6 @@ pub struct LoginPacket {
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 10004)]
-pub struct DisconnectPacket;
-
-#[derive(Packet, Decodable)]
 #[packet(id = 10005)]
 pub struct ClaimThreadPacket {
     pub secret_key: u32,
@@ -43,10 +39,14 @@ pub struct ClaimThreadPacket {
 
 #[derive(Packet, Decodable)]
 #[packet(id = 10006)]
+pub struct DisconnectPacket;
+
+#[derive(Packet, Decodable)]
+#[packet(id = 10007)]
 pub struct KeepaliveTCPPacket;
 
 #[derive(Packet, Decodable)]
-#[packet(id = 10010)]
+#[packet(id = 10200)]
 pub struct ConnectionTestPacket {
     pub uid: u32,
     pub data: Vec<u8>,

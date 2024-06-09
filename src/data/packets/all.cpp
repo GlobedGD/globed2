@@ -12,12 +12,15 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(ServerDisconnectPacket);
         PACKET(LoggedInPacket);
         PACKET(LoginFailedPacket);
-        PACKET(ServerNoticePacket);
         PACKET(ProtocolMismatchPacket);
         PACKET(KeepaliveTCPResponsePacket);
-        PACKET(ConnectionTestResponsePacket);
+        PACKET(ClaimThreadFailedPacket);
+        PACKET(LoginRecoveryFailecPacket);
+
+        PACKET(ServerNoticePacket);
         PACKET(ServerBannedPacket);
         PACKET(ServerMutedPacket);
+        PACKET(ConnectionTestResponsePacket);
 
         // general
 

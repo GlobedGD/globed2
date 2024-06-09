@@ -72,11 +72,11 @@ bool GlobedSettingsLayer::init() {
     tabsGradientNode->setAlphaThreshold(0.7f);
 #endif
 
-    tabsGradientSprite = CCSprite::create("geode.loader/tab-gradient.png");
+    tabsGradientSprite = CCSprite::createWithSpriteFrameName("tab-gradient.png"_spr);
     tabsGradientSprite->setPosition(tabButtonMenu->getPosition());
     tabsGradientNode->addChild(tabsGradientSprite);
 
-    tabsGradientStencil = CCSprite::create("geode.loader/tab-gradient-mask.png");
+    tabsGradientStencil = CCSprite::createWithSpriteFrameName("tab-gradient-mask.png"_spr);
     tabsGradientStencil->setScale(TAB_SCALE);
     tabsGradientStencil->setAnchorPoint({0.f, 0.f});
 #ifndef GEODE_IS_IOS

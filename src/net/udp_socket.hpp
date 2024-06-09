@@ -12,9 +12,9 @@ public:
     UdpSocket();
     ~UdpSocket();
 
-    Result<> connect(const std::string_view serverIp, unsigned short port) override;
+    Result<> connect(const NetworkAddress& address) override;
     Result<int> send(const char* data, unsigned int dataSize) override;
-    Result<int> sendTo(const char* data, unsigned int dataSize, const std::string_view address, unsigned short port);
+    Result<int> sendTo(const char* data, unsigned int dataSize, const NetworkAddress& address);
     RecvResult receive(char* buffer, int bufferSize) override;
     bool close() override;
     virtual void disconnect();
@@ -26,7 +26,7 @@ public:
 #ifdef GLOBED_IS_UNIX
     asp::AtomicI32 socket_ = 0;
 #else
-    asp::AtomicU32 socket_ = 0;
+    asp::AtomicSizeT socket_ = 0; // pointer sized
 #endif
 
 private:

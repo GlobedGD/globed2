@@ -1,7 +1,6 @@
 use super::*;
-use crate::{data::*, server_thread::GameServerThread};
 
-impl GameServerThread {
+impl ClientThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
         let _ = gs_needauth!(self);
 

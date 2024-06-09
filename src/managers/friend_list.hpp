@@ -1,6 +1,7 @@
 #pragma once
-#include <defs/util.hpp>
 #include <defs/geode.hpp>
+
+#include <util/singleton.hpp>
 
 class FriendListManager : public SingletonBase<FriendListManager> {
 protected:

@@ -25,6 +25,8 @@ pub enum PacketHandlingError {
     DangerousAllocation(usize),            // attempted to allocate a huge chunk of memory with alloca
     DebugOnlyPacket,                       // packet can only be handled in debug mode
     PacketTooLong(usize),                  // packet is too long
+    UnableToSendUdp,                       // only tcp packets can be sent at the moment
+    InvalidStreamMarker,                   // client did not send a control byte indicating whether this is an initial login or a recovery
 }
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
@@ -91,6 +93,8 @@ impl Display for PacketHandlingError {
             )),
             Self::DebugOnlyPacket => f.write_str("this packet can only be handled in debug mode"),
             Self::PacketTooLong(size) => f.write_fmt(format_args!("received packet is way too long - {size} bytes")),
+            Self::UnableToSendUdp => f.write_str("tried to send a udp packet on a thread that was not claimed by a udp connection"),
+            Self::InvalidStreamMarker => f.write_str("invalid or missing stream marker at the start of the tcp stream"),
         }
     }
 }

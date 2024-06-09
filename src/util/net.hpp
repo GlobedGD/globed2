@@ -4,6 +4,7 @@
 #include <string>
 
 struct sockaddr_in;
+struct in_addr;
 
 namespace util::net {
     // Initialize all networking libraries (calls `WSAStartup` on Windows, does nothing on other platforms)
@@ -38,7 +39,11 @@ namespace util::net {
 
     // getaddrinfo
     Result<std::string> getaddrinfo(const std::string_view hostname);
+    Result<> getaddrinfo(const std::string_view hostname, sockaddr_in& out);
 
-    // Given a port number and either an IP address or a domain name, initialize a sockaddr struct
-    Result<> initSockaddr(const std::string_view address, unsigned short port, sockaddr_in& dest);
+    Result<std::string> inAddrToString(const in_addr& addr);
+    Result<> stringToInAddr(const char* addr, in_addr& out);
+
+    uint16_t hostToNetworkPort(uint16_t port);
+
 }

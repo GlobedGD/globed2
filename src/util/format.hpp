@@ -10,7 +10,7 @@
 namespace util::format {
     // example: 2.123s, 69.123ms
     template <typename Rep, typename Period>
-    std::string formatDuration(time::duration<Rep, Period> time) {
+    std::string formatDuration(const time::duration<Rep, Period>& time) {
         auto seconds = time::asSeconds(time);
         auto millis = time::asMillis(time);
         auto micros = time::asMicros(time);
@@ -24,11 +24,20 @@ namespace util::format {
         }
     }
 
+    template <typename Rep, typename Period>
+    std::string duration(const time::duration<Rep, Period>& time) {
+        return formatDuration(time);
+    }
+
     // example: 2023-11-16 19:43:50.200
-    std::string formatDateTime(time::system_time_point tp);
+    std::string formatDateTime(const time::system_time_point& tp);
+
+    std::string dateTime(const time::system_time_point& tp);
 
     // example: 123.4KiB
     std::string formatBytes(uint64_t bytes);
+
+    std::string bytes(uint64_t bytes);
 
     // format an HTTP error message into a nicer string
     std::string formatErrorMessage(std::string message);

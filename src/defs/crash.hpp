@@ -32,10 +32,12 @@
 
 #define GLOBED_SUICIDE GLOBED_CRASH_SIGTRAP
 
-[[noreturn]] static inline void _globedUnreachable() {
+namespace globed {
+    [[noreturn]] static inline void unreachable() {
 #if defined(_MSC_VER) && !defined(__clang__) // MSVC
-    __assume(false);
+        __assume(false);
 #else // GCC, Clang
-    __builtin_unreachable();
+        __builtin_unreachable();
 #endif
+    }
 }

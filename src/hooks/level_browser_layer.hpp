@@ -6,7 +6,9 @@
 #include <data/types/gd.hpp>
 
 class $modify(HookedLevelBrowserLayer, LevelBrowserLayer) {
-    std::unordered_map<LevelId, uint16_t> levels;
+    struct Fields {
+        std::unordered_map<LevelId, uint16_t> levels;
+    };
 
     $override
     void setupLevelBrowser(cocos2d::CCArray* p0);
