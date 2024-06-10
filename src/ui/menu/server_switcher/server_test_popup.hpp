@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/all.hpp>
 
-#include <Geode/utils/web.hpp>
+#include <managers/web.hpp>
 
 class AddServerPopup;
 
@@ -18,10 +18,10 @@ public:
 protected:
     AddServerPopup* parent;
 
-    geode::EventListener<geode::Task<Result<std::string, std::string>>> requestListener;
+    WebRequestManager::Listener requestListener;
 
     bool setup(const std::string_view, AddServerPopup* parent) override;
 
     void cancelRequest();
-    void requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
+    void requestCallback(typename WebRequestManager::Event* event);
 };

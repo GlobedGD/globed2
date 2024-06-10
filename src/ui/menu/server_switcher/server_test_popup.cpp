@@ -22,26 +22,7 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
         .scale(0.35f)
         .parent(m_mainLayer);
 
-    auto request = web::WebRequest()
-        .userAgent(util::net::webUserAgent())
-        .timeout(util::time::seconds(5))
-        .get(fmt::format("{}/version", url))
-        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
-            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
-
-            if (resptext.empty()) {
-                return Err(fmt::format("server sent an empty response with code {}", response->code()));
-            }
-
-            if (response->ok()) {
-                return Ok(resptext);
-            } else {
-                return Err("<cy>" + util::format::formatErrorMessage(resptext) + "</c>");
-            }
-
-        }, [](web::WebProgress*) -> std::monostate {
-            return {};
-        });
+    auto request = WebRequestManager::get().testServer(url);
 
     requestListener.bind(this, &ServerTestPopup::requestCallback);
     requestListener.setFilter(std::move(request));
@@ -49,20 +30,20 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
     return true;
 }
 
-void ServerTestPopup::requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event) {
+void ServerTestPopup::requestCallback(typename WebRequestManager::Event* event) {
     if (!event || !event->getValue()) return;
 
-    auto evalue = event->getValue();
+    auto evalue = std::move(*event->getValue());
 
-    if (!evalue->isOk()) {
-        std::string message = evalue->unwrapErr();
+    if (evalue.isErr()) {
+        auto error = evalue.unwrapErr();
 
-        this->parent->onTestFailure(message);
+        this->parent->onTestFailure(util::format::webError(error));
         this->onClose(this);
         return;
     }
 
-    auto resp = evalue->unwrap();
+    auto resp = evalue.unwrap();
 
     int protocol = util::format::parse<int>(resp).value_or(0);
 

@@ -2,9 +2,10 @@
 #include <defs/minimal_geode.hpp>
 
 #include <Geode/utils/web.hpp>
+#include <asp/sync.hpp>
 
 #include <crypto/secret_box.hpp>
-#include <asp/sync.hpp>
+#include <managers/web.hpp>
 
 #include <util/singleton.hpp>
 
@@ -42,9 +43,7 @@ public:
     bool hasAuthKey();
     std::string getAuthKey();
 
-    void requestAuthToken(const std::string_view baseUrl,
-                          std::optional<std::function<void()>> callback
-    );
+    void requestAuthToken(std::optional<std::function<void()>> callback);
 
     // admin password stuff
 
@@ -54,11 +53,11 @@ public:
     std::optional<std::string> getAdminPassword();
 
 private:
-    geode::EventListener<geode::Task<Result<std::string, std::string>>> requestListener;
+    WebRequestManager::Listener requestListener;
     std::optional<std::function<void()>> requestCallbackStored;
     std::unique_ptr<SecretBox> cryptoBox;
 
-    void requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
+    void requestCallback(WebRequestManager::Task::Event* event);
     void cancelAuthTokenRequest();
 
     std::string computeGDDataHash(const std::string_view name, int accountId, int userId, const std::string_view central);

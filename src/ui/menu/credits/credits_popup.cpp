@@ -130,12 +130,6 @@ bool GlobedCreditsPopup::setup() {
             ->setAutoScale(false)
     );
 
-#define ADD_PLAYER(array, obj) \
-    array->addObject( \
-        GlobedCreditsPlayer::create(obj.gameName, obj.name, obj.accountId, obj.userId, \
-            GlobedSimplePlayer::Icons { .type = IconType::Cube, .id = obj.iconId, .color1 = obj.color1, .color2 = obj.color2, .color3 = obj.color3}) \
-    )
-
     /* Fetch credits from server */
 
     auto& wrm = WebRequestManager::get();
@@ -145,7 +139,7 @@ bool GlobedCreditsPopup::setup() {
     return true;
 }
 
-void GlobedCreditsPopup::requestCallback(WebRequestManager::RequestTask::Event* e) {
+void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
     if (!e || !e->getValue()) return;
 
     auto result = e->getValue();
@@ -176,6 +170,12 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::RequestTask::Event* 
     }
 
     auto creditsData = creditsDataOpt.value().as<CreditsResponse>();
+
+#define ADD_PLAYER(array, obj) \
+    array->addObject( \
+        GlobedCreditsPlayer::create(obj.gameName, obj.name, obj.accountId, obj.userId, \
+            GlobedSimplePlayer::Icons { .type = IconType::Cube, .id = obj.iconId, .color1 = obj.color1, .color2 = obj.color2, .color3 = obj.color3}) \
+    )
 
     /* Owner */
 

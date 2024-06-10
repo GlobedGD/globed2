@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/all.hpp>
 
+#include <managers/web.hpp>
+
 class GlobedSignupPopup : public geode::Popup<>, public UploadMessageDelegate {
 public:
     constexpr static float POPUP_WIDTH = 180.f;
@@ -10,8 +12,8 @@ public:
 
 protected:
     cocos2d::CCLabelBMFont* statusMessage;
-    geode::EventListener<geode::Task<Result<std::string, std::string>>> createListener;
-    geode::EventListener<geode::Task<Result<std::string, std::string>>> finishListener;
+    WebRequestManager::Listener createListener;
+    WebRequestManager::Listener finishListener;
 
     std::string storedAuthcode;
     int storedAccountId;
@@ -29,6 +31,6 @@ protected:
     void uploadMessageFailed(int) override;
 
     void onDelayedChallengeCompleted();
-    void createCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
-    void finishCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
+    void createCallback(typename WebRequestManager::Event* event);
+    void finishCallback(typename WebRequestManager::Event* event);
 };

@@ -59,7 +59,7 @@ bool HookedMenuLayer::init() {
                 return;
             }
 
-            am.requestAuthToken(csm.getActive()->url, [lastServer] {
+            am.requestAuthToken([lastServer] {
                 auto result = NetworkManager::get().connect(lastServer.value());
                 if (result.isErr()) {
                     ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));

@@ -32,56 +32,30 @@ bool GlobedSignupPopup::setup() {
         .store(statusMessage)
         .parent(m_mainLayer);
 
-    auto gdData = am.gdData.lock();
-
-    auto request = web::WebRequest()
-        .userAgent(util::net::webUserAgent())
-        .timeout(util::time::seconds(5))
-        .param("aid", gdData->accountId)
-        .param("uid", gdData->userId)
-        .param("aname", gdData->accountName)
-        .param("protocol", NetworkManager::get().getUsedProtocol())
-        .post(fmt::format("{}/challenge/new", activeServer->url))
-        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
-            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
-
-            if (resptext.empty()) {
-                return Err(fmt::format("server sent an empty response with code {}", response->code()));
-            }
-
-            if (response->ok()) {
-                return Ok(resptext);
-            } else {
-                return Err(resptext);
-            }
-
-        }, [](web::WebProgress*) -> std::monostate {
-            return {};
-        });
-
+    auto request = WebRequestManager::get().challengeStart();
     createListener.bind(this, &GlobedSignupPopup::createCallback);
     createListener.setFilter(std::move(request));
 
     return true;
 }
 
-void GlobedSignupPopup::createCallback(typename geode::Task<Result<std::string, std::string>>::Event* event) {
+void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event) {
     if (!event || !event->getValue()) return;
 
-    auto evalue = event->getValue();
+    auto evalue = std::move(*event->getValue());
 
-    if (!evalue->isOk()) {
-        std::string message = evalue->unwrapErr();
+    if (evalue.isErr()) {
+        std::string message = util::format::webError(evalue.unwrapErr());
 
         log::warn("error creating challenge");
         log::warn("{}", message);
 
-        this->onFailure("Creating challenge failed: <cy>" + util::format::formatErrorMessage(message) + "</c>");
+        this->onFailure("Creating challenge failed: <cy>" + message + "</c>");
 
         return;
     }
 
-    auto resptext = evalue->unwrap();
+    auto resptext = evalue.unwrap();
 
     auto parts = util::format::split(resptext, ":");
     if (parts.size() != 3) {
@@ -148,59 +122,29 @@ void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
 
     statusMessage->setString("Verifying..");
 
-    auto gdData = am.gdData.lock();
-
-    auto url = csm.getActive()->url +
-        fmt::format("/challenge/verify?aid={}&uid={}&aname={}&answer={}&systime={}",
-                    gdData->accountId,
-                    gdData->userId,
-                    util::format::urlEncode(gdData->accountName),
-                    authcode,
-                    std::time(nullptr)
-        );
-
-    auto request = web::WebRequest()
-        .userAgent(util::net::webUserAgent())
-        .timeout(util::time::seconds(30))
-        .post(url)
-        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
-            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
-
-            if (resptext.empty()) {
-                return Err(fmt::format("server sent an empty response with code {}", response->code()));
-            }
-
-            if (response->ok()) {
-                return Ok(resptext);
-            } else {
-                if (response->code() == 401) {
-                    return Err("account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>" + util::format::formatErrorMessage(resptext) + "</c>");
-                } else {
-                    return Err(util::format::formatErrorMessage(resptext));
-                }
-            }
-
-        }, [](web::WebProgress*) -> std::monostate {
-            return {};
-        });
-
+    auto request = WebRequestManager::get().challengeFinish(authcode);
     finishListener.bind(this, &GlobedSignupPopup::finishCallback);
     finishListener.setFilter(std::move(request));
 }
 
-void GlobedSignupPopup::finishCallback(typename geode::Task<Result<std::string, std::string>>::Event* event) {
+void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event) {
     if (!event || !event->getValue()) return;
 
-    auto evalue = event->getValue();
+    auto evalue = std::move(*event->getValue());
 
-    if (!evalue->isOk()) {
-        std::string message = evalue->unwrapErr();
+    if (evalue.isErr()) {
+        auto error = evalue.unwrapErr();
+        if (error.code == 401) {
+            this->onFailure(fmt::format("account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>{}</c>", error.message));
+            return;
+        }
 
+        std::string message = util::format::webError(evalue.unwrapErr());
         this->onFailure(message);
         return;
     }
 
-    auto response = evalue->unwrap();
+    auto response = evalue.unwrap();
 
     // we are good! the authkey has been created and can be saved now.
     auto colonPos = response.find(':');

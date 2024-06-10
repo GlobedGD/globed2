@@ -76,67 +76,37 @@ std::string GlobedAccountManager::getAuthKey() {
     return Mod::get()->getSavedValue<std::string>(jsonkey);
 }
 
-void GlobedAccountManager::requestAuthToken(
-    const std::string_view baseUrl,
-    std::optional<std::function<void()>> callback
-) {
-    auto authkey = this->getAuthKey();
-    // recode as urlsafe
-    authkey = util::crypto::base64Encode(util::crypto::base64Decode(authkey), util::crypto::Base64Variant::URLSAFE);
-
-    auto gd = gdData.lock();
-
+void GlobedAccountManager::requestAuthToken(std::optional<std::function<void()>> callback) {
     this->cancelAuthTokenRequest();
 
     requestCallbackStored = std::move(callback);
-    log::debug("base url: {}", baseUrl);
 
-    auto request = web::WebRequest()
-        .userAgent(util::net::webUserAgent())
-        .timeout(util::time::seconds(3))
-        .param("aid", gd->accountId)
-        .param("uid", gd->userId)
-        .param("aname", gd->accountName)
-        .param("authkey", authkey)
-        .post(fmt::format("{}/totplogin", baseUrl))
-        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
-            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
-
-            if (resptext.empty()) {
-                return Err(fmt::format("server sent an empty response with code {}", response->code()));
-            }
-
-            if (response->ok()) {
-                return Ok(resptext);
-            } else {
-                return Err(resptext);
-            }
-
-        }, [](web::WebProgress* progress) -> std::monostate {
-            return {};
-        });
+    auto task = WebRequestManager::get().requestAuthToken();
 
     requestListener.bind(this, &GlobedAccountManager::requestCallback);
-    requestListener.setFilter(std::move(request));
+    requestListener.setFilter(task);
 }
 
-void GlobedAccountManager::requestCallback(typename Task<Result<std::string, std::string>>::Event* event) {
+void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event) {
     if (!event || !event->getValue()) return;
 
-    if (event->getValue()->isOk()) {
-        *this->authToken.lock() = event->getValue()->unwrap();
+    auto result = std::move(*event->getValue());
+
+    if (result.isOk()) {
+        *this->authToken.lock() = std::move(result.unwrap());
 
         if (requestCallbackStored.has_value()) {
             requestCallbackStored.value()();
         }
+
         return;
     }
 
-    std::string message = event->getValue()->unwrapErr();
+    auto error = event->getValue()->unwrapErr();
 
     ErrorQueues::get().error(fmt::format(
         "Failed to generate a session token! Please try to login and connect again.\n\nReason: <cy>{}</c>",
-        message
+        util::format::webError(error)
     ));
 
     this->clearAuthKey();

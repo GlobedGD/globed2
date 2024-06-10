@@ -7,6 +7,8 @@
 #include <util/time.hpp>
 #include <util/misc.hpp>
 
+struct WebRequestError;
+
 namespace util::format {
     // example: 2.123s, 69.123ms
     template <typename Rep, typename Period>
@@ -41,6 +43,9 @@ namespace util::format {
 
     // format an HTTP error message into a nicer string
     std::string formatErrorMessage(std::string message);
+
+    // format a web request error into a string in format like "code 404: Not found" or "code -1: empty response"
+    std::string webError(const WebRequestError& error);
 
     // format milliseconds into a string like 45.200, 1:20.300, 3:01:40.500
     std::string formatPlatformerTime(uint32_t ms);

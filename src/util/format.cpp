@@ -4,6 +4,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include <managers/web.hpp>
+
 namespace util::format {
     std::string formatDateTime(const time::system_time_point& tp) {
         auto timet = time::sysclock::to_time_t(tp);
@@ -57,6 +59,14 @@ namespace util::format {
         }
 
         return message;
+    }
+
+    std::string webError(const WebRequestError& error) {
+        if (error.message.empty()) {
+            return fmt::format("code {}: empty response", error.code);
+        } else {
+            return fmt::format("code {}: {}", error.code, formatErrorMessage(error.message));
+        }
     }
 
     std::string formatPlatformerTime(uint32_t ms) {

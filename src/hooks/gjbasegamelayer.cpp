@@ -723,8 +723,8 @@ void GlobedGJBGL::updateDRPC() {
         (m_level->m_levelID.value() < 128 && m_level->m_levelID.value() != 0) ||
             m_level->m_levelID.value() == 3001 || m_level->m_levelID.value() < 5003 ||
             m_level->m_levelID.value() > 5000
-    ) && std::string(m_level->m_creatorName) == "";
-    
+    ) && m_level->m_creatorName.empty();
+
     auto state = fmt::format("{} by {}", std::string(m_level->m_levelName), (isRobTopLevel) ? "RobTopGames" : std::string(m_level->m_creatorName));
 
     using SetRPCEvent = geode::DispatchEvent<bool>;
@@ -747,7 +747,7 @@ void GlobedGJBGL::updateDRPC() {
     UpdateRPCEvent("techstudent10.discord_rich_presence/update_rpc", json).post();
 }
 
-// selUpdateDRPC - runs every 10 seconds, updates Discord RPC 
+// selUpdateDRPC - runs every 10 seconds, updates Discord RPC
 void GlobedGJBGL::selUpdateDRPC(float dt) {
     auto self = GlobedGJBGL::get();
 

@@ -16,8 +16,9 @@
 #include <ui/menu/admin/admin_popup.hpp>
 #include <ui/menu/admin/admin_login_popup.hpp>
 #include <ui/menu/credits/credits_popup.hpp>
-#include <util/ui.hpp>
 #include <util/net.hpp>
+#include <util/format.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -322,56 +323,39 @@ void GlobedMenuLayer::requestServerList() {
         return;
     }
 
-    auto request = web::WebRequest()
-        .userAgent(util::net::webUserAgent())
-        .timeout(util::time::seconds(3))
-        .get(fmt::format("{}/servers?protocol={}", centralUrl.value().url, NetworkManager::get().getUsedProtocol()))
-        .map([this](web::WebResponse* response) -> Result<std::string, std::string> {
-            GLOBED_UNWRAP_INTO(response->string(), auto resptext);
-
-            if (resptext.empty()) {
-                return Err(fmt::format("server sent an empty response with code {}", response->code()));
-            }
-
-            if (response->ok()) {
-                return Ok(resptext);
-            } else {
-                return Err(fmt::format("code {}: {}", response->code(), resptext));
-            }
-
-        }, [](web::WebProgress*) -> std::monostate {
-            return {};
-        });
+    auto request = WebRequestManager::get().fetchServers();
 
     requestListener.bind(this, &GlobedMenuLayer::requestCallback);
     requestListener.setFilter(std::move(request));
 }
 
-void GlobedMenuLayer::requestCallback(typename Task<Result<std::string, std::string>>::Event* event) {
+void GlobedMenuLayer::requestCallback(typename WebRequestManager::Event* event) {
     if (!event || !event->getValue()) return;
 
-    if (event->getValue()->isErr()) {
+    auto result = std::move(*event->getValue());
+
+    if (result.isErr()) {
         auto& gsm = GameServerManager::get();
         gsm.clearCache();
         gsm.clear();
         gsm.pendingChanges = true;
 
-        ErrorQueues::get().error(fmt::format("Failed to fetch servers.\n\nReason: <cy>{}</c>", event->getValue()->unwrapErr()));
+        ErrorQueues::get().error(fmt::format("Failed to fetch servers.\n\nReason: <cy>{}</c>", util::format::webError(result.unwrapErr())));
 
         return;
     }
 
-    auto response = event->getValue()->unwrap();
+    auto response = result.unwrap();
 
     auto& gsm = GameServerManager::get();
     gsm.updateCache(response);
-    auto result = gsm.loadFromCache();
+    auto loadResult = gsm.loadFromCache();
     gsm.pendingChanges = true;
 
-    if (result.isErr()) {
-        log::warn("failed to parse server list: {}", result.unwrapErr());
+    if (loadResult.isErr()) {
+        log::warn("failed to parse server list: {}", loadResult.unwrapErr());
         log::warn("{}", response);
-        ErrorQueues::get().error(fmt::format("Failed to parse server list: <cy>{}</c>", result.unwrapErr()));
+        ErrorQueues::get().error(fmt::format("Failed to parse server list: <cy>{}</c>", loadResult.unwrapErr()));
     }
 }
 

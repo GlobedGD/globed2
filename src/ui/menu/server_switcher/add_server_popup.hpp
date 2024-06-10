@@ -13,7 +13,7 @@ public:
     static AddServerPopup* create(int modifyingIndex, ServerSwitcherPopup* parent);
 
     void onTestSuccess();
-    void onTestFailure(const std::string_view message);
+    void onTestFailure(const std::string& message);
 
 protected:
     geode::InputNode *nameNode, *urlNode;

@@ -13,10 +13,10 @@ public:
     static GlobedCreditsPopup* create();
 
 protected:
-    WebRequestManager::RequestListener eventListener;
+    WebRequestManager::Listener eventListener;
     geode::ScrollLayer* scrollLayer;
 
-    void requestCallback(WebRequestManager::RequestTask::Event* e);
+    void requestCallback(WebRequestManager::Task::Event* e);
 
     bool setup() override;
 

@@ -1,8 +1,10 @@
 #pragma once
 #include <defs/all.hpp>
 
-#include "signup_layer.hpp"
 #include <Geode/utils/web.hpp>
+
+#include "signup_layer.hpp"
+#include <managers/web.hpp>
 
 class GlobedMenuLayer : public cocos2d::CCLayer {
 public:
@@ -18,7 +20,7 @@ private:
     GlobedSignupLayer* signupLayer;
     Ref<CCMenuItemSpriteExtra> levelListButton, roomButton, serverSwitcherButton, discordButton, settingsButton;
     cocos2d::CCMenu *leftButtonMenu, *rightButtonMenu;
-    geode::EventListener<geode::Task<Result<std::string, std::string>>> requestListener;
+    WebRequestManager::Listener requestListener;
 
     bool currentlyShowingButtons = false;
 
@@ -31,5 +33,5 @@ private:
     void pingServers(float dt);
 
     void cancelWebRequest();
-    void requestCallback(typename geode::Task<Result<std::string, std::string>>::Event* event);
+    void requestCallback(typename WebRequestManager::Event* event);
 };

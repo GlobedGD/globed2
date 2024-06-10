@@ -135,7 +135,7 @@ void ServerListCell::requestTokenAndConnect() {
     auto& am = GlobedAccountManager::get();
     auto& csm = CentralServerManager::get();
 
-    am.requestAuthToken(csm.getActive()->url, [gsview = this->gsview]{
+    am.requestAuthToken([gsview = this->gsview]{
         GLOBED_RESULT_ERRC(NetworkManager::get().connect(gsview));
     });
 }

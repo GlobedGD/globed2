@@ -8,7 +8,7 @@
 
 using namespace geode::prelude;
 
-using RequestTask = WebRequestManager::RequestTask;
+using RequestTask = WebRequestManager::Task;
 
 static std::string makeUrl(std::string_view baseUrl, std::string_view suffix) {
     std::string base(baseUrl);
@@ -60,11 +60,15 @@ RequestTask WebRequestManager::requestAuthToken() {
     auto authkey = gam.getAuthKey();
     auto gdData = gam.gdData.lock();
 
-    return this->get(makeCentralUrl("totplogin"), 5, [&](web::WebRequest& req) {
+    return this->post(makeCentralUrl("totplogin"), 5, [&](web::WebRequest& req) {
         req.param("aid", gdData->accountId);
         req.param("uid", gdData->userId);
         req.param("aname", gdData->accountName);
-        req.param("authkey", authkey);
+
+        // recode as urlsafe
+        // honestly i dont remember why this is needed anymore but its almost midnight and im so tired and i just wanna go to sleep but it  didnt work without this
+        auto key = util::crypto::base64Encode(util::crypto::base64Decode(authkey), util::crypto::Base64Variant::URLSAFE);
+        req.param("authkey", key);
     });
 }
 
