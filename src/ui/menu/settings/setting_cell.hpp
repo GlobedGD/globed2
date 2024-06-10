@@ -20,7 +20,7 @@ public:
     // The character parameters must be string literals, or must exist for the entire lifetime of the cell.
     static GlobedSettingCell* create(void*, Type, const char*, const char*, const Limits&);
 
-    void storeAndSave(std::any value);
+    void storeAndSave(std::any&& value);
 
 private:
     void* settingStorage;

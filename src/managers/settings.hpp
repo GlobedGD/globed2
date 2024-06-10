@@ -221,34 +221,34 @@ public:
 
     void reflect(TaskType type);
 
-    bool has(const std::string_view key);
-    void clear(const std::string_view key);
+    bool has(std::string_view key);
+    void clear(std::string_view key);
 
     template <typename T>
-    void store(const std::string_view key, const T& val) {
+    void store(std::string_view key, const T& val) {
         geode::Mod::get()->setSavedValue(key, val);
     }
 
     template <typename T>
-    T load(const std::string_view key) {
+    T load(std::string_view key) {
         return geode::Mod::get()->getSavedValue<T>(key);
     }
 
     // If setting is present, loads into `into`. Otherwise does nothing.
     template <typename T>
-    void loadOptionalInto(const std::string_view key, T& into) {
+    void loadOptionalInto(std::string_view key, T& into) {
         if (this->has(key)) {
             into = this->load<T>(key);
         }
     }
 
     template <typename T>
-    std::optional<T> loadOptional(const std::string_view key) {
+    std::optional<T> loadOptional(std::string_view key) {
         return this->has(key) ? this->load<T>(key) : std::nullopt;
     }
 
     template <typename T>
-    T loadOrDefault(const std::string_view key, const T& defaultval) {
+    T loadOrDefault(std::string_view key, const T& defaultval) {
         return this->has(key) ? this->load<T>(key) : defaultval;
     }
 };

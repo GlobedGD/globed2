@@ -43,15 +43,24 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     }
 
     switch (settingType) {
-        case Type::DiscordRPC: [[fallthrough]];
         case Type::Bool: {
-            bool enabled = true;
-            float opacity = 1.f;
-            bool isDRPCPossible = settingType == Type::DiscordRPC && Loader::get()->isModLoaded("techstudent10.discord_rich_presence");
-            if (!isDRPCPossible) {
-                enabled = false;
-                opacity = 0.5f;
-            }
+            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 1.0f))
+                .anchorPoint(0.5f, 0.5f)
+                .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
+                .scale(0.8f)
+                .id("input-checkbox"_spr)
+                .store(inpCheckbox)
+                .intoNewParent(CCMenu::create())
+                .pos(0.f, 0.f)
+                .id("input-menu"_spr)
+                .parent(this);
+
+            inpCheckbox->toggle(*(bool*)(settingStorage));
+        } break;
+        case Type::DiscordRPC: {
+            bool possible = Loader::get()->isModLoaded("techstudent10.discord_rich_presence");
+            float opacity = possible ? 1.f : 0.5f;
+
             Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 1.0f))
                 .anchorPoint(0.5f, 0.5f)
                 .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
@@ -66,36 +75,23 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 .pos(0.f, 0.f)
                 .id("input-menu"_spr)
                 .parent(this)
-                .enabled(enabled);
+                .enabled(possible);
 
-            if (!isDRPCPossible) {
+            if (!possible) {
                 Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
                     .scale(0.4f)
                     .intoMenuItem([](auto) {
-                        FLAlertLayer::create("Discord RPC is disabled", "Discord Rich Presence is disabled or not installed. Please enable or install it in Geode to use this option.", "OK")->show();
-                    })
-                    .pos(inpCheckbox->getPositionX() - 20.f, inpCheckbox->getPositionY() + 10.f)
-                    .intoNewParent(CCMenu::create())
-                    .pos(0.f, 0.f)
-                    .parent(this)
-                .enabled(enabled);
-            }
-
-            inpCheckbox->toggle(*(bool*)(settingStorage));
-            if (!isDRPCPossible) {
-                Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-                    .scale(0.4f)
-                    .intoMenuItem([](auto) {
-                        FLAlertLayer::create("Discord RPC is disabled", "Discord Rich Presence is disabled or not installed. Please enable or install it in Geode to use this option.", "OK")->show();
+                        FLAlertLayer::create("Not available", "This feature requires the Discord Rich Presence mod to be installed.", "Ok")->show();
                     })
                     .pos(inpCheckbox->getPositionX() - 20.f, inpCheckbox->getPositionY() + 10.f)
                     .intoNewParent(CCMenu::create())
                     .pos(0.f, 0.f)
                     .parent(this);
 
-                inpCheckbox->toggle(false);
+                this->storeAndSave(false);
             }
 
+            inpCheckbox->toggle(*(bool*)(settingStorage));
         } break;
         case Type::Float: {
             Build<Slider>::create(this, menu_selector(GlobedSettingCell::onSliderChanged), 0.3f)
@@ -316,15 +312,16 @@ void GlobedSettingCell::recreateCornerButton() {
     theButton->m_label->setString("0");
 }
 
-void GlobedSettingCell::storeAndSave(std::any value) {
+void GlobedSettingCell::storeAndSave(std::any&& value) {
     // banger
     switch (settingType) {
+        case Type::DiscordRPC: [[fallthrough]];
         case Type::Bool:
             *(bool*)(settingStorage) = std::any_cast<bool>(value); break;
         case Type::Float:
             *(float*)(settingStorage) = std::any_cast<float>(value); break;
         case Type::String:
-            *(std::string*)(settingStorage) = std::any_cast<std::string>(value); break;
+            *(std::string*)(settingStorage) = std::any_cast<std::string>(std::move(value)); break;
         case Type::AudioDevice: [[fallthrough]];
         case Type::Corner: [[fallthrough]];
         case Type::PacketFragmentation: [[fallthrough]];

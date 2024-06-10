@@ -138,12 +138,6 @@ endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
-
-    # idk why this is necessary ?? github actions doesnt build without it
-    if (WIN32)
-        target_compile_options(asp PRIVATE "--target=x86_64-pc-windows-msvc")
-        target_compile_options(opus PRIVATE "--target=x86_64-pc-windows-msvc")
-    endif()
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder opus Boost::describe asp)

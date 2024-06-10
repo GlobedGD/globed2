@@ -33,7 +33,6 @@
 * Fix the placeholder green icon color being a slightly different shade than the actual default green
 * Fix a missing texture crash when asset preloading is disabled
 * Fix progress indicator line going out of the progressbar
-
 * Lots of internal restructuring and rewrites, for improved performance and user experience
 * Protocol optimization (slightly less bandwidth usage)
 * Change the compiler used for Windows releases

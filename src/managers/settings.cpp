@@ -76,11 +76,11 @@ void GlobedSettings::save() {
     this->reflect(TaskType::SaveSettings);
 }
 
-bool GlobedSettings::has(const std::string_view key) {
+bool GlobedSettings::has(std::string_view key) {
     return Mod::get()->hasSavedValue(key);
 }
 
-void GlobedSettings::clear(const std::string_view key) {
+void GlobedSettings::clear(std::string_view key) {
     auto& container = Mod::get()->getSaveContainer();
     auto& obj = container.as_object();
 

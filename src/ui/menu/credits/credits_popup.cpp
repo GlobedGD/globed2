@@ -1,10 +1,12 @@
 #include "credits_popup.hpp"
+
 #include <matjson.hpp>
 #include <matjson/stl_serialize.hpp>
-#include <util/ui.hpp>
 
 #include "credits_player.hpp"
 #include "credits_cell.hpp"
+#include <managers/error_queues.hpp>
+#include <util/ui.hpp>
 
 #include <Geode/utils/web.hpp>
 
@@ -136,33 +138,20 @@ bool GlobedCreditsPopup::setup() {
 
     /* Fetch credits from server */
 
-    auto task = web::WebRequest()
-        // .get("http://credits.globed.dev/credits")
-        .get("http://127.0.0.1:8080/credits")
-        .map([](web::WebResponse* response) -> Result<std::string, std::string> {
-            GLOBED_UNWRAP_INTO(response->string(), auto resp);
-
-            if (response->ok()) {
-                return Ok(resp);
-            } else {
-                return Err(resp);
-            }
-        }, [](auto) -> std::monostate {
-            return {};
-        });
-
+    auto& wrm = WebRequestManager::get();
     eventListener.bind(this, &GlobedCreditsPopup::requestCallback);
-    eventListener.setFilter(task);
+    eventListener.setFilter(wrm.fetchCredits());
 
     return true;
 }
 
-void GlobedCreditsPopup::requestCallback(Task<Result<std::string, std::string>>::Event* e) {
+void GlobedCreditsPopup::requestCallback(WebRequestManager::RequestTask::Event* e) {
     if (!e || !e->getValue()) return;
 
     auto result = e->getValue();
     if (result->isErr()) {
-        FLAlertLayer::create("Error", fmt::format("Failed to load credits.\n\nReason: <cy>{}</c>", result->unwrapErr()), "Ok")->show();
+        auto err = result->unwrapErr();
+        ErrorQueues::get().error(fmt::format("Failed to load credits.\n\nReason: <cy>{}</c> (code {})", err.message, err.code));
         return;
     }
 
@@ -170,6 +159,12 @@ void GlobedCreditsPopup::requestCallback(Task<Result<std::string, std::string>>:
 
     std::string parseError;
     auto creditsDataOpt = matjson::parse(response, parseError);
+
+#ifdef GLOBED_DEBUG
+    if (creditsDataOpt) {
+        log::debug("credits response: {}", creditsDataOpt.value());
+    }
+#endif
 
     if (creditsDataOpt && !creditsDataOpt->is<CreditsResponse>()) {
         parseError = "invalid json response";

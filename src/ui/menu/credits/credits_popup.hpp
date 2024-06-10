@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/geode.hpp>
 
+#include <managers/web.hpp>
+
 class GlobedCreditsPopup : public geode::Popup<> {
 public:
     static constexpr float POPUP_WIDTH = 380.f;
@@ -11,10 +13,10 @@ public:
     static GlobedCreditsPopup* create();
 
 protected:
-    geode::EventListener<geode::Task<Result<std::string, std::string>>> eventListener;
+    WebRequestManager::RequestListener eventListener;
     geode::ScrollLayer* scrollLayer;
 
-    void requestCallback(geode::Task<Result<std::string, std::string>>::Event* e);
+    void requestCallback(WebRequestManager::RequestTask::Event* e);
 
     bool setup() override;
 

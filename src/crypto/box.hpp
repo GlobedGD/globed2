@@ -5,7 +5,7 @@ class CryptoBox final : public BaseCryptoBox<CryptoBox> {
 public:
     constexpr static size_t KEY_LEN = 32;
     constexpr static size_t NONCE_LEN = 24;
-    constexpr static size_t MAC_LEN = 24;
+    constexpr static size_t MAC_LEN = 16;
 
     using BaseCryptoBox<CryptoBox>::PREFIX_LEN;
 
