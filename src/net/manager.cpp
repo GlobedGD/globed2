@@ -44,9 +44,114 @@ struct AtomicConnectionState {
     }
 };
 
+static std::string formatListenerKey(packetid_t id) {
+    return util::cocos::spr(fmt::format("packet-listener-{}", id));
+}
+
+template <typename T>
+static void* addrFromWeakRef(const WeakRef<T>& ref) {
+    // Do not do this.
+    auto hugePtr = reinterpret_cast<const std::shared_ptr<CCObject*>*>(&ref);
+    auto& controller = *hugePtr;
+    if (controller) {
+        return (void*)*controller;
+    } else {
+        return nullptr;
+    }
+}
+
+// Packet listener pool. Most of the functions must not be used on a different thread than main.
+class PacketListenerPool : public CCObject {
+public:
+    PacketListenerPool(const PacketListenerPool&) = delete;
+    PacketListenerPool(PacketListenerPool&&) = delete;
+    PacketListenerPool& operator=(const PacketListenerPool&) = delete;
+    PacketListenerPool& operator=(PacketListenerPool&&) = delete;
+
+    static PacketListenerPool& get() {
+        static PacketListenerPool instance;
+        return instance;
+    }
+
+    // Must be called from the main thread. Delivers packets to all listeners that are tied to an object.
+    void update(float dt) {
+        if (packetQueue.empty()) return;
+
+        // clear any dead listeners
+        this->removeDeadListeners();
+
+        while (auto packet_ = packetQueue.tryPop()) {
+            auto& packet = packet_.value();
+            packetid_t id = packet->getPacketId();
+
+            bool invoked = false;
+            auto& lsm = listeners[id];
+
+            for (auto& listener : lsm) {
+                if (auto l = listener.lock()) {
+                    l->invokeCallback(packet);
+                }
+            }
+        }
+    }
+
+    void removeDeadListeners() {
+        for (auto& [id, listeners] : listeners) {
+            for (int i = listeners.size() - 1; i >= 0; i--) {
+                if (!listeners[i].valid()) {
+#ifdef GLOBED_DEBUG
+                    log::debug("Unregistering listener (id {}) for {}", id, addrFromWeakRef(listeners[i]));
+#endif
+                    // log::debug("removing listener for {}", id);
+                    listeners.erase(listeners.begin() + i);
+                }
+            }
+        }
+    }
+
+    void registerListener(packetid_t id, PacketListener* listener) {
+#ifdef GLOBED_DEBUG
+        log::debug("Registering listener {} (id {}) for {}", listener, id, listener->owner);
+#endif
+
+        auto& ls = listeners[id];
+
+        this->removeDeadListeners();
+
+        // verify it's not a duplicate
+        bool duped = false;
+        for (auto& l : ls) {
+            if (l.lock() == listener) {
+                duped = true;
+                break;
+            }
+        }
+
+        if (!duped) {
+            ls.push_back(WeakRef(listener));
+        } else {
+            log::warn("duped listener ({}, id {}, owner {}), not adding again", listener, id, listener->owner);
+        }
+    }
+
+    // Push a packet to the queue. Thread safe.
+    void pushPacket(std::shared_ptr<Packet> packet) {
+        packetQueue.push(std::move(packet));
+    }
+
+private:
+    std::unordered_map<packetid_t, std::vector<WeakRef<PacketListener>>> listeners;
+    asp::Channel<std::shared_ptr<Packet>> packetQueue;
+
+    PacketListenerPool() {
+        CCScheduler::get()->scheduleSelector(schedule_selector(PacketListenerPool::update), this, 0.f, false);
+    }
+};
+
 class NetworkManager::Impl {
 protected:
     friend class NetworkManager;
+    friend class PacketListenerPool;
 
     static constexpr int BUILTIN_LISTENER_PRIORITY = -10000000;
 
@@ -54,7 +159,13 @@ protected:
     struct TaskSendPacket {
         std::shared_ptr<Packet> packet;
     };
-    struct TaskPingActive{};
+    struct TaskPingActive {};
+
+    struct GlobalListener {
+        packetid_t packetId;
+        bool isFinal;
+        PacketListener::CallbackFn callback;
+    };
 
     using Task = std::variant<TaskPingServers, TaskSendPacket, TaskPingActive>;
 
@@ -65,7 +176,7 @@ protected:
 
     // Note that we intentionally don't use Ref here,
     // as we use the destructor to know if the object owning the listener has been destroyed.
-    asp::Mutex<std::unordered_map<packetid_t, std::vector<PacketListener*>>> listeners;
+    asp::Mutex<std::unordered_map<packetid_t, GlobalListener>> listeners;
     asp::Mutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
 
     // these fields are only used by us and in a safe manner, so they don't need a mutex
@@ -220,13 +331,9 @@ protected:
 
     /* listeners */
 
-    std::string formatListenerKey(packetid_t id) {
-        return util::cocos::spr(fmt::format("packet-listener-{}", id));
-    }
-
-    void addListener(cocos2d::CCNode* target, PacketListener* listener) {
+    void addListener(CCNode* target, PacketListener* listener) {
         if (target) {
-            target->setUserObject(this->formatListenerKey(listener->packetId), listener);
+            target->setUserObject(formatListenerKey(listener->packetId), listener);
         } else {
             // if target is nullptr we leak the listener,
             // essentially saying it should live for the entire duration of the program.
@@ -237,26 +344,7 @@ protected:
     }
 
     void registerPacketListener(packetid_t packet, PacketListener* listener) {
-#ifdef GLOBED_DEBUG
-        log::debug("Registering listener (id {}) for {}", packet, listener->owner);
-#endif
-
-        auto ls = listeners.lock();
-        auto& lsm = (*ls)[packet];
-
-        // is it already added?
-        auto it = std::find(lsm.begin(), lsm.end(), listener);
-        if (it != lsm.end()) {
-            return;
-        }
-
-        // otherwise, add it
-        lsm.push_back(listener);
-
-        // sort all elements by priority descending (higher = runs earlier)
-        std::sort(lsm.begin(), lsm.end(), [](PacketListener* a, PacketListener* b) -> bool {
-            return a->priority > b->priority;
-        });
+        PacketListenerPool::get().registerListener(packet, listener);
     }
 
     void removeListener(cocos2d::CCNode* target, packetid_t id) {
@@ -268,25 +356,6 @@ protected:
     }
 
     void unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {
-#ifdef GLOBED_DEBUG
-        // note: is it safe to access listener->owner here?
-        // at the time of user object destruction, i believe the node is still valid,
-        // but we are inside of ~CCNode(), which means main vtable is set to CCNode vtable,
-        // and therefore this would always print 'class cocos2d::CCNode' instead of the real class.
-        log::debug("Unregistering listener (id {}) for {}", packet, listener->owner);
-#endif
-
-        auto ls = listeners.lock();
-        auto& lsm = (*ls)[packet];
-
-        auto it = std::find(lsm.begin(), lsm.end(), listener);
-        if (it != lsm.end()) {
-            lsm.erase(it);
-        }
-
-        if (suppressUnhandled) {
-            this->suppressUnhandledUntil(packet, util::time::systemNow() + util::time::seconds(3));
-        }
     }
 
     void suppressUnhandledUntil(packetid_t id, util::time::system_time_point point) {
@@ -297,22 +366,48 @@ protected:
         listeners.lock()->clear();
     }
 
-    void addGlobalListener(packetid_t id, PacketCallback&& callback, bool mainThread = false) {
-        auto listener = PacketListener::create(id, std::move(callback), nullptr, BUILTIN_LISTENER_PRIORITY, mainThread, false);
+    // adds a global listener, with same fairness as all other listeners
+    void addGlobalListener(packetid_t id, PacketCallback&& callback) {
+        auto listener = PacketListener::create(id, std::move(callback), nullptr, BUILTIN_LISTENER_PRIORITY, false);
         this->addListener(nullptr, listener);
     }
 
     template <HasPacketID Pty>
-    void addGlobalListener(PacketCallbackSpecific<Pty>&& callback, bool mainThread = false) {
+    void addGlobalListener(PacketCallbackSpecific<Pty>&& callback) {
         this->addGlobalListener(Pty::PACKET_ID, [callback = std::move(callback)](std::shared_ptr<Packet> pkt) {
             callback(std::static_pointer_cast<Pty>(pkt));
-        }, mainThread);
+        });
     }
 
-    // Same as `addGlobalListener(callback, true)`
+    // adds a global listener, which always runs NOT on the main thread and always before other listeners
+    void addInternalListener(packetid_t id, PacketCallback&& callback) {
+        GlobalListener listener {
+            .packetId = id,
+            .isFinal = false,
+            .callback = std::move(callback),
+        };
+
+        (*listeners.lock())[id] = std::move(listener);
+#ifdef GLOBED_DEBUG
+        log::debug("Registered internal listener (id = {})", id);
+#endif
+    }
+
     template <HasPacketID Pty>
-    void addGlobalListenerSync(PacketCallbackSpecific<Pty>&& callback) {
-        this->addGlobalListener<Pty>(std::move(callback), true);
+    void addInternalListener(PacketCallbackSpecific<Pty>&& callback) {
+        this->addInternalListener(Pty::PACKET_ID, [cb = std::move(callback)](std::shared_ptr<Packet> packet) {
+            cb(std::static_pointer_cast<Pty>(std::move(packet)));
+        });
+    }
+
+    // same as `addInternalListener` but runs the callback on the main thread
+    template <HasPacketID Pty>
+    void addInternalListenerSync(PacketCallbackSpecific<Pty>&& callback) {
+        this->addInternalListener<Pty>([cb = std::move(callback)](std::shared_ptr<Pty> packet) {
+            Loader::get()->queueInMainThread([cb = std::move(cb), packet = std::move(packet)] {
+                cb(std::move(packet));
+            });
+        });
     }
 
     /* global listeners */
@@ -320,39 +415,39 @@ protected:
     void setupGlobalListeners() {
         // Connection packets
 
-        addGlobalListenerSync<CryptoHandshakeResponsePacket>([this](auto packet) {
+        addInternalListenerSync<CryptoHandshakeResponsePacket>([this](auto packet) {
             this->onCryptoHandshakeResponse(std::move(packet));
         });
 
-        addGlobalListener<KeepaliveResponsePacket>([](auto packet) {
+        addInternalListener<KeepaliveResponsePacket>([](auto packet) {
             GameServerManager::get().finishKeepalive(packet->playerCount);
         });
 
-        addGlobalListener<KeepaliveTCPResponsePacket>([](auto) {});
+        addInternalListener<KeepaliveTCPResponsePacket>([](auto) {});
 
-        addGlobalListener<ServerDisconnectPacket>([this](auto packet) {
+        addInternalListener<ServerDisconnectPacket>([this](auto packet) {
             this->disconnectWithMessage(packet->message);
         });
 
-        addGlobalListener<LoggedInPacket>([this](auto packet) {
+        addInternalListener<LoggedInPacket>([this](auto packet) {
             this->onLoggedIn(std::move(packet));
         });
 
-        addGlobalListener<LoginFailedPacket>([this](auto packet) {
+        addInternalListener<LoginFailedPacket>([this](auto packet) {
             ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> The server rejected the login attempt.\n\nReason: <cy>{}</c>", packet->message));
             GlobedAccountManager::get().authToken.lock()->clear();
             this->disconnect(true);
         });
 
-        addGlobalListener<ProtocolMismatchPacket>([this](auto packet) {
+        addInternalListener<ProtocolMismatchPacket>([this](auto packet) {
             this->onProtocolMismatch(std::move(packet));
         });
 
-        addGlobalListener<ClaimThreadFailedPacket>([this](auto packet) {
+        addInternalListener<ClaimThreadFailedPacket>([this](auto packet) {
             this->disconnectWithMessage("failed to claim udp thread");
         });
 
-        addGlobalListener<LoginRecoveryFailecPacket>([this](auto packet) {
+        addInternalListener<LoginRecoveryFailecPacket>([this](auto packet) {
             log::debug("Login recovery failed, retrying regular connection");
 
             // failed to recover login, try regular connection
@@ -407,18 +502,18 @@ protected:
 
         // General packets
 
-        addGlobalListenerSync<RolesUpdatedPacket>([](auto packet) {
+        addGlobalListener<RolesUpdatedPacket>([](auto packet) {
             auto& pcm = ProfileCacheManager::get();
             pcm.setOwnSpecialData(packet->specialUserData);
         });
 
         // Room packets
 
-        addGlobalListenerSync<RoomInvitePacket>([](auto packet) {
+        addGlobalListener<RoomInvitePacket>([](auto packet) {
             GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->password, packet->playerData);
         });
 
-        addGlobalListenerSync<RoomInfoPacket>([](auto packet) {
+        addGlobalListener<RoomInfoPacket>([](auto packet) {
             ErrorQueues::get().success("Room configuration updated");
 
             RoomManager::get().setInfo(packet->info);
@@ -442,7 +537,7 @@ protected:
             ErrorQueues::get().success("Successfully authorized");
         });
 
-        addGlobalListenerSync<AdminAuthFailedPacket>([this](auto packet) {
+        addGlobalListener<AdminAuthFailedPacket>([this](auto packet) {
             ErrorQueues::get().warn("Login failed");
 
             auto& am = GlobedAccountManager::get();
@@ -653,47 +748,18 @@ protected:
     void callListener(std::shared_ptr<Packet>&& packet) {
         packetid_t packetId = packet->getPacketId();
 
+        // go through internal listeners
         auto ls = listeners.lock();
-        auto& lsm = (*ls)[packetId];
-
-        if (lsm.empty()) {
-            this->handleUnhandledPacket(packetId);
-            return;
-        }
-        // in case any of the listeners try to destruct themselves (i.e. destroying thir parent),
-        // we should retain and release them after unlocking `listeners`, to prevent deadlocks.
-
-        for (auto* listener : lsm) {
-            listener->retain();
+        if (ls->contains(packetId)) {
+            auto listener = ls->at(packetId);
+            listener.callback(packet);
+            if (listener.isFinal) return;
         }
 
-        // invoke callbacks
-        for (auto* listener : lsm) {
-            listener->invokeCallback(packet);
-
-            if (listener->isFinal) break;
-        }
-
-        std::vector<PacketListener*> lsmCopy(lsm);
         ls.unlock();
 
-        for (auto* listener : lsmCopy) {
-            listener->release();
-        }
-    }
-
-    void handleUnhandledPacket(packetid_t packetId) {
-        // if suppressed, do nothing
-        auto suppressed_ = suppressed.lock();
-
-        if (suppressed_->contains(packetId) && util::time::systemNow() > suppressed_->at(packetId)) {
-            suppressed_->erase(packetId);
-        }
-
-        // else show a warning
-        if (!suppressed_->contains(packetId)) {
-            ErrorQueues::get().debugWarn(fmt::format("Unhandled packet: {}", packetId));
-        }
+        // call other listeners
+        PacketListenerPool::get().pushPacket(std::move(packet));
     }
 
     void handlePingResponse(std::shared_ptr<Packet>&& packet) {
@@ -984,16 +1050,16 @@ void NetworkManager::updateServerPing() {
     impl->updateServerPing();
 }
 
-void NetworkManager::addListener(cocos2d::CCNode* target, packetid_t id, PacketListener* listener) {
+void NetworkManager::addListener(CCNode* target, packetid_t id, PacketListener* listener) {
     impl->addListener(target, listener);
 }
 
-void NetworkManager::addListener(cocos2d::CCNode* target, packetid_t id, PacketCallback&& callback, int priority, bool mainThread, bool isFinal) {
-    auto* listener = PacketListener::create(id, std::move(callback), target, priority, mainThread, isFinal);
+void NetworkManager::addListener(CCNode* target, packetid_t id, PacketCallback&& callback, int priority, bool isFinal) {
+    auto* listener = PacketListener::create(id, std::move(callback), target, priority, isFinal);
     impl->addListener(target, listener);
 }
 
-void NetworkManager::removeListener(cocos2d::CCNode* target, packetid_t id) {
+void NetworkManager::removeListener(CCNode* target, packetid_t id) {
     impl->removeListener(target, id);
 }
 

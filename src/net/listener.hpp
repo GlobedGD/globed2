@@ -10,17 +10,17 @@ public:
     ~PacketListener();
 
     // higher priority - runs earlier
-    static PacketListener* create(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, int priority, bool mainThread, bool isFinal);
+    static PacketListener* create(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, int priority, bool isFinal);
 
     void invokeCallback(std::shared_ptr<Packet> packet);
 
     packetid_t packetId;
     cocos2d::CCObject* owner;
     int priority;
-    bool mainThread, isFinal;
+    bool isFinal;
 
 private:
     CallbackFn callback;
 
-    bool init(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, int priority, bool mainThread, bool isFinal);
+    bool init(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, int priority, bool isFinal);
 };

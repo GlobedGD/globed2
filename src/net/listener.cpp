@@ -4,41 +4,25 @@
 
 using namespace geode::prelude;
 
-PacketListener::~PacketListener() {
-    auto& nm = NetworkManager::get();
-    nm.unregisterPacketListener(packetId, this, true);
-}
+PacketListener::~PacketListener() {}
 
-bool PacketListener::init(packetid_t packetId, CallbackFn&& fn, CCObject* owner, int priority, bool mainThread, bool isFinal) {
+bool PacketListener::init(packetid_t packetId, CallbackFn&& fn, CCObject* owner, int priority, bool isFinal) {
     this->callback = std::move(fn);
     this->packetId = packetId;
     this->owner = owner;
     this->priority = priority;
-    this->mainThread = mainThread;
     this->isFinal = isFinal;
 
     return true;
 }
 
 void PacketListener::invokeCallback(std::shared_ptr<Packet> packet) {
-    if (owner) {
-        owner->retain();
-    }
-
-    if (mainThread) {
-        Loader::get()->queueInMainThread([this, packet = std::move(packet)] {
-            this->callback(packet);
-            if (owner) this->owner->release();
-        });
-    } else {
-        callback(packet);
-        if (owner) this->owner->release();
-    }
+    callback(std::move(packet));
 }
 
-PacketListener* PacketListener::create(packetid_t packetId, CallbackFn&& fn, CCObject* owner, int priority, bool mainThread, bool isFinal) {
+PacketListener* PacketListener::create(packetid_t packetId, CallbackFn&& fn, CCObject* owner, int priority, bool isFinal) {
     auto ret = new PacketListener;
-    if (ret->init(packetId, std::move(fn), owner, priority, mainThread, isFinal)) {
+    if (ret->init(packetId, std::move(fn), owner, priority, isFinal)) {
         ret->autorelease();
         return ret;
     }
