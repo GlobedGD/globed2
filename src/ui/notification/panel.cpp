@@ -9,7 +9,7 @@ using namespace geode::prelude;
 bool GlobedNotificationPanel::init() {
     if (!CCNode::init()) return false;
 
-    this->setLayout(ColumnLayout::create()->setGap(5.f)->setAutoScale(false)->setAxisAlignment(AxisAlignment::End));
+    this->setLayout(ColumnLayout::create()->setGap(-10.f)->setAutoScale(false)->setAxisAlignment(AxisAlignment::End));
     this->setContentSize({200.f, CCDirector::get()->getWinSize().height});
     this->setZOrder(99);
 

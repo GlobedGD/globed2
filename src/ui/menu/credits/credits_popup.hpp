@@ -17,6 +17,7 @@ protected:
     geode::ScrollLayer* scrollLayer;
 
     void requestCallback(WebRequestManager::Task::Event* e);
+    void setupFromCache();
 
     bool setup() override;
 

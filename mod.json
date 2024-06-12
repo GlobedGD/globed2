@@ -10,7 +10,8 @@
     "resources": {
         "spritesheets": {
             "globedsheet1": [
-                "resources/sheet1/*.png"
+                "resources/sheet1/*.png",
+                "resources/sheet1/roles/*.png"
             ]
         },
         "sprites": [

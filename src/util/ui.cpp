@@ -136,12 +136,17 @@ namespace util::ui {
         }
     }
 
-    PopupLayout getPopupLayout(CCSize popupSize) {
+    static PopupLayout popupLayoutWith(const CCSize& popupSize, bool useWinSize) {
         PopupLayout layout;
 
         layout.winSize = CCDirector::get()->getWinSize();
         layout.popupSize = popupSize;
-        layout.center = CCSize{layout.winSize.width / 2, layout.winSize.height / 2};
+
+        if (useWinSize) {
+            layout.center = CCSize{layout.winSize.width / 2, layout.winSize.height / 2};
+        } else {
+            layout.center = CCSize{layout.popupSize.width / 2, layout.popupSize.height / 2};
+        }
 
         layout.left = layout.center.width - popupSize.width / 2;
         layout.bottom = layout.center.height - popupSize.height / 2;
@@ -159,6 +164,14 @@ namespace util::ui {
         layout.topRight = CCSize{layout.right, layout.top};
 
         return layout;
+    }
+
+    PopupLayout getPopupLayout(const CCSize& popupSize) {
+        return popupLayoutWith(popupSize, true);
+    }
+
+    PopupLayout getPopupLayoutAnchored(const CCSize& popupSize) {
+        return popupLayoutWith(popupSize, false);
     }
 
     CCNode* findChildByMenuSelectorRecursive(CCNode* node, uintptr_t function) {

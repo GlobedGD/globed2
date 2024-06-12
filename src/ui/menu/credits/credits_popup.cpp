@@ -105,6 +105,8 @@ struct matjson::Serialize<CreditsResponse> {
     }
 };
 
+static std::optional<CreditsResponse> g_cachedResponse;
+
 bool GlobedCreditsPopup::setup() {
     using Icons = GlobedSimplePlayer::Icons;
 
@@ -130,11 +132,15 @@ bool GlobedCreditsPopup::setup() {
             ->setAutoScale(false)
     );
 
-    /* Fetch credits from server */
-
-    auto& wrm = WebRequestManager::get();
-    eventListener.bind(this, &GlobedCreditsPopup::requestCallback);
-    eventListener.setFilter(wrm.fetchCredits());
+    // if not cached, make a request
+    if (!g_cachedResponse) {
+        auto& wrm = WebRequestManager::get();
+        eventListener.bind(this, &GlobedCreditsPopup::requestCallback);
+        eventListener.setFilter(wrm.fetchCredits());
+    } else {
+        // otherwise use the cached response
+        this->setupFromCache();
+    }
 
     return true;
 }
@@ -154,12 +160,6 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
     std::string parseError;
     auto creditsDataOpt = matjson::parse(response, parseError);
 
-#ifdef GLOBED_DEBUG
-    if (creditsDataOpt) {
-        log::debug("credits response: {}", creditsDataOpt.value());
-    }
-#endif
-
     if (creditsDataOpt && !creditsDataOpt->is<CreditsResponse>()) {
         parseError = "invalid json response";
     }
@@ -169,7 +169,12 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
         return;
     }
 
-    auto creditsData = creditsDataOpt.value().as<CreditsResponse>();
+    g_cachedResponse = creditsDataOpt.value().as<CreditsResponse>();
+    this->setupFromCache();
+}
+
+void GlobedCreditsPopup::setupFromCache() {
+    GLOBED_REQUIRE(g_cachedResponse, "setupFromCache called when no cached response is available");
 
 #define ADD_PLAYER(array, obj) \
     array->addObject( \
@@ -181,7 +186,7 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
 
     CCArray* owners = CCArray::create();
 
-    for (auto& credit : creditsData.owner) {
+    for (auto& credit : g_cachedResponse->owner) {
         ADD_PLAYER(owners, credit);
     }
 
@@ -194,7 +199,7 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
 
     CCArray* staff = CCArray::create();
 
-    for (auto& credit : creditsData.staff) {
+    for (auto& credit : g_cachedResponse->staff) {
         ADD_PLAYER(staff, credit);
     }
 
@@ -207,7 +212,7 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
 
     CCArray* contributors = CCArray::create();
 
-    for (auto& credit : creditsData.contributors) {
+    for (auto& credit : g_cachedResponse->contributors) {
         ADD_PLAYER(contributors, credit);
     }
 
@@ -220,7 +225,7 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
 
     CCArray* special = CCArray::create();
 
-    for (auto& credit : creditsData.special) {
+    for (auto& credit : g_cachedResponse->special) {
         ADD_PLAYER(special, credit);
     }
 

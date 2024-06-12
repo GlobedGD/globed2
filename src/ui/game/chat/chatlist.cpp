@@ -49,7 +49,7 @@ bool GlobedChatListPopup::setup() {
     menu->updateLayout();
     menu->setTouchPriority(-510);
 
-    background = cocos2d::extension::CCScale9Sprite::create("square02_small.png");
+    background = CCScale9Sprite::create("square02_small.png");
     background->setContentSize(scroll->getContentSize());
     background->setOpacity(75);
     background->setPosition(winSize / 2);
