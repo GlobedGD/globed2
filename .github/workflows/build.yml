@@ -15,7 +15,6 @@ jobs:
         config:
         - name: Windows
           os: windows-latest
-          target: Win32
         # - name: MacOS
         #   os: macos-latest
         - name: Android32
@@ -35,11 +34,10 @@ jobs:
         uses: geode-sdk/build-geode-mod@main
         with:
           combine: true
-          cli: "v3.0.0-beta.1"
+          cli: "latest"
           sdk: 'nightly'
           target: ${{ matrix.config.target }}
           configure-args: '-DGLOBED_RELEASE=ON'
-          # bindings: "dankmeme01/bindings"
 
   package:
     name: Package builds
