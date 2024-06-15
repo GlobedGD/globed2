@@ -81,7 +81,7 @@ void RoomSettingsPopup::updateCheckboxes() {
     cellInviteOnly->setToggled(currentSettings.flags.isHidden);
     cellPublicInvites->setToggled(currentSettings.flags.publicInvites);
     cellCollision->setToggled(currentSettings.flags.collision);
-    cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);
+    // cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);
 
     this->enableCheckboxes(RoomManager::get().isOwner());
 }
@@ -90,7 +90,7 @@ void RoomSettingsPopup::enableCheckboxes(bool enabled) {
     cellInviteOnly->setEnabled(enabled);
     cellPublicInvites->setEnabled(enabled);
     cellCollision->setEnabled(enabled);
-    cellTwoPlayer->setEnabled(enabled);
+    // cellTwoPlayer->setEnabled(enabled);
 }
 
 RoomSettingsPopup* RoomSettingsPopup::create() {

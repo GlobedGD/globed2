@@ -32,9 +32,9 @@ namespace util::format {
     }
 
     // example: 2023-11-16 19:43:50.200
-    std::string formatDateTime(const time::system_time_point& tp);
+    std::string formatDateTime(const time::system_time_point& tp, bool ms = true);
 
-    std::string dateTime(const time::system_time_point& tp);
+    std::string dateTime(const time::system_time_point& tp, bool ms = true);
 
     // example: 123.4KiB
     std::string formatBytes(uint64_t bytes);
