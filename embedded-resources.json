@@ -1,5 +1,6 @@
 {
     "strings": {
-        "discord": "https://discord.gg/d56q5Dkdm3"
+        "discord": "https://discord.gg/d56q5Dkdm3",
+        "main-server-url": "http://main.globed.dev"
     }
 }

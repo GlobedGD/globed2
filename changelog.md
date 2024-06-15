@@ -1,6 +1,5 @@
 ## v1.4.0
 
-* Add text chat in-game
 * Overhaul the room system
 * * You can now send room invites to other players
 * * Rooms have various settings, i.e. password, collision, player limit, name, invite-only

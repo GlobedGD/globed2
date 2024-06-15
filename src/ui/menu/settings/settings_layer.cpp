@@ -4,6 +4,7 @@
 #include "setting_cell.hpp"
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
+#include <util/cocos.hpp>
 
 using namespace geode::prelude;
 using SettingType = GlobedSettingCell::Type;
@@ -284,7 +285,7 @@ GJListLayer* GlobedSettingsLayer::makeListLayer(int category) {
     auto* listLayer = Build<GJListLayer>::create(listview, nullptr, util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
         .zOrder(6)
         .anchorPoint(0.f, 0.f)
-        .id(Mod::get()->expandSpriteName(fmt::format("setting-list-{}", category).c_str()))
+        .id(util::cocos::spr(fmt::format("setting-list-{}", category)).c_str())
         .collect();
 
     auto winSize = CCDirector::get()->getWinSize();

@@ -32,24 +32,25 @@ void GlobedPauseLayer::customSetup() {
         .id("btn-open-playerlist"_spr)
         .parent(menu);
 
-    auto* chatIcon = Build<CCSprite>::createSpriteName("icon-chat.png"_spr)
-        .scale(0.9f)
-        .intoMenuItem([](auto) {
-            GlobedChatListPopup::create()->show();
-        })
-        .pos(winSize.width - 50.f, 90.f)
-        .id("btn-open-chatlist"_spr)
-        .parent(menu)
-        .collect()
-        ;
+    // TODO: bring back when it works properly
+    // auto* chatIcon = Build<CCSprite>::createSpriteName("icon-chat.png"_spr)
+    //     .scale(0.9f)
+    //     .intoMenuItem([](auto) {
+    //         GlobedChatListPopup::create()->show();
+    //     })
+    //     .pos(winSize.width - 50.f, 90.f)
+    //     .id("btn-open-chatlist"_spr)
+    //     .parent(menu)
+    //     .collect()
+    //     ;
 
-    // todo make it not 3
-    Build<UnreadMessagesBadge>::create(3)
-        .pos(chatIcon->getScaledContentSize() - CCPoint{5.f, 5.f})
-        .scale(0.7f)
-        .id("unread-messages-icon"_spr)
-        .parent(chatIcon)
-        ;
+    // // todo make it not 3
+    // Build<UnreadMessagesBadge>::create(3)
+    //     .pos(chatIcon->getScaledContentSize() - CCPoint{5.f, 5.f})
+    //     .scale(0.7f)
+    //     .id("unread-messages-icon"_spr)
+    //     .parent(chatIcon)
+    //     ;
 
     this->schedule(schedule_selector(GlobedPauseLayer::selUpdate), 0.f);
 }

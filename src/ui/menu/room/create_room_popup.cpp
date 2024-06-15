@@ -145,7 +145,7 @@ bool CreateRoomPopup::setup(RoomPopup* parent) {
         {"Private Room", TAG_PRIVATE},
         {"Open Invites", TAG_OPEN_INV},
         {"Collision", TAG_COLLISION},
-        {"2-Player Mode", TAG_2P},
+        // {"2-Player Mode", TAG_2P},
     });
 
     float totalHeight = 0.f;

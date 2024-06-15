@@ -15,7 +15,7 @@ CentralServerManager::CentralServerManager() {
     if (empty) {
         this->addServer(CentralServer {
             .name = "Main server",
-            .url = "http://globed.dankmeme.dev"
+            .url = globed::string<"main-server-url">()
         });
     }
 

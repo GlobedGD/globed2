@@ -362,7 +362,7 @@ impl UnauthorizedThread {
                     socket
                         .send_packet_dynamic(&ServerBannedPacket {
                             message: FastString::new(&user.violation_reason.as_ref().map_or_else(|| "No reason given".to_owned(), |x| x.clone())),
-                            timestamp: user.violation_expiry.unwrap(), // TODO: fix
+                            timestamp: user.violation_expiry.unwrap_or_default(),
                         })
                         .await?;
 

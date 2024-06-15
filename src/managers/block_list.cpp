@@ -7,7 +7,7 @@ BlockListManager::BlockListManager() {
     try {
         auto result = this->load();
         if (result.isErr()) {
-            log::warn("Faile to load blocklist: {}", result.unwrapErr());
+            log::warn("Failed to load blocklist: {}", result.unwrapErr());
             _bl.clear();
             _wl.clear();
         }
@@ -40,7 +40,7 @@ Result<> BlockListManager::load() {
     _wl.clear();
 
     auto val = Mod::get()->getSavedValue<std::string>(SETTING_KEY);
-    if (val.empty()) return Err("no blocklist found");
+    if (val.empty()) return Ok();
 
     util::data::bytevector data;
 
