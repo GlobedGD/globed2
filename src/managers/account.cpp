@@ -103,10 +103,23 @@ void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event
     }
 
     auto error = event->getValue()->unwrapErr();
+    std::string reason;
+    if (error.code == 401) {
+        // invalid auth? or banned
+        if (error.message.empty()) {
+            reason = "unauthorized, please reauthenticate";
+        } else {
+            reason = fmt::format("unauthorized: {}", error.message);
+        }
+    }
+
+    if (reason.empty()) {
+        reason = util::format::webError(error);
+    }
 
     ErrorQueues::get().error(fmt::format(
         "Failed to generate a session token! Please try to login and connect again.\n\nReason: <cy>{}</c>",
-        util::format::webError(error)
+        reason
     ));
 
     this->clearAuthKey();

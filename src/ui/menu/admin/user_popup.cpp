@@ -93,20 +93,20 @@ void AdminUserPopup::onProfileLoaded() {
         .parent(nameLayout)
         .collect();
 
-    // color palette button
-    Build<ColorChannelSprite>::create()
-        .scale(0.6f)
-        .color(this->getCurrentNameColor())
-        .store(nameColorSprite)
-        .intoMenuItem([this](auto) {
-            GlobedColorInputPopup::create(this->getCurrentNameColor(), [this](auto color) {
-                // if our role doesn't permit editing the color, don't do anything
-                if (!AdminManager::get().getRole().editRole) {
-                    this->onColorSelected(color);
-                }
-            })->show();
-        })
-        .parent(nameLayout);
+    // // color palette button
+    // Build<ColorChannelSprite>::create()
+    //     .scale(0.6f)
+    //     .color(this->getCurrentNameColor())
+    //     .store(nameColorSprite)
+    //     .intoMenuItem([this](auto) {
+    //         GlobedColorInputPopup::create(this->getCurrentNameColor(), [this](auto color) {
+    //             // if our role doesn't permit editing the color, don't do anything
+    //             if (!AdminManager::get().getRole().editRole) {
+    //                 this->onColorSelected(color);
+    //             }
+    //         })->show();
+    //     })
+    //     .parent(nameLayout);
 
     // role modify button
     this->recreateRoleModifyButton();
