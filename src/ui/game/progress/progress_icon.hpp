@@ -16,7 +16,7 @@ public:
 
 private:
     cocos2d::CCLayerColor* line = nullptr;
-    cocos2d::CCSprite* practiceSprite = nullptr;
+    // cocos2d::CCSprite* practiceSprite = nullptr;
     GlobedSimplePlayer* playerIcon = nullptr;
     bool forceOnTop = false;
 

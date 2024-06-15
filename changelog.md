@@ -26,7 +26,6 @@
 * Add much better error messages for outdated clients
 * Don't play effects and animations if the player is too far, to decrease lag
 * Replace the Overlay settings tab with Menus and move overlay settings into Level UI
-* Add a checkpoint icon on the progressbar for players that are in practice mode
 * Fix "already inside of a level" error sometimes appearing when it shouldn't, and add a way to bypass it
 * Fix settings menu looking a bit broken due to a Geode update
 * Fix the placeholder green icon color being a slightly different shade than the actual default green

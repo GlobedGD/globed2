@@ -14,7 +14,7 @@ bool PlayerProgressIcon::init() {
 
 void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
     if (line) line->removeFromParent();
-    if (practiceSprite) practiceSprite->removeFromParent();
+    // if (practiceSprite) practiceSprite->removeFromParent();
     if (playerIcon) playerIcon->removeFromParent();
 
     auto& settings = GlobedSettings::get();
@@ -26,13 +26,13 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
         .pos(0.f, 5.f)
         .parent(this)
         .store(line);
-        
-    Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
-        .pos(1.2f, 8.f)
-        .scale(.3f)
-        .parent(this)
-        .visible(false)
-        .store(practiceSprite);
+
+    // Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
+    //     .pos(1.2f, 8.f)
+    //     .scale(.3f)
+    //     .parent(this)
+    //     .visible(false)
+    //     .store(practiceSprite);
 
     Build<GlobedSimplePlayer>::create(data)
         .opacity(forceOnTop ? 255 : static_cast<uint8_t>(settings.levelUi.progressOpacity * 255))
@@ -69,7 +69,7 @@ void PlayerProgressIcon::toggleLine(bool enabled) {
 }
 
 void PlayerProgressIcon::togglePracticeSprite(bool enabled) {
-    practiceSprite->setVisible(enabled);
+    // practiceSprite->setVisible(enabled);
 }
 
 void PlayerProgressIcon::setForceOnTop(bool state) {

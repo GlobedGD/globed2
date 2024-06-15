@@ -555,8 +555,8 @@ impl ClientThread {
             if c_is_banned && is_banned && res.is_ok() {
                 thread
                     .push_new_message(ServerThreadMessage::BroadcastBan(ServerBannedPacket {
-                        message: FastString::new(&user_entry.violation_reason.clone().unwrap_or_default()),
-                        timestamp: user_entry.violation_expiry.unwrap_or(0),
+                        message: FastString::new(&new_user_entry.violation_reason.clone().unwrap_or_default()),
+                        timestamp: new_user_entry.violation_expiry.unwrap_or(0),
                     }))
                     .await;
             }
@@ -564,8 +564,8 @@ impl ClientThread {
             if c_is_muted && is_muted && res.is_ok() {
                 thread
                     .push_new_message(ServerThreadMessage::BroadcastMute(ServerMutedPacket {
-                        reason: FastString::new(&user_entry.violation_reason.clone().unwrap_or_default()),
-                        timestamp: user_entry.violation_expiry.unwrap_or(0),
+                        reason: FastString::new(&new_user_entry.violation_reason.clone().unwrap_or_default()),
+                        timestamp: new_user_entry.violation_expiry.unwrap_or(0),
                     }))
                     .await;
             }
