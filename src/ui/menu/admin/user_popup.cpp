@@ -390,10 +390,7 @@ void AdminUserPopup::getUserInfoFinished(GJUserScore* score) {
         score->m_accountID,
         score->m_userID,
         score->m_userName,
-        score->m_playerCube,
-        score->m_color1,
-        score->m_color2,
-        score->m_glowEnabled ? score->m_color3 : -1,
+        PlayerIconDataSimple(score),
         0,
         {}
     );

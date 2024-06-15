@@ -560,7 +560,7 @@ void ComplexVisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
     playerIcon->setColor(storedMainColor);
     playerIcon->setSecondColor(storedSecondaryColor);
 
-    if (storedIcons.glowColor != -1) {
+    if (storedIcons.glowColor != NO_GLOW) {
         playerIcon->m_hasGlow = true;
         playerIcon->enableCustomGlowColor(gm->colorForIdx(storedIcons.glowColor));
     } else {

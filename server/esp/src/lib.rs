@@ -320,10 +320,6 @@ macro_rules! impl_extwrite {
 
         #[inline]
         fn append_self_checksum(&mut self) {
-            // TODO: enable adler
-            // let mut adler = adler32fast::Adler32::new();
-            // adler.update(self.as_bytes());
-            // let checksum = adler.as_u32();
             let checksum = crc32fast::hash(self.as_bytes());
 
             self.write_u32(checksum);
@@ -426,10 +422,6 @@ macro_rules! impl_extread {
             self.set_rpos(before_cksum);
             let checksum = self.read_u32()?;
 
-            // TODO: enable adler
-            // let mut adler = adler32fast::Adler32::new();
-            // adler.update(&self.as_bytes()[..before_cksum]);
-            // let correct_checksum = adler.as_u32();
             let correct_checksum = crc32fast::hash(&self.as_bytes()[..before_cksum]);
 
             self.set_rpos(last_pos);

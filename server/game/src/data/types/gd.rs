@@ -2,6 +2,8 @@ use globed_shared::UserEntry;
 
 use crate::{data::*, managers::RoleManager};
 
+pub const NO_GLOW: u8 = u8::MAX;
+
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
 pub struct PlayerIconData {
@@ -14,10 +16,12 @@ pub struct PlayerIconData {
     pub spider: i16,
     pub swing: i16,
     pub jetpack: i16,
-    pub death_effect: i16,
-    pub color1: i16,
-    pub color2: i16,
-    pub glow_color: i16,
+    pub death_effect: u8,
+    pub color1: u8,
+    pub color2: u8,
+    pub glow_color: u8,
+    pub streak: u8,
+    pub ship_streak: u8,
 }
 
 impl Default for PlayerIconData {
@@ -35,7 +39,9 @@ impl Default for PlayerIconData {
             death_effect: 1,
             color1: 1,
             color2: 3,
-            glow_color: -1, // -1 is glow disabled
+            glow_color: NO_GLOW, // glow disabled
+            streak: 1,
+            ship_streak: 1,
         }
     }
 }
@@ -43,6 +49,35 @@ impl Default for PlayerIconData {
 impl PlayerIconData {
     pub const fn is_valid(&self) -> bool {
         true
+    }
+
+    pub fn to_simple(&self) -> PlayerIconDataSimple {
+        PlayerIconDataSimple {
+            cube: self.cube,
+            color1: self.color1,
+            color2: self.color2,
+            glow_color: self.glow_color,
+        }
+    }
+}
+
+#[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
+pub struct PlayerIconDataSimple {
+    pub cube: i16,
+    pub color1: u8,
+    pub color2: u8,
+    pub glow_color: u8,
+}
+
+impl Default for PlayerIconDataSimple {
+    fn default() -> Self {
+        Self {
+            cube: 1,
+            color1: 1,
+            color2: 3,
+            glow_color: NO_GLOW,
+        }
     }
 }
 
@@ -82,10 +117,7 @@ impl PlayerAccountData {
             account_id: self.account_id,
             user_id: self.user_id,
             name: self.name.clone(),
-            cube: self.icons.cube,
-            color1: self.icons.color1,
-            color2: self.icons.color2,
-            glow_color: self.icons.glow_color,
+            icons: self.icons.to_simple(),
             level_id,
             special_user_data: self.special_user_data.clone(),
         }
@@ -96,10 +128,7 @@ impl PlayerAccountData {
             account_id: self.account_id,
             user_id: self.user_id,
             name: self.name.clone(),
-            cube: self.icons.cube,
-            color1: self.icons.color1,
-            color2: self.icons.color2,
-            glow_color: self.icons.glow_color,
+            icons: self.icons.to_simple(),
             special_user_data: self.special_user_data.clone(),
         }
     }
@@ -112,10 +141,7 @@ pub struct PlayerPreviewAccountData {
     pub account_id: i32,
     pub user_id: i32,
     pub name: InlineString<MAX_NAME_SIZE>,
-    pub cube: i16,
-    pub color1: i16,
-    pub color2: i16,
-    pub glow_color: i16,
+    pub icons: PlayerIconDataSimple,
     pub special_user_data: SpecialUserData,
 }
 
@@ -126,10 +152,7 @@ pub struct PlayerRoomPreviewAccountData {
     pub account_id: i32,
     pub user_id: i32,
     pub name: InlineString<MAX_NAME_SIZE>,
-    pub cube: i16,
-    pub color1: i16,
-    pub color2: i16,
-    pub glow_color: i16,
+    pub icons: PlayerIconDataSimple,
     pub level_id: LevelId,
     pub special_user_data: SpecialUserData,
 }

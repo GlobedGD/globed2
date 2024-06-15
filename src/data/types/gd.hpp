@@ -10,29 +10,59 @@
 #include "user.hpp"
 #include "game.hpp"
 
+static constexpr uint8_t NO_GLOW = -1;
+static constexpr uint8_t NO_TRAIL = 1;
+
 class PlayerIconData {
 public:
     static const PlayerIconData DEFAULT_ICONS;
 
     // wee woo
     PlayerIconData(
-        int16_t cube, int16_t ship, int16_t ball, int16_t ufo, int16_t wave, int16_t robot, int16_t spider, int16_t swing, int16_t jetpack, int16_t deathEffect, int16_t color1, int16_t color2, int16_t glowColor
-    ) : cube(cube), ship(ship), ball(ball), ufo(ufo), wave(wave), robot(robot), spider(spider), swing(swing), jetpack(jetpack), deathEffect(deathEffect), color1(color1), color2(color2), glowColor(glowColor) {}
+        int16_t cube, int16_t ship, int16_t ball, int16_t ufo, int16_t wave, int16_t robot, int16_t spider, int16_t swing, int16_t jetpack, uint8_t deathEffect, uint8_t color1, uint8_t color2, uint8_t glowColor, uint8_t streak, uint8_t shipStreak
+    ) : cube(cube), ship(ship), ball(ball), ufo(ufo), wave(wave), robot(robot), spider(spider), swing(swing), jetpack(jetpack), deathEffect(deathEffect), color1(color1), color2(color2), glowColor(glowColor), streak(streak), shipStreak(shipStreak) {}
 
-    PlayerIconData() {}
+    PlayerIconData() : PlayerIconData(PlayerIconData::DEFAULT_ICONS) {}
+    PlayerIconData(const PlayerIconData&) = default;
 
     bool operator==(const PlayerIconData&) const = default;
 
-    int16_t cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2, glowColor;
+    int16_t cube, ship, ball, ufo, wave, robot, spider, swing, jetpack;
+    uint8_t deathEffect, color1, color2, glowColor, streak, shipStreak;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerIconData, (
-    cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2, glowColor
+    cube, ship, ball, ufo, wave, robot, spider, swing, jetpack, deathEffect, color1, color2, glowColor, streak, shipStreak
 ));
 
 inline const PlayerIconData PlayerIconData::DEFAULT_ICONS = PlayerIconData(
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, -1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, NO_GLOW, NO_TRAIL, NO_TRAIL
 );
+
+class PlayerIconDataSimple {
+public:
+    PlayerIconDataSimple(
+        int16_t cube, uint8_t color1, uint8_t color2, uint8_t glowColor
+    ) : cube(cube), color1(color1), color2(color2), glowColor(glowColor) {}
+    PlayerIconDataSimple() : cube(1), color1(1), color2(3), glowColor(NO_GLOW) {}
+
+    PlayerIconDataSimple(GJUserScore* score) :
+        PlayerIconDataSimple(
+            score->m_playerCube,
+            score->m_color1,
+            score->m_color2,
+            score->m_glowEnabled ? (uint8_t)score->m_color3 : NO_GLOW
+        ) {}
+
+    PlayerIconDataSimple(const PlayerIconData& data) : PlayerIconDataSimple(data.cube, data.color1, data.color2, data.glowColor) {}
+
+    int16_t cube;
+    uint8_t color1, color2, glowColor;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(PlayerIconDataSimple, (
+    cube, color1, color2, glowColor
+));
 
 struct SpecialUserData {
     SpecialUserData() {}
@@ -48,44 +78,44 @@ GLOBED_SERIALIZABLE_STRUCT(SpecialUserData, (
 
 class PlayerRoomPreviewAccountData {
 public:
-    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, LevelId levelId, const SpecialUserData& specialUserData)
-        : accountId(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor), levelId(levelId), specialUserData(specialUserData) {}
+    PlayerRoomPreviewAccountData(int32_t id, int32_t userId, std::string name, PlayerIconDataSimple icons, LevelId levelId, const SpecialUserData& specialUserData)
+        : accountId(id), userId(userId), name(name), icons(icons), levelId(levelId), specialUserData(specialUserData) {}
     PlayerRoomPreviewAccountData() {}
 
     int32_t accountId, userId;
     std::string name;
-    int16_t cube, color1, color2, glowColor;
+    PlayerIconDataSimple icons;
     LevelId levelId;
     SpecialUserData specialUserData;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerRoomPreviewAccountData, (
-    accountId, userId, name, cube, color1, color2, glowColor, levelId, specialUserData
+    accountId, userId, name, icons, levelId, specialUserData
 ));
 
 class PlayerPreviewAccountData {
 public:
-    PlayerPreviewAccountData(int32_t id, int32_t userId, std::string name, int16_t cube, int16_t color1, int16_t color2, int16_t glowColor, int32_t levelId)
-        : accountId(id), userId(userId), name(name), cube(cube), color1(color1), color2(color2), glowColor(glowColor) {}
+    PlayerPreviewAccountData(int32_t id, int32_t userId, std::string name, PlayerIconDataSimple icons, int32_t levelId)
+        : accountId(id), userId(userId), name(name), icons(icons) {}
     PlayerPreviewAccountData() {}
 
     int32_t accountId, userId;
     std::string name;
-    int16_t cube, color1, color2, glowColor;
+    PlayerIconDataSimple icons;
     SpecialUserData specialUserData;
 
     PlayerRoomPreviewAccountData makeRoomPreview() const {
         return PlayerRoomPreviewAccountData(
             accountId, userId,
             name,
-            cube, color1, color2, glowColor,
+            icons,
             0, specialUserData
         );
     }
 };
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerPreviewAccountData, (
-    accountId, userId, name, cube, color1, color2, glowColor, specialUserData
+    accountId, userId, name, icons, specialUserData
 ));
 
 class PlayerAccountData {
@@ -101,7 +131,12 @@ public:
 
     PlayerRoomPreviewAccountData makeRoomPreview(LevelId levelId) const {
         return PlayerRoomPreviewAccountData(
-            accountId, userId, name, icons.cube, icons.color1, icons.color2, icons.glowColor, levelId, specialUserData
+            accountId, userId, name, PlayerIconDataSimple(
+                icons.cube,
+                icons.color1,
+                icons.color2,
+                icons.glowColor
+            ), levelId, specialUserData
         );
     }
 

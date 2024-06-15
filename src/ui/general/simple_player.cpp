@@ -41,7 +41,7 @@ SimplePlayer* GlobedSimplePlayer::getInner() {
 }
 
 GlobedSimplePlayer* GlobedSimplePlayer::create(const Icons& icons) {
-    auto ret = new GlobedSimplePlayer;
+    auto ret = new GlobedSimplePlayer();
     if (ret->init(icons)) {
         ret->autorelease();
         return ret;
@@ -52,13 +52,13 @@ GlobedSimplePlayer* GlobedSimplePlayer::create(const Icons& icons) {
 }
 
 GlobedSimplePlayer* GlobedSimplePlayer::create(IconType type, const PlayerIconData& icons) {
-    return create(Icons {
-        .type = type,
-        .id = util::misc::getIconWithType(icons, type),
-        .color1 = icons.color1,
-        .color2 = icons.color2,
-        .color3 = icons.glowColor,
-    });
+    return create(Icons(
+        type,
+        util::misc::getIconWithType(icons, type),
+        icons.color1,
+        icons.color2,
+        icons.glowColor == NO_GLOW ? -1 : (int)icons.glowColor
+    ));
 }
 
 GlobedSimplePlayer* GlobedSimplePlayer::create(const PlayerIconData& icons) {

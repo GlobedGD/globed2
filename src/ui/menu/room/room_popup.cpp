@@ -55,10 +55,7 @@ bool RoomPopup::setup() {
             gjam->m_accountID,
             GameManager::get()->m_playerUserID.value(),
             gjam->m_username,
-            ownData.cube,
-            ownData.color1,
-            ownData.color2,
-            ownData.glowColor,
+            PlayerIconDataSimple(ownData),
             0,
             ownSpecialData
         )};

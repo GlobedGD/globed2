@@ -29,7 +29,10 @@ bool RoomSettingsPopup::setup() {
     MAKE_SETTING("Private Room", "While enabled, the room can not be found on the public room listing and can only be joined by entering the room ID", TAG_INVITE_ONLY, cellInviteOnly);
     MAKE_SETTING("Open Invites", "While enabled, all players in the room can invite players instead of just the room owner", TAG_PUBLIC_INVITES, cellPublicInvites);
     MAKE_SETTING("Collision", "While enabled, players can collide with each other", TAG_COLLISION, cellCollision);
-    // MAKE_SETTING("2-Player Mode", "While enabled, players can link with another player to play a 2-player enabled level together", TAG_TWO_PLAYER, cellTwoPlayer);
+
+#ifdef GLOBED_DEBUG
+    MAKE_SETTING("2-Player Mode", "While enabled, players can link with another player to play a 2-player enabled level together", TAG_TWO_PLAYER, cellTwoPlayer);
+#endif
 
     auto listview = ListView::create(cells, RoomSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
     auto* listlayer = Build(GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false))
@@ -81,7 +84,9 @@ void RoomSettingsPopup::updateCheckboxes() {
     cellInviteOnly->setToggled(currentSettings.flags.isHidden);
     cellPublicInvites->setToggled(currentSettings.flags.publicInvites);
     cellCollision->setToggled(currentSettings.flags.collision);
-    // cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);
+#ifdef GLOBED_DEBUG
+    cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);
+#endif
 
     this->enableCheckboxes(RoomManager::get().isOwner());
 }
@@ -90,7 +95,10 @@ void RoomSettingsPopup::enableCheckboxes(bool enabled) {
     cellInviteOnly->setEnabled(enabled);
     cellPublicInvites->setEnabled(enabled);
     cellCollision->setEnabled(enabled);
-    // cellTwoPlayer->setEnabled(enabled);
+
+#ifdef GLOBED_DEBUG
+    cellTwoPlayer->setEnabled(enabled);
+#endif
 }
 
 RoomSettingsPopup* RoomSettingsPopup::create() {

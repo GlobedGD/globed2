@@ -67,7 +67,7 @@ bool GlobedMenuLayer::init() {
         .store(leftButtonMenu);
 
     // server switcher button
-    serverSwitcherButton = Build<CCSprite>::createSpriteName("accountBtn_myLevels_001.png")
+    serverSwitcherButton = Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
         .intoMenuItem([](auto) {
             if (auto* popup = ServerSwitcherPopup::create()) {
                 popup->m_noElasticity = true;

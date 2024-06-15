@@ -465,7 +465,6 @@ protected:
         });
 
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
-            // TODO: review this
             using namespace std::chrono;
 
             std::string reason = packet->message;
@@ -483,7 +482,6 @@ protected:
         });
 
         addGlobalListener<ServerMutedPacket>([](auto packet) {
-            // TODO: and this
             using namespace std::chrono;
 
             std::string reason = packet->reason;

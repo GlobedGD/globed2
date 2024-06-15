@@ -179,7 +179,7 @@ void GlobedCreditsPopup::setupFromCache() {
 #define ADD_PLAYER(array, obj) \
     array->addObject( \
         GlobedCreditsPlayer::create(obj.gameName, obj.name, obj.accountId, obj.userId, \
-            GlobedSimplePlayer::Icons { .type = IconType::Cube, .id = obj.iconId, .color1 = obj.color1, .color2 = obj.color2, .color3 = obj.color3}) \
+            GlobedSimplePlayer::Icons(obj.iconId, obj.color1, obj.color2, obj.color3)) \
     )
 
     /* Owner */
