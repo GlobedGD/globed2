@@ -20,8 +20,16 @@ namespace util::ui {
         switchToScene(Build<CCScene>::create().child(layer).collect());
     }
 
-    void prepareLayer(CCLayer* layer) {
-        util::ui::addBackground(layer);
+    void replaceScene(CCScene* layer) {
+        CCDirector::get()->replaceScene(CCTransitionFade::create(.5f, layer));
+    }
+
+    void replaceScene(CCLayer* layer) {
+        replaceScene(Build<CCScene>::create().child(layer).collect());
+    }
+
+    void prepareLayer(CCLayer* layer, cocos2d::ccColor3B color) {
+        util::ui::addBackground(layer, color);
 
         auto menu = CCMenu::create();
         layer->addChild(menu);
@@ -32,7 +40,7 @@ namespace util::ui {
         layer->setKeypadEnabled(true);
     }
 
-    void addBackground(CCNode* layer) {
+    void addBackground(CCNode* layer, cocos2d::ccColor3B color) {
         auto windowSize = CCDirector::get()->getWinSize();
 
         auto bg = CCSprite::create("GJ_gradientBG.png");
@@ -43,7 +51,7 @@ namespace util::ui {
             .scaleX((windowSize.width + 10.f) / bgSize.width)
             .scaleY((windowSize.height + 10.f) / bgSize.height)
             .pos({-5.f, -5.f})
-            .color({0, 102, 255})
+            .color(color)
             .zOrder(-1)
             .parent(layer);
     }

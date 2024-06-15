@@ -27,12 +27,16 @@ namespace util::net {
     }
 
     std::string webUserAgent() {
+#ifdef GLOBED_DEBUG
         return fmt::format(
             "globed-geode-xd/{}; Globed {}; Loader {}",
             Mod::get()->getVersion().toString(),
             GLOBED_PLATFORM_STRING,
             Loader::get()->getVersion().toString()
         );
+#else
+        return fmt::format("Globed {}", Mod::get()->getVersion().toString())
+#endif
     }
 
     std::string loginPlatformString() {

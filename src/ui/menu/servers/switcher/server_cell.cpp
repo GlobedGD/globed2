@@ -39,48 +39,46 @@ bool CentralServerListCell::init(const CentralServer& data, int index, ServerSwi
         .id("server-list-cell-menu"_spr)
         .store(menu);
 
-    // delete server btn
-
-    Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
-        .scale(0.7f)
-        .intoMenuItem([this](auto) {
-            auto& csm = CentralServerManager::get();
-            // don't delete if it's the only server
-            if (csm.count() == 1) {
-                FLAlertLayer::create("Notice", "You can't delete every single server!", "Ok")->show();
-                return;
-            }
-
-            csm.removeServer(this->index);
-
-            this->parent->reloadList();
-        })
-        .parent(menu)
-        .id("server-list-cell-delete"_spr)
-        .store(btnDelete);
-
-    // modify server btn
-
-    Build<CCSprite>::createSpriteName("GJ_editBtn_001.png")
-        .scale(0.4f)
-        .intoMenuItem([this](auto) {
-            AddServerPopup::create(this->index, this->parent)->show();
-        })
-        .parent(menu)
-        .id("server-list-cell-modify"_spr)
-        .store(btnModify);
-
-    // switch to server btn
-
     auto& csm = CentralServerManager::get();
     bool isActive = csm.getActiveIndex() == index;
 
-    auto btnspr = Build<CCSprite>::createSpriteName(isActive ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
+    auto playspr = Build<CCSprite>::createSpriteName(isActive ? "GJ_selectSongOnBtn_001.png" : "GJ_playBtn2_001.png")
+        .scale(isActive ? 0.75f : 0.35f)
         .collect();
 
-    util::ui::rescaleToMatch(btnspr, btnModify);
+    // cannot delete or modify main server
+    if (index != 0) {
+        // delete server btn
+        Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
+            .scale(0.7f)
+            .intoMenuItem([this](auto) {
+                auto& csm = CentralServerManager::get();
+                csm.removeServer(this->index);
 
-    Build<CCSprite>(btnspr)
+                this->parent->reloadList();
+            })
+            .parent(menu)
+            .id("server-list-cell-delete"_spr)
+            .store(btnDelete);
+
+        // modify server btn
+        Build<CCSprite>::createSpriteName("GJ_editBtn_001.png")
+            .scale(0.4f)
+            .intoMenuItem([this](auto) {
+                AddServerPopup::create(this->index, this->parent)->show();
+            })
+            .parent(menu)
+            .id("server-list-cell-modify"_spr)
+            .store(btnModify);
+
+        util::ui::rescaleToMatch(btnDelete, playspr);
+        util::ui::rescaleToMatch(btnModify, playspr);
+    }
+
+    // switch to server btn
+
+
+    Build<CCSprite>(playspr)
         .intoMenuItem([this, &csm, isActive](auto) {
             if (!isActive) {
                 csm.switchRoutine(this->index);

@@ -9,7 +9,6 @@
 struct CentralServer {
     std::string name;
     std::string url;
-
 };
 
 GLOBED_SERIALIZABLE_STRUCT(CentralServer, (name, url));

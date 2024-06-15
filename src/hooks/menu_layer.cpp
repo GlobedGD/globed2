@@ -8,6 +8,7 @@
 #include <managers/friend_list.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
+#include <ui/menu/servers/server_layer.hpp>
 #include <util/misc.hpp>
 #include <util/net.hpp>
 #include <util/ui.hpp>
@@ -131,7 +132,11 @@ void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
         return;
     }
 
-    util::ui::switchToScene(GlobedMenuLayer::create());
+    if (NetworkManager::get().established()) {
+        util::ui::switchToScene(GlobedMenuLayer::create());
+    } else {
+        util::ui::switchToScene(GlobedServersLayer::create());
+    }
 }
 
 #if 0

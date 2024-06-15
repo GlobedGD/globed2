@@ -8,17 +8,6 @@
 CentralServerManager::CentralServerManager() {
     this->reload();
 
-    // if empty (as it would be by default), add our server
-
-    bool empty = _servers.lock()->empty();
-
-    if (empty) {
-        this->addServer(CentralServer {
-            .name = "Main server",
-            .url = globed::string<"main-server-url">()
-        });
-    }
-
     // if we have a stored active server, use it. otherwise use idx 0
 
     _activeIdx = 0;
@@ -173,6 +162,12 @@ void CentralServerManager::switchRoutine(int index, bool force) {
 void CentralServerManager::reload() {
     auto servers = _servers.lock();
     servers->clear();
+
+    // main server is always forced into 1st position
+    servers->push_back(CentralServer {
+        .name = "Main server",
+        .url = globed::string<"main-server-url">(),
+    });
 
     try {
         auto b64value = Mod::get()->getSavedValue<std::string>(SETTING_KEY);

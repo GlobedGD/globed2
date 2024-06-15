@@ -1,6 +1,5 @@
 #include "globed_menu_layer.hpp"
 
-#include "server_list_cell.hpp"
 #include "kofi_popup.hpp"
 #include <data/types/misc.hpp>
 #include <managers/account.hpp>
@@ -10,8 +9,8 @@
 #include <managers/game_server.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/room/room_popup.hpp>
-#include <ui/menu/server_switcher/server_switcher_popup.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
+#include <ui/menu/servers/server_layer.hpp>
 #include <ui/menu/level_list/level_list_layer.hpp>
 #include <ui/menu/admin/admin_popup.hpp>
 #include <ui/menu/admin/admin_login_popup.hpp>
@@ -25,31 +24,7 @@ using namespace geode::prelude;
 bool GlobedMenuLayer::init() {
     if (!CCLayer::init()) return false;
 
-    GlobedAccountManager::get().autoInitialize();
-
     auto winSize = CCDirector::get()->getWinSize();
-
-    // server list
-
-    auto listview = Build<ListView>::create(createServerList(), ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
-        .collect();
-
-    Build<GJListLayer>::create(listview, "Servers", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
-        .zOrder(2)
-        .anchorPoint(0.f, 0.f)
-        .parent(this)
-        .id("server-list"_spr)
-        .store(listLayer);
-
-    listLayer->setPosition({winSize / 2 - listLayer->getScaledContentSize() / 2});
-
-    Build<GlobedSignupLayer>::create()
-        .zOrder(2)
-        .anchorPoint(0.f, 0.f)
-        .pos(listLayer->getPosition())
-        .parent(this)
-        .id("signup-layer"_spr)
-        .store(signupLayer);
 
     // left button menu
 
@@ -69,10 +44,8 @@ bool GlobedMenuLayer::init() {
     // server switcher button
     serverSwitcherButton = Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
         .intoMenuItem([](auto) {
-            if (auto* popup = ServerSwitcherPopup::create()) {
-                popup->m_noElasticity = true;
-                popup->show();
-            }
+            auto layer = GlobedServersLayer::create();
+            util::ui::switchToScene(layer);
         })
         .scaleMult(1.15f)
         .id("btn-open-server-switcher"_spr)
@@ -151,12 +124,7 @@ bool GlobedMenuLayer::init() {
         })
         .scaleMult(1.15f)
         .id("btn-kofi"_spr)
-        .parent(rightButtonMenu)
-        .intoNewChild(CCSprite::createWithSpriteFrameName("icon-kofi-glow.png"_spr))
-        .zOrder(-1)
-        .anchorPoint(0.f, 0.f)
-        .pos(-3.f, -5.f)
-        .scale(1.f);
+        .parent(rightButtonMenu);
 
     // credits button
     Build<CCSprite>::createSpriteName("icon-credits.png"_spr)
@@ -189,48 +157,24 @@ bool GlobedMenuLayer::init() {
 
     rightButtonMenu->updateLayout();
 
+    Build<GJListLayer>::create(ListView::create(CCArray::create()), "thing", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
+        .zOrder(2)
+        .with([&](auto* layer) {
+            layer->setPosition(winSize / 2 - layer->getScaledContentSize() / 2);
+        })
+        .parent(this);
+
     util::ui::prepareLayer(this);
 
-    this->schedule(schedule_selector(GlobedMenuLayer::refreshServerList), 0.1f);
-    this->schedule(schedule_selector(GlobedMenuLayer::pingServers), 5.0f);
-
-    auto& gsm = GameServerManager::get();
-
-    this->requestServerList();
+    this->scheduleUpdate();
 
     return true;
 }
 
-void GlobedMenuLayer::onExit() {
-    CCLayer::onExit();
-    this->cancelWebRequest();
-}
-
-CCArray* GlobedMenuLayer::createServerList() {
-    auto ret = CCArray::create();
-
-    auto& nm = NetworkManager::get();
-    auto& gsm = GameServerManager::get();
-
-    bool authenticated = nm.established();
-
-    auto activeServer = gsm.getActiveId();
-
-    for (const auto& [serverId, server] : gsm.getAllServers()) {
-        bool active = authenticated && serverId == activeServer;
-        auto cell = ServerListCell::create(server, active);
-        ret->addObject(cell);
-    }
-
-    return ret;
-}
-
-void GlobedMenuLayer::refreshServerList(float) {
-    auto& am = GlobedAccountManager::get();
-    auto& csm = CentralServerManager::get();
+void GlobedMenuLayer::update(float dt) {
     auto& nm = NetworkManager::get();
 
-    // also update the buttons
+    // update the buttons
     if (nm.established() != currentlyShowingButtons) {
         currentlyShowingButtons = nm.established();
 
@@ -245,122 +189,6 @@ void GlobedMenuLayer::refreshServerList(float) {
         leftButtonMenu->updateLayout();
     }
 
-    // update ping of the active server, if any
-    nm.updateServerPing();
-
-    // if we do not have a session token from the central server, and are not in a standalone server, don't show game servers
-    if (!csm.standalone() && !am.hasAuthKey()) {
-        listLayer->setVisible(false);
-        signupLayer->setVisible(true);
-        return;
-    }
-
-    signupLayer->setVisible(false);
-    listLayer->setVisible(true);
-
-    // if we recently switched a central server, redo everything
-    if (csm.recentlySwitched) {
-        csm.recentlySwitched = false;
-        this->cancelWebRequest();
-        this->requestServerList();
-    }
-
-    // if there are pending changes, hard refresh the list and ping all servers
-    auto& gsm = GameServerManager::get();
-    if (gsm.pendingChanges) {
-        gsm.pendingChanges = false;
-
-        listLayer->m_listView->removeFromParent();
-
-        auto serverList = createServerList();
-        listLayer->m_listView = Build<ListView>::create(serverList, ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
-            .parent(listLayer)
-            .collect();
-
-        this->pingServers(0.f);
-
-        // also disconnect from the current server if it's gone
-        auto activeId = gsm.getActiveId();
-        if (!gsm.getServer(activeId).has_value()) {
-            NetworkManager::get().disconnect(false);
-        }
-
-        return;
-    }
-
-    // if there were no pending changes, still update the server data (ping, players, etc.)
-
-    auto listCells = listLayer->m_listView->m_tableView->m_contentLayer->getChildren();
-    if (listCells == nullptr) {
-        return;
-    }
-
-    auto active = gsm.getActiveId();
-
-    bool authenticated = NetworkManager::get().established();
-
-    for (auto* obj : CCArrayExt<CCNode*>(listCells)) {
-        auto slc = static_cast<ServerListCell*>(obj->getChildren()->objectAtIndex(2));
-        auto server = gsm.getServer(slc->gsview.id);
-        if (server.has_value()) {
-            slc->updateWith(server.value(), authenticated && slc->gsview.id == active);
-        }
-    }
-}
-
-void GlobedMenuLayer::requestServerList() {
-    this->cancelWebRequest();
-
-    auto& csm = CentralServerManager::get();
-
-    if (csm.standalone()) {
-        return;
-    }
-
-    auto centralUrl = csm.getActive();
-
-    if (!centralUrl) {
-        return;
-    }
-
-    auto request = WebRequestManager::get().fetchServers();
-
-    requestListener.bind(this, &GlobedMenuLayer::requestCallback);
-    requestListener.setFilter(std::move(request));
-}
-
-void GlobedMenuLayer::requestCallback(typename WebRequestManager::Event* event) {
-    if (!event || !event->getValue()) return;
-
-    auto result = std::move(*event->getValue());
-
-    if (result.isErr()) {
-        auto& gsm = GameServerManager::get();
-        gsm.clearCache();
-        gsm.clear();
-        gsm.pendingChanges = true;
-
-        ErrorQueues::get().error(fmt::format("Failed to fetch servers.\n\nReason: <cy>{}</c>", util::format::webError(result.unwrapErr())));
-
-        return;
-    }
-
-    auto response = result.unwrap();
-
-    auto& gsm = GameServerManager::get();
-    gsm.updateCache(response);
-    auto loadResult = gsm.loadFromCache();
-    gsm.pendingChanges = true;
-
-    if (loadResult.isErr()) {
-        log::warn("failed to parse server list: {}", loadResult.unwrapErr());
-        log::warn("{}", response);
-        ErrorQueues::get().error(fmt::format("Failed to parse server list: <cy>{}</c>", loadResult.unwrapErr()));
-    }
-}
-
-void GlobedMenuLayer::cancelWebRequest() {
-    requestListener.getFilter().cancel();
 }
 
 void GlobedMenuLayer::keyBackClicked() {
@@ -378,11 +206,6 @@ void GlobedMenuLayer::keyDown(enumKeyCodes key) {
     } else {
         CCLayer::keyDown(key);
     }
-}
-
-void GlobedMenuLayer::pingServers(float) {
-    auto& nm = NetworkManager::get();
-    nm.pingServers();
 }
 
 GlobedMenuLayer* GlobedMenuLayer::create() {
