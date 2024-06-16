@@ -22,17 +22,7 @@ bool GlobedServersLayer::init() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    auto* bg = CCSprite::create("game_bg_01_001.png");
-    auto bgrect = bg->getTextureRect();
-    bgrect.size.width = winSize.width * 3;
-
-    ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
-    bg->getTexture()->setTexParameters(&tp);
-    bg->setContentSize({winSize.width, bg->getContentSize().height});
-    bg->setTextureRect(bgrect);
-    bg->setZOrder(-1);
-    bg->setAnchorPoint({0.f, 0.f});
-    bg->setColor({40, 40, 40});
+    auto* bg = util::ui::makeRepeatingBackground("game_bg_01_001.png", {40, 40, 40}, 3.f, 1.f, util::ui::RepeatMode::X);
     this->addChild(bg);
     this->background = bg;
 
@@ -92,11 +82,6 @@ bool GlobedServersLayer::init() {
         .id("server-list")
         .store(signupLayer);
 
-    // TODO: this doesnt work always
-    NetworkManager::get().addListener<LoggedInPacket>(this, [] (auto pkt) {
-        util::ui::replaceScene(GlobedMenuLayer::create());
-    }, 100);
-
     this->schedule(schedule_selector(GlobedServersLayer::updateBG));
     this->schedule(schedule_selector(GlobedServersLayer::updateServerList), 0.1f);
     this->schedule(schedule_selector(GlobedServersLayer::pingServers), 5.0f);
@@ -118,10 +103,14 @@ void GlobedServersLayer::onExit() {
 void GlobedServersLayer::updateBG(float dt) {
     constexpr float bgWidth = 512;
 
-    background->setPositionX(background->getPositionX() - dt * (bgWidth * 0.1f));
+    background->setPositionX(background->getPositionX() - dt * (bgWidth * 0.07f));
     if (std::fabs(background->getPositionX()) > bgWidth * 2) {
         background->setPositionX(background->getPositionX() + bgWidth * 2);
     }
+}
+
+void GlobedServersLayer::transitionToMainLayer() {
+    util::ui::replaceScene(GlobedMenuLayer::create());
 }
 
 void GlobedServersLayer::updateServerList(float) {
@@ -130,8 +119,15 @@ void GlobedServersLayer::updateServerList(float) {
     auto& nm = NetworkManager::get();
 
     // if we are connected to a server, navigate away
-    if (nm.established() && !typeinfo_cast<CCTransitionScene*>(CCScene::get())) {
-        util::ui::replaceScene(GlobedMenuLayer::create());
+    if (nm.established() && !typeinfo_cast<CCTransitionScene*>(CCScene::get()) && !transitioningAway) {
+        auto* seq = CCSequence::create(
+            CCDelayTime::create(0.2f),
+            CCCallFunc::create(this, callfunc_selector(GlobedServersLayer::transitionToMainLayer)),
+            nullptr
+        );
+        this->runAction(seq);
+        transitioningAway = true;
+
         return;
     }
 

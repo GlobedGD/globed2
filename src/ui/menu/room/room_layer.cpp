@@ -42,7 +42,6 @@ bool RoomLayer::init() {
     auto& rm = RoomManager::get();
 
     nm.addListener<RoomPlayerListPacket>(this, [this](std::shared_ptr<RoomPlayerListPacket> packet) {
-        log::debug("recv player list");
         this->isWaiting = false;
         this->playerList = packet->players;
         this->applyFilter("");
@@ -54,12 +53,10 @@ bool RoomLayer::init() {
     });
 
     nm.addListener<RoomJoinedPacket>(this, [this](auto) {
-        log::debug("recv joined ");
         this->reloadPlayerList(true);
     });
 
     nm.addListener<RoomCreatedPacket>(this, [this](std::shared_ptr<RoomCreatedPacket> packet) {
-        log::debug("recv created");
         auto ownData = ProfileCacheManager::get().getOwnData();
         auto ownSpecialData = ProfileCacheManager::get().getOwnSpecialData();
 
@@ -441,7 +438,7 @@ void RoomLayer::recreateInviteButton() {
 }
 
 RoomLayer* RoomLayer::create() {
-    auto ret = new RoomLayer;
+    auto ret = new RoomLayer();
     if (ret->init()) {
         ret->autorelease();
         return ret;

@@ -16,6 +16,7 @@ private:
     GlobedServerList* serverList;
     GlobedSignupLayer* signupLayer;
     WebRequestManager::Listener requestListener;
+    bool transitioningAway = false;
 
     bool init() override;
     void onExit() override;
@@ -26,6 +27,7 @@ private:
     void updateServerList(float dt);
     void requestServerList();
     void pingServers(float dt);
+    void transitionToMainLayer();
 
     void cancelWebRequest();
     void requestCallback(typename WebRequestManager::Event* event);

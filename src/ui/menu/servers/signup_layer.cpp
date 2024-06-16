@@ -18,6 +18,8 @@ bool GlobedSignupLayer::init() {
         .parent(this)
         .collect();
 
+    util::ui::makeListGray(listLayer);
+
     this->setContentSize(listLayer->getScaledContentSize());
 
     Build<ButtonSprite>::create("Login", "goldFont.fnt", "GJ_button_01.png", 0.8f)

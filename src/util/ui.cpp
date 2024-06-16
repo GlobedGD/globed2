@@ -336,4 +336,41 @@ namespace util::ui {
             static_cast<GenericListCell*>(cell)->m_backgroundLayer->setColor(color);
         }
     }
+
+    CCSprite* makeRepeatingBackground(const char* texture, ccColor3B color, float xMult, float yMult, RepeatMode mode) {
+        auto bg = CCSprite::create(texture);
+        if (!bg) bg = CCSprite::createWithSpriteFrameName(texture);
+        if (!bg) return nullptr;
+
+        auto winSize = CCDirector::get()->getWinSize();
+
+        auto bgrect = bg->getTextureRect();
+
+        bool repeatX = mode == RepeatMode::X || mode == RepeatMode::Both;
+        bool repeatY = mode == RepeatMode::Y || mode == RepeatMode::Both;
+        if (repeatX) {
+            bgrect.size.width = winSize.width * xMult;
+        }
+
+        if (repeatY) {
+            bgrect.size.height = winSize.height * yMult;
+        }
+
+        ccTexParams tp = {
+            GL_LINEAR, GL_LINEAR,
+            static_cast<GLuint>(repeatX ? GL_REPEAT : GL_CLAMP_TO_EDGE),
+            static_cast<GLuint>(repeatY ? GL_REPEAT : GL_CLAMP_TO_EDGE)
+        };
+
+        // TODO: dont overwrite global texture
+        bg->getTexture()->setTexParameters(&tp);
+
+        return Build(bg)
+            .contentSize(winSize.width, winSize.height)
+            .textureRect(bgrect)
+            .zOrder(-1)
+            .anchorPoint(0.f, 0.f)
+            .color(color)
+            .collect();
+    }
 }

@@ -14,7 +14,6 @@ public:
     void reloadPlayerList(bool sendPacket = true);
 
 protected:
-
     std::vector<PlayerRoomPreviewAccountData> playerList;
     std::vector<PlayerRoomPreviewAccountData> filteredPlayerList;
 
