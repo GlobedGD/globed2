@@ -12,6 +12,7 @@ public:
     static GlobedServersLayer* create();
 
 private:
+    cocos2d::CCSprite* background;
     GlobedServerList* serverList;
     GlobedSignupLayer* signupLayer;
     WebRequestManager::Listener requestListener;
@@ -19,6 +20,8 @@ private:
     bool init() override;
     void onExit() override;
     void keyBackClicked() override;
+
+    void updateBG(float dt);
 
     void updateServerList(float dt);
     void requestServerList();

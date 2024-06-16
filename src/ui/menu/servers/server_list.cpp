@@ -19,6 +19,8 @@ bool GlobedServerList::init() {
         .parent(this)
         .collect();
 
+    util::ui::makeListGray(listLayer);
+
     this->setContentSize(listLayer->getScaledContentSize());
 
     return true;
@@ -31,6 +33,8 @@ void GlobedServerList::forceRefresh() {
     listLayer->m_listView = Build<ListView>::create(serverList, ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .parent(listLayer)
         .collect();
+
+    util::ui::setCellColors(serverList, {90, 90, 90});
 }
 
 void GlobedServerList::softRefresh() {

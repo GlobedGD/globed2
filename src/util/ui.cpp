@@ -53,6 +53,7 @@ namespace util::ui {
             .pos({-5.f, -5.f})
             .color(color)
             .zOrder(-1)
+            .id("background")
             .parent(layer);
     }
 
@@ -271,5 +272,68 @@ namespace util::ui {
         action->setTag(tag);
 
         label->runAction(action);
+    }
+
+    void makeListGray(GJListLayer* listLayer) {
+        auto top = static_cast<CCSprite*>(geode::cocos::getChildBySpriteFrameName(listLayer, "GJ_table_top_001.png"));
+        auto bottom = static_cast<CCSprite*>(geode::cocos::getChildBySpriteFrameName(listLayer, "GJ_table_bottom_001.png"));
+
+        CCSprite *side1 = nullptr, *side2 = nullptr;
+
+        for (auto* child : CCArrayExt<CCNode*>(listLayer->getChildren())) {
+            if (geode::cocos::isSpriteFrameName(child, "GJ_table_side_001.png")) {
+                if (!side1) {
+                    side1 = static_cast<CCSprite*>(child);
+                } else if (child != side1) {
+                    side2 = static_cast<CCSprite*>(child);
+                    break;
+                }
+            }
+        }
+
+        if (top && bottom && side1 && side2) {
+            auto top2 = CCSprite::createWithSpriteFrameName("list-border-top.png"_spr);
+            top->setTexture(top2->getTexture());
+            top->setTextureRect(top2->getTextureRect());
+
+            auto bottom2 = CCSprite::createWithSpriteFrameName("list-border-bottom.png"_spr);
+            bottom->setTexture(bottom2->getTexture());
+            bottom->setTextureRect(bottom2->getTextureRect());
+
+            for (auto* side : {side1, side2}) {
+                auto id = side->getID();
+                auto pos = side->getPosition();
+                auto scaleY = side->getScaleY();
+
+                side->removeFromParent();
+
+                auto* spr = Build<CCSprite>::createSpriteName("list-border-side.png"_spr)
+                    .zOrder(9)
+                    .id(id)
+                    .anchorPoint({0.f, 0.f})
+                    .pos(pos)
+                    .scaleY(scaleY)
+                    .parent(listLayer)
+                    .collect();
+
+                if (side == side2) {
+                    spr->setScaleX(-1.f);
+                }
+            }
+        }
+
+        listLayer->setColor({55, 55, 55});
+    }
+
+    void setCellColors(CCArray* cells, ccColor3B color) {
+        for (auto cell : CCArrayExt<CCNode*>(cells)) {
+            while (cell && !typeinfo_cast<GenericListCell*>(cell)) {
+                cell = cell->getParent();
+            }
+
+            if (!cell) continue;
+
+            static_cast<GenericListCell*>(cell)->m_backgroundLayer->setColor(color);
+        }
     }
 }

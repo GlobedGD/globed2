@@ -17,7 +17,24 @@ using namespace geode::prelude;
 bool GlobedServersLayer::init() {
     if (!CCLayer::init()) return false;
 
-    util::ui::prepareLayer(this, {91, 91, 91});
+    util::ui::prepareLayer(this, {60,60, 60});
+    this->getChildByID("background")->removeFromParent();
+
+    auto winSize = CCDirector::get()->getWinSize();
+
+    auto* bg = CCSprite::create("game_bg_01_001.png");
+    auto bgrect = bg->getTextureRect();
+    bgrect.size.width = winSize.width * 3;
+
+    ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
+    bg->getTexture()->setTexParameters(&tp);
+    bg->setContentSize({winSize.width, bg->getContentSize().height});
+    bg->setTextureRect(bgrect);
+    bg->setZOrder(-1);
+    bg->setAnchorPoint({0.f, 0.f});
+    bg->setColor({40, 40, 40});
+    this->addChild(bg);
+    this->background = bg;
 
     GlobedAccountManager::get().autoInitialize();
 
@@ -56,8 +73,6 @@ bool GlobedServersLayer::init() {
 
     buttonMenu->updateLayout();
 
-    auto winSize = CCDirector::get()->getWinSize();
-
     // server list and signup layer
     Build<GlobedServerList>::create()
         .zOrder(2)
@@ -82,6 +97,7 @@ bool GlobedServersLayer::init() {
         util::ui::replaceScene(GlobedMenuLayer::create());
     }, 100);
 
+    this->schedule(schedule_selector(GlobedServersLayer::updateBG));
     this->schedule(schedule_selector(GlobedServersLayer::updateServerList), 0.1f);
     this->schedule(schedule_selector(GlobedServersLayer::pingServers), 5.0f);
 
@@ -97,6 +113,15 @@ void GlobedServersLayer::keyBackClicked() {
 void GlobedServersLayer::onExit() {
     CCLayer::onExit();
     this->cancelWebRequest();
+}
+
+void GlobedServersLayer::updateBG(float dt) {
+    constexpr float bgWidth = 512;
+
+    background->setPositionX(background->getPositionX() - dt * (bgWidth * 0.1f));
+    if (std::fabs(background->getPositionX()) > bgWidth * 2) {
+        background->setPositionX(background->getPositionX() + bgWidth * 2);
+    }
 }
 
 void GlobedServersLayer::updateServerList(float) {
