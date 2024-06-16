@@ -46,6 +46,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(RoomInfoPacket);
         PACKET(RoomInvitePacket);
         PACKET(RoomListPacket);
+        PACKET(RoomCreateFailedPacket);
 
         // admin related
 

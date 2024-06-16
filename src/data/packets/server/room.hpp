@@ -80,3 +80,13 @@ class RoomListPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RoomListPacket, (rooms));
+
+class RoomCreateFailedPacket : public Packet {
+    GLOBED_PACKET(23007, RoomCreateFailedPacket, false, false)
+
+    RoomCreateFailedPacket() {}
+
+    std::string reason;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(RoomCreateFailedPacket, (reason));

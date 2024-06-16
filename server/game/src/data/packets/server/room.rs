@@ -44,3 +44,9 @@ pub struct RoomInvitePacket {
 pub struct RoomListPacket {
     pub rooms: Vec<RoomListingInfo>,
 }
+
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 23007)]
+pub struct RoomCreateFailedPacket<'a> {
+    pub reason: &'a str,
+}

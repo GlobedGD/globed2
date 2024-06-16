@@ -8,6 +8,23 @@ impl ClientThread {
 
         // if we are already in a room, just return the same room info, otherwise create a new one
         let room_info = if room_id == 0 {
+            // check if data is valid
+
+            let fail_reason: Option<&'static str> = match packet.room_name.to_str() {
+                Ok(str) => {
+                    if self.game_server.state.filter.is_bad(str) {
+                        Some("Please choose a different room name")
+                    } else {
+                        None
+                    }
+                }
+                Err(_) => Some("invalid room name"),
+            };
+
+            if let Some(reason) = fail_reason {
+                return self.send_packet_dynamic(&RoomCreateFailedPacket { reason }).await;
+            }
+
             let room_info = self
                 .game_server
                 .state

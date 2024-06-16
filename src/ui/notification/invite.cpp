@@ -20,7 +20,7 @@ bool GlobedInviteNotification::init(uint32_t roomID, const std::string_view pass
     const float mult = 2.f;
     Build<CCScale9Sprite>::create("GJ_square02.png")
         .contentSize({cc9sw * mult, cc9sh * mult})
-        .pos(width / 2 + 10.f, height / 2 - 13.f)
+        .pos(width / 2 + 10.f, height / 2 - 3.f)
         .scale(1.f / mult)
         .opacity(167)
         .zOrder(-1)
@@ -30,22 +30,22 @@ bool GlobedInviteNotification::init(uint32_t roomID, const std::string_view pass
     Build<CCSprite>::createSpriteName("icon-invite.png"_spr)
         .rotation(-13.f)
         .scale(1.25f)
-        .pos(width - cc9sw + 2.f, cc9sh - 2.f)
+        .pos(width - cc9sw + 2.f, cc9sh + 8.f)
         .parent(this);
 
     Build<CCLabelBMFont>::create(player.name.c_str(), "goldFont.fnt")
         .limitLabelWidth(targetWidth, 0.76f, 0.3f)
-        .pos(width / 2.f + 10.f, height - 39.f)
+        .pos(width / 2.f + 10.f, height - 29.f)
         .parent(this);
 
     Build<CCLabelBMFont>::create("invited you to a room", "bigFont.fnt")
         .scale(0.45f)
-        .pos(width / 2.f + 10.f, height / 2.f - 4.f)
+        .pos(width / 2.f + 10.f, height / 2.f + 6.f)
         .parent(this);
 
     auto* menu = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(10.f))
-        .pos(width / 2.f + 10.f, 23.f)
+        .pos(width / 2.f + 10.f, 33.f)
         .anchorPoint(0.5f, 0.5f)
         .contentSize(width * 0.7f, 40.f)
         .parent(this)

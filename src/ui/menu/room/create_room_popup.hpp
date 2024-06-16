@@ -17,7 +17,7 @@ protected:
     geode::TextInput* roomNameInput;
     geode::TextInput* passwordInput;
     geode::TextInput* playerLimitInput;
-    RoomSettingsFlags settingFlags;
+    RoomSettingsFlags settingFlags = {};
 
     bool setup(RoomLayer* parent) override;
     void onCheckboxToggled(cocos2d::CCObject*);

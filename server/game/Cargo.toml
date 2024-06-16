@@ -23,6 +23,7 @@ tokio_tracing = { package = "tokio", version = "1.37.0", features = [
     "tracing",
 ], optional = true }
 tokio = { version = "1.37.0", features = ["full"], optional = true }
+aho-corasick = "1.1.3"
 
 [dev-dependencies]
 criterion = "0.5.1"

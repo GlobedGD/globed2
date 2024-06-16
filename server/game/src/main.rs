@@ -1,4 +1,4 @@
-#![feature(sync_unsafe_cell, duration_constructors, async_closure)]
+#![feature(sync_unsafe_cell, duration_constructors, async_closure, iter_collect_into)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
@@ -26,7 +26,11 @@ use bridge::{CentralBridge, CentralBridgeError};
 use globed_shared::{log::Log, *};
 use reqwest::StatusCode;
 use state::ServerState;
-use tokio::net::{TcpListener, UdpSocket};
+use tokio::{
+    fs::File,
+    io::AsyncReadExt,
+    net::{TcpListener, UdpSocket},
+};
 
 use server::GameServer;
 
@@ -59,6 +63,7 @@ fn censor_key(key: &str, keep_first_n_chars: usize) -> String {
 
 fn parse_configuration() -> StartupConfiguration {
     let mut args = std::env::args();
+
     let exe_name = args.next().unwrap(); // skip executable
     let arg = args.next();
 
@@ -177,7 +182,38 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let startup_config = parse_configuration();
     let standalone = startup_config.central_data.is_none();
 
-    let state = ServerState::new();
+    // check if there's a word filter
+    let word_filter_path = std::env::current_exe()
+        .expect("failed to get current executable")
+        .parent()
+        .unwrap()
+        .join("word-filter.txt");
+
+    let word_filter_path2 = std::env::current_dir().expect("failed to get current dir").join("word-filter.txt");
+
+    let chosen = match (word_filter_path.exists(), word_filter_path2.exists()) {
+        (_, true) => Some(word_filter_path2),
+        (true, false) => Some(word_filter_path),
+        (false, false) => None,
+    };
+
+    let mut filter_words = Vec::new();
+    if let Some(chosen) = chosen {
+        let mut content = String::new();
+
+        match File::open(chosen).await {
+            Ok(mut file) => {
+                file.read_to_string(&mut content).await?;
+            }
+            Err(e) => warn!("failed to open word-filter.txt: {e}"),
+        }
+
+        content.lines().map(|x| x.to_owned()).collect_into(&mut filter_words);
+    }
+
+    let filter_words_count = filter_words.len();
+
+    let state = ServerState::new(&filter_words);
     let bridge = if standalone {
         warn!("Starting in standalone mode, authentication is disabled");
         warn!("Note: use Direct Connection option in-game to connect, Add Server cannot be used.");
@@ -279,6 +315,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 "* Text chat ratelimit: {} messages per {}ms",
                 gsbd.chat_burst_limit, gsbd.chat_burst_interval
             );
+        }
+
+        if filter_words_count != 0 {
+            debug!("Filtered words: {filter_words_count}");
         }
 
         state.role_manager.refresh_from(&gsbd);

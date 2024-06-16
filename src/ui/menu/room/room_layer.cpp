@@ -76,6 +76,11 @@ bool RoomLayer::init() {
         this->onLoaded(true);
     });
 
+    nm.addListener<RoomCreateFailedPacket>(this, [this](std::shared_ptr<RoomCreateFailedPacket> packet) {
+        ErrorQueues::get().error(fmt::format("Failed to create room: <cy>{}</c>", packet->reason));
+        this->onLoaded(true);
+    });
+
     nm.addListener<RoomInfoPacket>(this, [this](std::shared_ptr<RoomInfoPacket> packet) {
         log::debug("recv info");
         ErrorQueues::get().success("Room configuration updated");
