@@ -62,6 +62,7 @@ namespace util::ui {
             .intoMenuItem([callback](CCObject*) {
                 callback();
             })
+            .id("back-button")
             .pos(-windowSize.width / 2 + 25.0f, windowSize.height / 2 - 25.0f)
             .parent(menu);
     }

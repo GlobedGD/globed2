@@ -580,4 +580,22 @@ namespace util::cocos {
 
         return out;
     }
+    template <>
+    ccColor3B convert(const ccColor4B& value) {
+        return ccColor3B {
+            .r = value.r,
+            .g = value.g,
+            .b = value.b
+        };
+    }
+
+    template <>
+    ccColor4B convert(const ccColor3B& value) {
+        return ccColor4B {
+            .r = value.r,
+            .g = value.g,
+            .b = value.b,
+            .a = 255
+        };
+    }
 }

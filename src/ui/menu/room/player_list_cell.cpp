@@ -1,6 +1,6 @@
 #include "player_list_cell.hpp"
 
-#include "room_popup.hpp"
+#include "room_layer.hpp"
 #include "download_level_popup.hpp"
 #include <data/packets/client/room.hpp>
 #include <hooks/level_select_layer.hpp>
@@ -33,7 +33,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start)->setAutoScale(false))
         .anchorPoint(0.f, 0.5f)
-        .contentSize(RoomPopup::LIST_WIDTH, CELL_HEIGHT)
+        .contentSize(RoomLayer::LIST_WIDTH, CELL_HEIGHT)
         .scale(1.f)
         .parent(this)
         .id("badge-wrapper"_spr)
@@ -68,7 +68,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End))
         .anchorPoint(0.f, 0.5f)
         .pos(pad, CELL_HEIGHT / 2.f)
-        .contentSize(RoomPopup::LIST_WIDTH - pad * 2, CELL_HEIGHT)
+        .contentSize(RoomLayer::LIST_WIDTH - pad * 2, CELL_HEIGHT)
         .parent(this)
         .store(menu);
 
@@ -128,7 +128,7 @@ void PlayerListCell::createJoinButton() {
                 popup->show();
             }
         })
-        .pos(RoomPopup::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
+        .pos(RoomLayer::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
         .scaleMult(1.1f)
         .store(playButton)
         .parent(menu);

@@ -13,7 +13,7 @@ public:
     static GlobedMenuLayer* create();
 
 private:
-    Ref<CCMenuItemSpriteExtra> levelListButton, roomButton, serverSwitcherButton, discordButton, settingsButton;
+    Ref<CCMenuItemSpriteExtra> levelListButton, serverSwitcherButton, discordButton, settingsButton;
     cocos2d::CCMenu *leftButtonMenu, *rightButtonMenu;
 
     bool currentlyShowingButtons = false;

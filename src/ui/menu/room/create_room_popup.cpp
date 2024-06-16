@@ -2,7 +2,7 @@
 
 #include <Geode/ui/TextInput.hpp>
 
-#include "room_popup.hpp"
+#include "room_layer.hpp"
 #include <data/packets/client/room.hpp>
 #include <net/manager.hpp>
 #include <util/format.hpp>
@@ -15,7 +15,7 @@ constexpr int TAG_OPEN_INV = 1022;
 constexpr int TAG_COLLISION = 1023;
 constexpr int TAG_2P = 1024;
 
-bool CreateRoomPopup::setup(RoomPopup* parent) {
+bool CreateRoomPopup::setup(RoomLayer* parent) {
     this->setTitle("Create Room", "goldFont.fnt", 1.0f);
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
@@ -209,7 +209,7 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
     }
 }
 
-CreateRoomPopup* CreateRoomPopup::create(RoomPopup* parent) {
+CreateRoomPopup* CreateRoomPopup::create(RoomLayer* parent) {
     auto ret = new CreateRoomPopup;
     if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, parent)) {
         ret->autorelease();

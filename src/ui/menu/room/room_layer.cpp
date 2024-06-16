@@ -1,4 +1,4 @@
-#include "room_popup.hpp"
+#include "room_layer.hpp"
 
 #include "player_list_cell.hpp"
 #include "room_join_popup.hpp"
@@ -15,12 +15,23 @@
 #include <managers/room.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <util/ui.hpp>
+#include <util/cocos.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>
 
 using namespace geode::prelude;
 
-bool RoomPopup::setup() {
+bool RoomLayer::init() {
+    if (!CCLayer::init()) return false;
+
+    CCSize m_size = {POPUP_WIDTH, POPUP_HEIGHT};
+
+    auto winSize = CCDirector::get()->getWinSize();
+    auto bg = CCScale9Sprite::create("GJ_square02.png", {0, 0, 80, 80});
+    bg->setContentSize({POPUP_WIDTH, POPUP_HEIGHT});
+    bg->setPosition(winSize.width / 2, winSize.height / 2);
+    this->addChild(bg);
+
     auto& nm = NetworkManager::get();
     if (!nm.established()) {
         return false;
@@ -31,6 +42,7 @@ bool RoomPopup::setup() {
     auto& rm = RoomManager::get();
 
     nm.addListener<RoomPlayerListPacket>(this, [this](std::shared_ptr<RoomPlayerListPacket> packet) {
+        log::debug("recv player list");
         this->isWaiting = false;
         this->playerList = packet->players;
         this->applyFilter("");
@@ -42,10 +54,12 @@ bool RoomPopup::setup() {
     });
 
     nm.addListener<RoomJoinedPacket>(this, [this](auto) {
+        log::debug("recv joined ");
         this->reloadPlayerList(true);
     });
 
     nm.addListener<RoomCreatedPacket>(this, [this](std::shared_ptr<RoomCreatedPacket> packet) {
+        log::debug("recv created");
         auto ownData = ProfileCacheManager::get().getOwnData();
         auto ownSpecialData = ProfileCacheManager::get().getOwnSpecialData();
 
@@ -66,6 +80,7 @@ bool RoomPopup::setup() {
     });
 
     nm.addListener<RoomInfoPacket>(this, [this](std::shared_ptr<RoomInfoPacket> packet) {
+        log::debug("recv info");
         ErrorQueues::get().success("Room configuration updated");
 
         RoomManager::get().setInfo(packet->info);
@@ -77,22 +92,11 @@ bool RoomPopup::setup() {
     auto popupLayout = util::ui::getPopupLayout(m_size);
 
     auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
-    listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
+    listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_DARK_BLUE, LIST_WIDTH, LIST_HEIGHT, true);
 
-    float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;
+    float xpos = (this->getScaledContentSize().width - LIST_WIDTH) / 2;
     listLayer->setPosition({xpos, 85.f});
-    m_mainLayer->addChild(listLayer);
-
-    // refresh button
-    Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
-        .scale(0.9f)
-        .intoMenuItem([this](auto) {
-            this->reloadPlayerList(true);
-        })
-        .pos(m_size.width / 2.f - 3.f, -m_size.height / 2.f + 3.f)
-        .id("reload-btn"_spr)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
+    this->addChild(listLayer);
 
     Build<CCMenu>::create()
         .layout(ColumnLayout::create()->setGap(1.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
@@ -100,7 +104,7 @@ bool RoomPopup::setup() {
         .pos(popupLayout.right - 6.f, popupLayout.top - 6.f)
         .anchorPoint(1.f, 1.f)
         .contentSize(30.f, POPUP_HEIGHT)
-        .parent(m_mainLayer)
+        .parent(this)
         .id("top-right-buttons"_spr)
         .store(buttonMenu);
 
@@ -158,7 +162,18 @@ bool RoomPopup::setup() {
         .store(settingsButton)
         .intoNewParent(CCMenu::create())
         .pos(popupLayout.bottomLeft)
-        .parent(m_mainLayer);
+        .parent(this);
+
+    // refresh button
+    Build<CCSprite>::createSpriteName("icon-refresh-square.png"_spr)
+        .intoMenuItem([this](auto) {
+            this->reloadPlayerList(true);
+        })
+        .scaleMult(1.1f)
+        .zOrder(999) // force below everything
+        .id("reload-btn"_spr)
+        .store(refreshButton)
+        .parent(buttonMenu);
 
     buttonMenu->updateLayout();
 
@@ -170,11 +185,11 @@ bool RoomPopup::setup() {
     return true;
 }
 
-void RoomPopup::update(float) {
+void RoomLayer::update(float) {
     settingsButton->setVisible(RoomManager::get().isInRoom());
 }
 
-void RoomPopup::onLoaded(bool stateChanged) {
+void RoomLayer::onLoaded(bool stateChanged) {
     this->removeLoadingCircle();
 
     auto cells = CCArray::create();
@@ -193,6 +208,10 @@ void RoomPopup::onLoaded(bool stateChanged) {
         .parent(listLayer)
         .collect();
 
+    for (auto* cell : CCArrayExt<PlayerListCell*>(cells)) {
+        static_cast<GenericListCell*>(cell->getParent())->m_backgroundLayer->setColor(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_DARKER_BLUE));
+    }
+
     if (previousCellCount != 0 && !stateChanged) {
         util::ui::setScrollPos(listLayer->m_list, scrollPos);
     }
@@ -208,7 +227,7 @@ void RoomPopup::onLoaded(bool stateChanged) {
     this->recreateInviteButton();
 }
 
-void RoomPopup::addButtons() {
+void RoomLayer::addButtons() {
     // remove existing buttons
     if (roomBtnMenu) roomBtnMenu->removeFromParent();
 
@@ -224,7 +243,7 @@ void RoomPopup::addButtons() {
             )
             .id("btn-menu"_spr)
             .pos(popupCenter, 55.f)
-            .parent(m_mainLayer)
+            .parent(this)
             .store(roomBtnMenu);
 
         auto* joinRoomButton = Build<ButtonSprite>::create("Join room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
@@ -256,7 +275,7 @@ void RoomPopup::addButtons() {
         Build<CCMenu>::create()
             .id("leave-room-btn-menu"_spr)
             .pos(popupCenter, 55.f)
-            .parent(m_mainLayer)
+            .parent(this)
             .store(roomBtnMenu);
 
         auto* leaveRoomButton = Build<ButtonSprite>::create("Leave room", "bigFont.fnt", "GJ_button_01.png", 0.8f)
@@ -273,17 +292,17 @@ void RoomPopup::addButtons() {
     }
 }
 
-void RoomPopup::removeLoadingCircle() {
+void RoomLayer::removeLoadingCircle() {
     if (loadingCircle) {
         loadingCircle->fadeAndRemove();
         loadingCircle = nullptr;
     }
 }
 
-void RoomPopup::reloadPlayerList(bool sendPacket) {
+void RoomLayer::reloadPlayerList(bool sendPacket) {
     auto& nm = NetworkManager::get();
     if (!nm.established()) {
-        this->onClose(this);
+        // this->onClose(this);
         return;
     }
 
@@ -305,13 +324,15 @@ void RoomPopup::reloadPlayerList(bool sendPacket) {
     loadingCircle->show();
 
     this->recreateInviteButton();
+
+    buttonMenu->updateLayout();
 }
 
-bool RoomPopup::isLoading() {
+bool RoomLayer::isLoading() {
     return loadingCircle != nullptr;
 }
 
-void RoomPopup::sortPlayerList() {
+void RoomLayer::sortPlayerList() {
     auto& flm = FriendListManager::get();
 
     // filter out the weird people (old game server used to send unauthenticated people too)
@@ -338,7 +359,7 @@ void RoomPopup::sortPlayerList() {
     });
 }
 
-void RoomPopup::applyFilter(const std::string_view input) {
+void RoomLayer::applyFilter(const std::string_view input) {
     filteredPlayerList.clear();
 
     if (input.empty()) {
@@ -363,7 +384,7 @@ void RoomPopup::applyFilter(const std::string_view input) {
     buttonMenu->updateLayout();
 }
 
-void RoomPopup::setRoomTitle(std::string name, uint32_t id) {
+void RoomLayer::setRoomTitle(std::string name, uint32_t id) {
     if (roomIdButton) roomIdButton->removeFromParent();
 
     std::string title;
@@ -373,14 +394,14 @@ void RoomPopup::setRoomTitle(std::string name, uint32_t id) {
         title = fmt::format("{} ({})", name, id);
     }
 
-    auto layout = util::ui::getPopupLayout(m_size);
+    auto layout = util::ui::getPopupLayout({POPUP_WIDTH, POPUP_HEIGHT});
 
     CCNode* elem = Build<CCLabelBMFont>::create(title.c_str(), "goldFont.fnt")
         .scale(0.7f)
         .collect();
 
     if (id != 0) {
-        auto* button = CCMenuItemSpriteExtra::create(elem, this, menu_selector(RoomPopup::onCopyRoomId));
+        auto* button = CCMenuItemSpriteExtra::create(elem, this, menu_selector(RoomLayer::onCopyRoomId));
         button->addChild(elem);
 
         auto* menu = CCMenu::create();
@@ -390,12 +411,12 @@ void RoomPopup::setRoomTitle(std::string name, uint32_t id) {
     }
 
     elem->setPosition(layout.centerTop - CCPoint{0.f, 17.f});
-    m_mainLayer->addChild(elem);
+    this->addChild(elem);
 
     roomIdButton = elem;
 }
 
-void RoomPopup::onCopyRoomId(cocos2d::CCObject*) {
+void RoomLayer::onCopyRoomId(cocos2d::CCObject*) {
     auto id = RoomManager::get().getId();
 
     utils::clipboard::write(std::to_string(id));
@@ -403,7 +424,7 @@ void RoomPopup::onCopyRoomId(cocos2d::CCObject*) {
     Notification::create("Copied to clipboard", NotificationIcon::Success)->show();
 }
 
-void RoomPopup::recreateInviteButton() {
+void RoomLayer::recreateInviteButton() {
     inviteButton->removeFromParent();
 
     auto& rm = RoomManager::get();
@@ -413,14 +434,15 @@ void RoomPopup::recreateInviteButton() {
 
         if (canInvite) {
             buttonMenu->addChild(inviteButton);
-            buttonMenu->updateLayout();
         }
     }
+
+    buttonMenu->updateLayout();
 }
 
-RoomPopup* RoomPopup::create() {
-    auto ret = new RoomPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+RoomLayer* RoomLayer::create() {
+    auto ret = new RoomLayer;
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }

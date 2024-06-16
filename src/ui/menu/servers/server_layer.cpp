@@ -7,6 +7,7 @@
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
+#include <ui/menu/settings/settings_layer.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
 #include <util/format.hpp>
@@ -20,6 +21,13 @@ bool GlobedServersLayer::init() {
 
     GlobedAccountManager::get().autoInitialize();
 
+    auto* buttonMenu = Build<CCMenu>::create()
+        .layout(ColumnLayout::create()->setAutoScale(true)->setAxisAlignment(AxisAlignment::Start))
+        .anchorPoint(0.f, 0.f)
+        .pos(15.f, 20.f)
+        .parent(this)
+        .collect();
+
     // central server switcher
     Build<CCSprite>::createSpriteName("accountBtn_myLevels_001.png")
         .with([&](auto* spr) {
@@ -31,11 +39,22 @@ bool GlobedServersLayer::init() {
                 popup->show();
             }
         })
-        .intoNewParent(CCMenu::create())
-        .layout(ColumnLayout::create()->setAutoScale(true)->setAxisAlignment(AxisAlignment::Start))
-        .anchorPoint(0.f, 0.f)
-        .pos(15.f, 20.f)
-        .parent(this);
+        .scaleMult(1.15f)
+        .parent(buttonMenu);
+
+    // settings button
+    Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+        .with([&](auto* spr) {
+            util::ui::rescaleToMatch(spr, {43.f, 41.5f});
+        })
+        .intoMenuItem([](auto) {
+            util::ui::switchToScene(GlobedSettingsLayer::create());
+        })
+        .scaleMult(1.15f)
+        .id("btn-open-settings"_spr)
+        .parent(buttonMenu);
+
+    buttonMenu->updateLayout();
 
     auto winSize = CCDirector::get()->getWinSize();
 
@@ -84,6 +103,12 @@ void GlobedServersLayer::updateServerList(float) {
     auto& am = GlobedAccountManager::get();
     auto& csm = CentralServerManager::get();
     auto& nm = NetworkManager::get();
+
+    // if we are connected to a server, navigate away
+    if (nm.established() && !typeinfo_cast<CCTransitionScene*>(CCScene::get())) {
+        util::ui::replaceScene(GlobedMenuLayer::create());
+        return;
+    }
 
     // update ping of the active server, if any
     nm.updateServerPing();

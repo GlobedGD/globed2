@@ -3,15 +3,15 @@
 
 #include <data/types/room.hpp>
 
-class RoomPopup;
+class RoomLayer;
 namespace geode { class TextInput; }
 
-class CreateRoomPopup : public geode::Popup<RoomPopup*> {
+class CreateRoomPopup : public geode::Popup<RoomLayer*> {
 public:
     constexpr static float POPUP_WIDTH = 340.f;
     constexpr static float POPUP_HEIGHT = 200.f;
 
-    static CreateRoomPopup* create(RoomPopup* parent);
+    static CreateRoomPopup* create(RoomLayer* parent);
 
 protected:
     geode::TextInput* roomNameInput;
@@ -19,6 +19,6 @@ protected:
     geode::TextInput* playerLimitInput;
     RoomSettingsFlags settingFlags;
 
-    bool setup(RoomPopup* parent) override;
+    bool setup(RoomLayer* parent) override;
     void onCheckboxToggled(cocos2d::CCObject*);
 };

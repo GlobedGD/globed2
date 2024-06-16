@@ -8,7 +8,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <net/manager.hpp>
-#include <ui/menu/room/room_popup.hpp>
+#include <ui/menu/room/room_layer.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
 #include <ui/menu/servers/server_layer.hpp>
 #include <ui/menu/level_list/level_list_layer.hpp>
@@ -41,17 +41,6 @@ bool GlobedMenuLayer::init() {
         .id("left-button-menu"_spr)
         .store(leftButtonMenu);
 
-    // server switcher button
-    serverSwitcherButton = Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
-        .intoMenuItem([](auto) {
-            auto layer = GlobedServersLayer::create();
-            util::ui::switchToScene(layer);
-        })
-        .scaleMult(1.15f)
-        .id("btn-open-server-switcher"_spr)
-        .parent(leftButtonMenu)
-        .collect();
-
     // discord button
     discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
         .scale(1.35f)
@@ -74,19 +63,6 @@ bool GlobedMenuLayer::init() {
         .scaleMult(1.15f)
         .id("btn-open-settings"_spr)
         .parent(leftButtonMenu)
-        .collect();
-
-    // room popup button
-    roomButton = Build<CCSprite>::createSpriteName("accountBtn_friends_001.png")
-        .intoMenuItem([](auto) {
-            // this->requestServerList();
-            if (auto* popup = RoomPopup::create()) {
-                popup->m_noElasticity = true;
-                popup->show();
-            }
-        })
-        .scaleMult(1.15f)
-        .id("btn-refresh-servers"_spr)
         .collect();
 
     auto& settings = GlobedSettings::get();
@@ -157,14 +133,38 @@ bool GlobedMenuLayer::init() {
 
     rightButtonMenu->updateLayout();
 
-    Build<GJListLayer>::create(ListView::create(CCArray::create()), "thing", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
-        .zOrder(2)
-        .with([&](auto* layer) {
-            layer->setPosition(winSize / 2 - layer->getScaledContentSize() / 2);
-        })
-        .parent(this);
+    this->addChild(RoomLayer::create());
 
     util::ui::prepareLayer(this);
+
+    auto* backBtn = this->getChildByIDRecursive("back-button");
+
+    if (backBtn) {
+        // leave server btn
+        auto* menu = backBtn->getParent();
+        menu->setAnchorPoint({0.f, 1.f});
+        menu->setPosition({5.f, winSize.height - 5.f});
+        menu->setContentWidth(60.f);
+
+        menu->setLayout(RowLayout::create()->setAxisAlignment(AxisAlignment::Start));
+
+        Build<CCSprite>::createSpriteName("icon-leave-server.png"_spr)
+            .scale(1.15f)
+            .intoMenuItem([] {
+                geode::createQuickPopup("Leave Server", "Are you sure you want to <cr>disconnect</c>\nfrom this server?", "Cancel", "Yes", [](auto, bool confirm) {
+                    if (!confirm) return;
+
+                    NetworkManager::get().disconnect();
+
+                    auto layer = GlobedServersLayer::create();
+                    util::ui::replaceScene(layer);
+                });
+            })
+            .parent(menu)
+            ;
+
+        menu->updateLayout();
+    }
 
     this->scheduleUpdate();
 
@@ -180,10 +180,8 @@ void GlobedMenuLayer::update(float dt) {
 
         if (currentlyShowingButtons) {
             leftButtonMenu->addChild(levelListButton);
-            leftButtonMenu->addChild(roomButton);
         } else {
             levelListButton->removeFromParent();
-            roomButton->removeFromParent();
         }
 
         leftButtonMenu->updateLayout();

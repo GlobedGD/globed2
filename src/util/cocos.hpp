@@ -41,4 +41,7 @@ namespace util::cocos {
     gd::string getPathForFilename(const gd::string& filename, const gd::string& searchPath);
 
     std::string spr(const std::string_view s);
+
+    template <typename To, typename From>
+    To convert(const From& value);
 }
