@@ -15,6 +15,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <managers/profile_cache.hpp>
+#include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <managers/role.hpp>
@@ -508,6 +509,18 @@ protected:
         // Room packets
 
         addGlobalListener<RoomInvitePacket>([](auto packet) {
+            using InvitesFrom = GlobedSettings::InvitesFrom;
+
+            // check if allowed
+            int inviter = packet->playerData.accountId;
+            InvitesFrom setting = static_cast<InvitesFrom>((int)GlobedSettings::get().globed.invitesFrom);
+
+            if (setting == InvitesFrom::Nobody) {
+                return;
+            } else if (setting == InvitesFrom::Friends && !FriendListManager::get().isFriend(inviter)) {
+                return;
+            }
+
             GlobedNotificationPanel::get()->addInviteNotification(packet->roomID, packet->password, packet->playerData);
         });
 

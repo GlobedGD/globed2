@@ -6,7 +6,7 @@
 class GlobedSettingCell : public cocos2d::CCLayer, public TextInputDelegate {
 public:
     enum class Type {
-        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC
+        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom
     };
 
     struct Limits {
@@ -37,6 +37,7 @@ private:
     CCMenuItemSpriteExtra* inpAudioButton = nullptr;
 
     CCMenuItemSpriteExtra* cornerButton = nullptr;
+    CCMenuItemSpriteExtra* invitesFromButton = nullptr;
 
     bool init(void*, Type, const char*, const char*, const Limits&);
     void onCheckboxToggled(cocos2d::CCObject*);
@@ -45,6 +46,7 @@ private:
     void onStringChanged(const std::string_view);
 
     void recreateCornerButton();
+    void recreateInvitesFromButton();
 
     void textChanged(CCTextInputNode* p0);
     void textInputOpened(CCTextInputNode* p0);

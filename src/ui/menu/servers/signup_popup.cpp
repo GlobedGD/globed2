@@ -13,7 +13,7 @@
 using namespace geode::prelude;
 
 bool GlobedSignupPopup::setup() {
-    this->setTitle("Servers");
+    this->setTitle("Authentication");
     m_closeBtn->setVisible(false);
 
     auto& csm = CentralServerManager::get();

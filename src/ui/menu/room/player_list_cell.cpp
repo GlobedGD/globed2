@@ -88,14 +88,29 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
 void PlayerListCell::createInviteButton() {
     Build<CCSprite>::createSpriteName("icon-invite.png"_spr)
         .scale(0.85f)
-        .intoMenuItem([accountId = this->data.accountId](auto) {
-            NetworkManager::get().send(RoomSendInvitePacket::create(accountId));
+        .intoMenuItem([this](auto) {
+            this->sendInvite();
         })
         .scaleMult(1.25f)
         .store(inviteButton)
         .parent(menu);
 
     menu->updateLayout();
+}
+
+void PlayerListCell::sendInvite() {
+    NetworkManager::get().send(RoomSendInvitePacket::create(data.accountId));
+
+    // disable sending invites for a few seconds
+    inviteButton->setEnabled(false);
+    inviteButton->setOpacity(90);
+
+    this->runAction(CCSequence::create(CCDelayTime::create(3.f), CCCallFunc::create(this, callfunc_selector(PlayerListCell::enableInvites))));
+}
+
+void PlayerListCell::enableInvites() {
+    inviteButton->setEnabled(true);
+    inviteButton->setOpacity(255);
 }
 
 void PlayerListCell::createJoinButton() {

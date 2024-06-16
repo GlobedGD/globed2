@@ -121,6 +121,10 @@ RequestTask WebRequestManager::get(std::string_view url, int timeoutS) {
 }
 
 RequestTask WebRequestManager::get(std::string_view url, int timeoutS, std::function<void(web::WebRequest&)> additional) {
+#ifdef GLOBED_DEBUG
+    log::debug("GET request: {}", url);
+#endif
+
     auto request = web::WebRequest()
 #ifdef GLOBED_DEBUG
         .certVerification(false)
@@ -143,6 +147,10 @@ RequestTask WebRequestManager::post(std::string_view url, int timeoutS) {
 }
 
 RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::function<void(web::WebRequest&)> additional) {
+#ifdef GLOBED_DEBUG
+    log::debug("POST request: {}", url);
+#endif
+
     auto request = web::WebRequest()
 #ifdef GLOBED_DEBUG
         .certVerification(false)

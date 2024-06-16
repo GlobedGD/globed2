@@ -4,14 +4,15 @@
 * * You can now send room invites to other players
 * * Rooms have various settings, i.e. password, collision, player limit, name, invite-only
 * * Public room listing that lets you discover rooms without having to be invited
+* * You can control whether you can be invited by anybody, only friends, or by nobody
 * Add user roles
 * * Staff, supporters, etc. will have special name color, text chat color, and a badge near their name
 * * Thanks to [LimeGradient](user:7214334), [Terma](user:4706010) and [Capeling](user:18226543) for help
 * Add editor compatibility
-* * If you are the creator of a level (or you use Level Edit hack), you will be able to see other people playing while in the editor
+* * This does **NOT** mean you can build levels together!
+* * If you are the creator of a level, you will be able to see other people playing while in the editor
 * * When [EditorCollab by alk1m123](https://github.com/altalk23/EditorCollab) comes out, you will also be able to playtest non-uploaded levels together with others
 * * Experimental, might have issues
-* Add a way to play 2-player levels together (as a room setting!)
 * Add automatic reconnection to the server
 * Add credits to the globed menu (thanks [TechStudent11](user:20284359))
 * Add integration with the Discord Rich Presence mod (thanks [TechStudent11](user:20284359))
@@ -22,10 +23,11 @@
 * Add a Compressed Player Count setting which changes the "X players" label to be more compact (thanks [Uproxide](user:25397826)!)
 * Add a support button in the menu
 * Add a voice chat guide button in the menu
-* Change textures for some icons in the menus
+* Redesign the main menus and change textures for many of the icons
 * Add much better error messages for outdated clients
 * Don't play effects and animations if the player is too far, to decrease lag
 * Replace the Overlay settings tab with Menus and move overlay settings into Level UI
+* Pin the main server to the top of the server list and disallow deleting or modifying it
 * Fix "already inside of a level" error sometimes appearing when it shouldn't, and add a way to bypass it
 * Fix settings menu looking a bit broken due to a Geode update
 * Fix the placeholder green icon color being a slightly different shade than the actual default green

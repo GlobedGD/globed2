@@ -1,15 +1,19 @@
 #pragma once
 #include <defs/all.hpp>
+
 #include <data/types/room.hpp>
-#include <data/types/gd.hpp>
+
+class RoomListingPopup;
 
 class RoomListingCell : public cocos2d::CCLayerColor {
 public:
-    static constexpr float CELL_HEIGHT = 44.f;
-
-    int accountID;
+    static constexpr float CELL_HEIGHT = 35.f;
 
     void onUser(cocos2d::CCObject* sender);
-    bool init(RoomListingInfo);
-    static RoomListingCell* create(RoomListingInfo);
+    bool init(const RoomListingInfo& info, RoomListingPopup* parent);
+    static RoomListingCell* create(const RoomListingInfo& info, RoomListingPopup* parent);
+
+private:
+    int accountID;
+    RoomListingPopup* parent;
 };

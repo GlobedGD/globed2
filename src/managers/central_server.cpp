@@ -121,6 +121,8 @@ void CentralServerManager::removeServer(int index) {
     if (doSwitchRoutine) {
         this->switchRoutine(_activeIdx, true);
     }
+
+    this->save();
 }
 
 void CentralServerManager::modifyServer(int index, const CentralServer& data) {
@@ -182,7 +184,12 @@ void CentralServerManager::reload() {
             ErrorQueues::get().warn(fmt::format("failed to load servers: {}", result.unwrapErr()));
             return;
         }
-        *servers = result.unwrap();
+
+        auto parsed = result.unwrap();
+
+        for (const auto& server : parsed) {
+            servers->push_back(server);
+        }
     } catch (const std::exception& e) {
         ErrorQueues::get().warn(std::string("failed to load servers: ") + e.what());
     }
@@ -193,11 +200,18 @@ void CentralServerManager::save() {
     auto servers = _servers.lock();
 
     ByteBuffer buf;
-    buf.writeValue<std::vector<CentralServer>>(*servers);
+
+    buf.writeLength(servers->size() - 1);
+    for (size_t i = 1; i < servers->size(); i++) {
+        buf.writeValue((*servers)[i]);
+    }
+
     auto data = util::crypto::base64Encode(buf.data());
 
     Mod::get()->setSavedValue(SETTING_KEY, data);
 
     Mod::get()->setSavedValue(ACTIVE_SERVER_KEY, std::to_string(_activeIdx.load()));
+
+    (void) Mod::get()->saveData();
 }
 

@@ -132,11 +132,18 @@ public:
     // Settings themselves, split into categories
     // when adding settings, please remember to also add them at the bottom of this file
 
+    enum class InvitesFrom : int {
+        Everyone = 0,
+        Friends = 1,
+        Nobody = 2,
+    };
+
     struct Globed {
         Setting<bool, true> autoconnect;
         LimitedSetting<int, 0, 0, 240> tpsCap;
         Setting<bool, true> preloadAssets;
         Setting<bool, false> deferPreloadAssets;
+        LimitedSetting<int, (int)InvitesFrom::Friends, 0, 2> invitesFrom;
         Setting<bool, false> increaseLevelList;
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;

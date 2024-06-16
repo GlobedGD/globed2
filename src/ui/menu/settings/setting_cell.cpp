@@ -164,6 +164,9 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         case Type::Corner: {
             this->recreateCornerButton();
         } break;
+        case Type::InvitesFrom: {
+            this->recreateInvitesFromButton();
+        } break;
     }
 
     if (auto* menu = this->getChildByID("input-menu"_spr)) {
@@ -268,15 +271,9 @@ void GlobedSettingCell::onStringChanged(const std::string_view text) {
 
 void GlobedSettingCell::recreateCornerButton() {
     if (cornerButton) {
-        // workaround for a funny bug - the button gets freed but CCMenuItem::activate still tried to access a member
-        // so we delay the actual deletion by 1 frame
-        cornerButton->retain();
-        Loader::get()->queueInMainThread([cornerButton = cornerButton] {
-            cornerButton->release();
-        });
-
         cornerButton->getParent()->removeFromParent();
         cornerButton->removeFromParent();
+        cornerButton = nullptr;
     }
 
     int currentValue = *(int*)(settingStorage);
@@ -287,8 +284,7 @@ void GlobedSettingCell::recreateCornerButton() {
         .scale(0.75f)
         .store(theButton)
         .intoMenuItem([this, currentValue](auto) {
-            int cv = currentValue;
-            cv++;
+            int cv = currentValue + 1;
             if (cv > 3) {
                 cv = 0;
             }
@@ -298,18 +294,60 @@ void GlobedSettingCell::recreateCornerButton() {
         })
         .anchorPoint(0.5f, 0.5f)
         .pos(CELL_WIDTH - 25.f, CELL_HEIGHT / 2)
-        .id("input-field"_spr)
+        .id("overlay-btn")
         .store(cornerButton)
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
-        .id("input-menu"_spr)
+        .id("overlay-menu")
         .parent(this);
 
     // kill me
     float xOff = 9.f * ((currentValue % 2 == 1) ? 1.f : -1.f);
     float yOff = 8.f * ((currentValue < 2) ? 1.f : -1.f);
-    theButton->m_label->setPosition(theButton->m_label->getPosition() + ccp(1.f, 0.f) + ccp(xOff, yOff));
+    theButton->m_label->setPosition(theButton->m_label->getPosition() + ccp(xOff + 1.f, yOff));
     theButton->m_label->setString("0");
+}
+
+void GlobedSettingCell::recreateInvitesFromButton() {
+    using InvitesFrom = GlobedSettings::InvitesFrom;
+
+    if (invitesFromButton) {
+        invitesFromButton->getParent()->removeFromParent();
+        invitesFromButton->removeFromParent();
+        invitesFromButton = nullptr;
+    }
+
+    InvitesFrom currentValue = static_cast<InvitesFrom>(std::clamp(*(int*)(settingStorage), 0, 2));
+
+    const char* text = "";
+    switch (currentValue) {
+        case InvitesFrom::Everyone: text = "Everybody"; break;
+        case InvitesFrom::Friends: text = "Friends"; break;
+        case InvitesFrom::Nobody: text = "Nobody"; break;
+        default: globed::unreachable();
+    }
+
+    Build<ButtonSprite>::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f)
+        .scale(0.75f)
+        .intoMenuItem([this, currentValue](auto) {
+            int cv = (int)currentValue + 1;
+            if (cv > 2) {
+                cv = 0;
+            }
+
+            this->storeAndSave(cv);
+            this->recreateInvitesFromButton();
+        })
+        .anchorPoint(0.5f, 0.5f)
+        .with([](auto* btn) {
+            btn->setPosition(CELL_WIDTH - 8.f - btn->getScaledContentSize().width / 2.f, CELL_HEIGHT / 2);
+        })
+        .id("invite-from-btn")
+        .store(invitesFromButton)
+        .intoNewParent(CCMenu::create())
+        .pos(0.f, 0.f)
+        .id("invite-from-menu")
+        .parent(this);
 }
 
 void GlobedSettingCell::storeAndSave(std::any&& value) {
@@ -325,6 +363,7 @@ void GlobedSettingCell::storeAndSave(std::any&& value) {
         case Type::AudioDevice: [[fallthrough]];
         case Type::Corner: [[fallthrough]];
         case Type::PacketFragmentation: [[fallthrough]];
+        case Type::InvitesFrom: [[fallthrough]];
         case Type::Int:
             *(int*)(settingStorage) = std::any_cast<int>(value); break;
         case Type::AdvancedSettings:

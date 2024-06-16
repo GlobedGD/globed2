@@ -11,6 +11,7 @@ namespace util::ui {
     constexpr cocos2d::ccColor4B BG_COLOR_DARK_BLUE = {0x33, 0x44, 0x99, 255};
     constexpr cocos2d::ccColor4B BG_COLOR_DARKER_BLUE = {0x28, 0x35, 0x77, 255};
     const cocos2d::CCSize BADGE_SIZE = {18.f, 18.f};
+    const cocos2d::CCSize BADGE_SIZE_SMALL = BADGE_SIZE * 0.8f;
 
     void switchToScene(cocos2d::CCScene* layer);
     void switchToScene(cocos2d::CCLayer* layer);

@@ -18,6 +18,9 @@ protected:
     void createJoinButton();
     void createAdminButton();
 
+    void sendInvite();
+    void enableInvites();
+
     PlayerRoomPreviewAccountData data;
 
     cocos2d::CCMenu* menu;
