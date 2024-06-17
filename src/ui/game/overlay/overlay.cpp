@@ -14,13 +14,30 @@ bool GlobedOverlay::init() {
         return true;
     }
 
-    this->setLayout(
-        ColumnLayout::create()
-            ->setAxisReverse(true)
-            ->setAxisAlignment(AxisAlignment::Start)
-            ->setCrossAxisLineAlignment(AxisAlignment::End)
-            ->setGap(3.f)
-    );
+    auto winSize = CCDirector::get()->getWinSize();
+
+    bool onTop = settings.position < 2;
+    bool onRight = settings.position % 2 == 1;
+
+    log::debug("pos: {}, top: {}, right: {}", settings.position.get(), onTop, onRight);
+
+    float overlayBaseY = onTop ? winSize.height - 2.f : 2.f;
+    float overlayBaseX = onRight ? winSize.width - 2.f : 2.f;
+
+    float overlayAnchorY = onTop ? 1.f : 0.f;
+    float overlayAnchorX = onRight ? 1.f : 0.f;
+
+    auto* layout = ColumnLayout::create()
+        ->setAxisAlignment(AxisAlignment::Start)
+        ->setGap(3.f);
+
+    layout->setAxisReverse(!onTop);
+    layout->setAxisAlignment(onTop ? AxisAlignment::End : AxisAlignment::Start);
+    layout->setCrossAxisLineAlignment(onRight ? AxisAlignment::End : AxisAlignment::Start);
+
+    this->setLayout(layout);
+    this->setPosition(overlayBaseX, overlayBaseY);
+    this->setAnchorPoint({overlayAnchorX, overlayAnchorY});
 
     Build<CCLabelBMFont>::create("", "bigFont.fnt")
         .opacity(static_cast<uint8_t>(settings.opacity * 255))

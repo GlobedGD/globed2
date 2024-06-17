@@ -294,6 +294,7 @@ void GlobedSettingCell::recreateCornerButton() {
         })
         .anchorPoint(0.5f, 0.5f)
         .pos(CELL_WIDTH - 25.f, CELL_HEIGHT / 2)
+        .scaleMult(1.1f)
         .id("overlay-btn")
         .store(cornerButton)
         .intoNewParent(CCMenu::create())
@@ -321,7 +322,7 @@ void GlobedSettingCell::recreateInvitesFromButton() {
 
     const char* text = "";
     switch (currentValue) {
-        case InvitesFrom::Everyone: text = "Everybody"; break;
+        case InvitesFrom::Everyone: text = "Everyone"; break;
         case InvitesFrom::Friends: text = "Friends"; break;
         case InvitesFrom::Nobody: text = "Nobody"; break;
         default: globed::unreachable();
@@ -342,6 +343,7 @@ void GlobedSettingCell::recreateInvitesFromButton() {
         .with([](auto* btn) {
             btn->setPosition(CELL_WIDTH - 8.f - btn->getScaledContentSize().width / 2.f, CELL_HEIGHT / 2);
         })
+        .scaleMult(1.1f)
         .id("invite-from-btn")
         .store(invitesFromButton)
         .intoNewParent(CCMenu::create())

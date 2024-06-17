@@ -121,18 +121,7 @@ void GlobedGJBGL::setupAll() {
 
 // runs even if not connected to a server or in a non-uploaded editor level
 void GlobedGJBGL::setupBare() {
-    GlobedSettings& settings = GlobedSettings::get();
-
-    auto winSize = CCDirector::get()->getWinSize();
-    float overlayBaseY = settings.overlay.position < 2 ? winSize.height - 2.f : 2.f;
-    float overlayBaseX = (settings.overlay.position % 2 == 1) ? winSize.width - 2.f : 2.f;
-
-    float overlayAnchorY = (settings.overlay.position < 2) ? 1.f : 0.f;
-    float overlayAnchorX = (settings.overlay.position % 2 == 1) ? 1.f : 0.f;
-
     Build<GlobedOverlay>::create()
-        .pos(overlayBaseX, overlayBaseY)
-        .anchorPoint(overlayAnchorX, overlayAnchorY)
         .scale(0.4f)
         .zOrder(11)
         .id("game-overlay"_spr)

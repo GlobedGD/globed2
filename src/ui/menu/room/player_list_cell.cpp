@@ -105,7 +105,11 @@ void PlayerListCell::sendInvite() {
     inviteButton->setEnabled(false);
     inviteButton->setOpacity(90);
 
-    this->runAction(CCSequence::create(CCDelayTime::create(3.f), CCCallFunc::create(this, callfunc_selector(PlayerListCell::enableInvites))));
+    this->runAction(CCSequence::create(
+        CCDelayTime::create(3.f),
+        CCCallFunc::create(this, callfunc_selector(PlayerListCell::enableInvites)),
+        nullptr
+    ));
 }
 
 void PlayerListCell::enableInvites() {
