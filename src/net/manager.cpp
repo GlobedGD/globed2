@@ -49,17 +49,24 @@ static std::string formatListenerKey(packetid_t id) {
     return util::cocos::spr(fmt::format("packet-listener-{}", id));
 }
 
+struct WeakRefDummy {
+    std::shared_ptr<WeakRefController> ctrl;
+};
+
 template <typename T>
 static void* addrFromWeakRef(const WeakRef<T>& ref) {
     // Do not do this.
-    auto hugePtr = reinterpret_cast<const std::shared_ptr<CCObject*>*>(&ref);
-    auto& controller = *hugePtr;
-    if (controller) {
-        return (void*)*controller;
-    } else {
-        return nullptr;
-    }
+    auto dummy = reinterpret_cast<const WeakRefDummy&>(ref);
+    return dummy.ctrl ? dummy.ctrl->get() : nullptr;
 }
+
+template <typename T>
+static const WeakRefController& controllerFromWeakRef(const WeakRef<T>& ref) {
+    // Do not do this.
+    auto dummy = reinterpret_cast<const WeakRefDummy&>(ref);
+    return *dummy.ctrl;
+}
+
 
 // Packet listener pool. Most of the functions must not be used on a different thread than main.
 class PacketListenerPool : public CCObject {
@@ -99,9 +106,11 @@ public:
     void removeDeadListeners() {
         for (auto& [id, listeners] : listeners) {
             for (int i = listeners.size() - 1; i >= 0; i--) {
+                auto addr = addrFromWeakRef(listeners[i]);
+
                 if (!listeners[i].valid()) {
 #ifdef GLOBED_DEBUG
-                    log::debug("Unregistering listener (id {}) for {}", id, addrFromWeakRef(listeners[i]));
+                    log::debug("Unregistering listener {} (id {})", addr, id);
 #endif
                     // log::debug("removing listener for {}", id);
                     listeners.erase(listeners.begin() + i);
