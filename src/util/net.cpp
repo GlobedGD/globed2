@@ -35,7 +35,7 @@ namespace util::net {
             Loader::get()->getVersion().toString()
         );
 #else
-        return fmt::format("Globed {}", Mod::get()->getVersion().toString());
+        return fmt::format("globed-geode-xd/{}", Mod::get()->getVersion().toString());
 #endif
     }
 
