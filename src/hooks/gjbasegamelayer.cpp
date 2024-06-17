@@ -1058,7 +1058,7 @@ void GlobedGJBGL::pausedUpdate(float dt) {
     }
 }
 
-bool GlobedGJBGL::accountForSpeedhack(size_t uniqueKey, float cap, float allowance) {
+bool GlobedGJBGL::accountForSpeedhack(int uniqueKey, float cap, float allowance) {
     auto* sched = CCScheduler::get();
     auto ts = sched->getTimeScale();
     if (!util::math::equal(ts, m_fields->lastKnownTimeScale)) {

@@ -139,11 +139,11 @@ RequestTask WebRequestManager::get(std::string_view url, int timeoutS, std::func
 
 
 RequestTask WebRequestManager::post(std::string_view url) {
-    return post(url);
+    return post(url, 5);
 }
 
 RequestTask WebRequestManager::post(std::string_view url, int timeoutS) {
-    return post(url, timeoutS);
+    return post(url, timeoutS, [](auto&) {});
 }
 
 RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::function<void(web::WebRequest&)> additional) {

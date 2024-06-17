@@ -24,9 +24,6 @@ concept CBox = requires(T box, const util::data::byte* src, util::data::byte* de
     std::is_class_v<T>;
     { box.encryptInto(src, dest, size) } -> std::convertible_to<size_t>;
     { box.decryptInto(src, dest, size) } -> std::convertible_to<size_t>;
-    { T::MAC_LEN } -> std::convertible_to<size_t>;
-    { T::NONCE_LEN } -> std::convertible_to<size_t>;
-    { T::KEY_LEN } -> std::convertible_to<size_t>;
 };
 
 template <typename Derived>
@@ -36,22 +33,27 @@ protected:
     using bytevector = util::data::bytevector;
 
 public:
-    constexpr static size_t PREFIX_LEN = Derived::NONCE_LEN + Derived::MAC_LEN;
+    // Preferrably we should define those separately for each subclass, but it does not compile on MSVC.
+    constexpr static size_t KEY_LEN = 32;
+    constexpr static size_t NONCE_LEN = 24;
+    constexpr static size_t MAC_LEN = 16;
+
+    constexpr static size_t PREFIX_LEN = NONCE_LEN + MAC_LEN;
 
     constexpr static size_t prefixLength() {
         return PREFIX_LEN;
     }
 
     constexpr static size_t nonceLength() {
-        return Derived::NONCE_LEN;
+        return NONCE_LEN;
     }
 
     constexpr static size_t macLength() {
-        return Derived::MAC_LEN;
+        return MAC_LEN;
     }
 
     constexpr static size_t keyLength() {
-        return Derived::KEY_LEN;
+        return KEY_LEN;
     }
 
     /* Encryption */

@@ -8,10 +8,6 @@
 
 class SecretBox final : public BaseCryptoBox<SecretBox> {
 public:
-    static const size_t NONCE_LEN = 24;
-    static const size_t MAC_LEN = 16;
-    static const size_t KEY_LEN = 32;
-
     SecretBox(util::data::bytevector key);
     SecretBox(const SecretBox&) = delete;
     SecretBox& operator=(const SecretBox&) = delete;

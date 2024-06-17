@@ -10,10 +10,6 @@
 
 class ChaChaSecretBox final : public BaseCryptoBox<ChaChaSecretBox> {
 public:
-    static const size_t NONCE_LEN = 16;
-    static const size_t KEY_LEN = 32;
-    static const size_t MAC_LEN = 24;
-
     ChaChaSecretBox(util::data::bytevector key);
     ChaChaSecretBox(const ChaChaSecretBox&) = delete;
     ChaChaSecretBox& operator=(const ChaChaSecretBox&) = delete;

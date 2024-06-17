@@ -158,7 +158,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     // For non-naive speedhacks however, ones that don't use CCScheduler::setTimeScale, it is more complicated.
     // We record the time of sending each packet and compare the intervals. If the interval is suspiciously small, we reject the packet.
     // This does result in less smooth experience with non-naive speedhacks however.
-    bool accountForSpeedhack(size_t uniqueKey, float cap, float allowance = 0.9f);
+    bool accountForSpeedhack(int uniqueKey, float cap, float allowance = 0.9f);
 
     void unscheduleSelectors();
     void rescheduleSelectors();

@@ -8,7 +8,7 @@ using packetid_t = uint16_t;
 
 class PacketListener;
 class NetworkAddress;
-class GameServer;
+struct GameServer;
 class Packet;
 
 template <typename T>
