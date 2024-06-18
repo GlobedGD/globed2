@@ -15,7 +15,9 @@
             ]
         },
         "sprites": [
-            "resources/kofi-promo-bg.png"
+            "resources/kofi-promo-bg.png",
+            "resources/kofi-promo-border.png",
+            "resources/kofi-promo-card.png"
         ],
         "files": [
             "resources/*.ogg"
