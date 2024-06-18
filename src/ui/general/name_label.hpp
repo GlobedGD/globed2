@@ -21,6 +21,8 @@ public:
 private:
     cocos2d::CCSprite* badge = nullptr;
     cocos2d::CCLabelBMFont* label = nullptr;
+    cocos2d::CCNode* labelContainer = nullptr;
+    cocos2d::CCLabelBMFont* labelShadow = nullptr;
     constexpr static int COLOR_ACTION_TAG = 3498567;
 
     bool init(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor);
