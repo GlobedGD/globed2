@@ -93,3 +93,5 @@ libs/openssl
 globed-lerp-log.bin
 
 !libs/sodium/libsodium.lib
+
+*.log

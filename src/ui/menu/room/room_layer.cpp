@@ -112,6 +112,14 @@ bool RoomLayer::init() {
 
     CCMenuItemSpriteExtra *filterBtn;
 
+    // status button
+    Build<CCMenuItemToggler>(CCMenuItemToggler::create(CCSprite::createWithSpriteFrameName("status-invisible.png"_spr), CCSprite::createWithSpriteFrameName("status-visible.png"_spr), this, menu_selector(RoomLayer::onChangeStatus)))
+        .id("status-btn"_spr)
+        .parent(buttonMenu)
+        .store(statusButton);
+
+    statusButton->toggle(!GlobedSettings::get().globed.isInvisible);    
+
     // search button
     Build<CCSprite>::createSpriteName("gj_findBtn_001.png")
         .intoMenuItem([this](auto) {
@@ -187,6 +195,12 @@ bool RoomLayer::init() {
     return true;
 }
 
+void RoomLayer::onChangeStatus(CCObject*) {
+    bool invisible = statusButton->isOn();
+    NetworkManager::get().send(UpdatePlayerStatusPacket::create(invisible));
+    GlobedSettings::get().globed.isInvisible = invisible;
+}
+
 void RoomLayer::update(float) {
     settingsButton->setVisible(RoomManager::get().isInRoom());
 }
@@ -225,6 +239,8 @@ void RoomLayer::onLoaded(bool stateChanged) {
     }
 
     buttonMenu->updateLayout();
+
+    NetworkManager::get().send(UpdatePlayerStatusPacket::create(GlobedSettings::get().globed.isInvisible));
 
     this->recreateInviteButton();
 }

@@ -237,9 +237,11 @@ impl ClientThread {
             .room_manager
             .with_any(room_id, |room| room.get_room_info(room_id, self.game_server));
 
+        let can_moderate = self.user_role.lock().can_moderate();
+
         self.send_packet_dynamic(&RoomPlayerListPacket {
             room_info,
-            players: self.game_server.get_room_player_previews(room_id),
+            players: self.game_server.get_room_player_previews(room_id, can_moderate),
         })
         .await
     }

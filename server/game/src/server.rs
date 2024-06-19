@@ -482,14 +482,14 @@ impl GameServer {
     }
 
     #[inline]
-    pub fn for_every_room_player_preview<F, A>(&self, room_id: u32, f: F, additional: &mut A) -> usize
+    pub fn for_every_room_player_preview<F, A>(&self, room_id: u32, f: F, additional: &mut A, can_moderate: bool) -> usize
     where
         F: Fn(&PlayerRoomPreviewAccountData, usize, &mut A) -> bool,
     {
         self.clients
             .lock()
             .values()
-            .filter(|thr| thr.authenticated() && thr.room_id.load(Ordering::Relaxed) == room_id)
+            .filter(|thr| thr.authenticated() && thr.room_id.load(Ordering::Relaxed) == room_id && (!thr.is_invisible.load(Ordering::Relaxed) || can_moderate))
             .map(|thread| {
                 let mut level_id = thread.level_id.load(Ordering::Relaxed);
 
@@ -523,7 +523,7 @@ impl GameServer {
 
     /// get a list of all players in a room
     #[inline]
-    pub fn get_room_player_previews(&self, room_id: u32) -> Vec<PlayerRoomPreviewAccountData> {
+    pub fn get_room_player_previews(&self, room_id: u32, can_moderate: bool) -> Vec<PlayerRoomPreviewAccountData> {
         let player_count = self.state.room_manager.with_any(room_id, |room| room.manager.get_total_player_count());
 
         let mut vec = Vec::with_capacity(player_count);
@@ -535,6 +535,7 @@ impl GameServer {
                 true
             },
             &mut vec,
+            can_moderate
         );
 
         vec
