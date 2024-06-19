@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../general/simple_player.hpp"
-#include "../../general/name_label.hpp"
+#include <ui/general/simple_player.hpp>
+#include <ui/general/name_label.hpp>
 #include <defs/geode.hpp>
 
 class GlobedKofiPopup : public geode::Popup<cocos2d::CCSprite*> {

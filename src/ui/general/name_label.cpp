@@ -7,8 +7,6 @@ using namespace geode::prelude;
 bool GlobedNameLabel::init(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor) {
     if (!CCNode::init()) return false;
 
-    labelContainer = CCNode::create();
-    
     this->setAnchorPoint({0.5f, 0.5f});
     this->setLayout(RowLayout::create()->setGap(4.f)->setAutoScale(false));
     this->setContentWidth(150.f);
@@ -47,27 +45,30 @@ void GlobedNameLabel::updateName(const std::string& name) {
 
 void GlobedNameLabel::updateName(const char* name) {
     if (!label) {
+        Build<CCNode>::create()
+            .parent(this)
+            .zOrder(-2)
+            .store(labelContainer);
+
         Build<CCLabelBMFont>::create("", "chatFont.fnt")
             .zOrder(-1)
-            .parent(this)
+            .anchorPoint(0.f, 0.f)
+            .parent(labelContainer)
             .store(label);
-        
-        labelContainer->setScaledContentSize(label->getScaledContentSize());
-        labelContainer->setZOrder(-2);
-        this->addChild(labelContainer);
 
         Build<CCLabelBMFont>::create("", "chatFont.fnt")
             .zOrder(-2)
-            .color({0, 0, 0})
-            .anchorPoint({0, 0.5})
-            .pos({4.75, -0.75})
+            .color(0, 0, 0)
+            .anchorPoint(0.f, 0.0f)
+            .pos(0.75f, -0.75f)
             .parent(labelContainer)
-            .opacity(label->getOpacity() * 0.75)
+            .opacity(label->getOpacity() * 0.75f)
             .store(labelShadow);
     }
 
-    labelShadow->setString(name);
     label->setString(name);
+    labelShadow->setString(name);
+    labelContainer->setScaledContentSize(label->getScaledContentSize());
     this->updateLayout();
 }
 

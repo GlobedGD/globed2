@@ -73,5 +73,7 @@ namespace util::ui {
     enum class RepeatMode {
         X, Y, Both
     };
+
+    // make a background that loops
     cocos2d::CCSprite* makeRepeatingBackground(const char* texture, cocos2d::ccColor3B color, float xMult = 1.f, float yMult = 1.f, RepeatMode mode = RepeatMode::Both);
 }
