@@ -11,9 +11,6 @@ public:
     static constexpr float LIST_HEIGHT = 220.f;
 
     static GlobedMenuLayer* create();
-    ~GlobedMenuLayer() {
-        log::debug("Globed menu layer destructed");
-    }
 
 private:
     Ref<CCMenuItemSpriteExtra> levelListButton, serverSwitcherButton, discordButton, settingsButton;

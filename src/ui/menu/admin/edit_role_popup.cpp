@@ -7,6 +7,9 @@
 
 using namespace geode::prelude;
 
+static const auto ROLE_ICON_SIZE = util::ui::BADGE_SIZE * 1.2f;
+static const float WIDTH_PER_ROLE = ROLE_ICON_SIZE.width + 3.f;
+
 static GameServerRole* findRole(const std::string& id) {
     auto& all = RoleManager::get().getAllRoles();
 
@@ -68,7 +71,7 @@ bool AdminEditRolePopup::setup(const std::vector<std::string>& roles, EditRoleCa
 
 AdminEditRolePopup* AdminEditRolePopup::create(const std::vector<std::string>& roles, EditRoleCallbackFn fn) {
     auto ret = new AdminEditRolePopup;
-    if (ret->init(WIDTH_PER_ROLE * RoleManager::get().getAllRoles().size(), POPUP_HEIGHT, roles, fn)) {
+    if (ret->init(50.f + WIDTH_PER_ROLE * RoleManager::get().getAllRoles().size(), POPUP_HEIGHT, roles, fn)) {
         ret->autorelease();
         return ret;
     }

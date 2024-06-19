@@ -159,6 +159,7 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
         .pos(0.f, 0.f)
         .anchorPoint(0.f, 0.f)
         .scale(0.9f)
+        .zOrder(-1)
         .store(particles)
         .parent(player)
         .collect();
