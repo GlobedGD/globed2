@@ -90,41 +90,15 @@ public:
 
     bool operator==(const RichColor& other) const = default;
 
-    bool isMultiple() const {
-        return inner.isSecond();
-    }
+    bool isMultiple() const;
 
-    std::vector<cocos2d::ccColor3B>& getColors() {
-        GLOBED_REQUIRE(inner.isSecond(), "calling RichColor::getColors when there is only 1 color");
+    std::vector<cocos2d::ccColor3B>& getColors();
+    const std::vector<cocos2d::ccColor3B>& getColors() const;
 
-        return inner.secondRef()->get();
-    }
+    cocos2d::ccColor3B getColor() const;
+    cocos2d::ccColor3B getAnyColor() const;
 
-    const std::vector<cocos2d::ccColor3B>& getColors() const {
-        GLOBED_REQUIRE(inner.isSecond(), "calling RichColor::getColors when there is only 1 color");
-
-        return inner.secondRef()->get();
-    }
-
-    cocos2d::ccColor3B getColor() const {
-        GLOBED_REQUIRE(inner.isFirst(), "calling RichColor::getColor when there are multiple colors");
-
-        return inner.firstRef()->get();
-    }
-
-    cocos2d::ccColor3B getAnyColor() const {
-        if (inner.isFirst()) {
-            return inner.firstRef()->get();
-        } else {
-            auto& colors = inner.secondRef()->get();
-
-            if (colors.empty()) {
-                return cocos2d::ccc3(255, 255, 255);
-            } else {
-                return colors.at(0);
-            }
-        }
-    }
+    void animateLabel(cocos2d::CCLabelBMFont* label) const;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RichColor, (

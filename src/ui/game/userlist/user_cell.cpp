@@ -49,7 +49,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     auto* nameButton = Build<CCLabelBMFont>::create(data.name.data(), "bigFont.fnt")
         .with([&nameColor](auto* label) {
-            util::ui::animateLabelColorTint(label, nameColor);
+            nameColor.animateLabel(label);
         })
         .limitLabelWidth(140.f, 0.5f, 0.1f)
         .intoMenuItem([this] {

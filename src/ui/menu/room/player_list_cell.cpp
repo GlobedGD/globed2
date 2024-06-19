@@ -45,7 +45,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .with([&labelWidth, &nameColor](CCLabelBMFont* label) {
             label->setScale(label->getScale() * 0.9f);
             labelWidth = label->getScaledContentSize().width;
-            util::ui::animateLabelColorTint(label, nameColor);
+            nameColor.animateLabel(label);
         })
         .intoMenuItem([this] {
             this->onOpenProfile(nullptr);

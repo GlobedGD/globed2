@@ -65,7 +65,7 @@ pub async fn totp_login(
 
     if state_.config.userlist_mode == UserlistMode::Whitelist {
         if !db.get_user(aid).await?.map_or(false, |x| x.is_whitelisted) {
-            unauthorized!("This server has whitelist enabled and your account ID has not been approved.");
+            unauthorized!("This server has whitelist enabled and your account has not been approved.");
         }
     } else {
         let ban_reason = state_.is_banned(db, aid).await;
@@ -117,7 +117,7 @@ pub async fn challenge_start(
 
     if state.config.userlist_mode == UserlistMode::Whitelist {
         if !db.get_user(aid).await?.map_or(false, |x| x.is_whitelisted) {
-            unauthorized!("This server has whitelist enabled and your account ID has not been approved.");
+            unauthorized!("This server has whitelist enabled and your account has not been approved.");
         }
     } else {
         let ban_reason = state.is_banned(db, aid).await;

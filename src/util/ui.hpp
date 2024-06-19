@@ -65,8 +65,6 @@ namespace util::ui {
     cocos2d::ccColor3B getNameColor(const SpecialUserData& data);
     RichColor getNameRichColor(const SpecialUserData& data);
 
-    void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color);
-
     void makeListGray(GJListLayer* list);
     void setCellColors(cocos2d::CCArray* cells, cocos2d::ccColor3B color);
 

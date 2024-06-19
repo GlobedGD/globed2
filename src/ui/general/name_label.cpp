@@ -85,7 +85,7 @@ void GlobedNameLabel::updateOpacity(unsigned char opacity) {
 void GlobedNameLabel::updateColor(const RichColor& color) {
     if (!label) return;
 
-    util::ui::animateLabelColorTint(label, color);
+    color.animateLabel(label);
 }
 
 GlobedNameLabel* GlobedNameLabel::create(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor) {

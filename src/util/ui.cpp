@@ -243,37 +243,6 @@ namespace util::ui {
         return RichColor(ccc3(255, 255, 255));
     }
 
-    void animateLabelColorTint(cocos2d::CCLabelBMFont* label, const RichColor& color) {
-        constexpr int tag = 34925671;
-
-        label->stopActionByTag(tag);
-
-        if (!color.isMultiple()) {
-            label->setColor(color.getColor());
-            return;
-        }
-
-        const auto& colors = color.getColors();
-        if (colors.empty()) {
-            return;
-        }
-
-        // set the last color
-        label->setColor(colors.at(colors.size() - 1));
-
-        // create an action to tint between the rest of the colors
-        CCArray* actions = CCArray::create();
-
-        for (const auto& color : colors) {
-            actions->addObject(CCTintTo::create(0.8f, color.r, color.g, color.b));
-        }
-
-        CCRepeat* action = CCRepeat::create(CCSequence::create(actions), 99999999);
-        action->setTag(tag);
-
-        label->runAction(action);
-    }
-
     void makeListGray(GJListLayer* listLayer) {
         auto top = static_cast<CCSprite*>(geode::cocos::getChildBySpriteFrameName(listLayer, "GJ_table_top_001.png"));
         auto bottom = static_cast<CCSprite*>(geode::cocos::getChildBySpriteFrameName(listLayer, "GJ_table_bottom_001.png"));
