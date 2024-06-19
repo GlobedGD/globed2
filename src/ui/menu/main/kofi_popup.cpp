@@ -164,7 +164,11 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
         .parent(player)
         .collect();
 
+#ifdef GEODE_IS_WINDOWS
     emitter->setOpacity(0);
+#else
+    emitter->setScale(0.0f);
+#endif
 
     auto emitterColor = gm->colorForIdx(gm->m_playerColor);
     auto dict = CCDictionary::createWithContentsOfFile("dragEffect.plist");
@@ -213,7 +217,11 @@ void GlobedKofiPopup::kofiEnableParticlesCallback() {
 }
 
 void GlobedKofiPopup::kofiEnableParticlesCallback2(float dt) {
+#ifdef GEODE_IS_WINDOWS
     particles->setOpacity(255);
+#else
+    particles->setScale(0.9f);
+#endif
 }
 
 GlobedKofiPopup* GlobedKofiPopup::create() {
