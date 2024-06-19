@@ -110,7 +110,11 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
 
     // create kofi btn
 
-    Build<CCMenu>::create()
+    Build<ButtonSprite>::create("Open Ko-fi", "goldFont.fnt", "GJ_button_03.png", 1.f)
+        .intoMenuItem([this](auto* o) {
+            this->kofiCallback(o);
+        })
+        .intoNewParent(CCMenu::create())
         .pos(rlayout.centerBottom + CCPoint{0.f, 5.f})
         .anchorPoint(0.f, 0.f)
         .with([&](CCMenu* menu) {
@@ -122,11 +126,7 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
 
             menu->runAction(buttonSequence);
         })
-        .parent(m_mainLayer)
-        .intoNewChild(ButtonSprite::create("Open Ko-fi", "goldFont.fnt", "GJ_button_03.png", 1.f))
-        .intoMenuItem([this](auto* o) {
-            this->kofiCallback(o);
-        });
+        .parent(m_mainLayer);
 
     auto* gm = GameManager::sharedState();
     auto icons = ProfileCacheManager::get().getOwnData();
@@ -156,13 +156,14 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
         .collect();
 
     auto emitter = Build<CCParticleSystemQuad>::create()
-        .visible(false)
+        .pos(0.f, 0.f)
         .anchorPoint(0.f, 0.f)
-        .pos(-1000.f, -1000.f)
         .scale(0.9f)
         .store(particles)
         .parent(player)
         .collect();
+
+    emitter->setOpacity(0);
 
     auto emitterColor = gm->colorForIdx(gm->m_playerColor);
     auto dict = CCDictionary::createWithContentsOfFile("dragEffect.plist");
@@ -198,6 +199,8 @@ void GlobedKofiPopup::update(float dt) {
     if (std::fabs(ground->getPositionX()) > gWidth * 2) {
         ground->setPositionX(ground->getPositionX() + gWidth * 2);
     }
+
+    particles->setPosition(0.f, 0.f);
 }
 
 void GlobedKofiPopup::kofiCallback(CCObject* sender) {
@@ -205,8 +208,11 @@ void GlobedKofiPopup::kofiCallback(CCObject* sender) {
 }
 
 void GlobedKofiPopup::kofiEnableParticlesCallback() {
-    particles->setVisible(true);
-    particles->setPosition({-15.f, -15.f});
+    this->scheduleOnce(schedule_selector(GlobedKofiPopup::kofiEnableParticlesCallback2), 0.1f);
+}
+
+void GlobedKofiPopup::kofiEnableParticlesCallback2(float dt) {
+    particles->setOpacity(255);
 }
 
 GlobedKofiPopup* GlobedKofiPopup::create() {

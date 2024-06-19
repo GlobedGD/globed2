@@ -17,4 +17,5 @@ private:
     void update(float dt) override;
     void kofiCallback(CCObject* sender);
     void kofiEnableParticlesCallback();
+    void kofiEnableParticlesCallback2(float dt);
 };
