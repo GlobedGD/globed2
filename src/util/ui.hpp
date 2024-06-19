@@ -4,6 +4,8 @@
 #include <data/types/gd.hpp>
 #include <functional>
 
+class UserEntry;
+
 namespace util::ui {
     constexpr cocos2d::ccColor4B BG_COLOR_BROWN = {191, 114, 62, 255};
     constexpr cocos2d::ccColor4B BG_COLOR_DARKBROWN = {161, 88, 44, 255};
@@ -61,6 +63,7 @@ namespace util::ui {
 
     cocos2d::CCSprite* createBadge(const std::string& sprite);
     cocos2d::CCSprite* createBadgeIfSpecial(const SpecialUserData& data);
+    cocos2d::CCSprite* createBadgeIfSpecial(const UserEntry& data);
 
     cocos2d::ccColor3B getNameColor(const SpecialUserData& data);
     RichColor getNameRichColor(const SpecialUserData& data);

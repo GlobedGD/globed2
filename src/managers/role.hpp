@@ -13,6 +13,7 @@ public:
     void clearAllRoles();
     std::vector<GameServerRole>& getAllRoles();
     ComputedRole compute(const std::vector<uint8_t>& roles);
+    ComputedRole compute(const std::vector<std::string>& roles);
 
 private:
     std::vector<GameServerRole> allRoles;

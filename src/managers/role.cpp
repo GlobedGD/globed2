@@ -54,3 +54,17 @@ ComputedRole RoleManager::compute(const std::vector<uint8_t>& roles) {
 
     return computed;
 }
+
+ComputedRole RoleManager::compute(const std::vector<std::string>& roles) {
+    std::vector<uint8_t> out;
+    out.reserve(roles.size());
+
+    for (const auto& key : roles) {
+        auto it = std::find_if(allRoles.begin(), allRoles.end(), [&](auto& role) { return role.role.id == key; });
+        if (it == allRoles.end()) continue;
+
+        out.push_back(it->intId);
+    }
+
+    return this->compute(out);
+}

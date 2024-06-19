@@ -114,6 +114,10 @@ void HookedMenuLayer::updateGlobedButton() {
         m_fields->globedBtn->setNormalImage(makeSprite());
     }
 
+#ifndef GLOBED_DEBUG
+    m_fields->globedBtn->setOpacity(std::sin(M_PI * 2));
+#endif
+
     parent->updateLayout();
 }
 

@@ -70,6 +70,8 @@ cocos2d::ccColor3B RichColor::getAnyColor() const {
 void RichColor::animateLabel(cocos2d::CCLabelBMFont* label) const {
     constexpr int tag = 34925671;
 
+    if (!label) return;
+
     label->stopActionByTag(tag);
 
     if (!this->isMultiple()) {

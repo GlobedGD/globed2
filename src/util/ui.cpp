@@ -1,6 +1,7 @@
 #include "ui.hpp"
 
 #include <hooks/game_manager.hpp>
+#include <data/types/admin.hpp>
 #include <managers/settings.hpp>
 #include <managers/role.hpp>
 #include <util/cocos.hpp>
@@ -219,8 +220,18 @@ namespace util::ui {
         return RoleManager::get().compute(data.roles.value());
     }
 
+    static ComputedRole compute(const UserEntry& data) {
+        return RoleManager::get().compute(data.userRoles);
+    }
+
     CCSprite* createBadgeIfSpecial(const SpecialUserData& data) {
         if (!data.roles) return nullptr;
+
+        return createBadge(compute(data).badgeIcon);
+    }
+
+    CCSprite* createBadgeIfSpecial(const UserEntry& data) {
+        if (data.userRoles.empty()) return nullptr;
 
         return createBadge(compute(data).badgeIcon);
     }

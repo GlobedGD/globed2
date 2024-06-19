@@ -4,6 +4,7 @@
 #include <data/packets/server/admin.hpp>
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/role.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/admin/edit_role_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
@@ -329,7 +330,7 @@ void AdminUserPopup::recreateRoleModifyButton() {
 
     CCSprite* badgeIcon = nullptr;
     if (accountData) {
-        badgeIcon = util::ui::createBadgeIfSpecial(accountData->specialUserData);
+        badgeIcon = util::ui::createBadgeIfSpecial(userEntry);
     }
 
     // make it the normal user icon
