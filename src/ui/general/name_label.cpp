@@ -45,13 +45,30 @@ void GlobedNameLabel::updateName(const std::string& name) {
 
 void GlobedNameLabel::updateName(const char* name) {
     if (!label) {
+        Build<CCNode>::create()
+            .parent(this)
+            .zOrder(-2)
+            .store(labelContainer);
+
         Build<CCLabelBMFont>::create("", "chatFont.fnt")
             .zOrder(-1)
-            .parent(this)
+            .anchorPoint(0.f, 0.f)
+            .parent(labelContainer)
             .store(label);
+
+        Build<CCLabelBMFont>::create("", "chatFont.fnt")
+            .zOrder(-2)
+            .color(0, 0, 0)
+            .anchorPoint(0.f, 0.0f)
+            .pos(0.75f, -0.75f)
+            .parent(labelContainer)
+            .opacity(label->getOpacity() * 0.75f)
+            .store(labelShadow);
     }
 
     label->setString(name);
+    labelShadow->setString(name);
+    labelContainer->setScaledContentSize(label->getScaledContentSize());
     this->updateLayout();
 }
 
@@ -62,6 +79,7 @@ void GlobedNameLabel::updateOpacity(float opacity) {
 void GlobedNameLabel::updateOpacity(unsigned char opacity) {
     if (label) label->setOpacity(opacity);
     if (badge) badge->setOpacity(opacity);
+    if (labelShadow) labelShadow->setOpacity(opacity * 0.75);
 }
 
 void GlobedNameLabel::updateColor(const RichColor& color) {

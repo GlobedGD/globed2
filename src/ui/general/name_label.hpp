@@ -19,8 +19,10 @@ public:
     static GlobedNameLabel* create(const std::string& name);
 
 private:
-    cocos2d::CCSprite* badge = nullptr;
-    cocos2d::CCLabelBMFont* label = nullptr;
+    Ref<cocos2d::CCSprite> badge;
+    Ref<cocos2d::CCLabelBMFont> label;
+    Ref<cocos2d::CCLabelBMFont> labelShadow;
+    Ref<cocos2d::CCNode> labelContainer;
     constexpr static int COLOR_ACTION_TAG = 3498567;
 
     bool init(const std::string& name, cocos2d::CCSprite* badgeSprite, const RichColor& nameColor);
