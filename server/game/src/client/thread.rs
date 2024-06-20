@@ -126,7 +126,7 @@ impl ClientThread {
 
             is_authorized_admin: AtomicBool::new(false),
 
-            is_invisible: AtomicBool::new(false),
+            is_invisible: thread.is_invisible,
 
             message_queue: Mutex::new(VecDeque::new()),
             message_notify: Notify::new(),
@@ -134,7 +134,7 @@ impl ClientThread {
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
 
-            destruction_notify: thread.destruction_notify,
+            destruction_notify: thread.destruction_notify
         }
     }
 

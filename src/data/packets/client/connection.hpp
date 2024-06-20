@@ -49,7 +49,8 @@ class LoginPacket : public Packet {
             const std::string_view token,
             const PlayerIconData& icons,
             uint16_t fragmentationLimit,
-            const std::string_view platform
+            const std::string_view platform,
+            bool isInvisible
     ) :
             accountId(accid),
             userId(userId),
@@ -57,7 +58,8 @@ class LoginPacket : public Packet {
             token(token),
             icons(icons),
             fragmentationLimit(fragmentationLimit),
-            platform(platform) {}
+            platform(platform),
+            isInvisible(isInvisible) {}
 
     int32_t accountId;
     int32_t userId;
@@ -66,6 +68,7 @@ class LoginPacket : public Packet {
     PlayerIconData icons;
     uint16_t fragmentationLimit;
     std::string platform;
+    bool isInvisible;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
@@ -75,7 +78,8 @@ GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
     token,
     icons,
     fragmentationLimit,
-    platform
+    platform,
+    isInvisible
 ));
 
 // 10005 - ClaimThreadPacket

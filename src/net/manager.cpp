@@ -603,7 +603,8 @@ protected:
             authtoken,
             pcm.getOwnData(),
             settings.globed.fragmentationLimit,
-            util::net::loginPlatformString()
+            util::net::loginPlatformString(),
+            settings.globed.isInvisible
         );
 
         this->send(pkt);

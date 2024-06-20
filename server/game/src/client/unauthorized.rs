@@ -1,7 +1,7 @@
 use std::{
     net::SocketAddrV4,
     sync::{
-        atomic::{AtomicI32, AtomicU16, AtomicU32, Ordering},
+        atomic::{AtomicI32, AtomicU16, AtomicU32, Ordering, AtomicBool},
         Arc,
     },
     time::Duration,
@@ -58,6 +58,7 @@ pub struct UnauthorizedThread {
     pub terminate_notify: Notify,
 
     pub destruction_notify: Arc<Notify>,
+    pub is_invisible: AtomicBool,
 }
 
 pub enum UnauthorizedThreadOutcome {
@@ -95,6 +96,7 @@ impl UnauthorizedThread {
             terminate_notify: Notify::new(),
 
             destruction_notify: Arc::new(Notify::new()),
+            is_invisible: AtomicBool::new(false),
         }
     }
 
@@ -125,6 +127,7 @@ impl UnauthorizedThread {
             terminate_notify: Notify::new(),
 
             destruction_notify: thread.destruction_notify,
+            is_invisible: thread.is_invisible,
         }
     }
 
@@ -423,6 +426,7 @@ impl UnauthorizedThread {
         self.send_login_success().await?;
 
         self.connection_state.store(ClientThreadState::Unclaimed); // as we still need ClaimThreadPacket to arrive
+        self.is_invisible.store(packet.is_invisible, Ordering::Relaxed);
 
         Ok(())
     });

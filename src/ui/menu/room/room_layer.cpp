@@ -198,7 +198,7 @@ bool RoomLayer::init() {
 void RoomLayer::onChangeStatus(CCObject*) {
     GlobedSettings& settings = GlobedSettings::get();
 
-    if (settings.flags.seenStatusNotice) {
+    if (!settings.flags.seenStatusNotice) {
         settings.flags.seenStatusNotice = true;
 
         FLAlertLayer::create(
@@ -251,8 +251,6 @@ void RoomLayer::onLoaded(bool stateChanged) {
     }
 
     buttonMenu->updateLayout();
-
-    NetworkManager::get().send(UpdatePlayerStatusPacket::create(GlobedSettings::get().globed.isInvisible));
 
     this->recreateInviteButton();
 }
