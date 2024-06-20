@@ -82,15 +82,18 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     if (isFriend) {
         // cell gradient
-        Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
+        auto* cellGradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
             .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_FRIEND_INGAME))
-            .opacity(80)
+            .opacity(50)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)
             .scaleX(2)
             .blendFunc({GL_ONE, GL_ONE})
-            .parent(this);
+            .parent(this)
+            .collect();
+
+        util::ui::rescaleToMatch(cellGradient, {cellGradient->getScaledContentSize().width, CELL_HEIGHT}, true);
 
         // friend icon
         Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
