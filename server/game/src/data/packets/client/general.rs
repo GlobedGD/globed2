@@ -19,3 +19,9 @@ pub struct RequestLevelListPacket;
 pub struct RequestPlayerCountPacket {
     pub level_ids: FastVec<LevelId, 128>,
 }
+
+#[derive(Packet, Decodable)]
+#[packet(id = 11004)]
+pub struct UpdatePlayerStatusPacket {
+    pub is_invisible: bool,
+}

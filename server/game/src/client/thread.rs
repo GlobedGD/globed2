@@ -66,6 +66,8 @@ pub struct ClientThread {
 
     pub is_authorized_admin: AtomicBool,
 
+    pub is_invisible: AtomicBool,
+
     message_queue: Mutex<VecDeque<ServerThreadMessage>>,
     message_notify: Notify,
     rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
@@ -124,13 +126,15 @@ impl ClientThread {
 
             is_authorized_admin: AtomicBool::new(false),
 
+            is_invisible: thread.is_invisible,
+
             message_queue: Mutex::new(VecDeque::new()),
             message_notify: Notify::new(),
             rate_limiter: LockfreeMutCell::new(rate_limiter),
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
 
-            destruction_notify: thread.destruction_notify,
+            destruction_notify: thread.destruction_notify
         }
     }
 
@@ -426,6 +430,7 @@ impl ClientThread {
             RequestGlobalPlayerListPacket::PACKET_ID => self.handle_request_global_list(&mut data).await,
             RequestLevelListPacket::PACKET_ID => self.handle_request_level_list(&mut data).await,
             RequestPlayerCountPacket::PACKET_ID => self.handle_request_player_count(&mut data).await,
+            UpdatePlayerStatusPacket::PACKET_ID => self.handle_set_player_status(&mut data).await,
 
             /* game related */
             RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,

@@ -44,3 +44,15 @@ class RequestPlayerCountPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RequestPlayerCountPacket, (levelIds));
+
+// 11004 - UpdatePlayerStatusPacket
+class UpdatePlayerStatusPacket : public Packet {
+    GLOBED_PACKET(11004, UpdatePlayerStatusPacket, false, false);
+
+    UpdatePlayerStatusPacket() {}
+    UpdatePlayerStatusPacket(bool isInvisible) : isInvisible(isInvisible) {}
+
+    bool isInvisible;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(UpdatePlayerStatusPacket, (isInvisible));

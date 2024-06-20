@@ -1,4 +1,5 @@
 #pragma once
+#include "Geode/binding/CCMenuItemToggler.hpp"
 #include <defs/all.hpp>
 #include <data/types/gd.hpp>
 
@@ -21,6 +22,7 @@ protected:
     GJCommentListLayer* listLayer = nullptr;
     cocos2d::CCMenu* buttonMenu;
     Ref<CCMenuItemSpriteExtra> clearSearchButton, settingsButton, inviteButton, refreshButton;
+    Ref<CCMenuItemToggler> statusButton;
     cocos2d::CCNode* roomIdButton = nullptr;
 
     cocos2d::CCMenu* roomBtnMenu = nullptr;
@@ -37,4 +39,5 @@ protected:
     void setRoomTitle(std::string name, uint32_t id);
     void onCopyRoomId(cocos2d::CCObject*);
     void recreateInviteButton();
+    void onChangeStatus(cocos2d::CCObject*);
 };

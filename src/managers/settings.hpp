@@ -148,6 +148,7 @@ public:
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
+        Setting<bool, false> isInvisible;
     };
 
     struct Overlay {
@@ -202,6 +203,7 @@ public:
         Flag seenVoiceChatPTTNotice;
         Flag seenTeleportNotice;
         Flag seenAprilFoolsNotice;
+        Flag seenStatusNotice;
     };
 
     Globed globed;
@@ -263,7 +265,7 @@ public:
 /* Enable reflection */
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, isInvisible
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
@@ -289,7 +291,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Admin, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
-    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice
+    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice, seenStatusNotice
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (
