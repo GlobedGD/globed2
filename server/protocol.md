@@ -30,6 +30,7 @@ General
 * 11001 - RequestGlobalPlayerListPacket - request list of all people in the server (response 21000)
 * 11002 - RequestLevelListPacket - request list of all levels people are playing right now (response 21005)
 * 11003 - RequestPlayerCountPacket - request amount of people on up to 128 different levels (response 21006)
+* 11004 - UpdatePlayerStatusPacket - updates the player's status to either visible or invisible
 
 Game related
 
