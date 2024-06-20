@@ -203,7 +203,7 @@ void RoomLayer::onChangeStatus(CCObject*) {
 
         FLAlertLayer::create(
             "Invisibility",
-            "This button toggles whether you want to be visible in the global room list or not. You will still be visible in level player lists and all moderators can see you regardless.",
+            "This button toggles whether you want to be visible on the global player list or not. You will still be visible to other players on the same level as you.",
             "OK"
         )->show();
     }
