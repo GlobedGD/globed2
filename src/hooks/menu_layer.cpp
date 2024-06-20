@@ -115,7 +115,7 @@ void HookedMenuLayer::updateGlobedButton() {
     }
 
 #ifndef GLOBED_DEBUG
-    m_fields->globedBtn->setOpacity(std::sin(M_PI * 2));
+    m_fields->globedBtn->setVisible(std::sin(M_PI * 2));
 #endif
 
     parent->updateLayout();
