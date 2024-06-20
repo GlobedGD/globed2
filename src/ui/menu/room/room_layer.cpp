@@ -196,9 +196,21 @@ bool RoomLayer::init() {
 }
 
 void RoomLayer::onChangeStatus(CCObject*) {
+    GlobedSettings& settings = GlobedSettings::get();
+
+    if (settings.flags.seenStatusNotice) {
+        settings.flags.seenStatusNotice = true;
+
+        FLAlertLayer::create(
+            "Invisibility",
+            "This button toggles whether you want to be visible in the global room list or not. You will still be visible in level player lists and all moderators can see you regardless.",
+            "OK"
+        )->show();
+    }
+
     bool invisible = statusButton->isOn();
     NetworkManager::get().send(UpdatePlayerStatusPacket::create(invisible));
-    GlobedSettings::get().globed.isInvisible = invisible;
+    settings.globed.isInvisible = invisible;
 }
 
 void RoomLayer::update(float) {

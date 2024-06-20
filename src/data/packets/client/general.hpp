@@ -50,9 +50,9 @@ class UpdatePlayerStatusPacket : public Packet {
     GLOBED_PACKET(11004, UpdatePlayerStatusPacket, false, false);
 
     UpdatePlayerStatusPacket() {}
-    UpdatePlayerStatusPacket(bool is_invisible) : is_invisible(is_invisible) {}
+    UpdatePlayerStatusPacket(bool isInvisible) : isInvisible(isInvisible) {}
 
-    bool is_invisible;
+    bool isInvisible;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(UpdatePlayerStatusPacket, (is_invisible));
+GLOBED_SERIALIZABLE_STRUCT(UpdatePlayerStatusPacket, (isInvisible));

@@ -203,6 +203,7 @@ public:
         Flag seenVoiceChatPTTNotice;
         Flag seenTeleportNotice;
         Flag seenAprilFoolsNotice;
+        Flag seenStatusNotice;
     };
 
     Globed globed;
@@ -290,7 +291,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Admin, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
-    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice
+    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice, seenStatusNotice
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (
