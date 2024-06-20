@@ -1297,17 +1297,17 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
 };
 
 // TODO: test if still needed for 2 player mode
-void GlobedGJBGL::updateCamera(float dt) {
-    if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
-        GJBaseGameLayer::updateCamera(dt);
-        return;
-    }
+// void GlobedGJBGL::updateCamera(float dt) {
+//     if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
+//         GJBaseGameLayer::updateCamera(dt);
+//         return;
+//     }
 
-    auto lastPos = m_player1->getPosition();
-    m_player1->setPosition({m_player2->getPositionX(), lastPos.y});
-    GJBaseGameLayer::updateCamera(dt);
-    m_player1->setPosition(lastPos);
-}
+//     auto lastPos = m_player1->getPosition();
+//     m_player1->setPosition({m_player2->getPositionX(), lastPos.y});
+//     GJBaseGameLayer::updateCamera(dt);
+//     m_player1->setPosition(lastPos);
+// }
 
 void GlobedGJBGL::linkPlayerTo(int accountId) {
     if (!m_fields->players.contains(accountId)) return;

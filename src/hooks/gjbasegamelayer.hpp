@@ -77,8 +77,9 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     $override
     void loadLevelSettings();
 
-    $override
-    void updateCamera(float dt);
+    // TODO: bring back once 2p mode is out
+    // $override
+    // void updateCamera(float dt);
 
     // vmt hook
     void onEnterHook();
