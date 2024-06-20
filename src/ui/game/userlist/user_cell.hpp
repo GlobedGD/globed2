@@ -15,6 +15,7 @@ public:
     static GlobedUserCell* create(const PlayerStore::Entry& entry, const PlayerAccountData& data);
 
     PlayerAccountData accountData;
+    bool isFriend;
 
 private:
     cocos2d::CCLabelBMFont* percentageLabel;
@@ -30,8 +31,10 @@ private:
     cocos2d::CCMenu* buttonsWrapper = nullptr;
     GlobedAudioVisualizer* audioVisualizer = nullptr;
     PlayerStore::Entry _data;
+    CCMenuItemSpriteExtra* nameBtn = nullptr;
 
     bool init(const PlayerStore::Entry& entry, const PlayerAccountData& data);
     void makeButtons();
     void updateUsernameLayout();
+    void fixNamePosition();
 };
