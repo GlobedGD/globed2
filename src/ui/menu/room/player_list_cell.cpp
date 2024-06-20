@@ -6,8 +6,10 @@
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <managers/admin.hpp>
+#include <managers/friend_list.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
+#include <util/cocos.hpp>
 
 using namespace geode::prelude;
 
@@ -16,6 +18,10 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
     this->data = data;
 
     auto* gm = GameManager::get();
+
+    // detect if the user is a friend
+    auto& flm = FriendListManager::get();
+    this->isFriend = flm.isFriend(data.accountId);
 
     Build<GlobedSimplePlayer>::create(GlobedSimplePlayer::Icons(data))
         .scale(0.65f)
@@ -50,7 +56,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .intoMenuItem([this] {
             this->onOpenProfile(nullptr);
         })
-        .pos(simplePlayer->getPositionX() + labelWidth / 2.f + 25.f, CELL_HEIGHT / 2.f)
+        .pos(simplePlayer->getPositionX() + labelWidth / 2.f + 25.f, CELL_HEIGHT / 2 - 50.f)
         .scaleMult(1.1f)
         .parent(badgeWrapper)
         .collect();
@@ -61,8 +67,27 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         badgeWrapper->addChild(badge);
     }
 
+    if (isFriend) {
+        CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
+            .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_FRIEND))
+            .opacity(100)
+            .pos(0, 0)
+            .anchorPoint({0, 0})
+            .zOrder(-2)
+            .scaleX(2)
+            .blendFunc({GL_ONE, GL_ONE})
+            .parent(this);
+
+        CCSprite* icon = Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
+            .anchorPoint({0, 0.5})
+            .scale(0.3)
+            .parent(badgeWrapper);
+    }
+
     badgeWrapper->updateLayout();
 
+    label->setPositionY(CELL_HEIGHT / 2 - 5.15f);
+    
     const float pad = 5.f;
     Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End))

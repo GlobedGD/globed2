@@ -7,11 +7,13 @@
 #include <managers/block_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/profile_cache.hpp>
+#include <managers/friend_list.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
+#include <util/cocos.hpp>
 
 using namespace geode::prelude;
 
@@ -23,6 +25,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     auto winSize = CCDirector::get()->getWinSize();
 
     auto gm = GameManager::get();
+    auto& flm = FriendListManager::get();
+    this->isFriend = flm.isFriend(data.accountId);
 
     Build<CCMenu>::create()
         .pos(0.f, 0.f)
@@ -44,6 +48,10 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .id("player-icon"_spr)
         .collect();
 
+    auto spacer = Build<CCNode>::create()
+        .contentSize({0.4f, 1.0f})
+        .parent(usernameLayout);
+
     auto& pcm = ProfileCacheManager::get();
     RichColor nameColor = util::ui::getNameRichColor(data.specialUserData);
 
@@ -62,12 +70,30 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         })
         .scaleMult(1.1f)
         .parent(usernameLayout)
+        .store(nameBtn)
         .collect();
 
     CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
     if (badgeIcon) {
         util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE);
         usernameLayout->addChild(badgeIcon);
+    }
+
+    if (isFriend) {
+        CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
+            .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_FRIEND_INGAME))
+            .opacity(80)
+            .pos(0, 0)
+            .anchorPoint({0, 0})
+            .zOrder(-2)
+            .scaleX(2)
+            .blendFunc({GL_ONE, GL_ONE})
+            .parent(this);
+
+        CCSprite* icon = Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
+            .anchorPoint({0, 0.5})
+            .scale(0.3)
+            .parent(usernameLayout);
     }
 
     // percentage label
@@ -79,6 +105,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     usernameLayout->updateLayout();
     menu->updateLayout();
+
+    fixNamePosition();
 
     this->makeButtons();
 
@@ -96,11 +124,17 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
         if (platformer && _data.localBest != 0) {
             percentageLabel->setString(util::format::formatPlatformerTime(_data.localBest).c_str());
             usernameLayout->updateLayout();
+            fixNamePosition();
         } else if (!platformer) {
             percentageLabel->setString(fmt::format("{}%", _data.localBest).c_str());
             usernameLayout->updateLayout();
+            fixNamePosition();
         }
     }
+}
+
+void GlobedUserCell::fixNamePosition() {
+    nameBtn->setPositionY(CELL_HEIGHT / 2 - 2.5f);
 }
 
 void GlobedUserCell::updateVisualizer(float dt) {

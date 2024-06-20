@@ -210,9 +210,24 @@ void RoomLayer::onLoaded(bool stateChanged) {
         .parent(listLayer)
         .collect();
 
-    for (auto* cell : CCArrayExt<PlayerListCell*>(cells)) {
-        static_cast<GenericListCell*>(cell->getParent())->m_backgroundLayer->setColor(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_DARKER_BLUE));
+    CCPoint rect[4] = {
+        CCPoint(0, 0),
+        CCPoint(0, PlayerListCell::CELL_HEIGHT - 1.f),
+        CCPoint(LIST_WIDTH, PlayerListCell::CELL_HEIGHT - 1.f),
+        CCPoint(LIST_WIDTH, 0)
+    };
+
+    int pos = 0;
+    for (auto* cell : CCArrayExt<PlayerListCell*>(listLayer->m_list->m_entries)) {
+        if (auto listcell = static_cast<GenericListCell*>(cell->getParent())) {
+            pos++;
+            listcell->m_backgroundLayer->setColor(util::cocos::convert<ccColor3B>(pos % 2 == 1 ? util::ui::BG_COLOR_DARK_BLUE : util::ui::BG_COLOR_DARKER_BLUE));
+        } 
     }
+
+    // for (auto* cell : CCArrayExt<PlayerListCell*>(cells)) {
+    //     static_cast<GenericListCell*>(cell->getParent())->m_backgroundLayer->setColor(util::cocos::convert<ccColor3B>(cell->isFriend ? util::ui::BG_COLOR_DARKER_GREEN : util::ui::BG_COLOR_DARKER_BLUE));
+    // }
 
     if (previousCellCount != 0 && !stateChanged) {
         util::ui::setScrollPos(listLayer->m_list, scrollPos);
