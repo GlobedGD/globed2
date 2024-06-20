@@ -23,6 +23,7 @@
 * Add a Compressed Player Count setting which changes the "X players" label to be more compact (thanks [Uproxide](user:25397826)!)
 * Add a support button in the menu
 * Add a voice chat guide button in the menu
+* Add a gradient and an icon to your friends on the player list
 * Redesign the main menus and change textures for many of the icons
 * Add much better error messages for outdated clients
 * Don't play effects and animations if the player is too far, to decrease lag
