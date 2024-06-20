@@ -1,5 +1,8 @@
 #pragma once
+#include <defs/minimal_geode.hpp>
+
 #include <string_view>
+#include <string>
 
 // for sockaddr_in
 #ifdef GEODE_IS_WINDOWS
@@ -7,6 +10,7 @@
 #else
 # include <netinet/in.h>
 #endif
+
 
 // Represents an IPv4 address and a port
 class NetworkAddress {

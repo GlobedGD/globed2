@@ -14,6 +14,10 @@ class Packet;
 template <typename T>
 concept HasPacketID = requires { T::PACKET_ID; };
 
+namespace cocos2d {
+    class CCNode;
+}
+
 class NetworkManager : public SingletonBase<NetworkManager> {
 protected:
     friend class SingletonBase;
