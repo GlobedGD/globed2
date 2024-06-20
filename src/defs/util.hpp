@@ -2,6 +2,9 @@
 
 #include <config.hpp>
 #include <embedded_resources.hpp>
+#include <string>
+#include <string_view>
+#include <algorithm>
 
 // gets a string from embedded resources json
 // "key"_gstr;

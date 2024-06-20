@@ -1,5 +1,5 @@
 #pragma once
-#include <stdint.h>
+#include <cstddef>
 
 namespace util::crypto {
     // Unoptimized adler-32 implementation.
