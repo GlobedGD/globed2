@@ -24,6 +24,7 @@
 * Add a support button in the menu
 * Add a voice chat guide button in the menu
 * Add a gradient and an icon to your friends on the player list
+* Add a way to hide yourself from the player list in menus
 * Redesign the main menus and change textures for many of the icons
 * Add much better error messages for outdated clients
 * Don't play effects and animations if the player is too far, to decrease lag
