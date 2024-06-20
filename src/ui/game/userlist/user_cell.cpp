@@ -48,7 +48,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .id("player-icon"_spr)
         .collect();
 
-    auto spacer = Build<CCNode>::create()
+    // spacer
+    Build<CCNode>::create()
         .contentSize({0.4f, 1.0f})
         .parent(usernameLayout);
 
@@ -80,7 +81,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     }
 
     if (isFriend) {
-        CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
+        // cell gradient
+        Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
             .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_FRIEND_INGAME))
             .opacity(80)
             .pos(0, 0)
@@ -90,7 +92,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
             .blendFunc({GL_ONE, GL_ONE})
             .parent(this);
 
-        CCSprite* icon = Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
+        // friend icon
+        Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
             .anchorPoint({0, 0.5})
             .scale(0.3)
             .parent(usernameLayout);

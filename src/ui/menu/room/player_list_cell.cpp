@@ -70,7 +70,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
     if (isFriend) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
             .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_FRIEND))
-            .opacity(100)
+            .opacity(50)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)
@@ -87,7 +87,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
     badgeWrapper->updateLayout();
 
     label->setPositionY(CELL_HEIGHT / 2 - 5.15f);
-    
+
     const float pad = 5.f;
     Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End))
