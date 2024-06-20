@@ -109,7 +109,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     usernameLayout->updateLayout();
     menu->updateLayout();
 
-    fixNamePosition();
+    this->fixNamePosition();
 
     this->makeButtons();
 
@@ -127,11 +127,11 @@ void GlobedUserCell::refreshData(const PlayerStore::Entry& entry) {
         if (platformer && _data.localBest != 0) {
             percentageLabel->setString(util::format::formatPlatformerTime(_data.localBest).c_str());
             usernameLayout->updateLayout();
-            fixNamePosition();
+            this->fixNamePosition();
         } else if (!platformer) {
             percentageLabel->setString(fmt::format("{}%", _data.localBest).c_str());
             usernameLayout->updateLayout();
-            fixNamePosition();
+            this->fixNamePosition();
         }
     }
 }
