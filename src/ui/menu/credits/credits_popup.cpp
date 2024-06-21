@@ -115,7 +115,9 @@ bool GlobedCreditsPopup::setup() {
     auto rlayout = util::ui::getPopupLayout(m_size);
 
     auto* listlayer = Build<GJCommentListLayer>::create(nullptr, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false)
-        .pos((m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2, 60.f)
+        .ignoreAnchorPointForPos(false)
+        .anchorPoint(0.5f, 1.f)
+        .pos(rlayout.center.width, rlayout.top - 40.f)
         .parent(m_mainLayer)
         .collect();
 

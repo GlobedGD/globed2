@@ -91,6 +91,10 @@ namespace util::ui {
         }
     }
 
+    void rescaleToMatchX(cocos2d::CCNode* node, float targetWidth) {
+        node->setScaleX(targetWidth / node->getContentWidth());
+    }
+
     float getScrollPos(BoomListView* listView) {
         auto* cl = listView->m_tableView->m_contentLayer;
         if (cl->getPositionY() > 0.f) return 99999.f;
@@ -352,5 +356,43 @@ namespace util::ui {
             .anchorPoint(0.f, 0.f)
             .color(color)
             .collect();
+    }
+
+    float capPopupWidth(float in) {
+        auto winSize = CCDirector::get()->getWinSize();
+        return util::math::min(420.f, winSize.width * 0.7f);
+    }
+
+    void fixListBorders(GJCommentListLayer* list) {
+        float w = list->getScaledContentWidth() * 1.045f;
+
+        // find the borders
+        CCNode* border1 = nullptr, *border2 = nullptr;
+
+        for (auto* child : CCArrayExt<CCNode*>(list->getChildren())) {
+            auto sprite = typeinfo_cast<CCSprite*>(child);
+            if (!sprite) continue;
+
+            if (geode::cocos::isSpriteFrameName(sprite, "GJ_commentTop2_001.png")) {
+                border1 ? (border2 = sprite) : (border1 = sprite);
+            }
+
+            if (border2) break;
+        }
+
+        // rescale them
+        if (border1) {
+            rescaleToMatchX(border1, w);
+        }
+
+        if (border2) {
+            rescaleToMatchX(border2, w);
+        }
+    }
+
+    float getAspectRatio() {
+        auto winSize = CCDirector::get()->getWinSize();
+
+        return winSize.width / winSize.height;
     }
 }

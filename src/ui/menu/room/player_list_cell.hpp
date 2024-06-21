@@ -7,11 +7,11 @@
 class PlayerListCell : public cocos2d::CCLayer {
 public:
     static constexpr float CELL_HEIGHT = 30.0f;
-    bool isFriend;
-    static PlayerListCell* create(const PlayerRoomPreviewAccountData& data, bool forInviting);
+
+    static PlayerListCell* create(const PlayerRoomPreviewAccountData& data, float width, bool forInviting);
 
 protected:
-    bool init(const PlayerRoomPreviewAccountData& data, bool forInviting);
+    bool init(const PlayerRoomPreviewAccountData& data, float width, bool forInviting);
     void onOpenProfile(cocos2d::CCObject*);
 
     void createInviteButton();
@@ -22,9 +22,11 @@ protected:
     void enableInvites();
 
     PlayerRoomPreviewAccountData data;
-    
+    float width;
+
     cocos2d::CCMenu* menu;
     CCMenuItemSpriteExtra *playButton = nullptr, *inviteButton = nullptr;
     GlobedSimplePlayer* simplePlayer;
 
+    bool isFriend;
 };

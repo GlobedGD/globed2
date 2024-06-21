@@ -104,7 +104,7 @@ void InvitePopup::onLoaded(bool stateChanged) {
     auto cells = CCArray::create();
 
     for (const auto& pdata : filteredPlayerList) {
-        auto* cell = PlayerListCell::create(pdata.makeRoomPreview(), true);
+        auto* cell = PlayerListCell::create(pdata.makeRoomPreview(), LIST_WIDTH, true);
         cells->addObject(cell);
     }
 

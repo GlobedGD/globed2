@@ -32,7 +32,9 @@ namespace util::ui {
     void rescaleToMatch(cocos2d::CCNode* node, cocos2d::CCNode* target, bool stretch = false);
 
     // set the scale for `node` in a way that `node->getScaledContentSize()` will match `targetSize`
-    void rescaleToMatch(cocos2d::CCNode *node, cocos2d::CCSize targetSize, bool stretch = false);
+    void rescaleToMatch(cocos2d::CCNode* node, cocos2d::CCSize targetSize, bool stretch = false);
+
+    void rescaleToMatchX(cocos2d::CCNode* node, float targetWidth);
 
     float getScrollPos(BoomListView* listView);
     void setScrollPos(BoomListView* listView, float pos);
@@ -79,4 +81,12 @@ namespace util::ui {
 
     // make a background that loops
     cocos2d::CCSprite* makeRepeatingBackground(const char* texture, cocos2d::ccColor3B color, float xMult = 1.f, float yMult = 1.f, RepeatMode mode = RepeatMode::Both);
+
+    // cap popup width so it doesnt become too big on small aspect ratios (max winSize.width * 0.8)
+    float capPopupWidth(float in);
+
+    // i hate gjcommentlistlayer i hate gjcommentlistlayer i hate gjcommentlistlayer
+    void fixListBorders(GJCommentListLayer* list);
+
+    float getAspectRatio();
 }

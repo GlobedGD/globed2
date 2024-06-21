@@ -77,7 +77,7 @@ void AdminUserPopup::onProfileLoaded() {
 
     // name layout
     Build<CCMenu>::create()
-        .layout(RowLayout::create()->setGap(5.f))
+        .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false))
         .pos(sizes.centerTop - CCPoint{0.f, 20.f})
         .parent(m_mainLayer)
         .store(nameLayout);
@@ -338,7 +338,7 @@ void AdminUserPopup::recreateRoleModifyButton() {
         badgeIcon = CCSprite::createWithSpriteFrameName("role-user.png"_spr);
     }
 
-    util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE * 1.1f);
+    util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE * 1.2f);
 
     roleModifyButton = Build(badgeIcon)
         .intoMenuItem([this](auto) {

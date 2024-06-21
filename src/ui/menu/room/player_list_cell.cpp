@@ -13,9 +13,10 @@
 
 using namespace geode::prelude;
 
-bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInviting) {
+bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width, bool forInviting) {
     if (!CCLayer::init()) return false;
     this->data = data;
+    this->width = width;
 
     auto* gm = GameManager::get();
 
@@ -39,7 +40,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start)->setAutoScale(false))
         .anchorPoint(0.f, 0.5f)
-        .contentSize(RoomLayer::LIST_WIDTH, CELL_HEIGHT)
+        .contentSize(width, CELL_HEIGHT)
         .scale(1.f)
         .parent(this)
         .id("badge-wrapper"_spr)
@@ -93,7 +94,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, bool forInvi
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End))
         .anchorPoint(0.f, 0.5f)
         .pos(pad, CELL_HEIGHT / 2.f)
-        .contentSize(RoomLayer::LIST_WIDTH - pad * 2, CELL_HEIGHT)
+        .contentSize(width - pad * 2, CELL_HEIGHT)
         .parent(this)
         .store(menu);
 
@@ -172,7 +173,7 @@ void PlayerListCell::createJoinButton() {
                 popup->show();
             }
         })
-        .pos(RoomLayer::LIST_WIDTH - 30.f, CELL_HEIGHT / 2.f)
+        .pos(width - 30.f, CELL_HEIGHT / 2.f)
         .scaleMult(1.1f)
         .store(playButton)
         .parent(menu);
@@ -199,9 +200,9 @@ void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
     ProfilePage::create(data.accountId, false)->show();
 }
 
-PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data, bool forInviting) {
+PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data, float width, bool forInviting) {
     auto ret = new PlayerListCell;
-    if (ret->init(data, forInviting)) {
+    if (ret->init(data, width, forInviting)) {
         ret->autorelease();
         return ret;
     }

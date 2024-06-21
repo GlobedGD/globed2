@@ -18,17 +18,25 @@
 #include <util/cocos.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>
+#include <util/math.hpp>
 
 using namespace geode::prelude;
 
 bool RoomLayer::init() {
     if (!CCLayer::init()) return false;
 
-    CCSize m_size = {POPUP_WIDTH, POPUP_HEIGHT};
-
     auto winSize = CCDirector::get()->getWinSize();
+
+    const float popupWidth = util::ui::capPopupWidth(420.f);
+    const float popupHeight = 280.f;
+
+    listWidth = popupWidth * 0.80f;
+    listHeight = 180.f;
+
+    popupSize = CCSize{popupWidth, popupHeight};
+
     auto bg = CCScale9Sprite::create("GJ_square02.png", {0, 0, 80, 80});
-    bg->setContentSize({POPUP_WIDTH, POPUP_HEIGHT});
+    bg->setContentSize(popupSize);
     bg->setPosition(winSize.width / 2, winSize.height / 2);
     this->addChild(bg);
 
@@ -91,24 +99,36 @@ bool RoomLayer::init() {
         this->recreateInviteButton();
     });
 
-    auto popupLayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayout(popupSize);
 
-    auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
-    listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_DARK_BLUE, LIST_WIDTH, LIST_HEIGHT, true);
+    auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, listWidth, listHeight);
 
-    float xpos = (this->getScaledContentSize().width - LIST_WIDTH) / 2;
-    listLayer->setPosition({xpos, 85.f});
-    this->addChild(listLayer);
+    listLayer = Build<GJCommentListLayer>::create(listview, "", util::ui::BG_COLOR_DARK_BLUE, listWidth, listHeight, true)
+        .ignoreAnchorPointForPos(false)
+        .anchorPoint(0.5f, 1.f)
+        .pos(rlayout.center.width, rlayout.top - 40.f)
+        .parent(this)
+        .collect();
+
+    util::ui::fixListBorders(listLayer);
+
+    const float sidePadding = (rlayout.popupSize.width - listWidth) / 2.f;
 
     Build<CCMenu>::create()
         .layout(ColumnLayout::create()->setGap(1.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
         .scale(0.875f)
-        .pos(popupLayout.right - 6.f, popupLayout.top - 6.f)
+        // this is funny
+        .pos(rlayout.right - util::math::min(6.f, (sidePadding - 30.f)), rlayout.top - 6.f)
         .anchorPoint(1.f, 1.f)
-        .contentSize(30.f, POPUP_HEIGHT)
+        .contentSize(30.f, popupHeight)
         .parent(this)
         .id("top-right-buttons"_spr)
         .store(buttonMenu);
+
+    // this is grand
+    float buttonSize = util::math::min(32.5f, sidePadding - 5.f);
+    this->targetButtonSize = CCSize{buttonSize, buttonSize};
+    log::debug("target btn size: {}", buttonSize);
 
     CCMenuItemSpriteExtra *filterBtn;
 
@@ -118,6 +138,10 @@ bool RoomLayer::init() {
         .parent(buttonMenu)
         .store(statusButton);
 
+    util::ui::rescaleToMatch(statusButton->m_offButton, targetButtonSize);
+    util::ui::rescaleToMatch(statusButton->m_onButton, targetButtonSize);
+    util::ui::rescaleToMatch(statusButton, targetButtonSize);
+
     statusButton->m_offButton->m_scaleMultiplier = 1.1f;
     statusButton->m_onButton->m_scaleMultiplier = 1.1f;
 
@@ -125,6 +149,9 @@ bool RoomLayer::init() {
 
     // search button
     Build<CCSprite>::createSpriteName("gj_findBtn_001.png")
+        .with([&](auto* btn) {
+            util::ui::rescaleToMatch(btn, targetButtonSize);
+        })
         .intoMenuItem([this](auto) {
             AskInputPopup::create("Search Player", [this](const std::string_view input) {
                 this->applyFilter(input);
@@ -139,6 +166,9 @@ bool RoomLayer::init() {
 
     // clear search button
     Build<CCSprite>::createSpriteName("gj_findBtnOff_001.png")
+        .with([&](auto* btn) {
+            util::ui::rescaleToMatch(btn, targetButtonSize);
+        })
         .intoMenuItem([this](auto) {
             this->applyFilter("");
             this->sortPlayerList();
@@ -151,7 +181,7 @@ bool RoomLayer::init() {
     // invite button
     Build<CCSprite>::createSpriteName("icon-invite-menu.png"_spr)
         .with([this](CCSprite* spr) {
-            util::ui::rescaleToMatch(spr, clearSearchButton);
+            util::ui::rescaleToMatch(spr, targetButtonSize);
         })
         .intoMenuItem([this](auto) {
             InvitePopup::create()->show();
@@ -174,11 +204,14 @@ bool RoomLayer::init() {
         .visible(false)
         .store(settingsButton)
         .intoNewParent(CCMenu::create())
-        .pos(popupLayout.bottomLeft)
+        .pos(rlayout.bottomLeft)
         .parent(this);
 
     // refresh button
     Build<CCSprite>::createSpriteName("icon-refresh-square.png"_spr)
+        .with([&](auto* btn) {
+            util::ui::rescaleToMatch(btn, targetButtonSize);
+        })
         .intoMenuItem([this](auto) {
             this->reloadPlayerList(true);
         })
@@ -226,7 +259,7 @@ void RoomLayer::onLoaded(bool stateChanged) {
     auto cells = CCArray::create();
 
     for (const auto& pdata : filteredPlayerList) {
-        auto* cell = PlayerListCell::create(pdata, false);
+        auto* cell = PlayerListCell::create(pdata, listWidth, false);
         cells->addObject(cell);
     }
 
@@ -235,15 +268,15 @@ void RoomLayer::onLoaded(bool stateChanged) {
     int previousCellCount = listLayer->m_list->m_entries->count();
 
     listLayer->m_list->removeFromParent();
-    listLayer->m_list = Build<ListView>::create(cells, PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
+    listLayer->m_list = Build<ListView>::create(cells, PlayerListCell::CELL_HEIGHT, listWidth, listHeight)
         .parent(listLayer)
         .collect();
 
     CCPoint rect[4] = {
         CCPoint(0, 0),
         CCPoint(0, PlayerListCell::CELL_HEIGHT - 1.f),
-        CCPoint(LIST_WIDTH, PlayerListCell::CELL_HEIGHT - 1.f),
-        CCPoint(LIST_WIDTH, 0)
+        CCPoint(listWidth, PlayerListCell::CELL_HEIGHT - 1.f),
+        CCPoint(listWidth, 0)
     };
 
     int pos = 0;
@@ -278,7 +311,8 @@ void RoomLayer::addButtons() {
     if (roomBtnMenu) roomBtnMenu->removeFromParent();
 
     auto& rm = RoomManager::get();
-    float popupCenter = CCDirector::get()->getWinSize().width / 2;
+
+    auto rlayout = util::ui::getPopupLayout(popupSize);
 
     if (rm.isInGlobal()) {
         Build<CCMenu>::create()
@@ -287,8 +321,9 @@ void RoomLayer::addButtons() {
                 ->setAxisAlignment(AxisAlignment::Center)
                 ->setGap(5.0f)
             )
+            .contentSize(listWidth, 0.f)
             .id("btn-menu"_spr)
-            .pos(popupCenter, 55.f)
+            .pos(rlayout.center.width, rlayout.bottom + 30.f)
             .parent(this)
             .store(roomBtnMenu);
 
@@ -320,7 +355,7 @@ void RoomLayer::addButtons() {
     } else {
         Build<CCMenu>::create()
             .id("leave-room-btn-menu"_spr)
-            .pos(popupCenter, 55.f)
+            .pos(rlayout.center.width, rlayout.bottom + 30.f)
             .parent(this)
             .store(roomBtnMenu);
 
@@ -440,10 +475,10 @@ void RoomLayer::setRoomTitle(std::string name, uint32_t id) {
         title = fmt::format("{} ({})", name, id);
     }
 
-    auto layout = util::ui::getPopupLayout({POPUP_WIDTH, POPUP_HEIGHT});
+    auto layout = util::ui::getPopupLayout(popupSize);
 
     CCNode* elem = Build<CCLabelBMFont>::create(title.c_str(), "goldFont.fnt")
-        .scale(0.7f)
+        .limitLabelWidth(listWidth, 0.7f, 0.2f)
         .collect();
 
     if (id != 0) {

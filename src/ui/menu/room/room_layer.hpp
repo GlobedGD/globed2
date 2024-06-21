@@ -5,14 +5,13 @@
 
 class RoomLayer : public cocos2d::CCLayer {
 public:
-    constexpr static float POPUP_WIDTH = 420.f;
-    constexpr static float POPUP_HEIGHT = 280.f;
-    constexpr static float LIST_WIDTH = 340.f;
-    constexpr static float LIST_HEIGHT = 180.f;
-
     static RoomLayer* create();
 
     void reloadPlayerList(bool sendPacket = true);
+
+    cocos2d::CCSize popupSize;
+    float listWidth, listHeight;
+    cocos2d::CCSize targetButtonSize;
 
 protected:
     std::vector<PlayerRoomPreviewAccountData> playerList;

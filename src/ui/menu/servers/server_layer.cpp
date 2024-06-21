@@ -67,9 +67,6 @@ bool GlobedServersLayer::init() {
     Build<GlobedServerList>::create()
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
-        .with([&](auto* node) {
-            node->setPosition({winSize / 2 - node->getScaledContentSize() / 2});
-        })
         .parent(this)
         .id("server-list")
         .store(serverList);
@@ -81,6 +78,14 @@ bool GlobedServersLayer::init() {
         .parent(this)
         .id("server-list")
         .store(signupLayer);
+
+    if (util::ui::getAspectRatio() < 1.6f) {
+        serverList->setScaleX(0.9f);
+        signupLayer->setScaleX(0.9f);
+    }
+
+    serverList->setPosition({winSize / 2 - serverList->getScaledContentSize() / 2});
+    signupLayer->setPosition({winSize / 2 - signupLayer->getScaledContentSize() / 2});
 
     this->schedule(schedule_selector(GlobedServersLayer::updateBG));
     this->schedule(schedule_selector(GlobedServersLayer::updateServerList), 0.1f);
