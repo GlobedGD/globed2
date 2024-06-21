@@ -184,13 +184,16 @@ impl UnauthorizedThread {
                             Ok(()) => {}
                             Err(e) => {
                                 warn!("error on an unauth thread: {e}");
-                                self.terminate();
+                                #[cfg(debug_assertions)]
+                                let _ = self.terminate_with_message(&format!("{e}")).await;
+                                #[cfg(not(debug_assertions))]
+                                let _ = self.terminate_with_message("internal server error during handling a packet").await;
                             }
                         },
 
                         Ok(Err(err)) => {
                             // terminate, an error occurred
-                            warn!("error on an unauth thread, terminating: {err}");
+                            warn!("fatal error on an unauth thread, terminating: {err}");
                             self.terminate();
                         }
 
@@ -494,6 +497,16 @@ impl UnauthorizedThread {
 
     fn terminate(&self) {
         self.connection_state.store(ClientThreadState::Terminating);
+    }
+
+    async fn terminate_with_message(&self, message: & str) -> Result<()> {
+        self.get_socket().send_packet_dynamic(&ServerDisconnectPacket {
+            message
+        }).await?;
+
+        self.terminate();
+
+        Ok(())
     }
 
     pub fn request_termination(&self) {

@@ -199,6 +199,7 @@ protected:
     AtomicBool suspended;
     AtomicBool standalone;
     AtomicBool recovering;
+    AtomicBool handshakeDone;
     AtomicU8 recoverAttempt;
     AtomicBool ignoreProtocolMismatch;
     AtomicBool wasFromRecovery;
@@ -221,6 +222,8 @@ protected:
         threadMain.setLoopFunction(&NetworkManager::Impl::threadMainFunc);
         threadMain.setStartFunction([] { geode::utils::thread::setName("Network Thread (out)"); });
         threadMain.start(this);
+
+        this->resetConnectionState();
     }
 
     ~Impl() {
@@ -245,6 +248,21 @@ protected:
         log::info("goodbye from networkmanager!");
     }
 
+    void resetConnectionState() {
+        state = ConnectionState::Disconnected;
+        standalone = false;
+        recovering = false;
+        handshakeDone = false;
+        recoverAttempt = 0;
+        wasFromRecovery = false;
+        cancellingRecovery = false;
+        secretKey = 0;
+        serverTps = 0;
+        lastReceivedPacket = {};
+        lastSentKeepalive = {};
+        lastTcpExchange = {};
+    }
+
     /* connection and tasks */
 
     Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone, bool fromRecovery = false) {
@@ -256,6 +274,8 @@ protected:
         if (state != ConnectionState::Disconnected) {
             return Err("already trying to connect");
         }
+
+        this->resetConnectionState();
 
         this->standalone = standalone;
         this->wasFromRecovery = fromRecovery;
@@ -283,11 +303,7 @@ protected:
     void disconnect(bool quiet = false, bool noclear = false) {
         ConnectionState prevState = state;
 
-        state = ConnectionState::Disconnected;
-        standalone = false;
-        recovering = false;
-        cancellingRecovery = false;
-        recoverAttempt = 0;
+        this->resetConnectionState();
 
         if (!quiet && prevState == ConnectionState::Established) {
             // send it directly instead of pushing to the queue
@@ -575,6 +591,8 @@ protected:
 
     void onCryptoHandshakeResponse(std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
         log::debug("handshake successful, logging in");
+        handshakeDone = true;
+
         auto key = packet->data.key;
 
         socket.cryptoBox->setPeerKey(key.data());
@@ -895,14 +913,20 @@ protected:
         else if (state == ConnectionState::Authenticating && !socket.isConnected()) {
             this->disconnect(true);
 
-            ErrorQueues::get().error(fmt::format("Failed to connect to the server.\n\nReason: <cy>server abruptly disconnected during the handshake</c>"));
+            ErrorQueues::get().error(fmt::format(
+                "Failed to connect to the server.\n\nReason: <cy>server abruptly disconnected during the {}</c>",
+                handshakeDone ? "login attempt" : "handshake"
+            ));
             return;
         }
         // Detect if authentication is taking too long
         else if (state == ConnectionState::Authenticating && !recovering && (util::time::now() - lastReceivedPacket) > util::time::seconds(5)) {
             this->disconnect(true);
 
-            ErrorQueues::get().error(fmt::format("Failed to connect to the server.\n\nReason: <cy>server took too long to respond to the handshake</c>"));
+            ErrorQueues::get().error(fmt::format(
+                "Failed to connect to the server.\n\nReason: <cy>server took too long to respond to the {}</c>",
+                handshakeDone ? "login attempt" : "handshake"
+            ));
             return;
         }
 
