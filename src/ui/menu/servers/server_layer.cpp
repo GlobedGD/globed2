@@ -1,6 +1,8 @@
 #include "server_layer.hpp"
 
 #include "switcher/server_switcher_popup.hpp"
+#include <ui/menu/main/kofi_popup.hpp>
+#include <ui/menu/credits/credits_popup.hpp>
 #include <data/packets/server/connection.hpp>
 #include <managers/account.hpp>
 #include <managers/central_server.hpp>
@@ -86,6 +88,44 @@ bool GlobedServersLayer::init() {
 
     serverList->setPosition({winSize / 2 - serverList->getScaledContentSize() / 2});
     signupLayer->setPosition({winSize / 2 - signupLayer->getScaledContentSize() / 2});
+
+
+
+    // right button menu
+    auto* rightButtonMenu = Build<CCMenu>::create()
+        .layout(
+            ColumnLayout::create()
+                ->setAutoScale(true)
+                ->setGap(4.f)
+                ->setAxisAlignment(AxisAlignment::Start)
+        )
+        .anchorPoint(1.f, 0.f)
+        .pos(winSize.width - 15.f, 20.f)
+        .parent(this)
+        .id("right-button-menu"_spr)
+        .collect();
+
+    // kofi button
+    Build<CCSprite>::createSpriteName("icon-kofi.png"_spr)
+        .intoMenuItem([](auto) {
+            GlobedKofiPopup::create()->show();
+        })
+        .scaleMult(1.15f)
+        .id("btn-kofi"_spr)
+        .parent(rightButtonMenu);
+
+    // credits button
+    Build<CCSprite>::createSpriteName("icon-credits.png"_spr)
+        .intoMenuItem([](auto) {
+            auto* popup = GlobedCreditsPopup::create();
+            popup->m_noElasticity = true;
+            popup->show();
+        })
+        .scaleMult(1.15f)
+        .id("btn-credits"_spr)
+        .parent(rightButtonMenu);
+
+    rightButtonMenu->updateLayout();
 
     this->schedule(schedule_selector(GlobedServersLayer::updateServerList), 0.1f);
     this->schedule(schedule_selector(GlobedServersLayer::pingServers), 5.0f);
