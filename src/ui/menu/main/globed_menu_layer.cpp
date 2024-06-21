@@ -180,21 +180,48 @@ void GlobedMenuLayer::update(float dt) {
     auto& nm = NetworkManager::get();
 
     // update the buttons
-    if (nm.established() != currentlyShowingButtons) {
-        currentlyShowingButtons = nm.established();
+    // if (nm.established() != currentlyShowingButtons) {
+    //     currentlyShowingButtons = nm.established();
 
-        if (currentlyShowingButtons) {
-            leftButtonMenu->addChild(levelListButton);
-        } else {
-            levelListButton->removeFromParent();
-        }
+    //     if (currentlyShowingButtons) {
+    //         leftButtonMenu->addChild(levelListButton);
+    //     } else {
+    //         levelListButton->removeFromParent();
+    //     }
 
-        leftButtonMenu->updateLayout();
+    //     leftButtonMenu->updateLayout();
+    // }
+
+    if (!nm.established()) {
+        this->navigateToServerLayer();
     }
 }
 
 void GlobedMenuLayer::keyBackClicked() {
     util::ui::navigateBack();
+}
+
+void GlobedMenuLayer::navigateToServerLayer() {
+    auto* dir = CCDirector::get();
+
+    if (typeinfo_cast<CCTransitionScene*>(dir->getRunningScene())) {
+        return;
+    }
+
+    auto prevScene = static_cast<CCScene*>(dir->m_pobScenesStack->objectAtIndex(dir->m_pobScenesStack->count() - 2));
+
+    if (!prevScene->getChildren() || prevScene->getChildrenCount() < 1) {
+        this->keyBackClicked();
+        return;
+    }
+
+    if (typeinfo_cast<GlobedServersLayer*>(prevScene->getChildren()->objectAtIndex(0))) {
+        this->keyBackClicked();
+        return;
+    }
+
+    // if the prev scene is a menulayer instead, replace scene to server layer
+    util::ui::replaceScene(GlobedServersLayer::create());
 }
 
 void GlobedMenuLayer::keyDown(enumKeyCodes key) {
