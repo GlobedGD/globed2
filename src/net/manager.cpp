@@ -67,7 +67,6 @@ static const WeakRefController& controllerFromWeakRef(const WeakRef<T>& ref) {
     return *dummy.ctrl;
 }
 
-
 // Packet listener pool. Most of the functions must not be used on a different thread than main.
 class PacketListenerPool : public CCObject {
 public:
