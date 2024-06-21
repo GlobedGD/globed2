@@ -185,9 +185,9 @@ impl UnauthorizedThread {
                             Err(e) => {
                                 warn!("error on an unauth thread: {e}");
                                 #[cfg(debug_assertions)]
-                                let _ = self.terminate_with_message(&format!("{e}")).await;
+                                let _ = self.terminate_with_message(&format!("failed to authenticate: {e}")).await;
                                 #[cfg(not(debug_assertions))]
-                                let _ = self.terminate_with_message("internal server error during handling a packet").await;
+                                let _ = self.terminate_with_message("internal server error during player authentication").await;
                             }
                         },
 
