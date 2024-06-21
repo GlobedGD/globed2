@@ -22,7 +22,7 @@ bool GlobedServersLayer::init() {
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    auto* bg = util::ui::makeRepeatingBackground("game_bg_01_001.png", {40, 40, 40}, 3.f, 1.f, util::ui::RepeatMode::X);
+    auto* bg = util::ui::makeRepeatingBackground("game_bg_01_001.png", {40, 40, 40});
     this->addChild(bg);
     this->background = bg;
 
@@ -87,7 +87,6 @@ bool GlobedServersLayer::init() {
     serverList->setPosition({winSize / 2 - serverList->getScaledContentSize() / 2});
     signupLayer->setPosition({winSize / 2 - signupLayer->getScaledContentSize() / 2});
 
-    this->schedule(schedule_selector(GlobedServersLayer::updateBG));
     this->schedule(schedule_selector(GlobedServersLayer::updateServerList), 0.1f);
     this->schedule(schedule_selector(GlobedServersLayer::pingServers), 5.0f);
 
@@ -103,15 +102,6 @@ void GlobedServersLayer::keyBackClicked() {
 void GlobedServersLayer::onExit() {
     CCLayer::onExit();
     this->cancelWebRequest();
-}
-
-void GlobedServersLayer::updateBG(float dt) {
-    constexpr float bgWidth = 512;
-
-    background->setPositionX(background->getPositionX() - dt * (bgWidth * 0.07f));
-    if (std::fabs(background->getPositionX()) > bgWidth * 2) {
-        background->setPositionX(background->getPositionX() + bgWidth * 2);
-    }
 }
 
 void GlobedServersLayer::transitionToMainLayer() {

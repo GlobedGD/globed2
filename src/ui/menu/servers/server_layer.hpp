@@ -22,8 +22,6 @@ private:
     void onExit() override;
     void keyBackClicked() override;
 
-    void updateBG(float dt);
-
     void updateServerList(float dt);
     void requestServerList();
     void pingServers(float dt);

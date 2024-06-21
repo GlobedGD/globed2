@@ -118,7 +118,7 @@ bool RoomLayer::init() {
         .layout(ColumnLayout::create()->setGap(1.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
         .scale(0.875f)
         // this is funny
-        .pos(rlayout.right - util::math::min(6.f, (sidePadding - 30.f)), rlayout.top - 6.f)
+        .pos(rlayout.right - util::math::min(5.f, (sidePadding - 28.f)), rlayout.top - 6.f)
         .anchorPoint(1.f, 1.f)
         .contentSize(30.f, popupHeight)
         .parent(this)
@@ -128,7 +128,6 @@ bool RoomLayer::init() {
     // this is grand
     float buttonSize = util::math::min(32.5f, sidePadding - 5.f);
     this->targetButtonSize = CCSize{buttonSize, buttonSize};
-    log::debug("target btn size: {}", buttonSize);
 
     CCMenuItemSpriteExtra *filterBtn;
 

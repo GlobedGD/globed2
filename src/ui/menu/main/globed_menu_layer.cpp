@@ -138,7 +138,7 @@ bool GlobedMenuLayer::init() {
     util::ui::prepareLayer(this);
 
     // background
-    auto* bg = util::ui::makeRepeatingBackground("game_bg_01_001.png", {37, 50, 167}, 3.f, 1.f, util::ui::RepeatMode::X);
+    auto* bg = util::ui::makeRepeatingBackground("game_bg_01_001.png", {37, 50, 167});
     this->addChild(bg);
     this->background = bg;
 
@@ -190,14 +190,6 @@ void GlobedMenuLayer::update(float dt) {
         }
 
         leftButtonMenu->updateLayout();
-    }
-
-    // update bg
-    constexpr float bgWidth = 512.f;
-
-    background->setPositionX(background->getPositionX() - dt * (bgWidth * 0.07f));
-    if (std::fabs(background->getPositionX()) > bgWidth * 2) {
-        background->setPositionX(background->getPositionX() + bgWidth * 2);
     }
 }
 

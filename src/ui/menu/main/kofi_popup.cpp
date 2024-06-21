@@ -64,7 +64,7 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
     mask->drawPolygon(rectangle, 4, ccc4FFromccc3B({0, 0, 0}), 0, ccc4FFromccc3B({0, 0, 0}));
     clippingNode->setStencil(mask);
 
-    Build(util::ui::makeRepeatingBackground("game_bg_02_001.png", {40, 125, 255}, 4.f, 0.f, util::ui::RepeatMode::X))
+    Build(util::ui::makeRepeatingBackground("game_bg_02_001.png", {40, 125, 255}))
         .id("background")
         .scale(0.6f)
         .parent(clippingNode)
@@ -76,7 +76,7 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
     Build(util::ui::makeRepeatingBackground(
         "groundSquare_02_001.png",
         {40 - tintMod, 125 - tintMod, 255 - tintMod},
-        6.f, 0.f, util::ui::RepeatMode::X)
+        1.f, 6.f, 0.f, util::ui::RepeatMode::X)
     )
         .id("ground")
         .scale(0.6f)
@@ -98,15 +98,22 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
         .blendFunc(blending)
         .parent(m_mainLayer);
 
-    Build<CCSprite>::create("kofi-promo-card.png"_spr)
+
+    float promoCardFinalScale = 0.85f;
+    if (winSize.width < 520.f) {
+        promoCardFinalScale = (promoCardFinalScale - (520.f - winSize.width) / 1000.f);
+    }
+
+    auto* promoCard = Build<CCSprite>::create("kofi-promo-card.png"_spr)
         .anchorPoint(1.f, 1.f)
         .scale(0.5f)
-        .pos(rlayout.topRight - CCPoint{30.f, 30.f})
+        .pos(rlayout.topRight - CCPoint{25.f, 30.f})
         .parent(m_mainLayer)
         .with([&](CCSprite* card) {
-            auto scaleUpAction = CCEaseExponentialOut::create(CCScaleTo::create(1.25f, 0.85f));
+            auto scaleUpAction = CCEaseExponentialOut::create(CCScaleTo::create(1.25f, promoCardFinalScale));
             card->runAction(scaleUpAction);
-        });
+        })
+        .collect();
 
     // create kofi btn
 
@@ -192,19 +199,6 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
 }
 
 void GlobedKofiPopup::update(float dt) {
-    constexpr float bgWidth = 307.2f;
-    constexpr float gWidth = 307.2;
-
-    background->setPositionX(background->getPositionX() - dt * (bgWidth * 0.14f));
-    if (std::fabs(background->getPositionX()) > bgWidth * 2) {
-        background->setPositionX(background->getPositionX() + bgWidth * 2);
-    }
-
-    ground->setPositionX(ground->getPositionX() - dt * (gWidth * 0.42f));
-    if (std::fabs(ground->getPositionX()) > gWidth * 2) {
-        ground->setPositionX(ground->getPositionX() + gWidth * 2);
-    }
-
     particles->setPosition(0.f, 0.f);
 }
 
@@ -226,7 +220,8 @@ void GlobedKofiPopup::kofiEnableParticlesCallback2(float dt) {
 
 GlobedKofiPopup* GlobedKofiPopup::create() {
     auto bg = CCSprite::create("kofi-promo-border.png"_spr);
-    bg->setScale(1.5f);
+    float scaleMult = std::min(1.5f, (CCDirector::get()->getWinSize().width - 35.f) / bg->getContentWidth());
+    bg->setScale(scaleMult);
     auto csize = bg->getScaledContentSize();
 
     auto ret = new GlobedKofiPopup();

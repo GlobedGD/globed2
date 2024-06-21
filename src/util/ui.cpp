@@ -321,23 +321,92 @@ namespace util::ui {
         }
     }
 
-    CCSprite* makeRepeatingBackground(const char* texture, ccColor3B color, float xMult, float yMult, RepeatMode mode) {
-        auto bg = CCSprite::create(texture);
-        if (!bg) bg = CCSprite::createWithSpriteFrameName(texture);
+    struct RepeatingBackgroundParams : public CCObject {
+    public:
+        static RepeatingBackgroundParams* create(float xm, float ym, float speed, CCSize textureSize, RepeatMode repeat) {
+            auto ret = new RepeatingBackgroundParams;
+            ret->xMult = xm;
+            ret->yMult = ym;
+            ret->speed = speed;
+            ret->textureSize = textureSize;
+            ret->repeatMode = repeat;
+            ret->autorelease();
+            return ret;
+        }
+
+        float xMult;
+        float yMult;
+        float speed;
+        CCSize textureSize;
+        RepeatMode repeatMode;
+    };
+
+    void RepeatingBackground::update(float dt) {
+        auto* params = static_cast<RepeatingBackgroundParams*>(this->getUserObject("repeat-bg-params"));
+        if (!params) return;
+
+        const auto& csize = this->getContentSize();
+
+        auto& texSize = params->textureSize;
+
+        float moveByX = dt * params->speed * texSize.width / 12.f;
+        float moveByY = dt * params->speed * texSize.height / 15.f;
+
+        bool repeatX = params->repeatMode == RepeatMode::X || params->repeatMode == RepeatMode::Both;
+        bool repeatY = params->repeatMode == RepeatMode::Y || params->repeatMode == RepeatMode::Both;
+
+        if (repeatX) {
+            this->setPositionX(this->getPositionX() - moveByX);
+
+            if (std::fabs(this->getPositionX()) > texSize.width * (params->xMult - 1)) {
+                this->setPositionX(this->getPositionX() + texSize.width * (params->xMult - 1));
+            }
+        }
+
+        if (repeatY) {
+            this->setPositionY(this->getPositionY() - moveByY);
+
+            if (std::fabs(this->getPositionY()) > texSize.height * (params->yMult - 1)) {
+                this->setPositionY(this->getPositionY() + texSize.height * (params->yMult - 1));
+            }
+        }
+    }
+
+    RepeatingBackground* RepeatingBackground::create(const char* name) {
+        auto tex = util::cocos::textureFromSpriteName(name);
+        auto bg = CCSprite::createWithTexture(tex);
+
+        if (bg) {
+            auto testInstance = new RepeatingBackground;
+            // replace the vtable so we can get our update() called
+            // is this UB?
+            // Yes.
+            std::memcpy((void*)bg, (void*)testInstance, sizeof(void*));
+            delete testInstance;
+
+            return reinterpret_cast<RepeatingBackground*>(bg);
+        }
+
+        return nullptr;
+    }
+
+    CCSprite* makeRepeatingBackground(const char* texture, ccColor3B color, float speed, float xMult, float yMult, RepeatMode mode) {
+        auto bg = RepeatingBackground::create(texture);
         if (!bg) return nullptr;
 
         auto winSize = CCDirector::get()->getWinSize();
 
         auto bgrect = bg->getTextureRect();
+        auto rawTextureSize = bg->getContentSize();
 
         bool repeatX = mode == RepeatMode::X || mode == RepeatMode::Both;
         bool repeatY = mode == RepeatMode::Y || mode == RepeatMode::Both;
         if (repeatX) {
-            bgrect.size.width = winSize.width * xMult;
+            bgrect.size.width = util::math::max(winSize.width, rawTextureSize.width) * xMult;
         }
 
         if (repeatY) {
-            bgrect.size.height = winSize.height * yMult;
+            bgrect.size.height = util::math::max(winSize.height, rawTextureSize.height) * yMult;
         }
 
         ccTexParams tp = {
@@ -346,16 +415,20 @@ namespace util::ui {
             static_cast<GLuint>(repeatY ? GL_REPEAT : GL_CLAMP_TO_EDGE)
         };
 
-        // TODO: dont overwrite global texture
         bg->getTexture()->setTexParameters(&tp);
 
-        return Build(bg)
+        auto rbg = static_cast<RepeatingBackground*>(Build(bg)
             .contentSize(winSize.width, winSize.height)
             .textureRect(bgrect)
             .zOrder(-1)
             .anchorPoint(0.f, 0.f)
             .color(color)
-            .collect();
+            .collect());
+
+        rbg->scheduleUpdate();
+        rbg->setUserObject("repeat-bg-params", RepeatingBackgroundParams::create(xMult, yMult, speed, rawTextureSize, mode));
+
+        return bg;
     }
 
     float capPopupWidth(float in) {

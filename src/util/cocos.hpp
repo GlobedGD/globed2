@@ -42,6 +42,9 @@ namespace util::cocos {
 
     std::string spr(const std::string_view s);
 
+    // creates a new, independent texture
+    cocos2d::CCTexture2D* textureFromSpriteName(std::string_view name);
+
     template <typename To, typename From>
     To convert(const From& value);
 }

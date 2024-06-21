@@ -79,8 +79,15 @@ namespace util::ui {
         X, Y, Both
     };
 
+    class RepeatingBackground : public cocos2d::CCSprite {
+        void update(float dt) override;
+
+    public:
+        static RepeatingBackground* create(const char* name);
+    };
+
     // make a background that loops
-    cocos2d::CCSprite* makeRepeatingBackground(const char* texture, cocos2d::ccColor3B color, float xMult = 1.f, float yMult = 1.f, RepeatMode mode = RepeatMode::Both);
+    cocos2d::CCSprite* makeRepeatingBackground(const char* texture, cocos2d::ccColor3B color, float speed = 1.0f, float xMult = 3.f, float yMult = 1.f, RepeatMode mode = RepeatMode::X);
 
     // cap popup width so it doesnt become too big on small aspect ratios (max winSize.width * 0.8)
     float capPopupWidth(float in);

@@ -572,6 +572,32 @@ namespace util::cocos {
         // return "";
     }
 
+    CCTexture2D* textureFromSpriteName(std::string_view name) {
+        auto fullPath = fullPathForFilename(name);
+        if (fullPath.empty()) {
+            return nullptr;
+        }
+
+        auto pathKey = fmt::format("globed-cocos-{}", fullPath);
+
+        auto* tex = static_cast<CCTexture2D*>(CCTextureCache::get()->m_pTextures->objectForKey(pathKey));
+        if (!tex) {
+            std::string lowercase(fullPath);
+            std::transform(lowercase.begin(), lowercase.end(), lowercase.begin(), ::tolower);
+
+            auto img = new CCImage();
+            img->initWithImageFile(fullPath.c_str(), CCImage::kFmtPng);
+
+            tex = new CCTexture2D();
+            if (tex->initWithImage(img)) {
+                CCTextureCache::get()->m_pTextures->setObject(tex, pathKey);
+                tex->release();
+            }
+        }
+
+        return tex;
+    }
+
     std::string spr(const std::string_view s) {
         static const std::string id = Mod::get()->getID() + "/";
 
@@ -580,6 +606,7 @@ namespace util::cocos {
 
         return out;
     }
+
     template <>
     ccColor3B convert(const ccColor4B& value) {
         return ccColor3B {
