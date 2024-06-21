@@ -172,16 +172,26 @@ static void loadingFinishedCaller() {
 
     int3
 */
+// mac x64 disasm:
+/*
+    call CCDirector::sharedDirector   <- offset for start1
+    mov rbx, rax
+    movzx edi, r14b
+    call MenuLayer::scene
+    mov rdi, rbx
+    mov rsi, rax
+    call CCDirector::replaceScene
+    jmp <out>                         <- offset for end1
+*/
 #ifdef GEODE_IS_WINDOWS
 const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
     {0x30ee46, 0x30ee62},
     {0x30ee67, 0x30ee83},
 });
 #else
-# pragma message("todo add inlined mac addresses")
-// const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
-// });
-const std::array<std::pair<ptrdiff_t, ptrdiff_t>, 0> INLINED_PATCH_SPOTS{};
+const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
+    {0x3a67dd, 0x3a67f9},
+});
 #endif
 
 $execute {
