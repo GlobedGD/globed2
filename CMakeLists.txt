@@ -14,7 +14,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
     set(CMAKE_SYSTEM_NAME "iOS")
 else()
     message(STATUS "building for mac")
-    set(CMAKE_OSX_ARCHITECTURES "x86_64")
 endif()
 
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
@@ -183,4 +182,9 @@ if (WIN32)
     target_link_libraries(${PROJECT_NAME} ws2_32)
 endif()
 
-setup_geode_mod(${PROJECT_NAME})
+if (APPLE)
+    # idk if this is a geode bug or what i cba
+    setup_geode_mod(${PROJECT_NAME} EXTERNALS geode.custom-keybinds:>=1.2.3)
+else()
+    setup_geode_mod(${PROJECT_NAME})
+endif()
