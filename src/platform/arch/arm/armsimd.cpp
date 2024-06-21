@@ -1,3 +1,5 @@
+#if defined(__arm__)
+
 #include "armsimd.hpp"
 
 #include <util/misc.hpp>
@@ -29,3 +31,5 @@ float globed::simd::arm::pcmVolume(const float* pcm, std::size_t samples) {
     return util::misc::pcmVolumeSlow(pcm, samples);
 #endif
 }
+
+#endif

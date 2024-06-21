@@ -1,4 +1,7 @@
 #pragma once
+
+#if defined(__x86__) || defined(__x86_64__)
+
 #include <immintrin.h>
 #include <stdint.h>
 
@@ -47,3 +50,5 @@ namespace globed::simd::x86 {
     float GLOBED_FEATURE_AVX2 pcmVolumeAVX2(const float* pcm, size_t samples);
     float GLOBED_FEATURE_AVX512DQ pcmVolumeAVX512(const float* pcm, size_t samples);
 }
+
+#endif

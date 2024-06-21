@@ -1,4 +1,7 @@
+#if defined(__x86__) || defined(__x86_64__)
+
 #include "x86simd.hpp"
+
 #include <cmath>
 
 namespace globed::simd::x86 {
@@ -64,3 +67,5 @@ namespace globed::simd::x86 {
         return sum / samples;
     }
 }
+
+#endif

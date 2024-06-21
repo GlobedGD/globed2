@@ -1,5 +1,7 @@
 #include "x86simd.hpp"
 
+#if defined(__x86__) || defined(__x86_64__)
+
 #include <defs/platform.hpp>
 #include <defs/minimal_geode.hpp>
 #include <util/misc.hpp>
@@ -124,3 +126,5 @@ namespace globed::simd::x86 {
         }
     }
 }
+
+#endif
