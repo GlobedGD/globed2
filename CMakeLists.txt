@@ -184,7 +184,7 @@ endif()
 
 if (APPLE)
     # idk if this is a geode bug or what i cba
-    setup_geode_mod(${PROJECT_NAME} EXTERNALS geode.custom-keybinds:>=1.2.3)
+    setup_geode_mod(${PROJECT_NAME} EXTERNALS geode.custom-keybinds:1.2.3)
 else()
     setup_geode_mod(${PROJECT_NAME})
 endif()

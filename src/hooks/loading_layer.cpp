@@ -179,8 +179,9 @@ const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>(
 });
 #else
 # pragma message("todo add inlined mac addresses")
-const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
-});
+// const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
+// });
+const std::array<std::pair<ptrdiff_t, ptrdiff_t>, 0> INLINED_PATCH_SPOTS;
 #endif
 
 $execute {
