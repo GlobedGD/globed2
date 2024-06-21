@@ -118,7 +118,10 @@ bool RoomLayer::init() {
         .parent(buttonMenu)
         .store(statusButton);
 
-    statusButton->toggle(!GlobedSettings::get().globed.isInvisible);    
+    statusButton->m_offButton->m_scaleMultiplier = 1.1f;
+    statusButton->m_onButton->m_scaleMultiplier = 1.1f;
+
+    statusButton->toggle(!GlobedSettings::get().globed.isInvisible);
 
     // search button
     Build<CCSprite>::createSpriteName("gj_findBtn_001.png")
