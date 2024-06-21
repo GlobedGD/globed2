@@ -14,6 +14,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
     set(CMAKE_SYSTEM_NAME "iOS")
 else()
     message(STATUS "building for mac")
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
 
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
