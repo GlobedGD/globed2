@@ -1,6 +1,8 @@
 #pragma once
 
-#if defined(__arm__)
+#include <platform/basic.hpp>
+
+#ifdef GLOBED_ARM
 
 #include <cstddef>
 

@@ -1,6 +1,6 @@
-#if defined(__x86__) || defined(__x86_64__)
-
 #include "x86simd.hpp"
+
+#ifdef GLOBED_X86
 
 #include <cmath>
 

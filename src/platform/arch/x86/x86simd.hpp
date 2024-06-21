@@ -1,9 +1,11 @@
 #pragma once
 
-#if defined(__x86__) || defined(__x86_64__)
+#include <platform/basic.hpp>
+
+#ifdef GLOBED_X86
 
 #include <immintrin.h>
-#include <stdint.h>
+#include <cstddef>
 
 // everything here was done just for fun and educational purposes don't judge me too harshly :D
 

@@ -1,6 +1,6 @@
 #include "x86simd.hpp"
 
-#if defined(__x86__) || defined(__x86_64__)
+#ifdef GLOBED_X86
 
 #include <defs/platform.hpp>
 #include <defs/minimal_geode.hpp>

@@ -1,6 +1,6 @@
-#if defined(__arm__)
-
 #include "armsimd.hpp"
+
+#ifdef GLOBED_ARM
 
 #include <util/misc.hpp>
 #include <arm_neon.h>

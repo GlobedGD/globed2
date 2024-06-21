@@ -133,14 +133,15 @@ bool RoomLayer::init() {
     CCMenuItemSpriteExtra *filterBtn;
 
     // status button
-    Build<CCMenuItemToggler>(CCMenuItemToggler::create(CCSprite::createWithSpriteFrameName("status-invisible.png"_spr), CCSprite::createWithSpriteFrameName("status-visible.png"_spr), this, menu_selector(RoomLayer::onChangeStatus)))
+    auto* invisSprite = CCSprite::createWithSpriteFrameName("status-invisible.png"_spr);
+    auto* visSprite = CCSprite::createWithSpriteFrameName("status-visible.png"_spr);
+    util::ui::rescaleToMatch(invisSprite, targetButtonSize);
+    util::ui::rescaleToMatch(visSprite, targetButtonSize);
+
+    Build<CCMenuItemToggler>(CCMenuItemToggler::create(invisSprite, visSprite, this, menu_selector(RoomLayer::onChangeStatus)))
         .id("status-btn"_spr)
         .parent(buttonMenu)
         .store(statusButton);
-
-    util::ui::rescaleToMatch(statusButton->m_offButton, targetButtonSize);
-    util::ui::rescaleToMatch(statusButton->m_onButton, targetButtonSize);
-    util::ui::rescaleToMatch(statusButton, targetButtonSize);
 
     statusButton->m_offButton->m_scaleMultiplier = 1.1f;
     statusButton->m_onButton->m_scaleMultiplier = 1.1f;
