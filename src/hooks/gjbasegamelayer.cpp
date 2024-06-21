@@ -1241,7 +1241,9 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
     };
 
     void update(float dt) {
-        auto* bgl = static_cast<GlobedGJBGL*>(m_gameLayer);
+        // dont ask
+        auto* bgl = static_cast<GlobedGJBGL*>(typeinfo_cast<GJBaseGameLayer*>((CCObject*)m_gameLayer));
+
         if (!bgl || !bgl->m_fields->twopstate.active || !m_fields->lockedTo) {
             PlayerObject::update(dt);
             return;
