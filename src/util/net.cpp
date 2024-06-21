@@ -2,6 +2,7 @@
 
 #include <defs/geode.hpp>
 #include <util/format.hpp>
+#include <util/data.hpp>
 
 #ifdef GEODE_IS_WINDOWS
 # include <ws2tcpip.h>
@@ -146,7 +147,7 @@ namespace util::net {
     }
 
     uint16_t hostToNetworkPort(uint16_t port) {
-        return ::htons(port);
+        return util::data::byteswap(port);
     }
 }
 
