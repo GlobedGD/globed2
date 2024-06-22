@@ -1,3 +1,7 @@
+## v1.4.1
+
+* Fix room list not starting at the top
+
 ## v1.4.0
 
 * Overhaul the room system
