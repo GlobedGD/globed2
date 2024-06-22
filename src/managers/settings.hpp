@@ -143,7 +143,7 @@ public:
         LimitedSetting<int, 0, 0, 240> tpsCap;
         Setting<bool, true> preloadAssets;
         Setting<bool, false> deferPreloadAssets;
-        LimitedSetting<int, (int)InvitesFrom::Friends, 0, 2> invitesFrom;
+        LimitedSetting<int, (int)InvitesFrom::Everyone, 0, 2> invitesFrom;
         Setting<bool, false> increaseLevelList;
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;

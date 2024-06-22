@@ -153,7 +153,7 @@ private:
     asp::Channel<std::shared_ptr<Packet>> packetQueue;
 
     PacketListenerPool() {
-        CCScheduler::get()->scheduleSelector(schedule_selector(PacketListenerPool::update), this, 0.f, kCCRepeatForever, 0.f, false);
+        CCScheduler::get()->scheduleSelector(schedule_selector(PacketListenerPool::update), this, 0.f, false);
     }
 };
 
