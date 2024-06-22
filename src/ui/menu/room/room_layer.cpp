@@ -118,7 +118,7 @@ bool RoomLayer::init() {
         .layout(ColumnLayout::create()->setGap(1.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
         .scale(0.875f)
         // this is funny
-        .pos(rlayout.right - util::math::min(5.f, (sidePadding - 28.f)), rlayout.top - 6.f)
+        .pos(rlayout.right - util::math::min(6.f, (sidePadding - 28.f)), rlayout.top - 6.f)
         .anchorPoint(1.f, 1.f)
         .contentSize(30.f, popupHeight)
         .parent(this)
@@ -401,7 +401,8 @@ void RoomLayer::reloadPlayerList(bool sendPacket) {
     // show the circle
     loadingCircle = LoadingCircle::create();
     loadingCircle->setParentLayer(listLayer);
-    loadingCircle->setPosition(-listLayer->getPosition());
+    loadingCircle->ignoreAnchorPointForPosition(false);
+    loadingCircle->setPosition(listLayer->getScaledContentSize() / 2.f);
     loadingCircle->show();
 
     this->recreateInviteButton();
