@@ -15,7 +15,6 @@
 * * Experimental, might have issues
 * Add automatic reconnection to the server in case of a disconnect
 * Add credits to the globed menu (thanks [TechStudent11](user:20284359) for partial help)
-* Add integration with the Discord Rich Presence mod (thanks [TechStudent11](user:20284359))
 * Fix all unsynced clock issues (auth no longer uses TOTP)
 * Fix most "unhandled packet" errors by rewriting networking core
 * Fix many connection related bugs

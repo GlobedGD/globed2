@@ -703,9 +703,12 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
 }
 
 void GlobedGJBGL::updateDRPC() {
-    if (!Loader::get()->isModLoaded("techstudent10.discord_rich_presence")) return;
+    // TODO
+    return;
 
-    if (!GlobedSettings::get().globed.useDiscordRPC) return;
+    // if (!Loader::get()->isModLoaded("techstudent10.discord_rich_presence")) return;
+
+    // if (!GlobedSettings::get().globed.useDiscordRPC) return;
 
     // taken from drpc
     bool isRobTopLevel = (
