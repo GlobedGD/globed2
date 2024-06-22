@@ -240,6 +240,19 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
         }
     });
 
+    // Find self and move to top
+    auto gm = GJAccountManager::get();
+    
+    for (auto entry : playerIds) {
+        if (entry == gm->m_accountID) {
+            int self = entry;
+            playerIds.insert(playerIds.begin(), entry);
+            auto it = std::find(playerIds.begin() + 1, playerIds.end(), gm->m_accountID);
+            playerIds.erase(it);
+            break;
+        }
+    }
+
     this->setTitle(fmt::format("Players ({})", playerIds.size()));
 
     for (const auto playerId : playerIds) {

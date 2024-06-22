@@ -71,18 +71,33 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width,
     if (isFriend) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
             .color(util::cocos::convert<ccColor3B>(forInviting ? util::ui::BG_COLOR_FRIEND_INGAME : util::ui::BG_COLOR_FRIEND))
-            .opacity(forInviting ? 70 : 50)
+            .opacity(forInviting ? 75 : 90) // shh
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)
-            .scaleX(2)
-            .blendFunc({GL_ONE, GL_ONE})
+            .scaleX(1.5)
             .parent(this);
+
+        if (forInviting)
+            gradient->setBlendFunc({GL_ONE, GL_ONE});
 
         CCSprite* icon = Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
             .anchorPoint({0, 0.5})
             .scale(0.3)
             .parent(badgeWrapper);
+    }
+    
+    auto acm = GJAccountManager::get();
+    if (this->data.accountId == acm->m_accountID) {
+        CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
+            .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_SELF))
+            .opacity(75)
+            .pos(0, 0)
+            .anchorPoint({0, 0})
+            .zOrder(-2)
+            .scaleX(10)
+            //.blendFunc({GL_ONE, GL_ONE})
+            .parent(this);
     }
 
     badgeWrapper->updateLayout();
