@@ -1,18 +1,18 @@
 ## v1.4.0
 
 * Overhaul the room system
-* * You can now send room invites to other players
-* * Rooms have various settings, i.e. password, collision, player limit, name, invite-only
-* * Public room listing that lets you discover rooms without having to be invited
-* * You can control whether you can be invited by anybody, only friends, or by nobody
+* \-- You can now send room invites to other players
+* \-- Rooms have various settings, i.e. password, collision, player limit, name, invite-only
+* \-- Public room listing that lets you discover rooms without having to be invited
+* \-- You can control whether you can be invited by anybody, only friends, or by nobody
 * Add user roles
-* * Staff, supporters, etc. will have special name color, text chat color, and a badge near their name
-* * Thanks to [LimeGradient](user:7214334), [Terma](user:4706010) and [Capeling](user:18226543) for help!
+* \-- Staff, supporters, etc. will have special name color, text chat color, and a badge near their name
+* \-- Thanks to [LimeGradient](user:7214334), [Terma](user:4706010) and [Capeling](user:18226543) for help!
 * Add editor compatibility
-* * This does **NOT** mean you can build levels together!
-* * If you are the creator of a level, you will be able to see other people playing while in the editor
-* * When [EditorCollab by alk1m123](https://github.com/altalk23/EditorCollab) comes out, you will also be able to playtest non-uploaded levels together with others
-* * Experimental, might have issues
+* \-- This does **NOT** mean you can build levels together!
+* \-- If you are the creator of a level, you will be able to see other people playing while in the editor
+* \-- When [EditorCollab by alk1m123](https://github.com/altalk23/EditorCollab) comes out, you will also be able to playtest non-uploaded levels together with others
+* \-- Experimental, might have issues
 * Add automatic reconnection to the server in case of a disconnect
 * Add credits to the globed menu (thanks [TechStudent11](user:20284359) for partial help)
 * Fix all unsynced clock issues (auth no longer uses TOTP)
