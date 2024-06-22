@@ -323,21 +323,21 @@ namespace util::ui {
 
     struct RepeatingBackgroundParams : public CCObject {
     public:
-        static RepeatingBackgroundParams* create(float xm, float ym, float speed, CCSize textureSize, RepeatMode repeat) {
+        static RepeatingBackgroundParams* create(float scale, float speed, CCSize textureSize, RepeatMode repeat, CCSize visibleSize) {
             auto ret = new RepeatingBackgroundParams;
-            ret->xMult = xm;
-            ret->yMult = ym;
+            ret->scale = scale;
             ret->speed = speed;
             ret->textureSize = textureSize;
+            ret->visibleSize = visibleSize;
             ret->repeatMode = repeat;
             ret->autorelease();
             return ret;
         }
 
-        float xMult;
-        float yMult;
+        float scale;
         float speed;
         CCSize textureSize;
+        CCSize visibleSize;
         RepeatMode repeatMode;
     };
 
@@ -345,30 +345,23 @@ namespace util::ui {
         auto* params = static_cast<RepeatingBackgroundParams*>(this->getUserObject("repeat-bg-params"));
         if (!params) return;
 
-        const auto& csize = this->getContentSize();
-
-        auto& texSize = params->textureSize;
-
-        float moveByX = dt * params->speed * texSize.width / 12.f;
-        float moveByY = dt * params->speed * texSize.height / 15.f;
+        float moveByX = dt * params->speed * params->textureSize.width / 12.f;
+        float moveByY = dt * params->speed * params->textureSize.height / 15.f;
 
         bool repeatX = params->repeatMode == RepeatMode::X || params->repeatMode == RepeatMode::Both;
         bool repeatY = params->repeatMode == RepeatMode::Y || params->repeatMode == RepeatMode::Both;
 
-        if (repeatX) {
-            this->setPositionX(this->getPositionX() - moveByX);
+        float loopAfterXMin = params->visibleSize.width;
+        float loopAfterX = 0.f;
 
-            if (std::fabs(this->getPositionX()) > texSize.width * (params->xMult - 1)) {
-                this->setPositionX(this->getPositionX() + texSize.width * (params->xMult - 1));
-            }
+        while (loopAfterX < loopAfterXMin) {
+            loopAfterX += params->textureSize.width * params->scale;
         }
 
-        if (repeatY) {
-            this->setPositionY(this->getPositionY() - moveByY);
-
-            if (std::fabs(this->getPositionY()) > texSize.height * (params->yMult - 1)) {
-                this->setPositionY(this->getPositionY() + texSize.height * (params->yMult - 1));
-            }
+        this->setPositionX(this->getPositionX() - moveByX);
+        if (std::fabs(this->getPositionX()) > loopAfterX) {
+            // log::debug("Looping, visSize: {}, loopAfter: {}", loopAfterX);
+            this->setPositionX(this->getPositionX() + params->textureSize.width * params->scale);
         }
     }
 
@@ -390,9 +383,14 @@ namespace util::ui {
         return nullptr;
     }
 
-    CCSprite* makeRepeatingBackground(const char* texture, ccColor3B color, float speed, float xMult, float yMult, RepeatMode mode) {
+    CCSprite* makeRepeatingBackground(const char* texture, ccColor3B color, float speed, float scale, RepeatMode mode, const cocos2d::CCSize& _vsize) {
         auto bg = RepeatingBackground::create(texture);
         if (!bg) return nullptr;
+
+        auto visibleSize = _vsize;
+        if (visibleSize == CCSize{0.f, 0.f}) {
+            visibleSize = CCDirector::get()->getWinSize();
+        }
 
         auto winSize = CCDirector::get()->getWinSize();
 
@@ -401,12 +399,25 @@ namespace util::ui {
 
         bool repeatX = mode == RepeatMode::X || mode == RepeatMode::Both;
         bool repeatY = mode == RepeatMode::Y || mode == RepeatMode::Both;
+
         if (repeatX) {
-            bgrect.size.width = util::math::max(winSize.width, rawTextureSize.width) * xMult;
+            float minX = visibleSize.width * 3.f / scale;
+            float w = 0.f;
+            while (w < minX) {
+                w += rawTextureSize.width;
+            }
+
+            bgrect.size.width = w;
         }
 
         if (repeatY) {
-            bgrect.size.height = util::math::max(winSize.height, rawTextureSize.height) * yMult;
+            float minY = visibleSize.width * 2.f / scale;
+            float h = 0.f;
+            while (h < minY) {
+                h += rawTextureSize.height;
+            }
+
+            bgrect.size.height = h;
         }
 
         ccTexParams tp = {
@@ -420,20 +431,21 @@ namespace util::ui {
         auto rbg = static_cast<RepeatingBackground*>(Build(bg)
             .contentSize(winSize.width, winSize.height)
             .textureRect(bgrect)
+            .scale(scale)
             .zOrder(-1)
             .anchorPoint(0.f, 0.f)
             .color(color)
             .collect());
 
+        rbg->setUserObject("repeat-bg-params", RepeatingBackgroundParams::create(scale, speed, rawTextureSize, mode, visibleSize));
         rbg->scheduleUpdate();
-        rbg->setUserObject("repeat-bg-params", RepeatingBackgroundParams::create(xMult, yMult, speed, rawTextureSize, mode));
 
         return bg;
     }
 
     float capPopupWidth(float in) {
         auto winSize = CCDirector::get()->getWinSize();
-        return util::math::min(420.f, winSize.width * 0.7f);
+        return util::math::min(in, winSize.width * 0.75f);
     }
 
     void fixListBorders(GJCommentListLayer* list) {

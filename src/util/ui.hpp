@@ -87,7 +87,7 @@ namespace util::ui {
     };
 
     // make a background that loops
-    cocos2d::CCSprite* makeRepeatingBackground(const char* texture, cocos2d::ccColor3B color, float speed = 1.0f, float xMult = 3.f, float yMult = 1.f, RepeatMode mode = RepeatMode::X);
+    cocos2d::CCSprite* makeRepeatingBackground(const char* texture, cocos2d::ccColor3B color, float speed = 1.0f, float scale = 1.f, RepeatMode mode = RepeatMode::X, const cocos2d::CCSize& visibleSize = {0.f, 0.f});
 
     // cap popup width so it doesnt become too big on small aspect ratios (max winSize.width * 0.8)
     float capPopupWidth(float in);

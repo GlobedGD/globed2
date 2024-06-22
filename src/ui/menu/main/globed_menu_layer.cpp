@@ -180,17 +180,17 @@ void GlobedMenuLayer::update(float dt) {
     auto& nm = NetworkManager::get();
 
     // update the buttons
-    // if (nm.established() != currentlyShowingButtons) {
-    //     currentlyShowingButtons = nm.established();
+    if (nm.established() != currentlyShowingButtons) {
+        currentlyShowingButtons = nm.established();
 
-    //     if (currentlyShowingButtons) {
-    //         leftButtonMenu->addChild(levelListButton);
-    //     } else {
-    //         levelListButton->removeFromParent();
-    //     }
+        if (currentlyShowingButtons) {
+            leftButtonMenu->addChild(levelListButton);
+        } else {
+            levelListButton->removeFromParent();
+        }
 
-    //     leftButtonMenu->updateLayout();
-    // }
+        leftButtonMenu->updateLayout();
+    }
 
     if (!nm.established()) {
         this->navigateToServerLayer();

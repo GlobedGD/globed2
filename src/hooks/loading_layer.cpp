@@ -144,7 +144,37 @@ static void loadingFinishedCaller() {
 #ifdef GLOBED_LOADING_FINISHED_MIDHOOK
 
 # ifdef GEODE_IS_ARM_MAC
-#  pragma message("loadingFinished midhook not implemented on arm mac")
+// LoadingLayer::loadAssets
+// macos aarch64 disasm:
+/*
+    bl CCDirector::sharedDirector   <- offset for start
+    mov x20, x0
+    mov x0, x19
+    bl MenuLayer::scene
+    mov x1, x0
+    mov x0, x20
+    bl CCDirector::replaceScene
+    ldp x29, x30, [sp, #0x80]       <- offset for end
+    ldp x20, x19, [sp, #0x70]
+    ldp x22, x21, [sp, #0x60]
+    add sp, sp, #0x90
+    ret
+*/
+// Injected code will make it look like:
+/*
+    movz x0,
+    bl loadingFinishedCaller
+    nop
+    nop
+    ...
+    ldp x29, x30, [sp, #0x80]
+    ldp x20, x19, [sp, #0x70]
+    ldp x22, x21, [sp, #0x60]
+    ret
+*/
+$execute {
+
+}
 # elif GEODE_COMP_GD_VERSION != 22060
 #  pragma message("loadingFinished midhook not implemented for this GD version")
 # else

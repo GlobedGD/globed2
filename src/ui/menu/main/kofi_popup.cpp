@@ -64,9 +64,12 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
     mask->drawPolygon(rectangle, 4, ccc4FFromccc3B({0, 0, 0}), 0, ccc4FFromccc3B({0, 0, 0}));
     clippingNode->setStencil(mask);
 
-    Build(util::ui::makeRepeatingBackground("game_bg_02_001.png", {40, 125, 255}))
+    Build(util::ui::makeRepeatingBackground(
+        "game_bg_02_001.png",
+        {40, 125, 255},
+        1.f, 0.6f, util::ui::RepeatMode::X, m_size)
+    )
         .id("background")
-        .scale(0.6f)
         .parent(clippingNode)
         .store(this->background)
         .collect();
@@ -76,10 +79,9 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
     Build(util::ui::makeRepeatingBackground(
         "groundSquare_02_001.png",
         {40 - tintMod, 125 - tintMod, 255 - tintMod},
-        1.f, 6.f, 0.f, util::ui::RepeatMode::X)
+        10.f, 0.6f, util::ui::RepeatMode::X, m_size)
     )
         .id("ground")
-        .scale(0.6f)
         .posY(-10.f)
         .parent(clippingNode)
         .zOrder(6)
