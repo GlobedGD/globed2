@@ -70,8 +70,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width,
 
     if (isFriend) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_FRIEND))
-            .opacity(50)
+            .color(util::cocos::convert<ccColor3B>(forInviting ? util::ui::BG_COLOR_FRIEND_INGAME : util::ui::BG_COLOR_FRIEND))
+            .opacity(forInviting ? 70 : 50)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)
@@ -104,7 +104,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width,
         this->createJoinButton();
     }
 
-    if (AdminManager::get().authorized()) {
+    if (AdminManager::get().authorized() && !forInviting) {
         this->createAdminButton();
     }
 
