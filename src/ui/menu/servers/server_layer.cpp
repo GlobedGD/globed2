@@ -78,7 +78,7 @@ bool GlobedServersLayer::init() {
         .anchorPoint(0.f, 0.f)
         .pos(serverList->getPosition())
         .parent(this)
-        .id("server-list")
+        .id("signup-list")
         .store(signupLayer);
 
     if (util::ui::getAspectRatio() < 1.6f) {
@@ -88,8 +88,6 @@ bool GlobedServersLayer::init() {
 
     serverList->setPosition({winSize / 2 - serverList->getScaledContentSize() / 2});
     signupLayer->setPosition({winSize / 2 - signupLayer->getScaledContentSize() / 2});
-
-
 
     // right button menu
     auto* rightButtonMenu = Build<CCMenu>::create()

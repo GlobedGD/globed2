@@ -6,7 +6,7 @@
 #include <arm_neon.h>
 
 float globed::simd::arm::pcmVolume(const float* pcm, std::size_t samples) {
-#ifdef GLOBED_IS_64BIT
+#ifdef GLOBED_ARM64
     size_t alignedSamples = samples / 4 * 4;
 
     float32x4_t sumVec = vdupq_n_f32(0.0f);

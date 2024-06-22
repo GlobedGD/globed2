@@ -90,7 +90,6 @@ bool RoomLayer::init() {
     });
 
     nm.addListener<RoomInfoPacket>(this, [this](std::shared_ptr<RoomInfoPacket> packet) {
-        log::debug("recv info");
         ErrorQueues::get().success("Room configuration updated");
 
         RoomManager::get().setInfo(packet->info);

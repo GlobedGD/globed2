@@ -21,9 +21,9 @@ option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
 # on windows use precompiled, on other platforms compile libsodium
 if (WIN32)
-    option(GLOBED_COMPILE_SODIUM "Compile libsodium instead of using precompiled binary" OFF)
+    option(GLOBED_COMPILE_LIBS "Don't use precompiled libraries and compile manually" OFF)
 else()
-    option(GLOBED_COMPILE_SODIUM "Compile libsodium instead of using precompiled binary" ON)
+    option(GLOBED_COMPILE_LIBS "Don't use precompiled libraries and compile manually" ON)
 endif()
 
 # Check for debug build
@@ -41,7 +41,6 @@ if (GLOBED_IS_DEBUG)
     add_compile_definitions(ASP_ENABLE_DEBUG=1)
 elseif (GLOBED_RELEASE)
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
-    set(DB_PRODUCTION_MODE ON)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
@@ -103,7 +102,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # our favorite libraries
 CPMAddPackage("gh:camila314/uibuilder#ba63097")
-CPMAddPackage("gh:xiph/opus#main")
 CPMAddPackage(
     NAME Boost
     VERSION 1.84.0
@@ -140,12 +138,15 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
 endif()
 
-target_link_libraries(${PROJECT_NAME} UIBuilder opus Boost::describe asp)
+target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)
 
-if (GLOBED_COMPILE_SODIUM)
+if (GLOBED_COMPILE_LIBS)
     CPMAddPackage("gh:dankmeme01/libsodium-cmake#226abba")
+    CPMAddPackage("gh:xiph/opus#v1.5.2")
+
     target_compile_options(sodium PRIVATE "-Wno-inaccessible-base" "-Wno-pointer-sign" "-Wno-user-defined-warnings")
-    target_link_libraries(${PROJECT_NAME} sodium)
+
+    target_link_libraries(${PROJECT_NAME} sodium opus)
 else()
     # download headers (binaries based off of 1.0.20 too)
     CPMAddPackage(
@@ -153,12 +154,22 @@ else()
         GIT_REPOSITORY "https://github.com/jedisct1/libsodium.git"
         GIT_TAG "1.0.20-RELEASE"
     )
+    CPMAddPackage(
+        NAME opus
+        GIT_REPOSITORY "https://github.com/xiph/opus.git"
+        GIT_TAG "v1.5.2"
+        DOWNLOAD_ONLY YES
+    )
 
     add_library(sodium STATIC IMPORTED)
     set_target_properties(sodium PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/libs/sodium/libsodium.lib")
 
+    add_library(opus STATIC IMPORTED)
+    set_target_properties(opus PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/libs/opus/opus.lib")
+
     target_compile_definitions(${PROJECT_NAME} PRIVATE SODIUM_STATIC=1)
     target_include_directories(${PROJECT_NAME} PRIVATE "${sodium_SOURCE_DIR}/src/libsodium/include")
+    target_include_directories(${PROJECT_NAME} PRIVATE "${opus_SOURCE_DIR}/include")
 
     set(SODIUM_VERSION_IN "${CMAKE_CURRENT_SOURCE_DIR}/libs/sodium/version.h")
     set(SODIUM_VERSION_OUT "${sodium_SOURCE_DIR}/src/libsodium/include/sodium/")
@@ -176,9 +187,10 @@ else()
         endif()
     endif()
 
-    target_link_libraries(${PROJECT_NAME} sodium)
+    target_link_libraries(${PROJECT_NAME} sodium opus)
 endif()
 
+# Windows - link to winsock
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} ws2_32)
 endif()
