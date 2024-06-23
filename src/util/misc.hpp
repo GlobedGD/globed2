@@ -100,10 +100,6 @@ namespace util::misc {
         return copy;
     }
 
-    // Utility function for converting various enums between each other, is specialized separately for different enums
-    template <typename To, typename From>
-    To convertEnum(From value);
-
     // On first call, simply calls `func`. On repeated calls, given the same `key`, the function will not be called again. Not thread safe.
     void callOnce(const char* key, std::function<void()> func);
 

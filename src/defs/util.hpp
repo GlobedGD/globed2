@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 #include <algorithm>
+#include <util/into.hpp>
 
 // gets a string from embedded resources json
 // "key"_gstr;

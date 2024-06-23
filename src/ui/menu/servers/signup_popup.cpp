@@ -135,7 +135,7 @@ void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event)
     if (evalue.isErr()) {
         auto error = evalue.unwrapErr();
         if (error.code == 401) {
-            this->onFailure(fmt::format("account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>{}</c>", error.message));
+            this->onFailure(fmt::format("Account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>{}</c>", error.message));
             return;
         }
 

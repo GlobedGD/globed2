@@ -694,7 +694,7 @@ void ComplexVisualPlayer::tryLoadIconsAsync() {
         std::string sheetName = gm->sheetNameForIcon(storedIcons.cube, (int)IconType::Cube);
 
         if (!sheetName.empty()) {
-            int key = gm->keyForIcon(iconId, (int)util::misc::convertEnum<IconType>(type));
+            int key = gm->keyForIcon(iconId, (int)globed::into<IconType>(type));
             // essentially addIconDelegate
             gm->m_iconDelegates[key].push_back(this);
 
@@ -744,7 +744,7 @@ void ComplexVisualPlayer::asyncIconLoadedIntermediary(cocos2d::CCObject* obj) {
     asyncLoadRequests.erase(uniqueId);
 
     auto* gm = GameManager::get();
-    gm->loadIcon(request.iconId, (int)util::misc::convertEnum<IconType>(request.iconType), -1);
+    gm->loadIcon(request.iconId, (int)globed::into<IconType>(request.iconType), -1);
     gm->m_isIconBeingLoaded[request.key] = 0;
 
     for (const auto delegate : gm->m_iconDelegates[request.key]) {

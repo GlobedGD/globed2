@@ -13,7 +13,6 @@
 #include <ui/general/ask_input_popup.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
-#include <util/cocos.hpp>
 
 using namespace geode::prelude;
 
@@ -83,7 +82,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     if (isFriend) {
         // cell gradient
         auto* cellGradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_FRIEND_INGAME))
+            .color(globed::into<ccColor3B>(util::ui::BG_COLOR_FRIEND_INGAME))
             .opacity(50)
             .pos(0, 0)
             .anchorPoint({0, 0})

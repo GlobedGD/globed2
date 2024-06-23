@@ -158,6 +158,10 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
     }
 
     auto response = result->unwrap();
+    if (response == "{}") {
+        FLAlertLayer::create("Error", "<cy>Credits currently unavailable, please try again later.</c>", "Ok")->show();
+        return;
+    }
 
     std::string parseError;
     auto creditsDataOpt = matjson::parse(response, parseError);
