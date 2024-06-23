@@ -33,7 +33,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .pos(4.f, 17.f)
         .anchorPoint(0.f, 1.f)
         .layout(RowLayout::create()
-            ->setGap(2.f)
+            ->setGap(3.f)
             ->setGrowCrossAxis(true)
             ->setCrossAxisReverse(true)
             ->setAutoScale(false)
@@ -75,15 +75,42 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     // this also *must* be called after updateLayout().
     usernameButton->setZOrder(10);
 
-    CCLabelBMFont* roomNameLabel = Build<CCLabelBMFont>::create(rli.name.c_str(), "bigFont.fnt")
-        .pos(4.f, CELL_HEIGHT - 10.f)
-        .limitLabelWidth(275.0f, 0.5f, 0.1f)
-        .anchorPoint(0, 0.5)
-        .id("message-text")
+    auto* roomNameLayout = Build<CCNode>::create()
+        .pos(4, CELL_HEIGHT - 10.f)
+        .anchorPoint(0.f, 0.5f)
+        .layout(
+            RowLayout::create()
+                ->setGap(3.f)
+                ->setAutoScale(false)
+                ->setAxisAlignment(AxisAlignment::Start)
+        )
+        .contentSize(RoomListingPopup::LIST_WIDTH, 0.f)
+        .parent(this)
         .collect();
 
-    this->addChild(roomNameLabel);
+    CCLabelBMFont* roomNameLabel = Build<CCLabelBMFont>::create(rli.name.c_str(), "bigFont.fnt")
+        .limitLabelWidth(200.0f, 0.5f, 0.1f)
+        .id("message-text")
+        .parent(roomNameLayout)
+        .collect();
 
+    roomNameLayout->updateLayout();
+
+    auto* rightMenu = Build<CCMenu>::create()
+        .layout(
+            RowLayout::create()
+                    ->setAxisReverse(true)
+                    ->setAxisAlignment(AxisAlignment::End)
+                    ->setAutoScale(false)
+                    ->setGap(2.f)
+        )
+        .anchorPoint(1.f, 0.5f)
+        .pos(RoomListingPopup::LIST_WIDTH - 3.f, CELL_HEIGHT / 2.f)
+        .contentSize(this->getContentSize())
+        .parent(this)
+        .collect();
+
+    // join button
     Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .scale(0.7f)
         .intoMenuItem([this, rli](auto) {
@@ -95,13 +122,51 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
             NetworkManager::get().send(JoinRoomPacket::create(rli.id, std::string_view("")));
             this->parent->close();
         })
-        .with([&](auto* btn) {
-            btn->setPosition(RoomListingPopup::LIST_WIDTH - btn->getScaledContentSize().width / 2.f - 3.f, CELL_HEIGHT / 2.f);
-        })
         .scaleMult(1.15f)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(rightMenu);
+
+    // lock button
+    auto* lockSpr = Build<CCSprite>::createSpriteName("GJLargeLock_001.png")
+        .scale(0.24f)
+        .opacity(rli.hasPassword ? 255 : 80)
+        .parent(rightMenu)
+        .collect();
+
+    // collision icon
+    Build<CCSprite>::createSpriteName("room-icon-collision.png"_spr)
+        .with([&](auto* s) {
+            util::ui::rescaleToMatch(s, lockSpr->getScaledContentSize() * 1.2f);
+        })
+        .opacity(rli.settings.flags.collision ? 255 : 80)
+        .parent(rightMenu);
+
+    auto* playerCountWrapper = Build<CCNode>::create()
+        .layout(RowLayout::create()->setGap(1.f)->setAutoScale(false))
+        .parent(rightMenu)
+        .collect();
+
+    // player count number
+    int playerCount = 3;
+    std::string playerCountText = rli.settings.playerLimit == 0 ? std::to_string(playerCount) : fmt::format("{}/{}", playerCount, rli.settings.playerLimit);
+
+    auto* playerCountLabel = Build<CCLabelBMFont>::create(playerCountText.c_str(), "bigFont.fnt")
+        .scale(0.35f)
+        .parent(playerCountWrapper)
+        .collect();
+
+    // player count icon
+    auto* playerCountIcon = Build<CCSprite>::createSpriteName("icon-person.png"_spr)
+        .with([&](auto* p) {
+            util::ui::rescaleToMatch(p, util::ui::BADGE_SIZE_SMALL * 0.9f);
+        })
+        .parent(playerCountWrapper)
+        .collect();
+
+    playerCountWrapper->setContentWidth(1.f + playerCountIcon->getScaledContentSize().width + playerCountLabel->getScaledContentSize().width);
+
+    playerCountWrapper->updateLayout();
+
+    rightMenu->updateLayout();
 
     return true;
 }
