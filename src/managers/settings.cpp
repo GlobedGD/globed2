@@ -88,3 +88,13 @@ void GlobedSettings::clear(std::string_view key) {
         obj.erase(key);
     }
 }
+
+// verify that all members are serialized
+#include <data/bytebuffer.hpp>
+static void verifySettings() {
+    globed::unreachable();
+
+    GlobedSettings* ptr = nullptr;
+    ByteBuffer bb;
+    bb.writeValue(*ptr);
+}
