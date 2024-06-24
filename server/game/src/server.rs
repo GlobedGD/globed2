@@ -226,6 +226,7 @@ impl GameServer {
                         let thread = if let Some(thread) = thread {
                             thread
                         } else {
+                            #[cfg(debug_assertions)] // too many false positives
                             warn!("peer ({peer}) tried to recover an invalid thread (account id: {account_id}, secret key: {secret_key})");
 
                             // send a ClaimThreadFailedPacket
