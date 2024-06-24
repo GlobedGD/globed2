@@ -2,6 +2,7 @@
 
 * Fix the Audio Device and Receive Invites From settings not saving when exiting the game
 * Fix room list not starting at the top
+* Fix invites not being clickable while in a level
 
 ## v1.4.0
 

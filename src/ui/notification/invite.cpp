@@ -52,6 +52,8 @@ bool GlobedInviteNotification::init(uint32_t roomID, const std::string_view pass
         .collect()
         ;
 
+    menu->setTouchPriority(-1000); // this is stupid
+
     Build<ButtonSprite>::create("Accept", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this, roomID, password = std::string(password)](auto) {
             auto& nm = NetworkManager::get();
