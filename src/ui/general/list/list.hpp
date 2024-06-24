@@ -58,6 +58,15 @@ private:
         return true;
     }
 
+    void draw() override {
+        // i stole this from geode
+        auto size = this->getContentSize();
+        cocos2d::ccDrawColor4B(0, 0, 0, 0x4f);
+        glLineWidth(2.0f);
+        cocos2d::ccDrawLine({ 1.0f, 0.0f }, { size.width - 1.0f, 0.0f });
+        cocos2d::ccDrawLine({ 1.0f, size.height }, { size.width - 1.0f, size.height });
+    }
+
     template <typename T>
     void setColor(const T& color) {
         background->setColor(globed::into<cocos2d::ccColor3B>(color));
@@ -247,7 +256,7 @@ protected:
         this->setContentSize({width, height});
         this->ignoreAnchorPointForPosition(false);
 
-        // TODO: bg and separator line
+        // TODO: bg?
         borderNode = GlobedListBorder::create(borderType, width, height, background);
 
         if (borderNode) {
