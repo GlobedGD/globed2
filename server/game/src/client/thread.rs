@@ -53,6 +53,7 @@ pub struct ClientThread {
     connection_state: AtomicClientThreadState,
 
     pub secret_key: u32,
+    pub protocol_version: AtomicU16,
 
     pub account_id: AtomicI32,
     pub level_id: AtomicLevelId,
@@ -113,6 +114,7 @@ impl ClientThread {
             connection_state: thread.connection_state,
 
             secret_key: thread.secret_key,
+            protocol_version: thread.protocol_version,
 
             account_id: thread.account_id,
             level_id: thread.level_id,

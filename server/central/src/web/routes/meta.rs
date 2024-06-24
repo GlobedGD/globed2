@@ -4,7 +4,7 @@ use globed_shared::{
     base64::{engine::general_purpose as b64e, Engine as _},
     esp::{ByteBuffer, ByteBufferExt, ByteBufferExtWrite},
     rand::{self, Rng},
-    MIN_CLIENT_VERSION, PROTOCOL_VERSION, SERVER_MAGIC,
+    MIN_CLIENT_VERSION, SUPPORTED_PROTOCOLS, SERVER_MAGIC,
 };
 
 use rocket::{
@@ -19,7 +19,8 @@ use super::*;
 
 #[get("/version")]
 pub fn version() -> String {
-    PROTOCOL_VERSION.to_string()
+    // send minimum supported protocol
+    SUPPORTED_PROTOCOLS.first().unwrap().to_string()
 }
 
 #[get("/")]

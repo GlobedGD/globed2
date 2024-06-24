@@ -89,7 +89,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .collect();
 
     CCLabelBMFont* roomNameLabel = Build<CCLabelBMFont>::create(rli.name.c_str(), "bigFont.fnt")
-        .limitLabelWidth(200.0f, 0.5f, 0.1f)
+        .limitLabelWidth(190.0f, 0.48f, 0.1f)
         .id("message-text")
         .parent(roomNameLayout)
         .collect();
@@ -146,7 +146,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .collect();
 
     // player count number
-    int playerCount = 3;
+    int playerCount = rli.playerCount;
     std::string playerCountText = rli.settings.playerLimit == 0 ? std::to_string(playerCount) : fmt::format("{}/{}", playerCount, rli.settings.playerLimit);
 
     auto* playerCountLabel = Build<CCLabelBMFont>::create(playerCountText.c_str(), "bigFont.fnt")

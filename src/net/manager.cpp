@@ -29,7 +29,9 @@ using namespace asp::sync;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
-static constexpr uint16_t PROTOCOL_VERSION = 6;
+static constexpr uint16_t MIN_PROTOCOL_VERSION = 6;
+static constexpr uint16_t MAX_PROTOCOL_VERSION = 7;
+static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({6, 7});
 
 // yes, really
 struct AtomicConnectionState {
@@ -718,7 +720,7 @@ protected:
 
     uint16_t getUsedProtocol() {
         // 0xffff is a special value that the server doesn't check
-        return ignoreProtocolMismatch ? 0xffff : PROTOCOL_VERSION;
+        return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
     }
 
     uint32_t getServerTps() {
@@ -1145,6 +1147,18 @@ void NetworkManager::suspend() {
 
 void NetworkManager::resume() {
     impl->resume();
+}
+
+uint16_t NetworkManager::getMinProtocol() {
+    return MIN_PROTOCOL_VERSION;
+}
+
+uint16_t NetworkManager::getMaxProtocol() {
+    return MAX_PROTOCOL_VERSION;
+}
+
+bool NetworkManager::isProtocolSupported(uint16_t version) {
+    return std::find(SUPPORTED_PROTOCOLS.begin(), SUPPORTED_PROTOCOLS.end(), version) != SUPPORTED_PROTOCOLS.end();
 }
 
 void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {

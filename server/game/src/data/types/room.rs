@@ -29,8 +29,19 @@ pub struct RoomInfo {
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
+pub struct RoomListingInfoLegacy {
+    pub id: u32,
+    pub owner: PlayerPreviewAccountData,
+    pub name: InlineString<32>,
+    pub has_password: bool,
+    pub settings: RoomSettings,
+}
+
+#[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static = true)]
 pub struct RoomListingInfo {
     pub id: u32,
+    pub player_count: u16,
     pub owner: PlayerPreviewAccountData,
     pub name: InlineString<32>,
     pub has_password: bool,

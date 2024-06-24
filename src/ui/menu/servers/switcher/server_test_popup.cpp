@@ -47,7 +47,7 @@ void ServerTestPopup::requestCallback(typename WebRequestManager::Event* event) 
 
     int protocol = util::format::parse<int>(resp).value_or(0);
 
-    if (protocol != NetworkManager::get().getUsedProtocol()) {
+    if (!NetworkManager::get().isProtocolSupported(protocol)) {
         this->parent->onTestFailure(fmt::format(
             "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
             NetworkManager::get().getUsedProtocol(),

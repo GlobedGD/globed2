@@ -265,9 +265,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 abort_misconfig();
             }
             Err(CentralBridgeError::ProtocolMismatch(protocol)) => {
+                let our = *SUPPORTED_PROTOCOLS.last().unwrap();
                 error!("incompatible protocol versions!");
-                error!("this game server is on v{PROTOCOL_VERSION}, while the central server uses v{}", protocol);
-                if protocol > PROTOCOL_VERSION {
+                error!("this game server is on v{}, while the central server uses v{}", our, protocol);
+                if protocol > our {
                     warn!(
                         "hint: you are running an old version of the Globed game server (v{}), please update to the latest one.",
                         env!("CARGO_PKG_VERSION")

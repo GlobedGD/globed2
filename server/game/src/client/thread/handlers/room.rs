@@ -214,19 +214,35 @@ impl ClientThread {
     gs_handler!(self, handle_request_room_list, RequestRoomListPacket, _packet, {
         let _ = gs_needauth!(self);
 
-        let pkt = RoomListPacket {
-            rooms: self
-                .game_server
-                .state
-                .room_manager
-                .get_rooms()
-                .iter()
-                .filter(|(_, room)| !room.is_hidden())
-                .map(|(id, room)| room.get_room_listing_info(*id, self.game_server))
-                .collect(),
-        };
+        if self.protocol_version.load(Ordering::Relaxed) >= 7 {
+            let pkt = RoomListPacket {
+                rooms: self
+                    .game_server
+                    .state
+                    .room_manager
+                    .get_rooms()
+                    .iter()
+                    .filter(|(_, room)| !room.is_hidden())
+                    .map(|(id, room)| room.get_room_listing_info(*id, self.game_server))
+                    .collect(),
+            };
 
-        self.send_packet_dynamic(&pkt).await
+            self.send_packet_dynamic(&pkt).await
+        } else {
+            let pkt = RoomListPacketLegacy {
+                rooms: self
+                    .game_server
+                    .state
+                    .room_manager
+                    .get_rooms()
+                    .iter()
+                    .filter(|(_, room)| !room.is_hidden())
+                    .map(|(id, room)| room.get_room_listing_info_legacy(*id, self.game_server))
+                    .collect(),
+            };
+
+            self.send_packet_dynamic(&pkt).await
+        }
     });
 
     #[inline]

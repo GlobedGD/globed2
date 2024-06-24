@@ -7,7 +7,7 @@ use globed_shared::{
 };
 
 use crate::{
-    data::{LevelId, RoomInfo, RoomListingInfo, RoomSettings, ROOM_ID_LENGTH},
+    data::{LevelId, RoomInfo, RoomListingInfo, RoomListingInfoLegacy, RoomSettings, ROOM_ID_LENGTH},
     server::GameServer,
 };
 
@@ -88,6 +88,18 @@ impl Room {
     #[inline]
     pub fn get_room_listing_info(&self, id: u32, game_server: &GameServer) -> RoomListingInfo {
         RoomListingInfo {
+            id,
+            player_count: self.manager.get_total_player_count() as u16,
+            name: self.name.clone(),
+            has_password: !self.password.is_empty(),
+            owner: game_server.get_player_preview_data(self.owner).unwrap_or_default(),
+            settings: self.settings,
+        }
+    }
+
+    #[inline]
+    pub fn get_room_listing_info_legacy(&self, id: u32, game_server: &GameServer) -> RoomListingInfoLegacy {
+        RoomListingInfoLegacy {
             id,
             name: self.name.clone(),
             has_password: !self.password.is_empty(),

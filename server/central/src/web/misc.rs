@@ -57,7 +57,8 @@ macro_rules! bad_request {
 macro_rules! check_protocol {
     ($protocol:expr) => {
         let p = $protocol;
-        if p != PROTOCOL_VERSION && p != 0xffff {
+
+        if !globed_shared::SUPPORTED_PROTOCOLS.contains(&p) && p != 0xffff {
             bad_request!(&format!(
                 "Outdated client, please update Globed. This server requires at least version {MIN_CLIENT_VERSION}.",
             ));

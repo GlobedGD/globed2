@@ -11,7 +11,7 @@ use std::{
 use globed_shared::{
     debug, info,
     rand::{self, Rng},
-    warn, SyncMutex, UserEntry, MIN_CLIENT_VERSION, PROTOCOL_VERSION,
+    warn, SyncMutex, UserEntry, MIN_CLIENT_VERSION, SUPPORTED_PROTOCOLS,
 };
 
 use super::*;
@@ -38,6 +38,7 @@ pub struct UnauthorizedThread {
     pub connection_state: AtomicClientThreadState,
 
     pub secret_key: u32,
+    pub protocol_version: AtomicU16,
 
     pub account_id: AtomicI32,
     pub level_id: AtomicLevelId,
@@ -76,6 +77,7 @@ impl UnauthorizedThread {
             connection_state: AtomicClientThreadState::default(),
 
             secret_key: rand::thread_rng().gen(),
+            protocol_version: AtomicU16::new(0),
 
             account_id: AtomicI32::new(0),
             level_id: AtomicLevelId::new(0),
@@ -107,6 +109,7 @@ impl UnauthorizedThread {
             connection_state: AtomicClientThreadState::new(ClientThreadState::Disconnected),
 
             secret_key: thread.secret_key,
+            protocol_version: thread.protocol_version,
 
             account_id: thread.account_id,
             level_id: thread.level_id,
@@ -278,18 +281,21 @@ impl UnauthorizedThread {
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
         let socket = self.get_socket();
 
-        if packet.protocol != PROTOCOL_VERSION && packet.protocol != 0xffff {
+        if !SUPPORTED_PROTOCOLS.contains(&packet.protocol) && packet.protocol != 0xffff {
             self.terminate();
 
             socket
                 .send_packet_dynamic(&ProtocolMismatchPacket {
-                    protocol: PROTOCOL_VERSION,
+                    // send minimum required version
+                    protocol: *SUPPORTED_PROTOCOLS.first().unwrap(),
                     min_client_version: MIN_CLIENT_VERSION,
                 })
                 .await?;
 
             return Ok(());
         }
+
+        self.protocol_version.store(packet.protocol, Ordering::Relaxed);
 
         socket.init_crypto_box(&packet.key)?;
         socket

@@ -3,7 +3,6 @@
 * Fix the Audio Device and Receive Invites From settings not saving when exiting the game
 * Fix room list not starting at the top
 
-
 ## v1.4.0
 
 * Overhaul the room system

@@ -282,7 +282,7 @@ void RoomLayer::onLoaded(bool stateChanged) {
     for (auto* cell : CCArrayExt<PlayerListCell*>(listLayer->m_list->m_entries)) {
         if (auto listcell = static_cast<GenericListCell*>(cell->getParent())) {
             pos++;
-            listcell->m_backgroundLayer->setColor(util::cocos::convert<ccColor3B>(pos % 2 == 1 ? util::ui::BG_COLOR_DARK_BLUE : util::ui::BG_COLOR_DARKER_BLUE));
+            listcell->m_backgroundLayer->setColor(globed::into<ccColor3B>(pos % 2 == 1 ? util::ui::BG_COLOR_DARK_BLUE : util::ui::BG_COLOR_DARKER_BLUE));
         }
     }
 

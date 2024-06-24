@@ -26,7 +26,7 @@ impl Default for GameServerBootData {
         let status_print_interval = 7200; // 2 hours
 
         Self {
-            protocol: PROTOCOL_VERSION,
+            protocol: *SUPPORTED_PROTOCOLS.last().unwrap(),
             tps: 30,
             maintenance: false,
             secret_key2: String::new(),

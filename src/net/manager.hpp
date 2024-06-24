@@ -120,6 +120,10 @@ public:
     // Resume all network threads
     void resume();
 
+    uint16_t getMinProtocol();
+    uint16_t getMaxProtocol();
+    bool isProtocolSupported(uint16_t version);
+
 private:
     class Impl;
     Impl* impl;

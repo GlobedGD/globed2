@@ -7,7 +7,7 @@ use globed_shared::{
     anyhow::{self, anyhow},
     base64::{engine::general_purpose as b64e, Engine as _},
     logger::*,
-    MIN_CLIENT_VERSION, PROTOCOL_VERSION,
+    MIN_CLIENT_VERSION,
 };
 use rocket::{post, State};
 

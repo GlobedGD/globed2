@@ -42,6 +42,7 @@ GLOBED_SERIALIZABLE_STRUCT(RoomInfo, (
 
 struct RoomListingInfo {
     uint32_t id;
+    uint16_t playerCount;
     PlayerPreviewAccountData owner;
     std::string name;
     bool hasPassword;
@@ -49,5 +50,5 @@ struct RoomListingInfo {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RoomListingInfo, (
-    id, owner, name, hasPassword, settings
+    id, playerCount, owner, name, hasPassword, settings
 ));

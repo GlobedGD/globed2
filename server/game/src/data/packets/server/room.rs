@@ -41,6 +41,12 @@ pub struct RoomInvitePacket {
 
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 23006)]
+pub struct RoomListPacketLegacy {
+    pub rooms: Vec<RoomListingInfoLegacy>,
+}
+
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 23006)]
 pub struct RoomListPacket {
     pub rooms: Vec<RoomListingInfo>,
 }
