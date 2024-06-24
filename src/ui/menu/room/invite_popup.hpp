@@ -2,6 +2,9 @@
 #include <defs/all.hpp>
 #include <data/types/gd.hpp>
 
+#include "player_list_cell.hpp"
+#include <ui/general/list/list.hpp>
+
 class InvitePopup : public geode::Popup<> {
 public:
     constexpr static float POPUP_WIDTH = 420.f;
@@ -12,11 +15,13 @@ public:
     static InvitePopup* create();
 
 protected:
+    using UserList = GlobedListLayer<PlayerListCell>;
+
     std::vector<PlayerPreviewAccountData> playerList;
     std::vector<PlayerPreviewAccountData> filteredPlayerList;
 
     LoadingCircle* loadingCircle = nullptr;
-    GJCommentListLayer* listLayer = nullptr;
+    UserList* listLayer = nullptr;
     cocos2d::CCMenu* buttonMenu;
     Ref<CCMenuItemSpriteExtra> clearSearchButton, settingsButton;
 

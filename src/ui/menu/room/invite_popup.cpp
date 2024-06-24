@@ -23,6 +23,8 @@ bool InvitePopup::setup() {
 
     this->setTitle("Invite Player");
 
+    auto rlayout = util::ui::getPopupLayout(m_size);
+
     FriendListManager::get().maybeLoad();
 
     auto& rm = RoomManager::get();
@@ -37,12 +39,11 @@ bool InvitePopup::setup() {
 
     auto popupLayout = util::ui::getPopupLayout(m_size);
 
-    auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
-    listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
-
-    float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;
-    listLayer->setPosition({xpos, 45.f});
-    m_mainLayer->addChild(listLayer);
+    Build(UserList::createForComments(LIST_WIDTH, LIST_HEIGHT, PlayerListCell::CELL_HEIGHT))
+        .anchorPoint(0.5f, 1.f)
+        .pos(rlayout.fromTop(20.f))
+        .store(listLayer)
+        .parent(m_mainLayer);
 
     this->reloadPlayerList();
 
@@ -108,18 +109,7 @@ void InvitePopup::onLoaded(bool stateChanged) {
         cells->addObject(cell);
     }
 
-    // preserve scroll position
-    float scrollPos = util::ui::getScrollPos(listLayer->m_list);
-    int previousCellCount = listLayer->m_list->m_entries->count();
-
-    listLayer->m_list->removeFromParent();
-    listLayer->m_list = Build<ListView>::create(cells, PlayerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
-        .parent(listLayer)
-        .collect();
-
-    if (previousCellCount != 0 && !stateChanged) {
-        util::ui::setScrollPos(listLayer->m_list, scrollPos);
-    }
+    listLayer->swapCells(cells);
 
     if (stateChanged) {
         this->addButtons();

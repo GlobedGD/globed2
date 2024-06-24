@@ -36,8 +36,8 @@ private:
     template <typename T>
         requires (std::is_base_of_v<cocos2d::CCNode, T>)
     friend class GlobedListLayer;
-
     CellType* inner;
+
     cocos2d::CCLayerColor* background;
 
     bool init(CellType* inner, float width) {
@@ -106,28 +106,18 @@ public:
         return static_cast<WrapperCell*>(scrollLayer->m_contentLayer->getChildren()->objectAtIndex(index))->inner;
     }
 
-    void addCell(CellType* cell) {
-        auto wcell = WrapperCell::create(cell, width);
-        wcell->setColor(this->getCellColor(this->cellCount()));
-        wcell->setZOrder(this->cellCount());
+    cocos2d::CCArray* getCells() {
+        return scrollLayer->m_contentLayer->getChildren();
+    }
 
-        scrollLayer->m_contentLayer->addChild(wcell);
-        scrollLayer->m_contentLayer->updateLayout();
+    void addCell(CellType* cell) {
+        this->addWrapperCell(cell, this->cellCount());
     }
 
     void insertCell(CellType* cell, int index) {
         GLOBED_REQUIRE(index > 0 && index <= this->cellCount(), "invalid index passed to insertCell");
 
-        auto wcell = WrapperCell::create(cell, height);
-        wcell->setColor(this->getCellColor(index));
-
-        // move all cells one up
-        for (int i = index; i < this->cellCount(); i++) {
-            static_cast<WrapperCell*>(scrollLayer->m_contentLayer->getChildren()->objectAtIndex(i))->setZOrder(i + 1);
-        }
-
-        scrollLayer->m_contentLayer->addChild(wcell, index);
-        scrollLayer->m_contentLayer->updateLayout();
+        this->addWrapperCell(cell, index);
     }
 
     void removeCell(WrapperCell* cell) {
@@ -149,11 +139,17 @@ public:
         scrollLayer->m_contentLayer->removeAllChildren();
     }
 
-    void swapCells(cocos2d::CCArray* cells) {
+    void swapCells(cocos2d::CCArray* cells, bool preserveScrollPos = true) {
+        auto scpos = this->getScrollPos();
+
         this->removeAllCells();
 
         for (auto* cell : CCArrayExt<CellType*>(cells)) {
             this->addCell(cell);
+        }
+
+        if (preserveScrollPos) {
+            this->scrollToPos(scpos);
         }
     }
 
@@ -195,14 +191,17 @@ public:
         evenCellColor = globed::into<cocos2d::ccColor4B>(even);
     }
 
+    void setCellHeight(float h) {
+        cellHeight = h;
+    }
+
     // helper templated functions
 
     template <typename... Args>
     CellType* addCell(Args&&... args) {
         CellType* cell = CellType::create(std::forward<Args>(args)...);
-        auto wcell = WrapperCell::create(cell);
 
-        this->addCell(wcell);
+        this->addCell(cell);
 
         return cell;
     }
@@ -210,16 +209,28 @@ public:
     template <typename... Args>
     CellType* insertCell(Args&&... args, int index) {
         CellType* cell = CellType::create(std::forward<Args>(args)...);
-        auto wcell = WrapperCell::create(cell);
 
-        this->insertCell(wcell, index);
+        this->insertCell(cell);
 
         return cell;
     }
 
-    static GlobedListLayer* create(float width, float height, cocos2d::ccColor4B background, GlobedListBorderType borderType = GlobedListBorderType::None) {
+    template <typename T>
+    static GlobedListLayer* create(float width, float height, const T& background, float cellHeight = 0.0f, GlobedListBorderType borderType = GlobedListBorderType::None) {
         auto ret = new GlobedListLayer();
-        if (ret->init(width, height, background, borderType)) {
+        if (ret->init(width, height, globed::into(background), cellHeight, borderType)) {
+            ret->autorelease();
+            return ret;
+        }
+
+        delete ret;
+        return nullptr;
+    }
+
+    static GlobedListLayer* createForComments(float width, float height, float cellHeight = 0.0f) {
+        auto ret = new GlobedListLayer();
+        if (ret->init(width, height, globed::into(util::ui::BG_COLOR_BROWN), cellHeight, GlobedListBorderType::GJCommentListLayer)) {
+            ret->setCellColors(util::ui::BG_COLOR_DARKBROWN, util::ui::BG_COLOR_BROWN);
             ret->autorelease();
             return ret;
         }
@@ -231,15 +242,16 @@ public:
 protected:
     geode::ScrollLayer* scrollLayer;
     cocos2d::CCSprite *borderLeft, *borderRight, *borderTop, *borderBottom;
-    float height, width;
+    float height, width, cellHeight = 0.f;
     cocos2d::ccColor4B oddCellColor, evenCellColor;
     Ref<GlobedListBorder> borderNode;
 
-    bool init(float width, float height, cocos2d::ccColor4B background, GlobedListBorderType borderType) {
+    bool init(float width, float height, cocos2d::ccColor4B background, float cellHeight, GlobedListBorderType borderType) {
         if (!CCLayer::init()) return false;
 
         this->height = height;
         this->width = width;
+        this->cellHeight = cellHeight;
 
         Build<geode::ScrollLayer>::create(cocos2d::CCSize{width, height})
             .parent(this)
@@ -269,6 +281,25 @@ protected:
         return true;
     }
 
+    WrapperCell* addWrapperCell(CellType* cell, int index) {
+        if (cellHeight != 0.0f) {
+            cell->setContentHeight(cellHeight);
+        }
+
+        auto wcell = WrapperCell::create(cell, width);
+        wcell->setColor(this->getCellColor(index));
+
+        // move all cells one up
+        for (int i = index; i < this->cellCount(); i++) {
+            static_cast<WrapperCell*>(scrollLayer->m_contentLayer->getChildren()->objectAtIndex(i))->setZOrder(i + 1);
+        }
+
+        scrollLayer->m_contentLayer->addChild(wcell, index);
+        scrollLayer->m_contentLayer->updateLayout();
+
+        return wcell;
+    }
+
     void updateCellOrder() {
         size_t i = 0;
         for (WrapperCell* child : CCArrayExt<WrapperCell*>(scrollLayer->m_contentLayer->getChildren())) {
@@ -289,5 +320,46 @@ protected:
 
     cocos2d::ccColor4B getCellColor(int idx) {
         return idx % 2 == 0 ? oddCellColor : evenCellColor;
+    }
+
+public:
+    // iterators
+    class iterator {
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using held_type = WrapperCell*;
+        using value_type = CellType*;
+        using reference = CellType*&;
+        using pointer = CellType**;
+
+        iterator(cocos2d::CCArray* children, size_t idx) : array(children), idx(idx) {}
+
+        reference operator*() const { return get(); }
+        pointer operator->() { return &get(); }
+        iterator& operator++() {
+            idx++;
+            return *this;
+        }
+
+        bool operator==(const iterator& other) const { return idx == other.idx && array == other.array; }
+        bool operator!=(const iterator& other) const = default;
+
+    private:
+        cocos2d::CCArray* array;
+        size_t idx;
+
+        reference get() const {
+            return static_cast<held_type>(array->objectAtIndex(idx))->inner;
+        }
+    };
+
+    iterator begin() {
+        auto arr = scrollLayer->m_contentLayer->getChildren();
+        return iterator(arr, 0);
+    }
+
+    iterator end() {
+        auto arr = scrollLayer->m_contentLayer->getChildren();
+        return iterator(arr, arr->count());
     }
 };

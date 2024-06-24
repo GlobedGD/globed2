@@ -34,13 +34,11 @@ bool RoomSettingsPopup::setup() {
     MAKE_SETTING("2-Player Mode", "While enabled, players can link with another player to play a 2-player enabled level together", TAG_TWO_PLAYER, cellTwoPlayer);
 #endif
 
-    auto listview = ListView::create(cells, RoomSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
-    auto* listlayer = Build(GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false))
+    Build(SettingList::createForComments(LIST_WIDTH, LIST_HEIGHT, RoomSettingCell::CELL_HEIGHT))
         .scale(0.65f)
-        .parent(m_mainLayer)
-        .collect();
-
-    listlayer->setPosition(popupLayout.center - listlayer->getContentSize() / 2);
+        .anchorPoint(0.5f, 1.f)
+        .pos(popupLayout.fromTop(20.f))
+        .parent(m_mainLayer);
 
     NetworkManager::get().addListener<RoomInfoPacket>(this, [this](auto packet) {
         log::debug("room configuration updated");

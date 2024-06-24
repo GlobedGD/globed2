@@ -1,6 +1,9 @@
 #pragma once
 #include <defs/all.hpp>
 
+#include "server_cell.hpp"
+#include <ui/general/list/list.hpp>
+
 class ServerSwitcherPopup : public geode::Popup<> {
 public:
     constexpr static float POPUP_WIDTH = 420.f;
@@ -13,7 +16,9 @@ public:
 
     static ServerSwitcherPopup* create();
 protected:
-    GJCommentListLayer* listLayer = nullptr;
+    using ServerList = GlobedListLayer<CentralServerListCell>;
+
+    ServerList* listLayer = nullptr;
 
     bool setup() override;
 };

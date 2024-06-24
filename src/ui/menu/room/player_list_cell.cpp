@@ -189,7 +189,7 @@ void PlayerListCell::createAdminButton() {
             AdminManager::get().openUserPopup(data);
         })
         .parent(menu)
-        .zOrder(-3)
+        .zOrder(10)
         .id("admin-button"_spr);
 
     menu->updateLayout();

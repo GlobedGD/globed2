@@ -151,6 +151,22 @@ namespace util::ui {
         }
     }
 
+    CCPoint PopupLayout::fromTop(float y) {
+        return fromTop({0.f, y});
+    }
+
+    CCPoint PopupLayout::fromTop(cocos2d::CCSize off) {
+        return this->centerTop - off;
+    }
+
+    CCPoint PopupLayout::fromBottom(float y) {
+        return fromTop({0.f, y});
+    }
+
+    CCPoint PopupLayout::fromBottom(cocos2d::CCSize off) {
+        return this->centerBottom + off;
+    }
+
     static PopupLayout popupLayoutWith(const CCSize& popupSize, bool useWinSize) {
         PopupLayout layout;
 

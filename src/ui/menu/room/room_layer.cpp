@@ -99,7 +99,7 @@ bool RoomLayer::init() {
     });
 
     auto rlayout = util::ui::getPopupLayout(popupSize);
-    Build<PlayerList>::create(listWidth, listHeight, util::ui::BG_COLOR_DARK_BLUE, GlobedListBorderType::GJCommentListLayerBlue)
+    Build<PlayerList>::create(listWidth, listHeight, util::ui::BG_COLOR_DARK_BLUE, PlayerListCell::CELL_HEIGHT, GlobedListBorderType::GJCommentListLayerBlue)
         .ignoreAnchorPointForPos(false)
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.center.width, rlayout.top - 40.f)
@@ -260,8 +260,6 @@ void RoomLayer::onLoaded(bool stateChanged) {
         cells->addObject(cell);
     }
 
-    // preserve scroll position
-    float scrollPos = listLayer->getScrollPos();
     int previousCellCount = listLayer->cellCount();
 
     listLayer->swapCells(cells);
@@ -273,9 +271,7 @@ void RoomLayer::onLoaded(bool stateChanged) {
         CCPoint(listWidth, 0)
     };
 
-    if (previousCellCount != 0 && !stateChanged) {
-        listLayer->scrollToPos(scrollPos);
-    } else if (previousCellCount == 0) {
+    if (previousCellCount == 0) {
         listLayer->scrollToTop();
     }
 

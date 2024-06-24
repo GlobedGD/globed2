@@ -12,12 +12,13 @@ using namespace geode::prelude;
 bool ServerSwitcherPopup::setup() {
     this->setTitle("Server switcher");
 
-    auto listview = ListView::create(CCArray::create(), CentralServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
-    listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
+    auto rlayout = util::ui::getPopupLayout(m_size);
 
-    float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;
-    listLayer->setPosition({xpos, 70.f});
-    m_mainLayer->addChild(listLayer);
+
+    Build(ServerList::createForComments(LIST_WIDTH, LIST_HEIGHT, CentralServerListCell::CELL_HEIGHT))
+        .anchorPoint(0.5f, 1.f)
+        .pos(rlayout.centerTop - CCPoint{0.f, 20.f})
+        .parent(m_mainLayer);
 
     // buttons layout
 
@@ -70,10 +71,7 @@ void ServerSwitcherPopup::reloadList() {
         cells->addObject(cell);
     }
 
-    listLayer->m_list->removeFromParent();
-    listLayer->m_list = Build<ListView>::create(cells, CentralServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
-        .parent(listLayer)
-        .collect();
+    listLayer->swapCells(cells);
 
     geode::cocos::handleTouchPriority(this);
 }

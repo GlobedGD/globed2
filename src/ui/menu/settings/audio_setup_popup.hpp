@@ -3,7 +3,9 @@
 
 #ifdef GLOBED_VOICE_SUPPORT
 
+#include "audio_device_cell.hpp"
 #include <ui/general/audio_visualizer.hpp>
+#include <ui/general/list/list.hpp>
 #include <asp/sync.hpp>
 
 class AudioSetupPopup : public geode::Popup<> {
@@ -18,8 +20,9 @@ public:
     static AudioSetupPopup* create();
 
 private:
+    using DeviceList = GlobedListLayer<AudioDeviceCell>;
     Ref<CCMenuItemSpriteExtra> recordButton, stopRecordButton;
-    GJCommentListLayer* listLayer;
+    DeviceList* listLayer;
     GlobedAudioVisualizer* audioVisualizer;
     asp::AtomicF32 audioLevel;
     cocos2d::CCMenu* visualizerLayout;

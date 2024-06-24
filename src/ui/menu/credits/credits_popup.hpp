@@ -1,7 +1,9 @@
 #pragma once
 #include <defs/geode.hpp>
 
+#include "credits_cell.hpp"
 #include <managers/web.hpp>
+#include <ui/general/list/list.hpp>
 
 class GlobedCreditsPopup : public geode::Popup<> {
 public:
@@ -13,8 +15,10 @@ public:
     static GlobedCreditsPopup* create();
 
 protected:
+    using CreditsList = GlobedListLayer<GlobedCreditsCell>;
+
     WebRequestManager::Listener eventListener;
-    geode::ScrollLayer* scrollLayer;
+    CreditsList* listLayer;
 
     void requestCallback(WebRequestManager::Task::Event* e);
     void setupFromCache();

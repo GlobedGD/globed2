@@ -71,12 +71,6 @@ bool GlobedCreditsCell::init(const char* name, bool lightBg, cocos2d::CCArray* p
 
     this->setContentSize(CCSize{cellWidth, playerWrapper->getScaledContentSize().height + 8.f + title->getScaledContentSize().height});
 
-    Build<CCLayerColor>::create(lightBg ? util::ui::BG_COLOR_BROWN : util::ui::BG_COLOR_DARKBROWN)
-        .id("background")
-        .zOrder(-1)
-        .parent(this)
-        .contentSize(this->getContentSize());
-
     // title at the top
     title->setPosition({title->getPositionX(), this->getContentHeight() - 10.f});
 

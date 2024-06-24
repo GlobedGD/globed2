@@ -14,12 +14,16 @@ using namespace geode::prelude;
 bool GlobedUserListPopup::setup() {
     this->setTitle("Players");
 
-    auto sizes = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayout(m_size);
 
     m_noElasticity = true;
 
-    Build<GJCommentListLayer>::create(nullptr, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false)
-        .pos((m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2, 60.f)
+    Build(UserList::createForComments(LIST_WIDTH, LIST_HEIGHT, GlobedUserCell::CELL_HEIGHT))
+        .anchorPoint(0.5f, 1.f)
+        .pos(rlayout.fromTop(20.f))
+        .with([&](auto* list) {
+            list->setCellColors(util::ui::BG_COLOR_DARKBROWN, util::ui::BG_COLOR_BROWN);
+        })
         .parent(m_mainLayer)
         .store(listLayer);
 
@@ -58,13 +62,13 @@ bool GlobedUserListPopup::setup() {
     // checkbox to toggle voice sorting
     auto* cbLayout = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false))
-        .pos(sizes.centerBottom + CCPoint{0.f, 20.f})
+        .pos(rlayout.centerBottom + CCPoint{0.f, 20.f})
         .parent(m_mainLayer)
         .collect();
 
 
     volumeSlider = Build<Slider>::create(this, menu_selector(GlobedUserListPopup::onVolumeChanged))
-        .pos(sizes.topRight + ccp(-75, -30 - 7) * 0.7f + ccp(0, -5))
+        .pos(rlayout.topRight + ccp(-75, -30 - 7) * 0.7f + ccp(0, -5))
         .anchorPoint(0, 0)
         .scale(0.45f * 0.7f)
         //.scaleX(0.35f)
@@ -73,7 +77,7 @@ bool GlobedUserListPopup::setup() {
         .collect();
 
     Build<CCLabelBMFont>::create("Voice Volume", "bigFont.fnt")
-        .pos(sizes.topRight + ccp(-75, -18) * 0.7f + ccp(0, -5))
+        .pos(rlayout.topRight + ccp(-75, -18) * 0.7f + ccp(0, -5))
         .scale(0.45f * 0.7f)
         .parent(m_mainLayer);
 
@@ -101,7 +105,7 @@ void GlobedUserListPopup::reorderWithVolume(float) {
     std::unordered_map<int, GlobedUserCell*> cellMap;
     std::vector<int> cellIndices;
 
-    for (auto* entry : CCArrayExt<GlobedUserCell*>(listLayer->m_list->m_entries)) {
+    for (auto* entry : *listLayer) {
         cellMap[entry->accountData.accountId] = entry;
         cellIndices.push_back(entry->accountData.accountId);
     }
@@ -143,13 +147,7 @@ void GlobedUserListPopup::reorderWithVolume(float) {
         sorted->addObject(cellMap[idx]);
     }
 
-    float scrollPos = util::ui::getScrollPos(listLayer->m_list);
-
-    listLayer->m_list->removeFromParent();
-    listLayer->m_list = Build<ListView>::create(sorted, GlobedUserCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
-        .parent(listLayer);
-
-    util::ui::setScrollPos(listLayer->m_list, scrollPos);
+    listLayer->swapCells(sorted);
 
     vpm.getLastPlaybackTime(0);
 }
@@ -161,7 +159,7 @@ void GlobedUserListPopup::reloadList(float) {
     auto& playerStore = playLayer->m_fields->playerStore->getAll();
     auto& pcm = ProfileCacheManager::get();
 
-    size_t existingCount = listLayer->m_list->m_entries->count();
+    size_t existingCount = listLayer->cellCount();
 
     // if the count is different, hard refresh
     if (playerStore.size() != existingCount) {
@@ -170,7 +168,7 @@ void GlobedUserListPopup::reloadList(float) {
     }
 
     size_t refreshed = 0;
-    for (auto* cell : CCArrayExt<GlobedUserCell*>(listLayer->m_list->m_entries)) {
+    for (auto* cell : *listLayer) {
         for (const auto& [playerId, entry] : playerStore) {
             if (playerId == cell->accountData.accountId) {
                 cell->refreshData(entry);
@@ -186,27 +184,7 @@ void GlobedUserListPopup::reloadList(float) {
 }
 
 void GlobedUserListPopup::hardRefresh() {
-    float lastScrollPos = -1.f;
-    if (listLayer->m_list) {
-        lastScrollPos = util::ui::getScrollPos(listLayer->m_list);
-        listLayer->m_list->removeFromParent();
-    }
-
-    listLayer->m_list = Build<ListView>::create(createPlayerCells(), GlobedUserCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
-        .parent(listLayer)
-        .collect();
-
-    int pos = 0;
-    for (auto* cell : CCArrayExt<GlobedUserCell*>(listLayer->m_list->m_entries)) {
-        if (auto listcell = static_cast<GenericListCell*>(cell->getParent())) {
-            pos++;
-            listcell->m_backgroundLayer->setColor(globed::into<ccColor3B>(pos % 2 == 1 ? util::ui::BG_COLOR_BROWN : util::ui::BG_COLOR_DARKBROWN));
-        }
-    }
-
-    if (lastScrollPos != -1.f) {
-        util::ui::setScrollPos(listLayer->m_list, lastScrollPos);
-    }
+    listLayer->swapCells(createPlayerCells());
 }
 
 CCArray* GlobedUserListPopup::createPlayerCells() {

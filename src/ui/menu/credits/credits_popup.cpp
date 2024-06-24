@@ -4,7 +4,6 @@
 #include <matjson/stl_serialize.hpp>
 
 #include "credits_player.hpp"
-#include "credits_cell.hpp"
 #include <managers/error_queues.hpp>
 #include <util/ui.hpp>
 
@@ -114,25 +113,11 @@ bool GlobedCreditsPopup::setup() {
 
     auto rlayout = util::ui::getPopupLayout(m_size);
 
-    auto* listlayer = Build<GJCommentListLayer>::create(nullptr, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false)
-        .ignoreAnchorPointForPos(false)
+    Build(CreditsList::createForComments(LIST_WIDTH, LIST_HEIGHT, 0.f))
         .anchorPoint(0.5f, 1.f)
-        .pos(rlayout.center.width, rlayout.top - 40.f)
-        .parent(m_mainLayer)
-        .collect();
-
-    Build(ScrollLayer::create({LIST_WIDTH, LIST_HEIGHT}))
-        .parent(listlayer)
-        .store(scrollLayer)
-        .collect();
-
-    scrollLayer->m_contentLayer->setLayout(
-        ColumnLayout::create()
-            ->setGap(0.f)
-            ->setAxisReverse(true)
-            ->setAxisAlignment(AxisAlignment::End)
-            ->setAutoScale(false)
-    );
+        .pos(rlayout.fromTop(40.f))
+        .store(listLayer)
+        .parent(m_mainLayer);
 
     // if not cached, make a request
     if (!g_cachedResponse) {
@@ -196,10 +181,7 @@ void GlobedCreditsPopup::setupFromCache() {
         ADD_PLAYER(owners, credit);
     }
 
-    auto* cellOwners = Build<GlobedCreditsCell>::create("Owner", false, owners)
-        .id("cell-owner"_spr)
-        .parent(scrollLayer->m_contentLayer)
-        .collect();
+    listLayer->addCell("Owner", false, owners);
 
     /* Staff */
 
@@ -209,10 +191,7 @@ void GlobedCreditsPopup::setupFromCache() {
         ADD_PLAYER(staff, credit);
     }
 
-    auto* cellStaff = Build<GlobedCreditsCell>::create("Staff", true, staff)
-        .id("cell-staff"_spr)
-        .parent(scrollLayer->m_contentLayer)
-        .collect();
+    listLayer->addCell("Staff", false, staff);
 
     /* Contributor */
 
@@ -222,10 +201,7 @@ void GlobedCreditsPopup::setupFromCache() {
         ADD_PLAYER(contributors, credit);
     }
 
-    auto* cellContributors = Build<GlobedCreditsCell>::create("Contributor", false, contributors)
-        .id("cell-contributor"_spr)
-        .parent(scrollLayer->m_contentLayer)
-        .collect();
+    listLayer->addCell("Contributor", false, contributors);
 
     /* Special */
 
@@ -235,21 +211,10 @@ void GlobedCreditsPopup::setupFromCache() {
         ADD_PLAYER(special, credit);
     }
 
-    auto* cellSpecial = Build<GlobedCreditsCell>::create("Special thanks", true, special)
-        .id("cell-special"_spr)
-        .parent(scrollLayer->m_contentLayer)
-        .collect();
-
-    scrollLayer->m_contentLayer->setContentHeight(
-        cellOwners->getScaledContentSize().height
-        + cellStaff->getScaledContentSize().height
-        + cellContributors->getScaledContentSize().height
-        + cellSpecial->getScaledContentSize().height
-    );
-    scrollLayer->m_contentLayer->updateLayout();
+    listLayer->addCell("Special thanks", false, special);
 
     // make the list start at the top instead of the bottom
-    util::ui::scrollToTop(scrollLayer);
+    listLayer->scrollToTop();
 }
 
 GlobedCreditsPopup* GlobedCreditsPopup::create() {

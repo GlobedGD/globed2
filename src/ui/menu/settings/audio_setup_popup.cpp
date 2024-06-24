@@ -12,6 +12,8 @@
 using namespace geode::prelude;
 
 bool AudioSetupPopup::setup() {
+    auto rlayout = util::ui::getPopupLayout(m_size);
+
     auto menu = Build<CCMenu>::create()
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
@@ -90,12 +92,13 @@ bool AudioSetupPopup::setup() {
 
     this->toggleButtons(false);
 
-    listLayer = GJCommentListLayer::create(nullptr, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
-    this->refreshList();
+    Build(DeviceList::createForComments(LIST_WIDTH, LIST_HEIGHT, AudioDeviceCell::CELL_HEIGHT))
+        .anchorPoint(0.5f, 1.f)
+        .pos(rlayout.centerTop - CCPoint{0.f, 20.f})
+        .parent(m_mainLayer)
+        .store(listLayer);
 
-    float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;
-    listLayer->setPosition({xpos, 85.f});
-    m_mainLayer->addChild(listLayer);
+    this->refreshList();
 
     this->scheduleUpdate();
 
@@ -122,11 +125,7 @@ cocos2d::CCArray* AudioSetupPopup::createDeviceCells() {
 }
 
 void AudioSetupPopup::refreshList() {
-    if (listLayer->m_list)
-        listLayer->m_list->removeFromParent();
-
-    listLayer->m_list = ListView::create(createDeviceCells(), AudioDeviceCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT);
-    listLayer->addChild(listLayer->m_list);
+    listLayer->swapCells(createDeviceCells());
 
     geode::cocos::handleTouchPriority(this);
 }
@@ -134,7 +133,7 @@ void AudioSetupPopup::refreshList() {
 void AudioSetupPopup::weakRefreshList() {
     auto& vm = GlobedAudioManager::get();
     auto recordDevices = vm.getRecordingDevices();
-    size_t existingCount = listLayer->m_list->m_entries->count();
+    size_t existingCount = listLayer->cellCount();
     if (existingCount != recordDevices.size()) {
         // if different device count, hard refresh
         this->refreshList();
@@ -144,7 +143,7 @@ void AudioSetupPopup::weakRefreshList() {
     int activeId = vm.getRecordingDevice().id;
 
     size_t refreshed = 0;
-    for (auto* cell : CCArrayExt<AudioDeviceCell*>(listLayer->m_list->m_entries)) {
+    for (auto* cell : *listLayer) {
         for (auto& rdev : recordDevices) {
             if (rdev.id == cell->deviceInfo.id) {
                 cell->refreshDevice(rdev, activeId);

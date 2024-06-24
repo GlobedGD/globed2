@@ -2,6 +2,9 @@
 #include <defs/all.hpp>
 #include <Geode/utils/web.hpp>
 
+#include "user_cell.hpp"
+#include <ui/general/list/list.hpp>
+
 class GlobedUserListPopup : public geode::Popup<> {
 public:
     static constexpr float POPUP_WIDTH = 400.f;
@@ -12,7 +15,9 @@ public:
     static GlobedUserListPopup* create();
 
 private:
-    GJCommentListLayer* listLayer = nullptr;
+    using UserList = GlobedListLayer<GlobedUserCell>;
+
+    UserList* listLayer = nullptr;
     bool volumeSortEnabled = false;
     Slider* volumeSlider = nullptr;
 
