@@ -1,7 +1,9 @@
 #pragma once
-#include "Geode/binding/CCMenuItemToggler.hpp"
+
+#include "player_list_cell.hpp"
 #include <defs/all.hpp>
 #include <data/types/gd.hpp>
+#include <ui/general/list/list.hpp>
 
 class RoomLayer : public cocos2d::CCLayer {
 public:
@@ -14,11 +16,13 @@ public:
     cocos2d::CCSize targetButtonSize;
 
 protected:
+    using PlayerList = GlobedListLayer<PlayerListCell>;
+
     std::vector<PlayerRoomPreviewAccountData> playerList;
     std::vector<PlayerRoomPreviewAccountData> filteredPlayerList;
 
     LoadingCircle* loadingCircle = nullptr;
-    GJCommentListLayer* listLayer = nullptr;
+    PlayerList* listLayer = nullptr;
     cocos2d::CCMenu* buttonMenu;
     Ref<CCMenuItemSpriteExtra> clearSearchButton, settingsButton, inviteButton, refreshButton;
     Ref<CCMenuItemToggler> statusButton;

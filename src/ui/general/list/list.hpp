@@ -247,12 +247,11 @@ protected:
         this->setContentSize({width, height});
         this->ignoreAnchorPointForPosition(false);
 
-        // TODO: border and bg
-        // TODO: separator line
+        // TODO: bg and separator line
         borderNode = GlobedListBorder::create(borderType, width, height, background);
 
         if (borderNode) {
-            borderNode->setZOrder(-1);
+            borderNode->setZOrder(1);
             borderNode->setAnchorPoint({0.5f, 0.5f});
             borderNode->setPosition(width / 2.f, height / 2.f);
             this->addChild(borderNode);

@@ -99,17 +99,15 @@ bool RoomLayer::init() {
     });
 
     auto rlayout = util::ui::getPopupLayout(popupSize);
-
-    auto listview = ListView::create(CCArray::create(), PlayerListCell::CELL_HEIGHT, listWidth, listHeight);
-
-    listLayer = Build<GJCommentListLayer>::create(listview, "", util::ui::BG_COLOR_DARK_BLUE, listWidth, listHeight, true)
+    Build<PlayerList>::create(listWidth, listHeight, util::ui::BG_COLOR_DARK_BLUE, GlobedListBorderType::GJCommentListLayerBlue)
         .ignoreAnchorPointForPos(false)
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.center.width, rlayout.top - 40.f)
         .parent(this)
-        .collect();
+        .store(listLayer)
+        ;
 
-    util::ui::fixListBorders(listLayer);
+    listLayer->setCellColors(util::ui::BG_COLOR_DARKER_BLUE, util::ui::BG_COLOR_DARK_BLUE);
 
     const float sidePadding = (rlayout.popupSize.width - listWidth) / 2.f;
 
@@ -263,13 +261,10 @@ void RoomLayer::onLoaded(bool stateChanged) {
     }
 
     // preserve scroll position
-    float scrollPos = util::ui::getScrollPos(listLayer->m_list);
-    int previousCellCount = listLayer->m_list->m_entries->count();
+    float scrollPos = listLayer->getScrollPos();
+    int previousCellCount = listLayer->cellCount();
 
-    listLayer->m_list->removeFromParent();
-    listLayer->m_list = Build<ListView>::create(cells, PlayerListCell::CELL_HEIGHT, listWidth, listHeight)
-        .parent(listLayer)
-        .collect();
+    listLayer->swapCells(cells);
 
     CCPoint rect[4] = {
         CCPoint(0, 0),
@@ -278,20 +273,10 @@ void RoomLayer::onLoaded(bool stateChanged) {
         CCPoint(listWidth, 0)
     };
 
-    int pos = 0;
-    for (auto* cell : CCArrayExt<PlayerListCell*>(listLayer->m_list->m_entries)) {
-        if (auto listcell = static_cast<GenericListCell*>(cell->getParent())) {
-            pos++;
-            listcell->m_backgroundLayer->setColor(globed::into<ccColor3B>(pos % 2 == 1 ? util::ui::BG_COLOR_DARK_BLUE : util::ui::BG_COLOR_DARKER_BLUE));
-        }
-    }
-
-    // for (auto* cell : CCArrayExt<PlayerListCell*>(cells)) {
-    //     static_cast<GenericListCell*>(cell->getParent())->m_backgroundLayer->setColor(util::cocos::convert<ccColor3B>(cell->isFriend ? util::ui::BG_COLOR_DARKER_GREEN : util::ui::BG_COLOR_DARKER_BLUE));
-    // }
-
     if (previousCellCount != 0 && !stateChanged) {
-        util::ui::setScrollPos(listLayer->m_list, scrollPos);
+        listLayer->scrollToPos(scrollPos);
+    } else if (previousCellCount == 0) {
+        listLayer->scrollToTop();
     }
 
     auto& rm = RoomManager::get();
