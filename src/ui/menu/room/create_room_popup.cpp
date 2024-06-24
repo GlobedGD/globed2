@@ -110,6 +110,8 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
                         roomName = fmt::format("{}'s room", GJAccountManager::get()->m_username);
                     }
 
+                    roomName = util::format::trim(roomName);
+
                     uint32_t playerCount = util::format::parse<uint32_t>(playerLimitInput->getString()).value_or(0);
 
                     NetworkManager::get().send(CreateRoomPacket::create(roomName, passwordInput->getString(), RoomSettings {

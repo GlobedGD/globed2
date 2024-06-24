@@ -39,7 +39,6 @@ bool RoomListingPopup::setup() {
         .zOrder(2)
         .parent(m_mainLayer);
 
-
     nm.addListener<RoomListPacket>(this, [this](std::shared_ptr<RoomListPacket> packet) {
         this->createCells(packet->rooms);
     });
@@ -96,6 +95,7 @@ void RoomListingPopup::createCells(std::vector<RoomListingInfo> rlpv) {
         scroll->m_contentLayer->addChild(rlc);
     }
     scroll->m_contentLayer->updateLayout();
+    util::ui::scrollToTop(scroll);
 }
 
 void RoomListingPopup::close() {

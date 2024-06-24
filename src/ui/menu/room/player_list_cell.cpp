@@ -1,6 +1,5 @@
 #include "player_list_cell.hpp"
 
-#include "room_layer.hpp"
 #include "download_level_popup.hpp"
 #include <data/packets/client/room.hpp>
 #include <hooks/level_select_layer.hpp>
@@ -9,7 +8,6 @@
 #include <managers/friend_list.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
-#include <util/cocos.hpp>
 
 using namespace geode::prelude;
 
@@ -17,6 +15,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width,
     if (!CCLayer::init()) return false;
     this->data = data;
     this->width = width;
+
+    this->setContentHeight(CELL_HEIGHT);
 
     auto* gm = GameManager::get();
 
@@ -70,8 +70,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width,
 
     if (isFriend) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(util::cocos::convert<ccColor3B>(forInviting ? util::ui::BG_COLOR_FRIEND_INGAME : util::ui::BG_COLOR_FRIEND))
-            .opacity(forInviting ? 75 : 90) // shh
+            .color(globed::into<ccColor3B>(forInviting ? util::ui::BG_COLOR_FRIEND_INGAME : util::ui::BG_COLOR_FRIEND))
+            .opacity(forInviting ? 75 : 90)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)

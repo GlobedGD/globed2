@@ -19,8 +19,6 @@ bool GlobedOverlay::init() {
     bool onTop = settings.position < 2;
     bool onRight = settings.position % 2 == 1;
 
-    log::debug("pos: {}, top: {}, right: {}", settings.position.get(), onTop, onRight);
-
     float overlayBaseY = onTop ? winSize.height - 2.f : 2.f;
     float overlayBaseX = onRight ? winSize.width - 2.f : 2.f;
 

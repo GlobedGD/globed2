@@ -143,7 +143,7 @@ public:
         LimitedSetting<int, 0, 0, 240> tpsCap;
         Setting<bool, true> preloadAssets;
         Setting<bool, false> deferPreloadAssets;
-        LimitedSetting<int, (int)InvitesFrom::Friends, 0, 2> invitesFrom;
+        LimitedSetting<int, (int)InvitesFrom::Everyone, 0, 2> invitesFrom;
         Setting<bool, false> increaseLevelList;
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
@@ -265,7 +265,7 @@ public:
 /* Enable reflection */
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, isInvisible
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, isInvisible
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
@@ -273,7 +273,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Communication, (
-    voiceEnabled, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, deafenNotification, voiceLoopback
+    voiceEnabled, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, audioDevice, deafenNotification, voiceLoopback
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (

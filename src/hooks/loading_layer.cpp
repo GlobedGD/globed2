@@ -162,18 +162,52 @@ static void loadingFinishedCaller() {
 */
 // Injected code will make it look like:
 /*
-    movz x0,
-    bl loadingFinishedCaller
+    ldr x0, .+12        // load the addr into x0
+    blr x0              // call the function
+    b .+12              // skip the address
+    <addr part 1>       // lower 32 bits
+    <addr part 2>       // upper 32 bits
     nop
     nop
-    ...
-    ldp x29, x30, [sp, #0x80]
+    ldp x29, x30, [sp, #0x80] // cleanup
     ldp x20, x19, [sp, #0x70]
     ldp x22, x21, [sp, #0x60]
+    add sp, sp, #0x90
     ret
 */
-$execute {
+constexpr ptrdiff_t START_OFFSET = 0x32cdcc;
+constexpr ptrdiff_t END_OFFSET = 0x32cde8;
 
+$execute {
+    uint64_t caller = reinterpret_cast<uint64_t>(&loadingFinishedCaller);
+
+    std::vector<uint8_t> patchBytes = {
+        // ldr x0, .+12
+        0x60, 0x00, 0x00, 0x58,
+        // blr x0
+        0x00, 0x00, 0x3f, 0xd6,
+        // b .+12
+        0x03, 0x00, 0x00, 0x14,
+        // address (placeholder)
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        // nop
+        0x1f, 0x20, 0x03, 0xd5,
+        // nop
+        0x1f, 0x20, 0x03, 0xd5
+    };
+
+    std::memcpy(patchBytes.data() + 12, &caller, sizeof(uint64_t));
+
+    GLOBED_REQUIRE(patchBytes.size() == START_OFFSET - END_OFFSET, "patch size is wrong");
+
+    auto patch = util::lowlevel::patch(START_OFFSET, patchBytes);
+    if (patch && !patch->isEnabled()) {
+        auto res = patch->enable();
+        if (!res) {
+            log::warn("Failed to patch loadingFinished midhook at {:X}: {}", START_OFFSET, res.unwrapErr());
+        }
+    }
 }
 # elif GEODE_COMP_GD_VERSION != 22060
 #  pragma message("loadingFinished midhook not implemented for this GD version")

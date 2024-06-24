@@ -1,6 +1,6 @@
 {
-    "geode": "3.0.0-beta.5",
-    "version": "v1.4.0-beta.3",
+    "geode": "3.0.0",
+    "version": "v1.4.1",
     "gd": {
         "win": "2.206",
         "android": "2.206",
@@ -15,6 +15,7 @@
             ]
         },
         "sprites": [
+            "resources/list/*.png",
             "resources/kofi-promo-bg.png",
             "resources/kofi-promo-border.png",
             "resources/kofi-promo-card.png"

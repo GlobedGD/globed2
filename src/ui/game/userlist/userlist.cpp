@@ -8,7 +8,6 @@
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
 #include <util/misc.hpp>
-#include <util/cocos.hpp>
 
 using namespace geode::prelude;
 
@@ -201,7 +200,7 @@ void GlobedUserListPopup::hardRefresh() {
     for (auto* cell : CCArrayExt<GlobedUserCell*>(listLayer->m_list->m_entries)) {
         if (auto listcell = static_cast<GenericListCell*>(cell->getParent())) {
             pos++;
-            listcell->m_backgroundLayer->setColor(util::cocos::convert<ccColor3B>(pos % 2 == 1 ? util::ui::BG_COLOR_BROWN : util::ui::BG_COLOR_DARKBROWN));
+            listcell->m_backgroundLayer->setColor(globed::into<ccColor3B>(pos % 2 == 1 ? util::ui::BG_COLOR_BROWN : util::ui::BG_COLOR_DARKBROWN));
         }
     }
 

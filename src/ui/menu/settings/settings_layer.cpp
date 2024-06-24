@@ -218,8 +218,10 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
             registerSetting(cat, settings.globed.invitesFrom, "Receive invites from", "Controls who can invite you into a room.", Type::InvitesFrom);
             registerSetting(cat, settings.globed.fragmentationLimit, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.", Type::PacketFragmentation);
             registerSetting(cat, settings.globed.tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.");
+
 #ifndef GEODE_IS_ANDROID
-            registerSetting(cat, settings.globed.useDiscordRPC, "Discord RPC", "If you have the Discord Rich Presence standalone mod, this option will toggle a Globed-specific RPC on your profile.", Type::DiscordRPC);
+            // TODO: broken
+            // registerSetting(cat, settings.globed.useDiscordRPC, "Discord RPC", "If you have the Discord Rich Presence standalone mod, this option will toggle a Globed-specific RPC on your profile.", Type::DiscordRPC);
 #endif
 #ifdef GLOBED_DEBUG
             // advanced settings button
