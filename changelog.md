@@ -1,5 +1,6 @@
 ## v1.4.1
 
+* Add MacOS support
 * Improve the room listing (now shows player count/limit and whether the room has collision enabled or a password set)
 * Fix the Audio Device and Receive Invites From settings not saving when exiting the game
 * Fix room list not starting at the top
