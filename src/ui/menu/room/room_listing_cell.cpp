@@ -12,6 +12,8 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     if (!CCLayerColor::init())
         return false;
 
+    // log::debug("rli: {}", rli.id);
+
     this->parent = parent;
 
     accountID = rli.owner.accountId;
@@ -57,7 +59,6 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(rli.owner.specialUserData);
     if (badgeIcon) {
         util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE_SMALL);
-        // TODO: fix this
         badgeIcon->setZOrder(1);
         playerBundle->addChild(badgeIcon);
     }
@@ -89,7 +90,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .collect();
 
     CCLabelBMFont* roomNameLabel = Build<CCLabelBMFont>::create(rli.name.c_str(), "bigFont.fnt")
-        .limitLabelWidth(190.0f, 0.48f, 0.1f)
+        .limitLabelWidth(185.0f, 0.48f, 0.1f)
         .id("message-text")
         .parent(roomNameLayout)
         .collect();
