@@ -199,7 +199,7 @@ $execute {
 
     std::memcpy(patchBytes.data() + 12, &caller, sizeof(uint64_t));
 
-    GLOBED_REQUIRE(patchBytes.size() == START_OFFSET - END_OFFSET, "patch size is wrong");
+    GLOBED_REQUIRE(patchBytes.size() == END_OFFSET - START_OFFSET, "patch size is wrong");
 
     auto patch = util::lowlevel::patch(START_OFFSET, patchBytes);
     if (patch && !patch->isEnabled()) {
