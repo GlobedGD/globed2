@@ -41,7 +41,7 @@ bool InvitePopup::setup() {
     listLayer = GJCommentListLayer::create(listview, "", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, false);
 
     float xpos = (m_mainLayer->getScaledContentSize().width - LIST_WIDTH) / 2;
-    listLayer->setPosition({xpos, 85.f});
+    listLayer->setPosition({xpos, 45.f});
     m_mainLayer->addChild(listLayer);
 
     this->reloadPlayerList();
