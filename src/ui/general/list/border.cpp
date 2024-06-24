@@ -18,7 +18,7 @@ bool GlobedListBorder::init(Type type, float listWidth, float listHeight, cocos2
         case Type::GJCommentListLayer: {
             auto* border = ListBorders::create();
             border->setSpriteFrames(spriteFrameTop, spriteFrameSide);
-            border->setContentSize({listWidth, listHeight + 6.f});
+            border->setContentSize({listWidth + 4.f, listHeight + 6.f});
             border->setPosition({listWidth / 2.f, listHeight / 2.f});
             this->addChild(border);
         } default: break;
