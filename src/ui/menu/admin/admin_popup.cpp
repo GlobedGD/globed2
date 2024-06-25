@@ -166,7 +166,7 @@ bool AdminPopup::setup() {
         .parent(m_mainLayer)
         .collect();
 
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "user", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 16)
+    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "user", "chatFont.fnt", std::string(util::misc::STRING_USERNAME), 16)
         .parent(findUserWrapper)
         .store(userInput);
 

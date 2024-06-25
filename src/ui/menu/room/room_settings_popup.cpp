@@ -26,7 +26,7 @@ bool RoomSettingsPopup::setup() {
 
     auto* cells = CCArray::create();
 
-    MAKE_SETTING("Private Room", "While enabled, the room can not be found on the public room listing and can only be joined by entering the room ID", TAG_INVITE_ONLY, cellInviteOnly);
+    MAKE_SETTING("Hidden Room", "While enabled, the room can not be found on the public room listing and can only be joined by entering the room ID", TAG_INVITE_ONLY, cellInviteOnly);
     MAKE_SETTING("Open Invites", "While enabled, all players in the room can invite players instead of just the room owner", TAG_PUBLIC_INVITES, cellPublicInvites);
     MAKE_SETTING("Collision", "While enabled, players can collide with each other", TAG_COLLISION, cellCollision);
 

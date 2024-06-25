@@ -144,7 +144,7 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
         ;
 
     constexpr auto settings = std::to_array<std::pair<const char*, int>>({
-        {"Private Room", TAG_PRIVATE},
+        {"Hidden Room", TAG_PRIVATE},
         {"Open Invites", TAG_OPEN_INV},
         {"Collision", TAG_COLLISION},
         // {"2-Player Mode", TAG_2P},
