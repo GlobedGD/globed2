@@ -106,6 +106,7 @@ public:
         return static_cast<WrapperCell*>(scrollLayer->m_contentLayer->getChildren()->objectAtIndex(index))->inner;
     }
 
+    // Returns CCArray<GlobedListCell<CellType>>*
     cocos2d::CCArray* getCells() {
         return scrollLayer->m_contentLayer->getChildren();
     }
@@ -150,6 +151,25 @@ public:
 
         if (preserveScrollPos) {
             this->scrollToPos(scpos);
+        }
+    }
+
+    void sort(std::function<bool (CellType*, CellType*)>&& pred) {
+        std::vector<Ref<WrapperCell>> sorted;
+
+        for (auto* cell : CCArrayExt<WrapperCell*>(this->getCells())) {
+            sorted.push_back(Ref(cell));
+        }
+
+        std::sort(sorted.begin(), sorted.end(), [&](auto a, auto b) {
+            return pred(a->inner, b->inner);
+        });
+
+        scrollLayer->m_contentLayer->removeAllChildren();
+
+        size_t idx = 0;
+        for (auto elem : sorted) {
+            this->addWrapperCell(elem, idx++);
         }
     }
 
@@ -287,17 +307,21 @@ protected:
         }
 
         auto wcell = WrapperCell::create(cell, width);
-        wcell->setColor(this->getCellColor(index));
+        this->addWrapperCell(wcell, index);
+
+        return wcell;
+    }
+
+    void addWrapperCell(WrapperCell* cell, int index) {
+        cell->setColor(this->getCellColor(index));
 
         // move all cells one up
         for (int i = index; i < this->cellCount(); i++) {
             static_cast<WrapperCell*>(scrollLayer->m_contentLayer->getChildren()->objectAtIndex(i))->setZOrder(i + 1);
         }
 
-        scrollLayer->m_contentLayer->addChild(wcell, index);
+        scrollLayer->m_contentLayer->addChild(cell, index);
         scrollLayer->m_contentLayer->updateLayout();
-
-        return wcell;
     }
 
     void updateCellOrder() {

@@ -31,7 +31,7 @@ public:
     static constexpr float POPUP_WIDTH = 250.f;
     static constexpr float POPUP_HEIGHT = 170.f;
     static constexpr float LIST_WIDTH = RoomSettingCell::CELL_WIDTH;
-    static constexpr float LIST_HEIGHT = 220.f;
+    static constexpr float LIST_HEIGHT = 210.f;
 
     static RoomSettingsPopup* create();
 

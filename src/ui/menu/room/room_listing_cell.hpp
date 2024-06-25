@@ -14,6 +14,9 @@ public:
     static RoomListingCell* create(const RoomListingInfo& info, RoomListingPopup* parent);
 
 private:
+    friend class RoomListingPopup;
+
+    int playerCount;
     int accountID;
     RoomListingPopup* parent;
 };

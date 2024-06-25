@@ -15,6 +15,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     // log::debug("rli: {}", rli.id);
 
     this->parent = parent;
+    this->playerCount = rli.playerCount;
 
     accountID = rli.owner.accountId;
 
@@ -130,16 +131,27 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     auto* lockSpr = Build<CCSprite>::createSpriteName("GJLargeLock_001.png")
         .scale(0.24f)
         .opacity(rli.hasPassword ? 255 : 80)
+        .intoMenuItem([] {
+            FLAlertLayer::create("Locked room", "This room requires a password to join.", "Ok")->show();
+        })
         .parent(rightMenu)
         .collect();
 
+    lockSpr->setEnabled(rli.hasPassword);
+
     // collision icon
-    Build<CCSprite>::createSpriteName("room-icon-collision.png"_spr)
+    auto* collisionBtn = Build<CCSprite>::createSpriteName("room-icon-collision.png"_spr)
         .with([&](auto* s) {
             util::ui::rescaleToMatch(s, lockSpr->getScaledContentSize() * 1.2f);
         })
         .opacity(rli.settings.flags.collision ? 255 : 80)
-        .parent(rightMenu);
+        .intoMenuItem([] {
+            FLAlertLayer::create("Collision", "This room has collision enabled, meaning you can collide with other players.", "Ok")->show();
+        })
+        .parent(rightMenu)
+        .collect();
+
+    collisionBtn->setEnabled(rli.settings.flags.collision);
 
     auto* playerCountWrapper = Build<CCNode>::create()
         .layout(RowLayout::create()->setGap(1.f)->setAutoScale(false))

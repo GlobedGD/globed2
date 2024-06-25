@@ -21,23 +21,13 @@ bool RoomListingPopup::setup() {
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
-    Build<ScrollLayer>::create(contentSize)
-        .anchorPoint(0.f, 0.f)
-        .contentSize(contentSize)
-        .store(scroll)
-        .with([&](auto* scroll) {
-            scroll->m_contentLayer->setLayout(
-                ColumnLayout::create()
-                    ->setGap(5.f)
-                    ->setAxisReverse(true)
-                    ->setAxisAlignment(AxisAlignment::End)
-                    ->setAutoGrowAxis(contentSize.height)
-            );
-
-            scroll->setPosition(rlayout.center - scroll->getScaledContentSize() / 2.f);
-        })
+    Build<RoomList>::create(contentSize.width, contentSize.height, util::ui::BG_COLOR_BROWN, RoomListingCell::CELL_HEIGHT)
+        .anchorPoint(0.5f, 1.f)
+        .pos(rlayout.fromTop(40.f))
         .zOrder(2)
-        .parent(m_mainLayer);
+        .parent(m_mainLayer)
+        .store(listLayer)
+    ;
 
     nm.addListener<RoomListPacket>(this, [this](std::shared_ptr<RoomListPacket> packet) {
         this->createCells(packet->rooms);
@@ -49,7 +39,8 @@ bool RoomListingPopup::setup() {
         .id("background")
         .contentSize(contentSize)
         .opacity(75)
-        .pos(rlayout.center)
+        .anchorPoint(0.5f, 1.f)
+        .pos(listLayer->getPosition())
         .parent(m_mainLayer)
         .zOrder(1)
         .store(background);
@@ -89,13 +80,17 @@ void RoomListingPopup::onReload(CCObject* sender) {
 }
 
 void RoomListingPopup::createCells(std::vector<RoomListingInfo> rlpv) {
-    scroll->m_contentLayer->removeAllChildren();
+    listLayer->removeAllCells();
+
     for (const RoomListingInfo& rlp : rlpv) {
-        RoomListingCell* rlc = RoomListingCell::create(rlp, this);
-        scroll->m_contentLayer->addChild(rlc);
+        listLayer->addCell(rlp, this);
     }
-    scroll->m_contentLayer->updateLayout();
-    util::ui::scrollToTop(scroll);
+
+    listLayer->sort([](RoomListingCell* a, RoomListingCell* b) {
+        return a->playerCount > b->playerCount;
+    });
+
+    listLayer->scrollToTop();
 }
 
 void RoomListingPopup::close() {

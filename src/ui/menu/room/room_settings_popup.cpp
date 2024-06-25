@@ -34,11 +34,14 @@ bool RoomSettingsPopup::setup() {
     MAKE_SETTING("2-Player Mode", "While enabled, players can link with another player to play a 2-player enabled level together", TAG_TWO_PLAYER, cellTwoPlayer);
 #endif
 
-    Build(SettingList::createForComments(LIST_WIDTH, LIST_HEIGHT, RoomSettingCell::CELL_HEIGHT))
+    auto* listLayer = Build(SettingList::createForComments(LIST_WIDTH, LIST_HEIGHT, RoomSettingCell::CELL_HEIGHT))
         .scale(0.65f)
         .anchorPoint(0.5f, 1.f)
-        .pos(popupLayout.fromTop(20.f))
-        .parent(m_mainLayer);
+        .pos(popupLayout.fromTop(18.f))
+        .parent(m_mainLayer)
+        .collect();
+
+    listLayer->swapCells(cells);
 
     NetworkManager::get().addListener<RoomInfoPacket>(this, [this](auto packet) {
         log::debug("room configuration updated");

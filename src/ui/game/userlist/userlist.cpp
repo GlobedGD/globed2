@@ -20,7 +20,7 @@ bool GlobedUserListPopup::setup() {
 
     Build(UserList::createForComments(LIST_WIDTH, LIST_HEIGHT, GlobedUserCell::CELL_HEIGHT))
         .anchorPoint(0.5f, 1.f)
-        .pos(rlayout.fromTop(20.f))
+        .pos(rlayout.fromTop(40.f))
         .with([&](auto* list) {
             list->setCellColors(util::ui::BG_COLOR_DARKBROWN, util::ui::BG_COLOR_BROWN);
         })

@@ -14,10 +14,10 @@ bool ServerSwitcherPopup::setup() {
 
     auto rlayout = util::ui::getPopupLayout(m_size);
 
-
     Build(ServerList::createForComments(LIST_WIDTH, LIST_HEIGHT, CentralServerListCell::CELL_HEIGHT))
         .anchorPoint(0.5f, 1.f)
-        .pos(rlayout.centerTop - CCPoint{0.f, 20.f})
+        .pos(rlayout.fromTop(40.f))
+        .store(listLayer)
         .parent(m_mainLayer);
 
     // buttons layout

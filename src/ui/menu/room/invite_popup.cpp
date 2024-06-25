@@ -41,7 +41,7 @@ bool InvitePopup::setup() {
 
     Build(UserList::createForComments(LIST_WIDTH, LIST_HEIGHT, PlayerListCell::CELL_HEIGHT))
         .anchorPoint(0.5f, 1.f)
-        .pos(rlayout.fromTop(20.f))
+        .pos(rlayout.fromTop(40.f))
         .store(listLayer)
         .parent(m_mainLayer);
 
