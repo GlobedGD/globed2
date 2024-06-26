@@ -82,7 +82,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
         if (m_fields->roomSettings.flags.collision && !level->isPlatformer()) {
             m_fields->roomSettings.flags.collision = false;
 
-            constexpr bool forcedPlatformer = false;
+            constexpr bool forcedPlatformer = false; // TODO: maybe reenable?
             if (forcedPlatformer) {
                 m_fields->forcedPlatformer = true;
                 m_fields->roomSettings.flags.collision = true;
@@ -349,12 +349,20 @@ void GlobedGJBGL::setupUpdate() {
         // send LevelJoinPacket and RequestPlayerProfilesPacket
 
         auto levelId = HookedGJGameLevel::getLevelIDFrom(self->m_level);
-        nm.send(LevelJoinPacket::create(levelId));
+
+        // TODO: remove legacy packet after min protocol becomes 8
+        if (nm.getServerProtocol() >= 8) {
+            nm.send(LevelJoinPacket::create(levelId, self->m_level->m_unlisted));
+        } else {
+            nm.send(LevelJoinLegacyPacket::create(levelId));
+        }
 
         self->rescheduleSelectors();
         self->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);
 
         self->scheduleOnce(schedule_selector(GlobedGJBGL::postInitActions), 0.25f);
+
+        self->updateDRPC();
     });
 }
 
@@ -703,12 +711,9 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
 }
 
 void GlobedGJBGL::updateDRPC() {
-    // TODO
-    return;
+    if (!Loader::get()->isModLoaded("techstudent10.discord_rich_presence")) return;
 
-    // if (!Loader::get()->isModLoaded("techstudent10.discord_rich_presence")) return;
-
-    // if (!GlobedSettings::get().globed.useDiscordRPC) return;
+    if (!GlobedSettings::get().globed.useDiscordRPC) return;
 
     // taken from drpc
     bool isRobTopLevel = (
@@ -725,7 +730,7 @@ void GlobedGJBGL::updateDRPC() {
     using UpdateRPCEvent = geode::DispatchEvent<std::string>;
     auto json = matjson::Value(matjson::Object({
         {"modID", ""_spr},
-        {"details", "Playing in mutliplayer!"},
+        {"details", "Playing on Globed!"},
         {"state", state},
         {"smallImageKey", ""},
         {"smallImageText", ""},

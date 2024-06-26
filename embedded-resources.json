@@ -1,6 +1,7 @@
 {
     "strings": {
         "discord": "https://discord.gg/d56q5Dkdm3",
-        "main-server-url": "https://main.globed.dev"
+        "main-server-url": "https://main.globed.dev",
+        "err-client-too-new": "Your Globed version is too new. This server is outdated, and does not support your client version."
     }
 }

@@ -127,7 +127,7 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
 }
 
 PlayerStatusIcons::Loudness PlayerStatusIcons::loudnessToCategory(float loudness) {
-    // TODO
+    // TODO show loudness
     return Loudness::Low;
     // if (loudness < 0.5f) {
     //     return Loudness::Low;

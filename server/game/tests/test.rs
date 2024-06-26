@@ -102,7 +102,7 @@ fn test_player_manager() {
 
     for level_id in 0..100 {
         for account_id in 0..100 {
-            manager.add_to_level(level_id, level_id as i32 * 100 + account_id);
+            manager.add_to_level(level_id, level_id as i32 * 100 + account_id, false);
             manager.set_player_data(level_id as i32 * 100 + account_id, &PlayerData::default());
         }
     }
@@ -112,16 +112,11 @@ fn test_player_manager() {
         let count = manager.get_player_count_on_level(i).unwrap_or(0);
         assert_eq!(count, 100);
 
-        let total = manager.for_each_player_on_level(
-            i,
-            |_, _, p| {
-                *p += 1;
-                true
-            },
-            &mut total_players,
-        );
+        manager.for_each_player_on_level(i, |_| {
+            total_players += 1;
+        });
 
-        assert_eq!(total, count);
+        assert_eq!(total_players, count);
     }
 
     assert_eq!(total_players, 10000);

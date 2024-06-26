@@ -42,11 +42,17 @@ impl LevelManagerPlayer {
     }
 }
 
+#[derive(Default)]
+pub struct Level {
+    pub players: Vec<i32>,
+    pub unlisted: bool,
+}
+
 // Manages an entire room (all levels and players inside of it).
 #[derive(Default)]
 pub struct LevelManager {
     pub players: IntMap<i32, LevelManagerPlayer>, // player id : associated data
-    pub levels: IntMap<LevelId, Vec<i32>>,        // level id : [player id]
+    pub levels: IntMap<LevelId, Level>,           // level id : [player id]
 }
 
 impl LevelManager {
@@ -91,7 +97,7 @@ impl LevelManager {
     }
 
     /// get a reference to a list of account IDs of players on a level given its ID
-    pub fn get_level(&self, level_id: LevelId) -> Option<&Vec<i32>> {
+    pub fn get_level(&self, level_id: LevelId) -> Option<&Level> {
         self.levels.get(&level_id)
     }
 
@@ -102,7 +108,7 @@ impl LevelManager {
 
     /// get the amount of players on a level given its ID
     pub fn get_player_count_on_level(&self, level_id: LevelId) -> Option<usize> {
-        self.levels.get(&level_id).map(Vec::len)
+        self.levels.get(&level_id).map(|x| x.players.len())
     }
 
     /// get the total amount of players
@@ -111,55 +117,44 @@ impl LevelManager {
     }
 
     /// run a function `f` on each player on a level given its ID, with possibility to pass additional data
-    pub fn for_each_player_on_level<F, A>(&self, level_id: LevelId, f: F, additional: &mut A) -> usize
-    where
-        F: Fn(&LevelManagerPlayer, usize, &mut A) -> bool,
-    {
-        if let Some(ids) = self.levels.get(&level_id) {
-            ids.iter()
-                .filter_map(|&key| self.players.get(&key))
-                .fold(0, |count, data| count + usize::from(f(data, count, additional)))
-        } else {
-            0
+    pub fn for_each_player_on_level<F: FnMut(&LevelManagerPlayer)>(&self, level_id: LevelId, f: F) {
+        if let Some(level) = self.levels.get(&level_id) {
+            level.players.iter().filter_map(|&key| self.players.get(&key)).for_each(f);
         }
     }
 
     /// run a function `f` on each player in this `PlayerManager`, with possibility to pass additional data
-    pub fn for_each_player<F, A>(&self, f: F, additional: &mut A) -> usize
-    where
-        F: Fn(&LevelManagerPlayer, usize, &mut A) -> bool,
-    {
-        self.players
-            .values()
-            .fold(0, |count, data| count + usize::from(f(data, count, additional)))
+    pub fn for_each_player<F: FnMut(&LevelManagerPlayer)>(&self, f: F) {
+        self.players.values().for_each(f);
     }
 
     /// run a function `f` on each level in this `PlayerManager`, with possibility to pass additional data
-    pub fn for_each_level<F, A>(&self, f: F, additional: &mut A) -> usize
-    where
-        F: Fn((LevelId, &Vec<i32>), usize, &mut A) -> bool,
-    {
-        self.levels
-            .iter()
-            .fold(0, |count, (id, players)| count + usize::from(f((*id, players), count, additional)))
+    pub fn for_each_level<F: FnMut(LevelId, &Level)>(&self, mut f: F) {
+        self.levels.iter().for_each(|(id, level)| f(*id, level));
     }
 
     /// add a player to a level given a level ID and an account ID
-    pub fn add_to_level(&mut self, level_id: LevelId, account_id: i32) {
-        let players = self.levels.entry(level_id).or_insert_with(|| Vec::with_capacity(8));
-        if !players.contains(&account_id) {
-            players.push(account_id);
+    pub fn add_to_level(&mut self, level_id: LevelId, account_id: i32, unlisted: bool) {
+        let level = self.levels.entry(level_id).or_insert_with(|| Level {
+            players: Vec::with_capacity(8),
+            unlisted,
+        });
+
+        if !level.players.contains(&account_id) {
+            level.players.push(account_id);
         }
+
+        level.unlisted = unlisted;
     }
 
     /// remove a player from a level given a level ID and an account ID
     pub fn remove_from_level(&mut self, level_id: LevelId, account_id: i32) {
         let should_remove_level = self.levels.get_mut(&level_id).is_some_and(|level| {
-            if let Some(index) = level.iter().position(|&x| x == account_id) {
-                level.remove(index);
+            if let Some(index) = level.players.iter().position(|&x| x == account_id) {
+                level.players.remove(index);
             }
 
-            level.is_empty()
+            level.players.is_empty()
         });
 
         if should_remove_level {

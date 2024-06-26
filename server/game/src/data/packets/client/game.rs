@@ -6,10 +6,18 @@ pub struct RequestPlayerProfilesPacket {
     pub requested: i32, // 0 to get all ppl on the level
 }
 
+// TODO: remove in next major gd update.
 #[derive(Packet, Decodable)]
 #[packet(id = 12001)]
+pub struct LevelJoinLegacyPacket {
+    pub level_id: LevelId,
+}
+
+#[derive(Packet, Decodable)]
+#[packet(id = 12005)]
 pub struct LevelJoinPacket {
     pub level_id: LevelId,
+    pub unlisted: bool,
 }
 
 #[derive(Packet, Decodable)]

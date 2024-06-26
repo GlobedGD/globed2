@@ -1,3 +1,10 @@
+## v1.4.2
+
+todo changelog
+* highlight self on player list
+* enable drpc
+* fix unlisted stuff
+
 ## v1.4.1
 
 * Add MacOS support

@@ -70,5 +70,11 @@ static inline constexpr const char* string() {
     return ret ? ret : "<invalid string>";
 }
 
+// const char* x = globed::string(str);
+static inline constexpr const char* string(std::string_view sv) {
+    auto ret = globed::stringbyhash(util::crypto::adler32((uint8_t*)sv.data(), sv.size()));
+    return ret ? ret : "<invalid string>";
+}
+
 }
 

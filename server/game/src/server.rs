@@ -500,8 +500,8 @@ impl GameServer {
             .map(|thread| {
                 let mut level_id = thread.level_id.load(Ordering::Relaxed);
 
-                // if they are in editorcollab, show no level
-                if is_editorcollab_level(level_id) {
+                // if they are in editorcollab or an unlisted level, show no level
+                if thread.on_unlisted_level.load(Ordering::SeqCst) || is_editorcollab_level(level_id) {
                     level_id = 0;
                 }
 
@@ -543,7 +543,7 @@ impl GameServer {
                 true
             },
             &mut vec,
-            force_visibility
+            force_visibility,
         );
 
         vec
@@ -695,13 +695,13 @@ impl GameServer {
         let threads = self.state.room_manager.with_any(room_id, |pm| {
             let players = pm.manager.get_level(level_id);
 
-            if let Some(players) = players {
+            if let Some(level) = players {
                 self.clients
                     .lock()
                     .values()
                     .filter(|thread| {
                         let account_id = thread.account_id.load(Ordering::Relaxed);
-                        account_id != origin_id && players.contains(&account_id)
+                        account_id != origin_id && level.players.contains(&account_id)
                     })
                     .cloned()
                     .collect()

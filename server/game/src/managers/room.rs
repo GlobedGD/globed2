@@ -51,15 +51,11 @@ impl Room {
         if was_owner {
             // rotate the owner
             let mut rotate_to: i32 = 0;
-            self.manager.for_each_player(
-                |rp, _, rotate_to| {
-                    if *rotate_to == 0 && rp.account_id != player {
-                        *rotate_to = rp.account_id;
-                    }
-                    true
-                },
-                &mut rotate_to,
-            );
+            self.manager.for_each_player(|rp| {
+                if rotate_to == 0 && rp.account_id != player {
+                    rotate_to = rp.account_id;
+                }
+            });
 
             self.owner = rotate_to;
         }

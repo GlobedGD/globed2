@@ -5,16 +5,15 @@ using namespace geode::prelude;
 bool VoiceChatButtonsMenu::init() {
     if (!CCNode::init()) return false;
 
-    Build<CCMenu>::create()
-        .parent(this)
-        .store(btnMenu);
+    GLOBED_UNIMPL("VoiceChatButtonsMenu")
 
-    // create the buttons
-    // TODO sometime later
+    // Build<CCMenu>::create()
+    //     .parent(this)
+    //     .store(btnMenu);
 
 
-    Build<CCScale9Sprite>::create("GJ_button_05.png")
-        .contentSize(1.f, 1.f);
+    // Build<CCScale9Sprite>::create("GJ_button_05.png")
+    //     .contentSize(1.f, 1.f);
 
     return true;
 }

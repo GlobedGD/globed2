@@ -25,13 +25,24 @@ pub struct ServerDisconnectPacket<'a> {
     pub message: &'a str,
 }
 
+// TODO: remove with next gd version bump
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 20004, encrypted = true, tcp = true)]
+pub struct LoggedInLegacyPacket {
+    pub tps: u32,
+    pub special_user_data: SpecialUserData,
+    pub all_roles: Vec<GameServerRole>,
+    pub secret_key: u32,
+}
+
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 20014, encrypted = true, tcp = true)]
 pub struct LoggedInPacket {
     pub tps: u32,
     pub special_user_data: SpecialUserData,
     pub all_roles: Vec<GameServerRole>,
     pub secret_key: u32,
+    pub server_protocol: u16,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

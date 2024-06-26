@@ -8,7 +8,7 @@ use std::{
 use esp::{size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize, StaticSize};
 use globed_shared::{
     reqwest::{self, StatusCode},
-    GameServerBootData, SyncMutex, TokenIssuer, UserEntry, SUPPORTED_PROTOCOLS, SERVER_MAGIC, SERVER_MAGIC_LEN,
+    GameServerBootData, SyncMutex, TokenIssuer, UserEntry, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
 use crate::webhook::{self, *};
@@ -32,7 +32,10 @@ impl Display for CentralBridgeError {
             Self::WebhookError((err, response)) => write!(f, "webhook error {err}: {response}"),
             Self::InvalidMagic(_) => write!(f, "central server sent invalid magic"),
             Self::MalformedData(err) => write!(f, "failed to decode data sent by the central server: {err}"),
-            Self::ProtocolMismatch(proto) => write!(f, "protocol mismatch, we are on v{} while central server is on v{proto}", *SUPPORTED_PROTOCOLS.last().unwrap()),
+            Self::ProtocolMismatch(proto) => write!(
+                f,
+                "protocol mismatch, we are on v{MAX_SUPPORTED_PROTOCOL} while central server is on v{proto}"
+            ),
             Self::Other(err) => f.write_str(err),
         }
     }
@@ -131,7 +134,7 @@ impl CentralBridge {
 
         let boot_data = reader.read_value::<GameServerBootData>()?;
 
-        if boot_data.protocol != *SUPPORTED_PROTOCOLS.last().unwrap() {
+        if boot_data.protocol != MAX_SUPPORTED_PROTOCOL {
             return Err(CentralBridgeError::ProtocolMismatch(boot_data.protocol));
         }
 

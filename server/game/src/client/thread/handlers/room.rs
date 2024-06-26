@@ -257,7 +257,9 @@ impl ClientThread {
 
         self.send_packet_dynamic(&RoomPlayerListPacket {
             room_info,
-            players: self.game_server.get_room_player_previews(room_id, self.account_id.load(Ordering::Relaxed), can_moderate),
+            players: self
+                .game_server
+                .get_room_player_previews(room_id, self.account_id.load(Ordering::Relaxed), can_moderate),
         })
         .await
     }

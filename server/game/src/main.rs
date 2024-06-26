@@ -265,7 +265,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 abort_misconfig();
             }
             Err(CentralBridgeError::ProtocolMismatch(protocol)) => {
-                let our = *SUPPORTED_PROTOCOLS.last().unwrap();
+                let our = MAX_SUPPORTED_PROTOCOL;
                 error!("incompatible protocol versions!");
                 error!("this game server is on v{}, while the central server uses v{}", our, protocol);
                 if protocol > our {

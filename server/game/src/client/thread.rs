@@ -57,6 +57,7 @@ pub struct ClientThread {
 
     pub account_id: AtomicI32,
     pub level_id: AtomicLevelId,
+    pub on_unlisted_level: AtomicBool,
     pub room_id: AtomicU32,
 
     pub account_data: SyncMutex<PlayerAccountData>,
@@ -118,6 +119,7 @@ impl ClientThread {
 
             account_id: thread.account_id,
             level_id: thread.level_id,
+            on_unlisted_level: thread.on_unlisted_level,
             room_id: thread.room_id,
 
             account_data: SyncMutex::new(account_data),
@@ -136,7 +138,7 @@ impl ClientThread {
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
 
-            destruction_notify: thread.destruction_notify
+            destruction_notify: thread.destruction_notify,
         }
     }
 
@@ -436,6 +438,7 @@ impl ClientThread {
 
             /* game related */
             RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,
+            LevelJoinLegacyPacket::PACKET_ID => self.handle_level_join_legacy(&mut data).await,
             LevelJoinPacket::PACKET_ID => self.handle_level_join(&mut data).await,
             LevelLeavePacket::PACKET_ID => self.handle_level_leave(&mut data).await,
             PlayerDataPacket::PACKET_ID => self.handle_player_data(&mut data).await,

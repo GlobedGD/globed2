@@ -108,16 +108,6 @@ namespace util::debug {
     // like log::debug but with precise timestamps.
     void timedLog(const std::string_view message);
 
-    struct ProcMapEntry {
-        ptrdiff_t size;
-        bool readable;
-    };
-
-    Result<std::string> getTypename(void* address);
-    Result<std::string> getTypenameFromVtable(void* address);
-
-    void dumpStruct(void* address, size_t size);
-
     std::optional<ptrdiff_t> searchMember(const void* structptr, const uint8_t* bits, size_t length, size_t alignment, size_t maxSize);
 
     template <typename T>

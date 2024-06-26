@@ -3,7 +3,7 @@ use std::net::IpAddr;
 use globed_shared::{
     esp::{types::FastString, ByteBuffer, ByteBufferExtWrite},
     logger::debug,
-    GameServerBootData, UserEntry, SUPPORTED_PROTOCOLS, SERVER_MAGIC,
+    GameServerBootData, UserEntry, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC,
 };
 
 use rocket::{get, post, serde::json::Json, State};
@@ -27,7 +27,7 @@ pub async fn boot(
     let config = &state.config;
 
     let bdata = GameServerBootData {
-        protocol: *SUPPORTED_PROTOCOLS.last().unwrap(),
+        protocol: MAX_SUPPORTED_PROTOCOL,
         tps: config.tps,
         maintenance: config.maintenance,
         secret_key2: config.secret_key2.clone(),

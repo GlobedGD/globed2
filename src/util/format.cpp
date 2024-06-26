@@ -55,6 +55,13 @@ namespace util::format {
     }
 
     std::string formatErrorMessage(std::string message) {
+        if (message.starts_with("ERR: ")) {
+            auto errstr = std::string_view(message).substr(message.find("ERR: "));
+            auto errid = errstr.substr(0, errstr.find(';'));
+
+            return globed::string(errid);
+        }
+
         if (message.find("<html>") != std::string::npos) {
             message = "<HTML response, not showing>";
         } else if (message.size() > 128) {

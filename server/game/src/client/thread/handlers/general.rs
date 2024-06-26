@@ -25,19 +25,14 @@ impl ClientThread {
         let levels = self.game_server.state.room_manager.with_any(room_id, |pm| {
             let mut vec = Vec::with_capacity(pm.manager.get_level_count());
 
-            pm.manager.for_each_level(
-                |(level_id, players), _count, vec| {
-                    if !is_editorcollab_level(level_id) {
-                        vec.push(GlobedLevel {
-                            level_id,
-                            player_count: players.len() as u16,
-                        });
-                    }
-
-                    true
-                },
-                &mut vec,
-            );
+            pm.manager.for_each_level(|level_id, level| {
+                if !level.unlisted && !is_editorcollab_level(level_id) {
+                    vec.push(GlobedLevel {
+                        level_id,
+                        player_count: level.players.len() as u16,
+                    });
+                }
+            });
 
             vec
         });

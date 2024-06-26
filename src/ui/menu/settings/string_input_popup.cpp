@@ -2,7 +2,7 @@
 
 bool StringInputPopup::setup(std::function<void(const std::string_view)>) {
     // Build<geode::InputNode>::create(POPUP_WIDTH * 0.8f, "", "chatFont.)
-    // TODO !!!
+    GLOBED_UNIMPL("StringInputPopup")
 
     return true;
 }

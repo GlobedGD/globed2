@@ -1,17 +1,18 @@
 use std::{
     net::SocketAddrV4,
     sync::{
-        atomic::{AtomicI32, AtomicU16, AtomicU32, Ordering, AtomicBool},
+        atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
         Arc,
     },
     time::Duration,
 };
 
+use globed_shared::MAX_SUPPORTED_PROTOCOL;
 #[allow(unused_imports)]
 use globed_shared::{
     debug, info,
     rand::{self, Rng},
-    warn, SyncMutex, UserEntry, MIN_CLIENT_VERSION, SUPPORTED_PROTOCOLS,
+    warn, SyncMutex, UserEntry, MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SUPPORTED_PROTOCOLS,
 };
 
 use super::*;
@@ -42,6 +43,7 @@ pub struct UnauthorizedThread {
 
     pub account_id: AtomicI32,
     pub level_id: AtomicLevelId,
+    pub on_unlisted_level: AtomicBool,
     pub room_id: AtomicU32,
 
     pub account_data: SyncMutex<PlayerAccountData>,
@@ -81,6 +83,7 @@ impl UnauthorizedThread {
 
             account_id: AtomicI32::new(0),
             level_id: AtomicLevelId::new(0),
+            on_unlisted_level: AtomicBool::new(false),
             room_id: AtomicU32::new(0),
 
             account_data: SyncMutex::new(PlayerAccountData::default()),
@@ -113,6 +116,7 @@ impl UnauthorizedThread {
 
             account_id: thread.account_id,
             level_id: thread.level_id,
+            on_unlisted_level: thread.on_unlisted_level,
             room_id: thread.room_id,
 
             account_data: SyncMutex::new(std::mem::take(&mut *thread.account_data.lock())),
@@ -287,7 +291,7 @@ impl UnauthorizedThread {
             socket
                 .send_packet_dynamic(&ProtocolMismatchPacket {
                     // send minimum required version
-                    protocol: *SUPPORTED_PROTOCOLS.first().unwrap(),
+                    protocol: MIN_SUPPORTED_PROTOCOL,
                     min_client_version: MIN_CLIENT_VERSION,
                 })
                 .await?;
@@ -407,11 +411,12 @@ impl UnauthorizedThread {
         self.game_server.state.inc_player_count(); // increment player count
 
         info!(
-            "[{} ({}) @ {}] Login successful, platform: {}",
+            "[{} ({}) @ {}] Login successful, platform: {}, protocol v{}",
             player_name,
             packet.account_id,
             self.get_tcp_peer(),
-            packet.platform
+            packet.platform,
+            self.protocol_version.load(Ordering::Relaxed)
         );
 
         {
@@ -446,14 +451,28 @@ impl UnauthorizedThread {
         let special_user_data = self.account_data.lock().special_user_data.clone();
 
         let socket = self.get_socket();
-        socket
-            .send_packet_dynamic(&LoggedInPacket {
-                tps,
-                all_roles,
-                secret_key: self.secret_key,
-                special_user_data,
-            })
-            .await
+
+        // loggednipacket only on protocol v8 and higher
+        if self.protocol_version.load(Ordering::Relaxed) >= 8 {
+            socket
+                .send_packet_dynamic(&LoggedInPacket {
+                    tps,
+                    all_roles,
+                    secret_key: self.secret_key,
+                    special_user_data,
+                    server_protocol: MAX_SUPPORTED_PROTOCOL,
+                })
+                .await
+        } else {
+            socket
+                .send_packet_dynamic(&LoggedInLegacyPacket {
+                    tps,
+                    all_roles,
+                    secret_key: self.secret_key,
+                    special_user_data,
+                })
+                .await
+        }
     }
 
     /// Blocks until we get notified that we got claimed by a UDP socket.
@@ -505,10 +524,8 @@ impl UnauthorizedThread {
         self.connection_state.store(ClientThreadState::Terminating);
     }
 
-    async fn terminate_with_message(&self, message: & str) -> Result<()> {
-        self.get_socket().send_packet_dynamic(&ServerDisconnectPacket {
-            message
-        }).await?;
+    async fn terminate_with_message(&self, message: &str) -> Result<()> {
+        self.get_socket().send_packet_dynamic(&ServerDisconnectPacket { message }).await?;
 
         self.terminate();
 

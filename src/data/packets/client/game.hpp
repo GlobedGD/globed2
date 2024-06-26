@@ -11,20 +11,30 @@ class RequestPlayerProfilesPacket : public Packet {
 
     int requested;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RequestPlayerProfilesPacket, (requested));
 
-// 12001 - LevelJoinPacket
-class LevelJoinPacket : public Packet {
-    GLOBED_PACKET(12001, LevelJoinPacket, false, false)
+// 12001 - LevelJoinLegacyPacket
+class LevelJoinLegacyPacket : public Packet {
+    GLOBED_PACKET(12001, LevelJoinLegacyPacket, false, false)
 
-    LevelJoinPacket() {}
-    LevelJoinPacket(LevelId levelId) : levelId(levelId) {}
+    LevelJoinLegacyPacket() {}
+    LevelJoinLegacyPacket(LevelId levelId) : levelId(levelId) {}
 
     LevelId levelId;
 };
+GLOBED_SERIALIZABLE_STRUCT(LevelJoinLegacyPacket, (levelId));
 
-GLOBED_SERIALIZABLE_STRUCT(LevelJoinPacket, (levelId));
+// 12005 - LevelJoinPacket
+class LevelJoinPacket : public Packet {
+    GLOBED_PACKET(12005, LevelJoinPacket, false, false)
+
+    LevelJoinPacket() {}
+    LevelJoinPacket(LevelId levelId, bool unlisted) : levelId(levelId), unlisted(unlisted) {}
+
+    LevelId levelId;
+    bool unlisted;
+};
+GLOBED_SERIALIZABLE_STRUCT(LevelJoinPacket, (levelId, unlisted));
 
 // 12002 - LevelLeavePacket
 class LevelLeavePacket : public Packet {
@@ -32,7 +42,6 @@ class LevelLeavePacket : public Packet {
 
     LevelLeavePacket() {}
 };
-
 GLOBED_SERIALIZABLE_STRUCT(LevelLeavePacket, ());
 
 // 12003 - PlayerDataPacket
@@ -44,7 +53,6 @@ class PlayerDataPacket : public Packet {
 
     PlayerData data;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(PlayerDataPacket, (data));
 
 // 12004 - PlayerMetadataPacket
@@ -56,7 +64,6 @@ class PlayerMetadataPacket : public Packet {
 
     PlayerMetadata data;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(PlayerMetadataPacket, (data));
 
 #ifdef GLOBED_VOICE_SUPPORT
@@ -72,7 +79,6 @@ class VoicePacket : public Packet {
 
     std::shared_ptr<EncodedAudioFrame> frame;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(VoicePacket, (frame));
 
 #endif // GLOBED_VOICE_SUPPORT
@@ -86,5 +92,4 @@ class ChatMessagePacket : public Packet {
 
     std::string message;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(ChatMessagePacket, (message));

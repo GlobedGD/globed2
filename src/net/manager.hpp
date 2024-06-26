@@ -103,6 +103,9 @@ public:
     // Get the TPS of the currently connected server, or 0
     uint32_t getServerTps();
 
+    // Get the maximum protocol version of the currently connected server
+    uint16_t getServerProtocol();
+
     // Returns true if we are connected to a standalone game server, not tied to any central server.
     bool standalone();
 

@@ -220,8 +220,7 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
             registerSetting(cat, settings.globed.tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.");
 
 #ifndef GEODE_IS_ANDROID
-            // TODO: broken
-            // registerSetting(cat, settings.globed.useDiscordRPC, "Discord RPC", "If you have the Discord Rich Presence standalone mod, this option will toggle a Globed-specific RPC on your profile.", Type::DiscordRPC);
+            registerSetting(cat, settings.globed.useDiscordRPC, "Discord RPC", "If you have the Discord Rich Presence standalone mod, this option will toggle a Globed-specific RPC on your profile.", Type::DiscordRPC);
 #endif
 #ifdef GLOBED_DEBUG
             // advanced settings button

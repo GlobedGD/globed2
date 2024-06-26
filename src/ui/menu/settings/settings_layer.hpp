@@ -16,11 +16,7 @@ public:
 protected:
     std::unordered_map<int, Ref<GJListLayer>> storedTabs;
     geode::TabButton *tabBtn1, *tabBtn2, *tabBtn3, *tabBtn4, *tabBtn5;
-#ifdef GEODE_IS_IOS // TODO
-    cocos2d::CCNode* tabsGradientNode = nullptr;
-#else
     cocos2d::CCClippingNode* tabsGradientNode = nullptr;
-#endif
 
     cocos2d::CCSprite *tabsGradientSprite, *tabsGradientStencil;
     std::unordered_map<int, Ref<cocos2d::CCArray>> settingCells;

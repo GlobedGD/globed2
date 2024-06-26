@@ -30,8 +30,12 @@ using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
 static constexpr uint16_t MIN_PROTOCOL_VERSION = 6;
-static constexpr uint16_t MAX_PROTOCOL_VERSION = 7;
-static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({6, 7});
+static constexpr uint16_t MAX_PROTOCOL_VERSION = 8;
+static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({6, 7, 8});
+
+static bool isProtocolSupported(uint16_t proto) {
+    return std::find(SUPPORTED_PROTOCOLS.begin(), SUPPORTED_PROTOCOLS.end(), proto) != SUPPORTED_PROTOCOLS.end();
+}
 
 // yes, really
 struct AtomicConnectionState {
@@ -207,6 +211,7 @@ protected:
     AtomicBool cancellingRecovery;
     AtomicU32 secretKey;
     AtomicU32 serverTps;
+    AtomicU16 serverProtocol;
 
     Impl() {
         // initialize winsock
@@ -259,6 +264,7 @@ protected:
         cancellingRecovery = false;
         secretKey = 0;
         serverTps = 0;
+        serverProtocol = 0;
         lastReceivedPacket = {};
         lastSentKeepalive = {};
         lastTcpExchange = {};
@@ -460,6 +466,17 @@ protected:
             this->onLoggedIn(std::move(packet));
         });
 
+        addInternalListener<LoggedInLegacyPacket>([this](auto packet) {
+            auto pkt = std::make_shared<LoggedInPacket>();
+            pkt->allRoles = std::move(packet->allRoles);
+            pkt->specialUserData = std::move(packet->specialUserData);
+            pkt->tps = packet->tps;
+            pkt->secretKey = packet->secretKey;
+            pkt->serverProtocol = 7; // last protocol with legacy login packet
+
+            this->onLoggedIn(std::move(pkt));
+        });
+
         addInternalListener<LoginFailedPacket>([this](auto packet) {
             ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> The server rejected the login attempt.\n\nReason: <cy>{}</c>", packet->message));
             GlobedAccountManager::get().authToken.lock()->clear();
@@ -630,9 +647,20 @@ protected:
     }
 
     void onLoggedIn(std::shared_ptr<LoggedInPacket> packet) {
+        // validate protocol version
+        if (!::isProtocolSupported(packet->serverProtocol)) {
+            auto mismatch = std::make_shared<ProtocolMismatchPacket>();
+            mismatch->serverProtocol = packet->serverProtocol;
+            mismatch->minClientVersion = "unknown";
+            this->onProtocolMismatch(std::move(mismatch));
+            return;
+        }
+
         log::info("Successfully logged into the server!");
         serverTps = packet->tps;
         secretKey = packet->secretKey;
+        serverProtocol = packet->serverProtocol;
+
         state = ConnectionState::Established;
 
         if (recovering || wasFromRecovery) {
@@ -725,6 +753,10 @@ protected:
 
     uint32_t getServerTps() {
         return established() ? serverTps.load() : 0;
+    }
+
+    uint16_t getServerProtocol() {
+        return established() ? serverProtocol.load() : 0;
     }
 
     bool isStandalone() {
@@ -1125,6 +1157,10 @@ uint32_t NetworkManager::getServerTps() {
     return impl->getServerTps();
 }
 
+uint16_t NetworkManager::getServerProtocol() {
+    return impl->getServerProtocol();
+}
+
 bool NetworkManager::standalone() {
     return impl->isStandalone();
 }
@@ -1158,7 +1194,7 @@ uint16_t NetworkManager::getMaxProtocol() {
 }
 
 bool NetworkManager::isProtocolSupported(uint16_t version) {
-    return std::find(SUPPORTED_PROTOCOLS.begin(), SUPPORTED_PROTOCOLS.end(), version) != SUPPORTED_PROTOCOLS.end();
+    return ::isProtocolSupported(version);
 }
 
 void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {

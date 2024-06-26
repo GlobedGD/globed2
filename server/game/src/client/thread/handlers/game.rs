@@ -7,9 +7,19 @@ pub const MAX_VOICE_PACKET_SIZE: usize = 4096;
 
 impl ClientThread {
     gs_handler!(self, handle_level_join, LevelJoinPacket, packet, {
+        self._handle_level_join(packet.level_id, packet.unlisted).await
+    });
+
+    gs_handler!(self, handle_level_join_legacy, LevelJoinLegacyPacket, packet, {
+        self._handle_level_join(packet.level_id, false).await
+    });
+
+    async fn _handle_level_join(&self, level_id: LevelId, unlisted: bool) -> crate::client::Result<()> {
         let account_id = gs_needauth!(self);
 
-        let old_level = self.level_id.swap(packet.level_id, Ordering::Relaxed);
+        self.on_unlisted_level.store(unlisted, Ordering::SeqCst);
+
+        let old_level = self.level_id.swap(level_id, Ordering::Relaxed);
         let room_id = self.room_id.load(Ordering::Relaxed);
 
         self.game_server.state.room_manager.with_any(room_id, |pm| {
@@ -17,13 +27,13 @@ impl ClientThread {
                 pm.manager.remove_from_level(old_level, account_id);
             }
 
-            if packet.level_id != 0 {
-                pm.manager.add_to_level(packet.level_id, account_id);
+            if level_id != 0 {
+                pm.manager.add_to_level(level_id, account_id, unlisted);
             }
         });
 
         Ok(())
-    });
+    }
 
     gs_handler!(self, handle_level_leave, LevelLeavePacket, _packet, {
         let account_id = gs_needauth!(self);
@@ -69,18 +79,15 @@ impl ClientThread {
             self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| {
                 self.game_server.state.room_manager.with_any(room_id, |pm| {
                     buf.write_list_with(written_players, |buf| {
-                        pm.manager.for_each_player_on_level(
-                            level_id,
-                            |player, count, buf| {
-                                if count < written_players && player.account_id != account_id {
-                                    buf.write_value(&player.to_borrowed_associated_data());
-                                    true
-                                } else {
-                                    false
-                                }
-                            },
-                            buf,
-                        )
+                        let mut count = 0usize;
+                        pm.manager.for_each_player_on_level(level_id, |player| {
+                            if count < written_players && player.account_id != account_id {
+                                buf.write_value(&player.to_borrowed_associated_data());
+                                count += 1;
+                            }
+                        });
+
+                        count
                     });
                 });
             })
@@ -95,18 +102,11 @@ impl ClientThread {
         let mut players = Vec::with_capacity(written_players + 4);
 
         self.game_server.state.room_manager.with_any(room_id, |pm| {
-            pm.manager.for_each_player_on_level(
-                level_id,
-                |player, _, players| {
-                    if player.account_id == account_id {
-                        false
-                    } else {
-                        players.push(player.to_associated_data());
-                        true
-                    }
-                },
-                &mut players,
-            )
+            pm.manager.for_each_player_on_level(level_id, |player| {
+                if player.account_id != account_id {
+                    players.push(player.to_associated_data());
+                }
+            });
         });
 
         let players_per_fragment = (players.len() + total_fragments - 1) / total_fragments;
@@ -137,17 +137,12 @@ impl ClientThread {
             pm.manager.set_player_meta(account_id, &packet.data);
 
             let mut vec = Vec::with_capacity(pm.manager.get_player_count_on_level(level_id).unwrap_or(0));
-            pm.manager.for_each_player_on_level(
-                level_id,
-                |player, _count, vec| {
-                    vec.push(AssociatedPlayerMetadata {
-                        account_id: player.account_id,
-                        data: player.meta.clone(),
-                    });
-                    true
-                },
-                &mut vec,
-            );
+            pm.manager.for_each_player_on_level(level_id, |player| {
+                vec.push(AssociatedPlayerMetadata {
+                    account_id: player.account_id,
+                    data: player.meta.clone(),
+                });
+            });
 
             vec
         });
@@ -196,18 +191,12 @@ impl ClientThread {
                 Vec::new()
             } else {
                 let mut vec = Vec::with_capacity(total_players);
-                pm.manager.for_each_player_on_level(
-                    level_id,
-                    |player, _count, vec| {
-                        let account_data = self.game_server.get_player_account_data(player.account_id);
-                        if let Some(d) = account_data {
-                            vec.push(d);
-                        }
-
-                        true
-                    },
-                    &mut vec,
-                );
+                pm.manager.for_each_player_on_level(level_id, |player| {
+                    let account_data = self.game_server.get_player_account_data(player.account_id);
+                    if let Some(d) = account_data {
+                        vec.push(d);
+                    }
+                });
 
                 vec
             }
