@@ -13,7 +13,8 @@ namespace util::ui {
     constexpr cocos2d::ccColor4B BG_COLOR_DARK_BLUE = {0x33, 0x44, 0x99, 255};
     constexpr cocos2d::ccColor4B BG_COLOR_DARKER_BLUE = {0x28, 0x35, 0x77, 255};
     constexpr cocos2d::ccColor4B BG_COLOR_FRIEND = {0, 255, 100};
-    constexpr cocos2d::ccColor4B BG_COLOR_FRIEND_INGAME = {255, 255, 255};
+    constexpr cocos2d::ccColor4B BG_COLOR_FRIEND_INGAME = {0, 255, 180};
+    constexpr cocos2d::ccColor4B BG_COLOR_SELF = {255, 255, 50};
     const cocos2d::CCSize BADGE_SIZE = {16.f, 16.f};
     const cocos2d::CCSize BADGE_SIZE_SMALL = BADGE_SIZE * 0.8f;
 

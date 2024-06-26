@@ -83,11 +83,11 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         // cell gradient
         auto* cellGradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
             .color(globed::into<ccColor3B>(util::ui::BG_COLOR_FRIEND_INGAME))
-            .opacity(50)
+            .opacity(75)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)
-            .scaleX(2)
+            .scaleX(1.5)
             .blendFunc({GL_ONE, GL_ONE})
             .parent(this)
             .collect();
@@ -99,6 +99,19 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
             .anchorPoint({0, 0.5})
             .scale(0.3)
             .parent(usernameLayout);
+    }
+
+    auto acm = GJAccountManager::get();
+    if (data.accountId == acm->m_accountID) {
+        CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
+            .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_SELF))
+            .opacity(75)
+            .pos(0, 0)
+            .anchorPoint({0, 0})
+            .zOrder(-2)
+            .scaleX(10)
+            //.blendFunc({GL_ONE, GL_ONE})
+            .parent(this);
     }
 
     // percentage label
