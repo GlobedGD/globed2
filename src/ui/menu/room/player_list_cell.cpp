@@ -86,12 +86,12 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width,
             .scale(0.3)
             .parent(badgeWrapper);
     }
-    
+
     auto acm = GJAccountManager::get();
     if (this->data.accountId == acm->m_accountID) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(util::cocos::convert<ccColor3B>(util::ui::BG_COLOR_SELF))
-            .opacity(75)
+            .color(globed::into<ccColor3B>(util::ui::BG_COLOR_SELF))
+            .opacity(util::ui::BG_COLOR_SELF.a)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)

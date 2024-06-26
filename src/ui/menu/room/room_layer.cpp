@@ -19,7 +19,6 @@
 #include <util/misc.hpp>
 #include <util/format.hpp>
 #include <util/math.hpp>
-#include <algorithm>
 
 using namespace geode::prelude;
 
@@ -405,9 +404,13 @@ void RoomLayer::sortPlayerList() {
 
     // show friends before everyone else, and sort everyone alphabetically by the name
     std::sort(filteredPlayerList.begin(), filteredPlayerList.end(), [&flm](const auto& p1, const auto& p2) -> bool {
+        auto selfId = GJAccountManager::get()->m_accountID;
+        if (p1.accountId == selfId) return true;
+        else if (p2.accountId == selfId) return false;
+
         bool isFriend1 = flm.isFriend(p1.accountId);
         bool isFriend2 = flm.isFriend(p2.accountId);
-        
+
         if (isFriend1 != isFriend2) {
             return isFriend1;
         } else {
@@ -420,23 +423,6 @@ void RoomLayer::sortPlayerList() {
             return name1 < name2;
         }
     });
-    
-    // Find self and move to top
-    auto gm = GJAccountManager::get();
-    
-    for (auto entry : filteredPlayerList) {
-        if (entry.accountId == gm->m_accountID) {
-            PlayerRoomPreviewAccountData self = entry;
-            filteredPlayerList.insert(filteredPlayerList.begin(), entry);
-            for (auto it = filteredPlayerList.begin() + 1; it != filteredPlayerList.end(); it++) {
-                if (it->accountId == gm->m_accountID) {
-                    filteredPlayerList.erase(it);
-                    break;
-                }
-            }
-            break;
-        }
-    }
 }
 
 void RoomLayer::applyFilter(const std::string_view input) {

@@ -203,6 +203,11 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
 
     auto& flm = FriendListManager::get();
     std::sort(playerIds.begin(), playerIds.end(), [&flm, &pcm, &playerStore](const auto& p1, const auto& p2) -> bool {
+        auto selfId = GJAccountManager::get()->m_accountID;
+
+        if (p1 == selfId) return true;
+        else if (p2 == selfId) return false;
+
         bool isFriend1 = flm.isFriend(p1);
         bool isFriend2 = flm.isFriend(p2);
 
@@ -216,19 +221,6 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
             return util::misc::compareName(accData1.value().name, accData2.value().name);
         }
     });
-
-    // Find self and move to top
-    auto gm = GJAccountManager::get();
-    
-    for (auto entry : playerIds) {
-        if (entry == gm->m_accountID) {
-            int self = entry;
-            playerIds.insert(playerIds.begin(), entry);
-            auto it = std::find(playerIds.begin() + 1, playerIds.end(), gm->m_accountID);
-            playerIds.erase(it);
-            break;
-        }
-    }
 
     this->setTitle(fmt::format("Players ({})", playerIds.size()));
 
