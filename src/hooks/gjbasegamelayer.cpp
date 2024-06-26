@@ -414,7 +414,7 @@ void GlobedGJBGL::setupMisc() {
         auto vtableidx = 85;
         auto p = util::lowlevel::vmtHook(&GlobedGJBGL::onEnterHook, this, vtableidx);
         if (p.isErr()) {
-            log::warn("vmt hook failed: {}", p.unwrapErr());
+            log::warn("GJBGL vmt hook failed: {}", p.unwrapErr());
             return nullptr;
         } else {
             return p.unwrap();

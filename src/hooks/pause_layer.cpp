@@ -105,7 +105,7 @@ void PauseLayerBugfix::customSetup() {
         auto vtableidx = 87;
         auto p = util::lowlevel::vmtHook(&PauseLayerBugfix::onExitHook, this, vtableidx);
         if (p.isErr()) {
-            log::warn("vmt hook failed: {}", p.unwrapErr());
+            log::warn("PauseLayer vmt hook failed: {}", p.unwrapErr());
             return nullptr;
         } else {
             return p.unwrap();

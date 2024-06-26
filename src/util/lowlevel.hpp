@@ -16,6 +16,8 @@ namespace util::lowlevel {
     // picks either relativeCall or absoluteCall depending on the circumstance.
     geode::Patch* call(ptrdiff_t offset, ptrdiff_t callableOffset);
 
+    geode::Result<> withProtectedMemory(void* address, size_t size, std::function<void(void*)>&& callback);
+
     template <typename Func>
     concept FPtr = std::is_function_v<Func>;
 
@@ -24,8 +26,28 @@ namespace util::lowlevel {
         auto bytes = geode::toByteArray(detour);
         bytes.resize(sizeof(void*));
 
+        auto result = Mod::get()->patch(&vtable[index], bytes);
 
-        return Mod::get()->patch(&vtable[index], bytes);
+        if (result) {
+            return result;
+        }
+
+        auto err = result.unwrapErr();
+        if (err.find("Unable to write to memory") != std::string::npos) {
+            Result<Patch*> out;
+
+            auto protResult = withProtectedMemory(&vtable[index], bytes.size(), [&](void* addr) {
+                out = Mod::get()->patch(addr, bytes);
+            });
+
+            if (!protResult) {
+                return Err(protResult.unwrapErr());
+            }
+
+            return out;
+        }
+
+        return result;
     }
 
     // perform a VMT hook. Note that on windows, this will only be able to hook functions in the main vtable.

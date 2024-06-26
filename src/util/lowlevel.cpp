@@ -1,6 +1,8 @@
 #include "lowlevel.hpp"
 #include <defs/assert.hpp>
 
+#include <util/net.hpp>
+
 namespace util::lowlevel {
     geode::Patch* patch(ptrdiff_t offset, const std::vector<uint8_t>& bytes) {
         auto p = Mod::get()->patch(reinterpret_cast<void*>(geode::base::get() + offset), bytes);
@@ -55,5 +57,21 @@ namespace util::lowlevel {
         } else {
             return absoluteCall(offset, callableOffset);
         }
+    }
+
+    Result<> withProtectedMemory(void* address, size_t size, std::function<void(void*)>&& callback) {
+#ifdef GEODE_IS_WINDOWS
+        DWORD oldProtect;
+
+        if (VirtualProtect(address, size, PAGE_READWRITE, &oldProtect)) {
+            callback(address);
+            VirtualProtect(address, size, oldProtect, &oldProtect);
+        } else {
+            return Err(util::net::lastErrorString(GetLastError(), false));
+        }
+
+        return Ok();
+#endif
+        return Err("withProtectedMemory unimplemented");
     }
 }

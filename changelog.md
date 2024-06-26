@@ -4,6 +4,7 @@ todo changelog
 * highlight self on player list
 * enable drpc
 * fix unlisted stuff
+* fix teh vmt hook
 
 ## v1.4.1
 
