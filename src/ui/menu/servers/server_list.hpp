@@ -2,6 +2,9 @@
 
 #include <defs/geode.hpp>
 
+#include "server_list_cell.hpp"
+#include <ui/general/list/list.hpp>
+
 class GlobedServerList : public cocos2d::CCLayer {
 public:
     static constexpr float LIST_WIDTH = 358.f;
@@ -13,7 +16,10 @@ public:
     static GlobedServerList* create();
 
 private:
-    GJListLayer* listLayer;
+    using ServerList = GlobedListLayer<ServerListCell>;
+
+    GJListLayer* bgListLayer;
+    ServerList* listLayer;
 
     bool init() override;
 

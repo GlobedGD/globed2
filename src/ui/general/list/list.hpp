@@ -6,6 +6,7 @@
 
 #include "border.hpp"
 #include <util/ui.hpp>
+#include <util/lowlevel.hpp>
 
 template <typename CellType>
     requires (std::is_base_of_v<cocos2d::CCNode, CellType>)
@@ -223,6 +224,11 @@ public:
         this->updateCellOrder();
     }
 
+    // disable being able to like scroll up above the stuff you know
+    void disableOverScrollUp() {
+        isDisableOverScrollUp = true;
+    }
+
     // helper templated functions
 
     template <typename... Args>
@@ -288,11 +294,14 @@ public:
     }
 
 protected:
+    friend class GlobedContentLayer;
+
     geode::ScrollLayer* scrollLayer;
     cocos2d::CCSprite *borderLeft, *borderRight, *borderTop, *borderBottom;
     float height, width, cellHeight = 0.f;
     cocos2d::ccColor4B oddCellColor, evenCellColor;
     Ref<GlobedListBorder> borderNode;
+    bool isDisableOverScrollUp = false;
 
     bool init(float width, float height, cocos2d::ccColor4B background, float cellHeight, GlobedListBorderType borderType) {
         if (!CCLayer::init()) return false;
@@ -312,6 +321,10 @@ protected:
                 ->setAxisAlignment(cocos2d::AxisAlignment::End)
                 ->setAutoGrowAxis(height)
         );
+
+        // this is fucking criminal i hope no one notices this
+        // TODO: dont do this
+        util::lowlevel::forceDowncast<GlobedContentLayer>(scrollLayer->m_contentLayer);
 
         this->setContentSize({width, height});
         this->ignoreAnchorPointForPosition(false);
@@ -415,6 +428,36 @@ public:
 
     iterator end() {
         auto arr = scrollLayer->m_contentLayer->getChildren();
-        return iterator(arr, arr->count());
+        return iterator(arr, arr ? arr->count() : 0);
+    }
+};
+
+class GlobedContentLayer : geode::GenericContentLayer {
+    void setPosition(const cocos2d::CCPoint& pos) override {
+        auto list = static_cast<GlobedListLayer<cocos2d::CCNode>*>(this->getParent()->getParent());
+
+        bool disableOverscroll = list->isDisableOverScrollUp;
+
+        auto lastPos = this->getPosition();
+
+        CCLayerColor::setPosition(pos);
+
+        // I could not figure this out
+        // log::debug("pos: {}, bottom: {}, height: {}", list->getScrollPos().val, list->getScrollPos().atBottom, this->getScaledContentHeight());
+
+        // auto sp = list->getScrollPos();
+        // if (disableOverscroll && sp.val < this->getScaledContentHeight() && !sp.atBottom) {
+        //     CCLayerColor::setPosition(lastPos);
+        //     return;
+        // }
+
+        for (auto child : CCArrayExt<CCNode*>(m_pChildren)) {
+            auto y = this->getPositionY() + child->getPositionY();
+            float childHeight = child->getScaledContentHeight();
+
+            // the change here from the original is `+ childHeight`
+            child->setVisible(!(((m_obContentSize.height + childHeight) < y) || (y < -child->getContentSize().height)));
+        }
+
     }
 };
