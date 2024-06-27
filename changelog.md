@@ -10,6 +10,8 @@ todo changelog
 * make joining rooms in level work fine
 * make the userlist immediately show a person who joine (untested and probably a lie)
 * remove version checks when adding a new server
+* fix server list layer on mac
+* fix crash when completing created levels on arm mac
 
 ## v1.4.1
 

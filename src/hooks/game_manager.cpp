@@ -44,10 +44,14 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
 }
 
 void HookedGameManager::unloadIcon(int iconId, int iconType, int idk) {
+    // TODO
+    // GLOBED_CHECK_HOOK(GameManager::unloadIcon);
     // do nothing.
 }
 
 void HookedGameManager::loadDeathEffect(int id) {
+    // TODO
+    // GLOBED_CHECK_HOOK(GameManager::loadDeathEffect);
     util::ui::tryLoadDeathEffect(id);
 }
 

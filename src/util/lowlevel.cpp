@@ -23,6 +23,18 @@ namespace util::lowlevel {
         }
 
         return patch(offset, bytevec);
+
+#elif defined(GEODE_IS_ARM_MAC) || defined(GEODE_IS_ANDROID64)
+        GLOBED_REQUIRE(bytes % 4 == 0, "patch must be a multiple of 4 on ARM64");
+
+        std::vector<uint8_t> nopvec;
+        for (size_t i = 0; i < bytes; i += 4) {
+            nopvec.push_back(0x1f);
+            nopvec.push_back(0x20);
+            nopvec.push_back(0x03);
+            nopvec.push_back(0xd5);
+        }
+        return patch(offset, nopvec);
 #else
         GLOBED_UNIMPL("util::lowlevel::nop");
 #endif
