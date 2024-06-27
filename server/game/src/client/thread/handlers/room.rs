@@ -46,6 +46,11 @@ impl ClientThread {
             }
         };
 
+        info!(
+            "Room created: {} ({}) (by {} ({}))",
+            room_info.name, room_info.id, room_info.owner.name, room_info.owner.account_id
+        );
+
         self.send_packet_static(&RoomCreatedPacket { info: room_info }).await
     });
 
