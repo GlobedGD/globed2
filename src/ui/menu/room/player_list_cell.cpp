@@ -31,7 +31,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
     auto* gm = GameManager::get();
 
     Build<CCMenu>::create()
-        .pos(5.f, CELL_HEIGHT / 2.f)
+        .pos(10.f, CELL_HEIGHT / 2.f)
         .anchorPoint(0.f, 0.5f)
         .layout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start))
         .contentSize(cellWidth * 0.75f, CELL_HEIGHT)
@@ -61,6 +61,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
         .scaleMult(1.1f)
         .parent(leftSideLayout)
         .collect();
+
+    label->setLayoutOptions(AxisLayoutOptions::create()->setPrevGap(10.f));
 
     // badge
     auto badge = util::ui::createBadgeIfSpecial(playerData.specialUserData);
@@ -109,7 +111,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
 
     Build<CCMenu>::create()
         .anchorPoint(1.f, 0.5f)
-        .pos(cellWidth - 5.f, CELL_HEIGHT / 2.f)
+        .pos(cellWidth - (forInviting ? 10.f : 5.f), CELL_HEIGHT / 2.f)
         .contentSize(cellWidth - 10.f, CELL_HEIGHT)
         .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
         .parent(this)

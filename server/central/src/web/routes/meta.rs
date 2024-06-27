@@ -4,7 +4,7 @@ use globed_shared::{
     base64::{engine::general_purpose as b64e, Engine as _},
     esp::{ByteBuffer, ByteBufferExt, ByteBufferExtWrite},
     rand::{self, Rng},
-    MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SERVER_MAGIC, SUPPORTED_PROTOCOLS,
+    MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SERVER_MAGIC,
 };
 
 use rocket::{
