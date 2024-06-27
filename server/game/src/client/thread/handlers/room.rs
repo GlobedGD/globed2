@@ -105,6 +105,12 @@ impl ClientThread {
 
         self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
             pm.manager.create_player(account_id);
+
+            // if we are in any level, clean transition to there
+            if level_id != 0 {
+                pm.manager
+                    .add_to_level(level_id, account_id, self.on_unlisted_level.load(Ordering::SeqCst));
+            }
         });
 
         self._respond_with_room_list(packet.room_id, true).await

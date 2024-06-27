@@ -1,11 +1,42 @@
 {
+    "id": "dankmeme.globed2",
+    "name": "Globed",
+    "developer": "dankmeme",
     "geode": "3.1.1",
-    "version": "v1.4.1",
+    "version": "v1.4.2",
     "gd": {
         "win": "2.206",
         "android": "2.206",
         "mac": "2.206",
         "ios": "2.206"
+    },
+    "description": "Feature-rich multiplayer mod for Geometry Dash",
+    "dependencies": [
+        {
+            "id": "geode.custom-keybinds",
+            "version": ">=v1.2.3",
+            "importance": "required",
+            "platforms": [
+                "win"
+            ]
+        }
+    ],
+    "incompatibilities": [],
+    "links": {
+        "homepage": "https://globed.dev",
+        "source": "https://github.com/dankmeme01/globed2",
+        "community": "https://discord.gg/d56q5Dkdm3"
+    },
+    "tags": [
+        "online"
+    ],
+    "settings": {
+        "force-skip-preload": {
+            "default": false,
+            "name": "Skip preload assets",
+            "description": "Skip preloading assets on the loading screen. Enable this only if you are experiencing crashes during loading.",
+            "type": "bool"
+        }
     },
     "resources": {
         "spritesheets": {
@@ -23,42 +54,5 @@
         "files": [
             "resources/*.ogg"
         ]
-    },
-    "id": "dankmeme.globed2",
-    "name": "Globed",
-    "developer": "dankmeme",
-    "description": "Feature-rich multiplayer mod for Geometry Dash",
-    "dependencies": [
-        {
-            "id": "geode.custom-keybinds",
-            "version": ">=v1.2.3",
-            "importance": "required",
-            "platforms": [
-                "win"
-            ]
-        }
-    ],
-    "incompatibilities": [
-        {
-            "id": "thesillydoggo.moretags",
-            "importance": "breaking",
-            "version": "*"
-        }
-    ],
-    "links": {
-        "homepage": "https://globed.dev",
-        "source": "https://github.com/dankmeme01/globed2",
-        "community": "https://discord.gg/d56q5Dkdm3"
-    },
-    "tags": [
-        "online"
-    ],
-    "settings": {
-        "force-skip-preload": {
-            "default": false,
-            "name": "Skip preload assets",
-            "description": "Skip preloading assets on the loading screen. Enable this only if you are experiencing crashes during loading.",
-            "type": "bool"
-        }
     }
 }
