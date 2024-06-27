@@ -9,6 +9,7 @@ todo changelog
 * various ui touches
 * make joining rooms in level work fine
 * make the userlist immediately show a person who joine (untested and probably a lie)
+* remove version checks when adding a new server
 
 ## v1.4.1
 

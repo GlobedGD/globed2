@@ -83,10 +83,13 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
 
             if (this->modifyingIndex == -1 || csm.getServer(this->modifyingIndex).url != url) {
                 // we try to connect to the server and see if the versions match
-                ServerTestPopup::create(url, this)->show();
-                this->retain();
+
+                // removed because idk
+                // ServerTestPopup::create(url, this)->show();
                 testedName = name;
                 testedUrl = url;
+                this->retain();
+                this->onTestSuccess();
             } else {
                 // if we just changed the name of an existing server, simply update it
                 testedName = name;
