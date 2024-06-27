@@ -385,13 +385,12 @@ namespace util::ui {
         auto tex = util::cocos::textureFromSpriteName(name);
         auto bg = CCSprite::createWithTexture(tex);
 
-        if (bg) {
-            auto testInstance = new RepeatingBackground;
+        if (util::cocos::isValidSprite(bg)) {
+            RepeatingBackground testInstance;
             // replace the vtable so we can get our update() called
             // is this UB?
             // Yes.
-            std::memcpy((void*)bg, (void*)testInstance, sizeof(void*));
-            delete testInstance;
+            std::memcpy((void*)bg, (void*)&testInstance, sizeof(void*));
 
             return reinterpret_cast<RepeatingBackground*>(bg);
         }

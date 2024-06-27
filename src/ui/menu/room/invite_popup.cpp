@@ -220,7 +220,11 @@ void InvitePopup::applyFilter(const std::string_view input) {
             filteredPlayerList.push_back(item);
         }
     }
-    buttonMenu->addChild(clearSearchButton);
+
+    if (!clearSearchButton->getParent()) {
+        buttonMenu->addChild(clearSearchButton);
+    }
+
     buttonMenu->updateLayout();
 }
 

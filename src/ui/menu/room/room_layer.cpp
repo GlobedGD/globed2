@@ -446,7 +446,10 @@ void RoomLayer::applyFilter(const std::string_view input) {
         }
     }
 
-    buttonMenu->addChild(clearSearchButton);
+    if (!clearSearchButton->getParent()) {
+        buttonMenu->addChild(clearSearchButton);
+    }
+
     buttonMenu->updateLayout();
 }
 

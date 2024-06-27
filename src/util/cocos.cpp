@@ -606,4 +606,8 @@ namespace util::cocos {
 
         return out;
     }
+
+    bool isValidSprite(cocos2d::CCNode* obj) {
+        return obj && !obj->getUserObject("geode.texture-loader/fallback");
+    }
 }

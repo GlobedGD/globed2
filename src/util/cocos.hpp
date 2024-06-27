@@ -44,4 +44,7 @@ namespace util::cocos {
 
     // creates a new, independent texture
     cocos2d::CCTexture2D* textureFromSpriteName(std::string_view name);
+
+    // checks for nullptr and textureldr fallback
+    bool isValidSprite(cocos2d::CCNode* obj);
 }
