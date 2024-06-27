@@ -7,6 +7,8 @@ todo changelog
 * fix teh vmt hook
 * make roomlayer less laggy
 * various ui touches
+* make joining rooms in level work fine
+* make the userlist immediately show a person who joine (untested and probably a lie)
 
 ## v1.4.1
 

@@ -12,7 +12,7 @@ void PlayerStore::removePlayer(int playerId) {
 }
 
 std::optional<PlayerStore::Entry> PlayerStore::get(int playerId) {
-    return _data.contains(playerId) ? std::nullopt : std::optional(_data.at(playerId));
+    return _data.contains(playerId) ? std::optional(_data.at(playerId)) : std::nullopt;
 }
 
 std::unordered_map<int, PlayerStore::Entry>& PlayerStore::getAll() {
