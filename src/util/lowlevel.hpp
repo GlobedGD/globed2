@@ -57,6 +57,18 @@ namespace util::lowlevel {
         return vmtHookWithTable(detour, vtable, index);
     }
 
+    // Assuming that `Out` inherits `In`, downcasts `In*` to `Out*`, and replaces the vtable with that of `Out`.
+    // This is not safe. Do not do this.
+    template <typename Out, typename In>
+        requires (std::is_base_of_v<In, Out> && std::is_default_constructible_v<Out> && std::is_polymorphic_v<In>)
+    Out* forceDowncast(In* ptr) {
+        Out tempInstance;
+
+        std::memcpy((void*)ptr, (void*)&tempInstance, sizeof(void*));
+
+        return reinterpret_cast<Out*>(ptr);
+    }
+
     // Cast a polymorphic object to another (potentially unrelated by inheritance) polymorphic object.
     // Advantages: significantly faster than dynamic_cast or typeinfo_cast (simply compares main vtable pointer)
     // Disadvantages:

@@ -6,6 +6,7 @@ todo changelog
 * fix unlisted level stuff
 * fix teh vmt hook
 * make roomlayer less laggy
+* various ui touches
 
 ## v1.4.1
 

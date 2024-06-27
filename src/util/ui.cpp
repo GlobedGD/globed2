@@ -9,6 +9,7 @@
 #include <util/misc.hpp>
 #include <util/time.hpp>
 #include <util/math.hpp>
+#include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
 
@@ -230,8 +231,8 @@ namespace util::ui {
         CCSprite* spr1 = nullptr;
 
         if (!sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr(sprite).c_str());
-        if (!spr1 && !sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(sprite.c_str());
-        if (!spr1) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr("button-secret.png").c_str());
+        if (!util::cocos::isValidSprite(spr1) && !sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(sprite.c_str());
+        if (!util::cocos::isValidSprite(spr1)) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr("button-secret.png").c_str());
 
         return spr1;
     }
@@ -386,13 +387,10 @@ namespace util::ui {
         auto bg = CCSprite::createWithTexture(tex);
 
         if (util::cocos::isValidSprite(bg)) {
-            RepeatingBackground testInstance;
             // replace the vtable so we can get our update() called
             // is this UB?
             // Yes.
-            std::memcpy((void*)bg, (void*)&testInstance, sizeof(void*));
-
-            return reinterpret_cast<RepeatingBackground*>(bg);
+            return util::lowlevel::forceDowncast<RepeatingBackground>(bg);
         }
 
         return nullptr;

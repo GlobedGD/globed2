@@ -93,13 +93,14 @@ void RoomSettingsPopup::updateCheckboxes() {
 }
 
 void RoomSettingsPopup::enableCheckboxes(bool enabled) {
-    cellInviteOnly->setEnabled(enabled);
-    cellPublicInvites->setEnabled(enabled);
-    cellCollision->setEnabled(enabled);
-
+    for (auto* cell : {
+        cellInviteOnly, cellPublicInvites, cellCollision
 #ifdef GLOBED_DEBUG
-    cellTwoPlayer->setEnabled(enabled);
+        , cellTwoPlayer
 #endif
+    }) {
+        cell->setEnabled(enabled);
+    }
 }
 
 RoomSettingsPopup* RoomSettingsPopup::create() {
@@ -172,6 +173,8 @@ void RoomSettingCell::setToggled(bool state) {
 
 void RoomSettingCell::setEnabled(bool state) {
     button->setEnabled(state);
+    button->m_offButton->setOpacity(state ? 255 : 167);
+    button->m_onButton->setOpacity(state ? 255 : 167);
 }
 
 RoomSettingCell* RoomSettingCell::create(const char* name, std::string desc, int tag, RoomSettingsPopup* popup) {

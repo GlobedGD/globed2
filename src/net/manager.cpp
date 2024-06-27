@@ -698,20 +698,7 @@ protected:
     void onProtocolMismatch(std::shared_ptr<ProtocolMismatchPacket> packet) {
         log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, this->getUsedProtocol());
 
-#ifdef GLOBED_DEBUG
-        // if we are in debug mode, allow the user to override it
-        Loader::get()->queueInMainThread([this, serverProtocol = packet->serverProtocol] {
-            geode::createQuickPopup("Globed Error",
-                fmt::format("Protocol mismatch (client: v{}, server: v{}). Override the protocol for this session and allow to connect to the server anyway? <cy>(Not recommended!)</c>", this->getUsedProtocol(), serverProtocol),
-                "Cancel", "Yes", [this](FLAlertLayer*, bool override) {
-                    if (override) {
-                        this->setIgnoreProtocolMismatch(true);
-                    }
-                }
-            );
-        });
-#else
-        // if we are not in debug, show an error telling the user to update the mod
+        // show an error telling the user to update the mod
 
         if (packet->serverProtocol < this->getUsedProtocol()) {
             std::string message = "Your Globed version is <cy>too new</c> for this server. Downgrade the mod to an older version or ask the server owner to update their server.";
@@ -724,6 +711,7 @@ protected:
                     Mod::get()->getVersion().toString(),
                     packet->minClientVersion
                 );
+
                 geode::createQuickPopup("Globed Error", message, "Cancel", "Update", [](FLAlertLayer*, bool update) {
                     if (!update) return;
 
@@ -731,7 +719,6 @@ protected:
                 });
             });
         }
-#endif
 
         this->disconnect(true);
     }
@@ -748,7 +735,11 @@ protected:
 
     uint16_t getUsedProtocol() {
         // 0xffff is a special value that the server doesn't check
+#ifdef GLOBED_DEBUG
+        return 0xffff;
+#else
         return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
+#endif
     }
 
     uint32_t getServerTps() {
