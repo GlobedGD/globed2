@@ -127,3 +127,5 @@ namespace util::debug {
 #endif
     }
 }
+
+#define GLOBED_BENCH(name, ...) ::util::debug::Benchmarker().runAndLog([&] { __VA_ARGS__ ; }, name)

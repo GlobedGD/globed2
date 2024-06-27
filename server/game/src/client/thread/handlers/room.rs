@@ -102,7 +102,7 @@ impl ClientThread {
             pm.manager.create_player(account_id);
         });
 
-        self.send_packet_static(&RoomJoinedPacket).await
+        self._respond_with_room_list(packet.room_id, true).await
     });
 
     gs_handler!(self, handle_leave_room, LeaveRoomPacket, _packet, {
@@ -126,14 +126,14 @@ impl ClientThread {
         self.game_server.state.room_manager.get_global().manager.create_player(account_id);
 
         // respond with the global room list
-        self._respond_with_room_list(0).await
+        self._respond_with_room_list(0, false).await
     });
 
     gs_handler!(self, handle_request_room_players, RequestRoomPlayerListPacket, _packet, {
         let _ = gs_needauth!(self);
 
         let room_id = self.room_id.load(Ordering::Relaxed);
-        self._respond_with_room_list(room_id).await
+        self._respond_with_room_list(room_id, false).await
     });
 
     gs_handler!(self, handle_update_room_settings, UpdateRoomSettingsPacket, packet, {
@@ -246,7 +246,7 @@ impl ClientThread {
     });
 
     #[inline]
-    async fn _respond_with_room_list(&self, room_id: u32) -> crate::client::Result<()> {
+    async fn _respond_with_room_list(&self, room_id: u32, just_joined: bool) -> crate::client::Result<()> {
         let room_info = self
             .game_server
             .state
@@ -254,13 +254,14 @@ impl ClientThread {
             .with_any(room_id, |room| room.get_room_info(room_id, self.game_server));
 
         let can_moderate = self.user_role.lock().can_moderate();
+        let players = self
+            .game_server
+            .get_room_player_previews(room_id, self.account_id.load(Ordering::Relaxed), can_moderate);
 
-        self.send_packet_dynamic(&RoomPlayerListPacket {
-            room_info,
-            players: self
-                .game_server
-                .get_room_player_previews(room_id, self.account_id.load(Ordering::Relaxed), can_moderate),
-        })
-        .await
+        if just_joined {
+            self.send_packet_dynamic(&RoomJoinedPacket { room_info, players }).await
+        } else {
+            self.send_packet_dynamic(&RoomPlayerListPacket { room_info, players }).await
+        }
     }
 }

@@ -6,9 +6,12 @@ pub struct RoomCreatedPacket {
     pub info: RoomInfo,
 }
 
-#[derive(Packet, Encodable, StaticSize)]
-#[packet(id = 23001, tcp = false)]
-pub struct RoomJoinedPacket;
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 23001, tcp = true)]
+pub struct RoomJoinedPacket {
+    pub room_info: RoomInfo,
+    pub players: Vec<PlayerRoomPreviewAccountData>,
+}
 
 #[derive(Packet, Encodable, StaticSize, Default)]
 #[packet(id = 23002, tcp = false)]

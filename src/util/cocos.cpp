@@ -607,7 +607,19 @@ namespace util::cocos {
         return out;
     }
 
-    bool isValidSprite(cocos2d::CCNode* obj) {
+    bool isValidSprite(CCNode* obj) {
         return obj && !obj->getUserObject("geode.texture-loader/fallback");
+    }
+
+    void renderNodeToFile(CCNode* node, const std::filesystem::path& dest) {
+        auto tex = CCRenderTexture::create(node->getScaledContentWidth(), node->getScaledContentHeight());
+        tex->beginWithClear(0, 0, 0, 0);
+        node->visit();
+        tex->draw();
+        tex->end();
+
+        // idk if this leaks
+        auto img = tex->newCCImage();
+        img->saveToFile(dest.string().c_str());
     }
 }

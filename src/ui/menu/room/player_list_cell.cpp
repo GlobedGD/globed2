@@ -1,74 +1,77 @@
 #include "player_list_cell.hpp"
 
-#include "download_level_popup.hpp"
 #include <data/packets/client/room.hpp>
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <managers/admin.hpp>
 #include <managers/friend_list.hpp>
 #include <net/manager.hpp>
+#include <ui/menu/room/download_level_popup.hpp>
+#include <ui/general/simple_player.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
 
-bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width, bool forInviting) {
-    if (!CCLayer::init()) return false;
-    this->data = data;
-    this->width = width;
+namespace {
+    namespace btnorder {
+        constexpr int Icon = 1;
+        constexpr int Name = 2;
+        constexpr int Badge = 3;
+    }
+}
 
-    this->setContentHeight(CELL_HEIGHT);
+bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad) {
+    if (!CCLayer::init()) return false;
+
+    this->playerData = data;
+    this->cellWidth = cellWidth;
+
+    this->setContentWidth(cellWidth);
 
     auto* gm = GameManager::get();
 
-    // detect if the user is a friend
-    auto& flm = FriendListManager::get();
-    this->isFriend = flm.isFriend(data.accountId);
-
-    Build<GlobedSimplePlayer>::create(GlobedSimplePlayer::Icons(data))
-        .scale(0.65f)
+    Build<CCMenu>::create()
+        .pos(5.f, CELL_HEIGHT / 2.f)
+        .anchorPoint(0.f, 0.5f)
+        .layout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start))
+        .contentSize(cellWidth * 0.75f, CELL_HEIGHT)
         .parent(this)
-        .anchorPoint(0.5f, 0.5f)
-        .pos(25.f, CELL_HEIGHT / 2.f)
-        .id("player-icon"_spr)
-        .store(simplePlayer);
+        .id("left-layout")
+        .store(leftSideLayout);
+
+    if (isIconLazyLoad) {
+        this->createPlaceholderPlayerIcon();
+    } else {
+        this->createPlayerIcon();
+    }
 
     // name label
-
-    RichColor nameColor = util::ui::getNameRichColor(data.specialUserData);
-
-    CCMenu* badgeWrapper = Build<CCMenu>::create()
-        .pos(simplePlayer->getPositionX() + simplePlayer->getScaledContentSize().width / 2 + 10.f, CELL_HEIGHT / 2)
-        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::Start)->setAutoScale(false))
-        .anchorPoint(0.f, 0.5f)
-        .contentSize(width, CELL_HEIGHT)
-        .scale(1.f)
-        .parent(this)
-        .id("badge-wrapper"_spr)
-        .collect();
+    RichColor nameColor = util::ui::getNameRichColor(playerData.specialUserData);
 
     float labelWidth;
-    auto* label = Build<CCLabelBMFont>::create(data.name.c_str(), "bigFont.fnt")
+    auto* label = Build<CCLabelBMFont>::create(playerData.name.c_str(), "bigFont.fnt")
         .limitLabelWidth(170.f, 0.6f, 0.1f)
-        .with([&labelWidth, &nameColor](CCLabelBMFont* label) {
+        .with([&](CCLabelBMFont* label) {
             label->setScale(label->getScale() * 0.9f);
             labelWidth = label->getScaledContentSize().width;
             nameColor.animateLabel(label);
         })
-        .intoMenuItem([this] {
-            this->onOpenProfile(nullptr);
-        })
-        .pos(simplePlayer->getPositionX() + labelWidth / 2.f + 25.f, CELL_HEIGHT / 2 - 50.f)
+        .intoMenuItem(this, menu_selector(PlayerListCell::onOpenProfile))
+        .zOrder(btnorder::Name)
         .scaleMult(1.1f)
-        .parent(badgeWrapper)
+        .parent(leftSideLayout)
         .collect();
 
-    auto badge = util::ui::createBadgeIfSpecial(data.specialUserData);
+    // badge
+    auto badge = util::ui::createBadgeIfSpecial(playerData.specialUserData);
     if (badge) {
         util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
-        badgeWrapper->addChild(badge);
+        badge->setZOrder(btnorder::Badge);
+        leftSideLayout->addChild(badge);
     }
 
-    if (isFriend) {
+    // friend gradient and own gradient
+    if (FriendListManager::get().isFriend(data.accountId)) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
             .color(globed::into<ccColor3B>(forInviting ? util::ui::BG_COLOR_FRIEND_INGAME : util::ui::BG_COLOR_FRIEND))
             .opacity(forInviting ? 75 : 90)
@@ -84,11 +87,11 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width,
         CCSprite* icon = Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
             .anchorPoint({0, 0.5})
             .scale(0.3)
-            .parent(badgeWrapper);
+            .parent(leftSideLayout);
     }
 
-    auto acm = GJAccountManager::get();
-    if (this->data.accountId == acm->m_accountID) {
+    auto* gjam = GJAccountManager::get();
+    if (playerData.accountId == gjam->m_accountID) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
             .color(globed::into<ccColor3B>(util::ui::BG_COLOR_SELF))
             .opacity(util::ui::BG_COLOR_SELF.a)
@@ -100,30 +103,61 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float width,
             .parent(this);
     }
 
-    badgeWrapper->updateLayout();
+    leftSideLayout->updateLayout();
 
     label->setPositionY(CELL_HEIGHT / 2 - 5.15f);
 
-    const float pad = 5.f;
     Build<CCMenu>::create()
-        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End))
-        .anchorPoint(0.f, 0.5f)
-        .pos(pad, CELL_HEIGHT / 2.f)
-        .contentSize(width - pad * 2, CELL_HEIGHT)
+        .anchorPoint(1.f, 0.5f)
+        .pos(cellWidth - 5.f, CELL_HEIGHT / 2.f)
+        .contentSize(cellWidth - 10.f, CELL_HEIGHT)
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
         .parent(this)
-        .store(menu);
-
-    if (forInviting) {
-        this->createInviteButton();
-    } else {
-        this->createJoinButton();
-    }
+        .store(rightButtonMenu);
 
     if (AdminManager::get().authorized() && !forInviting) {
         this->createAdminButton();
     }
 
+    if (forInviting) {
+        this->createInviteButton();
+    } else if (playerData.levelId != 0) {
+        this->createJoinButton();
+    }
+
     return true;
+}
+
+bool PlayerListCell::isIconLoaded() {
+    return simplePlayer != nullptr;
+}
+
+void PlayerListCell::createPlayerIcon() {
+    if (placeholderIcon) {
+        placeholderIcon->removeFromParent();
+        placeholderIcon = nullptr;
+    }
+
+    // player cube icon
+    if (!simplePlayer) {
+        Build<GlobedSimplePlayer>::create(playerData)
+            .scale(0.65f)
+            .zOrder(btnorder::Icon)
+            .id("player-icon"_spr)
+            .parent(leftSideLayout)
+            .store(simplePlayer);
+    }
+}
+
+void PlayerListCell::createPlaceholderPlayerIcon() {
+    if (placeholderIcon || simplePlayer) return;
+
+    Build<CCSprite>::createSpriteName("default-player-cube.png"_spr)
+        .scale(0.65f)
+        .zOrder(btnorder::Icon)
+        .id("player-icon-placeholder")
+        .parent(leftSideLayout)
+        .store(placeholderIcon);
 }
 
 void PlayerListCell::createInviteButton() {
@@ -134,38 +168,15 @@ void PlayerListCell::createInviteButton() {
         })
         .scaleMult(1.25f)
         .store(inviteButton)
-        .parent(menu);
+        .parent(rightButtonMenu);
 
-    menu->updateLayout();
-}
-
-void PlayerListCell::sendInvite() {
-    NetworkManager::get().send(RoomSendInvitePacket::create(data.accountId));
-
-    // disable sending invites for a few seconds
-    inviteButton->setEnabled(false);
-    inviteButton->setOpacity(90);
-
-    this->runAction(CCSequence::create(
-        CCDelayTime::create(3.f),
-        CCCallFunc::create(this, callfunc_selector(PlayerListCell::enableInvites)),
-        nullptr
-    ));
-}
-
-void PlayerListCell::enableInvites() {
-    inviteButton->setEnabled(true);
-    inviteButton->setOpacity(255);
+    rightButtonMenu->updateLayout();
 }
 
 void PlayerListCell::createJoinButton() {
-    if (this->data.levelId == 0) {
-        return;
-    }
-
     Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
-        .scale(0.30f)
-        .intoMenuItem([levelId = this->data.levelId](auto) {
+        .scale(0.31f)
+        .intoMenuItem([levelId = this->playerData.levelId](auto) {
             auto* glm = GameLevelManager::sharedState();
             auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
             bool isMainLevel = std::find(HookedLevelSelectLayer::MAIN_LEVELS.begin(), HookedLevelSelectLayer::MAIN_LEVELS.end(), levelId) != HookedLevelSelectLayer::MAIN_LEVELS.end();
@@ -188,12 +199,12 @@ void PlayerListCell::createJoinButton() {
                 popup->show();
             }
         })
-        .pos(width - 30.f, CELL_HEIGHT / 2.f)
+        .zOrder(10)
+        .pos(cellWidth - 30.f, CELL_HEIGHT / 2.f)
         .scaleMult(1.1f)
-        .store(playButton)
-        .parent(menu);
+        .parent(rightButtonMenu);
 
-    menu->updateLayout();
+    rightButtonMenu->updateLayout();
 }
 
 void PlayerListCell::createAdminButton() {
@@ -201,23 +212,42 @@ void PlayerListCell::createAdminButton() {
     Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
         .scale(0.525f)
         .intoMenuItem([this](auto) {
-            AdminManager::get().openUserPopup(data);
+            AdminManager::get().openUserPopup(playerData);
         })
-        .parent(menu)
-        .zOrder(10)
+        .parent(rightButtonMenu)
+        .zOrder(3)
         .id("admin-button"_spr);
 
-    menu->updateLayout();
+    rightButtonMenu->updateLayout();
+}
+
+void PlayerListCell::sendInvite() {
+    NetworkManager::get().send(RoomSendInvitePacket::create(playerData.accountId));
+
+    // disable sending invites for a few seconds
+    inviteButton->setEnabled(false);
+    inviteButton->setOpacity(90);
+
+    this->runAction(CCSequence::create(
+        CCDelayTime::create(3.f),
+        CCCallFunc::create(this, callfunc_selector(PlayerListCell::enableInvites)),
+        nullptr
+    ));
+}
+
+void PlayerListCell::enableInvites() {
+    inviteButton->setEnabled(true);
+    inviteButton->setOpacity(255);
 }
 
 void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
-    GameLevelManager::sharedState()->storeUserName(data.userId, data.accountId, data.name);
-    ProfilePage::create(data.accountId, false)->show();
+    GameLevelManager::sharedState()->storeUserName(playerData.userId, playerData.accountId, playerData.name);
+    ProfilePage::create(playerData.accountId, false)->show();
 }
 
-PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data, float width, bool forInviting) {
+PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad) {
     auto ret = new PlayerListCell;
-    if (ret->init(data, width, forInviting)) {
+    if (ret->init(data, cellWidth, forInviting, isIconLazyLoad)) {
         ret->autorelease();
         return ret;
     }

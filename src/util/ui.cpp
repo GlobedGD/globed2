@@ -160,7 +160,7 @@ namespace util::ui {
     }
 
     CCPoint PopupLayout::fromBottom(float y) {
-        return fromTop({0.f, y});
+        return fromBottom({0.f, y});
     }
 
     CCPoint PopupLayout::fromBottom(cocos2d::CCSize off) {

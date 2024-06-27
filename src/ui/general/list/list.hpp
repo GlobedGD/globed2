@@ -111,14 +111,14 @@ public:
         return scrollLayer->m_contentLayer->getChildren();
     }
 
-    void addCell(CellType* cell) {
-        this->addWrapperCell(cell, this->cellCount());
+    void addCell(CellType* cell, bool updateLayout = true) {
+        this->addWrapperCell(cell, this->cellCount(), updateLayout);
     }
 
-    void insertCell(CellType* cell, int index) {
+    void insertCell(CellType* cell, int index, bool updateLayout = true) {
         GLOBED_REQUIRE(index > 0 && index <= this->cellCount(), "invalid index passed to insertCell");
 
-        this->addWrapperCell(cell, index);
+        this->addWrapperCell(cell, index, updateLayout);
     }
 
     void removeCell(WrapperCell* cell) {
@@ -146,8 +146,10 @@ public:
         this->removeAllCells();
 
         for (auto* cell : CCArrayExt<CellType*>(cells)) {
-            this->addCell(cell);
+            this->addCell(cell, false);
         }
+
+        this->updateCellOrder();
 
         if (preserveScrollPos) {
             this->scrollToPos(scpos);
@@ -169,8 +171,10 @@ public:
 
         size_t idx = 0;
         for (auto elem : sorted) {
-            this->addWrapperCell(elem, idx++);
+            this->addWrapperCell(elem, idx++, false);
         }
+
+        this->updateCells();
     }
 
     void scrollToTop() {
@@ -215,13 +219,27 @@ public:
         cellHeight = h;
     }
 
+    void forceUpdate() {
+        this->updateCellOrder();
+    }
+
     // helper templated functions
 
     template <typename... Args>
     CellType* addCell(Args&&... args) {
         CellType* cell = CellType::create(std::forward<Args>(args)...);
 
-        this->addCell(cell);
+        this->addCell(cell, true);
+
+        return cell;
+    }
+
+    // like `addCell` but does not update layout
+    template <typename... Args>
+    CellType* addCellFast(Args&&... args) {
+        CellType* cell = CellType::create(std::forward<Args>(args)...);
+
+        this->addCell(cell, false);
 
         return cell;
     }
@@ -230,7 +248,17 @@ public:
     CellType* insertCell(Args&&... args, int index) {
         CellType* cell = CellType::create(std::forward<Args>(args)...);
 
-        this->insertCell(cell);
+        this->insertCell(cell, index, true);
+
+        return cell;
+    }
+
+    // like `insertCell` but does not update layout
+    template <typename... Args>
+    CellType* insertCellFast(Args&&... args, int index) {
+        CellType* cell = CellType::create(std::forward<Args>(args)...);
+
+        this->insertCell(cell, index, false);
 
         return cell;
     }
@@ -301,18 +329,18 @@ protected:
         return true;
     }
 
-    WrapperCell* addWrapperCell(CellType* cell, int index) {
+    WrapperCell* addWrapperCell(CellType* cell, int index, bool updateLayout = false) {
         if (cellHeight != 0.0f) {
             cell->setContentHeight(cellHeight);
         }
 
         auto wcell = WrapperCell::create(cell, width);
-        this->addWrapperCell(wcell, index);
+        this->addWrapperCell(wcell, index, updateLayout);
 
         return wcell;
     }
 
-    void addWrapperCell(WrapperCell* cell, int index) {
+    void addWrapperCell(WrapperCell* cell, int index, bool updateLayout = false) {
         cell->setColor(this->getCellColor(index));
 
         // move all cells one up
@@ -321,7 +349,10 @@ protected:
         }
 
         scrollLayer->m_contentLayer->addChild(cell, index);
-        scrollLayer->m_contentLayer->updateLayout();
+
+        if (updateLayout) {
+            this->updateCells();
+        }
     }
 
     void updateCellOrder() {
@@ -331,14 +362,14 @@ protected:
             child->setZOrder(i++);
         }
 
-        this->updateCells();
-    }
-
-    void updateCells() {
         for (WrapperCell* child : CCArrayExt<WrapperCell*>(scrollLayer->m_contentLayer->getChildren())) {
             child->setContentHeight(child->inner->getContentHeight());
         }
 
+        this->updateCells();
+    }
+
+    void updateCells() {
         scrollLayer->m_contentLayer->updateLayout();
     }
 

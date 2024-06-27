@@ -133,7 +133,10 @@ bool GlobedMenuLayer::init() {
 
     rightButtonMenu->updateLayout();
 
-    this->addChild(RoomLayer::create());
+    Build<RoomLayer>::create()
+        .anchorPoint(0.5f, 0.5f)
+        .pos(winSize / 2.f)
+        .parent(this);
 
     util::ui::prepareLayer(this);
 

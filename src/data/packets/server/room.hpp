@@ -11,7 +11,6 @@ class RoomCreatedPacket : public Packet {
 
     RoomInfo info;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RoomCreatedPacket, (info));
 
 // 23001 - RoomJoinedPacket
@@ -19,9 +18,11 @@ class RoomJoinedPacket : public Packet {
     GLOBED_PACKET(23001, RoomJoinedPacket, false, false)
 
     RoomJoinedPacket() {}
-};
 
-GLOBED_SERIALIZABLE_STRUCT(RoomJoinedPacket, ());
+    RoomInfo info;
+    std::vector<PlayerRoomPreviewAccountData> players;
+};
+GLOBED_SERIALIZABLE_STRUCT(RoomJoinedPacket, (info, players));
 
 // 23002 - RoomJoinFailedPacket
 class RoomJoinFailedPacket : public Packet {
@@ -31,7 +32,6 @@ class RoomJoinFailedPacket : public Packet {
 
     bool wasInvalid, wasProtected, wasFull;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RoomJoinFailedPacket, (wasInvalid, wasProtected, wasFull));
 
 // 23003 - RoomPlayerListPacket
@@ -43,7 +43,6 @@ class RoomPlayerListPacket : public Packet {
     RoomInfo info;
     std::vector<PlayerRoomPreviewAccountData> players;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RoomPlayerListPacket, (info, players));
 
 // 23004 - RoomInfoPacket
@@ -54,7 +53,6 @@ class RoomInfoPacket : public Packet {
 
     RoomInfo info;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RoomInfoPacket, (info));
 
 // 23005 - RoomInvitePacket
@@ -67,7 +65,6 @@ class RoomInvitePacket : public Packet {
     uint32_t roomID;
     std::string password;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RoomInvitePacket, (playerData, roomID, password));
 
 // 23006 - RoomListPacket
@@ -78,7 +75,6 @@ class RoomListPacket : public Packet {
 
     std::vector<RoomListingInfo> rooms;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RoomListPacket, (rooms));
 
 class RoomCreateFailedPacket : public Packet {
@@ -88,5 +84,4 @@ class RoomCreateFailedPacket : public Packet {
 
     std::string reason;
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RoomCreateFailedPacket, (reason));

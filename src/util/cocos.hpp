@@ -47,4 +47,6 @@ namespace util::cocos {
 
     // checks for nullptr and textureldr fallback
     bool isValidSprite(cocos2d::CCNode* obj);
+
+    void renderNodeToFile(cocos2d::CCNode*, const std::filesystem::path& dest);
 }

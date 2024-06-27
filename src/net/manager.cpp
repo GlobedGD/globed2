@@ -1200,3 +1200,21 @@ bool NetworkManager::isProtocolSupported(uint16_t version) {
 void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {
     impl->unregisterPacketListener(packet, listener, suppressUnhandled);
 }
+
+/* packet sending */
+
+#define MAKE_SENDER(name, packet, arglist, arglist2) \
+    void NetworkManager::name arglist { \
+        impl->send(packet::create arglist2); \
+    }
+
+#define MAKE_SENDER2(name, arglist, arglist2) \
+    MAKE_SENDER(send##name, name##Packet, arglist, arglist2)
+
+// two choices:
+// MAKE_SENDER(sendLeaveRoom, LeaveRoomPacket, (), ())
+// MAKE_SENDER2(LeaveRoom, (), ())
+
+MAKE_SENDER2(UpdatePlayerStatus, (bool invisible), (invisible))
+MAKE_SENDER2(RequestRoomPlayerList, (), ())
+MAKE_SENDER2(LeaveRoom, (), ())

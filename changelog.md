@@ -3,8 +3,9 @@
 todo changelog
 * highlight self on player list
 * enable drpc
-* fix unlisted stuff
+* fix unlisted level stuff
 * fix teh vmt hook
+* make roomlayer less laggy
 
 ## v1.4.1
 
