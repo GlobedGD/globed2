@@ -202,6 +202,10 @@ void ComplexVisualPlayer::updateData(
         playerIcon->setScaleY((data.isUpsideDown ? -1.0f : 1.0f) * mult);
     }
 
+    // set scale members for collision
+    playerIcon->m_scaleX = mult;
+    playerIcon->m_scaleY = mult;
+
     bool switchedMode = iconType != playerIconType;
 
     bool turningOffSwing = (playerIconType == PlayerIconType::Swing && switchedMode);

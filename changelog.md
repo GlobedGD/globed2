@@ -12,6 +12,7 @@
 * Small UI changes and fixes
 * Make the main room menu significantly more optimized
 * Fix weirdness when opening someone's levels or lists while in a level and then coming back
+* Fix hitboxes of mini icons being too big in collision rooms
 * Remove version checks when adding a new server
 * Small fixes to asset preloading
 
