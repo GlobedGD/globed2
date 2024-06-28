@@ -57,6 +57,7 @@ bool RoomLayer::init() {
 
     // blue background
     Build(CCScale9Sprite::create("GJ_square02.png", {0, 0, 80, 80}))
+        .zOrder(-1)
         .contentSize(popupSize)
         .pos(rlayout.center)
         .parent(this);
