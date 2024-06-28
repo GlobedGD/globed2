@@ -225,6 +225,8 @@ namespace util::cocos {
         log::debug("preload: initializing gl textures");
 
         // initialize all the textures (must be done on the main thread)
+
+        size_t initedTextures = 0;
         while (true) {
             if (textureInitRequests.empty()) {
                 if (threadPool.isDoingWork()) {
@@ -252,9 +254,11 @@ namespace util::cocos {
 
             texture->release();
             image->release();
+
+            initedTextures++;
         }
 
-        log::debug("preload: initialized textures, adding sprite frames");
+        log::debug("preload: initialized {} textures, adding sprite frames", initedTextures);
 
         // now, add sprite frames
         for (size_t i = 0; i < imgCount; i++) {
