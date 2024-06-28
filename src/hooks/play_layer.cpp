@@ -128,7 +128,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     }
 
     m_fields->insideDestroyPlayer = true;
-#ifndef GEODE_IS_ARM_MAC
+#ifdef GEODE_IS_ARM_MAC
 # if GEODE_COMP_GD_VERSION != 22060
 #  error "update this patch for new gd"
 # else
