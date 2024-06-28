@@ -270,7 +270,6 @@ void RoomLayer::recreatePlayerList() {
 
     auto filter = util::format::toLowercase(currentFilter);
 
-    size_t idx = 0;
     for (const auto& data : playerList) {
         // filtering
         if (data.accountId <= 0) {
@@ -284,13 +283,15 @@ void RoomLayer::recreatePlayerList() {
             }
         }
 
-        // load first 10 icons, lazy load the rest (for prettiness)
-        listLayer->addCellFast(data, listSize.width, false, idx > 10);
-
-        idx++;
+        listLayer->addCellFast(data, listSize.width, false, true);
     }
 
     this->sortPlayerList();
+
+    // for prettiness, load first 10 icons
+    for (size_t i = 0; i < util::math::min(listLayer->cellCount(), 10); i++) {
+        listLayer->getCell(i)->createPlayerIcon();
+    }
 
     listLayer->scrollToPos(scrollPos);
 }

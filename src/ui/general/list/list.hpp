@@ -104,7 +104,7 @@ public:
     }
 
     CellType* getCell(int index) {
-        GLOBED_REQUIRE(index > 0 && index < this->cellCount(), "invalid index passed to getCell");
+        GLOBED_REQUIRE(index >= 0 && index < this->cellCount(), "invalid index passed to getCell");
 
         return static_cast<WrapperCell*>(scrollLayer->m_contentLayer->getChildren()->objectAtIndex(index))->inner;
     }
@@ -119,7 +119,7 @@ public:
     }
 
     void insertCell(CellType* cell, int index, bool updateLayout = true) {
-        GLOBED_REQUIRE(index > 0 && index <= this->cellCount(), "invalid index passed to insertCell");
+        GLOBED_REQUIRE(index >= 0 && index <= this->cellCount(), "invalid index passed to insertCell");
 
         this->addWrapperCell(cell, index, updateLayout);
     }
@@ -133,7 +133,7 @@ public:
     }
 
     void removeCell(int index) {
-        GLOBED_REQUIRE(index > 0 && index < this->cellCount(), "invalid index passed to removeCell");
+        GLOBED_REQUIRE(index >= 0 && index < this->cellCount(), "invalid index passed to removeCell");
 
         this->removeCell(this->getCell(index));
         this->updateCellOrder();

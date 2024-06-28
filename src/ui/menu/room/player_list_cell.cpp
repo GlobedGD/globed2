@@ -55,6 +55,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
         .with([&, nameColor = std::move(nameColor)](CCLabelBMFont* label) {
             label->setScale(label->getScale() * 0.9f);
             labelWidth = label->getScaledContentSize().width;
+            nameColor.animateLabel(label);
 
             // TODO: this is a shitty workaround but for some reason it didnt work
             Loader::get()->queueInMainThread([label = Ref(label), nameColor = std::move(nameColor)] {
