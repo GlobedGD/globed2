@@ -1,6 +1,8 @@
 pub mod misc;
+use globed_shared::MIN_CLIENT_VERSION;
 pub use misc::*;
 
+use const_format::concatcp;
 use rocket::{catch, Request};
 
 #[catch(404)]
@@ -10,7 +12,11 @@ pub fn not_found(_req: &Request) -> &'static str {
 
 #[catch(422)]
 pub fn query_string(_req: &Request) -> &'static str {
-    "you are running an old version of Globed, please update Globed in the Geode mod list"
+    concatcp!(
+        "Outdated Globed version. Minimum supported by this server is ",
+        MIN_CLIENT_VERSION,
+        ". Please make sure that you are running the latest versions of Geometry Dash, Geode and Globed."
+    )
 }
 
 pub mod routes {
