@@ -144,11 +144,12 @@ public:
         Setting<bool, true> preloadAssets;
         Setting<bool, false> deferPreloadAssets;
         LimitedSetting<int, (int)InvitesFrom::Everyone, 0, 2> invitesFrom;
+        Setting<bool, true> editorSupport;
         Setting<bool, false> increaseLevelList;
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
-        Setting<bool, false> isInvisible;
+        Setting<bool, false> isInvisible; // hidden setting
     };
 
     struct Overlay {
@@ -265,7 +266,7 @@ public:
 /* Enable reflection */
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, isInvisible
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, isInvisible
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (

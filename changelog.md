@@ -12,6 +12,8 @@ todo changelog
 * remove version checks when adding a new server
 * fix server list layer on mac
 * fix crash when completing created levels on arm mac
+* add option to disable globed in editor
+* preload changes (performance)
 
 ## v1.4.1
 

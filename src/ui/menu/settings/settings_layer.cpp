@@ -216,6 +216,7 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
             registerSetting(cat, settings.globed.preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
             registerSetting(cat, settings.globed.deferPreloadAssets, "Defer preloading", "Instead of making the loading screen longer, load assets only when you join a level while connected.");
             registerSetting(cat, settings.globed.invitesFrom, "Receive invites from", "Controls who can invite you into a room.", Type::InvitesFrom);
+            registerSetting(cat, settings.globed.editorSupport, "View players in editor", "Enables the ability to see people playing your level while in the editor. Note: <cy>this does not let you build levels together!</c>");
             registerSetting(cat, settings.globed.fragmentationLimit, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.", Type::PacketFragmentation);
             registerSetting(cat, settings.globed.tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.");
 
