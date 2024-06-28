@@ -118,7 +118,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 #  error "update this patch for new gd"
 # else
     static auto armpatch = [] {
-        return util::lowlevel::nop(0x316ce6, 0x4);
+        return util::lowlevel::nop(0xa73e4, 0x4);
     }();
 
     if (armpatch) {
