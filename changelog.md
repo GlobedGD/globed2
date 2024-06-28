@@ -1,6 +1,9 @@
 ## v1.4.3
 
 * Fix crash on ARM MacOS when a player with an animated name is online
+* Fix rare crash with devtools
+* Add error message when entering wrong room password
+* Minor UI changes
 
 ## v1.4.2
 
