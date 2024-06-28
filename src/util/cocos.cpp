@@ -622,4 +622,19 @@ namespace util::cocos {
         auto img = tex->newCCImage();
         img->saveToFile(dest.string().c_str());
     }
+
+    void tryLoadDeathEffect(int id) {
+        if (id <= 1) return;
+
+        auto textureCache = CCTextureCache::sharedTextureCache();
+        auto sfCache  = CCSpriteFrameCache::sharedSpriteFrameCache();
+
+        auto pngKey = fmt::format("PlayerExplosion_{:02}.png", id - 1);
+        auto plistKey = fmt::format("PlayerExplosion_{:02}.plist", id - 1);
+
+        if (textureCache->textureForKey(pngKey.c_str()) == nullptr) {
+            textureCache->addImage(pngKey.c_str(), false);
+            sfCache->addSpriteFramesWithFile(plistKey.c_str());
+        }
+    }
 }

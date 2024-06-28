@@ -51,8 +51,6 @@ namespace util::ui {
     // scrolls to the top of the scroll layer
     void scrollToTop(geode::ScrollLayer* listView);
 
-    void tryLoadDeathEffect(int id);
-
     // small wrapper with precalculated sizes to make ui easier
     struct PopupLayout {
         cocos2d::CCSize winSize, popupSize;

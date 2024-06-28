@@ -1,7 +1,7 @@
 #include "player_object.hpp"
 
 #include <hooks/gjbasegamelayer.hpp>
-#include <util/ui.hpp>
+#include <util/cocos.hpp>
 #include <util/debug.hpp>
 
 using namespace geode::prelude;
@@ -33,7 +33,7 @@ void ComplexPlayerObject::playDeathEffect() {
     gm->setPlayerDeathEffect(deathEffect);
 
     // also make sure the death effect is properly loaded
-    util::ui::tryLoadDeathEffect(deathEffect);
+    util::cocos::tryLoadDeathEffect(deathEffect);
 
     PlayerObject::playDeathEffect();
     gm->setPlayerDeathEffect(oldEffect);

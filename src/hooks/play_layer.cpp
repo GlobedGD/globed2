@@ -3,6 +3,7 @@
 #include "gjbasegamelayer.hpp"
 #include "level_editor_layer.hpp"
 #include <util/lowlevel.hpp>
+#include <util/cocos.hpp>
 
 using namespace geode::prelude;
 
@@ -23,7 +24,21 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 }
 
 void GlobedPlayLayer::setupHasCompleted() {
+    // loadDeathEffect is inlined on win64, we want to avoid unloading anything
+    auto* gm = GameManager::get();
+    int lastLoadedEffect = gm->m_loadedDeathEffect;
+    int lastDeathEffect = gm->m_playerDeathEffect;
+
+    gm->m_loadedDeathEffect = 0;
+    gm->m_playerDeathEffect = 0;
+
     PlayLayer::setupHasCompleted();
+
+    gm->m_loadedDeathEffect = lastLoadedEffect;
+    gm->m_playerDeathEffect = lastDeathEffect;
+
+    util::cocos::tryLoadDeathEffect(lastDeathEffect);
+
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
     gjbgl->m_fields->setupWasCompleted = true;
 }

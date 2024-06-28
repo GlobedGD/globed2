@@ -49,4 +49,6 @@ namespace util::cocos {
     bool isValidSprite(cocos2d::CCNode* obj);
 
     void renderNodeToFile(cocos2d::CCNode*, const std::filesystem::path& dest);
+
+    void tryLoadDeathEffect(int id);
 }

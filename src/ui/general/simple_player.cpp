@@ -9,8 +9,8 @@ bool GlobedSimplePlayer::init(const Icons& icons) {
         .parent(this)
         .store(sp);
 
-    this->setContentSize(sp->m_firstLayer->getScaledContentSize());
-    sp->setPosition(sp->m_firstLayer->getScaledContentSize() / 2);
+    this->setContentSize(sp->m_outlineSprite->getScaledContentSize());
+    sp->setPosition(sp->m_outlineSprite->getScaledContentSize() / 2);
     this->updateIcons(icons);
 
     return true;
