@@ -20,7 +20,7 @@ bool GlobedUserListPopup::setup() {
 
     Build(UserList::createForComments(LIST_WIDTH, LIST_HEIGHT, GlobedUserCell::CELL_HEIGHT))
         .anchorPoint(0.5f, 1.f)
-        .pos(rlayout.fromTop(40.f))
+        .pos(rlayout.fromTop(45.f))
         .with([&](auto* list) {
             list->setCellColors(util::ui::BG_COLOR_DARKBROWN, util::ui::BG_COLOR_BROWN);
         })
@@ -198,6 +198,9 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
     auto& ownData = pcm.getOwnAccountData();
 
     std::vector<int> playerIds;
+
+    // we are always first
+    playerIds.push_back(ownData.accountId);
 
     for (const auto& [playerId, _] : players) {
         playerIds.push_back(playerId);

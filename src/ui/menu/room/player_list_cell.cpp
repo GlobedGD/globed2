@@ -17,6 +17,7 @@ namespace {
         constexpr int Icon = 1;
         constexpr int Name = 2;
         constexpr int Badge = 3;
+        constexpr int FriendsIcon = 4;
     }
 }
 
@@ -87,8 +88,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
             gradient->setBlendFunc({GL_ONE, GL_ONE});
 
         CCSprite* icon = Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
-            .anchorPoint({0, 0.5})
             .scale(0.3)
+            .zOrder(btnorder::FriendsIcon)
             .parent(leftSideLayout);
     }
 

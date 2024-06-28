@@ -23,7 +23,7 @@ bool GlobedServerList::init() {
 
     this->setContentSize(bgListLayer->getScaledContentSize());
 
-    Build<ServerList>::create(LIST_WIDTH, LIST_HEIGHT - 5.f, util::ui::BG_COLOR_BROWN, ServerListCell::CELL_HEIGHT)
+    Build<ServerList>::create(LIST_WIDTH, LIST_HEIGHT - 2.f, util::ui::BG_COLOR_BROWN, ServerListCell::CELL_HEIGHT)
         .zOrder(3)
         .anchorPoint(0.5f, 0.5f)
         .pos(bgListLayer->getScaledContentSize() / 2.f)
