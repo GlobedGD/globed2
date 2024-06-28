@@ -1,3 +1,7 @@
+## v1.4.3
+
+* Fix crash on ARM MacOS when a player with an animated name is online
+
 ## v1.4.2
 
 * Put yourself at the top of the player list (thanks [Kiba](user:4569963))
