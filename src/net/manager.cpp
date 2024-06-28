@@ -748,7 +748,8 @@ protected:
 
     uint16_t getUsedProtocol() {
         // 0xffff is a special value that the server doesn't check
-        return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
+        // return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
+        return 7;
     }
 
     uint32_t getServerTps() {

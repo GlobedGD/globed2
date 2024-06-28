@@ -104,8 +104,7 @@ bool RoomLayer::init() {
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.center.width, rlayout.top - 40.f)
         .parent(this)
-        .store(listLayer)
-        ;
+        .store(listLayer);
 
     listLayer->setCellColors(util::ui::BG_COLOR_DARKER_BLUE, util::ui::BG_COLOR_DARK_BLUE);
 

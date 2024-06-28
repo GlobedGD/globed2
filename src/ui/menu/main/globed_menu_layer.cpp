@@ -1,6 +1,7 @@
 #include "globed_menu_layer.hpp"
 
 #include "kofi_popup.hpp"
+#include "../room/daily_popup.hpp"
 #include <data/types/misc.hpp>
 #include <managers/account.hpp>
 #include <managers/admin.hpp>
@@ -40,6 +41,54 @@ bool GlobedMenuLayer::init() {
         .parent(this)
         .id("left-button-menu"_spr)
         .store(leftButtonMenu);
+    
+    // daily menu
+
+    Build<CCMenu>::create()
+        .layout(
+            ColumnLayout::create()
+                ->setAutoScale(true)
+                ->setGap(4.f)
+                ->setAxisAlignment(AxisAlignment::Start)
+        )
+        .anchorPoint(0.f, 0.f)
+        .pos(11.0f, winSize.height * 0.55f)
+        .parent(this)
+        .id("daily-button-menu"_spr)
+        .store(dailyButtonMenu);
+
+    auto makeSprite = [this]{
+        return CircleButtonSprite::createWithSpriteFrameName(
+            "icon-crown.png"_spr,
+            1.05f,
+            CircleBaseColor::Green,
+            CircleBaseSize::Medium
+        );
+    };
+
+    auto dailyPopupButton = Build<CircleButtonSprite>(makeSprite())
+            .scale(1.1f)
+            .intoMenuItem([this](auto) {
+                DailyPopup::create()->show();
+            })
+            .scaleMult(1.15f)
+            .id("btn-daily-popup"_spr)
+            .parent(dailyButtonMenu)
+            .collect();
+    
+    CCSprite* dailyPopupNew = Build<CCSprite>::createSpriteName("newMusicIcon_001.png")
+    .id("btn-daily-extra"_spr)
+    .anchorPoint({0.5, 0.5})
+    .pos({dailyPopupButton->getScaledContentWidth() * 0.85f, dailyPopupButton->getScaledContentHeight() * 0.15f})
+    .parent(dailyPopupButton);
+     auto newSequence = CCRepeatForever::create(CCSequence::create(
+        CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.2f)),
+        CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.0f)),
+        nullptr
+    ));
+    dailyPopupNew->runAction(newSequence);
+    
+    dailyButtonMenu->updateLayout();
 
     // discord button
     discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
