@@ -48,14 +48,18 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
 
     // name label
     RichColor nameColor = util::ui::getNameRichColor(playerData.specialUserData);
-
     float labelWidth;
-    auto* label = Build<CCLabelBMFont>::create(playerData.name.c_str(), "bigFont.fnt")
+
+    auto* nameBtn = Build<CCLabelBMFont>::create(playerData.name.c_str(), "bigFont.fnt")
         .limitLabelWidth(170.f, 0.6f, 0.1f)
-        .with([&](CCLabelBMFont* label) {
+        .with([&, nameColor = std::move(nameColor)](CCLabelBMFont* label) {
             label->setScale(label->getScale() * 0.9f);
             labelWidth = label->getScaledContentSize().width;
-            nameColor.animateLabel(label);
+
+            // TODO: this is a shitty workaround but for some reason it didnt work
+            Loader::get()->queueInMainThread([label = Ref(label), nameColor = std::move(nameColor)] {
+                nameColor.animateLabel(label);
+            });
         })
         .intoMenuItem(this, menu_selector(PlayerListCell::onOpenProfile))
         .zOrder(btnorder::Name)
@@ -63,7 +67,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
         .parent(leftSideLayout)
         .collect();
 
-    label->setLayoutOptions(AxisLayoutOptions::create()->setPrevGap(10.f));
+    nameBtn->setLayoutOptions(AxisLayoutOptions::create()->setPrevGap(10.f));
 
     // badge
     auto badge = util::ui::createBadgeIfSpecial(playerData.specialUserData);
@@ -108,7 +112,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
 
     leftSideLayout->updateLayout();
 
-    label->setPositionY(CELL_HEIGHT / 2 - 5.15f);
+    nameBtn->setPositionY(CELL_HEIGHT / 2 - 5.15f);
 
     Build<CCMenu>::create()
         .anchorPoint(1.f, 0.5f)
