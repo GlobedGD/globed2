@@ -1,10 +1,20 @@
 ## v1.4.2
 
-todo changelog
-* highlight self on player list
-* enable drpc
-* fix unlisted stuff
-* fix teh vmt hook
+* Put yourself at the top of the player list (thanks [Kiba](user:4569963))
+* Add integration with the Discord Rich Presence mod
+* \-- If you have the mod installed, you will have a special rich presence while playing on Globed
+* Playing an unlisted level in the editor will no longer show the level on the level list
+* \-- Note: joining an unlisted level NOT through the editor will still cause the level to be shown on the level list, as the game does not know whether the level is unlisted or not.
+* Add option to disable multiplayer in the level editor
+* Fix crash when completing created levels on ARM MacOS
+* Fix server list being broken on MacOS
+* Fix joining a room while in a level causing visual glitches until you reopen the level
+* Small UI changes and fixes
+* Make the main room menu significantly more optimized
+* Fix weirdness when opening someone's levels or lists while in a level and then coming back
+* Fix hitboxes of mini icons being too big in collision rooms
+* Remove version checks when adding a new server
+* Small fixes to asset preloading
 
 ## v1.4.1
 
@@ -37,7 +47,7 @@ todo changelog
 * Fix many connection related bugs
 * Ask the user if they want voice chat enabled or not on first startup
 * Add a Compressed Player Count setting which changes the "X players" label to be more compact (thanks [Uproxide](user:25397826)!)
-* Add support & voice chat guide buttons in the menu
+* Add support & voice chat guide buttons in the menu (thanks [Kiba](user:4569963) for the design)
 * Add a gradient and an icon to your friends on the player list
 * Add a way to hide yourself from the player list in menus (thanks [TechStudent11](user:20284359))
 * Redesign the main menus and change textures for many of the icons

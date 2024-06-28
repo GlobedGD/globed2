@@ -118,7 +118,7 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
                         settingFlags, playerCount
                     }));
 
-                    parent->reloadPlayerList(false);
+                    parent->startLoading();
                     this->onClose(nullptr);
                 })
                 .collect()

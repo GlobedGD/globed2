@@ -127,6 +127,11 @@ public:
     uint16_t getMaxProtocol();
     bool isProtocolSupported(uint16_t version);
 
+    // Packet sending
+    void sendUpdatePlayerStatus(bool invisible);
+    void sendRequestRoomPlayerList();
+    void sendLeaveRoom();
+
 private:
     class Impl;
     Impl* impl;

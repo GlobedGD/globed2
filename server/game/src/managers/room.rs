@@ -7,7 +7,7 @@ use globed_shared::{
 };
 
 use crate::{
-    data::{LevelId, RoomInfo, RoomListingInfo, RoomListingInfoLegacy, RoomSettings, ROOM_ID_LENGTH},
+    data::{LevelId, PlayerPreviewAccountData, RoomInfo, RoomListingInfo, RoomListingInfoLegacy, RoomSettings, ROOM_ID_LENGTH},
     server::GameServer,
 };
 
@@ -15,7 +15,10 @@ use super::LevelManager;
 
 #[derive(Default)]
 pub struct Room {
+    pub orig_owner: i32,
+    pub orig_owner_data: Option<PlayerPreviewAccountData>,
     pub owner: i32,
+    pub owner_data: Option<PlayerPreviewAccountData>,
     pub name: InlineString<32>,
     pub password: InlineString<16>,
     pub manager: LevelManager,
@@ -34,9 +37,19 @@ const ROOM_ID_START: u32 = 10_u32.pow(ROOM_ID_LENGTH as u32 - 1);
 const ROOM_ID_END: u32 = 10_u32.pow(ROOM_ID_LENGTH as u32);
 
 impl Room {
-    pub fn new(owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings, manager: LevelManager) -> Self {
+    pub fn new(
+        owner: i32,
+        owner_data: Option<PlayerPreviewAccountData>,
+        name: InlineString<32>,
+        password: InlineString<16>,
+        settings: RoomSettings,
+        manager: LevelManager,
+    ) -> Self {
         Self {
+            orig_owner: owner,
+            orig_owner_data: owner_data.clone(),
             owner,
+            owner_data,
             name,
             password,
             manager,
@@ -71,35 +84,35 @@ impl Room {
     }
 
     #[inline]
-    pub fn get_room_info(&self, id: u32, game_server: &GameServer) -> RoomInfo {
+    pub fn get_room_info(&self, id: u32) -> RoomInfo {
         RoomInfo {
             id,
             name: self.name.clone(),
             password: self.password.clone(),
-            owner: game_server.get_player_preview_data(self.owner).unwrap_or_default(),
+            owner: self.owner_data.clone().unwrap_or_default(),
             settings: self.settings,
         }
     }
 
     #[inline]
-    pub fn get_room_listing_info(&self, id: u32, game_server: &GameServer) -> RoomListingInfo {
+    pub fn get_room_listing_info(&self, id: u32) -> RoomListingInfo {
         RoomListingInfo {
             id,
             player_count: self.manager.get_total_player_count() as u16,
             name: self.name.clone(),
             has_password: !self.password.is_empty(),
-            owner: game_server.get_player_preview_data(self.owner).unwrap_or_default(),
+            owner: self.owner_data.clone().unwrap_or_default(),
             settings: self.settings,
         }
     }
 
     #[inline]
-    pub fn get_room_listing_info_legacy(&self, id: u32, game_server: &GameServer) -> RoomListingInfoLegacy {
+    pub fn get_room_listing_info_legacy(&self, id: u32) -> RoomListingInfoLegacy {
         RoomListingInfoLegacy {
             id,
             name: self.name.clone(),
             has_password: !self.password.is_empty(),
-            owner: game_server.get_player_preview_data(self.owner).unwrap_or_default(),
+            owner: self.owner_data.clone().unwrap_or_default(),
             settings: self.settings,
         }
     }
@@ -199,7 +212,7 @@ impl RoomManager {
 
         let room = self._create_room(room_id, account_id, name, password, settings);
 
-        self.get_global().remove_player(account_id);
+        self.get_global().remove_player(account_id); // dont worry about setting owner data here
 
         room
     }
@@ -225,6 +238,9 @@ impl RoomManager {
         let was_owner = self.with_any(room_id, |pm| {
             let was_owner = pm.remove_player(account_id);
 
+            // refresh owner data to newest
+            pm.owner_data = self.get_game_server().get_player_preview_data(pm.owner);
+
             if level_id != 0 {
                 pm.manager.remove_from_level(level_id, account_id);
             }
@@ -241,7 +257,7 @@ impl RoomManager {
     }
 
     pub fn get_room_info(&self, room_id: u32) -> Option<RoomInfo> {
-        self.try_with_any(room_id, |room| Some(room.get_room_info(room_id, self.get_game_server())), || None)
+        self.try_with_any(room_id, |room| Some(room.get_room_info(room_id)), || None)
     }
 
     fn _create_room(&self, room_id: u32, owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> RoomInfo {
@@ -252,8 +268,10 @@ impl RoomManager {
             pm.create_player(owner);
         }
 
-        let room = Room::new(owner, name, password, settings, pm);
-        let room_info = room.get_room_info(room_id, self.get_game_server());
+        let owner_data = self.get_game_server().get_player_preview_data(owner);
+
+        let room = Room::new(owner, owner_data, name, password, settings, pm);
+        let room_info = room.get_room_info(room_id);
 
         rooms.insert(room_id, room);
 

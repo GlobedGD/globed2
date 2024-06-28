@@ -30,7 +30,7 @@ bool ServerSwitcherPopup::setup() {
                 ->setAxisAlignment(AxisAlignment::Center)
         )
         .anchorPoint(0.5f, 0.5f)
-        .pos(m_mainLayer->getScaledContentSize().width / 2, 50.f)
+        .pos(rlayout.fromBottom(30.f))
         .contentSize(LIST_WIDTH, 0.f)
         .parent(m_mainLayer)
         .id("server-switcher-btn-menu"_spr)

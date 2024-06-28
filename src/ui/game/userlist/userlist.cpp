@@ -20,7 +20,7 @@ bool GlobedUserListPopup::setup() {
 
     Build(UserList::createForComments(LIST_WIDTH, LIST_HEIGHT, GlobedUserCell::CELL_HEIGHT))
         .anchorPoint(0.5f, 1.f)
-        .pos(rlayout.fromTop(40.f))
+        .pos(rlayout.fromTop(45.f))
         .with([&](auto* list) {
             list->setCellColors(util::ui::BG_COLOR_DARKBROWN, util::ui::BG_COLOR_BROWN);
         })
@@ -191,13 +191,18 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
     auto cells = CCArray::create();
 
     auto playLayer = GlobedGJBGL::get();
-    auto& playerStore = playLayer->m_fields->playerStore->getAll();
+    auto& players = playLayer->m_fields->players;
+    auto& playerStore = playLayer->m_fields->playerStore;
+
     auto& pcm = ProfileCacheManager::get();
     auto& ownData = pcm.getOwnAccountData();
 
     std::vector<int> playerIds;
 
-    for (const auto& [playerId, _] : playerStore) {
+    // we are always first
+    playerIds.push_back(ownData.accountId);
+
+    for (const auto& [playerId, _] : players) {
         playerIds.push_back(playerId);
     }
 
@@ -225,15 +230,18 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
     this->setTitle(fmt::format("Players ({})", playerIds.size()));
 
     for (const auto playerId : playerIds) {
-        auto& entry = playerStore.at(playerId);
+        auto entry = playerStore->get(playerId).value_or(PlayerStore::Entry {
+            .attempts = 0,
+            .localBest = 0,
+        });
 
         GlobedUserCell* cell;
         if (playerId == ownData.accountId) {
             cell = GlobedUserCell::create(entry, ownData);
-        } else {
-            auto pcmdata = pcm.getData(playerId);
-            if (!pcmdata) continue;
+        } else if (auto pcmdata = pcm.getData(playerId)) {
             cell = GlobedUserCell::create(entry, pcmdata.value());
+        } else {
+            cell = GlobedUserCell::create(entry, PlayerAccountData::DEFAULT_DATA);
         }
 
         cells->addObject(cell);

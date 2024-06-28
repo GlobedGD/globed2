@@ -6,7 +6,6 @@
 
 #include <managers/settings.hpp>
 #include <util/debug.hpp>
-#include <util/ui.hpp>
 #include <util/cocos.hpp>
 
 using namespace geode::prelude;
@@ -44,11 +43,15 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
 }
 
 void HookedGameManager::unloadIcon(int iconId, int iconType, int idk) {
+    GLOBED_CHECK_HOOK(GameManager::unloadIcon);
+
     // do nothing.
 }
 
 void HookedGameManager::loadDeathEffect(int id) {
-    util::ui::tryLoadDeathEffect(id);
+    // TODO
+    // GLOBED_CHECK_HOOK(GameManager::loadDeathEffect);
+    util::cocos::tryLoadDeathEffect(id);
 }
 
 void HookedGameManager::reloadAllStep2() {

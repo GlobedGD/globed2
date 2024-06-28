@@ -225,6 +225,8 @@ namespace util::cocos {
         log::debug("preload: initializing gl textures");
 
         // initialize all the textures (must be done on the main thread)
+
+        size_t initedTextures = 0;
         while (true) {
             if (textureInitRequests.empty()) {
                 if (threadPool.isDoingWork()) {
@@ -252,9 +254,11 @@ namespace util::cocos {
 
             texture->release();
             image->release();
+
+            initedTextures++;
         }
 
-        log::debug("preload: initialized textures, adding sprite frames");
+        log::debug("preload: initialized {} textures, adding sprite frames", initedTextures);
 
         // now, add sprite frames
         for (size_t i = 0; i < imgCount; i++) {
@@ -605,5 +609,36 @@ namespace util::cocos {
         out.append(s);
 
         return out;
+    }
+
+    bool isValidSprite(CCNode* obj) {
+        return obj && !obj->getUserObject("geode.texture-loader/fallback");
+    }
+
+    void renderNodeToFile(CCNode* node, const std::filesystem::path& dest) {
+        auto tex = CCRenderTexture::create(node->getScaledContentWidth(), node->getScaledContentHeight());
+        tex->beginWithClear(0, 0, 0, 0);
+        node->visit();
+        tex->draw();
+        tex->end();
+
+        // idk if this leaks
+        auto img = tex->newCCImage();
+        img->saveToFile(dest.string().c_str());
+    }
+
+    void tryLoadDeathEffect(int id) {
+        if (id <= 1) return;
+
+        auto textureCache = CCTextureCache::sharedTextureCache();
+        auto sfCache  = CCSpriteFrameCache::sharedSpriteFrameCache();
+
+        auto pngKey = fmt::format("PlayerExplosion_{:02}.png", id - 1);
+        auto plistKey = fmt::format("PlayerExplosion_{:02}.plist", id - 1);
+
+        if (textureCache->textureForKey(pngKey.c_str()) == nullptr) {
+            textureCache->addImage(pngKey.c_str(), false);
+            sfCache->addSpriteFramesWithFile(plistKey.c_str());
+        }
     }
 }

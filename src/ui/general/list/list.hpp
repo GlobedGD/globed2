@@ -5,7 +5,9 @@
 #include <defs/util.hpp>
 
 #include "border.hpp"
+#include "content_layer.hpp"
 #include <util/ui.hpp>
+#include <util/lowlevel.hpp>
 
 template <typename CellType>
     requires (std::is_base_of_v<cocos2d::CCNode, CellType>)
@@ -79,6 +81,7 @@ private:
     }
 };
 
+
 template <typename CellType>
     requires (std::is_base_of_v<cocos2d::CCNode, CellType>)
 class GlobedListLayer : public cocos2d::CCLayer {
@@ -101,7 +104,7 @@ public:
     }
 
     CellType* getCell(int index) {
-        GLOBED_REQUIRE(index > 0 && index < this->cellCount(), "invalid index passed to getCell");
+        GLOBED_REQUIRE(index >= 0 && index < this->cellCount(), "invalid index passed to getCell");
 
         return static_cast<WrapperCell*>(scrollLayer->m_contentLayer->getChildren()->objectAtIndex(index))->inner;
     }
@@ -111,14 +114,14 @@ public:
         return scrollLayer->m_contentLayer->getChildren();
     }
 
-    void addCell(CellType* cell) {
-        this->addWrapperCell(cell, this->cellCount());
+    void addCell(CellType* cell, bool updateLayout = true) {
+        this->addWrapperCell(cell, this->cellCount(), updateLayout);
     }
 
-    void insertCell(CellType* cell, int index) {
-        GLOBED_REQUIRE(index > 0 && index <= this->cellCount(), "invalid index passed to insertCell");
+    void insertCell(CellType* cell, int index, bool updateLayout = true) {
+        GLOBED_REQUIRE(index >= 0 && index <= this->cellCount(), "invalid index passed to insertCell");
 
-        this->addWrapperCell(cell, index);
+        this->addWrapperCell(cell, index, updateLayout);
     }
 
     void removeCell(WrapperCell* cell) {
@@ -130,7 +133,7 @@ public:
     }
 
     void removeCell(int index) {
-        GLOBED_REQUIRE(index > 0 && index < this->cellCount(), "invalid index passed to removeCell");
+        GLOBED_REQUIRE(index >= 0 && index < this->cellCount(), "invalid index passed to removeCell");
 
         this->removeCell(this->getCell(index));
         this->updateCellOrder();
@@ -146,8 +149,10 @@ public:
         this->removeAllCells();
 
         for (auto* cell : CCArrayExt<CellType*>(cells)) {
-            this->addCell(cell);
+            this->addCell(cell, false);
         }
+
+        this->updateCellOrder();
 
         if (preserveScrollPos) {
             this->scrollToPos(scpos);
@@ -169,8 +174,10 @@ public:
 
         size_t idx = 0;
         for (auto elem : sorted) {
-            this->addWrapperCell(elem, idx++);
+            this->addWrapperCell(elem, idx++, false);
         }
+
+        this->updateCells();
     }
 
     void scrollToTop() {
@@ -215,13 +222,32 @@ public:
         cellHeight = h;
     }
 
+    void forceUpdate() {
+        this->updateCellOrder();
+    }
+
+    // disable being able to like scroll up above the stuff you know
+    void disableOverScrollUp() {
+        isDisableOverScrollUp = true;
+    }
+
     // helper templated functions
 
     template <typename... Args>
     CellType* addCell(Args&&... args) {
         CellType* cell = CellType::create(std::forward<Args>(args)...);
 
-        this->addCell(cell);
+        this->addCell(cell, true);
+
+        return cell;
+    }
+
+    // like `addCell` but does not update layout
+    template <typename... Args>
+    CellType* addCellFast(Args&&... args) {
+        CellType* cell = CellType::create(std::forward<Args>(args)...);
+
+        this->addCell(cell, false);
 
         return cell;
     }
@@ -230,7 +256,17 @@ public:
     CellType* insertCell(Args&&... args, int index) {
         CellType* cell = CellType::create(std::forward<Args>(args)...);
 
-        this->insertCell(cell);
+        this->insertCell(cell, index, true);
+
+        return cell;
+    }
+
+    // like `insertCell` but does not update layout
+    template <typename... Args>
+    CellType* insertCellFast(Args&&... args, int index) {
+        CellType* cell = CellType::create(std::forward<Args>(args)...);
+
+        this->insertCell(cell, index, false);
 
         return cell;
     }
@@ -260,11 +296,14 @@ public:
     }
 
 protected:
+    friend class GlobedContentLayer;
+
     geode::ScrollLayer* scrollLayer;
     cocos2d::CCSprite *borderLeft, *borderRight, *borderTop, *borderBottom;
     float height, width, cellHeight = 0.f;
     cocos2d::ccColor4B oddCellColor, evenCellColor;
     Ref<GlobedListBorder> borderNode;
+    bool isDisableOverScrollUp = false;
 
     bool init(float width, float height, cocos2d::ccColor4B background, float cellHeight, GlobedListBorderType borderType) {
         if (!CCLayer::init()) return false;
@@ -285,6 +324,10 @@ protected:
                 ->setAutoGrowAxis(height)
         );
 
+        // this is fucking criminal i hope no one notices this
+        // TODO: dont do this
+        util::lowlevel::forceDowncast<GlobedContentLayer>(scrollLayer->m_contentLayer);
+
         this->setContentSize({width, height});
         this->ignoreAnchorPointForPosition(false);
 
@@ -301,18 +344,18 @@ protected:
         return true;
     }
 
-    WrapperCell* addWrapperCell(CellType* cell, int index) {
+    WrapperCell* addWrapperCell(CellType* cell, int index, bool updateLayout = false) {
         if (cellHeight != 0.0f) {
             cell->setContentHeight(cellHeight);
         }
 
         auto wcell = WrapperCell::create(cell, width);
-        this->addWrapperCell(wcell, index);
+        this->addWrapperCell(wcell, index, updateLayout);
 
         return wcell;
     }
 
-    void addWrapperCell(WrapperCell* cell, int index) {
+    void addWrapperCell(WrapperCell* cell, int index, bool updateLayout = false) {
         cell->setColor(this->getCellColor(index));
 
         // move all cells one up
@@ -321,7 +364,10 @@ protected:
         }
 
         scrollLayer->m_contentLayer->addChild(cell, index);
-        scrollLayer->m_contentLayer->updateLayout();
+
+        if (updateLayout) {
+            this->updateCells();
+        }
     }
 
     void updateCellOrder() {
@@ -331,14 +377,14 @@ protected:
             child->setZOrder(i++);
         }
 
-        this->updateCells();
-    }
-
-    void updateCells() {
         for (WrapperCell* child : CCArrayExt<WrapperCell*>(scrollLayer->m_contentLayer->getChildren())) {
             child->setContentHeight(child->inner->getContentHeight());
         }
 
+        this->updateCells();
+    }
+
+    void updateCells() {
         scrollLayer->m_contentLayer->updateLayout();
     }
 
@@ -384,6 +430,6 @@ public:
 
     iterator end() {
         auto arr = scrollLayer->m_contentLayer->getChildren();
-        return iterator(arr, arr->count());
+        return iterator(arr, arr ? arr->count() : 0);
     }
 };

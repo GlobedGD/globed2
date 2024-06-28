@@ -47,11 +47,6 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .id("player-icon"_spr)
         .collect();
 
-    // spacer
-    Build<CCNode>::create()
-        .contentSize({0.4f, 1.0f})
-        .parent(usernameLayout);
-
     auto& pcm = ProfileCacheManager::get();
     RichColor nameColor = util::ui::getNameRichColor(data.specialUserData);
 
@@ -59,7 +54,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         .with([&nameColor](auto* label) {
             nameColor.animateLabel(label);
         })
-        .limitLabelWidth(140.f, 0.5f, 0.1f)
+        .limitLabelWidth(130.f, 0.45f, 0.1f)
         .intoMenuItem([this] {
             bool myself = accountData.accountId == GJAccountManager::get()->m_accountID;
             if (!myself) {

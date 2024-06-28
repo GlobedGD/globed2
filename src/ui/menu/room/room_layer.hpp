@@ -1,46 +1,66 @@
 #pragma once
 
 #include "player_list_cell.hpp"
-#include <defs/all.hpp>
+#include <defs/geode.hpp>
 #include <data/types/gd.hpp>
 #include <ui/general/list/list.hpp>
 
+class RoomPlayerListPacket;
+class RoomCreatedPacket;
+class RoomJoinedPacket;
+class RoomInfoPacket;
+class RoomInfo;
+
 class RoomLayer : public cocos2d::CCLayer {
 public:
-    static RoomLayer* create();
-
-    void reloadPlayerList(bool sendPacket = true);
-
     cocos2d::CCSize popupSize;
-    float listWidth, listHeight;
+    cocos2d::CCSize listSize;
     cocos2d::CCSize targetButtonSize;
 
+    static RoomLayer* create();
+
 protected:
+    friend class CreateRoomPopup;
+
     using PlayerList = GlobedListLayer<PlayerListCell>;
 
     std::vector<PlayerRoomPreviewAccountData> playerList;
-    std::vector<PlayerRoomPreviewAccountData> filteredPlayerList;
+    std::string currentFilter;
 
-    LoadingCircle* loadingCircle = nullptr;
-    PlayerList* listLayer = nullptr;
-    cocos2d::CCMenu* buttonMenu;
-    Ref<CCMenuItemSpriteExtra> clearSearchButton, settingsButton, inviteButton, refreshButton;
-    Ref<CCMenuItemToggler> statusButton;
-    cocos2d::CCNode* roomIdButton = nullptr;
-
-    cocos2d::CCMenu* roomBtnMenu = nullptr;
-    bool isWaiting = false;
+    bool justEntered = true;
+    Ref<LoadingCircle> loadingCircle;
+    Ref<cocos2d::CCMenu> topRightButtons;
+    PlayerList* listLayer;
+    Ref<CCMenuItemSpriteExtra> btnSearch, btnClearSearch, btnSettings, btnInvite, btnRefresh;
+    Ref<CCMenuItemToggler> btnInvisible;
+    Ref<cocos2d::CCMenu> btnRoomId, roomButtonMenu;
 
     bool init() override;
     void update(float) override;
-    void onLoaded(bool stateChanged);
-    void removeLoadingCircle();
-    void addButtons();
+
+    // show/hide loading circle
+    void startLoading();
+    void stopLoading();
     bool isLoading();
+
+    void requestPlayerList();
+    void recreatePlayerList();
     void sortPlayerList();
-    void applyFilter(const std::string_view input);
-    void setRoomTitle(std::string name, uint32_t id);
+    void setFilter(std::string_view filter);
+    void resetFilter();
+    void setRoomTitle(std::string_view name, uint32_t id);
+
+    void addRoomButtons();
+    void addGlobalRoomButtons();
+    void addCustomRoomButtons();
+
+    // packet handlers
+    void onPlayerListReceived(const RoomPlayerListPacket&);
+    void onRoomCreatedReceived(const RoomCreatedPacket&);
+    void onRoomJoinedReceived(const RoomJoinedPacket&);
+    void reloadData(const RoomInfo& info, const std::vector<PlayerRoomPreviewAccountData>& players);
+
+    // callbacks
+    void onInvisibleClicked(cocos2d::CCObject*);
     void onCopyRoomId(cocos2d::CCObject*);
-    void recreateInviteButton();
-    void onChangeStatus(cocos2d::CCObject*);
 };

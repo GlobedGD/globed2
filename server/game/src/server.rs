@@ -573,7 +573,7 @@ impl GameServer {
         F: Fn(RoomListingInfo, usize, &mut A) -> bool,
     {
         self.state.room_manager.get_rooms().iter().fold(0, |count, (id, room)| {
-            count + usize::from(f(room.get_room_listing_info(*id, self), count, additional))
+            count + usize::from(f(room.get_room_listing_info(*id), count, additional))
         })
     }
 
@@ -742,7 +742,7 @@ impl GameServer {
         let info = self
             .state
             .room_manager
-            .try_with_any(room_id, |room| Some(room.get_room_info(room_id, self)), || None);
+            .try_with_any(room_id, |room| Some(room.get_room_info(room_id)), || None);
 
         if let Some(info) = info {
             let pkt = RoomInfoPacket { info };

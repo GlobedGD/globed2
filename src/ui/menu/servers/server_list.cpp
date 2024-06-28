@@ -12,45 +12,44 @@ bool GlobedServerList::init() {
 
     auto listview = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT).collect();
 
-    listLayer = Build<GJListLayer>::create(listview, "Servers", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
+    Build<GJListLayer>::create(listview, "Servers", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .pos(0.f, 0.f)
         .parent(this)
-        .collect();
+        .store(bgListLayer);
 
-    util::ui::makeListGray(listLayer);
+    util::ui::makeListGray(bgListLayer);
 
-    this->setContentSize(listLayer->getScaledContentSize());
+    this->setContentSize(bgListLayer->getScaledContentSize());
+
+    Build<ServerList>::create(LIST_WIDTH, LIST_HEIGHT - 2.f, util::ui::BG_COLOR_BROWN, ServerListCell::CELL_HEIGHT)
+        .zOrder(3)
+        .anchorPoint(0.5f, 0.5f)
+        .pos(bgListLayer->getScaledContentSize() / 2.f)
+        .parent(bgListLayer)
+        .store(listLayer);
+
+    listLayer->disableOverScrollUp(); // does nothing for now
+    listLayer->setCellColor(ccColor3B{90, 90, 90});
 
     return true;
 }
 
 void GlobedServerList::forceRefresh() {
-    listLayer->m_listView->removeFromParent();
-
     auto serverList = createServerList();
-    listLayer->m_listView = Build<ListView>::create(serverList, ServerListCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
-        .parent(listLayer)
-        .collect();
-
-    util::ui::setCellColors(serverList, {90, 90, 90});
+    listLayer->swapCells(this->createServerList());
+    listLayer->scrollToTop();
 }
 
 void GlobedServerList::softRefresh() {
     auto& gsm = GameServerManager::get();
 
-    auto listCells = listLayer->m_listView->m_tableView->m_contentLayer->getChildren();
-    if (listCells == nullptr) {
-        return;
-    }
-
     auto active = gsm.getActiveId();
 
     bool authenticated = NetworkManager::get().established();
 
-    for (auto* obj : CCArrayExt<CCNode*>(listCells)) {
-        auto slc = static_cast<ServerListCell*>(obj->getChildren()->objectAtIndex(2));
+    for (auto* slc : *listLayer) {
         auto server = gsm.getServer(slc->gsview.id);
         if (server.has_value()) {
             slc->updateWith(server.value(), authenticated && slc->gsview.id == active);

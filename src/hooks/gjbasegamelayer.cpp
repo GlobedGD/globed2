@@ -70,9 +70,14 @@ GlobedGJBGL* GlobedGJBGL::get() {
 // Runs before PlayLayer::init
 void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
     auto& nm = NetworkManager::get();
+    auto& settings = GlobedSettings::get();
 
     auto levelId = HookedGJGameLevel::getLevelIDFrom(level);
     m_fields->globedReady = nm.established() && levelId > 0;
+
+    if (!settings.globed.editorSupport && level->m_levelType == GJLevelType::Editor) {
+        m_fields->globedReady = false;
+    }
 
     if (m_fields->globedReady) {
         // room settings
@@ -135,7 +140,7 @@ void GlobedGJBGL::setupBare() {
 
     if (!nm.established()) {
         m_fields->overlay->updateWithDisconnected();
-    } else if (levelId == 0) {
+    } else if (!m_fields->globedReady) {
         m_fields->overlay->updateWithEditor();
     } else {
         // else update the overlay with ping
