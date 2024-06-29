@@ -573,9 +573,11 @@ protected:
             int inviter = packet->playerData.accountId;
             InvitesFrom setting = static_cast<InvitesFrom>((int)GlobedSettings::get().globed.invitesFrom);
 
+            auto& flm = FriendListManager::get();
+
             if (setting == InvitesFrom::Nobody) {
                 return;
-            } else if (setting == InvitesFrom::Friends && !FriendListManager::get().isFriend(inviter)) {
+            } else if (setting == InvitesFrom::Friends && !flm.isFriend(inviter)) {
                 return;
             }
 

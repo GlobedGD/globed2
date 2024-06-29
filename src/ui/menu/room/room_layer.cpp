@@ -414,6 +414,7 @@ void RoomLayer::setRoomTitle(std::string_view name, uint32_t id) {
     Build<CCLabelBMFont>::create(title.c_str(), "goldFont.fnt")
         .limitLabelWidth(listSize.width, 0.7f, 0.2f)
         .intoMenuItem(this, menu_selector(RoomLayer::onCopyRoomId))
+        .scaleMult(1.1f)
         .intoNewParent(CCMenu::create())
         .pos(rlayout.fromTop(17.f))
         .parent(this)
