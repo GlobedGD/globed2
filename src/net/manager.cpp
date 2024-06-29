@@ -100,9 +100,24 @@ public:
             bool invoked = false;
             auto& lsm = listeners[id];
 
+            // reorder them based on priority
+            std::sort(lsm.begin(), lsm.end(), [](auto& l1, auto& l2) -> bool {
+                auto r1 = l1.lock();
+                auto r2 = l2.lock();
+
+                if (!r1) return false;
+                if (!r2) return true;
+
+                return r1->priority < r2->priority;
+            });
+
             for (auto& listener : lsm) {
                 if (auto l = listener.lock()) {
                     l->invokeCallback(packet);
+
+                    if (l->isFinal) {
+                        break;
+                    }
                 }
             }
         }
@@ -581,7 +596,8 @@ protected:
             if (packet->wasInvalid) reason = "Room doesn't exist";
             if (packet->wasProtected) reason = "Room password is wrong";
             if (packet->wasFull) reason = "Room is full";
-            if (!packet->wasProtected) ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason)); //TEMPORARY disable wrong password alerts
+
+            ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
         });
 
         // Admin packets

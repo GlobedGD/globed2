@@ -29,9 +29,15 @@
 #ifdef GEODE_IS_MACOS
 // TODO arm ?
 # define GLOBED_PLATFORM_STRING_PLATFORM "Mac"
-# define GLOBED_PLATFORM_STRING_ARCH "x86_64"
-# define GLOBED_IS_X86_64 1
-# define GLOBED_IS_X86 1
+#  ifdef GEODE_IS_MAC_ARM
+#   define GLOBED_PLATFORM_STRING_ARCH "arm64"
+#   define GLOBED_IS_ARM 1
+#   define GLOBED_IS_ARM64 1
+#  else
+#   define GLOBED_PLATFORM_STRING_ARCH "x86_64"
+#   define GLOBED_IS_X86_64 1
+#   define GLOBED_IS_X86 1
+#  endif
 #elif defined(GEODE_IS_WINDOWS)
 # define GLOBED_PLATFORM_STRING_PLATFORM "Windows"
 # define GLOBED_PLATFORM_STRING_ARCH "x86_64"

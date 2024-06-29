@@ -3,7 +3,13 @@
 #include "list.hpp"
 
 void GlobedContentLayer::setPosition(const cocos2d::CCPoint& pos) {
-    auto list = static_cast<GlobedListLayer<cocos2d::CCNode>*>(this->getParent()->getParent());
+    auto parent1 = this->getParent();
+    auto list = static_cast<GlobedListLayer<cocos2d::CCNode>*>(parent1->getParent());
+
+    if (!parent1 || !list) {
+        CCLayerColor::setPosition(pos);
+        return;
+    }
 
     bool disableOverscroll = list->isDisableOverScrollUp;
 
