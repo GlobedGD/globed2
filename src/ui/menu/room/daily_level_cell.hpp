@@ -4,7 +4,6 @@
 class GlobedDailyLevelCell : public cocos2d::CCLayer, public LevelDownloadDelegate, public LevelManagerDelegate {
 public:
     static GlobedDailyLevelCell* create(int levelId, int edition, int rateTier);
-
 protected:
 
     static constexpr float CELL_WIDTH = 380.f;
@@ -14,12 +13,17 @@ protected:
     bool onOpenLevel(cocos2d::CCObject*);
 
     cocos2d::CCMenu* menu;
+    cocos2d::CCMenu* editionMenu;
     cocos2d::extension::CCScale9Sprite* darkBackground;
     cocos2d::extension::CCScale9Sprite* background;
     LoadingCircle* loadingCircle;
     CCMenuItemSpriteExtra *playButton = nullptr;
+    GJGameLevel* level;
 
-    GJGameLevel* level = nullptr;
+    int rating;
+    int editionNum;
+
+    void createCell(GJGameLevel* level);
 
     void downloadLevel(CCObject*);
     virtual void levelDownloadFinished(GJGameLevel*) override;

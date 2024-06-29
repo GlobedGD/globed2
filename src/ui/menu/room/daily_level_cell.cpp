@@ -4,11 +4,15 @@
 #include <util/ui.hpp>
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
+#include <managers/daily_cache.hpp>
 
 using namespace geode::prelude;
 
 bool GlobedDailyLevelCell::init(int levelId, int edition, int rateTier) {
     if (!CCLayer::init()) return false;
+
+    rating = rateTier;
+    editionNum = edition;
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
@@ -17,10 +21,6 @@ bool GlobedDailyLevelCell::init(int levelId, int edition, int rateTier) {
     .opacity(75)
     .zOrder(2)
     .parent(this);
-    
-    auto* glm = GameLevelManager::sharedState();
-    glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(levelId)));
 
     loadingCircle = Build<LoadingCircle>::create()
     .zOrder(-5)
@@ -30,11 +30,21 @@ bool GlobedDailyLevelCell::init(int levelId, int edition, int rateTier) {
     // dont replace this with ->show() and look in the bottom left!!! (worst mistake of my life)
     loadingCircle->runAction(CCRepeatForever::create(CCSequence::create(CCRotateBy::create(1.f, 360.f), nullptr)));
 
+    GJGameLevel* levelCheck = DailyCacheManager::get().getStoredLevel();
+    if (levelCheck != nullptr) {
+        level = levelCheck;
+        createCell(level);
+        return true;
+    }
+
+    auto* glm = GameLevelManager::sharedState();
+    glm->m_levelManagerDelegate = this;
+    glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(levelId)));
+
     return true;
 }
 
-////////////////////
-void GlobedDailyLevelCell::levelDownloadFinished(GJGameLevel* level) {
+void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     loadingCircle->fadeAndRemove();
     
     Build<CCScale9Sprite>::create("GJ_square02.png")
@@ -46,7 +56,7 @@ void GlobedDailyLevelCell::levelDownloadFinished(GJGameLevel* level) {
 
     Build<CCMenu>::create()
     .zOrder(6)
-    .pos(background->getScaledContentSize() / 2)
+    .pos({CELL_WIDTH - 75, CELL_HEIGHT / 2})
     .parent(background)
     .store(menu);
 
@@ -55,15 +65,39 @@ void GlobedDailyLevelCell::levelDownloadFinished(GJGameLevel* level) {
     .zOrder(6)
     .parent(background);
 
-    int levelId = level->m_levelID;
+    int frameValue = static_cast<int>(level->m_difficulty);
 
-    auto levelbtntest =  Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
-        .intoMenuItem([this, level](auto) {
-            util::ui::switchToScene(LevelInfoLayer::create(level, false));
-        })
-        .parent(menu)
-        .zOrder(10)
-        .id("play-button"_spr);
+    auto levelcell = new LevelCell("baller", CELL_WIDTH - 15, CELL_HEIGHT - 25);
+    levelcell->loadFromLevel(level);
+    levelcell->setPosition({7.5f, 12.5f});
+    background->addChild(levelcell);
+
+    auto cvoltonID = levelcell->m_mainLayer->getChildByIDRecursive("cvolton.betterinfo/level-id-label");
+    if (cvoltonID != nullptr) {
+        cvoltonID->setVisible(false);
+    }
+
+    auto playBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(levelcell->m_mainLayer->getChildByIDRecursive("view-button"));
+    if (playBtn != nullptr) {
+        playBtn->setSprite(CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png"));
+        playBtn->getNormalImage()->setScale(0.75);
+        playBtn->setContentSize(playBtn->getNormalImage()->getScaledContentSize());
+        playBtn->getNormalImage()->setPosition(playBtn->getNormalImage()->getScaledContentSize() / 2);
+    }
+
+    auto diffContainer = levelcell->m_mainLayer->getChildByIDRecursive("difficulty-container");
+    if (diffContainer != nullptr) {
+        diffContainer->setPositionX(diffContainer->getPositionX() - 2.f);
+    }
+    
+    GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(levelcell->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));
+    DailyCacheManager::attachRatingSprite(rating, diff);
+}
+
+////////////////////
+void GlobedDailyLevelCell::levelDownloadFinished(GJGameLevel* level) {
+    DailyCacheManager::get().setStoredLevel(level);
+    GlobedDailyLevelCell::createCell(level);
 }
 
 void GlobedDailyLevelCell::levelDownloadFailed(int) {

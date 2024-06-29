@@ -45,8 +45,17 @@ bool DailyPopup::setup() {
         .anchorPoint({0, 1})
         .parent(m_mainLayer);
 
-    auto title = Build<CCSprite>::createSpriteName("title-daily.png"_spr)
+    auto trCorner = Build<CCSprite>::createSpriteName("dailyLevelCorner_001.png")
         .scale(1.0f)
+        .flipY(true)
+        .flipX(true)
+        .zOrder(3)
+        .pos({m_mainLayer->getScaledContentSize().width, m_mainLayer->getScaledContentSize().height})
+        .anchorPoint({1, 1})
+        .parent(m_mainLayer);
+
+    auto title = Build<CCSprite>::createSpriteName("title-daily.png"_spr)
+        .scale(0.8f)
         .zOrder(3)
         .pos({m_mainLayer->getScaledContentWidth() / 2, m_mainLayer->getScaledContentHeight() - 30.f})
         .parent(m_mainLayer);
@@ -56,8 +65,9 @@ bool DailyPopup::setup() {
     m_mainLayer->addChild(menu);
 
     int levelId = 102837084;
+    //int levelId = 76880635;
 
-    auto cell = GlobedDailyLevelCell::create(levelId, 1, 0);
+    auto cell = GlobedDailyLevelCell::create(levelId, 1, 2);
     cell->setPosition({m_mainLayer->getScaledContentWidth() / 2, m_mainLayer->getScaledContentHeight() / 2 - 10.f});
     m_mainLayer->addChild(cell);
     

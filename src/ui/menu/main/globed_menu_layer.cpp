@@ -59,7 +59,7 @@ bool GlobedMenuLayer::init() {
 
     auto makeSprite = [this]{
         return CircleButtonSprite::createWithSpriteFrameName(
-            "icon-crown.png"_spr,
+            "icon-crown-btn.png"_spr,
             1.05f,
             CircleBaseColor::Green,
             CircleBaseSize::Medium
