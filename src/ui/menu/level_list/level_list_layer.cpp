@@ -21,7 +21,7 @@ bool GlobedLevelListLayer::init() {
     auto listview = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
-    Build<GJListLayer>::create(listview, "Levels", util::ui::BG_COLOR_BROWN, LIST_WIDTH, LIST_HEIGHT, 0)
+    Build<GJListLayer>::create(listview, "Levels", globed::color::Brown, LIST_WIDTH, LIST_HEIGHT, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .parent(this)

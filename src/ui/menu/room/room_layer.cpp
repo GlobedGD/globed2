@@ -63,7 +63,7 @@ bool RoomLayer::init() {
         .parent(this);
 
     // player list
-    Build<PlayerList>::create(listSize.width, listSize.height, util::ui::BG_COLOR_DARK_BLUE, PlayerListCell::CELL_HEIGHT, GlobedListBorderType::GJCommentListLayerBlue)
+    Build<PlayerList>::create(listSize.width, listSize.height, globed::color::DarkBlue, PlayerListCell::CELL_HEIGHT, GlobedListBorderType::GJCommentListLayerBlue)
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.fromTop(40.f))
         .parent(this)

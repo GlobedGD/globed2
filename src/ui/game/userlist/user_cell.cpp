@@ -77,8 +77,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     if (isFriend) {
         // cell gradient
         auto* cellGradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(globed::into<ccColor3B>(util::ui::BG_COLOR_FRIEND_INGAME))
-            .opacity(util::ui::BG_COLOR_FRIEND_INGAME.a)
+            .color(globed::into<ccColor3B>(globed::color::FriendIngameGradient))
+            .opacity(globed::color::FriendIngameGradient.a)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)
@@ -99,8 +99,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     auto acm = GJAccountManager::get();
     if (data.accountId == acm->m_accountID) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(globed::into<ccColor3B>(util::ui::BG_COLOR_SELF_INGAME))
-            .opacity(util::ui::BG_COLOR_SELF_INGAME.a)
+            .color(globed::into<ccColor3B>(globed::color::SelfIngameGradient))
+            .opacity(globed::color::SelfIngameGradient.a)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)
