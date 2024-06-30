@@ -3,6 +3,8 @@
 #include <util/ui.hpp>
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
+#include <managers/daily_manager.hpp>
+#include "Geode/binding/CCMenuItemSpriteExtra.hpp"
 #include "download_level_popup.hpp"
 #include "daily_level_cell.hpp"
 
@@ -54,8 +56,22 @@ bool DailyPopup::setup() {
         .anchorPoint({1, 1})
         .parent(m_mainLayer);
 
+    CCMenu* blCornerMenu = Build<CCMenu>::create()
+    .pos(20.f, 20.f)
+    .zOrder(5)
+    .parent(m_mainLayer);
+
+    auto infoBtn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+    .intoMenuItem([](auto) {
+        FLAlertLayer::create(
+                    "Featured Guide",
+                    "Globed will occasionally <co>highlight Platformer levels</c> made by the community.\n\nThe three feature types are:\n<cl>Normal</c>, <cj>Epic</c>, and <cg>Outstanding</c>\n\nSuggest levels on our <cb>Discord server</c> for a chance at being selected!",
+                "Ok")->show();
+    })
+    .parent(blCornerMenu);
+
     auto title = Build<CCSprite>::createSpriteName("title-daily.png"_spr)
-        .scale(0.8f)
+        .scale(1.0f)
         .zOrder(3)
         .pos({m_mainLayer->getScaledContentWidth() / 2, m_mainLayer->getScaledContentHeight() - 30.f})
         .parent(m_mainLayer);
@@ -64,10 +80,33 @@ bool DailyPopup::setup() {
     menu->setPosition({m_mainLayer->getScaledContentSize() / 2});
     m_mainLayer->addChild(menu);
 
-    int levelId = 102837084;
-    //int levelId = 76880635;
+    auto viewAllMenu = Build<CCMenu>::create()
+    .parent(m_mainLayer)
+    .pos({m_mainLayer->getScaledContentWidth() / 2, 40.f});
 
-    auto cell = GlobedDailyLevelCell::create(levelId, 1, 2);
+    CCMenuItemSpriteExtra* viewAllBtnSpr = Build<CCSprite>::createSpriteName("GJ_longBtn03_001.png")
+    .intoMenuItem([this](auto) {
+            auto searchObj = DailyManager::get().getSearchObject();
+            auto layer = LevelBrowserLayer::create(searchObj);
+            util::ui::switchToScene(layer);
+        })
+    .parent(viewAllMenu);
+
+    auto viewAllBtnStar = Build<CCSprite>::createSpriteName("GJ_bigStar_001.png")
+    .parent(viewAllBtnSpr)
+    .pos(20.f, viewAllBtnSpr->getScaledContentHeight() / 2 + 1.25f)
+    .scale(0.4);
+    
+    auto viewAllLabel = Build<CCLabelBMFont>::create("Featured List", "bigFont.fnt")
+    .parent(viewAllBtnSpr)
+    .pos({36.f, viewAllBtnSpr->getScaledContentHeight() / 2 + 2.f})
+    .anchorPoint({0, 0.5})
+    .scale(0.5);
+
+    DailyManager::get().requestDailyItems();
+    DailyItem item = DailyManager::get().getRecentDailyItem();
+
+    auto cell = GlobedDailyLevelCell::create(item.levelId, item.edition, item.rateTier);
     cell->setPosition({m_mainLayer->getScaledContentWidth() / 2, m_mainLayer->getScaledContentHeight() / 2 - 10.f});
     m_mainLayer->addChild(cell);
     

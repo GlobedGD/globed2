@@ -1,12 +1,26 @@
 #include "daily_level_cell.hpp"
+#include "hooks/level_cell.hpp"
 #include <util/ui.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
 #include <hooks/level_select_layer.hpp>
 #include <hooks/gjgamelevel.hpp>
-#include <managers/daily_cache.hpp>
+#include <managers/daily_manager.hpp>
+#include <net/manager.hpp>
+#include <data/packets/client/general.hpp>
+#include <data/packets/server/general.hpp>
 
 using namespace geode::prelude;
+
+class NewLevelCell : public LevelCell {
+public:
+    void draw() override {
+        // balls
+    };
+    
+    NewLevelCell(char const* p0, float p1, float p2): LevelCell(p0, p1, p2){};
+};
+
 
 bool GlobedDailyLevelCell::init(int levelId, int edition, int rateTier) {
     if (!CCLayer::init()) return false;
@@ -30,7 +44,7 @@ bool GlobedDailyLevelCell::init(int levelId, int edition, int rateTier) {
     // dont replace this with ->show() and look in the bottom left!!! (worst mistake of my life)
     loadingCircle->runAction(CCRepeatForever::create(CCSequence::create(CCRotateBy::create(1.f, 360.f), nullptr)));
 
-    GJGameLevel* levelCheck = DailyCacheManager::get().getStoredLevel();
+    GJGameLevel* levelCheck = DailyManager::get().getStoredLevel();
     if (levelCheck != nullptr) {
         level = levelCheck;
         createCell(level);
@@ -46,7 +60,7 @@ bool GlobedDailyLevelCell::init(int levelId, int edition, int rateTier) {
 
 void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     loadingCircle->fadeAndRemove();
-    
+
     Build<CCScale9Sprite>::create("GJ_square02.png")
     .contentSize({CELL_WIDTH, CELL_HEIGHT})
     .zOrder(5)
@@ -67,7 +81,8 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
 
     int frameValue = static_cast<int>(level->m_difficulty);
 
-    auto levelcell = new LevelCell("baller", CELL_WIDTH - 15, CELL_HEIGHT - 25);
+    auto levelcell = new NewLevelCell("baller", CELL_WIDTH - 15, CELL_HEIGHT - 25);
+    levelcell->autorelease();
     levelcell->loadFromLevel(level);
     levelcell->setPosition({7.5f, 12.5f});
     background->addChild(levelcell);
@@ -89,14 +104,39 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     if (diffContainer != nullptr) {
         diffContainer->setPositionX(diffContainer->getPositionX() - 2.f);
     }
-    
+
+    CCNode* editionNode = Build<CCNode>::create()
+    .pos({0, CELL_HEIGHT + 10.f})
+    .scale(0.6f)
+    .parent(background);
+
+    CCSprite* editionBadge = Build<CCSprite>::createSpriteName("icon-edition.png"_spr)
+    .pos({16.f, -0.5f})
+    .scale(0.45f)
+    .parent(editionNode);
+
+    CCLabelBMFont* editionLabel = Build<CCLabelBMFont>::create(fmt::format("#{}", editionNum).c_str(), "bigFont.fnt")
+    .scale(0.60f)
+    .color({255, 181, 102})
+    .anchorPoint({0, 0.5})
+    .pos({10.f + editionBadge->getScaledContentWidth(), 0})
+    .parent(editionNode);
+    editionLabel->runAction(CCRepeatForever::create(CCSequence::create(CCTintTo::create(0.75, 255, 243, 143), CCTintTo::create(0.75, 255, 181, 102), nullptr)));
+
+    CCScale9Sprite* editionBG = Build<CCScale9Sprite>::create("square02_small.png")
+    .opacity(75)
+    .zOrder(-1)
+    .anchorPoint({0, 0.5})
+    .contentSize({editionBadge->getScaledContentWidth() + editionLabel->getScaledContentWidth() + 16.f, 30.f})
+    .parent(editionNode);
+
     GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(levelcell->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));
-    DailyCacheManager::attachRatingSprite(rating, diff);
+    DailyManager::get().attachRatingSprite(rating, diff);
 }
 
 ////////////////////
 void GlobedDailyLevelCell::levelDownloadFinished(GJGameLevel* level) {
-    DailyCacheManager::get().setStoredLevel(level);
+    DailyManager::get().setStoredLevel(level);
     GlobedDailyLevelCell::createCell(level);
 }
 

@@ -1,18 +1,30 @@
-#include "daily_cache.hpp"
+#include "daily_manager.hpp"
 #include "Geode/binding/GameToolbox.hpp"
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
 
-void DailyCacheManager::setStoredLevel(GJGameLevel* level) {
+void DailyManager::setStoredLevel(GJGameLevel* level) {
     storedLevel = level;
 }
 
-GJGameLevel* DailyCacheManager::getStoredLevel() {
+GJGameLevel* DailyManager::getStoredLevel() {
     return storedLevel;
 }
 
-void DailyCacheManager::attachRatingSprite(int tier, CCNode* parent) {
+void DailyManager::requestDailyItems() {
+    dailyLevelsList.clear();
+    
+    dailyLevelsList.push_back({102837084, 1, 2});
+    dailyLevelsList.push_back({105422575, 2, 0});
+    dailyLevelsList.push_back({101470193, 3, 1});
+}
+
+DailyItem DailyManager::getRecentDailyItem() {
+    return dailyLevelsList.back();
+}
+
+void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
 
     CCObject* obj;
     CCARRAY_FOREACH(parent->getChildren(), obj) {
@@ -53,4 +65,20 @@ void DailyCacheManager::attachRatingSprite(int tier, CCNode* parent) {
         particle->setZOrder(-2);
         parent->addChild(particle);
     }
+}
+
+GJSearchObject* DailyManager::getSearchObject() {
+    std::stringstream download;
+    bool first = true;
+
+    for (int i = dailyLevelsList.size() - 1; i >= 0; i--) {
+        if (!first) {
+            download << ",";
+        }
+        download << std::to_string(dailyLevelsList.at(i).levelId);
+        first = false;
+    }
+
+    GJSearchObject* searchObj = GJSearchObject::create(SearchType::Type19, download.str());
+    return searchObj;
 }

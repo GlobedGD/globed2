@@ -143,13 +143,25 @@ bool GlobedMenuLayer::init() {
         .store(rightButtonMenu);
 
     // kofi button
-    Build<CCSprite>::createSpriteName("icon-kofi.png"_spr)
+    CCMenuItemSpriteExtra* kofi = Build<CCSprite>::createSpriteName("icon-kofi.png"_spr)
         .intoMenuItem([](auto) {
             GlobedKofiPopup::create()->show();
         })
         .scaleMult(1.15f)
         .id("btn-kofi"_spr)
         .parent(rightButtonMenu);
+
+    // kofi glow
+    CCSprite* glow = Build<CCSprite>::createSpriteName("icon-glow.png"_spr)
+    .id("btn-kofi-glow"_spr)
+    .pos(kofi->getScaledContentSize() / 2)
+    .zOrder(-1)
+    .color({255, 255, 0})
+    .opacity(200)
+    .scale(0.93f)
+    .blendFunc({GL_ONE, GL_ONE})
+    .parent(kofi);
+    glow->runAction(CCRepeatForever::create(CCSequence::create(CCFadeTo::create(1.5f, 50), CCFadeTo::create(1.5f, 200), nullptr)));
 
     // credits button
     Build<CCSprite>::createSpriteName("icon-credits.png"_spr)
@@ -167,7 +179,7 @@ bool GlobedMenuLayer::init() {
         Build<CCSprite>::createSpriteName("icon-voice-chat-guide.png"_spr)
             .intoMenuItem([](auto) {
                 FLAlertLayer::create(
-                    "Voice chat guide",
+                    "Voice Chat Guide",
     #ifdef GLOBED_VOICE_CAN_TALK
                     "In order to <cg>talk</c> with other people in-game, <cp>hold V</c>.\nIn order to <cr>deafen</c> (stop hearing everyone), <cb>press B</c>.\nBoth keybinds can be changed in <cy>Geometry Dash</c> settings.",
     #else

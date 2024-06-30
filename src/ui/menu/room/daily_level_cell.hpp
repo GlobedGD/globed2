@@ -20,6 +20,7 @@ protected:
     CCMenuItemSpriteExtra *playButton = nullptr;
     GJGameLevel* level;
 
+    short playerCount;
     int rating;
     int editionNum;
 
