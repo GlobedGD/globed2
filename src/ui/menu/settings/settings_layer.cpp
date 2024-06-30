@@ -285,7 +285,7 @@ GJListLayer* GlobedSettingsLayer::makeListLayer(int category) {
     auto listview = Build<ListView>::create(settingCells[category], GlobedSettingCell::CELL_HEIGHT, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
-    auto* listLayer = Build<GJListLayer>::create(listview, nullptr, util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
+    auto* listLayer = Build<GJListLayer>::create(listview, nullptr, globed::color::Brown, LIST_WIDTH, 220.f, 0)
         .zOrder(6)
         .anchorPoint(0.f, 0.f)
         .id(util::cocos::spr(fmt::format("setting-list-{}", category)).c_str())

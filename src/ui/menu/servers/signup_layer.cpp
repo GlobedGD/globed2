@@ -11,7 +11,7 @@ bool GlobedSignupLayer::init() {
 
     auto listview = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT).collect();
 
-    auto listLayer = Build<GJListLayer>::create(listview, "Authentication", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
+    auto listLayer = Build<GJListLayer>::create(listview, "Authentication", globed::color::Brown, LIST_WIDTH, 220.f, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .pos(0.f, 0.f)

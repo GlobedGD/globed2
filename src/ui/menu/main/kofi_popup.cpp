@@ -106,7 +106,7 @@ bool GlobedKofiPopup::setup(CCSprite* bg) {
         promoCardFinalScale = (promoCardFinalScale - (520.f - winSize.width) / 1000.f);
     }
 
-    auto* promoCard = Build<CCSprite>::create("kofi-promo-card.png"_spr)
+    auto* promoCard = Build<CCSprite>::createSpriteName("kofi-promo-card.png"_spr)
         .anchorPoint(1.f, 1.f)
         .scale(0.5f)
         .pos(rlayout.topRight - CCPoint{25.f, 30.f})
@@ -221,7 +221,7 @@ void GlobedKofiPopup::kofiEnableParticlesCallback2(float dt) {
 }
 
 GlobedKofiPopup* GlobedKofiPopup::create() {
-    auto bg = CCSprite::create("kofi-promo-border.png"_spr);
+    auto bg = CCSprite::createWithSpriteFrameName("kofi-promo-border.png"_spr);
     float scaleMult = std::min(1.5f, (CCDirector::get()->getWinSize().width - 35.f) / bg->getContentWidth());
     bg->setScale(scaleMult);
     auto csize = bg->getScaledContentSize();
