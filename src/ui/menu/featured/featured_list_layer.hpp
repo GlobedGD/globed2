@@ -1,4 +1,5 @@
 #pragma once
+
 #include <defs/all.hpp>
 #include <managers/settings.hpp>
 #include <data/types/misc.hpp>

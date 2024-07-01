@@ -25,12 +25,13 @@ pub async fn history(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>, page:
 }
 
 // replaces the currently active featured level with a new one
-#[post("/flevel/replace?<newlevel>&<aid>&<adminpwd>")]
+#[post("/flevel/replace?<newlevel>&<rate_tier>&<aid>&<adminpwd>")]
 pub async fn replace(
     state: &State<ServerState>,
     db: &GlobedDb,
     _user_agent: ClientUserAgentGuard<'_>,
     newlevel: i32,
+    rate_tier: i32,
     aid: i32,
     adminpwd: &str,
 ) -> WebResult<()> {
@@ -57,7 +58,7 @@ pub async fn replace(
         unauthorized!("unauthorized (perms)");
     }
 
-    db.replace_featured_level(aid, newlevel).await?;
+    db.replace_featured_level(aid, newlevel, rate_tier).await?;
 
     Ok(())
 }

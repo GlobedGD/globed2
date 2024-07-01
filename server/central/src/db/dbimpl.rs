@@ -52,21 +52,19 @@ pub struct PlayerCountHistoryEntry {
 
 #[derive(Clone, FromRow, Serialize)]
 pub struct FullFeaturedLevel {
-    #[serde(skip_serializing)]
-    #[allow(dead_code)]
     id: i64,
     level_id: i32,
     picked_at: i32,
     picked_by: i32,
     is_active: bool,
+    rate_tier: i32,
 }
 
 #[derive(Clone, FromRow, Serialize)]
 pub struct FeaturedLevel {
-    #[serde(skip_serializing)]
-    #[allow(dead_code)]
     id: i64,
     level_id: i32,
+    rate_tier: i32,
 }
 
 impl GlobedDb {
@@ -173,7 +171,7 @@ impl GlobedDb {
     }
 
     pub async fn get_current_featured_level(&self) -> Result<Option<FeaturedLevel>> {
-        let mut result = query_as::<_, FeaturedLevel>("SELECT (id, level_id) FROM featured_levels WHERE is_active = 1 LIMIT 1")
+        let mut result = query_as::<_, FeaturedLevel>("SELECT id, level_id, rate_tier FROM featured_levels WHERE is_active = 1 LIMIT 1")
             .fetch_all(&self.0)
             .await?;
 
@@ -183,7 +181,7 @@ impl GlobedDb {
     pub async fn get_featured_level_history(&self, page: usize) -> Result<Vec<FeaturedLevel>> {
         const PAGE_SIZE: usize = 10;
 
-        let result = query_as::<_, FeaturedLevel>("SELECT (id, level_id) FROM featured_levels ORDER BY id DESC LIMIT ? OFFSET ?")
+        let result = query_as::<_, FeaturedLevel>("SELECT id, level_id, rate_tier FROM featured_levels ORDER BY id DESC LIMIT ? OFFSET ?")
             .bind(PAGE_SIZE as i64)
             .bind((page * PAGE_SIZE) as i64)
             .fetch_all(&self.0)
@@ -192,15 +190,16 @@ impl GlobedDb {
         Ok(result)
     }
 
-    pub async fn replace_featured_level(&self, account_id: i32, level_id: i32) -> Result<()> {
+    pub async fn replace_featured_level(&self, account_id: i32, level_id: i32, rate_tier: i32) -> Result<()> {
         // set all previous levels to inactive
         query("UPDATE featured_levels SET is_active = 0").execute(&self.0).await?;
 
-        query("INSERT OR REPLACE INTO featured_levels (level_id, picked_at, picked_by, is_active) VALUES (?, ?, ?, ?)")
+        query("INSERT OR REPLACE INTO featured_levels (level_id, picked_at, picked_by, is_active, rate_tier) VALUES (?, ?, ?, ?, ?)")
             .bind(level_id)
             .bind(i64::try_from(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()).unwrap_or(0))
             .bind(account_id)
             .bind(1)
+            .bind(rate_tier)
             .execute(&self.0)
             .await?;
 

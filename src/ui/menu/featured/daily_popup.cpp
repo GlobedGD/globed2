@@ -1,7 +1,7 @@
 #include "daily_popup.hpp"
 
 #include "daily_level_cell.hpp"
-#include <ui/menu/level_list/featured_list_layer.hpp>
+#include "featured_list_layer.hpp"
 #include <managers/daily_manager.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
@@ -31,13 +31,13 @@ bool DailyPopup::setup() {
         .parent(m_mainLayer);
 
     auto infoBtn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-    .intoMenuItem([](auto) {
-        FLAlertLayer::create(
-                    "Featured Guide",
-                    "Globed will occasionally <co>highlight Platformer levels</c> made by the community.\n\nThe three feature types are:\n<cl>Normal</c>, <cj>Epic</c>, and <cg>Outstanding</c>\n\nSuggest levels on our <cb>Discord server</c> for a chance at being selected!",
-                "Ok")->show();
-    })
-    .parent(blCornerMenu);
+        .intoMenuItem([](auto) {
+            FLAlertLayer::create(
+                        "Featured Guide",
+                        "Globed will occasionally <co>highlight Platformer levels</c> made by the community.\n\nThe three feature types are:\n<cl>Normal</c>, <cj>Epic</c>, and <cg>Outstanding</c>\n\nSuggest levels on our <cb>Discord server</c> for a chance at being selected!",
+                    "Ok")->show();
+        })
+        .parent(blCornerMenu);
 
     auto title = Build<CCSprite>::createSpriteName("title-daily.png"_spr)
         .scale(1.0f)
@@ -71,11 +71,8 @@ bool DailyPopup::setup() {
         .anchorPoint({0, 0.5})
         .scale(0.5);
 
-    DailyManager::get().requestDailyItems();
-    DailyItem item = DailyManager::get().getRecentDailyItem();
-
-    auto cell = GlobedDailyLevelCell::create(item.levelId, item.edition, item.rateTier);
-    cell->setPosition({m_mainLayer->getScaledContentWidth() / 2, m_mainLayer->getScaledContentHeight() / 2 - 10.f});
+    auto cell = GlobedDailyLevelCell::create();
+    cell->setPosition(m_mainLayer->getScaledContentSize() / 2 - CCPoint{0.f, 10.f});
     m_mainLayer->addChild(cell);
 
     m_mainLayer->setPositionX(winSize.width * -0.5f);
@@ -92,13 +89,6 @@ bool DailyPopup::setup() {
 
 void DailyPopup::openLevel(CCObject*) {
 
-}
-
-void DailyPopup::onClose(CCObject* self) {
-    Popup::onClose(self);
-    auto* glm = GameLevelManager::sharedState();
-    glm->m_levelDownloadDelegate = nullptr;
-    glm->m_levelManagerDelegate = nullptr;
 }
 
 DailyPopup* DailyPopup::create() {

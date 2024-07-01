@@ -15,6 +15,5 @@ protected:
 
 public:
     static DailyPopup* create();
-    void onClose(cocos2d::CCObject*) override;
     void openLevel(CCObject*);
 };

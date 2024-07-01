@@ -1,7 +1,7 @@
 #include "globed_menu_layer.hpp"
 
 #include "kofi_popup.hpp"
-#include "../room/daily_popup.hpp"
+#include <ui/menu/featured/daily_popup.hpp>
 #include <data/types/misc.hpp>
 #include <managers/account.hpp>
 #include <managers/admin.hpp>
@@ -41,7 +41,7 @@ bool GlobedMenuLayer::init() {
         .parent(this)
         .id("left-button-menu"_spr)
         .store(leftButtonMenu);
-    
+
     // daily menu
 
     Build<CCMenu>::create()
@@ -75,7 +75,7 @@ bool GlobedMenuLayer::init() {
             .id("btn-daily-popup"_spr)
             .parent(dailyButtonMenu)
             .collect();
-    
+
     CCSprite* dailyPopupNew = Build<CCSprite>::createSpriteName("newMusicIcon_001.png")
     .id("btn-daily-extra"_spr)
     .anchorPoint({0.5, 0.5})
@@ -87,7 +87,7 @@ bool GlobedMenuLayer::init() {
         nullptr
     ));
     dailyPopupNew->runAction(newSequence);
-    
+
     dailyButtonMenu->updateLayout();
 
     // discord button

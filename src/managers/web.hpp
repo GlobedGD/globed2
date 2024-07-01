@@ -29,11 +29,12 @@ public:
     Task testServer(std::string_view url);
     Task fetchCredits();
     Task fetchServers();
+    Task fetchFeaturedLevel();
+    Task fetchFeaturedLevelHistory(int page);
     Task challengeStart();
     Task challengeFinish(std::string_view authcode);
 
 private:
-
     Task get(std::string_view url);
     Task get(std::string_view url, int timeoutS);
     Task get(std::string_view url, int timeoutS, std::function<void(geode::utils::web::WebRequest&)> additional);
