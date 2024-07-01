@@ -22,7 +22,7 @@ bool GlobedUserListPopup::setup() {
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.fromTop(45.f))
         .with([&](auto* list) {
-            list->setCellColors(util::ui::BG_COLOR_DARKBROWN, util::ui::BG_COLOR_BROWN);
+            list->setCellColors(globed::color::DarkBrown, globed::color::Brown);
         })
         .parent(m_mainLayer)
         .store(listLayer);

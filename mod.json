@@ -40,19 +40,17 @@
     },
     "resources": {
         "spritesheets": {
+            "roles": [
+                "resources/roles/*.png"
+            ],
             "globedsheet1": [
-                "resources/sheet1/*.png",
-                "resources/sheet1/roles/*.png"
+                "resources/sheet1/game/*.png",
+                "resources/sheet1/menus/*.png",
+                "resources/sheet1/misc/*.png"
             ]
         },
-        "sprites": [
-            "resources/list/*.png",
-            "resources/kofi-promo-bg.png",
-            "resources/kofi-promo-border.png",
-            "resources/kofi-promo-card.png"
-        ],
         "files": [
-            "resources/*.ogg"
+            "resources/sounds/*.ogg"
         ]
     }
 }

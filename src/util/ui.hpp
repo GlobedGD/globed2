@@ -2,20 +2,12 @@
 
 #include <defs/all.hpp>
 #include <data/types/gd.hpp>
+#include <ui/ui.hpp>
 #include <functional>
 
 class UserEntry;
 
 namespace util::ui {
-    constexpr cocos2d::ccColor4B BG_COLOR_BROWN = {191, 114, 62, 255};
-    constexpr cocos2d::ccColor4B BG_COLOR_DARKBROWN = {161, 88, 44, 255};
-    constexpr cocos2d::ccColor4B BG_COLOR_TRANSPARENT = {0, 0, 0, 180};
-    constexpr cocos2d::ccColor4B BG_COLOR_DARK_BLUE = {0x33, 0x44, 0x99, 255};
-    constexpr cocos2d::ccColor4B BG_COLOR_DARKER_BLUE = {0x28, 0x35, 0x77, 255};
-    constexpr cocos2d::ccColor4B BG_COLOR_FRIEND = {0, 255, 100};
-    constexpr cocos2d::ccColor4B BG_COLOR_FRIEND_INGAME = {255, 255, 255, 75};
-    constexpr cocos2d::ccColor4B BG_COLOR_SELF = {255, 195, 165, 75};
-    constexpr cocos2d::ccColor4B BG_COLOR_SELF_INGAME = {0xe8, 0xb7, 0xb7, 150};
     const cocos2d::CCSize BADGE_SIZE = {16.f, 16.f};
     const cocos2d::CCSize BADGE_SIZE_SMALL = BADGE_SIZE * 0.8f;
 

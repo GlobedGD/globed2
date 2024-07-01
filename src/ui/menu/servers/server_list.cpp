@@ -12,7 +12,7 @@ bool GlobedServerList::init() {
 
     auto listview = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT).collect();
 
-    Build<GJListLayer>::create(listview, "Servers", util::ui::BG_COLOR_BROWN, LIST_WIDTH, 220.f, 0)
+    Build<GJListLayer>::create(listview, "Servers", globed::color::Brown, LIST_WIDTH, 220.f, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .pos(0.f, 0.f)
@@ -23,7 +23,7 @@ bool GlobedServerList::init() {
 
     this->setContentSize(bgListLayer->getScaledContentSize());
 
-    Build<ServerList>::create(LIST_WIDTH, LIST_HEIGHT - 2.f, util::ui::BG_COLOR_BROWN, ServerListCell::CELL_HEIGHT)
+    Build<ServerList>::create(LIST_WIDTH, LIST_HEIGHT - 2.f, globed::color::Brown, ServerListCell::CELL_HEIGHT)
         .zOrder(3)
         .anchorPoint(0.5f, 0.5f)
         .pos(bgListLayer->getScaledContentSize() / 2.f)

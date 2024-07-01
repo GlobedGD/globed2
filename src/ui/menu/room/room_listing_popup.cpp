@@ -21,7 +21,7 @@ bool RoomListingPopup::setup() {
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
-    Build<RoomList>::create(contentSize.width, contentSize.height, util::ui::BG_COLOR_BROWN, RoomListingCell::CELL_HEIGHT)
+    Build<RoomList>::create(contentSize.width, contentSize.height, globed::color::Brown, RoomListingCell::CELL_HEIGHT)
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.fromTop(40.f))
         .zOrder(2)

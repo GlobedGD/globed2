@@ -81,7 +81,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
     // friend gradient and own gradient
     if (FriendListManager::get().isFriend(data.accountId)) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(globed::into<ccColor3B>(forInviting ? util::ui::BG_COLOR_FRIEND_INGAME : util::ui::BG_COLOR_FRIEND))
+            .color(globed::into<ccColor3B>(forInviting ? globed::color::FriendIngameGradient : globed::color::FriendGradient))
             .opacity(forInviting ? 75 : 90)
             .pos(0, 0)
             .anchorPoint({0, 0})
@@ -101,8 +101,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
     auto* gjam = GJAccountManager::get();
     if (playerData.accountId == gjam->m_accountID) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(globed::into<ccColor3B>(util::ui::BG_COLOR_SELF))
-            .opacity(util::ui::BG_COLOR_SELF.a)
+            .color(globed::into<ccColor3B>(globed::color::SelfGradient))
+            .opacity(globed::color::SelfGradient.a)
             .pos(0, 0)
             .anchorPoint({0, 0})
             .zOrder(-2)

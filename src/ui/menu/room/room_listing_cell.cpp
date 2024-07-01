@@ -146,7 +146,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         })
         .opacity(rli.settings.flags.collision ? 255 : 80)
         .intoMenuItem([] {
-            FLAlertLayer::create("Collision", "This room has collision enabled, meaning you can collide with other players.", "Ok")->show();
+            FLAlertLayer::create("Collision", "This room has collision enabled, meaning you can collide with other players.\n\n<cy>Note: this means the room has safe mode, making it impossible to make progress on levels.</c>", "Ok")->show();
         })
         .parent(rightMenu)
         .collect();

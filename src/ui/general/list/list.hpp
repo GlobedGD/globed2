@@ -285,8 +285,8 @@ public:
 
     static GlobedListLayer* createForComments(float width, float height, float cellHeight = 0.0f) {
         auto ret = new GlobedListLayer();
-        if (ret->init(width, height, globed::into(util::ui::BG_COLOR_BROWN), cellHeight, GlobedListBorderType::GJCommentListLayer)) {
-            ret->setCellColors(util::ui::BG_COLOR_DARKBROWN, util::ui::BG_COLOR_BROWN);
+        if (ret->init(width, height, globed::into(globed::color::Brown), cellHeight, GlobedListBorderType::GJCommentListLayer)) {
+            ret->setCellColors(globed::color::DarkBrown, globed::color::Brown);
             ret->autorelease();
             return ret;
         }

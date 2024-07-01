@@ -63,7 +63,7 @@ bool RoomLayer::init() {
         .parent(this);
 
     // player list
-    Build<PlayerList>::create(listSize.width, listSize.height, util::ui::BG_COLOR_DARK_BLUE, PlayerListCell::CELL_HEIGHT, GlobedListBorderType::GJCommentListLayerBlue)
+    Build<PlayerList>::create(listSize.width, listSize.height, globed::color::DarkBlue, PlayerListCell::CELL_HEIGHT, GlobedListBorderType::GJCommentListLayerBlue)
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.fromTop(40.f))
         .parent(this)
@@ -414,6 +414,7 @@ void RoomLayer::setRoomTitle(std::string_view name, uint32_t id) {
     Build<CCLabelBMFont>::create(title.c_str(), "goldFont.fnt")
         .limitLabelWidth(listSize.width, 0.7f, 0.2f)
         .intoMenuItem(this, menu_selector(RoomLayer::onCopyRoomId))
+        .scaleMult(1.1f)
         .intoNewParent(CCMenu::create())
         .pos(rlayout.fromTop(17.f))
         .parent(this)
