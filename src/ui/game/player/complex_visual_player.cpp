@@ -186,8 +186,8 @@ void ComplexVisualPlayer::updateData(
     // set position members for collision
     playerIcon->m_startPosition = data.position;
     playerIcon->m_lastPosition = data.position;
-    playerIcon->m_realXPosition = data.position.x;
-    playerIcon->m_realYPosition = data.position.y;
+    playerIcon->m_positionX = data.position.x;
+    playerIcon->m_positionY = data.position.y;
 
     PlayerIconType iconType = data.iconType;
 
