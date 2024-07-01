@@ -1,11 +1,21 @@
 #include "level_cell.hpp"
 #include <defs/geode.hpp>
 #include <managers/settings.hpp>
+#include <managers/daily_manager.hpp>
+#include "ui/menu/level_list/featured_list_layer.hpp"
 
 #include <util/math.hpp>
 
 using namespace geode::prelude;
 
+void GlobedLevelCell::modifyToFeaturedCell() {
+
+    int rating = DailyManager::get().getRatingFromID(this->m_level->m_levelID);
+    if (rating != -1) {
+        GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(this->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));
+        DailyManager::get().attachRatingSprite(rating, diff);
+    }
+}
 
 void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
     auto& settings = GlobedSettings::get();

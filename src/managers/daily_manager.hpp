@@ -14,6 +14,9 @@ public:
     GJGameLevel* getStoredLevel();
     void setStoredLevel(GJGameLevel* level);
     void attachRatingSprite(int tier, cocos2d::CCNode* parent);
+    std::vector<long long> getLevelIDs();
+    std::vector<long long> getLevelIDsReverse();
+    int getRatingFromID(int levelId);
 
     void requestDailyItems();
     DailyItem getRecentDailyItem();

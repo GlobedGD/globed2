@@ -1,6 +1,7 @@
 #include "daily_manager.hpp"
 #include "Geode/binding/GameToolbox.hpp"
 #include <util/ui.hpp>
+#include <algorithm>
 
 using namespace geode::prelude;
 
@@ -16,8 +17,39 @@ void DailyManager::requestDailyItems() {
     dailyLevelsList.clear();
     
     dailyLevelsList.push_back({102837084, 1, 2});
-    dailyLevelsList.push_back({105422575, 2, 0});
-    dailyLevelsList.push_back({101470193, 3, 1});
+    dailyLevelsList.push_back({107224663, 2, 2});
+    dailyLevelsList.push_back({105117679, 3, 0});
+    dailyLevelsList.push_back({100643019, 4, 1});
+}
+
+int DailyManager::getRatingFromID(int levelId) {
+    int rating = -1;
+    for (DailyItem item : dailyLevelsList) {
+        if (item.levelId == levelId) {
+            rating = item.rateTier;
+            break;
+        }
+    }
+    return rating;
+}
+
+std::vector<long long> DailyManager::getLevelIDs() {
+    std::vector<long long> vec;
+    for (DailyItem item : dailyLevelsList) {
+        //log::info("test {}", item.levelId);
+        vec.push_back(item.levelId);
+    }
+    return vec;
+}
+
+std::vector<long long> DailyManager::getLevelIDsReverse() {
+    std::vector<long long> vec;
+    for (DailyItem item : dailyLevelsList) {
+        //log::info("test {}", item.levelId);
+        vec.push_back(item.levelId);
+    }
+    std::reverse(vec.begin(), vec.end());
+    return vec;
 }
 
 DailyItem DailyManager::getRecentDailyItem() {
@@ -25,6 +57,10 @@ DailyItem DailyManager::getRecentDailyItem() {
 }
 
 void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
+
+    if (parent->getChildByID("globed-rating"_spr)) {
+        return;
+    }
 
     CCObject* obj;
     CCARRAY_FOREACH(parent->getChildren(), obj) {

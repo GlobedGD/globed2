@@ -6,6 +6,7 @@
 #include <managers/daily_manager.hpp>
 #include "Geode/binding/CCMenuItemSpriteExtra.hpp"
 #include "download_level_popup.hpp"
+#include "../level_list/featured_list_layer.hpp"
 #include "daily_level_cell.hpp"
 
 using namespace geode::prelude;
@@ -86,8 +87,7 @@ bool DailyPopup::setup() {
 
     CCMenuItemSpriteExtra* viewAllBtnSpr = Build<CCSprite>::createSpriteName("GJ_longBtn03_001.png")
     .intoMenuItem([this](auto) {
-            auto searchObj = DailyManager::get().getSearchObject();
-            auto layer = LevelBrowserLayer::create(searchObj);
+            auto layer = GlobedFeaturedListLayer::create();
             util::ui::switchToScene(layer);
         })
     .parent(viewAllMenu);

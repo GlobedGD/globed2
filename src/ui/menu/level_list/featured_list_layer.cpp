@@ -1,4 +1,5 @@
-#include "level_list_layer.hpp"
+#include "featured_list_layer.hpp"
+#include "Geode/cocos/actions/CCActionInterval.h"
 
 #include <hooks/level_cell.hpp>
 #include <data/packets/client/general.hpp>
@@ -8,12 +9,12 @@
 #include <managers/error_queues.hpp>
 #include <util/ui.hpp>
 #include <Geode/loader/Dispatch.hpp>
+#include <algorithm>
+#include <managers/daily_manager.hpp>
 
 using namespace geode::prelude;
 
-GlobedSettings& settings = GlobedSettings::get();
-
-bool GlobedLevelListLayer::init() {
+bool GlobedFeaturedListLayer::init() {
     if (!CCLayer::init()) return false;
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -21,12 +22,19 @@ bool GlobedLevelListLayer::init() {
     auto listview = Build<ListView>::create(CCArray::create(), 0.f, LIST_WIDTH, LIST_HEIGHT)
         .collect();
 
-    Build<GJListLayer>::create(listview, "Levels", globed::color::Brown, LIST_WIDTH, LIST_HEIGHT, 0)
+    Build<GJListLayer>::create(listview, "", globed::color::Brown, LIST_WIDTH, LIST_HEIGHT, 0)
         .zOrder(2)
         .anchorPoint(0.f, 0.f)
         .parent(this)
         .id("level-list"_spr)
         .store(listLayer);
+
+    auto titlePos = listLayer->getChildByID("title")->getPosition();
+
+    Build<CCSprite>::createSpriteName("icon-featured-label.png"_spr)
+        .zOrder(10)
+        .pos({titlePos.x, titlePos.y + 4.f})
+        .parent(listLayer);
 
     // refresh button
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
@@ -85,30 +93,34 @@ bool GlobedLevelListLayer::init() {
 
     util::ui::prepareLayer(this);
 
-    NetworkManager::get().addListener<LevelListPacket>(this, [this](std::shared_ptr<LevelListPacket> packet) {
+    std::vector<LevelId> retrievedIds = DailyManager::get().getLevelIDsReverse();
+    NetworkManager::get().addListener<LevelListPacket>(this, [this, retrievedIds](std::shared_ptr<LevelListPacket> packet) {
         this->levelList.clear();
         this->levelPages.clear();
         this->sortedLevelIds.clear();
 
         for (const auto& level : packet->levels) {
             this->levelList.emplace(level.levelId, level.playerCount);
-            this->sortedLevelIds.push_back(level.levelId);
+            //this->sortedLevelIds.push_back(level.levelId);
         }
 
         // sort the levels
-        auto comparator = [this](int a, int b) {
-            if (!this->levelList.contains(a) || !this->levelList.contains(b)) return false;
+        // auto comparator = [this](int a, int b) {
+        //     if (!this->levelList.contains(a) || !this->levelList.contains(b)) return false;
 
-            auto aVal = this->levelList.at(a);
-            auto bVal = this->levelList.at(b);
+        //     auto aVal = this->levelList.at(a);
+        //     auto bVal = this->levelList.at(b);
 
-            return aVal > bVal;
-        };
+        //     return aVal > bVal;
+        // };
 
-        std::sort(sortedLevelIds.begin(), sortedLevelIds.end(), comparator);
+        // std::sort(sortedLevelIds.begin(), sortedLevelIds.end(), comparator);
+        
+        sortedLevelIds = retrievedIds;
 
         this->currentPage = 0;
         this->reloadPage();
+        
     });
 
     this->refreshLevels();
@@ -116,11 +128,11 @@ bool GlobedLevelListLayer::init() {
     return true;
 }
 
-GlobedLevelListLayer::~GlobedLevelListLayer() {
+GlobedFeaturedListLayer::~GlobedFeaturedListLayer() {
     GameLevelManager::sharedState()->m_levelManagerDelegate = nullptr;
 }
 
-void GlobedLevelListLayer::reloadPage() {
+void GlobedFeaturedListLayer::reloadPage() {
     loading = true;
 
     this->showLoadingUi();
@@ -146,7 +158,7 @@ void GlobedLevelListLayer::reloadPage() {
         return;
     }
 
-    size_t pageSize = settings.globed.increaseLevelList ? INCREASED_LIST_PAGE_SIZE : LIST_PAGE_SIZE;
+    size_t pageSize = LIST_PAGE_SIZE;
 
     size_t startIdx = currentPage * pageSize;
     size_t endIdx = std::min((currentPage + 1) * pageSize, sortedLevelIds.size());
@@ -170,20 +182,20 @@ void GlobedLevelListLayer::reloadPage() {
     glm->getOnlineLevels(GJSearchObject::create((SearchType)26, oss.str()));
 }
 
-void GlobedLevelListLayer::loadListCommon() {
+void GlobedFeaturedListLayer::loadListCommon() {
     loading = false;
     this->removeLoadingCircle();
     GameLevelManager::sharedState()->m_levelManagerDelegate = nullptr;
 }
 
-void GlobedLevelListLayer::removeLoadingCircle() {
+void GlobedFeaturedListLayer::removeLoadingCircle() {
     if (loadingCircle) {
         loadingCircle->fadeAndRemove();
         loadingCircle = nullptr;
     }
 }
 
-void GlobedLevelListLayer::showLoadingUi() {
+void GlobedFeaturedListLayer::showLoadingUi() {
     if (!loadingCircle) {
         Build<LoadingCircle>::create()
             .pos(0.f, 0.f)
@@ -199,7 +211,7 @@ void GlobedLevelListLayer::showLoadingUi() {
         .collect();
 }
 
-void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) {
+void GlobedFeaturedListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) {
     this->loadListCommon();
 
     // guys im not gonna try and sort a ccarray manually
@@ -212,18 +224,18 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     }
 
     // compare by player count (descending)
-    auto comparator = [this](GJGameLevel* a, GJGameLevel* b) {
-        LevelId levelIdA = HookedGJGameLevel::getLevelIDFrom(a);
-        LevelId levelIdB = HookedGJGameLevel::getLevelIDFrom(b);
-        if (!this->levelList.contains(levelIdA) || !this->levelList.contains(levelIdB)) return false;
+    // auto comparator = [this](GJGameLevel* a, GJGameLevel* b) {
+    //     LevelId levelIdA = HookedGJGameLevel::getLevelIDFrom(a);
+    //     LevelId levelIdB = HookedGJGameLevel::getLevelIDFrom(b);
+    //     if (!this->levelList.contains(levelIdA) || !this->levelList.contains(levelIdB)) return false;
 
-        auto aVal = this->levelList.at(levelIdA);
-        auto bVal = this->levelList.at(levelIdB);
+    //     auto aVal = this->levelList.at(levelIdA);
+    //     auto bVal = this->levelList.at(levelIdB);
 
-        return aVal > bVal;
-    };
+    //     return aVal > bVal;
+    // };
 
-    std::sort(sortedLevels.begin(), sortedLevels.end(), comparator);
+    // std::sort(sortedLevels.begin(), sortedLevels.end(), comparator);
 
     // add to cache
     if (levelPages.size() <= currentPage) {
@@ -243,6 +255,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
     // guys we are about to do a funny
     for (LevelCell* cell : CCArrayExt<LevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
         int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
+        static_cast<GlobedLevelCell*>(cell)->modifyToFeaturedCell();
         if (!levelList.contains(levelId)) continue;
 
         static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));
@@ -253,29 +266,29 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
         btnPagePrev->setVisible(true);
     }
 
-    size_t pageSize = settings.globed.increaseLevelList ? INCREASED_LIST_PAGE_SIZE : LIST_PAGE_SIZE;
+    size_t pageSize = LIST_PAGE_SIZE;
 
     if (currentPage < (sortedLevelIds.size() / pageSize)) {
         btnPageNext->setVisible(true);
     }
 }
 
-void GlobedLevelListLayer::loadLevelsFailed(char const* p0, int p1) {
+void GlobedFeaturedListLayer::loadLevelsFailed(char const* p0, int p1) {
     this->loadListCommon();
     log::warn("failed to load levels: {}, {}", p1, p0);
 }
 
-void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) {
+void GlobedFeaturedListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) {
     this->loadLevelsFinished(p0, p1, -1);
 }
 
-void GlobedLevelListLayer::loadLevelsFailed(char const* p0) {
+void GlobedFeaturedListLayer::loadLevelsFailed(char const* p0) {
     this->loadLevelsFailed(p0, -1);
 }
 
-void GlobedLevelListLayer::setupPageInfo(gd::string p0, const char* p1) {}
+void GlobedFeaturedListLayer::setupPageInfo(gd::string p0, const char* p1) {}
 
-void GlobedLevelListLayer::refreshLevels() {
+void GlobedFeaturedListLayer::refreshLevels() {
     if (loading) return;
 
     loading = true;
@@ -292,12 +305,12 @@ void GlobedLevelListLayer::refreshLevels() {
     this->showLoadingUi();
 }
 
-void GlobedLevelListLayer::keyBackClicked() {
+void GlobedFeaturedListLayer::keyBackClicked() {
     util::ui::navigateBack();
 }
 
-GlobedLevelListLayer* GlobedLevelListLayer::create() {
-    auto ret = new GlobedLevelListLayer;
+GlobedFeaturedListLayer* GlobedFeaturedListLayer::create() {
+    auto ret = new GlobedFeaturedListLayer;
     if (ret->init()) {
         ret->autorelease();
         return ret;

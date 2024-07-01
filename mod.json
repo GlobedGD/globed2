@@ -46,7 +46,8 @@
             "globedsheet1": [
                 "resources/sheet1/game/*.png",
                 "resources/sheet1/menus/*.png",
-                "resources/sheet1/misc/*.png"
+                "resources/sheet1/misc/*.png",
+                "resources/sheet1/*.png"
             ]
         },
         "files": [
