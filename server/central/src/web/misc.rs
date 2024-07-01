@@ -54,6 +54,24 @@ macro_rules! bad_request {
     };
 }
 
+#[derive(Responder)]
+#[response(status = 404, content_type = "text")]
+pub struct NotFoundResponder {
+    pub inner: String,
+}
+
+impl NotFoundResponder {
+    pub fn new(inner: String) -> Self {
+        Self { inner }
+    }
+}
+
+macro_rules! not_found {
+    ($msg:expr) => {
+        return Err(NotFoundResponder::new($msg).into())
+    };
+}
+
 macro_rules! check_protocol {
     ($protocol:expr) => {
         let p = $protocol;
@@ -72,6 +90,7 @@ macro_rules! check_protocol {
 
 pub(crate) use bad_request;
 pub(crate) use check_protocol;
+pub(crate) use not_found;
 
 #[derive(Responder)]
 pub struct GenericErrorResponder<T> {
@@ -98,6 +117,14 @@ impl From<BadRequestResponder> for GenericErrorResponder<String> {
     fn from(value: BadRequestResponder) -> Self {
         GenericErrorResponder {
             inner: (Status::BadRequest, value.inner),
+        }
+    }
+}
+
+impl From<NotFoundResponder> for GenericErrorResponder<String> {
+    fn from(value: NotFoundResponder) -> Self {
+        GenericErrorResponder {
+            inner: (Status::NotFound, value.inner),
         }
     }
 }

@@ -121,20 +121,21 @@ Formatting for user roles:
     // all keys except id and priority are optional.
 
     "id": "mod",
-    "priority": 100, // determines which roles can edit users with other roles
+    "priority": 100,              // determines which roles can edit users with other roles
     "badge_icon": "role-mod.png", // make sure it's a valid sprite! (can be empty)
-    "name_color": "#ff0000", // name color
-    "chat_color": "#ff0000", // color of chat messages
+    "name_color": "#ff0000",      // name color
+    "chat_color": "#ff0000",      // color of chat messages
 
     // permissions
-    "notices": false, // ability to send notices (popup messages)
-    "notices_to_everyone": false, // ability to send a notice to everyone on the server
-    "kick": false, // ability to disconnect users from the server
-    "kick_everyone": false, // ability to disconnect everyone from the server
-    "mute": false, // ability to mute/unmute
-    "ban": false, // ability to ban/unban & whitelist (on whitelist enabled servers)
-    "edit_role": false, // ability to change roles of a user
-    "admin": false, // implicitly enables all other permissions and also does some additional things
+    "notices": false,              // ability to send notices (popup messages)
+    "notices_to_everyone": false,  // ability to send a notice to everyone on the server
+    "kick": false,                 // ability to disconnect users from the server
+    "kick_everyone": false,        // ability to disconnect everyone from the server
+    "mute": false,                 // ability to mute/unmute
+    "ban": false,                  // ability to ban/unban & whitelist (on whitelist enabled servers)
+    "edit_role": false,            // ability to change roles of a user
+    "edit_featured_levels": false, // ability to edit featured levels
+    "admin": false,                // implicitly enables all other permissions and also does some additional things
 }
 ```
 
