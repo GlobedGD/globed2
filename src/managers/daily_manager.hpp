@@ -23,6 +23,6 @@ public:
     GJSearchObject* getSearchObject();
 
 private:
-    GJGameLevel* storedLevel;
+    geode::Ref<GJGameLevel> storedLevel;
     std::vector<DailyItem> dailyLevelsList;
 };

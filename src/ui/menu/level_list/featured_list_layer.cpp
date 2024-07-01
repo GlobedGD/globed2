@@ -1,16 +1,16 @@
 #include "featured_list_layer.hpp"
-#include "Geode/cocos/actions/CCActionInterval.h"
 
-#include <hooks/level_cell.hpp>
-#include <data/packets/client/general.hpp>
-#include <data/packets/server/general.hpp>
-#include <net/manager.hpp>
-#include <hooks/gjgamelevel.hpp>
-#include <managers/error_queues.hpp>
-#include <util/ui.hpp>
 #include <Geode/loader/Dispatch.hpp>
 #include <algorithm>
+
+#include <hooks/level_cell.hpp>
+#include <hooks/gjgamelevel.hpp>
+#include <data/packets/client/general.hpp>
+#include <data/packets/server/general.hpp>
+#include <managers/error_queues.hpp>
 #include <managers/daily_manager.hpp>
+#include <net/manager.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -76,18 +76,8 @@ bool GlobedFeaturedListLayer::init() {
 
     btnSprite->setFlipX(true);
 
-    auto blSprite = Build<CCSprite>::createSpriteName("GJ_sideArt_001.png")
-        .pos({-1, -1})
-        .anchorPoint({0, 0})
-        .zOrder(1)
-        .parent(this);
-
-    auto brSprite = Build<CCSprite>::createSpriteName("GJ_sideArt_001.png")
-        .pos({winSize.width + 1, -1})
-        .anchorPoint({1, 0})
-        .flipX(true)
-        .zOrder(1)
-        .parent(this);
+    // side art
+    geode::addSideArt(this, SideArt::Bottom);
 
     listLayer->setPosition(winSize / 2 - listLayer->getScaledContentSize() / 2);
 
@@ -115,12 +105,12 @@ bool GlobedFeaturedListLayer::init() {
         // };
 
         // std::sort(sortedLevelIds.begin(), sortedLevelIds.end(), comparator);
-        
+
         sortedLevelIds = retrievedIds;
 
         this->currentPage = 0;
         this->reloadPage();
-        
+
     });
 
     this->refreshLevels();

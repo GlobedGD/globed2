@@ -68,18 +68,8 @@ bool GlobedLevelListLayer::init() {
 
     btnSprite->setFlipX(true);
 
-    auto blSprite = Build<CCSprite>::createSpriteName("GJ_sideArt_001.png")
-        .pos({-1, -1})
-        .anchorPoint({0, 0})
-        .zOrder(1)
-        .parent(this);
-
-    auto brSprite = Build<CCSprite>::createSpriteName("GJ_sideArt_001.png")
-        .pos({winSize.width + 1, -1})
-        .anchorPoint({1, 0})
-        .flipX(true)
-        .zOrder(1)
-        .parent(this);
+    // side art
+    geode::addSideArt(this, SideArt::Bottom);
 
     listLayer->setPosition(winSize / 2 - listLayer->getScaledContentSize() / 2);
 

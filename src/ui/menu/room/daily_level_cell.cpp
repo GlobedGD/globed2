@@ -16,11 +16,10 @@ class NewLevelCell : public LevelCell {
 public:
     void draw() override {
         // balls
-    };
-    
-    NewLevelCell(char const* p0, float p1, float p2): LevelCell(p0, p1, p2){};
-};
+    }
 
+    NewLevelCell(char const* p0, float p1, float p2) : LevelCell(p0, p1, p2) {};
+};
 
 bool GlobedDailyLevelCell::init(int levelId, int edition, int rateTier) {
     if (!CCLayer::init()) return false;
@@ -31,16 +30,17 @@ bool GlobedDailyLevelCell::init(int levelId, int edition, int rateTier) {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
     darkBackground = Build<CCScale9Sprite>::create("square02_001.png")
-    .contentSize({CELL_WIDTH, CELL_HEIGHT})
-    .opacity(75)
-    .zOrder(2)
-    .parent(this);
+        .contentSize({CELL_WIDTH, CELL_HEIGHT})
+        .opacity(75)
+        .zOrder(2)
+        .parent(this);
 
     loadingCircle = Build<LoadingCircle>::create()
-    .zOrder(-5)
-    .pos(winSize * -0.5)
-    .opacity(100)
-    .parent(this);
+        .zOrder(-5)
+        .pos(winSize * -0.5)
+        .opacity(100)
+        .parent(this);
+
     // dont replace this with ->show() and look in the bottom left!!! (worst mistake of my life)
     loadingCircle->runAction(CCRepeatForever::create(CCSequence::create(CCRotateBy::create(1.f, 360.f), nullptr)));
 
@@ -62,22 +62,22 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     loadingCircle->fadeAndRemove();
 
     Build<CCScale9Sprite>::create("GJ_square02.png")
-    .contentSize({CELL_WIDTH, CELL_HEIGHT})
-    .zOrder(5)
-    .pos(darkBackground->getScaledContentSize() / 2)
-    .parent(darkBackground)
-    .store(background);
+        .contentSize({CELL_WIDTH, CELL_HEIGHT})
+        .zOrder(5)
+        .pos(darkBackground->getScaledContentSize() / 2)
+        .parent(darkBackground)
+        .store(background);
 
     Build<CCMenu>::create()
-    .zOrder(6)
-    .pos({CELL_WIDTH - 75, CELL_HEIGHT / 2})
-    .parent(background)
-    .store(menu);
+        .zOrder(6)
+        .pos({CELL_WIDTH - 75, CELL_HEIGHT / 2})
+        .parent(background)
+        .store(menu);
 
     auto crown = Build<CCSprite>::createSpriteName("icon-crown.png"_spr)
-    .pos({background->getScaledContentWidth() / 2, CELL_HEIGHT + 11.f})
-    .zOrder(6)
-    .parent(background);
+        .pos({background->getScaledContentWidth() / 2, CELL_HEIGHT + 11.f})
+        .zOrder(6)
+        .parent(background);
 
     int frameValue = static_cast<int>(level->m_difficulty);
 
@@ -106,29 +106,29 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     }
 
     CCNode* editionNode = Build<CCNode>::create()
-    .pos({0, CELL_HEIGHT + 10.f})
-    .scale(0.6f)
-    .parent(background);
+        .pos({0, CELL_HEIGHT + 10.f})
+        .scale(0.6f)
+        .parent(background);
 
     CCSprite* editionBadge = Build<CCSprite>::createSpriteName("icon-edition.png"_spr)
-    .pos({16.f, -0.5f})
-    .scale(0.45f)
-    .parent(editionNode);
+        .pos({16.f, -0.5f})
+        .scale(0.45f)
+        .parent(editionNode);
 
     CCLabelBMFont* editionLabel = Build<CCLabelBMFont>::create(fmt::format("#{}", editionNum).c_str(), "bigFont.fnt")
-    .scale(0.60f)
-    .color({255, 181, 102})
-    .anchorPoint({0, 0.5})
-    .pos({10.f + editionBadge->getScaledContentWidth(), 0})
-    .parent(editionNode);
+        .scale(0.60f)
+        .color({255, 181, 102})
+        .anchorPoint({0, 0.5})
+        .pos({10.f + editionBadge->getScaledContentWidth(), 0})
+        .parent(editionNode);
     editionLabel->runAction(CCRepeatForever::create(CCSequence::create(CCTintTo::create(0.75, 255, 243, 143), CCTintTo::create(0.75, 255, 181, 102), nullptr)));
 
     CCScale9Sprite* editionBG = Build<CCScale9Sprite>::create("square02_small.png")
-    .opacity(75)
-    .zOrder(-1)
-    .anchorPoint({0, 0.5})
-    .contentSize({editionBadge->getScaledContentWidth() + editionLabel->getScaledContentWidth() + 16.f, 30.f})
-    .parent(editionNode);
+        .opacity(75)
+        .zOrder(-1)
+        .anchorPoint({0, 0.5})
+        .contentSize({editionBadge->getScaledContentWidth() + editionLabel->getScaledContentWidth() + 16.f, 30.f})
+        .parent(editionNode);
 
     GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(levelcell->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));
     DailyManager::get().attachRatingSprite(rating, diff);
