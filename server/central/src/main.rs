@@ -6,7 +6,8 @@
     clippy::missing_panics_doc,
     clippy::wildcard_imports,
     clippy::no_effect_underscore_binding,
-    clippy::redundant_closure_for_method_calls
+    clippy::redundant_closure_for_method_calls,
+    clippy::cast_possible_wrap
 )]
 
 use std::{
