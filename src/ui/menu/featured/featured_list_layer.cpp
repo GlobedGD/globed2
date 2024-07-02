@@ -190,6 +190,9 @@ void GlobedFeaturedListLayer::refreshLevels() {
     btnPagePrev->setVisible(false);
     btnPageNext->setVisible(false);
 
+    // remove existing listview and put a loading circle
+    this->showLoadingUi();
+
     auto& dm = DailyManager::get();
     dm.getFeaturedLevels(currentPage, [this](const DailyManager::Page& page) {
         while (levelPages.size() <= currentPage) {
@@ -199,9 +202,6 @@ void GlobedFeaturedListLayer::refreshLevels() {
         levelPages[currentPage] = page;
         this->reloadPage();
     });
-
-    // remove existing listview and put a loading circle
-    this->showLoadingUi();
 }
 
 void GlobedFeaturedListLayer::keyBackClicked() {
