@@ -83,7 +83,8 @@ bool GlobedFeaturedListLayer::init() {
 
     util::ui::prepareLayer(this);
 
-    std::vector<LevelId> retrievedIds = DailyManager::get().getLevelIDsReverse();
+    // std::vector<LevelId> retrievedIds = DailyManager::get().getLevelIDsReverse();
+    std::vector<LevelId> retrievedIds = {};
     NetworkManager::get().addListener<LevelListPacket>(this, [this, retrievedIds](std::shared_ptr<LevelListPacket> packet) {
         this->levelList.clear();
         this->levelPages.clear();

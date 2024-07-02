@@ -52,10 +52,14 @@ public:
     bool hasAdminPassword();
     std::optional<std::string> getAdminPassword();
 
+    void storeTempAdminPassword(std::string_view password);
+    std::string getTempAdminPassword();
+
 private:
     WebRequestManager::Listener requestListener;
     std::optional<std::function<void()>> requestCallbackStored;
     std::unique_ptr<SecretBox> cryptoBox;
+    asp::Mutex<std::string> tempAdminPassword;
 
     void requestCallback(WebRequestManager::Task::Event* event);
     void cancelAuthTokenRequest();

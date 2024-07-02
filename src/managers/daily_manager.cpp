@@ -204,48 +204,48 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
     auto val = std::move(*e->getValue());
 }
 
-void DailyManager::requestDailyItems() {
-    dailyLevelsList.clear();
+// void DailyManager::requestDailyItems() {
+//     dailyLevelsList.clear();
 
-    dailyLevelsList.push_back({102837084, 1, 2});
-    dailyLevelsList.push_back({107224663, 2, 2});
-    dailyLevelsList.push_back({105117679, 3, 0});
-    dailyLevelsList.push_back({100643019, 4, 1});
-}
+//     dailyLevelsList.push_back({102837084, 1, 2});
+//     dailyLevelsList.push_back({107224663, 2, 2});
+//     dailyLevelsList.push_back({105117679, 3, 0});
+//     dailyLevelsList.push_back({100643019, 4, 1});
+// }
 
-int DailyManager::getRatingFromID(int levelId) {
-    int rating = -1;
-    // for (DailyItem item : dailyLevelsList) {
-    //     if (item.levelId == levelId) {
-    //         rating = item.rateTier;
-    //         break;
-    //     }
-    // }
-    return rating;
-}
+// int DailyManager::getRatingFromID(int levelId) {
+//     int rating = -1;
+//     // for (DailyItem item : dailyLevelsList) {
+//     //     if (item.levelId == levelId) {
+//     //         rating = item.rateTier;
+//     //         break;
+//     //     }
+//     // }
+//     return rating;
+// }
 
-std::vector<long long> DailyManager::getLevelIDs() {
-    std::vector<long long> vec;
-    // for (DailyItem item : dailyLevelsList) {
-    //     //log::info("test {}", item.levelId);
-    //     vec.push_back(item.levelId);
-    // }
-    return vec;
-}
+// std::vector<long long> DailyManager::getLevelIDs() {
+//     std::vector<long long> vec;
+//     // for (DailyItem item : dailyLevelsList) {
+//     //     //log::info("test {}", item.levelId);
+//     //     vec.push_back(item.levelId);
+//     // }
+//     return vec;
+// }
 
-std::vector<long long> DailyManager::getLevelIDsReverse() {
-    std::vector<long long> vec;
-    // for (DailyItem item : dailyLevelsList) {
-    //     //log::info("test {}", item.levelId);
-    //     vec.push_back(item.levelId);
-    // }
-    std::reverse(vec.begin(), vec.end());
-    return vec;
-}
+// std::vector<long long> DailyManager::getLevelIDsReverse() {
+//     std::vector<long long> vec;
+//     // for (DailyItem item : dailyLevelsList) {
+//     //     //log::info("test {}", item.levelId);
+//     //     vec.push_back(item.levelId);
+//     // }
+//     std::reverse(vec.begin(), vec.end());
+//     return vec;
+// }
 
-GlobedFeaturedLevel DailyManager::getRecentDailyItem() {
-    return dailyLevelsList.back();
-}
+// GlobedFeaturedLevel DailyManager::getRecentDailyItem() {
+//     return dailyLevelsList.back();
+// }
 
 void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
     if (parent->getChildByID("globed-rating"_spr)) {
@@ -285,25 +285,25 @@ void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
             .parent(parent);
 
         auto particle = GameToolbox::particleFromString("26a-1a1.25a0.3a16a90a62a4a0a20a20a0a16a0a0a0a0a4a2a0a0a0.341176a0a1a0a0.635294a0a1a0a0a1a0a0a0.247059a0a1a0a0.498039a0a1a0a0.16a0a0.23a0a0a0a0a0a0a0a0a2a1a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0", nullptr, false);
-        particle->setPosition(parent->getScaledContentSize() + CCPoint{0.f, 4.f});
+        particle->setPosition(parent->getScaledContentSize() / 2 + CCPoint{0.f, 4.f});
         particle->setZOrder(-2);
         parent->addChild(particle);
     }
 }
 
-GJSearchObject* DailyManager::getSearchObject() {
-    std::stringstream download;
-    bool first = true;
+// GJSearchObject* DailyManager::getSearchObject() {
+//     std::stringstream download;
+//     bool first = true;
 
-    for (int i = dailyLevelsList.size() - 1; i >= 0; i--) {
-        if (!first) {
-            download << ",";
-        }
+//     for (int i = dailyLevelsList.size() - 1; i >= 0; i--) {
+//         if (!first) {
+//             download << ",";
+//         }
 
-        download << dailyLevelsList.at(i).levelId;
-        first = false;
-    }
+//         download << dailyLevelsList.at(i).levelId;
+//         first = false;
+//     }
 
-    GJSearchObject* searchObj = GJSearchObject::create(SearchType::Type19, download.str());
-    return searchObj;
-}
+//     GJSearchObject* searchObj = GJSearchObject::create(SearchType::Type19, download.str());
+//     return searchObj;
+// }

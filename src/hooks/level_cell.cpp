@@ -9,7 +9,8 @@
 using namespace geode::prelude;
 
 void GlobedLevelCell::modifyToFeaturedCell() {
-    int rating = DailyManager::get().getRatingFromID(this->m_level->m_levelID);
+    // int rating = DailyManager::get().getRatingFromID(this->m_level->m_levelID);
+    int rating = -1;
     if (rating != -1) {
         GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(this->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));
 

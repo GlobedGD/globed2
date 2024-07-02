@@ -2,7 +2,9 @@
 
 #include "daily_level_cell.hpp"
 #include "featured_list_layer.hpp"
+#include "edit_featured_level_popup.hpp"
 #include <managers/daily_manager.hpp>
+#include <managers/admin.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
 
@@ -42,16 +44,16 @@ bool DailyPopup::setup() {
     auto title = Build<CCSprite>::createSpriteName("title-daily.png"_spr)
         .scale(1.0f)
         .zOrder(3)
-        .pos({m_mainLayer->getScaledContentWidth() / 2, m_mainLayer->getScaledContentHeight() - 30.f})
+        .pos(rlayout.fromTop(30.f))
         .parent(m_mainLayer);
 
     auto menu = CCMenu::create();
-    menu->setPosition({m_mainLayer->getScaledContentSize() / 2});
+    menu->setPosition(rlayout.center);
     m_mainLayer->addChild(menu);
 
     auto viewAllMenu = Build<CCMenu>::create()
         .parent(m_mainLayer)
-        .pos({m_mainLayer->getScaledContentWidth() / 2, 40.f});
+        .pos(rlayout.fromBottom(40.f));
 
     CCMenuItemSpriteExtra* viewAllBtnSpr = Build<CCSprite>::createSpriteName("GJ_longBtn03_001.png")
         .intoMenuItem([this](auto) {
@@ -72,7 +74,7 @@ bool DailyPopup::setup() {
         .scale(0.5);
 
     auto cell = GlobedDailyLevelCell::create();
-    cell->setPosition(m_mainLayer->getScaledContentSize() / 2 - CCPoint{0.f, 10.f});
+    cell->setPosition(rlayout.center - CCPoint{0.f, 10.f});
     m_mainLayer->addChild(cell);
 
     m_mainLayer->setPositionX(winSize.width * -0.5f);
@@ -83,6 +85,21 @@ bool DailyPopup::setup() {
     );
 
     m_mainLayer->runAction(sequence);
+
+    if (AdminManager::get().authorized()) {
+        auto& role = AdminManager::get().getRole();
+        // TODO: check if edit levels perm is available
+
+        Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+            .scale(0.7f)
+            .intoMenuItem([this] {
+                EditFeaturedLevelPopup::create()->show();
+            })
+            .pos(rlayout.topRight - CCPoint{20.f, 20.f})
+            .intoNewParent(CCMenu::create())
+            .pos(0.f, 0.f)
+            .parent(m_mainLayer);
+    }
 
     return true;
 }
