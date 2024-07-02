@@ -76,7 +76,8 @@ $on_mod(Loaded) {
 void setupErrorCheckNode() {
     auto ecn = ErrorCheckNode::create();
     ecn->setID("error-check-node"_spr);
-    SceneManager::get()->keepAcrossScenes(ecn);
+    ecn->retain();
+    ecn->onEnter(); // needed so scheduled methods get called
 
     auto notif = GlobedNotificationPanel::create();
     notif->setID("notification-panel"_spr);

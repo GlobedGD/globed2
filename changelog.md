@@ -1,6 +1,7 @@
 ## v1.4.4
 
 * Various small fixes and UI changes
+* Played online levels are now put at the top of the saved list, rather than the bottom
 
 ## v1.4.3
 
