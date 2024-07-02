@@ -7,19 +7,20 @@ public:
     static GlobedDailyLevelCell* create();
     ~GlobedDailyLevelCell();
 
-protected:
+    void reload();
 
+protected:
     static constexpr float CELL_WIDTH = 380.f;
     static constexpr float CELL_HEIGHT = 116.f;
 
     bool init();
     bool onOpenLevel(cocos2d::CCObject*);
 
-    cocos2d::CCMenu* menu;
-    cocos2d::CCMenu* editionMenu;
-    cocos2d::extension::CCScale9Sprite* darkBackground;
-    cocos2d::extension::CCScale9Sprite* background;
-    LoadingCircle* loadingCircle;
+    Ref<cocos2d::CCMenu> menu;
+    Ref<cocos2d::CCMenu> editionMenu;
+    Ref<cocos2d::extension::CCScale9Sprite> darkBackground;
+    Ref<cocos2d::extension::CCScale9Sprite> background;
+    Ref<LoadingCircle> loadingCircle;
     CCMenuItemSpriteExtra *playButton = nullptr;
     GJGameLevel* level;
 

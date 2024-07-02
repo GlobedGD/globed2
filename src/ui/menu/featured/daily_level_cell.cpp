@@ -24,14 +24,25 @@ bool GlobedDailyLevelCell::init() {
         .zOrder(2)
         .parent(this);
 
+    this->reload();
+
+    return true;
+}
+
+void GlobedDailyLevelCell::reload() {
     loadingCircle = Build<LoadingCircle>::create()
         .zOrder(-5)
-        .pos(winSize * -0.5)
+        .pos(CCDirector::get()->getWinSize() * -0.5)
         .opacity(100)
         .parent(this);
 
     // dont replace this with ->show() and look in the bottom left!!! (worst mistake of my life)
     loadingCircle->runAction(CCRepeatForever::create(CCSequence::create(CCRotateBy::create(1.f, 360.f), nullptr)));
+
+    if (background) {
+        background->removeFromParent();
+        background = nullptr;
+    }
 
     DailyManager::get().getStoredLevel([this](GJGameLevel* level, const GlobedFeaturedLevel& meta) {
         this->level = level;
@@ -39,8 +50,6 @@ bool GlobedDailyLevelCell::init() {
         this->editionNum = meta.id;
         this->createCell(level);
     });
-
-    return true;
 }
 
 GlobedDailyLevelCell::~GlobedDailyLevelCell() {
@@ -80,8 +89,20 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     if (cvoltonID != nullptr) {
         cvoltonID->setVisible(false);
     }
-
     auto playBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(levelcell->m_mainLayer->getChildByIDRecursive("view-button"));
+    if (!playBtn) {
+        // no nodeids :(
+        if (auto menu = getChildOfType<CCMenu>(levelcell->m_mainLayer, 0)) {
+            if (auto btn = getChildOfType<CCMenuItemSpriteExtra>(menu, 0)) {
+                if (auto spr = getChildOfType<ButtonSprite>(btn, 0)) {
+                    if (std::string_view(spr->m_label->getString()) == "View") {
+                        playBtn = btn;
+                    }
+                }
+            }
+        }
+    }
+
     if (playBtn != nullptr) {
         playBtn->setSprite(CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png"));
         playBtn->getNormalImage()->setScale(0.75);
@@ -120,7 +141,18 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
         .parent(editionNode);
 
     GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(levelcell->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));
-    DailyManager::get().attachRatingSprite(rating, diff);
+    if (!diff) {
+        for (auto* child : CCArrayExt<CCNode*>(levelcell->m_mainLayer->getChildren())) {
+            if (auto p = getChildOfType<GJDifficultySprite>(child, 0)) {
+                diff = p;
+                break;
+            }
+        }
+    }
+
+    if (diff) {
+        DailyManager::get().attachRatingSprite(rating, diff);
+    }
 }
 
 GlobedDailyLevelCell* GlobedDailyLevelCell::create() {

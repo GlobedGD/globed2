@@ -708,6 +708,7 @@ protected:
         if (am.hasAdminPassword()) {
             auto password = am.getAdminPassword();
             if (password.has_value()) {
+                GlobedAccountManager::get().storeTempAdminPassword(password.value());
                 this->send(AdminAuthPacket::create(password.value()));
             }
         }

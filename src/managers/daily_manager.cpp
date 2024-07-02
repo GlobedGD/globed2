@@ -97,6 +97,16 @@ void DailyManager::getStoredLevel(std::function<void(GJGameLevel*, const GlobedF
     singleReqListener.setFilter(std::move(req));
 }
 
+void DailyManager::resetStoredLevel() {
+    if (singleFetchState != FetchState::NotFetching && singleFetchState != FetchState::Complete) {
+        return;
+    }
+
+    storedLevelMeta = {};
+    storedLevel = nullptr;
+    singleFetchState = FetchState::NotFetching;
+}
+
 void DailyManager::onLevelMetaFetchedCallback(typename WebRequestManager::Event* e) {
     if (!e || !e->getValue()) return;
 
@@ -248,6 +258,8 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
 // }
 
 void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
+    if (!parent) return;
+
     if (parent->getChildByID("globed-rating"_spr)) {
         return;
     }

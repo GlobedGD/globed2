@@ -16,6 +16,7 @@ class DailyManager : public SingletonBase<DailyManager> {
 public:
     // Fetches the level or returns a cached copy
     void getStoredLevel(std::function<void(GJGameLevel*, const GlobedFeaturedLevel&)>&& callback, bool force = false);
+    void resetStoredLevel();
     void clearWebCallback();
 
     // force clears all pages

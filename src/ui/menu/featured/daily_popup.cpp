@@ -73,9 +73,9 @@ bool DailyPopup::setup() {
         .anchorPoint({0, 0.5})
         .scale(0.5);
 
-    auto cell = GlobedDailyLevelCell::create();
-    cell->setPosition(rlayout.center - CCPoint{0.f, 10.f});
-    m_mainLayer->addChild(cell);
+    levelCell = GlobedDailyLevelCell::create();
+    levelCell->setPosition(rlayout.center - CCPoint{0.f, 10.f});
+    m_mainLayer->addChild(levelCell);
 
     m_mainLayer->setPositionX(winSize.width * -0.5f);
 
@@ -95,11 +95,28 @@ bool DailyPopup::setup() {
             .intoMenuItem([this] {
                 EditFeaturedLevelPopup::create()->show();
             })
+            .id("edit-btn")
             .pos(rlayout.topRight - CCPoint{20.f, 20.f})
             .intoNewParent(CCMenu::create())
+            .id("edit-menu")
             .pos(0.f, 0.f)
             .parent(m_mainLayer);
     }
+
+    // refresh button
+    Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
+        .scale(0.9f)
+        .intoMenuItem([this] {
+            auto& dm = DailyManager::get();
+            dm.resetStoredLevel();
+            levelCell->reload();
+        })
+        .id("refresh-btn")
+        .pos(rlayout.bottomRight + CCPoint{-2.f, 2.f})
+        .intoNewParent(CCMenu::create())
+        .id("refresh-menu")
+        .pos(0.f, 0.f)
+        .parent(m_mainLayer);
 
     return true;
 }

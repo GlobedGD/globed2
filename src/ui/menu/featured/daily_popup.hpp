@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/geode.hpp>
 
+class GlobedDailyLevelCell;
+
 class DailyPopup : public geode::Popup<> {
 protected:
 
@@ -14,6 +16,8 @@ protected:
     //void onReload(cocos2d::CCObject* sender);
 
 public:
+    GlobedDailyLevelCell* levelCell;
+
     static DailyPopup* create();
     void openLevel(CCObject*);
 };
