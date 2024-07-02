@@ -39,7 +39,7 @@ pub async fn replace(
         unauthorized!("unauthorized (account)")
     };
 
-    let pwd_valid = user.admin_password.is_some_and(|x| x == adminpwd);
+    let pwd_valid = user.admin_password.is_some_and(|x| x == adminpwd) || state.state_read().await.config.admin_key == adminpwd;
     if !pwd_valid {
         unauthorized!("unauthorized (password)");
     }
