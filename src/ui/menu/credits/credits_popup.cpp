@@ -110,6 +110,7 @@ bool GlobedCreditsPopup::setup() {
     using Icons = GlobedSimplePlayer::Icons;
 
     this->setTitle("Credits");
+    this->setID("GlobedCreditsPopup"_spr);
 
     auto rlayout = util::ui::getPopupLayout(m_size);
 

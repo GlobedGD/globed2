@@ -19,14 +19,16 @@ using namespace geode::prelude;
 bool GlobedServersLayer::init() {
     if (!CCLayer::init()) return false;
 
-    util::ui::prepareLayer(this, {60,60, 60});
-    this->getChildByID("background")->removeFromParent();
+    this->setID("GlobedServersLayer"_spr);
+
+    util::ui::prepareLayer(this, false);
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    auto* bg = util::ui::makeRepeatingBackground("game_bg_01_001.png", {40, 40, 40});
-    this->addChild(bg);
-    this->background = bg;
+    Build(util::ui::makeRepeatingBackground("game_bg_01_001.png", {40, 40, 40}))
+        .id("background")
+        .parent(this)
+        .store(this->background);
 
     GlobedAccountManager::get().autoInitialize();
 
@@ -34,6 +36,7 @@ bool GlobedServersLayer::init() {
         .layout(ColumnLayout::create()->setAutoScale(true)->setAxisAlignment(AxisAlignment::Start))
         .anchorPoint(0.f, 0.f)
         .pos(15.f, 20.f)
+        .id("left-side-menu")
         .parent(this)
         .collect();
 
@@ -48,6 +51,7 @@ bool GlobedServersLayer::init() {
                 popup->show();
             }
         })
+        .id("btn-server-switcher")
         .scaleMult(1.15f)
         .parent(buttonMenu);
 
@@ -60,7 +64,7 @@ bool GlobedServersLayer::init() {
             util::ui::switchToScene(GlobedSettingsLayer::create());
         })
         .scaleMult(1.15f)
-        .id("btn-open-settings"_spr)
+        .id("btn-settings")
         .parent(buttonMenu);
 
     buttonMenu->updateLayout();
@@ -100,7 +104,7 @@ bool GlobedServersLayer::init() {
         .anchorPoint(1.f, 0.f)
         .pos(winSize.width - 15.f, 20.f)
         .parent(this)
-        .id("right-button-menu"_spr)
+        .id("right-button-menu")
         .collect();
 
     // kofi button
@@ -109,7 +113,7 @@ bool GlobedServersLayer::init() {
             GlobedKofiPopup::create()->show();
         })
         .scaleMult(1.15f)
-        .id("btn-kofi"_spr)
+        .id("btn-kofi")
         .parent(rightButtonMenu);
 
     // credits button
@@ -120,7 +124,7 @@ bool GlobedServersLayer::init() {
             popup->show();
         })
         .scaleMult(1.15f)
-        .id("btn-credits"_spr)
+        .id("btn-credits")
         .parent(rightButtonMenu);
 
     rightButtonMenu->updateLayout();

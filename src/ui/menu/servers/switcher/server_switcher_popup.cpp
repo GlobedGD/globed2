@@ -10,6 +10,8 @@
 using namespace geode::prelude;
 
 bool ServerSwitcherPopup::setup() {
+    this->setID("ServerSwitcherPopup"_spr);
+
     this->setTitle("Server switcher");
 
     auto rlayout = util::ui::getPopupLayout(m_size);

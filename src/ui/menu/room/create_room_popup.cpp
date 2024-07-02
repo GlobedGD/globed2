@@ -16,6 +16,8 @@ constexpr int TAG_COLLISION = 1023;
 constexpr int TAG_2P = 1024;
 
 bool CreateRoomPopup::setup(RoomLayer* parent) {
+    this->setID("CreateRoomPopup"_spr);
+
     this->setTitle("Create Room", "goldFont.fnt", 1.0f);
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);

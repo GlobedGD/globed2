@@ -8,6 +8,8 @@
 using namespace geode::prelude;
 
 bool GlobedKofiPopup::setup(CCSprite* bg) {
+    this->setID("GlobedKofiPopup"_spr);
+
     m_bgSprite->removeFromParent();
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);

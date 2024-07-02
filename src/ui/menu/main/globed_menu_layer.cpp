@@ -24,6 +24,8 @@ using namespace geode::prelude;
 bool GlobedMenuLayer::init() {
     if (!CCLayer::init()) return false;
 
+    this->setID("GlobedMenuLayer"_spr);
+
     auto winSize = CCDirector::get()->getWinSize();
 
     // left button menu
@@ -38,7 +40,7 @@ bool GlobedMenuLayer::init() {
         .anchorPoint(0.f, 0.f)
         .pos(15.f, 20.f)
         .parent(this)
-        .id("left-button-menu"_spr)
+        .id("left-button-menu")
         .store(leftButtonMenu);
 
     // discord button
@@ -51,7 +53,7 @@ bool GlobedMenuLayer::init() {
             });
         })
         .scaleMult(1.15f)
-        .id("btn-open-discord"_spr)
+        .id("btn-open-discord")
         .parent(leftButtonMenu)
         .collect();
 
@@ -61,7 +63,7 @@ bool GlobedMenuLayer::init() {
             util::ui::switchToScene(GlobedSettingsLayer::create());
         })
         .scaleMult(1.15f)
-        .id("btn-open-settings"_spr)
+        .id("btn-open-settings")
         .parent(leftButtonMenu)
         .collect();
 
@@ -73,7 +75,7 @@ bool GlobedMenuLayer::init() {
             util::ui::switchToScene(GlobedLevelListLayer::create());
         })
         .scaleMult(1.15f)
-        .id("btn-open-level-list"_spr)
+        .id("btn-open-level-list")
         .collect();
 
     leftButtonMenu->updateLayout();
@@ -90,7 +92,7 @@ bool GlobedMenuLayer::init() {
         .anchorPoint(1.f, 0.f)
         .pos(winSize.width - 15.f, 20.f)
         .parent(this)
-        .id("right-button-menu"_spr)
+        .id("right-button-menu")
         .store(rightButtonMenu);
 
     // kofi button
@@ -99,7 +101,7 @@ bool GlobedMenuLayer::init() {
             GlobedKofiPopup::create()->show();
         })
         .scaleMult(1.15f)
-        .id("btn-kofi"_spr)
+        .id("btn-kofi")
         .parent(rightButtonMenu);
 
     // credits button
@@ -110,7 +112,7 @@ bool GlobedMenuLayer::init() {
             popup->show();
         })
         .scaleMult(1.15f)
-        .id("btn-credits"_spr)
+        .id("btn-credits")
         .parent(rightButtonMenu);
 
     // info button
@@ -127,7 +129,7 @@ bool GlobedMenuLayer::init() {
                 "Ok")->show();
             })
             .scaleMult(1.15f)
-            .id("btn-show-voice-chat-popup"_spr)
+            .id("btn-show-voice-chat-popup")
             .parent(rightButtonMenu);
     }
 
@@ -136,17 +138,19 @@ bool GlobedMenuLayer::init() {
     auto rl = RoomLayer::create();
     if (rl) {
         Build(rl)
+            .id("room-layer")
             .anchorPoint(0.5f, 0.5f)
             .pos(winSize / 2.f)
             .parent(this);
     }
 
-    util::ui::prepareLayer(this);
+    util::ui::prepareLayer(this, false);
 
     // background
-    auto* bg = util::ui::makeRepeatingBackground("game_bg_01_001.png", {37, 50, 167});
-    this->addChild(bg);
-    this->background = bg;
+    Build(util::ui::makeRepeatingBackground("game_bg_01_001.png", {37, 50, 167}))
+        .id("background")
+        .parent(this)
+        .store(background);
 
     auto* backBtn = this->getChildByIDRecursive("back-button");
 
@@ -156,6 +160,7 @@ bool GlobedMenuLayer::init() {
         menu->setAnchorPoint({0.f, 1.f});
         menu->setPosition({5.f, winSize.height - 5.f});
         menu->setContentWidth(60.f);
+        menu->setID("back-menu");
 
         menu->setLayout(RowLayout::create()->setAxisAlignment(AxisAlignment::Start));
 
@@ -171,6 +176,7 @@ bool GlobedMenuLayer::init() {
                     util::ui::replaceScene(layer);
                 });
             })
+            .id("btn-leave-server")
             .parent(menu)
             ;
 

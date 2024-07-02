@@ -30,10 +30,13 @@ namespace util::ui {
         replaceScene(Build<CCScene>::create().child(layer).collect());
     }
 
-    void prepareLayer(CCLayer* layer, cocos2d::ccColor3B color) {
-        util::ui::addBackground(layer, color);
+    void prepareLayer(CCLayer* layer, bool bg, cocos2d::ccColor3B color) {
+        if (bg) {
+            util::ui::addBackground(layer, color);
+        }
 
         auto menu = CCMenu::create();
+        menu->setID("back-menu");
         layer->addChild(menu);
 
         util::ui::addBackButton(menu, util::ui::navigateBack);
@@ -41,6 +44,7 @@ namespace util::ui {
         layer->setKeyboardEnabled(true);
         layer->setKeypadEnabled(true);
     }
+
 
     void addBackground(CCNode* layer, cocos2d::ccColor3B color) {
         auto windowSize = CCDirector::get()->getWinSize();

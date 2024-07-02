@@ -17,7 +17,7 @@ namespace util::ui {
     void replaceScene(cocos2d::CCScene* layer);
     void replaceScene(cocos2d::CCLayer* layer);
 
-    void prepareLayer(cocos2d::CCLayer* layer, cocos2d::ccColor3B color = {0, 102, 255});
+    void prepareLayer(cocos2d::CCLayer* layer, bool bg = true, cocos2d::ccColor3B color = {0, 102, 255});
     void addBackground(cocos2d::CCNode* layer, cocos2d::ccColor3B color = {0, 102, 255});
     void addBackButton(cocos2d::CCMenu* menu, std::function<void()> callback);
     void navigateBack();

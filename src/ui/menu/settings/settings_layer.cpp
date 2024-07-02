@@ -14,9 +14,12 @@ static constexpr float TAB_SCALE = 0.85f;
 bool GlobedSettingsLayer::init() {
     if (!CCLayer::init()) return false;
 
+    this->setID("GlobedSettingsLayer"_spr);
+
     auto winsize = CCDirector::get()->getWinSize();
 
     auto* tabButtonMenu = Build<CCMenu>::create()
+        .id("tab-button-menu")
         .zOrder(5)
         .layout(RowLayout::create()->setAutoScale(false)->setGap(-1.f))
         .pos(winsize.width / 2, winsize.height / 2 + LIST_HEIGHT / 2 + 26.f)
@@ -64,6 +67,7 @@ bool GlobedSettingsLayer::init() {
 #else
     tabsGradientNode = CCClippingNode::create();
 #endif
+    tabsGradientNode->setID("gradient-clipping-node");
     tabsGradientNode->setContentSize(this->getContentSize());
     tabsGradientNode->setAnchorPoint({0.5f, 0.5f});
     tabsGradientNode->ignoreAnchorPointForPosition(true);
@@ -96,8 +100,10 @@ bool GlobedSettingsLayer::init() {
                 }
             });
         })
+        .id("btn-reset")
         .pos(winsize.width - 30.f, 30.f)
         .intoNewParent(CCMenu::create())
+        .id("reset-menu")
         .pos(0.f, 0.f)
         .parent(this);
 

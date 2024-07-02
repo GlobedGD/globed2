@@ -66,6 +66,7 @@ bool RoomLayer::init() {
     Build<PlayerList>::create(listSize.width, listSize.height, globed::color::DarkBlue, PlayerListCell::CELL_HEIGHT, GlobedListBorderType::GJCommentListLayerBlue)
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.fromTop(40.f))
+        .id("player-list")
         .parent(this)
         .store(listLayer);
 
@@ -95,7 +96,7 @@ bool RoomLayer::init() {
     util::ui::rescaleToMatch(visSprite, targetButtonSize);
 
     Build<CCMenuItemToggler>(CCMenuItemToggler::create(invisSprite, visSprite, this, menu_selector(RoomLayer::onInvisibleClicked)))
-        .id("invisible-btn")
+        .id("btn-invisible")
         .parent(topRightButtons)
         .zOrder(btnorder::Invisibility)
         .store(btnInvisible);
@@ -120,7 +121,7 @@ bool RoomLayer::init() {
         })
         .zOrder(btnorder::Search)
         .scaleMult(1.1f)
-        .id("search-btn"_spr)
+        .id("btn-search")
         .parent(topRightButtons)
         .store(btnSearch);
 
@@ -168,7 +169,7 @@ bool RoomLayer::init() {
         })
         .zOrder(btnorder::Refresh)
         .scaleMult(1.1f)
-        .id("reload-btn"_spr)
+        .id("btn-reload")
         .parent(topRightButtons)
         .store(btnRefresh);
 
@@ -183,11 +184,12 @@ bool RoomLayer::init() {
             RoomSettingsPopup::create()->show();
         })
         .scaleMult(1.1f)
-        .id("settings-button"_spr)
+        .id("btn-settings")
         .pos(22.f, 23.f)
         .visible(false)
         .store(btnSettings)
         .intoNewParent(CCMenu::create())
+        .id("settings-menu")
         .pos(rlayout.bottomLeft)
         .parent(this);
 
@@ -416,6 +418,7 @@ void RoomLayer::setRoomTitle(std::string_view name, uint32_t id) {
         .intoMenuItem(this, menu_selector(RoomLayer::onCopyRoomId))
         .scaleMult(1.1f)
         .intoNewParent(CCMenu::create())
+        .id("title-menu")
         .pos(rlayout.fromTop(17.f))
         .parent(this)
         .store(btnRoomId);
