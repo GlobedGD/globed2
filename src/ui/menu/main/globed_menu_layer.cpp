@@ -8,6 +8,7 @@
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
+#include <managers/daily_manager.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/room/room_layer.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
@@ -80,15 +81,43 @@ bool GlobedMenuLayer::init() {
     .id("btn-daily-extra"_spr)
     .anchorPoint({0.5, 0.5})
     .pos({dailyPopupButton->getScaledContentWidth() * 0.85f, dailyPopupButton->getScaledContentHeight() * 0.15f})
+    .zOrder(2)
+    .visible(false)
     .parent(dailyPopupButton);
-     auto newSequence = CCRepeatForever::create(CCSequence::create(
+    auto newSequence = CCRepeatForever::create(CCSequence::create(
         CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.2f)),
         CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.0f)),
         nullptr
     ));
     dailyPopupNew->runAction(newSequence);
 
+    CCSprite* dailyGlow = Build<CCSprite>::createSpriteName("daily-glow.png"_spr)
+    .id("btn-daily-glow-extra"_spr)
+    .anchorPoint({0.5, 0.5})
+    .pos(dailyPopupButton->getScaledContentSize() / 2)
+    .zOrder(1)
+    .color({255, 255, 0})
+    .scale(0.75)
+    .opacity(50)
+    .blendFunc({GL_ONE, GL_ONE})
+    .visible(false)
+    .parent(dailyPopupButton);
+    auto newGlowSequence = CCRepeatForever::create(CCSequence::create(
+        CCEaseSineInOut::create(CCFadeTo::create(0.75f, 150)),
+        CCEaseSineInOut::create(CCFadeTo::create(0.75f, 50)),
+        nullptr
+    ));
+    dailyGlow->runAction(newGlowSequence);
+
     dailyButtonMenu->updateLayout();
+
+    DailyManager::get().getStoredLevel([this, dailyGlow, dailyPopupNew](GJGameLevel* level, const GlobedFeaturedLevel& meta) {
+        // check to see if most recently seen level is different from what is stored
+        if (Mod::get()->getSavedValue<int>("last-seen-daily", -1) != meta.id) {
+            dailyGlow->setVisible(true);
+            dailyPopupNew->setVisible(true);
+        }
+    }, true);
 
     // discord button
     discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")

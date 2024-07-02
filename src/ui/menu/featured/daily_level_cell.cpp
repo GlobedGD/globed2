@@ -49,6 +49,9 @@ void GlobedDailyLevelCell::reload() {
         this->rating = meta.rateTier;
         this->editionNum = meta.id;
         this->createCell(level);
+        
+        // updating most recently seen level
+        Mod::get()->setSavedValue<int>("last-seen-daily", meta.id);
     });
 }
 
