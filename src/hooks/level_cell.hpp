@@ -10,5 +10,5 @@ class $modify(GlobedLevelCell, LevelCell) {
     };
 
     void updatePlayerCount(int count, bool inLists = false);
-    void modifyToFeaturedCell();
+    void modifyToFeaturedCell(int rating);
 };

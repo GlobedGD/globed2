@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include <managers/error_queues.hpp>
+#include <util/format.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -10,8 +11,8 @@ using namespace geode::prelude;
 class DummyLevelFetchNode : public CCObject, public LevelManagerDelegate, public LevelDownloadDelegate {
 public:
     void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override {
-        if (this->fetchCallback) {
-            this->fetchCallback(Ok(p0->count() > 0 ? static_cast<GJGameLevel*>(p0->objectAtIndex(0)) : 0));
+        if (this->multipleFetchCallback) {
+            this->multipleFetchCallback(Ok(p0));
         }
     }
 
@@ -20,8 +21,8 @@ public:
     }
 
     void loadLevelsFailed(char const* p0, int p1) override {
-        if (this->fetchCallback) {
-            this->fetchCallback(Err(p1));
+        if (this->multipleFetchCallback) {
+            this->multipleFetchCallback(Err(p1));
         }
     }
 
@@ -29,7 +30,7 @@ public:
         this->loadLevelsFailed(p0, 0);
     }
 
-    std::function<void(Result<GJGameLevel*, int>)> fetchCallback;
+    std::function<void(Result<CCArray*, int>)> multipleFetchCallback;
 
     void levelDownloadFinished(GJGameLevel* level) override {
         if (this->downloadCallback) {
@@ -73,10 +74,39 @@ struct matjson::Serialize<GlobedFeaturedLevel> {
     }
 };
 
+template <>
+struct matjson::Serialize<GlobedFeaturedLevelList> {
+    static GlobedFeaturedLevelList from_json(const matjson::Value& value) {
+        std::vector<GlobedFeaturedLevel> levels;
+
+        for (auto& l : value.as_array()) {
+            levels.push_back(l.as<GlobedFeaturedLevel>());
+        }
+
+        return GlobedFeaturedLevelList {
+            .levels = levels
+        };
+    }
+
+    static matjson::Value to_json(const GlobedFeaturedLevelList& user) {
+        throw std::runtime_error("unimplemented");
+    }
+
+    static bool is_json(const matjson::Value& value) {
+        if (!value.is_array()) return false;
+
+        for (auto& val : value.as_array()) {
+            if (!val.is<GlobedFeaturedLevel>()) return false;
+        }
+
+        return true;
+    }
+};
+
 static DummyLevelFetchNode* fetchNode = new DummyLevelFetchNode();
 
 void DailyManager::getStoredLevel(std::function<void(GJGameLevel*, const GlobedFeaturedLevel&)>&& callback, bool force) {
-    if (singleFetchState == FetchState::Complete && !force) {
+    if (storedLevel != nullptr && !force) {
         callback(storedLevel, storedLevelMeta);
         return;
     }
@@ -98,7 +128,7 @@ void DailyManager::getStoredLevel(std::function<void(GJGameLevel*, const GlobedF
 }
 
 void DailyManager::resetStoredLevel() {
-    if (singleFetchState != FetchState::NotFetching && singleFetchState != FetchState::Complete) {
+    if (singleFetchState != FetchState::NotFetching) {
         return;
     }
 
@@ -113,7 +143,7 @@ void DailyManager::onLevelMetaFetchedCallback(typename WebRequestManager::Event*
     auto result = std::move(*e->getValue());
     if (!result) {
         auto err = result.unwrapErr();
-        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{} (code {})</c>", err.message, err.code));
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
         singleFetchState = FetchState::NotFetching;
         return;
     }
@@ -135,41 +165,19 @@ void DailyManager::onLevelMetaFetchedCallback(typename WebRequestManager::Event*
     }
 
     storedLevelMeta = std::move(parsed_.value()).as<GlobedFeaturedLevel>();
-    log::debug("level: {}, level id {}, rate {}", storedLevelMeta.id, storedLevelMeta.levelId, storedLevelMeta.rateTier);
 
     // fetch level from gd servers
 
-    fetchNode->fetchCallback = [this](Result<GJGameLevel*, int> level) {
-        this->onLevelFetchedCallback(level);
+    auto* glm = GameLevelManager::get();
+
+    glm->m_levelDownloadDelegate = fetchNode;
+    fetchNode->downloadCallback = [this](Result<GJGameLevel*, int> level) {
+        this->onFullLevelFetchedCallback(level);
     };
 
+    glm->downloadLevel(storedLevelMeta.levelId, false);
+
     singleFetchState = FetchState::FetchingLevel;
-    auto* glm = GameLevelManager::get();
-    glm->m_levelManagerDelegate = fetchNode;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(storedLevelMeta.levelId)));
-}
-
-void DailyManager::onLevelFetchedCallback(Result<GJGameLevel*, int> level) {
-    auto* glm = GameLevelManager::get();
-    glm->m_levelManagerDelegate = nullptr;
-
-    if (level.isOk()) {
-        this->storedLevel = level.unwrap();
-
-        glm->m_levelDownloadDelegate = fetchNode;
-        fetchNode->downloadCallback = [this](Result<GJGameLevel*, int> level) {
-            this->onFullLevelFetchedCallback(level);
-        };
-
-        glm->downloadLevel(storedLevel->m_levelID, false);
-
-        singleFetchState = FetchState::FetchingFullLevel;
-    } else {
-        int err = level.unwrapErr();
-        ErrorQueues::get().error(fmt::format("Failed to fetch featured level from the server: <cy>code {}</c>", err));
-
-        singleFetchState = FetchState::NotFetching;
-    }
 }
 
 void DailyManager::onFullLevelFetchedCallback(Result<GJGameLevel*, int> level) {
@@ -178,16 +186,17 @@ void DailyManager::onFullLevelFetchedCallback(Result<GJGameLevel*, int> level) {
 
     if (level.isOk()) {
         storedLevel = level.unwrap();
+
+        singleFetchState = FetchState::NotFetching;
+
         if (this->singleReqCallback) {
             this->singleReqCallback(storedLevel, storedLevelMeta);
         }
-
-        singleFetchState = FetchState::Complete;
     } else {
+        singleFetchState = FetchState::NotFetching;
+
         int err = level.unwrapErr();
         ErrorQueues::get().error(fmt::format("Failed to download featured level from the server: <cy>code {}</c>", err));
-
-        singleFetchState = FetchState::NotFetching;
     }
 
 }
@@ -196,9 +205,20 @@ void DailyManager::clearWebCallback() {
     singleReqCallback = {};
 }
 
-void DailyManager::getFeaturedLevels(int page, std::function<void(std::vector<std::pair<GJGameLevel*, GlobedFeaturedLevel>>)>&& callback, bool force) {
+void DailyManager::getFeaturedLevels(int page, std::function<void(const Page&)>&& callback, bool force) {
+    if (multipleFetchState == FetchState::NotFetching) {
+        if (storedMultiplePages.contains(page)) {
+            callback(storedMultiplePages[page]);
+            return;
+        }
+    } else if (multipleFetchPage == page) {
+        this->multipleReqCallback = std::move(callback);
+        return;
+    }
+
     this->multipleReqCallback = std::move(callback);
     this->multipleReqListener.getFilter().cancel();
+    this->multipleFetchPage = page;
 
     multipleFetchState = FetchState::FetchingId;
 
@@ -211,7 +231,92 @@ void DailyManager::getFeaturedLevels(int page, std::function<void(std::vector<st
 void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Event* e) {
     if (!e || !e->getValue()) return;
 
-    auto val = std::move(*e->getValue());
+    auto result = std::move(*e->getValue());
+
+    if (!result) {
+        auto err = result.unwrapErr();
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
+        multipleFetchState = FetchState::NotFetching;
+        return;
+    }
+
+    auto val = result.unwrap();
+
+    std::string parseError;
+    auto parsed_ = matjson::parse(val, parseError);
+
+    if (!parsed_ || !parsed_->is<GlobedFeaturedLevelList>()) {
+        if (parsed_) {
+            log::warn("failed to parse featured level list:\n{}", parsed_.value().dump());
+        }
+
+        ErrorQueues::get().error(fmt::format("Failed to fetch the featured level history.\n\nReason: <cy>parsing failed: {}</c>", parsed_.has_value() ? "invalid json structure" : parseError));
+        multipleFetchState = FetchState::NotFetching;
+        return;
+    }
+
+    auto levelList = std::move(parsed_.value()).as<GlobedFeaturedLevelList>();
+
+    // sort
+    std::sort(levelList.levels.begin(), levelList.levels.end(), [](auto& level1, auto& level2) {
+        return level1.id > level2.id;
+    });
+
+    // fetch level from gd servers
+
+    fetchNode->multipleFetchCallback = [this](Result<cocos2d::CCArray*, int> levels) {
+        this->onMultipleFetchedCallback(levels);
+    };
+
+    multipleFetchState = FetchState::FetchingLevel;
+    auto* glm = GameLevelManager::get();
+    glm->m_levelManagerDelegate = fetchNode;
+
+    // join to a string
+    std::string levelIds;
+    bool first = true;
+    for (auto& level : levelList.levels) {
+        if (!first) levelIds += ",";
+        first = false;
+
+        levelIds += std::to_string(level.levelId);
+    }
+
+    glm->getOnlineLevels(GJSearchObject::create(SearchType::Type19, levelIds));
+
+    // set stuff
+    storedMultiplePages[multipleFetchPage] = Page {};
+
+    for (auto& level : levelList.levels) {
+        storedMultiplePages[multipleFetchPage].levels.push_back(std::make_pair(level, nullptr));
+    }
+}
+
+void DailyManager::onMultipleFetchedCallback(Result<cocos2d::CCArray*, int> e) {
+    if (e.isOk()) {
+        for (auto level : CCArrayExt<GJGameLevel*>(e.unwrap())) {
+            auto& levels = storedMultiplePages[multipleFetchPage].levels;
+
+            for (auto& l : levels) {
+                if (l.first.levelId == level->m_levelID) {
+                    l.second = level;
+                    break;
+                }
+            }
+        }
+
+        multipleFetchState = FetchState::NotFetching;
+
+        if (this->multipleReqCallback) {
+            this->multipleReqCallback(storedMultiplePages[multipleFetchPage]);
+        }
+    } else {
+        multipleFetchState = FetchState::NotFetching;
+
+        int err = e.unwrapErr();
+        ErrorQueues::get().error(fmt::format("Failed to download featured levels from the server: <cy>code {}</c>", err));
+    }
+
 }
 
 // void DailyManager::requestDailyItems() {

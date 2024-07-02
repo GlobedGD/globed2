@@ -29,7 +29,12 @@ bool GlobedFeaturedListLayer::init() {
         .id("level-list"_spr)
         .store(listLayer);
 
-    auto titlePos = listLayer->getChildByID("title")->getPosition();
+    auto listTitle = listLayer->getChildByID("title");
+    if (!listTitle) {
+        listTitle = getChildOfType<CCLabelBMFont>(listLayer, 0);
+    }
+
+    auto titlePos = listTitle->getPosition();
 
     Build<CCSprite>::createSpriteName("icon-featured-label.png"_spr)
         .zOrder(10)
@@ -83,37 +88,6 @@ bool GlobedFeaturedListLayer::init() {
 
     util::ui::prepareLayer(this);
 
-    // std::vector<LevelId> retrievedIds = DailyManager::get().getLevelIDsReverse();
-    std::vector<LevelId> retrievedIds = {};
-    NetworkManager::get().addListener<LevelListPacket>(this, [this, retrievedIds](std::shared_ptr<LevelListPacket> packet) {
-        this->levelList.clear();
-        this->levelPages.clear();
-        this->sortedLevelIds.clear();
-
-        for (const auto& level : packet->levels) {
-            this->levelList.emplace(level.levelId, level.playerCount);
-            //this->sortedLevelIds.push_back(level.levelId);
-        }
-
-        // sort the levels
-        // auto comparator = [this](int a, int b) {
-        //     if (!this->levelList.contains(a) || !this->levelList.contains(b)) return false;
-
-        //     auto aVal = this->levelList.at(a);
-        //     auto bVal = this->levelList.at(b);
-
-        //     return aVal > bVal;
-        // };
-
-        // std::sort(sortedLevelIds.begin(), sortedLevelIds.end(), comparator);
-
-        sortedLevelIds = retrievedIds;
-
-        this->currentPage = 0;
-        this->reloadPage();
-
-    });
-
     this->refreshLevels();
 
     return true;
@@ -131,52 +105,16 @@ void GlobedFeaturedListLayer::reloadPage() {
     btnPagePrev->setVisible(false);
     btnPageNext->setVisible(false);
 
-    // if empty, don't make a request
-    if (levelList.empty()) {
-        this->loadLevelsFinished(CCArray::create(), "");
-        return;
+    if (currentPage >= levelPages.size()) {
+        this->createLevelList({});
+    } else {
+        this->createLevelList(levelPages[currentPage]);
     }
-
-    // if cached, reuse it
-    if (currentPage < levelPages.size()) {
-        auto& page = levelPages.at(currentPage);
-        auto array = CCArray::create();
-        for (const auto elem : page) {
-            array->addObject(elem);
-        }
-
-        this->loadLevelsFinished(array, "");
-        return;
-    }
-
-    size_t pageSize = LIST_PAGE_SIZE;
-
-    size_t startIdx = currentPage * pageSize;
-    size_t endIdx = std::min((currentPage + 1) * pageSize, sortedLevelIds.size());
-
-    // now join them to a comma separated string
-    std::ostringstream oss;
-
-    bool first = true;
-    for (size_t i = startIdx; i < endIdx; i++) {
-        if (first) {
-            first = false;
-        } else {
-            oss << ",";
-        }
-
-        oss << sortedLevelIds[i];
-    }
-
-    auto glm = GameLevelManager::sharedState();
-    glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create((SearchType)26, oss.str()));
 }
 
 void GlobedFeaturedListLayer::loadListCommon() {
     loading = false;
     this->removeLoadingCircle();
-    GameLevelManager::sharedState()->m_levelManagerDelegate = nullptr;
 }
 
 void GlobedFeaturedListLayer::removeLoadingCircle() {
@@ -202,40 +140,20 @@ void GlobedFeaturedListLayer::showLoadingUi() {
         .collect();
 }
 
-void GlobedFeaturedListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) {
+void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
     this->loadListCommon();
 
-    // guys im not gonna try and sort a ccarray manually
-
-    std::vector<Ref<GJGameLevel>> sortedLevels;
-    sortedLevels.reserve(p0->count());
-
-    for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(p0)) {
-        sortedLevels.push_back(level);
-    }
-
-    // compare by player count (descending)
-    // auto comparator = [this](GJGameLevel* a, GJGameLevel* b) {
-    //     LevelId levelIdA = HookedGJGameLevel::getLevelIDFrom(a);
-    //     LevelId levelIdB = HookedGJGameLevel::getLevelIDFrom(b);
-    //     if (!this->levelList.contains(levelIdA) || !this->levelList.contains(levelIdB)) return false;
-
-    //     auto aVal = this->levelList.at(levelIdA);
-    //     auto bVal = this->levelList.at(levelIdB);
-
-    //     return aVal > bVal;
-    // };
-
-    // std::sort(sortedLevels.begin(), sortedLevels.end(), comparator);
-
-    // add to cache
-    if (levelPages.size() <= currentPage) {
-        levelPages.push_back(sortedLevels);
-    }
+    std::unordered_map<int, int> levelToRateTier;
 
     CCArray* finalArray = CCArray::create();
-    for (GJGameLevel* level : sortedLevels) {
-        finalArray->addObject(level);
+    for (auto& entry : page.levels) {
+        if (entry.second) {
+            finalArray->addObject(entry.second);
+        } else {
+            log::warn("Skipping missing level: {} (level id {})", entry.first.id, entry.first.levelId);
+        }
+
+        levelToRateTier[entry.first.levelId] = entry.first.rateTier;
     }
 
     if (listLayer->m_listView) listLayer->m_listView->removeFromParent();
@@ -244,12 +162,13 @@ void GlobedFeaturedListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char cons
         .collect();
 
     // guys we are about to do a funny
-    for (LevelCell* cell : CCArrayExt<LevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
-        int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
-        static_cast<GlobedLevelCell*>(cell)->modifyToFeaturedCell();
-        if (!levelList.contains(levelId)) continue;
+    for (auto* cell : CCArrayExt<GlobedLevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
+        log::debug("rate tier: {}", levelToRateTier[cell->m_level->m_levelID]);
+        cell->modifyToFeaturedCell(levelToRateTier[cell->m_level->m_levelID]);
+        // if (!.contains(levelId)) continue;
 
-        static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));
+        // TODO
+        // static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));
     }
 
     // show the buttons
@@ -259,25 +178,10 @@ void GlobedFeaturedListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char cons
 
     size_t pageSize = LIST_PAGE_SIZE;
 
-    if (currentPage < (sortedLevelIds.size() / pageSize)) {
+    if (!page.levels.empty()) {
         btnPageNext->setVisible(true);
     }
 }
-
-void GlobedFeaturedListLayer::loadLevelsFailed(char const* p0, int p1) {
-    this->loadListCommon();
-    log::warn("failed to load levels: {}, {}", p1, p0);
-}
-
-void GlobedFeaturedListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) {
-    this->loadLevelsFinished(p0, p1, -1);
-}
-
-void GlobedFeaturedListLayer::loadLevelsFailed(char const* p0) {
-    this->loadLevelsFailed(p0, -1);
-}
-
-void GlobedFeaturedListLayer::setupPageInfo(gd::string p0, const char* p1) {}
 
 void GlobedFeaturedListLayer::refreshLevels() {
     if (loading) return;
@@ -286,11 +190,15 @@ void GlobedFeaturedListLayer::refreshLevels() {
     btnPagePrev->setVisible(false);
     btnPageNext->setVisible(false);
 
-    auto& nm = NetworkManager::get();
-    if (!nm.established()) return;
+    auto& dm = DailyManager::get();
+    dm.getFeaturedLevels(currentPage, [this](const DailyManager::Page& page) {
+        while (levelPages.size() <= currentPage) {
+            levelPages.push_back({});
+        }
 
-    // request the level list from the server
-    nm.send(RequestLevelListPacket::create());
+        levelPages[currentPage] = page;
+        this->reloadPage();
+    });
 
     // remove existing listview and put a loading circle
     this->showLoadingUi();
