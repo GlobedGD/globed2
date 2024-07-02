@@ -25,7 +25,7 @@
 #include <util/net.hpp>
 #include <ui/notification/panel.hpp>
 
-using namespace asp::sync;
+using namespace asp;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 

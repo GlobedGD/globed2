@@ -5,7 +5,6 @@
 #endif
 
 #include <asp/Log.hpp>
-#include <asp/async/Runtime.hpp>
 
 #include <hooks/all.hpp>
 #include <audio/manager.hpp>

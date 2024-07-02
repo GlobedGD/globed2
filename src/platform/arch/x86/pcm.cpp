@@ -17,7 +17,7 @@ namespace globed::simd::x86 {
             sumVec = _mm_add_ps(sumVec, pcmVec);
         }
 
-        float sum = vec128sum(sumVec);
+        float sum = asp::simd::vec128sum(sumVec);
 
         for (size_t i = alignedSamples; i < samples; i++) {
             sum += std::abs(pcm[i]);

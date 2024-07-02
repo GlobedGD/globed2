@@ -13,8 +13,8 @@ protected:
 
 public:
 #ifdef GLOBED_VOICE_SUPPORT
-    asp::thread::Thread<VoiceRecordingManager*> thread;
-    asp::sync::AtomicBool queuedStop = false, queuedStart = false, recording = false;
+    asp::Thread<VoiceRecordingManager*> thread;
+    asp::AtomicBool queuedStop = false, queuedStart = false, recording = false;
 
     void threadFunc();
 #endif // GLOBED_VOICE_SUPPORT

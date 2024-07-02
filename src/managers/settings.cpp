@@ -1,6 +1,6 @@
 #include "settings.hpp"
 
-#include <util/misc.hpp>
+#include <asp/misc/traits.hpp>
 
 using namespace geode::prelude;
 
@@ -13,7 +13,7 @@ void GlobedSettings::reflect(TaskType taskType) {
 
     // iterate through all categories
     boost::mp11::mp_for_each<SetMd>([&, this](auto cd) -> void {
-        using CatType = typename util::misc::MemberPtrToUnderlying<decltype(cd.pointer)>::type;
+        using CatType = typename asp::member_ptr_to_underlying<decltype(cd.pointer)>::type;
         auto catName = cd.name;
 
         auto& category = this->*cd.pointer;
@@ -22,7 +22,7 @@ void GlobedSettings::reflect(TaskType taskType) {
         // iterate through all settings in the category
         using CatMd = boost::describe::describe_members<CatType, boost::describe::mod_public>;
         boost::mp11::mp_for_each<CatMd>([&, this](auto setd) -> void {
-            using SetTy = typename util::misc::MemberPtrToUnderlying<decltype(setd.pointer)>::type;
+            using SetTy = typename asp::member_ptr_to_underlying<decltype(setd.pointer)>::type;
             using InnerType = SetTy::Type;
             constexpr InnerType Default = SetTy::Default;
 

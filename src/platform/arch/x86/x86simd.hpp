@@ -1,6 +1,7 @@
 #pragma once
 
 #include <platform/basic.hpp>
+#include <asp/simd.hpp>
 
 #ifdef GLOBED_X86
 
@@ -23,17 +24,10 @@
 #endif // __clang__
 
 namespace globed::simd::x86 {
-    struct CPUFeatures {
-        bool sse3, pclmulqdq, ssse3, sse4_1, sse4_2, aes, avx, sse, sse2, avx2, avx512, avx512dq;
-    };
+    using CPUFeatures = asp::simd::CPUFeatures;
 
     /* Generic functions */
 
-    void cpuid(int info[4], int infoType);
-
-    const CPUFeatures& getFeatures();
-
-    float vec128sum(__m128 vec);
     float GLOBED_FEATURE_AVX2 vec256sum(__m256 vec);
     float GLOBED_FEATURE_AVX512 vec512sum(__m512 vec);
 

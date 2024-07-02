@@ -61,11 +61,11 @@ namespace util::cocos {
         bool hasTexturePack;
         size_t gameSearchPathIdx = -1;
         std::vector<size_t> texturePackIndices;
-        std::unique_ptr<asp::thread::ThreadPool> threadPool;
+        std::unique_ptr<asp::ThreadPool> threadPool;
 
         void ensurePoolExists() {
             if (!threadPool) {
-                threadPool = std::make_unique<asp::thread::ThreadPool>(THREAD_COUNT);
+                threadPool = std::make_unique<asp::ThreadPool>(THREAD_COUNT);
             }
         }
 
@@ -122,7 +122,7 @@ namespace util::cocos {
             idx++;
         }
 
-        state.threadPool = std::make_unique<asp::thread::ThreadPool>(THREAD_COUNT);
+        state.threadPool = std::make_unique<asp::ThreadPool>(THREAD_COUNT);
 
         log::debug("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
         log::debug("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));

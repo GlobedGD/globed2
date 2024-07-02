@@ -1,5 +1,7 @@
 #include "setting_cell.hpp"
 
+#include <asp/math/NumberCycle.hpp>
+
 #include "audio_setup_popup.hpp"
 #include "frag_calibration_popup.hpp"
 #include "string_input_popup.hpp"
@@ -331,12 +333,10 @@ void GlobedSettingCell::recreateInvitesFromButton() {
     Build<ButtonSprite>::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f)
         .scale(0.75f)
         .intoMenuItem([this, currentValue](auto) {
-            int cv = (int)currentValue + 1;
-            if (cv > 2) {
-                cv = 0;
-            }
+            asp::NumberCycle curValue((int)currentValue, 0, (int)InvitesFrom::Nobody);
+            curValue.increment();
 
-            this->storeAndSave(cv);
+            this->storeAndSave(curValue);
             this->recreateInvitesFromButton();
         })
         .anchorPoint(0.5f, 0.5f)

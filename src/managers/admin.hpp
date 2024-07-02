@@ -19,6 +19,6 @@ public:
     void openUserPopup(const PlayerRoomPreviewAccountData& rpdata);
 
 private:
-    asp::sync::AtomicBool authorized_;
+    asp::AtomicBool authorized_;
     ComputedRole role = {};
 };

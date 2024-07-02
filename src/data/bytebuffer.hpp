@@ -4,6 +4,8 @@
 
 #include <type_traits>
 #include <fmt/format.h>
+#include <asp/data/util.hpp>
+#include <asp/misc/traits.hpp>
 
 #include "basic.hpp"
 #include "types/basic/either.hpp"
@@ -292,7 +294,7 @@ protected:
 
             // terrifying
             using MPT = decltype(descriptor.pointer);
-            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
+            using FT = typename asp::member_ptr_to_underlying<MPT>::type;
 
             auto result = this->readValue<FT>();
             if (result.isErr()) {
@@ -347,7 +349,7 @@ protected:
         T value;
         boost::mp11::mp_for_each<Md>([&, this](auto descriptor) -> void {
             using MPT = decltype(descriptor.pointer);
-            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
+            using FT = typename asp::member_ptr_to_underlying<MPT>::type;
 
             static_assert(std::is_same_v<FT, bool>, "bitfield struct must consist of only bools");
 
@@ -370,7 +372,7 @@ protected:
 
         boost::mp11::mp_for_each<Md>([&, this](auto descriptor) -> void {
             using MPT = decltype(descriptor.pointer);
-            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
+            using FT = typename asp::member_ptr_to_underlying<MPT>::type;
 
             static_assert(std::is_same_v<FT, bool>, "bitfield struct must consist of only bools");
 
@@ -384,13 +386,13 @@ protected:
 
     template <typename T>
     DecodeResult<T> preCustomDecode() {
-        if constexpr (util::misc::IsStdVector<T>::value) {
+        if constexpr (asp::is_std_vector<T>::value) {
             return this->pcDecodeVector<typename T::value_type>();
-        } else if constexpr (util::misc::IsStdPair<T>::value) {
+        } else if constexpr (asp::is_std_pair<T>::value) {
             return this->pcDecodePair<typename T::first_type, typename T::second_type>();
-        } else if constexpr (util::misc::IsStdOptional<T>::value) {
+        } else if constexpr (asp::is_std_optional<T>::value) {
             return this->pcDecodeOptional<typename T::value_type>();
-        } else if constexpr (util::misc::IsEither<T>::value) {
+        } else if constexpr (util::misc::is_either<T>::value) {
             return this->pcDecodeEither<typename T::first_type, typename T::second_type>();
         } else {
             return this->customDecode<T>();
@@ -399,13 +401,13 @@ protected:
 
     template <typename T>
     void preCustomEncode(const T& value) {
-        if constexpr (util::misc::IsStdVector<T>::value) {
+        if constexpr (asp::is_std_vector<T>::value) {
             this->pcEncodeVector<typename T::value_type>(value);
-        } else if constexpr (util::misc::IsStdPair<T>::value) {
+        } else if constexpr (asp::is_std_pair<T>::value) {
             this->pcEncodePair<typename T::first_type, typename T::second_type>(value);
-        } else if constexpr (util::misc::IsStdOptional<T>::value) {
+        } else if constexpr (asp::is_std_optional<T>::value) {
             this->pcEncodeOptional<typename T::value_type>(value);
-        } else if constexpr (util::misc::IsEither<T>::value) {
+        } else if constexpr (util::misc::is_either<T>::value) {
             this->pcEncodeEither(value);
         } else if constexpr (std::is_same_v<T, ByteBuffer>) {
             this->rawWriteBytes(value.data().data(), value.size());
@@ -525,7 +527,7 @@ protected:
 
         boost::mp11::mp_for_each<Md>([&](auto descriptor) {
             using MPT = decltype(descriptor.pointer);
-            using FT = typename util::misc::MemberPtrToUnderlying<MPT>::type;
+            using FT = typename asp::member_ptr_to_underlying<MPT>::type;
 
             // align first if unaligned
             if (total % alignof(FT) != 0) {
