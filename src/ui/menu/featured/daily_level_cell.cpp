@@ -52,9 +52,9 @@ void GlobedDailyLevelCell::reload() {
         this->rating = meta.rateTier;
         this->editionNum = meta.id;
         this->createCell(level);
-        
+
         // updating most recently seen level
-        Mod::get()->setSavedValue<int>("last-seen-daily", meta.id);
+        DailyManager::get().setLastSeenFeaturedLevel(meta.id);
     });
 }
 
@@ -110,27 +110,34 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
             }
         }
     }
-    
-    CCMenuItemSpriteExtra* newPlayBtn = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
-    .intoMenuItem([this, levelcell](auto) {
-        DailyManager::get().rateTierOpen = this->rating;
-        auto layer = LevelInfoLayer::create(this->level, false);
-        util::ui::switchToScene(layer);
-        DailyManager::get().rateTierOpen = -1;
-    })
-    .pos(playBtn->getPosition())
-    .parent(levelcell->getChildByIDRecursive("main-menu"));
 
-    newPlayBtn->getNormalImage()->setScale(0.75);
-    newPlayBtn->setContentSize(newPlayBtn->getNormalImage()->getScaledContentSize());
-    newPlayBtn->getNormalImage()->setPosition(newPlayBtn->getNormalImage()->getScaledContentSize() / 2);
-    playBtn->setVisible(false);
-    // if (playBtn != nullptr) {
-    //     playBtn->setSprite(CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png"));
-    //     playBtn->getNormalImage()->setScale(0.75);
-    //     playBtn->setContentSize(playBtn->getNormalImage()->getScaledContentSize());
-    //     playBtn->getNormalImage()->setPosition(playBtn->getNormalImage()->getScaledContentSize() / 2);
-    // }
+    CCNode* playBtnParent = levelcell->getChildByIDRecursive("main-menu");
+    if (!playBtnParent) {
+        playBtnParent = getChildOfType<CCMenu>(levelcell->m_mainLayer, 0);
+    }
+
+    if (playBtnParent) {
+        CCMenuItemSpriteExtra* newPlayBtn = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
+            .intoMenuItem([this, levelcell](auto) {
+                DailyManager::get().rateTierOpen = this->rating;
+                auto layer = LevelInfoLayer::create(this->level, false);
+                util::ui::switchToScene(layer);
+                DailyManager::get().rateTierOpen = -1;
+            })
+            .pos(playBtn->getPosition())
+            .parent(playBtnParent);
+
+        newPlayBtn->getNormalImage()->setScale(0.75);
+        newPlayBtn->setContentSize(newPlayBtn->getNormalImage()->getScaledContentSize());
+        newPlayBtn->getNormalImage()->setPosition(newPlayBtn->getNormalImage()->getScaledContentSize() / 2);
+        playBtn->setVisible(false);
+        // if (playBtn != nullptr) {
+        //     playBtn->setSprite(CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png"));
+        //     playBtn->getNormalImage()->setScale(0.75);
+        //     playBtn->setContentSize(playBtn->getNormalImage()->getScaledContentSize());
+        //     playBtn->getNormalImage()->setPosition(playBtn->getNormalImage()->getScaledContentSize() / 2);
+        // }
+    }
 
     auto diffContainer = levelcell->m_mainLayer->getChildByIDRecursive("difficulty-container");
     if (diffContainer != nullptr) {
@@ -162,15 +169,7 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
         .contentSize({editionBadge->getScaledContentWidth() + editionLabel->getScaledContentWidth() + 16.f, 30.f})
         .parent(editionNode);
 
-    GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(levelcell->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));
-    if (!diff) {
-        for (auto* child : CCArrayExt<CCNode*>(levelcell->m_mainLayer->getChildren())) {
-            if (auto p = getChildOfType<GJDifficultySprite>(child, 0)) {
-                diff = p;
-                break;
-            }
-        }
-    }
+    auto* diff = DailyManager::get().findDifficultySprite(levelcell);
 
     if (diff) {
         DailyManager::get().attachRatingSprite(rating, diff);

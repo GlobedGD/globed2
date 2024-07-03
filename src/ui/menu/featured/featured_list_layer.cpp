@@ -1,8 +1,5 @@
 #include "featured_list_layer.hpp"
 
-#include <Geode/loader/Dispatch.hpp>
-#include <algorithm>
-
 #include <hooks/level_cell.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <data/packets/client/general.hpp>
@@ -44,8 +41,9 @@ bool GlobedFeaturedListLayer::init() {
     // refresh button
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")
         .intoMenuItem([this](auto) {
-            this->refreshLevels();
+            this->refreshLevels(true);
         })
+        .id("btn-refresh")
         .pos(winSize.width - 35.f, 35.f)
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
@@ -58,11 +56,13 @@ bool GlobedFeaturedListLayer::init() {
     Build<CCSprite>::createSpriteName("GJ_arrow_03_001.png")
         .intoMenuItem([this](auto) {
             this->currentPage--;
-            this->reloadPage();
+            this->refreshLevels(false);
         })
+        .id("btn-prev-page")
         .pos(pageBtnPadding, winSize.height / 2)
         .store(btnPagePrev)
         .intoNewParent(CCMenu::create())
+        .id("prev-page-menu")
         .pos(0.f, 0.f)
         .parent(this);
 
@@ -71,11 +71,13 @@ bool GlobedFeaturedListLayer::init() {
         .store(btnSprite)
         .intoMenuItem([this](auto) {
             this->currentPage++;
-            this->reloadPage();
+            this->refreshLevels(false);
         })
+        .id("btn-next-page")
         .pos(winSize.width - pageBtnPadding, winSize.height / 2)
         .store(btnPageNext)
         .intoNewParent(CCMenu::create())
+        .id("next-page-menu")
         .pos(0.f, 0.f)
         .parent(this);
 
@@ -187,7 +189,7 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
     }
 }
 
-void GlobedFeaturedListLayer::refreshLevels() {
+void GlobedFeaturedListLayer::refreshLevels(bool force) {
     if (loading) return;
 
     loading = true;
@@ -205,7 +207,7 @@ void GlobedFeaturedListLayer::refreshLevels() {
 
         levelPages[currentPage] = page;
         this->reloadPage();
-    });
+    }, force);
 }
 
 void GlobedFeaturedListLayer::keyBackClicked() {

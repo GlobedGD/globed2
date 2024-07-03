@@ -11,8 +11,8 @@ using namespace geode::prelude;
 class DummyLevelFetchNode : public CCObject, public LevelManagerDelegate, public LevelDownloadDelegate {
 public:
     void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override {
-        if (this->multipleFetchCallback) {
-            this->multipleFetchCallback(Ok(p0));
+        if (this->fetchCallback) {
+            this->fetchCallback(Ok(p0));
         }
     }
 
@@ -21,8 +21,8 @@ public:
     }
 
     void loadLevelsFailed(char const* p0, int p1) override {
-        if (this->multipleFetchCallback) {
-            this->multipleFetchCallback(Err(p1));
+        if (this->fetchCallback) {
+            this->fetchCallback(Err(p1));
         }
     }
 
@@ -30,7 +30,7 @@ public:
         this->loadLevelsFailed(p0, 0);
     }
 
-    std::function<void(Result<CCArray*, int>)> multipleFetchCallback;
+    std::function<void(Result<CCArray*, int>)> fetchCallback;
 
     void levelDownloadFinished(GJGameLevel* level) override {
         if (this->downloadCallback) {
@@ -113,7 +113,7 @@ void DailyManager::getStoredLevel(std::function<void(GJGameLevel*, const GlobedF
 
     this->singleReqCallback = std::move(callback);
 
-    if (singleFetchState != FetchState::NotFetching) {
+    if (singleFetchState != FetchState::NotFetching || multipleFetchState != FetchState::NotFetching) {
         return;
     }
 
@@ -169,15 +169,42 @@ void DailyManager::onLevelMetaFetchedCallback(typename WebRequestManager::Event*
     // fetch level from gd servers
 
     auto* glm = GameLevelManager::get();
-
-    glm->m_levelDownloadDelegate = fetchNode;
-    fetchNode->downloadCallback = [this](Result<GJGameLevel*, int> level) {
-        this->onFullLevelFetchedCallback(level);
+    fetchNode->fetchCallback = [this](Result<CCArray*, int> level) {
+        this->onLevelFetchedCallback(level);
     };
 
-    glm->downloadLevel(storedLevelMeta.levelId, false);
-
     singleFetchState = FetchState::FetchingLevel;
+    glm->m_levelManagerDelegate = fetchNode;
+    glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(storedLevelMeta.levelId)));
+
+}
+
+void DailyManager::onLevelFetchedCallback(Result<CCArray*, int> level) {
+    auto glm = GameLevelManager::get();
+    glm->m_levelManagerDelegate = nullptr;
+
+    if (level.isOk()) {
+        if (level.unwrap()->count() < 1) {
+            singleFetchState = FetchState::NotFetching;
+            ErrorQueues::get().error("Failed to fetch featured level from the server: <cy>not found</c>");
+            return;
+        }
+
+        storedLevel = static_cast<GJGameLevel*>(level.unwrap()->objectAtIndex(0));
+
+        glm->m_levelDownloadDelegate = fetchNode;
+        fetchNode->downloadCallback = [this](Result<GJGameLevel*, int> level) {
+            this->onFullLevelFetchedCallback(level);
+        };
+
+        glm->downloadLevel(storedLevelMeta.levelId, false);
+
+        singleFetchState = FetchState::FetchingFullLevel;
+    } else {
+        int err = level.unwrapErr();
+        ErrorQueues::get().error(fmt::format("Failed to fetch featured level from the server: <cy>code {}</c>", err));
+        singleFetchState = FetchState::NotFetching;
+    }
 }
 
 void DailyManager::onFullLevelFetchedCallback(Result<GJGameLevel*, int> level) {
@@ -203,11 +230,56 @@ void DailyManager::onFullLevelFetchedCallback(Result<GJGameLevel*, int> level) {
 
 void DailyManager::clearWebCallback() {
     singleReqCallback = {};
+    levelMetaCallback = {};
+}
+
+void DailyManager::getCurrentLevelMeta(std::function<void(const GlobedFeaturedLevel&)>&& callback, bool force) {
+    if (!force && storedLevelMeta.levelId != 0) {
+        callback(storedLevelMeta);
+        return;
+    }
+
+    this->levelMetaCallback = std::move(callback);
+
+    auto req = WebRequestManager::get().fetchFeaturedLevel();
+    singleReqListener.bind(this, &DailyManager::onCurrentLevelMetaFetchedCallback);
+    singleReqListener.setFilter(std::move(req));
+}
+
+void DailyManager::onCurrentLevelMetaFetchedCallback(typename WebRequestManager::Event* e) {
+    if (!e || !e->getValue()) return;
+
+    auto result = std::move(*e->getValue());
+    if (!result) {
+        auto err = result.unwrapErr();
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
+        singleFetchState = FetchState::NotFetching;
+        return;
+    }
+
+    auto val = result.unwrap();
+
+    std::string parseError;
+    auto parsed_ = matjson::parse(val, parseError);
+
+    if (!parsed_ || !parsed_->is<GlobedFeaturedLevel>()) {
+        if (parsed_) {
+            log::warn("failed to parse featured level:\n{}", parsed_.value().dump());
+        }
+
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>parsing failed: {}</c>", parsed_.has_value() ? "invalid json structure" : parseError));
+        singleFetchState = FetchState::NotFetching;
+        return;
+    }
+
+    auto levelMeta = std::move(parsed_.value()).as<GlobedFeaturedLevel>();
+
+    this->levelMetaCallback(levelMeta);
 }
 
 void DailyManager::getFeaturedLevels(int page, std::function<void(const Page&)>&& callback, bool force) {
     if (multipleFetchState == FetchState::NotFetching) {
-        if (storedMultiplePages.contains(page)) {
+        if (storedMultiplePages.contains(page) && !force) {
             callback(storedMultiplePages[page]);
             return;
         }
@@ -215,6 +287,8 @@ void DailyManager::getFeaturedLevels(int page, std::function<void(const Page&)>&
         this->multipleReqCallback = std::move(callback);
         return;
     }
+
+    if (singleFetchState != FetchState::NotFetching) return;
 
     this->multipleReqCallback = std::move(callback);
     this->multipleReqListener.getFilter().cancel();
@@ -257,6 +331,18 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
 
     auto levelList = std::move(parsed_.value()).as<GlobedFeaturedLevelList>();
 
+    // if the page is empty, return early
+    if (levelList.levels.empty()) {
+        multipleFetchState = FetchState::NotFetching;
+        storedMultiplePages[multipleFetchPage] = Page {};
+
+        if (this->multipleReqCallback) {
+            this->multipleReqCallback(storedMultiplePages[multipleFetchPage]);
+        }
+
+        return;
+    }
+
     // sort
     std::sort(levelList.levels.begin(), levelList.levels.end(), [](auto& level1, auto& level2) {
         return level1.id > level2.id;
@@ -264,7 +350,7 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
 
     // fetch level from gd servers
 
-    fetchNode->multipleFetchCallback = [this](Result<cocos2d::CCArray*, int> levels) {
+    fetchNode->fetchCallback = [this](Result<cocos2d::CCArray*, int> levels) {
         this->onMultipleFetchedCallback(levels);
     };
 
@@ -406,6 +492,34 @@ void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
         parent->addChild(particle);
     }
     parent->addChild(spr);
+}
+
+GJDifficultySprite* DailyManager::findDifficultySprite(CCNode* node) {
+    if (auto lc = typeinfo_cast<LevelCell*>(node)) {
+        auto* diff = typeinfo_cast<GJDifficultySprite*>(lc->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));
+        if (diff) return diff;
+
+        for (auto* child : CCArrayExt<CCNode*>(lc->m_mainLayer->getChildren())) {
+            if (auto p = getChildOfType<GJDifficultySprite>(child, 0)) {
+                return p;
+            }
+        }
+    } else if (auto ll = typeinfo_cast<LevelInfoLayer*>(node)) {
+        auto* diff = typeinfo_cast<GJDifficultySprite*>(ll->getChildByIDRecursive("difficulty-sprite"));
+        if (diff) return diff;
+
+        return getChildOfType<GJDifficultySprite>(ll, 0);
+    }
+
+    return nullptr;
+}
+
+int DailyManager::getLastSeenFeaturedLevel() {
+    return Mod::get()->getSavedValue<int>("last-seen-featured-level");
+}
+
+void DailyManager::setLastSeenFeaturedLevel(int l) {
+    Mod::get()->setSavedValue<int>("last-seen-featured-level", l);
 }
 
 // GJSearchObject* DailyManager::getSearchObject() {

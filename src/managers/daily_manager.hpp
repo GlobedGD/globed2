@@ -27,10 +27,16 @@ public:
     void resetStoredLevel();
     void clearWebCallback();
 
+    void getCurrentLevelMeta(std::function<void(const GlobedFeaturedLevel&)>&& callback, bool force = false);
+
     // force clears all pages
     void getFeaturedLevels(int page, std::function<void(const Page&)>&& callback, bool force = false);
 
     void attachRatingSprite(int tier, cocos2d::CCNode* parent);
+    GJDifficultySprite* findDifficultySprite(cocos2d::CCNode*);
+
+    int getLastSeenFeaturedLevel();
+    void setLastSeenFeaturedLevel(int id);
 
     int rateTierOpen = -1;
 
@@ -39,7 +45,13 @@ private:
         NotFetching,
         FetchingId,
         FetchingLevel,
+        FetchingFullLevel,
     };
+
+    std::function<void(const GlobedFeaturedLevel&)> levelMetaCallback;
+    void onCurrentLevelMetaFetchedCallback(typename WebRequestManager::Event* event);
+
+    // single level fetching
 
     WebRequestManager::Listener singleReqListener;
     std::function<void(GJGameLevel*, const GlobedFeaturedLevel&)> singleReqCallback;
@@ -48,6 +60,11 @@ private:
     GlobedFeaturedLevel storedLevelMeta;
     geode::Ref<GJGameLevel> storedLevel;
 
+    void onLevelMetaFetchedCallback(typename WebRequestManager::Event* e);
+    void onLevelFetchedCallback(geode::Result<cocos2d::CCArray*, int> e);
+    void onFullLevelFetchedCallback(geode::Result<GJGameLevel*, int> e);
+
+    // multiple level fetching
 
     WebRequestManager::Listener multipleReqListener;
     std::function<void(const Page&)> multipleReqCallback;
@@ -55,10 +72,6 @@ private:
     int multipleFetchPage = 0;
 
     std::unordered_map<int, Page> storedMultiplePages;
-
-
-    void onLevelMetaFetchedCallback(typename WebRequestManager::Event* e);
-    void onFullLevelFetchedCallback(geode::Result<GJGameLevel*, int> e);
 
     void onMultipleMetaFetchedCallback(typename WebRequestManager::Event* e);
     void onMultipleFetchedCallback(geode::Result<cocos2d::CCArray*, int> e);

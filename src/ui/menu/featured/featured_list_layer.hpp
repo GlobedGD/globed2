@@ -26,7 +26,7 @@ private:
 
     bool init() override;
     void keyBackClicked() override;
-    void refreshLevels();
+    void refreshLevels(bool force = false);
     void reloadPage();
 
     void loadListCommon();
