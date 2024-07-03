@@ -42,6 +42,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
         bool forcedPlatformer = false;
         bool shouldStopProgress = false;
         bool quitting = false;
+        bool shouldRequestMeta = false;
         GameCameraState camState;
 
         std::optional<SpiderTeleportData> spiderTp1, spiderTp2;

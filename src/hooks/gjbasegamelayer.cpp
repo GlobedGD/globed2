@@ -485,8 +485,7 @@ void GlobedGJBGL::postInitActions(float) {
     auto& nm = NetworkManager::get();
     nm.send(RequestPlayerProfilesPacket::create(0));
 
-    auto data = this->gatherPlayerMetadata();
-    nm.send(PlayerMetadataPacket::create(data));
+    m_fields->shouldRequestMeta = true;
 }
 
 /* Selectors */
@@ -505,7 +504,12 @@ void GlobedGJBGL::selSendPlayerData(float) {
     if ((self->m_fields->players.empty() && self->m_fields->totalSentPackets % 30 != 15) || self->m_fields->quitting) return;
 
     auto data = self->gatherPlayerData();
-    NetworkManager::get().send(PlayerDataPacket::create(data));
+    std::optional<PlayerMetadata> meta;
+    if (util::misc::swapFlag(m_fields->shouldRequestMeta)) {
+        meta = self->gatherPlayerMetadata();
+    }
+
+    NetworkManager::get().send(PlayerDataPacket::create(data, meta));
 }
 
 // selSendPlayerMetadata - runs every 10 seconds
@@ -516,8 +520,7 @@ void GlobedGJBGL::selSendPlayerMetadata(float) {
     // if there are no players or we are quitting from the level, don't send the packet
     if (self->m_fields->players.empty() || self->m_fields->quitting) return;
 
-    auto data = self->gatherPlayerMetadata();
-    NetworkManager::get().send(PlayerMetadataPacket::create(data));
+    m_fields->shouldRequestMeta = true;
 }
 
 // selPeriodicalUpdate - runs 4 times a second, does various stuff

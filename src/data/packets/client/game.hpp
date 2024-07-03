@@ -38,22 +38,12 @@ class PlayerDataPacket : public Packet {
     GLOBED_PACKET(12003, PlayerDataPacket, false, false)
 
     PlayerDataPacket() {}
-    PlayerDataPacket(const PlayerData& data) : data(data) {}
+    PlayerDataPacket(const PlayerData& data, const std::optional<PlayerMetadata>& meta) : data(data), meta(meta) {}
 
     PlayerData data;
+    std::optional<PlayerMetadata> meta;
 };
-GLOBED_SERIALIZABLE_STRUCT(PlayerDataPacket, (data));
-
-// 12004 - PlayerMetadataPacket
-class PlayerMetadataPacket : public Packet {
-    GLOBED_PACKET(12004, PlayerMetadataPacket, false, false)
-
-    PlayerMetadataPacket() {}
-    PlayerMetadataPacket(const PlayerMetadata& data) : data(data) {}
-
-    PlayerMetadata data;
-};
-GLOBED_SERIALIZABLE_STRUCT(PlayerMetadataPacket, (data));
+GLOBED_SERIALIZABLE_STRUCT(PlayerDataPacket, (data, meta));
 
 #ifdef GLOBED_VOICE_SUPPORT
 

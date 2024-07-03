@@ -21,12 +21,7 @@ pub struct LevelLeavePacket;
 #[packet(id = 12003)]
 pub struct PlayerDataPacket {
     pub data: PlayerData,
-}
-
-#[derive(Packet, Decodable)]
-#[packet(id = 12004)]
-pub struct PlayerMetadataPacket {
-    pub data: PlayerMetadata,
+    pub meta: Option<PlayerMetadata>,
 }
 
 #[derive(Packet, Decodable)]
