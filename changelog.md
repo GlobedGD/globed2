@@ -1,7 +1,12 @@
 ## v1.4.4
 
+* Add Globed Featured Levels
+* \-- A level will be chosen every few days to be featured on Globed
+* \-- Levels can be rated Featured, Epic and Outstanding
+* Levels played on Globed are now put at the top of the saved levels list, rather than the bottom
+* Hopefully fix room list not loading on some devices
+* Change the icon used in Discord RPC integration to a better one
 * Various small fixes and UI changes
-* Played online levels are now put at the top of the saved list, rather than the bottom
 
 ## v1.4.3
 
