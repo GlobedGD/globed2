@@ -43,7 +43,7 @@ pub struct RoomInvitePacket {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 23006)]
+#[packet(id = 23006, tcp = true)]
 pub struct RoomListPacket {
     pub rooms: Vec<RoomListingInfo>,
 }
