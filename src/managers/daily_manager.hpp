@@ -32,6 +32,8 @@ public:
 
     void attachRatingSprite(int tier, cocos2d::CCNode* parent);
 
+    int rateTierOpen = -1;
+
 private:
     enum class FetchState {
         NotFetching,

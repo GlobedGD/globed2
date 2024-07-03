@@ -390,11 +390,10 @@ void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
     spr->setZOrder(-1);
     spr->setPosition(parent->getScaledContentSize() / 2);
     spr->setID("globed-rating"_spr);
-    parent->addChild(spr);
 
     if (tier == 2) {
         CCSprite* overlay = Build<CCSprite>::createSpriteName("icon-outstanding-overlay.png"_spr)
-            .pos(parent->getScaledContentSize() / 2 + CCPoint{0.f, 2.f})
+            .pos(parent->getScaledContentSize() / 2)
             .blendFunc({GL_ONE, GL_ONE})
             .color({200, 255, 255})
             .opacity(175)
@@ -406,6 +405,7 @@ void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
         particle->setZOrder(-2);
         parent->addChild(particle);
     }
+    parent->addChild(spr);
 }
 
 // GJSearchObject* DailyManager::getSearchObject() {

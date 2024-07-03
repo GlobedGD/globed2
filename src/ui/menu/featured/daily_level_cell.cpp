@@ -1,6 +1,7 @@
 #include "daily_level_cell.hpp"
 
 #include <managers/daily_manager.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -9,6 +10,8 @@ public:
     void draw() override {
         // balls
     }
+
+    int rateTier = -1;
 
     NewLevelCell(char const* p0, float p1, float p2) : LevelCell(p0, p1, p2) {};
 };
@@ -86,12 +89,14 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     levelcell->autorelease();
     levelcell->loadFromLevel(level);
     levelcell->setPosition({7.5f, 12.5f});
+    levelcell->rateTier = this->rating;
     background->addChild(levelcell);
 
     auto cvoltonID = levelcell->m_mainLayer->getChildByIDRecursive("cvolton.betterinfo/level-id-label");
     if (cvoltonID != nullptr) {
         cvoltonID->setVisible(false);
     }
+
     auto playBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(levelcell->m_mainLayer->getChildByIDRecursive("view-button"));
     if (!playBtn) {
         // no nodeids :(
@@ -105,13 +110,27 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
             }
         }
     }
+    
+    CCMenuItemSpriteExtra* newPlayBtn = Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
+    .intoMenuItem([this, levelcell](auto) {
+        DailyManager::get().rateTierOpen = this->rating;
+        auto layer = LevelInfoLayer::create(this->level, false);
+        util::ui::switchToScene(layer);
+        DailyManager::get().rateTierOpen = -1;
+    })
+    .pos(playBtn->getPosition())
+    .parent(levelcell->getChildByIDRecursive("main-menu"));
 
-    if (playBtn != nullptr) {
-        playBtn->setSprite(CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png"));
-        playBtn->getNormalImage()->setScale(0.75);
-        playBtn->setContentSize(playBtn->getNormalImage()->getScaledContentSize());
-        playBtn->getNormalImage()->setPosition(playBtn->getNormalImage()->getScaledContentSize() / 2);
-    }
+    newPlayBtn->getNormalImage()->setScale(0.75);
+    newPlayBtn->setContentSize(newPlayBtn->getNormalImage()->getScaledContentSize());
+    newPlayBtn->getNormalImage()->setPosition(newPlayBtn->getNormalImage()->getScaledContentSize() / 2);
+    playBtn->setVisible(false);
+    // if (playBtn != nullptr) {
+    //     playBtn->setSprite(CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png"));
+    //     playBtn->getNormalImage()->setScale(0.75);
+    //     playBtn->setContentSize(playBtn->getNormalImage()->getScaledContentSize());
+    //     playBtn->getNormalImage()->setPosition(playBtn->getNormalImage()->getScaledContentSize() / 2);
+    // }
 
     auto diffContainer = levelcell->m_mainLayer->getChildByIDRecursive("difficulty-container");
     if (diffContainer != nullptr) {

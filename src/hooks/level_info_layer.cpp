@@ -1,7 +1,33 @@
 #include "level_info_layer.hpp"
 #include <net/manager.hpp>
+#include <managers/daily_manager.hpp>
 
 using namespace geode::prelude;
+
+bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
+    if (!LevelInfoLayer::init(level, challenge)) return false;
+    //log::info("detected: {}", DailyManager::get().rateTierOpen);
+
+    int rating = DailyManager::get().rateTierOpen;
+
+    if (rating != -1) {
+        GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(this->getChildByIDRecursive("difficulty-sprite"));
+        if (!diff) {
+            for (auto* child : CCArrayExt<CCNode*>(this->getChildren())) {
+                if (auto p = getChildOfType<GJDifficultySprite>(child, 0)) {
+                    diff = p;
+                    break;
+                }
+            }
+        }
+
+        if (diff) {
+            DailyManager::get().attachRatingSprite(rating, diff);
+        }
+    }
+
+    return true;
+}
 
 void HookedLevelInfoLayer::onPlay(CCObject* s) {
     if (m_fields->allowOpeningAnyway) {

@@ -157,14 +157,18 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
     }
 
     if (listLayer->m_listView) listLayer->m_listView->removeFromParent();
+
     listLayer->m_listView = Build<CustomListView>::create(finalArray, BoomListType::Level, LIST_HEIGHT, LIST_WIDTH)
         .parent(listLayer)
         .collect();
 
     // guys we are about to do a funny
     for (auto* cell : CCArrayExt<GlobedLevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
-        log::debug("rate tier: {}", levelToRateTier[cell->m_level->m_levelID]);
+        // log::debug("rate tier: {}", levelToRateTier[cell->m_level->m_levelID]);
         cell->modifyToFeaturedCell(levelToRateTier[cell->m_level->m_levelID]);
+        if (levelToRateTier.contains(cell->m_level->m_levelID)) {
+            static_cast<GlobedLevelCell*>(cell)->m_fields->rateTier = levelToRateTier[cell->m_level->m_levelID];
+        }
         // if (!.contains(levelId)) continue;
 
         // TODO

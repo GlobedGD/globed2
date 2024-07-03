@@ -8,6 +8,12 @@
 
 using namespace geode::prelude;
 
+void GlobedLevelCell::onClick(CCObject* sender)  {
+    DailyManager::get().rateTierOpen = this->m_fields->rateTier;
+    LevelCell::onClick(sender);
+    DailyManager::get().rateTierOpen = -1;
+}
+
 void GlobedLevelCell::modifyToFeaturedCell(int rating) {
     if (rating != -1) {
         GJDifficultySprite* diff = typeinfo_cast<GJDifficultySprite*>(this->m_mainLayer->getChildByIDRecursive("difficulty-sprite"));

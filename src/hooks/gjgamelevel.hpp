@@ -7,6 +7,7 @@
 class $modify(HookedGJGameLevel, GJGameLevel) {
     struct Fields {
         bool shouldTransitionWithPopScene = false;
+        int rateTier = -1;
     };
 
 #ifndef GEODE_IS_ARM_MAC
