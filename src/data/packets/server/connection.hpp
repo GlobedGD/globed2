@@ -44,22 +44,9 @@ class ServerDisconnectPacket : public Packet {
 };
 GLOBED_SERIALIZABLE_STRUCT(ServerDisconnectPacket, (message));
 
-// 20004 - LoggedInLegacyPacket
-class LoggedInLegacyPacket : public Packet {
-    GLOBED_PACKET(20004, LoggedInLegacyPacket, false, false)
-
-    LoggedInLegacyPacket() {}
-
-    uint32_t tps;
-    SpecialUserData specialUserData;
-    std::vector<GameServerRole> allRoles;
-    uint32_t secretKey;
-};
-GLOBED_SERIALIZABLE_STRUCT(LoggedInLegacyPacket, (tps, specialUserData, allRoles, secretKey));
-
-// 20014 - LoggedInPacket
+// 20004 - LoggedInPacket
 class LoggedInPacket : public Packet {
-    GLOBED_PACKET(20014, LoggedInPacket, false, false)
+    GLOBED_PACKET(20004, LoggedInPacket, false, false)
 
     LoggedInPacket() {}
 

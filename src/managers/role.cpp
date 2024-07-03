@@ -46,6 +46,8 @@ ComputedRole RoleManager::compute(const std::vector<uint8_t>& roles) {
         }
 
         // NOTE: we intentionally dont compute permissions client-side as it's not required
+        // ... except for this one
+        computed.editFeaturedLevels |= role.editFeaturedLevels;
 
         if (isHigher) {
             computed.priority = role.priority;

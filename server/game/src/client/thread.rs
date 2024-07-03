@@ -438,7 +438,6 @@ impl ClientThread {
 
             /* game related */
             RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,
-            LevelJoinLegacyPacket::PACKET_ID => self.handle_level_join_legacy(&mut data).await,
             LevelJoinPacket::PACKET_ID => self.handle_level_join(&mut data).await,
             LevelLeavePacket::PACKET_ID => self.handle_level_leave(&mut data).await,
             PlayerDataPacket::PACKET_ID => self.handle_player_data(&mut data).await,

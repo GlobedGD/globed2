@@ -355,12 +355,7 @@ void GlobedGJBGL::setupUpdate() {
 
         auto levelId = HookedGJGameLevel::getLevelIDFrom(self->m_level);
 
-        // TODO: remove legacy packet after min protocol becomes 8
-        if (nm.getServerProtocol() >= 8) {
-            nm.send(LevelJoinPacket::create(levelId, self->m_level->m_unlisted));
-        } else {
-            nm.send(LevelJoinLegacyPacket::create(levelId));
-        }
+        nm.send(LevelJoinPacket::create(levelId, self->m_level->m_unlisted));
 
         self->rescheduleSelectors();
         self->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);

@@ -88,19 +88,19 @@ bool DailyPopup::setup() {
 
     if (AdminManager::get().authorized()) {
         auto& role = AdminManager::get().getRole();
-        // TODO: check if edit levels perm is available
-
-        Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
-            .scale(0.7f)
-            .intoMenuItem([this] {
-                EditFeaturedLevelPopup::create()->show();
-            })
-            .id("edit-btn")
-            .pos(rlayout.topRight - CCPoint{20.f, 20.f})
-            .intoNewParent(CCMenu::create())
-            .id("edit-menu")
-            .pos(0.f, 0.f)
-            .parent(m_mainLayer);
+        if (role.editFeaturedLevels) {
+            Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+                .scale(0.7f)
+                .intoMenuItem([this] {
+                    EditFeaturedLevelPopup::create()->show();
+                })
+                .id("edit-btn")
+                .pos(rlayout.topRight - CCPoint{20.f, 20.f})
+                .intoNewParent(CCMenu::create())
+                .id("edit-menu")
+                .pos(0.f, 0.f)
+                .parent(m_mainLayer);
+        }
     }
 
     // refresh button

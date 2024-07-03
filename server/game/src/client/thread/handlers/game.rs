@@ -10,10 +10,6 @@ impl ClientThread {
         self._handle_level_join(packet.level_id, packet.unlisted).await
     });
 
-    gs_handler!(self, handle_level_join_legacy, LevelJoinLegacyPacket, packet, {
-        self._handle_level_join(packet.level_id, false).await
-    });
-
     async fn _handle_level_join(&self, level_id: LevelId, unlisted: bool) -> crate::client::Result<()> {
         let account_id = gs_needauth!(self);
 

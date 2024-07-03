@@ -42,13 +42,6 @@ pub struct RoomInvitePacket {
     pub room_password: InlineString<16>,
 }
 
-// TODO: remove in next major GD update
-#[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 23006)]
-pub struct RoomListPacketLegacy {
-    pub rooms: Vec<RoomListingInfoLegacy>,
-}
-
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 23006)]
 pub struct RoomListPacket {

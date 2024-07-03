@@ -379,7 +379,7 @@ namespace util::ui {
             // replace the vtable so we can get our update() called
             // is this UB?
             // Yes.
-            return util::lowlevel::forceDowncast<RepeatingBackground>(bg);
+            return util::lowlevel::swapVtable<RepeatingBackground>(bg);
         }
 
         return nullptr;

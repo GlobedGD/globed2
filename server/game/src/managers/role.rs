@@ -1,5 +1,5 @@
 use crate::data::*;
-use globed_shared::{error, warn, GameServerBootData, IntMap, LegacyServerRole, ServerRole, SyncMutex};
+use globed_shared::{error, warn, GameServerBootData, IntMap, ServerRole, SyncMutex};
 
 #[derive(Default)]
 pub struct RoleManager {
@@ -9,8 +9,7 @@ pub struct RoleManager {
 #[derive(Encodable, Decodable, DynamicSize, Default, Clone)]
 pub struct GameServerRole {
     pub int_id: u8,
-    // TODO change to ServerRole
-    pub role: LegacyServerRole,
+    pub role: ServerRole,
 }
 
 #[derive(Encodable, Decodable, DynamicSize, Default, Clone)]
@@ -175,8 +174,7 @@ impl RoleManager {
                 computed.mute |= role.mute;
                 computed.ban |= role.ban;
                 computed.edit_role |= role.edit_role;
-                // TODO
-                // computed.edit_featured_levels |= role.edit_featured_levels;
+                computed.edit_featured_levels |= role.edit_featured_levels;
             }
 
             if is_higher {

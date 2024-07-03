@@ -65,58 +65,6 @@ impl UserEntry {
     }
 }
 
-// TODO: remove this
-#[derive(Serialize, Deserialize, Encodable, Decodable, DynamicSize, Clone, Default)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct LegacyServerRole {
-    pub id: String,
-    pub priority: i32,
-    #[serde(default)]
-    pub badge_icon: String,
-    #[serde(default)]
-    pub name_color: String,
-    #[serde(default)]
-    pub chat_color: String,
-
-    // permissions
-    #[serde(default)]
-    pub notices: bool,
-    #[serde(default)]
-    pub notices_to_everyone: bool,
-    #[serde(default)]
-    pub kick: bool,
-    #[serde(default)]
-    pub kick_everyone: bool,
-    #[serde(default)]
-    pub mute: bool,
-    #[serde(default)]
-    pub ban: bool,
-    #[serde(default)]
-    pub edit_role: bool,
-    #[serde(default)]
-    pub admin: bool,
-}
-
-impl From<ServerRole> for LegacyServerRole {
-    fn from(value: ServerRole) -> Self {
-        Self {
-            id: value.id,
-            priority: value.priority,
-            badge_icon: value.badge_icon,
-            name_color: value.name_color,
-            chat_color: value.chat_color,
-            notices: value.notices,
-            notices_to_everyone: value.notices_to_everyone,
-            kick: value.kick,
-            kick_everyone: value.kick_everyone,
-            mute: value.mute,
-            ban: value.ban,
-            edit_role: value.edit_role,
-            admin: value.admin,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Encodable, Decodable, DynamicSize, Clone, Default)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct ServerRole {

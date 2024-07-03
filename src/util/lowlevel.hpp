@@ -61,7 +61,8 @@ namespace util::lowlevel {
     // This is not safe. Do not do this.
     template <typename Out, typename In>
         requires (std::is_base_of_v<In, Out> && std::is_default_constructible_v<Out> && std::is_polymorphic_v<In>)
-    Out* forceDowncast(In* ptr) {
+    Out* swapVtable(In* ptr) {
+        static_assert(sizeof(In) == sizeof(Out), "swapVtable is not safe to use if the sizes of the classes do not match");
         Out tempInstance;
 
         std::memcpy((void*)ptr, (void*)&tempInstance, sizeof(void*));

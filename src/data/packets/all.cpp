@@ -10,7 +10,6 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(CryptoHandshakeResponsePacket);
         PACKET(KeepaliveResponsePacket);
         PACKET(ServerDisconnectPacket);
-        PACKET(LoggedInLegacyPacket);
         PACKET(LoggedInPacket);
         PACKET(LoginFailedPacket);
         PACKET(ProtocolMismatchPacket);

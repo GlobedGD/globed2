@@ -326,7 +326,7 @@ protected:
 
         // this is fucking criminal i hope no one notices this
         // TODO: dont do this
-        util::lowlevel::forceDowncast<GlobedContentLayer>(scrollLayer->m_contentLayer);
+        util::lowlevel::swapVtable<GlobedContentLayer>(scrollLayer->m_contentLayer);
 
         this->setContentSize({width, height});
         this->ignoreAnchorPointForPosition(false);

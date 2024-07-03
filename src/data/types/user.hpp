@@ -15,11 +15,12 @@ struct ServerRole {
     bool mute;
     bool ban;
     bool editRole;
+    bool editFeaturedLevels;
     bool admin;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(ServerRole, (
-    id, priority, badgeIcon, nameColor, chatColor, notices, noticesToEveryone, kick, kickEveryone, mute, ban, editRole, admin
+    id, priority, badgeIcon, nameColor, chatColor, notices, noticesToEveryone, kick, kickEveryone, mute, ban, editRole, editFeaturedLevels, admin
 ));
 
 struct GameServerRole {
@@ -42,9 +43,10 @@ struct ComputedRole {
     bool mute;
     bool ban;
     bool editRole;
+    bool editFeaturedLevels;
     bool admin;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(ComputedRole, (
-    priority, badgeIcon, nameColor, chatColor, notices, noticesToEveryone, kick, kickEveryone, mute, ban, editRole, admin
+    priority, badgeIcon, nameColor, chatColor, notices, noticesToEveryone, kick, kickEveryone, mute, ban, editRole, editFeaturedLevels, admin
 ));

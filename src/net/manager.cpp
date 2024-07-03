@@ -29,9 +29,9 @@ using namespace asp;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
-static constexpr uint16_t MIN_PROTOCOL_VERSION = 6;
-static constexpr uint16_t MAX_PROTOCOL_VERSION = 8;
-static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({6, 7, 8});
+static constexpr uint16_t MIN_PROTOCOL_VERSION = 9;
+static constexpr uint16_t MAX_PROTOCOL_VERSION = 9;
+static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({9});
 
 static bool isProtocolSupported(uint16_t proto) {
     return std::find(SUPPORTED_PROTOCOLS.begin(), SUPPORTED_PROTOCOLS.end(), proto) != SUPPORTED_PROTOCOLS.end();
@@ -481,17 +481,6 @@ protected:
             this->onLoggedIn(std::move(packet));
         });
 
-        addInternalListener<LoggedInLegacyPacket>([this](auto packet) {
-            auto pkt = std::make_shared<LoggedInPacket>();
-            pkt->allRoles = std::move(packet->allRoles);
-            pkt->specialUserData = std::move(packet->specialUserData);
-            pkt->tps = packet->tps;
-            pkt->secretKey = packet->secretKey;
-            pkt->serverProtocol = 7; // last protocol with legacy login packet
-
-            this->onLoggedIn(std::move(pkt));
-        });
-
         addInternalListener<LoginFailedPacket>([this](auto packet) {
             ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> The server rejected the login attempt.\n\nReason: <cy>{}</c>", packet->message));
             GlobedAccountManager::get().authToken.lock()->clear();
@@ -593,7 +582,6 @@ protected:
         addGlobalListener<RoomJoinedPacket>([](auto packet) {});
 
         addGlobalListener<RoomJoinFailedPacket>([](auto packet) {
-            // TODO: handle reason
             std::string reason = "N/A";
             if (packet->wasInvalid) reason = "Room doesn't exist";
             if (packet->wasProtected) reason = "Room password is wrong";

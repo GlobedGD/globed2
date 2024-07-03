@@ -452,27 +452,15 @@ impl UnauthorizedThread {
 
         let socket = self.get_socket();
 
-        // loggednipacket only on protocol v8 and higher
-        if self.protocol_version.load(Ordering::Relaxed) >= 8 {
-            socket
-                .send_packet_dynamic(&LoggedInPacket {
-                    tps,
-                    all_roles,
-                    secret_key: self.secret_key,
-                    special_user_data,
-                    server_protocol: MAX_SUPPORTED_PROTOCOL,
-                })
-                .await
-        } else {
-            socket
-                .send_packet_dynamic(&LoggedInLegacyPacket {
-                    tps,
-                    all_roles,
-                    secret_key: self.secret_key,
-                    special_user_data,
-                })
-                .await
-        }
+        socket
+            .send_packet_dynamic(&LoggedInPacket {
+                tps,
+                all_roles,
+                secret_key: self.secret_key,
+                special_user_data,
+                server_protocol: MAX_SUPPORTED_PROTOCOL,
+            })
+            .await
     }
 
     /// Blocks until we get notified that we got claimed by a UDP socket.

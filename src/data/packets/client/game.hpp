@@ -13,20 +13,9 @@ class RequestPlayerProfilesPacket : public Packet {
 };
 GLOBED_SERIALIZABLE_STRUCT(RequestPlayerProfilesPacket, (requested));
 
-// 12001 - LevelJoinLegacyPacket
-class LevelJoinLegacyPacket : public Packet {
-    GLOBED_PACKET(12001, LevelJoinLegacyPacket, false, false)
-
-    LevelJoinLegacyPacket() {}
-    LevelJoinLegacyPacket(LevelId levelId) : levelId(levelId) {}
-
-    LevelId levelId;
-};
-GLOBED_SERIALIZABLE_STRUCT(LevelJoinLegacyPacket, (levelId));
-
-// 12005 - LevelJoinPacket
+// 12001 - LevelJoinPacket
 class LevelJoinPacket : public Packet {
-    GLOBED_PACKET(12005, LevelJoinPacket, false, false)
+    GLOBED_PACKET(12001, LevelJoinPacket, false, false)
 
     LevelJoinPacket() {}
     LevelJoinPacket(LevelId levelId, bool unlisted) : levelId(levelId), unlisted(unlisted) {}
