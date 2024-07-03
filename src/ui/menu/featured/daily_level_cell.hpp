@@ -21,6 +21,7 @@ protected:
     Ref<cocos2d::extension::CCScale9Sprite> darkBackground;
     Ref<cocos2d::extension::CCScale9Sprite> background;
     Ref<LoadingCircle> loadingCircle;
+    Ref<cocos2d::CCNode> playersNode;
     CCMenuItemSpriteExtra *playButton = nullptr;
     GJGameLevel* level;
 
@@ -29,6 +30,7 @@ protected:
     int editionNum;
 
     void createCell(GJGameLevel* level);
+    void updatePlayerCount(unsigned short playerCount);
 
     void downloadLevel(CCObject*);
 };

@@ -1,6 +1,8 @@
 #include "daily_level_cell.hpp"
 
+#include <data/packets/server/general.hpp>
 #include <managers/daily_manager.hpp>
+#include <net/manager.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -13,7 +15,7 @@ public:
 
     int rateTier = -1;
 
-    NewLevelCell(char const* p0, float p1, float p2) : LevelCell(p0, p1, p2) {};
+    NewLevelCell(char const* p0, float p1, float p2) : LevelCell(p0, p1, p2) {}
 };
 
 bool GlobedDailyLevelCell::init() {
@@ -28,6 +30,13 @@ bool GlobedDailyLevelCell::init() {
         .parent(this);
 
     this->reload();
+
+    NetworkManager::get().addListener<LevelPlayerCountPacket>(this, [this](std::shared_ptr<LevelPlayerCountPacket> packet) {
+        if (packet->levels.empty()) return;
+        auto [levelId, playerCount] = packet->levels.front();
+
+        this->updatePlayerCount(playerCount);
+    });
 
     return true;
 }
@@ -63,6 +72,8 @@ GlobedDailyLevelCell::~GlobedDailyLevelCell() {
 }
 
 void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
+    NetworkManager::get().sendRequestPlayerCount(level->m_levelID);
+
     loadingCircle->fadeAndRemove();
 
     Build<CCScale9Sprite>::create("GJ_square02.png")
@@ -91,6 +102,15 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     levelcell->setPosition({7.5f, 12.5f});
     levelcell->rateTier = this->rating;
     background->addChild(levelcell);
+
+    auto menu = getChildOfType<CCMenu>(levelcell->m_mainLayer, 0);
+    if (!menu) return;
+
+    auto toggler = getChildOfType<CCMenuItemToggler>(menu, 0);
+
+    if (toggler) {
+        toggler->setVisible(false);
+    }
 
     auto cvoltonID = levelcell->m_mainLayer->getChildByIDRecursive("cvolton.betterinfo/level-id-label");
     if (cvoltonID != nullptr) {
@@ -144,6 +164,7 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
         diffContainer->setPositionX(diffContainer->getPositionX() - 2.f);
     }
 
+    // id
     CCNode* editionNode = Build<CCNode>::create()
         .pos({0, CELL_HEIGHT + 10.f})
         .scale(0.6f)
@@ -174,6 +195,42 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     if (diff) {
         DailyManager::get().attachRatingSprite(rating, diff);
     }
+}
+
+void GlobedDailyLevelCell::updatePlayerCount(unsigned short playerCount) {
+    if (playersNode) {
+        playersNode->removeFromParent();
+    }
+
+    // player count label
+    Build<CCNode>::create()
+        .pos({CELL_WIDTH, CELL_HEIGHT + 10.f})
+        .anchorPoint(1.f, 0.0f)
+        .scale(0.6f)
+        .parent(background)
+        .store(playersNode);
+
+    CCSprite* playersIcon = Build<CCSprite>::createSpriteName("featured-player-icon.png"_spr)
+        .pos({16.f, -0.5f})
+        .scale(0.45f)
+        .parent(playersNode);
+
+    CCLabelBMFont* playersLabel = Build<CCLabelBMFont>::create(fmt::format("{}", playerCount).c_str(), "bigFont.fnt")
+        .scale(0.60f)
+        .color({255, 181, 102})
+        .anchorPoint({0, 0.5})
+        .pos({10.f + playersIcon->getScaledContentWidth(), 0})
+        .parent(playersNode);
+    playersLabel->runAction(CCRepeatForever::create(CCSequence::create(CCTintTo::create(0.75, 255, 243, 143), CCTintTo::create(0.75, 255, 181, 102), nullptr)));
+
+    CCScale9Sprite* editionBG = Build<CCScale9Sprite>::create("square02_small.png")
+        .opacity(75)
+        .zOrder(-1)
+        .anchorPoint({0, 0.5})
+        .contentSize({playersIcon->getScaledContentWidth() + playersLabel->getScaledContentWidth() + 16.f, 30.f})
+        .parent(playersNode);
+
+    playersNode->setContentSize(editionBG->getContentSize());
 }
 
 GlobedDailyLevelCell* GlobedDailyLevelCell::create() {

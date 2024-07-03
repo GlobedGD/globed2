@@ -1228,3 +1228,11 @@ void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener*
 MAKE_SENDER2(UpdatePlayerStatus, (bool invisible), (invisible))
 MAKE_SENDER2(RequestRoomPlayerList, (), ())
 MAKE_SENDER2(LeaveRoom, (), ())
+
+void NetworkManager::sendRequestPlayerCount(LevelId id) {
+    impl->send(RequestPlayerCountPacket::create(std::vector({id})));
+}
+
+void NetworkManager::sendRequestPlayerCount(std::vector<LevelId> ids) {
+    impl->send(RequestPlayerCountPacket::create(std::move(ids)));
+}
