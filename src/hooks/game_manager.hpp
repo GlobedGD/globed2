@@ -10,6 +10,7 @@ class $modify(HookedGameManager, GameManager) {
         int lastSceneEnum;
         bool assetsPreloaded = false;
         bool deathEffectsPreloaded = false;
+        int lastLevelRateTier = -1;
     };
 
     static void onModify(auto& self) {

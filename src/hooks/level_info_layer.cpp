@@ -1,18 +1,37 @@
 #include "level_info_layer.hpp"
-#include <net/manager.hpp>
+
+#include <hooks/game_manager.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <managers/daily_manager.hpp>
+#include <net/manager.hpp>
 
 using namespace geode::prelude;
+
+static int& storedRateTier() {
+    return static_cast<HookedGameManager*>(GameManager::get())->m_fields->lastLevelRateTier;
+}
 
 bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
     if (!LevelInfoLayer::init(level, challenge)) return false;
 
     int rating = DailyManager::get().rateTierOpen;
 
+    bool isQuittingPlayLayer = false;
+    if (auto pl = GlobedGJBGL::get()) {
+        isQuittingPlayLayer = pl->m_fields->quitting;
+    }
+
+    if (rating == -1 && storedRateTier() != -1 && (!PlayLayer::get() || isQuittingPlayLayer)) {
+        rating = storedRateTier();
+        storedRateTier() = -1;
+    }
+
     if (rating != -1) {
         if (auto* diff = DailyManager::get().findDifficultySprite(this)) {
             DailyManager::get().attachRatingSprite(rating, diff);
         }
+
+        this->m_fields->rateTier = rating;
     }
 
     return true;
@@ -21,6 +40,7 @@ bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
 void HookedLevelInfoLayer::onPlay(CCObject* s) {
     if (m_fields->allowOpeningAnyway) {
         m_fields->allowOpeningAnyway = false;
+        storedRateTier() = m_fields->rateTier;
         LevelInfoLayer::onPlay(s);
         return;
     }
@@ -35,11 +55,14 @@ void HookedLevelInfoLayer::onPlay(CCObject* s) {
         return;
     }
 
+    storedRateTier() = m_fields->rateTier;
     LevelInfoLayer::onPlay(s);
 }
 
 void HookedLevelInfoLayer::forcePlay(CCObject* s) {
     m_fields->allowOpeningAnyway = true;
+
+    storedRateTier() = m_fields->rateTier;
     LevelInfoLayer::onPlay(s);
 }
 

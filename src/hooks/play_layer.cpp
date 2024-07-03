@@ -44,8 +44,9 @@ void GlobedPlayLayer::setupHasCompleted() {
 }
 
 void GlobedPlayLayer::onQuit() {
-    PlayLayer::onQuit();
     GlobedGJBGL::get()->onQuitActions();
+
+    PlayLayer::onQuit();
 }
 
 void GlobedPlayLayer::fullReset() {
