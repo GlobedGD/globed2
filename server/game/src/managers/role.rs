@@ -1,5 +1,5 @@
 use crate::data::*;
-use globed_shared::{error, warn, GameServerBootData, IntMap, ServerRole, SyncMutex};
+use globed_shared::{error, warn, GameServerBootData, IntMap, LegacyServerRole, ServerRole, SyncMutex};
 
 #[derive(Default)]
 pub struct RoleManager {
@@ -9,7 +9,8 @@ pub struct RoleManager {
 #[derive(Encodable, Decodable, DynamicSize, Default, Clone)]
 pub struct GameServerRole {
     pub int_id: u8,
-    pub role: ServerRole,
+    // TODO change to ServerRole
+    pub role: LegacyServerRole,
 }
 
 #[derive(Encodable, Decodable, DynamicSize, Default, Clone)]
@@ -27,12 +28,22 @@ pub struct ComputedRole {
     pub mute: bool,
     pub ban: bool,
     pub edit_role: bool,
+    pub edit_featured_levels: bool,
     pub admin: bool,
 }
 
 impl ComputedRole {
+    // check if the user has any mod perms at all
     pub fn can_moderate(&self) -> bool {
-        self.notices || self.notices_to_everyone || self.kick || self.kick_everyone || self.mute || self.ban || self.edit_role || self.admin
+        self.notices
+            || self.notices_to_everyone
+            || self.kick
+            || self.kick_everyone
+            || self.mute
+            || self.ban
+            || self.edit_role
+            || self.edit_featured_levels
+            || self.admin
     }
 }
 
@@ -78,7 +89,7 @@ impl RoleManager {
             .iter()
             .map(|(int_id, x)| GameServerRole {
                 int_id: *int_id,
-                role: x.clone(),
+                role: x.clone().into(),
             })
             .collect()
     }
@@ -154,6 +165,7 @@ impl RoleManager {
                 computed.mute = true;
                 computed.ban = true;
                 computed.edit_role = true;
+                computed.edit_featured_levels = true;
                 computed.admin = true;
             } else {
                 computed.notices |= role.notices;
@@ -163,6 +175,8 @@ impl RoleManager {
                 computed.mute |= role.mute;
                 computed.ban |= role.ban;
                 computed.edit_role |= role.edit_role;
+                // TODO
+                // computed.edit_featured_levels |= role.edit_featured_levels;
             }
 
             if is_higher {
@@ -210,6 +224,7 @@ impl RoleManager {
             mute: true,
             ban: true,
             edit_role: true,
+            edit_featured_levels: true,
             admin: true,
             ..Default::default()
         }

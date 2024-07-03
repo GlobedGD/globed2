@@ -14,7 +14,7 @@ public:
 
 private:
     Ref<CCMenuItemSpriteExtra> levelListButton, serverSwitcherButton, discordButton, settingsButton;
-    cocos2d::CCMenu *leftButtonMenu, *rightButtonMenu;
+    cocos2d::CCMenu *leftButtonMenu, *rightButtonMenu, *dailyButtonMenu;
     cocos2d::CCSprite* background;
 
     bool currentlyShowingButtons = false;

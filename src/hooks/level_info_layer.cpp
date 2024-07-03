@@ -1,7 +1,22 @@
 #include "level_info_layer.hpp"
 #include <net/manager.hpp>
+#include <managers/daily_manager.hpp>
 
 using namespace geode::prelude;
+
+bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
+    if (!LevelInfoLayer::init(level, challenge)) return false;
+
+    int rating = DailyManager::get().rateTierOpen;
+
+    if (rating != -1) {
+        if (auto* diff = DailyManager::get().findDifficultySprite(this)) {
+            DailyManager::get().attachRatingSprite(rating, diff);
+        }
+    }
+
+    return true;
+}
 
 void HookedLevelInfoLayer::onPlay(CCObject* s) {
     if (m_fields->allowOpeningAnyway) {

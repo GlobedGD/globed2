@@ -11,7 +11,8 @@ using namespace geode::prelude;
 
 bool AdminLoginPopup::setup() {
     auto sizes = util::ui::getPopupLayout(m_size);
-    setTitle("Admin Login");
+
+    this->setTitle("Admin Login");
 
     Build<InputNode>::create(POPUP_WIDTH * 0.75f, "Password", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 32)
         .pos(sizes.center.width, sizes.center.height + 20.f)
@@ -36,9 +37,12 @@ bool AdminLoginPopup::setup() {
                     return;
                 }
 
+                auto& gam = GlobedAccountManager::get();
                 if (settings.admin.rememberPassword) {
-                    GlobedAccountManager::get().storeAdminPassword(password);
+                    gam.storeAdminPassword(password);
                 }
+
+                gam.storeTempAdminPassword(password);
 
                 nm.send(AdminAuthPacket::create(password));
                 this->onClose(this);

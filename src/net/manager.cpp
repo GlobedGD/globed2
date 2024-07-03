@@ -708,6 +708,7 @@ protected:
         if (am.hasAdminPassword()) {
             auto password = am.getAdminPassword();
             if (password.has_value()) {
+                GlobedAccountManager::get().storeTempAdminPassword(password.value());
                 this->send(AdminAuthPacket::create(password.value()));
             }
         }
@@ -753,11 +754,11 @@ protected:
 
     uint16_t getUsedProtocol() {
         // 0xffff is a special value that the server doesn't check
-#ifdef GLOBED_DEBUG
-        return 0xffff;
-#else
-        return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
-#endif
+        #ifdef GLOBED_DEBUG
+                return 0xffff;
+        #else
+                return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
+        #endif
     }
 
     uint32_t getServerTps() {

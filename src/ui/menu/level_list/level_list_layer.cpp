@@ -36,6 +36,7 @@ bool GlobedLevelListLayer::init() {
         .pos(winSize.width - 35.f, 35.f)
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
+        .zOrder(2)
         .parent(this);
 
     constexpr float pageBtnPadding = 20.f;
@@ -66,6 +67,9 @@ bool GlobedLevelListLayer::init() {
         .parent(this);
 
     btnSprite->setFlipX(true);
+
+    // side art
+    geode::addSideArt(this, SideArt::Bottom);
 
     listLayer->setPosition(winSize / 2 - listLayer->getScaledContentSize() / 2);
 

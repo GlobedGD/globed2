@@ -6,6 +6,7 @@ use rocket::{
 use rocket_db_pools::Database;
 
 pub mod dbimpl;
+pub use dbimpl::{FeaturedLevel, FullFeaturedLevel};
 
 pub async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
     match GlobedDb::fetch(&rocket) {

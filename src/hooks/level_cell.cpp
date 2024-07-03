@@ -1,11 +1,28 @@
 #include "level_cell.hpp"
+
 #include <defs/geode.hpp>
 #include <managers/settings.hpp>
-
+#include <managers/daily_manager.hpp>
 #include <util/math.hpp>
+
 
 using namespace geode::prelude;
 
+void GlobedLevelCell::onClick(CCObject* sender)  {
+    DailyManager::get().rateTierOpen = this->m_fields->rateTier;
+    LevelCell::onClick(sender);
+    DailyManager::get().rateTierOpen = -1;
+}
+
+void GlobedLevelCell::modifyToFeaturedCell(int rating) {
+    if (rating != -1) {
+        auto* diff = DailyManager::get().findDifficultySprite(this);
+
+        if (diff) {
+            DailyManager::get().attachRatingSprite(rating, diff);
+        }
+    }
+}
 
 void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
     auto& settings = GlobedSettings::get();
@@ -61,6 +78,6 @@ void GlobedLevelCell::updatePlayerCount(int count, bool inLists) {
         } else {
             m_fields->playerCountLabel->setString(fmt::format("{} {}", count, count == 1 ? "player" : "players").c_str());
         }
-       
+
     }
 }

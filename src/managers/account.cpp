@@ -136,6 +136,14 @@ void GlobedAccountManager::storeAdminPassword(const std::string_view password) {
     Mod::get()->setSavedValue(jsonkey, encoded);
 }
 
+void GlobedAccountManager::storeTempAdminPassword(std::string_view password) {
+    *tempAdminPassword.lock() = std::string(password);
+}
+
+std::string GlobedAccountManager::getTempAdminPassword() {
+    return *tempAdminPassword.lock();
+}
+
 void GlobedAccountManager::clearAdminPassword() {
     GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::clearAdminPassword before initializing the instance")
 

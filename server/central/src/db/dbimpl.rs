@@ -50,6 +50,23 @@ pub struct PlayerCountHistoryEntry {
     count: i64,
 }
 
+#[derive(Clone, FromRow, Serialize)]
+pub struct FullFeaturedLevel {
+    id: i64,
+    level_id: i32,
+    picked_at: i32,
+    picked_by: i32,
+    is_active: bool,
+    rate_tier: i32,
+}
+
+#[derive(Clone, FromRow, Serialize)]
+pub struct FeaturedLevel {
+    id: i64,
+    level_id: i32,
+    rate_tier: i32,
+}
+
 impl GlobedDb {
     pub async fn get_user(&self, account_id: i32) -> Result<Option<UserEntry>> {
         let res: Option<UserEntryWrapper> = query_as("SELECT * FROM users WHERE account_id = ?")
@@ -90,7 +107,6 @@ impl GlobedDb {
             .map(|_| ())
     }
 
-    #[allow(clippy::cast_possible_wrap)]
     async fn maybe_expire_ban(&self, user: &mut UserEntry) -> Result<()> {
         let expired = user.violation_expiry.as_ref().is_some_and(|expiry| {
             let current_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock went backwards").as_secs() as i64;
@@ -152,5 +168,41 @@ impl GlobedDb {
             .bind(i64::try_from(after.duration_since(UNIX_EPOCH).unwrap().as_secs()).unwrap_or(0))
             .fetch_all(&self.0)
             .await
+    }
+
+    pub async fn get_current_featured_level(&self) -> Result<Option<FeaturedLevel>> {
+        let mut result = query_as::<_, FeaturedLevel>("SELECT id, level_id, rate_tier FROM featured_levels WHERE is_active = 1 LIMIT 1")
+            .fetch_all(&self.0)
+            .await?;
+
+        Ok(result.pop())
+    }
+
+    pub async fn get_featured_level_history(&self, page: usize) -> Result<Vec<FeaturedLevel>> {
+        const PAGE_SIZE: usize = 10;
+
+        let result = query_as::<_, FeaturedLevel>("SELECT id, level_id, rate_tier FROM featured_levels ORDER BY id DESC LIMIT ? OFFSET ?")
+            .bind(PAGE_SIZE as i64)
+            .bind((page * PAGE_SIZE) as i64)
+            .fetch_all(&self.0)
+            .await?;
+
+        Ok(result)
+    }
+
+    pub async fn replace_featured_level(&self, account_id: i32, level_id: i32, rate_tier: i32) -> Result<()> {
+        // set all previous levels to inactive
+        query("UPDATE featured_levels SET is_active = 0").execute(&self.0).await?;
+
+        query("INSERT OR REPLACE INTO featured_levels (level_id, picked_at, picked_by, is_active, rate_tier) VALUES (?, ?, ?, ?, ?)")
+            .bind(level_id)
+            .bind(i64::try_from(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()).unwrap_or(0))
+            .bind(account_id)
+            .bind(1)
+            .bind(rate_tier)
+            .execute(&self.0)
+            .await?;
+
+        Ok(())
     }
 }
