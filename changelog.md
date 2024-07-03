@@ -1,6 +1,10 @@
+## v1.4.5
+
+* Fix level ordering in the saved tab (again)
+
 ## v1.4.4
 
-* Add Globed Featured Levels
+* Add Globed Featured Levels (thanks [Kiba](user:4569963))
 * \-- A level will be chosen every few days to be featured on Globed
 * \-- Levels can be rated Featured, Epic and Outstanding
 * Levels played on Globed are now put at the top of the saved levels list, rather than the bottom

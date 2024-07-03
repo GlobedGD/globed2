@@ -5,6 +5,7 @@
 #include <managers/error_queues.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -213,6 +214,7 @@ void DailyManager::onFullLevelFetchedCallback(Result<GJGameLevel*, int> level) {
 
     if (level.isOk()) {
         storedLevel = level.unwrap();
+        util::gd::reorderDownloadedLevel(storedLevel);
 
         singleFetchState = FetchState::NotFetching;
 

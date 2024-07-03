@@ -1,17 +1,15 @@
 #include "level_list_layer.hpp"
 
 #include <hooks/level_cell.hpp>
+#include <hooks/gjgamelevel.hpp>
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/manager.hpp>
-#include <hooks/gjgamelevel.hpp>
 #include <managers/error_queues.hpp>
 #include <util/ui.hpp>
-#include <Geode/loader/Dispatch.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
-
-GlobedSettings& settings = GlobedSettings::get();
 
 bool GlobedLevelListLayer::init() {
     if (!CCLayer::init()) return false;
@@ -136,6 +134,7 @@ void GlobedLevelListLayer::reloadPage() {
         return;
     }
 
+    auto& settings = GlobedSettings::get();
     size_t pageSize = settings.globed.increaseLevelList ? INCREASED_LIST_PAGE_SIZE : LIST_PAGE_SIZE;
 
     size_t startIdx = currentPage * pageSize;
@@ -222,6 +221,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     CCArray* finalArray = CCArray::create();
     for (GJGameLevel* level : sortedLevels) {
+        util::gd::reorderDownloadedLevel(level);
         finalArray->addObject(level);
     }
 
@@ -243,6 +243,7 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
         btnPagePrev->setVisible(true);
     }
 
+    auto& settings = GlobedSettings::get();
     size_t pageSize = settings.globed.increaseLevelList ? INCREASED_LIST_PAGE_SIZE : LIST_PAGE_SIZE;
 
     if (currentPage < (sortedLevelIds.size() / pageSize)) {

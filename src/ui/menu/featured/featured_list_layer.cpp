@@ -8,6 +8,7 @@
 #include <managers/daily_manager.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -149,6 +150,8 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
 
     CCArray* finalArray = CCArray::create();
     for (auto& entry : page.levels) {
+        util::gd::reorderDownloadedLevel(entry.second);
+
         if (entry.second) {
             finalArray->addObject(entry.second);
         } else {
