@@ -198,6 +198,11 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
 }
 
 void GlobedDailyLevelCell::updatePlayerCount(unsigned short playerCount) {
+    // idfk
+    if (!background) {
+        return;
+    }
+
     if (playersNode) {
         playersNode->removeFromParent();
     }
