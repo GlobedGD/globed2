@@ -295,7 +295,7 @@ void DailyManager::getFeaturedLevels(int page, std::function<void(const Page&)>&
         return;
     }
 
-    if (singleFetchState != FetchState::NotFetching) return;
+    if (multipleFetchState != FetchState::NotFetching) return;
 
     this->multipleReqCallback = std::move(callback);
     this->multipleReqListener.getFilter().cancel();

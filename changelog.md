@@ -1,6 +1,7 @@
 ## v1.4.5
 
-* Add player counts to the featured list layer
+* Add player counts to the featured level list
+* Fix some bugs with the featured level list
 * Fix level ordering in the saved tab (again)
 * Fix "Receive Invites From" setting crashing the game
 * Fix the next arrow button showing on the last page of the featured level list
