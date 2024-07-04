@@ -8,7 +8,7 @@ using namespace geode::prelude;
 namespace globed {
 
 // IconType -> PlayerIconType
-template<> PlayerIconType into<PlayerIconType, IconType>(const IconType& value) {
+template<> PlayerIconType into(const IconType& value) {
     switch (value) {
         case IconType::Cube: return PlayerIconType::Cube;
         case IconType::Ship: return PlayerIconType::Ship;
@@ -24,7 +24,7 @@ template<> PlayerIconType into<PlayerIconType, IconType>(const IconType& value) 
 }
 
 // PlayerIconType -> IconType
-template<> IconType into<IconType, PlayerIconType>(const PlayerIconType& value) {
+template<> IconType into(const PlayerIconType& value) {
     switch (value) {
         case PlayerIconType::Cube: return IconType::Cube;
         case PlayerIconType::Ship: return IconType::Ship;

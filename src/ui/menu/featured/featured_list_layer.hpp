@@ -13,7 +13,6 @@ public:
     static constexpr size_t LIST_PAGE_SIZE = 30;
 
     static GlobedFeaturedListLayer* create();
-    ~GlobedFeaturedListLayer();
 
 private:
     GJListLayer* listLayer = nullptr;
@@ -26,6 +25,7 @@ private:
 
     bool init() override;
     void keyBackClicked() override;
+    void update(float dt) override;
     void refreshLevels(bool force = false);
     void reloadPage();
 

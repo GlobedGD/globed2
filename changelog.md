@@ -1,6 +1,8 @@
 ## v1.4.5
 
+* Add player counts to the featured list layer
 * Fix level ordering in the saved tab (again)
+* Fix "Receive Invites From" setting crashing the game
 
 ## v1.4.4
 

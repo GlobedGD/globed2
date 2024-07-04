@@ -12,7 +12,7 @@ To into(const From& value);
 
 // Specialization for T -> T
 template <typename T>
-T into(const T& value) {
+inline T into(const T& value) {
     return value;
 }
 

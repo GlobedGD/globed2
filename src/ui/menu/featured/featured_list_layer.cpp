@@ -91,13 +91,27 @@ bool GlobedFeaturedListLayer::init() {
 
     util::ui::prepareLayer(this);
 
+    NetworkManager::get().addListener<LevelPlayerCountPacket>(this, [this](auto packet) {
+        this->playerCounts.clear();
+
+        for (auto& [id, count] : packet->levels) {
+            this->playerCounts[id] = count;
+        }
+    });
+
     this->refreshLevels();
+    this->scheduleUpdate();
 
     return true;
 }
 
-GlobedFeaturedListLayer::~GlobedFeaturedListLayer() {
-    GameLevelManager::sharedState()->m_levelManagerDelegate = nullptr;
+void GlobedFeaturedListLayer::update(float dt) {
+    if (!listLayer || !listLayer->m_listView) return;
+
+    for (auto entry : CCArrayExt<CCNode*>(listLayer->m_listView->m_tableView->m_cellArray)) {
+        auto cell = typeinfo_cast<LevelCell*>(entry);
+        static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(playerCounts.contains(cell->m_level->m_levelID) ? playerCounts.at(cell->m_level->m_levelID) : 0);
+    }
 }
 
 void GlobedFeaturedListLayer::reloadPage() {
@@ -147,6 +161,7 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
     this->loadListCommon();
 
     std::unordered_map<int, int> levelToRateTier;
+    std::vector<LevelId> levelIds;
 
     CCArray* finalArray = CCArray::create();
     for (auto& entry : page.levels) {
@@ -159,6 +174,7 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
         }
 
         levelToRateTier[entry.first.levelId] = entry.first.rateTier;
+        levelIds.push_back(entry.first.levelId);
     }
 
     if (listLayer->m_listView) listLayer->m_listView->removeFromParent();
@@ -190,6 +206,8 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
     if (!page.levels.empty()) {
         btnPageNext->setVisible(true);
     }
+
+    NetworkManager::get().sendRequestPlayerCount(levelIds);
 }
 
 void GlobedFeaturedListLayer::refreshLevels(bool force) {
