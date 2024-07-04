@@ -336,7 +336,7 @@ void GlobedSettingCell::recreateInvitesFromButton() {
             asp::NumberCycle curValue((int)currentValue, 0, (int)InvitesFrom::Nobody);
             curValue.increment();
 
-            this->storeAndSave(curValue);
+            this->storeAndSave(curValue.get());
             this->recreateInvitesFromButton();
         })
         .anchorPoint(0.5f, 0.5f)
