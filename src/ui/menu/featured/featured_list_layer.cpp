@@ -203,7 +203,7 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
 
     size_t pageSize = LIST_PAGE_SIZE;
 
-    if (!page.levels.empty() && (lastPage != -1 && currentPage < lastPage)) {
+    if (!page.levels.empty() && (lastPage == -1 || currentPage < lastPage)) {
         btnPageNext->setVisible(true);
     }
 
@@ -230,6 +230,8 @@ void GlobedFeaturedListLayer::refreshLevels(bool force) {
 
         if (page.isLastPage) {
             lastPage = page.page;
+        } else {
+            lastPage = page.page + 1;
         }
 
         this->reloadPage();
