@@ -2,8 +2,11 @@
 
 #include <hooks/game_manager.hpp>
 #include <hooks/gjbasegamelayer.hpp>
+#include <ui/menu/level_list/level_list_layer.hpp>
+#include <ui/menu/featured/featured_list_layer.hpp>
 #include <managers/daily_manager.hpp>
 #include <net/manager.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -13,6 +16,16 @@ static int& storedRateTier() {
 
 bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
     if (!LevelInfoLayer::init(level, challenge)) return false;
+
+    // i hate myself
+    if (level->m_levelIndex == 0) {
+        for (auto child : CCArrayExt<CCNode*>(CCScene::get()->getChildren())) {
+            if (typeinfo_cast<GlobedLevelListLayer*>(child) || typeinfo_cast<GlobedFeaturedListLayer*>(child)) {
+                util::gd::reorderDownloadedLevel(level);
+                break;
+            }
+        }
+    }
 
     int rating = DailyManager::get().rateTierOpen;
 

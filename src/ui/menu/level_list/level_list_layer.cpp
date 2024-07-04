@@ -221,7 +221,6 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 
     CCArray* finalArray = CCArray::create();
     for (GJGameLevel* level : sortedLevels) {
-        util::gd::reorderDownloadedLevel(level);
         finalArray->addObject(level);
     }
 
@@ -263,8 +262,6 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
 void GlobedLevelListLayer::loadLevelsFailed(char const* p0) {
     this->loadLevelsFailed(p0, -1);
 }
-
-void GlobedLevelListLayer::setupPageInfo(gd::string p0, const char* p1) {}
 
 void GlobedLevelListLayer::refreshLevels() {
     if (loading) return;
