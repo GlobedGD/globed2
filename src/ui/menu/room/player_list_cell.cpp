@@ -9,6 +9,7 @@
 #include <ui/menu/room/download_level_popup.hpp>
 #include <ui/general/simple_player.hpp>
 #include <util/ui.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -249,8 +250,7 @@ void PlayerListCell::enableInvites() {
 }
 
 void PlayerListCell::onOpenProfile(cocos2d::CCObject*) {
-    GameLevelManager::sharedState()->storeUserName(playerData.userId, playerData.accountId, playerData.name);
-    ProfilePage::create(playerData.accountId, false)->show();
+    util::gd::openProfile(playerData.accountId, playerData.userId, playerData.name);
 }
 
 PlayerListCell* PlayerListCell::create(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad) {

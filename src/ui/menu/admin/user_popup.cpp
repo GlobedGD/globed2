@@ -14,6 +14,7 @@
 #include <util/ui.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -87,9 +88,7 @@ void AdminUserPopup::onProfileLoaded() {
         .limitLabelWidth(160.f, 0.8f, 0.1f)
         .intoMenuItem([this] {
             auto& data = accountData.value();
-
-            GameLevelManager::sharedState()->storeUserName(data.userId, data.accountId, data.name);
-            ProfilePage::create(data.accountId, false)->show();
+            util::gd::openProfile(data.accountId, data.userId, data.name);
         })
         .parent(nameLayout)
         .collect();

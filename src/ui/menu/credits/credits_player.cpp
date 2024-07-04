@@ -1,5 +1,7 @@
 #include "credits_player.hpp"
 
+#include <util/gd.hpp>
+
 using namespace geode::prelude;
 
 bool GlobedCreditsPlayer::init(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
@@ -26,8 +28,8 @@ bool GlobedCreditsPlayer::init(const std::string_view name, const std::string_vi
     auto menu = Build<CCLabelBMFont>::create(std::string(nickname).c_str(), "goldFont.fnt")
         .scale(0.45f)
         .limitLabelWidth(50.f, 0.45f, 0.05f)
-        .intoMenuItem([accountId] {
-            ProfilePage::create(accountId, false)->show();
+        .intoMenuItem([accountId, userId, name = std::string(name)] {
+            util::gd::openProfile(accountId, userId, name);
         })
         .pos(0.f, 24.f)
         .store(nameLabel)

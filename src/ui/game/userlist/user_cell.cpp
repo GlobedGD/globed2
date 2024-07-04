@@ -13,6 +13,7 @@
 #include <ui/general/ask_input_popup.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -56,12 +57,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
         })
         .limitLabelWidth(130.f, 0.45f, 0.1f)
         .intoMenuItem([this] {
-            bool myself = accountData.accountId == GJAccountManager::get()->m_accountID;
-            if (!myself) {
-                GameLevelManager::sharedState()->storeUserName(accountData.userId, accountData.accountId, accountData.name);
-            }
-
-            ProfilePage::create(accountData.accountId, myself)->show();
+            util::gd::openProfile(accountData.accountId, accountData.userId, accountData.name);
         })
         .scaleMult(1.1f)
         .parent(usernameLayout)

@@ -17,6 +17,6 @@ private:
     friend class RoomListingPopup;
 
     int playerCount;
-    int accountID;
+    PlayerPreviewAccountData ownerData;
     RoomListingPopup* parent;
 };

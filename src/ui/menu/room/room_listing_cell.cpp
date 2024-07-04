@@ -5,6 +5,7 @@
 #include <ui/general/simple_player.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -16,8 +17,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
 
     this->parent = parent;
     this->playerCount = rli.playerCount;
-
-    accountID = rli.owner.accountId;
+    this->ownerData = rli.owner;
 
     this->setContentSize({RoomListingPopup::LIST_WIDTH, CELL_HEIGHT});
     this->setAnchorPoint({0.f, 0.f});
@@ -185,7 +185,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
 }
 
 void RoomListingCell::onUser(CCObject* sender) {
-    ProfilePage::create(accountID, GJAccountManager::sharedState()->m_accountID == accountID)->show();
+    util::gd::openProfile(ownerData.accountId, ownerData.userId, ownerData.name);
 }
 
 RoomListingCell* RoomListingCell::create(const RoomListingInfo& rli, RoomListingPopup* parent) {

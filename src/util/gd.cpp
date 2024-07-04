@@ -30,4 +30,13 @@ namespace util::gd {
 
         level->m_levelIndex = idx;
     }
+
+    void openProfile(int accountId, int userId, const std::string& name) {
+        bool myself = accountId == GJAccountManager::get()->m_accountID;
+        if (!myself) {
+            GameLevelManager::sharedState()->storeUserName(userId, accountId, name);
+        }
+
+        ProfilePage::create(accountId, myself)->show();
+    }
 }
