@@ -12,14 +12,18 @@ struct GlobedFeaturedLevel {
     int rateTier;
 };
 
-struct GlobedFeaturedLevelList {
+struct GlobedFeaturedLevelPage {
     std::vector<GlobedFeaturedLevel> levels;
+    size_t page;
+    bool isLastPage;
 };
 
 class DailyManager : public SingletonBase<DailyManager> {
 public:
     struct Page {
         std::vector<std::pair<GlobedFeaturedLevel, GJGameLevel*>> levels;
+        size_t page;
+        bool isLastPage;
     };
 
     // Fetches the level or returns a cached copy

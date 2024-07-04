@@ -67,6 +67,13 @@ pub struct FeaturedLevel {
     rate_tier: i32,
 }
 
+#[derive(Clone, Serialize)]
+pub struct FeaturedLevelPage {
+    pub levels: Vec<FeaturedLevel>,
+    pub page: usize,
+    pub is_last_page: bool,
+}
+
 impl GlobedDb {
     pub async fn get_user(&self, account_id: i32) -> Result<Option<UserEntry>> {
         let res: Option<UserEntryWrapper> = query_as("SELECT * FROM users WHERE account_id = ?")
@@ -178,16 +185,31 @@ impl GlobedDb {
         Ok(result.pop())
     }
 
-    pub async fn get_featured_level_history(&self, page: usize) -> Result<Vec<FeaturedLevel>> {
+    pub async fn get_featured_level_history_new(&self, page: usize) -> Result<FeaturedLevelPage> {
         const PAGE_SIZE: usize = 10;
 
-        let result = query_as::<_, FeaturedLevel>("SELECT id, level_id, rate_tier FROM featured_levels ORDER BY id DESC LIMIT ? OFFSET ?")
+        let levels = query_as::<_, FeaturedLevel>("SELECT id, level_id, rate_tier FROM featured_levels ORDER BY id DESC LIMIT ? OFFSET ?")
             .bind(PAGE_SIZE as i64)
             .bind((page * PAGE_SIZE) as i64)
             .fetch_all(&self.0)
             .await?;
 
-        Ok(result)
+        Ok(FeaturedLevelPage {
+            page,
+            is_last_page: levels.len() < 10,
+            levels,
+        })
+    }
+    pub async fn get_featured_level_history(&self, page: usize) -> Result<Vec<FeaturedLevel>> {
+        const PAGE_SIZE: usize = 10;
+
+        let levels = query_as::<_, FeaturedLevel>("SELECT id, level_id, rate_tier FROM featured_levels ORDER BY id DESC LIMIT ? OFFSET ?")
+            .bind(PAGE_SIZE as i64)
+            .bind((page * PAGE_SIZE) as i64)
+            .fetch_all(&self.0)
+            .await?;
+
+        Ok(levels)
     }
 
     pub async fn replace_featured_level(&self, account_id: i32, level_id: i32, rate_tier: i32) -> Result<()> {

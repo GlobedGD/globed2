@@ -3,6 +3,7 @@
 * Add player counts to the featured list layer
 * Fix level ordering in the saved tab (again)
 * Fix "Receive Invites From" setting crashing the game
+* Fix the next arrow button showing on the last page of the featured level list
 
 ## v1.4.4
 

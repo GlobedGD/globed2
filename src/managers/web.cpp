@@ -73,11 +73,11 @@ RequestTask WebRequestManager::requestAuthToken() {
 }
 
 RequestTask WebRequestManager::testServer(std::string_view url) {
-    return this->get(makeUrl(url, "version"), 5);
+    return this->get(makeUrl(url, "version"));
 }
 
 RequestTask WebRequestManager::fetchCredits() {
-    return this->get("https://credits.globed.dev/credits", 5);
+    return this->get("https://credits.globed.dev/credits");
 }
 
 RequestTask WebRequestManager::fetchServers() {
@@ -87,11 +87,11 @@ RequestTask WebRequestManager::fetchServers() {
 }
 
 RequestTask WebRequestManager::fetchFeaturedLevel() {
-    return this->get(makeCentralUrl("flevel/current"), 5);
+    return this->get(makeCentralUrl("flevel/current"));
 }
 
 RequestTask WebRequestManager::fetchFeaturedLevelHistory(int page) {
-    return this->get(makeCentralUrl("flevel/history"), 5, [&](web::WebRequest& req) {
+    return this->get(makeCentralUrl("flevel/historyv2"), 5, [&](web::WebRequest& req) {
         req.param("page", page);
     });
 }

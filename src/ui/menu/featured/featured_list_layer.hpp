@@ -21,6 +21,7 @@ private:
     std::unordered_map<LevelId, unsigned short> playerCounts;
     std::vector<DailyManager::Page> levelPages;
     int currentPage = 0;
+    int lastPage = -1;
     bool loading = false;
 
     bool init() override;

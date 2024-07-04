@@ -1,7 +1,7 @@
 use rocket::{get, post, serde::json::Json, State};
 
 use crate::{
-    db::{FeaturedLevel, GlobedDb},
+    db::{dbimpl::FeaturedLevelPage, FeaturedLevel, GlobedDb},
     state::ServerState,
     web::*,
 };
@@ -17,9 +17,17 @@ pub async fn current(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>) -> We
     }
 }
 
+// TODO: deprecate
 #[get("/flevel/history?<page>")]
 pub async fn history(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>, page: usize) -> WebResult<Json<Vec<FeaturedLevel>>> {
     let levels = db.get_featured_level_history(page).await?;
+
+    Ok(Json(levels))
+}
+
+#[get("/flevel/historyv2?<page>")]
+pub async fn historyv2(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>, page: usize) -> WebResult<Json<FeaturedLevelPage>> {
+    let levels = db.get_featured_level_history_new(page).await?;
 
     Ok(Json(levels))
 }

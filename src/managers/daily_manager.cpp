@@ -76,27 +76,32 @@ struct matjson::Serialize<GlobedFeaturedLevel> {
 };
 
 template <>
-struct matjson::Serialize<GlobedFeaturedLevelList> {
-    static GlobedFeaturedLevelList from_json(const matjson::Value& value) {
+struct matjson::Serialize<GlobedFeaturedLevelPage> {
+    static GlobedFeaturedLevelPage from_json(const matjson::Value& value) {
         std::vector<GlobedFeaturedLevel> levels;
 
-        for (auto& l : value.as_array()) {
+        for (auto& l : value["levels"].as_array()) {
             levels.push_back(l.as<GlobedFeaturedLevel>());
         }
 
-        return GlobedFeaturedLevelList {
-            .levels = levels
+        return GlobedFeaturedLevelPage {
+            .levels = levels,
+            .page = static_cast<size_t>(value["page"].as_int()),
+            .isLastPage = value["is_last_page"].as_bool(),
         };
     }
 
-    static matjson::Value to_json(const GlobedFeaturedLevelList& user) {
+    static matjson::Value to_json(const GlobedFeaturedLevelPage& user) {
         throw std::runtime_error("unimplemented");
     }
 
     static bool is_json(const matjson::Value& value) {
-        if (!value.is_array()) return false;
+        if (!value.is_object()) return false;
 
-        for (auto& val : value.as_array()) {
+        if (!value.contains("levels") || !value.contains("page") || !value.contains("is_last_page")) return false;
+        if (!value["levels"].is_array() || !value["page"].is_number() || !value["is_last_page"].is_bool()) return false;
+
+        for (auto& val : value["levels"].as_array()) {
             if (!val.is<GlobedFeaturedLevel>()) return false;
         }
 
@@ -321,7 +326,7 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
     std::string parseError;
     auto parsed_ = matjson::parse(val, parseError);
 
-    if (!parsed_ || !parsed_->is<GlobedFeaturedLevelList>()) {
+    if (!parsed_ || !parsed_->is<GlobedFeaturedLevelPage>()) {
         if (parsed_) {
             log::warn("failed to parse featured level list:\n{}", parsed_.value().dump());
         }
@@ -331,22 +336,26 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
         return;
     }
 
-    auto levelList = std::move(parsed_.value()).as<GlobedFeaturedLevelList>();
+    auto levelPage = std::move(parsed_.value()).as<GlobedFeaturedLevelPage>();
 
     // if the page is empty, return early
-    if (levelList.levels.empty()) {
+    if (levelPage.levels.empty()) {
         multipleFetchState = FetchState::NotFetching;
-        storedMultiplePages[multipleFetchPage] = Page {};
+        storedMultiplePages[levelPage.page] = Page {
+            .levels = {},
+            .page = levelPage.page,
+            .isLastPage = levelPage.isLastPage,
+        };
 
         if (this->multipleReqCallback) {
-            this->multipleReqCallback(storedMultiplePages[multipleFetchPage]);
+            this->multipleReqCallback(storedMultiplePages[levelPage.page]);
         }
 
         return;
     }
 
     // sort
-    std::sort(levelList.levels.begin(), levelList.levels.end(), [](auto& level1, auto& level2) {
+    std::sort(levelPage.levels.begin(), levelPage.levels.end(), [](auto& level1, auto& level2) {
         return level1.id > level2.id;
     });
 
@@ -363,7 +372,7 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
     // join to a string
     std::string levelIds;
     bool first = true;
-    for (auto& level : levelList.levels) {
+    for (auto& level : levelPage.levels) {
         if (!first) levelIds += ",";
         first = false;
 
@@ -373,22 +382,26 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
     glm->getOnlineLevels(GJSearchObject::create(SearchType::Type19, levelIds));
 
     // set stuff
-    storedMultiplePages[multipleFetchPage] = Page {};
+    storedMultiplePages[levelPage.page] = Page {
+        .levels = {},
+        .page = levelPage.page,
+        .isLastPage = levelPage.isLastPage,
+    };
 
-    for (auto& level : levelList.levels) {
-        storedMultiplePages[multipleFetchPage].levels.push_back(std::make_pair(level, nullptr));
+    for (auto& level : levelPage.levels) {
+        storedMultiplePages[levelPage.page].levels.push_back(std::make_pair(level, nullptr));
     }
 }
 
 void DailyManager::onMultipleFetchedCallback(Result<cocos2d::CCArray*, int> e) {
     if (e.isOk()) {
+        // wow i hate it here
         for (auto level : CCArrayExt<GJGameLevel*>(e.unwrap())) {
-            auto& levels = storedMultiplePages[multipleFetchPage].levels;
-
-            for (auto& l : levels) {
-                if (l.first.levelId == level->m_levelID) {
-                    l.second = level;
-                    break;
+            for (auto& page : storedMultiplePages) {
+                for (auto& l : page.second.levels) {
+                    if (l.first.levelId == level->m_levelID) {
+                        l.second = level;
+                    }
                 }
             }
         }

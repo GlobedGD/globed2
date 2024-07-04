@@ -312,7 +312,6 @@ impl GameServer {
                     let socket = unsafe { thread.socket.get() };
                     let udp_peer = socket.udp_peer.expect("upgraded thread has no udp peer assigned");
 
-                    #[cfg(debug_assertions)]
                     debug!("upgrading thread (new peer: tcp {}, udp {})", socket.tcp_peer, udp_peer);
 
                     // upgrade to an authorized ClientThread and add it into clients map

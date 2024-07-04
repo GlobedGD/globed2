@@ -45,6 +45,7 @@ pub mod routes {
             auth::challenge_finish,
             featured::current,
             featured::history,
+            featured::historyv2,
             featured::replace,
             public::player_counts,
         ]
