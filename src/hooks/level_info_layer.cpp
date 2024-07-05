@@ -5,6 +5,8 @@
 #include <ui/menu/level_list/level_list_layer.hpp>
 #include <ui/menu/featured/featured_list_layer.hpp>
 #include <managers/daily_manager.hpp>
+#include <managers/admin.hpp>
+#include <ui/menu/featured/edit_featured_level_popup.hpp>
 #include <net/manager.hpp>
 #include <util/gd.hpp>
 
@@ -46,6 +48,32 @@ bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
 
         this->m_fields->rateTier = rating;
     }
+
+    auto* leftMenu = typeinfo_cast<CCMenu*>(getChildByIDRecursive("left-side-menu"));
+    // probably need some way to find this without nodeids
+    if (leftMenu) {
+        if (AdminManager::get().authorized()) {
+            auto& role = AdminManager::get().getRole();
+            if (role.editFeaturedLevels) {
+                bool plat = this->m_level->isPlatformer();
+                CCMenuItemSpriteExtra* btn = Build<CCSprite>::createSpriteName("icon-send-btn.png"_spr)
+                    .intoMenuItem([this, plat] {
+                        if (plat)
+                            EditFeaturedLevelPopup::create(this->m_level)->show();
+                        else
+                            FLAlertLayer::create("Error", "Only <cj>Platformer levels</c> are eligible to be <cg>Globed Featured!</c>", "Ok")->show();
+                    })
+                    .id("edit-btn")
+                    .parent(leftMenu);
+                
+                if (!plat)
+                btn->setColor({100, 100, 100});
+            }
+            leftMenu->updateLayout();
+        }
+    }
+
+    
 
     return true;
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <defs/all.hpp>
 #include <managers/settings.hpp>
+#include <managers/daily_manager.hpp>
 #include <data/types/misc.hpp>
 
 class GlobedLevelListLayer : public cocos2d::CCLayer, LevelManagerDelegate {
@@ -20,6 +21,7 @@ private:
     std::unordered_map<LevelId, unsigned short> levelList;
     std::vector<LevelId> sortedLevelIds;
     std::vector<std::vector<Ref<GJGameLevel>>> levelPages;
+    GlobedFeaturedLevel currentFeaturedLevel;
     int currentPage = 0;
     bool loading = false;
 
