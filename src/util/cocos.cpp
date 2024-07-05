@@ -610,10 +610,6 @@ namespace util::cocos {
 
         auto& fileUtils = HookedFileUtils::get();
 
-#ifdef GEODE_IS_ANDROID
-        _rguard.unlock();
-#endif
-
         if (!data || size == 0) {
             return nullptr;
         }
