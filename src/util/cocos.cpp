@@ -602,6 +602,42 @@ namespace util::cocos {
         return tex;
     }
 
+    CCTexture2D* addTextureFromData(const std::string& textureKey, unsigned char* data, size_t size) {
+        auto textureCache = CCTextureCache::get();
+        if (auto tex = textureCache->textureForKey(textureKey.c_str())) {
+            return tex;
+        }
+
+        auto& fileUtils = HookedFileUtils::get();
+
+#ifdef GEODE_IS_ANDROID
+        _rguard.unlock();
+#endif
+
+        if (!data || size == 0) {
+            return nullptr;
+        }
+
+        auto* image = new CCImage;
+        if (!image->initWithImageData(data, size, cocos2d::CCImage::kFmtPng)) {
+            delete image;
+            log::warn("failed to init image");
+            return nullptr;
+        }
+
+        auto texture = new CCTexture2D;
+        if (!texture->initWithImage(image)) {
+            delete texture;
+            image->release();
+            log::warn("failed to init CCTexture2D");
+            return nullptr;
+        }
+
+        CCTextureCache::get()->m_pTextures->setObject(texture, textureKey);
+
+        return texture;
+    }
+
     std::string spr(const std::string_view s) {
         static const std::string id = Mod::get()->getID() + "/";
 
