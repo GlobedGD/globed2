@@ -1,7 +1,7 @@
 ## v1.4.5
 
 * Add player counts to the featured level list
-* Make player names in invites clickable
+* Make player names in invites clickable to bring up their profile
 * Fix some bugs with the featured level list
 * Fix level ordering in the saved tab (again)
 * Fix "Receive Invites From" setting crashing the game
