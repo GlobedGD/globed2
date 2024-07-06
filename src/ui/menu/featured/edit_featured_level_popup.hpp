@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Geode/binding/CCMenuItemSpriteExtra.hpp"
 #include <defs/geode.hpp>
 
 #include <managers/web.hpp>
@@ -25,6 +26,10 @@ private:
     Ref<CCMenuItemSpriteExtra> sendButton;
     Ref<CCMenuItemSpriteExtra> curDiffButton;
     int currIdx = 0;
+
+    GJGameLevel* level;
+
+    Ref<cocos2d::CCMenu> menu;
 
     GJGameLevel* level;
     Ref<cocos2d::CCMenu> menu;
