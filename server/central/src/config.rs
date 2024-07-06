@@ -158,6 +158,8 @@ pub struct ServerConfig {
 
     #[serde(default = "default_string")]
     pub admin_webhook_url: String,
+    #[serde(default = "default_string")]
+    pub featured_webhook_url: String,
 
     // chat limits
     #[serde(default = "default_chat_burst_limit")]

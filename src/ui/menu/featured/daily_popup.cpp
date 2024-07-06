@@ -86,7 +86,7 @@ bool DailyPopup::setup() {
 
     m_mainLayer->runAction(sequence);
 
-    if (AdminManager::get().authorized()) {
+    /* if (AdminManager::get().authorized()) {
         auto& role = AdminManager::get().getRole();
         if (role.editFeaturedLevels) {
             Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
@@ -101,7 +101,7 @@ bool DailyPopup::setup() {
                 .pos(0.f, 0.f)
                 .parent(m_mainLayer);
         }
-    }
+    } */
 
     // refresh button
     Build<CCSprite>::createSpriteName("GJ_updateBtn_001.png")

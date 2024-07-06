@@ -43,3 +43,14 @@ pub struct AdminGetUserStatePacket {
 pub struct AdminUpdateUserPacket {
     pub user_entry: UserEntry,
 }
+
+#[derive(Packet, Decodable)]
+#[packet(id = 19005)]
+pub struct AdminSendFeaturedLevelPacket {
+    pub mod_name: FastString,
+    pub level_name: FastString,
+    pub level_id: i32,
+    pub level_author: FastString,
+    pub rate_tier: i32,
+    pub notes: Option<String>
+}

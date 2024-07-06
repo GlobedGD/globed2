@@ -37,6 +37,8 @@ public:
     void getFeaturedLevels(int page, std::function<void(const Page&)>&& callback, bool force = false);
 
     void attachRatingSprite(int tier, cocos2d::CCNode* parent);
+    cocos2d::CCSprite* createRatingSprite(int tier);
+    void attachOverlayToSprite(cocos2d::CCNode* parent);
     GJDifficultySprite* findDifficultySprite(cocos2d::CCNode*);
 
     int getLastSeenFeaturedLevel();

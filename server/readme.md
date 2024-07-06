@@ -77,6 +77,7 @@ By default, the file is created with the name `central-conf.json` in the current
 | `userlist_mode` | `"none"` | Can be `blacklist`, `whitelist`, `none` (same as `blacklist`). When set to `whitelist`, players will need to be first whitelisted before being able to join |
 | `tps` | `30` | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
 | `admin_webhook_url` | `(empty)` | When enabled, admin actions (banning, muting, etc.) will send a message to the given discord webhook URL |
+| `featured_webhook_url` | `(empty)` | When enabled, sending a level to be featured will send a message to the given discord webhook URL |
 | `chat_burst_limit` | `0` | Controls the amount of text chat messages users can send in a specific period of time, before getting rate limited. 0 to disable |
 | `chat_burst_interval` | `0` | Controls the period of time for the `chat_burst_limit_setting`. Time is in milliseconds |
 | `roles` | `(...)` | Controls the roles available on the server (moderator, admin, etc.), their permissions, name colors, and various other things |
