@@ -21,6 +21,7 @@ pub enum WebhookMessage {
     UserViolationMetaChanged(String, String, bool, bool, Option<i64>, Option<String>), // mod username, username, is_banned, is_muted, expiry, reason
     UserRolesChanged(String, String, Vec<String>, Vec<String>),                        // mod username, username, old roles, new roles
     UserNameColorChanged(String, String, Option<String>, Option<String>),              // mod username, username, old color, new color
+    FeaturedLevelSend(String, String, i32, String, i32, Option<String>),               // mod username, level name, level id, level author, rate tier, notes
 }
 
 #[derive(Serialize)]
@@ -46,6 +47,11 @@ pub struct WebhookField<'a> {
 }
 
 #[derive(Serialize)]
+pub struct WebhookThumbnail<'a> {
+    pub url: &'a str,
+}
+
+#[derive(Serialize)]
 pub struct WebhookEmbed<'a> {
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -58,6 +64,8 @@ pub struct WebhookEmbed<'a> {
     pub footer: Option<WebhookFooter<'a>>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub fields: Vec<WebhookField<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thumbnail: Option<WebhookThumbnail<'a>>,
 }
 
 #[derive(Serialize)]
@@ -87,6 +95,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 value: username.clone(),
                 inline: Some(true),
             }],
+            thumbnail: None,
         }),
         WebhookMessage::NoticeToSelection(username, player_count, message) => Some(WebhookEmbed {
             title: "Notice".to_owned(),
@@ -106,6 +115,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 },
             ],
+            thumbnail: None,
         }),
         WebhookMessage::NoticeToPerson(author, target, message) => Some(WebhookEmbed {
             title: format!("Notice for {target}"),
@@ -121,6 +131,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 value: author.clone(),
                 inline: Some(true),
             }],
+            thumbnail: None,
         }),
         WebhookMessage::KickEveryone(username, reason) => Some(WebhookEmbed {
             title: "Kick everyone".to_owned(),
@@ -133,6 +144,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 value: username.clone(),
                 inline: Some(true),
             }],
+            thumbnail: None,
         }),
         WebhookMessage::KickPerson(mod_name, user_name, target_id, reason) => Some(WebhookEmbed {
             title: "Kick user".to_owned(),
@@ -148,6 +160,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 value: mod_name.clone(),
                 inline: Some(true),
             }],
+            thumbnail: None,
         }),
         WebhookMessage::UserBanChanged(bmsc) => Some(WebhookEmbed {
             title: if bmsc.new_state {
@@ -190,6 +203,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 }]
             },
+            thumbnail: None,
         }),
         WebhookMessage::UserMuteChanged(bmsc) => Some(WebhookEmbed {
             title: if bmsc.new_state {
@@ -232,6 +246,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 }]
             },
+            thumbnail: None,
         }),
         WebhookMessage::UserViolationMetaChanged(mod_name, user_name, is_banned, _is_muted, expiry, reason) => Some(WebhookEmbed {
             title: format!("{} state changed", if *is_banned { "Ban" } else { "Mute" }),
@@ -259,6 +274,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(false),
                 },
             ],
+            thumbnail: None,
         }),
         WebhookMessage::UserRolesChanged(mod_name, user_name, old_roles, new_roles) => Some(WebhookEmbed {
             title: "Role change".to_owned(),
@@ -286,6 +302,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 },
             ],
+            thumbnail: None,
         }),
         WebhookMessage::UserNameColorChanged(mod_name, user_name, old_color, new_color) => Some(WebhookEmbed {
             title: "Name color change".to_owned(),
@@ -313,7 +330,43 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 },
             ],
+            thumbnail: None,
         }),
+        WebhookMessage::FeaturedLevelSend(mod_name, level_name, level_id, level_author, rate_tier, notes) => Some(WebhookEmbed {
+            title: "New level send".to_owned(),
+            color: hex_color_to_decimal("#79bd31"),
+            author: Some(WebhookAuthor {
+                name: mod_name.clone(),
+                icon_url: None,
+            }),
+            description: None,
+            footer: None,
+            fields: vec![
+                WebhookField {
+                    name: "Level ID",
+                    value: level_id.clone().to_string(),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: "Level Author",
+                    value: level_author.clone(),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: "Level Name",
+                    value: level_name.clone(),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: "Notes",
+                    value: notes.clone().unwrap_or_else(|| "None".to_owned()),
+                    inline: Some(true),
+                },
+            ],
+            thumbnail: Some(WebhookThumbnail {
+                url: rate_tier_to_image(rate_tier),
+            }),
+        })
     }
 }
 
@@ -321,4 +374,13 @@ pub fn hex_color_to_decimal(color: &str) -> Option<u32> {
     let color = color.strip_prefix('#').unwrap_or(color);
 
     u32::from_str_radix(color, 16).ok()
+}
+
+pub fn rate_tier_to_image(tier: &i32) -> &str {
+    match tier {
+        0 => return "https://cdn.discordapp.com/attachments/1205711281114587256/1257823701261357106/icon-featured.png?ex=66891adb&is=6687c95b&hm=da86bee4e229695f21cabd491a7a6ef1b16be1a311b225623cda88b6d9eb6f34&",
+        1 => return "https://cdn.discordapp.com/attachments/1205711281114587256/1257823701517340725/icon-epic.png?ex=66891adb&is=6687c95b&hm=7e606829be057f1602de005965953e0fbe2de015dde6b225716fc664991e9d4d&",
+        2 => return "https://cdn.discordapp.com/attachments/1205711281114587256/1257823701752348783/icon-outstanding.png?ex=66891adb&is=6687c95b&hm=daa702841cf5a4fdaecb8104d4ae3c3904cdc4440a926d603d60ad81f29833e9&",
+        _ => return "https://static.wikia.nocookie.net/geometry-dash-creations/images/1/13/Easy_Icon.webp/revision/latest?cb=20220606175015",
+    }
 }

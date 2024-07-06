@@ -219,12 +219,23 @@ impl CentralBridge {
     #[inline]
     pub async fn send_webhook_message(&self, message: WebhookMessage) -> Result<()> {
         let messages = [message];
-        self.send_webhook_messages(&messages).await
+        self.send_webhook_messages(&messages, false).await
+    }
+
+    #[inline]
+    pub async fn send_featured_webhook_message(&self, message: WebhookMessage) -> Result<()> {
+        let messages = [message];
+        self.send_webhook_messages(&messages, true).await
     }
 
     // not really bridge but it was making web requests which is sorta related i guess
-    pub async fn send_webhook_messages(&self, messages: &[WebhookMessage]) -> Result<()> {
-        let url = self.central_conf.lock().admin_webhook_url.clone();
+    pub async fn send_webhook_messages(&self, messages: &[WebhookMessage], is_featured_webhook: bool) -> Result<()> {
+        let url: String;
+        if is_featured_webhook {
+            url = self.central_conf.lock().featured_webhook_url.clone();
+        } else {
+            url = self.central_conf.lock().admin_webhook_url.clone();
+        }
 
         let mut embeds = Vec::new();
 

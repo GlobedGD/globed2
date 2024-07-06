@@ -459,6 +459,7 @@ impl ClientThread {
             AdminDisconnectPacket::PACKET_ID => self.handle_admin_disconnect(&mut data).await,
             AdminGetUserStatePacket::PACKET_ID => self.handle_admin_get_user_state(&mut data).await,
             AdminUpdateUserPacket::PACKET_ID => self.handle_admin_update_user(&mut data).await,
+            AdminSendFeaturedLevelPacket::PACKET_ID => self.handle_admin_send_featured_level(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }

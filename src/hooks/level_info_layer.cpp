@@ -19,6 +19,30 @@ static int& storedRateTier() {
 bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
     if (!LevelInfoLayer::init(level, challenge)) return false;
 
+    auto* leftMenu = typeinfo_cast<CCMenu*>(getChildByIDRecursive("left-side-menu"));
+    // probably need some way to find this without nodeids
+    if (leftMenu) {
+        if (AdminManager::get().authorized()) {
+            auto& role = AdminManager::get().getRole();
+            if (role.editFeaturedLevels) {
+                bool plat = this->m_level->isPlatformer();
+                CCMenuItemSpriteExtra* btn = Build<CCSprite>::createSpriteName("icon-send-btn.png"_spr)
+                    .intoMenuItem([this, plat] {
+                        if (plat)
+                            EditFeaturedLevelPopup::create(this->m_level)->show();
+                        else
+                            FLAlertLayer::create("Error", "Only <cj>Platformer levels</c> are eligible to be <cg>Globed Featured!</c>", "Ok")->show();
+                    })
+                    .id("edit-btn")
+                    .parent(leftMenu);
+
+                if (!plat)
+                btn->setColor({100, 100, 100});
+            }
+            leftMenu->updateLayout();
+        }
+    }
+
     // i hate myself
     if (level->m_levelIndex == 0) {
         for (auto child : CCArrayExt<CCNode*>(CCScene::get()->getChildren())) {

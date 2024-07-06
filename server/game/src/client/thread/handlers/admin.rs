@@ -179,7 +179,7 @@ impl ClientThread {
                         ))
                         .await
                     {
-                        warn!("webhook error: {err}");
+                        warn!("webhook error during notice to everyone: {err}");
                     }
                 }
 
@@ -216,7 +216,7 @@ impl ClientThread {
                         .send_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg))
                         .await
                     {
-                        warn!("webhook error: {err}");
+                        warn!("webhook error during notice to person: {err}");
                     }
                 }
 
@@ -282,7 +282,7 @@ impl ClientThread {
                         .send_webhook_message(WebhookMessage::NoticeToSelection(self_name, threads.len(), notice_msg))
                         .await
                     {
-                        warn!("webhook error: {err}");
+                        warn!("webhook error during notice to selection: {err}");
                     }
                 }
 
@@ -324,7 +324,7 @@ impl ClientThread {
                 .send_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
                 .await
             {
-                warn!("webhook error: {err}");
+                warn!("webhook error during kick everyone: {err}");
             }
 
             return Ok(());
@@ -350,7 +350,7 @@ impl ClientThread {
                     ))
                     .await
                 {
-                    warn!("webhook error: {err}");
+                    warn!("webhook error during kick person: {err}");
                 }
             }
 
@@ -636,8 +636,8 @@ impl ClientThread {
                         ));
                     }
 
-                    if let Err(err) = self.game_server.bridge.send_webhook_messages(&messages).await {
-                        warn!("webhook error: {err}");
+                    if let Err(err) = self.game_server.bridge.send_webhook_messages(&messages, false).await {
+                        warn!("webhook error during roles changed: {err}");
                     }
                 }
 
@@ -651,5 +651,21 @@ impl ClientThread {
                 admin_error!(self, &err.to_string());
             }
         }
+    });
+
+    gs_handler!(self, handle_admin_send_featured_level, AdminSendFeaturedLevelPacket, packet, {
+        if let Err(err) = self.game_server.bridge.send_featured_webhook_message(WebhookMessage::FeaturedLevelSend(
+            packet.mod_name.clone().to_string(),
+            packet.level_name.clone().to_string(),
+            packet.level_id.clone(),
+            packet.level_author.clone().to_string(),
+            packet.rate_tier.clone(),
+            packet.notes.clone(),
+        ))
+        .await {
+            warn!("webhook error during send featured: {err}");
+        }
+
+        return Ok(());
     });
 }

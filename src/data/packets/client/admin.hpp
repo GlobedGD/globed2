@@ -84,3 +84,23 @@ class AdminUpdateUserPacket : public Packet {
 GLOBED_SERIALIZABLE_STRUCT(AdminUpdateUserPacket, (
     userEntry
 ));
+
+// 19005 - AdminSendFeaturedLevelPacket
+class AdminSendFeaturedLevelPacket : public Packet {
+    GLOBED_PACKET(19005, AdminSendFeaturedLevelPacket, false, true)
+
+    AdminSendFeaturedLevelPacket() {}
+    AdminSendFeaturedLevelPacket(const std::string modName, const std::string levelName, const uint32_t levelID, const std::string levelAuthor, const uint32_t rateTier, const std::optional<std::string>& notes)
+        : modName(modName), levelName(levelName), levelID(levelID), levelAuthor(levelAuthor), rateTier(rateTier), notes(notes) {}
+
+    std::string modName;
+    std::string levelName;
+    uint32_t levelID;
+    std::string levelAuthor;
+    uint32_t rateTier;
+    std::optional<std::string> notes;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(AdminSendFeaturedLevelPacket, (
+    modName, levelName, levelID, levelAuthor, rateTier, notes
+));
