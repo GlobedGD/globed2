@@ -30,8 +30,6 @@ private:
     GJGameLevel* level;
 
     Ref<cocos2d::CCMenu> menu;
-
-    GJGameLevel* level;
-    Ref<cocos2d::CCMenu> menu;
+    
     WebRequestManager::Listener reqListener;
 };
