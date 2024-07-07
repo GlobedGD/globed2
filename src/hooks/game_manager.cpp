@@ -43,16 +43,14 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
 }
 
 void HookedGameManager::unloadIcon(int iconId, int iconType, int idk) {
-    GLOBED_CHECK_HOOK(GameManager::unloadIcon);
-
     // do nothing.
 }
 
+#ifndef GEODE_IS_WINDOWS
 void HookedGameManager::loadDeathEffect(int id) {
-    // TODO
-    // GLOBED_CHECK_HOOK(GameManager::loadDeathEffect);
     util::cocos::tryLoadDeathEffect(id);
 }
+#endif
 
 void HookedGameManager::reloadAllStep2() {
     this->resetAssetPreloadState();

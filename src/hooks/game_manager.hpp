@@ -26,8 +26,11 @@ class $modify(HookedGameManager, GameManager) {
     $override
     void unloadIcon(int iconId, int iconType, int idk);
 
+    // TODO: might be uninlined
+#ifndef GEODE_IS_WINDOWS
     $override
     void loadDeathEffect(int de);
+#endif
 
     $override
     void reloadAllStep2();
