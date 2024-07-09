@@ -1,7 +1,10 @@
 #pragma once
 #include <cmath>
 #include <limits>
-#include <concepts>
+#include <type_traits>
+#include <stdint.h>
+
+#include <defs/assert.hpp>
 
 namespace util::math {
     constexpr float FLOAT_ERROR_MARGIN = 0.002f;
@@ -19,7 +22,24 @@ namespace util::math {
 
     template <typename T>
     inline constexpr T abs(T val) {
-        return (val < 0) ? -val : val;
+#ifdef __clang__
+        if constexpr (std::is_same_v<T, float>) return __builtin_fabsf(val);
+        else if constexpr (std::is_same_v<T, double>) return __builtin_fabs(val);
+        else if constexpr (std::is_same_v<T, long double>) return __builtin_fabsl(val);
+        else globed::unreachable();
+#endif
+
+        if constexpr (std::is_same_v<T, double>) {
+            union { double f; uint64_t i; } u = {val};
+            u.i &= -1ULL/2;
+            return u.f;
+        } else if constexpr (std::is_same_v<T, float>) {
+            union { float f; uint32_t i; } u = {val};
+            u.i &= -1U/2;
+            return u.f;
+        } else {
+            throw std::runtime_error("invalid type for abs");
+        }
     }
 
     // Returns `true` if all passed numbers are valid. Returns `false` if at least one of them is NaN

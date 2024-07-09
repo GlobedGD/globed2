@@ -6,11 +6,6 @@
 * GLOBED_CAN_USE_SOURCE_LOCATION - 0 or 1, whether <source_location> header is available
 */
 
-// force consteval for source location
-#if GLOBED_FORCE_CONSTEVAL && !defined(__cpp_consteval)
-# define __cpp_consteval 1
-#endif // GLOBED_FORCE_CONSTEVAL && !defined(__cpp_consteval)
-
 #if defined(__cpp_consteval)
 # define GLOBED_CAN_USE_SOURCE_LOCATION 1
 # include <source_location>
@@ -109,3 +104,13 @@
             ErrorQueues::get().debugWarn(__result.unwrapErr()); \
         } \
     } while (false);
+
+namespace globed {
+    [[noreturn]] static inline void unreachable() {
+#if defined(_MSC_VER) && !defined(__clang__) // MSVC
+        __assume(false);
+#else // GCC, Clang
+        __builtin_unreachable();
+#endif
+    }
+}
