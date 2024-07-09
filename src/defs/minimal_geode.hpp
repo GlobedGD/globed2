@@ -12,11 +12,8 @@ using geode::Patch;
 using geode::Loader;
 
 // ugly workaround because MSVC sucks ass
-namespace __globed_log_namespace_shut_up_msvc {
+namespace __zglobed_log_namespace_shut_up_msvc {
     namespace log = geode::log;
 }
 
-using namespace __globed_log_namespace_shut_up_msvc;
-
-// stolen from cvolton
-#define GLOBED_CHECK_HOOK(func) static_assert(&func, "Hook not implemented")
+using namespace __zglobed_log_namespace_shut_up_msvc;
