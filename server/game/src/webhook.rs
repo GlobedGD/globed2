@@ -22,6 +22,14 @@ pub enum WebhookMessage {
     UserRolesChanged(String, String, Vec<String>, Vec<String>),                        // mod username, username, old roles, new roles
     UserNameColorChanged(String, String, Option<String>, Option<String>),              // mod username, username, old color, new color
     FeaturedLevelSend(String, String, i32, String, i32, Option<String>), // mod username, level name, level id, level author, rate tier, notes
+    RoomCreated(u32, String, String, i32, bool, bool),                   // room id, room name, username, account id, hidden, protected
+}
+
+#[derive(Debug)]
+pub enum WebhookChannel {
+    Admin,
+    Featured,
+    Room,
 }
 
 #[derive(Serialize)]
@@ -51,7 +59,7 @@ pub struct WebhookThumbnail<'a> {
     pub url: &'a str,
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub struct WebhookEmbed<'a> {
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -87,22 +95,18 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
         WebhookMessage::NoticeToEveryone(username, player_count, message) => Some(WebhookEmbed {
             title: format!("Global notice (for {player_count} people)"),
             color: hex_color_to_decimal("#4dace8"),
-            author: None,
             description: Some(message.clone()),
-            footer: None,
             fields: vec![WebhookField {
                 name: "Performed by",
                 value: username.clone(),
                 inline: Some(true),
             }],
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::NoticeToSelection(username, player_count, message) => Some(WebhookEmbed {
             title: "Notice".to_owned(),
             color: hex_color_to_decimal("#4dace8"),
-            author: None,
             description: Some(message.clone()),
-            footer: None,
             fields: vec![
                 WebhookField {
                     name: "Performed by",
@@ -115,7 +119,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 },
             ],
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::NoticeToPerson(author, target, message) => Some(WebhookEmbed {
             title: format!("Notice for {target}"),
@@ -125,26 +129,23 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 icon_url: None,
             }),
             description: Some(message.clone()),
-            footer: None,
             fields: vec![WebhookField {
                 name: "Performed by",
                 value: author.clone(),
                 inline: Some(true),
             }],
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::KickEveryone(username, reason) => Some(WebhookEmbed {
             title: "Kick everyone".to_owned(),
             color: hex_color_to_decimal("#e8d34d"),
-            author: None,
             description: Some(reason.clone()),
-            footer: None,
             fields: vec![WebhookField {
                 name: "Performed by",
                 value: username.clone(),
                 inline: Some(true),
             }],
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::KickPerson(mod_name, user_name, target_id, reason) => Some(WebhookEmbed {
             title: "Kick user".to_owned(),
@@ -154,13 +155,12 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 icon_url: None,
             }),
             description: Some(reason.clone()),
-            footer: None,
             fields: vec![WebhookField {
                 name: "Performed by",
                 value: mod_name.clone(),
                 inline: Some(true),
             }],
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::UserBanChanged(bmsc) => Some(WebhookEmbed {
             title: if bmsc.new_state {
@@ -178,7 +178,6 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             } else {
                 None
             },
-            footer: None,
             fields: if bmsc.new_state {
                 vec![
                     WebhookField {
@@ -203,7 +202,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 }]
             },
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::UserMuteChanged(bmsc) => Some(WebhookEmbed {
             title: if bmsc.new_state {
@@ -221,7 +220,6 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             } else {
                 None
             },
-            footer: None,
             fields: if bmsc.new_state {
                 vec![
                     WebhookField {
@@ -246,7 +244,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 }]
             },
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::UserViolationMetaChanged(mod_name, user_name, is_banned, _is_muted, expiry, reason) => Some(WebhookEmbed {
             title: format!("{} state changed", if *is_banned { "Ban" } else { "Mute" }),
@@ -255,8 +253,6 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 name: user_name.clone(),
                 icon_url: None,
             }),
-            description: None,
-            footer: None,
             fields: vec![
                 WebhookField {
                     name: "Performed by",
@@ -274,7 +270,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(false),
                 },
             ],
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::UserRolesChanged(mod_name, user_name, old_roles, new_roles) => Some(WebhookEmbed {
             title: "Role change".to_owned(),
@@ -283,8 +279,6 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 name: user_name.clone(),
                 icon_url: None,
             }),
-            description: None,
-            footer: None,
             fields: vec![
                 WebhookField {
                     name: "Performed by",
@@ -302,7 +296,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 },
             ],
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::UserNameColorChanged(mod_name, user_name, old_color, new_color) => Some(WebhookEmbed {
             title: "Name color change".to_owned(),
@@ -311,8 +305,6 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 name: user_name.clone(),
                 icon_url: None,
             }),
-            description: None,
-            footer: None,
             fields: vec![
                 WebhookField {
                     name: "Performed by",
@@ -330,7 +322,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     inline: Some(true),
                 },
             ],
-            thumbnail: None,
+            ..Default::default()
         }),
         WebhookMessage::FeaturedLevelSend(mod_name, level_name, level_id, level_author, rate_tier, notes) => Some(WebhookEmbed {
             title: "New level send".to_owned(),
@@ -339,8 +331,6 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 name: mod_name.clone(),
                 icon_url: None,
             }),
-            description: None,
-            footer: None,
             fields: vec![
                 WebhookField {
                     name: "Level ID",
@@ -366,6 +356,33 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             thumbnail: Some(WebhookThumbnail {
                 url: rate_tier_to_image(rate_tier),
             }),
+            ..Default::default()
+        }),
+        WebhookMessage::RoomCreated(room_id, room_name, username, account_id, hidden, protected) => Some(WebhookEmbed {
+            title: room_name.clone(),
+            color: hex_color_to_decimal("#4dace8"),
+            author: Some(WebhookAuthor {
+                name: format!("{username} ({account_id})"),
+                icon_url: None,
+            }),
+            fields: vec![
+                WebhookField {
+                    name: "Hidden",
+                    value: if *hidden { "Yes" } else { "No" }.to_owned(),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: "Private",
+                    value: if *protected { "Yes" } else { "No" }.to_owned(),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: "Room ID",
+                    value: room_id.to_string(),
+                    inline: Some(true),
+                },
+            ],
+            ..Default::default()
         }),
     }
 }

@@ -37,6 +37,7 @@ pub async fn boot(
         whitelist: config.userlist_mode == UserlistMode::Whitelist,
         admin_webhook_url: config.admin_webhook_url.clone(),
         featured_webhook_url: config.featured_webhook_url.clone(),
+        room_webhook_url: config.room_webhook_url.clone(),
         chat_burst_limit: config.chat_burst_limit,
         chat_burst_interval: config.chat_burst_interval,
         roles: config.roles.clone(),

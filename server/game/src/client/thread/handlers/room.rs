@@ -1,3 +1,5 @@
+use crate::webhook::{WebhookChannel, WebhookMessage};
+
 use super::*;
 
 impl ClientThread {
@@ -30,6 +32,27 @@ impl ClientThread {
                 .state
                 .room_manager
                 .create_room(account_id, packet.room_name, packet.password, packet.settings);
+
+            let self_name = self.account_data.lock().name.try_to_string();
+
+            if let Err(err) = self
+                .game_server
+                .bridge
+                .send_webhook_messages(
+                    &[WebhookMessage::RoomCreated(
+                        room_info.id,
+                        room_info.name.try_to_string(),
+                        self_name,
+                        account_id,
+                        packet.settings.flags.is_hidden,
+                        !room_info.password.is_empty(),
+                    )],
+                    WebhookChannel::Room,
+                )
+                .await
+            {
+                warn!("Failed to send webhook message (room creation): {err}");
+            }
 
             self.room_id.store(room_info.id, Ordering::Relaxed);
             room_info

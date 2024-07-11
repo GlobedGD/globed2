@@ -2,7 +2,7 @@ use globed_shared::{info, warn};
 
 use crate::{
     managers::ComputedRole,
-    webhook::{BanMuteStateChange, WebhookMessage},
+    webhook::{BanMuteStateChange, WebhookChannel, WebhookMessage},
 };
 
 use super::*;
@@ -636,7 +636,7 @@ impl ClientThread {
                         ));
                     }
 
-                    if let Err(err) = self.game_server.bridge.send_webhook_messages(&messages, false).await {
+                    if let Err(err) = self.game_server.bridge.send_webhook_messages(&messages, WebhookChannel::Admin).await {
                         warn!("webhook error during roles changed: {err}");
                     }
                 }
@@ -654,15 +654,19 @@ impl ClientThread {
     });
 
     gs_handler!(self, handle_admin_send_featured_level, AdminSendFeaturedLevelPacket, packet, {
-        if let Err(err) = self.game_server.bridge.send_featured_webhook_message(WebhookMessage::FeaturedLevelSend(
-            packet.mod_name.clone().to_string(),
-            packet.level_name.clone().to_string(),
-            packet.level_id.clone(),
-            packet.level_author.clone().to_string(),
-            packet.rate_tier.clone(),
-            packet.notes.clone(),
-        ))
-        .await {
+        if let Err(err) = self
+            .game_server
+            .bridge
+            .send_featured_webhook_message(WebhookMessage::FeaturedLevelSend(
+                packet.mod_name.clone().to_string(),
+                packet.level_name.clone().to_string(),
+                packet.level_id,
+                packet.level_author.clone().to_string(),
+                packet.rate_tier,
+                packet.notes.clone(),
+            ))
+            .await
+        {
             warn!("webhook error during send featured: {err}");
         }
 
