@@ -4,6 +4,7 @@
 
 #include <managers/error_queues.hpp>
 #include <managers/daily_manager.hpp>
+#include <managers/admin.hpp>
 #include <net/manager.hpp>
 #include <data/packets/client/admin.hpp>
 #include <util/ui.hpp>
@@ -75,16 +76,24 @@ bool EditFeaturedLevelPopup::setup() {
 
 void EditFeaturedLevelPopup::save() {
     //int levelId = util::format::parse<int>(idInput->getString()).value_or(0);
-    int levelId = this->level->m_levelID;
+    auto& am = AdminManager::get();
+    if (am.authorized()) {
+        auto& role = am.getRole();
+        if (role.editFeaturedLevels) {
+            int levelId = this->level->m_levelID;
 
-    if (levelId == 0) {
-        ErrorQueues::get().warn("Invalid level ID");
-        return;
+            if (levelId == 0) {
+                ErrorQueues::get().warn("Invalid level ID");
+                return;
+            }
+
+            auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx);
+            reqListener.bind(this, &EditFeaturedLevelPopup::onRequestComplete);
+            reqListener.setFilter(std::move(req));
+        } else {
+            Notification::create("You dont have permission to do this", NotificationIcon::Error)->show();
+        }
     }
-
-    auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx);
-    reqListener.bind(this, &EditFeaturedLevelPopup::onRequestComplete);
-    reqListener.setFilter(std::move(req));
 }
 
 void EditFeaturedLevelPopup::createDiffButton() {

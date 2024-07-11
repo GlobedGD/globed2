@@ -378,9 +378,9 @@ pub fn hex_color_to_decimal(color: &str) -> Option<u32> {
 
 pub fn rate_tier_to_image(tier: &i32) -> &str {
     match tier {
-        0 => return "https://cdn.discordapp.com/attachments/1205711281114587256/1257823701261357106/icon-featured.png?ex=66891adb&is=6687c95b&hm=da86bee4e229695f21cabd491a7a6ef1b16be1a311b225623cda88b6d9eb6f34&",
-        1 => return "https://cdn.discordapp.com/attachments/1205711281114587256/1257823701517340725/icon-epic.png?ex=66891adb&is=6687c95b&hm=7e606829be057f1602de005965953e0fbe2de015dde6b225716fc664991e9d4d&",
-        2 => return "https://cdn.discordapp.com/attachments/1205711281114587256/1257823701752348783/icon-outstanding.png?ex=66891adb&is=6687c95b&hm=daa702841cf5a4fdaecb8104d4ae3c3904cdc4440a926d603d60ad81f29833e9&",
+        0 => return "https://limegradient.xyz/globed/icon-featured.png",
+        1 => return "https://limegradient.xyz/globed/icon-epic.png",
+        2 => return "https://limegradient.xyz/globed/icon-outstanding.png",
         _ => return "https://static.wikia.nocookie.net/geometry-dash-creations/images/1/13/Easy_Icon.webp/revision/latest?cb=20220606175015",
     }
 }

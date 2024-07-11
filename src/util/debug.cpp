@@ -7,6 +7,8 @@
 # pragma comment(lib, "dbghelp.lib")
 #endif
 
+#include <defs/assert.hpp>
+
 #include <util/format.hpp>
 #include <util/rng.hpp>
 
