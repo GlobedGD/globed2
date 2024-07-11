@@ -132,7 +132,7 @@ bool GlobedMenuLayer::init() {
     discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
         .scale(1.35f)
         .intoMenuItem([](auto) {
-            geode::createQuickPopup("Open Discord", "Join our <cp>Discord</c> server?", "No", "Yes", [] (auto fl, bool btn2) {
+            geode::createQuickPopup("Open Discord", "Join our <cp>Discord</c> server?\n\n<cr>Important: By joining the Discord server, you agree to being at least 13 years of age.</c>", "No", "Yes", [] (auto fl, bool btn2) {
                 if (btn2)
                     geode::utils::web::openLinkInBrowser(globed::string<"discord">());
             });

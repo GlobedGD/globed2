@@ -1,4 +1,5 @@
 #include "level_cell.hpp"
+#include "ui/ui.hpp"
 
 #include <defs/geode.hpp>
 #include <managers/settings.hpp>
@@ -20,6 +21,26 @@ void GlobedLevelCell::modifyToFeaturedCell(int rating) {
 
         if (diff) {
             DailyManager::get().attachRatingSprite(rating, diff);
+
+            float borderWidth = 1.f;
+            float offset = borderWidth;
+
+            CCPoint rect[4] = {
+                CCPoint(0 + offset, 0 + offset),
+                CCPoint(0 + offset, this->getScaledContentHeight() - offset),
+                CCPoint(this->getScaledContentWidth() - offset, this->getScaledContentHeight() - offset),
+                CCPoint(this->getScaledContentWidth() - offset, 0 + offset)
+            };
+
+            CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
+            .color(globed::into<ccColor3B>(globed::color::FriendIngameGradient))
+            .anchorPoint({0, 0})
+            .opacity(90)
+            .zOrder(-5)
+            .parent(this);
+
+            gradient->setScaleX(this->getScaledContentWidth() / gradient->getScaledContentWidth() / 2);
+            gradient->setScaleY(this->getScaledContentHeight() / gradient->getScaledContentHeight());
         }
     }
 }
