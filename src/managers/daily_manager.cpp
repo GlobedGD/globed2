@@ -283,6 +283,9 @@ void DailyManager::onCurrentLevelMetaFetchedCallback(typename WebRequestManager:
 
     if (this->levelMetaCallback) {
         this->levelMetaCallback(levelMeta);
+    } else {
+        log::warn("no levelMetaCallback");
+        singleFetchState = FetchState::NotFetching;
     }
 }
 
