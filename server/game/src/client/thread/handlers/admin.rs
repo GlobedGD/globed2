@@ -168,7 +168,7 @@ impl ClientThread {
                     notice_packet.message,
                 );
 
-                if self.game_server.bridge.has_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     if let Err(err) = self
                         .game_server
                         .bridge
@@ -209,7 +209,7 @@ impl ClientThread {
                     self.get_tcp_peer()
                 );
 
-                if self.game_server.bridge.has_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     if let Err(err) = self
                         .game_server
                         .bridge
@@ -275,7 +275,7 @@ impl ClientThread {
                     threads.len()
                 );
 
-                if self.game_server.bridge.has_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     if let Err(err) = self
                         .game_server
                         .bridge
@@ -318,13 +318,15 @@ impl ClientThread {
 
             let self_name = self.account_data.lock().name.try_to_string();
 
-            if let Err(err) = self
-                .game_server
-                .bridge
-                .send_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
-                .await
-            {
-                warn!("webhook error during kick everyone: {err}");
+            if self.game_server.bridge.has_admin_webhook() {
+                if let Err(err) = self
+                    .game_server
+                    .bridge
+                    .send_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
+                    .await
+                {
+                    warn!("webhook error during kick everyone: {err}");
+                }
             }
 
             return Ok(());
@@ -335,7 +337,7 @@ impl ClientThread {
 
             thread.push_new_message(ServerThreadMessage::TerminationNotice(packet.message)).await;
 
-            if self.game_server.bridge.has_webhook() {
+            if self.game_server.bridge.has_admin_webhook() {
                 let own_name = self.account_data.lock().name.try_to_string();
                 let target_name = thread.account_data.lock().name.try_to_string();
 
@@ -581,7 +583,7 @@ impl ClientThread {
                     target_account_id
                 );
 
-                if self.game_server.bridge.has_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     // this is crazy
                     let mut messages = FastVec::<WebhookMessage, 4>::new();
 

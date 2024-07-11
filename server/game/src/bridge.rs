@@ -69,7 +69,9 @@ pub struct CentralBridge {
     // for performance reasons /shrug
     pub maintenance: AtomicBool,
     pub whitelist: AtomicBool,
-    pub webhook_present: AtomicBool,
+    pub admin_webhook_present: AtomicBool,
+    pub featured_webhook_present: AtomicBool,
+    pub room_webhook_present: AtomicBool,
 }
 
 impl CentralBridge {
@@ -88,7 +90,9 @@ impl CentralBridge {
             central_conf: SyncMutex::new(GameServerBootData::default()),
             maintenance: AtomicBool::new(false),
             whitelist: AtomicBool::new(false),
-            webhook_present: AtomicBool::new(false),
+            admin_webhook_present: AtomicBool::new(false),
+            featured_webhook_present: AtomicBool::new(false),
+            room_webhook_present: AtomicBool::new(false),
         }
     }
 
@@ -100,8 +104,16 @@ impl CentralBridge {
         self.whitelist.load(Ordering::Relaxed)
     }
 
-    pub fn has_webhook(&self) -> bool {
-        self.webhook_present.load(Ordering::Relaxed)
+    pub fn has_admin_webhook(&self) -> bool {
+        self.admin_webhook_present.load(Ordering::Relaxed)
+    }
+
+    pub fn has_featured_webhook(&self) -> bool {
+        self.featured_webhook_present.load(Ordering::Relaxed)
+    }
+
+    pub fn has_room_webhook(&self) -> bool {
+        self.room_webhook_present.load(Ordering::Relaxed)
     }
 
     pub async fn request_boot_data(&self) -> Result<GameServerBootData> {
@@ -157,7 +169,10 @@ impl CentralBridge {
     pub fn set_boot_data(&self, data: GameServerBootData) {
         self.maintenance.store(data.maintenance, Ordering::Relaxed);
         self.whitelist.store(data.whitelist, Ordering::Relaxed);
-        self.webhook_present.store(!data.admin_webhook_url.is_empty(), Ordering::Relaxed);
+        self.admin_webhook_present.store(!data.admin_webhook_url.is_empty(), Ordering::Relaxed);
+        self.featured_webhook_present
+            .store(!data.featured_webhook_url.is_empty(), Ordering::Relaxed);
+        self.room_webhook_present.store(!data.room_webhook_url.is_empty(), Ordering::Relaxed);
 
         let mut issuer = self.token_issuer.lock();
 
