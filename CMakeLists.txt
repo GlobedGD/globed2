@@ -99,6 +99,7 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
+target_include_directories(${PROJECT_NAME} PRIVATE libs/)
 
 # our favorite libraries
 CPMAddPackage("gh:camila314/uibuilder#ba63097")

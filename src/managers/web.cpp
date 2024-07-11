@@ -49,8 +49,6 @@ static RequestTask mapTask(web::WebTask&& param) {
 
         auto resp = strResult.unwrap();
         return Ok(resp);
-    }, [](auto) -> std::monostate {
-        return {};
     });
 }
 

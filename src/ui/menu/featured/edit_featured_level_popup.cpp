@@ -36,7 +36,7 @@ bool EditFeaturedLevelPopup::setup() {
         .pos(rlayout.fromBottom(55.f))
         .parent(m_mainLayer)
         .store(notesInput);
-    
+
     Build<ButtonSprite>::create("Feature", "bigFont.fnt", "GJ_button_01.png", 0.9f)
         .scale(0.75f)
         .intoMenuItem([this] {
@@ -48,7 +48,7 @@ bool EditFeaturedLevelPopup::setup() {
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
-    
+
     Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.9f)
         .scale(0.75f)
         .intoMenuItem([=, this] {
@@ -91,7 +91,7 @@ void EditFeaturedLevelPopup::save() {
             reqListener.bind(this, &EditFeaturedLevelPopup::onRequestComplete);
             reqListener.setFilter(std::move(req));
         } else {
-            Notification::create("You dont have permission to do this", NotificationIcon::Error)->show();
+            ErrorQueues::get().warn("You don't have permission to do this");
         }
     }
 }
@@ -121,7 +121,7 @@ void EditFeaturedLevelPopup::onDiffClick(CCObject* sender) {
 int EditFeaturedLevelPopup::getDifficulty() {
     int diff = 0;
     // "would a backwards wormhole be a whitehole or a holeworm?" - kiba 2024
-    if (level->m_autoLevel) 
+    if (level->m_autoLevel)
         diff = -1;
     else if (level->m_ratingsSum != 0) {
         if (level->m_demon == 1){

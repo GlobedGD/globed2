@@ -64,8 +64,8 @@ namespace util::format {
 
         if (message.find("<html>") != std::string::npos) {
             message = "<HTML response, not showing>";
-        } else if (message.size() > 128) {
-            message = message.substr(0, 128) + "...";
+        } else if (message.size() > 164) {
+            message = message.substr(0, 164) + "...";
         }
 
         return message;

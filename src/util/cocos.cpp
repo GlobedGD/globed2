@@ -62,6 +62,23 @@ namespace util::cocos {
         size_t gameSearchPathIdx = -1;
         std::vector<size_t> texturePackIndices;
         std::unique_ptr<asp::ThreadPool> threadPool;
+        struct _T {
+            util::time::time_point start{}, postPreparation{}, postTexCreation{}, finish{};
+
+            _T() = default;
+
+            void reset() {
+                *this = {};
+            }
+
+            void print() {
+                log::debug("Preload time estimates:");
+                log::debug("-- Preparation: {}", util::format::duration(postPreparation - start));
+                log::debug("-- Image load + texture creation: {}", util::format::duration(postTexCreation - postPreparation));
+                log::debug("-- Creating sprite frame: {}", util::format::duration(finish - postTexCreation));
+                log::debug("- Total: {}", util::format::duration(finish - start));
+            }
+        } timeMeasurements;
 
         void ensurePoolExists() {
             if (!threadPool) {
@@ -134,10 +151,12 @@ namespace util::cocos {
     void loadAssetsParallel(const std::vector<std::string>& images) {
         auto& state = getPreloadState();
         state.ensurePoolExists();
+        state.timeMeasurements.reset();
 
         auto& threadPool = *state.threadPool.get();
 
         log::debug("preload: preparing {} textures", images.size());
+        state.timeMeasurements.start = util::time::now();
 
         static asp::Mutex<> cocosWorkMutex;
 
@@ -180,10 +199,12 @@ namespace util::cocos {
 
         if (imgCount == 0) {
             log::debug("preload: all textures already loaded, skipping pass");
+            state.timeMeasurements.finish = util::time::now();
             return;
         }
 
         log::debug("preload: loading images ({} total)", imgCount);
+        state.timeMeasurements.postPreparation = util::time::now();
 
         asp::Channel<std::pair<size_t, CCImage*>> textureInitRequests;
 
@@ -192,33 +213,13 @@ namespace util::cocos {
                 // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
                 auto& imgState = imgStates.lock()->at(i);
 
-                // on android, resources are read from the apk file, so it's NOT thread safe. add a lock.
-#ifdef GEODE_IS_ANDROID
-                auto _rguard = cocosWorkMutex.lock();
-#endif
-
-                unsigned long filesize = 0;
-                unsigned char* buffer = fileUtils.getFileData(imgState.path.c_str(), "rb", &filesize);
-
-#ifdef GEODE_IS_ANDROID
-                _rguard.unlock();
-#endif
-
-                std::unique_ptr<unsigned char[]> buf(buffer);
-
-                if (!buffer || filesize == 0) {
-                    log::warn("failed to read image file: {}", imgState.path);
+                auto img = new CCImage();
+                if (!img->initWithImageFileThreadSafe(imgState.path.c_str(), cocos2d::CCImage::kFmtPng)) {
+                    log::warn("Failed to load image: {}", imgState.path);
                     return;
                 }
 
-                auto* image = new CCImage;
-                if (!image->initWithImageData(buf.get(), filesize, cocos2d::CCImage::kFmtPng)) {
-                    delete image;
-                    log::warn("failed to init image: {}", imgState.path);
-                    return;
-                }
-
-                textureInitRequests.push(std::make_pair(i, image));
+                textureInitRequests.push(std::make_pair(i, img));
             });
         }
 
@@ -259,6 +260,7 @@ namespace util::cocos {
         }
 
         log::debug("preload: initialized {} textures, adding sprite frames", initedTextures);
+        state.timeMeasurements.postTexCreation = util::time::now();
 
         // now, add sprite frames
         for (size_t i = 0; i < imgCount; i++) {
@@ -340,6 +342,11 @@ namespace util::cocos {
         threadPool.join();
 
         log::debug("preload: initialized sprite frames. done.");
+        state.timeMeasurements.finish = util::time::now();
+
+#ifdef GLOBED_DEBUG
+        state.timeMeasurements.print();
+#endif
     }
 
     void preloadAssets(AssetPreloadStage stage) {

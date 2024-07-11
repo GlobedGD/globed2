@@ -20,7 +20,7 @@ class WebRequestManager : public SingletonBase<WebRequestManager> {
 
 public:
     using Result = geode::Result<std::string, WebRequestError>;
-    using Task = geode::Task<Result>;
+    using Task = geode::Task<Result, geode::utils::web::WebProgress>;
     using Listener = geode::EventListener<Task>;
     using Event = Task::Event;
     using SingletonBase::get;
