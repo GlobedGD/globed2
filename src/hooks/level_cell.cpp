@@ -22,16 +22,6 @@ void GlobedLevelCell::modifyToFeaturedCell(int rating) {
         if (diff) {
             DailyManager::get().attachRatingSprite(rating, diff);
 
-            float borderWidth = 1.f;
-            float offset = borderWidth;
-
-            CCPoint rect[4] = {
-                CCPoint(0 + offset, 0 + offset),
-                CCPoint(0 + offset, this->getScaledContentHeight() - offset),
-                CCPoint(this->getScaledContentWidth() - offset, this->getScaledContentHeight() - offset),
-                CCPoint(this->getScaledContentWidth() - offset, 0 + offset)
-            };
-
             CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
             .color(globed::into<ccColor3B>(globed::color::FriendIngameGradient))
             .anchorPoint({0, 0})

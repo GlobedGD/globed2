@@ -8,7 +8,7 @@
 class EditFeaturedLevelPopup : public geode::Popup<> {
 public:
     static constexpr float POPUP_WIDTH = 340.f;
-    static constexpr float POPUP_HEIGHT = 170.f;
+    static constexpr float POPUP_HEIGHT = 190.f;
 
     static EditFeaturedLevelPopup* create(GJGameLevel* level);
 
