@@ -281,7 +281,9 @@ void DailyManager::onCurrentLevelMetaFetchedCallback(typename WebRequestManager:
 
     auto levelMeta = std::move(parsed_.value()).as<GlobedFeaturedLevel>();
 
-    this->levelMetaCallback(levelMeta);
+    if (this->levelMetaCallback) {
+        this->levelMetaCallback(levelMeta);
+    }
 }
 
 void DailyManager::getFeaturedLevels(int page, std::function<void(const Page&)>&& callback, bool force) {
