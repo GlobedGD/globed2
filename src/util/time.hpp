@@ -15,6 +15,7 @@ namespace util::time {
     using seconds = chrono::seconds;
     using millis = chrono::milliseconds;
     using micros = chrono::microseconds;
+    using nanos = chrono::nanoseconds;
 
     template <typename Rep, typename Period>
     using duration = chrono::duration<Rep, Period>;

@@ -24,7 +24,7 @@ bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
     if (leftMenu) {
         if (AdminManager::get().authorized()) {
             auto& role = AdminManager::get().getRole();
-            if (role.editFeaturedLevels) {
+            if (role.kick) {
                 bool plat = this->m_level->isPlatformer();
                 CCMenuItemSpriteExtra* btn = Build<CCSprite>::createSpriteName("icon-send-btn.png"_spr)
                     .intoMenuItem([this, plat] {

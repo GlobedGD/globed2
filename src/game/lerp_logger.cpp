@@ -1,7 +1,5 @@
 #include "lerp_logger.hpp"
 
-#include <defs/crash.hpp>
-
 void LerpLogger::reset(uint32_t id) {
 #ifdef GLOBED_DEBUG_INTERPOLATION
     auto& player = this->ensureExists(id);
