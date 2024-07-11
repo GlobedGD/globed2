@@ -21,7 +21,7 @@ pub enum WebhookMessage {
     UserViolationMetaChanged(String, String, bool, bool, Option<i64>, Option<String>), // mod username, username, is_banned, is_muted, expiry, reason
     UserRolesChanged(String, String, Vec<String>, Vec<String>),                        // mod username, username, old roles, new roles
     UserNameColorChanged(String, String, Option<String>, Option<String>),              // mod username, username, old color, new color
-    FeaturedLevelSend(String, String, i32, String, i32, Option<String>),               // mod username, level name, level id, level author, rate tier, notes
+    FeaturedLevelSend(String, String, i32, String, i32, Option<String>), // mod username, level name, level id, level author, rate tier, notes
 }
 
 #[derive(Serialize)]
@@ -366,7 +366,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             thumbnail: Some(WebhookThumbnail {
                 url: rate_tier_to_image(rate_tier),
             }),
-        })
+        }),
     }
 }
 
@@ -378,9 +378,9 @@ pub fn hex_color_to_decimal(color: &str) -> Option<u32> {
 
 pub fn rate_tier_to_image(tier: &i32) -> &str {
     match tier {
-        0 => return "https://limegradient.xyz/globed/icon-featured.png",
-        1 => return "https://limegradient.xyz/globed/icon-epic.png",
-        2 => return "https://limegradient.xyz/globed/icon-outstanding.png",
-        _ => return "https://static.wikia.nocookie.net/geometry-dash-creations/images/1/13/Easy_Icon.webp/revision/latest?cb=20220606175015",
+        0 => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/icon-featured.png",
+        1 => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/icon-epic.png",
+        2 => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/icon-outstanding.png",
+        _ => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/easy-icon.webp",
     }
 }
