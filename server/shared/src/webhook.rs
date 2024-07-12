@@ -420,7 +420,7 @@ pub fn rate_tier_to_image(difficulty: i32, tier: i32) -> String {
         3 => "hard",
         4 => "harder",
         5 => "insane",
-        6..=10 => "demon",
+        6..=10 => "harddemon",
         _ => "na",
     };
 
