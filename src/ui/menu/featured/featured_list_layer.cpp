@@ -105,6 +105,10 @@ bool GlobedFeaturedListLayer::init() {
     return true;
 }
 
+GlobedFeaturedListLayer::~GlobedFeaturedListLayer() {
+    DailyManager::get().clearMultiWebCallback();
+}
+
 void GlobedFeaturedListLayer::update(float dt) {
     if (!listLayer || !listLayer->m_listView) return;
 

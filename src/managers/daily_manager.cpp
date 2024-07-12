@@ -182,7 +182,6 @@ void DailyManager::onLevelMetaFetchedCallback(typename WebRequestManager::Event*
     singleFetchState = FetchState::FetchingLevel;
     glm->m_levelManagerDelegate = fetchNode;
     glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(storedLevelMeta.levelId)));
-
 }
 
 void DailyManager::onLevelFetchedCallback(Result<CCArray*, int> level) {
@@ -235,9 +234,13 @@ void DailyManager::onFullLevelFetchedCallback(Result<GJGameLevel*, int> level) {
 
 }
 
-void DailyManager::clearWebCallback() {
+void DailyManager::clearSingleWebCallback() {
     singleReqCallback = {};
+}
+
+void DailyManager::clearMultiWebCallback() {
     levelMetaCallback = {};
+    multipleReqCallback = {};
 }
 
 void DailyManager::getCurrentLevelMeta(std::function<void(const GlobedFeaturedLevel&)>&& callback, bool force) {
