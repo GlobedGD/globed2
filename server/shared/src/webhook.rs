@@ -364,7 +364,10 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
         WebhookMessage::LevelFeatured(level_name, level_id, level_author, rate_tier) => Some(WebhookEmbed {
             title: format!("{level_name} by {level_author}"),
             color: hex_color_to_decimal("#7dfff5"),
-            author: None,
+            author: Some(WebhookAuthor {
+                name: "New Featured Level".to_owned(),
+                icon_url: None,
+            }),
             fields: vec![WebhookField {
                 name: "Level ID",
                 value: level_id.clone().to_string(),

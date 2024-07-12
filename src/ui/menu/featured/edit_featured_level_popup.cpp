@@ -88,7 +88,7 @@ void EditFeaturedLevelPopup::save() {
                 return;
             }
 
-            auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx);
+            auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx, level->m_levelName, level->m_creatorName);
             reqListener.bind(this, &EditFeaturedLevelPopup::onRequestComplete);
             reqListener.setFilter(std::move(req));
         } else {

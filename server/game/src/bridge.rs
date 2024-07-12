@@ -238,7 +238,7 @@ impl CentralBridge {
 
     #[inline]
     pub async fn send_rate_suggestion_webhook_message(&self, message: WebhookMessage) -> Result<()> {
-        self.send_webhook_messages(&[message], WebhookChannel::Featured).await
+        self.send_webhook_messages(&[message], WebhookChannel::RateSuggestion).await
     }
 
     // not really bridge but it was making web requests which is sorta related i guess
