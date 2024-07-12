@@ -156,8 +156,11 @@ pub struct ServerConfig {
     #[serde(default = "default_tps")]
     pub tps: u32,
 
+    // webhooks
     #[serde(default = "default_string")]
     pub admin_webhook_url: String,
+    #[serde(default = "default_string")]
+    pub rate_suggestion_webhook_url: String,
     #[serde(default = "default_string")]
     pub featured_webhook_url: String,
     #[serde(default = "default_string")]

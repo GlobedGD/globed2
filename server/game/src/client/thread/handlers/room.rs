@@ -185,7 +185,7 @@ impl ClientThread {
 
         self.game_server.state.room_manager.with_any(room_id, |room| {
             if room.owner == account_id {
-                room.set_settings(&packet.settings);
+                room.set_settings(packet.settings);
                 success = true;
             }
         });

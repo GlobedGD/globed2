@@ -17,7 +17,7 @@ pub mod managers;
 pub mod server;
 pub mod state;
 pub mod util;
-pub mod webhook;
+use globed_shared::webhook;
 
 #[cfg(feature = "use_tokio_tracing")]
 use tokio_tracing as tokio;

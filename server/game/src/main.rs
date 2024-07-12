@@ -41,7 +41,7 @@ pub mod managers;
 pub mod server;
 pub mod state;
 pub mod util;
-pub mod webhook;
+use globed_shared::webhook;
 
 struct StartupConfiguration {
     bind_address: SocketAddr,

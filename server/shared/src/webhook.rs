@@ -1,3 +1,4 @@
+use reqwest::StatusCode;
 use serde::Serialize;
 
 pub struct BanMuteStateChange {
@@ -22,6 +23,7 @@ pub enum WebhookMessage {
     UserRolesChanged(String, String, Vec<String>, Vec<String>),                        // mod username, username, old roles, new roles
     UserNameColorChanged(String, String, Option<String>, Option<String>),              // mod username, username, old color, new color
     FeaturedLevelSend(i32, String, String, i32, String, i32, Option<String>), // user id, user name, level name, level id, level author, rate tier, notes
+    LevelFeatured(String, i32, String, i32),                                  // level name, level id, level author, rate tier
     RoomCreated(u32, String, String, i32, bool, bool),                        // room id, room name, username, account id, hidden, protected
 }
 
@@ -29,6 +31,7 @@ pub enum WebhookMessage {
 pub enum WebhookChannel {
     Admin,
     Featured,
+    RateSuggestion,
     Room,
 }
 
@@ -358,6 +361,20 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             }),
             ..Default::default()
         }),
+        WebhookMessage::LevelFeatured(level_name, level_id, level_author, rate_tier) => Some(WebhookEmbed {
+            title: format!("{level_name} by {level_author}"),
+            color: hex_color_to_decimal("#7dfff5"),
+            author: None,
+            fields: vec![WebhookField {
+                name: "Level ID",
+                value: level_id.clone().to_string(),
+                inline: Some(true),
+            }],
+            thumbnail: Some(WebhookThumbnail {
+                url: rate_tier_to_image(rate_tier),
+            }),
+            ..Default::default()
+        }),
         WebhookMessage::RoomCreated(room_id, room_name, username, account_id, hidden, protected) => Some(WebhookEmbed {
             title: room_name.clone(),
             color: hex_color_to_decimal("#4dace8"),
@@ -400,4 +417,44 @@ pub fn rate_tier_to_image(tier: &i32) -> &str {
         2 => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/icon-outstanding.png",
         _ => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/easy-icon.webp",
     }
+}
+
+#[derive(Debug)]
+pub enum WebhookError {
+    Serialization(String),
+    Request(reqwest::Error),
+    RequestStatus((StatusCode, String)),
+}
+
+pub async fn send_webhook_messages(http_client: reqwest::Client, url: &str, messages: &[WebhookMessage]) -> Result<(), WebhookError> {
+    let mut embeds = Vec::new();
+
+    for message in messages {
+        if let Some(embed) = embed_for_message(message) {
+            embeds.push(embed);
+        }
+    }
+
+    let opts = WebhookOpts {
+        username: None,
+        content: None,
+        embeds,
+    };
+
+    let response = http_client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .body(serde_json::to_string(&opts).map_err(|e| WebhookError::Serialization(e.to_string()))?)
+        .send()
+        .await
+        .map_err(WebhookError::Request)?;
+
+    let status = response.status();
+    if !status.is_success() {
+        let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+        return Err(WebhookError::RequestStatus((status, message)));
+    }
+
+    Ok(())
 }

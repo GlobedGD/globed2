@@ -172,7 +172,7 @@ impl ClientThread {
                     if let Err(err) = self
                         .game_server
                         .bridge
-                        .send_webhook_message(WebhookMessage::NoticeToEveryone(
+                        .send_admin_webhook_message(WebhookMessage::NoticeToEveryone(
                             name,
                             threads.len(),
                             notice_packet.message.try_to_string(),
@@ -213,7 +213,7 @@ impl ClientThread {
                     if let Err(err) = self
                         .game_server
                         .bridge
-                        .send_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg))
+                        .send_admin_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg))
                         .await
                     {
                         warn!("webhook error during notice to person: {err}");
@@ -279,7 +279,7 @@ impl ClientThread {
                     if let Err(err) = self
                         .game_server
                         .bridge
-                        .send_webhook_message(WebhookMessage::NoticeToSelection(self_name, threads.len(), notice_msg))
+                        .send_admin_webhook_message(WebhookMessage::NoticeToSelection(self_name, threads.len(), notice_msg))
                         .await
                     {
                         warn!("webhook error during notice to selection: {err}");
@@ -322,7 +322,7 @@ impl ClientThread {
                 if let Err(err) = self
                     .game_server
                     .bridge
-                    .send_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
+                    .send_admin_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
                     .await
                 {
                     warn!("webhook error during kick everyone: {err}");
@@ -344,7 +344,7 @@ impl ClientThread {
                 if let Err(err) = self
                     .game_server
                     .bridge
-                    .send_webhook_message(WebhookMessage::KickPerson(
+                    .send_admin_webhook_message(WebhookMessage::KickPerson(
                         own_name,
                         target_name,
                         thread.account_id.load(Ordering::Relaxed),
@@ -666,7 +666,7 @@ impl ClientThread {
         if let Err(err) = self
             .game_server
             .bridge
-            .send_featured_webhook_message(WebhookMessage::FeaturedLevelSend(
+            .send_rate_suggestion_webhook_message(WebhookMessage::FeaturedLevelSend(
                 account_id,
                 self_name,
                 packet.level_name.to_string(),

@@ -232,57 +232,31 @@ impl CentralBridge {
     }
 
     #[inline]
-    pub async fn send_webhook_message(&self, message: WebhookMessage) -> Result<()> {
-        let messages = [message];
-        self.send_webhook_messages(&messages, WebhookChannel::Admin).await
+    pub async fn send_admin_webhook_message(&self, message: WebhookMessage) -> Result<()> {
+        self.send_webhook_messages(&[message], WebhookChannel::Admin).await
     }
 
     #[inline]
-    pub async fn send_featured_webhook_message(&self, message: WebhookMessage) -> Result<()> {
-        let messages = [message];
-        self.send_webhook_messages(&messages, WebhookChannel::Featured).await
+    pub async fn send_rate_suggestion_webhook_message(&self, message: WebhookMessage) -> Result<()> {
+        self.send_webhook_messages(&[message], WebhookChannel::Featured).await
     }
 
     // not really bridge but it was making web requests which is sorta related i guess
     pub async fn send_webhook_messages(&self, messages: &[WebhookMessage], channel: WebhookChannel) -> Result<()> {
         let url = match channel {
             WebhookChannel::Admin => self.central_conf.lock().admin_webhook_url.clone(),
+            WebhookChannel::RateSuggestion => self.central_conf.lock().rate_suggestion_webhook_url.clone(),
             WebhookChannel::Featured => self.central_conf.lock().featured_webhook_url.clone(),
             WebhookChannel::Room => self.central_conf.lock().room_webhook_url.clone(),
         };
 
-        if url.is_empty() {
-            return Ok(());
-        }
-
-        let mut embeds = Vec::new();
-
-        for message in messages {
-            if let Some(embed) = webhook::embed_for_message(message) {
-                embeds.push(embed);
-            }
-        }
-
-        let opts = WebhookOpts {
-            username: None,
-            content: None,
-            embeds,
-        };
-
-        let response = self
-            .http_client
-            .post(url)
-            .header("Content-Type", "application/json")
-            .body(serde_json::to_string(&opts).map_err(|e| CentralBridgeError::Other(e.to_string()))?)
-            .send()
-            .await?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
-
-            return Err(CentralBridgeError::WebhookError((status, message)));
-        }
+        webhook::send_webhook_messages(self.http_client.clone(), &url, messages)
+            .await
+            .map_err(|e| match e {
+                WebhookError::Serialization(e) => CentralBridgeError::Other(e),
+                WebhookError::Request(e) => CentralBridgeError::RequestError(e),
+                WebhookError::RequestStatus((sc, message)) => CentralBridgeError::WebhookError((sc, message)),
+            })?;
 
         Ok(())
     }

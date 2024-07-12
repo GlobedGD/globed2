@@ -1,3 +1,4 @@
+use globed_shared::{warn, webhook};
 use rocket::{get, post, serde::json::Json, State};
 
 use crate::{
@@ -33,7 +34,7 @@ pub async fn historyv2(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>, pag
 }
 
 // replaces the currently active featured level with a new one
-#[post("/flevel/replace?<newlevel>&<rate_tier>&<aid>&<adminpwd>")]
+#[post("/flevel/replace?<newlevel>&<rate_tier>&<aid>&<adminpwd>&<levelname>&<levelauthor>")]
 pub async fn replace(
     state: &State<ServerState>,
     db: &GlobedDb,
@@ -42,6 +43,8 @@ pub async fn replace(
     rate_tier: i32,
     aid: i32,
     adminpwd: &str,
+    levelname: Option<&str>,
+    levelauthor: Option<&str>,
 ) -> WebResult<()> {
     let Some(user) = db.get_user(aid).await? else {
         unauthorized!("unauthorized (account)")
@@ -67,6 +70,23 @@ pub async fn replace(
     }
 
     db.replace_featured_level(aid, newlevel, rate_tier).await?;
+
+    // send a webhook message
+    let url = state.config.featured_webhook_url.clone();
+    if let Err(e) = webhook::send_webhook_messages(
+        state.http_client.clone(),
+        &url,
+        &[webhook::WebhookMessage::LevelFeatured(
+            levelname.unwrap_or("<unknown>").to_owned(),
+            newlevel,
+            levelauthor.unwrap_or("<unknown>").to_owned(),
+            rate_tier,
+        )],
+    )
+    .await
+    {
+        warn!("error sending webhook message: {e:?}");
+    }
 
     Ok(())
 }
