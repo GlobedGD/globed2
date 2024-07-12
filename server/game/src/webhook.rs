@@ -21,8 +21,8 @@ pub enum WebhookMessage {
     UserViolationMetaChanged(String, String, bool, bool, Option<i64>, Option<String>), // mod username, username, is_banned, is_muted, expiry, reason
     UserRolesChanged(String, String, Vec<String>, Vec<String>),                        // mod username, username, old roles, new roles
     UserNameColorChanged(String, String, Option<String>, Option<String>),              // mod username, username, old color, new color
-    FeaturedLevelSend(String, String, i32, String, i32, Option<String>), // mod username, level name, level id, level author, rate tier, notes
-    RoomCreated(u32, String, String, i32, bool, bool),                   // room id, room name, username, account id, hidden, protected
+    FeaturedLevelSend(i32, String, String, i32, String, i32, Option<String>), // user id, user name, level name, level id, level author, rate tier, notes
+    RoomCreated(u32, String, String, i32, bool, bool),                        // room id, room name, username, account id, hidden, protected
 }
 
 #[derive(Debug)]
@@ -324,11 +324,11 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             ],
             ..Default::default()
         }),
-        WebhookMessage::FeaturedLevelSend(mod_name, level_name, level_id, level_author, rate_tier, notes) => Some(WebhookEmbed {
+        WebhookMessage::FeaturedLevelSend(mod_id, mod_name, level_name, level_id, level_author, rate_tier, notes) => Some(WebhookEmbed {
             title: "New level send".to_owned(),
             color: hex_color_to_decimal("#79bd31"),
             author: Some(WebhookAuthor {
-                name: mod_name.clone(),
+                name: format!("{mod_name} ({mod_id})"),
                 icon_url: None,
             }),
             fields: vec![

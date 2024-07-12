@@ -656,16 +656,24 @@ impl ClientThread {
     });
 
     gs_handler!(self, handle_admin_send_featured_level, AdminSendFeaturedLevelPacket, packet, {
+        let account_id = gs_needauth!(self);
+        let self_name = self.account_data.lock().name.try_to_string();
+
+        if !self._has_perm(AdminPerm::Any) {
+            return Ok(());
+        }
+
         if let Err(err) = self
             .game_server
             .bridge
             .send_featured_webhook_message(WebhookMessage::FeaturedLevelSend(
-                packet.mod_name.clone().to_string(),
-                packet.level_name.clone().to_string(),
+                account_id,
+                self_name,
+                packet.level_name.to_string(),
                 packet.level_id,
-                packet.level_author.clone().to_string(),
+                packet.level_author.to_string(),
                 packet.rate_tier,
-                packet.notes.clone(),
+                packet.notes.map(|x| x.to_string()),
             ))
             .await
         {

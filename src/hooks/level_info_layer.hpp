@@ -13,10 +13,16 @@ class $modify(HookedLevelInfoLayer, LevelInfoLayer) {
         int rateTier = -1;
     };
 
-    void onPlay(cocos2d::CCObject*);
-    void forcePlay(cocos2d::CCObject*);
-    void tryCloneLevel(cocos2d::CCObject*);
-
+    $override
     bool init(GJGameLevel* level, bool challenge);
 
+    $override
+    void onPlay(cocos2d::CCObject*);
+
+    $override
+    void tryCloneLevel(cocos2d::CCObject*);
+
+    void forcePlay(cocos2d::CCObject*);
+
+    void addLevelSendButton();
 };

@@ -12,7 +12,9 @@
 
 using namespace geode::prelude;
 
-bool EditFeaturedLevelPopup::setup() {
+bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
+    this->level = level;
+
     this->setTitle("Globed: Suggest Level", "goldFont.fnt", .6f, 20.f);
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
@@ -55,7 +57,6 @@ bool EditFeaturedLevelPopup::setup() {
             auto& nm = NetworkManager::get();
 
             nm.send(AdminSendFeaturedLevelPacket::create(
-                GJAccountManager::get()->m_username,
                 this->level->m_levelName,
                 this->level->m_levelID,
                 this->level->m_creatorName,
@@ -110,10 +111,7 @@ void EditFeaturedLevelPopup::createDiffButton() {
 }
 
 void EditFeaturedLevelPopup::onDiffClick(CCObject* sender) {
-    this->currIdx++;
-    if (this->currIdx > 2) {
-        this->currIdx = 0;
-    }
+    this->currIdx.increment();
 
     this->createDiffButton();
 }
@@ -121,23 +119,23 @@ void EditFeaturedLevelPopup::onDiffClick(CCObject* sender) {
 int EditFeaturedLevelPopup::getDifficulty() {
     int diff = 0;
     // "would a backwards wormhole be a whitehole or a holeworm?" - kiba 2024
-    if (level->m_autoLevel)
+    if (level->m_autoLevel) {
         diff = -1;
-    else if (level->m_ratingsSum != 0) {
+    } else if (level->m_ratingsSum != 0) {
         if (level->m_demon == 1){
             int fixedNum = level->m_demonDifficulty;
 
-            if (fixedNum != 0)
+            if (fixedNum != 0) {
                 fixedNum -= 2;
+            }
 
             diff = 6 + fixedNum;
-        }
-        else{
+        } else {
             diff = level->m_ratingsSum / level->m_ratings;
         }
-    }
-    else
+    } else {
         diff = 0;
+    }
 
     return diff;
 }
@@ -157,8 +155,7 @@ void EditFeaturedLevelPopup::onRequestComplete(typename WebRequestManager::Event
 
 EditFeaturedLevelPopup* EditFeaturedLevelPopup::create(GJGameLevel* level) {
     auto ret = new EditFeaturedLevelPopup();
-    ret->level = level; // silly kiba things
-    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, level)) {
         ret->autorelease();
         return ret;
     }
