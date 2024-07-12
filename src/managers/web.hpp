@@ -31,7 +31,7 @@ public:
     Task fetchServers();
     Task fetchFeaturedLevel();
     Task fetchFeaturedLevelHistory(int page);
-    Task setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor);
+    Task setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty);
     Task challengeStart();
     Task challengeFinish(std::string_view authcode);
 

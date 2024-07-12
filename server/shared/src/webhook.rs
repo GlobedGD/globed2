@@ -22,9 +22,9 @@ pub enum WebhookMessage {
     UserViolationMetaChanged(String, String, bool, bool, Option<i64>, Option<String>), // mod username, username, is_banned, is_muted, expiry, reason
     UserRolesChanged(String, String, Vec<String>, Vec<String>),                        // mod username, username, old roles, new roles
     UserNameColorChanged(String, String, Option<String>, Option<String>),              // mod username, username, old color, new color
-    FeaturedLevelSend(i32, String, String, i32, String, i32, Option<String>), // user id, user name, level name, level id, level author, rate tier, notes
-    LevelFeatured(String, i32, String, i32),                                  // level name, level id, level author, rate tier
-    RoomCreated(u32, String, String, i32, bool, bool),                        // room id, room name, username, account id, hidden, protected
+    FeaturedLevelSend(i32, String, String, i32, String, i32, i32, Option<String>), // user id, user name, level name, level id, level author, difficulty, rate tier, notes
+    LevelFeatured(String, i32, String, i32, i32),                                  // level name, level id, level author, difficulty, rate tier
+    RoomCreated(u32, String, String, i32, bool, bool),                             // room id, room name, username, account id, hidden, protected
 }
 
 #[derive(Debug)]
@@ -58,8 +58,8 @@ pub struct WebhookField<'a> {
 }
 
 #[derive(Serialize)]
-pub struct WebhookThumbnail<'a> {
-    pub url: &'a str,
+pub struct WebhookThumbnail {
+    pub url: String,
 }
 
 #[derive(Default, Serialize)]
@@ -76,7 +76,7 @@ pub struct WebhookEmbed<'a> {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub fields: Vec<WebhookField<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub thumbnail: Option<WebhookThumbnail<'a>>,
+    pub thumbnail: Option<WebhookThumbnail>,
 }
 
 #[derive(Serialize)]
@@ -327,7 +327,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             ],
             ..Default::default()
         }),
-        WebhookMessage::FeaturedLevelSend(mod_id, mod_name, level_name, level_id, level_author, rate_tier, notes) => Some(WebhookEmbed {
+        WebhookMessage::FeaturedLevelSend(mod_id, mod_name, level_name, level_id, level_author, difficulty, rate_tier, notes) => Some(WebhookEmbed {
             title: "New level send".to_owned(),
             color: hex_color_to_decimal("#79bd31"),
             author: Some(WebhookAuthor {
@@ -357,11 +357,11 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 },
             ],
             thumbnail: Some(WebhookThumbnail {
-                url: rate_tier_to_image(rate_tier),
+                url: rate_tier_to_image(*difficulty, *rate_tier),
             }),
             ..Default::default()
         }),
-        WebhookMessage::LevelFeatured(level_name, level_id, level_author, rate_tier) => Some(WebhookEmbed {
+        WebhookMessage::LevelFeatured(level_name, level_id, level_author, difficulty, rate_tier) => Some(WebhookEmbed {
             title: format!("{level_name} by {level_author}"),
             color: hex_color_to_decimal("#7dfff5"),
             author: Some(WebhookAuthor {
@@ -374,7 +374,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                 inline: Some(true),
             }],
             thumbnail: Some(WebhookThumbnail {
-                url: rate_tier_to_image(rate_tier),
+                url: rate_tier_to_image(*difficulty, *rate_tier),
             }),
             ..Default::default()
         }),
@@ -413,13 +413,24 @@ pub fn hex_color_to_decimal(color: &str) -> Option<u32> {
     u32::from_str_radix(color, 16).ok()
 }
 
-pub fn rate_tier_to_image(tier: &i32) -> &str {
-    match tier {
-        0 => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/icon-featured.png",
-        1 => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/icon-epic.png",
-        2 => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/icon-outstanding.png",
-        _ => "https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/easy-icon.webp",
-    }
+pub fn rate_tier_to_image(difficulty: i32, tier: i32) -> String {
+    let diffname: &str = match difficulty {
+        1 => "easy",
+        2 => "normal",
+        3 => "hard",
+        4 => "harder",
+        5 => "insane",
+        6..=10 => "demon",
+        _ => "na",
+    };
+
+    let ratename: &str = match tier {
+        1 => "epic",
+        2 => "outstanding",
+        _ => "featured",
+    };
+
+    format!("https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/globed-faces/{diffname}/{diffname}-{ratename}.png")
 }
 
 #[derive(Debug)]

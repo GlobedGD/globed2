@@ -9,6 +9,7 @@
 #include <data/packets/client/admin.hpp>
 #include <util/ui.hpp>
 #include <util/format.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -60,6 +61,7 @@ bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
                 this->level->m_levelName,
                 this->level->m_levelID,
                 this->level->m_creatorName,
+                util::gd::calcLevelDifficulty(this->level),
                 currIdx,
                 this->notesInput->getString()
             ));
@@ -88,7 +90,7 @@ void EditFeaturedLevelPopup::save() {
                 return;
             }
 
-            auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx, level->m_levelName, level->m_creatorName);
+            auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx, level->m_levelName, level->m_creatorName, util::gd::calcLevelDifficulty(level));
             reqListener.bind(this, &EditFeaturedLevelPopup::onRequestComplete);
             reqListener.setFilter(std::move(req));
         } else {
@@ -117,27 +119,7 @@ void EditFeaturedLevelPopup::onDiffClick(CCObject* sender) {
 }
 
 int EditFeaturedLevelPopup::getDifficulty() {
-    int diff = 0;
-    // "would a backwards wormhole be a whitehole or a holeworm?" - kiba 2024
-    if (level->m_autoLevel) {
-        diff = -1;
-    } else if (level->m_ratingsSum != 0) {
-        if (level->m_demon == 1){
-            int fixedNum = level->m_demonDifficulty;
-
-            if (fixedNum != 0) {
-                fixedNum -= 2;
-            }
-
-            diff = 6 + fixedNum;
-        } else {
-            diff = level->m_ratingsSum / level->m_ratings;
-        }
-    } else {
-        diff = 0;
-    }
-
-    return diff;
+    return util::gd::calcLevelDifficulty(level);
 }
 
 void EditFeaturedLevelPopup::onRequestComplete(typename WebRequestManager::Event* event) {

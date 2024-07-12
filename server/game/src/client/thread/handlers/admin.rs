@@ -672,6 +672,7 @@ impl ClientThread {
                 packet.level_name.to_string(),
                 packet.level_id,
                 packet.level_author.to_string(),
+                packet.difficulty,
                 packet.rate_tier,
                 packet.notes.map(|x| x.to_string()),
             ))

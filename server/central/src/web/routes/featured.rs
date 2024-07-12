@@ -34,7 +34,7 @@ pub async fn historyv2(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>, pag
 }
 
 // replaces the currently active featured level with a new one
-#[post("/flevel/replace?<newlevel>&<rate_tier>&<aid>&<adminpwd>&<levelname>&<levelauthor>")]
+#[post("/flevel/replace?<newlevel>&<rate_tier>&<aid>&<adminpwd>&<levelname>&<levelauthor>&<difficulty>")]
 pub async fn replace(
     state: &State<ServerState>,
     db: &GlobedDb,
@@ -45,6 +45,7 @@ pub async fn replace(
     adminpwd: &str,
     levelname: Option<&str>,
     levelauthor: Option<&str>,
+    difficulty: Option<i32>,
 ) -> WebResult<()> {
     let Some(user) = db.get_user(aid).await? else {
         unauthorized!("unauthorized (account)")
@@ -80,6 +81,7 @@ pub async fn replace(
             levelname.unwrap_or("<unknown>").to_owned(),
             newlevel,
             levelauthor.unwrap_or("<unknown>").to_owned(),
+            difficulty.unwrap_or(0),
             rate_tier,
         )],
     )
