@@ -3,7 +3,6 @@
 #include "room_join_popup.hpp"
 #include "room_settings_popup.hpp"
 #include "room_listing_popup.hpp"
-#include "change_room_name_popup.hpp"
 #include "invite_popup.hpp"
 #include "create_room_popup.hpp"
 #include <data/packets/server/room.hpp>
