@@ -79,9 +79,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
     if (NOT MSVC)
         set(GLOBED_WINDOWS_CLANG ON)
+        target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--export-all-symbols")
     endif()
 
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 endif()
 
 # i am crying so hard right now
