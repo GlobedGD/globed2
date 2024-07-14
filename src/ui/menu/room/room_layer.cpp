@@ -6,7 +6,9 @@
 #include "invite_popup.hpp"
 #include "create_room_popup.hpp"
 #include <data/packets/server/room.hpp>
+#include <data/packets/client/admin.hpp>
 #include <net/manager.hpp>
+#include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
@@ -193,6 +195,29 @@ bool RoomLayer::init() {
         .pos(rlayout.bottomLeft)
         .parent(this);
 
+    // close room button
+    Build<CCSprite>::createSpriteName("icon-close-room.png"_spr)
+        .scale(0.7f)
+        .intoMenuItem([this](auto) {
+            auto& am = AdminManager::get();
+            if (am.getRole().canModerate()) {
+                geode::createQuickPopup("Close Room?", "Are you sure you want to close this room?", "Cancel", "Ok", [this](auto, bool btn2) {
+                    if (btn2) {
+                        this->closeRoom();
+                    }
+                });
+            }
+        })
+        .scaleMult(1.1f)
+        .id("btn-close-room")
+        .pos(54.f, 23.f)
+        .visible(false)
+        .store(btnCloseRoom)
+        .intoNewParent(CCMenu::create())
+        .id("close-room-menu")
+        .pos(rlayout.bottomLeft)
+        .parent(this);
+
     // listeners
 
     nm.addListener<RoomPlayerListPacket>(this, [this](auto packet) {
@@ -221,6 +246,7 @@ bool RoomLayer::init() {
 
 void RoomLayer::update(float dt) {
     btnSettings->setVisible(RoomManager::get().isInRoom());
+    btnCloseRoom->setVisible(AdminManager::get().authorized() && RoomManager::get().isInRoom());
 
     // show/hide the invite button
     auto& rm = RoomManager::get();
@@ -404,6 +430,21 @@ void RoomLayer::reloadData(const RoomInfo& info, const std::vector<PlayerRoomPre
     }
 
     topRightButtons->updateLayout();
+}
+
+void RoomLayer::closeRoom() {
+    for (const auto& data : playerList) {
+        if (data.accountId <= 0 || data.accountId == GJAccountManager::get()->m_accountID) {
+            continue;
+        }
+
+        auto packet = AdminDisconnectPacket::create(std::to_string(data.accountId), "Room Closed by Moderation");
+        NetworkManager::get().send(packet);
+    }
+    if (this->isLoading()) return;
+
+    NetworkManager::get().sendLeaveRoom();
+    this->startLoading();
 }
 
 void RoomLayer::setRoomTitle(std::string_view name, uint32_t id) {

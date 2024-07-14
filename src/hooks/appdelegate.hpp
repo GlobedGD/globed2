@@ -13,9 +13,4 @@ class $modify(GlobedAppDelegate, AppDelegate) {
     $override
     void applicationWillEnterForeground();
 #endif // GEODE_IS_ANDROID
-
-#ifdef GEODE_IS_MACOS
-    $override
-    void loadingIsFinished();
-#endif
 };

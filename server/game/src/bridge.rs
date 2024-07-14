@@ -69,7 +69,9 @@ pub struct CentralBridge {
     // for performance reasons /shrug
     pub maintenance: AtomicBool,
     pub whitelist: AtomicBool,
-    pub webhook_present: AtomicBool,
+    pub admin_webhook_present: AtomicBool,
+    pub featured_webhook_present: AtomicBool,
+    pub room_webhook_present: AtomicBool,
 }
 
 impl CentralBridge {
@@ -88,7 +90,9 @@ impl CentralBridge {
             central_conf: SyncMutex::new(GameServerBootData::default()),
             maintenance: AtomicBool::new(false),
             whitelist: AtomicBool::new(false),
-            webhook_present: AtomicBool::new(false),
+            admin_webhook_present: AtomicBool::new(false),
+            featured_webhook_present: AtomicBool::new(false),
+            room_webhook_present: AtomicBool::new(false),
         }
     }
 
@@ -100,8 +104,16 @@ impl CentralBridge {
         self.whitelist.load(Ordering::Relaxed)
     }
 
-    pub fn has_webhook(&self) -> bool {
-        self.webhook_present.load(Ordering::Relaxed)
+    pub fn has_admin_webhook(&self) -> bool {
+        self.admin_webhook_present.load(Ordering::Relaxed)
+    }
+
+    pub fn has_featured_webhook(&self) -> bool {
+        self.featured_webhook_present.load(Ordering::Relaxed)
+    }
+
+    pub fn has_room_webhook(&self) -> bool {
+        self.room_webhook_present.load(Ordering::Relaxed)
     }
 
     pub async fn request_boot_data(&self) -> Result<GameServerBootData> {
@@ -157,7 +169,10 @@ impl CentralBridge {
     pub fn set_boot_data(&self, data: GameServerBootData) {
         self.maintenance.store(data.maintenance, Ordering::Relaxed);
         self.whitelist.store(data.whitelist, Ordering::Relaxed);
-        self.webhook_present.store(!data.admin_webhook_url.is_empty(), Ordering::Relaxed);
+        self.admin_webhook_present.store(!data.admin_webhook_url.is_empty(), Ordering::Relaxed);
+        self.featured_webhook_present
+            .store(!data.featured_webhook_url.is_empty(), Ordering::Relaxed);
+        self.room_webhook_present.store(!data.room_webhook_url.is_empty(), Ordering::Relaxed);
 
         let mut issuer = self.token_issuer.lock();
 
@@ -217,54 +232,31 @@ impl CentralBridge {
     }
 
     #[inline]
-    pub async fn send_webhook_message(&self, message: WebhookMessage) -> Result<()> {
-        let messages = [message];
-        self.send_webhook_messages(&messages, false).await
+    pub async fn send_admin_webhook_message(&self, message: WebhookMessage) -> Result<()> {
+        self.send_webhook_messages(&[message], WebhookChannel::Admin).await
     }
 
     #[inline]
-    pub async fn send_featured_webhook_message(&self, message: WebhookMessage) -> Result<()> {
-        let messages = [message];
-        self.send_webhook_messages(&messages, true).await
+    pub async fn send_rate_suggestion_webhook_message(&self, message: WebhookMessage) -> Result<()> {
+        self.send_webhook_messages(&[message], WebhookChannel::RateSuggestion).await
     }
 
     // not really bridge but it was making web requests which is sorta related i guess
-    pub async fn send_webhook_messages(&self, messages: &[WebhookMessage], is_featured_webhook: bool) -> Result<()> {
-        let url: String;
-        if is_featured_webhook {
-            url = self.central_conf.lock().featured_webhook_url.clone();
-        } else {
-            url = self.central_conf.lock().admin_webhook_url.clone();
-        }
-
-        let mut embeds = Vec::new();
-
-        for message in messages {
-            if let Some(embed) = webhook::embed_for_message(message) {
-                embeds.push(embed);
-            }
-        }
-
-        let opts = WebhookOpts {
-            username: None,
-            content: None,
-            embeds,
+    pub async fn send_webhook_messages(&self, messages: &[WebhookMessage], channel: WebhookChannel) -> Result<()> {
+        let url = match channel {
+            WebhookChannel::Admin => self.central_conf.lock().admin_webhook_url.clone(),
+            WebhookChannel::RateSuggestion => self.central_conf.lock().rate_suggestion_webhook_url.clone(),
+            WebhookChannel::Featured => self.central_conf.lock().featured_webhook_url.clone(),
+            WebhookChannel::Room => self.central_conf.lock().room_webhook_url.clone(),
         };
 
-        let response = self
-            .http_client
-            .post(url)
-            .header("Content-Type", "application/json")
-            .body(serde_json::to_string(&opts).map_err(|e| CentralBridgeError::Other(e.to_string()))?)
-            .send()
-            .await?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
-
-            return Err(CentralBridgeError::WebhookError((status, message)));
-        }
+        webhook::send_webhook_messages(self.http_client.clone(), &url, messages)
+            .await
+            .map_err(|e| match e {
+                WebhookError::Serialization(e) => CentralBridgeError::Other(e),
+                WebhookError::Request(e) => CentralBridgeError::RequestError(e),
+                WebhookError::RequestStatus((sc, message)) => CentralBridgeError::WebhookError((sc, message)),
+            })?;
 
         Ok(())
     }

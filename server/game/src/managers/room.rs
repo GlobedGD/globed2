@@ -79,8 +79,8 @@ impl Room {
     }
 
     #[inline]
-    pub fn set_settings(&mut self, settings: &RoomSettings) {
-        self.settings.clone_from(settings);
+    pub fn set_settings(&mut self, settings: RoomSettings) {
+        self.settings = settings;
     }
 
     #[inline]

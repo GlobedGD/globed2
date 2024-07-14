@@ -29,7 +29,8 @@ public:
     // Fetches the level or returns a cached copy
     void getStoredLevel(std::function<void(GJGameLevel*, const GlobedFeaturedLevel&)>&& callback, bool force = false);
     void resetStoredLevel();
-    void clearWebCallback();
+    void clearSingleWebCallback();
+    void clearMultiWebCallback();
 
     void getCurrentLevelMeta(std::function<void(const GlobedFeaturedLevel&)>&& callback, bool force = false);
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <util/data.hpp>
+#include <string_view>
 #include "adler32.hpp"
 
 #define CRYPTO_REQUIRE(condition, message) GLOBED_REQUIRE(condition, "crypto error: " message)

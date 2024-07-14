@@ -49,8 +49,6 @@ static RequestTask mapTask(web::WebTask&& param) {
 
         auto resp = strResult.unwrap();
         return Ok(resp);
-    }, [](auto) -> std::monostate {
-        return {};
     });
 }
 
@@ -96,12 +94,15 @@ RequestTask WebRequestManager::fetchFeaturedLevelHistory(int page) {
     });
 }
 
-RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier) {
+RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty) {
     return this->post(makeCentralUrl("flevel/replace"), 5, [&](web::WebRequest& req) {
         req.param("newlevel", levelId);
         req.param("rate_tier", rateTier);
         req.param("aid", GlobedAccountManager::get().gdData.lock()->accountId);
         req.param("adminpwd", GlobedAccountManager::get().getTempAdminPassword());
+        req.param("levelname", levelName);
+        req.param("levelauthor", levelAuthor);
+        req.param("difficulty", difficulty);
     });
 }
 

@@ -182,7 +182,6 @@ void DailyManager::onLevelMetaFetchedCallback(typename WebRequestManager::Event*
     singleFetchState = FetchState::FetchingLevel;
     glm->m_levelManagerDelegate = fetchNode;
     glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(storedLevelMeta.levelId)));
-
 }
 
 void DailyManager::onLevelFetchedCallback(Result<CCArray*, int> level) {
@@ -235,9 +234,13 @@ void DailyManager::onFullLevelFetchedCallback(Result<GJGameLevel*, int> level) {
 
 }
 
-void DailyManager::clearWebCallback() {
+void DailyManager::clearSingleWebCallback() {
     singleReqCallback = {};
+}
+
+void DailyManager::clearMultiWebCallback() {
     levelMetaCallback = {};
+    multipleReqCallback = {};
 }
 
 void DailyManager::getCurrentLevelMeta(std::function<void(const GlobedFeaturedLevel&)>&& callback, bool force) {
@@ -281,7 +284,12 @@ void DailyManager::onCurrentLevelMetaFetchedCallback(typename WebRequestManager:
 
     auto levelMeta = std::move(parsed_.value()).as<GlobedFeaturedLevel>();
 
-    this->levelMetaCallback(levelMeta);
+    if (this->levelMetaCallback) {
+        this->levelMetaCallback(levelMeta);
+    } else {
+        log::warn("no levelMetaCallback");
+        singleFetchState = FetchState::NotFetching;
+    }
 }
 
 void DailyManager::getFeaturedLevels(int page, std::function<void(const Page&)>&& callback, bool force) {

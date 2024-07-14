@@ -20,7 +20,7 @@ class WebRequestManager : public SingletonBase<WebRequestManager> {
 
 public:
     using Result = geode::Result<std::string, WebRequestError>;
-    using Task = geode::Task<Result>;
+    using Task = geode::Task<Result, geode::utils::web::WebProgress>;
     using Listener = geode::EventListener<Task>;
     using Event = Task::Event;
     using SingletonBase::get;
@@ -31,7 +31,7 @@ public:
     Task fetchServers();
     Task fetchFeaturedLevel();
     Task fetchFeaturedLevelHistory(int page);
-    Task setFeaturedLevel(int levelId, int rateTier);
+    Task setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty);
     Task challengeStart();
     Task challengeFinish(std::string_view authcode);
 

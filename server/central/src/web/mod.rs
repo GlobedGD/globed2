@@ -13,9 +13,9 @@ pub fn not_found(_req: &Request) -> &'static str {
 #[catch(422)]
 pub fn query_string(_req: &Request) -> &'static str {
     concatcp!(
-        "Outdated Globed version. Minimum supported by this server is ",
+        "Outdated Globed version, minimum required is ",
         MIN_CLIENT_VERSION,
-        ". Please make sure that you are running the latest versions of Geometry Dash, Geode and Globed."
+        ". Please make sure that you are on the latest versions of Geometry Dash, Geode and Globed."
     )
 }
 

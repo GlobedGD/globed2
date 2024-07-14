@@ -34,6 +34,7 @@ pub use token_issuer::TokenIssuer;
 pub mod data;
 pub mod logger;
 pub mod token_issuer;
+pub mod webhook;
 
 pub const SUPPORTED_PROTOCOLS: &[u16] = &[9];
 pub const MAX_SUPPORTED_PROTOCOL: u16 = *SUPPORTED_PROTOCOLS.last().unwrap();

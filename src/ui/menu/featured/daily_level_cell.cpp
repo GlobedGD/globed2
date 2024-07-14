@@ -68,7 +68,7 @@ void GlobedDailyLevelCell::reload() {
 }
 
 GlobedDailyLevelCell::~GlobedDailyLevelCell() {
-    DailyManager::get().clearWebCallback();
+    DailyManager::get().clearSingleWebCallback();
 }
 
 void GlobedDailyLevelCell::createCell(GJGameLevel* level) {

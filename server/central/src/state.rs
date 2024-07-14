@@ -16,6 +16,7 @@ use globed_shared::{
     crypto_secretbox::{KeyInit, XSalsa20Poly1305},
     hmac::Hmac,
     rand::{self, distributions::Alphanumeric, rngs::OsRng, Rng, RngCore},
+    reqwest,
     sha2::Sha256,
     TokenIssuer,
 };
@@ -48,6 +49,7 @@ pub struct ServerStateData {
     pub active_challenges: HashMap<IpAddr, ActiveChallenge>,
     pub challenge_pubkey: GenericArray<u8, U32>,
     pub challenge_box: XSalsa20Poly1305,
+    pub http_client: reqwest::Client,
 }
 
 impl ServerStateData {
@@ -60,6 +62,11 @@ impl ServerStateData {
         let challenge_box = XSalsa20Poly1305::new(&challenge_pubkey);
 
         let token_expiry = Duration::from_secs(config.token_expiry);
+        let http_client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(5))
+            .user_agent(format!("globed-central-server/{}", env!("CARGO_PKG_VERSION")))
+            .build()
+            .unwrap();
 
         Self {
             config_path,
@@ -69,6 +76,7 @@ impl ServerStateData {
             active_challenges: HashMap::new(),
             challenge_pubkey,
             challenge_box,
+            http_client,
         }
     }
 

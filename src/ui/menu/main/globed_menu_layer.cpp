@@ -84,13 +84,14 @@ bool GlobedMenuLayer::init() {
         .parent(dailyButtonMenu)
         .collect();
 
-    CCSprite* featuredPopupNew = Build<CCSprite>::createSpriteName("newMusicIcon_001.png")
+    Build<CCSprite>::createSpriteName("newMusicIcon_001.png")
         .id("btn-daily-extra"_spr)
         .anchorPoint({0.5, 0.5})
         .pos({featuredPopupButton->getScaledContentWidth() * 0.85f, featuredPopupButton->getScaledContentHeight() * 0.15f})
         .zOrder(2)
         .visible(false)
-        .parent(featuredPopupButton);
+        .parent(featuredPopupButton)
+        .store(featuredPopupNew);
 
     auto newSequence = CCRepeatForever::create(CCSequence::create(
         CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.2f)),
@@ -99,7 +100,7 @@ bool GlobedMenuLayer::init() {
     ));
     featuredPopupNew->runAction(newSequence);
 
-    CCSprite* featuredBtnGlow = Build<CCSprite>::createSpriteName("daily-glow.png"_spr)
+    Build<CCSprite>::createSpriteName("daily-glow.png"_spr)
         .id("btn-daily-glow-extra"_spr)
         .anchorPoint({0.5, 0.5})
         .pos(featuredPopupButton->getScaledContentSize() / 2)
@@ -109,7 +110,8 @@ bool GlobedMenuLayer::init() {
         .opacity(50)
         .blendFunc({GL_ONE, GL_ONE})
         .visible(false)
-        .parent(featuredPopupButton);
+        .parent(featuredPopupButton)
+        .store(featuredBtnGlow);
 
     auto newGlowSequence = CCRepeatForever::create(CCSequence::create(
         CCEaseSineInOut::create(CCFadeTo::create(0.75f, 150)),
@@ -120,7 +122,7 @@ bool GlobedMenuLayer::init() {
 
     dailyButtonMenu->updateLayout();
 
-    DailyManager::get().getCurrentLevelMeta([this, featuredBtnGlow, featuredPopupNew](const GlobedFeaturedLevel& meta) {
+    DailyManager::get().getCurrentLevelMeta([this](const GlobedFeaturedLevel& meta) {
         // check to see if most recently seen level is different from what is stored
         if (DailyManager::get().getLastSeenFeaturedLevel() != meta.id) {
             featuredBtnGlow->setVisible(true);

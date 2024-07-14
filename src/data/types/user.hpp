@@ -45,6 +45,10 @@ struct ComputedRole {
     bool editRole;
     bool editFeaturedLevels;
     bool admin;
+
+    bool canModerate() {
+        return notices || noticesToEveryone || kick || kickEveryone || mute || ban || editRole || editFeaturedLevels || admin;
+    }
 };
 
 GLOBED_SERIALIZABLE_STRUCT(ComputedRole, (

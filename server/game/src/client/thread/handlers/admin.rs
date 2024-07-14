@@ -2,7 +2,7 @@ use globed_shared::{info, warn};
 
 use crate::{
     managers::ComputedRole,
-    webhook::{BanMuteStateChange, WebhookMessage},
+    webhook::{BanMuteStateChange, WebhookChannel, WebhookMessage},
 };
 
 use super::*;
@@ -168,11 +168,11 @@ impl ClientThread {
                     notice_packet.message,
                 );
 
-                if self.game_server.bridge.has_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     if let Err(err) = self
                         .game_server
                         .bridge
-                        .send_webhook_message(WebhookMessage::NoticeToEveryone(
+                        .send_admin_webhook_message(WebhookMessage::NoticeToEveryone(
                             name,
                             threads.len(),
                             notice_packet.message.try_to_string(),
@@ -209,11 +209,11 @@ impl ClientThread {
                     self.get_tcp_peer()
                 );
 
-                if self.game_server.bridge.has_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     if let Err(err) = self
                         .game_server
                         .bridge
-                        .send_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg))
+                        .send_admin_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg))
                         .await
                     {
                         warn!("webhook error during notice to person: {err}");
@@ -275,11 +275,11 @@ impl ClientThread {
                     threads.len()
                 );
 
-                if self.game_server.bridge.has_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     if let Err(err) = self
                         .game_server
                         .bridge
-                        .send_webhook_message(WebhookMessage::NoticeToSelection(self_name, threads.len(), notice_msg))
+                        .send_admin_webhook_message(WebhookMessage::NoticeToSelection(self_name, threads.len(), notice_msg))
                         .await
                     {
                         warn!("webhook error during notice to selection: {err}");
@@ -318,13 +318,15 @@ impl ClientThread {
 
             let self_name = self.account_data.lock().name.try_to_string();
 
-            if let Err(err) = self
-                .game_server
-                .bridge
-                .send_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
-                .await
-            {
-                warn!("webhook error during kick everyone: {err}");
+            if self.game_server.bridge.has_admin_webhook() {
+                if let Err(err) = self
+                    .game_server
+                    .bridge
+                    .send_admin_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
+                    .await
+                {
+                    warn!("webhook error during kick everyone: {err}");
+                }
             }
 
             return Ok(());
@@ -335,14 +337,14 @@ impl ClientThread {
 
             thread.push_new_message(ServerThreadMessage::TerminationNotice(packet.message)).await;
 
-            if self.game_server.bridge.has_webhook() {
+            if self.game_server.bridge.has_admin_webhook() {
                 let own_name = self.account_data.lock().name.try_to_string();
                 let target_name = thread.account_data.lock().name.try_to_string();
 
                 if let Err(err) = self
                     .game_server
                     .bridge
-                    .send_webhook_message(WebhookMessage::KickPerson(
+                    .send_admin_webhook_message(WebhookMessage::KickPerson(
                         own_name,
                         target_name,
                         thread.account_id.load(Ordering::Relaxed),
@@ -581,7 +583,7 @@ impl ClientThread {
                     target_account_id
                 );
 
-                if self.game_server.bridge.has_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     // this is crazy
                     let mut messages = FastVec::<WebhookMessage, 4>::new();
 
@@ -636,7 +638,7 @@ impl ClientThread {
                         ));
                     }
 
-                    if let Err(err) = self.game_server.bridge.send_webhook_messages(&messages, false).await {
+                    if let Err(err) = self.game_server.bridge.send_webhook_messages(&messages, WebhookChannel::Admin).await {
                         warn!("webhook error during roles changed: {err}");
                     }
                 }
@@ -654,15 +656,28 @@ impl ClientThread {
     });
 
     gs_handler!(self, handle_admin_send_featured_level, AdminSendFeaturedLevelPacket, packet, {
-        if let Err(err) = self.game_server.bridge.send_featured_webhook_message(WebhookMessage::FeaturedLevelSend(
-            packet.mod_name.clone().to_string(),
-            packet.level_name.clone().to_string(),
-            packet.level_id.clone(),
-            packet.level_author.clone().to_string(),
-            packet.rate_tier.clone(),
-            packet.notes.clone(),
-        ))
-        .await {
+        let account_id = gs_needauth!(self);
+        let self_name = self.account_data.lock().name.try_to_string();
+
+        if !self._has_perm(AdminPerm::Any) {
+            return Ok(());
+        }
+
+        if let Err(err) = self
+            .game_server
+            .bridge
+            .send_rate_suggestion_webhook_message(WebhookMessage::FeaturedLevelSend(
+                account_id,
+                self_name,
+                packet.level_name.to_string(),
+                packet.level_id,
+                packet.level_author.to_string(),
+                packet.difficulty,
+                packet.rate_tier,
+                packet.notes.map(|x| x.to_string()),
+            ))
+            .await
+        {
             warn!("webhook error during send featured: {err}");
         }
 

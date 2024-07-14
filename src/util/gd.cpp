@@ -39,4 +39,30 @@ namespace util::gd {
 
         ProfilePage::create(accountId, myself)->show();
     }
+
+    int calcLevelDifficulty(GJGameLevel* level) {
+        int diff = 0;
+        // "would a backwards wormhole be a whitehole or a holeworm?" - kiba 2024
+        if (level->m_autoLevel) {
+            diff = -1;
+        } else if (level->m_ratingsSum != 0) {
+            if (level->m_demon == 1){
+                int fixedNum = level->m_demonDifficulty;
+
+                if (fixedNum != 0) {
+                    fixedNum -= 2;
+                }
+
+                diff = 6 + fixedNum;
+            } else {
+                diff = level->m_ratingsSum / level->m_ratings;
+            }
+        } else {
+            diff = 0;
+        }
+
+        log::debug("Difficulty: {}", diff);
+
+        return diff;
+    }
 }
