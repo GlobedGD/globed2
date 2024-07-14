@@ -88,6 +88,16 @@ public:
 
     // Must be called from the main thread. Delivers packets to all listeners that are tied to an object.
     void update(float dt) {
+        // this is a bit irrelevant here but who gives a shit
+        if (GJAccountManager::get()->m_accountID != ProfileCacheManager::get().getOwnAccountData().accountId) {
+            NetworkManager::get().disconnect();
+
+            // clear the queue
+            while (auto t = packetQueue.tryPop());
+
+            return;
+        }
+
         if (packetQueue.empty()) return;
 
         // clear any dead listeners
@@ -316,6 +326,9 @@ protected:
         recoverAttempt = 0;
 
         state = ConnectionState::TcpConnecting;
+
+        auto& pcm = ProfileCacheManager::get();
+        pcm.setOwnDataAuto();
 
         // actual connection is deferred - the network thread does DNS resolution and TCP connection.
 
