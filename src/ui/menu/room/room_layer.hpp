@@ -31,7 +31,7 @@ protected:
     Ref<LoadingCircle> loadingCircle;
     Ref<cocos2d::CCMenu> topRightButtons;
     PlayerList* listLayer;
-    Ref<CCMenuItemSpriteExtra> btnSearch, btnClearSearch, btnSettings, btnInvite, btnRefresh;
+    Ref<CCMenuItemSpriteExtra> btnSearch, btnClearSearch, btnSettings, btnInvite, btnRefresh, btnCloseRoom;
     Ref<CCMenuItemToggler> btnInvisible;
     Ref<cocos2d::CCMenu> btnRoomId, roomButtonMenu;
 
@@ -47,8 +47,9 @@ protected:
     void recreatePlayerList();
     void sortPlayerList();
     void setFilter(std::string_view filter);
-    void resetFilter();
     void setRoomTitle(std::string_view name, uint32_t id);
+    void resetFilter();
+    void closeRoom();
 
     void addRoomButtons();
     void addGlobalRoomButtons();
