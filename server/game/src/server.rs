@@ -751,6 +751,18 @@ impl GameServer {
         }
     }
 
+    /// kick users from the room and send a `RoomPlayerListPacket`
+    pub async fn broadcast_room_kicked(&self, account_id: i32) {
+        if let Some(user) = self.get_user_by_id(account_id) {
+            let room_id = user.room_id.load(Ordering::Relaxed);
+            if room_id == 0 {
+                return;
+            }
+
+            user.push_new_message(ServerThreadMessage::BroadcastRoomKicked).await;
+        }
+    }
+
     /// Try to handle a packet that is not addressed to a specific thread, but to the game server.
     async fn try_udp_handle(&self, data: &[u8], peer: SocketAddrV4) -> anyhow::Result<bool> {
         let mut byte_reader = ByteReader::from_bytes(data);

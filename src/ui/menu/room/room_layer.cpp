@@ -1,6 +1,5 @@
 #include "room_layer.hpp"
 
-#include "room_join_popup.hpp"
 #include "room_settings_popup.hpp"
 #include "room_listing_popup.hpp"
 #include "invite_popup.hpp"
@@ -178,7 +177,7 @@ bool RoomLayer::init() {
     topRightButtons->updateLayout();
 
     // settings button
-    Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+    auto* bottomLeftMenu = Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
         .scale(0.7f)
         .intoMenuItem([this](auto) {
             if (this->isLoading()) return;
@@ -187,13 +186,15 @@ bool RoomLayer::init() {
         })
         .scaleMult(1.1f)
         .id("btn-settings")
-        .pos(22.f, 23.f)
         .visible(false)
         .store(btnSettings)
         .intoNewParent(CCMenu::create())
-        .id("settings-menu")
-        .pos(rlayout.bottomLeft)
-        .parent(this);
+        .anchorPoint(0.f, 0.f)
+        .layout(RowLayout::create()->setGap(3.f)->setAxisAlignment(AxisAlignment::Start))
+        .id("bottom-left-menu")
+        .pos(rlayout.bottomLeft + CCPoint{7.5f, 7.5f})
+        .parent(this)
+        .collect();
 
     // close room button
     Build<CCSprite>::createSpriteName("icon-close-room.png"_spr)
@@ -210,13 +211,11 @@ bool RoomLayer::init() {
         })
         .scaleMult(1.1f)
         .id("btn-close-room")
-        .pos(54.f, 23.f)
         .visible(false)
         .store(btnCloseRoom)
-        .intoNewParent(CCMenu::create())
-        .id("close-room-menu")
-        .pos(rlayout.bottomLeft)
-        .parent(this);
+        .parent(bottomLeftMenu);
+
+    bottomLeftMenu->updateLayout();
 
     // listeners
 
@@ -245,11 +244,12 @@ bool RoomLayer::init() {
 }
 
 void RoomLayer::update(float dt) {
-    btnSettings->setVisible(RoomManager::get().isInRoom());
-    btnCloseRoom->setVisible(AdminManager::get().authorized() && RoomManager::get().isInRoom());
+    auto& rm = RoomManager::get();
+
+    btnSettings->setVisible(rm.isInRoom());
+    btnCloseRoom->setVisible(rm.isInRoom() && (AdminManager::get().authorized() || rm.isOwner()));
 
     // show/hide the invite button
-    auto& rm = RoomManager::get();
     bool canInvite = rm.isInRoom() && (rm.isOwner() || rm.getInfo().settings.flags.publicInvites);
     bool isShown = btnInvite->getParent() != nullptr;
 
@@ -433,17 +433,10 @@ void RoomLayer::reloadData(const RoomInfo& info, const std::vector<PlayerRoomPre
 }
 
 void RoomLayer::closeRoom() {
-    for (const auto& data : playerList) {
-        if (data.accountId <= 0 || data.accountId == GJAccountManager::get()->m_accountID) {
-            continue;
-        }
-
-        auto packet = AdminDisconnectPacket::create(std::to_string(data.accountId), "Room Closed by Moderation");
-        NetworkManager::get().send(packet);
-    }
     if (this->isLoading()) return;
 
-    NetworkManager::get().sendLeaveRoom();
+    NetworkManager::get().sendCloseRoom();
+
     this->startLoading();
 }
 

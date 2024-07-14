@@ -131,6 +131,7 @@ public:
     void sendUpdatePlayerStatus(bool invisible);
     void sendRequestRoomPlayerList();
     void sendLeaveRoom();
+    void sendCloseRoom();
     void sendRequestPlayerCount(LevelId id);
     void sendRequestPlayerCount(std::vector<LevelId> ids);
 
