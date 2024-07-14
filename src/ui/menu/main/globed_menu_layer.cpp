@@ -74,61 +74,63 @@ bool GlobedMenuLayer::init() {
         return spr;
     };
 
-    auto featuredPopupButton = Build<CircleButtonSprite>(makeSprite())
-        .scale(1.1f)
-        .intoMenuItem([this](auto) {
-            DailyPopup::create()->show();
-        })
-        .scaleMult(1.15f)
-        .id("btn-daily-popup"_spr)
-        .parent(dailyButtonMenu)
-        .collect();
+    if (!NetworkManager::get().standalone()) {
+        auto featuredPopupButton = Build<CircleButtonSprite>(makeSprite())
+            .scale(1.1f)
+            .intoMenuItem([this](auto) {
+                DailyPopup::create()->show();
+            })
+            .scaleMult(1.15f)
+            .id("btn-daily-popup"_spr)
+            .parent(dailyButtonMenu)
+            .collect();
 
-    Build<CCSprite>::createSpriteName("newMusicIcon_001.png")
-        .id("btn-daily-extra"_spr)
-        .anchorPoint({0.5, 0.5})
-        .pos({featuredPopupButton->getScaledContentWidth() * 0.85f, featuredPopupButton->getScaledContentHeight() * 0.15f})
-        .zOrder(2)
-        .visible(false)
-        .parent(featuredPopupButton)
-        .store(featuredPopupNew);
+        Build<CCSprite>::createSpriteName("newMusicIcon_001.png")
+            .id("btn-daily-extra"_spr)
+            .anchorPoint({0.5, 0.5})
+            .pos({featuredPopupButton->getScaledContentWidth() * 0.85f, featuredPopupButton->getScaledContentHeight() * 0.15f})
+            .zOrder(2)
+            .visible(false)
+            .parent(featuredPopupButton)
+            .store(featuredPopupNew);
 
-    auto newSequence = CCRepeatForever::create(CCSequence::create(
-        CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.2f)),
-        CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.0f)),
-        nullptr
-    ));
-    featuredPopupNew->runAction(newSequence);
+        auto newSequence = CCRepeatForever::create(CCSequence::create(
+            CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.2f)),
+            CCEaseSineInOut::create(CCScaleTo::create(0.75f, 1.0f)),
+            nullptr
+        ));
+        featuredPopupNew->runAction(newSequence);
 
-    Build<CCSprite>::createSpriteName("daily-glow.png"_spr)
-        .id("btn-daily-glow-extra"_spr)
-        .anchorPoint({0.5, 0.5})
-        .pos(featuredPopupButton->getScaledContentSize() / 2)
-        .zOrder(1)
-        .color({255, 255, 0})
-        .scale(0.75)
-        .opacity(50)
-        .blendFunc({GL_ONE, GL_ONE})
-        .visible(false)
-        .parent(featuredPopupButton)
-        .store(featuredBtnGlow);
+        Build<CCSprite>::createSpriteName("daily-glow.png"_spr)
+            .id("btn-daily-glow-extra"_spr)
+            .anchorPoint({0.5, 0.5})
+            .pos(featuredPopupButton->getScaledContentSize() / 2)
+            .zOrder(1)
+            .color({255, 255, 0})
+            .scale(0.75)
+            .opacity(50)
+            .blendFunc({GL_ONE, GL_ONE})
+            .visible(false)
+            .parent(featuredPopupButton)
+            .store(featuredBtnGlow);
 
-    auto newGlowSequence = CCRepeatForever::create(CCSequence::create(
-        CCEaseSineInOut::create(CCFadeTo::create(0.75f, 150)),
-        CCEaseSineInOut::create(CCFadeTo::create(0.75f, 50)),
-        nullptr
-    ));
-    featuredBtnGlow->runAction(newGlowSequence);
+        auto newGlowSequence = CCRepeatForever::create(CCSequence::create(
+            CCEaseSineInOut::create(CCFadeTo::create(0.75f, 150)),
+            CCEaseSineInOut::create(CCFadeTo::create(0.75f, 50)),
+            nullptr
+        ));
+        featuredBtnGlow->runAction(newGlowSequence);
 
-    dailyButtonMenu->updateLayout();
+        dailyButtonMenu->updateLayout();
 
-    DailyManager::get().getCurrentLevelMeta([this](const GlobedFeaturedLevel& meta) {
-        // check to see if most recently seen level is different from what is stored
-        if (DailyManager::get().getLastSeenFeaturedLevel() != meta.id) {
-            featuredBtnGlow->setVisible(true);
-            featuredPopupNew->setVisible(true);
-        }
-    }, true);
+        DailyManager::get().getCurrentLevelMeta([this](const GlobedFeaturedLevel& meta) {
+            // check to see if most recently seen level is different from what is stored
+            if (DailyManager::get().getLastSeenFeaturedLevel() != meta.id) {
+                featuredBtnGlow->setVisible(true);
+                featuredPopupNew->setVisible(true);
+            }
+        }, true);
+    }
 
     // discord button
     discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")

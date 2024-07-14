@@ -79,11 +79,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_compile_definitions(WIN32_LEAN_AND_MEAN=1) # geode moment
     if (NOT MSVC)
         set(GLOBED_WINDOWS_CLANG ON)
-        target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--export-all-symbols")
     endif()
 
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
 endif()
 
 # i am crying so hard right now
@@ -112,7 +110,7 @@ CPMAddPackage(
     URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp2#89924e6")
+CPMAddPackage("gh:dankmeme01/asp2#2e3e1b8")
 
 # asp defines
 if (WIN32)
@@ -138,7 +136,7 @@ if (GLOBED_NATIVE_ARCH)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
+    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations" "-Wno-vla-cxx-extension")
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)
