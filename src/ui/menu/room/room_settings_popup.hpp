@@ -50,7 +50,8 @@ private:
         *cellInviteOnly,
         *cellCollision,
         *cellTwoPlayer,
-        *cellPublicInvites
+        *cellPublicInvites,
+        *cellDeathlink
         ;
 
     bool setup() override;

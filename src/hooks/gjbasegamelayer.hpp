@@ -33,21 +33,30 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
         std::unique_ptr<PlayerInterpolator> interpolator;
         std::unique_ptr<PlayerStore> playerStore;
         RoomSettings roomSettings;
+
         struct TwoPlayerModeState {
             bool active = false; // true when two player mode is enabled and linked to a player
             bool isPrimary = false;
             Ref<PlayerObject> linked;
         } twopstate;
+
+        struct DeathlinkState {
+            bool active = false;
+        } deathlinkState;
+        bool isManuallyResettingLevel = false;
+
         bool progressForciblyDisabled = false; // affected by room settings, forces safe mode
         bool forcedPlatformer = false;
         bool shouldStopProgress = false;
         bool quitting = false;
         bool shouldRequestMeta = false;
+        bool isFakingDeath = false;
         GameCameraState camState;
 
         std::optional<SpiderTeleportData> spiderTp1, spiderTp2;
         bool didJustJumpp1 = false, didJustJumpp2 = false;
         bool isCurrentlyDead = false;
+        bool isLastDeathReal = false;
         float lastDeathTimestamp = 0.f;
 
         // ui elements
@@ -149,6 +158,8 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     void onQuitActions();
 
     void linkPlayerTo(int accountId);
+    void notifyDeath();
+    void killPlayer();
 
     // runs every frame while paused
     void pausedUpdate(float dt);

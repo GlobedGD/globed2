@@ -29,12 +29,16 @@ using namespace asp;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
-static constexpr uint16_t MIN_PROTOCOL_VERSION = 9;
-static constexpr uint16_t MAX_PROTOCOL_VERSION = 9;
-static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({9});
+static constexpr uint16_t MIN_PROTOCOL_VERSION = 10;
+static constexpr uint16_t MAX_PROTOCOL_VERSION = 10;
+static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({10});
 
 static bool isProtocolSupported(uint16_t proto) {
+#ifdef GLOBED_DEBUG
+    return true;
+#else
     return std::find(SUPPORTED_PROTOCOLS.begin(), SUPPORTED_PROTOCOLS.end(), proto) != SUPPORTED_PROTOCOLS.end();
+#endif
 }
 
 // yes, really
@@ -755,11 +759,11 @@ protected:
 
     uint16_t getUsedProtocol() {
         // 0xffff is a special value that the server doesn't check
-        #ifdef GLOBED_DEBUG
-                return 0xffff;
-        #else
-                return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
-        #endif
+#ifdef GLOBED_DEBUG
+        return 0xffff;
+#else
+        return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
+#endif
     }
 
     uint32_t getServerTps() {
@@ -1197,11 +1201,19 @@ void NetworkManager::resume() {
 }
 
 uint16_t NetworkManager::getMinProtocol() {
+#ifdef GLOBED_DEBUG
+    return 0xffff;
+#else
     return MIN_PROTOCOL_VERSION;
+#endif
 }
 
 uint16_t NetworkManager::getMaxProtocol() {
+#ifdef GLOBED_DEBUG
+    return 0xffff;
+#else
     return MAX_PROTOCOL_VERSION;
+#endif
 }
 
 bool NetworkManager::isProtocolSupported(uint16_t version) {

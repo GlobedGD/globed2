@@ -262,6 +262,12 @@ void DailyManager::onCurrentLevelMetaFetchedCallback(typename WebRequestManager:
     auto result = std::move(*e->getValue());
     if (!result) {
         auto err = result.unwrapErr();
+
+        // not level, do nothing
+        if (err.code == 404) {
+            return;
+        }
+
         ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
         singleFetchState = FetchState::NotFetching;
         return;

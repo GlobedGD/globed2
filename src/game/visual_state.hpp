@@ -28,7 +28,7 @@ struct VisualPlayerState {
 };
 
 struct FrameFlags {
-    bool pendingDeath = false;
+    bool pendingDeath = false, pendingRealDeath = false;
     bool pendingP1Jump = false, pendingP2Jump = false;
     std::optional<SpiderTeleportData> pendingP1Teleport, pendingP2Teleport;
 };

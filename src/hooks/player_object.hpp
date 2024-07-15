@@ -25,6 +25,10 @@ class $modify(HookedPlayerObject, PlayerObject) {
         bool forcedPlatFlag = false;
     };
 
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("PlayerObject::playerDestroyed", 99999999).unwrap();
+    }
+
     $override
     void playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CCPoint to);
 
@@ -33,4 +37,7 @@ class $modify(HookedPlayerObject, PlayerObject) {
 
     $override
     void update(float dt);
+
+    $override
+    void playerDestroyed(bool p0);
 };

@@ -78,7 +78,7 @@ template<> void ByteBuffer::customEncode(const PlayerData& data) {
     this->writeValue(data.currentPercentage);
 
     BitBuffer<8> bits;
-    bits.writeBits(data.isDead, data.isPaused, data.isPracticing, data.isDualMode, data.isInEditor, data.isEditorBuilding);
+    bits.writeBits(data.isDead, data.isPaused, data.isPracticing, data.isDualMode, data.isInEditor, data.isEditorBuilding, data.isLastDeathReal);
     this->writeBits(bits);
 }
 
@@ -92,7 +92,7 @@ template<> ByteBuffer::DecodeResult<PlayerData> ByteBuffer::customDecode() {
     GLOBED_UNWRAP_INTO(this->readValue<float>(), data.currentPercentage);
 
     GLOBED_UNWRAP_INTO(this->readBits<8>(), auto bits);
-    bits.readBitsInto(data.isDead, data.isPaused, data.isPracticing, data.isDualMode, data.isInEditor, data.isEditorBuilding);
+    bits.readBitsInto(data.isDead, data.isPaused, data.isPracticing, data.isDualMode, data.isInEditor, data.isEditorBuilding, data.isLastDeathReal);
 
     return Ok(data);
 }

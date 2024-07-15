@@ -102,6 +102,15 @@ void HookedPlayerObject::update(float dt) {
     PlayerObject::update(dt);
 }
 
+void HookedPlayerObject::playerDestroyed(bool p0) {
+    PlayerObject::playerDestroyed(p0);
+
+    auto* gjbgl = GlobedGJBGL::get();
+    if (this == gjbgl->m_player1 || this == gjbgl->m_player2) {
+        gjbgl->notifyDeath();
+    }
+}
+
 // decompiled playerobject init for reference:
 
 /*
