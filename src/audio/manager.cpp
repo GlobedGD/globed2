@@ -472,7 +472,7 @@ void GlobedAudioManager::recordInvokeRawCallback(float* pcm, size_t samples) {
     }
 }
 
-void GlobedAudioManager::audioThreadFunc() {
+void GlobedAudioManager::audioThreadFunc(decltype(audioThreadHandle)::StopToken&) {
     // if we are not recording right now, sleep
     if (!recordActive) {
         audioThreadSleeping = true;

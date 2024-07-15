@@ -790,7 +790,7 @@ protected:
 
     /* worker threads */
 
-    void threadRecvFunc() {
+    void threadRecvFunc(decltype(threadRecv)::StopToken&) {
         if (this->suspended || state == ConnectionState::TcpConnecting) {
             std::this_thread::sleep_for(util::time::millis(100));
             return;
@@ -851,7 +851,7 @@ protected:
         }
     }
 
-    void threadMainFunc() {
+    void threadMainFunc(decltype(threadMain)::StopToken&) {
         if (this->suspended) {
             std::this_thread::sleep_for(util::time::millis(100));
             return;

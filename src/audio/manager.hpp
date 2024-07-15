@@ -153,11 +153,11 @@ private:
     /* misc */
     FMOD::System* cachedSystem = nullptr;
 
-    void audioThreadFunc();
-    Result<> audioThreadWork();
-
     asp::AtomicBool audioThreadSleeping = true;
     asp::Thread<GlobedAudioManager*> audioThreadHandle;
+
+    void audioThreadFunc(decltype(audioThreadHandle)::StopToken&);
+    Result<> audioThreadWork();
 };
 
 #else
