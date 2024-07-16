@@ -1,3 +1,7 @@
+## v1.5.1
+
+* Fix Globed not loading on Android due to missing Custom Keybinds dependency
+
 ## v1.5.0
 
 * Add a Death Link setting to rooms, which causes all players in the level to die if one of them dies
