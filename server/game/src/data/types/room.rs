@@ -8,6 +8,7 @@ pub struct RoomSettingsFlags {
     pub public_invites: bool,
     pub collision: bool,
     pub two_player: bool,
+    pub deathlink: bool,
 }
 
 #[derive(Clone, Copy, Default, Encodable, Decodable, StaticSize, DynamicSize, Debug)]

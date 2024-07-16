@@ -80,7 +80,6 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
         });
     } else {
         // otherwise, actually update the settings
-        log::debug("settings: {}", currentSettings.flags.isHidden, currentSettings.flags.publicInvites, currentSettings.flags.collision, currentSettings.flags.twoPlayerMode);
         NetworkManager::get().send(UpdateRoomSettingsPacket::create(currentSettings));
     }
 }
