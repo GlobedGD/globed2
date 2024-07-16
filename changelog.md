@@ -1,6 +1,6 @@
 ## v1.5.0
 
-* Add a Death Link setting to rooms, which causes all players in the level to die of one of them dies
+* Add a Death Link setting to rooms, which causes all players in the level to die if one of them dies
 * \-- **Huge thanks to <cg>Alphalaneous</c> for making the DeathLink mod and allowing us to use their idea**
 * Add ability for the room owner to close the room (kicks all players)
 * Change the Receive Invites From setting to friends only by default instead of everyone
