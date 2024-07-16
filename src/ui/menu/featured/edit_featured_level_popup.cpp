@@ -16,19 +16,19 @@ using namespace geode::prelude;
 bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
     this->level = level;
 
-    this->setTitle("Globed: Suggest Level", "goldFont.fnt", .6f, 20.f);
+    this->setTitle("Globed: Suggest Level", "goldFont.fnt", 0.9f, 20.f);
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build<CCMenu>::create()
-        .pos(rlayout.fromTop(65.f))
+        .pos(rlayout.fromTop(77.f))
         .parent(m_mainLayer)
         .store(menu);
 
     int diff = this->getDifficulty();
 
     Build<GJDifficultySprite>::create(diff, GJDifficultyName::Short)
-        .pos(rlayout.fromTop(65.f))
+        .pos(rlayout.fromTop(77.f))
         .parent(m_mainLayer)
         .scale(1.25)
         .zOrder(3);
@@ -36,25 +36,20 @@ bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
     this->createDiffButton();
 
     Build<TextInput>::create(POPUP_WIDTH * 0.8f, "Notes", "chatFont.fnt")
-        .pos(rlayout.fromBottom(55.f))
+        .pos(rlayout.fromBottom(60.f))
         .parent(m_mainLayer)
         .store(notesInput);
 
-    Build<ButtonSprite>::create("Feature", "bigFont.fnt", "GJ_button_01.png", 0.9f)
-        .scale(0.75f)
-        .intoMenuItem([this] {
-            this->save();
-        })
-        .pos(rlayout.fromBottom(22.f))
-        .store(featureButton)
-        .posX(featureButton->getPositionX() - 40.f)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(m_mainLayer);
+    auto* buttonMenu = Build<CCMenu>::create()
+        .layout(RowLayout::create())
+        .contentSize(POPUP_WIDTH * 0.8f, 50.f)
+        .pos(rlayout.fromBottom(27.f))
+        .parent(m_mainLayer)
+        .collect();
 
     Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.9f)
         .scale(0.75f)
-        .intoMenuItem([=, this] {
+        .intoMenuItem([this] {
             auto& nm = NetworkManager::get();
 
             nm.send(AdminSendFeaturedLevelPacket::create(
@@ -65,14 +60,28 @@ bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
                 currIdx,
                 this->notesInput->getString()
             ));
+
             Notification::create("Successfully sent level!", NotificationIcon::Success)->show();
+            this->onClose(this);
         })
-        .pos(rlayout.fromBottom(22.f))
-        .store(sendButton)
-        .posX(sendButton->getPositionX() + 50.f)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(m_mainLayer);
+        .parent(buttonMenu)
+        .store(sendButton);
+
+    auto& am = AdminManager::get();
+    if (am.authorized()) {
+        auto& role = am.getRole();
+        if (role.editFeaturedLevels) {
+            Build<ButtonSprite>::create("Feature", "bigFont.fnt", "GJ_button_02.png", 0.9f)
+                .scale(0.75f)
+                .intoMenuItem([this] {
+                    this->save();
+                })
+                .parent(buttonMenu)
+                .store(featureButton);
+        }
+    }
+
+    buttonMenu->updateLayout();
 
     return true;
 }
@@ -95,6 +104,7 @@ void EditFeaturedLevelPopup::save() {
             reqListener.setFilter(std::move(req));
         } else {
             ErrorQueues::get().warn("You don't have permission to do this");
+            this->onClose(this);
         }
     }
 }
@@ -133,6 +143,8 @@ void EditFeaturedLevelPopup::onRequestComplete(typename WebRequestManager::Event
         auto err = result.unwrapErr();
         ErrorQueues::get().error(fmt::format("Failed to update the level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
     }
+
+    this->onClose(this);
 }
 
 EditFeaturedLevelPopup* EditFeaturedLevelPopup::create(GJGameLevel* level) {

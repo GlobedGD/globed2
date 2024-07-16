@@ -2,7 +2,6 @@
 
 #include "daily_level_cell.hpp"
 #include "featured_list_layer.hpp"
-#include "edit_featured_level_popup.hpp"
 #include <managers/daily_manager.hpp>
 #include <managers/admin.hpp>
 #include <net/manager.hpp>

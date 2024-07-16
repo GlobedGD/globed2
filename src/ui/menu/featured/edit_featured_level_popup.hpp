@@ -8,7 +8,7 @@
 class EditFeaturedLevelPopup : public geode::Popup<GJGameLevel*> {
 public:
     static constexpr float POPUP_WIDTH = 340.f;
-    static constexpr float POPUP_HEIGHT = 170.f;
+    static constexpr float POPUP_HEIGHT = 190.f;
 
     static EditFeaturedLevelPopup* create(GJGameLevel* level);
 
@@ -28,6 +28,8 @@ private:
     asp::NumberCycle currIdx{0, 2};
 
     Ref<GJGameLevel> level;
+
     Ref<cocos2d::CCMenu> menu;
+
     WebRequestManager::Listener reqListener;
 };

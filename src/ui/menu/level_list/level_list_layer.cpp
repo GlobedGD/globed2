@@ -6,6 +6,7 @@
 #include <data/packets/server/general.hpp>
 #include <net/manager.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/daily_manager.hpp>
 #include <util/ui.hpp>
 #include <util/gd.hpp>
 
@@ -72,6 +73,10 @@ bool GlobedLevelListLayer::init() {
     listLayer->setPosition(winSize / 2 - listLayer->getScaledContentSize() / 2);
 
     util::ui::prepareLayer(this);
+
+    DailyManager::get().getCurrentLevelMeta([this](const GlobedFeaturedLevel& meta) {
+        currentFeaturedLevel = meta;
+    });
 
     NetworkManager::get().addListener<LevelListPacket>(this, [this](std::shared_ptr<LevelListPacket> packet) {
         this->levelList.clear();
@@ -234,7 +239,12 @@ void GlobedLevelListLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* 
         int levelId = HookedGJGameLevel::getLevelIDFrom(cell->m_level);
         if (!levelList.contains(levelId)) continue;
 
-        static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));
+        auto globedCell = static_cast<GlobedLevelCell*>(cell);
+        globedCell->updatePlayerCount(levelList.at(levelId));
+        if (globedCell->m_level->m_levelID == currentFeaturedLevel.levelId) {
+            globedCell->modifyToFeaturedCell(currentFeaturedLevel.rateTier);
+            globedCell->m_fields->rateTier = currentFeaturedLevel.rateTier;
+        }
     }
 
     // show the buttons
