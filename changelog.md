@@ -1,5 +1,14 @@
 ## v1.5.0
 
+* Add a Death Link setting to rooms, which causes all players in the level to die of one of them dies
+* \-- **Huge thanks to <cg>Alphalaneous</c> for making the DeathLink mod and allowing us to use their idea**
+* Add ability for the room owner to close the room (kicks all players)
+* Change the Receive Invites From setting to friends only by default instead of everyone
+* Fix the player not being disconnected from the server if they log out of their GD account
+* Fix crash when closing the featured level list too fast
+* Fix spammy error popups on self-hosted servers when no featured level is selected
+* Add an age warning to the discord invite button
+
 ## v1.4.5
 
 * Add player counts to the featured level list

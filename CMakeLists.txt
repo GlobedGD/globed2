@@ -135,7 +135,10 @@ if (GLOBED_NATIVE_ARCH)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations" "-Wno-vla-cxx-extension")
+    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
+    if (WIN32)
+        target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-vla-cxx-extension")
+    endif()
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)

@@ -213,13 +213,33 @@ namespace util::cocos {
                 // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
                 auto& imgState = imgStates.lock()->at(i);
 
-                auto img = new CCImage();
-                if (!img->initWithImageFileThreadSafe(imgState.path.c_str(), cocos2d::CCImage::kFmtPng)) {
-                    log::warn("Failed to load image: {}", imgState.path);
+                // on android, resources are read from the apk file, so it's NOT thread safe. add a lock.
+#ifdef GEODE_IS_ANDROID
+                auto _rguard = cocosWorkMutex.lock();
+#endif
+
+                unsigned long filesize = 0;
+                unsigned char* buffer = fileUtils.getFileData(imgState.path.c_str(), "rb", &filesize);
+
+#ifdef GEODE_IS_ANDROID
+                _rguard.unlock();
+#endif
+
+                std::unique_ptr<unsigned char[]> buf(buffer);
+
+                if (!buffer || filesize == 0) {
+                    log::warn("failed to read image file: {}", imgState.path);
                     return;
                 }
 
-                textureInitRequests.push(std::make_pair(i, img));
+                auto* image = new CCImage;
+                if (!image->initWithImageData(buf.get(), filesize, cocos2d::CCImage::kFmtPng)) {
+                    delete image;
+                    log::warn("failed to init image: {}", imgState.path);
+                    return;
+                }
+
+                textureInitRequests.push(std::make_pair(i, image));
             });
         }
 
