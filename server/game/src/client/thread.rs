@@ -455,6 +455,7 @@ impl ClientThread {
             RoomSendInvitePacket::PACKET_ID => self.handle_room_invitation(&mut data).await,
             RequestRoomListPacket::PACKET_ID => self.handle_request_room_list(&mut data).await,
             CloseRoomPacket::PACKET_ID => self.handle_close_room(&mut data).await,
+            KickRoomPlayerPacket::PACKET_ID => self.handle_kick_room_player(&mut data).await,
 
             /* admin related */
             AdminAuthPacket::PACKET_ID => self.handle_admin_auth(&mut data).await,

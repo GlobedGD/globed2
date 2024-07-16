@@ -285,6 +285,29 @@ impl ClientThread {
         self._kicked_from_room().await
     });
 
+    gs_handler!(self, handle_kick_room_player, KickRoomPlayerPacket, packet, {
+        let _ = gs_needauth!(self);
+
+        let room_id = self.room_id.load(Ordering::Relaxed);
+
+        if room_id == 0 {
+            return Ok(());
+        }
+
+        // check if the player is in our room
+        let has_player = self
+            .game_server
+            .state
+            .room_manager
+            .try_with_any(room_id, |room| room.has_player(packet.player), || false);
+
+        if has_player {
+            self.game_server.broadcast_room_kicked(packet.player).await;
+        }
+
+        Ok(())
+    });
+
     pub async fn _kicked_from_room(&self) -> crate::client::Result<()> {
         self._remove_from_room().await;
 

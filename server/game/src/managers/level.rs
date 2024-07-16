@@ -96,6 +96,11 @@ impl LevelManager {
         self.players.remove(&account_id);
     }
 
+    #[inline]
+    pub fn has_player(&self, account_id: i32) -> bool {
+        self.players.contains_key(&account_id)
+    }
+
     /// get a reference to a list of account IDs of players on a level given its ID
     pub fn get_level(&self, level_id: LevelId) -> Option<&Level> {
         self.levels.get(&level_id)

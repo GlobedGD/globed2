@@ -32,6 +32,7 @@ public:
     void clearSingleWebCallback();
     void clearMultiWebCallback();
 
+    // Fetches the level only from the central server
     void getCurrentLevelMeta(std::function<void(const GlobedFeaturedLevel&)>&& callback, bool force = false);
 
     // force clears all pages
