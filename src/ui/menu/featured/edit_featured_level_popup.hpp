@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Geode/binding/CCMenuItemSpriteExtra.hpp"
 #include <defs/geode.hpp>
 #include <asp/math/NumberCycle.hpp>
 
@@ -28,9 +27,9 @@ private:
     Ref<CCMenuItemSpriteExtra> curDiffButton;
     asp::NumberCycle currIdx{0, 2};
 
-    GJGameLevel* level;
-  
+    Ref<GJGameLevel> level;
+
     Ref<cocos2d::CCMenu> menu;
-    
+
     WebRequestManager::Listener reqListener;
 };

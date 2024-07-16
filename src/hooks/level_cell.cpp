@@ -1,11 +1,10 @@
 #include "level_cell.hpp"
-#include "ui/ui.hpp"
 
 #include <defs/geode.hpp>
 #include <managers/settings.hpp>
 #include <managers/daily_manager.hpp>
 #include <util/math.hpp>
-
+#include <ui/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -23,11 +22,11 @@ void GlobedLevelCell::modifyToFeaturedCell(int rating) {
             DailyManager::get().attachRatingSprite(rating, diff);
 
             CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(globed::into<ccColor3B>(globed::color::FriendIngameGradient))
-            .anchorPoint({0, 0})
-            .opacity(90)
-            .zOrder(-5)
-            .parent(this);
+                .color(globed::into<ccColor3B>(globed::color::FriendIngameGradient))
+                .anchorPoint({0.f, 0.f})
+                .opacity(90)
+                .zOrder(-1)
+                .parent(this);
 
             gradient->setScaleX(this->getScaledContentWidth() / gradient->getScaledContentWidth() / 2);
             gradient->setScaleY(this->getScaledContentHeight() / gradient->getScaledContentHeight());

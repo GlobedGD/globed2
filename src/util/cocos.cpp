@@ -270,7 +270,7 @@ namespace util::cocos {
             // auto fp = CCFileUtils::sharedFileUtils()->fullPathForFilename(plistKey.c_str(), false);
             // sfCache->addSpriteFramesWithFile(fp.c_str());
 
-            threadPool.pushTask([=, &imgStates] {
+            threadPool.pushTask([i, textureCache, &imgStates] {
                 // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
                 auto& imgState = imgStates.lock()->at(i);
 

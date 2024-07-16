@@ -74,6 +74,10 @@ bool GlobedLevelListLayer::init() {
 
     util::ui::prepareLayer(this);
 
+    DailyManager::get().getCurrentLevelMeta([this](const GlobedFeaturedLevel& meta) {
+        currentFeaturedLevel = meta;
+    });
+
     NetworkManager::get().addListener<LevelListPacket>(this, [this](std::shared_ptr<LevelListPacket> packet) {
         this->levelList.clear();
         this->levelPages.clear();
@@ -95,13 +99,9 @@ bool GlobedLevelListLayer::init() {
         };
 
         std::sort(sortedLevelIds.begin(), sortedLevelIds.end(), comparator);
-        
-        DailyManager::get().getCurrentLevelMeta([this](const GlobedFeaturedLevel& meta) {
-            currentFeaturedLevel = meta;
-            this->currentPage = 0;
-            this->reloadPage();
-        });
-        
+
+        this->currentPage = 0;
+        this->reloadPage();
     });
 
     this->refreshLevels();

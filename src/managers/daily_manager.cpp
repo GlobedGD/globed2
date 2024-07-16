@@ -518,7 +518,7 @@ void DailyManager::attachRatingSprite(int tier, CCNode* parent) {
     spr->setPosition(parent->getScaledContentSize() / 2);
 
     if (tier == 2) {
-        attachOverlayToSprite(parent);
+        this->attachOverlayToSprite(parent);
     }
 
     parent->addChild(spr);

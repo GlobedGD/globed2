@@ -13,7 +13,9 @@
 
 using namespace geode::prelude;
 
-bool EditFeaturedLevelPopup::setup() {
+bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
+    this->level = level;
+
     this->setTitle("Globed: Suggest Level", "goldFont.fnt", 0.9f, 20.f);
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
@@ -38,9 +40,16 @@ bool EditFeaturedLevelPopup::setup() {
         .parent(m_mainLayer)
         .store(notesInput);
 
+    auto* buttonMenu = Build<CCMenu>::create()
+        .layout(RowLayout::create())
+        .contentSize(POPUP_WIDTH * 0.8f, 50.f)
+        .pos(rlayout.fromBottom(27.f))
+        .parent(m_mainLayer)
+        .collect();
+
     Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.9f)
         .scale(0.75f)
-        .intoMenuItem([=, this] {
+        .intoMenuItem([this] {
             auto& nm = NetworkManager::get();
 
             nm.send(AdminSendFeaturedLevelPacket::create(
@@ -51,15 +60,13 @@ bool EditFeaturedLevelPopup::setup() {
                 currIdx,
                 this->notesInput->getString()
             ));
+
             Notification::create("Successfully sent level!", NotificationIcon::Success)->show();
-            onClose(this);
+            this->onClose(this);
         })
-        .pos(rlayout.fromBottom(27.f))
-        .store(sendButton)
-        .intoNewParent(CCMenu::create())
-        .pos(0.f, 0.f)
-        .parent(m_mainLayer);
-    
+        .parent(buttonMenu)
+        .store(sendButton);
+
     auto& am = AdminManager::get();
     if (am.authorized()) {
         auto& role = am.getRole();
@@ -69,16 +76,12 @@ bool EditFeaturedLevelPopup::setup() {
                 .intoMenuItem([this] {
                     this->save();
                 })
-                .pos(rlayout.fromBottom(27.f))
-                .store(featureButton)
-                .posX(featureButton->getPositionX() - 40.f)
-                .intoNewParent(CCMenu::create())
-                .pos(0.f, 0.f)
-                .parent(m_mainLayer);
-            
-            sendButton->setPositionX(sendButton->getPositionX() + 50.f);
+                .parent(buttonMenu)
+                .store(featureButton);
         }
     }
+
+    buttonMenu->updateLayout();
 
     return true;
 }
@@ -100,8 +103,8 @@ void EditFeaturedLevelPopup::save() {
             reqListener.bind(this, &EditFeaturedLevelPopup::onRequestComplete);
             reqListener.setFilter(std::move(req));
         } else {
-            Notification::create("You dont have permission to do this", NotificationIcon::Error)->show();
-            onClose(this);
+            ErrorQueues::get().warn("You don't have permission to do this");
+            this->onClose(this);
         }
     }
 }
@@ -140,7 +143,8 @@ void EditFeaturedLevelPopup::onRequestComplete(typename WebRequestManager::Event
         auto err = result.unwrapErr();
         ErrorQueues::get().error(fmt::format("Failed to update the level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
     }
-    onClose(this);
+
+    this->onClose(this);
 }
 
 EditFeaturedLevelPopup* EditFeaturedLevelPopup::create(GJGameLevel* level) {
