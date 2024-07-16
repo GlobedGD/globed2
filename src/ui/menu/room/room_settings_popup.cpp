@@ -35,7 +35,7 @@ bool RoomSettingsPopup::setup() {
     MAKE_SETTING("2-Player Mode", "While enabled, players can link with another player to play a 2-player enabled level together", TAG_TWO_PLAYER, cellTwoPlayer);
 #endif
 
-    MAKE_SETTING("Deathlink", "Whenever a player dies, everyone on the level dies as well. <cy>Inspired by the mod Deathlink from</c> <cg>Alphalaneous</c>.", TAG_DEATHLINK, cellDeathlink);
+    MAKE_SETTING("Death Link", "Whenever a player dies, everyone on the level dies as well. <cy>Inspired by the mod DeathLink from</c> <cg>Alphalaneous</c>.", TAG_DEATHLINK, cellDeathlink);
 
     auto* listLayer = Build(SettingList::createForComments(LIST_WIDTH, LIST_HEIGHT, RoomSettingCell::CELL_HEIGHT))
         .scale(0.65f)
@@ -103,6 +103,7 @@ void RoomSettingsPopup::enableCheckboxes(bool enabled) {
 #ifdef GLOBED_DEBUG
         , cellTwoPlayer
 #endif
+        , cellDeathlink
     }) {
         cell->setEnabled(enabled);
     }

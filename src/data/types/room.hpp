@@ -22,7 +22,7 @@ GLOBED_SERIALIZABLE_BITFIELD(RoomSettingsFlags, (
 
 struct RoomSettings {
     RoomSettingsFlags flags;
-    uint32_t playerLimit;
+    uint16_t playerLimit;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RoomSettings, (

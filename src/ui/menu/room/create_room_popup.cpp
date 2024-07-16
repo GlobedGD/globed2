@@ -115,7 +115,7 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
 
                     roomName = util::format::trim(roomName);
 
-                    uint32_t playerCount = util::format::parse<uint32_t>(playerLimitInput->getString()).value_or(0);
+                    uint16_t playerCount = util::format::parse<uint16_t>(playerLimitInput->getString()).value_or(0);
 
                     NetworkManager::get().send(CreateRoomPacket::create(roomName, passwordInput->getString(), RoomSettings {
                         settingFlags, playerCount
@@ -151,7 +151,7 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
         {"Open Invites", TAG_OPEN_INV},
         {"Collision", TAG_COLLISION},
         // {"2-Player Mode", TAG_2P},
-        {"Deathlink", TAG_DEATHLINK}
+        {"Death Link", TAG_DEATHLINK}
     });
 
     float totalHeight = 0.f;

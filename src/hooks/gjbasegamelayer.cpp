@@ -1356,6 +1356,6 @@ void GlobedGJBGL::notifyDeath() {
 
 void GlobedGJBGL::killPlayer() {
     if (!this->isEditor()) {
-        static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this))->destroyPlayer(m_player1, nullptr);
+        static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this))->PlayLayer::destroyPlayer(m_player1, nullptr);
     }
 }
