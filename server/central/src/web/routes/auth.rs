@@ -1,7 +1,4 @@
-use std::{
-    net::IpAddr,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{net::IpAddr, time::SystemTime};
 
 use globed_shared::{
     anyhow::{self, anyhow},
@@ -130,7 +127,7 @@ pub async fn challenge_start(
         }
     }
 
-    let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
+    let current_time = SystemTime::now();
 
     let mut should_return_existing = false;
     // check if there already is a challenge
@@ -139,7 +136,7 @@ pub async fn challenge_start(
         if challenge.account_id == aid && challenge.user_id == uid && challenge.name == aname {
             should_return_existing = true;
         } else {
-            let passed_time = current_time - challenge.started;
+            let passed_time = current_time.duration_since(challenge.started).unwrap_or_default();
             // if it hasn't expired yet, throw an error
             if passed_time.as_secs() < u64::from(state.config.challenge_expiry) {
                 trace!("rejecting start, challenge already requested: {user_ip}");

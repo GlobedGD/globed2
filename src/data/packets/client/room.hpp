@@ -78,5 +78,12 @@ class RequestRoomListPacket : public Packet {
 
     RequestRoomListPacket() {}
 };
-
 GLOBED_SERIALIZABLE_STRUCT(RequestRoomListPacket, ());
+
+// 13007 - CloseRoomPacket
+class CloseRoomPacket : public Packet {
+    GLOBED_PACKET(13007, CloseRoomPacket, false, false)
+
+    CloseRoomPacket() {}
+};
+GLOBED_SERIALIZABLE_STRUCT(CloseRoomPacket, ());

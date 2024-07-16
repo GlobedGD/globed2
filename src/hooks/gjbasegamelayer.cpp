@@ -103,6 +103,8 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
         if (m_fields->roomSettings.flags.twoPlayerMode) {
             m_fields->twopstate.isPrimary = RoomManager::get().isOwner();
         }
+
+        m_fields->deathlinkState.active = m_fields->roomSettings.flags.deathlink;
     }
 }
 
@@ -645,6 +647,8 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     auto& vpm = VoicePlaybackManager::get();
     auto& settings = GlobedSettings::get();
 
+    bool hasBeenKilled = false;
+
     for (const auto [playerId, remotePlayer] : self->m_fields->players) {
         const auto& vstate = self->m_fields->interpolator->getPlayerState(playerId);
 
@@ -657,6 +661,17 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
             isSpeaking,
             isSpeaking ? vpm.getLoudness(playerId) : 0.f
         );
+
+        // deathlink
+        if (self->m_fields->deathlinkState.active) {
+            if (frameFlags.pendingRealDeath && !hasBeenKilled) {
+                hasBeenKilled = true;
+                // force a fake death
+                self->m_fields->isFakingDeath = true;
+                self->killPlayer();
+                self->m_fields->isFakingDeath = false;
+            }
+        }
 
         // update progress icons
         if (auto self = PlayLayer::get()) {
@@ -805,12 +820,7 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
 
 PlayerData GlobedGJBGL::gatherPlayerData() {
     bool isDead = m_player1->m_isDead || m_player2->m_isDead;
-    if (isDead && !m_fields->isCurrentlyDead) {
-        m_fields->isCurrentlyDead = true;
-        m_fields->lastDeathTimestamp = m_fields->timeCounter;
-    } else if (!isDead) {
-        m_fields->isCurrentlyDead = false;
-    }
+    m_fields->isCurrentlyDead = isDead;
 
     // TODO: move the inline impl to GJBaseGameLayer bindings
     auto getPercent = [&](){
@@ -859,6 +869,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         .isDualMode = m_gameState.m_isDualMode,
         .isInEditor = isInEditor,
         .isEditorBuilding = isEditorBuilding,
+        .isLastDeathReal = m_fields->isLastDeathReal
     };
 }
 
@@ -1334,4 +1345,17 @@ void GlobedGJBGL::linkPlayerTo(int accountId) {
     pobj->setLockedTo(m_fields->twopstate.isPrimary ? rp->player2 : rp->player1);
 
     m_fields->twopstate.active = true;
+}
+
+/* Deathlink stuff */
+
+void GlobedGJBGL::notifyDeath() {
+    m_fields->lastDeathTimestamp = m_fields->timeCounter;
+    m_fields->isLastDeathReal = !m_fields->isFakingDeath;
+}
+
+void GlobedGJBGL::killPlayer() {
+    if (!this->isEditor()) {
+        static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this))->PlayLayer::destroyPlayer(m_player1, nullptr);
+    }
 }

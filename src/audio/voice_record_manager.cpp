@@ -23,7 +23,7 @@ void VoiceRecordingManager::stopRecording() {
     queuedStop = true;
 }
 
-void VoiceRecordingManager::threadFunc() {
+void VoiceRecordingManager::threadFunc(decltype(thread)::StopToken&) {
     auto& vm = GlobedAudioManager::get();
 
     if (queuedStop) {

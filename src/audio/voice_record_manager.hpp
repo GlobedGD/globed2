@@ -16,7 +16,7 @@ public:
     asp::Thread<VoiceRecordingManager*> thread;
     asp::AtomicBool queuedStop = false, queuedStart = false, recording = false;
 
-    void threadFunc();
+    void threadFunc(decltype(thread)::StopToken&);
 #endif // GLOBED_VOICE_SUPPORT
 
     void startRecording();

@@ -60,6 +60,7 @@ struct PlayerData {
     bool isDualMode;
     bool isInEditor;
     bool isEditorBuilding; // in the editor && not playtesting (incl. not paused)
+    bool isLastDeathReal; // for deathlink, to prevent death chains
 };
 
 struct PlayerMetadata {

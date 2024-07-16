@@ -168,6 +168,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         pinger_state.pinger.run_pinger().await;
     });
 
+    // yay
+    let challenge_deleter_s = state.inner.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_hours(1));
+
+        interval.tick().await;
+
+        loop {
+            interval.tick().await;
+            let mut mtx = challenge_deleter_s.data.write().await;
+            mtx.clear_outdated_challenges();
+        }
+    });
+
     // start up rocket
 
     let rocket = rocket::build()

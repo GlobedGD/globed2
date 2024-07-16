@@ -35,6 +35,7 @@ void PlayerInterpolator::updatePlayer(int playerId, const PlayerData& data, floa
         player.lastDeathTimestamp = data.lastDeathTimestamp;
         if (player.totalFrames > 1) {
             player.frameFlags.pendingDeath = true;
+            player.frameFlags.pendingRealDeath = data.isLastDeathReal;
         }
     }
 
@@ -123,6 +124,7 @@ FrameFlags PlayerInterpolator::swapFrameFlags(int playerId) {
     auto& state = players.at(playerId);
     FrameFlags out;
     out.pendingDeath = util::misc::swapFlag(state.frameFlags.pendingDeath);
+    out.pendingRealDeath = util::misc::swapFlag(state.frameFlags.pendingRealDeath);
     out.pendingP1Jump = util::misc::swapFlag(state.frameFlags.pendingP1Jump);
     out.pendingP2Jump = util::misc::swapFlag(state.frameFlags.pendingP2Jump);
 

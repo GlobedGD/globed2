@@ -88,11 +88,27 @@ bool GlobedPauseLayer::hasPopup() {
 
 REPLACE(onQuit);
 REPLACE(onResume);
-REPLACE(onRestart);
-REPLACE(onRestartFull);
 REPLACE(onEdit);
 REPLACE(onNormalMode);
 REPLACE(onPracticeMode);
+
+/* deathlink */
+
+void GlobedPauseLayer::onRestart(CCObject* s) {
+    if (this->hasPopup()) return;
+
+    GlobedGJBGL::get()->m_fields->isManuallyResettingLevel = true;
+    PauseLayer::onRestart(s);
+    GlobedGJBGL::get()->m_fields->isManuallyResettingLevel = false;
+}
+
+void GlobedPauseLayer::onRestartFull(CCObject* s) {
+    if (this->hasPopup()) return;
+
+    GlobedGJBGL::get()->m_fields->isManuallyResettingLevel = true;
+    PauseLayer::onRestartFull(s);
+    GlobedGJBGL::get()->m_fields->isManuallyResettingLevel = false;
+}
 
 /* bugfix */
 

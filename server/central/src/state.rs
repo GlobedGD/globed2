@@ -6,7 +6,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    time::Duration,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use globed_shared::{
@@ -38,7 +38,7 @@ pub struct ActiveChallenge {
     pub name: String,
     pub value: String,
     pub answer: String,
-    pub started: Duration,
+    pub started: SystemTime,
 }
 
 pub struct ServerStateData {
@@ -87,7 +87,7 @@ impl ServerStateData {
         user_id: i32,
         account_name: &str,
         user_ip: IpAddr,
-        current_time: Duration,
+        current_time: SystemTime,
     ) -> anyhow::Result<String> {
         let answer: String = rand::thread_rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect();
 
@@ -168,6 +168,12 @@ impl ServerStateData {
         } else {
             Ok(None)
         }
+    }
+
+    pub fn clear_outdated_challenges(&mut self) {
+        // remove all challenges older than 2 hours
+        self.active_challenges
+            .retain(|_, v| SystemTime::now().duration_since(v.started).unwrap_or_default().as_secs() < 60 * 60 * 2);
     }
 }
 

@@ -51,6 +51,16 @@ void GlobedPlayLayer::onQuit() {
 
 void GlobedPlayLayer::fullReset() {
     PlayLayer::fullReset();
+
+    auto gjbgl = GlobedGJBGL::get();
+
+    // if the user hit R or otherwise manually reset the level, count as a death with deathlink
+    if (gjbgl->m_fields->deathlinkState.active) {
+        if (gjbgl->m_fields->isManuallyResettingLevel) {
+            gjbgl->notifyDeath();
+        }
+    }
+
     // turn off safe mode
     GlobedGJBGL::get()->toggleSafeMode(false);
 }
@@ -63,6 +73,13 @@ void GlobedPlayLayer::resetLevel() {
         // log::debug("redirecting reset to kill");
         this->forceKill(m_player1);
         return;
+    }
+
+    // if the user hit R or otherwise manually reset the level, count as a death with deathlink
+    if (gjbgl->m_fields->deathlinkState.active) {
+        if (gjbgl->m_fields->isManuallyResettingLevel) {
+            gjbgl->notifyDeath();
+        }
     }
 
     if (m_fields->insideDestroyPlayer) {

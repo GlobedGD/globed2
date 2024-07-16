@@ -44,6 +44,7 @@ pub enum ServerThreadMessage {
     BroadcastBan(ServerBannedPacket),
     BroadcastMute(ServerMutedPacket),
     BroadcastRoleChange(RolesUpdatedPacket),
+    BroadcastRoomKicked,
     TerminationNotice(FastString),
 }
 
@@ -380,6 +381,7 @@ impl ClientThread {
             ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.timestamp).await?,
             ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
             ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
+            ServerThreadMessage::BroadcastRoomKicked => self._kicked_from_room().await?,
             ServerThreadMessage::TerminationNotice(message) => self.kick(message.try_to_str()).await?,
         }
 
@@ -452,6 +454,7 @@ impl ClientThread {
             UpdateRoomSettingsPacket::PACKET_ID => self.handle_update_room_settings(&mut data).await,
             RoomSendInvitePacket::PACKET_ID => self.handle_room_invitation(&mut data).await,
             RequestRoomListPacket::PACKET_ID => self.handle_request_room_list(&mut data).await,
+            CloseRoomPacket::PACKET_ID => self.handle_close_room(&mut data).await,
 
             /* admin related */
             AdminAuthPacket::PACKET_ID => self.handle_admin_auth(&mut data).await,

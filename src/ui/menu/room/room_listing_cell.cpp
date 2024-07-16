@@ -9,6 +9,14 @@
 
 using namespace geode::prelude;
 
+namespace {
+    namespace btnorder {
+        constexpr int Join = 43;
+        constexpr int Settings = 44;
+        constexpr int PlayerCount = 45;
+    }
+}
+
 bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent) {
     if (!CCLayerColor::init())
         return false;
@@ -104,12 +112,25 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
                     ->setAxisReverse(true)
                     ->setAxisAlignment(AxisAlignment::End)
                     ->setAutoScale(false)
-                    ->setGap(2.f)
+                    ->setGap(4.f)
         )
         .anchorPoint(1.f, 0.5f)
         .pos(RoomListingPopup::LIST_WIDTH - 3.f, CELL_HEIGHT / 2.f)
         .contentSize(this->getContentSize())
         .parent(this)
+        .collect();
+
+    auto* roomSettingsMenu = Build<CCMenu>::create()
+        .layout(
+            RowLayout::create()
+                ->setAxisReverse(true)
+                // ->setAxisAlignment(AxisAlignment::End)
+                ->setAutoScale(false)
+                ->setGap(1.f)
+        )
+        .contentSize(58.f, this->getContentHeight())
+        .parent(rightMenu)
+        .zOrder(btnorder::Settings)
         .collect();
 
     // join button
@@ -118,6 +139,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .intoMenuItem([this, rli](auto) {
             if (rli.hasPassword) {
                 RoomPasswordPopup::create(rli.id)->show();
+                this->parent->close();
                 return;
             }
 
@@ -125,16 +147,17 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
             this->parent->close();
         })
         .scaleMult(1.15f)
+        .zOrder(btnorder::Join)
         .parent(rightMenu);
 
     // lock button
-    auto* lockSpr = Build<CCSprite>::createSpriteName("GJLargeLock_001.png")
-        .scale(0.24f)
+    auto* lockSpr = Build<CCSprite>::createSpriteName("room-icon-lock.png"_spr)
+        .scale(0.38f)
         .opacity(rli.hasPassword ? 255 : 80)
         .intoMenuItem([] {
             FLAlertLayer::create("Locked room", "This room requires a password to join.", "Ok")->show();
         })
-        .parent(rightMenu)
+        .parent(roomSettingsMenu)
         .collect();
 
     lockSpr->setEnabled(rli.hasPassword);
@@ -142,20 +165,35 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     // collision icon
     auto* collisionBtn = Build<CCSprite>::createSpriteName("room-icon-collision.png"_spr)
         .with([&](auto* s) {
-            util::ui::rescaleToMatch(s, lockSpr->getScaledContentSize() * 1.2f);
+            util::ui::rescaleToMatch(s, lockSpr->getScaledContentSize());
         })
         .opacity(rli.settings.flags.collision ? 255 : 80)
         .intoMenuItem([] {
             FLAlertLayer::create("Collision", "This room has collision enabled, meaning you can collide with other players.\n\n<cy>Note: this means the room has safe mode, making it impossible to make progress on levels.</c>", "Ok")->show();
         })
-        .parent(rightMenu)
+        .parent(roomSettingsMenu)
         .collect();
 
     collisionBtn->setEnabled(rli.settings.flags.collision);
 
+    // deathlink icon
+    auto* deathlinkBtn = Build<CCSprite>::createSpriteName("room-icon-deathlink.png"_spr)
+        .with([&](auto* s) {
+            util::ui::rescaleToMatch(s, lockSpr->getScaledContentSize());
+        })
+        .opacity(rli.settings.flags.deathlink ? 255 : 80)
+        .intoMenuItem([] {
+            FLAlertLayer::create("Death Link", "This room has Death Link enabled, which means that if a player dies, everyone in the level dies as well. <cy>Inspired by the mod DeathLink by </c> <cg>Alphalaneous</c>.", "Ok")->show();
+        })
+        .parent(roomSettingsMenu)
+        .collect();
+
+    deathlinkBtn->setEnabled(rli.settings.flags.deathlink);
+
     auto* playerCountWrapper = Build<CCNode>::create()
         .layout(RowLayout::create()->setGap(1.f)->setAutoScale(false))
         .parent(rightMenu)
+        .zOrder(btnorder::PlayerCount)
         .collect();
 
     // player count number
@@ -179,7 +217,31 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
 
     playerCountWrapper->updateLayout();
 
+    roomSettingsMenu->updateLayout();
     rightMenu->updateLayout();
+
+    // add a bg
+    float sizeScale = 3.f;
+    auto* settingsBg = Build<CCScale9Sprite>::create("square02_001.png")
+        .opacity(67)
+        .zOrder(-1)
+        .contentSize(roomSettingsMenu->getScaledContentSize() * sizeScale + CCPoint{6.f, 8.f})
+        .scaleX(1.f / sizeScale)
+        .scaleY(1.f / sizeScale)
+        .parent(roomSettingsMenu)
+        .anchorPoint(0.5f, 0.5f)
+        .pos(roomSettingsMenu->getScaledContentSize() / 2.f)
+        .collect();
+
+    Build<CCScale9Sprite>::create("square02_001.png")
+        .opacity(67)
+        .zOrder(-1)
+        .contentSize(playerCountWrapper->getScaledContentSize().width * sizeScale + 8.f, settingsBg->getContentHeight())
+        .scaleX(1.f / sizeScale)
+        .scaleY(1.f / sizeScale)
+        .parent(playerCountWrapper)
+        .anchorPoint(0.5f, 0.5f)
+        .pos(playerCountWrapper->getScaledContentSize() / 2.f);
 
     return true;
 }

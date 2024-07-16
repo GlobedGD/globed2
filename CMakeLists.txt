@@ -110,7 +110,7 @@ CPMAddPackage(
     URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp2#89924e6")
+CPMAddPackage("gh:dankmeme01/asp2#782a4fa")
 
 # asp defines
 if (WIN32)
@@ -136,7 +136,7 @@ if (GLOBED_NATIVE_ARCH)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
+    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations" "-Wno-vla-cxx-extension")
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)

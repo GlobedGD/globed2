@@ -29,12 +29,16 @@ using namespace asp;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
-static constexpr uint16_t MIN_PROTOCOL_VERSION = 9;
-static constexpr uint16_t MAX_PROTOCOL_VERSION = 9;
-static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({9});
+static constexpr uint16_t MIN_PROTOCOL_VERSION = 10;
+static constexpr uint16_t MAX_PROTOCOL_VERSION = 10;
+static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({10});
 
 static bool isProtocolSupported(uint16_t proto) {
+#ifdef GLOBED_DEBUG
+    return true;
+#else
     return std::find(SUPPORTED_PROTOCOLS.begin(), SUPPORTED_PROTOCOLS.end(), proto) != SUPPORTED_PROTOCOLS.end();
+#endif
 }
 
 // yes, really
@@ -88,6 +92,16 @@ public:
 
     // Must be called from the main thread. Delivers packets to all listeners that are tied to an object.
     void update(float dt) {
+        // this is a bit irrelevant here but who gives a shit
+        if (GJAccountManager::get()->m_accountID != ProfileCacheManager::get().getOwnAccountData().accountId) {
+            NetworkManager::get().disconnect();
+
+            // clear the queue
+            while (auto t = packetQueue.tryPop());
+
+            return;
+        }
+
         if (packetQueue.empty()) return;
 
         // clear any dead listeners
@@ -316,6 +330,9 @@ protected:
         recoverAttempt = 0;
 
         state = ConnectionState::TcpConnecting;
+
+        auto& pcm = ProfileCacheManager::get();
+        pcm.setOwnDataAuto();
 
         // actual connection is deferred - the network thread does DNS resolution and TCP connection.
 
@@ -742,11 +759,11 @@ protected:
 
     uint16_t getUsedProtocol() {
         // 0xffff is a special value that the server doesn't check
-        #ifdef GLOBED_DEBUG
-                return 0xffff;
-        #else
-                return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
-        #endif
+#ifdef GLOBED_DEBUG
+        return 0xffff;
+#else
+        return ignoreProtocolMismatch ? 0xffff : MAX_PROTOCOL_VERSION;
+#endif
     }
 
     uint32_t getServerTps() {
@@ -777,7 +794,7 @@ protected:
 
     /* worker threads */
 
-    void threadRecvFunc() {
+    void threadRecvFunc(decltype(threadRecv)::StopToken&) {
         if (this->suspended || state == ConnectionState::TcpConnecting) {
             std::this_thread::sleep_for(util::time::millis(100));
             return;
@@ -838,7 +855,7 @@ protected:
         }
     }
 
-    void threadMainFunc() {
+    void threadMainFunc(decltype(threadMain)::StopToken&) {
         if (this->suspended) {
             std::this_thread::sleep_for(util::time::millis(100));
             return;
@@ -1184,11 +1201,19 @@ void NetworkManager::resume() {
 }
 
 uint16_t NetworkManager::getMinProtocol() {
+#ifdef GLOBED_DEBUG
+    return 0xffff;
+#else
     return MIN_PROTOCOL_VERSION;
+#endif
 }
 
 uint16_t NetworkManager::getMaxProtocol() {
+#ifdef GLOBED_DEBUG
+    return 0xffff;
+#else
     return MAX_PROTOCOL_VERSION;
+#endif
 }
 
 bool NetworkManager::isProtocolSupported(uint16_t version) {
@@ -1216,6 +1241,7 @@ void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener*
 MAKE_SENDER2(UpdatePlayerStatus, (bool invisible), (invisible))
 MAKE_SENDER2(RequestRoomPlayerList, (), ())
 MAKE_SENDER2(LeaveRoom, (), ())
+MAKE_SENDER2(CloseRoom, (), ())
 
 void NetworkManager::sendRequestPlayerCount(LevelId id) {
     impl->send(RequestPlayerCountPacket::create(std::vector({id})));

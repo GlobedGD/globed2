@@ -131,6 +131,7 @@ public:
     void sendUpdatePlayerStatus(bool invisible);
     void sendRequestRoomPlayerList();
     void sendLeaveRoom();
+    void sendCloseRoom();
     void sendRequestPlayerCount(LevelId id);
     void sendRequestPlayerCount(std::vector<LevelId> ids);
 
@@ -139,5 +140,6 @@ private:
     Impl* impl;
 
     friend class PacketListener;
+    friend class PacketListenerPool;
     void unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled = true);
 };
