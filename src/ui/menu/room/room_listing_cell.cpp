@@ -139,6 +139,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .intoMenuItem([this, rli](auto) {
             if (rli.hasPassword) {
                 RoomPasswordPopup::create(rli.id)->show();
+                this->parent->close();
                 return;
             }
 
