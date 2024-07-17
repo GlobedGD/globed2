@@ -63,6 +63,8 @@ impl ServerStateData {
 
         let token_expiry = Duration::from_secs(config.token_expiry);
         let http_client = reqwest::Client::builder()
+            .use_rustls_tls()
+            .danger_accept_invalid_certs(true)
             .timeout(Duration::from_secs(5))
             .user_agent(format!("globed-central-server/{}", env!("CARGO_PKG_VERSION")))
             .build()
