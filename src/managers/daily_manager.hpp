@@ -31,6 +31,7 @@ public:
     void resetStoredLevel();
     void clearSingleWebCallback();
     void clearMultiWebCallback();
+    void clearMetaWebCallback();
 
     // Fetches the level only from the central server
     void getCurrentLevelMeta(std::function<void(const GlobedFeaturedLevel&)>&& callback, bool force = false);

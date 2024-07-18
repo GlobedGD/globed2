@@ -238,6 +238,10 @@ void DailyManager::clearSingleWebCallback() {
     singleReqCallback = {};
 }
 
+void DailyManager::clearMetaWebCallback() {
+    levelMetaCallback = {};
+}
+
 void DailyManager::clearMultiWebCallback() {
     levelMetaCallback = {};
     multipleReqCallback = {};

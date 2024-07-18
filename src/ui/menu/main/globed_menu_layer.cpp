@@ -289,6 +289,10 @@ bool GlobedMenuLayer::init() {
     return true;
 }
 
+GlobedMenuLayer::~GlobedMenuLayer() {
+    DailyManager::get().clearSingleWebCallback();
+}
+
 void GlobedMenuLayer::update(float dt) {
     auto& nm = NetworkManager::get();
 
