@@ -15,7 +15,7 @@ impl ClientThread {
             let fail_reason: Option<&'static str> = match packet.room_name.to_str() {
                 Ok(str) => {
                     if self.game_server.state.filter.is_bad(str) {
-                        Some("Please choose a different room name")
+                        Some("Inappropriate room name. Please note that trying to bypass the filter may lead to a ban.")
                     } else {
                         None
                     }

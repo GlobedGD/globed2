@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <array>
+#include <bit>
 
 #include <asp/misc/traits.hpp>
 #include <asp/data/util.hpp>
