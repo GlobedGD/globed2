@@ -239,7 +239,7 @@ void AdminUserPopup::onProfileLoaded() {
             .parent(rootLayout)
             .collect();
 
-        Build<TextInput>::create(m_size.width * 0.65f, "admin password", "bigFont.fnt")
+        Build<TextInput>::create(m_size.width * 0.8f, "admin password", "bigFont.fnt")
             .parent(layout)
             .store(inputAdminPassword);
 
@@ -251,17 +251,6 @@ void AdminUserPopup::onProfileLoaded() {
         inputAdminPassword->setCallback([this](auto password) {
             this->userEntry.adminPassword = password;
         });
-
-        Build<ButtonSprite>::create("Copy", "bigFont.fnt", "GJ_button_01.png", 0.8f)
-            .scale(0.6f)
-            .intoMenuItem([this](auto) {
-                auto& pwd = this->userEntry.adminPassword;
-                if (pwd.has_value() && !pwd.value().empty()) {
-                    geode::utils::clipboard::write(pwd.value());
-                    Notification::create("Copied password to clipboard", NotificationIcon::Success)->show();
-                }
-            })
-            .parent(layout);
 
         layout->updateLayout();
     }

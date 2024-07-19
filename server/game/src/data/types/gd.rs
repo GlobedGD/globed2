@@ -1,5 +1,3 @@
-use globed_shared::UserEntry;
-
 use crate::{data::*, managers::RoleManager};
 
 pub const NO_GLOW: u8 = u8::MAX;
@@ -89,11 +87,11 @@ pub struct SpecialUserData {
 }
 
 impl SpecialUserData {
-    pub fn from_user_entry(user_entry: &UserEntry, role_manager: &RoleManager) -> Self {
-        if user_entry.user_roles.is_empty() {
+    pub fn from_roles(roles: &[String], role_manager: &RoleManager) -> Self {
+        if roles.is_empty() {
             Self { roles: None }
         } else {
-            let roles = role_manager.role_ids_to_int_ids(&user_entry.user_roles);
+            let roles = role_manager.role_ids_to_int_ids(roles);
 
             Self { roles: Some(roles) }
         }

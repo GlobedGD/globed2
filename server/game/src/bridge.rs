@@ -8,7 +8,7 @@ use std::{
 use esp::{size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize, StaticSize};
 use globed_shared::{
     reqwest::{self, StatusCode},
-    GameServerBootData, SyncMutex, TokenIssuer, UserEntry, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
+    GameServerBootData, ServerUserEntry, SyncMutex, TokenIssuer, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
 use crate::webhook::{self, *};
@@ -183,7 +183,7 @@ impl CentralBridge {
     }
 
     // other web requests
-    pub async fn get_user_data(&self, player: &str) -> Result<UserEntry> {
+    pub async fn get_user_data(&self, player: &str) -> Result<ServerUserEntry> {
         let response = self
             .http_client
             .get(format!("{}gs/user/{}", self.central_url, player))
@@ -202,10 +202,10 @@ impl CentralBridge {
         let mut reader = ByteReader::from_bytes(&config);
         reader.validate_self_checksum()?;
 
-        Ok(reader.read_value::<UserEntry>()?)
+        Ok(reader.read_value::<ServerUserEntry>()?)
     }
 
-    pub async fn update_user_data(&self, user: &UserEntry) -> Result<()> {
+    pub async fn update_user_data(&self, user: &ServerUserEntry) -> Result<()> {
         let mut buffer = ByteBuffer::with_capacity(user.encoded_size() + size_of_types!(u32));
 
         buffer.write_value(user);

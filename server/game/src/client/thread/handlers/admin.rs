@@ -82,12 +82,10 @@ impl ClientThread {
         }
 
         // test for the per-user password
-        let admin_password = self.user_entry.lock().admin_password.clone();
+        let pass_result = self.user_entry.lock().verify_password(&packet.key);
 
-        if admin_password.as_ref().is_some_and(|pwd| !pwd.is_empty()) {
-            let password = admin_password.unwrap();
-
-            if packet.key.constant_time_compare(&password) {
+        match pass_result {
+            Ok(true) => {
                 info!(
                     "[{} ({}) @ {}] just logged into the admin panel",
                     self.account_data.lock().name,
@@ -103,6 +101,10 @@ impl ClientThread {
                 self.send_packet_dynamic(&AdminAuthSuccessPacket { role }).await?;
 
                 return Ok(());
+            }
+            Ok(false) => {}
+            Err(e) => {
+                warn!("argon2 password validation error: {e}");
             }
         }
 
@@ -378,7 +380,7 @@ impl ClientThread {
             let account_data = user.account_data.lock().make_room_preview(0);
 
             AdminUserDataPacket {
-                entry,
+                entry: entry.to_user_entry(),
                 account_data: Some(account_data),
             }
         } else {
@@ -397,7 +399,7 @@ impl ClientThread {
             };
 
             AdminUserDataPacket {
-                entry: user_entry,
+                entry: user_entry.to_user_entry(),
                 account_data: None,
             }
         };
@@ -451,7 +453,7 @@ impl ClientThread {
 
         // if not admin, cant update others passwords
         if !self._has_perm(AdminPerm::Admin) {
-            new_user_entry.admin_password.clone_from(&user_entry.admin_password);
+            new_user_entry.admin_password = None;
         }
 
         // if no edit role perm or the user is higher than us, cant update their roles
@@ -467,7 +469,7 @@ impl ClientThread {
         let c_violation_reason = new_user_entry.violation_reason != user_entry.violation_reason;
         let c_violation_expiry = new_user_entry.violation_expiry != user_entry.violation_expiry;
         let c_name_color = new_user_entry.name_color != user_entry.name_color;
-        let c_admin_password = new_user_entry.admin_password != user_entry.admin_password;
+        let c_admin_password = new_user_entry.admin_password.is_some();
         // user_name intentionally left unchecked.
 
         if c_user_roles && new_user_priority >= my_priority && !self._has_perm(AdminPerm::Admin) {
@@ -516,6 +518,7 @@ impl ClientThread {
         }
 
         let target_user_name = new_user_entry.user_name.clone().unwrap_or_else(|| "<unknown>".to_owned());
+        let server_entry = ServerUserEntry::from_user_entry(new_user_entry.clone());
 
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
@@ -524,7 +527,7 @@ impl ClientThread {
 
             // update the role
             if c_user_roles {
-                let special_data = SpecialUserData::from_user_entry(&new_user_entry, &self.game_server.state.role_manager);
+                let special_data = SpecialUserData::from_roles(&new_user_entry.user_roles, &self.game_server.state.role_manager);
                 thread.account_data.lock().special_user_data.clone_from(&special_data);
 
                 // tell the user that their roles changed
@@ -541,7 +544,7 @@ impl ClientThread {
             let res = self
                 .game_server
                 .update_user(thread, |user| {
-                    user.clone_from(&new_user_entry);
+                    user.clone_from(&server_entry);
                     true
                 })
                 .await;
@@ -568,7 +571,7 @@ impl ClientThread {
             res
         } else {
             // otherwise just make a manual bridge request
-            self.game_server.bridge.update_user_data(&new_user_entry).await.map_err(Into::into)
+            self.game_server.bridge.update_user_data(&server_entry).await.map_err(Into::into)
         };
 
         match result {

@@ -10,7 +10,7 @@ use globed_shared::{
     crypto_box::{aead::OsRng, PublicKey, SecretKey},
     esp::ByteBufferExtWrite as _,
     logger::*,
-    SyncMutex, UserEntry,
+    ServerUserEntry, SyncMutex,
 };
 use rustc_hash::FxHashMap;
 use tokio::{
@@ -665,7 +665,7 @@ impl GameServer {
 
     /// Try to find a user by name or account ID, invoke the passed closure, and if it returns `true`,
     /// send a request to the central server to update the account.
-    pub async fn find_and_update_user<F: FnOnce(&mut UserEntry) -> bool>(&self, name: &str, f: F) -> anyhow::Result<()> {
+    pub async fn find_and_update_user<F: FnOnce(&mut ServerUserEntry) -> bool>(&self, name: &str, f: F) -> anyhow::Result<()> {
         if let Some(thread) = self.find_user(name) {
             self.update_user(&thread, f).await
         } else {
@@ -673,7 +673,7 @@ impl GameServer {
         }
     }
 
-    pub async fn update_user<F: FnOnce(&mut UserEntry) -> bool>(&self, thread: &ClientThread, f: F) -> anyhow::Result<()> {
+    pub async fn update_user<F: FnOnce(&mut ServerUserEntry) -> bool>(&self, thread: &ClientThread, f: F) -> anyhow::Result<()> {
         let result = {
             let mut data = thread.user_entry.lock();
             f(&mut data)
