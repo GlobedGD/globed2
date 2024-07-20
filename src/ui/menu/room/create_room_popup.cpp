@@ -6,6 +6,7 @@
 #include <data/packets/client/room.hpp>
 #include <net/manager.hpp>
 #include <util/format.hpp>
+#include <util/math.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -87,7 +88,7 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
         .intoNewChild(TextInput::create(POPUP_WIDTH * 0.25f, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setFilter(std::string(util::misc::STRING_DIGITS));
-            input->setMaxCharCount(4);
+            input->setMaxCharCount(5);
         })
         .store(playerLimitInput)
         .intoParent()
@@ -115,10 +116,15 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
 
                     roomName = util::format::trim(roomName);
 
-                    uint16_t playerCount = util::format::parse<uint16_t>(playerLimitInput->getString()).value_or(0);
+                    // parse as a 32-bit int but cap at 2^16
+                    // this is so that if a user inputs a number like 99999 (doesnt fit into ushort),
+                    // instead of making it 0, it makes it 65535 (max possible number)
+
+                    uint32_t playerCount = util::format::parse<uint32_t>(playerLimitInput->getString()).value_or(0);
+                    playerCount = util::math::min(playerCount, std::numeric_limits<uint16_t>::max());
 
                     NetworkManager::get().send(CreateRoomPacket::create(roomName, passwordInput->getString(), RoomSettings {
-                        settingFlags, playerCount
+                        settingFlags, static_cast<uint16_t>(playerCount)
                     }));
 
                     parent->startLoading();

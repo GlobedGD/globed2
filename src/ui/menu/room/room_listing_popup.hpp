@@ -11,7 +11,7 @@ protected:
 
     friend class RoomListingCell;
 
-    static constexpr float POPUP_WIDTH = 380.f;
+    static constexpr float POPUP_WIDTH = 390.f;
     static constexpr float POPUP_HEIGHT = 240.f;
     static constexpr float LIST_WIDTH = POPUP_WIDTH * 0.9f;
     static inline const cocos2d::CCSize contentSize = {LIST_WIDTH, 150.f};

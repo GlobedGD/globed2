@@ -17,8 +17,7 @@
             "version": ">=v1.2.3",
             "importance": "required",
             "platforms": [
-                "win",
-                "android"
+                "win"
             ]
         }
     ],
