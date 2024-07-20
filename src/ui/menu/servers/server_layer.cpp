@@ -183,8 +183,10 @@ void GlobedServersLayer::updateServerList(float) {
     }
 
     // if we are logged out of our account, navigate away
-    if (GJAccountManager::get()->m_accountID <= 0) {
+    if (GJAccountManager::get()->m_accountID <= 0 && !typeinfo_cast<CCTransitionScene*>(CCScene::get()) && !transitioningAway) {
         GameManager::get()->safePopScene();
+        transitioningAway = true;
+
         return;
     }
 
