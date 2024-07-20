@@ -40,6 +40,8 @@ bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
         .parent(m_mainLayer)
         .store(notesInput);
 
+    notesInput->setCommonFilter(CommonFilter::Any);
+
     auto* buttonMenu = Build<CCMenu>::create()
         .layout(RowLayout::create())
         .contentSize(POPUP_WIDTH * 0.8f, 50.f)
