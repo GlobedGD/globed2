@@ -116,17 +116,18 @@ bool GlobedServersLayer::init() {
         .scaleMult(1.15f)
         .id("btn-kofi")
         .parent(rightButtonMenu);
-    
+
     // kofi glow
     CCSprite* glow = Build<CCSprite>::createSpriteName("icon-glow.png"_spr)
-    .id("btn-kofi-glow"_spr)
-    .pos(kofi->getScaledContentSize() / 2)
-    .zOrder(-1)
-    .color({255, 255, 0})
-    .opacity(200)
-    .scale(0.93f)
-    .blendFunc({GL_ONE, GL_ONE})
-    .parent(kofi);
+        .id("btn-kofi-glow"_spr)
+        .pos(kofi->getScaledContentSize() / 2)
+        .zOrder(-1)
+        .color({255, 255, 0})
+        .opacity(200)
+        .scale(0.93f)
+        .blendFunc({GL_ONE, GL_ONE})
+        .parent(kofi);
+
     glow->runAction(CCRepeatForever::create(CCSequence::create(CCFadeTo::create(1.5f, 50), CCFadeTo::create(1.5f, 200), nullptr)));
 
     // credits button
@@ -178,6 +179,12 @@ void GlobedServersLayer::updateServerList(float) {
         this->runAction(seq);
         transitioningAway = true;
 
+        return;
+    }
+
+    // if we are logged out of our account, navigate away
+    if (GJAccountManager::get()->m_accountID <= 0) {
+        GameManager::get()->safePopScene();
         return;
     }
 
