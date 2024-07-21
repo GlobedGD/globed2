@@ -32,5 +32,6 @@ Special thanks:
 * [MathieuAR](user:3759035) - for providing us server hosting
 * [HJfod](user:104257) - for making [our website](https://globed.dev)
 * [alk1m123](user:11535118) - for working together for EditorCollab interoperability
+* [Alphalaneous](user:1139015) - for making the DeathLink mod and allowing us to take their idea and implement it in Globed
 * [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
 * Server staff and supporters - for helping in shaping this mod to be what it is today :)

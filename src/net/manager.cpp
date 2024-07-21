@@ -95,6 +95,9 @@ public:
         // this is a bit irrelevant here but who gives a shit
         if (GJAccountManager::get()->m_accountID != ProfileCacheManager::get().getOwnAccountData().accountId) {
             NetworkManager::get().disconnect();
+            auto& gam = GlobedAccountManager::get();
+            gam.autoInitialize();
+            gam.authToken.lock()->clear();
 
             // clear the queue
             while (auto t = packetQueue.tryPop());
