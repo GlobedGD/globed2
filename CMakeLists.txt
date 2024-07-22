@@ -137,9 +137,9 @@ endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
-    if (WIN32)
-        target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-vla-cxx-extension")
-    endif()
+    # if (WIN32)
+    #     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-vla-cxx-extension")
+    # endif()
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)
@@ -237,5 +237,13 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE "${curl_SOURCE_DIR}/include")
 
 target_link_libraries(${PROJECT_NAME} curl)
+
+# mac needs this for curl
+if (APPLE)
+	target_link_libraries(${PROJECT_NAME} z)
+else()
+    # windows needs this ig?
+    target_link_libraries(${PROJECT_NAME} crypt32)
+endif()
 
 setup_geode_mod(${PROJECT_NAME})
