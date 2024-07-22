@@ -241,7 +241,7 @@ target_link_libraries(${PROJECT_NAME} curl)
 # mac needs this for curl
 if (APPLE)
 	target_link_libraries(${PROJECT_NAME} z)
-else()
+elseif (WIN32)
     # windows needs this ig?
     target_link_libraries(${PROJECT_NAME} crypt32)
 endif()
