@@ -99,6 +99,7 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 # done so you can include root files with <file.hpp>
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
+target_include_directories(${PROJECT_NAME} PRIVATE libs/)
 
 # our favorite libraries
 CPMAddPackage("gh:camila314/uibuilder#ba63097")
@@ -200,5 +201,41 @@ endif()
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} ws2_32)
 endif()
+
+# link to libcurl
+
+CPMAddPackage(
+    NAME curl
+    GIT_REPOSITORY "https://github.com/curl/curl.git"
+    GIT_TAG "curl-8_8_0"
+    DOWNLOAD_ONLY YES
+)
+
+add_library(curl STATIC IMPORTED)
+
+if (ANDROID)
+    if (ANDROID_ABI STREQUAL "arm64-v8a")
+        set(LIB_PLATFORM "android64")
+    else()
+        set(LIB_PLATFORM "android32")
+    endif()
+elseif (WIN32)
+    set(LIB_PLATFORM "win64")
+else()
+    set(LIB_PLATFORM "macos")
+endif()
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE CURL_STATICLIB=1)
+
+# we are kinda leeching off of geode but we can always snatch those libraries in the future
+if (WIN32)
+    set_target_properties(curl PROPERTIES IMPORTED_LOCATION "$ENV{GEODE_SDK}/loader/include/link/${LIB_PLATFORM}/libcurl.lib")
+else()
+    set_target_properties(curl PROPERTIES IMPORTED_LOCATION "$ENV{GEODE_SDK}/loader/include/link/${LIB_PLATFORM}/libcurl.a")
+endif()
+
+target_include_directories(${PROJECT_NAME} PRIVATE "${curl_SOURCE_DIR}/include")
+
+target_link_libraries(${PROJECT_NAME} curl)
 
 setup_geode_mod(${PROJECT_NAME})

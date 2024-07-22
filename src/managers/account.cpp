@@ -92,8 +92,8 @@ void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event
 
     auto result = std::move(*event->getValue());
 
-    if (result.isOk()) {
-        *this->authToken.lock() = std::move(result.unwrap());
+    if (result.ok()) {
+        *this->authToken.lock() = std::move(result.text().unwrapOrDefault());
 
         if (requestCallbackStored.has_value()) {
             requestCallbackStored.value()();
@@ -102,19 +102,20 @@ void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event
         return;
     }
 
-    auto error = event->getValue()->unwrapErr();
+    auto rawError = result.text().unwrapOrDefault();
+
     std::string reason;
-    if (error.code == 401) {
+    if (result.getCode() == 401) {
         // invalid auth? or banned
-        if (error.message.empty()) {
+        if (rawError.empty()) {
             reason = "unauthorized, please reauthenticate";
         } else {
-            reason = fmt::format("unauthorized: {}", error.message);
+            reason = fmt::format("unauthorized: {}", rawError);
         }
     }
 
     if (reason.empty()) {
-        reason = util::format::webError(error);
+        reason = result.getError();
     }
 
     ErrorQueues::get().error(fmt::format(

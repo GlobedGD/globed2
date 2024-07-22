@@ -71,14 +71,6 @@ namespace util::format {
         return message;
     }
 
-    std::string webError(const WebRequestError& error) {
-        if (error.message.empty()) {
-            return fmt::format("code {}: empty response", error.code);
-        } else {
-            return fmt::format("code {}: {}", error.code, formatErrorMessage(error.message));
-        }
-    }
-
     std::string formatPlatformerTime(uint32_t ms) {
         auto dur = time::millis(ms);
         auto hours = time::as<time::hours>(dur).count() % 24;

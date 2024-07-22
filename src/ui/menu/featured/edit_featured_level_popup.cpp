@@ -139,11 +139,11 @@ void EditFeaturedLevelPopup::onRequestComplete(typename WebRequestManager::Event
 
     auto result = std::move(*event->getValue());
 
-    if (result.isOk()) {
+    if (result.ok()) {
         ErrorQueues::get().success("Successfully updated the level");
     } else {
-        auto err = result.unwrapErr();
-        ErrorQueues::get().error(fmt::format("Failed to update the level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
+        auto err = result.getError();
+        ErrorQueues::get().error(fmt::format("Failed to update the level.\n\nReason: <cy>{}</c>", err));
     }
 
     this->onClose(this);

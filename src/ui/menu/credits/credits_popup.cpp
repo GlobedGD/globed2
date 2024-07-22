@@ -136,28 +136,29 @@ bool GlobedCreditsPopup::setup() {
 void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
     if (!e || !e->getValue()) return;
 
+    static auto retError = [](auto msg) {
+        ErrorQueues::get().error(fmt::format("Failed to load credits.\n\nReason: <cy>{}</c>", msg));
+    };
+
     auto result = e->getValue();
-    if (result->isErr()) {
-        auto err = result->unwrapErr();
-        ErrorQueues::get().error(fmt::format("Failed to load credits.\n\nReason: <cy>{}</c> (code {})", err.message, err.code));
+    if (!result->ok()) {
+        retError(result->getError());
         return;
     }
 
-    auto response = result->unwrap();
-    if (response == "{}") {
-        FLAlertLayer::create("Error", "<cy>Credits currently unavailable, please try again later.</c>", "Ok")->show();
+    auto creditsDataOpt = result->json();
+    if (!creditsDataOpt) {
+        retError(fmt::format("JSON error: {}", creditsDataOpt.unwrapErr()));
         return;
     }
 
-    std::string parseError;
-    auto creditsDataOpt = matjson::parse(response, parseError);
-
-    if (creditsDataOpt && !creditsDataOpt->is<CreditsResponse>()) {
-        parseError = "invalid json response";
+    if (creditsDataOpt.unwrap().as_object().size() == 0) {
+        retError("Empty response object returned");
+        return;
     }
 
-    if (!creditsDataOpt || !parseError.empty()) {
-        FLAlertLayer::create("Error", fmt::format("Failed to parse credits response.\n\nReason: <cy>{}</c>", parseError), "Ok")->show();
+    if (!creditsDataOpt->is<CreditsResponse>()) {
+        retError("invalid json response");
         return;
     }
 

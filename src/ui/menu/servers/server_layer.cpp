@@ -258,18 +258,18 @@ void GlobedServersLayer::requestCallback(typename WebRequestManager::Event* even
 
     auto result = std::move(*event->getValue());
 
-    if (result.isErr()) {
+    if (!result.ok()) {
         auto& gsm = GameServerManager::get();
         gsm.clearCache();
         gsm.clear();
         gsm.pendingChanges = true;
 
-        ErrorQueues::get().error(fmt::format("Failed to fetch servers.\n\nReason: <cy>{}</c>", util::format::webError(result.unwrapErr())));
+        ErrorQueues::get().error(fmt::format("Failed to fetch servers.\n\nReason: <cy>{}</c>", result.getError()));
 
         return;
     }
 
-    auto response = result.unwrap();
+    auto response = result.text().unwrapOrDefault();
 
     auto& gsm = GameServerManager::get();
     gsm.updateCache(response);
