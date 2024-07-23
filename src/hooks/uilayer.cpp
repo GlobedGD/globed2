@@ -9,9 +9,9 @@ class $modify(UILayer) {
     }
 
     void handleKeypress(cocos2d::enumKeyCodes p0, bool p1) {
-        GlobedGJBGL::get()->m_fields->isManuallyResettingLevel = true;
+        auto gjbgl = GlobedGJBGL::get();
+        if (gjbgl) gjbgl->m_fields->isManuallyResettingLevel = true;
         UILayer::handleKeypress(p0, p1);
-        GlobedGJBGL::get()->m_fields->isManuallyResettingLevel = false;
+        if (gjbgl) gjbgl->m_fields->isManuallyResettingLevel = false;
     }
-
 };
