@@ -2,7 +2,6 @@
 #include <defs/geode.hpp>
 
 #include <Geode/modify/GJBaseGameLayer.hpp>
-#include "Geode/loader/Dispatch.hpp"
 
 #include <data/types/room.hpp>
 #include <game/interpolator.hpp>

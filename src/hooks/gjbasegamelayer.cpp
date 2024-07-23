@@ -1,12 +1,13 @@
 #include "gjbasegamelayer.hpp"
 
-#include "play_layer.hpp"
-#include "game_manager.hpp"
-
 #if GLOBED_HAS_KEYBINDS
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif // GLOBED_HAS_KEYBINDS
 
+#include <Geode/loader/Dispatch.hpp>
+
+#include "play_layer.hpp"
+#include "game_manager.hpp"
 #include "gjgamelevel.hpp"
 #include <audio/all.hpp>
 #include <managers/block_list.hpp>
