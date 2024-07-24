@@ -1,6 +1,8 @@
 #include "room_layer.hpp"
 
 #include "room_settings_popup.hpp"
+#include "room_password_popup.hpp"
+#include "room_join_popup.hpp"
 #include "room_listing_popup.hpp"
 #include "invite_popup.hpp"
 #include "create_room_popup.hpp"
@@ -381,6 +383,16 @@ void RoomLayer::onRoomCreatedReceived(const RoomCreatedPacket& packet) {
 
 void RoomLayer::onRoomJoinedReceived(const RoomJoinedPacket& packet) {
     this->reloadData(packet.info, packet.players);
+
+    // if we have any room listing popup opened, close them
+
+    auto nodes = CCScene::get()->getChildren();
+    for (int i = nodes->count() - 1; i >= 0; i--) {
+        auto node = static_cast<CCNode*>(nodes->objectAtIndex(i));
+        if (typeinfo_cast<RoomPasswordPopup*>(node) || typeinfo_cast<RoomListingPopup*>(node) || typeinfo_cast<RoomJoinPopup*>(node)) {
+            node->removeFromParent();
+        }
+    }
 }
 
 void RoomLayer::reloadData(const RoomInfo& info, const std::vector<PlayerRoomPreviewAccountData>& players) {
