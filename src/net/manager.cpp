@@ -699,6 +699,9 @@ protected:
 
         GameServerManager::get().setActive(connectedServerId);
 
+        auto& flm = FriendListManager::get();
+        flm.maybeLoad();
+
         // these are not thread-safe, so delay it
         Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
             auto& pcm = ProfileCacheManager::get();

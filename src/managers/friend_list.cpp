@@ -2,41 +2,58 @@
 
 #include <managers/error_queues.hpp>
 
-void FriendListManager::load() {
+void FriendListManager::load(bool friends) {
     auto* glm = GameLevelManager::sharedState();
-    if (!dummyNode) {
-        dummyNode = DummyNode::create();
-    }
 
-    glm->m_userListDelegate = dummyNode;
-    glm->getUserList(UserListType::Friends);
+    fetchState = friends ? FetchState::Friends : FetchState::Blocked;
+    glm->m_userListDelegate = &dummyNode;
+    glm->getUserList(friends ? UserListType::Friends : UserListType::Blocked);
 }
 
-bool FriendListManager::isLoaded() {
-    return loaded;
+bool FriendListManager::isFetching() {
+    return fetchState != FetchState::None;
+}
+
+bool FriendListManager::areFriendsLoaded() {
+    return loadedFriends;
+}
+
+bool FriendListManager::areBlockedLoaded() {
+    return loadedBlocked;
 }
 
 void FriendListManager::maybeLoad() {
-    if (!this->isLoaded()) {
-        this->load();
+    if (!this->areFriendsLoaded()) {
+        this->load(true);
+    } else if (!this->areBlockedLoaded()) {
+        this->load(false);
     }
 }
 
 void FriendListManager::invalidate() {
-    friends.clear();
-    loaded = false;
+    listFriends.clear();
+    listBlocked.clear();
+    loadedFriends = false;
+    loadedBlocked = false;
 }
 
 bool FriendListManager::isFriend(int playerId) {
-    return friends.contains(playerId);
+    return listFriends.contains(playerId);
 }
 
-void FriendListManager::insertPlayers(cocos2d::CCArray* players) {
+bool FriendListManager::isBlocked(int playerId) {
+    return listBlocked.contains(playerId);
+}
+
+void FriendListManager::insertPlayers(cocos2d::CCArray* players, bool friends) {
+    auto& set = friends ? listFriends : listBlocked;
+
     for (auto* elem : CCArrayExt<GJUserScore*>(players)) {
-        friends.insert(elem->m_accountID);
+        set.insert(elem->m_accountID);
     }
 
-    loaded = true;
+    // okay man
+    friends ? (loadedFriends = true) : (loadedBlocked = true);
 }
 
 void FriendListManager::DummyNode::cleanup() {
@@ -44,11 +61,15 @@ void FriendListManager::DummyNode::cleanup() {
 }
 
 void FriendListManager::DummyNode::getUserListFinished(cocos2d::CCArray* p0, UserListType p1) {
-    if (p1 == UserListType::Friends) {
-        auto& flm = FriendListManager::get();
-        flm.insertPlayers(p0);
-    }
+    auto& flm = FriendListManager::get();
+    flm.insertPlayers(p0, p1 == UserListType::Friends);
+
     this->cleanup();
+
+    if (p1 == UserListType::Friends) {
+        // fetch blocked users as well
+        FriendListManager::get().maybeLoad();
+    }
 }
 
 void FriendListManager::DummyNode::getUserListFailed(UserListType p0, GJErrorCode p1) {
@@ -56,24 +77,6 @@ void FriendListManager::DummyNode::getUserListFailed(UserListType p0, GJErrorCod
     if ((int)p1 != -2) {
         ErrorQueues::get().warn(fmt::format("Failed to get friendlist: {}", (int)p1));
     }
+
     this->cleanup();
-}
-
-void FriendListManager::DummyNode::userListChanged(cocos2d::CCArray* p0, UserListType p1) {
-    log::warn("why did changed get called");
-    this->getUserListFinished(p0, p1);
-}
-
-void FriendListManager::DummyNode::forceReloadList(UserListType p0) {}
-
-// ugly ass
-FriendListManager::DummyNode* FriendListManager::DummyNode::create() {
-    auto ret = new DummyNode;
-    if (ret->init()) {
-        ret->autorelease();
-        return ret;
-    }
-
-    delete ret;
-    return nullptr;
 }

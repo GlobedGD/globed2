@@ -18,11 +18,6 @@ using namespace geode::prelude;
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
 
-    if (GJAccountManager::sharedState()->m_accountID > 0) {
-        auto& flm = FriendListManager::get();
-        flm.maybeLoad();
-    }
-
     // auto connect
     util::misc::callOnce("menu-layer-init-autoconnect", []{
         if (!GlobedSettings::get().globed.autoconnect) return;
