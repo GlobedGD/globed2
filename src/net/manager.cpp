@@ -200,7 +200,7 @@ protected:
     friend class NetworkManager;
     friend class PacketListenerPool;
 
-    static constexpr int BUILTIN_LISTENER_PRIORITY = -10000000;
+    static constexpr int BUILTIN_LISTENER_PRIORITY = 10000000;
 
     struct TaskPingServers {};
     struct TaskSendPacket {

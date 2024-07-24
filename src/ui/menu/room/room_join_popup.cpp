@@ -53,7 +53,7 @@ bool RoomJoinPopup::setup() {
                         this->onClose(nullptr);
                     });
                 }
-            }, -123456789, true);
+            }, -10, true);
 
             nm.addListener<RoomJoinedPacket>(this, [this](std::shared_ptr<RoomJoinedPacket> packet) {
                 this->onClose(nullptr);
