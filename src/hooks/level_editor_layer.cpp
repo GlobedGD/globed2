@@ -22,4 +22,3 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
 
     return true;
 }
-

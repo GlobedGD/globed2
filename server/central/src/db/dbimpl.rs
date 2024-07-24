@@ -255,4 +255,13 @@ impl GlobedDb {
 
         Ok(())
     }
+
+    pub async fn has_been_featured(&self, level_id: i32) -> Result<bool> {
+        let result = query("SELECT COUNT(*) from featured_levels WHERE level_id = ?")
+            .bind(level_id)
+            .execute(&self.0)
+            .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
 }

@@ -19,8 +19,6 @@ static int& storedRateTier() {
 bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
     if (!LevelInfoLayer::init(level, challenge)) return false;
 
-    log::debug("dddifficulty: {}", util::gd::calcLevelDifficulty(level));
-
     auto& am = AdminManager::get();
     if (am.authorized() && am.getRole().canModerate()) {
         this->addLevelSendButton();

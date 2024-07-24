@@ -1,4 +1,4 @@
-use globed_shared::{warn, webhook};
+use globed_shared::{debug, warn, webhook};
 use rocket::{get, post, serde::json::Json, State};
 
 use crate::{
@@ -51,7 +51,8 @@ pub async fn replace(
         unauthorized!("unauthorized (account)")
     };
 
-    let pwd_valid = user.verify_password(adminpwd).unwrap_or(false) || state.state_read().await.config.admin_key == adminpwd;
+    let valid_global_pwd = state.state_read().await.config.admin_key == adminpwd;
+    let pwd_valid = user.verify_password(adminpwd).unwrap_or(false) || valid_global_pwd;
 
     if !pwd_valid {
         unauthorized!("unauthorized (password)");
@@ -59,16 +60,21 @@ pub async fn replace(
 
     // check if any of the user's roles allow editing featured levels
     let state = state.state_read().await;
-    let has_perm = user.user_roles.iter().any(|role| {
-        if let Some(matched_role) = state.config.roles.iter().find(|r| r.id == *role) {
-            matched_role.edit_featured_levels || matched_role.admin
-        } else {
-            false
-        }
-    });
+    let has_perm = valid_global_pwd
+        || user.user_roles.iter().any(|role| {
+            if let Some(matched_role) = state.config.roles.iter().find(|r| r.id == *role) {
+                matched_role.edit_featured_levels || matched_role.admin
+            } else {
+                false
+            }
+        });
 
     if !has_perm {
         unauthorized!("unauthorized (perms)");
+    }
+
+    if db.has_been_featured(newlevel).await? {
+        bad_request!("level has already been featured");
     }
 
     db.replace_featured_level(aid, newlevel, rate_tier).await?;

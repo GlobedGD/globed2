@@ -169,6 +169,9 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
 
     CCArray* finalArray = CCArray::create();
     for (auto& entry : page.levels) {
+        // if the level is invalid, skip it
+        if (!entry.second) continue;
+
         util::gd::reorderDownloadedLevel(entry.second);
 
         if (entry.second) {

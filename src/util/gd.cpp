@@ -61,8 +61,6 @@ namespace util::gd {
             diff = 0;
         }
 
-        log::debug("Difficulty: {}", diff);
-
         return diff;
     }
 }
