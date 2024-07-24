@@ -584,9 +584,15 @@ protected:
 
             auto& flm = FriendListManager::get();
 
-            if (setting == InvitesFrom::Nobody) {
-                return;
-            } else if (setting == InvitesFrom::Friends && !flm.isFriend(inviter)) {
+            // block the invite if either..
+            if (
+                // a. invites are disabled
+                setting == InvitesFrom::Nobody
+                // b. invites are friend-only and the user is not a friend
+                || (setting == InvitesFrom::Friends && !flm.isFriend(inviter))
+                // c. user is blocked
+                || flm.isBlocked(inviter)
+            ) {
                 return;
             }
 
