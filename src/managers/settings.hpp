@@ -189,6 +189,7 @@ public:
         Setting<bool, false> hideNearby;
         Setting<bool, false> forceVisibility;
         Setting<bool, false> ownName;
+        Setting<bool, false> rotateNames;
         Setting<bool, false> hidePracticePlayers;
     };
 
