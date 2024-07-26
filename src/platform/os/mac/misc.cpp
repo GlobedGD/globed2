@@ -34,8 +34,6 @@ Result<UniqueIdent> util::misc::fingerprintImpl() {
         return Err("Failed to get UUID");
     }
 
-    log::debug("UUID: {}", uuid);
-
     auto hashed = util::crypto::simpleHash(fmt::format("{}-{}", uuid, Mod::get()->getID()));
     std::array<uint8_t, 32> arr;
     std::copy_n(hashed.data(), 32, arr.begin());

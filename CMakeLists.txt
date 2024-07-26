@@ -202,6 +202,12 @@ if (WIN32)
     target_link_libraries(${PROJECT_NAME} ws2_32 wbemuuid)
 endif()
 
+# Apple - link to iokit
+if (APPLE)
+    find_library(IOKIT_LIBRARY IOKit)
+    target_link_libraries(${PROJECT_NAME} ${IOKIT_LIBRARY})
+endif()
+
 # link to libcurl
 
 CPMAddPackage(

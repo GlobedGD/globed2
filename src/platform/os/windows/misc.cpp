@@ -187,7 +187,7 @@ Result<UniqueIdent> util::misc::fingerprintImpl() {
         VariantInit(&vtProp);
 
         hr = clsobj->Get(L"SerialNumber", 0, &vtProp, 0, 0);
-        diskSerial = geode::utils::string::wideToUtf8(vtProp.bstrVal);
+        if (diskSerial.empty()) diskSerial = geode::utils::string::wideToUtf8(vtProp.bstrVal);
         log::debug("Serial: {}", diskSerial);
 
         VariantClear(&vtProp);
@@ -207,8 +207,6 @@ Result<UniqueIdent> util::misc::fingerprintImpl() {
             finalString += "-" + guid;
         }
     }
-
-    log::debug("Final pre-hash string: {}", finalString);
 
     auto hashed = util::crypto::simpleHash(finalString);
     std::array<uint8_t, 32> arr;

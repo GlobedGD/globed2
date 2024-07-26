@@ -12,6 +12,7 @@ Result<UniqueIdent> util::misc::fingerprintImpl() {
     constexpr static auto tryKeys = {
         "ro.serialno",
         "ro.boot.serialno",
+        "ro.boot.cpuid",
         "ro.build.fingerprint",
         "ro.product.build.fingerprint",
         "ro.system.build.id"
@@ -24,8 +25,6 @@ Result<UniqueIdent> util::misc::fingerprintImpl() {
     if (value[0] == '\0') {
         return Err("getprop failed");
     }
-
-    log::debug("Fingerprint: {}", value);
 
     auto hashed = util::crypto::simpleHash(fmt::format("{}-{}", value, Mod::get()->getID()));
     std::array<uint8_t, 32> arr;
