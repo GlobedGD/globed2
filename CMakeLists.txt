@@ -197,9 +197,9 @@ else()
     target_link_libraries(${PROJECT_NAME} sodium opus)
 endif()
 
-# Windows - link to winsock
+# Windows - link to winsock and wmi
 if (WIN32)
-    target_link_libraries(${PROJECT_NAME} ws2_32)
+    target_link_libraries(${PROJECT_NAME} ws2_32 wbemuuid)
 endif()
 
 # link to libcurl

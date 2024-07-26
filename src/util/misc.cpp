@@ -5,6 +5,7 @@
 #include <asp/sync.hpp>
 #include <util/simd.hpp>
 #include <util/lowlevel.hpp>
+#include <util/crypto.hpp>
 
 namespace util::misc {
     bool swapFlag(bool& target) {
@@ -60,29 +61,6 @@ namespace util::misc {
         return levelId > bound;
     }
 
-    int getIconWithType(const PlayerIconData& data, PlayerIconType type) {
-        int newIcon = data.cube;
-
-        switch (type) {
-            case PlayerIconType::Cube: newIcon = data.cube; break;
-            case PlayerIconType::Ship: newIcon = data.ship; break;
-            case PlayerIconType::Ball: newIcon = data.ball; break;
-            case PlayerIconType::Ufo: newIcon = data.ufo; break;
-            case PlayerIconType::Wave: newIcon = data.wave; break;
-            case PlayerIconType::Robot: newIcon = data.robot; break;
-            case PlayerIconType::Spider: newIcon = data.spider; break;
-            case PlayerIconType::Swing: newIcon = data.swing; break;
-            case PlayerIconType::Jetpack: newIcon = data.jetpack; break;
-            default: newIcon = data.cube; break;
-        };
-
-        return newIcon;
-    }
-
-    int getIconWithType(const PlayerIconData& data, IconType type) {
-        return getIconWithType(data, globed::into<PlayerIconType>(type));
-    }
-
     ScopeGuard::~ScopeGuard() {
         f();
     }
@@ -93,5 +71,37 @@ namespace util::misc {
 
     ScopeGuard scopeDestructor(std::function<void()>&& f) {
         return ScopeGuard(std::move(f));
+    }
+
+    UniqueIdent::operator std::string() {
+        return this->getString();
+    }
+
+    std::array<uint8_t, 32> UniqueIdent::getRaw() {
+        return rawForm;
+    }
+
+    std::string UniqueIdent::getString() {
+        return util::crypto::hexEncode(rawForm.data(), rawForm.size());
+    }
+
+    UniqueIdent fingerprint() {
+        static auto fingerprint = []{
+            auto res = fingerprintImpl();
+
+            if (!res) {
+                log::error("Failed to compute fingerprint: {}", res.unwrapErr());
+
+                // use a static predetermined value
+                auto data = util::crypto::hexDecode("fecc8b3da5e8ed1b9dcd66f6213b6f891416c4c5f957a4a6d0c7fef540a5f05b");
+                std::array<uint8_t, 32> arr;
+                std::copy_n(data.begin(), 32, arr.begin());
+
+                return UniqueIdent(arr);
+            }
+
+            return res.unwrap();
+        }();
+        return fingerprint;
     }
 }

@@ -3,7 +3,7 @@
 #include "remote_player.hpp"
 #include <hooks/game_manager.hpp>
 #include <managers/settings.hpp>
-#include <util/misc.hpp>
+#include <util/gd.hpp>
 #include <util/rng.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
@@ -339,7 +339,7 @@ void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
         this->callToggleWith(newType, true, false);
     }
 
-    this->callUpdateWith(newType, util::misc::getIconWithType(icons, newType));
+    this->callUpdateWith(newType, util::gd::getIconWithType(icons, newType));
 }
 
 void ComplexVisualPlayer::playDeathEffect() {
@@ -694,7 +694,7 @@ void ComplexVisualPlayer::tryLoadIconsAsync() {
     auto* sfCache = CCSpriteFrameCache::sharedSpriteFrameCache();
 
     for (auto type = PlayerIconType::Cube; type <= PlayerIconType::Jetpack; type = (PlayerIconType)((int)type + 1)) {
-        auto iconId = util::misc::getIconWithType(storedIcons, type);
+        auto iconId = util::gd::getIconWithType(storedIcons, type);
         std::string sheetName = gm->sheetNameForIcon(storedIcons.cube, (int)IconType::Cube);
 
         if (!sheetName.empty()) {

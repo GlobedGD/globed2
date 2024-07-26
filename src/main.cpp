@@ -125,4 +125,8 @@ void printDebugInfo() {
 #endif
     log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
     log::info("Libsodium version: {} (CryptoBox algorithm: {})", CryptoBox::sodiumVersion(), CryptoBox::algorithm());
+
+#ifdef GLOBED_DEBUG
+    log::info("Fingerprint: {}", util::misc::fingerprint().getString());
+#endif
 }

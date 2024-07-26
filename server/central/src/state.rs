@@ -88,7 +88,7 @@ impl ServerStateData {
         account_id: i32,
         user_id: i32,
         account_name: &str,
-        user_ip: IpAddr,
+        ip_address: IpAddr,
         current_time: SystemTime,
     ) -> anyhow::Result<String> {
         let answer: String = rand::thread_rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect();
@@ -123,7 +123,7 @@ impl ServerStateData {
             name: account_name.to_owned(),
         };
 
-        self.active_challenges.insert(user_ip, challenge);
+        self.active_challenges.insert(ip_address, challenge);
 
         Ok(challenge_str)
     }

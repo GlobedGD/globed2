@@ -55,8 +55,9 @@ pub mod routes {
             auth_v2::challenge_verify,
             featured::current,
             featured::history,
-            featured::historyv2,
+            featured::history_v2,
             featured::replace,
+            featured::replace_v2,
             public::player_counts,
         ]
     }

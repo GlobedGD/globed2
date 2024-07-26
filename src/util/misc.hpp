@@ -76,9 +76,6 @@ namespace util::misc {
 
     bool isEditorCollabLevel(LevelId levelId);
 
-    int getIconWithType(const PlayerIconData& data, PlayerIconType type);
-    int getIconWithType(const PlayerIconData& data, IconType type);
-
     class ScopeGuard {
     public:
         ScopeGuard(const std::function<void()>& f) : f(f) {}
@@ -92,4 +89,23 @@ namespace util::misc {
 
     ScopeGuard scopeDestructor(const std::function<void()>& f);
     ScopeGuard scopeDestructor(std::function<void()>&& f);
+
+    class UniqueIdent {
+    public:
+        UniqueIdent(std::array<uint8_t, 32> data) : rawForm(data) {}
+
+        operator std::string();
+        std::array<uint8_t, 32> getRaw();
+        std::string getString();
+
+    private:
+        std::array<uint8_t, 32> rawForm;
+    };
+
+    // Generates an identifier that should be unique per any possible device.
+    UniqueIdent fingerprint();
+    Result<UniqueIdent> fingerprintImpl(); // different definition per platform.
+
+    // If you are reading this, feel free to trace all usages of this function.
+    // The fingerprint is never sent anywhere, and is only used for local encryption.
 }

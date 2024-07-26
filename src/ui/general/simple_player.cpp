@@ -1,5 +1,7 @@
 #include "simple_player.hpp"
 
+#include <util/gd.hpp>
+
 using namespace geode::prelude;
 
 bool GlobedSimplePlayer::init(const Icons& icons) {
@@ -54,7 +56,7 @@ GlobedSimplePlayer* GlobedSimplePlayer::create(const Icons& icons) {
 GlobedSimplePlayer* GlobedSimplePlayer::create(IconType type, const PlayerIconData& icons) {
     return create(Icons(
         type,
-        util::misc::getIconWithType(icons, type),
+        util::gd::getIconWithType(icons, type),
         icons.color1,
         icons.color2,
         icons.glowColor == NO_GLOW ? -1 : (int)icons.glowColor

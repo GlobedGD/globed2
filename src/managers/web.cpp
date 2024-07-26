@@ -125,14 +125,19 @@ RequestTask WebRequestManager::fetchFeaturedLevelHistory(int page) {
 }
 
 RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty) {
-    return this->post(makeCentralUrl("flevel/replace"), 5, [&](CurlRequest& req) {
-        req.param("newlevel", levelId);
-        req.param("rate_tier", rateTier);
-        req.param("aid", GlobedAccountManager::get().gdData.lock()->accountId);
-        req.param("adminpwd", GlobedAccountManager::get().getTempAdminPassword());
-        req.param("levelname", levelName);
-        req.param("levelauthor", levelAuthor);
-        req.param("difficulty", difficulty);
+    return this->post(makeCentralUrl("v2/flevel/replace"), 5, [&](CurlRequest& req) {
+        matjson::Object data = {
+            {"level_id", levelId},
+            {"rate_tier", rateTier},
+            {"account_id", GlobedAccountManager::get().gdData.lock()->accountId},
+            {"admin_password", GlobedAccountManager::get().getTempAdminPassword()},
+            {"level_name", std::string(levelName)},
+            {"level_author", std::string(levelAuthor)},
+            {"difficulty", difficulty}
+        };
+
+        req.bodyJSON(data);
+        req.encrypted(true);
     });
 }
 
