@@ -70,3 +70,32 @@ ComputedRole RoleManager::compute(const std::vector<std::string>& roles) {
 
     return this->compute(out);
 }
+
+std::vector<std::string> RoleManager::createRoleArray(const std::vector<uint8_t>& roles) {
+    auto vector = std::vector<std::string>();
+    
+    for (auto& roleid : roles) {
+        auto it = std::find_if(allRoles.begin(), allRoles.end(), [&](auto& role) { return role.intId == roleid; });
+        if (it == allRoles.end()) continue;
+
+        auto& role = it->role;
+
+        vector.push_back(role.badgeIcon);
+    }
+
+    return vector;
+}
+
+std::vector<std::string> RoleManager::createRoleArray(const std::vector<std::string>& roles) {
+    std::vector<uint8_t> out;
+    out.reserve(roles.size());
+
+    for (const auto& key : roles) {
+        auto it = std::find_if(allRoles.begin(), allRoles.end(), [&](auto& role) { return role.role.id == key; });
+        if (it == allRoles.end()) continue;
+
+        out.push_back(it->intId);
+    }
+
+    return this->createRoleArray(out);
+}

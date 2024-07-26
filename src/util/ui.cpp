@@ -1,4 +1,5 @@
 #include "ui.hpp"
+#include "Geode/cocos/menu_nodes/CCMenu.h"
 
 #include <hooks/game_manager.hpp>
 #include <data/types/admin.hpp>
@@ -226,6 +227,25 @@ namespace util::ui {
         return spr1;
     }
 
+    CCMenu* createBadgeMenu(std::vector<std::string> roleVector) {
+        if (roleVector.empty()) return nullptr;
+
+        CCMenu* menu = CCMenu::create();
+        menu->setLayout(RowLayout::create()
+        ->setGap(5.f)
+        ->setAxisAlignment(AxisAlignment::Start)
+        );
+        menu->setScale(0.5f); //workaround
+        
+        for (std::string roleString : roleVector) {
+            auto badge = createBadge(roleString);
+            menu->addChild(badge);
+        }
+
+        menu->updateLayout();
+        return menu;
+    }
+
     static ComputedRole compute(const SpecialUserData& data) {
         return RoleManager::get().compute(data.roles.value());
     }
@@ -245,6 +265,18 @@ namespace util::ui {
 
         return createBadge(compute(data).badgeIcon);
     }
+
+    // CCMenu* createBadgeMenuIfSpecial(const SpecialUserData& data) {
+    //     if (!data.roles) return nullptr;
+
+    //     return createBadgeMenu(RoleManager::get().createRoleArray(data.roles.value()));
+    // }
+
+    // CCMenu* createBadgeMenuIfSpecial(const UserEntry& data) {
+    //     if (data.userRoles.empty()) return nullptr;
+
+    //     return createBadgeMenu(RoleManager::get().createRoleArray(data.userRoles));
+    // }
 
     ccColor3B getNameColor(const SpecialUserData& data) {
         if (!data.roles) return ccc3(255, 255, 255);

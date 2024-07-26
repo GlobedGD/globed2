@@ -4,6 +4,7 @@
 #include "room_listing_popup.hpp"
 #include <ui/general/simple_player.hpp>
 #include <net/manager.hpp>
+#include <managers/role.hpp>
 #include <util/ui.hpp>
 #include <util/gd.hpp>
 
@@ -64,12 +65,27 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .id("playername")
         .zOrder(2)
         .collect();
-
+    
     CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(rli.owner.specialUserData);
     if (badgeIcon) {
         util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE_SMALL);
         badgeIcon->setZOrder(1);
         playerBundle->addChild(badgeIcon);
+    }
+
+    // badge with s
+    if (rli.owner.specialUserData.roles) {
+        std::vector<std::string> badgeVector = RoleManager::get().createRoleArray(rli.owner.specialUserData.roles.value());
+        if (!badgeVector.empty()) {
+            for (std::string spr : badgeVector) {
+                auto badge = util::ui::createBadge(spr);
+                if (badge) {
+                    util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
+                    badge->setZOrder(1);
+                    playerBundle->addChild(badge);
+                }
+            }
+        }
     }
 
     auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(RoomListingCell::onUser))
