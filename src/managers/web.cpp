@@ -40,7 +40,7 @@ static RequestTask mapTask(CurlManager::Task&& param) {
 RequestTask WebRequestManager::requestAuthToken() {
     auto& gam = GlobedAccountManager::get();
 
-    auto authkey = gam.getAuthKey();
+    auto authkey = gam.getAuthKey().value_or("");
     auto gdData = gam.gdData.lock();
 
     return this->post(makeCentralUrl("v2/totplogin"), 5, [&](CurlRequest& req) {
@@ -53,9 +53,7 @@ RequestTask WebRequestManager::requestAuthToken() {
         obj["account_data"] = accdata;
 
         // recode as urlsafe
-        // honestly i dont remember why this is needed anymore but its almost midnight and im so tired and i just wanna go to sleep but it  didnt work without this
-        auto key = util::crypto::base64Encode(util::crypto::base64Decode(authkey), util::crypto::Base64Variant::URLSAFE);
-        obj["authkey"] = key;
+        obj["authkey"] = authkey;
 
         req.bodyJSON(obj);
         req.encrypted(true);

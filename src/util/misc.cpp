@@ -73,19 +73,19 @@ namespace util::misc {
         return ScopeGuard(std::move(f));
     }
 
-    UniqueIdent::operator std::string() {
+    UniqueIdent::operator std::string() const {
         return this->getString();
     }
 
-    std::array<uint8_t, 32> UniqueIdent::getRaw() {
+    std::array<uint8_t, 32> UniqueIdent::getRaw() const {
         return rawForm;
     }
 
-    std::string UniqueIdent::getString() {
+    std::string UniqueIdent::getString() const {
         return util::crypto::hexEncode(rawForm.data(), rawForm.size());
     }
 
-    UniqueIdent fingerprint() {
+    const UniqueIdent& fingerprint() {
         static auto fingerprint = []{
             auto res = fingerprintImpl();
 

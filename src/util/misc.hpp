@@ -94,16 +94,16 @@ namespace util::misc {
     public:
         UniqueIdent(std::array<uint8_t, 32> data) : rawForm(data) {}
 
-        operator std::string();
-        std::array<uint8_t, 32> getRaw();
-        std::string getString();
+        operator std::string() const;
+        std::array<uint8_t, 32> getRaw() const;
+        std::string getString() const;
 
     private:
         std::array<uint8_t, 32> rawForm;
     };
 
     // Generates an identifier that should be unique per any possible device.
-    UniqueIdent fingerprint();
+    const UniqueIdent& fingerprint();
     Result<UniqueIdent> fingerprintImpl(); // different definition per platform.
 
     // If you are reading this, feel free to trace all usages of this function.

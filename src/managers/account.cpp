@@ -7,6 +7,7 @@
 #include <managers/game_server.hpp>
 #include <util/crypto.hpp>
 #include <util/format.hpp>
+#include <util/misc.hpp>
 #include <util/net.hpp>
 
 using namespace geode::prelude;
@@ -23,8 +24,14 @@ void GlobedAccountManager::initialize(const std::string_view name, int accountId
     };
 
     *gdData.lock() = data;
+
     auto cryptoKey = util::crypto::hexDecode(data.precomputedHash);
-    cryptoBox = std::make_unique<SecretBox>(cryptoKey);
+
+    // append the per-device fingerprint
+    auto fp = util::misc::fingerprint().getRaw();
+    cryptoKey.insert(cryptoKey.end(), fp.begin(), fp.end());
+
+    cryptoBox = std::make_unique<SecretBox>(util::crypto::simpleHash(cryptoKey));
 
     initialized = true;
 }
@@ -46,7 +53,8 @@ void GlobedAccountManager::autoInitialize() {
 void GlobedAccountManager::storeAuthKey(const util::data::byte* source, size_t size) {
     GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::storeAuthKey before initializing the instance")
 
-    auto encoded = util::crypto::base64Encode(source, size);
+    auto encrypted = cryptoBox->encrypt(source, size);
+    auto encoded = util::crypto::base64Encode(encrypted);
 
     Mod::get()->setSavedValue(this->getKeyFor("auth-totp-key"), encoded);
 }
@@ -66,14 +74,36 @@ bool GlobedAccountManager::hasAuthKey() {
 
     auto jsonkey = this->getKeyFor("auth-totp-key");
     auto b64Token = Mod::get()->getSavedValue<std::string>(jsonkey);
-    return !b64Token.empty();
+
+    if (b64Token.empty()) {
+        return false;
+    }
+
+    try {
+        cryptoBox->decrypt(util::crypto::base64Decode(b64Token));
+        return true;
+    } catch (const std::exception& e) {}
+
+    return false;
 }
 
-std::string GlobedAccountManager::getAuthKey() {
+std::optional<std::string> GlobedAccountManager::getAuthKey() {
     GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::getAuthKey before initializing the instance")
 
     auto jsonkey = this->getKeyFor("auth-totp-key");
-    return Mod::get()->getSavedValue<std::string>(jsonkey);
+    auto encoded = Mod::get()->getSavedValue<std::string>(jsonkey);
+
+    if (encoded.empty()) {
+        return std::nullopt;
+    }
+
+    try {
+        auto decrypted = cryptoBox->decrypt(util::crypto::base64Decode(encoded));
+        return util::crypto::base64Encode(decrypted, util::crypto::Base64Variant::URLSAFE);
+    } catch (const std::exception& e) {
+        log::warn("Failed to load authkey: {}", e.what());
+        return std::nullopt;
+    }
 }
 
 void GlobedAccountManager::requestAuthToken(std::optional<std::function<void()>> callback) {

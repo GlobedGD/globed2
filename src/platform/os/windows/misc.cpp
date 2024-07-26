@@ -188,7 +188,6 @@ Result<UniqueIdent> util::misc::fingerprintImpl() {
 
         hr = clsobj->Get(L"SerialNumber", 0, &vtProp, 0, 0);
         if (diskSerial.empty()) diskSerial = geode::utils::string::wideToUtf8(vtProp.bstrVal);
-        log::debug("Serial: {}", diskSerial);
 
         VariantClear(&vtProp);
 

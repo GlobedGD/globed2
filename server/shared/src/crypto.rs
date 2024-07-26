@@ -113,8 +113,6 @@ impl CryptoBox {
 
         let plaintext_len = data.len() - ciphertext_start;
 
-        println!("nonce: {nonce:?}, mac: {mac:?}, data: {:?}", &data[..plaintext_len]);
-
         // decrypt
         match run_thing!(self, b, b.decrypt_in_place_detached(&nonce, b"", &mut data[..plaintext_len], &mac)) {
             Ok(()) => Ok(plaintext_len),
