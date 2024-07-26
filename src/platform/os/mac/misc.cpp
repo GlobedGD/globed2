@@ -4,7 +4,7 @@
 #include <util/crypto.hpp>
 
 #include <CoreFoundation/CoreFoundation.h>
-#include <IOKit/IOKitLab.h>
+#include <IOKit/IOKitLib.h>
 
 using util::misc::UniqueIdent;
 
