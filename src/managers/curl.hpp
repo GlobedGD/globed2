@@ -66,7 +66,7 @@ public:
     using Task = geode::Task<CurlResponse>;
 
     const char* getCurlVersion();
-    Task send(const CurlRequest& req);
+    Task send(CurlRequest& req);
 
 private:
 };
@@ -101,6 +101,7 @@ struct CurlRequest {
     CurlRequest& patch(std::string_view url);
     CurlRequest& delete_(std::string_view url);
     CurlRequest& customMethod(std::string_view url, std::string_view method);
+    CurlRequest& encrypted(bool enc);
 
     CurlManager::Task send();
 

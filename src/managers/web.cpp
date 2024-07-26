@@ -43,15 +43,60 @@ RequestTask WebRequestManager::requestAuthToken() {
     auto authkey = gam.getAuthKey();
     auto gdData = gam.gdData.lock();
 
-    return this->post(makeCentralUrl("totplogin"), 5, [&](CurlRequest& req) {
-        req.param("aid", gdData->accountId);
-        req.param("uid", gdData->userId);
-        req.param("aname", gdData->accountName);
+    return this->post(makeCentralUrl("v2/totplogin"), 5, [&](CurlRequest& req) {
+        matjson::Object accdata;
+        accdata["account_id"] = gdData->accountId;
+        accdata["user_id"] = gdData->userId;
+        accdata["username"] = gdData->accountName;
+
+        matjson::Object obj;
+        obj["account_data"] = accdata;
 
         // recode as urlsafe
         // honestly i dont remember why this is needed anymore but its almost midnight and im so tired and i just wanna go to sleep but it  didnt work without this
         auto key = util::crypto::base64Encode(util::crypto::base64Decode(authkey), util::crypto::Base64Variant::URLSAFE);
-        req.param("authkey", key);
+        obj["authkey"] = key;
+
+        req.bodyJSON(obj);
+        req.encrypted(true);
+        req.param("protocol", NetworkManager::get().getUsedProtocol());
+    });
+}
+
+RequestTask WebRequestManager::challengeStart() {
+    auto& gam = GlobedAccountManager::get();
+
+    auto gdData = gam.gdData.lock();
+
+    return this->post(makeCentralUrl("v2/challenge/new"), 5, [&](CurlRequest& req) {
+        matjson::Object accdata;
+        accdata["account_id"] = gdData->accountId;
+        accdata["user_id"] = gdData->userId;
+        accdata["username"] = gdData->accountName;
+
+        req.bodyJSON(accdata);
+        req.encrypted(true);
+        req.param("protocol", NetworkManager::get().getUsedProtocol());
+    });
+}
+
+RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
+    auto& gam = GlobedAccountManager::get();
+
+    auto gdData = gam.gdData.lock();
+
+    return this->post(makeCentralUrl("v2/challenge/verify"), 30, [&](CurlRequest& req) {
+        matjson::Object accdata;
+        accdata["account_id"] = gdData->accountId;
+        accdata["user_id"] = gdData->userId;
+        accdata["username"] = gdData->accountName;
+
+        matjson::Object obj;
+        obj["account_data"] = accdata;
+        obj["answer"] = std::string(authcode);
+
+        req.bodyJSON(obj);
+        req.encrypted(true);
     });
 }
 
@@ -88,32 +133,6 @@ RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::
         req.param("levelname", levelName);
         req.param("levelauthor", levelAuthor);
         req.param("difficulty", difficulty);
-    });
-}
-
-RequestTask WebRequestManager::challengeStart() {
-    auto& gam = GlobedAccountManager::get();
-
-    auto gdData = gam.gdData.lock();
-
-    return this->post(makeCentralUrl("challenge/new"), 5, [&](CurlRequest& req) {
-        req.param("aid", gdData->accountId);
-        req.param("uid", gdData->userId);
-        req.param("aname", gdData->accountName);
-        req.param("protocol", NetworkManager::get().getUsedProtocol());
-    });
-}
-
-RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
-    auto& gam = GlobedAccountManager::get();
-
-    auto gdData = gam.gdData.lock();
-
-    return this->post(makeCentralUrl("challenge/verify"), 30, [&](CurlRequest& req) {
-        req.param("aid", gdData->accountId);
-        req.param("uid", gdData->userId);
-        req.param("aname", gdData->accountName);
-        req.param("answer", authcode);
     });
 }
 

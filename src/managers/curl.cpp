@@ -5,8 +5,13 @@
 
 #include <ca_bundle.h>
 
+#include <util/crypto.hpp>
 #include <util/format.hpp>
 #include <util/net.hpp>
+#include <crypto/chacha_secret_box.hpp>
+
+constexpr static auto KEY = "bff252d2731a6c6ca26d7f5144bc750fd6723316619f86c8636ebdc13bf3214c";
+static ChaChaSecretBox g_box(util::crypto::hexDecode(KEY));
 
 struct CurlRequest::Data {
     std::string m_method;
@@ -17,6 +22,7 @@ struct CurlRequest::Data {
     std::vector<uint8_t> m_body;
     size_t m_timeout = 0;
     bool m_followRedirects = true;
+    bool m_encrypt = false;
 };
 
 /* CurlManager */
@@ -25,8 +31,10 @@ const char* CurlManager::getCurlVersion() {
     return curl_version_info(CURLVERSION_NOW)->version;
 }
 
-CurlManager::Task CurlManager::send(const CurlRequest& req) {
-    return Task::run([data = req.m_data](auto, auto hasBeenCancelled) -> Task::Result {
+CurlManager::Task CurlManager::send(CurlRequest& req) {
+    GLOBED_REQUIRE(req.m_data, "attempting to send the same CurlRequest twice");
+
+    return Task::run([data = std::move(req.m_data)](auto, auto hasBeenCancelled) -> Task::Result {
         // init curl
         auto curl = curl_easy_init();
         if (!curl) {
@@ -71,6 +79,13 @@ CurlManager::Task CurlManager::send(const CurlRequest& req) {
             } else {
                 curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, data->m_method.c_str());
             }
+        }
+
+        // transform body if needed
+        if (data->m_encrypt && !data->m_body.empty()) {
+            size_t plainSize = data->m_body.size();
+            data->m_body.resize(plainSize + g_box.prefixLength());
+            g_box.encryptInPlace(data->m_body.data(), plainSize);
         }
 
         // set body
@@ -253,6 +268,11 @@ CurlRequest& CurlRequest::delete_(std::string_view url) {
 CurlRequest& CurlRequest::customMethod(std::string_view url, std::string_view method) {
     m_data->m_method = method;
     m_data->m_url = url;
+    return *this;
+}
+
+CurlRequest& CurlRequest::encrypted(bool enc) {
+    m_data->m_encrypt = enc;
     return *this;
 }
 

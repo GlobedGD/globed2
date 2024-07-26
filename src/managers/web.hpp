@@ -16,14 +16,15 @@ public:
     using SingletonBase::get;
 
     Task requestAuthToken();
+    Task challengeStart();
+    Task challengeFinish(std::string_view authcode);
+
     Task testServer(std::string_view url);
     Task fetchCredits();
     Task fetchServers();
     Task fetchFeaturedLevel();
     Task fetchFeaturedLevelHistory(int page);
     Task setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty);
-    Task challengeStart();
-    Task challengeFinish(std::string_view authcode);
 
 private:
     Task get(std::string_view url);

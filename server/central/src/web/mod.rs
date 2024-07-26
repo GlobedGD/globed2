@@ -1,8 +1,9 @@
-pub mod misc;
-use globed_shared::MIN_CLIENT_VERSION;
-pub use misc::*;
+pub mod guards;
+pub mod responders;
 
-use const_format::concatcp;
+pub use guards::*;
+pub use responders::*;
+
 use rocket::{catch, Request};
 
 #[catch(404)]
@@ -12,6 +13,9 @@ pub fn not_found(_req: &Request) -> &'static str {
 
 #[catch(422)]
 pub fn query_string(_req: &Request) -> &'static str {
+    use const_format::concatcp;
+    use globed_shared::MIN_CLIENT_VERSION;
+
     concatcp!(
         "Outdated Globed version, minimum required is ",
         MIN_CLIENT_VERSION,
@@ -21,12 +25,15 @@ pub fn query_string(_req: &Request) -> &'static str {
 
 pub mod routes {
     pub mod auth;
+    pub mod auth_v2;
     pub mod featured;
     pub mod game_server;
     pub mod meta;
     pub mod public;
 
     pub use super::*;
+    pub use crate::{db::GlobedDb, state::ServerState};
+    pub use rocket::{get, post, State};
     use rocket::{routes, Route};
 
     pub fn build_router() -> Vec<Route> {
@@ -43,6 +50,9 @@ pub mod routes {
             auth::totp_login,
             auth::challenge_start,
             auth::challenge_finish,
+            auth_v2::totp_login,
+            auth_v2::challenge_new,
+            auth_v2::challenge_verify,
             featured::current,
             featured::history,
             featured::historyv2,
@@ -54,7 +64,7 @@ pub mod routes {
     macro_rules! check_maintenance {
         ($ctx:expr) => {
             if $ctx.maintenance() {
-                return Err(crate::web::misc::MaintenanceResponder {
+                return Err(crate::web::MaintenanceResponder {
                     inner: "The server is currently under maintenance, please try connecting again later",
                 }
                 .into());

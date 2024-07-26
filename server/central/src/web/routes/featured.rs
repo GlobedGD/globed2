@@ -1,4 +1,4 @@
-use globed_shared::{debug, warn, webhook};
+use globed_shared::{warn, webhook};
 use rocket::{get, post, serde::json::Json, State};
 
 use crate::{
