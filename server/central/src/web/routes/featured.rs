@@ -81,20 +81,23 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
 
     // send a webhook message
     let url = state.config.featured_webhook_url.clone();
-    if let Err(e) = webhook::send_webhook_messages(
-        state.http_client.clone(),
-        &url,
-        &[webhook::WebhookMessage::LevelFeatured(
-            data.level_name.unwrap_or_else(|| "<unknown>".to_owned()),
-            data.level_id,
-            data.level_author.unwrap_or_else(|| "<unknown>".to_owned()),
-            data.difficulty.unwrap_or(0),
-            data.rate_tier,
-        )],
-    )
-    .await
-    {
-        warn!("error sending webhook message: {e:?}");
+
+    if !url.is_empty() {
+        if let Err(e) = webhook::send_webhook_messages(
+            state.http_client.clone(),
+            &url,
+            &[webhook::WebhookMessage::LevelFeatured(
+                data.level_name.unwrap_or_else(|| "<unknown>".to_owned()),
+                data.level_id,
+                data.level_author.unwrap_or_else(|| "<unknown>".to_owned()),
+                data.difficulty.unwrap_or(0),
+                data.rate_tier,
+            )],
+        )
+        .await
+        {
+            warn!("error sending webhook message: {e:?}");
+        }
     }
 
     Ok(())
