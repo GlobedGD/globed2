@@ -16,9 +16,9 @@ namespace util::format {
         auto micros = time::asMicros(time);
 
         if (seconds > 0) {
-            return std::to_string(seconds) + "." + std::to_string(millis % 1000) + "s";
+            return fmt::format("{}.{:03}s", seconds, millis % 1000);
         } else if (millis > 0) {
-            return std::to_string(millis) + "." + std::to_string(micros % 1000) + "ms";
+            return fmt::format("{}.{:03}ms", millis, micros % 1000);
         } else {
             return std::to_string(micros) + "μs";
         }
