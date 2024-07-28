@@ -24,8 +24,6 @@ void GlobedAccountManager::migrateOldValues() {
     std::vector<std::string> toErase;
 
     for (auto& [key, value] : container) {
-        log::debug("key: {}", key);
-
         std::string pfx;
         if (key.starts_with("stored-admin-pw-")) {
             pfx = "stored-admin-pw-";
@@ -42,7 +40,6 @@ void GlobedAccountManager::migrateOldValues() {
 
             SecretBox box(cryptoKey);
             auto adminPwd = value.as_string();
-            log::debug("Migrating {}", adminPwd);
 
             util::data::bytevector password;
             if (pfx == "stored-admin-pw-") {
@@ -78,7 +75,6 @@ void GlobedAccountManager::migrateOldValues() {
     }
 
     for (const auto& [key, value] : toPush) {
-        log::debug("Migrating {} to {}", key, value);
         container[key] = value;
     }
 }

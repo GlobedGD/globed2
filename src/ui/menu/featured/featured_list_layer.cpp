@@ -192,7 +192,6 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
 
     // guys we are about to do a funny
     for (auto* cell : CCArrayExt<GlobedLevelCell*>(listLayer->m_listView->m_tableView->m_contentLayer->getChildren())) {
-        // log::debug("rate tier: {}", levelToRateTier[cell->m_level->m_levelID]);
         cell->modifyToFeaturedCell(levelToRateTier[cell->m_level->m_levelID]);
         if (levelToRateTier.contains(cell->m_level->m_levelID)) {
             static_cast<GlobedLevelCell*>(cell)->m_fields->rateTier = levelToRateTier[cell->m_level->m_levelID];

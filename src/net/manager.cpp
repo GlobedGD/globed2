@@ -149,7 +149,6 @@ public:
 #ifdef GLOBED_DEBUG
                     log::debug("Unregistering listener {} (id {})", addr, id);
 #endif
-                    // log::debug("removing listener for {}", id);
                     listeners.erase(listeners.begin() + i);
                 }
             }

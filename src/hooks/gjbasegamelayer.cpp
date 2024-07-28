@@ -996,8 +996,6 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     m_objectLayer->addChild(rp);
     m_fields->players.emplace(playerId, rp);
     m_fields->interpolator->addPlayer(playerId);
-
-    // log::debug("Player joined: {}", playerId);
 }
 
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
@@ -1012,8 +1010,6 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     m_fields->players.erase(playerId);
     m_fields->interpolator->removePlayer(playerId);
     m_fields->playerStore->removePlayer(playerId);
-
-    // log::debug("Player removed: {}", playerId);
 }
 
 bool GlobedGJBGL::established() {

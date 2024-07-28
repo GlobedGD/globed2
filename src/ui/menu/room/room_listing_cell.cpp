@@ -21,8 +21,6 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     if (!CCLayerColor::init())
         return false;
 
-    // log::debug("rli: {}", rli.id);
-
     this->parent = parent;
     this->playerCount = rli.playerCount;
     this->ownerData = rli.owner;

@@ -772,7 +772,7 @@ void ComplexVisualPlayer::cancelPlatformerJumpAnim() {
 }
 
 void ComplexVisualPlayer::enableTrail() {
-    log::debug("wave trail: {}", playerIcon->m_waveTrail);
+    // log::debug("wave trail: {}", playerIcon->m_waveTrail);
     // playerIcon->activateStreak();
 }
 
