@@ -73,4 +73,13 @@ namespace util::format {
     std::string urlEncode(const std::string_view str);
 
     std::vector<std::string_view> split(const std::string_view s, const std::string_view sep);
+
+    // like python's partition
+    std::tuple<std::string_view, std::string_view, std::string_view> partition(std::string_view s, std::string_view sep);
+    std::tuple<std::string_view, std::string_view, std::string_view> rpartition(std::string_view s, std::string_view sep);
+
+    std::tuple<std::string_view, char, std::string_view> partition(std::string_view s, char sep);
+    std::tuple<std::string_view, char, std::string_view> rpartition(std::string_view s, char sep);
+
+    std::string replace(std::string_view input, std::string_view searched, std::string_view replacement);
 }

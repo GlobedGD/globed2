@@ -62,6 +62,8 @@ private:
     std::unique_ptr<SecretBox> cryptoBox;
     asp::Mutex<std::string> tempAdminPassword;
 
+    void migrateOldValues();
+
     void requestCallback(WebRequestManager::Task::Event* event);
     void cancelAuthTokenRequest();
 
