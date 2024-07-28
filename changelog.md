@@ -4,6 +4,7 @@
 * \-- You can return to the old behavior by disabling the "Rotate names" setting
 * \-- Thanks [TheSillyDoggp](https://github.com/TheSillyDoggo/) for implementing this!
 * Automatically block invites from users that you have blocked on GD
+* Remove Custom Keybinds dependency from Android
 * Fix rare crash when closing the globed menu too fast
 * Fix room name overlapping other UI elements in the room listing
 * Fix player count going up to 4 digits on android (and cap to 10000 instead of 65535)
