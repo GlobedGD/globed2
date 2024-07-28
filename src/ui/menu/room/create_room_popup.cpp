@@ -88,7 +88,7 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
         .intoNewChild(TextInput::create(POPUP_WIDTH * 0.25f, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setFilter(std::string(util::misc::STRING_DIGITS));
-            input->setMaxCharCount(5);
+            input->setMaxCharCount(6);
         })
         .store(playerLimitInput)
         .intoParent()
@@ -116,12 +116,12 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
 
                     roomName = util::format::trim(roomName);
 
-                    // parse as a 32-bit int but cap at 2^16
-                    // this is so that if a user inputs a number like 99999 (doesnt fit into ushort),
-                    // instead of making it 0, it makes it 65535 (max possible number)
+                    // parse as a 32-bit int but cap at 10000
+                    // this is so that if a user inputs a number like 99999 (doesnt fit),
+                    // instead of making it 0, it makes it 10000
 
                     uint32_t playerCount = util::format::parse<uint32_t>(playerLimitInput->getString()).value_or(0);
-                    playerCount = util::math::min(playerCount, std::numeric_limits<uint16_t>::max());
+                    playerCount = util::math::min(playerCount, 10000);
 
                     NetworkManager::get().send(CreateRoomPacket::create(roomName, passwordInput->getString(), RoomSettings {
                         settingFlags, static_cast<uint16_t>(playerCount)

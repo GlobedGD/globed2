@@ -597,7 +597,7 @@ void RoomLayer::onCopyRoomId(CCObject*) {
 
     utils::clipboard::write(std::to_string(id));
 
-    Notification::create("Copied to clipboard", NotificationIcon::Success)->show();
+    Notification::create("Copied room ID to clipboard", NotificationIcon::Success)->show();
 }
 
 RoomLayer* RoomLayer::create() {

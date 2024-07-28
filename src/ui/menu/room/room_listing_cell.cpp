@@ -137,12 +137,10 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .intoMenuItem([this, rli](auto) {
             if (rli.hasPassword) {
                 RoomPasswordPopup::create(rli.id)->show();
-                this->parent->close();
                 return;
             }
 
             NetworkManager::get().send(JoinRoomPacket::create(rli.id, std::string_view("")));
-            this->parent->close();
         })
         .scaleMult(1.15f)
         .zOrder(btnorder::Join)

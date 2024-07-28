@@ -12,6 +12,12 @@ using namespace geode::prelude;
 bool RoomJoinPopup::setup() {
     this->setTitle("Join room");
 
+    auto& nm = NetworkManager::get();
+
+    if (!nm.established()) {
+        return false;
+    }
+
     float popupCenter = CCDirector::get()->getWinSize().width / 2;
 
     // room id hint
@@ -30,6 +36,8 @@ bool RoomJoinPopup::setup() {
 
     Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this](auto) {
+            if (this->awaitingResponse) return;
+
             std::string codestr = this->roomIdInput->getString();
             uint32_t code = util::format::parse<uint32_t>(codestr).value_or(0);
 
@@ -46,26 +54,35 @@ bool RoomJoinPopup::setup() {
             // test packet to check if pass needed (or just joining the room)
             NetworkManager::get().send(JoinRoomPacket::create(code, ""));
 
-            nm.addListener<RoomJoinFailedPacket>(this, [this, code](std::shared_ptr<RoomJoinFailedPacket> packet) {
-                if (packet->wasProtected) {
-                    Loader::get()->queueInMainThread([this, code] {
-                        RoomPasswordPopup::create(code)->show();
-                        this->onClose(nullptr);
-                    });
-                }
-            }, -10, true);
-
-            nm.addListener<RoomJoinedPacket>(this, [this](std::shared_ptr<RoomJoinedPacket> packet) {
-                this->onClose(nullptr);
-            });
-
-            //this->onClose(nullptr);
+            this->awaitingResponse = true;
+            this->attemptedJoinCode = code;
         })
         .id("join-btn"_spr)
         .intoNewParent(CCMenu::create())
         .id("join-btn-menu"_spr)
         .pos(popupCenter, 120.f)
         .parent(m_mainLayer);
+
+    nm.addListener<RoomJoinFailedPacket>(this, [this](std::shared_ptr<RoomJoinFailedPacket> packet) {
+        this->awaitingResponse = false;
+
+        if (packet->wasProtected) {
+            RoomPasswordPopup::create(this->attemptedJoinCode)->show();
+            this->onClose(nullptr);
+        } else {
+            std::string reason = "N/A";
+            if (packet->wasInvalid) reason = "Room doesn't exist";
+            if (packet->wasFull) reason = "Room is full";
+
+            ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
+        }
+    }, -10, true);
+
+    nm.addListener<RoomJoinedPacket>(this, [this](std::shared_ptr<RoomJoinedPacket> packet) {
+        this->awaitingResponse = false;
+
+        this->onClose(nullptr);
+    });
 
     return true;
 }
