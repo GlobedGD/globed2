@@ -1,3 +1,16 @@
+## v1.5.2
+
+* Fixed player names and status icons not rotating together with the camera (i.e. arrow trigger)
+* \-- You can return to the old behavior by disabling the "Rotate names" setting
+* \-- Thanks [TheSillyDoggp](https://github.com/TheSillyDoggo/) for implementing this!
+* Automatically block invites from users that you have blocked on GD
+* Fix rare crash when closing the globed menu too fast
+* Fix room name overlapping other UI elements in the room listing
+* Fix player count going up to 4 digits on android (and cap to 10000 instead of 65535)
+* Fix the room listing getting closed when trying to join a room, even if joining fails
+* Change max web request timeout to be 10 seconds in most places instead of 3 or 5 seconds
+* Various security improvements
+
 ## v1.5.1
 
 * Fix Globed not loading on Android due to missing Custom Keybinds dependency
