@@ -43,7 +43,7 @@ RequestTask WebRequestManager::requestAuthToken() {
     auto authkey = gam.getAuthKey().value_or("");
     auto gdData = gam.gdData.lock();
 
-    return this->post(makeCentralUrl("v2/totplogin"), 5, [&](CurlRequest& req) {
+    return this->post(makeCentralUrl("v2/totplogin"), 10, [&](CurlRequest& req) {
         matjson::Object accdata;
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
@@ -66,7 +66,7 @@ RequestTask WebRequestManager::challengeStart() {
 
     auto gdData = gam.gdData.lock();
 
-    return this->post(makeCentralUrl("v2/challenge/new"), 5, [&](CurlRequest& req) {
+    return this->post(makeCentralUrl("v2/challenge/new"), 10, [&](CurlRequest& req) {
         matjson::Object accdata;
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
@@ -107,7 +107,7 @@ RequestTask WebRequestManager::fetchCredits() {
 }
 
 RequestTask WebRequestManager::fetchServers() {
-    return this->get(makeCentralUrl("servers"), 3, [&](CurlRequest& req) {
+    return this->get(makeCentralUrl("servers"), 10, [&](CurlRequest& req) {
         req.param("protocol", NetworkManager::get().getUsedProtocol());
     });
 }
@@ -117,13 +117,13 @@ RequestTask WebRequestManager::fetchFeaturedLevel() {
 }
 
 RequestTask WebRequestManager::fetchFeaturedLevelHistory(int page) {
-    return this->get(makeCentralUrl("flevel/historyv2"), 5, [&](CurlRequest& req) {
+    return this->get(makeCentralUrl("flevel/historyv2"), 10, [&](CurlRequest& req) {
         req.param("page", page);
     });
 }
 
 RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty) {
-    return this->post(makeCentralUrl("v2/flevel/replace"), 5, [&](CurlRequest& req) {
+    return this->post(makeCentralUrl("v2/flevel/replace"), 10, [&](CurlRequest& req) {
         matjson::Object data = {
             {"level_id", levelId},
             {"rate_tier", rateTier},
@@ -140,7 +140,7 @@ RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::
 }
 
 RequestTask WebRequestManager::get(std::string_view url) {
-    return get(url, 5);
+    return get(url, 10);
 }
 
 RequestTask WebRequestManager::get(std::string_view url, int timeoutS) {
@@ -162,7 +162,7 @@ RequestTask WebRequestManager::get(std::string_view url, int timeoutS, std::func
 
 
 RequestTask WebRequestManager::post(std::string_view url) {
-    return post(url, 5);
+    return post(url, 10);
 }
 
 RequestTask WebRequestManager::post(std::string_view url, int timeoutS) {
