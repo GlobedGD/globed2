@@ -138,6 +138,9 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     PlayerData gatherPlayerData();
     PlayerMetadata gatherPlayerMetadata();
 
+    static cocos2d::CCPoint getCameraDirectionVector();
+    static float getCameraDirectionAngle();
+
     bool shouldLetMessageThrough(int playerId);
     void updateProximityVolume(int playerId);
 

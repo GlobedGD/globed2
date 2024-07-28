@@ -2,6 +2,7 @@
 
 #include "remote_player.hpp"
 #include <hooks/game_manager.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <managers/settings.hpp>
 #include <util/gd.hpp>
 #include <util/rng.hpp>
@@ -172,10 +173,8 @@ void ComplexVisualPlayer::updateData(
         this->cancelPlatformerJumpAnim();
     }
 
-    bool rotateNames = GlobedSettings::get().players.rotateNames;
-    float dir = GJBaseGameLayer::get() && rotateNames ? -GJBaseGameLayer::get()->m_gameState.m_cameraAngle : 0;
-    float rads = CC_DEGREES_TO_RADIANS(dir);
-    auto dirVec = CCPoint{sinf(rads), cosf(rads)};
+    auto dirVec = GlobedGJBGL::getCameraDirectionVector();
+    auto dir = GlobedGJBGL::getCameraDirectionAngle();
 
     // set the pos for status icons and name (ask rob not me)
     nameLabel->setPosition(data.position + dirVec * CCPoint{25.f, 25.f});
