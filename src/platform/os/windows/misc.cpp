@@ -49,34 +49,7 @@ static std::string getMachineGuid() {
     return std::string(data, data + dataSize - 1);
 }
 
-// thanks to Prevter - https://github.com/Prevter/BetterCrashlogs/blob/bf6ae0056cdfed6fc9ec3612387c1751d6807707/src/utils/hwinfo.cpp#L62
-static std::string getCPUName() {
-    std::array<int, 4> integerBuffer = {};
-    constexpr size_t sizeofIntegerBuffer = sizeof(int) * integerBuffer.size();
-
-    std::array<char, 64> charBuffer = {};
-    constexpr std::array<int, 4> functionIds = {
-        static_cast<int>(0x8000'0002),
-        static_cast<int>(0x8000'0003),
-        static_cast<int>(0x8000'0004)
-    };
-
-    std::string cpu;
-
-    for (auto& id : functionIds) {
-        __cpuid(integerBuffer.data(), id);
-        std::memcpy(charBuffer.data(), integerBuffer.data(), sizeofIntegerBuffer);
-        cpu += std::string(charBuffer.data());
-    }
-
-    cpu.erase(std::find_if(cpu.rbegin(), cpu.rend(), [](int ch) {
-        return !std::isspace(ch);
-    }).base(), cpu.end());
-
-    return cpu;
-}
-
-Result<UniqueIdent> util::misc::fingerprintImpl() {
+static Result<std::string> getWMIUniqueIdent() {
     HRESULT hres;
     hres = CoInitializeEx(0, COINIT_MULTITHREADED);
 
@@ -196,15 +169,56 @@ Result<UniqueIdent> util::misc::fingerprintImpl() {
 
     enumerator->Release();
 
+    if (diskSerial.empty()) {
+        return Err("no disks");
+    }
+
+    return Ok(diskSerial);
+}
+
+// thanks to Prevter - https://github.com/Prevter/BetterCrashlogs/blob/bf6ae0056cdfed6fc9ec3612387c1751d6807707/src/utils/hwinfo.cpp#L62
+static std::string getCPUName() {
+    std::array<int, 4> integerBuffer = {};
+    constexpr size_t sizeofIntegerBuffer = sizeof(int) * integerBuffer.size();
+
+    std::array<char, 64> charBuffer = {};
+    constexpr std::array<int, 4> functionIds = {
+        static_cast<int>(0x8000'0002),
+        static_cast<int>(0x8000'0003),
+        static_cast<int>(0x8000'0004)
+    };
+
+    std::string cpu;
+
+    for (auto& id : functionIds) {
+        __cpuid(integerBuffer.data(), id);
+        std::memcpy(charBuffer.data(), integerBuffer.data(), sizeofIntegerBuffer);
+        cpu += std::string(charBuffer.data());
+    }
+
+    cpu.erase(std::find_if(cpu.rbegin(), cpu.rend(), [](int ch) {
+        return !std::isspace(ch);
+    }).base(), cpu.end());
+
+    return cpu;
+}
+
+Result<UniqueIdent> util::misc::fingerprintImpl() {
     std::string cpuName = getCPUName();
+    std::string guid = getMachineGuid();
+    std::string finalString;
 
-    std::string finalString = fmt::format("{}-{}-{}", diskSerial, cpuName, Mod::get()->getID());
+    auto res = getWMIUniqueIdent();
 
-    if (isWine()) {
-        auto guid = getMachineGuid();
-        if (!guid.empty()) {
-            finalString += "-" + guid;
+    if (res) {
+        finalString = fmt::format("{}-{}-{}", res.unwrap(), cpuName, Mod::get()->getID());
+
+        if (isWine()) {
+            finalString += "-" + guid; // bc wmi ident isnt unique enough
         }
+    } else {
+        log::warn("Failed to query WMI: {}", res.unwrapErr());
+        finalString = fmt::format("{}-{}-{}", cpuName, Mod::get()->getID(), guid);
     }
 
     auto hashed = util::crypto::simpleHash(finalString);
