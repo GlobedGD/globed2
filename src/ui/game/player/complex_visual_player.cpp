@@ -172,11 +172,18 @@ void ComplexVisualPlayer::updateData(
         this->cancelPlatformerJumpAnim();
     }
 
+    bool rotateNames = GlobedSettings::get().players.rotateNames;
+    float dir = GJBaseGameLayer::get() && rotateNames ? -GJBaseGameLayer::get()->m_gameState.m_cameraAngle : 0;
+    float rads = CC_DEGREES_TO_RADIANS(dir);
+    auto dirVec = CCPoint{sinf(rads), cosf(rads)};
+
     // set the pos for status icons and name (ask rob not me)
-    nameLabel->setPosition(data.position + CCPoint{0.f, 25.f});
+    nameLabel->setPosition(data.position + dirVec * CCPoint{25.f, 25.f});
+    nameLabel->setRotation(dir);
 
     if (statusIcons) {
-        statusIcons->setPosition(data.position + CCPoint{0.f, nameLabel->isVisible() ? 40.f : 25.f});
+        statusIcons->setPosition(data.position + dirVec * CCPoint{nameLabel->isVisible() ? 40.f : 25.f, nameLabel->isVisible() ? 40.f : 25.f});
+        statusIcons->setRotation(dir);
     }
 
     if (!playerData.isDead && playerIcon->getOpacity() == 0) {
