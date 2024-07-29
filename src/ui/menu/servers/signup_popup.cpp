@@ -44,8 +44,8 @@ void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event)
 
     auto evalue = std::move(*event->getValue());
 
-    if (evalue.isErr()) {
-        std::string message = util::format::webError(evalue.unwrapErr());
+    if (!evalue.ok()) {
+        std::string message = evalue.getError();
 
         log::warn("error creating challenge");
         log::warn("{}", message);
@@ -55,7 +55,7 @@ void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event)
         return;
     }
 
-    auto resptext = evalue.unwrap();
+    auto resptext = evalue.text().unwrapOrDefault();
 
     auto parts = util::format::split(resptext, ":");
     if (parts.size() != 3) {
@@ -132,19 +132,17 @@ void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event)
 
     auto evalue = std::move(*event->getValue());
 
-    if (evalue.isErr()) {
-        auto error = evalue.unwrapErr();
-        if (error.code == 401) {
-            this->onFailure(fmt::format("Account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>{}</c>", error.message));
+    if (!evalue.ok()) {
+        if (evalue.getCode() == 401) {
+            this->onFailure(fmt::format("Account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>{}</c>", evalue.text().unwrapOrDefault()));
             return;
         }
 
-        std::string message = util::format::webError(evalue.unwrapErr());
-        this->onFailure(message);
+        this->onFailure(evalue.getError());
         return;
     }
 
-    auto response = evalue.unwrap();
+    auto response = evalue.text().unwrapOrDefault();
 
     // we are good! the authkey has been created and can be saved now.
     auto colonPos = response.find(':');

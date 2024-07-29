@@ -2,8 +2,9 @@
 
 #include "remote_player.hpp"
 #include <hooks/game_manager.hpp>
+#include <hooks/gjbasegamelayer.hpp>
 #include <managers/settings.hpp>
-#include <util/misc.hpp>
+#include <util/gd.hpp>
 #include <util/rng.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
@@ -172,11 +173,16 @@ void ComplexVisualPlayer::updateData(
         this->cancelPlatformerJumpAnim();
     }
 
+    auto dirVec = GlobedGJBGL::getCameraDirectionVector();
+    auto dir = GlobedGJBGL::getCameraDirectionAngle();
+
     // set the pos for status icons and name (ask rob not me)
-    nameLabel->setPosition(data.position + CCPoint{0.f, 25.f});
+    nameLabel->setPosition(data.position + dirVec * CCPoint{25.f, 25.f});
+    nameLabel->setRotation(dir);
 
     if (statusIcons) {
-        statusIcons->setPosition(data.position + CCPoint{0.f, nameLabel->isVisible() ? 40.f : 25.f});
+        statusIcons->setPosition(data.position + dirVec * CCPoint{nameLabel->isVisible() ? 40.f : 25.f, nameLabel->isVisible() ? 40.f : 25.f});
+        statusIcons->setRotation(dir);
     }
 
     if (!playerData.isDead && playerIcon->getOpacity() == 0) {
@@ -339,7 +345,7 @@ void ComplexVisualPlayer::updateIconType(PlayerIconType newType) {
         this->callToggleWith(newType, true, false);
     }
 
-    this->callUpdateWith(newType, util::misc::getIconWithType(icons, newType));
+    this->callUpdateWith(newType, util::gd::getIconWithType(icons, newType));
 }
 
 void ComplexVisualPlayer::playDeathEffect() {
@@ -694,7 +700,7 @@ void ComplexVisualPlayer::tryLoadIconsAsync() {
     auto* sfCache = CCSpriteFrameCache::sharedSpriteFrameCache();
 
     for (auto type = PlayerIconType::Cube; type <= PlayerIconType::Jetpack; type = (PlayerIconType)((int)type + 1)) {
-        auto iconId = util::misc::getIconWithType(storedIcons, type);
+        auto iconId = util::gd::getIconWithType(storedIcons, type);
         std::string sheetName = gm->sheetNameForIcon(storedIcons.cube, (int)IconType::Cube);
 
         if (!sheetName.empty()) {
@@ -766,7 +772,7 @@ void ComplexVisualPlayer::cancelPlatformerJumpAnim() {
 }
 
 void ComplexVisualPlayer::enableTrail() {
-    log::debug("wave trail: {}", playerIcon->m_waveTrail);
+    // log::debug("wave trail: {}", playerIcon->m_waveTrail);
     // playerIcon->activateStreak();
 }
 

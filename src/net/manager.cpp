@@ -95,6 +95,9 @@ public:
         // this is a bit irrelevant here but who gives a shit
         if (GJAccountManager::get()->m_accountID != ProfileCacheManager::get().getOwnAccountData().accountId) {
             NetworkManager::get().disconnect();
+            auto& gam = GlobedAccountManager::get();
+            gam.autoInitialize();
+            gam.authToken.lock()->clear();
 
             // clear the queue
             while (auto t = packetQueue.tryPop());
@@ -146,7 +149,6 @@ public:
 #ifdef GLOBED_DEBUG
                     log::debug("Unregistering listener {} (id {})", addr, id);
 #endif
-                    // log::debug("removing listener for {}", id);
                     listeners.erase(listeners.begin() + i);
                 }
             }
@@ -197,7 +199,7 @@ protected:
     friend class NetworkManager;
     friend class PacketListenerPool;
 
-    static constexpr int BUILTIN_LISTENER_PRIORITY = -10000000;
+    static constexpr int BUILTIN_LISTENER_PRIORITY = 10000000;
 
     struct TaskPingServers {};
     struct TaskSendPacket {
@@ -581,9 +583,15 @@ protected:
 
             auto& flm = FriendListManager::get();
 
-            if (setting == InvitesFrom::Nobody) {
-                return;
-            } else if (setting == InvitesFrom::Friends && !flm.isFriend(inviter)) {
+            // block the invite if either..
+            if (
+                // a. invites are disabled
+                setting == InvitesFrom::Nobody
+                // b. invites are friend-only and the user is not a friend
+                || (setting == InvitesFrom::Friends && !flm.isFriend(inviter))
+                // c. user is blocked
+                || flm.isBlocked(inviter)
+            ) {
                 return;
             }
 
@@ -695,6 +703,9 @@ protected:
         }
 
         GameServerManager::get().setActive(connectedServerId);
+
+        auto& flm = FriendListManager::get();
+        flm.maybeLoad();
 
         // these are not thread-safe, so delay it
         Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {

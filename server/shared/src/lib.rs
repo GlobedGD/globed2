@@ -28,9 +28,11 @@ pub use reqwest;
 pub use sha2;
 pub use time;
 // our reexports
+pub use crypto::*;
 pub use data::*;
 pub use logger::*;
 pub use token_issuer::TokenIssuer;
+pub mod crypto;
 pub mod data;
 pub mod logger;
 pub mod token_issuer;

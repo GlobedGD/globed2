@@ -147,30 +147,21 @@ void DailyManager::onLevelMetaFetchedCallback(typename WebRequestManager::Event*
     if (!e || !e->getValue()) return;
 
     auto result = std::move(*e->getValue());
-    if (!result) {
-        auto err = result.unwrapErr();
-        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
+    if (!result.ok()) {
+        auto err = result.getError();
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", err));
         singleFetchState = FetchState::NotFetching;
         return;
     }
 
-    auto val = result.unwrap();
-
-    std::string parseError;
-    auto parsed_ = matjson::parse(val, parseError);
-
-
-    if (!parsed_ || !parsed_->is<GlobedFeaturedLevel>()) {
-        if (parsed_) {
-            log::warn("failed to parse featured level:\n{}", parsed_.value().dump());
-        }
-
-        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>parsing failed: {}</c>", parsed_.has_value() ? "invalid json structure" : parseError));
+    auto val = result.json<GlobedFeaturedLevel>();
+    if (!val) {
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>parsing failed: {}</c>", val.unwrapErr()));
         singleFetchState = FetchState::NotFetching;
         return;
     }
 
-    storedLevelMeta = std::move(parsed_.value()).as<GlobedFeaturedLevel>();
+    storedLevelMeta = std::move(val.unwrap());
 
     // fetch level from gd servers
 
@@ -264,35 +255,26 @@ void DailyManager::onCurrentLevelMetaFetchedCallback(typename WebRequestManager:
     if (!e || !e->getValue()) return;
 
     auto result = std::move(*e->getValue());
-    if (!result) {
-        auto err = result.unwrapErr();
-
+    if (!result.ok()) {
         // not level, do nothing
-        if (err.code == 404) {
+        if (result.getCode() == 404) {
             return;
         }
 
-        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", result.getError()));
         singleFetchState = FetchState::NotFetching;
         return;
     }
 
-    auto val = result.unwrap();
+    auto val = result.json<GlobedFeaturedLevel>();
 
-    std::string parseError;
-    auto parsed_ = matjson::parse(val, parseError);
-
-    if (!parsed_ || !parsed_->is<GlobedFeaturedLevel>()) {
-        if (parsed_) {
-            log::warn("failed to parse featured level:\n{}", parsed_.value().dump());
-        }
-
-        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>parsing failed: {}</c>", parsed_.has_value() ? "invalid json structure" : parseError));
+    if (!val) {
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>parsing failed: {}</c>", val.unwrapErr()));
         singleFetchState = FetchState::NotFetching;
         return;
     }
 
-    auto levelMeta = std::move(parsed_.value()).as<GlobedFeaturedLevel>();
+    auto levelMeta = std::move(val.unwrap());
 
     if (this->levelMetaCallback) {
         this->levelMetaCallback(levelMeta);
@@ -332,29 +314,21 @@ void DailyManager::onMultipleMetaFetchedCallback(typename WebRequestManager::Eve
 
     auto result = std::move(*e->getValue());
 
-    if (!result) {
-        auto err = result.unwrapErr();
-        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
+    if (!result.ok()) {
+        ErrorQueues::get().error(fmt::format("Failed to fetch the current featured level.\n\nReason: <cy>{}</c>", result.getError()));
         multipleFetchState = FetchState::NotFetching;
         return;
     }
 
-    auto val = result.unwrap();
+    auto val = result.json<GlobedFeaturedLevelPage>();
 
-    std::string parseError;
-    auto parsed_ = matjson::parse(val, parseError);
-
-    if (!parsed_ || !parsed_->is<GlobedFeaturedLevelPage>()) {
-        if (parsed_) {
-            log::warn("failed to parse featured level list:\n{}", parsed_.value().dump());
-        }
-
-        ErrorQueues::get().error(fmt::format("Failed to fetch the featured level history.\n\nReason: <cy>parsing failed: {}</c>", parsed_.has_value() ? "invalid json structure" : parseError));
+    if (!val) {
+        ErrorQueues::get().error(fmt::format("Failed to fetch the featured level history.\n\nReason: <cy>parsing failed: {}</c>", val.unwrapErr()));
         multipleFetchState = FetchState::NotFetching;
         return;
     }
 
-    auto levelPage = std::move(parsed_.value()).as<GlobedFeaturedLevelPage>();
+    auto levelPage = std::move(val.unwrap());
 
     // if the page is empty, return early
     if (levelPage.levels.empty()) {

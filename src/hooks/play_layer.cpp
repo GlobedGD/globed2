@@ -132,7 +132,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 
         if (m_fields->antiCheat != object && player == noclipFor) {
             // epic noclip hack 2024 !!
-            log::debug("noclipping for {}", noclipFor == m_player1 ? "player 1" : "player 2");
+            // log::debug("noclipping for {}", noclipFor == m_player1 ? "player 1" : "player 2");
             return;
         }
     }

@@ -189,6 +189,7 @@ public:
         Setting<bool, false> hideNearby;
         Setting<bool, false> forceVisibility;
         Setting<bool, false> ownName;
+        Setting<bool, false> rotateNames;
         Setting<bool, false> hidePracticePlayers;
     };
 
@@ -282,7 +283,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Players, (
-    playerOpacity, showNames, dualName, nameOpacity, statusIcons, deathEffects, defaultDeathEffect, hideNearby, forceVisibility, ownName, hidePracticePlayers
+    playerOpacity, showNames, dualName, nameOpacity, statusIcons, deathEffects, defaultDeathEffect, hideNearby, forceVisibility, ownName, hidePracticePlayers, rotateNames
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Advanced, ());

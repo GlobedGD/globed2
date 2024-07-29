@@ -1,12 +1,13 @@
 #include "gjbasegamelayer.hpp"
 
-#include "play_layer.hpp"
-#include "game_manager.hpp"
-
 #if GLOBED_HAS_KEYBINDS
 # include <geode.custom-keybinds/include/Keybinds.hpp>
 #endif // GLOBED_HAS_KEYBINDS
 
+#include <Geode/loader/Dispatch.hpp>
+
+#include "play_layer.hpp"
+#include "game_manager.hpp"
 #include "gjgamelevel.hpp"
 #include <audio/all.hpp>
 #include <managers/block_list.hpp>
@@ -698,11 +699,15 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     // update self names
     if (self->m_fields->ownNameLabel) {
+        auto dirVec = GlobedGJBGL::getCameraDirectionVector();
+        auto dir = GlobedGJBGL::getCameraDirectionAngle();
+
         if (self->m_player1->m_isHidden) {
             self->m_fields->ownNameLabel->setVisible(false);
         } else {
             self->m_fields->ownNameLabel->setVisible(true);
-            self->m_fields->ownNameLabel->setPosition(self->m_player1->getPosition() + CCPoint{0.f, 25.f});
+            self->m_fields->ownNameLabel->setPosition(self->m_player1->getPosition() + dirVec * CCPoint{25.f, 25.f});
+            self->m_fields->ownNameLabel->setRotation(dir);
         }
 
         if (self->m_fields->ownNameLabel2) {
@@ -710,7 +715,8 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
                 self->m_fields->ownNameLabel2->setVisible(false);
             } else {
                 self->m_fields->ownNameLabel2->setVisible(true);
-                self->m_fields->ownNameLabel2->setPosition(self->m_player2->getPosition() + CCPoint{0.f, 25.f});
+                self->m_fields->ownNameLabel2->setPosition(self->m_player2->getPosition() + dirVec * CCPoint{25.f, 25.f});
+                self->m_fields->ownNameLabel->setRotation(dir);
             }
         }
     }
@@ -887,6 +893,18 @@ PlayerMetadata GlobedGJBGL::gatherPlayerMetadata() {
     };
 }
 
+CCPoint GlobedGJBGL::getCameraDirectionVector() {
+    float dir = GlobedGJBGL::getCameraDirectionAngle();
+    float rads = CC_DEGREES_TO_RADIANS(dir);
+    return CCPoint{std::sin(rads), std::cos(rads)};
+}
+
+float GlobedGJBGL::getCameraDirectionAngle() {
+    bool rotateNames = GlobedSettings::get().players.rotateNames;
+    float dir = GJBaseGameLayer::get() && rotateNames ? -GJBaseGameLayer::get()->m_gameState.m_cameraAngle : 0;
+    return dir;
+}
+
 bool GlobedGJBGL::shouldLetMessageThrough(int playerId) {
     auto& settings = GlobedSettings::get();
     auto& flm = FriendListManager::get();
@@ -978,8 +996,6 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     m_objectLayer->addChild(rp);
     m_fields->players.emplace(playerId, rp);
     m_fields->interpolator->addPlayer(playerId);
-
-    // log::debug("Player joined: {}", playerId);
 }
 
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
@@ -994,8 +1010,6 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     m_fields->players.erase(playerId);
     m_fields->interpolator->removePlayer(playerId);
     m_fields->playerStore->removePlayer(playerId);
-
-    // log::debug("Player removed: {}", playerId);
 }
 
 bool GlobedGJBGL::established() {

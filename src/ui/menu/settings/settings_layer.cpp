@@ -272,6 +272,7 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
             registerSetting(cat, settings.players.dualName, "Dual name", "Show the name of the player on their secondary icon as well.");
             registerSetting(cat, settings.players.nameOpacity, "Name opacity", "Opacity of player names.");
             registerSetting(cat, settings.players.ownName, "Show own name", "Shows your own name above your icon as well.");
+            registerSetting(cat, settings.players.rotateNames, "Rotate names", "Rotates player names with the camera rotation to keep them easily readable.");
             registerSetting(cat, settings.players.deathEffects, "Death effects", "Play a death effect whenever a player dies.");
             registerSetting(cat, settings.players.defaultDeathEffect, "Default death effect", "Replaces the death effects of all players with a default explosion effect.");
             registerSetting(cat, settings.players.hideNearby, "Hide nearby players", "Increases the transparency of players as they get closer to you, so that they don't obstruct your view.");

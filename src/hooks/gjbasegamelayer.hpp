@@ -2,7 +2,6 @@
 #include <defs/geode.hpp>
 
 #include <Geode/modify/GJBaseGameLayer.hpp>
-#include "Geode/loader/Dispatch.hpp"
 
 #include <data/types/room.hpp>
 #include <game/interpolator.hpp>
@@ -138,6 +137,9 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     SpecificIconData gatherSpecificIconData(PlayerObject* player);
     PlayerData gatherPlayerData();
     PlayerMetadata gatherPlayerMetadata();
+
+    static cocos2d::CCPoint getCameraDirectionVector();
+    static float getCameraDirectionAngle();
 
     bool shouldLetMessageThrough(int playerId);
     void updateProximityVolume(int playerId);

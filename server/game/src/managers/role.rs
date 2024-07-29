@@ -88,7 +88,7 @@ impl RoleManager {
             .iter()
             .map(|(int_id, x)| GameServerRole {
                 int_id: *int_id,
-                role: x.clone().into(),
+                role: x.clone(),
             })
             .collect()
     }
