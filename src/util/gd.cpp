@@ -88,4 +88,16 @@ namespace util::gd {
     int getIconWithType(const PlayerIconData& data, IconType type) {
         return getIconWithType(data, globed::into<PlayerIconType>(type));
     }
+
+    static std::string gvkey(GameVariable var) {
+        return fmt::format("{:04}", static_cast<int>(var));
+    }
+
+    bool variable(GameVariable var) {
+        return GameManager::get()->getGameVariable(gvkey(var).c_str());
+    }
+
+    void setVariable(GameVariable var, bool state) {
+        GameManager::get()->setGameVariable(gvkey(var).c_str(), state);
+    }
 }

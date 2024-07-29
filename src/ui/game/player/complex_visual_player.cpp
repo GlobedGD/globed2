@@ -33,7 +33,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
     // int oldStreak = hgm->getPlayerStreak();
     // int oldShipStreak = hgm->getPlayerShipFire();
 
-    // int streak = 6; // TODO needs protocol change
+    // int streak = 6; // TODO trails: needs protocol change
     // int shipStreak = 6;
 
     // // set the streak of the player
@@ -138,7 +138,7 @@ void ComplexVisualPlayer::updateData(
 
     auto displacement = data.position - playerIcon->getPosition();
 
-    // TODO: super broken lol
+    // sticky is super broken  lol
 
     // if (p1sticky) {
     //     auto* p1 = PlayLayer::get()->m_player1;
@@ -231,7 +231,7 @@ void ComplexVisualPlayer::updateData(
 
     // animate dashing
     if (data.isDashing != wasDashing) {
-        // TODO: fix dash
+        // TODO: dashing animation
         // if (data.isDashing) {
         //     auto kf = ObjectToolbox::sharedState()->intKeyToFrame(0x6d7);
         //     log::debug("kf: {}", kf);

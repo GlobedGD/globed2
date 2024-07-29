@@ -13,7 +13,7 @@
 using namespace geode::prelude;
 
 GlobedAccountManager::GlobedAccountManager() {
-    // TODO: remove in the future.
+    // TODO 1.6.x: remove the migration.
     this->migrateOldValues();
 }
 
@@ -33,7 +33,14 @@ void GlobedAccountManager::migrateOldValues() {
 
         if (pfx.empty()) continue;
 
-        // try {
+        if (value.as_string().empty()) {
+            toErase.push_back(key);
+            continue;
+        }
+
+        // log::debug("key: {}", key);
+
+        try {
             auto [_k, _sep, hash] = util::format::partition(key, pfx);
 
             auto cryptoKey = util::crypto::hexDecode(hash);
@@ -47,6 +54,8 @@ void GlobedAccountManager::migrateOldValues() {
             } else {
                 password = util::crypto::base64Decode(adminPwd);
             }
+
+            // log::debug("raw password: {}", password);
 
             // append the per-device fingerprint
             auto fp = util::misc::fingerprint().getRaw();
@@ -63,9 +72,9 @@ void GlobedAccountManager::migrateOldValues() {
 
             toPush.push_back({util::format::replace(key, pfx, newpfx), util::crypto::base64Encode(encrypted)});
 
-        // } catch (const std::exception& e) {
-        //     log::warn("Failed to migrate admin password: {}", e.what());
-        // }
+        } catch (const std::exception& e) {
+            log::warn("Failed to migrate admin password: {}", e.what());
+        }
 
         toErase.push_back(key);
     }
@@ -75,6 +84,7 @@ void GlobedAccountManager::migrateOldValues() {
     }
 
     for (const auto& [key, value] : toPush) {
+        // log::debug("migrate {} value {}", key, value);
         container[key] = value;
     }
 }

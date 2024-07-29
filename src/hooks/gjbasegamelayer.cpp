@@ -828,7 +828,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
     bool isDead = m_player1->m_isDead || m_player2->m_isDead;
     m_fields->isCurrentlyDead = isDead;
 
-    // TODO: move the inline impl to GJBaseGameLayer bindings
+    // this function (getCurrentPercent) only exists in playlayer and not the editor, so reimpl it
     auto getPercent = [&](){
         float percent;
 

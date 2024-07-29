@@ -15,7 +15,7 @@ AudioStream::AudioStream(AudioDecoder&& decoder)
     exinfo.format = FMOD_SOUND_FORMAT_PCMFLOAT;
     exinfo.defaultfrequency = VOICE_TARGET_SAMPLERATE;
     exinfo.userdata = this;
-    exinfo.length = sizeof(float) * exinfo.numchannels * exinfo.defaultfrequency * (VOICE_CHUNK_RECORD_TIME * 1); // TODO maybe bring back the 10 multiplier
+    exinfo.length = sizeof(float) * exinfo.numchannels * exinfo.defaultfrequency * (VOICE_CHUNK_RECORD_TIME * 1);
 
     exinfo.pcmreadcallback = [](FMOD_SOUND* sound_, void* data, unsigned int len) -> FMOD_RESULT {
         FMOD::Sound* sound = reinterpret_cast<FMOD::Sound*>(sound_);
