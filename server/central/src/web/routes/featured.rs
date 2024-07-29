@@ -71,6 +71,7 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
 
     let webhook_url = state.config.featured_webhook_url.clone();
     let http_client = state.http_client.clone();
+    let role_id = state.config.featured_webhook_role.clone();
     drop(state);
 
     if !has_perm {
