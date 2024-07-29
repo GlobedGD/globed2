@@ -69,6 +69,10 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
             }
         });
 
+    let webhook_url = state.config.featured_webhook_url.clone();
+    let http_client = state.http_client.clone();
+    drop(state);
+
     if !has_perm {
         unauthorized!("unauthorized (perms)");
     }
@@ -80,12 +84,10 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
     db.replace_featured_level(data.account_id, data.level_id, data.rate_tier).await?;
 
     // send a webhook message
-    let url = state.config.featured_webhook_url.clone();
-
-    if !url.is_empty() {
+    if !webhook_url.is_empty() {
         if let Err(e) = webhook::send_webhook_messages(
-            state.http_client.clone(),
-            &url,
+            http_client.clone(),
+            &webhook_url,
             &[webhook::WebhookMessage::LevelFeatured(
                 data.level_name.unwrap_or_else(|| "<unknown>".to_owned()),
                 data.level_id,
