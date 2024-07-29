@@ -84,6 +84,7 @@ pub async fn replace(
             difficulty.unwrap_or(0),
             rate_tier,
         )],
+        "<add ping here> A new level has been featured in Globed!".into()
     )
     .await
     {
