@@ -135,6 +135,19 @@ void GlobedGJBGL::setupBare() {
         .parent(this)
         .store(m_fields->overlay);
 
+    if (PlayLayer::get()) {
+        Build<CCMenu>::create()
+            .layout(ColumnLayout::create()->setAxisReverse(true))
+            .zOrder(11)
+            .pos(ccp(85, 55))
+            .scale(0.55f)
+            .contentSize(300, 170)
+            .opacity(150.f)
+            .id("deaths-overlay"_spr)
+            .parent(PlayLayer::get())
+            .store(m_fields->chatOverlay);
+    }
+
     auto& nm = NetworkManager::get();
 
     // if not authenticated, do nothing
@@ -148,6 +161,9 @@ void GlobedGJBGL::setupBare() {
         // else update the overlay with ping
         m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
     }
+
+    //m_fields->chatOverlay->addChild(GlobedChatCell::create("me", GJAccountManager::get()->m_accountID, "test"));
+    //m_fields->chatOverlay->updateLayout();
 }
 
 void GlobedGJBGL::setupDeferredAssetPreloading() {
@@ -665,6 +681,17 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         // deathlink
         if (self->m_fields->deathlinkState.active) {
             if (frameFlags.pendingRealDeath && !hasBeenKilled) {
+                std::string usr = ProfileCacheManager::get().getData(playerId)->name;
+                if (PlayLayer::get()) {
+                    if (CCMenu* menu = static_cast<CCMenu*>(PlayLayer::get()->getChildByID("deaths-overlay"_spr))) {
+                        if (menu->getChildrenCount() > 4) {
+                            static_cast<CCNode*>(menu->getChildren()->objectAtIndex(0))->removeFromParent();
+                        }
+                        menu->addChild(GlobedDeathCell::create(usr, playerId));
+                        menu->updateLayout();
+                    }
+                }
+                log::info("i think {} died", ProfileCacheManager::get().getData(playerId)->name);
                 hasBeenKilled = true;
                 // force a fake death
                 self->m_fields->isFakingDeath = true;
@@ -1352,10 +1379,22 @@ void GlobedGJBGL::linkPlayerTo(int accountId) {
 void GlobedGJBGL::notifyDeath() {
     m_fields->lastDeathTimestamp = m_fields->timeCounter;
     m_fields->isLastDeathReal = !m_fields->isFakingDeath;
+
+    if (!PlayLayer::get()) return;
+
+    if (PlayLayer::get()->m_gameState.m_currentProgress == 0) {
+        if (m_fields->chatOverlay->getChildrenCount() > 4) {
+            static_cast<CCNode*>(m_fields->chatOverlay->getChildren()->objectAtIndex(0))->removeFromParent();
+        }
+        m_fields->chatOverlay->addChild(GlobedDeathCell::create(GJAccountManager::get()->m_username, GJAccountManager::get()->m_accountID));
+        m_fields->chatOverlay->updateLayout();
+    }
 }
 
 void GlobedGJBGL::killPlayer() {
     if (!this->isEditor()) {
-        static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this))->PlayLayer::destroyPlayer(m_player1, nullptr);
+        PlayLayer* pl = static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this));
+
+        pl->PlayLayer::destroyPlayer(m_player1, nullptr);
     }
 }

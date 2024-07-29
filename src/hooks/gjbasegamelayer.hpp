@@ -13,6 +13,7 @@
 #include <ui/game/progress/progress_icon.hpp>
 #include <ui/game/progress/progress_arrow.hpp>
 #include <ui/game/voice_overlay/overlay.hpp>
+#include <ui/game/chat/death_cell.hpp>
 #include <util/time.hpp>
 
 float adjustLerpTimeDelta(float dt);
@@ -61,6 +62,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
 
         // ui elements
         GlobedOverlay* overlay = nullptr;
+        cocos2d::CCMenu* chatOverlay = nullptr;
         std::unordered_map<int, RemotePlayer*> players;
         Ref<PlayerProgressIcon> selfProgressIcon = nullptr;
         Ref<CCNode> progressBarWrapper = nullptr;

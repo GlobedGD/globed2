@@ -14,16 +14,11 @@
 #include <ui/general/intermediary_loading_popup.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
+#include <util/rng.hpp>
 
 using namespace geode::prelude;
 
-PlayerAccountData getAccountData(int id) {
-    if (ProfileCacheManager::get().getData(id)) return ProfileCacheManager::get().getData(id).value();
-    if (id == GJAccountManager::sharedState()->m_accountID) return ProfileCacheManager::get().getOwnAccountData();
-    return PlayerAccountData::DEFAULT_DATA;
-}
-
-bool GlobedChatCell::init(const std::string& username, int accid, const std::string& messageText) {
+bool GlobedDeathCell::init(const std::string& username, int accid) {
     if (!CCLayerColor::init())
         return false;
 
@@ -32,7 +27,7 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
 
     auto GAM = GJAccountManager::sharedState();
 
-    this->setContentSize(ccp(290, CELL_HEIGHT));
+    this->setContentSize(ccp(CELL_WIDTH, CELL_HEIGHT));
     this->setAnchorPoint(ccp(0, 0));
 
     // background
@@ -57,7 +52,11 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
         .parent(this)
         .collect();
 
-    Build<GlobedSimplePlayer>::create(getAccountData(accid).icons)
+    PlayerAccountData data = PlayerAccountData::DEFAULT_DATA;
+    if (ProfileCacheManager::get().getData(accid)) data = ProfileCacheManager::get().getData(accid).value();
+    if (accid == GJAccountManager::sharedState()->m_accountID) data = ProfileCacheManager::get().getOwnAccountData();
+
+    Build<GlobedSimplePlayer>::create(data.icons)
         .scale(0.475f)
         .id("playericon")
         .zOrder(-1)
@@ -69,18 +68,16 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
         .zOrder(2)
         .collect();
 
-    PlayerAccountData data = getAccountData(accid);
-
-    CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
+    /*CCSprite* badgeIcon = util::ui::createBadgeIfSpecial(data.specialUserData);
     if (badgeIcon) {
         util::ui::rescaleToMatch(badgeIcon, util::ui::BADGE_SIZE);
         // TODO: fix this
         badgeIcon->setPosition(ccp(nameLabel->getPositionX() + nameLabel->getScaledContentSize().width / 2.f + 13.5f, nameLabel->getPositionY()));
         badgeIcon->setZOrder(1);
         playerBundle->addChild(badgeIcon);
-    }
+    }*/
 
-    auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedChatCell::onUser))
+    auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(GlobedDeathCell::onUser))
         .pos(3.f, 35.f)
         .zOrder(0)
         .scaleMult(1.1f)
@@ -91,31 +88,41 @@ bool GlobedChatCell::init(const std::string& username, int accid, const std::str
 
     // set the zorder of the button to be the highest, so that when you hold it, the badge and player icon are behind
     // this also *must* be called after updateLayout().
-    usernameButton->setZOrder(10);
 
-    auto messageTextLabel = CCLabelBMFont::create(messageText.c_str(), "chatFont.fnt");
+    std::vector<std::string> MSGS = {
+        "died.",
+        "landed on a spike.",
+        "thought they were noclipping.",
+        "clicked too late.",
+        "got a lag spike.",
+        "tripped on a rock.",
+        "forgot to jump.",
+        "missed an input."
+    };
+
+    auto messageTextLabel = CCLabelBMFont::create(MSGS[util::rng::Random::get().generate<int>(0, MSGS.size() - 1)].c_str(), "bigFont.fnt");
 
     messageTextLabel->setPosition(4, 17);
+    messageTextLabel->setScale(0.5f);
     messageTextLabel->limitLabelWidth(260.0f, 0.8f, 0.0f);
     messageTextLabel->setAnchorPoint(ccp(0, 0.5));
     messageTextLabel->setID("message-text");
 
-    //ccColor3B textColor = util::ui::getNameColor(data.specialUserData);
+    playerBundle->addChild(messageTextLabel);
+    playerBundle->updateLayout();
 
-    //messageTextLabel->setColor(textColor);
-
-    this->addChild(messageTextLabel);
+    messageTextLabel->setScale(0.5f);
 
     return true;
 }
 
-void GlobedChatCell::onUser(CCObject* sender) {
+void GlobedDeathCell::onUser(CCObject* sender) {
     ProfilePage::create(accountId, GJAccountManager::sharedState()->m_accountID == accountId)->show();
 }
 
-GlobedChatCell* GlobedChatCell::create(const std::string& username, int aid, const std::string& messageText) {
-    auto* ret = new GlobedChatCell;
-    if (ret->init(username, aid, messageText)) {
+GlobedDeathCell* GlobedDeathCell::create(const std::string& username, int aid) {
+    auto* ret = new GlobedDeathCell;
+    if (ret->init(username, aid)) {
         ret->autorelease();
         return ret;
     }
