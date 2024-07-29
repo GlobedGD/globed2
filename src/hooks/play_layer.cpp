@@ -153,7 +153,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     bool oldFastReset = util::gd::variable(GameVariable::FastRespawn);
 
     if (pl->m_fields->twopstate.active || pl->m_fields->deathlinkState.active) {
-        util::gd::setVariable(GameVariable::FastRespawn, false); // TODO: maybe make it true?
+        util::gd::setVariable(GameVariable::FastRespawn, false);
     }
 
 #ifdef GEODE_IS_ARM_MAC

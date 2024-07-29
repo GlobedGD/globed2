@@ -13,7 +13,7 @@
 using namespace geode::prelude;
 
 GlobedAccountManager::GlobedAccountManager() {
-    // TODO: remove in the future.
+    // TODO 1.6.x: remove the migration.
     this->migrateOldValues();
 }
 

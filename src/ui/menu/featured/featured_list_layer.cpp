@@ -196,10 +196,6 @@ void GlobedFeaturedListLayer::createLevelList(const DailyManager::Page& page) {
         if (levelToRateTier.contains(cell->m_level->m_levelID)) {
             static_cast<GlobedLevelCell*>(cell)->m_fields->rateTier = levelToRateTier[cell->m_level->m_levelID];
         }
-        // if (!.contains(levelId)) continue;
-
-        // TODO
-        // static_cast<GlobedLevelCell*>(cell)->updatePlayerCount(levelList.at(levelId));
     }
 
     // show the buttons

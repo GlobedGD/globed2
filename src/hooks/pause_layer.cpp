@@ -32,7 +32,7 @@ void GlobedPauseLayer::customSetup() {
         .id("btn-open-playerlist"_spr)
         .parent(menu);
 
-    // TODO: bring back when it works properly
+    // TODO chat: bring back when it works properly
     // auto* chatIcon = Build<CCSprite>::createSpriteName("icon-chat.png"_spr)
     //     .scale(0.9f)
     //     .intoMenuItem([](auto) {

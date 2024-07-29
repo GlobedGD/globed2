@@ -5,6 +5,7 @@
 * \-- Thanks [TheSillyDoggp](https://github.com/TheSillyDoggo/) for implementing this!
 * Automatically block invites from users that you have blocked on GD
 * Remove Custom Keybinds dependency from Android
+* When playing in a Death Link room, the faster reset option is now forcefully disabled for all players
 * Fix rare crash when closing the globed menu too fast
 * Fix room name overlapping other UI elements in the room listing
 * Fix player count going up to 4 digits on android (and cap to 10000 instead of 65535)
