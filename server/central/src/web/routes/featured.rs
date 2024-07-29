@@ -95,6 +95,12 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
                 data.difficulty.unwrap_or(0),
                 data.rate_tier,
             )],
+            Some(
+                match role_id.is_empty() {
+                    true => "A new level just got featured in Globed! Check it out".into(),
+                    false => format!("<@&{}> A new level just got featured in Globed! Check it out", role_id).into()
+                }
+            )
         )
         .await
         {
