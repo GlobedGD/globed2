@@ -164,7 +164,7 @@ pub struct ServerConfig {
     #[serde(default = "default_string")]
     pub featured_webhook_url: String,
     #[serde(default = "default_string")]
-    pub featured_webhook_role: String,
+    pub featured_webhook_message: String,
     #[serde(default = "default_string")]
     pub room_webhook_url: String,
 

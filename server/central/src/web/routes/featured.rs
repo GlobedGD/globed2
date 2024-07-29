@@ -71,7 +71,7 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
 
     let webhook_url = state.config.featured_webhook_url.clone();
     let http_client = state.http_client.clone();
-    let role_id = state.config.featured_webhook_role.clone();
+    let webhook_message = state.config.featured_webhook_message.clone();
     drop(state);
 
     if !has_perm {
@@ -97,10 +97,7 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
                 data.rate_tier,
             )],
             Some(
-                match role_id.is_empty() {
-                    true => "A new level just got featured in Globed! Check it out".into(),
-                    false => format!("<@&{}> A new level just got featured in Globed! Check it out", role_id).into()
-                }
+                webhook_message
             )
         )
         .await
