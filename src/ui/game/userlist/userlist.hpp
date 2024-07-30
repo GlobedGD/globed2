@@ -13,6 +13,7 @@ public:
     static constexpr float LIST_HEIGHT = 190.f;
 
     static GlobedUserListPopup* create();
+    void removeListCell(GlobedUserCell* cell);
 
 private:
     using UserList = GlobedListLayer<GlobedUserCell>;

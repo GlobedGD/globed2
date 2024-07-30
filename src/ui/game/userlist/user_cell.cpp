@@ -17,9 +17,10 @@
 
 using namespace geode::prelude;
 
-bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
+bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountData& data, GlobedUserListPopup* parent) {
     if (!CCLayer::init()) return false;
 
+    this->parent = parent;
     accountData = data;
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -190,7 +191,10 @@ void GlobedUserCell::makeButtons() {
         createBtnSettings = false;
     }
 
-    if (!pl->m_fields->players.contains(accountData.accountId)) return;
+    if (!pl->m_fields->players.contains(accountData.accountId)) {
+        this->parent->removeListCell(this);
+        return;
+    }
 
     if (createBtnSettings) {
         // settings button
@@ -200,7 +204,10 @@ void GlobedUserCell::makeButtons() {
                 auto* pl = GlobedGJBGL::get();
 
                 // if they left the level, do nothing
-                if (!pl->m_fields->players.contains(accountData.accountId)) return;
+                if (!pl->m_fields->players.contains(accountData.accountId)) {
+                    this->parent->removeListCell(this);
+                    return;
+                }
 
                 GlobedUserActionsPopup::create(id)->show();
             })
@@ -229,10 +236,7 @@ void GlobedUserCell::makeButtons() {
                     vpm.setVolume(accountId, settings.communication.voiceVolume);
                 }
 
-                // delay by 1 frame to prevent epic ccmenuitem::activate crash
-                Loader::get()->queueInMainThread([this] {
-                    this->makeButtons();
-                });
+                this->makeButtons();
             })
             .scaleMult(1.2f)
             .parent(buttonsWrapper)
@@ -246,15 +250,16 @@ void GlobedUserCell::makeButtons() {
 
         Build(spr)
             .intoMenuItem([this, isHidden, pl, accountId = accountData.accountId](auto) {
-                if (!pl->m_fields->players.contains(accountId)) return;
+                if (!pl->m_fields->players.contains(accountId)) {
+                    this->parent->removeListCell(this);
+                    return;
+                }
 
                 pl->m_fields->players.at(accountId)->setForciblyHidden(!isHidden);
                 auto& bl = BlockListManager::get();
                 bl.setHidden(accountId, !isHidden);
 
-                Loader::get()->queueInMainThread([this] {
-                    this->makeButtons();
-                });
+                this->makeButtons();
             })
             .scaleMult(1.2f)
             .parent(buttonsWrapper)
@@ -343,9 +348,9 @@ void GlobedUserCell::makeButtons() {
     buttonsWrapper->updateLayout();
 }
 
-GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
+GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data, GlobedUserListPopup* parent) {
     auto ret = new GlobedUserCell;
-    if (ret->init(entry, data)) {
+    if (ret->init(entry, data, parent)) {
         return ret;
     }
 

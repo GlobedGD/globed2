@@ -237,11 +237,11 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
 
         GlobedUserCell* cell;
         if (playerId == ownData.accountId) {
-            cell = GlobedUserCell::create(entry, ownData);
+            cell = GlobedUserCell::create(entry, ownData, this);
         } else if (auto pcmdata = pcm.getData(playerId)) {
-            cell = GlobedUserCell::create(entry, pcmdata.value());
+            cell = GlobedUserCell::create(entry, pcmdata.value(), this);
         } else {
-            cell = GlobedUserCell::create(entry, PlayerAccountData::DEFAULT_DATA);
+            cell = GlobedUserCell::create(entry, PlayerAccountData::DEFAULT_DATA, this);
         }
 
         cells->addObject(cell);
@@ -256,6 +256,10 @@ void GlobedUserListPopup::onToggleVoiceSort(cocos2d::CCObject* sender) {
 
 void GlobedUserListPopup::onVolumeChanged(cocos2d::CCObject* sender) {
     GlobedSettings::get().communication.voiceVolume = volumeSlider->getThumb()->getValue() * 2;
+}
+
+void GlobedUserListPopup::removeListCell(GlobedUserCell* cell) {
+    listLayer->removeCell(cell);
 }
 
 GlobedUserListPopup* GlobedUserListPopup::create() {

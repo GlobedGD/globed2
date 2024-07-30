@@ -5,6 +5,8 @@
 #include <game/player_store.hpp>
 #include <ui/general/audio_visualizer.hpp>
 
+class GlobedUserListPopup;
+
 class GlobedUserCell : public cocos2d::CCLayer {
 public:
     static constexpr float CELL_HEIGHT = 25.f;
@@ -12,28 +14,29 @@ public:
     void refreshData(const PlayerStore::Entry& entry);
     void updateVisualizer(float dt);
 
-    static GlobedUserCell* create(const PlayerStore::Entry& entry, const PlayerAccountData& data);
+    static GlobedUserCell* create(const PlayerStore::Entry& entry, const PlayerAccountData& data, GlobedUserListPopup* parent);
 
     PlayerAccountData accountData;
     bool isFriend;
 
 private:
-    cocos2d::CCLabelBMFont* percentageLabel;
-    cocos2d::CCMenu *menu, *usernameLayout;
-    CCMenuItemSpriteExtra
-        *actionsButton = nullptr,
-        *muteButton = nullptr,
-        *hideButton = nullptr,
-        *kickButton = nullptr,
-        *teleportButton = nullptr,
-        *linkButton = nullptr;
+    Ref<cocos2d::CCLabelBMFont> percentageLabel;
+    Ref<cocos2d::CCMenu> menu, usernameLayout;
+    Ref<CCMenuItemSpriteExtra>
+        actionsButton,
+        muteButton,
+        hideButton,
+        kickButton,
+        teleportButton,
+        linkButton;
 
-    cocos2d::CCMenu* buttonsWrapper = nullptr;
-    GlobedAudioVisualizer* audioVisualizer = nullptr;
+    Ref<cocos2d::CCMenu> buttonsWrapper = nullptr;
+    Ref<GlobedAudioVisualizer> audioVisualizer = nullptr;
     PlayerStore::Entry _data;
-    CCMenuItemSpriteExtra* nameBtn = nullptr;
+    Ref<CCMenuItemSpriteExtra> nameBtn = nullptr;
+    GlobedUserListPopup* parent;
 
-    bool init(const PlayerStore::Entry& entry, const PlayerAccountData& data);
+    bool init(const PlayerStore::Entry& entry, const PlayerAccountData& data, GlobedUserListPopup* parent);
     void makeButtons();
     void updateUsernameLayout();
     void fixNamePosition();
