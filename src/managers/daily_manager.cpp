@@ -227,6 +227,7 @@ void DailyManager::onFullLevelFetchedCallback(Result<GJGameLevel*, int> level) {
 
 void DailyManager::clearSingleWebCallback() {
     singleReqCallback = {};
+    levelMetaCallback = {};
 }
 
 void DailyManager::clearMetaWebCallback() {
