@@ -3,7 +3,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use globed_shared::{debug, ServerUserEntry, UserEntry};
 use rocket_db_pools::sqlx::{query_as, Result};
 use serde::Serialize;
-use sqlx::{prelude::*, query, sqlite::SqliteRow};
+use sqlx::{prelude::*, query, query_scalar, sqlite::SqliteRow};
 
 use super::GlobedDb;
 
@@ -257,11 +257,11 @@ impl GlobedDb {
     }
 
     pub async fn has_been_featured(&self, level_id: i32) -> Result<bool> {
-        let result = query("SELECT COUNT(*) from featured_levels WHERE level_id = ?")
+        let count: i64 = query_scalar("SELECT COUNT(*) from featured_levels WHERE level_id = ?")
             .bind(level_id)
-            .execute(&self.0)
+            .fetch_one(&self.0)
             .await?;
 
-        Ok(result.rows_affected() > 0)
+        Ok(count > 0)
     }
 }
