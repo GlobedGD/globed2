@@ -85,7 +85,7 @@ pub struct WebhookOpts<'a> {
     pub username: Option<&'a str>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub content: Option<&'a str>,
+    pub content: Option<String>,
 
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub embeds: Vec<WebhookEmbed<'a>>,
@@ -440,7 +440,7 @@ pub enum WebhookError {
     RequestStatus((StatusCode, String)),
 }
 
-pub async fn send_webhook_messages(http_client: reqwest::Client, url: &str, messages: &[WebhookMessage]) -> Result<(), WebhookError> {
+pub async fn send_webhook_messages(http_client: reqwest::Client, url: &str, messages: &[WebhookMessage], content: Option<String>) -> Result<(), WebhookError> {
     let mut embeds = Vec::new();
 
     for message in messages {
@@ -451,7 +451,7 @@ pub async fn send_webhook_messages(http_client: reqwest::Client, url: &str, mess
 
     let opts = WebhookOpts {
         username: None,
-        content: None,
+        content,
         embeds,
     };
 
