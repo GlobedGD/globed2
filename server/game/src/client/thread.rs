@@ -14,7 +14,7 @@ use crate::tokio::{
     sync::{Mutex, Notify},
 };
 use esp::ByteReader;
-use globed_shared::{logger::*, SyncMutex, UserEntry};
+use globed_shared::{logger::*, ServerUserEntry, SyncMutex};
 use handlers::game::MAX_VOICE_PACKET_SIZE;
 use tokio::time::Instant;
 
@@ -62,7 +62,7 @@ pub struct ClientThread {
     pub room_id: AtomicU32,
 
     pub account_data: SyncMutex<PlayerAccountData>,
-    pub user_entry: SyncMutex<UserEntry>,
+    pub user_entry: SyncMutex<ServerUserEntry>,
     pub user_role: SyncMutex<ComputedRole>,
 
     pub fragmentation_limit: AtomicU16,

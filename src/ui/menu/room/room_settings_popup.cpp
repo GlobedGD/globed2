@@ -47,8 +47,6 @@ bool RoomSettingsPopup::setup() {
     listLayer->swapCells(cells);
 
     NetworkManager::get().addListener<RoomInfoPacket>(this, [this](auto packet) {
-        log::debug("room configuration updated");
-
         RoomManager::get().setInfo(packet->info);
         this->currentSettings = packet->info.settings;
         this->updateCheckboxes();

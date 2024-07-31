@@ -7,13 +7,13 @@ use std::{
     time::Duration,
 };
 
-use globed_shared::MAX_SUPPORTED_PROTOCOL;
 #[allow(unused_imports)]
 use globed_shared::{
     debug, info,
     rand::{self, Rng},
-    warn, SyncMutex, UserEntry, MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SUPPORTED_PROTOCOLS,
+    warn, SyncMutex, MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SUPPORTED_PROTOCOLS,
 };
+use globed_shared::{ServerUserEntry, MAX_SUPPORTED_PROTOCOL};
 
 use super::*;
 use crate::{
@@ -47,7 +47,7 @@ pub struct UnauthorizedThread {
     pub room_id: AtomicU32,
 
     pub account_data: SyncMutex<PlayerAccountData>,
-    pub user_entry: SyncMutex<Option<UserEntry>>,
+    pub user_entry: SyncMutex<Option<ServerUserEntry>>,
     pub user_role: SyncMutex<Option<ComputedRole>>,
 
     pub fragmentation_limit: AtomicU16,
@@ -428,7 +428,7 @@ impl UnauthorizedThread {
 
             let user_entry = self.user_entry.lock();
             if let Some(user_entry) = &*user_entry {
-                let sud = SpecialUserData::from_user_entry(user_entry, &self.game_server.state.role_manager);
+                let sud = SpecialUserData::from_roles(&user_entry.user_roles, &self.game_server.state.role_manager);
 
                 account_data.special_user_data = sud;
             }

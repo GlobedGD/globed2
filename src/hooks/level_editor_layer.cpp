@@ -8,7 +8,6 @@ using namespace geode::prelude;
 
 bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
     GlobedLevelEditorLayer::fromEditor = true;
-    log::debug("setting fromEditor to true");
 
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
@@ -22,4 +21,3 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
 
     return true;
 }
-

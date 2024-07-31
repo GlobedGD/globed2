@@ -113,6 +113,8 @@ public:
 
     // Decrypt `size` bytes from byte buffer `src` and return a bytevector with the plaintext data.
     bytevector decrypt(const byte* src, size_t size) {
+        if (size < prefixLength()) throw std::runtime_error("data too short");
+
         size_t plaintextLength = size - prefixLength();
 
         bytevector plaintext(plaintextLength);

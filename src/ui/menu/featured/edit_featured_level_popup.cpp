@@ -40,6 +40,8 @@ bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
         .parent(m_mainLayer)
         .store(notesInput);
 
+    notesInput->setCommonFilter(CommonFilter::Any);
+
     auto* buttonMenu = Build<CCMenu>::create()
         .layout(RowLayout::create())
         .contentSize(POPUP_WIDTH * 0.8f, 50.f)
@@ -74,7 +76,7 @@ bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
             Build<ButtonSprite>::create("Feature", "bigFont.fnt", "GJ_button_02.png", 0.9f)
                 .scale(0.75f)
                 .intoMenuItem([this] {
-                    this->save();
+                    this->sendFeatureRequest();
                 })
                 .parent(buttonMenu)
                 .store(featureButton);
@@ -86,27 +88,36 @@ bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
     return true;
 }
 
-void EditFeaturedLevelPopup::save() {
-    //int levelId = util::format::parse<int>(idInput->getString()).value_or(0);
+void EditFeaturedLevelPopup::sendFeatureRequest() {
     auto& am = AdminManager::get();
-    if (am.authorized()) {
-        auto& role = am.getRole();
-        if (role.editFeaturedLevels) {
-            int levelId = this->level->m_levelID;
+    if (!am.authorized()) return;
 
-            if (levelId == 0) {
-                ErrorQueues::get().warn("Invalid level ID");
-                return;
-            }
+    auto& role = am.getRole();
+
+    if (!role.editFeaturedLevels) {
+        ErrorQueues::get().warn("You don't have permission to do this");
+        this->onClose(this);
+        return;
+    }
+
+    int levelId = this->level->m_levelID;
+
+    if (levelId == 0) {
+        ErrorQueues::get().warn("Invalid level ID");
+        return;
+    }
+
+    geode::createQuickPopup(
+        "Globed", fmt::format("Are you sure you want to feature <cg>{}</c> by <cy>{}</c> ({})?", level->m_levelName, level->m_creatorName, levelId),
+        "Cancel", "Ok", [this, levelId](auto, bool ok) {
+            if (!ok) return;
 
             auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx, level->m_levelName, level->m_creatorName, util::gd::calcLevelDifficulty(level));
             reqListener.bind(this, &EditFeaturedLevelPopup::onRequestComplete);
             reqListener.setFilter(std::move(req));
-        } else {
-            ErrorQueues::get().warn("You don't have permission to do this");
-            this->onClose(this);
         }
-    }
+    );
+
 }
 
 void EditFeaturedLevelPopup::createDiffButton() {
@@ -137,11 +148,11 @@ void EditFeaturedLevelPopup::onRequestComplete(typename WebRequestManager::Event
 
     auto result = std::move(*event->getValue());
 
-    if (result.isOk()) {
+    if (result.ok()) {
         ErrorQueues::get().success("Successfully updated the level");
     } else {
-        auto err = result.unwrapErr();
-        ErrorQueues::get().error(fmt::format("Failed to update the level.\n\nReason: <cy>{}</c>", util::format::webError(err)));
+        auto err = result.getError();
+        ErrorQueues::get().error(fmt::format("Failed to update the level.\n\nReason: <cy>{}</c>", err));
     }
 
     this->onClose(this);

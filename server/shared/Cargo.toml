@@ -26,3 +26,4 @@ time = { version = "0.3.36", features = ["formatting"] }
 serde = { version = "1.0.202", features = ["derive"] }
 crypto_secretbox = { version = "0.1.1", features = ["chacha20"] }
 serde_json = "1.0.120"
+argon2 = "0.5.3"

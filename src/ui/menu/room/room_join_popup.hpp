@@ -12,4 +12,7 @@ protected:
     bool setup() override;
 
     geode::InputNode* roomIdInput;
+
+    uint32_t attemptedJoinCode = 0;
+    bool awaitingResponse = false;
 };

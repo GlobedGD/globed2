@@ -14,7 +14,7 @@ public:
 
 private:
     bool setup(GJGameLevel*) override;
-    void save();
+    void sendFeatureRequest();
     int getDifficulty();
     void createDiffButton();
     void onDiffClick(CCObject* sender);

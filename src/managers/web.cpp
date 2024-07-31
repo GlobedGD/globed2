@@ -33,40 +33,68 @@ static std::string makeCentralUrl(std::string_view suffix) {
     return makeUrl(active->url, suffix);
 }
 
-static RequestTask mapTask(web::WebTask&& param) {
-    return param.map([] (web::WebResponse* response) -> Result<std::string, WebRequestError> {
-        int code = response->code();
-
-        if (!response->ok()) {
-            auto data = response->string().unwrapOr("failed to parse response as a string");
-            return Err(WebRequestError(code, data));
-        }
-
-        auto strResult = response->string();
-        if (!strResult) {
-            return Err(WebRequestError(code, "failed to parse response as a string"));
-        }
-
-        auto resp = strResult.unwrap();
-        return Ok(resp);
-    });
+static RequestTask mapTask(CurlManager::Task&& param) {
+    return param;
 }
 
 RequestTask WebRequestManager::requestAuthToken() {
     auto& gam = GlobedAccountManager::get();
 
-    auto authkey = gam.getAuthKey();
+    auto authkey = gam.getAuthKey().value_or("");
     auto gdData = gam.gdData.lock();
 
-    return this->post(makeCentralUrl("totplogin"), 5, [&](web::WebRequest& req) {
-        req.param("aid", gdData->accountId);
-        req.param("uid", gdData->userId);
-        req.param("aname", gdData->accountName);
+    return this->post(makeCentralUrl("v2/totplogin"), 10, [&](CurlRequest& req) {
+        matjson::Object accdata;
+        accdata["account_id"] = gdData->accountId;
+        accdata["user_id"] = gdData->userId;
+        accdata["username"] = gdData->accountName;
+
+        matjson::Object obj;
+        obj["account_data"] = accdata;
 
         // recode as urlsafe
-        // honestly i dont remember why this is needed anymore but its almost midnight and im so tired and i just wanna go to sleep but it  didnt work without this
-        auto key = util::crypto::base64Encode(util::crypto::base64Decode(authkey), util::crypto::Base64Variant::URLSAFE);
-        req.param("authkey", key);
+        obj["authkey"] = authkey;
+
+        req.bodyJSON(obj);
+        req.encrypted(true);
+        req.param("protocol", NetworkManager::get().getUsedProtocol());
+    });
+}
+
+RequestTask WebRequestManager::challengeStart() {
+    auto& gam = GlobedAccountManager::get();
+
+    auto gdData = gam.gdData.lock();
+
+    return this->post(makeCentralUrl("v2/challenge/new"), 10, [&](CurlRequest& req) {
+        matjson::Object accdata;
+        accdata["account_id"] = gdData->accountId;
+        accdata["user_id"] = gdData->userId;
+        accdata["username"] = gdData->accountName;
+
+        req.bodyJSON(accdata);
+        req.encrypted(true);
+        req.param("protocol", NetworkManager::get().getUsedProtocol());
+    });
+}
+
+RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
+    auto& gam = GlobedAccountManager::get();
+
+    auto gdData = gam.gdData.lock();
+
+    return this->post(makeCentralUrl("v2/challenge/verify"), 30, [&](CurlRequest& req) {
+        matjson::Object accdata;
+        accdata["account_id"] = gdData->accountId;
+        accdata["user_id"] = gdData->userId;
+        accdata["username"] = gdData->accountName;
+
+        matjson::Object obj;
+        obj["account_data"] = accdata;
+        obj["answer"] = std::string(authcode);
+
+        req.bodyJSON(obj);
+        req.encrypted(true);
     });
 }
 
@@ -79,7 +107,7 @@ RequestTask WebRequestManager::fetchCredits() {
 }
 
 RequestTask WebRequestManager::fetchServers() {
-    return this->get(makeCentralUrl("servers"), 3, [&](web::WebRequest& req) {
+    return this->get(makeCentralUrl("servers"), 10, [&](CurlRequest& req) {
         req.param("protocol", NetworkManager::get().getUsedProtocol());
     });
 }
@@ -89,97 +117,68 @@ RequestTask WebRequestManager::fetchFeaturedLevel() {
 }
 
 RequestTask WebRequestManager::fetchFeaturedLevelHistory(int page) {
-    return this->get(makeCentralUrl("flevel/historyv2"), 5, [&](web::WebRequest& req) {
+    return this->get(makeCentralUrl("flevel/historyv2"), 10, [&](CurlRequest& req) {
         req.param("page", page);
     });
 }
 
 RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty) {
-    return this->post(makeCentralUrl("flevel/replace"), 5, [&](web::WebRequest& req) {
-        req.param("newlevel", levelId);
-        req.param("rate_tier", rateTier);
-        req.param("aid", GlobedAccountManager::get().gdData.lock()->accountId);
-        req.param("adminpwd", GlobedAccountManager::get().getTempAdminPassword());
-        req.param("levelname", levelName);
-        req.param("levelauthor", levelAuthor);
-        req.param("difficulty", difficulty);
-    });
-}
+    return this->post(makeCentralUrl("v2/flevel/replace"), 10, [&](CurlRequest& req) {
+        matjson::Object data = {
+            {"level_id", levelId},
+            {"rate_tier", rateTier},
+            {"account_id", GlobedAccountManager::get().gdData.lock()->accountId},
+            {"admin_password", GlobedAccountManager::get().getTempAdminPassword()},
+            {"level_name", std::string(levelName)},
+            {"level_author", std::string(levelAuthor)},
+            {"difficulty", difficulty}
+        };
 
-RequestTask WebRequestManager::challengeStart() {
-    auto& gam = GlobedAccountManager::get();
-
-    auto gdData = gam.gdData.lock();
-
-    return this->post(makeCentralUrl("challenge/new"), 5, [&](web::WebRequest& req) {
-        req.param("aid", gdData->accountId);
-        req.param("uid", gdData->userId);
-        req.param("aname", gdData->accountName);
-        req.param("protocol", NetworkManager::get().getUsedProtocol());
-    });
-}
-
-RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
-    auto& gam = GlobedAccountManager::get();
-
-    auto gdData = gam.gdData.lock();
-
-    return this->post(makeCentralUrl("challenge/verify"), 30, [&](web::WebRequest& req) {
-        req.param("aid", gdData->accountId);
-        req.param("uid", gdData->userId);
-        req.param("aname", gdData->accountName);
-        req.param("answer", authcode);
+        req.bodyJSON(data);
+        req.encrypted(true);
     });
 }
 
 RequestTask WebRequestManager::get(std::string_view url) {
-    return get(url, 5);
+    return get(url, 10);
 }
 
 RequestTask WebRequestManager::get(std::string_view url, int timeoutS) {
     return get(url, timeoutS, [](auto&) {});
 }
 
-RequestTask WebRequestManager::get(std::string_view url, int timeoutS, std::function<void(web::WebRequest&)> additional) {
+RequestTask WebRequestManager::get(std::string_view url, int timeoutS, std::function<void(CurlRequest&)> additional) {
 #ifdef GLOBED_DEBUG
     log::debug("GET request: {}", url);
 #endif
 
-    auto request = web::WebRequest()
-#ifdef GLOBED_DEBUG
-        .certVerification(false)
-#endif
-        .userAgent(util::net::webUserAgent())
+    auto request = CurlRequest()
         .timeout(util::time::seconds(timeoutS));
 
     additional(request);
 
-    return mapTask(request.get(url));
+    return mapTask(request.get(url).send());
 }
 
 
 RequestTask WebRequestManager::post(std::string_view url) {
-    return post(url, 5);
+    return post(url, 10);
 }
 
 RequestTask WebRequestManager::post(std::string_view url, int timeoutS) {
     return post(url, timeoutS, [](auto&) {});
 }
 
-RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::function<void(web::WebRequest&)> additional) {
+RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::function<void(CurlRequest&)> additional) {
 #ifdef GLOBED_DEBUG
     log::debug("POST request: {}", url);
 #endif
 
-    auto request = web::WebRequest()
-#ifdef GLOBED_DEBUG
-        .certVerification(false)
-#endif
-        .userAgent(util::net::webUserAgent())
+    auto request = CurlRequest()
         .timeout(util::time::seconds(timeoutS));
 
     additional(request);
 
-    return mapTask(request.post(url));
+    return mapTask(request.post(url).send());
 }
 

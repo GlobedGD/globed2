@@ -4,8 +4,10 @@
 #include "level_editor_layer.hpp"
 #include <util/lowlevel.hpp>
 #include <util/cocos.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
+using util::gd::GameVariable;
 
 /* Hooks */
 
@@ -132,7 +134,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 
         if (m_fields->antiCheat != object && player == noclipFor) {
             // epic noclip hack 2024 !!
-            log::debug("noclipping for {}", noclipFor == m_player1 ? "player 1" : "player 2");
+            // log::debug("noclipping for {}", noclipFor == m_player1 ? "player 1" : "player 2");
             return;
         }
     }
@@ -146,6 +148,14 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     }
 
     m_fields->insideDestroyPlayer = true;
+
+    // if deathlink or 2p mode is enabled, toggle faster reset off
+    bool oldFastReset = util::gd::variable(GameVariable::FastRespawn);
+
+    if (pl->m_fields->twopstate.active || pl->m_fields->deathlinkState.active) {
+        util::gd::setVariable(GameVariable::FastRespawn, false);
+    }
+
 #ifdef GEODE_IS_ARM_MAC
 # if GEODE_COMP_GD_VERSION != 22060
 #  error "update this patch for new gd"
@@ -171,6 +181,8 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 #else
     PlayLayer::destroyPlayer(player, object);
 #endif
+
+    util::gd::setVariable(GameVariable::FastRespawn, oldFastReset);
 
     m_isTestMode = lastTestMode;
 }

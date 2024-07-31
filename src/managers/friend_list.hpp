@@ -3,37 +3,46 @@
 
 #include <util/singleton.hpp>
 
+// Class for managing friendlist or blocklist in Geometry Dash.
 class FriendListManager : public SingletonBase<FriendListManager> {
 protected:
     friend class SingletonBase;
     friend class DummyNode;
 
-    class DummyNode : public cocos2d::CCNode, public UserListDelegate {
+    class DummyNode : public UserListDelegate {
     public:
-        static DummyNode* create();
         void cleanup();
         void getUserListFinished(cocos2d::CCArray* p0, UserListType p1);
         void getUserListFailed(UserListType p0, GJErrorCode p1);
-        void userListChanged(cocos2d::CCArray* p0, UserListType p1);
-        void forceReloadList(UserListType p0);
     };
 
 public:
-    // makes an async request to gd servers and fetches the current friendlist
-    void load();
-    bool isLoaded();
-    // call `load()` if `isLoaded() == false`
+    // call `load()` if list has not been loaded yet
     void maybeLoad();
 
-    // reset the friend list and ensure `isLoaded()` will return `false` until reloaded again.
+    // reset the friend list
     void invalidate();
 
     bool isFriend(int playerId);
+    bool isBlocked(int playerId);
 
 private:
-    void insertPlayers(cocos2d::CCArray* players);
+    // makes an async request to gd servers and fetches the current friendlist
+    void load(bool friends);
+    bool areFriendsLoaded();
+    bool areBlockedLoaded();
+    bool isFetching();
 
-    Ref<DummyNode> dummyNode;
-    std::set<int> friends;
-    bool loaded = false;
+    void insertPlayers(cocos2d::CCArray* players, bool friends);
+
+    enum class FetchState {
+        None, Friends, Blocked
+    };
+
+    DummyNode dummyNode;
+    std::set<int> listFriends;
+    std::set<int> listBlocked;
+    FetchState fetchState;
+
+    bool loadedFriends = false, loadedBlocked = false;
 };

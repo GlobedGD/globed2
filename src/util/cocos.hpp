@@ -19,6 +19,8 @@ namespace util::cocos {
         AllWithoutDeathEffects,
     };
 
+    void preloadLogImpl(std::string_view message);
+
     void preloadAssets(AssetPreloadStage stage);
 
     bool forcedSkipPreload();
