@@ -58,6 +58,7 @@ void GlobedPlayLayer::fullReset() {
     if (gjbgl->m_fields->deathlinkState.active) {
         if (gjbgl->m_fields->isManuallyResettingLevel) {
             gjbgl->notifyDeath();
+            gjbgl->selfDeath();
         }
     }
 
@@ -79,6 +80,7 @@ void GlobedPlayLayer::resetLevel() {
     if (gjbgl->m_fields->deathlinkState.active) {
         if (gjbgl->m_fields->isManuallyResettingLevel) {
             gjbgl->notifyDeath();
+            gjbgl->selfDeath();
         }
     }
 

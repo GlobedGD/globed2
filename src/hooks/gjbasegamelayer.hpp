@@ -45,6 +45,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
             bool active = false;
         } deathlinkState;
         bool isManuallyResettingLevel = false;
+        bool isDeathLinkDeath = false; // only true when a death was triggered by deathlink; triggered off by the playerobject hook
 
         bool progressForciblyDisabled = false; // affected by room settings, forces safe mode
         bool forcedPlatformer = false;
@@ -162,6 +163,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     void linkPlayerTo(int accountId);
     void notifyDeath();
     void killPlayer();
+    void selfDeath(); // its the thing that notifies the user that they themselves have died in deathlink
 
     // runs every frame while paused
     void pausedUpdate(float dt);

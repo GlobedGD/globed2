@@ -108,6 +108,9 @@ void HookedPlayerObject::playerDestroyed(bool p0) {
     auto* gjbgl = GlobedGJBGL::get();
     if (this == gjbgl->m_player1 || this == gjbgl->m_player2) {
         gjbgl->notifyDeath();
+        if (gjbgl->m_fields->deathlinkState.active && !gjbgl->m_fields->isDeathLinkDeath) {
+            gjbgl->selfDeath();
+        }
     }
 }
 

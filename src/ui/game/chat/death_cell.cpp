@@ -47,8 +47,10 @@ bool GlobedDeathCell::init(const std::string& username, int accid) {
             ->setGrowCrossAxis(true)
             ->setCrossAxisReverse(true)
             ->setAutoScale(false)
+            ->setCrossAxisOverflow(false)
             ->setAxisAlignment(AxisAlignment::Start)
         )
+        .height(22.f)
         .parent(this)
         .collect();
 
@@ -112,6 +114,7 @@ bool GlobedDeathCell::init(const std::string& username, int accid) {
     playerBundle->updateLayout();
 
     messageTextLabel->setScale(0.5f);
+    playerBundle->updateLayout();
 
     return true;
 }

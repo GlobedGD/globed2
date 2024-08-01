@@ -139,7 +139,7 @@ void GlobedGJBGL::setupBare() {
         Build<CCMenu>::create()
             .layout(ColumnLayout::create()->setAxisReverse(true))
             .zOrder(11)
-            .pos(ccp(85, 55))
+            .pos(ccp(120, 55))
             .scale(0.55f)
             .contentSize(300, 170)
             .opacity(150.f)
@@ -161,9 +161,6 @@ void GlobedGJBGL::setupBare() {
         // else update the overlay with ping
         m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
     }
-
-    //m_fields->chatOverlay->addChild(GlobedChatCell::create("me", GJAccountManager::get()->m_accountID, "test"));
-    //m_fields->chatOverlay->updateLayout();
 }
 
 void GlobedGJBGL::setupDeferredAssetPreloading() {
@@ -680,6 +677,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
         // deathlink
         if (self->m_fields->deathlinkState.active) {
+            self->m_fields->isDeathLinkDeath = false;
             if (frameFlags.pendingRealDeath && !hasBeenKilled) {
                 std::string usr = ProfileCacheManager::get().getData(playerId)->name;
                 if (PlayLayer::get()) {
@@ -693,6 +691,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
                 }
                 log::info("i think {} died", ProfileCacheManager::get().getData(playerId)->name);
                 hasBeenKilled = true;
+                self->m_fields->isDeathLinkDeath = true;
                 // force a fake death
                 self->m_fields->isFakingDeath = true;
                 self->killPlayer();
@@ -1379,10 +1378,12 @@ void GlobedGJBGL::linkPlayerTo(int accountId) {
 void GlobedGJBGL::notifyDeath() {
     m_fields->lastDeathTimestamp = m_fields->timeCounter;
     m_fields->isLastDeathReal = !m_fields->isFakingDeath;
+}
 
+void GlobedGJBGL::selfDeath() {
     if (!PlayLayer::get()) return;
 
-    if (PlayLayer::get()->m_gameState.m_currentProgress == 0) {
+    if (PlayLayer::get()->m_gameState.m_currentProgress != 0) {
         if (m_fields->chatOverlay->getChildrenCount() > 4) {
             static_cast<CCNode*>(m_fields->chatOverlay->getChildren()->objectAtIndex(0))->removeFromParent();
         }

@@ -6,8 +6,8 @@
 
 class GlobedDeathCell : public cocos2d::CCLayerColor {
 public:
-    static constexpr float CELL_HEIGHT = 22.f;
-    static constexpr float CELL_WIDTH = 290.f;
+    static constexpr float CELL_HEIGHT = 24.f;
+    static constexpr float CELL_WIDTH = 410.f;
 
     std::string user;
     int accountId;
