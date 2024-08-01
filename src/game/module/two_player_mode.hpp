@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base.hpp"
+#include <Geode/loader/Mod.hpp> // for _spr
 
 class TwoPlayerModeModule : public BaseGameplayModule {
 public:
