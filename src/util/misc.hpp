@@ -67,7 +67,7 @@ namespace util::misc {
     // When using this, it is recommended that the function does not take long to execute, due to the simplicity of the implementation.
     void callOnceSync(const char* key, std::function<void()> func);
 
-    // Calculate the avergae volume of pcm samples, picking the fastest implementation
+    // Calculate the average volume of pcm samples
     float calculatePcmVolume(const float* pcm, size_t samples);
 
     float pcmVolumeSlow(const float* pcm, size_t samples);

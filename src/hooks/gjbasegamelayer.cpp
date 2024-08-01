@@ -6,7 +6,6 @@
 
 #include <Geode/loader/Dispatch.hpp>
 
-#include "play_layer.hpp"
 #include "game_manager.hpp"
 #include "gjgamelevel.hpp"
 #include <audio/all.hpp>
@@ -18,6 +17,7 @@
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <data/packets/all.hpp>
+#include <game/module/all.hpp>
 #include <game/camera_state.hpp>
 #include <hooks/game_manager.hpp>
 #include <util/math.hpp>
@@ -33,6 +33,12 @@ constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
 
 constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
+
+// post an event to all modules
+#define GLOBED_EVENT(self, code) \
+    for (auto& module : self->m_fields->modules) { \
+        module->code; \
+    }
 
 
 bool GlobedGJBGL::init() {
@@ -69,7 +75,7 @@ GlobedGJBGL* GlobedGJBGL::get() {
 /* Setup */
 
 // Runs before PlayLayer::init
-void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
+void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     auto& nm = NetworkManager::get();
     auto& settings = GlobedSettings::get();
 
@@ -84,28 +90,51 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level) {
         // room settings
         m_fields->roomSettings = RoomManager::get().getInfo().settings;
 
-        // collision only works in platformer, so force platformer :D
-        if (m_fields->roomSettings.flags.collision && !level->isPlatformer()) {
-            m_fields->roomSettings.flags.collision = false;
+        /* initialize modules */
 
-            constexpr bool forcedPlatformer = false; // TODO: maybe reenable?
-            if (forcedPlatformer) {
+        // discord rpc
+        if (Loader::get()->isModLoaded("techstudent10.discord_rich_presence")
+            && settings.globed.useDiscordRPC)
+        {
+            this->addModule<DiscordRpcModule>();
+        }
+
+        auto& rs = m_fields->roomSettings.flags;
+
+        // Collision
+        if (rs.collision) {
+            bool shouldEnableCollision = true;
+
+            constexpr bool forcedPlatformer = false; // TODO maybe reenable?
+            if (!level->isPlatformer() && forcedPlatformer) {
                 m_fields->forcedPlatformer = true;
-                m_fields->roomSettings.flags.collision = true;
 #ifdef GEODE_IS_ANDROID
                 if (this->m_uiLayer) {
                     this->m_uiLayer->togglePlatformerMode(true);
                 }
 #endif
+            } else if (!level->isPlatformer()) {
+                // not forced platformer, so disable
+                shouldEnableCollision = false;
+            }
+
+            if (shouldEnableCollision) {
+                this->addModule<CollisionModule>();
             }
         }
 
-        // if 2 player mode is enabled, we are the primary player if we are the room creator
-        if (m_fields->roomSettings.flags.twoPlayerMode) {
-            m_fields->twopstate.isPrimary = RoomManager::get().isOwner();
+        // 2 player mode
+        log::debug("2 player mode: {}", rs.twoPlayerMode);
+        if (rs.twoPlayerMode && !editor) {
+            this->addModule<TwoPlayerModeModule>();
         }
 
-        m_fields->deathlinkState.active = m_fields->roomSettings.flags.deathlink;
+        // Deathlink
+        if (rs.deathlink && !rs.twoPlayerMode && !editor) {
+            this->addModule<DeathlinkModule>();
+        }
+
+        GLOBED_EVENT(this, setupPreInit(level));
     }
 }
 
@@ -149,6 +178,8 @@ void GlobedGJBGL::setupBare() {
         // else update the overlay with ping
         m_fields->overlay->updatePing(GameServerManager::get().getActivePing());
     }
+
+    GLOBED_EVENT(this, setupBare());
 }
 
 void GlobedGJBGL::setupDeferredAssetPreloading() {
@@ -225,6 +256,8 @@ void GlobedGJBGL::setupAudio() {
         }
     }
 
+    GLOBED_EVENT(this, setupAudio());
+
 #endif // GLOBED_VOICE_SUPPORT
 
         /*m_fields->chatOverlay = Build<GlobedChatOverlay>::create()
@@ -294,6 +327,8 @@ void GlobedGJBGL::setupPacketListeners() {
         }
 #endif // GLOBED_VOICE_SUPPORT
     });
+
+    GLOBED_EVENT(this, setupPacketListeners());
 }
 
 void GlobedGJBGL::setupCustomKeybinds() {
@@ -340,6 +375,8 @@ void GlobedGJBGL::setupCustomKeybinds() {
 
         return ListenerResult::Propagate;
     }, "voice-deafen"_spr);
+
+    GLOBED_EVENT(this, setupCustomKeybinds());
 #endif // GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
 }
 
@@ -364,8 +401,6 @@ void GlobedGJBGL::setupUpdate() {
         self->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);
 
         self->scheduleOnce(schedule_selector(GlobedGJBGL::postInitActions), 0.25f);
-
-        self->updateDRPC();
     });
 }
 
@@ -405,12 +440,6 @@ void GlobedGJBGL::setupMisc() {
     auto& flm = FriendListManager::get();
     flm.maybeLoad();
 
-    // toggle safe mode if collision is enabled
-    if (m_fields->roomSettings.flags.collision) {
-        m_fields->progressForciblyDisabled = true;
-        this->toggleSafeMode(true);
-    }
-
     // vmt hook
 #ifdef GEODE_IS_WINDOWS
     static auto patch = [&]() -> Patch* {
@@ -428,6 +457,22 @@ void GlobedGJBGL::setupMisc() {
         (void) patch->enable();
     }
 #endif
+
+    GLOBED_EVENT(this, setupMisc());
+
+    // check if any modules disable progress
+    bool shouldSafeMode = false;
+    for (auto& module : this->m_fields->modules) {
+        if (!module->shouldSaveProgress()) {
+            shouldSafeMode = true;
+            break;
+        }
+    }
+
+    if (shouldSafeMode) {
+        m_fields->progressForciblyDisabled = true;
+        this->toggleSafeMode(true);
+    }
 }
 
 void GlobedGJBGL::setupUi() {
@@ -482,6 +527,8 @@ void GlobedGJBGL::setupUi() {
             m_fields->ownNameLabel2->updateOpacity(settings.players.nameOpacity);
         }
     }
+
+    GLOBED_EVENT(this, setupUi());
 }
 
 void GlobedGJBGL::postInitActions(float) {
@@ -489,6 +536,8 @@ void GlobedGJBGL::postInitActions(float) {
     nm.send(RequestPlayerProfilesPacket::create(0));
 
     m_fields->shouldRequestMeta = true;
+
+    GLOBED_EVENT(this, postInitActions());
 }
 
 /* Selectors */
@@ -527,7 +576,7 @@ void GlobedGJBGL::selSendPlayerMetadata(float) {
 }
 
 // selPeriodicalUpdate - runs 4 times a second, does various stuff
-void GlobedGJBGL::selPeriodicalUpdate(float) {
+void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     auto self = GlobedGJBGL::get();
 
     if (!self || !self->established()) return;
@@ -602,6 +651,8 @@ void GlobedGJBGL::selPeriodicalUpdate(float) {
     if (GlobedSettings::get().overlay.enabled) {
         NetworkManager::get().updateServerPing();
     }
+
+    GLOBED_EVENT(this, selPeriodicalUpdate(dt));
 }
 
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
@@ -663,17 +714,6 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
             isSpeaking ? vpm.getLoudness(playerId) : 0.f
         );
 
-        // deathlink
-        if (self->m_fields->deathlinkState.active) {
-            if (frameFlags.pendingRealDeath && !hasBeenKilled) {
-                hasBeenKilled = true;
-                // force a fake death
-                self->m_fields->isFakingDeath = true;
-                self->killPlayer();
-                self->m_fields->isFakingDeath = false;
-            }
-        }
-
         // update progress icons
         if (auto self = PlayLayer::get()) {
             // dont update if we are in a normal level and without a progressbar
@@ -684,6 +724,8 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
         // update voice proximity
         self->updateProximityVolume(playerId);
+
+        GLOBED_EVENT(self, onUpdatePlayer(playerId, remotePlayer, frameFlags));
     }
 
     if (self->m_fields->selfStatusIcons) {
@@ -720,6 +762,8 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
             }
         }
     }
+
+    GLOBED_EVENT(this, selUpdate(dt));
 }
 
 // selUpdateEstimators - runs 30 times a second, updates audio stuff
@@ -732,49 +776,8 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
     if (self->m_fields->voiceOverlay) {
         self->m_fields->voiceOverlay->updateOverlay();
     }
-}
 
-void GlobedGJBGL::updateDRPC() {
-    if (!Loader::get()->isModLoaded("techstudent10.discord_rich_presence")) return;
-
-    if (!GlobedSettings::get().globed.useDiscordRPC) return;
-
-    // taken from drpc
-    bool isRobTopLevel = (
-        (m_level->m_levelID.value() < 128 && m_level->m_levelID.value() != 0) ||
-            m_level->m_levelID.value() == 3001 || m_level->m_levelID.value() < 5003 ||
-            m_level->m_levelID.value() > 5000
-    ) && m_level->m_creatorName.empty();
-
-    auto state = fmt::format("{} by {}", std::string(m_level->m_levelName), (isRobTopLevel) ? "RobTopGames" : std::string(m_level->m_creatorName));
-
-    using SetRPCEvent = geode::DispatchEvent<bool>;
-    SetRPCEvent("techstudent10.discord_rich_presence/set_default_rpc_enabled", false).post();
-
-    using UpdateRPCEvent = geode::DispatchEvent<std::string>;
-    auto json = matjson::Value(matjson::Object({
-        {"modID", ""_spr},
-        {"details", "Playing on Globed!"},
-        {"state", state},
-        {"smallImageKey", ""},
-        {"smallImageText", ""},
-        {"useTime", true},
-        {"shouldResetTime", false},
-        {"largeImageKey", "https://raw.githubusercontent.com/dankmeme01/globed2/main/logo.png"},
-        {"largeImageText", ""},
-        {"joinSecret", std::to_string(m_level->m_levelID.value())},
-        {"partyMax", m_fields->players.size() + 1}
-    })).dump();
-    UpdateRPCEvent("techstudent10.discord_rich_presence/update_rpc", json).post();
-}
-
-// selUpdateDRPC - runs every 10 seconds, updates Discord RPC
-void GlobedGJBGL::selUpdateDRPC(float dt) {
-    auto self = GlobedGJBGL::get();
-
-    if (!self || !self->established()) return;
-
-    self->updateDRPC();
+    GLOBED_EVENT(this, selUpdateEstimators(dt));
 }
 
 /* Player related functions */
@@ -996,6 +999,8 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     m_objectLayer->addChild(rp);
     m_fields->players.emplace(playerId, rp);
     m_fields->interpolator->addPlayer(playerId);
+
+    GLOBED_EVENT(this, onPlayerJoin(rp));
 }
 
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
@@ -1003,7 +1008,11 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
 
     if (!m_fields->players.contains(playerId)) return;
 
+
     auto rp = m_fields->players.at(playerId);
+
+    GLOBED_EVENT(this, onPlayerLeave(rp));
+
     rp->removeProgressIndicators();
     rp->removeFromParent();
 
@@ -1072,11 +1081,9 @@ void GlobedGJBGL::onQuitActions() {
         GlobedAudioManager::get().haltRecording();
         VoicePlaybackManager::get().stopAllStreams();
 #endif // GLOBED_VOICE_SUPPORT
-    }
 
-    // report back to the RPC mod that it can takeover again
-    using SetRPCEvent = geode::DispatchEvent<bool>;
-    SetRPCEvent("techstudent10.discord_rich_presence/set_default_rpc_enabled", true).post();
+        GLOBED_EVENT(this, onQuit());
+    }
 }
 
 void GlobedGJBGL::pausedUpdate(float dt) {
@@ -1125,11 +1132,17 @@ bool GlobedGJBGL::accountForSpeedhack(int uniqueKey, float cap, float allowance)
 
 void GlobedGJBGL::unscheduleSelectors() {
     auto* sched = CCScheduler::get();
-    sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selSendPlayerData), this->getParent());
-    sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selSendPlayerMetadata), this->getParent());
-    sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selPeriodicalUpdate), this->getParent());
-    sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selUpdateEstimators), this->getParent());
-    sched->unscheduleSelector(schedule_selector(GlobedGJBGL::selUpdateDRPC), this->getParent());
+
+    this->unscheduleSelector(schedule_selector(GlobedGJBGL::selSendPlayerData));
+    this->unscheduleSelector(schedule_selector(GlobedGJBGL::selSendPlayerMetadata));
+    this->unscheduleSelector(schedule_selector(GlobedGJBGL::selPeriodicalUpdate));
+    this->unscheduleSelector(schedule_selector(GlobedGJBGL::selUpdateEstimators));
+
+    GLOBED_EVENT(this, onUnscheduleSelectors());
+}
+
+void GlobedGJBGL::unscheduleSelector(cocos2d::SEL_SCHEDULE selector) {
+    m_pScheduler->unscheduleSelector(selector, this->getParent());
 }
 
 void GlobedGJBGL::rescheduleSelectors() {
@@ -1141,25 +1154,17 @@ void GlobedGJBGL::rescheduleSelectors() {
     float pmdInterval = 10.f * timescale;
     float updpInterval = 0.25f * timescale;
     float updeInterval = (1.0f / 30.f) * timescale;
-    float drpcInterval = 10.f * timescale;
 
-    this->getParent()->schedule(schedule_selector(GlobedGJBGL::selSendPlayerData), pdInterval);
-    this->getParent()->schedule(schedule_selector(GlobedGJBGL::selSendPlayerMetadata), pmdInterval);
-    this->getParent()->schedule(schedule_selector(GlobedGJBGL::selPeriodicalUpdate), updpInterval);
-    this->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdateEstimators), updeInterval);
-    this->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdateDRPC), drpcInterval);
+    this->customSchedule(schedule_selector(GlobedGJBGL::selSendPlayerData), pdInterval);
+    this->customSchedule(schedule_selector(GlobedGJBGL::selSendPlayerMetadata), pmdInterval);
+    this->customSchedule(schedule_selector(GlobedGJBGL::selPeriodicalUpdate), updpInterval);
+    this->customSchedule(schedule_selector(GlobedGJBGL::selUpdateEstimators), updeInterval);
+
+    GLOBED_EVENT(this, onRescheduleSelectors(timescale));
 }
 
-/* Collision stuff */
-
-static bool shouldCorrectCollision(const CCRect& p1, const CCRect& p2, CCPoint& displacement) {
-    if (std::abs(displacement.x) > 10.f) {
-        displacement.x = -displacement.x;
-        displacement.y = 0;
-        return true;
-    }
-
-    return false;
+void GlobedGJBGL::customSchedule(cocos2d::SEL_SCHEDULE selector, float interval) {
+    this->getParent()->schedule(selector, interval);
 }
 
 // hooks
@@ -1168,106 +1173,53 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
     int retval = GJBaseGameLayer::checkCollisions(player, dt, p2);
 
     if ((void*)this != GJBaseGameLayer::get()) return retval;
+    if (!this->established()) return retval;
 
-    auto* gpl = GlobedGJBGL::get();
-
-    if (!gpl->established()) return retval;
-    if (!gpl->m_fields->roomSettings.flags.collision) return retval;
-
-    bool isSecond = player == gpl->m_player2;
-
-    for (const auto& [_, rp] : gpl->m_fields->players) {
-        auto* p1 = static_cast<PlayerObject*>(rp->player1->getPlayerObject());
-        auto* p2 = static_cast<PlayerObject*>(rp->player2->getPlayerObject());
-
-        auto& p1Rect = p1->getObjectRect();
-        auto& p2Rect = p2->getObjectRect();
-
-        auto& playerRect = player->getObjectRect();
-
-        CCRect p1CollRect = p1Rect;
-        CCRect p2CollRect = p2Rect;
-
-        constexpr float padding = 2.f;
-
-        // p1CollRect.origin += CCPoint{padding, padding};
-        // p1CollRect.size -= CCSize{padding * 2, padding * 2};
-
-        // p2CollRect.origin += CCPoint{padding, padding};
-        // p2CollRect.size -= CCSize{padding * 2, padding * 2};
-
-        bool intersectsP1 = playerRect.intersectsRect(p1CollRect);
-        bool intersectsP2 = playerRect.intersectsRect(p2CollRect);
-
-        if (isSecond) {
-            rp->player1->setP2StickyState(false);
-            rp->player2->setP2StickyState(false);
-        } else {
-            rp->player1->setP1StickyState(false);
-            rp->player2->setP1StickyState(false);
-        }
-
-        if (intersectsP1) {
-            auto prev = player->getPosition();
-            player->collidedWithObject(dt, p1, p1CollRect, false);
-            auto displacement = player->getPosition() - prev;
-
-            // log::debug("p1 intersect, displacement: {}", displacement);
-
-            bool shouldRevert = shouldCorrectCollision(playerRect, p1Rect, displacement);
-
-            if (shouldRevert) {
-                player->setPosition(player->getPosition() + displacement);
-            }
-
-            if (std::abs(displacement.y) > 0.001f) {
-                isSecond ? rp->player1->setP2StickyState(true) : rp->player1->setP1StickyState(true);
-            }
-        }
-
-        if (intersectsP2) {
-            auto prev = player->getPosition();
-            player->collidedWithObject(dt, p2, p2CollRect, false);
-            auto displacement = player->getPosition() - prev;
-
-            // log::debug("p2 intersect, displacement: {}", displacement);
-
-            bool shouldRevert = shouldCorrectCollision(playerRect, p2Rect, displacement);
-
-            if (shouldRevert) {
-                player->setPosition(player->getPosition() + displacement);
-            }
-
-            if (std::abs(displacement.y) > 0.001f) {
-                isSecond ? rp->player2->setP2StickyState(true) : rp->player2->setP1StickyState(true);
-            }
-        }
-    }
+    GLOBED_EVENT(this, checkCollisions(player, dt, p2));
 
     return retval;
 }
 
 void GlobedGJBGL::loadLevelSettings() {
-    LevelSettingsObject* lo = m_levelSettings;
-
     if (!GJBaseGameLayer::get()) {
         GJBaseGameLayer::loadLevelSettings();
         return;
     }
 
-    auto* gpl = GlobedGJBGL::get();
-    bool lastPlat = lo->m_platformerMode;
-    auto lastLength = m_level->m_levelLength;
-
-    if (gpl->m_fields->forcedPlatformer) {
-        lo->m_platformerMode = true;
-    }
+    GLOBED_EVENT(this, loadLevelSettingsPre());
 
     GJBaseGameLayer::loadLevelSettings();
 
-    lo->m_platformerMode = lastPlat;
-    m_level->m_levelLength = lastLength;
+    GLOBED_EVENT(this, loadLevelSettingsPost());
 }
+
+class $modify(PlayerObject) {
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("PlayerObject::playerDestroyed", 99999999).unwrap();
+    }
+
+    void update(float dt) {
+        PlayerObject::update(dt);
+
+        auto pl = GlobedGJBGL::get();
+        if ((void*)m_gameLayer != pl || !pl) return;
+
+        if (pl->m_player1 == this || pl->m_player2 == this) {
+            GLOBED_EVENT(pl, mainPlayerUpdate(this, dt));
+        } else {
+            GLOBED_EVENT(pl, onlinePlayerUpdate(this, dt));
+        }
+    }
+
+    void playerDestroyed(bool p0) {
+        PlayerObject::playerDestroyed(p0);
+
+        auto* gjbgl = GlobedGJBGL::get();
+        if (gjbgl && this == gjbgl->m_player1 || this == gjbgl->m_player2) {
+            GLOBED_EVENT(gjbgl, playerDestroyed(this, p0));
+        }
+    }
+};
 
 /* 2-player mode stuff */
 
@@ -1276,42 +1228,6 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
         Ref<ComplexVisualPlayer> lockedTo;
     };
 
-    void update(float dt) {
-        // dont ask
-        auto* bgl = static_cast<GlobedGJBGL*>(typeinfo_cast<GJBaseGameLayer*>((CCObject*)m_gameLayer));
-
-        if (!bgl || !bgl->m_fields->twopstate.active || !m_fields->lockedTo) {
-            PlayerObject::update(dt);
-            return;
-        }
-
-        PlayerObject* noclipFor = nullptr;
-        if (bgl->m_fields->twopstate.isPrimary) {
-            noclipFor = bgl->m_player2;
-        } else {
-            noclipFor = bgl->m_player1;
-        }
-
-        if (this == noclipFor) {
-            PlayerObject::update(dt);
-
-            this->updateFromLockedPlayer(!bgl->m_fields->twopstate.isPrimary && bgl->m_gameState.m_isDualMode);
-            this->setVisible(false);
-            // if (bgl->m_gameState.m_isDualMode) {
-            //     this->m_isHidden = true;
-            // }
-
-            this->m_playEffects = false;
-            if (this->m_regularTrail) this->m_regularTrail->setVisible(false);
-            if (this->m_waveTrail) this->m_waveTrail->setVisible(false);
-            if (this->m_ghostTrail) this->m_ghostTrail->setVisible(false);
-            if (this->m_trailingParticles) this->m_trailingParticles->setVisible(false);
-            if (this->m_shipStreak) this->m_shipStreak->setVisible(false);
-        } else {
-            PlayerObject::update(dt);
-        }
-    }
-
     void setLockedTo(ComplexVisualPlayer* player) {
         m_fields->lockedTo = player;
     }
@@ -1319,57 +1235,10 @@ class $modify(TwoPModePlayerObject, PlayerObject) {
     void clearLockedTo() {
         this->setLockedTo(nullptr);
     }
-
-    void updateFromLockedPlayer(bool ignorePos) {
-        RemotePlayer* rp = m_fields->lockedTo->getRemotePlayer();
-        if (rp->lastFrameFlags.pendingDeath) {
-            Loader::get()->queueInMainThread([] {
-                static_cast<GlobedPlayLayer*>(PlayLayer::get())->forceKill(PlayLayer::get()->m_player1);
-            });
-        }
-
-        if (!ignorePos && !rp->lastVisualState.isDead) {
-            this->setPosition(m_fields->lockedTo->getPlayerPosition());
-        }
-    }
 };
 
-// TODO: test if still needed for 2 player mode
-// void GlobedGJBGL::updateCamera(float dt) {
-//     if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
-//         GJBaseGameLayer::updateCamera(dt);
-//         return;
-//     }
-
-//     auto lastPos = m_player1->getPosition();
-//     m_player1->setPosition({m_player2->getPositionX(), lastPos.y});
-//     GJBaseGameLayer::updateCamera(dt);
-//     m_player1->setPosition(lastPos);
-// }
-
-void GlobedGJBGL::linkPlayerTo(int accountId) {
-    if (!m_fields->players.contains(accountId)) return;
-    if (!m_fields->roomSettings.flags.twoPlayerMode) return;
-
-    RemotePlayer* rp = m_fields->players.at(accountId);
-
-    PlayerObject* ignored = m_fields->twopstate.isPrimary ? m_player2 : m_player1;
-
-    auto* pobj = static_cast<TwoPModePlayerObject*>(ignored);
-    pobj->setLockedTo(m_fields->twopstate.isPrimary ? rp->player2 : rp->player1);
-
-    m_fields->twopstate.active = true;
-}
-
-/* Deathlink stuff */
-
-void GlobedGJBGL::notifyDeath() {
-    m_fields->lastDeathTimestamp = m_fields->timeCounter;
-    m_fields->isLastDeathReal = !m_fields->isFakingDeath;
-}
-
-void GlobedGJBGL::killPlayer() {
-    if (!this->isEditor()) {
-        static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this))->PlayLayer::destroyPlayer(m_player1, nullptr);
-    }
+void GlobedGJBGL::updateCamera(float dt) {
+    GLOBED_EVENT(this, updateCameraPre(dt));
+    GJBaseGameLayer::updateCamera(dt);
+    GLOBED_EVENT(this, updateCameraPost(dt));
 }

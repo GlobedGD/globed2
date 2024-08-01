@@ -9,7 +9,7 @@
 
 using namespace geode::prelude;
 
-bool GlobedUserActionsPopup::setup(int accountId) {
+bool GlobedUserActionsPopup::setup(int accountId, CCArray* buttons) {
     this->accountId = accountId;
 
     auto& pcm = ProfileCacheManager::get();
@@ -22,16 +22,6 @@ bool GlobedUserActionsPopup::setup(int accountId) {
 
     this->setTitle(name);
 
-    this->remakeButtons();
-
-    return true;
-}
-
-void GlobedUserActionsPopup::remakeButtons() {
-    if (buttonLayout) {
-        buttonLayout->removeFromParent();
-    }
-
     auto rlayout = util::ui::getPopupLayout(m_size);
 
     Build<CCMenu>::create()
@@ -42,61 +32,18 @@ void GlobedUserActionsPopup::remakeButtons() {
 
     auto pl = GlobedGJBGL::get();
 
-    bool isUnblocked = pl->shouldLetMessageThrough(accountId);
-
-    // mute button
-    CCMenuItemSpriteExtra* muteButton;
-    Build<CCSprite>::createSpriteName(isUnblocked ? "icon-mute.png"_spr : "icon-unmute.png"_spr)
-        .intoMenuItem([this, isUnblocked](auto) {
-            auto& bl = BlockListManager::get();
-            isUnblocked ? bl.blacklist(accountId) : bl.whitelist(accountId);
-            // mute them immediately
-            auto& settings = GlobedSettings::get();
-            auto& vpm = VoicePlaybackManager::get();
-
-            if (isUnblocked) {
-                vpm.setVolume(accountId, 0.f);
-            } else {
-                vpm.setVolume(accountId, settings.communication.voiceVolume);
-            }
-
-            // delay by 1 frame to prevent epic ccmenuitem::activate crash
-            Loader::get()->queueInMainThread([this] {
-                this->remakeButtons();
-            });
-        })
-        .parent(buttonLayout)
-        .store(muteButton);
-
-    // hide button
-
-    if (pl->m_fields->players.contains(accountId)) {
-        bool isHidden = pl->m_fields->players.at(accountId)->getForciblyHidden();
-
-        auto sprite = Build<CCSprite>::createSpriteName(isHidden ? "icon-show-player.png"_spr : "icon-hide-player.png"_spr).collect();
-        util::ui::rescaleToMatch(sprite, muteButton);
-
-        Build<CCSprite>(sprite)
-            .intoMenuItem([this, isHidden, pl](auto) {
-                if (!pl->m_fields->players.contains(accountId)) return;
-
-                pl->m_fields->players.at(accountId)->setForciblyHidden(!isHidden);
-                auto& bl = BlockListManager::get();
-                bl.setHidden(accountId, !isHidden);
-
-                Loader::get()->queueInMainThread([this] {
-                    this->remakeButtons();
-                });
-            })
-            .parent(buttonLayout);
+    for (auto btn : CCArrayExt<CCNode*>(buttons)) {
+        buttonLayout->addChild(btn);
     }
 
     buttonLayout->updateLayout();
+
+    return true;
 }
 
-GlobedUserActionsPopup* GlobedUserActionsPopup::create(int accountId) {
+GlobedUserActionsPopup* GlobedUserActionsPopup::create(int accountId, CCArray* buttons) {
     auto ret = new GlobedUserActionsPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, accountId)) {
+    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, accountId, buttons)) {
         ret->autorelease();
         return ret;
     }

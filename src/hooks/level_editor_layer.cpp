@@ -11,7 +11,7 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
 
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
-    gjbgl->setupPreInit(level);
+    gjbgl->setupPreInit(level, true);
 
     if (!LevelEditorLayer::init(level, p1)) return false;
 

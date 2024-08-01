@@ -93,7 +93,7 @@ namespace util::misc {
                 log::error("Failed to compute fingerprint: {}", res.unwrapErr());
 
                 // use a static predetermined value
-                auto data = util::crypto::hexDecode("fecc8b3da5e8ed1b9dcd66f6213b6f891416c4c5f957a4a6d0c7fef540a5f05b");
+                auto data = util::crypto::hexDecode("fecc8b3da5e8ed1b9dcd66f6213b6f891416c4c5f957a4a6d0c7fef540a5f05b").unwrap();
                 std::array<uint8_t, 32> arr;
                 std::copy_n(data.begin(), 32, arr.begin());
 

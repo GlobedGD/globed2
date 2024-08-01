@@ -12,6 +12,7 @@ class $modify(GlobedPlayLayer, PlayLayer) {
 
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);
+        (void) self.setHookPriority("PlayLayer::destroyPlayer", -99999999);
     }
 
     // gd hooks

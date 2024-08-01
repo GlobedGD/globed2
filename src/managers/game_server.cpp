@@ -155,12 +155,7 @@ Result<> GameServerManager::loadFromCache() {
 
     std::string response = _data.lock()->cachedServerResponse;
 
-    util::data::bytevector decoded;
-    try {
-        decoded = util::crypto::base64Decode(response);
-    } catch (const std::exception& e) {
-        return Err(e.what());
-    }
+    GLOBED_UNWRAP_INTO(util::crypto::base64Decode(response), auto decoded)
 
     GLOBED_REQUIRE_SAFE(decoded.size() >= MAGIC_LEN, fmt::format("invalid response sent by the server (missing magic)"));
 

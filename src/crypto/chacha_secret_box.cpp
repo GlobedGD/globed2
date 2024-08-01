@@ -32,23 +32,23 @@ ChaChaSecretBox::~ChaChaSecretBox() {
     }
 }
 
-size_t ChaChaSecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
+Result<size_t> ChaChaSecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
     util::crypto::secureRandom(nonce, NONCE_LEN);
 
     byte* mac = dest + NONCE_LEN;
     byte* ciphertext = mac + MAC_LEN;
 
-    CRYPTO_ERR_CHECK(crypto_secretbox_xchacha20poly1305_detached(ciphertext, mac, src, size, nonce, key), "crypto_secretbox_xchacha20poly1305_detached failed")
+    CRYPTO_ERR_CHECK_SAFE(crypto_secretbox_xchacha20poly1305_detached(ciphertext, mac, src, size, nonce, key), "crypto_secretbox_xchacha20poly1305_detached failed")
 
     // prepend the nonce
     std::memcpy(dest, nonce, NONCE_LEN);
 
-    return size + prefixLength();
+    return Ok(size + prefixLength());
 }
 
-size_t ChaChaSecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
-    CRYPTO_REQUIRE(size >= prefixLength(), "message is too short")
+Result<size_t> ChaChaSecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
+    CRYPTO_REQUIRE_SAFE(size >= prefixLength(), "message is too short")
 
     size_t plaintextLength = size - prefixLength();
 
@@ -56,21 +56,22 @@ size_t ChaChaSecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
     const byte* mac = src + NONCE_LEN;
     const byte* ciphertext = mac + MAC_LEN;
 
-    CRYPTO_ERR_CHECK(crypto_secretbox_xchacha20poly1305_open_detached(dest, ciphertext, mac, plaintextLength, nonce, key), "crypto_secretbox_xchacha20poly1305_open_detached failed")
+    CRYPTO_ERR_CHECK_SAFE(crypto_secretbox_xchacha20poly1305_open_detached(dest, ciphertext, mac, plaintextLength, nonce, key), "crypto_secretbox_xchacha20poly1305_open_detached failed")
 
-    return plaintextLength;
+    return Ok(plaintextLength);
 }
 
-void ChaChaSecretBox::setKey(const util::data::bytevector& src) {
-    GLOBED_REQUIRE(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for ChaChaSecretBox")
-    setKey(src.data());
+Result<> ChaChaSecretBox::setKey(const util::data::bytevector& src) {
+    GLOBED_REQUIRE_SAFE(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for ChaChaSecretBox")
+    this->setKey(src.data());
+    return Ok();
 }
 
 void ChaChaSecretBox::setKey(const util::data::byte* src) {
     std::memcpy(this->key, src, crypto_secretbox_KEYBYTES);
 }
 
-void ChaChaSecretBox::setPassword(const std::string_view pw) {
+Result<> ChaChaSecretBox::setPassword(const std::string_view pw) {
     auto key = util::crypto::simpleHash(pw);
-    setKey(key);
+    return this->setKey(key);
 }

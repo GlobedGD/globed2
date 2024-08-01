@@ -161,6 +161,30 @@ void CentralServerManager::switchRoutine(int index, bool force) {
     gam.autoInitialize();
 }
 
+Result<> CentralServerManager::tryReload() {
+    auto b64value = Mod::get()->getSavedValue<std::string>(SETTING_KEY);
+    if (b64value.empty()) return Ok();
+
+    GLOBED_UNWRAP_INTO(util::crypto::base64Decode(b64value), auto decoded);
+    if (decoded.empty()) return Ok();
+
+    ByteBuffer buf(std::move(decoded));
+    auto result = buf.readValue<std::vector<CentralServer>>();
+    if (result.isErr()) {
+        ErrorQueues::get().warn(fmt::format("failed to load servers: {}", result.unwrapErr()));
+        return Ok();
+    }
+
+    auto parsed = result.unwrap();
+
+    auto servers = _servers.lock();
+    for (const auto& server : parsed) {
+        servers->push_back(server);
+    }
+
+    return Ok();
+}
+
 void CentralServerManager::reload() {
     auto servers = _servers.lock();
     servers->clear();
@@ -171,27 +195,12 @@ void CentralServerManager::reload() {
         .url = globed::string<"main-server-url">(),
     });
 
-    try {
-        auto b64value = Mod::get()->getSavedValue<std::string>(SETTING_KEY);
-        if (b64value.empty()) return;
+    servers.unlock();
 
-        auto decoded = util::crypto::base64Decode(b64value);
-        if (decoded.empty()) return;
+    auto res = this->tryReload();
 
-        ByteBuffer buf(std::move(decoded));
-        auto result = buf.readValue<std::vector<CentralServer>>();
-        if (result.isErr()) {
-            ErrorQueues::get().warn(fmt::format("failed to load servers: {}", result.unwrapErr()));
-            return;
-        }
-
-        auto parsed = result.unwrap();
-
-        for (const auto& server : parsed) {
-            servers->push_back(server);
-        }
-    } catch (const std::exception& e) {
-        ErrorQueues::get().warn(std::string("failed to load servers: ") + e.what());
+    if (!res) {
+        ErrorQueues::get().warn(std::string("failed to load servers: ") + res.unwrapErr());
     }
 }
 

@@ -4,14 +4,9 @@
 #include <util/crypto.hpp>
 
 BlockListManager::BlockListManager() {
-    try {
-        auto result = this->load();
-        if (result.isErr()) {
-            log::warn("Failed to load blocklist: {}", result.unwrapErr());
-            _bl.clear();
-            _wl.clear();
-        }
-    } catch (const std::exception& e) {
+    auto result = this->load();
+    if (result.isErr()) {
+        log::warn("Failed to load blocklist: {}", result.unwrapErr());
         _bl.clear();
         _wl.clear();
     }
@@ -42,13 +37,7 @@ Result<> BlockListManager::load() {
     auto val = Mod::get()->getSavedValue<std::string>(SETTING_KEY);
     if (val.empty()) return Ok();
 
-    util::data::bytevector data;
-
-    try {
-        data = util::crypto::base64Decode(val);
-    } catch (const std::exception& e) {
-        return Err(e.what());
-    }
+    GLOBED_UNWRAP_INTO(util::crypto::base64Decode(val), auto data);
 
     if (data.empty()) return Err("base64 string was empty");
 
