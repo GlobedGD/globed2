@@ -241,10 +241,13 @@ CCArray* GlobedUserListPopup::createPlayerCells() {
         } else if (auto pcmdata = pcm.getData(playerId)) {
             cell = GlobedUserCell::create(entry, pcmdata.value(), this);
         } else {
-            cell = GlobedUserCell::create(entry, PlayerAccountData::DEFAULT_DATA, this);
+            // cell = GlobedUserCell::create(entry, PlayerAccountData::DEFAULT_DATA, this);
+            cell = nullptr;
         }
 
-        cells->addObject(cell);
+        if (cell) {
+            cells->addObject(cell);
+        }
     }
 
     return cells;

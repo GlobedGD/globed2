@@ -28,8 +28,8 @@ public:
     // This precomputes the shared key and stores it for use in all future operations.
     void setPeerKey(const util::data::byte* src);
 
-    size_t encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
-    size_t decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
+    Result<size_t> encryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
+    Result<size_t> decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size);
 
 private: // nuh uh
     util::data::byte* memBasePtr = nullptr;

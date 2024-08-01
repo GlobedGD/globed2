@@ -11,10 +11,29 @@
 #include <util/net.hpp>
 
 using namespace geode::prelude;
+using namespace util::data;
 
 GlobedAccountManager::GlobedAccountManager() {
     // TODO 1.6.x: remove the migration.
     this->migrateOldValues();
+}
+
+static Result<bytevector> decryptOldSecretValue(std::string_view hash, std::string_view value, bool isAdminPassword) {
+    GLOBED_UNWRAP_INTO(util::crypto::hexDecode(hash), auto cryptoKey);
+
+    SecretBox box(cryptoKey);
+    auto adminPwd = value;
+
+    bytevector password;
+    GLOBED_UNWRAP_INTO(util::crypto::base64Decode(adminPwd), auto decoded);
+
+    if (isAdminPassword) {
+        GLOBED_UNWRAP_INTO(box.decrypt(decoded), password);
+    } else {
+        password = std::move(decoded);
+    }
+
+    return Ok(std::move(password));
 }
 
 void GlobedAccountManager::migrateOldValues() {
@@ -38,22 +57,16 @@ void GlobedAccountManager::migrateOldValues() {
             continue;
         }
 
-        // log::debug("key: {}", key);
+        log::debug("key: {}, value: {}", key, value.as_string());
 
-        try {
-            auto [_k, _sep, hash] = util::format::partition(key, pfx);
 
-            auto cryptoKey = util::crypto::hexDecode(hash);
-
-            SecretBox box(cryptoKey);
-            auto adminPwd = value.as_string();
-
-            util::data::bytevector password;
-            if (pfx == "stored-admin-pw-") {
-                password = box.decrypt(util::crypto::base64Decode(adminPwd));
-            } else {
-                password = util::crypto::base64Decode(adminPwd);
-            }
+        auto [_k, _sep, hash] = util::format::partition(key, pfx);
+        auto res = decryptOldSecretValue(hash, value.as_string(), pfx == "stored-admin-pw-");
+        if (!res) {
+            log::warn("Failed to decrypt key {}: {}", key, res.unwrapErr());
+        } else {
+            auto password = std::move(res.unwrap());
+            auto cryptoKey = util::crypto::hexDecode(hash).unwrap();
 
             // log::debug("raw password: {}", password);
 
@@ -71,9 +84,6 @@ void GlobedAccountManager::migrateOldValues() {
             newpfx.push_back('-');
 
             toPush.push_back({util::format::replace(key, pfx, newpfx), util::crypto::base64Encode(encrypted)});
-
-        } catch (const std::exception& e) {
-            log::warn("Failed to migrate admin password: {}", e.what());
         }
 
         toErase.push_back(key);
@@ -100,7 +110,7 @@ void GlobedAccountManager::initialize(const std::string_view name, int accountId
 
     *gdData.lock() = data;
 
-    auto cryptoKey = util::crypto::hexDecode(data.precomputedHash);
+    auto cryptoKey = std::move(util::crypto::hexDecode(data.precomputedHash).unwrap());
 
     // append the per-device fingerprint
     auto fp = util::misc::fingerprint().getRaw();
@@ -154,12 +164,10 @@ bool GlobedAccountManager::hasAuthKey() {
         return false;
     }
 
-    try {
-        cryptoBox->decrypt(util::crypto::base64Decode(b64Token));
-        return true;
-    } catch (const std::exception& e) {}
+    auto res = util::crypto::base64Decode(b64Token);
+    if (!res) return false;
 
-    return false;
+    return cryptoBox->decrypt(res.unwrap()).isOk();
 }
 
 std::optional<std::string> GlobedAccountManager::getAuthKey() {
@@ -172,13 +180,21 @@ std::optional<std::string> GlobedAccountManager::getAuthKey() {
         return std::nullopt;
     }
 
-    try {
-        auto decrypted = cryptoBox->decrypt(util::crypto::base64Decode(encoded));
-        return util::crypto::base64Encode(decrypted, util::crypto::Base64Variant::URLSAFE);
-    } catch (const std::exception& e) {
-        log::warn("Failed to load authkey: {}", e.what());
+    auto res1 = util::crypto::base64Decode(encoded);
+    if (!res1) {
+        ErrorQueues::get().debugWarn(fmt::format("Failed to load authkey: {}", res1.unwrapErr()));
         return std::nullopt;
     }
+
+    auto res = cryptoBox->decrypt(res1.unwrap());
+    if (!res) {
+        ErrorQueues::get().debugWarn(fmt::format("Failed to load authkey: {}", res.unwrapErr()));
+        return std::nullopt;
+    }
+
+    auto decrypted = std::move(res.unwrap());
+
+    return util::crypto::base64Encode(decrypted, util::crypto::Base64Variant::URLSAFE);
 }
 
 void GlobedAccountManager::requestAuthToken(std::optional<std::function<void()>> callback) {
@@ -269,14 +285,20 @@ std::optional<std::string> GlobedAccountManager::getAdminPassword() {
 
     auto jsonkey = this->getKeyFor("stored-admin-pw2");
     auto b64pw = Mod::get()->getSavedValue<std::string>(jsonkey);
-    try {
-        auto data = util::crypto::base64Decode(b64pw);
-        auto adminPassword = cryptoBox->decryptToString(data);
-        return adminPassword;
-    } catch (const std::exception& e) {
-        log::warn("failed to read admin key: {}", e.what());
+
+    auto res1 = util::crypto::base64Decode(b64pw);
+    if (!res1) {
+        ErrorQueues::get().debugWarn(fmt::format("Failed to read admin password: {}", res1.unwrapErr()));
         return std::nullopt;
     }
+
+    auto res2 = cryptoBox->decryptToString(res1.unwrap());
+    if (!res2) {
+        ErrorQueues::get().debugWarn(fmt::format("Failed to read admin password: {}", res2.unwrapErr()));
+        return std::nullopt;
+    }
+
+    return res2.unwrap();
 }
 
 void GlobedAccountManager::cancelAuthTokenRequest() {
