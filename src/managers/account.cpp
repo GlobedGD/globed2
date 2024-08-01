@@ -57,9 +57,6 @@ void GlobedAccountManager::migrateOldValues() {
             continue;
         }
 
-        log::debug("key: {}, value: {}", key, value.as_string());
-
-
         auto [_k, _sep, hash] = util::format::partition(key, pfx);
         auto res = decryptOldSecretValue(hash, value.as_string(), pfx == "stored-admin-pw-");
         if (!res) {
@@ -94,7 +91,7 @@ void GlobedAccountManager::migrateOldValues() {
     }
 
     for (const auto& [key, value] : toPush) {
-        // log::debug("migrate {} value {}", key, value);
+        log::debug("Migrated value: key {}, new value: {}", key, value);
         container[key] = value;
     }
 }
