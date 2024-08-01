@@ -1,5 +1,6 @@
 #include "keybinds.hpp"
 
+#include <defs/geode.hpp>
 #include <util/into.hpp>
 
 using namespace geode::prelude;
