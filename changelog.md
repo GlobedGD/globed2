@@ -11,6 +11,7 @@
 * Fix room name overlapping other UI elements in the room listing
 * Fix player count going up to 4 digits on android (and cap to 10000 instead of 65535)
 * Fix the room listing getting closed when trying to join a room, even if joining fails
+* Fix "Player" with default icons showing up in the player list
 * Change max web request timeout to be 10 seconds in most places instead of 3 or 5 seconds
 * Various security improvements
 
