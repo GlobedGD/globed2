@@ -124,7 +124,6 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
         }
 
         // 2 player mode
-        log::debug("2 player mode: {}", rs.twoPlayerMode);
         if (rs.twoPlayerMode && !editor) {
             this->addModule<TwoPlayerModeModule>();
         }
