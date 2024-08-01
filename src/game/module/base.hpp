@@ -12,6 +12,9 @@ namespace cocos2d {
 struct GlobedGJBGL;
 struct FrameFlags;
 
+class PlayerObject;
+class GJGameLevel;
+class GameObject;
 class RemotePlayer;
 class GlobedUserCell;
 class GlobedPlayLayer;
