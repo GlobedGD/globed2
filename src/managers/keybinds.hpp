@@ -38,6 +38,7 @@ namespace globed {
     };
 
     std::string formatKey(Key key);
+
 }
 
 class KeybindsManager : public SingletonBase<KeybindsManager> {
@@ -46,4 +47,8 @@ class KeybindsManager : public SingletonBase<KeybindsManager> {
 public:
     void handlePress(globed::Key);
     void handleRelease(globed::Key);
+    bool isHeld(globed::Key key);
+
+private:
+    std::map<globed::Key, bool> heldKeys;
 };
