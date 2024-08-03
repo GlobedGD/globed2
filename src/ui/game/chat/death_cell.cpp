@@ -116,6 +116,8 @@ bool GlobedDeathCell::init(const std::string& username, int accid) {
     messageTextLabel->setScale(0.5f);
     playerBundle->updateLayout();
 
+    runAction(CCSequence::create(CCDelayTime::create(5.f), CCFadeTo::create(0.5f, GLubyte(5)), nullptr));
+
     return true;
 }
 

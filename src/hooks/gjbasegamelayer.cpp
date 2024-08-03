@@ -680,7 +680,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
             self->m_fields->isDeathLinkDeath = false;
             if (frameFlags.pendingRealDeath && !hasBeenKilled) {
                 std::string usr = ProfileCacheManager::get().getData(playerId)->name;
-                if (PlayLayer::get()) {
+                if (PlayLayer::get() && !self->m_fields->deathLinkDone) {
                     if (CCMenu* menu = static_cast<CCMenu*>(PlayLayer::get()->getChildByID("deaths-overlay"_spr))) {
                         if (menu->getChildrenCount() > 4) {
                             static_cast<CCNode*>(menu->getChildren()->objectAtIndex(0))->removeFromParent();
@@ -688,6 +688,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
                         menu->addChild(GlobedDeathCell::create(usr, playerId));
                         menu->updateLayout();
                     }
+                    self->m_fields->deathLinkDone = true;
                 }
                 log::info("i think {} died", ProfileCacheManager::get().getData(playerId)->name);
                 hasBeenKilled = true;

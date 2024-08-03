@@ -46,6 +46,7 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
         } deathlinkState;
         bool isManuallyResettingLevel = false;
         bool isDeathLinkDeath = false; // only true when a death was triggered by deathlink; triggered off by the playerobject hook
+        bool deathLinkDone = false; // only true when someone has died in a deathlink attempt (which will stop any other death messages)
 
         bool progressForciblyDisabled = false; // affected by room settings, forces safe mode
         bool forcedPlatformer = false;

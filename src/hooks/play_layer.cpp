@@ -60,6 +60,7 @@ void GlobedPlayLayer::fullReset() {
             gjbgl->notifyDeath();
             gjbgl->selfDeath();
         }
+        gjbgl->m_fields->deathLinkDone = false;
     }
 
     // turn off safe mode
@@ -82,6 +83,7 @@ void GlobedPlayLayer::resetLevel() {
             gjbgl->notifyDeath();
             gjbgl->selfDeath();
         }
+        gjbgl->m_fields->deathLinkDone = false;
     }
 
     if (m_fields->insideDestroyPlayer) {
