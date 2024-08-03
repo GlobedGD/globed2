@@ -518,7 +518,8 @@ impl ClientThread {
         }
 
         let target_user_name = new_user_entry.user_name.clone().unwrap_or_else(|| "<unknown>".to_owned());
-        let server_entry = ServerUserEntry::from_user_entry(new_user_entry.clone());
+        let mut server_entry = ServerUserEntry::from_user_entry(new_user_entry.clone());
+        server_entry.admin_password_hash.clone_from(&user_entry.admin_password_hash);
 
         // if online, update live
         let result = if let Some(thread) = thread.as_ref() {
