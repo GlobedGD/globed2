@@ -283,8 +283,8 @@ namespace util::cocos {
             textureCache->m_pTextures->setObject(texture, imguard->at(idx).path);
             imguard.unlock();
 
-            texture->release();
-            image->release();
+            texture->release(); // bring refcount back to 1
+            image->release(); // bring refcount to 0, releasing it
 
             initedTextures++;
         }
