@@ -1214,25 +1214,9 @@ class $modify(PlayerObject) {
         PlayerObject::playerDestroyed(p0);
 
         auto* gjbgl = GlobedGJBGL::get();
-        if (gjbgl && this == gjbgl->m_player1 || this == gjbgl->m_player2) {
+        if (gjbgl && (this == gjbgl->m_player1 || this == gjbgl->m_player2)) {
             GLOBED_EVENT(gjbgl, playerDestroyed(this, p0));
         }
-    }
-};
-
-/* 2-player mode stuff */
-
-class $modify(TwoPModePlayerObject, PlayerObject) {
-    struct Fields {
-        Ref<ComplexVisualPlayer> lockedTo;
-    };
-
-    void setLockedTo(ComplexVisualPlayer* player) {
-        m_fields->lockedTo = player;
-    }
-
-    void clearLockedTo() {
-        this->setLockedTo(nullptr);
     }
 };
 
