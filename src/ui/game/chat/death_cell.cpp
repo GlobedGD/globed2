@@ -116,13 +116,20 @@ bool GlobedDeathCell::init(const std::string& username, int accid) {
     messageTextLabel->setScale(0.5f);
     playerBundle->updateLayout();
 
-    runAction(CCSequence::create(CCDelayTime::create(5.f), CCFadeTo::create(0.5f, GLubyte(5)), nullptr));
+    schedule(schedule_selector(GlobedDeathCell::updateTimer));
 
     return true;
 }
 
 void GlobedDeathCell::onUser(CCObject* sender) {
     ProfilePage::create(accountId, GJAccountManager::sharedState()->m_accountID == accountId)->show();
+}
+
+void GlobedDeathCell::updateTimer(float dt) {
+    timer += dt;
+    if (timer > 5.f) {
+        this->removeFromParent();
+    }
 }
 
 GlobedDeathCell* GlobedDeathCell::create(const std::string& username, int aid) {
