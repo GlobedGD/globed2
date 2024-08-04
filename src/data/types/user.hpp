@@ -54,3 +54,14 @@ struct ComputedRole {
 GLOBED_SERIALIZABLE_STRUCT(ComputedRole, (
     priority, badgeIcon, nameColor, chatColor, notices, noticesToEveryone, kick, kickEveryone, mute, ban, editRole, editFeaturedLevels, admin
 ));
+
+struct UserPrivacyFlags : BitfieldBase {
+    bool hideFromLists;
+    bool noInvites;
+    bool hideInGame;
+    bool hideRoles;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(UserPrivacyFlags, (
+    hideFromLists, noInvites, hideInGame, hideRoles
+));

@@ -589,7 +589,7 @@ void RoomLayer::onInvisibleClicked(CCObject*) {
     bool invisible = btnInvisible->isOn();
     settings.globed.isInvisible = invisible;
 
-    NetworkManager::get().sendUpdatePlayerStatus(invisible);
+    NetworkManager::get().sendUpdatePlayerStatus(settings.getPrivacyFlags());
 }
 
 void RoomLayer::onCopyRoomId(CCObject*) {

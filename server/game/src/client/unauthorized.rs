@@ -61,7 +61,8 @@ pub struct UnauthorizedThread {
     pub terminate_notify: Notify,
 
     pub destruction_notify: Arc<Notify>,
-    pub is_invisible: AtomicBool,
+
+    pub privacy_settings: SyncMutex<UserPrivacyFlags>,
 }
 
 pub enum UnauthorizedThreadOutcome {
@@ -101,7 +102,8 @@ impl UnauthorizedThread {
             terminate_notify: Notify::new(),
 
             destruction_notify: Arc::new(Notify::new()),
-            is_invisible: AtomicBool::new(false),
+
+            privacy_settings: SyncMutex::new(UserPrivacyFlags::default()),
         }
     }
 
@@ -134,7 +136,8 @@ impl UnauthorizedThread {
             terminate_notify: Notify::new(),
 
             destruction_notify: thread.destruction_notify,
-            is_invisible: thread.is_invisible,
+
+            privacy_settings: thread.privacy_settings,
         }
     }
 
@@ -440,7 +443,7 @@ impl UnauthorizedThread {
         self.send_login_success().await?;
 
         self.connection_state.store(ClientThreadState::Unclaimed); // as we still need ClaimThreadPacket to arrive
-        self.is_invisible.store(packet.is_invisible, Ordering::Relaxed);
+        self.privacy_settings.lock().clone_from(&packet.privacy_settings);
 
         Ok(())
     });

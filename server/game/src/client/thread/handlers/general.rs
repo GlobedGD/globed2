@@ -61,7 +61,15 @@ impl ClientThread {
     gs_handler!(self, handle_set_player_status, UpdatePlayerStatusPacket, packet, {
         let _ = gs_needauth!(self);
 
-        self.is_invisible.store(packet.is_invisible, Ordering::Relaxed);
+        let mut p = self.privacy_settings.lock();
+        p.clone_from(&packet.flags);
+
+        // only mods can hide roles
+        let is_mod = self.is_authorized_user.load(Ordering::Relaxed);
+
+        if !is_mod {
+            p.set_hide_roles(false);
+        }
 
         Ok(())
     });

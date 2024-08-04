@@ -213,7 +213,7 @@ impl ClientThread {
         let thread = self.game_server.get_user_by_id(packet.player);
 
         if let Some(thread) = thread {
-            let player_data = self.account_data.lock().make_preview();
+            let player_data = self.account_data.lock().make_preview(!self.privacy_settings.lock().get_hide_roles());
 
             debug!(
                 "{account_id} sent an invite to {} (room: {}, password: {})",

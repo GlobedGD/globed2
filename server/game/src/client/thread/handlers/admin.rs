@@ -31,7 +31,7 @@ enum AdminPerm {
 impl ClientThread {
     // check if the user is logged in as admin, and if they have the given permission
     fn _has_perm(&self, perm: AdminPerm) -> bool {
-        if !self.is_authorized_admin.load(Ordering::Relaxed) {
+        if !self.is_authorized_user.load(Ordering::Relaxed) {
             return false;
         }
 
@@ -71,7 +71,7 @@ impl ClientThread {
                 self.get_tcp_peer()
             );
 
-            self.is_authorized_admin.store(true, Ordering::Relaxed);
+            self.is_authorized_user.store(true, Ordering::Relaxed);
             // give super admin perms
             let role = self.game_server.state.role_manager.get_superadmin();
             self._update_user_role(&role);
@@ -93,7 +93,7 @@ impl ClientThread {
                     self.get_tcp_peer()
                 );
 
-                self.is_authorized_admin.store(true, Ordering::Relaxed);
+                self.is_authorized_user.store(true, Ordering::Relaxed);
 
                 let role = self.game_server.state.role_manager.compute(&self.user_entry.lock().user_roles);
                 self._update_user_role(&role);
@@ -377,7 +377,7 @@ impl ClientThread {
         let user = self.game_server.find_user(&packet.player);
         let mut packet = if let Some(user) = user {
             let entry = user.user_entry.lock().clone();
-            let account_data = user.account_data.lock().make_room_preview(0);
+            let account_data = user.account_data.lock().make_room_preview(0, true);
 
             AdminUserDataPacket {
                 entry: entry.to_user_entry(),
