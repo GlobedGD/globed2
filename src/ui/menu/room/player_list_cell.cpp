@@ -29,6 +29,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
     this->cellWidth = cellWidth;
 
     this->setContentWidth(cellWidth);
+    this->setContentHeight(CELL_HEIGHT);
 
     auto* gm = GameManager::get();
 

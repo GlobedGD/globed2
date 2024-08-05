@@ -4,6 +4,10 @@
 #include <hooks/gjbasegamelayer.hpp>
 #include <managers/daily_manager.hpp>
 #include <managers/admin.hpp>
+// todo remove (maybe)
+#include <managers/room.hpp>
+#include <data/packets/client/room.hpp>
+// end todo
 #include <net/manager.hpp>
 #include <ui/menu/level_list/level_list_layer.hpp>
 #include <ui/menu/featured/edit_featured_level_popup.hpp>
@@ -22,6 +26,11 @@ bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
     auto& am = AdminManager::get();
     if (am.authorized() && am.getRole().canModerate()) {
         this->addLevelSendButton();
+    }
+
+    auto& rm = RoomManager::get();
+    if (rm.isInRoom() && rm.isOwner()) {
+        this->addRoomLevelButton();
     }
 
     // i hate myself
@@ -159,5 +168,61 @@ void HookedLevelInfoLayer::addLevelSendButton() {
         Build(makeButton())
             .parent(menu)
             .pos(copybtn->getPosition() - CCPoint{0.f, 50.f});
+    }
+}
+
+void HookedLevelInfoLayer::addRoomLevelButton() {
+    auto makeButton = [this] {
+        return Build<CCSprite>::createSpriteName("GJ_shareBtn_001.png")
+            .scale(0.625f)
+            .intoMenuItem([this] {
+                auto settings = RoomManager::get().getInfo().settings;
+                settings.level_id = this->m_level->m_levelID.value();
+                NetworkManager::get().send(UpdateRoomSettingsPacket::create(settings));
+            })
+            .id("share-room-btn"_spr)
+            .collect();
+    };
+
+    bool nodeids = Loader::get()->isModLoaded("geode.node-ids");
+
+    if (nodeids) {
+        auto rightMenu = this->getChildByIDRecursive("right-side-menu");
+        if (!rightMenu) return;
+
+        Build(makeButton())
+            .parent(rightMenu);
+        
+        rightMenu->updateLayout();
+    } else {
+        // okay so globed apparently hasn't
+        // depended on nodeids since the
+        // beginning of time, so this
+        // is necessary
+
+        auto menu = getChildOfType<CCMenu>(this, 1);
+        if (!menu || menu->getChildrenCount() == 0) {
+            log::warn("failed to find right-side-menu");
+            return;
+        }
+
+        // find like/dislike button
+        CCMenuItemSpriteExtra* likeDislikeBtn = nullptr;
+
+        for (auto btn : CCArrayExt<CCMenuItemSpriteExtra*>(menu->getChildren())) {
+            if (isSpriteFrameName(static_cast<CCSprite*>(btn->getChildren()->objectAtIndex(0)), "GJ_like2Btn2_001.png")) {
+                likeDislikeBtn = btn;
+                break;
+            }
+        }
+
+        if (!likeDislikeBtn) {
+            log::warn("failed to find like/dislike button");
+            return;
+        }
+
+        Build(makeButton())
+            .parent(menu)
+            .pos(likeDislikeBtn->getPosition() - ccp(0.f, 50.f));
     }
 }
