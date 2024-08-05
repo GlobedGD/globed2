@@ -16,7 +16,7 @@ pub struct RoomSettingsFlags {
 pub struct RoomSettings {
     pub flags: RoomSettingsFlags,
     pub player_limit: u32,
-    pub level_id: u16,
+    pub level_id: LevelId,
 }
 
 #[derive(Clone, Encodable, Decodable, StaticSize, DynamicSize)]
