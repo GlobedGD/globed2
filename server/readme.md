@@ -79,6 +79,7 @@ By default, the file is created with the name `central-conf.json` in the current
 | `admin_webhook_url` | `(empty)` | When enabled, admin actions (banning, muting, etc.) will send a message to the given discord webhook URL |
 | `rate_suggestion_webhook_url` | `(empty)` | When enabled, sending a level to be featured will send a message to the given discord webhook URL |
 | `featured_webhook_url` | `(empty)` | When enabled, featuring a level will send a message to the given discord webhook URL |
+| `featured_webhook_message` | `(empty)` | The message to send in the body of the webhook message for featured levels |
 | `room_webhook_url` | `(empty)` | When enabled, creating a room will send a message to the given discord webhook URL |
 | `chat_burst_limit` | `0` | Controls the amount of text chat messages users can send in a specific period of time, before getting rate limited. 0 to disable |
 | `chat_burst_interval` | `0` | Controls the period of time for the `chat_burst_limit_setting`. Time is in milliseconds |

@@ -4,6 +4,7 @@
 #include <util/into.hpp>
 
 using namespace geode::prelude;
+using globed::Key;
 
 namespace globed {
     std::string formatKey(Key key) {
@@ -42,18 +43,24 @@ namespace globed {
     }
 }
 
-void KeybindsManager::handlePress(globed::Key) {
+void KeybindsManager::handlePress(Key key) {
+    if (key == Key::None) return;
 
+    heldKeys[key] = true;
 }
 
-void KeybindsManager::handleRelease(globed::Key) {
+void KeybindsManager::handleRelease(Key key) {
+    if (key == Key::None) return;
 
+    heldKeys[key] = false;
+}
+
+bool KeybindsManager::isHeld(Key key) {
+    return heldKeys.contains(key) && heldKeys.at(key);
 }
 
 #ifdef GEODE_IS_WINDOWS
-static globed::Key convertGlfwKey(int key) {
-    using globed::Key;
-
+static Key convertGlfwKey(int key) {
     switch (key) {
     case GLFW_KEY_A: return Key::A;
     case GLFW_KEY_B: return Key::B;
@@ -184,8 +191,7 @@ class $modify(CCEGLView) {
 
 #else
 
-globed::Key convertCocosKey(enumKeyCodes key) {
-    using globed::Key;
+Key convertCocosKey(enumKeyCodes key) {
 
     switch (key) {
         case KEY_A: return Key::A;
