@@ -16,8 +16,7 @@ public:
 
     static CollapsableLevelCell* create(GJGameLevel* level, float width);
 
-    void collapse();
-    void expand();
+    void setIsCollapsed(bool isCollapsed);
     void onOpenLevel(cocos2d::CCObject* sender);
 
 protected:
@@ -32,7 +31,9 @@ public:
     CollapsableLevelCell* room_cell;
 
     static ListCellWrapper* create(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad);
+    bool init(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad);
 
     using CollapsedCallback = std::function<void(bool)>;
     static ListCellWrapper* create(GJGameLevel* level, float width, CollapsedCallback callback);
+    bool init(GJGameLevel* level, float width, CollapsedCallback callback);
 };

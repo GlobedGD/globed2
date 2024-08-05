@@ -177,7 +177,7 @@ void HookedLevelInfoLayer::addRoomLevelButton() {
             .scale(0.625f)
             .intoMenuItem([this] {
                 auto settings = RoomManager::get().getInfo().settings;
-                settings.level_id = this->m_level->m_levelID.value();
+                settings.levelId = this->m_level->m_levelID.value();
                 NetworkManager::get().send(UpdateRoomSettingsPacket::create(settings));
             })
             .id("share-room-btn"_spr)

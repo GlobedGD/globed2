@@ -2,6 +2,7 @@
 
 #include <util/singleton.hpp>
 #include <string>
+#include <map>
 
 // Big shoutout to eclipse menu i am too lazy to type all that out myself
 // https://github.com/EclipseMenu/EclipseMenu/blob/main/src/modules/keybinds/manager.hpp

@@ -15,7 +15,7 @@ pub struct RoomSettingsFlags {
 #[dynamic_size(as_static = true)]
 pub struct RoomSettings {
     pub flags: RoomSettingsFlags,
-    pub player_limit: u32,
+    pub player_limit: u16,
     pub level_id: LevelId,
 }
 

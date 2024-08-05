@@ -59,32 +59,26 @@ bool CollapsableLevelCell::init(GJGameLevel* level, float width) {
     return true;
 }
 
-void CollapsableLevelCell::expand() {
+void CollapsableLevelCell::setIsCollapsed(bool isCollapsed) {
     m_collapsedCell->setVisible(false);
-    m_levelCell->setVisible(true);
-    this->setContentSize(
-        m_levelCell->getContentSize()
-    );
-
-    if (auto parent = this->getParent()) {
-        parent->setContentSize(this->getContentSize());
-    }
-
-    m_isCollapsed = false;
-}
-
-void CollapsableLevelCell::collapse() {
-    m_collapsedCell->setVisible(true);
     m_levelCell->setVisible(false);
-    this->setContentSize(
-        m_collapsedCell->getContentSize()
-    );
+    if (isCollapsed) {
+        m_collapsedCell->setVisible(true);
+        this->setContentSize(
+            m_collapsedCell->getContentSize()
+        );
+    } else {
+        m_levelCell->setVisible(true);
+        this->setContentSize(
+            m_levelCell->getContentSize()
+        );
+    }
 
     if (auto parent = this->getParent()) {
         parent->setContentSize(this->getContentSize());
     }
 
-    m_isCollapsed = true;
+    m_isCollapsed = isCollapsed;
 }
 
 void CollapsableLevelCell::onOpenLevel(CCObject* sender) {
@@ -93,7 +87,7 @@ void CollapsableLevelCell::onOpenLevel(CCObject* sender) {
 
 CollapsableLevelCell* CollapsableLevelCell::create(GJGameLevel* level, float width) {
     auto ret = new CollapsableLevelCell;
-    if (ret && ret->init(level, width)) {
+    if (ret->init(level, width)) {
         ret->autorelease();
         return ret;
     }
@@ -101,41 +95,28 @@ CollapsableLevelCell* CollapsableLevelCell::create(GJGameLevel* level, float wid
     return nullptr;
 }
 
-ListCellWrapper* ListCellWrapper::create(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad) {
-    auto cellWrapper = new ListCellWrapper;
-    if (!cellWrapper->init()) {
-        delete cellWrapper;
-        return nullptr;
-    }
-
-    cellWrapper->player_cell = PlayerListCell::create(
+bool ListCellWrapper::init(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad) {
+    player_cell = PlayerListCell::create(
         data,
         cellWidth,
         forInviting,
         isIconLazyLoad
     );
 
-    cellWrapper->setContentSize(cellWrapper->player_cell->getContentSize());
-    cellWrapper->addChild(cellWrapper->player_cell);
+    this->setContentSize(player_cell->getContentSize());
+    this->addChild(player_cell);
 
-    cellWrapper->autorelease();
-    return cellWrapper;
+    return true;
 }
 
-ListCellWrapper* ListCellWrapper::create(GJGameLevel* level, float width, CollapsedCallback callback) {
-    auto cellWrapper = new ListCellWrapper;
-    if (!cellWrapper->init()) {
-        delete cellWrapper;
-        return nullptr;
-    }
-
-    cellWrapper->room_cell = CollapsableLevelCell::create(level, width);
-    cellWrapper->addChild(cellWrapper->room_cell);
+bool ListCellWrapper::init(GJGameLevel* level, float width, CollapsedCallback callback) {
+    room_cell = CollapsableLevelCell::create(level, width);
+    this->addChild(room_cell);
 
     auto rightMenu = Build<CCMenu>::create()
         .pos(width - 20.f, CollapsableLevelCell::COLLAPSED_HEIGHT / 2.f)
         .anchorPoint(0.f, 0.5f)
-        .parent(cellWrapper->room_cell)
+        .parent(room_cell)
         .id("right-menu")
         .collect();
 
@@ -150,24 +131,56 @@ ListCellWrapper* ListCellWrapper::create(GJGameLevel* level, float width, Collap
     expandedSprite->setRotation(90);
     expandedSprite->setScale(scaleFactor);
 
-    Build<CCMenuItemToggler>::createToggle(collapsedSprite, expandedSprite, [cellWrapper, callback](CCMenuItemToggler* toggler) {
+    Build<CCMenuItemToggler>::createToggle(collapsedSprite, expandedSprite, [this, callback](CCMenuItemToggler* toggler) {
+        bool isCollapsed;
         if (!toggler->isOn()) {
-            cellWrapper->room_cell->collapse();
+            isCollapsed = true;
         } else {
-            cellWrapper->room_cell->expand();
+            isCollapsed = false;
+        }
+        room_cell->setIsCollapsed(isCollapsed);
+
+        if (auto parent = this->getParent()) {
+            parent->setContentSize(this->getContentSize());
         }
 
-        if (auto parent = cellWrapper->getParent()) {
-            parent->setContentSize(cellWrapper->getContentSize());
-        }
-
-        callback(cellWrapper->room_cell->m_isCollapsed);
+        callback(room_cell->m_isCollapsed);
     })
         .parent(rightMenu);
 
-    cellWrapper->autorelease();
-    cellWrapper->room_cell->expand();
+    room_cell->setIsCollapsed(false);
+    
+    return true;
+}
 
-    return cellWrapper;
+ListCellWrapper* ListCellWrapper::create(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad) {
+    auto ret = new ListCellWrapper;
+    if (ret->init(
+        data,
+        cellWidth,
+        forInviting,
+        isIconLazyLoad
+    )) {
+        ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
+}
+
+ListCellWrapper* ListCellWrapper::create(GJGameLevel* level, float width, CollapsedCallback callback) {
+    auto ret = new ListCellWrapper;
+    if (ret->init(
+        level,
+        width,
+        callback
+    )) {
+        ret->autorelease();
+        return ret;
+    }
+
+    delete ret;
+    return nullptr;
 }
 

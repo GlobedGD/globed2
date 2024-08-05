@@ -34,6 +34,8 @@ protected:
     Ref<CCMenuItemSpriteExtra> btnSearch, btnClearSearch, btnSettings, btnInvite, btnRefresh, btnCloseRoom;
     Ref<CCMenuItemToggler> btnInvisible;
     Ref<cocos2d::CCMenu> btnRoomId, roomButtonMenu;
+    Ref<ListCellWrapper> roomLevelCell;
+
     bool init() override;
     void update(float) override;
 
