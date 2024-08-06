@@ -23,5 +23,5 @@ pub struct RequestPlayerCountPacket {
 #[derive(Packet, Decodable)]
 #[packet(id = 11004)]
 pub struct UpdatePlayerStatusPacket {
-    pub is_invisible: bool,
+    pub flags: UserPrivacyFlags,
 }

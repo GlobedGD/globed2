@@ -1,5 +1,6 @@
 use crate::*;
 
+// N is the number of bytes, not bits.
 #[derive(Clone, Copy, Debug)]
 pub struct Bits<const N: usize> {
     buffer: [u8; N],

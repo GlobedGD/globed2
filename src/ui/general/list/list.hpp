@@ -141,11 +141,7 @@ public:
     void removeCell(int index, bool updateLayout = true) {
         GLOBED_REQUIRE(index >= 0 && index < this->cellCount(), "invalid index passed to removeCell");
 
-        this->removeCell(this->getCell(index));
-
-        if (updateLayout) {
-            this->updateCellOrder();
-        }
+        this->removeCell(this->getCell(index), updateLayout);
     }
 
     void removeAllCells(bool updateLayout = true) {

@@ -110,24 +110,32 @@ pub struct PlayerAccountData {
 }
 
 impl PlayerAccountData {
-    pub fn make_room_preview(&self, level_id: LevelId) -> PlayerRoomPreviewAccountData {
+    pub fn make_room_preview(&self, level_id: LevelId, show_roles: bool) -> PlayerRoomPreviewAccountData {
         PlayerRoomPreviewAccountData {
             account_id: self.account_id,
             user_id: self.user_id,
             name: self.name.clone(),
             icons: self.icons.to_simple(),
             level_id,
-            special_user_data: self.special_user_data.clone(),
+            special_user_data: if show_roles {
+                self.special_user_data.clone()
+            } else {
+                SpecialUserData { roles: None }
+            },
         }
     }
 
-    pub fn make_preview(&self) -> PlayerPreviewAccountData {
+    pub fn make_preview(&self, show_roles: bool) -> PlayerPreviewAccountData {
         PlayerPreviewAccountData {
             account_id: self.account_id,
             user_id: self.user_id,
             name: self.name.clone(),
             icons: self.icons.to_simple(),
-            special_user_data: self.special_user_data.clone(),
+            special_user_data: if show_roles {
+                self.special_user_data.clone()
+            } else {
+                SpecialUserData { roles: None }
+            },
         }
     }
 }

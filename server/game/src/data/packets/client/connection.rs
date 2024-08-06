@@ -29,7 +29,7 @@ pub struct LoginPacket {
     pub icons: PlayerIconData,
     pub fragmentation_limit: u16,
     pub platform: InlineString<72>,
-    pub is_invisible: bool,
+    pub privacy_settings: UserPrivacyFlags,
 }
 
 #[derive(Packet, Decodable)]

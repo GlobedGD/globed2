@@ -67,9 +67,9 @@ pub struct ClientThread {
 
     pub fragmentation_limit: AtomicU16,
 
-    pub is_authorized_admin: AtomicBool,
+    pub is_authorized_user: AtomicBool,
 
-    pub is_invisible: AtomicBool,
+    pub privacy_settings: SyncMutex<UserPrivacyFlags>,
 
     message_queue: Mutex<VecDeque<ServerThreadMessage>>,
     message_notify: Notify,
@@ -129,9 +129,9 @@ impl ClientThread {
 
             fragmentation_limit: thread.fragmentation_limit,
 
-            is_authorized_admin: AtomicBool::new(false),
+            is_authorized_user: AtomicBool::new(false),
 
-            is_invisible: thread.is_invisible,
+            privacy_settings: thread.privacy_settings,
 
             message_queue: Mutex::new(VecDeque::new()),
             message_notify: Notify::new(),
@@ -374,7 +374,13 @@ impl ClientThread {
                 self.send_packet_dynamic(&packet).await?;
                 info!("{} is receiving a notice: {}", self.account_data.lock().name, packet.message);
             }
-            ServerThreadMessage::BroadcastInvite(packet) => self.send_packet_static(&packet).await?,
+            ServerThreadMessage::BroadcastInvite(packet) => {
+                let invitable = !self.privacy_settings.lock().get_no_invites();
+
+                if invitable {
+                    self.send_packet_static(&packet).await?;
+                }
+            }
             ServerThreadMessage::BroadcastRoomInfo(packet) => {
                 self.send_packet_static(&packet).await?;
             }
