@@ -105,70 +105,29 @@ void HookedLevelInfoLayer::tryCloneLevel(CCObject* s) {
 }
 
 void HookedLevelInfoLayer::addLevelSendButton() {
-    // the positioning is fundamentally different with and without node ids lol
-    bool nodeids = Loader::get()->isModLoaded("geode.node-ids");
-
-    auto makeButton = [this]{
-        bool plat = this->m_level->isPlatformer();
-        return Build<CCSprite>::createSpriteName("icon-send-btn.png"_spr)
-            .intoMenuItem([this, plat] {
-                if (plat) {
-                    EditFeaturedLevelPopup::create(this->m_level)->show();
-                } else {
-                    FLAlertLayer::create("Error", "Only <cj>Platformer levels</c> are eligible to be <cg>Globed Featured!</c>", "Ok")->show();
-                }
-            })
-            .with([&](auto* btn) {
-                if (!plat) {
-                    btn->setColor({100, 100, 100});
-                }
-            })
-            .id("send-btn"_spr)
-            .collect();
-    };
-
-    if (nodeids) {
-        auto* leftMenu = typeinfo_cast<CCMenu*>(this->getChildByIDRecursive("left-side-menu"));
-        if (!leftMenu) {
-            return;
-        }
-
-        Build(makeButton())
-            .parent(leftMenu);
-
-        leftMenu->updateLayout();
-    } else {
-        auto* menu = getChildOfType<CCMenu>(this, 1);
-
-        if (!menu || menu->getChildrenCount() == 0) {
-            log::warn("Failed to find left-side-menu");
-            return;
-        }
-
-        CCMenuItemSpriteExtra* copybtn = nullptr;
-
-        // find copy button
-        size_t idx = menu->getChildrenCount();
-
-        do {
-            idx--;
-            if (auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(menu->getChildren()->objectAtIndex(idx))) {
-                if (isSpriteFrameName(static_cast<CCSprite*>(btn->getChildren()->objectAtIndex(0)), "GJ_duplicateBtn_001.png")) {
-                    copybtn = btn;
-                    break;
-                }
-            }
-        } while (idx > 0);
-
-        if (!copybtn) {
-            log::warn("failed to find copy button");
-            return;
-        }
-
-        Build(makeButton())
-            .parent(menu)
-            .pos(copybtn->getPosition() - CCPoint{0.f, 50.f});
+    auto* leftMenu = typeinfo_cast<CCMenu*>(this->getChildByIDRecursive("left-side-menu"));
+    if (!leftMenu) {
+        return;
     }
+
+    bool plat = this->m_level->isPlatformer();
+    Build<CCSprite>::createSpriteName("icon-send-btn.png"_spr)
+        .intoMenuItem([this, plat] {
+            if (plat) {
+                EditFeaturedLevelPopup::create(this->m_level)->show();
+            } else {
+                FLAlertLayer::create("Error", "Only <cj>Platformer levels</c> are eligible to be <cg>Globed Featured!</c>", "Ok")->show();
+            }
+        })
+        .with([&](auto* btn) {
+            if (!plat) {
+                btn->setColor({100, 100, 100});
+            }
+        })
+        .id("send-btn"_spr)
+        .parent(leftMenu);
+
+    leftMenu->updateLayout();
 }
 
 void HookedLevelInfoLayer::addRoomLevelButton() {
@@ -184,45 +143,18 @@ void HookedLevelInfoLayer::addRoomLevelButton() {
             .collect();
     };
 
-    bool nodeids = Loader::get()->isModLoaded("geode.node-ids");
+    auto rightMenu = this->getChildByIDRecursive("right-side-menu");
+    if (!rightMenu) return;
 
-    if (nodeids) {
-        auto rightMenu = this->getChildByIDRecursive("right-side-menu");
-        if (!rightMenu) return;
+    Build<CCSprite>::createSpriteName("GJ_shareBtn_001.png")
+        .scale(0.625f)
+        .intoMenuItem([this] {
+            auto settings = RoomManager::get().getInfo().settings;
+            settings.levelId = this->m_level->m_levelID.value();
+            NetworkManager::get().send(UpdateRoomSettingsPacket::create(settings));
+        })
+        .id("share-room-btn"_spr)
+        .parent(rightMenu);
 
-        Build(makeButton())
-            .parent(rightMenu);
-        
-        rightMenu->updateLayout();
-    } else {
-        // okay so globed apparently hasn't
-        // depended on nodeids since the
-        // beginning of time, so this
-        // is necessary
-
-        auto menu = getChildOfType<CCMenu>(this, 1);
-        if (!menu || menu->getChildrenCount() == 0) {
-            log::warn("failed to find right-side-menu");
-            return;
-        }
-
-        // find like/dislike button
-        CCMenuItemSpriteExtra* likeDislikeBtn = nullptr;
-
-        for (auto btn : CCArrayExt<CCMenuItemSpriteExtra*>(menu->getChildren())) {
-            if (isSpriteFrameName(static_cast<CCSprite*>(btn->getChildren()->objectAtIndex(0)), "GJ_like2Btn2_001.png")) {
-                likeDislikeBtn = btn;
-                break;
-            }
-        }
-
-        if (!likeDislikeBtn) {
-            log::warn("failed to find like/dislike button");
-            return;
-        }
-
-        Build(makeButton())
-            .parent(menu)
-            .pos(likeDislikeBtn->getPosition() - ccp(0.f, 50.f));
-    }
+    rightMenu->updateLayout();
 }
