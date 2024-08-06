@@ -25,4 +25,6 @@ class $modify(HookedLevelInfoLayer, LevelInfoLayer) {
     void forcePlay(cocos2d::CCObject*);
 
     void addLevelSendButton();
+
+    void addRoomLevelButton();
 };

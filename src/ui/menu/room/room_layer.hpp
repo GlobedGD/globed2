@@ -1,6 +1,6 @@
 #pragma once
 
-#include "player_list_cell.hpp"
+#include "list_cell.hpp"
 #include <defs/geode.hpp>
 #include <data/types/gd.hpp>
 #include <ui/general/list/list.hpp>
@@ -11,7 +11,7 @@ class RoomJoinedPacket;
 class RoomInfoPacket;
 class RoomInfo;
 
-class RoomLayer : public cocos2d::CCLayer {
+class RoomLayer : public cocos2d::CCLayer, public LevelDownloadDelegate, public LevelManagerDelegate {
 public:
     cocos2d::CCSize popupSize;
     cocos2d::CCSize listSize;
@@ -22,7 +22,7 @@ public:
 protected:
     friend class CreateRoomPopup;
 
-    using PlayerList = GlobedListLayer<PlayerListCell>;
+    using PlayerList = GlobedListLayer<ListCellWrapper>;
 
     std::vector<PlayerRoomPreviewAccountData> playerList;
     std::string currentFilter;
@@ -34,6 +34,7 @@ protected:
     Ref<CCMenuItemSpriteExtra> btnSearch, btnClearSearch, btnSettings, btnInvite, btnRefresh, btnCloseRoom;
     Ref<CCMenuItemToggler> btnInvisible;
     Ref<cocos2d::CCMenu> btnRoomId, roomButtonMenu;
+    Ref<ListCellWrapper> roomLevelCell;
 
     bool init() override;
     void update(float) override;
@@ -64,4 +65,18 @@ protected:
     // callbacks
     void onInvisibleClicked(cocos2d::CCObject*);
     void onCopyRoomId(cocos2d::CCObject*);
+
+    // level delegate stuff for room level
+    void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override;
+    void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) override;
+    void loadLevelsFailed(char const* p0, int p1) override;
+    void loadLevelsFailed(char const* p0) override;
+    void setupPageInfo(gd::string p0, char const* p1) override;
+
+    void levelDownloadFinished(GJGameLevel* p0) override;
+    void levelDownloadFailed(int p0) override;
+
+    void loadRoomLevel(int levelId);
+
+    ~RoomLayer();
 };
