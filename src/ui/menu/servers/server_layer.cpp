@@ -146,7 +146,9 @@ bool GlobedServersLayer::init() {
     this->schedule(schedule_selector(GlobedServersLayer::updateServerList), 0.1f);
     this->schedule(schedule_selector(GlobedServersLayer::pingServers), 5.0f);
 
-    this->requestServerList();
+    this->updateServerList(0.f);
+
+    initializing = false;
 
     return true;
 }
@@ -204,7 +206,7 @@ void GlobedServersLayer::updateServerList(float) {
     serverList->setVisible(true);
 
     // if we recently switched a central server, redo everything
-    if (csm.recentlySwitched) {
+    if (csm.recentlySwitched || initializing) {
         csm.recentlySwitched = false;
         this->cancelWebRequest();
         this->requestServerList();
@@ -212,7 +214,7 @@ void GlobedServersLayer::updateServerList(float) {
 
     // if there are pending changes, hard refresh the list and ping all servers
     auto& gsm = GameServerManager::get();
-    if (gsm.pendingChanges) {
+    if (gsm.pendingChanges || initializing) {
         gsm.pendingChanges = false;
 
         serverList->forceRefresh();
@@ -230,6 +232,9 @@ void GlobedServersLayer::updateServerList(float) {
 
     // if there were no pending changes, still update the server data (ping, players, etc.)
     serverList->softRefresh();
+
+    CCArray* a;
+    a->firstObject();
 }
 
 void GlobedServersLayer::requestServerList() {
@@ -274,7 +279,6 @@ void GlobedServersLayer::requestCallback(typename WebRequestManager::Event* even
     auto& gsm = GameServerManager::get();
     gsm.updateCache(response);
     auto loadResult = gsm.loadFromCache();
-    gsm.pendingChanges = true;
 
     if (loadResult.isErr()) {
         log::warn("failed to parse server list: {}", loadResult.unwrapErr());
