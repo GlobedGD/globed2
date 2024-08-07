@@ -11,7 +11,7 @@
 #include <crypto/chacha_secret_box.hpp>
 
 constexpr static auto KEY = "bff252d2731a6c6ca26d7f5144bc750fd6723316619f86c8636ebdc13bf3214c";
-static ChaChaSecretBox g_box(util::crypto::hexDecode(KEY));
+static ChaChaSecretBox g_box(util::crypto::hexDecode(KEY).unwrap());
 
 struct CurlRequest::Data {
     std::string m_method;

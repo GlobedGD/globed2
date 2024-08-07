@@ -9,6 +9,7 @@
 
 using namespace geode::prelude;
 
+namespace {
 class DummyLevelFetchNode : public CCObject, public LevelManagerDelegate, public LevelDownloadDelegate {
 public:
     void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override {
@@ -47,6 +48,7 @@ public:
 
     std::function<void(Result<GJGameLevel*, int>)> downloadCallback;
 };
+}
 
 template <>
 struct matjson::Serialize<GlobedFeaturedLevel> {

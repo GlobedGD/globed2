@@ -29,9 +29,9 @@ using namespace asp;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
-static constexpr uint16_t MIN_PROTOCOL_VERSION = 10;
-static constexpr uint16_t MAX_PROTOCOL_VERSION = 10;
-static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({10});
+static constexpr uint16_t MIN_PROTOCOL_VERSION = 11;
+static constexpr uint16_t MAX_PROTOCOL_VERSION = 11;
+static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({11});
 
 static bool isProtocolSupported(uint16_t proto) {
 #ifdef GLOBED_DEBUG
@@ -671,7 +671,7 @@ protected:
             pcm.getOwnData(),
             settings.globed.fragmentationLimit,
             util::net::loginPlatformString(),
-            settings.globed.isInvisible
+            settings.getPrivacyFlags()
         );
 
         this->send(pkt);
@@ -1249,7 +1249,7 @@ void NetworkManager::unregisterPacketListener(packetid_t packet, PacketListener*
 // MAKE_SENDER(sendLeaveRoom, LeaveRoomPacket, (), ())
 // MAKE_SENDER2(LeaveRoom, (), ())
 
-MAKE_SENDER2(UpdatePlayerStatus, (bool invisible), (invisible))
+MAKE_SENDER2(UpdatePlayerStatus, (const UserPrivacyFlags& flags), (flags))
 MAKE_SENDER2(RequestRoomPlayerList, (), ())
 MAKE_SENDER2(LeaveRoom, (), ())
 MAKE_SENDER2(CloseRoom, (), ())

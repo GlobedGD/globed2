@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/crypto.hpp>
 #include <data/types/gd.hpp>
+#include <data/types/user.hpp>
 
 // 10000 - PingPacket
 class PingPacket : public Packet {
@@ -50,7 +51,7 @@ class LoginPacket : public Packet {
             const PlayerIconData& icons,
             uint16_t fragmentationLimit,
             const std::string_view platform,
-            bool isInvisible
+            const UserPrivacyFlags& privacyFlags
     ) :
             accountId(accid),
             userId(userId),
@@ -59,7 +60,7 @@ class LoginPacket : public Packet {
             icons(icons),
             fragmentationLimit(fragmentationLimit),
             platform(platform),
-            isInvisible(isInvisible) {}
+            privacyFlags(privacyFlags) {}
 
     int32_t accountId;
     int32_t userId;
@@ -68,7 +69,7 @@ class LoginPacket : public Packet {
     PlayerIconData icons;
     uint16_t fragmentationLimit;
     std::string platform;
-    bool isInvisible;
+    UserPrivacyFlags privacyFlags;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
@@ -79,7 +80,7 @@ GLOBED_SERIALIZABLE_STRUCT(LoginPacket, (
     icons,
     fragmentationLimit,
     platform,
-    isInvisible
+    privacyFlags
 ));
 
 // 10005 - ClaimThreadPacket

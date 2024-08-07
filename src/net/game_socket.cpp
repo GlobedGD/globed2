@@ -276,7 +276,7 @@ Result<std::shared_ptr<Packet>> GameSocket::decodePacket(ByteBuffer& buffer) {
         GLOBED_REQUIRE_SAFE(cryptoBox.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
         bytevector& bufvec = buffer.data();
 
-        messageLength = cryptoBox->decryptInPlace(bufvec.data() + PacketHeader::SIZE, messageLength);
+        GLOBED_UNWRAP_INTO(cryptoBox->decryptInPlace(bufvec.data() + PacketHeader::SIZE, messageLength), messageLength);
         buffer.resize(messageLength + PacketHeader::SIZE);
     }
 

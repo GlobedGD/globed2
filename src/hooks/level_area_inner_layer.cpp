@@ -12,9 +12,6 @@ bool HookedLevelAreaInnerLayer::init(bool p0) {
     auto& nm = NetworkManager::get();
     if (!nm.established()) return true;
 
-    // soft node ids dependency
-    if (!Loader::get()->isModLoaded("geode.node-ids")) return true;
-
     auto* mainMenu = this->getChildByIDRecursive("main-menu");
     if (!mainMenu) return true;
 

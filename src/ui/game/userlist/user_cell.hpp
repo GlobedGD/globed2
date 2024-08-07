@@ -21,16 +21,12 @@ public:
 
 private:
     Ref<cocos2d::CCLabelBMFont> percentageLabel;
-    Ref<cocos2d::CCMenu> menu, usernameLayout;
-    Ref<CCMenuItemSpriteExtra>
-        actionsButton,
-        muteButton,
-        hideButton,
-        kickButton,
-        teleportButton,
-        linkButton;
+    Ref<cocos2d::CCMenu> usernameLayout;
+    Ref<cocos2d::CCNode> menu;
 
-    Ref<cocos2d::CCMenu> buttonsWrapper = nullptr;
+    Ref<cocos2d::CCArray> popupButtons;
+    Ref<cocos2d::CCMenu> buttonsWrapper;
+
     Ref<GlobedAudioVisualizer> audioVisualizer = nullptr;
     PlayerStore::Entry _data;
     Ref<CCMenuItemSpriteExtra> nameBtn = nullptr;

@@ -48,7 +48,7 @@ namespace util::gd {
             diff = -1;
         } else if (level->m_ratingsSum != 0) {
             if (level->m_demon == 1){
-                int fixedNum = level->m_demonDifficulty;
+                int fixedNum = std::clamp(level->m_demonDifficulty, 0, 6);
 
                 if (fixedNum != 0) {
                     fixedNum -= 2;

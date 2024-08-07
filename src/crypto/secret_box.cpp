@@ -32,21 +32,21 @@ SecretBox::~SecretBox() {
     }
 }
 
-size_t SecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
+Result<size_t> SecretBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
     util::crypto::secureRandom(nonce, NONCE_LEN);
 
     byte* ciphertext = dest + NONCE_LEN;
-    CRYPTO_ERR_CHECK(crypto_secretbox_easy(ciphertext, src, size, nonce, key), "crypto_secretbox_easy failed")
+    CRYPTO_ERR_CHECK_SAFE(crypto_secretbox_easy(ciphertext, src, size, nonce, key), "crypto_secretbox_easy failed")
 
     // prepend the nonce
     std::memcpy(dest, nonce, NONCE_LEN);
 
-    return size + prefixLength();
+    return Ok(size + prefixLength());
 }
 
-size_t SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
-    CRYPTO_REQUIRE(size >= prefixLength(), "message is too short")
+Result<size_t> SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
+    CRYPTO_REQUIRE_SAFE(size >= prefixLength(), "message is too short")
 
     const byte* nonce = src;
     const byte* ciphertext = src + NONCE_LEN;
@@ -54,21 +54,22 @@ size_t SecretBox::decryptInto(const byte* src, byte* dest, size_t size) {
     size_t plaintextLength = size - prefixLength();
     size_t ciphertextLength = size - NONCE_LEN;
 
-    CRYPTO_ERR_CHECK(crypto_secretbox_open_easy(dest, ciphertext, ciphertextLength, nonce, key), "crypto_secretbox_open_easy failed")
+    CRYPTO_ERR_CHECK_SAFE(crypto_secretbox_open_easy(dest, ciphertext, ciphertextLength, nonce, key), "crypto_secretbox_open_easy failed")
 
-    return plaintextLength;
+    return Ok(plaintextLength);
 }
 
-void SecretBox::setKey(const util::data::bytevector& src) {
-    GLOBED_REQUIRE(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for SecretBox")
-    setKey(src.data());
+Result<> SecretBox::setKey(const util::data::bytevector& src) {
+    GLOBED_REQUIRE_SAFE(src.size() == crypto_secretbox_KEYBYTES, "key size is too small or too big for SecretBox")
+    this->setKey(src.data());
+    return Ok();
 }
 
 void SecretBox::setKey(const util::data::byte* src) {
     std::memcpy(this->key, src, crypto_secretbox_KEYBYTES);
 }
 
-void SecretBox::setPassword(const std::string_view pw) {
+Result<> SecretBox::setPassword(const std::string_view pw) {
     auto key = util::crypto::simpleHash(pw);
-    setKey(key);
+    return this->setKey(key);
 }

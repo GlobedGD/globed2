@@ -1,10 +1,15 @@
 #pragma once
-#include <util/data.hpp>
+
 #include <string_view>
+
+#include <defs/minimal_geode.hpp>
+#include <util/data.hpp>
 #include "adler32.hpp"
 
 #define CRYPTO_REQUIRE(condition, message) GLOBED_REQUIRE(condition, "crypto error: " message)
+#define CRYPTO_REQUIRE_SAFE(condition, message) GLOBED_REQUIRE_SAFE(condition, "crypto error: " message)
 #define CRYPTO_ERR_CHECK(result, message) CRYPTO_REQUIRE(result == 0, message)
+#define CRYPTO_ERR_CHECK_SAFE(result, message) CRYPTO_REQUIRE_SAFE(result == 0, message)
 
 namespace util::crypto {
     // generate `size` bytes of cryptographically secure random data
@@ -44,11 +49,11 @@ namespace util::crypto {
     std::string base64Encode(const std::string_view source, Base64Variant variant = Base64Variant::STANDARD);
 
     // decodes the given base64 buffer into a bytevector
-    data::bytevector base64Decode(const data::byte* source, size_t size, Base64Variant variant = Base64Variant::STANDARD);
+    Result<data::bytevector> base64Decode(const data::byte* source, size_t size, Base64Variant variant = Base64Variant::STANDARD);
     // decodes the given base64 string into a bytevector
-    data::bytevector base64Decode(const std::string_view source, Base64Variant variant = Base64Variant::STANDARD);
+    Result<data::bytevector> base64Decode(const std::string_view source, Base64Variant variant = Base64Variant::STANDARD);
     // decodes the given base64 bytevector into a bytevector
-    data::bytevector base64Decode(const data::bytevector& source, Base64Variant variant = Base64Variant::STANDARD);
+    Result<data::bytevector> base64Decode(const data::bytevector& source, Base64Variant variant = Base64Variant::STANDARD);
 
     // encodes the given buffer into a hex string
     std::string hexEncode(const data::byte* source, size_t size);
@@ -58,11 +63,11 @@ namespace util::crypto {
     std::string hexEncode(const std::string_view source);
 
     // decodes the given hex buffer into a bytevector
-    data::bytevector hexDecode(const data::byte* source, size_t size);
+    Result<data::bytevector> hexDecode(const data::byte* source, size_t size);
     // decodes the given hex string into a bytevector
-    data::bytevector hexDecode(const std::string_view source);
+    Result<data::bytevector> hexDecode(const std::string_view source);
     // decodes the given hex bytevector into a bytevector
-    data::bytevector hexDecode(const data::bytevector& source);
+    Result<data::bytevector> hexDecode(const data::bytevector& source);
 
     // convert a `Base64Variant` enum to an int for libsodium API
     int base64VariantToInt(Base64Variant variant);
