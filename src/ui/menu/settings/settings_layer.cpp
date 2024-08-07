@@ -225,6 +225,7 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
             registerSetting(cat, settings.globed.editorSupport, "View players in editor", "Enables the ability to see people playing your level while in the editor. Note: <cy>this does not let you build levels together!</c>");
             registerSetting(cat, settings.globed.fragmentationLimit, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.", Type::PacketFragmentation);
             registerSetting(cat, settings.globed.tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.");
+            registerSetting(cat, settings.globed.forceProgressBar, "Force Progress Bar", "Enables the progress bar when connected to Globed. Useful if you typically leave it off.");
 
 #ifndef GEODE_IS_ANDROID
             registerSetting(cat, settings.globed.useDiscordRPC, "Discord RPC", "If you have the Discord Rich Presence standalone mod, this option will toggle a Globed-specific RPC on your profile.", Type::DiscordRPC);

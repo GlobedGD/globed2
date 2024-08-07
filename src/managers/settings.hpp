@@ -151,6 +151,7 @@ public:
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
+        Setting<bool, true> forceProgressBar;
 
         // hidden settings! no settings ui for them
 

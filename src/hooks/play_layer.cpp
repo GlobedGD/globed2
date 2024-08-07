@@ -3,6 +3,7 @@
 #include "gjbasegamelayer.hpp"
 #include "level_editor_layer.hpp"
 #include <game/module/all.hpp>
+#include <managers/settings.hpp>
 #include <util/lowlevel.hpp>
 #include <util/cocos.hpp>
 #include <util/gd.hpp>
@@ -30,6 +31,15 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
     gjbgl->setupPreInit(level, false);
+
+    if (GlobedSettings::get().globed.forceProgressBar) {
+        auto gm = GameManager::sharedState();
+        m_fields->oldShowProgressBar = gm->m_showProgressBar;
+
+        if (NetworkManager::get().established()) {
+            gm->m_showProgressBar = true;
+        }
+    }
 
     if (!PlayLayer::init(level, p1, p2)) return false;
 
@@ -60,6 +70,11 @@ void GlobedPlayLayer::setupHasCompleted() {
 
 void GlobedPlayLayer::onQuit() {
     GlobedGJBGL::get()->onQuitActions();
+
+    if (GlobedSettings::get().globed.forceProgressBar) {
+        auto gm = GameManager::sharedState();
+        gm->m_showProgressBar = m_fields->oldShowProgressBar;
+    }
 
     PlayLayer::onQuit();
 }
