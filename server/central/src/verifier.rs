@@ -19,6 +19,8 @@ struct AccountEntry {
     pub name: String,
     pub authcode: String,
     pub message_id: i32,
+    #[cfg(debug_assertions)]
+    pub age: String,
 }
 
 pub struct AccountVerifier {
@@ -149,7 +151,7 @@ impl AccountVerifier {
 
     pub async fn run_refresher(&self) {
         let mut interval = tokio::time::interval(self.flush_period);
-        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Burst);
         interval.tick().await;
 
         loop {
@@ -165,12 +167,23 @@ impl AccountVerifier {
                         trace!("refreshed account verification cache");
                         let cache = self.message_cache.lock();
                         for message in &*cache {
+                            #[cfg(not(debug_assertions))]
                             trace!(
                                 "{} ({} / userid {}): {}",
                                 message.name,
                                 message.account_id,
                                 message.user_id,
                                 message.authcode
+                            );
+
+                            #[cfg(debug_assertions)]
+                            trace!(
+                                "{} ({} / userid {}): {} ({})",
+                                message.name,
+                                message.account_id,
+                                message.user_id,
+                                message.authcode,
+                                message.age
                             );
                         }
                         trace!("------------------------------------");
@@ -337,6 +350,8 @@ impl AccountVerifier {
                 continue;
             };
 
+            let age = (*age).to_owned();
+
             // info!("adding message to cache: {author_id}, {author_name}, {authcode}");
 
             msg_cache.push(AccountEntry {
@@ -345,6 +360,8 @@ impl AccountVerifier {
                 name: (*author_name).to_string(),
                 authcode,
                 message_id,
+                #[cfg(debug_assertions)]
+                age,
             });
         }
 
