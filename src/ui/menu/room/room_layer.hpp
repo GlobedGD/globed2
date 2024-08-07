@@ -66,17 +66,5 @@ protected:
     void onInvisibleClicked(cocos2d::CCObject*);
     void onCopyRoomId(cocos2d::CCObject*);
 
-    // level delegate stuff for room level
-    void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override;
-    void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) override;
-    void loadLevelsFailed(char const* p0, int p1) override;
-    void loadLevelsFailed(char const* p0) override;
-    void setupPageInfo(gd::string p0, char const* p1) override;
-
-    void levelDownloadFinished(GJGameLevel* p0) override;
-    void levelDownloadFailed(int p0) override;
-
-    void loadRoomLevel(int levelId);
-
     ~RoomLayer();
 };

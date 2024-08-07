@@ -4,10 +4,10 @@
 
 class CollapsableLevelCell : public cocos2d::CCNode {
 public:
-    GJGameLevel* m_level;
+    Ref<GJGameLevel> m_level;
 
-    LevelCell* m_levelCell;
-    CCNode* m_collapsedCell;
+    LevelCell* m_levelCell = nullptr;
+    CCNode* m_collapsedCell = nullptr;
 
     bool m_isCollapsed;
 
@@ -27,8 +27,8 @@ protected:
 
 class ListCellWrapper : public cocos2d::CCNode {
 public:
-    PlayerListCell* player_cell;
-    CollapsableLevelCell* room_cell;
+    PlayerListCell* playerCell = nullptr;
+    CollapsableLevelCell* roomCell = nullptr;
 
     static ListCellWrapper* create(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad);
     bool init(const PlayerRoomPreviewAccountData& data, float cellWidth, bool forInviting, bool isIconLazyLoad);

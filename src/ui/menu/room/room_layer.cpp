@@ -273,15 +273,35 @@ void RoomLayer::update(float dt) {
         constexpr size_t perFrame = 10;
 
         for (auto cell : *listLayer) {
-            if (cell->player_cell == nullptr || cell->room_cell != nullptr) continue;
-            auto player_cell = cell->player_cell;
-            if (!player_cell->isIconLoaded()) {
-                player_cell->createPlayerIcon();
+            if (cell->playerCell == nullptr || cell->roomCell != nullptr) continue;
+            auto playerCell = cell->playerCell;
+            if (!playerCell->isIconLoaded()) {
+                playerCell->createPlayerIcon();
                 loaded++;
             }
 
             if (loaded == perFrame) break;
         }
+    }
+
+    // check for the room level
+    auto level = RoomManager::get().getRoomLevel();
+
+    // only change if the levelcell has not been created, or the level has changed.
+    if (level && (!roomLevelCell || roomLevelCell->roomCell->m_level->m_levelID != level->m_levelID)) {
+        if (roomLevelCell) {
+            listLayer->removeCell(roomLevelCell);
+            roomLevelCell = nullptr;
+        }
+
+        Build<ListCellWrapper>::create(level, listSize.width, [this](bool) {
+            listLayer->forceUpdate();
+        }).store(roomLevelCell);
+
+        listLayer->insertCell(roomLevelCell, 0);
+        listLayer->forceUpdate();
+
+        log::debug("Added cell");
     }
 }
 
@@ -302,6 +322,10 @@ void RoomLayer::recreatePlayerList() {
     auto scrollPos = listLayer->getScrollPos();
 
     listLayer->removeAllCells();
+
+    if (roomLevelCell) {
+        listLayer->addCell(roomLevelCell.data());
+    }
 
     auto filter = util::format::toLowercase(currentFilter);
 
@@ -326,7 +350,7 @@ void RoomLayer::recreatePlayerList() {
     // for prettiness, load first 10 icons
     for (size_t i = 0; i < util::math::min(listLayer->cellCount(), 10); i++) {
         auto cell = listLayer->getCell(i);
-        if (cell->player_cell) cell->player_cell->createPlayerIcon();
+        if (cell->playerCell) cell->playerCell->createPlayerIcon();
     }
 
     listLayer->scrollToPos(scrollPos);
@@ -338,11 +362,11 @@ void RoomLayer::sortPlayerList() {
     auto selfId = GJAccountManager::get()->m_accountID;
 
     listLayer->sort([&, selfId = selfId](ListCellWrapper* _a, ListCellWrapper* _b) {
-        if (_a->player_cell == nullptr) return true;
-        if (_b->player_cell == nullptr) return false;
+        if (_a->playerCell == nullptr) return true;
+        if (_b->playerCell == nullptr) return false;
 
-        PlayerListCell* a = _a->player_cell;
-        PlayerListCell* b = _b->player_cell;
+        PlayerListCell* a = _a->playerCell;
+        PlayerListCell* b = _b->playerCell;
 
         // force ourselves at the top
         if (a->playerData.accountId == selfId) return true;
@@ -445,10 +469,6 @@ void RoomLayer::reloadData(const RoomInfo& info, const std::vector<PlayerRoomPre
     // if we are not refreshing, but rather joining/leaving/creating a room, reset the filter
     if (changedRoom) {
         this->resetFilter();
-    }
-
-    if (info.settings.levelId != 0) {
-        this->loadRoomLevel(info.settings.levelId);
     }
 
     // create the player list
@@ -619,64 +639,6 @@ void RoomLayer::onCopyRoomId(CCObject*) {
     utils::clipboard::write(std::to_string(id));
 
     Notification::create("Copied room ID to clipboard", NotificationIcon::Success)->show();
-}
-
-void RoomLayer::loadLevelsFinished(cocos2d::CCArray* levels, char const* p1, int p2) {
-    if (levels->count() == 0) {
-        FLAlertLayer::create("Error", "Failed to download the room level. It may be unlisted or not exist on the servers anymore.", "Ok")->show();
-        return;
-    }
-
-    auto level = static_cast<GJGameLevel*>(levels->objectAtIndex(0));
-
-    auto* glm = GameLevelManager::sharedState();
-
-    glm->m_levelManagerDelegate = nullptr;
-    glm->m_levelDownloadDelegate = this;
-    glm->downloadLevel(level->m_levelID, false);
-}
-
-void RoomLayer::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1) {
-    this->loadLevelsFinished(p0, p1, -1);
-}
-
-void RoomLayer::loadLevelsFailed(char const* p0, int p1) {
-    Notification::create(fmt::format("Failed to download the room level: {}", p1), NotificationIcon::Error)->show();
-}
-
-void RoomLayer::loadLevelsFailed(char const* p0) {
-    this->loadLevelsFailed(p0, -1);
-}
-
-void RoomLayer::setupPageInfo(gd::string p0, char const* p1) {}
-
-void RoomLayer::levelDownloadFinished(GJGameLevel* level) {
-    util::gd::reorderDownloadedLevel(level);
-    
-    // because this function runs in the future
-    // this ensures the cell won't be created
-    // if the client has left/switched rooms
-    if (RoomManager::get().getInfo().settings.levelId != level->m_levelID.value()) return;
-
-    Build<ListCellWrapper>::create(level, listSize.width, [this](bool) {
-        listLayer->forceUpdate();
-    }).store(roomLevelCell);
-    listLayer->insertCell(roomLevelCell, 0);
-    listLayer->forceUpdate();
-
-    auto* glm = GameLevelManager::sharedState();
-    glm->m_levelManagerDelegate = nullptr;
-    glm->m_levelDownloadDelegate = nullptr;
-}
-
-void RoomLayer::levelDownloadFailed(int p0) {
-    Notification::create(fmt::format("Failed to download the room level: {}", p0), NotificationIcon::Error)->show();
-}
-
-void RoomLayer::loadRoomLevel(int levelId) {
-    auto* glm = GameLevelManager::sharedState();
-    glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(levelId)));
 }
 
 RoomLayer::~RoomLayer() {

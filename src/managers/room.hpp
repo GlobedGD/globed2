@@ -1,8 +1,8 @@
 #pragma once
 #include <asp/sync.hpp>
 
+#include <Geode/binding/GJGameLevel.hpp>
 #include <data/types/room.hpp>
-
 #include <util/singleton.hpp>
 
 class RoomManager : public SingletonBase<RoomManager> {
@@ -22,6 +22,14 @@ public:
     void setInfo(const RoomInfo& info);
     void setGlobal();
 
+    GJGameLevel* getRoomLevel();
+
 private:
     RoomInfo roomInfo;
+    Ref<GJGameLevel> roomLevel;
+    bool fetching = true;
+
+    void fetchRoomLevel(int levelId);
+    void cancelLevelFetching();
+    void onRoomLevelDownloaded(GJGameLevel* level);
 };
