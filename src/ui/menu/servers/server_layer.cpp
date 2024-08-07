@@ -232,9 +232,6 @@ void GlobedServersLayer::updateServerList(float) {
 
     // if there were no pending changes, still update the server data (ping, players, etc.)
     serverList->softRefresh();
-
-    CCArray* a;
-    a->firstObject();
 }
 
 void GlobedServersLayer::requestServerList() {
