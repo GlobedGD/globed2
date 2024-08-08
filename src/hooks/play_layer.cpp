@@ -66,12 +66,13 @@ void GlobedPlayLayer::setupHasCompleted() {
 }
 
 void GlobedPlayLayer::onQuit() {
-    GlobedGJBGL::get()->onQuitActions();
+    auto gjbgl = GlobedGJBGL::get();
 
-    if (GlobedSettings::get().levelUi.forceProgressBar) {
+    if (GlobedSettings::get().levelUi.forceProgressBar && gjbgl->m_fields->globedReady) {
         auto gm = GameManager::sharedState();
         gm->m_showProgressBar = m_fields->oldShowProgressBar;
     }
+    gjbgl->onQuitActions();
 
     PlayLayer::onQuit();
 }
