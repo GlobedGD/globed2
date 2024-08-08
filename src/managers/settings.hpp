@@ -151,7 +151,6 @@ public:
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
-        Setting<bool, true> forceProgressBar;
 
         // hidden settings! no settings ui for them
 
@@ -186,6 +185,7 @@ public:
         Setting<bool, true> progressPointers; // unused
         LimitedSetting<float, 1.0f, 0.f, 1.f> progressOpacity;
         Setting<bool, true> voiceOverlay;
+        Setting<bool, true> forceProgressBar;
     };
 
     struct Players {
@@ -286,7 +286,7 @@ public:
 /* Enable reflection */
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, forceProgressBar,
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC,
     isInvisible, noInvites, hideInGame, hideRoles
 ));
 
@@ -299,7 +299,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Communication, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (
-    progressIndicators, progressPointers, progressOpacity, voiceOverlay
+    progressIndicators, progressPointers, progressOpacity, voiceOverlay, forceProgressBar
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Players, (
