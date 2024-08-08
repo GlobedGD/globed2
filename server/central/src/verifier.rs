@@ -69,7 +69,7 @@ impl AccountVerifier {
             is_enabled: AtomicBool::new(enabled),
             ignore_name_mismatch,
             flush_period,
-            delete_period: flush_period * 60,
+            delete_period: flush_period * 15,
         }
     }
 
@@ -338,7 +338,7 @@ impl AccountVerifier {
             let age = age.unwrap();
 
             // if the message is old, queue it for deletion
-            if age.contains("hours") || age.contains("days") || age.contains("months") || age.contains("years") {
+            if age.contains("minutes") || age.contains("hours") || age.contains("days") || age.contains("months") || age.contains("years") {
                 self.outdated_messages.lock().insert(message_id);
                 continue;
             }
