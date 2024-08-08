@@ -32,7 +32,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     gjbgl->setupPreInit(level, false);
 
-    if (GlobedSettings::get().globed.forceProgressBar && gjbgl->m_fields->globedReady) {
+    if (GlobedSettings::get().globed.levelUi && gjbgl->m_fields->globedReady) {
         auto gm = GameManager::sharedState();
         m_fields->oldShowProgressBar = gm->m_showProgressBar;
         gm->m_showProgressBar = true;
@@ -68,7 +68,7 @@ void GlobedPlayLayer::setupHasCompleted() {
 void GlobedPlayLayer::onQuit() {
     GlobedGJBGL::get()->onQuitActions();
 
-    if (GlobedSettings::get().globed.forceProgressBar) {
+    if (GlobedSettings::get().levelUi.forceProgressBar) {
         auto gm = GameManager::sharedState();
         gm->m_showProgressBar = m_fields->oldShowProgressBar;
     }
