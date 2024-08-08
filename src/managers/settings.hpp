@@ -286,7 +286,7 @@ public:
 /* Enable reflection */
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC,
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, forceProgressBar,
     isInvisible, noInvites, hideInGame, hideRoles
 ));
 
