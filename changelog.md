@@ -1,4 +1,4 @@
-## v1.5.2
+## v1.6.0
 
 * Fixed player names and status icons not rotating together with the camera (i.e. arrow trigger)
 * \-- You can return to the old behavior by disabling the "Rotate names" setting
