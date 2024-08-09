@@ -71,7 +71,7 @@ ComputedRole RoleManager::compute(const std::vector<std::string>& roles) {
     return this->compute(out);
 }
 
-std::vector<std::string> RoleManager::createRoleArray(const std::vector<uint8_t>& roles) {
+std::vector<std::string> RoleManager::getBadgeList(const std::vector<uint8_t>& roles) {
     auto vector = std::vector<std::string>();
     
     for (auto& roleid : roles) {
@@ -86,7 +86,7 @@ std::vector<std::string> RoleManager::createRoleArray(const std::vector<uint8_t>
     return vector;
 }
 
-std::vector<std::string> RoleManager::createRoleArray(const std::vector<std::string>& roles) {
+std::vector<std::string> RoleManager::getBadgeList(const std::vector<std::string>& roles) {
     std::vector<uint8_t> out;
     out.reserve(roles.size());
 
@@ -97,5 +97,5 @@ std::vector<std::string> RoleManager::createRoleArray(const std::vector<std::str
         out.push_back(it->intId);
     }
 
-    return this->createRoleArray(out);
+    return this->getBadgeList(out);
 }

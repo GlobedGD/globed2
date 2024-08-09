@@ -74,16 +74,8 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     // badge with s
     if (data.specialUserData.roles) {
-        std::vector<std::string> badgeVector = RoleManager::get().createRoleArray(data.specialUserData.roles.value());
-        if (!badgeVector.empty()) {
-            for (std::string spr : badgeVector) {
-                auto badge = util::ui::createBadge(spr);
-                if (badge) {
-                    util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
-                    usernameLayout->addChild(badge);
-                }
-            }
-        }
+        std::vector<std::string> badgeVector = RoleManager::get().getBadgeList(data.specialUserData.roles.value());
+        util::ui::addBadgesToMenu(badgeVector, usernameLayout, 1);
     }
 
     if (isFriend) {

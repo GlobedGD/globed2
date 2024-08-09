@@ -14,8 +14,8 @@ public:
     std::vector<GameServerRole>& getAllRoles();
     ComputedRole compute(const std::vector<uint8_t>& roles);
     ComputedRole compute(const std::vector<std::string>& roles);
-    std::vector<std::string> createRoleArray(const std::vector<uint8_t>& roles);
-    std::vector<std::string> createRoleArray(const std::vector<std::string>& roles);
+    std::vector<std::string> getBadgeList(const std::vector<uint8_t>& roles);
+    std::vector<std::string> getBadgeList(const std::vector<std::string>& roles);
 
 private:
     std::vector<GameServerRole> allRoles;

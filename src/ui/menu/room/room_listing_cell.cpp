@@ -73,17 +73,8 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
 
     // badge with s
     if (rli.owner.specialUserData.roles) {
-        std::vector<std::string> badgeVector = RoleManager::get().createRoleArray(rli.owner.specialUserData.roles.value());
-        if (!badgeVector.empty()) {
-            for (std::string spr : badgeVector) {
-                auto badge = util::ui::createBadge(spr);
-                if (badge) {
-                    util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
-                    badge->setZOrder(1);
-                    playerBundle->addChild(badge);
-                }
-            }
-        }
+        std::vector<std::string> badgeVector = RoleManager::get().getBadgeList(rli.owner.specialUserData.roles.value());
+        util::ui::addBadgesToMenu(badgeVector, playerBundle, 1);
     }
 
     auto* usernameButton = Build<CCMenuItemSpriteExtra>::create(nameLabel, this, menu_selector(RoomListingCell::onUser))

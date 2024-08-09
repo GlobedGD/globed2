@@ -83,17 +83,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
 
     // badge with s
     if (playerData.specialUserData.roles) {
-        std::vector<std::string> badgeVector = RoleManager::get().createRoleArray(playerData.specialUserData.roles.value());
-        if (!badgeVector.empty()) {
-            for (std::string spr : badgeVector) {
-                auto badge = util::ui::createBadge(spr);
-                if (badge) {
-                    util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
-                    badge->setZOrder(btnorder::Badge);
-                    leftSideLayout->addChild(badge);
-                }
-            }
-        }
+        std::vector<std::string> badgeVector = RoleManager::get().getBadgeList(playerData.specialUserData.roles.value());
+        util::ui::addBadgesToMenu(badgeVector, leftSideLayout, btnorder::Badge);
     }
     
     // friend gradient and own gradient

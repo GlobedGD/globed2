@@ -1,5 +1,4 @@
 #include "ui.hpp"
-#include "Geode/cocos/menu_nodes/CCMenu.h"
 
 #include <hooks/game_manager.hpp>
 #include <data/types/admin.hpp>
@@ -227,23 +226,16 @@ namespace util::ui {
         return spr1;
     }
 
-    CCMenu* createBadgeMenu(std::vector<std::string> roleVector) {
-        if (roleVector.empty()) return nullptr;
-
-        CCMenu* menu = CCMenu::create();
-        menu->setLayout(RowLayout::create()
-        ->setGap(5.f)
-        ->setAxisAlignment(AxisAlignment::Start)
-        );
-        menu->setScale(0.5f); //workaround
-        
-        for (std::string roleString : roleVector) {
-            auto badge = createBadge(roleString);
-            menu->addChild(badge);
+    void addBadgesToMenu(std::vector<std::string> roleVector, CCMenu* menu, int z) {
+        if (roleVector.empty()) return;
+        for (std::string spr : roleVector) {
+            auto badge = util::ui::createBadge(spr);
+            if (badge) {
+                util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
+                badge->setZOrder(z);
+                menu->addChild(badge);
+            }
         }
-
-        menu->updateLayout();
-        return menu;
     }
 
     static ComputedRole compute(const SpecialUserData& data) {
