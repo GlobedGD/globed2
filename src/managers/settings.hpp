@@ -185,7 +185,7 @@ public:
         Setting<bool, true> progressPointers; // unused
         LimitedSetting<float, 1.0f, 0.f, 1.f> progressOpacity;
         Setting<bool, true> voiceOverlay;
-        Setting<bool, true> forceProgressBar;
+        Setting<bool, false> forceProgressBar;
     };
 
     struct Players {
