@@ -73,20 +73,12 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
 
     nameBtn->setLayoutOptions(AxisLayoutOptions::create()->setPrevGap(10.f));
 
-    // badge
-    // auto badge = util::ui::createBadgeIfSpecial(playerData.specialUserData);
-    // if (badge) {
-    //     util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
-    //     badge->setZOrder(btnorder::Badge);
-    //     leftSideLayout->addChild(badge);
-    // }
-
     // badge with s
     if (playerData.specialUserData.roles) {
         std::vector<std::string> badgeVector = RoleManager::get().getBadgeList(playerData.specialUserData.roles.value());
         util::ui::addBadgesToMenu(badgeVector, leftSideLayout, btnorder::Badge);
     }
-    
+
     // friend gradient and own gradient
     if (FriendListManager::get().isFriend(data.accountId)) {
         CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
@@ -121,7 +113,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
     }
 
     leftSideLayout->updateLayout();
-    
+
     nameBtn->setPositionY(CELL_HEIGHT / 2 - 5.00f);
 
     Build<CCMenu>::create()
@@ -163,6 +155,8 @@ void PlayerListCell::createPlayerIcon() {
             .id("player-icon"_spr)
             .parent(leftSideLayout)
             .store(simplePlayer);
+
+        leftSideLayout->updateLayout();
     }
 }
 

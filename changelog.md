@@ -3,6 +3,8 @@
 * Fixed player names and status icons not rotating together with the camera (i.e. arrow trigger)
 * \-- You can return to the old behavior by disabling the "Rotate names" setting
 * \-- Thanks [TheSillyDoggo](https://github.com/TheSillyDoggo/) for implementing this!
+* the uhh badge list
+* made auth faster
 * Automatically block invites from users that you have blocked on GD
 * Remove Custom Keybinds dependency from Android
 * When playing in a Death Link room, the faster reset option is now forcefully disabled for all players

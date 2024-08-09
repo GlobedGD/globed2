@@ -226,9 +226,15 @@ namespace util::ui {
         return spr1;
     }
 
-    void addBadgesToMenu(std::vector<std::string> roleVector, CCMenu* menu, int z) {
+    void addBadgesToMenu(const std::vector<std::string>& roleVector, CCNode* menu, int z) {
         if (roleVector.empty()) return;
-        for (std::string spr : roleVector) {
+
+        auto layout = menu->getLayout();
+        if (layout) {
+            static_cast<AxisLayout*>(layout)->setAutoScale(false);
+        }
+
+        for (const std::string& spr : roleVector) {
             auto badge = util::ui::createBadge(spr);
             if (badge) {
                 util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
@@ -236,6 +242,8 @@ namespace util::ui {
                 menu->addChild(badge);
             }
         }
+
+        menu->updateLayout();
     }
 
     static ComputedRole compute(const SpecialUserData& data) {
