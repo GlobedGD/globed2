@@ -41,7 +41,8 @@ public:
     void clearAuthKey();
 
     bool hasAuthKey();
-    std::string getAuthKey();
+    // Returns the authkey in urlsafe base64 encoded form
+    std::optional<std::string> getAuthKey();
 
     void requestAuthToken(std::optional<std::function<void()>> callback);
 
@@ -60,6 +61,8 @@ private:
     std::optional<std::function<void()>> requestCallbackStored;
     std::unique_ptr<SecretBox> cryptoBox;
     asp::Mutex<std::string> tempAdminPassword;
+
+    void migrateOldValues();
 
     void requestCallback(WebRequestManager::Task::Event* event);
     void cancelAuthTokenRequest();

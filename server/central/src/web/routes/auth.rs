@@ -1,3 +1,5 @@
+// TODO: deprecate auth v1
+
 use std::{net::IpAddr, time::SystemTime};
 
 use globed_shared::{
@@ -8,9 +10,9 @@ use globed_shared::{
 };
 use rocket::{post, State};
 
+use super::*;
 use crate::{
     config::UserlistMode,
-    db::GlobedDb,
     ip_blocker::IpBlocker,
     state::{ActiveChallenge, ServerState},
     web::{routes::check_maintenance, *},
@@ -25,7 +27,7 @@ macro_rules! get_user_ip {
             // verify if the actual peer is cloudflare
             if !IpBlocker::instance().is_allowed(&$ip) {
                 warn!("blocking unknown non-cloudflare address: {}", $ip);
-                unauthorized!("access is denied from this IP address");
+                super::responders::unauthorized_::unauthorized!("access is denied from this IP address");
             }
 
             $cfip.0.ok_or(anyhow!("failed to parse the IP header from Cloudflare"))

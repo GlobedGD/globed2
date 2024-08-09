@@ -250,7 +250,7 @@ impl CentralBridge {
             WebhookChannel::Room => self.central_conf.lock().room_webhook_url.clone(),
         };
 
-        webhook::send_webhook_messages(self.http_client.clone(), &url, messages)
+        webhook::send_webhook_messages(self.http_client.clone(), &url, messages, None)
             .await
             .map_err(|e| match e {
                 WebhookError::Serialization(e) => CentralBridgeError::Other(e),

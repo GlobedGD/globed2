@@ -42,3 +42,55 @@ impl FromStr for RichColor {
         }
     }
 }
+
+#[derive(Clone, Encodable, Decodable)]
+pub struct UserPrivacyFlags {
+    flags: Bits<1>,
+}
+
+impl UserPrivacyFlags {
+    pub fn get_hide_from_lists(&self) -> bool {
+        self.flags.get_bit(0)
+    }
+
+    pub fn set_hide_from_lists(&mut self, s: bool) {
+        self.flags.assign_bit(0, s);
+    }
+
+    pub fn get_no_invites(&self) -> bool {
+        self.flags.get_bit(1)
+    }
+
+    pub fn set_no_invites(&mut self, s: bool) {
+        self.flags.assign_bit(1, s);
+    }
+
+    pub fn get_hide_in_game(&self) -> bool {
+        self.flags.get_bit(2)
+    }
+
+    pub fn set_hide_in_game(&mut self, s: bool) {
+        self.flags.assign_bit(2, s);
+    }
+
+    pub fn get_hide_roles(&self) -> bool {
+        self.flags.get_bit(3)
+    }
+
+    pub fn set_hide_roles(&mut self, s: bool) {
+        self.flags.assign_bit(3, s);
+    }
+}
+
+impl Default for UserPrivacyFlags {
+    fn default() -> Self {
+        let mut returned = Self { flags: Bits::new() };
+
+        returned.set_hide_from_lists(false);
+        returned.set_no_invites(false);
+        returned.set_hide_in_game(false);
+        returned.set_hide_roles(false);
+
+        returned
+    }
+}

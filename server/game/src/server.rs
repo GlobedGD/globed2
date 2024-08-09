@@ -464,7 +464,7 @@ impl GameServer {
             .lock()
             .values()
             .filter(|thr| thr.authenticated())
-            .map(|thread| thread.account_data.lock().make_preview())
+            .map(|thread| thread.account_data.lock().make_preview(!thread.privacy_settings.lock().get_hide_roles()))
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
@@ -477,7 +477,7 @@ impl GameServer {
             .lock()
             .values()
             .filter(|thr| thr.authenticated() && thr.room_id.load(Ordering::Relaxed) == room_id)
-            .map(|thread| thread.account_data.lock().make_preview())
+            .map(|thread| thread.account_data.lock().make_preview(!thread.privacy_settings.lock().get_hide_roles()))
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
@@ -494,7 +494,7 @@ impl GameServer {
                     return false;
                 }
 
-                force_visibility || !thr.is_invisible.load(Ordering::Relaxed) || thr.account_id.load(Ordering::Relaxed) == requested
+                force_visibility || !thr.privacy_settings.lock().get_hide_from_lists() || thr.account_id.load(Ordering::Relaxed) == requested
             })
             .map(|thread| {
                 let mut level_id = thread.level_id.load(Ordering::Relaxed);
@@ -504,7 +504,9 @@ impl GameServer {
                     level_id = 0;
                 }
 
-                thread.account_data.lock().make_room_preview(level_id)
+                let show_roles = !thread.privacy_settings.lock().get_hide_roles();
+
+                thread.account_data.lock().make_room_preview(level_id, show_roles)
             })
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
@@ -591,7 +593,7 @@ impl GameServer {
             .lock()
             .values()
             .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
-            .map(|thr| thr.account_data.lock().make_preview())
+            .map(|thr| thr.account_data.lock().make_preview(!thr.privacy_settings.lock().get_hide_roles()))
     }
 
     /// If someone is already logged in under the given account ID, logs them out.

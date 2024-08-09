@@ -11,6 +11,8 @@ using namespace geode::prelude;
 
 constexpr size_t THREAD_COUNT = 25;
 
+#define preloadLog(...) preloadLogImpl(fmt::format(__VA_ARGS__))
+
 // all of this is needed to disrespect the privacy of ccfileutils
 #include <Geode/modify/CCFileUtils.hpp>
 class $modify(HookedFileUtils, CCFileUtils) {
@@ -56,6 +58,14 @@ namespace util::cocos {
         void _addSpriteFramesWithDictionary(CCDictionary* p1, CCTexture2D* p2);
     }
 
+    void preloadLogImpl(std::string_view message) {
+        static bool enabled = geode::Loader::get()->getLaunchFlag("globed-debug-preload");
+
+        if (enabled) {
+            geode::log::debug("preload: {}", message);
+        }
+    }
+
     struct PersistentPreloadState {
         TextureQuality texQuality;
         bool hasTexturePack;
@@ -72,11 +82,11 @@ namespace util::cocos {
             }
 
             void print() {
-                log::debug("Preload time estimates:");
-                log::debug("-- Preparation: {}", util::format::duration(postPreparation - start));
-                log::debug("-- Image load + texture creation: {}", util::format::duration(postTexCreation - postPreparation));
-                log::debug("-- Creating sprite frame: {}", util::format::duration(finish - postTexCreation));
-                log::debug("- Total: {}", util::format::duration(finish - start));
+                preloadLog("Preload time estimates:");
+                preloadLog("-- Preparation: {}", util::format::duration(postPreparation - start));
+                preloadLog("-- Image load + texture creation: {}", util::format::duration(postTexCreation - postPreparation));
+                preloadLog("-- Creating sprite frame: {}", util::format::duration(finish - postTexCreation));
+                preloadLog("- Total: {}", util::format::duration(finish - start));
             }
         } timeMeasurements;
 
@@ -141,10 +151,10 @@ namespace util::cocos {
 
         state.threadPool = std::make_unique<asp::ThreadPool>(THREAD_COUNT);
 
-        log::debug("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
-        log::debug("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
-        log::debug("texture packs: {}", state.texturePackIndices.size());
-        log::debug("game resources path ({}): {}", state.gameSearchPathIdx,
+        preloadLog("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
+        preloadLog("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
+        preloadLog("texture packs: {}", state.texturePackIndices.size());
+        preloadLog("game resources path ({}): {}", state.gameSearchPathIdx,
             state.gameSearchPathIdx == -1 ? "<not found>" : HookedFileUtils::get().getSearchPath(state.gameSearchPathIdx));
     }
 
@@ -155,7 +165,7 @@ namespace util::cocos {
 
         auto& threadPool = *state.threadPool.get();
 
-        log::debug("preload: preparing {} textures", images.size());
+        preloadLog("preparing {} textures", images.size());
         state.timeMeasurements.start = util::time::now();
 
         static asp::Mutex<> cocosWorkMutex;
@@ -198,12 +208,12 @@ namespace util::cocos {
         _imguard.unlock();
 
         if (imgCount == 0) {
-            log::debug("preload: all textures already loaded, skipping pass");
+            preloadLog("all textures already loaded, skipping pass");
             state.timeMeasurements.finish = util::time::now();
             return;
         }
 
-        log::debug("preload: loading images ({} total)", imgCount);
+        preloadLog("loading images ({} total)", imgCount);
         state.timeMeasurements.postPreparation = util::time::now();
 
         asp::Channel<std::pair<size_t, CCImage*>> textureInitRequests;
@@ -228,14 +238,14 @@ namespace util::cocos {
                 std::unique_ptr<unsigned char[]> buf(buffer);
 
                 if (!buffer || filesize == 0) {
-                    log::warn("failed to read image file: {}", imgState.path);
+                    log::warn("preload: failed to read image file: {}", imgState.path);
                     return;
                 }
 
                 auto* image = new CCImage;
                 if (!image->initWithImageData(buf.get(), filesize, cocos2d::CCImage::kFmtPng)) {
                     delete image;
-                    log::warn("failed to init image: {}", imgState.path);
+                    log::warn("preload: failed to init image: {}", imgState.path);
                     return;
                 }
 
@@ -243,7 +253,7 @@ namespace util::cocos {
             });
         }
 
-        log::debug("preload: initializing gl textures");
+        preloadLog("initializing gl textures");
 
         // initialize all the textures (must be done on the main thread)
 
@@ -264,7 +274,7 @@ namespace util::cocos {
             if (!texture->initWithImage(image)) {
                 delete texture;
                 image->release();
-                log::warn("failed to init CCTexture2D: {}", imgStates.lock()->at(idx).path);
+                log::warn("preload: failed to init CCTexture2D: {}", imgStates.lock()->at(idx).path);
                 continue;
             }
 
@@ -273,13 +283,13 @@ namespace util::cocos {
             textureCache->m_pTextures->setObject(texture, imguard->at(idx).path);
             imguard.unlock();
 
-            texture->release();
-            image->release();
+            texture->release(); // bring refcount back to 1
+            image->release(); // bring refcount to 0, releasing it
 
             initedTextures++;
         }
 
-        log::debug("preload: initialized {} textures, adding sprite frames", initedTextures);
+        preloadLog("initialized {} textures, adding sprite frames", initedTextures);
         state.timeMeasurements.postTexCreation = util::time::now();
 
         // now, add sprite frames
@@ -302,7 +312,7 @@ namespace util::cocos {
                     auto _ = cocosWorkMutex.lock();
 
                     if (static_cast<HookedGameManager*>(GameManager::get())->m_fields->loadedFrames.contains(plistKey)) {
-                        log::debug("already contains, skipping");
+                        preloadLog("already contains, skipping {}", plistKey);
                         return;
                     }
                 }
@@ -318,7 +328,7 @@ namespace util::cocos {
 
                 CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
                 if (!dict) {
-                    log::debug("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
+                    preloadLog("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
                     gd::string fallbackPath;
                     {
 #ifndef GEODE_IS_ANDROID
@@ -327,12 +337,12 @@ namespace util::cocos {
                         fallbackPath = fullPathForFilename(plistKey.c_str());
                     }
 
-                    log::debug("attempted fallback: {}", fallbackPath);
+                    preloadLog("attempted fallback: {}", fallbackPath);
                     dict = CCDictionary::createWithContentsOfFileThreadSafe(fallbackPath.c_str());
                 }
 
                 if (!dict) {
-                    log::warn("failed to find the plist for {}.", imgState.path);
+                    log::warn("preload: failed to find the plist for {}.", imgState.path);
 
 #ifndef GEODE_IS_ANDROID
                     auto _ = cocosWorkMutex.lock();
@@ -361,7 +371,7 @@ namespace util::cocos {
         // wait for the creation of sprite frames to finish.
         threadPool.join();
 
-        log::debug("preload: initialized sprite frames. done.");
+        preloadLog("initialized sprite frames. done.");
         state.timeMeasurements.finish = util::time::now();
 
 #ifdef GLOBED_DEBUG
@@ -372,7 +382,7 @@ namespace util::cocos {
     void preloadAssets(AssetPreloadStage stage) {
         using BatchedIconRange = HookedGameManager::BatchedIconRange;
 
-        log::debug("preloadAssets stage: {}", (int)stage);
+        preloadLog("preloadAssets stage: {}", (int)stage);
 
         auto* gm = static_cast<HookedGameManager*>(GameManager::get());
 

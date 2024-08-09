@@ -60,6 +60,13 @@ namespace util::misc {
         return copy;
     }
 
+    template <typename T>
+    constexpr std::string_view getTypeName() {
+        std::string_view x = std::source_location::current().function_name();
+        std::string_view y = x.substr(x.find("[T = ") + sizeof("[T = ") - 1);
+        return std::string_view(y.data(), y.size() - 1);
+    }
+
     // On first call, simply calls `func`. On repeated calls, given the same `key`, the function will not be called again. Not thread safe.
     void callOnce(const char* key, std::function<void()> func);
 
@@ -67,7 +74,7 @@ namespace util::misc {
     // When using this, it is recommended that the function does not take long to execute, due to the simplicity of the implementation.
     void callOnceSync(const char* key, std::function<void()> func);
 
-    // Calculate the avergae volume of pcm samples, picking the fastest implementation
+    // Calculate the average volume of pcm samples
     float calculatePcmVolume(const float* pcm, size_t samples);
 
     float pcmVolumeSlow(const float* pcm, size_t samples);
@@ -75,9 +82,6 @@ namespace util::misc {
     bool compareName(const std::string_view name1, const std::string_view name2);
 
     bool isEditorCollabLevel(LevelId levelId);
-
-    int getIconWithType(const PlayerIconData& data, PlayerIconType type);
-    int getIconWithType(const PlayerIconData& data, IconType type);
 
     class ScopeGuard {
     public:
@@ -92,4 +96,23 @@ namespace util::misc {
 
     ScopeGuard scopeDestructor(const std::function<void()>& f);
     ScopeGuard scopeDestructor(std::function<void()>&& f);
+
+    class UniqueIdent {
+    public:
+        UniqueIdent(std::array<uint8_t, 32> data) : rawForm(data) {}
+
+        operator std::string() const;
+        std::array<uint8_t, 32> getRaw() const;
+        std::string getString() const;
+
+    private:
+        std::array<uint8_t, 32> rawForm;
+    };
+
+    // Generates an identifier that should be unique per any possible device.
+    const UniqueIdent& fingerprint();
+    Result<UniqueIdent> fingerprintImpl(); // different definition per platform.
+
+    // If you are reading this, feel free to trace all usages of this function.
+    // The fingerprint is never sent anywhere, and is only used for local encryption.
 }

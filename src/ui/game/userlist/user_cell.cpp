@@ -18,9 +18,10 @@
 
 using namespace geode::prelude;
 
-bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
+bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountData& data, GlobedUserListPopup* parent) {
     if (!CCLayer::init()) return false;
 
+    this->parent = parent;
     accountData = data;
 
     auto winSize = CCDirector::get()->getWinSize();
@@ -29,7 +30,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
     auto& flm = FriendListManager::get();
     this->isFriend = flm.isFriend(data.accountId);
 
-    Build<CCMenu>::create()
+    Build<CCNode>::create()
         .pos(0.f, 0.f)
         .parent(this)
         .store(menu);
@@ -183,120 +184,158 @@ void GlobedUserCell::makeButtons() {
         .layout(RowLayout::create()
                     ->setGap(gap)
                     ->setAutoScale(false)
-                    ->setAxisReverse(true))
+                    ->setAxisReverse(true)
+                    ->setAxisAlignment(AxisAlignment::End))
+        .id("btn-menu"_spr)
         .parent(menu)
         .store(buttonsWrapper);
 
     auto& settings = GlobedSettings::get();
     auto pl = GlobedGJBGL::get();
 
-    auto maxWidth = -5.f;
-
     bool notSelf = accountData.accountId != GJAccountManager::get()->m_accountID;
-    bool createBtnSettings = notSelf;
-    bool createBtnAdmin = AdminManager::get().authorized();
-    bool createBtn2plink = pl->m_fields->roomSettings.flags.twoPlayerMode && notSelf;
-    bool createBtnTp = createBtnAdmin && notSelf && !createBtn2plink;
-    bool createVisualizer = settings.communication.voiceEnabled && notSelf;
-    bool createSettingsAlts = false;
 
-    if (!createBtnAdmin && createBtnSettings) {
-        createSettingsAlts = true;
-        createBtnSettings = false;
+    if (!pl->m_fields->players.contains(accountData.accountId)) {
+        return;
     }
 
-    if (!pl->m_fields->players.contains(accountData.accountId)) return;
+    bool createBtnHide = notSelf; // always created
+    bool createBtnMute = notSelf; // always created
+    bool createBtnAdmin = AdminManager::get().authorized();
 
-    if (createBtnSettings) {
-        // settings button
-        Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
-            .scale(0.36f)
-            .intoMenuItem([this, id = accountData.accountId](auto) {
-                auto* pl = GlobedGJBGL::get();
+    using UserCellButton = BaseGameplayModule::UserCellButton;
 
-                // if they left the level, do nothing
-                if (!pl->m_fields->players.contains(accountData.accountId)) return;
+    std::vector<BaseGameplayModule::UserCellButton> customButtons;
+    for (auto& module : pl->m_fields->modules) {
+        auto btns = module->onUserActionsPopup(accountData.accountId, !notSelf);
+        for (auto& btn : btns) {
+            customButtons.emplace_back(std::move(btn));
+        }
+    }
 
-                GlobedUserActionsPopup::create(id)->show();
-            })
-            .scaleMult(1.2f)
-            .parent(buttonsWrapper)
-            .id("player-actions-button"_spr)
-            .store(actionsButton);
+    bool createBtnTp = createBtnAdmin && notSelf;
+    bool createVisualizer = settings.communication.voiceEnabled && notSelf;
 
-        maxWidth += actionsButton->getScaledContentSize().width + gap;
-    } else if (createSettingsAlts) {
-        bool isUnblocked = pl->shouldLetMessageThrough(accountData.accountId);
-        bool isHidden = pl->m_fields->players.at(accountData.accountId)->getForciblyHidden();
+    size_t buttonCount = (size_t)createBtnHide + createBtnMute + createBtnAdmin + createBtnTp + customButtons.size();
 
-        Build<CCSprite>::createSpriteName(isUnblocked ? "icon-mute.png"_spr : "icon-unmute.png"_spr)
-            .scale(0.45f)
-            .intoMenuItem([this, isUnblocked, accountId = accountData.accountId](auto) {
-                auto& bl = BlockListManager::get();
-                isUnblocked ? bl.blacklist(accountId) : bl.whitelist(accountId);
-                // mute them immediately
-                auto& settings = GlobedSettings::get();
-                auto& vpm = VoicePlaybackManager::get();
+    // if no visualizer, max button count is 4, otherwise 2
+    size_t maxButtonCount = createVisualizer ? 2 : 4;
 
-                if (isUnblocked) {
-                    vpm.setVolume(accountId, 0.f);
-                } else {
-                    vpm.setVolume(accountId, settings.communication.voiceVolume);
-                }
+    // we create the settings button and popup if things arent gonna fit
+    bool createSettingsPopup = buttonCount > maxButtonCount;
 
-                // delay by 1 frame to prevent epic ccmenuitem::activate crash
-                Loader::get()->queueInMainThread([this] {
-                    this->makeButtons();
-                });
-            })
-            .scaleMult(1.2f)
-            .parent(buttonsWrapper)
-            .id("player-mute-button"_spr)
-            .store(muteButton);
+    CCArray* mainButtons = CCArray::create();
+    CCArray* popupButtons = CCArray::create();
+    CCSize btnSize = {20.f, 20.f};
+    CCSize btnSizeBig = {28.f, 28.f};
 
-        maxWidth += muteButton->getScaledContentSize().width + gap;
+    // Creare various buttons
 
-        auto spr = Build<CCSprite>::createSpriteName(isHidden ? "icon-show-player.png"_spr : "icon-hide-player.png"_spr).collect();
-        util::ui::rescaleToMatch(spr, muteButton);
+    // god i hate this
+    bool muteAndHideInCell = (!createVisualizer || buttonCount == 2);
 
-        Build(spr)
-            .intoMenuItem([this, isHidden, pl, accountId = accountData.accountId](auto) {
-                if (!pl->m_fields->players.contains(accountId)) return;
+    bool isMuted = !pl->shouldLetMessageThrough(accountData.accountId);
+    bool isHidden = notSelf ? pl->m_fields->players.at(accountData.accountId)->getForciblyHidden() : false;
 
-                pl->m_fields->players.at(accountId)->setForciblyHidden(!isHidden);
-                auto& bl = BlockListManager::get();
-                bl.setHidden(accountId, !isHidden);
+    // Mute button
+    auto* muteOn = CCSprite::createWithSpriteFrameName("icon-mute.png"_spr);
+    auto* muteOff = CCSprite::createWithSpriteFrameName("icon-unmute.png"_spr);
+    util::ui::rescaleToMatch(muteOn, muteAndHideInCell ? btnSize : btnSizeBig);
+    util::ui::rescaleToMatch(muteOff, muteAndHideInCell ? btnSize : btnSizeBig);
 
-                Loader::get()->queueInMainThread([this] {
-                    this->makeButtons();
-                });
-            })
-            .scaleMult(1.2f)
-            .parent(buttonsWrapper)
-            .id("player-hide-button"_spr)
-            .store(hideButton);
+    auto* muteButton = CCMenuItemExt::createToggler(
+        muteOn,
+        muteOff,
+        [accountId = accountData.accountId, pl](CCMenuItemToggler* btn) {
+            bool muted = btn->isOn();
 
-        maxWidth += hideButton->getScaledContentSize().width + gap;
+            auto& bl = BlockListManager::get();
+            muted ? bl.blacklist(accountId) : bl.whitelist(accountId);
+            // mute them immediately
+            auto& settings = GlobedSettings::get();
+            auto& vpm = VoicePlaybackManager::get();
+
+            if (!pl->m_fields->players.contains(accountId)) {
+                return;
+            }
+
+            if (muted) {
+                vpm.setVolume(accountId, 0.f);
+            } else {
+                vpm.setVolume(accountId, settings.communication.voiceVolume);
+            }
+        }
+    );
+
+    muteButton->setID("mute-btn"_spr);
+    muteButton->m_onButton->m_scaleMultiplier = 1.2f;
+    muteButton->m_offButton->m_scaleMultiplier = 1.2f;
+    muteButton->toggle(!isMuted); // fucked up
+
+    // Hide button
+
+    auto* hideOn = CCSprite::createWithSpriteFrameName("icon-hide-player.png"_spr);
+    auto* hideOff = CCSprite::createWithSpriteFrameName("icon-show-player.png"_spr);
+    util::ui::rescaleToMatch(hideOn, muteAndHideInCell ? btnSize : btnSizeBig);
+    util::ui::rescaleToMatch(hideOff, muteAndHideInCell ? btnSize : btnSizeBig);
+
+    auto* hideButton = CCMenuItemExt::createToggler(
+        hideOn,
+        hideOff,
+        [accountId = accountData.accountId, pl](CCMenuItemToggler* btn) {
+            bool hidden = btn->isOn();
+
+            auto& bl = BlockListManager::get();
+            bl.setHidden(accountId, hidden);
+
+            if (!pl->m_fields->players.contains(accountId)) {
+                return;
+            }
+
+            pl->m_fields->players.at(accountId)->setForciblyHidden(hidden);
+        }
+    );
+
+    hideButton->setID("hide-btn"_spr);
+    hideButton->m_onButton->m_scaleMultiplier = 1.2f;
+    hideButton->m_offButton->m_scaleMultiplier = 1.2f;
+    hideButton->toggle(!isHidden);
+
+    if (createSettingsPopup) {
+        popupButtons->addObject(muteButton);
+        popupButtons->addObject(hideButton);
+    } else {
+        // if not creating a settings popup, slot them here
+        mainButtons->addObject(muteButton);
+        mainButtons->addObject(hideButton);
     }
 
     // admin menu button
     if (createBtnAdmin) {
-        Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
-            .scale(0.4f)
-            .intoMenuItem([this](auto) {
-                AdminManager::get().openUserPopup(accountData.makeRoomPreview(0));
+        auto btn = Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+            .with([&](CCSprite* spr) {
+                util::ui::rescaleToMatch(spr, btnSize);
             })
-            .parent(buttonsWrapper)
-            .id("kick-button"_spr)
-            .store(kickButton);
+            .intoMenuItem([roomPreview = accountData.makeRoomPreview(0)](auto) {
+                AdminManager::get().openUserPopup(roomPreview);
+            })
+            .id("admin-button"_spr)
+            .collect();
 
-        maxWidth += kickButton->getScaledContentSize().width + gap;
+        mainButtons->addObject(btn);
     }
 
     if (createBtnTp) {
-        Build<CCSprite>::createSpriteName("icon-teleport.png"_spr)
-            .scale(0.35f)
-            .intoMenuItem([pl, this](auto) {
+        auto btnSprite = Build<CCSprite>::createSpriteName("icon-teleport.png"_spr).collect();
+
+        if (createSettingsPopup) {
+            util::ui::rescaleToMatch(btnSprite, btnSizeBig);
+        } else {
+            util::ui::rescaleToMatch(btnSprite, btnSize);
+        }
+
+        auto btn = Build(btnSprite)
+            .intoMenuItem([pl, accountId = accountData.accountId](auto) {
                 auto& settings = GlobedSettings::get();
                 if (!settings.flags.seenTeleportNotice)  {
                     settings.flags.seenTeleportNotice = true;
@@ -314,53 +353,89 @@ void GlobedUserCell::makeButtons() {
 
                 PlayerObject* po1 = pl->m_player1;
                 CCPoint position = {0, 0}; // just in case the player has already left by the time we teleport
-                if (pl->m_fields->interpolator->hasPlayer(accountData.accountId)) position = pl->m_fields->interpolator->getPlayerState(accountData.accountId).player1.position;
+                if (pl->m_fields->interpolator->hasPlayer(accountId)) position = pl->m_fields->interpolator->getPlayerState(accountId).player1.position;
 
                 po1->m_position = position;
             })
-            .parent(buttonsWrapper)
             .id("teleport-button"_spr)
-            .store(teleportButton);
+            .collect();
 
-        maxWidth += teleportButton->getScaledContentSize().width + gap;
+        if (createSettingsPopup) {
+            popupButtons->addObject(btn);
+        } else {
+            mainButtons->addObject(btn);
+        }
     }
 
-    if (createBtn2plink) {
-        Build<CCSprite>::createSpriteName("gj_linkBtn_001.png")
-            .scale(0.6f)
-            .intoMenuItem([pl, this](auto) {
-                pl->linkPlayerTo(this->accountData.accountId);
+    for (auto& btn : customButtons) {
+        auto spr = Build<CCSprite>::createSpriteName(btn.spriteName.c_str())
+            .with([&](CCSprite* spr) {
+                util::ui::rescaleToMatch(spr, btnSize);
             })
-            .parent(buttonsWrapper)
-            .id("2p-link-button"_spr)
-            .store(linkButton);
+            .intoMenuItem(std::move(btn.callback))
+            .scaleMult(1.2f)
+            .id(btn.id)
+            .zOrder(btn.order)
+            .collect();
 
-        maxWidth += linkButton->getScaledContentSize().width + gap;
+        if (mainButtons->count() < maxButtonCount) {
+            util::ui::rescaleToMatch(spr, btnSize);
+            mainButtons->addObject(spr);
+        } else {
+            util::ui::rescaleToMatch(spr, btnSizeBig);
+            popupButtons->addObject(spr);
+        }
     }
 
+#ifdef GLOBED_VOICE_SUPPORT
     if (createVisualizer) {
         // audio visualizer
         Build<GlobedAudioVisualizer>::create()
-#ifndef GLOBED_VOICE_SUPPORT
-            .visible(false)
-#endif // GLOBED_VOICE_SUPPORT
-            .parent(buttonsWrapper)
             .id("audio-visualizer"_spr)
+            .zOrder(999999) // force to be on the left
             .store(audioVisualizer);
 
         audioVisualizer->setScaleX(0.5f);
 
-        maxWidth += audioVisualizer->getScaledContentSize().width + gap;
+        mainButtons->addObject(audioVisualizer);
+    }
+#endif // GLOBED_VOICE_SUPPORT
+
+    for (auto node : CCArrayExt<CCNode*>(mainButtons)) {
+        buttonsWrapper->addChild(node);
     }
 
-    buttonsWrapper->setContentSize({maxWidth, 20.f});
+    if (createSettingsPopup && popupButtons->count() > 0) {
+        this->popupButtons = popupButtons;
 
+        // settings button
+        Build<CCSprite>::createSpriteName("GJ_optionsBtn_001.png")
+            .with([&](CCSprite* spr) {
+                util::ui::rescaleToMatch(spr, btnSize);
+            })
+            .intoMenuItem([this, id = accountData.accountId](auto) {
+                auto* pl = GlobedGJBGL::get();
+
+                // if they left the level, do nothing
+                if (!pl->m_fields->players.contains(id)) {
+                    return;
+                }
+
+                GlobedUserActionsPopup::create(id, this->popupButtons)->show();
+            })
+            .zOrder(-999999) // force to be on the right
+            .scaleMult(1.2f)
+            .parent(buttonsWrapper)
+            .id("player-actions-button"_spr);
+    }
+
+    buttonsWrapper->setContentWidth(150.f);
     buttonsWrapper->updateLayout();
 }
 
-GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data) {
+GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data, GlobedUserListPopup* parent) {
     auto ret = new GlobedUserCell;
-    if (ret->init(entry, data)) {
+    if (ret->init(entry, data, parent)) {
         return ret;
     }
 

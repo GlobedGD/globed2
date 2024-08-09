@@ -23,10 +23,11 @@ GLOBED_SERIALIZABLE_BITFIELD(RoomSettingsFlags, (
 struct RoomSettings {
     RoomSettingsFlags flags;
     uint16_t playerLimit;
+    LevelId levelId;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RoomSettings, (
-    flags, playerLimit
+    flags, playerLimit, levelId
 ))
 
 struct RoomInfo {

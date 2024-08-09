@@ -44,8 +44,8 @@ void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event)
 
     auto evalue = std::move(*event->getValue());
 
-    if (evalue.isErr()) {
-        std::string message = util::format::webError(evalue.unwrapErr());
+    if (!evalue.ok()) {
+        std::string message = evalue.getError();
 
         log::warn("error creating challenge");
         log::warn("{}", message);
@@ -55,7 +55,7 @@ void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event)
         return;
     }
 
-    auto resptext = evalue.unwrap();
+    auto resptext = evalue.text().unwrapOrDefault();
 
     auto parts = util::format::split(resptext, ":");
     if (parts.size() != 3) {
@@ -69,19 +69,23 @@ void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event)
     this->onChallengeCreated(accountId, parts[1], parts[2]);
 }
 
-void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view chtoken, const std::string_view pubkey) {
-    std::string answer;
+static Result<std::string> decodeAnswer(std::string_view chtoken, std::string_view pubkey) {
+    GLOBED_UNWRAP_INTO(util::crypto::base64Decode(chtoken), auto decodedChallenge);
+    GLOBED_UNWRAP_INTO(util::crypto::base64Decode(pubkey), auto cryptoKey);
 
-    try {
-        auto decodedChallenge = util::crypto::base64Decode(chtoken);
-        auto cryptoKey = util::crypto::base64Decode(pubkey);
-        SecretBox box(cryptoKey);
-        answer = box.decryptToString(decodedChallenge);
-    } catch (const std::exception& e) {
-        log::warn("failed to complete challenge: {}", e.what());
-        this->onFailure(fmt::format("Failed to complete challenge: <cy>{}</c>", e.what()));
+    SecretBox box(cryptoKey);
+    return box.decryptToString(decodedChallenge);
+}
+
+void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view chtoken, const std::string_view pubkey) {
+    auto ans = decodeAnswer(chtoken, pubkey);
+    if (!ans) {
+        log::warn("failed to complete challenge: {}", ans.unwrapErr());
+        this->onFailure(fmt::format("Failed to complete challenge: <cy>{}</c>", ans.unwrap()));
         return;
     }
+
+    std::string answer = ans.unwrap();
 
     if (accountId == -1) {
         // skip the account verification, server has it disabled
@@ -132,19 +136,17 @@ void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event)
 
     auto evalue = std::move(*event->getValue());
 
-    if (evalue.isErr()) {
-        auto error = evalue.unwrapErr();
-        if (error.code == 401) {
-            this->onFailure(fmt::format("Account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>{}</c>", error.message));
+    if (!evalue.ok()) {
+        if (evalue.getCode() == 401) {
+            this->onFailure(fmt::format("Account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>{}</c>", evalue.text().unwrapOrDefault()));
             return;
         }
 
-        std::string message = util::format::webError(evalue.unwrapErr());
-        this->onFailure(message);
+        this->onFailure(evalue.getError());
         return;
     }
 
-    auto response = evalue.unwrap();
+    auto response = evalue.text().unwrapOrDefault();
 
     // we are good! the authkey has been created and can be saved now.
     auto colonPos = response.find(':');
@@ -159,15 +161,16 @@ void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event)
     auto encodedAuthkey = response.substr(colonPos + 1);
 
     log::info("Authkey created successfully, saving.");
-    util::data::bytevector authkey;
-    try {
-        authkey = util::crypto::base64Decode(encodedAuthkey);
-    } catch (const std::exception& e) {
-        log::warn("failed to decode authkey: {}", e.what());
+
+    auto dres = util::crypto::base64Decode(encodedAuthkey);
+    if (!dres) {
+        log::warn("failed to decode authkey: {}", dres.unwrapErr());
         log::warn("authkey: {}", encodedAuthkey);
         this->onFailure("Completing challenge failed: <cy>invalid response from the server (couldn't decode base64)</c>");
         return;
     }
+
+    auto authkey = std::move(dres.unwrap());
 
     auto& am = GlobedAccountManager::get();
 

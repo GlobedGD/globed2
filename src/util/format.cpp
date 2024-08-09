@@ -71,14 +71,6 @@ namespace util::format {
         return message;
     }
 
-    std::string webError(const WebRequestError& error) {
-        if (error.message.empty()) {
-            return fmt::format("code {}: empty response", error.code);
-        } else {
-            return fmt::format("code {}: {}", error.code, formatErrorMessage(error.message));
-        }
-    }
-
     std::string formatPlatformerTime(uint32_t ms) {
         auto dur = time::millis(ms);
         auto hours = time::as<time::hours>(dur).count() % 24;
@@ -199,6 +191,65 @@ namespace util::format {
         }
 
         out.emplace_back(s.substr(start));
+
+        return out;
+    }
+
+    std::tuple<std::string_view, std::string_view, std::string_view> partition(std::string_view s, std::string_view sep) {
+        auto sepidx = s.find(sep);
+        if (sepidx == std::string::npos) {
+            return std::make_tuple(s, "", "");
+        }
+
+        return std::make_tuple(s.substr(0, sepidx), sep, s.substr(sepidx + sep.size()));
+    }
+
+    std::tuple<std::string_view, std::string_view, std::string_view> rpartition(std::string_view s, std::string_view sep) {
+        auto sepidx = s.rfind(sep);
+        if (sepidx == std::string::npos) {
+            return std::make_tuple(s, "", "");
+        }
+
+        return std::make_tuple(s.substr(0, sepidx), sep, s.substr(sepidx + sep.size()));
+    }
+
+    std::tuple<std::string_view, char, std::string_view> partition(std::string_view s, char sep) {
+        auto sepidx = s.find(sep);
+        if (sepidx == std::string::npos) {
+            return std::make_tuple(s, '\0', "");
+        }
+
+        return std::make_tuple(s.substr(0, sepidx), sep, s.substr(sepidx + 1));
+    }
+
+    std::tuple<std::string_view, char, std::string_view> rpartition(std::string_view s, char sep) {
+        auto sepidx = s.rfind(sep);
+        if (sepidx == std::string::npos) {
+            return std::make_tuple(s, '\0', "");
+        }
+
+        return std::make_tuple(s.substr(0, sepidx), sep, s.substr(sepidx + 1));
+    }
+
+    std::string replace(std::string_view input, std::string_view searched, std::string_view replacement) {
+        std::string out;
+        out.reserve(input.size());
+
+        // input = 5 = abcde
+        // searched = 2 = bc
+        // i = 0 through 3 s
+
+        for (size_t i = 0; i < input.size();) {
+            // if does not match, simply append
+            if (input.substr(i, searched.size()) != searched) {
+                out += input[i];
+                i++;
+            } else {
+                // if matches, increment i by size of searched and append the replacement
+                out += replacement;
+                i += searched.size();
+            }
+        }
 
         return out;
     }

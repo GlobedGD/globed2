@@ -2,10 +2,25 @@
 
 #include "gjbasegamelayer.hpp"
 #include "level_editor_layer.hpp"
+#include <game/module/all.hpp>
 #include <util/lowlevel.hpp>
 #include <util/cocos.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
+
+// post an event to all modules
+#define GLOBED_EVENT(self, code) \
+    for (auto& module : self->m_fields->modules) { \
+        module->code; \
+    }
+
+// post an event to all modules
+#define GLOBED_EVENT_O(self, code) \
+    for (auto& module : self->m_fields->modules) { \
+        auto _mo = module->code; \
+        if (_mo == BaseGameplayModule::EventOutcome::Halt) return; \
+    }
 
 /* Hooks */
 
@@ -14,7 +29,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this));
 
-    gjbgl->setupPreInit(level);
+    gjbgl->setupPreInit(level, false);
 
     if (!PlayLayer::init(level, p1, p2)) return false;
 
@@ -54,12 +69,7 @@ void GlobedPlayLayer::fullReset() {
 
     auto gjbgl = GlobedGJBGL::get();
 
-    // if the user hit R or otherwise manually reset the level, count as a death with deathlink
-    if (gjbgl->m_fields->deathlinkState.active) {
-        if (gjbgl->m_fields->isManuallyResettingLevel) {
-            gjbgl->notifyDeath();
-        }
-    }
+    GLOBED_EVENT_O(gjbgl, fullResetLevel());
 
     // turn off safe mode
     GlobedGJBGL::get()->toggleSafeMode(false);
@@ -68,19 +78,7 @@ void GlobedPlayLayer::fullReset() {
 void GlobedPlayLayer::resetLevel() {
     auto gjbgl = GlobedGJBGL::get();
 
-    // make it count as a death instead if playing 2p levels
-    if (gjbgl->m_fields->twopstate.active && gjbgl->m_fields->setupWasCompleted && !m_fields->insideDestroyPlayer) {
-        // log::debug("redirecting reset to kill");
-        this->forceKill(m_player1);
-        return;
-    }
-
-    // if the user hit R or otherwise manually reset the level, count as a death with deathlink
-    if (gjbgl->m_fields->deathlinkState.active) {
-        if (gjbgl->m_fields->isManuallyResettingLevel) {
-            gjbgl->notifyDeath();
-        }
-    }
+    GLOBED_EVENT_O(gjbgl, resetLevel());
 
     if (m_fields->insideDestroyPlayer) {
         m_fields->insideDestroyPlayer = false;
@@ -122,20 +120,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 
     auto* pl = GlobedGJBGL::get();
 
-    if (pl->m_fields->twopstate.active && !m_fields->ignoreNoclip) {
-        PlayerObject* noclipFor = nullptr;
-        if (pl->m_fields->twopstate.isPrimary) {
-            noclipFor = m_player2;
-        } else {
-            noclipFor = m_player1;
-        }
-
-        if (m_fields->antiCheat != object && player == noclipFor) {
-            // epic noclip hack 2024 !!
-            log::debug("noclipping for {}", noclipFor == m_player1 ? "player 1" : "player 2");
-            return;
-        }
-    }
+    GLOBED_EVENT_O(pl, destroyPlayerPre(player, object));
 
     // safe mode stuff yeah
 
@@ -146,6 +131,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     }
 
     m_fields->insideDestroyPlayer = true;
+
 #ifdef GEODE_IS_ARM_MAC
 # if GEODE_COMP_GD_VERSION != 22060
 #  error "update this patch for new gd"
@@ -171,6 +157,9 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 #else
     PlayLayer::destroyPlayer(player, object);
 #endif
+
+
+    GLOBED_EVENT(pl, destroyPlayerPost(player, object));
 
     m_isTestMode = lastTestMode;
 }

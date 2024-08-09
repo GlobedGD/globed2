@@ -4,6 +4,8 @@
 #include <defs/util.hpp>
 #include <data/basic.hpp>
 
+#include <data/types/user.hpp>
+
 #include <util/singleton.hpp>
 
 class GlobedSettings : public SingletonBase<GlobedSettings> {
@@ -149,7 +151,14 @@ public:
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
-        Setting<bool, false> isInvisible; // hidden setting
+
+        // hidden settings! no settings ui for them
+
+        /* privacy settings */
+        Setting<bool, false> isInvisible;
+        Setting<bool, false> noInvites;
+        Setting<bool, false> hideInGame;
+        Setting<bool, false> hideRoles;
     };
 
     struct Overlay {
@@ -189,6 +198,7 @@ public:
         Setting<bool, false> hideNearby;
         Setting<bool, false> forceVisibility;
         Setting<bool, false> ownName;
+        Setting<bool, false> rotateNames;
         Setting<bool, false> hidePracticePlayers;
     };
 
@@ -261,12 +271,22 @@ public:
     T loadOrDefault(std::string_view key, const T& defaultval) {
         return this->has(key) ? this->load<T>(key) : defaultval;
     }
+
+    UserPrivacyFlags getPrivacyFlags() {
+        return UserPrivacyFlags {
+            .hideFromLists = globed.isInvisible,
+            .noInvites = globed.noInvites,
+            .hideInGame = globed.hideInGame,
+            .hideRoles = globed.hideRoles,
+        };
+    }
 };
 
 /* Enable reflection */
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, isInvisible
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC,
+    isInvisible, noInvites, hideInGame, hideRoles
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
@@ -282,7 +302,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Players, (
-    playerOpacity, showNames, dualName, nameOpacity, statusIcons, deathEffects, defaultDeathEffect, hideNearby, forceVisibility, ownName, hidePracticePlayers
+    playerOpacity, showNames, dualName, nameOpacity, statusIcons, deathEffects, defaultDeathEffect, hideNearby, forceVisibility, ownName, hidePracticePlayers, rotateNames
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Advanced, ());

@@ -7,8 +7,6 @@
 #include <util/time.hpp>
 #include <util/misc.hpp>
 
-struct WebRequestError;
-
 namespace util::format {
     // example: 2.123s, 69.123ms
     template <typename Rep, typename Period>
@@ -18,9 +16,9 @@ namespace util::format {
         auto micros = time::asMicros(time);
 
         if (seconds > 0) {
-            return std::to_string(seconds) + "." + std::to_string(millis % 1000) + "s";
+            return fmt::format("{}.{:03}s", seconds, millis % 1000);
         } else if (millis > 0) {
-            return std::to_string(millis) + "." + std::to_string(micros % 1000) + "ms";
+            return fmt::format("{}.{:03}ms", millis, micros % 1000);
         } else {
             return std::to_string(micros) + "μs";
         }
@@ -43,9 +41,6 @@ namespace util::format {
 
     // format an HTTP error message into a nicer string
     std::string formatErrorMessage(std::string message);
-
-    // format a web request error into a string in format like "code 404: Not found" or "code -1: empty response"
-    std::string webError(const WebRequestError& error);
 
     // format milliseconds into a string like 45.200, 1:20.300, 3:01:40.500
     std::string formatPlatformerTime(uint32_t ms);
@@ -78,4 +73,13 @@ namespace util::format {
     std::string urlEncode(const std::string_view str);
 
     std::vector<std::string_view> split(const std::string_view s, const std::string_view sep);
+
+    // like python's partition
+    std::tuple<std::string_view, std::string_view, std::string_view> partition(std::string_view s, std::string_view sep);
+    std::tuple<std::string_view, std::string_view, std::string_view> rpartition(std::string_view s, std::string_view sep);
+
+    std::tuple<std::string_view, char, std::string_view> partition(std::string_view s, char sep);
+    std::tuple<std::string_view, char, std::string_view> rpartition(std::string_view s, char sep);
+
+    std::string replace(std::string_view input, std::string_view searched, std::string_view replacement);
 }

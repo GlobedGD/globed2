@@ -22,8 +22,6 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     if (!CCLayerColor::init())
         return false;
 
-    // log::debug("rli: {}", rli.id);
-
     this->parent = parent;
     this->playerCount = rli.playerCount;
     this->ownerData = rli.owner;
@@ -115,7 +113,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .collect();
 
     CCLabelBMFont* roomNameLabel = Build<CCLabelBMFont>::create(rli.name.c_str(), "bigFont.fnt")
-        .limitLabelWidth(185.0f, 0.48f, 0.1f)
+        .limitLabelWidth(180.0f, 0.48f, 0.1f)
         .id("message-text")
         .parent(roomNameLayout)
         .collect();
@@ -155,12 +153,10 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .intoMenuItem([this, rli](auto) {
             if (rli.hasPassword) {
                 RoomPasswordPopup::create(rli.id)->show();
-                this->parent->close();
                 return;
             }
 
             NetworkManager::get().send(JoinRoomPacket::create(rli.id, std::string_view("")));
-            this->parent->close();
         })
         .scaleMult(1.15f)
         .zOrder(btnorder::Join)
@@ -217,7 +213,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     std::string playerCountText = rli.settings.playerLimit == 0 ? std::to_string(playerCount) : fmt::format("{}/{}", playerCount, rli.settings.playerLimit);
 
     auto* playerCountLabel = Build<CCLabelBMFont>::create(playerCountText.c_str(), "bigFont.fnt")
-        .scale(0.35f)
+        .limitLabelWidth(100.f * 0.35f, 0.35f, 0.15f)
         .parent(playerCountWrapper)
         .collect();
 

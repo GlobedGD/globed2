@@ -1,9 +1,12 @@
 #include "room_layer.hpp"
 
 #include "room_settings_popup.hpp"
+#include "room_password_popup.hpp"
+#include "room_join_popup.hpp"
 #include "room_listing_popup.hpp"
 #include "invite_popup.hpp"
 #include "create_room_popup.hpp"
+#include "player_list_cell.hpp"
 #include <data/packets/server/room.hpp>
 #include <data/packets/client/admin.hpp>
 #include <net/manager.hpp>
@@ -16,6 +19,7 @@
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/ui.hpp>
 #include <util/ui.hpp>
+#include <util/gd.hpp>
 #include <util/cocos.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>
@@ -64,7 +68,7 @@ bool RoomLayer::init() {
         .parent(this);
 
     // player list
-    Build<PlayerList>::create(listSize.width, listSize.height, globed::color::DarkBlue, PlayerListCell::CELL_HEIGHT, GlobedListBorderType::GJCommentListLayerBlue)
+    Build<PlayerList>::create(listSize.width, listSize.height, globed::color::DarkBlue, 0.f, GlobedListBorderType::GJCommentListLayerBlue)
         .anchorPoint(0.5f, 1.f)
         .pos(rlayout.fromTop(40.f))
         .id("player-list")
@@ -269,13 +273,35 @@ void RoomLayer::update(float dt) {
         constexpr size_t perFrame = 10;
 
         for (auto cell : *listLayer) {
-            if (!cell->isIconLoaded()) {
-                cell->createPlayerIcon();
+            if (cell->playerCell == nullptr || cell->roomCell != nullptr) continue;
+            auto playerCell = cell->playerCell;
+            if (!playerCell->isIconLoaded()) {
+                playerCell->createPlayerIcon();
                 loaded++;
             }
 
             if (loaded == perFrame) break;
         }
+    }
+
+    // check for the room level
+    auto level = RoomManager::get().getRoomLevel();
+
+    // only change if the levelcell has not been created, or the level has changed.
+    if (level && (!roomLevelCell || roomLevelCell->roomCell->m_level->m_levelID != level->m_levelID)) {
+        if (roomLevelCell) {
+            listLayer->removeCell(roomLevelCell);
+            roomLevelCell = nullptr;
+        }
+
+        Build<ListCellWrapper>::create(level, listSize.width, [this](bool) {
+            listLayer->forceUpdate();
+        }).store(roomLevelCell);
+
+        listLayer->insertCell(roomLevelCell, 0);
+        listLayer->forceUpdate();
+
+        log::debug("Added cell");
     }
 }
 
@@ -296,6 +322,10 @@ void RoomLayer::recreatePlayerList() {
     auto scrollPos = listLayer->getScrollPos();
 
     listLayer->removeAllCells();
+
+    if (roomLevelCell) {
+        listLayer->addCell(roomLevelCell.data());
+    }
 
     auto filter = util::format::toLowercase(currentFilter);
 
@@ -319,7 +349,8 @@ void RoomLayer::recreatePlayerList() {
 
     // for prettiness, load first 10 icons
     for (size_t i = 0; i < util::math::min(listLayer->cellCount(), 10); i++) {
-        listLayer->getCell(i)->createPlayerIcon();
+        auto cell = listLayer->getCell(i);
+        if (cell->playerCell) cell->playerCell->createPlayerIcon();
     }
 
     listLayer->scrollToPos(scrollPos);
@@ -330,7 +361,13 @@ void RoomLayer::sortPlayerList() {
 
     auto selfId = GJAccountManager::get()->m_accountID;
 
-    listLayer->sort([&, selfId = selfId](PlayerListCell* a, PlayerListCell* b) {
+    listLayer->sort([&, selfId = selfId](ListCellWrapper* _a, ListCellWrapper* _b) {
+        if (_a->playerCell == nullptr) return true;
+        if (_b->playerCell == nullptr) return false;
+
+        PlayerListCell* a = _a->playerCell;
+        PlayerListCell* b = _b->playerCell;
+
         // force ourselves at the top
         if (a->playerData.accountId == selfId) return true;
         if (b->playerData.accountId == selfId) return false;
@@ -369,6 +406,12 @@ void RoomLayer::setFilter(std::string_view filter) {
 
 void RoomLayer::resetFilter() {
     this->setFilter("");
+
+    // re-add the cell if it was created before
+    if (roomLevelCell) {
+        listLayer->insertCell(roomLevelCell, 0);
+        listLayer->forceUpdate();
+    }
 }
 
 void RoomLayer::onPlayerListReceived(const RoomPlayerListPacket& packet) {
@@ -381,6 +424,16 @@ void RoomLayer::onRoomCreatedReceived(const RoomCreatedPacket& packet) {
 
 void RoomLayer::onRoomJoinedReceived(const RoomJoinedPacket& packet) {
     this->reloadData(packet.info, packet.players);
+
+    // if we have any room listing popup opened, close them
+
+    auto nodes = CCScene::get()->getChildren();
+    for (int i = nodes->count() - 1; i >= 0; i--) {
+        auto node = static_cast<CCNode*>(nodes->objectAtIndex(i));
+        if (typeinfo_cast<RoomPasswordPopup*>(node) || typeinfo_cast<RoomListingPopup*>(node) || typeinfo_cast<RoomJoinPopup*>(node)) {
+            node->removeFromParent();
+        }
+    }
 }
 
 void RoomLayer::reloadData(const RoomInfo& info, const std::vector<PlayerRoomPreviewAccountData>& players) {
@@ -577,7 +630,7 @@ void RoomLayer::onInvisibleClicked(CCObject*) {
     bool invisible = btnInvisible->isOn();
     settings.globed.isInvisible = invisible;
 
-    NetworkManager::get().sendUpdatePlayerStatus(invisible);
+    NetworkManager::get().sendUpdatePlayerStatus(settings.getPrivacyFlags());
 }
 
 void RoomLayer::onCopyRoomId(CCObject*) {
@@ -585,7 +638,13 @@ void RoomLayer::onCopyRoomId(CCObject*) {
 
     utils::clipboard::write(std::to_string(id));
 
-    Notification::create("Copied to clipboard", NotificationIcon::Success)->show();
+    Notification::create("Copied room ID to clipboard", NotificationIcon::Success)->show();
+}
+
+RoomLayer::~RoomLayer() {
+    auto* glm = GameLevelManager::sharedState();
+    glm->m_levelManagerDelegate = nullptr;
+    glm->m_levelDownloadDelegate = nullptr;
 }
 
 RoomLayer* RoomLayer::create() {

@@ -35,7 +35,7 @@ bool DailyPopup::setup() {
         .intoMenuItem([](auto) {
             FLAlertLayer::create(
                         "Featured Guide",
-                        "Globed will occasionally <co>highlight Platformer levels</c> made by the community.\n\nThe three feature types are:\n<cl>Normal</c>, <cj>Epic</c>, and <cg>Outstanding</c>.\n\nSuggest levels on our <cb>Discord server</c> for a chance at being selected!",
+                        "Globed will occasionally <co>highlight Platformer levels</c> made by the community.\n\nThe three feature types are:\n<cl>Normal</c>, <cj>Epic</c>, and <cg>Outstanding</c>.\n\nDepending on the type, a level can be featured for <cl>12 hours</c>, <cj>1 day</c> or <cg>2 days</c>",
                     "Ok")->show();
         })
         .parent(blCornerMenu);

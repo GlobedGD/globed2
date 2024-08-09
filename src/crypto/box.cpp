@@ -89,21 +89,21 @@ void CryptoBox::setPeerKey(const byte* key) {
     CRYPTO_ERR_CHECK(func_box_beforenm(sharedKey, peerPublicKey, secretKey), "func_box_beforenm failed")
 }
 
-size_t CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
+Result<size_t> CryptoBox::encryptInto(const byte* src, byte* dest, size_t size) {
     byte nonce[NONCE_LEN];
     util::crypto::secureRandom(nonce, NONCE_LEN);
 
     byte* ciphertext = dest + NONCE_LEN;
-    CRYPTO_ERR_CHECK(func_box_easy(ciphertext, src, size, nonce, sharedKey), "func_box_easy failed")
+    CRYPTO_ERR_CHECK_SAFE(func_box_easy(ciphertext, src, size, nonce, sharedKey), "func_box_easy failed")
 
     // prepend the nonce
     std::memcpy(dest, nonce, NONCE_LEN);
 
-    return size + PREFIX_LEN;
+    return Ok(size + PREFIX_LEN);
 }
 
-size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) {
-    CRYPTO_REQUIRE(size >= PREFIX_LEN, "message is too short")
+Result<size_t> CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* dest, size_t size) {
+    CRYPTO_REQUIRE_SAFE(size >= PREFIX_LEN, "message is too short")
 
     const byte* nonce = src;
     const byte* ciphertext = src + NONCE_LEN;
@@ -111,9 +111,9 @@ size_t CryptoBox::decryptInto(const util::data::byte* src, util::data::byte* des
     size_t plaintextLength = size - PREFIX_LEN;
     size_t ciphertextLength = size - NONCE_LEN;
 
-    CRYPTO_ERR_CHECK(func_box_open_easy(dest, ciphertext, ciphertextLength, nonce, sharedKey), "func_box_open_easy failed")
+    CRYPTO_ERR_CHECK_SAFE(func_box_open_easy(dest, ciphertext, ciphertextLength, nonce, sharedKey), "func_box_open_easy failed")
 
-    return plaintextLength;
+    return Ok(plaintextLength);
 }
 
 const char* CryptoBox::algorithm() {

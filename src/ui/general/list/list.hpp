@@ -124,23 +124,32 @@ public:
         this->addWrapperCell(cell, index, updateLayout);
     }
 
-    void removeCell(WrapperCell* cell) {
-        scrollLayer->m_contentLayer->removeChild(cell);
+    void removeCell(WrapperCell* cell, bool updateLayout = true) {
+        if (cell && cell->getParent() == scrollLayer->m_contentLayer) {
+            scrollLayer->m_contentLayer->removeChild(cell);
+        }
+
+        if (updateLayout) {
+            this->updateCells();
+        }
     }
 
-    void removeCell(CellType* cell) {
-        this->removeCell(static_cast<WrapperCell*>(cell->getParent()));
+    void removeCell(CellType* cell, bool updateLayout = true) {
+        this->removeCell(static_cast<WrapperCell*>(cell->getParent()), updateLayout);
     }
 
-    void removeCell(int index) {
+    void removeCell(int index, bool updateLayout = true) {
         GLOBED_REQUIRE(index >= 0 && index < this->cellCount(), "invalid index passed to removeCell");
 
-        this->removeCell(this->getCell(index));
-        this->updateCellOrder();
+        this->removeCell(this->getCell(index), updateLayout);
     }
 
-    void removeAllCells() {
+    void removeAllCells(bool updateLayout = true) {
         scrollLayer->m_contentLayer->removeAllChildren();
+
+        if (updateLayout) {
+            this->updateCellOrder();
+        }
     }
 
     void swapCells(cocos2d::CCArray* cells, bool preserveScrollPos = true) {
@@ -325,7 +334,6 @@ protected:
         );
 
         // this is fucking criminal i hope no one notices this
-        // TODO: dont do this
         util::lowlevel::swapVtable<GlobedContentLayer>(scrollLayer->m_contentLayer);
 
         this->setContentSize({width, height});

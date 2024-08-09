@@ -3,6 +3,8 @@
 #include <string>
 #include <cstring> // std::memmove
 
+#include <defs/minimal_geode.hpp>
+#include <defs/assert.hpp>
 #include <util/data.hpp>
 
 /*
@@ -61,19 +63,19 @@ public:
     // Encrypt bytes from the string `src` into `dest`. Note: the `dest` buffer must be at least `size + prefixLength()` bytes big.
     // Returns the length of the encrypted data.
     size_t encryptInto(const std::string_view src, byte* dest) {
-        return static_cast<Derived*>(this)->encryptInto(reinterpret_cast<const byte*>(src.data()), dest, src.size());
+        return static_cast<Derived*>(this)->encryptInto(reinterpret_cast<const byte*>(src.data()), dest, src.size()).unwrap();
     }
 
     // Encrypt bytes from the bytevector `src` into `dest`. Note: the `dest` buffer must be at least `src.size() + prefixLength()` bytes big.
     // Returns the length of the encrypted data.
     size_t encryptInto(const bytevector& src, byte* dest) {
-        return static_cast<Derived*>(this)->encryptInto(src.data(), dest, src.size());
+        return static_cast<Derived*>(this)->encryptInto(src.data(), dest, src.size()).unwrap();
     }
 
     // Encrypt `size` bytes from `data` into itself. Note: the buffer must be at least `size + prefixLength()` bytes big.
     // Returns the length of the encrypted data.
     size_t encryptInPlace(byte* data, size_t size) {
-        return static_cast<Derived*>(this)->encryptInto(data, data, size);
+        return static_cast<Derived*>(this)->encryptInto(data, data, size).unwrap();
     }
 
     // Encrypt bytes from bytevector `src` and return a bytevector with the encrypted data.
@@ -84,7 +86,7 @@ public:
     // Encrypt `size` bytes from byte buffer `src` and return a bytevector with the encrypted data.
     bytevector encrypt(const byte* src, size_t size) {
         bytevector output(size + prefixLength());
-        static_cast<Derived*>(this)->encryptInto(src, output.data(), size);
+        (void) static_cast<Derived*>(this)->encryptInto(src, output.data(), size);
         return output;
     }
 
@@ -96,40 +98,42 @@ public:
     /* Decryption */
 
     // Decrypt `size` bytes from `data` into itself. Returns the length of the plaintext data.
-    size_t decryptInPlace(byte* data, size_t size) {
+    Result<size_t> decryptInPlace(byte* data, size_t size) {
         // overwriting nonce causes decryption to break
         // so we offset the destination by NONCE_LEN and then move it back
-        size_t plaintext_size = static_cast<Derived*>(this)->decryptInto(data, data + nonceLength(), size);
+        GLOBED_UNWRAP_INTO(static_cast<Derived*>(this)->decryptInto(data, data + nonceLength(), size), size_t plaintext_size);
 
         std::memmove(data, data + nonceLength(), plaintext_size);
 
-        return plaintext_size;
+        return Ok(plaintext_size);
     }
 
     // Decrypt bytes from bytevector `src` and return a bytevector with the plaintext data.
-    bytevector decrypt(const bytevector& src) {
+    Result<bytevector> decrypt(const bytevector& src) {
         return decrypt(src.data(), src.size());
     }
 
     // Decrypt `size` bytes from byte buffer `src` and return a bytevector with the plaintext data.
-    bytevector decrypt(const byte* src, size_t size) {
+    Result<bytevector> decrypt(const byte* src, size_t size) {
+        if (size < prefixLength()) throw std::runtime_error("data too short");
+
         size_t plaintextLength = size - prefixLength();
 
         bytevector plaintext(plaintextLength);
-        static_cast<Derived*>(this)->decryptInto(src, plaintext.data(), size);
+        GLOBED_UNWRAP(static_cast<Derived*>(this)->decryptInto(src, plaintext.data(), size));
 
-        return plaintext;
+        return Ok(std::move(plaintext));
     }
 
     // Decrypt bytes from bytevector `src` and return a string with the plaintext data.
-    std::string decryptToString(const bytevector& src) {
-        auto vec = decrypt(src);
-        return std::string(vec.begin(), vec.end());
+    Result<std::string> decryptToString(const bytevector& src) {
+        GLOBED_UNWRAP_INTO(decrypt(src), auto vec);
+        return Ok(std::string(vec.begin(), vec.end()));
     }
 
     // Decrypt `size` bytes from byte buffer `src` and return a string with the plaintext data.
-    std::string decryptToString(const byte* src, size_t size) {
-        auto vec = decrypt(src, size);
-        return std::string(vec.begin(), vec.end());
+    Result<std::string> decryptToString(const byte* src, size_t size) {
+        GLOBED_UNWRAP_INTO(decrypt(src, size), auto vec);
+        return Ok(std::string(vec.begin(), vec.end()));
     }
 };

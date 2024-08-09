@@ -17,6 +17,7 @@ private:
     GlobedSignupLayer* signupLayer;
     WebRequestManager::Listener requestListener;
     bool transitioningAway = false;
+    bool initializing = true;
 
     bool init() override;
     void onExit() override;

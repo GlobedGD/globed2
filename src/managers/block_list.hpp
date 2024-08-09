@@ -3,6 +3,8 @@
 
 #include <util/singleton.hpp>
 
+// NOTE: this class is used for blocking users on globed, specifically muting or hiding them.
+// For managing blocked users in GD, see FriendListManager
 class BlockListManager : public SingletonBase<BlockListManager> {
 protected:
     friend class SingletonBase;

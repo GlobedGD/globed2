@@ -9,7 +9,7 @@ public:
 
     ~PacketListener();
 
-    // higher priority - runs earlier
+    // lower priority - runs earlier
     static PacketListener* create(packetid_t packetId, CallbackFn&& fn, cocos2d::CCObject* owner, int priority, bool isFinal);
 
     void invokeCallback(std::shared_ptr<Packet> packet);

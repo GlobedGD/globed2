@@ -35,15 +35,15 @@ void ServerTestPopup::requestCallback(typename WebRequestManager::Event* event) 
 
     auto evalue = std::move(*event->getValue());
 
-    if (evalue.isErr()) {
-        auto error = evalue.unwrapErr();
+    if (!evalue.ok()) {
+        auto error = evalue.getError();
 
-        this->parent->onTestFailure(util::format::webError(error));
+        this->parent->onTestFailure(error);
         this->onClose(this);
         return;
     }
 
-    auto resp = evalue.unwrap();
+    auto resp = evalue.text().unwrapOrDefault();
 
     int protocol = util::format::parse<int>(resp).value_or(0);
 

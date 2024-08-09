@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/gd.hpp>
 #include <data/types/room.hpp>
+#include <data/types/user.hpp>
 
 // 11000 - SyncIconsPacket
 class SyncIconsPacket : public Packet {
@@ -50,9 +51,9 @@ class UpdatePlayerStatusPacket : public Packet {
     GLOBED_PACKET(11004, UpdatePlayerStatusPacket, false, false);
 
     UpdatePlayerStatusPacket() {}
-    UpdatePlayerStatusPacket(bool isInvisible) : isInvisible(isInvisible) {}
+    UpdatePlayerStatusPacket(const UserPrivacyFlags& flags) : flags(flags) {}
 
-    bool isInvisible;
+    UserPrivacyFlags flags;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(UpdatePlayerStatusPacket, (isInvisible));
+GLOBED_SERIALIZABLE_STRUCT(UpdatePlayerStatusPacket, (flags));

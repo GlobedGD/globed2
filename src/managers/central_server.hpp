@@ -62,4 +62,5 @@ protected:
     constexpr static int STANDALONE_IDX = -2;
 
     void save();
+    Result<> tryReload();
 };

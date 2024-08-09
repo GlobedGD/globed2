@@ -3,7 +3,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use globed_shared::{debug, ServerUserEntry, UserEntry};
 use rocket_db_pools::sqlx::{query_as, Result};
 use serde::Serialize;
-use sqlx::{prelude::*, query, sqlite::SqliteRow};
+use sqlx::{prelude::*, query, query_scalar, sqlite::SqliteRow};
 
 use super::GlobedDb;
 
@@ -98,20 +98,33 @@ impl GlobedDb {
     }
 
     pub async fn update_user_server(&self, account_id: i32, user: &ServerUserEntry) -> Result<()> {
+        // oh god i hate myself
         query(
-            "INSERT OR REPLACE INTO users (account_id, user_name, name_color, user_roles, is_banned, is_muted, is_whitelisted, violation_reason, violation_expiry)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-            .bind(account_id)
-            .bind(&user.user_name)
-            .bind(&user.name_color)
-            .bind(user.user_roles.join(","))
-            .bind(user.is_banned)
-            .bind(user.is_muted)
-            .bind(user.is_whitelisted)
-            .bind(&user.violation_reason)
-            .bind(user.violation_expiry)
-            .execute(&self.0)
-            .await?;
+            r"
+            INSERT INTO users (account_id, user_name, name_color, user_roles, is_banned, is_muted, is_whitelisted, violation_reason, violation_expiry)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(account_id) DO UPDATE SET
+                user_name = excluded.user_name,
+                name_color = excluded.name_color,
+                user_roles = excluded.user_roles,
+                is_banned = excluded.is_banned,
+                is_muted = excluded.is_muted,
+                is_whitelisted = excluded.is_whitelisted,
+                violation_reason = excluded.violation_reason,
+                violation_expiry = excluded.violation_expiry;
+            ",
+        )
+        .bind(account_id)
+        .bind(&user.user_name)
+        .bind(&user.name_color)
+        .bind(user.user_roles.join(","))
+        .bind(user.is_banned)
+        .bind(user.is_muted)
+        .bind(user.is_whitelisted)
+        .bind(&user.violation_reason)
+        .bind(user.violation_expiry)
+        .execute(&self.0)
+        .await?;
 
         // update admin password
         if let Some(password) = user.admin_password.as_ref() {
@@ -254,5 +267,14 @@ impl GlobedDb {
             .await?;
 
         Ok(())
+    }
+
+    pub async fn has_been_featured(&self, level_id: i32) -> Result<bool> {
+        let count: i64 = query_scalar("SELECT COUNT(*) from featured_levels WHERE level_id = ?")
+            .bind(level_id)
+            .fetch_one(&self.0)
+            .await?;
+
+        Ok(count > 0)
     }
 }
