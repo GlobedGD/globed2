@@ -226,6 +226,18 @@ namespace util::ui {
         return spr1;
     }
 
+    void addBadgesToMenu(std::vector<std::string> roleVector, CCMenu* menu, int z) {
+        if (roleVector.empty()) return;
+        for (std::string spr : roleVector) {
+            auto badge = util::ui::createBadge(spr);
+            if (badge) {
+                util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
+                badge->setZOrder(z);
+                menu->addChild(badge);
+            }
+        }
+    }
+
     static ComputedRole compute(const SpecialUserData& data) {
         return RoleManager::get().compute(data.roles.value());
     }
@@ -245,6 +257,18 @@ namespace util::ui {
 
         return createBadge(compute(data).badgeIcon);
     }
+
+    // CCMenu* createBadgeMenuIfSpecial(const SpecialUserData& data) {
+    //     if (!data.roles) return nullptr;
+
+    //     return createBadgeMenu(RoleManager::get().createRoleArray(data.roles.value()));
+    // }
+
+    // CCMenu* createBadgeMenuIfSpecial(const UserEntry& data) {
+    //     if (data.userRoles.empty()) return nullptr;
+
+    //     return createBadgeMenu(RoleManager::get().createRoleArray(data.userRoles));
+    // }
 
     ccColor3B getNameColor(const SpecialUserData& data) {
         if (!data.roles) return ccc3(255, 255, 255);
