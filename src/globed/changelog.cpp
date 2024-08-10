@@ -5,12 +5,10 @@
 using namespace geode::prelude;
 
 static const std::string LAST_CHANGELOG_KEY = "_last-changelog-seen";
-static constexpr std::string LAST_CHANGELOG_KEY2 = "_last-changelog";
 
 namespace globed {
 
 bool shouldShowChangelogPopup() {
-    return true;
     auto currentVersion = Mod::get()->getVersion();
     auto lastVerResult = VersionInfo::parse(Mod::get()->getSavedValue<std::string>(LAST_CHANGELOG_KEY));
     VersionInfo lastVer;
