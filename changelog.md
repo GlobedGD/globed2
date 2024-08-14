@@ -5,11 +5,12 @@
 * \-- The chosen level will be <cg>pinned</c> at the top of the player list in the globed menu
 * \-- Thanks [TechStudent10](https://github.com/TechStudent10/) for implementing this!
 * Add a <cg>popup</c> showing the <cy>changelog</c> of the most recent update
-* Add proper user visibility settings
+* Add proper user visibility settings (TODO ACTUALLY MAKE UI!)
 * \-- You can now choose to separately hide yourself from the player list, the level, or the invite list.
 * Show all the <cp>badges</c> of a player instead of just one at a time (for example <cg>Mod</c> & <cp>Booster</c>) (thanks Kiba!)
 * When playing in a <cj>Death Link</c> room, the faster reset option is now <cy>forcefully disabled</c> for all players (to prevent <cr>desync</c>)
 * Automatically <cr>block</c> invites from users that you have <cr>blocked</c> on GD
+* Add a Force Progress Bar setting, that makes it so that the progress bar is enabled if there's other players on your level, when it's otherwise disabled (thanks TechStudent10!)
 * Add Node IDs dependency
 * Remove Custom Keybinds dependency from Android, as it was unused
 * Various security improvements
