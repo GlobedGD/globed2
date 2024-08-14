@@ -287,6 +287,10 @@ bool GlobedMenuLayer::init() {
 
     this->scheduleUpdate();
 
+    return true;
+}
+
+void GlobedMenuLayer::onEnterTransitionDidFinish() {
     if (globed::shouldShowChangelogPopup()) {
         Loader::get()->queueInMainThread([this] {
             auto s = this->getParent();
@@ -309,9 +313,8 @@ bool GlobedMenuLayer::init() {
                 cocos::handleTouchPriority(alert);
             });
         });
-    }
 
-    return true;
+    }
 }
 
 GlobedMenuLayer::~GlobedMenuLayer() {

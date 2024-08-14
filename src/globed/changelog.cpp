@@ -47,10 +47,58 @@ public:
         return nullptr;
     }
 
-    // biggest hack ever
-    void onClose(CCObject* obj) override {
-        if (!obj) return;
-        MDPopup::onClose(obj);
+    bool setup(
+        std::string const& title, std::string const& info, char const* btn1Text, char const* btn2Text,
+        utils::MiniFunction<void(bool)> onClick
+    ) {
+        this->setTitle(title.c_str(), "goldFont.fnt", .9f, 33.f);
+
+        m_onClick = onClick;
+
+        auto contentSize = CCSize {
+            m_size.width - 70.f,
+            m_size.height - 120.f,
+        };
+        auto content = MDTextArea::create(info, contentSize);
+        m_mainLayer->addChildAtPosition(content, Anchor::Center, ccp(0, 0));
+
+        auto btnSpr = ButtonSprite::create(btn1Text);
+
+        auto btn = CCMenuItemSpriteExtra::create(btnSpr, this, menu_selector(BetterMDPopup::onBtn));
+        btn->setTag(0);
+
+        auto menu = CCMenu::create();
+        menu->setLayout(
+            RowLayout::create()
+                ->setAxisAlignment(AxisAlignment::Center)
+                ->setGap(10.f)
+        );
+        menu->addChild(btn);
+
+        if (btn2Text) {
+            auto btn2Spr = ButtonSprite::create(btn2Text);
+
+            auto btn2 = CCMenuItemSpriteExtra::create(btn2Spr, this, menu_selector(BetterMDPopup::onBtn));
+            btn2->setTag(1);
+
+            menu->addChild(btn2);
+        }
+
+        m_buttonMenu->addChildAtPosition(menu, Anchor::Bottom, ccp(0, 30));
+        menu->updateLayout();
+
+        return true;
+    }
+
+    void onClose(CCObject* b) {
+        MDPopup::onClose(b);
+    }
+
+private:
+    void onBtn(CCObject* btn) {
+        if (m_onClick) {
+            m_onClick(btn->getTag());
+        }
     }
 };
 }
