@@ -151,6 +151,7 @@ public:
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
+        Setting<bool, true> changelogPopups;
 
         // hidden settings! no settings ui for them
 
@@ -286,6 +287,7 @@ public:
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
     autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC,
+    changelogPopups,
     isInvisible, noInvites, hideInGame, hideRoles
 ));
 

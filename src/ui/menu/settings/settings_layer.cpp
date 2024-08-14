@@ -229,6 +229,9 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
 #ifndef GEODE_IS_ANDROID
             registerSetting(cat, settings.globed.useDiscordRPC, "Discord RPC", "If you have the Discord Rich Presence standalone mod, this option will toggle a Globed-specific RPC on your profile.", Type::DiscordRPC);
 #endif
+
+            registerSetting(cat, settings.globed.changelogPopups, "Changelog Popup", "After every update, show a <cy>popup</c> detailing all the <cl>changes</c> in the <cg>update</c>.");
+
 #ifdef GLOBED_DEBUG
             // advanced settings button
             registerSetting(cat, settings.globed.autoconnect, "Advanced", "Advanced settings", Type::AdvancedSettings);
