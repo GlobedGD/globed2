@@ -186,6 +186,7 @@ public:
         Setting<bool, true> progressPointers; // unused
         LimitedSetting<float, 1.0f, 0.f, 1.f> progressOpacity;
         Setting<bool, true> voiceOverlay;
+        Setting<bool, false> forceProgressBar;
     };
 
     struct Players {
@@ -300,7 +301,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Communication, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (
-    progressIndicators, progressPointers, progressOpacity, voiceOverlay
+    progressIndicators, progressPointers, progressOpacity, voiceOverlay, forceProgressBar
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Players, (
