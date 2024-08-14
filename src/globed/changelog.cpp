@@ -98,7 +98,7 @@ FLAlertLayer* showChangelogPopup() {
 
         static auto closeChangelogPopup = [] {
             if (auto popup = CCScene::get()->getChildByID("changelog-popup"_spr)) {
-                static_cast<BetterMDPopup*>(popup)->onClose((CCObject*)1); // Yes. I know.
+                static_cast<BetterMDPopup*>(popup)->onClose(popup);
             }
         };
 
