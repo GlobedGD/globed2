@@ -45,4 +45,6 @@ class $modify(GlobedPlayLayer, PlayLayer) {
     void destroyPlayer(PlayerObject* p0, GameObject* p1);
 
     void forceKill(PlayerObject* p);
+
+    Fields& getFields();
 };

@@ -68,10 +68,11 @@ void GlobedPlayLayer::setupHasCompleted() {
 
 void GlobedPlayLayer::onQuit() {
     auto gjbgl = GlobedGJBGL::get();
+    auto& fields = this->getFields();
 
-    if (m_fields->oldShowProgressBar) {
+    if (fields.oldShowProgressBar) {
         auto gm = GameManager::sharedState();
-        gm->m_showProgressBar = m_fields->oldShowProgressBar.value();
+        gm->m_showProgressBar = fields.oldShowProgressBar.value();
     }
     gjbgl->onQuitActions();
 
@@ -91,11 +92,12 @@ void GlobedPlayLayer::fullReset() {
 
 void GlobedPlayLayer::resetLevel() {
     auto gjbgl = GlobedGJBGL::get();
+    auto& fields = this->getFields();
 
     GLOBED_EVENT_O(gjbgl, resetLevel());
 
-    if (m_fields->insideDestroyPlayer) {
-        m_fields->insideDestroyPlayer = false;
+    if (fields.insideDestroyPlayer) {
+        fields.insideDestroyPlayer = false;
     }
 
     bool lastTestMode = m_isTestMode;
@@ -128,8 +130,10 @@ void GlobedPlayLayer::levelComplete() {
 }
 
 void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
-    if (!m_fields->antiCheat) {
-        m_fields->antiCheat = object;
+    auto& fields = this->getFields();
+
+    if (!fields.antiCheat) {
+        fields.antiCheat = object;
     }
 
     auto* pl = GlobedGJBGL::get();
@@ -144,7 +148,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
         m_isTestMode = true;
     }
 
-    m_fields->insideDestroyPlayer = true;
+    fields.insideDestroyPlayer = true;
 
 #ifdef GEODE_IS_ARM_MAC
 # if GEODE_COMP_GD_VERSION != 22060
@@ -179,7 +183,13 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 }
 
 void GlobedPlayLayer::forceKill(PlayerObject* p) {
-    m_fields->ignoreNoclip = true;
+    auto& fields = this->getFields();
+
+    fields.ignoreNoclip = true;
     this->PlayLayer::destroyPlayer(p, nullptr);
-    m_fields->ignoreNoclip = false;
+    fields.ignoreNoclip = false;
+}
+
+GlobedPlayLayer::Fields& GlobedPlayLayer::getFields() {
+    return *m_fields.self();
 }

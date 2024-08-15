@@ -174,4 +174,6 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
 
     void rescheduleSelectors();
     void customSchedule(cocos2d::SEL_SCHEDULE, float interval = 0.f);
+
+    Fields& getFields();
 };

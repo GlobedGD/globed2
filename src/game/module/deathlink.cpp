@@ -41,14 +41,16 @@ void DeathlinkModule::onUpdatePlayer(int playerId, RemotePlayer* player, const F
     if (flags.pendingRealDeath && !this->hasBeenKilled) {
         this->hasBeenKilled = true;
 
+        auto& fields = gameLayer->m_fields;
+
         // force a fake death
-        gameLayer->m_fields->isFakingDeath = true;
+        fields->isFakingDeath = true;
 
         if (!gameLayer->isEditor()) {
             this->getPlayLayer()->PlayLayer::destroyPlayer(gameLayer->m_player1, nullptr);
         }
 
-        gameLayer->m_fields->isFakingDeath = false;
+        fields->isFakingDeath = false;
     }
 }
 
@@ -62,6 +64,8 @@ void DeathlinkModule::playerDestroyed(PlayerObject* player, bool unk) {
 }
 
 void DeathlinkModule::notifyDeath() {
-    gameLayer->m_fields->lastDeathTimestamp = gameLayer->m_fields->timeCounter;
-    gameLayer->m_fields->isLastDeathReal = !gameLayer->m_fields->isFakingDeath;
+    auto& fields = gameLayer->m_fields;
+
+    fields->lastDeathTimestamp = fields->timeCounter;
+    fields->isLastDeathReal = !fields->isFakingDeath;
 }
