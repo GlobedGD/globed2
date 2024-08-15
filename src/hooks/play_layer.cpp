@@ -80,11 +80,11 @@ void GlobedPlayLayer::onQuit() {
 }
 
 void GlobedPlayLayer::fullReset() {
-    PlayLayer::fullReset();
-
     auto gjbgl = GlobedGJBGL::get();
 
     GLOBED_EVENT_O(gjbgl, fullResetLevel());
+
+    PlayLayer::fullReset();
 
     // turn off safe mode
     GlobedGJBGL::get()->toggleSafeMode(false);

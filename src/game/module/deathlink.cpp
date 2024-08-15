@@ -10,7 +10,8 @@ using EventOutcome = BaseGameplayModule::EventOutcome;
 EventOutcome DeathlinkModule::fullResetLevel() {
     // if the user hit R or otherwise manually reset the level, count as a death with deathlink
     if (gameLayer->m_fields->isManuallyResettingLevel) {
-        this->notifyDeath();
+        this->forceKill();
+        return EventOutcome::Halt;
     }
 
     return EventOutcome::Continue;
@@ -19,7 +20,8 @@ EventOutcome DeathlinkModule::fullResetLevel() {
 EventOutcome DeathlinkModule::resetLevel() {
     // if the user hit R or otherwise manually reset the level, count as a death with deathlink
     if (gameLayer->m_fields->isManuallyResettingLevel) {
-        this->notifyDeath();
+        this->forceKill();
+        return EventOutcome::Halt;
     }
 
     return EventOutcome::Continue;
@@ -59,13 +61,12 @@ void DeathlinkModule::selUpdate(float dt) {
     this->hasBeenKilled = false;
 }
 
-void DeathlinkModule::playerDestroyed(PlayerObject* player, bool unk) {
-    this->notifyDeath();
-}
+void DeathlinkModule::forceKill() {
+    if (auto pl = this->getPlayLayer()) {
+        bool indp = pl->m_fields->insideDestroyPlayer;
 
-void DeathlinkModule::notifyDeath() {
-    auto& fields = gameLayer->m_fields;
-
-    fields->lastDeathTimestamp = fields->timeCounter;
-    fields->isLastDeathReal = !fields->isFakingDeath;
+        if (gameLayer->m_fields->setupWasCompleted && !indp) {
+            pl->forceKill(pl->m_player1);
+        }
+    }
 }

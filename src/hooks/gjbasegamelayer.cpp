@@ -878,6 +878,8 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         isEditorBuilding = this->m_playbackMode == PlaybackMode::Not;
     }
 
+    log::debug("sending last ts: {}, real: {}", m_fields->lastDeathTimestamp, m_fields->isLastDeathReal);
+
     return PlayerData {
         .timestamp = m_fields->timeCounter,
 
@@ -961,6 +963,13 @@ void GlobedGJBGL::updateProximityVolume(int playerId) {
     if (this->shouldLetMessageThrough(playerId)) {
         vpm.setVolume(playerId, volume * settings.communication.voiceVolume);
     }
+}
+
+void GlobedGJBGL::notifyDeath() {
+    auto& fields = this->getFields();
+
+    fields.lastDeathTimestamp = fields.timeCounter;
+    fields.isLastDeathReal = !fields.isFakingDeath;
 }
 
 void GlobedGJBGL::handlePlayerJoin(int playerId) {
@@ -1239,6 +1248,7 @@ class $modify(PlayerObject) {
         auto* gjbgl = GlobedGJBGL::get();
         if (gjbgl && (this == gjbgl->m_player1 || this == gjbgl->m_player2)) {
             GLOBED_EVENT(gjbgl, playerDestroyed(this, p0));
+            gjbgl->notifyDeath();
         }
     }
 };

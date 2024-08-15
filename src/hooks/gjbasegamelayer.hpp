@@ -152,6 +152,8 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
 
     void onQuitActions();
 
+    void notifyDeath();
+
     // runs every frame while paused
     void pausedUpdate(float dt);
 

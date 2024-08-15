@@ -41,6 +41,7 @@ void TwoPlayerModeModule::updateFromLockedPlayer(PlayerObject* player, bool igno
     if (!cvp) return;
 
     RemotePlayer* rp = cvp->getRemotePlayer();
+    log::debug("update from locked {}, death: {}", rp->getAccountData().name, rp->lastFrameFlags.pendingDeath);
 
     if (rp->lastFrameFlags.pendingDeath) {
         Loader::get()->queueInMainThread([] {
@@ -52,7 +53,6 @@ void TwoPlayerModeModule::updateFromLockedPlayer(PlayerObject* player, bool igno
         player->setPosition(cvp->getPlayerPosition());
     }
 }
-
 
 EventOutcome TwoPlayerModeModule::resetLevel() {
     auto pl = this->getPlayLayer();
@@ -93,9 +93,12 @@ void TwoPlayerModeModule::destroyPlayerPost(PlayerObject* player, GameObject* ob
 }
 
 void TwoPlayerModeModule::linkPlayerTo(int accountId) {
+    log::debug("Link attempt to {}", accountId);
     if (!gameLayer->m_fields->players.contains(accountId)) return;
 
     RemotePlayer* rp = gameLayer->m_fields->players.at(accountId);
+
+    log::debug("Linking to {}", rp->getAccountData().name);
 
     PlayerObject* ignored = this->isPrimary ? gameLayer->m_player2 : gameLayer->m_player1;
 
