@@ -728,7 +728,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     }
 
     if (self->m_fields->selfStatusIcons) {
-        float pos = self->m_fields->ownNameLabel->isVisible() ? 40.f : 25.f;
+        float pos = (self->m_fields->ownNameLabel && self->m_fields->ownNameLabel->isVisible()) ? 40.f : 25.f;
         self->m_fields->selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, pos});
         bool recording = VoiceRecordingManager::get().isRecording();
 

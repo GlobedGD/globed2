@@ -34,6 +34,9 @@ void GlobedNameLabel::updateData(const std::string& name, const SpecialUserData&
 
 void GlobedNameLabel::updateBadge(cocos2d::CCSprite* badge) {
     if (badgeContainer) badgeContainer->removeFromParent();
+    badgeContainer = nullptr;
+
+    if (!badge) return;
 
     util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
 
@@ -154,5 +157,5 @@ GlobedNameLabel* GlobedNameLabel::create(const std::string& name, const SpecialU
 }
 
 GlobedNameLabel* GlobedNameLabel::create(const std::string& name, bool bigFont) {
-    return create(name, {}, RichColor({255, 255, 255}), bigFont);
+    return create(name, std::vector<std::string>{}, RichColor({255, 255, 255}), bigFont);
 }
