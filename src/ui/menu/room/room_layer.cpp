@@ -298,12 +298,6 @@ void RoomLayer::update(float dt) {
 
         listLayer->insertCell(roomLevelCell, 0);
         listLayer->forceUpdate();
-    } else if (!level && roomLevelCell) {
-        if (roomLevelCell->getParent()) {
-            roomLevelCell->removeFromParent();
-        }
-
-        roomLevelCell = nullptr;
     }
 }
 
@@ -499,6 +493,12 @@ void RoomLayer::reloadData(const RoomInfo& info, const std::vector<PlayerRoomPre
 
         this->setRoomTitle(rm.getInfo().name, rm.getId());
         this->addRoomButtons();
+
+        // if we left the room, clear the pinned level
+        if (this->shouldRemoveRoomLevel()) {
+            listLayer->removeCell(roomLevelCell);
+            roomLevelCell = nullptr;
+        }
     }
 
     topRightButtons->updateLayout();
@@ -658,6 +658,16 @@ void RoomLayer::onCopyRoomId(CCObject*) {
     utils::clipboard::write(std::to_string(id));
 
     Notification::create("Copied room ID to clipboard", NotificationIcon::Success)->show();
+}
+
+bool RoomLayer::shouldRemoveRoomLevel() {
+    if (!roomLevelCell) return false;
+
+    auto level = RoomManager::get().getRoomLevel();
+
+    if (!level) return true;
+
+    return roomLevelCell->roomCell->m_level->m_levelID != level->m_levelID;
 }
 
 RoomLayer::~RoomLayer() {

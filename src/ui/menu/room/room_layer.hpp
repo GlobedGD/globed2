@@ -65,5 +65,7 @@ protected:
     void onInvisibleClicked(cocos2d::CCObject*);
     void onCopyRoomId(cocos2d::CCObject*);
 
+    bool shouldRemoveRoomLevel();
+
     ~RoomLayer();
 };
