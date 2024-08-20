@@ -226,7 +226,7 @@ namespace util::ui {
         return spr1;
     }
 
-    void addBadgesToMenu(const std::vector<std::string>& roleVector, CCNode* menu, int z) {
+    void addBadgesToMenu(const std::vector<std::string>& roleVector, CCNode* menu, int z, CCSize size) {
         if (roleVector.empty()) return;
 
         auto layout = menu->getLayout();
@@ -237,7 +237,7 @@ namespace util::ui {
         for (const std::string& spr : roleVector) {
             auto badge = util::ui::createBadge(spr);
             if (badge) {
-                util::ui::rescaleToMatch(badge, util::ui::BADGE_SIZE);
+                util::ui::rescaleToMatch(badge, size);
                 badge->setZOrder(z);
                 menu->addChild(badge);
             }
