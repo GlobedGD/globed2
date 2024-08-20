@@ -381,7 +381,7 @@ void RoomLayer::recreatePlayerList() {
 
     if (randomize) {
         // find first non-friend element
-        decltype(unsortedData)::iterator firstNonFriend = unsortedData.begin();
+        decltype(unsortedData)::iterator firstNonFriend = unsortedData.end();
 
         for (auto it = unsortedData.begin(); it != unsortedData.end(); it++) {
             if (!flm.isFriend(it->accountId)) {
