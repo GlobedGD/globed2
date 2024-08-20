@@ -150,6 +150,7 @@ public:
         Setting<bool, false> increaseLevelList;
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
+        Setting<bool, true> randomPlayerList;
         Setting<bool, true> useDiscordRPC;
         Setting<bool, true> changelogPopups;
 
