@@ -61,7 +61,7 @@ EventOutcome TwoPlayerModeModule::resetLevel() {
     bool indp = pl->m_fields->insideDestroyPlayer;
 
     if (gameLayer->m_fields->setupWasCompleted && !indp) {
-        pl->forceKill(pl->m_player1);
+        pl->forceKill(isPrimary ? pl->m_player1 : pl->m_player2);
         return EventOutcome::Halt;
     }
 
