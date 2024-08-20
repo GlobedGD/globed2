@@ -376,8 +376,8 @@ void RoomLayer::recreatePlayerList() {
         }
     });
 
-    // if in a global room and randomize player list is enabled, shuffle (except friends)!
-    bool randomize = RoomManager::get().isInGlobal() && GlobedSettings::get().globed.randomPlayerList;
+    // if in a global room, shuffle (except friends)!
+    bool randomize = RoomManager::get().isInGlobal();
 
     if (randomize) {
         // find first non-friend element
