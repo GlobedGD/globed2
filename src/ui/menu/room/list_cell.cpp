@@ -17,6 +17,11 @@ bool CollapsableLevelCell::init(GJGameLevel* level, float width) {
     m_levelCell->setPosition({ 0.f, 0.f });
     m_levelCell->setVisible(false);
 
+    auto cvoltonID = m_levelCell->m_mainLayer->getChildByIDRecursive("cvolton.betterinfo/level-id-label");
+    if (cvoltonID != nullptr) {
+        cvoltonID->setVisible(false);
+    }
+
     // initialize collapsedCell
 
     m_collapsedCell = CCNode::create();
