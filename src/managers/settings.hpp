@@ -211,12 +211,12 @@ public:
     };
 
     struct Flags {
-        Flag seenSignupNotice;
+        Flag seenSignupNotice;       // Obsolete
         Flag seenSignupNoticev2;
         Flag seenVoiceChatPTTNotice;
         Flag seenTeleportNotice;
-        Flag seenAprilFoolsNotice;
-        Flag seenStatusNotice;
+        Flag seenAprilFoolsNotice;   // Obsolete
+        Flag seenStatusNotice;       // Obsolete
     };
 
     Globed globed;
