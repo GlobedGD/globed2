@@ -136,9 +136,13 @@ void HookedLevelInfoLayer::addRoomLevelButton() {
 
     Build<CCSprite>::createSpriteName("button-pin-level.png"_spr)
         .intoMenuItem([this] {
-            auto settings = RoomManager::get().getInfo().settings;
-            settings.levelId = this->m_level->m_levelID.value();
-            NetworkManager::get().send(UpdateRoomSettingsPacket::create(settings));
+            geode::createQuickPopup("Globed", "Are you sure you want to <cy>pin</c> this level to the <cg>current room</c>?", "No", "Yes", [this](auto*, bool yes) {
+                if (yes) {
+                    auto settings = RoomManager::get().getInfo().settings;
+                    settings.levelId = this->m_level->m_levelID.value();
+                    NetworkManager::get().send(UpdateRoomSettingsPacket::create(settings));
+                }
+            });
         })
         .id("share-room-btn"_spr)
         .parent(rightMenu);
