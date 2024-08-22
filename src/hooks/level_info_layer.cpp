@@ -131,23 +131,10 @@ void HookedLevelInfoLayer::addLevelSendButton() {
 }
 
 void HookedLevelInfoLayer::addRoomLevelButton() {
-    auto makeButton = [this] {
-        return Build<CCSprite>::createSpriteName("button-pin-level.png"_spr)
-            .scale(0.625f)
-            .intoMenuItem([this] {
-                auto settings = RoomManager::get().getInfo().settings;
-                settings.levelId = this->m_level->m_levelID.value();
-                NetworkManager::get().send(UpdateRoomSettingsPacket::create(settings));
-            })
-            .id("share-room-btn"_spr)
-            .collect();
-    };
-
     auto rightMenu = this->getChildByIDRecursive("right-side-menu");
     if (!rightMenu) return;
 
-    Build<CCSprite>::createSpriteName("GJ_shareBtn_001.png")
-        .scale(0.625f)
+    Build<CCSprite>::createSpriteName("button-pin-level.png"_spr)
         .intoMenuItem([this] {
             auto settings = RoomManager::get().getInfo().settings;
             settings.levelId = this->m_level->m_levelID.value();
