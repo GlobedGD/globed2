@@ -19,6 +19,7 @@ using namespace geode::prelude;
 void setupErrorCheckNode();
 void setupCustomKeybinds();
 void printDebugInfo();
+void fixCVAbiBreak();
 
 #ifdef GLOBED_VOICE_SUPPORT
 // TODO this hook kinda doesnt work bc early load and i dont even know if it would do anything
@@ -70,6 +71,8 @@ $on_mod(Loaded) {
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
     printDebugInfo();
 #endif
+
+    fixCVAbiBreak();
 }
 
 // error check node runs on every scene and shows popups/notifications if an error has occured in another thread
@@ -125,4 +128,55 @@ void printDebugInfo() {
 #endif
     log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
     log::info("Libsodium version: {} (CryptoBox algorithm: {})", CryptoBox::sodiumVersion(), CryptoBox::algorithm());
+}
+
+static bool isWine() {
+    return GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version");
+}
+
+static inline bool _Primitive_wait_for(const _Cnd_t cond, const _Mtx_t mtx, unsigned int timeout) noexcept {
+    const auto pcv  = reinterpret_cast<PCONDITION_VARIABLE>((uintptr_t)cond + 8);
+    const auto psrw = reinterpret_cast<PSRWLOCK>(&mtx->_Critical_section._Unused); // changed from &mtx->_Critical_section._M_srw_lock
+    return SleepConditionVariableSRW(pcv, psrw, timeout, 0) != 0;
+}
+
+static _Thrd_result __stdcall _Cnd_timedwait_for_reimpl(_Cnd_t cond, _Mtx_t mtx, unsigned int target_ms) noexcept {
+    _Thrd_result res            = _Thrd_result::_Success;
+    unsigned long long start_ms = 0;
+
+    start_ms = GetTickCount64();
+
+    // TRANSITION: replace with _Mtx_clear_owner(mtx);
+    mtx->_Thread_id = -1;
+    --mtx->_Count;
+
+    if (!_Primitive_wait_for(cond, mtx, target_ms)) { // report timeout
+        if (GetTickCount64() - start_ms >= target_ms) {
+            res = _Thrd_result::_Timedout;
+        }
+    }
+    // TRANSITION: replace with _Mtx_reset_owner(mtx);
+    mtx->_Thread_id = static_cast<long>(GetCurrentThreadId());
+    ++mtx->_Count;
+
+    return res;
+}
+
+void fixCVAbiBreak() {
+    // Ok so this is really cursed but let me explain
+    // somewhere sometime recently microsoft stl brokey the internal mutex or cv structure or whatever
+    // and wine kinda doesnt wanna work with it (even with most recent redistributable package)
+    // tbh i dont entirely understand this either but hey it is what it is
+
+    if (!isWine()) return;
+
+    // TODO: im not sure tbh does this bug exist when compiled on windows too?
+#ifdef GLOBED_LINUX_COMPILATION
+    (void) Mod::get()->hook(
+        reinterpret_cast<void*>(addresser::getNonVirtual(&_Cnd_timedwait_for)),
+        _Cnd_timedwait_for_reimpl,
+        "_Cnd_timedwait_for",
+        tulip::hook::TulipConvention::Default
+    );
+#endif
 }
