@@ -132,7 +132,7 @@ void HookedLevelInfoLayer::addLevelSendButton() {
 
 void HookedLevelInfoLayer::addRoomLevelButton() {
     auto makeButton = [this] {
-        return Build<CCSprite>::createSpriteName("GJ_shareBtn_001.png")
+        return Build<CCSprite>::createSpriteName("button-pin-level.png"_spr)
             .scale(0.625f)
             .intoMenuItem([this] {
                 auto settings = RoomManager::get().getInfo().settings;
