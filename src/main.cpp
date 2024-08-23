@@ -130,6 +130,8 @@ void printDebugInfo() {
     log::info("Libsodium version: {} (CryptoBox algorithm: {})", CryptoBox::sodiumVersion(), CryptoBox::algorithm());
 }
 
+#ifdef GEODE_IS_WINDOWS
+
 static bool isWine() {
     return GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version");
 }
@@ -180,3 +182,9 @@ void fixCVAbiBreak() {
     );
 #endif
 }
+
+#else // GEODE_IS_WINDOWS
+
+void fixCVAbiBreak() {} // nothing.
+
+#endif // GEODE_IS_WINDOWS
