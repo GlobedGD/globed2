@@ -25,6 +25,7 @@ Bugfixes:
 * Fixed crash when muting a user that has exited the level
 * Fixed room name <cr>overlapping</c> other UI elements in the room listing
 * Fixed player count going up to 4 digits on android (and cap to 10000 instead of 65535)
+* Fixed crash on entering a level when Force Platformer is enabled in Megahack
 * Fixed the room listing getting <cr>closed</c> when trying to join a room, even if joining fails
 * Fixed <cg>"Player"</c> with default icons showing up in the player list
 * Change max web request timeout to be <cg>10 seconds</c> in most places instead of <cy>3 or 5 seconds</c>

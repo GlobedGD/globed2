@@ -1211,18 +1211,21 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
     return retval;
 }
 
-void GlobedGJBGL::loadLevelSettings() {
-    if (!GJBaseGameLayer::get()) {
-        GJBaseGameLayer::loadLevelSettings();
-        return;
-    }
+// TODO: this crashes when megahack force platformer is enabled
+// go beg absolute to use geode patches.
 
-    GLOBED_EVENT(this, loadLevelSettingsPre());
+// void GlobedGJBGL::loadLevelSettings() {
+//     if (!GJBaseGameLayer::get()) {
+//         GJBaseGameLayer::loadLevelSettings();
+//         return;
+//     }
 
-    GJBaseGameLayer::loadLevelSettings();
+//     GLOBED_EVENT(this, loadLevelSettingsPre());
 
-    GLOBED_EVENT(this, loadLevelSettingsPost());
-}
+//     GJBaseGameLayer::loadLevelSettings();
+
+//     GLOBED_EVENT(this, loadLevelSettingsPost());
+// }
 
 class $modify(PlayerObject) {
     static void onModify(auto& self) {

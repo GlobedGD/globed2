@@ -77,8 +77,8 @@ class $modify(GlobedGJBGL, GJBaseGameLayer) {
     $override
     int checkCollisions(PlayerObject* player, float dt, bool p2);
 
-    $override
-    void loadLevelSettings();
+    // $override
+    // void loadLevelSettings();
 
     $override
     void updateCamera(float dt);
