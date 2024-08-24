@@ -208,7 +208,12 @@ Result<UniqueIdent> util::misc::fingerprintImpl() {
     std::string guid = getMachineGuid();
     std::string finalString;
 
-    auto res = getWMIUniqueIdent();
+    Result<std::string> res;
+
+    // megahack... :sob:
+    std::thread([&] {
+        res = getWMIUniqueIdent();
+    }).join();
 
     if (res) {
         finalString = fmt::format("{}-{}-{}", res.unwrap(), cpuName, Mod::get()->getID());
