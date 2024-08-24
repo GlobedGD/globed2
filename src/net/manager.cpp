@@ -70,13 +70,6 @@ static void* addrFromWeakRef(const WeakRef<T>& ref) {
     return dummy.ctrl ? dummy.ctrl->get() : nullptr;
 }
 
-template <typename T>
-static const WeakRefController& controllerFromWeakRef(const WeakRef<T>& ref) {
-    // Do not do this.
-    auto dummy = reinterpret_cast<const WeakRefDummy&>(ref);
-    return *dummy.ctrl;
-}
-
 // Packet listener pool. Most of the functions must not be used on a different thread than main.
 class PacketListenerPool : public CCObject {
 public:
@@ -143,7 +136,9 @@ public:
     void removeDeadListeners() {
         for (auto& [id, listeners] : listeners) {
             for (int i = listeners.size() - 1; i >= 0; i--) {
+#ifdef GLOBED_DEBUG
                 auto addr = addrFromWeakRef(listeners[i]);
+#endif
 
                 if (!listeners[i].valid()) {
 #ifdef GLOBED_DEBUG
