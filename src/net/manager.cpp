@@ -996,7 +996,7 @@ protected:
         // poll for any incoming packets
 
         while (auto task_ = taskQueue.popTimeout(util::time::millis(50))) {
-            auto task = task_.value();
+            auto task = std::move(task_.value());
 
             if (std::holds_alternative<TaskPingServers>(task)) {
                 this->handlePingTask();
