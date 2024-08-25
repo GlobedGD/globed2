@@ -1,6 +1,5 @@
 use std::{
     collections::VecDeque,
-    io::ErrorKind,
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},

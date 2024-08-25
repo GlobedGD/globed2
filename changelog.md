@@ -10,7 +10,7 @@
 * Show all the <cp>badges</c> of a player instead of just one at a time (for example <cg>Mod</c> & <cp>Booster</c>) (thanks Kiba!)
 * When playing in a <cj>Death Link</c> room, the faster reset option is now <cy>forcefully disabled</c> for all players (to prevent <cr>desync</c>)
 * Automatically <cr>block</c> invites from users that you have <cr>blocked</c> on GD
-* Add a Force Progress Bar setting, that makes it so that the progress bar is enabled if there's other players on your level, when it's otherwise disabled (thanks TechStudent10!)
+* Add a Force Progress Bar setting, that makes it so that the progress bar is enabled if you are connected to the server, when it's otherwise disabled (thanks TechStudent10!)
 * Add Node IDs dependency
 * Remove Custom Keybinds dependency from Android, as it was unused
 * Various security improvements
