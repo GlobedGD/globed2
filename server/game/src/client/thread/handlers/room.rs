@@ -349,7 +349,7 @@ impl ClientThread {
     async fn _respond_with_room_list(&self, room_id: u32, just_joined: bool) -> crate::client::Result<()> {
         let room_info = self.game_server.state.room_manager.with_any(room_id, |room| room.get_room_info(room_id));
 
-        let can_moderate = self.user_role.lock().can_moderate();
+        let can_moderate = self.is_authorized_user.load(Ordering::Relaxed) && self.user_role.lock().can_moderate();
         let players = self
             .game_server
             .get_room_player_previews(room_id, self.account_id.load(Ordering::Relaxed), can_moderate);

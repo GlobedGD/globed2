@@ -514,7 +514,7 @@ impl GameServer {
 
                 let show_roles = !thread.privacy_settings.lock().get_hide_roles();
 
-                thread.account_data.lock().make_room_preview(level_id, show_roles)
+                thread.account_data.lock().make_room_preview(level_id, show_roles || force_visibility)
             })
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
