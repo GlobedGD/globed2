@@ -445,7 +445,12 @@ impl UnauthorizedThread {
         };
 
         // add them to the global room
-        self.game_server.state.room_manager.get_global().manager.create_player(packet.account_id);
+        self.game_server
+            .state
+            .room_manager
+            .get_global()
+            .manager
+            .create_player(packet.account_id, packet.privacy_settings.get_hide_in_game());
 
         self.send_login_success().await?;
 

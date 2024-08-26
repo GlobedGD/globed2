@@ -128,8 +128,10 @@ impl ClientThread {
         // remove the player from the previously connected room (or the global room)
         self.game_server.state.room_manager.remove_with_any(old_room_id, account_id, level_id);
 
+        let is_invisible = self.privacy_settings.lock().get_hide_in_game();
+
         self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
-            pm.manager.create_player(account_id);
+            pm.manager.create_player(account_id, is_invisible);
 
             // if we are in any level, clean transition to there
             if level_id != 0 {
@@ -332,8 +334,15 @@ impl ClientThread {
             self.game_server.broadcast_room_info(room_id).await;
         }
 
+        let is_invisible = self.privacy_settings.lock().get_hide_in_game();
+
         // add them to the global room
-        self.game_server.state.room_manager.get_global().manager.create_player(account_id);
+        self.game_server
+            .state
+            .room_manager
+            .get_global()
+            .manager
+            .create_player(account_id, is_invisible);
     }
 
     #[inline]

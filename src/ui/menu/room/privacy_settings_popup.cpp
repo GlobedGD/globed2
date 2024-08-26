@@ -72,7 +72,7 @@ void PrivacySettingsPopup::addButton(PSetting setting, const char* onSprite, con
 
     toggler->toggle(!getToggled(setting));
 
-    auto wrapperNode = Build<CCNode>::create()
+    auto wrapperNode = Build<CCMenu>::create()
         .contentSize(toggler->getScaledContentSize())
         .child(toggler)
         .parent(buttonMenu)
