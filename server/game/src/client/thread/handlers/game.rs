@@ -149,10 +149,12 @@ impl ClientThread {
 
         let room_id = self.room_id.load(Ordering::Relaxed);
 
+        let is_mod = self.is_authorized_user.load(Ordering::Relaxed) && self.user_role.lock().can_moderate();
+
         // if they requested just one player - use the fast heapless path
         if packet.requested != 0 {
             let calc_size = size_of_types!(VarLength) + size_of_types!(PlayerAccountData);
-            let account_data = self.game_server.get_player_account_data(packet.requested);
+            let account_data = self.game_server.get_player_account_data(packet.requested, is_mod);
 
             if let Some(account_data) = account_data {
                 return self
@@ -176,7 +178,7 @@ impl ClientThread {
             } else {
                 let mut vec = Vec::with_capacity(total_players);
                 pm.manager.for_each_player_on_level(level_id, |player| {
-                    let account_data = self.game_server.get_player_account_data(player.account_id);
+                    let account_data = self.game_server.get_player_account_data(player.account_id, is_mod);
                     if let Some(d) = account_data {
                         vec.push(d);
                     }

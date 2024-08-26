@@ -587,12 +587,21 @@ impl GameServer {
     }
 
     #[inline]
-    pub fn get_player_account_data(&self, account_id: i32) -> Option<PlayerAccountData> {
+    pub fn get_player_account_data(&self, account_id: i32, force_visibility: bool) -> Option<PlayerAccountData> {
         self.clients
             .lock()
             .values()
-            .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
-            .map(|thr| thr.account_data.lock().clone())
+            .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id && (force_visibility || !thr.privacy_settings.lock().get_hide_in_game()))
+            .map(|thr| {
+                let mut data = thr.account_data.lock().clone();
+                let settings = thr.privacy_settings.lock();
+
+                if settings.get_hide_roles() && !force_visibility {
+                    data.special_user_data.roles = None;
+                }
+
+                data
+            })
     }
 
     #[inline]

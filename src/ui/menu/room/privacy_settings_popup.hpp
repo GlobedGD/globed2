@@ -13,6 +13,7 @@ protected:
 
     void sendPacket();
     void addButton(PSetting setting, const char* onSprite, const char* offSprite);
+    void onDescriptionClicked(PSetting setting);
 
     cocos2d::CCMenu* buttonMenu;
 };

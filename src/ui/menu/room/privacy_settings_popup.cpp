@@ -36,13 +36,15 @@ static void setToggled(PSetting setting, bool state) {
 bool PrivacySettingsPopup::setup() {
     auto popupLayout = util::ui::getPopupLayoutAnchored(m_size);
 
+    this->setTitle("Visibility Settings");
+
     Build<CCMenu>::create()
         .layout(
-            RowLayout::create()->setGap(7.5f)
+            RowLayout::create()->setGap(15.f)->setAutoScale(false)
         )
         .id("button-menu")
         .store(buttonMenu)
-        .pos(popupLayout.center)
+        .pos(popupLayout.center - CCPoint{0.f, 10.f})
         .parent(m_mainLayer);
 
 
@@ -70,13 +72,39 @@ void PrivacySettingsPopup::addButton(PSetting setting, const char* onSprite, con
 
     toggler->toggle(!getToggled(setting));
 
-    Build(toggler)
-        .parent(buttonMenu);
+    auto wrapperNode = Build<CCNode>::create()
+        .contentSize(toggler->getScaledContentSize())
+        .child(toggler)
+        .parent(buttonMenu)
+        // info button
+        .intoNewChild(CCMenu::create())
+        .pos(30.f, 30.f)
+        .intoNewChild(
+            Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+                .scale(0.5f)
+                .intoMenuItem([this, setting] {
+                    this->onDescriptionClicked(setting);
+                })
+        )
+        .with([](auto* btn) {
+            auto size = btn->getScaledContentSize();
+            btn->getParent()->setContentSize(size);
+            btn->setPosition(size / 2.f);
+        })
+        .collect();
+
+    CCSize sz = toggler->getScaledContentSize();
+
+    toggler->setPosition(sz / 2.f);
+}
+
+void PrivacySettingsPopup::onDescriptionClicked(PSetting setting) {
+
 }
 
 void PrivacySettingsPopup::sendPacket() {
     auto flags = GlobedSettings::get().getPrivacyFlags();
-    log::debug("sending flags: lists {}, invites {}, game {}, roles {}", flags.hideFromLists, flags.noInvites, flags.hideInGame, flags.hideRoles);
+
     NetworkManager::get().sendUpdatePlayerStatus(flags);
 }
 
