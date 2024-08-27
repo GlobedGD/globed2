@@ -175,12 +175,14 @@ void fixCVAbiBreak() {
     // TODO: im not sure tbh does this bug exist when compiled on windows too?
 
 #ifdef GLOBED_LINUX_COMPILATION
-    (void) Mod::get()->hook(
-        reinterpret_cast<void*>(addresser::getNonVirtual(&_Cnd_timedwait_for)),
-        _Cnd_timedwait_for_reimpl,
-        "_Cnd_timedwait_for",
-        tulip::hook::TulipConvention::Default
-    );
+    if (!Loader::get()->getLaunchFlag("globed-skip-crt-fix")) {
+        (void) Mod::get()->hook(
+            reinterpret_cast<void*>(addresser::getNonVirtual(&_Cnd_timedwait_for)),
+            _Cnd_timedwait_for_reimpl,
+            "_Cnd_timedwait_for",
+            tulip::hook::TulipConvention::Default
+        );
+    }
 #endif
 }
 
