@@ -878,8 +878,6 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         isEditorBuilding = this->m_playbackMode == PlaybackMode::Not;
     }
 
-    log::debug("sending last ts: {}, real: {}", m_fields->lastDeathTimestamp, m_fields->isLastDeathReal);
-
     return PlayerData {
         .timestamp = m_fields->timeCounter,
 

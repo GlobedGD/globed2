@@ -43,11 +43,3 @@ class $modify(GlobedPauseLayer, PauseLayer) {
     $override
     void onPracticeMode(cocos2d::CCObject*);
 };
-
-// Bugfix for a vanilla bug
-class $modify(PauseLayerBugfix, PauseLayer) {
-    void customSetup();
-
-    // vmt hook
-    void onExitHook();
-};
