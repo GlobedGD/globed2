@@ -175,7 +175,12 @@ pub struct UserLookupResponse {
 }
 
 #[get("/gsp/user/lookup?<username>")]
-pub async fn p_user_lookup(state: &State<ServerState>, password: GameServerPasswordGuard, username: &str) -> WebResult<Json<UserLookupResponse>> {
+pub async fn p_user_lookup(
+    state: &State<ServerState>,
+    database: &GlobedDb,
+    password: GameServerPasswordGuard,
+    username: &str,
+) -> WebResult<Json<UserLookupResponse>> {
     let state = state.state_read().await;
 
     if !password.verify(&state.config.game_server_password) {
@@ -188,6 +193,20 @@ pub async fn p_user_lookup(state: &State<ServerState>, password: GameServerPassw
             name: login.name.clone(),
         }))
     } else {
-        not_found!("Failed to find user by given username");
+        // check if they are in the database
+        match _get_user(database, username).await {
+            Ok(user) => {
+                if let Some(name) = user.user_name {
+                    Ok(Json(UserLookupResponse {
+                        account_id: user.account_id,
+                        name,
+                    }))
+                } else {
+                    not_found!("Failed to find user by given username");
+                }
+            }
+
+            Err(_) => not_found!("Failed to find user by given username"),
+        }
     }
 }
