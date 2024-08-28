@@ -1,12 +1,16 @@
 #include "list_cell.hpp"
+
+#include <managers/settings.hpp>
 #include <util/gd.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
 
-bool CollapsableLevelCell::init(GJGameLevel* level, float width) {
+bool CollapsableLevelCell::init(GJGameLevel* level, float width, CollapsedCallback&& callback) {
     m_level = level;
     this->setContentSize({ width, HEIGHT });
+
+    m_callback = std::move(callback);
 
     // initialize levelCell
 
@@ -61,6 +65,37 @@ bool CollapsableLevelCell::init(GJGameLevel* level, float width) {
     this->addChild(m_levelCell);
     this->addChild(m_collapsedCell);
 
+    // buttons for expanding / collapsing
+
+    for (size_t i = 0; i < 2; i++) {
+        auto* menu = Build<CCMenu>::create()
+            .pos(width - 20.f, CollapsableLevelCell::HEIGHT - CollapsableLevelCell::COLLAPSED_HEIGHT / 2.f)
+            .anchorPoint(0.f, 0.5f)
+            .parent(i == 0 ? m_collapsedCell : m_levelCell)
+            .id("right-menu"_spr)
+            .collect();
+
+        float scaleFactor = 0.4f;
+
+        auto collapsedSprite = CCSprite::createWithSpriteFrameName("navArrowBtn_001.png");
+        collapsedSprite->setRotation(90);
+        collapsedSprite->setScale(scaleFactor);
+        collapsedSprite->setFlipY(true);
+
+        auto expandedSprite = CCSprite::createWithSpriteFrameName("navArrowBtn_001.png");
+        expandedSprite->setRotation(-90);
+        expandedSprite->setScale(scaleFactor);
+
+        auto* toggler = Build<CCMenuItemToggler>::createToggle(collapsedSprite, expandedSprite, [this, callback, menu](CCMenuItemToggler* toggler) {
+            this->onCollapse(toggler);
+        })
+            .parent(menu)
+            .collect();
+
+        menu->setContentSize(toggler->getScaledContentSize());
+        toggler->setPosition(toggler->getContentSize() / 2.f);
+    }
+
     return true;
 }
 
@@ -84,15 +119,29 @@ void CollapsableLevelCell::setIsCollapsed(bool isCollapsed) {
     }
 
     m_isCollapsed = isCollapsed;
+
+    GlobedSettings::get().globed.pinnedLevelCollapsed = isCollapsed;
 }
 
 void CollapsableLevelCell::onOpenLevel(CCObject* sender) {
     util::ui::switchToScene(LevelInfoLayer::create(m_level, false));
 }
 
-CollapsableLevelCell* CollapsableLevelCell::create(GJGameLevel* level, float width) {
+void CollapsableLevelCell::onCollapse(CCMenuItemToggler* toggler) {
+    bool isCollapsed = !toggler->isOn();
+
+    this->setIsCollapsed(isCollapsed);
+
+    if (auto parent = this->getParent()) {
+        parent->setContentSize(this->getContentSize());
+    }
+
+    this->m_callback(this->m_isCollapsed);
+}
+
+CollapsableLevelCell* CollapsableLevelCell::create(GJGameLevel* level, float width, CollapsedCallback&& callback) {
     auto ret = new CollapsableLevelCell;
-    if (ret->init(level, width)) {
+    if (ret->init(level, width, std::forward<CollapsedCallback>(callback))) {
         ret->autorelease();
         return ret;
     }
@@ -114,50 +163,11 @@ bool ListCellWrapper::init(const PlayerRoomPreviewAccountData& data, float cellW
     return true;
 }
 
-bool ListCellWrapper::init(GJGameLevel* level, float width, CollapsedCallback callback) {
-    roomCell = CollapsableLevelCell::create(level, width);
+bool ListCellWrapper::init(GJGameLevel* level, float width, CollapsedCallback&& callback) {
+    roomCell = CollapsableLevelCell::create(level, width, std::forward<CollapsedCallback>(callback));
     this->addChild(roomCell);
 
-    auto rightMenu = Build<CCMenu>::create()
-        .pos(width - 20.f, CollapsableLevelCell::HEIGHT - CollapsableLevelCell::COLLAPSED_HEIGHT / 2.f)
-        .anchorPoint(0.f, 0.5f)
-        .parent(roomCell)
-        .id("right-menu")
-        .collect();
-
-    float scaleFactor = 0.4f;
-
-    auto collapsedSprite = CCSprite::createWithSpriteFrameName("navArrowBtn_001.png");
-    collapsedSprite->setRotation(90);
-    collapsedSprite->setScale(scaleFactor);
-    collapsedSprite->setFlipY(true);
-
-    auto expandedSprite = CCSprite::createWithSpriteFrameName("navArrowBtn_001.png");
-    expandedSprite->setRotation(-90);
-    expandedSprite->setScale(scaleFactor);
-
-    Build<CCMenuItemToggler>::createToggle(collapsedSprite, expandedSprite, [this, callback, rightMenu](CCMenuItemToggler* toggler) {
-        bool isCollapsed;
-        if (!toggler->isOn()) {
-            isCollapsed = true;
-        } else {
-            isCollapsed = false;
-        }
-        roomCell->setIsCollapsed(isCollapsed);
-
-        if (auto parent = this->getParent()) {
-            parent->setContentSize(this->getContentSize());
-        }
-
-        // menu
-        auto topPad = CollapsableLevelCell::COLLAPSED_HEIGHT / 2.f;
-        rightMenu->setPositionY(isCollapsed ? topPad : CollapsableLevelCell::HEIGHT - topPad);
-
-        callback(roomCell->m_isCollapsed);
-    })
-        .parent(rightMenu);
-
-    roomCell->setIsCollapsed(false);
+    roomCell->setIsCollapsed(GlobedSettings::get().globed.pinnedLevelCollapsed);
 
     return true;
 }
@@ -178,12 +188,12 @@ ListCellWrapper* ListCellWrapper::create(const PlayerRoomPreviewAccountData& dat
     return nullptr;
 }
 
-ListCellWrapper* ListCellWrapper::create(GJGameLevel* level, float width, CollapsedCallback callback) {
+ListCellWrapper* ListCellWrapper::create(GJGameLevel* level, float width, CollapsedCallback&& callback) {
     auto ret = new ListCellWrapper;
     if (ret->init(
         level,
         width,
-        callback
+        std::forward<CollapsedCallback>(callback)
     )) {
         ret->autorelease();
         return ret;

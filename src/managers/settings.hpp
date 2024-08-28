@@ -16,6 +16,7 @@ public:
     // Save all settings to the geode save container
     void save();
 
+    // T -> T, but float -> globed::ConstexprFloat, as floats cant be used as template arguments
     template <typename T>
     using TypeFixup = std::conditional_t<std::is_same_v<T, float>, globed::ConstexprFloat, T>;
 
@@ -151,9 +152,11 @@ public:
         Setting<int, 60000> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
-        Setting<bool, true> changelogPopups;
 
         // hidden settings! no settings ui for them
+
+        Setting<bool, true> changelogPopups;
+        Setting<bool, false> pinnedLevelCollapsed;
 
         /* privacy settings */
         Setting<bool, false> isInvisible;
@@ -288,7 +291,7 @@ public:
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
     autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC,
-    changelogPopups,
+    changelogPopups, pinnedLevelCollapsed,
     isInvisible, noInvites, hideInGame, hideRoles
 ));
 
