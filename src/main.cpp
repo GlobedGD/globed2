@@ -130,7 +130,25 @@ void printDebugInfo() {
     log::info("Libsodium version: {} (CryptoBox algorithm: {})", CryptoBox::sodiumVersion(), CryptoBox::algorithm());
 }
 
-#ifdef GEODE_IS_WINDOWS
+// Ok so this is really cursed but let me explain
+// somewhere sometime recently microsoft stl brokey the internal mutex or cv structure or whatever
+// and wine kinda doesnt wanna work with it (even with most recent redistributable package)
+// tbh i dont entirely understand this either but hey it is what it is
+
+// this applies to latest sdk. the --sdk-version argument in xwin does nothing here.
+//
+// if you want to compile globed on linux without broken conditional variables, the steps are rather simple:
+// 1. look up https://aka.ms/vs/17/release/channel on the web archive
+// 2. get the entry from july, inside the file you should see version as "17.10", not "17.11" or later
+// 3. open .xwin-cache/dl/manifest_17.json and replace the contents
+// 4. run xwin install command again and it should work now!
+
+// ALTERNATIVELY
+
+// if you are very pissed, just change the '#if 0' to '#if 1'.
+// it is a temp fix and it WILL break things. but it does not crash on startup anymore! (most of the time)
+
+#if 0
 
 static bool isWine() {
     return GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version");
@@ -165,14 +183,6 @@ static _Thrd_result __stdcall _Cnd_timedwait_for_reimpl(_Cnd_t cond, _Mtx_t mtx,
 }
 
 void fixCVAbiBreak() {
-    // Ok so this is really cursed but let me explain
-    // somewhere sometime recently microsoft stl brokey the internal mutex or cv structure or whatever
-    // and wine kinda doesnt wanna work with it (even with most recent redistributable package)
-    // tbh i dont entirely understand this either but hey it is what it is
-
-    // this applies to latest sdk. globed compiled on linux with winsdk 10.0.26100.0 will NOT work.
-    // use 10.0.22621. or pass the --geode:globed-crt-fix flag when launching.
-
     if (!isWine()) return;
 
     // TODO: im not sure tbh does this bug exist when compiled on windows too?
