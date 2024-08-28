@@ -1,7 +1,8 @@
 #include "privacy_settings_popup.hpp"
 
-#include <net/manager.hpp>
+#include <managers/admin.hpp>
 #include <managers/settings.hpp>
+#include <net/manager.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -51,7 +52,10 @@ bool PrivacySettingsPopup::setup() {
     this->addButton(PSetting::HideFromLists, "button-privacy-lists-on.png"_spr, "button-privacy-lists-off.png"_spr);
     this->addButton(PSetting::DisableInvites, "button-privacy-invites-on.png"_spr, "button-privacy-invites-off.png"_spr);
     this->addButton(PSetting::HideInLevel, "button-privacy-ingame-on.png"_spr, "button-privacy-ingame-off.png"_spr);
-    this->addButton(PSetting::HideRoles, "button-privacy-roles-on.png"_spr, "button-privacy-roles-off.png"_spr);
+
+    if (AdminManager::get().canModerate()) {
+        this->addButton(PSetting::HideRoles, "button-privacy-roles-on.png"_spr, "button-privacy-roles-off.png"_spr);
+    }
 
     buttonMenu->updateLayout();
 
@@ -99,7 +103,32 @@ void PrivacySettingsPopup::addButton(PSetting setting, const char* onSprite, con
 }
 
 void PrivacySettingsPopup::onDescriptionClicked(PSetting setting) {
+    std::string title, message;
+    switch (setting) {
+        case PSetting::HideFromLists: {
+            title = "Player List";
+            message = "This option <cp>toggles</c> whether other people can see you in the <cy>player list</c>.";
+        } break;
 
+        case PSetting::DisableInvites: {
+            title = "Invites";
+            message = "This option <cp>toggles</c> invites from other players. This overrides the <cy>Receive Invites From</c> setting.";
+        } break;
+
+        case PSetting::HideInLevel: {
+            title = "In level";
+            message = "This option <cp>toggles</c> whether other people can see you in <cy>levels</c>.";
+        } break;
+
+        case PSetting::HideRoles: {
+            title = "Roles";
+            message = "This option <cp>toggles</c> the <cg>visibility</c> of your <cy>roles</c>.";
+        } break;
+    };
+
+    FLAlertLayer::create(
+        title.c_str(), message, "Ok"
+    )->show();
 }
 
 void PrivacySettingsPopup::sendPacket() {

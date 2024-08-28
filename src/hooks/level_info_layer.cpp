@@ -24,7 +24,7 @@ bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
     if (!LevelInfoLayer::init(level, challenge)) return false;
 
     auto& am = AdminManager::get();
-    if (am.authorized() && am.getRole().canModerate()) {
+    if (am.canModerate()) {
         this->addLevelSendButton();
     }
 
