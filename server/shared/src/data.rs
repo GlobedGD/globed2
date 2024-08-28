@@ -76,6 +76,13 @@ pub struct ServerUserEntry {
     pub violation_expiry: Option<i64>, // seconds since unix epoch
 }
 
+// this is pure laziness i was just too lazy to get derive macros n shit into the central server
+#[derive(Decodable, Clone)]
+pub struct UserLoginData {
+    pub account_id: i32,
+    pub name: String,
+}
+
 impl ServerUserEntry {
     pub fn new(account_id: i32) -> Self {
         Self {

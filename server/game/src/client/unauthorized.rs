@@ -383,7 +383,7 @@ impl UnauthorizedThread {
 
         // fetch data from the central
         if !standalone {
-            let user_entry = match self.game_server.bridge.get_user_data(&packet.account_id.to_string()).await {
+            let user_entry = match self.game_server.bridge.user_login(packet.account_id, &player_name).await {
                 Ok(user) if user.is_banned => {
                     socket
                         .send_packet_dynamic(&ServerBannedPacket {

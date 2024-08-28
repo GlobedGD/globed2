@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    hash::{DefaultHasher, Hash, Hasher},
     net::IpAddr,
     path::PathBuf,
     sync::{
@@ -41,6 +42,13 @@ pub struct ActiveChallenge {
     pub started: SystemTime,
 }
 
+#[derive(Clone)]
+pub struct LoginEntry {
+    pub account_id: i32,
+    pub name: String,
+    pub time: SystemTime,
+}
+
 pub struct ServerStateData {
     pub config_path: PathBuf,
     pub config: ServerConfig,
@@ -50,6 +58,7 @@ pub struct ServerStateData {
     pub challenge_pubkey: GenericArray<u8, U32>,
     pub challenge_box: XSalsa20Poly1305,
     pub http_client: reqwest::Client,
+    pub last_logins: HashMap<u64, LoginEntry>, // { hash of lowercase username : entry }
 }
 
 impl ServerStateData {
@@ -79,6 +88,7 @@ impl ServerStateData {
             challenge_pubkey,
             challenge_box,
             http_client,
+            last_logins: HashMap::new(),
         }
     }
 
@@ -173,9 +183,40 @@ impl ServerStateData {
     }
 
     pub fn clear_outdated_challenges(&mut self) {
+        let now = SystemTime::now();
+
         // remove all challenges older than 2 hours
         self.active_challenges
-            .retain(|_, v| SystemTime::now().duration_since(v.started).unwrap_or_default().as_secs() < 60 * 60 * 2);
+            .retain(|_, v| now.duration_since(v.started).unwrap_or_default().as_secs() < 60 * 60 * 2);
+
+        // remove logins older than 24 hours
+        self.last_logins
+            .retain(|_, v| now.duration_since(v.time).unwrap_or_default().as_secs() < 60 * 60 * 24);
+    }
+
+    pub fn get_login(&self, name: &str) -> Option<&LoginEntry> {
+        let lowercase = name.trim_start().to_lowercase();
+
+        let mut hasher = DefaultHasher::new();
+        lowercase.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        self.last_logins.get(&hash)
+    }
+
+    pub fn put_login(&mut self, name: &str, account_id: i32) {
+        let mut hasher = DefaultHasher::new();
+        name.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        self.last_logins.insert(
+            hash,
+            LoginEntry {
+                account_id,
+                name: name.to_owned(),
+                time: SystemTime::now(),
+            },
+        );
     }
 }
 

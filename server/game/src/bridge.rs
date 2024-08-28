@@ -5,7 +5,10 @@ use std::{
     time::Duration,
 };
 
-use esp::{size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize, StaticSize};
+use esp::{
+    size_of_dynamic_types, size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize,
+    StaticSize,
+};
 use globed_shared::{
     reqwest::{self, StatusCode},
     GameServerBootData, ServerUserEntry, SyncMutex, TokenIssuer, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
@@ -188,6 +191,37 @@ impl CentralBridge {
             .http_client
             .get(format!("{}gs/user/{}", self.central_url, player))
             .header("Authorization", self.central_pw.clone())
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+            return Err(CentralBridgeError::CentralError((status, message)));
+        }
+
+        let config = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&config);
+        reader.validate_self_checksum()?;
+
+        Ok(reader.read_value::<ServerUserEntry>()?)
+    }
+
+    pub async fn user_login(&self, account_id: i32, username: &str) -> Result<ServerUserEntry> {
+        let mut buffer = ByteBuffer::with_capacity(size_of_dynamic_types!(username, &account_id));
+
+        buffer.write_value(&account_id);
+        buffer.write_value(username);
+        buffer.append_self_checksum();
+
+        let body = buffer.into_vec();
+
+        let response = self
+            .http_client
+            .post(format!("{}gs/userlogin", self.central_url))
+            .header("Authorization", self.central_pw.clone())
+            .body(body)
             .send()
             .await?;
 

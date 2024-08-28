@@ -3,10 +3,11 @@ use std::net::IpAddr;
 use globed_shared::{
     esp::{types::FastString, ByteBuffer, ByteBufferExtWrite},
     logger::debug,
-    GameServerBootData, ServerUserEntry, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC,
+    GameServerBootData, ServerUserEntry, UserLoginData, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC,
 };
 
 use rocket::{get, post, serde::json::Json, State};
+use serde::Serialize;
 
 use crate::{config::UserlistMode, db::GlobedDb, state::ServerState, web::*};
 
@@ -54,18 +55,23 @@ pub async fn boot(
     Ok(bb.into_vec())
 }
 
+async fn _get_user_by_id(database: &GlobedDb, account_id: i32) -> WebResult<ServerUserEntry> {
+    let data = database.get_user(account_id).await?;
+    Ok(data.unwrap_or_else(|| ServerUserEntry::new(account_id)))
+}
+
 async fn _get_user(database: &GlobedDb, user: &str) -> WebResult<ServerUserEntry> {
-    Ok(if let Ok(account_id) = user.parse::<i32>() {
-        database.get_user(account_id).await?.unwrap_or_else(|| ServerUserEntry::new(account_id))
+    if let Ok(account_id) = user.parse::<i32>() {
+        _get_user_by_id(database, account_id).await
     } else {
         let user = database.get_user_by_name(user).await?;
 
         if let Some(user) = user {
-            user
+            Ok(user)
         } else {
             bad_request!("failed to find the user by name");
         }
-    })
+    }
 }
 
 #[get("/gs/user/<user>")]
@@ -83,6 +89,28 @@ pub async fn get_user(
     }
 
     Ok(CheckedEncodableResponder::new(_get_user(database, user).await?))
+}
+
+#[post("/gs/userlogin", data = "<userdata>")]
+pub async fn user_login(
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
+    database: &GlobedDb,
+    userdata: CheckedDecodableGuard<UserLoginData>,
+    _user_agent: GameServerUserAgentGuard<'_>,
+) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    // store login attempt
+    state.state_write().await.put_login(&userdata.0.name, userdata.0.account_id);
+
+    let user = _get_user_by_id(database, userdata.0.account_id).await?;
+
+    Ok(CheckedEncodableResponder::new(user))
 }
 
 #[post("/gs/user/update", data = "<userdata>")]
@@ -138,4 +166,28 @@ pub async fn p_update_user(
     database.update_user_server(userdata.0.account_id, &userdata.0).await?;
 
     Ok(())
+}
+
+#[derive(Serialize)]
+pub struct UserLookupResponse {
+    pub account_id: i32,
+    pub name: String,
+}
+
+#[get("/gsp/user/lookup?<username>")]
+pub async fn p_user_lookup(state: &State<ServerState>, password: GameServerPasswordGuard, username: &str) -> WebResult<Json<UserLookupResponse>> {
+    let state = state.state_read().await;
+
+    if !password.verify(&state.config.game_server_password) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    if let Some(login) = state.get_login(username) {
+        Ok(Json(UserLookupResponse {
+            account_id: login.account_id,
+            name: login.name.clone(),
+        }))
+    } else {
+        not_found!("Failed to find user by given username");
+    }
 }
