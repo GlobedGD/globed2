@@ -59,7 +59,7 @@ impl ClientThread {
     });
 
     gs_handler!(self, handle_set_player_status, UpdatePlayerStatusPacket, packet, {
-        let _ = gs_needauth!(self);
+        let account_id = gs_needauth!(self);
 
         let mut p = self.privacy_settings.lock();
         p.clone_from(&packet.flags);
@@ -70,6 +70,14 @@ impl ClientThread {
         if !is_mod {
             p.set_hide_roles(false);
         }
+
+        let room_id = self.room_id.load(Ordering::Relaxed);
+
+        self.game_server.state.room_manager.with_any(room_id, |pm| {
+            if let Some(player) = pm.manager.get_player_data_mut(account_id) {
+                player.is_invisible = packet.flags.get_hide_in_game();
+            }
+        });
 
         Ok(())
     });

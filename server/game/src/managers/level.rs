@@ -65,6 +65,10 @@ impl LevelManager {
         self.players.get(&account_id)
     }
 
+    pub fn get_player_data_mut(&mut self, account_id: i32) -> Option<&mut LevelManagerPlayer> {
+        self.players.get_mut(&account_id)
+    }
+
     pub fn create_player(&mut self, account_id: i32, invisible: bool) {
         self.players.insert(
             account_id,
