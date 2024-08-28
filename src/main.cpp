@@ -170,12 +170,15 @@ void fixCVAbiBreak() {
     // and wine kinda doesnt wanna work with it (even with most recent redistributable package)
     // tbh i dont entirely understand this either but hey it is what it is
 
+    // this applies to latest sdk. globed compiled on linux with winsdk 10.0.26100.0 will NOT work.
+    // use 10.0.22621. or pass the --geode:globed-crt-fix flag when launching.
+
     if (!isWine()) return;
 
     // TODO: im not sure tbh does this bug exist when compiled on windows too?
 
 #ifdef GLOBED_LINUX_COMPILATION
-    if (!Loader::get()->getLaunchFlag("globed-skip-crt-fix")) {
+    if (Loader::get()->getLaunchFlag("globed-crt-fix")) {
         (void) Mod::get()->hook(
             reinterpret_cast<void*>(addresser::getNonVirtual(&_Cnd_timedwait_for)),
             _Cnd_timedwait_for_reimpl,
