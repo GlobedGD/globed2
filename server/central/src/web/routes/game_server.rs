@@ -7,7 +7,7 @@ use globed_shared::{
 };
 
 use rocket::{get, post, serde::json::Json, State};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{config::UserlistMode, db::GlobedDb, state::ServerState, web::*};
 
@@ -174,7 +174,7 @@ pub struct UserLookupResponse {
     pub name: String,
 }
 
-#[get("/gsp/user/lookup?<username>")]
+#[get("/gsp/lookup?<username>")]
 pub async fn p_user_lookup(
     state: &State<ServerState>,
     database: &GlobedDb,
@@ -209,4 +209,42 @@ pub async fn p_user_lookup(
             Err(_) => not_found!("Failed to find user by given username"),
         }
     }
+}
+
+#[derive(Deserialize)]
+pub struct RoleSyncRequestData {
+    pub account_id: i32,
+    pub keep: Vec<String>,
+    pub remove: Vec<String>,
+}
+
+#[post("/gsp/sync_roles", data = "<userdata>")]
+pub async fn p_sync_roles(
+    state: &State<ServerState>,
+    database: &GlobedDb,
+    password: GameServerPasswordGuard,
+    userdata: Json<RoleSyncRequestData>,
+) -> WebResult<()> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    let mut user = _get_user_by_id(database, userdata.account_id).await?;
+
+    // add roles in case user doesn't have them
+    for role_id in &userdata.keep {
+        if !user.user_roles.contains(role_id) {
+            user.user_roles.push(role_id.clone());
+        }
+    }
+
+    // remove roles the user shouldn't have
+    user.user_roles.retain(|r| !userdata.remove.contains(r));
+
+    // update the user
+    database.update_user_server(user.account_id, &user).await?;
+
+    Ok(())
 }

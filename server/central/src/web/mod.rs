@@ -49,6 +49,7 @@ pub mod routes {
             game_server::p_get_user,
             game_server::p_update_user,
             game_server::p_user_lookup,
+            game_server::p_sync_roles,
             auth::totp_login,
             auth::challenge_start,
             auth::challenge_finish,
