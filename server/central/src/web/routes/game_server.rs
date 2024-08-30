@@ -212,10 +212,15 @@ pub async fn p_user_lookup(
 }
 
 #[derive(Deserialize)]
-pub struct RoleSyncRequestData {
+pub struct RoleSyncRequest {
     pub account_id: i32,
     pub keep: Vec<String>,
     pub remove: Vec<String>,
+}
+
+#[derive(Deserialize)]
+pub struct RoleSyncRequestData {
+    pub users: Vec<RoleSyncRequest>,
 }
 
 #[post("/gsp/sync_roles", data = "<userdata>")]
@@ -231,20 +236,22 @@ pub async fn p_sync_roles(
         unauthorized!("invalid gameserver credentials");
     }
 
-    let mut user = _get_user_by_id(database, userdata.account_id).await?;
+    for userdata in &userdata.users {
+        let mut user = _get_user_by_id(database, userdata.account_id).await?;
 
-    // add roles in case user doesn't have them
-    for role_id in &userdata.keep {
-        if !user.user_roles.contains(role_id) {
-            user.user_roles.push(role_id.clone());
+        // add roles in case user doesn't have them
+        for role_id in &userdata.keep {
+            if !user.user_roles.contains(role_id) {
+                user.user_roles.push(role_id.clone());
+            }
         }
+
+        // remove roles the user shouldn't have
+        user.user_roles.retain(|r| !userdata.remove.contains(r));
+
+        // update the user
+        database.update_user_server(user.account_id, &user).await?;
     }
-
-    // remove roles the user shouldn't have
-    user.user_roles.retain(|r| !userdata.remove.contains(r));
-
-    // update the user
-    database.update_user_server(user.account_id, &user).await?;
 
     Ok(())
 }
