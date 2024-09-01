@@ -3,7 +3,7 @@ use std::net::IpAddr;
 use globed_shared::{
     esp::{types::FastString, ByteBuffer, ByteBufferExtWrite},
     logger::debug,
-    GameServerBootData, ServerUserEntry, UserLoginData, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC,
+    warn, GameServerBootData, ServerUserEntry, UserLoginData, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC,
 };
 
 use rocket::{get, post, serde::json::Json, State};
@@ -236,18 +236,32 @@ pub async fn p_sync_roles(
         unauthorized!("invalid gameserver credentials");
     }
 
-    for userdata in &userdata.users {
-        let mut user = _get_user_by_id(database, userdata.account_id).await?;
+    let state = state.state_read().await;
+
+    for r_user in &userdata.users {
+        let mut user = _get_user_by_id(database, r_user.account_id).await?;
 
         // add roles in case user doesn't have them
-        for role_id in &userdata.keep {
-            if !user.user_roles.contains(role_id) {
-                user.user_roles.push(role_id.clone());
+        for role_id in &r_user.keep {
+            // check if the role is valid
+
+            if state.config.roles.iter().any(|x| x.id == *role_id) {
+                // add the role to the user
+                if !user.user_roles.contains(role_id) {
+                    user.user_roles.push(role_id.clone());
+                }
+
+                // // if this was a single user query, return back the names of the roles the user now received
+                // if userdata.users.len() == 1 {
+                //     return_val.push(server_role.)
+                // }
+            } else {
+                warn!("attempting to sync invalid role id: {role_id}");
             }
         }
 
         // remove roles the user shouldn't have
-        user.user_roles.retain(|r| !userdata.remove.contains(r));
+        user.user_roles.retain(|r| !r_user.remove.contains(r));
 
         // update the user
         database.update_user_server(user.account_id, &user).await?;
