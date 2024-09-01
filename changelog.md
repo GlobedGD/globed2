@@ -3,12 +3,12 @@
 * Add a way to <cg>pin a specific level</c> in a room
 * \-- If you are a room creator, there will now be a <cp>new button</c> whenever opening an online level
 * \-- The chosen level will be <cg>pinned</c> at the top of the player list in the globed menu
-* \-- Thanks [TechStudent10](https://github.com/TechStudent10/) for implementing this!
+* \-- Thanks [TechStudent10](user:20284359) for implementing this!
 * Add a <cg>popup</c> showing the <cy>changelog</c> of the most recent update
 * Change the invisibility button to instead open a popup with more advanced options
 * \-- You can now choose to separately hide yourself from the player list, the level, or the invite list
 * Add a new Discord bot for supporters to be able to get their role without needing a staff member
-* Show all the <cp>badges</c> of a player instead of just one at a time (for example <cg>Mod</c> & <cp>Booster</c>) (thanks Kiba!)
+* Show all the <cp>badges</c> of a player instead of just one at a time (for example <cg>Mod</c> & <cp>Booster</c>) (thanks [Kiba](user:4569963)
 * When playing in a <cj>Death Link</c> room, the faster reset option is now <cy>forcefully disabled</c> for all players (to prevent <cr>desync</c>)
 * Automatically <cr>block</c> invites from users that you have <cr>blocked</c> on GD
 * Change the player list to sort players in a <cp>random order</c>, to fight against people making alt accounts to promote their levels
@@ -22,7 +22,7 @@ Bugfixes:
 * Fixed some <cy>login issues</c> (login taking a very long time and sometimes failing for no reason)
 * Fixed player names and status icons <cr>not rotating</c> together with the camera (i.e. arrow trigger)
 * \-- You can return to the old behavior by disabling the "Rotate names" setting
-* \-- Thanks [TheSillyDoggo](https://github.com/TheSillyDoggo/) for implementing this!
+* \-- Thanks [TheSillyDoggo](user:16778880) for implementing this!
 * Fixed crash caused by closing the globed menu too fast
 * Fixed crash when muting a user that has exited the level
 * Fixed room name <cr>overlapping</c> other UI elements in the room listing
@@ -117,7 +117,7 @@ Bugfixes:
 * \-- When [EditorCollab by alk1m123](https://github.com/altalk23/EditorCollab) comes out, you will also be able to playtest non-uploaded levels together with others
 * \-- Experimental, might have issues
 * Add automatic reconnection to the server in case of a disconnect
-* Add credits to the globed menu (thanks [TechStudent11](user:20284359) for partial help)
+* Add credits to the globed menu (thanks [TechStudent10](user:20284359) for partial help)
 * Fix all unsynced clock issues (auth no longer uses TOTP)
 * Fix most "unhandled packet" errors by rewriting networking core
 * Fix many connection related bugs
@@ -125,7 +125,7 @@ Bugfixes:
 * Add a Compressed Player Count setting which changes the "X players" label to be more compact (thanks [Uproxide](user:25397826)!)
 * Add support & voice chat guide buttons in the menu (thanks [Kiba](user:4569963) for the design)
 * Add a gradient and an icon to your friends on the player list
-* Add a way to hide yourself from the player list in menus (thanks [TechStudent11](user:20284359))
+* Add a way to hide yourself from the player list in menus (thanks [TechStudent10](user:20284359))
 * Redesign the main menus and change textures for many of the icons
 * Add much better error messages for outdated clients
 * Don't play effects and animations if the player is too far, to decrease lag
