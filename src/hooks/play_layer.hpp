@@ -5,11 +5,9 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 class $modify(GlobedPlayLayer, PlayLayer) {
-
     struct Fields {
         GameObject* antiCheat = nullptr;
         bool ignoreNoclip = false;
-        bool insideDestroyPlayer = false;
         std::optional<bool> oldShowProgressBar;
     };
 

@@ -63,9 +63,7 @@ void DeathlinkModule::selUpdate(float dt) {
 
 void DeathlinkModule::forceKill() {
     if (auto pl = this->getPlayLayer()) {
-        bool indp = pl->m_fields->insideDestroyPlayer;
-
-        if (gameLayer->m_fields->setupWasCompleted && !indp) {
+        if (gameLayer->m_fields->setupWasCompleted) {
             pl->forceKill(pl->m_player1);
         }
     }
