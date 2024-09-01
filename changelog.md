@@ -6,10 +6,12 @@
 * \-- Thanks [TechStudent10](https://github.com/TechStudent10/) for implementing this!
 * Add a <cg>popup</c> showing the <cy>changelog</c> of the most recent update
 * Change the invisibility button to instead open a popup with more advanced options
-* \-- You can now choose to separately hide yourself from the player list, the level, or the invite list.
+* \-- You can now choose to separately hide yourself from the player list, the level, or the invite list
+* Add a new Discord bot for supporters to be able to get their role without needing a staff member
 * Show all the <cp>badges</c> of a player instead of just one at a time (for example <cg>Mod</c> & <cp>Booster</c>) (thanks Kiba!)
 * When playing in a <cj>Death Link</c> room, the faster reset option is now <cy>forcefully disabled</c> for all players (to prevent <cr>desync</c>)
 * Automatically <cr>block</c> invites from users that you have <cr>blocked</c> on GD
+* Change the player list to sort players in a random order, to fight against people making alt accounts to promote their levels
 * Add a Force Progress Bar setting, that makes it so that the progress bar is enabled if you are connected to the server, when it's otherwise disabled (thanks TechStudent10!)
 * Add Node IDs dependency
 * Remove Custom Keybinds dependency from Android, as it was unused
@@ -28,6 +30,7 @@ Bugfixes:
 * Fixed crash on entering a level when Force Platformer is enabled in Megahack
 * Fixed the room listing getting <cr>closed</c> when trying to join a room, even if joining fails
 * Fixed <cg>"Player"</c> with default icons showing up in the player list
+* Fixed ship fire showing near invisible players
 * Change max web request timeout to be <cg>10 seconds</c> in most places instead of <cy>3 or 5 seconds</c>
 
 ## v1.5.1

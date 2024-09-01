@@ -17,7 +17,7 @@
 
 float adjustLerpTimeDelta(float dt);
 
-class $modify(GlobedGJBGL, GJBaseGameLayer) {
+struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     struct Fields {
         // setup stuff
         bool globedReady = false;

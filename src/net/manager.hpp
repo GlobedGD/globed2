@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/utils/Result.hpp>
+#include <defs/platform.hpp>
 
 #include <util/singleton.hpp>
 
@@ -19,7 +20,7 @@ namespace cocos2d {
     class CCNode;
 }
 
-class NetworkManager : public SingletonBase<NetworkManager> {
+class GLOBED_DLL NetworkManager : public SingletonBase<NetworkManager> {
 protected:
     friend class SingletonBase;
     NetworkManager();

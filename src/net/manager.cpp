@@ -71,7 +71,7 @@ static void* addrFromWeakRef(const WeakRef<T>& ref) {
 }
 
 // Packet listener pool. Most of the functions must not be used on a different thread than main.
-class PacketListenerPool : public CCObject {
+class GLOBED_DLL PacketListenerPool : public CCObject {
 public:
     PacketListenerPool(const PacketListenerPool&) = delete;
     PacketListenerPool(PacketListenerPool&&) = delete;
@@ -189,7 +189,7 @@ private:
     }
 };
 
-class NetworkManager::Impl {
+class GLOBED_DLL NetworkManager::Impl {
 protected:
     friend class NetworkManager;
     friend class PacketListenerPool;

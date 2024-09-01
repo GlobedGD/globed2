@@ -4,7 +4,7 @@
 
 #include <Geode/modify/PlayLayer.hpp>
 
-class $modify(GlobedPlayLayer, PlayLayer) {
+struct GLOBED_DLL GlobedPlayLayer : geode::Modify<GlobedPlayLayer, PlayLayer> {
     struct Fields {
         GameObject* antiCheat = nullptr;
         bool ignoreNoclip = false;
