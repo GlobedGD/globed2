@@ -11,8 +11,8 @@
 * Show all the <cp>badges</c> of a player instead of just one at a time (for example <cg>Mod</c> & <cp>Booster</c>) (thanks Kiba!)
 * When playing in a <cj>Death Link</c> room, the faster reset option is now <cy>forcefully disabled</c> for all players (to prevent <cr>desync</c>)
 * Automatically <cr>block</c> invites from users that you have <cr>blocked</c> on GD
-* Change the player list to sort players in a random order, to fight against people making alt accounts to promote their levels
-* Add a Force Progress Bar setting, that makes it so that the progress bar is enabled if you are connected to the server, when it's otherwise disabled (thanks TechStudent10!)
+* Change the player list to sort players in a <cp>random order</c>, to fight against people making alt accounts to promote their levels
+* Add a <cy>Force Progress Bar</c> setting, that makes it so that the progress bar is enabled if you are connected to the server, when it's otherwise disabled (thanks TechStudent10!)
 * Add Node IDs dependency
 * Remove Custom Keybinds dependency from Android, as it was unused
 * Various security improvements
@@ -20,14 +20,14 @@
 Bugfixes:
 
 * Fixed some <cy>login issues</c> (login taking a very long time and sometimes failing for no reason)
-* Fixed player names and status icons not rotating together with the camera (i.e. arrow trigger)
+* Fixed player names and status icons <cr>not rotating</c> together with the camera (i.e. arrow trigger)
 * \-- You can return to the old behavior by disabling the "Rotate names" setting
 * \-- Thanks [TheSillyDoggo](https://github.com/TheSillyDoggo/) for implementing this!
 * Fixed crash caused by closing the globed menu too fast
 * Fixed crash when muting a user that has exited the level
 * Fixed room name <cr>overlapping</c> other UI elements in the room listing
 * Fixed player count going up to 4 digits on android (and cap to 10000 instead of 65535)
-* Fixed crash on entering a level when Force Platformer is enabled in Megahack
+* Fixed crash on entering a level when Force Platformer is enabled in <cg>Megahack</c>
 * Fixed the room listing getting <cr>closed</c> when trying to join a room, even if joining fails
 * Fixed <cg>"Player"</c> with default icons showing up in the player list
 * Fixed ship fire showing near invisible players
