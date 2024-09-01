@@ -252,10 +252,15 @@ impl ClientThread {
         self.send_packet_dynamic(&pkt).await
     });
 
-    gs_handler!(self, handle_close_room, CloseRoomPacket, _packet, {
+    gs_handler!(self, handle_close_room, CloseRoomPacket, packet, {
         let account_id = gs_needauth!(self);
 
-        let room_id = self.room_id.load(Ordering::Relaxed);
+        // use the provided room id or the current room if 0
+        let mut room_id = packet.room_id;
+        if room_id == 0 {
+            room_id = self.room_id.load(Ordering::Relaxed);
+        }
+
         if room_id == 0 {
             return self._respond_with_room_list(room_id, false).await;
         }

@@ -132,7 +132,7 @@ public:
     void sendUpdatePlayerStatus(const UserPrivacyFlags& flags);
     void sendRequestRoomPlayerList();
     void sendLeaveRoom();
-    void sendCloseRoom();
+    void sendCloseRoom(uint32_t roomId = 0);
     void sendRequestPlayerCount(LevelId id);
     void sendRequestPlayerCount(std::vector<LevelId> ids);
 
