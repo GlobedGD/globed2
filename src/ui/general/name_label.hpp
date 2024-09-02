@@ -15,7 +15,7 @@ public:
     void updateOpacity(unsigned char opacity);
     void updateColor(const RichColor& color);
 
-    void setSingleBadgeMode(bool state);
+    void setMultipleBadgeMode(bool state);
 
     static GlobedNameLabel* create(const std::string& name, const std::vector<std::string>&, const RichColor& color, bool bigFont = false);
     static GlobedNameLabel* create(const std::string& name, const SpecialUserData& sud, bool bigFont = false);
@@ -28,7 +28,7 @@ private:
     Ref<cocos2d::CCLabelBMFont> labelShadow;
     Ref<cocos2d::CCNode> labelContainer;
     Ref<cocos2d::CCNode> badgeContainer;
-    bool bigFont, singleBadge = false;
+    bool bigFont, multipleBadge = false;
     constexpr static int COLOR_ACTION_TAG = 3498567;
 
     bool init(const std::string& name, const std::vector<std::string>& badges, const RichColor& nameColor, bool bigFont = false);
