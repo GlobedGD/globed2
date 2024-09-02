@@ -67,8 +67,6 @@ bool CollapsableLevelCell::init(GJGameLevel* level, float width) {
 }
 
 void CollapsableLevelCell::setIsCollapsed(bool isCollapsed) {
-    log::debug("setIsCollapsed: {}", isCollapsed);
-
     m_collapsedCell->setVisible(false);
     m_levelCell->setVisible(false);
     if (isCollapsed) {

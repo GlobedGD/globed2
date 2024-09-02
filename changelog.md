@@ -1,6 +1,8 @@
 ## v1.6.1
 
 * Fix crash when pressing any key on Mac
+* Fix player list looking weird after leaving a room with a pinned level
+* Add verification for discord linking
 
 ## v1.6.0
 

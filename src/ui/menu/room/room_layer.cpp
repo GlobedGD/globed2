@@ -496,6 +496,7 @@ void RoomLayer::reloadData(const RoomInfo& info, const std::vector<PlayerRoomPre
         // if we left the room, clear the pinned level
         if (this->shouldRemoveRoomLevel()) {
             listLayer->removeCell(roomLevelCell);
+            listLayer->scrollToTop();
             roomLevelCell = nullptr;
         }
     }
