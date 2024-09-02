@@ -88,9 +88,7 @@ endif()
 # export some symbols
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_EXPORTING)
 
-# i am crying so hard right now
 if (CMAKE_HOST_SYSTEM MATCHES "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_compile_options("-march=skylake")
     target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_LINUX_COMPILATION=1)
 endif()
 
