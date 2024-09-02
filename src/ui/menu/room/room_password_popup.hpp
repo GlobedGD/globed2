@@ -1,6 +1,6 @@
 #pragma once
-#include <defs/all.hpp>
-#include <data/packets/all.hpp>
+#include <defs/minimal_geode.hpp>
+#include <cocos2d.h>
 
 class RoomPasswordPopup : public geode::Popup<uint32_t> {
 public:

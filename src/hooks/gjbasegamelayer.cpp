@@ -16,7 +16,9 @@
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
-#include <data/packets/all.hpp>
+#include <data/packets/client/game.hpp>
+#include <data/packets/client/general.hpp>
+#include <data/packets/server/game.hpp>
 #include <game/module/all.hpp>
 #include <game/camera_state.hpp>
 #include <hooks/game_manager.hpp>

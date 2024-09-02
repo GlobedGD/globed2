@@ -140,6 +140,8 @@ endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
+    # target_compile_options(${PROJECT_NAME} PRIVATE "-ftime-trace")
+    # target_compile_options(asp PRIVATE "-ftime-trace")
     # if (WIN32)
     #     target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-vla-cxx-extension")
     # endif()

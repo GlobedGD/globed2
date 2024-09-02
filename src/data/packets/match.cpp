@@ -1,4 +1,4 @@
-#include "all.hpp"
+#include "all.hpp" // include all packets
 
 #define PACKET(pt) case pt::PACKET_ID: return std::make_shared<pt>()
 
