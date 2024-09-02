@@ -7,7 +7,7 @@
 * Add a <cg>popup</c> showing the <cy>changelog</c> of the most recent update
 * Change the invisibility button to instead open a popup with more advanced options
 * \-- You can now choose to separately hide yourself from the player list, the level, or the invite list
-* Add a new Discord bot for supporters to be able to get their role without needing a staff member
+* Add a new Discord bot for supporters to be able to obtain their in-game roles without having to ask a staff member
 * Show all the <cp>badges</c> of a player instead of just one at a time (for example <cg>Mod</c> & <cp>Booster</c>) (thanks [Kiba](user:4569963)
 * When playing in a <cj>Death Link</c> room, the faster reset option is now <cy>forcefully disabled</c> for all players (to prevent <cr>desync</c>)
 * Automatically <cr>block</c> invites from users that you have <cr>blocked</c> on GD
