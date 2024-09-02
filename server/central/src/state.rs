@@ -205,8 +205,10 @@ impl ServerStateData {
     }
 
     pub fn put_login(&mut self, name: &str, account_id: i32) {
+        let lowercase = name.trim_start().to_lowercase();
+
         let mut hasher = DefaultHasher::new();
-        name.hash(&mut hasher);
+        lowercase.hash(&mut hasher);
         let hash = hasher.finish();
 
         self.last_logins.insert(
