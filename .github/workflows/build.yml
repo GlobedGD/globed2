@@ -38,6 +38,7 @@ jobs:
           sdk: 'nightly'
           target: ${{ matrix.config.target }}
           configure-args: '-DGLOBED_RELEASE=ON'
+          build-args: '-j4'
 
   package:
     name: Package builds
