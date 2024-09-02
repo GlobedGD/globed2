@@ -182,7 +182,6 @@ pub struct UserLookupResponse {
 #[get("/gsp/lookup?<username>&<link_code>&<bypass>")]
 pub async fn p_user_lookup(
     state: &State<ServerState>,
-    database: &GlobedDb,
     password: GameServerPasswordGuard,
     username: &str,
     link_code: u32,
@@ -194,27 +193,15 @@ pub async fn p_user_lookup(
         unauthorized!("invalid gameserver credentials");
     }
 
+    debug!("link code: {link_code}, bypass: {bypass:?}");
+
     if let Some(login) = state.get_login(username, if bypass.unwrap_or(false) { None } else { Some(link_code) }) {
         Ok(Json(UserLookupResponse {
             account_id: login.account_id,
             name: login.name.clone(),
         }))
     } else {
-        // check if they are in the database
-        match _get_user(database, username).await {
-            Ok(user) => {
-                if let Some(name) = user.user_name {
-                    Ok(Json(UserLookupResponse {
-                        account_id: user.account_id,
-                        name,
-                    }))
-                } else {
-                    not_found!("Failed to find user by given username");
-                }
-            }
-
-            Err(_) => not_found!("Failed to find user by given username"),
-        }
+        not_found!("Failed to find user by given username");
     }
 }
 
