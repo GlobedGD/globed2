@@ -28,6 +28,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(LevelListPacket);
         PACKET(LevelPlayerCountPacket);
         PACKET(RolesUpdatedPacket);
+        PACKET(LinkCodeResponsePacket);
 
         // game related
 

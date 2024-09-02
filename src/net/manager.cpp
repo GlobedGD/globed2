@@ -1248,6 +1248,7 @@ MAKE_SENDER2(UpdatePlayerStatus, (const UserPrivacyFlags& flags), (flags))
 MAKE_SENDER2(RequestRoomPlayerList, (), ())
 MAKE_SENDER2(LeaveRoom, (), ())
 MAKE_SENDER2(CloseRoom, (uint32_t roomId), (roomId))
+MAKE_SENDER2(LinkCodeRequest, (), ())
 
 void NetworkManager::sendRequestPlayerCount(LevelId id) {
     impl->send(RequestPlayerCountPacket::create(std::vector({id})));

@@ -136,6 +136,7 @@ public:
     void sendCloseRoom(uint32_t roomId = 0);
     void sendRequestPlayerCount(LevelId id);
     void sendRequestPlayerCount(std::vector<LevelId> ids);
+    void sendLinkCodeRequest();
 
 private:
     class Impl;
