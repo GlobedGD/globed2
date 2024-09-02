@@ -665,7 +665,7 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
         NetworkManager::get().updateServerPing();
     }
 
-    GLOBED_EVENT(this, selPeriodicalUpdate(dt));
+    GLOBED_EVENT(self, selPeriodicalUpdate(dt));
 }
 
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
@@ -713,8 +713,6 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     auto& bl = BlockListManager::get();
     auto& vpm = VoicePlaybackManager::get();
     auto& settings = GlobedSettings::get();
-
-    bool hasBeenKilled = false;
 
     for (const auto [playerId, remotePlayer] : fields.players) {
         const auto& vstate = fields.interpolator->getPlayerState(playerId);
@@ -779,7 +777,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         }
     }
 
-    GLOBED_EVENT(this, selUpdate(dt));
+    GLOBED_EVENT(self, selUpdate(dt));
 }
 
 // selUpdateEstimators - runs 30 times a second, updates audio stuff
@@ -793,7 +791,7 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
         overlay->updateOverlay();
     }
 
-    GLOBED_EVENT(this, selUpdateEstimators(dt));
+    GLOBED_EVENT(self, selUpdateEstimators(dt));
 }
 
 /* Player related functions */
