@@ -3,7 +3,8 @@ use std::net::IpAddr;
 use globed_shared::{
     esp::{types::FastString, ByteBuffer, ByteBufferExtWrite},
     logger::debug,
-    warn, GameServerBootData, ServerUserEntry, UserLoginData, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC,
+    rand::{self, Rng},
+    warn, GameServerBootData, ServerUserEntry, UserLoginData, UserLoginResponse, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC,
 };
 
 use rocket::{get, post, serde::json::Json, State};
@@ -105,12 +106,16 @@ pub async fn user_login(
         unauthorized!("invalid gameserver credentials");
     }
 
+    let link_code = rand::thread_rng().gen_range(1000..10_000);
+
     // store login attempt
-    state.state_write().await.put_login(&userdata.0.name, userdata.0.account_id);
+    state.state_write().await.put_login(&userdata.0.name, userdata.0.account_id, link_code);
 
     let user = _get_user_by_id(database, userdata.0.account_id).await?;
 
-    Ok(CheckedEncodableResponder::new(user))
+    let resp = UserLoginResponse { user_entry: user, link_code };
+
+    Ok(CheckedEncodableResponder::new(resp))
 }
 
 #[post("/gs/user/update", data = "<userdata>")]
@@ -174,12 +179,14 @@ pub struct UserLookupResponse {
     pub name: String,
 }
 
-#[get("/gsp/lookup?<username>")]
+#[get("/gsp/lookup?<username>&<link_code>&<bypass>")]
 pub async fn p_user_lookup(
     state: &State<ServerState>,
     database: &GlobedDb,
     password: GameServerPasswordGuard,
     username: &str,
+    link_code: u32,
+    bypass: Option<bool>,
 ) -> WebResult<Json<UserLookupResponse>> {
     let state = state.state_read().await;
 
@@ -187,7 +194,7 @@ pub async fn p_user_lookup(
         unauthorized!("invalid gameserver credentials");
     }
 
-    if let Some(login) = state.get_login(username) {
+    if let Some(login) = state.get_login(username, if bypass.unwrap_or(false) { None } else { Some(link_code) }) {
         Ok(Json(UserLookupResponse {
             account_id: login.account_id,
             name: login.name.clone(),

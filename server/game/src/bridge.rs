@@ -11,7 +11,7 @@ use esp::{
 };
 use globed_shared::{
     reqwest::{self, StatusCode},
-    GameServerBootData, ServerUserEntry, SyncMutex, TokenIssuer, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
+    GameServerBootData, ServerUserEntry, SyncMutex, TokenIssuer, UserLoginResponse, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
 use crate::webhook::{self, *};
@@ -208,7 +208,7 @@ impl CentralBridge {
         Ok(reader.read_value::<ServerUserEntry>()?)
     }
 
-    pub async fn user_login(&self, account_id: i32, username: &str) -> Result<ServerUserEntry> {
+    pub async fn user_login(&self, account_id: i32, username: &str) -> Result<UserLoginResponse> {
         let mut buffer = ByteBuffer::with_capacity(size_of_dynamic_types!(username, &account_id));
 
         buffer.write_value(&account_id);
@@ -236,7 +236,7 @@ impl CentralBridge {
         let mut reader = ByteReader::from_bytes(&config);
         reader.validate_self_checksum()?;
 
-        Ok(reader.read_value::<ServerUserEntry>()?)
+        Ok(reader.read_value::<UserLoginResponse>()?)
     }
 
     pub async fn update_user_data(&self, user: &ServerUserEntry) -> Result<()> {

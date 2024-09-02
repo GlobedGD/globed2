@@ -81,4 +81,12 @@ impl ClientThread {
 
         Ok(())
     });
+
+    gs_handler!(self, handle_link_code_request, LinkCodeRequestPacket, _packet, {
+        let _ = gs_needauth!(self);
+
+        let link_code = self.link_code.load(Ordering::Relaxed);
+
+        self.send_packet_static(&LinkCodeResponsePacket { link_code }).await
+    });
 }

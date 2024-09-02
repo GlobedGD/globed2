@@ -47,6 +47,7 @@ pub struct LoginEntry {
     pub account_id: i32,
     pub name: String,
     pub time: SystemTime,
+    pub link_code: u32,
 }
 
 pub struct ServerStateData {
@@ -194,17 +195,27 @@ impl ServerStateData {
             .retain(|_, v| now.duration_since(v.time).unwrap_or_default().as_secs() < 60 * 60 * 24);
     }
 
-    pub fn get_login(&self, name: &str) -> Option<&LoginEntry> {
+    // None to bypass verification
+    pub fn get_login(&self, name: &str, link_code: Option<u32>) -> Option<&LoginEntry> {
         let lowercase = name.trim_start().to_lowercase();
 
         let mut hasher = DefaultHasher::new();
         lowercase.hash(&mut hasher);
         let hash = hasher.finish();
 
-        self.last_logins.get(&hash)
+        let login = self.last_logins.get(&hash);
+
+        login.and_then(|user| {
+            // if link_code is None, or it matches, return the entry
+            if link_code.map(|code| code == user.link_code).unwrap_or(true) {
+                Some(user)
+            } else {
+                None
+            }
+        })
     }
 
-    pub fn put_login(&mut self, name: &str, account_id: i32) {
+    pub fn put_login(&mut self, name: &str, account_id: i32, link_code: u32) {
         let lowercase = name.trim_start().to_lowercase();
 
         let mut hasher = DefaultHasher::new();
@@ -217,6 +228,7 @@ impl ServerStateData {
                 account_id,
                 name: name.to_owned(),
                 time: SystemTime::now(),
+                link_code,
             },
         );
     }

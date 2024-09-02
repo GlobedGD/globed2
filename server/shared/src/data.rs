@@ -83,6 +83,13 @@ pub struct UserLoginData {
     pub name: String,
 }
 
+// same here
+#[derive(Encodable, Decodable, Clone)]
+pub struct UserLoginResponse {
+    pub user_entry: ServerUserEntry,
+    pub link_code: u32,
+}
+
 impl ServerUserEntry {
     pub fn new(account_id: i32) -> Self {
         Self {
