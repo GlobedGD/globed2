@@ -181,13 +181,13 @@ pub struct UserLookupResponse {
 
 #[get("/gsp/lookup?<username>&<link_code>&<bypass>")]
 pub async fn p_user_lookup(
-    state: &State<ServerState>,
+    s_state: &State<ServerState>,
     password: GameServerPasswordGuard,
     username: &str,
     link_code: u32,
     bypass: Option<bool>,
 ) -> WebResult<Json<UserLookupResponse>> {
-    let state = state.state_read().await;
+    let state = s_state.state_read().await;
 
     if !password.verify(&state.config.game_server_password) {
         unauthorized!("invalid gameserver credentials");
@@ -195,14 +195,20 @@ pub async fn p_user_lookup(
 
     debug!("link code: {link_code}, bypass: {bypass:?}");
 
-    if let Some(login) = state.get_login(username, if bypass.unwrap_or(false) { None } else { Some(link_code) }) {
-        Ok(Json(UserLookupResponse {
+    let response = if let Some(login) = state.get_login(username, if bypass.unwrap_or(false) { None } else { Some(link_code) }) {
+        UserLookupResponse {
             account_id: login.account_id,
             name: login.name.clone(),
-        }))
+        }
     } else {
         not_found!("Failed to find user by given username");
-    }
+    };
+
+    drop(state);
+
+    s_state.state_write().await.remove_login_code(username);
+
+    Ok(Json(response))
 }
 
 #[derive(Deserialize)]

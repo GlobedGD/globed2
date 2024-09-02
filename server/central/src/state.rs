@@ -207,7 +207,7 @@ impl ServerStateData {
 
         login.and_then(|user| {
             // if link_code is None, or it matches, return the entry
-            if link_code.map(|code| code == user.link_code).unwrap_or(true) {
+            if link_code.map(|code| code == user.link_code && user.link_code != 0).unwrap_or(true) {
                 Some(user)
             } else {
                 None
@@ -231,6 +231,21 @@ impl ServerStateData {
                 link_code,
             },
         );
+    }
+
+    pub fn remove_login_code(&mut self, name: &str) {
+        let lowercase = name.trim_start().to_lowercase();
+
+        let mut hasher = DefaultHasher::new();
+        lowercase.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        let data = self.last_logins.get_mut(&hash);
+
+        // reset so people cant relog again, just in case
+        if let Some(data) = data {
+            data.link_code = 0;
+        }
     }
 }
 
