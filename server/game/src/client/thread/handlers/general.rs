@@ -11,10 +11,8 @@ impl ClientThread {
     gs_handler!(self, handle_request_global_list, RequestGlobalPlayerListPacket, _packet, {
         let _ = gs_needauth!(self);
 
-        let can_moderate = self.is_authorized_user.load(Ordering::Relaxed) && self.user_role.lock().can_moderate();
-
         self.send_packet_dynamic(&GlobalPlayerListPacket {
-            players: self.game_server.get_player_previews_in_room(0, can_moderate),
+            players: self.game_server.get_player_previews_in_room(0, self.can_moderate()),
         })
         .await
     });

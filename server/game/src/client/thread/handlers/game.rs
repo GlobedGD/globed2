@@ -54,7 +54,7 @@ impl ClientThread {
             return Err(PacketHandlingError::UnexpectedPlayerData);
         }
 
-        let is_mod = self.is_authorized_user.load(Ordering::Relaxed) && self.user_role.lock().can_moderate();
+        let is_mod = self.can_moderate();
 
         let room_id = self.room_id.load(Ordering::Relaxed);
 
@@ -153,7 +153,7 @@ impl ClientThread {
 
         let room_id = self.room_id.load(Ordering::Relaxed);
 
-        let is_mod = self.is_authorized_user.load(Ordering::Relaxed) && self.user_role.lock().can_moderate();
+        let is_mod = self.can_moderate();
 
         // if they requested just one player - use the fast heapless path
         if packet.requested != 0 {

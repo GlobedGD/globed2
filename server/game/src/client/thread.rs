@@ -236,6 +236,11 @@ impl ClientThread {
         self.account_id.load(Ordering::Relaxed) != 0
     }
 
+    // shorthand for checking if user has mod perms, and is authorized
+    pub fn can_moderate(&self) -> bool {
+        self.is_authorized_user.load(Ordering::Relaxed) && self.user_role.lock().can_moderate()
+    }
+
     /// schedule the thread to terminate as soon as possible.
     #[inline]
     pub fn terminate(&self) -> ClientThreadOutcome {
