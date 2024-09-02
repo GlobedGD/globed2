@@ -8,6 +8,7 @@
 #include <util/format.hpp>
 #include <util/math.hpp>
 #include <util/ui.hpp>
+#include <util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -124,7 +125,9 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
                     playerCount = util::math::min(playerCount, 10000);
 
                     NetworkManager::get().send(CreateRoomPacket::create(roomName, passwordInput->getString(), RoomSettings {
-                        settingFlags, static_cast<uint16_t>(playerCount)
+                        .flags = settingFlags,
+                        .playerLimit = static_cast<uint16_t>(playerCount),
+                        .fasterReset = util::gd::variable(util::gd::GameVariable::FastRespawn)
                     }));
 
                     parent->startLoading();

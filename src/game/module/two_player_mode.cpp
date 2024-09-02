@@ -78,9 +78,9 @@ EventOutcome TwoPlayerModeModule::destroyPlayerPre(PlayerObject* player, GameObj
         }
     }
 
-    // if deathlink or 2p mode is enabled, toggle faster reset off
+    // if deathlink or 2p mode is enabled, toggle faster reset depending on room setting
     this->oldFastReset = util::gd::variable(GameVariable::FastRespawn);
-    util::gd::setVariable(GameVariable::FastRespawn, false);
+    util::gd::setVariable(GameVariable::FastRespawn, this->gameLayer->m_fields->roomSettings.fasterReset);
 
     return EventOutcome::Continue;
 }

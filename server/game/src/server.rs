@@ -278,7 +278,6 @@ impl GameServer {
                 if let PacketHandlingError::IOError(ref e) = e
                     && should_ignore_error(e)
                 {
-                    warn!("client loop error: {e}");
                     return;
                 }
 
