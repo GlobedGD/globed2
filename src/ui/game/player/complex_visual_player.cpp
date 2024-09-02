@@ -59,6 +59,8 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
         .parent(this)
         .store(nameLabel);
 
+    nameLabel->setSingleBadgeMode(true);
+
     this->updateIcons(data.icons);
 
     if (!isSecond && settings.players.statusIcons) {

@@ -63,7 +63,11 @@ void GlobedNameLabel::updateBadges(const std::vector<std::string>& badges) {
         .parent(this)
         .store(badgeContainer);
 
-    util::ui::addBadgesToMenu(badges, badgeContainer, 1);
+    if (singleBadge) {
+        util::ui::addBadgesToMenu(std::vector<std::string>({badges[0]}), badgeContainer, 1);
+    } else {
+        util::ui::addBadgesToMenu(badges, badgeContainer, 1);
+    }
 
     this->updateLayout();
 }
@@ -121,6 +125,11 @@ void GlobedNameLabel::updateColor(const RichColor& color) {
     if (!label) return;
 
     color.animateLabel(label);
+}
+
+
+void GlobedNameLabel::setSingleBadgeMode(bool state) {
+    this->singleBadge = state;
 }
 
 GlobedNameLabel* GlobedNameLabel::create(const std::string& name, const std::vector<std::string>& roles, const RichColor& color, bool bigFont) {
