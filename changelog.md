@@ -1,9 +1,13 @@
+## v1.6.1
+
+* Fix crash when pressing any key on Mac
+
 ## v1.6.0
 
 * Add a way to <cg>pin a specific level</c> in a room
 * \-- If you are a room creator, there will now be a <cp>new button</c> whenever opening an online level
 * \-- The chosen level will be <cg>pinned</c> at the top of the player list in the globed menu
-* \-- Thanks [TechStudent10](user:20284359) for implementing this!
+* \-- Thanks [TechStudent10](user:20284359) for implementing this (and [Dasshu](user:1975253) for the textures!)
 * Add a <cg>popup</c> showing the <cy>changelog</c> of the most recent update
 * Change the invisibility button to instead open a popup with more advanced options
 * \-- You can now choose to separately hide yourself from the player list, the level, or the invite list

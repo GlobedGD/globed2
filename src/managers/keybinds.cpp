@@ -309,6 +309,7 @@ Key convertCocosKey(enumKeyCodes key) {
     }
 }
 
+// TODO: mac m1 crash?
 // #include <Geode/modify/CCKeyboardDispatcher.hpp>
 
 // class $modify(CCKeyboardDispatcher) {
