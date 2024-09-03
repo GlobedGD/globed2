@@ -3,6 +3,7 @@
 * Fix crash when pressing any key on Mac
 * Fix crash when opening the globed menu on Mac
 * Fix player list looking weird after leaving a room with a pinned level
+* In Death Link, faster reset will now be enabled for everyone if the room creator has it enabled
 * Add verification for discord linking
 * Only show 1 badge near a player's name when in a level
 
