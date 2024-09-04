@@ -241,6 +241,12 @@ pub async fn p_sync_roles(
     for r_user in &userdata.users {
         let mut user = _get_user_by_id(database, r_user.account_id).await?;
 
+        if user.user_name.is_none() {
+            if let Some(name) = state.get_username_from_login(r_user.account_id) {
+                user.user_name = Some(name.to_owned());
+            }
+        }
+
         // add roles in case user doesn't have them
         for role_id in &r_user.keep {
             // check if the role is valid

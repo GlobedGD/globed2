@@ -215,6 +215,13 @@ impl ServerStateData {
         })
     }
 
+    pub fn get_username_from_login(&self, account_id: i32) -> Option<&str> {
+        self.last_logins
+            .iter()
+            .find(|(_k, v)| v.account_id == account_id)
+            .map(|x| x.1.name.as_str())
+    }
+
     pub fn put_login(&mut self, name: &str, account_id: i32, link_code: u32) {
         let lowercase = name.trim_start().to_lowercase();
 
