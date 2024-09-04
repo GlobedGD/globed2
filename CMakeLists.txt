@@ -204,7 +204,7 @@ endif()
 
 # Windows - link to winsock and wmi
 if (WIN32)
-    target_link_libraries(${PROJECT_NAME} ws2_32 wbemuuid)
+    target_link_libraries(${PROJECT_NAME} ws2_32)
 endif()
 
 # Apple - link to iokit
