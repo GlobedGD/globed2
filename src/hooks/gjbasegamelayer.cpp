@@ -362,10 +362,11 @@ void GlobedGJBGL::setupCustomKeybinds() {
 
     this->addEventListener<keybinds::InvokeBindFilter>([this, &settings](keybinds::InvokeBindEvent* event) {
         auto& vpm = VoicePlaybackManager::get();
+        auto& fields = this->getFields();
 
         if (event->isDown()) {
-            this->m_fields->deafened = !this->m_fields->deafened;
-            if (this->m_fields->deafened) {
+            fields.deafened = !fields.deafened;
+            if (fields.deafened) {
                 vpm.muteEveryone();
                 GlobedAudioManager::get().pausePassiveRecording();
                 if (settings.communication.deafenNotification)
@@ -375,7 +376,7 @@ void GlobedGJBGL::setupCustomKeybinds() {
                 //before the notification would only show up if you had voice proximity off in a platformer, this fixes that
                 if (settings.communication.deafenNotification)
                     Notification::create("Undeafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-off.png"_spr), 0.2f)->show();
-                if (!this->m_fields->isVoiceProximity) {
+                if (!fields.isVoiceProximity) {
                     vpm.setVolumeAll(settings.communication.voiceVolume);
                 }
             }
@@ -799,6 +800,8 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
 /* Player related functions */
 
 SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
+    auto& fields = this->getFields();
+
     PlayerIconType iconType = PlayerIconType::Cube;
     if (player->m_isShip) iconType = m_level->isPlatformer() ? PlayerIconType::Jetpack : PlayerIconType::Ship;
     else if (player->m_isBird) iconType = PlayerIconType::Ufo;
@@ -814,8 +817,8 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
 
     bool isPlayer1 = player == m_player1;
 
-    auto spiderTeleportData = isPlayer1 ? util::misc::swapOptional(m_fields->spiderTp1) : util::misc::swapOptional(m_fields->spiderTp2);
-    bool didJustJump = isPlayer1 ? util::misc::swapFlag(m_fields->didJustJumpp1) : util::misc::swapFlag(m_fields->didJustJumpp2);
+    auto spiderTeleportData = isPlayer1 ? util::misc::swapOptional(fields.spiderTp1) : util::misc::swapOptional(fields.spiderTp2);
+    bool didJustJump = isPlayer1 ? util::misc::swapFlag(fields.didJustJumpp1) : util::misc::swapFlag(fields.didJustJumpp2);
 
     bool isStationary = false;
     if (m_level->isPlatformer()) {
@@ -844,8 +847,10 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
 }
 
 PlayerData GlobedGJBGL::gatherPlayerData() {
+    auto& fields = this->getFields();
+
     bool isDead = m_player1->m_isDead || m_player2->m_isDead;
-    m_fields->isCurrentlyDead = isDead;
+    fields.isCurrentlyDead = isDead;
 
     // this function (getCurrentPercent) only exists in playlayer and not the editor, so reimpl it
     auto getPercent = [&](){
@@ -879,12 +884,12 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
     }
 
     return PlayerData {
-        .timestamp = m_fields->timeCounter,
+        .timestamp = fields.timeCounter,
 
         .player1 = this->gatherSpecificIconData(m_player1),
         .player2 = this->gatherSpecificIconData(m_player2),
 
-        .lastDeathTimestamp = m_fields->lastDeathTimestamp,
+        .lastDeathTimestamp = fields.lastDeathTimestamp,
 
         .currentPercentage = currentPercentage,
 
@@ -894,7 +899,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         .isDualMode = m_gameState.m_isDualMode,
         .isInEditor = isInEditor,
         .isEditorBuilding = isEditorBuilding,
-        .isLastDeathReal = m_fields->isLastDeathReal
+        .isLastDeathReal = fields.isLastDeathReal
     };
 }
 
@@ -938,17 +943,19 @@ bool GlobedGJBGL::shouldLetMessageThrough(int playerId) {
 }
 
 void GlobedGJBGL::updateProximityVolume(int playerId) {
-    if (m_fields->deafened || !m_fields->isVoiceProximity) return;
+    auto& fields = this->getFields();
+
+    if (fields.deafened || !fields.isVoiceProximity) return;
 
     auto& vpm = VoicePlaybackManager::get();
 
-    if (!m_fields->interpolator->hasPlayer(playerId)) {
+    if (!fields.interpolator->hasPlayer(playerId)) {
         // if we have no knowledge on the player, set volume to 0
         vpm.setVolume(playerId, 0.f);
         return;
     }
 
-    auto& vstate = m_fields->interpolator->getPlayerState(playerId);
+    auto& vstate = fields.interpolator->getPlayerState(playerId);
 
     float distance = cocos2d::ccpDistance(m_player1->getPosition(), vstate.player1.position);
     float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
@@ -972,6 +979,7 @@ void GlobedGJBGL::notifyDeath() {
 
 void GlobedGJBGL::handlePlayerJoin(int playerId) {
     auto& settings = GlobedSettings::get();
+    auto& fields = this->getFields();
 
     PlayerProgressIcon* progressIcon = nullptr;
     PlayerProgressArrow* progressArrow = nullptr;
@@ -982,7 +990,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
         Build<PlayerProgressIcon>::create()
             .zOrder(2)
             .id(util::cocos::spr(fmt::format("remote-player-progress-{}", playerId)))
-            .parent(m_fields->progressBarWrapper)
+            .parent(fields.progressBarWrapper)
             .store(progressIcon);
     } else if (platformer && settings.levelUi.progressIndicators) {
         Build<PlayerProgressArrow>::create()
@@ -1003,7 +1011,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
         }
     }
 
-    auto* rp = Build<RemotePlayer>::create(&m_fields->camState, progressIcon, progressArrow)
+    auto* rp = Build<RemotePlayer>::create(&fields.camState, progressIcon, progressArrow)
         .zOrder(10)
         .id(util::cocos::spr(fmt::format("remote-player-{}", playerId)))
         .collect();
@@ -1020,8 +1028,8 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     }
 
     m_objectLayer->addChild(rp);
-    m_fields->players.emplace(playerId, rp);
-    m_fields->interpolator->addPlayer(playerId);
+    fields.players.emplace(playerId, rp);
+    fields.interpolator->addPlayer(playerId);
 
     GLOBED_EVENT(this, onPlayerJoin(rp));
 }
@@ -1029,19 +1037,21 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
     VoicePlaybackManager::get().removeStream(playerId);
 
-    if (!m_fields->players.contains(playerId)) return;
+    auto& fields = this->getFields();
+
+    if (!fields.players.contains(playerId)) return;
 
 
-    auto rp = m_fields->players.at(playerId);
+    auto rp = fields.players.at(playerId);
 
     GLOBED_EVENT(this, onPlayerLeave(rp));
 
     rp->removeProgressIndicators();
     rp->removeFromParent();
 
-    m_fields->players.erase(playerId);
-    m_fields->interpolator->removePlayer(playerId);
-    m_fields->playerStore->removePlayer(playerId);
+    fields.players.erase(playerId);
+    fields.interpolator->removePlayer(playerId);
+    fields.playerStore->removePlayer(playerId);
 }
 
 bool GlobedGJBGL::established() {
