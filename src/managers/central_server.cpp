@@ -190,7 +190,7 @@ static bool maybeOverrideMainServer(std::string& url) {
     // first try env variable
     char buffer[1024];
     size_t count = 0;
-    if (0 == getenv_s(&count, buffer, "GLOBED_MAIN_SERVER_URL")) {
+    if (0 == getenv_s(&count, buffer, "GLOBED_MAIN_SERVER_URL") && count != 0) {
         log::debug("Found server override in: environment variable");
         url.assign(buffer);
         return true;

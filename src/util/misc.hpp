@@ -45,6 +45,12 @@ namespace util::misc {
     template <typename T, typename Y>
     struct is_either<Either<T, Y>> : std::true_type {};
 
+    template <typename... Ts, typename T>
+    bool is_any_of_dynamic(T* object) {
+        // todo add faster impl
+        return ((typeinfo_cast<std::add_pointer_t<std::remove_pointer_t<Ts>>>(object) != nullptr) || ...);
+    }
+
     // If `target` is false, returns false. If `target` is true, modifies `target` to false and returns true.
     bool swapFlag(bool& target);
 
