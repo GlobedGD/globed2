@@ -1,3 +1,7 @@
+## v1.6.2
+
+* Fix crashes on some Windows devices
+
 ## v1.6.1
 
 * Fix crash when pressing any key on Mac
