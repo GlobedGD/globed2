@@ -2,6 +2,7 @@
 
 #include <defs/minimal_geode.hpp>
 #include <Geode/ui/Popup.hpp>
+#include <Geode/ui/InputNode.hpp>
 #include <cocos2d.h>
 
 class RoomPasswordPopup : public geode::Popup<uint32_t> {
