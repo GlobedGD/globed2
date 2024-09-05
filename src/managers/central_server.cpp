@@ -185,14 +185,58 @@ Result<> CentralServerManager::tryReload() {
     return Ok();
 }
 
+static bool maybeOverrideMainServer(std::string& url) {
+#ifdef GEODE_IS_WINDOWS
+    // first try env variable
+    char buffer[1024];
+    size_t count = 0;
+    if (0 == getenv_s(&count, buffer, "GLOBED_MAIN_SERVER_URL")) {
+        log::debug("Found server override in: environment variable");
+        url.assign(buffer);
+        return true;
+    }
+#endif
+
+    auto path1 = geode::dirs::getGameDir();
+    auto path2 = Mod::get()->getConfigDir(false);
+    auto path3 = Mod::get()->getSaveDir();
+
+    for (const auto& p : {path1, path2, path3}) {
+        auto path = p / "globed-server-url.txt";
+
+        std::error_code ec{};
+        if (std::filesystem::exists(path) && ec == std::error_code{}) {
+            log::debug("Found server override in: {}", path);
+            std::ifstream file(path);
+            if (file.is_open()) {
+                url.clear();
+                file >> url;
+                return true;
+            } else {
+                log::warn("Failed to open file: {}", path);
+            }
+        }
+    }
+
+    return false;
+}
+
 void CentralServerManager::reload() {
     auto servers = _servers.lock();
     servers->clear();
 
     // main server is always forced into 1st position
+
+    std::string url = globed::string<"main-server-url">();
+
+    // check for main server overrides.
+    if (maybeOverrideMainServer(url)) {
+        log::debug("Main server override enabled: {}", url);
+    }
+
     servers->push_back(CentralServer {
         .name = "Main server",
-        .url = globed::string<"main-server-url">(),
+        .url = url,
     });
 
     servers.unlock();
