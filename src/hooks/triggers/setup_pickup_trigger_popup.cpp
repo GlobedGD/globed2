@@ -76,19 +76,20 @@ bool PickupPopupHook::init(EffectGameObject* p0, CCArray* p1) {
         .anchorPoint(0.f, 0.5f)
         .id("globed-mode-tooltip"_spr);
 
-    log::debug("Item id in init: {}", p0->m_itemID);
+    if (p0) {
+        // toggle globed mode
+        this->onUpdateValue(ItemId, p0->m_itemID);
 
-    // toggle globed mode
-    this->onUpdateValue(ItemId, p0->m_itemID);
-
-    if (inRange(p0->m_itemID)) {
-        toggler->toggle(true);
+        if (inRange(p0->m_itemID)) {
+            toggler->toggle(true);
+        }
     }
 
     return true;
 }
 
 static int getNextFreeGlobedItemId() {
+    // TODO: fix
     auto editor = LevelEditorLayer::get();
 
     int highestId = globed::CUSTOM_ITEM_ID_START;
@@ -111,8 +112,9 @@ static int getNextFreeGlobedItemId() {
 
 void PickupPopupHook::onPlusButton(cocos2d::CCObject* sender) {
     if (m_fields->globedMode) {
-        int id = getNextFreeGlobedItemId();
-        log::debug("Setting next free item id: {}", id);
+        // int id = getNextFreeGlobedItemId();
+        int id = globed::CUSTOM_ITEM_ID_START;
+        // log::debug("Setting next free item id: {}", id);
         m_disableTextDelegate = true;
         this->updateValue(ItemId, id);
         m_disableTextDelegate = false;
