@@ -69,6 +69,8 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
 
         // chat messages (duh)
         std::vector<std::pair<int, std::string>> chatMessages;
+
+        std::vector<GlobedCounterChange> pendingCounterChanges;
     };
 
     $override
@@ -176,6 +178,8 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
 
     void rescheduleSelectors();
     void customSchedule(cocos2d::SEL_SCHEDULE, float interval = 0.f);
+
+    void queueCounterChange(const GlobedCounterChange& change);
 
     Fields& getFields();
 };

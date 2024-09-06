@@ -22,6 +22,19 @@ struct SpiderTeleportData {
 
 GLOBED_SERIALIZABLE_STRUCT(SpiderTeleportData, (from, to));
 
+
+struct GlobedCounterChange {
+    enum class Type : uint8_t {
+        Set, Add, Multiply, Divide
+    };
+
+    int itemId;
+    Type type;
+    union { int intVal; float floatVal; } _val;
+};
+
+GLOBED_SERIALIZABLE_ENUM(GlobedCounterChange::Type);
+
 struct SpecificIconData {
     void copyFlagsFrom(const SpecificIconData& other);
 
@@ -61,6 +74,8 @@ struct PlayerData {
     bool isInEditor;
     bool isEditorBuilding; // in the editor && not playtesting (incl. not paused)
     bool isLastDeathReal; // for deathlink, to prevent death chains
+
+    std::vector<GlobedCounterChange> counterChanges;
 };
 
 struct PlayerMetadata {

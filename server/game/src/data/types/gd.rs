@@ -165,7 +165,7 @@ pub struct PlayerRoomPreviewAccountData {
 
 /* AssociatedPlayerData */
 
-#[derive(Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Clone, Default, Encodable, Decodable, DynamicSize)]
 pub struct AssociatedPlayerData {
     pub account_id: i32,
     pub data: PlayerData,

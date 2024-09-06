@@ -22,6 +22,7 @@
 #include <game/module/all.hpp>
 #include <game/camera_state.hpp>
 #include <hooks/game_manager.hpp>
+#include <hooks/triggers/gjeffectmanager.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
 #include <util/cocos.hpp>
@@ -41,7 +42,6 @@ constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
     for (auto& module : self->m_fields->modules) { \
         module->code; \
     }
-
 
 bool GlobedGJBGL::init() {
     if (!GJBaseGameLayer::init()) return false;
@@ -296,6 +296,10 @@ void GlobedGJBGL::setupPacketListeners() {
             }
 
             fields.interpolator->updatePlayer(player.accountId, player.data, fields.lastServerUpdate);
+
+            for (const auto& cc : player.data.counterChanges) {
+                static_cast<GJEffectManagerHook*>(m_effectManager)->applyFromCounterChange(cc);
+            }
         }
     });
 
@@ -899,7 +903,8 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         .isDualMode = m_gameState.m_isDualMode,
         .isInEditor = isInEditor,
         .isEditorBuilding = isEditorBuilding,
-        .isLastDeathReal = fields.isLastDeathReal
+        .isLastDeathReal = fields.isLastDeathReal,
+        .counterChanges = std::move(fields.pendingCounterChanges),
     };
 }
 
@@ -1200,6 +1205,10 @@ void GlobedGJBGL::rescheduleSelectors() {
 
 void GlobedGJBGL::customSchedule(cocos2d::SEL_SCHEDULE selector, float interval) {
     this->getParent()->schedule(selector, interval);
+}
+
+void GlobedGJBGL::queueCounterChange(const GlobedCounterChange& change) {
+    m_fields->pendingCounterChanges.push_back(change);
 }
 
 GlobedGJBGL::Fields& GlobedGJBGL::getFields() {

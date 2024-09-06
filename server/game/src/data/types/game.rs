@@ -48,10 +48,19 @@ pub struct PlayerMetadata {
     pub attempts: i32,
 }
 
+/* GlobedCounterChange */
+#[derive(Clone, Debug, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static)]
+pub struct GlobedCounterChange {
+    pub item_id: i32,
+    pub r#type: u8,
+    pub value: i32, // its a union but whatever
+}
+
 /* PlayerData (data in a level) */
 // 45 bytes best-case, 77 bytes worst-case (with 2 spider teleports).
 
-#[derive(Clone, Debug, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Clone, Debug, Default, Encodable, Decodable, DynamicSize)]
 pub struct PlayerData {
     pub timestamp: FiniteF32,
 
@@ -63,4 +72,6 @@ pub struct PlayerData {
     pub current_percentage: FiniteF32,
 
     pub flags: Bits<1>, // also a bit-field
+
+    pub counter_changes: Vec1L<GlobedCounterChange>,
 }

@@ -87,7 +87,8 @@ impl ClientThread {
             return Ok(());
         }
 
-        let calc_size = size_of_types!(u32) + size_of_types!(AssociatedPlayerData) * written_players;
+        // i despise this hardcoded 64 but umm i guess its at least faster
+        let calc_size = size_of_types!(u32) + 64 * written_players;
         let fragmentation_limit = self.fragmentation_limit.load(Ordering::Relaxed) as usize;
 
         // if we can fit in one packet, then just send it as-is
@@ -123,13 +124,13 @@ impl ClientThread {
             });
 
             let players_per_fragment = (players.len() + total_fragments - 1) / total_fragments;
-            let calc_size = size_of_types!(u32) + size_of_types!(AssociatedPlayerData) * players_per_fragment;
-
-            debug!(
-                "sending a fragmented packet (lim: {fragmentation_limit}, per: {players_per_fragment}, frags: {total_fragments}, fragsize: {calc_size})"
-            );
 
             for chunk in players.chunks(players_per_fragment) {
+                let mut calc_size = size_of_types!(u32);
+                for player in chunk {
+                    calc_size += player.encoded_size();
+                }
+
                 self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value(chunk))
                     .await?;
             }
