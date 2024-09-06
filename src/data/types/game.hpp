@@ -25,7 +25,7 @@ GLOBED_SERIALIZABLE_STRUCT(SpiderTeleportData, (from, to));
 
 struct GlobedCounterChange {
     enum class Type : uint8_t {
-        Set, Add, Multiply, Divide
+        Set = 0, Add = 1, Multiply = 2, Divide = 3
     };
 
     int itemId;
@@ -33,7 +33,7 @@ struct GlobedCounterChange {
     union { int intVal; float floatVal; } _val;
 };
 
-GLOBED_SERIALIZABLE_ENUM(GlobedCounterChange::Type);
+GLOBED_SERIALIZABLE_ENUM(GlobedCounterChange::Type, Set, Add, Multiply, Divide);
 
 struct SpecificIconData {
     void copyFlagsFrom(const SpecificIconData& other);
