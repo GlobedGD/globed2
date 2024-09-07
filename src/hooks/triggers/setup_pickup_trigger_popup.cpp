@@ -3,7 +3,6 @@
 #include <defs/geode.hpp>
 #include <globed/constants.hpp>
 #include <util/math.hpp>
-#include <util/format.hpp>
 
 using namespace geode::prelude;
 
@@ -147,42 +146,5 @@ void PickupPopupHook::onUpdateValue(int p0, float p1) {
 
     int itemId = (int)p1;
 
-    log::debug("Updating item id to {}", itemId);
-
     this->toggleGlobedMode(inRange(itemId), itemId);
 }
-
-#include <Geode/modify/SetupTriggerPopup.hpp>
-struct GLOBED_DLL SetupPopupHook : geode::Modify<SetupPopupHook, SetupTriggerPopup> {
-    $override
-    void valueChanged(int p0, float p1) {
-        SetupTriggerPopup::valueChanged(p0, p1);
-        if (auto p = typeinfo_cast<SetupPickupTriggerPopup*>(this)) {
-            if (p0 == ItemId) log::debug("valueChanged({})", (int)p1);
-
-            static_cast<PickupPopupHook*>(p)->onUpdateValue(p0, p1);
-        }
-    }
-
-    $override
-    void textChanged(CCTextInputNode* inputNode) {
-        if (inputNode->getTag() != ItemId || m_disableTextDelegate) {
-            return SetupTriggerPopup::textInputReturn(inputNode);
-        }
-
-        auto p = static_cast<PickupPopupHook*>(typeinfo_cast<SetupPickupTriggerPopup*>(this));
-        if (!p) {
-            return SetupTriggerPopup::textChanged(inputNode);
-        }
-
-        bool wasGlobedMode = p->m_fields->globedMode;
-        SetupTriggerPopup::textChanged(inputNode);
-
-        log::debug("Text changed, was globed: {}, id: {}", wasGlobedMode, inputNode->getString());
-
-        if (wasGlobedMode) {
-            int id = util::format::parse<int>(inputNode->getString()).value_or(0);
-            p->onUpdateValue(ItemId, globed::CUSTOM_ITEM_ID_START + id);
-        }
-    }
-};
