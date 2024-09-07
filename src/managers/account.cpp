@@ -286,12 +286,14 @@ std::optional<std::string> GlobedAccountManager::getAdminPassword() {
     auto res1 = util::crypto::base64Decode(b64pw);
     if (!res1) {
         ErrorQueues::get().debugWarn(fmt::format("Failed to read admin password: {}", res1.unwrapErr()));
+        this->storeAdminPassword("");
         return std::nullopt;
     }
 
     auto res2 = cryptoBox->decryptToString(res1.unwrap());
     if (!res2) {
         ErrorQueues::get().debugWarn(fmt::format("Failed to read admin password: {}", res2.unwrapErr()));
+        this->storeAdminPassword("");
         return std::nullopt;
     }
 
