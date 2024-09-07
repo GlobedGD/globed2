@@ -58,13 +58,15 @@ impl ClientThread {
 
         let room_id = self.room_id.load(Ordering::Relaxed);
 
-        let (written_players, metadatas) = self.game_server.state.room_manager.with_any(room_id, |pm| {
+        let (written_players, metadatas, estimated_size) = self.game_server.state.room_manager.with_any(room_id, |pm| {
             pm.manager.set_player_data(account_id, &packet.data);
 
             // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
             let player_count = pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1;
 
             let mut metavec = Vec::new();
+            let mut estimated_size = 0usize;
+
             if let Some(meta) = packet.meta {
                 pm.manager.set_player_meta(account_id, &meta);
 
@@ -75,11 +77,13 @@ impl ClientThread {
                             account_id: player.account_id,
                             data: player.meta.clone(),
                         });
+
+                        estimated_size += player.data.encoded_size() + size_of_types!(i32);
                     }
                 });
             }
 
-            (player_count, metavec)
+            (player_count, metavec, estimated_size)
         });
 
         // no one else on the level, no need to send a response packet
@@ -87,13 +91,13 @@ impl ClientThread {
             return Ok(());
         }
 
-        // i despise this hardcoded 64 but umm i guess its at least faster
-        let calc_size = size_of_types!(u32) + 64 * written_players;
+        let calc_size = size_of_types!(u32) + estimated_size;
         let fragmentation_limit = self.fragmentation_limit.load(Ordering::Relaxed) as usize;
 
         // if we can fit in one packet, then just send it as-is
         if calc_size <= fragmentation_limit {
-            self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| {
+            // 16 is a safety buffer just in case something goes ary
+            self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size + written_players * 16 + 256, |buf| {
                 self.game_server.state.room_manager.with_any(room_id, |pm| {
                     buf.write_list_with(written_players, |buf| {
                         let mut count = 0usize;
@@ -126,6 +130,10 @@ impl ClientThread {
             let players_per_fragment = (players.len() + total_fragments - 1) / total_fragments;
 
             for chunk in players.chunks(players_per_fragment) {
+                if chunk.is_empty() {
+                    continue;
+                }
+                
                 let mut calc_size = size_of_types!(u32);
                 for player in chunk {
                     calc_size += player.encoded_size();
