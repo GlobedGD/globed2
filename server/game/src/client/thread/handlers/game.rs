@@ -73,22 +73,26 @@ impl ClientThread {
             // retrieve metadata of other players, if was asked
             let mut metavec = Vec::new();
             let mut estimated_size = 0usize;
+            let mut should_add_meta = false;
 
             if let Some(meta) = packet.meta {
                 pm.manager.set_player_meta(account_id, &meta);
-
                 metavec = Vec::with_capacity(player_count);
-                pm.manager.for_each_player_on_level(level_id, |player| {
-                    if player.account_id != account_id && (!player.is_invisible || is_mod) {
+                should_add_meta = true;
+            }
+
+            pm.manager.for_each_player_on_level(level_id, |player| {
+                if player.account_id != account_id && (!player.is_invisible || is_mod) {
+                    if should_add_meta {
                         metavec.push(AssociatedPlayerMetadata {
                             account_id: player.account_id,
                             data: player.meta.clone(),
                         });
-
-                        estimated_size += player.data.encoded_size() + size_of_types!(i32);
                     }
-                });
-            }
+
+                    estimated_size += player.data.encoded_size() + size_of_types!(i32);
+                }
+            });
 
             (player_count, metavec, estimated_size)
         });
