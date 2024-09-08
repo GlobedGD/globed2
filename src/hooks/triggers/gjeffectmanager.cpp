@@ -72,16 +72,19 @@ void GJEffectManagerHook::addCountToItemCustom(int id, int diff) {
     this->updateCountForItemCustom(id, newValue);
 }
 
-void GJEffectManagerHook::reset() {
-    GJEffectManager::reset();
+// void GJEffectManagerHook::reset() {
+//     GJEffectManager::reset();
 
-    m_fields->customItems.clear();
-}
+//     m_fields->customItems.clear();
+// }
 
-void GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
+bool GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
     auto& fields = *m_fields.self();
 
+    int prev = fields.customItems[id];
     fields.customItems[id] = value;
+
+    return prev != value;
 }
 
 int GJEffectManagerHook::countForItemCustom(int id) {
@@ -112,8 +115,9 @@ void GJEffectManagerHook::applyFromCounterChange(const GlobedCounterChange& chan
 }
 
 void GJEffectManagerHook::applyItem(int id, int value) {
-    this->updateCountForItemCustom(id, value);
-    GlobedGJBGL::get()->updateCounters(id, value);
+    if (this->updateCountForItemCustom(id, value)) {
+        GlobedGJBGL::get()->updateCounters(id, value);
+    }
 }
 
 // gjbgl collectedObject and addCountToItem inlined on windows.

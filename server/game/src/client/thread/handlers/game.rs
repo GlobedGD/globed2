@@ -95,23 +95,24 @@ impl ClientThread {
 
         // no one else on the level, if no item ids changed there is no need to send a response packet
         if written_players == 0 {
-            if !packet.counter_changes.is_empty() {
-                // TODO not dynamic but alloca with custom encoder ig
-                // and just make this less sloppy tbh i cba
-                let custom_items = self
-                    .game_server
-                    .state
-                    .room_manager
-                    .with_any(room_id, |pm| pm.manager.get_level(level_id).map(|x| x.custom_items.clone()));
+            // TODO aah idk
+            // if !packet.counter_changes.is_empty() {
+            // TODO not dynamic but alloca with custom encoder ig
+            // and just make this less sloppy tbh i cba
+            let custom_items = self
+                .game_server
+                .state
+                .room_manager
+                .with_any(room_id, |pm| pm.manager.get_level(level_id).map(|x| x.custom_items.clone()));
 
-                if let Some(custom_items) = custom_items {
-                    self.send_packet_dynamic::<LevelDataPacket>(&LevelDataPacket {
-                        players: Vec::new(),
-                        custom_items: Some(custom_items),
-                    })
-                    .await?;
-                }
+            if let Some(custom_items) = custom_items {
+                self.send_packet_dynamic::<LevelDataPacket>(&LevelDataPacket {
+                    players: Vec::new(),
+                    custom_items: Some(custom_items),
+                })
+                .await?;
             }
+            // }
 
             return Ok(());
         }

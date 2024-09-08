@@ -20,12 +20,12 @@ struct GLOBED_DLL GJEffectManagerHook : geode::Modify<GJEffectManagerHook, GJEff
     int countForItem(int item);
 #endif
 
-    $override
-    void reset();
+    // $override
+    // void reset();
 
     void addCountToItemCustom(int id, int diff);
 
-    void updateCountForItemCustom(int id, int value);
+    bool updateCountForItemCustom(int id, int value);
 
     int countForItemCustom(int id);
 
