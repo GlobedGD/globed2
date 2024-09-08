@@ -146,11 +146,7 @@ impl ClientThread {
 
                 // write custom_items hashmap
 
-                let custom_items = self
-                    .game_server
-                    .state
-                    .room_manager
-                    .with_any(room_id, |pm| pm.manager.get_level(level_id).map(|x| x.custom_items.clone()));
+                let custom_items = pm.manager.get_level(level_id).map(|x| x.custom_items.clone());
 
                 if custom_items.as_ref().is_some_and(|x| !x.is_empty()) {
                     buf.write_bool(true);
