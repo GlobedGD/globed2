@@ -1,3 +1,5 @@
+use globed_shared::IntMap;
+
 use crate::data::*;
 
 #[derive(Packet, Encodable, DynamicSize)]
@@ -6,10 +8,11 @@ pub struct PlayerProfilesPacket {
     pub players: Vec<PlayerAccountData>,
 }
 
-#[derive(Packet, Encodable)]
+#[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 22001, tcp = false)]
 pub struct LevelDataPacket {
     pub players: Vec<AssociatedPlayerData>,
+    pub custom_items: Option<IntMap<u16, i32>>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

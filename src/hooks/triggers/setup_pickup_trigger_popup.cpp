@@ -8,10 +8,6 @@ using namespace geode::prelude;
 
 constexpr int ItemId = 0x50;
 
-static bool inRange(int itemId) {
-    return itemId >= globed::CUSTOM_ITEM_ID_START && itemId < globed::CUSTOM_ITEM_ID_END;
-}
-
 bool PickupPopupHook::init(EffectGameObject* p0, CCArray* p1) {
     if (!SetupPickupTriggerPopup::init(p0, p1)) return false;
 
@@ -79,7 +75,7 @@ bool PickupPopupHook::init(EffectGameObject* p0, CCArray* p1) {
         // toggle globed mode
         this->onUpdateValue(ItemId, p0->m_itemID);
 
-        if (inRange(p0->m_itemID)) {
+        if (globed::isWritableCustomItem(p0->m_itemID)) {
             toggler->toggle(true);
         }
     }
@@ -146,5 +142,5 @@ void PickupPopupHook::onUpdateValue(int p0, float p1) {
 
     int itemId = (int)p1;
 
-    this->toggleGlobedMode(inRange(itemId), itemId);
+    this->toggleGlobedMode(globed::isWritableCustomItem(itemId), itemId);
 }

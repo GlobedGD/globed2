@@ -10,13 +10,9 @@
 #include <globed/constants.hpp>
 #include <util/lowlevel.hpp>
 
-static bool inRange(int item) {
-    return item >= globed::CUSTOM_ITEM_ID_START && item < globed::CUSTOM_ITEM_ID_END;
-}
-
 void GJEffectManagerHook::updateCountForItem(int id, int value) {
-    if (inRange(id)) {
-        this->updateCountForItemReimpl(id, value);
+    if (globed::isWritableCustomItem(id)) {
+        this->updateCountForItemCustom(id, value);
     } else {
         GJEffectManager::updateCountForItem(id, value);
     }
@@ -24,7 +20,7 @@ void GJEffectManagerHook::updateCountForItem(int id, int value) {
 
 #ifndef GEODE_IS_WINDOWS
 int GJEffectManagerHook::countForItem(int item) {
-    if (inRange(item)) {
+    if (globed::isWritableCustomItem(item)) {
         return this->countForItemCustom(item);
     } else {
         return GJEffectManager::countForItem(item);
@@ -40,7 +36,7 @@ int GJEffectManagerHook::countForItem(int item) {
 static geode::Patch* countForItemPatch = nullptr;
 
 int countForItemDetour(GJEffectManagerHook* self, int itemId) {
-    if (inRange(itemId)) {
+    if (globed::isCustomItem(itemId)) {
         return self->countForItemCustom(itemId);
     } else {
         itemId = std::clamp(itemId, 0, 9999);
@@ -73,7 +69,7 @@ countForItemPatch = util::lowlevel::patch(0x2506d0, bytes);
 
 void GJEffectManagerHook::addCountToItemCustom(int id, int diff) {
     int newValue = m_fields->customItems[id] + diff;
-    this->updateCountForItemReimpl(id, newValue);
+    this->updateCountForItemCustom(id, newValue);
 }
 
 void GJEffectManagerHook::reset() {
@@ -82,7 +78,7 @@ void GJEffectManagerHook::reset() {
     m_fields->customItems.clear();
 }
 
-void GJEffectManagerHook::updateCountForItemReimpl(int id, int value) {
+void GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
     auto& fields = *m_fields.self();
 
     fields.customItems[id] = value;
@@ -99,38 +95,49 @@ void GJEffectManagerHook::applyFromCounterChange(const GlobedCounterChange& chan
 
     switch (change.type) {
         case Add: {
-            this->updateCountForItemReimpl(change.itemId, prev + change._val.intVal);
+            this->updateCountForItemCustom(change.itemId, prev + change._val.intVal);
         } break;
         case Set: {
-            this->updateCountForItemReimpl(change.itemId, change._val.intVal);
+            this->updateCountForItemCustom(change.itemId, change._val.intVal);
         } break;
         case Multiply: {
-            this->updateCountForItemReimpl(change.itemId, prev * change._val.floatVal);
+            this->updateCountForItemCustom(change.itemId, prev * change._val.floatVal);
         } break;
         case Divide: {
-            this->updateCountForItemReimpl(change.itemId, prev / change._val.floatVal);
+            this->updateCountForItemCustom(change.itemId, prev / change._val.floatVal);
         } break;
     }
 
     GlobedGJBGL::get()->updateCounters(change.itemId, this->countForItemCustom(change.itemId));
 }
 
+void GJEffectManagerHook::applyItem(int id, int value) {
+    this->updateCountForItemCustom(id, value);
+    GlobedGJBGL::get()->updateCounters(id, value);
+}
+
 // gjbgl collectedObject and addCountToItem inlined on windows.
+
+// TODO: idk if this hook is needed? maybe 2.1 levels?
 struct GLOBED_DLL EffectGameObjectHook : geode::Modify<EffectGameObjectHook, EffectGameObject> {
     void triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
-        log::debug("item id: {}", m_itemID);
-        if (this->m_collectibleIsPickupItem && inRange(m_itemID)) {
-            log::debug("triggered for {}", m_itemID);
-            auto em = static_cast<GJEffectManagerHook*>(layer->m_effectManager);
+        if (this->m_collectibleIsPickupItem && globed::isWritableCustomItem(m_itemID)) {
+            auto gjbgl = GlobedGJBGL::get();
+
+            GlobedCounterChange cc;
+            cc.itemId = globed::itemIdToCustom(m_itemID);
+
+            using enum GlobedCounterChange::Type;
 
             if (m_subtractCount) {
-                em->addCountToItemCustom(m_itemID, -1);
+                cc.type = Add;
+                cc._val.intVal = -1;
             } else {
-                em->addCountToItemCustom(m_itemID, 1);
+                cc.type = Add;
+                cc._val.intVal = 1;
             }
 
-            int count = em->m_fields->customItems[m_itemID];
-            layer->updateCounters(m_itemID, count);
+            gjbgl->queueCounterChange(cc);
         } else {
             EffectGameObject::triggerObject(layer, idk, idunno);
         }
@@ -140,39 +147,30 @@ struct GLOBED_DLL EffectGameObjectHook : geode::Modify<EffectGameObjectHook, Eff
 // gjbgl collectedObject and addCountToItem inlined on windows.
 struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerGameObject> {
     void triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
-        if (m_objectID == 0x719 && inRange(m_itemID)) {
+        if (m_objectID == 0x719 && globed::isWritableCustomItem(m_itemID)) {
             // gjbgl::addPickupTrigger reimpl
-            auto em = static_cast<GJEffectManagerHook*>(layer->m_effectManager);
             auto gjbgl = GlobedGJBGL::get();
 
             GlobedCounterChange cc;
-            cc.itemId = m_itemID;
+            cc.itemId = globed::itemIdToCustom(m_itemID);
 
             using enum GlobedCounterChange::Type;
 
             if (m_pickupTriggerMode == 1) {
-                auto count = em->countForItemCustom(m_itemID);
-                em->updateCountForItemReimpl(m_itemID, count * m_pickupTriggerMultiplier);
                 cc.type = Multiply;
                 cc._val.floatVal = m_pickupTriggerMultiplier;
             } else if (m_pickupTriggerMode == 2) {
-                auto count = em->countForItemCustom(m_itemID);
-                em->updateCountForItemReimpl(m_itemID, count / m_pickupTriggerMultiplier);
                 cc.type = Divide;
                 cc._val.floatVal = m_pickupTriggerMultiplier;
             } else if (!m_unkPickupBool2) {
-                em->addCountToItemCustom(m_itemID, m_pickupCount);
                 cc.type = Add;
                 cc._val.intVal = m_pickupCount;
             } else {
-                em->updateCountForItemReimpl(m_itemID, m_pickupCount);
                 cc.type = Set;
                 cc._val.intVal = m_pickupCount;
             }
 
             gjbgl->queueCounterChange(cc);
-
-            layer->updateCounters(m_itemID, em->countForItemCustom(m_itemID));
         } else {
             CountTriggerGameObject::triggerObject(layer, idk, idunno);
         }

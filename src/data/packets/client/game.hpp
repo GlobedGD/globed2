@@ -38,12 +38,29 @@ class PlayerDataPacket : public Packet {
     GLOBED_PACKET(12003, PlayerDataPacket, false, false)
 
     PlayerDataPacket() {}
-    PlayerDataPacket(const PlayerData& data, const std::optional<PlayerMetadata>& meta) : data(data), meta(meta) {}
+    PlayerDataPacket(const PlayerData& data, const std::optional<PlayerMetadata>& meta, std::vector<GlobedCounterChange>&& counterChanges) : data(data), meta(meta), counterChanges(std::move(counterChanges)) {}
 
     PlayerData data;
     std::optional<PlayerMetadata> meta;
+    std::vector<GlobedCounterChange> counterChanges;
 };
-GLOBED_SERIALIZABLE_STRUCT(PlayerDataPacket, (data, meta));
+
+template <>
+inline ByteBuffer::DecodeResult<PlayerDataPacket> ByteBuffer::customDecode<PlayerDataPacket>() {
+    throw std::runtime_error("unreachable tbh");
+}
+
+template <>
+inline void ByteBuffer::customEncode<PlayerDataPacket>(const PlayerDataPacket& packet) {
+    this->writeValue(packet.data);
+    this->writeValue(packet.meta);
+
+    this->writeU8(packet.counterChanges.size());
+
+    for (const auto& change : packet.counterChanges) {
+        this->writeValue(change);
+    }
+}
 
 #ifdef GLOBED_VOICE_SUPPORT
 

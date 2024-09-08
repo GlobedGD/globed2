@@ -1,8 +1,8 @@
-use globed_shared::IntMap;
+use globed_shared::{debug, IntMap};
 
 use crate::data::{
-    types::PlayerData, AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata, LevelId,
-    PlayerMetadata,
+    types::PlayerData, AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata,
+    GlobedCounterChange, LevelId, PlayerMetadata,
 };
 
 #[derive(Default)]
@@ -46,6 +46,7 @@ impl LevelManagerPlayer {
 #[derive(Default)]
 pub struct Level {
     pub players: Vec<i32>,
+    pub custom_items: IntMap<u16, i32>,
     pub unlisted: bool,
 }
 
@@ -112,6 +113,21 @@ impl LevelManager {
         self.levels.get(&level_id)
     }
 
+    /// get a mutable reference to a level given its ID
+    pub fn get_level_mut(&mut self, level_id: LevelId) -> Option<&mut Level> {
+        self.levels.get_mut(&level_id)
+    }
+
+    /// run counter actions on a level
+    pub fn run_counter_actions_on_level(&mut self, level_id: LevelId, actions: &[GlobedCounterChange]) {
+        if let Some(level) = self.get_level_mut(level_id) {
+            for ac in actions {
+                let val = level.custom_items.entry(ac.item_id).or_default();
+                ac.apply_to(val);
+            }
+        }
+    }
+
     /// get amount of levels in the room
     pub fn get_level_count(&self) -> usize {
         self.levels.len()
@@ -149,6 +165,7 @@ impl LevelManager {
     pub fn add_to_level(&mut self, level_id: LevelId, account_id: i32, unlisted: bool) {
         let level = self.levels.entry(level_id).or_insert_with(|| Level {
             players: Vec::with_capacity(8),
+            custom_items: IntMap::default(),
             unlisted,
         });
 

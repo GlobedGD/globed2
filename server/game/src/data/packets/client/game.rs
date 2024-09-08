@@ -22,6 +22,7 @@ pub struct LevelLeavePacket;
 pub struct PlayerDataPacket {
     pub data: PlayerData,
     pub meta: Option<PlayerMetadata>,
+    pub counter_changes: Vec1L<GlobedCounterChange>,
 }
 
 #[derive(Packet, Decodable)]

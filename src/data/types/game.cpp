@@ -8,7 +8,7 @@ template<>
 void ByteBuffer::customEncode<GlobedCounterChange>(const GlobedCounterChange& val) {
     using enum GlobedCounterChange::Type;
 
-    this->writeI32(val.itemId);
+    this->writeValue(val.itemId);
     this->writeEnum(val.type);
 
     if (val.type == Add || val.type == Set) {
@@ -24,7 +24,7 @@ ByteBuffer::DecodeResult<GlobedCounterChange> ByteBuffer::customDecode<GlobedCou
 
     GlobedCounterChange val;
 
-    GLOBED_UNWRAP_INTO(this->readI32(), val.itemId);
+    GLOBED_UNWRAP_INTO(this->readU16(), val.itemId);
     GLOBED_UNWRAP_INTO(this->readEnum<GlobedCounterChange::Type>(), val.type);
 
     if (val.type == Add || val.type == Set) {
@@ -112,11 +112,6 @@ template<> void ByteBuffer::customEncode(const PlayerData& data) {
     BitBuffer<8> bits;
     bits.writeBits(data.isDead, data.isPaused, data.isPracticing, data.isDualMode, data.isInEditor, data.isEditorBuilding, data.isLastDeathReal);
     this->writeBits(bits);
-
-    this->writeU8(data.counterChanges.size());
-    for (const auto& change : data.counterChanges) {
-        this->writeValue(change);
-    }
 }
 
 template<> ByteBuffer::DecodeResult<PlayerData> ByteBuffer::customDecode() {
@@ -130,13 +125,6 @@ template<> ByteBuffer::DecodeResult<PlayerData> ByteBuffer::customDecode() {
 
     GLOBED_UNWRAP_INTO(this->readBits<8>(), auto bits);
     bits.readBitsInto(data.isDead, data.isPaused, data.isPracticing, data.isDualMode, data.isInEditor, data.isEditorBuilding, data.isLastDeathReal);
-
-    GLOBED_UNWRAP_INTO(this->readU8(), size_t ccCount);
-
-    for (size_t i = 0; i < ccCount; i++) {
-        GLOBED_UNWRAP_INTO(this->readValue<GlobedCounterChange>(), auto cc);
-        data.counterChanges.emplace_back(std::move(cc));
-    }
 
     return Ok(data);
 }

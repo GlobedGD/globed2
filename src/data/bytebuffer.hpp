@@ -392,6 +392,8 @@ protected:
             return this->pcDecodePair<typename T::first_type, typename T::second_type>();
         } else if constexpr (asp::is_std_optional<T>::value) {
             return this->pcDecodeOptional<typename T::value_type>();
+        } else if constexpr (util::misc::is_map<T>::value) {
+            return this->pcDecodeMap<typename T::key_type, typename T::mapped_type>();
         } else if constexpr (util::misc::is_either<T>::value) {
             return this->pcDecodeEither<typename T::first_type, typename T::second_type>();
         } else {
@@ -409,6 +411,8 @@ protected:
             this->pcEncodeOptional<typename T::value_type>(value);
         } else if constexpr (util::misc::is_either<T>::value) {
             this->pcEncodeEither(value);
+        } else if constexpr (util::misc::is_map<T>::value) {
+            this->pcEncodeMap<typename T::key_type, typename T::mapped_type>(value);
         } else if constexpr (std::is_same_v<T, ByteBuffer>) {
             this->rawWriteBytes(value.data().data(), value.size());
         } else {
@@ -433,7 +437,7 @@ protected:
             out.emplace_back(std::move(val));
         }
 
-        return Ok(out);
+        return Ok(std::move(out));
     }
 
     template<typename T>
@@ -442,6 +446,34 @@ protected:
 
         for (const auto& elem : vec) {
             this->writeValue<T>(elem);
+        }
+    }
+
+    // Map
+
+    template <typename T, typename Y>
+    DecodeResult<std::map<T, Y>> pcDecodeMap() {
+        GLOBED_UNWRAP_INTO(this->readLength(), auto length);
+
+        std::map<T, Y> out;
+
+        for (size_t i = 0; i < length; i++) {
+            GLOBED_UNWRAP_INTO(this->readValue<T>(), T first);
+            GLOBED_UNWRAP_INTO(this->readValue<Y>(), Y second);
+
+            out.emplace(std::make_pair(std::move(first), std::move(second)));
+        }
+
+        return Ok(std::move(out));
+    }
+
+    template <typename T, typename Y>
+    void pcEncodeMap(const std::map<T, Y>& map) {
+        this->writeLength(map.size());
+
+        for (const auto& [first, second] : map) {
+            this->writeValue<T>(first);
+            this->writeValue<Y>(second);
         }
     }
 

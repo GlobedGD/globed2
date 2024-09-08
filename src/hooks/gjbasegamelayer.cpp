@@ -296,9 +296,14 @@ void GlobedGJBGL::setupPacketListeners() {
             }
 
             fields.interpolator->updatePlayer(player.accountId, player.data, fields.lastServerUpdate);
+        }
 
-            for (const auto& cc : player.data.counterChanges) {
-                static_cast<GJEffectManagerHook*>(m_effectManager)->applyFromCounterChange(cc);
+        if (packet->customItems) {
+            for (const auto& [itemId, value] : *packet->customItems) {
+                static_cast<GJEffectManagerHook*>(m_effectManager)->applyItem(
+                    globed::customItemToItemId(itemId),
+                    value
+                );
             }
         }
     });
@@ -570,7 +575,8 @@ void GlobedGJBGL::selSendPlayerData(float) {
     fields.totalSentPackets++;
     // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
     // or if we are quitting the level
-    if ((fields.players.empty() && fields.totalSentPackets % 30 != 15) || fields.quitting) return;
+
+    if ((fields.players.empty() && fields.totalSentPackets % 30 != 15 && fields.pendingCounterChanges.empty()) || fields.quitting) return;
 
     auto data = self->gatherPlayerData();
     std::optional<PlayerMetadata> meta;
@@ -578,7 +584,7 @@ void GlobedGJBGL::selSendPlayerData(float) {
         meta = self->gatherPlayerMetadata();
     }
 
-    NetworkManager::get().send(PlayerDataPacket::create(data, meta));
+    NetworkManager::get().send(PlayerDataPacket::create(data, meta, std::move(fields.pendingCounterChanges)));
 }
 
 // selSendPlayerMetadata - runs every 10 seconds
@@ -904,7 +910,6 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         .isInEditor = isInEditor,
         .isEditorBuilding = isEditorBuilding,
         .isLastDeathReal = fields.isLastDeathReal,
-        .counterChanges = std::move(fields.pendingCounterChanges),
     };
 }
 

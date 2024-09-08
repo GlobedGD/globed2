@@ -13,7 +13,10 @@ use rand::{distributions::Alphanumeric, Rng};
 
 // import reexports
 pub use nohash_hasher::{IntMap, IntSet};
-pub use parking_lot::{Mutex as SyncMutex, MutexGuard as SyncMutexGuard};
+pub use parking_lot::{
+    Mutex as SyncMutex, MutexGuard as SyncMutexGuard, RwLock as SyncRwLock, RwLockReadGuard as SyncRwLockReadGuard,
+    RwLockWriteGuard as SyncRwLockWriteGuard,
+};
 // module reexports
 pub use anyhow;
 pub use base64;

@@ -3,10 +3,6 @@
 
 using namespace geode::prelude;
 
-static bool inRange(int itemId) {
-    return itemId >= globed::CUSTOM_ITEM_ID_START && itemId < globed::CUSTOM_ITEM_ID_END;
-}
-
 bool InstantCountPopupHook::init(CountTriggerGameObject* p0, cocos2d::CCArray* p1) {
     if (!SetupInstantCountPopup::init(p0, p1)) return false;
 
@@ -17,7 +13,7 @@ void InstantCountPopupHook::updateItemID() {
     // TODO no mbo
 #ifdef GEODE_IS_WINDOWS
     int itemId = *(int*)((uintptr_t)this + 0x3c0);
-    if (!inRange(itemId)) {
+    if (!globed::isCustomItem(itemId)) {
         return SetupInstantCountPopup::updateItemID();
     }
 
@@ -33,6 +29,7 @@ void InstantCountPopupHook::updateItemID() {
         }
     }
 #else
+# pragma message "updateItemID mbo unimpl"
     return SetupInstantCountPopup::updateItemID();
 #endif
 }

@@ -45,6 +45,15 @@ namespace util::misc {
     template <typename T, typename Y>
     struct is_either<Either<T, Y>> : std::true_type {};
 
+    // todo move to asp im lazy
+
+    template <typename>
+    struct is_map : std::false_type {};
+
+    template <typename T, typename Y>
+    struct is_map<std::map<T, Y>> : std::true_type {};
+
+
     template <typename... Ts, typename T>
     bool is_any_of_dynamic(T* object) {
         // todo add faster impl

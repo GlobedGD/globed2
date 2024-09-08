@@ -48,13 +48,67 @@ pub struct PlayerMetadata {
     pub attempts: i32,
 }
 
+#[derive(Clone, Copy, Debug, Encodable, Decodable, StaticSize, DynamicSize)]
+#[dynamic_size(as_static)]
+#[repr(u8)]
+pub enum GlobedCounterChangeType {
+    Set = 0,
+    Add = 1,
+    Multiply = 2,
+    Divide = 3,
+}
+
+#[derive(Clone, Copy)]
+union CCValue {
+    pub int_val: i32,
+    pub flt_val: FiniteF32,
+}
+
+static_size_calc_impl!(CCValue, size_of_types!(i32));
+dynamic_size_as_static_impl!(CCValue);
+
 /* GlobedCounterChange */
-#[derive(Clone, Debug, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+#[derive(Clone, StaticSize, DynamicSize)]
 #[dynamic_size(as_static)]
 pub struct GlobedCounterChange {
-    pub item_id: i32,
-    pub r#type: u8,
-    pub value: i32, // its a union but whatever
+    pub item_id: u16,
+    pub r#type: GlobedCounterChangeType,
+    value: CCValue, // its a union but whatever
+}
+
+decode_impl!(GlobedCounterChange, buf, {
+    let item_id = buf.read_value()?;
+    let r#type = buf.read_value()?;
+
+    let value = match r#type {
+        GlobedCounterChangeType::Add | GlobedCounterChangeType::Set => CCValue { int_val: buf.read_i32()? },
+        GlobedCounterChangeType::Multiply | GlobedCounterChangeType::Divide => CCValue { flt_val: buf.read_value()? },
+    };
+
+    Ok(Self { item_id, r#type, value })
+});
+
+impl GlobedCounterChange {
+    pub fn apply_to(&self, number_ref: &mut i32) {
+        let number = *number_ref;
+        // safety: set/add are always ints, mul/div are always float
+        let value = unsafe {
+            match self.r#type {
+                GlobedCounterChangeType::Add => number + self.value.int_val,
+                GlobedCounterChangeType::Set => self.value.int_val,
+                GlobedCounterChangeType::Multiply => ((number as f32) * self.value.flt_val.0) as i32,
+                GlobedCounterChangeType::Divide => {
+                    if self.value.flt_val.0 == 0.0f32 {
+                        number
+                    } else {
+                        ((number as f32) / self.value.flt_val.0) as i32
+                    }
+                }
+            }
+        };
+
+        *number_ref = value;
+    }
 }
 
 /* PlayerData (data in a level) */
@@ -72,6 +126,4 @@ pub struct PlayerData {
     pub current_percentage: FiniteF32,
 
     pub flags: Bits<1>, // also a bit-field
-
-    pub counter_changes: Vec1L<GlobedCounterChange>,
 }

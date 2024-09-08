@@ -28,7 +28,7 @@ struct GlobedCounterChange {
         Set = 0, Add = 1, Multiply = 2, Divide = 3
     };
 
-    int itemId;
+    uint16_t itemId;
     Type type;
     union { int intVal; float floatVal; } _val;
 };
@@ -74,8 +74,6 @@ struct PlayerData {
     bool isInEditor;
     bool isEditorBuilding; // in the editor && not playtesting (incl. not paused)
     bool isLastDeathReal; // for deathlink, to prevent death chains
-
-    std::vector<GlobedCounterChange> counterChanges;
 };
 
 struct PlayerMetadata {

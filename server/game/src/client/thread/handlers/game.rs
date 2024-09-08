@@ -59,11 +59,18 @@ impl ClientThread {
         let room_id = self.room_id.load(Ordering::Relaxed);
 
         let (written_players, metadatas, estimated_size) = self.game_server.state.room_manager.with_any(room_id, |pm| {
+            // set metadata
             pm.manager.set_player_data(account_id, &packet.data);
+
+            // run custom item id changes
+            if !packet.counter_changes.is_empty() {
+                pm.manager.run_counter_actions_on_level(level_id, &packet.counter_changes);
+            }
 
             // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
             let player_count = pm.manager.get_player_count_on_level(level_id).unwrap_or(1) - 1;
 
+            // retrieve metadata of other players, if was asked
             let mut metavec = Vec::new();
             let mut estimated_size = 0usize;
 
@@ -86,8 +93,26 @@ impl ClientThread {
             (player_count, metavec, estimated_size)
         });
 
-        // no one else on the level, no need to send a response packet
+        // no one else on the level, if no item ids changed there is no need to send a response packet
         if written_players == 0 {
+            if !packet.counter_changes.is_empty() {
+                // TODO not dynamic but alloca with custom encoder ig
+                // and just make this less sloppy tbh i cba
+                let custom_items = self
+                    .game_server
+                    .state
+                    .room_manager
+                    .with_any(room_id, |pm| pm.manager.get_level(level_id).map(|x| x.custom_items.clone()));
+
+                if let Some(custom_items) = custom_items {
+                    self.send_packet_dynamic::<LevelDataPacket>(&LevelDataPacket {
+                        players: Vec::new(),
+                        custom_items: Some(custom_items),
+                    })
+                    .await?;
+                }
+            }
+
             return Ok(());
         }
 
@@ -95,54 +120,72 @@ impl ClientThread {
         let fragmentation_limit = self.fragmentation_limit.load(Ordering::Relaxed) as usize;
 
         // if we can fit in one packet, then just send it as-is
-        if calc_size <= fragmentation_limit {
-            // 16 is a safety buffer just in case something goes ary
-            self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size + written_players * 16 + 256, |buf| {
-                self.game_server.state.room_manager.with_any(room_id, |pm| {
-                    buf.write_list_with(written_players, |buf| {
-                        let mut count = 0usize;
-                        pm.manager.for_each_player_on_level(level_id, |player| {
-                            if count < written_players && player.account_id != account_id && (!player.is_invisible || is_mod) {
-                                buf.write_value(&player.to_borrowed_associated_data());
-                                count += 1;
-                            }
-                        });
+        // TODO: packet fragmentation removed for now
+        // if calc_size <= fragmentation_limit {
 
-                        count
-                    });
-                });
-            })
-            .await?;
-        } else {
-            // get all players into a vec
-            let total_fragments = (calc_size + fragmentation_limit - 1) / fragmentation_limit;
-
-            let mut players = Vec::with_capacity(written_players + 4);
-
+        // 16 is a safety buffer just in case something goes ary
+        self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size + written_players * 16 + 256, |buf| {
             self.game_server.state.room_manager.with_any(room_id, |pm| {
-                pm.manager.for_each_player_on_level(level_id, |player| {
-                    if player.account_id != account_id && (!player.is_invisible || is_mod) {
-                        players.push(player.to_associated_data());
-                    }
+                buf.write_list_with(written_players, |buf| {
+                    let mut count = 0usize;
+                    pm.manager.for_each_player_on_level(level_id, |player| {
+                        if count < written_players && player.account_id != account_id && (!player.is_invisible || is_mod) {
+                            buf.write_value(&player.account_id);
+                            buf.write_value(&player.data);
+                            count += 1;
+                        }
+                    });
+
+                    count
                 });
+
+                // write custom_items hashmap
+
+                let custom_items = self
+                    .game_server
+                    .state
+                    .room_manager
+                    .with_any(room_id, |pm| pm.manager.get_level(level_id).map(|x| x.custom_items.clone()));
+
+                if custom_items.as_ref().is_some_and(|x| !x.is_empty()) {
+                    buf.write_bool(true);
+                    buf.write_value(&custom_items.unwrap());
+                } else {
+                    buf.write_bool(false);
+                }
             });
+        })
+        .await?;
+        // } else {
+        //     // get all players into a vec
+        //     let total_fragments = (calc_size + fragmentation_limit - 1) / fragmentation_limit;
 
-            let players_per_fragment = (players.len() + total_fragments - 1) / total_fragments;
+        //     let mut players = Vec::with_capacity(written_players + 4);
 
-            for chunk in players.chunks(players_per_fragment) {
-                if chunk.is_empty() {
-                    continue;
-                }
-                
-                let mut calc_size = size_of_types!(u32);
-                for player in chunk {
-                    calc_size += player.encoded_size();
-                }
+        //     self.game_server.state.room_manager.with_any(room_id, |pm| {
+        //         pm.manager.for_each_player_on_level(level_id, |player| {
+        //             if player.account_id != account_id && (!player.is_invisible || is_mod) {
+        //                 players.push(player.to_associated_data());
+        //             }
+        //         });
+        //     });
 
-                self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value(chunk))
-                    .await?;
-            }
-        }
+        //     let players_per_fragment = (players.len() + total_fragments - 1) / total_fragments;
+
+        //     for chunk in players.chunks(players_per_fragment) {
+        //         if chunk.is_empty() {
+        //             continue;
+        //         }
+
+        //         let mut calc_size = size_of_types!(u32);
+        //         for player in chunk {
+        //             calc_size += player.encoded_size();
+        //         }
+
+        //         self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value(chunk))
+        //             .await?;
+        //     }
+        // }
 
         // send metadata
         if !metadatas.is_empty() {
