@@ -129,6 +129,7 @@ impl ClientThread {
         // if calc_size <= fragmentation_limit {
 
         // 16 is a safety buffer just in case something goes ary
+        // TODO: this doesnt even account for the item ids
         self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size + written_players * 16 + 256, |buf| {
             self.game_server.state.room_manager.with_any(room_id, |pm| {
                 buf.write_list_with(written_players, |buf| {
