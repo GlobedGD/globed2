@@ -72,11 +72,11 @@ void GJEffectManagerHook::addCountToItemCustom(int id, int diff) {
     this->updateCountForItemCustom(id, newValue);
 }
 
-// void GJEffectManagerHook::reset() {
-//     GJEffectManager::reset();
+void GJEffectManagerHook::reset() {
+    GJEffectManager::reset();
 
-//     m_fields->customItems.clear();
-// }
+    m_fields->customItems.clear();
+}
 
 bool GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
     auto& fields = *m_fields.self();
