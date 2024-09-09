@@ -122,7 +122,6 @@ impl ClientThread {
         }
 
         let calc_size = size_of_types!(u32) + estimated_size;
-        let fragmentation_limit = self.fragmentation_limit.load(Ordering::Relaxed) as usize;
 
         // if we can fit in one packet, then just send it as-is
         // TODO: packet fragmentation removed for now

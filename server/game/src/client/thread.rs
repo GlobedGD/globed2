@@ -65,8 +65,6 @@ pub struct ClientThread {
     pub user_entry: SyncMutex<ServerUserEntry>,
     pub user_role: SyncMutex<ComputedRole>,
 
-    pub fragmentation_limit: AtomicU16,
-
     pub is_authorized_user: AtomicBool,
 
     pub privacy_settings: SyncMutex<UserPrivacyFlags>,
@@ -127,8 +125,6 @@ impl ClientThread {
             account_data: SyncMutex::new(account_data),
             user_entry: SyncMutex::new(user_entry),
             user_role: SyncMutex::new(user_role),
-
-            fragmentation_limit: thread.fragmentation_limit,
 
             is_authorized_user: AtomicBool::new(false),
 
@@ -285,7 +281,8 @@ impl ClientThread {
                 | PacketHandlingError::DebugOnlyPacket
                 | PacketHandlingError::PacketTooLong(_)
                 | PacketHandlingError::SocketSendFailed(_)
-                | PacketHandlingError::InvalidStreamMarker => {
+                | PacketHandlingError::InvalidStreamMarker
+                | PacketHandlingError::TooManyChunks(_) => {
                     warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
 

@@ -1,4 +1,4 @@
-use globed_shared::{debug, IntMap};
+use globed_shared::IntMap;
 
 use crate::data::{
     types::PlayerData, AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata,

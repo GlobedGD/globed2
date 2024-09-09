@@ -159,58 +159,7 @@ macro_rules! gs_inline_encode {
     };
 
     ($self:ident, $size:expr, $data:ident, $tcp:expr, $rawdata:ident, $code:expr) => {
-        let retval: Result<Option<Vec<u8>>> = {
-            gs_with_alloca_guarded!($self.game_server, $size, $rawdata, {
-                let mut $data = FastByteBuffer::new($rawdata);
-
-                if $tcp {
-                    // reserve space for packet length
-                    $data.write_u32(0);
-                }
-
-                $code // user code
-
-                if $tcp {
-                    // write the packet length
-                    let packet_len = $data.len() - size_of_types!(u32);
-                    let pos = $data.get_pos();
-                    $data.set_pos(0);
-                    $data.write_u32(packet_len as u32);
-                    $data.set_pos(pos);
-                }
-
-                let data = $data.as_bytes();
-                let res = if $tcp {
-                    $self.send_buffer_tcp_immediate(data)
-                } else {
-                    $self.send_buffer_udp_immediate(data)
-                };
-
-                match res {
-                    // if we cant send without blocking, accept our defeat and clone the data to a vec
-                    Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(data.to_vec())),
-                    // if another error occured, propagate it up
-                    Err(e) => Err(e),
-                    // if all good, do nothing
-                    Ok(written) => {
-                        if written == data.len() {
-                            Ok(None)
-                        } else {
-                            // send leftover data
-                            Ok(Some(data[written..data.len()].to_vec()))
-                        }
-                    },
-                }
-            })
-        };
-
-        if let Some(data) = retval? {
-            if $tcp {
-                $self.send_buffer_tcp(&data).await?;
-            } else {
-                $self.send_buffer_udp(&data).await?;
-            }
-        }
+        
     }
 }
 

@@ -51,8 +51,6 @@ pub struct UnauthorizedThread {
     pub user_entry: SyncMutex<Option<ServerUserEntry>>,
     pub user_role: SyncMutex<Option<ComputedRole>>,
 
-    pub fragmentation_limit: AtomicU16,
-
     pub claim_udp_peer: SyncMutex<Option<SocketAddrV4>>,
     pub claim_udp_notify: Notify,
 
@@ -77,7 +75,7 @@ impl UnauthorizedThread {
     pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
         Self {
             game_server,
-            socket: LockfreeMutCell::new(ClientSocket::new(socket, peer, game_server)),
+            socket: LockfreeMutCell::new(ClientSocket::new(socket, peer, 0, game_server)),
             connection_state: AtomicClientThreadState::default(),
 
             secret_key: rand::thread_rng().gen(),
@@ -92,8 +90,6 @@ impl UnauthorizedThread {
             account_data: SyncMutex::new(PlayerAccountData::default()),
             user_entry: SyncMutex::new(None),
             user_role: SyncMutex::new(None),
-
-            fragmentation_limit: AtomicU16::new(0),
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
@@ -127,8 +123,6 @@ impl UnauthorizedThread {
             account_data: SyncMutex::new(std::mem::take(&mut *thread.account_data.lock())),
             user_entry: SyncMutex::new(Some(std::mem::take(&mut *thread.user_entry.lock()))),
             user_role: SyncMutex::new(Some(std::mem::take(&mut *thread.user_role.lock()))),
-
-            fragmentation_limit: thread.fragmentation_limit,
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
@@ -344,7 +338,7 @@ impl UnauthorizedThread {
             );
         }
 
-        self.fragmentation_limit.store(packet.fragmentation_limit, Ordering::Relaxed);
+        unsafe { self.socket.get_mut() }.set_mtu(packet.fragmentation_limit as usize);
 
         if packet.account_id <= 0 || packet.user_id <= 0 {
             let message = format!(

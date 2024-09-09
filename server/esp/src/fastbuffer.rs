@@ -84,6 +84,11 @@ impl<'a> FastByteBuffer<'a> {
     }
 
     #[inline]
+    pub const fn clear(&mut self) {
+        self.len = 0
+    }
+
+    #[inline]
     pub const fn get_pos(&self) -> usize {
         self.pos
     }
