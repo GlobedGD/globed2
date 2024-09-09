@@ -14,6 +14,16 @@ void GJEffectManagerHook::updateCountForItem(int id, int value) {
     if (globed::isWritableCustomItem(id)) {
         this->updateCountForItemCustom(id, value);
     } else {
+        // for testing!
+        // if (m_countTriggerActions.contains(id)) {
+        //     auto& actions = m_countTriggerActions.at(id);
+
+        //     for (const auto& action : actions) {
+        //         log::debug("Action: 0 = {}, 4 = {}, count = {}, group = {}, 10 = {}, 14 = {}, 18 = {}, item id = {}, multiac = {}, set = {}", action.m_unk0, action.m_unk4, action.m_targetCount, action.m_targetGroup, action.m_unk10, action.m_unk14, action.m_unk18, action.m_itemID, action.m_multiActivate, action.m_unkVecInt);
+        //         // m_triggerEffectDelegate->toggleGroupTriggered(id)
+        //     }
+        // }
+
         GJEffectManager::updateCountForItem(id, value);
     }
 }
@@ -36,6 +46,7 @@ int GJEffectManagerHook::countForItem(int item) {
 static geode::Patch* countForItemPatch = nullptr;
 
 int countForItemDetour(GJEffectManagerHook* self, int itemId) {
+    log::debug("Request for item {}", itemId);
     if (globed::isCustomItem(itemId)) {
         return self->countForItemCustom(itemId);
     } else {
@@ -83,6 +94,75 @@ bool GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
 
     int prev = fields.customItems[id];
     fields.customItems[id] = value;
+
+    // update count triggers haha
+    // please dont even begin to try to understand any of this
+
+    if (m_countTriggerActions.contains(id)) {
+        auto& actions = m_countTriggerActions.at(id);
+
+        auto comparator = value < prev
+            ? [](const CountTriggerAction& a, const CountTriggerAction& b){ return b.m_targetCount < a.m_targetCount; }
+            : [](const CountTriggerAction& a, const CountTriggerAction& b){ return a.m_targetCount < b.m_targetCount; };
+
+        // yeah whatever you say robby
+        std::sort(actions.begin(), actions.end(), comparator);
+
+
+        for (size_t i = 0; i < actions.size();) {
+            auto& action = actions[i];
+
+            if (action.m_previousCount == value) {
+                i++;
+                continue;
+            }
+
+            bool multiActivate = action.m_multiActivate;
+            int prevCount = action.m_previousCount;
+            action.m_previousCount = value;
+
+            auto stuff = [&]{
+
+                auto unkVecInt = action.m_unkVecInt;
+                bool unk10 = action.m_unk10;
+                int unk14 = action.m_unk14;
+                int unk18 = action.m_unk18;
+                int groupId = action.m_targetGroup;
+
+                if (!action.m_multiActivate) {
+                    actions.erase(actions.begin() + i);
+                }
+
+                if (!m_triggerEffectDelegate) {
+                    // i cant be bothered im not gonna lie
+                    // this->toggleGroup(groupId, unk10);
+                } else {
+                    m_triggerEffectDelegate->toggleGroupTriggered(groupId, unk10, unkVecInt, unk14, unk18);
+                }
+            };
+
+            if (action.m_targetCount <= prevCount) {
+                if ((action.m_targetCount < prevCount) && (value <= action.m_targetCount)) {
+                    stuff();
+                } else {
+                    i++;
+                    continue;
+                }
+            } else if (value < action.m_targetCount) {
+                i++;
+                continue;
+            } else {
+                stuff();
+            }
+
+            // log::debug("Action: 0 = {}, 4 = {}, 8 = {}, c = {}, 10 = {}, 14 = {}, 18 = {}, 1c = {}, set = {}", action.m_unk0, action.m_unk4, action.m_unk8, action.m_unkc, action.m_unk10, action.m_unk14, action.m_unk18, action.m_unk1c, action.m_unkVecInt);
+            // m_triggerEffectDelegate->toggleGroupTriggered(id)
+
+            if (multiActivate) {
+                i++;
+            }
+        }
+    }
 
     return prev != value;
 }
