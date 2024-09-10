@@ -54,7 +54,7 @@ struct GLOBED_DLL SetupPopupHook : geode::Modify<SetupPopupHook, SetupTriggerPop
 
         if (wasGlobedMode) {
             int id = util::format::parse<int>(inputNode->getString()).value_or(0);
-            p->onUpdateValue(ItemId, globed::CUSTOM_ITEM_ID_START + id);
+            p->onUpdateValue(ItemId, globed::CUSTOM_ITEM_ID_W_START + id);
         }
     }
 };

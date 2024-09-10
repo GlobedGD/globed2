@@ -1040,6 +1040,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     m_objectLayer->addChild(rp);
     fields.players.emplace(playerId, rp);
     fields.interpolator->addPlayer(playerId);
+    fields.lastJoinedPlayer = playerId;
 
     GLOBED_EVENT(this, onPlayerJoin(rp));
 }
@@ -1062,6 +1063,7 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     fields.players.erase(playerId);
     fields.interpolator->removePlayer(playerId);
     fields.playerStore->removePlayer(playerId);
+    fields.lastLeftPlayer = playerId;
 }
 
 bool GlobedGJBGL::established() {
@@ -1214,6 +1216,20 @@ void GlobedGJBGL::customSchedule(cocos2d::SEL_SCHEDULE selector, float interval)
 
 void GlobedGJBGL::queueCounterChange(const GlobedCounterChange& change) {
     m_fields->pendingCounterChanges.push_back(change);
+}
+
+int GlobedGJBGL::countForCustomItem(int id) {
+#define $id(x) (globed::CUSTOM_ITEM_ID_RO_START + (x))
+    auto& fields = this->getFields();
+
+    switch (id) {
+        case $id(0): return GJAccountManager::get()->m_accountID;
+        case $id(1): return fields.lastJoinedPlayer;
+        case $id(2): return fields.lastLeftPlayer;
+    }
+
+    return 0;
+#undef $id
 }
 
 GlobedGJBGL::Fields& GlobedGJBGL::getFields() {

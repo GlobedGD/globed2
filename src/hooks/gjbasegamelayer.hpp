@@ -71,6 +71,10 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         std::vector<std::pair<int, std::string>> chatMessages;
 
         std::vector<GlobedCounterChange> pendingCounterChanges;
+
+        // readonly custom items
+        int lastJoinedPlayer; // 1
+        int lastLeftPlayer;   // 2
     };
 
     $override
@@ -155,6 +159,9 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     void onQuitActions();
 
     void notifyDeath();
+    
+    // for global triggers
+    int countForCustomItem(int id);
 
     // runs every frame while paused
     void pausedUpdate(float dt);

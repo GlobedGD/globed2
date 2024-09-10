@@ -36,7 +36,7 @@ bool PickupPopupHook::init(EffectGameObject* p0, CCArray* p1) {
         m_disableTextDelegate = true;
 
         if (isGlobed) {
-            this->updateValue(ItemId, globed::CUSTOM_ITEM_ID_START);
+            this->updateValue(ItemId, globed::CUSTOM_ITEM_ID_W_START);
         } else {
             this->updateValue(ItemId, 0);
         }
@@ -87,7 +87,7 @@ static int getNextFreeGlobedItemId() {
     // TODO: fix
     auto editor = LevelEditorLayer::get();
 
-    int highestId = globed::CUSTOM_ITEM_ID_START;
+    int highestId = globed::CUSTOM_ITEM_ID_W_START;
 
     for (auto obj : CCArrayExt<GameObject*>(editor->m_objects)) {
         if (obj->m_unk4D0 != 1 || obj->m_objectType != GameObjectType::Collectible) continue;
@@ -108,7 +108,7 @@ static int getNextFreeGlobedItemId() {
 void PickupPopupHook::onPlusButton(cocos2d::CCObject* sender) {
     if (m_fields->globedMode) {
         // int id = getNextFreeGlobedItemId();
-        int id = globed::CUSTOM_ITEM_ID_START;
+        int id = globed::CUSTOM_ITEM_ID_W_START;
         // log::debug("Setting next free item id: {}", id);
         m_disableTextDelegate = true;
         this->updateValue(ItemId, id);
@@ -128,7 +128,7 @@ void PickupPopupHook::toggleGlobedMode(bool state, int itemId) {
 
     if (state) {
         fields.itemIdLabel->setString("Globed ID");
-        fields.itemIdInputNode->setString(std::to_string(itemId - globed::CUSTOM_ITEM_ID_START));
+        fields.itemIdInputNode->setString(std::to_string(itemId - globed::CUSTOM_ITEM_ID_W_START));
     } else {
         fields.itemIdLabel->setString("ItemID");
         fields.itemIdInputNode->setString(std::to_string(itemId));

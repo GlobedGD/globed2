@@ -168,7 +168,21 @@ bool GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
 }
 
 int GJEffectManagerHook::countForItemCustom(int id) {
+    // check if it's a special read only item
+    if (globed::isReadonlyCustomItem(id)) {
+        return this->countForReadonlyItem(id);
+    }
+
     return m_fields->customItems[id];
+}
+
+int GJEffectManagerHook::countForReadonlyItem(int id) {
+    auto bgl = GlobedGJBGL::get();
+    if (bgl && bgl->established()) {
+        return bgl->countForCustomItem(id);
+    }
+
+    return 0;
 }
 
 void GJEffectManagerHook::applyFromCounterChange(const GlobedCounterChange& change) {
