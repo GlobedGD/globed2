@@ -97,6 +97,7 @@ bool GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
 
     // update count triggers haha
     // please dont even begin to try to understand any of this
+    // TODO clean this up
 
     if (m_countTriggerActions.contains(id)) {
         auto& actions = m_countTriggerActions.at(id);
@@ -107,7 +108,6 @@ bool GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
 
         // yeah whatever you say robby
         std::sort(actions.begin(), actions.end(), comparator);
-
 
         for (size_t i = 0; i < actions.size();) {
             auto& action = actions[i];
