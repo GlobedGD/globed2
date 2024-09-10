@@ -108,7 +108,7 @@ void setupCustomKeybinds() {
     });
 #endif // GLOBED_HAS_KEYBINDS
 }
- 
+
 // just debug printing
 void printDebugInfo() {
     std::string version = Mod::get()->getVersion().toString();

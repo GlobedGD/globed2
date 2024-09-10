@@ -78,7 +78,7 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacketTCP() {
     return this->decodePacket(buf);
 }
 
-Result<ReceivedPacket> GameSocket::recvPacketUDP() {
+Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
     auto recvResult = udpSocket.receive(reinterpret_cast<char*>(dataBuffer), DATA_BUF_SIZE);
 
     ReceivedPacket out;
@@ -90,7 +90,26 @@ Result<ReceivedPacket> GameSocket::recvPacketUDP() {
 
     ByteBuffer buf(dataBuffer, (size_t)recvResult.result);
 
-    GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
+    // check if it is a full packet or a frame,
+    auto marker = buf.readU8();
+    if (marker.isErr()) {
+        return Err(fmt::to_string(marker.unwrapErr()));
+    }
+
+    if (*marker == MARKER_UDP_PACKET) {
+        GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
+    } else if (*marker == MARKER_UDP_FRAME) {
+        GLOBED_UNWRAP_INTO(udpBuffer.pushFrameFromBuffer(buf), auto maybeBuf);
+        if (!maybeBuf.empty()) {
+            log::debug("frame yay full packet {}", maybeBuf.size());
+            ByteBuffer toDecode(std::move(maybeBuf));
+            GLOBED_UNWRAP_INTO(this->decodePacket(toDecode), out.packet);
+        } else {
+            return Ok(std::nullopt);
+        }
+    } else {
+        return Err("invalid marker at the start of a udp packet");
+    }
 
     return Ok(std::move(out));
 }
@@ -113,7 +132,27 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
     }
 
     // else it's a udp packet
-    return this->recvPacketUDP();
+    auto udpres = this->recvPacketUDP();
+    if (udpres && udpres.value().has_value()) {
+        return Ok(std::move(**udpres));
+    } else if (!udpres) {
+        return Err(std::move(std::move(udpres).unwrapErr()));
+    }
+
+    // if it was a frame keep trying
+    for (;;) {
+        GLOBED_UNWRAP_INTO(udpSocket.poll(25), auto pollres);
+        if (!pollres) {
+            return Err("timed out");
+        }
+
+        auto udpres = this->recvPacketUDP();
+        if (udpres && udpres.value().has_value()) {
+            return Ok(std::move(**udpres));
+        } else if (!udpres) {
+            return Err(std::move(std::move(udpres).unwrapErr()));
+        }
+    }
 }
 
 Result<ReceivedPacket> GameSocket::recvPacket() {
