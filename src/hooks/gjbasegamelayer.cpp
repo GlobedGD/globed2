@@ -1041,6 +1041,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     fields.players.emplace(playerId, rp);
     fields.interpolator->addPlayer(playerId);
     fields.lastJoinedPlayer = playerId;
+    this->updateCountersForCustomItem(globed::ITEM_LAST_JOINED);
 
     GLOBED_EVENT(this, onPlayerJoin(rp));
 }
@@ -1064,6 +1065,7 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     fields.interpolator->removePlayer(playerId);
     fields.playerStore->removePlayer(playerId);
     fields.lastLeftPlayer = playerId;
+    this->updateCountersForCustomItem(globed::ITEM_LAST_LEFT);
 }
 
 bool GlobedGJBGL::established() {
@@ -1219,17 +1221,21 @@ void GlobedGJBGL::queueCounterChange(const GlobedCounterChange& change) {
 }
 
 int GlobedGJBGL::countForCustomItem(int id) {
-#define $id(x) (globed::CUSTOM_ITEM_ID_RO_START + (x))
+#define $id(x) (globed::ITEM_##x)
     auto& fields = this->getFields();
 
     switch (id) {
-        case $id(0): return GJAccountManager::get()->m_accountID;
-        case $id(1): return fields.lastJoinedPlayer;
-        case $id(2): return fields.lastLeftPlayer;
+        case $id(ACCOUNT_ID): return GJAccountManager::get()->m_accountID;
+        case $id(LAST_JOINED): return fields.lastJoinedPlayer;
+        case $id(LAST_LEFT): return fields.lastLeftPlayer;
     }
 
     return 0;
 #undef $id
+}
+
+void GlobedGJBGL::updateCountersForCustomItem(int id) {
+    static_cast<GJEffectManagerHook*>(m_effectManager)->updateCountersForCustomItem(id);
 }
 
 GlobedGJBGL::Fields& GlobedGJBGL::getFields() {

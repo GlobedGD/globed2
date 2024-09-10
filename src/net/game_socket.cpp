@@ -90,6 +90,12 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
 
     ByteBuffer buf(dataBuffer, (size_t)recvResult.result);
 
+    // if not from active server, dont't read the marker
+    if (!out.fromConnected) {
+        GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
+        return Ok(std::move(out));
+    }
+
     // check if it is a full packet or a frame,
     auto marker = buf.readU8();
     if (marker.isErr()) {

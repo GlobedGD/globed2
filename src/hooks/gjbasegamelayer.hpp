@@ -159,9 +159,10 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     void onQuitActions();
 
     void notifyDeath();
-    
+
     // for global triggers
     int countForCustomItem(int id);
+    void updateCountersForCustomItem(int id);
 
     // runs every frame while paused
     void pausedUpdate(float dt);

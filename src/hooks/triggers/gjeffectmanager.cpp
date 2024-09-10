@@ -205,7 +205,11 @@ void GJEffectManagerHook::applyFromCounterChange(const GlobedCounterChange& chan
         } break;
     }
 
-    GlobedGJBGL::get()->updateCounters(change.itemId, this->countForItemCustom(change.itemId));
+    this->updateCountersForCustomItem(change.itemId);
+}
+
+void GJEffectManagerHook::updateCountersForCustomItem(int id) {
+    GlobedGJBGL::get()->updateCounters(id, this->countForItemCustom(id));
 }
 
 void GJEffectManagerHook::applyItem(int id, int value) {

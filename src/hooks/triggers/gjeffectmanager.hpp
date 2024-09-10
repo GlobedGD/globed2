@@ -30,6 +30,8 @@ struct GLOBED_DLL GJEffectManagerHook : geode::Modify<GJEffectManagerHook, GJEff
     int countForItemCustom(int id);
     int countForReadonlyItem(int id);
 
+    void updateCountersForCustomItem(int id);
+
     [[deprecated]] void applyFromCounterChange(const GlobedCounterChange& change);
     void applyItem(int id, int value);
 };
