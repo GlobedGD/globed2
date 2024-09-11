@@ -247,11 +247,11 @@ impl ClientThread {
                 let player_ids = self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
                     let mut player_ids = Vec::with_capacity(128);
                     if packet.level_id == 0 {
-                        pm.manager.for_each_player(|player| {
+                        pm.manager.read().for_each_player(|player| {
                             player_ids.push(player.account_id);
                         });
                     } else {
-                        pm.manager.for_each_player_on_level(packet.level_id, |player| {
+                        pm.manager.read().for_each_player_on_level(packet.level_id, |player| {
                             player_ids.push(player.account_id);
                         });
                     }

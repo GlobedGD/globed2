@@ -1,9 +1,12 @@
-use std::sync::OnceLock;
+use std::sync::{
+    atomic::{AtomicI32, Ordering},
+    Arc, OnceLock,
+};
 
 use esp::InlineString;
 use globed_shared::{
     rand::{self, Rng},
-    IntMap, SyncMutex, SyncMutexGuard,
+    IntMap, SyncMutex, SyncMutexGuard, SyncRwLock,
 };
 
 use crate::{
@@ -14,21 +17,26 @@ use crate::{
 use super::LevelManager;
 
 #[derive(Default)]
-pub struct Room {
-    pub orig_owner: i32,
-    pub orig_owner_data: Option<PlayerPreviewAccountData>,
-    pub owner: i32,
-    pub owner_data: Option<PlayerPreviewAccountData>,
-    pub name: InlineString<32>,
-    pub password: InlineString<16>,
-    pub manager: LevelManager,
+struct RoomMutableData {
+    pub owner: Option<PlayerPreviewAccountData>,
     pub settings: RoomSettings,
 }
 
 #[derive(Default)]
+pub struct Room {
+    pub orig_owner: i32,
+    pub orig_owner_data: Option<PlayerPreviewAccountData>,
+    pub owner: AtomicI32,
+    pub name: InlineString<32>,
+    pub password: InlineString<16>,
+    pub manager: SyncRwLock<LevelManager>,
+    data: SyncMutex<RoomMutableData>,
+}
+
+#[derive(Default)]
 pub struct RoomManager {
-    rooms: SyncMutex<IntMap<u32, Room>>,
-    global: SyncMutex<Room>,
+    rooms: SyncMutex<IntMap<u32, Arc<Room>>>,
+    global: Room,
     game_server: OnceLock<&'static GameServer>,
 }
 
@@ -48,79 +56,90 @@ impl Room {
         Self {
             orig_owner: owner,
             orig_owner_data: owner_data.clone(),
-            owner,
-            owner_data,
+            owner: AtomicI32::new(owner),
             name,
             password,
-            manager,
-            settings,
+            manager: SyncRwLock::new(manager),
+            data: SyncMutex::new(RoomMutableData { owner: owner_data, settings }),
         }
     }
 
     // Removes a player, if the player was the owner, rotates the owner and returns `true`.
-    pub fn remove_player(&mut self, player: i32) -> bool {
-        let was_owner = self.owner == player;
+    pub fn remove_player(&self, player: i32) -> bool {
+        let was_owner = self.get_owner() == player;
+
+        let mut manager = self.manager.write();
 
         if was_owner {
             // rotate the owner
             let mut rotate_to: i32 = 0;
-            self.manager.for_each_player(|rp| {
+            manager.for_each_player(|rp| {
                 if rotate_to == 0 && rp.account_id != player {
                     rotate_to = rp.account_id;
                 }
             });
 
-            self.owner = rotate_to;
+            self.owner.store(rotate_to, Ordering::Relaxed);
         }
 
-        self.manager.remove_player(player);
+        manager.remove_player(player);
 
         was_owner
     }
 
-    #[inline]
-    pub fn has_player(&self, player: i32) -> bool {
-        self.manager.has_player(player)
+    /// Removes a player, does not rotate the room host. Be careful, only use this for the global room or if you're certain the player isn't the room host.
+    pub fn remove_player_no_rotate(&self, player: i32) {
+        self.manager.write().remove_player(player);
     }
 
     #[inline]
-    pub fn set_settings(&mut self, settings: RoomSettings) {
-        self.settings = settings;
+    pub fn has_player(&self, player: i32) -> bool {
+        self.manager.read().has_player(player)
+    }
+
+    #[inline]
+    pub fn set_settings(&self, settings: RoomSettings) {
+        self.data.lock().settings = settings;
     }
 
     #[inline]
     pub fn get_room_info(&self, id: u32) -> RoomInfo {
+        let data = self.data.lock();
+
         RoomInfo {
             id,
             name: self.name.clone(),
             password: self.password.clone(),
-            owner: self.owner_data.clone().unwrap_or_default(),
-            settings: self.settings,
+            owner: data.owner.clone().unwrap_or_default(),
+            settings: data.settings,
         }
     }
 
     #[inline]
     pub fn get_room_listing_info(&self, id: u32) -> RoomListingInfo {
+        let data = self.data.lock();
+        let player_count = self.get_player_count() as u16;
+
         RoomListingInfo {
             id,
-            player_count: self.manager.get_total_player_count() as u16,
+            player_count,
             name: self.name.clone(),
             has_password: !self.password.is_empty(),
-            owner: self.owner_data.clone().unwrap_or_default(),
-            settings: self.settings,
+            owner: data.owner.clone().unwrap_or_default(),
+            settings: data.settings,
         }
     }
 
     pub fn is_hidden(&self) -> bool {
-        self.settings.flags.is_hidden
+        self.data.lock().settings.flags.is_hidden
     }
 
     pub fn is_public_invites(&self) -> bool {
-        self.settings.flags.public_invites
+        self.data.lock().settings.flags.public_invites
     }
 
     pub fn is_two_player_mode(&self) -> bool {
-        self.settings.flags.two_player
+        self.data.lock().settings.flags.two_player
     }
 
     pub fn is_protected(&self) -> bool {
@@ -132,15 +151,32 @@ impl Room {
     }
 
     pub fn is_full(&self) -> bool {
-        let player_count = self.manager.get_total_player_count();
+        let player_count = self.get_player_count();
+        let data = self.data.lock();
 
-        if self.settings.flags.two_player {
+        if data.settings.flags.two_player {
             player_count >= 2
-        } else if self.settings.player_limit == 0 {
+        } else if data.settings.player_limit == 0 {
             false
         } else {
-            player_count >= (self.settings.player_limit as usize)
+            player_count >= (data.settings.player_limit as usize)
         }
+    }
+
+    pub fn get_player_count(&self) -> usize {
+        self.manager.read().get_total_player_count()
+    }
+
+    pub fn get_player_count_on_level(&self, level_id: LevelId) -> Option<usize> {
+        self.manager.read().get_player_count_on_level(level_id)
+    }
+
+    pub fn get_level_count(&self) -> usize {
+        self.manager.read().get_level_count()
+    }
+
+    pub fn get_owner(&self) -> i32 {
+        self.owner.load(Ordering::Relaxed)
     }
 }
 
@@ -161,33 +197,43 @@ impl RoomManager {
     }
 
     /// Try to find a room by given ID, if equal to 0 or not found, runs the provided closure with the global room
-    pub fn with_any<F: FnOnce(&mut Room) -> R, R>(&self, room_id: u32, f: F) -> R {
+    pub fn with_any<F: FnOnce(&Room) -> R, R>(&self, room_id: u32, f: F) -> R {
         if room_id == 0 {
-            f(&mut self.get_global())
-        } else if let Some(room) = self.get_rooms().get_mut(&room_id) {
-            f(room)
+            f(&self.get_global())
         } else {
-            f(&mut self.get_global())
+            let room = self.get_room(room_id);
+            if let Some(room) = room {
+                f(&room)
+            } else {
+                f(&self.get_global())
+            }
         }
     }
 
     /// Try to find a room by given ID and run the provided function on it. If not found, calls `default`.
-    pub fn try_with_any<F: FnOnce(&mut Room) -> R, D: FnOnce() -> R, R>(&self, room_id: u32, f: F, default: D) -> R {
+    pub fn try_with_any<F: FnOnce(&Room) -> R, D: FnOnce() -> R, R>(&self, room_id: u32, f: F, default: D) -> R {
         if room_id == 0 {
             f(&mut self.get_global())
-        } else if let Some(room) = self.get_rooms().get_mut(&room_id) {
-            f(room)
         } else {
-            default()
+            let room = self.get_room(room_id);
+            if let Some(room) = room {
+                f(&room)
+            } else {
+                default()
+            }
         }
     }
 
-    pub fn get_global(&self) -> SyncMutexGuard<'_, Room> {
-        self.global.lock()
+    pub fn get_global(&self) -> &Room {
+        &self.global
     }
 
-    pub fn get_rooms(&self) -> SyncMutexGuard<'_, IntMap<u32, Room>> {
+    pub fn get_rooms(&self) -> SyncMutexGuard<'_, IntMap<u32, Arc<Room>>> {
         self.rooms.lock()
+    }
+
+    pub fn get_room(&self, room_id: u32) -> Option<Arc<Room>> {
+        self.rooms.lock().get(&room_id).cloned()
     }
 
     /// Creates a new room, adds the given player, removes them from the global room, and returns the room ID
@@ -219,7 +265,7 @@ impl RoomManager {
     pub fn maybe_remove_room(&self, room_id: u32) {
         let mut rooms = self.rooms.lock();
 
-        let to_remove = rooms.get(&room_id).is_some_and(|room| room.manager.get_total_player_count() == 0);
+        let to_remove = rooms.get(&room_id).is_some_and(|room| room.get_player_count() == 0);
 
         if to_remove {
             rooms.remove(&room_id);
@@ -232,11 +278,13 @@ impl RoomManager {
         let was_owner = self.with_any(room_id, |pm| {
             let was_owner = pm.remove_player(account_id);
 
-            // refresh owner data to newest
-            pm.owner_data = self.get_game_server().get_player_preview_data(pm.owner);
+            if was_owner {
+                // refresh owner data to newest
+                pm.data.lock().owner = self.get_game_server().get_player_preview_data(pm.owner.load(Ordering::Relaxed));
+            }
 
             if level_id != 0 {
-                pm.manager.remove_from_level(level_id, account_id);
+                pm.manager.write().remove_from_level(level_id, account_id);
             }
 
             was_owner
@@ -270,7 +318,7 @@ impl RoomManager {
         let room = Room::new(owner, owner_data, name, password, settings, pm);
         let room_info = room.get_room_info(room_id);
 
-        rooms.insert(room_id, room);
+        rooms.insert(room_id, Arc::new(room));
 
         room_info
     }

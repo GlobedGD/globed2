@@ -454,6 +454,7 @@ impl UnauthorizedThread {
             .room_manager
             .get_global()
             .manager
+            .write()
             .create_player(packet.account_id, packet.privacy_settings.get_hide_in_game());
 
         self.send_login_success().await?;

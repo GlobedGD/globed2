@@ -23,9 +23,11 @@ impl ClientThread {
         let room_id = self.room_id.load(Ordering::Relaxed);
 
         let levels = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            let mut vec = Vec::with_capacity(pm.manager.get_level_count());
+            let manager = pm.manager.read();
 
-            pm.manager.for_each_level(|level_id, level| {
+            let mut vec = Vec::with_capacity(manager.get_level_count());
+
+            manager.for_each_level(|level_id, level| {
                 if !level.unlisted && !is_editorcollab_level(level_id) {
                     vec.push(GlobedLevel {
                         level_id,
@@ -49,7 +51,7 @@ impl ClientThread {
             let mut levels = Vec::with_capacity(0);
 
             for &level_id in &*packet.level_ids {
-                levels.push((level_id, pm.manager.get_player_count_on_level(level_id).unwrap_or(0) as u16));
+                levels.push((level_id, pm.get_player_count_on_level(level_id).unwrap_or(0) as u16));
             }
 
             levels
@@ -74,7 +76,7 @@ impl ClientThread {
         let room_id = self.room_id.load(Ordering::Relaxed);
 
         self.game_server.state.room_manager.with_any(room_id, |pm| {
-            if let Some(player) = pm.manager.get_player_data_mut(account_id) {
+            if let Some(player) = pm.manager.write().get_player_data_mut(account_id) {
                 player.is_invisible = packet.flags.get_hide_in_game();
             }
         });

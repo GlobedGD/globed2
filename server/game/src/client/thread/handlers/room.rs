@@ -131,12 +131,13 @@ impl ClientThread {
         let is_invisible = self.privacy_settings.lock().get_hide_in_game();
 
         self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
-            pm.manager.create_player(account_id, is_invisible);
+            let mut manager = pm.manager.write();
+
+            manager.create_player(account_id, is_invisible);
 
             // if we are in any level, clean transition to there
             if level_id != 0 {
-                pm.manager
-                    .add_to_level(level_id, account_id, self.on_unlisted_level.load(Ordering::SeqCst));
+                manager.add_to_level(level_id, account_id, self.on_unlisted_level.load(Ordering::SeqCst));
             }
         });
 
@@ -171,7 +172,7 @@ impl ClientThread {
         let mut success = false;
 
         self.game_server.state.room_manager.with_any(room_id, |room| {
-            if room.owner == account_id {
+            if room.owner.load(Ordering::Relaxed) == account_id {
                 room.set_settings(packet.settings);
                 success = true;
             }
@@ -197,7 +198,7 @@ impl ClientThread {
 
         // if we don't have permission to invite, skip
         let room_password = self.game_server.state.room_manager.with_any(room_id, |room| {
-            if room.is_protected() && (room.is_public_invites() || room.owner == account_id) {
+            if room.is_protected() && (room.is_public_invites() || room.get_owner() == account_id) {
                 Some(room.password.clone())
             } else if room.is_protected() {
                 None
@@ -269,12 +270,12 @@ impl ClientThread {
             room_id,
             |room| {
                 // we can only close a room if we are the creator or if we are a mod
-                if room.owner != account_id && !self.can_moderate() {
+                if room.get_owner() != account_id && !self.can_moderate() {
                     return Vec::new();
                 }
 
                 let mut v = Vec::new();
-                room.manager.for_each_player(|player| {
+                room.manager.read().for_each_player(|player| {
                     if player.account_id != account_id {
                         v.push(player.account_id);
                     }
@@ -347,6 +348,7 @@ impl ClientThread {
             .room_manager
             .get_global()
             .manager
+            .write()
             .create_player(account_id, is_invisible);
     }
 

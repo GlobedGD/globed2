@@ -545,7 +545,7 @@ impl GameServer {
     /// get a list of all players in a room
     #[inline]
     pub fn get_room_player_previews(&self, room_id: u32, requested: i32, force_visibility: bool) -> Vec<PlayerRoomPreviewAccountData> {
-        let player_count = self.state.room_manager.with_any(room_id, |room| room.manager.get_total_player_count());
+        let player_count = self.state.room_manager.with_any(room_id, |room| room.get_player_count());
 
         let mut vec = Vec::with_capacity(player_count);
 
@@ -565,7 +565,7 @@ impl GameServer {
 
     #[inline]
     pub fn get_player_previews_in_room(&self, room_id: u32, force_visibility: bool) -> Vec<PlayerPreviewAccountData> {
-        let player_count = self.state.room_manager.with_any(room_id, |room| room.manager.get_total_player_count());
+        let player_count = self.state.room_manager.with_any(room_id, |room| room.get_player_count());
 
         let mut vec = Vec::with_capacity(player_count);
 
@@ -717,7 +717,8 @@ impl GameServer {
     /// broadcast a message to all people on the level
     async fn broadcast_user_message(&self, msg: &ServerThreadMessage, origin_id: i32, level_id: LevelId, room_id: u32) {
         let threads = self.state.room_manager.with_any(room_id, |pm| {
-            let players = pm.manager.get_level(level_id);
+            let manager = pm.manager.read();
+            let players = manager.get_level(level_id);
 
             if let Some(level) = players {
                 self.clients
@@ -883,10 +884,7 @@ impl GameServer {
             self.unclaimed_threads.lock().len(),
         );
         info!("Amount of rooms: {}", self.state.room_manager.get_rooms().len());
-        info!(
-            "People in the global room: {}",
-            self.state.room_manager.get_global().manager.get_total_player_count()
-        );
+        info!("People in the global room: {}", self.state.room_manager.get_global().get_player_count());
         info!("-------------------------------------------");
     }
 

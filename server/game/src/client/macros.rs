@@ -150,24 +150,10 @@ macro_rules! gs_with_alloca_guarded {
     };
 }
 
-/// i love over optimizing things!
-/// when invoked as `gs_inline_encode!(self, size, buf, {code})`, uses alloca to make space on the stack,
-/// and lets you encode a packet. afterwards automatically tries a non-blocking send and on failure falls back to a Vec<u8> and an async send.
-macro_rules! gs_inline_encode {
-    ($self:ident, $size:expr, $data:ident, $tcp:expr, $code:expr) => {
-        gs_inline_encode!($self, $size, $data, $tcp, _rawdata, $code)
-    };
-
-    ($self:ident, $size:expr, $data:ident, $tcp:expr, $rawdata:ident, $code:expr) => {
-        
-    }
-}
-
 pub(crate) use gs_alloca_check_size;
 pub(crate) use gs_disconnect;
 pub(crate) use gs_handler;
 pub(crate) use gs_handler_sync;
-pub(crate) use gs_inline_encode;
 pub(crate) use gs_needauth;
 pub(crate) use gs_with_alloca;
 pub(crate) use gs_with_alloca_guarded;
