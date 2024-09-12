@@ -201,7 +201,7 @@ impl ClientSocket {
 
         if P::ENCRYPTED {
             // gs_inline_encode! doesn't work here because the borrow checker is silly :(
-            let header_start = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { 0usize };
+            let header_start = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { size_of_types!(u8) };
 
             let nonce_start = header_start + PacketHeader::SIZE;
             let mac_start = nonce_start + NONCE_SIZE;
