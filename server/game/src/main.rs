@@ -356,4 +356,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let server = Box::leak(Box::new(server));
 
     Box::pin(server.run()).await;
+
+    Ok(())
 }
