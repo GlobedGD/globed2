@@ -21,4 +21,3 @@ struct GLOBED_DLL PickupPopupHook : geode::Modify<PickupPopupHook, SetupPickupTr
 
     void onUpdateValue(int p0, float p1);
 };
-
