@@ -46,7 +46,6 @@ int GJEffectManagerHook::countForItem(int item) {
 static geode::Patch* countForItemPatch = nullptr;
 
 int countForItemDetour(GJEffectManagerHook* self, int itemId) {
-    log::debug("Request for item {}", itemId);
     if (globed::isCustomItem(itemId)) {
         return self->countForItemCustom(itemId);
     } else {
@@ -56,22 +55,41 @@ int countForItemDetour(GJEffectManagerHook* self, int itemId) {
 }
 
 $execute {
+    // r11 needed for one callsite in triggerObject
+    // xmm0-xmm3 preserved for 'activateItemEditTrigger'
     std::vector<uint8_t> bytes = {
         0x41, 0x53, // push r11
-        0x48, 0x83, 0xec, 0x10, // sub rsp, 0x20
+        0x41, 0x54, // push r12
+
+        0x48, 0x83, 0xec, 0x60, // sub rsp, 0x60
+        0xf3, 0x0f, 0x7f, 0x04, 0x24, // movdqu xmmword ptr [rsp], xmm0
+        0xf3, 0x0f, 0x7f, 0x4c, 0x24, 0x10, // movdqu xmmword ptr [rsp+0x10], xmm1
+        0xf3, 0x0f, 0x7f, 0x54, 0x24, 0x20, // movdqu xmmword ptr [rsp+0x20], xmm2
+        0xf3, 0x0f, 0x7f, 0x5c, 0x24, 0x30, // movdqu xmmword ptr [rsp+0x30], xmm3
+
         0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // movabs rax, 0x0
         0xff, 0xd0, // call rax
-        0x48, 0x83, 0xc4, 0x10, // add rsp, 0x20
+
+        0xf3, 0x0f, 0x6f, 0x04, 0x24, // movdqu xmm0, xmmword ptr [rsp]
+        0xf3, 0x0f, 0x6f, 0x4c, 0x24, 0x10, // movdqu xmm1, xmmword ptr [rsp+0x10]
+        0xf3, 0x0f, 0x6f, 0x54, 0x24, 0x20, // movdqu xmm2, xmmword ptr [rsp+0x20]
+        0xf3, 0x0f, 0x6f, 0x5c, 0x24, 0x30, // movdqu xmm3, xmmword ptr [rsp+0x30]
+        0x48, 0x83, 0xc4, 0x60, // add rsp, 0x60
+
         0x41, 0x5b, // pop r11
+        0x41, 0x5c, // pop r12
+
         0xc3, // ret
     };
 
+    GLOBED_REQUIRE(bytes.size() < 192, "Patch size was too big");
+
     uint64_t daddr = reinterpret_cast<uint64_t>(&countForItemDetour);
-    std::memcpy(bytes.data() + 8, &daddr, sizeof(daddr));
+    std::memcpy(bytes.data() + 31, &daddr, sizeof(daddr));
 
     // for some reason getNonVirtual does not work here lol
 #if GEODE_COMP_GD_VERSION == 22060
-countForItemPatch = util::lowlevel::patch(0x2506d0, bytes);
+    countForItemPatch = util::lowlevel::patch(0x2506d0, bytes);
 #else
 # error Update this for new gd, is address of GJEffectManager::countForItem
 #endif
@@ -248,6 +266,7 @@ struct GLOBED_DLL EffectGameObjectHook : geode::Modify<EffectGameObjectHook, Eff
 
 // gjbgl collectedObject and addCountToItem inlined on windows.
 struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerGameObject> {
+    // item edit - 3619 (0xe23)
     void triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
         if (m_objectID == 0x719 && globed::isWritableCustomItem(m_itemID)) {
             // gjbgl::addPickupTrigger reimpl
