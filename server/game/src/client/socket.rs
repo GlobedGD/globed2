@@ -291,7 +291,7 @@ impl ClientSocket {
 
             // so yeah
             if should_fragment {
-                let mut vec = Vec::<u8>::with_capacity(total_payload_size);
+                let mut vec = vec![0u8; total_payload_size];
                 let mut buf = FastByteBuffer::new(&mut vec[..]);
 
                 // write packet header and packet itself

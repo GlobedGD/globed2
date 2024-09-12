@@ -58,7 +58,7 @@ Result<std::vector<uint8_t>> UdpFrameBuffer::pushFrameFromBuffer(ByteBuffer& buf
         });
 
         std::vector<uint8_t> data;
-        
+
         // calculate full frame size
         size_t totalSize = 0;
         for (auto& frame : frames) {

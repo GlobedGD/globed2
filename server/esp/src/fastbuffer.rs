@@ -85,7 +85,8 @@ impl<'a> FastByteBuffer<'a> {
 
     #[inline]
     pub const fn clear(&mut self) {
-        self.len = 0
+        self.len = 0;
+        self.pos = 0;
     }
 
     #[inline]
