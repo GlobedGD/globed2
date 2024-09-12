@@ -298,6 +298,24 @@ struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerG
     }
 };
 
+struct GLOBED_DLL ItemEditGJBGL : geode::Modify<ItemEditGJBGL, GJBaseGameLayer> {
+    void activateItemEditTrigger(ItemTriggerGameObject* obj) {
+        GJBaseGameLayer::activateItemEditTrigger(obj);
+
+
+        int targetId = obj->m_targetGroupID;
+
+        if (globed::isWritableCustomItem(targetId)) {
+            GlobedCounterChange cc;
+            cc.itemId = globed::itemIdToCustom(targetId);
+            cc.type = GlobedCounterChange::Type::Set; // laziness tbh
+            cc._val.intVal = static_cast<GJEffectManagerHook*>(m_effectManager)->countForItemCustom(targetId);
+
+            static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this))->queueCounterChange(cc);
+        }
+    }
+};
+
 // EffectGameObject::getSaveString
 #if GEODE_COMP_GD_VERSION == 22060
 $execute {
@@ -309,7 +327,7 @@ $execute {
     offset2 = 0x47f9ca;
     bytes = {0x3d, 0xff, 0xff, 0xff, 0x7f};
 #else
-# pragme message "EffectGameObject::getSaveString not impl'd for this platform"
+# pragma message "EffectGameObject::getSaveString not impl'd for this platform"
     return;
 #endif
     util::lowlevel::patch(offset1, bytes);

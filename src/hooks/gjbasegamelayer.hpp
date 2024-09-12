@@ -50,6 +50,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         bool didJustJumpp1 = false, didJustJumpp2 = false;
         bool isCurrentlyDead = false;
         bool isLastDeathReal = false;
+        bool firstReceivedData = true;
         float lastDeathTimestamp = 0.f;
 
         // ui elements

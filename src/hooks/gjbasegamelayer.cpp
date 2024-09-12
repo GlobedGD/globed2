@@ -288,6 +288,7 @@ void GlobedGJBGL::setupPacketListeners() {
         auto& fields = this->getFields();
 
         fields.lastServerUpdate = fields.timeCounter;
+        bool firstPacket = util::misc::swapFlag(fields.firstReceivedData);
 
         for (const auto& player : packet->players) {
             if (!fields.players.contains(player.accountId)) {
@@ -305,6 +306,11 @@ void GlobedGJBGL::setupPacketListeners() {
                     value
                 );
             }
+        }
+
+        if (firstPacket) {
+            fields.lastJoinedPlayer = GJAccountManager::get()->m_accountID;
+            this->updateCountersForCustomItem(globed::ITEM_LAST_JOINED);
         }
     });
 

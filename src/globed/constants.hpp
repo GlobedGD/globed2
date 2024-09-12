@@ -12,6 +12,8 @@ namespace globed {
     $rid(ACCOUNT_ID, 0);
     $rid(LAST_JOINED, 1);
     $rid(LAST_LEFT, 2);
+    $rid(POSITION_X, 3);
+    $rid(POSITION_Y, 4);
 
 #undef $rid
 
