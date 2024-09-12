@@ -297,3 +297,24 @@ struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerG
         }
     }
 };
+
+// EffectGameObject::getSaveString
+#if GEODE_COMP_GD_VERSION == 22060
+$execute {
+    uintptr_t offset1, offset2;
+    std::vector<uint8_t> bytes;
+
+#ifdef GEODE_IS_WINDOWS
+    offset1 = 0x47f9aa;
+    offset2 = 0x47f9ca;
+    bytes = {0x3d, 0xff, 0xff, 0xff, 0x7f};
+#else
+# pragme message "EffectGameObject::getSaveString not impl'd for this platform"
+    return;
+#endif
+    util::lowlevel::patch(offset1, bytes);
+    util::lowlevel::patch(offset2, bytes);
+};
+#else
+# pragma message "EffectGameObject::getSaveString patch needs update"
+#endif
