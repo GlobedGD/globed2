@@ -61,7 +61,7 @@ Result<int> TcpSocket::send(const char* data, unsigned int dataSize) {
     auto result = ::send(socket_, data, dataSize, flags);
     if (result == -1) {
         this->maybeDisconnect();
-        return Err(util::net::lastErrorString());
+        return Err(fmt::format("tcp send failed: {}", util::net::lastErrorString()));
     }
 
     return Ok(result);
@@ -112,7 +112,7 @@ Result<> TcpSocket::recvExact(char* buffer, int bufferSize) {
 
     do {
         int result = this->receive(buffer + received, bufferSize - received).result;
-        if (result < 0) return Err(util::net::lastErrorString());
+        if (result < 0) return Err(fmt::format("tcp recv failed ({}): {}", result, util::net::lastErrorString()));
         if (result == 0) return Err("connection was closed by the server");
         received += result;
     } while (received < bufferSize);
@@ -143,7 +143,7 @@ Result<bool> TcpSocket::poll(int msDelay, bool in) {
     int result = GLOBED_SOCKET_POLL(fds, 1, msDelay);
 
     if (result == -1) {
-        return Err(util::net::lastErrorString());
+        return Err(fmt::format("tcp poll failed: {}", util::net::lastErrorString()));
     }
 
     return Ok(result > 0);
@@ -153,14 +153,14 @@ Result<bool> TcpSocket::poll(int msDelay, bool in) {
 Result<> TcpSocket::setNonBlocking(bool nb) {
 #ifdef GEODE_IS_WINDOWS
     unsigned long mode = nb ? 1 : 0;
-    if (SOCKET_ERROR == ioctlsocket(socket_, FIONBIO, &mode)) return Err(util::net::lastErrorString());
+    if (SOCKET_ERROR == ioctlsocket(socket_, FIONBIO, &mode)) return Err(fmt::format("ioctlsocket failed: {}", util::net::lastErrorString()));
 #else
     int flags = fcntl(socket_, F_GETFL);
 
     if (nb) {
-        if (fcntl(socket_, F_SETFL, flags | O_NONBLOCK) < 0) return Err(util::net::lastErrorString());
+        if (fcntl(socket_, F_SETFL, flags | O_NONBLOCK) < 0) return Err(fmt::format("fcntl(O_NONBLOCK) failed: {}", util::net::lastErrorString()));
     } else {
-        if (fcntl(socket_, F_SETFL, flags & (~O_NONBLOCK)) < 0) return Err(util::net::lastErrorString());
+        if (fcntl(socket_, F_SETFL, flags & (~O_NONBLOCK)) < 0) return Err(fmt::format("fcntl(~O_NONBLOCK) failed: {}", util::net::lastErrorString()));
     }
 #endif
 

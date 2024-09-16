@@ -85,7 +85,7 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
     out.fromConnected = recvResult.fromServer;
 
     if (recvResult.result < 0) {
-        return Err("udp recv failed");
+        return Err(fmt::format("udp recv failed ({}): {}", recvResult.result, util::net::lastErrorString()));
     }
 
     ByteBuffer buf(dataBuffer, (size_t)recvResult.result);
@@ -107,7 +107,6 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
     } else if (*marker == MARKER_UDP_FRAME) {
         GLOBED_UNWRAP_INTO(udpBuffer.pushFrameFromBuffer(buf), auto maybeBuf);
         if (!maybeBuf.empty()) {
-            log::debug("frame yay full packet {}", maybeBuf.size());
             ByteBuffer toDecode(std::move(maybeBuf));
             GLOBED_UNWRAP_INTO(this->decodePacket(toDecode), out.packet);
         } else {
@@ -130,11 +129,16 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
 
     // prioritize TCP, if the result is Tcp or Both, we care about TCP.
     if (pollResult != PollResult::Udp) {
-        GLOBED_UNWRAP_INTO(this->recvPacketTCP(), auto packet);
-        return Ok(ReceivedPacket {
-            .packet = std::move(packet),
-            .fromConnected = true
-        });
+        auto res = this->recvPacketTCP();
+
+        if (res) {
+            return Ok(ReceivedPacket {
+                .packet = std::move(std::move(res).unwrap()),
+                .fromConnected = true
+            });
+        } else {
+            return Err(fmt::format("recvPacketTCP failed: {}", res.unwrapErr()));
+        }
     }
 
     // else it's a udp packet
@@ -142,7 +146,7 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
     if (udpres && udpres.value().has_value()) {
         return Ok(std::move(**udpres));
     } else if (!udpres) {
-        return Err(std::move(std::move(udpres).unwrapErr()));
+        return Err(fmt::format("recvPacketUDP failed: {}", std::move(std::move(udpres).unwrapErr())));
     }
 
     // if it was a frame keep trying
@@ -156,7 +160,7 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
         if (udpres && udpres.value().has_value()) {
             return Ok(std::move(**udpres));
         } else if (!udpres) {
-            return Err(std::move(std::move(udpres).unwrapErr()));
+            return Err(fmt::format("recvPacketUDP failed: {}", std::move(std::move(udpres).unwrapErr())));
         }
     }
 }
