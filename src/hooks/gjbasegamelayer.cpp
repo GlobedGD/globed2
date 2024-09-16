@@ -1059,12 +1059,12 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
 
     if (!fields.players.contains(playerId)) return;
 
-
     auto rp = fields.players.at(playerId);
 
     GLOBED_EVENT(this, onPlayerLeave(rp));
 
     rp->removeProgressIndicators();
+    rp->cleanupObjectLayer();
     rp->removeFromParent();
 
     fields.players.erase(playerId);

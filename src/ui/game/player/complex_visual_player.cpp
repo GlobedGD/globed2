@@ -815,6 +815,10 @@ bool ComplexVisualPlayer::isPlayerNearby(const GameCameraState& camState) {
     return inCameraCoverage;
 }
 
+void ComplexVisualPlayer::cleanupObjectLayer() {
+    static_cast<HookedPlayerObject*>(static_cast<PlayerObject*>(playerIcon))->cleanupObjectLayer();
+}
+
 ComplexVisualPlayer* ComplexVisualPlayer::create(RemotePlayer* parent, bool isSecond) {
     auto ret = new ComplexVisualPlayer;
     if (ret->init(parent, isSecond)) {
