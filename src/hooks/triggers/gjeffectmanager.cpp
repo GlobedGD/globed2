@@ -302,7 +302,6 @@ struct GLOBED_DLL ItemEditGJBGL : geode::Modify<ItemEditGJBGL, GJBaseGameLayer> 
     void activateItemEditTrigger(ItemTriggerGameObject* obj) {
         GJBaseGameLayer::activateItemEditTrigger(obj);
 
-
         int targetId = obj->m_targetGroupID;
 
         if (globed::isWritableCustomItem(targetId)) {
@@ -316,7 +315,7 @@ struct GLOBED_DLL ItemEditGJBGL : geode::Modify<ItemEditGJBGL, GJBaseGameLayer> 
     }
 };
 
-// EffectGameObject::getSaveString
+// EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger would break otherwise)
 #if GEODE_COMP_GD_VERSION == 22060
 $execute {
     uintptr_t offset1, offset2;
