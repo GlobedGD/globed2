@@ -50,7 +50,7 @@ namespace util::misc {
         return static_cast<float>(sum / static_cast<double>(samples));
     }
 
-    bool compareName(const std::string_view nv1, const std::string_view nv2) {
+    bool compareName(std::string_view nv1, std::string_view nv2) {
         std::string name1(nv1);
         std::string name2(nv2);
 

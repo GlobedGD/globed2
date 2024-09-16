@@ -84,7 +84,7 @@ class ChatMessagePacket : public Packet {
     GLOBED_PACKET(12011, ChatMessagePacket, true, false)
 
     ChatMessagePacket() {}
-    ChatMessagePacket(const std::string_view message) : message(message) {}
+    ChatMessagePacket(std::string_view message) : message(message) {}
 
     std::string message;
 };

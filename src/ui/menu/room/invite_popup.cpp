@@ -73,7 +73,7 @@ bool InvitePopup::setup() {
     // search button
     Build<CCSprite>::createSpriteName("gj_findBtn_001.png")
         .intoMenuItem([this](auto) {
-            AskInputPopup::create("Search Player", [this](const std::string_view input) {
+            AskInputPopup::create("Search Player", [this](std::string_view input) {
                 this->applyFilter(input);
                 this->sortPlayerList();
                 this->onLoaded(true);
@@ -201,7 +201,7 @@ void InvitePopup::sortPlayerList() {
     });
 }
 
-void InvitePopup::applyFilter(const std::string_view input) {
+void InvitePopup::applyFilter(std::string_view input) {
     filteredPlayerList.clear();
 
     if (input.empty()) {

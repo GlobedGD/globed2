@@ -50,7 +50,7 @@ void HookedLoadingLayer::loadingFinishedHook() {
     }
 }
 
-void HookedLoadingLayer::setLabelText(const std::string_view text) {
+void HookedLoadingLayer::setLabelText(std::string_view text) {
     auto label = static_cast<CCLabelBMFont*>(this->getChildByID("geode-small-label"));
 
     if (label) {

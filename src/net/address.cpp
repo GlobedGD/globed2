@@ -13,15 +13,15 @@ NetworkAddress::NetworkAddress() {
     this->set("", DEFAULT_PORT);
 }
 
-NetworkAddress::NetworkAddress(const std::string_view address) {
+NetworkAddress::NetworkAddress(std::string_view address) {
     this->set(address);
 }
 
-NetworkAddress::NetworkAddress(const std::string_view host, uint16_t port) {
+NetworkAddress::NetworkAddress(std::string_view host, uint16_t port) {
     this->set(host, port);
 }
 
-void NetworkAddress::set(const std::string_view address) {
+void NetworkAddress::set(std::string_view address) {
     auto colon = address.find(':');
     if (colon == std::string::npos) {
         this->set(address, DEFAULT_PORT);
@@ -31,7 +31,7 @@ void NetworkAddress::set(const std::string_view address) {
     }
 }
 
-void NetworkAddress::set(const std::string_view host, uint16_t port) {
+void NetworkAddress::set(std::string_view host, uint16_t port) {
     this->host = host;
     this->port = port;
 }

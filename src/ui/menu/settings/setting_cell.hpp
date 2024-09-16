@@ -43,7 +43,7 @@ private:
     void onCheckboxToggled(cocos2d::CCObject*);
     void onSliderChanged(cocos2d::CCObject*);
     void onInteractiveButton(cocos2d::CCObject*);
-    void onStringChanged(const std::string_view);
+    void onStringChanged(std::string_view);
 
     void recreateCornerButton();
     void recreateInvitesFromButton();

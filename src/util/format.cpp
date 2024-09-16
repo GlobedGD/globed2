@@ -87,7 +87,7 @@ namespace util::format {
         }
     }
 
-    Result<cocos2d::ccColor3B> parseColor(const std::string_view hex) {
+    Result<cocos2d::ccColor3B> parseColor(std::string_view hex) {
         std::string_view subview;
 
         size_t hashPos = hex.find('#');
@@ -117,7 +117,7 @@ namespace util::format {
         return fmt::format("{}{:02X}{:02X}{:02X}{:02X}", withHash ? "#" : "", color.r, color.g, color.b, color.a);
     }
 
-    std::string rtrim(const std::string_view str, const std::string_view filter) {
+    std::string rtrim(std::string_view str, std::string_view filter) {
         size_t start = 0;
         size_t end = str.length();
 
@@ -128,7 +128,7 @@ namespace util::format {
         return std::string(str.substr(0, end));
     }
 
-    std::string ltrim(const std::string_view str, const std::string_view filter) {
+    std::string ltrim(std::string_view str, std::string_view filter) {
         size_t start = 0;
         size_t end = str.length();
 
@@ -139,11 +139,11 @@ namespace util::format {
         return std::string(str.substr(start));
     }
 
-    std::string trim(const std::string_view str, const std::string_view filter) {
+    std::string trim(std::string_view str, std::string_view filter) {
         return ltrim(rtrim(str, filter), filter);
     }
 
-    std::string toLowercase(const std::string_view str) {
+    std::string toLowercase(std::string_view str) {
         std::string result;
         for (char c : str) {
             result += std::tolower(c);
@@ -152,7 +152,7 @@ namespace util::format {
         return result;
     }
 
-    std::string toUppercase(const std::string_view str) {
+    std::string toUppercase(std::string_view str) {
         std::string result;
         for (char c : str) {
             result += std::toupper(c);
@@ -161,7 +161,7 @@ namespace util::format {
         return result;
     }
 
-    std::string urlEncode(const std::string_view str) {
+    std::string urlEncode(std::string_view str) {
         std::ostringstream ss;
         ss.fill('0');
         ss << std::hex;
@@ -180,7 +180,7 @@ namespace util::format {
         return ss.str();
     }
 
-    std::vector<std::string_view> split(const std::string_view s, const std::string_view sep) {
+    std::vector<std::string_view> split(std::string_view s, std::string_view sep) {
         std::vector<std::string_view> out;
         size_t start = 0;
         size_t end;
@@ -195,7 +195,7 @@ namespace util::format {
         return out;
     }
 
-    std::vector<std::string_view> splitlines(const std::string_view s) {
+    std::vector<std::string_view> splitlines(std::string_view s) {
         std::vector<std::string_view> lines;
         std::size_t start = 0;
         while (start < s.size()) {

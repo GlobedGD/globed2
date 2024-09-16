@@ -33,40 +33,40 @@ public:
     asp::AtomicBool pendingChanges;
 
     // Returns true if a new server has been added, otherwise false.
-    Result<> addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
+    Result<> addServer(std::string_view serverId, std::string_view name, std::string_view address, std::string_view region);
     // Returns true if a new server has been added, or the data has changed, false otherwise.
-    Result<bool> addOrUpdateServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region);
+    Result<bool> addOrUpdateServer(std::string_view serverId, std::string_view name, std::string_view address, std::string_view region);
     void clear();
     size_t count();
 
-    void setActive(const std::string_view id);
+    void setActive(std::string_view id);
     std::string getActiveId();
     void clearActive();
 
     // remove all servers except the one with the given id
-    void clearAllExcept(const std::string_view id);
+    void clearAllExcept(std::string_view id);
 
     std::optional<GameServer> getActiveServer();
-    std::optional<GameServer> getServer(const std::string_view id);
+    std::optional<GameServer> getServer(std::string_view id);
     std::unordered_map<std::string, GameServer> getAllServers();
 
     // return ping on the active server
     int getActivePing();
 
     // save the given address as a last connected standalone address
-    void saveStandalone(const std::string_view addr);
+    void saveStandalone(std::string_view addr);
     std::string loadStandalone();
 
-    void saveLastConnected(const std::string_view addr);
+    void saveLastConnected(std::string_view addr);
     std::string loadLastConnected();
 
-    void updateCache(const std::string_view response);
+    void updateCache(std::string_view response);
     void clearCache();
     Result<> loadFromCache();
 
     /* pings */
 
-    uint32_t startPing(const std::string_view serverId);
+    uint32_t startPing(std::string_view serverId);
     void finishPing(uint32_t pingId, uint32_t playerCount);
 
     void startKeepalive();

@@ -96,7 +96,7 @@ void GlobedAccountManager::migrateOldValues() {
     }
 }
 
-void GlobedAccountManager::initialize(const std::string_view name, int accountId, int userId, const std::string_view central) {
+void GlobedAccountManager::initialize(std::string_view name, int accountId, int userId, std::string_view central) {
     GDData data = {
         .accountName = std::string(name),
         .accountId = accountId,
@@ -244,7 +244,7 @@ void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event
     this->clearAuthKey();
 }
 
-void GlobedAccountManager::storeAdminPassword(const std::string_view password) {
+void GlobedAccountManager::storeAdminPassword(std::string_view password) {
     GLOBED_REQUIRE(initialized, "Attempting to call GlobedAccountManager::storeAdminPassword before initializing the instance")
 
     auto jsonkey = this->getKeyFor("stored-admin-pw2");
@@ -304,7 +304,7 @@ void GlobedAccountManager::cancelAuthTokenRequest() {
     requestListener.getFilter().cancel();
 }
 
-std::string GlobedAccountManager::computeGDDataHash(const std::string_view name, int accountId, int userId, const std::string_view central) {
+std::string GlobedAccountManager::computeGDDataHash(std::string_view name, int accountId, int userId, std::string_view central) {
     auto hash = util::crypto::simpleHash(fmt::format(
         "{}-{}-{}-{}", name, accountId, userId, central
     ));
@@ -313,6 +313,6 @@ std::string GlobedAccountManager::computeGDDataHash(const std::string_view name,
 }
 
 // NOTE: this does not check for initialized, callers must do it themselves
-std::string GlobedAccountManager::getKeyFor(const std::string_view key) {
+std::string GlobedAccountManager::getKeyFor(std::string_view key) {
     return std::string(key) + "-" + gdData.lock()->precomputedHash;
 }

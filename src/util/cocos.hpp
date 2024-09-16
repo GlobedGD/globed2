@@ -39,12 +39,12 @@ namespace util::cocos {
     void resetPreloadState();
     void cleanupThreadPool();
 
-    ::gd::string fullPathForFilename(const std::string_view filename);
+    ::gd::string fullPathForFilename(std::string_view filename);
 
     // Like cocos' func, returns empty string if file doesn't exist.
     ::gd::string getPathForFilename(const ::gd::string& filename, const ::gd::string& searchPath);
 
-    std::string spr(const std::string_view s);
+    std::string spr(std::string_view s);
 
     // creates a new, independent texture
     cocos2d::CCTexture2D* textureFromSpriteName(std::string_view name);

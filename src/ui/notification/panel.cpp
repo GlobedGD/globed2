@@ -30,7 +30,7 @@ void GlobedNotificationPanel::persist() {
     instance = this;
 }
 
-void GlobedNotificationPanel::addInviteNotification(uint32_t roomID, const std::string_view password, const PlayerPreviewAccountData& player) {
+void GlobedNotificationPanel::addInviteNotification(uint32_t roomID, std::string_view password, const PlayerPreviewAccountData& player) {
     auto* notif = GlobedInviteNotification::create(roomID, password, player);
     this->slideInNotification(notif);
 

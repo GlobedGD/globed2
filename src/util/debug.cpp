@@ -13,11 +13,11 @@
 using namespace geode::prelude;
 
 namespace util::debug {
-    void Benchmarker::start(const std::string_view id) {
+    void Benchmarker::start(std::string_view id) {
         _entries[std::string(id)] = time::now();
     }
 
-    time::micros Benchmarker::end(const std::string_view id) {
+    time::micros Benchmarker::end(std::string_view id) {
         auto idstr = std::string(id);
         auto micros = time::as<time::micros>(time::now() - _entries[idstr]);
         _entries.erase(idstr);
@@ -25,7 +25,7 @@ namespace util::debug {
         return micros;
     }
 
-    void Benchmarker::endAndLog(const std::string_view id, bool ignoreSmall) {
+    void Benchmarker::endAndLog(std::string_view id, bool ignoreSmall) {
         auto took = this->end(id);
         if (took > util::time::micros(250)) {
             log::debug("{} took {} to run", id, util::format::formatDuration(took));
@@ -40,7 +40,7 @@ namespace util::debug {
         return this->end(id);
     }
 
-    void Benchmarker::runAndLog(std::function<void()>&& func, const std::string_view identifier) {
+    void Benchmarker::runAndLog(std::function<void()>&& func, std::string_view identifier) {
         auto took = this->run(std::move(func));
         log::debug("{} took {} to run", identifier, util::format::formatDuration(took));
     }
@@ -184,14 +184,14 @@ namespace util::debug {
     }
 #endif
 
-    void delayedSuicide(const std::string_view message) {
+    void delayedSuicide(std::string_view message) {
         Loader::get()->queueInMainThread([message = std::string(message)] {
             log::error("Globed fatal error: {}", message);
             throw std::runtime_error(fmt::format("Globed error: {}", message));
         });
     }
 
-    void timedLog(const std::string_view message) {
+    void timedLog(std::string_view message) {
         log::info("\r[{}] [Globed] {}", util::format::formatDateTime(util::time::systemNow()), message);
     }
 

@@ -11,7 +11,7 @@
 
 using namespace geode::prelude;
 
-bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) {
+bool ServerTestPopup::setup(std::string_view url, AddServerPopup* parent) {
     this->parent = parent;
     this->setTitle("Testing server");
 
@@ -75,7 +75,7 @@ void ServerTestPopup::cancelRequest() {
     requestListener.getFilter().cancel();
 }
 
-ServerTestPopup* ServerTestPopup::create(const std::string_view url, AddServerPopup* parent) {
+ServerTestPopup* ServerTestPopup::create(std::string_view url, AddServerPopup* parent) {
     auto ret = new ServerTestPopup;
     if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, url, parent)) {
         ret->autorelease();

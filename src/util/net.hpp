@@ -32,14 +32,14 @@ namespace util::net {
     std::string loginPlatformString();
 
     // Split an address like 127.0.0.1:4343 into pair("127.0.0.1", 4343)
-    Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort = 0);
+    Result<std::pair<std::string, unsigned short>> splitAddress(std::string_view address, unsigned short defaultPort = 0);
 
     // Check if two sockaddr structures are equal
     bool sameSockaddr(const sockaddr_in& s1, const sockaddr_in& s2);
 
     // getaddrinfo
-    Result<std::string> getaddrinfo(const std::string_view hostname);
-    Result<> getaddrinfo(const std::string_view hostname, sockaddr_in& out);
+    Result<std::string> getaddrinfo(std::string_view hostname);
+    Result<> getaddrinfo(std::string_view hostname, sockaddr_in& out);
 
     Result<std::string> inAddrToString(const in_addr& addr);
     Result<> stringToInAddr(const char* addr, in_addr& out);

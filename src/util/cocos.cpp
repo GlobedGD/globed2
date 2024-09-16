@@ -526,7 +526,7 @@ namespace util::cocos {
     }
 
     // slightly faster rewrite of ccfileutils::fullPathForFilename
-    gd::string fullPathForFilename(const std::string_view rawfilename) {
+    gd::string fullPathForFilename(std::string_view rawfilename) {
         auto& fileUtils = HookedFileUtils::get();
         auto& pstate = getPreloadState();
 
@@ -671,7 +671,7 @@ namespace util::cocos {
         return texture;
     }
 
-    std::string spr(const std::string_view s) {
+    std::string spr(std::string_view s) {
         static const std::string id = Mod::get()->getID() + "/";
 
         std::string out(id);

@@ -77,7 +77,7 @@ static Result<std::string> decodeAnswer(std::string_view chtoken, std::string_vi
     return box.decryptToString(decodedChallenge);
 }
 
-void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view chtoken, const std::string_view pubkey) {
+void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtoken, std::string_view pubkey) {
     auto ans = decodeAnswer(chtoken, pubkey);
     if (!ans) {
         log::warn("failed to complete challenge: {}", ans.unwrapErr());
@@ -120,7 +120,7 @@ void GlobedSignupPopup::onDelayedChallengeCompleted() {
     this->onChallengeCompleted(storedAuthcode);
 }
 
-void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
+void GlobedSignupPopup::onChallengeCompleted(std::string_view authcode) {
     auto& csm = CentralServerManager::get();
     auto& am = GlobedAccountManager::get();
 
@@ -191,7 +191,7 @@ void GlobedSignupPopup::onSuccess() {
     this->onClose(this);
 }
 
-void GlobedSignupPopup::onFailure(const std::string_view message) {
+void GlobedSignupPopup::onFailure(std::string_view message) {
     ErrorQueues::get().error(message);
     this->onClose(this);
 }

@@ -12,11 +12,11 @@
 namespace util::debug {
     class Benchmarker : public SingletonBase<Benchmarker> {
     public:
-        void start(const std::string_view id);
-        void endAndLog(const std::string_view id, bool ignoreSmall = false);
-        time::micros end(const std::string_view id);
+        void start(std::string_view id);
+        void endAndLog(std::string_view id, bool ignoreSmall = false);
+        time::micros end(std::string_view id);
         time::micros run(std::function<void()>&& func);
-        void runAndLog(std::function<void()>&& func, const std::string_view identifier);
+        void runAndLog(std::function<void()>&& func, std::string_view identifier);
 
     private:
         std::unordered_map<std::string, time::time_point> _entries;
@@ -30,7 +30,7 @@ namespace util::debug {
             data::bytevector lastData;
         };
 
-        void start(const std::string_view id, uintptr_t address, size_t size) {
+        void start(std::string_view id, uintptr_t address, size_t size) {
             auto idstr = std::string(id);
             _entries.emplace(std::string(idstr), WatcherEntry {
                 .address = address,
@@ -41,7 +41,7 @@ namespace util::debug {
             this->updateLastData(_entries.at(idstr));
         }
 
-        void start(const std::string_view id, void* address, size_t size) {
+        void start(std::string_view id, void* address, size_t size) {
             this->start(id, (uintptr_t)address, size);
         }
 
@@ -103,10 +103,10 @@ namespace util::debug {
     [[noreturn]] void suicide();
 #endif
 
-    void delayedSuicide(const std::string_view);
+    void delayedSuicide(std::string_view);
 
     // like log::debug but with precise timestamps.
-    void timedLog(const std::string_view message);
+    void timedLog(std::string_view message);
 
     std::optional<ptrdiff_t> searchMember(const void* structptr, const uint8_t* bits, size_t length, size_t alignment, size_t maxSize);
 

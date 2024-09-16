@@ -271,13 +271,13 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
             FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
         }
     } else {
-        StringInputPopup::create([this](const std::string_view text) {
+        StringInputPopup::create([this](std::string_view text) {
             this->onStringChanged(text);
         })->show();
     }
 }
 
-void GlobedSettingCell::onStringChanged(const std::string_view text) {
+void GlobedSettingCell::onStringChanged(std::string_view text) {
     this->storeAndSave(text);
 }
 

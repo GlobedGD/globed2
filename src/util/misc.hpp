@@ -94,7 +94,7 @@ namespace util::misc {
 
     float pcmVolumeSlow(const float* pcm, size_t samples);
 
-    bool compareName(const std::string_view name1, const std::string_view name2);
+    bool compareName(std::string_view name1, std::string_view name2);
 
     bool isEditorCollabLevel(LevelId levelId);
 

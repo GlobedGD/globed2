@@ -62,7 +62,7 @@ public:
 
     // Encrypt bytes from the string `src` into `dest`. Note: the `dest` buffer must be at least `size + prefixLength()` bytes big.
     // Returns the length of the encrypted data.
-    size_t encryptInto(const std::string_view src, byte* dest) {
+    size_t encryptInto(std::string_view src, byte* dest) {
         return static_cast<Derived*>(this)->encryptInto(reinterpret_cast<const byte*>(src.data()), dest, src.size()).unwrap();
     }
 
@@ -91,7 +91,7 @@ public:
     }
 
     // Encrypt bytes from the string `src` and return a bytevector with the encrypted data.
-    bytevector encrypt(const std::string_view src) {
+    bytevector encrypt(std::string_view src) {
         return encrypt(reinterpret_cast<const byte*>(src.data()), src.size());
     }
 

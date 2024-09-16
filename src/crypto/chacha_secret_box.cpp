@@ -21,7 +21,7 @@ ChaChaSecretBox::ChaChaSecretBox(bytevector key) {
     std::memcpy(this->key, key.data(), KEY_LEN);
 }
 
-ChaChaSecretBox ChaChaSecretBox::withPassword(const std::string_view pw) {
+ChaChaSecretBox ChaChaSecretBox::withPassword(std::string_view pw) {
     auto key = util::crypto::simpleHash(pw);
     return ChaChaSecretBox(key);
 }
@@ -71,7 +71,7 @@ void ChaChaSecretBox::setKey(const util::data::byte* src) {
     std::memcpy(this->key, src, crypto_secretbox_KEYBYTES);
 }
 
-Result<> ChaChaSecretBox::setPassword(const std::string_view pw) {
+Result<> ChaChaSecretBox::setPassword(std::string_view pw) {
     auto key = util::crypto::simpleHash(pw);
     return this->setKey(key);
 }

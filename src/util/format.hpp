@@ -47,7 +47,7 @@ namespace util::format {
 
     // parse a string to an integer
     template <typename T>
-    inline std::optional<T> parse(const std::string_view src, int base = 10) {
+    inline std::optional<T> parse(std::string_view src, int base = 10) {
         T output;
 
         auto result = std::from_chars(&*src.begin(), &*src.end(), output, base);
@@ -58,22 +58,22 @@ namespace util::format {
         return output;
     }
 
-    Result<cocos2d::ccColor3B> parseColor(const std::string_view hex);
+    Result<cocos2d::ccColor3B> parseColor(std::string_view hex);
 
     std::string colorToHex(cocos2d::ccColor3B, bool withHash = false);
     std::string colorToHex(cocos2d::ccColor4B, bool withHash = false);
 
-    std::string rtrim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);
-    std::string ltrim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);
-    std::string trim(const std::string_view str, const std::string_view filter = misc::STRING_WHITESPACE);
+    std::string rtrim(std::string_view str, std::string_view filter = misc::STRING_WHITESPACE);
+    std::string ltrim(std::string_view str, std::string_view filter = misc::STRING_WHITESPACE);
+    std::string trim(std::string_view str, std::string_view filter = misc::STRING_WHITESPACE);
 
-    std::string toLowercase(const std::string_view str);
-    std::string toUppercase(const std::string_view str);
+    std::string toLowercase(std::string_view str);
+    std::string toUppercase(std::string_view str);
 
-    std::string urlEncode(const std::string_view str);
+    std::string urlEncode(std::string_view str);
 
-    std::vector<std::string_view> split(const std::string_view s, const std::string_view sep);
-    std::vector<std::string_view> splitlines(const std::string_view s);
+    std::vector<std::string_view> split(std::string_view s, std::string_view sep);
+    std::vector<std::string_view> splitlines(std::string_view s);
 
     // like python's partition
     std::tuple<std::string_view, std::string_view, std::string_view> partition(std::string_view s, std::string_view sep);

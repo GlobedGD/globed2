@@ -8,7 +8,7 @@ class AdminAuthPacket : public Packet {
     GLOBED_PACKET(19000, AdminAuthPacket, true, true)
 
     AdminAuthPacket() {}
-    AdminAuthPacket(const std::string_view key) : key(key) {}
+    AdminAuthPacket(std::string_view key) : key(key) {}
 
     std::string key;
 };
@@ -28,7 +28,7 @@ class AdminSendNoticePacket : public Packet {
     GLOBED_PACKET(19001, AdminSendNoticePacket, true, true)
 
     AdminSendNoticePacket() {}
-    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, const std::string_view player, const std::string_view message)
+    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, std::string_view player, std::string_view message)
         : ptype(ptype), roomId(roomId), levelId(levelId), player(player), message(message) {}
 
     AdminSendNoticeType ptype;
@@ -47,7 +47,7 @@ class AdminDisconnectPacket : public Packet {
     GLOBED_PACKET(19002, AdminDisconnectPacket, false, true)
 
     AdminDisconnectPacket() {}
-    AdminDisconnectPacket(const std::string_view player, const std::string_view message)
+    AdminDisconnectPacket(std::string_view player, std::string_view message)
         : player(player), message(message) {}
 
     std::string player, message;
@@ -62,7 +62,7 @@ class AdminGetUserStatePacket : public Packet {
     GLOBED_PACKET(19003, AdminGetUserStatePacket, false, true)
 
     AdminGetUserStatePacket() {}
-    AdminGetUserStatePacket(const std::string_view player) : player(player) {}
+    AdminGetUserStatePacket(std::string_view player) : player(player) {}
 
     std::string player;
 };

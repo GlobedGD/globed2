@@ -122,7 +122,7 @@ class PlayerAccountData {
 public:
     static const PlayerAccountData DEFAULT_DATA;
 
-    PlayerAccountData(int32_t id, int32_t userId, const std::string_view name, const PlayerIconData& icons)
+    PlayerAccountData(int32_t id, int32_t userId, std::string_view name, const PlayerIconData& icons)
         : accountId(id), userId(userId), name(name), icons(icons) {}
 
     PlayerAccountData() {}

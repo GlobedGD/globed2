@@ -7,7 +7,7 @@
 
 using namespace geode::prelude;
 
-bool AdminSendNoticePopup::setup(const std::string_view message) {
+bool AdminSendNoticePopup::setup(std::string_view message) {
     this->message = message;
 
     auto sizes = util::ui::getPopupLayout(m_size);
@@ -97,7 +97,7 @@ void AdminSendNoticePopup::commonSend(AdminSendNoticeType type) {
     NetworkManager::get().send(packet);
 }
 
-AdminSendNoticePopup* AdminSendNoticePopup::create(const std::string_view message) {
+AdminSendNoticePopup* AdminSendNoticePopup::create(std::string_view message) {
     auto* ret = new AdminSendNoticePopup;
     if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, message)) {
         ret->autorelease();

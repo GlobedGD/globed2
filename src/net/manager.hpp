@@ -42,7 +42,7 @@ public:
     };
 
     // Connect to a server
-    geode::Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone);
+    geode::Result<> connect(const NetworkAddress& address, std::string_view serverId, bool standalone);
 
     // Connect to a server
     geode::Result<> connect(const GameServer& gsview);
@@ -54,7 +54,7 @@ public:
     void disconnect(bool quiet = false, bool noclear = false);
 
     // Call `disconnect` and show an error popup with a message
-    void disconnectWithMessage(const std::string_view message, bool quiet = true);
+    void disconnectWithMessage(std::string_view message, bool quiet = true);
 
     // Cancel reconnection
     void cancelReconnect();

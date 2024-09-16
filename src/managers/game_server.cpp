@@ -12,13 +12,13 @@ GameServerManager::GameServerManager() {
     this->updateCache(Mod::get()->getSavedValue<std::string>(SERVER_RESPONSE_CACHE_KEY));
 }
 
-Result<> GameServerManager::addServer(const std::string_view serverId, const std::string_view name, const std::string_view address, const std::string_view region) {
+Result<> GameServerManager::addServer(std::string_view serverId, std::string_view name, std::string_view address, std::string_view region) {
     _data.lock()->servers.erase(std::string(serverId));
     GLOBED_UNWRAP(this->addOrUpdateServer(serverId, name, address, region));
     return Ok();
 }
 
-Result<bool> GameServerManager::addOrUpdateServer(const std::string_view serverId_, const std::string_view name, const std::string_view address, const std::string_view region) {
+Result<bool> GameServerManager::addOrUpdateServer(std::string_view serverId_, std::string_view name, std::string_view address, std::string_view region) {
     auto serverId = std::string(serverId_);
 
     int ping = -1;
@@ -68,7 +68,7 @@ size_t GameServerManager::count() {
     return _data.lock()->servers.size();
 }
 
-void GameServerManager::setActive(const std::string_view id) {
+void GameServerManager::setActive(std::string_view id) {
     auto idstr = std::string(id);
     auto data = _data.lock();
     if (!data->servers.contains(idstr)) return;
@@ -85,7 +85,7 @@ void GameServerManager::clearActive() {
     this->saveLastConnected("");
 }
 
-void GameServerManager::clearAllExcept(const std::string_view id) {
+void GameServerManager::clearAllExcept(std::string_view id) {
     auto data = _data.lock();
 
     auto key = std::string(id);
@@ -107,7 +107,7 @@ std::optional<GameServer> GameServerManager::getActiveServer() {
     return this->getServer(active);
 }
 
-std::optional<GameServer> GameServerManager::getServer(const std::string_view id_) {
+std::optional<GameServer> GameServerManager::getServer(std::string_view id_) {
     std::string id(id_);
 
     auto data = _data.lock();
@@ -137,7 +137,7 @@ int GameServerManager::getActivePing() {
     return server.value().ping;
 }
 
-void GameServerManager::saveStandalone(const std::string_view addr) {
+void GameServerManager::saveStandalone(std::string_view addr) {
     Mod::get()->setSavedValue(STANDALONE_SETTING_KEY, std::string(addr));
 }
 
@@ -145,7 +145,7 @@ std::string GameServerManager::loadStandalone() {
     return Mod::get()->getSavedValue<std::string>(STANDALONE_SETTING_KEY);
 }
 
-void GameServerManager::saveLastConnected(const std::string_view addr) {
+void GameServerManager::saveLastConnected(std::string_view addr) {
     Mod::get()->setSavedValue(LAST_CONNECTED_SETTING_KEY, std::string(addr));
 }
 
@@ -153,7 +153,7 @@ std::string GameServerManager::loadLastConnected() {
     return Mod::get()->getSavedValue<std::string>(LAST_CONNECTED_SETTING_KEY);
 }
 
-void GameServerManager::updateCache(const std::string_view response) {
+void GameServerManager::updateCache(std::string_view response) {
     _data.lock()->cachedServerResponse = response;
     Mod::get()->setSavedValue(SERVER_RESPONSE_CACHE_KEY, std::string(response));
 }
@@ -219,7 +219,7 @@ Result<> GameServerManager::loadFromCache() {
     return Ok();
 }
 
-uint32_t GameServerManager::startPing(const std::string_view serverId) {
+uint32_t GameServerManager::startPing(std::string_view serverId) {
     auto pingId = util::rng::Random::get().generate<uint32_t>();
 
     auto data = _data.lock();

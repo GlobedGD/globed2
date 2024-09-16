@@ -299,7 +299,7 @@ protected:
 
     /* connection and tasks */
 
-    Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone, bool fromRecovery = false) {
+    Result<> connect(const NetworkAddress& address, std::string_view serverId, bool standalone, bool fromRecovery = false) {
         // if we are already connected, disconnect first
         if (state == ConnectionState::Established) {
             this->disconnect(false, false);
@@ -357,7 +357,7 @@ protected:
         }
     }
 
-    void disconnectWithMessage(const std::string_view message, bool quiet = true) {
+    void disconnectWithMessage(std::string_view message, bool quiet = true) {
         ErrorQueues::get().error(fmt::format("You have been disconnected from the active server.\n\nReason: <cy>{}</c>", message));
         this->disconnect(quiet);
     }
@@ -366,7 +366,7 @@ protected:
         cancellingRecovery = true;
     }
 
-    void onConnectionError(const std::string_view reason) {
+    void onConnectionError(std::string_view reason) {
         ErrorQueues::get().debugWarn(reason);
     }
 
@@ -1108,7 +1108,7 @@ NetworkManager::~NetworkManager() {
     delete impl;
 }
 
-Result<> NetworkManager::connect(const NetworkAddress& address, const std::string_view serverId, bool standalone) {
+Result<> NetworkManager::connect(const NetworkAddress& address, std::string_view serverId, bool standalone) {
     return impl->connect(address, serverId, standalone);
 }
 
@@ -1130,7 +1130,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     impl->disconnect(quiet, noclear);
 }
 
-void NetworkManager::disconnectWithMessage(const std::string_view message, bool quiet) {
+void NetworkManager::disconnectWithMessage(std::string_view message, bool quiet) {
     impl->disconnectWithMessage(message, quiet);
 }
 
