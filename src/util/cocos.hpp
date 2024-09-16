@@ -56,5 +56,7 @@ namespace util::cocos {
 
     void renderNodeToFile(cocos2d::CCNode*, const std::filesystem::path& dest);
 
+    std::string parentChain(cocos2d::CCNode*);
+
     GLOBED_DLL void tryLoadDeathEffect(int id);
 }

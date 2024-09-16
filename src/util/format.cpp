@@ -275,4 +275,21 @@ namespace util::format {
 
         return out;
     }
+
+    std::string_view unqualify(std::string_view input) {
+        auto lastNs = input.find_last_of("::");
+
+        if (lastNs != std::string::npos) {
+            input = input.substr(lastNs + 1); // after all namespaces
+        } else {
+            // skip class, struct, enum
+            if (input.find("class ") != std::string::npos) input = input.substr(6);
+            if (input.find("struct ") != std::string::npos) input = input.substr(7);
+            if (input.find("enum ") != std::string::npos) input = input.substr(5);
+        }
+
+        input = input.substr(0, input.find_first_of(' '));
+
+        return input;
+    }
 }

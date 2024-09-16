@@ -83,4 +83,8 @@ namespace util::format {
     std::tuple<std::string_view, char, std::string_view> rpartition(std::string_view s, char sep);
 
     std::string replace(std::string_view input, std::string_view searched, std::string_view replacement);
+
+    // Un-c++-qualifies a name.
+    // For example, is expected to take in `class cocos2d::CCNode * __ptr64` or `const cocos2d::CCNode* const` and return simply `CCNode*`
+    std::string_view unqualify(std::string_view input);
 }

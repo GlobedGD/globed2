@@ -696,6 +696,37 @@ namespace util::cocos {
         img->saveToFile(dest.string().c_str());
     }
 
+    std::string parentChain(CCNode* node) {
+        if (!node) {
+            return "<null>";
+        }
+
+        std::string out;
+
+        bool first = true;
+        do {
+            auto tname = util::debug::getTypename(node);
+            if (!first) {
+                out.insert(0, " -> ");
+            }
+
+            std::string formatted;
+            auto id = node->getID();
+
+            if (id.empty()) {
+                formatted = fmt::format("{} ({})", format::unqualify(tname), (void*)node);
+            } else {
+                formatted = fmt::format("{} ({} at {})", id, format::unqualify(tname), (void*)node);
+            }
+
+            out.insert(0, formatted);
+
+            first = false;
+        } while ((node = node->getParent()));
+
+        return out;
+    }
+
     void tryLoadDeathEffect(int id) {
         if (id <= 1) return;
 

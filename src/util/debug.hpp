@@ -126,6 +126,12 @@ namespace util::debug {
         log::warn("util::debug::printStruct not implemented for this platform");
 #endif
     }
+
+    template <typename T> requires (std::is_polymorphic_v<T>)
+    std::string getTypename(T* type) {
+        // TODO demangle
+        return typeid(*type).name();
+    }
 }
 
 #define GLOBED_BENCH(name, ...) ::util::debug::Benchmarker().runAndLog([&] { __VA_ARGS__ ; }, name)
