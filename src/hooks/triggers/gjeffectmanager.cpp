@@ -28,13 +28,18 @@ void GJEffectManagerHook::updateCountForItem(int id, int value) {
     }
 }
 
+static int countForItemDetour(GJEffectManagerHook* self, int itemId) {
+    if (globed::isCustomItem(itemId)) {
+        return self->countForItemCustom(itemId);
+    } else {
+        itemId = std::clamp(itemId, 0, 9999);
+        return self->m_itemIDs[itemId];
+    }
+}
+
 #ifndef GEODE_IS_WINDOWS
 int GJEffectManagerHook::countForItem(int item) {
-    if (globed::isWritableCustomItem(item)) {
-        return this->countForItemCustom(item);
-    } else {
-        return GJEffectManager::countForItem(item);
-    }
+    return countForItemDetour(this, item);
 }
 #else
 
@@ -44,15 +49,6 @@ int GJEffectManagerHook::countForItem(int item) {
 // The patch preserves r11 and calls a reimplementation of the function.
 
 static geode::Patch* countForItemPatch = nullptr;
-
-int countForItemDetour(GJEffectManagerHook* self, int itemId) {
-    if (globed::isCustomItem(itemId)) {
-        return self->countForItemCustom(itemId);
-    } else {
-        itemId = std::clamp(itemId, 0, 9999);
-        return self->m_itemIDs[itemId];
-    }
-}
 
 $execute {
     // r11 needed for one callsite in triggerObject

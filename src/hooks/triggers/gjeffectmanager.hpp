@@ -11,10 +11,14 @@ struct GLOBED_DLL GJEffectManagerHook : geode::Modify<GJEffectManagerHook, GJEff
         std::map<int, int> customItems;
     };
 
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("GJEffectManager::countForItem", 999999);
+    }
+
     $override
     void updateCountForItem(int id, int value);
 
-    // TODO: maybe inline flag will help here
+    // TODO: alk fixed, wait for geode update
 #ifndef GEODE_IS_WINDOWS
     $override
     int countForItem(int item);
