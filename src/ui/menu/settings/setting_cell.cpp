@@ -25,7 +25,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     this->limits = limits;
 
     Build<CCLabelBMFont>::create(nameText, "bigFont.fnt")
-        .scale(0.6f)
+        .scale(0.5f)
         .anchorPoint(0.f, 0.5f)
         .pos(10.f, CELL_HEIGHT / 2)
         .parent(this)
@@ -35,7 +35,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     if (descText && descText[0] != '\0') {
         auto labelSize = labelName->getScaledContentSize();
         Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-            .scale(0.4f)
+            .scale(0.35f)
             .intoMenuItem([nameText, descText](auto) {
                 FLAlertLayer::create(nameText, descText, "Ok")->show();
             })
@@ -47,9 +47,9 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
 
     switch (settingType) {
         case Type::Bool: {
-            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 1.0f))
+            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 0.85f))
                 .anchorPoint(0.5f, 0.5f)
-                .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 15.f, CELL_HEIGHT / 2)
                 .scale(0.8f)
                 .id("input-checkbox"_spr)
                 .store(inpCheckbox)
@@ -64,9 +64,9 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
             bool possible = Loader::get()->isModLoaded("techstudent10.discord_rich_presence");
             float opacity = possible ? 1.f : 0.5f;
 
-            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 1.0f))
+            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 0.85f))
                 .anchorPoint(0.5f, 0.5f)
-                .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 15.f, CELL_HEIGHT / 2)
                 .scale(0.8f)
                 .with([&](auto* btn) {
                     btn->m_offButton->setOpacity(static_cast<unsigned char>(255 * opacity));
@@ -82,7 +82,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
 
             if (!possible) {
                 Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-                    .scale(0.4f)
+                    .scale(0.35f)
                     .intoMenuItem([](auto) {
                         FLAlertLayer::create("Not available", "This feature requires the Discord Rich Presence mod to be installed.", "Ok")->show();
                     })
@@ -138,11 +138,12 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
             }
 
             Build<ButtonSprite>::create(text, "goldFont.fnt", "GJ_button_04.png", .7f)
+                .scale(0.8f)
                 .intoMenuItem([this](auto* sender) {
                     this->onInteractiveButton(sender);
                 })
                 .anchorPoint(0.5f, 0.5f)
-                .pos(CELL_WIDTH - 10.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 8.f, CELL_HEIGHT / 2)
                 .id("input-interactive-btn"_spr)
                 .store(inpAudioButton)
                 .intoNewParent(CCMenu::create())
@@ -155,8 +156,9 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         case Type::Int: {
             int currentValue = *(int*)(settingStorage);
             Build<InputNode>::create(CELL_WIDTH * 0.2f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 10)
+                .scale(0.8f)
                 .anchorPoint(1.f, 0.5f)
-                .pos(CELL_WIDTH - 10.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 8.f, CELL_HEIGHT / 2)
                 .id("input-field"_spr)
                 .store(inpField)
                 .intoNewParent(CCMenu::create())
@@ -182,7 +184,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                             ->setAutoScale(false));
         menu->setContentWidth(CELL_WIDTH - 5.f);
         menu->setAnchorPoint({0.f, 0.5f});
-        menu->setPositionX(-2.f);
+        menu->setPositionX(-1.f);
         menu->setPositionY(CELL_HEIGHT / 2.f);
 
         if (settingType == Type::PacketFragmentation) {
@@ -191,7 +193,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
 
             // button to manually edit packet frag
             Build<CircleButtonSprite>::create(spr)
-                .scale(0.65f)
+                .scale(0.5f)
                 .intoMenuItem([this, settingStorage] (auto) {
                     AskInputPopup::create("Packet limit", [this](auto input) {
                         auto limit = util::format::parse<int>(input).value_or(0);
@@ -293,7 +295,7 @@ void GlobedSettingCell::recreateCornerButton() {
     ButtonSprite* theButton;
 
     Build<ButtonSprite>::create("000", "bigFont.fnt", "GJ_button_04.png", 0.4f)
-        .scale(0.75f)
+        .scale(0.6f)
         .store(theButton)
         .intoMenuItem([this, currentValue](auto) {
             int cv = currentValue + 1;
@@ -305,7 +307,7 @@ void GlobedSettingCell::recreateCornerButton() {
             this->recreateCornerButton();
         })
         .anchorPoint(0.5f, 0.5f)
-        .pos(CELL_WIDTH - 25.f, CELL_HEIGHT / 2)
+        .pos(CELL_WIDTH - 23.f, CELL_HEIGHT / 2)
         .scaleMult(1.1f)
         .id("overlay-btn")
         .store(cornerButton)
@@ -341,7 +343,7 @@ void GlobedSettingCell::recreateInvitesFromButton() {
     }
 
     Build<ButtonSprite>::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f)
-        .scale(0.75f)
+        .scale(0.6f)
         .intoMenuItem([this, currentValue](auto) {
             asp::NumberCycle curValue((int)currentValue, 0, (int)InvitesFrom::Nobody);
             curValue.increment();
@@ -351,7 +353,7 @@ void GlobedSettingCell::recreateInvitesFromButton() {
         })
         .anchorPoint(0.5f, 0.5f)
         .with([](auto* btn) {
-            btn->setPosition(CELL_WIDTH - 8.f - btn->getScaledContentSize().width / 2.f, CELL_HEIGHT / 2);
+            btn->setPosition(CELL_WIDTH - 6.f - btn->getScaledContentSize().width / 2.f, CELL_HEIGHT / 2);
         })
         .scaleMult(1.1f)
         .id("invite-from-btn")

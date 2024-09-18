@@ -15,7 +15,7 @@ public:
     };
 
     static constexpr float CELL_WIDTH = 358.0f;
-    static constexpr float CELL_HEIGHT = 37.5f;
+    static constexpr float CELL_HEIGHT = 30.f;
 
     // The character parameters must be string literals, or must exist for the entire lifetime of the cell.
     static GlobedSettingCell* create(void*, Type, const char*, const char*, const Limits&);
