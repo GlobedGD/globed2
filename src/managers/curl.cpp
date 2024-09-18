@@ -5,10 +5,11 @@
 
 #include <ca_bundle.h>
 
+#include <crypto/chacha_secret_box.hpp>
+#include <managers/settings.hpp>
 #include <util/crypto.hpp>
 #include <util/format.hpp>
 #include <util/net.hpp>
-#include <crypto/chacha_secret_box.hpp>
 
 constexpr static auto KEY = "bff252d2731a6c6ca26d7f5144bc750fd6723316619f86c8636ebdc13bf3214c";
 static ChaChaSecretBox g_box(util::crypto::hexDecode(KEY).unwrap());
@@ -134,6 +135,14 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
         // do not fail if response code is 4XX or 5XX
         curl_easy_setopt(curl, CURLOPT_FAILONERROR, 0L);
 
+        if (GlobedSettings::get().launchArgs().verboseCurl) {
+            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        }
+
+        char errorBuffer[CURL_ERROR_SIZE];
+        errorBuffer[0] = '\0';
+        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
+
         // get headers from the response
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, (+[](char* buffer, size_t size, size_t nitems, void* ptr) {
@@ -175,11 +184,20 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
             response.m_code = status;
         } else {
             if (hasBeenCancelled()) {
+                curl_slist_free_all(headers);
+                curl_easy_cleanup(curl);
                 return Task::Cancel();
             }
 
+            std::string providedMessage{errorBuffer};
+
             response.m_code = 0;
-            response.m_fatalMessage = fmt::format("Curl failed: {}", curl_easy_strerror(code));
+
+            if (providedMessage.empty()) {
+                response.m_fatalMessage = fmt::format("Curl failed: {}", curl_easy_strerror(code));
+            } else {
+                response.m_fatalMessage = fmt::format("Curl failed ({}): {}", (int)code, providedMessage);
+            }
         }
 
         curl_slist_free_all(headers);
