@@ -116,7 +116,11 @@ cocos2d::CCArray* AudioSetupPopup::createDeviceCells() {
 
     auto& vm = GlobedAudioManager::get();
 
-    int activeId = vm.getRecordingDevice().id;
+    int activeId = -1;
+    if (const auto& dev = vm.getRecordingDevice()) {
+        activeId = dev->id;
+    }
+
     auto devices = vm.getRecordingDevices();
 
     for (const auto& device : devices) {
@@ -142,7 +146,10 @@ void AudioSetupPopup::weakRefreshList() {
         return;
     }
 
-    int activeId = vm.getRecordingDevice().id;
+    int activeId = -1;
+    if (const auto& dev = vm.getRecordingDevice()) {
+        activeId = dev->id;
+    }
 
     size_t refreshed = 0;
     for (auto* cell : *listLayer) {

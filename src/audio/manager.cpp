@@ -9,6 +9,7 @@
 #endif
 
 #include <opus.h>
+#include <fmod_errors.h>
 #include <Geode/utils/permission.hpp>
 
 #include <managers/error_queues.hpp>
@@ -85,18 +86,25 @@ void GlobedAudioManager::preInitialize() {
     }
 
     // load the previously selected device
+    if (settings.communication.audioDevice == -1) {
+        recordDevice = std::nullopt;
+        return;
+    }
+
     auto device = this->getRecordingDevice(settings.communication.audioDevice);
 
     if (device.has_value()) {
-        this->setActiveRecordingDevice(device.value());
+        recordDevice = std::move(device.value());
+        return;
+    }
+
+    // if invalid, try to get the first device in the list
+    device = this->getRecordingDevice(0);
+    if (device.has_value()) {
+        recordDevice = std::move(device.value());
     } else {
-        device = this->getRecordingDevice(0);
-        if (device.has_value()) {
-            this->setActiveRecordingDevice(device.value());
-        } else {
-            // give up.
-            recordDevice.id = -1;
-        }
+        // give up.
+        recordDevice = std::nullopt;
     }
 }
 
@@ -187,32 +195,33 @@ std::optional<AudioPlaybackDevice> GlobedAudioManager::getPlaybackDevice(int dev
 }
 
 bool GlobedAudioManager::isRecordingDeviceSet() {
-    return recordDevice.id != -1;
+    return recordDevice.has_value();
 }
 
 void GlobedAudioManager::validateDevices() {
-    try {
-        if (recordDevice.id != -1) {
-            this->setActiveRecordingDevice(recordDevice.id);
-            if (recordDevice.id == -1) {
-                log::info("Invalidating recording device {}", recordDevice.id);
-            }
-        }
-    } catch (const std::exception& e) {
-        log::info("Invalidating recording device {}: {}", recordDevice.id, e.what());
-        recordDevice.id = -1;
+    if (this->isRecording()) {
+        log::warn("Attempting to invoke validateDevices while recording audio");
+        return;
     }
 
-    try {
-        if (playbackDevice.id != -1) {
-            this->setActivePlaybackDevice(playbackDevice.id);
-            if (playbackDevice.id == -1) {
-                log::info("Invalidating playback device {}", playbackDevice.id);
-            }
+    if (recordDevice.has_value()) {
+        // check if this device still exists
+        if (auto dev = this->getRecordingDevice(recordDevice->id)) {
+            recordDevice = dev;
+        } else {
+            log::warn("Invalidating audio device {} ({})", recordDevice->id, recordDevice->name);
+            recordDevice = std::nullopt;
         }
-    } catch (const std::exception& e) {
-        log::info("Invalidating playback device {}: {}", playbackDevice.id, e.what());
-        playbackDevice.id = -1;
+    }
+
+    if (playbackDevice.has_value()) {
+        // check if this device still exists
+        if (auto dev = this->getPlaybackDevice(playbackDevice->id)) {
+            playbackDevice = dev;
+        } else {
+            log::warn("Invalidating audio device {} ({})", playbackDevice->id, playbackDevice->name);
+            playbackDevice = std::nullopt;
+        }
     }
 }
 
@@ -225,7 +234,7 @@ Result<> GlobedAudioManager::startRecordingInternal(bool passive) {
         return Err("Recording failed, please grant microphone permission in Globed settings");
     }
 
-    GLOBED_REQUIRE_SAFE(this->recordDevice.id >= 0, "no recording device is set")
+    GLOBED_REQUIRE_SAFE(this->recordDevice.has_value(), "no recording device is set")
     GLOBED_REQUIRE_SAFE(!this->isRecording() && !recordActive, "attempting to record when already recording")
 
     if (recordSound != nullptr) {
@@ -248,11 +257,11 @@ Result<> GlobedAudioManager::startRecordingInternal(bool passive) {
         "System::createSound"
     )
 
-    FMOD_RESULT res = this->getSystem()->recordStart(recordDevice.id, recordSound, true);
+    FMOD_RESULT res = this->getSystem()->recordStart(recordDevice->id, recordSound, true);
 
     // invalid device most likely
     if (res == FMOD_ERR_RECORD) {
-        return Err("Invalid audio device selected, unable to record");
+        return Err("Failed to start recording audio");
     }
 
     FMOD_ERR_CHECK_SAFE(res, "System::recordStart")
@@ -286,11 +295,15 @@ Result<> GlobedAudioManager::startRecordingRaw(std::function<void(const float*, 
     return Ok();
 }
 
-void GlobedAudioManager::internalStopRecording() {
-    FMOD_ERR_CHECK(
-        this->getSystem()->recordStop(recordDevice.id),
-        "System::recordStop"
-    )
+void GlobedAudioManager::internalStopRecording(bool ignoreErrors) {
+    if (ignoreErrors) {
+        (void) this->getSystem()->recordStop(recordDevice->id);
+    } else {
+        FMOD_ERR_CHECK(
+            this->getSystem()->recordStop(recordDevice->id),
+            "System::recordStop"
+        )
+    }
 
     // if halting instead of stopping, don't call the callback
     if (recordQueuedHalt) {
@@ -330,7 +343,7 @@ void GlobedAudioManager::haltRecording() {
 }
 
 bool GlobedAudioManager::isRecording() {
-    if (this->recordDevice.id == -1) {
+    if (!this->recordDevice) {
         return false;
     }
 
@@ -340,8 +353,9 @@ bool GlobedAudioManager::isRecording() {
 
     bool recording;
 
-    if (FMOD_OK != this->getSystem()->isRecording(this->recordDevice.id, &recording)) {
-        this->recordDevice.id = -1;
+    if (FMOD_OK != this->getSystem()->isRecording(this->recordDevice->id, &recording)) {
+        this->recordDevice = std::nullopt;
+        this->internalStopRecording(true);
         return false;
     }
 
@@ -408,37 +422,36 @@ FMOD::Sound* GlobedAudioManager::createSound(const float* pcm, size_t samples, i
     return sound;
 }
 
-AudioRecordingDevice GlobedAudioManager::getRecordingDevice() {
+const std::optional<AudioRecordingDevice>& GlobedAudioManager::getRecordingDevice() {
     return recordDevice;
 }
 
-AudioPlaybackDevice GlobedAudioManager::getPlaybackDevice() {
+const std::optional<AudioPlaybackDevice>& GlobedAudioManager::getPlaybackDevice() {
     return playbackDevice;
 }
 
 void GlobedAudioManager::setActiveRecordingDevice(int deviceId) {
-    if (recordDevice.id != -1) {
-        GLOBED_REQUIRE(!this->isRecording(), "attempting to change the recording device while recording")
-    }
-
     auto dev = this->getRecordingDevice(deviceId);
+
     if (dev.has_value()) {
         this->setActiveRecordingDevice(dev.value());
-    } else {
-        recordDevice.id = -1;
     }
 }
 
 void GlobedAudioManager::setActiveRecordingDevice(const AudioRecordingDevice& device) {
+    if (this->isRecording()) {
+        ErrorQueues::get().warn("attempting to change the recording device while recording");
+        return;
+    }
+
     recordDevice = device;
 }
 
 void GlobedAudioManager::setActivePlaybackDevice(int deviceId) {
     auto dev = this->getPlaybackDevice(deviceId);
+
     if (dev.has_value()) {
         this->setActivePlaybackDevice(dev.value());
-    } else {
-        playbackDevice.id = -1;
     }
 }
 
@@ -505,13 +518,12 @@ Result<> GlobedAudioManager::audioThreadWork() {
 
     unsigned int pos;
     FMOD_ERR_CHECK_SAFE(
-        this->getSystem()->getRecordPosition(recordDevice.id, &pos),
+        this->getSystem()->getRecordPosition(recordDevice->id, &pos),
         "System::getRecordPosition"
     )
 
     // if we are at the same position, do nothing
     if (pos == recordLastPosition) {
-        this->getSystem()->update();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         return Ok();
     }
@@ -562,8 +574,6 @@ Result<> GlobedAudioManager::audioThreadWork() {
         }
     }
 
-    this->getSystem()->update();
-
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
     // std::this_thread::yield();
 
@@ -579,98 +589,7 @@ FMOD::System* GlobedAudioManager::getSystem() {
 }
 
 const char* GlobedAudioManager::fmodErrorString(FMOD_RESULT result) {
-    static constexpr const char* values[] = {
-        "No error",
-        "Tried to call a function on a data type that does not allow this type of functionality",
-        "Error trying to allocate a Channel",
-        "The specified Channel has been reused to play another Sound",
-        "DMA Failure",
-        "DSP connection error (possibly caused by a cyclic dependency or a connected DSPs with incompatible buffer counts)",
-        "DSP don't process (return value for a DSP callback)",
-        "DSP Format error",
-        "DSP is already in the mixer's DSP network",
-        "Ccould not find the DSP unit specified",
-        "Cannot perform operation on this DSP as it is reserved by the system",
-        "DSP silence (return value for a DSP callback)",
-        "DSP operation cannot be performed on a DSP of this type",
-        "Error loading file",
-        "Couldn't perform a seek operation",
-        "Media was ejected while reading",
-        "End of file unexpectedly reached while trying to read essential data",
-        "End of current chunk reached while trying to read data",
-        "File not found",
-        "Unsupported file or audio format",
-        "Version mismatch between the FMOD header and either the FMOD Studio library or the FMOD Core library",
-        "An HTTP error occurred",
-        "The specified resource requires authentication or is forbidden",
-        "Proxy authentication is required to access the specified resource",
-        "An HTTP server error occurred",
-        "The HTTP request timed out",
-        "FMOD was not initialized correctly to support this function",
-        "Cannot call this command after the system has already been initialized",
-        "An internal FMOD error occurred",
-        "Value passed in was a NaN, Inf or denormalized float",
-        "An invalid object handle was used",
-        "An invalid parameter was passed to this function",
-        "An invalid seek position was passed to this function",
-        "An invalid speaker was passed to this function based on the current speaker mode",
-        "The syncpoint did not come from this Sound handle",
-        "Tried to call a function on a thread that is not supported",
-        "The vectors passed in are not unit length, or perpendicular",
-        "Reached maximum audible playback count for this Sound's SoundGroup",
-        "Not enough memory or resources",
-        "Can't use FMOD_OPENMEMORY_POINT on non PCM source data, or non mp3/xma/adpcm data if FMOD_CREATECOMPRESSEDSAMPLE was used",
-        "Tried to call a command on a 2D Sound when the command was meant for 3D Sound",
-        "Tried to use a feature that requires hardware support",
-        "Couldn't connect to the specified host",
-        "A socket error occurred",
-        "The specified URL couldn't be resolved",
-        "Operation on a non-blocking socket could not complete immediately",
-        "Operation could not be performed because specified Sound/DSP connection is not ready",
-        "Error initializing output device, because it is already in use and cannot be reused",
-        "Error creating hardware sound buffer",
-        "A call to a standard soundcard driver failed, which could possibly mean a bug in the driver or resources were missing or exhausted",
-        "Soundcard does not support the specified format",
-        "Error initializing output device",
-        "The output device has no drivers installed",
-        "An unspecified error has been returned from a plugin",
-        "A requested output, DSP unit type or codec was not available",
-        "A resource that the plugin requires cannot be allocated or found",
-        "A plugin was built with an unsupported SDK version",
-        "An error occurred trying to initialize the recording device",
-        "Reverb properties cannot be set on this Channel because a parent ChannelGroup owns the reverb connection",
-        "Specified instance in FMOD_REVERB_PROPERTIES couldn't be set. Most likely because it is an invalid instance number or the reverb doesn't exist",
-        "Sound contains subsounds when it shouldn't have, or it doesn't contain subsounds when it should have. The operation may also not be able to be performed on a parent Sound",
-        "This subsound is already being used by another Sound, you cannot have more than one parent to a Sound",
-        "Shared subsounds cannot be replaced or moved from their parent stream, such as when the parent stream is an FSB file",
-        "The specified tag could not be found or there are no tags",
-        "The Sound created exceeds the allowable input channel count. This can be increased using the 'maxinputchannels' parameter in System::setSoftwareFormat",
-        "The retrieved string is too long to fit in the supplied buffer and has been truncated",
-        "Something in FMOD hasn't been implemented when it should be!",
-        "This command cannot be called before initializing the System",
-        "A command issued was not supported by this object",
-        "The version number of this file format is not supported",
-        "The specified bank has already been loaded",
-        "The live update connection failed due to the game already being connected",
-        "The live update connection failed due to the game data being out of sync with the tool",
-        "The live update connection timed out",
-        "The requested event, parameter, bus or vca could not be found",
-        "The Studio::System object is not yet initialized",
-        "The specified resource is not loaded, so it can't be unloaded",
-        "An invalid string was passed to this function",
-        "The specified resource is already locked",
-        "The specified resource is not locked, so it can't be unlocked",
-        "The specified recording driver has been disconnected",
-        "The length provided exceeds the allowable limit"
-    };
-
-    int idx = static_cast<int>(result);
-
-    if (idx < 0 || idx > 81) {
-        return "Invalid FMOD error code was passed; there is no corresponding error message to return";
-    }
-
-    return values[idx];
+    return FMOD_ErrorString(result);
 }
 
 std::string GlobedAudioManager::formatFmodError(FMOD_RESULT result, const char* whatFailed) {

@@ -58,9 +58,9 @@ public:
     std::optional<AudioPlaybackDevice> getPlaybackDevice(int deviceId);
 
     // get the current active record device
-    AudioRecordingDevice getRecordingDevice();
+    const std::optional<AudioRecordingDevice>& getRecordingDevice();
     // get the current active playback device
-    AudioPlaybackDevice getPlaybackDevice();
+    const std::optional<AudioPlaybackDevice>& getPlaybackDevice();
 
     // get if the recording device is set
     bool isRecordingDeviceSet();
@@ -122,8 +122,8 @@ public:
 
 private:
     /* devices */
-    AudioRecordingDevice recordDevice;
-    AudioPlaybackDevice playbackDevice; // unused
+    std::optional<AudioRecordingDevice> recordDevice;
+    std::optional<AudioPlaybackDevice> playbackDevice; // unused
 
     asp::AtomicBool loopbacksAllowed = false;
 
@@ -146,7 +146,7 @@ private:
     void recordContinueStream();
     void recordInvokeCallback();
     void recordInvokeRawCallback(float* pcm, size_t samples);
-    void internalStopRecording();
+    void internalStopRecording(bool ignoreErrors = false);
 
     AudioEncoder encoder;
 
