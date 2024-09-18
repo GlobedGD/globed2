@@ -185,10 +185,8 @@ static _Thrd_result __stdcall _Cnd_timedwait_for_reimpl(_Cnd_t cond, _Mtx_t mtx,
 void fixCVAbiBreak() {
     if (!isWine()) return;
 
-    // TODO: im not sure tbh does this bug exist when compiled on windows too?
-
 #ifdef GLOBED_LINUX_COMPILATION
-    if (Loader::get()->getLaunchFlag("globed-crt-fix")) {
+    if (GlobedSettings::get().launchArgs().crtFix) {
         (void) Mod::get()->hook(
             reinterpret_cast<void*>(addresser::getNonVirtual(&_Cnd_timedwait_for)),
             _Cnd_timedwait_for_reimpl,

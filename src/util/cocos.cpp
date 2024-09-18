@@ -59,7 +59,7 @@ namespace util::cocos {
     }
 
     void preloadLogImpl(std::string_view message) {
-        static bool enabled = geode::Loader::get()->getLaunchFlag("globed-debug-preload");
+        static bool enabled = GlobedSettings::get().launchArgs().debugPreload;
 
         if (enabled) {
             geode::log::debug("preload: {}", message);
@@ -453,7 +453,7 @@ namespace util::cocos {
     bool forcedSkipPreload() {
         auto& settings = GlobedSettings::get();
 
-        return !settings.globed.preloadAssets || Loader::get()->getLaunchFlag("globed-skip-preload") || Mod::get()->getSettingValue<bool>("force-skip-preload");
+        return !settings.globed.preloadAssets || settings.launchArgs().skipPreload || Mod::get()->getSettingValue<bool>("force-skip-preload");
     }
 
     bool shouldTryToPreload(bool onLoading) {

@@ -60,6 +60,10 @@ void GlobedSettings::reflect(TaskType taskType) {
     });
 }
 
+const GlobedSettings::LaunchArgs& GlobedSettings::launchArgs() {
+    return _launchArgs;
+}
+
 void GlobedSettings::hardReset() {
     this->reflect(TaskType::HardResetSettings);
 }
@@ -70,6 +74,12 @@ void GlobedSettings::reset() {
 
 void GlobedSettings::reload() {
     this->reflect(TaskType::LoadSettings);
+
+    // load launch arguments
+    _launchArgs.crtFix = Mod::get()->getLaunchFlag("globed-crt-fix");
+    _launchArgs.verboseCurl = Mod::get()->getLaunchFlag("globed-verbose-curl");
+    _launchArgs.skipPreload = Mod::get()->getLaunchFlag("globed-skip-preload");
+    _launchArgs.debugPreload = Mod::get()->getLaunchFlag("globed-debug-preload");
 }
 
 void GlobedSettings::save() {

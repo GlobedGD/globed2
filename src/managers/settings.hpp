@@ -231,6 +231,18 @@ public:
     Admin admin;
     Flags flags;
 
+private:
+    // Launch args
+    struct LaunchArgs {
+        bool crtFix = false;
+        bool verboseCurl = false;
+        bool skipPreload = false;
+        bool debugPreload = false;
+    } _launchArgs;
+public:
+
+    const LaunchArgs& launchArgs();
+
     // Reset everything, including flags
     void hardReset();
 
