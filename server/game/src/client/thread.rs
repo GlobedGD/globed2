@@ -8,9 +8,12 @@ use std::{
     time::Duration,
 };
 
-use crate::tokio::{
-    self,
-    sync::{Mutex, Notify},
+use crate::{
+    managers::Room,
+    tokio::{
+        self,
+        sync::{Mutex, Notify},
+    },
 };
 use esp::ByteReader;
 use globed_shared::{logger::*, should_ignore_error, ServerUserEntry, SyncMutex};
@@ -60,6 +63,7 @@ pub struct ClientThread {
     pub on_unlisted_level: AtomicBool,
     pub room_id: AtomicU32,
     pub link_code: AtomicU32,
+    pub room: SyncMutex<Arc<Room>>,
 
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<ServerUserEntry>,
@@ -121,6 +125,7 @@ impl ClientThread {
             on_unlisted_level: thread.on_unlisted_level,
             room_id: thread.room_id,
             link_code: thread.link_code,
+            room: thread.room,
 
             account_data: SyncMutex::new(account_data),
             user_entry: SyncMutex::new(user_entry),
@@ -237,6 +242,10 @@ impl ClientThread {
     // shorthand for checking if user has mod perms, and is authorized
     pub fn can_moderate(&self) -> bool {
         self.is_authorized_user.load(Ordering::Relaxed) && self.user_role.lock().can_moderate()
+    }
+
+    pub fn is_in_room(&self) -> bool {
+        self.room_id.load(Ordering::Relaxed) != 0
     }
 
     /// schedule the thread to terminate as soon as possible.

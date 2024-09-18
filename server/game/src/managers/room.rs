@@ -30,13 +30,14 @@ pub struct Room {
     pub name: InlineString<32>,
     pub password: InlineString<16>,
     pub manager: SyncRwLock<LevelManager>,
+    pub id: u32,
     data: SyncMutex<RoomMutableData>,
 }
 
 #[derive(Default)]
 pub struct RoomManager {
     rooms: SyncMutex<IntMap<u32, Arc<Room>>>,
-    global: Room,
+    global: Arc<Room>,
     game_server: OnceLock<&'static GameServer>,
 }
 
@@ -52,6 +53,7 @@ impl Room {
         password: InlineString<16>,
         settings: RoomSettings,
         manager: LevelManager,
+        id: u32,
     ) -> Self {
         Self {
             orig_owner: owner,
@@ -60,6 +62,7 @@ impl Room {
             name,
             password,
             manager: SyncRwLock::new(manager),
+            id,
             data: SyncMutex::new(RoomMutableData { owner: owner_data, settings }),
         }
     }
@@ -103,11 +106,11 @@ impl Room {
     }
 
     #[inline]
-    pub fn get_room_info(&self, id: u32) -> RoomInfo {
+    pub fn get_room_info(&self) -> RoomInfo {
         let data = self.data.lock();
 
         RoomInfo {
-            id,
+            id: self.id,
             name: self.name.clone(),
             password: self.password.clone(),
             owner: data.owner.clone().unwrap_or_default(),
@@ -198,22 +201,13 @@ impl RoomManager {
 
     /// Try to find a room by given ID, if equal to 0 or not found, runs the provided closure with the global room
     pub fn with_any<F: FnOnce(&Room) -> R, R>(&self, room_id: u32, f: F) -> R {
-        if room_id == 0 {
-            f(&self.get_global())
-        } else {
-            let room = self.get_room(room_id);
-            if let Some(room) = room {
-                f(&room)
-            } else {
-                f(&self.get_global())
-            }
-        }
+        f(&self.get_room_or_global(room_id))
     }
 
     /// Try to find a room by given ID and run the provided function on it. If not found, calls `default`.
     pub fn try_with_any<F: FnOnce(&Room) -> R, D: FnOnce() -> R, R>(&self, room_id: u32, f: F, default: D) -> R {
         if room_id == 0 {
-            f(&mut self.get_global())
+            f(self.get_global())
         } else {
             let room = self.get_room(room_id);
             if let Some(room) = room {
@@ -228,6 +222,10 @@ impl RoomManager {
         &self.global
     }
 
+    pub fn get_global_owned(&self) -> Arc<Room> {
+        self.global.clone()
+    }
+
     pub fn get_rooms(&self) -> SyncMutexGuard<'_, IntMap<u32, Arc<Room>>> {
         self.rooms.lock()
     }
@@ -236,8 +234,16 @@ impl RoomManager {
         self.rooms.lock().get(&room_id).cloned()
     }
 
-    /// Creates a new room, adds the given player, removes them from the global room, and returns the room ID
-    pub fn create_room(&self, account_id: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> RoomInfo {
+    pub fn get_room_or_global(&self, room_id: u32) -> Arc<Room> {
+        if room_id == 0 {
+            self.get_global_owned()
+        } else {
+            self.get_room(room_id).unwrap_or_else(|| self.get_global_owned())
+        }
+    }
+
+    /// Creates a new room, adds the given player, removes them from the global room, and returns the room
+    pub fn create_room(&self, account_id: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> Arc<Room> {
         let rooms = self.rooms.lock();
 
         // in case we accidentally generate an existing room id, keep looping until we find a suitable id
@@ -274,35 +280,31 @@ impl RoomManager {
 
     // Removes the player from the given room, returns `true` if the player was the owner of the room,
     // and either a new owner has now been chosen, or the room has been deleted.
-    pub fn remove_with_any(&self, room_id: u32, account_id: i32, level_id: LevelId) -> bool {
-        let was_owner = self.with_any(room_id, |pm| {
-            let was_owner = pm.remove_player(account_id);
+    pub fn remove_player(&self, room: &Room, account_id: i32, level_id: LevelId) -> bool {
+        let was_owner = room.remove_player(account_id);
 
-            if was_owner {
-                // refresh owner data to newest
-                pm.data.lock().owner = self.get_game_server().get_player_preview_data(pm.owner.load(Ordering::Relaxed));
-            }
+        if was_owner {
+            // refresh owner data to newest
+            room.data.lock().owner = self.get_game_server().get_player_preview_data(room.owner.load(Ordering::Relaxed));
+        }
 
-            if level_id != 0 {
-                pm.manager.write().remove_from_level(level_id, account_id);
-            }
-
-            was_owner
-        });
+        if level_id != 0 {
+            room.manager.write().remove_from_level(level_id, account_id);
+        }
 
         // delete the room if there are no more players there
-        if room_id != 0 {
-            self.maybe_remove_room(room_id);
+        if room.id != 0 {
+            self.maybe_remove_room(room.id);
         }
 
         was_owner
     }
 
     pub fn get_room_info(&self, room_id: u32) -> Option<RoomInfo> {
-        self.try_with_any(room_id, |room| Some(room.get_room_info(room_id)), || None)
+        self.try_with_any(room_id, |room| Some(room.get_room_info()), || None)
     }
 
-    fn _create_room(&self, room_id: u32, owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> RoomInfo {
+    fn _create_room(&self, room_id: u32, owner: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> Arc<Room> {
         let mut rooms = self.rooms.lock();
 
         let mut pm = LevelManager::new();
@@ -315,11 +317,11 @@ impl RoomManager {
 
         let owner_data = self.get_game_server().get_player_preview_data(owner);
 
-        let room = Room::new(owner, owner_data, name, password, settings, pm);
-        let room_info = room.get_room_info(room_id);
+        let room = Room::new(owner, owner_data, name, password, settings, pm, room_id);
+        let room = Arc::new(room);
 
-        rooms.insert(room_id, Arc::new(room));
+        rooms.insert(room_id, room.clone());
 
-        room_info
+        room
     }
 }

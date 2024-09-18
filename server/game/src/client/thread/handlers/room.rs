@@ -27,13 +27,18 @@ impl ClientThread {
                 return self.send_packet_dynamic(&RoomCreateFailedPacket { reason }).await;
             }
 
-            let room_info = self
+            let room = self
                 .game_server
                 .state
                 .room_manager
                 .create_room(account_id, packet.room_name, packet.password, packet.settings);
 
+            self.room_id.store(room.id, Ordering::Relaxed);
+            *self.room.lock() = room;
+
             let self_name = self.account_data.lock().name.try_to_string();
+
+            let room_info = self.room.lock().get_room_info();
 
             if self.game_server.bridge.has_room_webhook() {
                 if let Err(err) = self
@@ -56,19 +61,9 @@ impl ClientThread {
                 }
             }
 
-            self.room_id.store(room_info.id, Ordering::Relaxed);
             room_info
         } else {
-            let room_info = self.game_server.state.room_manager.get_room_info(room_id);
-
-            if let Some(room_info) = room_info {
-                room_info
-            } else {
-                // somehow in an invalid room? shouldn't happen
-                warn!("player is in an invalid room: {}", room_id);
-                self.room_id.store(0, Ordering::Relaxed);
-                return Ok(());
-            }
+            self.room.lock().get_room_info()
         };
 
         info!(
@@ -126,22 +121,27 @@ impl ClientThread {
         let level_id = self.level_id.load(Ordering::Relaxed);
 
         // remove the player from the previously connected room (or the global room)
-        self.game_server.state.room_manager.remove_with_any(old_room_id, account_id, level_id);
+        self.game_server.state.room_manager.remove_player(&self.room.lock(), account_id, level_id);
 
-        let is_invisible = self.privacy_settings.lock().get_hide_in_game();
+        // set the current room
+        let room = {
+            let mut room = self.room.lock();
+            *room = self.game_server.state.room_manager.get_room_or_global(packet.room_id);
 
-        self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
-            let mut manager = pm.manager.write();
+            let mut manager = room.manager.write();
 
+            let is_invisible = self.privacy_settings.lock().get_hide_in_game();
             manager.create_player(account_id, is_invisible);
 
             // if we are in any level, clean transition to there
             if level_id != 0 {
                 manager.add_to_level(level_id, account_id, self.on_unlisted_level.load(Ordering::SeqCst));
             }
-        });
 
-        self._respond_with_room_list(packet.room_id, true).await
+            room.clone()
+        };
+
+        self._respond_with_room_list(room, true).await
     });
 
     gs_handler!(self, handle_leave_room, LeaveRoomPacket, _packet, {
@@ -150,37 +150,31 @@ impl ClientThread {
         self._remove_from_room().await;
 
         // respond with the global room list
-        self._respond_with_room_list(0, false).await
+        self._respond_with_room_list(self.game_server.state.room_manager.get_global_owned(), false)
+            .await
     });
 
     gs_handler!(self, handle_request_room_players, RequestRoomPlayerListPacket, _packet, {
         let _ = gs_needauth!(self);
 
-        let room_id = self.room_id.load(Ordering::Relaxed);
-        self._respond_with_room_list(room_id, false).await
+        let room = self.room.lock().clone();
+
+        self._respond_with_room_list(room, false).await
     });
 
     gs_handler!(self, handle_update_room_settings, UpdateRoomSettingsPacket, packet, {
         let account_id = gs_needauth!(self);
 
-        let room_id = self.room_id.load(Ordering::Relaxed);
-
-        if room_id == 0 {
+        if !self.is_in_room() {
             return Ok(());
         }
 
-        let mut success = false;
+        let room = self.room.lock().clone();
 
-        self.game_server.state.room_manager.with_any(room_id, |room| {
-            if room.owner.load(Ordering::Relaxed) == account_id {
-                room.set_settings(packet.settings);
-                success = true;
-            }
-        });
-
-        // send an update packet to all clients
-        if success {
-            self.game_server.broadcast_room_info(room_id).await;
+        if room.owner.load(Ordering::Relaxed) == account_id {
+            room.set_settings(packet.settings);
+            // send an update packet to all clients
+            self.game_server.broadcast_room_info(room).await;
         }
 
         Ok(())
@@ -197,7 +191,9 @@ impl ClientThread {
         }
 
         // if we don't have permission to invite, skip
-        let room_password = self.game_server.state.room_manager.with_any(room_id, |room| {
+        let room_password = {
+            let room = self.room.lock();
+
             if room.is_protected() && (room.is_public_invites() || room.get_owner() == account_id) {
                 Some(room.password.clone())
             } else if room.is_protected() {
@@ -205,7 +201,7 @@ impl ClientThread {
             } else {
                 Some(InlineString::default())
             }
-        });
+        };
 
         let Some(room_password) = room_password else {
             #[cfg(debug_assertions)]
@@ -263,7 +259,8 @@ impl ClientThread {
         }
 
         if room_id == 0 {
-            return self._respond_with_room_list(room_id, false).await;
+            let room = self.room.lock().clone();
+            return self._respond_with_room_list(room, false).await;
         }
 
         let players = self.game_server.state.room_manager.try_with_any(
@@ -296,18 +293,12 @@ impl ClientThread {
     gs_handler!(self, handle_kick_room_player, KickRoomPlayerPacket, packet, {
         let _ = gs_needauth!(self);
 
-        let room_id = self.room_id.load(Ordering::Relaxed);
-
-        if room_id == 0 {
+        if !self.is_in_room() {
             return Ok(());
         }
 
         // check if the player is in our room
-        let has_player = self
-            .game_server
-            .state
-            .room_manager
-            .try_with_any(room_id, |room| room.has_player(packet.player), || false);
+        let has_player = self.room.lock().has_player(packet.player);
 
         if has_player {
             self.game_server.broadcast_room_kicked(packet.player).await;
@@ -319,8 +310,9 @@ impl ClientThread {
     pub async fn _kicked_from_room(&self) -> crate::client::Result<()> {
         self._remove_from_room().await;
 
+        let room = self.room.lock().clone();
         // respond with the global room list
-        self._respond_with_room_list(0, false).await
+        self._respond_with_room_list(room, false).await
     }
 
     async fn _remove_from_room(&self) {
@@ -333,11 +325,12 @@ impl ClientThread {
 
         let level_id = self.level_id.load(Ordering::Relaxed);
 
-        let should_send_update = self.game_server.state.room_manager.remove_with_any(room_id, account_id, level_id);
+        let should_send_update = self.game_server.state.room_manager.remove_player(&self.room.lock(), account_id, level_id);
 
         // if we were the owner, send update packets to everyone
         if should_send_update {
-            self.game_server.broadcast_room_info(room_id).await;
+            let room = self.room.lock().clone();
+            self.game_server.broadcast_room_info(room).await;
         }
 
         let is_invisible = self.privacy_settings.lock().get_hide_in_game();
@@ -350,15 +343,18 @@ impl ClientThread {
             .manager
             .write()
             .create_player(account_id, is_invisible);
+
+        // set the current room to global
+        *self.room.lock() = self.game_server.state.room_manager.get_global_owned();
     }
 
     #[inline]
-    async fn _respond_with_room_list(&self, room_id: u32, just_joined: bool) -> crate::client::Result<()> {
-        let room_info = self.game_server.state.room_manager.with_any(room_id, |room| room.get_room_info(room_id));
+    async fn _respond_with_room_list(&self, room: Arc<Room>, just_joined: bool) -> crate::client::Result<()> {
+        let room_info = room.get_room_info();
 
         let players = self
             .game_server
-            .get_room_player_previews(room_id, self.account_id.load(Ordering::Relaxed), self.can_moderate());
+            .get_room_player_previews(&room, self.account_id.load(Ordering::Relaxed), self.can_moderate());
 
         if just_joined {
             self.send_packet_dynamic(&RoomJoinedPacket { room_info, players }).await

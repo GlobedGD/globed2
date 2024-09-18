@@ -20,10 +20,10 @@ impl ClientThread {
     gs_handler!(self, handle_request_level_list, RequestLevelListPacket, _packet, {
         let _ = gs_needauth!(self);
 
-        let room_id = self.room_id.load(Ordering::Relaxed);
+        let levels = {
+            let room = self.room.lock();
 
-        let levels = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            let manager = pm.manager.read();
+            let manager = room.manager.read();
 
             let mut vec = Vec::with_capacity(manager.get_level_count());
 
@@ -37,7 +37,7 @@ impl ClientThread {
             });
 
             vec
-        });
+        };
 
         self.send_packet_dynamic(&LevelListPacket { levels }).await
     });
@@ -45,17 +45,16 @@ impl ClientThread {
     gs_handler!(self, handle_request_player_count, RequestPlayerCountPacket, packet, {
         let _ = gs_needauth!(self);
 
-        let room_id = self.room_id.load(Ordering::Relaxed);
-
-        let levels = self.game_server.state.room_manager.with_any(room_id, |pm| {
+        let levels = {
+            let room = self.room.lock();
             let mut levels = Vec::with_capacity(0);
 
             for &level_id in &*packet.level_ids {
-                levels.push((level_id, pm.get_player_count_on_level(level_id).unwrap_or(0) as u16));
+                levels.push((level_id, room.get_player_count_on_level(level_id).unwrap_or(0) as u16));
             }
 
             levels
-        });
+        };
 
         self.send_packet_dynamic(&LevelPlayerCountPacket { levels }).await
     });
@@ -73,13 +72,9 @@ impl ClientThread {
             p.set_hide_roles(false);
         }
 
-        let room_id = self.room_id.load(Ordering::Relaxed);
-
-        self.game_server.state.room_manager.with_any(room_id, |pm| {
-            if let Some(player) = pm.manager.write().get_player_data_mut(account_id) {
-                player.is_invisible = packet.flags.get_hide_in_game();
-            }
-        });
+        if let Some(player) = self.room.lock().manager.write().get_player_data_mut(account_id) {
+            player.is_invisible = packet.flags.get_hide_in_game();
+        }
 
         Ok(())
     });

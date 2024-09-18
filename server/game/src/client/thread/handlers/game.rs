@@ -16,19 +16,18 @@ impl ClientThread {
         self.on_unlisted_level.store(unlisted, Ordering::SeqCst);
 
         let old_level = self.level_id.swap(level_id, Ordering::Relaxed);
-        let room_id = self.room_id.load(Ordering::Relaxed);
 
-        self.game_server.state.room_manager.with_any(room_id, |pm| {
-            let mut manager = pm.manager.write();
+        let room = self.room.lock();
 
-            if old_level != 0 {
-                manager.remove_from_level(old_level, account_id);
-            }
+        let mut manager = room.manager.write();
 
-            if level_id != 0 {
-                manager.add_to_level(level_id, account_id, unlisted);
-            }
-        });
+        if old_level != 0 {
+            manager.remove_from_level(old_level, account_id);
+        }
+
+        if level_id != 0 {
+            manager.add_to_level(level_id, account_id, unlisted);
+        }
 
         Ok(())
     }
@@ -38,11 +37,7 @@ impl ClientThread {
 
         let level_id = self.level_id.swap(0, Ordering::Relaxed);
         if level_id != 0 {
-            let room_id = self.room_id.load(Ordering::Relaxed);
-
-            self.game_server.state.room_manager.with_any(room_id, |pm| {
-                pm.manager.write().remove_from_level(level_id, account_id);
-            });
+            self.room.lock().manager.write().remove_from_level(level_id, account_id);
         }
 
         Ok(())
@@ -58,10 +53,10 @@ impl ClientThread {
 
         let is_mod = self.can_moderate();
 
-        let room_id = self.room_id.load(Ordering::Relaxed);
+        let (written_players, metadatas, estimated_size) = {
+            let room = self.room.lock();
 
-        let (written_players, metadatas, estimated_size) = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            let mut manager = pm.manager.write();
+            let mut manager = room.manager.write();
             // set metadata
             manager.set_player_data(account_id, &packet.data);
 
@@ -103,7 +98,7 @@ impl ClientThread {
             }
 
             (player_count, metavec, estimated_size)
-        });
+        };
 
         // no one else on the level, if no item ids changed there is no need to send a response packet
         if written_players == 0 {
@@ -111,11 +106,7 @@ impl ClientThread {
             // if !packet.counter_changes.is_empty() {
             // TODO not dynamic but alloca with custom encoder ig
             // and just make this less sloppy tbh i cba
-            let custom_items = self
-                .game_server
-                .state
-                .room_manager
-                .with_any(room_id, |pm| pm.manager.read().get_level(level_id).map(|x| x.custom_items.clone()));
+            let custom_items = self.room.lock().manager.read().get_level(level_id).map(|x| x.custom_items.clone());
 
             if let Some(custom_items) = custom_items {
                 self.send_packet_dynamic::<LevelDataPacket>(&LevelDataPacket {
@@ -133,33 +124,33 @@ impl ClientThread {
 
         // 8 is a safety buffer just in case something goes ary
         self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size + written_players * 8 + 64, |buf| {
-            self.game_server.state.room_manager.with_any(room_id, |pm| {
-                let manager = pm.manager.read();
+            let room = self.room.lock();
 
-                buf.write_list_with(written_players, |buf| {
-                    let mut count = 0usize;
-                    manager.for_each_player_on_level(level_id, |player| {
-                        if count < written_players && player.account_id != account_id && (!player.is_invisible || is_mod) {
-                            buf.write_value(&player.account_id);
-                            buf.write_value(&player.data);
-                            count += 1;
-                        }
-                    });
+            let manager = room.manager.read();
 
-                    count
+            buf.write_list_with(written_players, |buf| {
+                let mut count = 0usize;
+                manager.for_each_player_on_level(level_id, |player| {
+                    if count < written_players && player.account_id != account_id && (!player.is_invisible || is_mod) {
+                        buf.write_value(&player.account_id);
+                        buf.write_value(&player.data);
+                        count += 1;
+                    }
                 });
 
-                // write custom_items hashmap
-
-                let custom_items = manager.get_level(level_id).map(|x| x.custom_items.clone());
-
-                if custom_items.as_ref().is_some_and(|x| !x.is_empty()) {
-                    buf.write_bool(true);
-                    buf.write_value(&custom_items.unwrap());
-                } else {
-                    buf.write_bool(false);
-                }
+                count
             });
+
+            // write custom_items hashmap
+
+            let custom_items = manager.get_level(level_id).map(|x| x.custom_items.clone());
+
+            if custom_items.as_ref().is_some_and(|x| !x.is_empty()) {
+                buf.write_bool(true);
+                buf.write_value(&custom_items.unwrap());
+            } else {
+                buf.write_bool(false);
+            }
         })
         .await?;
 
@@ -201,8 +192,9 @@ impl ClientThread {
             return Ok(());
         }
 
-        let players = self.game_server.state.room_manager.with_any(room_id, |pm| {
-            let manager = pm.manager.read();
+        let players = {
+            let room = self.room.lock();
+            let manager = room.manager.read();
 
             // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
             let total_players = manager.get_player_count_on_level(level_id).unwrap_or(1) - 1;
@@ -220,7 +212,7 @@ impl ClientThread {
 
                 vec
             }
-        });
+        };
 
         self.send_packet_dynamic(&PlayerProfilesPacket { players }).await
     });

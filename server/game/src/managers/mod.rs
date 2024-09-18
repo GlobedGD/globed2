@@ -4,4 +4,4 @@ mod room;
 
 pub use level::LevelManager;
 pub use role::{ComputedRole, GameServerRole, RoleManager};
-pub use room::RoomManager;
+pub use room::{Room, RoomManager};

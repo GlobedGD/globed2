@@ -24,6 +24,7 @@ use crate::tokio::sync::oneshot; // no way
 
 use crate::{
     client::{ClientThreadState, PacketHandlingError},
+    managers::Room,
     tokio::{
         self,
         net::{TcpListener, UdpSocket},
@@ -367,7 +368,7 @@ impl GameServer {
                     };
 
                     // we are now supposedly the only reference to the thread, so this should always work
-                    let thread = Arc::into_inner(thread).expect("failed to unwrap thread");
+                    let thread: ClientThread = Arc::into_inner(thread).expect("failed to unwrap thread");
 
                     // downgrade back to an unauthorized thread
                     let thread = Arc::new(thread.into_unauthorized());
@@ -544,13 +545,13 @@ impl GameServer {
 
     /// get a list of all players in a room
     #[inline]
-    pub fn get_room_player_previews(&self, room_id: u32, requested: i32, force_visibility: bool) -> Vec<PlayerRoomPreviewAccountData> {
-        let player_count = self.state.room_manager.with_any(room_id, |room| room.get_player_count());
+    pub fn get_room_player_previews(&self, room: &Room, requested: i32, force_visibility: bool) -> Vec<PlayerRoomPreviewAccountData> {
+        let player_count = room.get_player_count();
 
         let mut vec = Vec::with_capacity(player_count);
 
         self.for_every_room_player_preview(
-            room_id,
+            room.id,
             requested,
             |p, _, vec| {
                 vec.push(p.clone());
@@ -759,22 +760,15 @@ impl GameServer {
     }
 
     /// send `RoomInfoPacket` to all players in a room
-    pub async fn broadcast_room_info(&self, room_id: u32) {
-        if room_id == 0 {
+    pub async fn broadcast_room_info(&self, room: Arc<Room>) {
+        if room.id == 0 {
             return;
         }
 
-        let info = self
-            .state
-            .room_manager
-            .try_with_any(room_id, |room| Some(room.get_room_info(room_id)), || None);
+        let pkt = RoomInfoPacket { info: room.get_room_info() };
 
-        if let Some(info) = info {
-            let pkt = RoomInfoPacket { info };
-
-            self.broadcast_room_message(&ServerThreadMessage::BroadcastRoomInfo(pkt), 0, room_id)
-                .await;
-        }
+        self.broadcast_room_message(&ServerThreadMessage::BroadcastRoomInfo(pkt), 0, room.id)
+            .await;
     }
 
     /// kick users from the room and send a `RoomPlayerListPacket`
@@ -837,14 +831,14 @@ impl GameServer {
     }
 
     async fn post_disconnect_cleanup(&self, thread: EitherClientThread) {
-        let (account_id, level_id, room_id) = match thread {
+        let (account_id, level_id, room) = match thread {
             EitherClientThread::Authorized(thread) => {
                 thread.destruction_notify.notify_one();
 
                 (
                     thread.account_id.load(Ordering::Relaxed),
                     thread.level_id.load(Ordering::Relaxed),
-                    thread.room_id.load(Ordering::Relaxed),
+                    thread.room.lock().clone(),
                 )
             }
             EitherClientThread::Unauthorized(thread) => {
@@ -853,7 +847,7 @@ impl GameServer {
                 (
                     thread.account_id.load(Ordering::Relaxed),
                     thread.level_id.load(Ordering::Relaxed),
-                    thread.room_id.load(Ordering::Relaxed),
+                    thread.room.lock().clone(),
                 )
             }
             EitherClientThread::None => unreachable!(),
@@ -867,11 +861,11 @@ impl GameServer {
         self.state.dec_player_count();
 
         // remove from the player manager and the level if they are on one
-        let was_owner = self.state.room_manager.remove_with_any(room_id, account_id, level_id);
+        let was_owner = self.state.room_manager.remove_player(&room, account_id, level_id);
 
         // also send room update i guess
-        if was_owner && room_id != 0 {
-            self.broadcast_room_info(room_id).await;
+        if was_owner && room.id != 0 {
+            self.broadcast_room_info(room).await;
         }
     }
 

@@ -18,7 +18,7 @@ use globed_shared::{should_ignore_error, ServerUserEntry, MAX_SUPPORTED_PROTOCOL
 use super::*;
 use crate::{
     data::*,
-    managers::ComputedRole,
+    managers::{ComputedRole, Room},
     server::GameServer,
     tokio::{self, net::TcpStream, sync::Notify},
     util::LockfreeMutCell,
@@ -46,6 +46,7 @@ pub struct UnauthorizedThread {
     pub on_unlisted_level: AtomicBool,
     pub room_id: AtomicU32,
     pub link_code: AtomicU32,
+    pub room: SyncMutex<Arc<Room>>,
 
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<Option<ServerUserEntry>>,
@@ -86,6 +87,7 @@ impl UnauthorizedThread {
             on_unlisted_level: AtomicBool::new(false),
             room_id: AtomicU32::new(0),
             link_code: AtomicU32::new(0),
+            room: SyncMutex::new(game_server.state.room_manager.get_global_owned()),
 
             account_data: SyncMutex::new(PlayerAccountData::default()),
             user_entry: SyncMutex::new(None),
@@ -119,6 +121,7 @@ impl UnauthorizedThread {
             on_unlisted_level: thread.on_unlisted_level,
             room_id: thread.room_id,
             link_code: thread.link_code,
+            room: thread.room,
 
             account_data: SyncMutex::new(std::mem::take(&mut *thread.account_data.lock())),
             user_entry: SyncMutex::new(Some(std::mem::take(&mut *thread.user_entry.lock()))),
