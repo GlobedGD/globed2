@@ -1,6 +1,7 @@
-// TODO: deprecate auth v1
-
 use std::{net::IpAddr, time::SystemTime};
+
+use rocket::{post, State};
+use serde::Deserialize;
 
 use globed_shared::{
     anyhow::{self, anyhow},
@@ -8,66 +9,81 @@ use globed_shared::{
     logger::*,
     MIN_CLIENT_VERSION,
 };
-use rocket::{post, State};
 
 use super::*;
-use crate::{
-    config::UserlistMode,
-    ip_blocker::IpBlocker,
-    state::{ActiveChallenge, ServerState},
-    web::{routes::check_maintenance, *},
-};
+use crate::{config::UserlistMode, ip_blocker::IpBlocker, state::ActiveChallenge};
 
-// if `use_cf_ip_header` is enabled, this macro gets the actual IP address of the user
-// from the CF-Connecting-IP header and puts it in $out.
-// it also checks if the request is made by actual cloudflare or if the header is just spoofed.
-macro_rules! get_user_ip {
-    ($state:expr,$ip:expr,$cfip:expr,$out:ident) => {
-        let user_ip: anyhow::Result<IpAddr> = if $state.config.cloudflare_protection && !cfg!(debug_assertions) {
-            // verify if the actual peer is cloudflare
-            if !IpBlocker::instance().is_allowed(&$ip) {
-                warn!("blocking unknown non-cloudflare address: {}", $ip);
-                super::responders::unauthorized_::unauthorized!("access is denied from this IP address");
-            }
+#[derive(Debug, Deserialize)]
+pub struct AccountData {
+    account_id: i32,
+    user_id: i32,
+    username: String,
+}
 
-            $cfip.0.ok_or(anyhow!("failed to parse the IP header from Cloudflare"))
-        } else {
-            Ok($ip)
-        };
+#[derive(Debug, Deserialize)]
+pub struct TotpLoginData {
+    account_data: AccountData,
+    authkey: String,
+}
 
-        let $out = match user_ip {
-            Ok(x) => x,
-            Err(err) => bad_request!(&err.to_string()),
-        };
+#[derive(Debug, Deserialize)]
+pub struct ChallengeFinishData {
+    account_data: AccountData,
+    answer: String,
+}
+
+fn check_ip(ip: IpAddr, cfip: &CloudflareIPGuard, cloudflare: bool) -> WebResult<IpAddr> {
+    let user_ip: anyhow::Result<IpAddr> = if cloudflare && !cfg!(debug_assertions) {
+        // verify if the actual peer is cloudflare
+        if !IpBlocker::instance().is_allowed(&ip) {
+            warn!("blocking unknown non-cloudflare address: {}", ip);
+            unauthorized!("access is denied from this IP address");
+        }
+
+        cfip.0.ok_or(anyhow!("failed to parse the IP header from Cloudflare"))
+    } else {
+        Ok(cfip.0.unwrap_or(ip))
     };
+
+    match user_ip {
+        Ok(x) => Ok(x),
+        Err(err) => bad_request!(&err.to_string()),
+    }
+}
+
+fn trim_name(data: &mut AccountData) {
+    let trimmed = data.username.trim_end();
+    trimmed.to_owned().clone_into(&mut data.username);
 }
 
 #[allow(clippy::too_many_arguments, clippy::similar_names, clippy::no_effect_underscore_binding)]
-#[post("/totplogin?<aid>&<uid>&<aname>&<authkey>")]
+#[post("/v2/totplogin?<protocol>", data = "<post_data>")]
 pub async fn totp_login(
     state: &State<ServerState>,
-    aid: i32,
-    uid: i32,
-    mut aname: &str,
-    authkey: &str,
     db: &GlobedDb,
     ip: IpAddr,
-    _ua: ClientUserAgentGuard<'_>,
     cfip: CloudflareIPGuard,
+    _user_agent: ClientUserAgentGuard<'_>,
+    mut post_data: EncryptedJsonGuard<TotpLoginData>,
+    protocol: u16,
 ) -> WebResult<String> {
     check_maintenance!(state);
+    check_protocol!(protocol);
 
-    aname = aname.trim_end();
+    // trim spaces at the end of the name
+    trim_name(&mut post_data.0.account_data);
 
     let state_ = state.state_read().await;
-    get_user_ip!(state_, ip, cfip, _ip);
+    let account_data = &post_data.0.account_data;
+
+    check_ip(ip, &cfip, state_.config.cloudflare_protection)?;
 
     if state_.config.userlist_mode == UserlistMode::Whitelist {
-        if !db.get_user(aid).await?.map_or(false, |x| x.is_whitelisted) {
+        if !db.get_user(account_data.account_id).await?.map_or(false, |x| x.is_whitelisted) {
             unauthorized!("This server has whitelist enabled and your account has not been approved.");
         }
     } else {
-        let ban_reason = state_.is_banned(db, aid).await;
+        let ban_reason = state_.is_banned(db, account_data.account_id).await;
         if let Err(err) = ban_reason {
             bad_request!(&format!("server error: {err}"));
         }
@@ -77,8 +93,8 @@ pub async fn totp_login(
         }
     }
 
-    let uak_decoded = b64e::URL_SAFE.decode(authkey)?;
-    let valid_authkey = state_.generate_hashed_authkey(aid, uid, aname);
+    let uak_decoded = b64e::URL_SAFE.decode(post_data.0.authkey)?;
+    let valid_authkey = state_.generate_hashed_authkey(account_data.account_id, account_data.user_id, &account_data.username);
 
     let valid = uak_decoded.len() == valid_authkey.len() && uak_decoded.iter().zip(valid_authkey.iter()).all(|(c1, c2)| *c1 == *c2);
 
@@ -86,40 +102,43 @@ pub async fn totp_login(
         unauthorized!("login failed");
     }
 
-    let token = state_.token_issuer.generate(aid, uid, aname);
+    let token = state_
+        .token_issuer
+        .generate(account_data.account_id, account_data.user_id, &account_data.username);
 
-    debug!("totp login from {} ({}) successful", aname, aid);
+    debug!("totp login from {} ({}) successful", account_data.account_id, &account_data.username);
 
     Ok(token)
 }
 
 #[allow(clippy::too_many_arguments, clippy::similar_names, clippy::no_effect_underscore_binding)]
-#[post("/challenge/new?<aid>&<uid>&<aname>&<protocol>")]
-pub async fn challenge_start(
+#[post("/v2/challenge/new?<protocol>", data = "<post_data>")]
+pub async fn challenge_new(
     state: &State<ServerState>,
-    aid: i32,
-    uid: i32,
-    protocol: u16,
-    mut aname: &str,
-    ip: IpAddr,
     db: &GlobedDb,
-    _ua: ClientUserAgentGuard<'_>,
+    ip: IpAddr,
     cfip: CloudflareIPGuard,
+    _user_agent: ClientUserAgentGuard<'_>,
+    mut post_data: EncryptedJsonGuard<AccountData>,
+    protocol: u16,
 ) -> WebResult<String> {
     check_maintenance!(state);
     check_protocol!(protocol);
 
-    aname = aname.trim_end();
+    // trim spaces at the end of the name
+    trim_name(&mut post_data.0);
 
     let mut state = state.state_write().await;
-    get_user_ip!(state, ip, cfip, user_ip);
+    let account_data = &post_data.0;
+
+    let user_ip = check_ip(ip, &cfip, state.config.cloudflare_protection)?;
 
     if state.config.userlist_mode == UserlistMode::Whitelist {
-        if !db.get_user(aid).await?.map_or(false, |x| x.is_whitelisted) {
+        if !db.get_user(account_data.account_id).await?.map_or(false, |x| x.is_whitelisted) {
             unauthorized!("This server has whitelist enabled and your account has not been approved.");
         }
     } else {
-        let ban_reason = state.is_banned(db, aid).await;
+        let ban_reason = state.is_banned(db, account_data.account_id).await;
         if let Err(err) = ban_reason {
             bad_request!(&format!("server error: {err}"));
         }
@@ -133,9 +152,9 @@ pub async fn challenge_start(
 
     let mut should_return_existing = false;
     // check if there already is a challenge
-    if let Some(challenge) = state.active_challenges.get(&user_ip) {
+    if let Some(challenge) = state.active_challenges.get(&ip) {
         // if it's the same account ID then it's OK, return the same challenge
-        if challenge.account_id == aid && challenge.user_id == uid && challenge.name == aname {
+        if challenge.account_id == account_data.account_id && challenge.user_id == account_data.user_id && challenge.name == account_data.username {
             should_return_existing = true;
         } else {
             let passed_time = current_time.duration_since(challenge.started).unwrap_or_default();
@@ -153,8 +172,6 @@ pub async fn challenge_start(
         let gd_api_account = state.config.gd_api_account;
         let pubkey = b64e::STANDARD.encode(state.challenge_pubkey);
 
-        drop(state);
-
         trace!("sending existing challenge to {user_ip} with {rand_string}");
 
         return Ok(format!(
@@ -165,7 +182,13 @@ pub async fn challenge_start(
         ));
     }
 
-    let challenge: String = match state.create_challenge(aid, uid, aname, user_ip, current_time) {
+    let challenge: String = match state.create_challenge(
+        account_data.account_id,
+        account_data.user_id,
+        &account_data.username,
+        user_ip,
+        current_time,
+    ) {
         Ok(x) => x,
         Err(err) => {
             warn!("failed to create challenge: {err}");
@@ -177,7 +200,7 @@ pub async fn challenge_start(
 
     let verify = state.config.use_gd_api;
     let gd_api_account = state.config.gd_api_account;
-    debug!("returning challenge");
+
     Ok(format!(
         "{}:{}:{}",
         if verify { gd_api_account.to_string() } else { "none".to_string() },
@@ -187,25 +210,25 @@ pub async fn challenge_start(
 }
 
 #[allow(clippy::too_many_arguments, clippy::similar_names, clippy::no_effect_underscore_binding)]
-#[post("/challenge/verify?<aid>&<uid>&<aname>&<answer>")]
-pub async fn challenge_finish(
+#[post("/v2/challenge/verify", data = "<post_data>")]
+pub async fn challenge_verify(
     state: &State<ServerState>,
-    aid: i32,
-    uid: i32,
-    mut aname: &str,
-    answer: &str,
     ip: IpAddr,
-    _ua: ClientUserAgentGuard<'_>,
     cfip: CloudflareIPGuard,
+    _user_agent: ClientUserAgentGuard<'_>,
+    mut post_data: EncryptedJsonGuard<ChallengeFinishData>,
 ) -> WebResult<String> {
     check_maintenance!(state);
 
-    aname = aname.trim_end();
+    // trim spaces at the end of the name
+    trim_name(&mut post_data.0.account_data);
 
     let state_ = state.state_read().await;
-    get_user_ip!(state_, ip, cfip, user_ip);
+    let account_data = &post_data.0.account_data;
 
-    trace!("challenge finish from '{aname}' ({aid} / userid {uid}) with answer: {answer}");
+    let user_ip = check_ip(ip, &cfip, state_.config.cloudflare_protection)?;
+
+    trace!("challenge finish: {:?}", post_data.0);
 
     let challenge: ActiveChallenge = match state_.active_challenges.get(&user_ip) {
         None => {
@@ -215,31 +238,31 @@ pub async fn challenge_finish(
     }
     .clone();
 
-    if challenge.account_id != aid {
+    if challenge.account_id != account_data.account_id {
         warn!(
-            "failed to validate challenge: requested for accountid {} but {aid} completed",
-            challenge.account_id
+            "failed to validate challenge: requested for accountid {} but {} completed",
+            challenge.account_id, account_data.account_id
         );
         unauthorized!("challenge was requested for a different account id, not validating");
     }
 
-    if challenge.user_id != uid {
+    if challenge.user_id != account_data.user_id {
         warn!(
-            "failed to validate challenge ({aid}): requested for userid {} but {uid} completed",
-            challenge.user_id
+            "failed to validate challenge ({}): requested for userid {} but {} completed",
+            account_data.account_id, challenge.user_id, account_data.user_id
         );
         unauthorized!("challenge was requested for a different user id, not validating");
     }
 
-    if !challenge.name.eq_ignore_ascii_case(aname) {
+    if !challenge.name.eq_ignore_ascii_case(&account_data.username) {
         warn!(
-            "failed to validate challenge ({aid}): requested for {} but {aname} completed",
-            challenge.name
+            "failed to validate challenge ({}): requested for {} but {} completed",
+            account_data.account_id, challenge.name, account_data.username
         );
         unauthorized!("challenge was requested for a different account name, not validating");
     }
 
-    let result = state_.verify_challenge(&challenge, answer);
+    let result = state_.verify_challenge(&challenge, &post_data.0.answer);
 
     if !result {
         unauthorized!("incorrect challenge solution was provided");
@@ -251,7 +274,11 @@ pub async fn challenge_finish(
     drop(state_);
 
     let message_id = if use_gd_api {
-        let result = state.inner.verifier.verify_account(aid, uid, aname, answer).await;
+        let result = state
+            .inner
+            .verifier
+            .verify_account(account_data.account_id, account_data.user_id, &account_data.username, &post_data.0.answer)
+            .await;
 
         match result {
             Ok(id) => Some(id),
@@ -261,11 +288,14 @@ pub async fn challenge_finish(
         None
     };
 
-    info!("successfully generated an authkey for {aname} ({aid} / {uid})");
+    info!(
+        "successfully generated an authkey for {} ({} / {})",
+        account_data.username, account_data.account_id, account_data.user_id
+    );
 
     let mut state_ = state.state_write().await;
     state_.active_challenges.remove(&user_ip);
-    let authkey = state_.generate_authkey(aid, uid, aname);
+    let authkey = state_.generate_authkey(account_data.account_id, account_data.user_id, &account_data.username);
 
     Ok(format!(
         "{}:{}",
