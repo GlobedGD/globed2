@@ -84,32 +84,58 @@ bool PickupPopupHook::init(EffectGameObject* p0, CCArray* p1) {
 }
 
 static int getNextFreeGlobedItemId() {
-    // TODO: fix
     auto editor = LevelEditorLayer::get();
 
-    int highestId = globed::CUSTOM_ITEM_ID_W_START;
+    // get all item IDs to a set
+    std::set<int> ids;
 
     for (auto obj : CCArrayExt<GameObject*>(editor->m_objects)) {
-        if (obj->m_unk4D0 != 1 || obj->m_objectType != GameObjectType::Collectible) continue;
+        if (obj->m_unk4D0 != 1) continue;
 
         auto eobj = static_cast<EffectGameObject*>(obj);
-        if (eobj->m_collectibleIsPickupItem || eobj->m_objectID == 0x719) {
-            int itemId = eobj->m_itemID;
-
-            if (itemId > highestId && itemId < globed::CUSTOM_ITEM_ID_END) {
-                highestId = itemId;
+        if ((eobj->m_objectType == GameObjectType::Collectible && eobj->m_collectibleIsPickupItem) || eobj->m_objectID == 0x719) {
+            int id = eobj->m_itemID;
+            if (globed::isWritableCustomItem(id)) {
+                ids.insert(id);
             }
         }
     }
 
-    return highestId;
+    // if no item ids are in use, return the id 0
+    if (ids.empty()) {
+        return globed::CUSTOM_ITEM_ID_W_START;
+    }
+
+    int lowest = *ids.begin();
+
+    // if the lowest id is more than 0, return 0
+    if (lowest > globed::CUSTOM_ITEM_ID_W_START) {
+        return globed::CUSTOM_ITEM_ID_W_START;
+    }
+
+    int previous = -1;
+
+    for (int elem : ids) {
+        if (previous == -1) {
+            previous = elem;
+            continue;
+        }
+
+        if (elem - previous > 1) {
+            // yay!
+            return previous + 1;
+        } else {
+            previous = elem;
+        }
+    }
+
+    // if nothing was found, return the highest id + 1
+    return previous + 1;
 }
 
 void PickupPopupHook::onPlusButton(cocos2d::CCObject* sender) {
     if (m_fields->globedMode) {
-        // int id = getNextFreeGlobedItemId();
-        int id = globed::CUSTOM_ITEM_ID_W_START;
-        // log::debug("Setting next free item id: {}", id);
+        int id = getNextFreeGlobedItemId();
         m_disableTextDelegate = true;
         this->updateValue(ItemId, id);
         m_disableTextDelegate = false;
