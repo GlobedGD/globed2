@@ -10,9 +10,8 @@ bool InstantCountPopupHook::init(CountTriggerGameObject* p0, cocos2d::CCArray* p
 }
 
 void InstantCountPopupHook::updateItemID() {
-    // TODO no mbo
-#ifdef GEODE_IS_WINDOWS
-    int itemId = *(int*)((uintptr_t)this + 0x3c0);
+    int itemId = m_itemID;
+
     if (!globed::isCustomItem(itemId)) {
         return SetupInstantCountPopup::updateItemID();
     }
@@ -28,8 +27,5 @@ void InstantCountPopupHook::updateItemID() {
             obj->m_itemID = itemId;
         }
     }
-#else
-# pragma message "updateItemID mbo unimpl"
     return SetupInstantCountPopup::updateItemID();
-#endif
 }
