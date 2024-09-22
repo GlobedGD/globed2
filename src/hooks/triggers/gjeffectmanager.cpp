@@ -260,7 +260,7 @@ struct GLOBED_DLL EffectGameObjectHook : geode::Modify<EffectGameObjectHook, Eff
             }
 
             gjbgl->queueCounterChange(cc);
-        } else {
+        } else if (!globed::isReadonlyCustomItem(m_itemID)){
             EffectGameObject::triggerObject(layer, idk, idunno);
         }
     }
@@ -294,7 +294,7 @@ struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerG
             }
 
             gjbgl->queueCounterChange(cc);
-        } else {
+        } else if (!globed::isReadonlyCustomItem(m_itemID)) {
             CountTriggerGameObject::triggerObject(layer, idk, idunno);
         }
     }
