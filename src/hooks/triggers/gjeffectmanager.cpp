@@ -296,18 +296,34 @@ struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerG
 
 struct GLOBED_DLL ItemEditGJBGL : geode::Modify<ItemEditGJBGL, GJBaseGameLayer> {
     void activateItemEditTrigger(ItemTriggerGameObject* obj) {
-        GJBaseGameLayer::activateItemEditTrigger(obj);
-
         int targetId = obj->m_targetGroupID;
 
-        if (globed::isWritableCustomItem(targetId)) {
-            GlobedCounterChange cc;
-            cc.itemId = globed::itemIdToCustom(targetId);
-            cc.type = GlobedCounterChange::Type::Set; // laziness tbh
-            cc._val.intVal = static_cast<GJEffectManagerHook*>(m_effectManager)->countForItemCustom(targetId);
-
-            static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this))->queueCounterChange(cc);
+        if (!globed::isCustomItem(targetId)) {
+            GJBaseGameLayer::activateItemEditTrigger(obj);
+            return;
         }
+
+        if (globed::isReadonlyCustomItem(targetId)) {
+            // do nothing
+            return;
+        }
+
+        auto efm = static_cast<GJEffectManagerHook*>(m_effectManager);
+
+        int oldValue = efm->countForItemCustom(targetId);
+
+        // TODO: we really should rewrite the orig method instead of doing this
+        GJBaseGameLayer::activateItemEditTrigger(obj);
+        int newValue = efm->countForItemCustom(targetId);
+        efm->updateCountForItemCustom(targetId, oldValue);
+        this->updateCounters(targetId, oldValue);
+
+        GlobedCounterChange cc;
+        cc.itemId = globed::itemIdToCustom(targetId);
+        cc.type = GlobedCounterChange::Type::Set; // laziness tbh
+        cc._val.intVal = newValue;
+
+        static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this))->queueCounterChange(cc);
     }
 };
 
