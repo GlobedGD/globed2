@@ -285,7 +285,7 @@ struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerG
             } else if (m_pickupTriggerMode == 2) {
                 cc.type = Divide;
                 cc._val.floatVal = m_pickupTriggerMultiplier;
-            } else if (!m_unkPickupBool2) {
+            } else if (!m_isOverride) {
                 cc.type = Add;
                 cc._val.intVal = m_pickupCount;
             } else {
