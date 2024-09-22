@@ -10,6 +10,8 @@
 #include <globed/constants.hpp>
 #include <util/lowlevel.hpp>
 
+static bool dontUpdateCountTriggers = false;
+
 void GJEffectManagerHook::updateCountForItem(int id, int value) {
     if (globed::isWritableCustomItem(id)) {
         this->updateCountForItemCustom(id, value);
@@ -108,6 +110,10 @@ bool GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
 
     int prev = fields.customItems[id];
     fields.customItems[id] = value;
+
+    if (dontUpdateCountTriggers) {
+        return prev != value;
+    }
 
     // update count triggers haha
     // please dont even begin to try to understand any of this
@@ -313,10 +319,14 @@ struct GLOBED_DLL ItemEditGJBGL : geode::Modify<ItemEditGJBGL, GJBaseGameLayer> 
         int oldValue = efm->countForItemCustom(targetId);
 
         // TODO: we really should rewrite the orig method instead of doing this
+        dontUpdateCountTriggers = true;
+
         GJBaseGameLayer::activateItemEditTrigger(obj);
         int newValue = efm->countForItemCustom(targetId);
         efm->updateCountForItemCustom(targetId, oldValue);
         this->updateCounters(targetId, oldValue);
+
+        dontUpdateCountTriggers = false;
 
         GlobedCounterChange cc;
         cc.itemId = globed::itemIdToCustom(targetId);
