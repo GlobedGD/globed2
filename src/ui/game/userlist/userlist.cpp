@@ -74,7 +74,7 @@ bool GlobedUserListPopup::setup() {
 
     volumeSlider->setContentWidth(80.f);
     volumeSlider->setLimits(0.0, 2.0);
-    volumeSlider->setValue(GlobedSettings::get().communication.voiceVolume / 2);
+    volumeSlider->setValue(GlobedSettings::get().communication.voiceVolume);
     volumeSlider->setCallback([this](BetterSlider* slider, double value) {
         this->onVolumeChanged(slider, value);
     });
