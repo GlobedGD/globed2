@@ -10,6 +10,7 @@
 #include <managers/settings.hpp>
 #include <net/manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
+#include <ui/general/slider.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
 
@@ -97,27 +98,21 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
             inpCheckbox->toggle(*(bool*)(settingStorage));
         } break;
         case Type::Float: {
-            Build<Slider>::create(this, menu_selector(GlobedSettingCell::onSliderChanged), 0.3f)
+            Build<BetterSlider>::create()
                 .anchorPoint(1.f, 0.5f)
-                .pos(CELL_WIDTH - 45.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 18.f, CELL_HEIGHT / 2 - 1.f)
                 .parent(this)
                 .id("input-slider"_spr)
                 .store(inpSlider);
 
-            // my ass
-            inpSlider->m_groove->setScaleY(0.75f);
-            auto thumbs1 = (CCNode*)(inpSlider->getThumb()->getChildren()->objectAtIndex(0));
-            auto thumbs2 = (CCNode*)(inpSlider->getThumb()->getChildren()->objectAtIndex(1));
-
-            thumbs1->setScale(1.5f);
-            thumbs2->setScale(1.5f);
-
-            thumbs1->setPositionY(thumbs1->getPositionY() - 10.f);
-            thumbs2->setPositionY(thumbs2->getPositionY() - 10.f);
+            inpSlider->setCallback([this](auto* slider, double value) {
+                this->onSliderChanged(slider, value);
+            });
+            inpSlider->setLimits(limits.floatMin, limits.floatMax);
+            inpSlider->setContentWidth(90.f);
 
             float value = *(float*)(settingStorage);
-            float relativeValue = value / (limits.floatMax - limits.floatMin);
-            inpSlider->setValue(relativeValue);
+            inpSlider->setValue(value);
         } break;
         case Type::String: [[fallthrough]];
         case Type::PacketFragmentation: [[fallthrough]];
@@ -219,10 +214,8 @@ void GlobedSettingCell::onCheckboxToggled(cocos2d::CCObject*) {
     this->storeAndSave(!inpCheckbox->isOn());
 }
 
-void GlobedSettingCell::onSliderChanged(cocos2d::CCObject*) {
-    float relativeValue = inpSlider->getThumb()->getValue();
-    float value = limits.floatMin + (limits.floatMax - limits.floatMin) * relativeValue;
-    this->storeAndSave(value);
+void GlobedSettingCell::onSliderChanged(BetterSlider* slider, double value) {
+    this->storeAndSave(static_cast<float>(value));
 }
 
 void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {

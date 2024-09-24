@@ -462,14 +462,14 @@ namespace util::ui {
 
         bg->getTexture()->setTexParameters(&tp);
 
-        auto rbg = static_cast<RepeatingBackground*>(Build(bg)
+        auto rbg = Build(bg)
             .contentSize(winSize.width, winSize.height)
             .textureRect(bgrect)
             .scale(scale)
             .zOrder(-1)
             .anchorPoint(0.f, 0.f)
             .color(color)
-            .collect());
+            .collect();
 
         rbg->setUserObject("repeat-bg-params", RepeatingBackgroundParams::create(scale, speed, rawTextureSize, mode, visibleSize));
         rbg->scheduleUpdate();

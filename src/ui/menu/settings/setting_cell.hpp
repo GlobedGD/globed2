@@ -3,6 +3,8 @@
 
 #include <any>
 
+class BetterSlider;
+
 class GlobedSettingCell : public cocos2d::CCLayer, public TextInputDelegate {
 public:
     enum class Type {
@@ -32,7 +34,7 @@ private:
     CCMenuItemSpriteExtra* btnInfo = nullptr;
 
     CCMenuItemToggler* inpCheckbox = nullptr;
-    Slider* inpSlider = nullptr;
+    BetterSlider* inpSlider = nullptr;
     geode::InputNode* inpField = nullptr;
     CCMenuItemSpriteExtra* inpAudioButton = nullptr;
 
@@ -41,7 +43,7 @@ private:
 
     bool init(void*, Type, const char*, const char*, const Limits&);
     void onCheckboxToggled(cocos2d::CCObject*);
-    void onSliderChanged(cocos2d::CCObject*);
+    void onSliderChanged(BetterSlider* slider, double value);
     void onInteractiveButton(cocos2d::CCObject*);
     void onStringChanged(std::string_view);
 

@@ -6,6 +6,7 @@
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
+#include <ui/general/slider.hpp>
 #include <util/ui.hpp>
 #include <util/misc.hpp>
 
@@ -66,20 +67,31 @@ bool GlobedUserListPopup::setup() {
         .parent(m_mainLayer)
         .collect();
 
+    Build<BetterSlider>::create()
+        .scale(0.85f)
+        .id("volume-slider")
+        .store(volumeSlider);
 
-    volumeSlider = Build<Slider>::create(this, menu_selector(GlobedUserListPopup::onVolumeChanged))
-        .pos(rlayout.topRight + ccp(-75, -30 - 7) * 0.7f + ccp(0, -5))
-        .anchorPoint(0, 0)
-        .scale(0.45f * 0.7f)
-        //.scaleX(0.35f)
-        .parent(m_mainLayer)
-        .value(GlobedSettings::get().communication.voiceVolume / 2)
-        .collect();
+    volumeSlider->setContentWidth(80.f);
+    volumeSlider->setLimits(0.0, 2.0);
+    volumeSlider->setValue(GlobedSettings::get().communication.voiceVolume / 2);
+    volumeSlider->setCallback([this](BetterSlider* slider, double value) {
+        this->onVolumeChanged(slider, value);
+    });
 
     Build<CCLabelBMFont>::create("Voice Volume", "bigFont.fnt")
-        .pos(rlayout.topRight + ccp(-75, -18) * 0.7f + ccp(0, -5))
         .scale(0.45f * 0.7f)
-        .parent(m_mainLayer);
+        .intoNewParent(CCNode::create())
+        .id("volume-wrapper")
+        .child(volumeSlider)
+        .layout(ColumnLayout::create()
+            ->setAutoScale(false)
+            ->setAxisReverse(true))
+        .contentSize(80.f, 30.f)
+        .anchorPoint(0.5f, 0.5f)
+        .pos(rlayout.topRight - CCPoint{50.f, 25.f})
+        .parent(m_mainLayer)
+        .updateLayout();
 
     // Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedUserListPopup::onToggleVoiceSort), 0.7f))
     //     .id("toggle-voice-sort"_spr)
@@ -257,8 +269,8 @@ void GlobedUserListPopup::onToggleVoiceSort(cocos2d::CCObject* sender) {
     volumeSortEnabled = !static_cast<CCMenuItemToggler*>(sender)->isOn();
 }
 
-void GlobedUserListPopup::onVolumeChanged(cocos2d::CCObject* sender) {
-    GlobedSettings::get().communication.voiceVolume = volumeSlider->getThumb()->getValue() * 2;
+void GlobedUserListPopup::onVolumeChanged(BetterSlider* slider, double value) {
+    GlobedSettings::get().communication.voiceVolume = value;
 }
 
 void GlobedUserListPopup::removeListCell(GlobedUserCell* cell) {

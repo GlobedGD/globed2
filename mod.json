@@ -2,15 +2,15 @@
     "id": "dankmeme.globed2",
     "name": "Globed",
     "developer": "dankmeme",
-    "geode": "3.7.1",
-    "version": "v1.6.2",
+    "geode": "3.7.2",
+    "version": "v1.7.0-beta.1",
     "gd": {
         "win": "2.206",
         "android": "2.206",
         "mac": "2.206",
         "ios": "2.206"
     },
-    "description": "Feature-rich multiplayer mod for Geometry Dash",
+    "description": "Feature-rich multiplayer mod",
     "dependencies": [
         {
             "id": "geode.custom-keybinds",
@@ -55,6 +55,14 @@
                 "resources/sheet1/featured/*.png"
             ]
         },
+        "sprites": [
+            "resources/ui/slider-start.png",
+            "resources/ui/slider-middle.png",
+            "resources/ui/slider-fill.png",
+            "resources/ui/slider-end.png",
+            "resources/ui/slider-thumb.png",
+            "resources/ui/slider-thumb-sel.png"
+        ],
         "files": [
             "resources/sounds/*.ogg"
         ]
