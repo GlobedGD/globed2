@@ -6,6 +6,7 @@ using Knob = BetterSlider::Knob;
 using namespace geode::prelude;
 
 constexpr float FILL_PAD = 2.f;
+constexpr float KNOB_PAD = 4.f;
 
 bool BetterSlider::init() {
     if (!CCMenu::init()) return false;
@@ -126,7 +127,7 @@ void BetterSlider::setValue(double value) {
 
 void BetterSlider::setValueRaw(double value) {
     this->rawvalue = std::clamp(value, 0.0, 1.0);
-    knob->setPositionX(this->getContentWidth() * value);
+    knob->setPositionX(KNOB_PAD + (this->getContentWidth() - KNOB_PAD * 2) * value);
 
     // update fill
     float maxWidth = this->getContentWidth() - FILL_PAD;
@@ -171,12 +172,10 @@ void BetterSlider::ccTouchMoved(CCTouch* touch, CCEvent* event) {
 
     // move the slider knob if it's selected
     if (knob->isHeld()) {
-        auto relX = this->convertTouchToNodeSpace(touch).x;
-        float maxw = this->getContentSize().width;
+        auto relX = this->convertTouchToNodeSpace(touch).x - KNOB_PAD;
+        float maxw = this->getContentSize().width - KNOB_PAD * 2;
 
         relX = std::clamp(relX + knobCorrection, 0.f, maxw);
-
-        knob->setPositionX(relX);
 
         double rawFill = relX / maxw;
 

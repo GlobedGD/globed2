@@ -100,7 +100,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         case Type::Float: {
             Build<BetterSlider>::create()
                 .anchorPoint(1.f, 0.5f)
-                .pos(CELL_WIDTH - 18.f, CELL_HEIGHT / 2 - 1.f)
+                .pos(CELL_WIDTH - 12.f, CELL_HEIGHT / 2 - 1.f)
                 .parent(this)
                 .id("input-slider"_spr)
                 .store(inpSlider);
