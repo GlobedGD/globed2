@@ -92,7 +92,7 @@ static constexpr errc codes[] = {
     errc::resource_unavailable_try_again,
 };
 
-[[noreturn]] static void __cdecl _throw_cpp_error_hook(int code) {
+[[noreturn]] void GLOBED_DLL __cdecl _throw_cpp_error_hook(int code) {
     throw std::system_error((int) codes[code], std::generic_category(), msgs[code]);
 }
 
