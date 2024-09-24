@@ -4,6 +4,8 @@
 
 using namespace geode::prelude;
 
+GlobedSettings::LaunchArgs GlobedSettings::_launchArgs = {};
+
 GlobedSettings::GlobedSettings() {
     this->reload();
 }
@@ -75,11 +77,16 @@ void GlobedSettings::reset() {
 void GlobedSettings::reload() {
     this->reflect(TaskType::LoadSettings);
 
+    auto lf = [](std::string_view x, bool& dest) {
+        dest = Mod::get()->getLaunchFlag(x);
+    };
+
     // load launch arguments
-    _launchArgs.crtFix = Mod::get()->getLaunchFlag("globed-crt-fix");
-    _launchArgs.verboseCurl = Mod::get()->getLaunchFlag("globed-verbose-curl");
-    _launchArgs.skipPreload = Mod::get()->getLaunchFlag("globed-skip-preload");
-    _launchArgs.debugPreload = Mod::get()->getLaunchFlag("globed-debug-preload");
+    lf("globed-crt-fix", _launchArgs.crtFix);
+    lf("globed-verbose-curl", _launchArgs.verboseCurl);
+    lf("globed-skip-preload", _launchArgs.skipPreload);
+    lf("globed-debug-preload", _launchArgs.debugPreload);
+    lf("globed-skip-resource-check", _launchArgs.skipResourceCheck);
 }
 
 void GlobedSettings::save() {

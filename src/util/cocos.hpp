@@ -52,7 +52,7 @@ namespace util::cocos {
     cocos2d::CCTexture2D* addTextureFromData(const std::string& textureKey, unsigned char* data, size_t size);
 
     // checks for nullptr and textureldr fallback
-    bool isValidSprite(cocos2d::CCNode* obj);
+    bool isValidSprite(cocos2d::CCSprite* obj);
 
     void renderNodeToFile(cocos2d::CCNode*, const std::filesystem::path& dest);
 

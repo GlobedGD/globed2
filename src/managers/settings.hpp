@@ -233,11 +233,12 @@ public:
 
 private:
     // Launch args
-    struct LaunchArgs {
+    static struct LaunchArgs {
         bool crtFix = false;
         bool verboseCurl = false;
         bool skipPreload = false;
         bool debugPreload = false;
+        bool skipResourceCheck = false;
     } _launchArgs;
 public:
 

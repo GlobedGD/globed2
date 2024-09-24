@@ -39,6 +39,13 @@ class $modify(HookedFileUtils, CCFileUtils) {
     }
 };
 
+#include <Geode/modify/CCSpriteFrame.hpp>
+class $modify(HookedSpriteFrame, CCSpriteFrame) {
+    gd::string& pGetTextureName() {
+        return m_strTextureFilename;
+    }
+};
+
 namespace util::cocos {
     // big hack to call a private cocos function
     namespace {
@@ -680,8 +687,37 @@ namespace util::cocos {
         return out;
     }
 
-    bool isValidSprite(CCNode* obj) {
-        return obj && !obj->getUserObject("geode.texture-loader/fallback");
+    bool isValidSprite(CCSprite* obj) {
+        if (!obj) return false;
+
+        // TODO: clean up this mess once the textureldr update is reasonably behind
+
+        static bool oldTextureLdr = []() -> bool {
+            auto mod = Loader::get()->getLoadedMod("geode.texture-loader");
+            if (!mod) return false;
+
+            // versions before 1.6.2 had a bug where the fallback object wouldn't get assigned sometimes
+            return mod->getVersion().getMajor() == 1 && mod->getVersion().getMinor() == 6 && mod->getVersion().getPatch() < 2;
+        };
+
+        static auto getFallbackTexture = []() -> CCTexture2D* {
+            return CCTextureCache::get()->textureForKey("geode.texture-loader/fallback.png");
+        };
+
+        if (oldTextureLdr) {
+            if (obj->getUserObject("geode.texture-loader/fallback")) {
+                return false;
+            }
+
+            // find the sprite frame name
+            if (auto frame = static_cast<HookedSpriteFrame*>(obj->displayFrame())) {
+                if (frame->getTexture() == getFallbackTexture()) {
+                    return false;
+                }
+            }
+        }
+
+        return !obj->getUserObject("geode.texture-loader/fallback");
     }
 
     void renderNodeToFile(CCNode* node, const std::filesystem::path& dest) {
