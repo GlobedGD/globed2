@@ -132,6 +132,9 @@ namespace util::debug {
         // TODO demangle
         return typeid(*type).name();
     }
+
+    bool isWine();
+    const char* getWineVersion();
 }
 
 #define GLOBED_BENCH(name, ...) ::util::debug::Benchmarker().runAndLog([&] { __VA_ARGS__ ; }, name)

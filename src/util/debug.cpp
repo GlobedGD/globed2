@@ -218,4 +218,26 @@ namespace util::debug {
 
         return std::nullopt;
     }
+
+    bool isWine() {
+#ifdef GEODE_IS_WINDOWS
+        auto nt = GetModuleHandleW(L"ntdll.dll");
+        return nt && GetProcAddress(nt, "wine_get_version") != nullptr;
+#else
+        return false;
+#endif
+    }
+    const char* getWineVersion() {
+#ifdef GEODE_IS_WINDOWS
+        auto nt = GetModuleHandleW(L"ntdll.dll");
+        if (!nt) return "";
+
+        auto addr = GetProcAddress(nt, "wine_get_version");
+        if (!addr) return "";
+
+        return reinterpret_cast<const char* (__cdecl*)(void)>(addr)();
+#else
+        return "";
+#endif
+    }
 }
