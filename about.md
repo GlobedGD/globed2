@@ -26,7 +26,7 @@ Globed is made by:
 * [TechStudent10](user:20284359) - developer
 * [ninXout](user:7479054) - developer
 
-and the rest of our awesome [contributors](https://github.com/dankmeme01/globed2/graphs/contributors)!
+and the rest of our awesome [contributors](https://github.com/GlobedGD/globed2/graphs/contributors)!
 
 Special thanks:
 

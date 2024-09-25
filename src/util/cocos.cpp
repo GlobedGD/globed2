@@ -414,7 +414,7 @@ namespace util::cocos {
             // a very strange bug when you have the Default mini icons option enabled.
             // I have no idea how loading a ship icon can cause a ball icon to become a cube,
             // and honestly I don't care enough.
-            // https://github.com/dankmeme01/globed2/issues/93
+            // https://github.com/GlobedGD/globed2/issues/93
             case AssetPreloadStage::Ship: gm->loadIconsBatched((int)IconType::Ship, 1, 168); break;
             case AssetPreloadStage::Ball: gm->loadIconsBatched((int)IconType::Ball, 0, 118); break;
             case AssetPreloadStage::Ufo: gm->loadIconsBatched((int)IconType::Ufo, 1, 149); break;

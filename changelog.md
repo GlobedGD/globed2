@@ -333,7 +333,7 @@ Globed now uses a different networking protocol (hybrid TCP/UDP instead of just 
 
 That means this is a **required** update which bumps the protocol version to 2. You will not be able to connect to an updated server without updating the mod to this version.
 
-If you are a server owner, please read the [server changelog](https://github.com/dankmeme01/globed2/blob/main/server/changelog.md) as there have been some changes to the server.
+If you are a server owner, please read the [server changelog](https://github.com/GlobedGD/globed2/blob/main/server/changelog.md) as there have been some changes to the server.
 
 Additional changes include:
 

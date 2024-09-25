@@ -44,7 +44,7 @@ void DiscordRpcModule::postDRPCEvent() {
         {"smallImageText", ""},
         {"useTime", true},
         {"shouldResetTime", false},
-        {"largeImageKey", "https://raw.githubusercontent.com/dankmeme01/globed2/main/logo.png"},
+        {"largeImageKey", "https://raw.githubusercontent.com/GlobedGD/globed2/main/logo.png"},
         {"largeImageText", ""},
         {"joinSecret", std::to_string(m_level->m_levelID.value())},
         {"partyMax", gameLayer->m_fields->players.size() + 1}

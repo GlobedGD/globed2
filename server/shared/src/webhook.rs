@@ -430,7 +430,7 @@ pub fn rate_tier_to_image(difficulty: i32, tier: i32) -> String {
         _ => "featured",
     };
 
-    format!("https://raw.githubusercontent.com/dankmeme01/globed2/main/assets/globed-faces/{diffname}/{diffname}-{ratename}.png")
+    format!("https://raw.githubusercontent.com/GlobedGD/globed2/main/assets/globed-faces/{diffname}/{diffname}-{ratename}.png")
 }
 
 #[derive(Debug)]
@@ -440,7 +440,12 @@ pub enum WebhookError {
     RequestStatus((StatusCode, String)),
 }
 
-pub async fn send_webhook_messages(http_client: reqwest::Client, url: &str, messages: &[WebhookMessage], content: Option<String>) -> Result<(), WebhookError> {
+pub async fn send_webhook_messages(
+    http_client: reqwest::Client,
+    url: &str,
+    messages: &[WebhookMessage],
+    content: Option<String>,
+) -> Result<(), WebhookError> {
     let mut embeds = Vec::new();
 
     for message in messages {
