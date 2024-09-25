@@ -10,6 +10,7 @@
 
 #include <data/packets/all.hpp>
 #include <defs/minimal_geode.hpp>
+#include <globed/tracing.hpp>
 #include <managers/account.hpp>
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
@@ -257,15 +258,22 @@ protected:
         threadMain.start(this);
 
         this->resetConnectionState();
+
+        TRACE("[NetworkManager] initialized");
     }
 
     ~Impl() {
+        TRACE("[NetworkManager] destructing");
+
         // remove all listeners
         this->removeAllListeners();
 
-        log::debug("waiting for network threads to terminate..");
+        TRACE("[NetworkManager] waiting for threads to stop");
+
         threadRecv.stopAndWait();
         threadMain.stopAndWait();
+
+        TRACE("[NetworkManager] threads stopped, disconnecting");
 
         if (state != ConnectionState::Disconnected) {
             log::debug("disconnecting from the server..");
@@ -276,9 +284,13 @@ protected:
             }
         }
 
+        TRACE("[NetworkManager] cleaning up");
+
         util::net::cleanup();
 
         log::info("goodbye from networkmanager!");
+
+        TRACE("[NetworkManager] uninitialized completely");
     }
 
     void resetConnectionState() {
