@@ -9,9 +9,9 @@ namespace globed {
     bool _traceEnabled();
 
     template <typename... Args>
-    void trace(Args&&... args) {
+    void trace(geode::log::impl::FmtStr<Args...> str, Args&&... args) {
         if (_traceEnabled()) {
-            geode::log::debug(std::move(args)...);
+            geode::log::debug(str, std::forward<Args>(args)...);
         }
     }
 }
