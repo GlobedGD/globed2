@@ -9,6 +9,8 @@
 class GLOBED_DLL VoiceRecordingManager : public SingletonBase<VoiceRecordingManager> {
 protected:
     VoiceRecordingManager();
+    ~VoiceRecordingManager();
+
     friend class SingletonBase;
 
 public:

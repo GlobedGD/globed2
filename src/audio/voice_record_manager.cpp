@@ -4,6 +4,7 @@
 
 #include <data/packets/client/misc.hpp>
 #include <data/packets/client/game.hpp>
+#include <globed/tracing.hpp>
 #include <managers/error_queues.hpp>
 #include <audio/manager.hpp>
 #include <net/manager.hpp>
@@ -13,6 +14,13 @@ VoiceRecordingManager::VoiceRecordingManager() {
     thread.setStartFunction([] { geode::utils::thread::setName("Record Thread"); });
     thread.setLoopFunction(&VoiceRecordingManager::threadFunc);
     thread.start(this);
+}
+
+
+VoiceRecordingManager::~VoiceRecordingManager() {
+    TRACE("[VoiceRecordingManager] waiting for thread to stop");
+    thread.stopAndWait();
+    TRACE("[VoiceRecordingManager] thread halted");
 }
 
 void VoiceRecordingManager::startRecording() {

@@ -1,6 +1,7 @@
 #include "cocos.hpp"
 
 #include <defs/geode.hpp>
+#include <globed/tracing.hpp>
 #include <managers/settings.hpp>
 #include <hooks/game_manager.hpp>
 #include <util/format.hpp>
@@ -98,12 +99,15 @@ namespace util::cocos {
         } timeMeasurements;
 
         void ensurePoolExists() {
+            TRACE("creating thread pool with size {}", THREAD_COUNT);
+
             if (!threadPool) {
                 threadPool = std::make_unique<asp::ThreadPool>(THREAD_COUNT);
             }
         }
 
         void destroyPool() {
+            TRACE("destroying thread pool");
             threadPool = nullptr;
         }
     };

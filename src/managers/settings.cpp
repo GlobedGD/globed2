@@ -87,6 +87,7 @@ void GlobedSettings::reload() {
     lf("globed-skip-preload", _launchArgs.skipPreload);
     lf("globed-debug-preload", _launchArgs.debugPreload);
     lf("globed-skip-resource-check", _launchArgs.skipResourceCheck);
+    lf("globed-tracing", _launchArgs.tracing);
 }
 
 void GlobedSettings::save() {

@@ -239,6 +239,7 @@ private:
         bool skipPreload = false;
         bool debugPreload = false;
         bool skipResourceCheck = false;
+        bool tracing = false;
     } _launchArgs;
 public:
 

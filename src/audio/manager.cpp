@@ -12,6 +12,7 @@
 #include <fmod_errors.h>
 #include <Geode/utils/permission.hpp>
 
+#include <globed/tracing.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
 #include <util/debug.hpp>
@@ -63,9 +64,11 @@ GlobedAudioManager::GlobedAudioManager()
 }
 
 GlobedAudioManager::~GlobedAudioManager() {
+    TRACE("[AudioManager] waiting for the thread to halt");
+
     audioThreadHandle.stopAndWait();
 
-    log::info("audio thread halted.");
+    TRACE("[AudioManager] audio thread halted");
 }
 
 void GlobedAudioManager::preInitialize() {
