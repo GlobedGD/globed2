@@ -34,6 +34,11 @@ struct ConstexprString {
     uint32_t hash;
 };
 
+template <>
+struct ConstexprString<0> {
+    constexpr ConstexprString() {}
+};
+
 struct ConstexprFloat {
     constexpr ConstexprFloat(float value) : value(value) {}
 
