@@ -5,12 +5,34 @@
 using namespace geode::prelude;
 // using util::misc::is_any_of_dynamic;
 
-void PopupQueue::push(FLAlertLayer* popup, bool hideWhilePlaying) {
-    (hideWhilePlaying ? queuedLowPrio : queuedHighPrio).push(popup);
+void PopupQueue::pushNoDelay(geode::Ref<FLAlertLayer> popup, bool hideWhilePlaying) {
+    (hideWhilePlaying ? queuedLowPrio : queuedHighPrio).push(std::move(popup));
+}
+
+void PopupQueue::push(FLAlertLayer* popup, CCNode* invoker, bool hideWhilePlaying) {
+    if (!invoker) {
+        auto scene = CCScene::get();
+        if (scene && scene->getChildrenCount() > 0) {
+            invoker = static_cast<CCNode*>(scene->getChildren()->objectAtIndex(0));
+        }
+    }
+
+    if (!invoker) {
+        log::warn("PopupQueue internal error: invoker is null and failed to find scene child. Ignoring popup.");
+        return;
+    }
+
+    delayedPopups.push_back(DelayedPopup {
+        .popup = Ref(popup),
+        .invokerLayer = invoker,
+        .lowPrioQueue = hideWhilePlaying
+    });
 }
 
 void PopupQueue::update(float dt) {
-    if (queuedLowPrio.empty() && queuedHighPrio.empty()) {
+    bool hasQueuedPopups = !queuedLowPrio.empty() || !queuedHighPrio.empty();
+
+    if (!hasQueuedPopups && delayedPopups.empty()) {
         return;
     }
 
@@ -25,6 +47,24 @@ void PopupQueue::update(float dt) {
     // dont show on some layers
     auto layer = static_cast<CCNode*>(scene->getChildren()->objectAtIndex(0));
     if (typeinfo_cast<LoadingLayer*>(layer)) {
+        return;
+    }
+
+    // check if any of the delayed popups can be pushed now
+    for (auto it = delayedPopups.begin(); it != delayedPopups.end();) {
+        if (it->invokerLayer == layer) {
+            ++it;
+        } else {
+            // layer changed, we can push it to the queue now
+            this->pushNoDelay(std::move(it->popup), it->lowPrioQueue);
+            hasQueuedPopups = true;
+            delayedPopups.erase(it);
+
+            // dont increment interator
+        }
+    }
+
+    if (!hasQueuedPopups) {
         return;
     }
 

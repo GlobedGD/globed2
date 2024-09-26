@@ -2,6 +2,7 @@
 
 #include <Geode/modify/SetupInstantCountPopup.hpp>
 #include <defs/minimal_geode.hpp>
+#include <managers/hook.hpp>
 #include <cocos2d.h>
 
 struct GLOBED_DLL InstantCountPopupHook : geode::Modify<InstantCountPopupHook, SetupInstantCountPopup> {
@@ -10,6 +11,16 @@ struct GLOBED_DLL InstantCountPopupHook : geode::Modify<InstantCountPopupHook, S
         CCTextInputNode* itemIdInputNode = nullptr;
         bool globedMode = false;
     };
+
+    static void onModify(auto& self) {
+        if (auto h = self.getHook("SetupInstantCountPopup::init")) {
+            HookManager::get().addHook(HookManager::Group::EditorTriggerPopups, h.unwrap());
+        }
+
+        if (auto h = self.getHook("SetupInstantCountPopup::updateItemID")) {
+            HookManager::get().addHook(HookManager::Group::EditorTriggerPopups, h.unwrap());
+        }
+    }
 
     $override
     bool init(CountTriggerGameObject* p0, cocos2d::CCArray* p1);

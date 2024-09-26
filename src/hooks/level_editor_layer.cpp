@@ -1,6 +1,11 @@
 #include "level_editor_layer.hpp"
 
+#include <Geode/utils/web.hpp>
+
 #include "gjbasegamelayer.hpp"
+#include <managers/settings.hpp>
+#include <managers/hook.hpp>
+#include <managers/popup_queue.hpp>
 
 using namespace geode::prelude;
 
@@ -18,6 +23,24 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
     gjbgl->setupAll();
 
     gjbgl->m_fields->setupWasCompleted = true;
+
+    auto& settings = GlobedSettings::get();
+    if (!settings.globed.editorChanges) {
+        HookManager::get().enableGroup(HookManager::Group::EditorTriggerPopups);
+
+        if (settings.flags.seenGlobalTriggerGuide) {
+            settings.flags.seenGlobalTriggerGuide = true;
+            auto alert = geode::createQuickPopup("Globed", fmt::format("Visit the global trigger guide page? <cy>({})</c>", globed::string<"global-trigger-page">()), "No", "Yes", [](auto, bool agree) {
+                if (!agree) return;
+
+                geode::utils::web::openLinkInBrowser(globed::string<"global-trigger-page">());
+            }, false);
+
+            PopupQueue::get()->push(alert);
+        }
+    } else {
+        HookManager::get().disableGroup(HookManager::Group::EditorTriggerPopups);
+    }
 
     return true;
 }
