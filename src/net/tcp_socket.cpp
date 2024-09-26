@@ -49,7 +49,7 @@ Result<> TcpSocket::connect(const NetworkAddress& address) {
     int code = ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
 
     // if the code isn't 0 (success) or EWOULDBLOCK (expected result), close socket and return error
-    if (code != 0 && code != WouldBlock) {
+    if (code != 0 && util::net::lastErrorCode() != WouldBlock) {
         this->close();
 
         return Err(fmt::format("tcp connect failed ({}): {}", code, util::net::lastErrorString()));
