@@ -78,7 +78,7 @@ void GlobedSettings::reload() {
     this->reflect(TaskType::LoadSettings);
 
     auto lf = [](std::string_view x, bool& dest) {
-        dest = Mod::get()->getLaunchFlag(x);
+        dest = Loader::get()->getLaunchFlag(x);
     };
 
     // load launch arguments

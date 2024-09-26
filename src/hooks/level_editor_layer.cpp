@@ -25,10 +25,10 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
     gjbgl->m_fields->setupWasCompleted = true;
 
     auto& settings = GlobedSettings::get();
-    if (!settings.globed.editorChanges) {
+    if (settings.globed.editorChanges) {
         HookManager::get().enableGroup(HookManager::Group::EditorTriggerPopups);
 
-        if (settings.flags.seenGlobalTriggerGuide) {
+        if (!settings.flags.seenGlobalTriggerGuide) {
             settings.flags.seenGlobalTriggerGuide = true;
             auto alert = geode::createQuickPopup("Globed", fmt::format("Visit the global trigger guide page? <cy>({})</c>", globed::string<"global-trigger-page">()), "No", "Yes", [](auto, bool agree) {
                 if (!agree) return;

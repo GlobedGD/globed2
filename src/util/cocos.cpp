@@ -99,9 +99,8 @@ namespace util::cocos {
         } timeMeasurements;
 
         void ensurePoolExists() {
-            TRACE("creating thread pool with size {}", THREAD_COUNT);
-
             if (!threadPool) {
+                TRACE("creating thread pool with size {}", THREAD_COUNT);
                 threadPool = std::make_unique<asp::ThreadPool>(THREAD_COUNT);
             }
         }
