@@ -12,6 +12,12 @@
 # include <unistd.h>
 #endif
 
+#ifdef GEODE_IS_WINDOWS
+constexpr static int WouldBlock = WSAEWOULDBLOCK;
+#else
+constexpr static int WouldBlock = EWOULDBLOCK;
+#endif
+
 using namespace geode::prelude;
 
 TcpSocket::TcpSocket() : socket_(0) {
@@ -24,6 +30,9 @@ TcpSocket::~TcpSocket() {
 }
 
 Result<> TcpSocket::connect(const NetworkAddress& address) {
+    // close any socket if still open
+    this->close();
+
     destAddr_->sin_family = AF_INET;
 
     GLOBED_UNWRAP_INTO(address.resolve(), *destAddr_)
@@ -37,10 +46,21 @@ Result<> TcpSocket::connect(const NetworkAddress& address) {
     // attempt a connection with a 5 second timeout
     GLOBED_UNWRAP(this->setNonBlocking(true));
 
-    // on a non-blocking socket this always errors with EWOULDBLOCK, ignore the status code
-    (void) ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
+    int code = ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
+
+    // if the code isn't 0 (success) or EWOULDBLOCK (expected result), close socket and return error
+    if (code != 0 && code != WouldBlock) {
+        this->close();
+
+        return Err(fmt::format("tcp connect failed ({}): {}", code, util::net::lastErrorString()));
+    }
 
     GLOBED_UNWRAP(this->setNonBlocking(false));
+
+    // if the connection succeeded without blocking (local connection?), just return
+    if (code == 0) {
+        return Ok();
+    }
 
     // im crying why does this actually poll for double the length????
     GLOBED_UNWRAP_INTO(this->poll(2500, false), auto pollResult);
@@ -123,6 +143,10 @@ Result<> TcpSocket::recvExact(char* buffer, int bufferSize) {
 bool TcpSocket::close() {
     connected = false;
 
+    if (socket_ == -1) {
+        return false;
+    }
+
 #ifdef GEODE_IS_WINDOWS
     auto res = ::closesocket(socket_) == 0;
 #else
@@ -170,13 +194,7 @@ Result<> TcpSocket::setNonBlocking(bool nb) {
 void TcpSocket::maybeDisconnect() {
     auto lastError = util::net::lastErrorCode();
 
-#ifdef GEODE_IS_WINDOWS
-    if (lastError != WSAEWOULDBLOCK) {
+    if (lastError != WouldBlock) {
         this->close();
     }
-#else
-    if (lastError != EWOULDBLOCK) {
-        this->close();
-    }
-#endif
 }

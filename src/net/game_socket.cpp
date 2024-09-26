@@ -55,6 +55,7 @@ Result<> GameSocket::connect(const NetworkAddress& address, bool isRecovering) {
 void GameSocket::disconnect() {
     tcpSocket.disconnect();
     udpSocket.disconnect();
+    udpBuffer.clear();
 }
 
 bool GameSocket::isConnected() {
