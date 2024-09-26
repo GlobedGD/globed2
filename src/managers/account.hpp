@@ -56,6 +56,8 @@ public:
     void storeTempAdminPassword(std::string_view password);
     std::string getTempAdminPassword();
 
+    void accountWasChanged();
+
 private:
     WebRequestManager::Listener requestListener;
     std::optional<std::function<void()>> requestCallbackStored;

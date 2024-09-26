@@ -5,6 +5,7 @@
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
+#include <managers/friend_list.hpp>
 #include <util/crypto.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
@@ -16,6 +17,8 @@ using namespace util::data;
 GlobedAccountManager::GlobedAccountManager() {}
 
 void GlobedAccountManager::initialize(std::string_view name, int accountId, int userId, std::string_view central) {
+    bool accountChanged = gdData.lock()->accountId != accountId;
+
     GDData data = {
         .accountName = std::string(name),
         .accountId = accountId,
@@ -35,6 +38,9 @@ void GlobedAccountManager::initialize(std::string_view name, int accountId, int 
     cryptoBox = std::make_unique<SecretBox>(util::crypto::simpleHash(cryptoKey));
 
     initialized = true;
+
+    // if we changed accounts, clear some stuff
+    this->accountWasChanged();
 }
 
 void GlobedAccountManager::autoInitialize() {
@@ -221,6 +227,10 @@ std::optional<std::string> GlobedAccountManager::getAdminPassword() {
 
 void GlobedAccountManager::cancelAuthTokenRequest() {
     requestListener.getFilter().cancel();
+}
+
+void GlobedAccountManager::accountWasChanged() {
+    FriendListManager::get().invalidate();
 }
 
 std::string GlobedAccountManager::computeGDDataHash(std::string_view name, int accountId, int userId, std::string_view central) {
