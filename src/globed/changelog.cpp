@@ -139,8 +139,6 @@ FLAlertLayer* showChangelogPopup() {
         }
     }
 
-    log::debug("Changelog text: {}, size: {}", currentChangelog, currentChangelog.size());
-
     if (!currentChangelog.empty()) {
         Mod::get()->setSavedValue(LAST_CHANGELOG_KEY, Mod::get()->getVersion().toVString());
 

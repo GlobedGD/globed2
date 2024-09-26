@@ -3,11 +3,23 @@
 
 #include <Geode/modify/PauseLayer.hpp>
 
+#include <managers/hook.hpp>
+
 // Defines globed-related PauseLayer hooks
 struct GLOBED_DLL GlobedPauseLayer : geode::Modify<GlobedPauseLayer, PauseLayer> {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PauseLayer::keyDown", -999999999);
         (void) self.setHookPriority("PauseLayer::goEdit", -999999999);
+
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::customSetup);
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::goEdit);
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::onQuit);
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::onResume);
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::onRestart);
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::onRestartFull);
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::onEdit);
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::onNormalMode);
+        GLOBED_MANAGE_HOOK(Gameplay, PauseLayer::onPracticeMode);
     }
 
     bool hasPopup();

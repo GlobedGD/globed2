@@ -1,10 +1,14 @@
+#include <defs/platform.hpp>
+#include <defs/minimal_geode.hpp>
+
+#include <hooks/gjbasegamelayer.hpp>
+#include <globed/constants.hpp>
+#include <managers/hook.hpp>
+
 #include <Geode/modify/GJEffectManager.hpp>
 #include <Geode/modify/EffectGameObject.hpp>
 #include <Geode/modify/CountTriggerGameObject.hpp>
-#include <hooks/gjbasegamelayer.hpp>
-#include <defs/platform.hpp>
-#include <defs/minimal_geode.hpp>
-#include <globed/constants.hpp>
+
 
 struct GLOBED_DLL GJEffectManagerHook : geode::Modify<GJEffectManagerHook, GJEffectManager> {
     struct Fields {
@@ -13,6 +17,9 @@ struct GLOBED_DLL GJEffectManagerHook : geode::Modify<GJEffectManagerHook, GJEff
 
     static void onModify(auto& self) {
         (void) self.setHookPriority("GJEffectManager::countForItem", 999999);
+        GLOBED_MANAGE_HOOK(Gameplay, GJEffectManager::countForItem);
+        GLOBED_MANAGE_HOOK(Gameplay, GJEffectManager::updateCountForItem);
+        GLOBED_MANAGE_HOOK(Gameplay, GJEffectManager::reset);
     }
 
     $override
@@ -39,3 +46,8 @@ struct GLOBED_DLL GJEffectManagerHook : geode::Modify<GJEffectManagerHook, GJEff
     [[deprecated]] void applyFromCounterChange(const GlobedCounterChange& change);
     void applyItem(int id, int value);
 };
+
+namespace globed {
+    // enable/disable trigger-related patch hooks
+    void toggleTriggerHooks(bool state);
+}

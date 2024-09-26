@@ -242,6 +242,10 @@ void GJEffectManagerHook::applyItem(int id, int value) {
 
 // TODO: idk if this hook is needed? maybe 2.1 levels?
 struct GLOBED_DLL EffectGameObjectHook : geode::Modify<EffectGameObjectHook, EffectGameObject> {
+    static void onModify(auto& self) {
+        GLOBED_MANAGE_HOOK(Gameplay, EffectGameObject::triggerObject);
+    }
+
     void triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
         if (this->m_collectibleIsPickupItem && globed::isWritableCustomItem(m_itemID)) {
             auto gjbgl = GlobedGJBGL::get();
@@ -268,7 +272,12 @@ struct GLOBED_DLL EffectGameObjectHook : geode::Modify<EffectGameObjectHook, Eff
 
 // gjbgl collectedObject and addCountToItem inlined on windows.
 struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerGameObject> {
+    static void onModify(auto& self) {
+        GLOBED_MANAGE_HOOK(Gameplay, CountTriggerGameObject::triggerObject);
+    }
+
     // item edit - 3619 (0xe23)
+    $override
     void triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
         if (m_objectID == 0x719 && globed::isWritableCustomItem(m_itemID)) {
             // gjbgl::addPickupTrigger reimpl
@@ -301,6 +310,11 @@ struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerG
 };
 
 struct GLOBED_DLL ItemEditGJBGL : geode::Modify<ItemEditGJBGL, GJBaseGameLayer> {
+    static void onModify(auto& self) {
+        GLOBED_MANAGE_HOOK(Gameplay, GJBaseGameLayer::activateItemEditTrigger);
+    }
+
+    $override
     void activateItemEditTrigger(ItemTriggerGameObject* obj) {
         int targetId = obj->m_targetGroupID;
 
@@ -337,6 +351,9 @@ struct GLOBED_DLL ItemEditGJBGL : geode::Modify<ItemEditGJBGL, GJBaseGameLayer> 
     }
 };
 
+static Patch* egoPatch1 = nullptr;
+static Patch* egoPatch2 = nullptr;
+
 // EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger would break otherwise)
 #if GEODE_COMP_GD_VERSION == 22060
 $execute {
@@ -351,9 +368,19 @@ $execute {
 # pragma message "EffectGameObject::getSaveString not impl'd for this platform"
     return;
 #endif
-    util::lowlevel::patch(offset1, bytes);
-    util::lowlevel::patch(offset2, bytes);
+    egoPatch1 = util::lowlevel::patch(offset1, bytes);
+    egoPatch2 = util::lowlevel::patch(offset2, bytes);
 };
 #else
 # pragma message "EffectGameObject::getSaveString patch needs update"
 #endif
+
+void globed::toggleTriggerHooks(bool state) {
+    auto toggle = [state](Patch* patch) {
+        if (patch) (void) (state ? patch->enable() : patch->disable());
+    };
+
+    toggle(egoPatch1);
+    toggle(egoPatch2);
+    toggle(countForItemPatch);
+}

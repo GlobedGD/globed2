@@ -7,6 +7,7 @@
 #include <game/interpolator.hpp>
 #include <game/player_store.hpp>
 #include <game/module/base.hpp>
+#include <managers/hook.hpp>
 #include <net/manager.hpp>
 #include <ui/game/player/remote_player.hpp>
 #include <ui/game/overlay/overlay.hpp>
@@ -77,6 +78,11 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         int lastJoinedPlayer; // 1
         int lastLeftPlayer;   // 2
     };
+
+    static void onModify(auto& self) {
+        GLOBED_MANAGE_HOOK(Gameplay, GJBaseGameLayer::checkCollisions);
+        GLOBED_MANAGE_HOOK(Gameplay, GJBaseGameLayer::updateCamera);
+    }
 
     $override
     bool init();

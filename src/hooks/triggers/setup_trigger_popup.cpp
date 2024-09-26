@@ -15,13 +15,8 @@ constexpr int ItemId3 = 51;
 #include <Geode/modify/SetupTriggerPopup.hpp>
 struct GLOBED_DLL SetupPopupHook : geode::Modify<SetupPopupHook, SetupTriggerPopup> {
     static void onModify(auto& self) {
-        if (auto h = self.getHook("SetupTriggerPopup::valueChanged")) {
-            HookManager::get().addHook(HookManager::Group::EditorTriggerPopups, h.unwrap());
-        }
-
-        if (auto h = self.getHook("SetupTriggerPopup::textChanged")) {
-            HookManager::get().addHook(HookManager::Group::EditorTriggerPopups, h.unwrap());
-        }
+        GLOBED_MANAGE_HOOK(EditorTriggerPopups, SetupTriggerPopup::valueChanged);
+        GLOBED_MANAGE_HOOK(EditorTriggerPopups, SetupTriggerPopup::textChanged);
     }
 
     $override

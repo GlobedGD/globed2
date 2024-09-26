@@ -89,6 +89,16 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
         fields.globedReady = false;
     }
 
+    // enable/disable certain hooks for performance
+
+    if (fields.globedReady) {
+        HookManager::get().enableGroup(HookManager::Group::Gameplay);
+        globed::toggleTriggerHooks(true);
+    } else {
+        HookManager::get().disableGroup(HookManager::Group::Gameplay);
+        globed::toggleTriggerHooks(false);
+    }
+
     if (fields.globedReady) {
         // room settings
         fields.roomSettings = RoomManager::get().getInfo().settings;
@@ -1280,8 +1290,12 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
 class $modify(PlayerObject) {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayerObject::playerDestroyed", 99999999).unwrap();
+
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::update);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::playerDestroyed);
     }
 
+    $override
     void update(float dt) {
         PlayerObject::update(dt);
 
@@ -1295,6 +1309,7 @@ class $modify(PlayerObject) {
         }
     }
 
+    $override
     void playerDestroyed(bool p0) {
         PlayerObject::playerDestroyed(p0);
 

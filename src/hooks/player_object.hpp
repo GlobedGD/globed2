@@ -3,6 +3,8 @@
 
 #include <Geode/modify/PlayerObject.hpp>
 
+#include <managers/hook.hpp>
+
 class ComplexVisualPlayer;
 
 constexpr int COMPLEX_PLAYER_OBJECT_TAG = 3458738;
@@ -11,6 +13,9 @@ struct GLOBED_DLL ComplexPlayerObject : geode::Modify<ComplexPlayerObject, Playe
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayerObject::incrementJumps", -1000000);
         (void) self.setHookPriority("PlayerObject::playDeathEffect", -10);
+
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::incrementJumps);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::playDeathEffect);
     }
 
     // those are needed so that our changes don't impact actual PlayerObject instances
@@ -31,6 +36,12 @@ struct HookedPlayerObject : geode::Modify<HookedPlayerObject, PlayerObject> {
     struct Fields {
         bool forcedPlatFlag = false;
     };
+
+    static void onModify(auto& self) {
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::playSpiderDashEffect);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::incrementJumps);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::update);
+    }
 
     void cleanupObjectLayer();
 

@@ -1,8 +1,10 @@
 #pragma once
 #include <defs/geode.hpp>
-#include <optional>
 
 #include <Geode/modify/PlayLayer.hpp>
+#include <optional>
+
+#include <managers/hook.hpp>
 
 struct GLOBED_DLL GlobedPlayLayer : geode::Modify<GlobedPlayLayer, PlayLayer> {
     struct Fields {
@@ -14,6 +16,13 @@ struct GLOBED_DLL GlobedPlayLayer : geode::Modify<GlobedPlayLayer, PlayLayer> {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayLayer::resetLevel", 99999999);
         (void) self.setHookPriority("PlayLayer::destroyPlayer", -99999999);
+
+        GLOBED_MANAGE_HOOK(Gameplay, PlayLayer::resetLevel);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayLayer::destroyPlayer);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayLayer::onQuit);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayLayer::fullReset);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayLayer::showNewBest);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayLayer::levelComplete);
     }
 
     // gd hooks

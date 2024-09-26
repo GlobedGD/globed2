@@ -14,7 +14,9 @@ std::set<HookManager::HookData>& HookManager::getHooks(Group group) {
 
 void HookManager::enableGroup(Group group) {
     for (auto& h : groups[group]) {
-        if (auto res = h.hook->enable()) {} else {
+        if (auto res = h.hook->enable()) {
+            // TRACE("enabled hook {}", h.hook->getDisplayName());
+        } else {
             log::warn("Failed to enable hook {}: {}", h.hook->getDisplayName(), res.unwrapErr());
         }
     }
@@ -24,7 +26,9 @@ void HookManager::enableGroup(Group group) {
 
 void HookManager::disableGroup(Group group) {
     for (auto& h : groups[group]) {
-        if (auto res = h.hook->disable()) {} else {
+        if (auto res = h.hook->disable()) {
+            // TRACE("disabled hook {}", h.hook->getDisplayName());
+        } else {
             log::warn("Failed to disable hook {}: {}", h.hook->getDisplayName(), res.unwrapErr());
         }
     }
