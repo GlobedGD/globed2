@@ -50,4 +50,7 @@ struct GLOBED_DLL GJEffectManagerHook : geode::Modify<GJEffectManagerHook, GJEff
 namespace globed {
     // enable/disable trigger-related patch hooks
     void toggleTriggerHooks(bool state);
+
+    // enable/disable editor trigger-related patch hooks
+    void toggleEditorTriggerHooks(bool state);
 }

@@ -380,7 +380,14 @@ void globed::toggleTriggerHooks(bool state) {
         if (patch) (void) (state ? patch->enable() : patch->disable());
     };
 
+    toggle(countForItemPatch);
+}
+
+void globed::toggleEditorTriggerHooks(bool state) {
+    auto toggle = [state](Patch* patch) {
+        if (patch) (void) (state ? patch->enable() : patch->disable());
+    };
+
     toggle(egoPatch1);
     toggle(egoPatch2);
-    toggle(countForItemPatch);
 }
