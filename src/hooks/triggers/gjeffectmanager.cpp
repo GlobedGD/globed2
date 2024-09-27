@@ -9,6 +9,7 @@
 #include <hooks/gjbasegamelayer.hpp>
 #include <globed/constants.hpp>
 #include <util/lowlevel.hpp>
+#include <util/sigscan.hpp>
 
 static bool dontUpdateCountTriggers = false;
 
@@ -357,19 +358,35 @@ static Patch* egoPatch2 = nullptr;
 // EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger would break otherwise)
 #if GEODE_COMP_GD_VERSION == 22060
 $execute {
-    uintptr_t offset1, offset2;
+    uintptr_t offset1 = -1, offset2 = -1;
     std::vector<uint8_t> bytes;
 
+
 #ifdef GEODE_IS_WINDOWS
-    offset1 = 0x47f9aa;
-    offset2 = 0x47f9ca;
+    uintptr_t funcStart = geode::base::get() + 0x47f960;
+
+    offset1 = util::sigscan::find<"3d 0f 27 00 00", 0x100>(funcStart);
+    if (offset1 != -1) {
+        offset2 = util::sigscan::find<"3d 0f 27 00 00", 0x100>(offset1 + 1);
+    }
+
     bytes = {0x3d, 0xff, 0xff, 0xff, 0x7f};
 #else
 # pragma message "EffectGameObject::getSaveString not impl'd for this platform"
     return;
 #endif
-    egoPatch1 = util::lowlevel::patch(offset1, bytes);
-    egoPatch2 = util::lowlevel::patch(offset2, bytes);
+
+    if (offset1 == -1) {
+        log::warn("Failed to find getSaveString offset 1 (searched from {:X})", funcStart);
+    } else {
+        egoPatch1 = util::lowlevel::patch(offset1 - geode::base::get(), bytes);
+    }
+
+    if (offset2 == -1) {
+        log::warn("Failed to find getSaveString offset 2 (searched from {})", funcStart);
+    } else {
+        egoPatch2 = util::lowlevel::patch(offset2 - geode::base::get(), bytes);
+    }
 };
 #else
 # pragma message "EffectGameObject::getSaveString patch needs update"
