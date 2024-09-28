@@ -15,8 +15,8 @@ constexpr size_t THREAD_COUNT = 25;
 #define preloadLog(...) preloadLogImpl(fmt::format(__VA_ARGS__))
 
 // all of this is needed to disrespect the privacy of ccfileutils
-#include <Geode/modify/CCFileUtils.hpp>
-class $modify(HookedFileUtils, CCFileUtils) {
+
+struct HookedFileUtils : public CCFileUtils {
     gd::string& getSearchPath(size_t idx) {
         return m_searchPathArray.at(idx);
     }
@@ -37,13 +37,6 @@ class $modify(HookedFileUtils, CCFileUtils) {
 
     static HookedFileUtils& get() {
         return *static_cast<HookedFileUtils*>(CCFileUtils::sharedFileUtils());
-    }
-};
-
-#include <Geode/modify/CCSpriteFrame.hpp>
-class $modify(HookedSpriteFrame, CCSpriteFrame) {
-    gd::string& pGetTextureName() {
-        return m_strTextureFilename;
     }
 };
 
@@ -713,7 +706,7 @@ namespace util::cocos {
             }
 
             // find the sprite frame name
-            if (auto frame = static_cast<HookedSpriteFrame*>(obj->displayFrame())) {
+            if (auto frame = obj->displayFrame()) {
                 if (frame->getTexture() == getFallbackTexture()) {
                     return false;
                 }

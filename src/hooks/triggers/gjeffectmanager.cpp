@@ -361,7 +361,6 @@ $execute {
     uintptr_t offset1 = -1, offset2 = -1;
     std::vector<uint8_t> bytes;
 
-
 #ifdef GEODE_IS_WINDOWS
     uintptr_t funcStart = geode::base::get() + 0x47f960;
 

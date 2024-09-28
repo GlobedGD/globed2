@@ -99,7 +99,15 @@ RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
 }
 
 RequestTask WebRequestManager::testServer(std::string_view url) {
-    return this->get(makeUrl(url, "version"));
+    return this->get(makeUrl(url, "versioncheck"), 10, [&](CurlRequest& req) {
+        // why do you have to do this to me geode.
+
+        // TODO: uncomment this pls when geode 3.7.2 or later
+        // req.param("gd", GEODE_GD_VERSION_STRING);
+        req.param("gd", "2.206");
+        req.param("globed", Mod::get()->getVersion().toNonVString());
+        req.param("protocol", NetworkManager::get().getUsedProtocol());
+    });
 }
 
 RequestTask WebRequestManager::fetchCredits() {

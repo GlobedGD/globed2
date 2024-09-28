@@ -76,7 +76,8 @@ struct CurlRequest {
     CurlRequest& header(std::string_view name, std::string_view value);
     CurlRequest& param(std::string_view name, std::string_view value);
 
-    template <std::integral T>
+
+    template <typename T> requires (std::floating_point<T> || std::integral<T>)
     CurlRequest& param(std::string_view name, T value) {
         return this->param(name, std::to_string(value));
     }

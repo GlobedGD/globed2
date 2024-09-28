@@ -38,6 +38,7 @@ pub mod routes {
     pub fn build_router() -> Vec<Route> {
         routes![
             meta::version,
+            meta::versioncheck,
             meta::servers,
             meta::index,
             meta::robots,
