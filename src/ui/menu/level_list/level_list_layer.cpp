@@ -146,22 +146,11 @@ void GlobedLevelListLayer::reloadPage() {
     size_t endIdx = std::min((currentPage + 1) * pageSize, sortedLevelIds.size());
 
     // now join them to a comma separated string
-    std::ostringstream oss;
-
-    bool first = true;
-    for (size_t i = startIdx; i < endIdx; i++) {
-        if (first) {
-            first = false;
-        } else {
-            oss << ",";
-        }
-
-        oss << sortedLevelIds[i];
-    }
+    std::string query = fmt::format("{}", fmt::join(sortedLevelIds, ","));
 
     auto glm = GameLevelManager::sharedState();
     glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create((SearchType)26, oss.str()));
+    glm->getOnlineLevels(GJSearchObject::create((SearchType)26, query));
 }
 
 void GlobedLevelListLayer::loadListCommon() {

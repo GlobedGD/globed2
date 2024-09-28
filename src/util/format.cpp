@@ -4,22 +4,17 @@
 #include <sstream>
 #include <iomanip>
 
+#include <fmt/chrono.h>
+#include <curl/curl.h>
+
 #include <managers/web.hpp>
 
 namespace util::format {
     std::string formatDateTime(const time::system_time_point& tp, bool ms) {
-        auto timet = time::sysclock::to_time_t(tp);
-        auto nowms = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;
+        std::time_t curTime = chrono::system_clock::to_time_t(tp);
+        auto millis = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;
 
-        std::tm time_info = *std::localtime(&timet);
-
-        std::ostringstream oss;
-        oss << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S");
-        if (ms) {
-            oss << '.' << std::setfill('0') << std::setw(3) << nowms.count();
-        }
-
-        return oss.str();
+        return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
     }
 
     std::string dateTime(const time::system_time_point& tp, bool ms) {
@@ -162,22 +157,28 @@ namespace util::format {
     }
 
     std::string urlEncode(std::string_view str) {
-        std::ostringstream ss;
-        ss.fill('0');
-        ss << std::hex;
+        auto encoded = curl_easy_escape(nullptr, str.data(), str.size());
 
-        for (char c : str) {
-            if (std::isalnum(c) || c == '-' || c== '_' || c == '.' || c == '~') {
-                ss << c;
-                continue;
-            }
+        std::string result(encoded);
+        curl_free(encoded);
+        return result;
 
-            ss << std::uppercase;
-            ss << '%' << std::setw(2) << static_cast<int>((unsigned char)c);
-            ss << std::nouppercase;
-        }
+        // std::ostringstream ss;
+        // ss.fill('0');
+        // ss << std::hex;
 
-        return ss.str();
+        // for (char c : str) {
+        //     if (std::isalnum(c) || c == '-' || c== '_' || c == '.' || c == '~') {
+        //         ss << c;
+        //         continue;
+        //     }
+
+        //     ss << std::uppercase;
+        //     ss << '%' << std::setw(2) << static_cast<int>((unsigned char)c);
+        //     ss << std::nouppercase;
+        // }
+
+        // return ss.str();
     }
 
     std::vector<std::string_view> split(std::string_view s, std::string_view sep) {

@@ -29,7 +29,7 @@ static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAG
     system->init(MAX_AUDIO_CHANNELS, flags, dd);
 }
 #endif // GLOBED_VOICE_SUPPORT
-#include <globed/tracing.hpp>
+
 $execute {
     using namespace asp;
 
@@ -74,8 +74,6 @@ $on_mod(Loaded) {
 #endif
 
     globed::platformSetup();
-
-    log::debug("TRACE: {}", globed::_traceEnabled());
 }
 
 // error check node runs on every scene and shows popups/notifications if an error has occured in another thread
