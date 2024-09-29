@@ -493,6 +493,7 @@ impl ClientThread {
             AdminWhitelistPacket::PACKET_ID => self.handle_admin_whitelist(&mut data).await,
             AdminSetAdminPasswordPacket::PACKET_ID => self.handle_admin_set_admin_password(&mut data).await,
             AdminEditPunishmentPacket::PACKET_ID => self.handle_admin_edit_punishment(&mut data).await,
+            AdminGetPunishmentHistoryPacket::PACKET_ID => self.handle_admin_get_punishment_history(&mut data).await,
 
             x => Err(PacketHandlingError::NoHandler(x)),
         }

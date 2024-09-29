@@ -246,6 +246,29 @@ impl CentralBridge {
         }
     }
 
+    pub async fn get_punishment_history(&self, account_id: i32) -> Result<Vec<UserPunishment>> {
+        let response = self
+            .http_client
+            .get(format!("{}user/punishment_history", self.central_url))
+            .query(&[("account_id", account_id)])
+            .header("Authorization", self.central_pw.clone())
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+            return Err(CentralBridgeError::CentralError((status, message)));
+        }
+
+        let data = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&data);
+        reader.validate_self_checksum()?;
+
+        Ok(reader.read_value()?)
+    }
+
     #[inline]
     pub async fn send_admin_webhook_message(&self, message: WebhookMessage) -> Result<()> {
         self.send_webhook_messages(&[message], WebhookChannel::Admin).await

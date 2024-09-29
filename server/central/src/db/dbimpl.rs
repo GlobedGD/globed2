@@ -183,6 +183,14 @@ impl GlobedDb {
         Ok([ban, mute])
     }
 
+    pub async fn get_all_user_punishments(&self, account_id: i32) -> Result<Vec<UserPunishment>> {
+        query_as::<_, UserPunishmentWrapper>("SELECT * FROM punishments WHERE account_id = ? LIMIT 100 ORDER BY punishment_id DESC")
+            .bind(account_id)
+            .fetch_all(&self.0)
+            .await
+            .map(|vec| vec.into_iter().map(|x| x.0).collect())
+    }
+
     async fn maybe_expire_punishments(&self, user: &mut ServerUserEntry) -> Result<()> {
         let punishments = self.get_users_punishments(user).await?;
 

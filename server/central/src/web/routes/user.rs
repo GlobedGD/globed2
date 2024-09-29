@@ -240,10 +240,17 @@ pub async fn p_get_user(
 
 #[post("/user/update/username", data = "<userdata>")]
 pub async fn update_username(
-    _password: GameServerPasswordGuard,
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<AdminUpdateUsernameAction>,
 ) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
     // insert empty user in case it does not exist
     database.insert_empty_user(userdata.0.account_id).await?;
 
@@ -256,10 +263,17 @@ pub async fn update_username(
 
 #[post("/user/update/name_color", data = "<userdata>")]
 pub async fn update_name_color(
-    _password: GameServerPasswordGuard,
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<AdminSetNameColorAction>,
 ) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
     // insert empty user in case it does not exist
     database.insert_empty_user(userdata.0.account_id).await?;
 
@@ -272,10 +286,17 @@ pub async fn update_name_color(
 
 #[post("/user/update/name_color", data = "<userdata>")]
 pub async fn update_roles(
-    _password: GameServerPasswordGuard,
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<AdminSetUserRolesAction>,
 ) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
     // insert empty user in case it does not exist
     database.insert_empty_user(userdata.0.account_id).await?;
 
@@ -288,10 +309,17 @@ pub async fn update_roles(
 
 #[post("/user/update/punish", data = "<userdata>")]
 pub async fn update_punish(
-    _password: GameServerPasswordGuard,
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<AdminPunishUserAction>,
 ) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
     // insert empty user in case it does not exist
     database.insert_empty_user(userdata.0.account_id).await?;
 
@@ -304,10 +332,17 @@ pub async fn update_punish(
 
 #[post("/user/update/unpunish", data = "<userdata>")]
 pub async fn update_unpunish(
-    _password: GameServerPasswordGuard,
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<AdminRemovePunishmentAction>,
 ) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
     database.unpunish_user(userdata.0.account_id, userdata.0.is_ban).await?;
 
     let user = _get_user_by_id(database, userdata.0.account_id).await?;
@@ -317,10 +352,17 @@ pub async fn update_unpunish(
 
 #[post("/user/update/whitelist", data = "<userdata>")]
 pub async fn update_whitelist(
-    _password: GameServerPasswordGuard,
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<AdminWhitelistAction>,
 ) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
     // insert empty user in case it does not exist
     database.insert_empty_user(userdata.0.account_id).await?;
 
@@ -333,10 +375,17 @@ pub async fn update_whitelist(
 
 #[post("/user/update/adminpw", data = "<userdata>")]
 pub async fn update_admin_password(
-    _password: GameServerPasswordGuard,
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<AdminSetAdminPasswordAction>,
 ) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
     // insert empty user in case it does not exist
     database.insert_empty_user(userdata.0.account_id).await?;
 
@@ -351,10 +400,17 @@ pub async fn update_admin_password(
 
 #[post("/user/update/editpunish", data = "<userdata>")]
 pub async fn update_edit_punishment(
-    _password: GameServerPasswordGuard,
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
     database: &GlobedDb,
     userdata: CheckedDecodableGuard<AdminEditPunishmentAction>,
 ) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
     database
         .edit_punishment(
             userdata.0.account_id,
@@ -367,4 +423,22 @@ pub async fn update_edit_punishment(
     let user = _get_user_by_id(database, userdata.0.account_id).await?;
 
     Ok(CheckedEncodableResponder::new(user))
+}
+
+#[get("/user/punishment_history?<account_id>")]
+pub async fn get_punishment_history(
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
+    database: &GlobedDb,
+    account_id: i32,
+) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    let punishments = database.get_all_user_punishments(account_id).await?;
+
+    Ok(CheckedEncodableResponder::new(punishments))
 }

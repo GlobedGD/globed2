@@ -1,4 +1,4 @@
-use globed_shared::UserEntry;
+use globed_shared::{UserEntry, UserPunishment};
 
 use crate::{data::*, managers::ComputedRole};
 
@@ -30,3 +30,9 @@ pub struct AdminSuccessMessagePacket<'a> {
 #[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 29004, tcp = true)]
 pub struct AdminAuthFailedPacket;
+
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 29005, tcp = true)]
+pub struct AdminPunishmentHistoryPacket {
+    pub entries: Vec<UserPunishment>,
+}

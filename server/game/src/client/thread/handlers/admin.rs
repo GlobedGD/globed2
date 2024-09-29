@@ -571,4 +571,25 @@ impl ClientThread {
             }
         }
     }
+
+    gs_handler!(self, handle_admin_get_punishment_history, AdminGetPunishmentHistoryPacket, packet, {
+        let _ = gs_needauth!(self);
+
+        if !self._has_perm(AdminPerm::Any) {
+            return Err(PacketHandlingError::NoPermission);
+        }
+
+        match self.game_server.bridge.get_punishment_history(packet.account_id).await {
+            Ok(x) => {
+                self.send_packet_dynamic(&AdminPunishmentHistoryPacket { entries: x }).await?;
+                Ok(())
+            }
+
+            Err(e) => {
+                self.send_packet_dynamic(&AdminErrorPacket { message: &e.to_string() }).await?;
+
+                Err(PacketHandlingError::BridgeError(e))
+            }
+        }
+    });
 }
