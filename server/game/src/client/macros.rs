@@ -3,7 +3,7 @@ use std::mem::MaybeUninit;
 
 /// packet handler for a specific packet type
 macro_rules! gs_handler {
-    ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
+    ($self:ident, $name:ident, $pktty:ty, $pkt:ident, $($code:tt)* ) => {
         pub(crate) async fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::client::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
 
@@ -12,21 +12,21 @@ macro_rules! gs_handler {
                 unsafe { $self.socket.get_mut() }.print_packet::<$pktty>(false, None);
             }
 
-            $code
+            $($code)*
         }
     };
 }
 
 /// packet handler except not async
 macro_rules! gs_handler_sync {
-    ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
+    ($self:ident, $name:ident, $pktty:ty, $pkt:ident, $($code:tt)* ) => {
         pub(crate) fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::client::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
 
             #[cfg(debug_assertions)]
             unsafe { $self.socket.get_mut() }.print_packet::<$pktty>(false, Some("sync"));
 
-            $code
+            $($code)*
         }
     };
 }

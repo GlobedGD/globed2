@@ -691,7 +691,7 @@ impl GameServer {
 
     /// Try to find a user by name or account ID, invoke the passed closure, and if it returns `true`,
     /// send a request to the central server to update the account.
-    pub async fn find_and_update_user<F: FnOnce(&mut ServerUserEntry) -> bool>(&self, name: &str, f: F) -> anyhow::Result<()> {
+    pub async fn find_and_update_user<F: FnOnce(&mut ServerUserEntry)>(&self, name: &str, f: F) -> anyhow::Result<()> {
         if let Some(thread) = self.find_user(name) {
             self.update_user(&thread, f).await
         } else {
@@ -699,16 +699,9 @@ impl GameServer {
         }
     }
 
-    pub async fn update_user<F: FnOnce(&mut ServerUserEntry) -> bool>(&self, thread: &ClientThread, f: F) -> anyhow::Result<()> {
-        let result = {
-            let mut data = thread.user_entry.lock();
-            f(&mut data)
-        };
-
-        if result {
-            let user_entry = thread.user_entry.lock().clone();
-            self.bridge.update_user_data(&user_entry).await?;
-        }
+    pub async fn update_user<F: FnOnce(&mut ServerUserEntry)>(&self, thread: &ClientThread, f: F) -> anyhow::Result<()> {
+        let mut data = thread.user_entry.lock();
+        f(&mut data);
 
         Ok(())
     }

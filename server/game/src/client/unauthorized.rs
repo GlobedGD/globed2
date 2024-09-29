@@ -384,17 +384,13 @@ impl UnauthorizedThread {
         // fetch data from the central
         if !standalone {
             let response = match self.game_server.bridge.user_login(packet.account_id, &player_name).await {
-                Ok(response) if response.user_entry.is_banned => {
+                Ok(response) if response.ban.is_some() => {
+                    let ban = response.ban.unwrap();
+
                     socket
                         .send_packet_dynamic(&ServerBannedPacket {
-                            message: FastString::new(
-                                &response
-                                    .user_entry
-                                    .violation_reason
-                                    .as_ref()
-                                    .map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
-                            ),
-                            timestamp: response.user_entry.violation_expiry.unwrap_or_default(),
+                            message: FastString::new(if ban.reason.is_empty() { "No reason given" } else { &ban.reason }),
+                            timestamp: ban.expires_at,
                         })
                         .await?;
 

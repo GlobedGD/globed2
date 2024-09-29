@@ -1,13 +1,14 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use globed_shared::{debug, ServerUserEntry, UserEntry};
+use globed_shared::{debug, AdminPunishUserAction, PunishmentType, ServerUserEntry, UserPunishment};
 use rocket_db_pools::sqlx::{query_as, Result};
 use serde::Serialize;
 use sqlx::{prelude::*, query, query_scalar, sqlite::SqliteRow};
 
 use super::GlobedDb;
 
-struct UserEntryWrapper(ServerUserEntry);
+struct UserEntryWrapper(pub ServerUserEntry);
+struct UserPunishmentWrapper(pub UserPunishment);
 
 impl<'r> FromRow<'r, SqliteRow> for UserEntryWrapper {
     fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
@@ -19,26 +20,47 @@ impl<'r> FromRow<'r, SqliteRow> for UserEntryWrapper {
         let mut user_roles = user_roles.map_or(Vec::new(), |s| s.split(',').map(|x| x.to_owned()).collect::<Vec<_>>());
         user_roles.retain(|x| !x.is_empty());
 
-        let is_banned: bool = row.try_get("is_banned")?;
-        let is_muted = row.try_get("is_muted")?;
         let is_whitelisted = row.try_get("is_whitelisted")?;
         let admin_password = row.try_get("admin_password")?;
         let admin_password_hash = row.try_get("admin_password_hash")?;
-        let violation_reason = row.try_get("violation_reason")?;
-        let violation_expiry = row.try_get("violation_expiry")?;
+        let active_mute = row.try_get("active_mute")?;
+        let active_ban = row.try_get("active_ban")?;
 
         Ok(UserEntryWrapper(ServerUserEntry {
             account_id,
             user_name,
             name_color,
             user_roles,
-            is_banned,
-            is_muted,
             is_whitelisted,
             admin_password,
             admin_password_hash,
-            violation_reason,
-            violation_expiry,
+            active_mute,
+            active_ban,
+        }))
+    }
+}
+
+impl<'r> FromRow<'r, SqliteRow> for UserPunishmentWrapper {
+    fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
+        let id = row.try_get("punishment_id")?;
+        let account_id = row.try_get("account_id")?;
+        let r#typestr: String = row.try_get("type")?;
+        let reason = row.try_get("reason")?;
+
+        let expires_at = row.try_get("expires_at")?;
+        let issued_at = row.try_get("issued_at")?;
+        let issued_by = row.try_get("issued_by")?;
+
+        let r#type = if r#typestr == "ban" { PunishmentType::Ban } else { PunishmentType::Mute };
+
+        Ok(UserPunishmentWrapper(UserPunishment {
+            id,
+            account_id,
+            r#type,
+            reason,
+            expires_at,
+            issued_at,
+            issued_by,
         }))
     }
 }
@@ -97,75 +119,111 @@ impl GlobedDb {
         self.unwrap_user(res).await
     }
 
-    pub async fn update_user_server(&self, account_id: i32, user: &ServerUserEntry) -> Result<()> {
-        // oh god i hate myself
-        query(
-            r"
-            INSERT INTO users (account_id, user_name, name_color, user_roles, is_banned, is_muted, is_whitelisted, violation_reason, violation_expiry)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(account_id) DO UPDATE SET
-                user_name = excluded.user_name,
-                name_color = excluded.name_color,
-                user_roles = excluded.user_roles,
-                is_banned = excluded.is_banned,
-                is_muted = excluded.is_muted,
-                is_whitelisted = excluded.is_whitelisted,
-                violation_reason = excluded.violation_reason,
-                violation_expiry = excluded.violation_expiry;
-            ",
+    pub async fn insert_empty_user(&self, account_id: i32) -> Result<()> {
+        query!("INSERT INTO users (account_id) VALUES (?) ON CONFLICT DO NOTHING", account_id)
+            .execute(&self.0)
+            .await
+            .map(|_| ())
+    }
+
+    pub async fn get_punishment(&self, id: i64) -> Result<UserPunishment> {
+        query_as::<_, UserPunishmentWrapper>("SELECT * FROM punishments WHERE id = ?")
+            .bind(id)
+            .fetch_one(&self.0)
+            .await
+            .map(|x| x.0)
+    }
+
+    pub async fn get_active_ban(&self, account_id: i32) -> Result<UserPunishment> {
+        query_as::<_, UserPunishmentWrapper>(
+            r#"
+                SELECT p.punishment_id, p.type, p.account_id, p.reason, p.expires_at, p.issued_at, p.issued_by
+                FROM users u
+                LEFT JOIN punishments p ON u.active_ban = punishment_id
+                WHERE u.account_id = ?
+            "#,
         )
         .bind(account_id)
-        .bind(&user.user_name)
-        .bind(&user.name_color)
-        .bind(user.user_roles.join(","))
-        .bind(user.is_banned)
-        .bind(user.is_muted)
-        .bind(user.is_whitelisted)
-        .bind(&user.violation_reason)
-        .bind(user.violation_expiry)
-        .execute(&self.0)
-        .await?;
+        .fetch_one(&self.0)
+        .await
+        .map(|x| x.0)
+    }
 
-        // update admin password
-        if let Some(password) = user.admin_password.as_ref() {
-            let hash = globed_shared::generate_argon2_hash(password);
-            debug!("generating hash for password {password}: {hash}");
-            query("UPDATE users SET admin_password = NULL, admin_password_hash = ? WHERE account_id = ?")
-                .bind(hash)
-                .bind(account_id)
-                .execute(&self.0)
-                .await?;
+    pub async fn get_active_mute(&self, account_id: i32) -> Result<UserPunishment> {
+        query_as::<_, UserPunishmentWrapper>(
+            r#"
+                SELECT p.punishment_id, p.type, p.account_id, p.reason, p.expires_at, p.issued_at, p.issued_by
+                FROM users u
+                LEFT JOIN punishments p ON u.active_mute = punishment_id
+                WHERE u.account_id = ?
+            "#,
+        )
+        .bind(account_id)
+        .fetch_one(&self.0)
+        .await
+        .map(|x| x.0)
+    }
+
+    /// get users' ban and mute punishments respectively
+    pub async fn get_users_punishments(&self, user: &ServerUserEntry) -> Result<[Option<UserPunishment>; 2]> {
+        let ban = match user.active_ban {
+            Some(id) => Some(self.get_punishment(id).await?),
+            None => None,
         };
 
-        Ok(())
+        let mute = match user.active_mute {
+            Some(id) => match self.get_punishment(id).await {
+                Ok(x) => Some(x),
+                Err(sqlx::Error::RowNotFound) => None,
+                Err(e) => return Err(e),
+            },
+            None => None,
+        };
+
+        Ok([ban, mute])
     }
 
-    pub async fn update_user(&self, account_id: i32, user: UserEntry) -> Result<()> {
-        self.update_user_server(account_id, &ServerUserEntry::from_user_entry(user)).await
-    }
+    async fn maybe_expire_punishments(&self, user: &mut ServerUserEntry) -> Result<()> {
+        let punishments = self.get_users_punishments(user).await?;
 
-    async fn maybe_expire_ban(&self, user: &mut ServerUserEntry) -> Result<()> {
-        let expired = user.violation_expiry.as_ref().is_some_and(|expiry| {
-            let current_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock went backwards").as_secs() as i64;
+        if punishments[0].as_ref().is_some_and(|ban| ban.expired()) {
+            user.active_ban = None;
+        }
 
-            current_time > *expiry
-        });
+        if punishments[1].as_ref().is_some_and(|mute| mute.expired()) {
+            user.active_mute = None;
+        }
 
-        if expired {
-            user.is_banned = false;
-            user.is_muted = false;
-            user.violation_reason = None;
-            user.violation_expiry = None;
+        // additional sanity checks, just in case.
 
-            self.update_user_server(user.account_id, user).await?;
+        if punishments[0].is_none() && user.active_ban.is_some() {
+            user.active_ban = None;
+        }
+
+        if punishments[1].is_none() && user.active_mute.is_some() {
+            user.active_mute = None;
         }
 
         Ok(())
     }
 
     async fn migrate_admin_password(&self, user: &mut ServerUserEntry) -> Result<()> {
-        // update_user already does the migration itself
-        self.update_user_server(user.account_id, user).await
+        if let Some(password) = user.admin_password.as_ref() {
+            let hash = globed_shared::generate_argon2_hash(password);
+            debug!("generating hash for password {password}: {hash}");
+
+            query("UPDATE users SET admin_password = NULL, admin_password_hash = ? WHERE account_id = ?")
+                .bind(&hash)
+                .bind(user.account_id)
+                .execute(&self.0)
+                .await?;
+
+            user.admin_password_hash = Some(hash);
+        };
+
+        user.admin_password = None;
+
+        Ok(())
     }
 
     /// Convert a `Option<UserEntryWrapper>` into `Option<UserEntry>` and expire their ban/mute if needed.
@@ -174,11 +232,12 @@ impl GlobedDb {
         let mut user = user.map(|x| x.0);
 
         // if they are banned/muted and the ban/mute expired, unban/unmute them
-        if user.as_ref().is_some_and(|user| user.is_banned || user.is_muted) {
+        if user.as_ref().is_some_and(|user| user.active_mute.is_some() || user.active_ban.is_some()) {
             let user = user.as_mut().unwrap();
-            self.maybe_expire_ban(user).await?;
+            self.maybe_expire_punishments(user).await?;
         }
 
+        // TODO: remove this in the near future
         // migrate admin password to hashed form
         if user.as_ref().is_some_and(|user| user.admin_password.is_some()) {
             let user = user.as_mut().unwrap();
@@ -187,6 +246,103 @@ impl GlobedDb {
 
         Ok(user)
     }
+
+    // User update actions
+
+    pub async fn update_username(&self, account_id: i32, new_name: &str) -> Result<()> {
+        query!("UPDATE users SET user_name = ? WHERE account_id = ?", new_name, account_id)
+            .execute(&self.0)
+            .await
+            .map(|_| ())
+    }
+
+    pub async fn update_user_name_color(&self, account_id: i32, color: &str) -> Result<()> {
+        query!("UPDATE users SET name_color = ? WHERE account_id = ?", color, account_id)
+            .execute(&self.0)
+            .await
+            .map(|_| ())
+    }
+
+    pub async fn update_user_roles(&self, account_id: i32, roles: &[String]) -> Result<()> {
+        let joined = roles.join(",");
+
+        query!("UPDATE users SET user_roles = ? WHERE account_id = ?", joined, account_id)
+            .execute(&self.0)
+            .await
+            .map(|_| ())
+    }
+
+    pub async fn punish_user(&self, action: &AdminPunishUserAction) -> Result<i64> {
+        let reason = action.reason.try_to_str();
+        let r#type = if action.is_ban { "ban" } else { "mute " };
+        let issued_at = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+
+        let id = query!(
+            "INSERT INTO punishments (account_id, type, reason, expires_at, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?) RETURNING punishment_id",
+            action.account_id,
+            r#type,
+            reason,
+            action.expires_at,
+            issued_at,
+            action.issued_by
+        )
+        .fetch_one(&self.0)
+        .await?
+        .punishment_id;
+
+        Ok(id)
+    }
+
+    pub async fn unpunish_user(&self, account_id: i32, is_ban: bool) -> Result<()> {
+        if is_ban {
+            query!("UPDATE users SET active_ban = NULL where account_id = ?", account_id)
+                .execute(&self.0)
+                .await?;
+        } else {
+            query!("UPDATE users SET active_mute = NULL where account_id = ?", account_id)
+                .execute(&self.0)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn whitelist_user(&self, account_id: i32, state: bool) -> Result<()> {
+        query!("UPDATE users SET is_whitelisted = ? where account_id = ?", state, account_id)
+            .execute(&self.0)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn update_user_admin_password(&self, account_id: i32, password: &str) -> Result<()> {
+        let hash = globed_shared::generate_argon2_hash(password);
+
+        query!("UPDATE users SET admin_password_hash = ? WHERE account_id = ?", hash, account_id)
+            .execute(&self.0)
+            .await
+            .map(|_| ())
+    }
+
+    pub async fn edit_punishment(&self, account_id: i32, is_ban: bool, reason: &str, expires_at: i64) -> Result<()> {
+        let punishment = if is_ban {
+            self.get_active_ban(account_id).await?
+        } else {
+            self.get_active_mute(account_id).await?
+        };
+
+        query!(
+            "UPDATE punishments SET reason = ?, expires_at = ? WHERE punishment_id = ?",
+            reason,
+            expires_at,
+            punishment.id
+        )
+        .execute(&self.0)
+        .await
+        .map(|_| ())
+    }
+
+    // Misc
 
     pub async fn insert_player_count_history(&self, entries: &[(SystemTime, u32)]) -> Result<()> {
         for entry in entries {
@@ -241,6 +397,7 @@ impl GlobedDb {
             levels,
         })
     }
+
     pub async fn get_featured_level_history(&self, page: usize) -> Result<Vec<FeaturedLevel>> {
         const PAGE_SIZE: usize = 10;
 

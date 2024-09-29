@@ -1,6 +1,9 @@
 use std::{fmt::Display, time::SystemTimeError};
 
-use crate::data::{types::ColorParseError, DecodeError};
+use crate::{
+    bridge::CentralBridgeError,
+    data::{types::ColorParseError, DecodeError},
+};
 use globed_shared::reqwest;
 
 pub enum PacketHandlingError {
@@ -28,6 +31,8 @@ pub enum PacketHandlingError {
     TooManyChunks(usize),                  // too many chunks in fragmented udp packet
     UnableToSendUdp,                       // only tcp packets can be sent at the moment
     InvalidStreamMarker,                   // client did not send a control byte indicating whether this is an initial login or a recovery
+    NoPermission,
+    BridgeError(CentralBridgeError),
 }
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
@@ -94,9 +99,13 @@ impl Display for PacketHandlingError {
             )),
             Self::DebugOnlyPacket => f.write_str("this packet can only be handled in debug mode"),
             Self::PacketTooLong(size) => f.write_fmt(format_args!("received packet is way too long - {size} bytes")),
-            Self::TooManyChunks(count) => f.write_fmt(format_args!("tried to send a fragmented udp packet with {count} chunks, which is above the limit")),
+            Self::TooManyChunks(count) => f.write_fmt(format_args!(
+                "tried to send a fragmented udp packet with {count} chunks, which is above the limit"
+            )),
             Self::UnableToSendUdp => f.write_str("tried to send a udp packet on a thread that was not claimed by a udp connection"),
             Self::InvalidStreamMarker => f.write_str("invalid or missing stream marker at the start of the tcp stream"),
+            Self::NoPermission => f.write_str("no permission"),
+            Self::BridgeError(e) => write!(f, "central bridge returned error: {e}"),
         }
     }
 }

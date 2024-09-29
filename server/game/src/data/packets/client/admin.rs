@@ -1,5 +1,4 @@
 use crate::data::*;
-use globed_shared::UserEntry;
 
 #[derive(Packet, Decodable)]
 #[packet(id = 19000, encrypted = true)]
@@ -16,7 +15,7 @@ pub enum AdminSendNoticeType {
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 19001)]
+#[packet(id = 19001, encrypted = true)]
 pub struct AdminSendNoticePacket {
     pub notice_type: AdminSendNoticeType,
     pub room_id: u32,
@@ -26,26 +25,20 @@ pub struct AdminSendNoticePacket {
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 19002)]
+#[packet(id = 19002, encrypted = true)]
 pub struct AdminDisconnectPacket {
     pub player: FastString,
     pub message: FastString,
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 19003)]
+#[packet(id = 19003, encrypted = true)]
 pub struct AdminGetUserStatePacket {
     pub player: FastString,
 }
 
 #[derive(Packet, Decodable)]
-#[packet(id = 19004)]
-pub struct AdminUpdateUserPacket {
-    pub user_entry: UserEntry,
-}
-
-#[derive(Packet, Decodable)]
-#[packet(id = 19005)]
+#[packet(id = 19005, encrypted = true)]
 pub struct AdminSendFeaturedLevelPacket {
     pub level_name: FastString,
     pub level_id: i32,
@@ -53,4 +46,66 @@ pub struct AdminSendFeaturedLevelPacket {
     pub difficulty: i32,
     pub rate_tier: i32,
     pub notes: Option<FastString>,
+}
+
+// Update user packets
+
+#[derive(Packet, Decodable, Encodable, DynamicSize)]
+#[packet(id = 19010, encrypted = true)]
+pub struct AdminUpdateUsernamePacket {
+    pub account_id: i32,
+    pub username: InlineString<MAX_NAME_SIZE>,
+}
+
+#[derive(Packet, Decodable, Encodable, DynamicSize)]
+#[packet(id = 19011, encrypted = true)]
+pub struct AdminSetNameColorPacket {
+    pub account_id: i32,
+    pub color: Color3B,
+}
+
+#[derive(Packet, Decodable, Encodable, DynamicSize)]
+#[packet(id = 19012, encrypted = true)]
+pub struct AdminSetUserRolesPacket {
+    pub account_id: i32,
+    pub roles: Vec<String>,
+}
+
+#[derive(Packet, Decodable, Encodable, DynamicSize)]
+#[packet(id = 19013, encrypted = true)]
+pub struct AdminPunishUserPacket {
+    pub account_id: i32,
+    pub is_ban: bool,
+    pub reason: FastString,
+    pub expires_at: i64,
+}
+
+#[derive(Packet, Decodable, Encodable, DynamicSize)]
+#[packet(id = 19014, encrypted = true)]
+pub struct AdminRemovePunishmentPacket {
+    pub account_id: i32,
+    pub is_ban: bool,
+}
+
+#[derive(Packet, Decodable, Encodable, DynamicSize)]
+#[packet(id = 19015, encrypted = true)]
+pub struct AdminWhitelistPacket {
+    pub account_id: i32,
+    pub state: bool,
+}
+
+#[derive(Packet, Decodable, Encodable, DynamicSize)]
+#[packet(id = 19016, encrypted = true)]
+pub struct AdminSetAdminPasswordPacket {
+    pub account_id: i32,
+    pub new_password: FastString,
+}
+
+#[derive(Packet, Decodable, Encodable, DynamicSize)]
+#[packet(id = 19017, encrypted = true)]
+pub struct AdminEditPunishmentPacket {
+    pub account_id: i32,
+    pub is_ban: bool,
+    pub reason: FastString,
+    pub expires_at: i64,
 }

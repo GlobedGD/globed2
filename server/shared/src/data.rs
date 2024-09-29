@@ -1,9 +1,11 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use super::*;
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use esp::FastString;
+use esp::{FastString, InlineString};
 use serde::{Deserialize, Serialize};
 
 #[derive(Encodable, Decodable, Clone)]
@@ -67,13 +69,11 @@ pub struct ServerUserEntry {
     pub user_name: Option<String>,
     pub name_color: Option<String>,
     pub user_roles: Vec<String>,
-    pub is_banned: bool,
-    pub is_muted: bool,
     pub is_whitelisted: bool,
     pub admin_password: Option<String>,
     pub admin_password_hash: Option<String>,
-    pub violation_reason: Option<String>,
-    pub violation_expiry: Option<i64>, // seconds since unix epoch
+    pub active_mute: Option<i64>,
+    pub active_ban: Option<i64>,
 }
 
 // this is pure laziness i was just too lazy to get derive macros n shit into the central server
@@ -87,6 +87,7 @@ pub struct UserLoginData {
 #[derive(Encodable, Decodable, Clone)]
 pub struct UserLoginResponse {
     pub user_entry: ServerUserEntry,
+    pub ban: Option<UserPunishment>,
     pub link_code: u32,
 }
 
@@ -98,34 +99,15 @@ impl ServerUserEntry {
         }
     }
 
-    pub fn to_user_entry(self) -> UserEntry {
+    pub fn to_user_entry(self, active_ban: Option<UserPunishment>, active_mute: Option<UserPunishment>) -> UserEntry {
         UserEntry {
             account_id: self.account_id,
             user_name: self.user_name,
             name_color: self.name_color,
             user_roles: self.user_roles,
-            is_banned: self.is_banned,
-            is_muted: self.is_muted,
             is_whitelisted: self.is_whitelisted,
-            admin_password: None,
-            violation_reason: self.violation_reason,
-            violation_expiry: self.violation_expiry,
-        }
-    }
-
-    pub fn from_user_entry(entry: UserEntry) -> Self {
-        Self {
-            account_id: entry.account_id,
-            user_name: entry.user_name,
-            name_color: entry.name_color,
-            user_roles: entry.user_roles,
-            is_banned: entry.is_banned,
-            is_muted: entry.is_muted,
-            is_whitelisted: entry.is_whitelisted,
-            admin_password: entry.admin_password,
-            admin_password_hash: None,
-            violation_reason: entry.violation_reason,
-            violation_expiry: entry.violation_expiry,
+            active_ban,
+            active_mute,
         }
     }
 
@@ -141,18 +123,40 @@ impl ServerUserEntry {
     }
 }
 
+#[derive(Clone, Copy, Encodable, Decodable, DynamicSize, StaticSize, Serialize, Deserialize)]
+#[repr(u8)]
+#[dynamic_size(as_static)]
+pub enum PunishmentType {
+    Ban = 0,
+    Mute = 1,
+}
+
+#[derive(Clone, Encodable, Decodable, DynamicSize, Serialize, Deserialize)]
+pub struct UserPunishment {
+    pub id: i64,
+    pub account_id: i32,
+    pub r#type: PunishmentType,
+    pub reason: String,
+    pub expires_at: i64,
+    pub issued_at: Option<i64>,
+    pub issued_by: Option<i32>,
+}
+
+impl UserPunishment {
+    pub fn expired(&self) -> bool {
+        self.expires_at != 0 && (self.expires_at as u64) < SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+    }
+}
+
 #[derive(Encodable, Decodable, Serialize, Deserialize, DynamicSize, Clone, Default)]
 pub struct UserEntry {
     pub account_id: i32,
     pub user_name: Option<String>,
     pub name_color: Option<String>,
     pub user_roles: Vec<String>,
-    pub is_banned: bool,
-    pub is_muted: bool,
     pub is_whitelisted: bool,
-    pub admin_password: Option<String>, // always None when returning
-    pub violation_reason: Option<String>,
-    pub violation_expiry: Option<i64>, // seconds since unix epoch
+    pub active_ban: Option<UserPunishment>,
+    pub active_mute: Option<UserPunishment>,
 }
 
 impl UserEntry {
@@ -195,4 +199,64 @@ pub struct ServerRole {
     pub edit_featured_levels: bool,
     #[serde(default)]
     pub admin: bool,
+}
+
+/* Admin actions */
+
+#[derive(Decodable, Encodable, DynamicSize)]
+pub struct AdminUpdateUsernameAction {
+    pub account_id: i32,
+    pub username: InlineString<MAX_NAME_SIZE>,
+}
+
+#[derive(Decodable, Encodable, DynamicSize)]
+pub struct AdminSetNameColorAction {
+    pub issued_by: i32,
+    pub account_id: i32,
+    pub color: FastString,
+}
+
+#[derive(Decodable, Encodable, DynamicSize)]
+pub struct AdminSetUserRolesAction {
+    pub issued_by: i32,
+    pub account_id: i32,
+    pub roles: Vec<String>,
+}
+
+#[derive(Decodable, Encodable, DynamicSize)]
+pub struct AdminPunishUserAction {
+    pub issued_by: i32,
+    pub account_id: i32,
+    pub is_ban: bool,
+    pub reason: FastString,
+    pub expires_at: i64,
+}
+
+#[derive(Decodable, Encodable, DynamicSize)]
+pub struct AdminRemovePunishmentAction {
+    pub issued_by: i32,
+    pub account_id: i32,
+    pub is_ban: bool,
+}
+
+#[derive(Decodable, Encodable, DynamicSize)]
+pub struct AdminWhitelistAction {
+    pub issued_by: i32,
+    pub account_id: i32,
+    pub state: bool,
+}
+
+#[derive(Decodable, Encodable, DynamicSize)]
+pub struct AdminSetAdminPasswordAction {
+    pub account_id: i32,
+    pub new_password: FastString,
+}
+
+#[derive(Decodable, Encodable, DynamicSize)]
+pub struct AdminEditPunishmentAction {
+    pub issued_by: i32,
+    pub account_id: i32,
+    pub is_ban: bool,
+    pub reason: FastString,
+    pub expires_at: i64,
 }

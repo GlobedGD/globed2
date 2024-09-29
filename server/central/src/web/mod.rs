@@ -29,6 +29,7 @@ pub mod routes {
     pub mod game_server;
     pub mod meta;
     pub mod public;
+    pub mod user;
 
     pub use super::*;
     pub use crate::{db::GlobedDb, state::ServerState};
@@ -43,13 +44,6 @@ pub mod routes {
             meta::index,
             meta::robots,
             game_server::boot,
-            game_server::get_user,
-            game_server::user_login,
-            game_server::update_user,
-            game_server::p_get_user,
-            game_server::p_update_user,
-            game_server::p_user_lookup,
-            game_server::p_sync_roles,
             auth::totp_login,
             auth::challenge_new,
             auth::challenge_verify,
@@ -57,6 +51,19 @@ pub mod routes {
             featured::history,
             featured::replace,
             public::player_counts,
+            user::get_user,
+            user::p_get_user,
+            user::user_login,
+            user::update_username,
+            user::update_name_color,
+            user::update_roles,
+            user::update_punish,
+            user::update_unpunish,
+            user::update_whitelist,
+            user::update_admin_password,
+            user::update_edit_punishment,
+            user::p_user_lookup,
+            user::p_sync_roles,
         ]
     }
 

@@ -11,7 +11,7 @@ use std::{
 };
 
 use globed_shared::{
-    anyhow,
+    anyhow::{self, anyhow},
     base64::{engine::general_purpose::STANDARD as b64e, Engine},
     crypto_box::aead::{generic_array::GenericArray, AeadMutInPlace},
     crypto_secretbox::{KeyInit, XSalsa20Poly1305},
@@ -23,12 +23,7 @@ use globed_shared::{
 };
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use crate::{
-    config::{ServerConfig, UserlistMode},
-    db::GlobedDb,
-    game_pinger::GameServerPinger,
-    verifier::AccountVerifier,
-};
+use crate::{config::ServerConfig, db::GlobedDb, game_pinger::GameServerPinger, verifier::AccountVerifier};
 use blake2::{Blake2b, Digest};
 use digest::consts::U32;
 
@@ -167,16 +162,16 @@ impl ServerStateData {
     }
 
     pub async fn is_banned(&self, db: &GlobedDb, account_id: i32) -> anyhow::Result<Option<String>> {
-        if self.config.userlist_mode == UserlistMode::Whitelist {
-            return Ok(None);
-        }
+        let user = match db.get_user(account_id).await? {
+            Some(user) => user,
+            None => return Err(anyhow!("user not found")),
+        };
 
-        let user = db.get_user(account_id).await?;
-        if let Some(user) = user {
-            if user.is_banned {
-                Ok(user.violation_reason.clone())
-            } else {
-                Ok(None)
+        if let Some(ban_id) = user.active_ban {
+            match db.get_punishment(ban_id).await {
+                Ok(x) => Ok(Some(x.reason)),
+                Err(sqlx::Error::RowNotFound) => Ok(None),
+                Err(e) => Err(e.into()),
             }
         } else {
             Ok(None)

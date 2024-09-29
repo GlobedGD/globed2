@@ -6,11 +6,13 @@ use std::{
 };
 
 use esp::{
-    size_of_dynamic_types, size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize,
+    size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, Decodable, DecodeError, DynamicSize, Encodable,
     StaticSize,
 };
+use globed_derive::{DynamicSize, Encodable};
 use globed_shared::{
-    reqwest::{self, StatusCode},
+    data::*,
+    reqwest::{self, Response, StatusCode},
     GameServerBootData, ServerUserEntry, SyncMutex, TokenIssuer, UserLoginResponse, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
@@ -75,6 +77,23 @@ pub struct CentralBridge {
     pub admin_webhook_present: AtomicBool,
     pub featured_webhook_present: AtomicBool,
     pub room_webhook_present: AtomicBool,
+}
+
+#[derive(Encodable, DynamicSize)]
+struct UserLoginPayload<'a> {
+    pub account_id: i32,
+    pub username: &'a str,
+}
+
+pub enum AdminUserAction {
+    UpdateUsername(AdminUpdateUsernameAction),
+    SetNameColor(AdminSetNameColorAction),
+    SetUserRoles(AdminSetUserRolesAction),
+    PunishUser(AdminPunishUserAction),
+    RemovePunishment(AdminRemovePunishmentAction),
+    Whitelist(AdminWhitelistAction),
+    SetAdminPassword(AdminSetAdminPasswordAction),
+    EditPunishment(AdminEditPunishmentAction),
 }
 
 impl CentralBridge {
@@ -186,7 +205,7 @@ impl CentralBridge {
     }
 
     // other web requests
-    pub async fn get_user_data(&self, player: &str) -> Result<ServerUserEntry> {
+    pub async fn get_user_data(&self, player: &str) -> Result<UserEntry> {
         let response = self
             .http_client
             .get(format!("{}gs/user/{}", self.central_url, player))
@@ -205,64 +224,26 @@ impl CentralBridge {
         let mut reader = ByteReader::from_bytes(&config);
         reader.validate_self_checksum()?;
 
-        Ok(reader.read_value::<ServerUserEntry>()?)
+        Ok(reader.read_value()?)
     }
 
     pub async fn user_login(&self, account_id: i32, username: &str) -> Result<UserLoginResponse> {
-        let mut buffer = ByteBuffer::with_capacity(size_of_dynamic_types!(username, &account_id));
+        let payload = UserLoginPayload { account_id, username };
 
-        buffer.write_value(&account_id);
-        buffer.write_value(username);
-        buffer.append_self_checksum();
-
-        let body = buffer.into_vec();
-
-        let response = self
-            .http_client
-            .post(format!("{}gs/userlogin", self.central_url))
-            .header("Authorization", self.central_pw.clone())
-            .body(body)
-            .send()
-            .await?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
-
-            return Err(CentralBridgeError::CentralError((status, message)));
-        }
-
-        let config = response.bytes().await?;
-        let mut reader = ByteReader::from_bytes(&config);
-        reader.validate_self_checksum()?;
-
-        Ok(reader.read_value::<UserLoginResponse>()?)
+        self._send_encoded_body_req_resp("gs/userlogin", &payload).await
     }
 
-    pub async fn update_user_data(&self, user: &ServerUserEntry) -> Result<()> {
-        let mut buffer = ByteBuffer::with_capacity(user.encoded_size() + size_of_types!(u32));
-
-        buffer.write_value(user);
-        buffer.append_self_checksum();
-
-        let body = buffer.into_vec();
-
-        let response = self
-            .http_client
-            .post(format!("{}gs/user/update", self.central_url))
-            .header("Authorization", self.central_pw.clone())
-            .body(body)
-            .send()
-            .await?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
-
-            return Err(CentralBridgeError::CentralError((status, message)));
+    pub async fn send_admin_user_action(&self, action: &AdminUserAction) -> Result<ServerUserEntry> {
+        match action {
+            AdminUserAction::UpdateUsername(x) => self._send_encoded_body_req_resp("user/update/username", x).await,
+            AdminUserAction::SetNameColor(x) => self._send_encoded_body_req_resp("user/update/name_color", x).await,
+            AdminUserAction::SetUserRoles(x) => self._send_encoded_body_req_resp("user/update/roles", x).await,
+            AdminUserAction::PunishUser(x) => self._send_encoded_body_req_resp("user/update/punish", x).await,
+            AdminUserAction::RemovePunishment(x) => self._send_encoded_body_req_resp("user/update/unpunish", x).await,
+            AdminUserAction::Whitelist(x) => self._send_encoded_body_req_resp("user/update/whitelist", x).await,
+            AdminUserAction::SetAdminPassword(x) => self._send_encoded_body_req_resp("user/update/adminpw", x).await,
+            AdminUserAction::EditPunishment(x) => self._send_encoded_body_req_resp("user/update/editpunish", x).await,
         }
-
-        Ok(())
     }
 
     #[inline]
@@ -273,6 +254,42 @@ impl CentralBridge {
     #[inline]
     pub async fn send_rate_suggestion_webhook_message(&self, message: WebhookMessage) -> Result<()> {
         self.send_webhook_messages(&[message], WebhookChannel::RateSuggestion).await
+    }
+
+    async fn _send_encoded_body_req<T: Encodable + DynamicSize>(&self, url_suffix: &str, body: &T) -> Result<Response> {
+        let mut buffer = ByteBuffer::with_capacity(body.encoded_size() + size_of_types!(u32));
+
+        buffer.write_value(body);
+        buffer.append_self_checksum();
+
+        let body = buffer.into_vec();
+
+        let response = self
+            .http_client
+            .post(format!("{}{}", self.central_url, url_suffix))
+            .header("Authorization", self.central_pw.clone())
+            .body(body)
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+            return Err(CentralBridgeError::CentralError((status, message)));
+        }
+
+        Ok(response)
+    }
+
+    async fn _send_encoded_body_req_resp<R: Decodable, T: Encodable + DynamicSize>(&self, url_suffix: &str, body: &T) -> Result<R> {
+        let response = self._send_encoded_body_req::<T>(url_suffix, body).await?;
+
+        let data = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&data);
+        reader.validate_self_checksum()?;
+
+        Ok(reader.read_value::<R>()?)
     }
 
     // not really bridge but it was making web requests which is sorta related i guess

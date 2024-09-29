@@ -306,7 +306,8 @@ impl ClientThread {
                 | PacketHandlingError::SystemTimeError(_)
                 | PacketHandlingError::WebRequestError(_)
                 | PacketHandlingError::DangerousAllocation(_)
-                | PacketHandlingError::UnableToSendUdp => {
+                | PacketHandlingError::UnableToSendUdp
+                | PacketHandlingError::BridgeError(_) => {
                     error!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
@@ -316,7 +317,8 @@ impl ClientThread {
                 | PacketHandlingError::MalformedPacketStructure(_)
                 | PacketHandlingError::SocketWouldBlock
                 | PacketHandlingError::Ratelimited
-                | PacketHandlingError::UnexpectedPlayerData => {}
+                | PacketHandlingError::UnexpectedPlayerData
+                | PacketHandlingError::NoPermission => {}
             }
         }
     }
@@ -339,7 +341,7 @@ impl ClientThread {
             return false;
         }
 
-        if self.user_entry.lock().is_muted {
+        if self.user_entry.lock().active_mute.is_some() {
             // blocked from chat
             return false;
         }
@@ -481,8 +483,17 @@ impl ClientThread {
             AdminSendNoticePacket::PACKET_ID => self.handle_admin_send_notice(&mut data).await,
             AdminDisconnectPacket::PACKET_ID => self.handle_admin_disconnect(&mut data).await,
             AdminGetUserStatePacket::PACKET_ID => self.handle_admin_get_user_state(&mut data).await,
-            AdminUpdateUserPacket::PACKET_ID => self.handle_admin_update_user(&mut data).await,
             AdminSendFeaturedLevelPacket::PACKET_ID => self.handle_admin_send_featured_level(&mut data).await,
+
+            AdminUpdateUsernamePacket::PACKET_ID => self.handle_admin_update_username(&mut data).await,
+            AdminSetNameColorPacket::PACKET_ID => self.handle_admin_set_name_color(&mut data).await,
+            AdminSetUserRolesPacket::PACKET_ID => self.handle_admin_set_user_roles(&mut data).await,
+            AdminPunishUserPacket::PACKET_ID => self.handle_admin_punish_user(&mut data).await,
+            AdminRemovePunishmentPacket::PACKET_ID => self.handle_admin_remove_punishment(&mut data).await,
+            AdminWhitelistPacket::PACKET_ID => self.handle_admin_whitelist(&mut data).await,
+            AdminSetAdminPasswordPacket::PACKET_ID => self.handle_admin_set_admin_password(&mut data).await,
+            AdminEditPunishmentPacket::PACKET_ID => self.handle_admin_edit_punishment(&mut data).await,
+
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }

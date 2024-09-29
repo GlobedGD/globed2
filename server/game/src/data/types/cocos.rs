@@ -53,6 +53,32 @@ impl FromStr for Color3B {
     }
 }
 
+impl Color3B {
+    pub fn to_fast_string(&self) -> FastString {
+        const HEX_DIGITS: &[u8; 16] = b"0123456789abcdef";
+
+        let mut str = FastString::default();
+        str.push(b'#');
+
+        str.push(HEX_DIGITS[(self.r >> 4) as usize]);
+        str.push(HEX_DIGITS[(self.r & 0xf) as usize]);
+
+        str.push(HEX_DIGITS[(self.g >> 4) as usize]);
+        str.push(HEX_DIGITS[(self.g & 0xf) as usize]);
+
+        str.push(HEX_DIGITS[(self.b >> 4) as usize]);
+        str.push(HEX_DIGITS[(self.b & 0xf) as usize]);
+
+        str
+    }
+}
+
+impl Display for Color3B {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{:02x}{:02x}{:02x}", self.r, self.g, self.b)
+    }
+}
+
 #[derive(Copy, Clone, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 #[dynamic_size(as_static = true)]
 pub struct Color4B {

@@ -1,4 +1,4 @@
-#![feature(duration_constructors)]
+#![feature(duration_constructors, async_closure)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
