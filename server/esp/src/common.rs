@@ -528,7 +528,7 @@ decode_impl!(SocketAddrV4, buf, {
 static_size_calc_impl!(SocketAddrV4, size_of_types!(Ipv4Addr, u16));
 dynamic_size_as_static_impl!(SocketAddrV4);
 
-/* tuples (only 2 elements because i cant figure out how to make it a macro lmao) */
+/* tuples (only 2 and 3 elements because i cant figure out how to make it a macro lmao) */
 /* if you feel bored, feel free to make your attempt at making a macro for this */
 
 impl<A, B> Encodable for (A, B)
@@ -585,5 +585,70 @@ where
 {
     fn encoded_size(&self) -> usize {
         self.0.encoded_size() + self.1.encoded_size()
+    }
+}
+
+// 3
+
+impl<A, B, C> Encodable for (A, B, C)
+where
+    A: Encodable,
+    B: Encodable,
+    C: Encodable,
+{
+    #[inline]
+    fn encode(&self, buf: &mut ByteBuffer) {
+        buf.write_value(&self.0);
+        buf.write_value(&self.1);
+        buf.write_value(&self.2);
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_value(&self.0);
+        buf.write_value(&self.1);
+        buf.write_value(&self.2);
+    }
+}
+
+impl<A, B, C> Decodable for (A, B, C)
+where
+    A: Decodable,
+    B: Decodable,
+    C: Decodable,
+{
+    #[inline]
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Ok((buf.read_value()?, buf.read_value()?, buf.read_value()?))
+    }
+
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Ok((buf.read_value()?, buf.read_value()?, buf.read_value()?))
+    }
+}
+
+impl<A, B, C> StaticSize for (A, B, C)
+where
+    A: StaticSize,
+    B: StaticSize,
+    C: StaticSize,
+{
+    const ENCODED_SIZE: usize = size_of_types!(A, B, C);
+}
+
+impl<A, B, C> DynamicSize for (A, B, C)
+where
+    A: DynamicSize,
+    B: DynamicSize,
+    C: DynamicSize,
+{
+    fn encoded_size(&self) -> usize {
+        self.0.encoded_size() + self.1.encoded_size() + self.2.encoded_size()
     }
 }

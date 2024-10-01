@@ -285,12 +285,14 @@ impl GlobedDb {
         let r#type = if action.is_ban { "ban" } else { "mute " };
         let issued_at = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
 
+        let expires_at = action.expires_at as i64;
+
         let id = query!(
             "INSERT INTO punishments (account_id, type, reason, expires_at, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?) RETURNING punishment_id",
             action.account_id,
             r#type,
             reason,
-            action.expires_at,
+            expires_at,
             issued_at,
             action.issued_by
         )
@@ -332,12 +334,14 @@ impl GlobedDb {
             .map(|_| ())
     }
 
-    pub async fn edit_punishment(&self, account_id: i32, is_ban: bool, reason: &str, expires_at: i64) -> Result<()> {
+    pub async fn edit_punishment(&self, account_id: i32, is_ban: bool, reason: &str, expires_at: u64) -> Result<()> {
         let punishment = if is_ban {
             self.get_active_ban(account_id).await?
         } else {
             self.get_active_mute(account_id).await?
         };
+
+        let expires_at = expires_at as i64;
 
         query!(
             "UPDATE punishments SET reason = ?, expires_at = ? WHERE punishment_id = ?",

@@ -232,9 +232,16 @@ pub async fn p_get_user(
     Ok(Json(_get_user(database, user).await?))
 }
 
-// TODO gsp user update replacement
+// TODO json public api user update replacement
 
 // Update endpoints
+
+async fn _return_user_and_punishments(database: &GlobedDb, account_id: i32) -> WebResult<CheckedEncodableResponder> {
+    let user = _get_user_by_id(database, account_id).await?;
+    let mut punishments = database.get_users_punishments(&user).await?;
+
+    Ok(CheckedEncodableResponder::new((user, punishments[0].take(), punishments[1].take())))
+}
 
 // TODO webhooks
 
@@ -325,9 +332,7 @@ pub async fn update_punish(
 
     database.punish_user(&userdata.0).await?;
 
-    let user = _get_user_by_id(database, userdata.0.account_id).await?;
-
-    Ok(CheckedEncodableResponder::new(user))
+    _return_user_and_punishments(database, userdata.0.account_id).await
 }
 
 #[post("/user/update/unpunish", data = "<userdata>")]
@@ -345,9 +350,7 @@ pub async fn update_unpunish(
 
     database.unpunish_user(userdata.0.account_id, userdata.0.is_ban).await?;
 
-    let user = _get_user_by_id(database, userdata.0.account_id).await?;
-
-    Ok(CheckedEncodableResponder::new(user))
+    _return_user_and_punishments(database, userdata.0.account_id).await
 }
 
 #[post("/user/update/whitelist", data = "<userdata>")]
@@ -420,9 +423,7 @@ pub async fn update_edit_punishment(
         )
         .await?;
 
-    let user = _get_user_by_id(database, userdata.0.account_id).await?;
-
-    Ok(CheckedEncodableResponder::new(user))
+    _return_user_and_punishments(database, userdata.0.account_id).await
 }
 
 #[get("/user/punishment_history?<account_id>")]

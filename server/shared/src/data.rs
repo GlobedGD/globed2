@@ -229,7 +229,7 @@ pub struct AdminPunishUserAction {
     pub account_id: i32,
     pub is_ban: bool,
     pub reason: FastString,
-    pub expires_at: i64,
+    pub expires_at: u64,
 }
 
 #[derive(Decodable, Encodable, DynamicSize)]
@@ -258,5 +258,5 @@ pub struct AdminEditPunishmentAction {
     pub account_id: i32,
     pub is_ban: bool,
     pub reason: FastString,
-    pub expires_at: i64,
+    pub expires_at: u64,
 }

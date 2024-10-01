@@ -430,6 +430,7 @@ impl ClientThread {
     // Handle user edit packets
 
     // TODO verify perms.. (relative to the other uesr)
+    // TODO: live ban and mute and stuff
 
     gs_handler!(self, handle_admin_update_username, AdminUpdateUsernamePacket, packet, {
         let _ = gs_needauth!(self);
@@ -552,7 +553,24 @@ impl ClientThread {
         }
 
         match self.game_server.bridge.send_admin_user_action(action).await {
-            Ok(x) => {
+            Ok((x, ban, mute)) => {
+                let webhook_result = if self.game_server.bridge.has_admin_webhook() {
+                    let own_name = self.user_entry.lock().user_name.clone();
+                    let account_id = self.account_id.load(Ordering::Relaxed);
+
+                    match self
+                        .game_server
+                        .bridge
+                        .send_webhook_message_for_action(action, &x, account_id, own_name.unwrap_or_default(), ban, mute)
+                        .await
+                    {
+                        Ok(()) => Ok(()),
+                        Err(e) => Err(PacketHandlingError::BridgeError(e)),
+                    }
+                } else {
+                    Ok(())
+                };
+
                 if let Some(user) = self.game_server.get_user_by_id(x.account_id) {
                     self.game_server
                         .update_user(&user, |entry| {
@@ -561,7 +579,7 @@ impl ClientThread {
                         .await?;
                 }
 
-                Ok(())
+                webhook_result
             }
 
             Err(e) => {

@@ -77,7 +77,7 @@ pub struct AdminPunishUserPacket {
     pub account_id: i32,
     pub is_ban: bool,
     pub reason: FastString,
-    pub expires_at: i64,
+    pub expires_at: u64,
 }
 
 #[derive(Packet, Decodable)]
@@ -107,7 +107,7 @@ pub struct AdminEditPunishmentPacket {
     pub account_id: i32,
     pub is_ban: bool,
     pub reason: FastString,
-    pub expires_at: i64,
+    pub expires_at: u64,
 }
 
 #[derive(Packet, Decodable)]

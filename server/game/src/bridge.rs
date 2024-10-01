@@ -7,7 +7,7 @@ use std::{
 
 use esp::{
     size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, Decodable, DecodeError, DynamicSize, Encodable,
-    StaticSize,
+    FastVec, StaticSize,
 };
 use globed_derive::{DynamicSize, Encodable};
 use globed_shared::{
@@ -233,15 +233,18 @@ impl CentralBridge {
         self._send_encoded_body_req_resp("gs/userlogin", &payload).await
     }
 
-    pub async fn send_admin_user_action(&self, action: &AdminUserAction) -> Result<ServerUserEntry> {
+    pub async fn send_admin_user_action(
+        &self,
+        action: &AdminUserAction,
+    ) -> Result<(ServerUserEntry, Option<UserPunishment>, Option<UserPunishment>)> {
         match action {
-            AdminUserAction::UpdateUsername(x) => self._send_encoded_body_req_resp("user/update/username", x).await,
-            AdminUserAction::SetNameColor(x) => self._send_encoded_body_req_resp("user/update/name_color", x).await,
-            AdminUserAction::SetUserRoles(x) => self._send_encoded_body_req_resp("user/update/roles", x).await,
+            AdminUserAction::UpdateUsername(x) => Ok((self._send_encoded_body_req_resp("user/update/username", x).await?, None, None)),
+            AdminUserAction::SetNameColor(x) => Ok((self._send_encoded_body_req_resp("user/update/name_color", x).await?, None, None)),
+            AdminUserAction::SetUserRoles(x) => Ok((self._send_encoded_body_req_resp("user/update/roles", x).await?, None, None)),
             AdminUserAction::PunishUser(x) => self._send_encoded_body_req_resp("user/update/punish", x).await,
             AdminUserAction::RemovePunishment(x) => self._send_encoded_body_req_resp("user/update/unpunish", x).await,
-            AdminUserAction::Whitelist(x) => self._send_encoded_body_req_resp("user/update/whitelist", x).await,
-            AdminUserAction::SetAdminPassword(x) => self._send_encoded_body_req_resp("user/update/adminpw", x).await,
+            AdminUserAction::Whitelist(x) => Ok((self._send_encoded_body_req_resp("user/update/whitelist", x).await?, None, None)),
+            AdminUserAction::SetAdminPassword(x) => Ok((self._send_encoded_body_req_resp("user/update/adminpw", x).await?, None, None)),
             AdminUserAction::EditPunishment(x) => self._send_encoded_body_req_resp("user/update/editpunish", x).await,
         }
     }
@@ -333,5 +336,113 @@ impl CentralBridge {
             })?;
 
         Ok(())
+    }
+
+    pub async fn send_webhook_message_for_action(
+        &self,
+        action: &AdminUserAction,
+        user: &ServerUserEntry,
+        _mod_id: i32,
+        mod_name: String,
+        ban: Option<UserPunishment>,
+        mute: Option<UserPunishment>,
+    ) -> Result<()> {
+        let mut messages = FastVec::<WebhookMessage, 4>::new();
+
+        match action {
+            AdminUserAction::UpdateUsername(_) => {}
+            AdminUserAction::SetNameColor(_act) => {
+                messages.push(WebhookMessage::UserNameColorChanged(UserNameColorChange {
+                    account_id: user.account_id,
+                    mod_name,
+                    name: user.user_name.clone().unwrap_or_default(),
+                    new_color: user.name_color.clone(),
+                }));
+            }
+            AdminUserAction::SetUserRoles(_act) => {
+                messages.push(WebhookMessage::UserRolesChanged(
+                    mod_name,
+                    user.user_name.clone().unwrap_or_default(),
+                    user.user_roles.clone(),
+                ));
+            }
+            AdminUserAction::PunishUser(act) => {
+                if act.is_ban {
+                    let ban = if let Some(ban) = ban {
+                        ban
+                    } else {
+                        return Err(CentralBridgeError::Other("internal error: ban is None when punishing user".to_owned()));
+                    };
+
+                    let bmsc = BanMuteStateChange {
+                        mod_name,
+                        target_name: user.user_name.clone().unwrap_or_default(),
+                        target_id: user.account_id,
+                        new_state: true,
+                        expiry: if ban.expires_at == 0 { None } else { Some(ban.expires_at) },
+                        reason: if ban.reason.is_empty() { None } else { Some(ban.reason) },
+                    };
+
+                    messages.push(WebhookMessage::UserBanned(bmsc));
+                } else {
+                    let mute = if let Some(mute) = mute {
+                        mute
+                    } else {
+                        return Err(CentralBridgeError::Other("internal error: mute is None when punishing user".to_owned()));
+                    };
+
+                    let bmsc = BanMuteStateChange {
+                        mod_name,
+                        target_name: user.user_name.clone().unwrap_or_default(),
+                        target_id: user.account_id,
+                        new_state: true,
+                        expiry: if mute.expires_at == 0 { None } else { Some(mute.expires_at) },
+                        reason: if mute.reason.is_empty() { None } else { Some(mute.reason) },
+                    };
+
+                    messages.push(WebhookMessage::UserMuted(bmsc));
+                }
+            }
+            AdminUserAction::RemovePunishment(act) => {
+                if act.is_ban {
+                    messages.push(WebhookMessage::UserUnbanned(PunishmentRemoval {
+                        account_id: user.account_id,
+                        name: user.user_name.clone().unwrap_or_default(),
+                        mod_name,
+                    }));
+                } else {
+                    messages.push(WebhookMessage::UserUnmuted(PunishmentRemoval {
+                        account_id: user.account_id,
+                        name: user.user_name.clone().unwrap_or_default(),
+                        mod_name,
+                    }));
+                }
+            }
+            AdminUserAction::Whitelist(_action) => {
+                // messages.push(WebhookMessage::Wh);
+                // TODO
+            }
+            AdminUserAction::SetAdminPassword(_) => {}
+            AdminUserAction::EditPunishment(action) => {
+                messages.push(WebhookMessage::UserViolationMetaChanged(ViolationMetaChange {
+                    account_id: user.account_id,
+                    name: user.user_name.clone().unwrap_or_default(),
+                    is_ban: action.is_ban,
+                    expiry: if action.expires_at == 0 { None } else { Some(action.expires_at) },
+                    reason: if action.reason.is_empty() {
+                        None
+                    } else {
+                        Some(action.reason.to_string())
+                    },
+                    mod_name,
+                }));
+            }
+        };
+
+        if messages.is_empty() {
+            return Ok(());
+        }
+
+        self.send_webhook_messages(&messages, WebhookChannel::Admin).await
     }
 }
