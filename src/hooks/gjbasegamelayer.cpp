@@ -37,6 +37,8 @@ constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
 constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 
+// TODO: dont do custom item shit if it's not enabled in the level (scan thru all objects n stuff)
+
 // post an event to all modules
 #define GLOBED_EVENT(self, code) \
     for (auto& module : self->m_fields->modules) { \
@@ -1056,8 +1058,13 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     m_objectLayer->addChild(rp);
     fields.players.emplace(playerId, rp);
     fields.interpolator->addPlayer(playerId);
+
     fields.lastJoinedPlayer = playerId;
-    this->updateCountersForCustomItem(globed::ITEM_LAST_JOINED);
+    fields.totalJoins++;
+
+    this->updateCustomItem(globed::ITEM_LAST_JOINED, fields.lastJoinedPlayer);
+    this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS_JOINED, fields.totalJoins);
+    this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS, fields.players.size() + 1);
 
     GLOBED_EVENT(this, onPlayerJoin(rp));
 }
@@ -1080,8 +1087,13 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     fields.players.erase(playerId);
     fields.interpolator->removePlayer(playerId);
     fields.playerStore->removePlayer(playerId);
+
     fields.lastLeftPlayer = playerId;
-    this->updateCountersForCustomItem(globed::ITEM_LAST_LEFT);
+    fields.totalLeaves++;
+
+    this->updateCustomItem(globed::ITEM_LAST_LEFT, fields.lastLeftPlayer);
+    this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS_LEFT, fields.totalLeaves);
+    this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS, fields.players.size() + 1);
 }
 
 bool GlobedGJBGL::established() {
@@ -1090,7 +1102,7 @@ bool GlobedGJBGL::established() {
 }
 
 bool GlobedGJBGL::isCurrentPlayLayer() {
-    auto playLayer = geode::cocos::getChildOfType<PlayLayer>(cocos2d::CCScene::get(), 0);
+    auto playLayer = getChildOfType<PlayLayer>(CCScene::get(), 0);
     return static_cast<GJBaseGameLayer*>(playLayer) == this;
 }
 
@@ -1244,6 +1256,9 @@ int GlobedGJBGL::countForCustomItem(int id) {
         case $id(ACCOUNT_ID): return GJAccountManager::get()->m_accountID;
         case $id(LAST_JOINED): return fields.lastJoinedPlayer;
         case $id(LAST_LEFT): return fields.lastLeftPlayer;
+        case $id(TOTAL_PLAYERS): return fields.players.size();
+        case $id(TOTAL_PLAYERS_JOINED): return fields.totalJoins;
+        case $id(TOTAL_PLAYERS_LEFT): return fields.totalLeaves;
     }
 
     return 0;
@@ -1252,6 +1267,11 @@ int GlobedGJBGL::countForCustomItem(int id) {
 
 void GlobedGJBGL::updateCountersForCustomItem(int id) {
     static_cast<GJEffectManagerHook*>(m_effectManager)->updateCountersForCustomItem(id);
+}
+
+void GlobedGJBGL::updateCustomItem(int id, int value) {
+    static_cast<GJEffectManagerHook*>(m_effectManager)->updateCountForItemCustom(id, value);
+    this->updateCountersForCustomItem(id);
 }
 
 GlobedGJBGL::Fields& GlobedGJBGL::getFields() {
@@ -1326,3 +1346,88 @@ void GlobedGJBGL::updateCamera(float dt) {
     GJBaseGameLayer::updateCamera(dt);
     GLOBED_EVENT(this, updateCameraPost(dt));
 }
+
+// #include <Geode/modify/SpawnTriggerGameObject.hpp>
+// class $modify(SpawnTriggerGameObject) {
+//     void triggerObject(GJBaseGameLayer* p0, int p1, gd::vector<int> const* p2) {
+//         log::debug("Spawn trigger game object");
+//         log::pushNest();
+
+//         if (p2) {
+//             auto& v = *reinterpret_cast<gd::vector<int>*>((uintptr_t)this + 0x760);
+//             if (v.size() && v.at(0) >= 90000) {
+//                 log::debug("spawntrigger-pre rogue element: {}", v);
+//             }
+//         }
+
+//         SpawnTriggerGameObject::triggerObject(p0, p1, p2);
+
+//         log::popNest();
+//     }
+
+//     void updateRemapKeys(gd::vector<int> const& p0) {
+//         auto& v = *reinterpret_cast<gd::vector<int>*>((uintptr_t)this + 0x760);
+
+//         log::debug("Pre uprk, member = {}, arg = {}", v, p0);
+
+//         SpawnTriggerGameObject::updateRemapKeys(p0);
+
+//         log::debug("Post uprk, arg = {}", v);
+//     }
+// };
+
+// // TODO fucking figure it out
+// class $modify(GJBaseGameLayer) {
+
+
+//     $override
+//     void applyRemap(EffectGameObject* p0, gd::vector<int> const& p1, gd::unordered_map<int, int>& p2) {
+//         auto& v = const_cast<gd::vector<int>&>(p1);
+//         if (v.size() && v.at(0) >= 90000) {
+//             log::debug("applyRemap-pre rogue element: {}", v);
+//         }
+
+//         GJBaseGameLayer::applyRemap(p0, p1, p2);
+//     }
+
+//     $override
+//     void spawnGroup(int p0, bool p1, double p2, gd::vector<int> const& p3, int p4, int p5) {
+//         log::debug("spawnGroup");
+//         log::pushNest();
+//         auto& v = const_cast<gd::vector<int>&>(p3);
+//         if (v.size() && v.at(0) >= 90000) {
+//             log::debug("spawnGroup-pre rogue element: {}", v);
+//         }
+
+//         GJBaseGameLayer::spawnGroup(p0, p1, p2, p3, p4, p5);
+//         log::popNest();
+//     }
+
+//     $override
+//     void toggleGroupTriggered(int p0, bool p1, gd::vector<int> const& p2, int p3, int p4) {
+//         log::debug("toggleGroupTriggered");
+//         log::pushNest();
+
+//         auto& v = const_cast<gd::vector<int>&>(p2);
+//         if (v.size() && v.at(0) >= 90000) {
+//             log::debug("spawnGroup-pre rogue element: {}", v);
+//         }
+
+//         GJBaseGameLayer::toggleGroupTriggered(p0, p1, p2, p3, p4);
+//         log::popNest();
+//     }
+
+//     $override
+//     void spawnObject(GameObject* p0, double p1, gd::vector<int> const& p2) {
+//         log::debug("spawnGroup");
+//         log::pushNest();
+//         auto& v = const_cast<gd::vector<int>&>(p2);
+//         if (v.size() && v.at(0) >= 90000) {
+//             log::debug("spawnObject-pre rogue element: {}", v);
+//         }
+
+//         GJBaseGameLayer::spawnObject(p0, p1, p2);
+//         log::popNest();
+
+//     }
+// };

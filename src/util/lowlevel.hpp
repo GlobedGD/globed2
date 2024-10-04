@@ -5,6 +5,7 @@
 
 namespace util::lowlevel {
     geode::Patch* patch(ptrdiff_t offset, const std::vector<uint8_t>& bytes);
+    geode::Patch* patchAbsolute(uintptr_t offset, const std::vector<uint8_t>& bytes);
 
     // nop X bytes at offset
     geode::Patch* nop(ptrdiff_t offset, size_t bytes);

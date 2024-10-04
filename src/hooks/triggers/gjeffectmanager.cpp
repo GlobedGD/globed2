@@ -378,13 +378,13 @@ $execute {
     if (offset1 == -1) {
         log::warn("Failed to find getSaveString offset 1 (searched from {:X})", funcStart);
     } else {
-        egoPatch1 = util::lowlevel::patch(offset1 - geode::base::get(), bytes);
+        egoPatch1 = util::lowlevel::patchAbsolute(offset1, bytes);
     }
 
     if (offset2 == -1) {
         log::warn("Failed to find getSaveString offset 2 (searched from {})", funcStart);
     } else {
-        egoPatch2 = util::lowlevel::patch(offset2 - geode::base::get(), bytes);
+        egoPatch2 = util::lowlevel::patchAbsolute(offset2, bytes);
     }
 };
 #else

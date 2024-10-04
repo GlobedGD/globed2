@@ -75,8 +75,10 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         std::vector<GlobedCounterChange> pendingCounterChanges;
 
         // readonly custom items
-        int lastJoinedPlayer; // 1
-        int lastLeftPlayer;   // 2
+        int lastJoinedPlayer = 0; // 1
+        int lastLeftPlayer = 0;   // 2
+        int totalJoins = 0;
+        int totalLeaves = 0;
     };
 
     static void onModify(auto& self) {
@@ -170,6 +172,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     // for global triggers
     int countForCustomItem(int id);
     void updateCountersForCustomItem(int id);
+    void updateCustomItem(int id, int value);
 
     // runs every frame while paused
     void pausedUpdate(float dt);

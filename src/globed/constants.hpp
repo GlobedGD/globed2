@@ -12,8 +12,11 @@ namespace globed {
     $rid(ACCOUNT_ID, 0);
     $rid(LAST_JOINED, 1);
     $rid(LAST_LEFT, 2);
-    $rid(POSITION_X, 3);
-    $rid(POSITION_Y, 4);
+    $rid(TOTAL_PLAYERS, 3);
+    $rid(TOTAL_PLAYERS_JOINED, 4);
+    $rid(TOTAL_PLAYERS_LEFT, 5);
+    $rid(POSITION_X, 50);
+    $rid(POSITION_Y, 51);
 
 #undef $rid
 
