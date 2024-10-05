@@ -243,8 +243,6 @@ async fn _return_user_and_punishments(database: &GlobedDb, account_id: i32) -> W
     Ok(CheckedEncodableResponder::new((user, punishments[0].take(), punishments[1].take())))
 }
 
-// TODO webhooks
-
 #[post("/user/update/username", data = "<userdata>")]
 pub async fn update_username(
     state: &State<ServerState>,

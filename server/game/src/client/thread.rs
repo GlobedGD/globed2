@@ -307,7 +307,8 @@ impl ClientThread {
                 | PacketHandlingError::WebRequestError(_)
                 | PacketHandlingError::DangerousAllocation(_)
                 | PacketHandlingError::UnableToSendUdp
-                | PacketHandlingError::BridgeError(_) => {
+                | PacketHandlingError::BridgeError(_)
+                | PacketHandlingError::WebhookError(_) => {
                     error!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
@@ -329,9 +330,9 @@ impl ClientThread {
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
 
-    async fn ban(&self, message: FastString, timestamp: i64) -> Result<()> {
+    async fn ban(&self, message: FastString, expires_at: u64) -> Result<()> {
         self.terminate();
-        self.send_packet_dynamic(&ServerBannedPacket { message, timestamp }).await
+        self.send_packet_dynamic(&ServerBannedPacket { message, expires_at }).await
     }
 
     fn is_chat_packet_allowed(&self, voice: bool, len: usize) -> bool {
@@ -398,7 +399,7 @@ impl ClientThread {
             ServerThreadMessage::BroadcastRoomInfo(packet) => {
                 self.send_packet_static(&packet).await?;
             }
-            ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.timestamp).await?,
+            ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.expires_at).await?,
             ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
             ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
             ServerThreadMessage::BroadcastRoomKicked => self._kicked_from_room().await?,

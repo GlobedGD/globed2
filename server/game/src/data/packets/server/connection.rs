@@ -71,14 +71,14 @@ pub struct ServerNoticePacket {
 #[packet(id = 20101, tcp = true)]
 pub struct ServerBannedPacket {
     pub message: FastString,
-    pub timestamp: i64,
+    pub expires_at: u64,
 }
 
 #[derive(Packet, Encodable, DynamicSize, Clone)]
 #[packet(id = 20102)]
 pub struct ServerMutedPacket {
     pub reason: FastString,
-    pub timestamp: i64,
+    pub expires_at: u64,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

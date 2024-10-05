@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use globed_shared::{data::*, info, warn};
 
 use crate::{bridge::AdminUserAction, managers::ComputedRole, webhook::WebhookMessage};
@@ -32,7 +34,7 @@ impl ClientThread {
             return false;
         }
 
-        let role: globed_shared::parking_lot::lock_api::MutexGuard<'_, globed_shared::parking_lot::RawMutex, ComputedRole> = self.user_role.lock();
+        let role = self.user_role.lock();
 
         if role.admin {
             return true;
@@ -430,7 +432,6 @@ impl ClientThread {
     // Handle user edit packets
 
     // TODO verify perms.. (relative to the other uesr)
-    // TODO: live ban and mute and stuff
 
     gs_handler!(self, handle_admin_update_username, AdminUpdateUsernamePacket, packet, {
         let _ = gs_needauth!(self);
@@ -456,11 +457,46 @@ impl ClientThread {
                 issued_by: account_id,
             }),
         )
-        .await
+        .await?;
+
+        self._send_admin_success("Success").await
     });
 
     gs_handler!(self, handle_admin_set_user_roles, AdminSetUserRolesPacket, packet, {
         let account_id = gs_needauth!(self);
+
+        if !self.game_server.state.role_manager.all_valid(&packet.roles) {
+            admin_error!(self, "attempting to assign an invalid role");
+        }
+
+        let thread = self.game_server.get_user_by_id(packet.account_id);
+        let editing_self = account_id == packet.account_id;
+
+        let my_priority = self.game_server.state.role_manager.compute_priority(&self.user_entry.lock().user_roles);
+        let their_new_priority = self.game_server.state.role_manager.compute_priority(&packet.roles);
+
+        let their_priority = if editing_self {
+            my_priority
+        } else if let Some(user) = &thread {
+            user.user_role.lock().priority
+        } else {
+            match self.game_server.bridge.get_user_data(&packet.account_id).await {
+                Ok(x) => self.game_server.state.role_manager.compute_priority(&x.user_roles),
+                Err(err) => {
+                    warn!("error fetching data from the bridge: {err}");
+                    admin_error!(self, &err.to_string());
+                }
+            }
+        };
+
+        // disallow editing overall if we <= them, and additionally disallow assigning roles >= us
+        if !self._has_perm(AdminPerm::Admin) {
+            if my_priority <= their_priority {
+                admin_error!(self, "cannot edit roles of a user with higher roles than you");
+            } else if their_new_priority >= my_priority {
+                admin_error!(self, "cannot set user's roles to be higher than yours");
+            }
+        }
 
         self._handle_admin_action(
             AdminPerm::EditRoles,
@@ -470,23 +506,83 @@ impl ClientThread {
                 issued_by: account_id,
             }),
         )
-        .await
+        .await?;
+
+        // if the user is online on the server, update live
+        if let Some(user) = self.game_server.get_user_by_id(packet.account_id) {
+            let pkt = ServerThreadMessage::BroadcastRoleChange(RolesUpdatedPacket {
+                special_user_data: user.account_data.lock().special_user_data.clone(),
+            });
+
+            user.push_new_message(pkt).await;
+        }
+
+        self._send_admin_success("Success").await
     });
 
     gs_handler!(self, handle_admin_punish_user, AdminPunishUserPacket, packet, {
         let account_id = gs_needauth!(self);
+
+        // verify the punishment is correct
+        if SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() > packet.expires_at {
+            admin_error!(self, "invalid expiration date");
+        }
+
+        let thread = self.game_server.get_user_by_id(packet.account_id);
+        let editing_self = account_id == packet.account_id;
+
+        let my_priority = self.game_server.state.role_manager.compute_priority(&self.user_entry.lock().user_roles);
+
+        let their_priority = if editing_self {
+            my_priority
+        } else if let Some(user) = &thread {
+            user.user_role.lock().priority
+        } else {
+            // oh well we gotta make a bridge req to get their prio
+            match self.game_server.bridge.get_user_data(&packet.account_id).await {
+                Ok(x) => self.game_server.state.role_manager.compute_priority(&x.user_roles),
+                Err(err) => {
+                    warn!("error fetching data from the bridge: {err}");
+                    admin_error!(self, &err.to_string());
+                }
+            }
+        };
+
+        // cannot ban role above you or at your level
+        if packet.is_ban && my_priority <= their_priority && !self._has_perm(AdminPerm::Admin) {
+            admin_error!(self, "cannot ban user above or at your permission level");
+        }
 
         self._handle_admin_action(
             if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
             &AdminUserAction::PunishUser(AdminPunishUserAction {
                 account_id: packet.account_id,
                 is_ban: packet.is_ban,
-                reason: packet.reason,
+                reason: packet.reason.clone(),
                 issued_by: account_id,
                 expires_at: packet.expires_at,
             }),
         )
-        .await
+        .await?;
+
+        // if the user is online on the server, update live
+        if let Some(user) = thread {
+            if packet.is_ban {
+                user.push_new_message(ServerThreadMessage::BroadcastBan(ServerBannedPacket {
+                    message: FastString::new(&packet.reason),
+                    expires_at: packet.expires_at,
+                }))
+                .await;
+            } else {
+                user.push_new_message(ServerThreadMessage::BroadcastMute(ServerMutedPacket {
+                    reason: packet.reason,
+                    expires_at: packet.expires_at,
+                }))
+                .await;
+            }
+        }
+
+        self._send_admin_success("Success").await
     });
 
     gs_handler!(self, handle_admin_remove_punishment, AdminRemovePunishmentPacket, packet, {
@@ -500,7 +596,9 @@ impl ClientThread {
                 issued_by: account_id,
             }),
         )
-        .await
+        .await?;
+
+        self._send_admin_success("Success").await
     });
 
     gs_handler!(self, handle_admin_whitelist, AdminWhitelistPacket, packet, {
@@ -514,7 +612,9 @@ impl ClientThread {
                 issued_by: account_id,
             }),
         )
-        .await
+        .await?;
+
+        self._send_admin_success("Success").await
     });
 
     gs_handler!(self, handle_admin_set_admin_password, AdminSetAdminPasswordPacket, packet, {
@@ -527,11 +627,18 @@ impl ClientThread {
                 new_password: packet.new_password,
             }),
         )
-        .await
+        .await?;
+
+        self._send_admin_success("Success").await
     });
 
     gs_handler!(self, handle_admin_edit_punishment, AdminEditPunishmentPacket, packet, {
         let account_id = gs_needauth!(self);
+
+        // verify the punishment is correct
+        if SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() > packet.expires_at {
+            admin_error!(self, "invalid expiration date");
+        }
 
         self._handle_admin_action(
             if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
@@ -543,7 +650,9 @@ impl ClientThread {
                 issued_by: account_id,
             }),
         )
-        .await
+        .await?;
+
+        self._send_admin_success("Success").await
     });
 
     // Return
@@ -552,34 +661,35 @@ impl ClientThread {
             return Err(PacketHandlingError::NoPermission);
         }
 
+        if self.game_server.standalone {
+            admin_error!(self, "This cannot be done on a standalone server");
+        }
+
         match self.game_server.bridge.send_admin_user_action(action).await {
             Ok((x, ban, mute)) => {
-                let webhook_result = if self.game_server.bridge.has_admin_webhook() {
+                if self.game_server.bridge.has_admin_webhook() {
                     let own_name = self.user_entry.lock().user_name.clone();
                     let account_id = self.account_id.load(Ordering::Relaxed);
 
-                    match self
+                    if let Err(e) = self
                         .game_server
                         .bridge
                         .send_webhook_message_for_action(action, &x, account_id, own_name.unwrap_or_default(), ban, mute)
                         .await
                     {
-                        Ok(()) => Ok(()),
-                        Err(e) => Err(PacketHandlingError::BridgeError(e)),
+                        error!("Failed to submit webhook message for admin action: {e}");
                     }
-                } else {
-                    Ok(())
-                };
-
-                if let Some(user) = self.game_server.get_user_by_id(x.account_id) {
-                    self.game_server
-                        .update_user(&user, |entry| {
-                            *entry = x;
-                        })
-                        .await?;
                 }
 
-                webhook_result
+                if let Some(user) = self.game_server.get_user_by_id(x.account_id) {
+                    let sud = SpecialUserData::from_roles(&x.user_roles, &self.game_server.state.role_manager);
+
+                    user.account_data.lock().special_user_data = sud;
+                    *user.user_role.lock() = self.game_server.state.role_manager.compute(&x.user_roles);
+                    *user.user_entry.lock() = x;
+                }
+
+                Ok(())
             }
 
             Err(e) => {
@@ -588,6 +698,10 @@ impl ClientThread {
                 Err(PacketHandlingError::BridgeError(e))
             }
         }
+    }
+
+    async fn _send_admin_success(&self, msg: impl AsRef<str>) -> Result<()> {
+        self.send_packet_dynamic(&AdminSuccessMessagePacket { message: msg.as_ref() }).await
     }
 
     gs_handler!(self, handle_admin_get_punishment_history, AdminGetPunishmentHistoryPacket, packet, {

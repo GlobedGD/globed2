@@ -33,6 +33,7 @@ pub enum PacketHandlingError {
     InvalidStreamMarker,                   // client did not send a control byte indicating whether this is an initial login or a recovery
     NoPermission,
     BridgeError(CentralBridgeError),
+    WebhookError(CentralBridgeError),
 }
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
@@ -106,6 +107,7 @@ impl Display for PacketHandlingError {
             Self::InvalidStreamMarker => f.write_str("invalid or missing stream marker at the start of the tcp stream"),
             Self::NoPermission => f.write_str("no permission"),
             Self::BridgeError(e) => write!(f, "central bridge returned error: {e}"),
+            Self::WebhookError(e) => write!(f, "webhook error: {e}"),
         }
     }
 }

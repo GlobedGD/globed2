@@ -693,17 +693,16 @@ impl GameServer {
     /// send a request to the central server to update the account.
     pub async fn find_and_update_user<F: FnOnce(&mut ServerUserEntry)>(&self, name: &str, f: F) -> anyhow::Result<()> {
         if let Some(thread) = self.find_user(name) {
-            self.update_user(&thread, f).await
+            self.update_user(&thread, f).await;
+            Ok(())
         } else {
             Err(anyhow!("failed to find the user"))
         }
     }
 
-    pub async fn update_user<F: FnOnce(&mut ServerUserEntry)>(&self, thread: &ClientThread, f: F) -> anyhow::Result<()> {
+    pub async fn update_user<F: FnOnce(&mut ServerUserEntry)>(&self, thread: &ClientThread, f: F) {
         let mut data = thread.user_entry.lock();
         f(&mut data);
-
-        Ok(())
     }
 
     /* private handling stuff */

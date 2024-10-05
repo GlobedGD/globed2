@@ -205,7 +205,7 @@ impl CentralBridge {
     }
 
     // other web requests
-    pub async fn get_user_data(&self, player: &str) -> Result<UserEntry> {
+    pub async fn get_user_data<T: Display>(&self, player: &T) -> Result<UserEntry> {
         let response = self
             .http_client
             .get(format!("{}gs/user/{}", self.central_url, player))
