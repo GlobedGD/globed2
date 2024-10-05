@@ -145,7 +145,7 @@ void AdminUserPopup::onProfileLoaded() {
         .tag(TAG_BAN)
         .parent(violationsLayout)
         .collect();
-    btnBanned->toggle(userEntry.isBanned);
+    btnBanned->toggle(userEntry.activeBan.has_value());
 
     auto muteUnmuted = Build<CCSprite>::createSpriteName("icon-mute.png"_spr)
         .scale(buttonScale);
@@ -155,7 +155,7 @@ void AdminUserPopup::onProfileLoaded() {
         .tag(TAG_MUTE)
         .parent(violationsLayout)
         .collect();
-    btnMuted->toggle(userEntry.isMuted);
+    btnMuted->toggle(userEntry.activeMute.has_value());
 
     auto whitelistOff = Build<CCSprite>::createSpriteName("icon-whitelist.png"_spr)
         .scale(buttonScale);
@@ -203,33 +203,33 @@ void AdminUserPopup::onProfileLoaded() {
         .parent(slider)
         .store(banDurationText);
 
-    if (userEntry.violationExpiry.has_value()) {
-        uint64_t expiry = userEntry.violationExpiry.value();
+    // if (userEntry.violationExpiry.has_value()) {
+    //     uint64_t expiry = userEntry.violationExpiry.value();
 
-        slider->slider->setValue(floatFromExpiry(expiry));
+    //     slider->slider->setValue(floatFromExpiry(expiry));
 
-        auto expiryString = fmt::format("Expires: in {:.1f} days", floatFromExpiryDays(expiry));
-        banDurationText->setString(expiryString.c_str());
-    }
+    //     auto expiryString = fmt::format("Expires: in {:.1f} days", floatFromExpiryDays(expiry));
+    //     banDurationText->setString(expiryString.c_str());
+    // }
 
     // violation reason
     Build<TextInput>::create(m_size.width * 0.8f, "reason", "chatFont.fnt")
         .parent(rootLayout)
         .store(inputReason);
 
-    inputReason->setCommonFilter(CommonFilter::Any);
-    inputReason->setMaxCharCount(160);
-    inputReason->setCallback([this](auto reason) {
-        if (reason.empty()) {
-            userEntry.violationReason = std::nullopt;
-        } else {
-            userEntry.violationReason = reason;
-        }
-    });
+    // inputReason->setCommonFilter(CommonFilter::Any);
+    // inputReason->setMaxCharCount(160);
+    // inputReason->setCallback([this](auto reason) {
+    //     if (reason.empty()) {
+    //         userEntry.violationReason = std::nullopt;
+    //     } else {
+    //         userEntry.violationReason = reason;
+    //     }
+    // });
 
-    if (userEntry.violationReason.has_value()) {
-        inputReason->setString(userEntry.violationReason.value());
-    }
+    // if (userEntry.violationReason.has_value()) {
+    //     inputReason->setString(userEntry.violationReason.value());
+    // }
 
     // admin password field
     if (AdminManager::get().getRole().admin) {
@@ -243,19 +243,19 @@ void AdminUserPopup::onProfileLoaded() {
             .parent(layout)
             .store(inputAdminPassword);
 
-        inputAdminPassword->setPasswordMode(true);
-        inputAdminPassword->setMaxCharCount(32);
-        inputAdminPassword->setFilter(std::string(util::misc::STRING_PRINTABLE_INPUT));
+        // inputAdminPassword->setPasswordMode(true);
+        // inputAdminPassword->setMaxCharCount(32);
+        // inputAdminPassword->setFilter(std::string(util::misc::STRING_PRINTABLE_INPUT));
 
-        inputAdminPassword->setString(userEntry.adminPassword.value_or(""));
-        inputAdminPassword->setCallback([this](auto password) {
-            this->userEntry.adminPassword = password;
-        });
+        // inputAdminPassword->setString(userEntry.adminPassword.value_or(""));
+        // inputAdminPassword->setCallback([this](auto password) {
+        //     this->userEntry.adminPassword = password;
+        // });
 
         layout->updateLayout();
     }
 
-    banDurationText->setVisible(userEntry.isBanned || userEntry.isMuted);
+    // banDurationText->setVisible(userEntry.isBanned || userEntry.isMuted);
 
     violationsLayout->updateLayout();
 
@@ -279,35 +279,35 @@ void AdminUserPopup::onColorSelected(ccColor3B color) {
 }
 
 void AdminUserPopup::onViolationChanged(cocos2d::CCObject* sender) {
-    int tag = sender->getTag();
+    // int tag = sender->getTag();
 
-    bool* destination = nullptr;
-    switch (tag) {
-        case TAG_BAN: destination = &userEntry.isBanned; break;
-        case TAG_MUTE: destination = &userEntry.isMuted; break;
-        case TAG_WHITELIST: destination = &userEntry.isWhitelisted; break;
-    }
+    // bool* destination = nullptr;
+    // switch (tag) {
+    //     case TAG_BAN: destination = &userEntry.isBanned; break;
+    //     case TAG_MUTE: destination = &userEntry.isMuted; break;
+    //     case TAG_WHITELIST: destination = &userEntry.isWhitelisted; break;
+    // }
 
 
-    GLOBED_REQUIRE(destination != nullptr, "invalid tag in AdminUserPopup::onViolationChanged")
+    // GLOBED_REQUIRE(destination != nullptr, "invalid tag in AdminUserPopup::onViolationChanged")
 
-    *destination = !static_cast<CCMenuItemToggler*>(sender)->isOn();
+    // *destination = !static_cast<CCMenuItemToggler*>(sender)->isOn();
 
-    // if unmuted and unbanned, hide the text label
-    banDurationText->setVisible(userEntry.isBanned || userEntry.isMuted);
+    // // if unmuted and unbanned, hide the text label
+    // banDurationText->setVisible(userEntry.isBanned || userEntry.isMuted);
 }
 
 void AdminUserPopup::onViolationDurationChanged(cocos2d::CCObject* sender) {
-    float value = static_cast<SliderThumb*>(sender)->getValue();
+    // float value = static_cast<SliderThumb*>(sender)->getValue();
 
-    if (util::math::equal(value, 0.f)) {
-        userEntry.violationExpiry = std::nullopt;
-        banDurationText->setString("Expires: never");
-    } else {
-        userEntry.violationExpiry = expiryFromFloatUnix(value);
+    // if (util::math::equal(value, 0.f)) {
+    //     userEntry.violationExpiry = std::nullopt;
+    //     banDurationText->setString("Expires: never");
+    // } else {
+    //     userEntry.violationExpiry = expiryFromFloatUnix(value);
 
-        banDurationText->setString(fmt::format("Expires: in {:.1f} days", expiryFromFloat(value)).c_str());
-    }
+    //     banDurationText->setString(fmt::format("Expires: in {:.1f} days", expiryFromFloat(value)).c_str());
+    // }
 }
 
 void AdminUserPopup::recreateRoleModifyButton() {
@@ -359,8 +359,8 @@ void AdminUserPopup::sendUpdateUser() {
         userEntry.userName = accountData->name;
     }
 
-    auto& nm = NetworkManager::get();
-    nm.send(AdminUpdateUserPacket::create(this->userEntry));
+    // auto& nm = NetworkManager::get();
+    // nm.send(AdminUpdateUserPacket::create(this->userEntry));
 }
 
 void AdminUserPopup::removeLoadingCircle() {

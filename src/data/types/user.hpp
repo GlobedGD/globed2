@@ -70,6 +70,8 @@ enum class PunishmentType : uint8_t {
     Ban = 0, Mute = 1
 };
 
+GLOBED_SERIALIZABLE_ENUM(PunishmentType, Ban, Mute);
+
 struct UserPunishment {
     int64_t id;
     int32_t accountId;
