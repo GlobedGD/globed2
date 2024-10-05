@@ -12,11 +12,11 @@ using namespace util::data;
 ChaChaSecretBox::ChaChaSecretBox(bytevector key) {
     CRYPTO_REQUIRE(key.size() == KEY_LEN, "provided key is too long or too short for ChaChaSecretBox")
 
-    this->key = reinterpret_cast<byte*>(sodium_malloc(
+    this->key = reinterpret_cast<byte*>(std::malloc(
         KEY_LEN
     ));
 
-    CRYPTO_REQUIRE(this->key != nullptr, "sodium_malloc returned nullptr")
+    CRYPTO_REQUIRE(this->key != nullptr, "malloc returned nullptr")
 
     std::memcpy(this->key, key.data(), KEY_LEN);
 }
@@ -28,7 +28,7 @@ ChaChaSecretBox ChaChaSecretBox::withPassword(std::string_view pw) {
 
 ChaChaSecretBox::~ChaChaSecretBox() {
     if (this->key) {
-        sodium_free(this->key);
+        std::free(this->key);
     }
 }
 
