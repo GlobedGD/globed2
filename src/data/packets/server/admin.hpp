@@ -57,3 +57,14 @@ class AdminAuthFailedPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminAuthFailedPacket, ());
+
+// 29005 - AdminPunishmentHistoryPacket
+class AdminPunishmentHistoryPacket : public Packet {
+    GLOBED_PACKET(29005, AdminPunishmentHistoryPacket, false, false)
+
+    AdminPunishmentHistoryPacket() {}
+
+    std::vector<UserPunishment> entries;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(AdminPunishmentHistoryPacket, (entries));

@@ -65,3 +65,21 @@ struct UserPrivacyFlags : BitfieldBase {
 GLOBED_SERIALIZABLE_BITFIELD(UserPrivacyFlags, (
     hideFromLists, noInvites, hideInGame, hideRoles
 ));
+
+enum class PunishmentType : uint8_t {
+    Ban = 0, Mute = 1
+};
+
+struct UserPunishment {
+    int64_t id;
+    int32_t accountId;
+    PunishmentType type;
+    std::string reason;
+    int64_t expiresAt;
+    std::optional<int64_t> issuedAt;
+    std::optional<int32_t> issuedBy;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(UserPunishment, (
+    id, accountId, type, reason, expiresAt, issuedAt, issuedBy
+))
