@@ -115,12 +115,25 @@ namespace util::debug {
         return searchMember(structptr, reinterpret_cast<const uint8_t*>(&value), sizeof(T), alignof(T), maxSize);
     }
 
+    inline void logPrintfWrapper(const char* format, ...) {
+        va_list args;
+        va_start(args, format);
+
+        int count = std::vsnprintf(nullptr, 0, format, args);
+        std::string str(count + 1, '\0');
+        std::vsnprintf(str.data(), str.size(), format, args);
+
+        va_end(args);
+
+        log::debug("{}", str);
+    }
+
     template <typename T>
-    void printStruct(const T& s) {
+    void printStruct(T* s) {
 #ifdef __clang__
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wformat"
-        __builtin_dump_struct(&s, printf);
+        __builtin_dump_struct(s, logPrintfWrapper);
 # pragma clang diagnostic pop
 #else
         log::warn("util::debug::printStruct not implemented for this platform");

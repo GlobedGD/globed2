@@ -106,10 +106,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE libs/)
 CPMAddPackage("gh:camila314/uibuilder#ba63097")
 CPMAddPackage(
     NAME Boost
-    VERSION 1.84.0
-    URL https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.xz
-    URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
-    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
+    VERSION 1.86.0
+    URL https://github.com/boostorg/boost/releases/download/boost-1.86.0/boost-1.86.0-cmake.7z
+    URL_HASH SHA256=ee6e0793b5ec7d13e7181ec05d3b1aaa23615947295080e4b9930324488e078f
+    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe\\\;stacktrace" # escape with \\\;
 )
 CPMAddPackage("gh:dankmeme01/asp2#782a4fa")
 
@@ -146,6 +146,10 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)
+
+if (GLOBED_IS_DEBUG)
+    target_link_libraries(${PROJECT_NAME} Boost::stacktrace)
+endif()
 
 if (GLOBED_COMPILE_LIBS)
     CPMAddPackage("gh:dankmeme01/libsodium-cmake#226abba")
