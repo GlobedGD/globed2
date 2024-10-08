@@ -23,11 +23,11 @@
 */
 
 #ifdef GLOBED_DEBUG
-# define GLOBED_REQUIRE(condition,message) \
+# define GLOBED_REQUIRE(condition, message) \
     if (!(condition)) [[unlikely]] { \
         ::globed::_condFail(std::source_location::current(), ::boost::stacktrace::stacktrace{}, (message)); \
     }
-# define GLOBED_HARD_ASSERT(condition,message) \
+# define GLOBED_HARD_ASSERT(condition, message) \
     if (!(condition)) [[unlikely]] { \
         ::globed::_condFailFatal(std::source_location::current(), ::boost::stacktrace::stacktrace{}, (message)); \
     }

@@ -88,16 +88,16 @@ static void printStacktrace(const boost::stacktrace::stacktrace& trace) {
 }
 
 std::string globed::_condFailSafe(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message) {
-    auto msg = fmt::format("Condition failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
-    log::debug("{}", msg);
+    log::debug("Condition failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
 
     printStacktrace(trace);
 
-    return msg;
+    return std::string(message);
 }
 
 [[noreturn]] void globed::_condFailFatal(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message) {
-    log::debug("Condition fatally failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
+    log::error("Condition fatally failed: {}", message);
+    log::error("At {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
 
     printStacktrace(trace);
 
@@ -114,10 +114,9 @@ std::string globed::_condFailSafe(const std::source_location& loc, const boost::
 }
 
 std::string globed::_condFailSafe(const std::source_location& loc, std::string_view message) {
-    auto msg = fmt::format("Condition failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
-    log::debug("{}", msg);
+    log::debug("Condition failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
 
-    return msg;
+    return std::string(message);
 }
 
 [[noreturn]] void globed::_condFailFatal(const std::source_location& loc, std::string_view message) {

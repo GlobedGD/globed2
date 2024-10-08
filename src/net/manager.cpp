@@ -143,9 +143,7 @@ public:
 #endif
 
                 if (!listeners[i].valid()) {
-#ifdef GLOBED_DEBUG
-                    log::debug("Unregistering listener {} (id {})", addr, id);
-#endif
+                    TRACE("Unregistering listener {} (id {})", addr, id);
                     listeners.erase(listeners.begin() + i);
                 }
             }
@@ -153,9 +151,7 @@ public:
     }
 
     void registerListener(packetid_t id, PacketListener* listener) {
-#ifdef GLOBED_DEBUG
-        log::debug("Registering listener {} (id {}) for {}", listener, id, listener->owner);
-#endif
+        TRACE("Registering listener {} (id {}) for {}", listener, id, listener->owner);
 
         auto& ls = listeners[id];
 
