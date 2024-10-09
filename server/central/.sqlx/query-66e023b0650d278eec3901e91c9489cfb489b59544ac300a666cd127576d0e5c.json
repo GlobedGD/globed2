@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE users SET is_whitelisted = ? where account_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "66e023b0650d278eec3901e91c9489cfb489b59544ac300a666cd127576d0e5c"
+}
