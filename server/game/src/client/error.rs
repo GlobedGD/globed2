@@ -34,6 +34,7 @@ pub enum PacketHandlingError {
     NoPermission,
     BridgeError(CentralBridgeError),
     WebhookError(CentralBridgeError),
+    Standalone,
 }
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
@@ -108,6 +109,7 @@ impl Display for PacketHandlingError {
             Self::NoPermission => f.write_str("no permission"),
             Self::BridgeError(e) => write!(f, "central bridge returned error: {e}"),
             Self::WebhookError(e) => write!(f, "webhook error: {e}"),
+            Self::Standalone => write!(f, "attempted to perform an action that cannot be done on a standalone server"),
         }
     }
 }

@@ -58,6 +58,7 @@ namespace util::ui {
         cocos2d::CCPoint fromBottom(cocos2d::CCSize off);
 
         cocos2d::CCPoint fromCenter(cocos2d::CCSize off);
+        cocos2d::CCPoint fromCenter(float x, float y);
     };
 
     PopupLayout getPopupLayout(const cocos2d::CCSize& popupSize);

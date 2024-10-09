@@ -161,6 +161,10 @@ namespace util::ui {
         return this->center + off;
     }
 
+    CCPoint PopupLayout::fromCenter(float x, float y) {
+        return this->fromCenter(CCSize{x, y});
+    }
+
     static PopupLayout popupLayoutWith(const CCSize& popupSize, bool useWinSize) {
         PopupLayout layout;
 

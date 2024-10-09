@@ -319,7 +319,8 @@ impl ClientThread {
                 | PacketHandlingError::SocketWouldBlock
                 | PacketHandlingError::Ratelimited
                 | PacketHandlingError::UnexpectedPlayerData
-                | PacketHandlingError::NoPermission => {}
+                | PacketHandlingError::NoPermission
+                | PacketHandlingError::Standalone => {}
             }
         }
     }

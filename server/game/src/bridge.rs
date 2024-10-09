@@ -344,8 +344,8 @@ impl CentralBridge {
         user: &ServerUserEntry,
         _mod_id: i32,
         mod_name: String,
-        ban: Option<UserPunishment>,
-        mute: Option<UserPunishment>,
+        ban: Option<&UserPunishment>,
+        mute: Option<&UserPunishment>,
     ) -> Result<()> {
         let mut messages = FastVec::<WebhookMessage, 4>::new();
 
@@ -380,7 +380,7 @@ impl CentralBridge {
                         target_id: user.account_id,
                         new_state: true,
                         expiry: if ban.expires_at == 0 { None } else { Some(ban.expires_at) },
-                        reason: if ban.reason.is_empty() { None } else { Some(ban.reason) },
+                        reason: if ban.reason.is_empty() { None } else { Some(ban.reason.clone()) },
                     };
 
                     messages.push(WebhookMessage::UserBanned(bmsc));
@@ -397,7 +397,7 @@ impl CentralBridge {
                         target_id: user.account_id,
                         new_state: true,
                         expiry: if mute.expires_at == 0 { None } else { Some(mute.expires_at) },
-                        reason: if mute.reason.is_empty() { None } else { Some(mute.reason) },
+                        reason: if mute.reason.is_empty() { None } else { Some(mute.reason.clone()) },
                     };
 
                     messages.push(WebhookMessage::UserMuted(bmsc));

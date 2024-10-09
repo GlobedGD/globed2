@@ -443,7 +443,9 @@ impl ClientThread {
                 username: packet.username,
             }),
         )
-        .await
+        .await?;
+
+        Ok(())
     });
 
     gs_handler!(self, handle_admin_set_name_color, AdminSetNameColorPacket, packet, {
@@ -553,17 +555,18 @@ impl ClientThread {
             admin_error!(self, "cannot ban user above or at your permission level");
         }
 
-        self._handle_admin_action(
-            if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
-            &AdminUserAction::PunishUser(AdminPunishUserAction {
-                account_id: packet.account_id,
-                is_ban: packet.is_ban,
-                reason: packet.reason.clone(),
-                issued_by: account_id,
-                expires_at: packet.expires_at,
-            }),
-        )
-        .await?;
+        let (ban, mute) = self
+            ._handle_admin_action(
+                if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
+                &AdminUserAction::PunishUser(AdminPunishUserAction {
+                    account_id: packet.account_id,
+                    is_ban: packet.is_ban,
+                    reason: packet.reason.clone(),
+                    issued_by: account_id,
+                    expires_at: packet.expires_at,
+                }),
+            )
+            .await?;
 
         // if the user is online on the server, update live
         if let Some(user) = thread {
@@ -582,7 +585,13 @@ impl ClientThread {
             }
         }
 
-        self._send_admin_success("Success").await
+        if let Some(punishment) = if packet.is_ban { ban } else { mute } {
+            self.send_packet_dynamic(&AdminSuccessfulPunishmentPacket { punishment }).await?;
+        } else {
+            admin_error!(self, "error: punishment is None");
+        }
+
+        Ok(())
     });
 
     gs_handler!(self, handle_admin_remove_punishment, AdminRemovePunishmentPacket, packet, {
@@ -656,13 +665,18 @@ impl ClientThread {
     });
 
     // Return
-    async fn _handle_admin_action(&self, perm: AdminPerm, action: &AdminUserAction) -> Result<()> {
+    async fn _handle_admin_action(&self, perm: AdminPerm, action: &AdminUserAction) -> Result<(Option<UserPunishment>, Option<UserPunishment>)> {
         if !self._has_perm(perm) {
             return Err(PacketHandlingError::NoPermission);
         }
 
         if self.game_server.standalone {
-            admin_error!(self, "This cannot be done on a standalone server");
+            self.send_packet_dynamic(&AdminErrorPacket {
+                message: "This cannot be done on a standalone server",
+            })
+            .await?;
+
+            return Err(PacketHandlingError::Standalone);
         }
 
         match self.game_server.bridge.send_admin_user_action(action).await {
@@ -674,7 +688,7 @@ impl ClientThread {
                     if let Err(e) = self
                         .game_server
                         .bridge
-                        .send_webhook_message_for_action(action, &x, account_id, own_name.unwrap_or_default(), ban, mute)
+                        .send_webhook_message_for_action(action, &x, account_id, own_name.unwrap_or_default(), ban.as_ref(), mute.as_ref())
                         .await
                     {
                         error!("Failed to submit webhook message for admin action: {e}");
@@ -689,7 +703,7 @@ impl ClientThread {
                     *user.user_entry.lock() = x;
                 }
 
-                Ok(())
+                Ok((ban, mute))
             }
 
             Err(e) => {

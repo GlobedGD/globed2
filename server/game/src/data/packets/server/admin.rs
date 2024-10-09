@@ -36,3 +36,9 @@ pub struct AdminAuthFailedPacket;
 pub struct AdminPunishmentHistoryPacket {
     pub entries: Vec<UserPunishment>,
 }
+
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 29006, tcp = true)]
+pub struct AdminSuccessfulPunishmentPacket {
+    pub punishment: UserPunishment,
+}
