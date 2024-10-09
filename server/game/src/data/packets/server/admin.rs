@@ -22,23 +22,23 @@ pub struct AdminUserDataPacket {
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 29003, tcp = true)]
+#[packet(id = 29003, tcp, encrypted)]
 pub struct AdminSuccessMessagePacket<'a> {
     pub message: &'a str,
 }
 
 #[derive(Packet, Encodable, StaticSize)]
-#[packet(id = 29004, tcp = true)]
+#[packet(id = 29004, tcp, encrypted)]
 pub struct AdminAuthFailedPacket;
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 29005, tcp = true)]
+#[packet(id = 29005, tcp, encrypted)]
 pub struct AdminPunishmentHistoryPacket {
     pub entries: Vec<UserPunishment>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
-#[packet(id = 29006, tcp = true)]
+#[packet(id = 29006, tcp, encrypted)]
 pub struct AdminSuccessfulPunishmentPacket {
     pub punishment: UserPunishment,
 }
