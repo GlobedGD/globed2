@@ -289,7 +289,7 @@ pub async fn update_name_color(
     Ok(CheckedEncodableResponder::new(user))
 }
 
-#[post("/user/update/name_color", data = "<userdata>")]
+#[post("/user/update/roles", data = "<userdata>")]
 pub async fn update_roles(
     state: &State<ServerState>,
     password: GameServerPasswordGuard,
