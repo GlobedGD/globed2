@@ -108,6 +108,12 @@ void RoomManager::fetchRoomLevel(int levelId) {
     fetchNode->fetchCallback = [this, glm](Result<CCArray*, int> level) {
         glm->m_levelManagerDelegate = nullptr;
 
+        if (!level) {
+            log::warn("Failed to fetch level data (id {}) for room: code {}", roomInfo.settings.levelId, level.unwrapErr());
+            fetchNode->fetchCallback = {};
+            return;
+        }
+
         fetchNode->downloadCallback = [this, glm](Result<GJGameLevel*, int> level) {
             glm->m_levelDownloadDelegate = nullptr;
 
@@ -120,13 +126,13 @@ void RoomManager::fetchRoomLevel(int levelId) {
             fetchNode->downloadCallback = {};
         };
 
-        fetchNode->fetchCallback = {};
-
         auto arr = level.unwrap();
         if (arr->count()) {
             glm->m_levelDownloadDelegate = fetchNode;
             glm->downloadLevel(static_cast<GJGameLevel*>(arr->objectAtIndex(0))->m_levelID, false);
         }
+
+        fetchNode->fetchCallback = {};
     };
 
     glm->m_levelManagerDelegate = fetchNode;
