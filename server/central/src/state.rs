@@ -164,7 +164,7 @@ impl ServerStateData {
     pub async fn is_banned(&self, db: &GlobedDb, account_id: i32) -> anyhow::Result<Option<String>> {
         let user = match db.get_user(account_id).await? {
             Some(user) => user,
-            None => return Err(anyhow!("user not found")),
+            None => return Ok(None),
         };
 
         if let Some(ban_id) = user.active_ban {
