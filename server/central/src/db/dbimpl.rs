@@ -282,7 +282,7 @@ impl GlobedDb {
 
     pub async fn punish_user(&self, action: &AdminPunishUserAction) -> Result<i64> {
         let reason = action.reason.try_to_str();
-        let r#type = if action.is_ban { "ban" } else { "mute " };
+        let r#type = if action.is_ban { "ban" } else { "mute" };
         let issued_at = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
 
         let expires_at = action.expires_at as i64;
