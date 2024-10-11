@@ -325,6 +325,11 @@ pub async fn update_punish(
         unauthorized!("invalid gameserver credentials");
     }
 
+    debug!(
+        "Punishing {} (ban = {}, expires at = {}, reason = '{}')",
+        userdata.0.account_id, userdata.0.is_ban, userdata.0.expires_at, userdata.0.reason
+    );
+
     // insert empty user in case it does not exist
     database.insert_empty_user(userdata.0.account_id).await?;
 
@@ -345,6 +350,8 @@ pub async fn update_unpunish(
     if !password.verify(&correct) {
         unauthorized!("invalid gameserver credentials");
     }
+
+    debug!("Removing punishment from {} (ban = {}", userdata.0.account_id, userdata.0.is_ban);
 
     database.unpunish_user(userdata.0.account_id, userdata.0.is_ban).await?;
 
