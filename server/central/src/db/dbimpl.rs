@@ -234,7 +234,7 @@ impl GlobedDb {
         Ok(())
     }
 
-    /// Convert a `Option<UserEntryWrapper>` into `Option<UserEntry>` and expire their ban/mute if needed.
+    /// Convert a `Option<UserEntryWrapper>` into `Option<ServerUserEntry>` and expire their ban/mute if needed.
     #[inline]
     async fn unwrap_user(&self, user: Option<UserEntryWrapper>) -> Result<Option<ServerUserEntry>> {
         let mut user = user.map(|x| x.0);
@@ -299,6 +299,13 @@ impl GlobedDb {
         .fetch_one(&self.0)
         .await?
         .punishment_id;
+
+        // set the punishment
+        if action.is_ban {
+            query!("UPDATE users SET active_ban = ?", id).execute(&self.0).await?;
+        } else {
+            query!("UPDATE users SET active_mute = ?", id).execute(&self.0).await?;
+        }
 
         Ok(id)
     }
