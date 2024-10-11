@@ -319,7 +319,7 @@ Result<std::shared_ptr<Packet>> GameSocket::decodePacket(ByteBuffer& buffer) {
     GLOBED_REQUIRE_SAFE(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(header.id))
 
     if (packet->getEncrypted() && !header.encrypted) {
-        GLOBED_REQUIRE_SAFE(false, "server sent a cleartext packet when expected an encrypted one")
+        GLOBED_REQUIRE_SAFE(false, fmt::format("server sent a cleartext packet when expected an encrypted one ({})", header.id))
     }
 
     if (header.encrypted) {

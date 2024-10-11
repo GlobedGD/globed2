@@ -28,7 +28,7 @@ struct GLOBED_DLL HookedLoadingLayer : geode::Modify<HookedLoadingLayer, Loading
 
     void loadingFinishedHook();
 
-    void setLabelText(std::string_view text);
+    void setLabelText(const char* text);
     void setLabelTextForStage();
     void finishLoading();
 
