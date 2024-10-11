@@ -127,7 +127,7 @@ impl GlobedDb {
     }
 
     pub async fn get_punishment(&self, id: i64) -> Result<UserPunishment> {
-        query_as::<_, UserPunishmentWrapper>("SELECT * FROM punishments WHERE id = ?")
+        query_as::<_, UserPunishmentWrapper>("SELECT * FROM punishments WHERE punishment_id = ?")
             .bind(id)
             .fetch_one(&self.0)
             .await
