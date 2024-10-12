@@ -184,7 +184,7 @@ impl GlobedDb {
     }
 
     pub async fn get_all_user_punishments(&self, account_id: i32) -> Result<Vec<UserPunishment>> {
-        query_as::<_, UserPunishmentWrapper>("SELECT * FROM punishments WHERE account_id = ? LIMIT 100 ORDER BY punishment_id DESC")
+        query_as::<_, UserPunishmentWrapper>("SELECT * FROM punishments WHERE account_id = ? ORDER BY punishment_id DESC LIMIT 100")
             .bind(account_id)
             .fetch_all(&self.0)
             .await
