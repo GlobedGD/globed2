@@ -448,3 +448,18 @@ pub async fn get_punishment_history(
 
     Ok(CheckedEncodableResponder::new(punishments))
 }
+
+#[get("/user_names?<ids>")]
+pub async fn get_many_user_names(_password: GameServerPasswordGuard, database: &GlobedDb, ids: String) -> WebResult<CheckedEncodableResponder> {
+    let mut vec = Vec::<(i32, String)>::new();
+
+    for i in ids.split(",") {
+        if let Ok(x) = i.parse::<i32>() {
+            if let Some(user) = database.get_user(x).await? {
+                vec.push((x, user.user_name.unwrap_or_else(|| "Unknown".to_string())));
+            }
+        }
+    }
+
+    Ok(CheckedEncodableResponder::new(vec))
+}

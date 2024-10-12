@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    fmt::Display,
+    fmt::{Display, Write},
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
@@ -254,6 +254,41 @@ impl CentralBridge {
             .http_client
             .get(format!("{}user/punishment_history", self.central_url))
             .query(&[("account_id", account_id)])
+            .header("Authorization", self.central_pw.clone())
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+            return Err(CentralBridgeError::CentralError((status, message)));
+        }
+
+        let data = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&data);
+        reader.validate_self_checksum()?;
+
+        Ok(reader.read_value()?)
+    }
+
+    pub async fn get_many_names(&self, account_ids: &[i32]) -> Result<Vec<(i32, String)>> {
+        if account_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut q = String::new();
+        account_ids.iter().for_each(|&id| {
+            write!(&mut q, "{},", id).unwrap();
+        });
+
+        // remove trailing comma
+        q.pop();
+
+        let response = self
+            .http_client
+            .get(format!("{}user_names", self.central_url))
+            .query(&[("ids", q)])
             .header("Authorization", self.central_pw.clone())
             .send()
             .await?;

@@ -735,7 +735,24 @@ impl ClientThread {
 
         match self.game_server.bridge.get_punishment_history(packet.account_id).await {
             Ok(x) => {
-                self.send_packet_dynamic(&AdminPunishmentHistoryPacket { entries: x }).await?;
+                // ok so basically client needs to know names of all mods (as db only stores account ids)
+                let mut ids = Vec::<i32>::new();
+                for entry in &x {
+                    if let Some(id) = entry.issued_by {
+                        ids.push(id);
+                    }
+                }
+
+                let mod_name_data = match self.game_server.bridge.get_many_names(&ids).await {
+                    Ok(x) => x,
+                    Err(err) => {
+                        warn!("error fetching data from the bridge: {err}");
+                        Vec::new()
+                    }
+                };
+
+                self.send_packet_dynamic(&AdminPunishmentHistoryPacket { entries: x, mod_name_data })
+                    .await?;
                 Ok(())
             }
 

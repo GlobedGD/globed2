@@ -65,9 +65,10 @@ class AdminPunishmentHistoryPacket : public Packet {
     AdminPunishmentHistoryPacket() {}
 
     std::vector<UserPunishment> entries;
+    std::map<int32_t, std::string> modNameData;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(AdminPunishmentHistoryPacket, (entries));
+GLOBED_SERIALIZABLE_STRUCT(AdminPunishmentHistoryPacket, (entries, modNameData));
 
 // 29006 - AdminSuccessfulUpdatePacket
 class AdminSuccessfulUpdatePacket : public Packet {
