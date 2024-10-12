@@ -16,6 +16,8 @@
 #include <ui/game/voice_overlay/overlay.hpp>
 #include <util/time.hpp>
 
+#include <asp/time/Instant.hpp>
+
 float adjustLerpTimeDelta(float dt);
 
 struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
@@ -67,7 +69,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
 
         // speedhack detection
         float lastKnownTimeScale = 1.0f;
-        std::unordered_map<int, util::time::time_point> lastSentPacket;
+        std::unordered_map<int, asp::time::Instant> lastSentPacket;
 
         // chat messages (duh)
         std::vector<std::pair<int, std::string>> chatMessages;

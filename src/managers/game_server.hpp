@@ -5,8 +5,9 @@
 #include <asp/sync.hpp> // mutex
 
 #include <util/crypto.hpp> // base64
-#include <util/time.hpp>
 #include <util/singleton.hpp>
+
+#include <asp/time/SystemTime.hpp>
 
 struct GameServer {
     std::string id;
@@ -76,7 +77,7 @@ protected:
     // expansion of GameServer with pending pings
     struct GameServerData {
         GameServer server;
-        std::unordered_map<uint32_t, util::time::time_point> pendingPings;
+        std::unordered_map<uint32_t, asp::time::SystemTime> pendingPings;
     };
 
     struct InnerData {

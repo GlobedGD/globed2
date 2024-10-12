@@ -9,19 +9,21 @@
 
 #include <managers/web.hpp>
 
+using namespace asp::time;
+
 namespace util::format {
-    std::string formatDateTime(const time::system_time_point& tp, bool ms) {
-        std::time_t curTime = chrono::system_clock::to_time_t(tp);
+    std::string formatDateTime(const asp::time::SystemTime& tp, bool ms) {
+        std::time_t curTime = tp.to_time_t();
 
         if (ms) {
-            auto millis = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()).count() % 1000;
+            auto millis = tp.timeSinceEpoch().subsecMillis();
             return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
         } else {
             return fmt::format("{:%Y-%m-%d %H:%M:%S}", fmt::localtime(curTime));
         }
     }
 
-    std::string dateTime(const time::system_time_point& tp, bool ms) {
+    std::string dateTime(const asp::time::SystemTime& tp, bool ms) {
         return formatDateTime(tp, ms);
     }
 
@@ -71,11 +73,11 @@ namespace util::format {
     }
 
     std::string formatPlatformerTime(uint32_t ms) {
-        auto dur = time::millis(ms);
-        auto hours = time::as<time::hours>(dur).count() % 24;
-        auto minutes = time::as<time::minutes>(dur).count() % 60;
-        auto seconds = time::as<time::seconds>(dur).count() % 60;
-        auto millis = ms % 1000;
+        auto dur = Duration::fromMillis(ms);
+        auto hours = dur.hours() % 24;
+        auto minutes = dur.minutes() % 60;
+        auto seconds = dur.seconds() % 60;
+        auto millis = dur.subsecMillis();
 
         if (hours > 0) {
             return fmt::format("{}:{:02}:{:02}.{:03}", hours, minutes, seconds, millis);

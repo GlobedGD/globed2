@@ -2,10 +2,10 @@
 #include <unordered_map>
 
 #include <asp/sync.hpp>
+#include <asp/time/Instant.hpp>
 
 #include <data/packets/packet.hpp>
 #include <util/collections.hpp>
-#include <util/time.hpp>
 #include <util/misc.hpp>
 #include <util/singleton.hpp>
 
@@ -14,12 +14,12 @@ namespace util::debug {
     public:
         void start(std::string_view id);
         void endAndLog(std::string_view id, bool ignoreSmall = false);
-        time::micros end(std::string_view id);
-        time::micros run(std::function<void()>&& func);
+        asp::time::Duration end(std::string_view id);
+        asp::time::Duration run(std::function<void()>&& func);
         void runAndLog(std::function<void()>&& func, std::string_view identifier);
 
     private:
-        std::unordered_map<std::string, time::time_point> _entries;
+        std::unordered_map<std::string, asp::time::Instant> _entries;
     };
 
     class DataWatcher : public SingletonBase<DataWatcher> {

@@ -8,8 +8,9 @@
 #include <util/crypto.hpp>
 
 #ifdef GLOBED_DEBUG
-# include <util/time.hpp>
+# include <asp/time/SystemTime.hpp>
 # include <util/format.hpp>
+using namespace asp::time;
 #endif
 
 namespace util::misc {
@@ -93,9 +94,9 @@ namespace util::misc {
     const UniqueIdent& fingerprint() {
         static auto fingerprint = []{
 #ifdef GLOBED_DEBUG
-            auto now = util::time::now();
+            auto now = Instant::now();
             auto _ = util::misc::scopeDestructor([now] {
-                log::debug("Fingerprint computation took {}", util::format::duration(util::time::now() - now));
+                log::debug("Fingerprint computation took {}", now.elapsed().toString());
             });
 #endif
 

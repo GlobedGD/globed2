@@ -4,6 +4,8 @@
 #include <Geode/ui/TextInput.hpp>
 #include <data/types/user.hpp>
 
+#include <asp/time/Duration.hpp>
+
 class AdminUserPopup;
 
 class AdminPunishUserPopup : public geode::Popup<AdminUserPopup*, int32_t, bool, std::optional<UserPunishment>> {
@@ -15,8 +17,8 @@ private:
     bool isBan;
     AdminUserPopup* parentPopup;
     geode::TextInput *reasonInput, *daysInput, *hoursInput;
-    std::map<std::chrono::seconds, CCMenuItemToggler*> durationButtons;
-    std::chrono::seconds currentDuration{0};
+    std::map<asp::time::Duration, CCMenuItemToggler*> durationButtons;
+    asp::time::Duration currentDuration{};
 
     std::optional<UserPunishment> punishment;
 
@@ -24,7 +26,7 @@ private:
     friend class AdminPunishUserPopup::CommonReasonPopup;
 
     bool setup(AdminUserPopup* popup, int32_t accountId, bool isBan, std::optional<UserPunishment> punishment);
-    void setDuration(std::chrono::seconds dur, bool inCallback = false);
+    void setDuration(asp::time::Duration dur, bool inCallback = false);
     void setReason(const std::string& reason);
     void inputChanged();
     void submit();

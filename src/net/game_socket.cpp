@@ -18,6 +18,7 @@ constexpr size_t DATA_BUF_SIZE = 2 << 18;
 
 using namespace util::data;
 using namespace util::debug;
+using namespace asp::time;
 using PollResult = GameSocket::PollResult;
 using ReceivedPacket = GameSocket::ReceivedPacket;
 
@@ -351,7 +352,7 @@ void GameSocket::dumpPacket(packetid_t id, ByteBuffer& buffer, bool sending) {
         log::debug("Packet log folder: {}", folder);
     });
 
-    auto datetime = util::format::formatDateTime(util::time::systemNow());
+    auto datetime = util::format::formatDateTime(SystemTime::now());
     auto filepath = folder / fmt::format("{}-{}.bin", id, datetime);
 
     std::ofstream fs(filepath, std::ios::binary);

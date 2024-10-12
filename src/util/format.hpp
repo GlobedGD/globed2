@@ -4,35 +4,15 @@
 #include <cocos2d.h>
 #include <defs/minimal_geode.hpp>
 
+#include <asp/time.hpp>
 #include <util/time.hpp>
 #include <util/misc.hpp>
 
 namespace util::format {
-    // example: 2.123s, 69.123ms
-    template <typename Rep, typename Period>
-    std::string formatDuration(const time::duration<Rep, Period>& time) {
-        auto seconds = time::asSeconds(time);
-        auto millis = time::asMillis(time);
-        auto micros = time::asMicros(time);
-
-        if (seconds > 0) {
-            return fmt::format("{}.{:03}s", seconds, millis % 1000);
-        } else if (millis > 0) {
-            return fmt::format("{}.{:03}ms", millis, micros % 1000);
-        } else {
-            return std::to_string(micros) + "μs";
-        }
-    }
-
-    template <typename Rep, typename Period>
-    std::string duration(const time::duration<Rep, Period>& time) {
-        return formatDuration(time);
-    }
-
     // example: 2023-11-16 19:43:50.200
-    std::string formatDateTime(const time::system_time_point& tp, bool ms = true);
+    std::string formatDateTime(const asp::time::SystemTime& tp, bool ms = true);
 
-    std::string dateTime(const time::system_time_point& tp, bool ms = true);
+    std::string dateTime(const asp::time::SystemTime& tp, bool ms = true);
 
     // example: 123.4KiB
     std::string formatBytes(uint64_t bytes);

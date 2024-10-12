@@ -95,7 +95,7 @@ float VoicePlaybackManager::getLoudness(int playerId) {
     return streams.at(playerId)->getLoudness();
 }
 
-util::time::time_point VoicePlaybackManager::getLastPlaybackTime(int playerId) {
+asp::time::SystemTime VoicePlaybackManager::getLastPlaybackTime(int playerId) {
     if (!streams.contains(playerId)) return {};
 
     return streams.at(playerId)->getLastPlaybackTime();
@@ -127,7 +127,7 @@ void VoicePlaybackManager::updateAllEstimators(float dt) {}
 float VoicePlaybackManager::getLoudness(int playerId) {
     return 0.f;
 }
-util::time::time_point VoicePlaybackManager::getLastPlaybackTime(int playerId) {
+asp::time::SystemTime VoicePlaybackManager::getLastPlaybackTime(int playerId) {
     return {};
 }
 void VoicePlaybackManager::forEachStream(std::function<void(int, AudioStream&)> func) {}

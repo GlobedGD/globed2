@@ -78,7 +78,7 @@ void VoiceRecordingManager::threadFunc(decltype(thread)::StopToken&) {
 
     this->resetBools(vm.isRecording());
 
-    std::this_thread::sleep_for(util::time::millis(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void VoiceRecordingManager::resetBools(bool recording) {

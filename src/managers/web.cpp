@@ -3,10 +3,12 @@
 #include <managers/account.hpp>
 #include <managers/central_server.hpp>
 #include <util/net.hpp>
-#include <util/time.hpp>
 #include <net/manager.hpp>
 
+#include <asp/time/SystemTime.hpp>
+
 using namespace geode::prelude;
+using namespace asp::time;
 
 using RequestTask = WebRequestManager::Task;
 
@@ -161,7 +163,7 @@ RequestTask WebRequestManager::get(std::string_view url, int timeoutS, std::func
 #endif
 
     auto request = CurlRequest()
-        .timeout(util::time::seconds(timeoutS));
+        .timeout(Duration::fromSecs(timeoutS));
 
     additional(request);
 
@@ -183,7 +185,7 @@ RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::fun
 #endif
 
     auto request = CurlRequest()
-        .timeout(util::time::seconds(timeoutS));
+        .timeout(Duration::fromSecs(timeoutS));
 
     additional(request);
 

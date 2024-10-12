@@ -4,7 +4,8 @@
 
 #include <defs/geode.hpp>
 #include <data/types/gd.hpp>
-#include <util/time.hpp>
+
+#include <asp/time/SystemTime.hpp>
 
 class GlobedNotificationPanel : public cocos2d::CCNode {
 public:
@@ -19,9 +20,9 @@ public:
     void queueNotification(cocos2d::CCNode* node);
 
 private:
-    static constexpr auto NOTIFICATION_BUFFER_TIME = util::time::millis(1250);
+    static constexpr auto NOTIFICATION_BUFFER_TIME = asp::time::Duration::fromMillis(1250);
 
-    util::time::time_point lastNotificationAdded;
+    asp::time::SystemTime lastNotificationAdded;
     std::queue<Ref<cocos2d::CCNode>> queuedNotifs;
 
     bool init() override;

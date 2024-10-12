@@ -9,6 +9,7 @@
 #include <asp/thread.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 constexpr size_t THREAD_COUNT = 25;
 
@@ -74,9 +75,9 @@ namespace util::cocos {
         std::vector<size_t> texturePackIndices;
         std::unique_ptr<asp::ThreadPool> threadPool;
         struct _T {
-            util::time::time_point start{}, postPreparation{}, postTexCreation{}, finish{};
+            asp::time::Instant start, postPreparation, postTexCreation, finish;
 
-            _T() = default;
+            _T() : start(Instant::now()), postPreparation(start), postTexCreation(start), finish(start) {}
 
             void reset() {
                 *this = {};
@@ -84,10 +85,10 @@ namespace util::cocos {
 
             void print() {
                 preloadLog("Preload time estimates:");
-                preloadLog("-- Preparation: {}", util::format::duration(postPreparation - start));
-                preloadLog("-- Image load + texture creation: {}", util::format::duration(postTexCreation - postPreparation));
-                preloadLog("-- Creating sprite frame: {}", util::format::duration(finish - postTexCreation));
-                preloadLog("- Total: {}", util::format::duration(finish - start));
+                preloadLog("-- Preparation: {}", postPreparation.durationSince(start).toString());
+                preloadLog("-- Image load + texture creation: {}", postTexCreation.durationSince(postPreparation).toString());
+                preloadLog("-- Creating sprite frame: {}", finish.durationSince(postTexCreation).toString());
+                preloadLog("- Total: {}", finish.durationSince(start).toString());
             }
         } timeMeasurements;
 
@@ -105,7 +106,7 @@ namespace util::cocos {
     };
 
     static void initPreloadState(PersistentPreloadState& state) {
-        auto startTime = util::time::now();
+        auto startTime = Instant::now();
 
         state.texturePackIndices.clear();
 
@@ -154,7 +155,7 @@ namespace util::cocos {
 
         state.threadPool = std::make_unique<asp::ThreadPool>(THREAD_COUNT);
 
-        preloadLog("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
+        preloadLog("initialized preload state in {}", startTime.elapsed().toString());
         preloadLog("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
         preloadLog("texture packs: {}", state.texturePackIndices.size());
         preloadLog("game resources path ({}): {}", state.gameSearchPathIdx,
@@ -169,7 +170,7 @@ namespace util::cocos {
         auto& threadPool = *state.threadPool.get();
 
         preloadLog("preparing {} textures", images.size());
-        state.timeMeasurements.start = util::time::now();
+        state.timeMeasurements.start = Instant::now();
 
         static asp::Mutex<> cocosWorkMutex;
 
@@ -212,12 +213,12 @@ namespace util::cocos {
 
         if (imgCount == 0) {
             preloadLog("all textures already loaded, skipping pass");
-            state.timeMeasurements.finish = util::time::now();
+            state.timeMeasurements.finish = Instant::now();
             return;
         }
 
         preloadLog("loading images ({} total)", imgCount);
-        state.timeMeasurements.postPreparation = util::time::now();
+        state.timeMeasurements.postPreparation = Instant::now();
 
         asp::Channel<std::pair<size_t, CCImage*>> textureInitRequests;
 
@@ -293,7 +294,7 @@ namespace util::cocos {
         }
 
         preloadLog("initialized {} textures, adding sprite frames", initedTextures);
-        state.timeMeasurements.postTexCreation = util::time::now();
+        state.timeMeasurements.postTexCreation = Instant::now();
 
         // now, add sprite frames
         for (size_t i = 0; i < imgCount; i++) {
@@ -375,7 +376,7 @@ namespace util::cocos {
         threadPool.join();
 
         preloadLog("initialized sprite frames. done.");
-        state.timeMeasurements.finish = util::time::now();
+        state.timeMeasurements.finish = Instant::now();
 
 #ifdef GLOBED_DEBUG
         state.timeMeasurements.print();

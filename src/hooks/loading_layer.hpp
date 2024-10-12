@@ -7,6 +7,8 @@
 #include <util/ui.hpp>
 #include <util/time.hpp>
 
+#include <asp/time/SystemTime.hpp>
+
 // GLOBED_LOADING_FINISHED_MIDHOOK - whether to midhook the inlined func
 #if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_IOS) || defined(GEODE_IS_MACOS)
 # define GLOBED_LOADING_FINISHED_MIDHOOK 1
@@ -15,7 +17,7 @@
 struct GLOBED_DLL HookedLoadingLayer : geode::Modify<HookedLoadingLayer, LoadingLayer> {
     struct Fields {
         int preloadingStage = 0;
-        util::time::system_time_point loadingStartedTime;
+        asp::time::SystemTime loadingStartedTime;
     };
 
 #ifndef GLOBED_LOADING_FINISHED_MIDHOOK

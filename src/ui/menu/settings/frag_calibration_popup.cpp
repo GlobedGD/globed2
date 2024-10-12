@@ -7,6 +7,7 @@
 #include <util/rng.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 bool FragmentationCalibartionPopup::setup() {
     this->setTitle("Connection test");
@@ -47,7 +48,7 @@ bool FragmentationCalibartionPopup::setup() {
 }
 
 void FragmentationCalibartionPopup::checkForUpdates(float) {
-    if (util::time::systemNow() - lastPacket > util::time::millis(2500)) {
+    if (lastPacket.elapsed().millis() > 2500) {
         currentAttempt--;
         failedAttempts++;
         log::warn("failed attempt! size: {}, current attempt: {}", currentSize, currentAttempt);
@@ -91,7 +92,7 @@ void FragmentationCalibartionPopup::nextStep() {
     }
 
     nm.send(ConnectionTestPacket::create(uid, std::move(data)));
-    lastPacket = util::time::systemNow();
+    lastPacket = SystemTime::now();
 
     currentAttempt++;
 

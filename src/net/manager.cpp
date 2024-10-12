@@ -27,6 +27,7 @@
 #include <ui/notification/panel.hpp>
 
 using namespace asp;
+using namespace asp::time;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
@@ -216,14 +217,14 @@ protected:
     // Note that we intentionally don't use Ref here,
     // as we use the destructor to know if the object owning the listener has been destroyed.
     asp::Mutex<std::unordered_map<packetid_t, GlobalListener>> listeners;
-    asp::Mutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
+    asp::Mutex<std::unordered_map<packetid_t, asp::time::SystemTime>> suppressed;
 
     // these fields are only used by us and in a safe manner, so they don't need a mutex
     NetworkAddress connectedAddress;
     std::string connectedServerId;
-    util::time::time_point lastReceivedPacket;
-    util::time::time_point lastSentKeepalive;
-    util::time::time_point lastTcpExchange;
+    asp::time::SystemTime lastReceivedPacket;
+    asp::time::SystemTime lastSentKeepalive;
+    asp::time::SystemTime lastTcpExchange;
 
     AtomicBool suspended;
     AtomicBool standalone;
@@ -322,9 +323,9 @@ protected:
         this->standalone = standalone;
         this->wasFromRecovery = fromRecovery;
 
-        lastReceivedPacket = util::time::now();
-        lastSentKeepalive = util::time::now();
-        lastTcpExchange = util::time::now();
+        lastReceivedPacket = SystemTime::now();
+        lastSentKeepalive = SystemTime::now();
+        lastTcpExchange = SystemTime::now();
 
         if (!standalone) {
             GLOBED_REQUIRE_SAFE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
@@ -429,7 +430,7 @@ protected:
     void unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {
     }
 
-    void suppressUnhandledUntil(packetid_t id, util::time::system_time_point point) {
+    void suppressUnhandledUntil(packetid_t id, asp::time::SystemTime point) {
         (*suppressed.lock())[id] = point;
     }
 
@@ -546,7 +547,7 @@ protected:
             auto msg = fmt::format(
                 "<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
                 reason,
-                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)), false)
+                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
             );
 
             this->disconnectWithMessage(msg);
@@ -563,7 +564,7 @@ protected:
             auto msg = fmt::format(
                 "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
                 reason,
-                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)), false)
+                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
             );
 
             ErrorQueues::get().notice(msg);
@@ -811,7 +812,7 @@ protected:
 
     void threadRecvFunc(decltype(threadRecv)::StopToken&) {
         if (this->suspended || state == ConnectionState::TcpConnecting) {
-            std::this_thread::sleep_for(util::time::millis(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             return;
         }
 
@@ -842,7 +843,7 @@ protected:
             return;
         }
 
-        lastReceivedPacket = util::time::now();
+        lastReceivedPacket = SystemTime::now();
 
         this->callListener(std::move(packet));
     }
@@ -872,7 +873,7 @@ protected:
 
     void threadMainFunc(decltype(threadMain)::StopToken&) {
         if (this->suspended) {
-            std::this_thread::sleep_for(util::time::millis(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             return;
         }
 
@@ -940,9 +941,9 @@ protected:
                     return;
                 }
 
-                auto sleepPeriod = util::time::millis(10000) * attemptNumber;
+                auto sleepPeriod = std::chrono::seconds(10) * attemptNumber;
 
-                log::debug("tcp connect failed, sleeping for {} before trying again", util::format::formatDuration(sleepPeriod));
+                log::debug("tcp connect failed, sleeping for {} before trying again", Duration::fromSecs(sleepPeriod.count()).toString());
 
                 // wait for a bit before trying again
 
@@ -983,7 +984,7 @@ protected:
             return;
         }
         // Detect if authentication is taking too long
-        else if (state == ConnectionState::Authenticating && !recovering && (util::time::now() - lastReceivedPacket) > util::time::seconds(5)) {
+        else if (state == ConnectionState::Authenticating && !recovering && lastReceivedPacket.elapsed() > Duration::fromSecs(5)) {
             this->disconnect(true);
 
             ErrorQueues::get().error(fmt::format(
@@ -999,7 +1000,7 @@ protected:
 
         // poll for any incoming packets
 
-        while (auto task_ = taskQueue.popTimeout(util::time::millis(50))) {
+        while (auto task_ = taskQueue.popTimeout(Duration::fromMillis(50))) {
             auto task = std::move(task_.value());
 
             if (std::holds_alternative<TaskPingServers>(task)) {
@@ -1017,22 +1018,22 @@ protected:
     void maybeSendKeepalive() {
         if (!this->established()) return;
 
-        auto now = util::time::now();
+        auto now = SystemTime::now();
 
-        auto sinceLastPacket = now - lastReceivedPacket;
-        auto sinceLastKeepalive = now - lastSentKeepalive;
-        auto sinceLastTcpExchange = now - lastTcpExchange;
+        auto sinceLastPacket = (now - lastReceivedPacket).value();
+        auto sinceLastKeepalive = (now - lastSentKeepalive).value();
+        auto sinceLastTcpExchange = (now - lastTcpExchange).value();
 
-        if (sinceLastPacket > util::time::seconds(20)) {
+        if (sinceLastPacket > Duration::fromSecs(20)) {
             // timed out, disconnect the tcp socket but allow to reconnect
-            log::warn("timed out, time since last received packet: {}", util::format::formatDuration(sinceLastPacket));
+            log::warn("timed out, time since last received packet: {}", sinceLastPacket.toString());
             socket.disconnect();
-        } else if (sinceLastPacket > util::time::seconds(10) && sinceLastKeepalive > util::time::seconds(3)) {
+        } else if (sinceLastPacket > Duration::fromSecs(10) && sinceLastKeepalive > Duration::fromSecs(3)) {
             this->sendKeepalive();
         }
 
         // send a tcp keepalive to keep the nat hole open
-        if (sinceLastTcpExchange > util::time::seconds(60)) {
+        if (sinceLastTcpExchange > Duration::fromSecs(60)) {
             this->send(KeepaliveTCPPacket::create());
         }
     }
@@ -1040,7 +1041,7 @@ protected:
     void sendKeepalive() {
         // send a keepalive
         this->send(KeepalivePacket::create());
-        lastSentKeepalive = util::time::now();
+        lastSentKeepalive = SystemTime::now();
         GameServerManager::get().startKeepalive();
     }
 
@@ -1078,7 +1079,7 @@ protected:
 
     void handleSendPacketTask(TaskSendPacket task) {
         if (task.packet->getUseTcp()) {
-            lastTcpExchange = util::time::now();
+            lastTcpExchange = SystemTime::now();
         }
 
         try {
@@ -1097,12 +1098,12 @@ protected:
     void handlePingActive() {
         if (!this->established()) return;
 
-        auto now = util::time::now();
+        auto now = SystemTime::now();
         auto sinceLastKeepalive = now - lastSentKeepalive;
 
         bool isPingUnknown = GameServerManager::get().getActivePing() == -1;
 
-        if (sinceLastKeepalive > util::time::seconds(5) || isPingUnknown) {
+        if (sinceLastKeepalive > Duration::fromSecs(5) || isPingUnknown) {
             this->sendKeepalive();
         }
     }

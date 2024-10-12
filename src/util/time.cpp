@@ -3,13 +3,16 @@
 #include <sstream>
 
 #include <fmt/chrono.h>
+#include <asp/time/SystemTime.hpp>
+
+using namespace asp::time;
 
 namespace util::time {
     std::string nowPretty() {
-        auto time = chrono::system_clock::now();
-        std::time_t curTime = chrono::system_clock::to_time_t(time);
+        auto time = SystemTime::now();
+        auto curTime = time.to_time_t();
 
-        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch()).count() % 1000;
+        auto millis = time.timeSinceEpoch().subsecMillis();
 
         return fmt::format("{:%H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
     }

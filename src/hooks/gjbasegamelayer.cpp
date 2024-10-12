@@ -30,6 +30,7 @@
 #include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 // how many units before the voice disappears
 constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
@@ -208,11 +209,11 @@ void GlobedGJBGL::setupDeferredAssetPreloading() {
     if (util::cocos::shouldTryToPreload(false)) {
         log::info("Preloading assets (deferred)");
 
-        auto start = util::time::now();
-        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::AllWithoutDeathEffects);
-        auto took = util::time::now() - start;
+        auto start = Instant::now();
 
-        log::info("Asset preloading took {}", util::format::formatDuration(took));
+        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::AllWithoutDeathEffects);
+
+        log::info("Asset preloading took {}", start.elapsed().toString());
 
         gm->setAssetsPreloaded(true);
     }
@@ -223,11 +224,11 @@ void GlobedGJBGL::setupDeferredAssetPreloading() {
     if (!util::cocos::forcedSkipPreload() && shouldLoadDeaths && !gm->getDeathEffectsPreloaded()) {
         log::info("Preloading death effects (deferred)");
 
-        auto start = util::time::now();
-        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::DeathEffect);
-        auto took = util::time::now() - start;
+        auto start = Instant::now();
 
-        log::info("Death effect preloading took {}", util::format::formatDuration(took));
+        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::DeathEffect);
+
+        log::info("Death effect preloading took {}", start.elapsed().toString());
         gm->setDeathEffectsPreloaded(true);
     }
 
@@ -1186,23 +1187,21 @@ bool GlobedGJBGL::accountForSpeedhack(int uniqueKey, float cap, float allowance)
         this->rescheduleSelectors();
     }
 
-    auto now = util::time::now();
-
     if (!fields.lastSentPacket.contains(uniqueKey)) {
-        fields.lastSentPacket.emplace(uniqueKey, now);
+        fields.lastSentPacket.emplace(uniqueKey, Instant::now());
         return true;
     }
 
     auto lastSent = fields.lastSentPacket.at(uniqueKey);
 
-    auto passed = util::time::asMillis(now - lastSent);
+    auto passed = lastSent.elapsed().millis();
 
     if (passed < cap * 1000 * allowance) {
         // log::warn("dropping a packet (speedhack?), passed time is {}ms", passed);
         return false;
     }
 
-    fields.lastSentPacket[uniqueKey] = now;
+    fields.lastSentPacket[uniqueKey] = Instant::now();
 
     return true;
 }

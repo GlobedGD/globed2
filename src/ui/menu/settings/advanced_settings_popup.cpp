@@ -63,7 +63,7 @@ bool AdvancedSettingsPopup::setup() {
                 if (!res) log::debug("failed to resolve domain name: {}", res.unwrapErr());
             });
 
-            log::debug("Resolutions took: {}, {}, {}", util::format::duration(res1), util::format::duration(res2), util::format::duration(res3));
+            log::debug("Resolutions took: {}, {}, {}", res1.toString(), res2.toString(), res3.toString());
         })
         .pos(rlayout.center - CCPoint{0.f, 60.f})
         .parent(menu);

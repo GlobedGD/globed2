@@ -8,6 +8,7 @@
 #include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 static void loadingFinishedReimpl(bool fromRefresh) {
     // reimplementation of the function
@@ -24,7 +25,7 @@ void HookedLoadingLayer::loadingFinished() {
 
 void HookedLoadingLayer::loadingFinishedHook() {
     if (m_fields->preloadingStage == 0) {
-        m_fields->loadingStartedTime = util::time::systemNow();
+        m_fields->loadingStartedTime = SystemTime::now();
 
         m_fields->preloadingStage++;
 
@@ -44,7 +45,7 @@ void HookedLoadingLayer::loadingFinishedHook() {
         this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.0f);
         return;
     } else if (m_fields->preloadingStage == 1000) {
-        log::info("Asset preloading finished in {}.", util::format::formatDuration(util::time::systemNow() - m_fields->loadingStartedTime));
+        log::info("Asset preloading finished in {}.", m_fields->loadingStartedTime.elapsed().toString());
         util::cocos::cleanupThreadPool();
         loadingFinishedReimpl(m_fromRefresh);
     }

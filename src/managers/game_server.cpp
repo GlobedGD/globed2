@@ -7,6 +7,7 @@
 #include <data/types/misc.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 GameServerManager::GameServerManager() {
     this->updateCache(Mod::get()->getSavedValue<std::string>(SERVER_RESPONSE_CACHE_KEY));
@@ -230,21 +231,19 @@ uint32_t GameServerManager::startPing(std::string_view serverId) {
         gsdata.pendingPings.clear();
     }
 
-    auto now = util::time::now();
+    auto now = SystemTime::now();
     gsdata.pendingPings[pingId] = now;
 
     return pingId;
 }
 
 void GameServerManager::finishPing(uint32_t pingId, uint32_t playerCount) {
-    auto now = util::time::now();
-
     auto data = _data.lock();
 
     for (auto& [_, server] : data->servers) {
         if (server.pendingPings.contains(pingId)) {
             auto start = server.pendingPings.at(pingId);
-            auto timeTook = util::time::asMillis(now - start);
+            auto timeTook = start.elapsed().millis();
 
             server.server.ping = timeTook;
             server.server.playerCount = playerCount;

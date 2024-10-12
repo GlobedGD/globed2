@@ -5,6 +5,7 @@
 #include <hooks/gjbasegamelayer.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 bool GlobedNotificationPanel::init() {
     if (!CCNode::init()) return false;
@@ -52,8 +53,8 @@ static bool shouldShowNotification() {
 }
 
 void GlobedNotificationPanel::slideInNotification(CCNode* node) {
-    auto time = util::time::now();
-    if (time - lastNotificationAdded < NOTIFICATION_BUFFER_TIME || !shouldShowNotification()) {
+    auto time = SystemTime::now();
+    if ((time - lastNotificationAdded).value() < NOTIFICATION_BUFFER_TIME || !shouldShowNotification()) {
         this->queueNotification(node);
         return;
     }
@@ -129,8 +130,7 @@ void GlobedNotificationPanel::update(float dt) {
 
     if (queuedNotifs.empty()) return;
 
-    auto now = util::time::now();
-    if (now - lastNotificationAdded < NOTIFICATION_BUFFER_TIME) return;
+    if (lastNotificationAdded.elapsed() < NOTIFICATION_BUFFER_TIME) return;
 
     this->slideInNotification(queuedNotifs.front());
     queuedNotifs.pop();

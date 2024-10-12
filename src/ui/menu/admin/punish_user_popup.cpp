@@ -9,7 +9,10 @@
 
 #include "user_popup.hpp"
 
+#include <asp/time/SystemTime.hpp>
+
 using namespace geode::prelude;
+using namespace asp::time;
 
 class AdminPunishUserPopup::CommonReasonPopup : public geode::Popup<AdminPunishUserPopup*, bool> {
 public:
@@ -181,9 +184,6 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
         .parent(rootLayout)
         ;
 
-    constexpr static auto HOUR = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours{1});
-    constexpr static auto DAY = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days{1});
-
     auto durRoot = Build<CCNode>::create()
         .layout(RowLayout::create())
         .contentSize(rootLayout->getScaledContentWidth(), 92.f)
@@ -196,28 +196,31 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
         .contentSize(m_size.width * 0.5f, durRoot->getScaledContentHeight())
         .collect();
 
+    constexpr static auto HOUR = Duration::fromHours(1);
+    constexpr static auto DAY = Duration::fromDays(1);
+
     // quick buttons for duration
-    for (std::chrono::seconds off : std::initializer_list<std::chrono::seconds>{
-        1 * HOUR,
-        6 * HOUR,
-        1 * DAY,
-        3 * DAY,
-        7 * DAY,
-        14 * DAY,
-        30 * DAY,
-        std::chrono::seconds{0}
+    for (Duration off : std::initializer_list<Duration>{
+        HOUR * 1,
+        HOUR * 6,
+        DAY * 1,
+        DAY * 3,
+        DAY * 7,
+        DAY * 14,
+        DAY * 30,
+        Duration{}
     }) {
         std::string labeltext;
         float scale = 0.9f;
 
-        if (off.count() == 0) {
+        if (off.isZero()) {
             labeltext = "Permanent";
             scale = 0.675f;
         } else if (off >= DAY) {
-            auto days = std::chrono::duration_cast<std::chrono::days>(off).count();
+            auto days = off.days();
             labeltext = fmt::format("{}d", days);
         } else {
-            auto hrs = std::chrono::duration_cast<std::chrono::hours>(off).count();
+            auto hrs = off.hours();
             labeltext = fmt::format("{}h", hrs);
         }
 
@@ -242,7 +245,7 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
         toggler->m_onButton->m_scaleMultiplier = 1.15f;
         toggler->m_offButton->m_scaleMultiplier = 1.15f;
 
-        toggler->setTag((int) off.count());
+        toggler->setTag((int) off.seconds());
         durGrid->addChild(toggler);
         durationButtons.try_emplace(off, toggler);
     }
@@ -273,10 +276,7 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
                     Build<CCSprite>::createSpriteName("edit_leftBtn_001.png")
                         .scale(0.9f)
                         .intoMenuItem([this] {
-                            auto newdu = currentDuration - std::chrono::days{1};
-                            if (newdu.count() < 0) {
-                                newdu = newdu.zero();
-                            }
+                            auto newdu = currentDuration - Duration::fromDays(1);
 
                             this->setDuration(newdu);
                         })
@@ -296,7 +296,7 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
                     Build<CCSprite>::createSpriteName("edit_rightBtn_001.png")
                         .scale(0.9f)
                         .intoMenuItem([this] {
-                            auto newdu = currentDuration + std::chrono::days{1};
+                            auto newdu = currentDuration + Duration::fromDays(1);
                             this->setDuration(newdu);
                         })
                 )
@@ -316,11 +316,7 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
                     Build<CCSprite>::createSpriteName("edit_leftBtn_001.png")
                         .scale(0.9f)
                         .intoMenuItem([this] {
-                            auto newdu = currentDuration - std::chrono::hours{1};
-                            if (newdu.count() < 0) {
-                                newdu = newdu.zero();
-                            }
-
+                            auto newdu = currentDuration - Duration::fromHours(1);
                             this->setDuration(newdu);
                         })
                 )
@@ -339,7 +335,7 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
                     Build<CCSprite>::createSpriteName("edit_rightBtn_001.png")
                         .scale(0.9f)
                         .intoMenuItem([this] {
-                            auto newdu = currentDuration + std::chrono::hours{1};
+                            auto newdu = currentDuration + Duration::fromHours(1);
                             this->setDuration(newdu);
                         })
                 )
@@ -388,13 +384,12 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
 
     // if the user already was punished, set the data
     if (punishment) {
-        log::debug("Duration = {}, reason = {}", punishment->expiresAt, punishment->reason);
-        if (punishment->expiresAt == 0) {
-            this->setDuration(std::chrono::seconds{0});
+        auto expiry = SystemTime::fromUnix(punishment->expiresAt);
+
+        if (punishment->expiresAt == 0 || expiry.isPast()) {
+            this->setDuration(Duration{});
         } else {
-            this->setDuration(
-                util::time::seconds{punishment->expiresAt - util::time::as<util::time::seconds>(util::time::systemNow().time_since_epoch()).count()}
-            );
+            this->setDuration((expiry - SystemTime::now()).value_or(Duration{}));
         }
 
         this->setReason(punishment->reason);
@@ -403,9 +398,9 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
     return true;
 }
 
-void AdminPunishUserPopup::setDuration(std::chrono::seconds dur, bool inCallback) {
-    if (dur.count() < 0 || dur > std::chrono::duration_cast<std::chrono::seconds>(std::chrono::years{100})) {
-        dur = std::chrono::seconds{0};
+void AdminPunishUserPopup::setDuration(Duration dur, bool inCallback) {
+    if (dur > Duration::fromYears(100)) {
+        dur = Duration{};
     }
 
     currentDuration = dur;
@@ -422,8 +417,8 @@ void AdminPunishUserPopup::setDuration(std::chrono::seconds dur, bool inCallback
         }
     }
 
-    auto cdays = std::chrono::duration_cast<std::chrono::days>(currentDuration).count();
-    auto chours = std::chrono::duration_cast<std::chrono::hours>(currentDuration % 86400).count();
+    auto cdays = currentDuration.days();
+    auto chours = currentDuration.hours() % 24;
 
     daysInput->setString(fmt::format("{}", cdays));
     hoursInput->setString(fmt::format("{}", chours));
@@ -438,22 +433,22 @@ void AdminPunishUserPopup::inputChanged() {
     auto chours = util::format::parse<uint32_t>(hoursInput->getString()).value_or(0);
 
     // i hate c++ im going to rewrite the std lib one day
+    // update 1 day later: i did :) this no longer uses std::chrono
 
-    this->setDuration(
-        std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::days{cdays} + std::chrono::hours{chours}
-        )
-    );
+    this->setDuration(Duration::fromDays(cdays) + Duration::fromHours(chours));
 }
 
 void AdminPunishUserPopup::submit() {
     auto& nm = NetworkManager::get();
 
-    auto expiresAt = std::chrono::duration_cast<std::chrono::seconds>(util::time::systemNow().time_since_epoch()).count() + currentDuration.count();
+    auto expiresAtTime = SystemTime::now() + currentDuration;
+    time_t expiresAt; // seconds since unix epoch
 
-    if (currentDuration.count() == 0) {
+    if (currentDuration.isZero() || expiresAtTime.isPast()) {
         // permanent punishment
         expiresAt = 0;
+    } else {
+        expiresAt = expiresAtTime.to_time_t();
     }
 
     auto reason = this->reasonInput->getString();

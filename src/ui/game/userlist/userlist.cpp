@@ -11,6 +11,7 @@
 #include <util/misc.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 bool GlobedUserListPopup::setup() {
     this->setTitle("Players");
@@ -122,23 +123,23 @@ void GlobedUserListPopup::reorderWithVolume(float) {
         cellIndices.push_back(entry->accountData.accountId);
     }
 
-    auto now = util::time::now();
+    auto now = SystemTime::now();
     std::sort(cellIndices.begin(), cellIndices.end(), [&vpm, &cellMap, now = now](int idx1, int idx2) -> bool {
-        constexpr util::time::seconds limit(5);
+        constexpr auto limit = Duration::fromSecs(5);
 
         auto time1 = vpm.getLastPlaybackTime(idx1);
         auto time2 = vpm.getLastPlaybackTime(idx2);
 
-        auto diff1 = now - time1;
-        auto diff2 = now - time2;
+        auto diff1 = now.durationSince(time1).value_or(Duration{});
+        auto diff2 = now.durationSince(time2).value_or(Duration{});
 
         // if both users are speaking in the last 10 seconds, sort by who is more recent
         if (diff1 < limit && diff2 < limit) {
-            auto secs1 = util::time::asSeconds(diff1);
-            auto secs2 = util::time::asSeconds(diff2);
+            auto secs1 = diff1.seconds();
+            auto secs2 = diff2.seconds();
 
             // if there's a 0 second difference, sort by playername
-            if (std::abs(secs2 - secs1) == 0) {
+            if (secs1 != secs2) {
                 return util::misc::compareName(cellMap[idx1]->accountData.name, cellMap[idx2]->accountData.name);
             }
 

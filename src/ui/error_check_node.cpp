@@ -5,9 +5,12 @@
 #include <managers/error_queues.hpp>
 #include <util/debug.hpp>
 
-using namespace geode::prelude;
+#include <asp/time/Duration.hpp>
 
-constexpr auto BLOCK_CLOSING_FOR = util::time::millis(375);
+using namespace geode::prelude;
+using namespace asp::time;
+
+constexpr auto BLOCK_CLOSING_FOR = Duration::fromMillis(375);
 
 bool ErrorCheckNode::init() {
     if (!CCNode::init()) return false;

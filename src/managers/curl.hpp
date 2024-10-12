@@ -10,6 +10,8 @@
 #include <util/time.hpp>
 #include <util/singleton.hpp>
 
+#include <asp/time/Duration.hpp>
+
 struct CurlRequest;
 
 struct GLOBED_DLL CurlResponse {
@@ -85,9 +87,8 @@ struct CurlRequest {
     CurlRequest& userAgent(std::string_view name);
     CurlRequest& timeout(size_t seconds);
 
-    template <typename Rep, typename Period>
-    CurlRequest& timeout(const util::time::duration<Rep, Period>& duration) {
-        return this->timeout(static_cast<size_t>(util::time::asSeconds(duration)));
+    CurlRequest& timeout(const asp::time::Duration& duration) {
+        return this->timeout(static_cast<size_t>(duration.seconds()));
     }
 
     CurlRequest& followRedirects(bool follow);
