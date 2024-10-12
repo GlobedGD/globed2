@@ -145,7 +145,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
     # endif()
 endif()
 
-target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)
+target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe Boost::thread asp)
 
 if (GLOBED_IS_DEBUG)
     target_link_libraries(${PROJECT_NAME} Boost::stacktrace)
