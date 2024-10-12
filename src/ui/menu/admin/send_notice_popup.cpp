@@ -1,6 +1,7 @@
 #include "send_notice_popup.hpp"
 
 #include <net/manager.hpp>
+#include <managers/error_queues.hpp>
 #include <util/ui.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>
@@ -93,7 +94,13 @@ void AdminSendNoticePopup::commonSend(AdminSendNoticeType type) {
         roomId = util::format::parse<uint32_t>(roomInput->getString()).value_or(0);
     }
 
-    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, userInput->getString(), message);
+    auto text = util::format::trim(userInput->getString());
+    if (text.empty()) {
+        ErrorQueues::get().warn("Cannot send an empty notice");
+        return;
+    }
+
+    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, text, message);
     NetworkManager::get().send(packet);
 }
 

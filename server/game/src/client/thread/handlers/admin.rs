@@ -461,7 +461,7 @@ impl ClientThread {
         )
         .await?;
 
-        self._send_admin_success("Success").await
+        self._send_admin_success(packet.account_id).await
     });
 
     gs_handler!(self, handle_admin_set_user_roles, AdminSetUserRolesPacket, packet, {
@@ -493,7 +493,7 @@ impl ClientThread {
 
         // disallow editing overall if we <= them, and additionally disallow assigning roles >= us
         if !self._has_perm(AdminPerm::Admin) {
-            if my_priority <= their_priority {
+            if my_priority <= their_priority && !editing_self {
                 admin_error!(self, "cannot edit roles of a user with higher roles than you");
             } else if their_new_priority >= my_priority {
                 admin_error!(self, "cannot set user's roles to be higher than yours");
@@ -519,14 +519,14 @@ impl ClientThread {
             user.push_new_message(pkt).await;
         }
 
-        self._send_admin_success("Success").await
+        self._send_admin_success(packet.account_id).await
     });
 
     gs_handler!(self, handle_admin_punish_user, AdminPunishUserPacket, packet, {
         let account_id = gs_needauth!(self);
 
         // verify the punishment is correct
-        if packet.expires_at != 0 && SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() > packet.expires_at {
+        if packet.expires_at != 0 && UNIX_EPOCH.elapsed().unwrap().as_secs() > packet.expires_at {
             admin_error!(self, "invalid expiration date");
         }
 
@@ -585,13 +585,7 @@ impl ClientThread {
             }
         }
 
-        if let Some(punishment) = if packet.is_ban { ban } else { mute } {
-            self.send_packet_dynamic(&AdminSuccessfulPunishmentPacket { punishment }).await?;
-        } else {
-            admin_error!(self, "error: punishment is None");
-        }
-
-        Ok(())
+        self._send_admin_success(packet.account_id).await
     });
 
     gs_handler!(self, handle_admin_remove_punishment, AdminRemovePunishmentPacket, packet, {
@@ -607,7 +601,7 @@ impl ClientThread {
         )
         .await?;
 
-        self._send_admin_success("Success").await
+        self._send_admin_success(packet.account_id).await
     });
 
     gs_handler!(self, handle_admin_whitelist, AdminWhitelistPacket, packet, {
@@ -623,7 +617,7 @@ impl ClientThread {
         )
         .await?;
 
-        self._send_admin_success("Success").await
+        self._send_admin_success(packet.account_id).await
     });
 
     gs_handler!(self, handle_admin_set_admin_password, AdminSetAdminPasswordPacket, packet, {
@@ -638,14 +632,14 @@ impl ClientThread {
         )
         .await?;
 
-        self._send_admin_success("Success").await
+        self._send_admin_success(packet.account_id).await
     });
 
     gs_handler!(self, handle_admin_edit_punishment, AdminEditPunishmentPacket, packet, {
         let account_id = gs_needauth!(self);
 
         // verify the punishment is correct
-        if SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() > packet.expires_at {
+        if packet.expires_at != 0 && UNIX_EPOCH.elapsed().unwrap().as_secs() > packet.expires_at {
             admin_error!(self, "invalid expiration date");
         }
 
@@ -661,7 +655,7 @@ impl ClientThread {
         )
         .await?;
 
-        self._send_admin_success("Success").await
+        self._send_admin_success(packet.account_id).await
     });
 
     // Return
@@ -699,7 +693,12 @@ impl ClientThread {
                     let sud = SpecialUserData::from_roles(&x.user_roles, &self.game_server.state.role_manager);
 
                     user.account_data.lock().special_user_data = sud;
-                    *user.user_role.lock() = self.game_server.state.role_manager.compute(&x.user_roles);
+                    let mut user_role = user.user_role.lock();
+
+                    // dont replace if they have super admin
+                    if user_role.priority != self.game_server.state.role_manager.get_superadmin().priority {
+                        *user_role = self.game_server.state.role_manager.compute(&x.user_roles);
+                    }
                     *user.user_entry.lock() = x;
                 }
 
@@ -714,7 +713,16 @@ impl ClientThread {
         }
     }
 
-    async fn _send_admin_success(&self, msg: impl AsRef<str>) -> Result<()> {
+    async fn _send_admin_success(&self, account_id: i32) -> Result<()> {
+        let user_entry = match self.game_server.bridge.get_user_data(&account_id).await {
+            Ok(x) => x,
+            Err(err) => return Err(PacketHandlingError::BridgeError(err)),
+        };
+
+        self.send_packet_dynamic(&AdminSuccessfulUpdatePacket { user_entry }).await
+    }
+
+    async fn _send_admin_success_msg(&self, msg: impl AsRef<str>) -> Result<()> {
         self.send_packet_dynamic(&AdminSuccessMessagePacket { message: msg.as_ref() }).await
     }
 

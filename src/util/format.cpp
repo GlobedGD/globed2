@@ -12,9 +12,13 @@
 namespace util::format {
     std::string formatDateTime(const time::system_time_point& tp, bool ms) {
         std::time_t curTime = chrono::system_clock::to_time_t(tp);
-        auto millis = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;
 
-        return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
+        if (ms) {
+            auto millis = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()).count() % 1000;
+            return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
+        } else {
+            return fmt::format("{:%Y-%m-%d %H:%M:%S}", fmt::localtime(curTime));
+        }
     }
 
     std::string dateTime(const time::system_time_point& tp, bool ms) {

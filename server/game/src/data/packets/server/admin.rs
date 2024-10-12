@@ -39,6 +39,6 @@ pub struct AdminPunishmentHistoryPacket {
 
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 29006, tcp, encrypted)]
-pub struct AdminSuccessfulPunishmentPacket {
-    pub punishment: UserPunishment,
+pub struct AdminSuccessfulUpdatePacket {
+    pub user_entry: UserEntry,
 }

@@ -60,13 +60,9 @@ private:
             this->onClose(nullptr);
         }, -1000, true);
 
-        NetworkManager::get().addListener<AdminSuccessfulPunishmentPacket>(this, [this](auto pkt) {
+        NetworkManager::get().addListener<AdminSuccessfulUpdatePacket>(this, [this](auto pkt) {
             ErrorQueues::get().success("Success");
-            if (pkt->punishment.type == PunishmentType::Ban) {
-                this->adminPopup->userEntry.activeBan = std::move(pkt->punishment);
-            } else {
-                this->adminPopup->userEntry.activeMute = std::move(pkt->punishment);
-            }
+            this->adminPopup->refreshFromUserEntry(std::move(pkt->userEntry));
 
             this->onClose(nullptr);
         }, -1000, true);
@@ -107,6 +103,8 @@ bool AdminUserPopup::setup(const UserEntry& userEntry, const std::optional<Playe
 
     return true;
 }
+
+constexpr static float btnScale = 0.85f;
 
 void AdminUserPopup::onProfileLoaded() {
     GLOBED_REQUIRE(accountData.has_value(), "no account data umm")
@@ -174,7 +172,7 @@ void AdminUserPopup::onProfileLoaded() {
         .scaleY(0.5f)
         .scaleX(0.5f);
 
-    auto* rootMenu = Build<CCMenu>::create()
+    Build<CCMenu>::create()
         .ignoreAnchorPointForPos(false)
         .contentSize(rootLayout->getScaledContentSize() * 0.95f)
         .anchorPoint(0.5f, 0.5f)
@@ -184,27 +182,9 @@ void AdminUserPopup::onProfileLoaded() {
                     ->setGap(5.f)
                     ->setAutoScale(false)
                     ->setGrowCrossAxis(true))
-        .collect();
+        .store(rootMenu);
 
-    constexpr static float btnScale = 0.85f;
-
-    // Ban button
-    Build<CCSprite>::createSpriteName(userEntry.activeBan ? "button-admin-unban.png"_spr : "button-admin-ban.png"_spr)
-        .scale(btnScale)
-        .intoMenuItem([this] {
-            AdminPunishUserPopup::create(userEntry.accountId, true)->show();
-        })
-        .zOrder(btnorder::Ban)
-        .parent(rootMenu);
-
-    // Mute button
-    Build<CCSprite>::createSpriteName(userEntry.activeMute ? "button-admin-unmute.png"_spr : "button-admin-mute.png"_spr)
-        .scale(btnScale)
-        .intoMenuItem([this] {
-            AdminPunishUserPopup::create(userEntry.accountId, false)->show();
-        })
-        .zOrder(btnorder::Mute)
-        .parent(rootMenu);
+    this->createBanAndMuteButtons();
 
     // Whitelist button
     Build<CCSprite>::createSpriteName(userEntry.isWhitelisted ? "button-admin-unwhitelist.png"_spr : "button-admin-whitelist.png"_spr)
@@ -223,7 +203,7 @@ void AdminUserPopup::onProfileLoaded() {
                     auto packet = AdminWhitelistPacket::create(userEntry.accountId, !userEntry.isWhitelisted);
                     NetworkManager::get().send(packet);
 
-                    WaitForResponsePopup::create(this)->show();
+                    this->showLoadingPopup();
 
                     userEntry.isWhitelisted = !userEntry.isWhitelisted;
 
@@ -258,7 +238,7 @@ void AdminUserPopup::onProfileLoaded() {
                     auto packet = AdminSetAdminPasswordPacket::create(accountId, util::format::trim(pwd));
                     NetworkManager::get().send(packet);
 
-                    WaitForResponsePopup::create(this)->show();
+                    this->showLoadingPopup();
                 }, 64, "Password", util::misc::STRING_PRINTABLE_INPUT, 0.85f)->show();
             })
             .zOrder(btnorder::AdminPassword)
@@ -273,7 +253,7 @@ void AdminUserPopup::onProfileLoaded() {
                 auto packet = AdminDisconnectPacket::create(std::to_string(accountId), reason);
                 NetworkManager::get().send(packet);
 
-                WaitForResponsePopup::create(this)->show();
+                this->showLoadingPopup();
             }, 120, "Kick reason", util::misc::STRING_PRINTABLE_INPUT, 0.6f)->show();
         })
         .zOrder(btnorder::Kick)
@@ -287,7 +267,7 @@ void AdminUserPopup::onProfileLoaded() {
                 auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), message);
                 NetworkManager::get().send(packet);
 
-                WaitForResponsePopup::create(this)->show();
+                this->showLoadingPopup();
             }, 160, "Message", util::misc::STRING_PRINTABLE_INPUT, 0.6f)->show();
         })
         .zOrder(btnorder::Notice)
@@ -299,38 +279,6 @@ void AdminUserPopup::onProfileLoaded() {
 void AdminUserPopup::onColorSelected(ccColor3B color) {
     nameColorSprite->setColor(color);
     userEntry.nameColor = util::format::colorToHex(color);
-}
-
-void AdminUserPopup::onViolationChanged(cocos2d::CCObject* sender) {
-    // int tag = sender->getTag();
-
-    // bool* destination = nullptr;
-    // switch (tag) {
-    //     case TAG_BAN: destination = &userEntry.isBanned; break;
-    //     case TAG_MUTE: destination = &userEntry.isMuted; break;
-    //     case TAG_WHITELIST: destination = &userEntry.isWhitelisted; break;
-    // }
-
-
-    // GLOBED_REQUIRE(destination != nullptr, "invalid tag in AdminUserPopup::onViolationChanged")
-
-    // *destination = !static_cast<CCMenuItemToggler*>(sender)->isOn();
-
-    // // if unmuted and unbanned, hide the text label
-    // banDurationText->setVisible(userEntry.isBanned || userEntry.isMuted);
-}
-
-void AdminUserPopup::onViolationDurationChanged(cocos2d::CCObject* sender) {
-    // float value = static_cast<SliderThumb*>(sender)->getValue();
-
-    // if (util::math::equal(value, 0.f)) {
-    //     userEntry.violationExpiry = std::nullopt;
-    //     banDurationText->setString("Expires: never");
-    // } else {
-    //     userEntry.violationExpiry = expiryFromFloatUnix(value);
-
-    //     banDurationText->setString(fmt::format("Expires: in {:.1f} days", expiryFromFloat(value)).c_str());
-    // }
 }
 
 void AdminUserPopup::recreateRoleModifyButton() {
@@ -355,15 +303,44 @@ void AdminUserPopup::recreateRoleModifyButton() {
         .intoMenuItem([this](auto) {
             if (!AdminManager::get().getRole().editRole) return;
 
-            AdminEditRolePopup::create(userEntry.userRoles, [this](const std::vector<std::string>& roles) {
-                userEntry.userRoles = roles;
-                this->recreateRoleModifyButton();
-            })->show();
+            AdminEditRolePopup::create(this, userEntry.accountId, userEntry.userRoles)->show();
         })
         .parent(nameLayout)
         .collect();
 
     nameLayout->updateLayout();
+}
+
+void AdminUserPopup::createBanAndMuteButtons() {
+    if (banButton) {
+        banButton->removeFromParent();
+    }
+
+    if (muteButton) {
+        muteButton->removeFromParent();
+    }
+
+    // Ban button
+    Build<CCSprite>::createSpriteName(userEntry.activeBan ? "button-admin-unban.png"_spr : "button-admin-ban.png"_spr)
+        .scale(btnScale)
+        .intoMenuItem([this] {
+            AdminPunishUserPopup::create(this, userEntry.accountId, true, userEntry.activeBan)->show();
+        })
+        .zOrder(btnorder::Ban)
+        .parent(rootMenu)
+        .store(banButton);
+
+    // Mute button
+    Build<CCSprite>::createSpriteName(userEntry.activeMute ? "button-admin-unmute.png"_spr : "button-admin-mute.png"_spr)
+        .scale(btnScale)
+        .intoMenuItem([this] {
+            AdminPunishUserPopup::create(this, userEntry.accountId, false, userEntry.activeMute)->show();
+        })
+        .zOrder(btnorder::Mute)
+        .parent(rootMenu)
+        .store(muteButton);
+
+    rootMenu->updateLayout();
 }
 
 cocos2d::ccColor3B AdminUserPopup::getCurrentNameColor() {
@@ -381,13 +358,20 @@ void AdminUserPopup::sendUpdateUser() {
     if (!userEntry.userName.has_value()) {
         userEntry.userName = accountData->name;
     }
+}
 
-    // auto& nm = NetworkManager::get();
-    // nm.send(AdminUpdateUserPacket::create(this->userEntry));
+void AdminUserPopup::refreshFromUserEntry(UserEntry entry) {
+    this->userEntry = std::move(entry);
+    this->recreateRoleModifyButton();
+    this->createBanAndMuteButtons();
 }
 
 void AdminUserPopup::removeLoadingCircle() {
     loadingCircle->fadeOut();
+}
+
+void AdminUserPopup::showLoadingPopup() {
+    WaitForResponsePopup::create(this)->show();
 }
 
 void AdminUserPopup::getUserInfoFinished(GJUserScore* score) {

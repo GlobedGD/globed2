@@ -57,7 +57,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(AdminSuccessMessagePacket);
         PACKET(AdminAuthFailedPacket);
         PACKET(AdminPunishmentHistoryPacket);
-        PACKET(AdminSuccessfulPunishmentPacket);
+        PACKET(AdminSuccessfulUpdatePacket);
 
         default:
             return std::shared_ptr<Packet>(nullptr);

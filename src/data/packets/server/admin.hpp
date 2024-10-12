@@ -69,13 +69,13 @@ class AdminPunishmentHistoryPacket : public Packet {
 
 GLOBED_SERIALIZABLE_STRUCT(AdminPunishmentHistoryPacket, (entries));
 
-// 29006 - AdminSuccessfulPunishmentPacket
-class AdminSuccessfulPunishmentPacket : public Packet {
-    GLOBED_PACKET(29006, AdminSuccessfulPunishmentPacket, true, false)
+// 29006 - AdminSuccessfulUpdatePacket
+class AdminSuccessfulUpdatePacket : public Packet {
+    GLOBED_PACKET(29006, AdminSuccessfulUpdatePacket, true, false)
 
-    AdminSuccessfulPunishmentPacket() {}
+    AdminSuccessfulUpdatePacket() {}
 
-    UserPunishment punishment;
+    UserEntry userEntry;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(AdminSuccessfulPunishmentPacket, (punishment));
+GLOBED_SERIALIZABLE_STRUCT(AdminSuccessfulUpdatePacket, (userEntry));

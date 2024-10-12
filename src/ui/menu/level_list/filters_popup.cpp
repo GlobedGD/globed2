@@ -5,6 +5,7 @@
 
 using namespace geode::prelude;
 
+// TODO: save the filters
 bool GlobedLevelFilterPopup::setup(const GlobedLevelListLayer::Filters& filters, GlobedLevelListLayer* ll, Callback&& cb) {
     using Difficulty = util::gd::Difficulty;
     using enum Difficulty;

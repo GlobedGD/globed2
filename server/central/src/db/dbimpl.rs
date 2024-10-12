@@ -283,7 +283,7 @@ impl GlobedDb {
     pub async fn punish_user(&self, action: &AdminPunishUserAction) -> Result<i64> {
         let reason = action.reason.try_to_str();
         let r#type = if action.is_ban { "ban" } else { "mute" };
-        let issued_at = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        let issued_at = UNIX_EPOCH.elapsed().unwrap().as_secs() as i64;
 
         let expires_at = action.expires_at as i64;
 
@@ -374,7 +374,7 @@ impl GlobedDb {
 
         // delete logs older than 1 month
 
-        let delete_before = i64::try_from((SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - Duration::from_days(31)).as_secs()).unwrap_or(0);
+        let delete_before = i64::try_from((UNIX_EPOCH.elapsed().unwrap() - Duration::from_days(31)).as_secs()).unwrap_or(0);
 
         if delete_before != 0 {
             query("DELETE FROM player_counts WHERE log_time < ?")
@@ -435,7 +435,7 @@ impl GlobedDb {
 
         query("INSERT OR REPLACE INTO featured_levels (level_id, picked_at, picked_by, is_active, rate_tier) VALUES (?, ?, ?, ?, ?)")
             .bind(level_id)
-            .bind(i64::try_from(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()).unwrap_or(0))
+            .bind(i64::try_from(UNIX_EPOCH.elapsed().unwrap().as_secs()).unwrap_or(0))
             .bind(account_id)
             .bind(1)
             .bind(rate_tier)

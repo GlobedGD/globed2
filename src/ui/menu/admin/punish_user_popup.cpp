@@ -1,9 +1,13 @@
 #include "punish_user_popup.hpp"
 
 #include <defs/geode.hpp>
+#include <data/packets/client/admin.hpp>
+#include <net/manager.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
 #include <ui/general/list/list.hpp>
+
+#include "user_popup.hpp"
 
 using namespace geode::prelude;
 
@@ -51,8 +55,10 @@ private:
 
             this->setContentWidth(cellWidth);
 
-            Build<CCSprite>::createSpriteName("GJ_achImage_001.png")
-                .scale(0.6f)
+            Build<CCSprite>::createSpriteName("GJ_downloadsIcon_001.png")
+                .with([&](auto spr) {
+                    util::ui::rescaleToMatch(spr, {cellHeight - 4.f, cellHeight - 4.f});
+                })
                 .intoMenuItem([text, popup] {
                     popup->onSelected(text);
                 })
@@ -111,14 +117,22 @@ private:
             list->addCell(this, reason, cellWidth, cellHeight);
         }
 
+        if (popup->accountId == 18950870) {
+            list->addCell(this, "Being exceptionally gay :3", cellWidth, cellHeight);
+        }
+
         list->scrollToTop();
 
         return true;
     }
 };
 
-bool AdminPunishUserPopup::setup(int32_t accountId, bool isBan) {
+bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool isBan, std::optional<UserPunishment> punishment_) {
     this->setTitle(isBan ? "Ban/Unban user" : "Mute/Unmute user");
+    this->punishment = std::move(punishment_);
+    this->accountId = accountId;
+    this->isBan = isBan;
+    this->parentPopup = popup;
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
     auto* rootLayout = Build<CCNode>::create()
@@ -345,26 +359,55 @@ bool AdminPunishUserPopup::setup(int32_t accountId, bool isBan) {
         .pos(durRoot->getScaledContentSize() / 2.f)
         .anchorPoint(0.5f, 0.5f);
 
-    // Button for applying
+    // Buttons for applying or removing punishment
+
+    auto* menu = Build<CCMenu>::create()
+        .layout(RowLayout::create()->setAutoScale(true))
+        .parent(rootLayout)
+        .collect();
+
     Build<ButtonSprite>::create("Submit", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .scale(0.9f)
         .intoMenuItem([this] {
             this->submit();
         })
-        .intoNewParent(CCMenu::create())
-        .with([&](CCMenu* m) {
-            auto btn = static_cast<CCNode*>(m->getChildren()->objectAtIndex(0));
-            m->setContentSize(btn->getScaledContentSize());
-            btn->setPosition(btn->getScaledContentSize() / 2.f);
-        })
-        .parent(rootLayout);
+        .parent(menu);
+
+    if (punishment) {
+        Build<ButtonSprite>::create(isBan ? "Unban" : "Unmute", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+            .scale(0.9f)
+            .intoMenuItem([this] {
+                this->submitRemoval();
+            })
+            .parent(menu);
+    }
+
+    menu->updateLayout();
 
     rootLayout->updateLayout();
+
+    // if the user already was punished, set the data
+    if (punishment) {
+        log::debug("Duration = {}, reason = {}", punishment->expiresAt, punishment->reason);
+        if (punishment->expiresAt == 0) {
+            this->setDuration(std::chrono::seconds{0});
+        } else {
+            this->setDuration(
+                util::time::seconds{punishment->expiresAt - util::time::as<util::time::seconds>(util::time::systemNow().time_since_epoch()).count()}
+            );
+        }
+
+        this->setReason(punishment->reason);
+    }
 
     return true;
 }
 
 void AdminPunishUserPopup::setDuration(std::chrono::seconds dur, bool inCallback) {
+    if (dur.count() < 0 || dur > std::chrono::duration_cast<std::chrono::seconds>(std::chrono::years{100})) {
+        dur = std::chrono::seconds{0};
+    }
+
     currentDuration = dur;
 
     for (const auto& [key, btn] : durationButtons) {
@@ -404,12 +447,40 @@ void AdminPunishUserPopup::inputChanged() {
 }
 
 void AdminPunishUserPopup::submit() {
+    auto& nm = NetworkManager::get();
 
+    auto expiresAt = std::chrono::duration_cast<std::chrono::seconds>(util::time::systemNow().time_since_epoch()).count() + currentDuration.count();
+
+    if (currentDuration.count() == 0) {
+        // permanent punishment
+        expiresAt = 0;
+    }
+
+    auto reason = this->reasonInput->getString();
+
+    // if not editing a punishment, submit a new one
+    if (!punishment) {
+        nm.send(AdminPunishUserPacket::create(accountId, isBan, reason, expiresAt));
+    } else {
+        // edit the punishment otherwise
+        nm.send(AdminEditPunishmentPacket::create(accountId, isBan, reason, expiresAt));
+    }
+
+    this->onClose(nullptr);
+    this->parentPopup->showLoadingPopup();
 }
 
-AdminPunishUserPopup* AdminPunishUserPopup::create(int32_t accountId, bool isBan) {
+void AdminPunishUserPopup::submitRemoval() {
+    auto& nm = NetworkManager::get();
+    nm.send(AdminRemovePunishmentPacket::create(accountId, isBan));
+
+    this->onClose(nullptr);
+    this->parentPopup->showLoadingPopup();
+}
+
+AdminPunishUserPopup* AdminPunishUserPopup::create(AdminUserPopup* popup, int32_t accountId, bool isBan, std::optional<UserPunishment> punishment) {
     auto ret = new AdminPunishUserPopup;
-    if (ret->initAnchored(350.f, 250.f, accountId, isBan)) {
+    if (ret->initAnchored(350.f, 250.f, popup, accountId, isBan, std::move(punishment))) {
         ret->autorelease();
         return ret;
     }

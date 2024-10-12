@@ -144,7 +144,7 @@ pub struct UserPunishment {
 
 impl UserPunishment {
     pub fn expired(&self) -> bool {
-        self.expires_at != 0 && (self.expires_at as u64) < SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+        self.expires_at != 0 && (self.expires_at as u64) < UNIX_EPOCH.elapsed().unwrap().as_secs()
     }
 }
 
