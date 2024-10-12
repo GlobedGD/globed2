@@ -28,7 +28,7 @@ public:
     }
 
     bool init(const UserPunishment& entry, const std::map<int, std::string>& usernames, float width) {
-        constexpr float height = 64.f;
+        constexpr float height = 48.f;
 
         this->punishment = entry;
         this->setContentHeight(height);
@@ -37,10 +37,10 @@ public:
         auto icon = Build<CCSprite>::createSpriteName(entry.type == PunishmentType::Ban ? "icon-ban.png"_spr : "icon-mute.png"_spr)
             .with([&] (auto spr) {
                 constexpr float pad = 4.f;
-                util::ui::rescaleToMatch(spr, {height - pad, height - pad});
+                util::ui::rescaleToMatch(spr, {32.f, 32.f});
             })
             .parent(this)
-            .pos(16.f, height / 2.f)
+            .pos(22.f, height / 2.f)
             .collect();
 
         std::string username;
@@ -63,15 +63,16 @@ public:
 
         auto usernameLabel = Build<CCLabelBMFont>::create(username.c_str(), "goldFont.fnt")
             .limitLabelWidth(width - 50.f, 0.6f, 0.1f)
-            .pos(startX, height / 2.f + 20.f)
+            .pos(startX, height / 2.f + 16.f)
             .anchorPoint(0.f, 0.5f)
             .parent(this)
             .collect()
             ;
 
-        auto reasonLabel = Build<CCLabelBMFont>::create(entry.reason.empty() ? "No reason given" : entry.reason.c_str(), "goldFont.fnt")
-            .limitLabelWidth(width - 50.f, 0.5f, 0.1f)
-            .pos(startX, height / 2.f + 8.f)
+        auto reasonLabel = Build<CCLabelBMFont>::create(entry.reason.empty() ? "No reason given" : entry.reason.c_str(), "bigFont.fnt")
+            .color(entry.reason.empty() ? ccColor3B{175, 175, 175} : ccColor3B{255, 255, 255})
+            .limitLabelWidth(width - 50.f, 0.4f, 0.1f)
+            .pos(startX, height / 2.f + 2.f)
             .anchorPoint(0.f, 0.5f)
             .parent(this)
             .collect();
@@ -81,14 +82,14 @@ public:
 
         std::string dateString;
         if (entry.expiresAt == 0) {
-            dateString = fmt::format("{} - Permanent", util::format::formatDateTime(issuedAt));
+            dateString = fmt::format("{} - Permanent", util::format::formatDateTime(issuedAt, false));
         } else {
-            dateString = fmt::format("{} - {}", util::format::formatDateTime(issuedAt), util::format::formatDateTime(expiresAt));
+            dateString = fmt::format("{} - {}", util::format::formatDateTime(issuedAt, false), util::format::formatDateTime(expiresAt, false));
         }
 
         Build<CCLabelBMFont>::create(dateString.c_str(), "bigFont.fnt")
-            .limitLabelWidth(width - 50.f, 0.35f, 0.1f)
-            .pos(reasonLabel->getPositionX(), height / 2.f - 8.f)
+            .limitLabelWidth(width - 50.f, 0.25f, 0.05f)
+            .pos(reasonLabel->getPositionX(), height / 2.f - 12.f)
             .anchorPoint(0.f, 0.5f)
             .parent(this);
 
