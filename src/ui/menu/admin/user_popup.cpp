@@ -9,7 +9,6 @@
 #include <ui/menu/admin/edit_role_popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/color_input_popup.hpp>
-#include <ui/general/slider_wrapper.hpp>
 #include <util/math.hpp>
 #include <util/ui.hpp>
 #include <util/misc.hpp>
