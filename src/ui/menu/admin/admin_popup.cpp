@@ -149,7 +149,7 @@ bool AdminPopup::setup() {
 
     Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
         .intoMenuItem([this](auto) {
-            auto message = this->messageInput->getString();
+            auto message = util::format::trim(this->messageInput->getString());
             if (!message.empty()) {
                 AdminSendNoticePopup::create(message)->show();
             }

@@ -264,7 +264,13 @@ void AdminUserPopup::onProfileLoaded() {
         .scale(btnScale)
         .intoMenuItem([this] {
             AskInputPopup::create(fmt::format("Send notice to {}", accountData->name), [this, accountId = accountData->accountId](auto message) {
-                auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), message);
+                auto msg = util::format::trim(message);
+                if (msg.empty()) {
+                    ErrorQueues::get().warn("Cannot send an empty notice");
+                    return;
+                }
+
+                auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), msg);
                 NetworkManager::get().send(packet);
 
                 this->showLoadingPopup();

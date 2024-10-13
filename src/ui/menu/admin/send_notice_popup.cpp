@@ -94,13 +94,7 @@ void AdminSendNoticePopup::commonSend(AdminSendNoticeType type) {
         roomId = util::format::parse<uint32_t>(roomInput->getString()).value_or(0);
     }
 
-    auto text = util::format::trim(userInput->getString());
-    if (text.empty()) {
-        ErrorQueues::get().warn("Cannot send an empty notice");
-        return;
-    }
-
-    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, text, message);
+    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, userInput->getString(), message);
     NetworkManager::get().send(packet);
 }
 
