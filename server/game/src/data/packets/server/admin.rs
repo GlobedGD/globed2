@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use globed_shared::{UserEntry, UserPunishment};
 
 use crate::{data::*, managers::ComputedRole};
@@ -11,7 +13,7 @@ pub struct AdminAuthSuccessPacket {
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 29001, tcp = true, encrypted = true)]
 pub struct AdminErrorPacket<'a> {
-    pub message: &'a str,
+    pub message: Cow<'a, str>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
@@ -24,7 +26,7 @@ pub struct AdminUserDataPacket {
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 29003, tcp, encrypted)]
 pub struct AdminSuccessMessagePacket<'a> {
-    pub message: &'a str,
+    pub message: Cow<'a, str>,
 }
 
 #[derive(Packet, Encodable, StaticSize)]

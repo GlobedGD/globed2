@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use crate::webhook::{WebhookChannel, WebhookMessage};
 
 use super::*;
@@ -24,7 +25,7 @@ impl ClientThread {
             };
 
             if let Some(reason) = fail_reason {
-                return self.send_packet_dynamic(&RoomCreateFailedPacket { reason }).await;
+                return self.send_packet_dynamic(&RoomCreateFailedPacket { reason: Cow::Borrowed(reason) }).await;
             }
 
             let room = self
@@ -225,6 +226,8 @@ impl ClientThread {
                 room_password,
             };
 
+
+
             thread.push_new_message(ServerThreadMessage::BroadcastInvite(invite_packet.clone())).await;
         }
 
@@ -349,7 +352,7 @@ impl ClientThread {
     }
 
     #[inline]
-    async fn _respond_with_room_list(&self, room: Arc<Room>, just_joined: bool) -> crate::client::Result<()> {
+    async fn _respond_with_room_list(&self, room: Arc<Room>, just_joined: bool) -> Result<()> {
         let room_info = room.get_room_info();
 
         let players = self

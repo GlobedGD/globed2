@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
@@ -195,9 +196,9 @@ impl UnauthorizedThread {
                             Err(e) => {
                                 warn!("error on an unauth thread: {e}");
                                 #[cfg(debug_assertions)]
-                                let _ = self.terminate_with_message(&format!("failed to authenticate: {e}")).await;
+                                let _ = self.terminate_with_message(Cow::Owned(format!("failed to authenticate: {e}"))).await;
                                 #[cfg(not(debug_assertions))]
-                                let _ = self.terminate_with_message("internal server error during player authentication").await;
+                                let _ = self.terminate_with_message(Cow::Borrowed("internal server error during player authentication")).await;
                             }
                         },
 
@@ -302,7 +303,7 @@ impl UnauthorizedThread {
                 .send_packet_dynamic(&ProtocolMismatchPacket {
                     // send minimum required version
                     protocol: MIN_SUPPORTED_PROTOCOL,
-                    min_client_version: MIN_CLIENT_VERSION,
+                    min_client_version: Cow::Borrowed(MIN_CLIENT_VERSION),
                 })
                 .await?;
 
@@ -334,7 +335,7 @@ impl UnauthorizedThread {
         if packet.fragmentation_limit < 1300 {
             gs_disconnect!(
                 self,
-                &format!(
+                format!(
                     "The client fragmentation limit is too low ({} bytes) to be accepted",
                     packet.fragmentation_limit
                 )
@@ -344,11 +345,12 @@ impl UnauthorizedThread {
         unsafe { self.socket.get_mut() }.set_mtu(packet.fragmentation_limit as usize);
 
         if packet.account_id <= 0 || packet.user_id <= 0 {
-            let message = format!(
+            let message = Cow::Owned(format!(
                 "Invalid account/user ID was sent ({} and {}). Please note that you must be signed into a Geometry Dash account before connecting.",
                 packet.account_id, packet.user_id
-            );
-            socket.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
+            ));
+
+            socket.send_packet_dynamic(&LoginFailedPacket { message }).await?;
             return Ok(());
         }
 
@@ -372,7 +374,11 @@ impl UnauthorizedThread {
                     let mut message = FastString::new("authentication failed: ");
                     message.extend(err.error_message());
 
-                    socket.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
+                    socket
+                        .send_packet_dynamic(&LoginFailedPacket {
+                            message: Cow::Owned(message.to_string()),
+                        })
+                        .await?;
                     return Ok(());
                 }
             }
@@ -399,7 +405,7 @@ impl UnauthorizedThread {
                 Ok(response) if self.game_server.bridge.is_whitelist() && !response.user_entry.is_whitelisted => {
                     socket
                         .send_packet_dynamic(&LoginFailedPacket {
-                            message: "This server has whitelist enabled and your account has not been allowed.",
+                            message: Cow::Borrowed("This server has whitelist enabled and your account has not been allowed."),
                         })
                         .await?;
 
@@ -410,7 +416,11 @@ impl UnauthorizedThread {
                     let mut message = InlineString::<256>::new("failed to fetch user data: ");
                     message.extend_safe(&err.to_string());
 
-                    socket.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
+                    socket
+                        .send_packet_dynamic(&LoginFailedPacket {
+                            message: Cow::Owned(message.to_string()),
+                        })
+                        .await?;
                     return Ok(());
                 }
             };
@@ -531,7 +541,7 @@ impl UnauthorizedThread {
         self.connection_state.store(ClientThreadState::Terminating);
     }
 
-    async fn terminate_with_message(&self, message: &str) -> Result<()> {
+    async fn terminate_with_message(&self, message: Cow<'_, str>) -> Result<()> {
         self.get_socket().send_packet_dynamic(&ServerDisconnectPacket { message }).await?;
 
         self.terminate();
@@ -556,7 +566,7 @@ impl UnauthorizedThread {
     }
 
     /// terminate and send a message to the user with the reason
-    async fn kick(&self, message: &str) -> Result<()> {
+    async fn kick(&self, message: Cow<'_, str>) -> Result<()> {
         self.terminate();
         self.get_socket().send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }

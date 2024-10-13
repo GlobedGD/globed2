@@ -5,7 +5,7 @@ use std::mem::MaybeUninit;
 macro_rules! gs_handler {
     ($self:ident, $name:ident, $pktty:ty, $pkt:ident, $($code:tt)* ) => {
         pub(crate) async fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::client::Result<()> {
-            let $pkt = <$pktty>::decode_from_reader(buf)?;
+            let $pkt: $pktty = <$pktty>::decode_from_reader(buf)?;
 
             #[cfg(debug_assertions)]
             if <$pktty>::PACKET_ID != KeepalivePacket::PACKET_ID {
@@ -33,8 +33,13 @@ macro_rules! gs_handler_sync {
 
 /// call disconnect and return from the function
 macro_rules! gs_disconnect {
+    ($self:ident, $msg:literal) => {
+        $self.kick(std::borrow::Cow::Borrowed($msg)).await?;
+        return Ok(());
+    };
+
     ($self:ident, $msg:expr) => {
-        $self.kick($msg).await?;
+        $self.kick(std::borrow::Cow::Owned($msg)).await?;
         return Ok(());
     };
 }

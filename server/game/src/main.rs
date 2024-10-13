@@ -10,10 +10,10 @@
     clippy::redundant_closure_for_method_calls
 )]
 
-#[cfg(feature = "use_tokio_tracing")]
-use tokio_tracing as tokio;
+// #[cfg(feature = "use_tokio_tracing")]
+// use tokio_tracing as tokio;
 
-#[cfg(not(feature = "use_tokio_tracing"))]
+// #[cfg(not(feature = "use_tokio_tracing"))]
 #[allow(clippy::single_component_path_imports)]
 use tokio;
 
@@ -172,10 +172,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // setup tokio-console in debug builds
 
-    if cfg!(all(tokio_unstable, feature = "use_tokio_tracing")) {
-        info!("Initializing tokio-console subscriber");
-        console_subscriber::init();
-    }
+    // if cfg!(all(tokio_unstable, feature = "use_tokio_tracing")) {
+    //     info!("Initializing tokio-console subscriber");
+    //     console_subscriber::init();
+    // }
 
     // parse the configuration from environment variables or command line
 

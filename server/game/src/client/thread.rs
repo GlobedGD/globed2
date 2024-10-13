@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     collections::VecDeque,
     net::SocketAddrV4,
     sync::{
@@ -326,7 +327,7 @@ impl ClientThread {
     }
 
     /// call `self.terminate()` and send a message to the user with the reason
-    async fn kick(&self, message: &str) -> Result<()> {
+    async fn kick(&self, message: Cow<'_, str>) -> Result<()> {
         self.terminate();
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
@@ -404,7 +405,7 @@ impl ClientThread {
             ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
             ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
             ServerThreadMessage::BroadcastRoomKicked => self._kicked_from_room().await?,
-            ServerThreadMessage::TerminationNotice(message) => self.kick(message.try_to_str()).await?,
+            ServerThreadMessage::TerminationNotice(message) => self.kick(Cow::Borrowed(message.try_to_str())).await?,
         }
 
         Ok(())

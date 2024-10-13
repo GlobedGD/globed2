@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use crate::data::*;
 
 #[derive(Packet, Encodable, StaticSize)]
@@ -51,5 +52,5 @@ pub struct RoomListPacket {
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 23007)]
 pub struct RoomCreateFailedPacket<'a> {
-    pub reason: &'a str,
+    pub reason: Cow<'a, str>,
 }

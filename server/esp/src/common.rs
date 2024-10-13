@@ -2,6 +2,7 @@
 
 use crate::*;
 use std::{
+    borrow::Cow,
     collections::HashMap,
     hash::{BuildHasher, Hash},
     net::{Ipv4Addr, SocketAddrV4},
@@ -147,6 +148,58 @@ where
     #[inline]
     fn encoded_size(&self) -> usize {
         T::encoded_size(self)
+    }
+}
+
+/* Cow<'a, T> */
+
+impl<'a, T: ?Sized + ToOwned> Encodable for Cow<'a, T>
+where
+    <T as ToOwned>::Owned: Encodable,
+    T: Encodable,
+{
+    #[inline]
+    fn encode(&self, buf: &mut ByteBuffer) {
+        match self {
+            Cow::Borrowed(b) => b.encode(buf),
+            Cow::Owned(o) => o.encode(buf),
+        }
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        match self {
+            Cow::Borrowed(b) => b.encode_fast(buf),
+            Cow::Owned(o) => o.encode_fast(buf),
+        }
+    }
+}
+
+impl<'a, T: ?Sized + ToOwned> Decodable for Cow<'a, T>
+where
+    <T as ToOwned>::Owned: Decodable,
+    T: Decodable,
+{
+    #[inline]
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Ok(Cow::Owned(buf.read_value()?))
+    }
+}
+
+impl<'a, T: ?Sized + ToOwned> DynamicSize for Cow<'a, T>
+where
+    <T as ToOwned>::Owned: DynamicSize,
+    T: DynamicSize,
+{
+    #[inline]
+    fn encoded_size(&self) -> usize {
+        match self {
+            Cow::Borrowed(b) => b.encoded_size(),
+            Cow::Owned(o) => o.encoded_size(),
+        }
     }
 }
 

@@ -1,4 +1,5 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::borrow::Cow;
+use std::time::UNIX_EPOCH;
 
 use globed_shared::{data::*, info, warn};
 
@@ -7,8 +8,17 @@ use crate::{bridge::AdminUserAction, managers::ComputedRole, webhook::WebhookMes
 use super::*;
 
 macro_rules! admin_error {
+    ($self:expr, $msg:literal) => {
+        $self
+            .send_packet_dynamic(&AdminErrorPacket {
+                message: Cow::Borrowed($msg),
+            })
+            .await?;
+        return Ok(());
+    };
+
     ($self:expr, $msg:expr) => {
-        $self.send_packet_dynamic(&AdminErrorPacket { message: $msg }).await?;
+        $self.send_packet_dynamic(&AdminErrorPacket { message: Cow::Owned($msg) }).await?;
         return Ok(());
     };
 }
@@ -185,7 +195,7 @@ impl ClientThread {
                 }
 
                 self.send_packet_dynamic(&AdminSuccessMessagePacket {
-                    message: &format!("Sent to {} people", threads.len()),
+                    message: Cow::Owned(format!("Sent to {} people", threads.len())),
                 })
                 .await?;
 
@@ -225,7 +235,7 @@ impl ClientThread {
                     thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone())).await;
 
                     self.send_packet_dynamic(&AdminSuccessMessagePacket {
-                        message: &format!("Sent notice to {}", thread.account_data.lock().name),
+                        message: Cow::Owned(format!("Sent notice to {}", thread.account_data.lock().name)),
                     })
                     .await?;
                 } else {
@@ -288,7 +298,7 @@ impl ClientThread {
                 }
 
                 self.send_packet_dynamic(&AdminSuccessMessagePacket {
-                    message: &format!("Sent to {} people", threads.len()),
+                    message: Cow::Owned(format!("Sent to {} people", threads.len())),
                 })
                 .await?;
 
@@ -358,7 +368,7 @@ impl ClientThread {
             }
 
             self.send_packet_dynamic(&AdminSuccessMessagePacket {
-                message: &format!("Successfully kicked {}", thread.account_data.lock().name),
+                message: Cow::Owned(format!("Successfully kicked {}", thread.account_data.lock().name)),
             })
             .await
         } else {
@@ -387,7 +397,7 @@ impl ClientThread {
                 Ok(x) => x,
                 Err(err) => {
                     warn!("error fetching data from the bridge: {err}");
-                    admin_error!(self, &err.to_string());
+                    admin_error!(self, err.to_string());
                 }
             }
         };
@@ -486,7 +496,7 @@ impl ClientThread {
                 Ok(x) => self.game_server.state.role_manager.compute_priority(&x.user_roles),
                 Err(err) => {
                     warn!("error fetching data from the bridge: {err}");
-                    admin_error!(self, &err.to_string());
+                    admin_error!(self, err.to_string());
                 }
             }
         };
@@ -545,7 +555,7 @@ impl ClientThread {
                 Ok(x) => self.game_server.state.role_manager.compute_priority(&x.user_roles),
                 Err(err) => {
                     warn!("error fetching data from the bridge: {err}");
-                    admin_error!(self, &err.to_string());
+                    admin_error!(self, err.to_string());
                 }
             }
         };
@@ -555,7 +565,7 @@ impl ClientThread {
             admin_error!(self, "cannot ban user above or at your permission level");
         }
 
-        let (ban, mute) = self
+        let _ = self
             ._handle_admin_action(
                 if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
                 &AdminUserAction::PunishUser(AdminPunishUserAction {
@@ -666,7 +676,7 @@ impl ClientThread {
 
         if self.game_server.standalone {
             self.send_packet_dynamic(&AdminErrorPacket {
-                message: "This cannot be done on a standalone server",
+                message: Cow::Borrowed("This cannot be done on a standalone server"),
             })
             .await?;
 
@@ -706,7 +716,10 @@ impl ClientThread {
             }
 
             Err(e) => {
-                self.send_packet_dynamic(&AdminErrorPacket { message: &e.to_string() }).await?;
+                self.send_packet_dynamic(&AdminErrorPacket {
+                    message: Cow::Owned(e.to_string()),
+                })
+                .await?;
 
                 Err(PacketHandlingError::BridgeError(e))
             }
@@ -723,7 +736,10 @@ impl ClientThread {
     }
 
     async fn _send_admin_success_msg(&self, msg: impl AsRef<str>) -> Result<()> {
-        self.send_packet_dynamic(&AdminSuccessMessagePacket { message: msg.as_ref() }).await
+        self.send_packet_dynamic(&AdminSuccessMessagePacket {
+            message: Cow::Borrowed(msg.as_ref()),
+        })
+        .await
     }
 
     gs_handler!(self, handle_admin_get_punishment_history, AdminGetPunishmentHistoryPacket, packet, {
@@ -757,7 +773,10 @@ impl ClientThread {
             }
 
             Err(e) => {
-                self.send_packet_dynamic(&AdminErrorPacket { message: &e.to_string() }).await?;
+                self.send_packet_dynamic(&AdminErrorPacket {
+                    message: Cow::Owned(e.to_string()),
+                })
+                .await?;
 
                 Err(PacketHandlingError::BridgeError(e))
             }

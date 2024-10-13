@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     error::Error,
     fmt::{Display, Write},
     sync::atomic::{AtomicBool, Ordering},
@@ -82,7 +83,7 @@ pub struct CentralBridge {
 #[derive(Encodable, DynamicSize)]
 struct UserLoginPayload<'a> {
     pub account_id: i32,
-    pub username: &'a str,
+    pub username: Cow<'a, str>,
 }
 
 pub enum AdminUserAction {
@@ -228,7 +229,10 @@ impl CentralBridge {
     }
 
     pub async fn user_login(&self, account_id: i32, username: &str) -> Result<UserLoginResponse> {
-        let payload = UserLoginPayload { account_id, username };
+        let payload = UserLoginPayload {
+            account_id,
+            username: Cow::Borrowed(username),
+        };
 
         self._send_encoded_body_req_resp("gs/userlogin", &payload).await
     }

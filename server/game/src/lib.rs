@@ -19,9 +19,9 @@ pub mod state;
 pub mod util;
 use globed_shared::webhook;
 
-#[cfg(feature = "use_tokio_tracing")]
-use tokio_tracing as tokio;
+// #[cfg(feature = "use_tokio_tracing")]
+// use tokio_tracing as tokio;
 
-#[cfg(not(feature = "use_tokio_tracing"))]
+// #[cfg(not(feature = "use_tokio_tracing"))]
 #[allow(clippy::single_component_path_imports)]
 use tokio;

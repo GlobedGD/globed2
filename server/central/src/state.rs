@@ -11,7 +11,7 @@ use std::{
 };
 
 use globed_shared::{
-    anyhow::{self, anyhow},
+    anyhow,
     base64::{engine::general_purpose::STANDARD as b64e, Engine},
     crypto_box::aead::{generic_array::GenericArray, AeadMutInPlace},
     crypto_secretbox::{KeyInit, XSalsa20Poly1305},

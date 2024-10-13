@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{data::*, managers::GameServerRole};
 
 #[derive(Packet, Encodable, StaticSize)]
@@ -22,7 +24,7 @@ pub struct KeepaliveResponsePacket {
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 20003, tcp = true)]
 pub struct ServerDisconnectPacket<'a> {
-    pub message: &'a str,
+    pub message: Cow<'a, str>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
@@ -38,14 +40,14 @@ pub struct LoggedInPacket {
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 20005, tcp = true)]
 pub struct LoginFailedPacket<'a> {
-    pub message: &'a str,
+    pub message: Cow<'a, str>,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 20006, tcp = true)]
 pub struct ProtocolMismatchPacket<'a> {
     pub protocol: u16,
-    pub min_client_version: &'a str,
+    pub min_client_version: Cow<'a, str>,
 }
 
 #[derive(Packet, Encodable, StaticSize)]

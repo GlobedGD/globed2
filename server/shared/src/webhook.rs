@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use reqwest::StatusCode;
 use serde::Serialize;
 
@@ -60,53 +62,53 @@ pub enum WebhookChannel {
 }
 
 #[derive(Serialize)]
-pub struct WebhookAuthor {
-    pub name: String,
+pub struct WebhookAuthor<'a> {
+    pub name: Cow<'a, str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon_url: Option<String>,
+    pub icon_url: Option<Cow<'a, str>>,
 }
 
 #[derive(Serialize)]
 pub struct WebhookFooter<'a> {
-    pub text: &'a str,
+    pub text: Cow<'a, str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon_url: Option<&'a str>,
+    pub icon_url: Option<Cow<'a, str>>,
 }
 
 #[derive(Serialize)]
 pub struct WebhookField<'a> {
-    pub name: &'a str,
-    pub value: String,
+    pub name: Cow<'a, str>,
+    pub value: Cow<'a, str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub inline: Option<bool>,
 }
 
 #[derive(Serialize)]
-pub struct WebhookThumbnail {
-    pub url: String,
+pub struct WebhookThumbnail<'a> {
+    pub url: Cow<'a, str>,
 }
 
 #[derive(Default, Serialize)]
 pub struct WebhookEmbed<'a> {
-    pub title: String,
+    pub title: Cow<'a, str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub author: Option<WebhookAuthor>,
+    pub author: Option<WebhookAuthor<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    pub description: Option<Cow<'a, str>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub footer: Option<WebhookFooter<'a>>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub fields: Vec<WebhookField<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub thumbnail: Option<WebhookThumbnail>,
+    pub thumbnail: Option<WebhookThumbnail<'a>>,
 }
 
 #[derive(Serialize)]
 pub struct WebhookOpts<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub username: Option<&'a str>,
+    pub username: Option<Cow<'a, str>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
@@ -120,95 +122,95 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
     match message {
         WebhookMessage::AuthFail(_user_name) => None,
         WebhookMessage::NoticeToEveryone(username, player_count, message) => Some(WebhookEmbed {
-            title: format!("Global notice (for {player_count} people)"),
+            title: Cow::Owned(format!("Global notice (for {player_count} people)")),
             color: hex_color_to_decimal("#4dace8"),
-            description: Some(message.clone()),
+            description: Some(Cow::Owned(message.clone())),
             fields: vec![WebhookField {
-                name: "Performed by",
-                value: username.clone(),
+                name: Cow::Borrowed("Performed by"),
+                value: Cow::Owned(username.clone()),
                 inline: Some(true),
             }],
             ..Default::default()
         }),
         WebhookMessage::NoticeToSelection(username, player_count, message) => Some(WebhookEmbed {
-            title: "Notice".to_owned(),
+            title: Cow::Borrowed("Notice"),
             color: hex_color_to_decimal("#4dace8"),
-            description: Some(message.clone()),
+            description: Some(Cow::Owned(message.clone())),
             fields: vec![
                 WebhookField {
-                    name: "Performed by",
-                    value: username.clone(),
+                    name: Cow::Borrowed("Performed by"),
+                    value: Cow::Owned(username.clone()),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Sent to",
-                    value: format!("{player_count} people"),
+                    name: Cow::Borrowed("Sent to"),
+                    value: Cow::Owned(format!("{player_count} people")),
                     inline: Some(true),
                 },
             ],
             ..Default::default()
         }),
         WebhookMessage::NoticeToPerson(author, target, message) => Some(WebhookEmbed {
-            title: format!("Notice for {target}"),
+            title: Cow::Owned(format!("Notice for {target}")),
             color: hex_color_to_decimal("#4dace8"),
             author: Some(WebhookAuthor {
-                name: target.clone(),
+                name: Cow::Owned(target.clone()),
                 icon_url: None,
             }),
-            description: Some(message.clone()),
+            description: Some(Cow::Owned(message.clone())),
             fields: vec![WebhookField {
-                name: "Performed by",
-                value: author.clone(),
+                name: Cow::Borrowed("Performed by"),
+                value: Cow::Owned(author.clone()),
                 inline: Some(true),
             }],
             ..Default::default()
         }),
         WebhookMessage::KickEveryone(username, reason) => Some(WebhookEmbed {
-            title: "Kick everyone".to_owned(),
+            title: Cow::Borrowed("Kick everyone"),
             color: hex_color_to_decimal("#e8d34d"),
-            description: Some(reason.clone()),
+            description: Some(Cow::Owned(reason.clone())),
             fields: vec![WebhookField {
-                name: "Performed by",
-                value: username.clone(),
+                name: Cow::Borrowed("Performed by"),
+                value: Cow::Owned(username.clone()),
                 inline: Some(true),
             }],
             ..Default::default()
         }),
         WebhookMessage::KickPerson(mod_name, user_name, target_id, reason) => Some(WebhookEmbed {
-            title: "Kick user".to_owned(),
+            title: Cow::Borrowed("Kick user"),
             color: hex_color_to_decimal("#e8d34d"),
             author: Some(WebhookAuthor {
-                name: format!("{user_name} ({target_id})"),
+                name: Cow::Owned(format!("{user_name} ({target_id})")),
                 icon_url: None,
             }),
-            description: Some(reason.clone()),
+            description: Some(Cow::Owned(reason.clone())),
             fields: vec![WebhookField {
-                name: "Performed by",
-                value: mod_name.clone(),
+                name: Cow::Borrowed("Performed by"),
+                value: Cow::Owned(mod_name.clone()),
                 inline: Some(true),
             }],
             ..Default::default()
         }),
         WebhookMessage::UserBanned(bmsc) => Some(WebhookEmbed {
-            title: "User banned".to_owned(),
+            title: Cow::Borrowed("User banned"),
             color: hex_color_to_decimal("#de3023"),
             author: Some(WebhookAuthor {
-                name: format!("{} ({})", bmsc.target_name, bmsc.target_id),
+                name: Cow::Owned(format!("{} ({})", bmsc.target_name, bmsc.target_id)),
                 icon_url: None,
             }),
-            description: Some(bmsc.reason.clone().unwrap_or_else(|| "No reason given.".to_string())),
+            description: Some(Cow::Owned(bmsc.reason.clone().unwrap_or_else(|| "No reason given.".to_string()))),
             fields: vec![
                 WebhookField {
-                    name: "Performed by",
-                    value: bmsc.mod_name.clone(),
+                    name: Cow::Borrowed("Performed by"),
+                    value: Cow::Owned(bmsc.mod_name.clone()),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Expires",
+                    name: Cow::Borrowed("Expires"),
                     value: if let Some(seconds) = bmsc.expiry {
-                        format!("<t:{seconds}:f>")
+                        Cow::Owned(format!("<t:{seconds}:f>"))
                     } else {
-                        "Permanent.".to_owned()
+                        Cow::Borrowed("Permanent.")
                     },
                     inline: Some(true),
                 },
@@ -217,40 +219,40 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
         }),
 
         WebhookMessage::UserUnbanned(removal) => Some(WebhookEmbed {
-            title: "User unbanned".to_owned(),
+            title: Cow::Borrowed("User unbanned"),
             color: hex_color_to_decimal("31bd31"),
             author: Some(WebhookAuthor {
-                name: format!("{} ({})", removal.name, removal.account_id),
+                name: Cow::Owned(format!("{} ({})", removal.name, removal.account_id)),
                 icon_url: None,
             }),
             description: None,
             fields: vec![WebhookField {
-                name: "Performed by",
-                value: removal.mod_name.clone(),
+                name: Cow::Borrowed("Performed by"),
+                value: Cow::Owned(removal.mod_name.clone()),
                 inline: Some(true),
             }],
             ..Default::default()
         }),
         WebhookMessage::UserMuted(bmsc) => Some(WebhookEmbed {
-            title: "User muted".to_owned(),
+            title: Cow::Borrowed("User muted"),
             color: hex_color_to_decimal("#ded823"),
             author: Some(WebhookAuthor {
-                name: format!("{} ({})", bmsc.target_name, bmsc.target_id),
+                name: Cow::Owned(format!("{} ({})", bmsc.target_name, bmsc.target_id)),
                 icon_url: None,
             }),
-            description: Some(bmsc.reason.clone().unwrap_or_else(|| "No reason given.".to_string())),
+            description: Some(Cow::Owned(bmsc.reason.clone().unwrap_or_else(|| "No reason given.".to_string()))),
             fields: vec![
                 WebhookField {
-                    name: "Performed by",
-                    value: bmsc.mod_name.clone(),
+                    name: Cow::Borrowed("Performed by"),
+                    value: Cow::Owned(bmsc.mod_name.clone()),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Expires",
+                    name: Cow::Borrowed("Expires"),
                     value: if let Some(seconds) = bmsc.expiry {
-                        format!("<t:{seconds}:f>")
+                        Cow::Owned(format!("<t:{seconds}:f>"))
                     } else {
-                        "Permanent.".to_owned()
+                        Cow::Borrowed("Permanent.")
                     },
                     inline: Some(true),
                 },
@@ -259,160 +261,160 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
         }),
 
         WebhookMessage::UserUnmuted(removal) => Some(WebhookEmbed {
-            title: "User unmuted".to_owned(),
+            title: Cow::Borrowed("User unmuted"),
             color: hex_color_to_decimal("#79bd31"),
             author: Some(WebhookAuthor {
-                name: format!("{} ({})", removal.name, removal.account_id),
+                name: Cow::Owned(format!("{} ({})", removal.name, removal.account_id)),
                 icon_url: None,
             }),
             description: None,
             fields: vec![WebhookField {
-                name: "Performed by",
-                value: removal.mod_name.clone(),
+                name: Cow::Borrowed("Performed by"),
+                value: Cow::Owned(removal.mod_name.clone()),
                 inline: Some(true),
             }],
             ..Default::default()
         }),
         WebhookMessage::UserViolationMetaChanged(change) => Some(WebhookEmbed {
-            title: format!("{} state changed", if change.is_ban { "Ban" } else { "Mute" }),
+            title: Cow::Borrowed(if change.is_ban { "Ban state changed" } else { "Mute state changed" }),
             color: hex_color_to_decimal("#de7a23"),
             author: Some(WebhookAuthor {
-                name: change.name.clone(),
+                name: Cow::Owned(change.name.clone()),
                 icon_url: None,
             }),
             fields: vec![
                 WebhookField {
-                    name: "Performed by",
-                    value: change.mod_name.clone(),
+                    name: Cow::Borrowed("Performed by"),
+                    value: Cow::Owned(change.mod_name.clone()),
                     inline: Some(false),
                 },
                 WebhookField {
-                    name: "Reason",
-                    value: change.reason.clone().unwrap_or_else(|| "No reason given.".to_owned()),
+                    name: Cow::Borrowed("Reason"),
+                    value: Cow::Owned(change.reason.clone().unwrap_or_else(|| "No reason given.".to_owned())),
                     inline: Some(false),
                 },
                 WebhookField {
-                    name: "Expiration",
-                    value: change.expiry.map(|x| format!("<t:{x}:f>")).unwrap_or_else(|| "Permanent.".to_owned()),
+                    name: Cow::Borrowed("Expiration"),
+                    value: Cow::Owned(change.expiry.map(|x| format!("<t:{x}:f>")).unwrap_or_else(|| "Permanent.".to_owned())),
                     inline: Some(false),
                 },
             ],
             ..Default::default()
         }),
         WebhookMessage::UserRolesChanged(mod_name, user_name, new_roles) => Some(WebhookEmbed {
-            title: "Role change".to_owned(),
+            title: Cow::Borrowed("Role change"),
             color: hex_color_to_decimal("#8b4de8"),
             author: Some(WebhookAuthor {
-                name: user_name.clone(),
+                name: Cow::Owned(user_name.clone()),
                 icon_url: None,
             }),
             fields: vec![
                 WebhookField {
-                    name: "Performed by",
-                    value: mod_name.clone(),
+                    name: Cow::Borrowed("Performed by"),
+                    value: Cow::Owned(mod_name.clone()),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "New roles",
-                    value: new_roles.join(", "),
+                    name: Cow::Borrowed("New roles"),
+                    value: Cow::Owned(new_roles.join(", ")),
                     inline: Some(true),
                 },
             ],
             ..Default::default()
         }),
         WebhookMessage::UserNameColorChanged(change) => Some(WebhookEmbed {
-            title: "Name color change".to_owned(),
+            title: Cow::Borrowed("Name color change"),
             color: hex_color_to_decimal(change.new_color.as_ref().map_or_else(|| "", |x| x.as_str())),
             author: Some(WebhookAuthor {
-                name: change.name.clone(),
+                name: Cow::Owned(change.name.clone()),
                 icon_url: None,
             }),
             fields: vec![
                 WebhookField {
-                    name: "Performed by",
-                    value: change.mod_name.clone(),
+                    name: Cow::Borrowed("Performed by"),
+                    value: Cow::Owned(change.mod_name.clone()),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "New color",
-                    value: change.new_color.clone().unwrap_or_else(|| "none".to_owned()),
+                    name: Cow::Borrowed("New color"),
+                    value: Cow::Owned(change.new_color.clone().unwrap_or_else(|| "none".to_owned())),
                     inline: Some(true),
                 },
             ],
             ..Default::default()
         }),
         WebhookMessage::FeaturedLevelSend(mod_id, mod_name, level_name, level_id, level_author, difficulty, rate_tier, notes) => Some(WebhookEmbed {
-            title: "New level send".to_owned(),
+            title: Cow::Borrowed("New level send"),
             color: hex_color_to_decimal("#79bd31"),
             author: Some(WebhookAuthor {
-                name: format!("{mod_name} ({mod_id})"),
+                name: Cow::Owned(format!("{mod_name} ({mod_id})")),
                 icon_url: None,
             }),
             fields: vec![
                 WebhookField {
-                    name: "Level ID",
-                    value: level_id.clone().to_string(),
+                    name: Cow::Borrowed("Level ID"),
+                    value: Cow::Owned(level_id.to_string()),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Level Author",
-                    value: level_author.clone(),
+                    name: Cow::Borrowed("Level Author"),
+                    value: Cow::Owned(level_author.clone()),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Level Name",
-                    value: level_name.clone(),
+                    name: Cow::Borrowed("Level Name"),
+                    value: Cow::Owned(level_name.clone()),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Notes",
-                    value: notes.clone().unwrap_or_else(|| "None".to_owned()),
+                    name: Cow::Borrowed("Notes"),
+                    value: Cow::Owned(notes.clone().unwrap_or_else(|| "None".to_owned())),
                     inline: Some(true),
                 },
             ],
             thumbnail: Some(WebhookThumbnail {
-                url: rate_tier_to_image(*difficulty, *rate_tier),
+                url: Cow::Owned(rate_tier_to_image(*difficulty, *rate_tier)),
             }),
             ..Default::default()
         }),
         WebhookMessage::LevelFeatured(level_name, level_id, level_author, difficulty, rate_tier) => Some(WebhookEmbed {
-            title: format!("{level_name} by {level_author}"),
+            title: Cow::Owned(format!("{level_name} by {level_author}")),
             color: hex_color_to_decimal("#7dfff5"),
             author: Some(WebhookAuthor {
-                name: "New Featured Level".to_owned(),
+                name: Cow::Borrowed("New Featured Level"),
                 icon_url: None,
             }),
             fields: vec![WebhookField {
-                name: "Level ID",
-                value: level_id.clone().to_string(),
+                name: Cow::Borrowed("Level ID"),
+                value: Cow::Owned(level_id.to_string()),
                 inline: Some(true),
             }],
             thumbnail: Some(WebhookThumbnail {
-                url: rate_tier_to_image(*difficulty, *rate_tier),
+                url: Cow::Owned(rate_tier_to_image(*difficulty, *rate_tier)),
             }),
             ..Default::default()
         }),
         WebhookMessage::RoomCreated(room_id, room_name, username, account_id, hidden, protected) => Some(WebhookEmbed {
-            title: room_name.clone(),
+            title: Cow::Owned(room_name.clone()),
             color: hex_color_to_decimal("#4dace8"),
             author: Some(WebhookAuthor {
-                name: format!("{username} ({account_id})"),
+                name: Cow::Owned(format!("{username} ({account_id})")),
                 icon_url: None,
             }),
             fields: vec![
                 WebhookField {
-                    name: "Hidden",
-                    value: if *hidden { "Yes" } else { "No" }.to_owned(),
+                    name: Cow::Borrowed("Hidden"),
+                    value: Cow::Borrowed(if *hidden { "Yes" } else { "No" }),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Private",
-                    value: if *protected { "Yes" } else { "No" }.to_owned(),
+                    name: Cow::Borrowed("Private"),
+                    value: Cow::Borrowed(if *protected { "Yes" } else { "No" }),
                     inline: Some(true),
                 },
                 WebhookField {
-                    name: "Room ID",
-                    value: room_id.to_string(),
+                    name: Cow::Borrowed("Room ID"),
+                    value: Cow::Owned(room_id.to_string()),
                     inline: Some(true),
                 },
             ],
