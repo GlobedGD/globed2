@@ -302,9 +302,13 @@ impl GlobedDb {
 
         // set the punishment
         if action.is_ban {
-            query!("UPDATE users SET active_ban = ?", id).execute(&self.0).await?;
+            query!("UPDATE users SET active_ban = ? WHERE account_id = ?", id, action.account_id)
+                .execute(&self.0)
+                .await?;
         } else {
-            query!("UPDATE users SET active_mute = ?", id).execute(&self.0).await?;
+            query!("UPDATE users SET active_mute = ? WHERE account_id = ?", id, action.account_id)
+                .execute(&self.0)
+                .await?;
         }
 
         Ok(id)
@@ -312,11 +316,11 @@ impl GlobedDb {
 
     pub async fn unpunish_user(&self, account_id: i32, is_ban: bool) -> Result<()> {
         if is_ban {
-            query!("UPDATE users SET active_ban = NULL where account_id = ?", account_id)
+            query!("UPDATE users SET active_ban = NULL WHERE account_id = ?", account_id)
                 .execute(&self.0)
                 .await?;
         } else {
-            query!("UPDATE users SET active_mute = NULL where account_id = ?", account_id)
+            query!("UPDATE users SET active_mute = NULL WHERE account_id = ?", account_id)
                 .execute(&self.0)
                 .await?;
         }
@@ -325,7 +329,7 @@ impl GlobedDb {
     }
 
     pub async fn whitelist_user(&self, account_id: i32, state: bool) -> Result<()> {
-        query!("UPDATE users SET is_whitelisted = ? where account_id = ?", state, account_id)
+        query!("UPDATE users SET is_whitelisted = ? WHERE account_id = ?", state, account_id)
             .execute(&self.0)
             .await?;
 
