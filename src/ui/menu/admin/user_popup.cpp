@@ -109,7 +109,7 @@ constexpr static float btnScale = 0.85f;
 void AdminUserPopup::onProfileLoaded() {
     GLOBED_REQUIRE(accountData.has_value(), "no account data umm")
 
-    auto sizes = util::ui::getPopupLayout(m_size);
+    auto sizes = util::ui::getPopupLayoutAnchored(m_size);
 
     auto& data = accountData.value();
 
@@ -413,7 +413,7 @@ void AdminUserPopup::onClose(CCObject* sender) {
 
 AdminUserPopup* AdminUserPopup::create(const UserEntry& userEntry, const std::optional<PlayerRoomPreviewAccountData>& accountData) {
     auto ret = new AdminUserPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, userEntry, accountData)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, userEntry, accountData)) {
         ret->autorelease();
         return ret;
     }

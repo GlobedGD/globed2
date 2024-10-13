@@ -53,7 +53,7 @@ public:
             }
 
             if (username.empty()) {
-                username = "?";
+                username = fmt::format("Unknown ({})", entry.issuedBy.value());
             }
         } else {
             username = "Unknown";
@@ -63,7 +63,7 @@ public:
 
         auto usernameLabel = Build<CCLabelBMFont>::create(username.c_str(), "goldFont.fnt")
             .limitLabelWidth(width - 50.f, 0.6f, 0.1f)
-            .pos(startX, height / 2.f + 16.f)
+            .pos(startX, height / 2.f + 14.f)
             .anchorPoint(0.f, 0.5f)
             .parent(this)
             .collect()
@@ -72,24 +72,37 @@ public:
         auto reasonLabel = Build<CCLabelBMFont>::create(entry.reason.empty() ? "No reason given" : entry.reason.c_str(), "bigFont.fnt")
             .color(entry.reason.empty() ? ccColor3B{175, 175, 175} : ccColor3B{255, 255, 255})
             .limitLabelWidth(width - 50.f, 0.4f, 0.1f)
-            .pos(startX, height / 2.f + 2.f)
+            .pos(startX, height / 2.f + 0.f)
             .anchorPoint(0.f, 0.5f)
             .parent(this)
             .collect();
 
-        auto issuedAt = SystemTime::fromUnix(entry.issuedAt.value_or(0));
-        auto expiresAt = SystemTime::fromUnix(entry.expiresAt);
+        SystemTime issuedAt = SystemTime::fromUnix(entry.issuedAt.value_or(0));;
+        SystemTime expiresAt = SystemTime::fromUnix(entry.expiresAt);
 
-        std::string dateString;
-        if (entry.expiresAt == 0) {
-            dateString = fmt::format("{} - Permanent", util::format::formatDateTime(issuedAt, false));
-        } else {
-            dateString = fmt::format("{} - {}", util::format::formatDateTime(issuedAt, false), util::format::formatDateTime(expiresAt, false));
+        bool isPermanent = expiresAt.to_time_t() == 0;
+
+        std::string issuedStr, expiresStr;
+
+        // sanity check
+        if (expiresAt < issuedAt && !isPermanent) {
+            issuedStr = "Unknown";
+            expiresStr = "Unknown";
         }
+        // if the issued time is unknown, the expire time is shown as a date, otherwise it's shown as a duration
+        else if (issuedAt.to_time_t() == 0) {
+            issuedStr = "Unknown";
+            expiresStr = isPermanent ? "Permanent" : util::format::formatDateTime(expiresAt, false);
+        } else {
+            issuedStr = util::format::formatDateTime(issuedAt, false);
+            expiresStr = isPermanent ? "Permanent" : expiresAt.durationSince(issuedAt)->toHumanString();
+        }
+
+        std::string dateString = fmt::format("{} - {}", issuedStr, expiresStr);
 
         Build<CCLabelBMFont>::create(dateString.c_str(), "bigFont.fnt")
             .limitLabelWidth(width - 50.f, 0.25f, 0.05f)
-            .pos(reasonLabel->getPositionX(), height / 2.f - 12.f)
+            .pos(reasonLabel->getPositionX(), height / 2.f - 14.f)
             .anchorPoint(0.f, 0.5f)
             .parent(this);
 
