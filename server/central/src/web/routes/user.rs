@@ -197,8 +197,7 @@ pub async fn user_login(
 
     let ban = if let Some(ban_id) = &user.active_ban {
         match database.get_punishment(*ban_id).await {
-            Ok(x) => Some(x),
-            Err(sqlx::Error::RowNotFound) => None,
+            Ok(x) => x,
             Err(e) => return Err(e.into()),
         }
     } else {

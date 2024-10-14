@@ -169,8 +169,7 @@ impl ServerStateData {
 
         if let Some(ban_id) = user.active_ban {
             match db.get_punishment(ban_id).await {
-                Ok(x) => Ok(Some(x.reason)),
-                Err(sqlx::Error::RowNotFound) => Ok(None),
+                Ok(x) => Ok(x.map(|x| x.reason)),
                 Err(e) => Err(e.into()),
             }
         } else {
