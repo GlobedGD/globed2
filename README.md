@@ -23,7 +23,7 @@ See the [server readme](./server/readme.md) for more information about hosting a
 Globed is made by:
 
 * [dank_meme](https://github.com/dankmeme01) - owner and main developer
-* [availax](https://availax.xyz/) - co-owner, community manager, artist, ❤️
+* [availax](https://availax.xyz/) - co-owner, community manager, artist
 * [ItzKiba](https://github.com/ItzKiba/) - artist, developer
 * [TechStudent10](https://github.com/TechStudent10) - developer
 * [ninXout](https://github.com/ninXout/) - developer

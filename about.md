@@ -21,7 +21,7 @@ As a sign of appreciation, you will get a nice <ca>purple</c> name and a badge i
 Globed is made by:
 
 * [dank_meme](user:9735891) - owner and main developer
-* [availax](user:1621348) - co-owner, community manager, artist, <3
+* [availax](user:1621348) - co-owner, community manager, artist
 * [ItzKiba](user:4569963) - artist, developer
 * [TechStudent10](user:20284359) - developer
 * [ninXout](user:7479054) - developer
