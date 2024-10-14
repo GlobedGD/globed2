@@ -126,12 +126,12 @@ impl GlobedDb {
             .map(|_| ())
     }
 
-    pub async fn get_punishment(&self, id: i64) -> Result<UserPunishment> {
-        query_as::<_, UserPunishmentWrapper>("SELECT * FROM punishments WHERE punishment_id = ?")
+    pub async fn get_punishment(&self, id: i64) -> Result<Option<UserPunishment>> {
+        Ok(query_as::<_, UserPunishmentWrapper>("SELECT * FROM punishments WHERE punishment_id = ?")
             .bind(id)
-            .fetch_one(&self.0)
-            .await
-            .map(|x| x.0)
+            .fetch_optional(&self.0)
+            .await?
+            .map(|x| x.0))
     }
 
     pub async fn get_active_ban(&self, account_id: i32) -> Result<UserPunishment> {
@@ -167,14 +167,16 @@ impl GlobedDb {
     /// get users' ban and mute punishments respectively
     pub async fn get_users_punishments(&self, user: &ServerUserEntry) -> Result<[Option<UserPunishment>; 2]> {
         let ban = match user.active_ban {
-            Some(id) => Some(self.get_punishment(id).await?),
+            Some(id) => match self.get_punishment(id).await {
+                Ok(x) => x,
+                Err(e) => return Err(e),
+            },
             None => None,
         };
 
         let mute = match user.active_mute {
             Some(id) => match self.get_punishment(id).await {
-                Ok(x) => Some(x),
-                Err(sqlx::Error::RowNotFound) => None,
+                Ok(x) => x,
                 Err(e) => return Err(e),
             },
             None => None,

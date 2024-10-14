@@ -25,6 +25,9 @@ namespace util::gd {
         ExtremeDemon = 10
     };
 
+    const char* difficultyToString(Difficulty diff);
+    std::optional<Difficulty> difficultyFromString(std::string_view diff);
+
     GLOBED_DLL Difficulty calcLevelDifficulty(GJGameLevel* level);
 
     int getIconWithType(const PlayerIconData& data, PlayerIconType type);

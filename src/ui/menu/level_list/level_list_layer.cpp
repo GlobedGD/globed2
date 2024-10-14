@@ -20,6 +20,135 @@ using namespace geode::prelude;
 // at a time, request up to 100 levels from the server, then do client side filtering if any filters are enabled.
 // if not enough levels to fill a page, keep making requests.
 
+
+static std::string rateTierToString(GlobedLevelListLayer::Filters::RateTier tier) {
+    using enum GlobedLevelListLayer::Filters::RateTier;
+    switch (tier) {
+        case Unrated: return "Unrated";
+        case Rate: return "Rate";
+        case Feature: return "Feature";
+        case Epic: return "Epic";
+        case Legendary: return "Legendary";
+        case Mythic: return "Mythic";
+    }
+}
+
+static std::optional<GlobedLevelListLayer::Filters::RateTier> rateTierFromString(std::string_view str) {
+    if (str == "Unrated") return GlobedLevelListLayer::Filters::RateTier::Unrated;
+    if (str == "Rate") return GlobedLevelListLayer::Filters::RateTier::Rate;
+    if (str == "Feature") return GlobedLevelListLayer::Filters::RateTier::Feature;
+    if (str == "Epic") return GlobedLevelListLayer::Filters::RateTier::Epic;
+    if (str == "Legendary") return GlobedLevelListLayer::Filters::RateTier::Legendary;
+    if (str == "Mythic") return GlobedLevelListLayer::Filters::RateTier::Mythic;
+    return std::nullopt;
+}
+
+template <>
+struct matjson::Serialize<GlobedLevelListLayer::Filters> {
+    static GlobedLevelListLayer::Filters from_json(const matjson::Value& value) {
+        GlobedLevelListLayer::Filters filters{};
+
+        if (value.contains("difficulty") && value["difficulty"].is_array()) {
+            for (auto& diff : value["difficulty"].as_array()) {
+                auto diffe = util::gd::difficultyFromString(diff.as_string());
+                if (diffe) {
+                    filters.difficulty.insert(diffe.value());
+                }
+            }
+        }
+
+        if (value.contains("demonDifficulty") && value["demonDifficulty"].is_array()) {
+            for (auto& diff : value["demonDifficulty"].as_array()) {
+                auto diffe = util::gd::difficultyFromString(diff.as_string());
+                if (diffe) {
+                    filters.demonDifficulty.insert(diffe.value());
+                }
+            }
+        }
+
+        if (value.contains("length") && value["length"].is_array()) {
+            for (auto& len : value["length"].as_array()) {
+                filters.length.insert(len.as_int());
+            }
+        }
+
+        if (value.contains("rateTier") && value["rateTier"].is_array()) {
+            filters.rateTier = std::set<GlobedLevelListLayer::Filters::RateTier>{};
+            for (auto& tier : value["rateTier"].as_array()) {
+                auto rt = rateTierFromString(tier.as_string());
+                if (rt) {
+                    filters.rateTier.value().insert(rt.value());
+                }
+            }
+        }
+
+        if (value.contains("coins") && value["coins"].is_bool()) {
+            filters.coins = value["coins"].as_bool();
+        }
+
+        if (value.contains("completed") && value["completed"].is_bool()) {
+            filters.completed = value["completed"].as_bool();
+        }
+
+        if (value.contains("twoPlayer") && value["twoPlayer"].is_bool()) {
+            filters.twoPlayer = value["twoPlayer"].as_bool();
+        }
+
+        if (value.contains("rated") && value["rated"].is_bool()) {
+            filters.rated = value["rated"].as_bool();
+        }
+
+        if (value.contains("original") && value["original"].is_bool()) {
+            filters.original = value["original"].as_bool();
+        }
+
+        return filters;
+    }
+
+    static matjson::Value to_json(const GlobedLevelListLayer::Filters& filters) {
+        matjson::Value obj;
+        obj["difficulty"] = matjson::Array{};
+        for (auto diff : filters.difficulty) {
+            obj["difficulty"].as_array().push_back(util::gd::difficultyToString(diff));
+        }
+
+        obj["demonDifficulty"] = matjson::Array{};
+        for (auto diff : filters.demonDifficulty) {
+            obj["demonDifficulty"].as_array().push_back(util::gd::difficultyToString(diff));
+        }
+
+        obj["length"] = matjson::Array{};
+        for (auto len : filters.length) {
+            obj["length"].as_array().push_back(len);
+        }
+
+        if (auto& rt = filters.rateTier) {
+            obj["rateTier"] = matjson::Array{};
+            for (auto tier : rt.value()) {
+                obj["rateTier"].as_array().push_back(rateTierToString(tier));
+            }
+        }
+
+        if (auto& c = filters.coins) {
+            obj["coins"] = *c;
+        }
+
+        if (auto& c = filters.completed) {
+            obj["completed"] = *c;
+        }
+
+        obj["twoPlayer"] = filters.twoPlayer;
+        obj["rated"] = filters.rated;
+        obj["original"] = filters.original;
+
+        return obj;
+    }
+
+    static bool is_json(const matjson::Value& value) {
+        return true;
+    }
+};
+
 bool GlobedLevelListLayer::init() {
     if (!CCLayer::init()) return false;
 
@@ -163,6 +292,10 @@ bool GlobedLevelListLayer::init() {
         this->startLoadingForPage();
     });
 
+    if (auto filtersJson = Mod::get()->getSaveContainer().try_get<GlobedLevelListLayer::Filters>("saved-level-filters")) {
+        this->filters = *filtersJson;
+    }
+
     this->onRefresh();
 
     return true;
@@ -182,6 +315,9 @@ void GlobedLevelListLayer::onOpenFilters() {
             this->filters = filters;
             this->currentPage = 0;
             this->startLoadingForPage();
+
+            matjson::Value val = filters;
+            Mod::get()->setSavedValue("saved-level-filters", val);
         }
     })->show();
 }
@@ -375,7 +511,6 @@ bool GlobedLevelListLayer::isMatchingFilters(GJGameLevel* level) {
 
     // log::debug("Name = {}, diff = {}, demon diff = {}, is demon = {}, length = {}, epic = {}, featured = {}, stars = {}, coins = {}", level->m_levelName, (int) difficulty, (int)level->m_demonDifficulty, (int)level->m_demon, (int)level->m_levelLength, level->m_isEpic, level->m_featured, (int)level->m_stars, level->m_coins);
     // return true;
-
 
     // Difficulty
     if (!filters.difficulty.empty()) {
