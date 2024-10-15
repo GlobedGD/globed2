@@ -157,7 +157,7 @@ void HookedMenuLayer::maybeUpdateButton(float) {
     }
 }
 
-void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
+void HookedMenuLayer::onGlobedButton(CCObject*) {
     if (softDisabled) {
         geode::createQuickPopup(
             "Globed Error",
@@ -165,7 +165,23 @@ void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
             "Dismiss", "More info", [](auto, bool moreInfo) {
                 if (!moreInfo) return;
 
-                bool tldr = Loader::get()->isModLoaded("geode.texture-loader");
+                bool texturePack = [] {
+                    auto hasLdr = Loader::get()->isModLoaded("geode.texture-loader");
+                    if (!hasLdr) return false;
+
+                    // check if filename of a globedsheet1.png is overriden
+                    auto p = CCFileUtils::get()->fullPathForFilename("globedsheet1.png"_spr, false);
+                    if (p.empty()) {
+                        log::error("Failed to find globedsheet1.png");
+                        return false;
+                    }
+
+                    if (std::filesystem::path(std::string(p)).parent_path() != Mod::get()->getResourcesDir()) {
+                        return true;
+                    }
+
+                    return false;
+                }();
                 bool darkmode = Loader::get()->isModLoaded("bitz.darkmode_v4");
 
                 auto impostorFolderLoc = dirs::getGameDir() / "Resources" / "dankmeme.globed2";
@@ -201,10 +217,10 @@ void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
                             }
                         }
                     );
-                } else if (tldr || darkmode) {
+                } else if (texturePack || darkmode) {
                     FLAlertLayer::create(
                         "Note",
-                        fmt::format("Texture loader enabled: {}</c>\nDarkMode v4 enabled: {}</c>\n\nPlease try to <cr>disable</c> these mods and see if the issue is resolved after restarting.", tldr ? "<cg>yes" : "<cr>no", darkmode ? "<cg>yes" : "<cr>no"),
+                        fmt::format("Globed texture pack detected: {}</c>\nDarkMode v4 enabled: {}</c>\n\nPlease try to <cr>disable</c> these and see if the issue is resolved after restarting.", texturePack ? "<cg>yes" : "<cr>no", darkmode ? "<cg>yes" : "<cr>no"),
                         "Ok"
                     )->show();
                 } else {
