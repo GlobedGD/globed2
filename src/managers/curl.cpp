@@ -24,6 +24,7 @@ struct CurlRequest::Data {
     size_t m_timeout = 0;
     bool m_followRedirects = true;
     bool m_encrypt = false;
+    bool m_certVerification = true;
 };
 
 /* CurlManager */
@@ -98,20 +99,19 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
         }
 
-        // disable cert verification in debug
-#ifdef GLOBED_DEBUG3
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-#else
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2);
+        if (data->m_certVerification && !GlobedSettings::get().launchArgs().noSslVerification) {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2);
 
-        curl_blob cbb = {};
-        cbb.data = const_cast<void*>(reinterpret_cast<const void*>(CA_BUNDLE_CONTENT));
-        cbb.len = sizeof(CA_BUNDLE_CONTENT);
-        cbb.flags = CURL_BLOB_COPY;
-        curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &cbb);
-#endif
+            curl_blob cbb = {};
+            cbb.data = const_cast<void*>(reinterpret_cast<const void*>(CA_BUNDLE_CONTENT));
+            cbb.len = sizeof(CA_BUNDLE_CONTENT);
+            cbb.flags = CURL_BLOB_COPY;
+            curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &cbb);
+        } else {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+        }
 
         if (!data->m_userAgent.empty()) {
             curl_easy_setopt(curl, CURLOPT_USERAGENT, data->m_userAgent.c_str());
@@ -291,6 +291,11 @@ CurlRequest& CurlRequest::customMethod(std::string_view url, std::string_view me
 
 CurlRequest& CurlRequest::encrypted(bool enc) {
     m_data->m_encrypt = enc;
+    return *this;
+}
+
+CurlRequest& CurlRequest::certVerification(bool enc) {
+    m_data->m_certVerification = enc;
     return *this;
 }
 

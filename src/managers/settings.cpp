@@ -88,6 +88,7 @@ void GlobedSettings::reload() {
     lf("globed-debug-preload", _launchArgs.debugPreload);
     lf("globed-skip-resource-check", _launchArgs.skipResourceCheck);
     lf("globed-tracing", _launchArgs.tracing);
+    lf("globed-no-ssl-verification", _launchArgs.noSslVerification);
 }
 
 void GlobedSettings::save() {

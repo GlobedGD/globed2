@@ -242,6 +242,7 @@ private:
         bool debugPreload = false;
         bool skipResourceCheck = false;
         bool tracing = false;
+        bool noSslVerification = false;
     } _launchArgs;
 public:
 
