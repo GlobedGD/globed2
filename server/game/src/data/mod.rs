@@ -8,6 +8,7 @@ pub use globed_shared::MAX_NAME_SIZE;
 
 pub use v_current::packets;
 pub use v_current::types;
+pub use v_current::VERSION as CURRENT_PROTOCOL;
 
 pub use packets::*;
 pub use types::*;

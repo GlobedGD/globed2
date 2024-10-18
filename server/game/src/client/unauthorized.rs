@@ -62,6 +62,7 @@ pub struct UnauthorizedThread {
     pub terminate_notify: Notify,
 
     pub destruction_notify: Arc<Notify>,
+    pub translator: NoopPacketTranslator,
 
     pub privacy_settings: SyncMutex<UserPrivacyFlags>,
 }
@@ -103,6 +104,7 @@ impl UnauthorizedThread {
             terminate_notify: Notify::new(),
 
             destruction_notify: Arc::new(Notify::new()),
+            translator: NoopPacketTranslator::default(),
 
             privacy_settings: SyncMutex::new(UserPrivacyFlags::default()),
         }
@@ -137,6 +139,7 @@ impl UnauthorizedThread {
             terminate_notify: Notify::new(),
 
             destruction_notify: thread.destruction_notify,
+            translator: NoopPacketTranslator::default(),
 
             privacy_settings: thread.privacy_settings,
         }

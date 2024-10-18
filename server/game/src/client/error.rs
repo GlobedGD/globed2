@@ -6,6 +6,8 @@ use crate::{
 };
 use globed_shared::reqwest;
 
+use super::PacketTranslationError;
+
 pub enum PacketHandlingError {
     Other(String),                         // unknown generic error
     WrongCryptoBoxState,                   // cryptobox was either Some or None when should've been the other one
@@ -35,6 +37,7 @@ pub enum PacketHandlingError {
     BridgeError(CentralBridgeError),
     WebhookError(CentralBridgeError),
     Standalone,
+    TranslationError(PacketTranslationError), // failed to translate packet
 }
 
 pub type Result<T> = core::result::Result<T, PacketHandlingError>;
@@ -110,6 +113,7 @@ impl Display for PacketHandlingError {
             Self::BridgeError(e) => write!(f, "central bridge returned error: {e}"),
             Self::WebhookError(e) => write!(f, "webhook error: {e}"),
             Self::Standalone => write!(f, "attempted to perform an action that cannot be done on a standalone server"),
+            Self::TranslationError(e) => write!(f, "packet translation error: {e}"),
         }
     }
 }

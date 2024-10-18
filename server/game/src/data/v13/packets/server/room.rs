@@ -1,5 +1,5 @@
-use std::borrow::Cow;
 use crate::data::*;
+use std::borrow::Cow;
 
 #[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 23000, tcp = false)]

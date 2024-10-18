@@ -79,6 +79,7 @@ pub struct ClientThread {
     rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
     voice_rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
     chat_rate_limiter: Option<LockfreeMutCell<SimpleRateLimiter>>,
+    translator: PacketTranslator,
 
     pub destruction_notify: Arc<Notify>,
 }
@@ -112,6 +113,7 @@ impl ClientThread {
         let account_data = std::mem::take(&mut *thread.account_data.lock());
         let user_entry = std::mem::take(&mut *thread.user_entry.lock()).unwrap_or_default();
         let user_role = std::mem::take(&mut *thread.user_role.lock()).unwrap_or_else(|| game_server.state.role_manager.get_default().clone());
+        let translator = PacketTranslator::new(thread.protocol_version.load(Ordering::Relaxed));
 
         Self {
             game_server,
@@ -141,6 +143,7 @@ impl ClientThread {
             rate_limiter: LockfreeMutCell::new(rate_limiter),
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
+            translator,
 
             destruction_notify: thread.destruction_notify,
         }
@@ -292,7 +295,8 @@ impl ClientThread {
                 | PacketHandlingError::PacketTooLong(_)
                 | PacketHandlingError::SocketSendFailed(_)
                 | PacketHandlingError::InvalidStreamMarker
-                | PacketHandlingError::TooManyChunks(_) => {
+                | PacketHandlingError::TooManyChunks(_)
+                | PacketHandlingError::TranslationError(_) => {
                     warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
 
