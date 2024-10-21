@@ -66,7 +66,7 @@ bool HookedMenuLayer::init() {
             if (csm.standalone()) {
                 auto result = NetworkManager::get().connectStandalone();
                 if (result.isErr()) {
-                    ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));
+                    ErrorQueues::get().warn(fmt::format("[Globed] Failed to connect: {}", result.unwrapErr()));
                 }
             } else {
                 auto cacheResult = gsm.loadFromCache();
@@ -90,7 +90,7 @@ bool HookedMenuLayer::init() {
                 am.requestAuthToken([lastServer] {
                     auto result = NetworkManager::get().connect(lastServer.value());
                     if (result.isErr()) {
-                        ErrorQueues::get().warn(fmt::format("Failed to connect: {}", result.unwrapErr()));
+                        ErrorQueues::get().warn(fmt::format("[Globed] Failed to connect: {}", result.unwrapErr()));
                     }
                 });
             }

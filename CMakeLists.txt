@@ -26,6 +26,21 @@ else()
     option(GLOBED_COMPILE_LIBS "Don't use precompiled libraries and compile manually" ON)
 endif()
 
+# check if compiler is clang
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(GLOBED_IS_CLANG ON)
+else()
+    set(GLOBED_IS_CLANG OFF)
+endif()
+
+# check if it's clang-cl or clang
+if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+    set(GLOBED_IS_CLANG_CL OFF)
+else()
+    set(GLOBED_IS_CLANG_CL ON)
+endif()
+
+
 # Check for debug build
 option(ENABLE_DEBUG "Debug mode" OFF)
 option(GLOBED_RELEASE "Release build" OFF)
@@ -39,6 +54,19 @@ if (GLOBED_IS_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
     add_compile_definitions(GEODE_DEBUG=1)
     add_compile_definitions(ASP_ENABLE_DEBUG=1)
+
+    # # turn on asan
+    # if (GLOBED_IS_CLANG)
+    #     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libs/stl_asan.lib")
+    #         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+    #         set(GLOBED_LINK_TO_ASAN ON)
+    #     endif()
+
+    #     # no omit frame pointer
+    #     if (NOT GLOBED_IS_CLANG_CL)
+    #         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+    #     endif()
+    # endif()
 elseif (GLOBED_RELEASE)
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -111,7 +139,7 @@ CPMAddPackage(
     URL_HASH SHA256=ee6e0793b5ec7d13e7181ec05d3b1aaa23615947295080e4b9930324488e078f
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe\\\;stacktrace\\\;thread" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp2#43c7b4f")
+CPMAddPackage("gh:dankmeme01/asp2#a4b156b")
 
 # asp defines
 if (WIN32)
@@ -146,6 +174,15 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
 endif()
 
 target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe Boost::thread asp)
+
+# if (GLOBED_LINK_TO_ASAN)
+#     target_link_libraries(
+#         ${PROJECT_NAME}
+#         "${CMAKE_CURRENT_SOURCE_DIR}/libs/stl_asan.lib"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/libs/clang_rt.asan_dynamic-x86_64.lib"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/libs/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+#     )
+# endif()
 
 if (GLOBED_IS_DEBUG)
     target_link_libraries(${PROJECT_NAME} Boost::stacktrace)

@@ -624,11 +624,11 @@ protected:
 
         addGlobalListener<AdminAuthSuccessPacket>([this](auto packet) {
             AdminManager::get().setAuthorized(std::move(packet->role));
-            ErrorQueues::get().success("Successfully authorized");
+            ErrorQueues::get().success("[Globed] Successfully authorized");
         });
 
         addGlobalListener<AdminAuthFailedPacket>([this](auto packet) {
-            ErrorQueues::get().warn("Login failed");
+            ErrorQueues::get().warn("[Globed] Login failed");
 
             auto& am = GlobedAccountManager::get();
             am.clearAdminPassword();

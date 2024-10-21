@@ -443,7 +443,7 @@ void GlobedAudioManager::setActiveRecordingDevice(int deviceId) {
 
 void GlobedAudioManager::setActiveRecordingDevice(const AudioRecordingDevice& device) {
     if (this->isRecording()) {
-        ErrorQueues::get().warn("attempting to change the recording device while recording");
+        ErrorQueues::get().warn("[Globed] attempting to change the recording device while recording");
         return;
     }
 

@@ -112,14 +112,14 @@ void setupCustomKeybinds() {
 
 // just debug printing
 void printDebugInfo() {
-    std::string version = Mod::get()->getVersion().toString();
+    std::string version = Mod::get()->getVersion().toVString();
     unsigned int fv = 0;
 
 #if GLOBED_HAS_FMOD
     FMODAudioEngine::sharedEngine()->m_system->getVersion(&fv);
 #endif
 
-    log::warn("=== Globed {} has been loaded in debug mode ===", version.starts_with('v') ? version : ("v" + version));
+    log::warn("=== Globed {} has been loaded in debug mode ===", version);
     log::info("Platform: {} ({}-endian)", GLOBED_PLATFORM_STRING, GLOBED_LITTLE_ENDIAN ? "little" : "big");
     log::info("FMOD linkage: {}, version: {:X}", GLOBED_HAS_FMOD == 0 ? "false" : "true", fv);
 #ifdef GLOBED_VOICE_SUPPORT
@@ -130,4 +130,3 @@ void printDebugInfo() {
     log::info("Discord RPC support: {}", GLOBED_HAS_DRPC == 0 ? "false" : "true");
     log::info("Libsodium version: {} (CryptoBox algorithm: {})", CryptoBox::sodiumVersion(), CryptoBox::algorithm());
 }
-
