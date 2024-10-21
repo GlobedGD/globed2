@@ -243,6 +243,7 @@ private:
         bool skipResourceCheck = false;
         bool tracing = false;
         bool noSslVerification = false;
+        bool fakeData = false;
     } _launchArgs;
 public:
 

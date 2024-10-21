@@ -22,7 +22,6 @@
 #define _GLOBED_STRWHITESPACE " \t\n\r\x0b\x0c"
 
 
-struct PlayerIconData;
 enum class PlayerIconType : uint8_t;
 enum class IconType;
 

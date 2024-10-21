@@ -31,6 +31,45 @@ bool RoomListingPopup::setup() {
     ;
 
     nm.addListener<RoomListPacket>(this, [this](std::shared_ptr<RoomListPacket> packet) {
+        // fake testing data
+        if (GlobedSettings::get().launchArgs().fakeData) {
+            auto& rng = util::rng::Random::get();
+
+            auto randomSettings = [&]() -> RoomSettings {
+                RoomSettings s = {};
+                s.fasterReset = false;
+                if (rng.generate<bool>()) {
+                    s.levelId = rng.generate<uint32_t>(1, 100000);
+                }
+
+                if (rng.genRatio(0.25f)) {
+                    s.playerLimit = rng.generate<uint16_t>(1, 1000);
+                }
+
+                s.flags.collision = rng.generate<bool>();
+                s.flags.deathlink = rng.generate<bool>();
+                s.flags.publicInvites = rng.generate<bool>();
+                // s.flags.twoPlayerMode = rng.generate<bool>();
+
+                return s;
+            };
+
+            packet->rooms.clear();
+            size_t lim = rng.generate<size_t>(50, 150);
+            for (size_t i = 0; i < lim; i++) {
+                RoomListingInfo room = {
+                    rng.generate<uint32_t>(1, 100000),
+                    rng.generate<uint16_t>(1, 1000),
+                    PlayerPreviewAccountData::makeRandom(),
+                    fmt::format("Room {}", i),
+                    rng.genRatio(0.3f),
+                    randomSettings()
+                };
+
+                packet->rooms.push_back(room);
+            }
+        }
+
         this->createCells(packet->rooms);
     });
 
@@ -70,6 +109,8 @@ bool RoomListingPopup::setup() {
         .pos(rlayout.bottomLeft + CCPoint{3.f, 3.f})
         .id("add-room-btn"_spr)
         .parent(menu);
+
+    // TODO: mod action bnt
 
     nm.send(RequestRoomListPacket::create());
 

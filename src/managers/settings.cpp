@@ -89,6 +89,12 @@ void GlobedSettings::reload() {
     lf("globed-skip-resource-check", _launchArgs.skipResourceCheck);
     lf("globed-tracing", _launchArgs.tracing);
     lf("globed-no-ssl-verification", _launchArgs.noSslVerification);
+    lf("globed-fake-server-data", _launchArgs.fakeData);
+
+    // some of those options will do nothing unless the mod is built in debug mode
+#ifndef GLOBED_DEBUG
+    _launchArgs.fakeData = false;
+#endif
 }
 
 void GlobedSettings::save() {
