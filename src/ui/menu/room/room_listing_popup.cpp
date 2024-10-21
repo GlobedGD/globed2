@@ -4,6 +4,7 @@
 #include "room_join_popup.hpp"
 #include <data/packets/client/room.hpp>
 #include <data/packets/server/room.hpp>
+#include <managers/admin.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
 #include <net/manager.hpp>
@@ -107,10 +108,33 @@ bool RoomListingPopup::setup() {
             RoomJoinPopup::create()->show();
         })
         .pos(rlayout.bottomLeft + CCPoint{3.f, 3.f})
-        .id("add-room-btn"_spr)
+        .id("add-room-btn")
         .parent(menu);
 
-    // TODO: mod action bnt
+    if (AdminManager::get().canModerate()) {
+        Build<CCMenu>::create()
+            .id("mod-actions-menu")
+            .pos(rlayout.fromBottom(20.f))
+            .layout(
+                RowLayout::create()
+                    ->setGap(8.f)
+                    ->setAutoScale(false)
+            )
+            .contentSize(60.f, 0.f)
+            .parent(m_mainLayer)
+            .child(Build<CCLabelBMFont>::create("Mod", "bigFont.fnt").scale(0.4f))
+            .child(
+                Build(CCMenuItemExt::createTogglerWithStandardSprites(0.6f, [this](auto btn) {
+                    bool enabled = !btn->isToggled();
+                    this->toggleModActions(enabled);
+                }))
+            )
+            .updateLayout()
+            .with([&](auto* menu) {
+                util::ui::attachBackground(menu);
+            })
+            ;
+    }
 
     nm.send(RequestRoomListPacket::create());
 
@@ -133,6 +157,12 @@ void RoomListingPopup::createCells(std::vector<RoomListingInfo> rlpv) {
     });
 
     listLayer->scrollToTop();
+}
+
+void RoomListingPopup::toggleModActions(bool enabled) {
+    for (auto cell : (*listLayer)) {
+        cell->toggleModActions(enabled);
+    }
 }
 
 void RoomListingPopup::close() {

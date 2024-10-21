@@ -92,6 +92,24 @@ namespace util::ui {
     // make a background that loops
     cocos2d::CCSprite* makeRepeatingBackground(const char* texture, cocos2d::ccColor3B color, float speed = 1.0f, float scale = 1.f, RepeatMode mode = RepeatMode::X, const cocos2d::CCSize& visibleSize = {0.f, 0.f});
 
+    struct BackgroundOptions {
+        float opacity = 80;
+        float sidePadding = 3.f;
+        float verticalPadding = 3.f;
+        // 0 = square, 1 = slightly rounded (depends on texture though)
+        float cornerRoundness = 1.f;
+        bool scaleMustMatch = true; // determines if scalex must be equal to scaley (impacts how pretty the corners are)
+        const char* texture = "square02_001.png";
+        int zOrder = -1;
+        std::string id = "bg";
+    };
+
+    // Attach a CCScale9Sprite to a node
+    cocos2d::extension::CCScale9Sprite* attachBackground(
+        cocos2d::CCNode* node,
+        const BackgroundOptions& options = BackgroundOptions{}
+    );
+
     // cap popup width so it doesnt become too big on small aspect ratios (max winSize.width * 0.8)
     float capPopupWidth(float in);
 

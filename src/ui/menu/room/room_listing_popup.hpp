@@ -23,6 +23,7 @@ protected:
 
     void onReload(cocos2d::CCObject* sender);
     void createCells(std::vector<RoomListingInfo> rlp);
+    void toggleModActions(bool enabled);
 
 public:
 	static RoomListingPopup* create();
