@@ -313,7 +313,8 @@ Result<std::shared_ptr<Packet>> GameSocket::decodePacket(ByteBuffer& buffer) {
     auto header = buffer.readValue<PacketHeader>().unwrap(); // we know that the header must be present by now.
 
     // packet size without the header
-    size_t messageLength = buffer.size() - buffer.getPosition();
+    size_t messageStart = buffer.getPosition();
+    size_t messageLength = buffer.size() - messageStart;
 
     auto packet = matchPacket(header.id);
 
@@ -327,8 +328,8 @@ Result<std::shared_ptr<Packet>> GameSocket::decodePacket(ByteBuffer& buffer) {
         GLOBED_REQUIRE_SAFE(cryptoBox.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
         bytevector& bufvec = buffer.data();
 
-        GLOBED_UNWRAP_INTO(cryptoBox->decryptInPlace(bufvec.data() + PacketHeader::SIZE, messageLength), messageLength);
-        buffer.resize(messageLength + PacketHeader::SIZE);
+        GLOBED_UNWRAP_INTO(cryptoBox->decryptInPlace(bufvec.data() + messageStart, messageLength), messageLength);
+        buffer.resize(messageStart + messageLength);
     }
 
     if (dumpPackets) {
