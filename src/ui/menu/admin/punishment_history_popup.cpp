@@ -34,7 +34,7 @@ public:
         this->setContentHeight(height);
 
         // TODO: icons
-        auto icon = Build<CCSprite>::createSpriteName(entry.type == PunishmentType::Ban ? "icon-ban.png"_spr : "icon-mute.png"_spr)
+        auto icon = Build<CCSprite>::createSpriteName(entry.type == PunishmentType::Ban ? "button-admin-ban.png"_spr : "button-admin-mute.png"_spr)
             .with([&] (auto spr) {
                 constexpr float pad = 4.f;
                 util::ui::rescaleToMatch(spr, {32.f, 32.f});
