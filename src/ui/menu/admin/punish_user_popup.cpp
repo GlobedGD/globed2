@@ -58,7 +58,7 @@ private:
 
             this->setContentWidth(cellWidth);
 
-            Build<CCSprite>::createSpriteName("GJ_downloadsIcon_001.png")
+            Build<CCSprite>::createSpriteName("btn_chatHistory_001.png")
                 .with([&](auto spr) {
                     util::ui::rescaleToMatch(spr, {cellHeight - 4.f, cellHeight - 4.f});
                 })
