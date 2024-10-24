@@ -25,11 +25,8 @@ struct GLOBED_DLL GJEffectManagerHook : geode::Modify<GJEffectManagerHook, GJEff
     $override
     void updateCountForItem(int id, int value);
 
-    // TODO: alk fixed, wait for geode update
-#ifndef GEODE_IS_WINDOWS
     $override
     int countForItem(int item);
-#endif
 
     $override
     void reset();

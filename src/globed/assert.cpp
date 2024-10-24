@@ -12,6 +12,8 @@ struct Module {
     uintptr_t base;
 };
 
+# ifdef GEODE_IS_WINDOWS
+
 // this code is very borrowed from geode
 static HMODULE handleFromAddress(void const* addr) {
     HMODULE module = nullptr;
@@ -48,6 +50,13 @@ static std::optional<Module> moduleFromAddress(T addr_) {
 
     return mod;
 }
+
+# else
+template <typename T>
+static std::optional<Module> moduleFromAddress(T addr_) {
+    return std::nullopt;
+}
+#endif
 
 static std::string formatFrame(const boost::stacktrace::frame& frame) {
     auto mod = moduleFromAddress(frame.address());

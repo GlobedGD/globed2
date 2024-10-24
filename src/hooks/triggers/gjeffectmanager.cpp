@@ -40,60 +40,9 @@ static int countForItemDetour(GJEffectManagerHook* self, int itemId) {
     }
 }
 
-#ifndef GEODE_IS_WINDOWS
 int GJEffectManagerHook::countForItem(int item) {
     return countForItemDetour(this, item);
 }
-#else
-
-// We can't hook this function because gd's LTO assumes it will not modify r11,
-// which our hook will inadvertently do, breaking one or multiple callsites.
-
-// The patch preserves r11 and calls a reimplementation of the function.
-
-static geode::Patch* countForItemPatch = nullptr;
-
-$execute {
-    // r11 needed for one callsite in triggerObject
-    // xmm0-xmm3 preserved for 'activateItemEditTrigger'
-    std::vector<uint8_t> bytes = {
-        0x41, 0x53, // push r11
-        0x41, 0x54, // push r12
-
-        0x48, 0x83, 0xec, 0x68, // sub rsp, 0x68
-        0xf3, 0x0f, 0x7f, 0x04, 0x24, // movdqu xmmword ptr [rsp], xmm0
-        0xf3, 0x0f, 0x7f, 0x4c, 0x24, 0x10, // movdqu xmmword ptr [rsp+0x10], xmm1
-        0xf3, 0x0f, 0x7f, 0x54, 0x24, 0x20, // movdqu xmmword ptr [rsp+0x20], xmm2
-        0xf3, 0x0f, 0x7f, 0x5c, 0x24, 0x30, // movdqu xmmword ptr [rsp+0x30], xmm3
-
-        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // movabs rax, 0x0
-        0xff, 0xd0, // call rax
-
-        0xf3, 0x0f, 0x6f, 0x04, 0x24, // movdqu xmm0, xmmword ptr [rsp]
-        0xf3, 0x0f, 0x6f, 0x4c, 0x24, 0x10, // movdqu xmm1, xmmword ptr [rsp+0x10]
-        0xf3, 0x0f, 0x6f, 0x54, 0x24, 0x20, // movdqu xmm2, xmmword ptr [rsp+0x20]
-        0xf3, 0x0f, 0x6f, 0x5c, 0x24, 0x30, // movdqu xmm3, xmmword ptr [rsp+0x30]
-        0x48, 0x83, 0xc4, 0x68, // add rsp, 0x68
-
-        0x41, 0x5c, // pop r12
-        0x41, 0x5b, // pop r11
-
-        0xc3, // ret
-    };
-
-    GLOBED_REQUIRE(bytes.size() < 192, "Patch size was too big");
-
-    uint64_t daddr = reinterpret_cast<uint64_t>(&countForItemDetour);
-    std::memcpy(bytes.data() + 33, &daddr, sizeof(daddr));
-
-    // for some reason getNonVirtual does not work here lol
-#if GEODE_COMP_GD_VERSION == 22060
-    countForItemPatch = util::lowlevel::patch(0x2506d0, bytes);
-#else
-# error Update this for new gd, is address of GJEffectManager::countForItem
-#endif
-}
-#endif
 
 void GJEffectManagerHook::addCountToItemCustom(int id, int diff) {
     int newValue = m_fields->customItems[id] + diff;
@@ -358,11 +307,11 @@ static Patch* egoPatch2 = nullptr;
 // EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger would break otherwise)
 #if GEODE_COMP_GD_VERSION == 22060
 $execute {
-    uintptr_t offset1 = -1, offset2 = -1;
+    uintptr_t offset1 = -1, offset2 = -1, funcStart = 0;
     std::vector<uint8_t> bytes;
 
 #ifdef GEODE_IS_WINDOWS
-    uintptr_t funcStart = geode::base::get() + 0x47f960;
+    funcStart = geode::base::get() + 0x47f960;
 
     offset1 = util::sigscan::find<"3d 0f 27 00 00", 0x100>(funcStart);
     if (offset1 != -1) {
@@ -396,7 +345,6 @@ void globed::toggleTriggerHooks(bool state) {
         if (patch) (void) (state ? patch->enable() : patch->disable());
     };
 
-    toggle(countForItemPatch);
 }
 
 void globed::toggleEditorTriggerHooks(bool state) {
