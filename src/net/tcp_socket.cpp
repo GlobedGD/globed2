@@ -15,7 +15,7 @@
 #ifdef GEODE_IS_WINDOWS
 constexpr static int WouldBlock = WSAEWOULDBLOCK;
 #else
-constexpr static int WouldBlock = EWOULDBLOCK;
+constexpr static int WouldBlock = EINPROGRESS;
 #endif
 
 using namespace geode::prelude;
