@@ -2,8 +2,8 @@
     "id": "dankmeme.globed2",
     "name": "Globed",
     "developer": "dankmeme",
-    "geode": "3.4.0",
-    "version": "v1.6.2",
+    "geode": "3.9.0",
+    "version": "v1.6.3",
     "gd": {
         "win": "2.206",
         "android": "2.206",
