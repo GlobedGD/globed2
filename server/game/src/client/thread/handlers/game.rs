@@ -84,13 +84,6 @@ impl ClientThread {
                 // first update/reset if needed
                 let is_dead = packet.data.flags.get_bit(0);
                 let last_death_real = packet.data.flags.get_bit(6);
-                debug!(
-                    "is dead: {}, last death real: {}, last death ts: {}, ts: {}",
-                    is_dead,
-                    last_death_real,
-                    packet.data.last_death_timestamp.get(),
-                    packet.data.timestamp.get()
-                );
 
                 if last_death_real && is_dead && packet.data.last_death_timestamp.get() != switch_manager.last_death_ts {
                     debug!("player died, resetting switch manager");

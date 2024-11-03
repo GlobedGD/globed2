@@ -16,7 +16,7 @@ private:
     int linkedTo = 0;
     static inline const std::string LOCKED_TO_KEY = "sw-locked-to"_spr;
 
-    void updateFromLockedPlayer(PlayerObject* player, bool ignorePos);
+    void updateFromLockedPlayer(PlayerObject* player);
     void linkPlayerTo(int accountId);
     void unlink();
 };

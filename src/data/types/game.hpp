@@ -27,6 +27,8 @@ struct SpecificIconData {
 
     cocos2d::CCPoint position;
     float rotation;
+    float yVel;
+    float fallSpeed;
 
     PlayerIconType iconType;
     bool isVisible;         // self-explanatory

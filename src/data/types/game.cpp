@@ -22,6 +22,8 @@ void SpecificIconData::copyFlagsFrom(const SpecificIconData& other) {
 template<> void ByteBuffer::customEncode(const SpecificIconData& data) {
     this->writeValue(data.position);
     this->writeValue(data.rotation);
+    this->writeValue(data.yVel);
+    this->writeValue(data.fallSpeed);
     this->writeValue(data.iconType);
 
     BitBuffer<16> bits;
@@ -48,6 +50,8 @@ template<> ByteBuffer::DecodeResult<SpecificIconData> ByteBuffer::customDecode()
 
     GLOBED_UNWRAP_INTO(this->readValue<CCPoint>(), data.position);
     GLOBED_UNWRAP_INTO(this->readValue<float>(), data.rotation);
+    GLOBED_UNWRAP_INTO(this->readValue<float>(), data.yVel);
+    GLOBED_UNWRAP_INTO(this->readValue<float>(), data.fallSpeed);
     GLOBED_UNWRAP_INTO(this->readValue<PlayerIconType>(), data.iconType);
 
     GLOBED_UNWRAP_INTO(this->readBits<16>(), auto bits);

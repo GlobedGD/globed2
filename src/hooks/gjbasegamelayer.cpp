@@ -840,6 +840,8 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
     return SpecificIconData {
         .position = player->getPosition(),
         .rotation = rot,
+        .yVel = (float) player->m_yVelocity,
+        .fallSpeed = (float )player->m_fallSpeed,
 
         .iconType = iconType,
         .isVisible = player->isVisible(),
@@ -1279,7 +1281,7 @@ void GlobedGJBGL::updateCamera(float dt) {
 void GlobedGJBGL::executeSwitch(const SwitchData& data) {
     auto& fields = this->getFields();
 
-    log::debug("Switching to {}", data.player);
+    log::debug("Switching to {}, ts = {}, last executed = {}, next = {}", data.player, m_fields->npTimeCounter, m_fields->lastExecutedSwitch.timestamp, data.timestamp);
 
     for (auto p : m_fields->players) {
         p.second->setVisible(p.first == data.player);
@@ -1288,5 +1290,31 @@ void GlobedGJBGL::executeSwitch(const SwitchData& data) {
 
         m_player1->setVisible(selfVisible);
         m_player2->setVisible(selfVisible);
+
+        if (selfVisible) {
+            // border thingy and sound effect
+#if GLOBED_HAS_FMOD
+            auto* engine = FMODAudioEngine::sharedEngine();
+            engine->playEffect("switch-sfx.wav"_spr, 1.f, 1.f, 1.f);
+#endif
+
+            // switch-screen-glow.png
+            Build(CCScale9Sprite::createWithSpriteFrameName("switch-screen-glow.png"_spr))
+                .parent(m_uiLayer)
+                .zOrder(11)
+                .opacity(0)
+                .contentSize(CCDirector::get()->getWinSize())
+                .anchorPoint(0.f, 0.f)
+                .with([&](auto node) {
+                    node->runAction(
+                        CCSequence::create(
+                            CCFadeIn::create(0.05f),
+                            CCFadeOut::create(0.2f),
+                            CCRemoveSelf::create(),
+                            nullptr
+                        )
+                    );
+                });
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 #include <hooks/gjbasegamelayer.hpp>
 #include <hooks/play_layer.hpp>
+#include <util/gd.hpp>
 
 using EventOutcome = BaseGameplayModule::EventOutcome;
 
@@ -22,7 +23,7 @@ void SwitchModule::mainPlayerUpdate(PlayerObject* player, float dt) {
     PlayerObject* noclipFor = gameLayer->m_player1;
 
     if (player == noclipFor && this->linkedTo != 0) {
-        this->updateFromLockedPlayer(player, false);
+        this->updateFromLockedPlayer(player);
         player->setVisible(false);
         // if (bgl->m_gameState.m_isDualMode) {
         //     this->m_isHidden = true;
@@ -37,7 +38,7 @@ void SwitchModule::mainPlayerUpdate(PlayerObject* player, float dt) {
     }
 }
 
-void SwitchModule::updateFromLockedPlayer(PlayerObject* player, bool ignorePos) {
+void SwitchModule::updateFromLockedPlayer(PlayerObject* player) {
     ComplexVisualPlayer* cvp = static_cast<ComplexVisualPlayer*>(player->getUserObject(LOCKED_TO_KEY));
     if (!cvp) return;
 
@@ -49,8 +50,9 @@ void SwitchModule::updateFromLockedPlayer(PlayerObject* player, bool ignorePos) 
         });
     }
 
-    if (!ignorePos && !rp->lastVisualState.isDead) {
-        player->setPosition(cvp->getPlayerPosition());
+    if (!rp->lastVisualState.isDead) {
+        auto link = static_cast<PlayerObject*>(cvp->getPlayerObject());
+        util::gd::clonePlayerObject(player, link);
     }
 }
 

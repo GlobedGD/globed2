@@ -164,6 +164,8 @@ void ComplexVisualPlayer::updateData(
     float innerRot = data.isSideways ? (data.isUpsideDown ? 90.f : -90.f) : 0.f;
     playerIcon->m_mainLayer->setRotation(innerRot);
 
+    playerIcon->m_isUpsideDown = data.isUpsideDown;
+
     float distanceTo90deg = std::fmod(std::abs(data.rotation), 90.f);
     if (distanceTo90deg > 45.f) {
         distanceTo90deg = 90.f - distanceTo90deg;
@@ -231,24 +233,30 @@ void ComplexVisualPlayer::updateData(
 
     // animate dashing
     if (data.isDashing != wasDashing) {
+
         // TODO: dashing animation
-        // if (data.isDashing) {
-        //     auto kf = ObjectToolbox::sharedState()->intKeyToFrame(0x6d7);
-        //     log::debug("kf: {}", kf);
-        //     auto* dobj = DashRingObject::create(kf);
-        //     dobj->retain();
-        //     // rotation
-        //     *(float*)((char*)dobj + 0x34c) = 115.f;
-        //     *(bool*)((char*)dobj + 0x394) = false;
-        //     playerIcon->m_playEffects = true;
-        //     playerIcon->startDashing(nullptr);
-        // } else {
-        //     playerIcon->stopDashing();
-        //     playerIcon->setRotation(0.f);
-        // }
+        if (data.isDashing) {
+            playerIcon->m_isDashing = true;
+            auto* dobj = static_cast<DashRingObject*>(GameObject::createWithKey(0x6d7));
+            if (dobj) {
+            dobj->retain();
+                // rotation
+                *(float*)((char*)dobj + 0x34c) = 115.f;
+                *(bool*)((char*)dobj + 0x394) = false;
+                playerIcon->m_playEffects = true;
+                playerIcon->startDashing(dobj);
+            }
+        } else {
+            playerIcon->stopDashing();
+            playerIcon->setRotation(0.f);
+        }
 
         wasDashing = data.isDashing;
     }
+
+    // switch things
+    playerIcon->m_yVelocity = data.yVel;
+    playerIcon->m_fallSpeed = data.fallSpeed;
 
     // animate robot and spider
     if (iconType == PlayerIconType::Robot || iconType == PlayerIconType::Spider) {

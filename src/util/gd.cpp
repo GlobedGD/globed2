@@ -100,4 +100,19 @@ namespace util::gd {
     void setVariable(GameVariable var, bool state) {
         GameManager::get()->setGameVariable(gvkey(var).c_str(), state);
     }
+
+    void clonePlayerObject(PlayerObject* dest, PlayerObject* src) {
+        dest->setPosition(src->getPosition());
+        dest->setRotation(src->getRotation());
+        dest->m_mainLayer->setRotation(src->m_mainLayer->getRotation());
+        dest->m_mainLayer->setPosition(src->m_mainLayer->getPosition());
+        dest->m_mainLayer->setScale(src->m_mainLayer->getScale());
+        dest->m_mainLayer->setScaleX(src->m_mainLayer->getScaleX());
+        dest->m_mainLayer->setScaleY(src->m_mainLayer->getScaleY());
+        dest->setOpacity(src->getOpacity());
+        dest->m_isDashing = src->m_isDashing;
+        dest->m_yVelocity = src->m_yVelocity;
+        dest->m_fallSpeed = src->m_fallSpeed;
+        dest->m_isUpsideDown = src->m_isUpsideDown;
+    }
 }

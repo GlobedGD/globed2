@@ -21,4 +21,6 @@ namespace util::gd {
 
     bool variable(GameVariable var);
     void setVariable(GameVariable var, bool state);
+
+    void clonePlayerObject(PlayerObject* target, PlayerObject* source);
 }

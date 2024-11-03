@@ -34,6 +34,8 @@ pub struct SpiderTeleportData {
 pub struct SpecificIconData {
     pub position: Point,
     pub rotation: FiniteF32,
+    pub y_vel: FiniteF32,
+    pub fall_speed: FiniteF32,
     pub icon_type: PlayerIconType,
     pub flags: Bits<2>, // bit-field with various flags, see the client-side structure for more info
     pub spider_teleport_data: Option<SpiderTeleportData>,
