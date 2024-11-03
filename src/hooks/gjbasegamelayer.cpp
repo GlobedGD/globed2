@@ -136,6 +136,11 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
             this->addModule<DeathlinkModule>();
         }
 
+        // Switch mode
+        if (rs.switchMode && !editor) {
+            this->addModule<SwitchModule>();
+        }
+
         GLOBED_EVENT(this, setupPreInit(level));
     }
 }
@@ -288,6 +293,15 @@ void GlobedGJBGL::setupPacketListeners() {
         auto& fields = this->getFields();
 
         fields.lastServerUpdate = fields.timeCounter;
+        if (m_fields->roomSettings.flags.switchMode) {
+            // check if we did managed to run the last switch, if not, run it
+            if (fields.lastExecutedSwitch.timestamp != fields.nextSwitchData.timestamp) {
+                this->executeSwitch(fields.nextSwitchData);
+                fields.lastExecutedSwitch = fields.nextSwitchData;
+            }
+
+            fields.nextSwitchData = packet->switchData;
+        }
 
         for (const auto& player : packet->players) {
             if (!fields.players.contains(player.accountId)) {
@@ -697,6 +711,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     );
 
     fields.timeCounter += dt;
+    fields.npTimeCounter += dt;
 
     fields.interpolator->tick(dt);
 
@@ -880,6 +895,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
 
     return PlayerData {
         .timestamp = m_fields->timeCounter,
+        .npTimestamp = m_fields->npTimeCounter,
 
         .player1 = this->gatherSpecificIconData(m_player1),
         .player2 = this->gatherSpecificIconData(m_player2),
@@ -1258,4 +1274,19 @@ void GlobedGJBGL::updateCamera(float dt) {
     GLOBED_EVENT(this, updateCameraPre(dt));
     GJBaseGameLayer::updateCamera(dt);
     GLOBED_EVENT(this, updateCameraPost(dt));
+}
+
+void GlobedGJBGL::executeSwitch(const SwitchData& data) {
+    auto& fields = this->getFields();
+
+    log::debug("Switching to {}", data.player);
+
+    for (auto p : m_fields->players) {
+        p.second->setVisible(p.first == data.player);
+
+        bool selfVisible = data.player == GJAccountManager::get()->m_accountID;
+
+        m_player1->setVisible(selfVisible);
+        m_player2->setVisible(selfVisible);
+    }
 }

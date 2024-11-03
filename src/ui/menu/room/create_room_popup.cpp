@@ -17,6 +17,7 @@ constexpr int TAG_OPEN_INV = 1022;
 constexpr int TAG_COLLISION = 1023;
 constexpr int TAG_2P = 1024;
 constexpr int TAG_DEATHLINK = 1025;
+constexpr int TAG_SWITCH_MODE = 1026;
 
 bool CreateRoomPopup::setup(RoomLayer* parent) {
     this->setID("CreateRoomPopup"_spr);
@@ -162,7 +163,8 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
 #ifdef GLOBED_DEBUG
         {"2-Player Mode", TAG_2P},
 #endif
-        {"Death Link", TAG_DEATHLINK}
+        {"Death Link", TAG_DEATHLINK},
+        {"Switch Mode", TAG_SWITCH_MODE},
     });
 
     float totalHeight = 0.f;
@@ -226,6 +228,7 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
         case TAG_OPEN_INV: settingFlags.publicInvites = state; break;
         case TAG_PRIVATE: settingFlags.isHidden = state; break;
         case TAG_DEATHLINK: settingFlags.deathlink = state; break;
+        case TAG_SWITCH_MODE: settingFlags.switchMode = state; break;
     }
 }
 

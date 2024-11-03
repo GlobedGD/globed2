@@ -51,7 +51,8 @@ private:
         *cellCollision,
         *cellTwoPlayer,
         *cellPublicInvites,
-        *cellDeathlink
+        *cellDeathlink,
+        *cellSwitchMode
         ;
 
     bool setup() override;

@@ -29,9 +29,12 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         bool isVoiceProximity = false;
         uint32_t totalSentPackets = 0;
         float timeCounter = 0.f;
+        float npTimeCounter = 0.f; // only makes sense when switch mode is enabled
         float lastServerUpdate = 0.f;
         std::unique_ptr<PlayerInterpolator> interpolator;
         std::unique_ptr<PlayerStore> playerStore;
+        SwitchData lastExecutedSwitch;
+        SwitchData nextSwitchData;
         RoomSettings roomSettings;
 
         std::vector<std::unique_ptr<BaseGameplayModule>> modules;
@@ -161,6 +164,8 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     void addModule() {
         m_fields->modules.push_back(std::make_unique<T>(this));
     }
+
+    void executeSwitch(const SwitchData& data);
 
     // With speedhack enabled, all scheduled selectors will run more often than they are supposed to.
     // This means, if you turn up speedhack to let's say 100x, you will send 3000 packets per second. That is a big no-no.

@@ -46,6 +46,7 @@ struct SpecificIconData {
 
 struct PlayerData {
     float timestamp;
+    float npTimestamp;
 
     SpecificIconData player1;
     SpecificIconData player2;
@@ -71,4 +72,14 @@ struct PlayerMetadata {
 GLOBED_SERIALIZABLE_STRUCT(PlayerMetadata, (
     localBest,
     attempts
+));
+
+struct SwitchData {
+    int player;
+    float timestamp;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(SwitchData, (
+    player,
+    timestamp
 ));

@@ -9,6 +9,7 @@ pub struct RoomSettingsFlags {
     pub collision: bool,
     pub two_player: bool,
     pub deathlink: bool,
+    pub switch_mode: bool,
 }
 
 #[derive(Clone, Copy, Default, Encodable, Decodable, StaticSize, DynamicSize, Debug)]

@@ -13,7 +13,8 @@ enum {
     TAG_TWO_PLAYER,
     TAG_PUBLIC_INVITES,
     TAG_INVITE_ONLY,
-    TAG_DEATHLINK
+    TAG_DEATHLINK,
+    TAG_SWITCH_MODE
 };
 
 #define MAKE_SETTING(name, desc, tag, storage) \
@@ -36,6 +37,7 @@ bool RoomSettingsPopup::setup() {
 #endif
 
     MAKE_SETTING("Death Link", "Whenever a player dies, everyone on the level dies as well. <cy>Inspired by the mod DeathLink from</c> <cg>Alphalaneous</c>.", TAG_DEATHLINK, cellDeathlink);
+    MAKE_SETTING("Switch Mode", "While enabled, one player can play the level at a time and the turns switch every once in a while", TAG_SWITCH_MODE, cellSwitchMode);
 
     auto* listLayer = Build(SettingList::createForComments(LIST_WIDTH, LIST_HEIGHT, RoomSettingCell::CELL_HEIGHT))
         .scale(0.65f)
@@ -70,6 +72,7 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
         case TAG_TWO_PLAYER: currentSettings.flags.twoPlayerMode = enabled; break;
 #endif
         case TAG_DEATHLINK: currentSettings.flags.deathlink = enabled; break;
+        case TAG_SWITCH_MODE: currentSettings.flags.switchMode = enabled; break;
     }
 
     // if we are not the room owner, just revert the changes next frame
@@ -92,6 +95,7 @@ void RoomSettingsPopup::updateCheckboxes() {
     cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);
 #endif
     cellDeathlink->setToggled(currentSettings.flags.deathlink);
+    cellSwitchMode->setToggled(currentSettings.flags.switchMode);
 
     this->enableCheckboxes(RoomManager::get().isOwner());
 }
@@ -103,6 +107,7 @@ void RoomSettingsPopup::enableCheckboxes(bool enabled) {
         , cellTwoPlayer
 #endif
         , cellDeathlink
+        , cellSwitchMode
     }) {
         cell->setEnabled(enabled);
     }

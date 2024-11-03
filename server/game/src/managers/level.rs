@@ -1,8 +1,13 @@
-use globed_shared::IntMap;
+use esp::FiniteF32;
+use globed_shared::{
+    debug,
+    rand::{self, seq::SliceRandom, Rng},
+    IntMap,
+};
 
 use crate::data::{
     types::PlayerData, AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata, LevelId,
-    PlayerMetadata,
+    PlayerMetadata, SwitchData,
 };
 
 #[derive(Default)]
@@ -44,9 +49,79 @@ impl LevelManagerPlayer {
 }
 
 #[derive(Default)]
+pub struct SwitchManager {
+    players_: Vec<i32>,
+    history: Vec<SwitchData>,
+    pub last_death_ts: f32,
+}
+
+impl SwitchManager {
+    pub fn reset(&mut self) {
+        self.history.clear();
+    }
+
+    pub fn players(&mut self) -> &mut Vec<i32> {
+        &mut self.players_
+    }
+
+    pub fn get_next_switch(&mut self, timestamp: f32) -> SwitchData {
+        pub const MIN_SWITCH_DUR: f32 = 2.0;
+        pub const MAX_SWITCH_DUR: f32 = 5.0;
+
+        // if there are no players, return a default dummy value
+        if self.players_.is_empty() {
+            return SwitchData {
+                player: 0,
+                timestamp: FiniteF32::new(0.0f32),
+            };
+        }
+
+        // first, check if timestamp is less than the last switch
+        let start_ts;
+        let last_player: i32;
+
+        if let Some(last) = self.history.last() {
+            if timestamp < *last.timestamp {
+                return last.clone();
+            }
+
+            start_ts = last.timestamp.get();
+            last_player = last.player;
+        } else {
+            start_ts = 0.0f32;
+            last_player = 0;
+        }
+
+        // otherwise, generate a new switch and return it
+        let next_stamp = FiniteF32::new(start_ts + rand::thread_rng().gen_range(MIN_SWITCH_DUR..MAX_SWITCH_DUR));
+
+        debug!("next switch at: {}", next_stamp.get());
+
+        // don't repeat the same player twice in a row
+        let next_player = loop {
+            let player = *self.players_.choose(&mut rand::thread_rng()).unwrap();
+
+            if player != last_player {
+                break player;
+            }
+        };
+
+        let data = SwitchData {
+            player: next_player,
+            timestamp: next_stamp,
+        };
+
+        self.history.push(data.clone());
+
+        data
+    }
+}
+
+#[derive(Default)]
 pub struct Level {
     pub players: Vec<i32>,
     pub unlisted: bool,
+    pub switch_manager: SwitchManager,
 }
 
 // Manages an entire room (all levels and players inside of it).
@@ -127,6 +202,10 @@ impl LevelManager {
         self.players.len()
     }
 
+    pub fn get_switch_manager(&mut self, level_id: LevelId) -> Option<&mut SwitchManager> {
+        self.levels.get_mut(&level_id).map(|x| &mut x.switch_manager)
+    }
+
     /// run a function `f` on each player on a level given its ID, with possibility to pass additional data
     #[inline]
     pub fn for_each_player_on_level<F: FnMut(&LevelManagerPlayer)>(&self, level_id: LevelId, f: F) {
@@ -150,6 +229,7 @@ impl LevelManager {
         let level = self.levels.entry(level_id).or_insert_with(|| Level {
             players: Vec::with_capacity(8),
             unlisted,
+            ..Default::default()
         });
 
         if !level.players.contains(&account_id) {

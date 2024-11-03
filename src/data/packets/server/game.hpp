@@ -20,9 +20,10 @@ class LevelDataPacket : public Packet {
     LevelDataPacket() {}
 
     std::vector<AssociatedPlayerData> players;
+    SwitchData switchData;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(LevelDataPacket, (players));
+GLOBED_SERIALIZABLE_STRUCT(LevelDataPacket, (players, switchData));
 
 // 22002 - LevelPlayerMetadataPacket
 class LevelPlayerMetadataPacket : public Packet {

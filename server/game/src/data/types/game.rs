@@ -54,6 +54,7 @@ pub struct PlayerMetadata {
 #[derive(Clone, Debug, Default, Encodable, Decodable, StaticSize, DynamicSize)]
 pub struct PlayerData {
     pub timestamp: FiniteF32,
+    pub np_timestamp: FiniteF32, // non persistent timestamp, resets every attempt
 
     pub player1: SpecificIconData,
     pub player2: SpecificIconData,
@@ -63,4 +64,10 @@ pub struct PlayerData {
     pub current_percentage: FiniteF32,
 
     pub flags: Bits<1>, // also a bit-field
+}
+
+#[derive(Clone, Debug, Default, Encodable, Decodable, StaticSize, DynamicSize)]
+pub struct SwitchData {
+    pub player: i32,
+    pub timestamp: FiniteF32,
 }

@@ -58,7 +58,7 @@ impl ClientThread {
 
         let room_id = self.room_id.load(Ordering::Relaxed);
 
-        let (written_players, metadatas) = self.game_server.state.room_manager.with_any(room_id, |pm| {
+        let (written_players, metadatas, switch_data) = self.game_server.state.room_manager.with_any(room_id, |pm| {
             pm.manager.set_player_data(account_id, &packet.data);
 
             // this unwrap should be safe and > 0 given that self.level_id != 0, but we leave a default just in case
@@ -79,7 +79,51 @@ impl ClientThread {
                 });
             }
 
-            (player_count, metavec)
+            let mut sm_reset_players = false;
+            if let Some(switch_manager) = pm.manager.get_switch_manager(level_id) {
+                // first update/reset if needed
+                let is_dead = packet.data.flags.get_bit(0);
+                let last_death_real = packet.data.flags.get_bit(6);
+                debug!(
+                    "is dead: {}, last death real: {}, last death ts: {}, ts: {}",
+                    is_dead,
+                    last_death_real,
+                    packet.data.last_death_timestamp.get(),
+                    packet.data.timestamp.get()
+                );
+
+                if last_death_real && is_dead && packet.data.last_death_timestamp.get() != switch_manager.last_death_ts {
+                    debug!("player died, resetting switch manager");
+                    switch_manager.reset();
+
+                    switch_manager.last_death_ts = packet.data.last_death_timestamp.get();
+
+                    // reset players as well
+                    sm_reset_players = true;
+                }
+            }
+
+            if sm_reset_players {
+                let mut pvec = Vec::new();
+
+                pm.manager.for_each_player_on_level(level_id, |player| {
+                    pvec.push(player.account_id);
+                });
+
+                let sm = pm.manager.get_switch_manager(level_id).unwrap();
+
+                *sm.players() = pvec;
+
+                debug!("players: {:?}", sm.players());
+            }
+
+            let switch_data = if let Some(switch_manager) = pm.manager.get_switch_manager(level_id) {
+                switch_manager.get_next_switch(packet.data.np_timestamp.get())
+            } else {
+                SwitchData::default()
+            };
+
+            (player_count, metavec, switch_data)
         });
 
         // no one else on the level, no need to send a response packet
@@ -105,6 +149,8 @@ impl ClientThread {
 
                         count
                     });
+
+                    buf.write_value(&switch_data); // TODO
                 });
             })
             .await?;
@@ -130,8 +176,11 @@ impl ClientThread {
             );
 
             for chunk in players.chunks(players_per_fragment) {
-                self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| buf.write_value(chunk))
-                    .await?;
+                self.send_packet_alloca_with::<LevelDataPacket, _>(calc_size, |buf| {
+                    buf.write_value(chunk);
+                    buf.write_value(&switch_data);
+                })
+                .await?;
             }
         }
 
