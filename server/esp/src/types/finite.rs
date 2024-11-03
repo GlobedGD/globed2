@@ -65,6 +65,20 @@ impl Deref for FiniteF32 {
     }
 }
 
+impl FiniteF32 {
+    pub fn new(x: f32) -> Self {
+        if !x.is_finite() {
+            panic!("Non-finite value: {}", x);
+        }
+
+        Self(x)
+    }
+
+    pub fn get(&self) -> f32 {
+        self.0
+    }
+}
+
 #[derive(Copy, Clone, Default, Debug)]
 pub struct FiniteF64(pub f64);
 
@@ -125,5 +139,19 @@ impl Deref for FiniteF64 {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl FiniteF64 {
+    pub fn new(x: f64) -> Self {
+        if !x.is_finite() {
+            panic!("Non-finite value: {}", x);
+        }
+
+        Self(x)
+    }
+
+    pub fn get(&self) -> f64 {
+        self.0
     }
 }
