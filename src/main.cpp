@@ -16,6 +16,7 @@
 
 using namespace geode::prelude;
 
+void setupAsp();
 void setupErrorCheckNode();
 void setupCustomKeybinds();
 void printDebugInfo();
@@ -29,23 +30,6 @@ static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAG
     system->init(MAX_AUDIO_CHANNELS, flags, dd);
 }
 #endif // GLOBED_VOICE_SUPPORT
-
-$execute {
-    using namespace asp;
-
-    asp::setLogFunction([](LogLevel level, auto message) {
-        switch (level) {
-            case LogLevel::Trace: [[fallthrough]];
-            case LogLevel::Debug: log::debug("[asp] {}", message); break;
-            case LogLevel::Info: log::info("[asp] {}", message); break;
-            case LogLevel::Warn: log::warn("[asp] {}", message); break;
-            case LogLevel::Error: log::error("[asp] {}", message); break;
-        }
-    });
-
-    // auto& rt = asp::async::Runtime::get();
-    // rt.launch();
-}
 
 $on_mod(Loaded) {
 #ifdef GLOBED_VOICE_SUPPORT
@@ -62,6 +46,7 @@ $on_mod(Loaded) {
 #endif // GLOBED_VOICE_SUPPORT
 
     CryptoBox::initLibrary();
+    setupAsp();
     setupErrorCheckNode();
     setupCustomKeybinds();
 
@@ -74,6 +59,20 @@ $on_mod(Loaded) {
 #endif
 
     globed::platformSetup();
+}
+
+void setupAsp() {
+    using namespace asp;
+
+    asp::setLogFunction([](LogLevel level, auto message) {
+        switch (level) {
+            case LogLevel::Trace: [[fallthrough]];
+            case LogLevel::Debug: log::debug("[asp] {}", message); break;
+            case LogLevel::Info: log::info("[asp] {}", message); break;
+            case LogLevel::Warn: log::warn("[asp] {}", message); break;
+            case LogLevel::Error: log::error("[asp] {}", message); break;
+        }
+    });
 }
 
 // error check node runs on every scene and shows popups/notifications if an error has occured in another thread

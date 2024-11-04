@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE punishments SET reason = ?, expires_at = ? WHERE punishment_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "4baf83134ee0bba1b75ef59967b2f3f2c76702a2b652c1117dbf26a7e87a145c"
+}
