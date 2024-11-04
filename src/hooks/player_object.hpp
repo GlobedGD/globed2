@@ -7,7 +7,7 @@ class ComplexVisualPlayer;
 
 constexpr int COMPLEX_PLAYER_OBJECT_TAG = 3458738;
 
-struct GLOBED_DLL ComplexPlayerObject : geode::Modify<ComplexPlayerObject, PlayerObject> {
+struct ComplexPlayerObject : geode::Modify<ComplexPlayerObject, PlayerObject> {
     // those are needed so that our changes don't impact actual PlayerObject instances
     bool vanilla();
 
@@ -20,7 +20,7 @@ struct GLOBED_DLL ComplexPlayerObject : geode::Modify<ComplexPlayerObject, Playe
 };
 
 // Unlike `ComplexPlayerObject`, this one is made specifically for vanilla player objects, so it is a separate $modify class.
-struct GLOBED_DLL HookedPlayerObject : geode::Modify<HookedPlayerObject, PlayerObject> {
+struct HookedPlayerObject : geode::Modify<HookedPlayerObject, PlayerObject> {
     struct Fields {
         bool forcedPlatFlag = false;
     };
