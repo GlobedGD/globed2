@@ -3,6 +3,7 @@
 #include <hooks/gjbasegamelayer.hpp>
 #include <hooks/play_layer.hpp>
 #include <util/gd.hpp>
+#include <util/math.hpp>
 
 using EventOutcome = BaseGameplayModule::EventOutcome;
 
@@ -77,10 +78,9 @@ void SwitchModule::selUpdate(float dt) {
 
     auto& fields = pl->getFields();
 
-    if (fields.lastExecutedSwitch.timestamp != fields.nextSwitchData.timestamp) {
+    if (!util::math::equal(fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp)) {
         if (fields.nextSwitchData.timestamp <= fields.npTimeCounter) {
             pl->executeSwitch(fields.nextSwitchData);
-            fields.lastExecutedSwitch = fields.nextSwitchData;
         }
     }
 

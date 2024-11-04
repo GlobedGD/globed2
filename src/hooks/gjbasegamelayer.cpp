@@ -295,9 +295,8 @@ void GlobedGJBGL::setupPacketListeners() {
         fields.lastServerUpdate = fields.timeCounter;
         if (m_fields->roomSettings.flags.switchMode) {
             // check if we did managed to run the last switch, if not, run it
-            if (fields.lastExecutedSwitch.timestamp != fields.nextSwitchData.timestamp) {
+            if (!util::math::equal(fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp)) {
                 this->executeSwitch(fields.nextSwitchData);
-                fields.lastExecutedSwitch = fields.nextSwitchData;
             }
 
             fields.nextSwitchData = packet->switchData;
@@ -1317,4 +1316,6 @@ void GlobedGJBGL::executeSwitch(const SwitchData& data) {
                 });
         }
     }
+
+    fields.lastExecutedSwitch = fields.nextSwitchData;
 }
