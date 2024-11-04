@@ -3,6 +3,8 @@
 #include <Geode/utils/general.hpp>
 #include <defs/minimal_geode.hpp>
 
+#include <util/data.hpp>
+
 namespace util::lowlevel {
     geode::Patch* patch(ptrdiff_t offset, const std::vector<uint8_t>& bytes);
     geode::Patch* patchAbsolute(uintptr_t offset, const std::vector<uint8_t>& bytes);
@@ -24,7 +26,7 @@ namespace util::lowlevel {
 
     template <typename DFunc>
     Result<Patch*> vmtHookWithTable(DFunc detour, void** vtable, size_t index) {
-        auto bytes = geode::toByteArray(detour);
+        auto bytes = util::data::asRawByteVector(detour);
         bytes.resize(sizeof(void*));
 
         auto result = Mod::get()->patch(&vtable[index], bytes);

@@ -1,6 +1,7 @@
 #include "loading_layer.hpp"
 
 #include "game_manager.hpp"
+#include <util/data.hpp>
 #include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/cocos.hpp>
@@ -265,7 +266,7 @@ $execute {
     // movabs rax, <loadingFinishedCaller>
     patchBytes.push_back(0x48);
     patchBytes.push_back(0xb8);
-    for (auto byte : geode::toByteArray(&loadingFinishedCaller)) {
+    for (auto byte : util::data::asRawBytes(&loadingFinishedCaller)) {
         patchBytes.push_back(byte);
     }
 
