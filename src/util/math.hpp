@@ -8,7 +8,7 @@
 #include <defs/assert.hpp>
 
 namespace util::math {
-    constexpr float FLOAT_ERROR_MARGIN = 0.002f;
+    constexpr float FLOAT_ERROR_MARGIN = 0.001f;
     constexpr double DOUBLE_ERROR_MARGIN = 0.0001;
 
     // returns a signaling NaN

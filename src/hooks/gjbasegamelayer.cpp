@@ -294,12 +294,14 @@ void GlobedGJBGL::setupPacketListeners() {
 
         fields.lastServerUpdate = fields.timeCounter;
         if (m_fields->roomSettings.flags.switchMode) {
-            // check if we did managed to run the last switch, if not, run it
-            if (!util::math::equal(fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp)) {
-                this->executeSwitch(fields.nextSwitchData);
-            }
+            if (!util::math::equal(packet->switchData.timestamp, fields.nextSwitchData.timestamp)) {
+                // check if we did managed to run the last switch, if not, run it
+                if (!util::math::equal(fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp)) {
+                    this->executeSwitch(fields.nextSwitchData);
+                }
 
-            fields.nextSwitchData = packet->switchData;
+                fields.nextSwitchData = packet->switchData;
+            }
         }
 
         for (const auto& player : packet->players) {
