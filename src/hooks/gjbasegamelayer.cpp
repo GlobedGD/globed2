@@ -1286,11 +1286,14 @@ void GlobedGJBGL::executeSwitch(const SwitchData& data) {
         p.second->setVisible(p.first == data.player);
 
         bool selfVisible = data.player == GJAccountManager::get()->m_accountID;
+        if (data.player == 0) {
+            selfVisible = true;
+        }
 
         m_player1->setVisible(selfVisible);
         m_player2->setVisible(selfVisible);
 
-        if (selfVisible) {
+        if (selfVisible && data.player != 0) {
             // border thingy and sound effect
 #if GLOBED_HAS_FMOD
             auto* engine = FMODAudioEngine::sharedEngine();
