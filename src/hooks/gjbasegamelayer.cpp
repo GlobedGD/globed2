@@ -295,11 +295,6 @@ void GlobedGJBGL::setupPacketListeners() {
         fields.lastServerUpdate = fields.timeCounter;
         if (m_fields->roomSettings.flags.switchMode) {
             if (!util::math::equal(packet->switchData.timestamp, fields.nextSwitchData.timestamp)) {
-                // check if we did managed to run the last switch, if not, run it
-                if (!util::math::equal(fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp)) {
-                    this->executeSwitch(fields.nextSwitchData);
-                }
-
                 fields.nextSwitchData = packet->switchData;
             }
         }
@@ -1302,25 +1297,57 @@ void GlobedGJBGL::executeSwitch(const SwitchData& data) {
             engine->playEffect("switch-sfx.wav"_spr, 1.f, 1.f, 1.f);
 #endif
 
-            // switch-screen-glow.png
-            Build(CCScale9Sprite::createWithSpriteFrameName("switch-screen-glow.png"_spr))
-                .parent(m_uiLayer)
-                .zOrder(11)
-                .opacity(0)
-                .contentSize(CCDirector::get()->getWinSize())
-                .anchorPoint(0.f, 0.f)
-                .with([&](auto node) {
-                    node->runAction(
-                        CCSequence::create(
-                            CCFadeIn::create(0.05f),
-                            CCFadeOut::create(0.2f),
-                            CCRemoveSelf::create(),
-                            nullptr
-                        )
-                    );
-                });
+            fields.switchGlowGreen->stopAllActions();
+            fields.switchGlowGreen->removeFromParent();
+
+            m_uiLayer->addChild(fields.switchGlowGreen);
+            fields.switchGlowGreen->setOpacity(0);
+            fields.switchGlowGreen->runAction(
+                CCSequence::create(
+                    CCFadeIn::create(0.05f),
+                    CCFadeOut::create(0.2f),
+                    CCRemoveSelf::create(),
+                    nullptr
+                )
+            );
         }
     }
 
     fields.lastExecutedSwitch = fields.nextSwitchData;
+    fields.shownSwitchWarning = false;
+}
+
+void GlobedGJBGL::executePreSwitch() {
+    log::debug("Switch soon!");
+
+    auto& fields = this->getFields();
+
+    if (!fields.switchGlowWhite || !fields.switchGlowGreen) {
+        Build(CCScale9Sprite::createWithSpriteFrameName("switch-screen-glow.png"_spr))
+            .zOrder(11)
+            .contentSize(CCDirector::get()->getWinSize())
+            .anchorPoint(0.f, 0.f)
+            .store(fields.switchGlowGreen);
+
+        Build(CCScale9Sprite::createWithSpriteFrameName("switch-screen-preglow.png"_spr))
+            .zOrder(10)
+            .contentSize(CCDirector::get()->getWinSize())
+            .anchorPoint(0.f, 0.f)
+            .store(fields.switchGlowWhite);
+    }
+
+    fields.switchGlowWhite->stopAllActions();
+    fields.switchGlowWhite->removeFromParent();
+
+    m_uiLayer->addChild(fields.switchGlowWhite);
+    fields.switchGlowWhite->setOpacity(0);
+    fields.switchGlowWhite->runAction(
+        CCSequence::create(
+            CCFadeIn::create(0.05f),
+            CCDelayTime::create(0.7f),
+            CCFadeOut::create(0.2f),
+            CCRemoveSelf::create(),
+            nullptr
+        )
+    );
 }

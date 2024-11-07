@@ -35,6 +35,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         std::unique_ptr<PlayerStore> playerStore;
         SwitchData lastExecutedSwitch;
         SwitchData nextSwitchData;
+        bool shownSwitchWarning = false;
         RoomSettings roomSettings;
 
         std::vector<std::unique_ptr<BaseGameplayModule>> modules;
@@ -65,6 +66,8 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         //Ref<GlobedChatOverlay> chatOverlay = nullptr;
         Ref<GlobedNameLabel> ownNameLabel = nullptr;
         Ref<GlobedNameLabel> ownNameLabel2 = nullptr;
+        Ref<cocos2d::extension::CCScale9Sprite> switchGlowWhite = nullptr;
+        Ref<cocos2d::extension::CCScale9Sprite> switchGlowGreen = nullptr;
 
         // speedhack detection
         float lastKnownTimeScale = 1.0f;
@@ -166,6 +169,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     }
 
     void executeSwitch(const SwitchData& data);
+    void executePreSwitch();
 
     // With speedhack enabled, all scheduled selectors will run more often than they are supposed to.
     // This means, if you turn up speedhack to let's say 100x, you will send 3000 packets per second. That is a big no-no.

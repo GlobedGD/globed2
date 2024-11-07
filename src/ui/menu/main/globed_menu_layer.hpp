@@ -1,4 +1,5 @@
-#pragma once
+_Pragma("once")
+
 #include <defs/all.hpp>
 
 #include <Geode/utils/web.hpp>

@@ -110,7 +110,9 @@ impl ClientThread {
                 debug!("players: {:?}", sm.players());
             }
 
-            let switch_data = if let Some(switch_manager) = pm.manager.get_switch_manager(level_id) {
+            let switch_data = if let Some(switch_manager) = pm.manager.get_switch_manager(level_id)
+                && !packet.data.flags.get_bit(0)
+            {
                 switch_manager.get_next_switch(packet.data.np_timestamp.get())
             } else {
                 SwitchData::default()
