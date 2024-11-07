@@ -64,7 +64,7 @@ impl SwitchManager {
         &mut self.players_
     }
 
-    pub fn get_next_switch(&mut self, timestamp: f32) -> SwitchData {
+    pub fn get_next_switch(&mut self, timestamp: f32, dont_roll_new: bool) -> SwitchData {
         pub const MIN_SWITCH_DUR: f32 = 4.0;
         pub const MAX_SWITCH_DUR: f32 = 8.0;
 
@@ -76,20 +76,37 @@ impl SwitchManager {
             };
         }
 
+        let roll_player = |last_player: i32| loop {
+            let player = *self.players_.choose(&mut rand::thread_rng()).unwrap();
+
+            if player != last_player {
+                break player;
+            }
+        };
+
         // first, check if timestamp is less than the last switch
         let start_ts;
-        let last_player: i32;
+        let next_player: i32;
 
         if let Some(last) = self.history.last() {
-            if timestamp < *last.timestamp {
+            if timestamp < *last.timestamp || dont_roll_new {
                 return last.clone();
             }
 
             start_ts = last.timestamp.get();
-            last_player = last.player;
+            next_player = roll_player(last.player);
         } else {
-            start_ts = 0.0f32;
-            last_player = 0;
+            // roll a random player and return it as the first switch
+            next_player = roll_player(0);
+
+            let data = SwitchData {
+                player: next_player,
+                timestamp: FiniteF32::new(0.0f32),
+            };
+
+            self.history.push(data.clone());
+
+            return data;
         }
 
         // otherwise, generate a new switch and return it
@@ -98,13 +115,6 @@ impl SwitchManager {
         debug!("next switch at: {}", next_stamp.get());
 
         // don't repeat the same player twice in a row
-        let next_player = loop {
-            let player = *self.players_.choose(&mut rand::thread_rng()).unwrap();
-
-            if player != last_player {
-                break player;
-            }
-        };
 
         let data = SwitchData {
             player: next_player,

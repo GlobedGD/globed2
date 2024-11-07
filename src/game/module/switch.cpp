@@ -78,18 +78,27 @@ void SwitchModule::selUpdate(float dt) {
 
     auto& fields = pl->getFields();
 
-    // log::debug("time = {}, last switch = {}, next switch = {}", fields.npTimeCounter, fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp);
+    log::debug("time = {}, last switch = {}, next switch = {}", fields.npTimeCounter, fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp);
 
-    if (!util::math::equal(fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp)) {
+    if (
+        fields.nextSwitchData.player != 0
+        && (!util::math::equal(fields.lastExecutedSwitch.timestamp, fields.nextSwitchData.timestamp) || fields.nextSwitchData.timestamp == 0)
+    ) {
         float untilSwitch = fields.nextSwitchData.timestamp - fields.npTimeCounter;
 
-        if (untilSwitch <= 1.0f && !fields.shownSwitchWarning) {
-            pl->executePreSwitch();
-            fields.shownSwitchWarning = true;
-        }
+        if (fields.nextSwitchData.timestamp == 0) {
+            if (this->linkedTo != fields.nextSwitchData.player) {
+                this->linkPlayerTo(fields.nextSwitchData.player);
+            }
+        } else {
+            if (untilSwitch <= 1.0f && !fields.shownSwitchWarning) {
+                pl->executePreSwitch();
+                fields.shownSwitchWarning = true;
+            }
 
-        if (untilSwitch <= 0.0f) {
-            pl->executeSwitch(fields.nextSwitchData);
+            if (untilSwitch <= 0.0f) {
+                pl->executeSwitch(fields.nextSwitchData);
+            }
         }
     }
 
