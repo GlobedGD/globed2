@@ -65,8 +65,8 @@ impl SwitchManager {
     }
 
     pub fn get_next_switch(&mut self, timestamp: f32, dont_roll_new: bool) -> SwitchData {
-        pub const MIN_SWITCH_DUR: f32 = 4.0;
-        pub const MAX_SWITCH_DUR: f32 = 8.0;
+        pub const MIN_SWITCH_DUR: f32 = 5.0;
+        pub const MAX_SWITCH_DUR: f32 = 10.0;
 
         // if there are no players (or 1), return a default dummy value
         if self.players_.len() <= 1 {
