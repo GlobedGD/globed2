@@ -88,7 +88,11 @@ void SwitchModule::selUpdate(float dt) {
 
         if (fields.nextSwitchData.timestamp == 0) {
             if (this->linkedTo != fields.nextSwitchData.player) {
-                this->linkPlayerTo(fields.nextSwitchData.player);
+                if (fields.lastExecutedSwitch.player != GJAccountManager::get()->m_accountID) {
+                    this->linkPlayerTo(fields.nextSwitchData.player);
+                } else {
+                    this->unlink();
+                }
             }
         } else {
             if (untilSwitch <= 1.0f && !fields.shownSwitchWarning) {
