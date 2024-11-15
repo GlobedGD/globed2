@@ -1,5 +1,6 @@
 #include "web.hpp"
 
+#include <globed/tracing.hpp>
 #include <managers/account.hpp>
 #include <managers/central_server.hpp>
 #include <util/net.hpp>
@@ -103,9 +104,6 @@ RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
 
 RequestTask WebRequestManager::testServer(std::string_view url) {
     return this->get(makeUrl(url, "versioncheck"), 10, [&](CurlRequest& req) {
-        // why do you have to do this to me geode.
-
-        // TODO: uncomment this pls when geode 3.7.2 or later
         req.param("gd", GEODE_GD_VERSION_STRING);
         req.param("globed", Mod::get()->getVersion().toNonVString());
         req.param("protocol", NetworkManager::get().getUsedProtocol());
@@ -180,9 +178,7 @@ RequestTask WebRequestManager::post(std::string_view url, int timeoutS) {
 }
 
 RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::function<void(CurlRequest&)> additional) {
-#ifdef GLOBED_DEBUG
-    log::debug("POST request: {}", url);
-#endif
+    TRACE("POST request: {}", url);
 
     auto request = CurlRequest()
         .timeout(Duration::fromSecs(timeoutS));
@@ -191,4 +187,3 @@ RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::fun
 
     return mapTask(request.post(url).send());
 }
-
