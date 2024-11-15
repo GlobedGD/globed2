@@ -23,7 +23,7 @@ enum {
     }
 
 bool RoomSettingsPopup::setup() {
-    auto popupLayout = util::ui::getPopupLayout(m_size);
+    auto popupLayout = util::ui::getPopupLayoutAnchored(m_size);
 
     auto* cells = CCArray::create();
 
@@ -110,7 +110,7 @@ void RoomSettingsPopup::enableCheckboxes(bool enabled) {
 
 RoomSettingsPopup* RoomSettingsPopup::create() {
     auto ret = new RoomSettingsPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

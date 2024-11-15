@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/all.hpp>
 
+#include <Geode/ui/TextInput.hpp>
+
 #include <data/packets/client/admin.hpp>
 
 class AdminSendNoticePopup : public geode::Popup<std::string_view> {
@@ -12,7 +14,7 @@ public:
 
 private:
     std::string message;
-    geode::InputNode *userInput, *roomInput, *levelInput;
+    geode::TextInput *userInput, *roomInput, *levelInput;
 
     bool setup(std::string_view message);
     void commonSend(AdminSendNoticeType type);

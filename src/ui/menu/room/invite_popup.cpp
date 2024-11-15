@@ -24,7 +24,7 @@ bool InvitePopup::setup() {
 
     this->setTitle("Invite Player");
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     FriendListManager::get().maybeLoad();
 
@@ -38,7 +38,7 @@ bool InvitePopup::setup() {
         this->onLoaded(!roomBtnMenu);
     });
 
-    auto popupLayout = util::ui::getPopupLayout(m_size);
+    auto popupLayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build(UserList::createForComments(LIST_WIDTH, LIST_HEIGHT, PlayerListCell::CELL_HEIGHT))
         .anchorPoint(0.5f, 1.f)
@@ -231,7 +231,7 @@ void InvitePopup::applyFilter(std::string_view input) {
 
 InvitePopup* InvitePopup::create() {
     auto ret = new InvitePopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

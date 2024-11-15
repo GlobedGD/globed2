@@ -30,7 +30,7 @@ bool AdminEditRolePopup::setup(AdminUserPopup* parentPopup, int32_t accountId, c
     this->roles = roles;
     this->setTitle("Edit user roles");
 
-    auto sizes = util::ui::getPopupLayout(m_size);
+    auto sizes = util::ui::getPopupLayoutAnchored(m_size);
 
     auto* buttonLayout = Build<CCMenu>::create()
         .pos(sizes.center)
@@ -90,7 +90,7 @@ void AdminEditRolePopup::submit() {
 
 AdminEditRolePopup* AdminEditRolePopup::create(AdminUserPopup* parentPopup, int32_t accountId, const std::vector<std::string>& roles) {
     auto ret = new AdminEditRolePopup;
-    if (ret->init(50.f + WIDTH_PER_ROLE * RoleManager::get().getAllRoles().size(), POPUP_HEIGHT, parentPopup, accountId, roles)) {
+    if (ret->initAnchored(50.f + WIDTH_PER_ROLE * RoleManager::get().getAllRoles().size(), POPUP_HEIGHT, parentPopup, accountId, roles)) {
         ret->autorelease();
         return ret;
     }

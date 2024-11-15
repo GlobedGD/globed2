@@ -150,7 +150,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         } break;
         case Type::Int: {
             int currentValue = *(int*)(settingStorage);
-            Build<InputNode>::create(CELL_WIDTH * 0.2f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 10)
+            Build<TextInput>::create(CELL_WIDTH * 0.2f, "", "chatFont.fnt")
                 .scale(0.8f)
                 .anchorPoint(1.f, 0.5f)
                 .pos(CELL_WIDTH - 8.f, CELL_HEIGHT / 2)
@@ -161,7 +161,20 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 .id("input-menu"_spr)
                 .parent(this);
 
-            inpField->getInput()->setDelegate(this);
+            inpField->setCommonFilter(CommonFilter::Uint);
+            inpField->setMaxCharCount(10);
+            inpField->setCallback([this](const std::string& string) {
+                auto val = util::format::parse<int>(string);
+                if (val) {
+                    int vval = val.value();
+                    if (this->limits.intMax != 0 && this->limits.intMin != 0) {
+                        vval = std::clamp(vval, this->limits.intMin, this->limits.intMax);
+                    }
+
+                    this->storeAndSave(val.value());
+                }
+            });
+
             inpField->setString(std::to_string(currentValue));
         } break;
         case Type::Corner: {
@@ -380,25 +393,6 @@ void GlobedSettingCell::storeAndSave(std::any&& value) {
 
     GlobedSettings::get().save();
 }
-
-void GlobedSettingCell::textChanged(CCTextInputNode* p0) {
-    auto val = util::format::parse<int>(p0->getString());
-    if (val) {
-        int vval = val.value();
-        if (limits.intMax != 0 && limits.intMin != 0) {
-            vval = std::clamp(vval, limits.intMin, limits.intMax);
-        }
-
-        this->storeAndSave(val.value());
-    }
-}
-
-void GlobedSettingCell::textInputOpened(CCTextInputNode* p0) {}
-void GlobedSettingCell::textInputClosed(CCTextInputNode* p0) {}
-void GlobedSettingCell::textInputShouldOffset(CCTextInputNode* p0, float p1) {}
-void GlobedSettingCell::textInputReturn(CCTextInputNode* p0) {}
-bool GlobedSettingCell::allowTextInput(CCTextInputNode* p0) { return true; }
-void GlobedSettingCell::enterPressed(CCTextInputNode* p0) {}
 
 GlobedSettingCell* GlobedSettingCell::create(void* settingStorage, Type settingType, const char* name, const char* desc, const Limits& limits) {
     auto ret = new GlobedSettingCell;

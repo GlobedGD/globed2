@@ -14,7 +14,7 @@ using namespace geode::prelude;
 bool AudioSetupPopup::setup() {
     this->setID("AudioSetupPopup"_spr);
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     auto menu = Build<CCMenu>::create()
         .pos(0.f, 0.f)
@@ -202,7 +202,7 @@ void AudioSetupPopup::applyAudioDevice(int id) {
 
 AudioSetupPopup* AudioSetupPopup::create() {
     auto ret = new AudioSetupPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

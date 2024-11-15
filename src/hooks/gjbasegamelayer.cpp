@@ -1103,7 +1103,7 @@ bool GlobedGJBGL::established() {
 }
 
 bool GlobedGJBGL::isCurrentPlayLayer() {
-    auto playLayer = getChildOfType<PlayLayer>(CCScene::get(), 0);
+    auto playLayer = CCScene::get()->getChildByType<PlayLayer>(0);
     return static_cast<GJBaseGameLayer*>(playLayer) == this;
 }
 

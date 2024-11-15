@@ -80,7 +80,7 @@ void PopupQueue::update(float dt) {
 
     // if in a playlayer, dont show while unpaused
     if (typeinfo_cast<PlayLayer*>(layer)) {
-        if (!getChildOfType<PauseLayer>(layer, 0)) {
+        if (!layer->getChildByType<PauseLayer>(0)) {
             return;
         }
     }

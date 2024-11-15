@@ -5,6 +5,7 @@
 #include <managers/settings.hpp>
 #include <util/crypto.hpp>
 #include <util/rng.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -12,10 +13,10 @@ using namespace asp::time;
 bool FragmentationCalibartionPopup::setup() {
     this->setTitle("Connection test");
 
-    auto winSize = CCDirector::get()->getWinSize();
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build<CCLabelBMFont>::create("", "bigFont.fnt")
-        .pos(winSize.width / 2, winSize.height / 2 + m_size.height / 2 - 50.f)
+        .pos(rlayout.fromTop(50.f))
         .scale(0.3f)
         .parent(m_mainLayer)
         .store(statusLabel);
@@ -120,7 +121,7 @@ void FragmentationCalibartionPopup::closeDelayed() {
 
 FragmentationCalibartionPopup* FragmentationCalibartionPopup::create() {
     auto ret = new FragmentationCalibartionPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

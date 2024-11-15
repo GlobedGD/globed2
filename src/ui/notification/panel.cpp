@@ -45,7 +45,7 @@ static bool shouldShowNotification() {
     auto* scene = CCScene::get();
     if (!scene || scene->getChildrenCount() == 0) return false;
 
-    if (typeinfo_cast<CCTransitionScene*>(scene) || (getChildOfType<PlayLayer>(scene, 0) && !getChildOfType<PauseLayer>(scene, 0))) {
+    if (typeinfo_cast<CCTransitionScene*>(scene) || (scene->getChildByType<PlayLayer>(0) && !scene->getChildByType<PauseLayer>(0))) {
         return false;
     }
 

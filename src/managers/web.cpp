@@ -46,12 +46,12 @@ RequestTask WebRequestManager::requestAuthToken() {
     auto gdData = gam.gdData.lock();
 
     return this->post(makeCentralUrl("v2/totplogin"), 10, [&](CurlRequest& req) {
-        matjson::Object accdata;
+        matjson::Value accdata = matjson::Value::object();
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
         accdata["username"] = gdData->accountName;
 
-        matjson::Object obj;
+        matjson::Value obj = matjson::Value::object();
         obj["account_data"] = accdata;
 
         // recode as urlsafe
@@ -69,7 +69,7 @@ RequestTask WebRequestManager::challengeStart() {
     auto gdData = gam.gdData.lock();
 
     return this->post(makeCentralUrl("v2/challenge/new"), 10, [&](CurlRequest& req) {
-        matjson::Object accdata;
+        auto accdata = matjson::Value::object();
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
         accdata["username"] = gdData->accountName;
@@ -86,12 +86,13 @@ RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
     auto gdData = gam.gdData.lock();
 
     return this->post(makeCentralUrl("v2/challenge/verify"), 30, [&](CurlRequest& req) {
-        matjson::Object accdata;
+
+        auto accdata = matjson::Value::object();
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
         accdata["username"] = gdData->accountName;
 
-        matjson::Object obj;
+        auto obj = matjson::Value::object();
         obj["account_data"] = accdata;
         obj["answer"] = std::string(authcode);
 
@@ -105,8 +106,7 @@ RequestTask WebRequestManager::testServer(std::string_view url) {
         // why do you have to do this to me geode.
 
         // TODO: uncomment this pls when geode 3.7.2 or later
-        // req.param("gd", GEODE_GD_VERSION_STRING);
-        req.param("gd", "2.206");
+        req.param("gd", GEODE_GD_VERSION_STRING);
         req.param("globed", Mod::get()->getVersion().toNonVString());
         req.param("protocol", NetworkManager::get().getUsedProtocol());
     });
@@ -134,7 +134,7 @@ RequestTask WebRequestManager::fetchFeaturedLevelHistory(int page) {
 
 RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty) {
     return this->post(makeCentralUrl("v2/flevel/replace"), 10, [&](CurlRequest& req) {
-        matjson::Object data = {
+        auto data = matjson::makeObject({
             {"level_id", levelId},
             {"rate_tier", rateTier},
             {"account_id", GlobedAccountManager::get().gdData.lock()->accountId},
@@ -142,7 +142,7 @@ RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::
             {"level_name", std::string(levelName)},
             {"level_author", std::string(levelAuthor)},
             {"difficulty", difficulty}
-        };
+        });
 
         req.bodyJSON(data);
         req.encrypted(true);

@@ -70,7 +70,7 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacketTCP() {
     // receive the packet length
     GLOBED_UNWRAP(tcpSocket.recvExact(reinterpret_cast<char*>(bb.data().data()), 4));
 
-    auto packetSize = bb.readU32().value_or(0); // must always be 4 bytes so cant error
+    auto packetSize = bb.readU32().unwrapOr(0); // must always be 4 bytes so cant error
     GLOBED_REQUIRE_SAFE(packetSize < DATA_BUF_SIZE, "packet is too big, rejecting")
 
     GLOBED_UNWRAP(tcpSocket.recvExact(reinterpret_cast<char*>(dataBuffer), packetSize));
@@ -145,7 +145,8 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
 
     // else it's a udp packet
     auto udpres = this->recvPacketUDP();
-    if (udpres && udpres.value().has_value()) {
+
+    if (udpres && udpres.unwrap().has_value()) {
         return Ok(std::move(**udpres));
     } else if (!udpres) {
         return Err(fmt::format("recvPacketUDP failed: {}", std::move(std::move(udpres).unwrapErr())));
@@ -159,7 +160,7 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
         }
 
         auto udpres = this->recvPacketUDP();
-        if (udpres && udpres.value().has_value()) {
+        if (udpres && udpres.unwrap().has_value()) {
             return Ok(std::move(**udpres));
         } else if (!udpres) {
             return Err(fmt::format("recvPacketUDP failed: {}", std::move(std::move(udpres).unwrapErr())));

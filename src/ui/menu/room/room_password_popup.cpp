@@ -21,10 +21,13 @@ bool RoomPasswordPopup::setup(uint32_t id) {
         .parent(m_mainLayer);
 
     // room password input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC), 16)
+    Build<TextInput>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt")
         .pos(popupCenter, POPUP_HEIGHT + 25.f)
         .parent(m_mainLayer)
         .store(roomPassInput);
+
+    roomPassInput->setFilter(std::string(util::misc::STRING_ALPHANUMERIC));
+    roomPassInput->setMaxCharCount(16);
 
     Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this, id](auto) {
@@ -42,7 +45,7 @@ bool RoomPasswordPopup::setup(uint32_t id) {
 
 RoomPasswordPopup* RoomPasswordPopup::create(uint32_t id) {
     auto ret = new RoomPasswordPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, id)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, id)) {
         ret->autorelease();
         return ret;
     }

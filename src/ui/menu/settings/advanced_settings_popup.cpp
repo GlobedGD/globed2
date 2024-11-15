@@ -11,7 +11,7 @@
 using namespace geode::prelude;
 
 bool AdvancedSettingsPopup::setup() {
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
     this->setTitle("Advanced settings");
 
     auto* menu = Build<ButtonSprite>::create("Reset token", "bigFont.fnt", "GJ_button_01.png", 0.75f)
@@ -84,7 +84,7 @@ void AdvancedSettingsPopup::onPacketLog(CCObject* p) {
 
 AdvancedSettingsPopup* AdvancedSettingsPopup::create() {
     auto ret = new AdvancedSettingsPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

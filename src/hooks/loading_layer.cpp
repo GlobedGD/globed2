@@ -177,6 +177,8 @@ static void loadingFinishedCaller() {
     add sp, sp, #0x90
     ret
 */
+
+// TODO: update
 constexpr ptrdiff_t START_OFFSET = 0x32cdcc;
 constexpr ptrdiff_t END_OFFSET = 0x32cde8;
 
@@ -211,7 +213,7 @@ $execute {
         }
     }
 }
-# elif GEODE_COMP_GD_VERSION != 22060
+# elif GEODE_COMP_GD_VERSION != 22074
 #  pragma message("loadingFinished midhook not implemented for this GD version")
 # else
 
@@ -251,12 +253,12 @@ $execute {
 */
 #ifdef GEODE_IS_WINDOWS
 const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
-    {0x30ee46, 0x30ee62},
-    {0x30ee67, 0x30ee83},
+    {0x31a8e6, 0x31a902},
+    {0x31a907, 0x31a923},
 });
 #else
 const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
-    {0x3a67dd, 0x3a67f9},
+    {0x3a67dd, 0x3a67f9}, // TODO: update
 });
 #endif
 

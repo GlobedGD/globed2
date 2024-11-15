@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Geode/utils/Result.hpp>
+#include <Geode/Result.hpp>
 #include <defs/platform.hpp>
 
 #include <util/singleton.hpp>

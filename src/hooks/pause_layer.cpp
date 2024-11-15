@@ -76,7 +76,7 @@ void GlobedPauseLayer::goEdit() {
 bool GlobedPauseLayer::hasPopup() {
     if (!this->getParent()) return false;
 
-    return getChildOfType<GlobedUserListPopup>(this->getParent(), 0) != nullptr;
+    return this->getParent()->getChildByType<GlobedUserListPopup>(0) != nullptr;
 }
 
 #define REPLACE(method) \

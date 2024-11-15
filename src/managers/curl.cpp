@@ -352,13 +352,12 @@ geode::Result<std::string> CurlResponse::text() {
 geode::Result<matjson::Value> CurlResponse::json() {
     GLOBED_UNWRAP_INTO(this->text(), auto str);
 
-    std::string err;
-    auto val = matjson::parse(str, err);
+    auto val = matjson::parse(str);
     if (!val) {
-        return Err(err);
+        return Err((std::string) val.unwrapErr());
     }
 
-    return Ok(std::move(val.value()));
+    return Ok(std::move(val.unwrap()));
 }
 
 std::string CurlResponse::getError() {

@@ -31,9 +31,9 @@ namespace util::net {
 #ifdef GLOBED_DEBUG
         return fmt::format(
             "globed-geode-xd/{}; Globed {}; Loader {}",
-            Mod::get()->getVersion().toString(),
+            Mod::get()->getVersion().toVString(),
             GLOBED_PLATFORM_STRING,
-            Loader::get()->getVersion().toString()
+            Loader::get()->getVersion().toVString()
         );
 #else
         return fmt::format("globed-geode-xd/{}", Mod::get()->getVersion().toString());
@@ -45,8 +45,8 @@ namespace util::net {
         return fmt::format(
             "{} ({}, Geode {})",
             GLOBED_PLATFORM_STRING,
-            Mod::get()->getVersion().toString(),
-            Loader::get()->getVersion().toString()
+            Mod::get()->getVersion().toVString(),
+            Loader::get()->getVersion().toVString()
         );
 #else
         // no telemetry in release :(

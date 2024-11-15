@@ -131,7 +131,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 target_include_directories(${PROJECT_NAME} PRIVATE libs/)
 
 # our favorite libraries
-CPMAddPackage("gh:camila314/uibuilder#ba63097")
+CPMAddPackage("gh:dankmeme01/uibuilder#c30755a")
 CPMAddPackage(
     NAME Boost
     VERSION 1.86.0

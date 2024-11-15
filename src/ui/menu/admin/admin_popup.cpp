@@ -53,7 +53,7 @@ public:
 bool AdminPopup::setup() {
     this->setTitle("Globed Admin Panel");
 
-    auto sizes = util::ui::getPopupLayout(m_size);
+    auto sizes = util::ui::getPopupLayoutAnchored(m_size);
 
     auto& nm = NetworkManager::get();
     auto& am = AdminManager::get();
@@ -143,9 +143,12 @@ bool AdminPopup::setup() {
         .parent(m_mainLayer)
         .collect();
 
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "message", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 160)
+    Build<TextInput>::create(POPUP_WIDTH * 0.75f, "message", "chatFont.fnt")
         .parent(sendNoticeWrapper)
         .store(messageInput);
+
+    messageInput->setFilter(std::string(util::misc::STRING_PRINTABLE_INPUT));
+    messageInput->setMaxCharCount(160);
 
     Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
         .intoMenuItem([this](auto) {
@@ -166,9 +169,12 @@ bool AdminPopup::setup() {
         .parent(m_mainLayer)
         .collect();
 
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "user", "chatFont.fnt", std::string(util::misc::STRING_USERNAME), 16)
+    Build<TextInput>::create(POPUP_WIDTH * 0.75f, "user", "chatFont.fnt")
         .parent(findUserWrapper)
         .store(userInput);
+
+    userInput->setFilter(std::string(util::misc::STRING_USERNAME));
+    userInput->setMaxCharCount(16);
 
     Build<ButtonSprite>::create("Find", "bigFont.fnt", "GJ_button_01.png", 0.5f)
         .intoMenuItem([this](auto) {
@@ -187,7 +193,7 @@ bool AdminPopup::setup() {
 
 AdminPopup* AdminPopup::create() {
     auto ret = new AdminPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

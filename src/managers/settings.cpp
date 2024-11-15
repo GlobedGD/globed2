@@ -107,11 +107,7 @@ bool GlobedSettings::has(std::string_view key) {
 
 void GlobedSettings::clear(std::string_view key) {
     auto& container = Mod::get()->getSaveContainer();
-    auto& obj = container.as_object();
-
-    if (obj.contains(key)) {
-        obj.erase(key);
-    }
+    container.erase(key);
 }
 
 // verify that all members are serialized

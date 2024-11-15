@@ -206,7 +206,7 @@ void GlobedSignupPopup::keyBackClicked() {
 
 GlobedSignupPopup* GlobedSignupPopup::create() {
     auto ret = new GlobedSignupPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

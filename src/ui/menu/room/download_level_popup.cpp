@@ -8,10 +8,10 @@ using namespace geode::prelude;
 bool DownloadLevelPopup::setup(int levelId) {
     this->setTitle("Downloading level");
 
-    auto winSize = CCDirector::get()->getWinSize();
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build<CCLabelBMFont>::create("Fetching data..", "bigFont.fnt")
-        .pos(winSize.width / 2, winSize.height / 2 + m_size.height / 2 - 50.f)
+        .pos(rlayout.fromTop(50.f))
         .scale(0.35f)
         .parent(m_mainLayer)
         .store(statusLabel);
@@ -75,7 +75,7 @@ void DownloadLevelPopup::onClose(cocos2d::CCObject* obj) {
 
 DownloadLevelPopup* DownloadLevelPopup::create(int levelId) {
     auto ret = new DownloadLevelPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, levelId)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, levelId)) {
         ret->autorelease();
         return ret;
     }

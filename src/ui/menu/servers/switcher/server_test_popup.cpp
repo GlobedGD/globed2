@@ -39,22 +39,24 @@ struct VersionCheckResponse {
 
 template<>
 struct matjson::Serialize<VersionCheckResponse> {
-	static VersionCheckResponse from_json(const matjson::Value& v) {
-        return VersionCheckResponse {
-            .pmin = static_cast<uint16_t>(v["pmin"].as_int()),
-            .pmax = static_cast<uint16_t>(v["pmax"].as_int()),
-            .gdmin = v["gdmin"].as_string(),
-            .globedmin = v["globedmin"].as_string(),
-        };
+	static Result<VersionCheckResponse> fromJson(const matjson::Value& v) {
+        if (!_isJson(v)) return Err("invalid structure");
+
+        return Ok(VersionCheckResponse {
+            .pmin = static_cast<uint16_t>(GEODE_UNWRAP(v["pmin"].asInt())),
+            .pmax = static_cast<uint16_t>(GEODE_UNWRAP(v["pmax"].asInt())),
+            .gdmin = GEODE_UNWRAP(v["gdmin"].asString()),
+            .globedmin = GEODE_UNWRAP(v["globedmin"].asString()),
+        });
     }
 
-	static matjson::Value to_json(const VersionCheckResponse& obj) {
+	static matjson::Value toJson(const VersionCheckResponse& obj) {
         GLOBED_UNIMPL("serializer for VersionCheckResponse");
     }
 
-	static bool is_json(const matjson::Value& obj) {
+	static bool _isJson(const matjson::Value& obj) {
         return obj.contains("pmin") && obj.contains("pmax") && obj.contains("gdmin") && obj.contains("globedmin")
-            && obj["pmin"].is_number() && obj["pmax"].is_number() && obj["gdmin"].is_number() && obj["globedmin"].is_number();
+            && obj["pmin"].isNumber() && obj["pmax"].isNumber() && obj["gdmin"].isNumber() && obj["globedmin"].isNumber();
     }
 };
 
@@ -73,21 +75,16 @@ void ServerTestPopup::requestCallback(typename WebRequestManager::Event* event) 
 
     auto resp = evalue.text().unwrapOrDefault();
 
-    std::string errormsg;
-    auto parseresult = matjson::parse(resp, errormsg);
+    auto parseresult = matjson::parseAs<VersionCheckResponse>(resp);
 
-    if (!parseresult || !parseresult->is<VersionCheckResponse>()) {
-        if (errormsg.empty()) {
-            errormsg = "unexpected structure";
-        }
-
+    if (!parseresult) {
         log::warn("Bogus server response for versioncheck: {}", resp);
-        this->parent->onTestFailure(fmt::format("Failed to parse message returned by the server: {}", errormsg));
+        this->parent->onTestFailure(fmt::format("Failed to parse message returned by the server: {}", parseresult.unwrapErr()));
         this->onClose(this);
         return;
     }
 
-    auto respv = parseresult->as<VersionCheckResponse>();
+    auto respv = std::move(parseresult).unwrap();
 
     bool anySupport = false;
     for (int i = respv.pmin; i <= respv.pmax; i++) {
@@ -127,7 +124,7 @@ void ServerTestPopup::cancelRequest() {
 
 ServerTestPopup* ServerTestPopup::create(std::string_view url, AddServerPopup* parent) {
     auto ret = new ServerTestPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, url, parent)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, url, parent)) {
         ret->autorelease();
         return ret;
     }

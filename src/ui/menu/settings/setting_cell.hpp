@@ -1,11 +1,12 @@
 #pragma once
 #include <defs/all.hpp>
 
+#include <Geode/ui/TextInput.hpp>
 #include <any>
 
 class BetterSlider;
 
-class GlobedSettingCell : public cocos2d::CCLayer, public TextInputDelegate {
+class GlobedSettingCell : public cocos2d::CCLayer {
 public:
     enum class Type {
         Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom, LinkCode
@@ -35,7 +36,7 @@ private:
 
     CCMenuItemToggler* inpCheckbox = nullptr;
     BetterSlider* inpSlider = nullptr;
-    geode::InputNode* inpField = nullptr;
+    geode::TextInput* inpField = nullptr;
     CCMenuItemSpriteExtra* inpAudioButton = nullptr;
 
     CCMenuItemSpriteExtra* cornerButton = nullptr;
@@ -49,12 +50,4 @@ private:
 
     void recreateCornerButton();
     void recreateInvitesFromButton();
-
-    void textChanged(CCTextInputNode* p0);
-    void textInputOpened(CCTextInputNode* p0);
-    void textInputClosed(CCTextInputNode* p0);
-    void textInputShouldOffset(CCTextInputNode* p0, float p1);
-    void textInputReturn(CCTextInputNode* p0);
-    bool allowTextInput(CCTextInputNode* p0);
-    void enterPressed(CCTextInputNode* p0);
 };

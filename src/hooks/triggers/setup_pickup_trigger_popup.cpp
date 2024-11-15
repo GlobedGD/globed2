@@ -44,7 +44,7 @@ bool PickupPopupHook::init(EffectGameObject* p0, CCArray* p1) {
         m_disableTextDelegate = prevDisableDelegate;
     });
 
-    auto menu = getChildOfType<CCMenu>(m_mainLayer, 0);
+    auto menu = m_mainLayer->getChildByType<CCMenu>(0);
 
     if (!menu) return true;
 

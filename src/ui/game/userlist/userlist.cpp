@@ -16,7 +16,7 @@ using namespace asp::time;
 bool GlobedUserListPopup::setup() {
     this->setTitle("Players");
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     m_noElasticity = true;
 
@@ -280,7 +280,7 @@ void GlobedUserListPopup::removeListCell(GlobedUserCell* cell) {
 
 GlobedUserListPopup* GlobedUserListPopup::create() {
     auto ret = new GlobedUserListPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

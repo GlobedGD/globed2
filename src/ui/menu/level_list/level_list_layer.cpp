@@ -12,6 +12,8 @@
 
 #include "filters_popup.hpp"
 
+
+
 using namespace geode::prelude;
 
 // ok so let's say we load the layer
@@ -45,87 +47,87 @@ static std::optional<GlobedLevelListLayer::Filters::RateTier> rateTierFromString
 
 template <>
 struct matjson::Serialize<GlobedLevelListLayer::Filters> {
-    static GlobedLevelListLayer::Filters from_json(const matjson::Value& value) {
+    static Result<GlobedLevelListLayer::Filters> fromJson(const matjson::Value& value) {
         GlobedLevelListLayer::Filters filters{};
 
-        if (value.contains("difficulty") && value["difficulty"].is_array()) {
-            for (auto& diff : value["difficulty"].as_array()) {
-                auto diffe = util::gd::difficultyFromString(diff.as_string());
+        if (value["difficulty"].isArray()) {
+            for (auto& diff : value["difficulty"].asArray().unwrap()) {
+                auto diffe = util::gd::difficultyFromString(GEODE_UNWRAP(diff.asString()));
                 if (diffe) {
                     filters.difficulty.insert(diffe.value());
                 }
             }
         }
 
-        if (value.contains("demonDifficulty") && value["demonDifficulty"].is_array()) {
-            for (auto& diff : value["demonDifficulty"].as_array()) {
-                auto diffe = util::gd::difficultyFromString(diff.as_string());
+        if (value["demonDifficulty"].isArray()) {
+            for (auto& diff : value["demonDifficulty"].asArray().unwrap()) {
+                auto diffe = util::gd::difficultyFromString(GEODE_UNWRAP(diff.asString()));
                 if (diffe) {
                     filters.demonDifficulty.insert(diffe.value());
                 }
             }
         }
 
-        if (value.contains("length") && value["length"].is_array()) {
-            for (auto& len : value["length"].as_array()) {
-                filters.length.insert(len.as_int());
+        if (value["length"].isArray()) {
+            for (auto& len : value["length"].asArray().unwrap()) {
+                filters.length.insert(GEODE_UNWRAP(len.asInt()));
             }
         }
 
-        if (value.contains("rateTier") && value["rateTier"].is_array()) {
+        if (value["rateTier"].isArray()) {
             filters.rateTier = std::set<GlobedLevelListLayer::Filters::RateTier>{};
-            for (auto& tier : value["rateTier"].as_array()) {
-                auto rt = rateTierFromString(tier.as_string());
+            for (auto& tier : value["rateTier"].asArray().unwrap()) {
+                auto rt = rateTierFromString(GEODE_UNWRAP(tier.asString()));
                 if (rt) {
                     filters.rateTier.value().insert(rt.value());
                 }
             }
         }
 
-        if (value.contains("coins") && value["coins"].is_bool()) {
-            filters.coins = value["coins"].as_bool();
+        if (value["coins"].isBool()) {
+            filters.coins = value["coins"].asBool().unwrap();
         }
 
-        if (value.contains("completed") && value["completed"].is_bool()) {
-            filters.completed = value["completed"].as_bool();
+        if (value["completed"].isBool()) {
+            filters.completed = value["completed"].asBool().unwrap();
         }
 
-        if (value.contains("twoPlayer") && value["twoPlayer"].is_bool()) {
-            filters.twoPlayer = value["twoPlayer"].as_bool();
+        if (value.contains("twoPlayer") && value["twoPlayer"].isBool()) {
+            filters.twoPlayer = value["twoPlayer"].asBool().unwrap();
         }
 
-        if (value.contains("rated") && value["rated"].is_bool()) {
-            filters.rated = value["rated"].as_bool();
+        if (value.contains("rated") && value["rated"].isBool()) {
+            filters.rated = value["rated"].asBool().unwrap();
         }
 
-        if (value.contains("original") && value["original"].is_bool()) {
-            filters.original = value["original"].as_bool();
+        if (value.contains("original") && value["original"].isBool()) {
+            filters.original = value["original"].asBool().unwrap();
         }
 
-        return filters;
+        return Ok(filters);
     }
 
-    static matjson::Value to_json(const GlobedLevelListLayer::Filters& filters) {
+    static matjson::Value toJson(const GlobedLevelListLayer::Filters& filters) {
         matjson::Value obj;
-        obj["difficulty"] = matjson::Array{};
+        obj["difficulty"] = matjson::Value::array();
         for (auto diff : filters.difficulty) {
-            obj["difficulty"].as_array().push_back(util::gd::difficultyToString(diff));
+            obj["difficulty"].asArray().unwrap().push_back(util::gd::difficultyToString(diff));
         }
 
-        obj["demonDifficulty"] = matjson::Array{};
+        obj["demonDifficulty"] = matjson::Value::array();
         for (auto diff : filters.demonDifficulty) {
-            obj["demonDifficulty"].as_array().push_back(util::gd::difficultyToString(diff));
+            obj["demonDifficulty"].asArray().unwrap().push_back(util::gd::difficultyToString(diff));
         }
 
-        obj["length"] = matjson::Array{};
+        obj["length"] = matjson::Value::array();
         for (auto len : filters.length) {
-            obj["length"].as_array().push_back(len);
+            obj["length"].asArray().unwrap().push_back(len);
         }
 
         if (auto& rt = filters.rateTier) {
-            obj["rateTier"] = matjson::Array{};
+            obj["rateTier"] = matjson::Value::array();
             for (auto tier : rt.value()) {
-                obj["rateTier"].as_array().push_back(rateTierToString(tier));
+                obj["rateTier"].asArray().unwrap().push_back(rateTierToString(tier));
             }
         }
 
@@ -142,10 +144,6 @@ struct matjson::Serialize<GlobedLevelListLayer::Filters> {
         obj["original"] = filters.original;
 
         return obj;
-    }
-
-    static bool is_json(const matjson::Value& value) {
-        return true;
     }
 };
 
@@ -293,7 +291,7 @@ bool GlobedLevelListLayer::init() {
         this->startLoadingForPage();
     });
 
-    if (auto filtersJson = Mod::get()->getSaveContainer().try_get<GlobedLevelListLayer::Filters>("saved-level-filters")) {
+    if (auto filtersJson = Mod::get()->getSaveContainer()["saved-level-filters"].as<GlobedLevelListLayer::Filters>()) {
         this->filters = *filtersJson;
     }
 
@@ -338,7 +336,7 @@ void GlobedLevelListLayer::onRefresh() {
 }
 
 void GlobedLevelListLayer::onNextPage() {
-    currentPage = util::math::min(currentPage + 1, allLevelIds.size() / pageSize); // TODO this is wrong
+    currentPage = util::math::min(currentPage + 1, allLevelIds.size() / pageSize); // TODO idk if this is correcto
     this->startLoadingForPage();
 }
 
@@ -395,7 +393,7 @@ void GlobedLevelListLayer::finishLoading() {
     std::vector<Ref<GJGameLevel>> page;
 
     size_t counter = 0;
-    size_t unloadedLevels = 0;
+    size_t unloadedLevels = 0; // levels that haven't been loaded yet
     size_t reqMin = currentPage * pageSize;
 
     for (auto id : allLevelIds) {
@@ -412,7 +410,7 @@ void GlobedLevelListLayer::finishLoading() {
         }
     }
 
-    TRACE("Finished loading, page size = {}, counter = {}, unloaded = {}, reqm = {}", page.size(), counter, unloadedLevels, reqMin);
+    TRACE("Finished loading, page size = {}, counter = {}, unloaded = {}, reqm = {}, failed = {}", page.size(), counter, unloadedLevels, reqMin, failedQueries.size());
 
     // TODO: idk if unloaded levels thing is rightt
     bool showNextPage = counter > (reqMin + pageSize) || unloadedLevels;
@@ -557,10 +555,10 @@ bool GlobedLevelListLayer::isMatchingFilters(GJGameLevel* level) {
             rateTier = Legendary;
         } else if (level->m_isEpic == 1) {
             rateTier = Epic;
-        } else if (level->m_featured > 0) { // TODO: check might be wrong
+        } else if (level->m_featured > 0) {
             rateTier = Feature;
         } else if (level->m_stars > 0) {
-            rateTier = Rate; // TODO: check is prob wrong
+            rateTier = Rate;
         } else {
             rateTier = Unrated;
         }

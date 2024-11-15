@@ -748,7 +748,7 @@ protected:
                 std::string message = fmt::format(
                     "Your Globed version is <cr>outdated</c>, please <cg>update</c> Globed in order to connect."
                     " Installed version: <cy>{}</c>, required: <cy>{}</c> (or newer)",
-                    Mod::get()->getVersion().toString(),
+                    Mod::get()->getVersion().toVString(),
                     packet->minClientVersion
                 );
 
@@ -1063,7 +1063,7 @@ protected:
             NetworkAddress addr(server.address);
 
 #ifdef GLOBED_DEBUG
-            auto addrString = addr.resolveToString().value_or("<unresolved>");
+            auto addrString = addr.resolveToString().unwrapOr("<unresolved>");
             log::debug("sending ping to {}", addrString);
 #endif
 

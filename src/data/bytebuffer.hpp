@@ -29,7 +29,7 @@ public:
 
     BOOST_DESCRIBE_NESTED_ENUM(DecodeError, Ok, NotEnoughData, InvalidEnumValue);
 
-    template <typename T = std::monostate>
+    template <typename T = void>
     using DecodeResult = geode::Result<T, DecodeError>;
 
     static const char* strerror(DecodeError err);

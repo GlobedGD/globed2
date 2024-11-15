@@ -9,7 +9,7 @@ public:
     static StringInputPopup* create(std::function<void(std::string_view)>);
 
 private:
-    geode::InputNode* inputNode;
+    geode::TextInput* inputNode;
 
     bool setup(std::function<void(std::string_view)>) override;
 };

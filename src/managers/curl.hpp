@@ -4,7 +4,7 @@
 #include <defs/minimal_geode.hpp>
 #include <stdint.h>
 #include <matjson.hpp>
-#include <Geode/utils/Result.hpp>
+#include <Geode/Result.hpp>
 #include <Geode/utils/Task.hpp>
 
 #include <util/time.hpp>
@@ -37,16 +37,17 @@ struct GLOBED_DLL CurlResponse {
     Result<T> json() {
         GLOBED_UNWRAP_INTO(this->json(), auto parsed);
 
-        if (!parsed.is<T>()) {
-            auto tname = std::string(typeid(T).name());
-#ifdef GEODE_IS_WINDOWS
-            tname = tname.substr(tname.find(' ') + 1);
-#endif
-
-            return Err(fmt::format("failed to parse JSON as {}", tname));
+        auto pres = parsed.as<T>();
+        if (pres) {
+            return Ok(std::move(pres.unwrap()));
         }
 
-        return Ok(parsed.as<T>());
+        auto tname = std::string(typeid(T).name());
+#ifdef GEODE_IS_WINDOWS
+        tname = tname.substr(tname.find(' ') + 1);
+#endif
+
+        return Err(fmt::format("failed to parse JSON as {}", tname));
     }
 
     // Gets either the fatal error message, or formats the response in format "code X: data"

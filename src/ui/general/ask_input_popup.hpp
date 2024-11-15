@@ -1,5 +1,6 @@
 #pragma once
 #include <defs/all.hpp>
+#include <Geode/ui/TextInput.hpp>
 
 class AskInputPopup : public geode::Popup<
     std::string_view, // title
@@ -16,7 +17,7 @@ public:
 
 private:
     std::function<void(std::string_view)> function;
-    geode::InputNode* input = nullptr;
+    geode::TextInput* input = nullptr;
 
     bool setup(std::string_view, std::function<void(std::string_view)> function, size_t chars, std::string_view placeholder, std::string_view filter);
 };

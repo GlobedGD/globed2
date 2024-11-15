@@ -37,10 +37,10 @@ namespace util::lowlevel {
 
         auto err = result.unwrapErr();
         if (err.find("Unable to write to memory") != std::string::npos) {
-            Result<Patch*> out;
+            Result<Patch*> out = Ok(nullptr);
 
-            auto protResult = withProtectedMemory(&vtable[index], bytes.size(), [&](void* addr) {
-                out = Mod::get()->patch(addr, bytes);
+            auto protResult = withProtectedMemory(&vtable[index], bytes.size(), [&](void* addr) mutable {
+                out = std::move(Mod::get()->patch(addr, bytes));
             });
 
             if (!protResult) {

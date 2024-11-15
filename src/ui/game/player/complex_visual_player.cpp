@@ -372,7 +372,7 @@ void ComplexVisualPlayer::playDeathEffect() {
     playerIcon->playerDestroyed(false);
 
     // TODO temp, we remove the small cube pieces because theyre buggy in my testing
-    if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {
+    if (auto ein = this->getChildByType<ExplodeItemNode>(0)) {
         ein->removeFromParent();
     }
 
