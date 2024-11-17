@@ -16,7 +16,9 @@ protected:
     WebRequestManager::Listener finishListener;
 
     std::string storedAuthcode;
+    std::string storedChToken;
     int storedAccountId;
+    bool isSecureMode = false;
 
     bool setup() override;
     void keyDown(cocos2d::enumKeyCodes key) override;
@@ -24,7 +26,7 @@ protected:
     void onFailure(std::string_view message);
     void onSuccess();
 
-    void onChallengeCreated(int accountId, std::string_view challenge, std::string_view pubkey);
+    void onChallengeCreated(int accountId, std::string_view challenge, std::string_view pubkey, bool secureMode);
     void onChallengeCompleted(std::string_view authcode);
 
     void uploadMessageFinished(int) override;

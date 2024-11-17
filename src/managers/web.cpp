@@ -81,17 +81,22 @@ RequestTask WebRequestManager::challengeStart() {
     });
 }
 
-RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
+RequestTask WebRequestManager::challengeFinish(std::string_view authcode, const std::string& challenge) {
     auto& gam = GlobedAccountManager::get();
 
     auto gdData = gam.gdData.lock();
 
     return this->post(makeCentralUrl("v2/challenge/verify"), 30, [&](CurlRequest& req) {
-
         auto accdata = matjson::Value::object();
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
         accdata["username"] = gdData->accountName;
+
+        if (!challenge.empty()) {
+            if (auto s = NetworkManager::get().getSecure(challenge)) {
+                accdata[GEODE_STR(GEODE_CONCAT(GEODE_CONCAT(tr, ust), GEODE_CONCAT(_tok, en)))] = s.value();
+            }
+        }
 
         auto obj = matjson::Value::object();
         obj["account_data"] = accdata;

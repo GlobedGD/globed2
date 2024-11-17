@@ -46,7 +46,9 @@ fn abort_misconfig() -> ! {
 #[rocket::main]
 #[allow(clippy::too_many_lines)]
 async fn main() -> Result<(), Box<dyn Error>> {
-    log::set_logger(Logger::instance("globed_central_server", false)).unwrap();
+    let write_to_file = std::env::var("GLOBED_NO_FILE_LOG").map(|p| p.parse::<i32>().unwrap()).unwrap_or(0) == 0;
+
+    log::set_logger(Logger::instance("globed_central_server", write_to_file)).unwrap();
 
     if let Some(log_level) = get_log_level("GLOBED_LOG_LEVEL") {
         log::set_max_level(log_level);

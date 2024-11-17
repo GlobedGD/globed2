@@ -138,6 +138,8 @@ public:
     void sendRequestPlayerCount(std::vector<LevelId> ids);
     void sendLinkCodeRequest();
 
+    std::optional<std::string> getSecure(const std::string&);
+
 private:
     class Impl;
     Impl* impl;

@@ -17,7 +17,12 @@ else()
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
 
+option(GLOBED_OSS_BUILD "Open source build that does not require closed-source dependencies" OFF)
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
+
+if (NOT WIN32)
+    set(GLOBED_OSS_BUILD ON) # TODO: remove this
+endif()
 
 # on windows use precompiled, on other platforms compile libsodium
 if (WIN32)
@@ -294,6 +299,16 @@ if (APPLE)
 elseif (WIN32)
     # windows needs this ig?
     target_link_libraries(${PROJECT_NAME} crypt32)
+endif()
+
+
+# link to bb
+if (NOT GLOBED_OSS_BUILD)
+    if (WIN32)
+        target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb.lib")
+    else()
+        target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-${LIB_PLATFORM}.a")
+    endif()
 endif()
 
 setup_geode_mod(${PROJECT_NAME})

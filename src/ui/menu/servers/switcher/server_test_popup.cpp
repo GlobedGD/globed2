@@ -75,7 +75,15 @@ void ServerTestPopup::requestCallback(typename WebRequestManager::Event* event) 
 
     auto resp = evalue.text().unwrapOrDefault();
 
-    auto parseresult = matjson::parseAs<VersionCheckResponse>(resp);
+    auto parseres1 = matjson::parse(resp);
+    if (!parseres1) {
+        log::warn("Bogus server response for versioncheck: {}", resp);
+        this->parent->onTestFailure(fmt::format("Failed to parse message returned by the server: {}", parseres1.unwrapErr()));
+        this->onClose(this);
+        return;
+    }
+
+    auto parseresult = parseres1.unwrap().as<VersionCheckResponse>();
 
     if (!parseresult) {
         log::warn("Bogus server response for versioncheck: {}", resp);

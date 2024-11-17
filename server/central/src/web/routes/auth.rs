@@ -1,11 +1,13 @@
 use std::{net::IpAddr, time::SystemTime};
 
+use digest::KeyInit;
 use rocket::{post, State};
 use serde::Deserialize;
 
 use globed_shared::{
     anyhow::{self, anyhow},
     base64::{engine::general_purpose as b64e, Engine as _},
+    crypto_box::aead::Aead,
     logger::*,
     MIN_CLIENT_VERSION,
 };
@@ -30,6 +32,7 @@ pub struct TotpLoginData {
 pub struct ChallengeFinishData {
     account_data: AccountData,
     answer: String,
+    trust_token: Option<String>,
 }
 
 fn check_ip(ip: IpAddr, cfip: &CloudflareIPGuard, cloudflare: bool) -> WebResult<IpAddr> {
@@ -201,12 +204,36 @@ pub async fn challenge_new(
     let verify = state.config.use_gd_api;
     let gd_api_account = state.config.gd_api_account;
 
+    let use_secure_mode = std::env::var("GLOBED_GS_SECURE_MODE_KEY").is_ok();
+
     Ok(format!(
-        "{}:{}:{}",
+        "{}:{}:{}:{}",
         if verify { gd_api_account.to_string() } else { "none".to_string() },
         challenge,
-        pubkey
+        pubkey,
+        use_secure_mode
     ))
+}
+
+fn decrypt_trust_token(token: &str, key: &str) -> WebResult<Vec<u8>> {
+    let encrypted = b64e::URL_SAFE.decode(token)?;
+    let key = b64e::URL_SAFE.decode(key)?;
+
+    // check sizes
+    if encrypted.len() < 24 || key.len() != 32 {
+        bad_request!("invalid trust token or key size");
+    }
+
+    let mut key_arr = [0u8; 32];
+    key_arr.copy_from_slice(&key);
+
+    let cipher = globed_shared::crypto_secretbox::XSalsa20Poly1305::new((&key_arr).into());
+    let nonce = encrypted[..24].try_into().unwrap();
+    let ciphertext = &encrypted[24..];
+
+    let decrypted = cipher.decrypt(nonce, ciphertext)?;
+
+    Ok(decrypted)
 }
 
 #[allow(clippy::too_many_arguments, clippy::similar_names, clippy::no_effect_underscore_binding)]
@@ -288,10 +315,37 @@ pub async fn challenge_verify(
         None
     };
 
-    info!(
-        "successfully generated an authkey for {} ({} / {})",
-        account_data.username, account_data.account_id, account_data.user_id
-    );
+    // verify trust token
+    let trust_token = if let Ok(sm_key) = std::env::var("GLOBED_GS_SECURE_MODE_KEY") {
+        if let Some(trust_token) = &post_data.0.trust_token {
+            let decrypted = String::from_utf8(decrypt_trust_token(&trust_token, &sm_key)?)?;
+            if let Some((s_value, token_rest)) = decrypted.split_once('|') {
+                if s_value != challenge.value {
+                    unauthorized!("security check failed: trust token value mismatch");
+                }
+
+                Some(token_rest.to_owned())
+            } else {
+                unauthorized!("security check failed: trust token value mismatch");
+            }
+        } else {
+            unauthorized!("security check failed: trust token missing but required");
+        }
+    } else {
+        None
+    };
+
+    if let Some(trust_token) = trust_token {
+        info!(
+            "generated authkey for {} ({} / {}), trust token: {}",
+            account_data.username, account_data.account_id, account_data.user_id, trust_token
+        );
+    } else {
+        info!(
+            "generated authkey for {} ({} / {})",
+            account_data.username, account_data.account_id, account_data.user_id
+        );
+    }
 
     let mut state_ = state.state_write().await;
     state_.active_challenges.remove(&user_ip);

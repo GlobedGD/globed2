@@ -58,15 +58,22 @@ void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event)
     auto resptext = evalue.text().unwrapOrDefault();
 
     auto parts = util::format::split(resptext, ":");
-    if (parts.size() != 3) {
-        this->onFailure("Creating challenge failed: <cy>response does not consist of 3 parts</c>");
+
+    if (parts.size() < 3) {
+        this->onFailure("Creating challenge failed: <cy>response does not consist of 3+ parts</c>");
         return;
     }
 
     // we accept -1 as the default
     int accountId = util::format::parse<int>(parts[0]).value_or(-1);
+    std::string_view challenge = parts[1];
+    std::string_view pubkey = parts[2];
+    bool secureMode = false;
+    if (parts.size() > 3) {
+        secureMode = parts[3] == "1";
+    }
 
-    this->onChallengeCreated(accountId, parts[1], parts[2]);
+    this->onChallengeCreated(accountId, challenge, pubkey, secureMode);
 }
 
 static Result<std::string> decodeAnswer(std::string_view chtoken, std::string_view pubkey) {
@@ -77,7 +84,7 @@ static Result<std::string> decodeAnswer(std::string_view chtoken, std::string_vi
     return box.decryptToString(decodedChallenge);
 }
 
-void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtoken, std::string_view pubkey) {
+void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtoken, std::string_view pubkey, bool secureMode) {
     auto ans = decodeAnswer(chtoken, pubkey);
     if (!ans) {
         log::warn("failed to complete challenge: {}", ans.unwrapErr());
@@ -85,7 +92,11 @@ void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtok
         return;
     }
 
+    this->storedChToken = chtoken;
+
     std::string answer = ans.unwrap();
+
+    this->isSecureMode = secureMode;
 
     if (accountId == -1) {
         // skip the account verification, server has it disabled
@@ -126,7 +137,7 @@ void GlobedSignupPopup::onChallengeCompleted(std::string_view authcode) {
 
     statusMessage->setString("Verifying..");
 
-    auto request = WebRequestManager::get().challengeFinish(authcode);
+    auto request = WebRequestManager::get().challengeFinish(authcode, isSecureMode ? storedChToken : "");
     finishListener.bind(this, &GlobedSignupPopup::finishCallback);
     finishListener.setFilter(std::move(request));
 }

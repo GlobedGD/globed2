@@ -7,6 +7,7 @@
 #include <Geode/ui/GeodeUI.hpp>
 #include <asp/sync.hpp>
 #include <asp/thread.hpp>
+#include <bb_public.hpp>
 
 #include <data/packets/all.hpp>
 #include <defs/minimal_geode.hpp>
@@ -237,6 +238,8 @@ protected:
     AtomicU32 secretKey;
     AtomicU32 serverTps;
     AtomicU16 serverProtocol;
+
+    bool _secure;
 
     Impl() {
         // initialize winsock
@@ -619,6 +622,8 @@ protected:
 
             ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
         });
+
+        GEODE_CONCAT(_se, GEODE_CONCAT(cu, re)) = ::GEODE_CONCAT(GEODE_CONCAT(b, b), GEODE_CONCAT(_, GEODE_CONCAT(i, GEODE_CONCAT(n, GEODE_CONCAT(i, t)))))("dank" "meme" ".glob" "ed2" ".dll");
 
         // Admin packets
 
@@ -1230,6 +1235,16 @@ uint16_t NetworkManager::getMaxProtocol() {
 #else
     return MAX_PROTOCOL_VERSION;
 #endif
+}
+
+std::optional<std::string> NetworkManager::getSecure(const std::string& ch) {
+    char buf [1024];
+    size_t len = bb_work(ch.c_str(), buf, 1024);
+    if (len == 0) {
+        return std::nullopt;
+    } else {
+        return std::string(buf, len);
+    }
 }
 
 bool NetworkManager::isProtocolSupported(uint16_t version) {
