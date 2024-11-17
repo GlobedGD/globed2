@@ -75,7 +75,6 @@ if (GLOBED_IS_DEBUG)
 elseif (GLOBED_RELEASE)
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_RELEASE=1)
 endif()
 
 # add thingies depending on the current system
@@ -115,6 +114,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if (NOT MSVC)
         set(GLOBED_WINDOWS_CLANG ON)
     endif()
+endif()
+
+if (GLOBED_RELEASE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_RELEASE=1)
 endif()
 
 # export some symbols
