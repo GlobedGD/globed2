@@ -26,6 +26,8 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
     gjbgl->m_fields->setupWasCompleted = true;
 
     auto& settings = GlobedSettings::get();
+
+#if GLOBED_GP_CHANGES
     if (settings.globed.editorChanges) {
         HookManager::get().enableGroup(HookManager::Group::EditorTriggerPopups);
 
@@ -42,6 +44,9 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
     } else {
         HookManager::get().disableGroup(HookManager::Group::EditorTriggerPopups);
     }
+#else
+    settings.globed.editorChanges = false;
+#endif
 
     globed::toggleEditorTriggerHooks(settings.globed.editorChanges);
 

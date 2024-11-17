@@ -75,6 +75,7 @@ if (GLOBED_IS_DEBUG)
 elseif (GLOBED_RELEASE)
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_RELEASE=1)
 endif()
 
 # add thingies depending on the current system

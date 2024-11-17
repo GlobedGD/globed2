@@ -22,7 +22,7 @@ See the [server readme](./server/readme.md) for more information about hosting a
 
 Build like any other mod, see [Geode documentation](https://docs.geode-sdk.org/getting-started/cpp-stuff).
 
-Only compiler supported is Clang, MSVC is unsupported since release v1.7.0 (for Geode v4). Be careful if compiling on Linux, clang-cl and certain specific SDK versions might have to be used to avoid crashes, contact me (github issues or @dank_meme01 on discord) if you need help.
+Only compiler supported is Clang, MSVC is unsupported since release v1.7.0 (for Geode v4). If compiling on linux, clang-cl is required instead of regular clang.
 
 ## Credit
 

@@ -42,6 +42,11 @@
 #define GLOBED_FMOD_IOS 0
 #define GLOBED_DRPC_IOS 0
 
+// TODO: right now dont enable for action builds
+#ifndef GLOBED_RELEASE
+# define GLOBED_GP_CHANGES 1
+#endif
+
 
 #endif // GLOBED_IGNORE_CONFIG_HPP
 
