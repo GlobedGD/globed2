@@ -142,12 +142,12 @@ public:
             for (int i = listeners.size() - 1; i >= 0; i--) {
 #ifdef GLOBED_DEBUG
                 auto addr = addrFromWeakRef(listeners[i]);
+#else
+                void* addr = nullptr;
 #endif
 
                 if (!listeners[i].valid()) {
-#ifdef GLOBED_DEBUG
                     TRACE("Unregistering listener {} (id {})", addr, id);
-#endif
                     listeners.erase(listeners.begin() + i);
                 }
             }
