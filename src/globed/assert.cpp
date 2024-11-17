@@ -120,7 +120,7 @@ std::string globed::_condFailSafe(const std::source_location& loc, const boost::
 // no stack trace in debug!
 
 [[noreturn]] void globed::_condFail(const std::source_location& loc, std::string_view message) {
-    throw std::runtime_error(_condFailSafe(loc, trace, message));
+    throw std::runtime_error(_condFailSafe(loc, message));
 }
 
 std::string globed::_condFailSafe(const std::source_location& loc, std::string_view message) {
