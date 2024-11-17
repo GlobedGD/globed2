@@ -92,15 +92,15 @@ RequestTask WebRequestManager::challengeFinish(std::string_view authcode, const 
         accdata["user_id"] = gdData->userId;
         accdata["username"] = gdData->accountName;
 
-        if (!challenge.empty()) {
-            if (auto s = NetworkManager::get().getSecure(challenge)) {
-                accdata[GEODE_STR(GEODE_CONCAT(GEODE_CONCAT(tr, ust), GEODE_CONCAT(_tok, en)))] = s.value();
-            }
-        }
-
         auto obj = matjson::Value::object();
         obj["account_data"] = accdata;
         obj["answer"] = std::string(authcode);
+
+        if (!challenge.empty()) {
+            if (auto s = NetworkManager::get().getSecure(challenge)) {
+                obj[GEODE_STR(GEODE_CONCAT(GEODE_CONCAT(tr, ust), GEODE_CONCAT(_tok, en)))] = s.value();
+            }
+        }
 
         req.bodyJSON(obj);
         req.encrypted(true);

@@ -218,8 +218,8 @@ pub async fn challenge_new(
 }
 
 fn decrypt_trust_token(token: &str, key: &str) -> WebResult<Vec<u8>> {
-    let encrypted = b64e::URL_SAFE.decode(token)?;
-    let key = b64e::URL_SAFE.decode(key)?;
+    let encrypted: Vec<u8> = b64e::URL_SAFE.decode(token)?;
+    let key = hex::decode(key)?;
 
     // check sizes
     if encrypted.len() < 24 || key.len() != 32 {
@@ -230,7 +230,7 @@ fn decrypt_trust_token(token: &str, key: &str) -> WebResult<Vec<u8>> {
     key_arr.copy_from_slice(&key);
 
     let cipher = globed_shared::crypto_secretbox::XSalsa20Poly1305::new((&key_arr).into());
-    let nonce = encrypted[..24].try_into().unwrap();
+    let nonce = encrypted[..24].into();
     let ciphertext = &encrypted[24..];
 
     let decrypted = cipher.decrypt(nonce, ciphertext)?;
