@@ -9,6 +9,7 @@
 #include <util/net.hpp>
 #include <util/format.hpp>
 #include <util/crypto.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -24,10 +25,10 @@ bool GlobedSignupPopup::setup() {
         return false;
     }
 
-    auto winSize = cocos2d::CCDirector::sharedDirector()->getWinSize();
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build<CCLabelBMFont>::create("Requesting challenge..", "bigFont.fnt")
-        .pos(winSize.width / 2, winSize.height / 2 + m_size.height / 2 - 50.f)
+        .pos(rlayout.fromCenter(0.f, -10.f))
         .scale(0.35f)
         .store(statusMessage)
         .parent(m_mainLayer);
