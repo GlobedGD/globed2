@@ -36,7 +36,7 @@ namespace util::net {
             Loader::get()->getVersion().toVString()
         );
 #else
-        return fmt::format("globed-geode-xd/{}", Mod::get()->getVersion().toString());
+        return fmt::format("globed-geode-xd/{}", Mod::get()->getVersion().toVString());
 #endif
     }
 
@@ -50,7 +50,7 @@ namespace util::net {
         );
 #else
         // no telemetry in release :(
-        return fmt::format("Globed {}", Mod::get()->getVersion().toString());
+        return fmt::format("Globed {}", Mod::get()->getVersion().toVString());
 #endif
     }
 
