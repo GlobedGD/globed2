@@ -623,7 +623,7 @@ protected:
             ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
         });
 
-        GEODE_CONCAT(_se, GEODE_CONCAT(cu, re)) = ::GEODE_CONCAT(GEODE_CONCAT(b, b), GEODE_CONCAT(_, GEODE_CONCAT(i, GEODE_CONCAT(n, GEODE_CONCAT(i, t)))))("dank" "meme" ".glob" "ed2" ".dll");
+        GEODE_CONCAT(_se, GEODE_CONCAT(cu, re)) = ::GEODE_CONCAT(GEODE_CONCAT(b, b), GEODE_CONCAT(_, GEODE_CONCAT(i, GEODE_CONCAT(n, GEODE_CONCAT(i, t)))))();
 
         // Admin packets
 
@@ -1238,6 +1238,10 @@ uint16_t NetworkManager::getMaxProtocol() {
 }
 
 std::optional<std::string> NetworkManager::getSecure(const std::string& ch) {
+    if (!impl->_secure) {
+        return std::nullopt;
+    }
+
     char buf [1024];
     size_t len = bb_work(ch.c_str(), buf, 1024);
     if (len == 0) {

@@ -174,14 +174,16 @@ pub async fn challenge_new(
         let verify = state.config.use_gd_api;
         let gd_api_account = state.config.gd_api_account;
         let pubkey = b64e::STANDARD.encode(state.challenge_pubkey);
+        let use_secure_mode = std::env::var("GLOBED_GS_SECURE_MODE_KEY").is_ok();
 
         trace!("sending existing challenge to {user_ip} with {rand_string}");
 
         return Ok(format!(
-            "{}:{}:{}",
+            "{}:{}:{}:{}",
             if verify { gd_api_account.to_string() } else { "none".to_string() },
             rand_string,
-            pubkey
+            pubkey,
+            if use_secure_mode { "1" } else { "0" }
         ));
     }
 
@@ -202,7 +204,7 @@ pub async fn challenge_new(
     let pubkey = b64e::STANDARD.encode(state.challenge_pubkey);
 
     let verify = state.config.use_gd_api;
-    let gd_api_account = state.config.gd_api_account;
+    let gd_api_account: i32 = state.config.gd_api_account;
 
     let use_secure_mode = std::env::var("GLOBED_GS_SECURE_MODE_KEY").is_ok();
 
@@ -211,7 +213,7 @@ pub async fn challenge_new(
         if verify { gd_api_account.to_string() } else { "none".to_string() },
         challenge,
         pubkey,
-        use_secure_mode
+        if use_secure_mode { "1" } else { "0" }
     ))
 }
 

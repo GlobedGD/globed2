@@ -307,9 +307,12 @@ endif()
 
 
 # link to bb
-if (NOT GLOBED_OSS_BUILD)
+if (GLOBED_OSS_BUILD)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_OSS_BUILD=1)
+else()
     if (WIN32)
         target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb.lib")
+        target_link_libraries(${PROJECT_NAME} ntdll.lib userenv.lib runtimeobject.lib)
     else()
         target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-${LIB_PLATFORM}.a")
     endif()
