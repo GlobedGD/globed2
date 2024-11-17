@@ -1,11 +1,12 @@
 #include <defs/assert.hpp>
-#include <boost/stacktrace/stacktrace.hpp>
 
 #include <util/debug.hpp>
 
 using namespace geode::prelude;
 
 #ifdef GLOBED_DEBUG
+
+#include <boost/stacktrace/stacktrace.hpp>
 
 struct Module {
     std::string name;
