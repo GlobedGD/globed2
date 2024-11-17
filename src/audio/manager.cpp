@@ -59,8 +59,8 @@ GlobedAudioManager::GlobedAudioManager()
 
     audioThreadHandle.start(this);
 
-    recordDevice = {.id = -1};
-    playbackDevice = {.id = -1};
+    recordDevice = AudioRecordingDevice{.id = -1};
+    playbackDevice = AudioPlaybackDevice{.id = -1};
 }
 
 GlobedAudioManager::~GlobedAudioManager() {
