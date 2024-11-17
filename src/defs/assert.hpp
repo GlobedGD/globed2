@@ -116,7 +116,13 @@ namespace globed {
 #endif
     }
 
+#ifdef GLOBED_DEBUG
     [[noreturn]] void _condFail(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message);
     std::string _condFailSafe(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message);
     [[noreturn]] void _condFailFatal(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message);
+#else
+    [[noreturn]] void _condFail(const std::source_location& loc, std::string_view message);
+    std::string _condFailSafe(const std::source_location& loc, std::string_view message);
+    [[noreturn]] void _condFailFatal(const std::source_location& loc, std::string_view message);
+#endif
 }
