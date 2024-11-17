@@ -145,7 +145,9 @@ public:
 #endif
 
                 if (!listeners[i].valid()) {
+#ifdef GLOBED_DEBUG
                     TRACE("Unregistering listener {} (id {})", addr, id);
+#endif
                     listeners.erase(listeners.begin() + i);
                 }
             }
