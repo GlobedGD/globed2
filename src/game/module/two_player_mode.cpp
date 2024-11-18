@@ -91,7 +91,11 @@ void TwoPlayerModeModule::destroyPlayerPost(PlayerObject* player, GameObject* ob
 
 void TwoPlayerModeModule::linkPlayerTo(int accountId) {
     log::debug("Link attempt to {}", accountId);
-    if (!gameLayer->m_fields->players.contains(accountId)) return;
+    if (accountId == 0 || !gameLayer->m_fields->players.contains(accountId)) {
+        this->linked = false;
+        this->linkedId = 0;
+        return;
+    }
 
     RemotePlayer* rp = gameLayer->m_fields->players.at(accountId);
 
@@ -102,6 +106,11 @@ void TwoPlayerModeModule::linkPlayerTo(int accountId) {
     ignored->setUserObject(LOCKED_TO_KEY, isPrimary ? rp->player2 : rp->player1);
 
     this->linked = true;
+    this->linkedId = accountId;
+}
+
+int TwoPlayerModeModule::getLinkedTo() {
+    return linkedId;
 }
 
 // TODO: test if still needed for 2 player mode
@@ -120,11 +129,23 @@ void TwoPlayerModeModule::linkPlayerTo(int accountId) {
 std::vector<UserCellButton> TwoPlayerModeModule::onUserActionsPopup(int accountId, bool self) {
     if (self) return {};
 
+    if (accountId == linkedId) {
+        return std::vector({UserCellButton {
+            .spriteName = "gj_linkBtnOff_001.png",
+            .id = "2p-unlink-btn"_spr,
+            .callback = [this](CCObject* sender){
+                this->linkPlayerTo(0);
+                return true;
+            }
+        }});
+    }
+
     return std::vector({UserCellButton {
         .spriteName = "gj_linkBtn_001.png",
         .id = "2p-link-btn"_spr,
         .callback = [this, accountId](CCObject* sender){
             this->linkPlayerTo(accountId);
+            return true;
         }
     }});
 }

@@ -90,7 +90,7 @@ public:
     struct UserCellButton {
         std::string spriteName;
         std::string id;
-        std::function<void(cocos2d::CCObject*)> callback;
+        std::function<bool(cocos2d::CCObject*)> callback;
         int order = 0;
     };
 

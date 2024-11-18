@@ -257,7 +257,7 @@ const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>(
 });
 #else // Mac x64 offsets
 const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
-    {0x3904c5, 0x3904dc}, // TODO: update
+    {0x3904c5, 0x3904e1}, // TODO: update
 });
 #endif
 

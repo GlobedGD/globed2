@@ -14,10 +14,13 @@ public:
     void destroyPlayerPost(PlayerObject* player, GameObject* object) override;
     std::vector<UserCellButton> onUserActionsPopup(int accountId, bool self) override;
 
+    int getLinkedTo();
+
 private:
     bool isPrimary = false;
     bool oldFastReset = false;
     bool linked = false;
+    int linkedId = 0;
 
     static inline const std::string LOCKED_TO_KEY = "2p-locked-to"_spr;
 

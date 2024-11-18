@@ -16,6 +16,7 @@ public:
 
     static GlobedUserListPopup* create();
     void removeListCell(GlobedUserCell* cell);
+    void hardRefresh();
 
 private:
     using UserList = GlobedListLayer<GlobedUserCell>;
@@ -27,7 +28,6 @@ private:
     bool setup() override;
     void reloadList(float);
     void reorderWithVolume(float);
-    void hardRefresh();
     cocos2d::CCArray* createPlayerCells();
     void onToggleVoiceSort(cocos2d::CCObject* sender);
     void onVolumeChanged(BetterSlider* slider, double value);
