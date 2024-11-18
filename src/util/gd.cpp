@@ -141,4 +141,17 @@ namespace util::gd {
     void setVariable(GameVariable var, bool state) {
         GameManager::get()->setGameVariable(gvkey(var).c_str(), state);
     }
+
+    void safePopScene() {
+        GameManager::get()->safePopScene();
+        // auto dir = CCDirector::get();
+
+        // if (dir->sceneCount() < 2) {
+        //     auto ml = MenuLayer::scene(false);
+        //     auto ct = CCTransitionFade::create(0.5f, ml);
+        //     dir->replaceScene(ct);
+        // } else {
+        //     dir->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
+        // }
+    }
 }
