@@ -1,4 +1,7 @@
 #include "setup_instant_count_popup.hpp"
+
+#ifdef GLOBED_GP_CHANGES
+
 #include <globed/constants.hpp>
 
 using namespace geode::prelude;
@@ -29,3 +32,5 @@ void InstantCountPopupHook::updateItemID() {
     }
     return SetupInstantCountPopup::updateItemID();
 }
+
+#endif // GLOBED_GP_CHANGES

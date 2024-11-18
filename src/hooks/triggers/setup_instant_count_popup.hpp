@@ -1,5 +1,9 @@
 #pragma once
 
+#include <config.hpp>
+
+#ifdef GLOBED_GP_CHANGES
+
 #include <Geode/modify/SetupInstantCountPopup.hpp>
 #include <defs/minimal_geode.hpp>
 #include <managers/hook.hpp>
@@ -29,3 +33,4 @@ struct GLOBED_DLL InstantCountPopupHook : geode::Modify<InstantCountPopupHook, S
     void updateItemID();
 };
 
+#endif // GLOBED_GP_CHANGES

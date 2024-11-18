@@ -1,6 +1,8 @@
 #include <defs/platform.hpp>
 #include <defs/minimal_geode.hpp>
 
+#ifdef GLOBED_GP_CHANGES
+
 #include <hooks/gjbasegamelayer.hpp>
 #include <globed/constants.hpp>
 #include <managers/hook.hpp>
@@ -51,3 +53,5 @@ namespace globed {
     // enable/disable editor trigger-related patch hooks
     void toggleEditorTriggerHooks(bool state);
 }
+
+#endif // GLOBED_GP_CHANGES

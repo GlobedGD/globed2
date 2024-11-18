@@ -96,11 +96,13 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
 
     if (fields.globedReady) {
         HookManager::get().enableGroup(HookManager::Group::Gameplay);
-        globed::toggleTriggerHooks(true);
     } else {
         HookManager::get().disableGroup(HookManager::Group::Gameplay);
-        globed::toggleTriggerHooks(false);
     }
+
+#ifdef GLOBED_GP_CHANGES
+    globed::toggleTriggerHooks(fields.globedReady);
+#endif
 
     if (fields.globedReady) {
         // room settings
@@ -312,6 +314,7 @@ void GlobedGJBGL::setupPacketListeners() {
             fields.interpolator->updatePlayer(player.accountId, player.data, fields.lastServerUpdate);
         }
 
+#ifdef GLOBED_GP_CHANGES
         if (packet->customItems) {
             for (const auto& [itemId, value] : *packet->customItems) {
                 static_cast<GJEffectManagerHook*>(m_effectManager)->applyItem(
@@ -325,6 +328,7 @@ void GlobedGJBGL::setupPacketListeners() {
             fields.lastJoinedPlayer = GJAccountManager::get()->m_accountID;
             this->updateCountersForCustomItem(globed::ITEM_LAST_JOINED);
         }
+#endif
     });
 
     nm.addListener<LevelPlayerMetadataPacket>(this, [this](std::shared_ptr<LevelPlayerMetadataPacket> packet) {
@@ -1063,9 +1067,11 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     fields.lastJoinedPlayer = playerId;
     fields.totalJoins++;
 
+#ifdef GLOBED_GP_CHANGES
     this->updateCustomItem(globed::ITEM_LAST_JOINED, fields.lastJoinedPlayer);
     this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS_JOINED, fields.totalJoins);
     this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS, fields.players.size() + 1);
+#endif
 
     GLOBED_EVENT(this, onPlayerJoin(rp));
 }
@@ -1092,9 +1098,11 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     fields.lastLeftPlayer = playerId;
     fields.totalLeaves++;
 
+#ifdef GLOBED_GP_CHANGES
     this->updateCustomItem(globed::ITEM_LAST_LEFT, fields.lastLeftPlayer);
     this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS_LEFT, fields.totalLeaves);
     this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS, fields.players.size() + 1);
+#endif
 }
 
 bool GlobedGJBGL::established() {
@@ -1248,7 +1256,8 @@ void GlobedGJBGL::queueCounterChange(const GlobedCounterChange& change) {
 }
 
 int GlobedGJBGL::countForCustomItem(int id) {
-#define $id(x) (globed::ITEM_##x)
+#ifdef GLOBED_GP_CHANGES
+# define $id(x) (globed::ITEM_##x)
     auto& fields = this->getFields();
 
     switch (id) {
@@ -1261,16 +1270,23 @@ int GlobedGJBGL::countForCustomItem(int id) {
     }
 
     return 0;
-#undef $id
+# undef $id
+#else
+    return 0;
+#endif
 }
 
 void GlobedGJBGL::updateCountersForCustomItem(int id) {
+#ifdef GLOBED_GP_CHANGES
     static_cast<GJEffectManagerHook*>(m_effectManager)->updateCountersForCustomItem(id);
+#endif
 }
 
 void GlobedGJBGL::updateCustomItem(int id, int value) {
+#ifdef GLOBED_GP_CHANGES
     static_cast<GJEffectManagerHook*>(m_effectManager)->updateCountForItemCustom(id, value);
     this->updateCountersForCustomItem(id);
+#endif
 }
 
 GlobedGJBGL::Fields& GlobedGJBGL::getFields() {

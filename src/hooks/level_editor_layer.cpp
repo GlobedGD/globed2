@@ -44,11 +44,10 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
     } else {
         HookManager::get().disableGroup(HookManager::Group::EditorTriggerPopups);
     }
-#else
-    settings.globed.editorChanges = false;
-#endif
 
     globed::toggleEditorTriggerHooks(settings.globed.editorChanges);
+#endif
+
 
     return true;
 }

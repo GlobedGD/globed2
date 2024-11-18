@@ -1,5 +1,9 @@
 #pragma once
 
+#include <config.hpp>
+
+#ifdef GLOBED_GP_CHANGES
+
 #include <Geode/modify/SetupPickupTriggerPopup.hpp>
 #include <defs/minimal_geode.hpp>
 #include <managers/hook.hpp>
@@ -32,3 +36,5 @@ struct GLOBED_DLL PickupPopupHook : geode::Modify<PickupPopupHook, SetupPickupTr
 
     void onUpdateValue(int p0, float p1);
 };
+
+#endif // GLOBED_GP_CHANGES

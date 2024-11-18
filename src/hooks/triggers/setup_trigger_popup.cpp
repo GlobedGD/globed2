@@ -1,4 +1,7 @@
 #include <defs/platform.hpp>
+
+#ifdef GLOBED_GP_CHANGES
+
 #include <globed/constants.hpp>
 #include <managers/hook.hpp>
 #include <util/format.hpp>
@@ -78,3 +81,5 @@ struct GLOBED_DLL SetupPopupHook : geode::Modify<SetupPopupHook, SetupTriggerPop
         }
     }
 };
+
+#endif // GLOBED_GP_CHANGES

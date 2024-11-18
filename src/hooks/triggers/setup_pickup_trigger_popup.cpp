@@ -1,5 +1,7 @@
 #include "setup_pickup_trigger_popup.hpp"
 
+#ifdef GLOBED_GP_CHANGES
+
 #include <defs/geode.hpp>
 #include <globed/constants.hpp>
 #include <util/math.hpp>
@@ -170,3 +172,5 @@ void PickupPopupHook::onUpdateValue(int p0, float p1) {
 
     this->toggleGlobedMode(globed::isWritableCustomItem(itemId), itemId);
 }
+
+#endif // GLOBED_GP_CHANGES

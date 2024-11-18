@@ -13,6 +13,11 @@ std::set<HookManager::HookData>& HookManager::getHooks(Group group) {
 }
 
 void HookManager::enableGroup(Group group) {
+    if (group == Group::EditorTriggerPopups) {
+        disableGroup(group);
+        return;
+    }
+
     for (auto& h : groups[group]) {
         if (auto res = h.hook->enable()) {
             // TRACE("enabled hook {}", h.hook->getDisplayName());

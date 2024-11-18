@@ -1,5 +1,7 @@
 #include "gjeffectmanager.hpp"
 
+#ifdef GLOBED_GP_CHANGES
+
 #include <Geode/modify/GJEffectManager.hpp>
 #include <Geode/modify/EffectGameObject.hpp>
 #include <Geode/modify/CountTriggerGameObject.hpp>
@@ -55,87 +57,6 @@ void GJEffectManagerHook::reset() {
     m_fields->customItems.clear();
 }
 
-bool GJEffectManagerHook::updateCountForItemCustom(int id, int value) {
-    auto& fields = *m_fields.self();
-
-    int prev = fields.customItems[id];
-    fields.customItems[id] = value;
-
-    if (dontUpdateCountTriggers) {
-        return prev != value;
-    }
-
-    // update count triggers haha
-    // please dont even begin to try to understand any of this
-    // TODO clean this up
-
-    if (m_countTriggerActions.contains(id)) {
-        auto& actions = m_countTriggerActions.at(id);
-
-        auto comparator = value < prev
-            ? [](const CountTriggerAction& a, const CountTriggerAction& b){ return b.m_targetCount < a.m_targetCount; }
-            : [](const CountTriggerAction& a, const CountTriggerAction& b){ return a.m_targetCount < b.m_targetCount; };
-
-        // yeah whatever you say robby
-        std::sort(actions.begin(), actions.end(), comparator);
-
-        for (size_t i = 0; i < actions.size();) {
-            auto& action = actions[i];
-
-            if (action.m_previousCount == value) {
-                i++;
-                continue;
-            }
-
-            bool multiActivate = action.m_multiActivate;
-            int prevCount = action.m_previousCount;
-            action.m_previousCount = value;
-
-            auto stuff = [&]{
-
-                auto unkVecInt = action.m_unkVecInt;
-                bool unk10 = action.m_unk10;
-                int unk14 = action.m_unk14;
-                int unk18 = action.m_unk18;
-                int groupId = action.m_targetGroup;
-
-                if (!action.m_multiActivate) {
-                    actions.erase(actions.begin() + i);
-                }
-
-                if (!m_triggerEffectDelegate) {
-                    // i cant be bothered im not gonna lie
-                    // this->toggleGroup(groupId, unk10);
-                } else {
-                    m_triggerEffectDelegate->toggleGroupTriggered(groupId, unk10, unkVecInt, unk14, unk18);
-                }
-            };
-
-            if (action.m_targetCount <= prevCount) {
-                if ((action.m_targetCount < prevCount) && (value <= action.m_targetCount)) {
-                    stuff();
-                } else {
-                    i++;
-                    continue;
-                }
-            } else if (value < action.m_targetCount) {
-                i++;
-                continue;
-            } else {
-                stuff();
-            }
-
-            // log::debug("Action: 0 = {}, 4 = {}, 8 = {}, c = {}, 10 = {}, 14 = {}, 18 = {}, 1c = {}, set = {}", action.m_unk0, action.m_unk4, action.m_unk8, action.m_unkc, action.m_unk10, action.m_unk14, action.m_unk18, action.m_unk1c, action.m_unkVecInt);
-            // m_triggerEffectDelegate->toggleGroupTriggered(id)
-
-            if (multiActivate) {
-                i++;
-            }
-        }
-    }
-
-    return prev != value;
-}
 
 int GJEffectManagerHook::countForItemCustom(int id) {
     // check if it's a special read only item
@@ -220,87 +141,6 @@ struct GLOBED_DLL EffectGameObjectHook : geode::Modify<EffectGameObjectHook, Eff
     }
 };
 
-// gjbgl collectedObject and addCountToItem inlined on windows.
-struct GLOBED_DLL CountObjectHook : geode::Modify<CountObjectHook, CountTriggerGameObject> {
-    static void onModify(auto& self) {
-        GLOBED_MANAGE_HOOK(Gameplay, CountTriggerGameObject::triggerObject);
-    }
-
-    // item edit - 3619 (0xe23)
-    $override
-    void triggerObject(GJBaseGameLayer* layer, int idk, gd::vector<int> const* idunno) {
-        if (m_objectID == 0x719 && globed::isWritableCustomItem(m_itemID)) {
-            // gjbgl::addPickupTrigger reimpl
-            auto gjbgl = GlobedGJBGL::get();
-
-            GlobedCounterChange cc;
-            cc.itemId = globed::itemIdToCustom(m_itemID);
-
-            using enum GlobedCounterChange::Type;
-
-            if (m_pickupTriggerMode == 1) {
-                cc.type = Multiply;
-                cc._val.floatVal = m_pickupTriggerMultiplier;
-            } else if (m_pickupTriggerMode == 2) {
-                cc.type = Divide;
-                cc._val.floatVal = m_pickupTriggerMultiplier;
-            } else if (!m_isOverride) {
-                cc.type = Add;
-                cc._val.intVal = m_pickupCount;
-            } else {
-                cc.type = Set;
-                cc._val.intVal = m_pickupCount;
-            }
-
-            gjbgl->queueCounterChange(cc);
-        } else if (!globed::isReadonlyCustomItem(m_itemID)) {
-            CountTriggerGameObject::triggerObject(layer, idk, idunno);
-        }
-    }
-};
-
-struct GLOBED_DLL ItemEditGJBGL : geode::Modify<ItemEditGJBGL, GJBaseGameLayer> {
-    static void onModify(auto& self) {
-        GLOBED_MANAGE_HOOK(Gameplay, GJBaseGameLayer::activateItemEditTrigger);
-    }
-
-    $override
-    void activateItemEditTrigger(ItemTriggerGameObject* obj) {
-        int targetId = obj->m_targetGroupID;
-
-        if (!globed::isCustomItem(targetId)) {
-            GJBaseGameLayer::activateItemEditTrigger(obj);
-            return;
-        }
-
-        if (globed::isReadonlyCustomItem(targetId)) {
-            // do nothing
-            return;
-        }
-
-        auto efm = static_cast<GJEffectManagerHook*>(m_effectManager);
-
-        int oldValue = efm->countForItemCustom(targetId);
-
-        // TODO: we really should rewrite the orig method instead of doing this
-        dontUpdateCountTriggers = true;
-
-        GJBaseGameLayer::activateItemEditTrigger(obj);
-        int newValue = efm->countForItemCustom(targetId);
-        efm->updateCountForItemCustom(targetId, oldValue);
-        this->updateCounters(targetId, oldValue);
-
-        dontUpdateCountTriggers = false;
-
-        GlobedCounterChange cc;
-        cc.itemId = globed::itemIdToCustom(targetId);
-        cc.type = GlobedCounterChange::Type::Set; // laziness tbh
-        cc._val.intVal = newValue;
-
-        static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(this))->queueCounterChange(cc);
-    }
-};
-
 static Patch* egoPatch1 = nullptr;
 static Patch* egoPatch2 = nullptr;
 
@@ -310,19 +150,8 @@ $execute {
     uintptr_t offset1 = -1, offset2 = -1, funcStart = 0;
     std::vector<uint8_t> bytes;
 
-#ifdef GEODE_IS_WINDOWS
-    funcStart = geode::base::get() + + 0x4932b0;
-
-    offset1 = util::sigscan::find<"3d 0f 27 00 00", 0x100>(funcStart);
-    if (offset1 != -1) {
-        offset2 = util::sigscan::find<"3d 0f 27 00 00", 0x100>(offset1 + 1);
-    }
-
-    bytes = {0x3d, 0xff, 0xff, 0xff, 0x7f};
-#else
 # pragma message "EffectGameObject::getSaveString not impl'd for this platform"
     return;
-#endif
 
     if (offset1 == -1) {
         log::warn("Failed to find getSaveString offset 1 (searched from {:X})", funcStart);
@@ -355,3 +184,5 @@ void globed::toggleEditorTriggerHooks(bool state) {
     toggle(egoPatch1);
     toggle(egoPatch2);
 }
+
+#endif // GLOBED_GP_CHANGES
