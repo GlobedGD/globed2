@@ -1,3 +1,29 @@
+## v1.7.0
+
+* Port to Geode v4.0.0
+* Added a <cg>2-player mode room setting</c>, allowing you to 2-player levels with a remote friend
+* Added a way to <cg>filter levels</c> in the Globed level list
+* Added a mechanism that allows for compatibility with <cr>outdated mod versions and game versions</c>
+* Make the direct connection popup allow for 64 characters in the address instead of 21
+* Added some guides to the GitHub repository (currently only a guide on how to use certain launch options)
+* Improve error messages in failed web requests
+* Improve sliders (volume, etc.) in UI, now no longer squished!
+* Improve server security & performance
+* Improve packet fragmentation algorithm
+* Revamp moderator panel
+* Add a way to override the main server URL (for GDPS owners). The searched sources are, in order:
+* \-- `GLOBED_MAIN_SERVER_URL` environment variable
+* \-- `globed-server-url.txt` in the game folder
+* \-- `globed-server-url.txt` in the mod config folder
+* \-- `globed-server-url.txt` in the mod save directory
+* \-- Default value, `https://main.globed.dev`
+* Fix crash when trying to join a room with an unlisted/deleted level
+* Fix minor memory leak whenever any player leaves the level :P (thanks sleepyut)
+* Fix crashes when using an outdated texture pack that modifies Globed textures
+* Fix some logic issues in the audio recording system
+* Fix a rare crash during closing the game that no one except Brittank88 ever experienced :D
+* Fix rare multithreading crash when loading into the main menu
+
 ## v1.6.2
 
 * Fix crashes on some Windows devices

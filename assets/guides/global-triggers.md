@@ -1,3 +1,0 @@
-# Global Triggers
-
-TODO yeah

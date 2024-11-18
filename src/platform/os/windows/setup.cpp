@@ -1,6 +1,10 @@
 #include <defs/geode.hpp>
 #include <util/debug.hpp>
 
+// TODO: all of this might be obsolete
+// im not sure
+// it works ok on my fedora linux now
+
 // Ok so this is really cursed but let me explain
 // somewhere sometime recently microsoft stl brokey the internal mutex or cv structure or whatever
 // and wine kinda doesnt wanna work with it (even with most recent redistributable package)

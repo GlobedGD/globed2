@@ -46,7 +46,7 @@ pub const MAX_SUPPORTED_PROTOCOL: u16 = *SUPPORTED_PROTOCOLS.last().unwrap();
 pub const MIN_SUPPORTED_PROTOCOL: u16 = *SUPPORTED_PROTOCOLS.first().unwrap();
 // used for communicating to the user the minimum required mod version for this protocol
 pub const MIN_CLIENT_VERSION: &str = "v1.7.0";
-pub const MIN_GD_VERSION: &str = "2.206";
+pub const MIN_GD_VERSION: &str = "2.2074";
 pub const SERVER_MAGIC: &[u8] = b"\xdd\xeeglobed\xda\xee";
 pub const SERVER_MAGIC_LEN: usize = SERVER_MAGIC.len();
 /// amount of chars in an admin key (32)

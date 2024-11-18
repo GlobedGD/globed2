@@ -30,15 +30,29 @@ namespace util::rng {
     template <typename T>
     T Random::generate(T min, T max) {
         std::uniform_int_distribution<T> dist(min, max);
+
         return dist(engine);
     }
 
-    RNG_DEF(uint64_t);
-    RNG_DEF(int64_t);
-    RNG_DEF(uint32_t);
-    RNG_DEF(int32_t);
-    RNG_DEF(uint16_t);
-    RNG_DEF(int16_t);
+    // In a perfect world, long would be same as long long on unix, or int on msvc.
+    // In practice, despite being the same size, they name different types.
+    // Thank you C++
+
+    // RNG_DEF(uint64_t);
+    // RNG_DEF(int64_t);
+    // RNG_DEF(uint32_t);
+    // RNG_DEF(int32_t);
+    // RNG_DEF(uint16_t);
+    // RNG_DEF(int16_t);
+
+    RNG_DEF(short);
+    RNG_DEF(unsigned short);
+    RNG_DEF(int);
+    RNG_DEF(unsigned int);
+    RNG_DEF(long);
+    RNG_DEF(unsigned long);
+    RNG_DEF(long long);
+    RNG_DEF(unsigned long long);
 
     template<> bool Random::generate<bool>() {
         std::uniform_int_distribution<int> dist(0, 1);
