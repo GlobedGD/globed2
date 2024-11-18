@@ -1,7 +1,7 @@
 ## v1.7.0
 
 * Port to Geode v4.0.0
-* Added a <cg>2-player mode room setting</c>, allowing you to 2-player levels with a remote friend
+* Added a <cg>2-player mode room setting</c>, allowing you to play 2-player levels with a remote friend
 * Added a way to <cg>filter levels</c> in the Globed level list
 * Added a mechanism that allows for compatibility with <cr>outdated mod versions and game versions</c>
 * Make the direct connection popup allow for 64 characters in the address instead of 21

@@ -20,11 +20,8 @@ bool AudioSetupPopup::setup() {
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
 
-    auto winSize = CCDirector::get()->getWinSize();
-    auto screenCenter = winSize / 2;
-
     Build<CCMenu>::create()
-        .pos(screenCenter.width, screenCenter.height - 110.f)
+        .pos(rlayout.fromCenter(0.f, -110.f))
         .layout(RowLayout::create()
                     ->setGap(5.0f)
                     ->setAxisReverse(true)
@@ -83,7 +80,7 @@ bool AudioSetupPopup::setup() {
         .intoMenuItem([this](auto) {
             this->refreshList();
         })
-        .pos(screenCenter.width + POPUP_WIDTH / 2 - 10.f, screenCenter.height - POPUP_HEIGHT / 2 + 10.f)
+        .pos(rlayout.fromBottomRight(5.f, 5.f))
         .parent(menu)
         .id("refresh-btn"_spr);
 

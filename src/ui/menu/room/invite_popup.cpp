@@ -53,7 +53,7 @@ bool InvitePopup::setup() {
         .intoMenuItem([this](auto) {
             this->reloadPlayerList(true);
         })
-        .pos(m_size.width / 2.f - 3.f, -m_size.height / 2.f + 3.f)
+        .pos(rlayout.fromBottomRight(3.f, 3.f))
         .id("reload-btn"_spr)
         .intoNewParent(CCMenu::create())
         .parent(m_mainLayer);
