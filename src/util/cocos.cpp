@@ -687,33 +687,6 @@ namespace util::cocos {
     bool isValidSprite(CCSprite* obj) {
         if (!obj) return false;
 
-        // TODO: clean up this mess once the textureldr update is reasonably behind
-
-        static bool oldTextureLdr = []() -> bool {
-            auto mod = Loader::get()->getLoadedMod("geode.texture-loader");
-            if (!mod) return false;
-
-            // versions before 1.6.2 had a bug where the fallback object wouldn't get assigned sometimes
-            return mod->getVersion().getMajor() == 1 && mod->getVersion().getMinor() == 6 && mod->getVersion().getPatch() < 2;
-        };
-
-        static auto getFallbackTexture = []() -> CCTexture2D* {
-            return CCTextureCache::get()->textureForKey("geode.texture-loader/fallback.png");
-        };
-
-        if (oldTextureLdr) {
-            if (obj->getUserObject("geode.texture-loader/fallback")) {
-                return false;
-            }
-
-            // find the sprite frame name
-            if (auto frame = obj->displayFrame()) {
-                if (frame->getTexture() == getFallbackTexture()) {
-                    return false;
-                }
-            }
-        }
-
         return !obj->getUserObject("geode.texture-loader/fallback");
     }
 

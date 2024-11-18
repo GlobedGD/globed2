@@ -59,6 +59,18 @@ namespace util::ui {
 
         cocos2d::CCPoint fromCenter(cocos2d::CCSize off);
         cocos2d::CCPoint fromCenter(float x, float y);
+
+        cocos2d::CCPoint fromBottomRight(cocos2d::CCSize off);
+        cocos2d::CCPoint fromBottomRight(float x, float y);
+
+        cocos2d::CCPoint fromTopRight(cocos2d::CCSize off);
+        cocos2d::CCPoint fromTopRight(float x, float y);
+
+        cocos2d::CCPoint fromBottomLeft(cocos2d::CCSize off);
+        cocos2d::CCPoint fromBottomLeft(float x, float y);
+
+        cocos2d::CCPoint fromTopLeft(cocos2d::CCSize off);
+        cocos2d::CCPoint fromTopLeft(float x, float y);
     };
 
     [[deprecated("use getPopupLayoutAnchored")]] PopupLayout getPopupLayout(const cocos2d::CCSize& popupSize);

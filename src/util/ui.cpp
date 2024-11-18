@@ -165,6 +165,38 @@ namespace util::ui {
         return this->fromCenter(CCSize{x, y});
     }
 
+    CCPoint PopupLayout::fromBottomRight(CCSize off) {
+        return {bottomRight.width - off.width, bottomRight.height + off.height};
+    }
+
+    CCPoint PopupLayout::fromBottomRight(float x, float y) {
+        return fromBottomRight({x, y});
+    }
+
+    CCPoint PopupLayout::fromTopRight(CCSize off) {
+        return this->topRight - off;
+    }
+
+    CCPoint PopupLayout::fromTopRight(float x, float y) {
+        return fromTopRight({x, y});
+    }
+
+    CCPoint PopupLayout::fromBottomLeft(CCSize off) {
+        return this->bottomLeft + off;
+    }
+
+    CCPoint PopupLayout::fromBottomLeft(float x, float y) {
+        return fromBottomLeft({x, y});
+    }
+
+    CCPoint PopupLayout::fromTopLeft(CCSize off) {
+        return {topLeft.width + off.width, topLeft.height - off.height};
+    }
+
+    CCPoint PopupLayout::fromTopLeft(float x, float y) {
+        return fromTopLeft({x, y});
+    }
+
     static PopupLayout popupLayoutWith(const CCSize& popupSize, bool useWinSize) {
         PopupLayout layout;
 

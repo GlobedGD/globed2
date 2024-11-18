@@ -36,10 +36,9 @@ bool GlobedUserListPopup::setup() {
         .intoMenuItem([this](auto) {
             this->hardRefresh();
         })
-        .pos(m_size.width / 2.f - 3.f, -m_size.height / 2.f + 3.f)
+        .pos(rlayout.fromBottomRight(8.f, 8.f))
         .id("reload-btn"_spr)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
+        .parent(m_buttonMenu);
 
     Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
         .scale(0.5f)
@@ -56,15 +55,14 @@ bool GlobedUserListPopup::setup() {
                 }
             );
         })
-        .pos(-m_size.width / 2.f + 20.f, -m_size.height / 2.f + 22.f)
+        .pos(rlayout.fromBottomLeft(20.f, 20.f))
         .id("report-btn"_spr)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
+        .parent(m_buttonMenu);
 
     // checkbox to toggle voice sorting
     auto* cbLayout = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false))
-        .pos(rlayout.centerBottom + CCPoint{0.f, 20.f})
+        .pos(rlayout.fromBottom(20.f))
         .parent(m_mainLayer)
         .collect();
 
