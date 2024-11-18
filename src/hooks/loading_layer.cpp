@@ -145,7 +145,9 @@ static void loadingFinishedCaller() {
 // Please help.
 #ifdef GLOBED_LOADING_FINISHED_MIDHOOK
 
-# ifdef GEODE_IS_ARM_MAC
+# if GEODE_COMP_GD_VERSION != 22074
+#  pragma message("loadingFinished midhook not implemented for this GD version")
+# elif defined(GEODE_IS_ARM_MAC)
 // LoadingLayer::loadAssets
 // macos aarch64 disasm:
 /*
@@ -178,9 +180,8 @@ static void loadingFinishedCaller() {
     ret
 */
 
-// TODO: update
-constexpr ptrdiff_t START_OFFSET = 0x32cdcc;
-constexpr ptrdiff_t END_OFFSET = 0x32cde8;
+constexpr ptrdiff_t START_OFFSET = 0x31f22c;
+constexpr ptrdiff_t END_OFFSET = 0x31f248;
 
 $execute {
     uint64_t caller = reinterpret_cast<uint64_t>(&loadingFinishedCaller);
@@ -213,9 +214,8 @@ $execute {
         }
     }
 }
-# elif GEODE_COMP_GD_VERSION != 22074
-#  pragma message("loadingFinished midhook not implemented for this GD version")
-# else
+
+# else // Win64 + Mac x64
 
 // LoadingLayer::loadAssets, invokation of MenuLayer::scene
 // win64 disasm (1):
@@ -227,16 +227,15 @@ $execute {
     mov rcx, rax
     mov rdx, rbx
     call CCDirector::replaceScene
-    jmp <out>                        <- offset for end1
-
-    mov cl, 0x1                      <- offset for start2
+    jmp <out>                         <- offset for end1
+    mov cl, 0x1                       <- offset for start2
     call MenuLayer::scene
     mov rbx, rax
     call CCDirector::sharedDirector
     mov rcx, rax
     mov rdx, rbx
     call CCDirector::replaceScene
-    jmp <out>                        <- offset for end2
+    jmp <out>                         <- offset for end2
 
     int3
 */
@@ -251,14 +250,14 @@ $execute {
     call CCDirector::replaceScene
     jmp <out>                         <- offset for end1
 */
-#ifdef GEODE_IS_WINDOWS
+#ifdef GEODE_IS_WINDOWS // Windows offsets
 const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
     {0x31a8e6, 0x31a902},
     {0x31a907, 0x31a923},
 });
-#else
+#else // Mac x64 offsets
 const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
-    {0x3a67dd, 0x3a67f9}, // TODO: update
+    {0x3904c5, 0x3904dc}, // TODO: update
 });
 #endif
 

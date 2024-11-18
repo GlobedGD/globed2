@@ -145,11 +145,11 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     }
 
 #ifdef GEODE_IS_ARM_MAC
-# if GEODE_COMP_GD_VERSION != 22060
+# if GEODE_COMP_GD_VERSION != 22074
 #  error "update this patch for new gd"
 # else
     static auto armpatch = [] {
-        return util::lowlevel::nop(0xa73e4, 0x4);
+        return util::lowlevel::nop(0xaa390, 0x4);
     }();
 
     if (armpatch) {

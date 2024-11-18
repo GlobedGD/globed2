@@ -305,13 +305,13 @@ static Patch* egoPatch1 = nullptr;
 static Patch* egoPatch2 = nullptr;
 
 // EffectGameObject::getSaveString patch cmp 9999 to INT_MAX to avoid checks on saving the level (item edit trigger would break otherwise)
-#if GEODE_COMP_GD_VERSION == 22060
+#if GEODE_COMP_GD_VERSION == 22074
 $execute {
     uintptr_t offset1 = -1, offset2 = -1, funcStart = 0;
     std::vector<uint8_t> bytes;
 
 #ifdef GEODE_IS_WINDOWS
-    funcStart = geode::base::get() + 0x47f960;
+    funcStart = geode::base::get() + + 0x4932b0;
 
     offset1 = util::sigscan::find<"3d 0f 27 00 00", 0x100>(funcStart);
     if (offset1 != -1) {
