@@ -86,20 +86,49 @@ bool GlobedPauseLayer::hasPopup() {
         } \
     }
 
+#define REPLACE_UNPAUSE(method) \
+    void GlobedPauseLayer::method(CCObject* s) {\
+        if (!this->hasPopup()) { \
+            if (auto* gpl = GlobedGJBGL::get()) { \
+                bool shouldResume = true; \
+                for (auto& mod : gpl->m_fields->modules) { \
+                    shouldResume = shouldResume && mod->onUnpause(); \
+                } \
+                \
+                if (!shouldResume) { \
+                    return; \
+                } \
+            } \
+            PauseLayer::method(s); \
+        } \
+    }
+
+REPLACE_UNPAUSE(onResume);
+REPLACE_UNPAUSE(onNormalMode);
+REPLACE_UNPAUSE(onPracticeMode);
+
 REPLACE(onQuit);
-REPLACE(onResume);
 REPLACE(onEdit);
-REPLACE(onNormalMode);
-REPLACE(onPracticeMode);
 
 /* deathlink */
 
 void GlobedPauseLayer::onRestart(CCObject* s) {
     if (this->hasPopup()) return;
 
-    GlobedGJBGL::get()->m_fields->isManuallyResettingLevel = true;
+    auto& fields = GlobedGJBGL::get()->getFields();
+
+    bool shouldResume = true;
+    for (auto& mod : fields.modules) {
+        shouldResume = shouldResume && mod->onUnpause();
+    }
+
+    if (!shouldResume) {
+        return;
+    }
+
+    fields.isManuallyResettingLevel = true;
     PauseLayer::onRestart(s);
-    GlobedGJBGL::get()->m_fields->isManuallyResettingLevel = false;
+    fields.isManuallyResettingLevel = false;
 }
 
 void GlobedPauseLayer::onRestartFull(CCObject* s) {

@@ -34,6 +34,12 @@ public:
     virtual void onPlayerJoin(RemotePlayer* player) {}
     virtual void onPlayerLeave(RemotePlayer* player) {}
 
+    // Return `false` to disallow pausing
+    virtual bool onPause() { return true; }
+
+    // Return `false` to disallow unpausing
+    virtual bool onUnpause() { return true; }
+
     // PlayerObject::update but only for player 1 and player 2
     virtual void mainPlayerUpdate(PlayerObject* player, float dt) {}
 

@@ -12,7 +12,12 @@ public:
     EventOutcome resetLevel() override;
     EventOutcome destroyPlayerPre(PlayerObject* player, GameObject* object) override;
     void destroyPlayerPost(PlayerObject* player, GameObject* object) override;
+
     std::vector<UserCellButton> onUserActionsPopup(int accountId, bool self) override;
+    bool onUnpause() override;
+    bool shouldSaveProgress() override;
+
+    void selPeriodicalUpdate(float dt) override;
 
     int getLinkedTo();
 
@@ -26,4 +31,7 @@ private:
 
     void updateFromLockedPlayer(PlayerObject* player, bool ignorePos);
     void linkPlayerTo(int accountId);
+
+    void unlinkIfAlone();
+    void unlink();
 };
