@@ -31,7 +31,7 @@
 *.out
 *.app
 
-# Macos be like
+# macOS Thumbnail Caches
 **/.DS_Store
 
 # Cache files for Sublime Text
@@ -41,26 +41,32 @@
 
 # Ignore build folders
 **/build
+# Ignore platform specific build folders
+build-*/
 
 # Workspace files are user-specific
 *.sublime-workspace
 
-# ILY vscode
+# Visual Studio Code
 **/.vscode
-.idea/
+
+# Local History for Visual Studio Code
+.history/
 
 # clangd
 .cache/
 
+# Visual Studio
+.vs/
+
+# CLion
+.idea/
+/cmake-build-*/
+
 build.sh
-build-win
 build-fast.sh
 build-android.sh
-build-android/
 build-armv8.sh
-build-armv8/
-build-android64
-build-android32
 
 mod-w.json
 mod-a.json
@@ -87,7 +93,6 @@ server/central/.env
 server/central/Rocket.toml
 src/hooks/cvh
 
-# it'll be left a relic
 server/rustc-ice-*.txt
 
 libs/openssl
