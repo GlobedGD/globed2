@@ -220,7 +220,9 @@ void GlobedServersLayer::updateServerList(float) {
 
         serverList->forceRefresh();
 
-        this->pingServers(0.f);
+        if (!initializing) {
+            this->pingServers(0.f);
+        }
 
         // also disconnect from the current server if it's gone
         auto activeId = gsm.getActiveId();
@@ -293,7 +295,7 @@ void GlobedServersLayer::cancelWebRequest() {
     requestListener.getFilter().cancel();
 }
 
-void GlobedServersLayer::pingServers(float) {
+void GlobedServersLayer::pingServers(float d) {
     auto& nm = NetworkManager::get();
     nm.pingServers();
 }

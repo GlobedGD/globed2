@@ -1,14 +1,23 @@
 pub mod consts;
-pub mod packets;
-pub mod types;
 
 /* re-export all important types, packets and macros */
 pub use consts::*;
 pub use esp::*;
 pub use globed_derive::*;
 pub use globed_shared::MAX_NAME_SIZE;
+
+pub use v_current::packets;
+pub use v_current::types;
+pub use v_current::VERSION as CURRENT_PROTOCOL;
+
 pub use packets::*;
 pub use types::*;
+
+pub mod v13;
+pub mod v14;
+
+// change this to the latest version as needed
+pub use v13 as v_current;
 
 // our own extension
 

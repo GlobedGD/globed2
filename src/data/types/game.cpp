@@ -4,6 +4,38 @@
 
 using namespace cocos2d;
 
+template<>
+void ByteBuffer::customEncode<GlobedCounterChange>(const GlobedCounterChange& val) {
+    using enum GlobedCounterChange::Type;
+
+    this->writeValue(val.itemId);
+    this->writeEnum(val.type);
+
+    if (val.type == Add || val.type == Set) {
+        this->writeI32(val._val.intVal);
+    } else {
+        this->writeF32(val._val.floatVal);
+    }
+}
+
+template <>
+ByteBuffer::DecodeResult<GlobedCounterChange> ByteBuffer::customDecode<GlobedCounterChange>() {
+    using enum GlobedCounterChange::Type;
+
+    GlobedCounterChange val;
+
+    GLOBED_UNWRAP_INTO(this->readU16(), val.itemId);
+    GLOBED_UNWRAP_INTO(this->readEnum<GlobedCounterChange::Type>(), val.type);
+
+    if (val.type == Add || val.type == Set) {
+        GLOBED_UNWRAP_INTO(this->readI32(), val._val.intVal);
+    } else {
+        GLOBED_UNWRAP_INTO(this->readF32(), val._val.floatVal);
+    }
+
+    return Ok(val);
+}
+
 void SpecificIconData::copyFlagsFrom(const SpecificIconData& other) {
     iconType = other.iconType;
     isDashing = other.isDashing;

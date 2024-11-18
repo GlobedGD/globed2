@@ -10,14 +10,18 @@
 using namespace geode::prelude;
 
 bool AdminLoginPopup::setup() {
-    auto sizes = util::ui::getPopupLayout(m_size);
+    auto sizes = util::ui::getPopupLayoutAnchored(m_size);
 
     this->setTitle("Admin Login");
 
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "Password", "chatFont.fnt", std::string(util::misc::STRING_PRINTABLE_INPUT), 32)
+    Build<TextInput>::create(POPUP_WIDTH * 0.75f, "Password", "bigFont.fnt")
         .pos(sizes.center.width, sizes.center.height + 20.f)
         .parent(m_mainLayer)
         .store(passwordInput);
+
+    passwordInput->setFilter(std::string(util::misc::STRING_PRINTABLE_INPUT));
+    passwordInput->setPasswordMode(true);
+    passwordInput->setMaxCharCount(32);
 
     auto* btnLayout = Build<CCMenu>::create()
         .pos(sizes.center.width, sizes.center.height - 20.f)
@@ -71,7 +75,7 @@ void AdminLoginPopup::onRememberPassword(cocos2d::CCObject* sender) {
 
 AdminLoginPopup* AdminLoginPopup::create() {
     auto ret = new AdminLoginPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

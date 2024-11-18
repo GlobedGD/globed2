@@ -2,17 +2,20 @@
 
 using namespace geode::prelude;
 
-bool AskInputPopup::setup(const std::string_view title, std::function<void(const std::string_view)> function, size_t chars, const std::string_view placeholder, const std::string_view filter) {
+bool AskInputPopup::setup(std::string_view title, std::function<void(std::string_view)> function, size_t chars, std::string_view placeholder, std::string_view filter) {
     this->setTitle(std::string(title));
     this->function = function;
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    Build<InputNode>::create(m_size.width - POPUP_PADDING * 2.f, std::string(placeholder).c_str(), "chatFont.fnt", std::string(filter), chars)
+    Build<TextInput>::create(m_size.width - POPUP_PADDING * 2.f, std::string(placeholder).c_str(), "chatFont.fnt")
         .pos(winSize / 2 + CCPoint{0.f, 10.f})
         .parent(m_mainLayer)
         .id("generic-popup-input"_spr)
         .store(input);
+
+    input->setFilter(std::string(filter));
+    input->setMaxCharCount(chars);
 
     Build<ButtonSprite>::create("Submit", "bigFont.fnt", "GJ_button_01.png", 0.4f)
         .intoMenuItem([this](auto) {
@@ -27,9 +30,9 @@ bool AskInputPopup::setup(const std::string_view title, std::function<void(const
     return true;
 }
 
-AskInputPopup* AskInputPopup::create(const std::string_view title, std::function<void(const std::string_view)> function, size_t chars, const std::string_view placeholder, const std::string_view filter, float widthMult) {
+AskInputPopup* AskInputPopup::create(std::string_view title, std::function<void(std::string_view)> function, size_t chars, std::string_view placeholder, std::string_view filter, float widthMult) {
     auto ret = new AskInputPopup;
-    if (ret->init(POPUP_PADDING * 2 + 4.f * chars * widthMult, POPUP_HEIGHT, title, function, chars, placeholder, filter)) {
+    if (ret->initAnchored(POPUP_PADDING * 2 + 4.f * chars * widthMult, POPUP_HEIGHT, title, function, chars, placeholder, filter)) {
         ret->autorelease();
         return ret;
     }

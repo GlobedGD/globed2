@@ -156,6 +156,11 @@ void RemotePlayer::removeProgressIndicators() {
     }
 }
 
+void RemotePlayer::cleanupObjectLayer() {
+    player1->cleanupObjectLayer();
+    player2->cleanupObjectLayer();
+}
+
 RemotePlayer* RemotePlayer::create(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data) {
     auto ret = new RemotePlayer;
     if (ret->init(gameCameraState, progressIcon, progressArrow, data)) {

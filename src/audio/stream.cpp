@@ -5,9 +5,12 @@
 #include "manager.hpp"
 #include <util/misc.hpp>
 
+using namespace asp::time;
+
 AudioStream::AudioStream(AudioDecoder&& decoder)
     : decoder(std::move(decoder)),
-      estimator(std::move(VolumeEstimator(VOICE_TARGET_SAMPLERATE))) {
+      estimator(std::move(VolumeEstimator(VOICE_TARGET_SAMPLERATE))),
+      lastPlaybackTime(SystemTime::now()) {
     FMOD_CREATESOUNDEXINFO exinfo = {};
 
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
@@ -41,7 +44,7 @@ AudioStream::AudioStream(AudioDecoder&& decoder)
             }
         } else {
             stream->starving = false;
-            stream->lastPlaybackTime = util::time::now();
+            stream->lastPlaybackTime = SystemTime::now();
         }
 
         return FMOD_OK;
@@ -74,6 +77,7 @@ AudioStream::~AudioStream() {
 AudioStream::AudioStream(AudioStream&& other) noexcept {
     sound = other.sound;
     channel = other.channel;
+    lastPlaybackTime = other.lastPlaybackTime;
     other.sound = nullptr;
     other.channel = nullptr;
 
@@ -152,7 +156,7 @@ float AudioStream::getLoudness() {
     return estimator.lock()->getVolume() * this->volume;
 }
 
-util::time::time_point AudioStream::getLastPlaybackTime() {
+asp::time::SystemTime AudioStream::getLastPlaybackTime() {
     return lastPlaybackTime;
 }
 

@@ -1,3 +1,5 @@
+/// Non-owning buffer for encoding binary data.
+///
 /// Buffer for encoding that does zero heap allocation but also has limited functionality.
 /// It will panic on writes if there isn't enough space.
 /// On average, is at least 4-5x faster than a regular `ByteBuffer`.
@@ -81,6 +83,12 @@ impl<'a> FastByteBuffer<'a> {
     #[inline]
     pub const fn len(&self) -> usize {
         self.len
+    }
+
+    #[inline]
+    pub const fn clear(&mut self) {
+        self.len = 0;
+        self.pos = 0;
     }
 
     #[inline]

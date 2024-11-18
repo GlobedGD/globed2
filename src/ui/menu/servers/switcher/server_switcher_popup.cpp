@@ -14,7 +14,7 @@ bool ServerSwitcherPopup::setup() {
 
     this->setTitle("Server switcher");
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build(ServerList::createForComments(LIST_WIDTH, LIST_HEIGHT, CentralServerListCell::CELL_HEIGHT))
         .anchorPoint(0.5f, 1.f)
@@ -85,7 +85,7 @@ void ServerSwitcherPopup::close() {
 ServerSwitcherPopup* ServerSwitcherPopup::create() {
     auto ret = new ServerSwitcherPopup;
 
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

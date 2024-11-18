@@ -2,6 +2,9 @@
     "strings": {
         "discord": "https://discord.gg/d56q5Dkdm3",
         "main-server-url": "https://main.globed.dev",
+        "github-page": "https://github.com/GlobedGD/globed2",
+        "github-issues": "https://github.com/GlobedGD/globed2/issues",
+        "global-trigger-page": "https://globed.dev/triggers",
         "err-client-too-new": "Your Globed version is too new. This server is outdated, and does not support your client version."
     }
 }

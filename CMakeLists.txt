@@ -17,7 +17,12 @@ else()
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
 
+option(GLOBED_OSS_BUILD "Open source build that does not require closed-source dependencies" OFF)
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
+
+if (NOT WIN32)
+    set(GLOBED_OSS_BUILD ON) # TODO: remove this
+endif()
 
 # on windows use precompiled, on other platforms compile libsodium
 if (WIN32)
@@ -25,6 +30,21 @@ if (WIN32)
 else()
     option(GLOBED_COMPILE_LIBS "Don't use precompiled libraries and compile manually" ON)
 endif()
+
+# check if compiler is clang
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(GLOBED_IS_CLANG ON)
+else()
+    set(GLOBED_IS_CLANG OFF)
+endif()
+
+# check if it's clang-cl or clang
+if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+    set(GLOBED_IS_CLANG_CL OFF)
+else()
+    set(GLOBED_IS_CLANG_CL ON)
+endif()
+
 
 # Check for debug build
 option(ENABLE_DEBUG "Debug mode" OFF)
@@ -39,6 +59,19 @@ if (GLOBED_IS_DEBUG)
     add_compile_definitions(GLOBED_DEBUG=1)
     add_compile_definitions(GEODE_DEBUG=1)
     add_compile_definitions(ASP_ENABLE_DEBUG=1)
+
+    # # turn on asan
+    # if (GLOBED_IS_CLANG)
+    #     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libs/stl_asan.lib")
+    #         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+    #         set(GLOBED_LINK_TO_ASAN ON)
+    #     endif()
+
+    #     # no omit frame pointer
+    #     if (NOT GLOBED_IS_CLANG_CL)
+    #         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+    #     endif()
+    # endif()
 elseif (GLOBED_RELEASE)
     # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -83,6 +116,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     endif()
 endif()
 
+if (GLOBED_RELEASE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_RELEASE=1)
+endif()
+
 # export some symbols
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_EXPORTING)
 
@@ -103,15 +140,15 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 target_include_directories(${PROJECT_NAME} PRIVATE libs/)
 
 # our favorite libraries
-CPMAddPackage("gh:camila314/uibuilder#ba63097")
+CPMAddPackage("gh:dankmeme01/uibuilder#c30755a")
 CPMAddPackage(
     NAME Boost
-    VERSION 1.84.0
-    URL https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.xz
-    URL_HASH SHA256=2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e
-    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
+    VERSION 1.86.0
+    URL https://github.com/boostorg/boost/releases/download/boost-1.86.0/boost-1.86.0-cmake.7z
+    URL_HASH SHA256=ee6e0793b5ec7d13e7181ec05d3b1aaa23615947295080e4b9930324488e078f
+    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe\\\;stacktrace\\\;thread" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp2#782a4fa")
+CPMAddPackage("gh:dankmeme01/asp2#a4b156b")
 
 # asp defines
 if (WIN32)
@@ -145,7 +182,20 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
     # endif()
 endif()
 
-target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)
+target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe Boost::thread asp)
+
+# if (GLOBED_LINK_TO_ASAN)
+#     target_link_libraries(
+#         ${PROJECT_NAME}
+#         "${CMAKE_CURRENT_SOURCE_DIR}/libs/stl_asan.lib"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/libs/clang_rt.asan_dynamic-x86_64.lib"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/libs/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+#     )
+# endif()
+
+if (GLOBED_IS_DEBUG)
+    target_link_libraries(${PROJECT_NAME} Boost::stacktrace)
+endif()
 
 if (GLOBED_COMPILE_LIBS)
     CPMAddPackage("gh:dankmeme01/libsodium-cmake#226abba")
@@ -253,6 +303,19 @@ if (APPLE)
 elseif (WIN32)
     # windows needs this ig?
     target_link_libraries(${PROJECT_NAME} crypt32)
+endif()
+
+
+# link to bb
+if (GLOBED_OSS_BUILD)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_OSS_BUILD=1)
+else()
+    if (WIN32)
+        target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb.lib")
+        target_link_libraries(${PROJECT_NAME} ntdll.lib userenv.lib runtimeobject.lib)
+    else()
+        target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-${LIB_PLATFORM}.a")
+    endif()
 endif()
 
 setup_geode_mod(${PROJECT_NAME})

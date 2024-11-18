@@ -9,6 +9,7 @@
 #include <util/net.hpp>
 #include <util/format.hpp>
 #include <util/crypto.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -24,10 +25,10 @@ bool GlobedSignupPopup::setup() {
         return false;
     }
 
-    auto winSize = cocos2d::CCDirector::sharedDirector()->getWinSize();
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build<CCLabelBMFont>::create("Requesting challenge..", "bigFont.fnt")
-        .pos(winSize.width / 2, winSize.height / 2 + m_size.height / 2 - 50.f)
+        .pos(rlayout.fromCenter(0.f, -10.f))
         .scale(0.35f)
         .store(statusMessage)
         .parent(m_mainLayer);
@@ -58,15 +59,22 @@ void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event)
     auto resptext = evalue.text().unwrapOrDefault();
 
     auto parts = util::format::split(resptext, ":");
-    if (parts.size() != 3) {
-        this->onFailure("Creating challenge failed: <cy>response does not consist of 3 parts</c>");
+
+    if (parts.size() < 3) {
+        this->onFailure("Creating challenge failed: <cy>response does not consist of 3+ parts</c>");
         return;
     }
 
     // we accept -1 as the default
     int accountId = util::format::parse<int>(parts[0]).value_or(-1);
+    std::string_view challenge = parts[1];
+    std::string_view pubkey = parts[2];
+    bool secureMode = false;
+    if (parts.size() > 3) {
+        secureMode = parts[3] == "1";
+    }
 
-    this->onChallengeCreated(accountId, parts[1], parts[2]);
+    this->onChallengeCreated(accountId, challenge, pubkey, secureMode);
 }
 
 static Result<std::string> decodeAnswer(std::string_view chtoken, std::string_view pubkey) {
@@ -77,7 +85,7 @@ static Result<std::string> decodeAnswer(std::string_view chtoken, std::string_vi
     return box.decryptToString(decodedChallenge);
 }
 
-void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view chtoken, const std::string_view pubkey) {
+void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtoken, std::string_view pubkey, bool secureMode) {
     auto ans = decodeAnswer(chtoken, pubkey);
     if (!ans) {
         log::warn("failed to complete challenge: {}", ans.unwrapErr());
@@ -85,7 +93,11 @@ void GlobedSignupPopup::onChallengeCreated(int accountId, const std::string_view
         return;
     }
 
+    this->storedChToken = chtoken;
+
     std::string answer = ans.unwrap();
+
+    this->isSecureMode = secureMode;
 
     if (accountId == -1) {
         // skip the account verification, server has it disabled
@@ -120,13 +132,13 @@ void GlobedSignupPopup::onDelayedChallengeCompleted() {
     this->onChallengeCompleted(storedAuthcode);
 }
 
-void GlobedSignupPopup::onChallengeCompleted(const std::string_view authcode) {
+void GlobedSignupPopup::onChallengeCompleted(std::string_view authcode) {
     auto& csm = CentralServerManager::get();
     auto& am = GlobedAccountManager::get();
 
     statusMessage->setString("Verifying..");
 
-    auto request = WebRequestManager::get().challengeFinish(authcode);
+    auto request = WebRequestManager::get().challengeFinish(authcode, isSecureMode ? storedChToken : "");
     finishListener.bind(this, &GlobedSignupPopup::finishCallback);
     finishListener.setFilter(std::move(request));
 }
@@ -191,7 +203,7 @@ void GlobedSignupPopup::onSuccess() {
     this->onClose(this);
 }
 
-void GlobedSignupPopup::onFailure(const std::string_view message) {
+void GlobedSignupPopup::onFailure(std::string_view message) {
     ErrorQueues::get().error(message);
     this->onClose(this);
 }
@@ -206,7 +218,7 @@ void GlobedSignupPopup::keyBackClicked() {
 
 GlobedSignupPopup* GlobedSignupPopup::create() {
     auto ret = new GlobedSignupPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

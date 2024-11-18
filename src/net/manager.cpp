@@ -7,9 +7,11 @@
 #include <Geode/ui/GeodeUI.hpp>
 #include <asp/sync.hpp>
 #include <asp/thread.hpp>
+#include <bb_public.hpp>
 
 #include <data/packets/all.hpp>
 #include <defs/minimal_geode.hpp>
+#include <globed/tracing.hpp>
 #include <managers/account.hpp>
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
@@ -26,12 +28,13 @@
 #include <ui/notification/panel.hpp>
 
 using namespace asp;
+using namespace asp::time;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
-static constexpr uint16_t MIN_PROTOCOL_VERSION = 12;
-static constexpr uint16_t MAX_PROTOCOL_VERSION = 12;
-static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({12});
+static constexpr uint16_t MIN_PROTOCOL_VERSION = 13;
+static constexpr uint16_t MAX_PROTOCOL_VERSION = 13;
+static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({13});
 
 static bool isProtocolSupported(uint16_t proto) {
 #ifdef GLOBED_DEBUG
@@ -43,10 +46,11 @@ static bool isProtocolSupported(uint16_t proto) {
 
 // yes, really
 struct AtomicConnectionState {
-    AtomicInt inner;
+    using inner_t = std::underlying_type_t<ConnectionState>;
+    std::atomic<inner_t> inner;
 
     AtomicConnectionState& operator=(ConnectionState state) {
-        inner.store(static_cast<int>(state));
+        inner.store(static_cast<inner_t>(state));
         return *this;
     }
 
@@ -138,12 +142,12 @@ public:
             for (int i = listeners.size() - 1; i >= 0; i--) {
 #ifdef GLOBED_DEBUG
                 auto addr = addrFromWeakRef(listeners[i]);
+#else
+                void* addr = nullptr;
 #endif
 
                 if (!listeners[i].valid()) {
-#ifdef GLOBED_DEBUG
-                    log::debug("Unregistering listener {} (id {})", addr, id);
-#endif
+                    TRACE("Unregistering listener {} (id {})", addr, id);
                     listeners.erase(listeners.begin() + i);
                 }
             }
@@ -151,9 +155,7 @@ public:
     }
 
     void registerListener(packetid_t id, PacketListener* listener) {
-#ifdef GLOBED_DEBUG
-        log::debug("Registering listener {} (id {}) for {}", listener, id, listener->owner);
-#endif
+        TRACE("Registering listener {} (id {}) for {}", listener, id, listener->owner);
 
         auto& ls = listeners[id];
 
@@ -218,14 +220,14 @@ protected:
     // Note that we intentionally don't use Ref here,
     // as we use the destructor to know if the object owning the listener has been destroyed.
     asp::Mutex<std::unordered_map<packetid_t, GlobalListener>> listeners;
-    asp::Mutex<std::unordered_map<packetid_t, util::time::system_time_point>> suppressed;
+    asp::Mutex<std::unordered_map<packetid_t, asp::time::SystemTime>> suppressed;
 
     // these fields are only used by us and in a safe manner, so they don't need a mutex
     NetworkAddress connectedAddress;
     std::string connectedServerId;
-    util::time::time_point lastReceivedPacket;
-    util::time::time_point lastSentKeepalive;
-    util::time::time_point lastTcpExchange;
+    asp::time::SystemTime lastReceivedPacket;
+    asp::time::SystemTime lastSentKeepalive;
+    asp::time::SystemTime lastTcpExchange;
 
     AtomicBool suspended;
     AtomicBool standalone;
@@ -238,6 +240,8 @@ protected:
     AtomicU32 secretKey;
     AtomicU32 serverTps;
     AtomicU16 serverProtocol;
+
+    bool _secure;
 
     Impl() {
         // initialize winsock
@@ -256,15 +260,22 @@ protected:
         threadMain.start(this);
 
         this->resetConnectionState();
+
+        TRACE("[NetworkManager] initialized");
     }
 
     ~Impl() {
+        TRACE("[NetworkManager] destructing");
+
         // remove all listeners
         this->removeAllListeners();
 
-        log::debug("waiting for network threads to terminate..");
+        TRACE("[NetworkManager] waiting for threads to stop");
+
         threadRecv.stopAndWait();
         threadMain.stopAndWait();
+
+        TRACE("[NetworkManager] threads stopped, disconnecting");
 
         if (state != ConnectionState::Disconnected) {
             log::debug("disconnecting from the server..");
@@ -275,9 +286,13 @@ protected:
             }
         }
 
+        TRACE("[NetworkManager] cleaning up");
+
         util::net::cleanup();
 
         log::info("goodbye from networkmanager!");
+
+        TRACE("[NetworkManager] uninitialized completely");
     }
 
     void resetConnectionState() {
@@ -298,7 +313,7 @@ protected:
 
     /* connection and tasks */
 
-    Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone, bool fromRecovery = false) {
+    Result<> connect(const NetworkAddress& address, std::string_view serverId, bool standalone, bool fromRecovery = false) {
         // if we are already connected, disconnect first
         if (state == ConnectionState::Established) {
             this->disconnect(false, false);
@@ -313,9 +328,9 @@ protected:
         this->standalone = standalone;
         this->wasFromRecovery = fromRecovery;
 
-        lastReceivedPacket = util::time::now();
-        lastSentKeepalive = util::time::now();
-        lastTcpExchange = util::time::now();
+        lastReceivedPacket = SystemTime::now();
+        lastSentKeepalive = SystemTime::now();
+        lastTcpExchange = SystemTime::now();
 
         if (!standalone) {
             GLOBED_REQUIRE_SAFE(!GlobedAccountManager::get().authToken.lock()->empty(), "attempting to connect with no authtoken set in account manager")
@@ -356,7 +371,7 @@ protected:
         }
     }
 
-    void disconnectWithMessage(const std::string_view message, bool quiet = true) {
+    void disconnectWithMessage(std::string_view message, bool quiet = true) {
         ErrorQueues::get().error(fmt::format("You have been disconnected from the active server.\n\nReason: <cy>{}</c>", message));
         this->disconnect(quiet);
     }
@@ -365,7 +380,7 @@ protected:
         cancellingRecovery = true;
     }
 
-    void onConnectionError(const std::string_view reason) {
+    void onConnectionError(std::string_view reason) {
         ErrorQueues::get().debugWarn(reason);
     }
 
@@ -420,7 +435,7 @@ protected:
     void unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {
     }
 
-    void suppressUnhandledUntil(packetid_t id, util::time::system_time_point point) {
+    void suppressUnhandledUntil(packetid_t id, asp::time::SystemTime point) {
         (*suppressed.lock())[id] = point;
     }
 
@@ -537,7 +552,7 @@ protected:
             auto msg = fmt::format(
                 "<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
                 reason,
-                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)), false)
+                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
             );
 
             this->disconnectWithMessage(msg);
@@ -554,7 +569,7 @@ protected:
             auto msg = fmt::format(
                 "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
                 reason,
-                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(sys_seconds(seconds(packet->timestamp)), false)
+                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
             );
 
             ErrorQueues::get().notice(msg);
@@ -610,15 +625,17 @@ protected:
             ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
         });
 
+        GEODE_CONCAT(_se, GEODE_CONCAT(cu, re)) = ::GEODE_CONCAT(GEODE_CONCAT(b, b), GEODE_CONCAT(_, GEODE_CONCAT(i, GEODE_CONCAT(n, GEODE_CONCAT(i, t)))))();
+
         // Admin packets
 
         addGlobalListener<AdminAuthSuccessPacket>([this](auto packet) {
             AdminManager::get().setAuthorized(std::move(packet->role));
-            ErrorQueues::get().success("Successfully authorized");
+            ErrorQueues::get().success("[Globed] Successfully authorized");
         });
 
         addGlobalListener<AdminAuthFailedPacket>([this](auto packet) {
-            ErrorQueues::get().warn("Login failed");
+            ErrorQueues::get().warn("[Globed] Login failed");
 
             auto& am = GlobedAccountManager::get();
             am.clearAdminPassword();
@@ -699,13 +716,13 @@ protected:
 
         GameServerManager::get().setActive(connectedServerId);
 
-        auto& flm = FriendListManager::get();
-        flm.maybeLoad();
-
         // these are not thread-safe, so delay it
         Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
             auto& pcm = ProfileCacheManager::get();
             pcm.setOwnSpecialData(specialUserData);
+
+            auto& flm = FriendListManager::get();
+            flm.maybeLoad();
 
             RoomManager::get().setGlobal();
             RoleManager::get().setAllRoles(allRoles);
@@ -738,7 +755,7 @@ protected:
                 std::string message = fmt::format(
                     "Your Globed version is <cr>outdated</c>, please <cg>update</c> Globed in order to connect."
                     " Installed version: <cy>{}</c>, required: <cy>{}</c> (or newer)",
-                    Mod::get()->getVersion().toString(),
+                    Mod::get()->getVersion().toVString(),
                     packet->minClientVersion
                 );
 
@@ -802,7 +819,7 @@ protected:
 
     void threadRecvFunc(decltype(threadRecv)::StopToken&) {
         if (this->suspended || state == ConnectionState::TcpConnecting) {
-            std::this_thread::sleep_for(util::time::millis(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             return;
         }
 
@@ -833,7 +850,7 @@ protected:
             return;
         }
 
-        lastReceivedPacket = util::time::now();
+        lastReceivedPacket = SystemTime::now();
 
         this->callListener(std::move(packet));
     }
@@ -863,7 +880,7 @@ protected:
 
     void threadMainFunc(decltype(threadMain)::StopToken&) {
         if (this->suspended) {
-            std::this_thread::sleep_for(util::time::millis(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             return;
         }
 
@@ -931,9 +948,9 @@ protected:
                     return;
                 }
 
-                auto sleepPeriod = util::time::millis(10000) * attemptNumber;
+                auto sleepPeriod = std::chrono::seconds(10) * attemptNumber;
 
-                log::debug("tcp connect failed, sleeping for {} before trying again", util::format::formatDuration(sleepPeriod));
+                log::debug("tcp connect failed, sleeping for {} before trying again", Duration::fromSecs(sleepPeriod.count()).toString());
 
                 // wait for a bit before trying again
 
@@ -974,7 +991,7 @@ protected:
             return;
         }
         // Detect if authentication is taking too long
-        else if (state == ConnectionState::Authenticating && !recovering && (util::time::now() - lastReceivedPacket) > util::time::seconds(5)) {
+        else if (state == ConnectionState::Authenticating && !recovering && lastReceivedPacket.elapsed() > Duration::fromSecs(5)) {
             this->disconnect(true);
 
             ErrorQueues::get().error(fmt::format(
@@ -990,7 +1007,7 @@ protected:
 
         // poll for any incoming packets
 
-        while (auto task_ = taskQueue.popTimeout(util::time::millis(50))) {
+        while (auto task_ = taskQueue.popTimeout(Duration::fromMillis(50))) {
             auto task = std::move(task_.value());
 
             if (std::holds_alternative<TaskPingServers>(task)) {
@@ -1008,22 +1025,22 @@ protected:
     void maybeSendKeepalive() {
         if (!this->established()) return;
 
-        auto now = util::time::now();
+        auto now = SystemTime::now();
 
-        auto sinceLastPacket = now - lastReceivedPacket;
-        auto sinceLastKeepalive = now - lastSentKeepalive;
-        auto sinceLastTcpExchange = now - lastTcpExchange;
+        auto sinceLastPacket = (now - lastReceivedPacket).value();
+        auto sinceLastKeepalive = (now - lastSentKeepalive).value();
+        auto sinceLastTcpExchange = (now - lastTcpExchange).value();
 
-        if (sinceLastPacket > util::time::seconds(20)) {
+        if (sinceLastPacket > Duration::fromSecs(20)) {
             // timed out, disconnect the tcp socket but allow to reconnect
-            log::warn("timed out, time since last received packet: {}", util::format::formatDuration(sinceLastPacket));
+            log::warn("timed out, time since last received packet: {}", sinceLastPacket.toString());
             socket.disconnect();
-        } else if (sinceLastPacket > util::time::seconds(10) && sinceLastKeepalive > util::time::seconds(3)) {
+        } else if (sinceLastPacket > Duration::fromSecs(10) && sinceLastKeepalive > Duration::fromSecs(3)) {
             this->sendKeepalive();
         }
 
         // send a tcp keepalive to keep the nat hole open
-        if (sinceLastTcpExchange > util::time::seconds(60)) {
+        if (sinceLastTcpExchange > Duration::fromSecs(60)) {
             this->send(KeepaliveTCPPacket::create());
         }
     }
@@ -1031,7 +1048,7 @@ protected:
     void sendKeepalive() {
         // send a keepalive
         this->send(KeepalivePacket::create());
-        lastSentKeepalive = util::time::now();
+        lastSentKeepalive = SystemTime::now();
         GameServerManager::get().startKeepalive();
     }
 
@@ -1053,7 +1070,7 @@ protected:
             NetworkAddress addr(server.address);
 
 #ifdef GLOBED_DEBUG
-            auto addrString = addr.resolveToString().value_or("<unresolved>");
+            auto addrString = addr.resolveToString().unwrapOr("<unresolved>");
             log::debug("sending ping to {}", addrString);
 #endif
 
@@ -1069,7 +1086,7 @@ protected:
 
     void handleSendPacketTask(TaskSendPacket task) {
         if (task.packet->getUseTcp()) {
-            lastTcpExchange = util::time::now();
+            lastTcpExchange = SystemTime::now();
         }
 
         try {
@@ -1088,12 +1105,12 @@ protected:
     void handlePingActive() {
         if (!this->established()) return;
 
-        auto now = util::time::now();
+        auto now = SystemTime::now();
         auto sinceLastKeepalive = now - lastSentKeepalive;
 
         bool isPingUnknown = GameServerManager::get().getActivePing() == -1;
 
-        if (sinceLastKeepalive > util::time::seconds(5) || isPingUnknown) {
+        if (sinceLastKeepalive > Duration::fromSecs(5) || isPingUnknown) {
             this->sendKeepalive();
         }
     }
@@ -1107,7 +1124,7 @@ NetworkManager::~NetworkManager() {
     delete impl;
 }
 
-Result<> NetworkManager::connect(const NetworkAddress& address, const std::string_view serverId, bool standalone) {
+Result<> NetworkManager::connect(const NetworkAddress& address, std::string_view serverId, bool standalone) {
     return impl->connect(address, serverId, standalone);
 }
 
@@ -1129,7 +1146,7 @@ void NetworkManager::disconnect(bool quiet, bool noclear) {
     impl->disconnect(quiet, noclear);
 }
 
-void NetworkManager::disconnectWithMessage(const std::string_view message, bool quiet) {
+void NetworkManager::disconnectWithMessage(std::string_view message, bool quiet) {
     impl->disconnectWithMessage(message, quiet);
 }
 
@@ -1220,6 +1237,20 @@ uint16_t NetworkManager::getMaxProtocol() {
 #else
     return MAX_PROTOCOL_VERSION;
 #endif
+}
+
+std::optional<std::string> NetworkManager::getSecure(const std::string& ch) {
+    if (!impl->_secure) {
+        return std::nullopt;
+    }
+
+    char buf [1024];
+    size_t len = bb_work(ch.c_str(), buf, 1024);
+    if (len == 0) {
+        return std::nullopt;
+    } else {
+        return std::string(buf, len);
+    }
 }
 
 bool NetworkManager::isProtocolSupported(uint16_t version) {

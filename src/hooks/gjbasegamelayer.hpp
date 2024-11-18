@@ -7,6 +7,7 @@
 #include <game/interpolator.hpp>
 #include <game/player_store.hpp>
 #include <game/module/base.hpp>
+#include <managers/hook.hpp>
 #include <net/manager.hpp>
 #include <ui/game/player/remote_player.hpp>
 #include <ui/game/overlay/overlay.hpp>
@@ -14,6 +15,8 @@
 #include <ui/game/progress/progress_arrow.hpp>
 #include <ui/game/voice_overlay/overlay.hpp>
 #include <util/time.hpp>
+
+#include <asp/time/Instant.hpp>
 
 float adjustLerpTimeDelta(float dt);
 
@@ -50,6 +53,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         bool didJustJumpp1 = false, didJustJumpp2 = false;
         bool isCurrentlyDead = false;
         bool isLastDeathReal = false;
+        bool firstReceivedData = true;
         float lastDeathTimestamp = 0.f;
 
         // ui elements
@@ -65,11 +69,24 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
 
         // speedhack detection
         float lastKnownTimeScale = 1.0f;
-        std::unordered_map<int, util::time::time_point> lastSentPacket;
+        std::unordered_map<int, asp::time::Instant> lastSentPacket;
 
         // chat messages (duh)
         std::vector<std::pair<int, std::string>> chatMessages;
+
+        std::vector<GlobedCounterChange> pendingCounterChanges;
+
+        // readonly custom items
+        int lastJoinedPlayer = 0; // 1
+        int lastLeftPlayer = 0;   // 2
+        int totalJoins = 0;
+        int totalLeaves = 0;
     };
+
+    static void onModify(auto& self) {
+        GLOBED_MANAGE_HOOK(Gameplay, GJBaseGameLayer::checkCollisions);
+        GLOBED_MANAGE_HOOK(Gameplay, GJBaseGameLayer::updateCamera);
+    }
 
     $override
     bool init();
@@ -154,6 +171,11 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
 
     void notifyDeath();
 
+    // for global triggers
+    int countForCustomItem(int id);
+    void updateCountersForCustomItem(int id);
+    void updateCustomItem(int id, int value);
+
     // runs every frame while paused
     void pausedUpdate(float dt);
 
@@ -176,6 +198,8 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
 
     void rescheduleSelectors();
     void customSchedule(cocos2d::SEL_SCHEDULE, float interval = 0.f);
+
+    void queueCounterChange(const GlobedCounterChange& change);
 
     Fields& getFields();
 };

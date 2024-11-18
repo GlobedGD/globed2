@@ -14,7 +14,7 @@ protected:
     static constexpr float POPUP_WIDTH = 390.f;
     static constexpr float POPUP_HEIGHT = 240.f;
     static constexpr float LIST_WIDTH = POPUP_WIDTH * 0.9f;
-    static inline const cocos2d::CCSize contentSize = {LIST_WIDTH, 150.f};
+    static inline const cocos2d::CCSize contentSize = {LIST_WIDTH, 160.f};
 
 	bool setup() override;
 
@@ -23,6 +23,7 @@ protected:
 
     void onReload(cocos2d::CCObject* sender);
     void createCells(std::vector<RoomListingInfo> rlp);
+    void toggleModActions(bool enabled);
 
 public:
 	static RoomListingPopup* create();

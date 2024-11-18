@@ -36,7 +36,7 @@ void DiscordRpcModule::postDRPCEvent() {
     SetRPCEvent("techstudent10.discord_rich_presence/set_default_rpc_enabled", false).post();
 
     using UpdateRPCEvent = geode::DispatchEvent<std::string>;
-    auto json = matjson::Value(matjson::Object({
+    auto json = matjson::makeObject({
         {"modID", ""_spr},
         {"details", "Playing on Globed!"},
         {"state", state},
@@ -44,11 +44,11 @@ void DiscordRpcModule::postDRPCEvent() {
         {"smallImageText", ""},
         {"useTime", true},
         {"shouldResetTime", false},
-        {"largeImageKey", "https://raw.githubusercontent.com/dankmeme01/globed2/main/logo.png"},
+        {"largeImageKey", "https://raw.githubusercontent.com/GlobedGD/globed2/main/logo.png"},
         {"largeImageText", ""},
         {"joinSecret", std::to_string(m_level->m_levelID.value())},
         {"partyMax", gameLayer->m_fields->players.size() + 1}
-    })).dump();
+    }).dump();
     UpdateRPCEvent("techstudent10.discord_rich_presence/update_rpc", json).post();
 }
 

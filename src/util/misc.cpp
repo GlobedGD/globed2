@@ -8,8 +8,9 @@
 #include <util/crypto.hpp>
 
 #ifdef GLOBED_DEBUG
-# include <util/time.hpp>
+# include <asp/time/SystemTime.hpp>
 # include <util/format.hpp>
+using namespace asp::time;
 #endif
 
 namespace util::misc {
@@ -50,7 +51,7 @@ namespace util::misc {
         return static_cast<float>(sum / static_cast<double>(samples));
     }
 
-    bool compareName(const std::string_view nv1, const std::string_view nv2) {
+    bool compareName(std::string_view nv1, std::string_view nv2) {
         std::string name1(nv1);
         std::string name2(nv2);
 
@@ -93,9 +94,9 @@ namespace util::misc {
     const UniqueIdent& fingerprint() {
         static auto fingerprint = []{
 #ifdef GLOBED_DEBUG
-            auto now = util::time::now();
+            auto now = Instant::now();
             auto _ = util::misc::scopeDestructor([now] {
-                log::debug("Fingerprint computation took {}", util::format::duration(util::time::now() - now));
+                log::debug("Fingerprint computation took {}", now.elapsed().toString());
             });
 #endif
 

@@ -22,16 +22,16 @@ public:
     NetworkAddress();
 
     // Parses the given string in format `host:port`
-    NetworkAddress(const std::string_view address);
+    NetworkAddress(std::string_view address);
 
     // Constructs a `NetworkAddress` from the given host and port
-    NetworkAddress(const std::string_view host, uint16_t port);
+    NetworkAddress(std::string_view host, uint16_t port);
 
     NetworkAddress(const NetworkAddress&) = default;
     NetworkAddress& operator=(const NetworkAddress&) = default;
 
-    void set(const std::string_view address);
-    void set(const std::string_view host, uint16_t port);
+    void set(std::string_view address);
+    void set(std::string_view host, uint16_t port);
 
     // Returns the input in format `host:port`. If the host is a domain name, it is not resolved to an IP address.
     std::string toString() const;

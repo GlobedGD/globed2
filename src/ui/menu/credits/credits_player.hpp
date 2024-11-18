@@ -7,10 +7,10 @@
 class GlobedCreditsPlayer : public cocos2d::CCNode {
 public:
 
-    static GlobedCreditsPlayer* create(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons);
+    static GlobedCreditsPlayer* create(std::string_view name, std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons);
 
 private:
-    bool init(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons);
+    bool init(std::string_view name, std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons);
 
     int accountId;
 };

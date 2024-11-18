@@ -14,7 +14,7 @@ using namespace geode::prelude;
 bool AudioSetupPopup::setup() {
     this->setID("AudioSetupPopup"_spr);
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     auto menu = Build<CCMenu>::create()
         .pos(0.f, 0.f)
@@ -116,7 +116,11 @@ cocos2d::CCArray* AudioSetupPopup::createDeviceCells() {
 
     auto& vm = GlobedAudioManager::get();
 
-    int activeId = vm.getRecordingDevice().id;
+    int activeId = -1;
+    if (const auto& dev = vm.getRecordingDevice()) {
+        activeId = dev->id;
+    }
+
     auto devices = vm.getRecordingDevices();
 
     for (const auto& device : devices) {
@@ -142,7 +146,10 @@ void AudioSetupPopup::weakRefreshList() {
         return;
     }
 
-    int activeId = vm.getRecordingDevice().id;
+    int activeId = -1;
+    if (const auto& dev = vm.getRecordingDevice()) {
+        activeId = dev->id;
+    }
 
     size_t refreshed = 0;
     for (auto* cell : *listLayer) {
@@ -195,7 +202,7 @@ void AudioSetupPopup::applyAudioDevice(int id) {
 
 AudioSetupPopup* AudioSetupPopup::create() {
     auto ret = new AudioSetupPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

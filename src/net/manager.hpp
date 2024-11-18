@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Geode/utils/Result.hpp>
+#include <Geode/Result.hpp>
 #include <defs/platform.hpp>
 
 #include <util/singleton.hpp>
@@ -42,7 +42,7 @@ public:
     };
 
     // Connect to a server
-    geode::Result<> connect(const NetworkAddress& address, const std::string_view serverId, bool standalone);
+    geode::Result<> connect(const NetworkAddress& address, std::string_view serverId, bool standalone);
 
     // Connect to a server
     geode::Result<> connect(const GameServer& gsview);
@@ -54,7 +54,7 @@ public:
     void disconnect(bool quiet = false, bool noclear = false);
 
     // Call `disconnect` and show an error popup with a message
-    void disconnectWithMessage(const std::string_view message, bool quiet = true);
+    void disconnectWithMessage(std::string_view message, bool quiet = true);
 
     // Cancel reconnection
     void cancelReconnect();
@@ -137,6 +137,8 @@ public:
     void sendRequestPlayerCount(LevelId id);
     void sendRequestPlayerCount(std::vector<LevelId> ids);
     void sendLinkCodeRequest();
+
+    std::optional<std::string> getSecure(const std::string&);
 
 private:
     class Impl;

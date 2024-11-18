@@ -4,9 +4,15 @@
 
 void GlobedContentLayer::setPosition(const cocos2d::CCPoint& pos) {
     auto parent1 = this->getParent();
+
+    if (!parent1) {
+        CCLayerColor::setPosition(pos);
+        return;
+    }
+
     auto list = static_cast<GlobedListLayer<cocos2d::CCNode>*>(parent1->getParent());
 
-    if (!parent1 || !list) {
+    if (!list) {
         CCLayerColor::setPosition(pos);
         return;
     }

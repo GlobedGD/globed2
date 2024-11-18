@@ -22,7 +22,6 @@
 #define _GLOBED_STRWHITESPACE " \t\n\r\x0b\x0c"
 
 
-struct PlayerIconData;
 enum class PlayerIconType : uint8_t;
 enum class IconType;
 
@@ -44,6 +43,21 @@ namespace util::misc {
 
     template <typename T, typename Y>
     struct is_either<Either<T, Y>> : std::true_type {};
+
+    // todo move to asp im lazy
+
+    template <typename>
+    struct is_map : std::false_type {};
+
+    template <typename T, typename Y>
+    struct is_map<std::map<T, Y>> : std::true_type {};
+
+
+    template <typename... Ts, typename T>
+    bool is_any_of_dynamic(T* object) {
+        // todo add faster impl
+        return ((typeinfo_cast<std::add_pointer_t<std::remove_pointer_t<Ts>>>(object) != nullptr) || ...);
+    }
 
     // If `target` is false, returns false. If `target` is true, modifies `target` to false and returns true.
     bool swapFlag(bool& target);
@@ -79,7 +93,7 @@ namespace util::misc {
 
     float pcmVolumeSlow(const float* pcm, size_t samples);
 
-    bool compareName(const std::string_view name1, const std::string_view name2);
+    bool compareName(std::string_view name1, std::string_view name2);
 
     bool isEditorCollabLevel(LevelId levelId);
 

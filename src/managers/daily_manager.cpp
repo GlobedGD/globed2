@@ -52,62 +52,48 @@ public:
 
 template <>
 struct matjson::Serialize<GlobedFeaturedLevel> {
-    static GlobedFeaturedLevel from_json(const matjson::Value& value) {
-        return GlobedFeaturedLevel {
-            .id = value["id"].as_int(),
-            .levelId = value["level_id"].as_int(),
-            .rateTier = value["rate_tier"].as_int(),
-        };
-    }
-
-    static matjson::Value to_json(const GlobedFeaturedLevel& user) {
-        throw std::runtime_error("unimplemented");
-    }
-
-    static bool is_json(const matjson::Value& value) {
-        if (
-            !value.contains("id")
-            || !value.contains("level_id")
-            || !value.contains("rate_tier")
-        ) {
-            return false;
+    static Result<GlobedFeaturedLevel> fromJson(const matjson::Value& value) {
+        if (!(value["id"].isNumber() && value["level_id"].isNumber() && value["rate_tier"].isNumber())) {
+            return Err("invalid type");
         }
 
-        return value["id"].is_number() && value["level_id"].is_number() && value["rate_tier"].is_number();
+        return Ok(GlobedFeaturedLevel {
+            .id = (int) value["id"].asInt().unwrapOrDefault(),
+            .levelId = (int) value["level_id"].asInt().unwrapOrDefault(),
+            .rateTier = (int) value["rate_tier"].asInt().unwrapOrDefault(),
+        });
+    }
+
+    static matjson::Value toJson(const GlobedFeaturedLevel& user) {
+        throw std::runtime_error("unimplemented");
     }
 };
 
 template <>
 struct matjson::Serialize<GlobedFeaturedLevelPage> {
-    static GlobedFeaturedLevelPage from_json(const matjson::Value& value) {
+    static Result<GlobedFeaturedLevelPage> fromJson(const matjson::Value& value) {
+        if (!value.isObject()) return Err("invalid type");
+
+        if (!value["levels"].isArray() || !value["page"].isNumber() || !value["is_last_page"].isBool()) return Err("invalid type");
+
         std::vector<GlobedFeaturedLevel> levels;
 
-        for (auto& l : value["levels"].as_array()) {
-            levels.push_back(l.as<GlobedFeaturedLevel>());
+        for (auto& l : value["levels"].asArray().unwrap()) {
+            auto res = l.as<GlobedFeaturedLevel>();
+            if (!res) return Err(res.unwrapErr());
+
+            levels.push_back(res.unwrap());
         }
 
-        return GlobedFeaturedLevelPage {
+        return Ok(GlobedFeaturedLevelPage {
             .levels = levels,
-            .page = static_cast<size_t>(value["page"].as_int()),
-            .isLastPage = value["is_last_page"].as_bool(),
-        };
+            .page = static_cast<size_t>(value["page"].asInt().unwrapOrDefault()),
+            .isLastPage = value["is_last_page"].asBool().unwrapOr(false),
+        });
     }
 
-    static matjson::Value to_json(const GlobedFeaturedLevelPage& user) {
+    static matjson::Value toJson(const GlobedFeaturedLevelPage& user) {
         throw std::runtime_error("unimplemented");
-    }
-
-    static bool is_json(const matjson::Value& value) {
-        if (!value.is_object()) return false;
-
-        if (!value.contains("levels") || !value.contains("page") || !value.contains("is_last_page")) return false;
-        if (!value["levels"].is_array() || !value["page"].is_number() || !value["is_last_page"].is_bool()) return false;
-
-        for (auto& val : value["levels"].as_array()) {
-            if (!val.is<GlobedFeaturedLevel>()) return false;
-        }
-
-        return true;
     }
 };
 
@@ -555,7 +541,7 @@ GJDifficultySprite* DailyManager::findDifficultySprite(CCNode* node) {
         if (diff) return diff;
 
         for (auto* child : CCArrayExt<CCNode*>(lc->m_mainLayer->getChildren())) {
-            if (auto p = getChildOfType<GJDifficultySprite>(child, 0)) {
+            if (auto p = child->getChildByType<GJDifficultySprite>(0)) {
                 return p;
             }
         }
@@ -563,7 +549,7 @@ GJDifficultySprite* DailyManager::findDifficultySprite(CCNode* node) {
         auto* diff = typeinfo_cast<GJDifficultySprite*>(ll->getChildByIDRecursive("difficulty-sprite"));
         if (diff) return diff;
 
-        return getChildOfType<GJDifficultySprite>(ll, 0);
+        return ll->getChildByType<GJDifficultySprite>(0);
     }
 
     return nullptr;

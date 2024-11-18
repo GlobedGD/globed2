@@ -26,6 +26,8 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     this->parent = parent;
     this->playerCount = rli.playerCount;
     this->ownerData = rli.owner;
+    this->roomId = rli.id;
+    this->roomHasPassword = rli.hasPassword;
 
     this->setContentSize({RoomListingPopup::LIST_WIDTH, CELL_HEIGHT});
     this->setAnchorPoint({0.f, 0.f});
@@ -106,7 +108,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
 
     roomNameLayout->updateLayout();
 
-    auto* rightMenu = Build<CCMenu>::create()
+    Build<CCMenu>::create()
         .layout(
             RowLayout::create()
                     ->setAxisReverse(true)
@@ -118,7 +120,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .pos(RoomListingPopup::LIST_WIDTH - 3.f, CELL_HEIGHT / 2.f)
         .contentSize(this->getContentSize())
         .parent(this)
-        .collect();
+        .store(rightMenu);
 
     auto* roomSettingsMenu = Build<CCMenu>::create()
         .layout(
@@ -134,19 +136,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .collect();
 
     // join button
-    Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
-        .scale(0.7f)
-        .intoMenuItem([this, rli](auto) {
-            if (rli.hasPassword) {
-                RoomPasswordPopup::create(rli.id)->show();
-                return;
-            }
-
-            NetworkManager::get().send(JoinRoomPacket::create(rli.id, std::string_view("")));
-        })
-        .scaleMult(1.15f)
-        .zOrder(btnorder::Join)
-        .parent(rightMenu);
+    this->createJoinButton();
 
     // lock button
     auto* lockSpr = Build<CCSprite>::createSpriteName("room-icon-lock.png"_spr)
@@ -242,6 +232,51 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .pos(playerCountWrapper->getScaledContentSize() / 2.f);
 
     return true;
+}
+
+void RoomListingCell::toggleModActions(bool enabled) {
+    if (joinButton) {
+        joinButton->removeFromParent();
+        joinButton = nullptr;
+    }
+
+    if (closeButton) {
+        closeButton->removeFromParent();
+        closeButton = nullptr;
+    }
+
+    if (enabled) {
+        Build<ButtonSprite>::create("Close", "bigFont.fnt", "GJ_button_06.png", 0.8f)
+            .scale(0.7f)
+            .intoMenuItem([this](auto) {
+                NetworkManager::get().send(CloseRoomPacket::create(this->roomId));
+            })
+            .scaleMult(1.15f)
+            .zOrder(btnorder::Join)
+            .parent(rightMenu)
+            .store(closeButton);
+    } else {
+        this->createJoinButton();
+    }
+
+    rightMenu->updateLayout();
+}
+
+void RoomListingCell::createJoinButton() {
+    Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        .scale(0.7f)
+        .intoMenuItem([this](auto) {
+            if (this->roomHasPassword) {
+                RoomPasswordPopup::create(this->roomId)->show();
+                return;
+            }
+
+            NetworkManager::get().send(JoinRoomPacket::create(this->roomId, std::string_view("")));
+        })
+        .scaleMult(1.15f)
+        .zOrder(btnorder::Join)
+        .parent(rightMenu)
+        .store(joinButton);
 }
 
 void RoomListingCell::onUser(CCObject* sender) {

@@ -22,6 +22,7 @@
 #include <game/module/all.hpp>
 #include <game/camera_state.hpp>
 #include <hooks/game_manager.hpp>
+#include <hooks/triggers/gjeffectmanager.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
 #include <util/cocos.hpp>
@@ -29,6 +30,7 @@
 #include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 // how many units before the voice disappears
 constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
@@ -36,12 +38,13 @@ constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
 constexpr float VOICE_OVERLAY_PAD_X = 5.f;
 constexpr float VOICE_OVERLAY_PAD_Y = 20.f;
 
+// TODO: dont do custom item shit if it's not enabled in the level (scan thru all objects n stuff)
+
 // post an event to all modules
 #define GLOBED_EVENT(self, code) \
     for (auto& module : self->m_fields->modules) { \
         module->code; \
     }
-
 
 bool GlobedGJBGL::init() {
     if (!GJBaseGameLayer::init()) return false;
@@ -88,6 +91,18 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     if (!settings.globed.editorSupport && level->m_levelType == GJLevelType::Editor) {
         fields.globedReady = false;
     }
+
+    // enable/disable certain hooks for performance
+
+    if (fields.globedReady) {
+        HookManager::get().enableGroup(HookManager::Group::Gameplay);
+    } else {
+        HookManager::get().disableGroup(HookManager::Group::Gameplay);
+    }
+
+#ifdef GLOBED_GP_CHANGES
+    globed::toggleTriggerHooks(fields.globedReady);
+#endif
 
     if (fields.globedReady) {
         // room settings
@@ -196,11 +211,11 @@ void GlobedGJBGL::setupDeferredAssetPreloading() {
     if (util::cocos::shouldTryToPreload(false)) {
         log::info("Preloading assets (deferred)");
 
-        auto start = util::time::now();
-        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::AllWithoutDeathEffects);
-        auto took = util::time::now() - start;
+        auto start = Instant::now();
 
-        log::info("Asset preloading took {}", util::format::formatDuration(took));
+        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::AllWithoutDeathEffects);
+
+        log::info("Asset preloading took {}", start.elapsed().toString());
 
         gm->setAssetsPreloaded(true);
     }
@@ -211,11 +226,11 @@ void GlobedGJBGL::setupDeferredAssetPreloading() {
     if (!util::cocos::forcedSkipPreload() && shouldLoadDeaths && !gm->getDeathEffectsPreloaded()) {
         log::info("Preloading death effects (deferred)");
 
-        auto start = util::time::now();
-        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::DeathEffect);
-        auto took = util::time::now() - start;
+        auto start = Instant::now();
 
-        log::info("Death effect preloading took {}", util::format::formatDuration(took));
+        util::cocos::preloadAssets(util::cocos::AssetPreloadStage::DeathEffect);
+
+        log::info("Death effect preloading took {}", start.elapsed().toString());
         gm->setDeathEffectsPreloaded(true);
     }
 
@@ -288,6 +303,7 @@ void GlobedGJBGL::setupPacketListeners() {
         auto& fields = this->getFields();
 
         fields.lastServerUpdate = fields.timeCounter;
+        bool firstPacket = util::misc::swapFlag(fields.firstReceivedData);
 
         for (const auto& player : packet->players) {
             if (!fields.players.contains(player.accountId)) {
@@ -297,6 +313,22 @@ void GlobedGJBGL::setupPacketListeners() {
 
             fields.interpolator->updatePlayer(player.accountId, player.data, fields.lastServerUpdate);
         }
+
+#ifdef GLOBED_GP_CHANGES
+        if (packet->customItems) {
+            for (const auto& [itemId, value] : *packet->customItems) {
+                static_cast<GJEffectManagerHook*>(m_effectManager)->applyItem(
+                    globed::customItemToItemId(itemId),
+                    value
+                );
+            }
+        }
+
+        if (firstPacket) {
+            fields.lastJoinedPlayer = GJAccountManager::get()->m_accountID;
+            this->updateCountersForCustomItem(globed::ITEM_LAST_JOINED);
+        }
+#endif
     });
 
     nm.addListener<LevelPlayerMetadataPacket>(this, [this](std::shared_ptr<LevelPlayerMetadataPacket> packet) {
@@ -362,10 +394,11 @@ void GlobedGJBGL::setupCustomKeybinds() {
 
     this->addEventListener<keybinds::InvokeBindFilter>([this, &settings](keybinds::InvokeBindEvent* event) {
         auto& vpm = VoicePlaybackManager::get();
+        auto& fields = this->getFields();
 
         if (event->isDown()) {
-            this->m_fields->deafened = !this->m_fields->deafened;
-            if (this->m_fields->deafened) {
+            fields.deafened = !fields.deafened;
+            if (fields.deafened) {
                 vpm.muteEveryone();
                 GlobedAudioManager::get().pausePassiveRecording();
                 if (settings.communication.deafenNotification)
@@ -375,7 +408,7 @@ void GlobedGJBGL::setupCustomKeybinds() {
                 //before the notification would only show up if you had voice proximity off in a platformer, this fixes that
                 if (settings.communication.deafenNotification)
                     Notification::create("Undeafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-off.png"_spr), 0.2f)->show();
-                if (!this->m_fields->isVoiceProximity) {
+                if (!fields.isVoiceProximity) {
                     vpm.setVolumeAll(settings.communication.voiceVolume);
                 }
             }
@@ -565,7 +598,8 @@ void GlobedGJBGL::selSendPlayerData(float) {
     fields.totalSentPackets++;
     // additionally, if there are no players on the level, we drop down to 1 time per second as an optimization
     // or if we are quitting the level
-    if ((fields.players.empty() && fields.totalSentPackets % 30 != 15) || fields.quitting) return;
+
+    if ((fields.players.empty() && fields.totalSentPackets % 30 != 15 && fields.pendingCounterChanges.empty()) || fields.quitting) return;
 
     auto data = self->gatherPlayerData();
     std::optional<PlayerMetadata> meta;
@@ -573,7 +607,7 @@ void GlobedGJBGL::selSendPlayerData(float) {
         meta = self->gatherPlayerMetadata();
     }
 
-    NetworkManager::get().send(PlayerDataPacket::create(data, meta));
+    NetworkManager::get().send(PlayerDataPacket::create(data, meta, std::move(fields.pendingCounterChanges)));
 }
 
 // selSendPlayerMetadata - runs every 10 seconds
@@ -799,6 +833,8 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
 /* Player related functions */
 
 SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
+    auto& fields = this->getFields();
+
     PlayerIconType iconType = PlayerIconType::Cube;
     if (player->m_isShip) iconType = m_level->isPlatformer() ? PlayerIconType::Jetpack : PlayerIconType::Ship;
     else if (player->m_isBird) iconType = PlayerIconType::Ufo;
@@ -814,8 +850,8 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
 
     bool isPlayer1 = player == m_player1;
 
-    auto spiderTeleportData = isPlayer1 ? util::misc::swapOptional(m_fields->spiderTp1) : util::misc::swapOptional(m_fields->spiderTp2);
-    bool didJustJump = isPlayer1 ? util::misc::swapFlag(m_fields->didJustJumpp1) : util::misc::swapFlag(m_fields->didJustJumpp2);
+    auto spiderTeleportData = isPlayer1 ? util::misc::swapOptional(fields.spiderTp1) : util::misc::swapOptional(fields.spiderTp2);
+    bool didJustJump = isPlayer1 ? util::misc::swapFlag(fields.didJustJumpp1) : util::misc::swapFlag(fields.didJustJumpp2);
 
     bool isStationary = false;
     if (m_level->isPlatformer()) {
@@ -844,8 +880,10 @@ SpecificIconData GlobedGJBGL::gatherSpecificIconData(PlayerObject* player) {
 }
 
 PlayerData GlobedGJBGL::gatherPlayerData() {
+    auto& fields = this->getFields();
+
     bool isDead = m_player1->m_isDead || m_player2->m_isDead;
-    m_fields->isCurrentlyDead = isDead;
+    fields.isCurrentlyDead = isDead;
 
     // this function (getCurrentPercent) only exists in playlayer and not the editor, so reimpl it
     auto getPercent = [&](){
@@ -879,12 +917,12 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
     }
 
     return PlayerData {
-        .timestamp = m_fields->timeCounter,
+        .timestamp = fields.timeCounter,
 
         .player1 = this->gatherSpecificIconData(m_player1),
         .player2 = this->gatherSpecificIconData(m_player2),
 
-        .lastDeathTimestamp = m_fields->lastDeathTimestamp,
+        .lastDeathTimestamp = fields.lastDeathTimestamp,
 
         .currentPercentage = currentPercentage,
 
@@ -894,7 +932,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         .isDualMode = m_gameState.m_isDualMode,
         .isInEditor = isInEditor,
         .isEditorBuilding = isEditorBuilding,
-        .isLastDeathReal = m_fields->isLastDeathReal
+        .isLastDeathReal = fields.isLastDeathReal,
     };
 }
 
@@ -938,17 +976,19 @@ bool GlobedGJBGL::shouldLetMessageThrough(int playerId) {
 }
 
 void GlobedGJBGL::updateProximityVolume(int playerId) {
-    if (m_fields->deafened || !m_fields->isVoiceProximity) return;
+    auto& fields = this->getFields();
+
+    if (fields.deafened || !fields.isVoiceProximity) return;
 
     auto& vpm = VoicePlaybackManager::get();
 
-    if (!m_fields->interpolator->hasPlayer(playerId)) {
+    if (!fields.interpolator->hasPlayer(playerId)) {
         // if we have no knowledge on the player, set volume to 0
         vpm.setVolume(playerId, 0.f);
         return;
     }
 
-    auto& vstate = m_fields->interpolator->getPlayerState(playerId);
+    auto& vstate = fields.interpolator->getPlayerState(playerId);
 
     float distance = cocos2d::ccpDistance(m_player1->getPosition(), vstate.player1.position);
     float volume = 1.f - std::clamp(distance, 0.01f, PROXIMITY_VOICE_LIMIT) / PROXIMITY_VOICE_LIMIT;
@@ -972,6 +1012,7 @@ void GlobedGJBGL::notifyDeath() {
 
 void GlobedGJBGL::handlePlayerJoin(int playerId) {
     auto& settings = GlobedSettings::get();
+    auto& fields = this->getFields();
 
     PlayerProgressIcon* progressIcon = nullptr;
     PlayerProgressArrow* progressArrow = nullptr;
@@ -982,7 +1023,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
         Build<PlayerProgressIcon>::create()
             .zOrder(2)
             .id(util::cocos::spr(fmt::format("remote-player-progress-{}", playerId)))
-            .parent(m_fields->progressBarWrapper)
+            .parent(fields.progressBarWrapper)
             .store(progressIcon);
     } else if (platformer && settings.levelUi.progressIndicators) {
         Build<PlayerProgressArrow>::create()
@@ -1003,7 +1044,7 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
         }
     }
 
-    auto* rp = Build<RemotePlayer>::create(&m_fields->camState, progressIcon, progressArrow)
+    auto* rp = Build<RemotePlayer>::create(&fields.camState, progressIcon, progressArrow)
         .zOrder(10)
         .id(util::cocos::spr(fmt::format("remote-player-{}", playerId)))
         .collect();
@@ -1020,8 +1061,17 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     }
 
     m_objectLayer->addChild(rp);
-    m_fields->players.emplace(playerId, rp);
-    m_fields->interpolator->addPlayer(playerId);
+    fields.players.emplace(playerId, rp);
+    fields.interpolator->addPlayer(playerId);
+
+    fields.lastJoinedPlayer = playerId;
+    fields.totalJoins++;
+
+#ifdef GLOBED_GP_CHANGES
+    this->updateCustomItem(globed::ITEM_LAST_JOINED, fields.lastJoinedPlayer);
+    this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS_JOINED, fields.totalJoins);
+    this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS, fields.players.size() + 1);
+#endif
 
     GLOBED_EVENT(this, onPlayerJoin(rp));
 }
@@ -1029,19 +1079,30 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
     VoicePlaybackManager::get().removeStream(playerId);
 
-    if (!m_fields->players.contains(playerId)) return;
+    auto& fields = this->getFields();
 
+    if (!fields.players.contains(playerId)) return;
 
-    auto rp = m_fields->players.at(playerId);
+    auto rp = fields.players.at(playerId);
 
     GLOBED_EVENT(this, onPlayerLeave(rp));
 
     rp->removeProgressIndicators();
+    rp->cleanupObjectLayer();
     rp->removeFromParent();
 
-    m_fields->players.erase(playerId);
-    m_fields->interpolator->removePlayer(playerId);
-    m_fields->playerStore->removePlayer(playerId);
+    fields.players.erase(playerId);
+    fields.interpolator->removePlayer(playerId);
+    fields.playerStore->removePlayer(playerId);
+
+    fields.lastLeftPlayer = playerId;
+    fields.totalLeaves++;
+
+#ifdef GLOBED_GP_CHANGES
+    this->updateCustomItem(globed::ITEM_LAST_LEFT, fields.lastLeftPlayer);
+    this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS_LEFT, fields.totalLeaves);
+    this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS, fields.players.size() + 1);
+#endif
 }
 
 bool GlobedGJBGL::established() {
@@ -1050,7 +1111,7 @@ bool GlobedGJBGL::established() {
 }
 
 bool GlobedGJBGL::isCurrentPlayLayer() {
-    auto playLayer = geode::cocos::getChildOfType<PlayLayer>(cocos2d::CCScene::get(), 0);
+    auto playLayer = CCScene::get()->getChildByType<PlayLayer>(0);
     return static_cast<GJBaseGameLayer*>(playLayer) == this;
 }
 
@@ -1134,23 +1195,21 @@ bool GlobedGJBGL::accountForSpeedhack(int uniqueKey, float cap, float allowance)
         this->rescheduleSelectors();
     }
 
-    auto now = util::time::now();
-
     if (!fields.lastSentPacket.contains(uniqueKey)) {
-        fields.lastSentPacket.emplace(uniqueKey, now);
+        fields.lastSentPacket.emplace(uniqueKey, Instant::now());
         return true;
     }
 
     auto lastSent = fields.lastSentPacket.at(uniqueKey);
 
-    auto passed = util::time::asMillis(now - lastSent);
+    auto passed = lastSent.elapsed().millis();
 
     if (passed < cap * 1000 * allowance) {
         // log::warn("dropping a packet (speedhack?), passed time is {}ms", passed);
         return false;
     }
 
-    fields.lastSentPacket[uniqueKey] = now;
+    fields.lastSentPacket[uniqueKey] = Instant::now();
 
     return true;
 }
@@ -1192,6 +1251,44 @@ void GlobedGJBGL::customSchedule(cocos2d::SEL_SCHEDULE selector, float interval)
     this->getParent()->schedule(selector, interval);
 }
 
+void GlobedGJBGL::queueCounterChange(const GlobedCounterChange& change) {
+    m_fields->pendingCounterChanges.push_back(change);
+}
+
+int GlobedGJBGL::countForCustomItem(int id) {
+#ifdef GLOBED_GP_CHANGES
+# define $id(x) (globed::ITEM_##x)
+    auto& fields = this->getFields();
+
+    switch (id) {
+        case $id(ACCOUNT_ID): return GJAccountManager::get()->m_accountID;
+        case $id(LAST_JOINED): return fields.lastJoinedPlayer;
+        case $id(LAST_LEFT): return fields.lastLeftPlayer;
+        case $id(TOTAL_PLAYERS): return fields.players.size();
+        case $id(TOTAL_PLAYERS_JOINED): return fields.totalJoins;
+        case $id(TOTAL_PLAYERS_LEFT): return fields.totalLeaves;
+    }
+
+    return 0;
+# undef $id
+#else
+    return 0;
+#endif
+}
+
+void GlobedGJBGL::updateCountersForCustomItem(int id) {
+#ifdef GLOBED_GP_CHANGES
+    static_cast<GJEffectManagerHook*>(m_effectManager)->updateCountersForCustomItem(id);
+#endif
+}
+
+void GlobedGJBGL::updateCustomItem(int id, int value) {
+#ifdef GLOBED_GP_CHANGES
+    static_cast<GJEffectManagerHook*>(m_effectManager)->updateCountForItemCustom(id, value);
+    this->updateCountersForCustomItem(id);
+#endif
+}
+
 GlobedGJBGL::Fields& GlobedGJBGL::getFields() {
     return *m_fields.self();
 }
@@ -1228,8 +1325,12 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
 class $modify(PlayerObject) {
     static void onModify(auto& self) {
         (void) self.setHookPriority("PlayerObject::playerDestroyed", 99999999).unwrap();
+
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::update);
+        GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::playerDestroyed);
     }
 
+    $override
     void update(float dt) {
         PlayerObject::update(dt);
 
@@ -1243,6 +1344,7 @@ class $modify(PlayerObject) {
         }
     }
 
+    $override
     void playerDestroyed(bool p0) {
         PlayerObject::playerDestroyed(p0);
 

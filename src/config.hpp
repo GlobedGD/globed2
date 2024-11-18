@@ -42,7 +42,6 @@
 #define GLOBED_FMOD_IOS 0
 #define GLOBED_DRPC_IOS 0
 
-
 #endif // GLOBED_IGNORE_CONFIG_HPP
 
 #include <stdint.h>

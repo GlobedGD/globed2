@@ -1,9 +1,12 @@
 #pragma once
 #include <defs/all.hpp>
 
+#include <Geode/ui/TextInput.hpp>
 #include <any>
 
-class GlobedSettingCell : public cocos2d::CCLayer, public TextInputDelegate {
+class BetterSlider;
+
+class GlobedSettingCell : public cocos2d::CCLayer {
 public:
     enum class Type {
         Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom, LinkCode
@@ -15,7 +18,7 @@ public:
     };
 
     static constexpr float CELL_WIDTH = 358.0f;
-    static constexpr float CELL_HEIGHT = 37.5f;
+    static constexpr float CELL_HEIGHT = 30.f;
 
     // The character parameters must be string literals, or must exist for the entire lifetime of the cell.
     static GlobedSettingCell* create(void*, Type, const char*, const char*, const Limits&);
@@ -32,8 +35,8 @@ private:
     CCMenuItemSpriteExtra* btnInfo = nullptr;
 
     CCMenuItemToggler* inpCheckbox = nullptr;
-    Slider* inpSlider = nullptr;
-    geode::InputNode* inpField = nullptr;
+    BetterSlider* inpSlider = nullptr;
+    geode::TextInput* inpField = nullptr;
     CCMenuItemSpriteExtra* inpAudioButton = nullptr;
 
     CCMenuItemSpriteExtra* cornerButton = nullptr;
@@ -41,18 +44,10 @@ private:
 
     bool init(void*, Type, const char*, const char*, const Limits&);
     void onCheckboxToggled(cocos2d::CCObject*);
-    void onSliderChanged(cocos2d::CCObject*);
+    void onSliderChanged(BetterSlider* slider, double value);
     void onInteractiveButton(cocos2d::CCObject*);
-    void onStringChanged(const std::string_view);
+    void onStringChanged(std::string_view);
 
     void recreateCornerButton();
     void recreateInvitesFromButton();
-
-    void textChanged(CCTextInputNode* p0);
-    void textInputOpened(CCTextInputNode* p0);
-    void textInputClosed(CCTextInputNode* p0);
-    void textInputShouldOffset(CCTextInputNode* p0, float p1);
-    void textInputReturn(CCTextInputNode* p0);
-    bool allowTextInput(CCTextInputNode* p0);
-    void enterPressed(CCTextInputNode* p0);
 };

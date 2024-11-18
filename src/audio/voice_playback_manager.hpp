@@ -3,8 +3,9 @@
 #include <defs/minimal_geode.hpp>
 
 #include "stream.hpp"
-#include <util/time.hpp>
 #include <util/singleton.hpp>
+
+#include <asp/time/SystemTime.hpp>
 
 /*
 * VoicePlaybackManager is responsible for playing voices of multiple people
@@ -31,7 +32,7 @@ public:
     void updateAllEstimators(float dt);
 
     float getLoudness(int playerId);
-    util::time::time_point getLastPlaybackTime(int playerId);
+    asp::time::SystemTime getLastPlaybackTime(int playerId);
 
     void forEachStream(std::function<void(int, AudioStream&)> func);
 

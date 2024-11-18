@@ -5,10 +5,11 @@
 
 #include <ca_bundle.h>
 
+#include <crypto/chacha_secret_box.hpp>
+#include <managers/settings.hpp>
 #include <util/crypto.hpp>
 #include <util/format.hpp>
 #include <util/net.hpp>
-#include <crypto/chacha_secret_box.hpp>
 
 constexpr static auto KEY = "bff252d2731a6c6ca26d7f5144bc750fd6723316619f86c8636ebdc13bf3214c";
 static ChaChaSecretBox g_box(util::crypto::hexDecode(KEY).unwrap());
@@ -23,6 +24,7 @@ struct CurlRequest::Data {
     size_t m_timeout = 0;
     bool m_followRedirects = true;
     bool m_encrypt = false;
+    bool m_certVerification = true;
 };
 
 /* CurlManager */
@@ -97,20 +99,19 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
         }
 
-        // disable cert verification in debug
-#ifdef GLOBED_DEBUG3
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-#else
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2);
+        if (data->m_certVerification && !GlobedSettings::get().launchArgs().noSslVerification) {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2);
 
-        curl_blob cbb = {};
-        cbb.data = const_cast<void*>(reinterpret_cast<const void*>(CA_BUNDLE_CONTENT));
-        cbb.len = sizeof(CA_BUNDLE_CONTENT);
-        cbb.flags = CURL_BLOB_COPY;
-        curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &cbb);
-#endif
+            curl_blob cbb = {};
+            cbb.data = const_cast<void*>(reinterpret_cast<const void*>(CA_BUNDLE_CONTENT));
+            cbb.len = sizeof(CA_BUNDLE_CONTENT);
+            cbb.flags = CURL_BLOB_COPY;
+            curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &cbb);
+        } else {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+        }
 
         if (!data->m_userAgent.empty()) {
             curl_easy_setopt(curl, CURLOPT_USERAGENT, data->m_userAgent.c_str());
@@ -133,6 +134,14 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
 
         // do not fail if response code is 4XX or 5XX
         curl_easy_setopt(curl, CURLOPT_FAILONERROR, 0L);
+
+        if (GlobedSettings::get().launchArgs().verboseCurl) {
+            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        }
+
+        char errorBuffer[CURL_ERROR_SIZE];
+        errorBuffer[0] = '\0';
+        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
 
         // get headers from the response
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response);
@@ -175,11 +184,20 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
             response.m_code = status;
         } else {
             if (hasBeenCancelled()) {
+                curl_slist_free_all(headers);
+                curl_easy_cleanup(curl);
                 return Task::Cancel();
             }
 
+            std::string providedMessage{errorBuffer};
+
             response.m_code = 0;
-            response.m_fatalMessage = fmt::format("Curl failed: {}", curl_easy_strerror(code));
+
+            if (providedMessage.empty()) {
+                response.m_fatalMessage = fmt::format("Curl failed: {}", curl_easy_strerror(code));
+            } else {
+                response.m_fatalMessage = fmt::format("Curl failed ({}): {}", (int)code, providedMessage);
+            }
         }
 
         curl_slist_free_all(headers);
@@ -276,6 +294,11 @@ CurlRequest& CurlRequest::encrypted(bool enc) {
     return *this;
 }
 
+CurlRequest& CurlRequest::certVerification(bool enc) {
+    m_data->m_certVerification = enc;
+    return *this;
+}
+
 CurlManager::Task CurlRequest::send() {
     return CurlManager::get().send(*this);
 }
@@ -329,13 +352,12 @@ geode::Result<std::string> CurlResponse::text() {
 geode::Result<matjson::Value> CurlResponse::json() {
     GLOBED_UNWRAP_INTO(this->text(), auto str);
 
-    std::string err;
-    auto val = matjson::parse(str, err);
+    auto val = matjson::parse(str);
     if (!val) {
-        return Err(err);
+        return Err((std::string) val.unwrapErr());
     }
 
-    return Ok(std::move(val.value()));
+    return Ok(std::move(val.unwrap()));
 }
 
 std::string CurlResponse::getError() {

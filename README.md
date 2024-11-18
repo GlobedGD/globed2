@@ -18,17 +18,23 @@ Globed is a [Geode](https://geode-sdk.org/) mod, so it requires you to install G
 
 See the [server readme](./server/readme.md) for more information about hosting a server. If you have any troubles or suggestions, you can join our [Discord server](https://discord.gg/d56q5Dkdm3) or make an issue.
 
+## Building
+
+Build like any other mod, see [Geode documentation](https://docs.geode-sdk.org/getting-started/cpp-stuff).
+
+Only compiler supported is Clang, MSVC is unsupported since release v1.7.0 (for Geode v4). If compiling on linux, clang-cl is required instead of regular clang.
+
 ## Credit
 
 Globed is made by:
 
 * [dank_meme](https://github.com/dankmeme01) - owner and main developer
-* [availax](https://availax.xyz/) - co-owner, community manager, artist, ❤️
+* [availax](https://availax.xyz/) - co-owner, community manager, artist
 * [ItzKiba](https://github.com/ItzKiba/) - artist, developer
 * [TechStudent10](https://github.com/TechStudent10) - developer
 * [ninXout](https://github.com/ninXout/) - developer
 
-and the rest of our awesome [contributors](https://github.com/dankmeme01/globed2/graphs/contributors)!
+and the rest of our awesome [contributors](https://github.com/GlobedGD/globed2/graphs/contributors)!
 
 Special thanks:
 

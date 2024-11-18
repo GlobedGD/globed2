@@ -42,7 +42,7 @@ Result<int> UdpSocket::send(const char* data, unsigned int dataSize) {
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
 
     if (retval == -1) {
-        return Err(util::net::lastErrorString());
+        return Err(fmt::format("sendto failed ({}): {}", retval, util::net::lastErrorString()));
     }
 
     return Ok(retval);
@@ -59,7 +59,7 @@ Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const Net
     int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr));
 
     if (retval == -1) {
-        return Err(util::net::lastErrorString());
+        return Err(fmt::format("sendto failed ({}): {}", retval, util::net::lastErrorString()));
     }
 
     return Ok(retval);
@@ -106,7 +106,7 @@ Result<bool> UdpSocket::poll(int msDelay, bool in) {
     int result = GLOBED_SOCKET_POLL(fds, 1, msDelay);
 
     if (result == -1) {
-        return Err(util::net::lastErrorString());
+        return Err(fmt::format("udp poll failed ({}): {}", result, util::net::lastErrorString()));
     }
 
     return Ok(result > 0);

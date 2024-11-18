@@ -10,7 +10,7 @@ Additionally, if you are setting up a public server, please keep in mind that th
 
 ## Setup
 
-If you want to host a server yourself, first you have to download the server binaries from the [latest GitHub release](https://github.com/dankmeme01/globed2/releases/latest), named `globed-central-server` and `globed-game-server`. Depending on your OS and architecture, you want the one ending in `.exe` on Windows, the `-x64` one on Linux x64, and the `-arm64` one on Linux ARM64.
+If you want to host a server yourself, first you have to download the server binaries from the [latest GitHub release](https://github.com/GlobedGD/globed2/releases/latest), named `globed-central-server` and `globed-game-server`. Depending on your OS and architecture, you want the one ending in `.exe` on Windows, the `-x64` one on Linux x64, and the `-arm64` one on Linux ARM64.
 
 After that is done, you have 2 paths:
 
@@ -165,3 +165,5 @@ cargo build --release
 In release builds, by default, the `Debug` and `Trace` log levels are disabled, so you will only see logs with levels `Info`, `Warn` and `Error`.
 
 This can be changed by setting the environment variable `GLOBED_LOG_LEVEL` for the central server, or `GLOBED_GS_LOG_LEVEL` for the game server. The appropriate values are: `trace`, `debug`, `info`, `warn`, `error`, `none`.
+
+`GLOBED_NO_FILE_LOG` can be set to a nonzero value to disable logging to a file.

@@ -11,7 +11,7 @@
 
 using namespace geode::prelude;
 
-bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) {
+bool ServerTestPopup::setup(std::string_view url, AddServerPopup* parent) {
     this->parent = parent;
     this->setTitle("Testing server");
 
@@ -30,6 +30,36 @@ bool ServerTestPopup::setup(const std::string_view url, AddServerPopup* parent) 
     return true;
 }
 
+struct VersionCheckResponse {
+    uint16_t pmin;
+    uint16_t pmax;
+    std::string gdmin;
+    std::string globedmin;
+};
+
+template<>
+struct matjson::Serialize<VersionCheckResponse> {
+	static Result<VersionCheckResponse> fromJson(const matjson::Value& v) {
+        if (!_isJson(v)) return Err("invalid structure");
+
+        return Ok(VersionCheckResponse {
+            .pmin = static_cast<uint16_t>(GEODE_UNWRAP(v["pmin"].asInt())),
+            .pmax = static_cast<uint16_t>(GEODE_UNWRAP(v["pmax"].asInt())),
+            .gdmin = GEODE_UNWRAP(v["gdmin"].asString()),
+            .globedmin = GEODE_UNWRAP(v["globedmin"].asString()),
+        });
+    }
+
+	static matjson::Value toJson(const VersionCheckResponse& obj) {
+        GLOBED_UNIMPL("serializer for VersionCheckResponse");
+    }
+
+	static bool _isJson(const matjson::Value& obj) {
+        return obj.contains("pmin") && obj.contains("pmax") && obj.contains("gdmin") && obj.contains("globedmin")
+            && obj["pmin"].isNumber() && obj["pmax"].isNumber() && obj["gdmin"].isNumber() && obj["globedmin"].isNumber();
+    }
+};
+
 void ServerTestPopup::requestCallback(typename WebRequestManager::Event* event) {
     if (!event || !event->getValue()) return;
 
@@ -45,13 +75,38 @@ void ServerTestPopup::requestCallback(typename WebRequestManager::Event* event) 
 
     auto resp = evalue.text().unwrapOrDefault();
 
-    int protocol = util::format::parse<int>(resp).value_or(0);
+    auto parseres1 = matjson::parse(resp);
+    if (!parseres1) {
+        log::warn("Bogus server response for versioncheck: {}", resp);
+        this->parent->onTestFailure(fmt::format("Failed to parse message returned by the server: {}", parseres1.unwrapErr()));
+        this->onClose(this);
+        return;
+    }
 
-    if (!NetworkManager::get().isProtocolSupported(protocol)) {
+    auto parseresult = parseres1.unwrap().as<VersionCheckResponse>();
+
+    if (!parseresult) {
+        log::warn("Bogus server response for versioncheck: {}", resp);
+        this->parent->onTestFailure(fmt::format("Failed to parse message returned by the server: {}", parseresult.unwrapErr()));
+        this->onClose(this);
+        return;
+    }
+
+    auto respv = std::move(parseresult).unwrap();
+
+    bool anySupport = false;
+    for (int i = respv.pmin; i <= respv.pmax; i++) {
+        if (NetworkManager::get().isProtocolSupported(i)) {
+            anySupport = true;
+            break;
+        }
+    }
+
+    if (!anySupport) {
         this->parent->onTestFailure(fmt::format(
-            "Failed to add the server due to version mismatch. Client protocol version: v{}, server: v{}",
+            "Failed to add the server due to version mismatch. Client protocol version: v{}, server expects from v{} to v{}",
             NetworkManager::get().getUsedProtocol(),
-            protocol
+            respv.pmin, respv.pmax
         ));
     } else {
         this->parent->onTestSuccess();
@@ -75,9 +130,9 @@ void ServerTestPopup::cancelRequest() {
     requestListener.getFilter().cancel();
 }
 
-ServerTestPopup* ServerTestPopup::create(const std::string_view url, AddServerPopup* parent) {
+ServerTestPopup* ServerTestPopup::create(std::string_view url, AddServerPopup* parent) {
     auto ret = new ServerTestPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, url, parent)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, url, parent)) {
         ret->autorelease();
         return ret;
     }

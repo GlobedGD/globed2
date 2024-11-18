@@ -14,10 +14,9 @@ pub struct LevelReplaceData {
     rate_tier: i32,
     account_id: i32,
     admin_password: String,
-    // TODO: make these not optional
-    level_name: Option<String>,
-    level_author: Option<String>,
-    difficulty: Option<i32>,
+    level_name: String,
+    level_author: String,
+    difficulty: i32,
 }
 
 #[get("/flevel/current")]
@@ -31,16 +30,8 @@ pub async fn current(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>) -> We
     }
 }
 
-// TODO: deprecate
-#[get("/flevel/history?<page>")]
-pub async fn history(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>, page: usize) -> WebResult<Json<Vec<FeaturedLevel>>> {
-    let levels = db.get_featured_level_history(page).await?;
-
-    Ok(Json(levels))
-}
-
 #[get("/flevel/historyv2?<page>")]
-pub async fn history_v2(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>, page: usize) -> WebResult<Json<FeaturedLevelPage>> {
+pub async fn history(db: &GlobedDb, _user_agent: ClientUserAgentGuard<'_>, page: usize) -> WebResult<Json<FeaturedLevelPage>> {
     let levels = db.get_featured_level_history_new(page).await?;
 
     Ok(Json(levels))
@@ -90,15 +81,13 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
             http_client.clone(),
             &webhook_url,
             &[webhook::WebhookMessage::LevelFeatured(
-                data.level_name.unwrap_or_else(|| "<unknown>".to_owned()),
+                data.level_name,
                 data.level_id,
-                data.level_author.unwrap_or_else(|| "<unknown>".to_owned()),
-                data.difficulty.unwrap_or(0),
+                data.level_author,
+                data.difficulty,
                 data.rate_tier,
             )],
-            Some(
-                webhook_message
-            )
+            Some(webhook_message),
         )
         .await
         {
@@ -109,37 +98,9 @@ async fn do_flevel_replace(state: &State<ServerState>, db: &GlobedDb, data: Leve
     Ok(())
 }
 
-// TODO: deprecate
-// replaces the currently active featured level with a new one
-#[post("/flevel/replace?<newlevel>&<rate_tier>&<aid>&<adminpwd>&<levelname>&<levelauthor>&<difficulty>")]
-pub async fn replace(
-    state: &State<ServerState>,
-    db: &GlobedDb,
-    _user_agent: ClientUserAgentGuard<'_>,
-    newlevel: i32,
-    rate_tier: i32,
-    aid: i32,
-    adminpwd: &str,
-    levelname: Option<&str>,
-    levelauthor: Option<&str>,
-    difficulty: Option<i32>,
-) -> WebResult<()> {
-    let level = LevelReplaceData {
-        level_id: newlevel,
-        rate_tier,
-        account_id: aid,
-        admin_password: adminpwd.to_owned(),
-        level_name: levelname.map(|x| x.to_owned()),
-        level_author: levelauthor.map(|x| x.to_owned()),
-        difficulty,
-    };
-
-    do_flevel_replace(state, db, level).await
-}
-
 // replaces the currently active featured level with a new one
 #[post("/v2/flevel/replace", data = "<data>")]
-pub async fn replace_v2(
+pub async fn replace(
     state: &State<ServerState>,
     db: &GlobedDb,
     _user_agent: ClientUserAgentGuard<'_>,

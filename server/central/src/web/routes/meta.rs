@@ -4,23 +4,74 @@ use globed_shared::{
     base64::{engine::general_purpose as b64e, Engine as _},
     esp::{ByteBuffer, ByteBufferExt, ByteBufferExtWrite},
     rand::{self, Rng},
-    MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SERVER_MAGIC,
+    MAX_SUPPORTED_PROTOCOL, MIN_CLIENT_VERSION, MIN_GD_VERSION, MIN_SUPPORTED_PROTOCOL, SERVER_MAGIC,
 };
 
 use rocket::{
     get,
     http::{ContentType, Status},
+    serde::json::Json,
     State,
 };
+use serde::Serialize;
 
 use crate::state::ServerState;
 
 use super::*;
 
+// Deprecated, but probably will never be removed for legacy reasons lol
 #[get("/version")]
 pub fn version() -> String {
     // send minimum supported protocol
     MIN_SUPPORTED_PROTOCOL.to_string()
+}
+
+#[derive(Serialize)]
+pub struct VersionCheckResponse {
+    pub pmin: u16,
+    pub pmax: u16,
+    pub gdmin: &'static str,
+    pub globedmin: &'static str,
+}
+
+#[get("/versioncheck?<gd>&<globed>&<protocol>")]
+pub fn versioncheck(gd: &str, globed: &str, protocol: u16) -> WebResult<Json<VersionCheckResponse>> {
+    let resp = || VersionCheckResponse {
+        pmin: MIN_SUPPORTED_PROTOCOL,
+        pmax: MAX_SUPPORTED_PROTOCOL,
+        gdmin: MIN_GD_VERSION,
+        globedmin: MIN_CLIENT_VERSION,
+    };
+
+    if protocol == u16::MAX {
+        return Ok(Json(resp()));
+    }
+
+    // do validation
+
+    // i hate it but yeah we parse the versions as floats
+    if gd != MIN_GD_VERSION {
+        let gd_flt = gd.parse::<f32>()?;
+        let min_gd_flt = MIN_GD_VERSION.parse::<f32>()?;
+
+        if gd_flt < min_gd_flt && (min_gd_flt - gd_flt > 0.00001) {
+            bad_request!(&format!(
+                "Outdated Geometry Dash version. This server requires at least v{MIN_GD_VERSION}, and your device is running v{gd}."
+            ));
+        }
+    }
+
+    if protocol < MIN_SUPPORTED_PROTOCOL {
+        bad_request!(&format!(
+            "Outdated Globed version, minimum required is {MIN_CLIENT_VERSION}, your is {globed}. Please update Globed."
+        ));
+    } else if protocol > MAX_SUPPORTED_PROTOCOL {
+        bad_request!(&format!(
+            "Outdated server, client requested protocol version v{protocol}, server supports up to v{MAX_SUPPORTED_PROTOCOL}"
+        ));
+    }
+
+    Ok(Json(resp()))
 }
 
 #[get("/")]

@@ -1,16 +1,19 @@
 use std::{
+    borrow::Cow,
     error::Error,
-    fmt::Display,
+    fmt::{Display, Write},
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
 
 use esp::{
-    size_of_dynamic_types, size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, DecodeError, DynamicSize,
-    StaticSize,
+    size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, Decodable, DecodeError, DynamicSize, Encodable,
+    FastVec, StaticSize,
 };
+use globed_derive::{DynamicSize, Encodable};
 use globed_shared::{
-    reqwest::{self, StatusCode},
+    data::*,
+    reqwest::{self, Response, StatusCode},
     GameServerBootData, ServerUserEntry, SyncMutex, TokenIssuer, UserLoginResponse, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
@@ -75,6 +78,23 @@ pub struct CentralBridge {
     pub admin_webhook_present: AtomicBool,
     pub featured_webhook_present: AtomicBool,
     pub room_webhook_present: AtomicBool,
+}
+
+#[derive(Encodable, DynamicSize)]
+struct UserLoginPayload<'a> {
+    pub account_id: i32,
+    pub username: Cow<'a, str>,
+}
+
+pub enum AdminUserAction {
+    UpdateUsername(AdminUpdateUsernameAction),
+    SetNameColor(AdminSetNameColorAction),
+    SetUserRoles(AdminSetUserRolesAction),
+    PunishUser(AdminPunishUserAction),
+    RemovePunishment(AdminRemovePunishmentAction),
+    Whitelist(AdminWhitelistAction),
+    SetAdminPassword(AdminSetAdminPasswordAction),
+    EditPunishment(AdminEditPunishmentAction),
 }
 
 impl CentralBridge {
@@ -186,7 +206,7 @@ impl CentralBridge {
     }
 
     // other web requests
-    pub async fn get_user_data(&self, player: &str) -> Result<ServerUserEntry> {
+    pub async fn get_user_data<T: Display>(&self, player: &T) -> Result<UserEntry> {
         let response = self
             .http_client
             .get(format!("{}gs/user/{}", self.central_url, player))
@@ -205,53 +225,40 @@ impl CentralBridge {
         let mut reader = ByteReader::from_bytes(&config);
         reader.validate_self_checksum()?;
 
-        Ok(reader.read_value::<ServerUserEntry>()?)
+        Ok(reader.read_value()?)
     }
 
     pub async fn user_login(&self, account_id: i32, username: &str) -> Result<UserLoginResponse> {
-        let mut buffer = ByteBuffer::with_capacity(size_of_dynamic_types!(username, &account_id));
+        let payload = UserLoginPayload {
+            account_id,
+            username: Cow::Borrowed(username),
+        };
 
-        buffer.write_value(&account_id);
-        buffer.write_value(username);
-        buffer.append_self_checksum();
-
-        let body = buffer.into_vec();
-
-        let response = self
-            .http_client
-            .post(format!("{}gs/userlogin", self.central_url))
-            .header("Authorization", self.central_pw.clone())
-            .body(body)
-            .send()
-            .await?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
-
-            return Err(CentralBridgeError::CentralError((status, message)));
-        }
-
-        let config = response.bytes().await?;
-        let mut reader = ByteReader::from_bytes(&config);
-        reader.validate_self_checksum()?;
-
-        Ok(reader.read_value::<UserLoginResponse>()?)
+        self._send_encoded_body_req_resp("gs/userlogin", &payload).await
     }
 
-    pub async fn update_user_data(&self, user: &ServerUserEntry) -> Result<()> {
-        let mut buffer = ByteBuffer::with_capacity(user.encoded_size() + size_of_types!(u32));
+    pub async fn send_admin_user_action(
+        &self,
+        action: &AdminUserAction,
+    ) -> Result<(ServerUserEntry, Option<UserPunishment>, Option<UserPunishment>)> {
+        match action {
+            AdminUserAction::UpdateUsername(x) => Ok((self._send_encoded_body_req_resp("user/update/username", x).await?, None, None)),
+            AdminUserAction::SetNameColor(x) => Ok((self._send_encoded_body_req_resp("user/update/name_color", x).await?, None, None)),
+            AdminUserAction::SetUserRoles(x) => Ok((self._send_encoded_body_req_resp("user/update/roles", x).await?, None, None)),
+            AdminUserAction::PunishUser(x) => self._send_encoded_body_req_resp("user/update/punish", x).await,
+            AdminUserAction::RemovePunishment(x) => self._send_encoded_body_req_resp("user/update/unpunish", x).await,
+            AdminUserAction::Whitelist(x) => Ok((self._send_encoded_body_req_resp("user/update/whitelist", x).await?, None, None)),
+            AdminUserAction::SetAdminPassword(x) => Ok((self._send_encoded_body_req_resp("user/update/adminpw", x).await?, None, None)),
+            AdminUserAction::EditPunishment(x) => self._send_encoded_body_req_resp("user/update/editpunish", x).await,
+        }
+    }
 
-        buffer.write_value(user);
-        buffer.append_self_checksum();
-
-        let body = buffer.into_vec();
-
+    pub async fn get_punishment_history(&self, account_id: i32) -> Result<Vec<UserPunishment>> {
         let response = self
             .http_client
-            .post(format!("{}gs/user/update", self.central_url))
+            .get(format!("{}user/punishment_history", self.central_url))
+            .query(&[("account_id", account_id)])
             .header("Authorization", self.central_pw.clone())
-            .body(body)
             .send()
             .await?;
 
@@ -262,7 +269,46 @@ impl CentralBridge {
             return Err(CentralBridgeError::CentralError((status, message)));
         }
 
-        Ok(())
+        let data = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&data);
+        reader.validate_self_checksum()?;
+
+        Ok(reader.read_value()?)
+    }
+
+    pub async fn get_many_names(&self, account_ids: &[i32]) -> Result<Vec<(i32, String)>> {
+        if account_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut q = String::new();
+        account_ids.iter().for_each(|&id| {
+            write!(&mut q, "{},", id).unwrap();
+        });
+
+        // remove trailing comma
+        q.pop();
+
+        let response = self
+            .http_client
+            .get(format!("{}user_names", self.central_url))
+            .query(&[("ids", q)])
+            .header("Authorization", self.central_pw.clone())
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+            return Err(CentralBridgeError::CentralError((status, message)));
+        }
+
+        let data = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&data);
+        reader.validate_self_checksum()?;
+
+        Ok(reader.read_value()?)
     }
 
     #[inline]
@@ -273,6 +319,42 @@ impl CentralBridge {
     #[inline]
     pub async fn send_rate_suggestion_webhook_message(&self, message: WebhookMessage) -> Result<()> {
         self.send_webhook_messages(&[message], WebhookChannel::RateSuggestion).await
+    }
+
+    async fn _send_encoded_body_req<T: Encodable + DynamicSize>(&self, url_suffix: &str, body: &T) -> Result<Response> {
+        let mut buffer = ByteBuffer::with_capacity(body.encoded_size() + size_of_types!(u32));
+
+        buffer.write_value(body);
+        buffer.append_self_checksum();
+
+        let body = buffer.into_vec();
+
+        let response = self
+            .http_client
+            .post(format!("{}{}", self.central_url, url_suffix))
+            .header("Authorization", self.central_pw.clone())
+            .body(body)
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+            return Err(CentralBridgeError::CentralError((status, message)));
+        }
+
+        Ok(response)
+    }
+
+    async fn _send_encoded_body_req_resp<R: Decodable, T: Encodable + DynamicSize>(&self, url_suffix: &str, body: &T) -> Result<R> {
+        let response = self._send_encoded_body_req::<T>(url_suffix, body).await?;
+
+        let data = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&data);
+        reader.validate_self_checksum()?;
+
+        Ok(reader.read_value::<R>()?)
     }
 
     // not really bridge but it was making web requests which is sorta related i guess
@@ -293,5 +375,113 @@ impl CentralBridge {
             })?;
 
         Ok(())
+    }
+
+    pub async fn send_webhook_message_for_action(
+        &self,
+        action: &AdminUserAction,
+        user: &ServerUserEntry,
+        _mod_id: i32,
+        mod_name: String,
+        ban: Option<&UserPunishment>,
+        mute: Option<&UserPunishment>,
+    ) -> Result<()> {
+        let mut messages = FastVec::<WebhookMessage, 4>::new();
+
+        match action {
+            AdminUserAction::UpdateUsername(_) => {}
+            AdminUserAction::SetNameColor(_act) => {
+                messages.push(WebhookMessage::UserNameColorChanged(UserNameColorChange {
+                    account_id: user.account_id,
+                    mod_name,
+                    name: user.user_name.clone().unwrap_or_default(),
+                    new_color: user.name_color.clone(),
+                }));
+            }
+            AdminUserAction::SetUserRoles(_act) => {
+                messages.push(WebhookMessage::UserRolesChanged(
+                    mod_name,
+                    user.user_name.clone().unwrap_or_default(),
+                    user.user_roles.clone(),
+                ));
+            }
+            AdminUserAction::PunishUser(act) => {
+                if act.is_ban {
+                    let ban = if let Some(ban) = ban {
+                        ban
+                    } else {
+                        return Err(CentralBridgeError::Other("internal error: ban is None when punishing user".to_owned()));
+                    };
+
+                    let bmsc = BanMuteStateChange {
+                        mod_name,
+                        target_name: user.user_name.clone().unwrap_or_default(),
+                        target_id: user.account_id,
+                        new_state: true,
+                        expiry: if ban.expires_at == 0 { None } else { Some(ban.expires_at) },
+                        reason: if ban.reason.is_empty() { None } else { Some(ban.reason.clone()) },
+                    };
+
+                    messages.push(WebhookMessage::UserBanned(bmsc));
+                } else {
+                    let mute = if let Some(mute) = mute {
+                        mute
+                    } else {
+                        return Err(CentralBridgeError::Other("internal error: mute is None when punishing user".to_owned()));
+                    };
+
+                    let bmsc = BanMuteStateChange {
+                        mod_name,
+                        target_name: user.user_name.clone().unwrap_or_default(),
+                        target_id: user.account_id,
+                        new_state: true,
+                        expiry: if mute.expires_at == 0 { None } else { Some(mute.expires_at) },
+                        reason: if mute.reason.is_empty() { None } else { Some(mute.reason.clone()) },
+                    };
+
+                    messages.push(WebhookMessage::UserMuted(bmsc));
+                }
+            }
+            AdminUserAction::RemovePunishment(act) => {
+                if act.is_ban {
+                    messages.push(WebhookMessage::UserUnbanned(PunishmentRemoval {
+                        account_id: user.account_id,
+                        name: user.user_name.clone().unwrap_or_default(),
+                        mod_name,
+                    }));
+                } else {
+                    messages.push(WebhookMessage::UserUnmuted(PunishmentRemoval {
+                        account_id: user.account_id,
+                        name: user.user_name.clone().unwrap_or_default(),
+                        mod_name,
+                    }));
+                }
+            }
+            AdminUserAction::Whitelist(_action) => {
+                // messages.push(WebhookMessage::Wh);
+                // TODO
+            }
+            AdminUserAction::SetAdminPassword(_) => {}
+            AdminUserAction::EditPunishment(action) => {
+                messages.push(WebhookMessage::UserViolationMetaChanged(ViolationMetaChange {
+                    account_id: user.account_id,
+                    name: user.user_name.clone().unwrap_or_default(),
+                    is_ban: action.is_ban,
+                    expiry: if action.expires_at == 0 { None } else { Some(action.expires_at) },
+                    reason: if action.reason.is_empty() {
+                        None
+                    } else {
+                        Some(action.reason.to_string())
+                    },
+                    mod_name,
+                }));
+            }
+        };
+
+        if messages.is_empty() {
+            return Ok(());
+        }
+
+        self.send_webhook_messages(&messages, WebhookChannel::Admin).await
     }
 }

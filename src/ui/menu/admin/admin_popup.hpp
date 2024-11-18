@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/all.hpp>
 
+#include <Geode/ui/TextInput.hpp>
+
 class AdminPopup : public geode::Popup<> {
 public:
     static constexpr float POPUP_WIDTH = 400.f;
@@ -9,7 +11,7 @@ public:
     static AdminPopup* create();
 
 private:
-    geode::InputNode *messageInput, *userInput;
+    geode::TextInput *messageInput, *userInput;
 
     bool setup() override;
 };

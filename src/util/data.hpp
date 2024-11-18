@@ -50,4 +50,18 @@ namespace util::data {
     constexpr size_t bitsToBytes(size_t bits) {
         return (bits + 7) / 8;
     }
+
+    template <typename T>
+    std::vector<uint8_t> asRawByteVector(const T& value) {
+        std::vector<uint8_t> bytes(sizeof(T));
+        std::memcpy(bytes.data(), &value, sizeof(T));
+        return bytes;
+    }
+
+    template <typename T>
+    std::array<uint8_t, sizeof(T)> asRawBytes(const T& value) {
+        std::array<uint8_t, sizeof(T)> bytes;
+        std::memcpy(bytes.data(), &value, sizeof(T));
+        return bytes;
+    }
 }

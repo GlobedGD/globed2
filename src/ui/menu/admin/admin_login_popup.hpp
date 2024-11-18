@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/all.hpp>
 
+#include <Geode/ui/TextInput.hpp>
+
 #include <data/packets/client/admin.hpp>
 
 class AdminLoginPopup : public geode::Popup<> {
@@ -11,7 +13,7 @@ public:
     static AdminLoginPopup* create();
 
 private:
-    geode::InputNode* passwordInput = nullptr;
+    geode::TextInput* passwordInput = nullptr;
 
     void onRememberPassword(cocos2d::CCObject* sender);
 

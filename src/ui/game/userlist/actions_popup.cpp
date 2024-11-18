@@ -22,7 +22,7 @@ bool GlobedUserActionsPopup::setup(int accountId, CCArray* buttons) {
 
     this->setTitle(name);
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f))
@@ -43,7 +43,7 @@ bool GlobedUserActionsPopup::setup(int accountId, CCArray* buttons) {
 
 GlobedUserActionsPopup* GlobedUserActionsPopup::create(int accountId, CCArray* buttons) {
     auto ret = new GlobedUserActionsPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, accountId, buttons)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, accountId, buttons)) {
         ret->autorelease();
         return ret;
     }

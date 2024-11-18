@@ -6,15 +6,17 @@
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
+#include <ui/general/slider.hpp>
 #include <util/ui.hpp>
 #include <util/misc.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 bool GlobedUserListPopup::setup() {
     this->setTitle("Players");
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     m_noElasticity = true;
 
@@ -34,10 +36,9 @@ bool GlobedUserListPopup::setup() {
         .intoMenuItem([this](auto) {
             this->hardRefresh();
         })
-        .pos(m_size.width / 2.f - 3.f, -m_size.height / 2.f + 3.f)
+        .pos(rlayout.fromBottomRight(8.f, 8.f))
         .id("reload-btn"_spr)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
+        .parent(m_buttonMenu);
 
     Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
         .scale(0.5f)
@@ -54,32 +55,42 @@ bool GlobedUserListPopup::setup() {
                 }
             );
         })
-        .pos(-m_size.width / 2.f + 20.f, -m_size.height / 2.f + 22.f)
+        .pos(rlayout.fromBottomLeft(20.f, 20.f))
         .id("report-btn"_spr)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
+        .parent(m_buttonMenu);
 
     // checkbox to toggle voice sorting
     auto* cbLayout = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(5.f)->setAutoScale(false))
-        .pos(rlayout.centerBottom + CCPoint{0.f, 20.f})
+        .pos(rlayout.fromBottom(20.f))
         .parent(m_mainLayer)
         .collect();
 
+    Build<BetterSlider>::create()
+        .scale(0.85f)
+        .id("volume-slider")
+        .store(volumeSlider);
 
-    volumeSlider = Build<Slider>::create(this, menu_selector(GlobedUserListPopup::onVolumeChanged))
-        .pos(rlayout.topRight + ccp(-75, -30 - 7) * 0.7f + ccp(0, -5))
-        .anchorPoint(0, 0)
-        .scale(0.45f * 0.7f)
-        //.scaleX(0.35f)
-        .parent(m_mainLayer)
-        .value(GlobedSettings::get().communication.voiceVolume / 2)
-        .collect();
+    volumeSlider->setContentWidth(80.f);
+    volumeSlider->setLimits(0.0, 2.0);
+    volumeSlider->setValue(GlobedSettings::get().communication.voiceVolume);
+    volumeSlider->setCallback([this](BetterSlider* slider, double value) {
+        this->onVolumeChanged(slider, value);
+    });
 
     Build<CCLabelBMFont>::create("Voice Volume", "bigFont.fnt")
-        .pos(rlayout.topRight + ccp(-75, -18) * 0.7f + ccp(0, -5))
         .scale(0.45f * 0.7f)
-        .parent(m_mainLayer);
+        .intoNewParent(CCNode::create())
+        .id("volume-wrapper")
+        .child(volumeSlider)
+        .layout(ColumnLayout::create()
+            ->setAutoScale(false)
+            ->setAxisReverse(true))
+        .contentSize(80.f, 30.f)
+        .anchorPoint(0.5f, 0.5f)
+        .pos(rlayout.topRight - CCPoint{50.f, 25.f})
+        .parent(m_mainLayer)
+        .updateLayout();
 
     // Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedUserListPopup::onToggleVoiceSort), 0.7f))
     //     .id("toggle-voice-sort"_spr)
@@ -110,23 +121,23 @@ void GlobedUserListPopup::reorderWithVolume(float) {
         cellIndices.push_back(entry->accountData.accountId);
     }
 
-    auto now = util::time::now();
+    auto now = SystemTime::now();
     std::sort(cellIndices.begin(), cellIndices.end(), [&vpm, &cellMap, now = now](int idx1, int idx2) -> bool {
-        constexpr util::time::seconds limit(5);
+        constexpr auto limit = Duration::fromSecs(5);
 
         auto time1 = vpm.getLastPlaybackTime(idx1);
         auto time2 = vpm.getLastPlaybackTime(idx2);
 
-        auto diff1 = now - time1;
-        auto diff2 = now - time2;
+        auto diff1 = now.durationSince(time1).value_or(Duration{});
+        auto diff2 = now.durationSince(time2).value_or(Duration{});
 
         // if both users are speaking in the last 10 seconds, sort by who is more recent
         if (diff1 < limit && diff2 < limit) {
-            auto secs1 = util::time::asSeconds(diff1);
-            auto secs2 = util::time::asSeconds(diff2);
+            auto secs1 = diff1.seconds();
+            auto secs2 = diff2.seconds();
 
             // if there's a 0 second difference, sort by playername
-            if (std::abs(secs2 - secs1) == 0) {
+            if (secs1 != secs2) {
                 return util::misc::compareName(cellMap[idx1]->accountData.name, cellMap[idx2]->accountData.name);
             }
 
@@ -257,8 +268,8 @@ void GlobedUserListPopup::onToggleVoiceSort(cocos2d::CCObject* sender) {
     volumeSortEnabled = !static_cast<CCMenuItemToggler*>(sender)->isOn();
 }
 
-void GlobedUserListPopup::onVolumeChanged(cocos2d::CCObject* sender) {
-    GlobedSettings::get().communication.voiceVolume = volumeSlider->getThumb()->getValue() * 2;
+void GlobedUserListPopup::onVolumeChanged(BetterSlider* slider, double value) {
+    GlobedSettings::get().communication.voiceVolume = value;
 }
 
 void GlobedUserListPopup::removeListCell(GlobedUserCell* cell) {
@@ -267,7 +278,7 @@ void GlobedUserListPopup::removeListCell(GlobedUserCell* cell) {
 
 GlobedUserListPopup* GlobedUserListPopup::create() {
     auto ret = new GlobedUserListPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

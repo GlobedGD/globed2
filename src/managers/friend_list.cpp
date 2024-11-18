@@ -75,7 +75,7 @@ void FriendListManager::DummyNode::getUserListFinished(cocos2d::CCArray* p0, Use
 void FriendListManager::DummyNode::getUserListFailed(UserListType p0, GJErrorCode p1) {
     // -2 means no friends :broken_heart:
     if ((int)p1 != -2) {
-        ErrorQueues::get().warn(fmt::format("Failed to get friendlist: {}", (int)p1));
+        ErrorQueues::get().warn(fmt::format("[Globed] Failed to get friendlist: {}", (int)p1));
     }
 
     this->cleanup();

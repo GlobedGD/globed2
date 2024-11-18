@@ -12,23 +12,23 @@ using namespace util::data;
 SecretBox::SecretBox(bytevector key) {
     CRYPTO_REQUIRE(key.size() == crypto_secretbox_KEYBYTES, "provided key is too long or too short for SecretBox")
 
-    this->key = reinterpret_cast<byte*>(sodium_malloc(
+    this->key = reinterpret_cast<byte*>(std::malloc(
         crypto_secretbox_KEYBYTES
     ));
 
-    CRYPTO_REQUIRE(this->key != nullptr, "sodium_malloc returned nullptr")
+    CRYPTO_REQUIRE(this->key != nullptr, "malloc returned nullptr")
 
     std::memcpy(this->key, key.data(), crypto_secretbox_KEYBYTES);
 }
 
-SecretBox SecretBox::withPassword(const std::string_view pw) {
+SecretBox SecretBox::withPassword(std::string_view pw) {
     auto key = util::crypto::simpleHash(pw);
     return SecretBox(key);
 }
 
 SecretBox::~SecretBox() {
     if (this->key) {
-        sodium_free(this->key);
+        std::free(this->key);
     }
 }
 
@@ -69,7 +69,7 @@ void SecretBox::setKey(const util::data::byte* src) {
     std::memcpy(this->key, src, crypto_secretbox_KEYBYTES);
 }
 
-Result<> SecretBox::setPassword(const std::string_view pw) {
+Result<> SecretBox::setPassword(std::string_view pw) {
     auto key = util::crypto::simpleHash(pw);
     return this->setKey(key);
 }

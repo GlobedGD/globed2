@@ -58,7 +58,7 @@ bool EditFeaturedLevelPopup::setup(GJGameLevel* level) {
                 this->level->m_levelName,
                 this->level->m_levelID,
                 this->level->m_creatorName,
-                util::gd::calcLevelDifficulty(this->level),
+                (int) util::gd::calcLevelDifficulty(this->level),
                 currIdx,
                 this->notesInput->getString()
             ));
@@ -112,7 +112,7 @@ void EditFeaturedLevelPopup::sendFeatureRequest() {
         "Cancel", "Ok", [this, levelId](auto, bool ok) {
             if (!ok) return;
 
-            auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx, level->m_levelName, level->m_creatorName, util::gd::calcLevelDifficulty(level));
+            auto req = WebRequestManager::get().setFeaturedLevel(levelId, currIdx, level->m_levelName, level->m_creatorName, (int) util::gd::calcLevelDifficulty(level));
             reqListener.bind(this, &EditFeaturedLevelPopup::onRequestComplete);
             reqListener.setFilter(std::move(req));
         }
@@ -140,7 +140,7 @@ void EditFeaturedLevelPopup::onDiffClick(CCObject* sender) {
 }
 
 int EditFeaturedLevelPopup::getDifficulty() {
-    return util::gd::calcLevelDifficulty(level);
+    return (int) util::gd::calcLevelDifficulty(level);
 }
 
 void EditFeaturedLevelPopup::onRequestComplete(typename WebRequestManager::Event* event) {

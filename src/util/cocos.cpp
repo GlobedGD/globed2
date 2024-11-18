@@ -1,6 +1,7 @@
 #include "cocos.hpp"
 
 #include <defs/geode.hpp>
+#include <globed/tracing.hpp>
 #include <managers/settings.hpp>
 #include <hooks/game_manager.hpp>
 #include <util/format.hpp>
@@ -8,14 +9,15 @@
 #include <asp/thread.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 constexpr size_t THREAD_COUNT = 25;
 
 #define preloadLog(...) preloadLogImpl(fmt::format(__VA_ARGS__))
 
 // all of this is needed to disrespect the privacy of ccfileutils
-#include <Geode/modify/CCFileUtils.hpp>
-class $modify(HookedFileUtils, CCFileUtils) {
+
+struct HookedFileUtils : public CCFileUtils {
     gd::string& getSearchPath(size_t idx) {
         return m_searchPathArray.at(idx);
     }
@@ -59,7 +61,7 @@ namespace util::cocos {
     }
 
     void preloadLogImpl(std::string_view message) {
-        static bool enabled = geode::Loader::get()->getLaunchFlag("globed-debug-preload");
+        static bool enabled = GlobedSettings::get().launchArgs().debugPreload;
 
         if (enabled) {
             geode::log::debug("preload: {}", message);
@@ -73,9 +75,9 @@ namespace util::cocos {
         std::vector<size_t> texturePackIndices;
         std::unique_ptr<asp::ThreadPool> threadPool;
         struct _T {
-            util::time::time_point start{}, postPreparation{}, postTexCreation{}, finish{};
+            asp::time::Instant start, postPreparation, postTexCreation, finish;
 
-            _T() = default;
+            _T() : start(Instant::now()), postPreparation(start), postTexCreation(start), finish(start) {}
 
             void reset() {
                 *this = {};
@@ -83,26 +85,28 @@ namespace util::cocos {
 
             void print() {
                 preloadLog("Preload time estimates:");
-                preloadLog("-- Preparation: {}", util::format::duration(postPreparation - start));
-                preloadLog("-- Image load + texture creation: {}", util::format::duration(postTexCreation - postPreparation));
-                preloadLog("-- Creating sprite frame: {}", util::format::duration(finish - postTexCreation));
-                preloadLog("- Total: {}", util::format::duration(finish - start));
+                preloadLog("-- Preparation: {}", postPreparation.durationSince(start).toString());
+                preloadLog("-- Image load + texture creation: {}", postTexCreation.durationSince(postPreparation).toString());
+                preloadLog("-- Creating sprite frame: {}", finish.durationSince(postTexCreation).toString());
+                preloadLog("- Total: {}", finish.durationSince(start).toString());
             }
         } timeMeasurements;
 
         void ensurePoolExists() {
             if (!threadPool) {
+                TRACE("creating thread pool with size {}", THREAD_COUNT);
                 threadPool = std::make_unique<asp::ThreadPool>(THREAD_COUNT);
             }
         }
 
         void destroyPool() {
+            TRACE("destroying thread pool");
             threadPool = nullptr;
         }
     };
 
     static void initPreloadState(PersistentPreloadState& state) {
-        auto startTime = util::time::now();
+        auto startTime = Instant::now();
 
         state.texturePackIndices.clear();
 
@@ -151,7 +155,7 @@ namespace util::cocos {
 
         state.threadPool = std::make_unique<asp::ThreadPool>(THREAD_COUNT);
 
-        preloadLog("initialized preload state in {}", util::format::formatDuration(util::time::now() - startTime));
+        preloadLog("initialized preload state in {}", startTime.elapsed().toString());
         preloadLog("texture quality: {}", state.texQuality == TextureQuality::High ? "High" : (state.texQuality == TextureQuality::Medium ? "Medium" : "Low"));
         preloadLog("texture packs: {}", state.texturePackIndices.size());
         preloadLog("game resources path ({}): {}", state.gameSearchPathIdx,
@@ -166,7 +170,7 @@ namespace util::cocos {
         auto& threadPool = *state.threadPool.get();
 
         preloadLog("preparing {} textures", images.size());
-        state.timeMeasurements.start = util::time::now();
+        state.timeMeasurements.start = Instant::now();
 
         static asp::Mutex<> cocosWorkMutex;
 
@@ -209,12 +213,12 @@ namespace util::cocos {
 
         if (imgCount == 0) {
             preloadLog("all textures already loaded, skipping pass");
-            state.timeMeasurements.finish = util::time::now();
+            state.timeMeasurements.finish = Instant::now();
             return;
         }
 
         preloadLog("loading images ({} total)", imgCount);
-        state.timeMeasurements.postPreparation = util::time::now();
+        state.timeMeasurements.postPreparation = Instant::now();
 
         asp::Channel<std::pair<size_t, CCImage*>> textureInitRequests;
 
@@ -290,7 +294,7 @@ namespace util::cocos {
         }
 
         preloadLog("initialized {} textures, adding sprite frames", initedTextures);
-        state.timeMeasurements.postTexCreation = util::time::now();
+        state.timeMeasurements.postTexCreation = Instant::now();
 
         // now, add sprite frames
         for (size_t i = 0; i < imgCount; i++) {
@@ -372,7 +376,7 @@ namespace util::cocos {
         threadPool.join();
 
         preloadLog("initialized sprite frames. done.");
-        state.timeMeasurements.finish = util::time::now();
+        state.timeMeasurements.finish = Instant::now();
 
 #ifdef GLOBED_DEBUG
         state.timeMeasurements.print();
@@ -403,7 +407,7 @@ namespace util::cocos {
             // a very strange bug when you have the Default mini icons option enabled.
             // I have no idea how loading a ship icon can cause a ball icon to become a cube,
             // and honestly I don't care enough.
-            // https://github.com/dankmeme01/globed2/issues/93
+            // https://github.com/GlobedGD/globed2/issues/93
             case AssetPreloadStage::Ship: gm->loadIconsBatched((int)IconType::Ship, 1, 168); break;
             case AssetPreloadStage::Ball: gm->loadIconsBatched((int)IconType::Ball, 0, 118); break;
             case AssetPreloadStage::Ufo: gm->loadIconsBatched((int)IconType::Ufo, 1, 149); break;
@@ -453,7 +457,7 @@ namespace util::cocos {
     bool forcedSkipPreload() {
         auto& settings = GlobedSettings::get();
 
-        return !settings.globed.preloadAssets || Loader::get()->getLaunchFlag("globed-skip-preload") || Mod::get()->getSettingValue<bool>("force-skip-preload");
+        return !settings.globed.preloadAssets || settings.launchArgs().skipPreload || Mod::get()->getSettingValue<bool>("force-skip-preload");
     }
 
     bool shouldTryToPreload(bool onLoading) {
@@ -526,7 +530,7 @@ namespace util::cocos {
     }
 
     // slightly faster rewrite of ccfileutils::fullPathForFilename
-    gd::string fullPathForFilename(const std::string_view rawfilename) {
+    gd::string fullPathForFilename(std::string_view rawfilename) {
         auto& fileUtils = HookedFileUtils::get();
         auto& pstate = getPreloadState();
 
@@ -671,7 +675,7 @@ namespace util::cocos {
         return texture;
     }
 
-    std::string spr(const std::string_view s) {
+    std::string spr(std::string_view s) {
         static const std::string id = Mod::get()->getID() + "/";
 
         std::string out(id);
@@ -680,8 +684,10 @@ namespace util::cocos {
         return out;
     }
 
-    bool isValidSprite(CCNode* obj) {
-        return obj && !obj->getUserObject("geode.texture-loader/fallback");
+    bool isValidSprite(CCSprite* obj) {
+        if (!obj) return false;
+
+        return !obj->getUserObject("geode.texture-loader/fallback");
     }
 
     void renderNodeToFile(CCNode* node, const std::filesystem::path& dest) {
@@ -694,6 +700,37 @@ namespace util::cocos {
         // idk if this leaks
         auto img = tex->newCCImage();
         img->saveToFile(dest.string().c_str());
+    }
+
+    std::string parentChain(CCNode* node) {
+        if (!node) {
+            return "<null>";
+        }
+
+        std::string out;
+
+        bool first = true;
+        do {
+            auto tname = util::debug::getTypename(node);
+            if (!first) {
+                out.insert(0, " -> ");
+            }
+
+            std::string formatted;
+            auto id = node->getID();
+
+            if (id.empty()) {
+                formatted = fmt::format("{} ({})", format::unqualify(tname), (void*)node);
+            } else {
+                formatted = fmt::format("{} ({} at {})", id, format::unqualify(tname), (void*)node);
+            }
+
+            out.insert(0, formatted);
+
+            first = false;
+        } while ((node = node->getParent()));
+
+        return out;
     }
 
     void tryLoadDeathEffect(int id) {

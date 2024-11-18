@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     net::SocketAddrV4,
     sync::{
         atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
@@ -18,7 +19,7 @@ use globed_shared::{should_ignore_error, ServerUserEntry, MAX_SUPPORTED_PROTOCOL
 use super::*;
 use crate::{
     data::*,
-    managers::ComputedRole,
+    managers::{ComputedRole, Room},
     server::GameServer,
     tokio::{self, net::TcpStream, sync::Notify},
     util::LockfreeMutCell,
@@ -46,12 +47,11 @@ pub struct UnauthorizedThread {
     pub on_unlisted_level: AtomicBool,
     pub room_id: AtomicU32,
     pub link_code: AtomicU32,
+    pub room: SyncMutex<Arc<Room>>,
 
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<Option<ServerUserEntry>>,
     pub user_role: SyncMutex<Option<ComputedRole>>,
-
-    pub fragmentation_limit: AtomicU16,
 
     pub claim_udp_peer: SyncMutex<Option<SocketAddrV4>>,
     pub claim_udp_notify: Notify,
@@ -62,6 +62,7 @@ pub struct UnauthorizedThread {
     pub terminate_notify: Notify,
 
     pub destruction_notify: Arc<Notify>,
+    pub translator: NoopPacketTranslator,
 
     pub privacy_settings: SyncMutex<UserPrivacyFlags>,
 }
@@ -77,7 +78,7 @@ impl UnauthorizedThread {
     pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
         Self {
             game_server,
-            socket: LockfreeMutCell::new(ClientSocket::new(socket, peer, game_server)),
+            socket: LockfreeMutCell::new(ClientSocket::new(socket, peer, 0, game_server)),
             connection_state: AtomicClientThreadState::default(),
 
             secret_key: rand::thread_rng().gen(),
@@ -88,12 +89,11 @@ impl UnauthorizedThread {
             on_unlisted_level: AtomicBool::new(false),
             room_id: AtomicU32::new(0),
             link_code: AtomicU32::new(0),
+            room: SyncMutex::new(game_server.state.room_manager.get_global_owned()),
 
             account_data: SyncMutex::new(PlayerAccountData::default()),
             user_entry: SyncMutex::new(None),
             user_role: SyncMutex::new(None),
-
-            fragmentation_limit: AtomicU16::new(0),
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
@@ -104,6 +104,7 @@ impl UnauthorizedThread {
             terminate_notify: Notify::new(),
 
             destruction_notify: Arc::new(Notify::new()),
+            translator: NoopPacketTranslator::default(),
 
             privacy_settings: SyncMutex::new(UserPrivacyFlags::default()),
         }
@@ -123,12 +124,11 @@ impl UnauthorizedThread {
             on_unlisted_level: thread.on_unlisted_level,
             room_id: thread.room_id,
             link_code: thread.link_code,
+            room: thread.room,
 
             account_data: SyncMutex::new(std::mem::take(&mut *thread.account_data.lock())),
             user_entry: SyncMutex::new(Some(std::mem::take(&mut *thread.user_entry.lock()))),
             user_role: SyncMutex::new(Some(std::mem::take(&mut *thread.user_role.lock()))),
-
-            fragmentation_limit: thread.fragmentation_limit,
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
@@ -139,6 +139,7 @@ impl UnauthorizedThread {
             terminate_notify: Notify::new(),
 
             destruction_notify: thread.destruction_notify,
+            translator: NoopPacketTranslator::default(),
 
             privacy_settings: thread.privacy_settings,
         }
@@ -198,9 +199,9 @@ impl UnauthorizedThread {
                             Err(e) => {
                                 warn!("error on an unauth thread: {e}");
                                 #[cfg(debug_assertions)]
-                                let _ = self.terminate_with_message(&format!("failed to authenticate: {e}")).await;
+                                let _ = self.terminate_with_message(Cow::Owned(format!("failed to authenticate: {e}"))).await;
                                 #[cfg(not(debug_assertions))]
-                                let _ = self.terminate_with_message("internal server error during player authentication").await;
+                                let _ = self.terminate_with_message(Cow::Borrowed("internal server error during player authentication")).await;
                             }
                         },
 
@@ -305,7 +306,7 @@ impl UnauthorizedThread {
                 .send_packet_dynamic(&ProtocolMismatchPacket {
                     // send minimum required version
                     protocol: MIN_SUPPORTED_PROTOCOL,
-                    min_client_version: MIN_CLIENT_VERSION,
+                    min_client_version: Cow::Borrowed(MIN_CLIENT_VERSION),
                 })
                 .await?;
 
@@ -337,21 +338,22 @@ impl UnauthorizedThread {
         if packet.fragmentation_limit < 1300 {
             gs_disconnect!(
                 self,
-                &format!(
+                format!(
                     "The client fragmentation limit is too low ({} bytes) to be accepted",
                     packet.fragmentation_limit
                 )
             );
         }
 
-        self.fragmentation_limit.store(packet.fragmentation_limit, Ordering::Relaxed);
+        unsafe { self.socket.get_mut() }.set_mtu(packet.fragmentation_limit as usize);
 
         if packet.account_id <= 0 || packet.user_id <= 0 {
-            let message = format!(
+            let message = Cow::Owned(format!(
                 "Invalid account/user ID was sent ({} and {}). Please note that you must be signed into a Geometry Dash account before connecting.",
                 packet.account_id, packet.user_id
-            );
-            socket.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
+            ));
+
+            socket.send_packet_dynamic(&LoginFailedPacket { message }).await?;
             return Ok(());
         }
 
@@ -375,7 +377,11 @@ impl UnauthorizedThread {
                     let mut message = FastString::new("authentication failed: ");
                     message.extend(err.error_message());
 
-                    socket.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
+                    socket
+                        .send_packet_dynamic(&LoginFailedPacket {
+                            message: Cow::Owned(message.to_string()),
+                        })
+                        .await?;
                     return Ok(());
                 }
             }
@@ -387,17 +393,13 @@ impl UnauthorizedThread {
         // fetch data from the central
         if !standalone {
             let response = match self.game_server.bridge.user_login(packet.account_id, &player_name).await {
-                Ok(response) if response.user_entry.is_banned => {
+                Ok(response) if response.ban.is_some() => {
+                    let ban = response.ban.unwrap();
+
                     socket
                         .send_packet_dynamic(&ServerBannedPacket {
-                            message: FastString::new(
-                                &response
-                                    .user_entry
-                                    .violation_reason
-                                    .as_ref()
-                                    .map_or_else(|| "No reason given".to_owned(), |x| x.clone()),
-                            ),
-                            timestamp: response.user_entry.violation_expiry.unwrap_or_default(),
+                            message: FastString::new(if ban.reason.is_empty() { "No reason given" } else { &ban.reason }),
+                            expires_at: ban.expires_at as u64,
                         })
                         .await?;
 
@@ -406,7 +408,7 @@ impl UnauthorizedThread {
                 Ok(response) if self.game_server.bridge.is_whitelist() && !response.user_entry.is_whitelisted => {
                     socket
                         .send_packet_dynamic(&LoginFailedPacket {
-                            message: "This server has whitelist enabled and your account has not been allowed.",
+                            message: Cow::Borrowed("This server has whitelist enabled and your account has not been allowed."),
                         })
                         .await?;
 
@@ -417,7 +419,11 @@ impl UnauthorizedThread {
                     let mut message = InlineString::<256>::new("failed to fetch user data: ");
                     message.extend_safe(&err.to_string());
 
-                    socket.send_packet_dynamic(&LoginFailedPacket { message: &message }).await?;
+                    socket
+                        .send_packet_dynamic(&LoginFailedPacket {
+                            message: Cow::Owned(message.to_string()),
+                        })
+                        .await?;
                     return Ok(());
                 }
             };
@@ -460,6 +466,7 @@ impl UnauthorizedThread {
             .room_manager
             .get_global()
             .manager
+            .write()
             .create_player(packet.account_id, packet.privacy_settings.get_hide_in_game());
 
         self.send_login_success().await?;
@@ -537,7 +544,7 @@ impl UnauthorizedThread {
         self.connection_state.store(ClientThreadState::Terminating);
     }
 
-    async fn terminate_with_message(&self, message: &str) -> Result<()> {
+    async fn terminate_with_message(&self, message: Cow<'_, str>) -> Result<()> {
         self.get_socket().send_packet_dynamic(&ServerDisconnectPacket { message }).await?;
 
         self.terminate();
@@ -562,7 +569,7 @@ impl UnauthorizedThread {
     }
 
     /// terminate and send a message to the user with the reason
-    async fn kick(&self, message: &str) -> Result<()> {
+    async fn kick(&self, message: Cow<'_, str>) -> Result<()> {
         self.terminate();
         self.get_socket().send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }

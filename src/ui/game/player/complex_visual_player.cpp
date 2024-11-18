@@ -372,7 +372,7 @@ void ComplexVisualPlayer::playDeathEffect() {
     playerIcon->playerDestroyed(false);
 
     // TODO temp, we remove the small cube pieces because theyre buggy in my testing
-    if (auto ein = getChildOfType<ExplodeItemNode>(this, 0)) {
+    if (auto ein = this->getChildByType<ExplodeItemNode>(0)) {
         ein->removeFromParent();
     }
 
@@ -813,6 +813,10 @@ bool ComplexVisualPlayer::isPlayerNearby(const GameCameraState& camState) {
     );
 
     return inCameraCoverage;
+}
+
+void ComplexVisualPlayer::cleanupObjectLayer() {
+    static_cast<HookedPlayerObject*>(static_cast<PlayerObject*>(playerIcon))->cleanupObjectLayer();
 }
 
 ComplexVisualPlayer* ComplexVisualPlayer::create(RemotePlayer* parent, bool isSecond) {

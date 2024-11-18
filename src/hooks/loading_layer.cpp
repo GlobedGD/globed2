@@ -1,6 +1,7 @@
 #include "loading_layer.hpp"
 
 #include "game_manager.hpp"
+#include <util/data.hpp>
 #include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/cocos.hpp>
@@ -8,6 +9,7 @@
 #include <util/lowlevel.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 static void loadingFinishedReimpl(bool fromRefresh) {
     // reimplementation of the function
@@ -24,7 +26,7 @@ void HookedLoadingLayer::loadingFinished() {
 
 void HookedLoadingLayer::loadingFinishedHook() {
     if (m_fields->preloadingStage == 0) {
-        m_fields->loadingStartedTime = util::time::systemNow();
+        m_fields->loadingStartedTime = SystemTime::now();
 
         m_fields->preloadingStage++;
 
@@ -44,17 +46,17 @@ void HookedLoadingLayer::loadingFinishedHook() {
         this->scheduleOnce(schedule_selector(HookedLoadingLayer::preloadingStage2), 0.0f);
         return;
     } else if (m_fields->preloadingStage == 1000) {
-        log::info("Asset preloading finished in {}.", util::format::formatDuration(util::time::systemNow() - m_fields->loadingStartedTime));
+        log::info("Asset preloading finished in {}.", m_fields->loadingStartedTime.elapsed().toString());
         util::cocos::cleanupThreadPool();
         loadingFinishedReimpl(m_fromRefresh);
     }
 }
 
-void HookedLoadingLayer::setLabelText(const std::string_view text) {
+void HookedLoadingLayer::setLabelText(const char* text) {
     auto label = static_cast<CCLabelBMFont*>(this->getChildByID("geode-small-label"));
 
     if (label) {
-        label->setString(std::string(text).c_str());
+        label->setString(text);
     }
 }
 
@@ -143,7 +145,9 @@ static void loadingFinishedCaller() {
 // Please help.
 #ifdef GLOBED_LOADING_FINISHED_MIDHOOK
 
-# ifdef GEODE_IS_ARM_MAC
+# if GEODE_COMP_GD_VERSION != 22074
+#  pragma message("loadingFinished midhook not implemented for this GD version")
+# elif defined(GEODE_IS_ARM_MAC)
 // LoadingLayer::loadAssets
 // macos aarch64 disasm:
 /*
@@ -175,8 +179,9 @@ static void loadingFinishedCaller() {
     add sp, sp, #0x90
     ret
 */
-constexpr ptrdiff_t START_OFFSET = 0x32cdcc;
-constexpr ptrdiff_t END_OFFSET = 0x32cde8;
+
+constexpr ptrdiff_t START_OFFSET = 0x31f22c;
+constexpr ptrdiff_t END_OFFSET = 0x31f248;
 
 $execute {
     uint64_t caller = reinterpret_cast<uint64_t>(&loadingFinishedCaller);
@@ -209,9 +214,8 @@ $execute {
         }
     }
 }
-# elif GEODE_COMP_GD_VERSION != 22060
-#  pragma message("loadingFinished midhook not implemented for this GD version")
-# else
+
+# else // Win64 + Mac x64
 
 // LoadingLayer::loadAssets, invokation of MenuLayer::scene
 // win64 disasm (1):
@@ -223,16 +227,15 @@ $execute {
     mov rcx, rax
     mov rdx, rbx
     call CCDirector::replaceScene
-    jmp <out>                        <- offset for end1
-
-    mov cl, 0x1                      <- offset for start2
+    jmp <out>                         <- offset for end1
+    mov cl, 0x1                       <- offset for start2
     call MenuLayer::scene
     mov rbx, rax
     call CCDirector::sharedDirector
     mov rcx, rax
     mov rdx, rbx
     call CCDirector::replaceScene
-    jmp <out>                        <- offset for end2
+    jmp <out>                         <- offset for end2
 
     int3
 */
@@ -247,14 +250,14 @@ $execute {
     call CCDirector::replaceScene
     jmp <out>                         <- offset for end1
 */
-#ifdef GEODE_IS_WINDOWS
+#ifdef GEODE_IS_WINDOWS // Windows offsets
 const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
-    {0x30ee46, 0x30ee62},
-    {0x30ee67, 0x30ee83},
+    {0x31a8e6, 0x31a902},
+    {0x31a907, 0x31a923},
 });
-#else
+#else // Mac x64 offsets
 const auto INLINED_PATCH_SPOTS = std::to_array<std::pair<ptrdiff_t, ptrdiff_t>>({
-    {0x3a67dd, 0x3a67f9},
+    {0x3904c5, 0x3904dc}, // TODO: update
 });
 #endif
 
@@ -264,7 +267,7 @@ $execute {
     // movabs rax, <loadingFinishedCaller>
     patchBytes.push_back(0x48);
     patchBytes.push_back(0xb8);
-    for (auto byte : geode::toByteArray(&loadingFinishedCaller)) {
+    for (auto byte : util::data::asRawBytes(&loadingFinishedCaller)) {
         patchBytes.push_back(byte);
     }
 

@@ -11,14 +11,14 @@
 
 class ErrorQueues : public SingletonBase<ErrorQueues> {
 public:
-    void warn(const std::string_view message, bool print = true);
-    void error(const std::string_view message, bool print = true);
-    void success(const std::string_view message, bool print = true);
+    void warn(std::string_view message, bool print = true);
+    void error(std::string_view message, bool print = true);
+    void success(std::string_view message, bool print = true);
     // notices are messages coming directly from the server
-    void notice(const std::string_view message, bool print = true);
+    void notice(std::string_view message, bool print = true);
 
     // debugWarn shows a warn notification in debug, in release only prints a message (noop if `print` = false)
-    void debugWarn(const std::string_view message, bool print = true);
+    void debugWarn(std::string_view message, bool print = true);
 
     std::vector<std::string> getWarnings();
     std::vector<std::string> getErrors();

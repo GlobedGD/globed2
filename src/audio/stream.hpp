@@ -9,6 +9,7 @@
 #include "volume_estimator.hpp"
 
 #include <asp/sync.hpp>
+#include <asp/time/SystemTime.hpp>
 #include <util/time.hpp>
 
 class GLOBED_DLL AudioStream {
@@ -40,7 +41,7 @@ public:
     // get how loud the sound is being played
     float getLoudness();
 
-    util::time::time_point getLastPlaybackTime();
+    asp::time::SystemTime getLastPlaybackTime();
 
     asp::AtomicBool starving = false; // true if there aren't enough samples in the queue
 
@@ -51,7 +52,7 @@ private:
     AudioDecoder decoder;
     asp::Mutex<VolumeEstimator> estimator;
     float volume = 0.f;
-    util::time::time_point lastPlaybackTime;
+    asp::time::SystemTime lastPlaybackTime;
 };
 
 #else

@@ -2,7 +2,7 @@
 
 #include <boost/describe.hpp>
 
-template <typename T = std::monostate>
+template <typename T = void>
 using DecodeResult = ByteBuffer::DecodeResult<T>;
 using DecodeError = ByteBuffer::DecodeError;
 

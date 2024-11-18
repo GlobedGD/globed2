@@ -29,7 +29,7 @@ bool GlobedFeaturedListLayer::init() {
 
     auto listTitle = listLayer->getChildByID("title");
     if (!listTitle) {
-        listTitle = getChildOfType<CCLabelBMFont>(listLayer, 0);
+        listTitle = listLayer->getChildByType<CCLabelBMFont>(0);
     }
 
     auto titlePos = listTitle->getPosition();

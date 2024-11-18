@@ -92,6 +92,10 @@ Simple wrappers around `f32` and `f64` with the only difference being that they 
 
 Structure that holds a bitfield of flags. For example, `Bits<2>` and `u16` have the same size, but the former will never be byteswapped on a non-big-endian system, and also provides user-friendly APIs for managing bits.
 
+### Vec1L
+
+Simple wrapper around Vec that can hold up to 255 elements and the length is encoded as a single byte.
+
 ### RemainderBytes
 
 Must be put at the end of a struct, the value will simply be the remaining data in the buffer.

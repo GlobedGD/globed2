@@ -231,6 +231,9 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
 #endif
 
             registerSetting(cat, settings.globed.changelogPopups, "Changelog Popup", "After every update, show a <cy>popup</c> detailing all the <cl>changes</c> in the <cg>update</c>.");
+#ifdef GLOBED_GP_CHANGES
+            registerSetting(cat, settings.globed.editorChanges, "Editor Global Triggers (Beta)", "<cp>NOTE: experimental, could cause level corruption.</c>\n\nChanges the UI of some triggers, adding new multiplayer functionality to them. A guide will be shown upon entering the editor.");
+#endif
 
 #ifdef GLOBED_DEBUG
             // advanced settings button

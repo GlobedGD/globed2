@@ -25,11 +25,11 @@ pub fn query_string(_req: &Request) -> &'static str {
 
 pub mod routes {
     pub mod auth;
-    pub mod auth_v2;
     pub mod featured;
     pub mod game_server;
     pub mod meta;
     pub mod public;
+    pub mod user;
 
     pub use super::*;
     pub use crate::{db::GlobedDb, state::ServerState};
@@ -39,29 +39,33 @@ pub mod routes {
     pub fn build_router() -> Vec<Route> {
         routes![
             meta::version,
+            meta::versioncheck,
             meta::servers,
             meta::index,
             meta::robots,
             game_server::boot,
-            game_server::get_user,
-            game_server::user_login,
-            game_server::update_user,
-            game_server::p_get_user,
-            game_server::p_update_user,
-            game_server::p_user_lookup,
-            game_server::p_sync_roles,
             auth::totp_login,
-            auth::challenge_start,
-            auth::challenge_finish,
-            auth_v2::totp_login,
-            auth_v2::challenge_new,
-            auth_v2::challenge_verify,
+            auth::challenge_new,
+            auth::challenge_verify,
             featured::current,
             featured::history,
-            featured::history_v2,
             featured::replace,
-            featured::replace_v2,
             public::player_counts,
+            user::get_user,
+            user::p_get_user,
+            user::user_login,
+            user::update_username,
+            user::update_name_color,
+            user::update_roles,
+            user::update_punish,
+            user::update_unpunish,
+            user::update_whitelist,
+            user::update_admin_password,
+            user::update_edit_punishment,
+            user::get_punishment_history,
+            user::get_many_user_names,
+            user::p_user_lookup,
+            user::p_sync_roles,
         ]
     }
 

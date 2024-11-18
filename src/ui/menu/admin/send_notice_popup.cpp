@@ -1,16 +1,17 @@
 #include "send_notice_popup.hpp"
 
 #include <net/manager.hpp>
+#include <managers/error_queues.hpp>
 #include <util/ui.hpp>
 #include <util/misc.hpp>
 #include <util/format.hpp>
 
 using namespace geode::prelude;
 
-bool AdminSendNoticePopup::setup(const std::string_view message) {
+bool AdminSendNoticePopup::setup(std::string_view message) {
     this->message = message;
 
-    auto sizes = util::ui::getPopupLayout(m_size);
+    auto sizes = util::ui::getPopupLayoutAnchored(m_size);
 
     auto* rootLayout = Build<CCNode>::create()
         .pos(sizes.center)
@@ -27,9 +28,12 @@ bool AdminSendNoticePopup::setup(const std::string_view message) {
         .parent(rootLayout)
         .collect();
 
-    Build<InputNode>::create(m_size.width * 0.7f, "user", "chatFont.fnt", std::string(util::misc::STRING_ALPHANUMERIC) + "@", 16)
+    Build<TextInput>::create(m_size.width * 0.7f, "user", "chatFont.fnt")
         .parent(userLayout)
         .store(userInput);
+
+    userInput->setFilter(std::string(util::misc::STRING_ALPHANUMERIC) + "@");
+    userInput->setMaxCharCount(16);
 
     Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
         .intoMenuItem([this](auto) {
@@ -46,13 +50,19 @@ bool AdminSendNoticePopup::setup(const std::string_view message) {
         .parent(rootLayout)
         .collect();
 
-    Build<InputNode>::create(m_size.width * 0.35, "room ID", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 6)
+    Build<TextInput>::create(m_size.width * 0.35, "room ID", "chatFont.fnt")
         .parent(rlLayout)
         .store(roomInput);
 
-    Build<InputNode>::create(m_size.width * 0.35, "level ID", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 11)
+    roomInput->setCommonFilter(CommonFilter::Uint);
+    roomInput->setMaxCharCount(7);
+
+    Build<TextInput>::create(m_size.width * 0.35, "level ID", "chatFont.fnt")
         .parent(rlLayout)
         .store(levelInput);
+
+    levelInput->setCommonFilter(CommonFilter::Uint);
+    levelInput->setMaxCharCount(12);
 
     Build<ButtonSprite>::create("Send", "bigFont.fnt", "GJ_button_01.png", 0.5f)
         .intoMenuItem([this](auto) {
@@ -97,9 +107,9 @@ void AdminSendNoticePopup::commonSend(AdminSendNoticeType type) {
     NetworkManager::get().send(packet);
 }
 
-AdminSendNoticePopup* AdminSendNoticePopup::create(const std::string_view message) {
+AdminSendNoticePopup* AdminSendNoticePopup::create(std::string_view message) {
     auto* ret = new AdminSendNoticePopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, message)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, message)) {
         ret->autorelease();
         return ret;
     }
