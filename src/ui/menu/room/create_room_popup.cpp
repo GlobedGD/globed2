@@ -5,6 +5,7 @@
 #include "room_layer.hpp"
 #include <data/packets/client/room.hpp>
 #include <net/manager.hpp>
+#include <managers/settings.hpp>
 #include <util/format.hpp>
 #include <util/math.hpp>
 #include <util/ui.hpp>
@@ -142,6 +143,16 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
     smallInputsWrapper->updateLayout();
     inputsWrapper->updateLayout();
 
+    // safe mode button
+    Build<CCSprite>::createSpriteName("white-period.png"_spr)
+        .color(ccGREEN)
+        .intoMenuItem([this] {
+            this->showSafeModePopup(false);
+        })
+        .store(safeModeBtn)
+        .parent(m_buttonMenu)
+        .pos(rlayout.fromTopRight(16.f, 16.f))
+        ;
 
     // list of settings
     const float gap = 3.f;
@@ -155,12 +166,12 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
         .collect()
         ;
 
-    constexpr auto settings = std::to_array<std::pair<const char*, int>>({
-        {"Hidden Room", TAG_PRIVATE},
-        {"Open Invites", TAG_OPEN_INV},
-        {"Collision", TAG_COLLISION},
-        {"2-Player Mode", TAG_2P},
-        {"Death Link", TAG_DEATHLINK}
+    constexpr auto settings = std::to_array<std::tuple<const char*, std::string_view, int>>({
+        {"Hidden Room", "hidden-room"_spr, TAG_PRIVATE},
+        {"Open Invites", "open-invites"_spr, TAG_OPEN_INV},
+        {"Collision", "collision"_spr, TAG_COLLISION},
+        {"2-Player Mode", "2-player-mode"_spr, TAG_2P},
+        {"Death Link", "deathlink"_spr, TAG_DEATHLINK}
     });
 
     float totalHeight = 0.f;
@@ -182,11 +193,12 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
             this, menu_selector(CreateRoomPopup::onCheckboxToggled)
         ))
             .pos(width - 11.f, height / 2.f)
-            .tag(entry.second)
+            .id(std::string(std::get<1>(entry)))
+            .tag(std::get<2>(entry))
             .intoNewParent(CCMenu::create())
             .contentSize(width, height)
             .parent(settingsList)
-            .intoNewChild(CCLabelBMFont::create(entry.first, "bigFont.fnt"))
+            .intoNewChild(CCLabelBMFont::create(std::get<0>(entry), "bigFont.fnt"))
             .limitLabelWidth(width - 30.f, 0.35f, 0.1f)
             .anchorPoint(0.f, 0.5f)
             .pos(3.f, height / 2.f)
@@ -216,13 +228,71 @@ void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {
     auto* btn = static_cast<CCMenuItemToggler*>(p);
     bool state = !btn->isOn();
 
+    bool isSafeMode = false;
+
     switch (p->getTag()) {
-        case TAG_2P: settingFlags.twoPlayerMode = state; break;
-        case TAG_COLLISION: settingFlags.collision = state; break;
+        case TAG_2P: isSafeMode = true; settingFlags.twoPlayerMode = state; break;
+        case TAG_COLLISION: isSafeMode = true; settingFlags.collision = state; break;
         case TAG_OPEN_INV: settingFlags.publicInvites = state; break;
         case TAG_PRIVATE: settingFlags.isHidden = state; break;
         case TAG_DEATHLINK: settingFlags.deathlink = state; break;
     }
+
+    auto& settings = GlobedSettings::get();
+
+    if (isSafeMode && state && !settings.flags.seenRoomOptionsSafeModeNotice) {
+        settings.flags.seenRoomOptionsSafeModeNotice = true;
+        this->showSafeModePopup(true);
+    }
+
+    if (p->getTag() == TAG_DEATHLINK && settingFlags.deathlink && settingFlags.twoPlayerMode) {
+        settingFlags.twoPlayerMode = false;
+        static_cast<CCMenuItemToggler*>(m_mainLayer->getChildByIDRecursive("2-player-mode"_spr))->toggle(false);
+    } else if (p->getTag() == TAG_2P && settingFlags.twoPlayerMode && settingFlags.deathlink) {
+        settingFlags.deathlink = false;
+        static_cast<CCMenuItemToggler*>(m_mainLayer->getChildByIDRecursive("deathlink"_spr))->toggle(false);
+    }
+
+    bool enableSafeModeDot = (settingFlags.twoPlayerMode || settingFlags.collision);
+
+    safeModeBtn->getChildByType<CCSprite>(0)->setColor(enableSafeModeDot ? ccORANGE : ccGREEN);
+}
+
+void CreateRoomPopup::showSafeModePopup(bool firstTime) {
+    auto getSafeModeString = [&]() -> std::string {
+        std::string mods;
+
+        if (this->settingFlags.twoPlayerMode) {
+            mods += "2-Player Mode";
+        }
+
+        if (this->settingFlags.collision) {
+            if (!mods.empty()) {
+                mods += ", ";
+            }
+
+            mods += "Collision";
+        }
+
+        if (mods.find(", ") != std::string::npos) {
+            return fmt::format("<cy>Safe mode</c> is <cr>enabled</c> due to the following settings: <cy>{}</c>.\n\nYou won't be able to make progress on levels while these settings are enabled.", mods);
+        } else {
+            return fmt::format("<cy>Safe mode</c> is <cr>enabled</c> due to the following setting: <cy>{}</c>.\n\nYou won't be able to make progress on levels while this setting is enabled.", mods);
+        }
+    };
+
+    if (!settingFlags.twoPlayerMode && !settingFlags.collision) {
+        FLAlertLayer::create("Safe Mode", "<cy>Safe Mode</c> is <cg>not enabled</c> with these room settings. You are able to make progress on levels while in this room.", "Ok")->show();
+        return;
+    }
+
+    FLAlertLayer::create(
+        "Safe Mode",
+        firstTime
+            ? "This setting enables <cy>safe mode</c>, which means you won't be able to make progress on levels while in this room."
+            : getSafeModeString(),
+        "Ok"
+    )->show();
 }
 
 CreateRoomPopup* CreateRoomPopup::create(RoomLayer* parent) {

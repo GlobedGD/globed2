@@ -18,7 +18,9 @@ protected:
     geode::TextInput* passwordInput;
     geode::TextInput* playerLimitInput;
     RoomSettingsFlags settingFlags = {};
+    CCMenuItemSpriteExtra* safeModeBtn = nullptr;
 
     bool setup(RoomLayer* parent) override;
     void onCheckboxToggled(cocos2d::CCObject*);
+    void showSafeModePopup(bool firstTime);
 };

@@ -6,6 +6,7 @@
 * Added a mechanism that allows for compatibility with <cr>outdated mod versions and game versions</c>
 * Make the direct connection popup allow for 64 characters in the address instead of 21
 * Added some guides to the GitHub repository (currently only a guide on how to use certain launch options)
+* Added a 'cheat indicator' to the room creation UI, to show which settings enable safe mode
 * Improve error messages in failed web requests
 * Improve sliders (volume, etc.) in UI, now no longer squished!
 * Improve server security & performance

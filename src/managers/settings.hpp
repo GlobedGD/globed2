@@ -222,6 +222,7 @@ public:
         Flag seenAprilFoolsNotice;   // Obsolete
         Flag seenStatusNotice;       // Obsolete
         Flag seenGlobalTriggerGuide;
+        Flag seenRoomOptionsSafeModeNotice;
     };
 
     Globed globed;
@@ -335,7 +336,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Admin, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
-    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide
+    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide, seenRoomOptionsSafeModeNotice
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (

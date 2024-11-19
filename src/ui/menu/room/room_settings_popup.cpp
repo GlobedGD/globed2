@@ -66,6 +66,15 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
         case TAG_DEATHLINK: currentSettings.flags.deathlink = enabled; break;
     }
 
+    // 2 player mode and deathlink are mutually exclusive
+    if (setting == TAG_TWO_PLAYER && currentSettings.flags.twoPlayerMode && currentSettings.flags.deathlink) {
+        currentSettings.flags.deathlink = false;
+        this->updateCheckboxes();
+    } else if (setting == TAG_DEATHLINK && currentSettings.flags.deathlink && currentSettings.flags.twoPlayerMode) {
+        currentSettings.flags.twoPlayerMode = false;
+        this->updateCheckboxes();
+    }
+
     // if we are not the room owner, just revert the changes next frame
     if (!RoomManager::get().isOwner()) {
         ErrorQueues::get().warn("Not the room creator");
