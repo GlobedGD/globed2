@@ -105,6 +105,7 @@ private:
 
 FLAlertLayer* showChangelogPopup() {
     auto currentVersion = Mod::get()->getVersion();
+
     // parse changelog.md lol
     auto clog_ = Mod::get()->getMetadata().getChangelog();
     if (!clog_) {
