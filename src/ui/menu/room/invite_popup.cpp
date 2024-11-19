@@ -53,10 +53,9 @@ bool InvitePopup::setup() {
         .intoMenuItem([this](auto) {
             this->reloadPlayerList(true);
         })
-        .pos(rlayout.fromBottomRight(3.f, 3.f))
+        .pos(rlayout.fromBottomRight(5.f, 5.f))
         .id("reload-btn"_spr)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
+        .parent(m_buttonMenu);
 
     Build<CCMenu>::create()
         .layout(ColumnLayout::create()->setGap(1.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))

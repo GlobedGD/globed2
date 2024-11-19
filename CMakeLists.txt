@@ -20,10 +20,6 @@ endif()
 option(GLOBED_OSS_BUILD "Open source build that does not require closed-source dependencies" OFF)
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 
-if (NOT WIN32)
-    set(GLOBED_OSS_BUILD ON) # TODO: remove this
-endif()
-
 # on windows use precompiled, on other platforms compile libsodium
 if (WIN32)
     option(GLOBED_COMPILE_LIBS "Don't use precompiled libraries and compile manually" OFF)
@@ -313,8 +309,10 @@ else()
     if (WIN32)
         target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb.lib")
         target_link_libraries(${PROJECT_NAME} ntdll.lib userenv.lib runtimeobject.lib)
-    else()
+    elseif (ANDROID)
         target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-${LIB_PLATFORM}.a")
+    else()
+        target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-macarm.a" "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-macx64.a")
     endif()
 endif()
 
