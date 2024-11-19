@@ -401,7 +401,7 @@ namespace util::cocos {
 
                 loadAssetsParallel(images);
             } break;
-            case AssetPreloadStage::Cube: gm->loadIconsBatched((int)IconType::Cube, 0, 484); break;
+            case AssetPreloadStage::Cube: gm->loadIconsBatched((int)IconType::Cube, 0, 485); break;
 
             // There are actually 169 ship icons, but for some reason, loading the last icon causes
             // a very strange bug when you have the Default mini icons option enabled.
@@ -432,7 +432,7 @@ namespace util::cocos {
                     BatchedIconRange{
                         .iconType = (int)IconType::Jetpack,
                         .startId = 1,
-                        .endId = 5
+                        .endId = 8
                     },
                 };
 
