@@ -803,7 +803,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         }
 
         if (fields.ownNameLabel2) {
-            if (self->m_player2->m_isHidden || !self->m_gameState.m_isDualMode) {
+            if (self->m_player2->m_isHidden || !self->m_gameState.m_isDualMode || !self->m_player2->isVisible()) {
                 fields.ownNameLabel2->setVisible(false);
             } else {
                 fields.ownNameLabel2->setVisible(true);
