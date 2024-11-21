@@ -22,7 +22,7 @@ public:
 private:
     static constexpr auto NOTIFICATION_BUFFER_TIME = asp::time::Duration::fromMillis(1250);
 
-    asp::time::SystemTime lastNotificationAdded;
+    asp::time::SystemTime lastNotificationAdded = asp::time::SystemTime::UNIX_EPOCH;
     std::queue<Ref<cocos2d::CCNode>> queuedNotifs;
 
     bool init() override;
