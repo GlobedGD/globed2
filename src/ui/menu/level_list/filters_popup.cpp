@@ -195,10 +195,6 @@ bool GlobedLevelFilterPopup::setup(const GlobedLevelListLayer::Filters& filters,
                     GlobedDemonFilterPopup::create(
                         this->filters,
                         [this](bool active, auto&& demonDiffs) {
-                            log::debug("Active: {}", active);
-                            for (auto diff : demonDiffs) {
-                                log::debug("diff = {}", (int)diff);
-                            }
                             if (!active) {
                                 this->filters.demonDifficulty.clear();
                                 this->filters.difficulty.erase(HardDemon);
