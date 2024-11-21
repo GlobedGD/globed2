@@ -82,7 +82,7 @@ pub async fn totp_login(
     check_ip(ip, &cfip, state_.config.cloudflare_protection)?;
 
     if state_.config.userlist_mode == UserlistMode::Whitelist {
-        if !db.get_user(account_data.account_id).await?.map_or(false, |x| x.is_whitelisted) {
+        if !db.get_user(account_data.account_id).await?.is_some_and(|x| x.is_whitelisted) {
             unauthorized!("This server has whitelist enabled and your account has not been approved.");
         }
     } else {
@@ -137,7 +137,7 @@ pub async fn challenge_new(
     let user_ip = check_ip(ip, &cfip, state.config.cloudflare_protection)?;
 
     if state.config.userlist_mode == UserlistMode::Whitelist {
-        if !db.get_user(account_data.account_id).await?.map_or(false, |x| x.is_whitelisted) {
+        if !db.get_user(account_data.account_id).await?.is_some_and(|x| x.is_whitelisted) {
             unauthorized!("This server has whitelist enabled and your account has not been approved.");
         }
     } else {

@@ -44,6 +44,9 @@
 
 #endif // GLOBED_IGNORE_CONFIG_HPP
 
+#define G_WC24252435(x, y) x##y
+#define G_WC(x, y) G_WC24252435(x, y)
+
 #include <stdint.h>
 
 using LevelId = int64_t; // 64-bit

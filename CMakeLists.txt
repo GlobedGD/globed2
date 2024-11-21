@@ -304,6 +304,7 @@ endif()
 
 # link to bb
 if (GLOBED_OSS_BUILD)
+    message(STATUS "Building open-source version, not linking to bb")
     target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_OSS_BUILD=1)
 else()
     if (WIN32)

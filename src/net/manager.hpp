@@ -139,6 +139,7 @@ public:
     void sendLinkCodeRequest();
 
     std::optional<std::string> getSecure(const std::string&);
+    bool canGetSecure();
 
 private:
     class Impl;

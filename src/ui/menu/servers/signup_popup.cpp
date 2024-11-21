@@ -99,6 +99,20 @@ void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtok
 
     this->isSecureMode = secureMode;
 
+    if (secureMode && !NetworkManager::get().canGetSecure()) {
+        // mod is built in insecure mode, or secure mode initialization failed
+#ifdef GLOBED_OSS_BUILD
+        const char* msg = "Globed is built in the <cy>open-source mode</c>, which enables <cr>insecure mode</c>. Connecting to this server is <cr>not possible</c> while in this mode.";
+#else
+        const char* msg = "<cr>Secure mode initialization failed.</c> This is a bug. Please report this to the mod developer.";
+#endif
+
+        log::warn("cannot create authtoken, secure mode is disabled but server requires it");
+
+        this->onFailure(msg);
+        return;
+    }
+
     if (accountId == -1) {
         // skip the account verification, server has it disabled
         this->onChallengeCompleted(answer);
