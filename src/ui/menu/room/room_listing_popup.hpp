@@ -20,6 +20,7 @@ protected:
 
     RoomList* listLayer = nullptr;
     cocos2d::extension::CCScale9Sprite* background;
+    bool modActionsOn = false;
 
     void onReload(cocos2d::CCObject* sender);
     void createCells(std::vector<RoomListingInfo> rlp);

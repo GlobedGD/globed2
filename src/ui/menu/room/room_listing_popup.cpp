@@ -157,9 +157,13 @@ void RoomListingPopup::createCells(std::vector<RoomListingInfo> rlpv) {
     });
 
     listLayer->scrollToTop();
+
+    this->toggleModActions(this->modActionsOn);
 }
 
 void RoomListingPopup::toggleModActions(bool enabled) {
+    this->modActionsOn = enabled;
+
     for (auto cell : (*listLayer)) {
         cell->toggleModActions(enabled);
     }
