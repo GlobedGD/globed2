@@ -130,7 +130,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
                 ->setAutoScale(false)
                 ->setGap(1.f)
         )
-        .contentSize(58.f, this->getContentHeight())
+        .contentSize(77.f, this->getContentHeight())
         .parent(rightMenu)
         .zOrder(btnorder::Settings)
         .collect();
@@ -178,6 +178,20 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
 
     deathlinkBtn->setEnabled(rli.settings.flags.deathlink);
 
+    // 2 player icon
+    auto* twoPlayerBtn = Build<CCSprite>::createSpriteName("room-icon-2p.png"_spr)
+        .with([&](auto* s) {
+            util::ui::rescaleToMatch(s, lockSpr->getScaledContentSize());
+        })
+        .opacity(rli.settings.flags.twoPlayerMode ? 255 : 80)
+        .intoMenuItem([] {
+            FLAlertLayer::create("2 Player", "This room has 2 Player enabled, which means you can play 2-player levels with a remote friend.", "Ok")->show();
+        })
+        .parent(roomSettingsMenu)
+        .collect();
+
+    twoPlayerBtn->setEnabled(rli.settings.flags.twoPlayerMode);
+
     auto* playerCountWrapper = Build<CCNode>::create()
         .layout(RowLayout::create()->setGap(1.f)->setAutoScale(false))
         .parent(rightMenu)
@@ -209,7 +223,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     rightMenu->updateLayout();
 
     // add a bg
-    float sizeScale = 3.f;
+    float sizeScale = 3.5f;
     auto* settingsBg = Build<CCScale9Sprite>::create("square02_001.png")
         .opacity(67)
         .zOrder(-1)
