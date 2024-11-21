@@ -12,9 +12,12 @@ void HookedEndLevelLayer::customSetup() {
 
     if (GlobedGJBGL::get()->m_fields->shouldStopProgress) {
         if (messageLabel)
-            messageLabel->setString("Safe Mode!");
+            messageLabel->setString(globed::string<"safe-mode-message">());
 
-        if (endText)
-            endText->setString("Safe Mode!");
+        if (endText) {
+            endText->setString(globed::string<"safe-mode-message">());
+            endText->limitLabelWidth(150.0,0.8,0.0);
+        }
+
     }
 }

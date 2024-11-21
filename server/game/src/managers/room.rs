@@ -157,9 +157,7 @@ impl Room {
         let player_count = self.get_player_count();
         let data = self.data.lock();
 
-        if data.settings.flags.two_player {
-            player_count >= 2
-        } else if data.settings.player_limit == 0 {
+        if data.settings.player_limit == 0 {
             false
         } else {
             player_count >= (data.settings.player_limit as usize)
