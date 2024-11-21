@@ -101,12 +101,9 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .collect();
 
     CCLabelBMFont* roomNameLabel = Build<CCLabelBMFont>::create(rli.name.c_str(), "bigFont.fnt")
-        .limitLabelWidth(180.0f, 0.48f, 0.1f)
         .id("message-text")
         .parent(roomNameLayout)
         .collect();
-
-    roomNameLayout->updateLayout();
 
     Build<CCMenu>::create()
         .layout(
@@ -221,6 +218,10 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
 
     roomSettingsMenu->updateLayout();
     rightMenu->updateLayout();
+
+    // update width of the room name accordingly, so it fits
+    roomNameLabel->limitLabelWidth(208.f - playerCountWrapper->getContentWidth(), 0.48f, 0.1f);
+    roomNameLayout->updateLayout();
 
     // add a bg
     float sizeScale = 3.5f;
