@@ -96,15 +96,7 @@ void GlobedPlayLayer::resetLevel() {
 
     GLOBED_EVENT_O(gjbgl, resetLevel());
 
-    // bool lastTestMode = m_isTestMode;
-
-    // if (GlobedGJBGL::get()->isSafeMode()) {
-    //     m_isTestMode = true;
-    // }
-
     PlayLayer::resetLevel();
-
-    // m_isTestMode = lastTestMode;
 
     // this is also called upon init, so bail out if we are too early
     if (!gjbgl->m_fields->setupWasCompleted) return;
@@ -123,7 +115,7 @@ void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, boo
 void GlobedPlayLayer::levelComplete() {
     bool original = this->m_isTestMode;
 
-    if (GlobedGJBGL::get()->m_fields->shouldStopProgress) {
+    if (GlobedGJBGL::get()->isSafeMode()) {
         this->m_isTestMode = true;
     }
 
@@ -142,18 +134,11 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 
     auto* pl = GlobedGJBGL::get();
 
-    if (pl->m_fields->shouldStopProgress)
+    if (pl->isSafeMode()) {
         this->m_isTestMode = true;
+    }
 
     GLOBED_EVENT_O(pl, destroyPlayerPre(player, object));
-
-    // safe mode stuff yeah
-
-    // bool lastTestMode = m_isTestMode;
-
-    // if (GlobedGJBGL::get()->isSafeMode()) {
-    //     m_isTestMode = true;
-    // }
 
 #ifdef GEODE_IS_ARM_MAC
 # if GEODE_COMP_GD_VERSION != 22074
@@ -164,7 +149,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     }();
 
     if (armpatch) {
-        if (GlobedGJBGL::get()->m_fields->shouldStopProgress) {
+        if (GlobedGJBGL::get()->isSafeMode()) {
             (void) armpatch->enable();
         } else {
             (void) armpatch->disable();
