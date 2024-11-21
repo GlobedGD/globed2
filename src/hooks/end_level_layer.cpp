@@ -11,8 +11,9 @@ void HookedEndLevelLayer::customSetup() {
     auto* endText = static_cast<CCLabelBMFont*>(this->m_mainLayer->getChildByID("end-text"));
 
     if (GlobedGJBGL::get()->m_fields->shouldStopProgress) {
-        if (messageLabel)
+        if (messageLabel) {
             messageLabel->setString(globed::string<"safe-mode-message">());
+        }
 
         if (endText) {
             endText->setString(globed::string<"safe-mode-message">());

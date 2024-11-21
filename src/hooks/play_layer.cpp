@@ -123,8 +123,9 @@ void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, boo
 void GlobedPlayLayer::levelComplete() {
     bool original = this->m_isTestMode;
 
-    if (GlobedGJBGL::get()->m_fields->shouldStopProgress)
+    if (GlobedGJBGL::get()->m_fields->shouldStopProgress) {
         this->m_isTestMode = true;
+    }
 
     PlayLayer::levelComplete();
 

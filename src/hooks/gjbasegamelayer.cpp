@@ -794,7 +794,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         auto dirVec = GlobedGJBGL::getCameraDirectionVector();
         auto dir = GlobedGJBGL::getCameraDirectionAngle();
 
-        if (self->m_player1->m_isHidden || !self->m_gameState.m_isDualMode || !self->m_player1->isVisible()) {
+        if (self->m_player1->m_isHidden || !self->m_player1->isVisible()) {
             fields.ownNameLabel->setVisible(false);
         } else {
             fields.ownNameLabel->setVisible(true);
