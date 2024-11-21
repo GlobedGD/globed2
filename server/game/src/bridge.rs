@@ -383,6 +383,7 @@ impl CentralBridge {
         user: &ServerUserEntry,
         _mod_id: i32,
         mod_name: String,
+        user_name: Cow<'_, str>,
         ban: Option<&UserPunishment>,
         mute: Option<&UserPunishment>,
     ) -> Result<()> {
@@ -394,14 +395,14 @@ impl CentralBridge {
                 messages.push(WebhookMessage::UserNameColorChanged(UserNameColorChange {
                     account_id: user.account_id,
                     mod_name,
-                    name: user.user_name.clone().unwrap_or_default(),
+                    name: user_name.into_owned(),
                     new_color: user.name_color.clone(),
                 }));
             }
             AdminUserAction::SetUserRoles(_act) => {
                 messages.push(WebhookMessage::UserRolesChanged(
                     mod_name,
-                    user.user_name.clone().unwrap_or_default(),
+                    user_name.into_owned(),
                     user.user_roles.clone(),
                 ));
             }
@@ -415,7 +416,7 @@ impl CentralBridge {
 
                     let bmsc = BanMuteStateChange {
                         mod_name,
-                        target_name: user.user_name.clone().unwrap_or_default(),
+                        target_name: user_name.into_owned(),
                         target_id: user.account_id,
                         new_state: true,
                         expiry: if ban.expires_at == 0 { None } else { Some(ban.expires_at) },
@@ -432,7 +433,7 @@ impl CentralBridge {
 
                     let bmsc = BanMuteStateChange {
                         mod_name,
-                        target_name: user.user_name.clone().unwrap_or_default(),
+                        target_name: user_name.into_owned(),
                         target_id: user.account_id,
                         new_state: true,
                         expiry: if mute.expires_at == 0 { None } else { Some(mute.expires_at) },
@@ -446,13 +447,13 @@ impl CentralBridge {
                 if act.is_ban {
                     messages.push(WebhookMessage::UserUnbanned(PunishmentRemoval {
                         account_id: user.account_id,
-                        name: user.user_name.clone().unwrap_or_default(),
+                        name: user_name.into_owned(),
                         mod_name,
                     }));
                 } else {
                     messages.push(WebhookMessage::UserUnmuted(PunishmentRemoval {
                         account_id: user.account_id,
-                        name: user.user_name.clone().unwrap_or_default(),
+                        name: user_name.into_owned(),
                         mod_name,
                     }));
                 }

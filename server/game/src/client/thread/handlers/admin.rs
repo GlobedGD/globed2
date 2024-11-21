@@ -447,6 +447,7 @@ impl ClientThread {
         let _ = gs_needauth!(self);
 
         self._handle_admin_action(
+            packet.account_id,
             AdminPerm::Any,
             &AdminUserAction::UpdateUsername(AdminUpdateUsernameAction {
                 account_id: packet.account_id,
@@ -462,6 +463,7 @@ impl ClientThread {
         let account_id = gs_needauth!(self);
 
         self._handle_admin_action(
+            packet.account_id,
             AdminPerm::EditRoles,
             &AdminUserAction::SetNameColor(AdminSetNameColorAction {
                 account_id: packet.account_id,
@@ -511,6 +513,7 @@ impl ClientThread {
         }
 
         self._handle_admin_action(
+            packet.account_id,
             AdminPerm::EditRoles,
             &AdminUserAction::SetUserRoles(AdminSetUserRolesAction {
                 account_id: packet.account_id,
@@ -567,6 +570,7 @@ impl ClientThread {
 
         let _ = self
             ._handle_admin_action(
+                packet.account_id,
                 if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
                 &AdminUserAction::PunishUser(AdminPunishUserAction {
                     account_id: packet.account_id,
@@ -602,6 +606,7 @@ impl ClientThread {
         let account_id = gs_needauth!(self);
 
         self._handle_admin_action(
+            packet.account_id,
             if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
             &AdminUserAction::RemovePunishment(AdminRemovePunishmentAction {
                 account_id: packet.account_id,
@@ -618,6 +623,7 @@ impl ClientThread {
         let account_id = gs_needauth!(self);
 
         self._handle_admin_action(
+            packet.account_id,
             AdminPerm::Ban,
             &AdminUserAction::Whitelist(AdminWhitelistAction {
                 account_id: packet.account_id,
@@ -634,6 +640,7 @@ impl ClientThread {
         let _ = gs_needauth!(self);
 
         self._handle_admin_action(
+            packet.account_id,
             AdminPerm::Admin,
             &AdminUserAction::SetAdminPassword(AdminSetAdminPasswordAction {
                 account_id: packet.account_id,
@@ -654,6 +661,7 @@ impl ClientThread {
         }
 
         self._handle_admin_action(
+            packet.account_id,
             if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
             &AdminUserAction::EditPunishment(AdminEditPunishmentAction {
                 account_id: packet.account_id,
@@ -669,7 +677,12 @@ impl ClientThread {
     });
 
     // Return
-    async fn _handle_admin_action(&self, perm: AdminPerm, action: &AdminUserAction) -> Result<(Option<UserPunishment>, Option<UserPunishment>)> {
+    async fn _handle_admin_action(
+        &self,
+        user_account_id: i32,
+        perm: AdminPerm,
+        action: &AdminUserAction,
+    ) -> Result<(Option<UserPunishment>, Option<UserPunishment>)> {
         if !self._has_perm(perm) {
             return Err(PacketHandlingError::NoPermission);
         }
@@ -689,10 +702,26 @@ impl ClientThread {
                     let own_name = self.user_entry.lock().user_name.clone();
                     let account_id = self.account_id.load(Ordering::Relaxed);
 
+                    let user_name: Cow<'_, str> = if let Some(u) = &x.user_name {
+                        Cow::Borrowed(u)
+                    } else if let Some(user) = self.game_server.get_user_by_id(user_account_id) {
+                        Cow::Owned(user.account_data.lock().name.try_to_string())
+                    } else {
+                        Cow::Owned("Unknown".to_owned())
+                    };
+
                     if let Err(e) = self
                         .game_server
                         .bridge
-                        .send_webhook_message_for_action(action, &x, account_id, own_name.unwrap_or_default(), ban.as_ref(), mute.as_ref())
+                        .send_webhook_message_for_action(
+                            action,
+                            &x,
+                            account_id,
+                            own_name.unwrap_or_default(),
+                            user_name,
+                            ban.as_ref(),
+                            mute.as_ref(),
+                        )
                         .await
                     {
                         error!("Failed to submit webhook message for admin action: {e}");
