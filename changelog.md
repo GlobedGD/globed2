@@ -1,3 +1,7 @@
+## v1.7.1
+
+* Fix room password popup having broken UI
+
 ## v1.7.0
 
 * Port to Geode v4.0.0
