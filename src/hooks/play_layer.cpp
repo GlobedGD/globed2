@@ -183,7 +183,6 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     GLOBED_EVENT(pl, destroyPlayerPost(player, object));
 
     this->m_isTestMode = original;
-    log::info("efwefwefwefwefwef: {}", original, this->m_isTestMode);
 }
 
 void GlobedPlayLayer::forceKill(PlayerObject* p) {
