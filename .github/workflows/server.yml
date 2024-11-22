@@ -1,4 +1,4 @@
-name: Build the server
+name: Build Globed server
 
 on:
   workflow_dispatch:
@@ -18,10 +18,15 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            name: "Linux x64"
+
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
+            name: "Linux arm64"
+
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            name: "Windows x64"
 
     steps:
       - name: Checkout code
@@ -41,28 +46,29 @@ jobs:
       - name: Add rust target
         run: rustup target add ${{ matrix.target }}
 
-      - name: Change directory
-        run: cd server
-
       - name: Build game server
-        run: cargo build --release --target ${{ matrix.target }} -p game
+        run: |
+          cd server
+          cargo build --release --target ${{ matrix.target }} -p game
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
 
       - name: Build central server
-        run: cargo build --release --target ${{ matrix.target }} -p central
+        run: |
+          cd server
+          cargo build --release --target ${{ matrix.target }} -p central
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
 
       - name: Package artifacts
         run: |
-          mkdir -p artifacts
-          cp target/${{ matrix.target }}/release/globed-game-server* artifacts/
-          cp target/${{ matrix.target }}/release/globed-central-server* artifacts/
+          mkdir -p server/artifacts
+          cp server/target/${{ matrix.target }}/release/globed-game-server* server/artifacts/
+          cp server/target/${{ matrix.target }}/release/globed-central-server* server/artifacts/
           if [[ ${{ matrix.os }} == 'windows-latest' ]]; then
-            zip -j artifacts-${{ matrix.target }}.zip artifacts/*.exe
+            zip -j artifacts-${{ matrix.target }}.zip server/artifacts/*.exe
           else
-            zip -j artifacts-${{ matrix.target }}.zip artifacts/*
+            zip -j artifacts-${{ matrix.target }}.zip server/artifacts/*
           fi
         shell: bash
 
