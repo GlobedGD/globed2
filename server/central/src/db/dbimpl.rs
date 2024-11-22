@@ -267,6 +267,9 @@ impl GlobedDb {
     }
 
     pub async fn update_user_name_color(&self, account_id: i32, color: &str) -> Result<()> {
+        // make sure the user exists in the db
+        self.insert_empty_user(account_id).await?;
+
         query!("UPDATE users SET name_color = ? WHERE account_id = ?", color, account_id)
             .execute(&self.0)
             .await
@@ -275,6 +278,9 @@ impl GlobedDb {
 
     pub async fn update_user_roles(&self, account_id: i32, roles: &[String]) -> Result<()> {
         let joined = roles.join(",");
+
+        // make sure the user exists in the db
+        self.insert_empty_user(account_id).await?;
 
         query!("UPDATE users SET user_roles = ? WHERE account_id = ?", joined, account_id)
             .execute(&self.0)
@@ -288,6 +294,10 @@ impl GlobedDb {
         let issued_at = UNIX_EPOCH.elapsed().unwrap().as_secs() as i64;
 
         let expires_at = action.expires_at as i64;
+
+        // make sure both the mod and the user exist in the db
+        self.insert_empty_user(action.account_id).await?;
+        self.insert_empty_user(action.issued_by).await?;
 
         let id = query!(
             "INSERT INTO punishments (account_id, type, reason, expires_at, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?) RETURNING punishment_id",
@@ -317,6 +327,9 @@ impl GlobedDb {
     }
 
     pub async fn unpunish_user(&self, account_id: i32, is_ban: bool) -> Result<()> {
+        // make sure the user exists in the db
+        self.insert_empty_user(account_id).await?;
+
         if is_ban {
             query!("UPDATE users SET active_ban = NULL WHERE account_id = ?", account_id)
                 .execute(&self.0)
@@ -331,6 +344,9 @@ impl GlobedDb {
     }
 
     pub async fn whitelist_user(&self, account_id: i32, state: bool) -> Result<()> {
+        // make sure the user exists in the db
+        self.insert_empty_user(account_id).await?;
+
         query!("UPDATE users SET is_whitelisted = ? WHERE account_id = ?", state, account_id)
             .execute(&self.0)
             .await?;
@@ -339,6 +355,9 @@ impl GlobedDb {
     }
 
     pub async fn update_user_admin_password(&self, account_id: i32, password: &str) -> Result<()> {
+        // make sure the user exists in the db
+        self.insert_empty_user(account_id).await?;
+
         let hash = globed_shared::generate_argon2_hash(password);
 
         query!("UPDATE users SET admin_password_hash = ? WHERE account_id = ?", hash, account_id)

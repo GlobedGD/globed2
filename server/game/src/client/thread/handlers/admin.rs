@@ -71,6 +71,9 @@ impl ClientThread {
     gs_handler!(self, handle_admin_auth, AdminAuthPacket, packet, {
         let account_id = gs_needauth!(self);
 
+        // make sure we exist in the db!
+        self._verify_user_exists(account_id).await?;
+
         // test for the global password first
         if packet.key.constant_time_compare(&self.game_server.bridge.central_conf.lock().admin_key) {
             info!(
@@ -462,6 +465,8 @@ impl ClientThread {
     gs_handler!(self, handle_admin_set_name_color, AdminSetNameColorPacket, packet, {
         let account_id = gs_needauth!(self);
 
+        self._verify_user_exists(packet.account_id).await?;
+
         self._handle_admin_action(
             packet.account_id,
             AdminPerm::EditRoles,
@@ -482,6 +487,8 @@ impl ClientThread {
         if !self.game_server.state.role_manager.all_valid(&packet.roles) {
             admin_error!(self, "attempting to assign an invalid role");
         }
+
+        self._verify_user_exists(packet.account_id).await?;
 
         let thread = self.game_server.get_user_by_id(packet.account_id);
         let editing_self = account_id == packet.account_id;
@@ -542,6 +549,8 @@ impl ClientThread {
         if packet.expires_at != 0 && UNIX_EPOCH.elapsed().unwrap().as_secs() > packet.expires_at {
             admin_error!(self, "invalid expiration date");
         }
+
+        self._verify_user_exists(packet.account_id).await?;
 
         let thread = self.game_server.get_user_by_id(packet.account_id);
         let editing_self = account_id == packet.account_id;
@@ -605,6 +614,8 @@ impl ClientThread {
     gs_handler!(self, handle_admin_remove_punishment, AdminRemovePunishmentPacket, packet, {
         let account_id = gs_needauth!(self);
 
+        self._verify_user_exists(packet.account_id).await?;
+
         self._handle_admin_action(
             packet.account_id,
             if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
@@ -622,6 +633,8 @@ impl ClientThread {
     gs_handler!(self, handle_admin_whitelist, AdminWhitelistPacket, packet, {
         let account_id = gs_needauth!(self);
 
+        self._verify_user_exists(packet.account_id).await?;
+
         self._handle_admin_action(
             packet.account_id,
             AdminPerm::Ban,
@@ -638,6 +651,8 @@ impl ClientThread {
 
     gs_handler!(self, handle_admin_set_admin_password, AdminSetAdminPasswordPacket, packet, {
         let _ = gs_needauth!(self);
+
+        self._verify_user_exists(packet.account_id).await?;
 
         self._handle_admin_action(
             packet.account_id,
@@ -659,6 +674,8 @@ impl ClientThread {
         if packet.expires_at != 0 && UNIX_EPOCH.elapsed().unwrap().as_secs() > packet.expires_at {
             admin_error!(self, "invalid expiration date");
         }
+
+        self._verify_user_exists(packet.account_id).await?;
 
         self._handle_admin_action(
             packet.account_id,
@@ -699,7 +716,7 @@ impl ClientThread {
         match self.game_server.bridge.send_admin_user_action(action).await {
             Ok((x, ban, mute)) => {
                 if self.game_server.bridge.has_admin_webhook() {
-                    let own_name = self.user_entry.lock().user_name.clone();
+                    let own_name = self.account_data.lock().name.clone();
                     let account_id = self.account_id.load(Ordering::Relaxed);
 
                     let user_name: Cow<'_, str> = if let Some(u) = &x.user_name {
@@ -713,15 +730,7 @@ impl ClientThread {
                     if let Err(e) = self
                         .game_server
                         .bridge
-                        .send_webhook_message_for_action(
-                            action,
-                            &x,
-                            account_id,
-                            own_name.unwrap_or_default(),
-                            user_name,
-                            ban.as_ref(),
-                            mute.as_ref(),
-                        )
+                        .send_webhook_message_for_action(action, &x, account_id, own_name.try_to_string(), user_name, ban.as_ref(), mute.as_ref())
                         .await
                     {
                         error!("Failed to submit webhook message for admin action: {e}");
@@ -769,6 +778,32 @@ impl ClientThread {
             message: Cow::Borrowed(msg.as_ref()),
         })
         .await
+    }
+
+    async fn _verify_user_exists(&self, account_id: i32) -> Result<UserEntry> {
+        if self.game_server.standalone {
+            return Ok(UserEntry::new(account_id));
+        }
+
+        match self.game_server.bridge.get_user_data(&account_id).await {
+            Ok(u) if u.user_name.is_some() => return Ok(u),
+            _ => {}
+        };
+
+        // see if we can add the user
+        let name = if let Some(thread) = self.game_server.get_user_by_id(account_id) {
+            thread.account_data.lock().name.clone()
+        } else {
+            Default::default()
+        };
+
+        let (ue, ban, mute) = self
+            .game_server
+            .bridge
+            .send_admin_user_action(&AdminUserAction::UpdateUsername(AdminUpdateUsernameAction { account_id, username: name }))
+            .await?;
+
+        Ok(ue.to_user_entry(ban, mute))
     }
 
     gs_handler!(self, handle_admin_get_punishment_history, AdminGetPunishmentHistoryPacket, packet, {

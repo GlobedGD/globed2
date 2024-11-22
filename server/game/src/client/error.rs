@@ -78,6 +78,12 @@ impl From<DecodeError> for PacketHandlingError {
     }
 }
 
+impl From<CentralBridgeError> for PacketHandlingError {
+    fn from(value: CentralBridgeError) -> Self {
+        Self::BridgeError(value)
+    }
+}
+
 impl Display for PacketHandlingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
