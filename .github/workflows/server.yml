@@ -45,14 +45,32 @@ jobs:
           rustup target add x86_64-unknown-linux-gnu
           cargo install cross
 
-      - name: Build game server
+      - name: Build game server (native)
+        if: matrix.target != 'aarch64-unknown-linux-gnu'
         run: |
           cd server
           cross build --release --target ${{ matrix.target }} -p globed-game-server
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
 
-      - name: Build central server
+      - name: Build game server (cross)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          cd server
+          cross build --release --target ${{ matrix.target }} -p globed-game-server
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+      - name: Build central server (native)
+        if: matrix.target != 'aarch64-unknown-linux-gnu'
+        run: |
+          cd server
+          cross build --release --target ${{ matrix.target }} -p globed-central-server
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+      - name: Build central server (cross)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           cd server
           cross build --release --target ${{ matrix.target }} -p globed-central-server
