@@ -49,7 +49,7 @@ jobs:
         if: matrix.target != 'aarch64-unknown-linux-gnu'
         run: |
           cd server
-          cross build --release --target ${{ matrix.target }} -p globed-game-server
+          cargo build --release --target ${{ matrix.target }} -p globed-game-server
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
 
@@ -65,7 +65,7 @@ jobs:
         if: matrix.target != 'aarch64-unknown-linux-gnu'
         run: |
           cd server
-          cross build --release --target ${{ matrix.target }} -p globed-central-server
+          cargo build --release --target ${{ matrix.target }} -p globed-central-server
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
 
