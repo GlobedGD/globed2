@@ -86,17 +86,14 @@ jobs:
       - name: Package artifacts
         run: |
           mkdir -p server/artifacts
-          cp server/target/${{ matrix.target }}/release/globed-game-server* server/artifacts/
-          cp server/target/${{ matrix.target }}/release/globed-central-server* server/artifacts/
-          if [[ ${{ matrix.os }} == 'windows-latest' ]]; then
-            zip -j artifacts-${{ matrix.target }}.zip server/artifacts/*.exe
-          else
-            zip -j artifacts-${{ matrix.target }}.zip server/artifacts/*
-          fi
+          cp server/target/${{ matrix.target }}/release/globed-game-server server/artifacts/ || :
+          cp server/target/${{ matrix.target }}/release/globed-central-server server/artifacts/ || :
+          cp server/target/${{ matrix.target }}/release/globed-game-server.exe server/artifacts/ || :
+          cp server/target/${{ matrix.target }}/release/globed-central-server.exe server/artifacts/ || :
         shell: bash
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target }}-build
-          path: artifacts-${{ matrix.target }}.zip
+          path: server/artifacts/*
