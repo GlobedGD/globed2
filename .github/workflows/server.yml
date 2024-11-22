@@ -14,14 +14,17 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             name: Linux x64
+            bin-suffix: "-x64"
 
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             name: Linux arm64
+            bin-suffix: "-arm64"
 
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             name: Windows x64
+            bin-suffix: ".exe"
 
     steps:
       - name: Checkout code
@@ -83,17 +86,38 @@ jobs:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
         shell: bash
 
-      - name: Package artifacts
+      - name: Create artifacts folder
         run: |
           mkdir -p server/artifacts
-          cp server/target/${{ matrix.target }}/release/globed-game-server server/artifacts/ || :
-          cp server/target/${{ matrix.target }}/release/globed-central-server server/artifacts/ || :
-          cp server/target/${{ matrix.target }}/release/globed-game-server.exe server/artifacts/ || :
-          cp server/target/${{ matrix.target }}/release/globed-central-server.exe server/artifacts/ || :
+        shell: bash
+
+      - name: Copy artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cp server/target/${{ matrix.target }}/release/globed-game-server.exe server/artifacts/globed-game-server${{ matrix.bin-suffix }} || :
+          cp server/target/${{ matrix.target }}/release/globed-central-server.exe server/artifacts/globed-central-server${{ matrix.bin-suffix }} || :
+        shell: bash
+
+      - name: Copy artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cp server/target/${{ matrix.target }}/release/globed-game-server server/artifacts/globed-game-server${{ matrix.bin-suffix }} || :
+          cp server/target/${{ matrix.target }}/release/globed-central-server server/artifacts/globed-central-server${{ matrix.bin-suffix }} || :
         shell: bash
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}-build
           path: server/artifacts/*
+
+  merge:
+    name: Merge artifacts
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Merge artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: globed-server-build
+          delete-merged: true
