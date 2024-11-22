@@ -6,9 +6,8 @@ on:
 
 jobs:
   build:
-    name: Build Globed server
-    runs-on: ${{ matrix.os }}
     name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
