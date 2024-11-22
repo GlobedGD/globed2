@@ -49,14 +49,14 @@ jobs:
       - name: Build game server
         run: |
           cd server
-          cargo build --release --target ${{ matrix.target }} -p game
+          cargo build --release --target ${{ matrix.target }} -p globed-game-server
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
 
       - name: Build central server
         run: |
           cd server
-          cargo build --release --target ${{ matrix.target }} -p central
+          cargo build --release --target ${{ matrix.target }} -p globed-central-server
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
 
