@@ -37,6 +37,7 @@ jobs:
       - name: Add rust target
         if: matrix.target != 'aarch64-unknown-linux-gnu'
         run: rustup target add ${{ matrix.target }}
+        shell: bash
 
       # install cross for arm target
       - name: Install cross
@@ -44,6 +45,7 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo install cross
+        shell: bash
 
       - name: Build game server (native)
         if: matrix.target != 'aarch64-unknown-linux-gnu'
@@ -52,6 +54,7 @@ jobs:
           cargo build --release --target ${{ matrix.target }} -p globed-game-server
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
+        shell: bash
 
       - name: Build game server (cross)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
@@ -60,6 +63,7 @@ jobs:
           cross build --release --target ${{ matrix.target }} -p globed-game-server
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
+        shell: bash
 
       - name: Build central server (native)
         if: matrix.target != 'aarch64-unknown-linux-gnu'
@@ -68,6 +72,7 @@ jobs:
           SQLX_OFFLINE=true cargo build --release --target ${{ matrix.target }}
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
+        shell: bash
 
       - name: Build central server (cross)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
@@ -76,6 +81,7 @@ jobs:
           cross build --release --target ${{ matrix.target }} -p globed-central-server
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
+        shell: bash
 
       - name: Package artifacts
         run: |
