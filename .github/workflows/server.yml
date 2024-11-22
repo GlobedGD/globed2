@@ -1,0 +1,73 @@
+name: Build the server
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    name: Build Globed server
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - x86_64-pc-windows-msvc
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Install aarch64-linux-gnu-gcc
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Add rust target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Change directory
+        run: cd server
+
+      - name: Build game server
+        run: cargo build --release --target ${{ matrix.target }} -p game
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+      - name: Build central server
+        run: cargo build --release --target ${{ matrix.target }} -p central
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+      - name: Package artifacts
+        run: |
+          mkdir -p artifacts
+          cp target/${{ matrix.target }}/release/globed-game-server* artifacts/
+          cp target/${{ matrix.target }}/release/globed-central-server* artifacts/
+          if [[ ${{ matrix.os }} == 'windows-latest' ]]; then
+            zip -j artifacts-${{ matrix.target }}.zip artifacts/*.exe
+          else
+            zip -j artifacts-${{ matrix.target }}.zip artifacts/*
+          fi
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target }}-build
+          path: artifacts-${{ matrix.target }}.zip

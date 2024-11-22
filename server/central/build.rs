@@ -2,4 +2,7 @@
 fn main() {
     // trigger recompilation when a new migration is added
     println!("cargo:rerun-if-changed=migrations");
+
+    // set SQLX_OFFLINE to 1
+    println!("cargo:rustc-env=SQLX_OFFLINE=1");
 }
