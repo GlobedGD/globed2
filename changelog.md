@@ -1,3 +1,5 @@
+## v1.7.2
+
 ## v1.7.1
 
 * Fix room password popup having broken UI
