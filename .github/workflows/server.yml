@@ -64,8 +64,8 @@ jobs:
       - name: Build central server (native)
         if: matrix.target != 'aarch64-unknown-linux-gnu'
         run: |
-          cd server
-          cargo build --release --target ${{ matrix.target }} -p globed-central-server
+          cd server/central
+          SQLX_OFFLINE=true cargo build --release --target ${{ matrix.target }}
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
 
