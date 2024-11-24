@@ -297,13 +297,14 @@ void GlobedMenuLayer::onEnterTransitionDidFinish() {
             if (!s) s = this;
 
             auto alert = globed::showChangelogPopup();
+            // TODO: use popupqueue??
 
             if (alert) {
                 alert->m_scene = s;
                 alert->show();
 
                 // oh my god i hate it here
-                Loader::get()->queueInMainThread([alert] {
+                Loader::get()->queueInMainThread([alert = Ref(alert)] {
                     auto* td = CCTouchDispatcher::get();
                     auto handler = td->findHandler(alert);
                     if (handler) {

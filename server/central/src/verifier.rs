@@ -164,7 +164,7 @@ impl AccountVerifier {
             match self.flush_cache().await {
                 Ok(()) => {
                     if cfg!(debug_assertions) {
-                        trace!("refreshed account verification cache");
+                        trace!("verifier: refreshed cache");
                         let cache = self.message_cache.lock();
                         for message in &*cache {
                             #[cfg(not(debug_assertions))]
@@ -190,7 +190,7 @@ impl AccountVerifier {
                     }
                 }
                 Err(err) => {
-                    warn!("failed to refresh account verification cache: {err}");
+                    warn!("verifier: failed to refresh cache: {err}");
                 }
             }
         }
@@ -211,7 +211,7 @@ impl AccountVerifier {
             match self.delete_outdated().await {
                 Ok(()) => {}
                 Err(err) => {
-                    warn!("failed to delete outdated messages: {err}");
+                    warn!("verifier: failed to delete outdated messages: {err}");
                 }
             }
         }
@@ -228,7 +228,9 @@ impl AccountVerifier {
         };
 
         // at most 100 messages, join them to a string
-        let outdated_str = outdated.into_iter().take(100).map(|x| x.to_string()).collect::<Vec<String>>().join(",");
+        let outdated_iter = outdated.into_iter().take(100).map(|x| x.to_string()).collect::<Vec<String>>();
+        let outdated_len = outdated_iter.len();
+        let outdated_str = outdated_iter.join(",");
 
         let result = self
             .http_client
@@ -255,6 +257,8 @@ impl AccountVerifier {
             bail!("boomlings returned -1!");
         }
 
+        info!("verifier: deleted {outdated_len} messages");
+
         Ok(())
     }
 
@@ -273,7 +277,7 @@ impl AccountVerifier {
 
         let mut response = match result {
             Err(err) => {
-                warn!("Failed to make a request to GD servers: {}", err.to_string());
+                warn!("verifier: failed to make a request to GD servers: {}", err.to_string());
                 bail!("server error: {err}");
             }
             Ok(x) => x,
@@ -287,7 +291,7 @@ impl AccountVerifier {
 
         if response.starts_with("error code:") {
             if response == "error code: 1006" {
-                error!("received error 1006, your IP address is likely blocked by the GD servers.");
+                error!("verifier: received error 1006, your IP address is likely blocked by the GD servers.");
             }
 
             bail!("server error: {response}");
@@ -324,7 +328,7 @@ impl AccountVerifier {
             let age = values.get("7");
 
             if message_id.is_none() || title.is_none() || author_name.is_none() || author_id.is_none() || age.is_none() || author_user_id.is_none() {
-                warn!("ignoring invalid message: one of the attrs is none ({string})");
+                warn!("verifier: ignoring invalid message: one of the attrs is none ({string})");
                 continue;
             }
 

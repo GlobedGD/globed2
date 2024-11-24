@@ -184,6 +184,8 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                 }();
                 bool darkmode = Loader::get()->isModLoaded("bitz.darkmode_v4");
 
+                // TODO: for android, check if the dankmeme.globed2 folder is in the apk
+
                 auto impostorFolderLoc = dirs::getGameDir() / "Resources" / "dankmeme.globed2";
                 std::error_code ec{};
                 bool impostorFolder = std::filesystem::exists(impostorFolderLoc) && ec == std::error_code{};
