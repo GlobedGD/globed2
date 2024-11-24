@@ -342,7 +342,7 @@ impl AccountVerifier {
             let age = age.unwrap();
 
             // if the message is old, queue it for deletion
-            if age.contains("minutes") || age.contains("hours") || age.contains("days") || age.contains("months") || age.contains("years") {
+            if age.contains("minute") || age.contains("hour") || age.contains("day") || age.contains("month") || age.contains("year") {
                 self.outdated_messages.lock().insert(message_id);
                 continue;
             }
