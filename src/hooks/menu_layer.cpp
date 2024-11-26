@@ -166,8 +166,8 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                 if (!moreInfo) return;
 
                 bool texturePack = [] {
-                    auto hasLdr = Loader::get()->isModLoaded("geode.texture-loader");
-                    if (!hasLdr) return false;
+                    // auto hasLdr = Loader::get()->isModLoaded("geode.texture-loader");
+                    // if (!hasLdr) return false;
 
                     // check if filename of a globedsheet1.png is overriden
                     auto p = CCFileUtils::get()->fullPathForFilename("globedsheet1.png"_spr, false);
@@ -177,6 +177,7 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                     }
 
                     if (std::filesystem::path(std::string(p)).parent_path() != Mod::get()->getResourcesDir()) {
+                        log::debug("Mismatch, globedsheet1 expected in {}, found at {}", Mod::get()->getResourcesDir(), p);
                         return true;
                     }
 
