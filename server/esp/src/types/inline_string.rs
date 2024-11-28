@@ -119,7 +119,7 @@ impl<const N: usize> InlineString<N> {
     /// Converts this string to a string slice, without doing any UTF-8 checks.
     /// If the string is not a valid UTF-8 string, the behavior is undefined.
     #[inline]
-    pub unsafe fn to_str_unchecked(&self) -> &str {
+    pub fn to_str_unchecked(&self) -> &str {
         // in debug mode we still do a sanity check, a panic will indicate a *massive* logic error somewhere in the code.
         #[cfg(debug_assertions)]
         let ret = self
@@ -127,7 +127,7 @@ impl<const N: usize> InlineString<N> {
             .expect("Attempted to unsafely convert a non-UTF-8 InlineString into a string slice");
 
         #[cfg(not(debug_assertions))]
-        let ret = std::str::from_utf8_unchecked(&self.buffer[..self.len()]);
+        let ret = unsafe std::str::from_utf8_unchecked(&self.buffer[..self.len()]);
 
         ret
     }
