@@ -3,6 +3,7 @@
 #include "address.hpp"
 #include "udp_socket.hpp"
 #include "tcp_socket.hpp"
+#include "udp_frame_buffer.hpp"
 
 #include <data/packets/packet.hpp>
 #include <crypto/box.hpp>
@@ -10,6 +11,9 @@
 class GLOBED_DLL GameSocket {
     static constexpr uint8_t MARKER_CONN_INITIAL = 0xe0;
     static constexpr uint8_t MARKER_CONN_RECOVERY = 0xe1;
+
+    static constexpr uint8_t MARKER_UDP_PACKET = 0xb1;
+    static constexpr uint8_t MARKER_UDP_FRAME = 0xa7;
 
 public:
     GameSocket();
@@ -28,7 +32,7 @@ public:
     Result<std::shared_ptr<Packet>> recvPacketTCP();
 
     // Try to receive a packet on the UDP socket
-    Result<ReceivedPacket> recvPacketUDP();
+    Result<std::optional<ReceivedPacket>> recvPacketUDP();
 
     // Try to receive a packet
     Result<ReceivedPacket> recvPacket();
@@ -60,6 +64,7 @@ private:
 
     TcpSocket tcpSocket;
     UdpSocket udpSocket;
+    UdpFrameBuffer udpBuffer;
 
     std::unique_ptr<CryptoBox> cryptoBox;
     util::data::byte* dataBuffer;

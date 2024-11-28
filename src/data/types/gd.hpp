@@ -16,6 +16,7 @@ static constexpr uint8_t NO_TRAIL = 1;
 class PlayerIconData {
 public:
     static const PlayerIconData DEFAULT_ICONS;
+    static PlayerIconData makeRandom();
 
     // wee woo
     PlayerIconData(
@@ -27,8 +28,10 @@ public:
 
     bool operator==(const PlayerIconData&) const = default;
 
+
     int16_t cube, ship, ball, ufo, wave, robot, spider, swing, jetpack;
     uint8_t deathEffect, color1, color2, glowColor, streak, shipStreak;
+
 };
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerIconData, (
@@ -112,6 +115,8 @@ public:
             0, specialUserData
         );
     }
+
+    static PlayerPreviewAccountData makeRandom();
 };
 
 GLOBED_SERIALIZABLE_STRUCT(PlayerPreviewAccountData, (
@@ -122,7 +127,7 @@ class PlayerAccountData {
 public:
     static const PlayerAccountData DEFAULT_DATA;
 
-    PlayerAccountData(int32_t id, int32_t userId, const std::string_view name, const PlayerIconData& icons)
+    PlayerAccountData(int32_t id, int32_t userId, std::string_view name, const PlayerIconData& icons)
         : accountId(id), userId(userId), name(name), icons(icons) {}
 
     PlayerAccountData() {}

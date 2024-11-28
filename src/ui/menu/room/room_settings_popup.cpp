@@ -23,18 +23,14 @@ enum {
     }
 
 bool RoomSettingsPopup::setup() {
-    auto popupLayout = util::ui::getPopupLayout(m_size);
+    auto popupLayout = util::ui::getPopupLayoutAnchored(m_size);
 
     auto* cells = CCArray::create();
 
     MAKE_SETTING("Hidden Room", "While enabled, the room can not be found on the public room listing and can only be joined by entering the room ID", TAG_INVITE_ONLY, cellInviteOnly);
     MAKE_SETTING("Open Invites", "While enabled, all players in the room can invite players instead of just the room owner", TAG_PUBLIC_INVITES, cellPublicInvites);
     MAKE_SETTING("Collision", "While enabled, players can collide with each other.\n\n<cy>Note: this enables safe mode, making it impossible to make progress on levels.</c>", TAG_COLLISION, cellCollision);
-
-#ifdef GLOBED_DEBUG
-    MAKE_SETTING("2-Player Mode", "While enabled, players can link with another player to play a 2-player enabled level together", TAG_TWO_PLAYER, cellTwoPlayer);
-#endif
-
+    MAKE_SETTING("2-Player Mode", "While enabled, players can link with another player to play a 2-player enabled level together.\n\n<cy>Note: this enables safe mode, making it impossible to make progress on levels.</c>", TAG_TWO_PLAYER, cellTwoPlayer);
     MAKE_SETTING("Death Link", "Whenever a player dies, everyone on the level dies as well. <cy>Inspired by the mod DeathLink from</c> <cg>Alphalaneous</c>.", TAG_DEATHLINK, cellDeathlink);
 
     auto* listLayer = Build(SettingList::createForComments(LIST_WIDTH, LIST_HEIGHT, RoomSettingCell::CELL_HEIGHT))
@@ -66,10 +62,17 @@ void RoomSettingsPopup::onSettingClicked(cocos2d::CCObject* sender) {
         case TAG_INVITE_ONLY: currentSettings.flags.isHidden = enabled; break;
         case TAG_PUBLIC_INVITES: currentSettings.flags.publicInvites = enabled; break;
         case TAG_COLLISION: currentSettings.flags.collision = enabled; break;
-#ifdef GLOBED_DEBUG
         case TAG_TWO_PLAYER: currentSettings.flags.twoPlayerMode = enabled; break;
-#endif
         case TAG_DEATHLINK: currentSettings.flags.deathlink = enabled; break;
+    }
+
+    // 2 player mode and deathlink are mutually exclusive
+    if (setting == TAG_TWO_PLAYER && currentSettings.flags.twoPlayerMode && currentSettings.flags.deathlink) {
+        currentSettings.flags.deathlink = false;
+        this->updateCheckboxes();
+    } else if (setting == TAG_DEATHLINK && currentSettings.flags.deathlink && currentSettings.flags.twoPlayerMode) {
+        currentSettings.flags.twoPlayerMode = false;
+        this->updateCheckboxes();
     }
 
     // if we are not the room owner, just revert the changes next frame
@@ -88,9 +91,7 @@ void RoomSettingsPopup::updateCheckboxes() {
     cellInviteOnly->setToggled(currentSettings.flags.isHidden);
     cellPublicInvites->setToggled(currentSettings.flags.publicInvites);
     cellCollision->setToggled(currentSettings.flags.collision);
-#ifdef GLOBED_DEBUG
     cellTwoPlayer->setToggled(currentSettings.flags.twoPlayerMode);
-#endif
     cellDeathlink->setToggled(currentSettings.flags.deathlink);
 
     this->enableCheckboxes(RoomManager::get().isOwner());
@@ -98,11 +99,7 @@ void RoomSettingsPopup::updateCheckboxes() {
 
 void RoomSettingsPopup::enableCheckboxes(bool enabled) {
     for (auto* cell : {
-        cellInviteOnly, cellPublicInvites, cellCollision
-#ifdef GLOBED_DEBUG
-        , cellTwoPlayer
-#endif
-        , cellDeathlink
+        cellInviteOnly, cellPublicInvites, cellCollision, cellTwoPlayer, cellDeathlink
     }) {
         cell->setEnabled(enabled);
     }
@@ -110,7 +107,7 @@ void RoomSettingsPopup::enableCheckboxes(bool enabled) {
 
 RoomSettingsPopup* RoomSettingsPopup::create() {
     auto ret = new RoomSettingsPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

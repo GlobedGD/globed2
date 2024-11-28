@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/all.hpp>
 
+#include <Geode/ui/TextInput.hpp>
+
 class ServerSwitcherPopup;
 
 class DirectConnectionPopup : public geode::Popup<ServerSwitcherPopup*> {
@@ -10,7 +12,7 @@ public:
 
     static DirectConnectionPopup* create(ServerSwitcherPopup* parent);
 protected:
-    geode::InputNode* addressNode;
+    geode::TextInput* addressNode;
     ServerSwitcherPopup* parent;
 
     bool setup(ServerSwitcherPopup* popup) override;

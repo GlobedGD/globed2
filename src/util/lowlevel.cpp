@@ -5,10 +5,14 @@
 
 namespace util::lowlevel {
     geode::Patch* patch(ptrdiff_t offset, const std::vector<uint8_t>& bytes) {
-        auto p = Mod::get()->patch(reinterpret_cast<void*>(geode::base::get() + offset), bytes);
+        return patchAbsolute(geode::base::get() + offset, bytes);
+    }
+
+    geode::Patch* patchAbsolute(uintptr_t address, const std::vector<uint8_t>& bytes) {
+        auto p = Mod::get()->patch(reinterpret_cast<void*>(address), bytes);
 
         if (!p) {
-            log::error("Failed to apply patch at {:X}: {}", offset, p.unwrapErr());
+            log::error("Failed to apply patch at {:X}: {}", address, p.unwrapErr());
             return nullptr;
         }
 

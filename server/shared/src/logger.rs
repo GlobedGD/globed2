@@ -81,6 +81,9 @@ impl log::Log for Logger {
         } else {
             println!("[{formatted_time}] [{level}] - {args}");
         }
+
+        #[cfg(debug_assertions)]
+        self.flush();
     }
 
     fn flush(&self) {

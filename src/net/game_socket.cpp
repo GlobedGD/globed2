@@ -18,6 +18,7 @@ constexpr size_t DATA_BUF_SIZE = 2 << 18;
 
 using namespace util::data;
 using namespace util::debug;
+using namespace asp::time;
 using PollResult = GameSocket::PollResult;
 using ReceivedPacket = GameSocket::ReceivedPacket;
 
@@ -55,6 +56,7 @@ Result<> GameSocket::connect(const NetworkAddress& address, bool isRecovering) {
 void GameSocket::disconnect() {
     tcpSocket.disconnect();
     udpSocket.disconnect();
+    udpBuffer.clear();
 }
 
 bool GameSocket::isConnected() {
@@ -68,7 +70,7 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacketTCP() {
     // receive the packet length
     GLOBED_UNWRAP(tcpSocket.recvExact(reinterpret_cast<char*>(bb.data().data()), 4));
 
-    auto packetSize = bb.readU32().value_or(0); // must always be 4 bytes so cant error
+    auto packetSize = bb.readU32().unwrapOr(0); // must always be 4 bytes so cant error
     GLOBED_REQUIRE_SAFE(packetSize < DATA_BUF_SIZE, "packet is too big, rejecting")
 
     GLOBED_UNWRAP(tcpSocket.recvExact(reinterpret_cast<char*>(dataBuffer), packetSize));
@@ -78,19 +80,43 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacketTCP() {
     return this->decodePacket(buf);
 }
 
-Result<ReceivedPacket> GameSocket::recvPacketUDP() {
+Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
     auto recvResult = udpSocket.receive(reinterpret_cast<char*>(dataBuffer), DATA_BUF_SIZE);
 
     ReceivedPacket out;
     out.fromConnected = recvResult.fromServer;
 
     if (recvResult.result < 0) {
-        return Err("udp recv failed");
+        return Err(fmt::format("udp recv failed ({}): {}", recvResult.result, util::net::lastErrorString()));
     }
 
     ByteBuffer buf(dataBuffer, (size_t)recvResult.result);
 
-    GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
+    // if not from active server, dont't read the marker
+    if (!out.fromConnected) {
+        GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
+        return Ok(std::move(out));
+    }
+
+    // check if it is a full packet or a frame,
+    auto marker = buf.readU8();
+    if (marker.isErr()) {
+        return Err(fmt::to_string(marker.unwrapErr()));
+    }
+
+    if (*marker == MARKER_UDP_PACKET) {
+        GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
+    } else if (*marker == MARKER_UDP_FRAME) {
+        GLOBED_UNWRAP_INTO(udpBuffer.pushFrameFromBuffer(buf), auto maybeBuf);
+        if (!maybeBuf.empty()) {
+            ByteBuffer toDecode(std::move(maybeBuf));
+            GLOBED_UNWRAP_INTO(this->decodePacket(toDecode), out.packet);
+        } else {
+            return Ok(std::nullopt);
+        }
+    } else {
+        return Err("invalid marker at the start of a udp packet");
+    }
 
     return Ok(std::move(out));
 }
@@ -105,15 +131,41 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
 
     // prioritize TCP, if the result is Tcp or Both, we care about TCP.
     if (pollResult != PollResult::Udp) {
-        GLOBED_UNWRAP_INTO(this->recvPacketTCP(), auto packet);
-        return Ok(ReceivedPacket {
-            .packet = std::move(packet),
-            .fromConnected = true
-        });
+        auto res = this->recvPacketTCP();
+
+        if (res) {
+            return Ok(ReceivedPacket {
+                .packet = std::move(std::move(res).unwrap()),
+                .fromConnected = true
+            });
+        } else {
+            return Err(fmt::format("recvPacketTCP failed: {}", res.unwrapErr()));
+        }
     }
 
     // else it's a udp packet
-    return this->recvPacketUDP();
+    auto udpres = this->recvPacketUDP();
+
+    if (udpres && udpres.unwrap().has_value()) {
+        return Ok(std::move(**udpres));
+    } else if (!udpres) {
+        return Err(fmt::format("recvPacketUDP failed: {}", std::move(std::move(udpres).unwrapErr())));
+    }
+
+    // if it was a frame keep trying
+    for (;;) {
+        GLOBED_UNWRAP_INTO(udpSocket.poll(25), auto pollres);
+        if (!pollres) {
+            return Err("timed out");
+        }
+
+        auto udpres = this->recvPacketUDP();
+        if (udpres && udpres.unwrap().has_value()) {
+            return Ok(std::move(**udpres));
+        } else if (!udpres) {
+            return Err(fmt::format("recvPacketUDP failed: {}", std::move(std::move(udpres).unwrapErr())));
+        }
+    }
 }
 
 Result<ReceivedPacket> GameSocket::recvPacket() {
@@ -262,22 +314,23 @@ Result<std::shared_ptr<Packet>> GameSocket::decodePacket(ByteBuffer& buffer) {
     auto header = buffer.readValue<PacketHeader>().unwrap(); // we know that the header must be present by now.
 
     // packet size without the header
-    size_t messageLength = buffer.size() - buffer.getPosition();
+    size_t messageStart = buffer.getPosition();
+    size_t messageLength = buffer.size() - messageStart;
 
     auto packet = matchPacket(header.id);
 
     GLOBED_REQUIRE_SAFE(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(header.id))
 
     if (packet->getEncrypted() && !header.encrypted) {
-        GLOBED_REQUIRE_SAFE(false, "server sent a cleartext packet when expected an encrypted one")
+        GLOBED_REQUIRE_SAFE(false, fmt::format("server sent a cleartext packet when expected an encrypted one ({})", header.id))
     }
 
     if (header.encrypted) {
         GLOBED_REQUIRE_SAFE(cryptoBox.get() != nullptr, "attempted to decrypt a packet when no cryptobox is initialized")
         bytevector& bufvec = buffer.data();
 
-        GLOBED_UNWRAP_INTO(cryptoBox->decryptInPlace(bufvec.data() + PacketHeader::SIZE, messageLength), messageLength);
-        buffer.resize(messageLength + PacketHeader::SIZE);
+        GLOBED_UNWRAP_INTO(cryptoBox->decryptInPlace(bufvec.data() + messageStart, messageLength), messageLength);
+        buffer.resize(messageStart + messageLength);
     }
 
     if (dumpPackets) {
@@ -301,7 +354,7 @@ void GameSocket::dumpPacket(packetid_t id, ByteBuffer& buffer, bool sending) {
         log::debug("Packet log folder: {}", folder);
     });
 
-    auto datetime = util::format::formatDateTime(util::time::systemNow());
+    auto datetime = util::format::formatDateTime(SystemTime::now());
     auto filepath = folder / fmt::format("{}-{}.bin", id, datetime);
 
     std::ofstream fs(filepath, std::ios::binary);

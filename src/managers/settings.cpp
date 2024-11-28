@@ -4,6 +4,8 @@
 
 using namespace geode::prelude;
 
+GlobedSettings::LaunchArgs GlobedSettings::_launchArgs = {};
+
 GlobedSettings::GlobedSettings() {
     this->reload();
 }
@@ -60,6 +62,10 @@ void GlobedSettings::reflect(TaskType taskType) {
     });
 }
 
+const GlobedSettings::LaunchArgs& GlobedSettings::launchArgs() {
+    return _launchArgs;
+}
+
 void GlobedSettings::hardReset() {
     this->reflect(TaskType::HardResetSettings);
 }
@@ -70,6 +76,25 @@ void GlobedSettings::reset() {
 
 void GlobedSettings::reload() {
     this->reflect(TaskType::LoadSettings);
+
+    auto lf = [](std::string_view x, bool& dest) {
+        dest = Loader::get()->getLaunchFlag(x);
+    };
+
+    // load launch arguments
+    lf("globed-crt-fix", _launchArgs.crtFix);
+    lf("globed-verbose-curl", _launchArgs.verboseCurl);
+    lf("globed-skip-preload", _launchArgs.skipPreload);
+    lf("globed-debug-preload", _launchArgs.debugPreload);
+    lf("globed-skip-resource-check", _launchArgs.skipResourceCheck);
+    lf("globed-tracing", _launchArgs.tracing);
+    lf("globed-no-ssl-verification", _launchArgs.noSslVerification);
+    lf("globed-fake-server-data", _launchArgs.fakeData);
+
+    // some of those options will do nothing unless the mod is built in debug mode
+#ifndef GLOBED_DEBUG
+    _launchArgs.fakeData = false;
+#endif
 }
 
 void GlobedSettings::save() {
@@ -82,11 +107,7 @@ bool GlobedSettings::has(std::string_view key) {
 
 void GlobedSettings::clear(std::string_view key) {
     auto& container = Mod::get()->getSaveContainer();
-    auto& obj = container.as_object();
-
-    if (obj.contains(key)) {
-        obj.erase(key);
-    }
+    container.erase(key);
 }
 
 // verify that all members are serialized

@@ -7,9 +7,9 @@
 
 class GlobedInviteNotification : public cocos2d::CCLayer {
 public:
-    static GlobedInviteNotification* create(uint32_t roomID, const std::string_view password, const PlayerPreviewAccountData& player);
+    static GlobedInviteNotification* create(uint32_t roomID, std::string_view password, const PlayerPreviewAccountData& player);
 
 private:
-    bool init(uint32_t roomID, const std::string_view password, const PlayerPreviewAccountData& player);
+    bool init(uint32_t roomID, std::string_view password, const PlayerPreviewAccountData& player);
     void removeFromParent() override;
 };

@@ -46,11 +46,11 @@ class LoginPacket : public Packet {
     LoginPacket(
             int32_t accid,
             int32_t userId,
-            const std::string_view name,
-            const std::string_view token,
+            std::string_view name,
+            std::string_view token,
             const PlayerIconData& icons,
             uint16_t fragmentationLimit,
-            const std::string_view platform,
+            std::string_view platform,
             const UserPrivacyFlags& privacyFlags
     ) :
             accountId(accid),

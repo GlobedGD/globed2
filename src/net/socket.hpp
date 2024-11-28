@@ -12,7 +12,7 @@ class Socket {
 public:
     virtual Result<> connect(const NetworkAddress& address) = 0;
     virtual Result<int> send(const char* data, unsigned int dataSize) = 0;
-    Result<int> send(const std::string_view data);
+    Result<int> send(std::string_view data);
     virtual RecvResult receive(char* buffer, int bufferSize) = 0;
     virtual bool close();
     virtual ~Socket();

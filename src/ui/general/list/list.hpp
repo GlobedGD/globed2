@@ -346,10 +346,10 @@ protected:
             .store(scrollLayer);
 
         scrollLayer->m_contentLayer->setLayout(
-            cocos2d::ColumnLayout::create()
+            geode::ColumnLayout::create()
                 ->setGap(0.f)
                 ->setAxisReverse(true)
-                ->setAxisAlignment(cocos2d::AxisAlignment::End)
+                ->setAxisAlignment(geode::AxisAlignment::End)
                 ->setAutoGrowAxis(height)
         );
 

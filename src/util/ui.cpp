@@ -145,7 +145,7 @@ namespace util::ui {
         return fromTop({0.f, y});
     }
 
-    CCPoint PopupLayout::fromTop(cocos2d::CCSize off) {
+    CCPoint PopupLayout::fromTop(CCSize off) {
         return this->centerTop - off;
     }
 
@@ -153,8 +153,48 @@ namespace util::ui {
         return fromBottom({0.f, y});
     }
 
-    CCPoint PopupLayout::fromBottom(cocos2d::CCSize off) {
+    CCPoint PopupLayout::fromBottom(CCSize off) {
         return this->centerBottom + off;
+    }
+
+    CCPoint PopupLayout::fromCenter(CCSize off) {
+        return this->center + off;
+    }
+
+    CCPoint PopupLayout::fromCenter(float x, float y) {
+        return this->fromCenter(CCSize{x, y});
+    }
+
+    CCPoint PopupLayout::fromBottomRight(CCSize off) {
+        return {bottomRight.width - off.width, bottomRight.height + off.height};
+    }
+
+    CCPoint PopupLayout::fromBottomRight(float x, float y) {
+        return fromBottomRight({x, y});
+    }
+
+    CCPoint PopupLayout::fromTopRight(CCSize off) {
+        return this->topRight - off;
+    }
+
+    CCPoint PopupLayout::fromTopRight(float x, float y) {
+        return fromTopRight({x, y});
+    }
+
+    CCPoint PopupLayout::fromBottomLeft(CCSize off) {
+        return this->bottomLeft + off;
+    }
+
+    CCPoint PopupLayout::fromBottomLeft(float x, float y) {
+        return fromBottomLeft({x, y});
+    }
+
+    CCPoint PopupLayout::fromTopLeft(CCSize off) {
+        return {topLeft.width + off.width, topLeft.height - off.height};
+    }
+
+    CCPoint PopupLayout::fromTopLeft(float x, float y) {
+        return fromTopLeft({x, y});
     }
 
     static PopupLayout popupLayoutWith(const CCSize& popupSize, bool useWinSize) {
@@ -462,19 +502,67 @@ namespace util::ui {
 
         bg->getTexture()->setTexParameters(&tp);
 
-        auto rbg = static_cast<RepeatingBackground*>(Build(bg)
+        auto rbg = Build(bg)
             .contentSize(winSize.width, winSize.height)
             .textureRect(bgrect)
             .scale(scale)
             .zOrder(-1)
             .anchorPoint(0.f, 0.f)
             .color(color)
-            .collect());
+            .collect();
 
         rbg->setUserObject("repeat-bg-params", RepeatingBackgroundParams::create(scale, speed, rawTextureSize, mode, visibleSize));
         rbg->scheduleUpdate();
 
         return bg;
+    }
+
+    CCScale9Sprite* attachBackground(
+        CCNode* node,
+        const BackgroundOptions& options
+    ) {
+        if (!node) return nullptr;
+
+        CCSize rawSize = node->getScaledContentSize();
+        rawSize.width += options.sidePadding * 2;
+        rawSize.height += options.verticalPadding * 2;
+
+        // now, we have some annoying math to figure out.
+        // at 1x scale, if `rawSize` is small enough, the parts of the ccscale9sprite will overlap with each other, which is very unwanted.
+        // on top of that, the `cornerRoundness` parameter will also impact the scale of the sprite,
+        // as scaling the texture down and blowing up the size makes the corners a lot more rough, and vice versa.
+
+        // here goes nothing
+
+        float scaleX = 1.f, scaleY = 1.f;
+        float roundness = options.cornerRoundness;
+
+        auto spr = CCScale9Sprite::create(options.texture);
+        auto bgSize = spr->getContentSize();
+
+        if (rawSize.width < bgSize.width) {
+            scaleX = rawSize.width / bgSize.width;
+        }
+
+        if (rawSize.height < bgSize.height) {
+            scaleY = rawSize.height / bgSize.height;
+        }
+
+        if (options.scaleMustMatch) {
+            scaleX = scaleY = util::math::min(scaleX, scaleY);
+        }
+
+        return Build(spr)
+            .pos(node->getScaledContentSize() / 2.f)
+            .contentSize(rawSize.width / scaleX, rawSize.height / scaleY)
+            .scaleX(scaleX)
+            .scaleY(scaleY)
+            .opacity(options.opacity)
+            .zOrder(options.zOrder)
+            .parent(node)
+            .id(options.id)
+
+            ;
     }
 
     float capPopupWidth(float in) {

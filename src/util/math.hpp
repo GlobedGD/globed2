@@ -103,4 +103,9 @@ namespace util::math {
     inline constexpr Out (max)(T1 a, T2 b) {
         return a > b ? a : b;
     }
+
+    template <typename T1, typename T2, typename T3, typename Out = std::common_type_t<T1, T2, T3>>
+    inline constexpr Out clamp(T1 val, T2 min, T3 max) {
+        return val < min ? min : (val > max ? max : val);
+    }
 }

@@ -21,7 +21,7 @@ void secureRandom(byte* dest, size_t size) {
     randombytes_buf(dest, size);
 }
 
-bytevector pwHash(const std::string_view input) {
+bytevector pwHash(std::string_view input) {
     return pwHash(reinterpret_cast<const byte*>(input.data()), input.size());
 }
 
@@ -49,7 +49,7 @@ bytevector pwHash(const byte* input, size_t len) {
     return out;
 }
 
-bytevector simpleHash(const std::string_view input) {
+bytevector simpleHash(std::string_view input) {
     return simpleHash(reinterpret_cast<const byte*>(input.data()), input.size());
 }
 
@@ -69,7 +69,7 @@ bytevector simpleHash(const byte* input, size_t size) {
     return out;
 }
 
-bool stringsEqual(const std::string_view s1, const std::string_view s2) {
+bool stringsEqual(std::string_view s1, std::string_view s2) {
     if (s1.size() != s2.size()) {
         return false;
     }
@@ -101,7 +101,7 @@ std::string base64Encode(const bytevector& source, Base64Variant variant) {
     return base64Encode(source.data(), source.size(), variant);
 }
 
-std::string base64Encode(const std::string_view source, Base64Variant variant) {
+std::string base64Encode(std::string_view source, Base64Variant variant) {
     return base64Encode(reinterpret_cast<const byte*>(source.data()), source.size(), variant);
 }
 
@@ -122,7 +122,7 @@ Result<data::bytevector> base64Decode(const byte* source, size_t size, Base64Var
     return Ok(out);
 }
 
-Result<data::bytevector> base64Decode(const std::string_view source, Base64Variant variant) {
+Result<data::bytevector> base64Decode(std::string_view source, Base64Variant variant) {
     return base64Decode(reinterpret_cast<const byte*>(source.data()), source.size(), variant);
 }
 
@@ -147,7 +147,7 @@ std::string hexEncode(const bytevector& source) {
     return hexEncode(source.data(), source.size());
 }
 
-std::string hexEncode(const std::string_view source) {
+std::string hexEncode(std::string_view source) {
     return hexEncode(reinterpret_cast<const byte*>(source.data()), source.size());
 }
 
@@ -168,7 +168,7 @@ Result<data::bytevector> hexDecode(const byte* source, size_t size) {
     return Ok(out);
 }
 
-Result<data::bytevector> hexDecode(const std::string_view source) {
+Result<data::bytevector> hexDecode(std::string_view source) {
     return hexDecode(reinterpret_cast<const byte*>(source.data()), source.size());
 }
 

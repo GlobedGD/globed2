@@ -18,21 +18,21 @@ namespace util::crypto {
     void secureRandom(data::byte* dest, size_t size);
 
     // generate a hash from this string and return it together with the salt prepended
-    data::bytevector pwHash(const std::string_view input);
+    data::bytevector pwHash(std::string_view input);
     // generate a hash from this bytevector and return it together with the salt prepended
     data::bytevector pwHash(const data::bytevector& input);
     // generate a hash from this buffer and return it together with the salt prepended
     data::bytevector pwHash(const data::byte* input, size_t len);
 
     // generate a simple, consistent hash from this string
-    data::bytevector simpleHash(const std::string_view input);
+    data::bytevector simpleHash(std::string_view input);
     // generate a simple, consistent hash from this bytevector
     data::bytevector simpleHash(const data::bytevector& input);
     // generate a simple, consistent hash from this buffer
     data::bytevector simpleHash(const data::byte* input, size_t size);
 
     // compares two strings in constant time to prevent timing attacks
-    bool stringsEqual(const std::string_view s1, const std::string_view s2);
+    bool stringsEqual(std::string_view s1, std::string_view s2);
 
     enum class Base64Variant {
         STANDARD,
@@ -46,12 +46,12 @@ namespace util::crypto {
     // encodes the given bytevector into a base64 string
     std::string base64Encode(const data::bytevector& source, Base64Variant variant = Base64Variant::STANDARD);
     // encodes the given string into a base64 string
-    std::string base64Encode(const std::string_view source, Base64Variant variant = Base64Variant::STANDARD);
+    std::string base64Encode(std::string_view source, Base64Variant variant = Base64Variant::STANDARD);
 
     // decodes the given base64 buffer into a bytevector
     Result<data::bytevector> base64Decode(const data::byte* source, size_t size, Base64Variant variant = Base64Variant::STANDARD);
     // decodes the given base64 string into a bytevector
-    Result<data::bytevector> base64Decode(const std::string_view source, Base64Variant variant = Base64Variant::STANDARD);
+    Result<data::bytevector> base64Decode(std::string_view source, Base64Variant variant = Base64Variant::STANDARD);
     // decodes the given base64 bytevector into a bytevector
     Result<data::bytevector> base64Decode(const data::bytevector& source, Base64Variant variant = Base64Variant::STANDARD);
 
@@ -60,12 +60,12 @@ namespace util::crypto {
     // encodes the given bytevector into a hex string
     std::string hexEncode(const data::bytevector& source);
     // encodes the given string into a hex string
-    std::string hexEncode(const std::string_view source);
+    std::string hexEncode(std::string_view source);
 
     // decodes the given hex buffer into a bytevector
     Result<data::bytevector> hexDecode(const data::byte* source, size_t size);
     // decodes the given hex string into a bytevector
-    Result<data::bytevector> hexDecode(const std::string_view source);
+    Result<data::bytevector> hexDecode(std::string_view source);
     // decodes the given hex bytevector into a bytevector
     Result<data::bytevector> hexDecode(const data::bytevector& source);
 

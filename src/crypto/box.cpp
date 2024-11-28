@@ -47,13 +47,13 @@ void CryptoBox::initLibrary() {
 }
 
 CryptoBox::CryptoBox(byte* key) {
-    memBasePtr = reinterpret_cast<byte*>(sodium_malloc(
+    memBasePtr = reinterpret_cast<byte*>(std::malloc(
         KEY_LEN * 2 + // publicKey, peerPublicKey
         SECRET_KEY_LEN + // secretKey
         SHARED_KEY_LEN // sharedKey
     ));
 
-    CRYPTO_REQUIRE(memBasePtr != nullptr, "sodium_malloc returned nullptr")
+    CRYPTO_REQUIRE(memBasePtr != nullptr, "malloc returned nullptr")
 
     secretKey = memBasePtr; // base + 0
     publicKey = secretKey + SECRET_KEY_LEN; // base + 32
@@ -69,7 +69,7 @@ CryptoBox::CryptoBox(byte* key) {
 
 CryptoBox::~CryptoBox() {
     if (memBasePtr) {
-        sodium_free(memBasePtr);
+        std::free(memBasePtr);
     }
 }
 

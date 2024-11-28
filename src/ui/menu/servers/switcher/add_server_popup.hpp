@@ -16,7 +16,7 @@ public:
     void onTestFailure(const std::string& message);
 
 protected:
-    geode::InputNode *nameNode, *urlNode;
+    geode::TextInput *nameNode, *urlNode;
     ServerSwitcherPopup* parent;
     int modifyingIndex = -1;
 

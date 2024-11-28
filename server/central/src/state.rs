@@ -23,12 +23,7 @@ use globed_shared::{
 };
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use crate::{
-    config::{ServerConfig, UserlistMode},
-    db::GlobedDb,
-    game_pinger::GameServerPinger,
-    verifier::AccountVerifier,
-};
+use crate::{config::ServerConfig, db::GlobedDb, game_pinger::GameServerPinger, verifier::AccountVerifier};
 use blake2::{Blake2b, Digest};
 use digest::consts::U32;
 
@@ -167,16 +162,15 @@ impl ServerStateData {
     }
 
     pub async fn is_banned(&self, db: &GlobedDb, account_id: i32) -> anyhow::Result<Option<String>> {
-        if self.config.userlist_mode == UserlistMode::Whitelist {
-            return Ok(None);
-        }
+        let user = match db.get_user(account_id).await? {
+            Some(user) => user,
+            None => return Ok(None),
+        };
 
-        let user = db.get_user(account_id).await?;
-        if let Some(user) = user {
-            if user.is_banned {
-                Ok(user.violation_reason.clone())
-            } else {
-                Ok(None)
+        if let Some(ban_id) = user.active_ban {
+            match db.get_punishment(ban_id).await {
+                Ok(x) => Ok(x.map(|x| x.reason)),
+                Err(e) => Err(e.into()),
             }
         } else {
             Ok(None)

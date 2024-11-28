@@ -91,7 +91,10 @@ void TwoPlayerModeModule::destroyPlayerPost(PlayerObject* player, GameObject* ob
 
 void TwoPlayerModeModule::linkPlayerTo(int accountId) {
     log::debug("Link attempt to {}", accountId);
-    if (!gameLayer->m_fields->players.contains(accountId)) return;
+    if (accountId == 0 || !gameLayer->m_fields->players.contains(accountId)) {
+        this->unlink();
+        return;
+    }
 
     RemotePlayer* rp = gameLayer->m_fields->players.at(accountId);
 
@@ -102,6 +105,57 @@ void TwoPlayerModeModule::linkPlayerTo(int accountId) {
     ignored->setUserObject(LOCKED_TO_KEY, isPrimary ? rp->player2 : rp->player1);
 
     this->linked = true;
+    this->linkedId = accountId;
+}
+
+int TwoPlayerModeModule::getLinkedTo() {
+    return linkedId;
+}
+
+bool TwoPlayerModeModule::onUnpause() {
+    this->unlinkIfAlone();
+
+    if (!this->linked) {
+        FLAlertLayer::create("Globed Error", "Cannot unpause while not linked to a player.", "OK")->show();
+        return false;
+    }
+
+    return true;
+}
+
+void TwoPlayerModeModule::unlinkIfAlone() {
+    if (!this->linked) return;
+
+    auto& players = gameLayer->m_fields->players;
+    if (!players.contains(linkedId)) {
+        this->unlink();
+        return;
+    }
+}
+
+void TwoPlayerModeModule::unlink() {
+    this->linked = false;
+    this->linkedId = 0;
+
+    gameLayer->m_player1->setUserObject(LOCKED_TO_KEY, nullptr);
+    gameLayer->m_player2->setUserObject(LOCKED_TO_KEY, nullptr);
+}
+
+bool TwoPlayerModeModule::shouldSaveProgress() {
+    // safe mode
+    return false;
+}
+
+void TwoPlayerModeModule::selPeriodicalUpdate(float dt) {
+    this->unlinkIfAlone();
+
+    auto pl = PlayLayer::get();
+    auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(pl));
+
+    if (pl && !gjbgl->isPaused() && !this->linked) {
+        // pause the game
+        pl->pauseGame(false);
+    }
 }
 
 // TODO: test if still needed for 2 player mode
@@ -120,11 +174,23 @@ void TwoPlayerModeModule::linkPlayerTo(int accountId) {
 std::vector<UserCellButton> TwoPlayerModeModule::onUserActionsPopup(int accountId, bool self) {
     if (self) return {};
 
+    if (accountId == linkedId) {
+        return std::vector({UserCellButton {
+            .spriteName = "gj_linkBtnOff_001.png",
+            .id = "2p-unlink-btn"_spr,
+            .callback = [this](CCObject* sender){
+                this->linkPlayerTo(0);
+                return true;
+            }
+        }});
+    }
+
     return std::vector({UserCellButton {
         .spriteName = "gj_linkBtn_001.png",
         .id = "2p-link-btn"_spr,
         .callback = [this, accountId](CCObject* sender){
             this->linkPlayerTo(accountId);
+            return true;
         }
     }});
 }

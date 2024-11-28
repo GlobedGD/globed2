@@ -31,12 +31,12 @@ namespace util::net {
 #ifdef GLOBED_DEBUG
         return fmt::format(
             "globed-geode-xd/{}; Globed {}; Loader {}",
-            Mod::get()->getVersion().toString(),
+            Mod::get()->getVersion().toVString(),
             GLOBED_PLATFORM_STRING,
-            Loader::get()->getVersion().toString()
+            Loader::get()->getVersion().toVString()
         );
 #else
-        return fmt::format("globed-geode-xd/{}", Mod::get()->getVersion().toString());
+        return fmt::format("globed-geode-xd/{}", Mod::get()->getVersion().toVString());
 #endif
     }
 
@@ -45,16 +45,16 @@ namespace util::net {
         return fmt::format(
             "{} ({}, Geode {})",
             GLOBED_PLATFORM_STRING,
-            Mod::get()->getVersion().toString(),
-            Loader::get()->getVersion().toString()
+            Mod::get()->getVersion().toVString(),
+            Loader::get()->getVersion().toVString()
         );
 #else
         // no telemetry in release :(
-        return fmt::format("Globed {}", Mod::get()->getVersion().toString());
+        return fmt::format("Globed {}", Mod::get()->getVersion().toVString());
 #endif
     }
 
-    Result<std::pair<std::string, unsigned short>> splitAddress(const std::string_view address, unsigned short defaultPort) {
+    Result<std::pair<std::string, unsigned short>> splitAddress(std::string_view address, unsigned short defaultPort) {
         std::pair<std::string, unsigned short> out;
 
         size_t colon = address.find(':');
@@ -87,7 +87,7 @@ namespace util::net {
         return std::memcmp(&s1.sin_addr, &s2.sin_addr, sizeof(s1.sin_addr)) == 0;
     }
 
-    Result<std::string> getaddrinfo(const std::string_view hostname) {
+    Result<std::string> getaddrinfo(std::string_view hostname) {
         auto ipaddr = std::make_unique<sockaddr_in>();
 
         GLOBED_UNWRAP(getaddrinfo(hostname, *ipaddr));
@@ -95,7 +95,7 @@ namespace util::net {
         return inAddrToString(ipaddr->sin_addr);
     }
 
-    Result<> getaddrinfo(const std::string_view hostname, sockaddr_in& out) {
+    Result<> getaddrinfo(std::string_view hostname, sockaddr_in& out) {
         struct addrinfo hints = {};
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;

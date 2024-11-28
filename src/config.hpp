@@ -42,8 +42,10 @@
 #define GLOBED_FMOD_IOS 0
 #define GLOBED_DRPC_IOS 0
 
-
 #endif // GLOBED_IGNORE_CONFIG_HPP
+
+#define G_WC24252435(x, y) x##y
+#define G_WC(x, y) G_WC24252435(x, y)
 
 #include <stdint.h>
 

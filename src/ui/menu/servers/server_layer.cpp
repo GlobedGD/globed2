@@ -13,6 +13,7 @@
 #include <ui/menu/settings/settings_layer.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
+#include <util/gd.hpp>
 #include <util/format.hpp>
 
 using namespace geode::prelude;
@@ -186,7 +187,7 @@ void GlobedServersLayer::updateServerList(float) {
 
     // if we are logged out of our account, navigate away
     if (GJAccountManager::get()->m_accountID <= 0 && !typeinfo_cast<CCTransitionScene*>(CCScene::get()) && !transitioningAway) {
-        GameManager::get()->safePopScene();
+        util::gd::safePopScene();
         transitioningAway = true;
 
         return;
@@ -220,7 +221,9 @@ void GlobedServersLayer::updateServerList(float) {
 
         serverList->forceRefresh();
 
-        this->pingServers(0.f);
+        if (!initializing) {
+            this->pingServers(0.f);
+        }
 
         // also disconnect from the current server if it's gone
         auto activeId = gsm.getActiveId();
@@ -293,7 +296,7 @@ void GlobedServersLayer::cancelWebRequest() {
     requestListener.getFilter().cancel();
 }
 
-void GlobedServersLayer::pingServers(float) {
+void GlobedServersLayer::pingServers(float d) {
     auto& nm = NetworkManager::get();
     nm.pingServers();
 }

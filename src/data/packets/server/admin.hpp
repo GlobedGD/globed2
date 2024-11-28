@@ -40,7 +40,7 @@ GLOBED_SERIALIZABLE_STRUCT(AdminUserDataPacket, (userEntry, accountData));
 
 // 29003 - AdminSuccessMessagePacket
 class AdminSuccessMessagePacket : public Packet {
-    GLOBED_PACKET(29003, AdminSuccessMessagePacket, false, false)
+    GLOBED_PACKET(29003, AdminSuccessMessagePacket, true, false)
 
     AdminSuccessMessagePacket() {}
 
@@ -51,9 +51,32 @@ GLOBED_SERIALIZABLE_STRUCT(AdminSuccessMessagePacket, (message));
 
 // 29004 - AdminAuthFailedPacket
 class AdminAuthFailedPacket : public Packet {
-    GLOBED_PACKET(29004, AdminAuthFailedPacket, false, false)
+    GLOBED_PACKET(29004, AdminAuthFailedPacket, true, false)
 
     AdminAuthFailedPacket() {}
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminAuthFailedPacket, ());
+
+// 29005 - AdminPunishmentHistoryPacket
+class AdminPunishmentHistoryPacket : public Packet {
+    GLOBED_PACKET(29005, AdminPunishmentHistoryPacket, true, false)
+
+    AdminPunishmentHistoryPacket() {}
+
+    std::vector<UserPunishment> entries;
+    std::map<int32_t, std::string> modNameData;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(AdminPunishmentHistoryPacket, (entries, modNameData));
+
+// 29006 - AdminSuccessfulUpdatePacket
+class AdminSuccessfulUpdatePacket : public Packet {
+    GLOBED_PACKET(29006, AdminSuccessfulUpdatePacket, true, false)
+
+    AdminSuccessfulUpdatePacket() {}
+
+    UserEntry userEntry;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(AdminSuccessfulUpdatePacket, (userEntry));

@@ -7,6 +7,7 @@
 #include <net/manager.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
+#include <util/ui.hpp>
 
 using namespace geode::prelude;
 
@@ -19,21 +20,24 @@ bool RoomJoinPopup::setup() {
         return false;
     }
 
-    float popupCenter = CCDirector::get()->getWinSize().width / 2;
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     // room id hint
     Build<CCLabelBMFont>::create("Room ID", "bigFont.fnt")
         .scale(0.3f)
-        .pos(popupCenter, POPUP_HEIGHT + 45.f)
+        .pos(rlayout.fromTop(45.f))
         .parent(m_mainLayer)
         .id("join-room-id-hint"_spr);
 
     // room id input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 7)
-        .pos(popupCenter, POPUP_HEIGHT + 25.f)
+    Build<TextInput>::create(POPUP_WIDTH * 0.75f, "", "chatFont.fnt")
+        .pos(rlayout.fromTop(65.f))
         .parent(m_mainLayer)
         .id("join-room-id"_spr)
         .store(roomIdInput);
+
+    roomIdInput->setCommonFilter(CommonFilter::Uint);
+    roomIdInput->setMaxCharCount(7);
 
     Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this](auto) {
@@ -61,7 +65,7 @@ bool RoomJoinPopup::setup() {
         .id("join-btn"_spr)
         .intoNewParent(CCMenu::create())
         .id("join-btn-menu"_spr)
-        .pos(popupCenter, 120.f)
+        .pos(rlayout.fromBottom(30.f))
         .parent(m_mainLayer);
 
     nm.addListener<RoomJoinFailedPacket>(this, [this](std::shared_ptr<RoomJoinFailedPacket> packet) {
@@ -90,7 +94,7 @@ bool RoomJoinPopup::setup() {
 
 RoomJoinPopup* RoomJoinPopup::create() {
     auto ret = new RoomJoinPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

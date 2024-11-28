@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE users SET active_mute = NULL WHERE account_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "02fa43600c4eff4f86ddbc97992d88c790e4d1591c109fea75e876ec0985a636"
+}

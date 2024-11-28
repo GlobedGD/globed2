@@ -26,6 +26,8 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     this->parent = parent;
     this->playerCount = rli.playerCount;
     this->ownerData = rli.owner;
+    this->roomId = rli.id;
+    this->roomHasPassword = rli.hasPassword;
 
     this->setContentSize({RoomListingPopup::LIST_WIDTH, CELL_HEIGHT});
     this->setAnchorPoint({0.f, 0.f});
@@ -99,14 +101,11 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .collect();
 
     CCLabelBMFont* roomNameLabel = Build<CCLabelBMFont>::create(rli.name.c_str(), "bigFont.fnt")
-        .limitLabelWidth(180.0f, 0.48f, 0.1f)
         .id("message-text")
         .parent(roomNameLayout)
         .collect();
 
-    roomNameLayout->updateLayout();
-
-    auto* rightMenu = Build<CCMenu>::create()
+    Build<CCMenu>::create()
         .layout(
             RowLayout::create()
                     ->setAxisReverse(true)
@@ -118,7 +117,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .pos(RoomListingPopup::LIST_WIDTH - 3.f, CELL_HEIGHT / 2.f)
         .contentSize(this->getContentSize())
         .parent(this)
-        .collect();
+        .store(rightMenu);
 
     auto* roomSettingsMenu = Build<CCMenu>::create()
         .layout(
@@ -128,25 +127,13 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
                 ->setAutoScale(false)
                 ->setGap(1.f)
         )
-        .contentSize(58.f, this->getContentHeight())
+        .contentSize(77.f, this->getContentHeight())
         .parent(rightMenu)
         .zOrder(btnorder::Settings)
         .collect();
 
     // join button
-    Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
-        .scale(0.7f)
-        .intoMenuItem([this, rli](auto) {
-            if (rli.hasPassword) {
-                RoomPasswordPopup::create(rli.id)->show();
-                return;
-            }
-
-            NetworkManager::get().send(JoinRoomPacket::create(rli.id, std::string_view("")));
-        })
-        .scaleMult(1.15f)
-        .zOrder(btnorder::Join)
-        .parent(rightMenu);
+    this->createJoinButton();
 
     // lock button
     auto* lockSpr = Build<CCSprite>::createSpriteName("room-icon-lock.png"_spr)
@@ -188,6 +175,20 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
 
     deathlinkBtn->setEnabled(rli.settings.flags.deathlink);
 
+    // 2 player icon
+    auto* twoPlayerBtn = Build<CCSprite>::createSpriteName("room-icon-2p.png"_spr)
+        .with([&](auto* s) {
+            util::ui::rescaleToMatch(s, lockSpr->getScaledContentSize());
+        })
+        .opacity(rli.settings.flags.twoPlayerMode ? 255 : 80)
+        .intoMenuItem([] {
+            FLAlertLayer::create("2 Player", "This room has 2 Player enabled, which means you can play 2-player levels with a remote friend.", "Ok")->show();
+        })
+        .parent(roomSettingsMenu)
+        .collect();
+
+    twoPlayerBtn->setEnabled(rli.settings.flags.twoPlayerMode);
+
     auto* playerCountWrapper = Build<CCNode>::create()
         .layout(RowLayout::create()->setGap(1.f)->setAutoScale(false))
         .parent(rightMenu)
@@ -218,8 +219,12 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
     roomSettingsMenu->updateLayout();
     rightMenu->updateLayout();
 
+    // update width of the room name accordingly, so it fits
+    roomNameLabel->limitLabelWidth(208.f - playerCountWrapper->getContentWidth(), 0.48f, 0.1f);
+    roomNameLayout->updateLayout();
+
     // add a bg
-    float sizeScale = 3.f;
+    float sizeScale = 3.5f;
     auto* settingsBg = Build<CCScale9Sprite>::create("square02_001.png")
         .opacity(67)
         .zOrder(-1)
@@ -242,6 +247,51 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .pos(playerCountWrapper->getScaledContentSize() / 2.f);
 
     return true;
+}
+
+void RoomListingCell::toggleModActions(bool enabled) {
+    if (joinButton) {
+        joinButton->removeFromParent();
+        joinButton = nullptr;
+    }
+
+    if (closeButton) {
+        closeButton->removeFromParent();
+        closeButton = nullptr;
+    }
+
+    if (enabled) {
+        Build<ButtonSprite>::create("Close", "bigFont.fnt", "GJ_button_06.png", 0.8f)
+            .scale(0.7f)
+            .intoMenuItem([this](auto) {
+                NetworkManager::get().send(CloseRoomPacket::create(this->roomId));
+            })
+            .scaleMult(1.15f)
+            .zOrder(btnorder::Join)
+            .parent(rightMenu)
+            .store(closeButton);
+    } else {
+        this->createJoinButton();
+    }
+
+    rightMenu->updateLayout();
+}
+
+void RoomListingCell::createJoinButton() {
+    Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        .scale(0.7f)
+        .intoMenuItem([this](auto) {
+            if (this->roomHasPassword) {
+                RoomPasswordPopup::create(this->roomId)->show();
+                return;
+            }
+
+            NetworkManager::get().send(JoinRoomPacket::create(this->roomId, std::string_view("")));
+        })
+        .scaleMult(1.15f)
+        .zOrder(btnorder::Join)
+        .parent(rightMenu)
+        .store(joinButton);
 }
 
 void RoomListingCell::onUser(CCObject* sender) {

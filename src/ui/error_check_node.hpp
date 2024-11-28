@@ -1,7 +1,8 @@
 #pragma once
 #include <cocos2d.h>
+#include <defs/platform.hpp>
 
-class ErrorCheckNode : public cocos2d::CCNode {
+class GLOBED_DLL ErrorCheckNode : public cocos2d::CCNode {
 public:
     static ErrorCheckNode* create();
 

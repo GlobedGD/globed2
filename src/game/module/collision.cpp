@@ -104,3 +104,7 @@ void CollisionModule::checkCollisions(PlayerObject* player, float dt, bool p2) {
         }
     }
 }
+
+bool CollisionModule::shouldSaveProgress() {
+    return false;
+}

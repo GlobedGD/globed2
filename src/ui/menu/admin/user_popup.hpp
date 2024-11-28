@@ -5,35 +5,37 @@
 
 #include <data/types/admin.hpp>
 #include <data/types/gd.hpp>
+#include <ui/general/loading_circle.hpp>
 
 class AdminUserPopup : public geode::Popup<const UserEntry&, const std::optional<PlayerRoomPreviewAccountData>&>, public UserInfoDelegate {
 public:
     static constexpr float POPUP_WIDTH = 300.f;
-    static constexpr float POPUP_HEIGHT = 260.f;
-    static constexpr int TAG_BAN = 41;
-    static constexpr int TAG_MUTE = 42;
-    static constexpr int TAG_WHITELIST = 43;
+    static constexpr float POPUP_HEIGHT = 190.f;
 
     static AdminUserPopup* create(const UserEntry& userEntry, const std::optional<PlayerRoomPreviewAccountData>& accountData);
+    void showLoadingPopup();
 
 private:
+    class WaitForResponsePopup;
+    friend class AdminPunishUserPopup;
+
     UserEntry userEntry;
     std::optional<PlayerRoomPreviewAccountData> accountData;
     GJUserScore* userScore = nullptr;
-    Ref<LoadingCircle> loadingCircle = nullptr;
+    Ref<BetterLoadingCircle> loadingCircle = nullptr;
     ColorChannelSprite* nameColorSprite = nullptr;
     cocos2d::CCLabelBMFont* banDurationText = nullptr;
     geode::TextInput *inputReason = nullptr;
     geode::TextInput *inputAdminPassword = nullptr;
     cocos2d::CCMenu* nameLayout;
-    Ref<CCMenuItemSpriteExtra> roleModifyButton;
+    cocos2d::CCMenu* rootMenu;
+    Ref<CCMenuItemSpriteExtra> roleModifyButton, banButton, muteButton;
 
     bool setup(const UserEntry& userEntry, const std::optional<PlayerRoomPreviewAccountData>& accountData) override;
     void onProfileLoaded();
     void onColorSelected(cocos2d::ccColor3B);
-    void onViolationChanged(cocos2d::CCObject* sender);
-    void onViolationDurationChanged(cocos2d::CCObject* sender);
     void recreateRoleModifyButton();
+    void createBanAndMuteButtons();
 
     cocos2d::ccColor3B getCurrentNameColor();
 
@@ -41,6 +43,7 @@ private:
 
     void onClose(cocos2d::CCObject*) override;
     void removeLoadingCircle();
+    void refreshFromUserEntry(UserEntry entry);
 
     void getUserInfoFinished(GJUserScore* p0) override;
     void getUserInfoFailed(int p0) override;

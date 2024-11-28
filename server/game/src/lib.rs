@@ -1,4 +1,4 @@
-#![feature(sync_unsafe_cell, duration_constructors, async_closure, let_chains)]
+#![feature(sync_unsafe_cell, duration_constructors, async_closure, let_chains, if_let_guard)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
@@ -19,9 +19,9 @@ pub mod state;
 pub mod util;
 use globed_shared::webhook;
 
-#[cfg(feature = "use_tokio_tracing")]
-use tokio_tracing as tokio;
+// #[cfg(feature = "use_tokio_tracing")]
+// use tokio_tracing as tokio;
 
-#[cfg(not(feature = "use_tokio_tracing"))]
+// #[cfg(not(feature = "use_tokio_tracing"))]
 #[allow(clippy::single_component_path_imports)]
 use tokio;

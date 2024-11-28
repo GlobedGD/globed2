@@ -16,21 +16,24 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
     this->parent = parent;
     this->setTitle("Direct connection");
 
-    float popupCenter = CCDirector::get()->getWinSize().width / 2;
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     // address hint
     Build<CCLabelBMFont>::create("Server address", "bigFont.fnt")
         .scale(0.3f)
-        .pos(popupCenter, POPUP_HEIGHT - 20.f)
+        .pos(rlayout.fromTop(45.f))
         .parent(m_mainLayer)
         .id("direct-connection-addr-hint"_spr);
 
     // address input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, fmt::format("127.0.0.1:{}", NetworkAddress::DEFAULT_PORT).c_str(), "chatFont.fnt", std::string(util::misc::STRING_URL), 21)
-        .pos(popupCenter, POPUP_HEIGHT - 40.f)
+    Build<TextInput>::create(POPUP_WIDTH * 0.75f, fmt::format("127.0.0.1:{}", NetworkAddress::DEFAULT_PORT).c_str(), "chatFont.fnt")
+        .pos(rlayout.fromTop(65.f))
         .parent(m_mainLayer)
         .id("direct-connection-addr"_spr)
         .store(addressNode);
+
+    addressNode->setFilter(std::string(util::misc::STRING_URL));
+    addressNode->setMaxCharCount(64);
 
     Build<ButtonSprite>::create("Connect", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this](auto) {
@@ -80,7 +83,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
         .id("connect-btn"_spr)
         .intoNewParent(CCMenu::create())
         .id("connect-btn-menu"_spr)
-        .pos(popupCenter, 55.f)
+        .pos(rlayout.fromBottom(30.f))
         .parent(m_mainLayer);
 
     return true;
@@ -88,7 +91,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
 
 DirectConnectionPopup* DirectConnectionPopup::create(ServerSwitcherPopup* parent) {
     auto ret = new DirectConnectionPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, parent)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, parent)) {
         ret->autorelease();
         return ret;
     }

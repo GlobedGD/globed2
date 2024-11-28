@@ -7,7 +7,7 @@
 
 using namespace geode::prelude;
 
-bool GlobedInviteNotification::init(uint32_t roomID, const std::string_view password, const PlayerPreviewAccountData& player) {
+bool GlobedInviteNotification::init(uint32_t roomID, std::string_view password, const PlayerPreviewAccountData& player) {
     if (!CCLayer::init()) return false;
 
     this->setID(fmt::format("room-invite-{}", roomID));
@@ -107,7 +107,7 @@ void GlobedInviteNotification::removeFromParent() {
     GlobedNotificationPanel::get()->updateLayout();
 }
 
-GlobedInviteNotification* GlobedInviteNotification::create(uint32_t roomID, const std::string_view password, const PlayerPreviewAccountData& player) {
+GlobedInviteNotification* GlobedInviteNotification::create(uint32_t roomID, std::string_view password, const PlayerPreviewAccountData& player) {
     auto ret = new GlobedInviteNotification;
     if (ret->init(roomID, password, player)) {
         ret->autorelease();

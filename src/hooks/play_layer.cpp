@@ -96,15 +96,7 @@ void GlobedPlayLayer::resetLevel() {
 
     GLOBED_EVENT_O(gjbgl, resetLevel());
 
-    bool lastTestMode = m_isTestMode;
-
-    if (GlobedGJBGL::get()->isSafeMode()) {
-        m_isTestMode = true;
-    }
-
     PlayLayer::resetLevel();
-
-    m_isTestMode = lastTestMode;
 
     // this is also called upon init, so bail out if we are too early
     if (!gjbgl->m_fields->setupWasCompleted) return;
@@ -121,12 +113,20 @@ void GlobedPlayLayer::showNewBest(bool p0, int p1, int p2, bool p3, bool p4, boo
 }
 
 void GlobedPlayLayer::levelComplete() {
-    if (!GlobedGJBGL::get()->isSafeMode()) PlayLayer::levelComplete();
-    else GlobedPlayLayer::onQuit();
+    bool original = this->m_isTestMode;
+
+    if (GlobedGJBGL::get()->isSafeMode()) {
+        this->m_isTestMode = true;
+    }
+
+    PlayLayer::levelComplete();
+
+    this->m_isTestMode = original;
 }
 
 void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     auto& fields = this->getFields();
+    bool original = this->m_isTestMode;
 
     if (!fields.antiCheat) {
         fields.antiCheat = object;
@@ -134,26 +134,22 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 
     auto* pl = GlobedGJBGL::get();
 
-    GLOBED_EVENT_O(pl, destroyPlayerPre(player, object));
-
-    // safe mode stuff yeah
-
-    bool lastTestMode = m_isTestMode;
-
-    if (GlobedGJBGL::get()->isSafeMode()) {
-        m_isTestMode = true;
+    if (pl->isSafeMode()) {
+        this->m_isTestMode = true;
     }
 
+    GLOBED_EVENT_O(pl, destroyPlayerPre(player, object));
+
 #ifdef GEODE_IS_ARM_MAC
-# if GEODE_COMP_GD_VERSION != 22060
+# if GEODE_COMP_GD_VERSION != 22074
 #  error "update this patch for new gd"
 # else
     static auto armpatch = [] {
-        return util::lowlevel::nop(0xa73e4, 0x4);
+        return util::lowlevel::nop(0xaa390, 0x4);
     }();
 
     if (armpatch) {
-        if (GlobedGJBGL::get()->m_fields->shouldStopProgress) {
+        if (GlobedGJBGL::get()->isSafeMode()) {
             (void) armpatch->enable();
         } else {
             (void) armpatch->disable();
@@ -172,7 +168,7 @@ void GlobedPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 
     GLOBED_EVENT(pl, destroyPlayerPost(player, object));
 
-    m_isTestMode = lastTestMode;
+    this->m_isTestMode = original;
 }
 
 void GlobedPlayLayer::forceKill(PlayerObject* p) {

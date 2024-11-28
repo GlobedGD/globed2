@@ -12,7 +12,7 @@ bool GlobedAudioVisualizer::init() {
         .parent(this)
         .store(visNode);
 
-    auto batchnode = getChildOfType<CCSpriteBatchNode>(visNode, 0);
+    auto batchnode = visNode->getChildByType<CCSpriteBatchNode>(0);
     auto bigBar = static_cast<CCSprite*>(batchnode->getChildren()->objectAtIndex(0));
     CCSize visualizerSize = bigBar->getScaledContentSize();
 
@@ -42,7 +42,7 @@ void GlobedAudioVisualizer::setScaleX(float scale) {
     CCNode::setScaleX(scale);
 
     // do not try this at home
-    auto batchnode = getChildOfType<CCSpriteBatchNode>(this->visNode, 0);
+    auto batchnode = this->visNode->getChildByType<CCSpriteBatchNode>(0);
     auto border = static_cast<CCSprite*>(batchnode->getChildren()->objectAtIndex(0));
     border->setScaleY(100.f + 1.f / scale);
 }

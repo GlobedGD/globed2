@@ -1,7 +1,9 @@
+use std::ops::Deref;
+
 use crate::*;
 
 #[derive(Copy, Clone, Default, Debug)]
-pub struct FiniteF32(f32);
+pub struct FiniteF32(pub f32);
 
 impl Encodable for FiniteF32 {
     fn encode(&self, buf: &mut ByteBuffer) {
@@ -55,8 +57,30 @@ impl Display for FiniteF32 {
     }
 }
 
+impl Deref for FiniteF32 {
+    type Target = f32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl FiniteF32 {
+    pub fn new(x: f32) -> Self {
+        if !x.is_finite() {
+            panic!("Non-finite value: {}", x);
+        }
+
+        Self(x)
+    }
+
+    pub fn get(&self) -> f32 {
+        self.0
+    }
+}
+
 #[derive(Copy, Clone, Default, Debug)]
-pub struct FiniteF64(f64);
+pub struct FiniteF64(pub f64);
 
 impl Encodable for FiniteF64 {
     fn encode(&self, buf: &mut ByteBuffer) {
@@ -107,5 +131,27 @@ impl DynamicSize for FiniteF64 {
 impl Display for FiniteF64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl Deref for FiniteF64 {
+    type Target = f64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl FiniteF64 {
+    pub fn new(x: f64) -> Self {
+        if !x.is_finite() {
+            panic!("Non-finite value: {}", x);
+        }
+
+        Self(x)
+    }
+
+    pub fn get(&self) -> f64 {
+        self.0
     }
 }

@@ -24,7 +24,7 @@ bool InvitePopup::setup() {
 
     this->setTitle("Invite Player");
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     FriendListManager::get().maybeLoad();
 
@@ -38,7 +38,7 @@ bool InvitePopup::setup() {
         this->onLoaded(!roomBtnMenu);
     });
 
-    auto popupLayout = util::ui::getPopupLayout(m_size);
+    auto popupLayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build(UserList::createForComments(LIST_WIDTH, LIST_HEIGHT, PlayerListCell::CELL_HEIGHT))
         .anchorPoint(0.5f, 1.f)
@@ -53,10 +53,9 @@ bool InvitePopup::setup() {
         .intoMenuItem([this](auto) {
             this->reloadPlayerList(true);
         })
-        .pos(m_size.width / 2.f - 3.f, -m_size.height / 2.f + 3.f)
+        .pos(rlayout.fromBottomRight(5.f, 5.f))
         .id("reload-btn"_spr)
-        .intoNewParent(CCMenu::create())
-        .parent(m_mainLayer);
+        .parent(m_buttonMenu);
 
     Build<CCMenu>::create()
         .layout(ColumnLayout::create()->setGap(1.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
@@ -73,7 +72,7 @@ bool InvitePopup::setup() {
     // search button
     Build<CCSprite>::createSpriteName("gj_findBtn_001.png")
         .intoMenuItem([this](auto) {
-            AskInputPopup::create("Search Player", [this](const std::string_view input) {
+            AskInputPopup::create("Search Player", [this](std::string_view input) {
                 this->applyFilter(input);
                 this->sortPlayerList();
                 this->onLoaded(true);
@@ -201,7 +200,7 @@ void InvitePopup::sortPlayerList() {
     });
 }
 
-void InvitePopup::applyFilter(const std::string_view input) {
+void InvitePopup::applyFilter(std::string_view input) {
     filteredPlayerList.clear();
 
     if (input.empty()) {
@@ -231,7 +230,7 @@ void InvitePopup::applyFilter(const std::string_view input) {
 
 InvitePopup* InvitePopup::create() {
     auto ret = new InvitePopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

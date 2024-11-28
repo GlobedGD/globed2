@@ -33,7 +33,7 @@ class BetterMDPopup : public MDPopup {
 public:
     static BetterMDPopup* create(
         std::string const& title, std::string const& content, char const* btn1, char const* btn2,
-        utils::MiniFunction<void(bool)> onClick
+        std::function<void(bool)> onClick
     ) {
         auto ret = new BetterMDPopup();
         if (ret->initAnchored(
@@ -49,7 +49,7 @@ public:
 
     bool setup(
         std::string const& title, std::string const& info, char const* btn1Text, char const* btn2Text,
-        utils::MiniFunction<void(bool)> onClick
+        std::function<void(bool)> onClick
     ) {
         this->setTitle(title.c_str(), "goldFont.fnt", .9f, 33.f);
 
@@ -105,6 +105,7 @@ private:
 
 FLAlertLayer* showChangelogPopup() {
     auto currentVersion = Mod::get()->getVersion();
+
     // parse changelog.md lol
     auto clog_ = Mod::get()->getMetadata().getChangelog();
     if (!clog_) {
@@ -138,8 +139,6 @@ FLAlertLayer* showChangelogPopup() {
             currentChangelog += "\n";
         }
     }
-
-    log::debug("Changelog text: {}, size: {}", currentChangelog, currentChangelog.size());
 
     if (!currentChangelog.empty()) {
         Mod::get()->setSavedValue(LAST_CHANGELOG_KEY, Mod::get()->getVersion().toVString());

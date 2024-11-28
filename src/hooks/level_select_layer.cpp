@@ -81,7 +81,7 @@ bool HookedLevelSelectLayer::init(int p0) {
     if (!nm.established()) return true;
 
     nm.addListener<LevelPlayerCountPacket>(this, [this](auto packet) {
-        auto currentLayer = getChildOfType<LevelSelectLayer>(CCScene::get(), 0);
+        auto currentLayer = CCScene::get()->getChildByType<LevelSelectLayer>(0);
         if (currentLayer && this != currentLayer) return;
 
         m_fields->levels.clear();
@@ -105,14 +105,14 @@ void HookedLevelSelectLayer::sendRequest(float) {
 }
 
 void HookedLevelSelectLayer::updatePlayerCounts() {
-    auto* bsl = getChildOfType<BoomScrollLayer>(this, 0);
+    auto* bsl = this->getChildByType<BoomScrollLayer>(0);
     if (!bsl) return;
-    auto* extlayer = getChildOfType<ExtendedLayer>(bsl, 0);
+    auto* extlayer = bsl->getChildByType<ExtendedLayer>(0);
     if (!extlayer || extlayer->getChildrenCount() == 0) return;
 
     for (auto* page : CCArrayExt<LevelPage*>(extlayer->getChildren())) {
-        auto buttonmenu = getChildOfType<CCMenu>(page, 0);
-        auto button = getChildOfType<CCMenuItemSpriteExtra>(buttonmenu, 0);
+        auto buttonmenu = page->getChildByType<CCMenu>(0);
+        auto button = buttonmenu->getChildByType<CCMenuItemSpriteExtra>(0);
         PlayerCountLabel* label = static_cast<PlayerCountLabel*>(button->getChildByID("player-count-label"_spr));
 
         LevelId levelId = HookedGJGameLevel::getLevelIDFrom(page->m_level);

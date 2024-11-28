@@ -2,20 +2,16 @@
 #include <defs/geode.hpp>
 #include <Geode/modify/FLAlertLayer.hpp>
 
-#include <util/time.hpp>
+#include <asp/time/SystemTime.hpp>
 
 struct GLOBED_DLL HookedFLAlertLayer : geode::Modify<HookedFLAlertLayer, FLAlertLayer> {
     struct Fields {
         bool blockClosing = false;
-        util::time::time_point blockClosingUntil;
+        asp::time::SystemTime blockClosingUntil;
     };
 
     $override
     void keyBackClicked() override;
 
-    template <typename Rep, typename Period>
-    void blockClosingFor(util::time::duration<Rep, Period> duration) {
-        m_fields->blockClosing = true;
-        m_fields->blockClosingUntil = util::time::now() + duration;
-    }
+    void blockClosingFor(asp::time::Duration duration);
 };

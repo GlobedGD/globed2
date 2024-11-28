@@ -17,7 +17,7 @@ public:
 
     Task requestAuthToken();
     Task challengeStart();
-    Task challengeFinish(std::string_view authcode);
+    Task challengeFinish(std::string_view authcode, const std::string&);
 
     Task testServer(std::string_view url);
     Task fetchCredits();

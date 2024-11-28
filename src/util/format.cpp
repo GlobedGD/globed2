@@ -4,25 +4,26 @@
 #include <sstream>
 #include <iomanip>
 
+#include <fmt/chrono.h>
+#include <curl/curl.h>
+
 #include <managers/web.hpp>
 
+using namespace asp::time;
+
 namespace util::format {
-    std::string formatDateTime(const time::system_time_point& tp, bool ms) {
-        auto timet = time::sysclock::to_time_t(tp);
-        auto nowms = chrono::duration_cast<chrono::milliseconds>(tp.time_since_epoch()) % 1000;
+    std::string formatDateTime(const asp::time::SystemTime& tp, bool ms) {
+        std::time_t curTime = tp.to_time_t();
 
-        std::tm time_info = *std::localtime(&timet);
-
-        std::ostringstream oss;
-        oss << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S");
         if (ms) {
-            oss << '.' << std::setfill('0') << std::setw(3) << nowms.count();
+            auto millis = tp.timeSinceEpoch().subsecMillis();
+            return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03}", fmt::localtime(curTime), millis);
+        } else {
+            return fmt::format("{:%Y-%m-%d %H:%M:%S}", fmt::localtime(curTime));
         }
-
-        return oss.str();
     }
 
-    std::string dateTime(const time::system_time_point& tp, bool ms) {
+    std::string dateTime(const asp::time::SystemTime& tp, bool ms) {
         return formatDateTime(tp, ms);
     }
 
@@ -72,11 +73,11 @@ namespace util::format {
     }
 
     std::string formatPlatformerTime(uint32_t ms) {
-        auto dur = time::millis(ms);
-        auto hours = time::as<time::hours>(dur).count() % 24;
-        auto minutes = time::as<time::minutes>(dur).count() % 60;
-        auto seconds = time::as<time::seconds>(dur).count() % 60;
-        auto millis = ms % 1000;
+        auto dur = Duration::fromMillis(ms);
+        auto hours = dur.hours() % 24;
+        auto minutes = dur.minutes() % 60;
+        auto seconds = dur.seconds() % 60;
+        auto millis = dur.subsecMillis();
 
         if (hours > 0) {
             return fmt::format("{}:{:02}:{:02}.{:03}", hours, minutes, seconds, millis);
@@ -87,7 +88,7 @@ namespace util::format {
         }
     }
 
-    Result<cocos2d::ccColor3B> parseColor(const std::string_view hex) {
+    Result<cocos2d::ccColor3B> parseColor(std::string_view hex) {
         std::string_view subview;
 
         size_t hashPos = hex.find('#');
@@ -117,7 +118,7 @@ namespace util::format {
         return fmt::format("{}{:02X}{:02X}{:02X}{:02X}", withHash ? "#" : "", color.r, color.g, color.b, color.a);
     }
 
-    std::string rtrim(const std::string_view str, const std::string_view filter) {
+    std::string rtrim(std::string_view str, std::string_view filter) {
         size_t start = 0;
         size_t end = str.length();
 
@@ -128,7 +129,7 @@ namespace util::format {
         return std::string(str.substr(0, end));
     }
 
-    std::string ltrim(const std::string_view str, const std::string_view filter) {
+    std::string ltrim(std::string_view str, std::string_view filter) {
         size_t start = 0;
         size_t end = str.length();
 
@@ -139,11 +140,11 @@ namespace util::format {
         return std::string(str.substr(start));
     }
 
-    std::string trim(const std::string_view str, const std::string_view filter) {
+    std::string trim(std::string_view str, std::string_view filter) {
         return ltrim(rtrim(str, filter), filter);
     }
 
-    std::string toLowercase(const std::string_view str) {
+    std::string toLowercase(std::string_view str) {
         std::string result;
         for (char c : str) {
             result += std::tolower(c);
@@ -152,7 +153,7 @@ namespace util::format {
         return result;
     }
 
-    std::string toUppercase(const std::string_view str) {
+    std::string toUppercase(std::string_view str) {
         std::string result;
         for (char c : str) {
             result += std::toupper(c);
@@ -161,26 +162,32 @@ namespace util::format {
         return result;
     }
 
-    std::string urlEncode(const std::string_view str) {
-        std::ostringstream ss;
-        ss.fill('0');
-        ss << std::hex;
+    std::string urlEncode(std::string_view str) {
+        auto encoded = curl_easy_escape(nullptr, str.data(), str.size());
 
-        for (char c : str) {
-            if (std::isalnum(c) || c == '-' || c== '_' || c == '.' || c == '~') {
-                ss << c;
-                continue;
-            }
+        std::string result(encoded);
+        curl_free(encoded);
+        return result;
 
-            ss << std::uppercase;
-            ss << '%' << std::setw(2) << static_cast<int>((unsigned char)c);
-            ss << std::nouppercase;
-        }
+        // std::ostringstream ss;
+        // ss.fill('0');
+        // ss << std::hex;
 
-        return ss.str();
+        // for (char c : str) {
+        //     if (std::isalnum(c) || c == '-' || c== '_' || c == '.' || c == '~') {
+        //         ss << c;
+        //         continue;
+        //     }
+
+        //     ss << std::uppercase;
+        //     ss << '%' << std::setw(2) << static_cast<int>((unsigned char)c);
+        //     ss << std::nouppercase;
+        // }
+
+        // return ss.str();
     }
 
-    std::vector<std::string_view> split(const std::string_view s, const std::string_view sep) {
+    std::vector<std::string_view> split(std::string_view s, std::string_view sep) {
         std::vector<std::string_view> out;
         size_t start = 0;
         size_t end;
@@ -195,7 +202,7 @@ namespace util::format {
         return out;
     }
 
-    std::vector<std::string_view> splitlines(const std::string_view s) {
+    std::vector<std::string_view> splitlines(std::string_view s) {
         std::vector<std::string_view> lines;
         std::size_t start = 0;
         while (start < s.size()) {
@@ -274,5 +281,22 @@ namespace util::format {
         }
 
         return out;
+    }
+
+    std::string_view unqualify(std::string_view input) {
+        auto lastNs = input.find_last_of("::");
+
+        if (lastNs != std::string::npos) {
+            input = input.substr(lastNs + 1); // after all namespaces
+        } else {
+            // skip class, struct, enum
+            if (input.find("class ") != std::string::npos) input = input.substr(6);
+            if (input.find("struct ") != std::string::npos) input = input.substr(7);
+            if (input.find("enum ") != std::string::npos) input = input.substr(5);
+        }
+
+        input = input.substr(0, input.find_first_of(' '));
+
+        return input;
     }
 }

@@ -364,7 +364,13 @@ void GlobedUserCell::makeButtons() {
             .with([&](CCSprite* spr) {
                 util::ui::rescaleToMatch(spr, btnSize);
             })
-            .intoMenuItem(std::move(btn.callback))
+            .intoMenuItem([this, cb = std::move(btn.callback)](CCObject* sender) {
+                bool refresh = cb(sender);
+                if (refresh) {
+                    parent->hardRefresh();
+                }
+
+            })
             .scaleMult(1.2f)
             .id(btn.id)
             .zOrder(btn.order)

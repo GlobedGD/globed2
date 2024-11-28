@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     collections::VecDeque,
     net::SocketAddrV4,
     sync::{
@@ -8,9 +9,12 @@ use std::{
     time::Duration,
 };
 
-use crate::tokio::{
-    self,
-    sync::{Mutex, Notify},
+use crate::{
+    managers::Room,
+    tokio::{
+        self,
+        sync::{Mutex, Notify},
+    },
 };
 use esp::ByteReader;
 use globed_shared::{logger::*, should_ignore_error, ServerUserEntry, SyncMutex};
@@ -60,12 +64,11 @@ pub struct ClientThread {
     pub on_unlisted_level: AtomicBool,
     pub room_id: AtomicU32,
     pub link_code: AtomicU32,
+    pub room: SyncMutex<Arc<Room>>,
 
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<ServerUserEntry>,
     pub user_role: SyncMutex<ComputedRole>,
-
-    pub fragmentation_limit: AtomicU16,
 
     pub is_authorized_user: AtomicBool,
 
@@ -76,6 +79,7 @@ pub struct ClientThread {
     rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
     voice_rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
     chat_rate_limiter: Option<LockfreeMutCell<SimpleRateLimiter>>,
+    translator: PacketTranslator,
 
     pub destruction_notify: Arc<Notify>,
 }
@@ -109,6 +113,7 @@ impl ClientThread {
         let account_data = std::mem::take(&mut *thread.account_data.lock());
         let user_entry = std::mem::take(&mut *thread.user_entry.lock()).unwrap_or_default();
         let user_role = std::mem::take(&mut *thread.user_role.lock()).unwrap_or_else(|| game_server.state.role_manager.get_default().clone());
+        let translator = PacketTranslator::new(thread.protocol_version.load(Ordering::Relaxed));
 
         Self {
             game_server,
@@ -123,12 +128,11 @@ impl ClientThread {
             on_unlisted_level: thread.on_unlisted_level,
             room_id: thread.room_id,
             link_code: thread.link_code,
+            room: thread.room,
 
             account_data: SyncMutex::new(account_data),
             user_entry: SyncMutex::new(user_entry),
             user_role: SyncMutex::new(user_role),
-
-            fragmentation_limit: thread.fragmentation_limit,
 
             is_authorized_user: AtomicBool::new(false),
 
@@ -139,6 +143,7 @@ impl ClientThread {
             rate_limiter: LockfreeMutCell::new(rate_limiter),
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
+            translator,
 
             destruction_notify: thread.destruction_notify,
         }
@@ -243,6 +248,10 @@ impl ClientThread {
         self.is_authorized_user.load(Ordering::Relaxed) && self.user_role.lock().can_moderate()
     }
 
+    pub fn is_in_room(&self) -> bool {
+        self.room_id.load(Ordering::Relaxed) != 0
+    }
+
     /// schedule the thread to terminate as soon as possible.
     #[inline]
     pub fn terminate(&self) -> ClientThreadOutcome {
@@ -285,7 +294,9 @@ impl ClientThread {
                 | PacketHandlingError::DebugOnlyPacket
                 | PacketHandlingError::PacketTooLong(_)
                 | PacketHandlingError::SocketSendFailed(_)
-                | PacketHandlingError::InvalidStreamMarker => {
+                | PacketHandlingError::InvalidStreamMarker
+                | PacketHandlingError::TooManyChunks(_)
+                | PacketHandlingError::TranslationError(_) => {
                     warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
 
@@ -300,7 +311,9 @@ impl ClientThread {
                 | PacketHandlingError::SystemTimeError(_)
                 | PacketHandlingError::WebRequestError(_)
                 | PacketHandlingError::DangerousAllocation(_)
-                | PacketHandlingError::UnableToSendUdp => {
+                | PacketHandlingError::UnableToSendUdp
+                | PacketHandlingError::BridgeError(_)
+                | PacketHandlingError::WebhookError(_) => {
                     error!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
                 // these can likely never happen unless network corruption or someone is pentesting, so ignore in release
@@ -310,20 +323,22 @@ impl ClientThread {
                 | PacketHandlingError::MalformedPacketStructure(_)
                 | PacketHandlingError::SocketWouldBlock
                 | PacketHandlingError::Ratelimited
-                | PacketHandlingError::UnexpectedPlayerData => {}
+                | PacketHandlingError::UnexpectedPlayerData
+                | PacketHandlingError::NoPermission
+                | PacketHandlingError::Standalone => {}
             }
         }
     }
 
     /// call `self.terminate()` and send a message to the user with the reason
-    async fn kick(&self, message: &str) -> Result<()> {
+    async fn kick(&self, message: Cow<'_, str>) -> Result<()> {
         self.terminate();
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
 
-    async fn ban(&self, message: FastString, timestamp: i64) -> Result<()> {
+    async fn ban(&self, message: FastString, expires_at: u64) -> Result<()> {
         self.terminate();
-        self.send_packet_dynamic(&ServerBannedPacket { message, timestamp }).await
+        self.send_packet_dynamic(&ServerBannedPacket { message, expires_at }).await
     }
 
     fn is_chat_packet_allowed(&self, voice: bool, len: usize) -> bool {
@@ -333,7 +348,7 @@ impl ClientThread {
             return false;
         }
 
-        if self.user_entry.lock().is_muted {
+        if self.user_entry.lock().active_mute.is_some() {
             // blocked from chat
             return false;
         }
@@ -390,11 +405,11 @@ impl ClientThread {
             ServerThreadMessage::BroadcastRoomInfo(packet) => {
                 self.send_packet_static(&packet).await?;
             }
-            ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.timestamp).await?,
+            ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.expires_at).await?,
             ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
             ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
             ServerThreadMessage::BroadcastRoomKicked => self._kicked_from_room().await?,
-            ServerThreadMessage::TerminationNotice(message) => self.kick(message.try_to_str()).await?,
+            ServerThreadMessage::TerminationNotice(message) => self.kick(Cow::Borrowed(message.try_to_str())).await?,
         }
 
         Ok(())
@@ -475,8 +490,18 @@ impl ClientThread {
             AdminSendNoticePacket::PACKET_ID => self.handle_admin_send_notice(&mut data).await,
             AdminDisconnectPacket::PACKET_ID => self.handle_admin_disconnect(&mut data).await,
             AdminGetUserStatePacket::PACKET_ID => self.handle_admin_get_user_state(&mut data).await,
-            AdminUpdateUserPacket::PACKET_ID => self.handle_admin_update_user(&mut data).await,
             AdminSendFeaturedLevelPacket::PACKET_ID => self.handle_admin_send_featured_level(&mut data).await,
+
+            AdminUpdateUsernamePacket::PACKET_ID => self.handle_admin_update_username(&mut data).await,
+            AdminSetNameColorPacket::PACKET_ID => self.handle_admin_set_name_color(&mut data).await,
+            AdminSetUserRolesPacket::PACKET_ID => self.handle_admin_set_user_roles(&mut data).await,
+            AdminPunishUserPacket::PACKET_ID => self.handle_admin_punish_user(&mut data).await,
+            AdminRemovePunishmentPacket::PACKET_ID => self.handle_admin_remove_punishment(&mut data).await,
+            AdminWhitelistPacket::PACKET_ID => self.handle_admin_whitelist(&mut data).await,
+            AdminSetAdminPasswordPacket::PACKET_ID => self.handle_admin_set_admin_password(&mut data).await,
+            AdminEditPunishmentPacket::PACKET_ID => self.handle_admin_edit_punishment(&mut data).await,
+            AdminGetPunishmentHistoryPacket::PACKET_ID => self.handle_admin_get_punishment_history(&mut data).await,
+
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }

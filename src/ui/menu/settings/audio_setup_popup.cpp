@@ -14,17 +14,14 @@ using namespace geode::prelude;
 bool AudioSetupPopup::setup() {
     this->setID("AudioSetupPopup"_spr);
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     auto menu = Build<CCMenu>::create()
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
 
-    auto winSize = CCDirector::get()->getWinSize();
-    auto screenCenter = winSize / 2;
-
     Build<CCMenu>::create()
-        .pos(screenCenter.width, screenCenter.height - 110.f)
+        .pos(rlayout.fromCenter(0.f, -110.f))
         .layout(RowLayout::create()
                     ->setGap(5.0f)
                     ->setAxisReverse(true)
@@ -83,7 +80,7 @@ bool AudioSetupPopup::setup() {
         .intoMenuItem([this](auto) {
             this->refreshList();
         })
-        .pos(screenCenter.width + POPUP_WIDTH / 2 - 10.f, screenCenter.height - POPUP_HEIGHT / 2 + 10.f)
+        .pos(rlayout.fromBottomRight(5.f, 5.f))
         .parent(menu)
         .id("refresh-btn"_spr);
 
@@ -116,7 +113,11 @@ cocos2d::CCArray* AudioSetupPopup::createDeviceCells() {
 
     auto& vm = GlobedAudioManager::get();
 
-    int activeId = vm.getRecordingDevice().id;
+    int activeId = -1;
+    if (const auto& dev = vm.getRecordingDevice()) {
+        activeId = dev->id;
+    }
+
     auto devices = vm.getRecordingDevices();
 
     for (const auto& device : devices) {
@@ -142,7 +143,10 @@ void AudioSetupPopup::weakRefreshList() {
         return;
     }
 
-    int activeId = vm.getRecordingDevice().id;
+    int activeId = -1;
+    if (const auto& dev = vm.getRecordingDevice()) {
+        activeId = dev->id;
+    }
 
     size_t refreshed = 0;
     for (auto* cell : *listLayer) {
@@ -195,7 +199,7 @@ void AudioSetupPopup::applyAudioDevice(int id) {
 
 AudioSetupPopup* AudioSetupPopup::create() {
     auto ret = new AudioSetupPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

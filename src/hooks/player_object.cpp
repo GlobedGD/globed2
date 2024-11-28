@@ -44,6 +44,36 @@ void ComplexPlayerObject::incrementJumps() {
 }
 
 
+void HookedPlayerObject::cleanupObjectLayer() {
+#define $clear(x) if (x) x->removeFromParent(); x = nullptr
+
+    // Robtop does not properly remove most/all those nodes from the playerobject in the destructor,
+    // so whenever someone leaves the level, these nodes are never deleted until you leave the level too.
+
+    // Thanks sleepyut for finding this :)
+
+    $clear(m_shipStreak);
+    $clear(m_regularTrail);
+    $clear(m_waveTrail);
+    $clear(m_ghostTrail);
+
+    $clear(m_playerGroundParticles);
+    $clear(m_trailingParticles);
+    $clear(m_shipClickParticles);
+    $clear(m_vehicleGroundParticles);
+    $clear(m_ufoClickParticles);
+    $clear(m_robotBurstParticles);
+    $clear(m_dashParticles);
+    $clear(m_swingBurstParticles1);
+    $clear(m_swingBurstParticles2);
+    $clear(m_landParticles0);
+    $clear(m_landParticles1);
+
+    // hope i didnt forget anything..
+
+#undef $clear
+}
+
 void HookedPlayerObject::playSpiderDashEffect(cocos2d::CCPoint from, cocos2d::CCPoint to) {
     // if we are in the editor, do nothing
     if (GJBaseGameLayer::get() == nullptr) {

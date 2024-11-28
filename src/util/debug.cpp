@@ -11,28 +11,29 @@
 #include <util/rng.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 namespace util::debug {
-    void Benchmarker::start(const std::string_view id) {
-        _entries[std::string(id)] = time::now();
+    void Benchmarker::start(std::string_view id) {
+        _entries.emplace(std::make_pair(std::string(id), Instant::now()));
     }
 
-    time::micros Benchmarker::end(const std::string_view id) {
+    Duration Benchmarker::end(std::string_view id) {
         auto idstr = std::string(id);
-        auto micros = time::as<time::micros>(time::now() - _entries[idstr]);
+        auto dur = Instant::now().durationSince(_entries[idstr]);
         _entries.erase(idstr);
 
-        return micros;
+        return dur;
     }
 
-    void Benchmarker::endAndLog(const std::string_view id, bool ignoreSmall) {
+    void Benchmarker::endAndLog(std::string_view id, bool ignoreSmall) {
         auto took = this->end(id);
-        if (took > util::time::micros(250)) {
-            log::debug("{} took {} to run", id, util::format::formatDuration(took));
+        if (took > Duration::fromMicros(250)) {
+            log::debug("{} took {} to run", id, took.toString());
         }
     }
 
-    time::micros Benchmarker::run(std::function<void()>&& func) {
+    Duration Benchmarker::run(std::function<void()>&& func) {
         auto& random = rng::Random::get();
         auto id = fmt::format("bb-rng-{}", random.generate<uint32_t>());
         this->start(id);
@@ -40,9 +41,9 @@ namespace util::debug {
         return this->end(id);
     }
 
-    void Benchmarker::runAndLog(std::function<void()>&& func, const std::string_view identifier) {
+    void Benchmarker::runAndLog(std::function<void()>&& func, std::string_view identifier) {
         auto took = this->run(std::move(func));
-        log::debug("{} took {} to run", identifier, util::format::formatDuration(took));
+        log::debug("{} took {} to run", identifier, took.toString());
     }
 
     std::vector<size_t> DataWatcher::updateLastData(DataWatcher::WatcherEntry& entry) {
@@ -184,15 +185,15 @@ namespace util::debug {
     }
 #endif
 
-    void delayedSuicide(const std::string_view message) {
+    void delayedSuicide(std::string_view message) {
         Loader::get()->queueInMainThread([message = std::string(message)] {
             log::error("Globed fatal error: {}", message);
             throw std::runtime_error(fmt::format("Globed error: {}", message));
         });
     }
 
-    void timedLog(const std::string_view message) {
-        log::info("\r[{}] [Globed] {}", util::format::formatDateTime(util::time::systemNow()), message);
+    void timedLog(std::string_view message) {
+        log::info("\r[{}] [Globed] {}", util::format::formatDateTime(SystemTime::now()), message);
     }
 
     std::optional<ptrdiff_t> searchMember(const void* structptr, const uint8_t* bits, size_t length, size_t alignment, size_t maxSize) {
@@ -217,5 +218,27 @@ namespace util::debug {
         }
 
         return std::nullopt;
+    }
+
+    bool isWine() {
+#ifdef GEODE_IS_WINDOWS
+        auto nt = GetModuleHandleW(L"ntdll.dll");
+        return nt && GetProcAddress(nt, "wine_get_version") != nullptr;
+#else
+        return false;
+#endif
+    }
+    const char* getWineVersion() {
+#ifdef GEODE_IS_WINDOWS
+        auto nt = GetModuleHandleW(L"ntdll.dll");
+        if (!nt) return "";
+
+        auto addr = GetProcAddress(nt, "wine_get_version");
+        if (!addr) return "";
+
+        return reinterpret_cast<const char* (__cdecl*)(void)>(addr)();
+#else
+        return "";
+#endif
     }
 }

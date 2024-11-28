@@ -1,12 +1,15 @@
 #include "web.hpp"
 
+#include <globed/tracing.hpp>
 #include <managers/account.hpp>
 #include <managers/central_server.hpp>
 #include <util/net.hpp>
-#include <util/time.hpp>
 #include <net/manager.hpp>
 
+#include <asp/time/SystemTime.hpp>
+
 using namespace geode::prelude;
+using namespace asp::time;
 
 using RequestTask = WebRequestManager::Task;
 
@@ -44,12 +47,12 @@ RequestTask WebRequestManager::requestAuthToken() {
     auto gdData = gam.gdData.lock();
 
     return this->post(makeCentralUrl("v2/totplogin"), 10, [&](CurlRequest& req) {
-        matjson::Object accdata;
+        matjson::Value accdata = matjson::Value::object();
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
         accdata["username"] = gdData->accountName;
 
-        matjson::Object obj;
+        matjson::Value obj = matjson::Value::object();
         obj["account_data"] = accdata;
 
         // recode as urlsafe
@@ -67,7 +70,7 @@ RequestTask WebRequestManager::challengeStart() {
     auto gdData = gam.gdData.lock();
 
     return this->post(makeCentralUrl("v2/challenge/new"), 10, [&](CurlRequest& req) {
-        matjson::Object accdata;
+        auto accdata = matjson::Value::object();
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
         accdata["username"] = gdData->accountName;
@@ -78,20 +81,26 @@ RequestTask WebRequestManager::challengeStart() {
     });
 }
 
-RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
+RequestTask WebRequestManager::challengeFinish(std::string_view authcode, const std::string& challenge) {
     auto& gam = GlobedAccountManager::get();
 
     auto gdData = gam.gdData.lock();
 
     return this->post(makeCentralUrl("v2/challenge/verify"), 30, [&](CurlRequest& req) {
-        matjson::Object accdata;
+        auto accdata = matjson::Value::object();
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
         accdata["username"] = gdData->accountName;
 
-        matjson::Object obj;
+        auto obj = matjson::Value::object();
         obj["account_data"] = accdata;
         obj["answer"] = std::string(authcode);
+
+        if (!challenge.empty()) {
+            if (auto s = NetworkManager::get().getSecure(challenge)) {
+                obj[GEODE_STR(GEODE_CONCAT(GEODE_CONCAT(tr, ust), GEODE_CONCAT(_tok, en)))] = s.value();
+            }
+        }
 
         req.bodyJSON(obj);
         req.encrypted(true);
@@ -99,7 +108,11 @@ RequestTask WebRequestManager::challengeFinish(std::string_view authcode) {
 }
 
 RequestTask WebRequestManager::testServer(std::string_view url) {
-    return this->get(makeUrl(url, "version"));
+    return this->get(makeUrl(url, "versioncheck"), 10, [&](CurlRequest& req) {
+        req.param("gd", GEODE_GD_VERSION_STRING);
+        req.param("globed", Mod::get()->getVersion().toNonVString());
+        req.param("protocol", NetworkManager::get().getUsedProtocol());
+    });
 }
 
 RequestTask WebRequestManager::fetchCredits() {
@@ -124,7 +137,7 @@ RequestTask WebRequestManager::fetchFeaturedLevelHistory(int page) {
 
 RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty) {
     return this->post(makeCentralUrl("v2/flevel/replace"), 10, [&](CurlRequest& req) {
-        matjson::Object data = {
+        auto data = matjson::makeObject({
             {"level_id", levelId},
             {"rate_tier", rateTier},
             {"account_id", GlobedAccountManager::get().gdData.lock()->accountId},
@@ -132,7 +145,7 @@ RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::
             {"level_name", std::string(levelName)},
             {"level_author", std::string(levelAuthor)},
             {"difficulty", difficulty}
-        };
+        });
 
         req.bodyJSON(data);
         req.encrypted(true);
@@ -153,7 +166,7 @@ RequestTask WebRequestManager::get(std::string_view url, int timeoutS, std::func
 #endif
 
     auto request = CurlRequest()
-        .timeout(util::time::seconds(timeoutS));
+        .timeout(Duration::fromSecs(timeoutS));
 
     additional(request);
 
@@ -170,15 +183,12 @@ RequestTask WebRequestManager::post(std::string_view url, int timeoutS) {
 }
 
 RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::function<void(CurlRequest&)> additional) {
-#ifdef GLOBED_DEBUG
-    log::debug("POST request: {}", url);
-#endif
+    TRACE("POST request: {}", url);
 
     auto request = CurlRequest()
-        .timeout(util::time::seconds(timeoutS));
+        .timeout(Duration::fromSecs(timeoutS));
 
     additional(request);
 
     return mapTask(request.post(url).send());
 }
-

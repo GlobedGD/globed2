@@ -103,10 +103,10 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     levelcell->rateTier = this->rating;
     background->addChild(levelcell);
 
-    auto menu = getChildOfType<CCMenu>(levelcell->m_mainLayer, 0);
+    auto menu = levelcell->m_mainLayer->getChildByType<CCMenu>(0);
     if (!menu) return;
 
-    auto toggler = getChildOfType<CCMenuItemToggler>(menu, 0);
+    auto toggler = menu->getChildByType<CCMenuItemToggler>(0);
 
     if (toggler) {
         toggler->setVisible(false);
@@ -120,9 +120,9 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
     auto playBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(levelcell->m_mainLayer->getChildByIDRecursive("view-button"));
     if (!playBtn) {
         // no nodeids :(
-        if (auto menu = getChildOfType<CCMenu>(levelcell->m_mainLayer, 0)) {
-            if (auto btn = getChildOfType<CCMenuItemSpriteExtra>(menu, 0)) {
-                if (auto spr = getChildOfType<ButtonSprite>(btn, 0)) {
+        if (auto menu = levelcell->m_mainLayer->getChildByType<CCMenu>(0)) {
+            if (auto btn = menu->getChildByType<CCMenuItemSpriteExtra>(0)) {
+                if (auto spr = btn->getChildByType<ButtonSprite>(0)) {
                     if (std::string_view(spr->m_label->getString()) == "View") {
                         playBtn = btn;
                     }
@@ -133,7 +133,7 @@ void GlobedDailyLevelCell::createCell(GJGameLevel* level) {
 
     CCNode* playBtnParent = levelcell->getChildByIDRecursive("main-menu");
     if (!playBtnParent) {
-        playBtnParent = getChildOfType<CCMenu>(levelcell->m_mainLayer, 0);
+        playBtnParent = levelcell->m_mainLayer->getChildByType<CCMenu>(0);
     }
 
     if (playBtnParent) {

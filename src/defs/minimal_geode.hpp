@@ -1,6 +1,6 @@
 #pragma once
 #include "platform.hpp"
-#include <Geode/utils/Result.hpp>
+#include <Geode/Result.hpp>
 #include <Geode/loader/Log.hpp>
 #include <Geode/loader/Mod.hpp>
 

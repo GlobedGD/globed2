@@ -10,6 +10,7 @@
 #include <managers/settings.hpp>
 #include <net/manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
+#include <ui/general/slider.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
 
@@ -25,7 +26,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     this->limits = limits;
 
     Build<CCLabelBMFont>::create(nameText, "bigFont.fnt")
-        .scale(0.6f)
+        .scale(0.5f)
         .anchorPoint(0.f, 0.5f)
         .pos(10.f, CELL_HEIGHT / 2)
         .parent(this)
@@ -35,7 +36,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
     if (descText && descText[0] != '\0') {
         auto labelSize = labelName->getScaledContentSize();
         Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-            .scale(0.4f)
+            .scale(0.35f)
             .intoMenuItem([nameText, descText](auto) {
                 FLAlertLayer::create(nameText, descText, "Ok")->show();
             })
@@ -47,9 +48,9 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
 
     switch (settingType) {
         case Type::Bool: {
-            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 1.0f))
+            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 0.85f))
                 .anchorPoint(0.5f, 0.5f)
-                .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 15.f, CELL_HEIGHT / 2)
                 .scale(0.8f)
                 .id("input-checkbox"_spr)
                 .store(inpCheckbox)
@@ -64,9 +65,9 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
             bool possible = Loader::get()->isModLoaded("techstudent10.discord_rich_presence");
             float opacity = possible ? 1.f : 0.5f;
 
-            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 1.0f))
+            Build<CCMenuItemToggler>(CCMenuItemToggler::createWithStandardSprites(this, menu_selector(GlobedSettingCell::onCheckboxToggled), 0.85f))
                 .anchorPoint(0.5f, 0.5f)
-                .pos(CELL_WIDTH - 20.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 15.f, CELL_HEIGHT / 2)
                 .scale(0.8f)
                 .with([&](auto* btn) {
                     btn->m_offButton->setOpacity(static_cast<unsigned char>(255 * opacity));
@@ -82,7 +83,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
 
             if (!possible) {
                 Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-                    .scale(0.4f)
+                    .scale(0.35f)
                     .intoMenuItem([](auto) {
                         FLAlertLayer::create("Not available", "This feature requires the Discord Rich Presence mod to be installed.", "Ok")->show();
                     })
@@ -97,27 +98,21 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
             inpCheckbox->toggle(*(bool*)(settingStorage));
         } break;
         case Type::Float: {
-            Build<Slider>::create(this, menu_selector(GlobedSettingCell::onSliderChanged), 0.3f)
+            Build<BetterSlider>::create()
                 .anchorPoint(1.f, 0.5f)
-                .pos(CELL_WIDTH - 45.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 12.f, CELL_HEIGHT / 2 - 1.f)
                 .parent(this)
                 .id("input-slider"_spr)
                 .store(inpSlider);
 
-            // my ass
-            inpSlider->m_groove->setScaleY(0.75f);
-            auto thumbs1 = (CCNode*)(inpSlider->getThumb()->getChildren()->objectAtIndex(0));
-            auto thumbs2 = (CCNode*)(inpSlider->getThumb()->getChildren()->objectAtIndex(1));
-
-            thumbs1->setScale(1.5f);
-            thumbs2->setScale(1.5f);
-
-            thumbs1->setPositionY(thumbs1->getPositionY() - 10.f);
-            thumbs2->setPositionY(thumbs2->getPositionY() - 10.f);
+            inpSlider->setCallback([this](auto* slider, double value) {
+                this->onSliderChanged(slider, value);
+            });
+            inpSlider->setLimits(limits.floatMin, limits.floatMax);
+            inpSlider->setContentWidth(90.f);
 
             float value = *(float*)(settingStorage);
-            float relativeValue = value / (limits.floatMax - limits.floatMin);
-            inpSlider->setValue(relativeValue);
+            inpSlider->setValue(value);
         } break;
         case Type::String: [[fallthrough]];
         case Type::PacketFragmentation: [[fallthrough]];
@@ -138,11 +133,12 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
             }
 
             Build<ButtonSprite>::create(text, "goldFont.fnt", "GJ_button_04.png", .7f)
+                .scale(0.8f)
                 .intoMenuItem([this](auto* sender) {
                     this->onInteractiveButton(sender);
                 })
                 .anchorPoint(0.5f, 0.5f)
-                .pos(CELL_WIDTH - 10.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 8.f, CELL_HEIGHT / 2)
                 .id("input-interactive-btn"_spr)
                 .store(inpAudioButton)
                 .intoNewParent(CCMenu::create())
@@ -154,9 +150,10 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         } break;
         case Type::Int: {
             int currentValue = *(int*)(settingStorage);
-            Build<InputNode>::create(CELL_WIDTH * 0.2f, "", "chatFont.fnt", std::string(util::misc::STRING_DIGITS), 10)
+            Build<TextInput>::create(CELL_WIDTH * 0.2f, "", "chatFont.fnt")
+                .scale(0.8f)
                 .anchorPoint(1.f, 0.5f)
-                .pos(CELL_WIDTH - 10.f, CELL_HEIGHT / 2)
+                .pos(CELL_WIDTH - 8.f, CELL_HEIGHT / 2)
                 .id("input-field"_spr)
                 .store(inpField)
                 .intoNewParent(CCMenu::create())
@@ -164,7 +161,20 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 .id("input-menu"_spr)
                 .parent(this);
 
-            inpField->getInput()->setDelegate(this);
+            inpField->setCommonFilter(CommonFilter::Uint);
+            inpField->setMaxCharCount(10);
+            inpField->setCallback([this](const std::string& string) {
+                auto val = util::format::parse<int>(string);
+                if (val) {
+                    int vval = val.value();
+                    if (this->limits.intMax != 0 && this->limits.intMin != 0) {
+                        vval = std::clamp(vval, this->limits.intMin, this->limits.intMax);
+                    }
+
+                    this->storeAndSave(val.value());
+                }
+            });
+
             inpField->setString(std::to_string(currentValue));
         } break;
         case Type::Corner: {
@@ -182,7 +192,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                             ->setAutoScale(false));
         menu->setContentWidth(CELL_WIDTH - 5.f);
         menu->setAnchorPoint({0.f, 0.5f});
-        menu->setPositionX(-2.f);
+        menu->setPositionX(-1.f);
         menu->setPositionY(CELL_HEIGHT / 2.f);
 
         if (settingType == Type::PacketFragmentation) {
@@ -191,7 +201,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
 
             // button to manually edit packet frag
             Build<CircleButtonSprite>::create(spr)
-                .scale(0.65f)
+                .scale(0.5f)
                 .intoMenuItem([this, settingStorage] (auto) {
                     AskInputPopup::create("Packet limit", [this](auto input) {
                         auto limit = util::format::parse<int>(input).value_or(0);
@@ -217,10 +227,8 @@ void GlobedSettingCell::onCheckboxToggled(cocos2d::CCObject*) {
     this->storeAndSave(!inpCheckbox->isOn());
 }
 
-void GlobedSettingCell::onSliderChanged(cocos2d::CCObject*) {
-    float relativeValue = inpSlider->getThumb()->getValue();
-    float value = limits.floatMin + (limits.floatMax - limits.floatMin) * relativeValue;
-    this->storeAndSave(value);
+void GlobedSettingCell::onSliderChanged(BetterSlider* slider, double value) {
+    this->storeAndSave(static_cast<float>(value));
 }
 
 void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
@@ -271,13 +279,13 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
             FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
         }
     } else {
-        StringInputPopup::create([this](const std::string_view text) {
+        StringInputPopup::create([this](std::string_view text) {
             this->onStringChanged(text);
         })->show();
     }
 }
 
-void GlobedSettingCell::onStringChanged(const std::string_view text) {
+void GlobedSettingCell::onStringChanged(std::string_view text) {
     this->storeAndSave(text);
 }
 
@@ -293,7 +301,7 @@ void GlobedSettingCell::recreateCornerButton() {
     ButtonSprite* theButton;
 
     Build<ButtonSprite>::create("000", "bigFont.fnt", "GJ_button_04.png", 0.4f)
-        .scale(0.75f)
+        .scale(0.6f)
         .store(theButton)
         .intoMenuItem([this, currentValue](auto) {
             int cv = currentValue + 1;
@@ -305,7 +313,7 @@ void GlobedSettingCell::recreateCornerButton() {
             this->recreateCornerButton();
         })
         .anchorPoint(0.5f, 0.5f)
-        .pos(CELL_WIDTH - 25.f, CELL_HEIGHT / 2)
+        .pos(CELL_WIDTH - 23.f, CELL_HEIGHT / 2)
         .scaleMult(1.1f)
         .id("overlay-btn")
         .store(cornerButton)
@@ -341,7 +349,7 @@ void GlobedSettingCell::recreateInvitesFromButton() {
     }
 
     Build<ButtonSprite>::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f)
-        .scale(0.75f)
+        .scale(0.6f)
         .intoMenuItem([this, currentValue](auto) {
             asp::NumberCycle curValue((int)currentValue, 0, (int)InvitesFrom::Nobody);
             curValue.increment();
@@ -351,7 +359,7 @@ void GlobedSettingCell::recreateInvitesFromButton() {
         })
         .anchorPoint(0.5f, 0.5f)
         .with([](auto* btn) {
-            btn->setPosition(CELL_WIDTH - 8.f - btn->getScaledContentSize().width / 2.f, CELL_HEIGHT / 2);
+            btn->setPosition(CELL_WIDTH - 6.f - btn->getScaledContentSize().width / 2.f, CELL_HEIGHT / 2);
         })
         .scaleMult(1.1f)
         .id("invite-from-btn")
@@ -385,25 +393,6 @@ void GlobedSettingCell::storeAndSave(std::any&& value) {
 
     GlobedSettings::get().save();
 }
-
-void GlobedSettingCell::textChanged(CCTextInputNode* p0) {
-    auto val = util::format::parse<int>(p0->getString());
-    if (val) {
-        int vval = val.value();
-        if (limits.intMax != 0 && limits.intMin != 0) {
-            vval = std::clamp(vval, limits.intMin, limits.intMax);
-        }
-
-        this->storeAndSave(val.value());
-    }
-}
-
-void GlobedSettingCell::textInputOpened(CCTextInputNode* p0) {}
-void GlobedSettingCell::textInputClosed(CCTextInputNode* p0) {}
-void GlobedSettingCell::textInputShouldOffset(CCTextInputNode* p0, float p1) {}
-void GlobedSettingCell::textInputReturn(CCTextInputNode* p0) {}
-bool GlobedSettingCell::allowTextInput(CCTextInputNode* p0) { return true; }
-void GlobedSettingCell::enterPressed(CCTextInputNode* p0) {}
 
 GlobedSettingCell* GlobedSettingCell::create(void* settingStorage, Type settingType, const char* name, const char* desc, const Limits& limits) {
     auto ret = new GlobedSettingCell;

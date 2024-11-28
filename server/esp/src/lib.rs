@@ -7,7 +7,7 @@
 //! esp also provides optimized types such as `InlineString` that will be more efficient in encoding/decoding,
 //! and shall be used for encoding instead of the alternatives when possible.
 
-#![feature(maybe_uninit_uninit_array, const_for, const_trait_impl, const_mut_refs)]
+#![feature(maybe_uninit_uninit_array, const_for, const_trait_impl)]
 #![allow(
     clippy::must_use_candidate,
     clippy::cast_possible_truncation,

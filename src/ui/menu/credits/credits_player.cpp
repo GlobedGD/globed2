@@ -4,7 +4,7 @@
 
 using namespace geode::prelude;
 
-bool GlobedCreditsPlayer::init(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
+bool GlobedCreditsPlayer::init(std::string_view name, std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
     if (!CCNode::init()) return false;
 
     this->accountId = accountId;
@@ -53,7 +53,7 @@ bool GlobedCreditsPlayer::init(const std::string_view name, const std::string_vi
     return true;
 }
 
-GlobedCreditsPlayer* GlobedCreditsPlayer::create(const std::string_view name, const std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
+GlobedCreditsPlayer* GlobedCreditsPlayer::create(std::string_view name, std::string_view nickname, int accountId, int userId, const GlobedSimplePlayer::Icons& icons) {
     auto ret = new GlobedCreditsPlayer;
     if (ret->init(name, nickname, accountId, userId, icons)) {
         ret->autorelease();

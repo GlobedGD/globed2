@@ -24,6 +24,7 @@ use crate::tokio::sync::oneshot; // no way
 
 use crate::{
     client::{ClientThreadState, PacketHandlingError},
+    managers::Room,
     tokio::{
         self,
         net::{TcpListener, UdpSocket},
@@ -367,7 +368,7 @@ impl GameServer {
                     };
 
                     // we are now supposedly the only reference to the thread, so this should always work
-                    let thread = Arc::into_inner(thread).expect("failed to unwrap thread");
+                    let thread: ClientThread = Arc::into_inner(thread).expect("failed to unwrap thread");
 
                     // downgrade back to an unauthorized thread
                     let thread = Arc::new(thread.into_unauthorized());
@@ -544,13 +545,13 @@ impl GameServer {
 
     /// get a list of all players in a room
     #[inline]
-    pub fn get_room_player_previews(&self, room_id: u32, requested: i32, force_visibility: bool) -> Vec<PlayerRoomPreviewAccountData> {
-        let player_count = self.state.room_manager.with_any(room_id, |room| room.manager.get_total_player_count());
+    pub fn get_room_player_previews(&self, room: &Room, requested: i32, force_visibility: bool) -> Vec<PlayerRoomPreviewAccountData> {
+        let player_count = room.get_player_count();
 
         let mut vec = Vec::with_capacity(player_count);
 
         self.for_every_room_player_preview(
-            room_id,
+            room.id,
             requested,
             |p, _, vec| {
                 vec.push(p.clone());
@@ -565,7 +566,7 @@ impl GameServer {
 
     #[inline]
     pub fn get_player_previews_in_room(&self, room_id: u32, force_visibility: bool) -> Vec<PlayerPreviewAccountData> {
-        let player_count = self.state.room_manager.with_any(room_id, |room| room.manager.get_total_player_count());
+        let player_count = self.state.room_manager.with_any(room_id, |room| room.get_player_count());
 
         let mut vec = Vec::with_capacity(player_count);
 
@@ -690,26 +691,18 @@ impl GameServer {
 
     /// Try to find a user by name or account ID, invoke the passed closure, and if it returns `true`,
     /// send a request to the central server to update the account.
-    pub async fn find_and_update_user<F: FnOnce(&mut ServerUserEntry) -> bool>(&self, name: &str, f: F) -> anyhow::Result<()> {
+    pub async fn find_and_update_user<F: FnOnce(&mut ServerUserEntry)>(&self, name: &str, f: F) -> anyhow::Result<()> {
         if let Some(thread) = self.find_user(name) {
-            self.update_user(&thread, f).await
+            self.update_user(&thread, f).await;
+            Ok(())
         } else {
             Err(anyhow!("failed to find the user"))
         }
     }
 
-    pub async fn update_user<F: FnOnce(&mut ServerUserEntry) -> bool>(&self, thread: &ClientThread, f: F) -> anyhow::Result<()> {
-        let result = {
-            let mut data = thread.user_entry.lock();
-            f(&mut data)
-        };
-
-        if result {
-            let user_entry = thread.user_entry.lock().clone();
-            self.bridge.update_user_data(&user_entry).await?;
-        }
-
-        Ok(())
+    pub async fn update_user<F: FnOnce(&mut ServerUserEntry)>(&self, thread: &ClientThread, f: F) {
+        let mut data = thread.user_entry.lock();
+        f(&mut data);
     }
 
     /* private handling stuff */
@@ -717,7 +710,8 @@ impl GameServer {
     /// broadcast a message to all people on the level
     async fn broadcast_user_message(&self, msg: &ServerThreadMessage, origin_id: i32, level_id: LevelId, room_id: u32) {
         let threads = self.state.room_manager.with_any(room_id, |pm| {
-            let players = pm.manager.get_level(level_id);
+            let manager = pm.manager.read();
+            let players = manager.get_level(level_id);
 
             if let Some(level) = players {
                 self.clients
@@ -758,22 +752,15 @@ impl GameServer {
     }
 
     /// send `RoomInfoPacket` to all players in a room
-    pub async fn broadcast_room_info(&self, room_id: u32) {
-        if room_id == 0 {
+    pub async fn broadcast_room_info(&self, room: Arc<Room>) {
+        if room.id == 0 {
             return;
         }
 
-        let info = self
-            .state
-            .room_manager
-            .try_with_any(room_id, |room| Some(room.get_room_info(room_id)), || None);
+        let pkt = RoomInfoPacket { info: room.get_room_info() };
 
-        if let Some(info) = info {
-            let pkt = RoomInfoPacket { info };
-
-            self.broadcast_room_message(&ServerThreadMessage::BroadcastRoomInfo(pkt), 0, room_id)
-                .await;
-        }
+        self.broadcast_room_message(&ServerThreadMessage::BroadcastRoomInfo(pkt), 0, room.id)
+            .await;
     }
 
     /// kick users from the room and send a `RoomPlayerListPacket`
@@ -836,14 +823,14 @@ impl GameServer {
     }
 
     async fn post_disconnect_cleanup(&self, thread: EitherClientThread) {
-        let (account_id, level_id, room_id) = match thread {
+        let (account_id, level_id, room) = match thread {
             EitherClientThread::Authorized(thread) => {
                 thread.destruction_notify.notify_one();
 
                 (
                     thread.account_id.load(Ordering::Relaxed),
                     thread.level_id.load(Ordering::Relaxed),
-                    thread.room_id.load(Ordering::Relaxed),
+                    thread.room.lock().clone(),
                 )
             }
             EitherClientThread::Unauthorized(thread) => {
@@ -852,7 +839,7 @@ impl GameServer {
                 (
                     thread.account_id.load(Ordering::Relaxed),
                     thread.level_id.load(Ordering::Relaxed),
-                    thread.room_id.load(Ordering::Relaxed),
+                    thread.room.lock().clone(),
                 )
             }
             EitherClientThread::None => unreachable!(),
@@ -866,11 +853,11 @@ impl GameServer {
         self.state.dec_player_count();
 
         // remove from the player manager and the level if they are on one
-        let was_owner = self.state.room_manager.remove_with_any(room_id, account_id, level_id);
+        let was_owner = self.state.room_manager.remove_player(&room, account_id, level_id);
 
         // also send room update i guess
-        if was_owner && room_id != 0 {
-            self.broadcast_room_info(room_id).await;
+        if was_owner && room.id != 0 {
+            self.broadcast_room_info(room).await;
         }
     }
 
@@ -883,10 +870,7 @@ impl GameServer {
             self.unclaimed_threads.lock().len(),
         );
         info!("Amount of rooms: {}", self.state.room_manager.get_rooms().len());
-        info!(
-            "People in the global room: {}",
-            self.state.room_manager.get_global().manager.get_total_player_count()
-        );
+        info!("People in the global room: {}", self.state.room_manager.get_global().get_player_count());
         info!("-------------------------------------------");
     }
 

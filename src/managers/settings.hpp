@@ -153,10 +153,11 @@ public:
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
         Setting<bool, true> playerCountOnLvlPage;
+        Setting<bool, true> changelogPopups;
+        Setting<bool, false> editorChanges;
 
         // hidden settings! no settings ui for them
 
-        Setting<bool, true> changelogPopups;
         Setting<bool, false> pinnedLevelCollapsed;
 
         /* privacy settings */
@@ -221,6 +222,8 @@ public:
         Flag seenTeleportNotice;
         Flag seenAprilFoolsNotice;   // Obsolete
         Flag seenStatusNotice;       // Obsolete
+        Flag seenGlobalTriggerGuide;
+        Flag seenRoomOptionsSafeModeNotice;
     };
 
     Globed globed;
@@ -231,6 +234,22 @@ public:
     Advanced advanced;
     Admin admin;
     Flags flags;
+
+private:
+    // Launch args
+    static struct LaunchArgs {
+        bool crtFix = false;
+        bool verboseCurl = false;
+        bool skipPreload = false;
+        bool debugPreload = false;
+        bool skipResourceCheck = false;
+        bool tracing = false;
+        bool noSslVerification = false;
+        bool fakeData = false;
+    } _launchArgs;
+public:
+
+    const LaunchArgs& launchArgs();
 
     // Reset everything, including flags
     void hardReset();
@@ -291,8 +310,7 @@ public:
 /* Enable reflection */
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC,
-    changelogPopups, pinnedLevelCollapsed, playerCountOnLvlPage,
+    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed, playerCountOnLvlPage, 
     isInvisible, noInvites, hideInGame, hideRoles
 ));
 
@@ -319,7 +337,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Admin, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
-    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice, seenStatusNotice
+    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide, seenRoomOptionsSafeModeNotice
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (

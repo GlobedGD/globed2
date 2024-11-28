@@ -45,6 +45,8 @@ public:
     void callToggleWith(PlayerIconType type, bool arg1, bool arg2);
     void callUpdateWith(PlayerIconType type, int icon);
 
+    void cleanupObjectLayer();
+
     static ComplexVisualPlayer* create(RemotePlayer* parent, bool isSecond);
 
 protected:

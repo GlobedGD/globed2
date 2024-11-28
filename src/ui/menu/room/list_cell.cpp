@@ -41,7 +41,7 @@ bool CollapsableLevelCell::init(GJGameLevel* level, float width) {
         .id("left-menu")
         .collect();
 
-    Build<GJDifficultySprite>::create(util::gd::calcLevelDifficulty(level), GJDifficultyName::Short)
+    Build<GJDifficultySprite>::create((int) util::gd::calcLevelDifficulty(level), GJDifficultyName::Short)
         .scale(0.5f)
         .anchorPoint(0.f, 0.5f)
         .id("difficulty-sprite"_spr)

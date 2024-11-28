@@ -1,0 +1,1 @@
+ALTER TABLE punishments ADD COLUMN issued_at INTEGER;

@@ -35,6 +35,7 @@ public:
     void setDefaultTicks(unsigned int ticks);
     void incDefaultTicks();
     void removeProgressIndicators();
+    void cleanupObjectLayer();
 
     void setForciblyHidden(bool state);
     bool getForciblyHidden();
@@ -58,7 +59,6 @@ protected:
     bool wasPracticing = false;
     bool isForciblyHidden = false;
     bool isEditorBuilding = false;
-
 
     GameCameraState* gameCameraState;
 

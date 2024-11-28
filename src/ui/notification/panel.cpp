@@ -5,6 +5,7 @@
 #include <hooks/gjbasegamelayer.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 bool GlobedNotificationPanel::init() {
     if (!CCNode::init()) return false;
@@ -30,7 +31,7 @@ void GlobedNotificationPanel::persist() {
     instance = this;
 }
 
-void GlobedNotificationPanel::addInviteNotification(uint32_t roomID, const std::string_view password, const PlayerPreviewAccountData& player) {
+void GlobedNotificationPanel::addInviteNotification(uint32_t roomID, std::string_view password, const PlayerPreviewAccountData& player) {
     auto* notif = GlobedInviteNotification::create(roomID, password, player);
     this->slideInNotification(notif);
 
@@ -44,7 +45,7 @@ static bool shouldShowNotification() {
     auto* scene = CCScene::get();
     if (!scene || scene->getChildrenCount() == 0) return false;
 
-    if (typeinfo_cast<CCTransitionScene*>(scene) || (getChildOfType<PlayLayer>(scene, 0) && !getChildOfType<PauseLayer>(scene, 0))) {
+    if (typeinfo_cast<CCTransitionScene*>(scene) || (scene->getChildByType<PlayLayer>(0) && !scene->getChildByType<PauseLayer>(0))) {
         return false;
     }
 
@@ -52,8 +53,8 @@ static bool shouldShowNotification() {
 }
 
 void GlobedNotificationPanel::slideInNotification(CCNode* node) {
-    auto time = util::time::now();
-    if (time - lastNotificationAdded < NOTIFICATION_BUFFER_TIME || !shouldShowNotification()) {
+    auto time = SystemTime::now();
+    if ((time - lastNotificationAdded).value() < NOTIFICATION_BUFFER_TIME || !shouldShowNotification()) {
         this->queueNotification(node);
         return;
     }
@@ -129,8 +130,7 @@ void GlobedNotificationPanel::update(float dt) {
 
     if (queuedNotifs.empty()) return;
 
-    auto now = util::time::now();
-    if (now - lastNotificationAdded < NOTIFICATION_BUFFER_TIME) return;
+    if (lastNotificationAdded.elapsed() < NOTIFICATION_BUFFER_TIME) return;
 
     this->slideInNotification(queuedNotifs.front());
     queuedNotifs.pop();

@@ -9,7 +9,7 @@ bool GlobedColorInputPopup::setup(ccColor3B color, ColorInputCallbackFn fn) {
     this->callback = fn;
     this->storedColor = color;
 
-    auto sizes = util::ui::getPopupLayout(m_size);
+    auto sizes = util::ui::getPopupLayoutAnchored(m_size);
 
     colorPicker = CCControlColourPicker::colourPicker();
     colorPicker->setPosition(sizes.center + CCPoint{75.f, 0.f});
@@ -139,7 +139,7 @@ void GlobedColorInputPopup::updateColors(bool updateWheel) {
 
 GlobedColorInputPopup* GlobedColorInputPopup::create(ccColor3B color, ColorInputCallbackFn fn) {
     auto ret = new GlobedColorInputPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, color, fn)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, color, fn)) {
         ret->autorelease();
         return ret;
     }

@@ -1,4 +1,4 @@
-use std::{fmt, ops::Deref, str::Utf8Error};
+use std::{convert::Infallible, fmt, ops::Deref, str::Utf8Error};
 
 use crate::*;
 
@@ -101,11 +101,6 @@ impl<const N: usize> InlineString<N> {
     }
 
     #[inline]
-    pub fn to_string(&self) -> Result<String, Utf8Error> {
-        self.to_str().map(str::to_owned)
-    }
-
-    #[inline]
     pub fn to_str(&self) -> Result<&str, Utf8Error> {
         std::str::from_utf8(&self.buffer[..self.len()])
     }
@@ -173,9 +168,9 @@ impl<const N: usize> fmt::Display for InlineString<N> {
 }
 
 impl<const N: usize> TryInto<String> for InlineString<N> {
-    type Error = DecodeError;
-    fn try_into(self) -> DecodeResult<String> {
-        self.to_string().map_err(|_| DecodeError::InvalidStringValue)
+    type Error = Infallible;
+    fn try_into(self) -> Result<String, Infallible> {
+        Ok(self.to_string())
     }
 }
 

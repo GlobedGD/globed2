@@ -116,7 +116,7 @@ bool RoomLayer::init() {
             util::ui::rescaleToMatch(btn, targetButtonSize);
         })
         .intoMenuItem([this](auto) {
-            AskInputPopup::create("Search Player", [this](const std::string_view input) {
+            AskInputPopup::create("Search Player", [this](std::string_view input) {
                 if (this->isLoading()) return;
 
                 this->setFilter(input);

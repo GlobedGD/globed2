@@ -10,6 +10,7 @@ use crate::tokio::{
     net::TcpStream,
 };
 
+use globed_shared::rand::Rng;
 #[allow(unused_imports)]
 use globed_shared::{
     crypto_box::{
@@ -32,6 +33,7 @@ pub struct ClientSocket {
     pub udp_peer: Option<SocketAddrV4>,
     crypto_box: OnceLock<ChaChaBox>,
     game_server: &'static GameServer,
+    mtu: usize,
 }
 
 // do not touch those, encryption related
@@ -41,14 +43,18 @@ const MAC_SIZE: usize = 16;
 const MAX_PACKET_SIZE: usize = 65536;
 pub const INLINE_BUFFER_SIZE: usize = 164;
 
+const MARKER_UDP_PACKET: u8 = 0xb1;
+const MARKER_UDP_FRAME: u8 = 0xa7;
+
 impl ClientSocket {
-    pub fn new(socket: TcpStream, tcp_peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
+    pub fn new(socket: TcpStream, tcp_peer: SocketAddrV4, mtu: usize, game_server: &'static GameServer) -> Self {
         Self {
             socket,
             tcp_peer,
             udp_peer: None,
             crypto_box: OnceLock::new(),
             game_server,
+            mtu
         }
     }
 
@@ -103,6 +109,10 @@ impl ClientSocket {
 
     pub fn set_udp_peer(&mut self, udp_peer: SocketAddrV4) {
         self.udp_peer.replace(udp_peer);
+    }
+
+    pub fn set_mtu(&mut self, mtu: usize) {
+        self.mtu = mtu;
     }
 
     pub fn decrypt<'a>(&self, message: &'a mut [u8]) -> Result<ByteReader<'a>> {
@@ -191,7 +201,7 @@ impl ClientSocket {
 
         if P::ENCRYPTED {
             // gs_inline_encode! doesn't work here because the borrow checker is silly :(
-            let header_start = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { 0usize };
+            let header_start = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { size_of_types!(u8) };
 
             let nonce_start = header_start + PacketHeader::SIZE;
             let mac_start = nonce_start + NONCE_SIZE;
@@ -206,6 +216,9 @@ impl ClientSocket {
                 if P::SHOULD_USE_TCP {
                     // reserve space for packet length
                     buf.write_u32(0);
+                } else {
+                    // udp packet marker
+                    buf.write_u8(MARKER_UDP_PACKET);
                 }
 
                 // write the header
@@ -270,12 +283,82 @@ impl ClientSocket {
                 }
             }
         } else {
-            let prefix_sz = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { 0usize };
+            let prefix_sz = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { 1usize };
+            let total_payload_size = prefix_sz + PacketHeader::SIZE + packet_size;
 
-            gs_inline_encode!(self, prefix_sz + PacketHeader::SIZE + packet_size, buf, P::SHOULD_USE_TCP, {
+            // ok so now umm
+            let should_fragment = !P::SHOULD_USE_TCP && self.mtu != 0 && total_payload_size > self.mtu;
+
+            // so yeah
+            if should_fragment {
+                let mut vec = vec![0u8; total_payload_size];
+                let mut buf = FastByteBuffer::new(&mut vec[..]);
+
+                // write packet header and packet itself
                 buf.write_packet_header::<P>();
                 encode_fn(&mut buf);
-            });
+
+                let data = buf.as_bytes();
+                self.send_fragmented_udp_payload(data).await?;
+            } else {
+                let retval: Result<Option<Vec<u8>>> = {
+                    gs_with_alloca_guarded!(self.game_server, total_payload_size, raw_data, {
+                        let mut buf = FastByteBuffer::new(raw_data);
+
+                        if P::SHOULD_USE_TCP {
+                            // reserve space for packet length
+                            buf.write_u32(0);
+                        } else {
+                            // write udp packet marker
+                            buf.write_u8(MARKER_UDP_PACKET);
+                        }
+
+                        // write packet header and packet itself
+                        buf.write_packet_header::<P>();
+                        encode_fn(&mut buf);
+
+                        if P::SHOULD_USE_TCP {
+                            // write the packet length
+                            let packet_len = buf.len() - size_of_types!(u32);
+                            let pos = buf.get_pos();
+                            buf.set_pos(0);
+                            buf.write_u32(packet_len as u32);
+                            buf.set_pos(pos);
+                        }
+
+                        let data = buf.as_bytes();
+                        let res = if P::SHOULD_USE_TCP {
+                            self.send_buffer_tcp_immediate(data)
+                        } else {
+                            self.send_buffer_udp_immediate(data)
+                        };
+
+                        match res {
+                            // if we cant send without blocking, accept our defeat and clone the data to a vec
+                            Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(data.to_vec())),
+                            // if another error occured, propagate it up
+                            Err(e) => Err(e),
+                            // if all good, do nothing
+                            Ok(written) => {
+                                if written == data.len() {
+                                    Ok(None)
+                                } else {
+                                    // send leftover data
+                                    Ok(Some(data[written..data.len()].to_vec()))
+                                }
+                            },
+                        }
+                    })
+                };
+
+                if let Some(data) = retval? {
+                    if P::SHOULD_USE_TCP {
+                        self.send_buffer_tcp(&data).await?;
+                    } else {
+                        self.send_buffer_udp(&data).await?;
+                    }
+                }
+            }
         }
 
         if P::SHOULD_USE_TCP {
@@ -341,5 +424,47 @@ impl ClientSocket {
 
             None => Err(PacketHandlingError::UnableToSendUdp),
         }
+    }
+
+    /// fragmented udp send
+    async fn send_fragmented_udp_payload(&self, buffer: &[u8]) -> Result<()> {
+        let mut vec = vec![0u8; self.mtu];
+        let mut buf = FastByteBuffer::new(&mut vec[..]);
+
+        let unique_id: u32 = globed_shared::rand::thread_rng().gen();
+
+        // // ok
+        let chunk_size = self.mtu - 8;
+        let chunk_count = buffer.len().div_ceil(chunk_size);
+
+        if chunk_count > u8::MAX as usize {
+            return Err(PacketHandlingError::TooManyChunks(chunk_count));
+        }
+
+        for (idx, frame) in buffer.chunks(chunk_size).enumerate() {
+            debug_assert!(idx < chunk_count, "too many chunks lol calculation is wrong");
+
+            buf.clear();
+
+            // write marker
+            buf.write_u8(MARKER_UDP_FRAME);
+
+            // write unique packet id
+            buf.write_u32(unique_id);
+
+            // write frame index
+            buf.write_u8(idx as u8);
+
+            // write total frame count
+            buf.write_u8(chunk_count as u8);
+
+            // write the data itself
+            buf.write_bytes(frame);
+
+            // send itttt
+            self.send_buffer_udp(buf.as_bytes()).await?;
+        }
+
+        Ok(())
     }
 }

@@ -35,5 +35,5 @@ protected:
     void addButtons();
     bool isLoading();
     void sortPlayerList();
-    void applyFilter(const std::string_view input);
+    void applyFilter(std::string_view input);
 };

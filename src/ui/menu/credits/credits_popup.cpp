@@ -20,46 +20,34 @@ struct CreditsUser {
 
 template <>
 struct matjson::Serialize<CreditsUser> {
-    static CreditsUser from_json(const matjson::Value& value) {
-        return CreditsUser {
-            .name = value["name"].as_string(),
-            .gameName = value["gameName"].as_string(),
-            .accountId = value["accountID"].as_int(),
-            .userId = value["userID"].as_int(),
-            .color1 = value["color1"].as_int(),
-            .color2 = value["color2"].as_int(),
-            .color3 = value["color3"].as_int(),
-            .iconId = value["iconID"].as_int()
-        };
-    }
+    static Result<CreditsUser> fromJson(const matjson::Value& value) {
+        if (!(value["name"].isString()
+            && value["gameName"].isString()
+            && value["accountID"].isNumber()
+            && value["userID"].isNumber()
+            && value["color1"].isNumber()
+            && value["color2"].isNumber()
+            && value["color3"].isNumber()
+            && value["iconID"].isNumber()))
 
-    static matjson::Value to_json(const CreditsUser& user) {
-        throw std::runtime_error("unimplemented");
-    }
-
-    static bool is_json(const matjson::Value& value) {
-        if (
-            !value.contains("name")
-            || !value.contains("gameName")
-            || !value.contains("accountID")
-            || !value.contains("userID")
-            || !value.contains("color1")
-            || !value.contains("color2")
-            || !value.contains("color3")
-            || !value.contains("iconID")
-        ) {
-            return false;
+        {
+            return Err("invalid type");
         }
 
-        return value["name"].is_string()
-            && value["gameName"].is_string()
-            && value["accountID"].is_number()
-            && value["userID"].is_number()
-            && value["color1"].is_number()
-            && value["color2"].is_number()
-            && value["color3"].is_number()
-            && value["iconID"].is_number()
-        ;
+        return Ok(CreditsUser {
+            .name = value["name"].asString().unwrapOrDefault(),
+            .gameName = value["gameName"].asString().unwrapOrDefault(),
+            .accountId = (int) value["accountID"].asInt().unwrapOrDefault(),
+            .userId = (int) value["userID"].asInt().unwrapOrDefault(),
+            .color1 = (int) value["color1"].asInt().unwrapOrDefault(),
+            .color2 = (int) value["color2"].asInt().unwrapOrDefault(),
+            .color3 = (int) value["color3"].asInt().unwrapOrDefault(),
+            .iconId = (int) value["iconID"].asInt().unwrapOrDefault()
+        });
+    }
+
+    static matjson::Value toJson(const CreditsUser& user) {
+        throw std::runtime_error("unimplemented");
     }
 };
 
@@ -69,38 +57,22 @@ struct CreditsResponse {
 
 template <>
 struct matjson::Serialize<CreditsResponse> {
-    static CreditsResponse from_json(const matjson::Value& value) {
+    static Result<CreditsResponse> fromJson(const matjson::Value& value) {
         auto owner = value["owner"].as<std::vector<CreditsUser>>();
         auto staff = value["staff"].as<std::vector<CreditsUser>>();
         auto contributors = value["contributors"].as<std::vector<CreditsUser>>();
         auto special = value["special"].as<std::vector<CreditsUser>>();
 
-        return CreditsResponse {
-            .owner = owner,
-            .staff = staff,
-            .contributors = contributors,
-            .special = special
-        };
-    }
+        if (!owner || !staff || !contributors || !special) {
+            return Err("invalid type");
+        }
 
-    static bool is_json(const matjson::Value& value) {
-        if (!value.contains("owner") || !value.contains("staff") || !value.contains("contributors") || !value.contains("special")) return false;
-
-        auto isValid = [](const matjson::Value& value) -> bool {
-            if (!value.is_array()) return false;
-
-            for (auto& elem : value.as_array()) {
-                if (!elem.is<CreditsUser>()) return false;
-            }
-
-            return true;
-        };
-
-        return
-            isValid(value["owner"])
-            && isValid(value["staff"])
-            && isValid(value["contributors"])
-            && isValid(value["special"]);
+        return Ok(CreditsResponse {
+            .owner = owner.unwrapOrDefault(),
+            .staff = staff.unwrapOrDefault(),
+            .contributors = contributors.unwrapOrDefault(),
+            .special = special.unwrapOrDefault()
+        });
     }
 };
 
@@ -112,7 +84,7 @@ bool GlobedCreditsPopup::setup() {
     this->setTitle("Credits");
     this->setID("GlobedCreditsPopup"_spr);
 
-    auto rlayout = util::ui::getPopupLayout(m_size);
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build(CreditsList::createForComments(LIST_WIDTH, LIST_HEIGHT, 0.f))
         .anchorPoint(0.5f, 1.f)
@@ -152,17 +124,20 @@ void GlobedCreditsPopup::requestCallback(WebRequestManager::Task::Event* e) {
         return;
     }
 
-    if (creditsDataOpt.unwrap().as_object().size() == 0) {
+    auto creditsData = creditsDataOpt.unwrap();
+
+    if (creditsData.size() == 0) {
         retError("Empty response object returned");
         return;
     }
 
-    if (!creditsDataOpt->is<CreditsResponse>()) {
+    auto ccresp = creditsData.as<CreditsResponse>();
+    if (!ccresp) {
         retError("invalid json response");
         return;
     }
 
-    g_cachedResponse = creditsDataOpt.value().as<CreditsResponse>();
+    g_cachedResponse = ccresp.unwrap();
     this->setupFromCache();
 }
 
@@ -221,7 +196,7 @@ void GlobedCreditsPopup::setupFromCache() {
 
 GlobedCreditsPopup* GlobedCreditsPopup::create() {
     auto ret = new GlobedCreditsPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;
     }

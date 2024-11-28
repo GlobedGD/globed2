@@ -19,7 +19,7 @@ bool HookedLevelAreaInnerLayer::init(bool p0) {
         auto* door = mainMenu->getChildByID(fmt::format("level-{}-button", id));
         if (!door) continue;
 
-        auto* doorSprite = getChildOfType<CCSprite>(door, 0);
+        auto* doorSprite = door->getChildByType<CCSprite>(0);
 
         const float scale = 0.45f;
 
@@ -46,7 +46,7 @@ bool HookedLevelAreaInnerLayer::init(bool p0) {
     }
 
     nm.addListener<LevelPlayerCountPacket>(this, [this](auto packet) {
-        auto currentLayer = getChildOfType<LevelAreaInnerLayer>(CCScene::get(), 0);
+        auto currentLayer = CCScene::get()->getChildByType<LevelAreaInnerLayer>(0);
         if (currentLayer && this != currentLayer) return;
 
         m_fields->levels.clear();

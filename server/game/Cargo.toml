@@ -18,10 +18,10 @@ serde_json = "1.0.117"
 futures-util = "0.3.30"
 console-subscriber = { version = "0.2.0", features = ["parking_lot"] }
 
-tokio_tracing = { package = "tokio", version = "1.37.0", features = [
-    "full",
-    "tracing",
-], optional = true }
+# tokio_tracing = { package = "tokio", version = "1.37.0", features = [
+#     "full",
+#     "tracing",
+# ], optional = true }
 tokio = { version = "1.37.0", features = ["full"], optional = true }
 aho-corasick = "1.1.3"
 
@@ -42,4 +42,4 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tokio_unstable)'] }
 
 [features]
 default = ["tokio"]
-use_tokio_tracing = ["tokio_tracing"]
+# use_tokio_tracing = ["tokio_tracing"]

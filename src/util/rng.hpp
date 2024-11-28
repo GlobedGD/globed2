@@ -31,7 +31,7 @@ namespace util::rng {
         // Has a `ratio%` chance of returning true. 1.0 is 100%, 0.0 is 0%
         bool genRatio(double ratio);
 
-        std::string genString(const std::string_view alphabet, size_t size);
+        std::string genString(std::string_view alphabet, size_t size);
 
         template <typename T>
         void fill(T* ptr, size_t count) {

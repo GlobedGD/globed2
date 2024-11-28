@@ -11,6 +11,8 @@ public:
     void loadLevelSettingsPost() override;
     void checkCollisions(PlayerObject* player, float dt, bool p2) override;
 
+    bool shouldSaveProgress() override;
+
 private:
     bool lastPlat = false;
     int lastLength = 0;

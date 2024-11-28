@@ -7,7 +7,7 @@ class CreateRoomPacket : public Packet {
     GLOBED_PACKET(13000, CreateRoomPacket, false, false)
 
     CreateRoomPacket() {}
-    CreateRoomPacket(const std::string_view roomName, const std::string_view password, const RoomSettings& settings)
+    CreateRoomPacket(std::string_view roomName, std::string_view password, const RoomSettings& settings)
         : roomName(roomName), password(password), settings(settings) {}
 
     std::string roomName;
@@ -22,7 +22,7 @@ class JoinRoomPacket : public Packet {
     GLOBED_PACKET(13001, JoinRoomPacket, false, false)
 
     JoinRoomPacket() {}
-    JoinRoomPacket(uint32_t roomId, const std::string_view password) : roomId(roomId), password(password) {}
+    JoinRoomPacket(uint32_t roomId, std::string_view password) : roomId(roomId), password(password) {}
 
     uint32_t roomId;
     std::string password;

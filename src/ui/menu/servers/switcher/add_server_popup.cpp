@@ -17,17 +17,18 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
     this->parent = parent;
     this->modifyingIndex = modifyingIndex;
 
-    float popupCenter = CCDirector::get()->getWinSize().width / 2;
+    auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
+
     // name hint
     Build<CCLabelBMFont>::create("Server name", "bigFont.fnt")
         .scale(0.3f)
-        .pos(popupCenter, POPUP_HEIGHT - 20.f)
+        .pos(rlayout.fromTop(40.f))
         .id("add-server-name-hint"_spr)
         .parent(m_mainLayer);
 
     // name input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "Server name")
-        .pos(popupCenter, POPUP_HEIGHT - 40.f)
+    Build<TextInput>::create(POPUP_WIDTH * 0.75f, "Server name")
+        .pos(rlayout.fromTop(60.f))
         .parent(m_mainLayer)
         .id("add-server-name"_spr)
         .store(nameNode);
@@ -35,16 +36,19 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
     // url hint
     Build<CCLabelBMFont>::create("Server URL", "bigFont.fnt")
         .scale(0.3f)
-        .pos(popupCenter, POPUP_HEIGHT - 80.f)
+        .pos(rlayout.fromTop(100.f))
         .id("add-server-url-hint"_spr)
         .parent(m_mainLayer);
 
     // url input node
-    Build<InputNode>::create(POPUP_WIDTH * 0.75f, "Server URL", "chatFont.fnt", std::string(util::misc::STRING_URL), 50)
-        .pos(popupCenter, POPUP_HEIGHT - 100.f)
+    Build<TextInput>::create(POPUP_WIDTH * 0.75f, "Server URL", "chatFont.fnt")
+        .pos(rlayout.fromTop(120.f))
         .parent(m_mainLayer)
         .id("add-server-url"_spr)
         .store(urlNode);
+
+    urlNode->setFilter(std::string(util::misc::STRING_URL));
+    urlNode->setMaxCharCount(64);
 
     if (modifyingIndex != -1) {
         auto& csm = CentralServerManager::get();
@@ -102,7 +106,7 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
         .id("add-server-button"_spr)
         .intoNewParent(CCMenu::create())
         .id("add-server-button-menu"_spr)
-        .pos(popupCenter, 55.f)
+        .pos(rlayout.fromBottom(30.f))
         .parent(m_mainLayer);
 
     return true;
@@ -143,7 +147,7 @@ void AddServerPopup::onTestFailure(const std::string& message) {
 
 AddServerPopup* AddServerPopup::create(int modifyingIndex, ServerSwitcherPopup* parent) {
     auto ret = new AddServerPopup;
-    if (ret->init(POPUP_WIDTH, POPUP_HEIGHT, modifyingIndex, parent)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, modifyingIndex, parent)) {
         ret->autorelease();
         return ret;
     }

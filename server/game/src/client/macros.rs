@@ -3,38 +3,48 @@ use std::mem::MaybeUninit;
 
 /// packet handler for a specific packet type
 macro_rules! gs_handler {
-    ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
+    ($self:ident, $name:ident, $pktty:ty, $pkt:ident, $($code:tt)* ) => {
         pub(crate) async fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::client::Result<()> {
-            let $pkt = <$pktty>::decode_from_reader(buf)?;
+            let $pkt: $pktty = match $self.translator.translate_packet::<$pktty>(buf) {
+                Ok(pkt) => pkt?,
+                Err(e) => {
+                    return Err(crate::client::error::PacketHandlingError::TranslationError(e));
+                }
+            };
 
             #[cfg(debug_assertions)]
             if <$pktty>::PACKET_ID != KeepalivePacket::PACKET_ID {
                 unsafe { $self.socket.get_mut() }.print_packet::<$pktty>(false, None);
             }
 
-            $code
+            $($code)*
         }
     };
 }
 
 /// packet handler except not async
 macro_rules! gs_handler_sync {
-    ($self:ident,$name:ident,$pktty:ty,$pkt:ident,$code:expr) => {
+    ($self:ident, $name:ident, $pktty:ty, $pkt:ident, $($code:tt)* ) => {
         pub(crate) fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::client::Result<()> {
             let $pkt = <$pktty>::decode_from_reader(buf)?;
 
             #[cfg(debug_assertions)]
             unsafe { $self.socket.get_mut() }.print_packet::<$pktty>(false, Some("sync"));
 
-            $code
+            $($code)*
         }
     };
 }
 
 /// call disconnect and return from the function
 macro_rules! gs_disconnect {
+    ($self:ident, $msg:literal) => {
+        $self.kick(std::borrow::Cow::Borrowed($msg)).await?;
+        return Ok(());
+    };
+
     ($self:ident, $msg:expr) => {
-        $self.kick($msg).await?;
+        $self.kick(std::borrow::Cow::Owned($msg)).await?;
         return Ok(());
     };
 }
@@ -150,75 +160,10 @@ macro_rules! gs_with_alloca_guarded {
     };
 }
 
-/// i love over optimizing things!
-/// when invoked as `gs_inline_encode!(self, size, buf, {code})`, uses alloca to make space on the stack,
-/// and lets you encode a packet. afterwards automatically tries a non-blocking send and on failure falls back to a Vec<u8> and an async send.
-macro_rules! gs_inline_encode {
-    ($self:ident, $size:expr, $data:ident, $tcp:expr, $code:expr) => {
-        gs_inline_encode!($self, $size, $data, $tcp, _rawdata, $code)
-    };
-
-    ($self:ident, $size:expr, $data:ident, $tcp:expr, $rawdata:ident, $code:expr) => {
-        let retval: Result<Option<Vec<u8>>> = {
-            gs_with_alloca_guarded!($self.game_server, $size, $rawdata, {
-                let mut $data = FastByteBuffer::new($rawdata);
-
-                if $tcp {
-                    // reserve space for packet length
-                    $data.write_u32(0);
-                }
-
-                $code // user code
-
-                if $tcp {
-                    // write the packet length
-                    let packet_len = $data.len() - size_of_types!(u32);
-                    let pos = $data.get_pos();
-                    $data.set_pos(0);
-                    $data.write_u32(packet_len as u32);
-                    $data.set_pos(pos);
-                }
-
-                let data = $data.as_bytes();
-                let res = if $tcp {
-                    $self.send_buffer_tcp_immediate(data)
-                } else {
-                    $self.send_buffer_udp_immediate(data)
-                };
-
-                match res {
-                    // if we cant send without blocking, accept our defeat and clone the data to a vec
-                    Err(PacketHandlingError::SocketWouldBlock) => Ok(Some(data.to_vec())),
-                    // if another error occured, propagate it up
-                    Err(e) => Err(e),
-                    // if all good, do nothing
-                    Ok(written) => {
-                        if written == data.len() {
-                            Ok(None)
-                        } else {
-                            // send leftover data
-                            Ok(Some(data[written..data.len()].to_vec()))
-                        }
-                    },
-                }
-            })
-        };
-
-        if let Some(data) = retval? {
-            if $tcp {
-                $self.send_buffer_tcp(&data).await?;
-            } else {
-                $self.send_buffer_udp(&data).await?;
-            }
-        }
-    }
-}
-
 pub(crate) use gs_alloca_check_size;
 pub(crate) use gs_disconnect;
 pub(crate) use gs_handler;
 pub(crate) use gs_handler_sync;
-pub(crate) use gs_inline_encode;
 pub(crate) use gs_needauth;
 pub(crate) use gs_with_alloca;
 pub(crate) use gs_with_alloca_guarded;

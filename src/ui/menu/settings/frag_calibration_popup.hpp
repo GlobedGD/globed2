@@ -2,7 +2,8 @@
 #include <defs/all.hpp>
 
 #include <data/packets/server/connection.hpp>
-#include <util/time.hpp>
+
+#include <asp/time/SystemTime.hpp>
 
 class FragmentationCalibartionPopup : public geode::Popup<> {
 public:
@@ -27,7 +28,7 @@ private:
     size_t currentSizeIdx = 0;
     int uid;
     int failedAttempts = 0;
-    util::time::system_time_point lastPacket;
+    asp::time::SystemTime lastPacket;
 
     bool setup() override;
     void onClose(cocos2d::CCObject*) override;

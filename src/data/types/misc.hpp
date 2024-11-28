@@ -57,14 +57,14 @@ public:
     Either<ErrorMessage, std::string> variant;
 
     CustomErrorMessage(ErrorMessage m) : variant(m) {}
-    CustomErrorMessage(const std::string_view s) : variant(std::string(s)) {}
+    CustomErrorMessage(std::string_view s) : variant(std::string(s)) {}
     CustomErrorMessage(std::string&& s) : variant(std::move(s)) {}
 
     bool isCustom() const {
         return variant.isSecond();
     }
 
-    const std::string_view message() {
+    std::string_view message() {
         if (variant.isFirst()) {
             return variant.firstRef()->get().message();
         } else {
@@ -86,7 +86,7 @@ public:
     RichColor(const std::vector<cocos2d::ccColor3B>& col) : inner(col) {}
     RichColor(std::vector<cocos2d::ccColor3B>&& col) : inner(std::move(col)) {}
 
-    static Result<RichColor> parse(const std::string_view k);
+    static Result<RichColor> parse(std::string_view k);
 
     bool operator==(const RichColor& other) const = default;
 
