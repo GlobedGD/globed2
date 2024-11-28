@@ -431,7 +431,7 @@ impl ClientSocket {
         let mut vec = vec![0u8; self.mtu];
         let mut buf = FastByteBuffer::new(&mut vec[..]);
 
-        let unique_id: u32 = globed_shared::rand::thread_rng().other_gen();
+        let unique_id: u32 = globed_shared::rand::thread_rng().gen();
 
         // // ok
         let chunk_size = self.mtu - 8;
