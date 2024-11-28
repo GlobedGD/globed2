@@ -3,32 +3,32 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/server/central"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "cargo"
     directory: "/server/derive"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "cargo"
     directory: "/server/esp"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "cargo"
     directory: "/server/game"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "cargo"
     directory: "/server/observer-shared"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "cargo"
     directory: "/server/observer"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "cargo"
     directory: "/server/shared"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "cargo"
     directory: "/server"
     schedule:
-      interval: "weekly"
+      interval: "daily"
