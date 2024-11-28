@@ -3,7 +3,6 @@
 #include <ui/general/loading_circle.hpp>
 
 bool IntermediaryLoadingPopup::setup(CallbackFn&& onInit, CallbackFn&& onCleanup) {
-    // TODO: use BetterLoadingCircle
     circle = BetterLoadingCircle::create();
     circle->addToLayer(m_mainLayer);
     circle->setScale(0.75f);
