@@ -244,7 +244,7 @@ impl RoomManager {
     pub fn create_room(&self, account_id: i32, name: InlineString<32>, password: InlineString<16>, settings: RoomSettings) -> Arc<Room> {
         let rooms = self.rooms.lock();
 
-        // in case we accidentally erate an existing room id, keep looping until we find a suitable id
+        // in case we accidentally generate an existing room id, keep looping until we find a suitable id
         let room_id = loop {
             let room_id = rand::rng().random_range(ROOM_ID_START..ROOM_ID_END);
             if !rooms.contains_key(&room_id) {
