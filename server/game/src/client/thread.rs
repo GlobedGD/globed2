@@ -300,7 +300,7 @@ impl ClientThread {
                     warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
 
-                PacketHandlingError::IOError(ref e) => {
+                &PacketHandlingError::IOError(ref e) => {
                     if !should_ignore_error(e) {
                         warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), e);
                     }
