@@ -169,7 +169,7 @@ impl ClientThread {
 
     async fn poll_for_tcp_data(&self) -> Result<usize> {
         // safety: we trust this function is not called from the oustide
-        let sock = unsafe { self.socket.get_mut() };
+        let sock = self.socket.get_mut();
         sock.poll_for_tcp_data().await
     }
 
@@ -276,7 +276,7 @@ impl ClientThread {
     /// get the tcp address of the connected peer. do not call this from another clientthread
     fn get_tcp_peer(&self) -> SocketAddrV4 {
         // safety: we trust this function is not called from the oustide
-        unsafe { self.socket.get() }.tcp_peer
+        self.socket.get().tcp_peer
     }
 
     // the error printing is different in release and debug. some errors have higher severity than others.
@@ -361,13 +361,13 @@ impl ClientThread {
             }
 
             // safety: only we can access the rate limiters of our user.
-            let block = !unsafe { self.voice_rate_limiter.get_mut().try_tick() };
+            let block = !self.voice_rate_limiter.get_mut().try_tick();
             if block {
                 return false;
             }
         } else {
             // if rate limiting is disabled, do not block
-            let block = !self.chat_rate_limiter.as_ref().map_or(true, |x| unsafe { x.get_mut().try_tick() });
+            let block = !self.chat_rate_limiter.as_ref().map_or(true, |x| x.get_mut().try_tick());
 
             if block {
                 return false;
@@ -380,7 +380,7 @@ impl ClientThread {
     #[inline]
     async fn recv_and_handle(&self, message_size: usize) -> Result<()> {
         // safety: only we can receive data from our client.
-        let socket = unsafe { self.socket.get_mut() };
+        let socket = self.socket.get_mut();
         socket.recv_and_handle(message_size, async |buf| self.handle_packet(buf).await).await
     }
 
@@ -424,7 +424,7 @@ impl ClientThread {
 
         // if we are ratelimited, just discard the packet.
         // safety: only we can use this ratelimiter.
-        if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
+        if !self.rate_limiter.get_mut().try_tick() {
             return Err(PacketHandlingError::Ratelimited);
         }
 
@@ -447,7 +447,7 @@ impl ClientThread {
 
         // decrypt the packet in-place if encrypted
         if header.encrypted {
-            data = unsafe { self.socket.get_mut() }.decrypt(message)?;
+            data = self.socket.get_mut().decrypt(message)?;
         }
 
         match header.packet_id {
@@ -510,12 +510,12 @@ impl ClientThread {
 
     #[inline]
     async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_static(packet).await
+        self.socket.get_mut().send_packet_static(packet).await
     }
 
     #[inline]
     async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_dynamic(packet).await
+        self.socket.get_mut().send_packet_dynamic(packet).await
     }
 
     #[inline]
@@ -529,7 +529,7 @@ impl ClientThread {
     where
         F: FnOnce(&mut FastByteBuffer),
     {
-        unsafe { self.socket.get_mut() }
+        self.socket.get_mut()
             .send_packet_alloca_with::<P, F>(packet_size, encode_fn)
             .await
     }
