@@ -8,6 +8,16 @@
 #include <util/debug.hpp>
 #include <asp/thread.hpp>
 
+#ifdef GEODE_IS_ANDROID
+
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
+
+#include <jni.h>
+#include <Geode/cocos/platform/android/jni/JniHelper.h>
+
+#endif
+
 using namespace geode::prelude;
 using namespace asp::time;
 
@@ -40,6 +50,32 @@ struct HookedFileUtils : public CCFileUtils {
         return *static_cast<HookedFileUtils*>(CCFileUtils::sharedFileUtils());
     }
 };
+
+#ifdef GEODE_IS_ANDROID
+
+static AAssetManager* getAssetManager() {
+    // TODO: broken right now
+    return nullptr;
+
+    cocos2d::JniMethodInfo t;
+
+    if (cocos2d::JniHelper::getStaticMethodInfo(t, "org/fmod/FMOD", "getAssetManager", "()Landroid/content/res/AssetManager;")) {
+        auto r = t.env->CallStaticObjectMethod(t.classID, t.methodID);
+
+        t.env->DeleteLocalRef(t.classID);
+
+        // this isn't ideal bc you're leaking the assetmanager ref, but you do have to keep it open while you use it
+        // so maybe wrap it in a shared ptr with a custom destructor, idk
+
+        return AAssetManager_fromJava(t.env, r);
+    }
+
+    return nullptr;
+}
+
+static AAssetManager* g_assetManager = nullptr;
+
+#endif
 
 namespace util::cocos {
     // big hack to call a private cocos function
@@ -74,6 +110,7 @@ namespace util::cocos {
         size_t gameSearchPathIdx = -1;
         std::vector<size_t> texturePackIndices;
         std::unique_ptr<asp::ThreadPool> threadPool;
+
         struct _T {
             asp::time::Instant start, postPreparation, postTexCreation, finish;
 
@@ -227,17 +264,8 @@ namespace util::cocos {
                 // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
                 auto& imgState = imgStates.lock()->at(i);
 
-                // on android, resources are read from the apk file, so it's NOT thread safe. add a lock.
-#ifdef GEODE_IS_ANDROID
-                auto _rguard = cocosWorkMutex.lock();
-#endif
-
                 unsigned long filesize = 0;
-                unsigned char* buffer = fileUtils.getFileData(imgState.path.c_str(), "rb", &filesize);
-
-#ifdef GEODE_IS_ANDROID
-                _rguard.unlock();
-#endif
+                unsigned char* buffer = getFileDataThreadSafe(imgState.path.c_str(), "rb", &filesize);
 
                 std::unique_ptr<unsigned char[]> buf(buffer);
 
@@ -615,6 +643,60 @@ namespace util::cocos {
         // }
 
         // return "";
+    }
+
+    unsigned char* getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize) {
+#ifndef GEODE_IS_ANDROID
+        auto fu = CCFileUtils::get();
+        return fu->getFileData(path, mode, outSize);
+#else
+        // on android, use AAssetManager to read files from the apk
+        if (!g_assetManager) {
+            g_assetManager = getAssetManager();
+        }
+
+        // if failed, use ccfileutils and a mutex
+        auto failedRoutine = [path, mode, outSize]{
+            static asp::Mutex<> mutex;
+
+            auto fu = CCFileUtils::get();
+
+            mutex.lock();
+
+            return fu->getFileData(path, mode, outSize);
+        };
+
+        if (!g_assetManager) {
+            static auto _ = []{
+                log::error("Failed to get AAssetManager, decoding files with CCFileUtils instead.");
+                return 0;
+            }();
+
+            return failedRoutine();
+        }
+
+        AAsset* asset = AAssetManager_open(g_assetManager, path, AASSET_MODE_BUFFER);
+        if (!asset) {
+            log::error("Failed to open asset, falling back, path: {}", path);
+            return failedRoutine();
+        }
+
+        size_t size = AAsset_getLength(asset);
+        auto* buffer = new unsigned char[size];
+
+        int readBytes = AAsset_read(asset, buffer, size);
+        if (readBytes != size) {
+            log::error("Failed to read asset (size {} != {}), falling back, path: {}", readBytes, size, path);
+            delete[] buffer;
+            AAsset_close(asset);
+            return failedRoutine();
+        }
+
+        AAsset_close(asset);
+
+        *outSize = size;
+        return buffer;
+#endif
     }
 
     CCTexture2D* textureFromSpriteName(std::string_view name) {

@@ -299,6 +299,8 @@ if (APPLE)
 elseif (WIN32)
     # windows needs this ig?
     target_link_libraries(${PROJECT_NAME} crypt32)
+elseif (ANDROID)
+    target_link_libraries(${PROJECT_NAME} android)
 endif()
 
 

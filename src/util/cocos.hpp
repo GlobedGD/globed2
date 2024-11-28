@@ -44,6 +44,8 @@ namespace util::cocos {
     // Like cocos' func, returns empty string if file doesn't exist.
     ::gd::string getPathForFilename(const ::gd::string& filename, const ::gd::string& searchPath);
 
+    unsigned char* getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize);
+
     std::string spr(std::string_view s);
 
     // creates a new, independent texture
