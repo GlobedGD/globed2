@@ -444,8 +444,6 @@ impl ClientThread {
 
     // Handle user edit packets
 
-    // TODO verify perms.. (relative to the other uesr)
-
     gs_handler!(self, handle_admin_update_username, AdminUpdateUsernamePacket, packet, {
         let _ = gs_needauth!(self);
 

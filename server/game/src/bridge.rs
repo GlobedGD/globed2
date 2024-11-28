@@ -458,10 +458,7 @@ impl CentralBridge {
                     }));
                 }
             }
-            AdminUserAction::Whitelist(_action) => {
-                // messages.push(WebhookMessage::Wh);
-                // TODO
-            }
+            AdminUserAction::Whitelist(_action) => { /* no whitelist message */ }
             AdminUserAction::SetAdminPassword(_) => {}
             AdminUserAction::EditPunishment(action) => {
                 messages.push(WebhookMessage::UserViolationMetaChanged(ViolationMetaChange {

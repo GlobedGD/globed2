@@ -593,6 +593,7 @@ void GlobedGJBGL::selSendPlayerData(float) {
     auto& fields = self->getFields();
 
     // if (!self->isCurrentPlayLayer()) return;
+    // TODO: idk remove this?
     if (!self->accountForSpeedhack(0, 1.0f / fields.configuredTps, 0.8f)) return;
 
     fields.totalSentPackets++;
