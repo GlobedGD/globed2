@@ -8,10 +8,8 @@
 
 use esp::{Decodable, DynamicSize, Encodable, StaticSize};
 pub use globed_derive::{Decodable, DynamicSize, Encodable, StaticSize};
-use rand::distr::{Alphanumeric, Rng};
+use rand::distr::Alphanumeric;
 use rand::{Rng, thread_rng};
-
-pub struct Alphanumeric;
 
 // import reexports
 pub use nohash_hasher::{IntMap, IntSet};
@@ -32,7 +30,6 @@ pub use rand;
 pub use reqwest;
 pub use sha2;
 pub use time;
-pub use digest;
 // our reexports
 pub use crypto::*;
 pub use data::*;
