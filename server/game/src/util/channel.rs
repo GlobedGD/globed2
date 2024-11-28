@@ -33,7 +33,7 @@ impl<T> TokioChannel<T> {
 
     /// Safety: is guaranteed to be safe as long as you don't call it from multiple threads at once.
     pub async fn recv(&self) -> Result<T, SenderDropped> {
-        let chan = unsafe { self.rx.get_mut() };
+        let chan = self.rx.get_mut();
         chan.recv().await.ok_or(SenderDropped)
     }
 }
