@@ -9,6 +9,7 @@
 use esp::{Decodable, DynamicSize, Encodable, StaticSize};
 pub use globed_derive::{Decodable, DynamicSize, Encodable, StaticSize};
 use rand::distributions::Alphanumeric;
+use rand::{Rng, thread_rng};
 
 // import reexports
 pub use nohash_hasher::{IntMap, IntSet};
