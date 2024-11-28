@@ -20,6 +20,8 @@ pub enum TokenValidationFailure {
     InvalidSignature,   // signature does not match
 }
 
+type HmacSha256 = Hmac<Sha256>;
+
 impl TokenValidationFailure {
     pub const fn error_message(&self) -> &'static str {
         match self {
