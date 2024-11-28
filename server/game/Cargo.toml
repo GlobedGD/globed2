@@ -16,7 +16,7 @@ rustc-hash = "2.0.0"
 serde = { version = "1.0.202", features = ["serde_derive"] }
 serde_json = "1.0.117"
 futures-util = "0.3.30"
-console-subscriber = { version = "0.2.0", features = ["parking_lot"] }
+console-subscriber = { version = "0.4.1", features = ["parking_lot"] }
 
 # tokio_tracing = { package = "tokio", version = "1.37.0", features = [
 #     "full",
