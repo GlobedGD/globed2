@@ -25,7 +25,7 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
     let struct_name = &input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
-    let otherGen = match &input.data {
+    let other_gen = match &input.data {
         Data::Struct(data) if let Some(bit_attrs) = bit_attrs => {
             encode::for_bit_struct(data, bit_attrs, struct_name, &impl_generics, &ty_generics, where_clause)
         }
@@ -39,7 +39,7 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
         }
     };
 
-    otherGen.into()
+    other_gen.into()
 }
 
 /// Implements `Decodable` for the given type, allowing you to deserialize it from a `ByteReader`/`ByteBuffer`.
@@ -54,7 +54,7 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
 
     let struct_name = &input.ident;
 
-    let otherGen = match &input.data {
+    let other_gen = match &input.data {
         Data::Struct(data) if let Some(bit_attrs) = bit_attrs => decode::for_bit_struct(data, bit_attrs, struct_name),
         Data::Struct(data) => decode::for_struct(data, struct_name),
         Data::Enum(data) => decode::for_enum(data, struct_name, &get_enum_repr_type(&input)),
@@ -66,7 +66,7 @@ pub fn derive_decodable(input: TokenStream) -> TokenStream {
         }
     };
 
-    otherGen.into()
+    other_gen.into()
 }
 
 /// Implements `StaticSize` for the given type, allowing you to compute the encoded size of the value at compile time.
@@ -111,14 +111,14 @@ pub fn derive_static_size(input: TokenStream) -> TokenStream {
         }
     };
 
-    let otherGen = quote! {
+    let other_gen = quote! {
         impl StaticSize for #struct_name {
             const ENCODED_SIZE: usize = #encoded_size;
         }
     };
 
     // Return the generated implementation as a TokenStream
-    otherGen.into()
+    other_gen.into()
 }
 
 /// Implements `DynamicSize` for the given type, allowing you to compute the encoded size of the value at runtime.
@@ -190,7 +190,7 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
         }
     };
 
-    let otherGen = quote! {
+    let other_gen = quote! {
         impl #impl_generics DynamicSize for #struct_name #ty_generics #where_clause {
             #[inline]
             fn encoded_size(&self) -> usize {
@@ -200,7 +200,7 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
     };
 
     // Return the generated implementation as a TokenStream
-    otherGen.into()
+    other_gen.into()
 }
 
 /// Implements `Packet`, `PacketMetadata` and the function `const fn header() -> PacketHeader` for the given struct.
