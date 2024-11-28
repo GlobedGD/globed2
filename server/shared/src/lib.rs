@@ -58,7 +58,7 @@ pub const DEFAULT_CENTRAL_SERVER_PORT: u16 = 4201;
 pub const DEFAULT_GAME_SERVER_PORT: u16 = 4202;
 
 pub fn generate_alphanum_string(n: usize) -> String {
-    rand::thread_rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect()
+    rand::rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect()
 }
 
 pub fn get_log_level(env_var: &str) -> Option<LogLevelFilter> {
