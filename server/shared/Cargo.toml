@@ -10,7 +10,7 @@ esp = { path = "../esp" }
 globed-derive = { path = "../derive" }
 
 anyhow = "1.0.83"
-base64 = "0.21.7"
+base64 = "0.22.1"
 colored = "2.1.0"
 crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
 hmac = "0.12.1"
