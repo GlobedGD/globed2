@@ -1,29 +1,27 @@
 [package]
 name = "globed-shared"
 version = "1.0.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+edition = "2024"
 
 [dependencies]
 esp = { path = "../esp" }
 globed-derive = { path = "../derive" }
 
-anyhow = "1.0.83"
+nyhow = "1.0.93"
 base64 = "0.22.1"
 colored = "2.1.0"
 crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
-hmac = "0.12.1"
-log = { version = "0.4.21" }
+hmac = "0.13.0-pre.4"
+log = "0.4.22"
 nohash-hasher = "0.2.0"
-parking_lot = "0.12.2"
-rand = "0.8.5"
-reqwest = { version = "0.12.4", default-features = false, features = [
+parking_lot = "0.12.3"
+rand = "0.9.0-beta.0"
+reqwest = { version = "0.12.9", default-features = false, features = [
     "rustls-tls",
 ] }
-sha2 = "0.10.8"
+sha2 = "0.11.0-pre.4"
 time = { version = "0.3.36", features = ["formatting"] }
-serde = { version = "1.0.202", features = ["derive"] }
+serde = { version = "1.0.215", features = ["derive"] }
 crypto_secretbox = { version = "0.1.1", features = ["chacha20"] }
-serde_json = "1.0.120"
-argon2 = "0.5.3"
+serde_json = "1.0.133"
+argon2 = "0.6.0-pre.1"
