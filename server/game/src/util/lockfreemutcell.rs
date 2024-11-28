@@ -14,7 +14,7 @@ impl<T> LockfreeMutCell<T> {
     }
 
     pub fn get(&self) -> &T {
-        unsafe &*self.cell.get()
+        unsafe { &*self.cell.get() }
     }
 
     /// We trust you have received the usual lecture from the local System
@@ -31,6 +31,6 @@ impl<T> LockfreeMutCell<T> {
     }
 
     pub fn swap(&self, new: T) -> T {
-        std::mem::replace(unsafe self.get_mut(), new)
+        std::mem::replace(unsafe { self.get_mut() }, new)
     }
 }
