@@ -7,7 +7,7 @@ edition = "2024"
 esp = { path = "../esp" }
 globed-derive = { path = "../derive" }
 
-nyhow = "1.0.93"
+anyhow = "1.0.93"
 base64 = "0.22.1"
 colored = "2.1.0"
 crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
