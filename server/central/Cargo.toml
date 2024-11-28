@@ -22,4 +22,3 @@ rocket_cors = "0.6.0"
 const_format = "0.2.33"
 hex = "0.4.3"
 libsqlite3-sys = { version = "0.25.1", links = "sqlx" }
-libsqlite3-sys = { version = "0.30.1", links = "sqlite3" }
