@@ -317,7 +317,7 @@ impl GameServer {
                     let thread = Arc::into_inner(thread).expect("failed to unwrap unauthorized thread");
 
                     // safety: the thread no longer runs and we are the only ones who can access the socket
-                    let socket = unsafe { thread.socket.get() };
+                    let socket = thread.socket.get();
                     let udp_peer = socket.udp_peer.expect("upgraded thread has no udp peer assigned");
 
                     debug!("upgrading thread (new peer: tcp {}, udp {})", socket.tcp_peer, udp_peer);
@@ -338,7 +338,7 @@ impl GameServer {
                         let mut clients = self.clients.lock();
                         // safety: this is pretty unsafe
                         // TODO
-                        let udp_peer = unsafe { thread.socket.get() }.udp_peer.expect("no udp peer in established thread");
+                        let udp_peer = thread.socket.get().udp_peer.expect("no udp peer in established thread");
                         clients.remove(&udp_peer);
                     }
 
@@ -388,7 +388,7 @@ impl GameServer {
         };
 
         // safety: the thread no longer runs and we are the only ones who can access the socket
-        let socket = unsafe { socket.get_mut() };
+        let socket = socket.get_mut();
         let _ = socket.shutdown().await;
 
         #[cfg(debug_assertions)]
