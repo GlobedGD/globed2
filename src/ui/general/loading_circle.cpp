@@ -7,6 +7,7 @@ bool BetterLoadingCircle::init(bool spinByDefault) {
         return false;
     }
 
+    this->setAnchorPoint({0.5f, 0.5f});
     this->runAction(CCRepeatForever::create(
         CCRotateBy::create(1.0f, 360.f)
     ));
@@ -21,6 +22,18 @@ bool BetterLoadingCircle::init(bool spinByDefault) {
     }
 
     return true;
+}
+
+void BetterLoadingCircle::addToLayer(cocos2d::CCNode* layer, int zOrder) {
+    // retain in case we remove it from the parent, which would otherwise delete it
+    Ref<CCNode> _self{this};
+
+    if (this->getParent()) {
+        this->removeFromParent();
+    }
+
+    layer->addChild(this, zOrder);
+    this->setPosition(layer->getContentSize() / 2);
 }
 
 void BetterLoadingCircle::fadeOut() {

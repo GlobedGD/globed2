@@ -1,11 +1,13 @@
 #include "intermediary_loading_popup.hpp"
 
+#include <ui/general/loading_circle.hpp>
+
 bool IntermediaryLoadingPopup::setup(CallbackFn&& onInit, CallbackFn&& onCleanup) {
     // TODO: use BetterLoadingCircle
-    circle = LoadingCircle::create();
-    circle->setParentLayer(m_mainLayer);
+    circle = BetterLoadingCircle::create();
+    circle->addToLayer(m_mainLayer);
     circle->setScale(0.75f);
-    circle->show();
+    circle->fadeIn();
 
     callbackCleanup = std::move(onCleanup);
     onInit(this);
@@ -14,7 +16,7 @@ bool IntermediaryLoadingPopup::setup(CallbackFn&& onInit, CallbackFn&& onCleanup
 }
 
 void IntermediaryLoadingPopup::onClose(cocos2d::CCObject* sender) {
-    circle->fadeAndRemove();
+    circle->fadeOut();
     callbackCleanup(this);
     Popup::onClose(sender);
 }

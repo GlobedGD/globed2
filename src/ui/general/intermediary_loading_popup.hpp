@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/all.hpp>
 
+class BetterLoadingCircle;
+
 class IntermediaryLoadingPopup : public geode::Popup<std::function<void(IntermediaryLoadingPopup*)>&&, std::function<void(IntermediaryLoadingPopup*)>&&> {
 public:
     using CallbackFn = std::function<void(IntermediaryLoadingPopup*)>;
@@ -13,7 +15,7 @@ public:
     static IntermediaryLoadingPopup* create(CallbackFn&& onInit, CallbackFn&& onCleanup);
 
 private:
-    LoadingCircle* circle;
+    BetterLoadingCircle* circle;
     CallbackFn callbackCleanup;
 
     bool setup(CallbackFn&& onInit, CallbackFn&& onCleanup) override;

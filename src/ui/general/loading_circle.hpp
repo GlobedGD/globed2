@@ -10,6 +10,9 @@ public:
     void fadeOut();
     void fadeIn();
 
+    // Adds the loading circle to the center of the given layer.
+    void addToLayer(cocos2d::CCNode* layer, int zOrder = 999);
+
 private:
     bool init(bool spinByDefault);
     void deactivate();
