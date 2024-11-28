@@ -81,7 +81,7 @@ impl UnauthorizedThread {
             socket: LockfreeMutCell::new(ClientSocket::new(socket, peer, 0, game_server)),
             connection_state: AtomicClientThreadState::default(),
 
-            secret_key: rand::thread_rng().random(),
+            secret_key: rand::rng().random(),
             protocol_version: AtomicU16::new(0),
 
             account_id: AtomicI32::new(0),
