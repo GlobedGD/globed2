@@ -16,7 +16,7 @@ use globed_shared::{
     crypto_box::aead::{generic_array::GenericArray, AeadMutInPlace},
     crypto_secretbox::{KeyInit, XSalsa20Poly1305},
     hmac::Hmac,
-    rand::{self, distributions::Alphanumeric, rngs::OsRng, Rng, RngCore},
+    rand::prelude::*,
     reqwest,
     sha2::Sha256,
     TokenIssuer,
