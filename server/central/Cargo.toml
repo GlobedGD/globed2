@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 globed-shared = { path = "../shared" }
 
-async-watcher = "0.2.1"
+async-watcher = "0.3.0"
 blake2 = "0.10.6"
 digest = "0.10.7"
 ipnet = "2.9.0"
