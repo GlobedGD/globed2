@@ -31,6 +31,6 @@ impl<T> LockfreeMutCell<T> {
     }
 
     pub fn swap(&self, new: T) -> T {
-        std::mem::replace(unsafe { self.get_mut() }, new)
+        std::mem::replace(self.get_mut(), new)
     }
 }
