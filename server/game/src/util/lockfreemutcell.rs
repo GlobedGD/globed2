@@ -27,7 +27,7 @@ impl<T> LockfreeMutCell<T> {
     /// #3) With great power comes great responsibility.
     #[allow(clippy::mut_from_ref)]
     pub fn get_mut(&self) -> &mut T {
-        &mut *self.cell.get()
+        &mut unsafe { *self.cell.get() }
     }
 
     pub fn swap(&self, new: T) -> T {
