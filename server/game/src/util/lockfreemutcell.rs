@@ -13,8 +13,8 @@ impl<T> LockfreeMutCell<T> {
         }
     }
 
-    pub unsafe fn get(&self) -> &T {
-        &*self.cell.get()
+    pub fn get(&self) -> &T {
+        unsafe &*self.cell.get()
     }
 
     /// We trust you have received the usual lecture from the local System
