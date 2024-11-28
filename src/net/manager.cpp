@@ -223,11 +223,13 @@ protected:
     asp::Mutex<std::unordered_map<packetid_t, asp::time::SystemTime>> suppressed;
 
     // these fields are only used by us and in a safe manner, so they don't need a mutex
+    // // the comment above is a lie, i just hit a race condition because there was no mutex - me, november 2024
+
     NetworkAddress connectedAddress;
     std::string connectedServerId;
-    asp::time::SystemTime lastReceivedPacket;
-    asp::time::SystemTime lastSentKeepalive;
-    asp::time::SystemTime lastTcpExchange;
+    asp::Mutex<asp::time::SystemTime> lastReceivedPacket; // last time we received a packet, accessed in both threads!
+    asp::time::SystemTime lastSentKeepalive; // last time we sent a keepalive packet, accessed only in sender thread
+    asp::time::SystemTime lastTcpExchange; // last time we sent a tcp packet, accessed only in sender thread
 
     AtomicBool suspended;
     AtomicBool standalone;
@@ -306,7 +308,7 @@ protected:
         secretKey = 0;
         serverTps = 0;
         serverProtocol = 0;
-        lastReceivedPacket = {};
+        *lastReceivedPacket.lock() = {};
         lastSentKeepalive = {};
         lastTcpExchange = {};
     }
@@ -328,7 +330,7 @@ protected:
         this->standalone = standalone;
         this->wasFromRecovery = fromRecovery;
 
-        lastReceivedPacket = SystemTime::now();
+        *lastReceivedPacket.lock() = SystemTime::now();
         lastSentKeepalive = SystemTime::now();
         lastTcpExchange = SystemTime::now();
 
@@ -850,7 +852,7 @@ protected:
             return;
         }
 
-        lastReceivedPacket = SystemTime::now();
+        *lastReceivedPacket.lock() = SystemTime::now();
 
         this->callListener(std::move(packet));
     }
@@ -991,7 +993,7 @@ protected:
             return;
         }
         // Detect if authentication is taking too long
-        else if (state == ConnectionState::Authenticating && !recovering && lastReceivedPacket.elapsed() > Duration::fromSecs(5)) {
+        else if (state == ConnectionState::Authenticating && !recovering && lastReceivedPacket.lock()->elapsed() > Duration::fromSecs(5)) {
             this->disconnect(true);
 
             ErrorQueues::get().error(fmt::format(
@@ -1027,9 +1029,9 @@ protected:
 
         auto now = SystemTime::now();
 
-        auto sinceLastPacket = (now - lastReceivedPacket).value();
-        auto sinceLastKeepalive = (now - lastSentKeepalive).value();
-        auto sinceLastTcpExchange = (now - lastTcpExchange).value();
+        auto sinceLastPacket = (now - *lastReceivedPacket.lock()).value_or(Duration{});
+        auto sinceLastKeepalive = (now - lastSentKeepalive).value_or(Duration{});
+        auto sinceLastTcpExchange = (now - lastTcpExchange).value_or(Duration{});
 
         if (sinceLastPacket > Duration::fromSecs(20)) {
             // timed out, disconnect the tcp socket but allow to reconnect
