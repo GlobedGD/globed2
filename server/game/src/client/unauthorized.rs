@@ -345,7 +345,7 @@ impl UnauthorizedThread {
             );
         }
 
-        unsafe { self.socket.get_mut() }.set_mtu(packet.fragmentation_limit as usize);
+        unsafe self.socket.get_mut().set_mtu(packet.fragmentation_limit as usize);
 
         if packet.account_id <= 0 || packet.user_id <= 0 {
             let message = Cow::Owned(format!(
@@ -560,7 +560,7 @@ impl UnauthorizedThread {
     /// otherwise always invokes undefined behavior.
     #[allow(clippy::mut_from_ref)]
     fn get_socket(&self) -> &mut ClientSocket {
-        unsafe { self.socket.get_mut() }
+        unsafe self.socket.get_mut()
     }
 
     /// get the tcp address of the connected peer. do not call this from another clientthread
