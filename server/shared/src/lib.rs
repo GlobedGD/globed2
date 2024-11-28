@@ -1,4 +1,3 @@
-#![feature(const_option)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
