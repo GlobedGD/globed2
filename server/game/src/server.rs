@@ -1,16 +1,17 @@
 use std::{
     collections::VecDeque,
     net::{SocketAddr, SocketAddrV4},
-    sync::{atomic::Ordering, Arc},
+    sync::{Arc, atomic::Ordering},
     time::Duration,
 };
 
 use globed_shared::{
+    ServerUserEntry, SyncMutex,
     anyhow::{self, anyhow, bail},
-    crypto_box::{aead::OsRng, PublicKey, SecretKey},
+    crypto_box::{PublicKey, SecretKey, aead::OsRng},
     esp::ByteBufferExtWrite as _,
     logger::*,
-    should_ignore_error, ServerUserEntry, SyncMutex,
+    should_ignore_error,
 };
 use rustc_hash::FxHashMap;
 use tokio::{
@@ -33,7 +34,7 @@ use crate::{
 
 use crate::{
     bridge::{self, CentralBridge},
-    client::{thread::ClientThreadOutcome, unauthorized::UnauthorizedThread, ClientThread, ServerThreadMessage, UnauthorizedThreadOutcome},
+    client::{ClientThread, ServerThreadMessage, UnauthorizedThreadOutcome, thread::ClientThreadOutcome, unauthorized::UnauthorizedThread},
     data::*,
     state::ServerState,
 };
@@ -317,7 +318,7 @@ impl GameServer {
                     let thread = Arc::into_inner(thread).expect("failed to unwrap unauthorized thread");
 
                     // safety: the thread no longer runs and we are the only ones who can access the socket
-                    let socket = thread.socket.get();
+                    let socket = unsafe { thread.socket.get() };
                     let udp_peer = socket.udp_peer.expect("upgraded thread has no udp peer assigned");
 
                     debug!("upgrading thread (new peer: tcp {}, udp {})", socket.tcp_peer, udp_peer);
@@ -338,7 +339,7 @@ impl GameServer {
                         let mut clients = self.clients.lock();
                         // safety: this is pretty unsafe
                         // TODO
-                        let udp_peer = thread.socket.get().udp_peer.expect("no udp peer in established thread");
+                        let udp_peer = unsafe { thread.socket.get() }.udp_peer.expect("no udp peer in established thread");
                         clients.remove(&udp_peer);
                     }
 
@@ -388,7 +389,7 @@ impl GameServer {
         };
 
         // safety: the thread no longer runs and we are the only ones who can access the socket
-        let socket = socket.get_mut();
+        let socket = unsafe { socket.get_mut() };
         let _ = socket.shutdown().await;
 
         #[cfg(debug_assertions)]

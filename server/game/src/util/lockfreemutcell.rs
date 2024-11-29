@@ -13,7 +13,7 @@ impl<T> LockfreeMutCell<T> {
         }
     }
 
-    pub fn get(&self) -> &T {
+    pub unsafe fn get(&self) -> &T {
         unsafe { &*self.cell.get() }
     }
 
@@ -26,11 +26,11 @@ impl<T> LockfreeMutCell<T> {
     ///
     /// #3) With great power comes great responsibility.
     #[allow(clippy::mut_from_ref)]
-    pub fn get_mut(&self) -> &mut T {
+    pub unsafe fn get_mut(&self) -> &mut T {
         unsafe { &mut *self.cell.get() }
     }
 
-    pub fn swap(&self, new: T) -> T {
-        std::mem::replace(self.get_mut(), new)
+    pub unsafe fn swap(&self, new: T) -> T {
+        std::mem::replace(unsafe { self.get_mut() }, new)
     }
 }

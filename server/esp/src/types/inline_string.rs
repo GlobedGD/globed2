@@ -119,7 +119,7 @@ impl<const N: usize> InlineString<N> {
     /// Converts this string to a string slice, without doing any UTF-8 checks.
     /// If the string is not a valid UTF-8 string, the behavior is undefined.
     #[inline]
-    pub fn to_str_unchecked(&self) -> &str {
+    pub unsafe fn to_str_unchecked(&self) -> &str {
         // in debug mode we still do a sanity check, a panic will indicate a *massive* logic error somewhere in the code.
         #[cfg(debug_assertions)]
         let ret = self

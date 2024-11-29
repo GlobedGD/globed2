@@ -295,7 +295,7 @@ impl FastString {
 
     /// Converts the string to a `&str`, bypassing utf-8 validation checks
     #[inline]
-    pub fn to_str_unchecked(&self) -> &str {
+    pub unsafe fn to_str_unchecked(&self) -> &str {
         unsafe { std::str::from_utf8_unchecked(self.as_bytes()) }
     }
 
