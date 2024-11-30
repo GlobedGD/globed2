@@ -264,8 +264,20 @@ namespace util::cocos {
                 // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
                 auto& imgState = imgStates.lock()->at(i);
 
+                // on android, resources are read from the apk file, so it's NOT thread safe. add a lock.
+#ifdef GEODE_IS_ANDROID
+                auto _rguard = cocosWorkMutex.lock();
+#endif
+
                 unsigned long filesize = 0;
-                unsigned char* buffer = getFileDataThreadSafe(imgState.path.c_str(), "rb", &filesize);
+                unsigned char* buffer = fileUtils.getFileData(imgState.path.c_str(), "rb", &filesize);
+
+#ifdef GEODE_IS_ANDROID
+                _rguard.unlock();
+#endif
+
+                // TODO: change all this to the lien below once it's figured out
+                // unsigned char* buffer = getFileDataThreadSafe(imgState.path.c_str(), "rb", &filesize);
 
                 std::unique_ptr<unsigned char[]> buf(buffer);
 
