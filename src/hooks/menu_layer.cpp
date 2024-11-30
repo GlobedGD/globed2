@@ -159,7 +159,6 @@ void HookedMenuLayer::maybeUpdateButton(float) {
 
 void HookedMenuLayer::onGlobedButton(CCObject*) {
     if (softDisabled) {
-
         geode::createQuickPopup(
             "Globed Error",
             "<cy>Outdated resources</c> were detected. The mod has been <cr>disabled</c> to prevent crashes.\n\nIf you have any <cg>texture packs</c>, or mods that change textures, please try <cy>disabling</c> them.",
