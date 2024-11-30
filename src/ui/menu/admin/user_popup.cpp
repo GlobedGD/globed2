@@ -99,7 +99,9 @@ bool AdminUserPopup::setup(const UserEntry& userEntry, const std::optional<Playe
         glm->m_userInfoDelegate = this;
         glm->getGJUserInfo(userEntry.accountId);
 
-        this->entryWasEmpty = true;
+        if (!userEntry.userName) {
+            this->entryWasEmpty = true;
+        }
 
         Build<BetterLoadingCircle>::create()
             .pos(util::ui::getPopupLayoutAnchored(m_size).center)
