@@ -1,6 +1,8 @@
 ## v1.7.2
 
-* Fix crash when viewing changelog popup
+* Make some corrections to the texture pack detection algorithm
+* Fix rare crash when viewing changelog popup
+* Fix rare crash caused by a race condition
 
 ## v1.7.1
 

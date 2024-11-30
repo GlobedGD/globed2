@@ -159,37 +159,70 @@ void HookedMenuLayer::maybeUpdateButton(float) {
 
 void HookedMenuLayer::onGlobedButton(CCObject*) {
     if (softDisabled) {
+
         geode::createQuickPopup(
             "Globed Error",
             "<cy>Outdated resources</c> were detected. The mod has been <cr>disabled</c> to prevent crashes.\n\nIf you have any <cg>texture packs</c>, or mods that change textures, please try <cy>disabling</c> them.",
             "Dismiss", "More info", [](auto, bool moreInfo) {
+
+                // Debug data format:
+                // gs1:0 - all is good
+                // gs1:-1 - globedsheet1.png not found
+                // gs1:-2 - globedsheet1.plist not found
+                // gs1:1 - tp detected, png and plist are in different folders
+                // gs1:2 - tp detected, png or plist in wrong folder
+                // dmv4:1 - darkmode v4 detected
+                std::string debugData;
+
                 if (!moreInfo) return;
 
-                bool texturePack = [] {
-                    // auto hasLdr = Loader::get()->isModLoaded("geode.texture-loader");
-                    // if (!hasLdr) return false;
-
+                bool texturePack = [&] {
                     // check if filename of a globedsheet1.png is overriden
                     auto p = CCFileUtils::get()->fullPathForFilename("globedsheet1.png"_spr, false);
+                    auto plist = CCFileUtils::get()->fullPathForFilename("globedsheet1.plist"_spr, false);
+
                     if (p.empty()) {
                         log::error("Failed to find globedsheet1.png");
+                        debugData += "gs1:-1;";
                         return false;
+                    }
+
+                    if (plist.empty()) {
+                        log::error("Failed to find globedsheet1.plist");
+                        debugData += "gs1:-2;";
+                        return false;
+                    }
+
+                    if (std::filesystem::path(std::string(p)).parent_path() != std::filesystem::path(std::string(plist)).parent_path()) {
+                        log::debug("Mismatch, globedsheet1.plist and globedsheet1.png are in different places ({} and {})", p, plist);
+                        debugData += "gs1:1;";
+                        return true;
                     }
 
                     if (std::filesystem::path(std::string(p)).parent_path() != Mod::get()->getResourcesDir()) {
                         log::debug("Mismatch, globedsheet1 expected in {}, found at {}", Mod::get()->getResourcesDir(), p);
+                        debugData += "gs1:2;";
                         return true;
                     }
 
+                    debugData += "gs1:0;";
                     return false;
                 }();
+
                 bool darkmode = Loader::get()->isModLoaded("bitz.darkmode_v4");
+                if (darkmode) {
+                    debugData += "dmv4:1;";
+                }
 
                 // TODO: for android, check if the dankmeme.globed2 folder is in the apk
 
                 auto impostorFolderLoc = dirs::getGameDir() / "Resources" / "dankmeme.globed2";
                 std::error_code ec{};
                 bool impostorFolder = std::filesystem::exists(impostorFolderLoc) && ec == std::error_code{};
+
+                debugData += fmt::format("impf:{};", impostorFolder ? "1" : "0");
+
+                log::debug("complete tp debug data: {}", debugData);
 
                 if (impostorFolder) {
                     geode::createQuickPopup(
@@ -221,15 +254,24 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                         }
                     );
                 } else if (texturePack || darkmode) {
+                    std::string enabledtxt;
+                    if (texturePack) {
+                        enabledtxt += "Globed texture pack detected: <cg>yes</c>\n";
+                    }
+
+                    if (darkmode) {
+                        enabledtxt += "DarkMode v4 enabled: <cg>yes</c>\n";
+                    }
+
                     FLAlertLayer::create(
                         "Note",
-                        fmt::format("Globed texture pack detected: {}</c>\nDarkMode v4 enabled: {}</c>\n\nPlease try to <cr>disable</c> these and see if the issue is resolved after restarting.", texturePack ? "<cg>yes" : "<cr>no", darkmode ? "<cg>yes" : "<cr>no"),
+                        fmt::format("{}\nPlease try to <cr>disable</c> these and see if the issue is resolved after restarting.\n\nDebug data: <cy>{}</c>", enabledtxt, debugData),
                         "Ok"
                     )->show();
                 } else {
                     geode::createQuickPopup(
                         "Error",
-                        "Failed to determine the root cause of the issue. Please create a <cy>bug report</c> on our GitHub page.",
+                        fmt::format("Failed to determine the root cause of the issue. Please create a <cy>bug report</c> on our GitHub page, including this information:\n\nDebug data: <cy>{}</c>", debugData),
                         "Dismiss",
                         "Open page",
                         [](auto, bool open) {
