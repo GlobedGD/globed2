@@ -457,7 +457,7 @@ impl ClientThread {
         )
         .await?;
 
-        Ok(())
+        self._send_admin_success(packet.account_id).await
     });
 
     gs_handler!(self, handle_admin_set_name_color, AdminSetNameColorPacket, packet, {

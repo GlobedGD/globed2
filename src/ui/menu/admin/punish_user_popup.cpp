@@ -439,8 +439,6 @@ void AdminPunishUserPopup::inputChanged() {
 }
 
 void AdminPunishUserPopup::submit() {
-    auto& nm = NetworkManager::get();
-
     auto expiresAtTime = SystemTime::now() + currentDuration;
     time_t expiresAt; // seconds since unix epoch
 
@@ -454,23 +452,22 @@ void AdminPunishUserPopup::submit() {
     auto reason = this->reasonInput->getString();
 
     // if not editing a punishment, submit a new one
+    std::shared_ptr<Packet> pkt;
+
     if (!punishment) {
-        nm.send(AdminPunishUserPacket::create(accountId, isBan, reason, expiresAt));
+        pkt = AdminPunishUserPacket::create(accountId, isBan, reason, expiresAt);
     } else {
         // edit the punishment otherwise
-        nm.send(AdminEditPunishmentPacket::create(accountId, isBan, reason, expiresAt));
+        pkt = AdminEditPunishmentPacket::create(accountId, isBan, reason, expiresAt);
     }
 
+    this->parentPopup->performAction(std::move(pkt));
     this->onClose(nullptr);
-    this->parentPopup->showLoadingPopup();
 }
 
 void AdminPunishUserPopup::submitRemoval() {
-    auto& nm = NetworkManager::get();
-    nm.send(AdminRemovePunishmentPacket::create(accountId, isBan));
-
+    this->parentPopup->performAction(AdminRemovePunishmentPacket::create(accountId, isBan));
     this->onClose(nullptr);
-    this->parentPopup->showLoadingPopup();
 }
 
 AdminPunishUserPopup* AdminPunishUserPopup::create(AdminUserPopup* popup, int32_t accountId, bool isBan, std::optional<UserPunishment> punishment) {

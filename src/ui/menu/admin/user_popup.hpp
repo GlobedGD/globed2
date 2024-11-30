@@ -5,6 +5,7 @@
 
 #include <data/types/admin.hpp>
 #include <data/types/gd.hpp>
+#include <data/packets/packet.hpp>
 #include <ui/general/loading_circle.hpp>
 
 class AdminUserPopup : public geode::Popup<const UserEntry&, const std::optional<PlayerRoomPreviewAccountData>&>, public UserInfoDelegate {
@@ -30,6 +31,9 @@ private:
     cocos2d::CCMenu* nameLayout;
     cocos2d::CCMenu* rootMenu;
     Ref<CCMenuItemSpriteExtra> roleModifyButton, banButton, muteButton;
+    std::shared_ptr<Packet> queuedPacket;
+    bool entryWasEmpty = false;
+    bool waitingForUpdateUsername = false;
 
     bool setup(const UserEntry& userEntry, const std::optional<PlayerRoomPreviewAccountData>& accountData) override;
     void onProfileLoaded();
@@ -44,6 +48,8 @@ private:
     void onClose(cocos2d::CCObject*) override;
     void removeLoadingCircle();
     void refreshFromUserEntry(UserEntry entry);
+
+    void performAction(std::shared_ptr<Packet> packet);
 
     void getUserInfoFinished(GJUserScore* p0) override;
     void getUserInfoFailed(int p0) override;

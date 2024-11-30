@@ -60,10 +60,21 @@ private:
         }, -1000, true);
 
         NetworkManager::get().addListener<AdminSuccessfulUpdatePacket>(this, [this](auto pkt) {
-            ErrorQueues::get().success("Success");
             this->adminPopup->refreshFromUserEntry(std::move(pkt->userEntry));
 
-            this->onClose(nullptr);
+            if (this->adminPopup->waitingForUpdateUsername) {
+                this->adminPopup->waitingForUpdateUsername = false;
+
+                if (this->adminPopup->queuedPacket) {
+                    NetworkManager::get().send(std::move(this->adminPopup->queuedPacket));
+                } else {
+                    this->onClose(nullptr);
+                }
+            } else {
+                ErrorQueues::get().success("Success");
+                this->onClose(nullptr);
+            }
+
         }, -1000, true);
 
         NetworkManager::get().addListener<AdminErrorPacket>(this, [this](auto pkt) {
@@ -87,6 +98,8 @@ bool AdminUserPopup::setup(const UserEntry& userEntry, const std::optional<Playe
         auto* glm = GameLevelManager::sharedState();
         glm->m_userInfoDelegate = this;
         glm->getGJUserInfo(userEntry.accountId);
+
+        this->entryWasEmpty = true;
 
         Build<BetterLoadingCircle>::create()
             .pos(util::ui::getPopupLayoutAnchored(m_size).center)
@@ -200,9 +213,8 @@ void AdminUserPopup::onProfileLoaded() {
                     if (!confirm) return;
 
                     auto packet = AdminWhitelistPacket::create(userEntry.accountId, !userEntry.isWhitelisted);
-                    NetworkManager::get().send(packet);
 
-                    this->showLoadingPopup();
+                    this->performAction(std::move(packet));
 
                     userEntry.isWhitelisted = !userEntry.isWhitelisted;
 
@@ -235,9 +247,8 @@ void AdminUserPopup::onProfileLoaded() {
             .intoMenuItem([this] {
                 AskInputPopup::create("Change Password", [this, accountId = accountData->accountId](auto pwd) {
                     auto packet = AdminSetAdminPasswordPacket::create(accountId, util::format::trim(pwd));
-                    NetworkManager::get().send(packet);
 
-                    this->showLoadingPopup();
+                    this->performAction(std::move(packet));
                 }, 64, "Password", util::misc::STRING_PRINTABLE_INPUT, 0.85f)->show();
             })
             .zOrder(btnorder::AdminPassword)
@@ -369,6 +380,35 @@ void AdminUserPopup::refreshFromUserEntry(UserEntry entry) {
     this->userEntry = std::move(entry);
     this->recreateRoleModifyButton();
     this->createBanAndMuteButtons();
+}
+
+void AdminUserPopup::performAction(std::shared_ptr<Packet> packet) {
+    if (entryWasEmpty) {
+        // send update username packet, put this one on hold..
+        queuedPacket = std::move(packet);
+        std::string username;
+        if (accountData) {
+            username = accountData->name;
+        } else {
+            username = userEntry.userName.value_or("");
+        }
+
+        if (username.empty()) {
+            ErrorQueues::get().warn("Username is empty, cannot send update packet");
+            NetworkManager::get().send(std::move(queuedPacket));
+            entryWasEmpty = false;
+            return;
+        }
+
+        entryWasEmpty = false;
+        waitingForUpdateUsername = true;
+
+        NetworkManager::get().send(AdminUpdateUsernamePacket::create(userEntry.accountId, username));
+    } else {
+        NetworkManager::get().send(packet);
+    }
+
+    this->showLoadingPopup();
 }
 
 void AdminUserPopup::removeLoadingCircle() {
