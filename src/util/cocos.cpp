@@ -53,10 +53,8 @@ struct HookedFileUtils : public CCFileUtils {
 
 #ifdef GEODE_IS_ANDROID
 
+// thanks zmx for this code!!
 static AAssetManager* getAssetManager() {
-    // TODO: broken right now
-    return nullptr;
-
     cocos2d::JniMethodInfo t;
 
     if (cocos2d::JniHelper::getStaticMethodInfo(t, "org/fmod/FMOD", "getAssetManager", "()Landroid/content/res/AssetManager;")) {
@@ -74,6 +72,7 @@ static AAssetManager* getAssetManager() {
 }
 
 static AAssetManager* g_assetManager = nullptr;
+static asp::Mutex<> g_fileDataMutex;
 
 #endif
 
@@ -204,6 +203,17 @@ namespace util::cocos {
         state.ensurePoolExists();
         state.timeMeasurements.reset();
 
+#ifdef GEODE_IS_ANDROID
+        if (!g_assetManager) {
+            preloadLog("attempting to get asset manager");
+            g_assetManager = getAssetManager();
+
+            if (!g_assetManager) {
+                preloadLog("failed to get asset manager!");
+            }
+        }
+#endif
+
         auto& threadPool = *state.threadPool.get();
 
         preloadLog("preparing {} textures", images.size());
@@ -264,20 +274,8 @@ namespace util::cocos {
                 // this is a dangling reference, but we do not modify imgStates in any way, so it's not a big deal.
                 auto& imgState = imgStates.lock()->at(i);
 
-                // on android, resources are read from the apk file, so it's NOT thread safe. add a lock.
-#ifdef GEODE_IS_ANDROID
-                auto _rguard = cocosWorkMutex.lock();
-#endif
-
                 unsigned long filesize = 0;
-                unsigned char* buffer = fileUtils.getFileData(imgState.path.c_str(), "rb", &filesize);
-
-#ifdef GEODE_IS_ANDROID
-                _rguard.unlock();
-#endif
-
-                // TODO: change all this to the lien below once it's figured out
-                // unsigned char* buffer = getFileDataThreadSafe(imgState.path.c_str(), "rb", &filesize);
+                unsigned char* buffer = getFileDataThreadSafe(imgState.path.c_str(), "rb", &filesize);
 
                 std::unique_ptr<unsigned char[]> buf(buffer);
 
@@ -364,42 +362,37 @@ namespace util::cocos {
                 auto pathsv = std::string_view(imgState.path);
                 std::string fullPlistPath = std::string(pathsv.substr(0, pathsv.find(".png"))) + ".plist";
 
-                // file reading is not thread safe on android.
+                // file reading is not thread safe on android, use a mutex
 
+                CCDictionary* dict;
+                {
 #ifdef GEODE_IS_ANDROID
-                auto _ccdlock = cocosWorkMutex.lock();
+                    auto _ = g_fileDataMutex.lock();
 #endif
 
-                CCDictionary* dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
-                if (!dict) {
-                    preloadLog("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
-                    gd::string fallbackPath;
-                    {
-#ifndef GEODE_IS_ANDROID
-                        auto _ = cocosWorkMutex.lock();
-#endif
-                        fallbackPath = fullPathForFilename(plistKey.c_str());
+                    dict = CCDictionary::createWithContentsOfFileThreadSafe(fullPlistPath.c_str());
+                    if (!dict) {
+                        preloadLog("dict is nullptr for: {}, trying slower fallback option", fullPlistPath);
+                        gd::string fallbackPath;
+                        {
+                            auto _ = cocosWorkMutex.lock();
+                            fallbackPath = fullPathForFilename(plistKey.c_str());
+                        }
+
+                        preloadLog("attempted fallback: {}", fallbackPath);
+                        dict = CCDictionary::createWithContentsOfFileThreadSafe(fallbackPath.c_str());
                     }
-
-                    preloadLog("attempted fallback: {}", fallbackPath);
-                    dict = CCDictionary::createWithContentsOfFileThreadSafe(fallbackPath.c_str());
                 }
 
                 if (!dict) {
                     log::warn("preload: failed to find the plist for {}.", imgState.path);
 
-#ifndef GEODE_IS_ANDROID
                     auto _ = cocosWorkMutex.lock();
-#endif
 
                     // remove the texture.
                     textureCache->m_pTextures->removeObjectForKey(imgState.path);
                     return;
                 }
-
-#ifdef GEODE_IS_ANDROID
-                _ccdlock.unlock();
-#endif
 
                 {
                     auto _ = cocosWorkMutex.lock();
@@ -663,17 +656,11 @@ namespace util::cocos {
         return fu->getFileData(path, mode, outSize);
 #else
         // on android, use AAssetManager to read files from the apk
-        if (!g_assetManager) {
-            g_assetManager = getAssetManager();
-        }
-
-        // if failed, use ccfileutils and a mutex
+        // if we failed to get the asset manager, use ccfileutils and a mutex
         auto failedRoutine = [path, mode, outSize]{
-            static asp::Mutex<> mutex;
-
             auto fu = CCFileUtils::get();
 
-            mutex.lock();
+            auto lck = g_fileDataMutex.lock();
 
             return fu->getFileData(path, mode, outSize);
         };
@@ -687,9 +674,15 @@ namespace util::cocos {
             return failedRoutine();
         }
 
-        AAsset* asset = AAssetManager_open(g_assetManager, path, AASSET_MODE_BUFFER);
+        // strip the 'assets/' part of the path
+        std::string_view strippedName = path;
+        if (strippedName.starts_with("assets/")) {
+            strippedName.remove_prefix(7);
+        }
+
+        AAsset* asset = AAssetManager_open(g_assetManager, strippedName.data(), AASSET_MODE_BUFFER);
         if (!asset) {
-            log::error("Failed to open asset, falling back, path: {}", path);
+            log::error("Failed to open asset, falling back, path: {}", strippedName);
             return failedRoutine();
         }
 
