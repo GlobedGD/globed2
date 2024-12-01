@@ -439,7 +439,7 @@ impl ByteBufferExtWrite for ByteBuffer {
     impl_extwrite!(encode);
 }
 
-impl<'a> ByteBufferExtWrite for FastByteBuffer<'a> {
+impl ByteBufferExtWrite for FastByteBuffer<'_> {
     impl_extwrite!(encode_fast);
 }
 
@@ -447,7 +447,7 @@ impl ByteBufferExtRead for ByteBuffer {
     impl_extread!(decode);
 }
 
-impl<'a> ByteBufferExtRead for ByteReader<'a> {
+impl ByteBufferExtRead for ByteReader<'_> {
     impl_extread!(decode_from_reader);
 }
 

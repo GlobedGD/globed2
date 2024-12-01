@@ -7,14 +7,14 @@ use std::{
 };
 
 use esp::{
-    size_of_types, ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, Decodable, DecodeError, DynamicSize, Encodable,
-    FastVec, StaticSize,
+    ByteBuffer, ByteBufferExt, ByteBufferExtRead, ByteBufferExtWrite, ByteReader, Decodable, DecodeError, DynamicSize, Encodable, FastVec,
+    StaticSize, size_of_types,
 };
 use globed_derive::{DynamicSize, Encodable};
 use globed_shared::{
+    GameServerBootData, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN, ServerUserEntry, SyncMutex, TokenIssuer, UserLoginResponse,
     data::*,
     reqwest::{self, Response, StatusCode},
-    GameServerBootData, ServerUserEntry, SyncMutex, TokenIssuer, UserLoginResponse, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC, SERVER_MAGIC_LEN,
 };
 
 use crate::webhook::{self, *};
@@ -160,7 +160,7 @@ impl CentralBridge {
         // verify that the magic bytes match
         let valid_magic = reader
             .read_value_array::<u8, SERVER_MAGIC_LEN>()
-            .map_or(false, |magic| magic.iter().eq(SERVER_MAGIC.iter()));
+            .is_ok_and(|magic| magic.iter().eq(SERVER_MAGIC.iter()));
 
         if !valid_magic {
             let txt = String::from_utf8(reader.as_bytes().to_vec()).unwrap_or_else(|_| "<invalid UTF-8 string>".to_owned());
@@ -377,6 +377,7 @@ impl CentralBridge {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn send_webhook_message_for_action(
         &self,
         action: &AdminUserAction,

@@ -10,11 +10,7 @@ use std::{
 
 // this is bizarre
 const fn constmax(a: usize, b: usize) -> usize {
-    if a >= b {
-        a
-    } else {
-        b
-    }
+    if a >= b { a } else { b }
 }
 
 macro_rules! impl_primitive {
@@ -153,7 +149,7 @@ where
 
 /* Cow<'a, T> */
 
-impl<'a, T: ?Sized + ToOwned> Encodable for Cow<'a, T>
+impl<T: ?Sized + ToOwned> Encodable for Cow<'_, T>
 where
     <T as ToOwned>::Owned: Encodable,
     T: Encodable,
@@ -175,7 +171,7 @@ where
     }
 }
 
-impl<'a, T: ?Sized + ToOwned> Decodable for Cow<'a, T>
+impl<T: ?Sized + ToOwned> Decodable for Cow<'_, T>
 where
     <T as ToOwned>::Owned: Decodable,
     T: Decodable,
@@ -189,7 +185,7 @@ where
     }
 }
 
-impl<'a, T: ?Sized + ToOwned> DynamicSize for Cow<'a, T>
+impl<T: ?Sized + ToOwned> DynamicSize for Cow<'_, T>
 where
     <T as ToOwned>::Owned: DynamicSize,
     T: DynamicSize,
