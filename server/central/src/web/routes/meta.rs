@@ -1,17 +1,16 @@
 use std::sync::OnceLock;
 
 use globed_shared::{
-    base64::{engine::general_purpose as b64e, Engine as _},
+    MAX_SUPPORTED_PROTOCOL, MIN_CLIENT_VERSION, MIN_GD_VERSION, MIN_SUPPORTED_PROTOCOL, SERVER_MAGIC,
+    base64::{Engine as _, engine::general_purpose as b64e},
     esp::{ByteBuffer, ByteBufferExt, ByteBufferExtWrite},
     rand::{self, Rng},
-    MAX_SUPPORTED_PROTOCOL, MIN_CLIENT_VERSION, MIN_GD_VERSION, MIN_SUPPORTED_PROTOCOL, SERVER_MAGIC,
 };
 
 use rocket::{
-    get,
+    State, get,
     http::{ContentType, Status},
     serde::json::Json,
-    State,
 };
 use serde::Serialize;
 
@@ -76,7 +75,7 @@ pub fn versioncheck(gd: &str, globed: &str, protocol: u16) -> WebResult<Json<Ver
 
 #[get("/")]
 pub fn index() -> (Status, (ContentType, String)) {
-    if rand::thread_rng().gen_ratio(1, 0xaa) {
+    if rand::rng().random_ratio(1, 0xaa) {
         return _check();
     }
 

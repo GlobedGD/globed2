@@ -1,15 +1,15 @@
 use std::{net::IpAddr, time::SystemTime};
 
-use digest::KeyInit;
-use rocket::{post, State};
+use rocket::{State, post};
 use serde::Deserialize;
 
 use globed_shared::{
-    anyhow::{self, anyhow},
-    base64::{engine::general_purpose as b64e, Engine as _},
-    crypto_box::aead::Aead,
-    logger::*,
     MIN_CLIENT_VERSION,
+    anyhow::{self, anyhow},
+    base64::{Engine as _, engine::general_purpose as b64e},
+    crypto_box::aead::Aead,
+    crypto_secretbox::{KeyInit, XSalsa20Poly1305},
+    logger::*,
 };
 
 use super::*;
@@ -229,7 +229,7 @@ fn decrypt_trust_token(token: &str, key: &str) -> WebResult<Vec<u8>> {
     let mut key_arr = [0u8; 32];
     key_arr.copy_from_slice(&key);
 
-    let cipher = globed_shared::crypto_secretbox::XSalsa20Poly1305::new((&key_arr).into());
+    let cipher = XSalsa20Poly1305::new((&key_arr).into());
     let nonce = encrypted[..24].into();
     let ciphertext = &encrypted[24..];
 

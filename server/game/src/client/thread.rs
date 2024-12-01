@@ -276,7 +276,7 @@ impl ClientThread {
     /// get the tcp address of the connected peer. do not call this from another clientthread
     fn get_tcp_peer(&self) -> SocketAddrV4 {
         // safety: we trust this function is not called from the oustide
-        self.socket.get().tcp_peer
+        unsafe { self.socket.get() }.tcp_peer
     }
 
     // the error printing is different in release and debug. some errors have higher severity than others.
@@ -300,7 +300,7 @@ impl ClientThread {
                     warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
 
-                &PacketHandlingError::IOError(ref e) => {
+                PacketHandlingError::IOError(e) => {
                     if !should_ignore_error(e) {
                         warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), e);
                     }
