@@ -6,9 +6,9 @@ pub use esp::*;
 pub use globed_derive::*;
 pub use globed_shared::MAX_NAME_SIZE;
 
+pub use v_current::VERSION as CURRENT_PROTOCOL;
 pub use v_current::packets;
 pub use v_current::types;
-pub use v_current::VERSION as CURRENT_PROTOCOL;
 
 pub use packets::*;
 pub use types::*;
@@ -39,7 +39,7 @@ impl ByteBufferExtRead2 for ByteBuffer {
     }
 }
 
-impl<'a> ByteBufferExtRead2 for ByteReader<'a> {
+impl ByteBufferExtRead2 for ByteReader<'_> {
     #[inline]
     fn read_packet_header(&mut self) -> DecodeResult<PacketHeader> {
         self.read_value()
@@ -73,7 +73,7 @@ impl ByteBufferExtWrite2 for ByteBuffer {
     }
 }
 
-impl<'a> ByteBufferExtWrite2 for FastByteBuffer<'a> {
+impl ByteBufferExtWrite2 for FastByteBuffer<'_> {
     #[inline]
     fn write_packet_header<T: PacketMetadata>(&mut self) {
         self.write_value(&PacketHeader::from_packet::<T>());

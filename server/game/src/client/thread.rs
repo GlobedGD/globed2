@@ -3,8 +3,8 @@ use std::{
     collections::VecDeque,
     net::SocketAddrV4,
     sync::{
-        atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
         Arc,
+        atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
     },
     time::Duration,
 };
@@ -17,7 +17,7 @@ use crate::{
     },
 };
 use esp::ByteReader;
-use globed_shared::{logger::*, should_ignore_error, ServerUserEntry, SyncMutex};
+use globed_shared::{ServerUserEntry, SyncMutex, logger::*, should_ignore_error};
 use handlers::game::MAX_VOICE_PACKET_SIZE;
 use tokio::time::Instant;
 
@@ -300,7 +300,7 @@ impl ClientThread {
                     warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), error);
                 }
 
-                PacketHandlingError::IOError(ref e) => {
+                PacketHandlingError::IOError(e) => {
                     if !should_ignore_error(e) {
                         warn!("[{} @ {}] {}", self.account_id.load(Ordering::Relaxed), self.get_tcp_peer(), e);
                     }
@@ -447,7 +447,7 @@ impl ClientThread {
 
         // decrypt the packet in-place if encrypted
         if header.encrypted {
-            data = unsafe { self.socket.get_mut() }.decrypt(message)?;
+            data = unsafe { self.socket.get_mut().decrypt(message)? };
         }
 
         match header.packet_id {

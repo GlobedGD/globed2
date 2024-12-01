@@ -62,7 +62,7 @@ impl GameServerPinger {
 
         // ping packet LOL
         let mut buffer = ByteBuffer::new();
-        let ping_id = rand::thread_rng().gen();
+        let ping_id = rand::rng().random();
         buffer.write_u16(10000);
         buffer.write_bool(false);
         buffer.write_u32(ping_id);

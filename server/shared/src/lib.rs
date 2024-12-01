@@ -1,4 +1,3 @@
-#![feature(const_option)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
@@ -9,7 +8,8 @@
 
 use esp::{Decodable, DynamicSize, Encodable, StaticSize};
 pub use globed_derive::{Decodable, DynamicSize, Encodable, StaticSize};
-use rand::{distributions::Alphanumeric, Rng};
+use rand::distr::Alphanumeric;
+use rand::prelude::*;
 
 // import reexports
 pub use nohash_hasher::{IntMap, IntSet};
@@ -59,7 +59,7 @@ pub const DEFAULT_CENTRAL_SERVER_PORT: u16 = 4201;
 pub const DEFAULT_GAME_SERVER_PORT: u16 = 4202;
 
 pub fn generate_alphanum_string(n: usize) -> String {
-    rand::thread_rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect()
+    rand::rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect()
 }
 
 pub fn get_log_level(env_var: &str) -> Option<LogLevelFilter> {

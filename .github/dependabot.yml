@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/server/central"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/server/derive"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/server/esp"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/server/game"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/server/shared"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/server"
+    schedule:
+      interval: "daily"

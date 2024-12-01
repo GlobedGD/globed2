@@ -43,7 +43,7 @@ jobs:
   package:
     name: Package builds
     runs-on: ubuntu-latest
-    needs: ['build']
+    needs: build
 
     steps:
       - name: Combine builds

@@ -4,7 +4,7 @@ use std::{
 };
 
 use base64::{engine::general_purpose as b64e, Engine};
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 
 pub struct TokenIssuer {
@@ -19,6 +19,8 @@ pub enum TokenValidationFailure {
     Expired,            // token expired
     InvalidSignature,   // signature does not match
 }
+
+type HmacSha256 = Hmac<Sha256>;
 
 impl TokenValidationFailure {
     pub const fn error_message(&self) -> &'static str {
@@ -41,7 +43,7 @@ impl Display for TokenValidationFailure {
 impl TokenIssuer {
     pub fn new(secret_key: &str, expiration_period: Duration) -> Self {
         let skey_bytes = secret_key.as_bytes();
-        let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
+        let hmac = HmacSha256::new_from_slice(skey_bytes).unwrap();
 
         Self { hmac, expiration_period }
     }
@@ -49,7 +51,7 @@ impl TokenIssuer {
     /// Change the secret key of this token issuer.
     pub fn set_secret_key(&mut self, secret_key: &str) {
         let skey_bytes = secret_key.as_bytes();
-        let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
+        let hmac = HmacSha256::new_from_slice(skey_bytes).unwrap();
 
         self.hmac = hmac;
     }

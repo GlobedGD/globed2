@@ -127,7 +127,7 @@ impl<const N: usize> InlineString<N> {
             .expect("Attempted to unsafely convert a non-UTF-8 InlineString into a string slice");
 
         #[cfg(not(debug_assertions))]
-        let ret = std::str::from_utf8_unchecked(&self.buffer[..self.len()]);
+        let ret = unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len()]) };
 
         ret
     }

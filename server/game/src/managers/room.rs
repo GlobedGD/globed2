@@ -246,7 +246,7 @@ impl RoomManager {
 
         // in case we accidentally generate an existing room id, keep looping until we find a suitable id
         let room_id = loop {
-            let room_id = rand::thread_rng().gen_range(ROOM_ID_START..ROOM_ID_END);
+            let room_id = rand::rng().random_range(ROOM_ID_START..ROOM_ID_END);
             if !rooms.contains_key(&room_id) {
                 break room_id;
             }

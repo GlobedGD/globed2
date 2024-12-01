@@ -4,28 +4,27 @@ use std::{
     net::IpAddr,
     path::PathBuf,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
     time::{Duration, SystemTime},
 };
 
 use globed_shared::{
-    anyhow,
-    base64::{engine::general_purpose::STANDARD as b64e, Engine},
-    crypto_box::aead::{generic_array::GenericArray, AeadMutInPlace},
-    crypto_secretbox::{KeyInit, XSalsa20Poly1305},
+    TokenIssuer, anyhow,
+    base64::{Engine, engine::general_purpose::STANDARD as b64e},
+    crypto_box::aead::{AeadMutInPlace, generic_array::GenericArray},
+    crypto_secretbox::{KeyInit as _, XSalsa20Poly1305},
     hmac::Hmac,
-    rand::{self, distributions::Alphanumeric, rngs::OsRng, Rng, RngCore},
+    rand::{self, distr::Alphanumeric, prelude::*},
     reqwest,
     sha2::Sha256,
-    TokenIssuer,
 };
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use crate::{config::ServerConfig, db::GlobedDb, game_pinger::GameServerPinger, verifier::AccountVerifier};
 use blake2::{Blake2b, Digest};
-use digest::consts::U32;
+use digest::{KeyInit as _, consts::U32};
 
 #[derive(Clone)]
 pub struct ActiveChallenge {
@@ -63,7 +62,7 @@ impl ServerStateData {
 
         let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
         let mut challenge_pubkey = GenericArray::<u8, U32>::default();
-        OsRng.fill_bytes(&mut challenge_pubkey);
+        rand::rng().fill_bytes(&mut challenge_pubkey);
         let challenge_box = XSalsa20Poly1305::new(&challenge_pubkey);
 
         let token_expiry = Duration::from_secs(config.token_expiry);
@@ -97,10 +96,10 @@ impl ServerStateData {
         ip_address: IpAddr,
         current_time: SystemTime,
     ) -> anyhow::Result<String> {
-        let answer: String = rand::thread_rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect();
+        let answer: String = rand::rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect();
 
         let mut nonce = [0u8; XSalsa20Poly1305::NONCE_SIZE];
-        OsRng.fill_bytes(&mut nonce);
+        rand::rng().fill_bytes(&mut nonce);
 
         let nonce_start = 0usize;
         let mac_start = nonce_start + XSalsa20Poly1305::NONCE_SIZE;
@@ -223,15 +222,12 @@ impl ServerStateData {
         lowercase.hash(&mut hasher);
         let hash = hasher.finish();
 
-        self.last_logins.insert(
-            hash,
-            LoginEntry {
-                account_id,
-                name: name.to_owned(),
-                time: SystemTime::now(),
-                link_code,
-            },
-        );
+        self.last_logins.insert(hash, LoginEntry {
+            account_id,
+            name: name.to_owned(),
+            time: SystemTime::now(),
+            link_code,
+        });
     }
 
     pub fn remove_login_code(&mut self, name: &str) {

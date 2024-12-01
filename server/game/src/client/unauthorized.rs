@@ -81,7 +81,7 @@ impl UnauthorizedThread {
             socket: LockfreeMutCell::new(ClientSocket::new(socket, peer, 0, game_server)),
             connection_state: AtomicClientThreadState::default(),
 
-            secret_key: rand::thread_rng().gen(),
+            secret_key: rand::rng().random(),
             protocol_version: AtomicU16::new(0),
 
             account_id: AtomicI32::new(0),
@@ -345,7 +345,7 @@ impl UnauthorizedThread {
             );
         }
 
-        unsafe { self.socket.get_mut() }.set_mtu(packet.fragmentation_limit as usize);
+        unsafe { self.socket.get_mut().set_mtu(packet.fragmentation_limit as usize) };
 
         if packet.account_id <= 0 || packet.user_id <= 0 {
             let message = Cow::Owned(format!(

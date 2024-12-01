@@ -16,14 +16,13 @@ use std::{
     time::Duration,
 };
 
-use async_watcher::{notify::RecursiveMode, AsyncDebouncer};
+use async_watcher::{AsyncDebouncer, notify::RecursiveMode};
 use config::ServerConfig;
 use db::GlobedDb;
 use game_pinger::GameServerPinger;
 use globed_shared::{
-    get_log_level,
-    logger::{error, info, log, warn, Logger},
-    LogLevelFilter,
+    LogLevelFilter, get_log_level,
+    logger::{Logger, error, info, log, warn},
 };
 use rocket::catchers;
 use rocket_db_pools::Database;
@@ -62,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // create Rocket.toml if it doesn't exist
     let rocket_toml = std::env::var("ROCKET_CONFIG").map_or_else(|_| std::env::current_dir().unwrap().join("Rocket.toml"), PathBuf::from);
 
-    if !rocket_toml.file_name().is_some_and(|x| x == "Rocket.toml") || !rocket_toml.parent().is_some_and(Path::exists) {
+    if rocket_toml.file_name().is_none_or(|x| x != "Rocket.toml") || !rocket_toml.parent().is_some_and(Path::exists) {
         error!("invalid value for ROCKET_CONFIG");
         warn!("hint: the filename must be 'Rocket.toml' and the parent folder must exist on the disk");
         abort_misconfig();
