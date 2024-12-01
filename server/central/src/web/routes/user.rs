@@ -1,11 +1,12 @@
 use globed_shared::{
+    ServerUserEntry, UserLoginData, UserLoginResponse,
     data::*,
     logger::debug,
     rand::{self, Rng},
-    warn, ServerUserEntry, UserLoginData, UserLoginResponse,
+    warn,
 };
 
-use rocket::{get, post, serde::json::Json, State};
+use rocket::{State, get, post, serde::json::Json};
 use serde::{Deserialize, Serialize};
 
 use crate::{db::GlobedDb, state::ServerState, web::*};
@@ -188,7 +189,7 @@ pub async fn user_login(
         unauthorized!("invalid gameserver credentials");
     }
 
-    let link_code = rand::thread_rng().gen_range(1000..10_000);
+    let link_code = rand::rng().random_range(1000..10_000);
 
     // store login attempt
     state.state_write().await.put_login(&userdata.0.name, userdata.0.account_id, link_code);
