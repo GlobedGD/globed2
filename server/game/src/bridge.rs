@@ -464,7 +464,7 @@ impl CentralBridge {
             AdminUserAction::EditPunishment(action) => {
                 messages.push(WebhookMessage::UserViolationMetaChanged(ViolationMetaChange {
                     account_id: user.account_id,
-                    name: user.user_name.clone().unwrap_or_default(),
+                    name: user_name.into_owned(),
                     is_ban: action.is_ban,
                     expiry: if action.expires_at == 0 { None } else { Some(action.expires_at) },
                     reason: if action.reason.is_empty() {
