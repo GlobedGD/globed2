@@ -1,7 +1,3 @@
-[package]
-name = "globed-server"
-edition = "2024"
-
 [workspace]
 members = ["central", "esp", "game", "derive", "shared", "observer", "observer-shared"]
 resolver = "2"
