@@ -14,8 +14,8 @@ use globed_shared::rand::Rng;
 #[allow(unused_imports)]
 use globed_shared::{
     crypto_box::{
-        aead::{AeadCore, AeadInPlace, OsRng},
         ChaChaBox,
+        aead::{AeadCore, AeadInPlace, OsRng},
     },
     trace,
 };
@@ -54,7 +54,7 @@ impl ClientSocket {
             udp_peer: None,
             crypto_box: OnceLock::new(),
             game_server,
-            mtu
+            mtu,
         }
     }
 
@@ -73,7 +73,7 @@ impl ClientSocket {
     #[inline]
     pub async fn recv_and_handle<F>(&mut self, bytes: usize, f: F) -> Result<()>
     where
-        F: async FnOnce(&mut [u8]) -> Result<()>,
+        F: AsyncFnOnce(&mut [u8]) -> Result<()>,
     {
         if bytes > MAX_PACKET_SIZE {
             return Err(PacketHandlingError::PacketTooLong(bytes));
@@ -346,7 +346,7 @@ impl ClientSocket {
                                     // send leftover data
                                     Ok(Some(data[written..data.len()].to_vec()))
                                 }
-                            },
+                            }
                         }
                     })
                 };
