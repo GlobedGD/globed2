@@ -76,7 +76,7 @@ public:
             .parent(this)
             .collect();
 
-        SystemTime issuedAt = SystemTime::fromUnix(entry.issuedAt.value_or(0));;
+        SystemTime issuedAt = SystemTime::fromUnix(entry.issuedAt.value_or(0));
         SystemTime expiresAt = SystemTime::fromUnix(entry.expiresAt);
 
         bool isPermanent = expiresAt.to_time_t() == 0;
