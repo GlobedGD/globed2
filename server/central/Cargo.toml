@@ -22,5 +22,5 @@ sqlx = { version = "^0.7.0", features = [ # TODO: rocket_db_pools is broken in s
     "runtime-tokio-rustls",
 ] }
 rocket_cors = "0.6.0"
-const_format = "0.2.33"
+const_format = "0.2.34"
 hex = "0.4.3"
