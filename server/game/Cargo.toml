@@ -20,6 +20,7 @@ console-subscriber = { version = "0.4.1", features = ["parking_lot"] }
 #     "full",
 #     "tracing",
 # ], optional = true }
+
 tokio = { version = "1.42.0", features = ["full"], optional = true }
 aho-corasick = "1.1.3"
 
