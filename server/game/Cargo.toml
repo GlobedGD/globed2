@@ -8,23 +8,24 @@ globed-shared = { path = "../shared" }
 globed-derive = { path = "../derive" }
 esp = { path = "../esp" }
 
-alloca = "0.4.0"
-ctrlc = "3.4.5"
-rustc-hash = "2.1.0"
-serde = { version = "1.0.215", features = ["serde_derive"] }
-serde_json = "1.0.133"
-futures-util = "0.3.31"
-console-subscriber = { version = "0.4.1", features = ["parking_lot"] }
+alloca = "*"
+ctrlc = "*"
+rustc-hash = "*"
+serde = { version = "*", features = ["serde_derive"] }
+serde_json = "*"
+futures-util = "*"
+console-subscriber = { version = "*", features = ["parking_lot"] }
 
-# tokio_tracing = { package = "tokio", version = "1.42.0", features = [
+# tokio_tracing = { package = "tokio", version = "*", features = [
 #     "full",
 #     "tracing",
 # ], optional = true }
-tokio = { version = "1.42.0", features = ["full"], optional = true }
-aho-corasick = "1.1.3"
+
+tokio = { version = "*", features = ["full"], optional = true }
+aho-corasick = "*"
 
 [dev-dependencies]
-criterion = "0.5.1"
+criterion = "*"
 
 [[bench]]
 name = "globed-bench"

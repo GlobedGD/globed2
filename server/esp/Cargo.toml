@@ -4,9 +4,9 @@ version = "1.0.0"
 edition = "2024"
 
 [dependencies]
-simd-adler32 = { version = "0.3.7", default-features = false }
-bytebuffer = "2.3.0"
-crc32fast = "1.4.2"
+simd-adler32 = { version = "*", default-features = false }
+bytebuffer = "*"
+crc32fast = "*"
 
 [dev-dependencies]
 globed-derive = { path = "../derive" }
