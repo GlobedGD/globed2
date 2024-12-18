@@ -39,10 +39,10 @@ and the rest of our awesome [contributors](https://github.com/GlobedGD/globed2/g
 
 **Special thanks**:
 
-- [MathieuAR](user:3759035) - For providing us with server hosting
-- [HJfod](user:104257) - For creating [our website](https://globed.dev)
-- [alk1m123](user:11535118) - For collaborating on EditorCollab interoperability
-- [Alphalaneous](user:1139015) - For creating the DeathLink mod and allowing us to implement their idea into Globed
+- MathieuAR - For providing us with server hosting
+- HJfod - For creating [our website](https://globed.dev)
+- alk1m123 - For collaborating on EditorCollab interoperability
+- Alphalaneous - For creating the DeathLink mod and allowing us to implement their idea into Globed
 - [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - For developing Geode
 - Server staff and supporters - For helping shape this mod into what it is today :)
 
