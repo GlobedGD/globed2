@@ -131,26 +131,28 @@ By default, the `central-conf.json` file is created in the current directory whe
 
 ```json
 {
-    "id": "mod",
-    "priority": 100,
-    "badge_icon": "role-mod.png",
-    "name_color": "#ff0000",
-    "chat_color": "#ff0000",
-    "notices": false,
-    "notices_to_everyone": false,
-    "kick": false,
-    "kick_everyone": false,
-    "mute": false,
-    "ban": false,
-    "edit_role": false,
-    "edit_featured_levels": false,
-    "admin": false
+    "id": "mod",                    // Required
+    "priority": 100,                // Required, determines which roles can edit users with other roles
+    "badge_icon": "role-mod.png",   // Optional, make sure it's a valid sprite
+    "name_color": "#ff0000",        // Optional, name color
+    "chat_color": "#ff0000",        // Optional, color of chat messages
+    "notices": false,               // Optional, ability to send notices (popup messages)
+    "notices_to_everyone": false,   // Optional, ability to send a notice to everyone on the server
+    "kick": false,                  // Optional, ability to kick users from the server
+    "kick_everyone": false,         // Optional, ability to kick everyone from the server
+    "mute": false,                  // Optional, ability to mute/unmute
+    "ban": false,                   // Optional, ability to ban/unban & whitelist (on whitelist enabled servers)
+    "edit_role": false,             // Optional, ability to change roles of a user
+    "edit_featured_levels": false,  // Optional, ability to edit featured levels
+    "admin": false                  // Optional, implicitly enables all other permissions
 }
 ```
 
 ### Special Role Tinting:
 
 You can create color transitions for names by using a special format, e.g., setting `name_color` to `#ff0000 > 00ff00 > 0000ff` will make the name fade between red, green, and blue.
+
+Keep in mind that there is a limit of 8 colors.
 
 ### Rocket.toml Configuration
 
@@ -168,6 +170,14 @@ cargo build --release
 
 ## Extra Configuration
 
-In release builds, the default log levels are set to `Info`, `Warn`, and `Error`. To change the log level, set the environment variable `GLOBED_LOG_LEVEL` for the central server or `GLOBED_GS_LOG_LEVEL` for the game server. Possible values include: `trace`, `debug`, `info`, `warn`, `error`, `none`.
+In release builds, the default log levels are set to `Info`, `Warn`, and `Error`. To adjust the log level, set the environment variable `GLOBED_LOG_LEVEL` for the central server or `GLOBED_GS_LOG_LEVEL` for the game server. This variable defines the **minimum** log level, meaning that setting it to `Trace` will enable all log levels, from `Trace` up to `Error`. 
+
+The possible log levels are:
+- `Trace` (shows all log messages, including `Trace`, `Debug`, `Info`, `Warn`, and `Error`)
+- `Debug`
+- `Info`
+- `Warn`
+- `Error`
+- `None` (disables all logs)
 
 To disable logging to a file, set `GLOBED_NO_FILE_LOG` to a nonzero value.
