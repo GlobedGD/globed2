@@ -114,7 +114,7 @@ CPMAddPackage(
     VERSION 1.87.0
     URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.7z
     URL_HASH SHA256=61d61a3f33283bab8f3736745a4e47c37141f07e413986cd05d1f942c69d529a
-    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe\\;stacktrace\\;thread"
+    OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe\\\;stacktrace\\\;thread"
 )
 CPMAddPackage("gh:dankmeme01/asp2#2378a82")
 
