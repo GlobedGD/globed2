@@ -200,7 +200,7 @@ endif()
 CPMAddPackage(
     NAME curl
     GIT_REPOSITORY "https://github.com/curl/curl.git"
-    GIT_TAG "curl-8.11.1_1"
+    GIT_TAG "curl-8_11_1"
     DOWNLOAD_ONLY YES
 )
 
