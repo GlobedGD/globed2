@@ -1,3 +1,3 @@
 # llgvis
 
-interpolation log visualiser
+Interpolation log visualiser
