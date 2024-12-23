@@ -7,7 +7,7 @@ edition = "2024"
 esp = { path = "../esp" }
 globed-derive = { path = "../derive" }
 
-anyhow = "1.0.94"
+anyhow = "1.0.95"
 base64 = "0.22.1"
 colored = "2.2.0"
 crypto_box = { version = "0.9.1", features = ["std", "chacha20"] }
@@ -23,5 +23,5 @@ sha2 = "0.11.0-pre.4"
 time = { version = "0.3.37", features = ["formatting"] }
 serde = { version = "1.0.216", features = ["derive"] }
 crypto_secretbox = { version = "0.1.1", features = ["chacha20"] }
-serde_json = "1.0.133"
+serde_json = "1.0.134"
 argon2 = "0.6.0-pre.1"
