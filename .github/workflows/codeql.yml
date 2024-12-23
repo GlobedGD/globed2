@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
           - language: c-cpp
-            build-mode: autobuild
+            build-mode: none
           - language: python
             build-mode: none
 
