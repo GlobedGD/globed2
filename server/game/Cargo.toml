@@ -12,7 +12,7 @@ alloca = "0.4.0"
 ctrlc = "3.4.5"
 rustc-hash = "2.1.0"
 serde = { version = "1.0.216", features = ["serde_derive"] }
-serde_json = "1.0.133"
+serde_json = "1.0.134"
 futures-util = "0.3.31"
 console-subscriber = { version = "0.4.1", features = ["parking_lot"] }
 
