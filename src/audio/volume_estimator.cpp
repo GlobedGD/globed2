@@ -30,12 +30,7 @@ void VolumeEstimator::update(float dt) {
 
     const size_t needed = static_cast<size_t>(static_cast<float>(sampleRate) * BUFFER_SIZE * dt);
 
-#ifdef __clang__
     float buf[needed];
-#else
-    // yuck msvc
-    float* buf = reinterpret_cast<float*>(alloca(sizeof(float) * needed));
-#endif
     size_t copied = sampleQueue.copyTo(buf, needed);
 
     if (copied < needed) {

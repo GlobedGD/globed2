@@ -11,9 +11,8 @@ using geode::Mod;
 using geode::Patch;
 using geode::Loader;
 
-// ugly workaround because MSVC sucks ass
-namespace __zglobed_log_namespace_shut_up_msvc {
+namespace zglobedlogns {
     namespace log = geode::log;
 }
 
-using namespace __zglobed_log_namespace_shut_up_msvc;
+using namespace zglobedlogns;

@@ -1,5 +1,6 @@
 #include "menu_layer.hpp"
 
+#include <globed/integrity.hpp>
 #include <managers/account.hpp>
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
@@ -16,40 +17,10 @@
 
 using namespace geode::prelude;
 
-static bool softDisabled = false;
-static bool fallbackMenuButton = false;
-static bool firstEntry = true;
-
-constexpr auto RESOURCE_DUMMY = "dummy-icon1.png"_spr;
-
-static void checkResources() {
-    if (GlobedSettings::get().launchArgs().skipResourceCheck) {
-        return;
-    }
-
-    if (!util::cocos::isValidSprite(CCSprite::createWithSpriteFrameName(RESOURCE_DUMMY))) {
-        log::warn("Failed to find {}, disabling the mod", RESOURCE_DUMMY);
-        softDisabled = true;
-        return;
-    }
-
-    if (!util::cocos::isValidSprite(CCSprite::createWithSpriteFrameName("menuicon.png"_spr))) {
-        log::warn("Failed to find menuicon.png, fallback menu button enabled");
-        softDisabled = true;
-        fallbackMenuButton = true;
-        return;
-    }
-}
-
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
 
-    if (firstEntry) {
-        checkResources();
-        firstEntry = false;
-    }
-
-    if (!softDisabled) {
+    if (!globed::softDisabled()) {
         // auto connect
         util::misc::callOnce("menu-layer-init-autoconnect", []{
             if (!GlobedSettings::get().globed.autoconnect) return;
@@ -123,7 +94,7 @@ void HookedMenuLayer::updateGlobedButton() {
     }
 
     auto makeSprite = [this]() -> CCNode* {
-        if (fallbackMenuButton) {
+        if (globed::useFallbackMenuButton()) {
             return CCSprite::createWithSpriteFrameName("GJ_reportBtn_001.png");
         } else {
             return CircleButtonSprite::createWithSpriteFrameName(
@@ -158,84 +129,32 @@ void HookedMenuLayer::maybeUpdateButton(float) {
 }
 
 void HookedMenuLayer::onGlobedButton(CCObject*) {
-    if (softDisabled) {
+    if (globed::softDisabled()) {
         geode::createQuickPopup(
             "Globed Error",
             "<cy>Outdated resources</c> were detected. The mod has been <cr>disabled</c> to prevent crashes.\n\nIf you have any <cg>texture packs</c>, or mods that change textures, please try <cy>disabling</c> them.",
             "Dismiss", "More info", [](auto, bool moreInfo) {
-
-                // Debug data format:
-                // gs1:0 - all is good
-                // gs1:-1 - globedsheet1.png not found
-                // gs1:-2 - globedsheet1.plist not found
-                // gs1:1 - tp detected, png and plist are in different folders
-                // gs1:2 - tp detected, png or plist in wrong folder
-                // dmv4:1 - darkmode v4 detected
-                std::string debugData;
-
                 if (!moreInfo) return;
 
-                bool texturePack = [&] {
-                    // check if filename of a globedsheet1.png is overriden
-                    auto p = CCFileUtils::get()->fullPathForFilename("globedsheet1.png"_spr, false);
-                    auto plist = CCFileUtils::get()->fullPathForFilename("globedsheet1.plist"_spr, false);
-
-                    if (p.empty()) {
-                        log::error("Failed to find globedsheet1.png");
-                        debugData += "gs1:-1;";
-                        return false;
-                    }
-
-                    if (plist.empty()) {
-                        log::error("Failed to find globedsheet1.plist");
-                        debugData += "gs1:-2;";
-                        return false;
-                    }
-
-                    if (std::filesystem::path(std::string(p)).parent_path() != std::filesystem::path(std::string(plist)).parent_path()) {
-                        log::debug("Mismatch, globedsheet1.plist and globedsheet1.png are in different places ({} and {})", p, plist);
-                        debugData += "gs1:1;";
-                        return true;
-                    }
-
-                    if (std::filesystem::path(std::string(p)).parent_path() != Mod::get()->getResourcesDir()) {
-                        log::debug("Mismatch, globedsheet1 expected in {}, found at {}", Mod::get()->getResourcesDir(), p);
-                        debugData += "gs1:2;";
-                        return true;
-                    }
-
-                    debugData += "gs1:0;";
-                    return false;
-                }();
-
-                bool darkmode = Loader::get()->isModLoaded("bitz.darkmode_v4");
-                if (darkmode) {
-                    debugData += "dmv4:1;";
-                }
-
-                // TODO: for android, check if the dankmeme.globed2 folder is in the apk
-
-                auto impostorFolderLoc = dirs::getGameDir() / "Resources" / "dankmeme.globed2";
-                std::error_code ec{};
-                bool impostorFolder = std::filesystem::exists(impostorFolderLoc) && ec == std::error_code{};
-
-                debugData += fmt::format("impf:{};", impostorFolder ? "1" : "0");
+                auto report = globed::getIntegrityReport();
+                std::string debugData = report.asDebugData();
 
                 log::debug("complete tp debug data: {}", debugData);
 
-                if (impostorFolder) {
+                if (report.impostorFolder) {
+                    auto popupBody = fmt::format("This is likely caused by a <cr>non-geode</c> texture pack (found in <cy>{}</c>). Automatically <cy>delete</c> the directory?", report.impostorFolder.value());
                     geode::createQuickPopup(
                         "Note",
-                        fmt::format("This is likely caused by a <cr>non-geode</c> texture pack (found in <cy>{}</c>). Automatically <cy>delete</c> the directory?", impostorFolderLoc),
+                        popupBody,
                         "No", "Yes",
-                        [impostorFolderLoc](auto, bool delete_) {
+                        [report = std::move(report)](auto, bool delete_) {
                             if (!delete_) {
                                 FLAlertLayer::create("Note", "Not deleting, resolve the issue manually.", "Ok")->show();
                                 return;
                             }
 
                             std::error_code ec;
-                            std::filesystem::remove_all(impostorFolderLoc, ec);
+                            std::filesystem::remove_all(report.impostorFolder.value(), ec);
 
                             if (ec == std::error_code{}) {
                                 geode::createQuickPopup("Success", "Successfully <cg>deleted</c> the folder. Restart the game now?", "Cancel", "Restart", [](auto, bool restart) {
@@ -252,13 +171,13 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                             }
                         }
                     );
-                } else if (texturePack || darkmode) {
+                } else if (report.hasTexturePack || report.darkmodeEnabled) {
                     std::string enabledtxt;
-                    if (texturePack) {
-                        enabledtxt += "Globed texture pack detected: <cg>yes</c>\n";
+                    if (report.hasTexturePack) {
+                        enabledtxt += "Texture pack detected: <cg>yes</c>\n";
                     }
 
-                    if (darkmode) {
+                    if (report.darkmodeEnabled) {
                         enabledtxt += "DarkMode v4 enabled: <cg>yes</c>\n";
                     }
 
@@ -268,9 +187,18 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                         "Ok"
                     )->show();
                 } else {
+                    auto latestLog = globed::getLatestLogFile();
+                    std::string body;
+
+                    if (latestLog) {
+                        body = fmt::format("Failed to determine the root cause of the issue (debug data: <cy>{}</c>). Please create a <cy>bug report</c> on our GitHub page, including this log file:\n\n<cy>{}</c>", debugData, latestLog.unwrap());
+                    } else {
+                        body = fmt::format("Failed to determine the root cause of the issue (debug data: <cy>{}</c>). Please create a <cy>bug report</c> on our GitHub page, including the latest log file, found in <cy>{}</c>", debugData, geode::dirs::getGeodeLogDir());
+                    }
+
                     geode::createQuickPopup(
                         "Error",
-                        fmt::format("Failed to determine the root cause of the issue. Please create a <cy>bug report</c> on our GitHub page, including this information:\n\nDebug data: <cy>{}</c>", debugData),
+                        body,
                         "Dismiss",
                         "Open page",
                         [](auto, bool open) {
