@@ -8,8 +8,8 @@
 
 #include <util/singleton.hpp>
 
-class GlobedSettings : public SingletonBase<GlobedSettings> {
-    friend class SingletonBase;
+class GlobedSettings : public SingletonLeakBase<GlobedSettings> {
+    friend class SingletonLeakBase;
     GlobedSettings();
 
 public:
