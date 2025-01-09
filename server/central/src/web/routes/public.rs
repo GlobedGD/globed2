@@ -1,12 +1,12 @@
 use std::time::{Duration, SystemTime};
 
 use crate::{
-    db::{dbimpl::PlayerCountHistoryEntry, GlobedDb},
+    db::{GlobedDb, dbimpl::PlayerCountHistoryEntry},
     state::ServerState,
 };
 
 use super::*;
-use rocket::{get, serde::json::Json, State};
+use rocket::{State, get, serde::json::Json};
 use serde::Serialize;
 
 #[derive(Serialize)]

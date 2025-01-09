@@ -1,10 +1,10 @@
 use crypto_box::{
-    aead::{generic_array::GenericArray, Aead, AeadCore, AeadInPlace, OsRng},
     ChaChaBox, PublicKey, SecretKey,
+    aead::{Aead, AeadCore, AeadInPlace, OsRng, generic_array::GenericArray},
 };
 use crypto_secretbox::{
-    consts::{U24, U32},
     KeyInit, XChaCha20Poly1305,
+    consts::{U24, U32},
 };
 
 /// Simpler interface for encryption/decryption

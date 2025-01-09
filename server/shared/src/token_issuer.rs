@@ -3,7 +3,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use base64::{engine::general_purpose as b64e, Engine};
+use base64::{Engine, engine::general_purpose as b64e};
 use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 

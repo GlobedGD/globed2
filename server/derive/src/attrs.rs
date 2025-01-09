@@ -11,11 +11,7 @@ pub(crate) struct BitfieldAttributes {
 impl BitfieldAttributes {
     pub fn parse(input: &DeriveInput) -> Option<Self> {
         let res = Self::from_derive_input(input).expect("Failed to parse bitfield attributes");
-        if res.on.unwrap_or(false) {
-            Some(res)
-        } else {
-            None
-        }
+        if res.on.unwrap_or(false) { Some(res) } else { None }
     }
 }
 

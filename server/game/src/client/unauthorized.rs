@@ -2,19 +2,19 @@ use std::{
     borrow::Cow,
     net::SocketAddrV4,
     sync::{
-        atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
         Arc,
+        atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
     },
     time::Duration,
 };
 
+use globed_shared::{MAX_SUPPORTED_PROTOCOL, ServerUserEntry, should_ignore_error};
 #[allow(unused_imports)]
 use globed_shared::{
-    debug, info,
+    MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SUPPORTED_PROTOCOLS, SyncMutex, debug, info,
     rand::{self, Rng},
-    warn, SyncMutex, MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SUPPORTED_PROTOCOLS,
+    warn,
 };
-use globed_shared::{should_ignore_error, ServerUserEntry, MAX_SUPPORTED_PROTOCOL};
 
 use super::*;
 use crate::{

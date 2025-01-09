@@ -1,5 +1,5 @@
 #![allow(clippy::wildcard_imports, clippy::cast_possible_truncation)]
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use esp::{ByteBuffer, ByteReader};
 use globed_game_server::{data::*, make_uninit, managers::LevelManager, new_uninit};
 use globed_shared::{
@@ -169,7 +169,7 @@ fn strings(c: &mut Criterion) {
         buf_long.write_value(&generate_alphanum_string(rand::thread_rng().gen_range(164..512)));
     }
 
-    let mut output = ByteBuffer::with_capacity(buf_long.len() + 1024);
+    let output = ByteBuffer::with_capacity(buf_long.len() + 1024);
 
     c.bench_function("read-string-short", |b| {
         b.iter(|| {

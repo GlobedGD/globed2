@@ -2,7 +2,7 @@ use std::{fmt::Display, time::SystemTimeError};
 
 use crate::{
     bridge::CentralBridgeError,
-    data::{types::ColorParseError, DecodeError},
+    data::{DecodeError, types::ColorParseError},
 };
 use globed_shared::reqwest;
 

@@ -5,8 +5,8 @@ mod general;
 mod room;
 
 #[allow(unused)]
-pub use super::{Packet, PacketTranslationError, Translatable, CURRENT_PROTOCOL};
+pub use super::{CURRENT_PROTOCOL, Packet, PacketTranslationError, Translatable};
 #[allow(unused)]
-pub use crate::data::{v13, v_current, Decodable, DynamicSize, Encodable, StaticSize};
+pub use crate::data::{Decodable, DynamicSize, Encodable, StaticSize, v_current, v13};
 #[allow(unused)]
 pub use v_current::{packets::*, types::*};
