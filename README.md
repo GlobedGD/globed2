@@ -8,11 +8,11 @@ Globed is a [Geode](https://geode-sdk.org/) mod, so it requires you to install G
 
 ## Features
 
-* Real-time multiplayer
-* Completely free and open-source, easy to host your own server
-* Available for Windows, Android and MacOS
-* In-game voice & text chat
-* Public & private rooms
+- Real-time multiplayer
+- Completely free and open-source, easy to host your own server
+- Available for Windows, Android, and MacOS
+- In-game voice & text chat
+- Public & private rooms
 
 ## Hosting a server
 
@@ -22,35 +22,45 @@ See the [server readme](./server/readme.md) for more information about hosting a
 
 Build like any other mod, see [Geode documentation](https://docs.geode-sdk.org/getting-started/cpp-stuff).
 
-Only compiler supported is Clang, MSVC is unsupported since release v1.7.0 (for Geode v4). If compiling on linux, clang-cl is required instead of regular clang.
+- Only compiler supported is Clang, MSVC is unsupported since release v1.7.0 (for Geode v4).
+- If compiling on Linux, `clang-cl` is required instead of regular clang.
 
 ## Credit
 
 Globed is made by:
 
-* [dank_meme](https://github.com/dankmeme01) - owner and main developer
-* [availax](https://availax.xyz/) - co-owner, community manager, artist
-* [ItzKiba](https://github.com/ItzKiba/) - artist, developer
-* [TechStudent10](https://github.com/TechStudent10) - developer
-* [ninXout](https://github.com/ninXout/) - developer
+- [dank_meme](https://github.com/dankmeme01) - Owner and main developer
+- [availax](https://availax.xyz/) - Co-owner, community manager, artist
+- [ItzKiba](https://github.com/ItzKiba) - Artist, developer
+- [TechStudent10](https://github.com/TechStudent10) - Developer
+- [ninXout](https://github.com/ninXout) - Developer
 
 and the rest of our awesome [contributors](https://github.com/GlobedGD/globed2/graphs/contributors)!
 
-Special thanks:
+**Special thanks**:
 
-* MathieuAR - for providing us server hosting
-* HJfod - for making [our website](https://globed.dev)
-* alk1m123 - for working together for EditorCollab interoperability
-* Alphalaneous - for making the DeathLink mod and allowing us to take their idea and implement it in Globed
-* [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - for making Geode
-* Server staff and supporters - for helping in shaping this mod to be what it is today :)
+- MathieuAR - For providing us with server hosting
+- HJfod - For creating [our website](https://globed.dev)
+- alk1m123 - For collaborating on EditorCollab interoperability
+- Alphalaneous - For creating the DeathLink mod and allowing us to implement their idea into Globed
+- [Everyone from the Geode Team](https://github.com/orgs/geode-sdk/people) - For developing Geode
+- Server staff and supporters - For helping shape this mod into what it is today :)
 
 ### Licenses
 
 Globed is licensed under the MIT license. All of the following libraries used in Globed have their own licenses you may want to read:
 
-* Geode - [website](https://geode-sdk.org) - [repository](https://github.com/geode-sdk/geode) - [license](https://github.com/geode-sdk/geode/blob/main/LICENSE.txt)
-* Boost - [website](https://boost.org) - [repository](https://github.com/boostorg/boost) - [license](https://github.com/boostorg/boost/blob/master/LICENSE_1_0.txt)
-* UIBuilder - [repository](https://github.com/camila314/uibuilder) - [license](https://github.com/camila314/uibuilder/blob/main/LICENSE)
-* Opus - [website](https://opus-codec.org/) - [repository](https://github.com/xiph/opus) - [license](https://github.com/xiph/opus/blob/master/COPYING)
-* libsodium - [website](https://libsodium.gitbook.io/doc/) - [repository](https://github.com/jedisct1/libsodium) - [license](https://github.com/jedisct1/libsodium/blob/master/LICENSE)
+- **Geode**  
+  [website](https://geode-sdk.org/) | [repository](https://github.com/geode-sdk/geode) | [license](https://github.com/geode-sdk/geode/blob/main/LICENSE.txt)
+  
+- **Boost**  
+  [website](https://www.boost.org/) | [repository](https://github.com/boostorg/boost) | [license](https://github.com/boostorg/boost/blob/master/LICENSE_1_0.txt)
+  
+- **UIBuilder**  
+  [repository](https://github.com/camila314/uibuilder) | [license](https://github.com/camila314/uibuilder/blob/main/LICENSE)
+  
+- **Opus**  
+  [website](https://opus-codec.org/) | [repository](https://github.com/xiph/opus) | [license](https://github.com/xiph/opus/blob/main/COPYING)
+  
+- **libsodium**  
+  [website](https://libsodium.gitbook.io/doc) | [repository](https://github.com/jedisct1/libsodium) | [license](https://github.com/jedisct1/libsodium/blob/master/LICENSE)
