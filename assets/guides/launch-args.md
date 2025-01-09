@@ -1,28 +1,27 @@
-# Globed launch arguments
+# Globed Launch Arguments
 
-Globed has a few launch arguments that might be useful in troubleshooting certain issues or just debugging. To enable them, pass the options into either the command line when launching the executable (if invoking directly), in steam launch options section, or in Geode launcher settings (if on Android).
+Globed has several launch arguments that can be useful for troubleshooting or debugging. To enable them, pass the options into either the command line when launching the executable (if invoking directly), in the Steam launch options section, or in the Geode launcher settings (if on Android).
 
-Make sure to use the full format and prefix the option name with `globed-`, so if an option is called `skip-preload`, the full launch option is called `--geode:globed-skip-preload`
+Make sure to use the full format and prefix the option name with `globed-`. For example, if an option is called `skip-preload`, the full launch option would be `--geode:globed-skip-preload`.
 
-## Asset preloading
+## Asset Preloading
 
-`debug-preload` - enables printing of a ton of extra information during asset preloading, so that in case there's a crash or a texture corruption isuse, it can be debugged easier.
-
-`skip-preload` - forces asset preloading to be disabled, no matter the in-game settings.
+- **`--geode:globed-debug-preload`**: Enables extra logging during asset preloading. This is helpful in diagnosing crashes or texture corruption issues.
+  
+- **`--geode:globed-skip-preload`**: Forces asset preloading to be disabled, regardless of in-game settings.
 
 ## Troubleshooting
 
-`skip-resource-check` - skips the resource check at the startup, which would cause globed to be unusable if a texture mismatch was detected (usually because of an outdated texture pack that modifies globed textures).
+- **`--geode:globed-skip-resource-check`**: Skips the resource check at startup. This can be helpful if there’s a texture mismatch, often caused by outdated texture packs that modify Globed textures.
+  
+- **`--geode:globed-no-ssl-verification`**: Disables SSL certificate verification. This option is useful if you're unable to connect to the server with an error like "SSL peer certificate or SSH remote key was not OK."
+  
+- **`--geode:globed-crt-fix`**: This is not used in release builds. However, if you are a developer using Wine and experiencing launch hangs, you may find more details in `src/platform/os/windows/setup.cpp`.
 
-`no-ssl-verification` - disables SSL certificate verification, useful if you can't connect to the server with an error similar to "SSL peer certificate or SSH remote key was not OK."
+## Debugging (Developer-Centered)
 
-`crt-fix` - unused in release builds, if you are a developer using Wine and experiencing hangs on launch, you may check `src/platform/os/windows/setup.cpp` for more information.
-
-## Debugging (more dev centered)
-
-`tracing` - enables some extra logging.
-
-`verbose-curl` - enables verbose curl logging (can help figure out problems with web requests)
-
-`fake-server-data` - emulates a more lively server, for example, even if the server has no players connected to it, with this option, there will be a lot of fake players on the player list. same with fake levels and rooms. **ONLY** works in debug builds (`-DGLOBED_DEBUG=ON` was set when building the mod)
-
+- **`--geode:globed-tracing`**: Enables additional logging to help with debugging.
+  
+- **`--geode:globed-verbose-curl`**: Enables verbose curl logging, which can be helpful for diagnosing issues with web requests.
+  
+- **`--geode:globed-fake-server-data`**: Simulates a more active server environment. Even if there are no players connected to the server, this option will populate the player list with fake players, and generate fake levels and rooms. **ONLY** works in debug builds (`-DGLOBED_DEBUG=ON` set during mod build).

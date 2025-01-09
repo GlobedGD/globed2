@@ -48,7 +48,7 @@ static std::string getMachineGuid() {
     return std::string(data, data + dataSize - 1);
 }
 
-// thanks to Prevter - https://github.com/Prevter/BetterCrashlogs/blob/bf6ae0056cdfed6fc9ec3612387c1751d6807707/src/utils/hwinfo.cpp#L62
+// thanks to Prevter - https://github.com/Prevter/BetterCrashlogs/blob/main/src/utils/hwinfo.cpp#L60
 static std::string getCPUName() {
     std::array<int, 4> integerBuffer = {};
     constexpr size_t sizeofIntegerBuffer = sizeof(int) * integerBuffer.size();
