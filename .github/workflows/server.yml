@@ -95,7 +95,7 @@ jobs:
         shell: bash
 
       - name: Copy artifacts (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
         run: |
           cp server/target/${{ matrix.target }}/release/globed-game-server server/artifacts/globed-game-server${{ matrix.bin-suffix }} || :
           cp server/target/${{ matrix.target }}/release/globed-central-server server/artifacts/globed-central-server${{ matrix.bin-suffix }} || :
