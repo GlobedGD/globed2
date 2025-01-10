@@ -76,7 +76,7 @@ fn buffers(c: &mut Criterion) {
 
 fn structs(c: &mut Criterion) {
     let mut data = [0u8; 2048];
-    rand::thread_rng().fill_bytes(&mut data);
+    rand::rng().fill_bytes(&mut data);
 
     c.bench_function("encode-audio-frame", |b| {
         b.iter(black_box(|| {
@@ -156,27 +156,27 @@ fn read_value_array(c: &mut Criterion) {
 fn strings(c: &mut Criterion) {
     let mut buf_short = ByteBuffer::new();
     for _ in 0..1024 {
-        buf_short.write_value(&generate_alphanum_string(rand::thread_rng().gen_range(8..32)));
+        buf_short.write_value(&generate_alphanum_string(rand::rng().random_range(8..32)));
     }
 
     let mut buf_med = ByteBuffer::new();
     for _ in 0..1024 {
-        buf_med.write_value(&generate_alphanum_string(rand::thread_rng().gen_range(56..128)));
+        buf_med.write_value(&generate_alphanum_string(rand::rng().random_range(56..128)));
     }
 
     let mut buf_long = ByteBuffer::new();
     for _ in 0..1024 {
-        buf_long.write_value(&generate_alphanum_string(rand::thread_rng().gen_range(164..512)));
+        buf_long.write_value(&generate_alphanum_string(rand::rng().random_range(164..512)));
     }
 
-    let output = ByteBuffer::with_capacity(buf_long.len() + 1024);
+    let _output = ByteBuffer::with_capacity(buf_long.len() + 1024);
 
     c.bench_function("read-string-short", |b| {
         b.iter(|| {
             // output.clear();
             let mut reader = ByteReader::from_bytes(buf_short.as_bytes());
             for _ in 0..1024 {
-                let str = black_box(reader.read::<String>()).unwrap();
+                let _str = black_box(reader.read::<String>()).unwrap();
                 // output.write_value(&str);
             }
         });
@@ -187,7 +187,7 @@ fn strings(c: &mut Criterion) {
             // output.clear();
             let mut reader = ByteReader::from_bytes(buf_short.as_bytes());
             for _ in 0..1024 {
-                let str = black_box(reader.read::<FastString>()).unwrap();
+                let _str = black_box(reader.read::<FastString>()).unwrap();
                 // output.write_value(&str);
             }
         });
@@ -198,7 +198,7 @@ fn strings(c: &mut Criterion) {
             // output.clear();
             let mut reader = ByteReader::from_bytes(buf_short.as_bytes());
             for _ in 0..1024 {
-                let str = black_box(reader.read::<InlineString<32>>()).unwrap();
+                let _str = black_box(reader.read::<InlineString<32>>()).unwrap();
                 // output.write_value(&str);
             }
         });
@@ -209,7 +209,7 @@ fn strings(c: &mut Criterion) {
             // output.clear();
             let mut reader = ByteReader::from_bytes(buf_med.as_bytes());
             for _ in 0..1024 {
-                let str = black_box(reader.read::<String>()).unwrap();
+                let _str = black_box(reader.read::<String>()).unwrap();
                 // output.write_value(&str);
             }
         });
@@ -220,7 +220,7 @@ fn strings(c: &mut Criterion) {
             // output.clear();
             let mut reader = ByteReader::from_bytes(buf_med.as_bytes());
             for _ in 0..1024 {
-                let str = black_box(reader.read::<FastString>()).unwrap();
+                let _str = black_box(reader.read::<FastString>()).unwrap();
                 // output.write_value(&str);
             }
         });
@@ -231,7 +231,7 @@ fn strings(c: &mut Criterion) {
             // output.clear();
             let mut reader = ByteReader::from_bytes(buf_long.as_bytes());
             for _ in 0..1024 {
-                let str = black_box(reader.read::<String>()).unwrap();
+                let _str = black_box(reader.read::<String>()).unwrap();
                 // output.write_value(&str);
             }
         });
@@ -242,7 +242,7 @@ fn strings(c: &mut Criterion) {
             // output.clear();
             let mut reader = ByteReader::from_bytes(buf_long.as_bytes());
             for _ in 0..1024 {
-                let str = black_box(reader.read::<FastString>()).unwrap();
+                let _str = black_box(reader.read::<FastString>()).unwrap();
                 // output.write_value(&str);
             }
         });
