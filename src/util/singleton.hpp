@@ -35,3 +35,24 @@ protected:
         destructed = true;
     }
 };
+
+// This is like SingletonBase except not freed during program exit
+template <typename Derived>
+class SingletonLeakBase {
+public:
+    // no copy
+    SingletonLeakBase(const SingletonLeakBase&) = delete;
+    SingletonLeakBase& operator=(const SingletonLeakBase&) = delete;
+    // no move
+    SingletonLeakBase(SingletonLeakBase&&) = delete;
+    SingletonLeakBase& operator=(SingletonLeakBase&&) = delete;
+
+    static Derived& get() {
+        static Derived* instance = new Derived();
+        return *instance;
+    }
+
+
+protected:
+    SingletonLeakBase() {}
+};
