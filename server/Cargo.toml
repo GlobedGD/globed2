@@ -1,6 +1,6 @@
 [workspace]
 members = ["central", "esp", "game", "derive", "shared", "observer", "observer-shared"]
-resolver = "2"
+resolver = "3"
 
 [profile.release]
 lto = "fat"
