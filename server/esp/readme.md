@@ -1,14 +1,12 @@
 # esp
 
-lightweight binary serialization library. derive macros for `Encodable`, `Decodable`, `StaticSize` and `DynamicSize` will be found in the `derive` crate, not here.
+`esp` is a lightweight binary serialization library. It provides derive macros for `Encodable`, `Decodable`, `StaticSize`, and `DynamicSize` found in the `derive` crate, not here.
 
-name meaning - **e**fficient **s**erialization **p**rotocol + a play on the stack pointer register on x86 since the crate also provides types like `FastByteBuffer` and `FastString` making heapless encoding easier.
+The name stands for **e**fficient **s**erialization **p**rotocol, and is also a play on the x86 stack pointer register, as the crate includes types like `FastByteBuffer` and `FastString`, which make heapless encoding easier.
 
 ## Encodable and Decodable
 
-it's just encoding structs to binary data. or the other way around. do i really need to say more
-
-though, one special feature is bitfield structs. they are done like this:
+`esp` enables encoding structs to binary data and decoding them back. While this may sound simple, one special feature of the library is its support for **bitfield structs**. Bitfields can be defined as follows:
 
 ```rust
 #[derive(Encodable, Decodable, StaticSize)]
@@ -25,83 +23,69 @@ assert!(Flags::ENCODED_SIZE == 2); // without `size = 2` would've been 1 byte, w
 
 ## StaticSize and DynamicSize
 
-Short primer on those traits -
+### `StaticSize`
+`StaticSize` is a trait with a single constant integer, which introduces zero runtime overhead, and all usages can be inlined. However, it is imprecise, as it only indicates the *maximum* size allowed. Therefore, the bytes written by `buffer.write_value(val: &T) where T: StaticSize` will be less than or equal to `T::ENCODED_SIZE`.
 
-`StaticSize` is a trait with a single constant integer, so there is zero runtime overhead and any usages can be inlined. However it is imprecise and only indicates the *maximum* permitted size, which means that after calling `buffer.write_value(val: &T) where T: StaticSize`, the amount of bytes written is equal to *or less than* `T::ENCODED_SIZE`.
+### `DynamicSize`
+`DynamicSize` is a trait with a method used to calculate the precise encoded size. If the object hasn't been mutated, `val.encoded_size()` will return the exact amount of bytes written by `buffer.write_value(&val)`. However, calculating this involves runtime overhead, as the method must check the size of every struct member to calculate the precise encoded data size.
 
-`DynamicSize` is a trait with a non-static method, which is used to calculate the precise encoded size. If the object hasn't been mutated between the two calls, there is a guarantee that the result of `val.encoded_size()` will be exactly the amount of bytes written with `buffer.write_value(&val)`. This precision, however, comes with a downside of a runtime calculation, as this will have to go through every struct member and check their sizes in order to calculate the exact size of the encoded data.
+### Implementing StaticSize and DynamicSize
+For efficiency, it’s recommended that every type (except for packets) implementing `StaticSize` should also implement `DynamicSize`. The crate offers the `dynamic_size_as_static_impl!` macro to automatically implement `DynamicSize` for a type that implements `StaticSize`, which will return the static size instead of calculating it.
 
-It is encouraged that every type (except for packets) that implements `StaticSize` must also implement `DynamicSize`, or else it would not be possible to derive `DynamicSize` for a struct containing such types. For efficiency purposes, the crate provides `dynamic_size_as_static_impl!` macro which would automatically implement `DynamicSize` for a struct that implements `StaticSize`, and that implementation would just return the static size instead of doing any calculations. That is also available as a derive macro atribute `#[dynamic_size(as_static = true)]`
+#### Implementation Guide:
+- If the size is known to be a constant N, implement both `StaticSize` and `DynamicSize` to return N.
+- If the size varies from 0 to N and memory overhead is minimal, implement `StaticSize` as N and `DynamicSize` to return the exact size.
+- If the size is unpredictable (e.g., `Vec` with unlimited elements), only implement `DynamicSize`.
 
-Implementer guide (only needed if you can't or don't want to derive):
+**Important**: You should not use `StaticSize`/`ENCODED_SIZE` when implementing `DynamicSize` (except for types with a constant size like primitive integers). For example, avoid implementing `DynamicSize` for `Vec<T: StaticSize>` using the formula `self.len() * T::ENCODED_SIZE`, as it will lead to incorrect results in certain cases (e.g., `Vec<Option<i32>>`).
 
-* If the size is known to be a constant N, implement both traits to return N.
-* If the size is known to be from 0 to N (inclusive), and N is small enough that memory allocation overhead doesn't matter, implement `StaticSize` to be N, and implement `DynamicSize` to calculate and return the exact encoded size.
-* If the size is too unpredictable (for example `Vec` which has unlimited size), only implement `DynamicSize`.
+## Ready Implementations
 
-You should **not** use `StaticSize`/`ENCODED_SIZE` *at all* when implementing `DynamicSize`, except for types that have an *actual constant size* (like primitive integers). For example, do not implement `DynamicSize` for `Vec<T: StaticSize>` with the implementation `self.len() * T::ENCODED_SIZE`. This is a bad idea, and while it may work properly for something like `Vec<i32>`, it will produce incorrect results for something like `Vec<Option<i32>>`. The entire point of `DynamicSize` is to be *accurate*, whereas `StaticSize` is made to be *fast*.
+`esp` provides implementations for `Encodable`, `Decodable`, and optionally `StaticSize` and/or `DynamicSize` for the following types:
 
-## Ready implementations
+- Primitive integers: `bool`, `u8`, `u16`, `u32`, `u64`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`
+- `str`, `String`
+- `Option<T>`, `Result<T, E>`
+- Arrays and slices: `[T; N]`, `[T]`
+- `Vec<T>`
+- `HashMap<K, V, S>`
+- `Ipv4Addr`, `SocketAddrV4`
+- Tuples: `(T1, T2)`
 
-`esp` provides the implementations of `Encodable`, `Decodable`, and optionally `StaticSize` and/or `DynamicSize` depending on the type, for all the following types:
+Variable-size types like `String`, `Vec`, and `HashMap` are prefixed with a `esp::VarLength` (currently an alias for `u16`), indicating the length. This means they can store no more than 65535 elements.
 
-* Primitive integers (`bool`, `u8`, `u16`, `u32`, `u64`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64`)
-* `str`
-* `String`
-* `Option<T>`
-* `Result<T, E>`
-* `[T; N]`
-* `[T]`
-* `Vec<T>`
-* `HashMap<K, V, S>`
-* `Ipv4Addr`
-* `SocketAddrV4`
-* `(T1, T2)`
+## New Types
 
-Variable-size types (strings, `Vec`, `HashMap`, etc.) are prefixed with a `esp::VarLength` (currently alias to `u16`) indicating the length. This means they cannot contain more than 65535 elements.
-
-## New types
-
-`esp` also adds a few new types, which are optimized specifically for the purpose of encoding or decoding, but can also be used for other purposes.
+`esp` introduces several types optimized for encoding/decoding, but they can also serve other purposes:
 
 ### FastString
+`FastString` is a Small String Optimization (SSO) class that can store up to 63 characters inline, resorting to heap allocation only when larger storage is required. It can be easily converted to and from a `String` or `&str`.
 
-`FastString` is an SSO string class that can store up to 63 characters inline, and will use heap allocation if bigger storage is required. It can be easily converted to and from a `String` or `&str` if needed.
+When encoded, `FastString` behaves identically to `String` or `&str`, but its main advantage is avoiding heap allocation when the string is small.
 
-When encoded, the actual representation is no different from `String` or `&str`, so its main purpose is just avoiding heap allocation.
-
-### InlineString
-
-`InlineString<N>` is an even simpler string class, that unlike `FastString` stores all the data inline - never does any heap allocation.
-
-Do keep in mind that if you try to mutate the string and the size goes above `N`, the program will panic. To avoid that, use `extend_safe` or manually check the size and capacity of the string before mutating.
+### InlineString<N>
+`InlineString<N>` is a simpler string type that stores all the data inline, never using heap allocation. However, if the string exceeds the defined size (`N`), the program will panic. Use `extend_safe` or manually check the size and capacity before mutating the string to avoid panics.
 
 ### FastVec
-
-Similar to `InlineString`, `FastVec<T, N>` is a class with similar API to `Vec<T>`, except it uses no heap storage and can store up to `N` elements, at which point adding any more will cause the program to panic. Just like `InlineString`, it also has `safe_` APIs that instead return an error on failure.
+`FastVec<T, N>` is similar to `InlineString`, but it is a vector-like type that can hold up to `N` elements without allocating on the heap. Adding more than `N` elements causes a panic. It also includes safe APIs like `safe_` that return an error on failure.
 
 ### Either
-
-Essentially `Result` but with a less misleading name, indicating that both outcomes are a success.
+`Either` is a type similar to `Result`, but it conveys the idea of two possible successful outcomes instead of one error and one success.
 
 ### FiniteF32, FiniteF64
-
-Simple wrappers around `f32` and `f64` with the only difference being that they will return a `DecodeError` if the value is `nan` or `+inf`/`-inf` when decoding.
+These are simple wrappers around `f32` and `f64` that return a `DecodeError` if the value is `NaN` or `±inf` during decoding.
 
 ### Bits
-
-Structure that holds a bitfield of flags. For example, `Bits<2>` and `u16` have the same size, but the former will never be byteswapped on a non-big-endian system, and also provides user-friendly APIs for managing bits.
+`Bits<N>` holds a bitfield of flags. For example, `Bits<2>` and `u16` occupy the same size, but the former ensures that the flags are never byte-swapped on non-big-endian systems and offers more user-friendly APIs for managing bits.
 
 ### Vec1L
-
-Simple wrapper around Vec that can hold up to 255 elements and the length is encoded as a single byte.
+A wrapper around `Vec` that can hold up to 255 elements, with the length encoded as a single byte.
 
 ### RemainderBytes
+This type must be placed at the end of a struct and will simply store any remaining data in the buffer.
 
-Must be put at the end of a struct, the value will simply be the remaining data in the buffer.
+## Additional Notes
 
-## Additional notes
+The library extends `ByteBuffer` and `ByteReader` from the `bytebuffer` crate with the `ByteBufferExt`, `ByteBufferExtRead`, and `ByteBufferExtWrite` traits. These extensions provide useful methods, though the derive macros often eliminate the need to manually use them.
 
-The library wraps around `ByteBuffer` and `ByteReader` from the crate `bytebuffer` and extends them both with traits `ByteBufferExt`, `ByteBufferExtRead`, `ByteBufferExtWrite`. These have a lot of useful methods, but due to derive macros, you often don't have to manually use those.
-
-One notable addition is methods `ByteBufferExtWrite::append_self_checksum` and `ByteBufferExtRead::validate_self_checksum`. The former calculates an Adler-32 checksum of all the data in the buffer, encodes it as a 32-bit unsigned integer, and writes it at the current position of the buffer. The latter method decodes that checksum and verifies that the data in the buffer matches, otherwise raising a `DecodeError`.
+A key addition is the `ByteBufferExtWrite::append_self_checksum` and `ByteBufferExtRead::validate_self_checksum` methods. The first calculates an Adler-32 checksum of the buffer’s data, encodes it as a 32-bit unsigned integer, and writes it. The latter method validates the checksum during decoding and raises a `DecodeError` if the data doesn’t match the checksum.

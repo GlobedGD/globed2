@@ -1,12 +1,12 @@
 use std::net::IpAddr;
 
 use globed_shared::{
-    esp::{types::FastString, ByteBuffer, ByteBufferExtWrite},
-    logger::debug,
     GameServerBootData, MAX_SUPPORTED_PROTOCOL, SERVER_MAGIC,
+    esp::{ByteBuffer, ByteBufferExtWrite, types::FastString},
+    logger::debug,
 };
 
-use rocket::{post, State};
+use rocket::{State, post};
 
 use crate::{config::UserlistMode, state::ServerState, web::*};
 

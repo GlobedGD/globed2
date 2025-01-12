@@ -2,8 +2,8 @@ use std::time::UNIX_EPOCH;
 
 use super::*;
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use esp::{FastString, InlineString};
 use serde::{Deserialize, Serialize};

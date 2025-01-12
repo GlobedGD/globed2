@@ -1,111 +1,120 @@
-# Globed Server
+# Globed Server Setup Guide
 
 ## Prerequisites
 
-Before trying to setup a server, it is **recommended** that you understand what it involves. You will likely need to either setup port forwarding or use a VPN tool like Radmin VPN if you are hosting the server on your PC, and that won't be covered in this guide.
+Before setting up the server, it is **recommended** that you understand what it entails. You may need to set up port forwarding or use a VPN tool like Radmin VPN if hosting the server on your PC. These steps are not covered in this guide.
 
-In case you are familiar with [Pterodactyl](https://pterodactyl.io/), there are eggs available for the [central](https://github.com/DumbCaveSpider/globed-central-egg) and [game](https://github.com/DumbCaveSpider/globed-game-egg) servers that could simplify the setup (thanks to [@DumbCaveSpider](https://github.com/DumbCaveSpider/))
+If you're familiar with [Pterodactyl](https://pterodactyl.io/), there are eggs available for both the [central](https://github.com/DumbCaveSpider/globed-central-egg) and [game](https://github.com/DumbCaveSpider/globed-game-egg) servers that can simplify the setup (thanks to [@DumbCaveSpider](https://github.com/DumbCaveSpider)).
 
-Additionally, if you are setting up a public server, please keep in mind that there are no stability guarantees. Big changes to the server can be made at any time, and updates to the mod can cause your server to stop accepting users until you update it.
+Please note, if you're setting up a public server, there are no guarantees regarding stability. The server may undergo significant changes at any time, and updates to the mod can cause your server to stop accepting users until it is updated.
 
 ## Setup
 
-If you want to host a server yourself, first you have to download the server binaries from the [latest GitHub release](https://github.com/GlobedGD/globed2/releases/latest), named `globed-central-server` and `globed-game-server`. Depending on your OS and architecture, you want the one ending in `.exe` on Windows, the `-x64` one on Linux x64, and the `-arm64` one on Linux ARM64.
+To host a server yourself, follow these steps:
 
-After that is done, you have 2 paths:
+1. **Download the Server Binaries:**  
+   Download the server binaries from the [latest GitHub release](https://github.com/GlobedGD/globed2/releases/latest), which include `globed-central-server` and `globed-game-server`. Choose the appropriate file based on your operating system:
+   - For **Windows**, download the `.exe` file.
+   - For **Linux x64**, download the `-x64` file.
+   - For **Linux ARM64**, download the `-arm64` file.
 
-* If you want to setup a small, simple server you can jump to the [standalone section](#standalone)
-* If you want to setup a bigger or more configurable server, keep reading.
+2. **Choose Your Setup Path:**
+   - If you want a small, simple server, proceed to the [Standalone section](#standalone).
+   - If you're aiming for a larger or more configurable setup, continue reading.
 
-After launching the central server binary, you should see two new files called `central-conf.json` and `Rocket.toml`. This is where you can configure everything about the server. For documentation about all the options, jump to the [configuration section](#central-server-configuration), however for now we only need the option `game_server_password`.
+3. **Configure the Central Server:**
+   Launch the `central-server` binary. Afterward, you should see two new files: `central-conf.json` and `Rocket.toml`. These files contain the server's configuration. For now, focus on the `game_server_password` option.
 
-With your central server properly setup and started, jump to the [bridged](#bridged) section of the game server configuration and launch the game server, with the password that you configured earlier.
+4. **Launch the Game Server:**
+   With the central server configured, proceed to the [Bridged section](#bridged) of the game server configuration and launch the game server using the password set earlier.
 
-If you did everything right, you should see no errors or warnings in the console and instead you should see "Server launched on x.x.x.x". This means everything worked! Congrats :)
+If everything is done correctly, the console should show "Server launched on x.x.x.x", indicating a successful setup.
 
-## Game server configuration
+## Game Server Configuration
 
-note: if you are not on Windows, in the following examples replace `set` with `export` and replace `globed-game-server.exe` with the appropriate server binary (such as `globed-game-server-x64`)
+**Note:** If you're not on Windows, replace `set` with `export` and use the appropriate server binary (e.g., `globed-game-server-x64` for Linux).
 
 ### Standalone
 
-If you want to spin up a quick, standalone game server, without needing to start a central server, then it is as simple as running the `globed-game-server.exe` executable directly.
+To quickly launch a game server without the central server, run the `globed-game-server.exe` executable directly.
 
-If you want to change the port (default is 4202) then you'll have to run the executable with an additional argument like so:
+To change the port (default is 4202), use the following command:
 ```sh
-# replace 4202 with your desired port
+# Replace 4202 with your desired port
 globed-game-server.exe 0.0.0.0:4202
 ```
 
-**To connect to your server, you want to use the Direct Connection option inside the server switcher in-game**. (with the address `127.0.0.1:4202` if the server is running on the same device)
+**Connecting to the server:**  
+Use the **Direct Connection** option in the game’s server switcher, with the address `127.0.0.1:4202` if the server is running on the same machine.
 
-Keep in mind that a standalone server makes the configuration very limited (for example you can't ban/mute users anymore) and disables any kind of player authentication.
-
+Keep in mind, a standalone server offers limited configuration (e.g., you can't ban or mute users) and disables player authentication.
 
 ### Bridged
 
-To start the game server and bridge it together with an active central server you must use the password from the `game_server_password` option in the central server configuration. Then, you have 2 options whenever you start the server:
+To bridge the game server with a central server, use the `game_server_password` from the central server configuration. You have two options to start the server:
 
 ```sh
 globed-game-server.exe 0.0.0.0:4202 http://127.0.0.1:4201 password
+```
 
-# or like this:
-
+Or set environment variables and then run the server:
+```sh
 set GLOBED_GS_ADDRESS=0.0.0.0:4202
 set GLOBED_GS_CENTRAL_URL=http://127.0.0.1:4201
 set GLOBED_GS_CENTRAL_PASSWORD=password
 globed-game-server.exe
 ```
 
-Replace `0.0.0.0:4202` with the address you want the game server to listen on, `http://127.0.0.1:4201` with the URL of your central server, and `password` with the password.
+Replace:
+- `0.0.0.0:4202` with your desired game server address.
+- `http://127.0.0.1:4201` with the URL of your central server.
+- `password` with your configured password.
 
-### Environment variables
+### Environment Variables
 
-`GLOBED_GS_NO_FILE_LOG` - if set to 1, don't create a log file and only log to the console.
+- `GLOBED_GS_NO_FILE_LOG` - Set to `1` to prevent the creation of a log file, logging only to the console.
 
-## Central server configuration
+## Central Server Configuration
 
-By default, the file is created with the name `central-conf.json` in the current working directory when you run the server, but it can be overriden with the environment variable `GLOBED_CONFIG_PATH`. The path can be a folder or a full file path.
+By default, the `central-conf.json` file is created in the current directory when you run the central server, but it can be overridden using the `GLOBED_CONFIG_PATH` environment variable.
 
-### General settings
-| JSON key | Default | Description |
-|---------|---------|-----------------|
-| `web_mountpoint` | `"/"` | HTTP mountpoint (the prefix before every endpoint) |
-| `game_servers` | `[]` | List of game servers that will be sent to the clients (see below for the format) |
-| `maintenance` | `false` | When enabled, anyone trying to connect will get an appropriate error message saying that the server is under maintenance |
-| `status_print_interval` | `7200` | How often (in seconds) the game servers will print various status information to the console, 0 to disable |
-| `userlist_mode` | `"none"` | Can be `blacklist`, `whitelist`, `none` (same as `blacklist`). When set to `whitelist`, players will need to be first whitelisted before being able to join |
-| `tps` | `30` | Dictates how many packets per second clients can (and will) send when in a level. Higher = smoother experience but more processing power and bandwidth |
-| `admin_webhook_url` | `(empty)` | When enabled, admin actions (banning, muting, etc.) will send a message to the given discord webhook URL |
-| `rate_suggestion_webhook_url` | `(empty)` | When enabled, sending a level to be featured will send a message to the given discord webhook URL |
-| `featured_webhook_url` | `(empty)` | When enabled, featuring a level will send a message to the given discord webhook URL |
-| `featured_webhook_message` | `(empty)` | The message to send in the body of the webhook message for featured levels |
-| `room_webhook_url` | `(empty)` | When enabled, creating a room will send a message to the given discord webhook URL |
-| `chat_burst_limit` | `0` | Controls the amount of text chat messages users can send in a specific period of time, before getting rate limited. 0 to disable |
-| `chat_burst_interval` | `0` | Controls the period of time for the `chat_burst_limit_setting`. Time is in milliseconds |
-| `roles` | `(...)` | Controls the roles available on the server (moderator, admin, etc.), their permissions, name colors, and various other things |
+### General Settings
 
-### Security settings (the boring stuff)
+| JSON Key                          | Default       | Description |
+|------------------------------------|---------------|-------------|
+| `web_mountpoint`                   | `"/"`         | HTTP mountpoint (prefix before every endpoint) |
+| `game_servers`                     | `[]`          | List of game servers sent to clients (see below for format) |
+| `maintenance`                      | `false`       | If enabled, users trying to connect will receive a maintenance message |
+| `status_print_interval`            | `7200`        | Time in seconds between status messages printed to the console (set to `0` to disable) |
+| `userlist_mode`                    | `"none"`      | Options: `blacklist`, `whitelist`, `none` (whitelist requires players to be whitelisted to join) |
+| `tps`                              | `30`          | Number of packets per second clients can send in a level (higher = smoother experience) |
+| `admin_webhook_url`                | `(empty)`     | URL for sending admin action notifications (banning, muting, etc.) to Discord |
+| `rate_suggestion_webhook_url`      | `(empty)`     | URL for sending level submission notifications to Discord |
+| `featured_webhook_url`             | `(empty)`     | URL for sending level feature notifications to Discord |
+| `room_webhook_url`                 | `(empty)`     | URL for sending room creation notifications to Discord |
+| `chat_burst_limit`                 | `0`           | Limit on the number of text messages a user can send in a period (set to `0` to disable) |
+| `chat_burst_interval`              | `0`           | Time period for chat burst limit (in milliseconds) |
+| `roles`                            | `(...)`       | List of available roles, with permissions and settings |
 
-These are recommended to adjust if you're hosting a public server, otherwise the defaults should be fine.
+### Security Settings (Recommended for Public Servers)
 
-| JSON key | Default | Description |
-|---------|---------|-----------------|
-| `admin_key` | `(random)` | The password used to unlock the admin panel in-game, must be 32 characters or less |
-| `use_gd_api` | `false` | Verify account ownership via requests to GD servers. Note that you must set `gd_api_account` and `gd_api_gjp` accordingly if you enable this setting |
-| `gd_api_account` | `0` | Account ID of a bot account that will be used to verify account ownership |
-| `gd_api_gjp` | `(empty)` | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
-| `gd_api_url` | `(...)` | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
-| `skip_name_check` | `false` | Skips validation of account names when verifying accounts |
-| `refresh_interval` | `3000` | Controls the time (in milliseconds) between requests to the GD server for refreshing messages |
-| `secret_key` | `(random)` | Secret key for signing authentication keys |
-| `secret_key2` | `(random)` | Secret key for signing session tokens |
-| `game_server_password` | `(random)` | Password used to authenticate game servers |
-| `cloudflare_protection` | `false` | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users. If your server is proxied through cloudflare, you **must** turn on this option. |
-| `challenge_expiry` | `30` | Amount of seconds before an authentication challenge expires and a new one can be requested |
-| `token_expiry` | `86400` (1 day) | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
+| JSON Key                          | Default       | Description |
+|------------------------------------|---------------|-------------|
+| `admin_key`                        | `(random)`    | Password for unlocking the admin panel (max 32 characters) |
+| `use_gd_api`                       | `false`       | Verify account ownership via GD servers (requires `gd_api_account` and `gd_api_gjp`) |
+| `gd_api_account`                   | `0`           | Bot account ID for verification |
+| `gd_api_gjp`                       | `(empty)`     | GJP2 for account verification |
+| `gd_api_url`                       | `(...)`       | Base URL for GD API used for account verification |
+| `skip_name_check`                  | `false`       | Skips account name validation when verifying accounts |
+| `refresh_interval`                 | `3000`        | Time in milliseconds between GD server requests for refreshing messages |
+| `secret_key`                       | `(random)`    | Secret key for signing authentication keys |
+| `secret_key2`                      | `(random)`    | Secret key for signing session tokens |
+| `game_server_password`             | `(random)`    | Password for authenticating game servers |
+| `cloudflare_protection`            | `false`       | Block non-Cloudflare requests and use the `CF-Connecting-IP` header if server is proxied through Cloudflare |
+| `challenge_expiry`                 | `30`          | Time (in seconds) before an authentication challenge expires |
+| `token_expiry`                     | `86400` (1 day) | Time (in seconds) a session token lasts |
 
-Formatting for game servers:
+### Game Server Formatting Example:
 
 ```json
 {
@@ -116,54 +125,59 @@ Formatting for game servers:
 }
 ```
 
-**Note that the `address` key must be a public IP address if you want others to be able to connect. Putting 127.0.0.1 will make it possible to only connect from *your* machine.**
+**Note:** The `address` key must be a public IP address if you want others to connect. Use `127.0.0.1` for local connections only.
 
-Formatting for user roles:
+### User Role Formatting Example:
 
 ```json
 {
-    // all keys except id and priority are optional.
-
-    "id": "mod",
-    "priority": 100,              // determines which roles can edit users with other roles
-    "badge_icon": "role-mod.png", // make sure it's a valid sprite! (can be empty)
-    "name_color": "#ff0000",      // name color
-    "chat_color": "#ff0000",      // color of chat messages
-
-    // permissions
-    "notices": false,              // ability to send notices (popup messages)
-    "notices_to_everyone": false,  // ability to send a notice to everyone on the server
-    "kick": false,                 // ability to disconnect users from the server
-    "kick_everyone": false,        // ability to disconnect everyone from the server
-    "mute": false,                 // ability to mute/unmute
-    "ban": false,                  // ability to ban/unban & whitelist (on whitelist enabled servers)
-    "edit_role": false,            // ability to change roles of a user
-    "edit_featured_levels": false, // ability to edit featured levels
-    "admin": false,                // implicitly enables all other permissions and also does some additional things
+    "id": "mod",                    // Required
+    "priority": 100,                // Required, determines which roles can edit users with other roles
+    "badge_icon": "role-mod.png",   // Optional, make sure it's a valid sprite
+    "name_color": "#ff0000",        // Optional, name color
+    "chat_color": "#ff0000",        // Optional, color of chat messages
+    "notices": false,               // Optional, ability to send notices (popup messages)
+    "notices_to_everyone": false,   // Optional, ability to send a notice to everyone on the server
+    "kick": false,                  // Optional, ability to kick users from the server
+    "kick_everyone": false,         // Optional, ability to kick everyone from the server
+    "mute": false,                  // Optional, ability to mute/unmute
+    "ban": false,                   // Optional, ability to ban/unban & whitelist (on whitelist enabled servers)
+    "edit_role": false,             // Optional, ability to change roles of a user
+    "edit_featured_levels": false,  // Optional, ability to edit featured levels
+    "admin": false                  // Optional, implicitly enables all other permissions
 }
 ```
 
-There is also a special format for tinting colors, for example setting `name_color` to `#ff0000 > 00ff00 > 0000ff` would make your name fade between red, green and blue. Spaces and a `#` at the start are for clarity and are optional. (Maximum 8 colors supported in one string)
+### Special Role Tinting:
 
-### Rocket.toml
+You can create color transitions for names by using a special format, e.g., setting `name_color` to `#ff0000 > 00ff00 > 0000ff` will make the name fade between red, green, and blue.
 
-Additionally, when first starting up a server, a `Rocket.toml` file will be created from a template. By default, it will be put in the current working directory, or `ROCKET_CONFIG` if specified.
+Keep in mind that there is a limit of 8 colors.
 
-The `Rocket.toml` is primarily used for changing the HTTP port and the path to the database, however other settings are also free to change, as per [Rocket documentation](https://rocket.rs/v0.5/guide/configuration/#rockettoml). Changing the TOML configuration is as simple as the JSON configuration, however it is *not* hot-reloadable.
+### Rocket.toml Configuration
 
-## Building
+When starting the server, a `Rocket.toml` file is generated, typically in the current working directory (or the directory specified by `ROCKET_CONFIG`). This file is used for configuring the HTTP port and database path, among other settings. Refer to [Rocket documentation](https://rocket.rs/guide/v0.5/configuration/#rocket-toml) for further configuration options.
 
-If you want to build the server yourself, you need a nightly Rust toolchain. After that, it's as simple as:
+## Building the Server
+
+To build the server yourself, you will need a nightly Rust toolchain. Once set up, use the following commands to build:
+
 ```sh
 cd server/
-rustup override set nightly # has to be done only once
+rustup override set nightly
 cargo build --release
 ```
 
-## Extra
+## Extra Configuration
 
-In release builds, by default, the `Debug` and `Trace` log levels are disabled, so you will only see logs with levels `Info`, `Warn` and `Error`.
+In release builds, the default log levels are set to `Info`, `Warn`, and `Error`. To adjust the log level, set the environment variable `GLOBED_LOG_LEVEL` for the central server or `GLOBED_GS_LOG_LEVEL` for the game server. This variable defines the **minimum** log level, meaning that setting it to `Trace` will enable all log levels, from `Trace` up to `Error`. 
 
-This can be changed by setting the environment variable `GLOBED_LOG_LEVEL` for the central server, or `GLOBED_GS_LOG_LEVEL` for the game server. The appropriate values are: `trace`, `debug`, `info`, `warn`, `error`, `none`.
+The possible log levels are:
+- `Trace` (shows all log messages, including `Trace`, `Debug`, `Info`, `Warn`, and `Error`)
+- `Debug`
+- `Info`
+- `Warn`
+- `Error`
+- `None` (disables all logs)
 
-`GLOBED_NO_FILE_LOG` can be set to a nonzero value to disable logging to a file.
+To disable logging to a file, set `GLOBED_NO_FILE_LOG` to a nonzero value.

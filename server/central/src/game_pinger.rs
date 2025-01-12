@@ -7,10 +7,10 @@ use std::{
 };
 
 use globed_shared::{
-    debug,
+    SyncMutex, debug,
     esp::{ByteBuffer, ByteBufferExtRead, ByteBufferExtWrite, ByteReader},
     rand::{self, Rng},
-    warn, SyncMutex,
+    warn,
 };
 use tokio::net::UdpSocket;
 

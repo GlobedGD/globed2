@@ -3,8 +3,8 @@ use std::{num::ParseIntError, sync::OnceLock};
 use super::*;
 use globed_shared::{CryptoBox, CryptoBoxError};
 use rocket::{
-    data::{self, FromData, ToByteUnit},
     Data,
+    data::{self, FromData, ToByteUnit},
 };
 use serde::de::DeserializeOwned;
 use tokio::io::AsyncReadExt;

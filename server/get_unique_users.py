@@ -27,23 +27,15 @@ print(f"Total logins: {len(entries)}")
 end_time = datetime.now() - timedelta(hours=shift_by_hours)
 start_time = end_time - timedelta(days=1)
 
-filtered = []
-for e in entries:
-    if e[0] > start_time and e[0] < end_time:
-        filtered.append(e)
+filtered = [e for e in entries if start_time < e[0] < end_time]
 
 print(f"Logins during the last 24 hours: {len(filtered)}")
 
-filtered2 = set()
-for e in filtered:
-    filtered2.add(e[1])
+unique_users = {e[1] for e in filtered}
 
-print(f"Unique users: {len(filtered2)}")
+print(f"Unique users: {len(unique_users)}")
 
 with open(".unique_users.txt", "w") as f:
-    unique_names = set()
-    for e in entries:
-        unique_names.add(e[1])
-
-    for name in sorted(list(unique_names)):
+    unique_names = {e[1] for e in entries}
+    for name in sorted(unique_names):
         f.write(name + "\n")

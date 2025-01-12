@@ -2,7 +2,7 @@
     "id": "dankmeme.globed2",
     "name": "Globed",
     "developer": "dankmeme",
-    "geode": "4.1.0",
+    "geode": "4.1.1",
     "version": "v1.7.2",
     "gd": {
         "win": "2.2074",
@@ -28,7 +28,7 @@
     ],
     "incompatibilities": [],
     "links": {
-        "homepage": "https://globed.dev",
+        "homepage": "https://globed.dev/",
         "source": "https://github.com/GlobedGD/globed2",
         "community": "https://discord.gg/d56q5Dkdm3"
     },

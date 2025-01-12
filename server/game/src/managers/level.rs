@@ -1,8 +1,8 @@
 use globed_shared::IntMap;
 
 use crate::data::{
-    types::PlayerData, AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata,
-    GlobedCounterChange, LevelId, PlayerMetadata,
+    AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata, GlobedCounterChange, LevelId,
+    PlayerMetadata, types::PlayerData,
 };
 
 #[derive(Default)]
@@ -71,14 +71,11 @@ impl LevelManager {
     }
 
     pub fn create_player(&mut self, account_id: i32, invisible: bool) {
-        self.players.insert(
+        self.players.insert(account_id, LevelManagerPlayer {
             account_id,
-            LevelManagerPlayer {
-                account_id,
-                is_invisible: invisible,
-                ..Default::default()
-            },
-        );
+            is_invisible: invisible,
+            ..Default::default()
+        });
     }
 
     fn get_or_create_player(&mut self, account_id: i32) -> &mut LevelManagerPlayer {

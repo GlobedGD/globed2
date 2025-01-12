@@ -1,16 +1,16 @@
 use std::sync::{
-    atomic::{AtomicI32, Ordering},
     Arc, OnceLock,
+    atomic::{AtomicI32, Ordering},
 };
 
 use esp::InlineString;
 use globed_shared::{
-    rand::{self, Rng},
     IntMap, SyncMutex, SyncMutexGuard, SyncRwLock,
+    rand::{self, Rng},
 };
 
 use crate::{
-    data::{LevelId, PlayerPreviewAccountData, RoomInfo, RoomListingInfo, RoomSettings, ROOM_ID_LENGTH},
+    data::{LevelId, PlayerPreviewAccountData, ROOM_ID_LENGTH, RoomInfo, RoomListingInfo, RoomSettings},
     server::GameServer,
 };
 
@@ -208,11 +208,7 @@ impl RoomManager {
             f(self.get_global())
         } else {
             let room = self.get_room(room_id);
-            if let Some(room) = room {
-                f(&room)
-            } else {
-                default()
-            }
+            if let Some(room) = room { f(&room) } else { default() }
         }
     }
 

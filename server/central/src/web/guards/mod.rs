@@ -1,9 +1,9 @@
 use std::net::IpAddr;
 
 use rocket::{
+    Request,
     http::Status,
     request::{FromRequest, Outcome},
-    Request,
 };
 
 pub mod check_protocol_;

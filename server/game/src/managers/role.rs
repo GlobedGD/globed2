@@ -1,5 +1,5 @@
 use crate::data::*;
-use globed_shared::{error, warn, GameServerBootData, IntMap, ServerRole, SyncMutex};
+use globed_shared::{GameServerBootData, IntMap, ServerRole, SyncMutex, error, warn};
 
 #[derive(Default)]
 pub struct RoleManager {

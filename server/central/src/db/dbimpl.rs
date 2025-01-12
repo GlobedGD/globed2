@@ -1,7 +1,7 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use globed_shared::{debug, AdminPunishUserAction, PunishmentType, ServerUserEntry, UserPunishment};
-use rocket_db_pools::sqlx::{query_as, Result};
+use globed_shared::{AdminPunishUserAction, PunishmentType, ServerUserEntry, UserPunishment, debug};
+use rocket_db_pools::sqlx::{Result, query_as};
 use serde::Serialize;
 use sqlx::{prelude::*, query, query_scalar, sqlite::SqliteRow};
 

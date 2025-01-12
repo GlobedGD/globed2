@@ -2,8 +2,8 @@ use super::*;
 
 use globed_shared::esp::{ByteBuffer, ByteBufferExtRead, Decodable, DecodeError};
 use rocket::{
-    data::{self, FromData, ToByteUnit},
     Data, Request,
+    data::{self, FromData, ToByteUnit},
 };
 use tokio::io::AsyncReadExt;
 

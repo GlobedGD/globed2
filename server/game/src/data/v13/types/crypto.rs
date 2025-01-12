@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use esp::*;
-use globed_shared::crypto_box::{PublicKey, KEY_SIZE};
+use globed_shared::crypto_box::{KEY_SIZE, PublicKey};
 
 pub struct CryptoPublicKey(pub PublicKey);
 

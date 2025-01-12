@@ -1,9 +1,9 @@
 use globed_shared::{warn, webhook};
-use rocket::{get, post, serde::json::Json, State};
+use rocket::{State, get, post, serde::json::Json};
 use serde::Deserialize;
 
 use crate::{
-    db::{dbimpl::FeaturedLevelPage, FeaturedLevel, GlobedDb},
+    db::{FeaturedLevel, GlobedDb, dbimpl::FeaturedLevelPage},
     state::ServerState,
     web::*,
 };
