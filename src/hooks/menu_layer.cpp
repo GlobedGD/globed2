@@ -20,6 +20,9 @@ using namespace geode::prelude;
 bool HookedMenuLayer::init() {
     if (!MenuLayer::init()) return false;
 
+    // reset integrity check state here
+    globed::resetIntegrityCheck();
+
     if (!globed::softDisabled()) {
         // auto connect
         util::misc::callOnce("menu-layer-init-autoconnect", []{

@@ -3,6 +3,7 @@
 namespace globed {
     bool softDisabled();
     bool useFallbackMenuButton();
+    void resetIntegrityCheck();
 
     void checkResources();
 

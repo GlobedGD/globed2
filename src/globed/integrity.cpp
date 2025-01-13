@@ -26,6 +26,12 @@ bool globed::useFallbackMenuButton() {
     return g_fallbackMenuButton;
 }
 
+void globed::resetIntegrityCheck() {
+    g_checked = false;
+    g_disable = false;
+    g_fallbackMenuButton = false;
+}
+
 void globed::checkResources() {
     g_checked = true;
 
