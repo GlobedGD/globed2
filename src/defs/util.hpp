@@ -22,13 +22,13 @@ struct ConstexprString {
         hash = util::crypto::adler32(str);
     }
     constexpr bool operator!=(const ConstexprString& other) const {
-        return std::equal(value, value + N, other.value);
+        return std::equal(value, value + N - 1, other.value);
     }
     constexpr operator std::string() const {
-        return std::string(value, N);
+        return std::string(value, N - 1);
     }
     constexpr operator std::string_view() const {
-        return std::string_view(value, N);
+        return std::string_view(value, N - 1);
     }
     char value[N];
     uint32_t hash;

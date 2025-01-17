@@ -2,6 +2,7 @@
 
 #include "setting_header_cell.hpp"
 #include "setting_cell.hpp"
+#include "save_slot_switcher_popup.hpp"
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
 #include <util/cocos.hpp>
@@ -14,6 +15,7 @@ static constexpr float TAB_SCALE = 0.85f;
 bool GlobedSettingsLayer::init() {
     if (!CCLayer::init()) return false;
 
+    this->prevSettingsSlot = GlobedSettings::get().getSelectedSlot();
     this->setID("GlobedSettingsLayer"_spr);
 
     auto winsize = CCDirector::get()->getWinSize();
@@ -91,7 +93,17 @@ bool GlobedSettingsLayer::init() {
     this->addChild(tabsGradientNode);
     this->addChild(tabsGradientStencil);
 
-    Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
+    auto rightMenu = Build<CCMenu>::create()
+        .layout(ColumnLayout::create()->setAxisAlignment(AxisAlignment::Start))
+        .anchorPoint(1.f, 0.f)
+        .pos(winsize.width - 8.f, 8.f)
+        .contentSize(48.f, winsize.height)
+        .id("right-side-menu")
+        .parent(this)
+        .collect();
+
+    // Reset settings button
+    auto resetBtn = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
         .intoMenuItem([this](auto) {
             geode::createQuickPopup("Reset all settings", "Are you sure you want to reset all settings? This action is <cr>irreversible.</c>", "Cancel", "Ok", [this](auto, bool accepted) {
                 if (accepted) {
@@ -101,17 +113,52 @@ bool GlobedSettingsLayer::init() {
             });
         })
         .id("btn-reset")
-        .pos(winsize.width - 30.f, 30.f)
-        .intoNewParent(CCMenu::create())
-        .id("reset-menu")
-        .pos(0.f, 0.f)
-        .parent(this);
+        .parent(rightMenu)
+        .collect();
+
+    // TODO: icon
+    // Save slot button
+    Build<CCSprite>::createSpriteName("GJ_savedSongsBtn_001.png")
+        .with([&](auto* item) {
+            util::ui::rescaleToMatch(item, resetBtn);
+        })
+        .intoMenuItem([this](auto) {
+            SaveSlotSwitcherPopup::create()->show();
+        })
+        .id("btn-save-slots")
+        .parent(rightMenu);
+
+    rightMenu->updateLayout();
 
     util::ui::prepareLayer(this);
 
     this->remakeList();
+    this->scheduleUpdate();
 
     return true;
+}
+
+void GlobedSettingsLayer::update(float dt) {
+    if (GlobedSettings::get().getSelectedSlot() == this->prevSettingsSlot) {
+        return;
+    }
+
+    this->prevSettingsSlot = GlobedSettings::get().getSelectedSlot();
+
+    // yeah so alk would probably demote me from lead dev for this code but it is what it is
+
+    auto newLayer = GlobedSettingsLayer::create();
+
+    for (auto tab : storedTabs) {
+        tab.second->removeFromParent();
+    }
+
+    this->storedTabs = std::move(newLayer->storedTabs);
+    this->settingCells = std::move(newLayer->settingCells);
+    this->onTabById(currentTab);
+
+    this->getParent()->addChild(newLayer);
+    newLayer->removeFromParent();
 }
 
 void GlobedSettingsLayer::onTab(CCObject* sender) {
@@ -125,7 +172,11 @@ void GlobedSettingsLayer::onTab(CCObject* sender) {
         return;
     }
 
-    currentTab = sender->getTag();
+    this->onTabById(sender->getTag());
+}
+
+void GlobedSettingsLayer::onTabById(int tag) {
+    currentTab = tag;
     this->addChild(storedTabs[currentTab]);
 
     // i stole this from geode

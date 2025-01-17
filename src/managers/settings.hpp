@@ -3,18 +3,132 @@
 #include <defs/geode.hpp>
 #include <defs/util.hpp>
 #include <data/basic.hpp>
-
 #include <data/types/user.hpp>
-
 #include <util/singleton.hpp>
+
+#include <asp/thread/Thread.hpp>
+#include <asp/sync/Channel.hpp>
+
+/*
+ * v2 save system.
+ *
+ * Primary difference from v1 is the support of multiple save slots.
+ * Save slots can be given custom names to distinguish them from each other.
+*/
 
 class GlobedSettings : public SingletonLeakBase<GlobedSettings> {
     friend class SingletonLeakBase;
     GlobedSettings();
 
+private:
+    template <globed::ConstexprString _name>
+    struct Arg {
+        static inline constexpr decltype(_name) Name = _name;
+
+        bool _value;
+
+        Arg() : _value(false) {}
+        Arg(bool v) : _value(v) {}
+
+        operator bool() const {
+            return _value;
+        }
+
+        void operator=(bool v) {
+            _value = v;
+        }
+
+        void set(bool v) {
+            _value = v;
+        }
+    };
+
 public:
-    // Save all settings to the geode save container
+    // Launch args
+    struct LaunchArgs {
+        Arg<"globed-crt-fix"> crtFix;
+        Arg<"globed-verbose-curl"> verboseCurl;
+        Arg<"globed-skip-preload"> skipPreload;
+        Arg<"globed-debug-preload"> debugPreload;
+        Arg<"globed-skip-resource-check"> skipResourceCheck;
+        Arg<"globed-tracing"> tracing;
+        Arg<"globed-no-ssl-verification"> noSslVerification;
+        Arg<"globed-fake-server-data"> fakeData;
+        Arg<"globed-reset-settings"> resetSettings;
+    };
+
+private:
+    static LaunchArgs _launchArgs;
+
+    struct WorkerTask {
+        matjson::Value data;
+        std::filesystem::path path;
+    };
+
+    asp::Thread<> workerThread;
+    asp::Channel<WorkerTask> workerChannel;
+    size_t selectedSlot = 0;
+    matjson::Value settingsContainer;
+    std::filesystem::path saveSlotPath;
+    bool forceResetSettings = false;
+
+public:
+    // Forcefully saves all settings to a file (in a worker thread, to prevent slowdowns)
     void save();
+
+    // Reloads settings from the save file, if it exists
+    void reload();
+
+    void reset();
+
+    // Selects a save slot, reloads settings.
+    void switchSlot(size_t index);
+
+    // Creates a new save slot, returns its index
+    Result<size_t> createSlot();
+
+    size_t getSelectedSlot();
+
+    // Get the launch arguments for this session
+    const LaunchArgs& launchArgs();
+
+    struct SaveSlot {
+        size_t index;
+        std::string name;
+    };
+
+    // Return all created save slots
+    std::vector<SaveSlot> getSaveSlots();
+
+    Result<size_t> getNextFreeSlot();
+
+    void deleteSlot(size_t index);
+    void renameSlot(size_t index, std::string_view name);
+
+private:
+    void migrateFromV1();
+
+    std::filesystem::path pathForSlot(size_t idx);
+
+    Result<matjson::Value> readSlotData(size_t idx);
+    Result<matjson::Value> readSlotData(const std::filesystem::path& path);
+
+    Result<SaveSlot> readSlotMetadata(size_t idx);
+    Result<SaveSlot> readSlotMetadata(const std::filesystem::path& path, size_t idx);
+
+    void loadLaunchArguments();
+    void deleteAllSaveSlotFiles();
+    void pushWorkerTask();
+    void resetNoSave();
+
+    enum class TaskType {
+        Save, Load, Reset, HardReset
+    };
+
+    void reflect(TaskType tt);
+
+public:
+    // Util classes for defining settings
 
     // T -> T, but float -> globed::ConstexprFloat, as floats cant be used as template arguments
     template <typename T>
@@ -234,48 +348,37 @@ public:
     Admin admin;
     Flags flags;
 
+    inline UserPrivacyFlags getPrivacyFlags() {
+        return UserPrivacyFlags {
+            .hideFromLists = globed.isInvisible,
+            .noInvites = globed.noInvites,
+            .hideInGame = globed.hideInGame,
+            .hideRoles = globed.hideRoles,
+        };
+    }
+
 private:
-    // Launch args
-    static struct LaunchArgs {
-        bool crtFix = false;
-        bool verboseCurl = false;
-        bool skipPreload = false;
-        bool debugPreload = false;
-        bool skipResourceCheck = false;
-        bool tracing = false;
-        bool noSslVerification = false;
-        bool fakeData = false;
-    } _launchArgs;
-public:
-
-    const LaunchArgs& launchArgs();
-
-    // Reset everything, including flags
-    void hardReset();
-
-    // Reset all settings, excluding flags
-    void reset();
-
-    // Reload all settings from the geode save container
-    void reload();
-
-    enum class TaskType {
-        SaveSettings, LoadSettings, ResetSettings, HardResetSettings
-    };
-
-    void reflect(TaskType type);
-
     bool has(std::string_view key);
+    bool hasFlag(std::string_view key);
     void clear(std::string_view key);
+    void clearFlag(std::string_view key);
 
     template <typename T>
     void store(std::string_view key, const T& val) {
-        geode::Mod::get()->setSavedValue(key, val);
+        settingsContainer[key] = val;
+    }
+
+    inline void storeFlag(std::string_view key, bool val) {
+        Mod::get()->setSavedValue(key, val);
     }
 
     template <typename T>
     T load(std::string_view key) {
-        return geode::Mod::get()->getSavedValue<T>(key);
+        return settingsContainer[key].template as<T>().unwrapOr(T());
+    }
+
+    bool loadFlag(std::string_view key) {
+        return Mod::get()->getSavedValue<bool>(key);
     }
 
     // If setting is present, loads into `into`. Otherwise does nothing.
@@ -283,6 +386,13 @@ public:
     void loadOptionalInto(std::string_view key, T& into) {
         if (this->has(key)) {
             into = this->load<T>(key);
+        }
+    }
+
+    template <typename T = bool>
+    void loadOptionalFlagInto(std::string_view key, T& into) {
+        if (this->hasFlag(key)) {
+            into = this->loadFlag(key);
         }
     }
 
@@ -295,18 +405,17 @@ public:
     T loadOrDefault(std::string_view key, const T& defaultval) {
         return this->has(key) ? this->load<T>(key) : defaultval;
     }
-
-    UserPrivacyFlags getPrivacyFlags() {
-        return UserPrivacyFlags {
-            .hideFromLists = globed.isInvisible,
-            .noInvites = globed.noInvites,
-            .hideInGame = globed.hideInGame,
-            .hideRoles = globed.hideRoles,
-        };
-    }
 };
 
 /* Enable reflection */
+
+// Launch args
+
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LaunchArgs, (
+    crtFix, verboseCurl, skipPreload, debugPreload, skipResourceCheck, tracing, noSslVerification, fakeData, resetSettings
+));
+
+// Settings
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
     autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed,

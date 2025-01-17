@@ -21,10 +21,13 @@ protected:
     cocos2d::CCSprite *tabsGradientSprite, *tabsGradientStencil;
     std::unordered_map<int, Ref<cocos2d::CCArray>> settingCells;
     int currentTab = -1;
+    size_t prevSettingsSlot = 0;
 
     bool init() override;
+    void update(float dt) override;
     void keyBackClicked() override;
     void onTab(cocos2d::CCObject* sender);
+    void onTabById(int tag);
 
     void remakeList();
     void createSettingsCells(int category);
