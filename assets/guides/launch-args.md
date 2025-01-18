@@ -2,8 +2,6 @@
 
 Globed has several launch arguments that can be useful for troubleshooting or debugging. To enable them, pass the options into either the command line when launching the executable (if invoking directly), in the Steam launch options section, or in the Geode launcher settings (if on Android).
 
-Make sure to use the full format and prefix the option name with `globed-`. For example, if an option is called `skip-preload`, the full launch option would be `--geode:globed-skip-preload`.
-
 ## Asset Preloading
 
 - **`--geode:globed-debug-preload`**: Enables extra logging during asset preloading. This is helpful in diagnosing crashes or texture corruption issues.
