@@ -15,6 +15,8 @@ Make sure to use the full format and prefix the option name with `globed-`. For 
 - **`--geode:globed-skip-resource-check`**: Skips the resource check at startup. This can be helpful if there’s a texture mismatch, often caused by outdated texture packs that modify Globed textures.
   
 - **`--geode:globed-no-ssl-verification`**: Disables SSL certificate verification. This option is useful if you're unable to connect to the server with an error like "SSL peer certificate or SSH remote key was not OK."
+
+- **`--geode:reset-settings`**: - Resets all Globed settings.
   
 - **`--geode:globed-crt-fix`**: This is not used in release builds. However, if you are a developer using Wine and experiencing launch hangs, you may find more details in `src/platform/os/windows/setup.cpp`.
 
