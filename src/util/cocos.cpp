@@ -6,7 +6,9 @@
 #include <hooks/game_manager.hpp>
 #include <util/format.hpp>
 #include <util/debug.hpp>
+
 #include <asp/thread.hpp>
+#include <asp/fs.hpp>
 
 #ifdef GEODE_IS_ANDROID
 
@@ -158,11 +160,8 @@ namespace util::cocos {
 
             if (sv.find("geode.texture-loader") != std::string::npos) {
                 // this might be the unzipped/ folder, if so, ignore it
-                std::error_code ec;
-                bool result = std::filesystem::equivalent(textureLdrUnzipped, fspath, ec);
-
                 // if the check failed, or if the path isn't equivalent to unzipped, count it as a texture pack folder
-                if (ec != std::error_code{} || !result) {
+                if (!asp::fs::equivalent(fspath, textureLdrUnzipped).unwrapOr(false)) {
                     state.hasTexturePack = true;
                     state.texturePackIndices.push_back(idx);
                 }
@@ -178,10 +177,7 @@ namespace util::cocos {
             }
 #else
 
-            std::error_code ec;
-            bool result = std::filesystem::equivalent(fspath, resourceDir, ec);
-
-            if (ec == std::error_code{} && result) {
+            if (asp::fs::equivalent(fspath, resourceDir).unwrapOr(false)) {
                 state.gameSearchPathIdx = idx;
             }
 #endif

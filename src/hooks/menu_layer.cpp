@@ -15,6 +15,8 @@
 #include <util/net.hpp>
 #include <util/ui.hpp>
 
+#include <asp/fs.hpp>
+
 using namespace geode::prelude;
 
 bool HookedMenuLayer::init() {
@@ -156,10 +158,9 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                                 return;
                             }
 
-                            std::error_code ec;
-                            std::filesystem::remove_all(report.impostorFolder.value(), ec);
+                            auto res = asp::fs::removeDirAll(report.impostorFolder.value());
 
-                            if (ec == std::error_code{}) {
+                            if (res) {
                                 geode::createQuickPopup("Success", "Successfully <cg>deleted</c> the folder. Restart the game now?", "Cancel", "Restart", [](auto, bool restart) {
                                     if (restart) {
                                         utils::game::restart();
@@ -168,7 +169,7 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                             } else {
                                 FLAlertLayer::create(
                                     "Error",
-                                    fmt::format("Failed to delete the directory: <cy>{}</c>.\n\nPlease delete it manually.", ec.message()),
+                                    fmt::format("Failed to delete the directory: <cy>{}</c>.\n\nPlease delete it manually.", res.unwrapErr().message()),
                                     "Ok"
                                 )->show();
                             }
@@ -191,13 +192,7 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                     )->show();
                 } else {
                     auto latestLog = globed::getLatestLogFile();
-                    std::string body;
-
-                    if (latestLog) {
-                        body = fmt::format("Failed to determine the root cause of the issue (debug data: <cy>{}</c>). Please create a <cy>bug report</c> on our GitHub page, including this log file:\n\n<cy>{}</c>", debugData, latestLog.unwrap());
-                    } else {
-                        body = fmt::format("Failed to determine the root cause of the issue (debug data: <cy>{}</c>). Please create a <cy>bug report</c> on our GitHub page, including the latest log file, found in <cy>{}</c>", debugData, geode::dirs::getGeodeLogDir());
-                    }
+                    std::string body = fmt::format("Failed to determine the root cause of the issue (debug data: <cy>{}</c>). Please create a <cy>bug report</c> on our GitHub page, including this log file:\n\n<cy>{}</c>", debugData, latestLog);
 
                     geode::createQuickPopup(
                         "Error",

@@ -2,6 +2,7 @@
 
 #include <util/format.hpp>
 #include <asp/misc/traits.hpp>
+#include <asp/fs.hpp>
 
 using namespace geode::prelude;
 using SaveSlot = GlobedSettings::SaveSlot;
@@ -9,13 +10,10 @@ using SaveSlot = GlobedSettings::SaveSlot;
 GlobedSettings::LaunchArgs GlobedSettings::_launchArgs = {};
 
 void dumpJsonToFile(const matjson::Value& val, const std::filesystem::path& path) {
-    std::ofstream file(path);
-    if (!file.is_open()) {
-        log::warn("dumpJsonToFile failed to open file: {}", path);
-        return;
+    auto res = asp::fs::write(path, val.dump(4));
+    if (!res) {
+        log::warn("dumpJsonToFile failed to write to file (at {}): {}", path, res.unwrapErr().message());
     }
-
-    file << val.dump(4);
 }
 
 GlobedSettings::GlobedSettings() {
@@ -26,12 +24,12 @@ GlobedSettings::GlobedSettings() {
 
     // determine save slot path
     saveSlotPath = Mod::get()->getSaveDir() / "saveslots";
-    std::error_code ec;
 
-    if (!std::filesystem::exists(saveSlotPath, ec)) {
-        std::filesystem::create_directories(saveSlotPath, ec);
-        if (ec != std::error_code{}) {
+    if (!asp::fs::exists(saveSlotPath)) {
+        auto res = asp::fs::createDirAll(saveSlotPath);
+        if (!res) {
             log::error("Failed to create saveslot directory at {}", saveSlotPath);
+            log::warn("Error: {}", res.unwrapErr().message());
             log::warn("Will be using root of the save directory for storage");
             saveSlotPath = Mod::get()->getSaveDir();
         }
@@ -136,15 +134,16 @@ const GlobedSettings::LaunchArgs& GlobedSettings::launchArgs() {
 std::vector<SaveSlot> GlobedSettings::getSaveSlots() {
     std::vector<SaveSlot> slots;
 
-    std::error_code ec{};
-    std::filesystem::directory_iterator iterator(this->saveSlotPath, ec);
+    auto iterres = asp::fs::iterdir(this->saveSlotPath);
 
-    if (ec != std::error_code{}) {
-        log::error("Failed to list saveslot directory: {}", ec.message());
+    if (!iterres) {
+        log::error("Failed to list saveslot directory: {}", iterres.unwrapErr().message());
         return slots;
     }
 
-    for (const auto& entry : iterator) {
+    auto iter = std::move(iterres).unwrap();
+
+    for (const auto& entry : iter) {
         if (entry.path().extension() == ".json") {
             std::string filename;
 
@@ -251,13 +250,8 @@ Result<SaveSlot> GlobedSettings::readSlotMetadata(const std::filesystem::path& p
 Result<size_t> GlobedSettings::getNextFreeSlot() {
     size_t idx = 0;
 
-    std::error_code ec;
-    while (std::filesystem::exists(this->pathForSlot(idx), ec) && ec == std::error_code{}) {
+    while (asp::fs::exists(this->pathForSlot(idx))) {
         idx++;
-    }
-
-    if (ec != std::error_code{}) {
-        return Err("Filesystem error: {}", ec.message());
     }
 
     return Ok(idx);
@@ -267,11 +261,11 @@ void GlobedSettings::deleteSlot(size_t index) {
     std::error_code ec;
     auto path = this->saveSlotPath / fmt::format("saveslot-{}.json", index);
 
-    if (std::filesystem::exists(path, ec) && ec == std::error_code{}) {
-        std::filesystem::remove(path, ec);
+    if (asp::fs::exists(path)) {
+        auto res = asp::fs::removeFile(path);
 
-        if (ec != std::error_code{}) {
-            log::warn("Failed to delete slot {}, system error: {}", index, ec.message());
+        if (!res) {
+            log::warn("Failed to delete slot {}, system error: {}", index, res.unwrapErr().message());
         }
     } else {
         log::warn("Failed to delete slot {}, was not found", index);
@@ -301,15 +295,16 @@ void GlobedSettings::renameSlot(size_t index, std::string_view name) {
 }
 
 void GlobedSettings::deleteAllSaveSlotFiles() {
-    std::error_code ec;
-    std::filesystem::directory_iterator iterator(this->saveSlotPath, ec);
+    auto iterres = asp::fs::iterdir(this->saveSlotPath);
 
-    if (ec != std::error_code{}) {
-        log::error("Failed to list saveslot directory: {}", ec.message());
+    if (!iterres) {
+        log::error("Failed to list saveslot directory: {}", iterres.unwrapErr().message());
         return;
     }
 
-    for (const auto& entry : iterator) {
+    auto iter = std::move(iterres).unwrap();
+
+    for (const auto& entry : iter) {
         if (entry.path().extension() == ".json") {
             try {
                 if (!entry.path().filename().string().starts_with("saveslot-")) {
@@ -319,9 +314,9 @@ void GlobedSettings::deleteAllSaveSlotFiles() {
                 continue;
             }
 
-            std::filesystem::remove(entry, ec);
-            if (ec != std::error_code{}) {
-                log::warn("Failed to delete save slot file: {}", ec.message());
+            auto res = asp::fs::removeFile(entry);
+            if (!res) {
+                log::warn("Failed to delete save slot file: {}", res.unwrapErr().message());
             }
         }
     }
