@@ -27,7 +27,7 @@
 
 use esp::{ByteReader, Decodable, DecodeResult};
 
-pub use crate::data::{Packet, CURRENT_PROTOCOL};
+pub use crate::data::{CURRENT_PROTOCOL, Packet};
 
 mod error;
 mod impls;

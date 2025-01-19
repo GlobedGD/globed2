@@ -2,8 +2,8 @@ use std::time::UNIX_EPOCH;
 
 use super::*;
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use esp::{FastString, InlineString};
 use serde::{Deserialize, Serialize};
@@ -74,6 +74,7 @@ pub struct ServerUserEntry {
     pub admin_password_hash: Option<String>,
     pub active_mute: Option<i64>,
     pub active_ban: Option<i64>,
+    pub punishment_count: u16,
 }
 
 // this is pure laziness i was just too lazy to get derive macros n shit into the central server
@@ -108,6 +109,7 @@ impl ServerUserEntry {
             is_whitelisted: self.is_whitelisted,
             active_ban,
             active_mute,
+            punishment_count: self.punishment_count,
         }
     }
 
@@ -157,6 +159,7 @@ pub struct UserEntry {
     pub is_whitelisted: bool,
     pub active_ban: Option<UserPunishment>,
     pub active_mute: Option<UserPunishment>,
+    pub punishment_count: u16,
 }
 
 impl UserEntry {
