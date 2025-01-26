@@ -1,10 +1,12 @@
+use std::fmt::Display;
+
 use crypto_box::{
-    aead::{generic_array::GenericArray, Aead, AeadCore, AeadInPlace, OsRng},
     ChaChaBox, PublicKey, SecretKey,
+    aead::{Aead, AeadCore, AeadInPlace, OsRng, generic_array::GenericArray},
 };
 use crypto_secretbox::{
-    consts::{U24, U32},
     KeyInit, XChaCha20Poly1305,
+    consts::{U24, U32},
 };
 
 /// Simpler interface for encryption/decryption
@@ -15,6 +17,14 @@ pub enum CryptoBox {
 
 #[derive(Debug)]
 pub struct CryptoBoxError;
+
+impl Display for CryptoBoxError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "CryptoBox error")
+    }
+}
+
+impl std::error::Error for CryptoBoxError {}
 
 type Result<T> = std::result::Result<T, CryptoBoxError>;
 
@@ -66,7 +76,14 @@ impl CryptoBox {
     }
 
     pub fn encrypt_with_nonce(&self, data: &[u8], nonce: GenericArray<u8, U24>) -> Result<Vec<u8>> {
-        run_thing!(self, b, b.encrypt(&nonce, data).map_err(|_| CryptoBoxError))
+        let vec = run_thing!(self, b, b.encrypt(&nonce, data).map_err(|_| CryptoBoxError))?;
+
+        // prepend nonce
+        let mut out = Vec::with_capacity(vec.len() + Self::nonce_size());
+        out.extend_from_slice(&nonce);
+        out.extend_from_slice(&vec);
+
+        Ok(out)
     }
 
     pub fn decrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
@@ -87,7 +104,7 @@ impl CryptoBox {
         out.extend_from_slice(&data[ciphertext_start..]);
 
         // decrypt in-place
-        match run_thing!(self, b, b.decrypt_in_place_detached(&nonce, b"", &mut out[ciphertext_start..], &mac)) {
+        match run_thing!(self, b, b.decrypt_in_place_detached(&nonce, b"", &mut out, &mac)) {
             Ok(()) => Ok(out),
             Err(_) => Err(CryptoBoxError),
         }
