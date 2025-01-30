@@ -43,16 +43,16 @@ namespace globed {
     }
 }
 
-void KeybindsManager::handlePress(Key key) {
+void KeybindsManager::handlePress(Key key, std::function<void(globed::Key)> callback) {
     if (key == Key::None) return;
 
-    heldKeys[key] = true;
+    callback(key);
 }
 
-void KeybindsManager::handleRelease(Key key) {
+void KeybindsManager::handleRelease(Key key, std::function<void(globed::Key)> callback) {
     if (key == Key::None) return;
 
-    heldKeys[key] = false;
+    callback(key);
 }
 
 bool KeybindsManager::isHeld(Key key) {
@@ -309,19 +309,30 @@ Key convertCocosKey(enumKeyCodes key) {
     }
 }
 
-// TODO: mac m1 crash?
-// #include <Geode/modify/CCKeyboardDispatcher.hpp>
-
-// class $modify(CCKeyboardDispatcher) {
-//     bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat) {
-//         if (down) {
-//             KeybindsManager::get().handlePress(convertCocosKey(key));
-//         } else if (!down) {
-//             KeybindsManager::get().handleRelease(convertCocosKey(key));
-//         }
-
-//         return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, repeat);
-//     }
-// };
-
 #endif
+
+using namespace geode::prelude;
+
+bool KeybindsManager::KeybindRegisterLayer::init(globed::Key key) {
+    if (!CCLayer::init()) return false;
+
+    return true;
+}
+
+void KeybindsManager::KeybindRegisterLayer::keyDown(enumKeyCodes keyCode) {
+    KeybindsManager::get().handlePress(convertCocosKey(keyCode), [this](auto key) {
+        this->key = key;
+    });
+
+    this->removeFromParent();
+}
+
+KeybindsManager::KeybindRegisterLayer* KeybindsManager::KeybindRegisterLayer::create(globed::Key key) {
+    auto ret = new KeybindsManager::KeybindRegisterLayer();
+    if (ret && ret->init(key)) {
+        ret->autorelease();
+        return ret;
+    }
+    CC_SAFE_DELETE(ret);
+    return nullptr;
+}
