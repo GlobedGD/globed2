@@ -29,7 +29,6 @@ protected:
     CCMenuItemSpriteExtra* m_button;
 
     bool init(std::shared_ptr<KeybindSetting> setting, float width);
-    void updateState(cocos2d::CCNode* invoker) override;
     void onButton(cocos2d::CCObject*);
     void onCommit() override {}
     void onResetToDefault() override {}

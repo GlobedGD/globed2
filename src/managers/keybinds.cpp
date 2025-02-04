@@ -43,8 +43,8 @@ namespace globed {
     }
 }
 
-void KeybindsManager::handlePress(Key key, std::function<void(globed::Key)> callback) {
-    if (key == Key::None) return;
+void KeybindsManager::handlePress(enumKeyCodes key, std::function<void(enumKeyCodes)> callback) {
+    if (key == enumKeyCodes::KEY_None) return;
 
     callback(key);
 }
@@ -60,7 +60,7 @@ bool KeybindsManager::isHeld(Key key) {
 }
 
 #ifdef GEODE_IS_WINDOWS
-static Key convertGlfwKey(int key) {
+Key KeybindsManager::convertGlfwKey(int key) {
     switch (key) {
     case GLFW_KEY_A: return Key::A;
     case GLFW_KEY_B: return Key::B;
@@ -191,7 +191,7 @@ static Key convertGlfwKey(int key) {
 
 #else
 
-Key convertCocosKey(enumKeyCodes key) {
+Key KeybindsManager::convertCocosKey(enumKeyCodes key) {
     switch (key) {
         case KEY_A: return Key::A;
         case KEY_B: return Key::B;
@@ -313,23 +313,53 @@ Key convertCocosKey(enumKeyCodes key) {
 
 using namespace geode::prelude;
 
-bool KeybindsManager::KeybindRegisterLayer::init(globed::Key key) {
+bool KeybindRegisterLayer::init(int keybind, ButtonSprite* btnSpr) {
     if (!CCLayer::init()) return false;
+
+    this->setTouchPriority(INT_MAX);
+    this->setZOrder(INT_MAX);
+    this->setKeyboardEnabled(true);
+    this->setKeypadEnabled(true);
+
+    Build<CCLayerColor>::create(ccc4(0, 0, 0, 100))
+        .ignoreAnchorPointForPos(false)
+        .anchorPoint({0.5f, 0.5f})
+        .zOrder(INT_MAX)
+        .parent(this)
+        .center()
+        .collect();
+    
+    
+
+    this->keybindRef = keybind;
+    this->buttonSprite = btnSpr;
 
     return true;
 }
 
-void KeybindsManager::KeybindRegisterLayer::keyDown(enumKeyCodes keyCode) {
-    KeybindsManager::get().handlePress(convertCocosKey(keyCode), [this](auto key) {
-        this->key = key;
-    });
+void KeybindRegisterLayer::keyDown(enumKeyCodes keyCode) {
+    // im so sorry im just so done with this shit
+    switch (this->keybindRef) {
+    case 0:
+        GlobedSettings::get().communication.voiceChatKey = (int)keyCode;
+        break;
+    
+    case 1:
+        GlobedSettings::get().communication.voiceDeafenKey = (int)keyCode;
+        break;
 
-    this->removeFromParent();
+    default:
+        break;
+    }
+
+    this->buttonSprite->setString(fmt::format("Keybind: {}", (int)keyCode).c_str());
+
+    this->removeFromParentAndCleanup(true);
 }
 
-KeybindsManager::KeybindRegisterLayer* KeybindsManager::KeybindRegisterLayer::create(globed::Key key) {
-    auto ret = new KeybindsManager::KeybindRegisterLayer();
-    if (ret && ret->init(key)) {
+KeybindRegisterLayer* KeybindRegisterLayer::create(int keybind, ButtonSprite* btnSpr) {
+    auto ret = new KeybindRegisterLayer();
+    if (ret && ret->init(keybind, btnSpr)) {
         ret->autorelease();
         return ret;
     }

@@ -4,7 +4,8 @@
 #include <string>
 #include <map>
 
-#include <Geode/Geode.hpp>
+#include <Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h>
+#include <managers/settings.hpp>
 
 // Big shoutout to eclipse menu i am too lazy to type all that out myself
 // https://github.com/EclipseMenu/EclipseMenu/blob/main/src/modules/keybinds/manager.hpp
@@ -48,26 +49,29 @@ class KeybindsManager : public SingletonBase<KeybindsManager> {
     friend class SingletonBase;
 
 public:
-    class KeybindRegisterLayer : public cocos2d::CCLayer {
-    protected:
-        bool init(globed::Key key);
-
-        $override
-        void keyDown(cocos2d::enumKeyCodes keyCode);
-
-        globed::Key key;
-    
-    public:
-        static KeybindRegisterLayer* create(globed::Key key);
-    };
-
-    void handlePress(globed::Key, std::function<void(globed::Key)> callback);
+    void init();
+    void handlePress(cocos2d::enumKeyCodes, std::function<void(cocos2d::enumKeyCodes)> callback);
     void handleRelease(globed::Key, std::function<void(globed::Key)> callback);
     bool isHeld(globed::Key key);
+    static globed::Key convertCocosKey(cocos2d::enumKeyCodes key);
+    static globed::Key convertGlfwKey(int key);
 
-    globed::Key voiceChatKey;
-    globed::Key voiceDeafenKey;
+    cocos2d::enumKeyCodes voiceChatKey;
+    cocos2d::enumKeyCodes voiceDeafenKey;
 
 private:
     std::map<globed::Key, bool> heldKeys;
+};
+
+class KeybindRegisterLayer : public cocos2d::CCLayer {
+protected:
+    bool init(int keybind, ButtonSprite* btnSpr);
+
+    void keyDown(cocos2d::enumKeyCodes keyCode) override;
+
+    int keybindRef;
+    ButtonSprite* buttonSprite;
+
+public:
+    static KeybindRegisterLayer* create(int keybind, ButtonSprite* btnSpr);
 };

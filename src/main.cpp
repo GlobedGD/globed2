@@ -12,6 +12,7 @@
 #include <managers/settings.hpp>
 #include <ui/error_check_node.hpp>
 #include <ui/notification/panel.hpp>
+#include <ui/menu/settings/keybind_setting.hpp>
 #include <util/all.hpp>
 
 using namespace geode::prelude;
@@ -32,6 +33,7 @@ static void FMODSystemInitHook(FMOD::System* system, int channels, FMOD_INITFLAG
 #endif // GLOBED_VOICE_SUPPORT
 
 $on_mod(Loaded) {
+    (void)Mod::get()->registerCustomSettingType("keybind-button", &KeybindSetting::parse);
 #ifdef GLOBED_VOICE_SUPPORT
     // (void) Mod::get()->hook(
     //     reinterpret_cast<void*>(

@@ -175,6 +175,8 @@ public:
 
     struct Communication {
         Setting<bool, true> voiceEnabled;
+        Setting<int, 86> voiceChatKey;
+        Setting<int, 66> voiceDeafenKey;
         Setting<bool, true> voiceProximity;
         Setting<bool, false> classicProximity;
         LimitedSetting<float, 1.0f, 0.f, 2.f> voiceVolume;
@@ -318,7 +320,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Communication, (
-    voiceEnabled, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, audioDevice, deafenNotification, voiceLoopback
+    voiceEnabled, voiceChatKey, voiceDeafenKey, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, audioDevice, deafenNotification, voiceLoopback
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (
