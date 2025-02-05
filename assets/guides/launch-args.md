@@ -16,6 +16,8 @@ Make sure to use the full format and prefix the option name with `globed-`, so i
 
 `no-ssl-verification` - disables SSL certificate verification, useful if you can't connect to the server with an error similar to "SSL peer certificate or SSH remote key was not OK."
 
+`reset-settings` - resets all Globed settings
+
 `crt-fix` - unused in release builds, if you are a developer using Wine and experiencing hangs on launch, you may check `src/platform/os/windows/setup.cpp` for more information.
 
 ## Debugging (more dev centered)

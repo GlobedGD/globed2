@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-
 project(globed2 VERSION 1.0.1)
 
 # set ios archs
@@ -48,6 +47,7 @@ option(GLOBED_RELEASE "Release build" OFF)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}asdf" STREQUAL "asdf" OR ENABLE_DEBUG)
     set(GLOBED_IS_DEBUG ON)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_HAS_ITERATOR_DEBUGGING=0")
 endif()
 
 # Debug/Release options
@@ -144,15 +144,10 @@ CPMAddPackage(
     URL_HASH SHA256=ee6e0793b5ec7d13e7181ec05d3b1aaa23615947295080e4b9930324488e078f
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe\\\;stacktrace\\\;thread" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp2#2378a82")
+CPMAddPackage("gh:dankmeme01/asp2#71196e5")
 
 # asp defines
 if (WIN32)
-    if (GLOBED_IS_DEBUG)
-        # debug
-        target_compile_definitions(asp PRIVATE _HAS_ITERATOR_DEBUGGING=0)
-    endif()
-
     # thingy
     target_compile_definitions(asp PRIVATE ASP_ENABLE_FORMAT=1)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ASP_ENABLE_FORMAT=1)
@@ -284,7 +279,11 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE CURL_STATICLIB=1)
 
 # we are kinda leeching off of geode but we can always snatch those libraries in the future
 if (WIN32)
-    set_target_properties(curl PROPERTIES IMPORTED_LOCATION "$ENV{GEODE_SDK}/loader/include/link/${LIB_PLATFORM}/libcurl.lib")
+    if (GLOBED_IS_DEBUG)
+        set_target_properties(curl PROPERTIES IMPORTED_LOCATION "$ENV{GEODE_SDK}/loader/include/link/${LIB_PLATFORM}/gd-libcurl.lib")
+    else()
+        set_target_properties(curl PROPERTIES IMPORTED_LOCATION "$ENV{GEODE_SDK}/loader/include/link/${LIB_PLATFORM}/libcurl.lib")
+    endif()
 else()
     set_target_properties(curl PROPERTIES IMPORTED_LOCATION "$ENV{GEODE_SDK}/loader/include/link/${LIB_PLATFORM}/libcurl.a")
 endif()
@@ -311,7 +310,7 @@ if (GLOBED_OSS_BUILD)
 else()
     if (WIN32)
         target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb.lib")
-        target_link_libraries(${PROJECT_NAME} ntdll.lib userenv.lib runtimeobject.lib Iphlpapi.lib)
+        target_link_libraries(${PROJECT_NAME} ntdll.lib userenv.lib runtimeobject.lib Iphlpapi.lib bcrypt.lib)
     else ()
         target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/libs/bb/bb-${LIB_PLATFORM}.a")
     endif()

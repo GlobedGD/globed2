@@ -57,6 +57,12 @@ namespace util::ui {
         cocos2d::CCPoint fromBottom(float y);
         cocos2d::CCPoint fromBottom(cocos2d::CCSize off);
 
+        cocos2d::CCPoint fromLeft(float x);
+        cocos2d::CCPoint fromLeft(cocos2d::CCSize off);
+
+        cocos2d::CCPoint fromRight(float x);
+        cocos2d::CCPoint fromRight(cocos2d::CCSize off);
+
         cocos2d::CCPoint fromCenter(cocos2d::CCSize off);
         cocos2d::CCPoint fromCenter(float x, float y);
 
@@ -71,10 +77,13 @@ namespace util::ui {
 
         cocos2d::CCPoint fromTopLeft(cocos2d::CCSize off);
         cocos2d::CCPoint fromTopLeft(float x, float y);
+
     };
 
     [[deprecated("use getPopupLayoutAnchored")]] PopupLayout getPopupLayout(const cocos2d::CCSize& popupSize);
     PopupLayout getPopupLayoutAnchored(const cocos2d::CCSize& popupSize);
+    PopupLayout getNodeLayout(const cocos2d::CCSize& nodeSize);
+    PopupLayout getNodeLayout(float width, float height);
 
     cocos2d::CCNode* findChildByMenuSelectorRecursive(cocos2d::CCNode* node, uintptr_t function);
 

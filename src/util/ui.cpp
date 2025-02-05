@@ -157,6 +157,22 @@ namespace util::ui {
         return this->centerBottom + off;
     }
 
+    CCPoint PopupLayout::fromLeft(float x) {
+        return fromLeft({x, 0.f});
+    }
+
+    CCPoint PopupLayout::fromLeft(CCSize off) {
+        return this->centerLeft + off;
+    }
+
+    CCPoint PopupLayout::fromRight(float x) {
+        return fromRight({x, 0.f});
+    }
+
+    CCPoint PopupLayout::fromRight(CCSize off) {
+        return this->centerRight + CCSize{-off.width, off.height};
+    }
+
     CCPoint PopupLayout::fromCenter(CCSize off) {
         return this->center + off;
     }
@@ -225,6 +241,14 @@ namespace util::ui {
         layout.topRight = CCSize{layout.right, layout.top};
 
         return layout;
+    }
+
+    PopupLayout getNodeLayout(const CCSize& nodeSize) {
+        return popupLayoutWith(nodeSize, false);
+    }
+
+    PopupLayout getNodeLayout(float width, float height) {
+        return getNodeLayout(CCSize{width, height});
     }
 
     PopupLayout getPopupLayout(const CCSize& popupSize) {

@@ -1,5 +1,5 @@
-use std::borrow::Cow;
 use crate::webhook::{WebhookChannel, WebhookMessage};
+use std::borrow::Cow;
 
 use super::*;
 
@@ -25,7 +25,11 @@ impl ClientThread {
             };
 
             if let Some(reason) = fail_reason {
-                return self.send_packet_dynamic(&RoomCreateFailedPacket { reason: Cow::Borrowed(reason) }).await;
+                return self
+                    .send_packet_dynamic(&RoomCreateFailedPacket {
+                        reason: Cow::Borrowed(reason),
+                    })
+                    .await;
             }
 
             let room = self
@@ -226,8 +230,6 @@ impl ClientThread {
                 room_password,
             };
 
-
-
             thread.push_new_message(ServerThreadMessage::BroadcastInvite(invite_packet.clone())).await;
         }
 
@@ -237,6 +239,8 @@ impl ClientThread {
     gs_handler!(self, handle_request_room_list, RequestRoomListPacket, _packet, {
         let _ = gs_needauth!(self);
 
+        let can_moderate = self.can_moderate();
+
         let pkt = RoomListPacket {
             rooms: self
                 .game_server
@@ -244,7 +248,7 @@ impl ClientThread {
                 .room_manager
                 .get_rooms()
                 .iter()
-                .filter(|(_, room)| !room.is_hidden())
+                .filter(|(_, room)| !room.is_hidden() || can_moderate)
                 .map(|(id, room)| room.get_room_listing_info(*id))
                 .collect(),
         };

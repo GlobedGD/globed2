@@ -1,7 +1,7 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use globed_shared::{debug, AdminPunishUserAction, PunishmentType, ServerUserEntry, UserPunishment};
-use rocket_db_pools::sqlx::{query_as, Result};
+use globed_shared::{AdminPunishUserAction, PunishmentType, ServerUserEntry, UserPunishment};
+use rocket_db_pools::sqlx::{Result, query_as};
 use serde::Serialize;
 use sqlx::{prelude::*, query, query_scalar, sqlite::SqliteRow};
 
@@ -36,6 +36,7 @@ impl<'r> FromRow<'r, SqliteRow> for UserEntryWrapper {
             admin_password_hash,
             active_mute,
             active_ban,
+            punishment_count: 0, // this will be initialized later
         }))
     }
 }
@@ -217,26 +218,7 @@ impl GlobedDb {
         Ok(())
     }
 
-    async fn migrate_admin_password(&self, user: &mut ServerUserEntry) -> Result<()> {
-        if let Some(password) = user.admin_password.as_ref() {
-            let hash = globed_shared::generate_argon2_hash(password);
-            debug!("generating hash for password {password}: {hash}");
-
-            query("UPDATE users SET admin_password = NULL, admin_password_hash = ? WHERE account_id = ?")
-                .bind(&hash)
-                .bind(user.account_id)
-                .execute(&self.0)
-                .await?;
-
-            user.admin_password_hash = Some(hash);
-        };
-
-        user.admin_password = None;
-
-        Ok(())
-    }
-
-    /// Convert a `Option<UserEntryWrapper>` into `Option<ServerUserEntry>` and expire their ban/mute if needed.
+    /// Convert a `Option<UserEntryWrapper>` into `Option<ServerUserEntry>`, expire their ban/mute if needed, count amount of punishments, etc.
     #[inline]
     async fn unwrap_user(&self, user: Option<UserEntryWrapper>) -> Result<Option<ServerUserEntry>> {
         let mut user = user.map(|x| x.0);
@@ -247,11 +229,12 @@ impl GlobedDb {
             self.maybe_expire_punishments(user).await?;
         }
 
-        // TODO: remove this in the near future
-        // migrate admin password to hashed form
-        if user.as_ref().is_some_and(|user| user.admin_password.is_some()) {
-            let user = user.as_mut().unwrap();
-            self.migrate_admin_password(user).await?;
+        // count punishments
+        if let Some(user) = user.as_mut() {
+            user.punishment_count = query_scalar("SELECT COUNT(*) FROM punishments WHERE account_id = ?")
+                .bind(user.account_id)
+                .fetch_one(&self.0)
+                .await?;
         }
 
         Ok(user)

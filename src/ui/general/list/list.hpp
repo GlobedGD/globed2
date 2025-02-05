@@ -300,6 +300,14 @@ public:
         return cell;
     }
 
+    float getListWidth() {
+        return width;
+    }
+
+    float getListHeight() {
+        return height;
+    }
+
     template <typename T>
     static GlobedListLayer* create(float width, float height, const T& background, float cellHeight = 0.0f, GlobedListBorderType borderType = GlobedListBorderType::None) {
         auto ret = new GlobedListLayer();

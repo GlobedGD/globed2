@@ -13,6 +13,8 @@ using namespace asp::time;
 
 static void loadingFinishedReimpl(bool fromRefresh) {
     // reimplementation of the function
+
+    // push menulayer scene
     auto* scene = MenuLayer::scene(fromRefresh);
     auto* dir = CCDirector::get();
     dir->replaceScene(scene);

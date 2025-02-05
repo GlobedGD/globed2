@@ -3,6 +3,7 @@
 namespace globed {
     bool softDisabled();
     bool useFallbackMenuButton();
+    void resetIntegrityCheck();
 
     void checkResources();
 
@@ -30,5 +31,5 @@ namespace globed {
 
     IntegrityReport getIntegrityReport();
 
-    geode::Result<std::filesystem::path> getLatestLogFile();
+    const std::filesystem::path& getLatestLogFile();
 }

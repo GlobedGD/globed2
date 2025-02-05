@@ -3,6 +3,8 @@
 #include <managers/settings.hpp>
 #include <util/cocos.hpp>
 
+#include <asp/fs.hpp>
+
 using namespace geode::prelude;
 
 static bool g_checked = false;
@@ -24,6 +26,12 @@ bool globed::useFallbackMenuButton() {
     }
 
     return g_fallbackMenuButton;
+}
+
+void globed::resetIntegrityCheck() {
+    g_checked = false;
+    g_disable = false;
+    g_fallbackMenuButton = false;
 }
 
 void globed::checkResources() {
@@ -113,17 +121,20 @@ globed::IntegrityReport globed::getIntegrityReport() {
     auto p = CCFileUtils::get()->fullPathForFilename("globedsheet1.png"_spr, false);
     auto plist = CCFileUtils::get()->fullPathForFilename("globedsheet1.plist"_spr, false);
 
+    auto pngParent = std::filesystem::path(std::string(p)).parent_path();
+    auto plistParent = std::filesystem::path(std::string(plist)).parent_path();
+
     if (p.empty()) {
         log::error("Failed to find globedsheet1.png (critical!)");
         report.sheetIntegrity = SheetIntegrity::MissingPng;
     } else if (plist.empty()) {
         log::error("Failed to find globedsheet1.plist (critical!)");
         report.sheetIntegrity = SheetIntegrity::MissingPlist;
-    } else if (std::filesystem::path(std::string(p)).parent_path() != std::filesystem::path(std::string(plist)).parent_path()) {
+    } else if (!asp::fs::equivalent(pngParent, plistParent).unwrapOr(false)) {
         log::debug("Mismatch, globedsheet1.plist and globedsheet1.png are in different places ({} and {})", p, plist);
         report.sheetIntegrity = SheetIntegrity::Ok;
         report.sheetFilesSeparated = true;
-    } else if (std::filesystem::path(std::string(p)).parent_path() != Mod::get()->getResourcesDir()) {
+    } else if (!asp::fs::equivalent(pngParent, Mod::get()->getResourcesDir())) {
         log::debug("Mismatch, globedsheet1 expected in {}, found at {}", Mod::get()->getResourcesDir(), p);
         report.sheetIntegrity = SheetIntegrity::Ok;
         report.sheetFilesModified = true;
@@ -141,9 +152,8 @@ globed::IntegrityReport globed::getIntegrityReport() {
     // TODO: for android, check if the dankmeme.globed2 folder is in the apk
 
     auto impostorFolderLoc = dirs::getGameDir() / "Resources" / "dankmeme.globed2";
-    std::error_code ec{};
 
-    if (std::filesystem::exists(impostorFolderLoc) && ec == std::error_code{}) {
+    if (asp::fs::exists(impostorFolderLoc)) {
         report.impostorFolder = impostorFolderLoc;
         log::debug("Impostor folder found: {}", impostorFolderLoc.string());
     }
@@ -157,37 +167,6 @@ globed::IntegrityReport globed::getIntegrityReport() {
     return report;
 }
 
-geode::Result<std::filesystem::path> globed::getLatestLogFile() {
-    auto logDir = dirs::getGeodeLogDir();
-
-    std::error_code ec{};
-
-    if (!std::filesystem::exists(logDir, ec) || ec != std::error_code{}) {
-        return Err("Log directory does not exist");
-    }
-
-    std::filesystem::path latestLog{};
-    std::filesystem::file_time_type latestTime{};
-
-    for (auto& entry : std::filesystem::directory_iterator(logDir, ec)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".log") {
-            auto time = std::filesystem::last_write_time(entry, ec);
-
-            if (ec != std::error_code{}) {
-                log::warn("Failed to get last write time for {}", entry.path().string());
-                continue;
-            }
-
-            if (time > latestTime) {
-                latestTime = time;
-                latestLog = entry.path();
-            }
-        }
-    }
-
-    if (latestLog.empty()) {
-        return Err("No log files found");
-    }
-
-    return Ok(latestLog);
+const std::filesystem::path& globed::getLatestLogFile() {
+    return log::getCurrentLogPath();
 }

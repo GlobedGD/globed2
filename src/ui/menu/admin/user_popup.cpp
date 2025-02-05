@@ -7,6 +7,7 @@
 #include <managers/role.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/admin/edit_role_popup.hpp>
+#include <ui/game/chat/unread_badge.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/color_input_popup.hpp>
 #include <util/math.hpp>
@@ -236,6 +237,17 @@ void AdminUserPopup::onProfileLoaded() {
     // History button
     Build<CCSprite>::createSpriteName("button-admin-history.png"_spr)
         .scale(btnScale)
+        .with([&](auto* btn) {
+            // if the user has past punishments, show a little badge with the count
+            if (userEntry.punishmentCount > 0) {
+                Build<UnreadMessagesBadge>::create(userEntry.punishmentCount)
+                    .pos(btn->getScaledContentSize() + CCPoint{1.f, 1.f})
+                    .scale(0.7f)
+                    .id("count-icon"_spr)
+                    .parent(btn)
+                    ;
+            }
+        })
         .intoMenuItem([this] {
             AdminPunishmentHistoryPopup::create(userEntry.accountId)->show();
         })

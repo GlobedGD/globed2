@@ -5,6 +5,8 @@
 #include <managers/account.hpp>
 #include <net/manager.hpp>
 
+#include <asp/fs.hpp>
+
 CentralServerManager::CentralServerManager() {
     this->reload();
 
@@ -204,17 +206,16 @@ static bool maybeOverrideMainServer(std::string& url) {
     for (const auto& p : {path1, path2, path3}) {
         auto path = p / "globed-server-url.txt";
 
-        std::error_code ec{};
-        if (std::filesystem::exists(path) && ec == std::error_code{}) {
+        if (asp::fs::exists(path)) {
             log::debug("Found server override in: {}", path);
-            std::ifstream file(path);
-            if (file.is_open()) {
-                url.clear();
-                file >> url;
-                return true;
-            } else {
-                log::warn("Failed to open file: {}", path);
+            auto res = asp::fs::readToString(path);
+            if (!res) {
+                log::warn("Failed to read file: {}", path);
+                continue;
             }
+
+            url = std::move(res).unwrap();
+            return true;
         }
     }
 
