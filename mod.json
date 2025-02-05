@@ -24,14 +24,6 @@
         "online"
     ],
     "settings": {
-        "voice-chat-keybind": {
-            "type": "custom:keybind-button",
-            "name": "Voice Chat Keybind"
-        },
-        "voice-deafen-keybind": {
-            "type": "custom:keybind-button",
-            "name": "Voice Deafen Keybind"
-        },
         "force-skip-preload": {
             "default": false,
             "name": "Skip preload assets",
