@@ -41,15 +41,19 @@ namespace globed {
         Up, Down, Left, Right,
     };
 
-    std::string formatKey(Key key);
+    enum class Keybinds {
+        VoiceChatKey,
+        VoiceDeafenKey,
+    };
 
+    std::string formatKey(Key key);
+    std::string formatKey(cocos2d::enumKeyCodes key);
 }
 
 class KeybindsManager : public SingletonBase<KeybindsManager> {
     friend class SingletonBase;
 
 public:
-    void init();
     void handlePress(cocos2d::enumKeyCodes, std::function<void(cocos2d::enumKeyCodes)> callback);
     void handleRelease(globed::Key, std::function<void(globed::Key)> callback);
     bool isHeld(globed::Key key);
@@ -61,17 +65,4 @@ public:
 
 private:
     std::map<globed::Key, bool> heldKeys;
-};
-
-class KeybindRegisterLayer : public cocos2d::CCLayer {
-protected:
-    bool init(int keybind, ButtonSprite* btnSpr);
-
-    void keyDown(cocos2d::enumKeyCodes keyCode) override;
-
-    int keybindRef;
-    ButtonSprite* buttonSprite;
-
-public:
-    static KeybindRegisterLayer* create(int keybind, ButtonSprite* btnSpr);
 };

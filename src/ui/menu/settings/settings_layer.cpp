@@ -146,6 +146,7 @@ void GlobedSettingsLayer::update(float dt) {
     this->prevSettingsSlot = GlobedSettings::get().getSelectedSlot();
 
     // yeah so alk would probably demote me from lead dev for this code but it is what it is
+    // yeah im gonna kill you - lime
 
     auto newLayer = GlobedSettingsLayer::create();
 
@@ -302,6 +303,10 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
         case TAG_TAB_COMMUNICATION: {
 #ifdef GLOBED_VOICE_SUPPORT
             registerSetting(cat, settings.communication.voiceEnabled, "Voice chat", "Enables in-game voice chat. To talk, hold V when in a level. (keybind can be changed in game settings)");
+# ifdef GLOBED_VOICE_CAN_TALK
+            registerSetting(cat, settings.communication.voiceChatKey, "Voice chat key", "Set the key to activate voice chat", Type::Keybind);
+            registerSetting(cat, settings.communication.voiceDeafenKey, "Voice deafen key", "Set the key to deafen voice chat", Type::Keybind);
+# endif
             registerSetting(cat, settings.communication.voiceProximity, "Voice proximity", "In platformer mode, the loudness of other players will be determined by how close they are to you.");
             registerSetting(cat, settings.communication.classicProximity, "Classic proximity", "Same as voice proximity, but for classic levels (non-platformer).");
             registerSetting(cat, settings.communication.voiceVolume, "Voice volume", "Controls how loud other players are.");

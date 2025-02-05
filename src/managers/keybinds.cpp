@@ -41,6 +41,10 @@ namespace globed {
 #undef KCASE
 #undef KCASEN
     }
+
+    std::string formatKey(enumKeyCodes key) {
+        return formatKey(KeybindsManager::convertCocosKey(key));
+    }
 }
 
 void KeybindsManager::handlePress(enumKeyCodes key, std::function<void(enumKeyCodes)> callback) {
@@ -59,7 +63,6 @@ bool KeybindsManager::isHeld(Key key) {
     return heldKeys.contains(key) && heldKeys.at(key);
 }
 
-#ifdef GEODE_IS_WINDOWS
 Key KeybindsManager::convertGlfwKey(int key) {
     switch (key) {
     case GLFW_KEY_A: return Key::A;
@@ -189,8 +192,6 @@ Key KeybindsManager::convertGlfwKey(int key) {
 //     }
 // };
 
-#else
-
 Key KeybindsManager::convertCocosKey(enumKeyCodes key) {
     switch (key) {
         case KEY_A: return Key::A;
@@ -307,62 +308,4 @@ Key KeybindsManager::convertCocosKey(enumKeyCodes key) {
         case KEY_ArrowRight: return Key::Right;
         default: return Key::None;
     }
-}
-
-#endif
-
-using namespace geode::prelude;
-
-bool KeybindRegisterLayer::init(int keybind, ButtonSprite* btnSpr) {
-    if (!CCLayer::init()) return false;
-
-    this->setTouchPriority(INT_MAX);
-    this->setZOrder(INT_MAX);
-    this->setKeyboardEnabled(true);
-    this->setKeypadEnabled(true);
-
-    Build<CCLayerColor>::create(ccc4(0, 0, 0, 100))
-        .ignoreAnchorPointForPos(false)
-        .anchorPoint({0.5f, 0.5f})
-        .zOrder(INT_MAX)
-        .parent(this)
-        .center()
-        .collect();
-    
-    
-
-    this->keybindRef = keybind;
-    this->buttonSprite = btnSpr;
-
-    return true;
-}
-
-void KeybindRegisterLayer::keyDown(enumKeyCodes keyCode) {
-    // im so sorry im just so done with this shit
-    switch (this->keybindRef) {
-    case 0:
-        GlobedSettings::get().communication.voiceChatKey = (int)keyCode;
-        break;
-    
-    case 1:
-        GlobedSettings::get().communication.voiceDeafenKey = (int)keyCode;
-        break;
-
-    default:
-        break;
-    }
-
-    this->buttonSprite->setString(fmt::format("Keybind: {}", (int)keyCode).c_str());
-
-    this->removeFromParentAndCleanup(true);
-}
-
-KeybindRegisterLayer* KeybindRegisterLayer::create(int keybind, ButtonSprite* btnSpr) {
-    auto ret = new KeybindRegisterLayer();
-    if (ret && ret->init(keybind, btnSpr)) {
-        ret->autorelease();
-        return ret;
-    }
-    CC_SAFE_DELETE(ret);
-    return nullptr;
 }

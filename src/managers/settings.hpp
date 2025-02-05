@@ -4,6 +4,7 @@
 #include <defs/util.hpp>
 #include <data/basic.hpp>
 #include <data/types/user.hpp>
+#include <managers/keybinds.hpp>
 #include <util/singleton.hpp>
 
 #include <asp/thread/Thread.hpp>
@@ -289,8 +290,8 @@ public:
 
     struct Communication {
         Setting<bool, true> voiceEnabled;
-        Setting<int, 86> voiceChatKey;
-        Setting<int, 66> voiceDeafenKey;
+        Setting<int, cocos2d::enumKeyCodes::KEY_V> voiceChatKey;
+        Setting<int, cocos2d::enumKeyCodes::KEY_B> voiceDeafenKey;
         Setting<bool, true> voiceProximity;
         Setting<bool, false> classicProximity;
         LimitedSetting<float, 1.0f, 0.f, 2.f> voiceVolume;
