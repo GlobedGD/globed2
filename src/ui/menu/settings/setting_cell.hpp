@@ -9,7 +9,7 @@ class BetterSlider;
 class GlobedSettingCell : public cocos2d::CCLayer {
 public:
     enum class Type {
-        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom, LinkCode
+        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom, LinkCode, Keybind
     };
 
     struct Limits {
@@ -47,6 +47,7 @@ private:
     void onSliderChanged(BetterSlider* slider, double value);
     void onInteractiveButton(cocos2d::CCObject*);
     void onStringChanged(std::string_view);
+    void onSetAudioDevice();
 
     void recreateCornerButton();
     void recreateInvitesFromButton();

@@ -116,7 +116,6 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     void setupBare();
     void setupDeferredAssetPreloading();
     void setupAudio();
-    void setupCustomKeybinds();
     void setupMisc();
     void setupUpdate();
     void setupUi();

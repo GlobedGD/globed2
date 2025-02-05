@@ -11,21 +11,9 @@
         "ios": "2.2074"
     },
     "description": "Feature-rich multiplayer mod",
-    "dependencies": [
-        {
-            "id": "geode.custom-keybinds",
-            "version": ">=v1.2.3",
-            "importance": "required",
-            "platforms": [
-                "win"
-            ]
-        },
-        {
-            "id": "geode.node-ids",
-            "version": ">=v1.10.0",
-            "importance": "required"
-        }
-    ],
+    "dependencies": {
+        "geode.node-ids": ">=v1.10.0"
+    },
     "incompatibilities": [],
     "links": {
         "homepage": "https://globed.dev",

@@ -11,6 +11,7 @@
 #include <net/manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/slider.hpp>
+#include <ui/menu/settings/keybind_setup_popup.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
 
@@ -118,18 +119,16 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         case Type::PacketFragmentation: [[fallthrough]];
         case Type::AdvancedSettings: [[fallthrough]];
         case Type::LinkCode: [[fallthrough]];
+        case Type::Keybind: [[fallthrough]];
         case Type::AudioDevice: {
             const char* text;
-            if (settingType == Type::PacketFragmentation) {
-                text = "Auto";
-            } else if (settingType == Type::AdvancedSettings) {
-                text = "View";
-            } else if (settingType == Type::AudioDevice) {
-                text = "Set";
-            } else if (settingType == Type::LinkCode) {
-                text = "View";
-            } else {
-                text = "String??";
+            switch (settingType) {
+                case Type::PacketFragmentation: text = "Auto"; break;
+                case Type::AdvancedSettings: text = "View"; break;
+                case Type::AudioDevice: text = "Set"; break;
+                case Type::LinkCode: text = "View"; break;
+                case Type::Keybind: text = "Set"; break;
+                default: text = "what the figma"; break;
             }
 
             Build<ButtonSprite>::create(text, "goldFont.fnt", "GJ_button_04.png", .7f)
@@ -232,57 +231,75 @@ void GlobedSettingCell::onSliderChanged(BetterSlider* slider, double value) {
 }
 
 void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
-    if (settingType == Type::AudioDevice) {
+    switch (settingType) {
+        case Type::AudioDevice: this->onSetAudioDevice(); break;
+        case Type::PacketFragmentation: {
+            if (NetworkManager::get().established()) {
+                FragmentationCalibartionPopup::create()->show();
+            } else {
+                FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
+            }
+            break;
+        }
+        case Type::AdvancedSettings: {
+            AdvancedSettingsPopup::create()->show();
+            break;
+        }
+        case Type::LinkCode: {
+            if (NetworkManager::get().established()) {
+                LinkCodePopup::create()->show();
+            } else {
+                FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
+            }
+            break;
+        }
+        case Type::Keybind: {
+            auto& gs = GlobedSettings::get();
+            auto type = settingStorage == &gs.communication.voiceChatKey.ref() ? globed::Keybinds::VoiceChatKey : globed::Keybinds::VoiceDeafenKey;
+            KeybindSetupPopup::create(*(int*)(settingStorage), type)->show();
+            break;
+        }
+        default: {
+            StringInputPopup::create([this](std::string_view text) {
+                this->onStringChanged(text);
+            })->show();
+            break;
+        }
+    }
+}
+
+void GlobedSettingCell::onSetAudioDevice() {
 #ifdef GLOBED_VOICE_SUPPORT
 # ifndef GLOBED_VOICE_CAN_TALK
-        // if we can't talk, show an error popup
-        FLAlertLayer::create("Error", "Sorry, but recording audio is currently <cr>not possible</c> on this platform.", "Ok")->show();
-        return;
+    // if we can't talk, show an error popup
+    FLAlertLayer::create("Error", "Sorry, but recording audio is currently <cr>not possible</c> on this platform.", "Ok")->show();
+    return;
 # endif // GLOBED_VOICE_CAN_TALK
 
-        // check for permission
-        bool perm = permission::getPermissionStatus(Permission::RecordAudio);
+    // check for permission
+    bool perm = permission::getPermissionStatus(Permission::RecordAudio);
 
-        if (!perm) {
-            geode::createQuickPopup(
-                "No permission",
-                "Globed does not currently have permission to use your microphone. Do you want to grant the permission?",
-                "Cancel", "Grant", [] (FLAlertLayer*, bool btn2) {
+    if (!perm) {
+        geode::createQuickPopup(
+            "No permission",
+            "Globed does not currently have permission to use your microphone. Do you want to grant the permission?",
+            "Cancel", "Grant", [] (FLAlertLayer*, bool btn2) {
 
-                if (btn2) {
-                    permission::requestPermission(Permission::RecordAudio, [](bool granted) {
-                        if (granted) {
-                            AudioSetupPopup::create()->show();
-                        } else {
-                            log::warn("permission denied when requesting audio access");
-                        }
-                    });
-                }
-            });
+            if (btn2) {
+                permission::requestPermission(Permission::RecordAudio, [](bool granted) {
+                    if (granted) {
+                        AudioSetupPopup::create()->show();
+                    } else {
+                        log::warn("permission denied when requesting audio access");
+                    }
+                });
+            }
+        });
 
-            return;
-        }
-        AudioSetupPopup::create()->show();
-#endif // GLOBED_VOICE_SUPPORT
-    } else if (settingType == Type::PacketFragmentation) {
-        if (NetworkManager::get().established()) {
-            FragmentationCalibartionPopup::create()->show();
-        } else {
-            FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
-        }
-    } else if (settingType == Type::AdvancedSettings) {
-        AdvancedSettingsPopup::create()->show();
-    } else if (settingType == Type::LinkCode) {
-        if (NetworkManager::get().established()) {
-            LinkCodePopup::create()->show();
-        } else {
-            FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
-        }
-    } else {
-        StringInputPopup::create([this](std::string_view text) {
-            this->onStringChanged(text);
-        })->show();
+        return;
     }
+    AudioSetupPopup::create()->show();
+#endif // GLOBED_VOICE_SUPPORT
 }
 
 void GlobedSettingCell::onStringChanged(std::string_view text) {
@@ -385,6 +402,7 @@ void GlobedSettingCell::storeAndSave(std::any&& value) {
         case Type::PacketFragmentation: [[fallthrough]];
         case Type::InvitesFrom: [[fallthrough]];
         case Type::LinkCode: [[fallthrough]];
+        case Type::Keybind: [[fallthrough]];
         case Type::Int:
             *(int*)(settingStorage) = std::any_cast<int>(value); break;
         case Type::AdvancedSettings:

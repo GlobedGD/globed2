@@ -1,9 +1,5 @@
 #include <defs/all.hpp>
 
-#if GLOBED_HAS_KEYBINDS
-# include <geode.custom-keybinds/include/Keybinds.hpp>
-#endif
-
 #include <asp/Log.hpp>
 
 #include <hooks/all.hpp>
@@ -18,7 +14,6 @@ using namespace geode::prelude;
 
 void setupAsp();
 void setupErrorCheckNode();
-void setupCustomKeybinds();
 void printDebugInfo();
 
 namespace globed { void platformSetup(); }
@@ -48,7 +43,6 @@ $on_mod(Loaded) {
     CryptoBox::initLibrary();
     setupAsp();
     setupErrorCheckNode();
-    setupCustomKeybinds();
 
 #ifdef GLOBED_VOICE_SUPPORT
     GlobedAudioManager::get().preInitialize();
@@ -85,28 +79,6 @@ void setupErrorCheckNode() {
     auto notif = GlobedNotificationPanel::create();
     notif->setID("notification-panel"_spr);
     notif->persist();
-}
-
-void setupCustomKeybinds() {
-#if GLOBED_HAS_KEYBINDS
-    using namespace keybinds;
-
-    BindManager::get()->registerBindable({
-        "voice-activate"_spr,
-        "Voice",
-        "Records audio from your microphone and sends it off to other users on the level.",
-        { Keybind::create(KEY_V, Modifier::None) },
-        Category::PLAY,
-    });
-
-    BindManager::get()->registerBindable({
-        "voice-deafen"_spr,
-        "Deafen",
-        "Mutes voices of other players when toggled.",
-        { Keybind::create(KEY_B, Modifier::None) },
-        Category::PLAY,
-    });
-#endif // GLOBED_HAS_KEYBINDS
 }
 
 // just debug printing

@@ -11,6 +11,7 @@ class NewLevelCell : public LevelCell {
 public:
     void draw() override {
         // balls
+        // balls
     }
 
     int rateTier = -1;

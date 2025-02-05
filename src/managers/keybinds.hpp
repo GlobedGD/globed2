@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 
+#include <managers/settings.hpp>
+
 // Big shoutout to eclipse menu i am too lazy to type all that out myself
 // https://github.com/EclipseMenu/EclipseMenu/blob/main/src/modules/keybinds/manager.hpp
 
@@ -38,17 +40,20 @@ namespace globed {
         Up, Down, Left, Right,
     };
 
-    std::string formatKey(Key key);
+    enum class Keybinds {
+        VoiceChatKey,
+        VoiceDeafenKey,
+    };
 
+    std::string formatKey(Key key);
+    std::string formatKey(cocos2d::enumKeyCodes key);
 }
 
 class KeybindsManager : public SingletonBase<KeybindsManager> {
     friend class SingletonBase;
 
 public:
-    void handlePress(globed::Key);
-    void handleRelease(globed::Key);
-    bool isHeld(globed::Key key);
+    static globed::Key convertCocosKey(cocos2d::enumKeyCodes key);
 
 private:
     std::map<globed::Key, bool> heldKeys;

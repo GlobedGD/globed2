@@ -1,9 +1,5 @@
 #include "gjbasegamelayer.hpp"
 
-#if GLOBED_HAS_KEYBINDS
-# include <geode.custom-keybinds/include/Keybinds.hpp>
-#endif // GLOBED_HAS_KEYBINDS
-
 #include <Geode/loader/Dispatch.hpp>
 
 #include "game_manager.hpp"
@@ -165,8 +161,6 @@ void GlobedGJBGL::setupAll() {
     this->setupDeferredAssetPreloading();
 
     this->setupAudio();
-
-    this->setupCustomKeybinds();
 
     this->setupMisc();
 
@@ -369,56 +363,6 @@ void GlobedGJBGL::setupPacketListeners() {
     });
 
     GLOBED_EVENT(this, setupPacketListeners());
-}
-
-void GlobedGJBGL::setupCustomKeybinds() {
-#if GLOBED_HAS_KEYBINDS && defined(GLOBED_VOICE_SUPPORT)
-    // the only keybinds used are for voice chat, so if voice is disabled, do nothing
-
-    auto& settings = GlobedSettings::get();
-    if (!settings.communication.voiceEnabled) {
-        return;
-    }
-
-    this->addEventListener<keybinds::InvokeBindFilter>([this](keybinds::InvokeBindEvent* event) {
-        if (event->isDown()) {
-            if (!this->m_fields->deafened) {
-                GlobedAudioManager::get().resumePassiveRecording();
-            }
-        } else {
-            GlobedAudioManager::get().pausePassiveRecording();
-        }
-
-        return ListenerResult::Stop;
-    }, "voice-activate"_spr);
-
-    this->addEventListener<keybinds::InvokeBindFilter>([this, &settings](keybinds::InvokeBindEvent* event) {
-        auto& vpm = VoicePlaybackManager::get();
-        auto& fields = this->getFields();
-
-        if (event->isDown()) {
-            fields.deafened = !fields.deafened;
-            if (fields.deafened) {
-                vpm.muteEveryone();
-                GlobedAudioManager::get().pausePassiveRecording();
-                if (settings.communication.deafenNotification)
-                    Notification::create("Deafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-on.png"_spr), 0.2f)->show();
-
-            } else {
-                //before the notification would only show up if you had voice proximity off in a platformer, this fixes that
-                if (settings.communication.deafenNotification)
-                    Notification::create("Undeafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-off.png"_spr), 0.2f)->show();
-                if (!fields.isVoiceProximity) {
-                    vpm.setVolumeAll(settings.communication.voiceVolume);
-                }
-            }
-        }
-
-        return ListenerResult::Propagate;
-    }, "voice-deafen"_spr);
-
-    GLOBED_EVENT(this, setupCustomKeybinds());
-#endif // GLOBED_HAS_KEYBINDS && GLOBED_VOICE_SUPPORT
 }
 
 void GlobedGJBGL::setupUpdate() {
