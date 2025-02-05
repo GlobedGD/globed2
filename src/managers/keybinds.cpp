@@ -47,22 +47,6 @@ namespace globed {
     }
 }
 
-void KeybindsManager::handlePress(enumKeyCodes key, std::function<void(enumKeyCodes)> callback) {
-    if (key == enumKeyCodes::KEY_None) return;
-
-    callback(key);
-}
-
-void KeybindsManager::handleRelease(Key key, std::function<void(globed::Key)> callback) {
-    if (key == Key::None) return;
-
-    callback(key);
-}
-
-bool KeybindsManager::isHeld(Key key) {
-    return heldKeys.contains(key) && heldKeys.at(key);
-}
-
 Key KeybindsManager::convertCocosKey(enumKeyCodes key) {
     switch (key) {
         case KEY_A: return Key::A;

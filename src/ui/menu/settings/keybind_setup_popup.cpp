@@ -11,9 +11,10 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
     m_keybindLabel->setScale(0.75f);
     m_mainLayer->addChildAtPosition(m_keybindLabel, Anchor::Center);
 
+    auto& gs = GlobedSettings::get();
+
     auto applyButton = Build<ButtonSprite>::create("Apply", "bigFont.fnt", "GJ_button_01.png", 0.75f)
-        .intoMenuItem([=, this] (auto) {
-            auto& gs = GlobedSettings::get();
+        .intoMenuItem([&gs, keybind, this] (auto) {
             switch (keybind) {
                 case globed::Keybinds::VoiceChatKey: {
                     gs.communication.voiceChatKey = this->key;
@@ -35,6 +36,18 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
+
+    switch (keybind) {
+        case globed::Keybinds::VoiceChatKey: {
+            this->keyDown((enumKeyCodes)gs.communication.voiceChatKey.get());
+            break;
+        }
+        case globed::Keybinds::VoiceDeafenKey: {
+            this->keyDown((enumKeyCodes)gs.communication.voiceDeafenKey.get());
+            break;
+        }
+        default: break;
+    }
 
     return true;
 }

@@ -4,7 +4,6 @@
 #include <string>
 #include <map>
 
-#include <Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h>
 #include <managers/settings.hpp>
 
 // Big shoutout to eclipse menu i am too lazy to type all that out myself
@@ -54,13 +53,7 @@ class KeybindsManager : public SingletonBase<KeybindsManager> {
     friend class SingletonBase;
 
 public:
-    void handlePress(cocos2d::enumKeyCodes, std::function<void(cocos2d::enumKeyCodes)> callback);
-    void handleRelease(globed::Key, std::function<void(globed::Key)> callback);
-    bool isHeld(globed::Key key);
     static globed::Key convertCocosKey(cocos2d::enumKeyCodes key);
-
-    cocos2d::enumKeyCodes voiceChatKey;
-    cocos2d::enumKeyCodes voiceDeafenKey;
 
 private:
     std::map<globed::Key, bool> heldKeys;

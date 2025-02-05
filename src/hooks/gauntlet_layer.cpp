@@ -8,13 +8,13 @@ using namespace geode::prelude;
 
 bool HookedGauntletLayer::init(GauntletType type) {
     if (!GauntletLayer::init(type)) return false;
-    if (this->m_levels != nullptr) buildUI();
+    if (this->m_levels != nullptr) this->buildUI();
     return true;
 }
 
 void HookedGauntletLayer::loadLevelsFinished(CCArray* p0, char const* p1, int p2) {
     GauntletLayer::loadLevelsFinished(p0, p1, p2);
-    buildUI();
+    this->buildUI();
 }
 
 void HookedGauntletLayer::buildUI() {
@@ -27,8 +27,12 @@ void HookedGauntletLayer::buildUI() {
     }
 
     auto levelsMenu = this->getChildByIDRecursive("levels-menu");
+    if (levelsMenu == nullptr) {
+        return; 
+    }
+
     auto levelButtons = CCArrayExt<CCMenuItemSpriteExtra*>(levelsMenu->getChildren());
-    for (int i = 0; i < levelButtons.size(); i++) {
+    for (size_t i = 0; i < levelButtons.size(); i++) {
         auto wrapper = Build<CCNode>::create()
             .pos(15.f, -33.f)
             .scale(0.45f)
@@ -64,7 +68,8 @@ void HookedGauntletLayer::buildUI() {
 
 void HookedGauntletLayer::refreshPlayerCounts() {
     for (const auto& [levelId, wrapper] : m_fields->wrappers) {
-        static_cast<CCLabelBMFont*>(wrapper->getChildByID("level-playercount-label"_spr))->setString(std::to_string(m_fields->levels.at(levelId)).c_str());
+        auto string = fmt::to_string(m_fields->levels.at(levelId));
+        static_cast<CCLabelBMFont*>(wrapper->getChildByID("level-playercount-label"_spr))->setString(string.c_str());
         wrapper->updateLayout();
     }
 }
