@@ -58,7 +58,6 @@ public:
     void handleRelease(globed::Key, std::function<void(globed::Key)> callback);
     bool isHeld(globed::Key key);
     static globed::Key convertCocosKey(cocos2d::enumKeyCodes key);
-    static globed::Key convertGlfwKey(int key);
 
     cocos2d::enumKeyCodes voiceChatKey;
     cocos2d::enumKeyCodes voiceDeafenKey;
