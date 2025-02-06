@@ -32,7 +32,7 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
             this->removeFromParent();
         })
         .id("keybind-apply-button")
-        .pos(util::ui::getPopupLayoutAnchored(m_size).fromBottom(10.f))
+        .pos(util::ui::getPopupLayoutAnchored(m_size).fromBottom(30.f))
         .intoNewParent(CCMenu::create())
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
