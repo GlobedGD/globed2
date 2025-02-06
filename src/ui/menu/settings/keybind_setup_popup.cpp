@@ -9,6 +9,7 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
 
     m_keybindLabel = CCLabelBMFont::create("Keybind: None", "bigFont.fnt");
     m_keybindLabel->setScale(0.75f);
+    m_keybindLabel->limitLabelWidth(POPUP_WIDTH - 16.f, 0.75f, 0.5f);
     m_mainLayer->addChildAtPosition(m_keybindLabel, Anchor::Center);
 
     auto& gs = GlobedSettings::get();
