@@ -77,7 +77,13 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacketTCP() {
 
     ByteBuffer buf(dataBuffer, packetSize);
 
-    return this->decodePacket(buf);
+    auto retval = this->decodePacket(buf);
+    if (retval) {
+        auto& pkt = retval.unwrap();
+        PacketLogger::get().record(pkt->getPacketId(), pkt->getEncrypted(), false, buf.size());
+    }
+
+    return retval;
 }
 
 Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
@@ -95,6 +101,11 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
     // if not from active server, dont't read the marker
     if (!out.fromConnected) {
         GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
+
+        if (out.packet) {
+            PacketLogger::get().record(out.packet->getPacketId(), out.packet->getEncrypted(), false, buf.size());
+        }
+
         return Ok(std::move(out));
     }
 
@@ -118,6 +129,10 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
         return Err("invalid marker at the start of a udp packet");
     }
 
+    if (out.packet) {
+        PacketLogger::get().record(out.packet->getPacketId(), out.packet->getEncrypted(), false, buf.size());
+    }
+
     return Ok(std::move(out));
 }
 
@@ -133,9 +148,11 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
     if (pollResult != PollResult::Udp) {
         auto res = this->recvPacketTCP();
 
+
         if (res) {
+            auto pkt = std::move(res).unwrap();
             return Ok(ReceivedPacket {
-                .packet = std::move(std::move(res).unwrap()),
+                .packet = std::move(pkt),
                 .fromConnected = true
             });
         } else {
@@ -182,6 +199,8 @@ Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
         this->dumpPacket(packet->getPacketId(), buf, true);
     }
 
+    PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
+
     if (packet->getUseTcp()) {
         GLOBED_UNWRAP(tcpSocket.sendAll(reinterpret_cast<const char*>(buf.data().data()), buf.size()));
     } else {
@@ -200,6 +219,8 @@ Result<> GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const NetworkA
     if (dumpPackets) {
         this->dumpPacket(packet->getPacketId(), buf, true);
     }
+
+    PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
 
     GLOBED_UNWRAP_INTO(udpSocket.sendTo(reinterpret_cast<const char*>(buf.data().data()), buf.size(), address), auto res)
 
