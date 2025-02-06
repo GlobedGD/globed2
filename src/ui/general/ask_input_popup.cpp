@@ -19,7 +19,7 @@ bool AskInputPopup::setup(std::string_view title, std::function<void(std::string
     input->setFilter(std::string(filter));
     input->setMaxCharCount(chars);
 
-    Build<ButtonSprite>::create("Submit", "bigFont.fnt", "GJ_button_01.png", 0.4f)
+    Build<ButtonSprite>::create("Submit", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .intoMenuItem([this](auto) {
             this->onClose(this);
             this->function(this->input->getString());

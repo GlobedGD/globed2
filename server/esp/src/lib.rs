@@ -56,6 +56,8 @@ impl From<std::io::Error> for DecodeError {
     }
 }
 
+impl std::error::Error for DecodeError {}
+
 pub type DecodeResult<T> = core::result::Result<T, DecodeError>;
 pub type VarLength = u16;
 

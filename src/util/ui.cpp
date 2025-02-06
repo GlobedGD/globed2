@@ -285,7 +285,7 @@ namespace util::ui {
 
         if (!sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr(sprite).c_str());
         if (!util::cocos::isValidSprite(spr1) && !sprite.empty()) spr1 = CCSprite::createWithSpriteFrameName(sprite.c_str());
-        if (!util::cocos::isValidSprite(spr1)) spr1 = CCSprite::createWithSpriteFrameName(util::cocos::spr("button-secret.png").c_str());
+        if (!util::cocos::isValidSprite(spr1)) spr1 = CCSprite::createWithSpriteFrameName("button-secret.png"_spr);
 
         return spr1;
     }

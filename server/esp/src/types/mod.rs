@@ -14,4 +14,4 @@ pub use fast_vec::FastVec;
 pub use finite::{FiniteF32, FiniteF64};
 pub use inline_string::InlineString;
 pub use remainder_bytes::RemainderBytes;
-pub use vecl::Vec1L;
+pub use vecl::{Vec1L, Vec4L};
