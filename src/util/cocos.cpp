@@ -542,6 +542,7 @@ namespace util::cocos {
 
     // transforms a string like "icon-41" into "icon-41-hd.png" depending on the current texture quality.
     static void appendQualitySuffix(std::string& out, TextureQuality quality, bool plist) {
+
         switch (quality) {
             case TextureQuality::Low: {
                 if (plist) out.append(".plist");
@@ -563,15 +564,23 @@ namespace util::cocos {
         auto& fileUtils = HookedFileUtils::get();
         auto& pstate = getPreloadState();
 
-        // add the quality suffix.
+        // add the quality suffix, if required
         std::string filename;
 
-        if (rawfilename.ends_with(".plist")) {
-            filename = rawfilename.substr(0, rawfilename.find(".plist"));
-            appendQualitySuffix(filename, pstate.texQuality, true);
-        } else {
-            filename = rawfilename.substr(0, rawfilename.find(".png"));
-            appendQualitySuffix(filename, pstate.texQuality, false);
+        bool hasQualitySuffix =
+            rawfilename.ends_with("-hd.png")
+            || rawfilename.ends_with("-uhd.png")
+            || rawfilename.ends_with("-hd.plist")
+            || rawfilename.ends_with("-uhd.plist");
+
+        if (!hasQualitySuffix) {
+            if (rawfilename.ends_with(".plist")) {
+                filename = rawfilename.substr(0, rawfilename.find(".plist"));
+                appendQualitySuffix(filename, pstate.texQuality, true);
+            } else {
+                filename = rawfilename.substr(0, rawfilename.find(".png"));
+                appendQualitySuffix(filename, pstate.texQuality, false);
+            }
         }
 
         gd::string filenameGd(filename);
