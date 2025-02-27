@@ -281,6 +281,7 @@ protected:
 
         if (state != ConnectionState::Disconnected) {
             log::debug("disconnecting from the server..");
+
             try {
                 this->disconnect(false, true);
             } catch (const std::exception& e) {

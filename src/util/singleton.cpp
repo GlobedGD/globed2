@@ -1,6 +1,9 @@
 #include "singleton.hpp"
 
 #include <stdexcept>
+#include <cpptrace/cpptrace.hpp>
+
+using namespace geode::prelude;
 
 class singleton_use_after_dtor : public std::runtime_error {
 public:
@@ -9,6 +12,10 @@ public:
 
 namespace globed {
     void destructedSingleton() {
+#ifdef GLOBED_DEBUG
+        log::warn("Singleton used after static destruction!");
+        log::warn("\n{}", cpptrace::generate_trace().to_string(true));
+#endif
         throw singleton_use_after_dtor();
     }
 }
