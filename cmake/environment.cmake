@@ -1,0 +1,18 @@
+# check if compiler is clang
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(GLOBED_IS_CLANG ON)
+else()
+    set(GLOBED_IS_CLANG OFF)
+endif()
+
+# check if it's clang-cl or clang
+if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+    set(GLOBED_IS_CLANG_CL OFF)
+else()
+    set(GLOBED_IS_CLANG_CL ON)
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}asdf" STREQUAL "asdf" OR GLOBED_DEBUG)
+    set(GLOBED_IS_DEBUG ON)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_HAS_ITERATOR_DEBUGGING=0")
+endif()

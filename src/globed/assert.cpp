@@ -6,7 +6,7 @@ using namespace geode::prelude;
 
 #ifdef GLOBED_DEBUG
 
-#include <boost/stacktrace/stacktrace.hpp>
+#include <cpptrace/cpptrace.hpp>
 
 struct Module {
     std::string name;
@@ -59,65 +59,9 @@ static std::optional<Module> moduleFromAddress(T addr_) {
 }
 #endif
 
-static std::string formatFrame(const boost::stacktrace::frame& frame) {
-    auto mod = moduleFromAddress(frame.address());
-    if (!mod) {
-        return fmt::format("{}", frame.address());
-    }
-
-    auto moduleWithOffset = fmt::format("{} + {:X}", mod->name, (reinterpret_cast<uintptr_t>(frame.address()) - mod->base));
-
-    auto name = frame.name();
-    auto sourceFile = frame.source_file();
-    auto sourceLine = frame.source_line();
-
-    if (name.empty()) {
-        return moduleWithOffset;
-    }
-
-    if (!sourceFile.empty()) {
-        return fmt::format("{} ({} | {}:{})", moduleWithOffset, name, sourceFile, sourceLine);
-    } else {
-        return fmt::format("{} ({})", moduleWithOffset, name);
-    }
+static void printStacktrace(const cpptrace::stacktrace& trace) {
+    log::debug("\n{}", trace.to_string(true));
 }
-
-static void printStacktrace(const boost::stacktrace::stacktrace& trace) {
-    log::debug("Stack trace: ");
-    log::pushNest();
-
-    for (const auto& frame : trace) {
-        log::debug("- {}", formatFrame(frame));
-    }
-
-    log::popNest();
-}
-
-[[noreturn]] void globed::_condFail(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message) {
-    throw std::runtime_error(_condFailSafe(loc, trace, message));
-}
-
-std::string globed::_condFailSafe(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message) {
-    log::debug("Condition failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
-
-    printStacktrace(trace);
-
-    return std::string(message);
-}
-
-[[noreturn]] void globed::_condFailFatal(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message) {
-    log::error("Condition fatally failed: {}", message);
-    log::error("At {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
-
-    printStacktrace(trace);
-
-    util::debug::suicide();
-}
-
-
-#else
-
-// no stack trace in debug!
 
 [[noreturn]] void globed::_condFail(const std::source_location& loc, std::string_view message) {
     throw std::runtime_error(_condFailSafe(loc, message));
@@ -126,11 +70,20 @@ std::string globed::_condFailSafe(const std::source_location& loc, const boost::
 std::string globed::_condFailSafe(const std::source_location& loc, std::string_view message) {
     log::debug("Condition failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
 
+#ifdef GLOBED_DEBUG
+    printStacktrace(cpptrace::generate_trace());
+#endif
+
     return std::string(message);
 }
 
 [[noreturn]] void globed::_condFailFatal(const std::source_location& loc, std::string_view message) {
-    log::debug("Condition fatally failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
+    log::error("Condition fatally failed: {}", message);
+    log::error("At {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
+
+#ifdef GLOBED_DEBUG
+    printStacktrace(cpptrace::generate_trace());
+#endif
 
     util::debug::suicide();
 }
