@@ -20,17 +20,6 @@ endif()
 
 include(cmake/environment.cmake)
 
-# Debug/Release options
-if (GLOBED_IS_DEBUG)
-    add_compile_definitions(GLOBED_DEBUG=1)
-    add_compile_definitions(GEODE_DEBUG=1)
-    add_compile_definitions(ASP_ENABLE_DEBUG=1)
-elseif (GLOBED_RELEASE)
-    # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_RELEASE=1)
-endif()
-
 # Add platform-specific sources
 if (ANDROID)
     file(GLOB_RECURSE OS_SOURCES "src/platform/os/android/*.cpp" "src/platform/arch/arm/*.cpp")
@@ -61,6 +50,17 @@ file(GLOB_RECURSE SOURCES
 )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
+
+# Debug/Release options
+if (GLOBED_IS_DEBUG)
+    add_compile_definitions(GLOBED_DEBUG=1)
+    add_compile_definitions(GEODE_DEBUG=1)
+    add_compile_definitions(ASP_ENABLE_DEBUG=1)
+elseif (GLOBED_RELEASE)
+    # Enable LTO in release (2.5x less binary size, costs only a few extra seconds of build time)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_RELEASE=1)
+endif()
 
 # Windows - do stuff
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
