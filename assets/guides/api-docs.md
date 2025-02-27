@@ -18,17 +18,17 @@ To use the API, add Globed to the dependency list in your mod's `mod.json` like 
 After that, you can include headers in any file by typing
 
 ```cpp
-#include <dankmeme.globed2/net.hpp>
-#include <dankmeme.globed2/settings.hpp>
+#include <dankmeme.globed2/include/net.hpp>
+#include <dankmeme.globed2/include/settings.hpp>
 // etc..
 
 // or, to include every single header at once
-#include <dankmeme.globed2/globed.hpp>
+#include <dankmeme.globed2/include/globed.hpp>
 ```
 
 ## General
 
-(Include: `dankmeme.globed2/general.hpp`)
+(Include: `dankmeme.globed2/include/general.hpp`)
 
 ### isLoaded
 
@@ -40,7 +40,7 @@ bool globed::isLoaded();
 
 ## Player
 
-(Include: `dankmeme.globed2/player.hpp`)
+(Include: `dankmeme.globed2/include/player.hpp`)
 
 ### isGlobedPlayer
 
@@ -74,9 +74,25 @@ Explodes a random player in the level. I will not elaborate further.
 Result<void> globed::player::explodeRandomPlayer();
 ```
 
+### playersOnLevel
+
+Returns the amount of players on the current level. If the player is not in a level, returns an error.
+
+```cpp
+Result<size_t> globed::player::playersOnLevel();
+```
+
+### playersOnline
+
+Returns the amount of players online. Might not be completely accurate. If the player is not connected to a server, returns an error.
+
+```cpp
+Result<size_t> globed::player::playersOnline();
+```
+
 ## Networking
 
-(Include: `dankmeme.globed2/net.hpp`)
+(Include: `dankmeme.globed2/include/net.hpp`)
 
 ### isConnected
 
@@ -120,7 +136,7 @@ Result<bool> globed::net::isReconnecting();
 
 ## Admin
 
-(Include: `dankmeme.globed2/admin.hpp`)
+(Include: `dankmeme.globed2/include/admin.hpp`)
 
 ### isModerator
 
@@ -148,7 +164,7 @@ Result<void> globed::admin::openModPanel();
 
 ## Settings
 
-(Include: `dankmeme.globed2/settings.hpp`)
+(Include: `dankmeme.globed2/include/settings.hpp`)
 
 ### getActiveSlotPath
 
