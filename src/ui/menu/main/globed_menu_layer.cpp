@@ -353,7 +353,13 @@ void GlobedMenuLayer::navigateToServerLayer() {
         return;
     }
 
-    auto prevScene = static_cast<CCScene*>(dir->m_pobScenesStack->objectAtIndex(dir->m_pobScenesStack->count() - 2));
+    auto sceneCount = dir->m_pobScenesStack->count();
+    if (sceneCount < 2) {
+        this->keyBackClicked();
+        return;
+    }
+
+    auto prevScene = static_cast<CCScene*>(dir->m_pobScenesStack->objectAtIndex(sceneCount - 2));
 
     if (!prevScene->getChildren() || prevScene->getChildrenCount() < 1) {
         this->keyBackClicked();
