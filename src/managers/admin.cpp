@@ -6,6 +6,8 @@
 #include <ui/menu/admin/user_popup.hpp>
 #include <ui/general/audio_visualizer.hpp>
 #include <ui/general/intermediary_loading_popup.hpp>
+#include <ui/menu/admin/admin_popup.hpp>
+#include <ui/menu/admin/admin_login_popup.hpp>
 
 bool AdminManager::authorized() {
     return authorized_;
@@ -38,6 +40,14 @@ void AdminManager::openUserPopup(const PlayerRoomPreviewAccountData& rpdata) {
             });
         });
     }, [](auto) {})->show();
+}
+
+void AdminManager::openModPanel() {
+    if (this->canModerate()) {
+        AdminPopup::create()->show();
+    } else {
+        AdminLoginPopup::create()->show();
+    }
 }
 
 bool AdminManager::canModerate() {

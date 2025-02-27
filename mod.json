@@ -3,7 +3,7 @@
     "name": "Globed",
     "developer": "dankmeme",
     "geode": "4.2.0",
-    "version": "v1.7.2",
+    "version": "v1.8.0",
     "gd": {
         "win": "2.2074",
         "android": "2.2074",
@@ -14,7 +14,7 @@
     "dependencies": {
         "geode.node-ids": ">=v1.10.0"
     },
-    "incompatibilities": [],
+    "incompatibilities": {},
     "links": {
         "homepage": "https://globed.dev",
         "source": "https://github.com/GlobedGD/globed2",
@@ -54,6 +54,11 @@
         ],
         "files": [
             "resources/sounds/*.ogg"
+        ]
+    },
+    "api": {
+        "include": [
+            "include/*.hpp"
         ]
     }
 }

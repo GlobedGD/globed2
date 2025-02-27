@@ -89,13 +89,7 @@ void GlobedSettings::save() {
 }
 
 void GlobedSettings::reload() {
-    // reset all settings to their defaults first
-    this->reflect(TaskType::Reset);
-
-    this->settingsContainer = this->readSlotData(this->selectedSlot).unwrapOrDefault();
-
-    // now load the container
-    this->reflect(TaskType::Load);
+    this->reloadFromContainer(this->readSlotData(this->selectedSlot).unwrapOrDefault());
 }
 
 void GlobedSettings::reset() {
@@ -292,6 +286,20 @@ void GlobedSettings::renameSlot(size_t index, std::string_view name) {
     auto data = std::move(datares).unwrap();
     data["_saveslot-name"] = name;
     dumpJsonToFile(data, this->pathForSlot(index));
+}
+
+matjson::Value GlobedSettings::getSettingContainer() {
+    return settingsContainer;
+}
+
+void GlobedSettings::reloadFromContainer(const matjson::Value& container) {
+    // reset all settings to their defaults first
+    this->reflect(TaskType::Reset);
+
+    this->settingsContainer = container;
+
+    // now reload
+    this->reflect(TaskType::Load);
 }
 
 void GlobedSettings::deleteAllSaveSlotFiles() {

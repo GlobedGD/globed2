@@ -24,6 +24,7 @@
 #include <util/cocos.hpp>
 #include <util/format.hpp>
 #include <util/lowlevel.hpp>
+#include <util/rng.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -1305,4 +1306,15 @@ void GlobedGJBGL::updateCamera(float dt) {
     GLOBED_EVENT(this, updateCameraPre(dt));
     GJBaseGameLayer::updateCamera(dt);
     GLOBED_EVENT(this, updateCameraPost(dt));
+}
+
+void GlobedGJBGL::explodeRandomPlayer() {
+    auto& fields = this->getFields();
+
+    if (fields.players.empty()) return;
+
+    auto it = fields.players.begin();
+    std::advance(it, util::rng::Random::get().generate<size_t>(0, fields.players.size() - 1));
+
+    auto* player = it->second;
 }

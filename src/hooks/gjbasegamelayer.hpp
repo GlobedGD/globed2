@@ -201,4 +201,6 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     void queueCounterChange(const GlobedCounterChange& change);
 
     Fields& getFields();
+
+    void explodeRandomPlayer();
 };

@@ -135,6 +135,9 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 target_include_directories(${PROJECT_NAME} PRIVATE libs/)
 
+# api headers
+target_include_directories(${PROJECT_NAME} PRIVATE include)
+
 # our favorite libraries
 CPMAddPackage("gh:dankmeme01/uibuilder#c30755a")
 CPMAddPackage(

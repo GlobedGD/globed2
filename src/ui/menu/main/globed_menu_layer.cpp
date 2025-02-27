@@ -15,8 +15,6 @@
 #include <ui/menu/settings/settings_layer.hpp>
 #include <ui/menu/servers/server_layer.hpp>
 #include <ui/menu/level_list/level_list_layer.hpp>
-#include <ui/menu/admin/admin_popup.hpp>
-#include <ui/menu/admin/admin_login_popup.hpp>
 #include <ui/menu/credits/credits_popup.hpp>
 #include <util/net.hpp>
 #include <util/format.hpp>
@@ -373,12 +371,7 @@ void GlobedMenuLayer::navigateToServerLayer() {
 
 void GlobedMenuLayer::keyDown(enumKeyCodes key) {
     if (key == enumKeyCodes::KEY_F8) {
-        bool authorized = AdminManager::get().canModerate();
-        if (authorized) {
-            AdminPopup::create()->show();
-        } else {
-            AdminLoginPopup::create()->show();
-        }
+        AdminManager::get().openModPanel();
     } else {
         CCLayer::keyDown(key);
     }
