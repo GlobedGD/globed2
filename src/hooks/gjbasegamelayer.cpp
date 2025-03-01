@@ -652,13 +652,13 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
 
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
 void GlobedGJBGL::selUpdate(float timescaledDt) {
-    // timescale silently changing dt isn't very good when doing network interpolation >_>
-    // since timeCounter needs to agree with everyone else on how long a second is!
-    float dt = timescaledDt / CCScheduler::get()->getTimeScale();
-
     auto self = GlobedGJBGL::get();
 
     if (!self) return;
+
+    // timescale silently changing dt isn't very good when doing network interpolation >_>
+    // since timeCounter needs to agree with everyone else on how long a second is!
+    float dt = timescaledDt / CCScheduler::get()->getTimeScale();
 
     auto& fields = self->getFields();
 

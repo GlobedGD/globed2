@@ -1,6 +1,7 @@
 ## v1.8.0
 
 TODO: icon for switching save slots
+TODO: profile the perf improvements
 
 * Add ability to create <cg>setting profiles</c> and toggle between them
 * \-- This allows you to easily change many settings at once, for example if attending some event
@@ -8,6 +9,7 @@ TODO: icon for switching save slots
 * Remove Custom Keybinds dependency, add ability to change the voice chat keybind in settings (thanks LimeGradient!)
 * Gauntlet levels now show the player count under them (thanks LimeGradient!)
 * Make even more corrections to the texture pack detection algorithm, add better debug information
+* Significant performance improvements
 * Fix crashing when connecting to a server that is down
 * Fix very rare crash when closing the Globed layer
 * Fix certain rare crashes and hangs when closing the game
