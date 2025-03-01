@@ -7,8 +7,8 @@ edition = "2024"
 globed-shared = { path = "../shared" }
 
 async-watcher = "0.3.0"
-blake2 = "0.11.0-pre.4"
-digest = "0.11.0-pre.9"
+blake2 = "0.10.6"
+digest = "0.10.7"
 ipnet = "2.10.1"
 iprange = "0.6.7"
 serde = { version = "1.0.215", features = ["serde_derive"] }

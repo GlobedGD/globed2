@@ -7,7 +7,7 @@
 //! esp also provides optimized types such as `InlineString` that will be more efficient in encoding/decoding,
 //! and shall be used for encoding instead of the alternatives when possible.
 
-#![feature(maybe_uninit_uninit_array, const_for, const_trait_impl)]
+#![feature(const_for, const_trait_impl)]
 #![allow(
     clippy::must_use_candidate,
     clippy::cast_possible_truncation,
@@ -390,7 +390,7 @@ macro_rules! impl_extread {
             // [(); N].try_map(|_| self.read_value::<T>())
             // ^^ i would love to only use safe rust but a ~10% performance difference is a bit too big to ignore
 
-            let mut arr = MaybeUninit::<T>::uninit_array::<N>();
+            let mut arr = [const { MaybeUninit::<T>::uninit() }; N];
             for i in 0..N {
                 match self.read_value::<T>() {
                     Ok(val) => arr[i].write(val),
