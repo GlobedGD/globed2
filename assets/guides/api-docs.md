@@ -1,8 +1,8 @@
 # Globed API
 
-Globed provides event-based API headers that can be used without linking, which means you can communicate with the mod without making it a dependency.
+Globed provides event-based API headers that can be used without linking, which means you can communicate with the mod without making it a required dependency.
 
-## Setup
+# Setup
 
 To use the API, add Globed to the dependency list in your mod's `mod.json` like so:
 
@@ -26,7 +26,7 @@ After that, you can include headers in any file by typing
 #include <dankmeme.globed2/include/globed.hpp>
 ```
 
-## General
+# General
 
 (Include: `dankmeme.globed2/include/general.hpp`)
 
@@ -38,7 +38,7 @@ Returns whether Globed is currently enabled and loaded or not.
 bool globed::isLoaded();
 ```
 
-## Player
+# Player
 
 (Include: `dankmeme.globed2/include/player.hpp`)
 
@@ -90,7 +90,7 @@ Returns the amount of players online. Might not be completely accurate. If the p
 Result<size_t> globed::player::playersOnline();
 ```
 
-## Networking
+# Networking
 
 (Include: `dankmeme.globed2/include/net.hpp`)
 
@@ -134,7 +134,7 @@ Returns whether a connection break happened and the client is currently trying t
 Result<bool> globed::net::isReconnecting();
 ```
 
-## Admin
+# Admin
 
 (Include: `dankmeme.globed2/include/admin.hpp`)
 
@@ -162,7 +162,7 @@ Opens the moderation panel. Does nothing if the user is not a moderator.
 Result<void> globed::admin::openModPanel();
 ```
 
-## Settings
+# Settings
 
 (Include: `dankmeme.globed2/include/settings.hpp`)
 
