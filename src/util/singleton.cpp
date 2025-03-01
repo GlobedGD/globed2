@@ -1,7 +1,10 @@
 #include "singleton.hpp"
 
 #include <stdexcept>
-#include <cpptrace/cpptrace.hpp>
+
+#ifdef GLOBED_DEBUG
+# include <cpptrace/cpptrace.hpp>
+#endif
 
 using namespace geode::prelude;
 
