@@ -81,6 +81,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     auto& nm = NetworkManager::get();
     auto& settings = GlobedSettings::get();
     auto& fields = this->getFields();
+    fields.isEditor = editor;
 
     auto levelId = HookedGJGameLevel::getLevelIDFrom(level);
     fields.globedReady = nm.established() && levelId > 0;
@@ -662,6 +663,11 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     auto& fields = self->getFields();
 
+    PlayLayer* pl = nullptr;
+    if (!fields.isEditor) {
+        pl = static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(self));
+    }
+
     fields.camState.visibleOrigin = CCPoint{0.f, 0.f};
     fields.camState.visibleCoverage = CCDirector::get()->getWinSize();
 
@@ -680,7 +686,8 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     fields.interpolator->tick(dt);
 
-    if (auto pl = PlayLayer::get()) {
+    // update progress indicators only if in PlayLayer
+    if (pl) {
         if (fields.progressBarWrapper->getParent() != nullptr) {
             fields.selfProgressIcon->updatePosition(pl->getCurrentPercent() / 100.f, self->m_isPracticeMode);
         } else if (pl->m_progressBar) {
@@ -710,9 +717,9 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         );
 
         // update progress icons
-        if (auto self = PlayLayer::get()) {
+        if (pl) {
             // dont update if we are in a normal level and without a progressbar
-            if (self->m_level->isPlatformer() || self->m_progressBar->isVisible()) {
+            if (self->m_level->isPlatformer() || pl->m_progressBar->isVisible()) {
                 remotePlayer->updateProgressIcon();
             }
         }

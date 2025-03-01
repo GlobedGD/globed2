@@ -25,6 +25,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         // setup stuff
         bool globedReady = false;
         bool setupWasCompleted = false;
+        bool isEditor = false;
         uint32_t configuredTps = 0;
 
         // in game stuff
