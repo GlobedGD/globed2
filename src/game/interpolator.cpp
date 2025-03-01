@@ -98,19 +98,21 @@ static inline void lerpPlayer(
 void PlayerInterpolator::tick(float dt) {
     if (settings.realtime) return;
 
+    auto localTs = this->getLocalTs();
+
     for (auto& [playerId, player] : players) {
         if (player.totalFrames < 2) continue;
 
         float frameDelta = player.newerFrame.timestamp - player.olderFrame.timestamp;
         if (frameDelta == 0.f) {
-            LerpLogger::get().logLerpSkip(playerId, this->getLocalTs(), player.timeCounter, player.interpolatedState.player1);
+            LerpLogger::get().logLerpSkip(playerId, localTs, player.timeCounter, player.interpolatedState.player1);
             continue;
         }
 
         float lerpRatio = (player.timeCounter - player.olderFrame.timestamp) / frameDelta;
         lerpPlayer(player.olderFrame.visual, player.newerFrame.visual, player.interpolatedState, lerpRatio);
 
-        LerpLogger::get().logLerpOperation(playerId, this->getLocalTs(), player.timeCounter, player.interpolatedState.player1);
+        LerpLogger::get().logLerpOperation(playerId, localTs, player.timeCounter, player.interpolatedState.player1);
 
         player.timeCounter += dt;
     }
