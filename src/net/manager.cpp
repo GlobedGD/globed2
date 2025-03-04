@@ -547,7 +547,7 @@ protected:
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
             using namespace std::chrono;
 
-            std::string reason = packet->message;
+            std::string reason = packet->punishment.reason;
             if (reason.empty()) {
                 reason = "No reason given";
             }
@@ -555,7 +555,8 @@ protected:
             auto msg = fmt::format(
                 "<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
                 reason,
-                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
+                //packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
+                1901
             );
 
             this->disconnectWithMessage(msg);
@@ -564,7 +565,7 @@ protected:
         addGlobalListener<ServerMutedPacket>([](auto packet) {
             using namespace std::chrono;
 
-            std::string reason = packet->reason;
+            std::string reason = packet->punishment.reason;
             if (reason.empty()) {
                 reason = "No reason given";
             }
@@ -572,7 +573,8 @@ protected:
             auto msg = fmt::format(
                 "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
                 reason,
-                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
+                //packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
+                1901
             );
 
             ErrorQueues::get().notice(msg);

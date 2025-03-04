@@ -398,8 +398,7 @@ impl UnauthorizedThread {
 
                     socket
                         .send_packet_dynamic(&ServerBannedPacket {
-                            message: FastString::new(if ban.reason.is_empty() { "No reason given" } else { &ban.reason }),
-                            expires_at: ban.expires_at as u64,
+                            punishment: ban
                         })
                         .await?;
 

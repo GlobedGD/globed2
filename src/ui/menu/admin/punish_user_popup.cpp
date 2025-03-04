@@ -455,6 +455,10 @@ void AdminPunishUserPopup::submit() {
     std::shared_ptr<Packet> pkt;
 
     if (!punishment) {
+        UserPunishment punishment = {
+            0, accountId, (isBan) ? PunishmentType::Ban : PunishmentType::Mute,
+            reason, expiresAt, 
+        }
         pkt = AdminPunishUserPacket::create(accountId, isBan, reason, expiresAt);
     } else {
         // edit the punishment otherwise

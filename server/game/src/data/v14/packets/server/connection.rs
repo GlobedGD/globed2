@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use globed_shared::UserPunishment;
+
 use crate::{data::*, managers::GameServerRole};
 
 #[derive(Packet, Encodable, StaticSize)]
@@ -72,15 +74,13 @@ pub struct ServerNoticePacket {
 #[derive(Packet, Encodable, DynamicSize, Clone)]
 #[packet(id = 20101, tcp = true)]
 pub struct ServerBannedPacket {
-    pub message: FastString,
-    pub expires_at: u64,
+    pub punishment: UserPunishment,
 }
 
 #[derive(Packet, Encodable, DynamicSize, Clone)]
 #[packet(id = 20102)]
 pub struct ServerMutedPacket {
-    pub reason: FastString,
-    pub expires_at: u64,
+    pub punishment: UserPunishment,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

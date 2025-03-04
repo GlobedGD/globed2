@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/admin.hpp>
 #include <data/types/gd.hpp>
+#include <data/types/user.hpp>
 
 // 19000 - AdminAuthPacket
 class AdminAuthPacket : public Packet {
@@ -141,17 +142,12 @@ class AdminPunishUserPacket : public Packet {
     GLOBED_PACKET(19013, AdminPunishUserPacket, true, false)
 
     AdminPunishUserPacket() {}
-    AdminPunishUserPacket(int32_t accountId, bool isBan, std::string_view reason, uint64_t expiresAt) : accountId(accountId), isBan(isBan), reason(reason), expiresAt(expiresAt) {}
+    AdminPunishUserPacket(UserPunishment punishment) : punishment(punishment) {}
 
-    int32_t accountId;
-    bool isBan;
-    std::string reason;
-    uint64_t expiresAt;
+    UserPunishment punishment;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(AdminPunishUserPacket, (
-    accountId, isBan, reason, expiresAt
-));
+GLOBED_SERIALIZABLE_STRUCT(AdminPunishUserPacket, (punishment));
 
 // 19014 - AdminRemovePunishmentPacket
 class AdminRemovePunishmentPacket : public Packet {

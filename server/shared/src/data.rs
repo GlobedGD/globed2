@@ -128,6 +128,7 @@ impl ServerUserEntry {
 #[derive(Clone, Copy, Encodable, Decodable, DynamicSize, StaticSize, Serialize, Deserialize)]
 #[repr(u8)]
 #[dynamic_size(as_static)]
+#[derive(PartialEq)]
 pub enum PunishmentType {
     Ban = 0,
     Mute = 1,
@@ -228,11 +229,7 @@ pub struct AdminSetUserRolesAction {
 
 #[derive(Decodable, Encodable, DynamicSize)]
 pub struct AdminPunishUserAction {
-    pub issued_by: i32,
-    pub account_id: i32,
-    pub is_ban: bool,
-    pub reason: FastString,
-    pub expires_at: u64,
+    pub punishment: UserPunishment,
 }
 
 #[derive(Decodable, Encodable, DynamicSize)]

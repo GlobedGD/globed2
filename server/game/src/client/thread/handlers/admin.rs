@@ -541,17 +541,19 @@ impl ClientThread {
     });
 
     gs_handler!(self, handle_admin_punish_user, AdminPunishUserPacket, packet, {
+        let is_ban = if packet.punishment.r#type == PunishmentType::Ban {true} else {false};
+
         let account_id = gs_needauth!(self);
 
         // verify the punishment is correct
-        if packet.expires_at != 0 && UNIX_EPOCH.elapsed().unwrap().as_secs() > packet.expires_at {
+        if packet.punishment.expires_at != 0 && UNIX_EPOCH.elapsed().unwrap().as_secs() > packet.punishment.expires_at.try_into().unwrap() {
             admin_error!(self, "invalid expiration date");
         }
 
-        self._verify_user_exists(packet.account_id).await?;
+        self._verify_user_exists(packet.punishment.account_id).await?;
 
-        let thread = self.game_server.get_user_by_id(packet.account_id);
-        let editing_self = account_id == packet.account_id;
+        let thread = self.game_server.get_user_by_id(packet.punishment.account_id);
+        let editing_self = account_id == packet.punishment.account_id;
 
         let my_priority = self.game_server.state.role_manager.compute_priority(&self.user_entry.lock().user_roles);
 
@@ -561,7 +563,7 @@ impl ClientThread {
             user.user_role.lock().priority
         } else {
             // oh well we gotta make a bridge req to get their prio
-            match self.game_server.bridge.get_user_data(&packet.account_id).await {
+            match self.game_server.bridge.get_user_data(&packet.punishment.account_id).await {
                 Ok(x) => self.game_server.state.role_manager.compute_priority(&x.user_roles),
                 Err(err) => {
                     warn!("error fetching data from the bridge: {err}");
@@ -571,42 +573,36 @@ impl ClientThread {
         };
 
         // cannot ban role above you or at your level
-        if packet.is_ban && my_priority <= their_priority && !self._has_perm(AdminPerm::Admin) {
+        if is_ban && my_priority <= their_priority && !self._has_perm(AdminPerm::Admin) {
             admin_error!(self, "cannot ban user above or at your permission level");
         }
 
         let _ = self
             ._handle_admin_action(
-                packet.account_id,
-                if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
+                packet.punishment.account_id,
+                if is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
                 &AdminUserAction::PunishUser(AdminPunishUserAction {
-                    account_id: packet.account_id,
-                    is_ban: packet.is_ban,
-                    reason: packet.reason.clone(),
-                    issued_by: account_id,
-                    expires_at: packet.expires_at,
+                    punishment: packet.punishment.clone()
                 }),
             )
             .await?;
 
         // if the user is online on the server, update live
         if let Some(user) = thread {
-            if packet.is_ban {
+            if is_ban {
                 user.push_new_message(ServerThreadMessage::BroadcastBan(ServerBannedPacket {
-                    message: FastString::new(&packet.reason),
-                    expires_at: packet.expires_at,
+                    punishment: packet.punishment.clone(),
                 }))
                 .await;
             } else {
                 user.push_new_message(ServerThreadMessage::BroadcastMute(ServerMutedPacket {
-                    reason: packet.reason,
-                    expires_at: packet.expires_at,
+                    punishment: packet.punishment.clone(),
                 }))
                 .await;
             }
         }
 
-        self._send_admin_success(packet.account_id).await
+        self._send_admin_success(packet.punishment.account_id).await
     });
 
     gs_handler!(self, handle_admin_remove_punishment, AdminRemovePunishmentPacket, packet, {

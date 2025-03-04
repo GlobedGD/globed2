@@ -17,7 +17,7 @@ use crate::{
     },
 };
 use esp::ByteReader;
-use globed_shared::{ServerUserEntry, SyncMutex, logger::*, should_ignore_error};
+use globed_shared::{logger::*, should_ignore_error, ServerUserEntry, SyncMutex, UserPunishment};
 use handlers::game::MAX_VOICE_PACKET_SIZE;
 use tokio::time::Instant;
 
@@ -336,9 +336,9 @@ impl ClientThread {
         self.send_packet_dynamic(&ServerDisconnectPacket { message }).await
     }
 
-    async fn ban(&self, message: FastString, expires_at: u64) -> Result<()> {
+    async fn ban(&self, punishment: UserPunishment) -> Result<()> {
         self.terminate();
-        self.send_packet_dynamic(&ServerBannedPacket { message, expires_at }).await
+        self.send_packet_dynamic(&ServerBannedPacket { punishment }).await
     }
 
     fn is_chat_packet_allowed(&self, voice: bool, len: usize) -> bool {
@@ -405,7 +405,7 @@ impl ClientThread {
             ServerThreadMessage::BroadcastRoomInfo(packet) => {
                 self.send_packet_static(&packet).await?;
             }
-            ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.message, packet.expires_at).await?,
+            ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.punishment).await?,
             ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
             ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
             ServerThreadMessage::BroadcastRoomKicked => self._kicked_from_room().await?,

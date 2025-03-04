@@ -272,36 +272,36 @@ impl GlobedDb {
     }
 
     pub async fn punish_user(&self, action: &AdminPunishUserAction) -> Result<i64> {
-        let reason = action.reason.try_to_str();
-        let r#type = if action.is_ban { "ban" } else { "mute" };
+        let reason = action.punishment.reason.clone();
+        let r#type = if action.punishment.r#type == PunishmentType::Ban { "ban" } else { "mute" };
         let issued_at = UNIX_EPOCH.elapsed().unwrap().as_secs() as i64;
 
-        let expires_at = action.expires_at as i64;
+        let expires_at = action.punishment.expires_at as i64;
 
         // make sure both the mod and the user exist in the db
-        self.insert_empty_user(action.account_id).await?;
-        self.insert_empty_user(action.issued_by).await?;
+        self.insert_empty_user(action.punishment.account_id).await?;
+        self.insert_empty_user(action.punishment.issued_by.unwrap()).await?;
 
         let id = query!(
             "INSERT INTO punishments (account_id, type, reason, expires_at, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?) RETURNING punishment_id",
-            action.account_id,
+            action.punishment.account_id,
             r#type,
             reason,
             expires_at,
             issued_at,
-            action.issued_by
+            action.punishment.issued_by,
         )
         .fetch_one(&self.0)
         .await?
         .punishment_id;
 
         // set the punishment
-        if action.is_ban {
-            query!("UPDATE users SET active_ban = ? WHERE account_id = ?", id, action.account_id)
+        if action.punishment.r#type == PunishmentType::Ban {
+            query!("UPDATE users SET active_ban = ? WHERE account_id = ?", id, action.punishment.account_id)
                 .execute(&self.0)
                 .await?;
         } else {
-            query!("UPDATE users SET active_mute = ? WHERE account_id = ?", id, action.account_id)
+            query!("UPDATE users SET active_mute = ? WHERE account_id = ?", id, action.punishment.account_id)
                 .execute(&self.0)
                 .await?;
         }

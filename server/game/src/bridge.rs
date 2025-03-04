@@ -408,7 +408,7 @@ impl CentralBridge {
                 ));
             }
             AdminUserAction::PunishUser(act) => {
-                if act.is_ban {
+                if act.punishment.r#type == PunishmentType::Ban {
                     let ban = if let Some(ban) = ban {
                         ban
                     } else {
