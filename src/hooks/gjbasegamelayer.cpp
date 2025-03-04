@@ -24,6 +24,7 @@
 #include <util/cocos.hpp>
 #include <util/format.hpp>
 #include <util/lowlevel.hpp>
+#include <util/rng.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -80,6 +81,7 @@ void GlobedGJBGL::setupPreInit(GJGameLevel* level, bool editor) {
     auto& nm = NetworkManager::get();
     auto& settings = GlobedSettings::get();
     auto& fields = this->getFields();
+    fields.isEditor = editor;
 
     auto levelId = HookedGJGameLevel::getLevelIDFrom(level);
     fields.globedReady = nm.established() && levelId > 0;
@@ -651,15 +653,20 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
 
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
 void GlobedGJBGL::selUpdate(float timescaledDt) {
-    // timescale silently changing dt isn't very good when doing network interpolation >_>
-    // since timeCounter needs to agree with everyone else on how long a second is!
-    float dt = timescaledDt / CCScheduler::get()->getTimeScale();
-
     auto self = GlobedGJBGL::get();
 
     if (!self) return;
 
+    // timescale silently changing dt isn't very good when doing network interpolation >_>
+    // since timeCounter needs to agree with everyone else on how long a second is!
+    float dt = timescaledDt / CCScheduler::get()->getTimeScale();
+
     auto& fields = self->getFields();
+
+    PlayLayer* pl = nullptr;
+    if (!fields.isEditor) {
+        pl = static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(self));
+    }
 
     fields.camState.visibleOrigin = CCPoint{0.f, 0.f};
     fields.camState.visibleCoverage = CCDirector::get()->getWinSize();
@@ -679,7 +686,8 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     fields.interpolator->tick(dt);
 
-    if (auto pl = PlayLayer::get()) {
+    // update progress indicators only if in PlayLayer
+    if (pl) {
         if (fields.progressBarWrapper->getParent() != nullptr) {
             fields.selfProgressIcon->updatePosition(pl->getCurrentPercent() / 100.f, self->m_isPracticeMode);
         } else if (pl->m_progressBar) {
@@ -709,9 +717,9 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         );
 
         // update progress icons
-        if (auto self = PlayLayer::get()) {
+        if (pl) {
             // dont update if we are in a normal level and without a progressbar
-            if (self->m_level->isPlatformer() || self->m_progressBar->isVisible()) {
+            if (self->m_level->isPlatformer() || pl->m_progressBar->isVisible()) {
                 remotePlayer->updateProgressIcon();
             }
         }
@@ -1305,4 +1313,15 @@ void GlobedGJBGL::updateCamera(float dt) {
     GLOBED_EVENT(this, updateCameraPre(dt));
     GJBaseGameLayer::updateCamera(dt);
     GLOBED_EVENT(this, updateCameraPost(dt));
+}
+
+void GlobedGJBGL::explodeRandomPlayer() {
+    auto& fields = this->getFields();
+
+    if (fields.players.empty()) return;
+
+    auto it = fields.players.begin();
+    std::advance(it, util::rng::Random::get().generate<size_t>(0, fields.players.size() - 1));
+
+    auto* player = it->second;
 }

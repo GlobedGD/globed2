@@ -24,7 +24,7 @@ use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use crate::{config::ServerConfig, db::GlobedDb, game_pinger::GameServerPinger, verifier::AccountVerifier};
 use blake2::{Blake2b, Digest};
-use digest::{KeyInit as _, consts::U32};
+use digest::consts::U32;
 
 #[derive(Clone)]
 pub struct ActiveChallenge {
@@ -222,12 +222,15 @@ impl ServerStateData {
         lowercase.hash(&mut hasher);
         let hash = hasher.finish();
 
-        self.last_logins.insert(hash, LoginEntry {
-            account_id,
-            name: name.to_owned(),
-            time: SystemTime::now(),
-            link_code,
-        });
+        self.last_logins.insert(
+            hash,
+            LoginEntry {
+                account_id,
+                name: name.to_owned(),
+                time: SystemTime::now(),
+                link_code,
+            },
+        );
     }
 
     pub fn remove_login_code(&mut self, name: &str) {

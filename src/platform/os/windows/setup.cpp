@@ -1,9 +1,8 @@
 #include <defs/geode.hpp>
 #include <util/debug.hpp>
 
-// TODO: all of this might be obsolete
-// im not sure
-// it works ok on my fedora linux now
+// TODO: all of this is probably obsolete
+// I am only leaving it here in the case that this somehow becomes an issue in the future again
 
 // Ok so this is really cursed but let me explain
 // somewhere sometime recently microsoft stl brokey the internal mutex or cv structure or whatever

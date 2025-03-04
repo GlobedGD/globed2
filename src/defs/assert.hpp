@@ -6,10 +6,6 @@
 # include <source_location>
 #endif
 
-#ifdef GLOBED_DEBUG
-# include <boost/stacktrace/stacktrace.hpp>
-#endif
-
 /*
 * GLOBED_REQUIRE - throws a runtime error if condition fails
 * GLOBED_REQUIRE_SAFE - returns a Result with an Err value if condition fails
@@ -22,54 +18,18 @@
 * GLOBED_RESULT_DBGWARNC - call ErrorQueues::debugWarn() if result is Err, discard the value
 */
 
-#ifdef GLOBED_DEBUG
-# define GLOBED_REQUIRE(condition, message) \
-    if (!(condition)) [[unlikely]] { \
-        ::globed::_condFail(std::source_location::current(), ::boost::stacktrace::stacktrace{}, (message)); \
-    }
-# define GLOBED_HARD_ASSERT(condition, message) \
-    if (!(condition)) [[unlikely]] { \
-        ::globed::_condFailFatal(std::source_location::current(), ::boost::stacktrace::stacktrace{}, (message)); \
-    }
-# define GLOBED_REQUIRE_SAFE(condition, message) \
-    if (!(condition)) [[unlikely]] { \
-        return geode::Err(::globed::_condFailSafe(std::source_location::current(), ::boost::stacktrace::stacktrace{}, (message))); \
-    }
-#else
-# define GLOBED_REQUIRE(condition,message) \
+#define GLOBED_REQUIRE(condition,message) \
     if (!(condition)) [[unlikely]] { \
         ::globed::_condFail(std::source_location::current(), (message)); \
     }
-# define GLOBED_HARD_ASSERT(condition,message) \
+#define GLOBED_HARD_ASSERT(condition,message) \
     if (!(condition)) [[unlikely]] { \
         ::globed::_condFailFatal(std::source_location::current(), (message)); \
     }
-# define GLOBED_REQUIRE_SAFE(condition, message) \
+#define GLOBED_REQUIRE_SAFE(condition, message) \
     if (!(condition)) [[unlikely]] { \
         return geode::Err(::globed::_condFailSafe(std::source_location::current(), (message))); \
     }
-#endif
-
-// #else
-// # define GLOBED_REQUIRE(condition,message) \
-//     if (!(condition)) [[unlikely]] { \
-//         auto ev_msg = (message); \
-//         geode::log::error("Condition failed: {}", ev_msg); \
-//         throw(std::runtime_error(std::string(ev_msg))); \
-//     }
-// # define GLOBED_HARD_ASSERT(condition,message) \
-//     if (!(condition)) [[unlikely]] { \
-//         auto ev_msg = (message); \
-//         geode::log::error("Condition failed: {}", ev_msg); \
-//         GLOBED_SUICIDE; \
-//     }
-// # define GLOBED_REQUIRE_SAFE(condition, message) \
-//     if (!(condition)) [[unlikely]] { \
-//         auto ev_msg = (message); \
-//         geode::log::warn("Condition failed: {}", ev_msg); \
-//         return geode::Err(std::string(ev_msg)); \
-//     }
-// #endif
 
 #define GLOBED_UNIMPL(message) GLOBED_REQUIRE(false, std::string("unimplemented: ") + (message))
 #define GLOBED_UNWRAP(value) \
@@ -116,13 +76,7 @@ namespace globed {
 #endif
     }
 
-#ifdef GLOBED_DEBUG
-    [[noreturn]] void _condFail(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message);
-    std::string _condFailSafe(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message);
-    [[noreturn]] void _condFailFatal(const std::source_location& loc, const boost::stacktrace::stacktrace& trace, std::string_view message);
-#else
     [[noreturn]] void _condFail(const std::source_location& loc, std::string_view message);
     std::string _condFailSafe(const std::source_location& loc, std::string_view message);
     [[noreturn]] void _condFailFatal(const std::source_location& loc, std::string_view message);
-#endif
 }

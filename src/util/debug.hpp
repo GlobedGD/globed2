@@ -82,7 +82,7 @@ namespace util::debug {
         void print();
     };
 
-    class PacketLogger : public SingletonBase<PacketLogger> {
+    class PacketLogger : public SingletonLeakBase<PacketLogger> {
     public:
         void record(packetid_t id, bool encrypted, bool outgoing, size_t bytes);
         PacketLogSummary getSummary();

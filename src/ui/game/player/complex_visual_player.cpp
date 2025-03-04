@@ -131,12 +131,13 @@ void ComplexVisualPlayer::updateData(
     auto& settings = GlobedSettings::get();
 
     wasRotating = data.isRotating;
+    lastPosition = data.position;
 
     bool isNearby = this->isPlayerNearby(camState);
     bool cameNearby = isNearby && !wasNearby;
     wasNearby = isNearby;
 
-    auto displacement = data.position - playerIcon->getPosition();
+    // auto displacement = data.position - playerIcon->getPosition();
 
     // sticky is super broken  lol
 
@@ -158,15 +159,19 @@ void ComplexVisualPlayer::updateData(
     //     p2->m_realXPosition = newPos.x;
     // }
 
-    playerIcon->setPosition(data.position);
-    playerIcon->setRotation(data.rotation);
-
     float innerRot = data.isSideways ? (data.isUpsideDown ? 90.f : -90.f) : 0.f;
-    playerIcon->m_mainLayer->setRotation(innerRot);
 
     float distanceTo90deg = std::fmod(std::abs(data.rotation), 90.f);
     if (distanceTo90deg > 45.f) {
         distanceTo90deg = 90.f - distanceTo90deg;
+    }
+
+    // only set position and stuff if the player is visible
+    if (isNearby) {
+        playerIcon->setPosition(data.position);
+        playerIcon->setRotation(data.rotation);
+
+        playerIcon->m_mainLayer->setRotation(innerRot);
     }
 
     if (data.isRotating || distanceTo90deg > 1.f) {
@@ -176,17 +181,21 @@ void ComplexVisualPlayer::updateData(
     auto dirVec = GlobedGJBGL::getCameraDirectionVector();
     auto dir = GlobedGJBGL::getCameraDirectionAngle();
 
-    // set the pos for status icons and name (ask rob not me)
-    nameLabel->setPosition(data.position + dirVec * CCPoint{25.f, 25.f});
-    nameLabel->setRotation(dir);
+    if (isNearby) {
+        // set the pos for status icons and name (ask rob not me)
+        nameLabel->setPosition(data.position + dirVec * CCPoint{25.f, 25.f});
+        nameLabel->setRotation(dir);
 
-    if (statusIcons) {
-        statusIcons->setPosition(data.position + dirVec * CCPoint{nameLabel->isVisible() ? 40.f : 25.f, nameLabel->isVisible() ? 40.f : 25.f});
-        statusIcons->setRotation(dir);
+        if (statusIcons) {
+            statusIcons->setPosition(data.position + dirVec * CCPoint{nameLabel->isVisible() ? 40.f : 25.f, nameLabel->isVisible() ? 40.f : 25.f});
+            statusIcons->setRotation(dir);
+        }
     }
 
+    bool updatedOpcaity = false;
     if (!playerData.isDead && playerIcon->getOpacity() == 0) {
         this->updateOpacity();
+        updatedOpcaity = true;
     }
 
     // set position members for collision
@@ -221,7 +230,7 @@ void ComplexVisualPlayer::updateData(
         this->updateIconType(iconType);
     }
 
-    if (switchedMode || (settings.players.hideNearby && isNearby)) {
+    if ((switchedMode || (settings.players.hideNearby && isNearby)) && !updatedOpcaity) {
         this->updateOpacity();
     }
 
@@ -670,7 +679,7 @@ void ComplexVisualPlayer::callUpdateWith(PlayerIconType type, int icon) {
 }
 
 const CCPoint& ComplexVisualPlayer::getPlayerPosition() {
-    return playerIcon->getPosition();
+    return lastPosition;
 }
 
 CCNode* ComplexVisualPlayer::getPlayerObject() {

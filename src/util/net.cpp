@@ -28,30 +28,21 @@ namespace util::net {
     }
 
     std::string webUserAgent() {
-#ifdef GLOBED_DEBUG
         return fmt::format(
             "globed-geode-xd/{}; Globed {}; Loader {}",
             Mod::get()->getVersion().toVString(),
             GLOBED_PLATFORM_STRING,
             Loader::get()->getVersion().toVString()
         );
-#else
-        return fmt::format("globed-geode-xd/{}", Mod::get()->getVersion().toVString());
-#endif
     }
 
     std::string loginPlatformString() {
-#ifdef GLOBED_DEBUG
         return fmt::format(
             "{} ({}, Geode {})",
             GLOBED_PLATFORM_STRING,
             Mod::get()->getVersion().toVString(),
             Loader::get()->getVersion().toVString()
         );
-#else
-        // no telemetry in release :(
-        return fmt::format("Globed {}", Mod::get()->getVersion().toVString());
-#endif
     }
 
     Result<std::pair<std::string, unsigned short>> splitAddress(std::string_view address, unsigned short defaultPort) {

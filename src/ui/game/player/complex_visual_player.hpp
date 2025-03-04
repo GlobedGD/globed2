@@ -61,6 +61,7 @@ protected:
     Ref<GlobedNameLabel> nameLabel;
     PlayerIconType playerIconType = PlayerIconType::Unknown;
     Ref<PlayerStatusIcons> statusIcons;
+    cocos2d::CCPoint lastPosition;
     bool isPlatformer;
     bool isEditor;
 

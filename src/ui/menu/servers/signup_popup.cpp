@@ -89,7 +89,7 @@ void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtok
     auto ans = decodeAnswer(chtoken, pubkey);
     if (!ans) {
         log::warn("failed to complete challenge: {}", ans.unwrapErr());
-        this->onFailure(fmt::format("Failed to complete challenge: <cy>{}</c>", ans.unwrap()));
+        this->onFailure(fmt::format("Failed to complete challenge: <cy>{}</c>", ans.unwrapErr()));
         return;
     }
 

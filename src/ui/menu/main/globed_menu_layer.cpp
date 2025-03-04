@@ -15,8 +15,6 @@
 #include <ui/menu/settings/settings_layer.hpp>
 #include <ui/menu/servers/server_layer.hpp>
 #include <ui/menu/level_list/level_list_layer.hpp>
-#include <ui/menu/admin/admin_popup.hpp>
-#include <ui/menu/admin/admin_login_popup.hpp>
 #include <ui/menu/credits/credits_popup.hpp>
 #include <util/net.hpp>
 #include <util/format.hpp>
@@ -355,7 +353,13 @@ void GlobedMenuLayer::navigateToServerLayer() {
         return;
     }
 
-    auto prevScene = static_cast<CCScene*>(dir->m_pobScenesStack->objectAtIndex(dir->m_pobScenesStack->count() - 2));
+    auto sceneCount = dir->m_pobScenesStack->count();
+    if (sceneCount < 2) {
+        this->keyBackClicked();
+        return;
+    }
+
+    auto prevScene = static_cast<CCScene*>(dir->m_pobScenesStack->objectAtIndex(sceneCount - 2));
 
     if (!prevScene->getChildren() || prevScene->getChildrenCount() < 1) {
         this->keyBackClicked();
@@ -373,12 +377,7 @@ void GlobedMenuLayer::navigateToServerLayer() {
 
 void GlobedMenuLayer::keyDown(enumKeyCodes key) {
     if (key == enumKeyCodes::KEY_F8) {
-        bool authorized = AdminManager::get().canModerate();
-        if (authorized) {
-            AdminPopup::create()->show();
-        } else {
-            AdminLoginPopup::create()->show();
-        }
+        AdminManager::get().openModPanel();
     } else {
         CCLayer::keyDown(key);
     }

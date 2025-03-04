@@ -106,10 +106,14 @@ public:
     void deleteSlot(size_t index);
     void renameSlot(size_t index, std::string_view name);
 
+    std::filesystem::path pathForSlot(size_t idx);
+    matjson::Value getSettingContainer();
+
+    void reloadFromContainer(const matjson::Value& container);
+
 private:
     void migrateFromV1();
 
-    std::filesystem::path pathForSlot(size_t idx);
 
     Result<matjson::Value> readSlotData(size_t idx);
     Result<matjson::Value> readSlotData(const std::filesystem::path& path);

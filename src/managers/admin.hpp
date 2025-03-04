@@ -17,6 +17,7 @@ public:
     ComputedRole& getRole();
 
     void openUserPopup(const PlayerRoomPreviewAccountData& rpdata);
+    void openModPanel();
 
     // Shorthand for `authorized() && getRole().canModerate()`
     bool canModerate();

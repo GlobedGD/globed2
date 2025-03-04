@@ -72,6 +72,7 @@ bool RoomListingPopup::setup() {
         }
 
         this->createCells(packet->rooms);
+        this->setTitle(fmt::format("Public Rooms ({} Rooms)", packet->rooms.size()));
     });
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();

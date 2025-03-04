@@ -199,7 +199,9 @@ Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
         this->dumpPacket(packet->getPacketId(), buf, true);
     }
 
+#ifdef GLOBED_DEBUG_PACKETS
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
+#endif
 
     if (packet->getUseTcp()) {
         GLOBED_UNWRAP(tcpSocket.sendAll(reinterpret_cast<const char*>(buf.data().data()), buf.size()));
@@ -220,7 +222,9 @@ Result<> GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const NetworkA
         this->dumpPacket(packet->getPacketId(), buf, true);
     }
 
+#ifdef GLOBED_DEBUG_PACKETS
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
+#endif
 
     GLOBED_UNWRAP_INTO(udpSocket.sendTo(reinterpret_cast<const char*>(buf.data().data()), buf.size(), address), auto res)
 
