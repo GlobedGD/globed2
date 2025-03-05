@@ -7,12 +7,13 @@ using namespace geode::prelude;
 void GlobedProfilePage::loadPageFromUserInfo(GJUserScore* score) {
 	ProfilePage::loadPageFromUserInfo(score);
 
-	if (!AdminManager::get().authorized()) return;
+	if (!AdminManager::get().canModerate()) return;
+
+	if (!this->getChildByIDRecursive("left-menu")) return;
 
 	auto leftMenu = static_cast<CCMenu*>(this->getChildByIDRecursive("left-menu"));
 
 	auto iconData = PlayerIconData {};
-
 	auto player = PlayerAccountData {
 		score->m_accountID,
 		score->m_userID,
