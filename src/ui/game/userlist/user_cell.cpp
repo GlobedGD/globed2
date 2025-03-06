@@ -15,6 +15,7 @@
 #include <util/format.hpp>
 #include <util/ui.hpp>
 #include <util/gd.hpp>
+#include <util/singleton.hpp>
 
 using namespace geode::prelude;
 
@@ -26,7 +27,7 @@ bool GlobedUserCell::init(const PlayerStore::Entry& entry, const PlayerAccountDa
 
     auto winSize = CCDirector::get()->getWinSize();
 
-    auto gm = GameManager::get();
+    auto gm = globed::cachedSingleton<GameManager>();
     auto& flm = FriendListManager::get();
     this->isFriend = flm.isFriend(data.accountId);
 

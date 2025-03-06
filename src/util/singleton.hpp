@@ -56,3 +56,12 @@ public:
 protected:
     SingletonLeakBase() {}
 };
+
+namespace globed {
+    // Singleton cache, for cocos/GD classes
+    template <typename T>
+    T* cachedSingleton() {
+        static auto instance = T::get();
+        return instance;
+    }
+}

@@ -1,6 +1,7 @@
 #include "overlay_cell.hpp"
 
 #include <util/ui.hpp>
+#include <util/singleton.hpp>
 
 #include <ui/general/simple_player.hpp>
 
@@ -37,7 +38,7 @@ bool VoiceOverlayCell::init(const PlayerAccountData& data) {
         .collect();
 
     // player icon
-    auto gm = GameManager::get();
+    auto gm = globed::cachedSingleton<GameManager>();
     auto color1 = gm->colorForIdx(data.icons.color1);
     auto color2 = gm->colorForIdx(data.icons.color2);
 

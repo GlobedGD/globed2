@@ -2,6 +2,7 @@
 
 #include <defs/geode.hpp>
 #include <data/types/gd.hpp>
+#include <util/singleton.hpp>
 
 using namespace geode::prelude;
 
@@ -12,7 +13,7 @@ namespace util::gd {
 
         auto* levels = GameLevelManager::get()->m_onlineLevels;
 
-        bool putAtLowest = GameManager::get()->getGameVariable("0084");
+        bool putAtLowest = globed::cachedSingleton<GameManager>()->getGameVariable("0084");
 
         int idx = 0;
         for (const auto& [k, level] : CCDictionaryExt<::gd::string, GJGameLevel*>(levels)) {
@@ -135,15 +136,15 @@ namespace util::gd {
     }
 
     bool variable(GameVariable var) {
-        return GameManager::get()->getGameVariable(gvkey(var).c_str());
+        return globed::cachedSingleton<GameManager>()->getGameVariable(gvkey(var).c_str());
     }
 
     void setVariable(GameVariable var, bool state) {
-        GameManager::get()->setGameVariable(gvkey(var).c_str(), state);
+        globed::cachedSingleton<GameManager>()->setGameVariable(gvkey(var).c_str(), state);
     }
 
     void safePopScene() {
-        GameManager::get()->safePopScene();
+        globed::cachedSingleton<GameManager>()->safePopScene();
         // auto dir = CCDirector::get();
 
         // if (dir->sceneCount() < 2) {

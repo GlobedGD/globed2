@@ -26,7 +26,7 @@ void ComplexPlayerObject::playDeathEffect() {
     auto* rp = static_cast<ComplexVisualPlayer*>(this->getUserObject());
     int deathEffect = rp->storedIcons.deathEffect;
 
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
 
     // we need to do this because the orig func reads the death effect ID from GameManager
     int oldEffect = gm->getPlayerDeathEffect();

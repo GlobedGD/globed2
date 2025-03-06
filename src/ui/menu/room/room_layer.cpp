@@ -462,7 +462,7 @@ void RoomLayer::reloadData(const RoomInfo& info, const std::vector<PlayerRoomPre
         this->playerList = std::vector({
             PlayerRoomPreviewAccountData(
                 gjam->m_accountID,
-                GameManager::get()->m_playerUserID.value(),
+                globed::cachedSingleton<GameManager>()->m_playerUserID.value(),
                 gjam->m_username,
                 PlayerIconDataSimple(ownData),
                 0,

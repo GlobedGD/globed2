@@ -54,7 +54,7 @@ void GlobedAccountManager::autoInitialize() {
         activeCentralUrl = activeCentral.value().url;
     }
 
-    this->initialize(gjam->m_username, gjam->m_accountID, GameManager::get()->m_playerUserID.value(), activeCentralUrl);
+    this->initialize(gjam->m_username, gjam->m_accountID, globed::cachedSingleton<GameManager>()->m_playerUserID.value(), activeCentralUrl);
 }
 
 void GlobedAccountManager::storeAuthKey(const util::data::byte* source, size_t size) {

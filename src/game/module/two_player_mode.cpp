@@ -44,7 +44,8 @@ void TwoPlayerModeModule::updateFromLockedPlayer(PlayerObject* player, bool igno
 
     if (rp->lastFrameFlags.pendingDeath) {
         Loader::get()->queueInMainThread([] {
-            static_cast<GlobedPlayLayer*>(PlayLayer::get())->forceKill(PlayLayer::get()->m_player1);
+            auto pl = globed::cachedSingleton<GameManager>()->m_playLayer;
+            static_cast<GlobedPlayLayer*>(pl)->forceKill(pl->m_player1);
         });
     }
 
@@ -149,7 +150,7 @@ bool TwoPlayerModeModule::shouldSaveProgress() {
 void TwoPlayerModeModule::selPeriodicalUpdate(float dt) {
     this->unlinkIfAlone();
 
-    auto pl = PlayLayer::get();
+    auto pl = globed::cachedSingleton<GameManager>()->m_playLayer;
     auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(pl));
 
     if (pl && !gjbgl->isPaused() && !this->linked) {

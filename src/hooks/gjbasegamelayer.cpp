@@ -48,7 +48,7 @@ bool GlobedGJBGL::init() {
 
     // yeah so like
 
-    auto* gm = static_cast<HookedGameManager*>(GameManager::get());
+    auto* gm = static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>());
     gm->setLastSceneEnum();
 
     return true;
@@ -71,7 +71,7 @@ void GlobedGJBGL::onEnterHook() {
 }
 
 GlobedGJBGL* GlobedGJBGL::get() {
-    return static_cast<GlobedGJBGL*>(GameManager::get()->m_gameLayer);
+    return static_cast<GlobedGJBGL*>(globed::cachedSingleton<GameManager>()->m_gameLayer);
 }
 
 /* Setup */
@@ -202,7 +202,7 @@ void GlobedGJBGL::setupBare() {
 void GlobedGJBGL::setupDeferredAssetPreloading() {
     GlobedSettings& settings = GlobedSettings::get();
 
-    auto* gm = static_cast<HookedGameManager*>(GameManager::get());
+    auto* gm = static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>());
 
     if (util::cocos::shouldTryToPreload(false)) {
         log::info("Preloading assets (deferred)");
@@ -1073,7 +1073,7 @@ bool GlobedGJBGL::isPaused(bool checkCurrent) {
         return this->m_playbackMode == PlaybackMode::Paused;
     }
 
-    if (PlayLayer::get()) {
+    if (!m_fields->isEditor) {
         if (checkCurrent && !isCurrentPlayLayer()) return false;
 
         for (CCNode* child : CCArrayExt<CCNode*>(this->getParent()->getChildren())) {

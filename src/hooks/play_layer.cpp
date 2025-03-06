@@ -48,7 +48,7 @@ bool GlobedPlayLayer::init(GJGameLevel* level, bool p1, bool p2) {
 
 void GlobedPlayLayer::setupHasCompleted() {
     // loadDeathEffect is inlined on win64, we want to avoid unloading anything
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
     int lastLoadedEffect = gm->m_loadedDeathEffect;
     int lastDeathEffect = gm->m_playerDeathEffect;
 

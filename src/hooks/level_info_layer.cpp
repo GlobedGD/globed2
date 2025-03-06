@@ -17,7 +17,7 @@
 using namespace geode::prelude;
 
 static int& storedRateTier() {
-    return static_cast<HookedGameManager*>(GameManager::get())->m_fields->lastLevelRateTier;
+    return static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>())->m_fields->lastLevelRateTier;
 }
 
 bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
@@ -50,7 +50,7 @@ bool HookedLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
         isQuittingPlayLayer = pl->m_fields->quitting;
     }
 
-    if (rating == -1 && storedRateTier() != -1 && (!PlayLayer::get() || isQuittingPlayLayer)) {
+    if (rating == -1 && storedRateTier() != -1 && (!globed::cachedSingleton<GameManager>()->m_playLayer || isQuittingPlayLayer)) {
         rating = storedRateTier();
         storedRateTier() = -1;
     }
