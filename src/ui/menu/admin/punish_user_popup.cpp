@@ -95,25 +95,23 @@ private:
 
         auto reasons =
             isBan ? std::initializer_list<const char*>{
-                "Bypassing room name filters to say slurs (unappealable)",
-                "Usage of slurs",
+                "Inappropriate room name",
                 "Hate speech / harassment",
                 "Inappropriate username",
-                "Advertising in room names",
-                "Ban transferred from Discord",
-                "Inappropriate sounds in voice chat",
-                "Ban evading",
-                "Multiple instances of rule breaking",
+                "Advertising through the use of room names",
+                "Ban transferred from external platform",
+                "Inappropriate usage of voice chat",
+                "Ban evasion"
             }
 
             : // mute reasons
 
             std::initializer_list<const char*>{
                 "Micspamming (music / soundboard)",
-                "Micspamming (loud noises)",
-                "Micspamming (clicking noises)",
-                "Poor microphone quality",
-                "Toxicity / harassment in voice chat"
+                "Micspamming (unreasonably loud)",
+                "Enabling microphone without speaking (clicking / background noise)",
+                "Toxicity / harassment",
+                "Inappropriate behavior"
             };
 
         for (auto reason : reasons) {
