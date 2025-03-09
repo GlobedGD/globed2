@@ -8,6 +8,7 @@ TODO: profile the perf improvements
 * \-- The amount of save slots is unlimited and you can give them custom names
 * Remove Custom Keybinds dependency, add ability to change the voice chat keybind in settings (thanks LimeGradient!)
 * Gauntlet levels now show the player count under them (thanks LimeGradient!)
+* Added the total room count to the rooms list popup (thanks LimeGradient!)
 * Make even more corrections to the texture pack detection algorithm, add better debug information
 * Significant performance improvements
 * Fix crashing when connecting to a server that is down
