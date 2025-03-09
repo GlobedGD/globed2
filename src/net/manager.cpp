@@ -25,6 +25,7 @@
 #include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/net.hpp>
+#include <ui/menu/admin/user_punishment_popup.hpp>
 #include <ui/notification/panel.hpp>
 
 using namespace asp;
@@ -558,8 +559,9 @@ protected:
                 //packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
                 1901
             );
-
-            this->disconnectWithMessage(msg);
+            
+            UserPunishmentPopup::create(packet->punishment)->show();
+            this->disconnect();
         });
 
         addGlobalListener<ServerMutedPacket>([](auto packet) {
@@ -577,7 +579,7 @@ protected:
                 1901
             );
 
-            ErrorQueues::get().notice(msg);
+            UserPunishmentPopup::create(packet->punishment)->show();
         });
 
         // General packets

@@ -1,5 +1,6 @@
 #include "punish_user_popup.hpp"
 
+#include <Geode/binding/GJAccountManager.hpp>
 #include <defs/geode.hpp>
 #include <data/packets/client/admin.hpp>
 #include <net/manager.hpp>
@@ -95,13 +96,12 @@ private:
 
         auto reasons =
             isBan ? std::initializer_list<const char*>{
-                "Bypassing room name filters to say slurs (unappealable)",
-                "Usage of slurs",
+                "Innapropriate room name",
                 "Hate speech / harassment",
                 "Inappropriate username",
                 "Advertising in room names",
-                "Ban transferred from Discord",
-                "Inappropriate sounds in voice chat",
+                "Ban transferred from external platform",
+                "Inappropriate usage of voice chat",
                 "Ban evading",
                 "Multiple instances of rule breaking",
             }
@@ -110,10 +110,10 @@ private:
 
             std::initializer_list<const char*>{
                 "Micspamming (music / soundboard)",
-                "Micspamming (loud noises)",
-                "Micspamming (clicking noises)",
-                "Poor microphone quality",
-                "Toxicity / harassment in voice chat"
+                "Micspamming (unreasonably loud)",
+                "Enabling microphone without speaking (clicking / background noise)",
+                "Toxicity / harassment in voice chat",
+                "Innapropriate behaviour",
             };
 
         for (auto reason : reasons) {
@@ -362,6 +362,7 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
         .parent(rootLayout)
         .collect();
 
+
     Build<ButtonSprite>::create("Submit", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .scale(0.9f)
         .intoMenuItem([this] {
@@ -457,9 +458,10 @@ void AdminPunishUserPopup::submit() {
     if (!punishment) {
         UserPunishment punishment = {
             0, accountId, (isBan) ? PunishmentType::Ban : PunishmentType::Mute,
-            reason, expiresAt, 
-        }
-        pkt = AdminPunishUserPacket::create(accountId, isBan, reason, expiresAt);
+            reason, expiresAt, static_cast<int64_t>(SystemTime::now().to_time_t()),
+            GJAccountManager::get()->m_accountID
+        };
+        pkt = AdminPunishUserPacket::create(punishment);
     } else {
         // edit the punishment otherwise
         pkt = AdminEditPunishmentPacket::create(accountId, isBan, reason, expiresAt);
