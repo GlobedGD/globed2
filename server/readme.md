@@ -153,7 +153,8 @@ The `Rocket.toml` is primarily used for changing the HTTP port and the path to t
 
 ## Building
 
-If you want to build the server yourself, you need a nightly Rust toolchain. After that, it's as simple as:
+If you want to build the server yourself, you need a **nightly Rust toolchain** (preferrably latest). After that, it's as simple as:
+
 ```sh
 cd server/
 rustup override set nightly # has to be done only once

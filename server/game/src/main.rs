@@ -20,8 +20,10 @@ use tokio;
 use std::{
     error::Error,
     net::{IpAddr, Ipv4Addr, SocketAddr},
+    time::Duration,
 };
 
+use async_watcher::{AsyncDebouncer, notify::RecursiveMode};
 use bridge::{CentralBridge, CentralBridgeError};
 use globed_shared::{log::Log, *};
 use reqwest::StatusCode;
@@ -191,14 +193,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let word_filter_path2 = std::env::current_dir().expect("failed to get current dir").join("word-filter.txt");
 
-    let chosen = match (word_filter_path.exists(), word_filter_path2.exists()) {
+    let chosen_word_filter_path = match (word_filter_path.exists(), word_filter_path2.exists()) {
         (_, true) => Some(word_filter_path2),
         (true, false) => Some(word_filter_path),
         (false, false) => None,
     };
 
     let mut filter_words = Vec::new();
-    if let Some(chosen) = chosen {
+    if let Some(chosen) = &chosen_word_filter_path {
         let mut content = String::new();
 
         match File::open(chosen).await {
@@ -353,8 +355,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // create and run the server
 
     let server = GameServer::new(tcp_socket, udp_socket, state, bridge, standalone);
-    let server = Box::leak(Box::new(server));
+    let server: &GameServer = Box::leak(Box::new(server));
 
+    // watch the word filter txt file for changes
+    if let Some(path) = chosen_word_filter_path {
+        let (mut debouncer, mut file_events) = AsyncDebouncer::new_with_channel(Duration::from_secs(1), Some(Duration::from_secs(1))).await?;
+        debouncer.watcher().watch(&path, RecursiveMode::NonRecursive)?;
+
+        tokio::spawn(async move {
+            while let Some(_event) = file_events.recv().await {
+                match server.state.filter.write().reload_from_file(&path) {
+                    Ok(()) => {
+                        info!("Successfully reloaded the word filter!");
+                    }
+
+                    Err(err) => {
+                        warn!("Failed to reload the word filter: {err}");
+                    }
+                }
+            }
+        });
+    };
+
+    // run the server!
     Box::pin(server.run()).await;
 
     #[allow(unreachable_code)] // i love rust
