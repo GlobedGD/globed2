@@ -309,9 +309,9 @@ protected:
         secretKey = 0;
         serverTps = 0;
         serverProtocol = 0;
-        *lastReceivedPacket.lock() = {};
-        lastSentKeepalive = {};
-        lastTcpExchange = {};
+        *lastReceivedPacket.lock() = SystemTime::now();
+        lastSentKeepalive = SystemTime::now();
+        lastTcpExchange = SystemTime::now();
     }
 
     /* connection and tasks */
