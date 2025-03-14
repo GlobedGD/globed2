@@ -8,14 +8,17 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
     this->setTitle("Set Keybind");
 
     m_keybindLabel = CCLabelBMFont::create("Keybind: None", "bigFont.fnt");
-    m_keybindLabel->setScale(0.75f);
-    m_keybindLabel->limitLabelWidth(POPUP_WIDTH - 16.f, 0.75f, 0.5f);
     m_mainLayer->addChildAtPosition(m_keybindLabel, Anchor::Center);
 
     auto& gs = GlobedSettings::get();
 
     auto applyButton = Build<ButtonSprite>::create("Apply", "bigFont.fnt", "GJ_button_01.png", 0.75f)
         .intoMenuItem([&gs, keybind, this] (auto) {
+            if (!this->isValid) {
+                Notification::create("Please choose a valid key", NotificationIcon::Error, 0.5f)->show();
+                return;
+            }
+
             switch (keybind) {
                 case globed::Keybinds::VoiceChatKey: {
                     gs.communication.voiceChatKey = this->key;
@@ -28,7 +31,8 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
                 default: break;
             }
 
-            Notification::create(fmt::format("Set Keybind to {}", globed::formatKey((enumKeyCodes)this->key)), NotificationIcon::Success, 0.5f)->show();
+            auto keystr = globed::formatKey((enumKeyCodes) this->key);
+            Notification::create(fmt::format("Set Keybind to {}", keystr), NotificationIcon::Success, 0.5f)->show();
 
             this->removeFromParent();
         })
@@ -40,11 +44,11 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
 
     switch (keybind) {
         case globed::Keybinds::VoiceChatKey: {
-            this->keyDown((enumKeyCodes)gs.communication.voiceChatKey.get());
+            this->keyDown((enumKeyCodes) gs.communication.voiceChatKey.get());
             break;
         }
         case globed::Keybinds::VoiceDeafenKey: {
-            this->keyDown((enumKeyCodes)gs.communication.voiceDeafenKey.get());
+            this->keyDown((enumKeyCodes) gs.communication.voiceDeafenKey.get());
             break;
         }
         default: break;
@@ -54,9 +58,25 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
 }
 
 void KeybindSetupPopup::keyDown(enumKeyCodes keyCode) {
+    if (keyCode == KEY_Escape) {
+        this->onClose(this);
+        return;
+    }
+
     this->key = (int)keyCode;
 
-    m_keybindLabel->setString(fmt::format("Keybind: {}", globed::formatKey(keyCode)).c_str());
+    auto k = KeybindsManager::convertCocosKey(keyCode);
+    this->isValid = k != globed::Key::None;
+
+    if (this->isValid) {
+        m_keybindLabel->setString(fmt::format("Keybind: {}", globed::formatKey(k)).c_str());
+        m_keybindLabel->setColor(ccColor3B{ 255, 255, 255 });
+    } else {
+        m_keybindLabel->setString("Invalid key");
+        m_keybindLabel->setColor(ccColor3B{ 224, 75, 16 });
+    }
+
+    m_keybindLabel->limitLabelWidth(POPUP_WIDTH - 16.f, 0.75f, 0.5f);
 }
 
 KeybindSetupPopup* KeybindSetupPopup::create(int key, globed::Keybinds keybind) {

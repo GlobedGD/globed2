@@ -1,7 +1,6 @@
 ## v1.8.0
 
 TODO: icon for switching save slots
-TODO: profile the perf improvements
 
 * Add ability to create <cg>setting profiles</c> and toggle between them
 * \-- This allows you to easily change many settings at once, for example if attending some event
