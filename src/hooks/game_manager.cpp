@@ -21,7 +21,7 @@ void HookedGameManager::returnToLastScene(GJGameLevel* level) {
     if (hooklevel->m_fields->shouldTransitionWithPopScene) {
         CCDirector::get()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
     } else {
-        m_sceneEnum = m_fields->lastSceneEnum;
+        m_sceneEnum = fields()->lastSceneEnum;
         GameManager::returnToLastScene(level);
     }
 }
@@ -36,7 +36,7 @@ CCTexture2D* HookedGameManager::loadIcon(int iconId, int iconType, int iconReque
     texture = GameManager::loadIcon(iconId, iconType, -1);
 
     if (texture) {
-        m_fields->iconCache[iconType][iconId] = texture;
+        fields()->iconCache[iconType][iconId] = texture;
     }
 
     if (!texture) {
@@ -72,6 +72,8 @@ void HookedGameManager::loadIconsBatched(int iconType, int startId, int endId) {
 }
 
 void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ranges) {
+    auto fs = this->fields();
+
     std::vector<std::string> toLoad;
     std::unordered_map<int, std::unordered_map<int, size_t>> toLoadMap;
 
@@ -111,15 +113,17 @@ void HookedGameManager::loadIconsBatched(const std::vector<BatchedIconRange>& ra
                 log::warn("icon already exists, overwriting (id: {}, type: {})", iconId, iconType);
             }
 
-            m_fields->iconCache[iconType][iconId] = tex;
+            fs->iconCache[iconType][iconId] = tex;
         }
     }
 }
 
 CCTexture2D* HookedGameManager::getCachedIcon(int iconId, int iconType) {
-    if (m_fields->iconCache.contains(iconType)) {
-        if (m_fields->iconCache.at(iconType).contains(iconId)) {
-            auto* tex = *m_fields->iconCache.at(iconType).at(iconId);
+    auto fs = this->fields();
+
+    if (fs->iconCache.contains(iconType)) {
+        if (fs->iconCache.at(iconType).contains(iconId)) {
+            auto* tex = *fs->iconCache.at(iconType).at(iconId);
             return tex;
         }
     }
@@ -128,24 +132,24 @@ CCTexture2D* HookedGameManager::getCachedIcon(int iconId, int iconType) {
 }
 
 bool HookedGameManager::getAssetsPreloaded() {
-    return m_fields->assetsPreloaded;
+    return fields()->assetsPreloaded;
 }
 
 void HookedGameManager::setAssetsPreloaded(bool state) {
-    m_fields->assetsPreloaded = state;
+    fields()->assetsPreloaded = state;
 }
 
 bool HookedGameManager::getDeathEffectsPreloaded() {
-    return m_fields->deathEffectsPreloaded;
+    return fields()->deathEffectsPreloaded;
 }
 
 void HookedGameManager::setDeathEffectsPreloaded(bool state) {
-    m_fields->deathEffectsPreloaded = state;
+    fields()->deathEffectsPreloaded = state;
 }
 
 void HookedGameManager::resetAssetPreloadState() {
-    m_fields->iconCache.clear();
-    m_fields->loadedFrames.clear();
+    fields()->iconCache.clear();
+    fields()->loadedFrames.clear();
 
     this->setAssetsPreloaded(false);
     this->setDeathEffectsPreloaded(false);
@@ -157,7 +161,7 @@ void HookedGameManager::setLastSceneEnum(int n) {
         n = m_sceneEnum;
     }
 
-    m_fields->lastSceneEnum = n;
+    fields()->lastSceneEnum = n;
 }
 
 HookedGameManager::Fields* HookedGameManager::fields() {
