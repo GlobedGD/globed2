@@ -8,7 +8,6 @@ pub struct AdminSendNoticePacket {
     pub level_id: LevelId,
     pub player: FastString,
     pub message: FastString,
-    pub can_reply: bool,
 }
 
 #[derive(Packet, Encodable, DynamicSize, Clone)]
