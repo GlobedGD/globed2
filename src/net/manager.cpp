@@ -541,7 +541,7 @@ protected:
         });
 
         addGlobalListener<ServerNoticePacket>([](auto packet) {
-            ErrorQueues::get().notice(packet->message);
+            ErrorQueues::get().notice(packet->message, packet->replyId);
         });
 
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
@@ -575,7 +575,7 @@ protected:
                 packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
             );
 
-            ErrorQueues::get().notice(msg);
+            ErrorQueues::get().notice(msg, 0);
         });
 
         // General packets
@@ -650,6 +650,19 @@ protected:
 
         addGlobalListener<AdminErrorPacket>([](auto packet) {
             ErrorQueues::get().warn(packet->message);
+        });
+
+        addGlobalListener<AdminReceivedNoticeReplyPacket>([](auto packet) {
+            auto alert = FLAlertLayer::create(
+                nullptr,
+                fmt::format("Reply from {}", packet->userName).c_str(),
+                packet->userReply,
+                "Ok",
+                nullptr,
+                420.f
+            );
+
+            alert->show();
         });
     }
 

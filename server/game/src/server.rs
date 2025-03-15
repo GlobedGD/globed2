@@ -154,6 +154,22 @@ impl GameServer {
             }
         });
 
+        // spawn user thread cleanup
+
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_mins(120));
+            interval.tick().await;
+
+            loop {
+                interval.tick().await;
+
+                let clients = self.clients.lock();
+                for client in clients.values() {
+                    client.routine_cleanup();
+                }
+            }
+        });
+
         loop {
             match self.accept_connection().await {
                 Ok(()) => {}

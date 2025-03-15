@@ -1,5 +1,5 @@
-/// maximum characters in a `ServerNoticePacket` or `ServerDisconnectPacket` (164)
-pub const MAX_NOTICE_SIZE: usize = 224;
+/// maximum characters in a `ServerNoticePacket` or `ServerDisconnectPacket` (280)
+pub const MAX_NOTICE_SIZE: usize = 280;
 /// maximum characters in a user message (156)
 pub const MAX_MESSAGE_SIZE: usize = 156;
 /// amount of chars in a room id string (6)

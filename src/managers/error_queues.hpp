@@ -15,15 +15,21 @@ public:
     void error(std::string_view message, bool print = true);
     void success(std::string_view message, bool print = true);
     // notices are messages coming directly from the server
-    void notice(std::string_view message, bool print = true);
+    void notice(std::string_view message, uint32_t replyId, bool print = true);
 
     // debugWarn shows a warn notification in debug, in release only prints a message (noop if `print` = false)
     void debugWarn(std::string_view message, bool print = true);
 
+    struct PendingNotice {
+        std::string message;
+        uint32_t replyId;
+    };
+
     std::vector<std::string> getWarnings();
     std::vector<std::string> getErrors();
     std::vector<std::string> getSuccesses();
-    std::vector<std::string> getNotices();
+    std::vector<PendingNotice> getNotices();
 private:
-    asp::Channel<std::string> _warns, _errors, _successes, _notices;
+    asp::Channel<std::string> _warns, _errors, _successes;
+    asp::Channel<PendingNotice> _notices;
 };

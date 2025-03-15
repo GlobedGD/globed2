@@ -62,11 +62,12 @@ pub struct ClaimThreadFailedPacket;
 #[packet(id = 20009, tcp = true)]
 pub struct LoginRecoveryFailedPacket;
 
-// used to communicate a simple message to the user
+// used to communicate a simple message to the user, can be replied to if `reply_id != 0`
 #[derive(Packet, Encodable, DynamicSize, Clone)]
 #[packet(id = 20100, tcp = false)]
 pub struct ServerNoticePacket {
     pub message: FastString,
+    pub reply_id: u32,
 }
 
 #[derive(Packet, Encodable, DynamicSize, Clone)]

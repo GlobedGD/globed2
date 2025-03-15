@@ -9,10 +9,10 @@
 //! ```rust
 //!
 //! impl Translatable for PingPacket {
-//!     fn translate_from(data: &mut esp::ByteReader<'_>, protocol: u16) -> Result<Self, PacketTranslationError> {
+//!     fn translate_from(data: &mut esp::ByteReader<'_>, protocol: u16) -> PacketTranslationResult<Self> {
 //!         match protocol {
 //!             // note the invariant: `protocol` is never equal to `CURRENT_PROTOCOL`
-//!             CURRENT_PROTOCOL => unreachable()!
+//!             CURRENT_PROTOCOL => unreachable!(),
 //!
 //!             13 => {
 //!                 let old_packet = v13::PingPacket::decode_from_reader(data)?;
@@ -24,8 +24,34 @@
 //!     }
 //! }
 //! ```
+//!
+//! There are also the `PartialTranslatable` and `PartialTranslatableEncodable` traits, used primarily for outgoing packets.
+//!
+//! ```rust
+//! impl PartialTranslatable<v13::PingResponsePacket> for v_current::PingResponsePacket {
+//!     fn translate_to(self) -> PacketTranslationResult<v13::PingResponsePacket> {
+//!         Ok(v13::PingResponsePacket {
+//!             // some fields ...
+//!         })
+//!     }
+//! }
+//!
+//! impl PartialTranslatableEncodable for PingResponsePacket {
+//!     fn translate_and_encode(&self, protocol: u16, buf: &mut ByteBuffer) -> PacketTranslationResult<()> {
+//!         match protocol {
+//!             13 => {
+//!                 let translated = <Self as PartialTranslatableTo<v13::ServerNoticePacket>>::translate_to(self)?;
+//!                 buf.write_value(&translated);
+//!                 Ok(())
+//!             }
+//!
+//!             _ => Err(PacketTranslationError::UnsupportedProtocol),
+//!         }
+//!     }
+//! }
+//! ```
 
-use esp::{ByteReader, Decodable, DecodeResult};
+use esp::{ByteBuffer, ByteReader, Decodable, DecodeResult, FastByteBuffer};
 
 pub use crate::data::{CURRENT_PROTOCOL, Packet};
 
@@ -33,12 +59,26 @@ mod error;
 mod impls;
 pub use error::PacketTranslationError;
 
+pub type PacketTranslationResult<T> = Result<T, PacketTranslationError>;
+
 pub trait Translatable: Packet + Sized + Decodable {
     // Default implementation for translating packets, which just assumes the packet structure is the same.
-    fn translate_from(data: &mut ByteReader<'_>, _protocol: u16) -> Result<Self, PacketTranslationError> {
+    fn translate_from(data: &mut ByteReader<'_>, _protocol: u16) -> PacketTranslationResult<Self> {
         let packet = Self::decode_from_reader(data)?;
 
         Ok(packet)
+    }
+}
+
+pub trait PartialTranslatableTo<OutP>: Packet + Sized {
+    fn translate_to(self) -> PacketTranslationResult<OutP>;
+}
+
+pub trait PartialTranslatableEncodable: Packet + Sized {
+    fn translate_and_encode(self, protocol: u16, buf: &mut ByteBuffer) -> PacketTranslationResult<()>;
+
+    fn translate_and_encode_fast(self, _protocol: u16, _buf: &mut FastByteBuffer) -> PacketTranslationResult<()> {
+        panic!("`translate_and_encode_fast` not implemented for this packet");
     }
 }
 
@@ -55,8 +95,8 @@ impl PacketTranslator {
     where
         P: Packet + Decodable + Translatable,
     {
-        // simply decode the packet if the protocol is the same
-        if self.protocol == CURRENT_PROTOCOL {
+        // simply decode the packet if the protocol is the same / max
+        if self.protocol == CURRENT_PROTOCOL || self.protocol == 0xffff {
             return Ok(P::decode_from_reader(data));
         }
 

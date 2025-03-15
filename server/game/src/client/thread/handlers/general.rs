@@ -86,4 +86,36 @@ impl ClientThread {
 
         self.send_packet_static(&LinkCodeResponsePacket { link_code }).await
     });
+
+    gs_handler!(self, handle_notice_reply, NoticeReplyPacket, packet, {
+        let _ = gs_needauth!(self);
+
+        if packet.message.len() > MAX_NOTICE_SIZE {
+            gs_disconnect!(self, "notice too long");
+        }
+
+        let reply = {
+            let mut replies = self.pending_notice_replies.lock();
+
+            replies
+                .iter()
+                .position(|reply| reply.reply_id == packet.reply_id)
+                .map(|pos| replies.remove(pos))
+        };
+
+        if let Some(mut reply) = reply {
+            reply.user_reply = packet.message;
+
+            // find the recipient moderator
+            if let Some(moderator) = self.game_server.get_user_by_id(reply.moderator_id) {
+                moderator.push_new_message(ServerThreadMessage::BroadcastNoticeReply(reply)).await;
+            } else {
+                gs_notice!(self, "Error: Failed to send notice reply, the moderator went offline");
+            }
+        } else {
+            gs_notice!(self, "Error: Failed to send notice reply, maybe it expired?");
+        }
+
+        Ok(())
+    });
 }

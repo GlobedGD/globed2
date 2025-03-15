@@ -80,3 +80,16 @@ class AdminSuccessfulUpdatePacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminSuccessfulUpdatePacket, (userEntry));
+
+// 29007 - AdminReceivedNoticeReplyPacket
+class AdminReceivedNoticeReplyPacket : public Packet {
+    GLOBED_PACKET(29007, AdminReceivedNoticeReplyPacket, true, false)
+
+    uint32_t replyId;
+    uint32_t userId;
+    std::string userName;
+    std::string adminMsg;
+    std::string userReply;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(AdminReceivedNoticeReplyPacket, (replyId, userId, userName, adminMsg, userReply));
