@@ -64,7 +64,11 @@ void GlobedGJBGL::onEnterHook() {
     }
 
     Loader::get()->queueInMainThread([self = Ref(this)] {
-        if (!GlobedGJBGL::get()->isPaused(false)) {
+        // TODO: i forgot why i don't use `self` here and also apparently GlobedGJBGL::get can be null here for 1 person in the world
+        auto l = GlobedGJBGL::get();
+        bool isPaused = l ? l->isPaused(false) : self->isPaused(false);
+
+        if (isPaused) {
             self->CCLayer::onEnter();
         }
     });
@@ -1087,7 +1091,7 @@ bool GlobedGJBGL::isPaused(bool checkCurrent) {
 }
 
 bool GlobedGJBGL::isEditor() {
-    return (void*)LevelEditorLayer::get() == (void*)this;
+    return (void*)globed::cachedSingleton<GameManager>()->m_levelEditorLayer == (void*)this;
 }
 
 bool GlobedGJBGL::isSafeMode() {
