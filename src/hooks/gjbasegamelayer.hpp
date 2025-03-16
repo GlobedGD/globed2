@@ -67,6 +67,8 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         //Ref<GlobedChatOverlay> chatOverlay = nullptr;
         Ref<GlobedNameLabel> ownNameLabel = nullptr;
         Ref<GlobedNameLabel> ownNameLabel2 = nullptr;
+        Ref<cocos2d::CCSprite> noticeAlert = nullptr;
+        bool showingNoticeAlert = false;
 
         // speedhack detection
         float lastKnownTimeScale = 1.0f;
@@ -170,6 +172,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     void onQuitActions();
 
     void notifyDeath();
+    void setNoticeAlertActive(bool active);
 
     // for global triggers
     int countForCustomItem(int id);

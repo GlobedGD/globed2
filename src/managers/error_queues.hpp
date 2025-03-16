@@ -20,6 +20,8 @@ public:
     // debugWarn shows a warn notification in debug, in release only prints a message (noop if `print` = false)
     void debugWarn(std::string_view message, bool print = true);
 
+    bool hasPendingNotices();
+
     struct PendingNotice {
         std::string message;
         uint32_t replyId;

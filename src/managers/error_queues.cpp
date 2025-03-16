@@ -32,6 +32,11 @@ void ErrorQueues::debugWarn(std::string_view message, bool print) {
 #endif
 }
 
+
+bool ErrorQueues::hasPendingNotices() {
+    return !_notices.empty();
+}
+
 std::vector<std::string> ErrorQueues::getWarnings() {
     std::vector<std::string> out;
     while (auto msg = _warns.tryPop()) {

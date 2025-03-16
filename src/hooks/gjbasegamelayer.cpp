@@ -770,6 +770,13 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         }
     }
 
+    // show a small alert icon if we have a pending notice
+    bool hasNotices = ErrorQueues::get().hasPendingNotices();
+    if (hasNotices != fields.showingNoticeAlert) {
+        fields.showingNoticeAlert = hasNotices;
+        self->setNoticeAlertActive(hasNotices);
+    }
+
     GLOBED_EVENT(self, selUpdate(dt));
 }
 
@@ -965,6 +972,35 @@ void GlobedGJBGL::notifyDeath() {
 
     fields.lastDeathTimestamp = fields.timeCounter;
     fields.isLastDeathReal = !fields.isFakingDeath;
+}
+
+void GlobedGJBGL::setNoticeAlertActive(bool active) {
+    auto& fields = this->getFields();
+
+    // Add the alert if it does not exist
+    if (!fields.noticeAlert) {
+        if (!fields.isEditor) {
+            auto pl = static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(this));
+
+            auto pbm = this->m_uiLayer->getChildByID("pause-button-menu");
+            if (!pbm) {
+                log::warn("pause-button-menu not found, not toggling notice alert");
+                return;
+            }
+
+            Build<CCSprite>::createSpriteName("geode.loader/info-alert.png")
+                .scale(0.45f)
+                .opacity(255)
+                .pos(8.f, 8.f)
+                .id("notice-alert"_spr)
+                .parent(pbm)
+                .store(fields.noticeAlert);
+        } else {
+            // Editor, TODO
+        }
+    }
+
+    fields.noticeAlert->setVisible(active);
 }
 
 void GlobedGJBGL::handlePlayerJoin(int playerId) {
