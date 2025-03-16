@@ -38,6 +38,9 @@ public:
     // get the total amount of servers
     size_t count();
 
+    // returns whether the official server, aka `https://main.globed.dev` is currently active
+    bool isOfficialServerActive();
+
     // add a new central server and save. only call from main thread
     void addServer(const CentralServer& data);
     // remove a central server and save. only call from main thread

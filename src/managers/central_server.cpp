@@ -87,6 +87,10 @@ size_t CentralServerManager::count() {
     return _servers.lock()->size();
 }
 
+bool CentralServerManager::isOfficialServerActive() {
+    return _servers.lock()->at(0).url == globed::string<"main-server-url">();
+}
+
 void CentralServerManager::addServer(const CentralServer& data) {
     _servers.lock()->push_back(data);
     this->save();
