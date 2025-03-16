@@ -327,15 +327,15 @@ pub async fn update_punish(
 
     debug!(
         "Punishing {} (ban = {}, expires at = {}, reason = '{}')",
-        userdata.0.punishment.account_id, userdata.0.punishment.r#type == PunishmentType::Ban, userdata.0.punishment.expires_at, userdata.0.punishment.reason
+        userdata.0.account_id, userdata.0.is_ban, userdata.0.expires_at, userdata.0.reason
     );
 
     // insert empty user in case it does not exist
-    database.insert_empty_user(userdata.0.punishment.account_id).await?;
+    database.insert_empty_user(userdata.0.account_id).await?;
 
     database.punish_user(&userdata.0).await?;
 
-    _return_user_and_punishments(database, userdata.0.punishment.account_id).await
+    _return_user_and_punishments(database, userdata.0.account_id).await
 }
 
 #[post("/user/update/unpunish", data = "<userdata>")]

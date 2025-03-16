@@ -143,12 +143,17 @@ class AdminPunishUserPacket : public Packet {
     GLOBED_PACKET(19013, AdminPunishUserPacket, true, false)
 
     AdminPunishUserPacket() {}
-    AdminPunishUserPacket(UserPunishment punishment) : punishment(punishment) {}
+    AdminPunishUserPacket(int32_t accountId, bool isBan, std::string_view reason, uint64_t expiresAt) : accountId(accountId), isBan(isBan), reason(reason), expiresAt(expiresAt) {}
 
-    UserPunishment punishment;
+    int32_t accountId;
+    bool isBan;
+    std::string reason;
+    uint64_t expiresAt;
 };
 
-GLOBED_SERIALIZABLE_STRUCT(AdminPunishUserPacket, (punishment));
+GLOBED_SERIALIZABLE_STRUCT(AdminPunishUserPacket, (
+    accountId, isBan, reason, expiresAt
+));
 
 // 19014 - AdminRemovePunishmentPacket
 class AdminRemovePunishmentPacket : public Packet {

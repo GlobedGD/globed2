@@ -77,7 +77,10 @@ pub struct AdminSetUserRolesPacket {
 #[derive(Packet, Decodable)]
 #[packet(id = 19013, encrypted = true)]
 pub struct AdminPunishUserPacket {
-    pub punishment: UserPunishment,
+    pub account_id: i32,
+    pub is_ban: bool,
+    pub reason: FastString,
+    pub expires_at: u64,
 }
 
 #[derive(Packet, Decodable)]

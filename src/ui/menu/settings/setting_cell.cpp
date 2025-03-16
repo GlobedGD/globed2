@@ -254,9 +254,6 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
             break;
         }
         case Type::Keybind: {
-            auto& gs = GlobedSettings::get();
-            
-            auto type = settingStorage == &gs.communication.voiceChatKey.ref() ? globed::Keybinds::VoiceChatKey : globed::Keybinds::VoiceDeafenKey;
             KeybindSetupPopup::create(settingStorage)->show();
             break;
         }

@@ -40,12 +40,6 @@ namespace globed {
         Up, Down, Left, Right,
     };
 
-    enum class Keybinds {
-        VoiceChatKey,
-        VoiceDeafenKey,
-        HidePlayersKey,
-    };
-
     std::string formatKey(Key key);
     std::string formatKey(cocos2d::enumKeyCodes key);
 }

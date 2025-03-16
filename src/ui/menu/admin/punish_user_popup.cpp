@@ -454,12 +454,7 @@ void AdminPunishUserPopup::submit() {
     std::shared_ptr<Packet> pkt;
 
     if (!punishment) {
-        UserPunishment punishment = {
-            0, accountId, (isBan) ? PunishmentType::Ban : PunishmentType::Mute,
-            reason, expiresAt, static_cast<int64_t>(SystemTime::now().to_time_t()),
-            GJAccountManager::get()->m_accountID
-        };
-        pkt = AdminPunishUserPacket::create(punishment);
+        pkt = AdminPunishUserPacket::create(accountId, isBan, reason, expiresAt);
     } else {
         // edit the punishment otherwise
         pkt = AdminEditPunishmentPacket::create(accountId, isBan, reason, expiresAt);

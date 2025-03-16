@@ -229,7 +229,11 @@ pub struct AdminSetUserRolesAction {
 
 #[derive(Decodable, Encodable, DynamicSize)]
 pub struct AdminPunishUserAction {
-    pub punishment: UserPunishment,
+    pub issued_by: i32,
+    pub account_id: i32,
+    pub is_ban: bool,
+    pub reason: FastString,
+    pub expires_at: u64,
 }
 
 #[derive(Decodable, Encodable, DynamicSize)]

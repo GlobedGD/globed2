@@ -120,9 +120,10 @@ class ServerBannedPacket : public Packet {
 
     ServerBannedPacket() {}
 
-    UserPunishment punishment;
+    std::string message;
+    int64_t timestamp;
 };
-GLOBED_SERIALIZABLE_STRUCT(ServerBannedPacket, (punishment));
+GLOBED_SERIALIZABLE_STRUCT(ServerBannedPacket, (message, timestamp));
 
 // 20102 - ServerMutedPacket
 class ServerMutedPacket : public Packet {
@@ -130,9 +131,10 @@ class ServerMutedPacket : public Packet {
 
     ServerMutedPacket() {}
 
-    UserPunishment punishment;
+    std::string reason;
+    int64_t timestamp;
 };
-GLOBED_SERIALIZABLE_STRUCT(ServerMutedPacket, (punishment));
+GLOBED_SERIALIZABLE_STRUCT(ServerMutedPacket, (reason, timestamp));
 
 // 20200 - ConnectionTestResponsePacket
 class ConnectionTestResponsePacket : public Packet {

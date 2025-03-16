@@ -3,32 +3,29 @@
 #include <managers/central_server.hpp>
 #include <data/types/user.hpp>
 #include <hooks/gjbasegamelayer.hpp>
+
 #include <Geode/Geode.hpp>
 #include <Geode/utils/web.hpp>
-
 #include <asp/time.hpp>
-#include <fmt/format.h>
 #include <util/format.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
 
-bool UserPunishmentPopup::setup(UserPunishment const& punishment) {
-    bool isBan = (punishment.type == PunishmentType::Ban) ? true : false;
-
+bool UserPunishmentPopup::setup(std::string reason, int64_t expiresAt, bool isBan) {
     this->setTitle((isBan) ? "You have been banned!" : "You have been muted!");
 
     CCMenu* punishedMenu;
 
-    Duration punishmentTime = SystemTime::fromUnix(punishment.expiresAt)
+    Duration punishmentTime = SystemTime::fromUnix(expiresAt)
         .durationSince(SystemTime::now())
         .value_or(Duration{});
 
     std::string timeUntil = (punishmentTime.isZero()) ? "Never" : fmt::format("in {}", punishmentTime.toHumanString(1));
     
     std::string reasonText = fmt::format("Reason: {}", 
-        (punishment.reason.empty()) ? "No reason provided" : punishment.reason);
+        (reason.empty()) ? "No reason provided" : reason);
 
     auto sizes = util::ui::getPopupLayoutAnchored(m_size);
     
@@ -80,9 +77,9 @@ bool UserPunishmentPopup::setup(UserPunishment const& punishment) {
     return true;
 }
 
-UserPunishmentPopup* UserPunishmentPopup::create(UserPunishment const& punishment) {
+UserPunishmentPopup* UserPunishmentPopup::create(std::string reason, int64_t expiresAt, bool isBan) {
     auto ret = new UserPunishmentPopup();
-    if (ret->initAnchored(300.f, 160.f, punishment)) {
+    if (ret->initAnchored(300.f, 160.f, reason, expiresAt, isBan)) {
         ret->autorelease();
         return ret;
     }
