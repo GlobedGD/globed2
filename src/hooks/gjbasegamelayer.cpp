@@ -68,7 +68,7 @@ void GlobedGJBGL::onEnterHook() {
         auto l = GlobedGJBGL::get();
         bool isPaused = l ? l->isPaused(false) : self->isPaused(false);
 
-        if (isPaused) {
+        if (!isPaused) {
             self->CCLayer::onEnter();
         }
     });
