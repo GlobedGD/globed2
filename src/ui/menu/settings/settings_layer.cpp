@@ -116,9 +116,8 @@ bool GlobedSettingsLayer::init() {
         .parent(rightMenu)
         .collect();
 
-    // TODO: icon
     // Save slot button
-    Build<CCSprite>::createSpriteName("GJ_savedSongsBtn_001.png")
+    Build<CircleButtonSprite>::create(CCSprite::createWithSpriteFrameName("icon-folder-settings.png"_spr), CircleBaseColor::Pink)
         .with([&](auto* item) {
             util::ui::rescaleToMatch(item, resetBtn);
         })
