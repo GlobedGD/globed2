@@ -90,33 +90,3 @@ UserPunishmentPopup* UserPunishmentPopup::create(UserPunishment const& punishmen
     delete ret;
     return nullptr;
 }
-
-bool UserPunishmentCheckNode::init(UserPunishment const& punishment) {
-    if (!CCNode::init()) return false;
-
-    this->punishment = punishment;
-    this->schedule(schedule_selector(UserPunishmentCheckNode::updatePopup), 0.1f);
-
-    return true;
-}
-
-void UserPunishmentCheckNode::updatePopup(float) {
-    auto playlayer = GlobedGJBGL::get();
-    if (playlayer && !playlayer->isPaused()) {
-        return;
-    }
-
-    UserPunishmentPopup::create(this->punishment)->show();
-    this->removeMeAndCleanup();
-}
-
-UserPunishmentCheckNode* UserPunishmentCheckNode::create(const UserPunishment &punishment) {
-    auto ret = new UserPunishmentCheckNode();
-    if (ret->init(punishment)) {
-        ret->autorelease();
-        return ret;
-    }
-
-    delete ret;
-    return nullptr;
-}

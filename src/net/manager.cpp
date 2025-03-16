@@ -1,6 +1,5 @@
 #include "manager.hpp"
 
-#include "Geode/cocos/cocoa/CCObject.h"
 #include "address.hpp"
 #include "listener.hpp"
 #include "game_socket.hpp"
@@ -18,6 +17,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <managers/profile_cache.hpp>
+#include <managers/popup_queue.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
@@ -547,17 +547,12 @@ protected:
         });
 
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
-            using namespace std::chrono;
-            
-            UserPunishmentCheckNode::create(packet->punishment);
-
+            PopupQueue::get()->push(UserPunishmentPopup::create(packet->punishment));
             this->disconnect();
         });
 
         addGlobalListener<ServerMutedPacket>([](auto packet) {
-            using namespace std::chrono;
-
-            UserPunishmentPopup::create(packet->punishment)->show();
+            PopupQueue::get()->push(UserPunishmentPopup::create(packet->punishment));
         });
 
         // General packets
