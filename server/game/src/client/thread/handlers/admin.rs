@@ -551,7 +551,7 @@ impl ClientThread {
         let account_id = gs_needauth!(self);
 
         // verify the punishment is correct
-        if packet.expires_at != 0 && UNIX_EPOCH.elapsed().unwrap().as_secs() > packet.expires_at.try_into().unwrap() {
+        if packet.expires_at != 0 && UNIX_EPOCH.elapsed().unwrap().as_secs() > packet.expires_at {
             admin_error!(self, "invalid expiration date");
         }
 
