@@ -1,6 +1,5 @@
 #include "punish_user_popup.hpp"
 
-#include <Geode/binding/GJAccountManager.hpp>
 #include <defs/geode.hpp>
 #include <data/packets/client/admin.hpp>
 #include <net/manager.hpp>

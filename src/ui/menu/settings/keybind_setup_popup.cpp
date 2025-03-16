@@ -1,6 +1,5 @@
 #include "keybind_setup_popup.hpp"
-#include "Geode/cocos/robtop/keyboard_dispatcher/CCKeyboardDelegate.h"
-#include "managers/keybinds.hpp"
+#include <managers/keybinds.hpp>
 
 #include <util/ui.hpp>
 
