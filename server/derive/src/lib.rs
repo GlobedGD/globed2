@@ -8,8 +8,8 @@ mod encode;
 use attrs::{BitfieldAttributes, DynamicSizeAttributes, PacketAttributes};
 use darling::FromDeriveInput;
 use proc_macro::{self, Span, TokenStream};
-use quote::{quote, ToTokens};
-use syn::{parse_macro_input, punctuated::Punctuated, Data, DataStruct, DeriveInput, Meta, Token, Type};
+use quote::{ToTokens, quote};
+use syn::{Data, DataStruct, DeriveInput, Meta, Token, Type, parse_macro_input, punctuated::Punctuated};
 
 /// Implements `Encodable` for the given type, allowing you to serialize it into a `ByteBuffer` or a `FastByteBuffer`.
 /// For `Encodable` to be successfully derived, for structs, all of the members of the struct must also implement `Encodable`.
@@ -35,7 +35,7 @@ pub fn derive_encodable(input: TokenStream) -> TokenStream {
             return quote! {
                 compile_error!("Encodable cannot be derived for unions");
             }
-            .into()
+            .into();
         }
     };
 

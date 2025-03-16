@@ -4,7 +4,7 @@ pub mod responders;
 pub use guards::*;
 pub use responders::*;
 
-use rocket::{catch, Request};
+use rocket::{Request, catch};
 
 #[catch(404)]
 pub fn not_found(_req: &Request) -> &'static str {
@@ -33,8 +33,8 @@ pub mod routes {
 
     pub use super::*;
     pub use crate::{db::GlobedDb, state::ServerState};
-    pub use rocket::{get, post, State};
-    use rocket::{routes, Route};
+    use rocket::{Route, routes};
+    pub use rocket::{State, get, post};
 
     pub fn build_router() -> Vec<Route> {
         routes![

@@ -1,7 +1,7 @@
 use globed_shared::{error, info};
 use rocket::{
-    fairing::{self, AdHoc},
     Build, Rocket,
+    fairing::{self, AdHoc},
 };
 use rocket_db_pools::Database;
 

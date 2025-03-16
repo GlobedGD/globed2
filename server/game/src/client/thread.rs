@@ -18,7 +18,10 @@ use crate::{
 };
 use esp::ByteReader;
 use globed_shared::{
-    logger::*, rand::{self, RngCore}, should_ignore_error, ServerUserEntry, SyncMutex
+    ServerUserEntry, SyncMutex,
+    logger::*,
+    rand::{self, RngCore},
+    should_ignore_error,
 };
 use handlers::game::MAX_VOICE_PACKET_SIZE;
 use tokio::time::Instant;
