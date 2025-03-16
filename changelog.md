@@ -1,13 +1,14 @@
 ## v1.8.0
 
 TODO: icon for switching save slots
-TODO: profile the perf improvements
 
 * Add ability to create <cg>setting profiles</c> and toggle between them
 * \-- This allows you to easily change many settings at once, for example if attending some event
 * \-- The amount of save slots is unlimited and you can give them custom names
 * Remove Custom Keybinds dependency, add ability to change the voice chat keybind in settings (thanks LimeGradient!)
+* Add ability to reply when you get a Globed notice from a moderator (not always enabled)
 * Gauntlet levels now show the player count under them (thanks LimeGradient!)
+* Added the total room count to the rooms list popup (thanks LimeGradient!)
 * Make even more corrections to the texture pack detection algorithm, add better debug information
 * Significant performance improvements
 * Fix crashing when connecting to a server that is down

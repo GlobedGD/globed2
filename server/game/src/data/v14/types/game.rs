@@ -94,7 +94,7 @@ impl GlobedCounterChange {
         // safety: set/add are always ints, mul/div are always float
         let value = unsafe {
             match self.r#type {
-                GlobedCounterChangeType::Add => number + self.value.int_val,
+                GlobedCounterChangeType::Add => number.wrapping_add(self.value.int_val),
                 GlobedCounterChangeType::Set => self.value.int_val,
                 GlobedCounterChangeType::Multiply => ((number as f32) * self.value.flt_val.0) as i32,
                 GlobedCounterChangeType::Divide => {

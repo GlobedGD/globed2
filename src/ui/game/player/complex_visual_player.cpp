@@ -9,6 +9,7 @@
 #include <util/math.hpp>
 #include <util/debug.hpp>
 #include <util/ui.hpp>
+#include <util/singleton.hpp>
 
 using namespace geode::prelude;
 
@@ -25,7 +26,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 
     auto& settings = GlobedSettings::get();
 
-    auto* hgm = static_cast<HookedGameManager*>(GameManager::get());
+    auto* hgm = static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>());
 
     auto playerOpacity = static_cast<unsigned char>(settings.players.playerOpacity * 255.f);
 
@@ -78,7 +79,7 @@ bool ComplexVisualPlayer::init(RemotePlayer* parent, bool isSecond) {
 }
 
 void ComplexVisualPlayer::updateIcons(const PlayerIconData& icons) {
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
     auto& settings = GlobedSettings::get();
 
     // update the name and the badge
@@ -365,7 +366,7 @@ void ComplexVisualPlayer::playDeathEffect() {
     this->onAnimateRobotFireOut();
 
     // only play the death effect in playlayer
-    if (!PlayLayer::get()) {
+    if (!globed::cachedSingleton<GameManager>()->m_playLayer) {
         return;
     }
 
@@ -395,12 +396,13 @@ void ComplexVisualPlayer::playDeathEffect() {
 
 void ComplexVisualPlayer::playSpiderTeleport(const SpiderTeleportData& data) {
     // spider teleport effect is only played in play layer, and when nearby
-    if (!PlayLayer::get() || !wasNearby) return;
+    auto pl = globed::cachedSingleton<GameManager>()->m_playLayer;
+    if (!pl || !wasNearby) return;
 
     playerIcon->m_playEffects = true;
     playerIcon->stopActionByTag(SPIDER_TELEPORT_COLOR_ACTION);
 
-    auto* arr = PlayLayer::get()->m_circleWaveArray;
+    auto* arr = pl->m_circleWaveArray;
     size_t countBefore = arr ? arr->count() : 0;
     playerIcon->playSpiderDashEffect(data.from, data.to);
     size_t countAfter = arr ? arr->count() : 0;
@@ -573,7 +575,7 @@ void ComplexVisualPlayer::onAnimateRobotFireOut() {
 }
 
 void ComplexVisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
 
     storedMainColor = gm->colorForIdx(storedIcons.color1);
     storedSecondaryColor = gm->colorForIdx(storedIcons.color2);
@@ -708,7 +710,7 @@ bool ComplexVisualPlayer::getP2StickyState() {
 
 void ComplexVisualPlayer::tryLoadIconsAsync() {
     if (iconsLoaded != 0) return;
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
     auto* textureCache = CCTextureCache::sharedTextureCache();
     auto* sfCache = CCSpriteFrameCache::sharedSpriteFrameCache();
 
@@ -766,7 +768,7 @@ void ComplexVisualPlayer::asyncIconLoadedIntermediary(cocos2d::CCObject* obj) {
     auto request = asyncLoadRequests[uniqueId];
     asyncLoadRequests.erase(uniqueId);
 
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
     gm->loadIcon(request.iconId, (int)globed::into<IconType>(request.iconType), -1);
     gm->m_isIconBeingLoaded[request.key] = 0;
 

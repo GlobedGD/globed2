@@ -17,7 +17,7 @@ void ProfileCacheManager::clear() {
 }
 
 void ProfileCacheManager::setOwnDataAuto() {
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
 
     PlayerIconData data(
         gm->m_playerFrame,

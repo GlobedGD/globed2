@@ -3,6 +3,7 @@
 #include "invite.hpp"
 #include <net/manager.hpp>
 #include <hooks/gjbasegamelayer.hpp>
+#include <util/singleton.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -114,7 +115,7 @@ void GlobedNotificationPanel::queueNotification(cocos2d::CCNode* node) {
 void GlobedNotificationPanel::update(float dt) {
     // hide if in a level
     bool shouldShow = true;
-    if (auto* pl = PlayLayer::get()) {
+    if (auto* pl = globed::cachedSingleton<GameManager>()->m_playLayer) {
         shouldShow = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(pl))->isPaused();
     }
 

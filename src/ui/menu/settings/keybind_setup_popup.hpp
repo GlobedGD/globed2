@@ -16,4 +16,5 @@ private:
 
     cocos2d::CCLabelBMFont* m_keybindLabel;
     int key;
+    bool isValid = false;
 };

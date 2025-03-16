@@ -1,5 +1,6 @@
 #include "manager.hpp"
 
+#include "Geode/cocos/cocoa/CCObject.h"
 #include "address.hpp"
 #include "listener.hpp"
 #include "game_socket.hpp"
@@ -310,9 +311,9 @@ protected:
         secretKey = 0;
         serverTps = 0;
         serverProtocol = 0;
-        *lastReceivedPacket.lock() = {};
-        lastSentKeepalive = {};
-        lastTcpExchange = {};
+        *lastReceivedPacket.lock() = SystemTime::now();
+        lastSentKeepalive = SystemTime::now();
+        lastTcpExchange = SystemTime::now();
     }
 
     /* connection and tasks */
@@ -542,42 +543,19 @@ protected:
         });
 
         addGlobalListener<ServerNoticePacket>([](auto packet) {
-            ErrorQueues::get().notice(packet->message);
+            ErrorQueues::get().notice(packet->message, packet->replyId);
         });
 
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
             using namespace std::chrono;
-
-            std::string reason = packet->punishment.reason;
-            if (reason.empty()) {
-                reason = "No reason given";
-            }
-
-            auto msg = fmt::format(
-                "<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
-                reason,
-                //packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
-                1901
-            );
             
-            UserPunishmentPopup::create(packet->punishment)->show();
+            UserPunishmentCheckNode::create(packet->punishment);
+
             this->disconnect();
         });
 
         addGlobalListener<ServerMutedPacket>([](auto packet) {
             using namespace std::chrono;
-
-            std::string reason = packet->punishment.reason;
-            if (reason.empty()) {
-                reason = "No reason given";
-            }
-
-            auto msg = fmt::format(
-                "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
-                reason,
-                //packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
-                1901
-            );
 
             UserPunishmentPopup::create(packet->punishment)->show();
         });
@@ -654,6 +632,19 @@ protected:
 
         addGlobalListener<AdminErrorPacket>([](auto packet) {
             ErrorQueues::get().warn(packet->message);
+        });
+
+        addGlobalListener<AdminReceivedNoticeReplyPacket>([](auto packet) {
+            auto alert = FLAlertLayer::create(
+                nullptr,
+                fmt::format("Reply from {}", packet->userName).c_str(),
+                packet->userReply,
+                "Ok",
+                nullptr,
+                420.f
+            );
+
+            alert->show();
         });
     }
 

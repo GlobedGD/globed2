@@ -4,7 +4,7 @@
 
 Before trying to setup a server, it is **recommended** that you understand what it involves. You will likely need to either setup port forwarding or use a VPN tool like Radmin VPN if you are hosting the server on your PC, and that won't be covered in this guide.
 
-In case you are familiar with [Pterodactyl](https://pterodactyl.io/), there are eggs available for the [central](https://github.com/DumbCaveSpider/globed-central-egg) and [game](https://github.com/DumbCaveSpider/globed-game-egg) servers that could simplify the setup (thanks to [@DumbCaveSpider](https://github.com/DumbCaveSpider/))
+In case you are familiar with [Pterodactyl](https://pterodactyl.io/), there is an [egg](https://github.com/DumbCaveSpider/globed-pterodactyl-egg) available that could simplify the setup (thanks to [@DumbCaveSpider](https://github.com/DumbCaveSpider/))
 
 Additionally, if you are setting up a public server, please keep in mind that there are no stability guarantees. Big changes to the server can be made at any time, and updates to the mod can cause your server to stop accepting users until you update it.
 
@@ -153,7 +153,8 @@ The `Rocket.toml` is primarily used for changing the HTTP port and the path to t
 
 ## Building
 
-If you want to build the server yourself, you need a nightly Rust toolchain. After that, it's as simple as:
+If you want to build the server yourself, you need a **nightly Rust toolchain** (preferrably latest). After that, it's as simple as:
+
 ```sh
 cd server/
 rustup override set nightly # has to be done only once

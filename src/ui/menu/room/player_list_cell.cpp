@@ -32,7 +32,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
     this->setContentWidth(cellWidth);
     this->setContentHeight(CELL_HEIGHT);
 
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
 
     Build<CCMenu>::create()
         .pos(10.f, CELL_HEIGHT / 2.f)

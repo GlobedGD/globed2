@@ -6,7 +6,7 @@ use std::{
         Arc,
         atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
     },
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use crate::{
@@ -17,7 +17,12 @@ use crate::{
     },
 };
 use esp::ByteReader;
-use globed_shared::{logger::*, should_ignore_error, ServerUserEntry, SyncMutex, UserPunishment};
+use globed_shared::{
+    ServerUserEntry, SyncMutex,
+    logger::*,
+    rand::{self, RngCore},
+    should_ignore_error,
+};
 use handlers::game::MAX_VOICE_PACKET_SIZE;
 use tokio::time::Instant;
 
@@ -47,8 +52,32 @@ pub enum ServerThreadMessage {
     BroadcastBan(ServerBannedPacket),
     BroadcastMute(ServerMutedPacket),
     BroadcastRoleChange(RolesUpdatedPacket),
+    BroadcastNoticeReply(PendingNoticeReply),
     BroadcastRoomKicked,
     TerminationNotice(FastString),
+}
+
+#[derive(Clone)]
+pub struct PendingNoticeReply {
+    pub reply_id: u32,          // unique id of the notice reply
+    pub moderator_id: i32,      // account id of the moderator
+    pub user_id: i32,           // account id of the target user
+    pub admin_msg: FastString,  // message that was sent by the admin
+    pub user_reply: FastString, // the reply of the user
+    pub sent_at: SystemTime,
+}
+
+impl Default for PendingNoticeReply {
+    fn default() -> Self {
+        Self {
+            reply_id: 0,
+            moderator_id: 0,
+            user_id: 0,
+            admin_msg: FastString::default(),
+            user_reply: FastString::default(),
+            sent_at: SystemTime::now(),
+        }
+    }
 }
 
 pub struct ClientThread {
@@ -80,6 +109,7 @@ pub struct ClientThread {
     voice_rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
     chat_rate_limiter: Option<LockfreeMutCell<SimpleRateLimiter>>,
     translator: PacketTranslator,
+    pub pending_notice_replies: SyncMutex<Vec<PendingNoticeReply>>,
 
     pub destruction_notify: Arc<Notify>,
 }
@@ -144,6 +174,7 @@ impl ClientThread {
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
             translator,
+            pending_notice_replies: SyncMutex::new(Vec::new()),
 
             destruction_notify: thread.destruction_notify,
         }
@@ -377,6 +408,31 @@ impl ClientThread {
         true
     }
 
+    pub fn create_notice_reply(&self, moderator_id: i32, admin_msg: FastString) -> u32 {
+        let user_id = self.account_id.load(Ordering::Relaxed);
+        let reply_id = rand::rng().next_u32();
+
+        let reply = PendingNoticeReply {
+            admin_msg,
+            user_id,
+            reply_id,
+            moderator_id,
+            user_reply: FastString::default(),
+            sent_at: SystemTime::now(),
+        };
+
+        self.pending_notice_replies.lock().push(reply);
+
+        reply_id
+    }
+
+    pub fn routine_cleanup(&self) {
+        // delete all pending replies that are over 1 hour old
+        self.pending_notice_replies
+            .lock()
+            .retain(|reply| reply.sent_at.elapsed().unwrap_or_default() < Duration::from_hours(1));
+    }
+
     #[inline]
     async fn recv_and_handle(&self, message_size: usize) -> Result<()> {
         // safety: only we can receive data from our client.
@@ -392,8 +448,8 @@ impl ClientThread {
             ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_static(&text_packet).await?,
             ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet_dynamic(&*voice_packet).await?,
             ServerThreadMessage::BroadcastNotice(packet) => {
-                self.send_packet_dynamic(&packet).await?;
                 info!("{} is receiving a notice: {}", self.account_data.lock().name, packet.message);
+                self.send_packet_translatable(packet).await?;
             }
             ServerThreadMessage::BroadcastInvite(packet) => {
                 let invitable = !self.privacy_settings.lock().get_no_invites();
@@ -408,6 +464,27 @@ impl ClientThread {
             ServerThreadMessage::BroadcastBan(packet) => self.ban(packet.punishment).await?,
             ServerThreadMessage::BroadcastMute(packet) => self.send_packet_dynamic(&packet).await?,
             ServerThreadMessage::BroadcastRoleChange(packet) => self.send_packet_static(&packet).await?,
+            ServerThreadMessage::BroadcastNoticeReply(reply) => {
+                let user_name = if let Some(user) = self.game_server.get_user_by_id(reply.user_id) {
+                    FastString::new(user.account_data.lock().name.try_to_str())
+                } else {
+                    FastString::new("<unknown>")
+                };
+
+                info!(
+                    "{user_name} ({}) sent a notice reply to {}: \"{}\"",
+                    reply.user_id, reply.moderator_id, reply.user_reply
+                );
+
+                self.send_packet_dynamic(&AdminReceivedNoticeReplyPacket {
+                    reply_id: reply.reply_id,
+                    user_id: reply.user_id,
+                    user_name,
+                    admin_msg: reply.admin_msg,
+                    user_reply: reply.user_reply,
+                })
+                .await?;
+            }
             ServerThreadMessage::BroadcastRoomKicked => self._kicked_from_room().await?,
             ServerThreadMessage::TerminationNotice(message) => self.kick(Cow::Borrowed(message.try_to_str())).await?,
         }
@@ -473,6 +550,7 @@ impl ClientThread {
             PlayerDataPacket::PACKET_ID => self.handle_player_data(&mut data).await,
             VoicePacket::PACKET_ID => self.handle_voice(&mut data).await,
             ChatMessagePacket::PACKET_ID => self.handle_chat_message(&mut data).await,
+            NoticeReplyPacket::PACKET_ID => self.handle_notice_reply(&mut data).await,
 
             /* room related */
             CreateRoomPacket::PACKET_ID => self.handle_create_room(&mut data).await,
@@ -516,6 +594,11 @@ impl ClientThread {
     #[inline]
     async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
         unsafe { self.socket.get_mut() }.send_packet_dynamic(packet).await
+    }
+
+    #[inline]
+    async fn send_packet_translatable<P: Packet + Encodable + DynamicSize + PartialTranslatableEncodable>(&self, packet: P) -> Result<()> {
+        unsafe { self.socket.get_mut() }.send_packet_translatable(packet).await
     }
 
     #[inline]

@@ -10,4 +10,16 @@ protected:
 
 public:
     static UserPunishmentPopup* create(UserPunishment const& punishment);
+    
+};
+
+class UserPunishmentCheckNode : public cocos2d::CCNode {
+protected:
+    bool init(UserPunishment const& punishment);
+    void updatePopup(float dt);
+
+    UserPunishment punishment;
+
+public:
+    static UserPunishmentCheckNode* create(UserPunishment const& punishment);
 };

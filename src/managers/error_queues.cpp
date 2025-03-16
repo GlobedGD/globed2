@@ -17,9 +17,12 @@ void ErrorQueues::success(std::string_view message, bool print) {
     _successes.push(std::string(message));
 }
 
-void ErrorQueues::notice(std::string_view message, bool print) {
+void ErrorQueues::notice(std::string_view message, uint32_t replyId, bool print) {
     if (print) log::warn("[Server notice] {}", message);
-    _notices.push(std::string(message));
+    _notices.push({
+        std::string(message),
+        replyId
+    });
 }
 
 void ErrorQueues::debugWarn(std::string_view message, bool print) {
@@ -56,8 +59,8 @@ std::vector<std::string> ErrorQueues::getSuccesses() {
     return out;
 }
 
-std::vector<std::string> ErrorQueues::getNotices() {
-    std::vector<std::string> out;
+std::vector<ErrorQueues::PendingNotice> ErrorQueues::getNotices() {
+    std::vector<PendingNotice> out;
     while (auto msg = _notices.tryPop()) {
         out.push_back(msg.value());
     }

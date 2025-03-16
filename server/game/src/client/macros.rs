@@ -52,8 +52,17 @@ macro_rules! gs_disconnect {
 #[allow(unused_macros)]
 /// send a `ServerNoticePacket` to the client with the given message
 macro_rules! gs_notice {
+    ($self:expr, $msg:literal) => {
+        $self
+            .send_packet_translatable(ServerNoticePacket {
+                message: FastString::new($msg),
+                reply_id: 0,
+            })
+            .await?;
+    };
+
     ($self:expr, $msg:expr) => {
-        $self.send_packet_fast_dynamic(&ServerNoticePacket { message: $msg }).await?;
+        $self.send_packet_translatable(ServerNoticePacket { message: $msg, reply_id: 0 }).await?;
     };
 }
 

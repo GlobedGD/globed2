@@ -110,8 +110,9 @@ class ServerNoticePacket : public Packet {
     ServerNoticePacket() {}
 
     std::string message;
+    uint32_t replyId;
 };
-GLOBED_SERIALIZABLE_STRUCT(ServerNoticePacket, (message));
+GLOBED_SERIALIZABLE_STRUCT(ServerNoticePacket, (message, replyId));
 
 // 20101 - ServerBannedPacket
 class ServerBannedPacket : public Packet {

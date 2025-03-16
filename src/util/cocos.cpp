@@ -6,6 +6,7 @@
 #include <hooks/game_manager.hpp>
 #include <util/format.hpp>
 #include <util/debug.hpp>
+#include <util/singleton.hpp>
 
 #include <asp/thread.hpp>
 #include <asp/fs.hpp>
@@ -349,7 +350,7 @@ namespace util::cocos {
                 {
                     auto _ = cocosWorkMutex.lock();
 
-                    if (static_cast<HookedGameManager*>(GameManager::get())->fields()->loadedFrames.contains(plistKey)) {
+                    if (static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>())->fields()->loadedFrames.contains(plistKey)) {
                         preloadLog("already contains, skipping {}", plistKey);
                         return;
                     }
@@ -394,7 +395,7 @@ namespace util::cocos {
                     auto _ = cocosWorkMutex.lock();
 
                     _addSpriteFramesWithDictionary(dict, imgState.texture);
-                    static_cast<HookedGameManager*>(GameManager::get())->fields()->loadedFrames.insert(plistKey);
+                    static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>())->fields()->loadedFrames.insert(plistKey);
                 }
 
                 dict->release();
@@ -417,7 +418,7 @@ namespace util::cocos {
 
         preloadLog("preloadAssets stage: {}", (int)stage);
 
-        auto* gm = static_cast<HookedGameManager*>(GameManager::get());
+        auto* gm = static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>());
 
         switch (stage) {
             case AssetPreloadStage::DeathEffect: {
@@ -493,7 +494,7 @@ namespace util::cocos {
         // if preloading is completely disabled, always return false
         if (forcedSkipPreload()) return false;
 
-        auto* gm = static_cast<HookedGameManager*>(GameManager::get());
+        auto* gm = static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>());
 
         // if already loaded, don't try again
         if (gm->getAssetsPreloaded()) {

@@ -21,6 +21,7 @@ use globed_shared::{
 };
 
 use super::{
+    PacketTranslationError, PartialTranslatableEncodable,
     error::{PacketHandlingError, Result},
     macros::*,
 };
@@ -33,6 +34,7 @@ pub struct ClientSocket {
     pub udp_peer: Option<SocketAddrV4>,
     crypto_box: OnceLock<ChaChaBox>,
     game_server: &'static GameServer,
+    protocol_version: u16,
     mtu: usize,
 }
 
@@ -54,6 +56,7 @@ impl ClientSocket {
             udp_peer: None,
             crypto_box: OnceLock::new(),
             game_server,
+            protocol_version: 0,
             mtu,
         }
     }
@@ -113,6 +116,10 @@ impl ClientSocket {
 
     pub fn set_mtu(&mut self, mtu: usize) {
         self.mtu = mtu;
+    }
+
+    pub fn set_protocol_version(&mut self, version: u16) {
+        self.protocol_version = version;
     }
 
     pub fn decrypt<'a>(&self, message: &'a mut [u8]) -> Result<ByteReader<'a>> {
@@ -175,6 +182,26 @@ impl ClientSocket {
     /// you are still required to derive/implement `DynamicSize` so the size can be computed at runtime.
     pub async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&mut self, packet: &P) -> Result<()> {
         self.send_packet_alloca(packet, packet.encoded_size()).await
+    }
+
+    /// packet translation, this is not optimized for performance and is relatively slow.
+    /// however, translatable packets should have a relatively low percentage compared to others, so this isn't a concern.
+    pub async fn send_packet_translatable<P: Packet + Encodable + DynamicSize + PartialTranslatableEncodable>(&mut self, packet: P) -> Result<()> {
+        // if client's protocol is same or set to ignore, send it without translating
+        if self.protocol_version == CURRENT_PROTOCOL || self.protocol_version == 0xffff {
+            return self.send_packet_dynamic(&packet).await;
+        }
+
+        let mut buf = ByteBuffer::with_capacity(128);
+
+        if let Err(e) = packet.translate_and_encode(self.protocol_version, &mut buf) {
+            return Err(PacketHandlingError::TranslationError(e));
+        }
+
+        self.send_packet_alloca_with::<P, _>(buf.len(), move |fb| {
+            fb.write_bytes(buf.as_bytes());
+        })
+        .await
     }
 
     /// use alloca to encode the packet on the stack, and try a non-blocking send, on failure clones to a Vec and a blocking send.

@@ -155,7 +155,10 @@ impl ClientThread {
             return Ok(());
         }
 
-        let notice_packet = ServerNoticePacket { message: packet.message };
+        let mut notice_packet = ServerNoticePacket {
+            message: packet.message,
+            reply_id: 0,
+        };
 
         // i am not proud of this code
         match packet.notice_type {
@@ -235,7 +238,11 @@ impl ClientThread {
                 }
 
                 if let Some(thread) = thread {
-                    thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone())).await;
+                    if packet.can_reply {
+                        notice_packet.reply_id = thread.create_notice_reply(account_id, notice_packet.message.clone());
+                    }
+
+                    thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet)).await;
 
                     self.send_packet_dynamic(&AdminSuccessMessagePacket {
                         message: Cow::Owned(format!("Sent notice to {}", thread.account_data.lock().name)),

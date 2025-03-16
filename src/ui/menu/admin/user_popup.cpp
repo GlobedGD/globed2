@@ -287,18 +287,18 @@ void AdminUserPopup::onProfileLoaded() {
     Build<CCSprite>::createSpriteName("button-admin-notice.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            AskInputPopup::create(fmt::format("Send notice to {}", accountData->name), [this, accountId = accountData->accountId](auto message) {
+            AskInputPopup::create(fmt::format("Send notice to {}", accountData->name), [this, accountId = accountData->accountId](auto message, bool canReply) {
                 auto msg = util::format::trim(message);
                 if (msg.empty()) {
                     ErrorQueues::get().warn("Cannot send an empty notice");
                     return;
                 }
 
-                auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), msg);
+                auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), msg, canReply);
                 NetworkManager::get().send(packet);
 
                 this->showLoadingPopup();
-            }, 160, "Message", util::misc::STRING_PRINTABLE_INPUT, 0.6f)->show();
+            }, 160, "Message", util::misc::STRING_PRINTABLE_INPUT, 0.6f, "User can reply?")->show();
         })
         .zOrder(btnorder::Notice)
         .parent(rootMenu);

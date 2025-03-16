@@ -29,18 +29,19 @@ class AdminSendNoticePacket : public Packet {
     GLOBED_PACKET(19001, AdminSendNoticePacket, true, true)
 
     AdminSendNoticePacket() {}
-    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, std::string_view player, std::string_view message)
-        : ptype(ptype), roomId(roomId), levelId(levelId), player(player), message(message) {}
+    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, std::string_view player, std::string_view message, bool canReply)
+        : ptype(ptype), roomId(roomId), levelId(levelId), player(player), message(message), canReply(canReply) {}
 
     AdminSendNoticeType ptype;
     uint32_t roomId;
     LevelId levelId;
     std::string player;
     std::string message;
+    bool canReply;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminSendNoticePacket, (
-    ptype, roomId, levelId, player, message
+    ptype, roomId, levelId, player, message, canReply
 ));
 
 // 19002 - AdminDisconnectPacket

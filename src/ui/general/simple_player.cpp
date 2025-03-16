@@ -1,6 +1,7 @@
 #include "simple_player.hpp"
 
 #include <util/gd.hpp>
+#include <util/singleton.hpp>
 
 using namespace geode::prelude;
 
@@ -24,7 +25,7 @@ void GlobedSimplePlayer::updateIcons(const Icons& icons) {
 }
 
 void GlobedSimplePlayer::updateIcons() {
-    auto* gm = GameManager::get();
+    auto* gm = globed::cachedSingleton<GameManager>();
 
     sp->updatePlayerFrame(icons.id, icons.type);
 

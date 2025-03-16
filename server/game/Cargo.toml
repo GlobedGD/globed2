@@ -9,6 +9,7 @@ globed-derive = { path = "../derive" }
 esp = { path = "../esp" }
 
 alloca = "0.4.0"
+async-watcher = "0.3.0"
 ctrlc = "3.4.5"
 rustc-hash = "2.1.0"
 serde = { version = "1.0.215", features = ["serde_derive"] }

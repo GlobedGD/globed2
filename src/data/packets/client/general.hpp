@@ -66,3 +66,16 @@ class LinkCodeRequestPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LinkCodeRequestPacket, ());
+
+// 11006 - NoticeReplyPacket
+class NoticeReplyPacket : public Packet {
+    GLOBED_PACKET(11006, NoticeReplyPacket, false, false);
+
+    NoticeReplyPacket() {}
+    NoticeReplyPacket(uint32_t replyId, std::string message) : replyId(replyId), message(std::move(message)) {}
+
+    uint32_t replyId;
+    std::string message;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(NoticeReplyPacket, (replyId, message));

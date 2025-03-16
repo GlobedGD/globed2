@@ -1,6 +1,7 @@
 #include "progress_icon.hpp"
 
 #include <managers/settings.hpp>
+#include <util/singleton.hpp>
 
 using namespace geode::prelude;
 
@@ -18,7 +19,7 @@ void PlayerProgressIcon::updateIcons(const PlayerIconData& data) {
     if (playerIcon) playerIcon->removeFromParent();
 
     auto& settings = GlobedSettings::get();
-    auto gm = GameManager::get();
+    auto gm = globed::cachedSingleton<GameManager>();
     auto color1 = gm->colorForIdx(data.color1);
     auto color2 = gm->colorForIdx(data.color2);
 

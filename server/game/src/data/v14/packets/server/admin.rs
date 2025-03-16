@@ -45,3 +45,13 @@ pub struct AdminPunishmentHistoryPacket {
 pub struct AdminSuccessfulUpdatePacket {
     pub user_entry: UserEntry,
 }
+
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 29007, tcp, encrypted)]
+pub struct AdminReceivedNoticeReplyPacket {
+    pub reply_id: u32,
+    pub user_id: i32,
+    pub user_name: FastString,
+    pub admin_msg: FastString,
+    pub user_reply: FastString,
+}

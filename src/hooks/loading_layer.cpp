@@ -32,7 +32,7 @@ void HookedLoadingLayer::loadingFinishedHook() {
 
         m_fields->preloadingStage++;
 
-        auto* gm = GameManager::get();
+        auto* gm = globed::cachedSingleton<GameManager>();
         auto* hgm = static_cast<HookedGameManager*>(gm);
 
         if (!util::cocos::shouldTryToPreload(true)) {
@@ -98,7 +98,7 @@ void HookedLoadingLayer::preloadingStage2(float) {
             // only preload them if they are enabled, they take like half the loading time
             if (settings.players.deathEffects && !settings.players.defaultDeathEffect) {
                 preloadAssets(AssetPreloadStage::DeathEffect);
-                static_cast<HookedGameManager*>(GameManager::get())->setDeathEffectsPreloaded(true);
+                static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>())->setDeathEffectsPreloaded(true);
             }
         } break;
         case 2: preloadAssets(AssetPreloadStage::Cube); break;
@@ -108,7 +108,7 @@ void HookedLoadingLayer::preloadingStage2(float) {
         case 6: preloadAssets(AssetPreloadStage::Wave); break;
         case 7: preloadAssets(AssetPreloadStage::Other); break;
         case 8: {
-            static_cast<HookedGameManager*>(GameManager::get())->setAssetsPreloaded(true);
+            static_cast<HookedGameManager*>(globed::cachedSingleton<GameManager>())->setAssetsPreloaded(true);
             this->finishLoading();
             return;
         }

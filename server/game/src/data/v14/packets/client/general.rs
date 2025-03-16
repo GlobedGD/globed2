@@ -29,3 +29,10 @@ pub struct UpdatePlayerStatusPacket {
 #[derive(Packet, Decodable)]
 #[packet(id = 11005)]
 pub struct LinkCodeRequestPacket;
+
+#[derive(Packet, Decodable)]
+#[packet(id = 11006)]
+pub struct NoticeReplyPacket {
+    pub reply_id: u32,
+    pub message: FastString,
+}
