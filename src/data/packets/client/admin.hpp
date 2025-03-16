@@ -2,6 +2,7 @@
 #include <data/packets/packet.hpp>
 #include <data/types/admin.hpp>
 #include <data/types/gd.hpp>
+#include <data/types/user.hpp>
 
 // 19000 - AdminAuthPacket
 class AdminAuthPacket : public Packet {

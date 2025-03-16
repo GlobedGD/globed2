@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use globed_shared::UserPunishment;
+
 use crate::{data::*, managers::GameServerRole};
 
 #[derive(Packet, Encodable, StaticSize)]

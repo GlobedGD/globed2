@@ -1,10 +1,11 @@
 #include "keybind_setup_popup.hpp"
+#include <managers/keybinds.hpp>
 
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
 
-bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
+bool KeybindSetupPopup::setup(void* settingStorage) {
     this->setTitle("Set Keybind");
 
     m_keybindLabel = CCLabelBMFont::create("Keybind: None", "bigFont.fnt");
@@ -12,24 +13,18 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
 
     auto& gs = GlobedSettings::get();
 
+    int keybind = *(int*)(settingStorage);
+    this->settingStorage = (int*)settingStorage;
+
     auto applyButton = Build<ButtonSprite>::create("Apply", "bigFont.fnt", "GJ_button_01.png", 0.75f)
-        .intoMenuItem([&gs, keybind, this] (auto) {
+        .intoMenuItem([&gs, this] (auto) {
             if (!this->isValid) {
                 Notification::create("Please choose a valid key", NotificationIcon::Error, 0.5f)->show();
                 return;
             }
 
-            switch (keybind) {
-                case globed::Keybinds::VoiceChatKey: {
-                    gs.communication.voiceChatKey = this->key;
-                    break;
-                }
-                case globed::Keybinds::VoiceDeafenKey: {
-                    gs.communication.voiceDeafenKey = this->key;
-                    break;
-                }
-                default: break;
-            }
+            *this->settingStorage = this->key;
+            gs.save();
 
             auto keystr = globed::formatKey((enumKeyCodes) this->key);
             Notification::create(fmt::format("Set Keybind to {}", keystr), NotificationIcon::Success, 0.5f)->show();
@@ -42,17 +37,7 @@ bool KeybindSetupPopup::setup(int key, globed::Keybinds keybind) {
         .pos(0.f, 0.f)
         .parent(m_mainLayer);
 
-    switch (keybind) {
-        case globed::Keybinds::VoiceChatKey: {
-            this->keyDown((enumKeyCodes) gs.communication.voiceChatKey.get());
-            break;
-        }
-        case globed::Keybinds::VoiceDeafenKey: {
-            this->keyDown((enumKeyCodes) gs.communication.voiceDeafenKey.get());
-            break;
-        }
-        default: break;
-    }
+    this->keyDown((enumKeyCodes)*this->settingStorage);
 
     return true;
 }
@@ -79,9 +64,9 @@ void KeybindSetupPopup::keyDown(enumKeyCodes keyCode) {
     m_keybindLabel->limitLabelWidth(POPUP_WIDTH - 16.f, 0.75f, 0.5f);
 }
 
-KeybindSetupPopup* KeybindSetupPopup::create(int key, globed::Keybinds keybind) {
+KeybindSetupPopup* KeybindSetupPopup::create(void* settingStorage) {
     auto ret = new KeybindSetupPopup();
-    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, key, keybind)) {
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, settingStorage)) {
         ret->autorelease();
         return ret;
     }

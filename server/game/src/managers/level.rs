@@ -1,8 +1,8 @@
 use globed_shared::IntMap;
 
 use crate::data::{
-    types::PlayerData, AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata,
-    GlobedCounterChange, LevelId, PlayerMetadata,
+    AssociatedPlayerData, AssociatedPlayerMetadata, BorrowedAssociatedPlayerData, BorrowedAssociatedPlayerMetadata, GlobedCounterChange, LevelId,
+    PlayerMetadata, types::PlayerData,
 };
 
 #[derive(Default)]

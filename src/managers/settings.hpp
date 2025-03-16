@@ -266,6 +266,7 @@ public:
         Setting<bool, true> preloadAssets;
         Setting<bool, false> deferPreloadAssets;
         LimitedSetting<int, (int)InvitesFrom::Friends, 0, 2> invitesFrom;
+        Setting<int, cocos2d::enumKeyCodes::KEY_H> hidePlayersKey;
         Setting<bool, true> editorSupport;
         Setting<bool, false> increaseLevelList;
         Setting<int, 60000> fragmentationLimit;

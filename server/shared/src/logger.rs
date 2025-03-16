@@ -7,10 +7,10 @@ use std::{
 };
 
 use colored::Colorize;
-use time::{format_description, OffsetDateTime};
+use time::{OffsetDateTime, format_description};
 
 pub use log;
-pub use log::{debug, error, info, trace, warn, Level as LogLevel, LevelFilter as LogLevelFilter};
+pub use log::{Level as LogLevel, LevelFilter as LogLevelFilter, debug, error, info, trace, warn};
 
 pub struct Logger {
     pub format_desc: Vec<format_description::FormatItem<'static>>,

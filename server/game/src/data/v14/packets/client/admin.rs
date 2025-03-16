@@ -1,3 +1,5 @@
+use globed_shared::UserPunishment;
+
 use crate::data::*;
 
 #[derive(Packet, Decodable)]

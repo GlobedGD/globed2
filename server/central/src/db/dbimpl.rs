@@ -289,7 +289,7 @@ impl GlobedDb {
             reason,
             expires_at,
             issued_at,
-            action.issued_by
+            action.issued_by,
         )
         .fetch_one(&self.0)
         .await?

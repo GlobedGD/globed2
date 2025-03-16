@@ -6,7 +6,7 @@ use std::{
 
 use globed_shared::{
     anyhow::bail,
-    base64::{engine::general_purpose as b64e, Engine as _},
+    base64::{Engine as _, engine::general_purpose as b64e},
     *,
 };
 
@@ -170,20 +170,13 @@ impl AccountVerifier {
                             #[cfg(not(debug_assertions))]
                             trace!(
                                 "{} ({} / userid {}): {}",
-                                message.name,
-                                message.account_id,
-                                message.user_id,
-                                message.authcode
+                                message.name, message.account_id, message.user_id, message.authcode
                             );
 
                             #[cfg(debug_assertions)]
                             trace!(
                                 "{} ({} / userid {}): {} ({})",
-                                message.name,
-                                message.account_id,
-                                message.user_id,
-                                message.authcode,
-                                message.age
+                                message.name, message.account_id, message.user_id, message.authcode, message.age
                             );
                         }
                         trace!("------------------------------------");

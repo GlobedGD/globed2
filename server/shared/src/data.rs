@@ -128,6 +128,7 @@ impl ServerUserEntry {
 #[derive(Clone, Copy, Encodable, Decodable, DynamicSize, StaticSize, Serialize, Deserialize)]
 #[repr(u8)]
 #[dynamic_size(as_static)]
+#[derive(PartialEq)]
 pub enum PunishmentType {
     Ban = 0,
     Mute = 1,

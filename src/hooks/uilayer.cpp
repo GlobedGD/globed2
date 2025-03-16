@@ -21,11 +21,11 @@ struct GLOBED_DLL HookedUILayer : geode::Modify<HookedUILayer, UILayer> {
         if (gjbgl) gjbgl->m_fields->isManuallyResettingLevel = false;        
     }
 
-#ifdef GLOBED_VOICE_CAN_TALK
     void keyDown(enumKeyCodes p0) {
         auto& settings = GlobedSettings::get();
         auto& fields = GlobedGJBGL::get()->getFields();
 
+#ifdef GLOBED_VOICE_CAN_TALK
         if (p0 == (cocos2d::enumKeyCodes)settings.communication.voiceChatKey.get()) {
             if (!fields.deafened) {
                 GlobedAudioManager::get().resumePassiveRecording();
@@ -46,6 +46,12 @@ struct GLOBED_DLL HookedUILayer : geode::Modify<HookedUILayer, UILayer> {
                     vpm.setVolumeAll(settings.communication.voiceVolume);
             }
         }
+#endif
+        if (p0 == (cocos2d::enumKeyCodes)settings.globed.hidePlayersKey.get()) {
+            bool newState = !fields.arePlayersHidden;
+            GlobedGJBGL::get()->setPlayerVisibility(newState);
+            Notification::create((newState) ? "All Players Hidden" : "All Players Visible", NotificationIcon::Success, 0.2f)->show();
+        }
 
         UILayer::keyDown(p0);
     }
@@ -53,11 +59,12 @@ struct GLOBED_DLL HookedUILayer : geode::Modify<HookedUILayer, UILayer> {
     void keyUp(enumKeyCodes p0) {
         auto& settings = GlobedSettings::get();
 
+#ifdef GLOBED_VOICE_CAN_TALK
         if (p0 == (cocos2d::enumKeyCodes)settings.communication.voiceChatKey.get()) {
             GlobedAudioManager::get().pausePassiveRecording();
         }
+#endif
 
         UILayer::keyUp(p0);
     }
-#endif
 };

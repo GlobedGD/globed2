@@ -17,6 +17,7 @@
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <managers/profile_cache.hpp>
+#include <managers/popup_queue.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
@@ -25,6 +26,7 @@
 #include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/net.hpp>
+#include <ui/menu/admin/user_punishment_popup.hpp>
 #include <ui/notification/panel.hpp>
 
 using namespace asp;
@@ -545,37 +547,12 @@ protected:
         });
 
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
-            using namespace std::chrono;
-
-            std::string reason = packet->message;
-            if (reason.empty()) {
-                reason = "No reason given";
-            }
-
-            auto msg = fmt::format(
-                "<cy>You have been</c> <cr>Banned:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
-                reason,
-                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
-            );
-
-            this->disconnectWithMessage(msg);
+            PopupQueue::get()->push(UserPunishmentPopup::create(packet->message, packet->timestamp, true));
+            this->disconnect();
         });
 
         addGlobalListener<ServerMutedPacket>([](auto packet) {
-            using namespace std::chrono;
-
-            std::string reason = packet->reason;
-            if (reason.empty()) {
-                reason = "No reason given";
-            }
-
-            auto msg = fmt::format(
-                "<cy>You have been</c> <cr>Muted:</c>\n{}\n<cy>Expires at:</c>\n{}\n<cy>Question/Appeals? Join the </c><cb>Discord.</c>",
-                reason,
-                packet->timestamp == 0 ? "Permanent" : util::format::formatDateTime(SystemTime::UNIX_EPOCH + Duration::fromSecs(packet->timestamp), false)
-            );
-
-            ErrorQueues::get().notice(msg, 0);
+            PopupQueue::get()->push(UserPunishmentPopup::create(packet->reason, packet->timestamp, false));
         });
 
         // General packets

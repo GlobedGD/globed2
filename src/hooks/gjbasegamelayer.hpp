@@ -37,6 +37,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         std::unique_ptr<PlayerInterpolator> interpolator;
         std::unique_ptr<PlayerStore> playerStore;
         RoomSettings roomSettings;
+        bool arePlayersHidden = false;
 
         std::vector<std::unique_ptr<BaseGameplayModule>> modules;
 
@@ -207,4 +208,6 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     Fields& getFields();
 
     void explodeRandomPlayer();
+    
+    void setPlayerVisibility(bool enabled);
 };
