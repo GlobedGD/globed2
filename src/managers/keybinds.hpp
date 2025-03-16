@@ -43,6 +43,7 @@ namespace globed {
     enum class Keybinds {
         VoiceChatKey,
         VoiceDeafenKey,
+        HidePlayersKey,
     };
 
     std::string formatKey(Key key);

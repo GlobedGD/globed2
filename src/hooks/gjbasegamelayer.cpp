@@ -708,9 +708,14 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     auto& settings = GlobedSettings::get();
 
     for (const auto [playerId, remotePlayer] : fields.players) {
-        const auto& vstate = fields.interpolator->getPlayerState(playerId);
+        auto& vstate = fields.interpolator->getPlayerState(playerId);
 
         auto frameFlags = fields.interpolator->swapFrameFlags(playerId);
+
+        if (fields.arePlayersHidden) {
+            vstate.player1.isVisible = false;
+            vstate.player2.isVisible = false;
+        }
 
         bool isSpeaking = vpm.isSpeaking(playerId);
         remotePlayer->updateData(
@@ -1328,4 +1333,9 @@ void GlobedGJBGL::explodeRandomPlayer() {
     std::advance(it, util::rng::Random::get().generate<size_t>(0, fields.players.size() - 1));
 
     auto* player = it->second;
+}
+
+void GlobedGJBGL::setPlayerVisibility(bool enabled) {
+    auto& fields = this->getFields();
+    fields.arePlayersHidden = enabled;
 }
