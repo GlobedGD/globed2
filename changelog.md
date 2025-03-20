@@ -1,7 +1,5 @@
 ## v1.8.0
 
-TODO: icon for switching save slots
-
 * Add ability to create <cg>setting profiles</c> and toggle between them
 * \-- This allows you to easily change many settings at once, for example if attending some event
 * \-- The amount of save slots is unlimited and you can give them custom names

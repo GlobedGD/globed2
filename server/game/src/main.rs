@@ -359,14 +359,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // watch the word filter txt file for changes
     if let Some(path) = chosen_word_filter_path {
-        let (mut debouncer, mut file_events) = AsyncDebouncer::new_with_channel(Duration::from_secs(1), Some(Duration::from_secs(1))).await?;
-        debouncer.watcher().watch(&path, RecursiveMode::NonRecursive)?;
-
         tokio::spawn(async move {
+            let (mut debouncer, mut file_events) = AsyncDebouncer::new_with_channel(Duration::from_secs(1), Some(Duration::from_secs(1)))
+                .await
+                .expect("Failed to create debouncer");
+
+            if let Err(e) = debouncer.watcher().watch(&path, RecursiveMode::NonRecursive) {
+                warn!("Failed to watch the word filter path ({path:?}");
+                warn!("Error: {e}");
+                return;
+            }
+
             while let Some(_event) = file_events.recv().await {
-                match server.state.filter.write().reload_from_file(&path) {
+                let mut filter = server.state.filter.write();
+
+                match filter.reload_from_file(&path) {
                     Ok(()) => {
-                        info!("Successfully reloaded the word filter!");
+                        info!("Successfully reloaded the word filter! Filtered words: {}", filter.word_count());
                     }
 
                     Err(err) => {
