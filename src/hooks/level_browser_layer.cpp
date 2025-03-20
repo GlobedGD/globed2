@@ -1,5 +1,7 @@
 #include "level_browser_layer.hpp"
 
+#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+
 #include <hooks/level_cell.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <data/packets/client/general.hpp>
@@ -75,3 +77,5 @@ void HookedLevelBrowserLayer::updatePlayerCounts(float) {
         nm.send(RequestPlayerCountPacket::create(std::move(levelIds)));
     }
 }
+
+#endif // GLOBED_DISABLE_EXTRA_HOOKS

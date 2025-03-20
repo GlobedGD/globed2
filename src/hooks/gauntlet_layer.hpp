@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/geode.hpp>
 
+#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+
 #include <Geode/modify/GauntletLayer.hpp>
 
 struct GLOBED_DLL HookedGauntletLayer : geode::Modify<HookedGauntletLayer, GauntletLayer> {
@@ -19,3 +21,5 @@ struct GLOBED_DLL HookedGauntletLayer : geode::Modify<HookedGauntletLayer, Gaunt
     void refreshPlayerCounts();
     void updatePlayerCounts(float);
 };
+
+#endif // GLOBED_DISABLE_EXTRA_HOOKS

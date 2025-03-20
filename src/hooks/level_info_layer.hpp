@@ -1,6 +1,8 @@
 #pragma once
 #include <defs/geode.hpp>
 
+#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+
 #include <Geode/modify/LevelInfoLayer.hpp>
 
 struct GLOBED_DLL HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLayer, LevelInfoLayer> {
@@ -28,3 +30,5 @@ struct GLOBED_DLL HookedLevelInfoLayer : geode::Modify<HookedLevelInfoLayer, Lev
 
     void addRoomLevelButton();
 };
+
+#endif // GLOBED_DISABLE_EXTRA_HOOKS

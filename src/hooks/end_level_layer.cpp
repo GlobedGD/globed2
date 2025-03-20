@@ -1,5 +1,7 @@
 #include "end_level_layer.hpp"
 
+#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+
 #include "gjbasegamelayer.hpp"
 
 using namespace geode::prelude;
@@ -22,3 +24,5 @@ void HookedEndLevelLayer::customSetup() {
 
     }
 }
+
+#endif // GLOBED_DISABLE_EXTRA_HOOKS
