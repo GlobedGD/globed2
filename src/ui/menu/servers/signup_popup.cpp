@@ -139,8 +139,50 @@ void GlobedSignupPopup::uploadMessageFinished(int) {
 
 void GlobedSignupPopup::uploadMessageFailed(int e) {
     GameLevelManager::sharedState()->m_uploadMessageDelegate = nullptr;
-    this->onFailure(fmt::format("Message upload failed due to an unknown reason. Please try to open account settings and refresh login."));
+    this->tryCheckMessageCount();
 }
+
+void GlobedSignupPopup::tryCheckMessageCount() {
+    // fetch user's sent messages, if they have 400 (which means they have 50 on page 7, 0-indexed) then they are at the limit and cannot send any more
+    auto glm = GameLevelManager::get();
+    glm->m_messageListDelegate = this;
+    glm->getUserMessages(true, 7, 50);
+}
+
+void GlobedSignupPopup::loadMessagesFinished(cocos2d::CCArray* p0, char const* p1) {
+    GameLevelManager::get()->m_messageListDelegate = nullptr;
+    size_t count = p0 ? p0->count() : 0;
+
+    if (count == 50) {
+        this->onClose(this);
+
+        geode::createQuickPopup(
+            "Note",
+            "You are at the limit of sent messages (<cy>400</c>), and cannot send any more. To <cg>verify your account</c>, we need to send a message to a bot account. "
+            "Do you want to open your messages and <cr>delete</c> some?",
+            "Cancel",
+            "Open",
+            [](auto, bool open) {
+                if (!open) return;
+
+                MessagesProfilePage::create(true)->show();
+            }
+        );
+    } else {
+        this->onFailure("Message upload failed despite not being at the message limit. Please try to Refresh Login in GD account settings.");
+    }
+}
+
+void GlobedSignupPopup::loadMessagesFailed(char const* p0, GJErrorCode p1) {
+    GameLevelManager::get()->m_messageListDelegate = nullptr;
+    this->onFailure(
+        fmt::format("Failed to check message count (code {}). This is likely either a network or an account issue, please try to Refresh Login in GD account settings.", (int) p1)
+    );
+}
+
+void GlobedSignupPopup::forceReloadMessages(bool p0) {}
+
+void GlobedSignupPopup::setupPageInfo(gd::string p0, char const* p1) {}
 
 void GlobedSignupPopup::onDelayedChallengeCompleted() {
     this->onChallengeCompleted(storedAuthcode);
