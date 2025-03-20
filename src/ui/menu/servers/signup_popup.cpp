@@ -9,9 +9,54 @@
 #include <util/net.hpp>
 #include <util/format.hpp>
 #include <util/crypto.hpp>
+#include <util/gd.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
+
+namespace {
+    enum class WhatFailed {
+        Message, Verify
+    };
+
+    static std::string makeErrorMessage(WhatFailed whatFailed, std::string_view why) {
+        bool gdps = util::gd::isGdps();
+        bool mainServer = CentralServerManager::get().isOfficialServerActive();
+
+        std::string msg;
+
+        switch (whatFailed) {
+            case WhatFailed::Message: msg = "Message upload <cr>failed</c>."; break;
+            case WhatFailed::Verify: msg = "Account verification <cr>failed</c>."; break;
+            default: break;
+        }
+
+        // If they are not on a GDPS, really the only thing that makes sense here is they might need to refresh login
+        if (!gdps) {
+            msg += " Please try to open GD account settings and <cg>Refresh Login</c>.";
+
+            if (whatFailed == WhatFailed::Verify) {
+                msg += fmt::format("\n\nReason: <cy>{}</c>", why);
+            }
+        } else if (mainServer) {
+            // if they are on a gdps, and using the main server, this is most definitely the issue
+            if (whatFailed == WhatFailed::Verify) {
+                msg += fmt::format(" Reason: <cy>{}</c>.", why);
+            }
+
+            msg += "\n\n<cp>Note:</c> You are likely using a <cj>GDPS</c>, connecting to the <cg>official Globed servers</c> is impossible when on a <cj>GDPS</c>!";
+        } else {
+            // if they are using a custom server, perhaps the server is misconfigured? hard to tell really
+            msg += " If you are the owner of this Globed server, ensure the configuration is correct and check the logs.";
+
+            if (whatFailed == WhatFailed::Verify) {
+                msg += fmt::format("\n\nReason: <cy>{}</c>", why);
+            }
+        }
+
+        return msg;
+    }
+}
 
 bool GlobedSignupPopup::setup() {
     this->setTitle("Authentication");
@@ -169,14 +214,14 @@ void GlobedSignupPopup::loadMessagesFinished(cocos2d::CCArray* p0, char const* p
             }
         );
     } else {
-        this->onFailure("Message upload failed despite not being at the message limit. Please try to Refresh Login in GD account settings.");
+        this->onFailure(makeErrorMessage(WhatFailed::Message, ""));
     }
 }
 
 void GlobedSignupPopup::loadMessagesFailed(char const* p0, GJErrorCode p1) {
     GameLevelManager::get()->m_messageListDelegate = nullptr;
     this->onFailure(
-        fmt::format("Failed to check message count (code {}). This is likely either a network or an account issue, please try to Refresh Login in GD account settings.", (int) p1)
+        fmt::format("Failed to check message count (code <cy>{}</c>). This is likely either a network or an account issue, please try to <cg>Refresh Login</c> in GD account settings.", (int) p1)
     );
 }
 
@@ -206,7 +251,8 @@ void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event)
 
     if (!evalue.ok()) {
         if (evalue.getCode() == 401) {
-            this->onFailure(fmt::format("Account verification failure. Please try to refresh login in account settings.\n\nReason: <cy>{}</c>", evalue.text().unwrapOrDefault()));
+            auto msg = makeErrorMessage(WhatFailed::Verify, evalue.text().unwrapOrDefault());
+            this->onFailure(msg);
             return;
         }
 

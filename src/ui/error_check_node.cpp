@@ -76,7 +76,10 @@ void ErrorCheckNode::updateErrors(float) {
         for (auto& error : errors) {
             if (canShowFLAlert()) {
                 log::debug("showing error: {}", error);
-                auto alert = static_cast<HookedFLAlertLayer*>(FLAlertLayer::create("Globed error", error, "Ok"));
+                auto alert = static_cast<HookedFLAlertLayer*>(
+                    FLAlertLayer::create(nullptr, "Globed error", error, "Ok", nullptr, 360.f)
+                );
+
                 alert->setID("error-popup"_spr);
                 alert->blockClosingFor(BLOCK_CLOSING_FOR);
                 alert->show();

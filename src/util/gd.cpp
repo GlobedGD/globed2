@@ -3,6 +3,7 @@
 #include <defs/geode.hpp>
 #include <data/types/gd.hpp>
 #include <util/singleton.hpp>
+#include <ServerAPIEvents.hpp>
 
 using namespace geode::prelude;
 
@@ -155,4 +156,68 @@ namespace util::gd {
         //     dir->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
         // }
     }
+
+#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+    std::string getBaseServerUrl() {
+        if (Loader::get()->isModLoaded("km7dev.server_api")) {
+            auto url = ServerAPIEvents::getCurrentServer().url;
+            if (!url.empty() && url != "NONE_REGISTERED") {
+                while (url.ends_with('/')) {
+                    url.pop_back();
+                }
+
+                return url;
+            }
+        }
+
+        // This was taken from the impostor mod :)
+
+        // The addresses are pointing to "https://www.boomlings.com/database/getGJLevels21.php"
+        // in the main game executable
+        char* originalUrl = nullptr;
+#ifdef GEODE_IS_WINDOWS
+        static_assert(GEODE_COMP_GD_VERSION == 22074, "Unsupported GD version");
+        originalUrl = (char*)(base::get() + 0x53ea48);
+#elif defined(GEODE_IS_ARM_MAC)
+        static_assert(GEODE_COMP_GD_VERSION == 22074, "Unsupported GD version");
+        originalUrl = (char*)(base::get() + 0x7749fb);
+#elif defined(GEODE_IS_INTEL_MAC)
+        static_assert(GEODE_COMP_GD_VERSION == 22074, "Unsupported GD version");
+        originalUrl = (char*)(base::get() + 0x8516bf);
+#elif defined(GEODE_IS_ANDROID64)
+        static_assert(GEODE_COMP_GD_VERSION == 22074, "Unsupported GD version");
+        originalUrl = (char*)(base::get() + 0xEA2988);
+#elif defined(GEODE_IS_ANDROID32)
+        static_assert(GEODE_COMP_GD_VERSION == 22074, "Unsupported GD version");
+        originalUrl = (char*)(base::get() + 0x952E9E);
+#else
+        static_assert(false, "Unsupported platform");
+#endif
+
+        std::string ret = originalUrl;
+        if(ret.size() > 34) ret = ret.substr(0, 34);
+
+        while (ret.ends_with('/')) {
+            ret.pop_back();
+        }
+
+        return ret;
+    }
+
+    bool isGdps() {
+        auto url = getBaseServerUrl();
+        return !url.starts_with("https://www.boomlings.com/database");
+    }
+#else // GLOBED_DISABLE_EXTRA_HOOKS
+
+    std::string getBaseServerUrl() {
+        return "https://www.boomlings.com/database"
+    }
+
+    bool isGdps() {
+        return false;
+    }
+
+#endif // GLOBED_DISABLE_EXTRA_HOOKS
+
 }

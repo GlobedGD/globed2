@@ -10,6 +10,7 @@
 * Make even more corrections to the texture pack detection algorithm, add better debug information
 * Significant performance improvements
 * Improve error messages for authentication issues, especially for people that are at the limit of sent messages
+* Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks km7!)
 * Fix crashing when connecting to a server that is down
 * Fix very rare crash when closing the Globed layer
 * Fix certain rare crashes and hangs when closing the game
