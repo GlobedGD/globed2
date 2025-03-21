@@ -321,6 +321,7 @@ pub async fn challenge_verify(
     let trust_token = if let Ok(sm_key) = std::env::var("GLOBED_GS_SECURE_MODE_KEY") {
         if let Some(trust_token) = &post_data.0.trust_token {
             let decrypted = String::from_utf8(decrypt_trust_token(trust_token, &sm_key)?)?;
+
             if let Some((s_value, token_rest)) = decrypted.split_once('|') {
                 if s_value != challenge.value {
                     unauthorized!("security check failed: trust token value mismatch");

@@ -3,8 +3,9 @@
 
 #pragma once
 #include <stddef.h>
+#include <Geode/platform/platform.hpp>
 
-#define BB_VERSION "0.1.0"
+#define BB_VERSION "0.2.0"
 
 #ifdef GLOBED_OSS_BUILD
 inline bool bb_init(const char* v = BB_VERSION) {
@@ -18,8 +19,16 @@ inline size_t bb_work(const char* s, char* o, size_t ol) {
 #else
 
 extern "C" {
-    bool bb_init(const char* v = BB_VERSION);
-    size_t bb_work(const char* s, char* o, size_t ol);
+    bool _bb_init(const char* v, size_t base);
+    size_t _bb_work(const char* s, char* o, size_t ol);
+}
+
+inline bool bb_init(const char* v = BB_VERSION) {
+    return _bb_init(v, geode::base::get());
+}
+
+inline size_t bb_work(const char* s, char* o, size_t ol) {
+    return _bb_work(s, o, ol);
 }
 
 #endif
