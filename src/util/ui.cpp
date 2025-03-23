@@ -632,6 +632,23 @@ namespace util::ui {
         }
     }
 
+    CCSize fixTextAreaContentSize(TextArea* textarea) {
+        // TODO: this doesn't really work the best rn
+        CCSize out{};
+
+        for (auto child : CCArrayExt<CCLabelBMFont>(textarea->m_label->getChildren())) {
+            out.width = std::max<float>(out.width, child->getContentWidth());
+            out.height += child->getContentHeight();
+        }
+
+        textarea->setContentSize(out);
+        textarea->m_label->setContentSize(out);
+        textarea->m_label->setAnchorPoint({-0.5f, -0.5f});
+        textarea->m_label->setPosition({0.f, 0.f});
+
+        return out;
+    }
+
     float getAspectRatio() {
         auto winSize = CCDirector::get()->getWinSize();
 

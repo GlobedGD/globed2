@@ -11,12 +11,15 @@ public:
     static constexpr float POPUP_HEIGHT = 80.f;
 
     void onClose(cocos2d::CCObject* sender) override;
+    void disableClosing();
+    void forceClose();
 
     static IntermediaryLoadingPopup* create(CallbackFn&& onInit, CallbackFn&& onCleanup);
 
 private:
     BetterLoadingCircle* circle;
     CallbackFn callbackCleanup;
+    bool cantClose = false;
 
     bool setup(CallbackFn&& onInit, CallbackFn&& onCleanup) override;
 };

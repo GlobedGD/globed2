@@ -45,6 +45,7 @@ const LARGE_BUFFER_SIZE: usize = 2usize.pow(19); // 2^19, 0.5mb
 
 const MARKER_CONN_INITIAL: u8 = 0xe0;
 const MARKER_CONN_RECOVERY: u8 = 0xe1;
+const MARKER_CONN_TEST: u8 = 0xe2;
 
 enum EitherClientThread {
     Authorized(Arc<ClientThread>),
@@ -204,10 +205,11 @@ impl GameServer {
     #[allow(clippy::manual_let_else, clippy::too_many_lines)]
     async fn client_loop(&'static self, mut socket: TcpStream, peer: SocketAddrV4) {
         // wait for incoming data, client should tell us whether it's an initial login or a recovery.
-        let result: crate::client::Result<bool> = async {
+        let result: crate::client::Result<u8> = async {
             match socket.read_u8().await? {
-                MARKER_CONN_INITIAL => Ok(false),
-                MARKER_CONN_RECOVERY => Ok(true),
+                MARKER_CONN_INITIAL => Ok(MARKER_CONN_INITIAL),
+                MARKER_CONN_RECOVERY => Ok(MARKER_CONN_RECOVERY),
+                MARKER_CONN_TEST => Ok(MARKER_CONN_TEST),
                 _ => Err(PacketHandlingError::InvalidStreamMarker),
             }
         }
@@ -216,7 +218,7 @@ impl GameServer {
         let mut either_thread: EitherClientThread;
 
         match result {
-            Ok(true) => {
+            Ok(MARKER_CONN_RECOVERY) => {
                 // if we are recovering a connection, next read account ID and secret key
 
                 let result: crate::client::Result<(i32, u32)> = async {
@@ -283,7 +285,7 @@ impl GameServer {
                 }
             }
 
-            Ok(false) => {
+            Ok(MARKER_CONN_INITIAL) | Ok(MARKER_CONN_TEST) => {
                 // initial login, just try to create an unauthorized thread
 
                 let thread = Arc::new(UnauthorizedThread::new(socket, peer, self));
@@ -302,6 +304,8 @@ impl GameServer {
                 warn!("client loop error: {e}");
                 return;
             }
+
+            _ => unreachable!(),
         };
 
         loop {

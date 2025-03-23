@@ -45,5 +45,4 @@ namespace util::net {
     Result<> stringToInAddr(const char* addr, in_addr& out);
 
     uint16_t hostToNetworkPort(uint16_t port);
-
 }

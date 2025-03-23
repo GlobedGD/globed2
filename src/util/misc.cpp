@@ -10,8 +10,9 @@
 #ifdef GLOBED_DEBUG
 # include <asp/time/SystemTime.hpp>
 # include <util/format.hpp>
-using namespace asp::time;
 #endif
+
+using namespace asp::time;
 
 namespace util::misc {
     bool swapFlag(bool& target) {
@@ -116,5 +117,64 @@ namespace util::misc {
             return res.unwrap();
         }();
         return fingerprint;
+    }
+
+    ButtonSequence::ButtonSequence(std::vector<uint32_t> seq) : m_seq(std::move(seq)) {
+        if (m_seq.empty()) {
+            throw std::runtime_error("ButtonSequence cannot be empty");
+        }
+    }
+
+    bool ButtonSequence::pushButton(uint32_t button) {
+        auto now = Instant::now();
+        auto elapsed = now.durationSince(m_lastPressTime);
+        m_lastPressTime = now;
+
+        auto expected = m_seq.at(m_curSeqPos);
+
+        // check if button is correct, if not, reset
+        if (!this->areEqual(button, expected)) {
+            // if this is the first button in the sequence, reset to that
+            if (this->areEqual(button, m_seq.at(0))) {
+                m_curSeqPos = 1;
+                return m_curSeqPos == m_seq.size();
+            } else {
+                m_curSeqPos = 0;
+                return false;
+            }
+        }
+
+        // if the button is correct, check how much time has elapsed, unless this is the first press
+        if (m_curSeqPos != 0) {
+            if (elapsed > Duration::fromSecs(2)) {
+                // reset, more than 2 seconds passed after last press
+                m_curSeqPos = 0;
+                return false;
+            }
+        }
+
+
+        // advance the sequence
+        m_curSeqPos++;
+
+        // if sequence is completed, set to 0 and return true
+        if (m_curSeqPos == m_seq.size()) {
+            m_curSeqPos = 0;
+            return true;
+        }
+
+        return false;
+    }
+
+    void ButtonSequence::setBitComps(bool state) {
+        this->bitComps = state;
+    }
+
+    bool ButtonSequence::areEqual(uint32_t pressed, uint32_t searching) {
+        if (this->bitComps) {
+            return (pressed & searching) == searching;
+        } else {
+            return pressed == searching;
+        }
     }
 }

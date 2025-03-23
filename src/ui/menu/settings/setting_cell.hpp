@@ -1,5 +1,6 @@
 #pragma once
 #include <defs/all.hpp>
+#include <util/misc.hpp>
 
 #include <Geode/ui/TextInput.hpp>
 #include <any>
@@ -9,7 +10,7 @@ class BetterSlider;
 class GlobedSettingCell : public cocos2d::CCLayer {
 public:
     enum class Type {
-        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom, LinkCode, Keybind
+        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom, LinkCode, Keybind, ConnectionTest
     };
 
     struct Limits {
@@ -42,6 +43,11 @@ private:
     CCMenuItemSpriteExtra* cornerButton = nullptr;
     CCMenuItemSpriteExtra* invitesFromButton = nullptr;
 
+    std::array<bool, 4> pluggedControllers;
+    std::array<uint32_t, 4> controllerLastPktNum;
+    bool anyController = false;
+    util::misc::ButtonSequence controllerSeq;
+
     bool init(void*, Type, const char*, const char*, const Limits&);
     void onCheckboxToggled(cocos2d::CCObject*);
     void onSliderChanged(BetterSlider* slider, double value);
@@ -51,4 +57,6 @@ private:
 
     void recreateCornerButton();
     void recreateInvitesFromButton();
+    void checkForController();
+    void updateController(float);
 };

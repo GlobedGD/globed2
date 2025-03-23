@@ -103,6 +103,7 @@ struct CurlRequest {
     CurlRequest& put(std::string_view url);
     CurlRequest& patch(std::string_view url);
     CurlRequest& delete_(std::string_view url);
+    CurlRequest& head(std::string_view url);
     CurlRequest& customMethod(std::string_view url, std::string_view method);
     CurlRequest& encrypted(bool enc);
     CurlRequest& certVerification(bool enc);

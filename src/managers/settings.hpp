@@ -355,6 +355,7 @@ public:
     Advanced advanced;
     Admin admin;
     Flags flags;
+    Setting<bool, false> dummySetting;
 
     inline UserPrivacyFlags getPrivacyFlags() {
         return UserPrivacyFlags {

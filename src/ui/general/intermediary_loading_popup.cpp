@@ -14,7 +14,21 @@ bool IntermediaryLoadingPopup::setup(CallbackFn&& onInit, CallbackFn&& onCleanup
     return true;
 }
 
+void IntermediaryLoadingPopup::disableClosing() {
+    this->m_closeBtn->removeFromParent();
+    cantClose = true;
+}
+
+void IntermediaryLoadingPopup::forceClose() {
+    cantClose = false;
+    this->onClose(this);
+}
+
 void IntermediaryLoadingPopup::onClose(cocos2d::CCObject* sender) {
+    if (cantClose) {
+        return;
+    }
+
     circle->fadeOut();
     callbackCleanup(this);
     Popup::onClose(sender);

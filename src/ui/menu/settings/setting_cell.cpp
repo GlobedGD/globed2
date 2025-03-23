@@ -7,13 +7,21 @@
 #include "string_input_popup.hpp"
 #include "advanced_settings_popup.hpp"
 #include "link_code_popup.hpp"
+#include "swag_connection_test_popup.hpp"
+#include "connection_test_popup.hpp"
 #include <managers/settings.hpp>
+#include <managers/central_server.hpp>
 #include <net/manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/slider.hpp>
 #include <ui/menu/settings/keybind_setup_popup.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
+#include <util/rng.hpp>
+
+#ifdef GEODE_IS_WINDOWS
+# include <XInput.h>
+#endif
 
 using namespace geode::prelude;
 namespace permission = geode::utils::permission;
@@ -120,6 +128,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         case Type::AdvancedSettings: [[fallthrough]];
         case Type::LinkCode: [[fallthrough]];
         case Type::Keybind: [[fallthrough]];
+        case Type::ConnectionTest: [[fallthrough]];
         case Type::AudioDevice: {
             const char* text;
             switch (settingType) {
@@ -128,6 +137,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 case Type::AudioDevice: text = "Set"; break;
                 case Type::LinkCode: text = "View"; break;
                 case Type::Keybind: text = "Set"; break;
+                case Type::ConnectionTest: text = "Test"; break;
                 default: text = "what the figma"; break;
             }
 
@@ -146,6 +156,10 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 .parent(this);
 
             inpAudioButton->setPositionX(inpAudioButton->getPositionX() - inpAudioButton->getScaledContentSize().width / 2);
+
+            if (settingType == Type::ConnectionTest) {
+                this->checkForController();
+            }
         } break;
         case Type::Int: {
             int currentValue = *(int*)(settingStorage);
@@ -257,6 +271,20 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
             KeybindSetupPopup::create(settingStorage)->show();
             break;
         }
+        case Type::ConnectionTest: {
+            bool showSwagPopup = false;
+            // if (util::rng::Random::get().genRatio(0.0001)) {
+            //     showSwagPopup = true;
+            // }
+
+            // determine if controller is connected
+
+            if (showSwagPopup) {
+                SwagConnectionTestPopup::create()->animateIn();
+            } else {
+                ConnectionTestPopup::create()->show();
+            }
+        } break;
         default: {
             StringInputPopup::create([this](std::string_view text) {
                 this->onStringChanged(text);
@@ -403,11 +431,91 @@ void GlobedSettingCell::storeAndSave(std::any&& value) {
         case Type::Keybind: [[fallthrough]];
         case Type::Int:
             *(int*)(settingStorage) = std::any_cast<int>(value); break;
+        case Type:: ConnectionTest: [[fallthrough]];
         case Type::AdvancedSettings:
             break;
     }
 
     GlobedSettings::get().save();
+}
+
+#ifdef GEODE_IS_WINDOWS
+DWORD XInputGetState_call(DWORD dwUserIndex, XINPUT_STATE* state) {
+    static auto module = [] {
+        auto x14 = GetModuleHandleA("XInput1_4.dll");
+        if (x14) {
+            return x14;
+        }
+
+        return GetModuleHandleA("XInput9_1_0.dll");
+    }();
+
+    static auto exportfn = GetProcAddress(module, "XInputGetState");
+    if (!exportfn) {
+        log::error("Failed to load XInput!");
+        return -1;
+    }
+
+    return reinterpret_cast<decltype(&XInputGetState)>(exportfn)(dwUserIndex, state);
+}
+#endif
+
+void GlobedSettingCell::checkForController() {
+#ifdef GEODE_IS_WINDOWS
+    for (DWORD i = 0; i < XUSER_MAX_COUNT; i++) {
+        XINPUT_STATE state{};
+
+        DWORD res = XInputGetState_call(i, &state);
+        pluggedControllers[i] = res == ERROR_SUCCESS;
+
+        if (res == ERROR_SUCCESS) {
+            this->anyController = true;
+        }
+    }
+
+    this->schedule(schedule_selector(GlobedSettingCell::updateController));
+
+    controllerSeq = util::misc::ButtonSequence{{
+        // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
+        0x0100, 0x0002, 0x8000, 0x0200
+    }};
+    controllerSeq.setBitComps(true);
+#endif
+}
+
+
+void GlobedSettingCell::updateController(float) {
+#ifdef GEODE_IS_WINDOWS
+    for (size_t i = 0; i < XUSER_MAX_COUNT; i++) {
+        if (!this->pluggedControllers[i]) continue;
+
+        XINPUT_STATE state{};
+        if (XInputGetState_call(i, &state) != ERROR_SUCCESS) {
+            pluggedControllers[i] = false;
+            continue;
+        }
+
+        if (controllerLastPktNum[i] == state.dwPacketNumber) {
+            continue;
+        }
+
+        controllerLastPktNum[i] = state.dwPacketNumber;
+        if (state.Gamepad.wButtons == 0) {
+            continue;
+        }
+
+        // check for button presses
+        bool completed = controllerSeq.pushButton(state.Gamepad.wButtons);
+        if (completed) {
+            // first check if any popups are present already!
+            if (CCScene::get()->getChildByType<FLAlertLayer>(0)) {
+                return;
+            }
+
+            SwagConnectionTestPopup::create()->animateIn();
+        }
+    }
+#endif
 }
 
 GlobedSettingCell* GlobedSettingCell::create(void* settingStorage, Type settingType, const char* name, const char* desc, const Limits& limits) {

@@ -119,8 +119,10 @@ RequestTask WebRequestManager::fetchCredits() {
     return this->get("https://credits.globed.dev/credits");
 }
 
-RequestTask WebRequestManager::fetchServers() {
-    return this->get(makeCentralUrl("servers"), 10, [&](CurlRequest& req) {
+RequestTask WebRequestManager::fetchServers(std::string_view urlOverride) {
+    auto url = urlOverride.empty() ? makeCentralUrl("servers") : makeUrl(urlOverride, "servers");
+
+    return this->get(url, 10, [&](CurlRequest& req) {
         req.param("protocol", NetworkManager::get().getUsedProtocol());
     });
 }
@@ -152,6 +154,10 @@ RequestTask WebRequestManager::setFeaturedLevel(int levelId, int rateTier, std::
     });
 }
 
+RequestTask WebRequestManager::testGoogle() {
+    return this->head("https://google.com");
+}
+
 RequestTask WebRequestManager::get(std::string_view url) {
     return get(url, 10);
 }
@@ -161,9 +167,7 @@ RequestTask WebRequestManager::get(std::string_view url, int timeoutS) {
 }
 
 RequestTask WebRequestManager::get(std::string_view url, int timeoutS, std::function<void(CurlRequest&)> additional) {
-#ifdef GLOBED_DEBUG
-    log::debug("GET request: {}", url);
-#endif
+    TRACE("GET request: {}", url);
 
     auto request = CurlRequest()
         .timeout(Duration::fromSecs(timeoutS));
@@ -191,4 +195,13 @@ RequestTask WebRequestManager::post(std::string_view url, int timeoutS, std::fun
     additional(request);
 
     return mapTask(request.post(url).send());
+}
+
+RequestTask WebRequestManager::head(std::string_view url, int timeoutS) {
+    TRACE("HEAD request: {}", url);
+
+    auto request = CurlRequest()
+        .timeout(Duration::fromSecs(timeoutS));
+
+    return mapTask(request.head(url).send());
 }

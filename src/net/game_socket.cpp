@@ -20,6 +20,7 @@ using namespace util::data;
 using namespace util::debug;
 using namespace asp::time;
 using PollResult = GameSocket::PollResult;
+using Protocol = GameSocket::Protocol;
 using ReceivedPacket = GameSocket::ReceivedPacket;
 
 GameSocket::GameSocket() {
@@ -27,6 +28,7 @@ GameSocket::GameSocket() {
 }
 
 GameSocket::~GameSocket() {
+    this->disconnect();
     delete[] dataBuffer;
 }
 
@@ -86,7 +88,7 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacketTCP() {
     return retval;
 }
 
-Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
+Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP(bool skipMarker) {
     auto recvResult = udpSocket.receive(reinterpret_cast<char*>(dataBuffer), DATA_BUF_SIZE);
 
     ReceivedPacket out;
@@ -99,7 +101,7 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP() {
     ByteBuffer buf(dataBuffer, (size_t)recvResult.result);
 
     // if not from active server, dont't read the marker
-    if (!out.fromConnected) {
+    if (!out.fromConnected || skipMarker) {
         GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
 
         if (out.packet) {
@@ -189,11 +191,18 @@ Result<ReceivedPacket> GameSocket::recvPacket() {
     return this->recvPacket(-1);
 }
 
-Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
+Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet, Protocol protocol) {
     GLOBED_REQUIRE_SAFE(this->isConnected(), "attempting to send a packet while disconnected")
 
+    bool useTcp = false;
+    switch (protocol) {
+        case Protocol::Tcp: useTcp = true; break;
+        case Protocol::Udp: useTcp = false; break;
+        default: useTcp = packet->getUseTcp(); break;
+    }
+
     ByteBuffer buf;
-    GLOBED_UNWRAP(this->encodePacket(*packet, buf))
+    GLOBED_UNWRAP(this->encodePacket(*packet, buf, useTcp))
 
     if (dumpPackets) {
         this->dumpPacket(packet->getPacketId(), buf, true);
@@ -203,7 +212,7 @@ Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     PacketLogger::get().record(packet->getPacketId(), packet->getEncrypted(), true, buf.size());
 #endif
 
-    if (packet->getUseTcp()) {
+    if (useTcp) {
         GLOBED_UNWRAP(tcpSocket.sendAll(reinterpret_cast<const char*>(buf.data().data()), buf.size()));
     } else {
         GLOBED_UNWRAP(udpSocket.send(reinterpret_cast<const char*>(buf.data().data()), buf.size()));
@@ -212,11 +221,19 @@ Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet) {
     return Ok();
 }
 
+Result<> GameSocket::sendPacketTCP(std::shared_ptr<Packet> packet) {
+    return this->sendPacket(packet, Protocol::Tcp);
+}
+
+Result<> GameSocket::sendPacketUDP(std::shared_ptr<Packet> packet) {
+    return this->sendPacket(packet, Protocol::Udp);
+}
+
 Result<> GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const NetworkAddress& address) {
     GLOBED_REQUIRE_SAFE(!packet->getUseTcp(), "cannot send a TCP packet to a UDP connection")
 
     ByteBuffer buf;
-    GLOBED_UNWRAP(this->encodePacket(*packet, buf))
+    GLOBED_UNWRAP(this->encodePacket(*packet, buf, false))
 
     if (dumpPackets) {
         this->dumpPacket(packet->getPacketId(), buf, true);
@@ -289,13 +306,11 @@ Result<PollResult> GameSocket::poll(int timeoutMs) {
     }
 }
 
-Result<> GameSocket::encodePacket(Packet& packet, ByteBuffer& buffer) {
+Result<> GameSocket::encodePacket(Packet& packet, ByteBuffer& buffer, bool tcp) {
     PacketHeader header = {
         .id = packet.getPacketId(),
         .encrypted = packet.getEncrypted(),
     };
-
-    bool tcp = packet.getUseTcp();
 
     // reserve space for packet length when using TCP
     size_t startPos = buffer.getPosition();

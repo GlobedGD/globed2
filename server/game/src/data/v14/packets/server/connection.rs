@@ -1,12 +1,18 @@
 use std::borrow::Cow;
 
-use globed_shared::UserPunishment;
-
 use crate::{data::*, managers::GameServerRole};
 
 #[derive(Packet, Encodable, StaticSize)]
 #[packet(id = 20000, tcp = false)]
 pub struct PingResponsePacket {
+    pub id: u32,
+    pub player_count: u32,
+}
+
+// This packet is functionally identical to PingResponsePacket, and is a hack to send this packet over TCP
+#[derive(Packet, Encodable, StaticSize)]
+#[packet(id = 20000, tcp = true)]
+pub struct PingResponsePacketTCP {
     pub id: u32,
     pub player_count: u32,
 }

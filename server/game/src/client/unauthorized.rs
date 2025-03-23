@@ -289,12 +289,26 @@ impl UnauthorizedThread {
 
         match header.packet_id {
             CryptoHandshakeStartPacket::PACKET_ID => self.handle_crypto_handshake(&mut data).await,
+            PingPacket::PACKET_ID => self.handle_ping(&mut data).await,
             LoginPacket::PACKET_ID => self.handle_login(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }
 
     // packet handlers
+
+    gs_handler!(self, handle_ping, PingPacket, packet, {
+        let socket = self.get_socket();
+
+        socket
+            .send_packet_static(&PingResponsePacketTCP {
+                id: packet.id,
+                player_count: self.game_server.state.get_player_count(),
+            })
+            .await?;
+
+        return Ok(());
+    });
 
     gs_handler!(self, handle_crypto_handshake, CryptoHandshakeStartPacket, packet, {
         let socket = self.get_socket();

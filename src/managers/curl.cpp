@@ -78,6 +78,8 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
         if (data->m_method != "GET") {
             if (data->m_method == "POST") {
                 curl_easy_setopt(curl, CURLOPT_POST, 1L);
+            } else if (data->m_method == "HEAD") {
+                curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
             } else {
                 curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, data->m_method.c_str());
             }
@@ -281,6 +283,10 @@ CurlRequest& CurlRequest::patch(std::string_view url) {
 
 CurlRequest& CurlRequest::delete_(std::string_view url) {
     return this->customMethod(url, "DELETE");
+}
+
+CurlRequest& CurlRequest::head(std::string_view url) {
+    return this->customMethod(url, "HEAD");
 }
 
 CurlRequest& CurlRequest::customMethod(std::string_view url, std::string_view method) {

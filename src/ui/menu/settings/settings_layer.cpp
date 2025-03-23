@@ -269,6 +269,7 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
 
     switch (category) {
         case TAG_TAB_GLOBED: {
+            registerSetting(cat, settings.dummySetting, "Connection Test", "Test the connection for possible issues. It is recommended to try this if you are experiencing connection issues.", Type::ConnectionTest);
             registerSetting(cat, settings.globed.autoconnect, "Autoconnect", "Automatically connect to the last connected server on launch.");
             registerSetting(cat, settings.globed.preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
             registerSetting(cat, settings.globed.deferPreloadAssets, "Defer preloading", "Instead of making the loading screen longer, load assets only when you join a level while connected.");
@@ -289,10 +290,10 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
 
 #ifdef GLOBED_DEBUG
             // advanced settings button
-            registerSetting(cat, settings.globed.autoconnect, "Advanced", "Advanced settings", Type::AdvancedSettings);
+            registerSetting(cat, settings.dummySetting, "Advanced", "Advanced settings", Type::AdvancedSettings);
 #endif
             // link code button
-            registerSetting(cat, settings.globed.autoconnect, "Discord link code", "Primarily for boosters/supporters/staff, code for linking an account to a Discord account", Type::LinkCode);
+            registerSetting(cat, settings.dummySetting, "Discord link code", "Primarily for boosters/supporters/staff, code for linking an account to a Discord account", Type::LinkCode);
         } break;
 
         case TAG_TAB_MENUS: {

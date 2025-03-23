@@ -28,11 +28,15 @@ public:
         bool fromConnected;
     };
 
+    enum class Protocol {
+        Unspecified, Tcp, Udp
+    };
+
     // Try to receive a packet on the TCP socket
     Result<std::shared_ptr<Packet>> recvPacketTCP();
 
     // Try to receive a packet on the UDP socket
-    Result<std::optional<ReceivedPacket>> recvPacketUDP();
+    Result<std::optional<ReceivedPacket>> recvPacketUDP(bool skipMarker = false);
 
     // Try to receive a packet
     Result<ReceivedPacket> recvPacket();
@@ -41,7 +45,12 @@ public:
     Result<ReceivedPacket> recvPacket(int timeoutMs);
 
     // Send a packet to the currently active connection. Throws if disconnected
-    Result<> sendPacket(std::shared_ptr<Packet> packet);
+    Result<> sendPacket(std::shared_ptr<Packet> packet, Protocol protocol = Protocol::Unspecified);
+
+    // Like sendPacket, but forcefully sends via the TCP connection
+    Result<> sendPacketTCP(std::shared_ptr<Packet> packet);
+    // Like sendPacket, but forcefully sends via the UDP connection
+    Result<> sendPacketUDP(std::shared_ptr<Packet> packet);
 
     // Send a UDP packet to a specific address
     Result<> sendPacketTo(std::shared_ptr<Packet> packet, const NetworkAddress& address);
@@ -72,7 +81,7 @@ private:
     bool dumpPackets = false;
 
     // Write a packet, packet header, and optionally length if the packet is TCP to the given buffer.
-    Result<> encodePacket(Packet& packet, ByteBuffer& buffer);
+    Result<> encodePacket(Packet& packet, ByteBuffer& buffer, bool tcp);
 
     // Decode a packet from a buffer
     Result<std::shared_ptr<Packet>> decodePacket(ByteBuffer& buffer);
