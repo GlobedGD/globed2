@@ -46,10 +46,17 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         auto labelSize = labelName->getScaledContentSize();
         Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
             .scale(0.35f)
-            .intoMenuItem([nameText, descText](auto) {
-                FLAlertLayer::create(nameText, descText, "Ok")->show();
+            .intoMenuItem([this, nameText, descText](auto) {
+                std::string text = descText;
+
+                if (this->anyController && !GlobedSettings::get().flags.seenSwagConnectionPopup) {
+                    text += "\n\n<cg>LB DOWN ??? RB</c>";
+                }
+
+                FLAlertLayer::create(nameText, text, "Ok")->show();
             })
             .pos(10.f + labelSize.width + 5.f, CELL_HEIGHT / 2 + labelSize.height / 2 - 5.f)
+            .store(btnInfo)
             .intoNewParent(CCMenu::create())
             .pos(0.f, 0.f)
             .parent(this);
@@ -468,21 +475,26 @@ void GlobedSettingCell::checkForController() {
         DWORD res = XInputGetState_call(i, &state);
         pluggedControllers[i] = res == ERROR_SUCCESS;
 
-        if (res == ERROR_SUCCESS) {
+        if (pluggedControllers[i]) {
             this->anyController = true;
         }
     }
 
-    this->schedule(schedule_selector(GlobedSettingCell::updateController));
+    if (this->anyController) {
+        this->schedule(schedule_selector(GlobedSettingCell::updateController));
 
-    controllerSeq = util::misc::ButtonSequence{{
-        // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
-        0x0100, 0x0002, 0x8000, 0x0200
-    }};
-    controllerSeq.setBitComps(true);
+        controllerSeq = util::misc::ButtonSequence{{
+            // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
+            0x0100, 0x0002, 0x8000, 0x0200
+        }};
+        controllerSeq.setBitComps(true);
+
+        if (!GlobedSettings::get().flags.seenSwagConnectionPopup) {
+            this->btnInfo->setColor({0, 255, 180});
+        }
+    }
 #endif
 }
-
 
 void GlobedSettingCell::updateController(float) {
 #ifdef GEODE_IS_WINDOWS
@@ -512,6 +524,7 @@ void GlobedSettingCell::updateController(float) {
                 return;
             }
 
+            GlobedSettings::get().flags.seenSwagConnectionPopup = true;
             SwagConnectionTestPopup::create()->animateIn();
         }
     }
