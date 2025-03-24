@@ -52,7 +52,7 @@ impl RoleManager {
 
         roles.clear();
 
-        if gsbd.roles.len() > <u8 as Into<usize>>::into(u8::MAX) {
+        if gsbd.roles.len() > u8::MAX as usize {
             error!("too many roles on the server ({})", gsbd.roles.len());
             error!(
                 "for performance reasons, the role count is currently limited to {} and cannot be bypassed",
