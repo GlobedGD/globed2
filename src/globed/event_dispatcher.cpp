@@ -13,6 +13,7 @@ using namespace geode::prelude;
 using namespace globed::_internal;
 
 constexpr const char* NOT_CONNECTED_MSG = "Not connected to a server";
+constexpr const char* NOT_IN_LEVEL_MSG = "Not currently in a level";
 
 // Helper struct and specializations for obtaining function return type and arguments
 template <typename F>
@@ -127,14 +128,16 @@ $on_mod(Loaded) {
     listen<Type::ExplodeRandomPlayer>([]() -> Result<void> {
         auto gjbgl = GlobedGJBGL::get();
 
-        log::debug("API call ExplodeRandomPlayer!");
+        if (!gjbgl) {
+            return Err(NOT_IN_LEVEL_MSG);
+        }
 
-        if (gjbgl && gjbgl->established()) {
-            gjbgl->explodeRandomPlayer();
-            return Ok();
-        } else {
+        if (!gjbgl->established()) {
             return Err(NOT_CONNECTED_MSG);
         }
+
+        gjbgl->explodeRandomPlayer();
+        return Ok();
     });
 
     listen<Type::AccountIdForPlayer, int(PlayerObject*)>([](PlayerObject* node) -> Result<int> {
@@ -146,16 +149,21 @@ $on_mod(Loaded) {
             }
         }
 
-        return Ok(-1);
+        return Err("Invalid player");
     });
 
     listen<Type::PlayersOnLevel, size_t>([]() -> Result<size_t> {
         auto gjbgl = GlobedGJBGL::get();
-        if (gjbgl && gjbgl->established()) {
-            return Ok(gjbgl->getFields().players.size());
+
+        if (!gjbgl) {
+            return Err(NOT_IN_LEVEL_MSG);
         }
 
-        return Err(NOT_CONNECTED_MSG);
+        if (!gjbgl->established()) {
+            return Err(NOT_CONNECTED_MSG);
+        }
+
+        return Ok(gjbgl->getFields().players.size());
     });
 
     listen<Type::PlayersOnline, size_t>([]() -> Result<size_t> {
@@ -168,6 +176,51 @@ $on_mod(Loaded) {
 
         auto& server = activeServer.value();
         return Ok(server.playerCount);
+    });
+
+    listen<Type::AllPlayerIds, std::vector<int>>([]() -> Result<std::vector<int>> {
+        auto gjbgl = GlobedGJBGL::get();
+
+        if (!gjbgl) {
+            return Err(NOT_IN_LEVEL_MSG);
+        }
+
+        if (!gjbgl->established()) {
+            return Err(NOT_CONNECTED_MSG);
+        }
+
+        std::vector<int> values;
+
+        auto& players = gjbgl->getFields().players;
+        for (const auto& [key, val] : players) {
+            values.push_back(key);
+        }
+
+        return Ok(std::move(values));
+    });
+
+    listen<Type::PlayerObjectsForId, std::pair<PlayerObject*, PlayerObject*>(int)>([](int id) -> Result<std::pair<PlayerObject*, PlayerObject*>> {
+        auto gjbgl = GlobedGJBGL::get();
+
+        if (!gjbgl) {
+            return Err(NOT_IN_LEVEL_MSG);
+        }
+
+        if (!gjbgl->established()) {
+            return Err(NOT_CONNECTED_MSG);
+        }
+
+        auto& players = gjbgl->getFields().players;
+        for (const auto& [pid, pl] : players) {
+            if (pid == id) {
+                return Ok(std::make_pair(
+                    static_cast<PlayerObject*>(pl->player1->getPlayerObject()),
+                    static_cast<PlayerObject*>(pl->player2->getPlayerObject())
+                ));
+            }
+        }
+
+        return Err("Player not found");
     });
 
     // Networking

@@ -22,6 +22,8 @@ enum class Type {
     AccountIdForPlayer = 1102,
     PlayersOnLevel = 1103,
     PlayersOnline = 1104,
+    AllPlayerIds = 1105,
+    PlayerObjectsForId = 1106,
     // Networking
     IsConnected = 1200,
     ServerTps = 1201,
