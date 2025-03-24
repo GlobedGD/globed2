@@ -26,6 +26,13 @@ After that, you can include headers in any file by typing
 #include <dankmeme.globed2/include/globed.hpp>
 ```
 
+There are 5 different API categories:
+* [General](#general)
+* [Player](#player)
+* [Networking](#networking)
+* [Admin](#admin)
+* [Settings](#settings)
+
 # General
 
 (Include: `dankmeme.globed2/include/general.hpp`)
@@ -60,7 +67,7 @@ bool globed::player::isGlobedPlayerFast(PlayerObject* node);
 
 ### accountIdForPlayer
 
-Returns the account ID of a player by their `PlayerObject`. If the given object does not represent an online player, -1 is returned.
+Returns the account ID of a player by their `PlayerObject`. If the given object does not represent an online player, an error is returned.
 
 ```cpp
 Result<int> globed::player::accountIdForPlayer(PlayerObject* node);
@@ -76,7 +83,7 @@ Result<void> globed::player::explodeRandomPlayer();
 
 ### playersOnLevel
 
-Returns the amount of players on the current level. If the player is not in a level, returns an error.
+Returns the amount of players on the current level. If the player is not in a level or not connected to a server, returns an error.
 
 ```cpp
 Result<size_t> globed::player::playersOnLevel();
@@ -88,6 +95,22 @@ Returns the amount of players online. Might not be completely accurate. If the p
 
 ```cpp
 Result<size_t> globed::player::playersOnline();
+```
+
+### getAllPlayerIds
+
+Returns a list of account IDs of all players that are on the same level as you. If the player is not in a level or not connected to a server, returns an error.
+
+```cpp
+Result<std::vector<int>> globed::player::getAllPlayerIds();
+```
+
+### getPlayerObjectsForId
+
+Returns a pair (player 1, player 2) of `PlayerObject` nodes for this player. If the not connected to a server, not in a level, or if the target player was not found in the same level, an error is returned.
+
+```cpp
+Result<std::pair<PlayerObject*, PlayerObject*>> globed::player::getPlayerObjectsForId(int accountId);
 ```
 
 # Networking

@@ -211,16 +211,17 @@ $on_mod(Loaded) {
         }
 
         auto& players = gjbgl->getFields().players;
-        for (const auto& [pid, pl] : players) {
-            if (pid == id) {
-                return Ok(std::make_pair(
-                    static_cast<PlayerObject*>(pl->player1->getPlayerObject()),
-                    static_cast<PlayerObject*>(pl->player2->getPlayerObject())
-                ));
-            }
+        auto it = players.find(id);
+
+        if (it == players.end()) {
+            return Err("Player not found");
         }
 
-        return Err("Player not found");
+        auto pl = it->second;
+        return Ok(std::make_pair(
+            static_cast<PlayerObject*>(pl->player1->getPlayerObject()),
+            static_cast<PlayerObject*>(pl->player2->getPlayerObject())
+        ));
     });
 
     // Networking
