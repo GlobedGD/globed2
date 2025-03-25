@@ -169,6 +169,36 @@ macro_rules! gs_with_alloca_guarded {
     };
 }
 
+macro_rules! thrd_trace {
+    ($self:expr, $($arg:tt)*) => {
+        globed_shared::trace!("[{} @ {}] {}", $self.account_id.load(std::sync::atomic::Ordering::Relaxed), $self.get_tcp_peer(), format_args!($($arg)*))
+    };
+}
+
+macro_rules! thrd_debug {
+    ($self:expr, $($arg:tt)*) => {
+        globed_shared::debug!("[{} @ {}] {}", $self.account_id.load(std::sync::atomic::Ordering::Relaxed), $self.get_tcp_peer(), format_args!($($arg)*))
+    };
+}
+
+macro_rules! thrd_info {
+    ($self:expr, $($arg:tt)*) => {
+        globed_shared::info!("[{} @ {}] {}", $self.account_id.load(std::sync::atomic::Ordering::Relaxed), $self.get_tcp_peer(), format_args!($($arg)*))
+    };
+}
+
+macro_rules! thrd_warn {
+    ($self:expr, $($arg:tt)*) => {
+        globed_shared::warn!("[{} @ {}] {}", $self.account_id.load(std::sync::atomic::Ordering::Relaxed), $self.get_tcp_peer(), format_args!($($arg)*))
+    };
+}
+
+macro_rules! thrd_error {
+    ($self:expr, $($arg:tt)*) => {
+        globed_shared::error!("[{} @ {}] {}", $self.account_id.load(std::sync::atomic::Ordering::Relaxed), $self.get_tcp_peer(), format_args!($($arg)*))
+    };
+}
+
 pub(crate) use gs_alloca_check_size;
 pub(crate) use gs_disconnect;
 pub(crate) use gs_handler;
@@ -179,6 +209,12 @@ pub(crate) use gs_with_alloca_guarded;
 pub(crate) use make_uninit;
 #[allow(unused)]
 pub(crate) use new_uninit;
+
+pub(crate) use thrd_debug;
+pub(crate) use thrd_error;
+pub(crate) use thrd_info;
+pub(crate) use thrd_trace;
+pub(crate) use thrd_warn;
 
 #[allow(unused_imports)]
 pub(crate) use gs_notice;
