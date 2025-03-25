@@ -119,6 +119,7 @@ class ConnectionTestPacket : public Packet {
 
     ConnectionTestPacket() {}
     ConnectionTestPacket(uint32_t uid, util::data::bytevector&& vec) : uid(uid), data(std::move(vec)) {}
+    ConnectionTestPacket(uint32_t uid, const util::data::bytevector& vec) : uid(uid), data(vec) {}
 
     uint32_t uid;
     util::data::bytevector data;

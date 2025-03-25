@@ -26,6 +26,7 @@ public:
     void onClose(CCObject*) override;
     void setProgress(double p);
     void queueGameServerTests();
+    void queuePacketLimitTest(const class NetworkAddress& addr);
     void softReloadTests();
     void update(float dt) override;
 
@@ -66,6 +67,8 @@ protected:
     bool actuallyReallyClose = false;
     bool waitingForThreadTerm = false;
     asp::AtomicBool threadTerminated = false;
+    asp::AtomicBool addedPacketTest = false;
+    asp::AtomicBool dontFinish = false;
     IntermediaryLoadingPopup* loadingPopup = nullptr;
 
     // Range of tests to perform:

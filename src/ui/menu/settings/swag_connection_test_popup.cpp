@@ -8,7 +8,6 @@ using ConnectionState = NetworkManager::ConnectionState;
 
 static ccColor3B GREEN_DOT_COLOR = { 34, 236, 85 };
 static ccColor3B WHITE_DOT_COLOR = {255, 255, 255};
-
 class SwagConnectionTestPopup::StatusCell : public CCNode {
 public:
     static StatusCell* create(const char* name, float width) {
@@ -270,7 +269,6 @@ void SwagConnectionTestPopup::xbPulseDots() {
     size_t pulseIdxStart = (xbCurState - 1) * 5;
     size_t pulseIdxEnd = xbCurState * 5;
 
-    log::debug("Pulsing from {} to {}", pulseIdxStart, pulseIdxEnd);
     for (size_t i = 0; i < dotSprites.size(); i++) {
         size_t reli = i % 5;
 

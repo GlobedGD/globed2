@@ -269,7 +269,7 @@ void ConnectionTestPopup::queueGameServerTests() {
     auto servers = gsm.getAllServers();
 
     for (const auto& [serverId, server] : servers) {
-        this->addTest(server.name, [server](Test* test) {
+        this->addTest(server.name, [server = server](Test* test) {
             GameSocket sock;
 
             NetworkAddress addr(server.address);
@@ -408,9 +408,65 @@ void ConnectionTestPopup::queueGameServerTests() {
             // disconnect
             sock.disconnect();
 
+            test->ctPopup->dontFinish = true;
+
+            // add packet test if needed
+            Loader::get()->queueInMainThread([addr, popup = test->ctPopup] {
+                popup->queuePacketLimitTest(addr);
+                popup->dontFinish = false;
+            });
+
             test->finish();
         });
     }
+}
+
+void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
+    this->addTest("Packet Limit Test", [addr = addr](Test* test) {
+        GameSocket sock;
+
+        auto res = sock.connect(addr, false);
+        if (!res) {
+            test->fail(fmt::format("Failed to connect to server: {}", res.unwrapErr()));
+            return;
+        }
+
+        test->logInfo("Connected successfully, starting the packet limit test");
+
+        constexpr static std::array testSizes = std::to_array<size_t>({
+            1300,
+            1400,
+            2000,
+            4000,
+            7000,
+            10000,
+            15000,
+            20000,
+            30000,
+            40000,
+            50000,
+            60000,
+        });
+
+        struct TestResult {
+            float reliability;
+            float speed;
+        };
+
+        std::array<TestResult, testSizes.size()> results;
+        auto& baseline = results[0];
+
+        std::vector<uint8_t> data;
+        data.reserve(testSizes.back());
+
+        for (size_t tsize : testSizes) {
+            // Send a test packet
+            data.resize(tsize);
+            Random::get().fill(data.data(), tsize);
+
+            ConnectionTestPacket::create(data);
+        }
+    });
 }
 
 void ConnectionTestPopup::softReloadTests() {
