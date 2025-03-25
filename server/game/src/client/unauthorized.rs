@@ -173,7 +173,7 @@ impl UnauthorizedThread {
                             socket.tcp_peer = tcp_peer;
 
                             if let Err(e) = self.send_login_success().await {
-                                warn!("failed to send login success: {e}");
+                                thrd_warn!(self, "failed to send login success: {e}");
                                 self.terminate();
                                 continue;
                             }
@@ -197,7 +197,7 @@ impl UnauthorizedThread {
                         Ok(Ok(datalen)) => match self.recv_and_handle(datalen).await {
                             Ok(()) => {}
                             Err(e) => {
-                                warn!("error on an unauth thread: {e}");
+                                thrd_warn!(self, "error on an unauth thread: {e}");
                                 #[cfg(debug_assertions)]
                                 let _ = self.terminate_with_message(Cow::Owned(format!("failed to authenticate: {e}"))).await;
                                 #[cfg(not(debug_assertions))]
@@ -211,9 +211,9 @@ impl UnauthorizedThread {
                             // ignore certain IO errors
                             if let PacketHandlingError::IOError(ref e) = err && should_ignore_error(e) {
                                 #[cfg(debug_assertions)]
-                                debug!("fatal error on an unauth thread, terminating: {err}");
+                                thrd_debug!(self, "fatal error on an unauth thread, terminating: {err}");
                             } else {
-                                warn!("fatal error on an unauth thread, terminating: {err}");
+                                thrd_warn!(self, "fatal error on an unauth thread, terminating: {err}");
                             }
                             self.terminate();
                         }

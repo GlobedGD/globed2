@@ -29,7 +29,6 @@ Only compiler supported is Clang, MSVC is unsupported since release v1.7.0 (for 
 Globed is made by:
 
 * [dank_meme](https://github.com/dankmeme01) - owner and main developer
-* [availax](https://availax.xyz/) - co-owner, community manager, artist
 * [ItzKiba](https://github.com/ItzKiba/) - artist, developer
 * [LimeGradient](https://github.com/LimeGradient) - developer
 * [TechStudent10](https://github.com/TechStudent10) - developer
@@ -39,6 +38,7 @@ and the rest of our awesome [contributors](https://github.com/GlobedGD/globed2/g
 
 Special thanks:
 
+* [availax](https://availax.xyz/) - for co-creating the mod and helping with everything for a long time
 * MathieuAR - for providing us server hosting
 * HJfod - for making [our website](https://globed.dev)
 * alk1m123 - for working together for EditorCollab interoperability

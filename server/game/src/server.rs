@@ -644,12 +644,12 @@ impl GameServer {
     /// If someone is already logged in under the given account ID, logs them out.
     /// Additionally, blocks until the appropriate cleanup has been done.
     pub async fn check_already_logged_in(&self, account_id: i32) -> anyhow::Result<()> {
-        let wait = async |notify: Arc<Notify>| -> anyhow::Result<()> {
+        let wait = async |notify: Arc<Notify>, which: &str| -> anyhow::Result<()> {
             // we want to wait until the player has been removed from any managers and such.
 
-            match tokio::time::timeout(Duration::from_secs(3), notify.notified()).await {
+            match tokio::time::timeout(Duration::from_secs(5), notify.notified()).await {
                 Ok(()) => Ok(()),
-                Err(_) => Err(anyhow!("timed out waiting for the thread to disconnect")),
+                Err(_) => Err(anyhow!("timed out waiting for the thread to disconnect ({which})")),
             }
         };
 
@@ -666,7 +666,7 @@ impl GameServer {
             let destruction_notify = thread.destruction_notify.clone();
             drop(thread);
 
-            wait(destruction_notify).await?;
+            wait(destruction_notify, "auth").await?;
         }
 
         while let Some(thread) = {
@@ -678,7 +678,7 @@ impl GameServer {
             let destruction_notify = thread.destruction_notify.clone();
             drop(thread);
 
-            wait(destruction_notify).await?;
+            wait(destruction_notify, "unauth").await?;
         }
 
         Ok(())
