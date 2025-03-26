@@ -2,8 +2,9 @@
 
 #include <defs/geode.hpp>
 #include <functional>
+#include "progressbar.hpp"
 
-class BetterSlider : public cocos2d::CCMenu {
+class BetterSlider : public ProgressBar {
 public:
     using Callback = std::function<void(BetterSlider*, double value)>;
 
@@ -51,17 +52,9 @@ public:
 private:
     double limMin = 0.0;
     double limMax = 1.0;
-    double rawvalue = 0.0;
     Knob* knob = nullptr;
     Callback callback;
     float knobCorrection = 0.f;
-
-    cocos2d::CCSprite
-        *outlineStart,
-        *outlineMiddle,
-        *outlineEnd;
-
-    cocos2d::CCSprite* fill;
 
     bool init() override;
 

@@ -3,6 +3,7 @@
 #include <defs/geode.hpp>
 #include <data/types/basic/either.hpp>
 
+#include <asp/time/Instant.hpp>
 #include <functional>
 #include <string_view>
 #include <type_traits>
@@ -129,4 +130,28 @@ namespace util::misc {
 
     // If you are reading this, feel free to trace all usages of this function.
     // The fingerprint is never sent anywhere, and is only used for local encryption.
+
+    class ButtonSequence {
+    public:
+        ButtonSequence(std::vector<uint32_t> seq);
+        ButtonSequence() = default;
+
+        ButtonSequence& operator=(ButtonSequence&&) = default;
+        ButtonSequence& operator=(const ButtonSequence&) = default;
+        ButtonSequence(const ButtonSequence&) = default;
+        ButtonSequence(ButtonSequence&&) = default;
+
+        // Returns whether the sequence was completed
+        bool pushButton(uint32_t);
+
+        void setBitComps(bool state);
+
+    private:
+        std::vector<uint32_t> m_seq;
+        size_t m_curSeqPos = 0;
+        asp::time::Instant m_lastPressTime;
+        bool bitComps = false;
+
+        bool areEqual(uint32_t pressed, uint32_t searching);
+    };
 }

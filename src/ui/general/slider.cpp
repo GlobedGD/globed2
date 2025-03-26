@@ -9,10 +9,7 @@ constexpr float FILL_PAD = 2.f;
 constexpr float KNOB_PAD = 4.f;
 
 bool BetterSlider::init() {
-    if (!CCMenu::init()) return false;
-
-    // stupid ass cocos conventions why do i have to do that
-    this->ignoreAnchorPointForPosition(false);
+    if (!ProgressBar::init()) return false;
 
     Build<Knob>::create(this)
         .zOrder(10)
@@ -22,55 +19,15 @@ bool BetterSlider::init() {
         .parent(this)
         .store(knob);
 
-    Build<CCSprite>::create("slider-start.png"_spr)
-        .zOrder(5)
-        .anchorPoint(0.f, 0.5f)
-        .id("outline-start")
-        .parent(this)
-        .store(outlineStart);
-
-    Build<CCSprite>::create("slider-end.png"_spr)
-        .zOrder(5)
-        .anchorPoint(1.f, 0.5f)
-        .id("outline-end")
-        .parent(this)
-        .store(outlineEnd);
-
-    ccTexParams tp = {
-        GL_LINEAR, GL_LINEAR,
-        GL_REPEAT, GL_CLAMP_TO_EDGE
-    };
-
-    Build<CCSprite>::create("slider-middle.png"_spr)
-        .zOrder(4)
-        .anchorPoint(0.5f, 0.5f)
-        .id("outline-middle")
-        .with([&](CCSprite* sprite) {
-            sprite->getTexture()->setTexParameters(&tp);
-        })
-        .parent(this)
-        .store(outlineMiddle);
-
-    Build<CCSprite>::create("slider-fill.png"_spr)
-        .scaleY(0.7f)
-        .zOrder(1)
-        .anchorPoint(0.0f, 0.5f)
-        .id("fill")
-        .with([&](CCSprite* sprite) {
-            sprite->getTexture()->setTexParameters(&tp);
-        })
-        .parent(this)
-        .store(fill);
-
     // initialize
-    this->setContentSize({64.f, 0.f});
+    this->setup(this->getContentSize());
 
     return true;
 }
 
 void BetterSlider::setContentSize(const CCSize& size) {
     if (!knob) {
-        CCMenu::setContentSize(size);
+        ProgressBar::setContentSize(size);
         return;
     }
 
@@ -78,21 +35,12 @@ void BetterSlider::setContentSize(const CCSize& size) {
 }
 
 void BetterSlider::setup(CCSize size) {
-    float width = size.width;
-    float height = outlineStart->getContentHeight();
+    ProgressBar::setup(size);
 
-    float outlineMiddleWidth = std::max(0.f, width - outlineStart->getContentWidth() - outlineEnd->getContentWidth());
+    knob->setPositionY(outlineStart->getContentHeight() / 2.f);
 
-    outlineMiddle->setTextureRect({0.f, 0.f, outlineMiddleWidth, height});
-
-    outlineStart->setPosition({0.f, height / 2.f});
-    outlineEnd->setPosition({width, height / 2.f});
-    outlineMiddle->setPosition({width / 2.f, height / 2.f});
-    fill->setPosition({FILL_PAD, height / 2.f});
-
-    knob->setPositionY(height / 2.f);
-
-    CCMenu::setContentSize({width, height});
+    // force update x pos
+    this->setValueRaw(this->getValueRaw());
 }
 
 void BetterSlider::setLimits(double min, double max) {
@@ -117,7 +65,7 @@ double BetterSlider::getValue() {
 }
 
 double BetterSlider::getValueRaw() {
-    return rawvalue;
+    return ProgressBar::getValue();
 }
 
 void BetterSlider::setValue(double value) {
@@ -126,15 +74,9 @@ void BetterSlider::setValue(double value) {
 }
 
 void BetterSlider::setValueRaw(double value) {
-    this->rawvalue = std::clamp(value, 0.0, 1.0);
-    knob->setPositionX(KNOB_PAD + (this->getContentWidth() - KNOB_PAD * 2) * value);
+    ProgressBar::setValue(value);
 
-    // update fill
-    float maxWidth = this->getContentWidth() - FILL_PAD;
-    float range = maxWidth - FILL_PAD;
-
-    float width = range * rawvalue;
-    fill->setTextureRect({0.f, 0.f, width, outlineStart->getContentHeight()});
+    knob->setPositionX(KNOB_PAD + (this->getContentWidth() - KNOB_PAD * 2) * ProgressBar::getValue());
 }
 
 bool BetterSlider::ccTouchBegan(CCTouch* touch, CCEvent* event) {
@@ -142,8 +84,8 @@ bool BetterSlider::ccTouchBegan(CCTouch* touch, CCEvent* event) {
 
     // ok so
     auto relpos = this->convertTouchToNodeSpace(touch);
-    const auto& knobSize = knob->getScaledContentSize();
-    const auto& knobpos = knob->getPosition() - knobSize / 2.f;
+    auto knobSize = knob->getScaledContentSize();
+    auto knobpos = knob->getPosition() - knobSize / 2.f;
 
     // check if it's inside of the rect
     if (

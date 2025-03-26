@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::atomic::{AtomicBool, Ordering},
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
     time::{Duration, SystemTime},
 };
 
@@ -35,6 +35,7 @@ pub struct AccountVerifier {
     ignore_name_mismatch: bool,
     flush_period: Duration,
     delete_period: Duration,
+    api_errors: AtomicUsize,
 }
 
 impl AccountVerifier {
@@ -70,6 +71,7 @@ impl AccountVerifier {
             ignore_name_mismatch,
             flush_period,
             delete_period: flush_period * 15,
+            api_errors: AtomicUsize::new(0),
         }
     }
 
@@ -80,6 +82,10 @@ impl AccountVerifier {
     pub async fn verify_account(&self, account_id: i32, user_id: i32, account_name: &str, authcode: &str) -> Result<i32, String> {
         if !self.is_enabled.load(Ordering::Relaxed) {
             return Ok(0);
+        }
+
+        if self.is_currently_down() {
+            return Err(String::from("verification system is currently down due to internal server issues"));
         }
 
         let request_time = SystemTime::now();
@@ -270,6 +276,7 @@ impl AccountVerifier {
 
         let mut response = match result {
             Err(err) => {
+                self.on_flush_error();
                 warn!("verifier: failed to make a request to GD servers: {}", err.to_string());
                 bail!("server error: {err}");
             }
@@ -279,6 +286,7 @@ impl AccountVerifier {
         .await?;
 
         if response == "-1" {
+            self.on_flush_error();
             bail!("boomlings returned -1!");
         }
 
@@ -287,6 +295,7 @@ impl AccountVerifier {
                 error!("verifier: received error 1006, your IP address is likely blocked by the GD servers.");
             }
 
+            self.on_flush_error();
             bail!("server error: {response}");
         }
 
@@ -363,7 +372,20 @@ impl AccountVerifier {
             });
         }
 
+        // No error occurred, reset the error counter
+        self.api_errors.store(0, Ordering::SeqCst);
+
         Ok(())
+    }
+
+    fn on_flush_error(&self) {
+        self.api_errors.fetch_add(1, Ordering::SeqCst);
+    }
+
+    /// Returns whether account verification is currently unavailable, due to certain errors
+    /// in making requests to GD api.
+    pub fn is_currently_down(&self) -> bool {
+        self.api_errors.load(Ordering::SeqCst) > 3
     }
 }
 

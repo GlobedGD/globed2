@@ -56,4 +56,12 @@ namespace globed::player {
     inline Result<size_t> playersOnline() {
         return _internal::request<size_t>(_internal::Type::PlayersOnline);
     }
+
+    inline Result<std::vector<int>> getAllPlayerIds() {
+        return _internal::request<std::vector<int>>(_internal::Type::AllPlayerIds);
+    }
+
+    inline Result<std::pair<PlayerObject*, PlayerObject*>> getPlayerObjectsForId(int accountId) {
+        return _internal::request<std::pair<PlayerObject*, PlayerObject*>, int>(_internal::Type::PlayerObjectsForId, accountId);
+    }
 } // namespace globed::player

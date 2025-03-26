@@ -15,12 +15,17 @@
 // various debugging options
 #if defined(GLOBED_DEBUG) && GLOBED_DEBUG
 
-// for source location, unrecommended because may break things
 // # define GLOBED_DEBUG_INTERPOLATION // dump all interpolation stuff
 // # define GLOBED_DEBUG_PACKETS // log all incoming and outgoing packets & bandwidth
 // # define GLOBED_DEBUG_PACKETS_PRINT // also print each packet
 
 #endif // GLOBED_DEBUG
+
+/* Options made to help port the mod faster to a new GD version / other platform */
+
+// Disable hooks/calls that aren't strictly necessary to mod's functionality
+// #define GLOBED_DISABLE_EXTRA_HOOKS
+
 
 /* platform-specific: Windows */
 

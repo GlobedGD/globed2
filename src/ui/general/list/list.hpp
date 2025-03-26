@@ -47,6 +47,9 @@ private:
         if (!CCLayer::init()) return false;
 
         this->inner = inner;
+        this->inner->ignoreAnchorPointForPosition(false);
+        this->inner->setPosition({0.f, 0.f});
+        this->inner->setAnchorPoint({0.f, 0.f});
         this->addChild(inner);
 
         float height = inner->getScaledContentSize().height;

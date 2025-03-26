@@ -345,6 +345,7 @@ public:
         Flag seenStatusNotice;       // Obsolete
         Flag seenGlobalTriggerGuide;
         Flag seenRoomOptionsSafeModeNotice;
+        Flag seenSwagConnectionPopup;
     };
 
     Globed globed;
@@ -355,6 +356,7 @@ public:
     Advanced advanced;
     Admin admin;
     Flags flags;
+    Setting<bool, false> dummySetting;
 
     inline UserPrivacyFlags getPrivacyFlags() {
         return UserPrivacyFlags {
@@ -453,7 +455,9 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Admin, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
-    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice, seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide, seenRoomOptionsSafeModeNotice
+    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice,
+    seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide, seenRoomOptionsSafeModeNotice,
+    seenSwagConnectionPopup
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (

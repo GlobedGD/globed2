@@ -1,5 +1,7 @@
 #include "gauntlet_layer.hpp"
 
+#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
 #include <net/manager.hpp>
@@ -8,7 +10,11 @@ using namespace geode::prelude;
 
 bool HookedGauntletLayer::init(GauntletType type) {
     if (!GauntletLayer::init(type)) return false;
-    if (this->m_levels != nullptr) this->buildUI();
+
+    if (this->m_levels != nullptr) {
+        this->buildUI();
+    }
+
     return true;
 }
 
@@ -20,7 +26,7 @@ void HookedGauntletLayer::loadLevelsFinished(CCArray* p0, char const* p1, int p2
 void HookedGauntletLayer::buildUI() {
     auto& nm = NetworkManager::get();
     if (!nm.established()) return;
- 
+
     std::vector<LevelId> levelIds;
     for (auto level : CCArrayExt<GJGameLevel*>(this->m_levels)) {
         levelIds.push_back(level->m_levelID);
@@ -28,7 +34,7 @@ void HookedGauntletLayer::buildUI() {
 
     auto levelsMenu = this->getChildByIDRecursive("levels-menu");
     if (levelsMenu == nullptr) {
-        return; 
+        return;
     }
 
     auto levelButtons = CCArrayExt<CCMenuItemSpriteExtra*>(levelsMenu->getChildren());
@@ -36,6 +42,7 @@ void HookedGauntletLayer::buildUI() {
         auto wrapper = Build<CCNode>::create()
             .pos(15.f, -33.f)
             .scale(0.45f)
+            .visible(false)
             .contentSize(levelButtons[i]->getScaledContentSize())
             .layout(RowLayout::create()->setGap(5.f))
             .parent(levelButtons[i])
@@ -45,11 +52,11 @@ void HookedGauntletLayer::buildUI() {
         Build<CCSprite>::createSpriteName("icon-person.png"_spr)
             .id("level-playercount-icon"_spr)
             .parent(wrapper);
-        
+
         Build<CCLabelBMFont>::create("", "goldFont.fnt")
             .id("level-playercount-label"_spr)
             .parent(wrapper);
-        
+
         wrapper->updateLayout();
         m_fields->wrappers[levelIds[i]] = wrapper;
     }
@@ -62,21 +69,30 @@ void HookedGauntletLayer::buildUI() {
 
         this->refreshPlayerCounts();
     });
+
     this->schedule(schedule_selector(HookedGauntletLayer::updatePlayerCounts), 5.f);
     this->updatePlayerCounts(0.f);
 }
 
 void HookedGauntletLayer::refreshPlayerCounts() {
     for (const auto& [levelId, wrapper] : m_fields->wrappers) {
-        auto string = fmt::to_string(m_fields->levels.at(levelId));
-        static_cast<CCLabelBMFont*>(wrapper->getChildByID("level-playercount-label"_spr))->setString(string.c_str());
-        wrapper->updateLayout();
+        auto playerCount = m_fields->levels[levelId];
+
+        if (playerCount == 0) {
+            wrapper->setVisible(false);
+        } else {
+            wrapper->setVisible(true);
+            auto label = static_cast<CCLabelBMFont*>(wrapper->getChildByID("level-playercount-label"_spr));
+            label->setString(fmt::to_string(playerCount).c_str());
+            wrapper->updateLayout();
+        }
     }
 }
 
 void HookedGauntletLayer::updatePlayerCounts(float) {
     auto& nm = NetworkManager::get();
     if (!nm.established()) return;
+
     std::vector<LevelId> levelIds;
 
     for (auto level : CCArrayExt<GJGameLevel*>(this->m_levels)) {
@@ -85,3 +101,5 @@ void HookedGauntletLayer::updatePlayerCounts(float) {
 
     nm.send(RequestPlayerCountPacket::create(std::move(levelIds)));
 }
+
+#endif // GLOBED_DISABLE_EXTRA_HOOKS

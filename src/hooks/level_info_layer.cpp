@@ -1,5 +1,7 @@
 #include "level_info_layer.hpp"
 
+#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+
 #include <hooks/game_manager.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 #include <managers/daily_manager.hpp>
@@ -149,3 +151,5 @@ void HookedLevelInfoLayer::addRoomLevelButton() {
 
     rightMenu->updateLayout();
 }
+
+#endif // GLOBED_DISABLE_EXTRA_HOOKS

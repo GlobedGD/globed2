@@ -136,6 +136,7 @@ namespace util::ui {
 
     // i hate gjcommentlistlayer i hate gjcommentlistlayer i hate gjcommentlistlayer
     void fixListBorders(GJCommentListLayer* list);
+    cocos2d::CCSize fixTextAreaContentSize(TextArea* textarea);
 
     float getAspectRatio();
 }

@@ -42,4 +42,7 @@ namespace util::gd {
     void setVariable(GameVariable var, bool state);
 
     void safePopScene();
+
+    std::string getBaseServerUrl();
+    bool isGdps();
 }

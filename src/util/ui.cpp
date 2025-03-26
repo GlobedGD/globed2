@@ -379,12 +379,23 @@ namespace util::ui {
 
         if (top && bottom && side1 && side2) {
             auto top2 = CCSprite::createWithSpriteFrameName("list-border-top.png"_spr);
-            top->setTexture(top2->getTexture());
-            top->setTextureRect(top2->getTextureRect());
-
             auto bottom2 = CCSprite::createWithSpriteFrameName("list-border-bottom.png"_spr);
-            bottom->setTexture(bottom2->getTexture());
-            bottom->setTextureRect(bottom2->getTextureRect());
+
+            auto cloneThing = [](CCSprite* from, CCSprite* to) {
+                to->setPosition(from->getPosition());
+                to->setAnchorPoint(from->getAnchorPoint());
+                to->setScaleX(from->getScaleX());
+                to->setScaleY(from->getScaleY());
+                to->setID(from->getID());
+                to->setZOrder(from->getZOrder());
+                to->setOpacity(from->getOpacity());
+
+                from->getParent()->addChild(to);
+                from->removeFromParent();
+            };
+
+            cloneThing(bottom, bottom2);
+            cloneThing(top, top2);
 
             for (auto* side : {side1, side2}) {
                 auto id = side->getID();
@@ -619,6 +630,23 @@ namespace util::ui {
         if (border2) {
             rescaleToMatchX(border2, w);
         }
+    }
+
+    CCSize fixTextAreaContentSize(TextArea* textarea) {
+        // TODO: this doesn't really work the best rn
+        CCSize out{};
+
+        for (auto child : CCArrayExt<CCLabelBMFont>(textarea->m_label->getChildren())) {
+            out.width = std::max<float>(out.width, child->getContentWidth());
+            out.height += child->getContentHeight();
+        }
+
+        textarea->setContentSize(out);
+        textarea->m_label->setContentSize(out);
+        textarea->m_label->setAnchorPoint({-0.5f, -0.5f});
+        textarea->m_label->setPosition({0.f, 0.f});
+
+        return out;
     }
 
     float getAspectRatio() {

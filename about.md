@@ -21,7 +21,6 @@ As a sign of appreciation, you will get a nice <ca>purple</c> name and a badge i
 Globed is made by:
 
 * [dank_meme](user:9735891) - owner and main developer
-* [availax](user:1621348) - co-owner, community manager, artist
 * [ItzKiba](user:4569963) - artist, developer
 * [LimeGradient](user:7214334) - developer
 * [TechStudent10](user:20284359) - developer
@@ -31,6 +30,7 @@ and the rest of our awesome [contributors](https://github.com/GlobedGD/globed2/g
 
 Special thanks:
 
+* [availax](user:1621348) - for co-creating the mod and helping with everything for a long time
 * [MathieuAR](user:3759035) - for providing us server hosting
 * [HJfod](user:104257) - for making [our website](https://globed.dev)
 * [alk1m123](user:11535118) - for working together for EditorCollab interoperability

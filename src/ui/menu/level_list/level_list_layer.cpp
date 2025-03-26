@@ -36,12 +36,13 @@ static std::string rateTierToString(GlobedLevelListLayer::Filters::RateTier tier
 }
 
 static std::optional<GlobedLevelListLayer::Filters::RateTier> rateTierFromString(std::string_view str) {
-    if (str == "Unrated") return GlobedLevelListLayer::Filters::RateTier::Unrated;
-    if (str == "Rate") return GlobedLevelListLayer::Filters::RateTier::Rate;
-    if (str == "Feature") return GlobedLevelListLayer::Filters::RateTier::Feature;
-    if (str == "Epic") return GlobedLevelListLayer::Filters::RateTier::Epic;
-    if (str == "Legendary") return GlobedLevelListLayer::Filters::RateTier::Legendary;
-    if (str == "Mythic") return GlobedLevelListLayer::Filters::RateTier::Mythic;
+    using enum GlobedLevelListLayer::Filters::RateTier;
+    if (str == "Unrated") return Unrated;
+    if (str == "Rate") return Rate;
+    if (str == "Feature") return Feature;
+    if (str == "Epic") return Epic;
+    if (str == "Legendary") return Legendary;
+    if (str == "Mythic") return Mythic;
     return std::nullopt;
 }
 

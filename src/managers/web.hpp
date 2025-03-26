@@ -21,10 +21,13 @@ public:
 
     Task testServer(std::string_view url);
     Task fetchCredits();
-    Task fetchServers();
+    Task fetchServers(std::string_view urlOverride = {});
     Task fetchFeaturedLevel();
     Task fetchFeaturedLevelHistory(int page);
     Task setFeaturedLevel(int levelId, int rateTier, std::string_view levelName, std::string_view levelAuthor, int difficulty);
+
+    // Makes a HEAD request to https://google.com
+    Task testGoogle();
 
 private:
     Task get(std::string_view url);
@@ -35,4 +38,5 @@ private:
     Task post(std::string_view url, int timeoutS);
     Task post(std::string_view url, int timeoutS, std::function<void(CurlRequest&)> additional);
 
+    Task head(std::string_view url, int timeoutS = 5);
 };

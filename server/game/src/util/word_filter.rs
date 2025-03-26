@@ -4,11 +4,13 @@ use aho_corasick::AhoCorasick;
 
 pub struct WordFilter {
     algo: AhoCorasick,
+    word_count: usize,
 }
 
 impl WordFilter {
     pub fn new(words: &[String]) -> Self {
         Self {
+            word_count: words.len(),
             algo: AhoCorasick::builder()
                 .ascii_case_insensitive(true)
                 .build(words)
@@ -25,8 +27,13 @@ impl WordFilter {
 
         let new_filter = Self::new(&words);
         self.algo = new_filter.algo;
+        self.word_count = new_filter.word_count;
 
         Ok(())
+    }
+
+    pub fn word_count(&self) -> usize {
+        self.word_count
     }
 }
 

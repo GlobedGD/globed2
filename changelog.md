@@ -1,16 +1,17 @@
 ## v1.8.0
 
-TODO: icon for switching save slots
-
 * Add ability to create <cg>setting profiles</c> and toggle between them
 * \-- This allows you to easily change many settings at once, for example if attending some event
 * \-- The amount of save slots is unlimited and you can give them custom names
+* Add a Connection Test menu in settings, to make it easier to debug network issues
 * Remove Custom Keybinds dependency, add ability to change the voice chat keybind in settings (thanks LimeGradient!)
 * Add ability to reply when you get a Globed notice from a moderator (not always enabled)
 * Gauntlet levels now show the player count under them (thanks LimeGradient!)
 * Added the total room count to the rooms list popup (thanks LimeGradient!)
 * Make even more corrections to the texture pack detection algorithm, add better debug information
 * Significant performance improvements
+* Improve error messages for authentication issues, especially for people that are at the limit of sent messages
+* Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks km7!)
 * Fix crashing when connecting to a server that is down
 * Fix very rare crash when closing the Globed layer
 * Fix certain rare crashes and hangs when closing the game
@@ -20,7 +21,7 @@ For developers: Added an event based API to allow mod developers to implement be
 
 * Currently not many functions are available, but the API will expand in the future
 * Feel free to suggest more features by making an issue or simply messaging me (dank_meme01) on Discord
-* Documentation is available [here](https://github.com/GlobedGD/globed2/blob/main/assets/guides/api-docs.md)
+* Documentation is available [here](https://github.com/GlobedGD/globed2/blob/main/docs/api-docs.md)
 
 ## v1.7.2
 

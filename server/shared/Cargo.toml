@@ -20,7 +20,7 @@ reqwest = { version = "0.12.9", default-features = false, features = [
     "rustls-tls",
 ] }
 sha2 = "0.10.8"
-time = { version = "0.3.37", features = ["formatting"] }
+time = { version = "0.3.41", features = ["formatting"] }
 serde = { version = "1.0.215", features = ["derive"] }
 crypto_secretbox = { version = "0.1.1", features = ["chacha20"] }
 serde_json = "1.0.133"
