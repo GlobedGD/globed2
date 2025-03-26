@@ -37,6 +37,7 @@ pub struct LoggedInPacket {
     pub all_roles: Vec<GameServerRole>,
     pub secret_key: u32,
     pub server_protocol: u16,
+    pub motd: String,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

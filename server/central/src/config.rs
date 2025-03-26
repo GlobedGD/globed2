@@ -148,6 +148,8 @@ pub struct ServerConfig {
     pub maintenance: bool,
     #[serde(default = "default_status_print_interval")]
     pub status_print_interval: u64,
+    #[serde(default = "default_string")]
+    pub motd_path: String,
 
     // special users and "special" users
     #[serde(default = "default_userlist_mode")]

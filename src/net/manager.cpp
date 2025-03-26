@@ -697,6 +697,8 @@ protected:
         secretKey = packet->secretKey;
         serverProtocol = packet->serverProtocol;
 
+        log::info("motd: {}", packet->motd);
+
         state = ConnectionState::Established;
 
         if (recovering || wasFromRecovery) {

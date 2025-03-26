@@ -42,6 +42,7 @@ pub async fn boot(
         chat_burst_limit: config.chat_burst_limit,
         chat_burst_interval: config.chat_burst_interval,
         roles: config.roles.clone(),
+        motd: state.motd.clone()
     };
 
     debug!("boot data request from game server {} at {}", user_agent.0, ip_address);
