@@ -53,11 +53,15 @@ public:
     template <typename T>
     requires std::is_base_of_v<Packet, T>
     T* tryDowncast() {
-        if (!this->isInstanceOf<T>()) {
-            return nullptr;
-        }
+        if constexpr (std::is_same_v<T, Packet>) {
+            return this;
+        } else {
+            if (!this->isInstanceOf<T>()) {
+                return nullptr;
+            }
 
-        return static_cast<T*>(this);
+            return static_cast<T*>(this);
+        }
     }
 };
 

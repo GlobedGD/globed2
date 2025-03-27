@@ -67,4 +67,6 @@ namespace util::format {
     // Un-c++-qualifies a name.
     // For example, is expected to take in `class cocos2d::CCNode * __ptr64` or `const cocos2d::CCNode* const` and return simply `CCNode*`
     std::string_view unqualify(std::string_view input);
+
+    bool hasIpAddress(std::string_view domain);
 }

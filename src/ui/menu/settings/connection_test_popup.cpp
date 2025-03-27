@@ -5,11 +5,15 @@
 #include <managers/error_queues.hpp>
 #include <managers/web.hpp>
 #include <managers/game_server.hpp>
+#include <managers/settings.hpp>
 #include <net/manager.hpp>
 #include <net/tcp_socket.hpp>
 #include <net/game_socket.hpp>
 #include <net/address.hpp>
+#include <util/misc.hpp>
+#include <util/format.hpp>
 #include <util/ui.hpp>
+#include <ui/general/ask_input_popup.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -18,6 +22,107 @@ using ConnectionState = NetworkManager::ConnectionState;
 using StatusCell = ConnectionTestPopup::StatusCell;
 using LogMessageCell = ConnectionTestPopup::LogMessageCell;
 using Test = ConnectionTestPopup::Test;
+using Protocol = GameSocket::Protocol;
+
+constexpr std::string_view URL_OVERRIDE_KEY = "connection-test-url-override";
+
+template <typename T>
+static Result<std::shared_ptr<T>> waitForPacketOn(
+    GameSocket& sock,
+    Protocol proto,
+    int timeoutMs = 5000,
+    bool skipUdpMarker = true,
+    bool mustFromConnected = false
+) {
+    auto endAt = SystemTime::now() + Duration::fromMillis(timeoutMs);
+
+    // wait up to 5s for response
+    while (endAt.isFuture()) {
+        auto toPoll = endAt.until().millis();
+        if (toPoll == 0) {
+            break; // safeguard
+        }
+
+        Result<bool> pollRes = Err("");
+
+        pollRes = sock.poll(proto, toPoll);
+        if (!pollRes) {
+            return Err("Failed to poll socket: {}", pollRes.unwrapErr());
+        }
+
+        auto r = pollRes.unwrap();
+        if (!r) {
+            break;
+        }
+
+        std::shared_ptr<Packet> respPkt;
+        bool fromConnected;
+
+        switch (proto) {
+            case Protocol::Unspecified: {
+                auto res = sock.recvPacket();
+                if (!res) {
+                    return Err("Failed to receive packet: {}", res.unwrapErr());
+                }
+
+                auto& rp = res.unwrap();
+
+                respPkt = std::move(rp.packet);
+                fromConnected = rp.fromConnected;
+            } break;
+
+            case Protocol::Tcp: {
+                auto res = sock.recvPacketTCP();
+                if (!res) {
+                    return Err("Failed to receive packet: {}", res.unwrapErr());
+                }
+
+                respPkt = std::move(res).unwrap();
+                fromConnected = true;
+            } break;
+
+            case Protocol::Udp: {
+                while (!respPkt) {
+                    auto res = sock.recvPacketUDP(skipUdpMarker);
+                    if (!res) {
+                        return Err("Failed to receive packet: {}", res.unwrapErr());
+                    }
+
+                    auto& maybePacket = res.unwrap();
+
+                    if (maybePacket) {
+                        respPkt = std::move(maybePacket.value().packet);
+                        fromConnected = maybePacket.value().fromConnected;
+                    } else {
+                        // if it returned nullopt and no error, this means we received a udp frame.
+                        // keep looping until we have the entire packet.
+                        auto pollRes = sock.poll(Protocol::Udp, 50);
+                        if (!pollRes) {
+                            return Err("Failed to poll socket (for UDP frame): {}", pollRes.unwrapErr());
+                        }
+                    }
+                }
+            } break;
+        }
+
+        if (!respPkt) {
+            return Err("Failed to decode response? (null packet)");
+        }
+
+        if (mustFromConnected && !fromConnected) {
+            continue;
+        }
+
+        auto neededPkt = respPkt->tryDowncast<T>();
+        if (!neededPkt) {
+            return Err("Unexpected packet, expected {}, got packet ID {}", util::misc::getTypeName<T>(), respPkt->getPacketId());
+        }
+
+        return Ok(std::static_pointer_cast<T>(std::move(respPkt)));
+    }
+
+    return Err("Timed out; no response was received from the server.");
+}
 
 bool ConnectionTestPopup::setup() {
     auto& nm = NetworkManager::get();
@@ -26,6 +131,18 @@ bool ConnectionTestPopup::setup() {
     }
 
     this->setTitle("Connection test");
+    this->usedCentralUrl = globed::string<"main-server-url">();
+
+    auto override = Mod::get()->getSavedValue<std::string>(URL_OVERRIDE_KEY);
+    if (!override.empty() && override.starts_with("http")) {
+        this->usedCentralUrl = override;
+        this->isCentralUrlOverriden = true;
+    }
+
+    while (this->usedCentralUrl.ends_with('/')) {
+        this->usedCentralUrl.pop_back();
+    }
+
     this->scheduleUpdate();
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
@@ -54,6 +171,30 @@ bool ConnectionTestPopup::setup() {
         .pos(rlayout.fromTopRight(32.f, 20.f))
         .parent(m_buttonMenu);
 
+    Build(CircleButtonSprite::create(
+        CCSprite::createWithSpriteFrameName("pencil.png"_spr),
+        CircleBaseColor::Green,
+        CircleBaseSize::Small
+    ))
+        .scale(0.7f)
+        .intoMenuItem([] {
+            AskInputPopup::create("Change testing URL", [](auto newUrl) {
+                geode::createQuickPopup(
+                    "Note",
+                    "Changing the URL is <cr>not recommended</c> unless you know what you are doing. Only do it if you are having troubles connecting to a <cy>specific</c> server. Are you sure you want to proceed?",
+                    "Cancel",
+                    "Yes",
+                    [newUrl = std::string(newUrl)](auto, bool yes) {
+                        if (!yes) return;
+
+                        Mod::get()->setSavedValue(URL_OVERRIDE_KEY, newUrl);
+                    }
+                );
+            }, 80, "Server URL", util::misc::STRING_URL)->show();
+        })
+        .pos(rlayout.fromTopRight(64.f, 20.f))
+        .parent(m_buttonMenu)
+    ;
     // add the tests
 
     this->addTest("Google TCP Test", [](Test* test) {
@@ -99,29 +240,33 @@ bool ConnectionTestPopup::setup() {
     });
 
     // this string is compile-time, so this is ok
-    std::string_view srvdomain = globed::string<"main-server-url">();
-    srvdomain.remove_prefix(sizeof("https://") - 1);
+    std::string_view srvdomain = usedCentralUrl;
 
-    while (srvdomain.ends_with('/')) {
-        srvdomain.remove_suffix(1);
+    if (srvdomain.starts_with("https://")) {
+        srvdomain.remove_prefix(sizeof("https://") - 1);
+    } else if (srvdomain.starts_with("http://")) {
+        srvdomain.remove_prefix(sizeof("http://") - 1);
     }
 
-    this->addTest("DNS Test", [srvdomain](Test* test) {
-        test->logInfo(fmt::format("Attempting to resolve host \"{}\"", srvdomain));
+    // let's not try to dns query an ip address
+    if (!util::format::hasIpAddress(srvdomain)) {
+        this->addTest("DNS Test", [srvdomain](Test* test) {
+            test->logInfo(fmt::format("Attempting to resolve host \"{}\"", srvdomain));
 
-        NetworkAddress addr(srvdomain, 443);
-        auto res = addr.resolveToString();
+            NetworkAddress addr(srvdomain, 443);
+            auto res = addr.resolveToString();
 
-        if (res) {
-            test->logInfo(fmt::format("Resolved to {}", res.unwrap()));
-            test->finish();
-        } else {
-            test->fail(fmt::format("Failed to resolve {}: {}", srvdomain, res.unwrapErr()));
-        }
-    });
+            if (res) {
+                test->logInfo(fmt::format("Resolved to {}", res.unwrap()));
+                test->finish();
+            } else {
+                test->fail(fmt::format("Failed to resolve {}: {}", srvdomain, res.unwrapErr()));
+            }
+        });
+    }
 
-    auto centralTest = this->addTest("Central Test", [](Test* test) {
-        std::string_view url = globed::string<"main-server-url">();
+    auto centralTest = this->addTest("Central Test", [this](Test* test) {
+        std::string_view url = this->usedCentralUrl;
 
         test->logInfo(fmt::format("Attempting to fetch {}/versioncheck", url));
 
@@ -149,8 +294,8 @@ bool ConnectionTestPopup::setup() {
         test->finish();
     });
 
-    auto srvListTest = this->addTest("Server List Test", [](Test* test) {
-        std::string_view url = globed::string<"main-server-url">();
+    auto srvListTest = this->addTest("Server List Test", [this](Test* test) {
+        std::string_view url = this->usedCentralUrl;
 
         test->logInfo(fmt::format("Attempting to fetch {}/servers", url));
 
@@ -300,50 +445,19 @@ void ConnectionTestPopup::queueGameServerTests() {
                 return;
             }
 
-            // wait up to 5s for response
-            while (true) {
-                auto pollRes = sock.poll(5000);
-                if (!pollRes) {
-                    test->fail(fmt::format("Failed to poll socket: {}", res.unwrapErr()));
-                    return;
-                }
+            auto r = waitForPacketOn<PingResponsePacket>(sock, Protocol::Tcp);
+            if (!r) {
+                test->fail(r.unwrapErr());
+                return;
+            }
 
-                auto r = pollRes.unwrap();
-                if (r == GameSocket::PollResult::Udp) {
-                    (void) sock.recvPacketUDP(); // drop it
-                    continue;
-                } else if (r == GameSocket::PollResult::None) {
-                    test->fail("No ping response received after 5 seconds");
-                    return;
-                } else {
-                    // tcp packet was received!
-                    auto pktres = sock.recvPacketTCP();
-                    if (!pktres) {
-                        test->fail(fmt::format("Failed to decode ping response: {}", pktres.unwrapErr()));
-                        return;
-                    }
+            auto pongpkt = std::move(r).unwrap();
 
-                    auto pkt = pktres.unwrap();
-                    if (!pkt) {
-                        test->fail(fmt::format("Failed to decode ping response (null packet)"));
-                        return;
-                    }
+            test->logTrace(fmt::format("Received TCP ping response, id: {}, player count: {}", pongpkt->id, pongpkt->playerCount));
 
-                    auto pongpkt = pkt->tryDowncast<PingResponsePacket>();
-                    if (!pongpkt) {
-                        test->fail(fmt::format("Unexpected packet, expected PingResponsePacket, got packet ID {}", pkt->getPacketId()));
-                        return;
-                    }
-
-                    test->logTrace(fmt::format("Received ping response, id: {}, player count: {}", pongpkt->id, pongpkt->playerCount));
-
-                    if (pongpkt->id != pingId) {
-                        test->fail("Server responded unexpected ping ID");
-                        return;
-                    }
-
-                    break;
-                }
+            if (pongpkt->id != pingId) {
+                test->fail("Server responded unexpected ping ID");
+                return;
             }
 
             // send a UDP ping packet
@@ -357,50 +471,19 @@ void ConnectionTestPopup::queueGameServerTests() {
                 return;
             }
 
-            // wait up to 5s for response
-            while (true) {
-                auto pollRes = sock.poll(5000);
-                if (!pollRes) {
-                    test->fail(fmt::format("Failed to poll socket: {}", res.unwrapErr()));
-                    return;
-                }
+            r = waitForPacketOn<PingResponsePacket>(sock, Protocol::Udp);
+            if (!r) {
+                test->fail(r.unwrapErr());
+                return;
+            }
 
-                auto r = pollRes.unwrap();
-                if (r == GameSocket::PollResult::Tcp) {
-                    (void) sock.recvPacketTCP(); // drop it
-                    continue;
-                } else if (r == GameSocket::PollResult::None) {
-                    test->fail("No UDP ping response received after 5 seconds");
-                    return;
-                } else {
-                    // udp packet was received!
-                    auto pktres = sock.recvPacketUDP(true);
-                    if (!pktres) {
-                        test->fail(fmt::format("Failed to decode ping response: {}", pktres.unwrapErr()));
-                        return;
-                    }
+            pongpkt = std::move(r).unwrap();
 
-                    auto pkt = pktres.unwrap()->packet;
-                    if (!pkt) {
-                        test->fail(fmt::format("Failed to decode ping response (null packet)"));
-                        return;
-                    }
+            test->logTrace(fmt::format("Received UDP ping response, id: {}, player count: {}", pongpkt->id, pongpkt->playerCount));
 
-                    auto pongpkt = pkt->tryDowncast<PingResponsePacket>();
-                    if (!pongpkt) {
-                        test->fail(fmt::format("Unexpected packet, expected PingResponsePacket, got packet ID {}", pkt->getPacketId()));
-                        return;
-                    }
-
-                    test->logTrace(fmt::format("Received UDP ping response, id: {}, player count: {}", pongpkt->id, pongpkt->playerCount));
-
-                    if (pongpkt->id != pingId) {
-                        test->fail("Server responded unexpected ping ID");
-                        return;
-                    }
-
-                    break;
-                }
+            if (pongpkt->id != pingId) {
+                test->fail("Server responded unexpected ping ID");
+                return;
             }
 
             test->logTrace("Cleaning up");
@@ -431,7 +514,7 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
             return;
         }
 
-        test->logInfo("Connected successfully, starting the packet limit test");
+        test->logInfo("Connected successfully, starting packet limit test");
 
         constexpr static std::array testSizes = std::to_array<size_t>({
             1300,
@@ -449,8 +532,10 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
         });
 
         struct TestResult {
-            float reliability;
-            float speed;
+            float reliability = 0.f;
+            float minTimeTaken = 1000000.f;
+            float maxTimeTaken = 0.f;
+            float avgTimeTaken = 0.f;
         };
 
         std::array<TestResult, testSizes.size()> results;
@@ -459,13 +544,115 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
         std::vector<uint8_t> data;
         data.reserve(testSizes.back());
 
-        for (size_t tsize : testSizes) {
+        for (size_t i = 0; i < testSizes.size(); i++) {
+            size_t tsize = testSizes[i];
+            auto& testResult = results[i];
+
             // Send a test packet
             data.resize(tsize);
             Random::get().fill(data.data(), tsize);
 
-            ConnectionTestPacket::create(data);
+            auto pkt = ConnectionTestPacket::create(0, data);
+            auto clientpkt = static_cast<ConnectionTestPacket*>(pkt.get());
+
+            size_t attempts;
+            if (tsize < 10000) {
+                attempts = 10;
+            } else if (tsize <= 30000) {
+                attempts = 7;
+            } else {
+                attempts = 5;
+            }
+
+            test->logTrace(fmt::format("Testing with size {}, doing {} attempts", tsize, attempts));
+
+            auto totalStartTime = Instant::now();
+
+            size_t successAttempts = 0;
+            float minTaken = 10000000.f;
+            float maxTaken = 0.f;
+
+            for (size_t att = 0; att < attempts; att++) {
+                auto startTime = Instant::now();
+
+                clientpkt->uid = Random::get().generate<uint32_t>();
+                auto res = sock.sendPacketUDP(pkt);
+                if (!res) {
+                    test->fail(fmt::format("Fatal error, TCP send failed (attempt {}): {}", att, res.unwrapErr()));
+                    return;
+                }
+
+                auto res2 = waitForPacketOn<ConnectionTestResponsePacket>(sock, Protocol::Udp);
+                if (!res2) {
+                    test->fail(res2.unwrapErr());
+                    return;
+                }
+
+                auto resppkt = std::move(res2).unwrap();
+
+                // verify data
+                if (clientpkt->uid != resppkt->uid) {
+                    test->logWarn(fmt::format("Wrong uid in response, expected {}, got {}", clientpkt->uid, resppkt->uid));
+                    continue;
+                }
+
+                if (clientpkt->data != resppkt->data) {
+                    test->logWarn("Wrong data in response, binary data differs");
+                    continue;
+                }
+
+                // success!
+                successAttempts++;
+
+                auto elapsed = startTime.elapsed();
+                float timeTaken = elapsed.micros() / 1'000'000.f;
+                minTaken = std::min(minTaken, timeTaken);
+                maxTaken = std::max(maxTaken, timeTaken);
+
+                // we will wait at least 150ms between attempts to not get rate limited
+                if (elapsed.millis() < 150) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds{150 - elapsed.millis()});
+                }
+            }
+
+            testResult.avgTimeTaken = totalStartTime.elapsed().micros() / 1'000'000.f / static_cast<float>(attempts);
+            testResult.reliability = static_cast<float>(successAttempts) / attempts;
+            testResult.minTimeTaken = minTaken;
+            testResult.maxTimeTaken = maxTaken;
+
+            test->logTrace(fmt::format(
+                "Finished, results: reliability = {}%, avg time = {:.3f}s, min time = {:.3f}s, max time = {:.3f}s",
+                static_cast<int>(testResult.reliability * 100),
+                testResult.avgTimeTaken,
+                testResult.minTimeTaken,
+                testResult.maxTimeTaken
+            ));
+
+            if (std::abs(testResult.reliability) < 0.01f) {
+                test->logTrace("Breaking early, this limit is already extremely unreliable!");
+                break;
+            }
         }
+
+        size_t bestChosenSize = testSizes[0];
+
+        for (size_t i = 0; i < testSizes.size(); i++) {
+            size_t size = testSizes[i];
+            auto& result = results.at(i);
+
+            // if unstable, break!
+            if (result.reliability < 0.95f) {
+                break;
+            }
+
+            // i dont really do other tests here :P
+            bestChosenSize = size;
+        }
+
+        test->logInfo(fmt::format("Test finished, setting packet limit to {} (most stable)", bestChosenSize));
+        GlobedSettings::get().globed.fragmentationLimit = bestChosenSize;
+
+        test->finish();
     });
 }
 

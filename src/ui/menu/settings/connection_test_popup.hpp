@@ -70,6 +70,9 @@ protected:
     asp::AtomicBool addedPacketTest = false;
     asp::AtomicBool dontFinish = false;
     IntermediaryLoadingPopup* loadingPopup = nullptr;
+    asp::time::Instant startedTestingAt;
+    std::string usedCentralUrl;
+    bool isCentralUrlOverriden = false;
 
     // Range of tests to perform:
     // 1. Google TCP Test: Open TCP socket to 8.8.8.8
@@ -129,7 +132,6 @@ protected:
     asp::Channel<std::shared_ptr<Test>> threadTestQueue;
     GlobedListLayer<StatusCell>* list;
     GlobedListLayer<LogMessageCell>* logList;
-    asp::time::Instant startedTestingAt;
 
     std::shared_ptr<Test> addTest(
         std::string name,

@@ -109,4 +109,22 @@ namespace util::rng {
 
         return out;
     }
+
+    template <>
+    void Random::fill<uint8_t>(uint8_t* ptr, size_t count) {
+        while (count >= sizeof(size_t)) {
+            size_t num = this->generate<size_t>();
+            *reinterpret_cast<size_t*>(ptr) = num;
+
+            ptr += sizeof(size_t);
+            count -= sizeof(size_t);
+        }
+
+        // less than sizeof(size_t) bytes remain now
+        while (count) {
+            *ptr = static_cast<uint8_t>(this->generate<uint16_t>());
+            ptr++;
+            count--;
+        }
+    }
 }
