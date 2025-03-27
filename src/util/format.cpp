@@ -3,6 +3,7 @@
 #include <cmath>
 #include <sstream>
 #include <iomanip>
+#include <regex>
 
 #include <fmt/chrono.h>
 #include <curl/curl.h>
@@ -298,5 +299,10 @@ namespace util::format {
         input = input.substr(0, input.find_first_of(' '));
 
         return input;
+    }
+
+    bool hasIpAddress(std::string_view domain) {
+        std::regex regex(R"(^(([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}|(\d{1,3}\.){3}\d{1,3})(:\d+)?(\/.*)?$)");
+        return std::regex_match(domain.begin(), domain.end(), regex);
     }
 }

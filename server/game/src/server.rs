@@ -30,6 +30,7 @@ use crate::{
         self,
         net::{TcpListener, UdpSocket},
     },
+    util::SimpleRateLimiter,
 };
 
 use crate::{
@@ -61,6 +62,7 @@ pub struct GameServer {
     pub clients: SyncMutex<FxHashMap<SocketAddrV4, Arc<ClientThread>>>,
     pub unauthorized_clients: SyncMutex<VecDeque<Arc<UnauthorizedThread>>>,
     pub unclaimed_threads: SyncMutex<VecDeque<Arc<ClientThread>>>,
+    pub udp_rate_limiters: SyncMutex<FxHashMap<SocketAddrV4, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
     pub public_key: PublicKey,
     pub bridge: CentralBridge,
@@ -80,6 +82,7 @@ impl GameServer {
             clients: SyncMutex::new(FxHashMap::default()),
             unauthorized_clients: SyncMutex::new(VecDeque::new()),
             unclaimed_threads: SyncMutex::new(VecDeque::new()),
+            udp_rate_limiters: SyncMutex::new(FxHashMap::default()),
             secret_key,
             public_key,
             bridge,
@@ -168,6 +171,10 @@ impl GameServer {
                 for client in clients.values() {
                     client.routine_cleanup();
                 }
+
+                // clean the uhh rate limiters
+                let mut limiters = self.udp_rate_limiters.lock();
+                limiters.retain(|_k, v| v.since_last_refill() < Duration::from_mins(3));
             }
         });
 
@@ -835,6 +842,41 @@ impl GameServer {
 
                     self.udp_socket.send_to(send_bytes, peer).await?;
                 }
+
+                Ok(true)
+            }
+
+            ConnectionTestPacket::PACKET_ID => {
+                {
+                    let mut limiters = self.udp_rate_limiters.lock();
+                    let allowed = limiters
+                        .entry(peer)
+                        .or_insert_with(|| SimpleRateLimiter::new(10, Duration::from_millis(900)))
+                        .try_tick();
+
+                    if !allowed {
+                        warn!("[{peer}] Dropping connection test packet, exceeds rate limit");
+                        return Ok(true);
+                    }
+                }
+
+                let pkt = ConnectionTestPacket::decode_from_reader(&mut byte_reader).map_err(|e| anyhow!("{e}"))?;
+
+                let response = ConnectionTestResponsePacket {
+                    uid: pkt.uid,
+                    data: pkt.data,
+                };
+
+                let mut buf = ByteBuffer::with_capacity(response.data.len() + 16); // lazy estimate
+                buf.write_packet_header::<ConnectionTestResponsePacket>();
+                buf.write_value(&response);
+
+                #[cfg(debug_assertions)]
+                debug!("[{}] Responding with ConnectionTestPacket with size {}", peer, response.data.len());
+
+                let send_bytes = buf.as_bytes();
+
+                self.udp_socket.send_to(send_bytes, peer).await?;
 
                 Ok(true)
             }

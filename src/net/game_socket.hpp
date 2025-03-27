@@ -68,6 +68,8 @@ public:
 
     Result<PollResult> poll(int timeoutMs);
 
+    Result<bool> poll(Protocol proto, int timeoutMs);
+
 private:
     friend class NetworkManager;
 

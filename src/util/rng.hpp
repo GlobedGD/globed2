@@ -40,6 +40,9 @@ namespace util::rng {
             }
         }
 
+        template <>
+        void fill<uint8_t>(uint8_t* ptr, size_t count);
+
     private:
         std::mt19937_64 engine;
     };

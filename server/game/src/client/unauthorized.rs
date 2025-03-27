@@ -22,7 +22,7 @@ use crate::{
     managers::{ComputedRole, Room},
     server::GameServer,
     tokio::{self, net::TcpStream, sync::Notify},
-    util::LockfreeMutCell,
+    util::{LockfreeMutCell, SimpleRateLimiter},
 };
 
 /// `UnauthorizedThread` is a thread that can be formed for 2 reasons:
@@ -65,6 +65,9 @@ pub struct UnauthorizedThread {
     pub translator: NoopPacketTranslator,
 
     pub privacy_settings: SyncMutex<UserPrivacyFlags>,
+
+    // private fields to unauth thread, not used when promoting
+    rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
 }
 
 pub enum UnauthorizedThreadOutcome {
@@ -73,6 +76,10 @@ pub enum UnauthorizedThreadOutcome {
 }
 
 const TIMEOUT: Duration = Duration::from_secs(90);
+
+fn create_rate_limiter() -> SimpleRateLimiter {
+    SimpleRateLimiter::new(10, Duration::from_millis(900))
+}
 
 impl UnauthorizedThread {
     pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
@@ -107,6 +114,7 @@ impl UnauthorizedThread {
             translator: NoopPacketTranslator::default(),
 
             privacy_settings: SyncMutex::new(UserPrivacyFlags::default()),
+            rate_limiter: LockfreeMutCell::new(create_rate_limiter()),
         }
     }
 
@@ -142,6 +150,7 @@ impl UnauthorizedThread {
             translator: NoopPacketTranslator::default(),
 
             privacy_settings: thread.privacy_settings,
+            rate_limiter: LockfreeMutCell::new(create_rate_limiter()),
         }
     }
 
@@ -274,6 +283,12 @@ impl UnauthorizedThread {
             return Err(PacketHandlingError::MalformedMessage);
         }
 
+        // if we are ratelimited, just discard the packet.
+        // safety: only we can use this ratelimiter.
+        if !unsafe { self.rate_limiter.get_mut() }.try_tick() {
+            return Err(PacketHandlingError::Ratelimited);
+        }
+
         let mut data = ByteReader::from_bytes(message);
         let header = data.read_packet_header()?;
 
@@ -291,6 +306,7 @@ impl UnauthorizedThread {
             CryptoHandshakeStartPacket::PACKET_ID => self.handle_crypto_handshake(&mut data).await,
             PingPacket::PACKET_ID => self.handle_ping(&mut data).await,
             LoginPacket::PACKET_ID => self.handle_login(&mut data).await,
+            ConnectionTestPacket::PACKET_ID => self.handle_connection_test(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }
@@ -490,6 +506,17 @@ impl UnauthorizedThread {
         self.privacy_settings.lock().clone_from(&packet.privacy_settings);
 
         Ok(())
+    });
+
+    gs_handler!(self, handle_connection_test, ConnectionTestPacket, packet, {
+        let socket = self.get_socket();
+
+        socket
+            .send_packet_dynamic(&ConnectionTestResponsePacket {
+                uid: packet.uid,
+                data: packet.data,
+            })
+            .await
     });
 
     async fn send_login_success(&self) -> Result<()> {

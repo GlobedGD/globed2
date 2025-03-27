@@ -150,7 +150,6 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
     if (pollResult != PollResult::Udp) {
         auto res = this->recvPacketTCP();
 
-
         if (res) {
             auto pkt = std::move(res).unwrap();
             return Ok(ReceivedPacket {
@@ -304,6 +303,31 @@ Result<PollResult> GameSocket::poll(int timeoutMs) {
     } else {
         return Ok(PollResult::None);
     }
+}
+
+Result<bool> GameSocket::poll(Protocol proto, int timeoutMs) {
+    GLOBED_REQUIRE_SAFE(proto != Protocol::Unspecified, "invalid protocol");
+
+    GLOBED_SOCKET_POLLFD fd;
+    fd.events = POLLIN;
+
+    if (proto == Protocol::Tcp) {
+        if (!tcpSocket.connected) {
+            return Err("TCP socket is not connected");
+        }
+
+        fd.fd = tcpSocket.socket_;
+    } else {
+        fd.fd = udpSocket.socket_;
+    }
+
+    int result = GLOBED_SOCKET_POLL(&fd, 1, timeoutMs);
+    if (result == -1) {
+        return Err(util::net::lastErrorString());
+    }
+
+    return Ok((bool) (fd.revents & POLLIN));
+
 }
 
 Result<> GameSocket::encodePacket(Packet& packet, ByteBuffer& buffer, bool tcp) {
