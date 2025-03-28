@@ -16,6 +16,7 @@
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
+#include <managers/central_server.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/popup_queue.hpp>
 #include <managers/friend_list.hpp>
@@ -23,6 +24,7 @@
 #include <managers/room.hpp>
 #include <managers/role.hpp>
 #include <util/cocos.hpp>
+#include <util/crypto.hpp>
 #include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/net.hpp>
@@ -697,8 +699,6 @@ protected:
         secretKey = packet->secretKey;
         serverProtocol = packet->serverProtocol;
 
-        log::info("motd: {}", packet->motd);
-
         state = ConnectionState::Established;
 
         if (recovering || wasFromRecovery) {
@@ -712,7 +712,7 @@ protected:
         GameServerManager::get().setActive(connectedServerId);
 
         // these are not thread-safe, so delay it
-        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
+        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles), motd = std::move(packet->motd)] {
             auto& pcm = ProfileCacheManager::get();
             pcm.setOwnSpecialData(specialUserData);
 
@@ -721,6 +721,15 @@ protected:
 
             RoomManager::get().setGlobal();
             RoleManager::get().setAllRoles(allRoles);
+
+            auto motd_hash = util::crypto::hexEncode(util::crypto::simpleHash(motd));
+            // show the message of the day
+            if (!motd.empty() && Mod::get()->getSavedValue<std::string>(fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url), "") != motd_hash) {
+                auto popup = MDPopup::create("Globed Message", motd, "OK");
+                popup->show();
+
+                Mod::get()->setSavedValue(fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url), motd_hash);
+            }
         });
 
         // claim the tcp thread to allow udp packets through
