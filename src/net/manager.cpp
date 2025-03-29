@@ -722,13 +722,14 @@ protected:
             RoomManager::get().setGlobal();
             RoleManager::get().setAllRoles(allRoles);
 
-            auto motd_hash = util::crypto::hexEncode(util::crypto::simpleHash(motd));
             // show the message of the day
-            if (!motd.empty() && Mod::get()->getSavedValue<std::string>(fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url), "") != motd_hash) {
+            auto motdHash = util::crypto::hexEncode(util::crypto::simpleHash(motd));
+            auto lastSeenMotdKey = fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url);
+            if (!motd.empty() && Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, "") != motdHash) {
                 auto popup = MDPopup::create("Globed Message", motd, "OK");
                 popup->show();
 
-                Mod::get()->setSavedValue(fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url), motd_hash);
+                Mod::get()->setSavedValue(lastSeenMotdKey, motdHash);
             }
         });
 
