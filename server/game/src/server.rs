@@ -61,7 +61,6 @@ pub struct GameServer {
     /// map udp peer : thread
     pub clients: SyncMutex<FxHashMap<SocketAddrV4, Arc<ClientThread>>>,
     pub unauthorized_clients: SyncMutex<VecDeque<Arc<UnauthorizedThread>>>,
-    pub unclaimed_threads: SyncMutex<VecDeque<Arc<ClientThread>>>,
     pub udp_rate_limiters: SyncMutex<FxHashMap<SocketAddrV4, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
     pub public_key: PublicKey,
@@ -81,7 +80,6 @@ impl GameServer {
             udp_socket,
             clients: SyncMutex::new(FxHashMap::default()),
             unauthorized_clients: SyncMutex::new(VecDeque::new()),
-            unclaimed_threads: SyncMutex::new(VecDeque::new()),
             udp_rate_limiters: SyncMutex::new(FxHashMap::default()),
             secret_key,
             public_key,
@@ -172,9 +170,7 @@ impl GameServer {
                     client.routine_cleanup();
                 }
 
-                // clean the uhh rate limiters
-                let mut limiters = self.udp_rate_limiters.lock();
-                limiters.retain(|_k, v| v.since_last_refill() < Duration::from_mins(3));
+                self.routine_cleanup();
             }
         });
 
@@ -927,14 +923,23 @@ impl GameServer {
     fn print_server_status(&self) {
         info!("Current server stats");
         info!(
-            "Player count: {} (threads: {}, unclaimed: {})",
+            "Player count: {} (threads: {}, unauthorized: {})",
             self.state.get_player_count(),
             self.clients.lock().len(),
-            self.unclaimed_threads.lock().len(),
+            self.unauthorized_clients.lock().len(),
         );
         info!("Amount of rooms: {}", self.state.room_manager.get_rooms().len());
         info!("People in the global room: {}", self.state.room_manager.get_global().get_player_count());
         info!("-------------------------------------------");
+    }
+
+    fn routine_cleanup(&self) {
+        // clean the uhh rate limiters
+        let mut limiters = self.udp_rate_limiters.lock();
+        limiters.retain(|_k, v| v.since_last_refill() < Duration::from_mins(3));
+
+        // // fix player count
+        // self.state.fix_player_count(self.threa);
     }
 
     async fn refresh_bootdata(&self) -> bridge::Result<()> {

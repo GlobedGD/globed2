@@ -1,5 +1,7 @@
 #include "connection_test_popup.hpp"
 
+#include <Geode/utils/web.hpp>
+
 #include <data/packets/client/connection.hpp>
 #include <data/packets/server/connection.hpp>
 #include <managers/error_queues.hpp>
@@ -133,8 +135,11 @@ bool ConnectionTestPopup::setup() {
     this->setTitle("Connection test");
     this->usedCentralUrl = globed::string<"main-server-url">();
 
+    auto& gs = GlobedSettings::get();
+
     auto override = Mod::get()->getSavedValue<std::string>(URL_OVERRIDE_KEY);
-    if (!override.empty() && override.starts_with("http")) {
+
+    if (gs.launchArgs().devStuff && !override.empty() && override.starts_with("http")) {
         this->usedCentralUrl = override;
         this->isCentralUrlOverriden = true;
     }
@@ -171,35 +176,40 @@ bool ConnectionTestPopup::setup() {
         .pos(rlayout.fromTopRight(32.f, 20.f))
         .parent(m_buttonMenu);
 
-    Build(CircleButtonSprite::create(
-        CCSprite::createWithSpriteFrameName("pencil.png"_spr),
-        CircleBaseColor::Green,
-        CircleBaseSize::Small
-    ))
-        .scale(0.7f)
-        .intoMenuItem([] {
-            AskInputPopup::create("Change testing URL", [](auto newUrl) {
-                geode::createQuickPopup(
-                    "Note",
-                    "Changing the URL is <cr>not recommended</c> unless you know what you are doing. Only do it if you are having troubles connecting to a <cy>specific</c> server. Are you sure you want to proceed?",
-                    "Cancel",
-                    "Yes",
-                    [newUrl = std::string(newUrl)](auto, bool yes) {
-                        if (!yes) return;
+    if (gs.launchArgs().devStuff) {
+        CCSprite* pencil;
+        Build(CircleButtonSprite::create(
+            Build<CCSprite>::createSpriteName("pencil.png"_spr)
+                .store(pencil)
+                .collect(),
+            CircleBaseColor::Green,
+            CircleBaseSize::Small
+        ))
+            .scale(0.7f)
+            .intoMenuItem([] {
+                AskInputPopup::create("Change testing URL", [](auto newUrl) {
+                    geode::createQuickPopup(
+                        "Note",
+                        "Changing the URL is <cr>not recommended</c> unless you know what you are doing. Only do it if you are having troubles connecting to a <cy>specific</c> server. Are you sure you want to proceed?",
+                        "Cancel",
+                        "Yes",
+                        [newUrl = std::string(newUrl)](auto, bool yes) {
+                            if (!yes) return;
 
-                        Mod::get()->setSavedValue(URL_OVERRIDE_KEY, newUrl);
-                    }
-                );
-            }, 80, "Server URL", util::misc::STRING_URL)->show();
-        })
-        .pos(rlayout.fromTopRight(64.f, 20.f))
-        .parent(m_buttonMenu)
-    ;
+                            Mod::get()->setSavedValue(URL_OVERRIDE_KEY, newUrl);
+                        }
+                    );
+                }, 80, "Server URL", util::misc::STRING_URL)->show();
+            })
+            .pos(rlayout.fromTopRight(64.f, 20.f))
+            .parent(m_buttonMenu);
+
+        pencil->setScale(pencil->getScale() * 0.9f); // needed!
+    }
+
     // add the tests
 
-    this->addTest("Google TCP Test", [](Test* test) {
-        test->logTrace("Creating TCP socket");
-
+    gtcpTest = this->addTest("Google TCP Test", [](Test* test) {
         TcpSocket sock;
 
         test->logInfo("Connecting to 8.8.8.8:53");
@@ -215,7 +225,7 @@ bool ConnectionTestPopup::setup() {
         }
     });
 
-    this->addTest("Google HTTP Test", [](Test* test) {
+    ghttpTest = this->addTest("Google HTTP Test", [](Test* test) {
         test->logInfo("Sending a HEAD request to https://google.com");
 
         auto task = WebRequestManager::get().testGoogle();
@@ -249,8 +259,9 @@ bool ConnectionTestPopup::setup() {
     }
 
     // let's not try to dns query an ip address
+    log::debug("domain: {}, has ip: {}", srvdomain, util::format::hasIpAddress(srvdomain));
     if (!util::format::hasIpAddress(srvdomain)) {
-        this->addTest("DNS Test", [srvdomain](Test* test) {
+        dnsTest = this->addTest("DNS Test", [srvdomain](Test* test) {
             test->logInfo(fmt::format("Attempting to resolve host \"{}\"", srvdomain));
 
             NetworkAddress addr(srvdomain, 443);
@@ -265,7 +276,7 @@ bool ConnectionTestPopup::setup() {
         });
     }
 
-    auto centralTest = this->addTest("Central Test", [this](Test* test) {
+    centralTest = this->addTest("Central Test", [this](Test* test) {
         std::string_view url = this->usedCentralUrl;
 
         test->logInfo(fmt::format("Attempting to fetch {}/versioncheck", url));
@@ -291,10 +302,28 @@ bool ConnectionTestPopup::setup() {
             return;
         }
 
+        // validate response
+        auto respText = val->text().unwrapOrDefault();
+        auto parseResult = matjson::parse(respText);
+        if (!parseResult) {
+            log::warn("versioncheck invalid response: \n{}", respText);
+
+            // check if
+            if (respText.find("<html>") != std::string::npos || respText.find("<body>") != std::string::npos) {
+                test->fail("Server erroneously returned an HTML response instead of a JSON structure");
+            } else {
+                test->fail(fmt::format("Failed to parse JSON sent by the server: {}", parseResult.unwrapErr()));
+            }
+
+            return;
+        }
+
+        // if it's a real json we just assume it works fine xd
+
         test->finish();
     });
 
-    auto srvListTest = this->addTest("Server List Test", [this](Test* test) {
+    srvListTest = this->addTest("Server List Test", [this](Test* test) {
         std::string_view url = this->usedCentralUrl;
 
         test->logInfo(fmt::format("Attempting to fetch {}/servers", url));
@@ -649,8 +678,9 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
             bestChosenSize = size;
         }
 
-        test->logInfo(fmt::format("Test finished, setting packet limit to {} (most stable)", bestChosenSize));
-        GlobedSettings::get().globed.fragmentationLimit = bestChosenSize;
+        auto& gs = GlobedSettings::get();
+        test->logInfo(fmt::format("Test finished, setting packet limit to {} (most stable), previous was {}", bestChosenSize, gs.globed.fragmentationLimit.get()));
+        gs.globed.fragmentationLimit = bestChosenSize;
 
         test->finish();
     });
@@ -672,6 +702,61 @@ void ConnectionTestPopup::softReloadTests() {
         workThread.stop();
         reallyClose = true; // so the user does not have to look at the popup
         this->appendLog("All tests finished.", ccColor3B{ 47, 255, 64 });
+
+        this->showVerdictPopup();
+    }
+}
+
+void ConnectionTestPopup::showVerdictPopup() {
+    // a bit funky
+
+    bool anyFailed = false;
+    for (auto& test : this->tests) {
+        if (test->didNotSucceed()) {
+            anyFailed = true;
+        }
+    }
+
+    std::string content;
+    bool openLink = false;
+
+    if (gtcpTest->didNotSucceed() || ghttpTest->didNotSucceed()) {
+        content = "Basic network tests are <cr>failing</c>, this could likely be a problem with your <cy>internet connection</c> or <co>firewall</c>. Try disabling an antivirus if you have one.";
+    } else if (dnsTest && dnsTest->didNotSucceed()) {
+        // i dont really know how you would fix this
+        content = "DNS resolution for the server failed, this may be due to a block by your ISP or a delay in DNS propagation. Try waiting for up to 24-48 hours to see if the issue is resolved.";
+    } else if (centralTest->didNotSucceed()) {
+        // this is silly
+        if (centralTest->failReason.find("returned an HTML") != std::string::npos) {
+            content = fmt::format(
+                "The Globed server sent an <cr>erroneous response</c>. This could be a <cr>block</c> by your ISP or antivirus. Try visiting <cy>{}</c> in your browser and see whether it is reachable there.",
+                this->usedCentralUrl
+            );
+        } else {
+            content = fmt::format(
+                "The Globed server could <cr>not be reached</c> or sent an <cr>erroneous response</c>. Try visiting <cy>{}</c> in your browser and see whether it is reachable there.",
+                this->usedCentralUrl
+            );
+        }
+
+        openLink = true;
+    } else if (srvListTest->didNotSucceed()) {
+        content = "The Globed server failed to properly respond with the server list. This should never happen.";
+    } else if (anyFailed) {
+        // game server test failed?
+        content = "An error happened during testing one or multiple <cj>game servers</c>. This isn't critical, assuming other servers work, but this should <cr>not</c> happen. See the <cg>logs</c> for more details.";
+    } else {
+        content = "All tests passed <cg>successfully</c> :)";
+    }
+
+    if (!openLink) {
+        FLAlertLayer::create(nullptr, "Test Results", content, "Ok", nullptr, 380.f)->show();
+    } else {
+        geode::createQuickPopup("Test Results", content, "Cancel", "Open", 380.f, [url = this->usedCentralUrl](auto alert, bool yes) {
+            if (yes) {
+                geode::utils::web::openLinkInBrowser(url);
+            }
+        });
     }
 }
 
@@ -773,6 +858,10 @@ void Test::block() {
     this->finished = true;
     this->blocked = true;
     this->reloadPopup();
+}
+
+bool Test::didNotSucceed() {
+    return this->failed || this->blocked;
 }
 
 void Test::reloadPopup() {

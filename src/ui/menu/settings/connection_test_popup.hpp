@@ -27,6 +27,7 @@ public:
     void setProgress(double p);
     void queueGameServerTests();
     void queuePacketLimitTest(const class NetworkAddress& addr);
+    void showVerdictPopup();
     void softReloadTests();
     void update(float dt) override;
 
@@ -111,6 +112,8 @@ public:
         void block();
         void reloadPopup();
 
+        bool didNotSucceed();
+
         void logTrace(std::string_view message);
         void logInfo(std::string_view message);
         void logWarn(std::string_view message);
@@ -129,6 +132,8 @@ public:
 
 protected:
     std::vector<std::shared_ptr<Test>> tests;
+    std::shared_ptr<Test> gtcpTest, ghttpTest, dnsTest, centralTest, srvListTest;
+
     asp::Channel<std::shared_ptr<Test>> threadTestQueue;
     GlobedListLayer<StatusCell>* list;
     GlobedListLayer<LogMessageCell>* logList;

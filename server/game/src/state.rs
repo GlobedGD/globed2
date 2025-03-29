@@ -25,6 +25,10 @@ impl ServerState {
         self.player_count.load(Ordering::SeqCst)
     }
 
+    pub fn fix_player_count(&self, num: u32) {
+        self.player_count.store(num, Ordering::SeqCst);
+    }
+
     pub fn inc_player_count(&self) {
         self.player_count.fetch_add(1, Ordering::SeqCst);
     }
