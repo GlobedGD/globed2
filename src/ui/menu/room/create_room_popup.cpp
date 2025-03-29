@@ -46,9 +46,22 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
         .id("name-wrapper")
         .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
         .contentSize(0.f, 55.f)
-        .intoNewChild(CCLabelBMFont::create("Room Name", "bigFont.fnt"))
-        .scale(0.5f)
-        .intoParent()
+        .intoNewChild(CCMenu::create()) // label wrapper
+        .contentSize(100.f, 20.f)
+        .layout(RowLayout::create()->setGap(3.f)->setAutoScale(false))
+        .child(
+            Build<CCLabelBMFont>::create("Room Name", "bigFont.fnt")
+                .scale(0.5f)
+        )
+        .child(
+            Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+                .scale(0.5f)
+                .intoMenuItem([this] {
+                    this->showRoomNameWarnPopup();
+                })
+        )
+        .updateLayout()
+        .intoParent() // into name-wrapper
         .parent(inputsWrapper)
         .intoNewChild(TextInput::create(POPUP_WIDTH * 0.515f, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
@@ -118,12 +131,17 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
 
                     roomName = util::format::trim(roomName);
 
-                    // parse as a 32-bit int but cap at 10000
+                    // parse as a 32-bit int but cap at 9999
                     // this is so that if a user inputs a number like 99999 (doesnt fit),
-                    // instead of making it 0, it makes it 10000
+                    // instead of making it 0, it makes it 9999
 
                     uint32_t playerCount = util::format::parse<uint32_t>(playerLimitInput->getString()).value_or(0);
-                    playerCount = util::math::min(playerCount, 10000);
+                    playerCount = util::math::min(playerCount, 9999);
+
+                    if (playerCount == 1488) {
+                        FLAlertLayer::create("Error", "Please choose a different player count number.", "Ok")->show();
+                        return;
+                    }
 
                     NetworkManager::get().send(CreateRoomPacket::create(roomName, passwordInput->getString(), RoomSettings {
                         .flags = settingFlags,
@@ -291,6 +309,18 @@ void CreateRoomPopup::showSafeModePopup(bool firstTime) {
         firstTime
             ? "This setting enables <cy>safe mode</c>, which means you won't be able to make progress on levels while in this room."
             : getSafeModeString(),
+        "Ok"
+    )->show();
+}
+
+void CreateRoomPopup::showRoomNameWarnPopup() {
+    FLAlertLayer::create(
+        "Note",
+
+        "Room names should be clear and appropriate. "
+        "Creating a room with <cy>advertisements</c> or <cr>profanity</c> in its name may lead to a <cy>closure of the room</c>, "
+        "or in some cases a <cr>ban</c>.",
+
         "Ok"
     )->show();
 }
