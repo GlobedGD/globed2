@@ -57,6 +57,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         bool isLastDeathReal = false;
         bool firstReceivedData = true;
         float lastDeathTimestamp = 0.f;
+        uint8_t deathCounter = 0;
 
         // ui elements
         GlobedOverlay* overlay = nullptr;
@@ -208,6 +209,6 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     Fields& getFields();
 
     void explodeRandomPlayer();
-    
+
     void setPlayerVisibility(bool enabled);
 };

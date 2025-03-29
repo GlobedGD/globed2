@@ -16,7 +16,7 @@ public:
 
     void updateData(
         const VisualPlayerState& data,
-        FrameFlags frameFlags,
+        const FrameFlags& frameFlags,
         bool speaking,
         float loudness
     );

@@ -63,7 +63,9 @@ struct PlayerData {
     SpecificIconData player1;
     SpecificIconData player2;
 
-    float lastDeathTimestamp;
+    float deathCounter;       // TODO: to support v13 connections this remains a float,
+                              // although in v14 it is no longer `lastDeathTimestamp` but instead always an death counter (integer).
+                              // in the future, for compactness this should be replaced by a uint8_t
 
     float currentPercentage;
 

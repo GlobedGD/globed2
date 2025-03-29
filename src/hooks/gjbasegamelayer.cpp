@@ -695,10 +695,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         if (fields.progressBarWrapper->getParent() != nullptr) {
             fields.selfProgressIcon->updatePosition(pl->getCurrentPercent() / 100.f, self->m_isPracticeMode);
         } else if (pl->m_progressBar) {
-            // for some reason, the progressbar is sometimes initialized later than PlayLayer::init
-            // it always should exist, even in levels with no actual progress bar (i.e. platformer levels)
-            // but it can randomly get initialized late.
-            // why robtop????????
+            // progressbar may get initialized late
             pl->m_progressBar->addChild(fields.progressBarWrapper);
         }
     }
@@ -891,7 +888,7 @@ PlayerData GlobedGJBGL::gatherPlayerData() {
         .player1 = this->gatherSpecificIconData(m_player1),
         .player2 = this->gatherSpecificIconData(m_player2),
 
-        .lastDeathTimestamp = fields.lastDeathTimestamp,
+        .deathCounter = (float) fields.deathCounter,
 
         .currentPercentage = currentPercentage,
 
@@ -975,7 +972,7 @@ void GlobedGJBGL::updateProximityVolume(int playerId) {
 void GlobedGJBGL::notifyDeath() {
     auto& fields = this->getFields();
 
-    fields.lastDeathTimestamp = fields.timeCounter;
+    fields.deathCounter++;
     fields.isLastDeathReal = !fields.isFakingDeath;
 }
 
