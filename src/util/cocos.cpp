@@ -202,12 +202,12 @@ namespace util::cocos {
 
 #ifdef GEODE_IS_ANDROID
         if (!g_assetManager) {
-            // preloadLog("attempting to get asset manager");
-            // g_assetManager = getAssetManager();
+            preloadLog("attempting to get asset manager");
+            g_assetManager = getAssetManager();
 
-            // if (!g_assetManager) {
-            //     preloadLog("failed to get asset manager!");
-            // }
+            if (!g_assetManager) {
+                preloadLog("failed to get asset manager!");
+            }
         }
 #endif
 
