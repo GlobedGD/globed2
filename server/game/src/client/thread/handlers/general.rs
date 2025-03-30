@@ -1,3 +1,5 @@
+use globed_shared::webhook::WebhookMessage;
+
 use super::*;
 
 impl ClientThread {
@@ -106,8 +108,33 @@ impl ClientThread {
         if let Some(mut reply) = reply {
             reply.user_reply = packet.message;
 
+            let moderator = self.game_server.get_user_by_id(reply.moderator_id);
+
+            if self.game_server.bridge.has_admin_webhook() {
+                let self_name = self.account_data.lock().name.try_to_string();
+                let mod_name = if let Some(moderator) = moderator.as_ref() {
+                    moderator.account_data.lock().name.try_to_string()
+                } else {
+                    format!("<unknown> ({})", reply.moderator_id)
+                };
+
+                if let Err(err) = self
+                    .game_server
+                    .bridge
+                    .send_admin_webhook_message(WebhookMessage::NoticeReply(
+                        self_name,
+                        mod_name,
+                        reply.user_reply.try_to_string(),
+                        reply.reply_id,
+                    ))
+                    .await
+                {
+                    warn!("webhook error during notice to person: {err}");
+                }
+            }
+
             // find the recipient moderator
-            if let Some(moderator) = self.game_server.get_user_by_id(reply.moderator_id) {
+            if let Some(moderator) = moderator {
                 moderator.push_new_message(ServerThreadMessage::BroadcastNoticeReply(reply)).await;
             } else {
                 gs_notice!(self, "Error: Failed to send notice reply, the moderator went offline");

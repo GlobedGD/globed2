@@ -23,4 +23,5 @@ protected:
     bool setup(RoomLayer* parent) override;
     void onCheckboxToggled(cocos2d::CCObject*);
     void showSafeModePopup(bool firstTime);
+    void showRoomNameWarnPopup();
 };

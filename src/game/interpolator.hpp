@@ -58,7 +58,7 @@ public:
     struct PlayerState {
         float updateCounter = 0.0f;
         float timeCounter = 0.0f;
-        float lastDeathTimestamp = 0.0f;
+        float deathCounter = 0.0f;
         size_t totalFrames = 0;
 
         LerpFrame olderFrame, newerFrame;

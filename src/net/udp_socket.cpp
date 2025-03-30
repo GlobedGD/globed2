@@ -13,7 +13,7 @@
 # include <poll.h>
 #endif
 
-UdpSocket::UdpSocket() : socket_(0) {
+UdpSocket::UdpSocket() : socket_(-1) {
     destAddr_ = std::make_unique<sockaddr_in>();
     std::memset(destAddr_.get(), 0, sizeof(sockaddr_in));
 
@@ -28,6 +28,10 @@ UdpSocket::~UdpSocket() {
 }
 
 Result<> UdpSocket::connect(const NetworkAddress& address) {
+    if (socket_ == -1) {
+        return Err("This UDP socket has already been closed and cannot be reused");
+    }
+
     destAddr_->sin_family = AF_INET;
 
     GLOBED_UNWRAP_INTO(address.resolve(), *destAddr_)
@@ -91,10 +95,13 @@ bool UdpSocket::close() {
 
     connected = false;
 #ifdef GEODE_IS_WINDOWS
-    return ::closesocket(socket_) == 0;
+    bool res = ::closesocket(socket_) == 0;
 #else
-    return ::close(socket_) == 0;
+    bool res =  ::close(socket_) == 0;
 #endif
+    socket_ = -1;
+
+    return res;
 }
 
 Result<bool> UdpSocket::poll(int msDelay, bool in) {

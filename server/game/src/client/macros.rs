@@ -5,7 +5,8 @@ use std::mem::MaybeUninit;
 macro_rules! gs_handler {
     ($self:ident, $name:ident, $pktty:ty, $pkt:ident, $($code:tt)* ) => {
         pub(crate) async fn $name(&$self, buf: &mut esp::ByteReader<'_>) -> crate::client::Result<()> {
-            let $pkt: $pktty = match $self.translator.translate_packet::<$pktty>(buf) {
+            #[allow(unused_mut)]
+            let mut $pkt: $pktty = match $self.translator.translate_packet::<$pktty>(buf) {
                 Ok(pkt) => pkt?,
                 Err(e) => {
                     return Err(crate::client::error::PacketHandlingError::TranslationError(e));

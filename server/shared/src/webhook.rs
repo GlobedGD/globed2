@@ -35,12 +35,13 @@ pub struct ViolationMetaChange {
 }
 
 pub enum WebhookMessage {
-    AuthFail(String),                         // username
-    NoticeToEveryone(String, usize, String),  // username, player count, message
-    NoticeToSelection(String, usize, String), // username, player count, message
-    NoticeToPerson(String, String, String),   // author, target username, message
-    KickEveryone(String, String),             // mod username, reason
-    KickPerson(String, String, i32, String),  // mod username, target username, target account id, reason
+    AuthFail(String),                            // username
+    NoticeToEveryone(String, usize, String),     // username, player count, message
+    NoticeToSelection(String, usize, String),    // username, player count, message, reply id
+    NoticeToPerson(String, String, String, u32), // author, target username, message, reply id
+    NoticeReply(String, String, String, u32),    // author, mod who is being replied to, message, reply id
+    KickEveryone(String, String),                // mod username, reason
+    KickPerson(String, String, i32, String),     // mod username, target username, target account id, reason
     UserBanned(BanMuteStateChange),
     UserUnbanned(PunishmentRemoval),
     UserMuted(BanMuteStateChange),
@@ -150,19 +151,44 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             ],
             ..Default::default()
         }),
-        WebhookMessage::NoticeToPerson(author, target, message) => Some(WebhookEmbed {
+        WebhookMessage::NoticeToPerson(author, target, message, reply_id) => Some(WebhookEmbed {
             title: Cow::Owned(format!("Notice for {target}")),
             color: hex_color_to_decimal("#4dace8"),
-            author: Some(WebhookAuthor {
-                name: Cow::Owned(target.clone()),
-                icon_url: None,
-            }),
             description: Some(Cow::Owned(message.clone())),
-            fields: vec![WebhookField {
-                name: Cow::Borrowed("Performed by"),
-                value: Cow::Owned(author.clone()),
-                inline: Some(true),
-            }],
+            fields: vec![
+                WebhookField {
+                    name: Cow::Borrowed("Performed by"),
+                    value: Cow::Owned(author.clone()),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: Cow::Borrowed("Can reply?"),
+                    value: if *reply_id == 0 {
+                        Cow::Borrowed("No")
+                    } else {
+                        Cow::Owned(format!("Yes, ID: {reply_id}"))
+                    },
+                    inline: Some(true),
+                },
+            ],
+            ..Default::default()
+        }),
+        WebhookMessage::NoticeReply(author, mod_name, message, reply_id) => Some(WebhookEmbed {
+            title: Cow::Owned(format!("Notice reply from {author}")),
+            color: hex_color_to_decimal("#55d9ed"),
+            description: Some(Cow::Owned(message.clone())),
+            fields: vec![
+                WebhookField {
+                    name: Cow::Borrowed("Sent to"),
+                    value: Cow::Owned(mod_name.clone()),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: Cow::Borrowed("Reply ID"),
+                    value: Cow::Owned(reply_id.to_string()),
+                    inline: Some(true),
+                },
+            ],
             ..Default::default()
         }),
         WebhookMessage::KickEveryone(username, reason) => Some(WebhookEmbed {
@@ -177,7 +203,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             ..Default::default()
         }),
         WebhookMessage::KickPerson(mod_name, user_name, target_id, reason) => Some(WebhookEmbed {
-            title: Cow::Borrowed("Kick user"),
+            title: Cow::Borrowed("User kicked"),
             color: hex_color_to_decimal("#e8d34d"),
             author: Some(WebhookAuthor {
                 name: Cow::Owned(format!("{user_name} ({target_id})")),

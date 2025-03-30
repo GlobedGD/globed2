@@ -51,7 +51,7 @@ const PlayerAccountData& RemotePlayer::getAccountData() const {
 
 void RemotePlayer::updateData(
         const VisualPlayerState& data,
-        FrameFlags frameFlags,
+        const FrameFlags& frameFlags,
         bool speaking,
         float loudness
 ) {

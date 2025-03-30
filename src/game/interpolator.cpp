@@ -31,8 +31,8 @@ void PlayerInterpolator::updatePlayer(int playerId, const PlayerData& data, floa
     player.pendingRealFrame = true;
     player.totalFrames++;
 
-    if (!util::math::equal(player.lastDeathTimestamp, data.lastDeathTimestamp)) {
-        player.lastDeathTimestamp = data.lastDeathTimestamp;
+    if (!util::math::equal(player.deathCounter, data.deathCounter)) {
+        player.deathCounter = data.deathCounter;
         if (player.totalFrames > 1) {
             player.frameFlags.pendingDeath = true;
             player.frameFlags.pendingRealDeath = data.isLastDeathReal;

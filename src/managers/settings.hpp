@@ -56,6 +56,7 @@ public:
         Arg<"globed-no-ssl-verification"> noSslVerification;
         Arg<"globed-fake-server-data"> fakeData;
         Arg<"globed-reset-settings"> resetSettings;
+        Arg<"globed-dev-stuff"> devStuff;
     };
 
 private:
@@ -422,7 +423,7 @@ private:
 // Launch args
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LaunchArgs, (
-    crtFix, verboseCurl, skipPreload, debugPreload, skipResourceCheck, tracing, noSslVerification, fakeData, resetSettings
+    crtFix, verboseCurl, skipPreload, debugPreload, skipResourceCheck, tracing, noSslVerification, fakeData, resetSettings, devStuff
 ));
 
 // Settings

@@ -106,7 +106,7 @@ template<> void ByteBuffer::customEncode(const PlayerData& data) {
     this->writeValue(data.timestamp);
     this->writeValue(data.player1);
     this->writeValue(data.player2);
-    this->writeValue(data.lastDeathTimestamp);
+    this->writeValue(data.deathCounter);
     this->writeValue(data.currentPercentage);
 
     BitBuffer<8> bits;
@@ -120,7 +120,7 @@ template<> ByteBuffer::DecodeResult<PlayerData> ByteBuffer::customDecode() {
     GLOBED_UNWRAP_INTO(this->readValue<float>(), data.timestamp);
     GLOBED_UNWRAP_INTO(this->readValue<SpecificIconData>(), data.player1);
     GLOBED_UNWRAP_INTO(this->readValue<SpecificIconData>(), data.player2);
-    GLOBED_UNWRAP_INTO(this->readValue<float>(), data.lastDeathTimestamp);
+    GLOBED_UNWRAP_INTO(this->readValue<float>(), data.deathCounter);
     GLOBED_UNWRAP_INTO(this->readValue<float>(), data.currentPercentage);
 
     GLOBED_UNWRAP_INTO(this->readBits<8>(), auto bits);

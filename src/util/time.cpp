@@ -20,8 +20,8 @@ namespace util::time {
     bool isAprilFools() {
         auto now = std::chrono::system_clock::now();
         auto timeNow = std::chrono::system_clock::to_time_t(now);
-        struct tm* tm_local = std::localtime(&timeNow);
+        struct tm tm_local = fmt::localtime(timeNow);
 
-        return tm_local->tm_mon == 3 && tm_local->tm_mday == 1;
+        return tm_local.tm_mon == 3 && tm_local.tm_mday == 1;
     }
 }

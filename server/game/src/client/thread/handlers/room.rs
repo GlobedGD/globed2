@@ -7,6 +7,11 @@ impl ClientThread {
     gs_handler!(self, handle_create_room, CreateRoomPacket, packet, {
         let account_id = gs_needauth!(self);
 
+        // settings validation
+        if packet.settings.player_limit > 9999 {
+            packet.settings.player_limit = 9999;
+        }
+
         let room_id: u32 = self.room_id.load(Ordering::Relaxed);
 
         // if we are already in a room, just return the same room info, otherwise create a new one

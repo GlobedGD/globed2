@@ -28,3 +28,5 @@ Make sure to use the full format and prefix the option name with `globed-`, so i
 
 `fake-server-data` - emulates a more lively server, for example, even if the server has no players connected to it, with this option, there will be a lot of fake players on the player list. same with fake levels and rooms. **ONLY** works in debug builds (`-DGLOBED_DEBUG=ON` was set when building the mod)
 
+`dev-stuff` - adds extra toggles in certain places that are otherwise unavailable
+

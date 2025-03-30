@@ -194,7 +194,13 @@ pub async fn user_login(
     // store login attempt
     state.state_write().await.put_login(&userdata.0.name, userdata.0.account_id, link_code);
 
-    let user = _get_user_by_id(database, userdata.0.account_id).await?;
+    let mut user = _get_user_by_id(database, userdata.0.account_id).await?;
+
+    // update username during login if it does not match
+    if user.user_name.as_ref().is_some_and(|u| *u != userdata.0.name) {
+        database.update_username(user.account_id, &userdata.0.name).await?;
+        user.user_name = Some(userdata.0.name);
+    }
 
     let ban = if let Some(ban_id) = &user.active_ban {
         match database.get_punishment(*ban_id).await {

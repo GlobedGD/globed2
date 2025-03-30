@@ -302,7 +302,7 @@ namespace util::format {
     }
 
     bool hasIpAddress(std::string_view domain) {
-        std::regex regex(R"(^(([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}|(\d{1,3}\.){3}\d{1,3})(:\d+)?(\/.*)?$)");
-        return std::regex_match(domain.begin(), domain.end(), regex);
+        std::regex regex(R"(((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4})");
+        return std::regex_search(domain.begin(), domain.end(), regex);
     }
 }
