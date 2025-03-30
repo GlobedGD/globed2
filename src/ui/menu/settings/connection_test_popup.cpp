@@ -197,6 +197,8 @@ bool ConnectionTestPopup::setup() {
                             if (!yes) return;
 
                             Mod::get()->setSavedValue(URL_OVERRIDE_KEY, newUrl);
+
+                            FLAlertLayer::create("Note", "Reopen the connection test popup for the change to apply.", "Ok")->show();
                         }
                     );
                 }, 80, "Server URL", util::misc::STRING_URL)->show();
@@ -259,7 +261,6 @@ bool ConnectionTestPopup::setup() {
     }
 
     // let's not try to dns query an ip address
-    log::debug("domain: {}, has ip: {}", srvdomain, util::format::hasIpAddress(srvdomain));
     if (!util::format::hasIpAddress(srvdomain)) {
         dnsTest = this->addTest("DNS Test", [srvdomain](Test* test) {
             test->logInfo(fmt::format("Attempting to resolve host \"{}\"", srvdomain));
@@ -534,7 +535,7 @@ void ConnectionTestPopup::queueGameServerTests() {
 }
 
 void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
-    this->addTest("Packet Limit Test", [addr = addr](Test* test) {
+    packetTest = this->addTest("Packet Limit Test", [addr = addr](Test* test) {
         GameSocket sock;
 
         auto res = sock.connect(addr, false);
@@ -602,6 +603,18 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
             float maxTaken = 0.f;
 
             for (size_t att = 0; att < attempts; att++) {
+                if (att >= 3 && successAttempts == 0) {
+                    test->logWarn("All attempts failed so far, skipping to the next size");
+                    attempts = att;
+                    break;
+                }
+
+                if (test->ctPopup->waitingForThreadTerm) {
+                    test->logWarn("Interrupting test, cancellation was requested");
+                    test->finish();
+                    return;
+                }
+
                 auto startTime = Instant::now();
 
                 clientpkt->uid = Random::get().generate<uint32_t>();
@@ -613,8 +626,8 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
 
                 auto res2 = waitForPacketOn<ConnectionTestResponsePacket>(sock, Protocol::Udp);
                 if (!res2) {
-                    test->fail(res2.unwrapErr());
-                    return;
+                    test->logWarn(fmt::format("Attempt {} failed: {}", att, res2.unwrapErr()));
+                    continue;
                 }
 
                 auto resppkt = std::move(res2).unwrap();
@@ -676,6 +689,10 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
 
             // i dont really do other tests here :P
             bestChosenSize = size;
+        }
+
+        if (bestChosenSize == testSizes.back()) {
+            bestChosenSize = 0;
         }
 
         auto& gs = GlobedSettings::get();
@@ -742,6 +759,8 @@ void ConnectionTestPopup::showVerdictPopup() {
         openLink = true;
     } else if (srvListTest->didNotSucceed()) {
         content = "The Globed server failed to properly respond with the server list. This should never happen.";
+    } else if (packetTest->didNotSucceed()) {
+        content = "An error happened during the <cy>packet limit test</c>, meaning a potential issue with your <co>firewall</c> or <cg>router</c>. Try manually setting the packet limit to <cy>1400</c> in settings.";
     } else if (anyFailed) {
         // game server test failed?
         content = "An error happened during testing one or multiple <cj>game servers</c>. This isn't critical, assuming other servers work, but this should <cr>not</c> happen. See the <cg>logs</c> for more details.";
@@ -798,6 +817,10 @@ void ConnectionTestPopup::update(float dt) {
 void ConnectionTestPopup::onClose(cocos2d::CCObject* o) {
     if (reallyClose) {
         if (actuallyReallyClose || threadTerminated) {
+            auto& gsm = GameServerManager::get();
+            gsm.clear();
+            gsm.clearCache();
+            gsm.clearActive();
             Popup::onClose(o);
             return;
         }
@@ -937,8 +960,7 @@ bool StatusCell::init(const char* name, float width) {
     setStatusIconData(loadingCircle);
 
     Build<CCLabelBMFont>::create(name, "bigFont.fnt")
-        .limitLabelWidth(150.f, 0.4f, 0.1f)
-        .scale(0.4f)
+        .limitLabelWidth(150.f, 0.4f, 0.05f)
         .anchorPoint(0.f, 0.5f)
         .pos(22.f, myVertCenter)
         .parent(this)

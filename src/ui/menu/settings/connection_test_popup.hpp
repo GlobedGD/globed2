@@ -66,7 +66,7 @@ protected:
     asp::Thread<> workThread;
     bool reallyClose = false;
     bool actuallyReallyClose = false;
-    bool waitingForThreadTerm = false;
+    asp::AtomicBool waitingForThreadTerm = false;
     asp::AtomicBool threadTerminated = false;
     asp::AtomicBool addedPacketTest = false;
     asp::AtomicBool dontFinish = false;
@@ -132,7 +132,7 @@ public:
 
 protected:
     std::vector<std::shared_ptr<Test>> tests;
-    std::shared_ptr<Test> gtcpTest, ghttpTest, dnsTest, centralTest, srvListTest;
+    std::shared_ptr<Test> gtcpTest, ghttpTest, dnsTest, centralTest, srvListTest, packetTest;
 
     asp::Channel<std::shared_ptr<Test>> threadTestQueue;
     GlobedListLayer<StatusCell>* list;
