@@ -226,11 +226,18 @@ impl ClientThread {
                     self.get_tcp_peer()
                 );
 
+                // set the reply id
+                if let Some(thread) = thread.as_ref()
+                    && packet.can_reply
+                {
+                    notice_packet.reply_id = thread.create_notice_reply(account_id, notice_packet.message.clone());
+                }
+
                 if self.game_server.bridge.has_admin_webhook() {
                     if let Err(err) = self
                         .game_server
                         .bridge
-                        .send_admin_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg))
+                        .send_admin_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg, notice_packet.reply_id))
                         .await
                     {
                         warn!("webhook error during notice to person: {err}");
@@ -238,10 +245,6 @@ impl ClientThread {
                 }
 
                 if let Some(thread) = thread {
-                    if packet.can_reply {
-                        notice_packet.reply_id = thread.create_notice_reply(account_id, notice_packet.message.clone());
-                    }
-
                     thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet)).await;
 
                     self.send_packet_dynamic(&AdminSuccessMessagePacket {

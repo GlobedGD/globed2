@@ -636,7 +636,7 @@ protected:
                 packet->userReply,
                 "Ok",
                 nullptr,
-                420.f
+                380.f
             );
 
             alert->show();
