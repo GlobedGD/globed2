@@ -191,7 +191,7 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
                 return Task::Cancel();
             }
 
-            std::string providedMessage{errorBuffer};
+            std::string_view providedMessage{errorBuffer};
 
             response.m_code = 0;
 

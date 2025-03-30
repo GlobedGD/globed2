@@ -1319,7 +1319,7 @@ int GlobedGJBGL::checkCollisions(PlayerObject* player, float dt, bool p2) {
 
 class $modify(PlayerObject) {
     static void onModify(auto& self) {
-        (void) self.setHookPriority("PlayerObject::playerDestroyed", 99999999).unwrap();
+        (void) self.setHookPriority("PlayerObject::playerDestroyed", -99999999).unwrap();
 
         GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::update);
         GLOBED_MANAGE_HOOK(Gameplay, PlayerObject::playerDestroyed);
