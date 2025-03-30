@@ -20,7 +20,7 @@ constexpr static int WouldBlock = EINPROGRESS;
 
 using namespace geode::prelude;
 
-TcpSocket::TcpSocket() : socket_(0) {
+TcpSocket::TcpSocket() : socket_(-1) {
     destAddr_ = std::make_unique<sockaddr_in>();
     std::memset(destAddr_.get(), 0, sizeof(sockaddr_in));
 }
