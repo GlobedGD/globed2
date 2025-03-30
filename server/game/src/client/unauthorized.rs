@@ -525,6 +525,7 @@ impl UnauthorizedThread {
         let special_user_data = self.account_data.lock().special_user_data.clone();
 
         let socket = self.get_socket();
+        let client_protocol = self.protocol_version.load(Ordering::Relaxed);
 
         socket
             .send_packet_dynamic(&LoggedInPacket {
@@ -532,7 +533,7 @@ impl UnauthorizedThread {
                 all_roles,
                 secret_key: self.secret_key,
                 special_user_data,
-                server_protocol: MAX_SUPPORTED_PROTOCOL,
+                server_protocol: client_protocol,
             })
             .await
     }

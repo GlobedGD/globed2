@@ -54,7 +54,7 @@ class LoggedInPacket : public Packet {
     SpecialUserData specialUserData;
     std::vector<GameServerRole> allRoles;
     uint32_t secretKey;
-    uint16_t serverProtocol; // max protocol
+    uint16_t serverProtocol; // negotiated protocol that both sides support
 };
 GLOBED_SERIALIZABLE_STRUCT(LoggedInPacket, (tps, specialUserData, allRoles, secretKey, serverProtocol));
 

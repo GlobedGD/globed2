@@ -42,7 +42,7 @@ pub struct LoggedInPacket {
     pub special_user_data: SpecialUserData,
     pub all_roles: Vec<GameServerRole>,
     pub secret_key: u32,
-    pub server_protocol: u16,
+    pub server_protocol: u16, // negotiated protocol that both sides support
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

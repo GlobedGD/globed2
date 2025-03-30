@@ -34,9 +34,9 @@ using namespace asp::time;
 using namespace geode::prelude;
 using ConnectionState = NetworkManager::ConnectionState;
 
-static constexpr uint16_t MIN_PROTOCOL_VERSION = 13;
-static constexpr uint16_t MAX_PROTOCOL_VERSION = 14;
 static constexpr std::array SUPPORTED_PROTOCOLS = std::to_array<uint16_t>({13, 14});
+static constexpr uint16_t MIN_PROTOCOL_VERSION = SUPPORTED_PROTOCOLS.front();
+static constexpr uint16_t MAX_PROTOCOL_VERSION = SUPPORTED_PROTOCOLS.back();
 
 static bool isProtocolSupported(uint16_t proto) {
 #ifdef GLOBED_DEBUG
