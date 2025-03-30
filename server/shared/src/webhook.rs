@@ -166,7 +166,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
                     value: if *reply_id == 0 {
                         Cow::Borrowed("No")
                     } else {
-                        Cow::Owned(format!("Yes, ID {reply_id}"))
+                        Cow::Owned(format!("Yes, ID: {reply_id}"))
                     },
                     inline: Some(true),
                 },
