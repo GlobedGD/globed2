@@ -64,20 +64,14 @@ bool GlobedSettingsLayer::init() {
 
     // tabs gradient (copied from geode)
 
-#ifdef GEODE_IS_IOS
-    tabsGradientNode = CCNode::create();
-#else
     tabsGradientNode = CCClippingNode::create();
-#endif
     tabsGradientNode->setID("gradient-clipping-node");
     tabsGradientNode->setContentSize(this->getContentSize());
     tabsGradientNode->setAnchorPoint({0.5f, 0.5f});
     tabsGradientNode->ignoreAnchorPointForPosition(true);
     tabsGradientNode->setZOrder(4);
-#ifndef GEODE_IS_IOS
     tabsGradientNode->setInverted(false);
     tabsGradientNode->setAlphaThreshold(0.7f);
-#endif
 
     tabsGradientSprite = CCSprite::createWithSpriteFrameName("tab-gradient.png"_spr);
     tabsGradientSprite->setPosition(tabButtonMenu->getPosition());

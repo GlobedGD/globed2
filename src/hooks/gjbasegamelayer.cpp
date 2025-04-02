@@ -739,9 +739,11 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     if (fields.selfStatusIcons) {
         float pos = (fields.ownNameLabel && fields.ownNameLabel->isVisible()) ? 40.f : 25.f;
         fields.selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, pos});
+        #ifdef GLOBED_VOICE_SUPPORT
         bool recording = VoiceRecordingManager::get().isRecording();
 
         fields.selfStatusIcons->updateStatus(false, false, recording, false, 0.f);
+        #endif
     }
 
     if (fields.voiceOverlay) {

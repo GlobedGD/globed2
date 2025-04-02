@@ -252,7 +252,7 @@ endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${curl_SOURCE_DIR}/include")
 
-target_link_libraries(${PROJECT_NAME} curl)
+target_link_libraries(${PROJECT_NAME} "-framework Security" curl)
 
 # mac needs this for curl
 if (APPLE)

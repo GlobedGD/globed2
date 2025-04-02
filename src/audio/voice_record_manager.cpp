@@ -94,6 +94,7 @@ bool VoiceRecordingManager::isRecording() {
 #else
 
 VoiceRecordingManager::VoiceRecordingManager() {}
+VoiceRecordingManager::~VoiceRecordingManager() {}
 void VoiceRecordingManager::startRecording() {}
 void VoiceRecordingManager::stopRecording() {}
 void VoiceRecordingManager::resetBools(bool recording) {}

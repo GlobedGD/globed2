@@ -10,7 +10,7 @@
 #include <asp/time/SystemTime.hpp>
 
 // GLOBED_LOADING_FINISHED_MIDHOOK - whether to midhook the inlined func
-#if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_IOS) || defined(GEODE_IS_MACOS)
+#if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_MACOS)
 # define GLOBED_LOADING_FINISHED_MIDHOOK 1
 #endif
 
