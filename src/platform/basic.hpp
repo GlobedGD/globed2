@@ -4,6 +4,8 @@
 # define GLOBED_ARM
 #elif defined(GEODE_IS_ANDROID)
 # define GLOBED_ARM
+#elif defined (GEODE_IS_IOS)
+# define GLOBED_ARM
 #else
 # define GLOBED_X86
 #endif
