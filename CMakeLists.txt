@@ -252,7 +252,11 @@ endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${curl_SOURCE_DIR}/include")
 
-target_link_libraries(${PROJECT_NAME} curl)
+if (GLOBED_IOS)
+    target_link_libraries(${PROJECT_NAME} "-framework Security" curl)
+else()
+    target_link_libraries(${PROJECT_NAME} curl)
+endif()
 
 # mac needs this for curl
 if (APPLE)

@@ -190,6 +190,9 @@ namespace util::gd {
 #elif defined(GEODE_IS_ANDROID32)
         static_assert(GEODE_COMP_GD_VERSION == 22074, "Unsupported GD version");
         originalUrl = (char*)(base::get() + 0x952E9E);
+#elif defined(GEODE_IS_IOS)
+        static_assert(GEODE_COMP_GD_VERSION == 22074, "Unsupported GD version");
+        originalUrl = (char*)(base::get() + 0x6af51a);
 #else
         static_assert(false, "Unsupported platform");
 #endif
