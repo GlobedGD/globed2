@@ -4,7 +4,10 @@
 
 using namespace geode::prelude;
 
-constexpr float FILL_PAD = 2.f;
+constexpr static float FILL_PAD = 2.f;
+
+// this is kinda bad but eh whatever
+constexpr static float OUTLINE_SCALE = 0.69f;
 
 bool ProgressBar::init() {
     if (!CCMenu::init()) return false;
@@ -13,6 +16,7 @@ bool ProgressBar::init() {
     this->ignoreAnchorPointForPosition(false);
 
     Build<CCSprite>::create("slider-start.png"_spr)
+        .scale(OUTLINE_SCALE)
         .zOrder(5)
         .anchorPoint(0.f, 0.5f)
         .id("outline-start")
@@ -20,6 +24,7 @@ bool ProgressBar::init() {
         .store(outlineStart);
 
     Build<CCSprite>::create("slider-end.png"_spr)
+        .scale(OUTLINE_SCALE)
         .zOrder(5)
         .anchorPoint(1.f, 0.5f)
         .id("outline-end")
@@ -32,6 +37,7 @@ bool ProgressBar::init() {
     };
 
     Build<CCSprite>::create("slider-middle.png"_spr)
+        .scale(OUTLINE_SCALE)
         .zOrder(4)
         .anchorPoint(0.5f, 0.5f)
         .id("outline-middle")
@@ -70,11 +76,11 @@ void ProgressBar::setContentSize(const CCSize& size) {
 
 void ProgressBar::setup(CCSize size) {
     float width = size.width;
-    float height = outlineStart->getContentHeight();
+    float height = outlineStart->getScaledContentHeight();
 
-    float outlineMiddleWidth = std::max(0.f, width - outlineStart->getContentWidth() - outlineEnd->getContentWidth());
+    float outlineMiddleWidth = std::max(0.f, width - outlineStart->getScaledContentWidth() - outlineEnd->getScaledContentWidth());
 
-    outlineMiddle->setTextureRect({0.f, 0.f, outlineMiddleWidth, height});
+    outlineMiddle->setTextureRect({0.f, 0.f, outlineMiddleWidth / OUTLINE_SCALE, height / OUTLINE_SCALE});
 
     outlineStart->setPosition({0.f, height / 2.f});
     outlineEnd->setPosition({width, height / 2.f});
@@ -92,11 +98,11 @@ void ProgressBar::setValue(double value) {
     this->rawvalue = std::clamp(value, 0.0, 1.0);
 
     // update fill
-    float maxWidth = this->getContentWidth() - FILL_PAD;
+    float maxWidth = this->getScaledContentWidth() - FILL_PAD;
     float range = maxWidth - FILL_PAD;
 
     float width = range * rawvalue;
-    fill->setTextureRect({0.f, 0.f, width, outlineStart->getContentHeight()});
+    fill->setTextureRect({0.f, 0.f, width, outlineStart->getScaledContentHeight()});
 }
 
 ProgressBar* ProgressBar::create() {
