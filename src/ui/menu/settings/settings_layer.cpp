@@ -80,9 +80,7 @@ bool GlobedSettingsLayer::init() {
     tabsGradientStencil = CCSprite::createWithSpriteFrameName("tab-gradient-mask.png"_spr);
     tabsGradientStencil->setScale(TAB_SCALE);
     tabsGradientStencil->setAnchorPoint({0.f, 0.f});
-#ifndef GEODE_IS_IOS
     tabsGradientNode->setStencil(tabsGradientStencil);
-#endif
 
     this->addChild(tabsGradientNode);
     this->addChild(tabsGradientStencil);
