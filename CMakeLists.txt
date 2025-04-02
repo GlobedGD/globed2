@@ -104,7 +104,7 @@ endif()
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 # add used libraries
-CPMAddPackage("gh:dankmeme01/uibuilder#c30755a")
+CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage(
     NAME Boost
     VERSION 1.86.0
