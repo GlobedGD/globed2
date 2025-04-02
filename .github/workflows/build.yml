@@ -20,7 +20,6 @@ jobs:
           - name: iOS
             os: macos-latest
             target: iOS
-            configure-args: -DGLOBED_OSS_BUILD=ON
 
           - name: Android32
             os: ubuntu-latest

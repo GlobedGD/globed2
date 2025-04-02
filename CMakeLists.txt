@@ -266,7 +266,7 @@ endif()
 
 
 # link to bb
-if (GLOBED_OSS_BUILD)
+if (GLOBED_OSS_BUILD OR GLOBED_IOS)
     message(STATUS "Building open-source version, not linking to bb")
     target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_OSS_BUILD=1)
 else()
