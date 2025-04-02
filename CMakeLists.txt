@@ -2,7 +2,16 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS" OR IOS)
+    set(GLOBED_IOS ON)
+endif()
+
+if (GLOBED_IOS)
+    set(CMAKE_OSX_ARCHITECTURES "arm64")
+else()
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+endif()
 
 project(globed2 VERSION 1.0.1)
 
@@ -16,10 +25,6 @@ if (WIN32)
     option(GLOBED_COMPILE_LIBS "Don't use precompiled libraries and compile manually" OFF)
 else()
     option(GLOBED_COMPILE_LIBS "Don't use precompiled libraries and compile manually" ON)
-endif()
-
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS" OR IOS)
-    set(GLOBED_IOS ON)
 endif()
 
 include(cmake/environment.cmake)
