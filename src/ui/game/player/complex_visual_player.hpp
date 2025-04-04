@@ -90,6 +90,8 @@ protected:
     // used for many anims
     bool wasNearby = false;
 
+    bool currentlyNotDrawing = false;
+
     // uhh yeah forcibly hiding players
     bool isForciblyHidden = false;
 
