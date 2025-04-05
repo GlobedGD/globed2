@@ -331,9 +331,10 @@ void ComplexVisualPlayer::updateData(
     } else if (settings.players.hidePracticePlayers && playerData.isPracticing) {
         shouldBeVisible = false;
     } else {
-        shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden;
+        shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden && isNearby;
     }
 
+    this->currentlyNotDrawing = !shouldBeVisible;
     this->setVisible(shouldBeVisible);
 
     if (!shouldBeVisible) {

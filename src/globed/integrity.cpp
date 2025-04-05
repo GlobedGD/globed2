@@ -106,7 +106,7 @@ std::string globed::IntegrityReport::asDebugData() {
 
     // add platform and version to debug data
     data += fmt::format("plat:{};ver:{};",
-        GEODE_ANDROID32("a32") GEODE_ANDROID64("a64") GEODE_WINDOWS("w") GEODE_ARM_MAC("ma") GEODE_INTEL_MAC("mi"),
+        GEODE_ANDROID32("a32") GEODE_ANDROID64("a64") GEODE_WINDOWS("w") GEODE_ARM_MAC("ma") GEODE_INTEL_MAC("mi") GEODE_IOS("i"),
         Mod::get()->getVersion()
     );
 

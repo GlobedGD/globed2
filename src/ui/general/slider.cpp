@@ -37,7 +37,7 @@ void BetterSlider::setContentSize(const CCSize& size) {
 void BetterSlider::setup(CCSize size) {
     ProgressBar::setup(size);
 
-    knob->setPositionY(outlineStart->getContentHeight() / 2.f);
+    knob->setPositionY(outlineStart->getScaledContentHeight() / 2.f);
 
     // force update x pos
     this->setValueRaw(this->getValueRaw());

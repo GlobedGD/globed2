@@ -2,7 +2,16 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS" OR IOS)
+    set(GLOBED_IOS ON)
+endif()
+
+if (GLOBED_IOS)
+    set(CMAKE_OSX_ARCHITECTURES "arm64")
+else()
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+endif()
 
 project(globed2 VERSION 1.0.1)
 
@@ -26,7 +35,11 @@ if (ANDROID)
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS")
     file(GLOB_RECURSE OS_SOURCES "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp")
 elseif (APPLE)
-    file(GLOB_RECURSE OS_SOURCES "src/platform/os/mac/*.cpp" "src/platform/arch/x86/*.cpp" "src/platform/arch/arm/*.cpp")
+    if (GLOBED_IOS)
+        file(GLOB_RECURSE OS_SOURCES "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp")
+    else()
+        file(GLOB_RECURSE OS_SOURCES "src/platform/os/mac/*.cpp" "src/platform/arch/x86/*.cpp" "src/platform/arch/arm/*.cpp")
+    endif()
 elseif (WIN32)
     file(GLOB_RECURSE OS_SOURCES "src/platform/os/windows/*.cpp" "src/platform/arch/x86/*.cpp")
 else()
@@ -91,7 +104,7 @@ endif()
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 # add used libraries
-CPMAddPackage("gh:dankmeme01/uibuilder#c30755a")
+CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage(
     NAME Boost
     VERSION 1.86.0
@@ -218,6 +231,8 @@ if (ANDROID)
     endif()
 elseif (WIN32)
     set(LIB_PLATFORM "win64")
+elseif (GLOBED_IOS)
+    set(LIB_PLATFORM "ios")
 else()
     set(LIB_PLATFORM "macos")
 endif()
@@ -251,7 +266,7 @@ endif()
 
 
 # link to bb
-if (GLOBED_OSS_BUILD)
+if (GLOBED_OSS_BUILD OR GLOBED_IOS)
     message(STATUS "Building open-source version, not linking to bb")
     target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_OSS_BUILD=1)
 else()

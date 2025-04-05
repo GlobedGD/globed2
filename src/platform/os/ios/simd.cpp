@@ -1,4 +1,7 @@
+#include <Geode/platform/cplatform.h>
+
 #include <util/simd.hpp>
+#include <util/misc.hpp>
 
 #include <platform/arch/arm/armsimd.hpp>
 
