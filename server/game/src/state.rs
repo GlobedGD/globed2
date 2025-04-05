@@ -14,9 +14,9 @@ pub struct ServerState {
 }
 
 impl ServerState {
-    pub fn new(filter_words: &[String]) -> Self {
+    pub fn new(filter_words: Vec<String>) -> Self {
         Self {
-            filter: SyncRwLock::new(WordFilter::new(filter_words)),
+            filter: SyncRwLock::new(WordFilter::new_from_lines(filter_words)),
             ..Default::default()
         }
     }

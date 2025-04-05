@@ -215,7 +215,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let filter_words_count = filter_words.len();
 
-    let state = ServerState::new(&filter_words);
+    let state = ServerState::new(filter_words);
     let bridge = if standalone {
         warn!("Starting in standalone mode, authentication is disabled");
         warn!("Note: use Direct Connection option in-game to connect, Add Server cannot be used.");
