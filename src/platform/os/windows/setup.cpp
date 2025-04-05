@@ -1,5 +1,8 @@
 #include <defs/geode.hpp>
 #include <util/debug.hpp>
+#include <managers/settings.hpp>
+
+using namespace geode::prelude;
 
 // TODO: all of this is probably obsolete
 // I am only leaving it here in the case that this somehow becomes an issue in the future again
@@ -55,7 +58,7 @@ static _Thrd_result __stdcall _Cnd_timedwait_for_reimpl(_Cnd_t cond, _Mtx_t mtx,
 static void fixCVAbiBreak() {
     if (GlobedSettings::get().launchArgs().crtFix) {
         (void) Mod::get()->hook(
-            reinterpret_cast<void*>(addresser::getNonVirtual(&_Cnd_timedwait_for)),
+            reinterpret_cast<void*>(addresser::getNonVirtual(&_Cnd_timedwait_for_unchecked)),
             _Cnd_timedwait_for_reimpl,
             "_Cnd_timedwait_for",
             tulip::hook::TulipConvention::Default

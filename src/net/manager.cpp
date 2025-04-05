@@ -16,6 +16,7 @@
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
+#include <managers/central_server.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/popup_queue.hpp>
 #include <managers/friend_list.hpp>
@@ -23,6 +24,7 @@
 #include <managers/room.hpp>
 #include <managers/role.hpp>
 #include <util/cocos.hpp>
+#include <util/crypto.hpp>
 #include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/net.hpp>
@@ -710,7 +712,7 @@ protected:
         GameServerManager::get().setActive(connectedServerId);
 
         // these are not thread-safe, so delay it
-        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
+        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles), motd = std::move(packet->motd)] {
             auto& pcm = ProfileCacheManager::get();
             pcm.setOwnSpecialData(specialUserData);
 
@@ -719,6 +721,16 @@ protected:
 
             RoomManager::get().setGlobal();
             RoleManager::get().setAllRoles(allRoles);
+
+            // show the message of the day
+            auto motdHash = util::crypto::hexEncode(util::crypto::simpleHash(motd));
+            auto lastSeenMotdKey = fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url);
+            if (!motd.empty() && Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, "") != motdHash) {
+                auto popup = MDPopup::create("Globed Message", motd, "OK");
+                popup->show();
+
+                Mod::get()->setSavedValue(lastSeenMotdKey, motdHash);
+            }
         });
 
         // claim the tcp thread to allow udp packets through
