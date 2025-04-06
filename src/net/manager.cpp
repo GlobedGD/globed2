@@ -727,7 +727,7 @@ protected:
             auto lastSeenMotdKey = fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url);
             if (!motd.empty() && Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, "") != motdHash) {
                 auto popup = MDPopup::create("Globed Message", motd, "OK");
-                popup->show();
+                PopupQueue::get()->push(popup);
 
                 Mod::get()->setSavedValue(lastSeenMotdKey, motdHash);
             }

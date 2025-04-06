@@ -520,8 +520,11 @@ impl UnauthorizedThread {
     });
 
     async fn send_login_success(&self) -> Result<()> {
-        let tps = self.game_server.bridge.central_conf.lock().tps;
-        let motd = self.game_server.bridge.central_conf.lock().motd.clone();
+        let (tps, motd) = {
+            let conf = self.game_server.bridge.central_conf.lock();
+            (conf.tps, conf.motd.clone())
+        };
+
         let all_roles = self.game_server.state.role_manager.get_all_roles();
         let special_user_data = self.account_data.lock().special_user_data.clone();
 

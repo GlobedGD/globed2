@@ -69,7 +69,7 @@ impl ServerStateData {
             .build()
             .unwrap();
 
-        let motd = read_to_string(config.clone().motd_path).unwrap_or("".into());
+        let motd = read_to_string(&config.motd_path).expect("unable to read the motd file");
 
         Self {
             config_path,

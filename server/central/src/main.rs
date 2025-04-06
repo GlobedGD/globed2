@@ -117,8 +117,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // invalid motd path
-    let motd_path = Path::new(&config.motd_path);
-    if config.motd_path != "" && !motd_path.exists() {
+    let motd_path = config_path.parent().unwrap().join(&config.motd_path);
+    if !config.motd_path.is_empty() && !motd_path.is_file() {
         error!("invalid message-of-the-day (motd) path found in central-conf.json");
         warn!("hint: make sure the path is relative to central-conf.json");
         warn!("hint: the MOTD file should be a markdown file");
