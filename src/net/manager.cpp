@@ -712,7 +712,7 @@ protected:
         GameServerManager::get().setActive(connectedServerId);
 
         // these are not thread-safe, so delay it
-        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles), motd = std::move(packet->motd)] {
+        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
             auto& pcm = ProfileCacheManager::get();
             pcm.setOwnSpecialData(specialUserData);
 
@@ -721,16 +721,6 @@ protected:
 
             RoomManager::get().setGlobal();
             RoleManager::get().setAllRoles(allRoles);
-
-            // show the message of the day
-            auto motdHash = util::crypto::hexEncode(util::crypto::simpleHash(motd));
-            auto lastSeenMotdKey = fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url);
-            if (!motd.empty() && Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, "") != motdHash) {
-                auto popup = MDPopup::create("Globed Message", motd, "OK");
-                PopupQueue::get()->push(popup);
-
-                Mod::get()->setSavedValue(lastSeenMotdKey, motdHash);
-            }
         });
 
         // claim the tcp thread to allow udp packets through

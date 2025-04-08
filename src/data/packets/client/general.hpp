@@ -79,3 +79,15 @@ class NoticeReplyPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(NoticeReplyPacket, (replyId, message));
+
+// 11007 - RequestMotdPacket
+class RequestMotdPacket : public Packet {
+    GLOBED_PACKET(11007, RequestMotdPacket, false, false)
+
+    RequestMotdPacket() {}
+    RequestMotdPacket(std::string motdHash) : motdHash(std::move(motdHash)) {}
+
+    std::string motdHash;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(RequestMotdPacket, (motdHash));

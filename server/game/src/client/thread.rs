@@ -542,6 +542,7 @@ impl ClientThread {
             RequestPlayerCountPacket::PACKET_ID => self.handle_request_player_count(&mut data).await,
             UpdatePlayerStatusPacket::PACKET_ID => self.handle_set_player_status(&mut data).await,
             LinkCodeRequestPacket::PACKET_ID => self.handle_link_code_request(&mut data).await,
+            RequestMotdPacket::PACKET_ID => self.handle_motd_request(&mut data).await,
 
             /* game related */
             RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,

@@ -2,6 +2,9 @@ use globed_shared::webhook::WebhookMessage;
 
 use super::*;
 
+use blake2::{Blake2b, Digest};
+use digest::consts::U32;
+
 impl ClientThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
         let _ = gs_needauth!(self);
@@ -141,6 +144,25 @@ impl ClientThread {
             }
         } else {
             gs_notice!(self, "Error: Failed to send notice reply, maybe it expired?");
+        }
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_motd_request, RequestMotdPacket, packet, {
+        let motd = self.game_server.bridge.central_conf.lock().motd.clone();
+
+        let mut hasher = Blake2b::<U32>::new();
+        hasher.update(&motd.as_bytes());
+        let output = hasher.finalize();
+
+        let mut hex_string = String::with_capacity(output.len() * 2);
+        for byte in output.iter() {
+            hex_string.push_str(&format!("{:02x}", byte));
+        }
+
+        if packet.motd_hash.to_string() != hex_string {
+            self.send_packet_dynamic(&MotdResponsePacket { motd, motd_hash: hex_string }).await?
         }
 
         Ok(())

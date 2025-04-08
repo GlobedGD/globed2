@@ -55,9 +55,8 @@ class LoggedInPacket : public Packet {
     std::vector<GameServerRole> allRoles;
     uint32_t secretKey;
     uint16_t serverProtocol; // negotiated protocol that both sides support
-    std::string motd; // message of the day
 };
-GLOBED_SERIALIZABLE_STRUCT(LoggedInPacket, (tps, specialUserData, allRoles, secretKey, serverProtocol, motd));
+GLOBED_SERIALIZABLE_STRUCT(LoggedInPacket, (tps, specialUserData, allRoles, secretKey, serverProtocol));
 
 // 20005 - LoginFailedPacket
 class LoginFailedPacket : public Packet {

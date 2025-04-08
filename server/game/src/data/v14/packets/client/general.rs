@@ -36,3 +36,8 @@ pub struct NoticeReplyPacket {
     pub reply_id: u32,
     pub message: FastString,
 }
+#[derive(Packet, Decodable)]
+#[packet(id = 11007)]
+pub struct RequestMotdPacket {
+    pub motd_hash: FastString
+}
