@@ -60,7 +60,7 @@ void PopupQueue::update(float dt) {
             hasQueuedPopups = true;
             delayedPopups.erase(it);
 
-            // dont increment interator
+            // dont increment iterator
         }
     }
 

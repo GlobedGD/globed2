@@ -547,12 +547,12 @@ protected:
         });
 
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
-            PopupQueue::get()->push(UserPunishmentPopup::create(packet->message, packet->timestamp, true));
+            PopupQueue::get()->pushNoDelay(UserPunishmentPopup::create(packet->message, packet->timestamp, true));
             this->disconnect();
         });
 
         addGlobalListener<ServerMutedPacket>([](auto packet) {
-            PopupQueue::get()->push(UserPunishmentPopup::create(packet->reason, packet->timestamp, false));
+            PopupQueue::get()->pushNoDelay(UserPunishmentPopup::create(packet->reason, packet->timestamp, false));
         });
 
         // General packets

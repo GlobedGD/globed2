@@ -4,11 +4,12 @@
 
 #include <data/types/user.hpp>
 
-class UserPunishmentPopup : public geode::Popup<std::string, int64_t, bool> {
+class UserPunishmentPopup : public geode::Popup<geode::SimpleTextArea*, int64_t, bool> {
 protected:
-    bool setup(std::string reason, int64_t expiresAt, bool isBan) override;
+    bool setup(geode::SimpleTextArea* textarea, int64_t expiresAt, bool isBan) override;
+    bool initCustomSize(std::string_view reason, int64_t expiresAt, bool isBan);
 
 public:
-    static UserPunishmentPopup* create(std::string reason, int64_t expiresAt, bool isBan);
-    
+    static UserPunishmentPopup* create(std::string_view reason, int64_t expiresAt, bool isBan);
+
 };
