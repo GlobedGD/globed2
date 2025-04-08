@@ -535,6 +535,11 @@ void ConnectionTestPopup::queueGameServerTests() {
 }
 
 void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
+    // don't add it twice
+    if (this->packetTest) {
+        return;
+    }
+
     packetTest = this->addTest("Packet Limit Test", [addr = addr](Test* test) {
         GameSocket sock;
 
