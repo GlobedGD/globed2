@@ -28,6 +28,10 @@ public:
 
     // Makes a HEAD request to https://google.com
     Task testGoogle();
+    // Makes a GET request to https://www.cloudflare.com/cdn-cgi/trace
+    Task testCloudflare();
+    // Makes a GET request to https://domain/cdn-cgi/trace
+    Task testCloudflareDomainTrace(std::string_view domain);
 
 private:
     Task get(std::string_view url);

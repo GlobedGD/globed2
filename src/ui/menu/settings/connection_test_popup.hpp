@@ -132,7 +132,7 @@ public:
 
 protected:
     std::vector<std::shared_ptr<Test>> tests;
-    std::shared_ptr<Test> gtcpTest, ghttpTest, dnsTest, centralTest, srvListTest, packetTest;
+    std::shared_ptr<Test> gtcpTest, ghttpTest, dnsTest, traceTest, centralTest, srvListTest, packetTest;
 
     asp::Channel<std::shared_ptr<Test>> threadTestQueue;
     GlobedListLayer<StatusCell>* list;

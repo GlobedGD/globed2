@@ -158,6 +158,14 @@ RequestTask WebRequestManager::testGoogle() {
     return this->head("https://google.com");
 }
 
+RequestTask WebRequestManager::testCloudflare() {
+    return this->testCloudflareDomainTrace("www.cloudflare.com");
+}
+
+RequestTask WebRequestManager::testCloudflareDomainTrace(std::string_view domain) {
+    return this->get(fmt::format("https://{}/cdn-cgi/trace", domain));
+}
+
 RequestTask WebRequestManager::get(std::string_view url) {
     return get(url, 10);
 }

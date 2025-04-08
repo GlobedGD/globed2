@@ -17,6 +17,8 @@
 #include <util/ui.hpp>
 #include <ui/general/ask_input_popup.hpp>
 
+#include <asp/net/IpAddress.hpp>
+
 using namespace geode::prelude;
 using namespace asp::time;
 using namespace util::rng;
@@ -228,12 +230,12 @@ bool ConnectionTestPopup::setup() {
     });
 
     ghttpTest = this->addTest("Google HTTP Test", [](Test* test) {
-        test->logInfo("Sending a HEAD request to https://google.com");
+        test->logInfo("Sending a HEAD request to Google");
 
         auto task = WebRequestManager::get().testGoogle();
 
         while (task.isPending()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds{100});
+            std::this_thread::sleep_for(std::chrono::milliseconds{50});
         }
 
         auto val = task.getFinishedValue();
@@ -251,13 +253,16 @@ bool ConnectionTestPopup::setup() {
         test->finish();
     });
 
-    // this string is compile-time, so this is ok
     std::string_view srvdomain = usedCentralUrl;
 
     if (srvdomain.starts_with("https://")) {
         srvdomain.remove_prefix(sizeof("https://") - 1);
     } else if (srvdomain.starts_with("http://")) {
         srvdomain.remove_prefix(sizeof("http://") - 1);
+    }
+
+    while (srvdomain.ends_with('/')) {
+        srvdomain.remove_prefix(1);
     }
 
     // let's not try to dns query an ip address
@@ -274,6 +279,65 @@ bool ConnectionTestPopup::setup() {
             } else {
                 test->fail(fmt::format("Failed to resolve {}: {}", srvdomain, res.unwrapErr()));
             }
+        });
+
+        traceTest = this->addTest("CF Trace Test", [srvdomain](Test* test) {
+            test->logInfo(fmt::format("Retrieving cloudflare trace for domain {}", srvdomain));
+
+            auto task = WebRequestManager::get().testCloudflareDomainTrace(srvdomain);
+
+            while (task.isPending()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds{50});
+            }
+
+            auto val = task.getFinishedValue();
+            if (!val) {
+                test->fail("Task returned no value");
+                return;
+            }
+
+            if (!val->ok()) {
+                test->fail(fmt::format("Connection to cloudflare failed: {}", val->getError()));
+                return;
+            }
+
+            auto text = val->text().unwrapOrDefault();
+            auto lines = util::format::split(text, "\n");
+
+            std::string_view datacenter, loc, tls;
+            std::string ip;
+            for (auto line : lines) {
+                if (line.starts_with("colo=")) {
+                    line.remove_prefix(5);
+                    datacenter = line;
+                } else if (line.starts_with("loc=")) {
+                    line.remove_prefix(4);
+                    loc = line;
+                } else if (line.starts_with("tls=")) {
+                    line.remove_prefix(4);
+                    tls = line;
+                } else if (line.starts_with("ip=")) {
+                    line.remove_prefix(3);
+                    ip = line;
+                }
+            }
+
+            // some users might not want their ip in logs /shrug
+            if (!ip.empty()) {
+                auto res = asp::net::Ipv4Address::tryFromString(ip);
+                if (res) {
+                    auto octets = res.unwrap().octets();
+                    ip = fmt::format("{}.{}.x.x", octets[0], octets[1]);
+                } else {
+                    log::warn("Failed to parse IP: error {}", (int) res.unwrapErr());
+                    ip = "<invalid>";
+                }
+            }
+
+            test->logTrace(fmt::format("CF datacenter={}, loc={}, tls={}, ip={}", datacenter, loc, tls, ip));
+
+            test->logInfo("Request was successful!");
+            test->finish();
         });
     }
 
@@ -764,7 +828,7 @@ void ConnectionTestPopup::showVerdictPopup() {
         openLink = true;
     } else if (srvListTest->didNotSucceed()) {
         content = "The Globed server failed to properly respond with the server list. This should never happen.";
-    } else if (packetTest->didNotSucceed()) {
+    } else if (packetTest && packetTest->didNotSucceed()) {
         content = "An error happened during the <cy>packet limit test</c>, meaning a potential issue with your <co>firewall</c> or <cg>router</c>. Try manually setting the packet limit to <cy>1400</c> in settings.";
     } else if (anyFailed) {
         // game server test failed?
