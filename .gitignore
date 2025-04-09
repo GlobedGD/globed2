@@ -93,6 +93,7 @@ server/central/Rocket.toml
 src/hooks/cvh
 
 server/rustc-ice-*.txt
+server/db.sqlite
 
 libs/openssl
 globed-lerp-log.bin
