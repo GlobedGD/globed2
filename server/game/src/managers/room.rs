@@ -95,6 +95,17 @@ impl Room {
         self.manager.write().remove_player(player);
     }
 
+    /// Makes the current room host the given player, if they are also the person who originally created the room.
+    /// Returns whether the host was changed.
+    pub fn maybe_rotate_to_original_owner(&self, player: i32) -> bool {
+        if self.orig_owner == player {
+            self.owner.store(player, Ordering::Relaxed);
+            true
+        } else {
+            false
+        }
+    }
+
     #[inline]
     pub fn has_player(&self, player: i32) -> bool {
         self.manager.read().has_player(player)

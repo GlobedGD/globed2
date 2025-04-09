@@ -137,6 +137,7 @@ impl ClientThread {
         let room = {
             let mut room = self.room.lock();
             *room = self.game_server.state.room_manager.get_room_or_global(packet.room_id);
+            let should_send_update = room.maybe_rotate_to_original_owner(account_id);
 
             let mut manager = room.manager.write();
 
@@ -146,6 +147,12 @@ impl ClientThread {
             // if we are in any level, clean transition to there
             if level_id != 0 {
                 manager.add_to_level(level_id, account_id, self.on_unlisted_level.load(Ordering::SeqCst));
+            }
+
+            // if the owner changed, send update packets to everyone
+            if should_send_update {
+                let room = room.clone();
+                self.game_server.broadcast_room_info(room).await;
             }
 
             room.clone()
