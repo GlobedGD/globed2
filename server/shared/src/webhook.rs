@@ -305,7 +305,7 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             title: Cow::Borrowed(if change.is_ban { "Ban state changed" } else { "Mute state changed" }),
             color: hex_color_to_decimal("#de7a23"),
             author: Some(WebhookAuthor {
-                name: Cow::Owned(change.name.clone()),
+                name: Cow::Owned(format!("{} ({})", change.name, change.account_id)),
                 icon_url: None,
             }),
             fields: vec![
