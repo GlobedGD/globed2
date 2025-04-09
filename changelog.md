@@ -10,6 +10,7 @@
 * Added the total room count to the rooms list popup (thanks LimeGradient!)
 * Make even more corrections to the texture pack detection algorithm, add better debug information
 * Make it so that the original room owner becomes the owner again if they leave and rejoin the room
+* Hopefully fix bugs with deaths not being detected in 2-player mode or Death Link
 * Significant performance improvements
 * Improve error messages for authentication issues, especially for people that are at the limit of sent messages
 * Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks km7!)
