@@ -18,19 +18,22 @@ To use the API, add Globed to the dependency list in your mod's `mod.json` like 
 After that, you can include headers in any file by typing
 
 ```cpp
+#include <dankmeme.globed2/include/globed.hpp>
+
+// or, include only the categories you need to use
+
 #include <dankmeme.globed2/include/net.hpp>
 #include <dankmeme.globed2/include/settings.hpp>
 // etc..
 
-// or, to include every single header at once
-#include <dankmeme.globed2/include/globed.hpp>
 ```
 
-There are 5 different API categories:
+There are 6 different API categories:
 * [General](#general)
 * [Player](#player)
 * [Networking](#networking)
 * [Admin](#admin)
+* [Callbacks](#callbacks)
 * [Settings](#settings)
 
 # General
@@ -183,6 +186,32 @@ Opens the moderation panel. Does nothing if the user is not a moderator.
 
 ```cpp
 Result<void> globed::admin::openModPanel();
+```
+
+# Callbacks
+
+### onPlayerJoin
+
+Sets a callback that will be called when another player joins the current level. Returns an error if not in a level, or not connected to Globed.
+
+**NOTE: Callback is removed when the user leaves the level.** You probably want to add it in a `PlayLayer::init` hook or something alike, instead of `$on_mod(Loaded)`.
+
+The callback is currently defined as `std::function<void (int, PlayerObject*, PlayerObject*)>`, with the arguments being account ID, player 1 and player 2.
+
+```cpp
+Result<void> globed::callbacks::onPlayerJoin(PlayerJoinFn func);
+```
+
+### onPlayerLeave
+
+Sets a callback that will be called when another player leaves the current level. Returns an error if not in a level, or not connected to Globed.
+
+**NOTE: Callback is removed when the user leaves the level.** You probably want to add it in a `PlayLayer::init` hook or something alike, instead of `$on_mod(Loaded)`.
+
+The callback is currently defined as `std::function<void (int, PlayerObject*, PlayerObject*)>`, with the arguments being account ID, player 1 and player 2.
+
+```cpp
+Result<void> globed::callbacks::onPlayerLeave(PlayerLeaveFn func);
 ```
 
 # Settings

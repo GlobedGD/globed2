@@ -3,6 +3,8 @@
 
 #include <Geode/modify/GJBaseGameLayer.hpp>
 
+#include <globed.hpp>
+
 #include <data/types/room.hpp>
 #include <game/interpolator.hpp>
 #include <game/player_store.hpp>
@@ -58,6 +60,10 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         bool firstReceivedData = true;
         float lastDeathTimestamp = 0.f;
         uint8_t deathCounter = 0;
+
+        // api stuff
+        std::vector<globed::callbacks::PlayerJoinFn> playerJoinCallbacks;
+        std::vector<globed::callbacks::PlayerJoinFn> playerLeaveCallbacks;
 
         // ui elements
         GlobedOverlay* overlay = nullptr;
@@ -209,6 +215,8 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     Fields& getFields();
 
     void explodeRandomPlayer();
+    void addPlayerJoinCallback(globed::callbacks::PlayerJoinFn fn);
+    void addPlayerLeaveCallback(globed::callbacks::PlayerLeaveFn fn);
 
     void setPlayerVisibility(bool enabled);
 };

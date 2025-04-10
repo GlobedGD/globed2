@@ -24,7 +24,7 @@ class LevelJoinPacket : public Packet {
     bool unlisted;
     std::optional<std::array<uint8_t, 32>> levelHash;
 };
-GLOBED_SERIALIZABLE_STRUCT(LevelJoinPacket, (levelId, unlisted));
+GLOBED_SERIALIZABLE_STRUCT(LevelJoinPacket, (levelId, unlisted, levelHash));
 
 // 12002 - LevelLeavePacket
 class LevelLeavePacket : public Packet {

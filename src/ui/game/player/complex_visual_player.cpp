@@ -685,7 +685,7 @@ const CCPoint& ComplexVisualPlayer::getPlayerPosition() {
     return lastPosition;
 }
 
-CCNode* ComplexVisualPlayer::getPlayerObject() {
+PlayerObject* ComplexVisualPlayer::getPlayerObject() {
     return playerIcon;
 }
 

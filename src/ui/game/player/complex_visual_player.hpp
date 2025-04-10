@@ -31,7 +31,7 @@ public:
     void playJump();
     void setForciblyHidden(bool state);
     const cocos2d::CCPoint& getPlayerPosition();
-    cocos2d::CCNode* getPlayerObject();
+    PlayerObject* getPlayerObject();
     RemotePlayer* getRemotePlayer();
 
     void setP1StickyState(bool state);

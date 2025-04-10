@@ -219,8 +219,8 @@ $on_mod(Loaded) {
 
         auto pl = it->second;
         return Ok(std::make_pair(
-            static_cast<PlayerObject*>(pl->player1->getPlayerObject()),
-            static_cast<PlayerObject*>(pl->player2->getPlayerObject())
+            pl->player1->getPlayerObject(),
+            pl->player2->getPlayerObject()
         ));
     });
 
@@ -263,6 +263,42 @@ $on_mod(Loaded) {
 
     listen<Type::OpenModPanel>([] {
         AdminManager::get().openModPanel();
+        return Ok();
+    });
+
+    // Callbacks
+
+    using namespace globed::callbacks;
+
+    listen<Type::CbPlayerJoin, void(PlayerJoinFn)>([](PlayerJoinFn fn) -> Result<void> {
+        auto gjbgl = GlobedGJBGL::get();
+        if (!gjbgl) {
+            return Err(NOT_IN_LEVEL_MSG);
+        }
+
+        auto& fields = gjbgl->getFields();
+        if (!fields.globedReady) {
+            return Err(NOT_CONNECTED_MSG);
+        }
+
+        gjbgl->addPlayerJoinCallback(std::move(fn));
+
+        return Ok();
+    });
+
+    listen<Type::CbPlayerLeave, void(PlayerLeaveFn)>([](PlayerLeaveFn fn) -> Result<void> {
+        auto gjbgl = GlobedGJBGL::get();
+        if (!gjbgl) {
+            return Err(NOT_IN_LEVEL_MSG);
+        }
+
+        auto& fields = gjbgl->getFields();
+        if (!fields.globedReady) {
+            return Err(NOT_CONNECTED_MSG);
+        }
+
+        gjbgl->addPlayerLeaveCallback(std::move(fn));
+
         return Ok();
     });
 

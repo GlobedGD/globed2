@@ -34,6 +34,9 @@ enum class Type {
     IsMod = 1301,
     IsAuthMod = 1302,
     OpenModPanel = 1303,
+    // Callbacks
+    CbPlayerJoin = 1400,
+    CbPlayerLeave = 1401,
     // Settings
     ActiveSlotPath = 1500,
     ActiveSlotContainer = 1501,

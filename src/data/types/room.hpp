@@ -18,7 +18,7 @@ struct RoomSettingsFlags : BitfieldBase {
 static_assert((sizeof(RoomSettingsFlags) + 7) / 8 == 2);
 
 GLOBED_SERIALIZABLE_BITFIELD(RoomSettingsFlags, (
-    isHidden, publicInvites, collision, twoPlayerMode, deathlink
+    isHidden, publicInvites, collision, twoPlayerMode, deathlink, levelIntegrity
 ))
 
 struct RoomSettings {

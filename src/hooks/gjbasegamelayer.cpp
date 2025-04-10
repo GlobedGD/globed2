@@ -1068,6 +1068,10 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     this->updateCustomItem(globed::ITEM_TOTAL_PLAYERS, fields.players.size() + 1);
 #endif
 
+    for (auto& cb : fields.playerJoinCallbacks) {
+        cb(playerId, rp->player1->getPlayerObject(), rp->player2->getPlayerObject());
+    }
+
     GLOBED_EVENT(this, onPlayerJoin(rp));
 }
 
@@ -1079,6 +1083,10 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     if (!fields.players.contains(playerId)) return;
 
     auto rp = fields.players.at(playerId);
+
+    for (auto& cb : fields.playerLeaveCallbacks) {
+        cb(playerId, rp->player1->getPlayerObject(), rp->player2->getPlayerObject());
+    }
 
     GLOBED_EVENT(this, onPlayerLeave(rp));
 
@@ -1366,6 +1374,14 @@ void GlobedGJBGL::explodeRandomPlayer() {
     std::advance(it, util::rng::Random::get().generate<size_t>(0, fields.players.size() - 1));
 
     auto* player = it->second;
+}
+
+void GlobedGJBGL::addPlayerJoinCallback(globed::callbacks::PlayerJoinFn fn) {
+    this->getFields().playerJoinCallbacks.push_back(std::move(fn));
+}
+
+void GlobedGJBGL::addPlayerLeaveCallback(globed::callbacks::PlayerLeaveFn fn) {
+    this->getFields().playerLeaveCallbacks.push_back(std::move(fn));
 }
 
 void GlobedGJBGL::setPlayerVisibility(bool enabled) {

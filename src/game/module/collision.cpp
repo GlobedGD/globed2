@@ -37,8 +37,8 @@ void CollisionModule::checkCollisions(PlayerObject* player, float dt, bool p2) {
     bool isSecond = player == gameLayer->m_player2;
 
     for (const auto& [_, rp] : gameLayer->m_fields->players) {
-        auto* p1 = static_cast<PlayerObject*>(rp->player1->getPlayerObject());
-        auto* p2 = static_cast<PlayerObject*>(rp->player2->getPlayerObject());
+        auto* p1 = rp->player1->getPlayerObject();
+        auto* p2 = rp->player2->getPlayerObject();
 
         auto& p1Rect = p1->getObjectRect();
         auto& p2Rect = p2->getObjectRect();
