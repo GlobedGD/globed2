@@ -65,16 +65,6 @@ static_assert(sizeof(LevelId) == 8, "level id is not 8 bytes");
 
 #define GLOBED_PLATFORM_STRING GLOBED_PLATFORM_STRING_PLATFORM " " GLOBED_PLATFORM_STRING_ARCH
 
-#if defined(GLOBED_LINK_TO_FMOD) && defined(GEODE_IS_WINDOWS)
-# define GLOBED_VOICE_CAN_TALK 1
-#endif
-
-#if defined(GLOBED_LINK_TO_FMOD) && !defined(GLOBED_DISABLE_VOICE_SUPPORT)
-# define GLOBED_VOICE_SUPPORT
-#else
-# undef GLOBED_VOICE_CAN_TALK
-#endif
-
 constexpr bool GLOBED_LITTLE_ENDIAN = true;
 
 // dllexport macro

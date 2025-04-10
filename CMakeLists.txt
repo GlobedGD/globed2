@@ -24,7 +24,7 @@ option(GLOBED_DEBUG_INTERPOLATION "Dump interpolation logs" OFF)
 option(GLOBED_DEBUG_PACKETS "Log all incoming & outgoing packets and bandwidth" OFF)
 option(GLOBED_DEBUG_PACKETS_PRINT "Print every incoming/outgoing packet" OFF)
 option(GLOBED_DISABLE_EXTRA_HOOKS "Disable extra hooks & calls to some GD functions, useful when porting to a new GD version" OFF)
-option(GLOBED_GP_CHANGES "" OFF)
+option(GLOBED_GP_CHANGES "a" OFF)
 option(GLOBED_LINK_TO_FMOD "Whether to link to FMOD, disables voice chat if off" ON)
 
 # on windows use precompiled, on other platforms compile libsodium
@@ -99,6 +99,14 @@ endif()
 
 if (GLOBED_LINK_TO_FMOD)
     target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_LINK_TO_FMOD=1)
+endif()
+
+if (GLOBED_LINK_TO_FMOD AND NOT GLOBED_DISABLE_VOICE_SUPPORT)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_VOICE_SUPPORT=1)
+
+    if (WIN32)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_VOICE_CAN_TALK=1)
+    endif()
 endif()
 
 # Debug/Release options
