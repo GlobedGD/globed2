@@ -133,11 +133,13 @@ impl ClientThread {
         // remove the player from the previously connected room (or the global room)
         self.game_server.state.room_manager.remove_player(&self.room.lock(), account_id, level_id);
 
+        let should_send_update;
+
         // set the current room
         let room = {
             let mut room = self.room.lock();
             *room = self.game_server.state.room_manager.get_room_or_global(packet.room_id);
-            let should_send_update = room.maybe_rotate_to_original_owner(account_id);
+            should_send_update = room.maybe_rotate_to_original_owner(account_id);
 
             let mut manager = room.manager.write();
 
@@ -149,14 +151,13 @@ impl ClientThread {
                 manager.add_to_level(level_id, account_id, self.on_unlisted_level.load(Ordering::SeqCst));
             }
 
-            // if the owner changed, send update packets to everyone
-            if should_send_update {
-                let room = room.clone();
-                self.game_server.broadcast_room_info(room).await;
-            }
-
             room.clone()
         };
+
+        // if the owner changed, send update packets to everyone
+        if should_send_update {
+            self.game_server.broadcast_room_info(room.clone()).await;
+        }
 
         self._respond_with_room_list(room, true).await
     });
