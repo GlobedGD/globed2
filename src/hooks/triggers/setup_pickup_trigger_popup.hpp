@@ -1,6 +1,6 @@
 #pragma once
 
-#include <config.hpp>
+#include <defs/platform.hpp>
 
 #ifdef GLOBED_GP_CHANGES
 

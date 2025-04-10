@@ -19,6 +19,13 @@ option(GLOBED_OSS_BUILD "Open source build that does not require closed-source d
 option(GLOBED_NATIVE_ARCH "Native architecture build" OFF)
 option(GLOBED_DEBUG "Debug mode" OFF)
 option(GLOBED_RELEASE "Release build" OFF)
+option(GLOBED_DISABLE_VOICE_SUPPORT "Disable voice chat support" OFF)
+option(GLOBED_DEBUG_INTERPOLATION "Dump interpolation logs" OFF)
+option(GLOBED_DEBUG_PACKETS "Log all incoming & outgoing packets and bandwidth" OFF)
+option(GLOBED_DEBUG_PACKETS_PRINT "Print every incoming/outgoing packet" OFF)
+option(GLOBED_DISABLE_EXTRA_HOOKS "Disable extra hooks & calls to some GD functions, useful when porting to a new GD version" OFF)
+option(GLOBED_GP_CHANGES "" OFF)
+option(GLOBED_LINK_TO_FMOD "Whether to link to FMOD, disables voice chat if off" ON)
 
 # on windows use precompiled, on other platforms compile libsodium
 if (WIN32)
@@ -27,6 +34,7 @@ else()
     option(GLOBED_COMPILE_LIBS "Don't use precompiled libraries and compile manually" ON)
 endif()
 
+# detect compile environment, set debug flags (GLOBED_IS_DEBUG)
 include(cmake/environment.cmake)
 
 # Add platform-specific sources
@@ -63,6 +71,35 @@ file(GLOB_RECURSE SOURCES
 )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
+
+# custom options
+if (GLOBED_DISABLE_VOICE_SUPPORT)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_DISABLE_VOICE_SUPPORT=1)
+endif()
+
+if (GLOBED_DEBUG_INTERPOLATION)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_DEBUG_INTERPOLATION=1)
+endif()
+
+if (GLOBED_DEBUG_PACKETS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_DEBUG_PACKETS=1)
+endif()
+
+if (GLOBED_DEBUG_PACKETS_PRINT)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_DEBUG_PACKETS_PRINT=1)
+endif()
+
+if (GLOBED_DISABLE_EXTRA_HOOKS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_DISABLE_EXTRA_HOOKS=1)
+endif()
+
+if (GLOBED_GP_CHANGES)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_GP_CHANGES=1)
+endif()
+
+if (GLOBED_LINK_TO_FMOD)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GLOBED_LINK_TO_FMOD=1)
+endif()
 
 # Debug/Release options
 if (GLOBED_IS_DEBUG)
@@ -263,7 +300,6 @@ elseif (WIN32)
 elseif (ANDROID)
     target_link_libraries(${PROJECT_NAME} android)
 endif()
-
 
 # link to bb
 if (GLOBED_OSS_BUILD OR GLOBED_IOS)

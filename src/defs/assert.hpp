@@ -1,5 +1,4 @@
 #pragma once
-#include <config.hpp>
 #include "util.hpp"
 
 #if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L

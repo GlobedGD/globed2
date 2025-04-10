@@ -36,10 +36,8 @@ void GlobedNotificationPanel::addInviteNotification(uint32_t roomID, std::string
     auto* notif = GlobedInviteNotification::create(roomID, password, player);
     this->slideInNotification(notif);
 
-#if GLOBED_HAS_FMOD
     auto* engine = FMODAudioEngine::sharedEngine();
     engine->playEffect("invite-sound.ogg"_spr, 1.f, 1.f, 1.f);
-#endif
 }
 
 static bool shouldShowNotification() {

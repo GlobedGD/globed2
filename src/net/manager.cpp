@@ -607,7 +607,7 @@ protected:
             ErrorQueues::get().error(fmt::format("Failed to join room: {}", reason));
         });
 
-        G_WC(_se, G_WC(cu, re)) = ::G_WC(G_WC(b, b), G_WC(_, G_WC(i, G_WC(n, G_WC(i, t)))))();
+        _secure = ::bb_init();
 
         // Admin packets
 

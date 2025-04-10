@@ -1,6 +1,6 @@
 #pragma once
 
-#include <config.hpp>
+#include <defs/platform.hpp>
 #include <embedded_resources.hpp>
 #include <string>
 #include <string_view>

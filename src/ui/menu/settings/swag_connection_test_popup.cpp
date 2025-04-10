@@ -122,10 +122,8 @@ bool SwagConnectionTestPopup::setup() {
 
     this->createXboxStyleUi();
 
-#if GLOBED_HAS_FMOD
     auto* engine = FMODAudioEngine::sharedEngine();
     engine->playEffect("bootanim.ogg"_spr, 1.f, 1.f, 1.f);
-#endif
 
     this->runAction(CCSequence::create(
         CCDelayTime::create(5.5f),

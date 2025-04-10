@@ -1,5 +1,9 @@
 #pragma once
-#include <config.hpp>
+
+#include <stdint.h>
+
+using LevelId = int64_t; // 64-bit
+static_assert(sizeof(LevelId) == 8, "level id is not 8 bytes");
 
 #include <Geode/platform/cplatform.h>
 
@@ -61,38 +65,11 @@
 
 #define GLOBED_PLATFORM_STRING GLOBED_PLATFORM_STRING_PLATFORM " " GLOBED_PLATFORM_STRING_ARCH
 
-/* platform-specific:
-* GLOBED_HAS_FMOD - 0 or 1, whether this platform links to FMOD
-* GLOBED_HAS_DRPC - 0 or 1, whether this platform can use discord rich presence
-*/
-
-#ifdef GEODE_IS_WINDOWS
-# define GLOBED_HAS_FMOD GLOBED_FMOD_WINDOWS
-# define GLOBED_HAS_DRPC GLOBED_DRPC_WINDOWS
-# define GLOBED_HAS_KEYBINDS 1
-# define GLOBED_VOICE_CAN_TALK
-#elif defined(GEODE_IS_MACOS)
-# define GLOBED_HAS_FMOD GLOBED_FMOD_MAC
-# define GLOBED_HAS_DRPC GLOBED_DRPC_MAC
-# define GLOBED_HAS_KEYBINDS 0
-#elif defined(GEODE_IS_ANDROID)
-# define GLOBED_HAS_FMOD GLOBED_FMOD_ANDROID
-# define GLOBED_HAS_DRPC GLOBED_DRPC_ANDROID
-# define GLOBED_HAS_KEYBINDS 0
-#elif defined(GEODE_IS_IOS)
-# define GLOBED_HAS_FMOD GLOBED_FMOD_IOS
-# define GLOBED_HAS_DRPC GLOBED_DRPC_IOS
-# define GLOBED_HAS_KEYBINDS 0
-#else
-# error "what"
+#if defined(GLOBED_LINK_TO_FMOD) && defined(GEODE_IS_WINDOWS)
+# define GLOBED_VOICE_CAN_TALK 1
 #endif
 
-#ifdef GLOBED_DISABLE_CUSTOM_KEYBINDS
-# undef GLOBED_HAS_KEYBINDS
-# define GLOBED_HAS_KEYBINDS 0
-#endif
-
-#if GLOBED_HAS_FMOD && !defined(GLOBED_DISABLE_VOICE_SUPPORT)
+#if defined(GLOBED_LINK_TO_FMOD) && !defined(GLOBED_DISABLE_VOICE_SUPPORT)
 # define GLOBED_VOICE_SUPPORT
 #else
 # undef GLOBED_VOICE_CAN_TALK
