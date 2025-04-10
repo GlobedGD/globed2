@@ -157,7 +157,7 @@ impl AccountVerifier {
 
     pub async fn run_refresher(&self) {
         let mut interval = tokio::time::interval(self.flush_period);
-        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Burst);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         interval.tick().await;
 
         loop {
@@ -265,6 +265,7 @@ impl AccountVerifier {
         let result = self
             .http_client
             .post(format!("{}/getGJMessages20.php", self.base_api_url))
+            .timeout(Duration::from_secs(15))
             .form(&[
                 ("accountID", self.account_id.to_string()),
                 ("gjp2", self.account_gjp.clone()),
