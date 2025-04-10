@@ -151,7 +151,7 @@ impl ClientThread {
 
         let res = {
             let conf = self.game_server.bridge.central_conf.lock();
-            if conf.motd_hash.eq_ignore_ascii_case(packet.motd_hash.try_to_str()) {
+            if conf.motd.is_empty() || conf.motd_hash.eq_ignore_ascii_case(packet.motd_hash.try_to_str()) {
                 None
             } else {
                 Some((conf.motd.clone(), conf.motd_hash.clone()))

@@ -167,6 +167,19 @@ void CentralServerManager::switchRoutine(int index, bool force) {
     gam.autoInitialize();
 }
 
+std::string CentralServerManager::getMotdKey() {
+    if (_activeIdx.load() == STANDALONE_IDX) {
+        return "";
+    }
+
+    auto active = this->getActive();
+    if (!active) {
+        return "";
+    }
+
+    return fmt::format("last-seen-motd-{}", active->url);
+}
+
 Result<> CentralServerManager::tryReload() {
     auto b64value = Mod::get()->getSavedValue<std::string>(SETTING_KEY);
     if (b64value.empty()) return Ok();

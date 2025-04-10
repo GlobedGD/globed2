@@ -643,6 +643,19 @@ protected:
 
             alert->show();
         });
+
+        addGlobalListener<MotdResponsePacket>([](auto packet) {
+            if (packet->motd.empty()) return;
+
+            // show the message of the day
+            auto popup = MDPopup::create("Globed Message", packet->motd, "Ok");
+            PopupQueue::get()->push(popup);
+
+            auto lastSeenMotdKey = CentralServerManager::get().getMotdKey();
+            if (!lastSeenMotdKey.empty()) {
+                Mod::get()->setSavedValue(lastSeenMotdKey, packet->motdHash);
+            }
+        });
     }
 
     void onCryptoHandshakeResponse(std::shared_ptr<CryptoHandshakeResponsePacket> packet) {
@@ -734,6 +747,12 @@ protected:
                 GlobedAccountManager::get().storeTempAdminPassword(password.value());
                 this->send(AdminAuthPacket::create(password.value()));
             }
+        }
+
+        // request the motd of the server
+        auto lastSeenMotdKey = CentralServerManager::get().getMotdKey();
+        if (!lastSeenMotdKey.empty()) {
+            this->send(RequestMotdPacket::create(Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, "")));
         }
     }
 

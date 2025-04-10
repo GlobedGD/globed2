@@ -54,6 +54,8 @@ public:
     // clear the active authtoken, reinitialize account manager, clear game servers, and switch to a central server by its ID
     void switchRoutine(int index, bool force = false);
 
+    std::string getMotdKey();
+
     asp::AtomicBool recentlySwitched = false;
 
 protected:
