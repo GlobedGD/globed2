@@ -1,7 +1,14 @@
 use std::{
-    collections::HashMap, fs::read_to_string, hash::{DefaultHasher, Hash, Hasher}, net::IpAddr, path::PathBuf, sync::{
-        atomic::{AtomicBool, Ordering}, Arc
-    }, time::{Duration, SystemTime}
+    collections::HashMap,
+    fs::read_to_string,
+    hash::{DefaultHasher, Hash, Hasher},
+    net::IpAddr,
+    path::PathBuf,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::{Duration, SystemTime},
 };
 
 use globed_shared::{
@@ -69,7 +76,11 @@ impl ServerStateData {
             .build()
             .unwrap();
 
-        let motd = read_to_string(&config.motd_path).expect("unable to read the motd file");
+        let motd = if config.motd_path.is_empty() {
+            String::new()
+        } else {
+            read_to_string(&config.motd_path).expect("unable to read the motd file")
+        };
 
         Self {
             config_path,

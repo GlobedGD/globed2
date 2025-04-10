@@ -299,7 +299,7 @@ impl FastString {
         unsafe { std::str::from_utf8_unchecked(self.as_bytes()) }
     }
 
-    /// Converts the string to a `&str`, returns "<invalid UTF-8 string>"" if utf-8 validation fails
+    /// Converts the string to a `&str`, returns "<invalid UTF-8 string>" if utf-8 validation fails
     #[inline]
     pub fn try_to_str(&self) -> &str {
         self.to_str().unwrap_or("<invalid UTF-8 string>")

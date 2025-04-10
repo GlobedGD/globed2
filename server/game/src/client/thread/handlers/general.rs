@@ -2,9 +2,6 @@ use globed_shared::webhook::WebhookMessage;
 
 use super::*;
 
-use blake2::{Blake2b, Digest};
-use digest::consts::U32;
-
 impl ClientThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
         let _ = gs_needauth!(self);
@@ -152,13 +149,17 @@ impl ClientThread {
     gs_handler!(self, handle_motd_request, RequestMotdPacket, packet, {
         let _ = gs_needauth!(self);
 
-        let (motd, motd_hash) = {
+        let res = {
             let conf = self.game_server.bridge.central_conf.lock();
-            (conf.motd.clone(), conf.motd_hash.clone())
+            if conf.motd_hash.eq_ignore_ascii_case(packet.motd_hash.try_to_str()) {
+                None
+            } else {
+                Some((conf.motd.clone(), conf.motd_hash.clone()))
+            }
         };
 
-        if packet.motd_hash.to_string() != motd_hash {
-            self.send_packet_dynamic(&MotdResponsePacket { motd, motd_hash }).await?
+        if let Some((motd, motd_hash)) = res {
+            self.send_packet_dynamic(&MotdResponsePacket { motd, motd_hash }).await?;
         }
 
         Ok(())
