@@ -157,7 +157,7 @@ namespace util::gd {
         // }
     }
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
     std::string getBaseServerUrl() {
         if (Loader::get()->isModLoaded("km7dev.server_api")) {
             auto url = ServerAPIEvents::getCurrentServer().url;
@@ -211,7 +211,7 @@ namespace util::gd {
         auto url = getBaseServerUrl();
         return !url.starts_with("https://www.boomlings.com/database");
     }
-#else // GLOBED_DISABLE_EXTRA_HOOKS
+#else // GLOBED_LESS_BINDINGS
 
     std::string getBaseServerUrl() {
         return "https://www.boomlings.com/database"
@@ -221,6 +221,6 @@ namespace util::gd {
         return false;
     }
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS
 
 }

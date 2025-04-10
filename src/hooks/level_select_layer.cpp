@@ -1,6 +1,6 @@
 #include "level_select_layer.hpp"
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
 
 #include <hooks/gjgamelevel.hpp>
 #include <data/packets/client/general.hpp>
@@ -155,4 +155,4 @@ void HookedLevelSelectLayer::updatePageWithObject(cocos2d::CCObject* o1, cocos2d
     });
 }
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS

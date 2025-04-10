@@ -1,6 +1,6 @@
 #include "level_area_inner_layer.hpp"
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
 
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
@@ -102,4 +102,4 @@ void HookedLevelAreaInnerLayer::onDoor(cocos2d::CCObject* s) {
     LevelAreaInnerLayer::onDoor(s);
 }
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS

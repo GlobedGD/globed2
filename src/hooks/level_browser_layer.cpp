@@ -1,6 +1,6 @@
 #include "level_browser_layer.hpp"
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
 
 #include <hooks/level_cell.hpp>
 #include <hooks/gjgamelevel.hpp>
@@ -78,4 +78,4 @@ void HookedLevelBrowserLayer::updatePlayerCounts(float) {
     }
 }
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS

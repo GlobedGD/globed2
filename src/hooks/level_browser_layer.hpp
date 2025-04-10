@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/geode.hpp>
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
 
 #include <Geode/modify/LevelBrowserLayer.hpp>
 
@@ -23,4 +23,4 @@ struct GLOBED_DLL HookedLevelBrowserLayer : geode::Modify<HookedLevelBrowserLaye
     }
 };
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS

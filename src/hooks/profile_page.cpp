@@ -1,6 +1,6 @@
 #include "profile_page.hpp"
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
 
 #include <managers/admin.hpp>
 #include <net/manager.hpp>
@@ -46,4 +46,4 @@ void GlobedProfilePage::loadPageFromUserInfo(GJUserScore* score) {
 	leftMenu->updateLayout();
 }
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS

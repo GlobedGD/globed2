@@ -1,7 +1,7 @@
 #pragma once
 #include <defs/geode.hpp>
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
 
 #include <Geode/modify/LevelAreaInnerLayer.hpp>
 
@@ -28,4 +28,4 @@ struct GLOBED_DLL HookedLevelAreaInnerLayer : geode::Modify<HookedLevelAreaInner
     void updatePlayerCounts();
 };
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS

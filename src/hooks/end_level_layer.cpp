@@ -1,6 +1,6 @@
 #include "end_level_layer.hpp"
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
 
 #include "gjbasegamelayer.hpp"
 
@@ -25,4 +25,4 @@ void HookedEndLevelLayer::customSetup() {
     }
 }
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS

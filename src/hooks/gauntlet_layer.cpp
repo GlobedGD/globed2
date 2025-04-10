@@ -1,6 +1,6 @@
 #include "gauntlet_layer.hpp"
 
-#ifndef GLOBED_DISABLE_EXTRA_HOOKS
+#ifndef GLOBED_LESS_BINDINGS
 
 #include <data/packets/client/general.hpp>
 #include <data/packets/server/general.hpp>
@@ -102,4 +102,4 @@ void HookedGauntletLayer::updatePlayerCounts(float) {
     nm.send(RequestPlayerCountPacket::create(std::move(levelIds)));
 }
 
-#endif // GLOBED_DISABLE_EXTRA_HOOKS
+#endif // GLOBED_LESS_BINDINGS

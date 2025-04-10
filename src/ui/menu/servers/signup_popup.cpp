@@ -188,7 +188,7 @@ void GlobedSignupPopup::uploadMessageFailed(int e) {
 }
 
 void GlobedSignupPopup::tryCheckMessageCount() {
-#ifdef GLOBED_DISABLE_EXTRA_HOOKS
+#ifdef GLOBED_LESS_BINDINGS
     // in the less bindings mode, just fail
     this->onFailure(
         "Message upload failed due to an unknown reason. Please try <cr>deleting</c> some <cy>sent messages</c> and <cg>Refresh Login</c> in GD account settings."
@@ -228,7 +228,7 @@ void GlobedSignupPopup::loadMessagesFinished(cocos2d::CCArray* p0, char const* p
 void GlobedSignupPopup::loadMessagesFailed(char const* p0, GJErrorCode p1) {
     GameLevelManager::get()->m_messageListDelegate = nullptr;
 
-#ifdef GLOBED_DISABLE_EXTRA_HOOKS
+#ifdef GLOBED_LESS_BINDINGS
     this->onFailure(fmt::format("Failed to check message count (code <cy>{}</c>). This is most likely an account issue, please try to <cg>Refresh Login</c> in GD account settings.", (int) p1));
 #else
     this->onClose(this);
