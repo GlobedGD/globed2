@@ -188,10 +188,17 @@ void GlobedSignupPopup::uploadMessageFailed(int e) {
 }
 
 void GlobedSignupPopup::tryCheckMessageCount() {
+#ifdef GLOBED_DISABLE_EXTRA_HOOKS
+    // in the less bindings mode, just fail
+    this->onFailure(
+        "Message upload failed due to an unknown reason. Please try <cr>deleting</c> some <cy>sent messages</c> and <cg>Refresh Login</c> in GD account settings."
+    );
+#else
     // fetch user's sent messages, if they have 400 (which means they have 50 on page 7, 0-indexed) then they are at the limit and cannot send any more
     auto glm = GameLevelManager::get();
     glm->m_messageListDelegate = this;
     glm->getUserMessages(true, 7, 50);
+#endif
 }
 
 void GlobedSignupPopup::loadMessagesFinished(cocos2d::CCArray* p0, char const* p1) {
@@ -220,9 +227,29 @@ void GlobedSignupPopup::loadMessagesFinished(cocos2d::CCArray* p0, char const* p
 
 void GlobedSignupPopup::loadMessagesFailed(char const* p0, GJErrorCode p1) {
     GameLevelManager::get()->m_messageListDelegate = nullptr;
-    this->onFailure(
-        fmt::format("Failed to check message count (code <cy>{}</c>). This is likely either a network or an account issue, please try to <cg>Refresh Login</c> in GD account settings.", (int) p1)
+
+#ifdef GLOBED_DISABLE_EXTRA_HOOKS
+    this->onFailure(fmt::format("Failed to check message count (code <cy>{}</c>). This is most likely an account issue, please try to <cg>Refresh Login</c> in GD account settings.", (int) p1));
+#else
+    this->onClose(this);
+    geode::createQuickPopup(
+        "Error",
+        fmt::format("Failed to check message count (code <cy>{}</c>). This is most likely an account issue, please try to <cg>Refresh Login</c> in GD account settings."
+            " Open settings now?", (int) p1),
+        "Cancel",
+        "Open",
+        [](auto, bool open) {
+            if (!open) return;
+
+            auto scene = CCScene::get();
+            auto acl = AccountLayer::create();
+            scene->addChild(acl, scene->getHighestChildZ() + 1);
+            acl->m_accountHelpRelated = 1;
+            acl->layerHidden(); // for some reason this switches to the "more" tab in account management,
+                                // which is exactly what we want
+        }
     );
+#endif
 }
 
 void GlobedSignupPopup::forceReloadMessages(bool p0) {}
