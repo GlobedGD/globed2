@@ -649,7 +649,7 @@ protected:
 
             // show the message of the day
             auto popup = MDPopup::create("Globed Message", packet->motd, "Ok");
-            PopupQueue::get()->push(popup);
+            PopupQueue::get()->pushNoDelay(popup);
 
             auto lastSeenMotdKey = CentralServerManager::get().getMotdKey();
             if (!lastSeenMotdKey.empty()) {
