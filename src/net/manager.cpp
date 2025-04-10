@@ -16,6 +16,7 @@
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
+#include <managers/central_server.hpp>
 #include <managers/profile_cache.hpp>
 #include <managers/popup_queue.hpp>
 #include <managers/friend_list.hpp>
@@ -23,6 +24,7 @@
 #include <managers/room.hpp>
 #include <managers/role.hpp>
 #include <util/cocos.hpp>
+#include <util/crypto.hpp>
 #include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/net.hpp>

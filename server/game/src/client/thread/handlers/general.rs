@@ -2,6 +2,9 @@ use globed_shared::webhook::WebhookMessage;
 
 use super::*;
 
+use blake2::{Blake2b, Digest};
+use digest::consts::U32;
+
 impl ClientThread {
     gs_handler!(self, handle_sync_icons, SyncIconsPacket, packet, {
         let _ = gs_needauth!(self);
@@ -141,6 +144,21 @@ impl ClientThread {
             }
         } else {
             gs_notice!(self, "Error: Failed to send notice reply, maybe it expired?");
+        }
+
+        Ok(())
+    });
+
+    gs_handler!(self, handle_motd_request, RequestMotdPacket, packet, {
+        let _ = gs_needauth!(self);
+
+        let (motd, motd_hash) = {
+            let conf = self.game_server.bridge.central_conf.lock();
+            (conf.motd.clone(), conf.motd_hash.clone())
+        };
+
+        if packet.motd_hash.to_string() != motd_hash {
+            self.send_packet_dynamic(&MotdResponsePacket { motd, motd_hash }).await?
         }
 
         Ok(())

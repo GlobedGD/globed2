@@ -33,3 +33,9 @@ pub struct RolesUpdatedPacket {
 pub struct LinkCodeResponsePacket {
     pub link_code: u32,
 }
+#[derive(Packet, Encodable, DynamicSize)]
+#[packet(id = 21005, tcp = true)]
+pub struct MotdResponsePacket {
+    pub motd: String,
+    pub motd_hash: String,
+}

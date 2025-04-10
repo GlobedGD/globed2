@@ -521,6 +521,7 @@ impl UnauthorizedThread {
 
     async fn send_login_success(&self) -> Result<()> {
         let tps = self.game_server.bridge.central_conf.lock().tps;
+
         let all_roles = self.game_server.state.role_manager.get_all_roles();
         let special_user_data = self.account_data.lock().special_user_data.clone();
 
@@ -533,7 +534,7 @@ impl UnauthorizedThread {
                 all_roles,
                 secret_key: self.secret_key,
                 special_user_data,
-                server_protocol: client_protocol,
+                server_protocol: client_protocol
             })
             .await
     }

@@ -84,6 +84,7 @@ By default, the file is created with the name `central-conf.json` in the current
 | `chat_burst_limit` | `0` | Controls the amount of text chat messages users can send in a specific period of time, before getting rate limited. 0 to disable |
 | `chat_burst_interval` | `0` | Controls the period of time for the `chat_burst_limit_setting`. Time is in milliseconds |
 | `roles` | `(...)` | Controls the roles available on the server (moderator, admin, etc.), their permissions, name colors, and various other things |
+| `motd` | `(empty)` | Path to a Markdown file (relative to `central-conf.json`) which will be displayed upon a player's first connection to the server. |
 
 ### Security settings (the boring stuff)
 

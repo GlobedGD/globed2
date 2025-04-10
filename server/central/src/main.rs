@@ -116,6 +116,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         abort_misconfig();
     }
 
+    // invalid motd path
+    let motd_path = config_path.parent().unwrap().join(&config.motd_path);
+    if !config.motd_path.is_empty() && !motd_path.is_file() {
+        error!("invalid message-of-the-day (motd) path found in central-conf.json");
+        warn!("hint: make sure the path is relative to central-conf.json");
+        warn!("hint: the MOTD file should be a markdown file");
+        abort_misconfig();
+    }
+
     // stupid rust
 
     let mnt_point = config.web_mountpoint.clone();

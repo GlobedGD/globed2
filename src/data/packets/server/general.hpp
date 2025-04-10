@@ -57,3 +57,15 @@ class LinkCodeResponsePacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(LinkCodeResponsePacket, (linkCode));
+
+// 21005 - MotdResponsePacket
+class MotdResponsePacket : public Packet {
+    GLOBED_PACKET(21005, MotdResponsePacket, false, false)
+
+    MotdResponsePacket() {}
+
+    std::string motd;
+    std::string motdHash;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(MotdResponsePacket, (motd, motdHash));

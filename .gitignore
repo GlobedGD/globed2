@@ -102,3 +102,5 @@ globed-lerp-log.bin
 !libs/opus/opus.lib
 
 *.log
+
+motd.md

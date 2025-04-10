@@ -12,6 +12,7 @@ impl Translatable for RequestPlayerCountPacket {}
 impl Translatable for UpdatePlayerStatusPacket {}
 impl Translatable for LinkCodeRequestPacket {}
 impl Translatable for NoticeReplyPacket {}
+impl Translatable for RequestMotdPacket {}
 
 // Partial impls
 
