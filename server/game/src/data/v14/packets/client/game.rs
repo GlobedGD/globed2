@@ -11,6 +11,7 @@ pub struct RequestPlayerProfilesPacket {
 pub struct LevelJoinPacket {
     pub level_id: LevelId,
     pub unlisted: bool,
+    pub level_hash: Option<ByteArray<32>>,
 }
 
 #[derive(Packet, Decodable)]

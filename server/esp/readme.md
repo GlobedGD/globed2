@@ -96,6 +96,10 @@ Structure that holds a bitfield of flags. For example, `Bits<2>` and `u16` have 
 
 Simple wrapper around Vec that can hold up to 255 elements and the length is encoded as a single byte.
 
+### ByteArray<N>
+
+Simple wrapper around `[u8; N]`, but decodes and encodes more efficiently
+
 ### RemainderBytes
 
 Must be put at the end of a struct, the value will simply be the remaining data in the buffer.

@@ -9,6 +9,7 @@ struct RoomSettingsFlags : BitfieldBase {
     bool collision;
     bool twoPlayerMode;
     bool deathlink;
+    bool levelIntegrity;
 
     // we need the struct to be 2 bytes
     bool _pad1, _pad2, _pad3, _pad4, _pad5;

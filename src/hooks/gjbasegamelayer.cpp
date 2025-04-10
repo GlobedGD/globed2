@@ -386,7 +386,7 @@ void GlobedGJBGL::setupUpdate() {
 
         auto levelId = HookedGJGameLevel::getLevelIDFrom(self->m_level);
 
-        nm.send(LevelJoinPacket::create(levelId, self->m_level->m_unlisted));
+        nm.send(LevelJoinPacket::create(levelId, self->m_level->m_unlisted, std::nullopt));
 
         self->rescheduleSelectors();
         self->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);

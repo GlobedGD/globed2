@@ -18,10 +18,11 @@ class LevelJoinPacket : public Packet {
     GLOBED_PACKET(12001, LevelJoinPacket, false, false)
 
     LevelJoinPacket() {}
-    LevelJoinPacket(LevelId levelId, bool unlisted) : levelId(levelId), unlisted(unlisted) {}
+    LevelJoinPacket(LevelId levelId, bool unlisted, std::optional<std::array<uint8_t, 32>> levelHash) : levelId(levelId), unlisted(unlisted), levelHash(levelHash) {}
 
     LevelId levelId;
     bool unlisted;
+    std::optional<std::array<uint8_t, 32>> levelHash;
 };
 GLOBED_SERIALIZABLE_STRUCT(LevelJoinPacket, (levelId, unlisted));
 

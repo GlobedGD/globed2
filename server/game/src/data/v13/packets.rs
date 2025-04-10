@@ -15,3 +15,10 @@ pub struct AdminSendNoticePacket {
 pub struct ServerNoticePacket {
     pub message: FastString,
 }
+
+#[derive(Packet, Decodable)]
+#[packet(id = 12001)]
+pub struct LevelJoinPacket {
+    pub level_id: LevelId,
+    pub unlisted: bool,
+}

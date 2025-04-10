@@ -268,6 +268,8 @@ pub trait ByteBufferExtRead {
     fn read_byte_array(&mut self) -> DecodeResult<Vec<u8>>;
     /// read the remaining data into a Vec
     fn read_remaining_bytes(&mut self) -> DecodeResult<Vec<u8>>;
+    /// read an exact amount of bytes
+    fn read_exact_bytes<const N: usize>(&mut self) -> DecodeResult<[u8; N]>;
 
     fn read_value<T: Decodable>(&mut self) -> DecodeResult<T>;
 
@@ -363,7 +365,6 @@ macro_rules! impl_extread {
             Ok(self.read_bytes(length)?)
         }
 
-        #[inline]
         fn read_remaining_bytes(&mut self) -> DecodeResult<Vec<u8>> {
             let remainder = self.len() - self.get_rpos();
             let mut data = Vec::with_capacity(remainder);
@@ -378,6 +379,15 @@ macro_rules! impl_extread {
             }
 
             Ok(data)
+        }
+
+        #[inline]
+        fn read_exact_bytes<const N: usize>(&mut self) -> DecodeResult<[u8; N]> {
+            let mut arr = [0u8; N];
+
+            std::io::Read::read(self, &mut arr)?;
+
+            Ok(arr)
         }
 
         #[inline]

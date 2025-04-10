@@ -1,4 +1,5 @@
 mod bits;
+mod byte_array;
 mod either;
 mod fast_string;
 mod fast_vec;
@@ -8,6 +9,7 @@ mod remainder_bytes;
 mod vecl;
 
 pub use bits::Bits;
+pub use byte_array::ByteArray;
 pub use either::Either;
 pub use fast_string::FastString;
 pub use fast_vec::FastVec;
