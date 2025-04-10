@@ -8,6 +8,9 @@ use globed_shared::{
 
 use rocket::{State, post};
 
+use blake2::{Blake2b, Digest};
+use digest::consts::U32;
+
 use crate::{config::UserlistMode, state::ServerState, web::*};
 
 #[post("/gs/boot")]
@@ -26,6 +29,15 @@ pub async fn boot(
     let state = state.state_read().await;
     let config = &state.config;
 
+    let mut hasher = Blake2b::<U32>::new();
+    hasher.update(&state.motd.clone().as_bytes());
+    let output = hasher.finalize();
+
+    let mut motd_hash = String::with_capacity(output.len() * 2);
+    for byte in output.iter() {
+        motd_hash.push_str(&format!("{:02x}", byte));
+    }
+
     let bdata = GameServerBootData {
         protocol: MAX_SUPPORTED_PROTOCOL,
         tps: config.tps,
@@ -42,7 +54,8 @@ pub async fn boot(
         chat_burst_limit: config.chat_burst_limit,
         chat_burst_interval: config.chat_burst_interval,
         roles: config.roles.clone(),
-        motd: state.motd.clone()
+        motd: state.motd.clone(),
+        motd_hash
     };
 
     debug!("boot data request from game server {} at {}", user_agent.0, ip_address);

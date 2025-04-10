@@ -150,19 +150,15 @@ impl ClientThread {
     });
 
     gs_handler!(self, handle_motd_request, RequestMotdPacket, packet, {
-        let motd = self.game_server.bridge.central_conf.lock().motd.clone();
+        let _ = gs_needauth!(self);
 
-        let mut hasher = Blake2b::<U32>::new();
-        hasher.update(&motd.as_bytes());
-        let output = hasher.finalize();
+        let (motd, motd_hash) = {
+            let conf = self.game_server.bridge.central_conf.lock();
+            (conf.motd.clone(), conf.motd_hash.clone())
+        };
 
-        let mut hex_string = String::with_capacity(output.len() * 2);
-        for byte in output.iter() {
-            hex_string.push_str(&format!("{:02x}", byte));
-        }
-
-        if packet.motd_hash.to_string() != hex_string {
-            self.send_packet_dynamic(&MotdResponsePacket { motd, motd_hash: hex_string }).await?
+        if packet.motd_hash.to_string() != motd_hash {
+            self.send_packet_dynamic(&MotdResponsePacket { motd, motd_hash }).await?
         }
 
         Ok(())

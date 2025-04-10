@@ -244,15 +244,16 @@ bool RoomLayer::init() {
     auto lastSeenMotdKey = fmt::format("last-seen-motd-{}", CentralServerManager::get().getActive()->url);
 
     nm.addListener<MotdResponsePacket>(this, [lastSeenMotdKey](auto packet) {
-        Loader::get()->queueInMainThread([motd = std::move(packet->motd), hash = std::move(packet->motdHash), lastSeenMotdKey]{
-            if (motd.empty()) return;
+        auto motd = packet->motd;
+        auto hash = packet->motdHash;
 
-            // show the message of the day
-            auto popup = MDPopup::create("Globed Message", motd, "OK");
-            PopupQueue::get()->push(popup);
+        if (motd.empty()) return;
 
-            Mod::get()->setSavedValue(lastSeenMotdKey, hash);
-        });
+        // show the message of the day
+        auto popup = MDPopup::create("Globed Message", motd, "OK");
+        PopupQueue::get()->push(popup);
+
+        Mod::get()->setSavedValue(lastSeenMotdKey, hash);
     });
 
     nm.send(RequestMotdPacket::create(Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, "")));

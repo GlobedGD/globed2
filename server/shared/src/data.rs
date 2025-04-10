@@ -26,6 +26,7 @@ pub struct GameServerBootData {
     pub chat_burst_interval: u32,
     pub roles: Vec<ServerRole>,
     pub motd: String,
+    pub motd_hash: String,
 }
 
 impl Default for GameServerBootData {
@@ -52,6 +53,7 @@ impl Default for GameServerBootData {
             chat_burst_interval: 0,
             roles: Vec::new(),
             motd: String::new(),
+            motd_hash: String::new()
         }
     }
 }
