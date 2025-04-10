@@ -266,3 +266,11 @@ void GameServerManager::finishKeepalive(uint32_t playerCount) {
     uint32_t activePingId = _data.lock()->activePingId;
     this->finishPing(activePingId, playerCount);
 }
+
+void GameServerManager::backupInternalData() {
+    *_dataBackup.lock() = *_data.lock();
+}
+
+void GameServerManager::restoreInternalData() {
+    *_data.lock() = *_dataBackup.lock();
+}

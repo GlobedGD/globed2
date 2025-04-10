@@ -28,6 +28,7 @@ public:
     void queueGameServerTests();
     void queuePacketLimitTest(const class NetworkAddress& addr);
     void showVerdictPopup();
+    void startTesting();
     void softReloadTests();
     void update(float dt) override;
 
@@ -64,6 +65,7 @@ public:
 protected:
     ProgressBar* progressBar;
     asp::Thread<> workThread;
+    bool hasBeenStarted = false;
     bool reallyClose = false;
     bool actuallyReallyClose = false;
     asp::AtomicBool waitingForThreadTerm = false;
@@ -137,6 +139,8 @@ protected:
     asp::Channel<std::shared_ptr<Test>> threadTestQueue;
     GlobedListLayer<StatusCell>* list;
     GlobedListLayer<LogMessageCell>* logList;
+    CCMenuItemToggler* logToggler;
+    CCMenuItemSpriteExtra* pencilBtn = nullptr;
 
     std::shared_ptr<Test> addTest(
         std::string name,

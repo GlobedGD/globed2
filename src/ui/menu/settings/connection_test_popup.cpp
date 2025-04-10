@@ -137,6 +137,10 @@ bool ConnectionTestPopup::setup() {
     this->setTitle("Connection test");
     this->usedCentralUrl = globed::string<"main-server-url">();
 
+    // Backup game servers
+    auto& gsm = GameServerManager::get();
+    gsm.backupInternalData();
+
     auto& gs = GlobedSettings::get();
 
     auto override = Mod::get()->getSavedValue<std::string>(URL_OVERRIDE_KEY);
@@ -156,6 +160,7 @@ bool ConnectionTestPopup::setup() {
 
     // make the test list
     Build(GlobedListLayer<StatusCell>::createForComments(LIST_WIDTH, POPUP_HEIGHT * 0.7f))
+        .visible(false)
         .parent(m_mainLayer)
         .pos(rlayout.fromCenter(0.f, -10.f))
         .store(list);
@@ -175,7 +180,18 @@ bool ConnectionTestPopup::setup() {
         this->list->setVisible(!on);
         this->logList->setVisible(on);
     }))
-        .pos(rlayout.fromTopRight(32.f, 20.f))
+        .pos(rlayout.fromTopRight(24.f, 20.f))
+        .visible(false)
+        .store(logToggler)
+        .parent(m_buttonMenu);
+
+    // button to start testing
+    Build(ButtonSprite::create("Start", "bigFont.fnt", "GJ_button_01.png", 0.8f))
+        .intoMenuItem([this](auto dabutton) {
+            dabutton->setVisible(false);
+            this->startTesting();
+        })
+        .pos(rlayout.center)
         .parent(m_buttonMenu);
 
     if (gs.launchArgs().devStuff) {
@@ -205,7 +221,8 @@ bool ConnectionTestPopup::setup() {
                     );
                 }, 80, "Server URL", util::misc::STRING_URL)->show();
             })
-            .pos(rlayout.fromTopRight(64.f, 20.f))
+            .pos(rlayout.fromTopRight(24.f, 20.f))
+            .store(pencilBtn)
             .parent(m_buttonMenu);
 
         pencil->setScale(pencil->getScale() * 0.9f); // needed!
@@ -478,10 +495,6 @@ bool ConnectionTestPopup::setup() {
 
         test->running = false;
     });
-
-    this->startedTestingAt = Instant::now();
-
-    workThread.start();
 
     return true;
 }
@@ -848,6 +861,23 @@ void ConnectionTestPopup::showVerdictPopup() {
     }
 }
 
+void ConnectionTestPopup::startTesting() {
+    if (!workThread.isStopped()) {
+        ErrorQueues::get().warn("Attempting to call startTesting more than once");
+        return;
+    }
+
+    this->startedTestingAt = Instant::now();
+    workThread.start();
+    hasBeenStarted = true;
+    list->setVisible(true);
+    logToggler->setVisible(true);
+
+    if (pencilBtn) {
+        pencilBtn->setVisible(false);
+    }
+}
+
 void ConnectionTestPopup::appendLog(std::string msg, ccColor3B color) {
     Duration dur = startedTestingAt.elapsed();
     msg = fmt::format("{}.{:03} {}", dur.seconds(), dur.subsecMillis(), msg);
@@ -884,12 +914,10 @@ void ConnectionTestPopup::update(float dt) {
 }
 
 void ConnectionTestPopup::onClose(cocos2d::CCObject* o) {
-    if (reallyClose) {
-        if (actuallyReallyClose || threadTerminated) {
+    if (reallyClose || !hasBeenStarted) {
+        if (actuallyReallyClose || threadTerminated || !hasBeenStarted) {
             auto& gsm = GameServerManager::get();
-            gsm.clear();
-            gsm.clearCache();
-            gsm.clearActive();
+            gsm.restoreInternalData();
             Popup::onClose(o);
             return;
         }

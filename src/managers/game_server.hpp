@@ -73,6 +73,10 @@ public:
     void startKeepalive();
     void finishKeepalive(uint32_t playerCount);
 
+    // backups (for connection test)
+    void backupInternalData();
+    void restoreInternalData();
+
 protected:
     // expansion of GameServer with pending pings
     struct GameServerData {
@@ -88,4 +92,5 @@ protected:
     };
 
     asp::Mutex<InnerData> _data;
+    asp::Mutex<InnerData> _dataBackup;
 };
