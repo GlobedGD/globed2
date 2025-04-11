@@ -3,6 +3,8 @@
 #include "kofi_popup.hpp"
 #include <ui/menu/featured/daily_popup.hpp>
 #include <data/types/misc.hpp>
+#include <data/packets/client/general.hpp>
+#include <data/packets/server/general.hpp>
 #include <globed/changelog.hpp>
 #include <managers/account.hpp>
 #include <managers/admin.hpp>
@@ -10,12 +12,14 @@
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
 #include <managers/daily_manager.hpp>
+#include <managers/motd_cache.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/room/room_layer.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
 #include <ui/menu/servers/server_layer.hpp>
 #include <ui/menu/level_list/level_list_layer.hpp>
 #include <ui/menu/credits/credits_popup.hpp>
+#include <ui/general/intermediary_loading_popup.hpp>
 #include <util/net.hpp>
 #include <util/format.hpp>
 #include <util/ui.hpp>
@@ -221,15 +225,30 @@ bool GlobedMenuLayer::init() {
             .intoMenuItem([](auto) {
                 FLAlertLayer::create(
                     "Voice Chat Guide",
-    #ifdef GLOBED_VOICE_CAN_TALK
+#ifdef GLOBED_VOICE_CAN_TALK
                     "In order to <cg>talk</c> with other people in-game, <cp>hold V</c>.\nIn order to <cr>deafen</c> (stop hearing everyone), <cb>press B</c>.\nBoth keybinds can be changed in <cy>Geometry Dash</c> settings.",
-    #else
+#else
                     "This platform currently <cr>does not</c> support audio recording, but you can still hear others in voice chat. Sorry for the inconvenience.",
-    #endif
+#endif
                 "Ok")->show();
             })
             .scaleMult(1.15f)
             .id("btn-show-voice-chat-popup")
+            .parent(rightButtonMenu);
+    }
+
+    // rules btn (to view motd)
+    auto& mcm = MotdCacheManager::get();
+    auto motd = mcm.getCurrentMotd();
+
+    // only show the motd button if it has not been fetched yet, or if it has been fetched and we know it is non-empty
+    if (!motd || !motd.value().empty()) {
+        Build<CCSprite>::createSpriteName("icon-voice-chat-guide.png"_spr)
+            .intoMenuItem([this] {
+                this->loadAndShowMotd();
+            })
+            .scale(1.15f)
+            .id("btn-show-motd")
             .parent(rightButtonMenu);
     }
 
@@ -373,6 +392,30 @@ void GlobedMenuLayer::navigateToServerLayer() {
 
     // if the prev scene is a menulayer instead, replace scene to server layer
     util::ui::replaceScene(GlobedServersLayer::create());
+}
+
+void GlobedMenuLayer::loadAndShowMotd() {
+    auto& mcm = MotdCacheManager::get();
+    auto motd = mcm.getCurrentMotd();
+
+    if (!motd) {
+        IntermediaryLoadingPopup::create([](auto popup) {
+            auto& nm = NetworkManager::get();
+            nm.send(RequestMotdPacket::create("", true));
+            nm.addListener<MotdResponsePacket>(popup, [popup](auto pkt) {
+                popup->onClose(popup);
+            }, 9999, false);
+        }, [](auto popup) {
+
+        })->show();
+    } else {
+        if (motd->empty()) {
+            FLAlertLayer::create("Note", "This server does not have a custom message configured", "Ok")->show();
+        } else {
+            util::ui::showMotd(*motd);
+        }
+    }
+
 }
 
 void GlobedMenuLayer::keyDown(enumKeyCodes key) {

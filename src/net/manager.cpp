@@ -23,6 +23,7 @@
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <managers/role.hpp>
+#include <managers/motd_cache.hpp>
 #include <util/cocos.hpp>
 #include <util/crypto.hpp>
 #include <util/format.hpp>
@@ -646,6 +647,9 @@ protected:
         });
 
         addGlobalListener<MotdResponsePacket>([](auto packet) {
+            auto& mcm = MotdCacheManager::get();
+            mcm.insertActive(packet->motd, packet->motdHash);
+
             if (packet->motd.empty()) return;
 
             // show the message of the day
@@ -749,10 +753,15 @@ protected:
             }
         }
 
-        // request the motd of the server
-        auto lastSeenMotdKey = CentralServerManager::get().getMotdKey();
-        if (!lastSeenMotdKey.empty()) {
-            this->send(RequestMotdPacket::create(Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, "")));
+        // request the motd of the server if uncached
+        auto& mcm = MotdCacheManager::get();
+        auto motd = mcm.getCurrentMotd();
+
+        if (!motd) {
+            auto lastSeenMotdKey = CentralServerManager::get().getMotdKey();
+            if (!lastSeenMotdKey.empty()) {
+                this->send(RequestMotdPacket::create(Mod::get()->getSavedValue<std::string>(lastSeenMotdKey, ""), false));
+            }
         }
     }
 
