@@ -145,12 +145,13 @@ void GlobedSettingsLayer::update(float dt) {
         tab.second->removeFromParent();
     }
 
+    // Idk why this is here but dont remove it or reorder it
+    this->getParent()->addChild(newLayer);
+    newLayer->removeFromParent();
+
     this->storedTabs = std::move(newLayer->storedTabs);
     this->settingCells = std::move(newLayer->settingCells);
     this->onTabById(currentTab);
-
-    this->getParent()->addChild(newLayer);
-    newLayer->removeFromParent();
 }
 
 void GlobedSettingsLayer::onTab(CCObject* sender) {
