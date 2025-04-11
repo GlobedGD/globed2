@@ -38,29 +38,28 @@ bool UserPunishmentPopup::setup(SimpleTextArea* textArea, int64_t expiresAt, boo
 
     layout->updateLayout();
 
-    auto* menu = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setAutoScale(true))
-        .collect();
-
     Build<ButtonSprite>::create("Close", "bigFont.fnt", "GJ_button_01.png", 0.8f)
-        .scale(0.8f)
+        .scale(0.75f)
         .intoMenuItem([this] {
             this->onClose(nullptr);
         })
-        .parent(menu);
-
-    auto discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
-        .intoMenuItem([this] {
-            web::openLinkInBrowser(globed::string<"discord">());
-        })
-        .intoNewParent(CCMenu::create())
-        .collect();
-
-    menu->updateLayout();
-    m_mainLayer->addChildAtPosition(menu, Anchor::Bottom, ccp(0.f, 25.f));
+        .pos(sizes.fromBottom(24.f))
+        .parent(m_buttonMenu);
 
     if (CentralServerManager::get().isOfficialServerActive()) {
-        m_mainLayer->addChildAtPosition(discordButton, Anchor::BottomRight, ccp(-25.f, 25.f));
+        Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
+            .scale(0.85f)
+            .intoMenuItem([this] {
+                web::openLinkInBrowser(globed::string<"discord">());
+            })
+            .pos(sizes.fromBottomRight(20.f, 20.f))
+            .parent(m_buttonMenu);
+
+        Build<CCLabelBMFont>::create("Appeal:", "bigFont.fnt")
+            .scale(0.35f)
+            .anchorPoint(1.f, 0.5f)
+            .pos(sizes.fromBottomRight(36.f, 16.f))
+            .parent(m_buttonMenu);
     }
 
     return true;
@@ -88,6 +87,12 @@ bool UserPunishmentPopup::initCustomSize(std::string_view reason, int64_t expire
     float textAreaHeight = reasonTextNode->getScaledContentHeight();
 
     return this->initAnchored(width, 120.f + textAreaHeight, reasonTextNode, expiresAt, isBan);
+}
+
+void UserPunishmentPopup::onClose(cocos2d::CCObject* a) {
+    Popup::onClose(a);
+
+    SceneManager::get()->forget(this);
 }
 
 UserPunishmentPopup* UserPunishmentPopup::create(std::string_view reason, int64_t expiresAt, bool isBan) {

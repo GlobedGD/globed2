@@ -1,5 +1,6 @@
 #include "popup_queue.hpp"
 
+#include <hooks/flalertlayer.hpp>
 #include <util/misc.hpp>
 
 using namespace geode::prelude;
@@ -73,6 +74,7 @@ void PopupQueue::update(float dt) {
         auto popup = std::move(queuedHighPrio.front());
         queuedHighPrio.pop();
         SceneManager::get()->keepAcrossScenes(popup);
+        // popup->show();
         return;
     }
 
@@ -89,6 +91,7 @@ void PopupQueue::update(float dt) {
     auto popup = std::move(queuedLowPrio.front());
     queuedLowPrio.pop();
     SceneManager::get()->keepAcrossScenes(popup);
+    // popup->show();
 }
 
 PopupQueue::PopupQueue() {}
