@@ -7,6 +7,6 @@ struct GameCameraState {
     float zoom;
 
     cocos2d::CCSize cameraCoverage() const {
-        return visibleCoverage / zoom;
+        return visibleCoverage / std::fabs(zoom);
     }
 };
