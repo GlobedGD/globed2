@@ -28,6 +28,7 @@
 #include <util/format.hpp>
 #include <util/time.hpp>
 #include <util/net.hpp>
+#include <util/ui.hpp>
 #include <ui/menu/admin/user_punishment_popup.hpp>
 #include <ui/notification/panel.hpp>
 
@@ -648,8 +649,7 @@ protected:
             if (packet->motd.empty()) return;
 
             // show the message of the day
-            auto popup = MDPopup::create("Globed Message", packet->motd, "Ok");
-            PopupQueue::get()->pushNoDelay(popup);
+            util::ui::showMotd(packet->motd);
 
             auto lastSeenMotdKey = CentralServerManager::get().getMotdKey();
             if (!lastSeenMotdKey.empty()) {

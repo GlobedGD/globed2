@@ -4,6 +4,7 @@
 #include <data/types/admin.hpp>
 #include <managers/settings.hpp>
 #include <managers/role.hpp>
+#include <managers/popup_queue.hpp>
 #include <util/cocos.hpp>
 #include <util/format.hpp>
 #include <util/misc.hpp>
@@ -653,5 +654,20 @@ namespace util::ui {
         auto winSize = CCDirector::get()->getWinSize();
 
         return winSize.width / winSize.height;
+    }
+
+    void showMotd(const std::string& text) {
+        class PQMDPopup : public MDPopup {
+        public:
+            void onClose(CCObject* a) override {
+                MDPopup::onClose(a);
+                SceneManager::get()->forget(this);
+            }
+        };
+
+        // swap the vtable to use custom onClose impl
+        auto popup = PQMDPopup::create("Globed Message", text, "Ok");
+        auto pqmd = util::lowlevel::swapVtable<PQMDPopup>(popup);
+        PopupQueue::get()->pushNoDelay(pqmd);
     }
 }

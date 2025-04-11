@@ -139,4 +139,6 @@ namespace util::ui {
     cocos2d::CCSize fixTextAreaContentSize(TextArea* textarea);
 
     float getAspectRatio();
+
+    void showMotd(const std::string& text);
 }
