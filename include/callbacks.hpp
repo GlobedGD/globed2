@@ -19,10 +19,10 @@ namespace globed::callbacks {
 
 namespace globed::callbacks {
     inline Result<void> onPlayerJoin(PlayerJoinFn func) {
-        return _internal::request<void>(_internal::Type::CbPlayerJoin);
+        return _internal::request<void>(_internal::Type::CbPlayerJoin, func);
     }
 
     inline Result<void> onPlayerLeave(PlayerLeaveFn func) {
-        return _internal::request<void>(_internal::Type::CbPlayerLeave);
+        return _internal::request<void>(_internal::Type::CbPlayerLeave, func);
     }
 } // namespace globed::callbacks
