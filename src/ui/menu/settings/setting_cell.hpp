@@ -10,7 +10,7 @@ class BetterSlider;
 class GlobedSettingCell : public cocos2d::CCLayer {
 public:
     enum class Type {
-        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom, LinkCode, Keybind, ConnectionTest
+        Bool, Int, Float, String, AudioDevice, Corner, PacketFragmentation, AdvancedSettings, DiscordRPC, InvitesFrom, LinkCode, Keybind, ConnectionTest, KeybindSettings
     };
 
     struct Limits {

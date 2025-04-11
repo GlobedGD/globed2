@@ -140,120 +140,113 @@ public:
     template <typename T>
     using TypeFixup = std::conditional_t<std::is_same_v<T, float>, globed::ConstexprFloat, T>;
 
-    /* Setting class */
+    /* Base of all setting classes */
 
     template <
-        typename InnerTyRaw,
-        TypeFixup<InnerTyRaw> DefaultV
+        typename StoredT,      // internally stored type, cannot be float or enum or anything like that
+        typename EffectiveT,   // effective type, i.e. the type user will deal with (can be float, enum)
+        typename SerializedT,
+        StoredT DefaultV,
+        bool DoLimit,
+        StoredT MinV,
+        StoredT MaxV
     >
-    class Setting {
-    protected:
-        using InnerTy = decltype(DefaultV);
-
+    class BaseSetting {
     public:
-        constexpr static bool IsFloat = std::is_same_v<InnerTy, globed::ConstexprFloat>;
-        constexpr static bool IsLimited = false;
+        constexpr static bool IsFloat = std::is_same_v<StoredT, globed::ConstexprFloat>;
+        constexpr static bool IsLimited = DoLimit;
 
-        using Type = std::conditional_t<IsFloat, float, InnerTy>;
-        constexpr static Type Default = DefaultV;
+        using Type = EffectiveT;
+        using StoredType = StoredT;
+        using SerializedType = SerializedT;
 
-        Setting() : value(Default) {}
+        constexpr static EffectiveT Default = static_cast<EffectiveT>(DefaultV);
+        constexpr static StoredT Minimum = MinV;
+        constexpr static StoredT Maximum = MaxV;
+
+        BaseSetting() : value(DefaultV) {}
 
         void set(const Type& v) {
-            value = v;
+            if constexpr (IsLimited) {
+                value = this->clamp(static_cast<StoredT>(v));
+            } else {
+                value = static_cast<StoredT>(v);
+            }
         }
 
         Type get() const {
-            return value;
+            return static_cast<Type>(value);
         }
 
         Type& ref() {
             if constexpr (IsFloat) {
                 return value.ref();
-            } else {
+            } else if constexpr (std::is_same_v<StoredT, Type>) {
                 return value;
+            } else {
+                static_assert(sizeof(StoredT) == sizeof(Type), "stored and effective type of BaseSetting must be of the same size if they are different!");
+                return *reinterpret_cast<Type*>(&value);
             }
+        }
+
+        Type* ptr() {
+            return &this->ref();
         }
 
         const Type& ref() const {
-            if constexpr (IsFloat) {
-                return value.ref();
-            } else {
-                return value;
-            }
+            return const_cast<BaseSetting*>(this)->ref();
         }
 
-        operator Type() {
-            return get();
+        const Type* ptr() const {
+            return &this->ref();
         }
 
-        operator float() const requires (IsFloat) {
-            return get().asFloat();
-        }
-
-        Setting& operator=(const Type& other) {
-            value = other;
-            GlobedSettings::get().save();
-            return *this;
-        }
-
-    protected:
-        InnerTy value;
-    };
-
-    template <
-        typename InnerTyRaw,
-        TypeFixup<InnerTyRaw> DefaultV,
-        TypeFixup<InnerTyRaw> MinimumV,
-        TypeFixup<InnerTyRaw> MaximumV
-    >
-    class LimitedSetting : public Setting<InnerTyRaw, DefaultV> {
-    public:
-        using Type = Setting<InnerTyRaw, DefaultV>::Type;
-        using InnerTy = Setting<InnerTyRaw, DefaultV>::InnerTy;
-        using Setting<InnerTyRaw, DefaultV>::IsFloat;
-        using Setting<InnerTyRaw, DefaultV>::Default;
-
-        constexpr static bool IsLimited = true;
-
-        constexpr static Type Minimum = MinimumV;
-        constexpr static Type Maximum = MaximumV;
-
-        LimitedSetting() {
-            this->value = Default;
-        }
-
-        void set(const Type& v) {
-            this->value = this->clamp(v);
-        }
-
-        operator Type() {
+        operator Type() const {
             return this->get();
         }
 
-        operator float() const requires (IsFloat) {
-            return this->get().asFloat();
-        }
-
-        LimitedSetting& operator=(const Type& other) {
+        BaseSetting& operator=(const Type& other) {
             this->set(other);
             GlobedSettings::get().save();
             return *this;
         }
 
-    private:
-        Type clamp(const Type& value) {
+    protected:
+        StoredT value;
+
+        StoredT clamp(const StoredT& value) {
             if (value > Maximum) return Maximum;
             if (value < Minimum) return Minimum;
             return value;
         }
     };
 
-    using Float = globed::ConstexprFloat;
-    using Flag = Setting<bool, false>;
+    template <typename TRaw, TypeFixup<TRaw> DefaultV>
+    using Setting = BaseSetting<TypeFixup<TRaw>, TRaw, TRaw, DefaultV, false, {}, {}>;
+
+    template <typename TRaw, TypeFixup<TRaw> DefaultV, TypeFixup<TRaw> MinV, TypeFixup<TRaw> MaxV>
+    using LimitedSetting = BaseSetting<TypeFixup<TRaw>, TRaw, TRaw, DefaultV, true, MinV, MaxV>;
+
+    template <typename E, E DefaultV, typename U = std::underlying_type_t<E>>
+    using EnumSetting = BaseSetting<U, E, U, static_cast<U>(DefaultV), false, {}, {}>;
+
+    template <typename E, E DefaultV, E MinV, E MaxV, typename U = std::underlying_type_t<E>>
+    using LimitedEnumSetting = BaseSetting<
+        U, E, U,
+        static_cast<U>(DefaultV),
+        true,
+        static_cast<U>(MinV),
+        static_cast<U>(MaxV)
+    >;
+
+    template <cocos2d::enumKeyCodes DefaultV>
+    using KeybindSetting = EnumSetting<cocos2d::enumKeyCodes, DefaultV>;
 
     // Settings themselves, split into categories
-    // when adding settings, please remember to also add them at the bottom of this file
+    // !! when adding settings, please remember to also add them at the bottom of this file !!
+
+    using Float = globed::ConstexprFloat;
+    using Flag = Setting<bool, false>;
 
     enum class InvitesFrom : int {
         Everyone = 0,
@@ -263,11 +256,9 @@ public:
 
     struct Globed {
         Setting<bool, true> autoconnect;
-        LimitedSetting<int, 0, 0, 240> tpsCap;
         Setting<bool, true> preloadAssets;
         Setting<bool, false> deferPreloadAssets;
-        LimitedSetting<int, (int)InvitesFrom::Friends, 0, 2> invitesFrom;
-        Setting<int, cocos2d::enumKeyCodes::KEY_H> hidePlayersKey;
+        LimitedEnumSetting<InvitesFrom, InvitesFrom::Friends, InvitesFrom::Everyone, InvitesFrom::Nobody> invitesFrom;
         Setting<bool, true> editorSupport;
         Setting<bool, false> increaseLevelList;
         Setting<int, 60000> fragmentationLimit;
@@ -296,8 +287,6 @@ public:
 
     struct Communication {
         Setting<bool, true> voiceEnabled;
-        Setting<int, cocos2d::enumKeyCodes::KEY_V> voiceChatKey;
-        Setting<int, cocos2d::enumKeyCodes::KEY_B> voiceDeafenKey;
         Setting<bool, true> voiceProximity;
         Setting<bool, false> classicProximity;
         LimitedSetting<float, 1.0f, 0.f, 2.f> voiceVolume;
@@ -337,6 +326,12 @@ public:
         Setting<bool, false> rememberPassword;
     };
 
+    struct Keys {
+        KeybindSetting<cocos2d::enumKeyCodes::KEY_V> voiceChatKey;
+        KeybindSetting<cocos2d::enumKeyCodes::KEY_B> voiceDeafenKey;
+        KeybindSetting<cocos2d::enumKeyCodes::KEY_H> hidePlayersKey;
+    };
+
     struct Flags {
         Flag seenSignupNotice;       // Obsolete
         Flag seenSignupNoticev2;
@@ -356,6 +351,7 @@ public:
     Players players;
     Advanced advanced;
     Admin admin;
+    Keys keys;
     Flags flags;
     Setting<bool, false> dummySetting;
 
@@ -429,7 +425,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LaunchArgs, (
 // Settings
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, tpsCap, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed,
+    autoconnect, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed,
     isInvisible, noInvites, hideInGame, hideRoles
 ));
 
@@ -438,7 +434,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Communication, (
-    voiceEnabled, voiceChatKey, voiceDeafenKey, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, audioDevice, deafenNotification, voiceLoopback
+    voiceEnabled, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, audioDevice, deafenNotification, voiceLoopback
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (
@@ -455,6 +451,10 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Admin, (
     rememberPassword
 ));
 
+GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Keys, (
+    voiceChatKey, voiceDeafenKey, hidePlayersKey
+));
+
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
     seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice,
     seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide, seenRoomOptionsSafeModeNotice,
@@ -462,5 +462,5 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (
-    globed, overlay, communication, levelUi, players, advanced, admin, flags
+    globed, overlay, communication, levelUi, players, advanced, admin, keys, flags
 ));

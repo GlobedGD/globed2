@@ -158,8 +158,8 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     PlayerData gatherPlayerData();
     PlayerMetadata gatherPlayerMetadata();
 
-    static cocos2d::CCPoint getCameraDirectionVector();
-    static float getCameraDirectionAngle();
+    cocos2d::CCPoint getCameraDirectionVector();
+    float getCameraDirectionAngle();
 
     bool shouldLetMessageThrough(int playerId);
     void updateProximityVolume(int playerId);

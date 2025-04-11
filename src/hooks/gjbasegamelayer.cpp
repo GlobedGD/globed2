@@ -403,12 +403,7 @@ void GlobedGJBGL::setupMisc() {
     fields.isVoiceProximity = m_level->isPlatformer() ? settings.communication.voiceProximity : settings.communication.classicProximity;
 
     // set the configured tps
-    auto tpsCap = settings.globed.tpsCap;
-    if (tpsCap != 0) {
-        fields.configuredTps = std::min(nm.getServerTps(), (uint32_t)tpsCap);
-    } else {
-        fields.configuredTps = nm.getServerTps();
-    }
+    fields.configuredTps = nm.getServerTps();
 
     // interpolator
     fields.interpolator = std::make_unique<PlayerInterpolator>(InterpolatorSettings {
@@ -431,6 +426,9 @@ void GlobedGJBGL::setupMisc() {
     // friendlist stuff
     auto& flm = FriendListManager::get();
     flm.maybeLoad();
+
+    // refresh keybinds
+    KeybindsManager::get().refreshBinds();
 
     // vmt hook
 #ifdef GEODE_IS_WINDOWS
@@ -750,8 +748,8 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     // update self names
     if (fields.ownNameLabel) {
-        auto dirVec = GlobedGJBGL::getCameraDirectionVector();
-        auto dir = GlobedGJBGL::getCameraDirectionAngle();
+        auto dirVec = this->getCameraDirectionVector();
+        auto dir = this->getCameraDirectionAngle();
 
         if (self->m_player1->m_isHidden || !self->m_player1->isVisible()) {
             fields.ownNameLabel->setVisible(false);
@@ -917,15 +915,18 @@ PlayerMetadata GlobedGJBGL::gatherPlayerMetadata() {
 }
 
 CCPoint GlobedGJBGL::getCameraDirectionVector() {
-    float dir = GlobedGJBGL::getCameraDirectionAngle();
-    float rads = CC_DEGREES_TO_RADIANS(dir);
+    float dir = this->getCameraDirectionAngle();
+    float rads = dir * M_PI / 180.f; // convert degrees to radians
     return CCPoint{std::sin(rads), std::cos(rads)};
 }
 
 float GlobedGJBGL::getCameraDirectionAngle() {
     bool rotateNames = GlobedSettings::get().players.rotateNames;
-    float dir = GJBaseGameLayer::get() && rotateNames ? -GJBaseGameLayer::get()->m_gameState.m_cameraAngle : 0;
-    return dir;
+    if (!rotateNames) {
+        return 0.f;
+    }
+
+    return -m_gameState.m_cameraAngle;
 }
 
 bool GlobedGJBGL::shouldLetMessageThrough(int playerId) {

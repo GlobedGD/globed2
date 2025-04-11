@@ -179,8 +179,15 @@ void ComplexVisualPlayer::updateData(
         this->cancelPlatformerJumpAnim();
     }
 
-    auto dirVec = GlobedGJBGL::getCameraDirectionVector();
-    auto dir = GlobedGJBGL::getCameraDirectionAngle();
+    CCPoint dirVec{};
+    float dir = 0.f;
+    auto gjbgl = GlobedGJBGL::get();
+
+    if (gjbgl) {
+        dirVec = gjbgl->getCameraDirectionVector();
+        dir = gjbgl->getCameraDirectionAngle();
+    }
+
 
     if (isNearby) {
         // set the pos for status icons and name (ask rob not me)

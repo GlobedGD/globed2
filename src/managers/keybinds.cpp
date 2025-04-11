@@ -1,10 +1,73 @@
 #include "keybinds.hpp"
 
 #include <defs/geode.hpp>
+#include <hooks/gjbasegamelayer.hpp>
+#include <audio/manager.hpp>
+#include <audio/voice_playback_manager.hpp>
 #include <util/into.hpp>
+#include <util/misc.hpp>
 
 using namespace geode::prelude;
 using globed::Key;
+
+void KeybindsManager::handleKeyDown(cocos2d::enumKeyCodes key) {
+    auto gjbgl = GLOBED_LAZY(GlobedGJBGL::get());
+    auto fields = GLOBED_LAZY(&gjbgl->getFields());
+
+#ifdef GLOBED_VOICE_CAN_TALK
+    if (key == keyVoice) {
+        if (!fields->deafened) {
+            GlobedAudioManager::get().resumePassiveRecording();
+        }
+    }
+    else if (key == keyDeafen) {
+        auto& vpm = VoicePlaybackManager::get();
+        auto& settings = GlobedSettings::get();
+
+        fields->deafened = !fields->deafened;
+        if (fields->deafened) {
+            vpm.muteEveryone();
+            GlobedAudioManager::get().pausePassiveRecording();
+            if (settings.communication.deafenNotification) {
+                Notification::create("Deafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-on.png"_spr), 0.2f)->show();
+            }
+        } else {
+            if (settings.communication.deafenNotification) {
+                Notification::create("Undeafened Voice Chat", CCSprite::createWithSpriteFrameName("deafen-icon-off.png"_spr), 0.2f)->show();
+            }
+
+            if (!fields->isVoiceProximity) {
+                vpm.setVolumeAll(settings.communication.voiceVolume);
+            }
+        }
+    }
+    else
+#endif
+    if (key == keyHidePlayers) {
+        bool newState = !fields->arePlayersHidden;
+        gjbgl->setPlayerVisibility(newState);
+        Notification::create((newState) ? "All Players Hidden" : "All Players Visible", NotificationIcon::Success, 0.2f)->show();
+    }
+}
+
+void KeybindsManager::handleKeyUp(cocos2d::enumKeyCodes key) {
+#ifdef GLOBED_VOICE_CAN_TALK
+    if (key == keyVoice) {
+        GlobedAudioManager::get().pausePassiveRecording();
+    }
+    else if (key == keyDeafen) {}
+    else
+#endif
+    if (key == keyHidePlayers) {}
+}
+
+void KeybindsManager::refreshBinds() {
+    auto& keys = GlobedSettings::get().keys;
+
+    keyVoice = keys.voiceChatKey.get();
+    keyDeafen = keys.voiceDeafenKey.get();
+    keyHidePlayers = keys.hidePlayersKey.get();
+}
 
 namespace globed {
     std::string formatKey(Key key) {

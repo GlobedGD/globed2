@@ -22,6 +22,8 @@
 #define _GLOBED_STRURL _GLOBED_STRALPHANUM ":/%._-?#"
 #define _GLOBED_STRWHITESPACE " \t\n\r\x0b\x0c"
 
+#define GLOBED_LAZY(expr) ::util::misc::lazyExpr([&]() -> decltype(expr) { return expr; })
+
 
 enum class PlayerIconType : uint8_t;
 enum class IconType;
@@ -154,4 +156,35 @@ namespace util::misc {
 
         bool areEqual(uint32_t pressed, uint32_t searching);
     };
+
+
+    // Returns a type that will only evaluate the given expression when it's referenced
+    template <typename F>
+    auto lazyExpr(F&& f) {
+        using Ret = std::invoke_result_t<F>;
+
+        class LazyExpr {
+            std::variant<F, Ret> value;
+            Ret& _eval() {
+                if (std::holds_alternative<F>(value)) {
+                    value = std::get<F>(value)();
+                }
+
+                return std::get<Ret>(value);
+            }
+
+        public:
+            LazyExpr(F&& f) : value(std::forward<F>(f)) {} // idk if the forward is correct here
+
+            Ret& operator*() {
+                return this->_eval();
+            }
+
+            Ret& operator->() {
+                return this->_eval();
+            }
+        };
+
+        return LazyExpr(std::forward<F>(f));
+    }
 }

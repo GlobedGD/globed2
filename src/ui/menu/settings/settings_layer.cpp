@@ -266,10 +266,9 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
             registerSetting(cat, settings.globed.preloadAssets, "Preload assets", "Increases the loading times but prevents most lagspikes in a level.");
             registerSetting(cat, settings.globed.deferPreloadAssets, "Defer preloading", "Instead of making the loading screen longer, load assets only when you join a level while connected.");
             registerSetting(cat, settings.globed.invitesFrom, "Receive invites from", "Controls who can invite you into a room.", Type::InvitesFrom);
-            registerSetting(cat, settings.globed.hidePlayersKey, "Hide/Unhide players key", "Set the key to hide/unhide players in a level", Type::Keybind);
             registerSetting(cat, settings.globed.editorSupport, "View players in editor", "Enables the ability to see people playing your level while in the editor. Note: <cy>this does not let you build levels together!</c>");
+            registerSetting(cat, settings.dummySetting, "Keybinds", "Opens the <cg>Keybinds Settings</c>.", Type::KeybindSettings);
             registerSetting(cat, settings.globed.fragmentationLimit, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.", Type::PacketFragmentation);
-            registerSetting(cat, settings.globed.tpsCap, "TPS cap", "Maximum amount of packets per second sent between the client and the server. Useful only for very silly things.");
 
 #ifndef GEODE_IS_ANDROID
             registerSetting(cat, settings.globed.useDiscordRPC, "Discord RPC", "If you have the Discord Rich Presence standalone mod, this option will toggle a Globed-specific RPC on your profile.", Type::DiscordRPC);
@@ -296,10 +295,6 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
         case TAG_TAB_COMMUNICATION: {
 #ifdef GLOBED_VOICE_SUPPORT
             registerSetting(cat, settings.communication.voiceEnabled, "Voice chat", "Enables in-game voice chat. To talk, hold V when in a level. (keybind can be changed in game settings)");
-# ifdef GLOBED_VOICE_CAN_TALK
-            registerSetting(cat, settings.communication.voiceChatKey, "Voice chat key", "Set the key to activate voice chat", Type::Keybind);
-            registerSetting(cat, settings.communication.voiceDeafenKey, "Voice deafen key", "Set the key to deafen voice chat", Type::Keybind);
-# endif
             registerSetting(cat, settings.communication.voiceProximity, "Voice proximity", "In platformer mode, the loudness of other players will be determined by how close they are to you.");
             registerSetting(cat, settings.communication.classicProximity, "Classic proximity", "Same as voice proximity, but for classic levels (non-platformer).");
             registerSetting(cat, settings.communication.voiceVolume, "Voice volume", "Controls how loud other players are.");

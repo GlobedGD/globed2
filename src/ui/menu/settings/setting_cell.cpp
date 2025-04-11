@@ -4,6 +4,7 @@
 
 #include "audio_setup_popup.hpp"
 #include "frag_calibration_popup.hpp"
+#include "keybind_settings_popup.hpp"
 #include "string_input_popup.hpp"
 #include "advanced_settings_popup.hpp"
 #include "link_code_popup.hpp"
@@ -136,6 +137,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
         case Type::LinkCode: [[fallthrough]];
         case Type::Keybind: [[fallthrough]];
         case Type::ConnectionTest: [[fallthrough]];
+        case Type::KeybindSettings: [[fallthrough]];
         case Type::AudioDevice: {
             const char* text;
             switch (settingType) {
@@ -145,6 +147,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 case Type::LinkCode: text = "View"; break;
                 case Type::Keybind: text = "Set"; break;
                 case Type::ConnectionTest: text = "Test"; break;
+                case Type::KeybindSettings: text = "View"; break;
                 default: text = "what the figma"; break;
             }
 
@@ -279,19 +282,13 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
             break;
         }
         case Type::ConnectionTest: {
-            bool showSwagPopup = false;
-            // if (util::rng::Random::get().genRatio(0.0001)) {
-            //     showSwagPopup = true;
-            // }
-
-            // determine if controller is connected
-
-            if (showSwagPopup) {
-                SwagConnectionTestPopup::create()->animateIn();
-            } else {
-                ConnectionTestPopup::create()->show();
-            }
+            ConnectionTestPopup::create()->show();
         } break;
+
+        case Type::KeybindSettings: {
+            KeybindSettingsPopup::create()->show();
+        } break;
+
         default: {
             StringInputPopup::create([this](std::string_view text) {
                 this->onStringChanged(text);
@@ -438,7 +435,8 @@ void GlobedSettingCell::storeAndSave(std::any&& value) {
         case Type::Keybind: [[fallthrough]];
         case Type::Int:
             *(int*)(settingStorage) = std::any_cast<int>(value); break;
-        case Type:: ConnectionTest: [[fallthrough]];
+        case Type::ConnectionTest: [[fallthrough]];
+        case Type::KeybindSettings: [[fallthrough]];
         case Type::AdvancedSettings:
             break;
     }

@@ -573,7 +573,7 @@ protected:
 
             // check if allowed
             int inviter = packet->playerData.accountId;
-            InvitesFrom setting = static_cast<InvitesFrom>((int)GlobedSettings::get().globed.invitesFrom);
+            InvitesFrom setting = GlobedSettings::get().globed.invitesFrom;
 
             auto& flm = FriendListManager::get();
 

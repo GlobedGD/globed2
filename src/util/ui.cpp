@@ -46,7 +46,6 @@ namespace util::ui {
         layer->setKeypadEnabled(true);
     }
 
-
     void addBackground(CCNode* layer, cocos2d::ccColor3B color) {
         auto windowSize = CCDirector::get()->getWinSize();
 

@@ -375,6 +375,8 @@ void GlobedSettings::reflect(GlobedSettings::TaskType tt) {
         boost::mp11::mp_for_each<CatMd>([&, this](auto setd) -> void {
             using SetTy = typename asp::member_ptr_to_underlying<decltype(setd.pointer)>::type;
             using InnerType = SetTy::Type;
+            using InnerStoredType = SetTy::StoredType;
+            using SerializedType = SetTy::SerializedType;
             constexpr InnerType Default = SetTy::Default;
 
             auto setName = setd.name;
@@ -393,11 +395,14 @@ void GlobedSettings::reflect(GlobedSettings::TaskType tt) {
                 switch (tt) {
                     case Save: {
                         if (this->has(settingKey) || setting.get() != Default || isFlag) {
-                            this->store(settingKey, setting.get());
+                            this->store(settingKey, static_cast<SerializedType>(setting.get()));
                         }
                     } break;
                     case Load: {
-                        this->loadOptionalInto(settingKey, setting.ref());
+                        if (this->has(settingKey)) {
+                            SerializedType value = this->load<SerializedType>(settingKey);
+                            setting.set(static_cast<InnerType>(value));
+                        }
                     } break;
                     case Reset: [[fallthrough]];
                     case HardReset: {
@@ -406,19 +411,23 @@ void GlobedSettings::reflect(GlobedSettings::TaskType tt) {
                     } break;
                 }
             } else {
+                if (!std::is_same_v<InnerType, bool>) {
+                    throw std::runtime_error("non-flag detected in settings flags");
+                }
+
                 // flags are saved in saved.json, separate from save slots
                 switch (tt) {
                     case Save: {
-                        this->storeFlag(settingKey, setting.get());
+                        this->storeFlag(settingKey, static_cast<SerializedType>(setting.get()));
                     } break;
                     case Load: {
-                        this->loadOptionalFlagInto(settingKey, setting.ref());
+                        this->loadOptionalFlagInto(settingKey, reinterpret_cast<bool&>(setting.ref())); // reinterpret because this code can be interpreted even for non-flags
                     } break;
                     case Reset:
                         // flags cant be cleared unless hard resetting
                         break;
                     case HardReset: {
-                        setting.set(false);
+                        setting.set(static_cast<InnerType>(0)); // false
                         this->clearFlag(settingKey);
                     } break;
                 }

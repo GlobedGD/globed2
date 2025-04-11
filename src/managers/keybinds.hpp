@@ -50,6 +50,12 @@ class KeybindsManager : public SingletonBase<KeybindsManager> {
 public:
     static globed::Key convertCocosKey(cocos2d::enumKeyCodes key);
 
+    void handleKeyDown(cocos2d::enumKeyCodes key);
+    void handleKeyUp(cocos2d::enumKeyCodes key);
+    void refreshBinds();
+
 private:
     std::map<globed::Key, bool> heldKeys;
+
+    cocos2d::enumKeyCodes keyVoice, keyDeafen, keyHidePlayers;
 };
