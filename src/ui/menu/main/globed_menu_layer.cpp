@@ -243,7 +243,7 @@ bool GlobedMenuLayer::init() {
 
     // only show the motd button if it has not been fetched yet, or if it has been fetched and we know it is non-empty
     if (!motd || !motd.value().empty()) {
-        Build<CCSprite>::createSpriteName("icon-voice-chat-guide.png"_spr)
+        Build<CCSprite>::createSpriteName("icon-show-motd.png"_spr)
             .intoMenuItem([this] {
                 this->loadAndShowMotd();
             })
