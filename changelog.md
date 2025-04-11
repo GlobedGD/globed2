@@ -4,12 +4,13 @@
 * \-- This allows you to easily change many settings at once, for example if attending some event
 * \-- The amount of save slots is unlimited and you can give them custom names
 * Add a Connection Test menu in settings, to make it easier to debug network issues
-* Remove Custom Keybinds dependency, add ability to change the voice chat keybind in settings (thanks LimeGradient!)
+* Remove Custom Keybinds dependency, add ability to change the keybinds in settings (thanks LimeGradient!)
 * Add ability to reply when you get a Globed notice from a moderator (not always enabled)
 * Gauntlet levels now show the player count under them (thanks LimeGradient!)
 * Added the total room count to the rooms list popup (thanks LimeGradient!)
 * Make even more corrections to the texture pack detection algorithm, add better debug information
 * Make it so that the original room owner becomes the owner again if they leave and rejoin the room
+* Added a keybind that lets you toggle visibility of other players while in a level
 * Hopefully fix bugs with deaths not being detected in 2-player mode or Death Link
 * Significant performance improvements
 * Improve error messages for authentication issues, especially for people that are at the limit of sent messages

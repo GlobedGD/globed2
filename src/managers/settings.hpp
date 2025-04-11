@@ -222,13 +222,13 @@ public:
     };
 
     template <typename TRaw, TypeFixup<TRaw> DefaultV>
-    using Setting = BaseSetting<TypeFixup<TRaw>, TRaw, TRaw, DefaultV, false, {}, {}>;
+    using Setting = BaseSetting<TypeFixup<TRaw>, TRaw, TRaw, DefaultV, false, TypeFixup<TRaw>{}, TypeFixup<TRaw>{}>;
 
     template <typename TRaw, TypeFixup<TRaw> DefaultV, TypeFixup<TRaw> MinV, TypeFixup<TRaw> MaxV>
     using LimitedSetting = BaseSetting<TypeFixup<TRaw>, TRaw, TRaw, DefaultV, true, MinV, MaxV>;
 
     template <typename E, E DefaultV, typename U = std::underlying_type_t<E>>
-    using EnumSetting = BaseSetting<U, E, U, static_cast<U>(DefaultV), false, {}, {}>;
+    using EnumSetting = BaseSetting<U, E, U, static_cast<U>(DefaultV), false, U{}, U{}>;
 
     template <typename E, E DefaultV, E MinV, E MaxV, typename U = std::underlying_type_t<E>>
     using LimitedEnumSetting = BaseSetting<

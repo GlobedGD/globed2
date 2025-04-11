@@ -1,7 +1,6 @@
 #pragma once
 
 #include <util/singleton.hpp>
-#include <string>
 #include <map>
 
 #include <managers/settings.hpp>
@@ -40,8 +39,8 @@ namespace globed {
         Up, Down, Left, Right,
     };
 
-    std::string formatKey(Key key);
-    std::string formatKey(cocos2d::enumKeyCodes key);
+    const char* formatKey(Key key);
+    const char* formatKey(cocos2d::enumKeyCodes key);
 }
 
 class KeybindsManager : public SingletonBase<KeybindsManager> {
@@ -53,6 +52,7 @@ public:
     void handleKeyDown(cocos2d::enumKeyCodes key);
     void handleKeyUp(cocos2d::enumKeyCodes key);
     void refreshBinds();
+    bool isKeyUsed(cocos2d::enumKeyCodes key);
 
 private:
     std::map<globed::Key, bool> heldKeys;

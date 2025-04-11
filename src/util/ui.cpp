@@ -96,6 +96,10 @@ namespace util::ui {
         }
     }
 
+    void rescaleToMatch(cocos2d::CCNode* node, float targetSize, bool stretch) {
+        rescaleToMatch(node, {targetSize, targetSize}, stretch);
+    }
+
     void rescaleToMatchX(cocos2d::CCNode* node, float targetWidth) {
         node->setScaleX(targetWidth / node->getContentWidth());
     }

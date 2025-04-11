@@ -28,6 +28,9 @@ namespace util::ui {
     // set the scale for `node` in a way that `node->getScaledContentSize()` will match `targetSize`
     void rescaleToMatch(cocos2d::CCNode* node, cocos2d::CCSize targetSize, bool stretch = false);
 
+    // set the scale for `node` in a way that `node->getScaledContentSize()` will match `CCSize{targetSize, targetSize}`
+    void rescaleToMatch(cocos2d::CCNode* node, float targetSize, bool stretch = false);
+
     void rescaleToMatchX(cocos2d::CCNode* node, float targetWidth);
 
     float getScrollPos(BoomListView* listView);

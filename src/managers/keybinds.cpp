@@ -69,8 +69,14 @@ void KeybindsManager::refreshBinds() {
     keyHidePlayers = keys.hidePlayersKey.get();
 }
 
+bool KeybindsManager::isKeyUsed(cocos2d::enumKeyCodes key) {
+    return key == keyVoice
+        || key == keyDeafen
+        || key == keyHidePlayers;
+}
+
 namespace globed {
-    std::string formatKey(Key key) {
+    const char* formatKey(Key key) {
 #define KCASE(k) case Key::k: return #k
 #define KCASEN(k, n) case Key::k: return n
 
@@ -105,7 +111,7 @@ namespace globed {
 #undef KCASEN
     }
 
-    std::string formatKey(enumKeyCodes key) {
+    const char* formatKey(enumKeyCodes key) {
         return formatKey(KeybindsManager::convertCocosKey(key));
     }
 }
