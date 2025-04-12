@@ -14,23 +14,16 @@ struct GLOBED_DLL HookedUILayer : geode::Modify<HookedUILayer, UILayer> {
         (void) self.setHookPriority("UILayer::handleKeypress", 9999);
     }
 
-    void handleKeypress(enumKeyCodes p0, bool p1) {
+    void handleKeypress(enumKeyCodes p0, bool down) {
         auto gjbgl = GlobedGJBGL::get();
 
+        auto& km = KeybindsManager::get();
+        down ? km.handleKeyDown(p0) : km.handleKeyUp(p0);
+
         if (gjbgl) gjbgl->m_fields->isManuallyResettingLevel = true;
-        UILayer::handleKeypress(p0, p1);
+
+        UILayer::handleKeypress(p0, down);
+
         if (gjbgl) gjbgl->m_fields->isManuallyResettingLevel = false;
-    }
-
-    void keyDown(enumKeyCodes p0) {
-        KeybindsManager::get().handleKeyDown(p0);
-
-        UILayer::keyDown(p0);
-    }
-
-    void keyUp(enumKeyCodes p0) {
-        KeybindsManager::get().handleKeyUp(p0);
-
-        UILayer::keyUp(p0);
     }
 };
