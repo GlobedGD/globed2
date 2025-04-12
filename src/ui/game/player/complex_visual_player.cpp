@@ -7,6 +7,7 @@
 #include <util/gd.hpp>
 #include <util/rng.hpp>
 #include <util/math.hpp>
+#include <util/misc.hpp>
 #include <util/debug.hpp>
 #include <util/ui.hpp>
 #include <util/singleton.hpp>
@@ -138,6 +139,25 @@ void ComplexVisualPlayer::updateData(
     bool cameNearby = isNearby && !wasNearby;
     wasNearby = isNearby;
 
+    // Determine if the player should be visible or not
+    bool shouldBeVisible;
+    if (isSecond && !playerData.isDualMode) {
+        shouldBeVisible = false;
+    } else if (settings.players.hidePracticePlayers && playerData.isPracticing) {
+        shouldBeVisible = false;
+    } else {
+        shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden && isNearby;
+    }
+
+    this->currentlyNotDrawing = !shouldBeVisible;
+    this->setVisible(shouldBeVisible);
+
+    if (!shouldBeVisible) {
+        playerIcon->m_playEffects = false;
+        if (playerIcon->m_regularTrail) playerIcon->m_regularTrail->setVisible(false);
+        if (playerIcon->m_shipStreak) playerIcon->m_shipStreak->setVisible(false);
+    }
+
     // auto displacement = data.position - playerIcon->getPosition();
 
     // sticky is super broken  lol
@@ -167,29 +187,23 @@ void ComplexVisualPlayer::updateData(
         distanceTo90deg = 90.f - distanceTo90deg;
     }
 
+    auto gjbgl = GLOBED_LAZY(GlobedGJBGL::get());
+
     // only set position and stuff if the player is visible
-    if (isNearby) {
+    if (shouldBeVisible) {
+        CCPoint dirVec{};
+        float dir = 0.f;
+
+        if (*gjbgl) {
+            dirVec = gjbgl->getCameraDirectionVector();
+            dir = gjbgl->getCameraDirectionAngle();
+        }
+
         playerIcon->setPosition(data.position);
         playerIcon->setRotation(data.rotation);
 
         playerIcon->m_mainLayer->setRotation(innerRot);
-    }
 
-    if (data.isRotating || distanceTo90deg > 1.f) {
-        this->cancelPlatformerJumpAnim();
-    }
-
-    CCPoint dirVec{};
-    float dir = 0.f;
-    auto gjbgl = GlobedGJBGL::get();
-
-    if (gjbgl) {
-        dirVec = gjbgl->getCameraDirectionVector();
-        dir = gjbgl->getCameraDirectionAngle();
-    }
-
-
-    if (isNearby) {
         // set the pos for status icons and name (ask rob not me)
         nameLabel->setPosition(data.position + dirVec * CCPoint{25.f, 25.f});
         nameLabel->setRotation(dir);
@@ -198,6 +212,10 @@ void ComplexVisualPlayer::updateData(
             statusIcons->setPosition(data.position + dirVec * CCPoint{nameLabel->isVisible() ? 40.f : 25.f, nameLabel->isVisible() ? 40.f : 25.f});
             statusIcons->setRotation(dir);
         }
+    }
+
+    if (data.isRotating || distanceTo90deg > 1.f) {
+        this->cancelPlatformerJumpAnim();
     }
 
     bool updatedOpcaity = false;
@@ -242,7 +260,7 @@ void ComplexVisualPlayer::updateData(
         this->updateOpacity();
     }
 
-    if (statusIcons && isNearby) {
+    if (statusIcons && shouldBeVisible) {
         statusIcons->updateStatus(playerData.isPaused, playerData.isPracticing, isSpeaking, playerData.isInEditor, loudness);
     }
 
@@ -274,7 +292,7 @@ void ComplexVisualPlayer::updateData(
             wasStationary = data.isStationary;
             wasFalling = data.isFalling;
 
-            if (isNearby) {
+            if (shouldBeVisible) {
                 iconType == PlayerIconType::Robot ? this->updateRobotAnimation() : this->updateSpiderAnimation();
             }
         }
@@ -314,7 +332,7 @@ void ComplexVisualPlayer::updateData(
 
     // remove robot fire
     else if (turningOffRobot) {
-        if (isNearby) {
+        if (shouldBeVisible) {
             this->animateRobotFire(false);
         } else {
             // just setVisible false
@@ -330,24 +348,6 @@ void ComplexVisualPlayer::updateData(
         } else {
             CCNode::onEnter();
         }
-    }
-
-    bool shouldBeVisible;
-    if (isSecond && !playerData.isDualMode) {
-        shouldBeVisible = false;
-    } else if (settings.players.hidePracticePlayers && playerData.isPracticing) {
-        shouldBeVisible = false;
-    } else {
-        shouldBeVisible = (data.isVisible || settings.players.forceVisibility) && !isForciblyHidden && isNearby;
-    }
-
-    this->currentlyNotDrawing = !shouldBeVisible;
-    this->setVisible(shouldBeVisible);
-
-    if (!shouldBeVisible) {
-        playerIcon->m_playEffects = false;
-        if (playerIcon->m_regularTrail) playerIcon->m_regularTrail->setVisible(false);
-        if (playerIcon->m_shipStreak) playerIcon->m_shipStreak->setVisible(false);
     }
 }
 
