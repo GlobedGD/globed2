@@ -173,9 +173,9 @@ impl ClientThread {
             };
 
             if do_send {
-                None
-            } else {
                 Some((conf.motd.clone(), conf.motd_hash.clone()))
+            } else {
+                None
             }
         };
 
