@@ -62,6 +62,7 @@ pub async fn boot(
         roles: config.roles.clone(),
         motd: state.motd.clone(),
         motd_hash,
+        motd_dynamic: state.motd_dynamic,
     };
 
     debug!("boot data request from game server {} at {}", user_agent.0, ip_address);

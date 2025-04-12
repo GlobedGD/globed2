@@ -56,6 +56,7 @@ pub struct ServerStateData {
     pub http_client: reqwest::Client,
     pub last_logins: HashMap<u64, LoginEntry>, // { hash of lowercase username : entry }
     pub motd: String,
+    pub motd_dynamic: bool,
 }
 
 impl ServerStateData {
@@ -82,6 +83,8 @@ impl ServerStateData {
             read_to_string(&config.motd_path).expect("unable to read the motd file")
         };
 
+        let motd_dynamic = config.motd_dynamic;
+
         Self {
             config_path,
             config,
@@ -93,6 +96,7 @@ impl ServerStateData {
             http_client,
             last_logins: HashMap::new(),
             motd,
+            motd_dynamic,
         }
     }
 

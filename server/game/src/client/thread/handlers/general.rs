@@ -151,7 +151,28 @@ impl ClientThread {
 
         let res = {
             let conf = self.game_server.bridge.central_conf.lock();
-            if (conf.motd.is_empty() || conf.motd_hash.eq_ignore_ascii_case(packet.motd_hash.try_to_str())) && !packet.expect_response {
+
+            // Determine if we should send a motd response packet
+            // It should happen under the following conditions:
+            // 1. if packet.expect_response is true, *always* send it
+            // 2. if config.motd is empty, don't send it
+            // 3. if packet.motd_hash is empty, send it
+            // 4. if packet.motd_hash != config.motd_hash and config.motd_dynamic, send it
+            // otherwise, don't send it.
+
+            let do_send = if packet.expect_response {
+                true
+            } else if conf.motd.is_empty() {
+                false
+            } else if packet.motd_hash.is_empty() {
+                true
+            } else if conf.motd_dynamic {
+                !conf.motd_hash.eq_ignore_ascii_case(packet.motd_hash.try_to_str())
+            } else {
+                false
+            };
+
+            if do_send {
                 None
             } else {
                 Some((conf.motd.clone(), conf.motd_hash.clone()))
