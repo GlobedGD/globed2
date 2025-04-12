@@ -3,19 +3,19 @@
 * Add ability to create <cg>setting profiles</c> and toggle between them
 * \-- This allows you to easily change many settings at once, for example if attending some event
 * \-- The amount of save slots is unlimited and you can give them custom names
-* Add a Connection Test menu in settings, to make it easier to debug network issues
-* Remove Custom Keybinds dependency, add ability to change the keybinds in settings (thanks [LimeGradient](user:7214334)!)
-* Add ability to reply when you get a Globed notice from a moderator (not always enabled)
-* Gauntlet levels now show the player count under them (thanks [LimeGradient](user:7214334)!)
+* Add a <cg>Connection Test</c> menu in settings, to make it easier to debug network issues
+* Remove <cy>Custom Keybinds</c> dependency, add ability to change the keybinds <cg>in settings</c> (thanks [LimeGradient](user:7214334)!)
+* Add ability to <cj>reply</c> when you get a Globed notice from a moderator (not always enabled)
+* Gauntlet levels now show the <cg>player count</c> under them (thanks [LimeGradient](user:7214334)!)
 * Added the total room count to the rooms list popup (thanks [LimeGradient](user:7214334)!)
 * Make even more corrections to the texture pack detection algorithm, add better debug information
 * Make it so that the original room owner becomes the owner again if they leave and rejoin the room
-* Added a keybind that lets you toggle visibility of other players while in a level
-* Show the server rules to the user when first connecting (thanks [TechStudent10](user:20284359))
-* Hopefully fix bugs with deaths not being detected in 2-player mode or Death Link
-* Significant performance improvements
+* Added a keybind that lets you toggle <cj>visibility</c> of other players while in a level
+* Show the <cg>server rules</c> to the user when first connecting (thanks [TechStudent10](user:20284359))
+* Hopefully fix bugs with <cr>deaths not being detected</c> in 2-player mode or Death Link
+* Significant performance <cg>improvements</c>
 * Improve error messages for authentication issues, especially for people that are at the limit of sent messages
-* Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks [km7dev](user:7236822) for Server API!)
+* Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks [km7dev](user:7236822) for Server API mod!)
 * Fix crashing when connecting to a server that is down
 * Fix very rare crash when closing the Globed layer
 * Fix certain rare crashes and hangs when closing the game
