@@ -11,7 +11,7 @@ using namespace geode::prelude;
 
 struct GLOBED_DLL HookedUILayer : geode::Modify<HookedUILayer, UILayer> {
     static void onModify(auto& self) {
-        (void) self.setHookPriority("UILayer::handleKeypress", 9999);
+        (void) self.setHookPriority("UILayer::handleKeypress", 999);
     }
 
     void handleKeypress(enumKeyCodes p0, bool down) {
