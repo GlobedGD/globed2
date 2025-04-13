@@ -28,4 +28,5 @@ private:
     cocos2d::CCMenu* rightMenu;
 
     void createJoinButton();
+    void removeMeFromList();
 };

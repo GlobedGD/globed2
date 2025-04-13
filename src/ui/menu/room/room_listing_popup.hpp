@@ -21,10 +21,13 @@ protected:
     RoomList* listLayer = nullptr;
     cocos2d::extension::CCScale9Sprite* background;
     bool modActionsOn = false;
+    size_t shownRoomCount = 0;
 
     void onReload(cocos2d::CCObject* sender);
     void createCells(std::vector<RoomListingInfo> rlp);
     void toggleModActions(bool enabled);
+    void updateTitle(size_t roomCount);
+    void decrementRoomCountInTitle();
 
 public:
 	static RoomListingPopup* create();

@@ -13,7 +13,7 @@
 using namespace geode::prelude;
 
 bool RoomListingPopup::setup() {
-	this->setTitle("Public Rooms");
+    this->updateTitle(0);
     this->setID("room-listing"_spr);
 
     auto& nm = NetworkManager::get();
@@ -28,8 +28,7 @@ bool RoomListingPopup::setup() {
         .pos(rlayout.fromTop(40.f))
         .zOrder(2)
         .parent(m_mainLayer)
-        .store(listLayer)
-    ;
+        .store(listLayer);
 
     nm.addListener<RoomListPacket>(this, [this](std::shared_ptr<RoomListPacket> packet) {
         // fake testing data
@@ -72,7 +71,7 @@ bool RoomListingPopup::setup() {
         }
 
         this->createCells(packet->rooms);
-        this->setTitle(fmt::format("Public Rooms ({} Rooms)", packet->rooms.size()));
+        this->updateTitle(packet->rooms.size());
     });
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();
@@ -140,6 +139,15 @@ bool RoomListingPopup::setup() {
     nm.send(RequestRoomListPacket::create());
 
     return true;
+}
+
+void RoomListingPopup::updateTitle(size_t roomCount) {
+    this->shownRoomCount = roomCount;
+    this->setTitle(fmt::format("Public Rooms ({} Rooms)", roomCount));
+}
+
+void RoomListingPopup::decrementRoomCountInTitle() {
+    this->updateTitle(this->shownRoomCount - 1);
 }
 
 void RoomListingPopup::onReload(CCObject* sender) {

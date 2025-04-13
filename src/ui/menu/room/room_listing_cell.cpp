@@ -265,6 +265,8 @@ void RoomListingCell::toggleModActions(bool enabled) {
             .scale(0.7f)
             .intoMenuItem([this](auto) {
                 NetworkManager::get().send(CloseRoomPacket::create(this->roomId));
+
+                this->removeMeFromList();
             })
             .scaleMult(1.15f)
             .zOrder(btnorder::Join)
@@ -292,6 +294,11 @@ void RoomListingCell::createJoinButton() {
         .zOrder(btnorder::Join)
         .parent(rightMenu)
         .store(joinButton);
+}
+
+void RoomListingCell::removeMeFromList() {
+    this->parent->listLayer->removeCell(this);
+    this->parent->decrementRoomCountInTitle();
 }
 
 void RoomListingCell::onUser(CCObject* sender) {
