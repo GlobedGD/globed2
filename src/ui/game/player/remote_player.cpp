@@ -50,11 +50,17 @@ const PlayerAccountData& RemotePlayer::getAccountData() const {
 }
 
 void RemotePlayer::updateData(
-        const VisualPlayerState& data,
+        VisualPlayerState& data,
         const FrameFlags& frameFlags,
         bool speaking,
-        float loudness
+        float loudness,
+        bool hide
 ) {
+    if (hide) {
+        data.player1.isVisible = false;
+        data.player2.isVisible = false;
+    }
+
     player1->updateData(data.player1, data, *gameCameraState, speaking, loudness);
     player2->updateData(data.player2, data, *gameCameraState, speaking, loudness);
 
@@ -66,8 +72,8 @@ void RemotePlayer::updateData(
 
     wasPracticing = data.isPracticing;
 
-    // don't update any anims if hidden
-    if (isForciblyHidden) return;
+    // don't update any anims if the player is hidden
+    if (isForciblyHidden || hide) return;
 
     if (frameFlags.pendingDeath && GlobedSettings::get().players.deathEffects) {
         player1->playDeathEffect();

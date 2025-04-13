@@ -707,17 +707,13 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
         auto frameFlags = fields.interpolator->swapFrameFlags(playerId);
 
-        if (fields.arePlayersHidden) {
-            vstate.player1.isVisible = false;
-            vstate.player2.isVisible = false;
-        }
-
         bool isSpeaking = vpm.isSpeaking(playerId);
         remotePlayer->updateData(
             vstate,
             frameFlags,
             isSpeaking,
-            isSpeaking ? vpm.getLoudness(playerId) : 0.f
+            isSpeaking ? vpm.getLoudness(playerId) : 0.f,
+            fields.arePlayersHidden
         );
 
         // update progress icons

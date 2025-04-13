@@ -15,10 +15,11 @@ public:
     const PlayerAccountData& getAccountData() const;
 
     void updateData(
-        const VisualPlayerState& data,
+        VisualPlayerState& data,
         const FrameFlags& frameFlags,
         bool speaking,
-        float loudness
+        float loudness,
+        bool hide
     );
     void updateProgressIcon();
     void updateProgressArrow(
