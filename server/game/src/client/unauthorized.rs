@@ -534,7 +534,7 @@ impl UnauthorizedThread {
                 all_roles,
                 secret_key: self.secret_key,
                 special_user_data,
-                server_protocol: client_protocol
+                server_protocol: client_protocol,
             })
             .await
     }

@@ -683,8 +683,13 @@ protected:
         auto& settings = GlobedSettings::get();
 
         if (settings.globed.fragmentationLimit == 0) {
-            settings.globed.fragmentationLimit = 65000;
+            settings.globed.fragmentationLimit = 65535;
         }
+
+#ifdef GEODE_IS_IOS
+        // iOS seemingly restricts packets to be < 10kb
+        settings.globed.fragmentationLimit = std::max<uint16_t>(settings.globed.fragmentationLimit, 10000);
+#endif
 
         auto gddata = am.gdData.lock();
         auto pkt = LoginPacket::create(

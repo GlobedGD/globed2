@@ -634,12 +634,12 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
             2000,
             4000,
             7000,
-            10000,
-            15000,
-            20000,
-            30000,
-            40000,
-            50000,
+            9500,
+            14800,
+            19800,
+            29800,
+            39800,
+            49800,
             60000,
         });
 
@@ -702,8 +702,8 @@ void ConnectionTestPopup::queuePacketLimitTest(const NetworkAddress& addr) {
                 clientpkt->uid = Random::get().generate<uint32_t>();
                 auto res = sock.sendPacketUDP(pkt);
                 if (!res) {
-                    test->fail(fmt::format("Fatal error, TCP send failed (attempt {}): {}", att, res.unwrapErr()));
-                    return;
+                    test->fail(fmt::format("Attempt {} failed: udp send failed: {}", att, res.unwrapErr()));
+                    continue;
                 }
 
                 auto res2 = waitForPacketOn<ConnectionTestResponsePacket>(sock, Protocol::Udp);

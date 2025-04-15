@@ -115,7 +115,11 @@ impl ClientSocket {
     }
 
     pub fn set_mtu(&mut self, mtu: usize) {
-        self.mtu = mtu;
+        if mtu == 0 || mtu >= 65000 {
+            self.mtu = 0; // 65k or 0 interpreted as no fragmentation
+        } else {
+            self.mtu = mtu;
+        }
     }
 
     pub fn set_protocol_version(&mut self, version: u16) {

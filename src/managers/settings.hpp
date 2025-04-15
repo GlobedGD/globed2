@@ -261,7 +261,7 @@ public:
         LimitedEnumSetting<InvitesFrom, InvitesFrom::Friends, InvitesFrom::Everyone, InvitesFrom::Nobody> invitesFrom;
         Setting<bool, true> editorSupport;
         Setting<bool, false> increaseLevelList;
-        Setting<int, 60000> fragmentationLimit;
+        Setting<int, 0> fragmentationLimit;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
         Setting<bool, true> changelogPopups;

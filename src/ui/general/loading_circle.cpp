@@ -1,5 +1,7 @@
 #include "loading_circle.hpp"
 
+#include <Geode/utils/cocos.hpp>
+
 using namespace geode::prelude;
 
 bool BetterLoadingCircle::init(bool spinByDefault) {
