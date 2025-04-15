@@ -2,6 +2,8 @@
 
 #include "_internal.hpp"
 
+class PlayerObject;
+
 namespace globed::callbacks {
     using PlayerJoinFn = std::function<void (int, PlayerObject*, PlayerObject*)>;
     using PlayerLeaveFn = std::function<void (int, PlayerObject*, PlayerObject*)>;

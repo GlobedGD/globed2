@@ -1,5 +1,9 @@
 #pragma once
 
+#include <optional>
+#include <string>
+#include <filesystem>
+
 namespace globed {
     bool softDisabled();
     bool useFallbackMenuButton();

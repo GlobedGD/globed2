@@ -157,7 +157,7 @@ CPMAddPackage(
     URL_HASH SHA256=feba537f6d32c062ed0f26b4d6e5b8e8450d51ef81492369a101ab99fcead278
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp2#b245c9a")
+CPMAddPackage("gh:dankmeme01/asp2#e422b95")
 
 # defines for asp (std::format is only available on windows currently)
 if (WIN32)

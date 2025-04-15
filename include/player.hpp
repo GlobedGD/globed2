@@ -1,6 +1,7 @@
 #pragma once
 
 #include "_internal.hpp"
+#include <Geode/binding/PlayerObject.hpp>
 
 class PlayerObject;
 
