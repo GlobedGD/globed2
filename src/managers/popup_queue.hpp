@@ -3,6 +3,9 @@
 #include <util/singleton.hpp>
 #include <cocos2d.h>
 #include <Geode/binding/FLAlertLayer.hpp>
+#include <Geode/utils/cocos.hpp>
+
+#include <vector>
 #include <queue>
 
 // not thread safe

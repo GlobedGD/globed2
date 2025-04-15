@@ -1,6 +1,9 @@
 #pragma once
 
 #include <util/singleton.hpp>
+#include <string>
+#include <optional>
+#include <unordered_map>
 
 class MotdCacheManager : public SingletonBase<MotdCacheManager> {
     friend class SingletonBase;
