@@ -261,6 +261,10 @@ pub async fn challenge_verify(
 
     let challenge: ActiveChallenge = match state_.active_challenges.get(&user_ip) {
         None => {
+            warn!(
+                "[{} @ {}] attempting to finish non-existent challenge",
+                post_data.0.account_data.account_id, user_ip
+            );
             unauthorized!("challenge does not exist for this IP address");
         }
         Some(x) => x,

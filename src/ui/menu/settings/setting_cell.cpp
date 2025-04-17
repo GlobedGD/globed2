@@ -257,11 +257,12 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
     switch (settingType) {
         case Type::AudioDevice: this->onSetAudioDevice(); break;
         case Type::PacketFragmentation: {
-            if (NetworkManager::get().established()) {
-                FragmentationCalibartionPopup::create()->show();
-            } else {
-                FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
-            }
+            FLAlertLayer::create("Error", "Packet limit test is now <cr>obsolete</c>, please use the <cg>Connection Test</c> setting, which will perform the same test at the end.", "Ok")->show();
+            // if (NetworkManager::get().established()) {
+            //     FragmentationCalibartionPopup::create()->show();
+            // } else {
+            //     FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
+            // }
             break;
         }
         case Type::AdvancedSettings: {
