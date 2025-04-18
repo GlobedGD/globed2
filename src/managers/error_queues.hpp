@@ -16,6 +16,7 @@ public:
     void success(std::string_view message, bool print = true);
     // notices are messages coming directly from the server
     void notice(std::string_view message, uint32_t replyId, bool print = true);
+    void noticeReply(std::string_view message, uint32_t replyId, std::string_view username, bool print = true);
 
     // debugWarn shows a warn notification in debug, in release only prints a message (noop if `print` = false)
     void debugWarn(std::string_view message, bool print = true);
@@ -25,6 +26,7 @@ public:
     struct PendingNotice {
         std::string message;
         uint32_t replyId;
+        std::string isReplyFrom;
     };
 
     std::vector<std::string> getWarnings();

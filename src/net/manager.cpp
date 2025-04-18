@@ -634,16 +634,7 @@ protected:
         });
 
         addGlobalListener<AdminReceivedNoticeReplyPacket>([](auto packet) {
-            auto alert = FLAlertLayer::create(
-                nullptr,
-                fmt::format("Reply from {}", packet->userName).c_str(),
-                packet->userReply,
-                "Ok",
-                nullptr,
-                380.f
-            );
-
-            alert->show();
+            ErrorQueues::get().noticeReply(packet->userReply, packet->replyId, packet->userName);
         });
 
         addGlobalListener<MotdResponsePacket>([](auto packet) {

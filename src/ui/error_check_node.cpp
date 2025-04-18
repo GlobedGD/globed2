@@ -96,13 +96,36 @@ void ErrorCheckNode::updateErrors(float) {
 
                 // if we cannot reply, just show a regular flalertlayer
                 if (notice.replyId == 0) {
-                    alert = FLAlertLayer::create("Globed notice", notice.message, "Ok");
+                    alert = FLAlertLayer::create(
+                        nullptr,
+                        "Globed notice",
+                        notice.message,
+                        "Ok",
+                        nullptr,
+                        380.f
+                    );
+                } else if (!notice.isReplyFrom.empty()) {
+                    // if this is a reply itself from a user
+                    alert = FLAlertLayer::create(
+                        nullptr,
+                        fmt::format("Reply from {}", notice.isReplyFrom).c_str(),
+                        notice.message,
+                        "Ok",
+                        nullptr,
+                        380.f
+                    );
                 } else {
                     // if we can reply, instead we show an alert with 2 buttons
-                    alert = geode::createQuickPopup("Globed notice", notice.message, "Ok", "Reply", [replyId = notice.replyId](auto, bool reply) {
-                        if (!reply) return;
+                    alert = geode::createQuickPopup(
+                        "Globed notice",
+                        notice.message,
+                        "Ok",
+                        "Reply",
+                        380.f,
+                        [replyId = notice.replyId](auto, bool reply) {
+                            if (!reply) return;
 
-                        askForNoticeReply(replyId);
+                            askForNoticeReply(replyId);
                     }, false);
                 }
 

@@ -21,7 +21,17 @@ void ErrorQueues::notice(std::string_view message, uint32_t replyId, bool print)
     if (print) log::warn("[Server notice] {}", message);
     _notices.push({
         std::string(message),
-        replyId
+        replyId,
+        ""
+    });
+}
+
+void ErrorQueues::noticeReply(std::string_view message, uint32_t replyId, std::string_view username, bool print) {
+    if (print) log::warn("[Notice reply from {}] {}", username, message);
+    _notices.push({
+        std::string(message),
+        replyId,
+        std::string(username)
     });
 }
 
