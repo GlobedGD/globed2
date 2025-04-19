@@ -163,7 +163,7 @@ pub async fn challenge_new(
             let passed_time = current_time.duration_since(challenge.started).unwrap_or_default();
             // if it hasn't expired yet, throw an error
             if passed_time.as_secs() < u64::from(state.config.challenge_expiry) {
-                trace!("rejecting start, challenge already requested: {user_ip}");
+                trace!("[{user_ip}] rejecting start, challenge already requested");
                 unauthorized!("challenge already requested for this account ID, please wait a minute and try again");
             }
         }
@@ -176,7 +176,7 @@ pub async fn challenge_new(
         let pubkey = b64e::STANDARD.encode(state.challenge_pubkey);
         let use_secure_mode = std::env::var("GLOBED_GS_SECURE_MODE_KEY").is_ok();
 
-        trace!("sending existing challenge to {user_ip} with {rand_string}");
+        trace!("[{user_ip}] sending existing challenge: {rand_string}");
 
         return Ok(format!(
             "{}:{}:{}:{}",
@@ -196,10 +196,12 @@ pub async fn challenge_new(
     ) {
         Ok(x) => x,
         Err(err) => {
-            warn!("failed to create challenge: {err}");
+            warn!("[{user_ip}] failed to create challenge: {err}");
             bad_request!("failed to create challenge: {err}");
         }
     };
+
+    debug!("[{} @ {user_ip}] sending challenge: {}", account_data.account_id, challenge);
 
     let pubkey = b64e::STANDARD.encode(state.challenge_pubkey);
 
@@ -257,7 +259,7 @@ pub async fn challenge_verify(
 
     let user_ip = check_ip(ip, &cfip, state_.config.cloudflare_protection)?;
 
-    trace!("challenge finish: {:?}", post_data.0);
+    debug!("[{user_ip}] challenge finish: {:?}", post_data.0);
 
     let challenge: ActiveChallenge = match state_.active_challenges.get(&user_ip) {
         None => {
@@ -273,7 +275,7 @@ pub async fn challenge_verify(
 
     if challenge.account_id != account_data.account_id {
         warn!(
-            "failed to validate challenge: requested for accountid {} but {} completed",
+            "[{user_ip}] failed to validate challenge: requested for accountid {} but {} completed",
             challenge.account_id, account_data.account_id
         );
         unauthorized!("challenge was requested for a different account id, not validating");
@@ -281,7 +283,7 @@ pub async fn challenge_verify(
 
     if challenge.user_id != account_data.user_id {
         warn!(
-            "failed to validate challenge ({}): requested for userid {} but {} completed",
+            "[{user_ip}] failed to validate challenge ({}): requested for userid {} but {} completed",
             account_data.account_id, challenge.user_id, account_data.user_id
         );
         unauthorized!("challenge was requested for a different user id, not validating");
@@ -289,7 +291,7 @@ pub async fn challenge_verify(
 
     if !challenge.name.eq_ignore_ascii_case(&account_data.username) {
         warn!(
-            "failed to validate challenge ({}): requested for {} but {} completed",
+            "[{user_ip}] failed to validate challenge ({}): requested for {} but {} completed",
             account_data.account_id, challenge.name, account_data.username
         );
         unauthorized!("challenge was requested for a different account name, not validating");
@@ -298,6 +300,10 @@ pub async fn challenge_verify(
     let result = state_.verify_challenge(&challenge, &post_data.0.answer);
 
     if !result {
+        warn!(
+            "[{user_ip}] incorrect challenge solution, expected: {}, got: {}",
+            challenge.answer, post_data.0.answer
+        );
         unauthorized!("incorrect challenge solution was provided");
     }
 
