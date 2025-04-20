@@ -388,8 +388,12 @@ void GlobedGJBGL::setupUpdate() {
 
         nm.send(LevelJoinPacket::create(levelId, self->m_level->m_unlisted, std::nullopt));
 
-        self->rescheduleSelectors();
-        self->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);
+        // sometimes this can fail, no idea why lol, defer scheduling until postInitActions
+        bool canSchedule = self->rescheduleSelectors();
+
+        if (canSchedule) {
+            self->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);
+        }
 
         self->scheduleOnce(schedule_selector(GlobedGJBGL::postInitActions), 0.25f);
     });
@@ -523,10 +527,24 @@ void GlobedGJBGL::setupUi() {
 }
 
 void GlobedGJBGL::postInitActions(float) {
-    auto& nm = NetworkManager::get();
-    nm.send(RequestPlayerProfilesPacket::create(0));
+    auto& fields = this->getFields();
+    if (!fields.didSchedule) {
+        bool can = this->rescheduleSelectors();
+        if (can) {
+            this->getParent()->schedule(schedule_selector(GlobedGJBGL::selUpdate), 0.f);
+            fields.didSchedule = true;
+        } else {
+            ErrorQueues::get().error("Failed to schedule some selectors. This should not happen. Globed will be disabled while in this level.");
+            this->disableAndRevertModifications();
+        }
+    }
 
-    m_fields->shouldRequestMeta = true;
+    if (fields.globedReady) {
+        auto& nm = NetworkManager::get();
+        nm.send(RequestPlayerProfilesPacket::create(0));
+
+        fields.shouldRequestMeta = true;
+    }
 
     GLOBED_EVENT(this, postInitActions());
 }
@@ -1170,6 +1188,31 @@ void GlobedGJBGL::onQuitActions() {
     }
 }
 
+void GlobedGJBGL::disableAndRevertModifications() {
+    auto& fields = this->getFields();
+
+    fields.globedReady = false;
+    fields.modules.clear();
+    fields.players.clear();
+    HookManager::get().disableGroup(HookManager::Group::Gameplay);
+
+    if (fields.overlay) {
+        fields.overlay->updateWithDisconnected();
+    }
+
+    VoiceRecordingManager::get().stopRecording();
+    VoicePlaybackManager::get().stopAllStreams();
+    GlobedAudioManager::get().haltRecording();
+
+    auto& nm = NetworkManager::get();
+    if (nm.established()) {
+        // send LevelLeavePacket
+        nm.send(LevelLeavePacket::create());
+    }
+
+    this->unscheduleSelectors();
+}
+
 void GlobedGJBGL::pausedUpdate(float dt) {
     // unpause dash effects and death effects
     for (auto* child : CCArrayExt<CCNode*>(m_objectLayer->getChildren())) {
@@ -1217,6 +1260,10 @@ bool GlobedGJBGL::accountForSpeedhack(int uniqueKey, float cap, float allowance)
 void GlobedGJBGL::unscheduleSelectors() {
     auto* sched = CCScheduler::get();
 
+    if (!this->getParent()) {
+        return;
+    }
+
     this->unscheduleSelector(schedule_selector(GlobedGJBGL::selSendPlayerData));
     this->unscheduleSelector(schedule_selector(GlobedGJBGL::selSendPlayerMetadata));
     this->unscheduleSelector(schedule_selector(GlobedGJBGL::selPeriodicalUpdate));
@@ -1229,7 +1276,7 @@ void GlobedGJBGL::unscheduleSelector(cocos2d::SEL_SCHEDULE selector) {
     m_pScheduler->unscheduleSelector(selector, this->getParent());
 }
 
-void GlobedGJBGL::rescheduleSelectors() {
+bool GlobedGJBGL::rescheduleSelectors() {
     auto* sched = CCScheduler::get();
     float timescale = sched->getTimeScale();
     m_fields->lastKnownTimeScale = timescale;
@@ -1239,16 +1286,28 @@ void GlobedGJBGL::rescheduleSelectors() {
     float updpInterval = 0.25f * timescale;
     float updeInterval = (1.0f / 30.f) * timescale;
 
+    if (!this->getParent()) {
+        m_fields->didSchedule = false;
+        log::warn("Failed to schedule some selectors, will try again later");
+        return false;
+    }
+
     this->customSchedule(schedule_selector(GlobedGJBGL::selSendPlayerData), pdInterval);
     this->customSchedule(schedule_selector(GlobedGJBGL::selSendPlayerMetadata), pmdInterval);
     this->customSchedule(schedule_selector(GlobedGJBGL::selPeriodicalUpdate), updpInterval);
     this->customSchedule(schedule_selector(GlobedGJBGL::selUpdateEstimators), updeInterval);
 
     GLOBED_EVENT(this, onRescheduleSelectors(timescale));
+
+    m_fields->didSchedule = true;
+
+    return true;
 }
 
 void GlobedGJBGL::customSchedule(cocos2d::SEL_SCHEDULE selector, float interval) {
-    this->getParent()->schedule(selector, interval);
+    if (auto parent = this->getParent()) {
+        parent->schedule(selector, interval);
+    }
 }
 
 void GlobedGJBGL::queueCounterChange(const GlobedCounterChange& change) {

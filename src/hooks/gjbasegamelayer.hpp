@@ -51,6 +51,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         bool quitting = false;
         bool shouldRequestMeta = false;
         bool isFakingDeath = false;
+        bool didSchedule = false;
         GameCameraState camState;
 
         std::optional<SpiderTeleportData> spiderTp1, spiderTp2;
@@ -179,6 +180,10 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
 
     void onQuitActions();
 
+    // Disables globed hooks and functionality, sets overlay to say disconnected, removes all players
+    // Can be used for example if connection is suddenly lost mid-level
+    void disableAndRevertModifications();
+
     void notifyDeath();
     void setNoticeAlertActive(bool active);
 
@@ -207,7 +212,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     void unscheduleSelectors();
     void unscheduleSelector(cocos2d::SEL_SCHEDULE selector);
 
-    void rescheduleSelectors();
+    bool rescheduleSelectors();
     void customSchedule(cocos2d::SEL_SCHEDULE, float interval = 0.f);
 
     void queueCounterChange(const GlobedCounterChange& change);
