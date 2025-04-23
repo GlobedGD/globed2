@@ -111,10 +111,13 @@ void GlobedNotificationPanel::queueNotification(cocos2d::CCNode* node) {
 }
 
 void GlobedNotificationPanel::update(float dt) {
-    // hide if in a level
-    bool shouldShow = true;
-    if (auto* pl = globed::cachedSingleton<GameManager>()->m_playLayer) {
-        shouldShow = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(pl))->isPaused();
+    // hide if in a level or if no notifications are to be shown
+    bool shouldShow = this->getChildrenCount() > 0 || !queuedNotifs.empty();
+
+    if (shouldShow) {
+        if (auto* pl = globed::cachedSingleton<GameManager>()->m_playLayer) {
+            shouldShow = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(pl))->isPaused();
+        }
     }
 
     this->setVisible(shouldShow);
