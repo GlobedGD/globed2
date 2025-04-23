@@ -29,6 +29,8 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
+#define GLOBED_INVALID_THIS [&]{ static_assert(false, "`this` cannot be safely used inside those selectors, they are scheduled on the scene"); return decltype(this){}; }()
+
 // how many units before the voice disappears
 constexpr float PROXIMITY_VOICE_LIMIT = 1200.f;
 
@@ -553,6 +555,8 @@ void GlobedGJBGL::postInitActions(float) {
 
 // selSendPlayerData - runs tps (default 30) times per second
 void GlobedGJBGL::selSendPlayerData(float) {
+#define this GLOBED_INVALID_THIS
+
     auto self = GlobedGJBGL::get();
 
     if (!self || !self->established()) return;
@@ -575,10 +579,12 @@ void GlobedGJBGL::selSendPlayerData(float) {
     }
 
     NetworkManager::get().send(PlayerDataPacket::create(data, meta, std::move(fields.pendingCounterChanges)));
+#undef this
 }
 
 // selSendPlayerMetadata - runs every 10 seconds
 void GlobedGJBGL::selSendPlayerMetadata(float) {
+#define this GLOBED_INVALID_THIS
     auto self = GlobedGJBGL::get();
 
     if (!self || !self->established()) return;
@@ -588,10 +594,14 @@ void GlobedGJBGL::selSendPlayerMetadata(float) {
     if (fields.players.empty() || fields.quitting) return;
 
     m_fields->shouldRequestMeta = true;
+
+#undef this
 }
 
 // selPeriodicalUpdate - runs 4 times a second, does various stuff
 void GlobedGJBGL::selPeriodicalUpdate(float dt) {
+#define this GLOBED_INVALID_THIS
+
     auto self = GlobedGJBGL::get();
 
     if (!self || !self->established()) return;
@@ -669,13 +679,18 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     }
 
     GLOBED_EVENT(self, selPeriodicalUpdate(dt));
+#undef this
 }
 
 // selUpdate - runs every frame, increments the non-decreasing time counter, interpolates and updates players
 void GlobedGJBGL::selUpdate(float timescaledDt) {
+    // we cannot use `this` inside this function!!!!
+#define this GLOBED_INVALID_THIS
+
     auto self = GlobedGJBGL::get();
 
     if (!self) return;
+
 
     // timescale silently changing dt isn't very good when doing network interpolation >_>
     // since timeCounter needs to agree with everyone else on how long a second is!
@@ -762,8 +777,8 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     // update self names
     if (fields.ownNameLabel) {
-        auto dirVec = this->getCameraDirectionVector();
-        auto dir = this->getCameraDirectionAngle();
+        auto dirVec = self->getCameraDirectionVector();
+        auto dir = self->getCameraDirectionAngle();
 
         if (self->m_player1->m_isHidden || !self->m_player1->isVisible()) {
             fields.ownNameLabel->setVisible(false);
@@ -792,10 +807,14 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     }
 
     GLOBED_EVENT(self, selUpdate(dt));
+
+#undef this
 }
 
 // selUpdateEstimators - runs 30 times a second, updates audio stuff
 void GlobedGJBGL::selUpdateEstimators(float dt) {
+#define this GLOBED_INVALID_THIS
+
     auto* self = GlobedGJBGL::get();
 
     // update volume estimators
@@ -806,6 +825,7 @@ void GlobedGJBGL::selUpdateEstimators(float dt) {
     }
 
     GLOBED_EVENT(self, selUpdateEstimators(dt));
+#undef this
 }
 
 /* Player related functions */
