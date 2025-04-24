@@ -98,7 +98,7 @@ void ProgressBar::setValue(double value) {
     this->rawvalue = std::clamp(value, 0.0, 1.0);
 
     // update fill
-    float maxWidth = this->getScaledContentWidth() - FILL_PAD;
+    float maxWidth = this->getContentWidth() - FILL_PAD;
     float range = maxWidth - FILL_PAD;
 
     float width = range * rawvalue;
