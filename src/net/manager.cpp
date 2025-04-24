@@ -216,9 +216,20 @@ protected:
         PacketListener::CallbackFn callback;
     };
 
+    struct AbortData {
+        AtomicBool requested;
+        AtomicBool quiet;
+        AtomicBool noclear;
+
+        operator bool() const {
+            return requested;
+        }
+    };
+
     using Task = std::variant<TaskPingServers, TaskSendPacket, TaskPingActive>;
 
     AtomicConnectionState state;
+    AbortData requestedAbort;
     GameSocket socket;
     asp::Thread<NetworkManager::Impl*> threadRecv, threadMain;
     asp::Channel<Task> taskQueue;
@@ -318,6 +329,9 @@ protected:
         *lastReceivedPacket.lock() = SystemTime::now();
         lastSentKeepalive = SystemTime::now();
         lastTcpExchange = SystemTime::now();
+        requestedAbort.requested = false;
+        requestedAbort.noclear = false;
+        requestedAbort.quiet = false;
     }
 
     /* connection and tasks */
@@ -361,12 +375,12 @@ protected:
     }
 
     void disconnect(bool quiet = false, bool noclear = false) {
-        ConnectionState prevState = state;
+        bool wasEstablished = state == ConnectionState::Established;
 
         this->resetConnectionState();
 
-        if (!quiet && prevState == ConnectionState::Established) {
-            // send it directly instead of pushing to the queue
+        if (!quiet && wasEstablished) {
+            // send the disconnect packet
             (void) socket.sendPacket(DisconnectPacket::create());
         }
 
@@ -380,9 +394,15 @@ protected:
         }
     }
 
+    void queueDisconnect(bool quiet = false, bool noclear = false) {
+        requestedAbort.requested = true;
+        requestedAbort.quiet = quiet;
+        requestedAbort.noclear = noclear;
+    }
+
     void disconnectWithMessage(std::string_view message, bool quiet = true) {
         ErrorQueues::get().error(fmt::format("You have been disconnected from the active server.\n\nReason: <cy>{}</c>", message));
-        this->disconnect(quiet);
+        this->queueDisconnect(quiet);
     }
 
     void cancelReconnect() {
@@ -412,7 +432,7 @@ protected:
     }
 
     bool established() {
-        return state == ConnectionState::Established;
+        return state == ConnectionState::Established && !requestedAbort;
     }
 
     /* listeners */
@@ -522,7 +542,7 @@ protected:
         addInternalListener<LoginFailedPacket>([this](auto packet) {
             ErrorQueues::get().error(fmt::format("<cr>Authentication failed!</c> The server rejected the login attempt.\n\nReason: <cy>{}</c>", packet->message));
             GlobedAccountManager::get().authToken.lock()->clear();
-            this->disconnect(true);
+            this->queueDisconnect(true);
         });
 
         addInternalListener<ProtocolMismatchPacket>([this](auto packet) {
@@ -552,7 +572,7 @@ protected:
 
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
             PopupQueue::get()->pushNoDelay(UserPunishmentPopup::create(packet->message, packet->timestamp, true));
-            this->disconnect();
+            this->queueDisconnect();
         });
 
         addGlobalListener<ServerMutedPacket>([](auto packet) {
@@ -1019,6 +1039,10 @@ protected:
             ));
             return;
         }
+        // Detect if the connection has been aborted
+        else if (requestedAbort) {
+            this->disconnect(requestedAbort.quiet, requestedAbort.noclear);
+        }
 
         if (this->established()) {
             this->maybeSendKeepalive();
@@ -1162,7 +1186,7 @@ Result<> NetworkManager::connectStandalone() {
 }
 
 void NetworkManager::disconnect(bool quiet, bool noclear) {
-    impl->disconnect(quiet, noclear);
+    impl->queueDisconnect(quiet, noclear);
 }
 
 void NetworkManager::disconnectWithMessage(std::string_view message, bool quiet) {

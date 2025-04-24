@@ -80,8 +80,9 @@ Result<int> TcpSocket::send(const char* data, unsigned int dataSize) {
 
     auto result = ::send(socket_, data, dataSize, flags);
     if (result == -1) {
+        auto code = util::net::lastErrorCode();
         this->maybeDisconnect();
-        return Err(fmt::format("tcp send failed: {}", util::net::lastErrorString()));
+        return Err(fmt::format("tcp send failed: {}", util::net::lastErrorString(code)));
     }
 
     return Ok(result);
@@ -171,7 +172,6 @@ Result<bool> TcpSocket::poll(int msDelay, bool in) {
     }
 
     return Ok(result > 0);
-
 }
 
 Result<> TcpSocket::setNonBlocking(bool nb) {
