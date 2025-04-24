@@ -16,6 +16,7 @@
 * Significant performance <cg>improvements</c>
 * Improve error messages for authentication issues, especially for people that are at the limit of sent messages
 * Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks [km7dev](user:7236822) for Server API mod!)
+* Fix error 10038 when trying to connect to a server
 * Fix crashing when connecting to a server that is down
 * Fix very rare crash when closing the Globed layer
 * Fix certain rare crashes and hangs when closing the game

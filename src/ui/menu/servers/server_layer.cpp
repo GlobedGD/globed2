@@ -207,8 +207,8 @@ void GlobedServersLayer::updateServerList(float) {
     serverList->setVisible(true);
 
     // if we recently switched a central server, redo everything
-    if ((csm.recentlySwitched || initializing || !serversLoaded) && !serversLoading) {
-        serversLoading = true;
+    if ((csm.recentlySwitched || initializing || !serversLoaded) && serversLoadingFor.value_or(-2) != csm.getActiveIndex()) {
+        serversLoadingFor = csm.getActiveIndex();
         csm.recentlySwitched = false;
         this->cancelWebRequest();
         this->requestServerList();
@@ -262,7 +262,7 @@ void GlobedServersLayer::requestServerList() {
 void GlobedServersLayer::requestCallback(typename WebRequestManager::Event* event) {
     if (!event || !event->getValue()) return;
 
-    serversLoading = false;
+    serversLoadingFor = std::nullopt;
     serversLoaded = true;
 
     auto result = std::move(*event->getValue());

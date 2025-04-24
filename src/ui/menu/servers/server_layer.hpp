@@ -18,8 +18,8 @@ private:
     WebRequestManager::Listener requestListener;
     bool transitioningAway = false;
     bool serversLoaded = false;
-    bool serversLoading = false;
     bool initializing = true;
+    std::optional<int> serversLoadingFor;
 
     bool init() override;
     void onExit() override;
