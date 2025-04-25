@@ -69,9 +69,13 @@ namespace util::cocos {
 
         CCData(T data) : inner(std::move(data)) {}
 
+        template <typename... Args>
+        CCData(Args&&... args) : inner(std::forward<Args>(args)...) {}
+
     public:
-        static CCData* create(T data) {
-            auto ret = new CCData{std::move(data)};
+        template <typename... Args>
+        static CCData* create(Args&&... args) {
+            auto ret = new CCData{std::forward<Args>(args)...};
             ret->autorelease();
             return ret;
         }
