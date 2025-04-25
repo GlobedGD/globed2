@@ -5,6 +5,7 @@
 #include <managers/admin.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/role.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/admin/edit_role_popup.hpp>
 #include <ui/game/chat/unread_badge.hpp>
@@ -456,7 +457,7 @@ void AdminUserPopup::getUserInfoFailed(int p0) {
     GameLevelManager::sharedState()->m_userInfoDelegate = nullptr;
     this->removeLoadingCircle();
 
-    FLAlertLayer::create("Error", "Failed to fetch user data.", "Ok")->show();
+    PopupManager::get().alert("Error", "Failed to fetch user data.").showInstant();
     this->onClose(this);
 }
 

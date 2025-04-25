@@ -21,4 +21,8 @@ namespace globed {
 #endif
         throw singleton_use_after_dtor();
     }
+
+    void scheduleUpdateFor(cocos2d::CCObject* obj) {
+        CCScheduler::get()->scheduleUpdateForTarget(obj, 0, false);
+    }
 }

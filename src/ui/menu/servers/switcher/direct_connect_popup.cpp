@@ -7,6 +7,7 @@
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/popup.hpp>
 #include <net/address.hpp>
 #include <util/misc.hpp>
 
@@ -43,22 +44,19 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             std::string addr = this->addressNode->getString();
 
             if (addr.empty() || !std::regex_match(addr, pattern)) {
-                FLAlertLayer::create(
+                PopupManager::get().alertFormat(
                     "Error",
-                    fmt::format(
-                        "Invalid address was passed. It must be an IPv4 address or a domain name with an optional port at the end (like <cy>127.0.0.1:{}</c> or <cy>globed.example.com:{}</c>)",
-                        NetworkAddress::DEFAULT_PORT,
-                        NetworkAddress::DEFAULT_PORT
-                    ),
-                    "Ok"
-                )->show();
+                    "Invalid address was passed. It must be an IPv4 address or a domain name with an optional port at the end (like <cy>127.0.0.1:{}</c> or <cy>globed.example.com:{}</c>)",
+                    NetworkAddress::DEFAULT_PORT,
+                    NetworkAddress::DEFAULT_PORT
+                ).showInstant();
                 return;
             }
 
             auto& gsm = GameServerManager::get();
             auto result = gsm.addServer(GameServerManager::STANDALONE_ID, "Server", addr, "unknown");
             if (result.isErr()) {
-                FLAlertLayer::create("Error", "Failed to connect to the server: " + result.unwrapErr(), "Ok")->show();
+                PopupManager::get().alertFormat("Error", "Failed to connect to the server: {}", result.unwrapErr()).showInstant();
                 return;
             }
 
@@ -74,7 +72,7 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
             auto& nm = NetworkManager::get();
             result = nm.connectStandalone();
             if (result.isErr()) {
-                FLAlertLayer::create("Error", result.unwrapErr(), "Ok")->show();
+                PopupManager::get().alert("Error", result.unwrapErr()).showInstant();
             }
 
             this->onClose(this);

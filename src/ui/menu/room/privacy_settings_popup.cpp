@@ -2,6 +2,7 @@
 
 #include <managers/admin.hpp>
 #include <managers/settings.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
 
@@ -126,9 +127,7 @@ void PrivacySettingsPopup::onDescriptionClicked(PSetting setting) {
         } break;
     };
 
-    FLAlertLayer::create(
-        title.c_str(), message, "Ok"
-    )->show();
+    PopupManager::get().alert(title, message).showInstant();
 }
 
 void PrivacySettingsPopup::sendPacket() {

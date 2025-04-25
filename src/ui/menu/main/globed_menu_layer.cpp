@@ -13,6 +13,7 @@
 #include <managers/game_server.hpp>
 #include <managers/daily_manager.hpp>
 #include <managers/motd_cache.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/room/room_layer.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
@@ -223,14 +224,14 @@ bool GlobedMenuLayer::init() {
     if (settings.communication.voiceEnabled) {
         Build<CCSprite>::createSpriteName("icon-voice-chat-guide.png"_spr)
             .intoMenuItem([](auto) {
-                FLAlertLayer::create(
+                PopupManager::get().alert(
                     "Voice Chat Guide",
 #ifdef GLOBED_VOICE_CAN_TALK
-                    "In order to <cg>talk</c> with other people in-game, <cp>hold V</c>.\nIn order to <cr>deafen</c> (stop hearing everyone), <cb>press B</c>.\nBoth keybinds can be changed in <cy>Geometry Dash</c> settings.",
+                    "In order to <cg>talk</c> with other people in-game, <cp>hold V</c>.\nIn order to <cr>deafen</c> (stop hearing everyone), <cb>press B</c>.\nBoth keybinds can be changed in <cy>mod's settings</c>."
 #else
-                    "This platform currently <cr>does not</c> support audio recording, but you can still hear others in voice chat. Sorry for the inconvenience.",
+                    "This platform currently <cr>does not</c> support audio recording, but you can still hear others in voice chat. Sorry for the inconvenience."
 #endif
-                "Ok")->show();
+                    ).showInstant();
             })
             .scaleMult(1.15f)
             .id("btn-show-voice-chat-popup")
@@ -314,23 +315,29 @@ void GlobedMenuLayer::onEnterTransitionDidFinish() {
             if (!s) s = this;
 
             auto alert = globed::showChangelogPopup();
-            // TODO: use popupqueue??
 
             if (alert) {
-                alert->m_scene = s;
-                alert->show();
-
-                // oh my god i hate it here
-                Loader::get()->queueInMainThread([alert = Ref(alert)] {
-                    auto* td = CCTouchDispatcher::get();
-                    auto handler = td->findHandler(alert);
-                    if (handler) {
-                        td->setPriority(-505, handler->getDelegate());
-                    }
-
-                    cocos::handleTouchPriority(alert);
-                });
+                auto clog = PopupManager::get().manage(alert);
+                clog.setPersistent();
+                clog.blockClosingFor(500);
+                clog.showQueue();
             }
+
+            // if (alert) {
+            //     alert->m_scene = s;
+            //     alert->show();
+
+            //     // oh my god i hate it here
+            //     Loader::get()->queueInMainThread([alert = Ref(alert)] {
+            //         auto* td = CCTouchDispatcher::get();
+            //         auto handler = td->findHandler(alert);
+            //         if (handler) {
+            //             td->setPriority(-505, handler->getDelegate());
+            //         }
+
+            //         cocos::handleTouchPriority(alert);
+            //     });
+            // }
         });
 
     }
@@ -410,7 +417,7 @@ void GlobedMenuLayer::loadAndShowMotd() {
         })->show();
     } else {
         if (motd->empty()) {
-            FLAlertLayer::create("Note", "This server does not have a custom message configured", "Ok")->show();
+            PopupManager::get().alert("Note", "This server does not have a custom message configured").showInstant();
         } else {
             util::ui::showMotd(*motd);
         }

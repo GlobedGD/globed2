@@ -4,6 +4,7 @@
 #include "featured_list_layer.hpp"
 #include <managers/daily_manager.hpp>
 #include <managers/admin.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <util/ui.hpp>
 
@@ -33,10 +34,13 @@ bool DailyPopup::setup() {
 
     auto infoBtn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
         .intoMenuItem([](auto) {
-            FLAlertLayer::create(
+
+            PopupManager::get().alert(
                         "Featured Guide",
-                        "Globed will occasionally <co>highlight Platformer levels</c> made by the community.\n\nThe three feature types are:\n<cl>Normal</c>, <cj>Epic</c>, and <cg>Outstanding</c>.\n\nDepending on the type, a level can be featured for <cl>12 hours</c>, <cj>1 day</c> or <cg>2 days</c>",
-                    "Ok")->show();
+                        "Globed will occasionally <co>highlight Platformer levels</c> made by the community.\n\n"
+                        "The three feature types are:\n<cl>Normal</c>, <cj>Epic</c>, and <cg>Outstanding</c>.\n\n"
+                        "Depending on the type, a level can be featured for <cl>12 hours</c>, <cj>1 day</c> or <cg>2 days</c>")
+                .showInstant();
         })
         .parent(blCornerMenu);
 

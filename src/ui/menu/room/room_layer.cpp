@@ -20,7 +20,6 @@
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <managers/central_server.hpp>
-#include <managers/popup_queue.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/ui.hpp>
 #include <util/ui.hpp>
@@ -29,8 +28,9 @@
 #include <util/misc.hpp>
 #include <util/format.hpp>
 #include <util/math.hpp>
-
 #include <util/debug.hpp>
+
+#include <Geode/utils/cocos.hpp>
 
 using namespace geode::prelude;
 
@@ -547,6 +547,9 @@ void RoomLayer::addRoomButtons() {
     }
 
     roomButtonMenu->updateLayout();
+
+    // this is a workaround for the fucked up touch prio in the motd popup
+    cocos::handleTouchPriority(CCScene::get(), true);
 }
 
 void RoomLayer::addGlobalRoomButtons() {

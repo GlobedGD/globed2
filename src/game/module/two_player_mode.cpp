@@ -1,6 +1,7 @@
 #include "two_player_mode.hpp"
 
 #include <managers/room.hpp>
+#include <managers/popup.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 #include <hooks/play_layer.hpp>
 #include <ui/game/userlist/user_cell.hpp>
@@ -117,7 +118,7 @@ bool TwoPlayerModeModule::onUnpause() {
     this->unlinkIfAlone();
 
     if (!this->linked) {
-        FLAlertLayer::create("Globed Error", "Cannot unpause while not linked to a player.", "OK")->show();
+        PopupManager::get().alert("Globed Error", "Cannot unpause while not linked to a player.").showInstant();
         return false;
     }
 

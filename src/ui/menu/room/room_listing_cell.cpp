@@ -4,6 +4,7 @@
 #include "room_listing_popup.hpp"
 #include <data/packets/client/room.hpp>
 #include <managers/role.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <ui/general/simple_player.hpp>
 #include <util/ui.hpp>
@@ -140,7 +141,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         .scale(0.38f)
         .opacity(rli.hasPassword ? 255 : 80)
         .intoMenuItem([] {
-            FLAlertLayer::create("Locked room", "This room requires a password to join.", "Ok")->show();
+            PopupManager::get().alert("Locked room", "This room requires a password to join.").showInstant();
         })
         .parent(roomSettingsMenu)
         .collect();
@@ -154,7 +155,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         })
         .opacity(rli.settings.flags.collision ? 255 : 80)
         .intoMenuItem([] {
-            FLAlertLayer::create("Collision", "This room has collision enabled, meaning you can collide with other players.\n\n<cy>Note: this means the room has safe mode, making it impossible to make progress on levels.</c>", "Ok")->show();
+            PopupManager::get().alert("Collision", "This room has collision enabled, meaning you can collide with other players.\n\n<cy>Note: this means the room has safe mode, making it impossible to make progress on levels.</c>").showInstant();
         })
         .parent(roomSettingsMenu)
         .collect();
@@ -168,7 +169,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         })
         .opacity(rli.settings.flags.deathlink ? 255 : 80)
         .intoMenuItem([] {
-            FLAlertLayer::create("Death Link", "This room has Death Link enabled, which means that if a player dies, everyone in the level dies as well. <cy>Inspired by the mod DeathLink by </c> <cg>Alphalaneous</c>.", "Ok")->show();
+            PopupManager::get().alert("Death Link", "This room has Death Link enabled, which means that if a player dies, everyone in the level dies as well. <cy>Inspired by the mod DeathLink by </c> <cg>Alphalaneous</c>.").showInstant();
         })
         .parent(roomSettingsMenu)
         .collect();
@@ -182,7 +183,7 @@ bool RoomListingCell::init(const RoomListingInfo& rli, RoomListingPopup* parent)
         })
         .opacity(rli.settings.flags.twoPlayerMode ? 255 : 80)
         .intoMenuItem([] {
-            FLAlertLayer::create("2 Player", "This room has 2 Player enabled, which means you can play 2-player levels with a remote friend.", "Ok")->show();
+            PopupManager::get().alert("2 Player", "This room has 2 Player enabled, which means you can play 2-player levels with a remote friend.").showInstant();
         })
         .parent(roomSettingsMenu)
         .collect();

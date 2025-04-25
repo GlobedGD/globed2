@@ -6,6 +6,7 @@
 #include <hooks/gjbasegamelayer.hpp>
 #include <managers/daily_manager.hpp>
 #include <managers/admin.hpp>
+#include <managers/popup.hpp>
 // todo remove (maybe)
 #include <managers/room.hpp>
 #include <data/packets/client/room.hpp>
@@ -99,7 +100,7 @@ void HookedLevelInfoLayer::forcePlay(CCObject* s) {
 
 void HookedLevelInfoLayer::tryCloneLevel(CCObject* s) {
     if (NetworkManager::get().established() && GJBaseGameLayer::get() != nullptr) {
-        FLAlertLayer::create("Globed Error", "Cannot perform this action while in a level", "Ok")->show();
+        PopupManager::get().alert("Globed Error", "Cannot perform this action while in a level").showInstant();
         return;
     }
 
@@ -118,7 +119,7 @@ void HookedLevelInfoLayer::addLevelSendButton() {
             if (plat) {
                 EditFeaturedLevelPopup::create(this->m_level)->show();
             } else {
-                FLAlertLayer::create("Error", "Only <cj>Platformer levels</c> are eligible to be <cg>Globed Featured!</c>", "Ok")->show();
+                PopupManager::get().alert("Error", "Only <cj>Platformer levels</c> are eligible to be <cg>Globed Featured!</c>").showInstant();
             }
         })
         .with([&](auto* btn) {

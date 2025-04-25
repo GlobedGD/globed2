@@ -39,23 +39,23 @@ include(cmake/environment.cmake)
 
 # Add platform-specific sources
 if (ANDROID)
-    file(GLOB_RECURSE OS_SOURCES "src/platform/os/android/*.cpp" "src/platform/arch/arm/*.cpp")
+    file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS "src/platform/os/android/*.cpp" "src/platform/arch/arm/*.cpp")
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS")
-    file(GLOB_RECURSE OS_SOURCES "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp")
+    file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp")
 elseif (APPLE)
     if (GLOBED_IOS)
-        file(GLOB_RECURSE OS_SOURCES "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp")
+        file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp")
     else()
-        file(GLOB_RECURSE OS_SOURCES "src/platform/os/mac/*.cpp" "src/platform/arch/x86/*.cpp" "src/platform/arch/arm/*.cpp")
+        file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS "src/platform/os/mac/*.cpp" "src/platform/arch/x86/*.cpp" "src/platform/arch/arm/*.cpp")
     endif()
 elseif (WIN32)
-    file(GLOB_RECURSE OS_SOURCES "src/platform/os/windows/*.cpp" "src/platform/arch/x86/*.cpp")
+    file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS "src/platform/os/windows/*.cpp" "src/platform/arch/x86/*.cpp")
 else()
     message(FATAL_ERROR "Unsupported operating system")
 endif()
 
 # source files
-file(GLOB_RECURSE SOURCES
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/audio/*.cpp
 	src/crypto/*.cpp
 	src/data/*.cpp

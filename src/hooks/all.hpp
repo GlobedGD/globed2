@@ -2,7 +2,6 @@
 
 #include "appdelegate.hpp"
 #include "editor_pause_layer.hpp"
-#include "flalertlayer.hpp"
 #include "game_manager.hpp"
 #include "gjbasegamelayer.hpp"
 #include "gjgamelevel.hpp"

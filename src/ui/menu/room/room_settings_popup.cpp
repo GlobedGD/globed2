@@ -1,6 +1,7 @@
 #include "room_settings_popup.hpp"
 
 #include <managers/error_queues.hpp>
+#include <managers/popup.hpp>
 #include <data/packets/server/room.hpp>
 #include <data/packets/client/room.hpp>
 #include <net/manager.hpp>
@@ -150,11 +151,10 @@ bool RoomSettingCell::init(const char* name, std::string desc, int tag, RoomSett
         Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
             .scale(0.75f)
             .intoMenuItem([this, name, desc] {
-                FLAlertLayer::create(
+                PopupManager::get().alert(
                     name,
-                    desc,
-                    "OK"
-                )->show();
+                    desc
+                ).showInstant();
             })
             .move(ccp(0.f, -3.f))
             //.pos(10.f + (std::string(name).size() * 12.f), CELL_HEIGHT / 2)

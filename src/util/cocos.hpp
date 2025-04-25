@@ -61,4 +61,54 @@ namespace util::cocos {
     std::string parentChain(cocos2d::CCNode*);
 
     GLOBED_DLL void tryLoadDeathEffect(int id);
+
+    // ccobject that stores a custom struct
+    template <typename T>
+    class CCData : public cocos2d::CCObject {
+        T inner;
+
+        CCData(T data) : inner(std::move(data)) {}
+
+    public:
+        static CCData* create(T data) {
+            auto ret = new CCData{std::move(data)};
+            ret->autorelease();
+            return ret;
+        }
+
+        T& data() {
+            return inner;
+        }
+
+        T* operator->() const {
+            return &inner;
+        }
+
+        T& operator*() const {
+            return inner;
+        }
+    };
+
+    // ccobject with pointer value
+    template <typename T = void>
+    class CCPointer : public cocos2d::CCObject {
+        T* inner;
+
+        CCPointer(T* ptr) : inner(ptr) {}
+
+    public:
+        static CCPointer* create(T* ptr) {
+            auto ret = new CCPointer{ptr};
+            ret->autorelease();
+            return ret;
+        }
+
+        T* get() {
+            return inner;
+        }
+
+        T* operator*() const {
+            return inner;
+        }
+    };
 }

@@ -18,7 +18,7 @@
 #include <managers/game_server.hpp>
 #include <managers/central_server.hpp>
 #include <managers/profile_cache.hpp>
-#include <managers/popup_queue.hpp>
+#include <managers/popup.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
@@ -571,12 +571,16 @@ protected:
         });
 
         addGlobalListener<ServerBannedPacket>([this](auto packet) {
-            PopupQueue::get()->pushNoDelay(UserPunishmentPopup::create(packet->message, packet->timestamp, true));
+            auto pref = PopupManager::get().manage(UserPunishmentPopup::create(packet->message, packet->timestamp, true));
+            pref.setPersistent();
+            pref.showQueue();
             this->queueDisconnect();
         });
 
         addGlobalListener<ServerMutedPacket>([](auto packet) {
-            PopupQueue::get()->pushNoDelay(UserPunishmentPopup::create(packet->reason, packet->timestamp, false));
+            auto pref = PopupManager::get().manage(UserPunishmentPopup::create(packet->reason, packet->timestamp, false));
+            pref.setPersistent();
+            pref.showQueue();
         });
 
         // General packets

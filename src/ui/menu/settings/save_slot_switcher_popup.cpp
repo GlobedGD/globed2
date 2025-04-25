@@ -1,6 +1,7 @@
 #include "save_slot_switcher_popup.hpp"
 
 #include <managers/settings.hpp>
+#include <managers/popup.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <util/ui.hpp>
 
@@ -164,7 +165,7 @@ bool SaveSlotSwitcherPopup::ListCell::initAddButton() {
 
             auto res = settings.createSlot();
             if (!res) {
-                FLAlertLayer::create("Error", fmt::format("Failed to create new save slot: <cy>{}</c>", res.unwrapErr()), "Ok")->show();
+                PopupManager::get().alertFormat("Error", "Failed to create new save slot: <cy>{}</c>", res.unwrapErr()).showInstant();
                 return;
             }
 

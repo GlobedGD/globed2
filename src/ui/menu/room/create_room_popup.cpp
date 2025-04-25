@@ -6,6 +6,7 @@
 #include <data/packets/client/room.hpp>
 #include <net/manager.hpp>
 #include <managers/settings.hpp>
+#include <managers/popup.hpp>
 #include <util/format.hpp>
 #include <util/math.hpp>
 #include <util/ui.hpp>
@@ -139,7 +140,7 @@ bool CreateRoomPopup::setup(RoomLayer* parent) {
                     playerCount = util::math::min(playerCount, 9999);
 
                     if (playerCount == 1488) {
-                        FLAlertLayer::create("Error", "Please choose a different player count number.", "Ok")->show();
+                        PopupManager::get().alert("Error", "Please choose a different player count number.").showInstant();
                         return;
                     }
 
@@ -300,29 +301,26 @@ void CreateRoomPopup::showSafeModePopup(bool firstTime) {
     };
 
     if (!settingFlags.twoPlayerMode && !settingFlags.collision) {
-        FLAlertLayer::create("Safe Mode", "<cy>Safe Mode</c> is <cg>not enabled</c> with these room settings. You are able to make progress on levels while in this room.", "Ok")->show();
+        PopupManager::get().alert("Safe Mode", "<cy>Safe Mode</c> is <cg>not enabled</c> with these room settings. You are able to make progress on levels while in this room.").showInstant();
         return;
     }
 
-    FLAlertLayer::create(
+    PopupManager::get().alert(
         "Safe Mode",
         firstTime
             ? "This setting enables <cy>safe mode</c>, which means you won't be able to make progress on levels while in this room."
-            : getSafeModeString(),
-        "Ok"
-    )->show();
+            : getSafeModeString()
+    ).showInstant();
 }
 
 void CreateRoomPopup::showRoomNameWarnPopup() {
-    FLAlertLayer::create(
+    PopupManager::get().alert(
         "Note",
 
         "Room names should be clear and appropriate. "
         "Creating a room with <cy>advertisements</c> or <cr>profanity</c> in its name may lead to a <cy>closure of the room</c>, "
-        "or in some cases a <cr>ban</c>.",
-
-        "Ok"
-    )->show();
+        "or in some cases a <cr>ban</c>."
+    ).showInstant();
 }
 
 CreateRoomPopup* CreateRoomPopup::create(RoomLayer* parent) {

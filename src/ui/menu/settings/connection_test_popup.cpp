@@ -8,6 +8,7 @@
 #include <managers/web.hpp>
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <net/tcp_socket.hpp>
 #include <net/game_socket.hpp>
@@ -216,7 +217,7 @@ bool ConnectionTestPopup::setup() {
 
                             Mod::get()->setSavedValue(URL_OVERRIDE_KEY, newUrl);
 
-                            FLAlertLayer::create("Note", "Reopen the connection test popup for the change to apply.", "Ok")->show();
+                            PopupManager::get().alert("Note", "Reopen the connection test popup for the change to apply.").showInstant();
                         }
                     );
                 }, 80, "Server URL", util::misc::STRING_URL)->show();
@@ -851,7 +852,7 @@ void ConnectionTestPopup::showVerdictPopup() {
     }
 
     if (!openLink) {
-        FLAlertLayer::create(nullptr, "Test Results", content, "Ok", nullptr, 380.f)->show();
+        PopupManager::get().alert("Test Results", content, "Ok", nullptr, 380.f).showInstant();
     } else {
         geode::createQuickPopup("Test Results", content, "Cancel", "Open", 380.f, [url = this->usedCentralUrl](auto alert, bool yes) {
             if (yes) {
@@ -1075,14 +1076,12 @@ bool StatusCell::init(const char* name, float width) {
             util::ui::rescaleToMatch(spr, statusIconSize);
         })
         .intoMenuItem([this] {
-            FLAlertLayer::create(
-                nullptr,
+            PopupManager::get().alertFormat(
                 "Test failure",
-                fmt::format("This test failed with the following error:\n\n<cy>{}</c>", this->failReason),
-                "Ok",
-                nullptr,
+                "This test failed with the following error:\n\n<cy>{}</c>",
+                this->failReason,
                 380.f
-            )->show();
+            ).showInstant();
         })
         .pos(width - 4.f - statusIconSize.width / 2.f, myVertCenter)
         .parent(this)

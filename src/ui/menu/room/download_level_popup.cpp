@@ -2,6 +2,7 @@
 
 #include <util/ui.hpp>
 #include <util/gd.hpp>
+#include <managers/popup.hpp>
 
 using namespace geode::prelude;
 
@@ -26,7 +27,7 @@ bool DownloadLevelPopup::setup(int levelId) {
 void DownloadLevelPopup::loadLevelsFinished(cocos2d::CCArray* levels, char const* p1, int p2) {
     if (levels->count() == 0) {
         this->onClose(this);
-        FLAlertLayer::create("Error", "Failed to download the level. It may be unlisted or not exist on the servers anymore.", "Ok")->show();
+        PopupManager::get().alert("Error", "Failed to download the level. It may be unlisted or not exist on the servers anymore.").showInstant();
         return;
     }
 
@@ -45,7 +46,7 @@ void DownloadLevelPopup::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1
 
 void DownloadLevelPopup::loadLevelsFailed(char const* p0, int p1) {
     this->onClose(this);
-    FLAlertLayer::create("Error", fmt::format("Failed to download the level: {}", p1), "Ok")->show();
+    PopupManager::get().alertFormat("Error", "Failed to download the level: {}", p1).showInstant();
 }
 
 void DownloadLevelPopup::loadLevelsFailed(char const* p0) {
@@ -63,7 +64,7 @@ void DownloadLevelPopup::levelDownloadFinished(GJGameLevel* level) {
 
 void DownloadLevelPopup::levelDownloadFailed(int p0) {
     this->onClose(this);
-    FLAlertLayer::create("Error", fmt::format("Failed to download the level: {}", p0), "Ok")->show();
+    PopupManager::get().alertFormat("Error", "Failed to download the level: {}", p0).showInstant();
 }
 
 void DownloadLevelPopup::onClose(cocos2d::CCObject* obj) {

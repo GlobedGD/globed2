@@ -7,6 +7,7 @@
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
+#include <managers/popup.hpp>
 #include <util/net.hpp>
 #include <util/time.hpp>
 #include <util/format.hpp>
@@ -111,7 +112,7 @@ void ServerListCell::updateWith(const GameServer& gsview, bool active) {
 #ifndef GLOBED_VOICE_CAN_TALK
                             if (enabled) {
                                 // if this is a platform that cannot use the microphone, show an additional popup
-                                FLAlertLayer::create("Notice", "Please note that talking is <cr>currently unimplemented</c> on this platform, and you will only be able to hear others. Sorry for the inconvenience.", "Ok")->show();
+                                PopupManager::get().alert("Notice", "Please note that talking is <cr>currently unimplemented</c> on this platform, and you will only be able to hear others. Sorry for the inconvenience.").showInstant();
                             }
 #endif
                         });

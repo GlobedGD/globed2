@@ -6,7 +6,7 @@
 #include "triggers/gjeffectmanager.hpp"
 #include <managers/settings.hpp>
 #include <managers/hook.hpp>
-#include <managers/popup_queue.hpp>
+#include <managers/popup.hpp>
 
 using namespace geode::prelude;
 
@@ -39,7 +39,9 @@ bool GlobedLevelEditorLayer::init(GJGameLevel* level, bool p1) {
                 geode::utils::web::openLinkInBrowser(globed::string<"global-trigger-page">());
             }, false);
 
-            PopupQueue::get()->push(alert);
+            // TODO: convert to .quickAlert icbb
+            auto pref = PopupManager::get().manage(alert);
+            pref.showQueue();
         }
     } else {
         HookManager::get().disableGroup(HookManager::Group::EditorTriggerPopups);

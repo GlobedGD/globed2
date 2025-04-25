@@ -7,6 +7,7 @@
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
 #include <managers/friend_list.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
 #include <ui/menu/servers/server_layer.hpp>
@@ -154,7 +155,7 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                         "No", "Yes",
                         [report = std::move(report)](auto, bool delete_) {
                             if (!delete_) {
-                                FLAlertLayer::create("Note", "Not deleting, resolve the issue manually.", "Ok")->show();
+                                PopupManager::get().alert("Note", "Not deleting, resolve the issue manually.").showInstant();
                                 return;
                             }
 
@@ -167,11 +168,11 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                                     }
                                 });
                             } else {
-                                FLAlertLayer::create(
+                                PopupManager::get().alertFormat(
                                     "Error",
-                                    fmt::format("Failed to delete the directory: <cy>{}</c>.\n\nPlease delete it manually.", res.unwrapErr().message()),
-                                    "Ok"
-                                )->show();
+                                    "Failed to delete the directory: <cy>{}</c>.\n\nPlease delete it manually.",
+                                    res.unwrapErr().message()
+                                ).showInstant();
                             }
                         }
                     );
@@ -185,11 +186,11 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                         enabledtxt += "DarkMode v4 enabled: <cg>yes</c>\n";
                     }
 
-                    FLAlertLayer::create(
+                    PopupManager::get().alertFormat(
                         "Note",
-                        fmt::format("{}\nPlease try to <cr>disable</c> these and see if the issue is resolved after restarting.\n\nDebug data: <cy>{}</c>", enabledtxt, debugData),
-                        "Ok"
-                    )->show();
+                        "{}\nPlease try to <cr>disable</c> these and see if the issue is resolved after restarting.\n\nDebug data: <cy>{}</c>",
+                        enabledtxt, debugData
+                    ).showInstant();
                 } else {
                     auto latestLog = globed::getLatestLogFile();
                     std::string body = fmt::format("Failed to determine the root cause of the issue (debug data: <cy>{}</c>). Please create a <cy>bug report</c> on our GitHub page, including this log file:\n\n<cy>{}</c>", debugData, latestLog);
@@ -213,7 +214,7 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
 
     auto accountId = GJAccountManager::sharedState()->m_accountID;
     if (accountId <= 0) {
-        FLAlertLayer::create("Notice", "You need to be signed into a <cg>Geometry Dash account</c> in order to play online.", "Ok")->show();
+        PopupManager::get().alert("Notice", "You need to be signed into a <cg>Geometry Dash account</c> in order to play online.").showInstant();
         return;
     }
 

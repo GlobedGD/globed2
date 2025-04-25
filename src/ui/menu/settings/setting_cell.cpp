@@ -3,7 +3,6 @@
 #include <asp/math/NumberCycle.hpp>
 
 #include "audio_setup_popup.hpp"
-#include "frag_calibration_popup.hpp"
 #include "keybind_settings_popup.hpp"
 #include "string_input_popup.hpp"
 #include "advanced_settings_popup.hpp"
@@ -12,6 +11,7 @@
 #include "connection_test_popup.hpp"
 #include <managers/settings.hpp>
 #include <managers/central_server.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/general/slider.hpp>
@@ -54,7 +54,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                     text += "\n\n<cg>LB DOWN ??? RB</c>";
                 }
 
-                FLAlertLayer::create(nameText, text, "Ok")->show();
+                PopupManager::get().alert(nameText, text).showInstant();
             })
             .pos(10.f + labelSize.width + 5.f, CELL_HEIGHT / 2 + labelSize.height / 2 - 5.f)
             .store(btnInfo)
@@ -102,7 +102,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
                     .scale(0.35f)
                     .intoMenuItem([](auto) {
-                        FLAlertLayer::create("Not available", "This feature requires the Discord Rich Presence mod to be installed.", "Ok")->show();
+                        PopupManager::get().alert("Not available", "This feature requires the Discord Rich Presence mod to be installed.").showInstant();
                     })
                     .pos(inpCheckbox->getPositionX() - 20.f, inpCheckbox->getPositionY() + 10.f)
                     .intoNewParent(CCMenu::create())
@@ -228,7 +228,7 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                     AskInputPopup::create("Packet limit", [this](auto input) {
                         auto limit = util::format::parse<int>(input).value_or(0);
                         if (limit < 1300 || limit > 65000) {
-                            FLAlertLayer::create("Error", "<cr>Invalid</c> limit was set. For best results, press the <cy>Auto</c> button instead, and only use this option if you know what you're doing.", "Ok")->show();
+                            PopupManager::get().alert("Error", "<cr>Invalid</c> limit was set. For best results, press the <cy>Auto</c> button instead, and only use this option if you know what you're doing.").showInstant();
                             return;
                         }
 
@@ -257,11 +257,11 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
     switch (settingType) {
         case Type::AudioDevice: this->onSetAudioDevice(); break;
         case Type::PacketFragmentation: {
-            FLAlertLayer::create("Error", "Packet limit test is now <cr>obsolete</c>, please use the <cg>Connection Test</c> setting, which will perform the same test at the end.", "Ok")->show();
+            PopupManager::get().alert("Error", "Packet limit test is now <cr>obsolete</c>, please use the <cg>Connection Test</c> setting, which will perform the same test at the end.").showInstant();
             // if (NetworkManager::get().established()) {
             //     FragmentationCalibartionPopup::create()->show();
             // } else {
-            //     FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
+            //     PopupManager::get().alert("Error", "This action can only be done when connected to a server.").showInstant();
             // }
             break;
         }
@@ -273,7 +273,7 @@ void GlobedSettingCell::onInteractiveButton(cocos2d::CCObject*) {
             if (NetworkManager::get().established()) {
                 LinkCodePopup::create()->show();
             } else {
-                FLAlertLayer::create("Error", "This action can only be done when connected to a server.", "Ok")->show();
+                PopupManager::get().alert("Error", "This action can only be done when connected to a server.").showInstant();
             }
             break;
         }
@@ -299,7 +299,7 @@ void GlobedSettingCell::onSetAudioDevice() {
 #ifdef GLOBED_VOICE_SUPPORT
 # ifndef GLOBED_VOICE_CAN_TALK
     // if we can't talk, show an error popup
-    FLAlertLayer::create("Error", "Sorry, but recording audio is currently <cr>not possible</c> on this platform.", "Ok")->show();
+    PopupManager::get().alert("Error", "Sorry, but recording audio is currently <cr>not possible</c> on this platform.").showInstant();
     return;
 # endif // GLOBED_VOICE_CAN_TALK
 

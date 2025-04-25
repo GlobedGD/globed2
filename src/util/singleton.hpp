@@ -1,9 +1,11 @@
 #pragma once
 
 #include <defs/platform.hpp>
+#include <cocos2d.h>
 
 namespace globed {
     [[noreturn]] void destructedSingleton();
+    void scheduleUpdateFor(cocos2d::CCObject* obj);
 }
 
 // there was no reason to do this other than for me to learn crtp
@@ -55,6 +57,42 @@ public:
 
 protected:
     SingletonLeakBase() {}
+};
+
+// This is like SingletonLeakBase but it is also a CCObject with optional update schedule
+template <typename Derived, bool ScheduleUpdate = false, typename Base = cocos2d::CCObject>
+class SingletonNodeBase : public Base {
+public:
+    SingletonNodeBase(const SingletonNodeBase&) = delete;
+    SingletonNodeBase& operator=(const SingletonNodeBase&) = delete;
+
+    SingletonNodeBase(SingletonNodeBase&&) = delete;
+    SingletonNodeBase& operator=(SingletonNodeBase&&) = delete;
+
+    static Derived& get() {
+        static Derived* obj = []{
+            auto obj = new Derived();
+
+            if constexpr (requires { obj->init(); }) {
+                obj->init();
+            }
+
+            if constexpr (requires { obj->onEnter(); }) {
+                obj->onEnter();
+            }
+
+            if constexpr (ScheduleUpdate) {
+                globed::scheduleUpdateFor(obj);
+            }
+
+            return obj;
+        }();
+
+        return *obj;
+    }
+
+protected:
+    SingletonNodeBase() {}
 };
 
 namespace globed {

@@ -7,6 +7,7 @@
 #include <managers/central_server.hpp>
 #include <managers/account.hpp>
 #include <managers/game_server.hpp>
+#include <managers/popup.hpp>
 #include <net/manager.hpp>
 #include <util/misc.hpp>
 
@@ -71,11 +72,10 @@ bool AddServerPopup::setup(int modifyingIndex, ServerSwitcherPopup* parent) {
             }
 
             if (!std::regex_match(url, serverPattern)) {
-                FLAlertLayer::create(
+                PopupManager::get().alert(
                     "Invalid URL",
-                    "The URL provided does not match the needed schema. It must be either a domain name (like <cy>http://example.com</c>) or an IP address (like <cy>http://127.0.0.1:41000</c>)",
-                    "Ok"
-                )->show();
+                    "The URL provided does not match the needed schema. It must be either a domain name (like <cy>http://example.com</c>) or an IP address (like <cy>http://127.0.0.1:41000</c>)"
+                ).showInstant();
                 return;
             }
 
@@ -140,7 +140,7 @@ void AddServerPopup::onTestSuccess() {
 }
 
 void AddServerPopup::onTestFailure(const std::string& message) {
-    FLAlertLayer::create("Globed error", message.data(), "Ok")->show();
+    PopupManager::get().alert("Globed error", message).showInstant();
     this->release();
     this->onClose(this);
 }

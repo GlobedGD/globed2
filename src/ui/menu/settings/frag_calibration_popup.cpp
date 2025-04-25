@@ -3,6 +3,7 @@
 #include <data/packets/client/connection.hpp>
 #include <net/manager.hpp>
 #include <managers/settings.hpp>
+#include <managers/popup.hpp>
 #include <util/crypto.hpp>
 #include <util/rng.hpp>
 #include <util/ui.hpp>
@@ -28,7 +29,12 @@ bool FragmentationCalibartionPopup::setup() {
             auto& settings = GlobedSettings::get();
             settings.globed.fragmentationLimit = newFragLimit;
 
-            FLAlertLayer::create("Error", fmt::format("Test failed fatally. Server sent invalid unique packet ID. Setting maximum packet size to {}.", newFragLimit), "Ok")->show();
+            PopupManager::get().alertFormat(
+                "Error",
+                "Test failed fatally. Server sent invalid unique packet ID. Setting maximum packet size to {}.",
+                newFragLimit
+            ).showInstant();
+
             this->closeDelayed();
             return;
         }
@@ -57,7 +63,13 @@ void FragmentationCalibartionPopup::checkForUpdates(float) {
         // if no response 3 times in a row, abort
         if (failedAttempts > 2) {
             auto newFragLimit = TEST_PACKET_SIZES[currentSizeIdx - 1];
-            FLAlertLayer::create("Notice", fmt::format("Test ended early with packet size = {}. Setting the maximum packet size to {}. Reconnect to the server in order to see any change.", currentSize, newFragLimit), "Ok")->show();
+            PopupManager::get().alertFormat(
+                "Notice",
+                "Test ended early with packet size = {}. Setting the maximum packet size to {}. "
+                "Reconnect to the server in order to see any change.",
+                currentSize, newFragLimit
+            ).showInstant();
+
             this->closeDelayed();
             return;
         }
@@ -75,7 +87,7 @@ void FragmentationCalibartionPopup::nextStep() {
 
     if (currentSize == 0) {
         // calibration was fully successful, user can send up to 64kb
-        FLAlertLayer::create("Success", "Connection test succeeded. No issues found.", "Ok")->show();
+        PopupManager::get().alert("Success", "Connection test succeeded. No issues found.").showInstant();
         this->closeDelayed();
         return;
     }
@@ -87,7 +99,7 @@ void FragmentationCalibartionPopup::nextStep() {
 
     auto& nm = NetworkManager::get();
     if (!nm.established()) {
-        FLAlertLayer::create("Failed", "Fatal failure. Disconnected during the test.", "Ok")->show();
+        PopupManager::get().alert("Failed", "Fatal failure. Disconnected during the test.").showInstant();
         this->closeDelayed();
         return;
     }

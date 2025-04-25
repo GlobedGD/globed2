@@ -1,8 +1,8 @@
 #include "error_check_node.hpp"
 
 #include <hooks/gjbasegamelayer.hpp>
-#include <hooks/flalertlayer.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/popup.hpp>
 #include <util/debug.hpp>
 #include <data/packets/client/general.hpp>
 #include <ui/general/ask_input_popup.hpp>
@@ -12,7 +12,7 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
-constexpr auto BLOCK_CLOSING_FOR = Duration::fromMillis(375);
+constexpr auto BLOCK_CLOSING_FOR = Duration::fromMillis(600);
 
 void askForNoticeReply(uint32_t replyId) {
     AskInputPopup::create("Enter Reply Text", [replyId](std::string_view text) {
@@ -69,20 +69,20 @@ void ErrorCheckNode::updateErrors(float) {
         return;
     }
 
+    auto& pm = PopupManager::get();
+
     try {
         auto errors = ErrorQueues::get().getErrors();
         auto notices = ErrorQueues::get().getNotices();
 
         for (auto& error : errors) {
             if (canShowFLAlert()) {
-                log::debug("showing error: {}", error);
-                auto alert = static_cast<HookedFLAlertLayer*>(
-                    FLAlertLayer::create(nullptr, "Globed error", error, "Ok", nullptr, 360.f)
-                );
+                log::info("showing error: {}", error);
+                auto popup = pm.alert("Globed error", error);
 
-                alert->setID("error-popup"_spr);
-                alert->blockClosingFor(BLOCK_CLOSING_FOR);
-                alert->show();
+                popup.getInner()->setID("error-popup"_spr);
+                popup.blockClosingFor(BLOCK_CLOSING_FOR);
+                popup.showQueue();
             } else {
                 log::warn("cant show flalert, ignoring error: {}", error);
             }
@@ -90,24 +90,16 @@ void ErrorCheckNode::updateErrors(float) {
 
         for (auto& notice : notices) {
             if (canShowFLAlert()) {
-                log::debug("showing notice: {} (reply id: {})", notice.message, notice.replyId);
+                log::info("showing notice: {} (reply id: {})", notice.message, notice.replyId);
 
-                FLAlertLayer* alert;
+                PopupManager::PopupRef alert;
 
                 // if we cannot reply, just show a regular flalertlayer
                 if (notice.replyId == 0) {
-                    alert = FLAlertLayer::create(
-                        nullptr,
-                        "Globed notice",
-                        notice.message,
-                        "Ok",
-                        nullptr,
-                        380.f
-                    );
+                    alert = pm.alert("Globed notice", notice.message, "Ok", nullptr, 380.f);
                 } else if (!notice.isReplyFrom.empty()) {
                     // if this is a reply itself from a user
-                    alert = FLAlertLayer::create(
-                        nullptr,
+                    alert = pm.alert(
                         fmt::format("Reply from {}", notice.isReplyFrom).c_str(),
                         notice.message,
                         "Ok",
@@ -116,22 +108,23 @@ void ErrorCheckNode::updateErrors(float) {
                     );
                 } else {
                     // if we can reply, instead we show an alert with 2 buttons
-                    alert = geode::createQuickPopup(
+                    alert = pm.quickPopup(
                         "Globed notice",
                         notice.message,
                         "Ok",
                         "Reply",
-                        380.f,
                         [replyId = notice.replyId](auto, bool reply) {
                             if (!reply) return;
 
                             askForNoticeReply(replyId);
-                    }, false);
+                        },
+                        380.f
+                    );
                 }
 
-                alert->setID("notice-popup"_spr);
-                static_cast<HookedFLAlertLayer*>(alert)->blockClosingFor(BLOCK_CLOSING_FOR);
-                alert->show();
+                alert.getInner()->setID("notice-popup"_spr);
+                alert.blockClosingFor(BLOCK_CLOSING_FOR);
+                alert.showQueue();
             } else {
                 log::warn("cant show flalert, ignoring notice: {}", notice.message);
             }

@@ -9,6 +9,7 @@
 #include <managers/profile_cache.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/role.hpp>
+#include <managers/popup.hpp>
 #include <hooks/gjbasegamelayer.hpp>
 #include <hooks/gjgamelevel.hpp>
 #include <ui/general/ask_input_popup.hpp>
@@ -333,11 +334,10 @@ void GlobedUserCell::makeButtons() {
                 if (!settings.flags.seenTeleportNotice)  {
                     settings.flags.seenTeleportNotice = true;
 
-                    FLAlertLayer::create(
+                    PopupManager::get().alert(
                         "Note",
-                        "Teleporting to a player will <cr>disable level progress</c> until you <cy>fully reset</c> the level.",
-                        "Ok"
-                    )->show();
+                        "Teleporting to a player will <cr>disable level progress</c> until you <cy>fully reset</c> the level."
+                    ).showInstant();
 
                     return;
                 }
