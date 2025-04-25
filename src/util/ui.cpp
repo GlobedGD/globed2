@@ -660,7 +660,18 @@ namespace util::ui {
     }
 
     void showMotd(const std::string& text) {
-        auto popup = MDPopup::create("Globed Message", text, "Ok");
+        std::string title, body;
+        auto newline = text.find("\n");
+
+        if (text.starts_with("#") && newline != std::string::npos) {
+            title = util::format::trim(text.substr(1, newline)); // from hashtag and until newline
+            body = util::format::trim(text.substr(newline + 1));
+        } else {
+            title = "Globed Message";
+            body = text;
+        }
+
+        auto popup = MDPopup::create(title, body, "Ok");
         auto pref = PopupManager::get().manage(popup);
         pref.setPersistent();
         pref.showQueue();
