@@ -14,8 +14,9 @@
 * Show the <cg>server rules</c> to the user when first connecting (thanks [TechStudent10](user:20284359))
 * Hopefully fix bugs with <cr>deaths not being detected</c> in 2-player mode or Death Link
 * Significant performance <cg>improvements</c>
-* Improve error messages for authentication issues, especially for people that are at the limit of sent messages
-* Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks [km7dev](user:7236822) for Server API mod!)
+* Improve UX during server connection
+* Use new authentication API (Argon), improve error messages for authentication issues, especially for people that are at the limit of sent messages
+* Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks [km7dev](user:7236822) for the mod Server API!)
 * Fix error 10038 when trying to connect to a server
 * Fix crashing when connecting to a server that is down
 * Fix very rare crash when closing the Globed layer

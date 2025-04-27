@@ -1,18 +1,16 @@
-#include "signup_popup.hpp"
+#include "connect_popup.hpp"
 
-#include <Geode/utils/web.hpp>
-#include <managers/error_queues.hpp>
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
+#include <managers/error_queues.hpp>
 #include <net/manager.hpp>
-#include <util/net.hpp>
 #include <util/format.hpp>
-#include <util/crypto.hpp>
 #include <util/gd.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
+using ConnectionState = NetworkManager::ConnectionState;
 
 namespace {
     enum class WhatFailed {
@@ -58,34 +56,167 @@ namespace {
     }
 }
 
-bool GlobedSignupPopup::setup() {
-    this->setTitle("Authentication");
-    m_closeBtn->setVisible(false);
-
-    auto& csm = CentralServerManager::get();
-    auto& am = GlobedAccountManager::get();
-
-    auto activeServer = csm.getActive();
-    if (!activeServer.has_value()) {
-        return false;
-    }
+bool ConnectionPopup::setup(GameServer gs_) {
+    m_server = std::move(gs_);
+    m_closeBtn->removeFromParent();
+    m_closeBtn = nullptr;
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
-    Build<CCLabelBMFont>::create("Requesting challenge..", "bigFont.fnt")
+    Build<CCLabelBMFont>::create("", "bigFont.fnt")
         .pos(rlayout.fromCenter(0.f, -10.f))
         .scale(0.35f)
-        .store(statusMessage)
+        .store(m_statusLabel)
         .parent(m_mainLayer);
 
-    auto request = WebRequestManager::get().challengeStart();
-    createListener.bind(this, &GlobedSignupPopup::createCallback);
-    createListener.setFilter(std::move(request));
+    this->setTitle(fmt::format("Connecting to {}", m_server.name));
+
+    auto& csm = CentralServerManager::get();
+    if (csm.standalone()) {
+        this->startStandalone();
+    } else {
+        this->startCentral();
+    }
+
+    this->scheduleUpdate();
 
     return true;
 }
 
-void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event) {
+void ConnectionPopup::update(float dt) {
+    if (m_state == State::AttemptingConnection || m_state == State::Establishing) {
+        auto& nm = NetworkManager::get();
+        auto state = nm.getConnectionState();
+
+        if (state == ConnectionState::Disconnected) {
+            this->forceClose();
+            log::warn("disconnected");
+        } else if (state == ConnectionState::Authenticating) {
+            this->updateState(State::Establishing);
+        } else if (state == ConnectionState::Established) {
+            this->updateState(State::Done);
+            this->forceClose();
+        }
+    }
+}
+
+void ConnectionPopup::forceClose() {
+    m_doClose = true;
+    this->onClose(this);
+}
+
+void ConnectionPopup::onClose(CCObject* o) {
+    if (m_doClose) {
+        Popup::onClose(o);
+    }
+}
+
+void ConnectionPopup::startStandalone() {
+    GLOBED_RESULT_ERRC(NetworkManager::get().connectStandalone());
+    this->updateState(State::AttemptingConnection);
+}
+
+void ConnectionPopup::startCentral() {
+    // if we have the session token, we can just connect
+    auto& am = GlobedAccountManager::get();
+
+    auto hasToken = !am.authToken.lock()->empty();
+
+    if (hasToken) {
+        GLOBED_RESULT_ERRC(NetworkManager::get().connect(m_server));
+        this->updateState(State::AttemptingConnection);
+        return;
+    }
+
+    // steps here will depend on whether we need to authenticate or not
+
+    auto& gam = GlobedAccountManager::get();
+    gam.autoInitialize();
+
+    auto& csm = CentralServerManager::get();
+    bool hasAuth = csm.activeHasAuth();
+    auto argonUrl = csm.activeArgonUrl();
+
+    if (hasAuth && argonUrl) {
+        // start argon auth
+        m_argonState = argon::AuthProgress::RequestedChallenge;
+        this->updateState(State::ArgonAuth);
+
+        (void) argon::setServerUrl(argonUrl.value());
+
+        auto res = argon::startAuth([this](Result<std::string> token) {
+            auto& gam = GlobedAccountManager::get();
+            if (token) {
+                gam.storeArgonToken(token.unwrap());
+                this->requestTokenAndConnect();
+            } else {
+                this->onFailure("Failed to create a token with argon: <cy>{}</c>", token.unwrapErr());
+            }
+        }, [this](auto prog) {
+            this->m_argonState = prog;
+            this->updateState(State::ArgonAuth);
+        });
+
+        if (!res) {
+            this->onFailure("Failed to authenticate the user: <cy>{}</c>", res.unwrapErr());
+        }
+
+        return;
+    } else if (gam.hasAuthKey()) {
+        this->requestTokenAndConnect();
+    } else {
+        // well here we have to go through the outdated challenge process :(
+        this->challengeStart();
+    }
+}
+
+void ConnectionPopup::requestTokenAndConnect() {
+    auto& am = GlobedAccountManager::get();
+    auto& csm = CentralServerManager::get();
+
+    am.requestAuthToken([self = Ref(this), server = m_server](bool done) {
+        if (done) {
+            GLOBED_RESULT_ERRC(NetworkManager::get().connect(server));
+            self->updateState(State::AttemptingConnection);
+        } else {
+            self->forceClose(); // the func already shows an error message for us
+        }
+    }, csm.activeArgonUrl().has_value());
+
+    this->updateState(State::CreatingSessionToken);
+}
+
+void ConnectionPopup::updateState(State state) {
+    m_state = state;
+
+    std::string message;
+
+    using enum State;
+
+    switch (state) {
+        case ArgonAuth: message = fmt::format("Argon: {}", argon::authProgressToString(m_argonState)); break;
+        case RequestedChallenge: message = "Requested challenge.."; break;
+        case UploadingChallenge: message = "Uploading results.."; break;
+        case VerifyingChallenge: message = "Verifying challenge.."; break;
+        case CreatingSessionToken: message = "Creating session.."; break;
+        case AttemptingConnection: message = "Connecting.."; break;
+        case Establishing: message = "Establishing.."; break;
+        case Done: message = "Done!"; break;
+    }
+
+    m_statusLabel->setString(message.c_str());
+    m_statusLabel->limitLabelWidth(POPUP_WIDTH * 0.85f, 0.35f, 0.1f);
+}
+
+void ConnectionPopup::challengeStart() {
+    auto request = WebRequestManager::get().challengeStart();
+    createListener.bind(this, &ConnectionPopup::challengeStartCallback);
+    createListener.setFilter(std::move(request));
+
+    this->updateState(State::RequestedChallenge);
+}
+
+void ConnectionPopup::challengeStartCallback(typename WebRequestManager::Event* event) {
     if (!event || !event->getValue()) return;
 
     auto evalue = std::move(*event->getValue());
@@ -96,7 +227,7 @@ void GlobedSignupPopup::createCallback(typename WebRequestManager::Event* event)
         log::warn("error creating challenge");
         log::warn("{}", message);
 
-        this->onFailure("Creating challenge failed: <cy>" + message + "</c>");
+        this->onFailure("Creating challenge failed: <cy>{}</c>", message);
 
         return;
     }
@@ -130,31 +261,29 @@ static Result<std::string> decodeAnswer(std::string_view chtoken, std::string_vi
     return box.decryptToString(decodedChallenge);
 }
 
-void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtoken, std::string_view pubkey, bool secureMode) {
+void ConnectionPopup::onChallengeCreated(int accountId, std::string_view chtoken, std::string_view pubkey, bool secureMode) {
     auto ans = decodeAnswer(chtoken, pubkey);
     if (!ans) {
         log::warn("failed to complete challenge: {}", ans.unwrapErr());
-        this->onFailure(fmt::format("Failed to complete challenge: <cy>{}</c>", ans.unwrapErr()));
+        this->onFailure("Failed to complete challenge: <cy>{}</c>", ans.unwrapErr());
         return;
     }
 
-    this->storedChToken = chtoken;
-
     std::string answer = ans.unwrap();
 
+    this->storedChToken = chtoken;
     this->isSecureMode = secureMode;
 
     if (secureMode && !NetworkManager::get().canGetSecure()) {
-        // mod is built in insecure mode, or secure mode initialization failed
-#ifdef GLOBED_OSS_BUILD
-        const char* msg = "Globed is built in the <cy>open-source mode</c>, which enables <cr>insecure mode</c>. Connecting to this server is <cr>not possible</c> while in this mode.";
-#else
-        const char* msg = "<cr>Secure mode initialization failed.</c> This is a bug. Please report this to the mod developer.";
-#endif
-
         log::warn("cannot create authtoken, secure mode is disabled but server requires it");
 
-        this->onFailure(msg);
+        // mod is built in insecure mode, or secure mode initialization failed
+#ifdef GLOBED_OSS_BUILD
+        this->onFailure("Globed is built in the <cy>open-source mode</c>, which enables <cr>insecure mode</c>. Connecting to this server is <cr>not possible</c> while in this mode.");
+#else
+        this->onFailure("<cr>Secure mode initialization failed.</c> This is a bug. Please report this to the mod developer.");
+#endif
+
         return;
     }
 
@@ -162,32 +291,38 @@ void GlobedSignupPopup::onChallengeCreated(int accountId, std::string_view chtok
         // skip the account verification, server has it disabled
         this->onChallengeCompleted(answer);
     } else {
-        statusMessage->setString("Uploading results..");
+        this->updateState(State::UploadingChallenge);
         storedAuthcode = answer;
         storedAccountId = accountId;
-        GameLevelManager::sharedState()->m_uploadMessageDelegate = this;
-        GameLevelManager::sharedState()->uploadUserMessage(storedAccountId, fmt::format("##c## {}", answer), "globed verification test, this message can be deleted");
+
+        auto glm = GameLevelManager::get();
+        glm->m_uploadMessageDelegate = this;
+        glm->uploadUserMessage(storedAccountId, fmt::format("##c## {}", answer), "globed verification test, this message can be deleted");
     }
 }
 
-void GlobedSignupPopup::uploadMessageFinished(int) {
-    GameLevelManager::sharedState()->m_uploadMessageDelegate = nullptr;
+void ConnectionPopup::uploadMessageFinished(int) {
+    GameLevelManager::get()->m_uploadMessageDelegate = nullptr;
 
     this->runAction(
         CCSequence::create(
             CCDelayTime::create(0.5f),
-            CCCallFunc::create(this, callfunc_selector(GlobedSignupPopup::onDelayedChallengeCompleted)),
+            CCCallFunc::create(this, callfunc_selector(ConnectionPopup::onDelayedChallengeCompleted)),
             nullptr
         )
     );
 }
 
-void GlobedSignupPopup::uploadMessageFailed(int e) {
-    GameLevelManager::sharedState()->m_uploadMessageDelegate = nullptr;
+void ConnectionPopup::uploadMessageFailed(int e) {
+    GameLevelManager::get()->m_uploadMessageDelegate = nullptr;
     this->tryCheckMessageCount();
 }
 
-void GlobedSignupPopup::tryCheckMessageCount() {
+void ConnectionPopup::onDelayedChallengeCompleted() {
+    this->onChallengeCompleted(storedAuthcode);
+}
+
+void ConnectionPopup::tryCheckMessageCount() {
 #ifdef GLOBED_LESS_BINDINGS
     // in the less bindings mode, just fail
     this->onFailure(
@@ -201,12 +336,12 @@ void GlobedSignupPopup::tryCheckMessageCount() {
 #endif
 }
 
-void GlobedSignupPopup::loadMessagesFinished(cocos2d::CCArray* p0, char const* p1) {
+void ConnectionPopup::loadMessagesFinished(cocos2d::CCArray* p0, char const* p1) {
     GameLevelManager::get()->m_messageListDelegate = nullptr;
     size_t count = p0 ? p0->count() : 0;
 
     if (count == 50) {
-        this->onClose(this);
+        this->forceClose();
 
         geode::createQuickPopup(
             "Note",
@@ -221,17 +356,17 @@ void GlobedSignupPopup::loadMessagesFinished(cocos2d::CCArray* p0, char const* p
             }
         );
     } else {
-        this->onFailure(makeErrorMessage(WhatFailed::Message, ""));
+        this->onFailure("{}", makeErrorMessage(WhatFailed::Message, ""));
     }
 }
 
-void GlobedSignupPopup::loadMessagesFailed(char const* p0, GJErrorCode p1) {
+void ConnectionPopup::loadMessagesFailed(char const* p0, GJErrorCode p1) {
     GameLevelManager::get()->m_messageListDelegate = nullptr;
 
 #ifdef GLOBED_LESS_BINDINGS
     this->onFailure(fmt::format("Failed to check message count (code <cy>{}</c>). This is most likely an account issue, please try to <cg>Refresh Login</c> in GD account settings.", (int) p1));
 #else
-    this->onClose(this);
+    this->forceClose();
     geode::createQuickPopup(
         "Error",
         fmt::format("Failed to check message count (code <cy>{}</c>). This is most likely an account issue, please try to <cg>Refresh Login</c> in GD account settings."
@@ -252,26 +387,20 @@ void GlobedSignupPopup::loadMessagesFailed(char const* p0, GJErrorCode p1) {
 #endif
 }
 
-void GlobedSignupPopup::forceReloadMessages(bool p0) {}
+// completed challenge
 
-void GlobedSignupPopup::setupPageInfo(gd::string p0, char const* p1) {}
-
-void GlobedSignupPopup::onDelayedChallengeCompleted() {
-    this->onChallengeCompleted(storedAuthcode);
-}
-
-void GlobedSignupPopup::onChallengeCompleted(std::string_view authcode) {
+void ConnectionPopup::onChallengeCompleted(std::string_view authcode) {
     auto& csm = CentralServerManager::get();
     auto& am = GlobedAccountManager::get();
 
-    statusMessage->setString("Verifying..");
+    this->updateState(State::VerifyingChallenge);
 
     auto request = WebRequestManager::get().challengeFinish(authcode, isSecureMode ? storedChToken : "");
-    finishListener.bind(this, &GlobedSignupPopup::finishCallback);
+    finishListener.bind(this, &ConnectionPopup::challengeCompleteCallback);
     finishListener.setFilter(std::move(request));
 }
 
-void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event) {
+void ConnectionPopup::challengeCompleteCallback(typename WebRequestManager::Event* event) {
     if (!event || !event->getValue()) return;
 
     auto evalue = std::move(*event->getValue());
@@ -279,11 +408,11 @@ void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event)
     if (!evalue.ok()) {
         if (evalue.getCode() == 401) {
             auto msg = makeErrorMessage(WhatFailed::Verify, evalue.text().unwrapOrDefault());
-            this->onFailure(msg);
+            this->onFailure("{}", msg);
             return;
         }
 
-        this->onFailure(evalue.getError());
+        this->onFailure("{}", evalue.getError());
         return;
     }
 
@@ -316,7 +445,9 @@ void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event)
     auto& am = GlobedAccountManager::get();
 
     am.storeAuthKey(util::crypto::simpleHash(authkey));
-    this->onSuccess();
+
+    // complete auth
+    this->requestTokenAndConnect();
 
     // delete the comment to cleanup
     if (messageId != "none") {
@@ -328,26 +459,9 @@ void GlobedSignupPopup::finishCallback(typename WebRequestManager::Event* event)
     }
 }
 
-void GlobedSignupPopup::onSuccess() {
-    this->onClose(this);
-}
-
-void GlobedSignupPopup::onFailure(std::string_view message) {
-    ErrorQueues::get().error(message);
-    this->onClose(this);
-}
-
-void GlobedSignupPopup::keyDown(cocos2d::enumKeyCodes) {
-    // do nothing; the popup should be impossible to close manually
-}
-
-void GlobedSignupPopup::keyBackClicked() {
-    // do nothing
-}
-
-GlobedSignupPopup* GlobedSignupPopup::create() {
-    auto ret = new GlobedSignupPopup;
-    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
+ConnectionPopup* ConnectionPopup::create(GameServer gs) {
+    auto ret = new ConnectionPopup;
+    if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT, std::move(gs))) {
         ret->autorelease();
         return ret;
     }

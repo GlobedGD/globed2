@@ -1,11 +1,15 @@
 #include "connection_test_popup.hpp"
 
 #include <Geode/utils/web.hpp>
+#include <asp/net/IpAddress.hpp>
+#include <matjson/stl_serialize.hpp>
+#include <matjson/reflect.hpp>
 
 #include <data/packets/client/connection.hpp>
 #include <data/packets/server/connection.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/web.hpp>
+#include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
 #include <managers/popup.hpp>
@@ -17,8 +21,6 @@
 #include <util/format.hpp>
 #include <util/ui.hpp>
 #include <ui/general/ask_input_popup.hpp>
-
-#include <asp/net/IpAddress.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -409,9 +411,9 @@ bool ConnectionTestPopup::setup() {
     srvListTest = this->addTest("Server List Test", [this](Test* test) {
         std::string_view url = this->usedCentralUrl;
 
-        test->logInfo(fmt::format("Attempting to fetch {}/servers", url));
+        test->logInfo(fmt::format("Attempting to fetch {}/v3/meta", url));
 
-        auto task = WebRequestManager::get().fetchServers(url);
+        auto task = WebRequestManager::get().fetchServerMeta(url);
 
         while (task.isPending()) {
             std::this_thread::sleep_for(std::chrono::milliseconds{100});
@@ -437,19 +439,16 @@ bool ConnectionTestPopup::setup() {
             truncResp = resp;
         }
 
-        auto& gsm = GameServerManager::get();
-        gsm.clear();
-        gsm.clearActive();
-        gsm.updateCache(resp);
-        auto loadResult = gsm.loadFromCache();
-        gsm.pendingChanges = true;
-
-        if (!loadResult) {
-            test->logWarn(fmt::format("Failed to parse server list: {}", loadResult.unwrapErr()));
+        auto& csm = CentralServerManager::get();
+        auto cres = matjson::parseAs<MetaResponse>(resp);
+        if (!cres) {
+            test->logWarn(fmt::format("Failed to parse server list: {}", cres.unwrapErr()));
             test->logWarn(fmt::format("Server response: \"{}\"", truncResp));
             test->fail("Invalid response was sent by the server");
             return;
         }
+
+        csm.initFromMeta(cres.unwrap());
 
         Loader::get()->queueInMainThread([popup = test->ctPopup] {
             popup->queueGameServerTests();

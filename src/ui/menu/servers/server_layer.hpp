@@ -2,19 +2,16 @@
 
 #include <defs/geode.hpp>
 
-#include "signup_layer.hpp"
 #include "server_list.hpp"
 #include <managers/web.hpp>
 
-class GlobedServersLayer : public cocos2d::CCLayer {
+class GLOBED_DLL GlobedServersLayer : public cocos2d::CCLayer {
 public:
-
     static GlobedServersLayer* create();
 
 private:
     cocos2d::CCSprite* background;
     GlobedServerList* serverList;
-    GlobedSignupLayer* signupLayer;
     WebRequestManager::Listener requestListener;
     bool transitioningAway = false;
     bool serversLoaded = false;

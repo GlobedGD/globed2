@@ -44,7 +44,10 @@ public:
     // Returns the authkey in urlsafe base64 encoded form
     std::optional<std::string> getAuthKey();
 
-    void requestAuthToken(std::optional<std::function<void()>> callback);
+    void storeArgonToken(const std::string& token);
+    std::string getArgonToken();
+
+    void requestAuthToken(std::optional<std::function<void(bool)>> callback, bool argon);
 
     // admin password stuff
 
@@ -60,9 +63,10 @@ public:
 
 private:
     WebRequestManager::Listener requestListener;
-    std::optional<std::function<void()>> requestCallbackStored;
+    std::optional<std::function<void(bool)>> requestCallbackStored;
     std::unique_ptr<SecretBox> cryptoBox;
     asp::Mutex<std::string> tempAdminPassword;
+    asp::Mutex<std::string> argonToken;
 
     void requestCallback(WebRequestManager::Task::Event* event);
     void cancelAuthTokenRequest();

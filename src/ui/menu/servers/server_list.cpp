@@ -45,14 +45,10 @@ void GlobedServerList::forceRefresh() {
 void GlobedServerList::softRefresh() {
     auto& gsm = GameServerManager::get();
 
-    auto active = gsm.getActiveId();
-
-    bool authenticated = NetworkManager::get().established();
-
     for (auto* slc : *listLayer) {
         auto server = gsm.getServer(slc->gsview.id);
         if (server.has_value()) {
-            slc->updateWith(server.value(), authenticated && slc->gsview.id == active);
+            slc->updateWith(server.value());
         }
     }
 }
@@ -63,13 +59,8 @@ CCArray* GlobedServerList::createServerList() {
     auto& nm = NetworkManager::get();
     auto& gsm = GameServerManager::get();
 
-    bool authenticated = nm.established();
-
-    auto activeServer = gsm.getActiveId();
-
     for (const auto& [serverId, server] : gsm.getAllServers()) {
-        bool active = authenticated && serverId == activeServer;
-        auto cell = ServerListCell::create(server, active);
+        auto cell = ServerListCell::create(server);
         ret->addObject(cell);
     }
 

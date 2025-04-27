@@ -145,7 +145,13 @@ namespace util::gd {
     }
 
     void safePopScene() {
+#ifndef GLOBED_LESS_BINDINGS
         globed::cachedSingleton<GameManager>()->safePopScene();
+#else
+        auto dir = CCDirector::get();
+        dir->popScene();
+#endif
+
         // auto dir = CCDirector::get();
 
         // if (dir->sceneCount() < 2) {

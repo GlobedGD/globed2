@@ -40,13 +40,15 @@ static RequestTask mapTask(CurlManager::Task&& param) {
     return param;
 }
 
-RequestTask WebRequestManager::requestAuthToken() {
+RequestTask WebRequestManager::requestAuthToken(bool argon) {
     auto& gam = GlobedAccountManager::get();
 
     auto authkey = gam.getAuthKey().value_or("");
+    auto argonToken = gam.getArgonToken();
+
     auto gdData = gam.gdData.lock();
 
-    return this->post(makeCentralUrl("v2/totplogin"), 10, [&](CurlRequest& req) {
+    return this->post(makeCentralUrl(argon ? "v3/argonlogin" : "v2/totplogin"), 10, [&](CurlRequest& req) {
         matjson::Value accdata = matjson::Value::object();
         accdata["account_id"] = gdData->accountId;
         accdata["user_id"] = gdData->userId;
@@ -55,12 +57,21 @@ RequestTask WebRequestManager::requestAuthToken() {
         matjson::Value obj = matjson::Value::object();
         obj["account_data"] = accdata;
 
-        // recode as urlsafe
-        obj["authkey"] = authkey;
+        if (!argon) {
+            obj["authkey"] = authkey;
+        } else {
+            obj["token"] = argonToken;
+            if (auto s = NetworkManager::get().getSecure(fmt::to_string(gdData->accountId))) {
+                obj[GEODE_STR(GEODE_CONCAT(GEODE_CONCAT(tr, ust), GEODE_CONCAT(_tok, en)))] = s.value();
+            }
+        }
 
         req.bodyJSON(obj);
         req.encrypted(true);
-        req.param("protocol", NetworkManager::get().getUsedProtocol());
+
+        if (!argon) {
+            req.param("protocol", NetworkManager::get().getUsedProtocol());
+        }
     });
 }
 
@@ -121,6 +132,14 @@ RequestTask WebRequestManager::fetchCredits() {
 
 RequestTask WebRequestManager::fetchServers(std::string_view urlOverride) {
     auto url = urlOverride.empty() ? makeCentralUrl("servers") : makeUrl(urlOverride, "servers");
+
+    return this->get(url, 10, [&](CurlRequest& req) {
+        req.param("protocol", NetworkManager::get().getUsedProtocol());
+    });
+}
+
+RequestTask WebRequestManager::fetchServerMeta(std::string_view urlOverride) {
+    auto url = urlOverride.empty() ? makeCentralUrl("v3/meta") : makeUrl(urlOverride, "v3/meta");
 
     return this->get(url, 10, [&](CurlRequest& req) {
         req.param("protocol", NetworkManager::get().getUsedProtocol());

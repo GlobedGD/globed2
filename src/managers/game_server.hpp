@@ -61,10 +61,6 @@ public:
     void saveLastConnected(std::string_view addr);
     std::string loadLastConnected();
 
-    void updateCache(std::string_view response);
-    void clearCache();
-    Result<> loadFromCache();
-
     /* pings */
 
     uint32_t startPing(std::string_view serverId);

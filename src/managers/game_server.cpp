@@ -1,5 +1,6 @@
 #include "game_server.hpp"
 
+#include <matjson/reflect.hpp>
 #include <util/net.hpp>
 #include <util/rng.hpp>
 #include <util/collections.hpp>
@@ -9,9 +10,7 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
-GameServerManager::GameServerManager() {
-    this->updateCache(Mod::get()->getSavedValue<std::string>(SERVER_RESPONSE_CACHE_KEY));
-}
+GameServerManager::GameServerManager() {}
 
 Result<> GameServerManager::addServer(std::string_view serverId, std::string_view name, std::string_view address, std::string_view region) {
     _data.lock()->servers.erase(std::string(serverId));
@@ -63,6 +62,7 @@ Result<bool> GameServerManager::addOrUpdateServer(std::string_view serverId_, st
 
 void GameServerManager::clear() {
     _data.lock()->servers.clear();
+    pendingChanges = true;
 }
 
 size_t GameServerManager::count() {
@@ -152,72 +152,6 @@ void GameServerManager::saveLastConnected(std::string_view addr) {
 
 std::string GameServerManager::loadLastConnected() {
     return Mod::get()->getSavedValue<std::string>(LAST_CONNECTED_SETTING_KEY);
-}
-
-void GameServerManager::updateCache(std::string_view response) {
-    _data.lock()->cachedServerResponse = response;
-    Mod::get()->setSavedValue(SERVER_RESPONSE_CACHE_KEY, std::string(response));
-}
-
-void GameServerManager::clearCache() {
-    this->updateCache("");
-}
-
-Result<> GameServerManager::loadFromCache() {
-    const size_t MAGIC_LEN = sizeof(NetworkManager::SERVER_MAGIC);
-
-    std::string response = _data.lock()->cachedServerResponse;
-
-    GLOBED_UNWRAP_INTO(util::crypto::base64Decode(response), auto decoded)
-
-    GLOBED_REQUIRE_SAFE(decoded.size() >= MAGIC_LEN, fmt::format("invalid response sent by the server (missing magic)"));
-
-    ByteBuffer buf(std::move(decoded));
-    auto magicResult = buf.readValue<util::data::bytearray<MAGIC_LEN>>();
-
-    if (magicResult.isErr()) {
-        return Err(ByteBuffer::strerror(magicResult.unwrapErr()));
-    }
-
-    auto magic = magicResult.unwrap();
-
-    // compare it with the needed magic
-    bool correct = true;
-    for (size_t i = 0; i < MAGIC_LEN; i++) {
-        if (magic[i] != NetworkManager::SERVER_MAGIC[i]) {
-            correct = false;
-            break;
-        }
-    }
-
-    GLOBED_REQUIRE_SAFE(correct, "invalid response sent by the server (invalid magic)");
-
-    auto serverListResult = buf.readValue<std::vector<GameServerEntry>>();
-    if (serverListResult.isErr()) {
-        return Err(ByteBuffer::strerror(serverListResult.unwrapErr()));
-    }
-
-    auto serverList = serverListResult.unwrap();
-
-    for (const auto& server : serverList) {
-        auto result = this->addOrUpdateServer(
-            server.id,
-            server.name,
-            server.address,
-            server.region
-        );
-
-        if (result.isErr()) {
-            this->clear();
-            return Err("invalid game server found when parsing server response");
-        }
-
-        if (result.unwrap()) {
-            this->pendingChanges = true;
-        }
-    }
-
-    return Ok();
 }
 
 uint32_t GameServerManager::startPing(std::string_view serverId) {

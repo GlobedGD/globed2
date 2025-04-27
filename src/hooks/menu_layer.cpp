@@ -16,6 +16,7 @@
 #include <util/net.hpp>
 #include <util/ui.hpp>
 
+#include <argon/argon.hpp>
 #include <asp/fs.hpp>
 
 using namespace geode::prelude;
@@ -46,7 +47,7 @@ bool HookedMenuLayer::init() {
                     ErrorQueues::get().warn(fmt::format("[Globed] Failed to connect: {}", result.unwrapErr()));
                 }
             } else {
-                auto cacheResult = gsm.loadFromCache();
+                auto cacheResult = csm.initFromCache();
                 if (cacheResult.isErr()) {
                     ErrorQueues::get().debugWarn(fmt::format("failed to autoconnect: {}", cacheResult.unwrapErr()));
                     return;
@@ -59,17 +60,40 @@ bool HookedMenuLayer::init() {
                     return;
                 };
 
-                if (!am.hasAuthKey()) {
+                auto doConnect = [&am, &csm, lastServer] {
+                    am.requestAuthToken([lastServer](bool success) {
+                        if (!success) {
+                            return;
+                        }
+
+                        auto result = NetworkManager::get().connect(lastServer.value());
+
+                        if (result.isErr()) {
+                            ErrorQueues::get().warn(fmt::format("[Globed] Failed to connect: {}", result.unwrapErr()));
+                        }
+                    }, csm.activeArgonUrl().has_value());
+                };
+
+                bool useArgon = csm.activeHasAuth() && csm.activeArgonUrl().has_value();
+
+                if (!useArgon && !am.hasAuthKey()) {
                     // no authkey, don't autoconnect
                     return;
-                }
+                } else if (useArgon) {
+                    // request the argon token, only then connect
+                    (void) argon::setServerUrl(csm.activeArgonUrl().value());
+                    (void) argon::startAuth([&am, doConnect](Result<std::string> token) {
+                        if (token) {
+                            am.storeArgonToken(token.unwrap());
+                            doConnect();
+                        } else {
+                            log::warn("Argon auth failed: {}", token.unwrapErr());
+                        }
+                    });
 
-                am.requestAuthToken([lastServer] {
-                    auto result = NetworkManager::get().connect(lastServer.value());
-                    if (result.isErr()) {
-                        ErrorQueues::get().warn(fmt::format("[Globed] Failed to connect: {}", result.unwrapErr()));
-                    }
-                });
+                } else {
+                    doConnect();
+                }
             }
         });
     }

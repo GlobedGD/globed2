@@ -14,7 +14,7 @@ use rocket::{
 };
 use serde::Serialize;
 
-use crate::state::ServerState;
+use crate::{config::GameServerEntry, state::ServerState};
 
 use super::*;
 
@@ -33,6 +33,7 @@ pub struct VersionCheckResponse {
     pub globedmin: &'static str,
 }
 
+// TODO: remove
 #[get("/versioncheck?<gd>&<globed>&<protocol>")]
 pub fn versioncheck(gd: &str, globed: &str, protocol: u16) -> WebResult<Json<VersionCheckResponse>> {
     let resp = || VersionCheckResponse {
@@ -87,6 +88,7 @@ pub fn robots() -> String {
     "User-agent: *\nDisallow: /".to_owned()
 }
 
+// TODO: remove
 #[get("/servers?<protocol>")]
 pub async fn servers(state: &State<ServerState>, protocol: u16) -> WebResult<String> {
     check_maintenance!(state);
@@ -104,6 +106,34 @@ pub async fn servers(state: &State<ServerState>, protocol: u16) -> WebResult<Str
     let encoded = b64e::STANDARD.encode(buf.as_bytes());
 
     Ok(encoded)
+}
+
+#[derive(Serialize)]
+pub struct ServerMeta {
+    pub servers: Vec<GameServerEntry>,
+    pub supported: bool,
+    pub auth: bool,
+    pub argon: Option<String>,
+    pub gdmin: &'static str,
+    pub globedmin: &'static str,
+}
+
+#[get("/v3/meta?<protocol>")]
+pub async fn meta(state: &State<ServerState>, protocol: u16) -> WebResult<Json<ServerMeta>> {
+    check_maintenance!(state);
+
+    let state = state.state_read().await;
+    let servers = &state.config.game_servers;
+    let supported = globed_shared::SUPPORTED_PROTOCOLS.contains(&protocol);
+
+    Ok(Json(ServerMeta {
+        servers: servers.clone(),
+        supported,
+        auth: state.config.use_gd_api || state.config.use_argon,
+        argon: state.config.use_argon.then(|| state.config.argon_url.clone()),
+        gdmin: MIN_GD_VERSION,
+        globedmin: MIN_CLIENT_VERSION,
+    }))
 }
 
 fn _check() -> (Status, (ContentType, String)) {

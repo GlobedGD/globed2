@@ -23,7 +23,7 @@ use globed_shared::{
 };
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use crate::{config::ServerConfig, db::GlobedDb, game_pinger::GameServerPinger, verifier::AccountVerifier};
+use crate::{argon_client::ArgonClient, config::ServerConfig, db::GlobedDb, game_pinger::GameServerPinger, verifier::AccountVerifier};
 use blake2::{Blake2b, Digest};
 use digest::consts::U32;
 
@@ -54,13 +54,14 @@ pub struct ServerStateData {
     pub challenge_pubkey: GenericArray<u8, U32>,
     pub challenge_box: XSalsa20Poly1305,
     pub http_client: reqwest::Client,
+    pub argon_client: Option<ArgonClient>,
     pub last_logins: HashMap<u64, LoginEntry>, // { hash of lowercase username : entry }
     pub motd: String,
     pub motd_dynamic: bool,
 }
 
 impl ServerStateData {
-    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: &str, token_secret_key: &str) -> Self {
+    pub fn new(config_path: PathBuf, config: ServerConfig, secret_key: &str, token_secret_key: &str, argon_client: Option<ArgonClient>) -> Self {
         let skey_bytes = secret_key.as_bytes();
 
         let hmac = Hmac::<Sha256>::new_from_slice(skey_bytes).unwrap();
@@ -97,6 +98,7 @@ impl ServerStateData {
             last_logins: HashMap::new(),
             motd,
             motd_dynamic,
+            argon_client,
         }
     }
 

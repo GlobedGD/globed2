@@ -195,6 +195,10 @@ pub struct ServerConfig {
     #[serde(default = "default_gd_api_url")]
     pub gd_api_url: String,
     #[serde(default = "default_false")]
+    pub use_argon: bool,
+    #[serde(default = "default_string")]
+    pub argon_url: String,
+    #[serde(default = "default_false")]
     pub skip_name_check: bool,
     #[serde(default = "default_refresh_interval")]
     pub refresh_interval: u64,

@@ -24,7 +24,9 @@ pub fn query_string(_req: &Request) -> &'static str {
 }
 
 pub mod routes {
-    pub mod auth;
+    pub mod auth_argon;
+    pub mod auth_common;
+    pub mod auth_old;
     pub mod featured;
     pub mod game_server;
     pub mod meta;
@@ -41,12 +43,14 @@ pub mod routes {
             meta::version,
             meta::versioncheck,
             meta::servers,
+            meta::meta,
             meta::index,
             meta::robots,
             game_server::boot,
-            auth::totp_login,
-            auth::challenge_new,
-            auth::challenge_verify,
+            auth_argon::argon_login,
+            auth_old::totp_login,
+            auth_old::challenge_new,
+            auth_old::challenge_verify,
             featured::current,
             featured::history,
             featured::replace,

@@ -5,6 +5,7 @@
 #include <data/bytebuffer.hpp>
 #include <util/crypto.hpp> // base64
 #include <util/singleton.hpp>
+#include <data/types/misc.hpp>
 
 struct CentralServer {
     std::string name;
@@ -13,6 +14,15 @@ struct CentralServer {
 
 GLOBED_SERIALIZABLE_STRUCT(CentralServer, (name, url));
 GLOBED_VERIFY_SERIALIZED_STRUCT(CentralServer);
+
+struct MetaResponse {
+    std::vector<GameServerEntry> servers;
+    bool supported;
+    bool auth;
+    std::optional<std::string> argon;
+    std::string gdmin;
+    std::string globedmin;
+};
 
 class CentralServerManager : public SingletonBase<CentralServerManager> {
 protected:
@@ -54,12 +64,26 @@ public:
     // clear the active authtoken, reinitialize account manager, clear game servers, and switch to a central server by its ID
     void switchRoutine(int index, bool force = false);
 
+    void updateCacheForActive(const std::string& response);
+    Result<> initFromCache();
+    void initFromMeta(const MetaResponse& resp);
+
+    bool activeHasAuth();
+    std::optional<std::string> activeArgonUrl();
+
     std::string getMotdKey();
 
     asp::AtomicBool recentlySwitched = false;
 
 protected:
-    asp::Mutex<std::vector<CentralServer>> _servers;
+    struct CentralServerData {
+        CentralServer server;
+        bool fetchedMeta = false;
+        bool auth;
+        std::optional<std::string> argonUrl;
+    };
+
+    asp::Mutex<std::vector<CentralServerData>> _servers;
     asp::AtomicI32 _activeIdx = -1;
 
     constexpr static const char* SETTING_KEY = "_central-server-list";
@@ -68,4 +92,9 @@ protected:
 
     void save();
     Result<> tryReload();
+
+    // modify a central server and save. only call from main thread
+    void modifyServerInternal(int index, const CentralServerData& data);
+
+    std::optional<CentralServerData*> getServerInternal(int id);
 };

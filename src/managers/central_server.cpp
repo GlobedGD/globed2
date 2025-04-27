@@ -5,7 +5,18 @@
 #include <managers/account.hpp>
 #include <net/manager.hpp>
 
+#include <matjson/reflect.hpp>
+#include <matjson/std.hpp>
+#include <matjson/stl_serialize.hpp>
+
 #include <asp/fs.hpp>
+
+static std::string identForServer(const CentralServer& server) {
+    auto s = util::crypto::hexEncode(util::crypto::simpleHash(server.url));
+    s.resize(16);
+
+    return s;
+}
 
 CentralServerManager::CentralServerManager() {
     this->reload();
@@ -60,7 +71,7 @@ std::optional<CentralServer> CentralServerManager::getActive() {
         return std::nullopt;
     }
 
-    return servers->at(idx);
+    return servers->at(idx).server;
 }
 
 int CentralServerManager::getActiveIndex() {
@@ -68,11 +79,16 @@ int CentralServerManager::getActiveIndex() {
 }
 
 std::vector<CentralServer> CentralServerManager::getAllServers() {
-    return *_servers.lock();
+    std::vector<CentralServer> out;
+    for (auto& server : *_servers.lock()) {
+        out.push_back(server.server);
+    }
+
+    return out;
 }
 
 CentralServer CentralServerManager::getServer(int index) {
-    return _servers.lock()->at(index);
+    return _servers.lock()->at(index).server;
 }
 
 void CentralServerManager::setStandalone(bool status) {
@@ -88,11 +104,14 @@ size_t CentralServerManager::count() {
 }
 
 bool CentralServerManager::isOfficialServerActive() {
-    return _servers.lock()->at(0).url == globed::string<"main-server-url">();
+    return _servers.lock()->at(0).server.url == globed::string<"main-server-url">();
 }
 
 void CentralServerManager::addServer(const CentralServer& data) {
-    _servers.lock()->push_back(data);
+    _servers.lock()->push_back(CentralServerData {
+        .server = data,
+        .fetchedMeta = false
+    });
     this->save();
 }
 
@@ -138,7 +157,7 @@ void CentralServerManager::modifyServer(int index, const CentralServer& data) {
         return;
     }
 
-    servers->at(index) = data;
+    servers->at(index).server = data;
     servers.unlock();
 
     this->save();
@@ -165,6 +184,78 @@ void CentralServerManager::switchRoutine(int index, bool force) {
 
     // auto reinitialize account manager
     gam.autoInitialize();
+}
+
+void CentralServerManager::updateCacheForActive(const std::string& response) {
+    auto server = this->getActive();
+    if (!server) return;
+
+    auto ident = identForServer(*server);
+
+    auto key = fmt::format("_server-cache-{}", ident);
+    Mod::get()->setSavedValue(key, response);
+}
+
+Result<> CentralServerManager::initFromCache() {
+    auto server = this->getActive();
+    if (!server) return Err("no active server");
+
+    auto cachedResp = Mod::get()->getSavedValue<std::string>(fmt::format("_server-cache-{}", identForServer(*server)));
+    auto resp = GEODE_UNWRAP(matjson::parseAs<MetaResponse>(cachedResp));
+    this->initFromMeta(resp);
+
+    return Ok();
+}
+
+void CentralServerManager::initFromMeta(const MetaResponse& resp) {
+    auto server = this->getServerInternal(_activeIdx);
+    if (!server) return;
+
+    auto& data = *server.value();
+
+    data.fetchedMeta = true;
+    data.auth = resp.auth;
+    data.argonUrl = resp.argon;
+
+    auto& gsm = GameServerManager::get();
+
+    for (auto& server : resp.servers) {
+        auto result = gsm.addOrUpdateServer(
+            server.id,
+            server.name,
+            server.address,
+            server.region
+        );
+
+        if (result.unwrapOr(false)) {
+            gsm.pendingChanges = true;
+        }
+    }
+}
+
+bool CentralServerManager::activeHasAuth() {
+    auto server = this->getServerInternal(_activeIdx);
+    if (!server) return false;
+
+    auto& data = *server.value();
+    return data.auth;
+}
+
+std::optional<std::string> CentralServerManager::activeArgonUrl() {
+    auto server = this->getServerInternal(_activeIdx);
+    if (!server) return std::nullopt;
+
+    auto& data = *server.value();
+    return data.argonUrl;
+}
+
+std::optional<CentralServerManager::CentralServerData*> CentralServerManager::getServerInternal(int idx) {
+    auto servers = _servers.lock();
+    if (idx < 0 || idx >= servers->size()) {
+        return std::nullopt;
+    }
+
+    return &(*servers)[idx];
 }
 
 std::string CentralServerManager::getMotdKey() {
@@ -198,7 +289,10 @@ Result<> CentralServerManager::tryReload() {
 
     auto servers = _servers.lock();
     for (const auto& server : parsed) {
-        servers->push_back(server);
+        servers->push_back(CentralServerData {
+            .server = server,
+            .fetchedMeta = false
+        });
     }
 
     return Ok();
@@ -252,9 +346,11 @@ void CentralServerManager::reload() {
         log::debug("Main server override enabled: {}", url);
     }
 
-    servers->push_back(CentralServer {
-        .name = "Main server",
-        .url = url,
+    servers->push_back(CentralServerData {
+        .server = CentralServer {
+            .name = "Main server",
+            .url = url,
+        }
     });
 
     servers.unlock();
@@ -274,7 +370,7 @@ void CentralServerManager::save() {
 
     buf.writeLength(servers->size() - 1);
     for (size_t i = 1; i < servers->size(); i++) {
-        buf.writeValue((*servers)[i]);
+        buf.writeValue((*servers)[i].server);
     }
 
     auto data = util::crypto::base64Encode(buf.data());

@@ -158,6 +158,7 @@ CPMAddPackage(
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
 CPMAddPackage("gh:dankmeme01/asp2#e422b95")
+CPMAddPackage("gh:GlobedGD/argon@1.1.0")
 
 # defines for asp (std::format is only available on windows currently)
 if (WIN32)
@@ -184,7 +185,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
 endif()
 
 # link to all libraries
-target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp)
+target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp argon)
 
 if (GLOBED_IS_DEBUG)
     # stacktrace library
