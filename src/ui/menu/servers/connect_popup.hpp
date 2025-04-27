@@ -57,6 +57,7 @@ private:
     void updateState(State s);
     void startStandalone();
     void startCentral();
+    void onArgonFailure(const std::string& error);
 
     void requestTokenAndConnect();
 

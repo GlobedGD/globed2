@@ -201,6 +201,10 @@ Result<> CentralServerManager::initFromCache() {
     if (!server) return Err("no active server");
 
     auto cachedResp = Mod::get()->getSavedValue<std::string>(fmt::format("_server-cache-{}", identForServer(*server)));
+    if (cachedResp.empty()) {
+        return Err("no cache");
+    }
+
     auto resp = GEODE_UNWRAP(matjson::parseAs<MetaResponse>(cachedResp));
     this->initFromMeta(resp);
 

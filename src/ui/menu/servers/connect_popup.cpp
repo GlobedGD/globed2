@@ -150,7 +150,7 @@ void ConnectionPopup::startCentral() {
                 gam.storeArgonToken(token.unwrap());
                 this->requestTokenAndConnect();
             } else {
-                this->onFailure("Failed to create a token with argon: <cy>{}</c>", token.unwrapErr());
+                this->onArgonFailure(token.unwrapErr());
             }
         }, [this](auto prog) {
             this->m_argonState = prog;
@@ -206,6 +206,15 @@ void ConnectionPopup::updateState(State state) {
 
     m_statusLabel->setString(message.c_str());
     m_statusLabel->limitLabelWidth(POPUP_WIDTH * 0.85f, 0.35f, 0.1f);
+}
+
+void ConnectionPopup::onArgonFailure(const std::string& error) {
+    if (error == "Stage 2 failed (generic error)") {
+        log::warn("Message upload failed, checking message count");
+        this->tryCheckMessageCount();
+    } else {
+        this->onFailure("Failed to create a token with argon: <cy>{}</c>", error);
+    }
 }
 
 void ConnectionPopup::challengeStart() {
