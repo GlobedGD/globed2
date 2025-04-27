@@ -127,13 +127,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         abort_misconfig();
     }
 
-    // validate argon/gdapi
-    if config.use_gd_api && config.use_argon {
-        error!("invalid combination of 'use_gd_api' and 'use_argon' in central-conf.json");
-        warn!("hint: only one auth method can be enabled at once");
-        abort_misconfig();
-    }
-
     // validate argon url
     if config.use_argon && config.argon_url.is_empty() {
         error!("invalid argon server URL set in central-conf.json");

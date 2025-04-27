@@ -39,6 +39,7 @@ pub async fn totp_login(
     protocol: u16,
 ) -> WebResult<String> {
     let _ = protocol;
+
     auth_common::handle_login(state, db, ip, cfip, post_data.0.account_data, LoginData::Old(post_data.0.authkey), None).await
 }
 
@@ -63,6 +64,10 @@ pub async fn challenge_new(
     let account_data = &post_data.0;
 
     let user_ip = check_ip(ip, &cfip, state.config.cloudflare_protection)?;
+
+    if state.config.use_argon && !state.config.use_gd_api {
+        bad_request!("this server uses argon auth instead of old challenges, unable to create challenge");
+    }
 
     if state.config.userlist_mode == UserlistMode::Whitelist {
         if !db.get_user(account_data.account_id).await?.is_some_and(|x| x.is_whitelisted) {

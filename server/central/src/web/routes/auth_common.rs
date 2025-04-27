@@ -96,7 +96,7 @@ pub async fn handle_login(
 
     // validate
     let trust_token = match login_data {
-        LoginData::Old(authkey) => {
+        LoginData::Old(ref authkey) => {
             let uak_decoded = b64e::URL_SAFE.decode(authkey)?;
             let valid_authkey = state_.generate_hashed_authkey(account_data.account_id, account_data.user_id, &account_data.username);
 
@@ -109,14 +109,14 @@ pub async fn handle_login(
             None
         }
 
-        LoginData::Argon(token) => {
+        LoginData::Argon(ref token) => {
             let client = match state_.argon_client.as_ref() {
                 Some(x) => x,
                 None => bad_request!("this server does not have argon authentication enabled"),
             };
 
             match client
-                .validate_token(account_data.account_id, account_data.user_id, &account_data.username, &token)
+                .validate_token(account_data.account_id, account_data.user_id, &account_data.username, token)
                 .await
             {
                 Ok(Verdict::Strong) => {}
@@ -166,13 +166,21 @@ pub async fn handle_login(
         }
     };
 
+    let argon_str = match login_data {
+        LoginData::Old(_) => "old",
+        LoginData::Argon(_) => "argon",
+    };
+
     if let Some(trust_token) = trust_token {
         debug!(
-            "[{} ({}) @ {}] login successful, trust token: {}",
-            account_data.username, account_data.account_id, user_ip, trust_token
+            "[{} ({}) @ {}] login successful ({argon_str}), trust token: {trust_token}",
+            account_data.username, account_data.account_id, user_ip
         );
     } else {
-        debug!("[{} ({}) @ {}] login successful", account_data.username, account_data.account_id, user_ip);
+        debug!(
+            "[{} ({}) @ {}] login successful ({argon_str})",
+            account_data.username, account_data.account_id, user_ip
+        );
     }
 
     let token = state_
