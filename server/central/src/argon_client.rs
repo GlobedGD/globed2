@@ -1,6 +1,6 @@
 use std::{fmt::Display, time::Duration};
 
-use globed_shared::{SyncMutex, reqwest};
+use globed_shared::reqwest;
 use serde::Deserialize;
 
 struct ClientConfig {
@@ -16,8 +16,9 @@ impl ClientConfig {
     }
 }
 
+// todo: if this ever is gonna store internal state then modify the thing in main
 pub struct ArgonClient {
-    config: SyncMutex<ClientConfig>,
+    config: ClientConfig,
     client: reqwest::Client,
 }
 
@@ -87,27 +88,16 @@ impl ArgonClient {
 
         let config = ClientConfig::new(base_url);
 
-        Self {
-            client: http_client,
-            config: SyncMutex::new(config),
-        }
-    }
-
-    pub fn update_base_url(&self, base_url: String) {
-        self.config.lock().base_url = base_url;
+        Self { client: http_client, config }
     }
 
     pub async fn validate_token(&self, account_id: i32, user_id: i32, username: &str, token: &str) -> Result<Verdict, ArgonClientError> {
-        let req = {
-            let config = self.config.lock();
-
-            self.client.get(format!("{}/v1/validation/check_strong", config.base_url)).query(&[
-                ("account_id", account_id.to_string().as_str()),
-                ("user_id", user_id.to_string().as_str()),
-                ("username", username),
-                ("authtoken", token),
-            ])
-        };
+        let req = self.client.get(format!("{}/v1/validation/check_strong", self.config.base_url)).query(&[
+            ("account_id", account_id.to_string().as_str()),
+            ("user_id", user_id.to_string().as_str()),
+            ("username", username),
+            ("authtoken", token),
+        ]);
 
         let response = req.send().await?;
 
@@ -131,11 +121,7 @@ impl ArgonClient {
     }
 
     pub async fn check_status(&self) -> Result<ArgonStatus, ArgonClientError> {
-        let req = {
-            let config = self.config.lock();
-
-            self.client.get(format!("{}/v1/status", config.base_url))
-        };
+        let req = self.client.get(format!("{}/v1/status", self.config.base_url));
 
         let response = req.send().await?;
 

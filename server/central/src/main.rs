@@ -183,6 +183,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     // set the maintenance flag appropriately
                     watcher_state.set_maintenance(state.config.maintenance);
                     watcher_state.inner.verifier.set_enabled(state.config.use_gd_api);
+
+                    // we can just recreate the client because it stores no internal state
+                    state.argon_client = state.config.use_argon.then(|| ArgonClient::new(state.config.argon_url.clone()));
                 }
                 Err(err) => {
                     warn!("Failed to reload configuration: {}", err.to_string());
