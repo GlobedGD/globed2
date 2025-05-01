@@ -74,6 +74,7 @@ Replace `0.0.0.0:4202` with the address you want the game server to listen on, `
 By default, the file is created with the name `central-conf.json` in the current working directory when you run the server, but it can be overriden with the environment variable `GLOBED_CONFIG_PATH`. The path can be a folder or a full file path.
 
 ### General settings
+
 | JSON key | Default | Description |
 |---------|---------|-----------------|
 | `web_mountpoint` | `"/"` | HTTP mountpoint (the prefix before every endpoint) |
@@ -92,26 +93,6 @@ By default, the file is created with the name `central-conf.json` in the current
 | `roles` | `(...)` | Controls the roles available on the server (moderator, admin, etc.), their permissions, name colors, and various other things |
 | `motd_path` | `(empty)` | Path to a Markdown file (relative to `central-conf.json`) which will be displayed upon a player's first connection to the server |
 | `motd_dynamic` | `false` | When enabled, players will get the motd popup every time it is changed, instead of just once |
-
-### Security settings (the boring stuff)
-
-These are recommended to adjust if you're hosting a public server, otherwise the defaults should be fine.
-
-| JSON key | Default | Description |
-|---------|---------|-----------------|
-| `admin_key` | `(random)` | The password used to unlock the admin panel in-game, must be 32 characters or less |
-| `use_gd_api` | `false` | Verify account ownership via requests to GD servers. Note that you must set `gd_api_account` and `gd_api_gjp` accordingly if you enable this setting |
-| `gd_api_account` | `0` | Account ID of a bot account that will be used to verify account ownership |
-| `gd_api_gjp` | `(empty)` | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
-| `gd_api_url` | `(...)` | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
-| `skip_name_check` | `false` | Skips validation of account names when verifying accounts |
-| `refresh_interval` | `3000` | Controls the time (in milliseconds) between requests to the GD server for refreshing messages |
-| `secret_key` | `(random)` | Secret key for signing authentication keys |
-| `secret_key2` | `(random)` | Secret key for signing session tokens |
-| `game_server_password` | `(random)` | Password used to authenticate game servers |
-| `cloudflare_protection` | `false` | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users. If your server is proxied through cloudflare, you **must** turn on this option. |
-| `challenge_expiry` | `30` | Amount of seconds before an authentication challenge expires and a new one can be requested |
-| `token_expiry` | `86400` (1 day) | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
 
 Formatting for game servers:
 
@@ -152,6 +133,43 @@ Formatting for user roles:
 ```
 
 There is also a special format for tinting colors, for example setting `name_color` to `#ff0000 > 00ff00 > 0000ff` would make your name fade between red, green and blue. Spaces and a `#` at the start are for clarity and are optional. (Maximum 8 colors supported in one string)
+
+### Security settings (the boring stuff)
+
+Most of those can be left at their defaults. If you are hosting a **public** server, you might want to enable player authentication. The guide on correctly doing so is after the table below.
+
+| JSON key | Default | Description |
+|---------|---------|-----------------|
+| `admin_key` | `(random)` | The password used to unlock the admin panel in-game, must be 32 characters or less |
+| `use_gd_api` | `false` | Verify account ownership via requests to GD servers. Note that you must set `gd_api_account` and `gd_api_gjp` accordingly if you enable this setting |
+| `gd_api_account` | `0` | Account ID of a bot account that will be used to verify account ownership |
+| `gd_api_gjp` | `(empty)` | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
+| `gd_api_url` | `(...)` | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
+| `use_argon` | `false` | Use Argon authentication API instead of the challenge system, cannot be set together with `use_gd_api` at the same time |
+| `argon_url` | `(empty)` | Base URL for the Argon server instance |
+| `skip_name_check` | `false` | Skips validation of account names when verifying accounts |
+| `refresh_interval` | `3000` | Controls the time (in milliseconds) between requests to the GD server for refreshing messages |
+| `secret_key` | `(random)` | Secret key for signing authentication keys |
+| `secret_key2` | `(random)` | Secret key for signing session tokens |
+| `game_server_password` | `(random)` | Password used to authenticate game servers |
+| `cloudflare_protection` | `false` | Block requests coming not from Cloudflare (see `central/src/allowed_ranges.txt`) and use `CF-Connecting-IP` header to distinguish users. If your server is proxied through cloudflare, you **must** turn on this option. |
+| `challenge_expiry` | `30` | Amount of seconds before an authentication challenge expires and a new one can be requested |
+| `token_expiry` | `86400` (1 day) | Amount of seconds a session token will last. Those regenerate every time you restart the game, so it doesn't have to be long |
+
+### Player authentication
+
+If you want to force all players to verify their identity and be unable to impersonate other players, you have two ways to do it: auth challenges or [Argon](https://github.com/GlobedGD/argon). Argon is more modern and more reliable, but more complicated to setup, meanwhile auth challenges are built into the Globed server and only require you to make a bot account and enter its credentials.
+
+If your Globed server **is for a GDPS**:
+
+* You should make a bot account, ensure it has messages enabled, and save its account ID and GJP2.
+* Next, the simplest way to do authentication is to use the challenge system, by setting `use_gd_api` to `true` and setting `gd_api_account` and `gd_api_gjp` variables appropriately in the config.
+* Otherwise, if you want to use Argon for improved security and performance, you can host your own [Argon server](https://github.com/GlobedGD/argon-server) and set the `use_argon` and `argon_url` config keys appropriately.
+
+If your Globed server is NOT for a GDPS:
+
+* The easiest way is to use our Argon server - simply set `use_argon` to `true` and `argon_url` to `https://argon.globed.dev`
+* If for whatever reason you don't want to use our official server, you can either self-host Argon or use the challenge system like described above.
 
 ### Rocket.toml
 

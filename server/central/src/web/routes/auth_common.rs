@@ -121,6 +121,9 @@ pub async fn handle_login(
             {
                 Ok(Verdict::Strong) => {}
 
+                // if skip name check is enabled, consider a weak token as valid
+                Ok(Verdict::Weak(_username)) if state_.config.skip_name_check => {}
+
                 Ok(Verdict::Weak(username)) => {
                     debug!(
                         "[{user_ip}] invalid token due to username mismatch: '{}' vs '{}'",
