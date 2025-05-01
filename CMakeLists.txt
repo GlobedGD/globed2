@@ -26,6 +26,7 @@ option(GLOBED_DEBUG_PACKETS_PRINT "Print every incoming/outgoing packet" OFF)
 option(GLOBED_LESS_BINDINGS "Disable extra hooks & calls to some GD functions, useful when porting to a new GD version" OFF)
 option(GLOBED_GP_CHANGES "a" OFF)
 option(GLOBED_LINK_TO_FMOD "Whether to link to FMOD, disables voice chat if off" ON)
+option(GLOBED_ENABLE_STACKTRACE "Whether to enable stacktrace library" OFF)
 
 # on windows use precompiled, on other platforms compile libsodium
 if (WIN32)
@@ -157,7 +158,7 @@ CPMAddPackage(
     URL_HASH SHA256=feba537f6d32c062ed0f26b4d6e5b8e8450d51ef81492369a101ab99fcead278
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
-CPMAddPackage("gh:dankmeme01/asp2#e422b95")
+CPMAddPackage("gh:dankmeme01/asp2#5b0bae3")
 CPMAddPackage("gh:GlobedGD/argon@1.1.0")
 
 # defines for asp (std::format is only available on windows currently)
@@ -174,8 +175,6 @@ include(cmake/baked_resources_gen.cmake)
 generate_baked_resources_header("${CMAKE_CURRENT_SOURCE_DIR}/embedded-resources.json" "${CMAKE_CURRENT_BINARY_DIR}/globed-codegen/embedded_resources.hpp")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated-declarations")
-
     # these can be enabled to see what's taking up the most compile time
     # target_compile_options(${PROJECT_NAME} PRIVATE "-ftime-trace")
     # target_compile_options(asp PRIVATE "-ftime-trace")
@@ -187,7 +186,7 @@ endif()
 # link to all libraries
 target_link_libraries(${PROJECT_NAME} UIBuilder Boost::describe asp argon)
 
-if (GLOBED_IS_DEBUG)
+if (GLOBED_ENABLE_STACKTRACE)
     # stacktrace library
     CPMAddPackage("gh:jeremy-rifkin/cpptrace#v0.8.2")
     target_link_libraries(${PROJECT_NAME} cpptrace::cpptrace)

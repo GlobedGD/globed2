@@ -30,7 +30,11 @@ void VolumeEstimator::update(float dt) {
 
     const size_t needed = static_cast<size_t>(static_cast<float>(sampleRate) * BUFFER_SIZE * dt);
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvla-cxx-extension"
     float buf[needed];
+#pragma clang diagnostic pop
+
     size_t copied = sampleQueue.copyTo(buf, needed);
 
     if (copied < needed) {

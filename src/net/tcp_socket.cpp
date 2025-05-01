@@ -1,6 +1,8 @@
 #include "tcp_socket.hpp"
 
 #include "address.hpp"
+#include <managers/settings.hpp>
+#include <asp/time/Instant.hpp>
 #include <util/net.hpp>
 
 #ifdef GEODE_IS_WINDOWS
@@ -23,13 +25,18 @@ using namespace geode::prelude;
 TcpSocket::TcpSocket() : socket_(-1) {
     destAddr_ = std::make_unique<sockaddr_in>();
     std::memset(destAddr_.get(), 0, sizeof(sockaddr_in));
+
+    globed::netLog("TcpSocket(this={}) created", (void*)this);
 }
 
 TcpSocket::~TcpSocket() {
+    globed::netLog("TcpSocket(this={}) destroyed", (void*)this);
     this->close();
 }
 
 Result<> TcpSocket::connect(const NetworkAddress& address) {
+    globed::netLog("TcpSocket::connect(this={}, address={})", (void*)this, address.toString());
+
     // close any socket if still open
     this->close();
 
@@ -41,29 +48,41 @@ Result<> TcpSocket::connect(const NetworkAddress& address) {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     socket_ = sock;
 
+    globed::netLog("TcpSocket::connect(this={}) bound to fd: {}", (void*)this, socket_.load());
+
     GLOBED_REQUIRE_SAFE(sock != -1, "failed to create a tcp socket: socket failed");
 
     // attempt a connection with a 5 second timeout
     GLOBED_UNWRAP(this->setNonBlocking(true));
 
+    globed::netLog("TcpSocket::connect(this={}) attempting connect call", (void*)this);
+
     int code = ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
 
     // if the code isn't 0 (success) or EWOULDBLOCK (expected result), close socket and return error
     if (code != 0 && util::net::lastErrorCode() != WouldBlock) {
+        auto errmsg = util::net::lastErrorString();
+        globed::netLog("TcpSocket::connect(this={}) connect call failed, code {}: {}", (void*)this, code, errmsg);
+
         this->close();
 
-        return Err(fmt::format("tcp connect failed ({}): {}", code, util::net::lastErrorString()));
+        return Err(fmt::format("tcp connect failed ({}): {}", code, errmsg));
     }
 
     GLOBED_UNWRAP(this->setNonBlocking(false));
 
     // if the connection succeeded without blocking (local connection?), just return
     if (code == 0) {
+        globed::netLog("TcpSocket::connect(this={}) connect call completed instantly, returning success!", (void*)this);
         return Ok();
     }
 
-    // im crying why does this actually poll for double the length????
-    GLOBED_UNWRAP_INTO(this->poll(2500, false), auto pollResult);
+    globed::netLog("TcpSocket::connect(this={}) polling!", (void*)this);
+    auto start = asp::time::Instant::now();
+
+    GLOBED_UNWRAP_INTO(this->poll(5000, false), auto pollResult);
+
+    globed::netLog("TcpSocket::connect(this={}) poll returned after {}, result: {}", (void*)this, start.elapsed().toString(), pollResult);
 
     GLOBED_REQUIRE_SAFE(pollResult, "connection timed out, failed to connect after 5 seconds.")
 
@@ -78,10 +97,15 @@ Result<int> TcpSocket::send(const char* data, unsigned int dataSize) {
     constexpr int flags = 0;
 #endif
 
+    globed::netLog("TcpSocket::send(this={}, fd={}, data={}, size={})", (void*)this, socket_.load(), (void*)data, dataSize);
+
     auto result = ::send(socket_, data, dataSize, flags);
     if (result == -1) {
         auto code = util::net::lastErrorCode();
+        globed::netLog("TcpSocket::send(this={}) failed: code {}", (void*)this, code);
+
         this->maybeDisconnect();
+
         return Err(fmt::format("tcp send failed: {}", util::net::lastErrorString(code)));
     }
 
@@ -89,6 +113,8 @@ Result<int> TcpSocket::send(const char* data, unsigned int dataSize) {
 }
 
 Result<> TcpSocket::sendAll(const char* data, unsigned int dataSize) {
+    globed::netLog("TcpSocket::sendAll(this={}, fd={}, data={}, size={})", (void*)this, socket_.load(), (void*)data, dataSize);
+
     unsigned int totalSent = 0;
 
     do {
@@ -102,10 +128,14 @@ Result<> TcpSocket::sendAll(const char* data, unsigned int dataSize) {
 }
 
 void TcpSocket::disconnect() {
+    globed::netLog("TcpSocket::disconnect(this={})", (void*)this);
+
     this->close();
 }
 
 RecvResult TcpSocket::receive(char* buffer, int bufferSize) {
+    globed::netLog("TcpSocket::receive(this={}, connected={}, buf={}, size={})", (void*)this, connected.load(), (void*)buffer, bufferSize);
+
     if (!connected) {
         return RecvResult {
             .fromServer = true,
@@ -114,6 +144,9 @@ RecvResult TcpSocket::receive(char* buffer, int bufferSize) {
     }
 
     int result = ::recv(socket_, buffer, bufferSize, 0);
+
+    globed::netLog("TcpSocket::receive recv() result: {}", result);
+
     if (result == -1) {
         this->maybeDisconnect();
     } else if (result == 0) {
@@ -127,6 +160,8 @@ RecvResult TcpSocket::receive(char* buffer, int bufferSize) {
 }
 
 Result<> TcpSocket::recvExact(char* buffer, int bufferSize) {
+    globed::netLog("TcpSocket::recvExact(this={}, connected={}, buf={}, size={})", (void*)this, connected.load(), (void*)buffer, bufferSize);
+
     GLOBED_REQUIRE_SAFE(connected, "attempting to call TcpSocket::recvExact on a disconnected socket")
 
     unsigned int received = 0;
@@ -147,6 +182,8 @@ bool TcpSocket::close() {
     if (socket_ == -1) {
         return false;
     }
+
+    globed::netLog("TcpSocket::close(this={}, fd = {})", (void*)this, socket_.load());
 
 #ifdef GEODE_IS_WINDOWS
     auto res = ::closesocket(socket_) == 0;

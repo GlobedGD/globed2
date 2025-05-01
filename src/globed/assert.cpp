@@ -4,7 +4,7 @@
 
 using namespace geode::prelude;
 
-#ifdef GLOBED_DEBUG
+#ifdef GLOBED_ENABLE_STACKTRACE
 
 # include <cpptrace/cpptrace.hpp>
 
@@ -21,7 +21,7 @@ static void printStacktrace(const cpptrace::stacktrace& trace) {
 std::string globed::_condFailSafe(const std::source_location& loc, std::string_view message) {
     log::debug("Condition failed at {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
 
-#ifdef GLOBED_DEBUG
+#ifdef GLOBED_ENABLE_STACKTRACE
     printStacktrace(cpptrace::generate_trace());
 #endif
 
@@ -32,7 +32,7 @@ std::string globed::_condFailSafe(const std::source_location& loc, std::string_v
     log::error("Condition fatally failed: {}", message);
     log::error("At {} ({}, line {})", loc.function_name(), loc.file_name(), loc.line());
 
-#ifdef GLOBED_DEBUG
+#ifdef GLOBED_ENABLE_STACKTRACE
     printStacktrace(cpptrace::generate_trace());
 #endif
 

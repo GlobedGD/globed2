@@ -165,8 +165,9 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
         }));
 
 
-        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &hasBeenCancelled);
-        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, +[](void* ptr, double dtotal, double dnow, double utotal, double unow) -> int {
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &hasBeenCancelled);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, +[](void* ptr, curl_off_t dtotal, curl_off_t dnow, curl_off_t utotal, curl_off_t unow) -> int {
             auto& hbc = *static_cast<decltype(hasBeenCancelled)*>(ptr);
 
             // check if request was cancelled

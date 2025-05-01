@@ -19,10 +19,13 @@ public:
     PlayerAccountData& getOwnAccountData();
     SpecialUserData& getOwnSpecialData();
 
+    bool changedAccount(int newAccountId);
+
     bool pendingChanges = false;
 
 private:
     std::unordered_map<int32_t, PlayerAccountData> cache;
     PlayerAccountData ownData;
     SpecialUserData ownSpecialData;
+    bool inited = false;
 };

@@ -1,8 +1,10 @@
 #include "net.hpp"
 
 #include <defs/geode.hpp>
+#include <managers/settings.hpp>
 #include <util/format.hpp>
 #include <util/data.hpp>
+#include <util/debug.hpp>
 
 #ifdef GEODE_IS_WINDOWS
 # include <ws2tcpip.h>
@@ -27,11 +29,20 @@ namespace util::net {
         throw std::runtime_error(std::string("Network error: ") + message);
     }
 
+    static const char* realPlatform() {
+#ifdef GEODE_IS_WINDOWS
+# define GLOBED_WINE_PLATFORM_STRING GLOBED_PLATFORM_STRING " (Wine)"
+        return util::debug::isWine() ? GLOBED_WINE_PLATFORM_STRING : GLOBED_PLATFORM_STRING;
+#else
+        return GLOBED_PLATFORM_STRING;
+#endif
+    }
+
     std::string webUserAgent() {
         return fmt::format(
             "globed-geode-xd/{}; Globed {}; Loader {}",
             Mod::get()->getVersion().toVString(),
-            GLOBED_PLATFORM_STRING,
+            realPlatform(),
             Loader::get()->getVersion().toVString()
         );
     }
@@ -39,7 +50,7 @@ namespace util::net {
     std::string loginPlatformString() {
         return fmt::format(
             "{} ({}, Geode {})",
-            GLOBED_PLATFORM_STRING,
+            realPlatform(),
             Mod::get()->getVersion().toVString(),
             Loader::get()->getVersion().toVString()
         );
@@ -95,10 +106,18 @@ namespace util::net {
         struct addrinfo* result;
 
         if (0 != ::getaddrinfo(std::string(hostname).c_str(), nullptr, &hints, &result)) {
-            return Err(util::net::lastErrorString());
+            auto code = util::net::lastErrorCode();
+            globed::netLog("(E) getaddrinfo failed (code {}): {}", code, util::net::lastErrorString(true));
+
+            return Err(util::net::lastErrorString(true));
         }
 
         if (result->ai_family != AF_INET || result->ai_socktype != SOCK_DGRAM || result->ai_protocol != IPPROTO_UDP) {
+            globed::netLog(
+                "(E) getaddrinfo returned unexpected results: ai_family={}, ai_socktype={}, ai_protocol={}",
+                result->ai_family, result->ai_socktype, result->ai_protocol
+            );
+
             ::freeaddrinfo(result);
             return Err("getaddrinfo returned wrong output");
         }

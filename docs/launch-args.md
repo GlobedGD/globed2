@@ -24,6 +24,8 @@ Make sure to use the full format and prefix the option name with `globed-`, so i
 
 `tracing` - enables some extra logging.
 
+`net-dump` - dumps as much network information as possible, both to the console and to a log file located in mod's save directory
+
 `verbose-curl` - enables verbose curl logging (can help figure out problems with web requests)
 
 `fake-server-data` - emulates a more lively server, for example, even if the server has no players connected to it, with this option, there will be a lot of fake players on the player list. same with fake levels and rooms. **ONLY** works in debug builds (`-DGLOBED_DEBUG=ON` was set when building the mod)

@@ -64,6 +64,7 @@ void ProfileCacheManager::setOwnData(const PlayerIconData& data) {
     ownData.specialUserData = ownSpecialData;
 
     pendingChanges = changes;
+    inited = true;
 }
 
 void ProfileCacheManager::setOwnSpecialData(const SpecialUserData& specialUserData) {
@@ -81,4 +82,8 @@ PlayerAccountData& ProfileCacheManager::getOwnAccountData() {
 
 SpecialUserData& ProfileCacheManager::getOwnSpecialData() {
     return ownSpecialData;
+}
+
+bool ProfileCacheManager::changedAccount(int newAccountId) {
+    return inited && ownData.accountId != newAccountId;
 }

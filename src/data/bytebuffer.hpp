@@ -543,6 +543,7 @@ protected:
         }
     }
 
+public:
     template <
         typename T,
         class Md = boost::describe::describe_members<T, boost::describe::mod_public>

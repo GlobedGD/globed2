@@ -6,6 +6,7 @@
 # include <netinet/in.h>
 #endif
 
+#include <managers/settings.hpp>
 #include <util/format.hpp>
 #include <util/net.hpp>
 
@@ -41,6 +42,8 @@ std::string NetworkAddress::toString() const {
 }
 
 Result<sockaddr_in> NetworkAddress::resolve() const {
+    globed::netLog("Resolving host {}", host);
+
     if (host.empty()) {
         return Err("empty IP address or domain name, cannot resolve");
     }
@@ -51,6 +54,12 @@ Result<sockaddr_in> NetworkAddress::resolve() const {
         out.sin_family = AF_INET;
         out.sin_port = util::net::hostToNetworkPort(port);
         out.sin_addr = dnsCache.at(host);
+
+        globed::netLog(
+            "Host was cached, returning '{}'",
+            util::net::inAddrToString(out.sin_addr).unwrapOrElse([] { return "<error stringifying>"; })
+        );
+
         return Ok(out);
     }
 
@@ -64,6 +73,12 @@ Result<sockaddr_in> NetworkAddress::resolve() const {
     if (!ipResult) {
         GLOBED_UNWRAP(util::net::getaddrinfo(host, *addr));
     }
+
+    globed::netLog(
+        "Adding host to DNS cache ('{}' -> '{}')",
+        host,
+        util::net::inAddrToString(addr->sin_addr).unwrapOrElse([] { return "<error stringifying>"; })
+    );
 
     // add to cache
     dnsCache.emplace(std::make_pair(host, addr->sin_addr));

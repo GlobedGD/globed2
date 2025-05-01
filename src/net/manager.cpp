@@ -96,7 +96,9 @@ public:
     // Must be called from the main thread. Delivers packets to all listeners that are tied to an object.
     void update(float dt) {
         // this is a bit irrelevant here but who gives a shit
-        if (GJAccountManager::get()->m_accountID != ProfileCacheManager::get().getOwnAccountData().accountId) {
+        static int& gdAccountId = GJAccountManager::get()->m_accountID;
+
+        if (ProfileCacheManager::get().changedAccount(gdAccountId)) {
             NetworkManager::get().disconnect();
             auto& gam = GlobedAccountManager::get();
             gam.autoInitialize();
@@ -337,6 +339,11 @@ protected:
     /* connection and tasks */
 
     Result<> connect(const NetworkAddress& address, std::string_view serverId, bool standalone, bool fromRecovery = false) {
+        globed::netLog(
+            "NetworkManagerImpl::connect(address={}, serverId={}, standalone={}, fromRecovery={}, prevstate={})",
+            address.toString(), serverId, standalone, fromRecovery, state.inner.load()
+        );
+
         // if we are already connected, disconnect first
         if (state == ConnectionState::Established) {
             this->disconnect(false, false);
@@ -377,6 +384,8 @@ protected:
     void disconnect(bool quiet = false, bool noclear = false) {
         bool wasEstablished = state == ConnectionState::Established;
 
+        globed::netLog("NetworkManagerImpl::disconnect(quiet={}, noclear={}, prevstate={})", quiet, noclear, state.inner.load());
+
         this->resetConnectionState();
 
         if (!quiet && wasEstablished) {
@@ -395,6 +404,7 @@ protected:
     }
 
     void queueDisconnect(bool quiet = false, bool noclear = false) {
+        globed::netLog("NetworkManagerImpl::queueDisconnect(quiet={}, noclear={})", quiet, noclear);
         requestedAbort.requested = true;
         requestedAbort.quiet = quiet;
         requestedAbort.noclear = noclear;
@@ -410,10 +420,12 @@ protected:
     }
 
     void onConnectionError(std::string_view reason) {
+        globed::netLog("NetworkManagerImpl::onConnectionError(reason = {})", reason);
         ErrorQueues::get().debugWarn(reason);
     }
 
     void send(std::shared_ptr<Packet> packet) {
+        globed::netLog("NetworkManagerImpl::send(packet = {{id = {}}})", packet->getPacketId());
         taskQueue.push(TaskSendPacket {
             .packet = std::move(packet)
         });
@@ -462,6 +474,7 @@ protected:
     }
 
     void unregisterPacketListener(packetid_t packet, PacketListener* listener, bool suppressUnhandled) {
+        // TODO: investigate why i left this function empty 11 months ago
     }
 
     void suppressUnhandledUntil(packetid_t id, asp::time::SystemTime point) {
@@ -526,6 +539,7 @@ protected:
         });
 
         addInternalListener<KeepaliveResponsePacket>([](auto packet) {
+            globed::netLog("NetworkManagerImpl received keepalive response");
             GameServerManager::get().finishKeepalive(packet->playerCount);
         });
 
@@ -681,6 +695,8 @@ protected:
         log::debug("handshake successful, logging in");
         handshakeDone = true;
 
+        globed::netLog("NetworkManagerImpl::onCryptoHandshakeResponse");
+
         auto key = packet->data.key;
 
         socket.cryptoBox->setPeerKey(key.data());
@@ -703,7 +719,7 @@ protected:
 
 #ifdef GEODE_IS_IOS
         // iOS seemingly restricts packets to be < 10kb
-        settings.globed.fragmentationLimit = std::max<uint16_t>(settings.globed.fragmentationLimit, 10000);
+        settings.globed.fragmentationLimit = std::min<uint16_t>(settings.globed.fragmentationLimit, 10000);
 #endif
 
         auto gddata = am.gdData.lock();
@@ -718,10 +734,17 @@ protected:
             settings.getPrivacyFlags()
         );
 
+        globed::netLog(
+            "NetworkManagerImpl sending Login packet (account = {} ({} / {}), fraglimit = {})",
+            gddata->accountName, gddata->accountId, gddata->userId, settings.globed.fragmentationLimit.get()
+        );
+
         this->send(pkt);
     }
 
     void onLoggedIn(std::shared_ptr<LoggedInPacket> packet) {
+        globed::netLog("NetworkManagerImpl::onLoggedIn(serverProtocol={}, secretKey={}, tps={})", packet->serverProtocol, packet->secretKey, packet->tps);
+
         // validate protocol version
         if (!::isProtocolSupported(packet->serverProtocol)) {
             auto mismatch = std::make_shared<ProtocolMismatchPacket>();
@@ -786,6 +809,8 @@ protected:
     }
 
     void onProtocolMismatch(std::shared_ptr<ProtocolMismatchPacket> packet) {
+        globed::netLog("(W) NetworkManagerImpl::onProtocolMismatch(serverProtocol={}, minClient={})", packet->serverProtocol, packet->minClientVersion);
+
         log::warn("Failed to connect because of protocol mismatch. Server: {}, client: {}", packet->serverProtocol, this->getUsedProtocol());
 
         // show an error telling the user to update the mod
@@ -884,16 +909,20 @@ protected:
         packetid_t id = packet->getPacketId();
 
         if (id == PingResponsePacket::PACKET_ID) {
+            globed::netLog("NetworkManagerImpl::threadRecvFunc handling ping response");
             this->handlePingResponse(std::move(packet));
             return;
         }
 
         // if it's not a ping packet, and it's NOT from the currently connected server, we reject it
         if (!fromServer) {
+            globed::netLog("NetworkManagerImpl::threadRecvFunc rejecting packet NOT from the server (id = {})", id);
             return;
         }
 
         *lastReceivedPacket.lock() = SystemTime::now();
+
+        globed::netLog("NetworkManagerImpl::threadRecvFunc dispatching packet {}", id);
 
         this->callListener(std::move(packet));
     }
@@ -930,6 +959,8 @@ protected:
         // Initial tcp connection.
         if (state == ConnectionState::TcpConnecting && !recovering) {
             // try to connect
+            globed::netLog("NetworkManagerImpl::threadMainFunc connecting to {} (recovering = {})", connectedAddress.toString(), recovering.load());
+
             auto result = socket.connect(connectedAddress, recovering);
 
             if (!result) {
@@ -937,6 +968,7 @@ protected:
 
                 auto reason = result.unwrapErr();
                 log::warn("TCP connection failed: <cy>{}</c>", reason);
+                globed::netLog("NetworkManagerImpl::threadMainFunc TCP connection failed: {}", reason);
 
                 ErrorQueues::get().error(fmt::format("Failed to connect to the server.\n\nReason: <cy>{}</c>", reason));
                 return;
@@ -944,9 +976,10 @@ protected:
                 log::debug("tcp connection successful, sending the handshake");
                 state = ConnectionState::Authenticating;
 
-                socket.createBox();
-
                 uint16_t proto = this->getUsedProtocol();
+                globed::netLog("NetworkManagerImpl::threadMainFunc TCP connection succeeded, authenticating now (used protocol = {})", proto);
+
+                socket.createBox();
 
                 this->send(CryptoHandshakeStartPacket::create(
                     proto,
@@ -956,7 +989,7 @@ protected:
         }
         // Connection recovery loop itself
         else if (state == ConnectionState::TcpConnecting && recovering) {
-            log::debug("recovery attempt {}", recoverAttempt.load());
+            globed::netLog("NetworkManagerImpl::threadMainFunc connection recovery attempt {}", recoverAttempt.load());
 
             // initiate TCP connection
             auto result = socket.connect(connectedAddress, recovering);
@@ -966,7 +999,7 @@ protected:
             if (!result) {
                 failed = true;
             } else {
-                log::debug("tcp connection successful, sending recovery data");
+                globed::netLog("NetworkManagerImpl::threadMainFunc recovery connection successful, sending recovery data");
                 state = ConnectionState::Authenticating;
 
                 // if we are recovering, next steps are slightly different
@@ -991,15 +1024,18 @@ protected:
                     return;
                 }
 
-                auto sleepPeriod = std::chrono::seconds(10) * attemptNumber;
+                auto sleepPeriod = Duration::fromSecs(10) * attemptNumber;
 
-                log::debug("tcp connect failed, sleeping for {} before trying again", Duration::fromSecs(sleepPeriod.count()).toString());
+                globed::netLog(
+                    "NetworkManagerImpl::threadMainFunc recovery connection failed, sleeping for {} before trying again",
+                    sleepPeriod.toString()
+                );
 
                 // wait for a bit before trying again
 
                 // we sleep 50 times because we want to check if the user cancelled the recovery
                 for (size_t i = 0; i < 50; i++) {
-                    std::this_thread::sleep_for(sleepPeriod / 50);
+                    asp::time::sleep(sleepPeriod / 50);
 
                     if (cancellingRecovery) {
                         log::debug("recovery attempts were cancelled.");
@@ -1015,6 +1051,8 @@ protected:
         }
         // Detect if the tcp socket has unexpectedly disconnected and start recovering the connection
         else if (state == ConnectionState::Established && !socket.isConnected()) {
+            globed::netLog("NetworkManagerImpl::threadMainFunc connection was lost, starting to recover");
+
             ErrorQueues::get().warn("[Globed] connection lost, reconnecting..");
 
             state = ConnectionState::TcpConnecting;
@@ -1025,6 +1063,8 @@ protected:
         }
         // Detect if we disconnected while authenticating, likely the server doesn't expect us
         else if (state == ConnectionState::Authenticating && !socket.isConnected()) {
+            globed::netLog("NetworkManagerImpl::threadMainFunc server disconnected during the handshake!");
+
             this->disconnect(true);
 
             ErrorQueues::get().error(fmt::format(
@@ -1035,6 +1075,8 @@ protected:
         }
         // Detect if authentication is taking too long
         else if (state == ConnectionState::Authenticating && !recovering && lastReceivedPacket.lock()->elapsed() > Duration::fromSecs(5)) {
+            globed::netLog("NetworkManagerImpl::threadMainFunc disconnecting, server took too long to respond during authentication");
+
             this->disconnect(true);
 
             ErrorQueues::get().error(fmt::format(
@@ -1045,6 +1087,7 @@ protected:
         }
         // Detect if the connection has been aborted
         else if (requestedAbort) {
+            globed::netLog("NetworkManagerImpl::threadMainFunc abort was requested, disconnecting");
             this->disconnect(requestedAbort.quiet, requestedAbort.noclear);
         }
 
@@ -1080,6 +1123,8 @@ protected:
 
         if (sinceLastPacket > Duration::fromSecs(20)) {
             // timed out, disconnect the tcp socket but allow to reconnect
+            globed::netLog("NetworkManagerImpl timeout, time since last received packet: {}", sinceLastPacket.toString());
+
             log::warn("timed out, time since last received packet: {}", sinceLastPacket.toString());
             socket.disconnect();
         } else if (sinceLastPacket > Duration::fromSecs(10) && sinceLastKeepalive > Duration::fromSecs(3)) {
@@ -1088,11 +1133,13 @@ protected:
 
         // send a tcp keepalive to keep the nat hole open
         if (sinceLastTcpExchange > Duration::fromSecs(60)) {
+            globed::netLog("NetworkManagerImpl sending TCP keepalive (previous was {} ago)", sinceLastTcpExchange.toString());
             this->send(KeepaliveTCPPacket::create());
         }
     }
 
     void sendKeepalive() {
+        globed::netLog("NetworkManagerImpl::sendKeepalive (previous was {} ago)", lastSentKeepalive.elapsed().toString());
         // send a keepalive
         this->send(KeepalivePacket::create());
         lastSentKeepalive = SystemTime::now();

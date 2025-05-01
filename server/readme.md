@@ -1,8 +1,14 @@
 # Globed Server
 
-## Prerequisites
+## Note on port forwarding
 
-Before trying to setup a server, it is **recommended** that you understand what it involves. You will likely need to either setup port forwarding or use a VPN tool like Radmin VPN if you are hosting the server on your PC, and that won't be covered in this guide.
+**Please read this before trying to set up a server.**
+
+Globed uses both TCP and UDP protocols, and if you are doing this on a home network instead of a cloud server, you **will** need some sort of port forwarding or a private network (playit.gg, Radmin VPN, cloudflare tunnels do NOT work with UDP). Setting this up is not covered by this guide.
+
+If doing port forwarding, your IP **will** be public to everyone who connects, it cannot be hidden.
+
+## Prerequisites
 
 In case you are familiar with [Pterodactyl](https://pterodactyl.io/), there is an [egg](https://github.com/DumbCaveSpider/globed-pterodactyl-egg) available that could simplify the setup (thanks to [@DumbCaveSpider](https://github.com/DumbCaveSpider/))
 

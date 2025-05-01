@@ -4,8 +4,22 @@
 #include <cocos2d.h>
 
 namespace globed {
-    [[noreturn]] void destructedSingleton();
+    [[noreturn]] void destructedSingleton(std::string_view name);
     void scheduleUpdateFor(cocos2d::CCObject* obj);
+
+    // had to be copied from util::debug because it includes this file
+    template <typename T>
+    constexpr std::string_view _sgetTypenameConstexpr() {
+#ifdef __clang__
+        constexpr auto pfx = sizeof("std::string_view getTypenameConstexpr() [T = ") - 1;
+        constexpr auto sfx = sizeof("]") - 1;
+        constexpr auto function = __PRETTY_FUNCTION__;
+        constexpr auto len = sizeof(__PRETTY_FUNCTION__) - pfx - sfx - 1;
+        return {function + pfx, len};
+#else
+        static_assert(false, "well well well");
+#endif
+    }
 }
 
 // there was no reason to do this other than for me to learn crtp
@@ -23,7 +37,7 @@ public:
         static Derived instance;
 
         if (destructed) {
-            globed::destructedSingleton();
+            globed::destructedSingleton(globed::_sgetTypenameConstexpr<Derived>());
         }
 
         return instance;
@@ -53,7 +67,6 @@ public:
         static Derived* instance = new Derived();
         return *instance;
     }
-
 
 protected:
     SingletonLeakBase() {}

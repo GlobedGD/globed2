@@ -2,6 +2,7 @@
 
 #include <data/bytebuffer.hpp>
 #include <data/packets/match.hpp>
+#include <managers/settings.hpp>
 #include <util/debug.hpp>
 #include <util/net.hpp>
 #include <util/format.hpp>
@@ -24,10 +25,12 @@ using Protocol = GameSocket::Protocol;
 using ReceivedPacket = GameSocket::ReceivedPacket;
 
 GameSocket::GameSocket() {
+    globed::netLog("GameSocket: created new socket with bufsize={}", DATA_BUF_SIZE);
     dataBuffer = new byte[DATA_BUF_SIZE];
 }
 
 GameSocket::~GameSocket() {
+    globed::netLog("GameSocket: destroying socket");
     this->disconnect();
     delete[] dataBuffer;
 }
@@ -48,6 +51,8 @@ Result<> GameSocket::connect(const NetworkAddress& address, bool isRecovering) {
     GLOBED_UNWRAP(tcpSocket.connect(address))
     GLOBED_UNWRAP(udpSocket.connect(address))
 
+    globed::netLog("GameSocket::connect sending magic byte (recovery = {})", isRecovering);
+
     // send a magic byte telling the server whether we are recovering or not
     uint8_t byte = isRecovering ? MARKER_CONN_RECOVERY : MARKER_CONN_INITIAL;
     GLOBED_UNWRAP(tcpSocket.send(reinterpret_cast<const char*>(&byte), 1));
@@ -56,6 +61,8 @@ Result<> GameSocket::connect(const NetworkAddress& address, bool isRecovering) {
 }
 
 void GameSocket::disconnect() {
+    globed::netLog("GameSocket::disconnect");
+
     tcpSocket.disconnect();
     udpSocket.disconnect();
     udpBuffer.clear();
@@ -73,9 +80,13 @@ Result<std::shared_ptr<Packet>> GameSocket::recvPacketTCP() {
     GLOBED_UNWRAP(tcpSocket.recvExact(reinterpret_cast<char*>(bb.data().data()), 4));
 
     auto packetSize = bb.readU32().unwrapOr(0); // must always be 4 bytes so cant error
+    globed::netLog("GameSocket::recvPacketTCP received message length, {} bytes", packetSize);
+
     GLOBED_REQUIRE_SAFE(packetSize < DATA_BUF_SIZE, "packet is too big, rejecting")
 
     GLOBED_UNWRAP(tcpSocket.recvExact(reinterpret_cast<char*>(dataBuffer), packetSize));
+
+    globed::netLog("GameSocket::recvPacketTCP received entirety of the message, decoding!");
 
     ByteBuffer buf(dataBuffer, packetSize);
 
@@ -95,8 +106,11 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP(bool skipMarker)
     out.fromConnected = recvResult.fromServer;
 
     if (recvResult.result < 0) {
+        globed::netLog("GameSocket::recvPacketUDP fail: code {}", recvResult.result);
         return Err(fmt::format("udp recv failed ({}): {}", recvResult.result, util::net::lastErrorString()));
     }
+
+    globed::netLog("GameSocket::recvPacketUDP received {} bytes (fromConnected = {})", (size_t)recvResult.result, out.fromConnected);
 
     ByteBuffer buf(dataBuffer, (size_t)recvResult.result);
 
@@ -113,9 +127,12 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP(bool skipMarker)
 
     // check if it is a full packet or a frame,
     auto marker = buf.readU8();
+
     if (marker.isErr()) {
         return Err(fmt::to_string(marker.unwrapErr()));
     }
+
+    globed::netLog("GameSocket::recvPacketUDP marker = {:X}", (int) *marker);
 
     if (*marker == MARKER_UDP_PACKET) {
         GLOBED_UNWRAP_INTO(this->decodePacket(buf), out.packet);
@@ -146,17 +163,23 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
         return Err("timed out");
     }
 
+    globed::netLog("GameSocket::recvPacket successful poll on {}, trying to receive", (int) pollResult);
+
     // prioritize TCP, if the result is Tcp or Both, we care about TCP.
     if (pollResult != PollResult::Udp) {
         auto res = this->recvPacketTCP();
 
         if (res) {
             auto pkt = std::move(res).unwrap();
+
+            globed::netLog("GameSocket::recvPacket returning received TCP packet (id = {})", pkt ? pkt->getPacketId() : 0);
+
             return Ok(ReceivedPacket {
                 .packet = std::move(pkt),
                 .fromConnected = true
             });
         } else {
+            globed::netLog("GameSocket::recvPacket error receiving TCP packet: {}", res.unwrapErr());
             return Err(fmt::format("recvPacketTCP failed: {}", res.unwrapErr()));
         }
     }
@@ -165,23 +188,42 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
     auto udpres = this->recvPacketUDP();
 
     if (udpres && udpres.unwrap().has_value()) {
-        return Ok(std::move(**udpres));
+        auto pkt = std::move(**udpres);
+        globed::netLog(
+            "GameSocket::recvPacket returning received UDP packet (id = {}, fromConnected = {})",
+            pkt.packet ? pkt.packet->getPacketId() : 0, pkt.fromConnected
+        );
+        return Ok(std::move(pkt));
     } else if (!udpres) {
-        return Err(fmt::format("recvPacketUDP failed: {}", std::move(std::move(udpres).unwrapErr())));
+        globed::netLog("GameSocket::recvPacket error receiving UDP packet: {}", udpres.unwrapErr());
+        return Err("recvPacketUDP failed: {}", udpres.unwrapErr());
     }
 
     // if it was a frame keep trying
+    globed::netLog("GameSocket::recvPacket UDP frame was received, waiting for other frames..");
+
     for (;;) {
         GLOBED_UNWRAP_INTO(udpSocket.poll(25), auto pollres);
         if (!pollres) {
+            globed::netLog("GameSocket::recvPacket timed out waiting for other udp frames!");
             return Err("timed out");
         }
 
         auto udpres = this->recvPacketUDP();
         if (udpres && udpres.unwrap().has_value()) {
-            return Ok(std::move(**udpres));
+            auto pkt = std::move(**udpres);
+
+            globed::netLog(
+                "GameSocket::recvPacket returning received UDP (frame!) packet (id = {}, fromConnected = {})",
+                pkt.packet ? pkt.packet->getPacketId() : 0, pkt.fromConnected
+            );
+
+            return Ok(std::move(pkt));
         } else if (!udpres) {
+            globed::netLog("GameSocket::recvPacket error receiving (frame!) UDP packet: {}", udpres.unwrapErr());
             return Err(fmt::format("recvPacketUDP failed: {}", std::move(std::move(udpres).unwrapErr())));
+        } else {
+            globed::netLog("GameSocket::recvPacket received UDP frame but message is incomplete, looping..");
         }
     }
 }
@@ -192,6 +234,8 @@ Result<ReceivedPacket> GameSocket::recvPacket() {
 
 Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet, Protocol protocol) {
     GLOBED_REQUIRE_SAFE(this->isConnected(), "attempting to send a packet while disconnected")
+
+    globed::netLog("GameSocket::sendPacket(packet={{id={}, encrypted={}}}, protocol={})", packet->getPacketId(), packet->getEncrypted(), (int) protocol);
 
     bool useTcp = false;
     switch (protocol) {
@@ -229,6 +273,8 @@ Result<> GameSocket::sendPacketUDP(std::shared_ptr<Packet> packet) {
 }
 
 Result<> GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const NetworkAddress& address) {
+    globed::netLog("GameSocket::sendPacketTo(packet={{id={}, encrypted={}}}, address={})", packet->getPacketId(), packet->getEncrypted(), address.toString());
+
     GLOBED_REQUIRE_SAFE(!packet->getUseTcp(), "cannot send a TCP packet to a UDP connection")
 
     ByteBuffer buf;
@@ -253,6 +299,8 @@ Result<> GameSocket::sendPacketTo(std::shared_ptr<Packet> packet, const NetworkA
 }
 
 Result<> GameSocket::sendRecoveryData(int accountId, uint32_t secretKey) {
+    globed::netLog("GameSocket::sendRecoveryData(accountId={}, secretKey={})", accountId, secretKey);
+
     ByteBuffer bb;
     bb.writeI32(accountId);
     bb.writeU32(secretKey);
@@ -261,10 +309,12 @@ Result<> GameSocket::sendRecoveryData(int accountId, uint32_t secretKey) {
 }
 
 void GameSocket::cleanupBox() {
+    globed::netLog("GameSocket::cleanupBox");
     cryptoBox = std::unique_ptr<CryptoBox>(nullptr);
 }
 
 void GameSocket::createBox() {
+    globed::netLog("GameSocket::createBox");
     cryptoBox = std::make_unique<CryptoBox>();
 }
 
@@ -273,8 +323,11 @@ void GameSocket::togglePacketLogging(bool state) {
 }
 
 Result<PollResult> GameSocket::poll(int timeoutMs) {
+    globed::netLog("GameSocket::poll(timeoutMs={})", timeoutMs);
+
     if (!tcpSocket.connected) {
         GLOBED_UNWRAP_INTO(udpSocket.poll(timeoutMs), auto res);
+        globed::netLog("GameSocket::poll polled only udp, result: {}", res);
         return Ok(res ? PollResult::Udp : PollResult::None);
     }
 
@@ -288,7 +341,9 @@ Result<PollResult> GameSocket::poll(int timeoutMs) {
     int result = GLOBED_SOCKET_POLL(fds, 2, timeoutMs);
 
     if (result == -1) {
-        return Err(util::net::lastErrorString());
+        auto code = util::net::lastErrorCode();
+        globed::netLog("(E) GameSocket::poll failed! code {}", code);
+        return Err(util::net::lastErrorString(code));
     }
 
     bool tcp = fds[0].revents & POLLIN;
@@ -306,6 +361,8 @@ Result<PollResult> GameSocket::poll(int timeoutMs) {
 }
 
 Result<bool> GameSocket::poll(Protocol proto, int timeoutMs) {
+    globed::netLog("GameSocket::poll(proto={}, timeoutMs={})", (int) proto, timeoutMs);
+
     GLOBED_REQUIRE_SAFE(proto != Protocol::Unspecified, "invalid protocol");
 
     GLOBED_SOCKET_POLLFD fd;
@@ -323,11 +380,14 @@ Result<bool> GameSocket::poll(Protocol proto, int timeoutMs) {
 
     int result = GLOBED_SOCKET_POLL(&fd, 1, timeoutMs);
     if (result == -1) {
-        return Err(util::net::lastErrorString());
+        auto code = util::net::lastErrorCode();
+        globed::netLog("(E) GameSocket::poll failed! code {}", code);
+        return Err(util::net::lastErrorString(code));
     }
 
-    return Ok((bool) (fd.revents & POLLIN));
+    globed::netLog("GameSocket::poll result: {}", bool(fd.revents & POLLIN));
 
+    return Ok((bool) (fd.revents & POLLIN));
 }
 
 Result<> GameSocket::encodePacket(Packet& packet, ByteBuffer& buffer, bool tcp) {
@@ -345,6 +405,8 @@ Result<> GameSocket::encodePacket(Packet& packet, ByteBuffer& buffer, bool tcp) 
 
     buffer.writeValue<PacketHeader>(header);
     packet.encode(buffer);
+
+    globed::netLog("GameSocket::encodePacket: encoding packet: id={}, encrypted={}, totalsize={} (pre-encryption)", header.id, header.encrypted, buffer.size());
 
     if (packet.getEncrypted()) {
         GLOBED_REQUIRE_SAFE(cryptoBox.get() != nullptr, "attempted to encrypt a packet when no cryptobox is initialized")
@@ -381,11 +443,14 @@ Result<std::shared_ptr<Packet>> GameSocket::decodePacket(ByteBuffer& buffer) {
     size_t messageStart = buffer.getPosition();
     size_t messageLength = buffer.size() - messageStart;
 
+    globed::netLog("GameSocket::decodePacket: Decoded header: id={}, encrypted={}, length={}", header.id, header.encrypted, messageLength);
+
     auto packet = matchPacket(header.id);
 
     GLOBED_REQUIRE_SAFE(packet.get() != nullptr, std::string("invalid server-side packet: ") + std::to_string(header.id))
 
     if (packet->getEncrypted() && !header.encrypted) {
+        globed::netLog("(W) GameSocket::decodePacket: warning, mismatched encryption!!");
         GLOBED_REQUIRE_SAFE(false, fmt::format("server sent a cleartext packet when expected an encrypted one ({})", header.id))
     }
 
@@ -403,7 +468,11 @@ Result<std::shared_ptr<Packet>> GameSocket::decodePacket(ByteBuffer& buffer) {
 
     auto result = packet->decode(buffer);
     if (result.isErr()) {
-        return Err(fmt::format("Decoding packet ID {} failed: {}", header.id, ByteBuffer::strerror(result.unwrapErr())));
+        auto errmsg = ByteBuffer::strerror(result.unwrapErr());
+
+        globed::netLog("(W) GameSocket::decodePacket: failed to decode packet: {}", errmsg);
+
+        return Err(fmt::format("Decoding packet ID {} failed: {}", header.id, errmsg));
     }
 
     return Ok(std::move(packet));

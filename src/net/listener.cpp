@@ -1,6 +1,8 @@
 #include "listener.hpp"
 
+#include <managers/settings.hpp>
 #include <net/manager.hpp>
+#include <util/debug.hpp>
 
 using namespace geode::prelude;
 
@@ -17,6 +19,17 @@ bool PacketListener::init(packetid_t packetId, CallbackFn&& fn, CCObject* owner,
 }
 
 void PacketListener::invokeCallback(std::shared_ptr<Packet> packet) {
+    auto ownerToStr = [](CCObject* obj) -> std::string {
+        if (!obj) return "<null>";
+
+        return fmt::format("{}({})", util::debug::getTypename(obj), (void*)obj);
+    };
+
+    globed::netLog(
+        "PacketListener::invokeCallback(this = {{packetId = {}, owner = {}, priority = {}, isFinal = {}}}, packet = {})",
+        this->packetId, ownerToStr(this->owner), this->priority, this->isFinal, packet->getPacketId()
+    );
+
     callback(std::move(packet));
 }
 

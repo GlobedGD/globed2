@@ -1,10 +1,14 @@
 #include "settings.hpp"
 
-#include <util/format.hpp>
 #include <asp/misc/traits.hpp>
 #include <asp/fs.hpp>
+#include <asp/time/Instant.hpp>
+
+#include <util/format.hpp>
+#include <util/net.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 using SaveSlot = GlobedSettings::SaveSlot;
 
 GlobedSettings::LaunchArgs GlobedSettings::_launchArgs = {};
@@ -452,3 +456,56 @@ void GlobedSettings::clearFlag(std::string_view key) {
     Mod::get()->getSaveContainer().erase(key);
 }
 
+namespace globed {
+    namespace {
+    // guard for static destruction
+    struct SGuard {
+        SGuard() {}
+        ~SGuard() {
+            destroyed = true;
+        }
+
+        volatile bool destroyed = false;
+    };
+    }
+
+    void _doNetDump(std::string_view str) {
+        static SGuard _sguard;
+        static auto start = Instant::now();
+        static std::ofstream file(Mod::get()->getSaveDir() / "net-dump.log");
+        static bool headerWritten = false;
+        static asp::Mutex<> mutex;
+
+        if (_sguard.destroyed) {
+            return;
+        }
+
+        log::debug("[netdump] {}", str);
+
+        // Lock the writing to file part
+        auto _guard = mutex.lock();
+
+        if (!file.is_open()) {
+            if (!headerWritten) {
+                headerWritten = true;
+                log::error("Failed to open net dump file for writing at {}", Mod::get()->getSaveDir() / "net-dump.log");
+            }
+
+            return;
+        }
+
+        if (!headerWritten) {
+            headerWritten = true;
+            file << fmt::format("Globed netdump, platform: {}", util::net::loginPlatformString()) << std::endl;
+        }
+
+        auto timestamp = start.elapsed();
+
+        file << fmt::format("[{:.6f}] [{}] {}", timestamp.seconds<asp::f64>(), utils::thread::getName(), str) << std::endl; // flushing every time is probably ok here
+    }
+}
+
+// Check that all launch arguments have been specified to the macro
+
+using La = GlobedSettings::LaunchArgs;
+static_assert(sizeof(La) == ByteBuffer::calculateStructSize<La>(), "LaunchArgs are incorrectly sized, you probably forgot to add some to the serializable macro!");

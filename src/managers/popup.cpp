@@ -66,7 +66,6 @@ void PopupRef::doShow(bool reshowing) {
 
     inner->setTag(MANAGED_ALERT_TAG);
     inner->show();
-    log::debug("Showed the popup at {}", inner->getParent());
 
     auto& fields = this->getFields();
     fields.shownAt = SystemTime::now();

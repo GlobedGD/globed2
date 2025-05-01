@@ -48,6 +48,7 @@ public:
     // Launch args
     struct LaunchArgs {
         Arg<"globed-crt-fix"> crtFix;
+        Arg<"globed-net-dump"> netDump;
         Arg<"globed-verbose-curl"> verboseCurl;
         Arg<"globed-skip-preload"> skipPreload;
         Arg<"globed-debug-preload"> debugPreload;
@@ -419,7 +420,7 @@ private:
 // Launch args
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LaunchArgs, (
-    crtFix, verboseCurl, skipPreload, debugPreload, skipResourceCheck, tracing, noSslVerification, fakeData, resetSettings, devStuff
+    crtFix, netDump, verboseCurl, skipPreload, debugPreload, skipResourceCheck, tracing, noSslVerification, fakeData, resetSettings, devStuff
 ));
 
 // Settings
@@ -464,3 +465,18 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (
     globed, overlay, communication, levelUi, players, advanced, admin, keys, flags
 ));
+
+// Net dump thingy
+
+namespace globed {
+    void _doNetDump(std::string_view str);
+
+    template <typename... Args>
+    GEODE_INLINE inline void netLog(fmt::format_string<Args...> fmt, Args&&... args) {
+        static bool enabled = GlobedSettings::get().launchArgs().netDump;
+
+        if (enabled) {
+            _doNetDump(fmt::format(fmt, std::forward<Args>(args)...));
+        }
+    }
+}
