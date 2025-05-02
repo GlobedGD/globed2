@@ -492,7 +492,7 @@ void GlobedAudioManager::audioThreadFunc(decltype(audioThreadHandle)::StopToken&
     // if we are not recording right now, sleep
     if (!recordActive) {
         audioThreadSleeping = true;
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        asp::time::sleep(asp::time::Duration::fromMillis(5));
         return;
     }
 

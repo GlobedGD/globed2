@@ -57,7 +57,7 @@ Result<sockaddr_in> NetworkAddress::resolve() const {
 
         globed::netLog(
             "Host was cached, returning '{}'",
-            util::net::inAddrToString(out.sin_addr).unwrapOrElse([] { return "<error stringifying>"; })
+            GLOBED_LAZY(util::net::inAddrToString(out.sin_addr).unwrapOrElse([] { return "<error stringifying>"; }))
         );
 
         return Ok(out);
@@ -77,7 +77,7 @@ Result<sockaddr_in> NetworkAddress::resolve() const {
     globed::netLog(
         "Adding host to DNS cache ('{}' -> '{}')",
         host,
-        util::net::inAddrToString(addr->sin_addr).unwrapOrElse([] { return "<error stringifying>"; })
+        GLOBED_LAZY(util::net::inAddrToString(addr->sin_addr).unwrapOrElse([] { return "<error stringifying>"; }))
     );
 
     // add to cache

@@ -35,7 +35,7 @@ TcpSocket::~TcpSocket() {
 }
 
 Result<> TcpSocket::connect(const NetworkAddress& address) {
-    globed::netLog("TcpSocket::connect(this={}, address={})", (void*)this, address.toString());
+    globed::netLog("TcpSocket::connect(this={}, address={})", (void*)this, GLOBED_LAZY(address.toString()));
 
     // close any socket if still open
     this->close();
@@ -82,7 +82,10 @@ Result<> TcpSocket::connect(const NetworkAddress& address) {
 
     GLOBED_UNWRAP_INTO(this->poll(5000, false), auto pollResult);
 
-    globed::netLog("TcpSocket::connect(this={}) poll returned after {}, result: {}", (void*)this, start.elapsed().toString(), pollResult);
+    globed::netLog(
+        "TcpSocket::connect(this={}) poll returned after {}, result: {}",
+        (void*)this, GLOBED_LAZY(start.elapsed().toString()), pollResult
+    );
 
     GLOBED_REQUIRE_SAFE(pollResult, "connection timed out, failed to connect after 5 seconds.")
 

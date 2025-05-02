@@ -107,9 +107,9 @@ namespace util::net {
 
         if (0 != ::getaddrinfo(std::string(hostname).c_str(), nullptr, &hints, &result)) {
             auto code = util::net::lastErrorCode();
-            globed::netLog("(E) getaddrinfo failed (code {}): {}", code, util::net::lastErrorString(true));
+            globed::netLog("(E) getaddrinfo failed (code {}): {}", code, GLOBED_LAZY(util::net::lastErrorString(code, true)));
 
-            return Err(util::net::lastErrorString(true));
+            return Err(util::net::lastErrorString(code, true));
         }
 
         if (result->ai_family != AF_INET || result->ai_socktype != SOCK_DGRAM || result->ai_protocol != IPPROTO_UDP) {

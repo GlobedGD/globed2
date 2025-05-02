@@ -27,7 +27,7 @@ void PacketListener::invokeCallback(std::shared_ptr<Packet> packet) {
 
     globed::netLog(
         "PacketListener::invokeCallback(this = {{packetId = {}, owner = {}, priority = {}, isFinal = {}}}, packet = {})",
-        this->packetId, ownerToStr(this->owner), this->priority, this->isFinal, packet->getPacketId()
+        this->packetId, GLOBED_LAZY(ownerToStr(this->owner)), this->priority, this->isFinal, packet->getPacketId()
     );
 
     callback(std::move(packet));

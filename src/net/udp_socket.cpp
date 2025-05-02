@@ -37,7 +37,7 @@ Result<> UdpSocket::connect(const NetworkAddress& address) {
         return Err("This UDP socket has already been closed and cannot be reused");
     }
 
-    globed::netLog("UdpSocket::connect(this={}, address={})", (void*)this, address.toString());
+    globed::netLog("UdpSocket::connect(this={}, address={})", (void*)this, GLOBED_LAZY(address.toString()));
 
     destAddr_->sin_family = AF_INET;
 
@@ -64,7 +64,7 @@ Result<int> UdpSocket::send(const char* data, unsigned int dataSize) {
 }
 
 Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const NetworkAddress& address) {
-    globed::netLog("UdpSocket::sendTo(this={}, data={}, size={}, address={})", (void*)this, (void*)data, dataSize, address.toString());
+    globed::netLog("UdpSocket::sendTo(this={}, data={}, size={}, address={})", (void*)this, (void*)data, dataSize, GLOBED_LAZY(address.toString()));
 
     // stinky windows returns wsa error 10014 if sockaddr is a stack pointer
     std::unique_ptr<sockaddr_in> addr = std::make_unique<sockaddr_in>();

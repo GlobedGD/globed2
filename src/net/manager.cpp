@@ -341,7 +341,7 @@ protected:
     Result<> connect(const NetworkAddress& address, std::string_view serverId, bool standalone, bool fromRecovery = false) {
         globed::netLog(
             "NetworkManagerImpl::connect(address={}, serverId={}, standalone={}, fromRecovery={}, prevstate={})",
-            address.toString(), serverId, standalone, fromRecovery, state.inner.load()
+            GLOBED_LAZY(address.toString()), serverId, standalone, fromRecovery, state.inner.load()
         );
 
         // if we are already connected, disconnect first
@@ -959,7 +959,10 @@ protected:
         // Initial tcp connection.
         if (state == ConnectionState::TcpConnecting && !recovering) {
             // try to connect
-            globed::netLog("NetworkManagerImpl::threadMainFunc connecting to {} (recovering = {})", connectedAddress.toString(), recovering.load());
+            globed::netLog(
+                "NetworkManagerImpl::threadMainFunc connecting to {} (recovering = {})",
+                GLOBED_LAZY(connectedAddress.toString()), recovering.load()
+            );
 
             auto result = socket.connect(connectedAddress, recovering);
 
@@ -1028,7 +1031,7 @@ protected:
 
                 globed::netLog(
                     "NetworkManagerImpl::threadMainFunc recovery connection failed, sleeping for {} before trying again",
-                    sleepPeriod.toString()
+                    GLOBED_LAZY(sleepPeriod.toString())
                 );
 
                 // wait for a bit before trying again
@@ -1123,7 +1126,7 @@ protected:
 
         if (sinceLastPacket > Duration::fromSecs(20)) {
             // timed out, disconnect the tcp socket but allow to reconnect
-            globed::netLog("NetworkManagerImpl timeout, time since last received packet: {}", sinceLastPacket.toString());
+            globed::netLog("NetworkManagerImpl timeout, time since last received packet: {}", GLOBED_LAZY(sinceLastPacket.toString()));
 
             log::warn("timed out, time since last received packet: {}", sinceLastPacket.toString());
             socket.disconnect();
@@ -1133,13 +1136,13 @@ protected:
 
         // send a tcp keepalive to keep the nat hole open
         if (sinceLastTcpExchange > Duration::fromSecs(60)) {
-            globed::netLog("NetworkManagerImpl sending TCP keepalive (previous was {} ago)", sinceLastTcpExchange.toString());
+            globed::netLog("NetworkManagerImpl sending TCP keepalive (previous was {} ago)", GLOBED_LAZY(sinceLastTcpExchange.toString()));
             this->send(KeepaliveTCPPacket::create());
         }
     }
 
     void sendKeepalive() {
-        globed::netLog("NetworkManagerImpl::sendKeepalive (previous was {} ago)", lastSentKeepalive.elapsed().toString());
+        globed::netLog("NetworkManagerImpl::sendKeepalive (previous was {} ago)", GLOBED_LAZY(lastSentKeepalive.elapsed().toString()));
         // send a keepalive
         this->send(KeepalivePacket::create());
         lastSentKeepalive = SystemTime::now();
