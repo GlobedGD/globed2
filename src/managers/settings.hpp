@@ -472,7 +472,7 @@ namespace globed {
     void _doNetDump(std::string_view str);
 
     template <typename... Args>
-    GEODE_INLINE inline void netLog(fmt::format_string<Args...> fmt, Args&&... args) {
+    GEODE_INLINE void netLog(fmt::format_string<Args...> fmt, Args&&... args) {
         static bool enabled = GlobedSettings::get().launchArgs().netDump;
 
         if (enabled) {
