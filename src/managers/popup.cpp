@@ -14,7 +14,7 @@ using PopupRef = PopupManager::PopupRef;
 
 
 static const std::string FIELDS_ID = "popupref-fields"_spr;
-static constexpr int MANAGED_ALERT_TAG = 4893583452;
+static constexpr int MANAGED_ALERT_TAG = 93583452;
 
 struct PopupRef::Data {
     std::optional<asp::time::SystemTime> shownAt;

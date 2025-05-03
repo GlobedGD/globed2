@@ -55,9 +55,21 @@ Result<sockaddr_in> NetworkAddress::resolve() const {
         out.sin_port = util::net::hostToNetworkPort(port);
         out.sin_addr = dnsCache.at(host);
 
+        // TODO This code causes clang to crash, uncomment when they fix it :)
+        // https://github.com/llvm/llvm-project/issues/138428
+
+        // globed::netLog(
+        //     "Host was cached, returning '{}'",
+        //     GLOBED_LAZY(util::net::inAddrToString(out.sin_addr).unwrapOrElse([] { return "<error stringifying>"; }))
+        // );
+
+        auto doConvert = [&] {
+            return util::net::inAddrToString(out.sin_addr).unwrapOrElse([] { return "<error stringifying>"; });
+        };
+
         globed::netLog(
             "Host was cached, returning '{}'",
-            GLOBED_LAZY(util::net::inAddrToString(out.sin_addr).unwrapOrElse([] { return "<error stringifying>"; }))
+            GLOBED_LAZY(doConvert())
         );
 
         return Ok(out);
@@ -74,10 +86,20 @@ Result<sockaddr_in> NetworkAddress::resolve() const {
         GLOBED_UNWRAP(util::net::getaddrinfo(host, *addr));
     }
 
+    // TODO: same as the todo above
+    // globed::netLog(
+    //     "Adding host to DNS cache ('{}' -> '{}')",
+    //     host,
+    //     GLOBED_LAZY(util::net::inAddrToString(addr->sin_addr).unwrapOrElse([] { return "<error stringifying>"; }))
+    // );
+
+    auto doConvert = [&] {
+        return util::net::inAddrToString(addr->sin_addr).unwrapOrElse([] { return "<error stringifying>"; });
+    };
+
     globed::netLog(
         "Adding host to DNS cache ('{}' -> '{}')",
-        host,
-        GLOBED_LAZY(util::net::inAddrToString(addr->sin_addr).unwrapOrElse([] { return "<error stringifying>"; }))
+        host, GLOBED_LAZY(doConvert())
     );
 
     // add to cache
