@@ -21,7 +21,7 @@ use globed_shared::{
 };
 
 use super::{
-    PacketTranslationError, PartialTranslatableEncodable,
+    PartialTranslatableEncodable,
     error::{PacketHandlingError, Result},
     macros::*,
 };

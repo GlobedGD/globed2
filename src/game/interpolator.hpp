@@ -9,7 +9,7 @@ struct InterpolatorSettings {
     float expectedDelta;
 };
 
-class PlayerInterpolator {
+class GLOBED_DLL PlayerInterpolator {
 public:
     struct PlayerState;
 

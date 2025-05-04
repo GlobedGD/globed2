@@ -691,7 +691,6 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
 
     if (!self) return;
 
-
     // timescale silently changing dt isn't very good when doing network interpolation >_>
     // since timeCounter needs to agree with everyone else on how long a second is!
     float dt = timescaledDt / CCScheduler::get()->getTimeScale();
@@ -710,7 +709,7 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     fields.camState.zoom = self->m_objectLayer->getScale();
 
     // update ourselves
-    auto accountId = GJAccountManager::get()->m_accountID;
+    auto accountId = globed::cachedSingleton<GJAccountManager>()->m_accountID;
     fields.playerStore->insertOrUpdate(
         accountId,
         self->m_level->m_attempts,

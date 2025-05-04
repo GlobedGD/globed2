@@ -1,8 +1,9 @@
 #pragma once
 #include <unordered_map>
 #include <optional>
+#include <defs/platform.hpp>
 
-class PlayerStore {
+class GLOBED_DLL PlayerStore {
 public:
     struct Entry {
         int32_t attempts;
