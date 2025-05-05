@@ -8,13 +8,13 @@ use std::{
     time::Duration,
 };
 
-use globed_shared::{MAX_SUPPORTED_PROTOCOL, ServerUserEntry, should_ignore_error};
 #[allow(unused_imports)]
 use globed_shared::{
-    MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SUPPORTED_PROTOCOLS, SyncMutex, debug, info,
+    MAX_SUPPORTED_PROTOCOL, MIN_CLIENT_VERSION, MIN_SUPPORTED_PROTOCOL, SUPPORTED_PROTOCOLS, SyncMutex, debug, info,
     rand::{self, Rng},
     warn,
 };
+use globed_shared::{ServerUserEntry, should_ignore_error};
 
 use super::*;
 use crate::{

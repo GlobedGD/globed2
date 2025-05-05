@@ -17,16 +17,28 @@ impl ClientThread {
 
         let old_level = self.level_id.swap(level_id, Ordering::Relaxed);
 
-        let room = self.room.lock();
+        let pkt = {
+            let room = self.room.lock();
 
-        let mut manager = room.manager.write();
+            let mut manager = room.manager.write();
 
-        if old_level != 0 {
-            manager.remove_from_level(old_level, account_id);
-        }
+            if old_level != 0 {
+                manager.remove_from_level(old_level, account_id);
+            }
 
-        if level_id != 0 {
-            manager.add_to_level(level_id, account_id, unlisted);
+            if level_id != 0 {
+                manager.add_to_level(level_id, account_id, unlisted);
+
+                Some(LevelInnerPlayerCountPacket {
+                    count: manager.get_player_count_on_level(level_id).unwrap_or(0) as u32,
+                })
+            } else {
+                None
+            }
+        };
+
+        if let Some(pkt) = pkt {
+            self.send_packet_static(&pkt).await?;
         }
 
         Ok(())

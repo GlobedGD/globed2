@@ -21,6 +21,12 @@ pub struct LevelPlayerMetadataPacket {
     pub players: Vec<AssociatedPlayerMetadata>,
 }
 
+#[derive(Packet, Encodable, StaticSize)]
+#[packet(id = 22003, tcp = true)]
+pub struct LevelInnerPlayerCountPacket {
+    pub count: u32,
+}
+
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 22010, encrypted = true, tcp = false)]
 pub struct VoiceBroadcastPacket {
