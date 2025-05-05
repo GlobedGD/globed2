@@ -20,6 +20,7 @@
 * Fix error 10038 when trying to connect to a server
 * Fix crashing when connecting to a server that is down
 * Fix very rare crash when closing the Globed layer
+* Fix rare "invalid unordered_map key" crash when in a level
 * Fix certain rare crashes and hangs when closing the game
 * Fix some minor incompatibilities with More Icons
 

@@ -735,6 +735,12 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
     auto& settings = GlobedSettings::get();
 
     for (const auto [playerId, remotePlayer] : fields.players) {
+        // this should never happen, yet somehow it does for that one person
+        if (!fields.interpolator->hasPlayer(playerId)) {
+            log::error("Interpolator is missing a player: {}", playerId);
+            continue;
+        }
+
         auto& vstate = fields.interpolator->getPlayerState(playerId);
 
         auto frameFlags = fields.interpolator->swapFrameFlags(playerId);
