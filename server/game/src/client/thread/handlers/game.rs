@@ -29,9 +29,14 @@ impl ClientThread {
             if level_id != 0 {
                 manager.add_to_level(level_id, account_id, unlisted);
 
-                Some(LevelInnerPlayerCountPacket {
-                    count: manager.get_player_count_on_level(level_id).unwrap_or(0) as u32,
-                })
+                if self.protocol_version.load(Ordering::SeqCst) >= 14 {
+                    // XXX: protocol compat
+                    Some(LevelInnerPlayerCountPacket {
+                        count: manager.get_player_count_on_level(level_id).unwrap_or(0) as u32,
+                    })
+                } else {
+                    None
+                }
             } else {
                 None
             }
