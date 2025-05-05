@@ -11,6 +11,7 @@
 #include <managers/profile_cache.hpp>
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
+#include <managers/popup.hpp>
 #include <managers/room.hpp>
 #include <data/packets/client/game.hpp>
 #include <data/packets/client/general.hpp>
@@ -19,6 +20,8 @@
 #include <game/camera_state.hpp>
 #include <hooks/game_manager.hpp>
 #include <hooks/triggers/gjeffectmanager.hpp>
+#include <ui/menu/settings/settings_layer.hpp>
+#include <ui/menu/settings/connection_test_popup.hpp>
 #include <util/math.hpp>
 #include <util/debug.hpp>
 #include <util/cocos.hpp>
@@ -339,6 +342,10 @@ void GlobedGJBGL::setupPacketListeners() {
         }
     });
 
+    nm.addListener<LevelInnerPlayerCountPacket>(this, [this](std::shared_ptr<LevelInnerPlayerCountPacket> packet) {
+        this->getFields().initialPlayerCount = packet->count;
+    });
+
     nm.addListener<ChatMessageBroadcastPacket>(this, [this](std::shared_ptr<ChatMessageBroadcastPacket> packet) {
         this->m_fields->chatMessages.push_back({packet->sender, packet->message});
 
@@ -615,8 +622,10 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
 
     util::collections::SmallVector<int, 32> toRemove;
 
+    auto sinceUpdate = fields.timeCounter - fields.lastServerUpdate;
+
     // if more than a second passed and there was only 1 player, they probably left
-    if (fields.timeCounter - fields.lastServerUpdate > 1.0f && fields.players.size() < 2) {
+    if (sinceUpdate > 1.0f && fields.players.size() < 2) {
         for (const auto& [playerId, _] : fields.players) {
             toRemove.push_back(playerId);
         }
@@ -624,8 +633,48 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
         for (int id : toRemove) {
             self->handlePlayerLeave(id);
         }
+    } else if (fields.lastServerUpdate == 0.0f && sinceUpdate > 5.f && fields.initialPlayerCount >= 10 && !fields.shownFragmentationAlert) {
+        fields.shownFragmentationAlert = true;
+
+        // if there were any players on the level when we first joined, but we never got a packet with their data,
+        // then we probably have an incorrect packet limit set and we need to fix this.
+
+        auto limit = GlobedSettings::get().globed.fragmentationLimit.get();
+
+        if (limit > 0 && limit < 60000) {
+            // user set the limit manually, ignore this ig
+            log::warn(
+                "Missing players detected (should be {} but have none), not showing frag test because user has a custom limit set: {}",
+                fields.initialPlayerCount, limit
+            );
+        } else {
+            log::warn("Missing players detected (should be {} but have none), prompting for connection test", fields.initialPlayerCount);
+
+            // force pause the game
+            if (!self->isEditor() && !self->isPaused()) {
+                static_cast<PlayLayer*>(static_cast<GJBaseGameLayer*>(self))->pauseGame(false);
+            }
+
+            // show alert
+            PopupManager::get().quickPopup(
+                "Globed Warning",
+                "We have detected that there are <cr>issues</c> in the connection, and Globed is having troubles showing other players for you. Do you want to try and run a <cg>connection test</c>, which will likely solve this issue? This action will <cy>exit</c> the current level.",
+                "No",
+                "Yes",
+                [](auto, bool res) {
+                    if (!res) {
+                        PopupManager::get().alert(
+                            "Globed Warning",
+                            "If you want to silence this warning in the future, open settings and set Fragmentation Limit to a different value, for example 1400."
+                        ).showInstant();
+                    } else {
+                        util::ui::replaceScene(GlobedSettingsLayer::create(true));
+                    }
+                }
+            ).showQueue();
+        }
     } else {
-        util::collections::SmallVector<int, 256> ids;
+        util::collections::SmallVector<int, 8> ids;
 
         // kick players that have left the level
         for (const auto& [playerId, remotePlayer] : fields.players) {
@@ -650,7 +699,9 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
                 }
 
                 if (remotePlayer->getDefaultTicks() == 0) {
-                    ids.push_back(playerId);
+                    if (ids.size() < ids.capacity()) {
+                        ids.push_back(playerId);
+                    }
                 }
 
                 remotePlayer->incDefaultTicks();
@@ -660,7 +711,7 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
             }
         }
 
-        if (ids.size() > 3) {
+        if (ids.size() > 5) {
             NetworkManager::get().send(RequestPlayerProfilesPacket::create(0));
         } else {
             for (int id : ids) {

@@ -11,7 +11,7 @@ public:
     static constexpr int TAG_TAB_LEVELUI = 4;
     static constexpr int TAG_TAB_PLAYERS = 5;
 
-    static GlobedSettingsLayer* create();
+    static GlobedSettingsLayer* create(bool showConnectionTest = false);
 
 protected:
     std::unordered_map<int, Ref<GJListLayer>> storedTabs;
@@ -22,10 +22,12 @@ protected:
     std::unordered_map<int, Ref<cocos2d::CCArray>> settingCells;
     int currentTab = -1;
     size_t prevSettingsSlot = 0;
+    bool doShowConnectionTest = false;
 
-    bool init() override;
+    bool init(bool showConnectionTest);
     void update(float dt) override;
     void keyBackClicked() override;
+    void onEnterTransitionDidFinish() override;
     void onTab(cocos2d::CCObject* sender);
     void onTabById(int tag);
 

@@ -29,10 +29,12 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         bool setupWasCompleted = false;
         bool isEditor = false;
         uint32_t configuredTps = 0;
+        uint32_t initialPlayerCount = 0;
 
         // in game stuff
         bool deafened = false;
         bool isVoiceProximity = false;
+        bool shownFragmentationAlert = false;
         uint32_t totalSentPackets = 0;
         float timeCounter = 0.f;
         float lastServerUpdate = 0.f;

@@ -45,6 +45,8 @@ class LevelInnerPlayerCountPacket : public Packet {
     uint32_t count;
 };
 
+GLOBED_SERIALIZABLE_STRUCT(LevelInnerPlayerCountPacket, (count));
+
 #ifdef GLOBED_VOICE_SUPPORT
 # include <audio/frame.hpp>
 #endif

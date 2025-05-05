@@ -3,6 +3,7 @@
 #include "setting_header_cell.hpp"
 #include "setting_cell.hpp"
 #include "save_slot_switcher_popup.hpp"
+#include "connection_test_popup.hpp"
 #include <managers/settings.hpp>
 #include <util/ui.hpp>
 #include <util/cocos.hpp>
@@ -12,9 +13,10 @@ using SettingType = GlobedSettingCell::Type;
 
 static constexpr float TAB_SCALE = 0.85f;
 
-bool GlobedSettingsLayer::init() {
+bool GlobedSettingsLayer::init(bool showConnectionTest) {
     if (!CCLayer::init()) return false;
 
+    this->doShowConnectionTest = showConnectionTest;
     this->prevSettingsSlot = GlobedSettings::get().getSelectedSlot();
     this->setID("GlobedSettingsLayer"_spr);
 
@@ -139,7 +141,7 @@ void GlobedSettingsLayer::update(float dt) {
     // yeah so alk would probably demote me from lead dev for this code but it is what it is
     // yeah im gonna kill you - lime
 
-    auto newLayer = GlobedSettingsLayer::create();
+    auto newLayer = GlobedSettingsLayer::create(false);
 
     for (auto tab : storedTabs) {
         tab.second->removeFromParent();
@@ -193,6 +195,14 @@ void GlobedSettingsLayer::onTabById(int tag) {
 
 void GlobedSettingsLayer::keyBackClicked() {
     util::ui::navigateBack();
+}
+
+void GlobedSettingsLayer::onEnterTransitionDidFinish() {
+    if (!doShowConnectionTest) return;
+
+    Loader::get()->queueInMainThread([] {
+        ConnectionTestPopup::create()->show();
+    });
 }
 
 void GlobedSettingsLayer::remakeList() {
@@ -358,9 +368,9 @@ GJListLayer* GlobedSettingsLayer::makeListLayer(int category) {
     return listLayer;
 }
 
-GlobedSettingsLayer* GlobedSettingsLayer::create() {
+GlobedSettingsLayer* GlobedSettingsLayer::create(bool showConnectionTest) {
     auto ret = new GlobedSettingsLayer;
-    if (ret->init()) {
+    if (ret->init(showConnectionTest)) {
         ret->autorelease();
         return ret;
     }

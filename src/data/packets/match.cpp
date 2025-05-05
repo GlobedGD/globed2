@@ -36,6 +36,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(PlayerProfilesPacket);
         PACKET(LevelDataPacket);
         PACKET(LevelPlayerMetadataPacket);
+        PACKET(LevelInnerPlayerCountPacket);
         PACKET(VoiceBroadcastPacket);
         PACKET(ChatMessageBroadcastPacket);
 

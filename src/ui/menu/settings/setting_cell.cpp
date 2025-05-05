@@ -226,13 +226,13 @@ bool GlobedSettingCell::init(void* settingStorage, Type settingType, const char*
                 .scale(0.5f)
                 .intoMenuItem([this, settingStorage] (auto) {
                     AskInputPopup::create("Packet limit", [this](auto input) {
-                        auto limit = util::format::parse<int>(input).value_or(0);
-                        if (limit < 1300 || limit > 65000) {
-                            PopupManager::get().alert("Error", "<cr>Invalid</c> limit was set. For best results, press the <cy>Auto</c> button instead, and only use this option if you know what you're doing.").showInstant();
+                        auto limit = util::format::parse<uint32_t>(input).value_or(0);
+                        if ((limit > 0 && limit < 1300) || limit > 65535) {
+                            PopupManager::get().alert("Error", "<cr>Invalid</c> limit was set. For best results, use the <cg>Connection Test</c> option, and only use this option if you know what you're doing.").showInstant();
                             return;
                         }
 
-                        this->storeAndSave(limit);
+                        this->storeAndSave((int) limit);
                     }, 6, std::to_string(*(int*)settingStorage), util::misc::STRING_DIGITS, 10.f)->show();
                 })
                 .id("fraglimit-manual-btn"_spr)
