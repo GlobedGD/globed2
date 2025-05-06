@@ -625,15 +625,7 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     auto sinceUpdate = fields.timeCounter - fields.lastServerUpdate;
 
     // if more than a second passed and there was only 1 player, they probably left
-    if (sinceUpdate > 1.0f && fields.players.size() < 2) {
-        for (const auto& [playerId, _] : fields.players) {
-            toRemove.push_back(playerId);
-        }
-
-        for (int id : toRemove) {
-            self->handlePlayerLeave(id);
-        }
-    } else if (fields.lastServerUpdate == 0.0f && sinceUpdate > 5.f && fields.initialPlayerCount >= 10 && !fields.shownFragmentationAlert) {
+    if (fields.lastServerUpdate == 0.0f && sinceUpdate > 5.f && fields.initialPlayerCount >= 10 && !fields.shownFragmentationAlert) {
         fields.shownFragmentationAlert = true;
 
         // if there were any players on the level when we first joined, but we never got a packet with their data,
@@ -672,6 +664,14 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
                     }
                 }
             ).showQueue();
+        }
+    } else if (sinceUpdate > 1.0f && fields.players.size() < 2) {
+        for (const auto& [playerId, _] : fields.players) {
+            toRemove.push_back(playerId);
+        }
+
+        for (int id : toRemove) {
+            self->handlePlayerLeave(id);
         }
     } else {
         util::collections::SmallVector<int, 8> ids;

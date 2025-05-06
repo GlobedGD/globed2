@@ -12,8 +12,9 @@
 * Make it so that the original room owner becomes the owner again if they leave and rejoin the room
 * Added a keybind that lets you toggle <cj>visibility</c> of other players while in a level
 * Show the <cg>server rules</c> to the user when first connecting (thanks [TechStudent10](user:20284359))
-* Hopefully fix bugs with <cr>deaths not being detected</c> in 2-player mode or Death Link
+* Fix bugs with <cr>deaths not being detected</c> in 2-player mode or Death Link
 * Significant performance <cg>improvements</c>
+* Automatically suggest the user to run a <cg>Connection Test</c> if it's detected that players are not appearing in levels
 * Improve UX during server connection
 * Use new authentication API (Argon), improve error messages for authentication issues, especially for people that are at the limit of sent messages
 * Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks [km7dev](user:7236822) for the mod Server API!)
