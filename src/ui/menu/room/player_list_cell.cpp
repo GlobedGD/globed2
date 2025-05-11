@@ -6,6 +6,7 @@
 #include <managers/admin.hpp>
 #include <managers/friend_list.hpp>
 #include <managers/role.hpp>
+#include <managers/room.hpp>
 #include <net/manager.hpp>
 #include <ui/menu/room/download_level_popup.hpp>
 #include <ui/general/simple_player.hpp>
@@ -20,6 +21,7 @@ namespace {
         constexpr int Name = 2;
         constexpr int Badge = 3;
         constexpr int FriendsIcon = 4;
+        constexpr int RoomOwner = 5;
     }
 }
 
@@ -77,6 +79,15 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
     if (playerData.specialUserData.roles) {
         std::vector<std::string> badgeVector = RoleManager::get().getBadgeList(playerData.specialUserData.roles.value());
         util::ui::addBadgesToMenu(badgeVector, leftSideLayout, btnorder::Badge);
+    }
+
+    // add an icon to the room owner
+    auto& rm = RoomManager::get();
+    if (rm.isInRoom() && rm.getInfo().owner.accountId == data.accountId) {
+        Build<CCSprite>::createSpriteName("GJ_featuredIcon_001.png")
+            .scale(0.75)
+            .zOrder(btnorder::RoomOwner)
+            .parent(leftSideLayout);
     }
 
     // friend gradient and own gradient
