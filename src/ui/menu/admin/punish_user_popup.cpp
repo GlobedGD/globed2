@@ -196,16 +196,19 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
 
     constexpr static auto HOUR = Duration::fromHours(1);
     constexpr static auto DAY = Duration::fromDays(1);
+    constexpr static auto MONTH = Duration::fromDays(30);
 
     // quick buttons for duration
     for (Duration off : std::initializer_list<Duration>{
-        HOUR * 1,
         HOUR * 6,
         DAY * 1,
         DAY * 3,
         DAY * 7,
         DAY * 14,
         DAY * 30,
+        MONTH * 3,
+        MONTH * 6,
+        MONTH * 12,
         Duration{}
     }) {
         std::string labeltext;
@@ -214,6 +217,10 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
         if (off.isZero()) {
             labeltext = "Permanent";
             scale = 0.675f;
+        } else if (off >= MONTH) {
+            auto months = off.days() / MONTH.days();
+            labeltext = fmt::format("{}mo", months);
+            scale = 0.835f;
         } else if (off >= DAY) {
             auto days = off.days();
             labeltext = fmt::format("{}d", days);
