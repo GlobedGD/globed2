@@ -77,14 +77,19 @@ struct ArgonResponse {
 impl ArgonClient {
     pub fn new(base_url: String) -> Self {
         let invalid_certs = std::env::var("GLOBED_ALLOW_INVALID_CERTS").is_ok_and(|x| x != "0");
+        let no_proxy = std::env::var("GLOBED_NO_ARGON_SYSPROXY").is_ok_and(|x| x != "0");
 
-        let http_client = reqwest::ClientBuilder::new()
+        let mut http_client = reqwest::ClientBuilder::new()
             .use_rustls_tls()
             .danger_accept_invalid_certs(invalid_certs)
             .user_agent(format!("globed-central-server/{}", env!("CARGO_PKG_VERSION")))
-            .timeout(Duration::from_secs(10))
-            .build()
-            .unwrap();
+            .timeout(Duration::from_secs(10));
+
+        if no_proxy {
+            http_client = http_client.no_proxy();
+        }
+
+        let http_client = http_client.build().unwrap();
 
         let config = ClientConfig::new(base_url);
 
