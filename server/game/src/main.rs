@@ -1,4 +1,12 @@
-#![feature(sync_unsafe_cell, duration_constructors, async_closure, iter_collect_into, let_chains, if_let_guard)]
+#![feature(
+    sync_unsafe_cell,
+    duration_constructors,
+    duration_constructors_lite,
+    async_closure,
+    iter_collect_into,
+    let_chains,
+    if_let_guard
+)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
