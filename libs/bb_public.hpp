@@ -3,9 +3,12 @@
 
 #pragma once
 #include <stddef.h>
+#include <stdint.h>
+#include <string_view>
 #include <Geode/platform/platform.hpp>
+#include <Geode/loader/Log.hpp>
 
-#define BB_VERSION "0.2.0"
+#define BB_VERSION "0.3.0"
 
 #ifdef GLOBED_OSS_BUILD
 inline bool bb_init(const char* v = BB_VERSION) {
@@ -18,13 +21,18 @@ inline size_t bb_work(const char* s, char* o, size_t ol) {
 
 #else
 
+inline void _bblogFunc(const uint8_t* ptr, size_t size) {
+    std::string_view view{(const char*)ptr, size};
+    geode::log::debug("{}", view);
+}
+
 extern "C" {
-    bool _bb_init(const char* v, size_t base);
+    bool _bb_init(const char* v, size_t base, void (*)(const uint8_t*, size_t));
     size_t _bb_work(const char* s, char* o, size_t ol);
 }
 
 inline bool bb_init(const char* v = BB_VERSION) {
-    return _bb_init(v, geode::base::get());
+    return _bb_init(v, geode::base::get(), &_bblogFunc);
 }
 
 inline size_t bb_work(const char* s, char* o, size_t ol) {
