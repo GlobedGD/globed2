@@ -154,8 +154,8 @@ CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage(
     NAME Boost
     VERSION 1.88.0
-    URL https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-cmake.7z
-    URL_HASH SHA256=feba537f6d32c062ed0f26b4d6e5b8e8450d51ef81492369a101ab99fcead278
+    GITHUB_REPOSITORY boostorg/boost
+    GIT_TAG boost-1.88.0
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
 CPMAddPackage("gh:dankmeme01/asp2#5b0bae3")
