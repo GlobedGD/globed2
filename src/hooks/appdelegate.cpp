@@ -4,7 +4,7 @@
 
 using namespace geode::prelude;
 
-#ifdef GEODE_IS_ANDROID
+#ifdef GEODE_IS_MOBILE
 void GlobedAppDelegate::applicationDidEnterBackground() {
     NetworkManager::get().suspend();
 
