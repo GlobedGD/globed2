@@ -616,7 +616,13 @@ void GlobedGJBGL::selPeriodicalUpdate(float dt) {
     // if (!self->isCurrentPlayLayer()) return;
 
     // update the overlay
-    fields.overlay->updatePing(GameServerManager::get().getActivePing());
+    // we dont use gsm.getActivePing because that can throw if we hit some
+    // crazy race condition and are disconnected but the established() call above returned true
+    // (yes, this has happened)
+    auto& gsm = GameServerManager::get();
+    if (auto server = gsm.getActiveServer()) {
+        fields.overlay->updatePing(server->ping);
+    }
 
     auto& pcm = ProfileCacheManager::get();
 
