@@ -88,7 +88,15 @@ bool AdminSendNoticePopup::setup(std::string_view message) {
     CCMenuItemSpriteExtra* everyoneBtn;
     Build<ButtonSprite>::create("Send to everyone", "bigFont.fnt", "GJ_button_01.png", 0.7f)
         .intoMenuItem([this](auto) {
-            this->commonSend(AdminSendNoticeType::Everyone);
+            geode::createQuickPopup(
+                "Confirmation",
+                "This action will send this notice to <cr>everyone on the server</c>. Are you sure you want to post this?",
+                "Cancel", "Send",
+                [this](auto, bool btn2) {
+                    if (!btn2) return;
+                    this->commonSend(AdminSendNoticeType::Everyone);
+                }
+            );
         })
         .store(everyoneBtn)
         .intoNewParent(CCMenu::create())
