@@ -112,7 +112,7 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP(bool skipMarker)
         // after coming back it will kill the udp socket and return ENOTCONN.
         // we don't have much choice but to just recreate the socket here.
         // i made this GLOBED_IS_UNIX because in theory this may happen on android at some point too (?) although i have never seen it
-#ifndef GLOBED_IS_UNIX
+#ifdef GLOBED_IS_UNIX
         if (code == ENOTCONN) {
             globed::netLog("GameSocket::recvPacketUDP - recreating UDP socket that was killed by the OS..");
             this->disconnect();
