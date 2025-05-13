@@ -1135,7 +1135,8 @@ protected:
         }
 
         // send a tcp keepalive to keep the nat hole open
-        if (sinceLastTcpExchange > Duration::fromSecs(60)) {
+        // we make an additional check for `established()` because the earlier socket.disconnect() call might've gone through
+        if (this->established() && sinceLastTcpExchange > Duration::fromSecs(60)) {
             globed::netLog("NetworkManagerImpl sending TCP keepalive (previous was {} ago)", GLOBED_LAZY(sinceLastTcpExchange.toString()));
             this->send(KeepaliveTCPPacket::create());
         }

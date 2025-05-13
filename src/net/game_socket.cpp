@@ -106,8 +106,23 @@ Result<std::optional<ReceivedPacket>> GameSocket::recvPacketUDP(bool skipMarker)
     out.fromConnected = recvResult.fromServer;
 
     if (recvResult.result < 0) {
+        auto code = util::net::lastErrorCode();
+
+        // So ios likes to be quirky, and if you close gd and leave it in the background for some time,
+        // after coming back it will kill the udp socket and return ENOTCONN.
+        // we don't have much choice but to just recreate the socket here.
+        // i made this GLOBED_IS_UNIX because in theory this may happen on android at some point too (?) although i have never seen it
+#ifndef GLOBED_IS_UNIX
+        if (code == ENOTCONN) {
+            globed::netLog("GameSocket::recvPacketUDP - recreating UDP socket that was killed by the OS..");
+            this->disconnect();
+            udpSocket = UdpSocket{};
+            return Err("socket was destroyed");
+        }
+#endif
+
         globed::netLog("GameSocket::recvPacketUDP fail: code {}", recvResult.result);
-        return Err(fmt::format("udp recv failed ({}): {}", recvResult.result, util::net::lastErrorString()));
+        return Err(fmt::format("udp recv failed ({}): {}", recvResult.result, util::net::lastErrorString(code)));
     }
 
     globed::netLog("GameSocket::recvPacketUDP received {} bytes (fromConnected = {})", (size_t)recvResult.result, out.fromConnected);
@@ -167,20 +182,30 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
 
     // prioritize TCP, if the result is Tcp or Both, we care about TCP.
     if (pollResult != PollResult::Udp) {
-        auto res = this->recvPacketTCP();
-
-        if (res) {
-            auto pkt = std::move(res).unwrap();
-
-            globed::netLog("GameSocket::recvPacket returning received TCP packet (id = {})", pkt ? pkt->getPacketId() : 0);
-
-            return Ok(ReceivedPacket {
-                .packet = std::move(pkt),
-                .fromConnected = true
-            });
+        // It is possible that the tcp socket was disconnected in the middle of the poll,
+        // in which case we probably should not try and receive data from it
+        if (!tcpSocket.connected) {
+            if (pollResult == PollResult::Tcp) {
+                return Err("socket was abruptly disconnected");
+            } else {
+                pollResult = PollResult::Udp; // Both -> Udp
+            }
         } else {
-            globed::netLog("GameSocket::recvPacket error receiving TCP packet: {}", res.unwrapErr());
-            return Err(fmt::format("recvPacketTCP failed: {}", res.unwrapErr()));
+            auto res = this->recvPacketTCP();
+
+            if (res) {
+                auto pkt = std::move(res).unwrap();
+
+                globed::netLog("GameSocket::recvPacket returning received TCP packet (id = {})", pkt ? pkt->getPacketId() : 0);
+
+                return Ok(ReceivedPacket {
+                    .packet = std::move(pkt),
+                    .fromConnected = true
+                });
+            } else {
+                globed::netLog("GameSocket::recvPacket error receiving TCP packet: {}", res.unwrapErr());
+                return Err(fmt::format("recvPacketTCP failed: {}", res.unwrapErr()));
+            }
         }
     }
 

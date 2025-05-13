@@ -32,6 +32,19 @@ UdpSocket::~UdpSocket() {
     this->close();
 }
 
+UdpSocket& UdpSocket::operator=(UdpSocket&& other) {
+    if (this != &other) {
+        this->socket_.store(other.socket_.load());
+        this->connected.store(other.connected.load());
+        this->destAddr_ = std::move(other.destAddr_);
+
+        other.socket_.store(0);
+        other.connected.store(false);
+    }
+
+    return *this;
+}
+
 Result<> UdpSocket::connect(const NetworkAddress& address) {
     if (socket_ == -1) {
         return Err("This UDP socket has already been closed and cannot be reused");

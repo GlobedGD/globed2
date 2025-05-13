@@ -12,6 +12,8 @@ public:
     UdpSocket();
     ~UdpSocket();
 
+    UdpSocket& operator=(UdpSocket&& other);
+
     Result<> connect(const NetworkAddress& address) override;
     Result<int> send(const char* data, unsigned int dataSize) override;
     Result<int> sendTo(const char* data, unsigned int dataSize, const NetworkAddress& address);

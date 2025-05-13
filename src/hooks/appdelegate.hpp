@@ -12,5 +12,5 @@ struct GLOBED_DLL GlobedAppDelegate : geode::Modify<GlobedAppDelegate, AppDelega
 
     $override
     void applicationWillEnterForeground();
-#endif // GEODE_IS_ANDROID
+#endif // GEODE_IS_MOBILE
 };
