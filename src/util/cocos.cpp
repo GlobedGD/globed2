@@ -172,7 +172,7 @@ namespace util::cocos {
             if (sv == "assets/") {
                 state.gameSearchPathIdx = idx;
             }
-#elif defined(GEODE_IS_MACOS)
+#elif defined(GEODE_IS_MACOS) || defined(GEODE_IS_IOS)
             if (sv.empty()) {
                 state.gameSearchPathIdx = idx;
             }
