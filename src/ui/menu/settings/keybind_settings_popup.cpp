@@ -52,6 +52,7 @@ namespace {
                     KeybindSetupPopup::create(*this->settingPtr, [this](auto key) {
                         *this->settingPtr = key;
                         this->updateKey(key);
+                        KeybindsManager::get().refreshBinds();
                         GlobedSettings::get().save();
                     })->show();
                 })

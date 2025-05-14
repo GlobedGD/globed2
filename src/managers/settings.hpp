@@ -330,7 +330,7 @@ public:
     struct Keys {
         KeybindSetting<cocos2d::enumKeyCodes::KEY_V> voiceChatKey;
         KeybindSetting<cocos2d::enumKeyCodes::KEY_B> voiceDeafenKey;
-        KeybindSetting<cocos2d::enumKeyCodes::KEY_H> hidePlayersKey;
+        KeybindSetting<cocos2d::enumKeyCodes::KEY_None> hidePlayersKey;
     };
 
     struct Flags {

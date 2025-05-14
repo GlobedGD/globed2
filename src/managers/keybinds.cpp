@@ -105,7 +105,7 @@ namespace globed {
 
             KCASE(Up); KCASE(Down); KCASE(Left); KCASE(Right);
 
-            case Key::None: return "-";
+            case Key::None: return "None";
         }
 #undef KCASE
 #undef KCASEN

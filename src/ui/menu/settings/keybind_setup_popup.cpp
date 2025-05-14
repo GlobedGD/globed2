@@ -18,18 +18,13 @@ bool KeybindSetupPopup::setup(enumKeyCodes initialKey, Callback callback) {
 
     auto applyButton = Build<ButtonSprite>::create("Apply", "bigFont.fnt", "GJ_button_01.png", 0.75f)
         .intoMenuItem([&gs, this] (auto) {
-            if (!this->isValid) {
-                Notification::create("Please choose a valid key", NotificationIcon::Error, 0.75f)->show();
-                return;
-            }
-
             if (this->originalKey == this->key) {
                 this->removeFromParent();
                 return;
             }
 
             auto& km = KeybindsManager::get();
-            if (km.isKeyUsed(this->key)) {
+            if (this->key != KEY_None && km.isKeyUsed(this->key)) {
                 Notification::create("This key is already used by another action", NotificationIcon::Error, 1.0f)->show();
                 return;
             }
@@ -62,6 +57,11 @@ void KeybindSetupPopup::keyDown(enumKeyCodes keyCode) {
         return;
     }
 
+    if (keyCode == KEY_Backspace) {
+        this->keyDown(KEY_None);
+        return;
+    }
+
     this->key = keyCode;
 
     auto k = KeybindsManager::convertCocosKey(keyCode);
@@ -71,8 +71,8 @@ void KeybindSetupPopup::keyDown(enumKeyCodes keyCode) {
         m_keybindLabel->setString(fmt::format("Keybind: {}", globed::formatKey(k)).c_str());
         m_keybindLabel->setColor(ccColor3B{ 255, 255, 255 });
     } else {
-        m_keybindLabel->setString("Invalid key");
-        m_keybindLabel->setColor(ccColor3B{ 224, 75, 16 });
+        m_keybindLabel->setString("Keybind: None");
+        m_keybindLabel->setColor(ccColor3B{ 216, 216, 216 });
     }
 
     m_keybindLabel->limitLabelWidth(POPUP_WIDTH - 16.f, 0.75f, 0.5f);
