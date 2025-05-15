@@ -14,7 +14,10 @@ use rocket::{
 };
 use serde::Serialize;
 
-use crate::{config::GameServerEntry, state::ServerState};
+use crate::{
+    config::{GameServerEntry, ServerRelay},
+    state::ServerState,
+};
 
 use super::*;
 
@@ -116,6 +119,7 @@ pub struct ServerMeta {
     pub argon: Option<String>,
     pub gdmin: &'static str,
     pub globedmin: &'static str,
+    pub relays: Vec<ServerRelay>,
 }
 
 #[get("/v3/meta?<protocol>")]
@@ -133,6 +137,7 @@ pub async fn meta(state: &State<ServerState>, protocol: u16) -> WebResult<Json<S
         argon: state.config.use_argon.then(|| state.config.argon_url.clone()),
         gdmin: MIN_GD_VERSION,
         globedmin: MIN_CLIENT_VERSION,
+        relays: state.config.relays.clone(),
     }))
 }
 

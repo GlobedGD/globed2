@@ -57,6 +57,10 @@ fn default_game_servers() -> Vec<GameServerEntry> {
     }]
 }
 
+fn default_relays() -> Vec<ServerRelay> {
+    Vec::new()
+}
+
 const fn default_status_print_interval() -> u64 {
     7200 // 2 hours
 }
@@ -137,6 +141,13 @@ pub struct GameServerEntry {
     pub region: String,
 }
 
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct ServerRelay {
+    pub id: String,
+    pub name: String,
+    pub address: String,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct ServerConfig {
@@ -144,6 +155,8 @@ pub struct ServerConfig {
     pub web_mountpoint: String,
     #[serde(default = "default_game_servers")]
     pub game_servers: Vec<GameServerEntry>,
+    #[serde(default = "default_relays")]
+    pub relays: Vec<ServerRelay>,
     #[serde(default = "default_false")]
     pub maintenance: bool,
     #[serde(default = "default_status_print_interval")]
