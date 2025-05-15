@@ -29,8 +29,8 @@ class AdminSendNoticePacket : public Packet {
     GLOBED_PACKET(19001, AdminSendNoticePacket, true, true)
 
     AdminSendNoticePacket() {}
-    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, std::string_view player, std::string_view message, bool canReply)
-        : ptype(ptype), roomId(roomId), levelId(levelId), player(player), message(message), canReply(canReply) {}
+    AdminSendNoticePacket(AdminSendNoticeType ptype, uint32_t roomId, LevelId levelId, std::string_view player, std::string_view message, bool canReply, bool justEstimate)
+        : ptype(ptype), roomId(roomId), levelId(levelId), player(player), message(message), canReply(canReply), justEstimate(justEstimate) {}
 
     AdminSendNoticeType ptype;
     uint32_t roomId;
@@ -38,6 +38,7 @@ class AdminSendNoticePacket : public Packet {
     std::string player;
     std::string message;
     bool canReply;
+    bool justEstimate;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminSendNoticePacket, (

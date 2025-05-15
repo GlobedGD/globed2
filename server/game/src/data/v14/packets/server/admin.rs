@@ -55,3 +55,9 @@ pub struct AdminReceivedNoticeReplyPacket {
     pub admin_msg: FastString,
     pub user_reply: FastString,
 }
+
+#[derive(Packet, Encodable, StaticSize)]
+#[packet(id = 29008, tcp, encrypted)]
+pub struct AdminNoticeRecipientCountPacket {
+    pub count: u32,
+}

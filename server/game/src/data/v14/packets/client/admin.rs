@@ -23,6 +23,7 @@ pub struct AdminSendNoticePacket {
     pub player: FastString,
     pub message: FastString,
     pub can_reply: bool,
+    pub just_estimate: bool,
 }
 
 #[derive(Packet, Decodable)]

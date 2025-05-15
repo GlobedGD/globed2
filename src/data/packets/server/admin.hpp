@@ -93,3 +93,12 @@ class AdminReceivedNoticeReplyPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminReceivedNoticeReplyPacket, (replyId, userId, userName, adminMsg, userReply));
+
+// 29008 - AdminNoticeRecipientCountPacket
+class AdminNoticeRecipientCountPacket : public Packet {
+    GLOBED_PACKET(29008, AdminNoticeRecipientCountPacket, true, false)
+
+    uint32_t count;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(AdminNoticeRecipientCountPacket, (count));

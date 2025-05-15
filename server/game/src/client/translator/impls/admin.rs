@@ -17,6 +17,7 @@ impl Translatable for AdminSendNoticePacket {
                     player: old_packet.player,
                     message: old_packet.message,
                     can_reply: false,
+                    just_estimate: false,
                 })
             }
 

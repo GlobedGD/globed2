@@ -3,7 +3,7 @@ use std::time::UNIX_EPOCH;
 
 use globed_shared::{data::*, info, warn};
 
-use crate::{bridge::AdminUserAction, managers::ComputedRole, webhook::WebhookMessage};
+use crate::{bridge::AdminUserAction, data::v14::LevelId, managers::ComputedRole, webhook::WebhookMessage};
 
 use super::*;
 
@@ -155,174 +155,214 @@ impl ClientThread {
             return Ok(());
         }
 
-        let mut notice_packet = ServerNoticePacket {
+        let notice_packet = ServerNoticePacket {
             message: packet.message,
             reply_id: 0,
         };
 
-        // i am not proud of this code
         match packet.notice_type {
-            AdminSendNoticeType::Everyone => {
-                if !self._has_perm(AdminPerm::NoticeToEveryone) {
-                    admin_error!(self, "no permission");
-                }
-
-                let threads = self
-                    .game_server
-                    .clients
-                    .lock()
-                    .values()
-                    .filter(|thr| thr.authenticated())
-                    .cloned()
-                    .collect::<Vec<_>>();
-
-                let name = self.account_data.lock().name.try_to_string();
-
-                info!(
-                    "[{name} ({account_id}) @ {}] sending a notice to all {} people on the server: {}",
-                    self.get_tcp_peer(),
-                    threads.len(),
-                    notice_packet.message,
-                );
-
-                if self.game_server.bridge.has_admin_webhook() {
-                    if let Err(err) = self
-                        .game_server
-                        .bridge
-                        .send_admin_webhook_message(WebhookMessage::NoticeToEveryone(
-                            name,
-                            threads.len(),
-                            notice_packet.message.try_to_string(),
-                        ))
-                        .await
-                    {
-                        warn!("webhook error during notice to everyone: {err}");
-                    }
-                }
-
-                self.send_packet_dynamic(&AdminSuccessMessagePacket {
-                    message: Cow::Owned(format!("Sent to {} people", threads.len())),
-                })
-                .await?;
-
-                for thread in threads {
-                    thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone())).await;
-                }
-            }
+            AdminSendNoticeType::Everyone => self._send_notice_to_everyone(account_id, packet.just_estimate, notice_packet).await,
 
             AdminSendNoticeType::Person => {
-                let thread = self.game_server.find_user(&packet.player);
-
-                let player_name = thread.as_ref().map_or_else(
-                    || "<invalid player>".to_owned(),
-                    |thr| thr.account_data.lock().name.try_to_str().to_owned(),
-                );
-
-                let self_name = self.account_data.lock().name.try_to_string();
-                let notice_msg = notice_packet.message.try_to_string();
-
-                info!(
-                    "[{self_name} ({account_id}) @ {}] sending a notice to {player_name}: {notice_msg}",
-                    self.get_tcp_peer()
-                );
-
-                // set the reply id
-                if let Some(thread) = thread.as_ref()
-                    && packet.can_reply
-                {
-                    notice_packet.reply_id = thread.create_notice_reply(account_id, notice_packet.message.clone());
-                }
-
-                if self.game_server.bridge.has_admin_webhook() {
-                    if let Err(err) = self
-                        .game_server
-                        .bridge
-                        .send_admin_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg, notice_packet.reply_id))
-                        .await
-                    {
-                        warn!("webhook error during notice to person: {err}");
-                    }
-                }
-
-                if let Some(thread) = thread {
-                    thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet)).await;
-
-                    self.send_packet_dynamic(&AdminSuccessMessagePacket {
-                        message: Cow::Owned(format!("Sent notice to {}", thread.account_data.lock().name)),
-                    })
-                    .await?;
-                } else {
-                    admin_error!(self, "failed to find the user");
-                }
+                self._send_notice_to_person(account_id, &packet.player, packet.can_reply, packet.just_estimate, notice_packet)
+                    .await
             }
 
             AdminSendNoticeType::RoomOrLevel => {
-                if packet.room_id != 0 && !self.game_server.state.room_manager.is_valid_room(packet.room_id) {
-                    admin_error!(self, "unable to send notice, invalid room ID");
-                }
-
-                // if this is a global room, also require the notice to everyone perm
-                if packet.room_id == 0 && !self._has_perm(AdminPerm::NoticeToEveryone) {
-                    admin_error!(self, "no permission");
-                }
-
-                let player_ids = self.game_server.state.room_manager.with_any(packet.room_id, |pm| {
-                    let mut player_ids = Vec::with_capacity(128);
-                    if packet.level_id == 0 {
-                        pm.manager.read().for_each_player(|player| {
-                            player_ids.push(player.account_id);
-                        });
-                    } else {
-                        pm.manager.read().for_each_player_on_level(packet.level_id, |player| {
-                            player_ids.push(player.account_id);
-                        });
-                    }
-
-                    player_ids
-                });
-
-                let threads = self
-                    .game_server
-                    .clients
-                    .lock()
-                    .values()
-                    .filter(|thr| player_ids.contains(&thr.account_id.load(Ordering::Relaxed)))
-                    .cloned()
-                    .collect::<Vec<_>>();
-
-                let self_name = self.account_data.lock().name.try_to_string();
-                let notice_msg = notice_packet.message.try_to_string();
-
-                info!(
-                    "[{self_name} ({account_id}) @ {}] sending a notice to {} people: {notice_msg}",
-                    self.get_tcp_peer(),
-                    threads.len()
-                );
-
-                if self.game_server.bridge.has_admin_webhook() {
-                    if let Err(err) = self
-                        .game_server
-                        .bridge
-                        .send_admin_webhook_message(WebhookMessage::NoticeToSelection(self_name, threads.len(), notice_msg))
-                        .await
-                    {
-                        warn!("webhook error during notice to selection: {err}");
-                    }
-                }
-
-                self.send_packet_dynamic(&AdminSuccessMessagePacket {
-                    message: Cow::Owned(format!("Sent to {} people", threads.len())),
-                })
-                .await?;
-
-                for thread in threads {
-                    thread.push_new_message(ServerThreadMessage::BroadcastNotice(notice_packet.clone())).await;
-                }
+                self._send_notice_to_room_or_level(account_id, packet.room_id, packet.level_id, packet.just_estimate, notice_packet)
+                    .await
             }
+        }
+    });
+
+    async fn _send_notice_to_everyone(&self, account_id: i32, estimate: bool, packet: ServerNoticePacket) -> Result<()> {
+        if !self._has_perm(AdminPerm::NoticeToEveryone) {
+            admin_error!(self, "no permission");
+        }
+
+        if estimate {
+            return self
+                ._send_estimate(self.game_server.clients.lock().values().filter(|thr| thr.authenticated()).count())
+                .await;
+        }
+
+        let threads = self
+            .game_server
+            .clients
+            .lock()
+            .values()
+            .filter(|thr| thr.authenticated())
+            .cloned()
+            .collect::<Vec<_>>();
+
+        let name = self.account_data.lock().name.try_to_string();
+
+        info!(
+            "[{name} ({account_id}) @ {}] sending a notice to all {} people on the server: {}",
+            self.get_tcp_peer(),
+            threads.len(),
+            packet.message,
+        );
+
+        if self.game_server.bridge.has_admin_webhook()
+            && let Err(err) = self
+                .game_server
+                .bridge
+                .send_admin_webhook_message(WebhookMessage::NoticeToEveryone(name, threads.len(), packet.message.try_to_string()))
+                .await
+        {
+            warn!("webhook error during notice to everyone: {err}");
+        }
+
+        self.send_packet_dynamic(&AdminSuccessMessagePacket {
+            message: Cow::Owned(format!("Sent to {} people", threads.len())),
+        })
+        .await?;
+
+        for thread in threads {
+            thread.push_new_message(ServerThreadMessage::BroadcastNotice(packet.clone())).await;
         }
 
         Ok(())
-    });
+    }
+
+    async fn _send_notice_to_person(
+        &self,
+        account_id: i32,
+        target: &str,
+        can_reply: bool,
+        estimate: bool,
+        mut packet: ServerNoticePacket,
+    ) -> Result<()> {
+        let thread = self.game_server.find_user(target);
+
+        if estimate {
+            return self._send_estimate(thread.is_some() as usize).await;
+        }
+
+        let player_name = thread.as_ref().map_or_else(
+            || "<invalid player>".to_owned(),
+            |thr| thr.account_data.lock().name.try_to_str().to_owned(),
+        );
+
+        let self_name = self.account_data.lock().name.try_to_string();
+        let notice_msg = packet.message.try_to_string();
+
+        info!(
+            "[{self_name} ({account_id}) @ {}] sending a notice to {player_name}: {notice_msg}",
+            self.get_tcp_peer()
+        );
+
+        // set the reply id
+        if let Some(thread) = thread.as_ref()
+            && can_reply
+        {
+            packet.reply_id = thread.create_notice_reply(account_id, packet.message.clone());
+        }
+
+        if self.game_server.bridge.has_admin_webhook()
+            && let Err(err) = self
+                .game_server
+                .bridge
+                .send_admin_webhook_message(WebhookMessage::NoticeToPerson(self_name, player_name, notice_msg, packet.reply_id))
+                .await
+        {
+            warn!("webhook error during notice to person: {err}");
+        }
+
+        if let Some(thread) = thread {
+            thread.push_new_message(ServerThreadMessage::BroadcastNotice(packet)).await;
+
+            self.send_packet_dynamic(&AdminSuccessMessagePacket {
+                message: Cow::Owned(format!("Sent notice to {}", thread.account_data.lock().name)),
+            })
+            .await?;
+        } else {
+            admin_error!(self, "failed to find the user");
+        }
+
+        Ok(())
+    }
+
+    async fn _send_notice_to_room_or_level(
+        &self,
+        account_id: i32,
+        room_id: u32,
+        level_id: LevelId,
+        estimate: bool,
+        packet: ServerNoticePacket,
+    ) -> Result<()> {
+        if room_id != 0 && !self.game_server.state.room_manager.is_valid_room(room_id) {
+            admin_error!(self, "unable to send notice, invalid room ID");
+        }
+
+        // if this is a global room, also require the notice to everyone perm
+        if room_id == 0 && !self._has_perm(AdminPerm::NoticeToEveryone) {
+            admin_error!(self, "no permission");
+        }
+
+        let player_ids = self.game_server.state.room_manager.with_any(room_id, |pm| {
+            let mut player_ids = Vec::with_capacity(128);
+            if level_id == 0 {
+                pm.manager.read().for_each_player(|player| {
+                    player_ids.push(player.account_id);
+                });
+            } else {
+                pm.manager.read().for_each_player_on_level(level_id, |player| {
+                    player_ids.push(player.account_id);
+                });
+            }
+
+            player_ids
+        });
+
+        if estimate {
+            return self._send_estimate(player_ids.len()).await;
+        }
+
+        let threads = self
+            .game_server
+            .clients
+            .lock()
+            .values()
+            .filter(|thr| player_ids.contains(&thr.account_id.load(Ordering::Relaxed)))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        let self_name = self.account_data.lock().name.try_to_string();
+        let notice_msg = packet.message.try_to_string();
+
+        info!(
+            "[{self_name} ({account_id}) @ {}] sending a notice to {} people: {notice_msg}",
+            self.get_tcp_peer(),
+            threads.len()
+        );
+
+        if self.game_server.bridge.has_admin_webhook()
+            && let Err(err) = self
+                .game_server
+                .bridge
+                .send_admin_webhook_message(WebhookMessage::NoticeToSelection(self_name, threads.len(), notice_msg))
+                .await
+        {
+            warn!("webhook error during notice to selection: {err}");
+        }
+
+        self.send_packet_dynamic(&AdminSuccessMessagePacket {
+            message: Cow::Owned(format!("Sent to {} people", threads.len())),
+        })
+        .await?;
+
+        for thread in threads {
+            thread.push_new_message(ServerThreadMessage::BroadcastNotice(packet.clone())).await;
+        }
+
+        Ok(())
+    }
+
+    async fn _send_estimate(&self, count: usize) -> Result<()> {
+        self.send_packet_static(&AdminNoticeRecipientCountPacket { count: count as u32 }).await
+    }
 
     gs_handler!(self, handle_admin_disconnect, AdminDisconnectPacket, packet, {
         let _ = gs_needauth!(self);
@@ -342,15 +382,14 @@ impl ClientThread {
 
             let self_name = self.account_data.lock().name.try_to_string();
 
-            if self.game_server.bridge.has_admin_webhook() {
-                if let Err(err) = self
+            if self.game_server.bridge.has_admin_webhook()
+                && let Err(err) = self
                     .game_server
                     .bridge
                     .send_admin_webhook_message(WebhookMessage::KickEveryone(self_name, packet.message.try_to_string()))
                     .await
-                {
-                    warn!("webhook error during kick everyone: {err}");
-                }
+            {
+                warn!("webhook error during kick everyone: {err}");
             }
 
             return Ok(());
