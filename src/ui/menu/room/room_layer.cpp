@@ -20,6 +20,7 @@
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <managers/central_server.hpp>
+#include <managers/game_server.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/ui.hpp>
 #include <util/ui.hpp>
@@ -302,6 +303,13 @@ void RoomLayer::update(float dt) {
         listLayer->insertCell(roomLevelCell, 0);
         listLayer->forceUpdate();
     }
+
+    // update player count
+    auto pc = GameServerManager::get().getActivePlayerCount();
+    if (pc != lastPlayerCount && rm.isInGlobal()) {
+        lastPlayerCount = pc;
+        this->setRoomTitle("", 0);
+    }
 }
 
 void RoomLayer::requestPlayerList() {
@@ -519,7 +527,12 @@ void RoomLayer::closeRoom() {
 void RoomLayer::setRoomTitle(std::string_view name, uint32_t id) {
     if (btnRoomId) btnRoomId->removeFromParent();
 
-    std::string title = (id == 0) ? "Global Room" : fmt::format("{} ({})", name, id);
+    std::string title;
+    if (id == 0) {
+        title = lastPlayerCount == 0 ? "Global Room" : fmt::format("Global Room ({} online)", lastPlayerCount);
+    } else {
+        title = fmt::format("{} ({})", name, id);
+    }
 
     auto rlayout = util::ui::getPopupLayoutAnchored(popupSize);
 
@@ -648,6 +661,10 @@ void RoomLayer::onPrivacySettingsClicked(CCObject*) {
 
 void RoomLayer::onCopyRoomId(CCObject*) {
     auto id = RoomManager::get().getId();
+
+    if (id == 0) {
+        return;
+    }
 
     utils::clipboard::write(std::to_string(id));
 

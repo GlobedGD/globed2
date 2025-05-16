@@ -65,6 +65,7 @@ public:
 
     // return ping on the active server
     int getActivePing();
+    int getActivePlayerCount();
 
     // save the given address as a last connected standalone address
     void saveStandalone(std::string_view addr);

@@ -291,9 +291,6 @@ bool GlobedMenuLayer::init() {
                     if (!confirm) return;
 
                     NetworkManager::get().disconnect();
-
-                    auto layer = GlobedServersLayer::create();
-                    util::ui::replaceScene(layer);
                 });
             })
             .id("btn-leave-server")

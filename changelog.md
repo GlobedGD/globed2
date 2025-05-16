@@ -25,6 +25,7 @@
 * Fix rare "invalid unordered_map key" crash when in a level
 * Fix certain rare crashes and hangs when closing the game
 * Fix some minor incompatibilities with More Icons
+* Some other small fixes and qol additions
 
 For developers: Added an event based API to allow mod developers to implement better compatibility with Globed.
 

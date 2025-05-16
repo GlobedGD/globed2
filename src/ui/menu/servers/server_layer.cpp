@@ -204,9 +204,7 @@ void GlobedServersLayer::updateServerList(float) {
 
         serverList->forceRefresh();
 
-        if (!initializing) {
-            this->pingServers(0.f);
-        }
+        this->pingServers(0.f);
 
         return;
     }

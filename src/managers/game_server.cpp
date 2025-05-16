@@ -205,6 +205,12 @@ int GameServerManager::getActivePing() {
     return server.value().ping;
 }
 
+int GameServerManager::getActivePlayerCount() {
+    auto server = this->getActiveServer();
+
+    return server ? server->playerCount : 0;
+}
+
 void GameServerManager::saveStandalone(std::string_view addr) {
     Mod::get()->setSavedValue(STANDALONE_SETTING_KEY, std::string(addr));
 }

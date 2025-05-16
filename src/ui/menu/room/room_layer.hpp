@@ -34,6 +34,7 @@ protected:
     Ref<CCMenuItemSpriteExtra> btnSearch, btnClearSearch, btnSettings, btnInvite, btnRefresh, btnCloseRoom, btnPrivacySettings;
     Ref<cocos2d::CCMenu> btnRoomId, roomButtonMenu;
     Ref<ListCellWrapper> roomLevelCell;
+    uint32_t lastPlayerCount = 0;
 
     bool init() override;
     void update(float) override;
