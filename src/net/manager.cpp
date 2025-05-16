@@ -6,6 +6,7 @@
 
 #include <Geode/ui/GeodeUI.hpp>
 #include <asp/sync.hpp>
+#include <asp/net.hpp>
 #include <asp/thread.hpp>
 #include <bb_public.hpp>
 
@@ -48,6 +49,16 @@ static bool isProtocolSupported(uint16_t proto) {
 #else
     return std::find(SUPPORTED_PROTOCOLS.begin(), SUPPORTED_PROTOCOLS.end(), proto) != SUPPORTED_PROTOCOLS.end();
 #endif
+}
+
+static bool isValidAscii(std::string_view str) {
+    for (char c : str) {
+        if (c > 0x7f) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // yes, really
@@ -235,6 +246,7 @@ protected:
     GameSocket socket;
     asp::Thread<NetworkManager::Impl*> threadRecv, threadMain;
     asp::Channel<Task> taskQueue;
+    NetworkAddress relayAddress;
 
     // Note that we intentionally don't use Ref here,
     // as we use the destructor to know if the object owning the listener has been destroyed.
@@ -258,7 +270,10 @@ protected:
     AtomicBool ignoreProtocolMismatch;
     AtomicBool wasFromRecovery;
     AtomicBool cancellingRecovery;
+    AtomicBool relayConnFinished;
+    AtomicBool relayStage1Finished;
     AtomicU32 secretKey;
+    AtomicU32 relayUdpId;
     AtomicU32 serverTps;
     AtomicU16 serverProtocol;
 
@@ -325,7 +340,10 @@ protected:
         recoverAttempt = 0;
         wasFromRecovery = false;
         cancellingRecovery = false;
+        relayConnFinished = false;
+        relayStage1Finished = false;
         secretKey = 0;
+        relayUdpId = 0;
         serverTps = 0;
         serverProtocol = 0;
         *lastReceivedPacket.lock() = SystemTime::now();
@@ -338,7 +356,7 @@ protected:
 
     /* connection and tasks */
 
-    Result<> connect(const NetworkAddress& address, std::string_view serverId, bool standalone, bool fromRecovery = false) {
+    geode::Result<> connect(const NetworkAddress& address, std::string_view serverId, bool standalone, bool fromRecovery = false) {
         globed::netLog(
             "NetworkManagerImpl::connect(address={}, serverId={}, standalone={}, fromRecovery={}, prevstate={})",
             GLOBED_LAZY(address.toString()), serverId, standalone, fromRecovery, state.inner.load()
@@ -857,6 +875,12 @@ protected:
 #endif
     }
 
+    void setRelayAddress(const NetworkAddress& address) {
+        globed::netLog("Setting relay address to {}", GLOBED_LAZY(address.toString()));
+
+        this->relayAddress = address;
+    }
+
     uint32_t getServerTps() {
         return established() ? serverTps.load() : 0;
     }
@@ -886,8 +910,83 @@ protected:
     /* worker threads */
 
     void threadRecvFunc(decltype(threadRecv)::StopToken&) {
-        if (this->suspended || state == ConnectionState::TcpConnecting) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if (this->suspended || state == ConnectionState::TcpConnecting || requestedAbort) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            return;
+        }
+
+        bool usingRelay = !relayAddress.isEmpty();
+
+        if (usingRelay && (state == ConnectionState::RelayAuthStage1 || state == ConnectionState::RelayAuthStage2)) {
+            bool stage2 = state == ConnectionState::RelayAuthStage2;
+
+            if (!socket.tcpSocket.connected) {
+                // wait..
+                std::this_thread::sleep_for(std::chrono::milliseconds(25));
+                return;
+            }
+
+            if ((relayStage1Finished && !stage2) || relayConnFinished) {
+                // for some time, even after stage 1/2 are finished, recv thread will keep running
+                // prevent the code below from misfiring when not needed
+
+                std::this_thread::sleep_for(std::chrono::milliseconds{10});
+                return;
+            }
+
+            globed::netLog("Polling relay TCP data, stage2: {}", stage2);
+
+            auto res = socket.recvRawTcpData(stage2 ? 1 : 0, 100);
+            if (stage2) {
+                globed::netLog("Stage 2 response received, ok: {}, bytes: {}", res.isOk(), res.isOk() ? res.unwrap().size() : 0, 0);
+            }
+
+            if (res.isErr()) {
+                auto error = std::move(res).unwrapErr();
+                if (error != "timed out") {
+                    this->disconnectWithMessage(fmt::format("Failed to receive data from the relay server: {}", error));
+                }
+
+                return;
+            }
+
+            auto data = std::move(res).unwrap();
+            globed::netLog("Relay server response (auth stage {}): {}", stage2 ? 2 : 1, data);
+
+            ByteBuffer buf(std::move(data));
+
+            if (!stage2) {
+                bool success = buf.readU8().unwrapOr(0) == 1;
+
+                if (!success) {
+                    auto msglen = buf.readU32().unwrapOr(0);
+
+                    if (msglen == 0 || msglen > 256) {
+                        this->disconnectWithMessage("Relay returned failure without a proper error message");
+                    } else {
+                        std::string out;
+                        out.resize(msglen);
+
+                        if (!buf.readBytesInto((uint8_t*)out.data(), msglen) || !isValidAscii(out)) {
+                            this->disconnectWithMessage("Relay returned failure without a proper error message");
+                        } else {
+                            this->disconnectWithMessage(fmt::format("Relay returned error: {}", out));
+                        }
+                    }
+                } else {
+                    uint32_t udpId = buf.readU32().unwrapOr(0);
+                    relayUdpId = udpId;
+                    relayStage1Finished = true;
+                }
+            } else {
+                // stage 2
+                if (buf.readU8().unwrapOr(0) != 1) {
+                    this->disconnectWithMessage(fmt::format("Relay returned auth failure"));
+                } else {
+                    relayConnFinished = true;
+                }
+            }
+
             return;
         }
 
@@ -964,7 +1063,17 @@ protected:
                 GLOBED_LAZY(connectedAddress.toString()), recovering.load()
             );
 
-            auto result = socket.connect(connectedAddress, recovering);
+            bool usingRelay = !this->relayAddress.isEmpty();
+
+            geode::Result<> result = Ok();
+            if (usingRelay) {
+                globed::netLog("using relay {}", relayAddress.toString());
+
+                state = ConnectionState::RelayAuthStage1; // set this early, avoid any race conditions with localhost
+                result = socket.connectWithRelay(connectedAddress, relayAddress, recovering);
+            } else {
+                result = socket.connect(connectedAddress, recovering);
+            }
 
             if (!result) {
                 this->disconnect(true);
@@ -975,19 +1084,41 @@ protected:
 
                 ErrorQueues::get().error(fmt::format("Failed to connect to the server.\n\nReason: <cy>{}</c>", reason));
                 return;
-            } else {
-                log::debug("tcp connection successful, sending the handshake");
+            } else if (!usingRelay) {
                 state = ConnectionState::Authenticating;
 
-                uint16_t proto = this->getUsedProtocol();
-                globed::netLog("NetworkManagerImpl::threadMainFunc TCP connection succeeded, authenticating now (used protocol = {})", proto);
+                this->startCryptoHandshake();
+            } else {
+                globed::netLog("Relay connection succeeded (so far!), waiting for server response..");
+            }
+        }
+        // Detect if the connection has been aborted
+        else if (requestedAbort) {
+            globed::netLog("NetworkManagerImpl::threadMainFunc abort was requested, disconnecting");
+            this->disconnect(requestedAbort.quiet, requestedAbort.noclear);
+        }
+        // Relay authentication, most of the time here is waiting for the server to give us a response
+        else if (state == ConnectionState::RelayAuthStage1) {
+            if (relayUdpId != 0) {
+                globed::netLog("Got relay udp id, now sending stage 2 udp packet: {}", relayUdpId.load());
 
-                socket.createBox();
+                if (auto res = socket.sendRelayUdpStage(relayUdpId)) {
+                    state = ConnectionState::RelayAuthStage2;
+                } else {
+                    ErrorQueues::get().error(fmt::format("Failed to send stage 2 udp packet to relay: {}", res.unwrapErr()));
+                    this->disconnect(true);
+                    return;
+                }
+            }
+        }
+        // Waiting for the relay to confirm auth
+        else if (state == ConnectionState::RelayAuthStage2) {
+            if (relayConnFinished) {
+                globed::netLog("Stage 2 relay auth successful, starting crypto handshake");
+                // yay!! we can now communicate with the game server thru this relay
+                state = ConnectionState::Authenticating;
 
-                this->send(CryptoHandshakeStartPacket::create(
-                    proto,
-                    CryptoPublicKey(socket.cryptoBox->extractPublicKey())
-                ));
+                this->startCryptoHandshake();
             }
         }
         // Connection recovery loop itself
@@ -1088,12 +1219,6 @@ protected:
             ));
             return;
         }
-        // Detect if the connection has been aborted
-        else if (requestedAbort) {
-            globed::netLog("NetworkManagerImpl::threadMainFunc abort was requested, disconnecting");
-            this->disconnect(requestedAbort.quiet, requestedAbort.noclear);
-        }
-
         if (this->established()) {
             this->maybeSendKeepalive();
         }
@@ -1113,6 +1238,18 @@ protected:
         }
 
         std::this_thread::yield();
+    }
+
+    void startCryptoHandshake() {
+        uint16_t proto = this->getUsedProtocol();
+        globed::netLog("TCP connection succeeded, authenticating now (used protocol = {})", proto);
+
+        socket.createBox();
+
+        this->send(CryptoHandshakeStartPacket::create(
+            proto,
+            CryptoPublicKey(socket.cryptoBox->extractPublicKey())
+        ));
     }
 
     void maybeSendKeepalive() {
@@ -1222,15 +1359,15 @@ NetworkManager::~NetworkManager() {
     delete impl;
 }
 
-Result<> NetworkManager::connect(const NetworkAddress& address, std::string_view serverId, bool standalone) {
+geode::Result<> NetworkManager::connect(const NetworkAddress& address, std::string_view serverId, bool standalone) {
     return impl->connect(address, serverId, standalone);
 }
 
-Result<> NetworkManager::connect(const GameServer& gsview) {
+geode::Result<> NetworkManager::connect(const GameServer& gsview) {
     return impl->connect(NetworkAddress(gsview.address), gsview.id, false);
 }
 
-Result<> NetworkManager::connectStandalone() {
+geode::Result<> NetworkManager::connectStandalone() {
     auto _server = GameServerManager::get().getServer(GameServerManager::STANDALONE_ID);
     if (!_server.has_value()) {
         return Err(fmt::format("failed to find server by standalone ID"));
@@ -1319,6 +1456,36 @@ void NetworkManager::suspend() {
 
 void NetworkManager::resume() {
     impl->resume();
+}
+
+geode::Result<> NetworkManager::setRelayAddress(std::string_view address) {
+    if (auto res = asp::net::SocketAddressV4::tryFromString(address)) {
+        this->setRelayAddress(NetworkAddress{address});
+        return Ok();
+    } else {
+        using enum asp::net::AddressParseError;
+        switch (res.unwrapErr()) {
+            case MissingOctets: return Err("missing octets in IP address");
+            case InvalidOctet: return Err("invalid octet in IP address");
+            case InvalidPort: return Err("invalid port in socket address");
+            case InvalidStructure: return Err("invalid socket address structure");
+            default: return Err("error parsing socket address");
+        }
+    }
+
+    return Ok();
+}
+
+void NetworkManager::setRelayAddress(const NetworkAddress& address) {
+    impl->setRelayAddress(address);
+}
+
+void NetworkManager::disableRelay() {
+    impl->setRelayAddress(NetworkAddress{});
+}
+
+NetworkAddress NetworkManager::getRelayAddress() {
+    return impl->relayAddress;
 }
 
 uint16_t NetworkManager::getMinProtocol() {

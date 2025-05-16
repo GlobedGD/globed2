@@ -16,6 +16,7 @@
 #endif
 
 constexpr size_t DATA_BUF_SIZE = 2 << 18;
+constexpr uint32_t RELAY_MAGIC = 0x7f8a9b0c;
 
 using namespace util::data;
 using namespace util::debug;
@@ -56,6 +57,21 @@ Result<> GameSocket::connect(const NetworkAddress& address, bool isRecovering) {
     // send a magic byte telling the server whether we are recovering or not
     uint8_t byte = isRecovering ? MARKER_CONN_RECOVERY : MARKER_CONN_INITIAL;
     GLOBED_UNWRAP(tcpSocket.send(reinterpret_cast<const char*>(&byte), 1));
+
+    return Ok();
+}
+
+Result<> GameSocket::connectWithRelay(const NetworkAddress& address, const NetworkAddress& relayAddress, bool isRecovering) {
+    GLOBED_UNWRAP(this->connect(relayAddress, isRecovering));
+
+    auto resolvedHost = GEODE_UNWRAP(address.resolveToString());
+
+    ByteBuffer buffer;
+    buffer.writeU32(RELAY_MAGIC); // magic
+    buffer.writeU32(resolvedHost.size());
+    buffer.writeBytes(resolvedHost.data(), resolvedHost.size());
+
+    GLOBED_UNWRAP(tcpSocket.send((const char*) buffer.data().data(), buffer.size()));
 
     return Ok();
 }
@@ -253,6 +269,40 @@ Result<ReceivedPacket> GameSocket::recvPacket(int timeoutMs) {
     }
 }
 
+Result<std::vector<uint8_t>> GameSocket::recvRawTcpData(size_t size, int timeoutMs) {
+    GLOBED_UNWRAP_INTO(this->poll(Protocol::Tcp, timeoutMs), auto pollResult);
+
+    if (!pollResult) {
+        return Err("timed out");
+    }
+
+    if (size == 0) {
+        uint32_t packetSize;
+        GLOBED_UNWRAP(tcpSocket.recvExact((char*)&packetSize, sizeof(uint32_t)));
+        size = asp::data::byteswap(packetSize);
+    }
+
+    if (size >= 2 << 26) {
+        // 64mb is too much sorry buddy
+        return Err("server sent a packet that is too large to accept: {}", size);
+    }
+
+    std::vector<uint8_t> out(size);
+    GLOBED_UNWRAP(tcpSocket.recvExact((char*) out.data(), size));
+
+    return Ok(std::move(out));
+}
+
+Result<> GameSocket::sendRelayUdpStage(uint32_t udpId) {
+    ByteBuffer buf;
+    buf.writeU32(RELAY_MAGIC);
+    buf.writeU32(udpId);
+
+    GLOBED_UNWRAP(udpSocket.send((const char*) buf.data().data(), buf.size()));
+
+    return Ok();
+}
+
 Result<ReceivedPacket> GameSocket::recvPacket() {
     return this->recvPacket(-1);
 }
@@ -408,6 +458,12 @@ Result<bool> GameSocket::poll(Protocol proto, int timeoutMs) {
         auto code = util::net::lastErrorCode();
         globed::netLog("(E) GameSocket::poll failed! code {}", code);
         return Err(util::net::lastErrorString(code));
+    }
+
+    bool error = (fd.revents & POLLERR) || (fd.revents & POLLHUP) || (fd.revents & POLLNVAL);
+    if (error) {
+        globed::netLog("(E) GameSocket::poll failed (revents = {})", fd.revents);
+        return Err("game socket poll failed");
     }
 
     globed::netLog("GameSocket::poll result: {}", bool(fd.revents & POLLIN));

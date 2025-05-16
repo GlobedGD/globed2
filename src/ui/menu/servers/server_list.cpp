@@ -1,8 +1,10 @@
 #include "server_list.hpp"
 
 #include "server_list_cell.hpp"
+#include "relay_tip_cell.hpp"
 #include <net/manager.hpp>
 #include <managers/game_server.hpp>
+#include <managers/settings.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -23,7 +25,7 @@ bool GlobedServerList::init() {
 
     this->setContentSize(bgListLayer->getScaledContentSize());
 
-    Build<ServerList>::create(LIST_WIDTH, LIST_HEIGHT - 2.f, globed::color::Brown, ServerListCell::CELL_HEIGHT)
+    Build<ServerList>::create(LIST_WIDTH, LIST_HEIGHT - 2.f, globed::color::Brown)
         .zOrder(3)
         .anchorPoint(0.5f, 0.5f)
         .pos(bgListLayer->getScaledContentSize() / 2.f)
@@ -45,10 +47,12 @@ void GlobedServerList::forceRefresh() {
 void GlobedServerList::softRefresh() {
     auto& gsm = GameServerManager::get();
 
-    for (auto* slc : *listLayer) {
-        auto server = gsm.getServer(slc->gsview.id);
-        if (server.has_value()) {
-            slc->updateWith(server.value());
+    for (auto* cell : *listLayer) {
+        if (auto slc = typeinfo_cast<ServerListCell*>(cell)) {
+            auto server = gsm.getServer(slc->gsview.id);
+            if (server.has_value()) {
+                slc->updateWith(server.value());
+            }
         }
     }
 }
@@ -56,12 +60,17 @@ void GlobedServerList::softRefresh() {
 CCArray* GlobedServerList::createServerList() {
     auto ret = CCArray::create();
 
+    auto& gs = GlobedSettings::get();
     auto& nm = NetworkManager::get();
     auto& gsm = GameServerManager::get();
 
     for (const auto& [serverId, server] : gsm.getAllServers()) {
         auto cell = ServerListCell::create(server);
         ret->addObject(cell);
+    }
+
+    if (gs.globed.showRelays && gsm.hasRelays()) {
+        ret->addObject(RelayTipCell::create());
     }
 
     return ret;

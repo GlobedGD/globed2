@@ -125,7 +125,7 @@ void AdminSendNoticePopup::commonSend(AdminSendNoticeType type) {
         canReply = userCanReplyCheckbox->isOn();
     }
 
-    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, userInput->getString(), message, canReply);
+    auto packet = AdminSendNoticePacket::create(type, roomId, levelId, userInput->getString(), message, canReply, false); // TODO: estimates
     NetworkManager::get().send(packet);
 }
 

@@ -4,6 +4,7 @@
 * \-- This allows you to easily change many settings at once, for example if attending some event
 * \-- The amount of save slots is unlimited and you can give them custom names
 * Add a <cg>Connection Test</c> menu in settings, to make it easier to debug network issues
+* Added a <cg>Connection Relay</c> feature, and now the main servers have a relay hosted in Russia, to combat the common connection issues for people in Russia
 * Remove <cy>Custom Keybinds</c> dependency, add ability to change the keybinds <cg>in settings</c> (thanks [LimeGradient](user:7214334)!)
 * Add ability to <cj>reply</c> when you get a Globed notice from a moderator (not always enabled)
 * Gauntlet levels now show the <cg>player count</c> under them (thanks [LimeGradient](user:7214334)!)

@@ -110,6 +110,10 @@ DecodeResult<> ByteBuffer::readBytesInto(byte* buf, size_t bytes) {
     return Ok();
 }
 
+void ByteBuffer::writeBytes(void* buf, size_t bytes) {
+    this->rawWriteBytes((byte*)buf, bytes);
+}
+
 /* Common encode/decode specializations */
 
 // Strings

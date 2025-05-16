@@ -35,6 +35,7 @@ private:
         CreatingSessionToken,
 
         AttemptingConnection,
+        RelayEstablishing,
         Establishing,
         Done
     };
@@ -58,6 +59,7 @@ private:
     void startStandalone();
     void startCentral();
     void onArgonFailure(const std::string& error);
+    void onAbruptDisconnect();
 
     void requestTokenAndConnect();
 

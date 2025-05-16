@@ -19,6 +19,8 @@ using namespace geode::prelude;
 bool ServerListCell::init(const GameServer& gsview) {
     if (!CCLayer::init()) return false;
 
+    this->setContentSize({CELL_WIDTH, CELL_HEIGHT});
+
     Build<CCLayer>::create()
         .layout(RowLayout::create()
                     ->setAxisAlignment(AxisAlignment::Start)

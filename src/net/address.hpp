@@ -44,6 +44,10 @@ public:
     // Note that this might block for DNS lookup if contained host was not an IP address.
     geode::Result<std::string> resolveToString() const;
 
+    // Returns whether the contained host is empty, aka the class was created from an empty string,
+    // or was default initialized.
+    bool isEmpty() const;
+
 private:
     std::string host;
     uint16_t port;

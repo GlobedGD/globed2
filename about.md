@@ -23,6 +23,7 @@ Globed is made by:
 * [dank_meme](user:9735891) - owner and main developer
 * [ItzKiba](user:4569963) - artist, developer
 * [LimeGradient](user:7214334) - developer
+* [Dasshu](user:1975253) - artist
 * [TechStudent10](user:20284359) - developer
 * [ninXout](user:7479054) - developer
 

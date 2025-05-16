@@ -60,9 +60,41 @@ Result<bool> GameServerManager::addOrUpdateServer(std::string_view serverId_, st
     return Ok(true);
 }
 
+void GameServerManager::addOrUpdateRelay(const ServerRelay& relay) {
+    auto data = _data.lock();
+    data->relays[relay.id] = relay;
+}
+
 void GameServerManager::clear() {
-    _data.lock()->servers.clear();
+    auto data = _data.lock();
+    data->servers.clear();
+    data->relays.clear();
+
     pendingChanges = true;
+}
+
+std::vector<ServerRelay> GameServerManager::getAllRelays() {
+    std::vector<ServerRelay> out;
+
+    for (auto& [k, v] : _data.lock()->relays) {
+        out.push_back(v);
+    }
+
+    return out;
+}
+
+void GameServerManager::setActiveRelay(const std::string& id) {
+    auto data = _data.lock();
+
+    if (data->relays.contains(id)) {
+        data->activeRelay = data->relays.at(id).id;
+    } else {
+        data->activeRelay = "";
+    }
+}
+
+std::string GameServerManager::getActiveRelayId() {
+    return _data.lock()->activeRelay;
 }
 
 size_t GameServerManager::count() {
@@ -84,6 +116,14 @@ void GameServerManager::clearActive() {
     data->active.clear();
 
     this->saveLastConnected("");
+}
+
+bool GameServerManager::hasRelays() {
+    return this->relayCount();
+}
+
+size_t GameServerManager::relayCount() {
+    return _data.lock()->relays.size();
 }
 
 void GameServerManager::clearAllExcept(std::string_view id) {

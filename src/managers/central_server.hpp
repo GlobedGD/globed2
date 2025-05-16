@@ -22,6 +22,7 @@ struct MetaResponse {
     std::optional<std::string> argon;
     std::string gdmin;
     std::string globedmin;
+    std::optional<std::vector<ServerRelay>> relays;
 };
 
 class CentralServerManager : public SingletonBase<CentralServerManager> {

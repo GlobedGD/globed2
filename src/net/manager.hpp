@@ -39,6 +39,9 @@ public:
         TcpConnecting,   // attempting to establish a TCP connection
         Authenticating,  // performing a handshake and login
         Established,     // fully connected to a server
+
+        RelayAuthStage1, // waiting for a positive reply from a relay
+        RelayAuthStage2, // waiting for a positive reply from a relay
     };
 
     // Connect to a server
@@ -124,6 +127,12 @@ public:
     void suspend();
     // Resume all network threads
     void resume();
+
+    // Relay management
+    geode::Result<> setRelayAddress(std::string_view address);
+    void setRelayAddress(const NetworkAddress& address);
+    void disableRelay();
+    NetworkAddress getRelayAddress();
 
     uint16_t getMinProtocol();
     uint16_t getMaxProtocol();

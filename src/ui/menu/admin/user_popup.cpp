@@ -295,7 +295,7 @@ void AdminUserPopup::onProfileLoaded() {
                     return;
                 }
 
-                auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), msg, canReply);
+                auto packet = AdminSendNoticePacket::create(AdminSendNoticeType::Person, 0, 0, std::to_string(accountId), msg, canReply, false);
                 NetworkManager::get().send(packet);
 
                 this->showLoadingPopup();

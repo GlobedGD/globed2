@@ -84,20 +84,26 @@ bool ConnectionPopup::setup(GameServer gs_) {
 }
 
 void ConnectionPopup::update(float dt) {
-    if (m_state == State::AttemptingConnection || m_state == State::Establishing) {
+    if (m_state == State::AttemptingConnection || m_state == State::Establishing || m_state == State::RelayEstablishing) {
         auto& nm = NetworkManager::get();
         auto state = nm.getConnectionState();
 
         if (state == ConnectionState::Disconnected) {
-            this->forceClose();
-            log::warn("disconnected");
+            this->onAbruptDisconnect(); // abrubt disconnect
+        } else if (state == ConnectionState::RelayAuthStage1 || state == ConnectionState::RelayAuthStage2) {
+            this->updateState(State::RelayEstablishing); // tcp connection -> relay establishing
         } else if (state == ConnectionState::Authenticating) {
-            this->updateState(State::Establishing);
+            this->updateState(State::Establishing); // tcp connection / relay establishing -> authentication
         } else if (state == ConnectionState::Established) {
+            // authentication -> established
             this->updateState(State::Done);
             this->forceClose();
         }
     }
+}
+
+void ConnectionPopup::onAbruptDisconnect() {
+    this->forceClose();
 }
 
 void ConnectionPopup::forceClose() {
@@ -187,6 +193,8 @@ void ConnectionPopup::requestTokenAndConnect() {
 }
 
 void ConnectionPopup::updateState(State state) {
+    if (state == m_state) return;
+
     m_state = state;
 
     std::string message;
@@ -201,6 +209,7 @@ void ConnectionPopup::updateState(State state) {
         case CreatingSessionToken: message = "Creating session.."; break;
         case AttemptingConnection: message = "Connecting.."; break;
         case Establishing: message = "Establishing.."; break;
+        case RelayEstablishing: message = "Establishing relay.."; break;
         case Done: message = "Done!"; break;
     }
 

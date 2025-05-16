@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <asp/sync.hpp> // mutex
 
+#include <data/types/misc.hpp>
 #include <util/crypto.hpp> // base64
 #include <util/singleton.hpp>
 
@@ -37,12 +38,21 @@ public:
     Result<> addServer(std::string_view serverId, std::string_view name, std::string_view address, std::string_view region);
     // Returns true if a new server has been added, or the data has changed, false otherwise.
     Result<bool> addOrUpdateServer(std::string_view serverId, std::string_view name, std::string_view address, std::string_view region);
+
+    void addOrUpdateRelay(const ServerRelay& relay);
+
     void clear();
     size_t count();
 
     void setActive(std::string_view id);
     std::string getActiveId();
     void clearActive();
+
+    bool hasRelays();
+    size_t relayCount();
+    std::vector<ServerRelay> getAllRelays();
+    void setActiveRelay(const std::string& id);
+    std::string getActiveRelayId();
 
     // remove all servers except the one with the given id
     void clearAllExcept(std::string_view id);
@@ -82,7 +92,9 @@ protected:
 
     struct InnerData {
         std::unordered_map<std::string, GameServerData> servers;
+        std::unordered_map<std::string, ServerRelay> relays;
         std::string active; // current game server ID
+        std::string activeRelay;
         uint32_t activePingId;
         std::string cachedServerResponse;
     };

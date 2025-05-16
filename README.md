@@ -31,6 +31,7 @@ Globed is made by:
 * [dank_meme](https://github.com/dankmeme01) - owner and main developer
 * [ItzKiba](https://github.com/ItzKiba/) - artist, developer
 * [LimeGradient](https://github.com/LimeGradient) - developer
+* [Dasshu](https://github.com/DasshuDev/) - artist
 * [TechStudent10](https://github.com/TechStudent10) - developer
 * [ninXout](https://github.com/ninXout/) - developer
 

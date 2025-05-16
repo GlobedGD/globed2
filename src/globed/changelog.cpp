@@ -107,7 +107,7 @@ FLAlertLayer* showChangelogPopup() {
     auto currentVersion = Mod::get()->getVersion();
 
     // parse changelog.md lol
-    auto clog_ = Mod::get()->getMetadata().getChangelog();
+    auto clog_ = Mod::get()->getMetadataRef().getChangelog();
     if (!clog_) {
         log::warn("Changelog is null");
         return nullptr;

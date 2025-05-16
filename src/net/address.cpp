@@ -121,3 +121,7 @@ Result<std::string> NetworkAddress::resolveToString() const {
 
     return Ok(std::move(ipstr + ":" + std::to_string(port)));
 }
+
+bool NetworkAddress::isEmpty() const {
+    return host.empty();
+}

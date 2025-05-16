@@ -16,7 +16,7 @@ public:
     static GlobedServerList* create();
 
 private:
-    using ServerList = GlobedListLayer<ServerListCell>;
+    using ServerList = GlobedListLayer<cocos2d::CCNode>;
 
     GJListLayer* bgListLayer;
     ServerList* listLayer;

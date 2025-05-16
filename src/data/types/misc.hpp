@@ -104,3 +104,9 @@ public:
 GLOBED_SERIALIZABLE_STRUCT(RichColor, (
     inner
 ));
+
+struct ServerRelay {
+    std::string id;
+    std::string name;
+    std::string address;
+};

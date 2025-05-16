@@ -181,9 +181,8 @@ impl ClientThread {
         }
 
         if estimate {
-            return self
-                ._send_estimate(self.game_server.clients.lock().values().filter(|thr| thr.authenticated()).count())
-                .await;
+            let est = self.game_server.clients.lock().values().filter(|thr| thr.authenticated()).count();
+            return self._send_estimate(est).await;
         }
 
         let threads = self

@@ -176,6 +176,9 @@ public:
     /* Raw reads */
     DecodeResult<> readBytesInto(util::data::byte* buf, size_t bytes);
 
+    /* Raw write */
+    void writeBytes(void* buf, size_t bytes);
+
 protected:
     // Read `sizeof(T)` bytes and reinterpret them as `T`. No endianness conversions are done.
     template <typename T>

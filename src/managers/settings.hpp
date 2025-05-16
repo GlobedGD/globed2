@@ -263,6 +263,7 @@ public:
         Setting<bool, true> editorSupport;
         Setting<bool, false> increaseLevelList;
         Setting<int, 0> fragmentationLimit;
+        Setting<bool, false> showRelays;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
         Setting<bool, true> changelogPopups;
@@ -343,6 +344,7 @@ public:
         Flag seenGlobalTriggerGuide;
         Flag seenRoomOptionsSafeModeNotice;
         Flag seenSwagConnectionPopup;
+        Flag seenRelayNotice;
     };
 
     Globed globed;
