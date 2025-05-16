@@ -39,6 +39,7 @@ std::shared_ptr<Packet> matchPacket(packetid_t packetId) {
         PACKET(LevelInnerPlayerCountPacket);
         PACKET(VoiceBroadcastPacket);
         PACKET(ChatMessageBroadcastPacket);
+        PACKET(VoiceFailedPacket);
 
         // room related
 

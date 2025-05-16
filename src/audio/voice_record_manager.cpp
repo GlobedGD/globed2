@@ -6,6 +6,7 @@
 #include <data/packets/client/game.hpp>
 #include <globed/tracing.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/settings.hpp>
 #include <audio/manager.hpp>
 #include <net/manager.hpp>
 #include <util/time.hpp>
@@ -64,7 +65,12 @@ void VoiceRecordingManager::threadFunc(decltype(thread)::StopToken&) {
                 ByteBuffer buf;
                 buf.writeValue(frame);
 
-                nm.send(RawPacket::create<VoicePacket>(std::move(buf)));
+                nm.send(RawPacket::create(
+                    VoicePacket::PACKET_ID,
+                    VoicePacket::ENCRYPTED,
+                    GlobedSettings::get().communication.tcpAudio ? true : VoicePacket::SHOULD_USE_TCP,
+                    std::move(buf)
+                ));
             });
 
             if (result.isErr()) {

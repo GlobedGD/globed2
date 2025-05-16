@@ -312,6 +312,7 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
             registerSetting(cat, settings.communication.voiceVolume, "Voice volume", "Controls how loud other players are.");
             registerSetting(cat, settings.communication.onlyFriends, "Only friends", "When enabled, you won't hear players that are not on your friend list in-game.");
             registerSetting(cat, settings.communication.lowerAudioLatency, "Lower audio latency", "Decreases the audio buffer size by 2 times, reducing the latency but potentially causing audio issues.");
+            registerSetting(cat, settings.communication.tcpAudio, "TCP Voice chat", "Uses TCP instead of UDP for voice chat, may sometimes help with voice chat not working");
             registerSetting(cat, settings.communication.deafenNotification, "Deafen notification", "Shows a notification when you deafen & undeafen.");
             registerSetting(cat, settings.communication.audioDevice, "Audio device", "The input device used for recording your voice.", Type::AudioDevice);
             // MAKE_SETTING(communication, voiceLoopback, "Voice loopback", "When enabled, you will hear your own voice as you speak.");

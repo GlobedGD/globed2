@@ -80,6 +80,11 @@ impl UserPrivacyFlags {
     pub fn set_hide_roles(&mut self, s: bool) {
         self.flags.assign_bit(3, s);
     }
+
+    // TODO: really shouldn't be in this struct
+    pub fn get_tcp_audio(&self) -> bool {
+        self.flags.get_bit(4)
+    }
 }
 
 impl Default for UserPrivacyFlags {

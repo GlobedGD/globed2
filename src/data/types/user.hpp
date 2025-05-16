@@ -60,10 +60,11 @@ struct UserPrivacyFlags : BitfieldBase {
     bool noInvites;
     bool hideInGame;
     bool hideRoles;
+    bool tcpAudio;
 };
 
 GLOBED_SERIALIZABLE_BITFIELD(UserPrivacyFlags, (
-    hideFromLists, noInvites, hideInGame, hideRoles
+    hideFromLists, noInvites, hideInGame, hideRoles, tcpAudio
 ));
 
 enum class PunishmentType : uint8_t {

@@ -33,6 +33,8 @@ use crate::{
     util::{LockfreeMutCell, SimpleRateLimiter},
 };
 
+use self::socket::ProtocolOverride;
+
 pub use super::*;
 
 pub mod handlers;
@@ -446,7 +448,15 @@ impl ClientThread {
             ServerThreadMessage::Packet(mut packet) => self.handle_packet(&mut packet).await?,
             ServerThreadMessage::SmallPacket((mut packet, len)) => self.handle_packet(&mut packet[..len]).await?,
             ServerThreadMessage::BroadcastText(text_packet) => self.send_packet_static(&text_packet).await?,
-            ServerThreadMessage::BroadcastVoice(voice_packet) => self.send_packet_dynamic(&*voice_packet).await?,
+            ServerThreadMessage::BroadcastVoice(voice_packet) => {
+                let tcp = self.privacy_settings.lock().get_tcp_audio();
+
+                if tcp {
+                    self.send_packet_dynamic_tcp(&*voice_packet).await?
+                } else {
+                    self.send_packet_dynamic(&*voice_packet).await?
+                }
+            }
             ServerThreadMessage::BroadcastNotice(packet) => {
                 info!("{} is receiving a notice: {}", self.account_data.lock().name, packet.message);
                 self.send_packet_translatable(packet).await?;
@@ -519,7 +529,10 @@ impl ClientThread {
         {
             #[cfg(debug_assertions)]
             log::warn!("blocking text/voice packet from {}", self.account_id.load(Ordering::Relaxed));
-            return Ok(());
+
+            let user_muted = self.user_entry.lock().active_mute.is_some();
+
+            return self.send_packet_static(&VoiceFailedPacket { user_muted }).await;
         }
 
         // decrypt the packet in-place if encrypted
@@ -589,23 +602,32 @@ impl ClientThread {
 
     #[inline]
     async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_static(packet).await
+        unsafe { self.socket.get_mut() }.send_packet_static(packet, ProtocolOverride::None).await
     }
 
     #[inline]
     async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_dynamic(packet).await
+        unsafe { self.socket.get_mut() }.send_packet_dynamic(packet, ProtocolOverride::None).await
+    }
+
+    #[inline]
+    async fn send_packet_dynamic_tcp<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
+        unsafe { self.socket.get_mut() }.send_packet_dynamic(packet, ProtocolOverride::Tcp).await
     }
 
     #[inline]
     async fn send_packet_translatable<P: Packet + Encodable + DynamicSize + PartialTranslatableEncodable>(&self, packet: P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_translatable(packet).await
+        unsafe { self.socket.get_mut() }
+            .send_packet_translatable(packet, ProtocolOverride::None)
+            .await
     }
 
     #[inline]
     #[allow(unused)]
     async fn send_packet_alloca<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_alloca(packet, packet_size).await
+        unsafe { self.socket.get_mut() }
+            .send_packet_alloca(packet, packet_size, ProtocolOverride::None)
+            .await
     }
 
     #[inline]
@@ -614,7 +636,7 @@ impl ClientThread {
         F: FnOnce(&mut FastByteBuffer),
     {
         unsafe { self.socket.get_mut() }
-            .send_packet_alloca_with::<P, F>(packet_size, encode_fn)
+            .send_packet_alloca_with::<P, F>(packet_size, ProtocolOverride::None, encode_fn)
             .await
     }
 }
