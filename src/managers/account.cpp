@@ -153,6 +153,8 @@ void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event
             requestCallbackStored.value()(true);
         }
 
+        requestCallbackStored.reset();
+
         return;
     }
 
@@ -182,6 +184,8 @@ void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event
     if (requestCallbackStored.has_value()) {
         requestCallbackStored.value()(false);
     }
+
+    requestCallbackStored.reset();
 }
 
 void GlobedAccountManager::storeAdminPassword(std::string_view password) {
