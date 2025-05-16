@@ -435,6 +435,7 @@ void GlobedUserCell::makeButtons() {
 GlobedUserCell* GlobedUserCell::create(const PlayerStore::Entry& entry, const PlayerAccountData& data, GlobedUserListPopup* parent) {
     auto ret = new GlobedUserCell;
     if (ret->init(entry, data, parent)) {
+        ret->autorelease();
         return ret;
     }
 
