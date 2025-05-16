@@ -362,6 +362,15 @@ protected:
             GLOBED_LAZY(address.toString()), serverId, standalone, fromRecovery, state.inner.load()
         );
 
+        auto& gsm = GameServerManager::get();
+        auto gsmRelay = gsm.getActiveRelay();
+
+        if (gsmRelay) {
+            this->setRelayAddress(NetworkAddress{gsmRelay->address});
+        } else {
+            this->setRelayAddress(NetworkAddress{});
+        }
+
         // if we are already connected, disconnect first
         if (state == ConnectionState::Established) {
             this->disconnect(false, false);
@@ -876,6 +885,10 @@ protected:
     }
 
     void setRelayAddress(const NetworkAddress& address) {
+        if (!address.isEmpty()) {
+            log::info("Using relay: {}", address.toString());
+        }
+
         globed::netLog("Setting relay address to {}", GLOBED_LAZY(address.toString()));
 
         this->relayAddress = address;
@@ -1456,32 +1469,6 @@ void NetworkManager::suspend() {
 
 void NetworkManager::resume() {
     impl->resume();
-}
-
-geode::Result<> NetworkManager::setRelayAddress(std::string_view address) {
-    if (auto res = asp::net::SocketAddressV4::tryFromString(address)) {
-        this->setRelayAddress(NetworkAddress{address});
-        return Ok();
-    } else {
-        using enum asp::net::AddressParseError;
-        switch (res.unwrapErr()) {
-            case MissingOctets: return Err("missing octets in IP address");
-            case InvalidOctet: return Err("invalid octet in IP address");
-            case InvalidPort: return Err("invalid port in socket address");
-            case InvalidStructure: return Err("invalid socket address structure");
-            default: return Err("error parsing socket address");
-        }
-    }
-
-    return Ok();
-}
-
-void NetworkManager::setRelayAddress(const NetworkAddress& address) {
-    impl->setRelayAddress(address);
-}
-
-void NetworkManager::disableRelay() {
-    impl->setRelayAddress(NetworkAddress{});
 }
 
 NetworkAddress NetworkManager::getRelayAddress() {

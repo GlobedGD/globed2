@@ -239,6 +239,8 @@ void CentralServerManager::initFromMeta(const MetaResponse& resp) {
     for (auto& relay : resp.relays.value_or(std::vector<ServerRelay>{})) {
         gsm.addOrUpdateRelay(relay);
     }
+
+    gsm.reloadActiveRelay();
 }
 
 bool CentralServerManager::activeHasAuth() {

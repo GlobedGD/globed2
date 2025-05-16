@@ -21,13 +21,8 @@ bool RelayCell::init(const ServerRelay& relay, RelaySwitchPopup* parent) {
     Build<CCSprite>::createSpriteName("GJ_selectSongBtn_001.png")
         .scale(0.8f)
         .intoMenuItem([this](auto) {
-            auto res = NetworkManager::get().setRelayAddress(m_data.address);
-            if (!res) {
-                ErrorQueues::get().error(fmt::format("Failed to set relay: {}", res.unwrapErr()));
-            } else {
-                log::debug("Enabled relay: {}", m_data.address);
-                GameServerManager::get().setActiveRelay(m_data.id);
-            }
+            log::info("Enabled relay: {}", m_data.address);
+            GameServerManager::get().setActiveRelay(m_data.id);
 
             m_parent->refreshList();
         })
@@ -43,7 +38,6 @@ bool RelayCell::init(const ServerRelay& relay, RelaySwitchPopup* parent) {
     Build<CCSprite>::createSpriteName("GJ_selectSongOnBtn_001.png")
         .scale(0.8f)
         .intoMenuItem([this](auto) {
-            NetworkManager::get().disableRelay();
             GameServerManager::get().setActiveRelay("");
 
             m_parent->refreshList();

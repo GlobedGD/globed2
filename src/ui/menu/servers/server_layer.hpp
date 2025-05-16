@@ -16,6 +16,7 @@ private:
     bool transitioningAway = false;
     bool serversLoaded = false;
     bool initializing = true;
+    bool prevShownRelays = false;
     std::optional<int> serversLoadingFor;
 
     bool init() override;

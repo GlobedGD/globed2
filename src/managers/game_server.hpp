@@ -51,8 +51,10 @@ public:
     bool hasRelays();
     size_t relayCount();
     std::vector<ServerRelay> getAllRelays();
+    std::optional<ServerRelay> getActiveRelay();
     void setActiveRelay(const std::string& id);
     std::string getActiveRelayId();
+    void reloadActiveRelay();
 
     // remove all servers except the one with the given id
     void clearAllExcept(std::string_view id);

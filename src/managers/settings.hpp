@@ -428,7 +428,8 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LaunchArgs, (
 // Settings
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed,
+    autoconnect, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, showRelays,
+    compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed,
     isInvisible, noInvites, hideInGame, hideRoles
 ));
 
@@ -461,7 +462,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Keys, (
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
     seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice,
     seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide, seenRoomOptionsSafeModeNotice,
-    seenSwagConnectionPopup
+    seenSwagConnectionPopup, seenRelayNotice
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (

@@ -10,6 +10,8 @@ public:
     static constexpr float LIST_WIDTH = 358.f;
     static constexpr float LIST_HEIGHT = 220.f;
 
+    bool showingRelays = false;
+
     void forceRefresh();
     void softRefresh();
 

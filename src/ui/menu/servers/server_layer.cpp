@@ -11,6 +11,7 @@
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/settings.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
 #include <net/manager.hpp>
@@ -22,6 +23,9 @@ using namespace geode::prelude;
 
 bool GlobedServersLayer::init() {
     if (!CCLayer::init()) return false;
+
+    auto& settings = GlobedSettings::get();
+    prevShownRelays = settings.globed.showRelays;
 
     this->setID("GlobedServersLayer"_spr);
 
@@ -203,6 +207,14 @@ void GlobedServersLayer::updateServerList(float) {
         if (!initializing) {
             this->pingServers(0.f);
         }
+
+        return;
+    }
+
+    auto& settings = GlobedSettings::get();
+    if (settings.globed.showRelays != prevShownRelays) {
+        prevShownRelays = settings.globed.showRelays;
+        serverList->forceRefresh();
 
         return;
     }

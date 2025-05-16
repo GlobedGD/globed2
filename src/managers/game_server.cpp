@@ -65,6 +65,16 @@ void GameServerManager::addOrUpdateRelay(const ServerRelay& relay) {
     data->relays[relay.id] = relay;
 }
 
+void GameServerManager::reloadActiveRelay() {
+    auto id = Mod::get()->getSavedValue<std::string>("active-server-relay");
+
+    if (!id.empty()) {
+        log::info("Reloading relay ({})", id);
+    }
+
+    this->setActiveRelay(id);
+}
+
 void GameServerManager::clear() {
     auto data = _data.lock();
     data->servers.clear();
@@ -91,10 +101,27 @@ void GameServerManager::setActiveRelay(const std::string& id) {
     } else {
         data->activeRelay = "";
     }
+
+    Mod::get()->setSavedValue("active-server-relay", data->activeRelay);
 }
 
 std::string GameServerManager::getActiveRelayId() {
     return _data.lock()->activeRelay;
+}
+
+std::optional<ServerRelay> GameServerManager::getActiveRelay() {
+    auto data = _data.lock();
+
+    if (data->activeRelay.empty()) {
+        return std::nullopt;
+    }
+
+    if (!data->relays.contains(data->activeRelay)) {
+        data->activeRelay = "";
+        return std::nullopt;
+    }
+
+    return data->relays.at(data->activeRelay);
 }
 
 size_t GameServerManager::count() {

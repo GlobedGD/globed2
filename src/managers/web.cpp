@@ -185,6 +185,32 @@ RequestTask WebRequestManager::testCloudflareDomainTrace(std::string_view domain
     return this->get(fmt::format("https://{}/cdn-cgi/trace", domain));
 }
 
+bool WebRequestManager::isRussian() {
+    return m_russian.value_or(false);
+}
+
+void WebRequestManager::fetchCountry() {
+    if (m_russian.has_value()) {
+        return;
+    }
+
+    this->testCloudflareDomainTrace("boomlings.com").listen([this](CurlResponse* response) {
+        if (!response) return;
+
+        if (!response->ok()) {
+            log::warn("Failed to fetch cdn-cgi trace (code {}): {}", response->getCode(), response->text().unwrapOrDefault());
+            m_russian = true;
+            return;
+        }
+
+        auto text = response->text().unwrapOrDefault();
+        auto locpos = text.find("loc=") + 4;
+        std::string_view loc = std::string_view{text}.substr(locpos, 2);
+
+        m_russian = (loc == "RU" || loc == "BY"); // i dont think belarus blocks but im adding here to be safe
+    });
+}
+
 RequestTask WebRequestManager::get(std::string_view url) {
     return get(url, 10);
 }

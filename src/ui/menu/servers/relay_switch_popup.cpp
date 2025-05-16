@@ -3,6 +3,8 @@
 #include <managers/game_server.hpp>
 
 bool RelaySwitchPopup::setup() {
+    this->setTitle("Available Relays");
+
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
     Build(RelayList::createForComments(LIST_WIDTH, LIST_HEIGHT, RelayCell::CELL_HEIGHT))

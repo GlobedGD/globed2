@@ -5,6 +5,7 @@
 #include <net/manager.hpp>
 #include <managers/game_server.hpp>
 #include <managers/settings.hpp>
+#include <managers/web.hpp>
 #include <util/ui.hpp>
 
 using namespace geode::prelude;
@@ -63,13 +64,15 @@ CCArray* GlobedServerList::createServerList() {
     auto& gs = GlobedSettings::get();
     auto& nm = NetworkManager::get();
     auto& gsm = GameServerManager::get();
+    auto& wrm = WebRequestManager::get();
 
     for (const auto& [serverId, server] : gsm.getAllServers()) {
         auto cell = ServerListCell::create(server);
         ret->addObject(cell);
     }
 
-    if (gs.globed.showRelays && gsm.hasRelays()) {
+    showingRelays = (gs.globed.showRelays || wrm.isRussian() || !gsm.getActiveRelayId().empty()) && gsm.hasRelays();
+    if (showingRelays) {
         ret->addObject(RelayTipCell::create());
     }
 
