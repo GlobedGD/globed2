@@ -16,6 +16,7 @@ private:
     std::string message;
     geode::TextInput *userInput, *roomInput, *levelInput;
     CCMenuItemToggler* userCanReplyCheckbox;
+    bool m_alreadyEstimated = false;
 
     bool setup(std::string_view message);
     void commonSend(AdminSendNoticeType type);

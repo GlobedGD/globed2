@@ -42,7 +42,7 @@ class AdminSendNoticePacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminSendNoticePacket, (
-    ptype, roomId, levelId, player, message, canReply
+    ptype, roomId, levelId, player, message, canReply, justEstimate
 ));
 
 // 19002 - AdminDisconnectPacket
