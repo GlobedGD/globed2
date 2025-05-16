@@ -31,7 +31,7 @@ Short primer on those traits -
 
 `DynamicSize` is a trait with a non-static method, which is used to calculate the precise encoded size. If the object hasn't been mutated between the two calls, there is a guarantee that the result of `val.encoded_size()` will be exactly the amount of bytes written with `buffer.write_value(&val)`. This precision, however, comes with a downside of a runtime calculation, as this will have to go through every struct member and check their sizes in order to calculate the exact size of the encoded data.
 
-It is encouraged that every type (except for packets) that implements `StaticSize` must also implement `DynamicSize`, or else it would not be possible to derive `DynamicSize` for a struct containing such types. For efficiency purposes, the crate provides `dynamic_size_as_static_impl!` macro which would automatically implement `DynamicSize` for a struct that implements `StaticSize`, and that implementation would just return the static size instead of doing any calculations. That is also available as a derive macro atribute `#[dynamic_size(as_static = true)]`
+It is encouraged that every type (except for packets) that implements `StaticSize` must also implement `DynamicSize`, or else it would not be possible to derive `DynamicSize` for a struct containing such types. For efficiency purposes, the crate provides `dynamic_size_as_static_impl!` macro which would automatically implement `DynamicSize` for a struct that implements `StaticSize`, and that implementation would just return the static size instead of doing any calculations. That is also available as a derive macro attribute `#[dynamic_size(as_static = true)]`
 
 Implementer guide (only needed if you can't or don't want to derive):
 

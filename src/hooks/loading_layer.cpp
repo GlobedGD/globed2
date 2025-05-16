@@ -219,7 +219,7 @@ $execute {
 
 # else // Win64 + Mac x64
 
-// LoadingLayer::loadAssets, invokation of MenuLayer::scene
+// LoadingLayer::loadAssets, invocation of MenuLayer::scene
 // win64 disasm (1):
 /*
     xor ecx, ecx                      <- offset for start1

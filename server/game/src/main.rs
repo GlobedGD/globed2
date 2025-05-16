@@ -164,7 +164,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         log::set_max_level(log_level);
     } else {
         log::set_max_level(LogLevelFilter::Warn); // we have to print these logs somehow lol
-        error!("invalid value for the log level environment varaible");
+        error!("invalid value for the log level environment variable");
         warn!("hint: possible values are 'trace', 'debug', 'info', 'warn', 'error', and 'none'.");
         abort_misconfig();
     }

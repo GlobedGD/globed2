@@ -195,7 +195,7 @@ impl UnauthorizedThread {
                         }
                     },
 
-                    () = self.wait_for_termianted() => {
+                    () = self.wait_for_terminated() => {
                         self.terminate();
                     }
                 },
@@ -233,7 +233,7 @@ impl UnauthorizedThread {
                         }
                     },
 
-                    () = self.wait_for_termianted() => {
+                    () = self.wait_for_terminated() => {
                         self.terminate();
                     }
                 },
@@ -252,7 +252,7 @@ impl UnauthorizedThread {
                         }
                     },
 
-                    () = self.wait_for_termianted() => {
+                    () = self.wait_for_terminated() => {
                         self.terminate();
                     }
                 },
@@ -580,7 +580,7 @@ impl UnauthorizedThread {
     }
 
     /// Blocks until we get notified that our thread is being terminated
-    async fn wait_for_termianted(&self) {
+    async fn wait_for_terminated(&self) {
         self.terminate_notify.notified().await;
     }
 

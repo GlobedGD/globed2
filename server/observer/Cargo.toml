@@ -8,4 +8,5 @@ globed-shared = { path = "../shared" }
 globed-derive = { path = "../derive" }
 observer-shared = { path = "../observer-shared" }
 esp = { path = "../esp" }
-egui = "0.29.1"
+
+egui = "0.31.1"

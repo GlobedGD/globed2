@@ -9,18 +9,18 @@ globed-shared = { path = "../shared" }
 async-watcher = "0.3.0"
 blake2 = "0.10.6"
 digest = "0.10.7"
-ipnet = "2.10.1"
+ipnet = "2.11.0"
 iprange = "0.6.7"
-serde = { version = "1.0.215", features = ["serde_derive"] }
-serde_json = "1.0.133"
-tokio = { version = "1.42.0", features = ["full"] }
+serde = { version = "1.0.219", features = ["serde_derive"] }
+serde_json = "1.0.140"
+tokio = { version = "1.45.0", features = ["full"] }
 json_comments = "0.2.2"
 rocket = { version = "0.5.1", features = ["json"] }
 rocket_db_pools = { version = "0.2.0", features = ["sqlx_sqlite"] }
-sqlx = { version = "^0.7.0", features = [ # TODO: rocket_db_pools is broken in sqlx 0.8.x
+sqlx = { version = "^0.7.4", features = [ # TODO: rocket_db_pools is broken in sqlx 0.8.x
     "migrate",
     "runtime-tokio-rustls",
 ] }
 rocket_cors = "0.6.0"
-const_format = "0.2.33"
+const_format = "0.2.34"
 hex = "0.4.3"
