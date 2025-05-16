@@ -3,7 +3,7 @@
 
 class PlayerStatusIcons : public cocos2d::CCNode {
 public:
-    void updateStatus(bool paused, bool practicing, bool speaking, bool editing, float loudness, bool force = false);
+    void updateStatus(bool paused, bool practicing, bool speaking, bool speakingFailing, bool editing, float loudness, bool force = false);
     void updateLoudnessIcon(float dt);
 
     static PlayerStatusIcons* create(unsigned char opacity);
@@ -14,7 +14,7 @@ private:
     };
 
     cocos2d::CCNode* iconWrapper = nullptr;
-    bool wasPaused = false, wasPracticing = false, wasSpeaking = false, wasEditing = false;
+    bool wasPaused = false, wasPracticing = false, wasSpeaking = false, wasSpeakingFailing = false, wasEditing = false;
     Loudness wasLoudness = Loudness::Low;
     float lastLoudness = 0.f;
     float nameScale = 0.f;

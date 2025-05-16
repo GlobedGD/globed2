@@ -532,7 +532,12 @@ impl ClientThread {
 
             let user_muted = self.user_entry.lock().active_mute.is_some();
 
-            return self.send_packet_static(&VoiceFailedPacket { user_muted }).await;
+            // XXX: protocol compat
+            if self.protocol_version.load(Ordering::Relaxed) >= 14 {
+                return self.send_packet_static(&VoiceFailedPacket { user_muted }).await;
+            } else {
+                return Ok(());
+            }
         }
 
         // decrypt the packet in-place if encrypted
@@ -602,17 +607,19 @@ impl ClientThread {
 
     #[inline]
     async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_static(packet, ProtocolOverride::None).await
+        unsafe { self.socket.get_mut() }.send_packet_static(packet).await
     }
 
     #[inline]
     async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_dynamic(packet, ProtocolOverride::None).await
+        unsafe { self.socket.get_mut() }.send_packet_dynamic(packet).await
     }
 
     #[inline]
     async fn send_packet_dynamic_tcp<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_dynamic(packet, ProtocolOverride::Tcp).await
+        unsafe { self.socket.get_mut() }
+            .send_packet_dynamic_override(packet, ProtocolOverride::Tcp)
+            .await
     }
 
     #[inline]

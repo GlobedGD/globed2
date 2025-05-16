@@ -377,6 +377,15 @@ void GlobedGJBGL::setupPacketListeners() {
 #endif // GLOBED_VOICE_SUPPORT
     });
 
+    nm.addListener<VoiceFailedPacket>(this, [this](std::shared_ptr<VoiceFailedPacket> packet) {
+#ifdef GLOBED_VOICE_SUPPORT
+        auto& fields = this->getFields();
+
+        fields.lastVoiceFailure = fields.timeCounter;
+#endif // GLOBED_VOICE_SUPPORT
+    });
+
+
     GLOBED_EVENT(this, setupPacketListeners());
 }
 
@@ -829,8 +838,9 @@ void GlobedGJBGL::selUpdate(float timescaledDt) {
         float pos = (fields.ownNameLabel && fields.ownNameLabel->isVisible()) ? 40.f : 25.f;
         fields.selfStatusIcons->setPosition(self->m_player1->getPosition() + CCPoint{0.f, pos});
         bool recording = VoiceRecordingManager::get().isRecording();
+        bool recordingFailing = std::fabs(fields.lastVoiceFailure - fields.timeCounter) < 5.f;
 
-        fields.selfStatusIcons->updateStatus(false, false, recording, false, 0.f);
+        fields.selfStatusIcons->updateStatus(false, false, recording, recordingFailing, false, 0.f);
     }
 
     if (fields.voiceOverlay) {

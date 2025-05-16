@@ -83,7 +83,7 @@ GLOBED_SERIALIZABLE_STRUCT(ChatMessageBroadcastPacket, (sender, message));
 
 // 22012 - VoiceFailedPacket
 class VoiceFailedPacket : public Packet {
-    GLOBED_PACKET(22012, VoiceFailedPacket, true, false)
+    GLOBED_PACKET(22012, VoiceFailedPacket, false, false)
 
     VoiceFailedPacket() {}
 

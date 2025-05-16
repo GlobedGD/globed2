@@ -9,7 +9,7 @@ bool PlayerStatusIcons::init(unsigned char opacity) {
 
     this->opacity = opacity;
 
-    this->updateStatus(false, false, false, false, 0.f);
+    this->updateStatus(false, false, false, false, false, 0.f);
     this->schedule(schedule_selector(PlayerStatusIcons::updateLoudnessIcon), 0.25f);
 
     return true;
@@ -19,17 +19,19 @@ void PlayerStatusIcons::updateLoudnessIcon(float dt) {
     Loudness lcat = this->loudnessToCategory(lastLoudness * 2.f);
     if (lcat != wasLoudness) {
         wasLoudness = lcat;
-        this->updateStatus(wasPaused, wasPracticing, wasSpeaking, wasEditing, lastLoudness, true);
+        this->updateStatus(wasPaused, wasPracticing, wasSpeaking, wasSpeakingFailing, wasEditing, lastLoudness, true);
     }
 }
 
-void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking, bool editing, float loudness, bool force) {
+void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking, bool speakingFailing, bool editing, float loudness, bool force) {
     lastLoudness = loudness;
 
-    if (!force && wasPaused == paused && wasPracticing == practicing && wasSpeaking == speaking && wasEditing == editing) return;
+    if (!force && wasPaused == paused && wasPracticing == practicing && wasSpeaking == speaking && wasEditing == editing && speakingFailing == wasSpeakingFailing) return;
+
     wasPaused = paused;
     wasPracticing = practicing;
     wasSpeaking = speaking;
+    wasSpeakingFailing = speakingFailing;
     wasEditing = editing;
 
     if (!wasPaused && !wasPracticing && !wasSpeaking && !wasEditing) {
@@ -77,14 +79,17 @@ void PlayerStatusIcons::updateStatus(bool paused, bool practicing, bool speaking
     }
 
     if (wasSpeaking) {
-        std::string sprite;
-        switch (wasLoudness) {
+        const char* sprite = "";
+
+        if (wasSpeakingFailing) {
+            sprite = "speaker-icon-mute.png"_spr;
+        } else switch (wasLoudness) {
             case Loudness::Low: sprite = "speaker-icon.png"_spr; break;
             case Loudness::Medium: sprite = "speaker-icon-yellow.png"_spr; break;
             case Loudness::High: sprite = "speaker-icon-red.png"_spr; break;
         }
 
-        auto speakSpr = Build<CCSprite>::createSpriteName(sprite.c_str())
+        auto speakSpr = Build<CCSprite>::createSpriteName(sprite)
             .opacity(opacity)
             .zOrder(1)
             .scale(0.85f)

@@ -183,7 +183,11 @@ impl ClientSocket {
 
     /// fast packet sending with best-case zero heap allocation. requires the packet to implement `StaticSize`.
     /// if the packet size isn't known at compile time, derive/implement `DynamicSize` and use `send_packet_dynamic` instead.
-    pub async fn send_packet_static<P: Packet + Encodable + StaticSize>(&mut self, packet: &P, proto: ProtocolOverride) -> Result<()> {
+    pub async fn send_packet_static<P: Packet + Encodable + StaticSize>(&mut self, packet: &P) -> Result<()> {
+        self.send_packet_static_override(packet, ProtocolOverride::None).await
+    }
+
+    pub async fn send_packet_static_override<P: Packet + Encodable + StaticSize>(&mut self, packet: &P, proto: ProtocolOverride) -> Result<()> {
         // in theory, the size is known at compile time, so we could use a stack array here, instead of using alloca.
         // however in practice, the performance difference is negligible, so we avoid code unnecessary code repetition.
         self.send_packet_alloca(packet, P::ENCODED_SIZE, proto).await
@@ -191,7 +195,11 @@ impl ClientSocket {
 
     /// version of `send_packet_static` that does not require the size to be known at compile time.
     /// you are still required to derive/implement `DynamicSize` so the size can be computed at runtime.
-    pub async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&mut self, packet: &P, proto: ProtocolOverride) -> Result<()> {
+    pub async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&mut self, packet: &P) -> Result<()> {
+        self.send_packet_dynamic_override(packet, ProtocolOverride::None).await
+    }
+
+    pub async fn send_packet_dynamic_override<P: Packet + Encodable + DynamicSize>(&mut self, packet: &P, proto: ProtocolOverride) -> Result<()> {
         self.send_packet_alloca(packet, packet.encoded_size(), proto).await
     }
 
@@ -204,7 +212,7 @@ impl ClientSocket {
     ) -> Result<()> {
         // if client's protocol is same or set to ignore, send it without translating
         if self.protocol_version == CURRENT_PROTOCOL || self.protocol_version == 0xffff {
-            return self.send_packet_dynamic(&packet, proto).await;
+            return self.send_packet_dynamic_override(&packet, proto).await;
         }
 
         let mut buf = ByteBuffer::with_capacity(128);
