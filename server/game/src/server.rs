@@ -11,6 +11,7 @@ use globed_shared::{
     crypto_box::{PublicKey, SecretKey, aead::OsRng},
     esp::ByteBufferExtWrite as _,
     logger::*,
+    rand::{self, seq::IteratorRandom},
     should_ignore_error,
 };
 use rustc_hash::FxHashMap;
@@ -549,6 +550,47 @@ impl GameServer {
             .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
+    #[inline]
+    pub fn for_n_random_room_player_previews<F, A>(
+        &self,
+        n: usize,
+        room_id: u32,
+        requested: i32,
+        f: F,
+        additional: &mut A,
+        force_visibility: bool,
+    ) -> usize
+    where
+        F: Fn(&PlayerRoomPreviewAccountData, usize, &mut A) -> bool,
+    {
+        let clients = self.clients.lock();
+
+        clients
+            .values()
+            .filter(|thr| {
+                if !thr.authenticated() || thr.room_id.load(Ordering::Relaxed) != room_id {
+                    return false;
+                }
+
+                force_visibility || !thr.privacy_settings.lock().get_hide_from_lists() || thr.account_id.load(Ordering::Relaxed) == requested
+            })
+            .choose_multiple(&mut rand::rng(), n)
+            .iter()
+            .map(|thread| {
+                let mut level_id = thread.level_id.load(Ordering::Relaxed);
+
+                // if they are in editorcollab or an unlisted level, show no level
+                if thread.on_unlisted_level.load(Ordering::SeqCst) || is_editorcollab_level(level_id) {
+                    level_id = 0;
+                }
+
+                let show_roles = !thread.privacy_settings.lock().get_hide_roles();
+
+                thread.account_data.lock().make_room_preview(level_id, show_roles || force_visibility)
+            })
+            .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
+    }
+
     /// get a list of all authenticated players
     #[inline]
     pub fn get_player_previews_for_inviting(&self) -> Vec<PlayerPreviewAccountData> {
@@ -571,19 +613,35 @@ impl GameServer {
     #[inline]
     pub fn get_room_player_previews(&self, room: &Room, requested: i32, force_visibility: bool) -> Vec<PlayerRoomPreviewAccountData> {
         let player_count = room.get_player_count();
+        let to_send = if room.id == 0 { player_count.min(250) } else { player_count };
 
-        let mut vec = Vec::with_capacity(player_count);
+        let mut vec = Vec::with_capacity(to_send);
 
-        self.for_every_room_player_preview(
-            room.id,
-            requested,
-            |p, _, vec| {
-                vec.push(p.clone());
-                true
-            },
-            &mut vec,
-            force_visibility,
-        );
+        if to_send == player_count {
+            self.for_every_room_player_preview(
+                room.id,
+                requested,
+                |p, _, vec| {
+                    vec.push(p.clone());
+                    true
+                },
+                &mut vec,
+                force_visibility,
+            );
+        } else {
+            // choose random players up to `to_send`
+            self.for_n_random_room_player_previews(
+                to_send,
+                room.id,
+                requested,
+                |p, _, vec| {
+                    vec.push(p.clone());
+                    true
+                },
+                &mut vec,
+                force_visibility,
+            );
+        }
 
         vec
     }
