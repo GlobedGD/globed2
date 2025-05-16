@@ -199,7 +199,7 @@ impl ClientThread {
     }
 
     async fn poll_for_tcp_data(&self) -> Result<usize> {
-        // safety: we trust this function is not called from the oustide
+        // safety: we trust this function is not called from the outside
         let sock = unsafe { self.socket.get_mut() };
         sock.poll_for_tcp_data().await
     }
@@ -217,7 +217,7 @@ impl ClientThread {
                 ClientThreadState::Established => {}
             }
 
-            // if more than 90 seconds since last packet, disonnect
+            // if more than 90 seconds since last packet, disconnect
             if last_received_packet.elapsed().as_secs() > 90 {
                 break self.terminate();
             }

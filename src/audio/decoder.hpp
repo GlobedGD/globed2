@@ -30,11 +30,11 @@ public:
     AudioDecoder& operator=(AudioDecoder&& other) noexcept;
 
     // Decodes the given Opus data into PCM float samples. `length` must be the size of the input data in bytes.
-    // After you no longer need the decoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioDecoder::freeData(data)`
+    // After you no longer need the decoded data, you must call `data.freeData()`, or (preferably, for explicitness) `AudioDecoder::freeData(data)`
     [[nodiscard]] Result<DecodedOpusData> decode(const util::data::byte* data, size_t length);
 
     // Decodes the given Opus data into PCM float samples. `length` must be the size of the input data in bytes.
-    // After you no longer need the decoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioDecoder::freeData(data)`
+    // After you no longer need the decoded data, you must call `data.freeData()`, or (preferably, for explicitness) `AudioDecoder::freeData(data)`
     [[nodiscard]] Result<DecodedOpusData> decode(const EncodedOpusData& data);
 
     static void freeData(DecodedOpusData& data) {

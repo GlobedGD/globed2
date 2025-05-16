@@ -98,7 +98,7 @@ std::string globed::IntegrityReport::asDebugData() {
 
     if (!menuIconPngFound) {
         data += "rss:2;";
-    } else if (!dummmyPngFound) {
+    } else if (!dummyPngFound) {
         data += "rss:1;";
     } else {
         data += "rss:0;";
@@ -117,7 +117,7 @@ globed::IntegrityReport globed::getIntegrityReport() {
     IntegrityReport report{};
 
     // First, check for texture packs
-    // check if filename of globedsheet1.png is overriden
+    // check if filename of globedsheet1.png is overridden
     auto p = CCFileUtils::get()->fullPathForFilename("globedsheet1.png"_spr, false);
     auto plist = CCFileUtils::get()->fullPathForFilename("globedsheet1.plist"_spr, false);
 
@@ -160,9 +160,9 @@ globed::IntegrityReport globed::getIntegrityReport() {
 
     // check for menuicon.png and dummy-icon1.png
     report.menuIconPngFound = util::cocos::isValidSprite(CCSprite::createWithSpriteFrameName("menuicon.png"_spr));
-    report.dummmyPngFound = util::cocos::isValidSprite(CCSprite::createWithSpriteFrameName(RESOURCE_DUMMY));
+    report.dummyPngFound = util::cocos::isValidSprite(CCSprite::createWithSpriteFrameName(RESOURCE_DUMMY));
 
-    log::debug("Resource check, menu icon: {}, dummy icon: {}", report.menuIconPngFound, report.dummmyPngFound);
+    log::debug("Resource check, menu icon: {}, dummy icon: {}", report.menuIconPngFound, report.dummyPngFound);
 
     return report;
 }

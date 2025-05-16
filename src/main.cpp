@@ -69,7 +69,7 @@ void setupAsp() {
     });
 }
 
-// error check node runs on every scene and shows popups/notifications if an error has occured in another thread
+// error check node runs on every scene and shows popups/notifications if an error has occurred in another thread
 void setupErrorCheckNode() {
     auto ecn = ErrorCheckNode::create();
     ecn->setID("error-check-node"_spr);

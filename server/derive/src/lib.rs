@@ -208,7 +208,7 @@ pub fn derive_dynamic_size(input: TokenStream) -> TokenStream {
 /// Example:
 /// ```rust
 /// #[derive(Packet, Encodable, Decodable)]
-/// #[packet(id = 10000, encrypted = false, tcp = false)] // 'encrypted' and 'tcp' are optional and off by deafult
+/// #[packet(id = 10000, encrypted = false, tcp = false)] // 'encrypted' and 'tcp' are optional and off by default
 /// pub struct MyPacket { /* fields */ }
 /// ```
 #[proc_macro_derive(Packet, attributes(packet))]

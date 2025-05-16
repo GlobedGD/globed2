@@ -25,7 +25,7 @@ public:
     // Update the last known state of the player. Should be called only when new data is received.
     void updatePlayer(int playerId, const PlayerData& data, float updateCounter);
 
-    // Interpolate the player state. Should preferrably be called every frame.
+    // Interpolate the player state. Should preferably be called every frame.
     void tick(float dt);
 
     // Get the current interpolated visual state of the player. This is what you pass into `RemotePlayer::updateData`

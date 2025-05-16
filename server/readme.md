@@ -71,7 +71,7 @@ Replace `0.0.0.0:4202` with the address you want the game server to listen on, `
 
 ## Central server configuration
 
-By default, the file is created with the name `central-conf.json` in the current working directory when you run the server, but it can be overriden with the environment variable `GLOBED_CONFIG_PATH`. The path can be a folder or a full file path.
+By default, the file is created with the name `central-conf.json` in the current working directory when you run the server, but it can be overridden with the environment variable `GLOBED_CONFIG_PATH`. The path can be a folder or a full file path.
 
 ### General settings
 
@@ -143,7 +143,7 @@ Most of those can be left at their defaults. If you are hosting a **public** ser
 | `admin_key` | `(random)` | The password used to unlock the admin panel in-game, must be 32 characters or less |
 | `use_gd_api` | `false` | Verify account ownership via requests to GD servers. Note that you must set `gd_api_account` and `gd_api_gjp` accordingly if you enable this setting |
 | `gd_api_account` | `0` | Account ID of a bot account that will be used to verify account ownership |
-| `gd_api_gjp` | `(empty)` | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an excercise to the reader :) |
+| `gd_api_gjp` | `(empty)` | GJP2 of the GD account used for verifying ownership. Figuring this out is left as an exercise to the reader :) |
 | `gd_api_url` | `(...)` | Base link to the GD API used for account verification. By default is `https://www.boomlings.com/database`. Change this if you're hosting a server for a GDPS |
 | `use_argon` | `false` | Use Argon authentication API instead of the challenge system, cannot be set together with `use_gd_api` at the same time |
 | `argon_url` | `(empty)` | Base URL for the Argon server instance |
@@ -179,7 +179,7 @@ The `Rocket.toml` is primarily used for changing the HTTP port and the path to t
 
 ## Building
 
-If you want to build the server yourself, you need a **nightly Rust toolchain** (preferrably latest). After that, it's as simple as:
+If you want to build the server yourself, you need a **nightly Rust toolchain** (preferably latest). After that, it's as simple as:
 
 ```sh
 cd server/

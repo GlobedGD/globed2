@@ -150,7 +150,7 @@ bool ConnectionTestPopup::setup() {
 
     if (gs.launchArgs().devStuff && !override.empty() && override.starts_with("http")) {
         this->usedCentralUrl = override;
-        this->isCentralUrlOverriden = true;
+        this->isCentralUrlOverridden = true;
     }
 
     while (this->usedCentralUrl.ends_with('/')) {

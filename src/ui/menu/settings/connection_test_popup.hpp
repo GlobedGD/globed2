@@ -75,7 +75,7 @@ protected:
     IntermediaryLoadingPopup* loadingPopup = nullptr;
     asp::time::Instant startedTestingAt;
     std::string usedCentralUrl;
-    bool isCentralUrlOverriden = false;
+    bool isCentralUrlOverridden = false;
 
     // Range of tests to perform:
     // 1. Google TCP Test: Open TCP socket to 8.8.8.8

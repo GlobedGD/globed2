@@ -12,8 +12,6 @@
 
 #include "filters_popup.hpp"
 
-
-
 using namespace geode::prelude;
 
 // ok so let's say we load the layer
@@ -21,7 +19,6 @@ using namespace geode::prelude;
 //
 // at a time, request up to 100 levels from the server, then do client side filtering if any filters are enabled.
 // if not enough levels to fill a page, keep making requests.
-
 
 static std::string rateTierToString(GlobedLevelListLayer::Filters::RateTier tier) {
     using enum GlobedLevelListLayer::Filters::RateTier;
@@ -413,7 +410,7 @@ void GlobedLevelListLayer::finishLoading() {
 
     TRACE("Finished loading, page size = {}, counter = {}, unloaded = {}, reqm = {}, failed = {}", page.size(), counter, unloadedLevels, reqMin, failedQueries.size());
 
-    // TODO: idk if unloaded levels thing is rightt
+    // TODO: idk if unloaded levels thing is right
     bool showNextPage = counter > (reqMin + pageSize) || unloadedLevels;
 
     // sort by player count descending

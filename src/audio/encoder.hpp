@@ -31,7 +31,7 @@ public:
     AudioEncoder& operator=(AudioEncoder&& other) noexcept;
 
     // Encode the given PCM samples with Opus. The amount of samples passed must be equal to `frameSize` passed in the constructor.
-    // After you no longer need the encoded data, you must call `data.freeData()`, or (preferrably, for explicitness) `AudioEncoder::freeData(data)`
+    // After you no longer need the encoded data, you must call `data.freeData()`, or (preferably, for explicitness) `AudioEncoder::freeData(data)`
     [[nodiscard]] Result<EncodedOpusData> encode(const float* data);
 
     // Free the underlying buffer of the encoded frame

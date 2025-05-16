@@ -277,7 +277,7 @@ impl GameServer {
                         // our job is done here.
                         // we have given up the ownership of `socket` to that thread.
                         // now, the `client_loop` task that previously owned that thread will wake up,
-                        // and repond to ClaimThreadPacket, thus upgrading the connection.
+                        // and respond to ClaimThreadPacket, thus upgrading the connection.
                         return;
                     }
 
