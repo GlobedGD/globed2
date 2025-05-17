@@ -148,9 +148,12 @@ void ConnectionPopup::startCentral() {
         m_argonState = argon::AuthProgress::RequestedChallenge;
         this->updateState(State::ArgonAuth);
 
-        (void) argon::setServerUrl(argonUrl.value());
+        auto res = argon::setServerUrl(argonUrl.value());
+        if (!res) {
+            log::warn("Failed to set argon url: {}", res.unwrapErr());
+        }
 
-        auto res = argon::startAuth([this](Result<std::string> token) {
+        res = argon::startAuth([this](Result<std::string> token) {
             auto& gam = GlobedAccountManager::get();
             if (token) {
                 gam.storeArgonToken(token.unwrap());

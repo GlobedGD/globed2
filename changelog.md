@@ -1,6 +1,7 @@
 ## v1.8.1
 
 * Fix more issues related to texture packs
+* Fix authentication not working on Amazon store version of GD
 
 ## v1.8.0
 
