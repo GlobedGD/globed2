@@ -10,6 +10,7 @@ using namespace geode::prelude;
 static bool g_checked = false;
 static bool g_disable = false;
 static bool g_fallbackMenuButton = false;
+static globed::IntegrityReport g_report;
 constexpr auto RESOURCE_DUMMY = "dummy-icon2.png"_spr;
 
 bool globed::softDisabled() {
@@ -32,6 +33,7 @@ void globed::resetIntegrityCheck() {
     g_checked = false;
     g_disable = false;
     g_fallbackMenuButton = false;
+    g_report = {};
 }
 
 void globed::checkResources() {
@@ -42,16 +44,27 @@ void globed::checkResources() {
         return;
     }
 
-    if (!util::cocos::isValidSprite(CCSprite::createWithSpriteFrameName(RESOURCE_DUMMY))) {
+    g_report = std::move(createIntegrityReport());
+
+    if (!g_report.dummmyPngFound) {
         log::warn("Failed to find {}, disabling the mod", RESOURCE_DUMMY);
         g_disable = true;
     }
 
-    if (!util::cocos::isValidSprite(CCSprite::createWithSpriteFrameName("menuicon.png"_spr))) {
+    if (!g_report.menuIconPngFound) {
         log::warn("Failed to find menuicon.png, fallback menu button enabled");
         g_disable = true;
         g_fallbackMenuButton = true;
     }
+
+    if (g_report.sheetFilesSeparated) {
+        log::warn("Sheet .png and .plist files are separated, disabling the mod");
+        g_disable = true;
+    }
+}
+
+globed::IntegrityReport& globed::getIntegrityReport() {
+    return g_report;
 }
 
 std::string globed::IntegrityReport::asDebugData() {
@@ -113,7 +126,7 @@ std::string globed::IntegrityReport::asDebugData() {
     return data;
 }
 
-globed::IntegrityReport globed::getIntegrityReport() {
+globed::IntegrityReport globed::createIntegrityReport() {
     IntegrityReport report{};
 
     // First, check for texture packs

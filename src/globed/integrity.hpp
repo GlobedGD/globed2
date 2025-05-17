@@ -33,7 +33,8 @@ namespace globed {
         std::string asDebugData();
     };
 
-    IntegrityReport getIntegrityReport();
+    IntegrityReport& getIntegrityReport();
+    IntegrityReport createIntegrityReport();
 
     const std::filesystem::path& getLatestLogFile();
 }
