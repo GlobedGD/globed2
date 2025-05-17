@@ -120,6 +120,10 @@ const fn default_token_expiry() -> u64 {
     60 * 60 * 24
 }
 
+const fn default_opt_string() -> Option<String> {
+    None
+}
+
 /* end stinky serde defaults */
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
@@ -211,6 +215,8 @@ pub struct ServerConfig {
     pub use_argon: bool,
     #[serde(default = "default_string")]
     pub argon_url: String,
+    #[serde(default = "default_opt_string")]
+    pub argon_token: Option<String>,
     #[serde(default = "default_false")]
     pub skip_name_check: bool,
     #[serde(default = "default_refresh_interval")]

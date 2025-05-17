@@ -5,14 +5,16 @@ use serde::Deserialize;
 
 struct ClientConfig {
     base_url: String,
+    api_token: Option<String>,
 }
+
 impl ClientConfig {
-    pub fn new(mut base_url: String) -> Self {
+    pub fn new(mut base_url: String, api_token: Option<String>) -> Self {
         while base_url.ends_with('/') {
             base_url.pop();
         }
 
-        Self { base_url }
+        Self { base_url, api_token }
     }
 }
 
@@ -75,7 +77,7 @@ struct ArgonResponse {
 }
 
 impl ArgonClient {
-    pub fn new(base_url: String) -> Self {
+    pub fn new(base_url: String, api_token: Option<String>) -> Self {
         let invalid_certs = std::env::var("GLOBED_ALLOW_INVALID_CERTS").is_ok_and(|x| x != "0");
         let no_proxy = std::env::var("GLOBED_NO_ARGON_SYSPROXY").is_ok_and(|x| x != "0");
 
@@ -91,18 +93,22 @@ impl ArgonClient {
 
         let http_client = http_client.build().unwrap();
 
-        let config = ClientConfig::new(base_url);
+        let config = ClientConfig::new(base_url, api_token);
 
         Self { client: http_client, config }
     }
 
     pub async fn validate_token(&self, account_id: i32, user_id: i32, username: &str, token: &str) -> Result<Verdict, ArgonClientError> {
-        let req = self.client.get(format!("{}/v1/validation/check_strong", self.config.base_url)).query(&[
+        let mut req = self.client.get(format!("{}/v1/validation/check_strong", self.config.base_url)).query(&[
             ("account_id", account_id.to_string().as_str()),
             ("user_id", user_id.to_string().as_str()),
             ("username", username),
             ("authtoken", token),
         ]);
+
+        if let Some(token) = self.config.api_token.as_ref() {
+            req = req.bearer_auth(token);
+        }
 
         let response = req.send().await?;
 
