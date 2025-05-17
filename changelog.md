@@ -1,5 +1,6 @@
 ## v1.8.0
 
+* Add iOS support (may be unstable, please report issues!), for guide on installing Geode on iOS check [this page](https://github.com/geode-sdk/ios-launcher/blob/main/INSTALL.md)
 * Add ability to create <cg>setting profiles</c> and toggle between them
 * \-- This allows you to easily change many settings at once, for example if attending some event
 * \-- The amount of save slots is unlimited and you can give them custom names
