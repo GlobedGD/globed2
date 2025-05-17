@@ -84,8 +84,8 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
     // add an icon to the room owner
     auto& rm = RoomManager::get();
     if (rm.isInRoom() && rm.getInfo().owner.accountId == data.accountId) {
-        Build<CCSprite>::createSpriteName("icon-crown.png"_spr)
-            .scale(0.75)
+        Build<CCSprite>::createSpriteName("icon-crown-small.png"_spr)
+            .scale(0.475f)
             .zOrder(btnorder::RoomOwner)
             .parent(leftSideLayout);
     }
