@@ -10,7 +10,7 @@ using namespace geode::prelude;
 static bool g_checked = false;
 static bool g_disable = false;
 static bool g_fallbackMenuButton = false;
-constexpr auto RESOURCE_DUMMY = "dummy-icon1.png"_spr;
+constexpr auto RESOURCE_DUMMY = "dummy-icon2.png"_spr;
 
 bool globed::softDisabled() {
     if (!g_checked) {
@@ -131,11 +131,11 @@ globed::IntegrityReport globed::getIntegrityReport() {
         log::error("Failed to find globedsheet1.plist (critical!)");
         report.sheetIntegrity = SheetIntegrity::MissingPlist;
     } else if (!asp::fs::equivalent(pngParent, plistParent).unwrapOr(false)) {
-        log::debug("Mismatch, globedsheet1.plist and globedsheet1.png are in different places ({} and {})", p, plist);
+        log::warn("Mismatch, globedsheet1.plist and globedsheet1.png are in different places ({} and {})", p, plist);
         report.sheetIntegrity = SheetIntegrity::Ok;
         report.sheetFilesSeparated = true;
     } else if (!asp::fs::equivalent(pngParent, Mod::get()->getResourcesDir())) {
-        log::debug("Mismatch, globedsheet1 expected in {}, found at {}", Mod::get()->getResourcesDir(), p);
+        log::warn("Mismatch, globedsheet1 expected in {}, found at {}", Mod::get()->getResourcesDir(), p);
         report.sheetIntegrity = SheetIntegrity::Ok;
         report.sheetFilesModified = true;
     }
@@ -155,7 +155,7 @@ globed::IntegrityReport globed::getIntegrityReport() {
 
     if (asp::fs::exists(impostorFolderLoc)) {
         report.impostorFolder = impostorFolderLoc;
-        log::debug("Impostor folder found: {}", impostorFolderLoc.string());
+        log::warn("Impostor folder found: {}", impostorFolderLoc.string());
     }
 
     // check for menuicon.png and dummy-icon1.png

@@ -49,7 +49,7 @@ bool GlobedServersLayer::init() {
         .collect();
 
     // central server switcher
-    Build<CCSprite>::createSpriteName("accountBtn_myLevels_001.png")
+    Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
         .with([&](auto* spr) {
             util::ui::rescaleToMatch(spr, {43.f, 41.5f});
         })
@@ -64,7 +64,7 @@ bool GlobedServersLayer::init() {
         .parent(buttonMenu);
 
     // settings button
-    Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+    Build<CCSprite>::createSpriteName("icon-settings.png"_spr)
         .with([&](auto* spr) {
             util::ui::rescaleToMatch(spr, {43.f, 41.5f});
         })

@@ -137,7 +137,7 @@ bool GlobedMenuLayer::init() {
     }
 
     // discord button
-    discordButton = Build<CCSprite>::createSpriteName("gj_discordIcon_001.png")
+    discordButton = Build<CCSprite>::createSpriteName("icon-discord.png"_spr)
         .scale(1.35f)
         .intoMenuItem([](auto) {
             geode::createQuickPopup("Open Discord", "Join our <cp>Discord</c> server?\n\n<cr>Important: By joining the Discord server, you agree to being at least 13 years of age.</c>", "No", "Yes", [] (auto fl, bool btn2) {
@@ -151,7 +151,7 @@ bool GlobedMenuLayer::init() {
         .collect();
 
     // settings button
-    settingsButton = Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+    settingsButton = Build<CCSprite>::createSpriteName("icon-settings.png"_spr)
         .intoMenuItem([](auto) {
             util::ui::switchToScene(GlobedSettingsLayer::create());
         })
