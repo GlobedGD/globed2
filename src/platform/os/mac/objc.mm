@@ -8,8 +8,7 @@ std::string getVendorId() {
     @autoreleasepool {
         NSString *idfv = nil;
 
-        NSURL* bundleURL = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier: [[NSBundle mainBundle] bundleIdentifier]];
-        idfv = [[NSFileManager defaultManager] attributesOfItemAtPath:bundleURL.path error:nil][NSFileSystemFileNumber];
+        idfv = [[UIDevice currentDevice] identifierForVendor].UUIDString;
 
         return idfv ? std::string([idfv UTF8String]) : "";
     }

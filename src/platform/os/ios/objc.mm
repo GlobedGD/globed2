@@ -8,7 +8,7 @@ std::string getVendorId() {
     @autoreleasepool {
         NSString *idfv = nil;
 
-        idfv = [[UIDevice curerntDevice] identifierForVendor].UUIDString;
+        idfv = [[UIDevice currentDevice] identifierForVendor].UUIDString;
 
         return idfv ? std::string([idfv UTF8String]) : "";
     }
