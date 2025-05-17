@@ -27,6 +27,7 @@ public:
     };
 
     asp::AtomicBool initialized = false;
+    bool didUseArgon = false;
     asp::Mutex<GDData> gdData;
     asp::Mutex<std::string> authToken;
 

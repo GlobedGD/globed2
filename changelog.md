@@ -2,6 +2,7 @@
 
 * Fix more issues related to texture packs
 * Fix authentication not working on Amazon store version of GD
+* Fix argon token not being regenerated upon auth failure
 
 ## v1.8.0
 
