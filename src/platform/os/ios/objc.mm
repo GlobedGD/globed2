@@ -2,7 +2,6 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIDevice.h>
-#import <AppKit/NSWorkspace.h>
 
 std::string getVendorId() {
     @autoreleasepool {
