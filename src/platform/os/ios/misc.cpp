@@ -3,28 +3,12 @@
 #include <util/misc.hpp>
 #include <util/crypto.hpp>
 
-#include <CoreFoundation/CoreFoundation.h>
-#include <IOKit/IOKitLib.h>
-
 using util::misc::UniqueIdent;
 
+std::string getVendorId(); // objc
+
 static std::string getUuid() {
-    io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(kIOMasterPortDefault, "IOService:/");
-    CFStringRef uuidCf = (CFStringRef)IORegistryEntryCreateCFProperty(ioRegistryRoot, CFSTR(kIOPlatformUUIDKey), kCFAllocatorDefault, 0);
-    IOObjectRelease(ioRegistryRoot);
-
-    if (!uuidCf) {
-        return "";
-    }
-
-    char uuid[256];
-    if (CFStringGetCString(uuidCf, uuid, sizeof(uuid), kCFStringEncodingUTF8)) {
-        CFRelease(uuidCf);
-        return std::string(uuid);
-    }
-
-    CFRelease(uuidCf);
-    return "";
+    return getVendorId();
 }
 
 Result<UniqueIdent> util::misc::fingerprintImpl() {
