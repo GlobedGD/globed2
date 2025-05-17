@@ -81,28 +81,26 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
         util::ui::addBadgesToMenu(badgeVector, leftSideLayout, btnorder::Badge);
     }
 
-    // add an icon to the room owner
+    // add an icon & gradient to the room owner
     auto& rm = RoomManager::get();
     if (rm.isInRoom() && rm.getInfo().owner.accountId == data.accountId) {
         Build<CCSprite>::createSpriteName("icon-crown-small.png"_spr)
             .scale(0.475f)
             .zOrder(btnorder::RoomOwner)
             .parent(leftSideLayout);
+
+        this->setGradient(globed::color::RoomOwnerGradient, true);
     }
 
     // friend gradient and own gradient
     if (FriendListManager::get().isFriend(data.accountId)) {
-        CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(globed::into<ccColor3B>(forInviting ? globed::color::FriendIngameGradient : globed::color::FriendGradient))
-            .opacity(forInviting ? 75 : 90)
-            .pos(0, 0)
-            .anchorPoint({0, 0})
-            .zOrder(-2)
-            .scaleX(1.5)
-            .parent(this);
-
-        if (forInviting)
-            gradient->setBlendFunc({GL_ONE, GL_ONE});
+        if (!gradient) {
+            this->setGradient(
+                forInviting ? globed::color::FriendIngameGradient : globed::color::FriendGradient,
+                false,
+                forInviting
+            );
+        }
 
         CCSprite* icon = Build<CCSprite>::createSpriteName("friend-icon.png"_spr)
             .scale(0.3)
@@ -112,15 +110,7 @@ bool PlayerListCell::init(const PlayerRoomPreviewAccountData& data, float cellWi
 
     auto* gjam = GJAccountManager::get();
     if (playerData.accountId == gjam->m_accountID) {
-        CCSprite* gradient = Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
-            .color(globed::into<ccColor3B>(globed::color::SelfGradient))
-            .opacity(globed::color::SelfGradient.a)
-            .pos(0, 0)
-            .anchorPoint({0, 0})
-            .zOrder(-2)
-            .scaleX(10)
-            //.blendFunc({GL_ONE, GL_ONE})
-            .parent(this);
+        this->setGradient(globed::color::SelfGradient, true);
     }
 
     leftSideLayout->updateLayout();
@@ -180,6 +170,26 @@ void PlayerListCell::createPlaceholderPlayerIcon() {
         .id("player-icon-placeholder")
         .parent(leftSideLayout)
         .store(placeholderIcon);
+}
+
+void PlayerListCell::setGradient(cocos2d::ccColor4B color, bool wide, bool blend) {
+    if (gradient) {
+        gradient->removeFromParent();
+    }
+
+    Build<CCSprite>::createSpriteName("friend-gradient.png"_spr)
+        .color(globed::into<ccColor3B>(color))
+        .opacity(color.a)
+        .pos(0, 0)
+        .anchorPoint({0, 0})
+        .zOrder(-2)
+        .scaleX(wide ? 10.f : 1.5f)
+        .parent(this)
+        .store(gradient);
+
+    if (blend) {
+        gradient->setBlendFunc({GL_ONE, GL_ONE});
+    }
 }
 
 void PlayerListCell::createInviteButton() {

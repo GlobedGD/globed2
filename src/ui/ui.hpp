@@ -14,5 +14,7 @@ namespace globed {
 
         extern const cocos2d::ccColor4B SelfGradient;
         extern const cocos2d::ccColor4B SelfIngameGradient;
+
+        extern const cocos2d::ccColor4B RoomOwnerGradient;
     }
 }
