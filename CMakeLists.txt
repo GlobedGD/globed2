@@ -51,6 +51,10 @@ else()
     message(FATAL_ERROR "Unsupported operating system")
 endif()
 
+# i still hate this
+set_source_files_properties(src/platform/os/ios/objc.mm PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(src/platform/os/mac/objc.mm PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+
 # source files
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	src/audio/*.cpp
