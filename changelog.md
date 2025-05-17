@@ -1,3 +1,7 @@
+## v1.8.2
+
+* Fix connection popup showing blank text sometimes
+
 ## v1.8.1
 
 * Fix more issues related to texture packs
