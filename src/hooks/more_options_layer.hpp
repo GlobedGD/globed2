@@ -3,9 +3,6 @@
 
 #include <Geode/modify/MoreOptionsLayer.hpp>
 
-#ifdef GEODE_IS_ANDROID
-#ifndef GEODE_IS_IOS
-
 struct GLOBED_DLL HookedMoreOptionsLayer : geode::Modify<HookedMoreOptionsLayer, MoreOptionsLayer> {
     struct Fields {
         Ref<CCMenuItemSpriteExtra> adminBtn = nullptr;
@@ -17,5 +14,3 @@ struct GLOBED_DLL HookedMoreOptionsLayer : geode::Modify<HookedMoreOptionsLayer,
     $override
     void goToPage(int x);
 };
-
-#endif // GEODE_IS_ANDROID

@@ -1,8 +1,5 @@
 #include <defs/platform.hpp>
 
-#ifdef GEODE_IS_ANDROID
-#ifndef GEODE_IS_IOS
-
 #include "more_options_layer.hpp"
 
 #include <ui/menu/admin/admin_login_popup.hpp>
@@ -45,5 +42,3 @@ void HookedMoreOptionsLayer::goToPage(int page) {
         m_fields->adminBtn->setVisible(isCorrect && page == 4);
     }
 }
-
-#endif // GEODE_IS_ANDROID
