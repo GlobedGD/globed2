@@ -1,6 +1,7 @@
 #include <defs/platform.hpp>
 
 #ifdef GEODE_IS_ANDROID
+#ifndef GEODE_IS_IOS
 
 #include "more_options_layer.hpp"
 

@@ -4,6 +4,7 @@
 #include <Geode/modify/MoreOptionsLayer.hpp>
 
 #ifdef GEODE_IS_ANDROID
+#ifndef GEODE_IS_IOS
 
 struct GLOBED_DLL HookedMoreOptionsLayer : geode::Modify<HookedMoreOptionsLayer, MoreOptionsLayer> {
     struct Fields {
