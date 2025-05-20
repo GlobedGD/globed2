@@ -38,28 +38,11 @@ endif()
 include(cmake/environment.cmake)
 
 if (ANDROID)
-    file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS
-        "src/platform/os/android/*.cpp"
-        "src/platform/arch/arm/*.cpp"
-    )
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS")
-    file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS
-        "src/platform/os/ios/*.cpp"
-        "src/platform/arch/arm/*.cpp"
-    )
+    file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS "src/platform/os/android/*.cpp" "src/platform/arch/arm/*.cpp")
+elseif (APPLE AND GLOBED_IOS)
+    file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS "src/platform/os/ios/*.cpp" "src/platform/arch/arm/*.cpp" "src/platform/os/ios/*.mm")
 elseif (APPLE)
-    if (GLOBED_IOS)
-        file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS
-            "src/platform/os/ios/*.cpp"
-            "src/platform/arch/arm/*.cpp"
-        )
-    else()
-        file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS
-            "src/platform/os/mac/*.cpp"
-            "src/platform/arch/x86/*.cpp"
-            "src/platform/arch/arm/*.cpp"
-        )
-    endif()
+    file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS "src/platform/os/mac/*.cpp" "src/platform/arch/x86/*.cpp" "src/platform/arch/arm/*.cpp" "src/platform/os/mac/*.mm")
 elseif (WIN32)
     file(GLOB_RECURSE OS_SOURCES CONFIGURE_DEPENDS
         "src/platform/os/windows/*.cpp"
@@ -68,6 +51,9 @@ elseif (WIN32)
 else()
     message(FATAL_ERROR "Unsupported operating system")
 endif()
+
+set_source_files_properties(src/platform/os/ios/objc.mm PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(src/platform/os/mac/objc.mm PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     src/audio/*.cpp
@@ -140,7 +126,7 @@ CPMAddPackage(
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe"
 )
 CPMAddPackage("gh:dankmeme01/asp2#5b0bae3")
-CPMAddPackage("gh:GlobedGD/argon@1.1.1")
+CPMAddPackage("gh:GlobedGD/argon@1.1.2")
 
 if (WIN32)
     target_compile_definitions(asp PRIVATE ASP_ENABLE_FORMAT=1)

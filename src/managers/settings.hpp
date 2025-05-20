@@ -294,6 +294,7 @@ public:
         LimitedSetting<float, 1.0f, 0.f, 2.f> voiceVolume;
         Setting<bool, false> onlyFriends;
         Setting<bool, true> lowerAudioLatency;
+        Setting<bool, false> tcpAudio;
         Setting<int, 0> audioDevice;
         Setting<bool, true> deafenNotification;
         Setting<bool, false> voiceLoopback; // TODO unimpl
@@ -364,6 +365,7 @@ public:
             .noInvites = globed.noInvites,
             .hideInGame = globed.hideInGame,
             .hideRoles = globed.hideRoles,
+            .tcpAudio = communication.tcpAudio,
         };
     }
 
@@ -428,7 +430,8 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LaunchArgs, (
 // Settings
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed,
+    autoconnect, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, showRelays,
+    compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed,
     isInvisible, noInvites, hideInGame, hideRoles
 ));
 
@@ -437,7 +440,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Overlay, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Communication, (
-    voiceEnabled, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, audioDevice, deafenNotification, voiceLoopback
+    voiceEnabled, voiceProximity, classicProximity, voiceVolume, onlyFriends, lowerAudioLatency, tcpAudio, audioDevice, deafenNotification, voiceLoopback
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LevelUI, (
@@ -461,7 +464,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Keys, (
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
     seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice,
     seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide, seenRoomOptionsSafeModeNotice,
-    seenSwagConnectionPopup
+    seenSwagConnectionPopup, seenRelayNotice
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings, (

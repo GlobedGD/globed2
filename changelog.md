@@ -1,5 +1,16 @@
+## v1.8.2
+
+* Fix connection popup showing blank text sometimes
+
+## v1.8.1
+
+* Fix more issues related to texture packs
+* Fix authentication not working on Amazon store version of GD
+* Fix argon token not being regenerated upon auth failure
+
 ## v1.8.0
 
+* Add iOS support (may be unstable, please report issues!), for guide on installing Geode on iOS check [this page](https://github.com/geode-sdk/ios-launcher/blob/main/INSTALL.md)
 * Add ability to create <cg>setting profiles</c> and toggle between them
 * \-- This allows you to easily change many settings at once, for example if attending some event
 * \-- The amount of save slots is unlimited and you can give them custom names
@@ -19,12 +30,18 @@
 * Improve UX during server connection
 * Use new authentication API (Argon), improve error messages for authentication issues, especially for people that are at the limit of sent messages
 * Add GDPS detection, warn user if trying to connect to the main server on a GDPS (thanks [km7dev](user:7236822) for the mod Server API!)
+* Highlight and show an icon near the room host
+* Only load maximum 250 people in the global room to prevent freezes
+* Show a more descriptive popup when getting muted / banned
+* If trying to talk while muted, the icon above the player will reflect the mute state
+* Improve textures of some buttons
 * Fix error 10038 when trying to connect to a server
 * Fix crashing when connecting to a server that is down
 * Fix very rare crash when closing the Globed layer
 * Fix rare "invalid unordered_map key" crash when in a level
 * Fix certain rare crashes and hangs when closing the game
 * Fix some minor incompatibilities with More Icons
+* Some other small fixes and qol additions
 
 For developers: Added an event based API to allow mod developers to implement better compatibility with Globed.
 

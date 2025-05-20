@@ -6,6 +6,7 @@
 #include <audio/manager.hpp>
 #include <crypto/box.hpp>
 #include <managers/settings.hpp>
+#include <managers/web.hpp>
 #include <ui/error_check_node.hpp>
 #include <ui/notification/panel.hpp>
 #include <util/all.hpp>
@@ -53,6 +54,8 @@ $on_mod(Loaded) {
 #endif
 
     globed::platformSetup();
+
+    WebRequestManager::get().fetchCountry();
 }
 
 void setupAsp() {

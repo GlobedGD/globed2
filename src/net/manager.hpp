@@ -129,9 +129,6 @@ public:
     void resume();
 
     // Relay management
-    geode::Result<> setRelayAddress(std::string_view address);
-    void setRelayAddress(const NetworkAddress& address);
-    void disableRelay();
     NetworkAddress getRelayAddress();
 
     uint16_t getMinProtocol();

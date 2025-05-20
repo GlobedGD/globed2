@@ -1,7 +1,6 @@
 #include "account.hpp"
 
 #include <defs/geode.hpp>
-
 #include <managers/central_server.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/game_server.hpp>
@@ -10,6 +9,8 @@
 #include <util/format.hpp>
 #include <util/misc.hpp>
 #include <util/net.hpp>
+
+#include <argon/argon.hpp>
 
 using namespace geode::prelude;
 using namespace util::data;
@@ -134,6 +135,7 @@ void GlobedAccountManager::requestAuthToken(std::optional<std::function<void(boo
     this->cancelAuthTokenRequest();
 
     requestCallbackStored = std::move(callback);
+    didUseArgon = argon;
 
     auto task = WebRequestManager::get().requestAuthToken(argon);
 
@@ -152,6 +154,8 @@ void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event
         if (requestCallbackStored.has_value()) {
             requestCallbackStored.value()(true);
         }
+
+        requestCallbackStored.reset();
 
         return;
     }
@@ -177,11 +181,18 @@ void GlobedAccountManager::requestCallback(WebRequestManager::Task::Event* event
         reason
     ));
 
-    this->clearAuthKey();
+    if (didUseArgon) {
+        argon::clearToken();
+    } else {
+        this->clearAuthKey();
+    }
+
 
     if (requestCallbackStored.has_value()) {
         requestCallbackStored.value()(false);
     }
+
+    requestCallbackStored.reset();
 }
 
 void GlobedAccountManager::storeAdminPassword(std::string_view password) {

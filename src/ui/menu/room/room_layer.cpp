@@ -20,6 +20,7 @@
 #include <managers/settings.hpp>
 #include <managers/room.hpp>
 #include <managers/central_server.hpp>
+#include <managers/game_server.hpp>
 #include <ui/general/ask_input_popup.hpp>
 #include <ui/ui.hpp>
 #include <util/ui.hpp>
@@ -302,6 +303,13 @@ void RoomLayer::update(float dt) {
         listLayer->insertCell(roomLevelCell, 0);
         listLayer->forceUpdate();
     }
+
+    // update player count
+    auto pc = GameServerManager::get().getActivePlayerCount();
+    if (pc != lastPlayerCount && rm.isInGlobal()) {
+        lastPlayerCount = pc;
+        this->setRoomTitle("", 0);
+    }
 }
 
 void RoomLayer::requestPlayerList() {
@@ -317,6 +325,8 @@ void RoomLayer::requestPlayerList() {
 }
 
 void RoomLayer::recreatePlayerList() {
+    auto& rm = RoomManager::get();
+
     int previousCellCount = listLayer->cellCount();
     auto scrollPos = listLayer->getScrollPos();
 
@@ -348,40 +358,65 @@ void RoomLayer::recreatePlayerList() {
         // listLayer->addCellFast(data, listSize.width, false, true);
     }
 
-    // we always come first (or second if there is a room level)
-    listLayer->addCellFast(ProfileCacheManager::get().getOwnAccountData().makeRoomPreview(0), listSize.width, false, true);
+    auto ownData = ProfileCacheManager::get().getOwnAccountData().makeRoomPreview(0);
+    unsortedData.emplace_back(std::move(ownData));
+
+    bool randomize = rm.isInGlobal();
+
+    int roomOwnerId = rm.isInRoom() ? rm.getInfo().owner.accountId : -1;
 
     // inefficient algoritms go!
 
     // first, just sort the player list
     auto& flm = FriendListManager::get();
-    std::sort(unsortedData.begin(), unsortedData.end(), [&flm](auto& a, auto& b) {
-        // force friends at the top
+    std::sort(unsortedData.begin(), unsortedData.end(), [&](auto& a, auto& b) {
+        // The order is as follows:
+        // 1. Room owner
+        // 2. Local player
+        // 3. Friends (sorted alphabetically)
+        // 4. everyone else, sorted either alphabetically or shuffled
+
+        bool isRoomOwner1 = a.accountId == roomOwnerId;
+        bool isRoomOwner2 = b.accountId == roomOwnerId;
+
+        bool isLocal1 = a.accountId == selfId;
+        bool isLocal2 = b.accountId == selfId;
+
         bool isFriend1 = flm.isFriend(a.accountId);
         bool isFriend2 = flm.isFriend(b.accountId);
 
+        if (isRoomOwner1 != isRoomOwner2) {
+            return isRoomOwner1;
+        }
+
+        if (isLocal1 != isLocal2) {
+            return isLocal1;
+        }
+
         if (isFriend1 != isFriend2) {
             return isFriend1;
-        } else {
+        }
+
+        // proper alphabetical sorting requires copying the usernames and converting them to lowercase,
+        // only do it if we wont end up shuffling at the end
+        if ((isFriend1 && isFriend2) || !randomize) {
             // convert both names to lowercase
             std::string name1 = a.name, name2 = b.name;
             std::transform(name1.begin(), name1.end(), name1.begin(), ::tolower);
             std::transform(name2.begin(), name2.end(), name2.begin(), ::tolower);
 
-            // sort alphabetically
             return name1 < name2;
         }
+
+        return a.name < b.name;
     });
 
-    // if in a global room, shuffle (except friends)!
-    bool randomize = RoomManager::get().isInGlobal();
-
     if (randomize) {
-        // find first non-friend element
+        // find first element thats not forced at the top
         decltype(unsortedData)::iterator firstNonFriend = unsortedData.end();
 
         for (auto it = unsortedData.begin(); it != unsortedData.end(); it++) {
-            if (!flm.isFriend(it->accountId)) {
+            if (it->accountId != roomOwnerId && it->accountId != selfId && !flm.isFriend(it->accountId)) {
                 firstNonFriend = it;
                 break;
             }
@@ -519,7 +554,12 @@ void RoomLayer::closeRoom() {
 void RoomLayer::setRoomTitle(std::string_view name, uint32_t id) {
     if (btnRoomId) btnRoomId->removeFromParent();
 
-    std::string title = (id == 0) ? "Global Room" : fmt::format("{} ({})", name, id);
+    std::string title;
+    if (id == 0) {
+        title = lastPlayerCount == 0 ? "Global Room" : fmt::format("Global Room ({} online)", lastPlayerCount);
+    } else {
+        title = fmt::format("{} ({})", name, id);
+    }
 
     auto rlayout = util::ui::getPopupLayoutAnchored(popupSize);
 
@@ -648,6 +688,10 @@ void RoomLayer::onPrivacySettingsClicked(CCObject*) {
 
 void RoomLayer::onCopyRoomId(CCObject*) {
     auto id = RoomManager::get().getId();
+
+    if (id == 0) {
+        return;
+    }
 
     utils::clipboard::write(std::to_string(id));
 

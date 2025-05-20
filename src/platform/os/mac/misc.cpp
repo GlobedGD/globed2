@@ -8,6 +8,8 @@
 
 using util::misc::UniqueIdent;
 
+std::string getVendorId(); // objc
+
 static std::string getUuid() {
     io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(kIOMasterPortDefault, "IOService:/");
     CFStringRef uuidCf = (CFStringRef)IORegistryEntryCreateCFProperty(ioRegistryRoot, CFSTR(kIOPlatformUUIDKey), kCFAllocatorDefault, 0);
@@ -29,6 +31,10 @@ static std::string getUuid() {
 
 Result<UniqueIdent> util::misc::fingerprintImpl() {
     auto uuid = getUuid();
+    if (uuid.empty()) {
+        uuid = getVendorId();
+    }
+
     if (uuid.empty()) {
         return Err("Failed to get UUID");
     }

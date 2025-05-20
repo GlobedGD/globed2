@@ -28,6 +28,7 @@ private:
 
 
     enum class State {
+        None,
         ArgonAuth,
         RequestedChallenge,
         UploadingChallenge,
@@ -40,7 +41,7 @@ private:
         Done
     };
 
-    State m_state;
+    State m_state = State::None;
     argon::AuthProgress m_argonState;
 
     void forceClose();

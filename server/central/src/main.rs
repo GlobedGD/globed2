@@ -137,7 +137,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let argon_client = if config.use_argon {
-        let client = ArgonClient::new(config.argon_url.clone());
+        let client = ArgonClient::new(config.argon_url.clone(), config.argon_token.clone());
         match client.check_status().await {
             Ok(s) => {
                 debug!("Argon server up, active: {}, ident: {}", s.active, s.ident);
@@ -185,7 +185,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     watcher_state.inner.verifier.set_enabled(state.config.use_gd_api);
 
                     // we can just recreate the client because it stores no internal state
-                    state.argon_client = state.config.use_argon.then(|| ArgonClient::new(state.config.argon_url.clone()));
+                    state.argon_client = state
+                        .config
+                        .use_argon
+                        .then(|| ArgonClient::new(state.config.argon_url.clone(), state.config.argon_token.clone()));
                 }
                 Err(err) => {
                     warn!("Failed to reload configuration: {}", err.to_string());

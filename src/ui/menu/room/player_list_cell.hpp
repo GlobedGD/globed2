@@ -15,6 +15,12 @@ public:
     void createPlayerIcon();
     void createPlaceholderPlayerIcon();
 
+    void setGradient(const auto& color, bool wide = false, bool blend = false) {
+        this->setGradient(globed::into<cocos2d::ccColor4B>(color), wide, blend);
+    }
+
+    void setGradient(cocos2d::ccColor4B color, bool wide = false, bool blend = false);
+
 protected:
     friend class RoomLayer;
 
@@ -37,4 +43,5 @@ protected:
     CCMenuItemSpriteExtra* inviteButton = nullptr;
     GlobedSimplePlayer* simplePlayer = nullptr;
     cocos2d::CCSprite* placeholderIcon = nullptr;
+    cocos2d::CCSprite* gradient = nullptr;
 };

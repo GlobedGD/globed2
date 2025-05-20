@@ -38,6 +38,7 @@ struct GLOBED_DLL GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
         uint32_t totalSentPackets = 0;
         float timeCounter = 0.f;
         float lastServerUpdate = 0.f;
+        float lastVoiceFailure = -99999.f;
         std::unique_ptr<PlayerInterpolator> interpolator;
         std::unique_ptr<PlayerStore> playerStore;
         RoomSettings roomSettings;

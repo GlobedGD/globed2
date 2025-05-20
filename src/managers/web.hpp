@@ -34,7 +34,13 @@ public:
     // Makes a GET request to https://domain/cdn-cgi/trace
     Task testCloudflareDomainTrace(std::string_view domain);
 
+    // returns whether the user is in a country that may block globed's servers (currently just russia)
+    bool isRussian();
+    void fetchCountry();
+
 private:
+    std::optional<bool> m_russian;
+
     Task get(std::string_view url);
     Task get(std::string_view url, int timeoutS);
     Task get(std::string_view url, int timeoutS, std::function<void(CurlRequest&)> additional);

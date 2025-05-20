@@ -38,6 +38,13 @@ pub struct ClientSocket {
     mtu: usize,
 }
 
+#[derive(PartialEq, Eq)]
+pub enum ProtocolOverride {
+    None,
+    Tcp,
+    Udp,
+}
+
 // do not touch those, encryption related
 const NONCE_SIZE: usize = 24;
 const MAC_SIZE: usize = 16;
@@ -177,23 +184,35 @@ impl ClientSocket {
     /// fast packet sending with best-case zero heap allocation. requires the packet to implement `StaticSize`.
     /// if the packet size isn't known at compile time, derive/implement `DynamicSize` and use `send_packet_dynamic` instead.
     pub async fn send_packet_static<P: Packet + Encodable + StaticSize>(&mut self, packet: &P) -> Result<()> {
+        self.send_packet_static_override(packet, ProtocolOverride::None).await
+    }
+
+    pub async fn send_packet_static_override<P: Packet + Encodable + StaticSize>(&mut self, packet: &P, proto: ProtocolOverride) -> Result<()> {
         // in theory, the size is known at compile time, so we could use a stack array here, instead of using alloca.
         // however in practice, the performance difference is negligible, so we avoid code unnecessary code repetition.
-        self.send_packet_alloca(packet, P::ENCODED_SIZE).await
+        self.send_packet_alloca(packet, P::ENCODED_SIZE, proto).await
     }
 
     /// version of `send_packet_static` that does not require the size to be known at compile time.
     /// you are still required to derive/implement `DynamicSize` so the size can be computed at runtime.
     pub async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&mut self, packet: &P) -> Result<()> {
-        self.send_packet_alloca(packet, packet.encoded_size()).await
+        self.send_packet_dynamic_override(packet, ProtocolOverride::None).await
+    }
+
+    pub async fn send_packet_dynamic_override<P: Packet + Encodable + DynamicSize>(&mut self, packet: &P, proto: ProtocolOverride) -> Result<()> {
+        self.send_packet_alloca(packet, packet.encoded_size(), proto).await
     }
 
     /// packet translation, this is not optimized for performance and is relatively slow.
     /// however, translatable packets should have a relatively low percentage compared to others, so this isn't a concern.
-    pub async fn send_packet_translatable<P: Packet + Encodable + DynamicSize + PartialTranslatableEncodable>(&mut self, packet: P) -> Result<()> {
+    pub async fn send_packet_translatable<P: Packet + Encodable + DynamicSize + PartialTranslatableEncodable>(
+        &mut self,
+        packet: P,
+        proto: ProtocolOverride,
+    ) -> Result<()> {
         // if client's protocol is same or set to ignore, send it without translating
         if self.protocol_version == CURRENT_PROTOCOL || self.protocol_version == 0xffff {
-            return self.send_packet_dynamic(&packet).await;
+            return self.send_packet_dynamic_override(&packet, proto).await;
         }
 
         let mut buf = ByteBuffer::with_capacity(128);
@@ -202,7 +221,7 @@ impl ClientSocket {
             return Err(PacketHandlingError::TranslationError(e));
         }
 
-        self.send_packet_alloca_with::<P, _>(buf.len(), move |fb| {
+        self.send_packet_alloca_with::<P, _>(buf.len(), proto, move |fb| {
             fb.write_bytes(buf.as_bytes());
         })
         .await
@@ -211,8 +230,8 @@ impl ClientSocket {
     /// use alloca to encode the packet on the stack, and try a non-blocking send, on failure clones to a Vec and a blocking send.
     /// be very careful if using this directly, miscalculating the size may cause a runtime panic.
     #[inline]
-    pub async fn send_packet_alloca<P: Packet + Encodable>(&mut self, packet: &P, packet_size: usize) -> Result<()> {
-        self.send_packet_alloca_with::<P, _>(packet_size, |buf| {
+    pub async fn send_packet_alloca<P: Packet + Encodable>(&mut self, packet: &P, packet_size: usize, proto: ProtocolOverride) -> Result<()> {
+        self.send_packet_alloca_with::<P, _>(packet_size, proto, |buf| {
             buf.write_value(packet);
         })
         .await
@@ -222,7 +241,7 @@ impl ClientSocket {
     /// but you have to provide a closure that handles packet encoding, and you must specify the appropriate packet size (upper bound).
     /// you do **not** have to encode the packet header or include its size in the `packet_size` argument, that will be done for you automatically.
     #[inline]
-    pub async fn send_packet_alloca_with<P: Packet, F>(&mut self, packet_size: usize, encode_fn: F) -> Result<()>
+    pub async fn send_packet_alloca_with<P: Packet, F>(&mut self, packet_size: usize, proto: ProtocolOverride, encode_fn: F) -> Result<()>
     where
         F: FnOnce(&mut FastByteBuffer),
     {
@@ -230,9 +249,11 @@ impl ClientSocket {
             self.print_packet::<P>(true, Some(if P::ENCRYPTED { "fast + encrypted" } else { "fast" }));
         }
 
+        let use_tcp = proto == ProtocolOverride::Tcp || (proto == ProtocolOverride::None && P::SHOULD_USE_TCP);
+
         if P::ENCRYPTED {
             // gs_inline_encode! doesn't work here because the borrow checker is silly :(
-            let header_start = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { size_of_types!(u8) };
+            let header_start = if use_tcp { size_of_types!(u32) } else { size_of_types!(u8) };
 
             let nonce_start = header_start + PacketHeader::SIZE;
             let mac_start = nonce_start + NONCE_SIZE;
@@ -244,7 +265,7 @@ impl ClientSocket {
             let to_send: Result<Option<Vec<u8>>> = gs_with_alloca!(total_size, data, {
                 let mut buf = FastByteBuffer::new(data);
 
-                if P::SHOULD_USE_TCP {
+                if use_tcp {
                     // reserve space for packet length
                     buf.write_u32(0);
                 } else {
@@ -277,7 +298,7 @@ impl ClientSocket {
                 // prepend the mac tag
                 data[mac_start..raw_data_start].copy_from_slice(&tag);
 
-                if P::SHOULD_USE_TCP {
+                if use_tcp {
                     // write total packet length
                     let packet_len = (raw_data_end - header_start) as u32;
                     data[..size_of_types!(u32)].copy_from_slice(&packet_len.to_be_bytes());
@@ -286,7 +307,7 @@ impl ClientSocket {
                 // we try a non-blocking send if we can, otherwise fallback to a Vec<u8> and an async send
                 let send_data = &data[..raw_data_end];
 
-                let res = if P::SHOULD_USE_TCP {
+                let res = if use_tcp {
                     self.send_buffer_tcp_immediate(send_data)
                 } else {
                     self.send_buffer_udp_immediate(send_data)
@@ -307,18 +328,18 @@ impl ClientSocket {
             });
 
             if let Some(to_send) = to_send? {
-                if P::SHOULD_USE_TCP {
+                if use_tcp {
                     self.send_buffer_tcp(&to_send).await?;
                 } else {
                     self.send_buffer_udp(&to_send).await?;
                 }
             }
         } else {
-            let prefix_sz = if P::SHOULD_USE_TCP { size_of_types!(u32) } else { 1usize };
+            let prefix_sz = if use_tcp { size_of_types!(u32) } else { 1usize };
             let total_payload_size = prefix_sz + PacketHeader::SIZE + packet_size;
 
             // ok so now umm
-            let should_fragment = !P::SHOULD_USE_TCP && self.mtu != 0 && total_payload_size > self.mtu;
+            let should_fragment = !use_tcp && self.mtu != 0 && total_payload_size > self.mtu;
 
             // so yeah
             if should_fragment {
@@ -336,7 +357,7 @@ impl ClientSocket {
                     gs_with_alloca_guarded!(self.game_server, total_payload_size, raw_data, {
                         let mut buf = FastByteBuffer::new(raw_data);
 
-                        if P::SHOULD_USE_TCP {
+                        if use_tcp {
                             // reserve space for packet length
                             buf.write_u32(0);
                         } else {
@@ -348,7 +369,7 @@ impl ClientSocket {
                         buf.write_packet_header::<P>();
                         encode_fn(&mut buf);
 
-                        if P::SHOULD_USE_TCP {
+                        if use_tcp {
                             // write the packet length
                             let packet_len = buf.len() - size_of_types!(u32);
                             let pos = buf.get_pos();
@@ -358,7 +379,7 @@ impl ClientSocket {
                         }
 
                         let data = buf.as_bytes();
-                        let res = if P::SHOULD_USE_TCP {
+                        let res = if use_tcp {
                             self.send_buffer_tcp_immediate(data)
                         } else {
                             self.send_buffer_udp_immediate(data)
@@ -383,7 +404,7 @@ impl ClientSocket {
                 };
 
                 if let Some(data) = retval? {
-                    if P::SHOULD_USE_TCP {
+                    if use_tcp {
                         self.send_buffer_tcp(&data).await?;
                     } else {
                         self.send_buffer_udp(&data).await?;
@@ -392,7 +413,7 @@ impl ClientSocket {
             }
         }
 
-        if P::SHOULD_USE_TCP {
+        if use_tcp {
             self.socket.flush().await?;
         }
 

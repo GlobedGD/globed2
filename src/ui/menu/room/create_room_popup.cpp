@@ -319,7 +319,7 @@ void CreateRoomPopup::showRoomNameWarnPopup() {
 
         "Room names should be clear and appropriate. "
         "Creating a room with <cy>advertisements</c> or <cr>profanity</c> in its name may lead to a <cy>closure of the room</c>, "
-        "or in some cases a <cr>ban</c>."
+        "or in some cases a <cr>ban</c>. The same rules apply for <cj>hidden rooms</c> too."
     ).showInstant();
 }
 

@@ -11,7 +11,7 @@ pub struct WordFilter {
 impl WordFilter {
     pub fn new(words: &[String], whole_words: Vec<String>) -> Self {
         Self {
-            word_count: words.len(),
+            word_count: words.len() + whole_words.len(),
             algo: AhoCorasick::builder()
                 .ascii_case_insensitive(true)
                 .build(words)
@@ -24,13 +24,13 @@ impl WordFilter {
         let mut whole_words = Vec::new();
 
         words.retain_mut(|w| {
-            let to_remove = w.starts_with("!!") && w.ends_with("!!") && w.len() > 4;
+            let is_whole = w.starts_with("!!") && w.ends_with("!!") && w.len() > 4;
 
-            if to_remove {
+            if is_whole {
                 whole_words.push(std::mem::take(w));
             }
 
-            !to_remove
+            !is_whole && !w.is_empty()
         });
 
         Self::new(&words, whole_words)

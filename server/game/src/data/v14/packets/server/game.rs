@@ -40,3 +40,9 @@ pub struct ChatMessageBroadcastPacket {
     pub player_id: i32,
     pub message: InlineString<MAX_MESSAGE_SIZE>,
 }
+
+#[derive(Packet, Encodable, StaticSize)]
+#[packet(id = 22012, tcp = true)]
+pub struct VoiceFailedPacket {
+    pub user_muted: bool,
+}

@@ -202,17 +202,20 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                     );
                 } else if (report.hasTexturePack || report.darkmodeEnabled) {
                     std::string enabledtxt;
+
                     if (report.hasTexturePack) {
-                        enabledtxt += "Texture pack detected: <cg>yes</c>\n";
+                        enabledtxt += "<cy>A texture pack</c> that <cj>modifies Globed textures</c> was detected. Please try to <cr>disable</c> this texture pack and wait until the creator updates it.\n";
+                    } else if (report.darkmodeEnabled) {
+                        enabledtxt += "<cy>DarkMode v4</c> mod was detected, this mod <cj>modifies Globed textures</c>. Please try to <cr>disable</c> it and wait until the creator updates it.\n";
                     }
 
-                    if (report.darkmodeEnabled) {
-                        enabledtxt += "DarkMode v4 enabled: <cg>yes</c>\n";
+                    if (report.sheetFilesSeparated) {
+                        enabledtxt += "If you are the author of the texture pack, please include the <cg>.plist files</c> of spritesheets in your texture pack to resolve this.\n";
                     }
 
                     PopupManager::get().alertFormat(
                         "Note",
-                        "{}\nPlease try to <cr>disable</c> these and see if the issue is resolved after restarting.\n\nDebug data: <cy>{}</c>",
+                        "{}\nDebug data: <cy>{}</c>",
                         enabledtxt, debugData
                     ).showInstant();
                 } else {

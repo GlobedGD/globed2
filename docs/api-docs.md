@@ -57,7 +57,7 @@ bool globed::isLoaded();
 Returns whether the given `PlayerObject` belongs to an online player.
 
 ```cpp
-Result<bool> globed::player::isGlobedPlayer(PlayerObject* node);
+bool globed::player::isGlobedPlayer(PlayerObject* node);
 ```
 
 ### isGlobedPlayerFast

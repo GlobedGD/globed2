@@ -7,7 +7,7 @@ class PlayerObject;
 
 namespace globed::player {
     // Returns whether the given `PlayerObject` belongs to an online player.
-    Result<bool> isGlobedPlayer(PlayerObject* node);
+    bool isGlobedPlayer(PlayerObject* node);
 
     // Returns whether the given `PlayerObject` belongs to an online player.
     // Is significantly faster than `isGlobedPlayer`, but may report false positives or false negatives, as it relies on the tag value on the player object.
@@ -33,8 +33,8 @@ namespace globed::player {
 // Implementation
 
 namespace globed::player {
-    inline Result<bool> isGlobedPlayer(PlayerObject* node) {
-        return _internal::request<bool>(_internal::Type::IsGlobedPlayer, node);
+    inline bool isGlobedPlayer(PlayerObject* node) {
+        return _internal::request<bool>(_internal::Type::IsGlobedPlayer, node).unwrapOr(false);
     }
 
     inline bool isGlobedPlayerFast(PlayerObject* node) {

@@ -30,7 +30,7 @@ bool RelayTipCell::init() {
 
                 PopupManager::get().quickPopup(
                     "Note",
-                    "Relay functionality is <cp>experimental</c> and might have issues. It is recommended to only use this if you have problems with <cy>connection to the server</c>.",
+                    "Relays can help if you have <cy>connection issues</c>. This functionality is <cp>experimental</c> and might have issues, it is recommended to use it only if you can't connect to the server at all.",
                     "Ok",
                     nullptr,
                     [](auto, bool) {

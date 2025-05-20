@@ -11,6 +11,7 @@
 #include <managers/central_server.hpp>
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/settings.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
 #include <net/manager.hpp>
@@ -22,6 +23,9 @@ using namespace geode::prelude;
 
 bool GlobedServersLayer::init() {
     if (!CCLayer::init()) return false;
+
+    auto& settings = GlobedSettings::get();
+    prevShownRelays = settings.globed.showRelays;
 
     this->setID("GlobedServersLayer"_spr);
 
@@ -45,7 +49,7 @@ bool GlobedServersLayer::init() {
         .collect();
 
     // central server switcher
-    Build<CCSprite>::createSpriteName("accountBtn_myLevels_001.png")
+    Build<CCSprite>::createSpriteName("icon-server-folder.png"_spr)
         .with([&](auto* spr) {
             util::ui::rescaleToMatch(spr, {43.f, 41.5f});
         })
@@ -60,7 +64,7 @@ bool GlobedServersLayer::init() {
         .parent(buttonMenu);
 
     // settings button
-    Build<CCSprite>::createSpriteName("accountBtn_settings_001.png")
+    Build<CCSprite>::createSpriteName("icon-settings.png"_spr)
         .with([&](auto* spr) {
             util::ui::rescaleToMatch(spr, {43.f, 41.5f});
         })
@@ -200,9 +204,15 @@ void GlobedServersLayer::updateServerList(float) {
 
         serverList->forceRefresh();
 
-        if (!initializing) {
-            this->pingServers(0.f);
-        }
+        this->pingServers(0.f);
+
+        return;
+    }
+
+    auto& settings = GlobedSettings::get();
+    if (settings.globed.showRelays != prevShownRelays) {
+        prevShownRelays = settings.globed.showRelays;
+        serverList->forceRefresh();
 
         return;
     }
