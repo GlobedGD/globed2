@@ -354,7 +354,7 @@ void GlobedSettings::loadLaunchArguments() {
         auto isSet = Loader::get()->getLaunchFlag(flagArg);
 
         if (isSet) {
-            log::info("Enabled launch flag: {}", flagArg);
+            log::info("Enabled launch flag: {}", (std::string_view) flagArg);
         }
 
         flag.set(isSet);

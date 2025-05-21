@@ -105,11 +105,14 @@ CurlManager::Task CurlManager::send(CurlRequest& req) {
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2);
 
+            // Our windows build of curl uses schannel, don't set the cacerts and use system store instead.
+#ifndef GEODE_IS_WINDOWS
             curl_blob cbb = {};
             cbb.data = const_cast<void*>(reinterpret_cast<const void*>(CA_BUNDLE_CONTENT));
             cbb.len = sizeof(CA_BUNDLE_CONTENT);
             cbb.flags = CURL_BLOB_COPY;
             curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &cbb);
+#endif
         } else {
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
