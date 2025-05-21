@@ -205,6 +205,7 @@ void ConnectionPopup::updateState(State state) {
     using enum State;
 
     switch (state) {
+        case None: message = "?"; break;
         case ArgonAuth: message = fmt::format("Argon: {}", argon::authProgressToString(m_argonState)); break;
         case RequestedChallenge: message = "Requested challenge.."; break;
         case UploadingChallenge: message = "Uploading results.."; break;
