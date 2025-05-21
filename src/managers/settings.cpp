@@ -351,7 +351,13 @@ void GlobedSettings::loadLaunchArguments() {
         auto flagArg = FlagType::Name;
 
         auto& flag = _launchArgs.*cd.pointer;
-        flag.set(Loader::get()->getLaunchFlag(flagArg));
+        auto isSet = Loader::get()->getLaunchFlag(flagArg);
+
+        if (isSet) {
+            log::info("Enabled launch flag: {}", flagArg);
+        }
+
+        flag.set(isSet);
     });
 
     this->forceResetSettings = _launchArgs.resetSettings;

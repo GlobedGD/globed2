@@ -1,4 +1,11 @@
-#![feature(sync_unsafe_cell, duration_constructors, duration_constructors_lite, let_chains, if_let_guard)]
+#![feature(
+    sync_unsafe_cell,
+    duration_constructors,
+    duration_constructors_lite,
+    let_chains,
+    if_let_guard,
+    string_remove_matches
+)]
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
