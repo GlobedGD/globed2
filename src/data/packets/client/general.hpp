@@ -92,3 +92,15 @@ class RequestMotdPacket : public Packet {
 };
 
 GLOBED_SERIALIZABLE_STRUCT(RequestMotdPacket, (motdHash, expectResponse));
+
+// 11008 - UpdateFriendListPacket
+class UpdateFriendListPacket : public Packet {
+    GLOBED_PACKET(11008, UpdateFriendListPacket, false, true)
+
+    UpdateFriendListPacket() {}
+    UpdateFriendListPacket(std::vector<int> ids) : ids(std::move(ids)) {}
+
+    std::vector<int> ids;
+};
+
+GLOBED_SERIALIZABLE_STRUCT(UpdateFriendListPacket, (ids));

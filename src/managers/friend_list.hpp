@@ -26,11 +26,14 @@ public:
     bool isFriend(int playerId);
     bool isBlocked(int playerId);
 
+    std::vector<int> getFriendList();
+
+    bool areFriendsLoaded();
+    bool areBlockedLoaded();
+
 private:
     // makes an async request to gd servers and fetches the current friendlist
     void load(bool friends);
-    bool areFriendsLoaded();
-    bool areBlockedLoaded();
     bool isFetching();
 
     void insertPlayers(cocos2d::CCArray* players, bool friends);

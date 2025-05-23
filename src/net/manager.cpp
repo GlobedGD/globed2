@@ -272,6 +272,7 @@ protected:
     AtomicBool cancellingRecovery;
     AtomicBool relayConnFinished;
     AtomicBool relayStage1Finished;
+    AtomicBool sentFriends;
     AtomicU32 secretKey;
     AtomicU32 relayUdpId;
     AtomicU32 serverTps;
@@ -342,6 +343,7 @@ protected:
         cancellingRecovery = false;
         relayConnFinished = false;
         relayStage1Finished = false;
+        sentFriends = false;
         secretKey = 0;
         relayUdpId = 0;
         serverTps = 0;
@@ -402,6 +404,10 @@ protected:
 
         auto& pcm = ProfileCacheManager::get();
         pcm.setOwnDataAuto();
+
+        // this is already done in globed servers layer init, but we do it here because autoconnect is a thing
+        auto& flm = FriendListManager::get();
+        flm.maybeLoad();
 
         // actual connection is deferred - the network thread does DNS resolution and TCP connection.
 
@@ -799,15 +805,15 @@ protected:
         GameServerManager::get().setActive(connectedServerId);
 
         // these are not thread-safe, so delay it
-        Loader::get()->queueInMainThread([specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
+        Loader::get()->queueInMainThread([this, specialUserData = std::move(packet->specialUserData), allRoles = std::move(packet->allRoles)] {
             auto& pcm = ProfileCacheManager::get();
             pcm.setOwnSpecialData(specialUserData);
 
-            auto& flm = FriendListManager::get();
-            flm.maybeLoad();
-
             RoomManager::get().setGlobal();
             RoleManager::get().setAllRoles(allRoles);
+
+            // send our friend list to the server
+            this->maybeSendFriendList();
         });
 
         // claim the tcp thread to allow udp packets through
@@ -1234,6 +1240,7 @@ protected:
         }
         if (this->established()) {
             this->maybeSendKeepalive();
+            this->maybeSendFriendList();
         }
 
         // poll for any incoming packets
@@ -1290,6 +1297,22 @@ protected:
             globed::netLog("NetworkManagerImpl sending TCP keepalive (previous was {} ago)", GLOBED_LAZY(sinceLastTcpExchange.toString()));
             this->send(KeepaliveTCPPacket::create());
         }
+    }
+
+    void maybeSendFriendList() {
+        if (sentFriends) return;
+
+        auto& flm = FriendListManager::get();
+
+        if (!flm.areFriendsLoaded()) {
+            return;
+        }
+
+        auto list = flm.getFriendList();
+        globed::netLog("NetworkManagerImpl::maybeSendFriendList sending {} friends", list.size());
+
+        this->send(UpdateFriendListPacket::create(std::move(list)));
+        sentFriends = true;
     }
 
     void sendKeepalive() {

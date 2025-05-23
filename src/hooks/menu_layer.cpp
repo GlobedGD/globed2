@@ -30,7 +30,10 @@ bool HookedMenuLayer::init() {
     if (!globed::softDisabled()) {
         // auto connect
         util::misc::callOnce("menu-layer-init-autoconnect", []{
-            if (!GlobedSettings::get().globed.autoconnect) return;
+            auto& settings = GlobedSettings::get();
+
+            if (!settings.globed.autoconnect) return;
+            if (!settings.flags.seenSignupNoticev3) return;
 
             auto& csm = CentralServerManager::get();
             auto& gsm = GameServerManager::get();
@@ -82,6 +85,7 @@ bool HookedMenuLayer::init() {
                 } else if (useArgon) {
                     // request the argon token, only then connect
                     (void) argon::setServerUrl(csm.activeArgonUrl().value());
+                    argon::setCertVerification(!settings.launchArgs().noSslVerification);
                     (void) argon::startAuth([&am, doConnect](Result<std::string> token) {
                         if (token) {
                             am.storeArgonToken(token.unwrap());
@@ -234,7 +238,7 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                         }
                     );
                 }
-            });
+        });
 
         return;
     }
@@ -242,6 +246,27 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
     auto accountId = GJAccountManager::sharedState()->m_accountID;
     if (accountId <= 0) {
         PopupManager::get().alert("Notice", "You need to be signed into a <cg>Geometry Dash account</c> in order to play online.").showInstant();
+        return;
+    }
+
+    auto& settings = GlobedSettings::get();
+    if (!settings.flags.seenSignupNoticev3) {
+        PopupManager::get().manage(MDPopup::create(
+            "Note",
+            "To <cg>improve user experience</c>, Globed needs to access your GD account, specifically:\n\n"
+            "* Send a <cy>message</c> to a <cj>bot account</c>, to <cg>verify</c> your account. The message will be <cj>automatically deleted</c>.\n"
+            "* Send your <cy>friend list</c> to the <cj>Globed server</c>, for features like friend-only invites (and some others) to work."
+            " This data is <cg>never stored or logged</c> on the server, and is <cr>deleted</c> once you disconnect.\n\n"
+            "If you do <cr>not</c> consent to this, press 'Cancel'.",
+            "Cancel", "Ok",
+            [this, &settings](bool yea) {
+                if (!yea) return;
+
+                settings.flags.seenSignupNoticev3 = true;
+                this->onGlobedButton(this);
+            }
+        )).showInstant();
+
         return;
     }
 

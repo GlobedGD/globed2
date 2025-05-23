@@ -4,6 +4,7 @@
 #include <managers/game_server.hpp>
 #include <managers/account.hpp>
 #include <managers/error_queues.hpp>
+#include <managers/settings.hpp>
 #include <net/manager.hpp>
 #include <util/format.hpp>
 #include <util/gd.hpp>
@@ -152,6 +153,8 @@ void ConnectionPopup::startCentral() {
         if (!res) {
             log::warn("Failed to set argon url: {}", res.unwrapErr());
         }
+
+        argon::setCertVerification(!GlobedSettings::get().launchArgs().noSslVerification);
 
         res = argon::startAuth([this](Result<std::string> token) {
             auto& gam = GlobedAccountManager::get();

@@ -338,6 +338,7 @@ public:
     struct Flags {
         Flag seenSignupNotice;       // Obsolete
         Flag seenSignupNoticev2;
+        Flag seenSignupNoticev3;
         Flag seenVoiceChatPTTNotice;
         Flag seenTeleportNotice;
         Flag seenAprilFoolsNotice;   // Obsolete
@@ -462,7 +463,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Keys, (
 ));
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Flags, (
-    seenSignupNotice, seenSignupNoticev2, seenVoiceChatPTTNotice, seenTeleportNotice,
+    seenSignupNotice, seenSignupNoticev2, seenSignupNoticev3, seenVoiceChatPTTNotice, seenTeleportNotice,
     seenAprilFoolsNotice, seenStatusNotice, seenGlobalTriggerGuide, seenRoomOptionsSafeModeNotice,
     seenSwagConnectionPopup, seenRelayNotice
 ));

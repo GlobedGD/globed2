@@ -15,6 +15,7 @@ use globed_shared::{
     should_ignore_error,
 };
 use rustc_hash::FxHashMap;
+use slotmap::{DefaultKey, DenseSlotMap};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
@@ -61,6 +62,7 @@ pub struct GameServer {
     pub udp_socket: UdpSocket,
     /// map udp peer : thread
     pub clients: SyncMutex<FxHashMap<SocketAddrV4, Arc<ClientThread>>>,
+    pub clients_list: SyncMutex<DenseSlotMap<DefaultKey, Arc<ClientThread>>>,
     pub unauthorized_clients: SyncMutex<VecDeque<Arc<UnauthorizedThread>>>,
     pub udp_rate_limiters: SyncMutex<FxHashMap<SocketAddrV4, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
@@ -80,6 +82,7 @@ impl GameServer {
             tcp_socket,
             udp_socket,
             clients: SyncMutex::new(FxHashMap::default()),
+            clients_list: SyncMutex::new(DenseSlotMap::new()),
             unauthorized_clients: SyncMutex::new(VecDeque::new()),
             udp_rate_limiters: SyncMutex::new(FxHashMap::default()),
             secret_key,
@@ -351,6 +354,7 @@ impl GameServer {
                     let thread = Arc::new(thread.upgrade());
 
                     self.clients.lock().insert(udp_peer, thread.clone());
+                    thread.set_slotmap_key(self.clients_list.lock().insert(thread.clone()));
 
                     either_thread = EitherClientThread::Authorized(thread);
                 }
@@ -365,9 +369,15 @@ impl GameServer {
                         // TODO
                         let udp_peer = unsafe { thread.socket.get() }.udp_peer.expect("no udp peer in established thread");
                         clients.remove(&udp_peer);
+
+                        if let Some(k) = thread.take_slotmap_key() {
+                            self.clients_list.lock().remove(k);
+                        }
                     }
 
                     // wait until there are no more references to the thread
+
+                    let mut loop_count = 0;
                     loop {
                         let ref_count = Arc::strong_count(thread);
 
@@ -378,6 +388,18 @@ impl GameServer {
                         debug!("waiting for refcount to be 1..");
 
                         tokio::time::sleep(Duration::from_millis(100)).await;
+
+                        loop_count += 1;
+
+                        if loop_count > 100 {
+                            error!(
+                                "thread did not terminate in 10 seconds, this is bad! id: {}, tcp ip: {}, udp ip: {:?}",
+                                thread.account_id.load(Ordering::Relaxed),
+                                unsafe { thread.socket.get() }.tcp_peer,
+                                unsafe { thread.socket.get() }.udp_peer.as_ref()
+                            );
+                            loop_count = 0;
+                        }
                     }
 
                     // check for the result
@@ -479,7 +501,7 @@ impl GameServer {
     where
         F: Fn(&PlayerAccountData, usize, &mut A) -> bool,
     {
-        self.clients
+        self.clients_list
             .lock()
             .values()
             .filter(|thread| ids.contains(&thread.account_id.load(Ordering::Relaxed)))
@@ -493,7 +515,7 @@ impl GameServer {
     where
         F: Fn(&PlayerPreviewAccountData, usize, &mut A) -> bool,
     {
-        self.clients
+        self.clients_list
             .lock()
             .values()
             .filter(|thr| thr.authenticated())
@@ -506,7 +528,7 @@ impl GameServer {
     where
         F: Fn(&PlayerPreviewAccountData, usize, &mut A) -> bool,
     {
-        self.clients
+        self.clients_list
             .lock()
             .values()
             .filter(|thr| {
@@ -525,11 +547,11 @@ impl GameServer {
     where
         F: Fn(&PlayerRoomPreviewAccountData, usize, &mut A) -> bool,
     {
-        self.clients
+        self.clients_list
             .lock()
             .values()
             .filter(|thr| {
-                if !thr.authenticated() || thr.room_id.load(Ordering::Relaxed) != room_id {
+                if thr.room_id.load(Ordering::Relaxed) != room_id || !thr.authenticated() {
                     return false;
                 }
 
@@ -551,11 +573,13 @@ impl GameServer {
     }
 
     #[inline]
+    #[allow(clippy::too_many_arguments)]
     pub fn for_n_random_room_player_previews<F, A>(
         &self,
         n: usize,
         room_id: u32,
         requested: i32,
+        friend_list: &[i32],
         f: F,
         additional: &mut A,
         force_visibility: bool,
@@ -563,38 +587,69 @@ impl GameServer {
     where
         F: Fn(&PlayerRoomPreviewAccountData, usize, &mut A) -> bool,
     {
-        let clients = self.clients.lock();
+        let clients = self.clients_list.lock();
 
-        clients
+        let mapper = |thread: &ClientThread| {
+            let mut level_id = thread.level_id.load(Ordering::Relaxed);
+
+            // if they are in editorcollab or an unlisted level, show no level
+            if thread.on_unlisted_level.load(Ordering::SeqCst) || is_editorcollab_level(level_id) {
+                level_id = 0;
+            }
+
+            let show_roles = !thread.privacy_settings.lock().get_hide_roles();
+
+            thread.account_data.lock().make_room_preview(level_id, show_roles || force_visibility)
+        };
+
+        // make two passes, first go through friends
+        let written_n = clients
             .values()
             .filter(|thr| {
-                if !thr.authenticated() || thr.room_id.load(Ordering::Relaxed) != room_id {
+                if thr.room_id.load(Ordering::Relaxed) != room_id || !thr.authenticated() {
                     return false;
                 }
 
-                force_visibility || !thr.privacy_settings.lock().get_hide_from_lists() || thr.account_id.load(Ordering::Relaxed) == requested
-            })
-            .choose_multiple(&mut rand::rng(), n)
-            .iter()
-            .map(|thread| {
-                let mut level_id = thread.level_id.load(Ordering::Relaxed);
+                let id = thr.account_id.load(Ordering::Relaxed);
 
-                // if they are in editorcollab or an unlisted level, show no level
-                if thread.on_unlisted_level.load(Ordering::SeqCst) || is_editorcollab_level(level_id) {
-                    level_id = 0;
+                // intentionally allow ourselves
+                // also intentionally disregard privacy settings, since we are showing friends
+                friend_list.binary_search(&id).is_ok() || id == requested
+            })
+            .map(|thr| mapper(thr))
+            .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)));
+
+        if written_n >= n {
+            return written_n;
+        }
+
+        // now go through non friends
+        clients
+            .values()
+            .filter(|thr| {
+                if thr.room_id.load(Ordering::Relaxed) != room_id || !thr.authenticated() {
+                    return false;
                 }
 
-                let show_roles = !thread.privacy_settings.lock().get_hide_roles();
+                let id = thr.account_id.load(Ordering::Relaxed);
 
-                thread.account_data.lock().make_room_preview(level_id, show_roles || force_visibility)
+                let is_friend = friend_list.binary_search(&id).is_ok() || id == requested;
+                if is_friend {
+                    return false;
+                }
+
+                force_visibility || !thr.privacy_settings.lock().get_hide_from_lists()
             })
-            .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
+            .choose_multiple(&mut rand::rng(), n - written_n)
+            .iter()
+            .map(|thr| mapper(thr))
+            .fold(written_n, |count, preview| count + usize::from(f(&preview, count, additional)))
     }
 
     /// get a list of all authenticated players
     #[inline]
     pub fn get_player_previews_for_inviting(&self) -> Vec<PlayerPreviewAccountData> {
-        let player_count = self.clients.lock().len();
+        let player_count = self.clients_list.lock().len();
 
         let mut vec = Vec::with_capacity(player_count);
 
@@ -611,7 +666,13 @@ impl GameServer {
 
     /// get a list of all players in a room
     #[inline]
-    pub fn get_room_player_previews(&self, room: &Room, requested: i32, force_visibility: bool) -> Vec<PlayerRoomPreviewAccountData> {
+    pub fn get_room_player_previews(
+        &self,
+        room: &Room,
+        requested: i32,
+        friend_list: &[i32],
+        force_visibility: bool,
+    ) -> Vec<PlayerRoomPreviewAccountData> {
         let player_count = room.get_player_count();
         let to_send = if room.id == 0 { player_count.min(250) } else { player_count };
 
@@ -634,6 +695,7 @@ impl GameServer {
                 to_send,
                 room.id,
                 requested,
+                friend_list,
                 |p, _, vec| {
                     vec.push(p.clone());
                     true
@@ -677,7 +739,7 @@ impl GameServer {
 
     #[inline]
     pub fn get_player_account_data(&self, account_id: i32, force_visibility: bool) -> Option<PlayerAccountData> {
-        self.clients
+        self.clients_list
             .lock()
             .values()
             .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id && (force_visibility || !thr.privacy_settings.lock().get_hide_in_game()))
@@ -695,7 +757,7 @@ impl GameServer {
 
     #[inline]
     pub fn get_player_preview_data(&self, account_id: i32) -> Option<PlayerPreviewAccountData> {
-        self.clients
+        self.clients_list
             .lock()
             .values()
             .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
@@ -715,8 +777,11 @@ impl GameServer {
         };
 
         while let Some(thread) = {
-            let clients = self.clients.lock();
-            clients.values().find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id).cloned()
+            self.clients_list
+                .lock()
+                .values()
+                .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
+                .cloned()
         } {
             thread
                 .push_new_message(ServerThreadMessage::TerminationNotice(FastString::new(
@@ -747,7 +812,7 @@ impl GameServer {
 
     /// Find a thread by account ID
     pub fn get_user_by_id(&self, account_id: i32) -> Option<Arc<ClientThread>> {
-        self.clients
+        self.clients_list
             .lock()
             .values()
             .find(|thr| thr.account_id.load(Ordering::Relaxed) == account_id)
@@ -756,7 +821,7 @@ impl GameServer {
 
     /// If the passed string is numeric, tries to find a user by account ID, else by their account name.
     pub fn find_user(&self, name: &str) -> Option<Arc<ClientThread>> {
-        self.clients
+        self.clients_list
             .lock()
             .values()
             .find(|thr| {
@@ -796,7 +861,7 @@ impl GameServer {
             let players = manager.get_level(level_id);
 
             if let Some(level) = players {
-                self.clients
+                self.clients_list
                     .lock()
                     .values()
                     .filter(|thread| {
@@ -983,7 +1048,7 @@ impl GameServer {
         info!(
             "Player count: {} (threads: {}, unauthorized: {})",
             self.state.get_player_count(),
-            self.clients.lock().len(),
+            self.clients_list.lock().len(),
             self.unauthorized_clients.lock().len(),
         );
         info!("Amount of rooms: {}", self.state.room_manager.get_rooms().len());
@@ -1005,7 +1070,7 @@ impl GameServer {
 
         // if we are now under maintenance, disconnect everyone who's still connected
         if self.bridge.is_maintenance() {
-            let threads: Vec<_> = self.clients.lock().values().cloned().collect();
+            let threads: Vec<_> = self.clients_list.lock().values().cloned().collect();
             for thread in threads {
                 thread
                     .push_new_message(ServerThreadMessage::TerminationNotice(FastString::new(

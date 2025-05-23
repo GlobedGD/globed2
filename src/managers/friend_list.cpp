@@ -45,6 +45,17 @@ bool FriendListManager::isBlocked(int playerId) {
     return listBlocked.contains(playerId);
 }
 
+std::vector<int> FriendListManager::getFriendList() {
+    std::vector<int> list;
+    list.reserve(listFriends.size());
+
+    for (auto& elem : listFriends) {
+        list.push_back(elem);
+    }
+
+    return list;
+}
+
 void FriendListManager::insertPlayers(cocos2d::CCArray* players, bool friends) {
     auto& set = friends ? listFriends : listBlocked;
 
@@ -58,6 +69,7 @@ void FriendListManager::insertPlayers(cocos2d::CCArray* players, bool friends) {
 
 void FriendListManager::DummyNode::cleanup() {
     GameLevelManager::sharedState()->m_userListDelegate = nullptr;
+    FriendListManager::get().fetchState = FetchState::None;
 }
 
 void FriendListManager::DummyNode::getUserListFinished(cocos2d::CCArray* p0, UserListType p1) {
@@ -74,7 +86,16 @@ void FriendListManager::DummyNode::getUserListFinished(cocos2d::CCArray* p0, Use
 
 void FriendListManager::DummyNode::getUserListFailed(UserListType p0, GJErrorCode p1) {
     // -2 means no friends :broken_heart:
-    if ((int)p1 != -2) {
+    if ((int)p1 == -2) {
+        auto& flm = FriendListManager::get();
+        if (flm.fetchState == FetchState::Friends) {
+            flm.loadedFriends = true;
+            flm.maybeLoad(); // load blocked users
+            return;
+        } else {
+            flm.loadedBlocked = true;
+        }
+    } else {
         ErrorQueues::get().warn(fmt::format("[Globed] Failed to get friendlist: {}", (int)p1));
     }
 

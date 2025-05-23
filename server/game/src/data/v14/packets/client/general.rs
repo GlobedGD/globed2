@@ -36,9 +36,16 @@ pub struct NoticeReplyPacket {
     pub reply_id: u32,
     pub message: FastString,
 }
+
 #[derive(Packet, Decodable)]
 #[packet(id = 11007)]
 pub struct RequestMotdPacket {
     pub motd_hash: FastString,
     pub expect_response: bool,
+}
+
+#[derive(Packet, Decodable)]
+#[packet(id = 11008)]
+pub struct UpdateFriendListPacket {
+    pub ids: Vec<i32>,
 }

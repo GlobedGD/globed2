@@ -185,4 +185,20 @@ impl ClientThread {
 
         Ok(())
     });
+
+    gs_handler!(self, handle_update_friend_list, UpdateFriendListPacket, packet, {
+        let _ = gs_needauth!(self);
+
+        let mut friend_list = self.friend_list.lock();
+        friend_list.clear();
+
+        for id in &packet.ids {
+            friend_list.push(*id);
+        }
+
+        // sort
+        friend_list.sort_unstable();
+
+        Ok(())
+    });
 }

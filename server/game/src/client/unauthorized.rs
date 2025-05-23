@@ -52,6 +52,7 @@ pub struct UnauthorizedThread {
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<Option<ServerUserEntry>>,
     pub user_role: SyncMutex<Option<ComputedRole>>,
+    pub friend_list: SyncMutex<Vec<i32>>,
 
     pub claim_udp_peer: SyncMutex<Option<SocketAddrV4>>,
     pub claim_udp_notify: Notify,
@@ -101,6 +102,7 @@ impl UnauthorizedThread {
             account_data: SyncMutex::new(PlayerAccountData::default()),
             user_entry: SyncMutex::new(None),
             user_role: SyncMutex::new(None),
+            friend_list: SyncMutex::new(Vec::new()),
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
@@ -137,6 +139,7 @@ impl UnauthorizedThread {
             account_data: SyncMutex::new(std::mem::take(&mut *thread.account_data.lock())),
             user_entry: SyncMutex::new(Some(std::mem::take(&mut *thread.user_entry.lock()))),
             user_role: SyncMutex::new(Some(std::mem::take(&mut *thread.user_role.lock()))),
+            friend_list: SyncMutex::new(std::mem::take(&mut *thread.friend_list.lock())),
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
@@ -307,6 +310,7 @@ impl UnauthorizedThread {
             PingPacket::PACKET_ID => self.handle_ping(&mut data).await,
             LoginPacket::PACKET_ID => self.handle_login(&mut data).await,
             ConnectionTestPacket::PACKET_ID => self.handle_connection_test(&mut data).await,
+            UpdateFriendListPacket::PACKET_ID => self.handle_update_friend_list(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
     }
@@ -517,6 +521,20 @@ impl UnauthorizedThread {
                 data: packet.data,
             })
             .await
+    });
+
+    gs_handler!(self, handle_update_friend_list, UpdateFriendListPacket, packet, {
+        let mut friend_list = self.friend_list.lock();
+        friend_list.clear();
+
+        for id in &packet.ids {
+            friend_list.push(*id);
+        }
+
+        // sort
+        friend_list.sort_unstable();
+
+        Ok(())
     });
 
     async fn send_login_success(&self) -> Result<()> {

@@ -12,6 +12,7 @@
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/settings.hpp>
+#include <managers/friend_list.hpp>
 #include <ui/menu/main/globed_menu_layer.hpp>
 #include <ui/menu/settings/settings_layer.hpp>
 #include <net/manager.hpp>
@@ -139,6 +140,10 @@ bool GlobedServersLayer::init() {
         .parent(rightButtonMenu);
 
     rightButtonMenu->updateLayout();
+
+    // initialize flm here, which should give us enough time to load friend list until a connection is made
+    auto& flm = FriendListManager::get();
+    flm.maybeLoad();
 
     this->schedule(schedule_selector(GlobedServersLayer::updateServerList), 0.1f);
     this->schedule(schedule_selector(GlobedServersLayer::pingServers), 5.0f);

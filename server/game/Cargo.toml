@@ -23,6 +23,7 @@ console-subscriber = { version = "0.4.1", features = ["parking_lot"] }
 # ], optional = true }
 tokio = { version = "1.42.0", features = ["full"], optional = true }
 aho-corasick = "1.1.3"
+slotmap = "1.0.7"
 
 [dev-dependencies]
 criterion = "0.5.1"

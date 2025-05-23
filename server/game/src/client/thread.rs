@@ -24,6 +24,7 @@ use globed_shared::{
     should_ignore_error,
 };
 use handlers::game::MAX_VOICE_PACKET_SIZE;
+use slotmap::DefaultKey;
 use tokio::time::Instant;
 
 use crate::{
@@ -100,6 +101,7 @@ pub struct ClientThread {
     pub account_data: SyncMutex<PlayerAccountData>,
     pub user_entry: SyncMutex<ServerUserEntry>,
     pub user_role: SyncMutex<ComputedRole>,
+    pub friend_list: SyncMutex<Vec<i32>>,
 
     pub is_authorized_user: AtomicBool,
 
@@ -111,6 +113,7 @@ pub struct ClientThread {
     voice_rate_limiter: LockfreeMutCell<SimpleRateLimiter>,
     chat_rate_limiter: Option<LockfreeMutCell<SimpleRateLimiter>>,
     translator: PacketTranslator,
+    slotmap_key: SyncMutex<Option<DefaultKey>>,
     pub pending_notice_replies: SyncMutex<Vec<PendingNoticeReply>>,
 
     pub destruction_notify: Arc<Notify>,
@@ -145,6 +148,7 @@ impl ClientThread {
         let account_data = std::mem::take(&mut *thread.account_data.lock());
         let user_entry = std::mem::take(&mut *thread.user_entry.lock()).unwrap_or_default();
         let user_role = std::mem::take(&mut *thread.user_role.lock()).unwrap_or_else(|| game_server.state.role_manager.get_default().clone());
+        let friend_list = std::mem::take(&mut *thread.friend_list.lock());
         let translator = PacketTranslator::new(thread.protocol_version.load(Ordering::Relaxed));
 
         Self {
@@ -165,6 +169,7 @@ impl ClientThread {
             account_data: SyncMutex::new(account_data),
             user_entry: SyncMutex::new(user_entry),
             user_role: SyncMutex::new(user_role),
+            friend_list: SyncMutex::new(friend_list),
 
             is_authorized_user: AtomicBool::new(false),
 
@@ -176,6 +181,7 @@ impl ClientThread {
             voice_rate_limiter: LockfreeMutCell::new(voice_rate_limiter),
             chat_rate_limiter: chat_rate_limiter.map(LockfreeMutCell::new),
             translator,
+            slotmap_key: SyncMutex::new(None),
             pending_notice_replies: SyncMutex::new(Vec::new()),
 
             destruction_notify: thread.destruction_notify,
@@ -428,6 +434,15 @@ impl ClientThread {
         reply_id
     }
 
+    pub fn set_slotmap_key(&self, key: DefaultKey) {
+        *self.slotmap_key.lock() = Some(key);
+    }
+
+    pub fn take_slotmap_key(&self) -> Option<DefaultKey> {
+        let mut k = self.slotmap_key.lock();
+        k.take()
+    }
+
     pub fn routine_cleanup(&self) {
         // delete all pending replies that are over 1 hour old
         self.pending_notice_replies
@@ -561,6 +576,7 @@ impl ClientThread {
             UpdatePlayerStatusPacket::PACKET_ID => self.handle_set_player_status(&mut data).await,
             LinkCodeRequestPacket::PACKET_ID => self.handle_link_code_request(&mut data).await,
             RequestMotdPacket::PACKET_ID => self.handle_motd_request(&mut data).await,
+            UpdateFriendListPacket::PACKET_ID => self.handle_update_friend_list(&mut data).await,
 
             /* game related */
             RequestPlayerProfilesPacket::PACKET_ID => self.handle_request_profiles(&mut data).await,

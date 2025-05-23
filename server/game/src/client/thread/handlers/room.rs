@@ -372,9 +372,12 @@ impl ClientThread {
     async fn _respond_with_room_list(&self, room: Arc<Room>, just_joined: bool) -> Result<()> {
         let room_info = room.get_room_info();
 
-        let players = self
-            .game_server
-            .get_room_player_previews(&room, self.account_id.load(Ordering::Relaxed), self.can_moderate());
+        let players = self.game_server.get_room_player_previews(
+            &room,
+            self.account_id.load(Ordering::Relaxed),
+            &self.friend_list.lock(),
+            self.can_moderate(),
+        );
 
         if just_joined {
             self.send_packet_dynamic(&RoomJoinedPacket { room_info, players }).await
