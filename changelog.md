@@ -4,6 +4,7 @@
 * Fix unlisted levels being joinable through the player list in some situations
 * Fix friends not showing at the top of the player list anymore
 * Add new consent notice when first using the mod (will be shown to everyone after updating)
+* Add proper mod panel button in the globed menu
 * Hopefully fix some SSL issues
 
 ## v1.8.1
