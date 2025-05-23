@@ -33,7 +33,7 @@ void AdminManager::openUserPopup(const PlayerRoomPreviewAccountData& rpdata) {
     IntermediaryLoadingPopup::create([&nm, rpdata = rpdata](auto popup) {
         nm.send(AdminGetUserStatePacket::create(std::to_string(rpdata.accountId)));
         nm.addListener<AdminUserDataPacket>(popup, [popup, rpdata = std::move(rpdata)](auto packet) {
-            // delay the cration to avoid deadlock
+            // delay the creation to avoid deadlock
             Loader::get()->queueInMainThread([popup, userEntry = std::move(packet->userEntry), accountData = std::move(rpdata)] {
                 AdminUserPopup::create(userEntry, accountData)->show();
                 popup->onClose(popup);

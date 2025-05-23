@@ -11,7 +11,7 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
-bool FragmentationCalibartionPopup::setup() {
+bool FragmentationCalibrationPopup::setup() {
     this->setTitle("Connection test");
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
@@ -49,12 +49,12 @@ bool FragmentationCalibartionPopup::setup() {
 
     this->nextStep();
 
-    this->schedule(schedule_selector(FragmentationCalibartionPopup::checkForUpdates), 0.25f);
+    this->schedule(schedule_selector(FragmentationCalibrationPopup::checkForUpdates), 0.25f);
 
     return true;
 }
 
-void FragmentationCalibartionPopup::checkForUpdates(float) {
+void FragmentationCalibrationPopup::checkForUpdates(float) {
     if (lastPacket.elapsed().millis() > 2500) {
         currentAttempt--;
         failedAttempts++;
@@ -78,7 +78,7 @@ void FragmentationCalibartionPopup::checkForUpdates(float) {
     }
 }
 
-void FragmentationCalibartionPopup::nextStep() {
+void FragmentationCalibrationPopup::nextStep() {
     if (currentAttempt > 4) {
         currentAttempt = 0;
         auto newSize = TEST_PACKET_SIZES[++currentSizeIdx];
@@ -112,7 +112,7 @@ void FragmentationCalibartionPopup::nextStep() {
     statusLabel->setString(fmt::format("Attempt {} with size = {}", currentAttempt, currentSize).c_str());
 }
 
-void FragmentationCalibartionPopup::onClose(cocos2d::CCObject* obj) {
+void FragmentationCalibrationPopup::onClose(cocos2d::CCObject* obj) {
     Popup::onClose(obj);
 
     if (currentSizeIdx > 0) {
@@ -124,15 +124,15 @@ void FragmentationCalibartionPopup::onClose(cocos2d::CCObject* obj) {
     }
 }
 
-void FragmentationCalibartionPopup::closeDelayed() {
+void FragmentationCalibrationPopup::closeDelayed() {
     // this is needed because we cant call NetworkManager::removeListener inside of a listener callback.
     Loader::get()->queueInMainThread([this] {
         this->onClose(this);
     });
 }
 
-FragmentationCalibartionPopup* FragmentationCalibartionPopup::create() {
-    auto ret = new FragmentationCalibartionPopup;
+FragmentationCalibrationPopup* FragmentationCalibrationPopup::create() {
+    auto ret = new FragmentationCalibrationPopup;
     if (ret->initAnchored(POPUP_WIDTH, POPUP_HEIGHT)) {
         ret->autorelease();
         return ret;

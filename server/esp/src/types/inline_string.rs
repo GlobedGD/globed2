@@ -4,7 +4,7 @@ use crate::*;
 
 /// `InlineString` is a string class that doesn't use heap allocation like `String` but also owns the string (unlike `&str`).
 /// When encoding or decoding into a byte buffer of any kind, the encoded form is identical to a normal `String`,
-/// and they can be converted between each other interchangably with `.try_into()` or `.try_from()`.
+/// and they can be converted between each other interchangeably with `.try_into()` or `.try_from()`.
 ///
 /// Note: `InlineString` is not guaranteed to hold a valid UTF-8 string at any point in time, and there are no UTF-8 checks when decoding.
 /// Checks are only done when you convert the string into a `&str` or `String`, via `.to_str`, `.try_to_str`, or `to_string`.

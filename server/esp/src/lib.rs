@@ -95,7 +95,7 @@ pub trait StaticSize {
 }
 
 pub trait DynamicSize {
-    /// For types that have an unpredicatble size at compile time (`Vec`, `String`, `HashMap`, etc.),
+    /// For types that have an unpredictable size at compile time (`Vec`, `String`, `HashMap`, etc.),
     /// this method can be used to calculate the maximum permitted encoded size at runtime.
     fn encoded_size(&self) -> usize;
 }

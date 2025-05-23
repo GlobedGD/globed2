@@ -35,7 +35,7 @@ protected:
     using bytevector = util::data::bytevector;
 
 public:
-    // Preferrably we should define those separately for each subclass, but it does not compile on MSVC.
+    // Preferably we should define those separately for each subclass, but it does not compile on MSVC.
     constexpr static size_t KEY_LEN = 32;
     constexpr static size_t NONCE_LEN = 24;
     constexpr static size_t MAC_LEN = 16;

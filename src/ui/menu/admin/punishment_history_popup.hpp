@@ -15,7 +15,7 @@ protected:
 
     class Cell;
 
-    bool setup(int32_t accoutnId) override;
+    bool setup(int32_t accountId) override;
 
     void addPunishments(const std::vector<UserPunishment>& entries, const std::map<int, std::string>& usernames);
 };

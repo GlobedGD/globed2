@@ -1,3 +1,0 @@
-# llgvis
-
-interpolation log visualiser

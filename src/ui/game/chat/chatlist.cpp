@@ -117,7 +117,7 @@ void GlobedChatListPopup::createMessage(int accountID, const std::string& messag
     scroll->m_contentLayer->addChild(cell);
     scroll->m_contentLayer->setAnchorPoint(ccp(0, 1));
 
-    // move all of them up to accomodate for a new message
+    // move all of them up to accommodate for a new message
     for (GlobedChatCell* gucci : messageCells) {
         gucci->setPositionY(gucci->getPositionY() + GlobedChatCell::CELL_HEIGHT + 3.f);
     }
