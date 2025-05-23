@@ -19,13 +19,13 @@ bool DownloadLevelPopup::setup(int levelId) {
 
     auto* glm = GameLevelManager::sharedState();
     glm->m_levelManagerDelegate = this;
-    glm->getOnlineLevels(GJSearchObject::create(SearchType::Search, std::to_string(levelId)));
+    glm->getOnlineLevels(GJSearchObject::create(SearchType::Type26, std::to_string(levelId)));
 
     return true;
 }
 
 void DownloadLevelPopup::loadLevelsFinished(cocos2d::CCArray* levels, char const* p1, int p2) {
-    if (levels->count() == 0) {
+    if (!levels || levels->count() == 0) {
         this->onClose(this);
         PopupManager::get().alert("Error", "Failed to download the level. It may be unlisted or not exist on the servers anymore.").showInstant();
         return;
@@ -64,7 +64,7 @@ void DownloadLevelPopup::levelDownloadFinished(GJGameLevel* level) {
 
 void DownloadLevelPopup::levelDownloadFailed(int p0) {
     this->onClose(this);
-    PopupManager::get().alertFormat("Error", "Failed to download the level: {}", p0).showInstant();
+    PopupManager::get().alert("Error", "Failed to download the level. It may be unlisted or not exist on the servers anymore.").showInstant();
 }
 
 void DownloadLevelPopup::onClose(cocos2d::CCObject* obj) {

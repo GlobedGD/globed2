@@ -1,6 +1,8 @@
 ## v1.8.2
 
 * Fix connection popup showing blank text sometimes
+* Fix unlisted levels being joinable through the player list in some situations
+* Hopefully fix some SSL issues
 
 ## v1.8.1
 

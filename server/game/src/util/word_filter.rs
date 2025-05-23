@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use aho_corasick::AhoCorasick;
+use globed_shared::debug;
 
 pub struct WordFilter {
     algo: AhoCorasick,
@@ -27,7 +28,9 @@ impl WordFilter {
             let is_whole = w.starts_with("!!") && w.ends_with("!!") && w.len() > 4;
 
             if is_whole {
-                whole_words.push(std::mem::take(w));
+                let mut word = std::mem::take(w);
+                word.remove_matches("!!");
+                whole_words.push(word);
             }
 
             !is_whole && !w.is_empty()

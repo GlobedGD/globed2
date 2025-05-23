@@ -4,7 +4,8 @@
     duration_constructors_lite,
     iter_collect_into,
     let_chains,
-    if_let_guard
+    if_let_guard,
+    string_remove_matches
 )]
 #![allow(
     clippy::must_use_candidate,
