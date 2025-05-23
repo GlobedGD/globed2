@@ -5,7 +5,8 @@
 #include <filesystem>
 
 namespace globed {
-    bool softDisabled();
+    bool hasBrokenResources();
+    bool hasSeverelyBrokenResources();
     bool useFallbackMenuButton();
     void resetIntegrityCheck();
 
