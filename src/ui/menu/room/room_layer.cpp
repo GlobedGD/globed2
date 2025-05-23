@@ -39,9 +39,10 @@ using namespace geode::prelude;
 namespace {
     namespace btnorder {
         constexpr int Invisibility = 3;
-        constexpr int Search = 4;
-        constexpr int ClearSearch = 5;
-        constexpr int Invite = 6;
+        constexpr int AdminPanel = 4;
+        constexpr int Search = 5;
+        constexpr int ClearSearch = 6;
+        constexpr int Invite = 7;
         constexpr int Refresh = 100; // dead last
     }
 }
@@ -165,6 +166,24 @@ bool RoomLayer::init() {
         .id("invite-btn"_spr)
         .parent(topRightButtons)
         .store(btnInvite);
+
+    auto badge = util::ui::createBadgeIfSpecial(ProfileCacheManager::get().getOwnSpecialData());
+    if (badge) {
+        // mod panel button
+        Build<EditorButtonSprite>::create(badge, EditorBaseColor::Aqua)
+            .with([&](auto* btn) {
+                util::ui::rescaleToMatch(btn, targetButtonSize);
+            })
+            .intoMenuItem([this](auto) {
+                AdminManager::get().openModPanel();
+            })
+            .zOrder(btnorder::AdminPanel)
+            .scaleMult(1.1f)
+            .id("btn-mod-panel")
+            .parent(topRightButtons);
+
+        badge->setScale(badge->getScale() * 0.85f);
+    }
 
     // refresh button
     Build<CCSprite>::createSpriteName("icon-refresh-square.png"_spr)
