@@ -9,6 +9,8 @@
 # include <WinSock2.h>
 #else
 # include <netinet/in.h>
+# include <netinet/tcp.h>
+# include <sys/socket.h>
 # include <fcntl.h>
 # include <poll.h>
 # include <unistd.h>
