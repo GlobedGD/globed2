@@ -641,7 +641,7 @@ impl GameServer {
 
                 let id = thr.account_id.load(Ordering::Relaxed);
 
-                let is_friend = friend_list.binary_search(&id).is_ok() || id == requested;
+                let is_friend = friend_list.binary_search(&id).is_ok();
                 if is_friend {
                     return false;
                 }
