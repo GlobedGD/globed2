@@ -1292,7 +1292,7 @@ protected:
     }
 
     void maybeSendKeepalive() {
-        if (!this->established() || socket.forceUseTcp) return;
+        if (!this->established()) return;
 
         auto now = SystemTime::now();
 
@@ -1306,13 +1306,20 @@ protected:
 
             log::warn("timed out, time since last received packet: {}", sinceLastPacket.toString());
             socket.disconnect();
-        } else if (sinceLastPacket > Duration::fromSecs(10) && sinceLastKeepalive > Duration::fromSecs(3)) {
+        }
+        // send a keepalive if either one of those is true:
+        // 1. last received packet was more than 10s ago and we haven't sent a keepalive in 3 seconds
+        // 2. last keepalive was sent more than 30 seconds ago
+        else if (
+            (sinceLastPacket > Duration::fromSecs(10) && sinceLastKeepalive > Duration::fromSecs(3))
+            || (sinceLastKeepalive > Duration::fromSecs(30))
+        ) {
             this->sendKeepalive();
         }
 
-        // send a tcp keepalive to keep the nat hole open
+        // send a tcp keepalive to keep the nat hole open (only if not in tcp-only mode)
         // we make an additional check for `established()` because the earlier socket.disconnect() call might've gone through
-        if (this->established() && sinceLastTcpExchange > Duration::fromSecs(60)) {
+        if (this->established() && !socket.forceUseTcp && sinceLastTcpExchange > Duration::fromSecs(60)) {
             globed::netLog("NetworkManagerImpl sending TCP keepalive (previous was {} ago)", GLOBED_LAZY(sinceLastTcpExchange.toString()));
             this->send(KeepaliveTCPPacket::create());
         }
