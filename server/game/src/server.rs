@@ -346,14 +346,17 @@ impl GameServer {
 
                     // safety: the thread no longer runs and we are the only ones who can access the socket
                     let socket = unsafe { thread.socket.get() };
-                    let udp_peer = socket.udp_peer.expect("upgraded thread has no udp peer assigned");
+                    let udp_peer = socket.udp_peer;
 
-                    debug!("upgrading thread (new peer: tcp {}, udp {})", socket.tcp_peer, udp_peer);
+                    debug!("upgrading thread (new peer: tcp {}, udp {:?})", socket.tcp_peer, udp_peer);
 
                     // upgrade to an authorized ClientThread and add it into clients map
                     let thread = Arc::new(thread.upgrade());
 
-                    self.clients.lock().insert(udp_peer, thread.clone());
+                    if let Some(udp_peer) = udp_peer {
+                        self.clients.lock().insert(udp_peer, thread.clone());
+                    }
+
                     thread.set_slotmap_key(self.clients_list.lock().insert(thread.clone()));
 
                     either_thread = EitherClientThread::Authorized(thread);
@@ -367,8 +370,9 @@ impl GameServer {
                         let mut clients = self.clients.lock();
                         // safety: this is pretty unsafe
                         // TODO
-                        let udp_peer = unsafe { thread.socket.get() }.udp_peer.expect("no udp peer in established thread");
-                        clients.remove(&udp_peer);
+                        if let Some(udp_peer) = unsafe { thread.socket.get() }.udp_peer {
+                            clients.remove(&udp_peer);
+                        }
 
                         if let Some(k) = thread.take_slotmap_key() {
                             self.clients_list.lock().remove(k);

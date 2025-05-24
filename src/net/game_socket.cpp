@@ -17,6 +17,7 @@
 
 constexpr size_t DATA_BUF_SIZE = 2 << 18;
 constexpr uint32_t RELAY_MAGIC = 0x7f8a9b0c;
+constexpr uint32_t RELAY_MAGIC_SKIP_LINK = 0x7f8a9b0d;
 
 using namespace util::data;
 using namespace util::debug;
@@ -303,6 +304,15 @@ Result<> GameSocket::sendRelayUdpStage(uint32_t udpId) {
     return Ok();
 }
 
+Result<> GameSocket::sendRelaySkipUdpLink() {
+    ByteBuffer buf;
+    buf.writeU32(RELAY_MAGIC_SKIP_LINK);
+
+    GLOBED_UNWRAP(tcpSocket.send((const char*) buf.data().data(), buf.size()));
+
+    return Ok();
+}
+
 Result<ReceivedPacket> GameSocket::recvPacket() {
     return this->recvPacket(-1);
 }
@@ -313,7 +323,10 @@ Result<> GameSocket::sendPacket(std::shared_ptr<Packet> packet, Protocol protoco
     globed::netLog("GameSocket::sendPacket(packet={{id={}, encrypted={}}}, protocol={})", packet->getPacketId(), packet->getEncrypted(), (int) protocol);
 
     bool useTcp = false;
-    switch (protocol) {
+
+    if (forceUseTcp) {
+        useTcp = true;
+    } else switch (protocol) {
         case Protocol::Tcp: useTcp = true; break;
         case Protocol::Udp: useTcp = false; break;
         default: useTcp = packet->getUseTcp(); break;
@@ -395,6 +408,10 @@ void GameSocket::createBox() {
 
 void GameSocket::togglePacketLogging(bool state) {
     dumpPackets = state;
+}
+
+void GameSocket::toggleForceTcp(bool enabled) {
+    forceUseTcp = enabled;
 }
 
 Result<PollResult> GameSocket::poll(int timeoutMs) {

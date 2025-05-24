@@ -263,6 +263,7 @@ public:
         Setting<bool, true> editorSupport;
         Setting<bool, false> increaseLevelList;
         Setting<int, 0> fragmentationLimit;
+        Setting<bool, false> forceTcp;
         Setting<bool, false> showRelays;
         Setting<bool, false> compressedPlayerCount;
         Setting<bool, true> useDiscordRPC;
@@ -431,7 +432,7 @@ GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LaunchArgs, (
 // Settings
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::Globed, (
-    autoconnect, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, showRelays,
+    autoconnect, preloadAssets, deferPreloadAssets, invitesFrom, editorSupport, increaseLevelList, fragmentationLimit, forceTcp, showRelays,
     compressedPlayerCount, useDiscordRPC, editorChanges, changelogPopups, pinnedLevelCollapsed,
     isInvisible, noInvites, hideInGame, hideRoles
 ));

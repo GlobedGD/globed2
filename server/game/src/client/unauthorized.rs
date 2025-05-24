@@ -1,5 +1,6 @@
 use std::{
     borrow::Cow,
+    collections::VecDeque,
     net::SocketAddrV4,
     sync::{
         Arc,
@@ -56,6 +57,8 @@ pub struct UnauthorizedThread {
 
     pub claim_udp_peer: SyncMutex<Option<SocketAddrV4>>,
     pub claim_udp_notify: Notify,
+    pub claim_udp_none: AtomicBool,
+    pub queued_packets: SyncMutex<VecDeque<Vec<u8>>>,
 
     pub recover_stream: SyncMutex<Option<(TcpStream, SocketAddrV4)>>,
     pub recover_notify: Notify,
@@ -106,6 +109,8 @@ impl UnauthorizedThread {
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
+            claim_udp_none: AtomicBool::new(false),
+            queued_packets: SyncMutex::new(VecDeque::new()),
 
             recover_stream: SyncMutex::new(None),
             recover_notify: Notify::new(),
@@ -143,6 +148,8 @@ impl UnauthorizedThread {
 
             claim_udp_peer: SyncMutex::new(None),
             claim_udp_notify: Notify::new(),
+            claim_udp_none: AtomicBool::new(false),
+            queued_packets: SyncMutex::new(std::mem::take(&mut *thread.queued_packets.lock())),
 
             recover_stream: SyncMutex::new(None),
             recover_notify: Notify::new(),
@@ -243,6 +250,12 @@ impl UnauthorizedThread {
 
                 /* unclaimed state, wait until user sends a ClaimThreadPacket and gameserver notifies us */
                 ClientThreadState::Unclaimed => tokio::select! {
+                    biased; // we want to prioritize termination & wait_for_claimed in case the user sends another packet right after
+
+                    () = self.wait_for_termianted() => {
+                        self.terminate();
+                    }
+
                     x = tokio::time::timeout(TIMEOUT, self.wait_for_claimed()) => match x {
                         Ok(()) => {
                             // we just got claimed, we can leave and upgrade into a ClientThread
@@ -255,9 +268,36 @@ impl UnauthorizedThread {
                         }
                     },
 
-                    () = self.wait_for_termianted() => {
-                        self.terminate();
-                    }
+                    // alternatively, wait until they send us a SkipClaimThreadPacket
+                    x = tokio::time::timeout(TIMEOUT, self.get_socket().poll_for_tcp_data()) => match x {
+                        Ok(Ok(datalen)) => match self.recv_and_handle(datalen).await {
+                            Ok(()) => {}
+                            Err(e) => {
+                                thrd_warn!(self, "error on an unauth thread: {e}");
+                                #[cfg(debug_assertions)]
+                                let _ = self.terminate_with_message(Cow::Owned(format!("failed to authenticate: {e}"))).await;
+                                #[cfg(not(debug_assertions))]
+                                let _ = self.terminate_with_message(Cow::Borrowed("internal server error during player authentication")).await;
+                            }
+                        },
+
+                        Ok(Err(err)) => {
+                            // terminate, an error occurred
+
+                            // ignore certain IO errors
+                            if let PacketHandlingError::IOError(ref e) = err && should_ignore_error(e) {
+                                #[cfg(debug_assertions)]
+                                thrd_debug!(self, "fatal error on an unauth thread, terminating: {err}");
+                            } else {
+                                thrd_warn!(self, "fatal error on an unauth thread, terminating: {err}");
+                            }
+                            self.terminate();
+                        }
+
+                        Err(_) => {
+                            self.terminate();
+                        }
+                    },
                 },
             }
         }
@@ -295,6 +335,15 @@ impl UnauthorizedThread {
         let mut data = ByteReader::from_bytes(message);
         let header = data.read_packet_header()?;
 
+        if self.connection_state.load() == ClientThreadState::Unclaimed && header.packet_id != SkipClaimThreadPacket::PACKET_ID {
+            #[cfg(debug_assertions)]
+            thrd_debug!(self, "received packet {} while in unclaimed state, saving it for later", header.packet_id);
+
+            self.queued_packets.lock().push_back(message.to_vec());
+
+            return Ok(());
+        }
+
         // reject cleartext credentials
         if header.packet_id == LoginPacket::PACKET_ID && !header.encrypted {
             return Err(PacketHandlingError::MalformedLoginAttempt);
@@ -310,6 +359,7 @@ impl UnauthorizedThread {
             PingPacket::PACKET_ID => self.handle_ping(&mut data).await,
             LoginPacket::PACKET_ID => self.handle_login(&mut data).await,
             ConnectionTestPacket::PACKET_ID => self.handle_connection_test(&mut data).await,
+            SkipClaimThreadPacket::PACKET_ID => self.handle_skip_claim_thread(&mut data).await,
             UpdateFriendListPacket::PACKET_ID => self.handle_update_friend_list(&mut data).await,
             x => Err(PacketHandlingError::NoHandler(x)),
         }
@@ -523,6 +573,13 @@ impl UnauthorizedThread {
             .await
     });
 
+    gs_handler!(self, handle_skip_claim_thread, SkipClaimThreadPacket, _packet, {
+        self.claim_udp_none.store(true, Ordering::SeqCst);
+        self.claim_udp_notify.notify_one();
+
+        Ok(())
+    });
+
     gs_handler!(self, handle_update_friend_list, UpdateFriendListPacket, packet, {
         let mut friend_list = self.friend_list.lock();
         friend_list.clear();
@@ -564,6 +621,9 @@ impl UnauthorizedThread {
             if p.is_some() {
                 self.get_socket().udp_peer = std::mem::take(&mut *p);
                 return;
+            } else if self.claim_udp_none.load(Ordering::SeqCst) {
+                // if we are not expecting a UDP peer, just return
+                return;
             }
         }
 
@@ -573,6 +633,9 @@ impl UnauthorizedThread {
             let mut p = self.claim_udp_peer.lock();
             if p.is_some() {
                 self.get_socket().udp_peer = std::mem::take(&mut *p);
+                return;
+            } else if self.claim_udp_none.load(Ordering::SeqCst) {
+                // if we are not expecting a UDP peer, just return
                 return;
             }
         }
@@ -639,7 +702,10 @@ impl UnauthorizedThread {
     pub fn upgrade(self) -> ClientThread {
         // make a couple of assertions that must always hold true before upgrading
 
-        debug_assert!(self.get_socket().udp_peer.is_some(), "udp peer is None when upgrading thread");
+        debug_assert!(
+            self.get_socket().udp_peer.is_some() || self.claim_udp_none.load(Ordering::SeqCst),
+            "udp peer is None when upgrading thread, and skip claim was not set"
+        );
         debug_assert!(
             self.account_id.load(std::sync::atomic::Ordering::Relaxed) != 0,
             "account ID is 0 when upgrading thread"

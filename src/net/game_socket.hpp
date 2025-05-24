@@ -51,6 +51,7 @@ public:
 
     // Send a payload to the relay server with the udp id
     Result<> sendRelayUdpStage(uint32_t udpId);
+    Result<> sendRelaySkipUdpLink();
 
     // Send a packet to the currently active connection. Throws if disconnected
     Result<> sendPacket(std::shared_ptr<Packet> packet, Protocol protocol = Protocol::Unspecified);
@@ -69,6 +70,7 @@ public:
     void createBox();
 
     void togglePacketLogging(bool enabled);
+    void toggleForceTcp(bool enabled);
 
     enum class PollResult {
         None, Tcp, Udp, Both
@@ -89,6 +91,7 @@ private:
     util::data::byte* dataBuffer;
 
     bool dumpPackets = false;
+    bool forceUseTcp = false;
 
     // Write a packet, packet header, and optionally length if the packet is TCP to the given buffer.
     Result<> encodePacket(Packet& packet, ByteBuffer& buffer, bool tcp);

@@ -23,6 +23,7 @@ public:
     virtual void disconnect();
     Result<bool> poll(int msDelay, bool in = true) override;
     Result<> setNonBlocking(bool nb) override;
+    Result<> setNodelay(bool nodelay);
 
     asp::AtomicBool connected = false;
 

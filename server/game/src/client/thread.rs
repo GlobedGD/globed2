@@ -103,6 +103,8 @@ pub struct ClientThread {
     pub user_role: SyncMutex<ComputedRole>,
     pub friend_list: SyncMutex<Vec<i32>>,
 
+    pub queued_packets: SyncMutex<VecDeque<Vec<u8>>>,
+
     pub is_authorized_user: AtomicBool,
 
     pub privacy_settings: SyncMutex<UserPrivacyFlags>,
@@ -149,6 +151,7 @@ impl ClientThread {
         let user_entry = std::mem::take(&mut *thread.user_entry.lock()).unwrap_or_default();
         let user_role = std::mem::take(&mut *thread.user_role.lock()).unwrap_or_else(|| game_server.state.role_manager.get_default().clone());
         let friend_list = std::mem::take(&mut *thread.friend_list.lock());
+        let queued_packets = std::mem::take(&mut *thread.queued_packets.lock());
         let translator = PacketTranslator::new(thread.protocol_version.load(Ordering::Relaxed));
 
         Self {
@@ -170,6 +173,8 @@ impl ClientThread {
             user_entry: SyncMutex::new(user_entry),
             user_role: SyncMutex::new(user_role),
             friend_list: SyncMutex::new(friend_list),
+
+            queued_packets: SyncMutex::new(queued_packets),
 
             is_authorized_user: AtomicBool::new(false),
 
@@ -214,6 +219,21 @@ impl ClientThread {
 
     pub async fn run(&self) -> ClientThreadOutcome {
         let mut last_received_packet = Instant::now();
+
+        {
+            loop {
+                let pkt = self.queued_packets.lock().pop_front();
+
+                match pkt {
+                    Some(pkt) => {
+                        if let Err(err) = self.handle_message(ServerThreadMessage::Packet(pkt)).await {
+                            self.print_error(&err);
+                        }
+                    }
+                    None => break,
+                }
+            }
+        }
 
         loop {
             let state = self.connection_state.load();
@@ -622,13 +642,26 @@ impl ClientThread {
     // packet encoding and sending functions
 
     #[inline]
+    fn proto_override(&self) -> ProtocolOverride {
+        if unsafe { self.socket.get() }.udp_peer.is_some() {
+            ProtocolOverride::None
+        } else {
+            ProtocolOverride::Tcp // tcp if the user is in tcp-only mode
+        }
+    }
+
+    #[inline]
     async fn send_packet_static<P: Packet + Encodable + StaticSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_static(packet).await
+        unsafe { self.socket.get_mut() }
+            .send_packet_static_override(packet, self.proto_override())
+            .await
     }
 
     #[inline]
     async fn send_packet_dynamic<P: Packet + Encodable + DynamicSize>(&self, packet: &P) -> Result<()> {
-        unsafe { self.socket.get_mut() }.send_packet_dynamic(packet).await
+        unsafe { self.socket.get_mut() }
+            .send_packet_dynamic_override(packet, self.proto_override())
+            .await
     }
 
     #[inline]
@@ -641,7 +674,7 @@ impl ClientThread {
     #[inline]
     async fn send_packet_translatable<P: Packet + Encodable + DynamicSize + PartialTranslatableEncodable>(&self, packet: P) -> Result<()> {
         unsafe { self.socket.get_mut() }
-            .send_packet_translatable(packet, ProtocolOverride::None)
+            .send_packet_translatable(packet, self.proto_override())
             .await
     }
 
@@ -649,7 +682,7 @@ impl ClientThread {
     #[allow(unused)]
     async fn send_packet_alloca<P: Packet + Encodable>(&self, packet: &P, packet_size: usize) -> Result<()> {
         unsafe { self.socket.get_mut() }
-            .send_packet_alloca(packet, packet_size, ProtocolOverride::None)
+            .send_packet_alloca(packet, packet_size, self.proto_override())
             .await
     }
 
@@ -659,7 +692,7 @@ impl ClientThread {
         F: FnOnce(&mut FastByteBuffer),
     {
         unsafe { self.socket.get_mut() }
-            .send_packet_alloca_with::<P, F>(packet_size, ProtocolOverride::None, encode_fn)
+            .send_packet_alloca_with::<P, F>(packet_size, self.proto_override(), encode_fn)
             .await
     }
 }

@@ -47,6 +47,10 @@ pub struct DisconnectPacket;
 pub struct KeepaliveTCPPacket;
 
 #[derive(Packet, Decodable)]
+#[packet(id = 10008)]
+pub struct SkipClaimThreadPacket;
+
+#[derive(Packet, Decodable)]
 #[packet(id = 10200)]
 pub struct ConnectionTestPacket {
     pub uid: u32,

@@ -373,6 +373,9 @@ protected:
             this->setRelayAddress(NetworkAddress{});
         }
 
+        auto& settings = GlobedSettings::get();
+        socket.toggleForceTcp(settings.globed.forceTcp);
+
         // if we are already connected, disconnect first
         if (state == ConnectionState::Established) {
             this->disconnect(false, false);
@@ -814,19 +817,24 @@ protected:
 
             // send our friend list to the server
             this->maybeSendFriendList();
+
+            // try to login as an admin if we can
+            auto& am = GlobedAccountManager::get();
+            if (am.hasAdminPassword()) {
+                auto password = am.getAdminPassword();
+                if (password.has_value()) {
+                    GlobedAccountManager::get().storeTempAdminPassword(password.value());
+                    this->send(AdminAuthPacket::create(password.value()));
+                }
+            }
         });
 
-        // claim the tcp thread to allow udp packets through
-        this->send(ClaimThreadPacket::create(this->secretKey));
-
-        // try to login as an admin if we can
-        auto& am = GlobedAccountManager::get();
-        if (am.hasAdminPassword()) {
-            auto password = am.getAdminPassword();
-            if (password.has_value()) {
-                GlobedAccountManager::get().storeTempAdminPassword(password.value());
-                this->send(AdminAuthPacket::create(password.value()));
-            }
+        if (socket.forceUseTcp) {
+            // if forcing tcp, send a packet telling the server to skip thread claiming
+            this->send(SkipClaimThreadPacket::create());
+        } else {
+            // otherwise claim the tcp thread to allow udp packets through
+            this->send(ClaimThreadPacket::create(this->secretKey));
         }
 
         // request the motd of the server if uncached
@@ -1119,12 +1127,23 @@ protected:
         // Relay authentication, most of the time here is waiting for the server to give us a response
         else if (state == ConnectionState::RelayAuthStage1) {
             if (relayUdpId != 0) {
-                globed::netLog("Got relay udp id, now sending stage 2 udp packet: {}", relayUdpId.load());
+                globed::netLog("Got relay udp id: {}", relayUdpId.load());
 
-                if (auto res = socket.sendRelayUdpStage(relayUdpId)) {
+                geode::Result<> res = Ok();
+
+                if (socket.forceUseTcp) {
+                    // using tcp, send a skip link
+                    globed::netLog("Tcp only mode enabled, sending skip udp link");
+                    res = socket.sendRelaySkipUdpLink();
+                } else {
+                    globed::netLog("Sending stage 2 udp packet");
+                    res = socket.sendRelayUdpStage(relayUdpId);
+                }
+
+                if (res) {
                     state = ConnectionState::RelayAuthStage2;
                 } else {
-                    ErrorQueues::get().error(fmt::format("Failed to send stage 2 udp packet to relay: {}", res.unwrapErr()));
+                    ErrorQueues::get().error(fmt::format("Failed to send stage 2 packet to relay: {}", res.unwrapErr()));
                     this->disconnect(true);
                     return;
                 }
@@ -1273,7 +1292,7 @@ protected:
     }
 
     void maybeSendKeepalive() {
-        if (!this->established()) return;
+        if (!this->established() || socket.forceUseTcp) return;
 
         auto now = SystemTime::now();
 

@@ -52,6 +52,9 @@ Result<> TcpSocket::connect(const NetworkAddress& address) {
 
     GLOBED_REQUIRE_SAFE(sock != -1, "failed to create a tcp socket: socket failed");
 
+    // disable nagle algorithm for sends
+    GLOBED_UNWRAP(this->setNodelay(true));
+
     // attempt a connection with a 5 second timeout
     GLOBED_UNWRAP(this->setNonBlocking(true));
 
@@ -227,6 +230,20 @@ Result<> TcpSocket::setNonBlocking(bool nb) {
         if (fcntl(socket_, F_SETFL, flags & (~O_NONBLOCK)) < 0) return Err(fmt::format("fcntl(~O_NONBLOCK) failed: {}", util::net::lastErrorString()));
     }
 #endif
+
+    return Ok();
+}
+
+Result<> TcpSocket::setNodelay(bool nodelay) {
+    globed::netLog("TcpSocket::setNodelay(this={}, nodelay={})", (void*)this, nodelay);
+
+    // enable/disable nagle's algorithm
+    int flag = nodelay ? 1 : 0;
+    if (setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&flag), sizeof(flag)) < 0) {
+        auto code = util::net::lastErrorCode();
+        globed::netLog("TcpSocket::setNodelay(this={}) setsockopt(TCP_NODELAY) failed: {}", (void*)this, util::net::lastErrorString(code));
+        return Err(fmt::format("setsockopt(TCP_NODELAY) failed: {}", util::net::lastErrorString(code)));
+    }
 
     return Ok();
 }
