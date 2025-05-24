@@ -3,6 +3,7 @@
 * Fix connection popup showing blank text sometimes
 * Fix unlisted levels being joinable through the player list in some situations
 * Fix friends not showing at the top of the player list anymore
+* Fix the popup saying microphone doesn't work showing up on Windows
 * Try to load mod's default textures if a broken texture pack is detected
 * Add new consent notice when first using the mod (will be shown to everyone after updating)
 * Add proper mod panel button in the globed menu

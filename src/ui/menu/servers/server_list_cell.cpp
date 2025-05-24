@@ -99,7 +99,7 @@ void ServerListCell::onConnect() {
             "Enable",
             [&settings, this](FLAlertLayer*, bool enabled) {
                 settings.communication.voiceEnabled = enabled;
-#ifdef GLOBED_VOICE_CAN_TALK
+#ifndef GLOBED_VOICE_CAN_TALK
                 if (enabled) {
                     // if this is a platform that cannot use the microphone, show an additional popup
                     PopupManager::get().quickPopup(
