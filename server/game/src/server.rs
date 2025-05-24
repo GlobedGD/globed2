@@ -607,21 +607,25 @@ impl GameServer {
         };
 
         // make two passes, first go through friends
-        let written_n = clients
-            .values()
-            .filter(|thr| {
-                if thr.room_id.load(Ordering::Relaxed) != room_id || !thr.authenticated() {
-                    return false;
-                }
+        let written_n = if !friend_list.is_empty() {
+            clients
+                .values()
+                .filter(|thr| {
+                    if thr.room_id.load(Ordering::Relaxed) != room_id || !thr.authenticated() {
+                        return false;
+                    }
 
-                let id = thr.account_id.load(Ordering::Relaxed);
+                    let id = thr.account_id.load(Ordering::Relaxed);
 
-                // intentionally allow ourselves
-                // also intentionally disregard privacy settings, since we are showing friends
-                friend_list.binary_search(&id).is_ok() || id == requested
-            })
-            .map(|thr| mapper(thr))
-            .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)));
+                    // intentionally allow ourselves
+                    // also intentionally disregard privacy settings, since we are showing friends
+                    friend_list.binary_search(&id).is_ok() || id == requested
+                })
+                .map(|thr| mapper(thr))
+                .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
+        } else {
+            0
+        };
 
         if written_n >= n {
             return written_n;
