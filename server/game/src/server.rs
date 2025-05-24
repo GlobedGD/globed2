@@ -617,9 +617,8 @@ impl GameServer {
 
                     let id = thr.account_id.load(Ordering::Relaxed);
 
-                    // intentionally allow ourselves
-                    // also intentionally disregard privacy settings, since we are showing friends
-                    friend_list.binary_search(&id).is_ok() || id == requested
+                    // intentionally disregard privacy settings, since we are showing friends
+                    friend_list.binary_search(&id).is_ok()
                 })
                 .map(|thr| mapper(thr))
                 .fold(0, |count, preview| count + usize::from(f(&preview, count, additional)))
@@ -627,6 +626,7 @@ impl GameServer {
             0
         };
 
+        // note that this will end up not returning ourselves, in case there are >= 250 friends online
         if written_n >= n {
             return written_n;
         }
@@ -646,7 +646,7 @@ impl GameServer {
                     return false;
                 }
 
-                force_visibility || !thr.privacy_settings.lock().get_hide_from_lists()
+                id == requested || force_visibility || !thr.privacy_settings.lock().get_hide_from_lists()
             })
             .choose_multiple(&mut rand::rng(), n - written_n)
             .iter()
