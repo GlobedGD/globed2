@@ -4,7 +4,7 @@
 
 // 12000 - RequestPlayerProfilesPacket
 class RequestPlayerProfilesPacket : public Packet {
-    GLOBED_PACKET(12000, RequestPlayerProfilesPacket, false, false)
+    GLOBED_PACKET(12000, RequestPlayerProfilesPacket, false, true)
 
     RequestPlayerProfilesPacket() {}
     RequestPlayerProfilesPacket(int requested) : requested(requested) {}
@@ -15,7 +15,7 @@ GLOBED_SERIALIZABLE_STRUCT(RequestPlayerProfilesPacket, (requested));
 
 // 12001 - LevelJoinPacket
 class LevelJoinPacket : public Packet {
-    GLOBED_PACKET(12001, LevelJoinPacket, false, false)
+    GLOBED_PACKET(12001, LevelJoinPacket, false, true)
 
     LevelJoinPacket() {}
     LevelJoinPacket(LevelId levelId, bool unlisted, std::optional<std::array<uint8_t, 32>> levelHash) : levelId(levelId), unlisted(unlisted), levelHash(levelHash) {}
@@ -28,7 +28,7 @@ GLOBED_SERIALIZABLE_STRUCT(LevelJoinPacket, (levelId, unlisted, levelHash));
 
 // 12002 - LevelLeavePacket
 class LevelLeavePacket : public Packet {
-    GLOBED_PACKET(12002, LevelLeavePacket, false, false)
+    GLOBED_PACKET(12002, LevelLeavePacket, false, true)
 
     LevelLeavePacket() {}
 };

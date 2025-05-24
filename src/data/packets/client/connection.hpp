@@ -95,7 +95,7 @@ class ClaimThreadPacket : public Packet {
 
 // 10006 - DisconnectPacket
 class DisconnectPacket : public Packet {
-    GLOBED_PACKET(10006, DisconnectPacket, false, false)
+    GLOBED_PACKET(10006, DisconnectPacket, false, true)
 
     DisconnectPacket() {}
 };

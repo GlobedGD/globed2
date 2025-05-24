@@ -6,7 +6,7 @@
 
 // 11000 - SyncIconsPacket
 class SyncIconsPacket : public Packet {
-    GLOBED_PACKET(11000, SyncIconsPacket, false, false)
+    GLOBED_PACKET(11000, SyncIconsPacket, false, true)
 
     SyncIconsPacket() {}
     SyncIconsPacket(const PlayerIconData& icons) : icons(icons) {}
@@ -18,7 +18,7 @@ GLOBED_SERIALIZABLE_STRUCT(SyncIconsPacket, (icons));
 
 // 11001 - RequestGlobalPlayerListPacket
 class RequestGlobalPlayerListPacket : public Packet {
-    GLOBED_PACKET(11001, RequestGlobalPlayerListPacket, false, false)
+    GLOBED_PACKET(11001, RequestGlobalPlayerListPacket, false, true)
 
     RequestGlobalPlayerListPacket() {}
 };
@@ -27,7 +27,7 @@ GLOBED_SERIALIZABLE_STRUCT(RequestGlobalPlayerListPacket, ());
 
 // 11002 - RequestLevelListPacket
 class RequestLevelListPacket : public Packet {
-    GLOBED_PACKET(11002, RequestLevelListPacket, false, false)
+    GLOBED_PACKET(11002, RequestLevelListPacket, false, true)
 
     RequestLevelListPacket() {}
 };
@@ -36,7 +36,7 @@ GLOBED_SERIALIZABLE_STRUCT(RequestLevelListPacket, ());
 
 // 11003 - RequestPlayerCountPacket
 class RequestPlayerCountPacket : public Packet {
-    GLOBED_PACKET(11003, RequestPlayerCountPacket, false, false)
+    GLOBED_PACKET(11003, RequestPlayerCountPacket, false, true)
 
     RequestPlayerCountPacket() {}
     RequestPlayerCountPacket(std::vector<LevelId>&& levelIds) : levelIds(std::move(levelIds)) {}
@@ -48,7 +48,7 @@ GLOBED_SERIALIZABLE_STRUCT(RequestPlayerCountPacket, (levelIds));
 
 // 11004 - UpdatePlayerStatusPacket
 class UpdatePlayerStatusPacket : public Packet {
-    GLOBED_PACKET(11004, UpdatePlayerStatusPacket, false, false);
+    GLOBED_PACKET(11004, UpdatePlayerStatusPacket, false, true);
 
     UpdatePlayerStatusPacket() {}
     UpdatePlayerStatusPacket(const UserPrivacyFlags& flags) : flags(flags) {}
@@ -60,7 +60,7 @@ GLOBED_SERIALIZABLE_STRUCT(UpdatePlayerStatusPacket, (flags));
 
 // 11005 - LinkCodeRequestPacket
 class LinkCodeRequestPacket : public Packet {
-    GLOBED_PACKET(11005, LinkCodeRequestPacket, false, false);
+    GLOBED_PACKET(11005, LinkCodeRequestPacket, false, true);
 
     LinkCodeRequestPacket() {}
 };
@@ -69,7 +69,7 @@ GLOBED_SERIALIZABLE_STRUCT(LinkCodeRequestPacket, ());
 
 // 11006 - NoticeReplyPacket
 class NoticeReplyPacket : public Packet {
-    GLOBED_PACKET(11006, NoticeReplyPacket, false, false);
+    GLOBED_PACKET(11006, NoticeReplyPacket, false, true);
 
     NoticeReplyPacket() {}
     NoticeReplyPacket(uint32_t replyId, std::string message) : replyId(replyId), message(std::move(message)) {}
