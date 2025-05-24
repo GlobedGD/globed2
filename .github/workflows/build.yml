@@ -39,8 +39,8 @@ jobs:
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
         with:
-          sdk: 'nightly'
-          cli: 'nightly'
+          # sdk: 'nightly'
+          # cli: 'nightly'
           configure-args: '-DGLOBED_RELEASE=ON'
           combine: 'true'
           target: ${{ matrix.config.target }}

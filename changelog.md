@@ -1,3 +1,7 @@
+## v1.8.3
+
+* fix mod not loading
+
 ## v1.8.2
 
 * Add a new setting that forces the use of TCP for all packets, which may fix some connection issues at the cost of potential higher latency
