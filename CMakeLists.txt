@@ -126,7 +126,7 @@ CPMAddPackage(
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe"
 )
 CPMAddPackage("gh:dankmeme01/asp2#5b0bae3")
-CPMAddPackage("gh:GlobedGD/argon@1.1.2")
+CPMAddPackage("gh:GlobedGD/argon@1.1.3")
 
 if (WIN32)
     target_compile_definitions(asp PRIVATE ASP_ENABLE_FORMAT=1)
