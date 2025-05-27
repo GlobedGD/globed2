@@ -44,7 +44,9 @@ void PlayerInterpolator::updatePlayer(int playerId, const PlayerData& data, floa
     player.frameFlags.pendingP1Jump = data.player1.didJustJump;
     player.frameFlags.pendingP2Jump = data.player1.didJustJump;
 
-    LerpLogger::get().logRealFrame(playerId, this->getLocalTs(), data.timestamp, data.player1);
+#ifdef GLOBED_DEBUG_INTERPOLATION
+    LerpLogger::get().logRealFrame(playerId, updateCounter, data.timestamp, data.player1);
+#endif
 
     if (settings.realtime) {
         player.interpolatedState = data;
@@ -98,7 +100,13 @@ static inline void lerpPlayer(
 void PlayerInterpolator::tick(float dt) {
     if (settings.realtime) return;
 
-    auto localTs = this->getLocalTs();
+    auto localTsRes = this->getLocalTs();
+    if (!localTsRes) {
+        log::warn("PlayerInterpolator::tick trying to tick when not in a level!");
+        return;
+    }
+
+    auto localTs = localTsRes.value();
 
     for (auto& [playerId, player] : players) {
         if (player.totalFrames < 2) continue;
@@ -142,8 +150,13 @@ bool PlayerInterpolator::isPlayerStale(int playerId, float lastServerPacket) {
     return uc != 0.f && std::abs(uc - lastServerPacket) > 0.5f;
 }
 
-float PlayerInterpolator::getLocalTs() {
-    return GlobedGJBGL::get()->m_fields->timeCounter;
+std::optional<float> PlayerInterpolator::getLocalTs() {
+    auto bgl = GlobedGJBGL::get();
+    if (!bgl) {
+        return std::nullopt;
+    }
+
+    return bgl->m_fields->timeCounter;
 }
 
 PlayerInterpolator::LerpFrame::LerpFrame() {

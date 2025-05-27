@@ -1,3 +1,7 @@
+## v1.8.4
+
+* Fix rare crash when leaving a level
+
 ## v1.8.3
 
 * fix mod not loading

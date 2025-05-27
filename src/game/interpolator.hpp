@@ -37,7 +37,8 @@ public:
     // returns `true` if the given time of the last packet doesn't match the last update time of the player
     bool isPlayerStale(int playerId, float lastServerPacket);
 
-    float getLocalTs();
+    // returns nullopt if we are out of the level
+    std::optional<float> getLocalTs();
 
 private:
     std::unordered_map<int, PlayerState> players;
