@@ -1,6 +1,8 @@
 ## v1.8.4
 
 * Fix rare crash when leaving a level
+* Fix `globed-no-ssl-verification` launch option not applying to Argon
+* Rebuild against Geode v4.5.0 to fix crashes during game exit
 
 ## v1.8.3
 
