@@ -92,17 +92,9 @@ static void* addrFromWeakRef(const WeakRef<T>& ref) {
 }
 
 // Packet listener pool. Most of the functions must not be used on a different thread than main.
-class GLOBED_DLL PacketListenerPool : public CCObject {
+class GLOBED_DLL PacketListenerPool : public SingletonNodeBase<PacketListenerPool, true> {
+    friend class SingletonNodeBase;
 public:
-    PacketListenerPool(const PacketListenerPool&) = delete;
-    PacketListenerPool(PacketListenerPool&&) = delete;
-    PacketListenerPool& operator=(const PacketListenerPool&) = delete;
-    PacketListenerPool& operator=(PacketListenerPool&&) = delete;
-
-    static PacketListenerPool& get() {
-        static PacketListenerPool instance;
-        return instance;
-    }
 
     // Must be called from the main thread. Delivers packets to all listeners that are tied to an object.
     void update(float dt) {
@@ -204,10 +196,6 @@ public:
 private:
     std::unordered_map<packetid_t, std::vector<WeakRef<PacketListener>>> listeners;
     asp::Channel<std::shared_ptr<Packet>> packetQueue;
-
-    PacketListenerPool() {
-        CCScheduler::get()->scheduleSelector(schedule_selector(PacketListenerPool::update), this, 0.f, false);
-    }
 };
 
 class GLOBED_DLL NetworkManager::Impl {
