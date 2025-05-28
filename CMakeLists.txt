@@ -159,7 +159,7 @@ CPMAddPackage(
     OPTIONS "BOOST_ENABLE_CMAKE ON" "BOOST_INCLUDE_LIBRARIES describe" # escape with \\\;
 )
 CPMAddPackage("gh:dankmeme01/asp2#5b0bae3")
-CPMAddPackage("gh:GlobedGD/argon@1.1.4")
+CPMAddPackage("gh:GlobedGD/argon@1.1.5")
 
 # defines for asp (std::format is only available on windows currently)
 if (WIN32)
