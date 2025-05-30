@@ -155,6 +155,12 @@ fn parse_configuration() -> StartupConfiguration {
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    let enable_console = std::env::var("GLOBED_TOKIO_CONSOLE").is_ok_and(|x| x != "0");
+
+    if enable_console {
+        console_subscriber::init();
+    }
+
     // Setup logger
 
     let write_to_file = std::env::var("GLOBED_GS_NO_FILE_LOG").map(|p| p.parse::<i32>().unwrap()).unwrap_or(0) == 0;
@@ -181,11 +187,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // setup tokio-console in debug builds
-
-    // if cfg!(all(tokio_unstable, feature = "use_tokio_tracing")) {
-    //     info!("Initializing tokio-console subscriber");
-    //     console_subscriber::init();
-    // }
 
     // parse the configuration from environment variables or command line
 
