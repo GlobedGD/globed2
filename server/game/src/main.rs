@@ -157,10 +157,6 @@ fn parse_configuration() -> StartupConfiguration {
 async fn main() -> Result<(), Box<dyn Error>> {
     let enable_console = std::env::var("GLOBED_TOKIO_CONSOLE").is_ok_and(|x| x != "0");
 
-    if enable_console {
-        console_subscriber::init();
-    }
-
     // Setup logger
 
     let write_to_file = std::env::var("GLOBED_GS_NO_FILE_LOG").map(|p| p.parse::<i32>().unwrap()).unwrap_or(0) == 0;
@@ -174,6 +170,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         error!("invalid value for the log level environment varaible");
         warn!("hint: possible values are 'trace', 'debug', 'info', 'warn', 'error', and 'none'.");
         abort_misconfig();
+    }
+
+    if enable_console {
+        info!("Tokio console enabled!");
+        console_subscriber::init();
     }
 
     // set the interrupt handler to flush the logfile and exit
