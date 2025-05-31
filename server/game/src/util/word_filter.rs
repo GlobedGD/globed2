@@ -55,6 +55,7 @@ impl WordFilter {
         let new_filter = Self::new_from_lines(lines);
         self.algo = new_filter.algo;
         self.word_count = new_filter.word_count;
+        self.whole_words = new_filter.whole_words;
 
         Ok(())
     }
