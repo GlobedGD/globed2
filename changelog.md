@@ -1,3 +1,7 @@
+## v1.8.5
+
+* Fix crash when receiving a notice in the editor
+
 ## v1.8.4
 
 * Fix rare crash when leaving a level

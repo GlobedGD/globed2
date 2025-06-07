@@ -1109,7 +1109,9 @@ void GlobedGJBGL::setNoticeAlertActive(bool active) {
         }
     }
 
-    fields.noticeAlert->setVisible(active);
+    if (fields.noticeAlert) {
+        fields.noticeAlert->setVisible(active);
+    }
 }
 
 void GlobedGJBGL::handlePlayerJoin(int playerId) {
