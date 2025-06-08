@@ -155,11 +155,16 @@ pub async fn handle_login(
                         && token_rest.chars().filter(|c| *c == '|').count() == 2
                     {
                         if account_id.parse::<i32>().unwrap_or(0) != account_data.account_id {
+                            warn!(
+                                "[{user_ip}] mismatched account ID in trust token: expected {}, got {}",
+                                account_data.account_id, account_id
+                            );
                             unauthorized!("security check failed: trust token value mismatch");
                         }
 
                         let last_pipe = token_rest.rfind('|').unwrap_or(0) + 1;
                         if last_pipe >= token_rest.len() {
+                            warn!("[{account_id} @ {user_ip}] confidence string missing, token: '{token_rest}'");
                             unauthorized!("security check failed: trust token value mismatch");
                         }
 
@@ -184,9 +189,11 @@ pub async fn handle_login(
 
                         Some(token_rest.to_owned())
                     } else {
+                        warn!("[{user_ip}] trust token malformed: {decrypted}");
                         unauthorized!("security check failed: trust token value mismatch");
                     }
                 } else {
+                    warn!("[{user_ip}] trust token missing!");
                     unauthorized!("security check failed: trust token missing but required");
                 }
             } else {
