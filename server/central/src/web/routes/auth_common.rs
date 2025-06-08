@@ -198,8 +198,9 @@ pub async fn handle_login(
                         unauthorized!("security check failed: trust token value mismatch");
                     }
                 } else {
-                    warn!("[{user_ip}] trust token missing!");
-                    unauthorized!("security check failed: trust token missing but required");
+                    warn!("[{user_ip}] trust token missing! ignoring for now");
+                    // unauthorized!("security check failed: trust token missing but required");
+                    None
                 }
             } else {
                 None
