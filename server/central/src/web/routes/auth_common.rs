@@ -149,10 +149,37 @@ pub async fn handle_login(
             {
                 if let Some(trust_token) = &trust_token {
                     let decrypted = String::from_utf8(decrypt_trust_token(trust_token, &sm_key)?)?;
+                    debug!("[{}] decrypted trust token: {}", user_ip, decrypted);
 
-                    if let Some((account_id, token_rest)) = decrypted.split_once('|') {
+                    if let Some((account_id, token_rest)) = decrypted.split_once('|')
+                        && token_rest.chars().filter(|c| *c == '|').count() == 2
+                    {
                         if account_id.parse::<i32>().unwrap_or(0) != account_data.account_id {
                             unauthorized!("security check failed: trust token value mismatch");
+                        }
+
+                        let last_pipe = token_rest.rfind('|').unwrap_or(0) + 1;
+                        if last_pipe >= token_rest.len() {
+                            unauthorized!("security check failed: trust token value mismatch");
+                        }
+
+                        let confidence_str = &token_rest[last_pipe..];
+                        let mut confidence_hash = 0u8;
+
+                        for c in confidence_str.chars() {
+                            if c.is_ascii_hexdigit() {
+                                confidence_hash ^= c as u8;
+                            } else {
+                                warn!("[{account_id} @ {user_ip}] invalid confidence string found in trust token: '{confidence_str}'");
+                                unauthorized!("security check failed: trust token value mismatch");
+                            }
+                        }
+
+                        if confidence_hash != 7 && confidence_hash != 90 {
+                            warn!("[{account_id} @ {user_ip}] invalid confidence string found in trust token: '{confidence_str}'");
+                            unauthorized!(&format!(
+                                "security check failed: trust token has poor security, confidence hash: {confidence_hash}"
+                            ));
                         }
 
                         Some(token_rest.to_owned())
@@ -160,8 +187,7 @@ pub async fn handle_login(
                         unauthorized!("security check failed: trust token value mismatch");
                     }
                 } else {
-                    // unauthorized!("security check failed: trust token missing but required");
-                    None
+                    unauthorized!("security check failed: trust token missing but required");
                 }
             } else {
                 None
@@ -175,12 +201,12 @@ pub async fn handle_login(
     };
 
     if let Some(trust_token) = trust_token {
-        debug!(
+        info!(
             "[{} ({}) @ {}] login successful ({argon_str}), trust token: {trust_token}",
             account_data.username, account_data.account_id, user_ip
         );
     } else {
-        debug!(
+        info!(
             "[{} ({}) @ {}] login successful ({argon_str})",
             account_data.username, account_data.account_id, user_ip
         );
