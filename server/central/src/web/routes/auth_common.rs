@@ -182,9 +182,14 @@ pub async fn handle_login(
 
                         if confidence_hash != 7 && confidence_hash != 90 {
                             warn!("[{account_id} @ {user_ip}] invalid confidence string found in trust token: '{confidence_str}'");
-                            unauthorized!(&format!(
-                                "security check failed: trust token has poor security, confidence hash: {confidence_hash}"
-                            ));
+
+                            if token_rest.contains("Android") {
+                                warn!("[{account_id} ignoring inconsistency in trust token (Android)");
+                            } else {
+                                unauthorized!(&format!(
+                                    "security check failed: trust token has poor security, confidence hash: {confidence_hash}"
+                                ));
+                            }
                         }
 
                         Some(token_rest.to_owned())
