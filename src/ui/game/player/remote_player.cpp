@@ -24,6 +24,16 @@ bool RemotePlayer::init(GameCameraState* gameCameraState, PlayerProgressIcon* pr
     return true;
 }
 
+RemotePlayer::~RemotePlayer() {
+    if (player1) {
+        player1->cleanupPlayerObject();
+    }
+
+    if (player2) {
+        player2->cleanupPlayerObject();
+    }
+}
+
 void RemotePlayer::updateAccountData(const PlayerAccountData& data, bool force) {
     if (!force && this->accountData == data) {
         defaultTicks = 0;

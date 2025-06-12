@@ -10,7 +10,7 @@ void ComplexPlayerObject::setRemotePlayer(ComplexVisualPlayer* rp) {
     this->setUserObject(rp);
 
     // also set remote state
-    this->setTag(COMPLEX_PLAYER_OBJECT_TAG);
+    this->setTag(rp ? COMPLEX_PLAYER_OBJECT_TAG : 0);
 }
 
 bool ComplexPlayerObject::vanilla() {

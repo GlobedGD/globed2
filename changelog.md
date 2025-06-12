@@ -1,6 +1,7 @@
 ## v1.8.5
 
 * Fix crash when receiving a notice in the editor
+* Fix huge memory leak that happens overtime whenever you join a level with other players
 
 ## v1.8.4
 

@@ -46,6 +46,7 @@ public:
     void callUpdateWith(PlayerIconType type, int icon);
 
     void cleanupObjectLayer();
+    void cleanupPlayerObject();
 
     static ComplexVisualPlayer* create(RemotePlayer* parent, bool isSecond);
 

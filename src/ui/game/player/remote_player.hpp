@@ -46,6 +46,8 @@ public:
     static RemotePlayer* create(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow, const PlayerAccountData& data);
     static RemotePlayer* create(GameCameraState* gameCameraState, PlayerProgressIcon* progressIcon, PlayerProgressArrow* progressArrow);
 
+    ~RemotePlayer();
+
     Ref<PlayerProgressIcon> progressIcon;
     Ref<PlayerProgressArrow> progressArrow;
     ComplexVisualPlayer* player1;
