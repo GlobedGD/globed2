@@ -37,8 +37,6 @@ void TwoPlayerModeModule::mainPlayerUpdate(PlayerObject* player, float dt) {
         if (player->m_shipStreak) player->m_shipStreak->setVisible(false);
         if (player->m_playerGroundParticles) player->m_playerGroundParticles->setVisible(false);
         if (player->m_vehicleGroundParticles) player->m_vehicleGroundParticles->setVisible(false);
-
-        this->gameLayer->moveCameraToPos(player->getPosition());
     }
 }
 
