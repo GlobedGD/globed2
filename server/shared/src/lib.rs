@@ -41,7 +41,7 @@ pub mod logger;
 pub mod token_issuer;
 pub mod webhook;
 
-pub const SUPPORTED_PROTOCOLS: &[u16] = &[13, 14];
+pub const SUPPORTED_PROTOCOLS: &[u16] = &[13, 14, 15];
 pub const MAX_SUPPORTED_PROTOCOL: u16 = *SUPPORTED_PROTOCOLS.last().unwrap();
 pub const MIN_SUPPORTED_PROTOCOL: u16 = *SUPPORTED_PROTOCOLS.first().unwrap();
 // used for communicating to the user the minimum required mod version for this protocol

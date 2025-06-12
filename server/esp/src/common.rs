@@ -577,7 +577,7 @@ decode_impl!(SocketAddrV4, buf, {
 static_size_calc_impl!(SocketAddrV4, size_of_types!(Ipv4Addr, u16));
 dynamic_size_as_static_impl!(SocketAddrV4);
 
-/* tuples (only 2 and 3 elements because i cant figure out how to make it a macro lmao) */
+/* tuples (only 2 and 3 and 4 elements because i cant figure out how to make it a macro lmao) */
 /* if you feel bored, feel free to make your attempt at making a macro for this */
 
 impl<A, B> Encodable for (A, B)
@@ -699,5 +699,76 @@ where
 {
     fn encoded_size(&self) -> usize {
         self.0.encoded_size() + self.1.encoded_size() + self.2.encoded_size()
+    }
+}
+
+// 4
+
+impl<A, B, C, D> Encodable for (A, B, C, D)
+where
+    A: Encodable,
+    B: Encodable,
+    C: Encodable,
+    D: Encodable,
+{
+    #[inline]
+    fn encode(&self, buf: &mut ByteBuffer) {
+        buf.write_value(&self.0);
+        buf.write_value(&self.1);
+        buf.write_value(&self.2);
+        buf.write_value(&self.3);
+    }
+
+    #[inline]
+    fn encode_fast(&self, buf: &mut FastByteBuffer) {
+        buf.write_value(&self.0);
+        buf.write_value(&self.1);
+        buf.write_value(&self.2);
+        buf.write_value(&self.3);
+    }
+}
+
+impl<A, B, C, D> Decodable for (A, B, C, D)
+where
+    A: Decodable,
+    B: Decodable,
+    C: Decodable,
+    D: Decodable,
+{
+    #[inline]
+    fn decode(buf: &mut ByteBuffer) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Ok((buf.read_value()?, buf.read_value()?, buf.read_value()?, buf.read_value()?))
+    }
+
+    fn decode_from_reader(buf: &mut ByteReader) -> DecodeResult<Self>
+    where
+        Self: Sized,
+    {
+        Ok((buf.read_value()?, buf.read_value()?, buf.read_value()?, buf.read_value()?))
+    }
+}
+
+impl<A, B, C, D> StaticSize for (A, B, C, D)
+where
+    A: StaticSize,
+    B: StaticSize,
+    C: StaticSize,
+    D: StaticSize,
+{
+    const ENCODED_SIZE: usize = size_of_types!(A, B, C, D);
+}
+
+impl<A, B, C, D> DynamicSize for (A, B, C, D)
+where
+    A: DynamicSize,
+    B: DynamicSize,
+    C: DynamicSize,
+    D: DynamicSize,
+{
+    fn encoded_size(&self) -> usize {
+        self.0.encoded_size() + self.1.encoded_size() + self.2.encoded_size() + self.3.encoded_size()
     }
 }

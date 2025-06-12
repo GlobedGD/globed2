@@ -80,6 +80,7 @@ pub struct ServerUserEntry {
     pub admin_password_hash: Option<String>,
     pub active_mute: Option<i64>,
     pub active_ban: Option<i64>,
+    pub active_room_ban: Option<i64>,
     pub punishment_count: u16,
 }
 
@@ -106,8 +107,13 @@ impl ServerUserEntry {
         }
     }
 
-    pub fn to_user_entry(self, active_ban: Option<UserPunishment>, active_mute: Option<UserPunishment>) -> UserEntry {
-        UserEntry {
+    pub fn to_user_entry(
+        self,
+        active_ban: Option<UserPunishment>,
+        active_mute: Option<UserPunishment>,
+        active_room_ban: Option<UserPunishment>,
+    ) -> UserEntryNew {
+        UserEntryNew {
             account_id: self.account_id,
             user_name: self.user_name,
             name_color: self.name_color,
@@ -115,6 +121,7 @@ impl ServerUserEntry {
             is_whitelisted: self.is_whitelisted,
             active_ban,
             active_mute,
+            active_room_ban,
             punishment_count: self.punishment_count,
         }
     }
@@ -131,13 +138,13 @@ impl ServerUserEntry {
     }
 }
 
-#[derive(Clone, Copy, Encodable, Decodable, DynamicSize, StaticSize, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Encodable, Decodable, DynamicSize, StaticSize, Serialize, Deserialize, PartialEq)]
 #[repr(u8)]
 #[dynamic_size(as_static)]
-#[derive(PartialEq)]
 pub enum PunishmentType {
     Ban = 0,
     Mute = 1,
+    RoomBan = 2,
 }
 
 #[derive(Clone, Encodable, Decodable, DynamicSize, Serialize, Deserialize)]
@@ -157,6 +164,7 @@ impl UserPunishment {
     }
 }
 
+// TODO: legacy struct (pre v15)
 #[derive(Encodable, Decodable, Serialize, Deserialize, DynamicSize, Clone, Default)]
 pub struct UserEntry {
     pub account_id: i32,
@@ -174,6 +182,41 @@ impl UserEntry {
         Self {
             account_id,
             ..Default::default()
+        }
+    }
+}
+
+#[derive(Encodable, Decodable, Serialize, Deserialize, DynamicSize, Clone, Default)]
+pub struct UserEntryNew {
+    pub account_id: i32,
+    pub user_name: Option<String>,
+    pub name_color: Option<String>,
+    pub user_roles: Vec<String>,
+    pub is_whitelisted: bool,
+    pub active_ban: Option<UserPunishment>,
+    pub active_mute: Option<UserPunishment>,
+    pub active_room_ban: Option<UserPunishment>,
+    pub punishment_count: u16,
+}
+
+impl UserEntryNew {
+    pub fn new(account_id: i32) -> Self {
+        Self {
+            account_id,
+            ..Default::default()
+        }
+    }
+
+    pub fn to_old_entry(self) -> UserEntry {
+        UserEntry {
+            account_id: self.account_id,
+            user_name: self.user_name,
+            name_color: self.name_color,
+            user_roles: self.user_roles,
+            is_whitelisted: self.is_whitelisted,
+            active_ban: self.active_ban,
+            active_mute: self.active_mute,
+            punishment_count: self.punishment_count,
         }
     }
 }
@@ -237,7 +280,7 @@ pub struct AdminSetUserRolesAction {
 pub struct AdminPunishUserAction {
     pub issued_by: i32,
     pub account_id: i32,
-    pub is_ban: bool,
+    pub r#type: PunishmentType,
     pub reason: FastString,
     pub expires_at: u64,
 }
@@ -246,7 +289,7 @@ pub struct AdminPunishUserAction {
 pub struct AdminRemovePunishmentAction {
     pub issued_by: i32,
     pub account_id: i32,
-    pub is_ban: bool,
+    pub r#type: PunishmentType,
 }
 
 #[derive(Decodable, Encodable, DynamicSize)]
@@ -266,7 +309,7 @@ pub struct AdminSetAdminPasswordAction {
 pub struct AdminEditPunishmentAction {
     pub issued_by: i32,
     pub account_id: i32,
-    pub is_ban: bool,
+    pub r#type: PunishmentType,
     pub reason: FastString,
     pub expires_at: u64,
 }

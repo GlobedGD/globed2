@@ -14,8 +14,9 @@ public:
         bool isWhitelisted,
         std::optional<UserPunishment> activeBan,
         std::optional<UserPunishment> activeMute,
+        std::optional<UserPunishment> activeRoomBan,
         uint16_t punishmentCount = 0
-    ) : accountId(accountId), userName(userName), nameColor(nameColor), userRoles(userRoles), isWhitelisted(isWhitelisted), activeBan(activeBan), activeMute(activeMute), punishmentCount(punishmentCount) {}
+    ) : accountId(accountId), userName(userName), nameColor(nameColor), userRoles(userRoles), isWhitelisted(isWhitelisted), activeBan(activeBan), activeMute(activeMute), activeRoomBan(activeRoomBan), punishmentCount(punishmentCount) {}
 
     int accountId;
     std::optional<std::string> userName;
@@ -24,6 +25,7 @@ public:
     bool isWhitelisted;
     std::optional<UserPunishment> activeBan;
     std::optional<UserPunishment> activeMute;
+    std::optional<UserPunishment> activeRoomBan;
     uint16_t punishmentCount;
 };
 
@@ -37,6 +39,7 @@ GLOBED_SERIALIZABLE_STRUCT(
         isWhitelisted,
         activeBan,
         activeMute,
+        activeRoomBan,
         punishmentCount
     )
 );

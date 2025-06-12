@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use globed_shared::{UserEntry, UserPunishment};
+use globed_shared::{UserEntry, UserEntryNew, UserPunishment};
 
 use crate::{data::*, managers::ComputedRole};
 
@@ -19,7 +19,7 @@ pub struct AdminErrorPacket<'a> {
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 29002, tcp = true, encrypted = true)]
 pub struct AdminUserDataPacket {
-    pub entry: UserEntry,
+    pub entry: UserEntryNew,
     pub account_data: Option<PlayerRoomPreviewAccountData>,
 }
 
@@ -43,7 +43,7 @@ pub struct AdminPunishmentHistoryPacket {
 #[derive(Packet, Encodable, DynamicSize)]
 #[packet(id = 29006, tcp, encrypted)]
 pub struct AdminSuccessfulUpdatePacket {
-    pub user_entry: UserEntry,
+    pub user_entry: UserEntryNew,
 }
 
 #[derive(Packet, Encodable, DynamicSize)]

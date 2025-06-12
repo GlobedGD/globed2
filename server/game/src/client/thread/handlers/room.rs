@@ -3,6 +3,27 @@ use std::borrow::Cow;
 
 use super::*;
 
+fn format_room_ban_expiry(timestamp: i64) -> String {
+    if timestamp == 0 {
+        "forever".to_string()
+    } else {
+        let expires_at = SystemTime::UNIX_EPOCH + Duration::from_secs(timestamp as u64);
+        let now = SystemTime::now();
+
+        let duration = expires_at.duration_since(now).unwrap_or(Duration::from_secs(0));
+
+        if duration.as_secs() < 60 {
+            "for 1 minute".to_string()
+        } else if duration.as_secs() < 3600 {
+            format!("for {} minutes", duration.as_secs() / 60)
+        } else if duration.as_secs() < 86400 {
+            format!("for {} hours", duration.as_secs() / 3600)
+        } else {
+            format!("for {} days", duration.as_secs() / 86400)
+        }
+    }
+}
+
 impl ClientThread {
     gs_handler!(self, handle_create_room, CreateRoomPacket, packet, {
         let account_id = gs_needauth!(self);
@@ -18,23 +39,42 @@ impl ClientThread {
         let room_info = if room_id == 0 {
             // check if data is valid
 
-            let fail_reason: Option<&'static str> = match packet.room_name.to_str() {
+            let mut fail_reason: Option<Cow<'static, str>> = match packet.room_name.to_str() {
                 Ok(str) => {
                     if self.game_server.state.filter.read().is_bad(str) {
-                        Some("Inappropriate room name. Please note that trying to bypass the filter may lead to a ban.")
+                        Some(Cow::Borrowed(
+                            "Inappropriate room name. Please note that trying to bypass the filter may lead to a ban.",
+                        ))
                     } else {
                         None
                     }
                 }
-                Err(_) => Some("invalid room name"),
+                Err(_) => Some(Cow::Borrowed("invalid room name")),
             };
 
+            let room_ban = self.user_entry.lock().active_room_ban;
+            if let Some(id) = room_ban {
+                // fetch punishment
+                match self.game_server.bridge.get_punishment(id).await {
+                    Ok(pun) => {
+                        fail_reason = Some(Cow::Owned(format!(
+                            "You are banned from creating rooms {}. Reason: {}",
+                            format_room_ban_expiry(pun.expires_at),
+                            pun.reason
+                        )));
+                    }
+
+                    Err(err) => {
+                        error!("Failed to fetch room ban punishment: {err}");
+                        fail_reason = Some(Cow::Borrowed(
+                            "You are banned from creating rooms. Ban details could not be fetched due to a server error.",
+                        ));
+                    }
+                }
+            }
+
             if let Some(reason) = fail_reason {
-                return self
-                    .send_packet_dynamic(&RoomCreateFailedPacket {
-                        reason: Cow::Borrowed(reason),
-                    })
-                    .await;
+                return self.send_packet_dynamic(&RoomCreateFailedPacket { reason }).await;
             }
 
             let room = self

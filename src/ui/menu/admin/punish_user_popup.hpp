@@ -8,13 +8,13 @@
 
 class AdminUserPopup;
 
-class AdminPunishUserPopup : public geode::Popup<AdminUserPopup*, int32_t, bool, std::optional<UserPunishment>> {
+class AdminPunishUserPopup : public geode::Popup<AdminUserPopup*, int32_t, PunishmentType, std::optional<UserPunishment>> {
 public:
-    static AdminPunishUserPopup* create(AdminUserPopup* popup, int32_t accountId, bool isBan, std::optional<UserPunishment> punishment);
+    static AdminPunishUserPopup* create(AdminUserPopup* popup, int32_t accountId, PunishmentType type, std::optional<UserPunishment> punishment);
 
 private:
     int32_t accountId;
-    bool isBan;
+    PunishmentType type;
     AdminUserPopup* parentPopup;
     geode::TextInput *reasonInput, *daysInput, *hoursInput;
     std::map<asp::time::Duration, CCMenuItemToggler*> durationButtons;
@@ -25,7 +25,7 @@ private:
     class CommonReasonPopup;
     friend class AdminPunishUserPopup::CommonReasonPopup;
 
-    bool setup(AdminUserPopup* popup, int32_t accountId, bool isBan, std::optional<UserPunishment> punishment);
+    bool setup(AdminUserPopup* popup, int32_t accountId, PunishmentType type, std::optional<UserPunishment> punishment);
     void setDuration(asp::time::Duration dur, bool inCallback = false);
     void setReason(const std::string& reason);
     void inputChanged();

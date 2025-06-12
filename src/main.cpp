@@ -103,3 +103,33 @@ void printDebugInfo() {
 #endif
     log::info("Libsodium version: {} (CryptoBox algorithm: {})", CryptoBox::sodiumVersion(), CryptoBox::algorithm());
 }
+
+// asp::Thread<> g_printer;
+// asp::Channel<std::tuple<std::string, std::string, asp::time::Duration>> g_ch;
+// static bool g_init = false;
+
+// $on_mod(Loaded) {
+//     g_printer.setLoopFunction([](auto&) {
+//         auto t = g_ch.popTimeout(asp::time::Duration::fromSecs(1));
+//         if (!t) return;
+
+//         log::info("[FPFF] - {} -> {} (taken {})", std::get<0>(t.value()), std::get<1>(t.value()), std::get<2>(t.value()).toString());
+//     });
+
+//     g_printer.start();
+// }
+
+// #include <Geode/modify/CCFileUtils.hpp>
+// class $modify(CCFileUtils) {
+//     static void onModify(auto& self) {
+//         self.setHookPriority("cocos2d::CCFileUtils::fullPathForFilename", -1000000);
+//     }
+//     gd::string fullPathForFilename(const char* f, bool p) {
+//         auto start = asp::time::Instant::now();
+//         auto res = CCFileUtils::fullPathForFilename(f, p);
+//         // g_ch.push({f, res, start.elapsed()});
+
+//         log::info("[FPFF] - {} -> {} (taken {})", f, res, start.elapsed().toString());
+//         return res;
+//     }
+// };

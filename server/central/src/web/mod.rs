@@ -67,6 +67,7 @@ pub mod routes {
             user::update_admin_password,
             user::update_edit_punishment,
             user::get_punishment_history,
+            user::get_punishment,
             user::get_many_user_names,
             user::p_user_lookup,
             user::p_sync_roles,

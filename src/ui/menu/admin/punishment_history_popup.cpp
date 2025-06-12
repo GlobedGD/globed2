@@ -33,7 +33,20 @@ public:
         this->punishment = entry;
         this->setContentHeight(height);
 
-        auto icon = Build<CCSprite>::createSpriteName(entry.type == PunishmentType::Ban ? "button-admin-ban.png"_spr : "button-admin-mute.png"_spr)
+        auto iconSpr = [](PunishmentType type) {
+            switch (type) {
+                case PunishmentType::Ban:
+                    return "button-admin-ban.png"_spr;
+                case PunishmentType::Mute:
+                    return "button-admin-mute.png"_spr;
+                case PunishmentType::RoomBan:
+                    return "button-admin-room-ban.png"_spr;
+            }
+
+            return "button-secret.png"_spr;
+        }(entry.type);
+
+        auto icon = Build<CCSprite>::createSpriteName(iconSpr)
             .with([&] (auto spr) {
                 constexpr float pad = 4.f;
                 util::ui::rescaleToMatch(spr, {32.f, 32.f});

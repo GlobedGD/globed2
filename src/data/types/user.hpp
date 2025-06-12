@@ -68,10 +68,10 @@ GLOBED_SERIALIZABLE_BITFIELD(UserPrivacyFlags, (
 ));
 
 enum class PunishmentType : uint8_t {
-    Ban = 0, Mute = 1
+    Ban = 0, Mute = 1, RoomBan = 2
 };
 
-GLOBED_SERIALIZABLE_ENUM(PunishmentType, Ban, Mute);
+GLOBED_SERIALIZABLE_ENUM(PunishmentType, Ban, Mute, RoomBan);
 
 struct UserPunishment {
     int64_t id;

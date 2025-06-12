@@ -1,3 +1,5 @@
+use globed_shared::PunishmentType;
+
 use crate::data::*;
 
 #[derive(Packet, Decodable)]
@@ -77,7 +79,7 @@ pub struct AdminSetUserRolesPacket {
 #[packet(id = 19013, encrypted = true)]
 pub struct AdminPunishUserPacket {
     pub account_id: i32,
-    pub is_ban: bool,
+    pub r#type: PunishmentType,
     pub reason: FastString,
     pub expires_at: u64,
 }
@@ -86,7 +88,7 @@ pub struct AdminPunishUserPacket {
 #[packet(id = 19014, encrypted = true)]
 pub struct AdminRemovePunishmentPacket {
     pub account_id: i32,
-    pub is_ban: bool,
+    pub r#type: PunishmentType,
 }
 
 #[derive(Packet, Decodable)]
@@ -107,7 +109,7 @@ pub struct AdminSetAdminPasswordPacket {
 #[packet(id = 19017, encrypted = true)]
 pub struct AdminEditPunishmentPacket {
     pub account_id: i32,
-    pub is_ban: bool,
+    pub r#type: PunishmentType,
     pub reason: FastString,
     pub expires_at: u64,
 }

@@ -206,7 +206,7 @@ impl CentralBridge {
     }
 
     // other web requests
-    pub async fn get_user_data<T: Display>(&self, player: &T) -> Result<UserEntry> {
+    pub async fn get_user_data<T: Display>(&self, player: &T) -> Result<UserEntryNew> {
         let response = self
             .http_client
             .get(format!("{}gs/user/{}", self.central_url, player))
@@ -240,15 +240,15 @@ impl CentralBridge {
     pub async fn send_admin_user_action(
         &self,
         action: &AdminUserAction,
-    ) -> Result<(ServerUserEntry, Option<UserPunishment>, Option<UserPunishment>)> {
+    ) -> Result<(ServerUserEntry, Option<UserPunishment>, Option<UserPunishment>, Option<UserPunishment>)> {
         match action {
-            AdminUserAction::UpdateUsername(x) => Ok((self._send_encoded_body_req_resp("user/update/username", x).await?, None, None)),
-            AdminUserAction::SetNameColor(x) => Ok((self._send_encoded_body_req_resp("user/update/name_color", x).await?, None, None)),
-            AdminUserAction::SetUserRoles(x) => Ok((self._send_encoded_body_req_resp("user/update/roles", x).await?, None, None)),
+            AdminUserAction::UpdateUsername(x) => Ok((self._send_encoded_body_req_resp("user/update/username", x).await?, None, None, None)),
+            AdminUserAction::SetNameColor(x) => Ok((self._send_encoded_body_req_resp("user/update/name_color", x).await?, None, None, None)),
+            AdminUserAction::SetUserRoles(x) => Ok((self._send_encoded_body_req_resp("user/update/roles", x).await?, None, None, None)),
             AdminUserAction::PunishUser(x) => self._send_encoded_body_req_resp("user/update/punish", x).await,
             AdminUserAction::RemovePunishment(x) => self._send_encoded_body_req_resp("user/update/unpunish", x).await,
-            AdminUserAction::Whitelist(x) => Ok((self._send_encoded_body_req_resp("user/update/whitelist", x).await?, None, None)),
-            AdminUserAction::SetAdminPassword(x) => Ok((self._send_encoded_body_req_resp("user/update/adminpw", x).await?, None, None)),
+            AdminUserAction::Whitelist(x) => Ok((self._send_encoded_body_req_resp("user/update/whitelist", x).await?, None, None, None)),
+            AdminUserAction::SetAdminPassword(x) => Ok((self._send_encoded_body_req_resp("user/update/adminpw", x).await?, None, None, None)),
             AdminUserAction::EditPunishment(x) => self._send_encoded_body_req_resp("user/update/editpunish", x).await,
         }
     }
@@ -258,6 +258,29 @@ impl CentralBridge {
             .http_client
             .get(format!("{}user/punishment_history", self.central_url))
             .query(&[("account_id", account_id)])
+            .header("Authorization", self.central_pw.clone())
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_else(|_| "<no response>".to_owned());
+
+            return Err(CentralBridgeError::CentralError((status, message)));
+        }
+
+        let data = response.bytes().await?;
+        let mut reader = ByteReader::from_bytes(&data);
+        reader.validate_self_checksum()?;
+
+        Ok(reader.read_value()?)
+    }
+
+    pub async fn get_punishment(&self, punishment_id: i64) -> Result<UserPunishment> {
+        let response = self
+            .http_client
+            .get(format!("{}user/punishment", self.central_url))
+            .query(&[("id", punishment_id)])
             .header("Authorization", self.central_pw.clone())
             .send()
             .await?;
@@ -387,6 +410,7 @@ impl CentralBridge {
         user_name: Cow<'_, str>,
         ban: Option<&UserPunishment>,
         mute: Option<&UserPunishment>,
+        room_ban: Option<&UserPunishment>,
     ) -> Result<()> {
         let mut messages = FastVec::<WebhookMessage, 4>::new();
 
@@ -408,56 +432,49 @@ impl CentralBridge {
                 ));
             }
             AdminUserAction::PunishUser(act) => {
-                if act.is_ban {
-                    let ban = if let Some(ban) = ban {
-                        ban
+                let punishment = match act.r#type {
+                    PunishmentType::Ban => ban,
+                    PunishmentType::Mute => mute,
+                    PunishmentType::RoomBan => room_ban,
+                };
+
+                let Some(punishment) = punishment else {
+                    return Err(CentralBridgeError::Other(
+                        "internal error: punishment is None when punishing user".to_owned(),
+                    ));
+                };
+
+                let bmsc = BanMuteStateChange {
+                    mod_name,
+                    target_name: user_name.into_owned(),
+                    target_id: user.account_id,
+                    new_state: true,
+                    expiry: if punishment.expires_at == 0 { None } else { Some(punishment.expires_at) },
+                    reason: if punishment.reason.is_empty() {
+                        None
                     } else {
-                        return Err(CentralBridgeError::Other("internal error: ban is None when punishing user".to_owned()));
-                    };
+                        Some(punishment.reason.clone())
+                    },
+                };
 
-                    let bmsc = BanMuteStateChange {
-                        mod_name,
-                        target_name: user_name.into_owned(),
-                        target_id: user.account_id,
-                        new_state: true,
-                        expiry: if ban.expires_at == 0 { None } else { Some(ban.expires_at) },
-                        reason: if ban.reason.is_empty() { None } else { Some(ban.reason.clone()) },
-                    };
-
-                    messages.push(WebhookMessage::UserBanned(bmsc));
-                } else {
-                    let mute = if let Some(mute) = mute {
-                        mute
-                    } else {
-                        return Err(CentralBridgeError::Other("internal error: mute is None when punishing user".to_owned()));
-                    };
-
-                    let bmsc = BanMuteStateChange {
-                        mod_name,
-                        target_name: user_name.into_owned(),
-                        target_id: user.account_id,
-                        new_state: true,
-                        expiry: if mute.expires_at == 0 { None } else { Some(mute.expires_at) },
-                        reason: if mute.reason.is_empty() { None } else { Some(mute.reason.clone()) },
-                    };
-
-                    messages.push(WebhookMessage::UserMuted(bmsc));
-                }
+                messages.push(match act.r#type {
+                    PunishmentType::Ban => WebhookMessage::UserBanned(bmsc),
+                    PunishmentType::Mute => WebhookMessage::UserMuted(bmsc),
+                    PunishmentType::RoomBan => WebhookMessage::UserRoomBanned(bmsc),
+                });
             }
             AdminUserAction::RemovePunishment(act) => {
-                if act.is_ban {
-                    messages.push(WebhookMessage::UserUnbanned(PunishmentRemoval {
-                        account_id: user.account_id,
-                        name: user_name.into_owned(),
-                        mod_name,
-                    }));
-                } else {
-                    messages.push(WebhookMessage::UserUnmuted(PunishmentRemoval {
-                        account_id: user.account_id,
-                        name: user_name.into_owned(),
-                        mod_name,
-                    }));
-                }
+                let pr = PunishmentRemoval {
+                    account_id: user.account_id,
+                    name: user_name.into_owned(),
+                    mod_name,
+                };
+
+                messages.push(match act.r#type {
+                    PunishmentType::Ban => WebhookMessage::UserUnbanned(pr),
+                    PunishmentType::Mute => WebhookMessage::UserUnmuted(pr),
+                    PunishmentType::RoomBan => WebhookMessage::UserRoomUnbanned(pr),
+                });
             }
             AdminUserAction::Whitelist(_action) => { /* no whitelist message */ }
             AdminUserAction::SetAdminPassword(_) => {}
@@ -465,7 +482,7 @@ impl CentralBridge {
                 messages.push(WebhookMessage::UserViolationMetaChanged(ViolationMetaChange {
                     account_id: user.account_id,
                     name: user_name.into_owned(),
-                    is_ban: action.is_ban,
+                    r#type: action.r#type,
                     expiry: if action.expires_at == 0 { None } else { Some(action.expires_at) },
                     reason: if action.reason.is_empty() {
                         None

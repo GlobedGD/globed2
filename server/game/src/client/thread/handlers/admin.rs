@@ -3,7 +3,12 @@ use std::time::UNIX_EPOCH;
 
 use globed_shared::{data::*, info, warn};
 
-use crate::{bridge::AdminUserAction, data::v14::LevelId, managers::ComputedRole, webhook::WebhookMessage};
+use crate::{
+    bridge::AdminUserAction,
+    data::{v_current::LevelId, v15::user},
+    managers::ComputedRole,
+    webhook::WebhookMessage,
+};
 
 use super::*;
 
@@ -441,7 +446,7 @@ impl ClientThread {
         let user_entry = if self.game_server.standalone
             && let Some(user) = user
         {
-            user.user_entry.lock().clone().to_user_entry(None, None)
+            user.user_entry.lock().clone().to_user_entry(None, None, None)
         } else {
             // request data via the bridge
             match self.game_server.bridge.get_user_data(&packet.player).await {
@@ -453,12 +458,21 @@ impl ClientThread {
             }
         };
 
-        let packet = AdminUserDataPacket {
-            entry: user_entry,
-            account_data,
-        };
+        if self.protocol_version.load(Ordering::Relaxed) < 15 {
+            let packet = v14::AdminUserDataPacket {
+                entry: user_entry.to_old_entry(),
+                account_data,
+            };
 
-        self.send_packet_dynamic(&packet).await
+            self.send_packet_dynamic(&packet).await
+        } else {
+            let packet = AdminUserDataPacket {
+                entry: user_entry,
+                account_data,
+            };
+
+            self.send_packet_dynamic(&packet).await
+        }
     });
 
     gs_handler!(self, handle_admin_send_featured_level, AdminSendFeaturedLevelPacket, packet, {
@@ -619,17 +633,21 @@ impl ClientThread {
         };
 
         // cannot ban role above you or at your level
-        if packet.is_ban && my_priority <= their_priority && !self._has_perm(AdminPerm::Admin) {
+        if packet.r#type == PunishmentType::Ban && my_priority <= their_priority && !self._has_perm(AdminPerm::Admin) {
             admin_error!(self, "cannot ban user above or at your permission level");
         }
 
         let _ = self
             ._handle_admin_action(
                 packet.account_id,
-                if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
+                if packet.r#type == PunishmentType::Ban {
+                    AdminPerm::Ban
+                } else {
+                    AdminPerm::Mute // mute for mutes or room bans
+                },
                 &AdminUserAction::PunishUser(AdminPunishUserAction {
                     account_id: packet.account_id,
-                    is_ban: packet.is_ban,
+                    r#type: packet.r#type,
                     reason: packet.reason.clone(),
                     issued_by: account_id,
                     expires_at: packet.expires_at,
@@ -639,18 +657,24 @@ impl ClientThread {
 
         // if the user is online on the server, update live
         if let Some(user) = thread {
-            if packet.is_ban {
-                user.push_new_message(ServerThreadMessage::BroadcastBan(ServerBannedPacket {
-                    message: FastString::new(&packet.reason),
-                    expires_at: packet.expires_at,
-                }))
-                .await;
-            } else {
-                user.push_new_message(ServerThreadMessage::BroadcastMute(ServerMutedPacket {
-                    reason: packet.reason,
-                    expires_at: packet.expires_at,
-                }))
-                .await;
+            match packet.r#type {
+                PunishmentType::Ban => {
+                    user.push_new_message(ServerThreadMessage::BroadcastBan(ServerBannedPacket {
+                        message: FastString::new(&packet.reason),
+                        expires_at: packet.expires_at,
+                    }))
+                    .await;
+                }
+
+                PunishmentType::Mute => {
+                    user.push_new_message(ServerThreadMessage::BroadcastMute(ServerMutedPacket {
+                        reason: packet.reason,
+                        expires_at: packet.expires_at,
+                    }))
+                    .await;
+                }
+
+                PunishmentType::RoomBan => {}
             }
         }
 
@@ -664,10 +688,14 @@ impl ClientThread {
 
         self._handle_admin_action(
             packet.account_id,
-            if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
+            if packet.r#type == PunishmentType::Ban {
+                AdminPerm::Ban
+            } else {
+                AdminPerm::Mute
+            },
             &AdminUserAction::RemovePunishment(AdminRemovePunishmentAction {
                 account_id: packet.account_id,
-                is_ban: packet.is_ban,
+                r#type: packet.r#type,
                 issued_by: account_id,
             }),
         )
@@ -725,10 +753,14 @@ impl ClientThread {
 
         self._handle_admin_action(
             packet.account_id,
-            if packet.is_ban { AdminPerm::Ban } else { AdminPerm::Mute },
+            if packet.r#type == PunishmentType::Ban {
+                AdminPerm::Ban
+            } else {
+                AdminPerm::Mute
+            },
             &AdminUserAction::EditPunishment(AdminEditPunishmentAction {
                 account_id: packet.account_id,
-                is_ban: packet.is_ban,
+                r#type: packet.r#type,
                 reason: packet.reason,
                 expires_at: packet.expires_at,
                 issued_by: account_id,
@@ -760,7 +792,7 @@ impl ClientThread {
         }
 
         match self.game_server.bridge.send_admin_user_action(action).await {
-            Ok((x, ban, mute)) => {
+            Ok((x, ban, mute, room_ban)) => {
                 if self.game_server.bridge.has_admin_webhook() {
                     let own_name = self.account_data.lock().name.clone();
                     let account_id = self.account_id.load(Ordering::Relaxed);
@@ -776,7 +808,16 @@ impl ClientThread {
                     if let Err(e) = self
                         .game_server
                         .bridge
-                        .send_webhook_message_for_action(action, &x, account_id, own_name.try_to_string(), user_name, ban.as_ref(), mute.as_ref())
+                        .send_webhook_message_for_action(
+                            action,
+                            &x,
+                            account_id,
+                            own_name.try_to_string(),
+                            user_name,
+                            ban.as_ref(),
+                            mute.as_ref(),
+                            room_ban.as_ref(),
+                        )
                         .await
                     {
                         error!("Failed to submit webhook message for admin action: {e}");
@@ -816,7 +857,14 @@ impl ClientThread {
             Err(err) => return Err(PacketHandlingError::BridgeError(err)),
         };
 
-        self.send_packet_dynamic(&AdminSuccessfulUpdatePacket { user_entry }).await
+        if self.protocol_version.load(Ordering::Relaxed) < 15 {
+            self.send_packet_dynamic(&v14::AdminSuccessfulUpdatePacket {
+                user_entry: user_entry.to_old_entry(),
+            })
+            .await
+        } else {
+            self.send_packet_dynamic(&AdminSuccessfulUpdatePacket { user_entry }).await
+        }
     }
 
     async fn _send_admin_success_msg(&self, msg: impl AsRef<str>) -> Result<()> {
@@ -826,9 +874,9 @@ impl ClientThread {
         .await
     }
 
-    async fn _verify_user_exists(&self, account_id: i32) -> Result<UserEntry> {
+    async fn _verify_user_exists(&self, account_id: i32) -> Result<UserEntryNew> {
         if self.game_server.standalone {
-            return Ok(UserEntry::new(account_id));
+            return Ok(UserEntryNew::new(account_id));
         }
 
         match self.game_server.bridge.get_user_data(&account_id).await {
@@ -843,13 +891,13 @@ impl ClientThread {
             Default::default()
         };
 
-        let (ue, ban, mute) = self
+        let (ue, ban, mute, room_ban) = self
             .game_server
             .bridge
             .send_admin_user_action(&AdminUserAction::UpdateUsername(AdminUpdateUsernameAction { account_id, username: name }))
             .await?;
 
-        Ok(ue.to_user_entry(ban, mute))
+        Ok(ue.to_user_entry(ban, mute, room_ban))
     }
 
     gs_handler!(self, handle_admin_get_punishment_history, AdminGetPunishmentHistoryPacket, packet, {

@@ -14,11 +14,11 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
-class AdminPunishUserPopup::CommonReasonPopup : public geode::Popup<AdminPunishUserPopup*, bool> {
+class AdminPunishUserPopup::CommonReasonPopup : public geode::Popup<AdminPunishUserPopup*, PunishmentType> {
 public:
-    static CommonReasonPopup* create(AdminPunishUserPopup* popup, bool isBan) {
+    static CommonReasonPopup* create(AdminPunishUserPopup* popup, PunishmentType type) {
         auto ret = new CommonReasonPopup;
-        if (ret->initAnchored(400.f, 260.f, popup, isBan)) {
+        if (ret->initAnchored(400.f, 260.f, popup, type)) {
             ret->autorelease();
             return ret;
         }
@@ -77,7 +77,7 @@ private:
         }
     };
 
-    bool setup(AdminPunishUserPopup* popup, bool isBan) {
+    bool setup(AdminPunishUserPopup* popup, PunishmentType type) {
         this->setTitle("Common Reasons");
 
         this->popup = popup;
@@ -94,7 +94,7 @@ private:
             .collect();
 
         auto reasons =
-            isBan ? std::initializer_list<const char*>{
+            type != PunishmentType::Mute ? std::initializer_list<const char*>{
                 "Inappropriate room name",
                 "Hate speech / harassment",
                 "Inappropriate username",
@@ -128,11 +128,11 @@ private:
     }
 };
 
-bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool isBan, std::optional<UserPunishment> punishment_) {
-    this->setTitle(isBan ? "Ban/Unban user" : "Mute/Unmute user");
+bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, PunishmentType type, std::optional<UserPunishment> punishment_) {
+    this->setTitle(type == PunishmentType::Ban ? "Ban/Unban user" : type == PunishmentType::RoomBan ? "Room ban/unban user" : "Mute/Unmute user");
     this->punishment = std::move(punishment_);
     this->accountId = accountId;
-    this->isBan = isBan;
+    this->type = type;
     this->parentPopup = popup;
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
@@ -170,14 +170,14 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
         .parent(reasonLayout);
 
     Build<CCSprite>::createSpriteName("btn_chatHistory_001.png")
-        .intoMenuItem([this, isBan] {
-            CommonReasonPopup::create(this, isBan)->show();
+        .intoMenuItem([this, type] {
+            CommonReasonPopup::create(this, type)->show();
         })
         .parent(reasonLayout);
 
     reasonLayout->updateLayout();
 
-    Build<CCLabelBMFont>::create(isBan ? "Ban Duration" : "Mute Duration", "bigFont.fnt")
+    Build<CCLabelBMFont>::create(type != PunishmentType::Mute ? "Ban Duration" : "Mute Duration", "bigFont.fnt")
         .scale(0.5f)
         .parent(rootLayout)
         ;
@@ -376,7 +376,7 @@ bool AdminPunishUserPopup::setup(AdminUserPopup* popup, int32_t accountId, bool 
         .parent(menu);
 
     if (punishment) {
-        Build<ButtonSprite>::create(isBan ? "Unban" : "Unmute", "bigFont.fnt", "GJ_button_01.png", 0.8f)
+        Build<ButtonSprite>::create(type != PunishmentType::Mute ? "Unban" : "Unmute", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .scale(0.9f)
             .intoMenuItem([this] {
                 this->submitRemoval();
@@ -461,10 +461,10 @@ void AdminPunishUserPopup::submit() {
     std::shared_ptr<Packet> pkt;
 
     if (!punishment) {
-        pkt = AdminPunishUserPacket::create(accountId, isBan, reason, expiresAt);
+        pkt = AdminPunishUserPacket::create(accountId, type, reason, expiresAt);
     } else {
         // edit the punishment otherwise
-        pkt = AdminEditPunishmentPacket::create(accountId, isBan, reason, expiresAt);
+        pkt = AdminEditPunishmentPacket::create(accountId, type, reason, expiresAt);
     }
 
     this->parentPopup->performAction(std::move(pkt));
@@ -472,13 +472,13 @@ void AdminPunishUserPopup::submit() {
 }
 
 void AdminPunishUserPopup::submitRemoval() {
-    this->parentPopup->performAction(AdminRemovePunishmentPacket::create(accountId, isBan));
+    this->parentPopup->performAction(AdminRemovePunishmentPacket::create(accountId, type));
     this->onClose(nullptr);
 }
 
-AdminPunishUserPopup* AdminPunishUserPopup::create(AdminUserPopup* popup, int32_t accountId, bool isBan, std::optional<UserPunishment> punishment) {
+AdminPunishUserPopup* AdminPunishUserPopup::create(AdminUserPopup* popup, int32_t accountId, PunishmentType type, std::optional<UserPunishment> punishment) {
     auto ret = new AdminPunishUserPopup;
-    if (ret->initAnchored(350.f, 250.f, popup, accountId, isBan, std::move(punishment))) {
+    if (ret->initAnchored(350.f, 250.f, popup, accountId, type, std::move(punishment))) {
         ret->autorelease();
         return ret;
     }

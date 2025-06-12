@@ -41,10 +41,10 @@ async fn _get_user(database: &GlobedDb, user: &str) -> WebResult<ServerUserEntry
     }
 }
 
-async fn _user_entry_from_server(user: ServerUserEntry, database: &GlobedDb) -> WebResult<UserEntry> {
+async fn _user_entry_from_server(user: ServerUserEntry, database: &GlobedDb) -> WebResult<UserEntryNew> {
     let mut punishments = database.get_users_punishments(&user).await?;
 
-    Ok(user.to_user_entry(punishments[0].take(), punishments[1].take()))
+    Ok(user.to_user_entry(punishments[0].take(), punishments[1].take(), punishments[2].take()))
 }
 
 /* User lookup & sync roles routes (for discord bot) */
@@ -246,7 +246,12 @@ async fn _return_user_and_punishments(database: &GlobedDb, account_id: i32) -> W
     let user = _get_user_by_id(database, account_id).await?;
     let mut punishments = database.get_users_punishments(&user).await?;
 
-    Ok(CheckedEncodableResponder::new((user, punishments[0].take(), punishments[1].take())))
+    Ok(CheckedEncodableResponder::new((
+        user,
+        punishments[0].take(),
+        punishments[1].take(),
+        punishments[2].take(),
+    )))
 }
 
 #[post("/user/update/username", data = "<userdata>")]
@@ -332,8 +337,8 @@ pub async fn update_punish(
     }
 
     debug!(
-        "Punishing {} (ban = {}, expires at = {}, reason = '{}')",
-        userdata.0.account_id, userdata.0.is_ban, userdata.0.expires_at, userdata.0.reason
+        "Punishing {} (type = {:?}, expires at = {}, reason = '{}')",
+        userdata.0.account_id, userdata.0.r#type, userdata.0.expires_at, userdata.0.reason
     );
 
     // insert empty user in case it does not exist
@@ -357,9 +362,9 @@ pub async fn update_unpunish(
         unauthorized!("invalid gameserver credentials");
     }
 
-    debug!("Removing punishment from {} (ban = {}", userdata.0.account_id, userdata.0.is_ban);
+    debug!("Removing punishment from {} (type = {:?})", userdata.0.account_id, userdata.0.r#type);
 
-    database.unpunish_user(userdata.0.account_id, userdata.0.is_ban).await?;
+    database.unpunish_user(userdata.0.account_id, userdata.0.r#type).await?;
 
     _return_user_and_punishments(database, userdata.0.account_id).await
 }
@@ -428,7 +433,7 @@ pub async fn update_edit_punishment(
     database
         .edit_punishment(
             userdata.0.account_id,
-            userdata.0.is_ban,
+            userdata.0.r#type,
             userdata.0.reason.try_to_str(),
             userdata.0.expires_at,
         )
@@ -453,6 +458,28 @@ pub async fn get_punishment_history(
     let punishments = database.get_all_user_punishments(account_id).await?;
 
     Ok(CheckedEncodableResponder::new(punishments))
+}
+
+#[get("/user/punishment?<id>")]
+pub async fn get_punishment(
+    state: &State<ServerState>,
+    password: GameServerPasswordGuard,
+    database: &GlobedDb,
+    id: i64,
+) -> WebResult<CheckedEncodableResponder> {
+    let correct = state.state_read().await.config.game_server_password.clone();
+
+    if !password.verify(&correct) {
+        unauthorized!("invalid gameserver credentials");
+    }
+
+    let punishment = database.get_punishment(id).await?;
+
+    if let Some(punishment) = punishment {
+        Ok(CheckedEncodableResponder::new(punishment))
+    } else {
+        not_found!("Punishment with the given ID does not exist");
+    }
 }
 
 #[get("/user_names?<ids>")]

@@ -3,6 +3,8 @@ use std::borrow::Cow;
 use reqwest::StatusCode;
 use serde::Serialize;
 
+use crate::PunishmentType;
+
 pub struct BanMuteStateChange {
     pub mod_name: String,
     pub target_name: String,
@@ -28,7 +30,7 @@ pub struct UserNameColorChange {
 pub struct ViolationMetaChange {
     pub account_id: i32,
     pub name: String,
-    pub is_ban: bool,
+    pub r#type: PunishmentType,
     pub expiry: Option<u64>,
     pub reason: Option<String>,
     pub mod_name: String,
@@ -45,7 +47,9 @@ pub enum WebhookMessage {
     UserBanned(BanMuteStateChange),
     UserUnbanned(PunishmentRemoval),
     UserMuted(BanMuteStateChange),
+    UserRoomBanned(BanMuteStateChange),
     UserUnmuted(PunishmentRemoval),
+    UserRoomUnbanned(PunishmentRemoval),
     UserViolationMetaChanged(ViolationMetaChange), // mod username, username, is_banned, is_muted, expiry, reason
     UserRolesChanged(String, String, Vec<String>), // mod username, username, new roles
     UserNameColorChanged(UserNameColorChange),
@@ -301,8 +305,55 @@ pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
             }],
             ..Default::default()
         }),
+
+        WebhookMessage::UserRoomBanned(bmsc) => Some(WebhookEmbed {
+            title: Cow::Borrowed("User room banned"),
+            color: hex_color_to_decimal("#d2a126"),
+            author: Some(WebhookAuthor {
+                name: Cow::Owned(format!("{} ({})", bmsc.target_name, bmsc.target_id)),
+                icon_url: None,
+            }),
+            description: Some(Cow::Owned(bmsc.reason.clone().unwrap_or_else(|| "No reason given.".to_string()))),
+            fields: vec![
+                WebhookField {
+                    name: Cow::Borrowed("Performed by"),
+                    value: Cow::Owned(bmsc.mod_name.clone()),
+                    inline: Some(true),
+                },
+                WebhookField {
+                    name: Cow::Borrowed("Expires"),
+                    value: if let Some(seconds) = bmsc.expiry {
+                        Cow::Owned(format!("<t:{seconds}:f>"))
+                    } else {
+                        Cow::Borrowed("Permanent.")
+                    },
+                    inline: Some(true),
+                },
+            ],
+            ..Default::default()
+        }),
+        WebhookMessage::UserRoomUnbanned(removal) => Some(WebhookEmbed {
+            title: Cow::Borrowed("User room unbanned"),
+            color: hex_color_to_decimal("#388e3c"),
+            author: Some(WebhookAuthor {
+                name: Cow::Owned(format!("{} ({})", removal.name, removal.account_id)),
+                icon_url: None,
+            }),
+            description: None,
+            fields: vec![WebhookField {
+                name: Cow::Borrowed("Performed by"),
+                value: Cow::Owned(removal.mod_name.clone()),
+                inline: Some(true),
+            }],
+            ..Default::default()
+        }),
+
         WebhookMessage::UserViolationMetaChanged(change) => Some(WebhookEmbed {
-            title: Cow::Borrowed(if change.is_ban { "Ban state changed" } else { "Mute state changed" }),
+            title: Cow::Borrowed(match change.r#type {
+                PunishmentType::Ban => "Ban state changed",
+                PunishmentType::Mute => "Mute state changed",
+                PunishmentType::RoomBan => "Room ban state changed",
+            }),
             color: hex_color_to_decimal("#de7a23"),
             author: Some(WebhookAuthor {
                 name: Cow::Owned(format!("{} ({})", change.name, change.account_id)),

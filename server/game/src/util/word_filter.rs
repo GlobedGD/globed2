@@ -1,7 +1,6 @@
 use std::path::Path;
 
 use aho_corasick::AhoCorasick;
-use globed_shared::debug;
 
 pub struct WordFilter {
     algo: AhoCorasick,

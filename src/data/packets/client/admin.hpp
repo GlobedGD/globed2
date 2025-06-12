@@ -144,16 +144,16 @@ class AdminPunishUserPacket : public Packet {
     GLOBED_PACKET(19013, AdminPunishUserPacket, true, false)
 
     AdminPunishUserPacket() {}
-    AdminPunishUserPacket(int32_t accountId, bool isBan, std::string_view reason, uint64_t expiresAt) : accountId(accountId), isBan(isBan), reason(reason), expiresAt(expiresAt) {}
+    AdminPunishUserPacket(int32_t accountId, PunishmentType type, std::string_view reason, uint64_t expiresAt) : accountId(accountId), type(type), reason(reason), expiresAt(expiresAt) {}
 
     int32_t accountId;
-    bool isBan;
+    PunishmentType type;
     std::string reason;
     uint64_t expiresAt;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminPunishUserPacket, (
-    accountId, isBan, reason, expiresAt
+    accountId, type, reason, expiresAt
 ));
 
 // 19014 - AdminRemovePunishmentPacket
@@ -161,14 +161,14 @@ class AdminRemovePunishmentPacket : public Packet {
     GLOBED_PACKET(19014, AdminRemovePunishmentPacket, true, false)
 
     AdminRemovePunishmentPacket() {}
-    AdminRemovePunishmentPacket(int32_t accountId, bool isBan) : accountId(accountId), isBan(isBan) {}
+    AdminRemovePunishmentPacket(int32_t accountId, PunishmentType type) : accountId(accountId), type(type) {}
 
     int32_t accountId;
-    bool isBan;
+    PunishmentType type;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminRemovePunishmentPacket, (
-    accountId, isBan,
+    accountId, type,
 ));
 
 // 19015 - AdminWhitelistPacket
@@ -206,16 +206,16 @@ class AdminEditPunishmentPacket : public Packet {
     GLOBED_PACKET(19017, AdminEditPunishmentPacket, true, false)
 
     AdminEditPunishmentPacket() {}
-    AdminEditPunishmentPacket(int32_t accountId, bool isBan, std::string_view reason, uint64_t expiresAt) : accountId(accountId), isBan(isBan), reason(reason), expiresAt(expiresAt) {}
+    AdminEditPunishmentPacket(int32_t accountId, PunishmentType type, std::string_view reason, uint64_t expiresAt) : accountId(accountId), type(type), reason(reason), expiresAt(expiresAt) {}
 
     int32_t accountId;
-    bool isBan;
+    PunishmentType type;
     std::string reason;
     uint64_t expiresAt;
 };
 
 GLOBED_SERIALIZABLE_STRUCT(AdminEditPunishmentPacket, (
-    accountId, isBan, reason, expiresAt
+    accountId, type, reason, expiresAt
 ));
 
 // 19018 - AdminGetPunishmentHistoryPacket

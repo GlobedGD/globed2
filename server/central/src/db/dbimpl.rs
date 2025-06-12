@@ -1,6 +1,9 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    fmt::Display,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
-use globed_shared::{AdminPunishUserAction, PunishmentType, ServerUserEntry, UserPunishment};
+use globed_shared::{AdminPunishUserAction, PunishmentType, ServerUserEntry, UserPunishment, warn};
 use rocket_db_pools::sqlx::{Result, query_as};
 use serde::Serialize;
 use sqlx::{prelude::*, query, query_scalar, sqlite::SqliteRow};
@@ -25,6 +28,7 @@ impl<'r> FromRow<'r, SqliteRow> for UserEntryWrapper {
         let admin_password_hash = row.try_get("admin_password_hash")?;
         let active_mute = row.try_get("active_mute")?;
         let active_ban = row.try_get("active_ban")?;
+        let active_room_ban = row.try_get("active_room_ban")?;
 
         Ok(UserEntryWrapper(ServerUserEntry {
             account_id,
@@ -36,23 +40,54 @@ impl<'r> FromRow<'r, SqliteRow> for UserEntryWrapper {
             admin_password_hash,
             active_mute,
             active_ban,
+            active_room_ban,
             punishment_count: 0, // this will be initialized later
         }))
     }
 }
+
+#[derive(Debug)]
+struct InvalidPunishmentType;
+
+impl Display for InvalidPunishmentType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Invalid punishment type in the database, must be one of 'ban', 'mute', or 'roomban'")
+    }
+}
+
+impl std::error::Error for InvalidPunishmentType {}
 
 impl<'r> FromRow<'r, SqliteRow> for UserPunishmentWrapper {
     fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
         let id = row.try_get("punishment_id")?;
         let account_id = row.try_get("account_id")?;
         let r#typestr: String = row.try_get("type")?;
+        let r#typestr2: Option<String> = row.try_get("type2")?;
         let reason = row.try_get("reason")?;
 
         let expires_at = row.try_get("expires_at")?;
         let issued_at = row.try_get("issued_at")?;
         let issued_by = row.try_get("issued_by")?;
 
-        let r#type = if r#typestr == "ban" { PunishmentType::Ban } else { PunishmentType::Mute };
+        let r#type = if let Some(ts) = r#typestr2 {
+            if ts == "ban" {
+                PunishmentType::Ban
+            } else if ts == "mute" {
+                PunishmentType::Mute
+            } else if ts == "roomban" {
+                PunishmentType::RoomBan
+            } else {
+                warn!("Invalid punishment type in the database (type 2): {ts}");
+                return Err(sqlx::Error::Decode(Box::new(InvalidPunishmentType)));
+            }
+        } else if r#typestr == "ban" {
+            PunishmentType::Ban
+        } else if r#typestr == "mute" {
+            PunishmentType::Mute
+        } else {
+            warn!("Invalid punishment type in the database: {}", r#typestr);
+            return Err(sqlx::Error::Decode(Box::new(InvalidPunishmentType)));
+        };
 
         Ok(UserPunishmentWrapper(UserPunishment {
             id,
@@ -138,7 +173,7 @@ impl GlobedDb {
     pub async fn get_active_ban(&self, account_id: i32) -> Result<UserPunishment> {
         query_as::<_, UserPunishmentWrapper>(
             r#"
-                SELECT p.punishment_id, p.type, p.account_id, p.reason, p.expires_at, p.issued_at, p.issued_by
+                SELECT p.punishment_id, p.type, p.type2, p.account_id, p.reason, p.expires_at, p.issued_at, p.issued_by
                 FROM users u
                 LEFT JOIN punishments p ON u.active_ban = punishment_id
                 WHERE u.account_id = ?
@@ -153,7 +188,7 @@ impl GlobedDb {
     pub async fn get_active_mute(&self, account_id: i32) -> Result<UserPunishment> {
         query_as::<_, UserPunishmentWrapper>(
             r#"
-                SELECT p.punishment_id, p.type, p.account_id, p.reason, p.expires_at, p.issued_at, p.issued_by
+                SELECT p.punishment_id, p.type, p.type2, p.account_id, p.reason, p.expires_at, p.issued_at, p.issued_by
                 FROM users u
                 LEFT JOIN punishments p ON u.active_mute = punishment_id
                 WHERE u.account_id = ?
@@ -165,8 +200,23 @@ impl GlobedDb {
         .map(|x| x.0)
     }
 
+    pub async fn get_active_room_ban(&self, account_id: i32) -> Result<UserPunishment> {
+        query_as::<_, UserPunishmentWrapper>(
+            r#"
+                SELECT p.punishment_id, p.type, p.type2, p.account_id, p.reason, p.expires_at, p.issued_at, p.issued_by
+                FROM users u
+                LEFT JOIN punishments p ON u.active_room_ban = punishment_id
+                WHERE u.account_id = ?
+            "#,
+        )
+        .bind(account_id)
+        .fetch_one(&self.0)
+        .await
+        .map(|x| x.0)
+    }
+
     /// get users' ban and mute punishments respectively
-    pub async fn get_users_punishments(&self, user: &ServerUserEntry) -> Result<[Option<UserPunishment>; 2]> {
+    pub async fn get_users_punishments(&self, user: &ServerUserEntry) -> Result<[Option<UserPunishment>; 3]> {
         let ban = match user.active_ban {
             Some(id) => match self.get_punishment(id).await {
                 Ok(x) => x,
@@ -183,7 +233,15 @@ impl GlobedDb {
             None => None,
         };
 
-        Ok([ban, mute])
+        let room_ban = match user.active_room_ban {
+            Some(id) => match self.get_punishment(id).await {
+                Ok(x) => x,
+                Err(e) => return Err(e),
+            },
+            None => None,
+        };
+
+        Ok([ban, mute, room_ban])
     }
 
     pub async fn get_all_user_punishments(&self, account_id: i32) -> Result<Vec<UserPunishment>> {
@@ -273,7 +331,13 @@ impl GlobedDb {
 
     pub async fn punish_user(&self, action: &AdminPunishUserAction) -> Result<i64> {
         let reason = action.reason.try_to_str();
-        let r#type = if action.is_ban { "ban" } else { "mute" };
+
+        let r#type = match action.r#type {
+            PunishmentType::Ban => "ban",
+            PunishmentType::Mute => "mute",
+            PunishmentType::RoomBan => "roomban",
+        };
+
         let issued_at = UNIX_EPOCH.elapsed().unwrap().as_secs() as i64;
 
         let expires_at = action.expires_at as i64;
@@ -282,9 +346,12 @@ impl GlobedDb {
         self.insert_empty_user(action.account_id).await?;
         self.insert_empty_user(action.issued_by).await?;
 
+        let type_old = if r#type == "roomban" { "ban" } else { r#type };
+
         let id = query!(
-            "INSERT INTO punishments (account_id, type, reason, expires_at, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?) RETURNING punishment_id",
+            "INSERT INTO punishments (account_id, type, type2, reason, expires_at, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING punishment_id",
             action.account_id,
+            type_old,
             r#type,
             reason,
             expires_at,
@@ -296,31 +363,47 @@ impl GlobedDb {
         .punishment_id;
 
         // set the punishment
-        if action.is_ban {
-            query!("UPDATE users SET active_ban = ? WHERE account_id = ?", id, action.account_id)
-                .execute(&self.0)
-                .await?;
-        } else {
-            query!("UPDATE users SET active_mute = ? WHERE account_id = ?", id, action.account_id)
-                .execute(&self.0)
-                .await?;
+        match action.r#type {
+            PunishmentType::Ban => {
+                query!("UPDATE users SET active_ban = ? WHERE account_id = ?", id, action.account_id)
+                    .execute(&self.0)
+                    .await?;
+            }
+            PunishmentType::Mute => {
+                query!("UPDATE users SET active_mute = ? WHERE account_id = ?", id, action.account_id)
+                    .execute(&self.0)
+                    .await?;
+            }
+            PunishmentType::RoomBan => {
+                query!("UPDATE users SET active_room_ban = ? WHERE account_id = ?", id, action.account_id)
+                    .execute(&self.0)
+                    .await?;
+            }
         }
 
         Ok(id)
     }
 
-    pub async fn unpunish_user(&self, account_id: i32, is_ban: bool) -> Result<()> {
+    pub async fn unpunish_user(&self, account_id: i32, r#type: PunishmentType) -> Result<()> {
         // make sure the user exists in the db
         self.insert_empty_user(account_id).await?;
 
-        if is_ban {
-            query!("UPDATE users SET active_ban = NULL WHERE account_id = ?", account_id)
-                .execute(&self.0)
-                .await?;
-        } else {
-            query!("UPDATE users SET active_mute = NULL WHERE account_id = ?", account_id)
-                .execute(&self.0)
-                .await?;
+        match r#type {
+            PunishmentType::Ban => {
+                query!("UPDATE users SET active_ban = NULL WHERE account_id = ?", account_id)
+                    .execute(&self.0)
+                    .await?;
+            }
+            PunishmentType::Mute => {
+                query!("UPDATE users SET active_mute = NULL WHERE account_id = ?", account_id)
+                    .execute(&self.0)
+                    .await?;
+            }
+            PunishmentType::RoomBan => {
+                query!("UPDATE users SET active_room_ban = NULL WHERE account_id = ?", account_id)
+                    .execute(&self.0)
+                    .await?;
+            }
         }
 
         Ok(())
@@ -349,12 +432,12 @@ impl GlobedDb {
             .map(|_| ())
     }
 
-    pub async fn edit_punishment(&self, account_id: i32, is_ban: bool, reason: &str, expires_at: u64) -> Result<()> {
-        let punishment = if is_ban {
-            self.get_active_ban(account_id).await?
-        } else {
-            self.get_active_mute(account_id).await?
-        };
+    pub async fn edit_punishment(&self, account_id: i32, r#type: PunishmentType, reason: &str, expires_at: u64) -> Result<()> {
+        let punishment = match r#type {
+            PunishmentType::Ban => self.get_active_ban(account_id).await,
+            PunishmentType::Mute => self.get_active_mute(account_id).await,
+            PunishmentType::RoomBan => self.get_active_room_ban(account_id).await,
+        }?;
 
         let expires_at = expires_at as i64;
 

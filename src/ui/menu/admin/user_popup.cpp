@@ -23,11 +23,12 @@
 namespace btnorder {
     static constexpr int Ban = 41;
     static constexpr int Mute = 42;
-    static constexpr int Whitelist = 43;
-    static constexpr int History = 44;
-    static constexpr int AdminPassword = 45;
-    static constexpr int Kick = 46;
-    static constexpr int Notice = 47;
+    static constexpr int RoomBan = 43;
+    static constexpr int Whitelist = 45;
+    static constexpr int History = 46;
+    static constexpr int AdminPassword = 47;
+    static constexpr int Kick = 48;
+    static constexpr int Notice = 49;
 }
 
 class AdminUserPopup::WaitForResponsePopup : public geode::Popup<AdminUserPopup*> {
@@ -351,11 +352,15 @@ void AdminUserPopup::createBanAndMuteButtons() {
         muteButton->removeFromParent();
     }
 
+    if (roomBanButton) {
+        roomBanButton->removeFromParent();
+    }
+
     // Ban button
     Build<CCSprite>::createSpriteName(userEntry.activeBan ? "button-admin-unban.png"_spr : "button-admin-ban.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            AdminPunishUserPopup::create(this, userEntry.accountId, true, userEntry.activeBan)->show();
+            AdminPunishUserPopup::create(this, userEntry.accountId, PunishmentType::Ban, userEntry.activeBan)->show();
         })
         .zOrder(btnorder::Ban)
         .parent(rootMenu)
@@ -365,11 +370,21 @@ void AdminUserPopup::createBanAndMuteButtons() {
     Build<CCSprite>::createSpriteName(userEntry.activeMute ? "button-admin-unmute.png"_spr : "button-admin-mute.png"_spr)
         .scale(btnScale)
         .intoMenuItem([this] {
-            AdminPunishUserPopup::create(this, userEntry.accountId, false, userEntry.activeMute)->show();
+            AdminPunishUserPopup::create(this, userEntry.accountId, PunishmentType::Mute, userEntry.activeMute)->show();
         })
         .zOrder(btnorder::Mute)
         .parent(rootMenu)
         .store(muteButton);
+
+    // Room ban button
+    Build<CCSprite>::createSpriteName(userEntry.activeRoomBan ? "button-admin-room-unban.png"_spr : "button-admin-room-ban.png"_spr)
+        .scale(btnScale)
+        .intoMenuItem([this] {
+            AdminPunishUserPopup::create(this, userEntry.accountId, PunishmentType::RoomBan, userEntry.activeRoomBan)->show();
+        })
+        .zOrder(btnorder::RoomBan)
+        .parent(rootMenu)
+        .store(roomBanButton);
 
     rootMenu->updateLayout();
 }

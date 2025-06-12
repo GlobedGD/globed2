@@ -30,7 +30,7 @@ private:
     geode::TextInput *inputAdminPassword = nullptr;
     cocos2d::CCMenu* nameLayout;
     cocos2d::CCMenu* rootMenu;
-    Ref<CCMenuItemSpriteExtra> roleModifyButton, banButton, muteButton;
+    Ref<CCMenuItemSpriteExtra> roleModifyButton, banButton, muteButton, roomBanButton;
     std::shared_ptr<Packet> queuedPacket;
     bool entryWasEmpty = false;
     bool waitingForUpdateUsername = false;

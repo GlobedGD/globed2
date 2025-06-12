@@ -211,10 +211,15 @@ pub(crate) use make_uninit;
 #[allow(unused)]
 pub(crate) use new_uninit;
 
+#[allow(unused)]
 pub(crate) use thrd_debug;
+#[allow(unused)]
 pub(crate) use thrd_error;
+#[allow(unused)]
 pub(crate) use thrd_info;
+#[allow(unused)]
 pub(crate) use thrd_trace;
+#[allow(unused)]
 pub(crate) use thrd_warn;
 
 #[allow(unused_imports)]
