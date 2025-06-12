@@ -24,6 +24,8 @@ impl Translatable for AdminSendNoticePacket {
                 })
             }
 
+            14 => Ok(v_current::AdminSendNoticePacket::decode_from_reader(data)?),
+
             _ => Err(PacketTranslationError::UnsupportedProtocol),
         }
     }

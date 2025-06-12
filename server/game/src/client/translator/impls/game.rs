@@ -14,6 +14,8 @@ impl Translatable for LevelJoinPacket {
                 })
             }
 
+            14 => Ok(v_current::LevelJoinPacket::decode_from_reader(data)?),
+
             _ => Err(PacketTranslationError::UnsupportedProtocol),
         }
     }

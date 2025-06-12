@@ -100,6 +100,7 @@ impl Room {
     pub fn maybe_rotate_to_original_owner(&self, player: i32) -> bool {
         if self.orig_owner == player {
             self.owner.store(player, Ordering::Relaxed);
+            self.data.lock().owner = self.orig_owner_data.clone();
             true
         } else {
             false
