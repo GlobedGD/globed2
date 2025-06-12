@@ -19,7 +19,7 @@
 #define _GLOBED_STRSPECIAL "@$#&* {}[],=-().+;'/\"!%^_\\:<>?`~"
 #define _GLOBED_STRPRINTABLEINPUT _GLOBED_STRALPHANUM _GLOBED_STRSPECIAL
 #define _GLOBED_STRPRINTABLE _GLOBED_STRPRINTABLEINPUT "\r\t\n"
-#define _GLOBED_STRURL _GLOBED_STRALPHANUM ":/%._-?#"
+#define _GLOBED_STRURL _GLOBED_STRALPHANUM ":/%._-?#[]"
 #define _GLOBED_STRWHITESPACE " \t\n\r\x0b\x0c"
 
 #define GLOBED_LAZY(expr) ::util::misc::lazyExpr([&]() -> decltype(expr) { return expr; })

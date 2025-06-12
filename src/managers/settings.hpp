@@ -58,6 +58,7 @@ public:
         Arg<"globed-fake-server-data"> fakeData;
         Arg<"globed-reset-settings"> resetSettings;
         Arg<"globed-dev-stuff"> devStuff;
+        Arg<"globed-ipv6"> useIpv6;
     };
 
 private:
@@ -426,7 +427,7 @@ private:
 // Launch args
 
 GLOBED_SERIALIZABLE_STRUCT(GlobedSettings::LaunchArgs, (
-    crtFix, netDump, verboseCurl, skipPreload, debugPreload, skipResourceCheck, tracing, noSslVerification, fakeData, resetSettings, devStuff
+    crtFix, netDump, verboseCurl, skipPreload, debugPreload, skipResourceCheck, tracing, noSslVerification, fakeData, resetSettings, devStuff, useIpv6
 ));
 
 // Settings

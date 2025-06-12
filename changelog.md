@@ -2,6 +2,7 @@
 
 * Fix crash when receiving a notice in the editor
 * Fix huge memory leak that happens overtime whenever you join a level with other players
+* Fix the room owner rotation feature not actually working when the original room host rejoins a room
 
 ## v1.8.4
 

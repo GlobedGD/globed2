@@ -32,5 +32,5 @@ public:
 #endif
 
 private:
-    std::unique_ptr<sockaddr_in> destAddr_;
+    std::unique_ptr<struct sockaddr_storage> destAddr_;
 };

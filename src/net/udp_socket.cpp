@@ -15,10 +15,10 @@
 #endif
 
 UdpSocket::UdpSocket() : socket_(-1) {
-    destAddr_ = std::make_unique<sockaddr_in>();
-    std::memset(destAddr_.get(), 0, sizeof(sockaddr_in));
+    destAddr_ = std::make_unique<sockaddr_storage>();
+    std::memset(destAddr_.get(), 0, sizeof(sockaddr_storage));
 
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    int sock = socket(util::net::activeAddressFamily(), SOCK_DGRAM, 0);
     socket_ = sock;
 
     globed::netLog("UdpSocket(this={}, fd={}) created", (void*)this, sock);
@@ -52,7 +52,7 @@ Result<> UdpSocket::connect(const NetworkAddress& address) {
 
     globed::netLog("UdpSocket::connect(this={}, address={})", (void*)this, GLOBED_LAZY(address.toString()));
 
-    destAddr_->sin_family = AF_INET;
+    destAddr_->ss_family = util::net::activeAddressFamily();
 
     GLOBED_UNWRAP_INTO(address.resolve(), *destAddr_)
 
@@ -65,7 +65,7 @@ Result<int> UdpSocket::send(const char* data, unsigned int dataSize) {
 
     globed::netLog("UdpSocket::send(this={}, data={}, size={})", (void*)this, (void*)data, dataSize);
 
-    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
+    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_storage));
 
     if (retval == -1) {
         auto errmsg = util::net::lastErrorString();
@@ -80,13 +80,13 @@ Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const Net
     globed::netLog("UdpSocket::sendTo(this={}, data={}, size={}, address={})", (void*)this, (void*)data, dataSize, GLOBED_LAZY(address.toString()));
 
     // stinky windows returns wsa error 10014 if sockaddr is a stack pointer
-    std::unique_ptr<sockaddr_in> addr = std::make_unique<sockaddr_in>();
+    auto addr = std::make_unique<sockaddr_storage>();
 
-    addr->sin_family = AF_INET;
+    addr->ss_family = util::net::activeAddressFamily();
 
     GLOBED_UNWRAP_INTO(address.resolve(), *addr)
 
-    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr));
+    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr_storage));
 
     if (retval == -1) {
         auto errmsg = util::net::lastErrorString();
@@ -103,7 +103,7 @@ void UdpSocket::disconnect() {
 }
 
 RecvResult UdpSocket::receive(char* buffer, int bufferSize) {
-    sockaddr_in source;
+    sockaddr_storage source;
     socklen_t addrLen = sizeof(source);
 
     int result = recvfrom(socket_, buffer, bufferSize, 0, reinterpret_cast<struct sockaddr*>(&source), &addrLen);

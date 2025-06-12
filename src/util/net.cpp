@@ -81,25 +81,44 @@ namespace util::net {
         return Ok(out);
     }
 
-    bool sameSockaddr(const sockaddr_in& s1, const sockaddr_in& s2) {
-        if (s1.sin_family != s2.sin_family || s1.sin_port != s2.sin_port) {
+    bool sameSockaddr(const sockaddr_storage& s1, const sockaddr_storage& s2) {
+        if (s1.ss_family != s2.ss_family) {
             return false;
         }
 
-        return std::memcmp(&s1.sin_addr, &s2.sin_addr, sizeof(s1.sin_addr)) == 0;
+        if (s1.ss_family == AF_INET) {
+            return sameSockaddr(reinterpret_cast<const sockaddr_in&>(s1).sin_addr, reinterpret_cast<const sockaddr_in&>(s2).sin_addr);
+        } else if (s1.ss_family == AF_INET6) {
+            return sameSockaddr(reinterpret_cast<const sockaddr_in6&>(s1).sin6_addr, reinterpret_cast<const sockaddr_in6&>(s2).sin6_addr);
+        } else {
+            // unsupported address family
+            return false;
+        }
+    }
+
+    bool sameSockaddr(const in_addr& s1, const in_addr& s2) {
+        return std::memcmp(&s1, &s2, sizeof(in_addr)) == 0;
+    }
+
+    bool sameSockaddr(const in6_addr& s1, const in6_addr& s2) {
+        return std::memcmp(&s1, &s2, sizeof(in6_addr)) == 0;
     }
 
     Result<std::string> getaddrinfo(std::string_view hostname) {
-        auto ipaddr = std::make_unique<sockaddr_in>();
+        auto ipaddr = std::make_unique<sockaddr_storage>();
 
         GLOBED_UNWRAP(getaddrinfo(hostname, *ipaddr));
 
-        return inAddrToString(ipaddr->sin_addr);
+        if (ipaddr->ss_family == AF_INET) {
+            return inAddrToString(((sockaddr_in*)(ipaddr.get()))->sin_addr);
+        } else {
+            return inAddrToString(((sockaddr_in6*)(ipaddr.get()))->sin6_addr);
+        }
     }
 
-    Result<> getaddrinfo(std::string_view hostname, sockaddr_in& out) {
+    Result<> getaddrinfo(std::string_view hostname, sockaddr_storage& out) {
         struct addrinfo hints = {};
-        hints.ai_family = AF_INET;
+        hints.ai_family = util::net::activeAddressFamily();
         hints.ai_socktype = SOCK_DGRAM;
         hints.ai_protocol = IPPROTO_UDP;
 
@@ -112,7 +131,7 @@ namespace util::net {
             return Err(util::net::lastErrorString(code, true));
         }
 
-        if (result->ai_family != AF_INET || result->ai_socktype != SOCK_DGRAM || result->ai_protocol != IPPROTO_UDP) {
+        if (result->ai_family != util::net::activeAddressFamily() || result->ai_socktype != SOCK_DGRAM || result->ai_protocol != IPPROTO_UDP) {
             globed::netLog(
                 "(E) getaddrinfo returned unexpected results: ai_family={}, ai_socktype={}, ai_protocol={}",
                 result->ai_family, result->ai_socktype, result->ai_protocol
@@ -122,9 +141,11 @@ namespace util::net {
             return Err("getaddrinfo returned wrong output");
         }
 
+        size_t toCopy = result->ai_addrlen;
+
         auto* ipaddr = (struct sockaddr_in*) result->ai_addr;
 
-        std::memcpy(&out, ipaddr, sizeof(sockaddr_in));
+        std::memcpy(&out, ipaddr, toCopy);
 
         ::freeaddrinfo(result);
 
@@ -146,6 +167,21 @@ namespace util::net {
         return Ok(std::move(out));
     }
 
+    Result<std::string> inAddrToString(const in_addr6& addr) {
+        std::string out;
+        out.resize(46);
+
+        auto ntopResult = inet_ntop(AF_INET6, &addr, out.data(), 46);
+
+        if (ntopResult == nullptr) {
+            return Err(lastErrorString());
+        }
+
+        out.resize(std::strlen(out.c_str()));
+
+        return Ok(std::move(out));
+    }
+
     Result<> stringToInAddr(const char* addr, in_addr& out) {
         auto ptonResult = inet_pton(AF_INET, addr, &out);
 
@@ -156,8 +192,22 @@ namespace util::net {
         }
     }
 
+    Result<> stringToInAddr(const char* addr, in_addr6& out) {
+        auto ptonResult = inet_pton(AF_INET6, addr, &out);
+
+        if (ptonResult > 0) {
+            return Ok();
+        } else {
+            return Err(lastErrorString());
+        }
+    }
+
     uint16_t hostToNetworkPort(uint16_t port) {
         return util::data::byteswap(port);
+    }
+
+    int activeAddressFamily() {
+        return GlobedSettings::get().launchArgs().useIpv6 ? AF_INET6 : AF_INET;
     }
 }
 

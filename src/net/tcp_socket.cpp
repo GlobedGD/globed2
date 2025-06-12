@@ -25,8 +25,8 @@ constexpr static int WouldBlock = EINPROGRESS;
 using namespace geode::prelude;
 
 TcpSocket::TcpSocket() : socket_(-1) {
-    destAddr_ = std::make_unique<sockaddr_in>();
-    std::memset(destAddr_.get(), 0, sizeof(sockaddr_in));
+    destAddr_ = std::make_unique<sockaddr_storage>();
+    std::memset(destAddr_.get(), 0, sizeof(sockaddr_storage));
 
     globed::netLog("TcpSocket(this={}) created", (void*)this);
 }
@@ -42,12 +42,12 @@ Result<> TcpSocket::connect(const NetworkAddress& address) {
     // close any socket if still open
     this->close();
 
-    destAddr_->sin_family = AF_INET;
+    destAddr_->ss_family = util::net::activeAddressFamily();
 
     GLOBED_UNWRAP_INTO(address.resolve(), *destAddr_)
 
     // create socket
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    int sock = socket(util::net::activeAddressFamily(), SOCK_STREAM, 0);
     socket_ = sock;
 
     globed::netLog("TcpSocket::connect(this={}) bound to fd: {}", (void*)this, socket_.load());
@@ -62,7 +62,7 @@ Result<> TcpSocket::connect(const NetworkAddress& address) {
 
     globed::netLog("TcpSocket::connect(this={}) attempting connect call", (void*)this);
 
-    int code = ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_in));
+    int code = ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_storage));
 
     // if the code isn't 0 (success) or EWOULDBLOCK (expected result), close socket and return error
     if (code != 0 && util::net::lastErrorCode() != WouldBlock) {

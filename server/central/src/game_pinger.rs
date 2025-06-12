@@ -18,7 +18,8 @@ use crate::config::GameServerEntry;
 
 pub struct GameServerPinger {
     addresses: Vec<SocketAddr>,
-    udp_socket: UdpSocket,
+    udp_socket_v4: UdpSocket,
+    udp_socket_v6: UdpSocket,
     latest_player_count: AtomicU32,
     history: SyncMutex<Vec<(SystemTime, u32)>>,
 }
@@ -31,17 +32,19 @@ impl GameServerPinger {
             let addr = tokio::net::lookup_host(&server.address)
                 .await
                 .expect("failed to resolve provided game server address")
-                .find(SocketAddr::is_ipv4)
-                .expect("failed to resolve provided game server (no ipv4)");
+                .next()
+                .expect("no addresses found for provided game server address");
 
             addresses.push(addr);
         }
 
-        let sock = UdpSocket::bind("0.0.0.0:0").await.expect("failed to bind udp socket for pinger");
+        let sock_v4 = UdpSocket::bind("0.0.0.0:0").await.expect("failed to bind udp socket (v4) for pinger");
+        let sock_v6 = UdpSocket::bind("[::]:0").await.expect("failed to bind udp socket (v6) for pinger");
 
         Self {
             addresses,
-            udp_socket: sock,
+            udp_socket_v4: sock_v4,
+            udp_socket_v6: sock_v6,
             latest_player_count: AtomicU32::new(0),
             history: SyncMutex::new(Vec::new()),
         }
@@ -74,7 +77,11 @@ impl GameServerPinger {
             debug!("pinging {} servers", self.addresses.len());
 
             for address in &self.addresses {
-                let _ = self.udp_socket.send_to(buffer.as_bytes(), address).await;
+                if address.is_ipv4() {
+                    let _ = self.udp_socket_v4.send_to(buffer.as_bytes(), address).await;
+                } else if address.is_ipv6() {
+                    let _ = self.udp_socket_v6.send_to(buffer.as_bytes(), address).await;
+                }
             }
 
             let player_count = self.receive_responses(ping_id, self.addresses.len()).await;
@@ -92,11 +99,12 @@ impl GameServerPinger {
         let mut successful_requests = 0;
 
         let mut buf = [0u8; 512];
+        let mut buf2 = [0u8; 512];
 
         while successful_requests < max {
-            match tokio::time::timeout(Duration::from_secs(5), self.udp_socket.recv(&mut buf)).await {
-                Ok(Ok(_)) => {
-                    let mut buffer = ByteReader::from_bytes(&buf);
+            match tokio::time::timeout(Duration::from_secs(5), self.receive_any(&mut buf, &mut buf2)).await {
+                Ok((Ok(_), ipv6)) => {
+                    let mut buffer = ByteReader::from_bytes(if ipv6 { &buf2 } else { &buf });
                     // skip header
                     buffer.skip(3);
                     let s_ping_id = buffer.read_u32().unwrap_or(0);
@@ -109,7 +117,7 @@ impl GameServerPinger {
                     total_players += s_player_count;
                     successful_requests += 1;
                 }
-                Ok(Err(e)) => {
+                Ok((Err(e), _)) => {
                     warn!("failed to recv data: {e}");
                     break;
                 }
@@ -118,5 +126,12 @@ impl GameServerPinger {
         }
 
         total_players
+    }
+
+    async fn receive_any(&self, buf: &mut [u8], buf2: &mut [u8]) -> (std::io::Result<usize>, bool) {
+        tokio::select! {
+            res = self.udp_socket_v4.recv(buf) => (res, false),
+            res = self.udp_socket_v6.recv(buf2) => (res, true),
+        }
     }
 }

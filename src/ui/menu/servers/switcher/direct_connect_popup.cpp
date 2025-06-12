@@ -8,6 +8,7 @@
 #include <managers/game_server.hpp>
 #include <managers/error_queues.hpp>
 #include <managers/popup.hpp>
+#include <managers/settings.hpp>
 #include <net/address.hpp>
 #include <util/misc.hpp>
 
@@ -38,12 +39,14 @@ bool DirectConnectionPopup::setup(ServerSwitcherPopup* parent) {
 
     Build<ButtonSprite>::create("Connect", "bigFont.fnt", "GJ_button_01.png", 0.8f)
         .intoMenuItem([this](auto) {
+            bool ipv6 = GlobedSettings::get().launchArgs().useIpv6;
+
             // this is scary
             static std::regex pattern(R"(^(?!(?:https?):\/\/)(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3}|(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(?::\d+)?$)");
 
             std::string addr = this->addressNode->getString();
 
-            if (addr.empty() || !std::regex_match(addr, pattern)) {
+            if (addr.empty() || (!ipv6 && !std::regex_match(addr, pattern))) {
                 PopupManager::get().alertFormat(
                     "Error",
                     "Invalid address was passed. It must be an IPv4 address or a domain name with an optional port at the end (like <cy>127.0.0.1:{}</c> or <cy>globed.example.com:{}</c>)",

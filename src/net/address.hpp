@@ -14,7 +14,7 @@
 
 // Represents an IPv4 address and a port
 class NetworkAddress {
-    static inline std::unordered_map<std::string, in_addr> dnsCache;
+    static inline std::unordered_map<std::string, struct sockaddr_storage> dnsCache;
 
 public:
     static constexpr uint16_t DEFAULT_PORT = 4202;
@@ -38,7 +38,7 @@ public:
 
     // Returns a `sockaddr_in` struct corresponding to this `NetworkAddress`.
     // Note that this might block for DNS lookup if contained host was not an IP address.
-    geode::Result<sockaddr_in> resolve() const;
+    geode::Result<sockaddr_storage> resolve() const;
 
     // Combination of `resolve` and `toString`, returns the input in format `host:port` but does do DNS resolution.
     // Note that this might block for DNS lookup if contained host was not an IP address.

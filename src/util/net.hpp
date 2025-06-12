@@ -4,7 +4,9 @@
 #include <string>
 
 struct sockaddr_in;
+struct sockaddr_storage;
 struct in_addr;
+struct in6_addr;
 
 namespace util::net {
     // Initialize all networking libraries (calls `WSAStartup` on Windows, does nothing on other platforms)
@@ -35,14 +37,20 @@ namespace util::net {
     Result<std::pair<std::string, unsigned short>> splitAddress(std::string_view address, unsigned short defaultPort = 0);
 
     // Check if two sockaddr structures are equal
-    bool sameSockaddr(const sockaddr_in& s1, const sockaddr_in& s2);
+    bool sameSockaddr(const sockaddr_storage& s1, const sockaddr_storage& s2);
+    bool sameSockaddr(const in_addr& s1, const in_addr& s2);
+    bool sameSockaddr(const in6_addr& s1, const in6_addr& s2);
 
     // getaddrinfo
     Result<std::string> getaddrinfo(std::string_view hostname);
-    Result<> getaddrinfo(std::string_view hostname, sockaddr_in& out);
+    Result<> getaddrinfo(std::string_view hostname, sockaddr_storage& out);
 
     Result<std::string> inAddrToString(const in_addr& addr);
+    Result<std::string> inAddrToString(const in6_addr& addr);
     Result<> stringToInAddr(const char* addr, in_addr& out);
+    Result<> stringToInAddr(const char* addr, in6_addr& out);
 
     uint16_t hostToNetworkPort(uint16_t port);
+
+    int activeAddressFamily();
 }

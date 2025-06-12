@@ -20,6 +20,8 @@ Make sure to use the full format and prefix the option name with `globed-`, so i
 
 `crt-fix` - unused in release builds, if you are a developer using Wine and experiencing hangs on launch, you may check `src/platform/os/windows/setup.cpp` for more information.
 
+`ipv6` - forces use of ipv6 for all connections, in the future ipv4 + ipv6 will be supported but right now only 1 at a time is possible
+
 ## Debugging (more dev centered)
 
 `tracing` - enables some extra logging.
