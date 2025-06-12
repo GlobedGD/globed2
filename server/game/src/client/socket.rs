@@ -1,8 +1,4 @@
-use std::{
-    net::{SocketAddr, SocketAddrV4},
-    sync::OnceLock,
-    time::Duration,
-};
+use std::{net::SocketAddr, sync::OnceLock, time::Duration};
 
 use crate::tokio::{
     self,
@@ -30,8 +26,8 @@ use crate::{data::*, server::GameServer};
 pub struct ClientSocket {
     pub socket: TcpStream,
 
-    pub tcp_peer: SocketAddrV4,
-    pub udp_peer: Option<SocketAddrV4>,
+    pub tcp_peer: SocketAddr,
+    pub udp_peer: Option<SocketAddr>,
     crypto_box: OnceLock<ChaChaBox>,
     game_server: &'static GameServer,
     protocol_version: u16,
@@ -56,7 +52,7 @@ const MARKER_UDP_PACKET: u8 = 0xb1;
 const MARKER_UDP_FRAME: u8 = 0xa7;
 
 impl ClientSocket {
-    pub fn new(socket: TcpStream, tcp_peer: SocketAddrV4, mtu: usize, game_server: &'static GameServer) -> Self {
+    pub fn new(socket: TcpStream, tcp_peer: SocketAddr, mtu: usize, game_server: &'static GameServer) -> Self {
         Self {
             socket,
             tcp_peer,
@@ -117,7 +113,7 @@ impl ClientSocket {
         Ok(())
     }
 
-    pub fn set_udp_peer(&mut self, udp_peer: SocketAddrV4) {
+    pub fn set_udp_peer(&mut self, udp_peer: SocketAddr) {
         self.udp_peer.replace(udp_peer);
     }
 
@@ -466,7 +462,7 @@ impl ClientSocket {
     /// non async version of `send_buffer_udp`
     fn send_buffer_udp_immediate(&self, buffer: &[u8]) -> Result<usize> {
         match self.udp_peer.as_ref() {
-            Some(udp_peer) => self.game_server.udp_socket.try_send_to(buffer, SocketAddr::V4(*udp_peer)).map_err(|e| {
+            Some(udp_peer) => self.game_server.udp_socket.try_send_to(buffer, *udp_peer).map_err(|e| {
                 if e.kind() == std::io::ErrorKind::WouldBlock {
                     PacketHandlingError::SocketWouldBlock
                 } else {

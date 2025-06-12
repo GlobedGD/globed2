@@ -1,7 +1,7 @@
 use std::{
     borrow::Cow,
     collections::VecDeque,
-    net::SocketAddrV4,
+    net::SocketAddr,
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
@@ -333,7 +333,7 @@ impl ClientThread {
     /* private utilities */
 
     /// get the tcp address of the connected peer. do not call this from another clientthread
-    fn get_tcp_peer(&self) -> SocketAddrV4 {
+    fn get_tcp_peer(&self) -> SocketAddr {
         // safety: we trust this function is not called from the oustide
         unsafe { self.socket.get() }.tcp_peer
     }

@@ -1,6 +1,6 @@
 use std::{
     collections::VecDeque,
-    net::{SocketAddr, SocketAddrV4},
+    net::SocketAddr,
     sync::{Arc, atomic::Ordering},
     time::Duration,
 };
@@ -61,10 +61,10 @@ pub struct GameServer {
     pub tcp_socket: TcpListener,
     pub udp_socket: UdpSocket,
     /// map udp peer : thread
-    pub clients: SyncMutex<FxHashMap<SocketAddrV4, Arc<ClientThread>>>,
+    pub clients: SyncMutex<FxHashMap<SocketAddr, Arc<ClientThread>>>,
     pub clients_list: SyncMutex<DenseSlotMap<DefaultKey, Arc<ClientThread>>>,
     pub unauthorized_clients: SyncMutex<VecDeque<Arc<UnauthorizedThread>>>,
-    pub udp_rate_limiters: SyncMutex<FxHashMap<SocketAddrV4, SimpleRateLimiter>>,
+    pub udp_rate_limiters: SyncMutex<FxHashMap<SocketAddr, SimpleRateLimiter>>,
     pub secret_key: SecretKey,
     pub public_key: PublicKey,
     pub bridge: CentralBridge,
@@ -197,11 +197,6 @@ impl GameServer {
     async fn accept_connection(&'static self) -> anyhow::Result<()> {
         let (socket, peer) = self.tcp_socket.accept().await?;
 
-        let peer = match peer {
-            SocketAddr::V4(x) => x,
-            SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
-        };
-
         debug!("accepting tcp connection from {peer}");
 
         tokio::spawn(self.client_loop(socket, peer));
@@ -210,7 +205,7 @@ impl GameServer {
     }
 
     #[allow(clippy::manual_let_else, clippy::too_many_lines)]
-    async fn client_loop(&'static self, mut socket: TcpStream, peer: SocketAddrV4) {
+    async fn client_loop(&'static self, mut socket: TcpStream, peer: SocketAddr) {
         // wait for incoming data, client should tell us whether it's an initial login or a recovery.
         let result: crate::client::Result<u8> = async {
             match socket.read_u8().await? {
@@ -451,11 +446,6 @@ impl GameServer {
     async fn recv_and_handle_udp(&self, buf: &mut [u8]) -> anyhow::Result<()> {
         let (len, peer) = self.udp_socket.recv_from(buf).await?;
 
-        let peer = match peer {
-            SocketAddr::V4(x) => x,
-            SocketAddr::V6(_) => bail!("rejecting request from ipv6 host"),
-        };
-
         // if it's a ping packet, we can handle it here. otherwise we send it to the appropriate thread.
         if !self.try_udp_handle(&buf[..len], peer).await? {
             let thread = { self.clients.lock().get(&peer).cloned() };
@@ -478,7 +468,7 @@ impl GameServer {
 
     /* various calls for other threads */
 
-    pub fn claim_thread(&self, udp_addr: SocketAddrV4, secret_key: u32) -> bool {
+    pub fn claim_thread(&self, udp_addr: SocketAddr, secret_key: u32) -> bool {
         let thread = self.unauthorized_clients.lock().iter().find(|x| x.secret_key == secret_key).cloned();
 
         if let Some(thread) = thread {
@@ -931,7 +921,7 @@ impl GameServer {
     }
 
     /// Try to handle a packet that is not addressed to a specific thread, but to the game server.
-    async fn try_udp_handle(&self, data: &[u8], peer: SocketAddrV4) -> anyhow::Result<bool> {
+    async fn try_udp_handle(&self, data: &[u8], peer: SocketAddr) -> anyhow::Result<bool> {
         let mut byte_reader = ByteReader::from_bytes(data);
         let header = byte_reader.read_packet_header().map_err(|e| anyhow!("{e}"))?;
 

@@ -1,7 +1,7 @@
 use std::{
     borrow::Cow,
     collections::VecDeque,
-    net::SocketAddrV4,
+    net::SocketAddr,
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, Ordering},
@@ -55,12 +55,12 @@ pub struct UnauthorizedThread {
     pub user_role: SyncMutex<Option<ComputedRole>>,
     pub friend_list: SyncMutex<Vec<i32>>,
 
-    pub claim_udp_peer: SyncMutex<Option<SocketAddrV4>>,
+    pub claim_udp_peer: SyncMutex<Option<SocketAddr>>,
     pub claim_udp_notify: Notify,
     pub claim_udp_none: AtomicBool,
     pub queued_packets: SyncMutex<VecDeque<Vec<u8>>>,
 
-    pub recover_stream: SyncMutex<Option<(TcpStream, SocketAddrV4)>>,
+    pub recover_stream: SyncMutex<Option<(TcpStream, SocketAddr)>>,
     pub recover_notify: Notify,
 
     pub terminate_notify: Notify,
@@ -86,7 +86,7 @@ fn create_rate_limiter() -> SimpleRateLimiter {
 }
 
 impl UnauthorizedThread {
-    pub fn new(socket: TcpStream, peer: SocketAddrV4, game_server: &'static GameServer) -> Self {
+    pub fn new(socket: TcpStream, peer: SocketAddr, game_server: &'static GameServer) -> Self {
         Self {
             game_server,
             socket: LockfreeMutCell::new(ClientSocket::new(socket, peer, 0, game_server)),
@@ -303,12 +303,12 @@ impl UnauthorizedThread {
         }
     }
 
-    pub fn claim(&self, udp_peer: SocketAddrV4) {
+    pub fn claim(&self, udp_peer: SocketAddr) {
         *self.claim_udp_peer.lock() = Some(udp_peer);
         self.claim_udp_notify.notify_one();
     }
 
-    pub fn recover(&self, tcp_stream: TcpStream, peer: SocketAddrV4) {
+    pub fn recover(&self, tcp_stream: TcpStream, peer: SocketAddr) {
         *self.recover_stream.lock() = Some((tcp_stream, peer));
         self.recover_notify.notify_one();
     }
@@ -642,7 +642,7 @@ impl UnauthorizedThread {
     }
 
     /// Blocks until we get notified that we got recovered and have an assigned TCP stream
-    async fn wait_for_recovered(&self) -> (TcpStream, SocketAddrV4) {
+    async fn wait_for_recovered(&self) -> (TcpStream, SocketAddr) {
         {
             let mut p = self.recover_stream.lock();
             if p.is_some() {
@@ -689,7 +689,7 @@ impl UnauthorizedThread {
     }
 
     /// get the tcp address of the connected peer. do not call this from another clientthread
-    fn get_tcp_peer(&self) -> SocketAddrV4 {
+    fn get_tcp_peer(&self) -> SocketAddr {
         self.get_socket().tcp_peer
     }
 
