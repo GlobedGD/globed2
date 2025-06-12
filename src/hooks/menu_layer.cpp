@@ -192,7 +192,7 @@ void HookedMenuLayer::onGlobedButton(CCObject*) {
                             if (res) {
                                 geode::createQuickPopup("Success", "Successfully <cg>deleted</c> the folder. Restart the game now?", "Cancel", "Restart", [](auto, bool restart) {
                                     if (restart) {
-                                        utils::game::restart();
+                                        utils::game::restart(true);
                                     }
                                 });
                             } else {

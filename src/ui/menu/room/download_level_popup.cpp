@@ -46,7 +46,7 @@ void DownloadLevelPopup::loadLevelsFinished(cocos2d::CCArray* p0, char const* p1
 
 void DownloadLevelPopup::loadLevelsFailed(char const* p0, int p1) {
     this->onClose(this);
-    PopupManager::get().alertFormat("Error", "Failed to download the level: {}", p1).showInstant();
+    PopupManager::get().alertFormat("Error", "Failed to download the level ({}). It is most likely unlisted and you have no permission to open it.", p1).showInstant();
 }
 
 void DownloadLevelPopup::loadLevelsFailed(char const* p0) {

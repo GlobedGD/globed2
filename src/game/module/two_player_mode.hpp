@@ -18,6 +18,8 @@ public:
     bool shouldSaveProgress() override;
 
     void selPeriodicalUpdate(float dt) override;
+    void updateCameraPre(float dt) override;
+    void updateCameraPost(float dt) override;
 
     int getLinkedTo();
 
@@ -26,6 +28,7 @@ private:
     bool oldFastReset = false;
     bool linked = false;
     int linkedId = 0;
+    cocos2d::CCPoint preservedPlayerPos;
 
     static inline const std::string LOCKED_TO_KEY = "2p-locked-to"_spr;
 

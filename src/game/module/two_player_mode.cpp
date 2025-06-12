@@ -22,7 +22,8 @@ void TwoPlayerModeModule::mainPlayerUpdate(PlayerObject* player, float dt) {
     PlayerObject* noclipFor = this->isPrimary ? gameLayer->m_player2 : gameLayer->m_player1;
 
     if (player == noclipFor && this->linked) {
-        this->updateFromLockedPlayer(player, !isPrimary && gameLayer->m_gameState.m_isDualMode);
+        // this->updateFromLockedPlayer(player, !isPrimary && gameLayer->m_gameState.m_isDualMode);
+        this->updateFromLockedPlayer(player, false);
         player->setVisible(false);
         // if (bgl->m_gameState.m_isDualMode) {
         //     this->m_isHidden = true;
@@ -34,6 +35,10 @@ void TwoPlayerModeModule::mainPlayerUpdate(PlayerObject* player, float dt) {
         if (player->m_ghostTrail) player->m_ghostTrail->setVisible(false);
         if (player->m_trailingParticles) player->m_trailingParticles->setVisible(false);
         if (player->m_shipStreak) player->m_shipStreak->setVisible(false);
+        if (player->m_playerGroundParticles) player->m_playerGroundParticles->setVisible(false);
+        if (player->m_vehicleGroundParticles) player->m_vehicleGroundParticles->setVisible(false);
+
+        this->gameLayer->moveCameraToPos(player->getPosition());
     }
 }
 
@@ -160,18 +165,31 @@ void TwoPlayerModeModule::selPeriodicalUpdate(float dt) {
     }
 }
 
-// TODO: test if still needed for 2 player mode
-// void TwoPlayerModeModule::updateCamera(float dt) {
-//     if (!m_fields->twopstate.active || m_fields->twopstate.isPrimary || !m_gameState.m_isDualMode) {
-//         GJBaseGameLayer::updateCamera(dt);
-//         return;
-//     }
+void TwoPlayerModeModule::updateCameraPre(float dt) {
+    auto pl = globed::cachedSingleton<GameManager>()->m_playLayer;
+    auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(pl));
+    auto& fields = gjbgl->getFields();
 
-//     auto lastPos = m_player1->getPosition();
-//     m_player1->setPosition({m_player2->getPositionX(), lastPos.y});
-//     GJBaseGameLayer::updateCamera(dt);
-//     m_player1->setPosition(lastPos);
-//
+    if (!gjbgl || !linked || isPrimary || !gjbgl->m_gameState.m_isDualMode) {
+        preservedPlayerPos = CCPoint{};
+        return;
+    }
+
+    preservedPlayerPos = gjbgl->m_player1->getPosition();
+    gjbgl->m_player1->setPosition({gjbgl->m_player2->getPositionX(), preservedPlayerPos.y});
+}
+
+void TwoPlayerModeModule::updateCameraPost(float dt) {
+    auto pl = globed::cachedSingleton<GameManager>()->m_playLayer;
+    auto gjbgl = static_cast<GlobedGJBGL*>(static_cast<GJBaseGameLayer*>(pl));
+
+    if (!gjbgl || !linked || isPrimary || !gjbgl->m_gameState.m_isDualMode || preservedPlayerPos.isZero()) {
+        return;
+    }
+
+    // restore player position
+    gjbgl->m_player1->setPosition(preservedPlayerPos);
+}
 
 std::vector<UserCellButton> TwoPlayerModeModule::onUserActionsPopup(int accountId, bool self) {
     if (self) return {};
