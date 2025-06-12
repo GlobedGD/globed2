@@ -4,6 +4,7 @@
 * Fix huge memory leak that happens overtime whenever you join a level with other players
 * Fix the room owner rotation feature not actually working when the original room host rejoins a room
 * Fix one of the players having broken 2nd player mechanics in 2-player mode rooms (this makes it way more playable)
+* Add the ability to cancel a connection, without having to wait until it finally fails
 
 ## v1.8.4
 

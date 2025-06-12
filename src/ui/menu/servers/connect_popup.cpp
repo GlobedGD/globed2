@@ -59,8 +59,6 @@ namespace {
 
 bool ConnectionPopup::setup(GameServer gs_) {
     m_server = std::move(gs_);
-    m_closeBtn->removeFromParent();
-    m_closeBtn = nullptr;
 
     auto rlayout = util::ui::getPopupLayoutAnchored(m_size);
 
@@ -110,11 +108,29 @@ void ConnectionPopup::onAbruptDisconnect() {
 void ConnectionPopup::forceClose() {
     m_doClose = true;
     this->onClose(this);
+
+    auto& nm = NetworkManager::get();
+    auto state = nm.getConnectionState();
+
+    if (state != ConnectionState::Established) {
+        // cancel connection
+        nm.disconnect(false, false);
+    }
 }
 
 void ConnectionPopup::onClose(CCObject* o) {
     if (m_doClose) {
         Popup::onClose(o);
+    } else {
+        PopupManager::get().quickPopup(
+            "Note",
+            "Connection is in progress, are you sure you want to cancel it?",
+            "No", "Yes",
+            [this](auto, bool yes) {
+            if (yes) {
+                this->forceClose();
+            }
+        }).showInstant();
     }
 }
 
