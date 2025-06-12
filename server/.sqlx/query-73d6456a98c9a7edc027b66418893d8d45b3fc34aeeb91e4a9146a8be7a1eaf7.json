@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO punishments (account_id, type, type2, reason, expires_at, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING punishment_id",
+  "describe": {
+    "columns": [
+      {
+        "name": "punishment_id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "73d6456a98c9a7edc027b66418893d8d45b3fc34aeeb91e4a9146a8be7a1eaf7"
+}
