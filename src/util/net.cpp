@@ -224,7 +224,7 @@ namespace util::net {
         }
     }
 
-    Result<> stringToInAddr(const char* addr, in_addr6& out) {
+    Result<> stringToInAddr(const char* addr, in6_addr& out) {
         auto ptonResult = inet_pton(AF_INET6, addr, &out);
 
         if (ptonResult > 0) {
