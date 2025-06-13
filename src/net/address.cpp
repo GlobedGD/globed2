@@ -106,7 +106,11 @@ Result<sockaddr_storage> NetworkAddress::resolve() const {
 
     // if this is not a valid IP address, try getaddrinfo
     if (!isIp) {
-        GLOBED_UNWRAP(util::net::getaddrinfo(host, *addr));
+        if (GlobedSettings::get().globed.dnsOverHttps) {
+            GLOBED_UNWRAP(util::net::getaddrinfoDoh(host, *addr));
+        } else {
+            GLOBED_UNWRAP(util::net::getaddrinfo(host, *addr));
+        }
     }
 
     // TODO: same as the todo above
@@ -118,9 +122,9 @@ Result<sockaddr_storage> NetworkAddress::resolve() const {
 
     auto doConvert = [&] {
         if (util::net::activeAddressFamily() == AF_INET6) {
-            return util::net::inAddrToString(reinterpret_cast<sockaddr_in6&>(addr).sin6_addr).unwrapOrElse([] { return "<error stringifying>"; });
+            return util::net::inAddrToString(reinterpret_cast<sockaddr_in6&>(*addr).sin6_addr).unwrapOrElse([] { return "<error stringifying>"; });
         } else {
-            return util::net::inAddrToString(reinterpret_cast<sockaddr_in&>(addr).sin_addr).unwrapOrElse([] { return "<error stringifying>"; });
+            return util::net::inAddrToString(reinterpret_cast<sockaddr_in&>(*addr).sin_addr).unwrapOrElse([] { return "<error stringifying>"; });
         }
     };
 

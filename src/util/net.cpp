@@ -2,6 +2,7 @@
 
 #include <defs/geode.hpp>
 #include <managers/settings.hpp>
+#include <managers/web.hpp>
 #include <util/format.hpp>
 #include <util/data.hpp>
 #include <util/debug.hpp>
@@ -152,6 +153,37 @@ namespace util::net {
         return Ok();
     }
 
+    Result<> getaddrinfoDoh(std::string_view hostname, sockaddr_storage& out) {
+        globed::netLog("getaddrinfoDoh({})", hostname);
+
+        auto af = util::net::activeAddressFamily();
+        const char* family = (af == AF_INET) ? "A" : "AAAA";
+
+        auto test = WebRequestManager::get().dnsOverHttps(hostname, family);
+
+        while (test.isPending()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+
+        if (test.isCancelled()) {
+            return Err("DNS over HTTPS request was cancelled");
+        }
+
+        auto val = test.getFinishedValue();
+        if (val->isErr()) {
+            globed::netLog("(E) getaddrinfoDoh({}) failed: {}", hostname, val->unwrapErr());
+            return Err(val->unwrapErr());
+        }
+
+        auto ip = std::move(val)->unwrap();
+
+        if (af == AF_INET) {
+            return stringToInAddr(ip.c_str(), reinterpret_cast<sockaddr_in&>(out).sin_addr);
+        } else {
+            return stringToInAddr(ip.c_str(), reinterpret_cast<sockaddr_in6&>(out).sin6_addr);
+        }
+    }
+
     Result<std::string> inAddrToString(const in_addr& addr) {
         std::string out;
         out.resize(16);
@@ -167,7 +199,7 @@ namespace util::net {
         return Ok(std::move(out));
     }
 
-    Result<std::string> inAddrToString(const in_addr6& addr) {
+    Result<std::string> inAddrToString(const in6_addr& addr) {
         std::string out;
         out.resize(46);
 

@@ -44,6 +44,7 @@ namespace util::net {
     // getaddrinfo
     Result<std::string> getaddrinfo(std::string_view hostname);
     Result<> getaddrinfo(std::string_view hostname, sockaddr_storage& out);
+    Result<> getaddrinfoDoh(std::string_view hostname, sockaddr_storage& out);
 
     Result<std::string> inAddrToString(const in_addr& addr);
     Result<std::string> inAddrToString(const in6_addr& addr);

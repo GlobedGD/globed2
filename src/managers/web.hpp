@@ -11,6 +11,7 @@ class WebRequestManager : public SingletonBase<WebRequestManager> {
 
 public:
     using Task = CurlManager::Task;
+    using DohTask = geode::Task<geode::Result<std::string>>;
     using Listener = geode::EventListener<Task>;
     using Event = Task::Event;
     using SingletonBase::get;
@@ -33,6 +34,8 @@ public:
     Task testCloudflare();
     // Makes a GET request to https://domain/cdn-cgi/trace
     Task testCloudflareDomainTrace(std::string_view domain);
+
+    DohTask dnsOverHttps(std::string_view hostname, std::string_view family = "A");
 
     // returns whether the user is in a country that may block globed's servers (currently just russia)
     bool isRussian();

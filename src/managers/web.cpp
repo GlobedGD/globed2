@@ -3,15 +3,18 @@
 #include <globed/tracing.hpp>
 #include <managers/account.hpp>
 #include <managers/central_server.hpp>
+#include <managers/settings.hpp>
 #include <util/net.hpp>
 #include <net/manager.hpp>
 
 #include <asp/time/SystemTime.hpp>
+#include <matjson/reflect.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
 
 using RequestTask = WebRequestManager::Task;
+using DohTask = WebRequestManager::DohTask;
 
 static std::string makeUrl(std::string_view baseUrl, std::string_view suffix) {
     std::string base(baseUrl);
@@ -183,6 +186,79 @@ RequestTask WebRequestManager::testCloudflare() {
 
 RequestTask WebRequestManager::testCloudflareDomainTrace(std::string_view domain) {
     return this->get(fmt::format("https://{}/cdn-cgi/trace", domain));
+}
+
+struct DohQuestion {
+    std::string name;
+    int type;
+};
+
+struct DohAnswer {
+    std::string name;
+    int type;
+    int TTL;
+    std::string data;
+};
+
+struct DohResponse {
+    int Status;
+    bool TC;
+    bool RD;
+    bool RA;
+    bool AD;
+    bool CD;
+    std::vector<DohQuestion> Question;
+    std::vector<DohAnswer> Answer;
+};
+
+DohTask WebRequestManager::dnsOverHttps(std::string_view hostname, std::string_view family) {
+    globed::netLog("Performing DoH lookup for {} ({})", hostname, family);
+
+    return this->get("https://one.one.one.one/dns-query", 5, [&](CurlRequest& req) {
+        req.param("name", hostname);
+        req.param("type", family);
+        req.param("do", "false");
+        req.param("cd", "false");
+        req.header("accept", "application/dns-json");
+    }).map([](CurlResponse* response) -> Result<std::string> {
+        globed::netLog("Received DoH response (code {})", response->getCode());
+
+        if (!response->ok()) {
+            globed::netLog("(E) DoH lookup failed: {}", response->getError());
+            return Err("DoH lookup failed: {}", response->getError());
+        }
+
+        auto data = matjson::parseAs<DohResponse>(response->text().unwrapOrDefault());
+        if (!data) {
+            globed::netLog("(E) DoH response is invalid: {}", response->text().unwrapOrDefault());
+            log::warn("DoH response is invalid JSON: {}", response->text().unwrapOrDefault());
+            return Err("Failed to parse DoH response as JSON: {}", data.unwrapErr());
+        }
+
+        int status = (*data).Status;
+        auto& answers = (*data).Answer;
+        auto& questions = (*data).Question;
+
+        std::string asked = "<unknown>";
+        if (!questions.empty()) {
+            asked = questions[0].name;
+        }
+
+        if (status != 0) {
+            globed::netLog("(E) DoH response returned DNS status code {} for {}", status, asked);
+            return Err("DoH lookup failed with status code {} for {}", status, asked);
+        }
+
+        if (answers.empty()) {
+            globed::netLog("(E) DoH response returned 0 answers for {}", asked);
+            return Err("DoH lookup returned no answers for {}", asked);
+        }
+
+        auto& record = answers[0];
+        globed::netLog("DoH lookup succeeded: {} -> {} (type {}, TTL {})", asked, record.data, record.type, record.TTL);
+
+        return Ok(record.data);
+    });
 }
 
 bool WebRequestManager::isRussian() {

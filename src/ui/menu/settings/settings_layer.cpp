@@ -281,6 +281,7 @@ void GlobedSettingsLayer::createSettingsCells(int category) {
             registerSetting(cat, settings.dummySetting, "Keybinds", "Opens the <cg>Keybinds Settings</c>.", Type::KeybindSettings);
             registerSetting(cat, settings.globed.fragmentationLimit, "Packet limit", "Press the \"Test\" button to calibrate the maximum packet size. Should fix some of the issues with players not appearing in a level.", Type::PacketFragmentation);
             registerSetting(cat, settings.globed.forceTcp, "Force TCP", "Forces the use of TCP for <cg>all packets</c>. This may help with some connection issues, but it also may result in higher latency and less smooth gameplay. <cy>Reconnect to the server to see changes.</c>");
+            registerSetting(cat, settings.globed.dnsOverHttps, "DNS over HTTPS", "Enables DNS over HTTPS rather than raw UDP. This improves security and may help with some connection issues. <cy>Restart the game to see changes.</c>");
             registerSetting(cat, settings.globed.showRelays, "Show server relays", "Shows <cg>server relays</c> in the server list, if the current server has any. Relays can help if experiencing connection issues. Note: this feature is <cp>experimental</c>.");
 
 #ifndef GEODE_IS_ANDROID
