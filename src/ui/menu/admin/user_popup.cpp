@@ -366,9 +366,13 @@ void AdminUserPopup::createBanAndMuteButtons() {
         .parent(rootMenu)
         .store(banButton);
 
+    auto expSize = banButton->getScaledContentSize();
+
     // Mute button
     Build<CCSprite>::createSpriteName(userEntry.activeMute ? "button-admin-unmute.png"_spr : "button-admin-mute.png"_spr)
-        .scale(btnScale)
+        .with([&](CCSprite* btn) {
+            util::ui::rescaleToMatch(btn, expSize);
+        })
         .intoMenuItem([this] {
             AdminPunishUserPopup::create(this, userEntry.accountId, PunishmentType::Mute, userEntry.activeMute)->show();
         })
@@ -378,7 +382,9 @@ void AdminUserPopup::createBanAndMuteButtons() {
 
     // Room ban button
     Build<CCSprite>::createSpriteName(userEntry.activeRoomBan ? "button-admin-room-unban.png"_spr : "button-admin-room-ban.png"_spr)
-        .scale(btnScale)
+        .with([&](CCSprite* btn) {
+            util::ui::rescaleToMatch(btn, expSize);
+        })
         .intoMenuItem([this] {
             AdminPunishUserPopup::create(this, userEntry.accountId, PunishmentType::RoomBan, userEntry.activeRoomBan)->show();
         })
