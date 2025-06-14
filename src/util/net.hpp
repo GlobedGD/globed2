@@ -54,4 +54,7 @@ namespace util::net {
     uint16_t hostToNetworkPort(uint16_t port);
 
     int activeAddressFamily();
+
+    // Returns size of sockaddr_in or sockaddr_in6 depending on the active address family
+    size_t activeAddressFamilySize();
 }

@@ -241,5 +241,9 @@ namespace util::net {
     int activeAddressFamily() {
         return GlobedSettings::get().launchArgs().useIpv6 ? AF_INET6 : AF_INET;
     }
+
+    size_t activeAddressFamilySize() {
+        return GlobedSettings::get().launchArgs().useIpv6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in);
+    }
 }
 

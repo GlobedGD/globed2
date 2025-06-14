@@ -65,7 +65,7 @@ Result<int> UdpSocket::send(const char* data, unsigned int dataSize) {
 
     globed::netLog("UdpSocket::send(this={}, data={}, size={})", (void*)this, (void*)data, dataSize);
 
-    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_storage));
+    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(destAddr_.get()), util::net::activeAddressFamilySize());
 
     if (retval == -1) {
         auto errmsg = util::net::lastErrorString();
@@ -86,7 +86,7 @@ Result<int> UdpSocket::sendTo(const char* data, unsigned int dataSize, const Net
 
     GLOBED_UNWRAP_INTO(address.resolve(), *addr)
 
-    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), sizeof(sockaddr_storage));
+    int retval = sendto(socket_, data, dataSize, 0, reinterpret_cast<struct sockaddr*>(addr.get()), util::net::activeAddressFamilySize());
 
     if (retval == -1) {
         auto errmsg = util::net::lastErrorString();
@@ -104,7 +104,7 @@ void UdpSocket::disconnect() {
 
 RecvResult UdpSocket::receive(char* buffer, int bufferSize) {
     sockaddr_storage source;
-    socklen_t addrLen = sizeof(source);
+    socklen_t addrLen = util::net::activeAddressFamilySize();
 
     int result = recvfrom(socket_, buffer, bufferSize, 0, reinterpret_cast<struct sockaddr*>(&source), &addrLen);
 

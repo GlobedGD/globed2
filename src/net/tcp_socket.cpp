@@ -62,7 +62,7 @@ Result<> TcpSocket::connect(const NetworkAddress& address) {
 
     globed::netLog("TcpSocket::connect(this={}) attempting connect call", (void*)this);
 
-    int code = ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), sizeof(sockaddr_storage));
+    int code = ::connect(socket_, reinterpret_cast<struct sockaddr*>(destAddr_.get()), util::net::activeAddressFamilySize());
 
     // if the code isn't 0 (success) or EWOULDBLOCK (expected result), close socket and return error
     if (code != 0 && util::net::lastErrorCode() != WouldBlock) {
