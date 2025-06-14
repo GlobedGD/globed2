@@ -263,6 +263,10 @@ impl GlobedDb {
             user.active_mute = None;
         }
 
+        if punishments[2].as_ref().is_some_and(|room_ban| room_ban.expired()) {
+            user.active_room_ban = None;
+        }
+
         // additional sanity checks, just in case.
 
         if punishments[0].is_none() && user.active_ban.is_some() {
@@ -271,6 +275,10 @@ impl GlobedDb {
 
         if punishments[1].is_none() && user.active_mute.is_some() {
             user.active_mute = None;
+        }
+
+        if punishments[2].is_none() && user.active_room_ban.is_some() {
+            user.active_room_ban = None;
         }
 
         Ok(())
