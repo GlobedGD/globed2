@@ -23,7 +23,7 @@ inline size_t bb_work(const char* s, char* o, size_t ol) {
 
 inline void _bblogFunc(const uint8_t* ptr, size_t size) {
     std::string_view view{(const char*)ptr, size};
-    geode::log::debug("{}", view);
+    geode::log::info("{}", view);
 }
 
 extern "C" {
