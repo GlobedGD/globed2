@@ -290,7 +290,10 @@ impl GlobedDb {
         let mut user = user.map(|x| x.0);
 
         // if they are banned/muted and the ban/mute expired, unban/unmute them
-        if user.as_ref().is_some_and(|user| user.active_mute.is_some() || user.active_ban.is_some()) {
+        if user
+            .as_ref()
+            .is_some_and(|user| user.active_mute.is_some() || user.active_ban.is_some() || user.active_room_ban.is_some())
+        {
             let user = user.as_mut().unwrap();
             self.maybe_expire_punishments(user).await?;
         }
