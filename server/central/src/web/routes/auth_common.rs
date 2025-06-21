@@ -199,8 +199,7 @@ pub async fn handle_login(
                     }
                 } else {
                     warn!("[{user_ip}] trust token missing! ignoring for now");
-                    // unauthorized!("security check failed: trust token missing but required");
-                    None
+                    unauthorized!("security check failed: trust token missing but required");
                 }
             } else {
                 None
