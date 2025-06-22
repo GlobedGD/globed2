@@ -210,8 +210,18 @@ void PlayerListCell::createJoinButton() {
         .scale(0.31f)
         .intoMenuItem([levelId = this->playerData.levelId](auto) {
             auto* glm = GameLevelManager::sharedState();
-            auto mlevel = glm->m_mainLevels->objectForKey(std::to_string(levelId));
+            auto mlevel = static_cast<GJGameLevel*>(glm->m_mainLevels->objectForKey(std::to_string(levelId)));
             bool isMainLevel = std::find(HookedLevelSelectLayer::MAIN_LEVELS.begin(), HookedLevelSelectLayer::MAIN_LEVELS.end(), levelId) != HookedLevelSelectLayer::MAIN_LEVELS.end();
+
+            // additional sanity checks!!!
+            // m_mainLevels also contains levels from world and spinoffs. yikes!
+            if (mlevel) {
+                // main levels, tower levels, the challenge
+                bool isMain = (levelId >= 1 && levelId <= 127) || (levelId >= 5001 && levelId <= 5024) || (levelId == 3001);
+                if (!isMain) {
+                    mlevel = nullptr;
+                }
+            }
 
             if (mlevel != nullptr) {
                 // if its a classic main level go to that page in LevelSelectLayer
