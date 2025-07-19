@@ -1,10 +1,7 @@
-#include "singleton.hpp"
-
 #include <stdexcept>
-
-#ifdef GLOBED_ENABLE_STACKTRACE
-# include <cpptrace/cpptrace.hpp>
-#endif
+#include <string_view>
+#include <fmt/format.h>
+#include <Geode/loader/Log.hpp>
 
 using namespace geode::prelude;
 
@@ -18,13 +15,6 @@ namespace globed {
     void destructedSingleton(std::string_view name) {
         log::warn("Singleton {} used after static destruction!", name);
 
-#ifdef GLOBED_ENABLE_STACKTRACE
-        log::warn("\n{}", cpptrace::generate_trace().to_string(true));
-#endif
         throw singleton_use_after_dtor(name);
-    }
-
-    void scheduleUpdateFor(cocos2d::CCObject* obj) {
-        CCScheduler::get()->scheduleUpdateForTarget(obj, 0, false);
     }
 }

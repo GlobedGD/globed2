@@ -1,1 +1,0 @@
-ALTER TABLE punishments DROP COLUMN issued_at;
