@@ -15,6 +15,8 @@ public:
 
 private:
     friend class SingletonBase;
+    friend class NetworkManagerImpl;
+
     std::unique_ptr<NetworkManagerImpl> m_impl;
 
     NetworkManager();

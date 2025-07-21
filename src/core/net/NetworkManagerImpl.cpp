@@ -1,6 +1,8 @@
 #include "NetworkManagerImpl.hpp"
 #include <globed/core/ValueManager.hpp>
+#include <globed/core/net/NetworkManager.hpp>
 #include <argon/argon.hpp>
+#include <core/CoreImpl.hpp>
 
 using namespace geode::prelude;
 
@@ -19,7 +21,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
         qn::ByteReader breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
-        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size()}};
+        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
         capnp::PackedMessageReader reader{ais};
 
         CentralMessage::Reader msg = reader.getRoot<CentralMessage>();
@@ -30,9 +32,60 @@ NetworkManagerImpl::NetworkManagerImpl() {
             log::error("failed to process message from central server: {}", err);
         }
     });
+
+    m_gameConn.setConnectionStateCallback([this](qn::ConnectionState state) {
+        if (state == qn::ConnectionState::Connected) {
+            log::debug("connected to game server at {}", m_gameServerUrl);
+            m_gameEstablished = true;
+
+            // if there was a deferred join, try to login with session, otherwise just login
+            if (m_gsDeferredJoin) {
+                this->sendGameLoginJoinRequest(*m_gsDeferredJoin);
+            } else {
+                this->sendGameLoginRequest();
+            }
+        } else if (state == qn::ConnectionState::Disconnected) {
+            log::debug("disconnected from game server at {}", m_gameServerUrl);
+            m_gameEstablished = false;
+            m_gameServerUrl.clear();
+
+            // if there was a deferred join, try to connect now
+            if (m_gsDeferredConnectJoin) {
+                auto res = m_gameConn.connect(m_gsDeferredConnectJoin->first);
+                m_gameServerUrl = m_gsDeferredConnectJoin->first;
+
+                if (!res) {
+                    log::error("Failed to connect to game server {}: {}", m_gsDeferredConnectJoin->first, res.unwrapErr().message());
+                    m_gameServerUrl.clear();
+                }
+            }
+        }
+    });
+
+    m_gameConn.setDataCallback([this](std::vector<uint8_t> bytes) {
+        qn::ByteReader breader{bytes};
+        size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
+
+        log::debug("unpacked size: {}, packed size: {}", unpackedSize, bytes.size());
+
+        kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
+        capnp::PackedMessageReader reader{ais};
+
+        GameMessage::Reader msg = reader.getRoot<GameMessage>();
+
+        log::debug("Received {} bytes from game server (msg {})", bytes.size(), (int)msg.which());
+
+        if (auto err = this->onGameDataReceived(msg).err()) {
+            log::error("failed to process message from game server: {}", err);
+        }
+    });
 }
 
 NetworkManagerImpl::~NetworkManagerImpl() {}
+
+NetworkManagerImpl& NetworkManagerImpl::get() {
+    return *NetworkManager::get().m_impl;
+}
 
 Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     if (m_centralConn.connected()) {
@@ -57,6 +110,35 @@ Result<> NetworkManagerImpl::disconnectCentral() {
     return Ok();
 }
 
+std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
+    if (!m_established) {
+        return std::nullopt;
+    }
+
+    if (auto value = globed::value<std::string>("preferred-server")) {
+        for (auto& srv : m_gameServers) {
+            if (srv.second.stringId == *value) {
+                return srv.second.id;
+            }
+        }
+    }
+
+    // fallback to the server with the lowest latency
+    if (!m_gameServers.empty()) {
+        auto it = std::min_element(m_gameServers.begin(), m_gameServers.end(),
+            [](const auto& a, const auto& b) {
+                return a.second.lastLatency < b.second.lastLatency;
+            });
+        return it->second.id;
+    }
+
+    return std::nullopt;
+}
+
+bool NetworkManagerImpl::isConnected() const {
+    return m_established;
+}
+
 void NetworkManagerImpl::onCentralConnected() {
     log::debug("connection to central server established, trying to log in");
     this->tryAuth();
@@ -69,7 +151,7 @@ void NetworkManagerImpl::tryAuth() {
 
     if (auto stoken = this->getUToken()) {
         (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
-            log::debug("attempting login with user token");
+            log::debug("attempting login with user token {}", *stoken);
             auto loginUToken = msg.initLoginUToken();
             loginUToken.setToken(*stoken);
             loginUToken.setAccountId(accountId);
@@ -121,6 +203,118 @@ void NetworkManagerImpl::abortConnection(std::string reason) {
 
 void NetworkManagerImpl::onCentralDisconnected() {
     log::debug("connection to central server lost!");
+
+    CoreImpl::get().onServerDisconnected();
+
+    m_established = false;
+    m_gameServers.clear();
+    m_knownArgonUrl.clear();
+}
+
+void NetworkManagerImpl::joinSession(SessionId id) {
+    if (!m_established) {
+        log::error("Cannot join session, not connected to central server");
+        return;
+    }
+
+    log::debug("Joining session with ID {}", id.asU64());
+
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto joinSession = msg.initJoinSession();
+        joinSession.setSessionId(id);
+    });
+
+    // find the game server
+    uint8_t serverId = id.serverId();
+    for (auto& srv : m_gameServers) {
+        if (srv.second.id == serverId) {
+            this->joinSessionWith(srv.second.url, id);
+            return;
+        }
+    }
+
+    // not found!
+    log::error("Tried joining an invalid session, game server with ID {} does not exist", static_cast<int>(serverId));
+}
+
+void NetworkManagerImpl::leaveSession() {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.initLeaveSession();
+    });
+
+    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+        msg.initLeaveSession();
+    });
+}
+
+void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId id) {
+    // if already connected to another game server, disconnect and wait for the connection to close
+    if (m_gameConn.connected()) {
+        if (m_gameServerUrl != serverUrl) {
+            m_gsDeferredConnectJoin = std::make_pair(std::string(serverUrl), id);
+            (void) m_gameConn.disconnect();
+        } else if (m_gameEstablished) {
+            // same server, just send the join request
+            this->sendGameJoinRequest(id);
+        } else {
+            this->sendGameLoginJoinRequest(id);
+        }
+    } else {
+        // not connected, connect to the game server and join later
+        m_gsDeferredJoin = id;
+        m_gameServerUrl = std::string(serverUrl);
+        auto res = m_gameConn.connect(serverUrl);
+        if (!res) {
+            log::error("Failed to connect to {}: {}", serverUrl, res.unwrapErr().message());
+            m_gameServerUrl.clear();
+            m_gsDeferredJoin.reset();
+        }
+    }
+}
+
+void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id) {
+    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+        auto loginJoin = msg.initLoginUTokenAndJoin();
+        loginJoin.setAccountId(GJAccountManager::get()->m_accountID);
+        loginJoin.setToken(this->getUToken().value_or(""));
+        loginJoin.setSessionId(id);
+        loginJoin.setPasscode(0); // TODO
+    });
+}
+
+void NetworkManagerImpl::sendGameLoginRequest() {
+    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+        auto login = msg.initLoginUToken();
+        login.setAccountId(GJAccountManager::get()->m_accountID);
+        login.setToken(this->getUToken().value_or(""));
+    });
+}
+
+void NetworkManagerImpl::sendGameJoinRequest(SessionId id) {
+    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+        auto join = msg.initJoinSession();
+        join.setSessionId(id);
+        join.setPasscode(0); // TODO
+    });
+}
+
+static void updateServers(std::unordered_map<std::string, GameServer>& servers, auto& newServers) {
+    servers.clear();
+
+    for (auto srv : newServers) {
+        GameServer gameServer;
+        gameServer.id = srv.getId();
+        gameServer.stringId = srv.getStringId();
+        gameServer.url = srv.getAddress();
+        gameServer.name = srv.getName();
+        gameServer.region = srv.getRegion();
+
+        log::debug("Added game server: {} (ID: {}, URL: {}, Region: {})",
+                   gameServer.name, static_cast<int>(gameServer.id), gameServer.url, gameServer.region);
+
+        servers[gameServer.stringId] = std::move(gameServer);
+
+    }
 }
 
 Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) {
@@ -134,9 +328,12 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             }
 
             if (loginOk.hasServers()) {
-                // TODO handle servers
                 auto servers = loginOk.getServers();
+                updateServers(m_gameServers, servers);
             }
+
+            m_established = true;
+            CoreImpl::get().onServerConnected();
         } break;
 
         case CentralMessage::LOGIN_FAILED: {
@@ -154,6 +351,51 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             m_knownArgonUrl = loginRequired.getArgonUrl();
             this->clearUToken();
             this->tryAuth();
+        } break;
+    }
+
+    return Ok();
+}
+
+Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
+    switch (msg.which()) {
+        case GameMessage::LOGIN_OK: {
+            m_gameEstablished = true;
+            log::debug("Successfully logged in to game server");
+        } break;
+
+        case GameMessage::LOGIN_FAILED: {
+            using enum schema::game::LoginFailedReason;
+
+            auto reason = msg.getLoginFailed().getReason();
+
+            switch (reason) {
+                case INVALID_USER_TOKEN: {
+                    log::warn("Login failed: invalid user token, aborting central connection to re-auth");
+                    this->abortConnection("re-authentication required");
+                } break;
+
+                case CENTRAL_SERVER_UNREACHABLE: {
+                    log::warn("Login failed: central server unreachable, aborting connection");
+                    // TODO: show to the user somehow
+                } break;
+            }
+
+            (void) m_gameConn.disconnect();
+        } break;
+
+        case GameMessage::JOIN_SESSION_OK: {} break;
+
+        case GameMessage::JOIN_SESSION_FAILED: {
+            using enum schema::game::JoinSessionFailedReason;
+
+            auto reason = msg.getJoinSessionFailed().getReason();
+
+            switch (reason) {
+                case INVALID_PASSCODE: {
+                    log::warn("Join session failed: invalid passcode");
+                } break;
+            }
         } break;
     }
 
@@ -195,15 +437,12 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
     }
 }
 
-Result<> NetworkManagerImpl::sendToCentral(std::function<void(CentralMessage::Builder&)> func) {
-    if (!m_centralConn.connected()) {
-        return Err("Not connected to central server");
-    }
-
+static Result<> encodeAndSend(
+    qn::Connection& conn,
+    std::function<void(capnp::MallocMessageBuilder&)> func
+) {
     capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<CentralMessage>();
-
-    func(root);
+    func(msg);
 
     size_t unpackedSize = capnp::computeSerializedSizeInWords(msg) * 8;
     qn::HeapByteWriter writer;
@@ -216,9 +455,31 @@ Result<> NetworkManagerImpl::sendToCentral(std::function<void(CentralMessage::Bu
 
     auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
 
-    m_centralConn.sendData(std::move(data));
+    conn.sendData(std::move(data));
 
     return Ok();
+}
+
+Result<> NetworkManagerImpl::sendToCentral(std::function<void(CentralMessage::Builder&)> func) {
+    if (!m_centralConn.connected()) {
+        return Err("Not connected to central server");
+    }
+
+    return encodeAndSend(m_centralConn, [&](capnp::MallocMessageBuilder& msg) {
+        auto root = msg.initRoot<CentralMessage>();
+        func(root);
+    });
+}
+
+Result<> NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&)> func) {
+    if (!m_gameConn.connected()) {
+        return Err("Not connected to game server");
+    }
+
+    return encodeAndSend(m_gameConn, [&](capnp::MallocMessageBuilder& msg) {
+        auto root = msg.initRoot<GameMessage>();
+        func(root);
+    });
 }
 
 std::optional<std::string> NetworkManagerImpl::getUToken() {
