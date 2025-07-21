@@ -1,0 +1,56 @@
+#pragma once
+
+#include <globed/core/Module.hpp>
+#include <globed/core/Core.hpp>
+#include <memory>
+
+namespace globed {
+
+class CoreImpl {
+public:
+    CoreImpl();
+    ~CoreImpl();
+
+    static CoreImpl& get() {
+        return *Core::get().m_impl;
+    }
+
+    geode::Result<> addModule(std::shared_ptr<Module> mod);
+    Module* findModule(std::string_view id);
+
+    // Call at the end of the loading phase, enables all modules that have auto enable set to Launch
+    void onLaunch();
+
+    // Call when connected to a server, enables all modules that have auto enable set to Server
+    void onServerConnected();
+
+    // Call when disconnected from a server, disables all modules that have auto enable set to Server
+    void onServerDisconnected();
+
+private:
+    std::vector<std::shared_ptr<Module>> m_modules;
+
+    template <typename F>
+    void enableIf(F&& func) {
+        for (auto& mod : m_modules) {
+            if (func(*mod)) {
+                if (auto err = mod->enable().err()) {
+                    geode::log::warn("Module '{}' failed to enable: {}", mod->id(), err);
+                }
+            }
+        }
+    }
+
+    template <typename F>
+    void disableIf(F&& func) {
+        for (auto& mod : m_modules) {
+            if (func(*mod)) {
+                if (auto err = mod->disable().err()) {
+                    geode::log::warn("Module '{}' failed to disable: {}", mod->id(), err);
+                }
+            }
+        }
+    }
+};
+
+}

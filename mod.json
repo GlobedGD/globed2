@@ -2,7 +2,7 @@
     "id": "dankmeme.globed2",
     "name": "Globed",
     "developer": "dankmeme",
-    "geode": "4.5.0",
+    "geode": "4.6.3",
     "version": "v1.8.5",
     "gd": {
         "win": "2.2074",
@@ -23,14 +23,7 @@
     "tags": [
         "online"
     ],
-    "settings": {
-        "force-skip-preload": {
-            "default": false,
-            "name": "Skip preload assets",
-            "description": "Skip preloading assets on the loading screen. Enable this only if you are experiencing crashes during loading.",
-            "type": "bool"
-        }
-    },
+    "settings": {},
     "resources": {
         "spritesheets": {
             "roles": [
@@ -54,11 +47,6 @@
         ],
         "files": [
             "resources/sounds/*.ogg"
-        ]
-    },
-    "api": {
-        "include": [
-            "include/*.hpp"
         ]
     }
 }
