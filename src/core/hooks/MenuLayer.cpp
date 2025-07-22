@@ -59,7 +59,7 @@ void HookedMenuLayer::recreateButton() {
 }
 
 void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
-    if (auto err = NetworkManager::get().connectCentral("tcp://[::1]:4340").err()) {
+    if (auto err = NetworkManager::get().connectCentral("tcp://[::1]:53781").err()) {
         log::error("failed to connect to central server: {}", err);
         return;
     }

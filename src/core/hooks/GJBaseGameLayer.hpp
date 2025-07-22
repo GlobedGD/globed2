@@ -1,0 +1,66 @@
+#pragma once
+#include <Geode/Geode.hpp>
+#include <Geode/modify/GJBaseGameLayer.hpp>
+#include <globed/config.hpp>
+#include <globed/core/game/RemotePlayer.hpp>
+#include <core/game/Interpolator.hpp>
+
+namespace globed {
+
+struct GLOBED_DLL GLOBED_NOVTABLE GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
+    struct Fields {
+        bool m_active = false;
+        bool m_editor = false;
+        bool m_didSchedule = false;
+        float m_sendDataInterval = 0.0f;
+
+        float m_timeCounter = 0.0f;
+        float m_lastServerUpdate = 0.0f;
+        float m_lastDataSend = 0.0f;
+        uint32_t m_totalSentPackets = 0;
+        Interpolator m_interpolator;
+        std::unordered_map<int, std::unique_ptr<RemotePlayer>> m_players;
+
+        CCNode* m_playerNode = nullptr;
+    };
+
+    // Setup functions
+    void setupPreInit(GJGameLevel* level, bool editor);
+    void setupPostInit();
+    void onQuit();
+    /// Necessary setup that runs always, even if multiplayer is not active.
+    void setupNecessary();
+    /// Preload necessary assets if they were not loaded before.
+    void setupAssetLoading();
+    /// Setup audio
+    void setupAudio();
+    /// Setup the update loop and other schedules
+    void setupUpdateLoop();
+    /// Setup UI
+    void setupUi();
+
+    // Hooks
+    $override
+    bool init(GJGameLevel* level);
+
+    // Schedules
+    void selUpdateProxy(float dt);
+    void selUpdate(float dt);
+    void selPostInitActions(float dt);
+    void selSendPlayerData(float dt);
+
+    // Misc
+    PlayerState getPlayerState();
+    bool isPaused(bool checkCurrent = true);
+    bool isEditor();
+    bool isCurrentPlayLayer();
+    void handlePlayerJoin(int playerId);
+    void handlePlayerLeave(int playerId);
+
+    // Functions for the outside :tm:
+    static GlobedGJBGL* get(GJBaseGameLayer* base = nullptr);
+    bool active();
+    void onLevelDataReceived(const std::vector<PlayerState>& players, const std::vector<int>& culledIds);
+};
+
+}

@@ -7,21 +7,63 @@ using namespace geode::prelude;
 namespace globed {
 
 SettingsManager::SettingsManager() {
-    this->add(
-        "core.test",
-        "Test setting",
-        "This is a test setting",
-        42
+    // Preload
+    this->registerSetting(
+        "core.preload.enabled",
+        "Preload Assets",
+        "Whether to preload assets during game loading. Helps tremendously with in-game performance, but increases loading time. May cause issues on very low-end devices.",
+        true
     );
 
-    this->freeze();
+    this->registerSetting(
+        "core.preload.defer",
+        "Defer Preloading",
+        "Skips asset preloading until you join an online level. This is useful if you don't use the mod often, but want to keep it enabled.",
+        false
+    );
+
+    // Player settings
+    this->registerSetting(
+        "core.player.opacity",
+        "Player Opacity",
+        "The opacity of other players.",
+        0.8f
+    );
+
+    this->registerSetting(
+        "core.player.name-opacity",
+        "Name Opacity",
+        "The opacity of other players' names.",
+        0.8f
+    );
+
+    this->registerSetting(
+        "core.player.force-visibility",
+        "Force Player Visibility",
+        "Whether to force player visibility, even if they are not visible in the level.",
+        false
+    );
+
+    this->registerSetting(
+        "core.player.hide-nearby",
+        "Hide Nearby Players",
+        "Whether to reduce opacity of players that are nearby.",
+        false
+    );
+
+    this->registerSetting(
+        "core.player.hide-practicing",
+        "Hide Practice Players",
+        "Whether to hide players that are in practice mode.",
+        false
+    );
 }
 
 void SettingsManager::freeze() {
     m_frozen = true;
 }
 
-void SettingsManager::add(
+void SettingsManager::registerSetting(
     std::string_view key,
     std::string_view name,
     std::string_view description,

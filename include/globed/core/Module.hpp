@@ -5,6 +5,7 @@
 namespace globed {
 
 class Core;
+struct GlobedGJBGL;
 
 enum class AutoEnableMode {
     /// The module will never be automatically enabled. You must call `enable()` manually.
@@ -65,6 +66,12 @@ protected:
     virtual geode::Result<> onDisabled() {
         return geode::Ok();
     }
+
+    /// Called when the user joins a level while connected to a server.
+    virtual void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {}
+    /// Called when the user leaves a level or gets disconnected from a server.
+    /// Only called if `onJoinLevel` was called before.
+    virtual void onLeaveLevel(GlobedGJBGL* gjbgl, bool editor) {}
 
 private:
     friend class Core;

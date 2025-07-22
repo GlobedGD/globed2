@@ -1,5 +1,6 @@
 #include "PreloadManager.hpp"
 #include <globed/util/SpinLock.hpp>
+#include <globed/core/SettingsManager.hpp>
 #include <asp/fs.hpp>
 
 #ifndef GEODE_IS_WINDOWS
@@ -83,6 +84,20 @@ PreloadManager::~PreloadManager() {}
 
 void PreloadManager::initLoadQueue() {
     auto gm = globed::cachedSingleton<GameManager>();
+    m_totalCount = 0;
+    m_loadQueue = {};
+
+    if (!globed::setting<bool>("core.preload.enabled")) {
+        // preloading is disabled, skip everything
+        return;
+    }
+
+    if (globed::setting<bool>("core.preload.defer")) {
+        // preloading is deferred, only load if we are loading a level
+        if (m_context != PreloadContext::Level) {
+            return;
+        }
+    }
 
     // Death effects
     // TODO: skip if death effects are disabled in settings
@@ -409,6 +424,7 @@ bool PreloadManager::shouldPreload() {
 
 void PreloadManager::enterContext(PreloadContext context) {
     m_context = context;
+
     // if we are reloading textures, everything must be reset
     if (context == PreloadContext::Reloading) {
         m_iconsLoaded = false;
@@ -430,6 +446,10 @@ size_t PreloadManager::getLoadedCount() {
 
 size_t PreloadManager::getTotalCount() {
     return m_totalCount;
+}
+
+bool PreloadManager::deathEffectsLoaded() {
+    return m_deathEffectsLoaded;
 }
 
 // transforms a string like "icon-41" into "icon-41-hd.png" depending on the current texture quality.

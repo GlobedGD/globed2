@@ -47,7 +47,12 @@ public:
             return *res;
         } else {
             // type mismatch, user may have edited the config? who knows, just return the default
-            return m_defaults[hash];
+            if (auto res = m_defaults[hash].as<T>()) {
+                return *res;
+            } else {
+                // no default either, this is a serious error
+                throw std::runtime_error(fmt::format("setting with hash {} has no default value or the default value is of an invalid type", hash));
+            }
         }
     }
 
@@ -64,8 +69,19 @@ public:
 
     bool hasSetting(uint64_t hash);
 
+    /// Registers a new setting. This cannot be called after the SettingsManager is frozen,
+    /// which happens at the end of the loading phase when the core is initialized.
+    void registerSetting(
+        std::string_view key,
+        std::string_view name,
+        std::string_view description,
+        matjson::Value defaultVal
+        // TODO: limits
+    );
+
 private:
     friend class SingletonBase;
+    friend class CoreImpl;
     template <typename T>
     friend class SettingAccessor;
 
@@ -75,14 +91,6 @@ private:
     std::unordered_map<uint64_t, std::string, NoHashHasher<uint64_t>> m_fullKeys;
 
     SettingsManager();
-
-    void add(
-        std::string_view key,
-        std::string_view name,
-        std::string_view description,
-        matjson::Value defaultVal
-        // TODO: limits
-    );
 
     void freeze();
 

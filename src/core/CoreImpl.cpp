@@ -1,4 +1,5 @@
 #include "CoreImpl.hpp"
+#include <globed/core/SettingsManager.hpp>
 
 using namespace geode::prelude;
 
@@ -33,6 +34,9 @@ void CoreImpl::onLaunch() {
     this->enableIf([](const Module& mod) {
         return mod.m_autoEnableMode == AutoEnableMode::Launch;
     });
+
+    // Disallow adding any new settings
+    SettingsManager::get().freeze();
 }
 
 void CoreImpl::onServerConnected() {
@@ -48,6 +52,18 @@ void CoreImpl::onServerDisconnected() {
 
     this->disableIf([](const Module& mod) {
         return mod.m_autoEnableMode == AutoEnableMode::Server;
+    });
+}
+
+void CoreImpl::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onJoinLevel(gjbgl, level, editor);
+    });
+}
+
+void CoreImpl::onLeaveLevel(GlobedGJBGL* gjbgl, bool editor) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onLeaveLevel(gjbgl, editor);
     });
 }
 

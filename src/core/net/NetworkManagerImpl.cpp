@@ -3,6 +3,9 @@
 #include <globed/core/net/NetworkManager.hpp>
 #include <argon/argon.hpp>
 #include <core/CoreImpl.hpp>
+#include <core/hooks/GJBaseGameLayer.hpp>
+
+#include "data/helpers.hpp"
 
 using namespace geode::prelude;
 
@@ -25,8 +28,6 @@ NetworkManagerImpl::NetworkManagerImpl() {
         capnp::PackedMessageReader reader{ais};
 
         CentralMessage::Reader msg = reader.getRoot<CentralMessage>();
-
-        log::debug("Received {} bytes from central server (msg {})", bytes.size(), (int)msg.which());
 
         if (auto err = this->onCentralDataReceived(msg).err()) {
             log::error("failed to process message from central server: {}", err);
@@ -66,14 +67,10 @@ NetworkManagerImpl::NetworkManagerImpl() {
         qn::ByteReader breader{bytes};
         size_t unpackedSize = breader.readVarUint().unwrapOr(-1);
 
-        log::debug("unpacked size: {}, packed size: {}", unpackedSize, bytes.size());
-
         kj::ArrayInputStream ais{{bytes.data() + breader.position(), bytes.size() - breader.position()}};
         capnp::PackedMessageReader reader{ais};
 
         GameMessage::Reader msg = reader.getRoot<GameMessage>();
-
-        log::debug("Received {} bytes from game server (msg {})", bytes.size(), (int)msg.which());
 
         if (auto err = this->onGameDataReceived(msg).err()) {
             log::error("failed to process message from game server: {}", err);
@@ -298,6 +295,14 @@ void NetworkManagerImpl::sendGameJoinRequest(SessionId id) {
     });
 }
 
+void NetworkManagerImpl::sendPlayerState(const PlayerState& state) {
+    (void) this->sendToGame([&](GameMessage::Builder& msg) {
+        auto playerData = msg.initPlayerData();
+        auto data = playerData.initData();
+        data::encodePlayerState(state, data);
+    }, false);
+}
+
 static void updateServers(std::unordered_map<std::string, GameServer>& servers, auto& newServers) {
     servers.clear();
 
@@ -397,6 +402,37 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
                 } break;
             }
         } break;
+
+        case GameMessage::LEVEL_DATA: {
+            auto data = msg.getLevelData();
+            auto players = data.getPlayers();
+            auto culled = data.getCulled();
+
+            std::vector<PlayerState> states;
+            std::vector<int> culledIds;
+
+            states.reserve(players.size());
+            culledIds.reserve(culled.size());
+
+            for (auto player : players) {
+                if (auto s = data::decodePlayerState(player)) {
+                    states.emplace_back(*s);
+                } else {
+                    log::warn("Server sent invalid player state data for {}, skipping", player.getAccountId());
+                }
+            }
+
+            for (auto id : culled) {
+                culledIds.push_back(id);
+            }
+
+            // TODO (high): better way to dispatch packets
+            Loader::get()->queueInMainThread([states = std::move(states), culledIds = std::move(culledIds)] mutable {
+                if (auto gjbgl = GlobedGJBGL::get()) {
+                    gjbgl->onLevelDataReceived(states, culledIds);
+                }
+            });
+        } break;
     }
 
     return Ok();
@@ -439,7 +475,8 @@ void NetworkManagerImpl::handleLoginFailed(schema::main::LoginFailedReason reaso
 
 static Result<> encodeAndSend(
     qn::Connection& conn,
-    std::function<void(capnp::MallocMessageBuilder&)> func
+    std::function<void(capnp::MallocMessageBuilder&)> func,
+    bool reliable
 ) {
     capnp::MallocMessageBuilder msg;
     func(msg);
@@ -455,7 +492,7 @@ static Result<> encodeAndSend(
 
     auto data = std::vector<uint8_t>(vos.getArray().begin(), vos.getArray().end());
 
-    conn.sendData(std::move(data));
+    conn.sendData(std::move(data), reliable);
 
     return Ok();
 }
@@ -468,10 +505,10 @@ Result<> NetworkManagerImpl::sendToCentral(std::function<void(CentralMessage::Bu
     return encodeAndSend(m_centralConn, [&](capnp::MallocMessageBuilder& msg) {
         auto root = msg.initRoot<CentralMessage>();
         func(root);
-    });
+    }, true);
 }
 
-Result<> NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&)> func) {
+Result<> NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable) {
     if (!m_gameConn.connected()) {
         return Err("Not connected to game server");
     }
@@ -479,7 +516,7 @@ Result<> NetworkManagerImpl::sendToGame(std::function<void(GameMessage::Builder&
     return encodeAndSend(m_gameConn, [&](capnp::MallocMessageBuilder& msg) {
         auto root = msg.initRoot<GameMessage>();
         func(root);
-    });
+    }, reliable);
 }
 
 std::optional<std::string> NetworkManagerImpl::getUToken() {

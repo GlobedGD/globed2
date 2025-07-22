@@ -3,6 +3,7 @@
 #include <qunet/Connection.hpp>
 #include <Geode/Result.hpp>
 #include <globed/core/SessionId.hpp>
+#include <globed/core/game/PlayerState.hpp>
 
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
@@ -40,6 +41,7 @@ public:
 
     void joinSession(SessionId id);
     void leaveSession();
+    void sendPlayerState(const PlayerState& state);
 
 private:
     qn::Connection m_centralConn;
@@ -61,7 +63,7 @@ private:
     geode::Result<> onCentralDataReceived(CentralMessage::Reader& msg);
     geode::Result<> onGameDataReceived(GameMessage::Reader& msg);
     geode::Result<> sendToCentral(std::function<void(CentralMessage::Builder&)> func);
-    geode::Result<> sendToGame(std::function<void(GameMessage::Builder&)> func);
+    geode::Result<> sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable = true);
 
     // Returns the user token for the current central server
     std::optional<std::string> getUToken();

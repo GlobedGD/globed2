@@ -27,6 +27,9 @@ public:
     // Call when disconnected from a server, disables all modules that have auto enable set to Server
     void onServerDisconnected();
 
+    void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor);
+    void onLeaveLevel(GlobedGJBGL* gjbgl, bool editor);
+
 private:
     std::vector<std::shared_ptr<Module>> m_modules;
 
@@ -48,6 +51,15 @@ private:
                 if (auto err = mod->disable().err()) {
                     geode::log::warn("Module '{}' failed to disable: {}", mod->id(), err);
                 }
+            }
+        }
+    }
+
+    template <typename F>
+    void forEachEnabled(F&& func) {
+        for (auto& mod : m_modules) {
+            if (mod->m_enabled) {
+                func(*mod);
             }
         }
     }

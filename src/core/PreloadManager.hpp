@@ -41,6 +41,9 @@ public:
     // Returns the total number of assets that will be loaded
     size_t getTotalCount();
 
+    /// Returns whether death effects have been loaded
+    bool deathEffectsLoaded();
+
 private:
     friend class SingletonBase;
     struct Item {

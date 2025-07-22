@@ -1,0 +1,48 @@
+#include <globed/core/game/RemotePlayer.hpp>
+#include <UIBuilder.hpp>
+
+using namespace geode::prelude;
+
+namespace globed {
+
+RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode)
+    : m_state(), m_parentNode(parentNode)
+{
+    m_state.accountId = playerId;
+
+    Build<VisualPlayer>::create(gameLayer, false)
+        .id(fmt::format("{}-player1", playerId).c_str())
+        .parent(m_parentNode)
+        .visible(false)
+        .store(m_player1);
+
+    Build<VisualPlayer>::create(gameLayer, true)
+        .id(fmt::format("{}-player2", playerId).c_str())
+        .parent(m_parentNode)
+        .visible(false)
+        .store(m_player2);
+
+    m_player1->m_remotePlayer = this;
+    m_player2->m_remotePlayer = this;
+}
+
+RemotePlayer::~RemotePlayer() {
+    m_player1->cleanupObjectLayer();
+    m_player2->cleanupObjectLayer();
+    m_player1->removeFromParent();
+    m_player2->removeFromParent();
+}
+
+void RemotePlayer::update(const PlayerState& state) {
+    m_state = state;
+
+    m_player1->updateFromData(m_state.player1, m_state);
+
+    if (m_state.player2) {
+        m_player2->updateFromData(*m_state.player2, m_state);
+    } else {
+        m_player2->setVisible(false);
+    }
+}
+
+}
