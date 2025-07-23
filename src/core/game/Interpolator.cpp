@@ -1,10 +1,13 @@
 #include "Interpolator.hpp"
+#include <globed/util/algo.hpp>
 
 #ifdef GLOBED_DEBUG_INTERPOLATION
 # define LERP_LOG(...) log::debug(__VA_ARGS__)
 #else
 # define LERP_LOG(...) do {} while (0)
 #endif
+
+constexpr float TIME_DRIFT_THRESHOLD = 0.20f; // 200ms
 
 using namespace geode::prelude;
 
@@ -63,7 +66,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     // account for potential drift in time
     float drift = state.newestFrame().timestamp - state.timeCounter;
-    if (state.frames.size() >= 2 && std::fabs(drift) > 0.5f) {
+    if (state.frames.size() >= 2 && std::fabs(drift) > TIME_DRIFT_THRESHOLD) {
         float newTs = state.frames[state.frames.size() - 2].timestamp;
         LERP_LOG("[Interpolator] Time drift for {}, resetting time from {} to {}", player.accountId, state.timeCounter, newTs);
         state.timeCounter = newTs;
@@ -101,7 +104,8 @@ static inline void lerpSpecific(
         out.position.x = newGuessedX;
     }
 
-    out.rotation = std::lerp(older.rotation, newer.rotation, t);
+    // rotation can wrap around, so we avoid using std::lerp
+    out.rotation = lerpAngle(older.rotation, newer.rotation, t);
 }
 
 static inline void lerpPlayer(
@@ -140,33 +144,28 @@ void Interpolator::tick(float dt, float p1xdiff) {
 
         // determine between which frames to interpolate
         PlayerState *older = nullptr, *newer = nullptr;
-        if (player.frames.size() == 2) {
-            older = &player.oldestFrame();
-            newer = &player.newestFrame();
-        } else {
-            for (size_t i = 0; i < player.frames.size() - 1; i++) {
-                auto& a = player.frames[i];
-                auto& b = player.frames[i + 1];
+        for (size_t i = 0; i < player.frames.size() - 1; i++) {
+            auto& a = player.frames[i];
+            auto& b = player.frames[i + 1];
 
-                if (a.timestamp <= player.timeCounter && b.timestamp > player.timeCounter) {
-                    older = &a;
-                    newer = &b;
-                    break;
-                }
+            if (a.timestamp <= player.timeCounter && b.timestamp > player.timeCounter) {
+                older = &a;
+                newer = &b;
+                break;
             }
+        }
 
-            if (!older || !newer) {
-                // possibly the next frame is delayed, we may need to extrapolate
-                if (player.timeCounter > player.newestFrame().timestamp) {
-                    // newer = &player.newestFrame();
-                    // older = &player.frames[player.frames.size() - 2]; // the one right before the newest
+        if (!older || !newer) {
+            // possibly the next frame is delayed, we may need to extrapolate
+            if (player.timeCounter >= player.newestFrame().timestamp) {
+                // newer = &player.newestFrame();
+                // older = &player.frames[player.frames.size() - 2]; // the one right before the newest
 
-                    // rather than extrapolation, wait for a new frame.
-                    continue;
-                } else if (player.timeCounter < player.oldestFrame().timestamp) {
-                    older = &player.oldestFrame();
-                    newer = &player.frames[1]; // the one right after the oldest
-                }
+                // rather than extrapolation, wait for a new frame.
+                continue;
+            } else if (player.timeCounter < player.oldestFrame().timestamp) {
+                older = &player.oldestFrame();
+                newer = &player.frames[1]; // the one right after the oldest
             }
         }
 

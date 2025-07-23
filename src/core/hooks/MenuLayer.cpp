@@ -1,6 +1,7 @@
 #include "MenuLayer.hpp"
 #include <UIBuilder.hpp>
 #include <globed/core/net/NetworkManager.hpp>
+#include <globed/core/SettingsManager.hpp>
 
 using namespace geode::prelude;
 
@@ -59,7 +60,10 @@ void HookedMenuLayer::recreateButton() {
 }
 
 void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
-    if (auto err = NetworkManager::get().connectCentral("tcp://[::1]:53781").err()) {
+    auto override = globed::value<std::string>("core.dev.override-central-url");
+    std::string url = override ? *override : "tcp://[::1]:53781";
+
+    if (auto err = NetworkManager::get().connectCentral(url).err()) {
         log::error("failed to connect to central server: {}", err);
         return;
     }

@@ -1,5 +1,6 @@
 #include "GJBaseGameLayer.hpp"
 #include <globed/core/RoomManager.hpp>
+#include <globed/util/algo.hpp>
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -240,7 +241,7 @@ PlayerState GlobedGJBGL::getPlayerState() {
 
         auto pobjInner = static_cast<CCNode*>(obj->getChildren()->objectAtIndex(0));
         out.position = obj->getPosition();
-        out.rotation = obj->getRotation();
+        out.rotation = globed::normalizeAngle(obj->getRotation());
 
         out.isVisible = obj->isVisible();
         out.isLookingLeft = obj->m_isGoingLeft;
