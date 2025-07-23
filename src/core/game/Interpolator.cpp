@@ -66,7 +66,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     // account for potential drift in time
     float drift = state.newestFrame().timestamp - state.timeCounter;
-    if (state.frames.size() >= 2 && std::fabs(drift) > TIME_DRIFT_THRESHOLD) {
+    if (state.frames.size() >= 2 && std::abs(drift) > TIME_DRIFT_THRESHOLD) {
         float newTs = state.frames[state.frames.size() - 2].timestamp;
         LERP_LOG("[Interpolator] Time drift for {}, resetting time from {} to {}", player.accountId, state.timeCounter, newTs);
         state.timeCounter = newTs;
@@ -97,9 +97,10 @@ static inline void lerpSpecific(
         out.position = older.position.lerp(newer.position, t);
     }
 
-    // if our guessed X is close enough to the accurate interpolated X, use it
+    // if both us and this player are moving, try to use the guessed X position as long as it is close enough,
     // this will result in smoother movement for an FPS that is not a factor of 240
-    if (std::abs(newGuessedX - out.position.x) < 3.0f) {
+    // TODO: maybe only apply this modification if the camera is dynamic (moves with the player)
+    if (std::abs(p1xdiff) > 0.1f && std::abs(older.position.x - newer.position.x) > 0.1f && std::abs(newGuessedX - out.position.x) < 3.0f) {
         LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessedX);
         out.position.x = newGuessedX;
     }
