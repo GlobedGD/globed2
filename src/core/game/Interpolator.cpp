@@ -105,8 +105,14 @@ static inline void lerpSpecific(
         out.position.x = newGuessedX;
     }
 
-    // rotation can wrap around, so we avoid using std::lerp
-    out.rotation = lerpAngle(older.rotation, newer.rotation, t);
+    // in platformer, a player may rotate by 180 degrees simply by moving left or right,
+    // if that happens, do not interpolate the rotation
+    if (older.isLookingLeft != newer.isLookingLeft && std::abs(normalizeAngle(newer.rotation - older.rotation)) >= 170.f) {
+        out.rotation = older.rotation;
+    } else {
+        // rotation can wrap around, so we avoid using std::lerp
+        out.rotation = lerpAngle(older.rotation, newer.rotation, t);
+    }
 }
 
 static inline void lerpPlayer(

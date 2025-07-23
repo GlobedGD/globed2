@@ -1,7 +1,7 @@
 #pragma once
 
 #include <globed/core/game/PlayerState.hpp>
-#include <queue>
+#include <deque>
 #include <optional>
 
 namespace globed {
