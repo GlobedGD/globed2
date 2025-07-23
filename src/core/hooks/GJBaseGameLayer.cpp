@@ -123,8 +123,12 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
     fields.m_timeCounter += dt;
 
+    float p1x = m_player1->getPosition().x;
+    float p1xdiff = p1x - fields.m_lastP1XPosition;
+    fields.m_lastP1XPosition = p1x;
+
     // process stuff
-    fields.m_interpolator.tick(dt);
+    fields.m_interpolator.tick(dt, p1xdiff);
 
     if (fields.m_timeCounter - fields.m_lastDataSend >= fields.m_sendDataInterval) {
         fields.m_lastDataSend += fields.m_sendDataInterval;

@@ -17,6 +17,7 @@ project(globed2 VERSION 1.0.0)
 # Options
 option(GLOBED_VOICE_SUPPORT "Enable voice chat support" ON)
 option(GLOBED_DEBUG "Enable debug mode" OFF)
+option(GLOBED_DEBUG_INTERPOLATION "Enable interpolation debugging, adds a TON of extra logs, and some visual elements" OFF)
 
 # Configure platform sources
 if (ANDROID)
@@ -57,6 +58,10 @@ if (GLOBED_DEBUG)
     target_compile_definitions(${PROJECT_NAME} PUBLIC GLOBED_DEBUG)
     set(QUNET_DEBUG ON)
     message(STATUS "Building Globed with debug support")
+endif()
+
+if (GLOBED_DEBUG_INTERPOLATION)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC GLOBED_DEBUG_INTERPOLATION)
 endif()
 
 # Dependencies

@@ -17,7 +17,10 @@ private:
     friend class RemotePlayer;
 
     RemotePlayer* m_remotePlayer = nullptr;
+
+#ifdef GLOBED_DEBUG_INTERPOLATION
     geode::Ref<cocos2d::CCDrawNode> m_playerTrajectory = nullptr;
+#endif
 
     bool m_isSecond = false;
     bool m_isPlatformer = false;

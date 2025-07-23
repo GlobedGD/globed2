@@ -20,6 +20,7 @@ struct GLOBED_DLL GLOBED_NOVTABLE GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBas
         uint32_t m_totalSentPackets = 0;
         Interpolator m_interpolator;
         std::unordered_map<int, std::unique_ptr<RemotePlayer>> m_players;
+        float m_lastP1XPosition = 0.f;
 
         CCNode* m_playerNode = nullptr;
     };

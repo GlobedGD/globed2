@@ -19,7 +19,7 @@ public:
     bool hasPlayer(int playerId) const;
     void updatePlayer(const PlayerState& player, float curTimestamp);
     void updateNoop(int accountId, float curTimestamp);
-    void tick(float dt);
+    void tick(float dt, float p1xdiff);
 
     PlayerState& getPlayerState(int playerId);
     PlayerState& getNewerState(int playerId);

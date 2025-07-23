@@ -1,5 +1,11 @@
 #include "Interpolator.hpp"
 
+#ifdef GLOBED_DEBUG_INTERPOLATION
+# define LERP_LOG(...) log::debug(__VA_ARGS__)
+#else
+# define LERP_LOG(...) do {} while (0)
+#endif
+
 using namespace geode::prelude;
 
 namespace globed {
@@ -24,7 +30,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     if (!state.frames.empty()) {
         // ignore repeated frames
         if (player.timestamp == state.newestFrame().timestamp) {
-            log::debug("[Interpolator] Ignoring repeated frame for player {} at timestamp {}", player.accountId, player.timestamp);
+            LERP_LOG("[Interpolator] Ignoring repeated frame for player {} at timestamp {}", player.accountId, player.timestamp);
             return;
         }
 
@@ -32,7 +38,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
             state.lastDeath = PlayerDeath { player.isLastDeathReal };
         }
 
-        log::info("[Interpolator] new frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
+        LERP_LOG("[Interpolator] new frame for {}, X progression: {} ({}) ... {} ({}) -> {} ({})",
             player.accountId,
             state.oldestFrame().player1.position.x,
             state.oldestFrame().timestamp,
@@ -47,7 +53,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
 
     // assert that the frame is newer than the last one
     if (!state.frames.empty() && player.timestamp <= state.newestFrame().timestamp) {
-        log::error("[Interpolator] Frame for player {} is not newer than the last one: {} <= {}",
+        LERP_LOG("[Interpolator] Frame for player {} is not newer than the last one: {} <= {}",
             player.accountId, player.timestamp, state.newestFrame().timestamp
         );
         return;
@@ -59,7 +65,7 @@ void Interpolator::updatePlayer(const PlayerState& player, float curTimestamp) {
     float drift = state.newestFrame().timestamp - state.timeCounter;
     if (state.frames.size() >= 2 && std::fabs(drift) > 0.5f) {
         float newTs = state.frames[state.frames.size() - 2].timestamp;
-        log::debug("[Interpolator] Time drift for {}, resetting time from {} to {}", player.accountId, state.timeCounter, newTs);
+        LERP_LOG("[Interpolator] Time drift for {}, resetting time from {} to {}", player.accountId, state.timeCounter, newTs);
         state.timeCounter = newTs;
     }
 }
@@ -73,9 +79,12 @@ static inline void lerpSpecific(
     const PlayerObjectData& older,
     const PlayerObjectData& newer,
     PlayerObjectData& out,
-    float t
+    float t,
+    float p1xdiff
 ) {
     out.copyFlagsFrom(older);
+
+    float newGuessedX = out.position.x + p1xdiff;
 
     // i hate spider
     if (out.iconType == PlayerIconType::Spider && std::abs(older.position.y - newer.position.y) >= 33.f) {
@@ -85,6 +94,13 @@ static inline void lerpSpecific(
         out.position = older.position.lerp(newer.position, t);
     }
 
+    // if our guessed X is close enough to the accurate interpolated X, use it
+    // this will result in smoother movement for an FPS that is not a factor of 240
+    if (std::abs(newGuessedX - out.position.x) < 3.0f) {
+        LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessedX);
+        out.position.x = newGuessedX;
+    }
+
     out.rotation = std::lerp(older.rotation, newer.rotation, t);
 }
 
@@ -92,7 +108,8 @@ static inline void lerpPlayer(
     const PlayerState& older,
     const PlayerState& newer,
     PlayerState& out,
-    float t
+    float t,
+    float p1xdiff
 ) {
     out.accountId = older.accountId;
     out.timestamp = std::lerp(older.timestamp, newer.timestamp, t);
@@ -106,16 +123,16 @@ static inline void lerpPlayer(
     out.isEditorBuilding = older.isEditorBuilding;
     out.isLastDeathReal = older.isLastDeathReal;
 
-    lerpSpecific(older.player1, newer.player1, out.player1, t);
+    lerpSpecific(older.player1, newer.player1, out.player1, t, p1xdiff);
 
     // only lerp player2 if present in both frames
     if (newer.player2 && older.player2) {
         out.player2 = PlayerObjectData{};
-        lerpSpecific(*older.player2, *newer.player2, *out.player2, t);
+        lerpSpecific(*older.player2, *newer.player2, *out.player2, t, p1xdiff);
     }
 }
 
-void Interpolator::tick(float dt) {
+void Interpolator::tick(float dt, float p1xdiff) {
     for (auto& [playerId, player] : m_players) {
         if (player.frames.size() < 2) continue;
 
@@ -172,11 +189,11 @@ void Interpolator::tick(float dt) {
         }
 
         float frameDelta = newer->timestamp - older->timestamp;
-
         float t = (player.timeCounter - older->timestamp) / frameDelta;
-        lerpPlayer(*older, *newer, player.interpolatedState, t);
 
-        log::info("[Interpolator] Lerp for {}: t = {}, timeCounter = {}, older ts = {}, newer ts = {}",
+        lerpPlayer(*older, *newer, player.interpolatedState, t, p1xdiff);
+
+        LERP_LOG("[Interpolator] Lerp for {}: t = {}, timeCounter = {}, older ts = {}, newer ts = {}",
             playerId, t, player.timeCounter, older->timestamp, newer->timestamp
         );
 

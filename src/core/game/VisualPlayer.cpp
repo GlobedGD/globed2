@@ -28,18 +28,20 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, bool isSecond) {
 
     this->updateOpacity();
 
-    // TODO: debug stuff
+#ifdef GLOBED_DEBUG_INTERPOLATION
     Build<CCDrawNode>::create()
         .id(fmt::format("debug-trajectory"_spr).c_str())
         .parent(gameLayer->m_objectLayer)
         .store(m_playerTrajectory);
 
     m_playerTrajectory->m_bUseArea = false;
+#endif
 
     return true;
 }
 
 void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerState& state) {
+#ifdef GLOBED_DEBUG_INTERPOLATION
     if (m_playerTrajectory) {
         m_playerTrajectory->drawSegment(
             m_prevPosition, data.position,
@@ -68,6 +70,7 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
             m_playerTrajectory->clear();
         }
     }
+#endif
 
     m_prevRotating = data.isRotating;
     m_prevPosition = data.position;
