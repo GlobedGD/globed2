@@ -1,5 +1,6 @@
 #include "NetworkManagerImpl.hpp"
 #include <globed/core/ValueManager.hpp>
+#include <globed/core/SettingsManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <argon/argon.hpp>
 #include <core/CoreImpl.hpp>
@@ -8,6 +9,17 @@
 #include "data/helpers.hpp"
 
 using namespace geode::prelude;
+
+static qn::ConnectionDebugOptions getConnOpts() {
+    qn::ConnectionDebugOptions opts{};
+    opts.packetLossSimulation = globed::setting<float>("core.dev.packet-loss-sim");
+
+    if (opts.packetLossSimulation != 0.f) {
+        log::warn("Packet loss simulation enabled: {}%", opts.packetLossSimulation * 100.f);
+    }
+
+    return opts;
+}
 
 namespace globed {
 
@@ -52,6 +64,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
 
             // if there was a deferred join, try to connect now
             if (m_gsDeferredConnectJoin) {
+                m_gameConn.setDebugOptions(getConnOpts());
                 auto res = m_gameConn.connect(m_gsDeferredConnectJoin->first);
                 m_gameServerUrl = m_gsDeferredConnectJoin->first;
 
@@ -91,6 +104,8 @@ Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
 
     m_centralUrl = std::string(url);
     m_knownArgonUrl.clear();
+
+    m_centralConn.setDebugOptions(getConnOpts());
 
     return m_centralConn.connect(url).mapErr([](auto&& err) {
         return err.message();
@@ -260,6 +275,7 @@ void NetworkManagerImpl::joinSessionWith(std::string_view serverUrl, SessionId i
         // not connected, connect to the game server and join later
         m_gsDeferredJoin = id;
         m_gameServerUrl = std::string(serverUrl);
+        m_gameConn.setDebugOptions(getConnOpts());
         auto res = m_gameConn.connect(serverUrl);
         if (!res) {
             log::error("Failed to connect to {}: {}", serverUrl, res.unwrapErr().message());

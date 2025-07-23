@@ -57,6 +57,14 @@ SettingsManager::SettingsManager() {
         "Whether to hide players that are in practice mode.",
         false
     );
+
+    // Developer settings
+    this->registerSetting(
+        "core.dev.packet-loss-sim",
+        "Packet Loss Simulation",
+        "Simulates packet loss for testing purposes, 0% means no loss, 100% means all packets are lost. Only works for UDP/QUIC connections, reconnect to the server to apply.",
+        0.0f
+    );
 }
 
 void SettingsManager::freeze() {
