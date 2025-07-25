@@ -79,6 +79,13 @@ SettingsManager::SettingsManager() {
         "Simulates packet loss for testing purposes, 0% means no loss, 100% means all packets are lost. Only works for UDP/QUIC connections, reconnect to the server to apply.",
         0.0f
     );
+
+    this->registerSetting(
+        "core.dev.net-debug-logs",
+        "Network Debug Logs",
+        "Enables debug logs from qunet.",
+        false
+    );
 }
 
 void SettingsManager::freeze() {

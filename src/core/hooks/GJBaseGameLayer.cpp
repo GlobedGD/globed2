@@ -131,7 +131,9 @@ void GlobedGJBGL::selUpdateProxy(float dt) {
 
 void GlobedGJBGL::selUpdate(float tsdt) {
     float dt = tsdt / CCScheduler::get()->getTimeScale();
+
     auto& fields = *m_fields.self();
+    auto& pcm = PlayerCacheManager::get();
 
     fields.m_timeCounter += dt;
 
@@ -164,7 +166,11 @@ void GlobedGJBGL::selUpdate(float tsdt) {
 
         // if we don't know player's data yet (username, icons, etc.), request it
         if (!player->isDataInitialized()) {
-            fields.m_unknownPlayers.push_back(playerId);
+            if (pcm.has(playerId)) {
+                player->initData(*pcm.get(playerId));
+            } else {
+                fields.m_unknownPlayers.push_back(playerId);
+            }
         }
     }
 
