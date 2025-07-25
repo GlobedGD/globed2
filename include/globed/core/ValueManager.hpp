@@ -35,4 +35,9 @@ std::optional<T> value(std::string_view key) {
     return ValueManager::get().getValue<T>(key);
 }
 
+template <typename T>
+void setValue(std::string_view key, T value) {
+    ValueManager::get().set(key, matjson::Value(value));
+}
+
 }

@@ -35,6 +35,8 @@ public:
     geode::Result<> connectCentral(std::string_view url);
     geode::Result<> disconnectCentral();
 
+    qn::ConnectionState getConnState(bool game);
+
     /// Returns the numeric ID of the preferred game server, or nullopt if not connected
     std::optional<uint8_t> getPreferredServer();
 
@@ -46,10 +48,18 @@ public:
     void sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests);
 
     template <typename T>
+    [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]
     MessageListener<T> listen(ListenerFn<T> callback) {
         auto listener = new MessageListenerImpl<T>(std::move(callback));
         this->addListener(typeid(T), listener);
         return MessageListener<T>(listener);
+    }
+
+    template <typename T>
+    MessageListenerImpl<T>* listenGlobal(ListenerFn<T> callback) {
+        auto listener = new MessageListenerImpl<T>(std::move(callback));
+        this->addListener(typeid(T), listener);
+        return listener;
     }
 
     void addListener(const std::type_info& ty, void* listener);
@@ -57,12 +67,14 @@ public:
 
 private:
     qn::Connection m_centralConn;
+    std::atomic<qn::ConnectionState> m_centralConnState;
     std::string m_centralUrl;
     std::string m_knownArgonUrl;
     bool m_waitingForArgon = false;
     bool m_established = false;
 
     qn::Connection m_gameConn;
+    std::atomic<qn::ConnectionState> m_gameConnState;
     std::string m_gameServerUrl;
     std::optional<std::pair<std::string, SessionId>> m_gsDeferredConnectJoin;
     std::optional<SessionId> m_gsDeferredJoin;

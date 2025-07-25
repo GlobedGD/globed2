@@ -2,6 +2,7 @@
 #include <UIBuilder.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/SettingsManager.hpp>
+#include <ui/menu/GlobedMenuLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -36,8 +37,8 @@ void HookedMenuLayer::recreateButton() {
         if (false) {
             return CCSprite::createWithSpriteFrameName("GJ_reportBtn_001.png");
         } else {
-            return CircleButtonSprite::createWithSpriteFrameName(
-                "menuicon.png"_spr,
+            return CircleButtonSprite::createWithSprite(
+                "globed-gold-icon.png"_spr,
                 1.f,
                 m_fields->btnActive ? CircleBaseColor::Cyan : CircleBaseColor::Green,
                 CircleBaseSize::MediumAlt
@@ -60,13 +61,25 @@ void HookedMenuLayer::recreateButton() {
 }
 
 void HookedMenuLayer::onGlobedButton(cocos2d::CCObject*) {
-    auto override = globed::value<std::string>("core.dev.override-central-url");
-    std::string url = override ? *override : "tcp://[::1]:53781";
+    if (!globed::value<bool>("core.flags.seen-consent-notice").value_or(false)) {
+        // TODO
+        createQuickPopup(
+            "Note",
+            "This is where I show the consent popup and yap about account verification but I don't have the time to write this rn",
+            "Cancel",
+            "Ok",
+            [this](auto, bool yup) {
+                if (yup) {
+                    globed::setValue("core.flags.seen-consent-notice", true);
+                    this->onGlobedButton(nullptr);
+                }
+            }
+        );
 
-    if (auto err = NetworkManager::get().connectCentral(url).err()) {
-        log::error("failed to connect to central server: {}", err);
         return;
     }
+
+    GlobedMenuLayer::create()->switchTo();
 }
 
 }

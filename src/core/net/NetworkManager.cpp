@@ -16,4 +16,23 @@ Result<> NetworkManager::connectCentral(std::string_view url) {
     return m_impl->connectCentral(url);
 }
 
+ConnectionState NetworkManager::getConnectionState() {
+    switch (m_impl->getConnState(false)) {
+        case qn::ConnectionState::Disconnected:
+            return ConnectionState::Disconnected;
+        case qn::ConnectionState::DnsResolving:
+            return ConnectionState::DnsResolving;
+        case qn::ConnectionState::Pinging:
+            return ConnectionState::Pinging;
+        case qn::ConnectionState::Connecting:
+            return ConnectionState::Connecting;
+        case qn::ConnectionState::Connected:
+            return ConnectionState::Connected;
+        case qn::ConnectionState::Closing:
+            return ConnectionState::Closing;
+        case qn::ConnectionState::Reconnecting:
+            return ConnectionState::Reconnecting;
+    }
+}
+
 }

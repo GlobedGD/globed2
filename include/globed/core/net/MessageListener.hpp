@@ -14,8 +14,13 @@ enum class ListenerResult {
     Stop,
 };
 
+#if defined(__cpp_lib_move_only_function) && __cpp_lib_move_only_function >= 202110L
+template <typename T>
+using ListenerFn = std::move_only_function<ListenerResult (const T&)>;
+#else
 template <typename T>
 using ListenerFn = std::function<ListenerResult (const T&)>;
+#endif
 
 void _destroyListener(const std::type_info& ty, void* ptr);
 

@@ -36,6 +36,7 @@ endif()
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     src/core/*.cpp
     src/util/*.cpp
+    src/ui/*.cpp
     ${PLATFORM_SOURCES}
 )
 
@@ -76,6 +77,7 @@ CPMAddPackage(
 CPMAddPackage("gh:GlobedGD/server-shared#master")
 CPMAddPackage("gh:dankmeme01/qunet#master")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
+CPMAddPackage("gh:dankmeme01/cue#b8ffad04")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 
 if (GLOBED_VOICE_SUPPORT)
@@ -84,4 +86,4 @@ if (GLOBED_VOICE_SUPPORT)
     target_link_libraries(${PROJECT_NAME} opus)
 endif()
 
-target_link_libraries(${PROJECT_NAME} CapnProto::capnp ServerShared qunet asp argon UIBuilder)
+target_link_libraries(${PROJECT_NAME} CapnProto::capnp ServerShared qunet asp argon cue UIBuilder)

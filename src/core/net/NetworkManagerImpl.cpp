@@ -51,6 +51,7 @@ namespace globed {
 
 NetworkManagerImpl::NetworkManagerImpl() {
     m_centralConn.setConnectionStateCallback([this](qn::ConnectionState state) {
+        m_centralConnState = state;
         if (state == qn::ConnectionState::Connected) {
             this->onCentralConnected();
         } else if (state == qn::ConnectionState::Disconnected) {
@@ -73,6 +74,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
     });
 
     m_gameConn.setConnectionStateCallback([this](qn::ConnectionState state) {
+        m_gameConnState = state;
         if (state == qn::ConnectionState::Connected) {
             log::debug("connected to game server at {}", m_gameServerUrl);
             m_gameEstablished = true;
@@ -146,6 +148,10 @@ Result<> NetworkManagerImpl::disconnectCentral() {
     (void) m_centralConn.disconnect();
 
     return Ok();
+}
+
+qn::ConnectionState NetworkManagerImpl::getConnState(bool game) {
+    return game ? m_gameConnState.load() : m_centralConnState.load();
 }
 
 std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {

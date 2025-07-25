@@ -7,11 +7,23 @@ namespace globed {
 
 class NetworkManagerImpl;
 
+enum class ConnectionState {
+    Disconnected,
+    DnsResolving,
+    Pinging,
+    Connecting,
+    Connected,
+    Closing,
+    Reconnecting,
+};
+
 class NetworkManager : public SingletonBase<NetworkManager> {
 public:
     // Connect to the central server at the given URL.
     // See qunet's documentation for the URL format.
     geode::Result<> connectCentral(std::string_view url);
+
+    ConnectionState getConnectionState();
 
 private:
     friend class SingletonBase;
