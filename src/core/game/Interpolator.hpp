@@ -40,6 +40,9 @@ private:
     };
 
     std::unordered_map<int, LerpState> m_players;
+    size_t m_stationaryFrames = 0;
+
+    bool isMainPlayerXStationary();
 };
 
 }

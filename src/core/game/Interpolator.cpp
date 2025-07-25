@@ -83,7 +83,8 @@ static inline void lerpSpecific(
     const PlayerObjectData& newer,
     PlayerObjectData& out,
     float t,
-    float p1xdiff
+    float p1xdiff,
+    bool p1xStationary
 ) {
     out.copyFlagsFrom(older);
 
@@ -100,10 +101,12 @@ static inline void lerpSpecific(
     // if both us and this player are moving, try to use the guessed X position as long as it is close enough,
     // this will result in smoother movement for an FPS that is not a factor of 240
     // TODO: maybe only apply this modification if the camera is dynamic (moves with the player)
-    if (std::abs(p1xdiff) > 0.1f && std::abs(older.position.x - newer.position.x) > 0.1f && std::abs(newGuessedX - out.position.x) < 3.0f) {
+    if (!p1xStationary && std::abs(older.position.x - newer.position.x) > 0.1f && std::abs(newGuessedX - out.position.x) < 3.0f) {
         LERP_LOG("[Interpolator] Rounding up X position from {} to {} for player", out.position.x, newGuessedX);
         out.position.x = newGuessedX;
     }
+
+    // TODO: apply same smoothing to Y position
 
     // in platformer, a player may rotate by 180 degrees simply by moving left or right,
     // if that happens, do not interpolate the rotation
@@ -120,7 +123,8 @@ static inline void lerpPlayer(
     const PlayerState& newer,
     PlayerState& out,
     float t,
-    float p1xdiff
+    float p1xdiff,
+    bool p1xStationary
 ) {
     out.accountId = older.accountId;
     out.timestamp = std::lerp(older.timestamp, newer.timestamp, t);
@@ -134,20 +138,26 @@ static inline void lerpPlayer(
     out.isEditorBuilding = older.isEditorBuilding;
     out.isLastDeathReal = older.isLastDeathReal;
 
-    lerpSpecific(older.player1, newer.player1, out.player1, t, p1xdiff);
+    lerpSpecific(older.player1, newer.player1, out.player1, t, p1xdiff, p1xStationary);
 
     // only lerp player2 if present in both frames
     if (newer.player2 && older.player2) {
         out.player2 = PlayerObjectData{};
-        lerpSpecific(*older.player2, *newer.player2, *out.player2, t, p1xdiff);
+        lerpSpecific(*older.player2, *newer.player2, *out.player2, t, p1xdiff, p1xStationary);
     }
 }
 
 void Interpolator::tick(float dt, float p1xdiff) {
+    if (p1xdiff == 0.0f) {
+        m_stationaryFrames++;
+    } else {
+        m_stationaryFrames = 0;
+    }
+
+    bool p1xStationary = this->isMainPlayerXStationary();
+
     for (auto& [playerId, player] : m_players) {
         if (player.frames.size() < 2) continue;
-
-        // TODO: increment dt here, or after processing?
 
         // determine between which frames to interpolate
         PlayerState *older = nullptr, *newer = nullptr;
@@ -197,7 +207,7 @@ void Interpolator::tick(float dt, float p1xdiff) {
         float frameDelta = newer->timestamp - older->timestamp;
         float t = (player.timeCounter - older->timestamp) / frameDelta;
 
-        lerpPlayer(*older, *newer, player.interpolatedState, t, p1xdiff);
+        lerpPlayer(*older, *newer, player.interpolatedState, t, p1xdiff, p1xStationary);
 
         LERP_LOG("[Interpolator] Lerp for {}: t = {}, timeCounter = {}, older ts = {}, newer ts = {}",
             playerId, t, player.timeCounter, older->timestamp, newer->timestamp
@@ -222,6 +232,23 @@ bool Interpolator::isPlayerStale(int playerId, float curTimestamp) {
     }
 
     return std::abs(state.updatedAt - curTimestamp) > 0.5f;
+}
+
+bool Interpolator::isMainPlayerXStationary() {
+    float userFps = 1.f / CCDirector::get()->getAnimationInterval();
+
+    // fps = 0-240, return frames > 0,
+    // fps = 240-480, return frames > 1,
+    // fps = 480-720, return frames > 2,
+    // and so on..
+
+    // this is needed because of how gd handles physics updates, at fps higher than 240,
+    // sometimes the player may not move at all, despite not being stationary.
+    // this is a (silly, but functional!) formula to calculate how many frames the player has to be stationary
+    // to actually be considered stationary.
+
+    size_t frames = userFps / 240.f;
+    return m_stationaryFrames > frames;
 }
 
 std::optional<PlayerDeath> Interpolator::LerpState::takeDeath() {
