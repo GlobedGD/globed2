@@ -3,7 +3,9 @@
 #include <qunet/Connection.hpp>
 #include <Geode/Result.hpp>
 #include <globed/core/SessionId.hpp>
-#include <globed/core/game/PlayerState.hpp>
+#include <globed/core/data/PlayerState.hpp>
+#include <globed/core/net/MessageListener.hpp>
+#include <typeindex>
 
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
@@ -41,7 +43,17 @@ public:
 
     void joinSession(SessionId id);
     void leaveSession();
-    void sendPlayerState(const PlayerState& state);
+    void sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests);
+
+    template <typename T>
+    MessageListener<T> listen(ListenerFn<T> callback) {
+        auto listener = new MessageListenerImpl<T>(std::move(callback));
+        this->addListener(typeid(T), listener);
+        return MessageListener<T>(listener);
+    }
+
+    void addListener(const std::type_info& ty, void* listener);
+    void removeListener(const std::type_info& ty, void* listener);
 
 private:
     qn::Connection m_centralConn;
@@ -57,6 +69,8 @@ private:
     bool m_gameEstablished = false;
 
     std::unordered_map<std::string, GameServer> m_gameServers;
+
+    asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>> m_listeners;
 
     void onCentralConnected();
     void onCentralDisconnected();
@@ -81,6 +95,55 @@ private:
 
     // Handlers for messages
     void handleLoginFailed(schema::main::LoginFailedReason reason);
+
+    template <typename T>
+    void invokeListeners(T&& message) {
+        auto listenersLock = m_listeners.lock();
+        auto listeners = listenersLock->find(typeid(T));
+
+        // check if there are any non-threadsafe listeners, and defer to the main thread if so
+        bool hasThreadUnsafe = false;
+
+        if (listeners != listenersLock->end()) {
+            for (auto* listener : listeners->second) {
+                auto impl = static_cast<MessageListenerImpl<T>*>(listener);
+
+                if (!impl->isThreadSafe()) {
+                    hasThreadUnsafe = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasThreadUnsafe) {
+            geode::Loader::get()->queueInMainThread([this, message = std::forward<T>(message)]() mutable {
+                this->invokeUnchecked(std::forward<T>(message));
+            });
+        } else {
+            listenersLock.unlock(); // prevent deadlocks
+            this->invokeUnchecked(std::forward<T>(message));
+        }
+    }
+
+    /// Like `invokeListeners`, but does not check for thread safety and invokes the listeners directly.
+    template <typename T>
+    void invokeUnchecked(T&& message) {
+        auto listenersLock = m_listeners.lock();
+        auto listeners = listenersLock->find(typeid(T));
+
+        if (listeners == listenersLock->end()) {
+            geode::log::debug("No listeners for message type '{}'", typeid(T).name());
+            return;
+        }
+
+        for (auto* listener : listeners->second) {
+            auto impl = static_cast<MessageListenerImpl<T>*>(listener);
+
+            if (impl->invoke(message) == ListenerResult::Stop) {
+                break;
+            }
+        }
+    }
 };
 
 }

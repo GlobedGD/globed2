@@ -5,9 +5,14 @@ using namespace geode::prelude;
 
 namespace globed {
 
-RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode)
-    : m_state(), m_parentNode(parentNode)
-{
+static const PlayerDisplayData DUMMY_DATA = {
+    .accountId = 0,
+    .userId = 0,
+    .username = "Player",
+    .icons = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, NO_GLOW, 1, NO_TRAIL, NO_TRAIL }
+};
+
+RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* parentNode) : m_state(), m_parentNode(parentNode) {
     m_state.accountId = playerId;
 
     Build<VisualPlayer>::create(gameLayer, false)
@@ -24,6 +29,9 @@ RemotePlayer::RemotePlayer(int playerId, GJBaseGameLayer* gameLayer, CCNode* par
 
     m_player1->m_remotePlayer = this;
     m_player2->m_remotePlayer = this;
+
+    m_player1->updateDisplayData(DUMMY_DATA);
+    m_player2->updateDisplayData(DUMMY_DATA);
 }
 
 RemotePlayer::~RemotePlayer() {
@@ -43,6 +51,17 @@ void RemotePlayer::update(const PlayerState& state) {
     } else {
         m_player2->setVisible(false);
     }
+}
+
+bool RemotePlayer::isDataInitialized() const {
+    return m_dataInitialized;
+}
+
+void RemotePlayer::initData(const PlayerDisplayData& data) {
+    m_dataInitialized = true;
+
+    m_player1->updateDisplayData(data);
+    m_player2->updateDisplayData(data);
 }
 
 }

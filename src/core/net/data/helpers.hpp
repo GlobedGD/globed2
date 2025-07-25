@@ -1,7 +1,8 @@
 #pragma once
 
 #include "generated.hpp"
-#include <globed/core/game/PlayerState.hpp>
+#include <globed/core/data/PlayerState.hpp>
+#include <globed/core/data/PlayerDisplayData.hpp>
 
 namespace globed::data {
 
@@ -102,6 +103,66 @@ inline std::optional<PlayerState> decodePlayerState(schema::game::PlayerData::Re
         auto p1 = single.getPlayer1();
         out.player2 = std::nullopt;
         initPlayer(p1, out.player1);
+    } else {
+        return std::nullopt;
+    }
+
+    return out;
+}
+
+inline void encodeIconData(const PlayerIconData& icons, auto& data) {
+    data.setCube(icons.cube);
+    data.setShip(icons.ship);
+    data.setBall(icons.ball);
+    data.setUfo(icons.ufo);
+    data.setWave(icons.wave);
+    data.setRobot(icons.robot);
+    data.setSpider(icons.spider);
+    data.setSwing(icons.swing);
+    data.setJetpack(icons.jetpack);
+    data.setColor1(icons.color1);
+    data.setColor2(icons.color2);
+    data.setGlowColor(icons.glowColor);
+    data.setDeathEffect(icons.deathEffect);
+    data.setTrail(icons.trail);
+    data.setShipTrail(icons.shipTrail);
+}
+
+inline std::optional<PlayerIconData> decodeIconData(schema::shared::PlayerIconData::Reader& reader) {
+    PlayerIconData out{};
+    out.cube = reader.getCube();
+    out.ship = reader.getShip();
+    out.ball = reader.getBall();
+    out.ufo = reader.getUfo();
+    out.wave = reader.getWave();
+    out.robot = reader.getRobot();
+    out.spider = reader.getSpider();
+    out.swing = reader.getSwing();
+    out.jetpack = reader.getJetpack();
+    out.color1 = reader.getColor1();
+    out.color2 = reader.getColor2();
+    out.glowColor = reader.getGlowColor();
+    out.deathEffect = reader.getDeathEffect();
+    out.trail = reader.getTrail();
+    out.shipTrail = reader.getShipTrail();
+    return out;
+}
+
+inline std::optional<PlayerDisplayData> decodeDisplayData(schema::shared::PlayerDisplayData::Reader& reader) {
+    PlayerDisplayData out{};
+    out.accountId = reader.getAccountId();
+
+    if (out.accountId == 0) {
+        return std::nullopt;
+    }
+
+    out.userId = reader.getUserId();
+    out.username = reader.getUsername();
+
+    auto iconsR = reader.getIcons();
+
+    if (auto icons = decodeIconData(iconsR)) {
+        out.icons = *icons;
     } else {
         return std::nullopt;
     }

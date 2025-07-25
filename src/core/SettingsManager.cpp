@@ -58,6 +58,20 @@ SettingsManager::SettingsManager() {
         false
     );
 
+    this->registerSetting(
+        "core.player.death-effects",
+        "Death Effects",
+        "Whether to play death effects for other players.",
+        true
+    );
+
+    this->registerSetting(
+        "core.player.default-death-effects",
+        "Default Death Effects",
+        "Whether to use the default death effects for other players.",
+        true
+    );
+
     // Developer settings
     this->registerSetting(
         "core.dev.packet-loss-sim",

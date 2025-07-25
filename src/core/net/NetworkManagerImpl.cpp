@@ -2,9 +2,10 @@
 #include <globed/core/ValueManager.hpp>
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
+#include <globed/core/data/Messages.hpp>
+#include <globed/core/data/PlayerDisplayData.hpp>
 #include <argon/argon.hpp>
 #include <core/CoreImpl.hpp>
-#include <core/hooks/GJBaseGameLayer.hpp>
 
 #include "data/helpers.hpp"
 
@@ -19,6 +20,31 @@ static qn::ConnectionDebugOptions getConnOpts() {
     }
 
     return opts;
+}
+
+static globed::PlayerIconData gatherIconData() {
+    auto gm = globed::cachedSingleton<GameManager>();
+
+    globed::PlayerIconData out{};
+    out.cube = gm->m_playerFrame;
+    out.ship = gm->m_playerShip;
+    out.ball = gm->m_playerBall;
+    out.ufo = gm->m_playerBird;
+    out.wave = gm->m_playerDart;
+    out.robot = gm->m_playerRobot;
+    out.spider = gm->m_playerSpider;
+    out.swing = gm->m_playerSwing;
+    out.jetpack = gm->m_playerJetpack;
+    out.deathEffect = gm->m_playerDeathEffect;
+    out.color1 = gm->m_playerColor;
+    out.color2 = gm->m_playerColor2;
+    if (gm->m_playerGlow) {
+        out.glowColor = gm->m_playerGlowColor.value();
+    }
+    out.trail = gm->m_playerStreak;
+    out.shipTrail = gm->m_playerShipFire;
+
+    return out;
 }
 
 namespace globed {
@@ -292,6 +318,9 @@ void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id) {
         loginJoin.setToken(this->getUToken().value_or(""));
         loginJoin.setSessionId(id);
         loginJoin.setPasscode(0); // TODO
+
+        auto iconBuilder = loginJoin.initIcons();
+        data::encodeIconData(gatherIconData(), iconBuilder);
     });
 }
 
@@ -300,6 +329,9 @@ void NetworkManagerImpl::sendGameLoginRequest() {
         auto login = msg.initLoginUToken();
         login.setAccountId(GJAccountManager::get()->m_accountID);
         login.setToken(this->getUToken().value_or(""));
+
+        auto iconBuilder = login.initIcons();
+        data::encodeIconData(gatherIconData(), iconBuilder);
     });
 }
 
@@ -311,12 +343,62 @@ void NetworkManagerImpl::sendGameJoinRequest(SessionId id) {
     });
 }
 
-void NetworkManagerImpl::sendPlayerState(const PlayerState& state) {
+void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests) {
     (void) this->sendToGame([&](GameMessage::Builder& msg) {
         auto playerData = msg.initPlayerData();
         auto data = playerData.initData();
         data::encodePlayerState(state, data);
+
+        auto reqs = playerData.initDataRequests(dataRequests.size());
+        for (size_t i = 0; i < dataRequests.size(); ++i) {
+            reqs.set(i, dataRequests[i]);
+        }
     }, false);
+}
+
+void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
+    std::type_index index{ty};
+    auto listeners = m_listeners.lock();
+    auto& ls = (*listeners)[index];
+
+    ls.push_back(listener);
+
+    log::debug(
+        "Added listener {} for message type '{}', priority: {}",
+        listener,
+        ty.name(),
+        static_cast<MessageListenerImplBase*>(listener)->m_priority
+    );
+
+    // sort them by priority
+    std::sort(ls.begin(), ls.end(), [](void* a, void* b) {
+        auto* implA = static_cast<MessageListenerImplBase*>(a);
+        auto* implB = static_cast<MessageListenerImplBase*>(b);
+        return implA->m_priority < implB->m_priority;
+    });
+}
+
+void NetworkManagerImpl::removeListener(const std::type_info& ty, void* listener) {
+    std::type_index index{ty};
+    auto listeners = m_listeners.lock();
+
+    log::debug(
+        "Removing listener {} for message type '{}'",
+        listener,
+        ty.name()
+    );
+
+    auto it = listeners->find(index);
+    if (it != listeners->end()) {
+        auto& vec = it->second;
+        auto pos = std::find(vec.begin(), vec.end(), listener);
+        if (pos != vec.end()) {
+            vec.erase(pos);
+            if (vec.empty()) {
+                listeners->erase(it);
+            }
+        }
+    }
 }
 
 static void updateServers(std::unordered_map<std::string, GameServer>& servers, auto& newServers) {
@@ -421,33 +503,38 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
         case GameMessage::LEVEL_DATA: {
             auto data = msg.getLevelData();
+
             auto players = data.getPlayers();
             auto culled = data.getCulled();
+            auto ddatas = data.getDisplayDatas();
 
-            std::vector<PlayerState> states;
-            std::vector<int> culledIds;
-
-            states.reserve(players.size());
-            culledIds.reserve(culled.size());
+            msg::LevelDataMessage outMsg;
+            outMsg.players.reserve(players.size());
+            outMsg.culled.reserve(culled.size());
+            outMsg.displayDatas.reserve(ddatas.size());
 
             for (auto player : players) {
                 if (auto s = data::decodePlayerState(player)) {
-                    states.emplace_back(*s);
+                    outMsg.players.emplace_back(*s);
                 } else {
                     log::warn("Server sent invalid player state data for {}, skipping", player.getAccountId());
                 }
             }
 
             for (auto id : culled) {
-                culledIds.push_back(id);
+                outMsg.culled.push_back(id);
             }
 
-            // TODO (high): better way to dispatch packets
-            Loader::get()->queueInMainThread([states = std::move(states), culledIds = std::move(culledIds)] mutable {
-                if (auto gjbgl = GlobedGJBGL::get()) {
-                    gjbgl->onLevelDataReceived(states, culledIds);
+            for (auto dd : ddatas) {
+                if (auto s = data::decodeDisplayData(dd)) {
+                    outMsg.displayDatas.push_back(*s);
+                } else {
+                    // can happen as an optimization
+                    log::debug("Server sent invalid player display data, skipping");
                 }
-            });
+            }
+
+            this->invokeListeners(std::move(outMsg));
         } break;
     }
 

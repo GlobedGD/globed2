@@ -1,6 +1,6 @@
 #pragma once
 
-#include <globed/core/game/PlayerState.hpp>
+#include <globed/core/data/PlayerState.hpp>
 #include <deque>
 #include <optional>
 

@@ -1,0 +1,14 @@
+#pragma once
+#include "PlayerIconData.hpp"
+#include <string>
+
+namespace globed {
+
+struct PlayerDisplayData {
+    int accountId;
+    int userId;
+    std::string username;
+    PlayerIconData icons;
+};
+
+}

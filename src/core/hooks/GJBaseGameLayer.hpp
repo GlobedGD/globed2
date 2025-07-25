@@ -3,6 +3,8 @@
 #include <Geode/modify/GJBaseGameLayer.hpp>
 #include <globed/config.hpp>
 #include <globed/core/game/RemotePlayer.hpp>
+#include <globed/core/net/MessageListener.hpp>
+#include <globed/core/data/Messages.hpp>
 #include <core/game/Interpolator.hpp>
 
 namespace globed {
@@ -19,8 +21,11 @@ struct GLOBED_DLL GLOBED_NOVTABLE GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBas
         float m_lastDataSend = 0.0f;
         uint32_t m_totalSentPackets = 0;
         Interpolator m_interpolator;
-        std::unordered_map<int, std::unique_ptr<RemotePlayer>> m_players;
         float m_lastP1XPosition = 0.f;
+        std::unordered_map<int, std::unique_ptr<RemotePlayer>> m_players;
+        std::vector<int> m_unknownPlayers;
+        float m_lastDataRequest = 0.f;
+        std::optional<MessageListener<msg::LevelDataMessage>> m_levelDataListener;
 
         CCNode* m_playerNode = nullptr;
     };
@@ -39,6 +44,8 @@ struct GLOBED_DLL GLOBED_NOVTABLE GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBas
     void setupUpdateLoop();
     /// Setup UI
     void setupUi();
+    /// Setup message listeners
+    void setupListeners();
 
     // Hooks
     $override
@@ -61,7 +68,9 @@ struct GLOBED_DLL GLOBED_NOVTABLE GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBas
     // Functions for the outside :tm:
     static GlobedGJBGL* get(GJBaseGameLayer* base = nullptr);
     bool active();
-    void onLevelDataReceived(const std::vector<PlayerState>& players, const std::vector<int>& culledIds);
+
+private:
+    void onLevelDataReceived(const msg::LevelDataMessage& message);
 };
 
 }

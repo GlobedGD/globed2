@@ -1,5 +1,6 @@
 #include "GJBaseGameLayer.hpp"
 #include <globed/core/RoomManager.hpp>
+#include <globed/core/PlayerCacheManager.hpp>
 #include <globed/util/algo.hpp>
 #include <core/CoreImpl.hpp>
 #include <core/PreloadManager.hpp>
@@ -41,6 +42,7 @@ void GlobedGJBGL::setupPostInit() {
     this->setupAudio();
     this->setupUpdateLoop();
     this->setupUi();
+    this->setupListeners();
 }
 
 void GlobedGJBGL::setupNecessary() {
@@ -100,6 +102,15 @@ void GlobedGJBGL::setupUi() {
         .store(fields.m_playerNode);
 }
 
+void GlobedGJBGL::setupListeners() {
+    auto& fields = *m_fields.self();
+
+    fields.m_levelDataListener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const msg::LevelDataMessage& message) {
+        this->onLevelDataReceived(message);
+        return ListenerResult::Continue;
+    });
+}
+
 void GlobedGJBGL::onQuit() {
     auto& fields = *m_fields.self();
 
@@ -131,10 +142,7 @@ void GlobedGJBGL::selUpdate(float tsdt) {
     // process stuff
     fields.m_interpolator.tick(dt, p1xdiff);
 
-    if (fields.m_timeCounter - fields.m_lastDataSend >= fields.m_sendDataInterval) {
-        fields.m_lastDataSend += fields.m_sendDataInterval;
-        this->selSendPlayerData(dt);
-    }
+    fields.m_unknownPlayers.clear();
 
     for (auto& it : fields.m_players) {
         int playerId = it.first;
@@ -151,6 +159,12 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         // if the player has left the level, remove them
         if (fields.m_interpolator.isPlayerStale(playerId, fields.m_lastServerUpdate)) {
             this->handlePlayerLeave(playerId);
+            continue;
+        }
+
+        // if we don't know player's data yet (username, icons, etc.), request it
+        if (!player->isDataInitialized()) {
+            fields.m_unknownPlayers.push_back(playerId);
         }
     }
 
@@ -161,6 +175,12 @@ void GlobedGJBGL::selUpdate(float tsdt) {
             int playerId = it.first;
             this->handlePlayerLeave(playerId);
         }
+    }
+
+    // send player data to the server
+    if (fields.m_timeCounter - fields.m_lastDataSend >= fields.m_sendDataInterval) {
+        fields.m_lastDataSend += fields.m_sendDataInterval;
+        this->selSendPlayerData(dt);
     }
 }
 
@@ -182,7 +202,28 @@ void GlobedGJBGL::selSendPlayerData(float dt) {
     fields.m_totalSentPackets++;
 
     auto state = this->getPlayerState();
-    NetworkManagerImpl::get().sendPlayerState(state);
+    std::vector<int> toRequest;
+    float sinceRequest = fields.m_timeCounter - fields.m_lastDataRequest;
+
+    // only request data if there's no in flight request or more than 1 second has passed since one was made (likely lost)
+    if (fields.m_lastDataRequest == 0.f || sinceRequest > 1.f) {
+        toRequest.reserve(std::min<size_t>(fields.m_unknownPlayers.size(), 64));
+
+        for (int player : m_fields->m_unknownPlayers) {
+            if (player <= 0 || toRequest.size() >= 64) {
+                continue;
+            }
+
+            toRequest.push_back(player);
+        }
+
+        fields.m_lastDataRequest = fields.m_timeCounter;
+
+        // TODO: technically there's a possibility for a "ghost player" where we think they are on the level, but the server is not aware of them,
+        // this will cause them to be sent every single time (as the server will never send their data). not sure how to handle this yet.
+    }
+
+    NetworkManagerImpl::get().sendPlayerState(state, toRequest);
 }
 
 PlayerState GlobedGJBGL::getPlayerState() {
@@ -318,6 +359,7 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     // TODO: cleanup
     fields.m_players.erase(playerId);
     fields.m_interpolator.removePlayer(playerId);
+    PlayerCacheManager::get().evictToLayer2(playerId);
 }
 
 GlobedGJBGL* GlobedGJBGL::get(GJBaseGameLayer* base) {
@@ -332,11 +374,11 @@ bool GlobedGJBGL::active() {
     return m_fields->m_active;
 }
 
-void GlobedGJBGL::onLevelDataReceived(const std::vector<PlayerState>& players, const std::vector<int>& culledIds) {
+void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     auto& fields = *m_fields.self();
     fields.m_lastServerUpdate = fields.m_timeCounter;
 
-    for (auto& player : players) {
+    for (auto& player : message.players) {
         if (player.accountId <= 0) continue;
 
         if (!fields.m_players.contains(player.accountId)) {
@@ -346,13 +388,23 @@ void GlobedGJBGL::onLevelDataReceived(const std::vector<PlayerState>& players, c
         fields.m_interpolator.updatePlayer(player, fields.m_lastServerUpdate);
     }
 
-    for (auto id : culledIds) {
+    for (auto id : message.culled) {
         if (id <= 0) continue;
 
         // this player is still on the level, but the server decided not to send their data,
         // for example because they are stationary or very far away
         // call `updateNoop` to prevent them from being kicked
         fields.m_interpolator.updateNoop(id, fields.m_lastServerUpdate);
+    }
+
+    for (auto& dd : message.displayDatas) {
+        if (dd.accountId <= 0) continue; // should never happen?
+
+        PlayerCacheManager::get().insert(dd.accountId, dd);
+    }
+
+    if (!message.displayDatas.empty()) {
+        fields.m_lastDataRequest = 0.f; // reset the time, so that we can request more players
     }
 }
 

@@ -268,7 +268,6 @@ void VisualPlayer::updateOpacity() {
 }
 
 void VisualPlayer::updateIconType(PlayerIconType iconType) {
-    // TODO: get icons
     this->toggleFlyMode(false, false);
     this->toggleRollMode(false, false);
     this->toggleBirdMode(false, false);
@@ -277,35 +276,43 @@ void VisualPlayer::updateIconType(PlayerIconType iconType) {
     this->toggleSpiderMode(false, false);
     this->toggleSwingMode(false, false);
 
-    // TODO: call updatexxx with icons
     switch (iconType) {
         case PlayerIconType::Unknown: break;
         case PlayerIconType::Cube: {
             // don't call toggle
+            this->updatePlayerFrame(m_icons.cube);
         } break;
         case PlayerIconType::Ship: {
             this->toggleFlyMode(true, false);
+            this->updatePlayerShipFrame(m_icons.ship);
         } break;
         case PlayerIconType::Ball: {
             this->toggleRollMode(true, false);
+            this->updatePlayerRollFrame(m_icons.ball);
         } break;
         case PlayerIconType::Ufo: {
             this->toggleBirdMode(true, false);
+            this->updatePlayerBirdFrame(m_icons.ufo);
         } break;
         case PlayerIconType::Wave: {
             this->toggleDartMode(true, false);
+            this->updatePlayerDartFrame(m_icons.wave);
         } break;
         case PlayerIconType::Robot: {
             this->toggleRobotMode(true, false);
+            this->updatePlayerRobotFrame(m_icons.robot);
         } break;
         case PlayerIconType::Spider: {
             this->toggleSpiderMode(true, false);
+            this->updatePlayerSpiderFrame(m_icons.spider);
         } break;
         case PlayerIconType::Swing: {
             this->toggleSwingMode(true, false);
+            this->updatePlayerSwingFrame(m_icons.swing);
         } break;
         case PlayerIconType::Jetpack: {
             this->toggleFlyMode(true, false);
+            this->updatePlayerJetpackFrame(m_icons.jetpack);
         } break;
     }
 }
@@ -416,6 +423,60 @@ void VisualPlayer::cleanupObjectLayer() {
     // hope i didnt forget anything..
 
 #undef $clear
+}
+
+void VisualPlayer::updateDisplayData(const PlayerDisplayData& data) {
+    auto gm = cachedSingleton<GameManager>();
+
+    // TODO: name label stuff
+
+    // TODO: i dont know why this was here
+    this->togglePlatformerMode(m_gameLayer->m_level->isPlatformer());
+
+    m_icons = data.icons;
+
+    if (globed::setting<bool>("core.player.default-death-effects")) {
+        m_icons.deathEffect = DEFAULT_DEATH;
+    }
+
+    this->updatePlayerObjectIcons(true);
+    this->updateIconType(m_prevMode);
+}
+
+void VisualPlayer::updatePlayerObjectIcons(bool skipFrames) {
+    auto* gm = globed::cachedSingleton<GameManager>();
+
+    m_color1 = gm->colorForIdx(m_icons.color1);
+    m_color2 = gm->colorForIdx(m_icons.color2);
+
+    this->setColor(m_color1);
+    this->setSecondColor(m_color2);
+
+    if (m_icons.glowColor != NO_GLOW) {
+        this->m_hasGlow = true;
+        this->enableCustomGlowColor(gm->colorForIdx(m_icons.glowColor));
+    } else {
+        this->m_hasGlow = false;
+        this->disableCustomGlowColor();
+    }
+
+    if (!skipFrames) {
+        this->updatePlayerFrame(m_icons.cube);
+        this->updatePlayerShipFrame(m_icons.ship);
+        this->updatePlayerRollFrame(m_icons.ball);
+        this->updatePlayerBirdFrame(m_icons.ufo);
+        this->updatePlayerDartFrame(m_icons.wave);
+        this->updatePlayerRobotFrame(m_icons.robot);
+        this->updatePlayerSpiderFrame(m_icons.spider);
+        this->updatePlayerSwingFrame(m_icons.swing);
+        this->updatePlayerJetpackFrame(m_icons.jetpack);
+    }
+
+    this->updateGlowColor();
+    this->updatePlayerGlow();
+
+    // set opacities
+    this->updateOpacity();
 }
 
 VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, bool isSecond) {
