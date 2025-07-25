@@ -43,9 +43,11 @@ public:
     /// Returns whether the client is connected and authenticated with the central server
     bool isConnected() const;
 
+    // Message sending functions
     void joinSession(SessionId id);
     void leaveSession();
     void sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests);
+    void sendRoomStateCheck();
 
     template <typename T>
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]

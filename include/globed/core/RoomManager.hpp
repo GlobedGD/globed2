@@ -6,17 +6,18 @@ namespace globed {
 
 /// Class that manages client's current room state.
 /// It also manages joining and leaving levels.
-class RoomManager : public SingletonBase<RoomManager> {
+class RoomManager : public SingletonLeakBase<RoomManager> {
 public:
     void joinLevel(int levelId);
     void leaveLevel();
 
 private:
-    friend class SingletonBase;
-    RoomManager() = default;
+    friend class SingletonLeakBase;
+    RoomManager();
     ~RoomManager() = default;
 
     uint32_t m_roomId = 0;
+    std::string m_roomName = "Global Room";
 };
 
 }

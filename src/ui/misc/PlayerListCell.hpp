@@ -15,6 +15,8 @@ public:
         cocos2d::CCSize cellSize
     );
 
+    static PlayerListCell* createMyself(cocos2d::CCSize cellSize);
+
 protected:
     int m_accountId;
     int m_userId;

@@ -362,6 +362,12 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
     }, false);
 }
 
+void NetworkManagerImpl::sendRoomStateCheck() {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.setCheckRoomState();
+    });
+}
+
 void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
     std::type_index index{ty};
     auto listeners = m_listeners.lock();
@@ -461,6 +467,16 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->clearUToken();
             this->tryAuth();
         } break;
+
+        case CentralMessage::ROOM_STATE: {
+            auto roomState = msg.getRoomState();
+
+            this->invokeListeners(data::decodeRoomStateMessage(roomState));
+        } break;
+
+        default: {
+            return Err("Received unknown message type: {}", std::to_underlying(msg.which()));
+        } break;
     }
 
     return Ok();
@@ -493,12 +509,16 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
             (void) m_gameConn.disconnect();
         } break;
 
-        case GameMessage::JOIN_SESSION_OK: {} break;
+        case GameMessage::JOIN_SESSION_OK: {
+            // TODO: post listener message
+        } break;
 
         case GameMessage::JOIN_SESSION_FAILED: {
             using enum schema::game::JoinSessionFailedReason;
 
             auto reason = msg.getJoinSessionFailed().getReason();
+
+            // TODO: post listener message
 
             switch (reason) {
                 case INVALID_PASSCODE: {
@@ -509,38 +529,11 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
 
         case GameMessage::LEVEL_DATA: {
             auto data = msg.getLevelData();
+            this->invokeListeners(data::decodeLevelDataMessage(data));
+        } break;
 
-            auto players = data.getPlayers();
-            auto culled = data.getCulled();
-            auto ddatas = data.getDisplayDatas();
-
-            msg::LevelDataMessage outMsg;
-            outMsg.players.reserve(players.size());
-            outMsg.culled.reserve(culled.size());
-            outMsg.displayDatas.reserve(ddatas.size());
-
-            for (auto player : players) {
-                if (auto s = data::decodePlayerState(player)) {
-                    outMsg.players.emplace_back(*s);
-                } else {
-                    log::warn("Server sent invalid player state data for {}, skipping", player.getAccountId());
-                }
-            }
-
-            for (auto id : culled) {
-                outMsg.culled.push_back(id);
-            }
-
-            for (auto dd : ddatas) {
-                if (auto s = data::decodeDisplayData(dd)) {
-                    outMsg.displayDatas.push_back(*s);
-                } else {
-                    // can happen as an optimization
-                    log::debug("Server sent invalid player display data, skipping");
-                }
-            }
-
-            this->invokeListeners(std::move(outMsg));
+        default: {
+            return Err("Received unknown message type: {}", std::to_underlying(msg.which()));
         } break;
     }
 

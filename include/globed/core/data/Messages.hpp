@@ -3,10 +3,15 @@
 #pragma once
 #include "PlayerState.hpp"
 #include "PlayerDisplayData.hpp"
+#include "RoomPlayer.hpp"
 
 namespace globed::msg {
 
-struct RoomStateMessage {}; // TODO
+struct RoomStateMessage {
+    uint32_t roomId;
+    std::string roomName;
+    std::vector<RoomPlayer> players;
+};
 
 struct WarpPlayerMessage {
     uint64_t sessionId;

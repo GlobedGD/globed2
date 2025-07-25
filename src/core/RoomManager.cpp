@@ -1,5 +1,6 @@
 #include <globed/core/RoomManager.hpp>
 #include <globed/core/SessionId.hpp>
+#include <globed/core/data/Messages.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 
 using namespace geode::prelude;
@@ -24,5 +25,15 @@ void RoomManager::leaveLevel() {
     nm.leaveSession();
 }
 
+RoomManager::RoomManager() {
+    NetworkManagerImpl::get().listenGlobal<msg::RoomStateMessage>([this](const auto& msg) {
+        if (msg.roomId != m_roomId) {
+            m_roomId = msg.roomId;
+            m_roomName = msg.roomName;
+        }
+
+        return ListenerResult::Continue;
+    });
+}
 
 }

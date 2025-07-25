@@ -1,5 +1,6 @@
 #include "PlayerListCell.hpp"
 #include <globed/core/actions.hpp>
+#include <globed/util/singleton.hpp>
 
 #include <UIBuilder.hpp>
 #include <cue/Util.hpp>
@@ -59,6 +60,25 @@ PlayerListCell* PlayerListCell::create(
 
     delete ret;
     return nullptr;
+}
+
+PlayerListCell* PlayerListCell::createMyself(cocos2d::CCSize cellSize) {
+    auto gam = cachedSingleton<GJAccountManager>();
+    auto gm = cachedSingleton<GameManager>();
+
+    return PlayerListCell::create(
+        gam->m_accountID,
+        gm->m_playerUserID,
+        gam->m_username,
+        cue::Icons {
+            .type = IconType::Cube,
+            .id = gm->m_playerFrame,
+            .color1 = gm->m_playerColor,
+            .color2 = gm->m_playerColor2,
+            .glowColor = gm->m_playerGlow ? gm->m_playerGlowColor : -1,
+        },
+        cellSize
+    );
 }
 
 }

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "generated.hpp"
-#include <globed/core/data/PlayerState.hpp>
-#include <globed/core/data/PlayerDisplayData.hpp>
+#include <globed/core/data/Messages.hpp>
 
 namespace globed::data {
+
+/// Player state
 
 inline void encodePlayerState(const PlayerState& state, auto& data) {
     data.setAccountId(state.accountId);
@@ -110,6 +111,8 @@ inline std::optional<PlayerState> decodePlayerState(schema::game::PlayerData::Re
     return out;
 }
 
+// Icon data
+
 inline void encodeIconData(const PlayerIconData& icons, auto& data) {
     data.setCube(icons.cube);
     data.setShip(icons.ship);
@@ -148,6 +151,8 @@ inline std::optional<PlayerIconData> decodeIconData(schema::shared::PlayerIconDa
     return out;
 }
 
+// Display data
+
 inline std::optional<PlayerDisplayData> decodeDisplayData(schema::shared::PlayerDisplayData::Reader& reader) {
     PlayerDisplayData out{};
     out.accountId = reader.getAccountId();
@@ -168,6 +173,71 @@ inline std::optional<PlayerDisplayData> decodeDisplayData(schema::shared::Player
     }
 
     return out;
+}
+
+// Account data
+
+inline PlayerAccountData decodeAccountData(schema::main::PlayerAccountData::Reader& reader) {
+    PlayerAccountData out{};
+    out.accountId = reader.getAccountId();
+    out.userId = reader.getUserId();
+    out.username = reader.getUsername();
+
+    return out;
+}
+
+inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessage::Reader& reader) {
+    msg::RoomStateMessage out{};
+    out.roomId = reader.getRoomId();
+    out.roomName = reader.getName();
+
+    auto players = reader.getPlayers();
+    out.players.reserve(players.size());
+
+    for (auto player : players) {
+        RoomPlayer plr;
+        plr.cube = player.getCube();
+        plr.session = SessionId(player.getSession());
+
+        auto accountData = player.getAccountData();
+        plr.accountData = data::decodeAccountData(accountData);
+    }
+
+    return out;
+}
+
+inline msg::LevelDataMessage decodeLevelDataMessage(schema::game::LevelDataMessage::Reader& reader) {
+    auto players = reader.getPlayers();
+    auto culled = reader.getCulled();
+    auto ddatas = reader.getDisplayDatas();
+
+    msg::LevelDataMessage outMsg;
+    outMsg.players.reserve(players.size());
+    outMsg.culled.reserve(culled.size());
+    outMsg.displayDatas.reserve(ddatas.size());
+
+    for (auto player : players) {
+        if (auto s = data::decodePlayerState(player)) {
+            outMsg.players.emplace_back(*s);
+        } else {
+            geode::log::warn("Server sent invalid player state data for {}, skipping", player.getAccountId());
+        }
+    }
+
+    for (auto id : culled) {
+        outMsg.culled.push_back(id);
+    }
+
+    for (auto dd : ddatas) {
+        if (auto s = data::decodeDisplayData(dd)) {
+            outMsg.displayDatas.push_back(*s);
+        } else {
+            // can happen as an optimization
+            geode::log::debug("Server sent invalid player display data, skipping");
+        }
+    }
+
+    return outMsg;
 }
 
 }

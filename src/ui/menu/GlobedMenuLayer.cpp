@@ -1,14 +1,18 @@
 #include "GlobedMenuLayer.hpp"
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
+#include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 
 #include <cue/RepeatingBackground.hpp>
 #include <UIBuilder.hpp>
 
 using namespace geode::prelude;
+using namespace asp::time;
 
 static constexpr float CELL_HEIGHT = 25.f;
+static constexpr CCSize PLAYER_LIST_MENU_SIZE{420.f, 280.f};
+static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 180.f};
 
 namespace globed {
 
@@ -76,25 +80,22 @@ bool GlobedMenuLayer::init() {
 
     // player list menu
 
-    CCSize playerListMenuSize{420.f, 280.f};
-    CCSize playerListSize{playerListMenuSize.width * 0.8f, 180.f};
-
     m_playerListMenu = Build<CCNode>::create()
         .id("player-list-menu")
-        .contentSize(playerListMenuSize)
+        .contentSize(PLAYER_LIST_MENU_SIZE)
         .pos(winSize / 2.f)
         .anchorPoint(0.5f, 0.5f)
         .parent(this)
         .visible(false);
 
     Build(CCScale9Sprite::create("GJ_square02.png", {0, 0, 80, 80}))
-        .contentSize(playerListMenuSize)
-        .pos(playerListMenuSize / 2.f)
+        .contentSize(PLAYER_LIST_MENU_SIZE)
+        .pos(PLAYER_LIST_MENU_SIZE / 2.f)
         .parent(m_playerListMenu);
 
-    m_playerList = Build<cue::ListNode>::create(playerListSize, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::CommentsBlue)
+    m_playerList = Build<cue::ListNode>::create(PLAYER_LIST_SIZE, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::CommentsBlue)
         .anchorPoint(0.5f, 1.f)
-        .pos(playerListMenuSize.width / 2.f, playerListMenuSize.height - 20.f)
+        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 20.f)
         .parent(m_playerListMenu);
 
     m_playerList->setJustify(cue::Justify::Center);
@@ -104,17 +105,52 @@ bool GlobedMenuLayer::init() {
         ccColor4B{0x33, 0x44, 0x99, 255}
     );
 
-    m_playerList->addCell(PlayerListCell::create(
-        1, 1, "Test", cue::Icons{}, CCSize{playerListSize.width, CELL_HEIGHT}
-    ));
-    m_playerList->addCell(PlayerListCell::create(
-        2, 2, "Test 2", cue::Icons{.color1 = 4, .color2 = 7}, CCSize{playerListSize.width, CELL_HEIGHT}
-    ));
+    m_roomStateListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
+        if (msg.roomId != m_roomId) {
+            this->initNewRoom(msg.roomId, msg.roomName, msg.players);
+        }
+
+        return ListenerResult::Continue;
+    });
 
     this->update(0.f);
     this->scheduleUpdate();
 
     return true;
+}
+
+void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players) {
+    m_roomId = id;
+
+    m_playerList->setAutoUpdate(false);
+    m_playerList->clear();
+
+    CCSize cellSize{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
+
+    for (auto& player : players) {
+        m_playerList->addCell(PlayerListCell::create(
+            player.accountData.accountId,
+            player.accountData.userId,
+            player.accountData.username,
+            cue::Icons {
+                .type = IconType::Cube,
+                .id = player.cube,
+                .color1 = player.color1,
+                .color2 = player.color2,
+                .glowColor = NO_GLOW,
+            },
+            cellSize
+        ));
+    }
+
+    // add ourself
+    auto gam = cachedSingleton<GJAccountManager>();
+    m_playerList->addCell(PlayerListCell::createMyself(cellSize));
+
+    // TODO: sort
+
+    m_playerList->setAutoUpdate(true);
+    m_playerList->updateLayout();
 }
 
 void GlobedMenuLayer::update(float dt) {
@@ -163,6 +199,14 @@ void GlobedMenuLayer::update(float dt) {
     }
 
     this->setMenuState(newState);
+
+    if (newState == MenuState::Connected) {
+        if (m_roomId == -1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
+            // request room state
+            m_lastRoomUpdate = Instant::now();
+            NetworkManagerImpl::get().sendRoomStateCheck();
+        }
+    }
 }
 
 void GlobedMenuLayer::setMenuState(MenuState state) {
