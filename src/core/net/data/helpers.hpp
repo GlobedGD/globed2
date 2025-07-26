@@ -1,6 +1,7 @@
 #pragma once
 
 #include "generated.hpp"
+#include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/data/Messages.hpp>
 
 namespace globed::data {
@@ -51,7 +52,7 @@ inline void encodePlayerState(const PlayerState& state, auto& data) {
     }
 }
 
-inline std::optional<PlayerState> decodePlayerState(schema::game::PlayerData::Reader& reader) {
+inline std::optional<PlayerState> decodePlayerState(const schema::game::PlayerData::Reader& reader) {
     PlayerState out{};
     out.accountId = reader.getAccountId();
     out.timestamp = reader.getTimestamp();
@@ -131,7 +132,7 @@ inline void encodeIconData(const PlayerIconData& icons, auto& data) {
     data.setShipTrail(icons.shipTrail);
 }
 
-inline std::optional<PlayerIconData> decodeIconData(schema::shared::PlayerIconData::Reader& reader) {
+inline std::optional<PlayerIconData> decodeIconData(const schema::shared::PlayerIconData::Reader& reader) {
     PlayerIconData out{};
     out.cube = reader.getCube();
     out.ship = reader.getShip();
@@ -151,9 +152,37 @@ inline std::optional<PlayerIconData> decodeIconData(schema::shared::PlayerIconDa
     return out;
 }
 
+// Room settings
+
+inline void encodeRoomSettings(const RoomSettings& settings, auto& data) {
+    data.setPlayerLimit(settings.playerLimit);
+    data.setFasterReset(settings.fasterReset);
+    data.setHidden(settings.hidden);
+    data.setPrivateInvites(settings.privateInvites);
+    data.setIsFollower(settings.isFollower);
+    data.setLevelIntegrity(settings.levelIntegrity);
+    data.setCollision(settings.collision);
+    data.setTwoPlayerMode(settings.twoPlayerMode);
+    data.setDeathlink(settings.deathlink);
+}
+
+inline RoomSettings decodeRoomSettings(const schema::main::RoomSettings::Reader& reader) {
+    RoomSettings out{};
+    out.playerLimit = reader.getPlayerLimit();
+    out.fasterReset = reader.getFasterReset();
+    out.hidden = reader.getHidden();
+    out.privateInvites = reader.getPrivateInvites();
+    out.isFollower = reader.getIsFollower();
+    out.levelIntegrity = reader.getLevelIntegrity();
+    out.collision = reader.getCollision();
+    out.twoPlayerMode = reader.getTwoPlayerMode();
+    out.deathlink = reader.getDeathlink();
+    return out;
+}
+
 // Display data
 
-inline std::optional<PlayerDisplayData> decodeDisplayData(schema::shared::PlayerDisplayData::Reader& reader) {
+inline std::optional<PlayerDisplayData> decodeDisplayData(const schema::shared::PlayerDisplayData::Reader& reader) {
     PlayerDisplayData out{};
     out.accountId = reader.getAccountId();
 
@@ -177,7 +206,7 @@ inline std::optional<PlayerDisplayData> decodeDisplayData(schema::shared::Player
 
 // Account data
 
-inline PlayerAccountData decodeAccountData(schema::main::PlayerAccountData::Reader& reader) {
+inline PlayerAccountData decodeAccountData(const schema::main::PlayerAccountData::Reader& reader) {
     PlayerAccountData out{};
     out.accountId = reader.getAccountId();
     out.userId = reader.getUserId();
@@ -186,10 +215,13 @@ inline PlayerAccountData decodeAccountData(schema::main::PlayerAccountData::Read
     return out;
 }
 
+// Room state
+
 inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessage::Reader& reader) {
     msg::RoomStateMessage out{};
     out.roomId = reader.getRoomId();
-    out.roomName = reader.getName();
+    out.roomOwner = reader.getRoomOwner();
+    out.roomName = reader.getRoomName();
 
     auto players = reader.getPlayers();
     out.players.reserve(players.size());
@@ -203,10 +235,14 @@ inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessa
         plr.accountData = data::decodeAccountData(accountData);
     }
 
+    out.settings = data::decodeRoomSettings(reader.getSettings());
+
     return out;
 }
 
-inline msg::LevelDataMessage decodeLevelDataMessage(schema::game::LevelDataMessage::Reader& reader) {
+// Level data
+
+inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDataMessage::Reader& reader) {
     auto players = reader.getPlayers();
     auto culled = reader.getCulled();
     auto ddatas = reader.getDisplayDatas();

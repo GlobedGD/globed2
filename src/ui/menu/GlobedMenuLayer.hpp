@@ -30,6 +30,8 @@ private:
     cocos2d::CCNode* m_playerListMenu;
     cue::ListNode* m_playerList;
     cocos2d::CCLabelBMFont* m_roomNameLabel;
+    CCMenuItemSpriteExtra* m_roomNameButton;
+    cocos2d::CCMenu* m_roomButtonsMenu;
     std::optional<MessageListener<msg::RoomStateMessage>> m_roomStateListener;
     uint32_t m_roomId = -1;
     std::optional<asp::time::Instant> m_lastRoomUpdate;
@@ -39,6 +41,8 @@ private:
     void setMenuState(MenuState state);
 
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players);
+    void initRoomButtons();
+    void copyRoomIdToClipboard();
 };
 
 }

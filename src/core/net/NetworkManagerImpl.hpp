@@ -4,6 +4,7 @@
 #include <Geode/Result.hpp>
 #include <globed/core/SessionId.hpp>
 #include <globed/core/data/PlayerState.hpp>
+#include <globed/core/data/RoomSettings.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <typeindex>
 
@@ -44,10 +45,21 @@ public:
     bool isConnected() const;
 
     // Message sending functions
-    void joinSession(SessionId id);
-    void leaveSession();
-    void sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests);
+
+    // Central server
     void sendRoomStateCheck();
+    void sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings);
+    void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
+    void sendLeaveRoom();
+
+    // Both servers
+    void sendJoinSession(SessionId id);
+    void sendLeaveSession();
+
+    // Game server
+    void sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests);
+
+    // Listeners
 
     template <typename T>
     [[nodiscard("listen returns a listener that must be kept alive to receive messages")]]

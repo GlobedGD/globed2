@@ -21,16 +21,21 @@ bool PlayerListCell::init(
     m_accountId = accountId;
     m_userId = userId;
 
-    this->setLayout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Start));
+    this->setLayout(
+        RowLayout::create()
+            ->setAutoScale(false)
+            ->setAxisAlignment(AxisAlignment::Start)
+            ->setGap(10.f)
+    );
 
     m_cubeIcon = Build(cue::PlayerIcon::create(icons))
         .id("icon")
         .parent(this);
 
-    cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.75f);
+    cue::rescaleToMatch(m_cubeIcon, cellSize.height * 0.7f);
 
     m_usernameBtn = Build<CCLabelBMFont>::create(username.c_str(), "bigFont.fnt")
-        .scale(cellSize.height / 48.f)
+        .scale(cellSize.height / 52.f)
         .intoMenuItem([this, username = username](auto) {
             globed::openUserProfile(m_accountId, m_userId, username);
         })
@@ -41,6 +46,8 @@ bool PlayerListCell::init(
     this->setContentSize({cellSize.width - 20.f, cellSize.height});
     this->ignoreAnchorPointForPosition(false);
     this->updateLayout();
+
+    m_usernameBtn->setPositionY(m_usernameBtn->getPositionY() + 1.f);
 
     return true;
 }

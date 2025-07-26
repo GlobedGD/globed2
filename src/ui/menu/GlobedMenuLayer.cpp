@@ -10,7 +10,7 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
-static constexpr float CELL_HEIGHT = 25.f;
+static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize PLAYER_LIST_MENU_SIZE{420.f, 280.f};
 static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 180.f};
 
@@ -92,10 +92,14 @@ bool GlobedMenuLayer::init() {
         .pos(PLAYER_LIST_MENU_SIZE / 2.f)
         .parent(m_playerListMenu);
 
-    m_roomNameLabel = Build<CCLabelBMFont>::create("", "goldFont.fnt")
-        .id("room-name-lbl")
+    m_roomNameButton = Build<CCLabelBMFont>::create("", "goldFont.fnt")
         .scale(0.7f)
+        .store(m_roomNameLabel)
+        .intoMenuItem([this] {
+            this->copyRoomIdToClipboard();
+        })
         .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 18.f)
+        .id("room-name-lbl")
         .parent(m_playerListMenu);
 
     m_playerList = Build<cue::ListNode>::create(PLAYER_LIST_SIZE, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::CommentsBlue)
@@ -109,6 +113,13 @@ bool GlobedMenuLayer::init() {
         ccColor4B{0x28, 0x35, 0x77, 255},
         ccColor4B{0x33, 0x44, 0x99, 255}
     );
+
+    m_roomButtonsMenu = Build<CCMenu>::create()
+        .id("room-buttons")
+        .layout(RowLayout::create()->setAutoScale(false))
+        .contentSize(PLAYER_LIST_SIZE.width, 64.f)
+        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, 32.f)
+        .parent(m_playerListMenu);
 
     m_roomStateListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
         if (msg.roomId != m_roomId) {
@@ -157,6 +168,46 @@ void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const st
 
     m_playerList->setAutoUpdate(true);
     m_playerList->updateLayout();
+
+    this->initRoomButtons();
+}
+
+void GlobedMenuLayer::initRoomButtons() {
+    m_roomButtonsMenu->removeAllChildren();
+
+    constexpr float BtnScale = 0.77f;
+
+    if (m_roomId == 0) {
+        // global room, show buttons to create / join a room
+
+        Build(ButtonSprite::create("Join Room", "bigFont.fnt", "GJ_button_01.png", BtnScale))
+            .intoMenuItem([] {
+                NetworkManagerImpl::get().sendJoinRoom(123456);
+            })
+            .scaleMult(1.1f)
+            .parent(m_roomButtonsMenu);
+
+        Build(ButtonSprite::create("Create Room", "bigFont.fnt", "GJ_button_01.png", BtnScale))
+            .intoMenuItem([] {
+                // TODO: show a cool ass popup with room creation options
+                NetworkManagerImpl::get().sendCreateRoom("Cool room", 0, RoomSettings{});
+            })
+            .scaleMult(1.1f)
+            .parent(m_roomButtonsMenu);
+    } else {
+        Build(ButtonSprite::create("Leave Room", "bigFont.fnt", "GJ_button_01.png", BtnScale))
+            .intoMenuItem([] {
+                NetworkManagerImpl::get().sendLeaveRoom();
+            })
+            .scaleMult(1.1f)
+            .parent(m_roomButtonsMenu);
+    }
+
+    m_roomButtonsMenu->updateLayout();
+}
+
+void GlobedMenuLayer::copyRoomIdToClipboard() {
+    geode::utils::clipboard::write(fmt::to_string(m_roomId));
 }
 
 void GlobedMenuLayer::update(float dt) {

@@ -1,0 +1,19 @@
+#pragma once
+#include <stdint.h>
+
+namespace globed {
+
+struct RoomSettings {
+    uint16_t playerLimit = 0;
+    bool fasterReset = false;
+    bool hidden = false;
+    bool privateInvites = false;
+    bool isFollower = false;
+    bool levelIntegrity = false;
+
+    bool collision = false;
+    bool twoPlayerMode = false;
+    bool deathlink = false;
+};
+
+}

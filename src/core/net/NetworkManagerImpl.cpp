@@ -261,7 +261,7 @@ void NetworkManagerImpl::onCentralDisconnected() {
     m_knownArgonUrl.clear();
 }
 
-void NetworkManagerImpl::joinSession(SessionId id) {
+void NetworkManagerImpl::sendJoinSession(SessionId id) {
     if (!m_established) {
         log::error("Cannot join session, not connected to central server");
         return;
@@ -287,7 +287,7 @@ void NetworkManagerImpl::joinSession(SessionId id) {
     log::error("Tried joining an invalid session, game server with ID {} does not exist", static_cast<int>(serverId));
 }
 
-void NetworkManagerImpl::leaveSession() {
+void NetworkManagerImpl::sendLeaveSession() {
     (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
         msg.initLeaveSession();
     });
@@ -371,6 +371,31 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
 void NetworkManagerImpl::sendRoomStateCheck() {
     (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
         msg.setCheckRoomState();
+    });
+}
+
+void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto createRoom = msg.initCreateRoom();
+        createRoom.setName(name);
+        createRoom.setPasscode(passcode);
+
+        auto sb = createRoom.initSettings();
+        data::encodeRoomSettings(settings, sb);
+    });
+}
+
+void NetworkManagerImpl::sendJoinRoom(uint32_t id, uint32_t passcode) {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto joinRoom = msg.initJoinRoom();
+        joinRoom.setRoomId(id);
+        joinRoom.setPasscode(passcode);
+    });
+}
+
+void NetworkManagerImpl::sendLeaveRoom() {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        msg.setLeaveRoom();
     });
 }
 

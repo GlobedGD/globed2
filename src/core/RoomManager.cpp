@@ -17,12 +17,12 @@ void RoomManager::joinLevel(int levelId) {
 
     // construct a session ID
     auto id = SessionId::fromParts(*serverId, m_roomId, levelId);
-    nm.joinSession(id);
+    nm.sendJoinSession(id);
 }
 
 void RoomManager::leaveLevel() {
     auto& nm = NetworkManagerImpl::get();
-    nm.leaveSession();
+    nm.sendLeaveSession();
 }
 
 RoomManager::RoomManager() {

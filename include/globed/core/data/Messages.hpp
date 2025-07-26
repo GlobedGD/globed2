@@ -4,13 +4,16 @@
 #include "PlayerState.hpp"
 #include "PlayerDisplayData.hpp"
 #include "RoomPlayer.hpp"
+#include "RoomSettings.hpp"
 
 namespace globed::msg {
 
 struct RoomStateMessage {
     uint32_t roomId;
+    int32_t roomOwner;
     std::string roomName;
     std::vector<RoomPlayer> players;
+    RoomSettings settings;
 };
 
 struct WarpPlayerMessage {
