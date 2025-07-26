@@ -34,7 +34,7 @@ bool PlayerListCell::init(
         .intoMenuItem([this, username = username](auto) {
             globed::openUserProfile(m_accountId, m_userId, username);
         })
-        .scaleMult(1.17f)
+        .scaleMult(1.1f)
         .id("username-btn")
         .parent(this);
 
