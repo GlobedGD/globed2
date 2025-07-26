@@ -26,6 +26,9 @@ void RoomManager::leaveLevel() {
 }
 
 RoomManager::RoomManager() {
+    m_roomId = 0;
+    m_roomName = "Global Room";
+
     NetworkManagerImpl::get().listenGlobal<msg::RoomStateMessage>([this](const auto& msg) {
         if (msg.roomId != m_roomId) {
             m_roomId = msg.roomId;

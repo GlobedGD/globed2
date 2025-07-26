@@ -77,7 +77,6 @@ bool GlobedMenuLayer::init() {
         .id("conn-state-lbl")
         .parent(m_connectMenu);
 
-
     // player list menu
 
     m_playerListMenu = Build<CCNode>::create()
@@ -93,9 +92,15 @@ bool GlobedMenuLayer::init() {
         .pos(PLAYER_LIST_MENU_SIZE / 2.f)
         .parent(m_playerListMenu);
 
+    m_roomNameLabel = Build<CCLabelBMFont>::create("", "goldFont.fnt")
+        .id("room-name-lbl")
+        .scale(0.7f)
+        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 18.f)
+        .parent(m_playerListMenu);
+
     m_playerList = Build<cue::ListNode>::create(PLAYER_LIST_SIZE, ccColor4B{0x33, 0x44, 0x99, 255}, cue::ListBorderStyle::CommentsBlue)
         .anchorPoint(0.5f, 1.f)
-        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 20.f)
+        .pos(PLAYER_LIST_MENU_SIZE.width / 2.f, PLAYER_LIST_MENU_SIZE.height - 36.f)
         .parent(m_playerListMenu);
 
     m_playerList->setJustify(cue::Justify::Center);
@@ -121,6 +126,7 @@ bool GlobedMenuLayer::init() {
 
 void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players) {
     m_roomId = id;
+    m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
 
     m_playerList->setAutoUpdate(false);
     m_playerList->clear();

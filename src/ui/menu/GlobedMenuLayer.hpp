@@ -29,6 +29,7 @@ private:
 
     cocos2d::CCNode* m_playerListMenu;
     cue::ListNode* m_playerList;
+    cocos2d::CCLabelBMFont* m_roomNameLabel;
     std::optional<MessageListener<msg::RoomStateMessage>> m_roomStateListener;
     uint32_t m_roomId = -1;
     std::optional<asp::time::Instant> m_lastRoomUpdate;

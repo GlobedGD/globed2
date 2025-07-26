@@ -17,7 +17,7 @@ private:
     ~RoomManager() = default;
 
     uint32_t m_roomId = 0;
-    std::string m_roomName = "Global Room";
+    std::string m_roomName;
 };
 
 }

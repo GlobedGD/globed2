@@ -4,12 +4,14 @@
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/data/Messages.hpp>
 #include <globed/core/data/PlayerDisplayData.hpp>
-#include <argon/argon.hpp>
 #include <core/CoreImpl.hpp>
-
 #include "data/helpers.hpp"
 
+#include <argon/argon.hpp>
+#include <asp/time/Duration.hpp>
+
 using namespace geode::prelude;
+using namespace asp::time;
 
 static qn::ConnectionDebugOptions getConnOpts() {
     qn::ConnectionDebugOptions opts{};
@@ -50,6 +52,10 @@ static globed::PlayerIconData gatherIconData() {
 namespace globed {
 
 NetworkManagerImpl::NetworkManagerImpl() {
+    // TODO: measure how much of an impact those have on bandwidth
+    m_centralConn.setActiveKeepaliveInterval(Duration::fromSecs(45));
+    m_gameConn.setActiveKeepaliveInterval(Duration::fromSecs(10));
+
     m_centralConn.setConnectionStateCallback([this](qn::ConnectionState state) {
         m_centralConnState = state;
         if (state == qn::ConnectionState::Connected) {
