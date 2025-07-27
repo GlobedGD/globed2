@@ -5,13 +5,6 @@ using namespace geode::prelude;
 
 namespace globed {
 
-Module::Module()
-    : m_core(nullptr),
-      m_autoEnableMode(AutoEnableMode::Default),
-      m_enabled(false) {}
-
-Module::~Module() {}
-
 Result<> Module::enable() {
     this->assertCore();
 
@@ -66,47 +59,11 @@ Result<> Module::disableHooks() {
     return Ok();
 }
 
-void Module::setAutoEnableMode(AutoEnableMode mode) {
-    m_autoEnableMode = mode;
-}
-
-void Module::claimHook(geode::Hook* hook) {
-    this->assertNotAdded(hook);
-    hook->setAutoEnable(false);
-    m_hooks.push_back(hook);
-}
-
-void Module::claimPatch(geode::Patch* patch) {
-    this->assertNotAdded(patch);
-    patch->setAutoEnable(false);
-    m_patches.push_back(patch);
-}
-
 void Module::assertCore() const {
     if (!m_core) {
         geode::utils::terminate(
             fmt::format("Globed module {} ({}) by {} called a module function before registering the mod with the core",
                         this->name(), this->id(), this->author()),
-            Mod::get()
-        );
-    }
-}
-
-void Module::assertNotAdded(geode::Hook* hook) const {
-    if (std::find(m_hooks.begin(), m_hooks.end(), hook) != m_hooks.end()) {
-        geode::utils::terminate(
-            fmt::format("Globed module {} ({}) by {} tried to claim a hook that was already claimed ({})",
-                        this->name(), this->id(), this->author(), hook->getDisplayName()),
-            Mod::get()
-        );
-    }
-}
-
-void Module::assertNotAdded(geode::Patch* patch) const {
-    if (std::find(m_patches.begin(), m_patches.end(), patch) != m_patches.end()) {
-        geode::utils::terminate(
-            fmt::format("Globed module {} ({}) by {} tried to claim a patch that was already claimed ({:X})",
-                        this->name(), this->id(), this->author(), patch->getAddress()),
             Mod::get()
         );
     }

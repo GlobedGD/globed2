@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/Result.hpp>
+#include <Geode/utils/terminate.hpp>
 
 namespace globed {
 
@@ -21,8 +22,11 @@ enum class AutoEnableMode {
 
 class Module {
 public:
-    Module();
-    virtual ~Module();
+    inline Module() : m_core(nullptr), m_autoEnableMode(AutoEnableMode::Default), m_enabled(false) {
+        std::fill(std::begin(_reserved), std::end(_reserved), 0);
+    }
+
+    inline virtual ~Module() {}
 
     /// This should return the human readable name of the module.
     virtual std::string_view name() const = 0;
@@ -36,24 +40,39 @@ public:
     }
 
     /// Sets the auto-enable mode of the module. See the `AutoEnableMode` enum for mode details.
-    void setAutoEnableMode(AutoEnableMode mode);
+    /// Inline function; can be called without linking.
+    inline void setAutoEnableMode(AutoEnableMode mode) {
+        m_autoEnableMode = mode;
+    }
 
     /// Adds a hook to the module. The hook will be enabled/disabled together with the module.
     /// The module will be responsible for managing this hook, do not use it manually.
-    void claimHook(geode::Hook* hook);
+    /// Inline function; can be called without linking.
+    inline void claimHook(geode::Hook* hook) {
+        this->assertNotAdded(hook);
+        hook->setAutoEnable(false);
+        m_hooks.push_back(hook);
+    }
 
     /// Adds a patch to the module. The patch will be enabled/disabled together with the module.
     /// The module will be responsible for managing this patch, do not use it manually.
-    void claimPatch(geode::Patch* patch);
+    /// Inline function; can be called without linking.
+    inline void claimPatch(geode::Patch* patch) {
+        this->assertNotAdded(patch);
+        patch->setAutoEnable(false);
+        m_patches.push_back(patch);
+    }
 
     /// Enables the module. If the module is already enabled, returns `Ok()`.
     /// If the module's initialization function fails, returns an error and the module will not be enabled.
     /// Terminates the game if the module is not registered with the core. Only call after calling `Core::addModule()`.
+    /// This function can only be called if linking to Globed.
     geode::Result<> enable();
 
     /// Disables the module. If the module is already disabled, returns `Ok()`.
     /// If the module's deinitialization function fails, returns an error.
     /// Terminates the game if the module is not registered with the core. Only call after calling `Core::addModule()`.
+    /// This function can only be called if linking to Globed.
     geode::Result<> disable();
 
 protected:
@@ -86,10 +105,28 @@ private:
     uint8_t _reserved[59];
 
     void assertCore() const;
-    void assertNotAdded(geode::Hook*) const;
-    void assertNotAdded(geode::Patch*) const;
     geode::Result<> enableHooks();
     geode::Result<> disableHooks();
+
+    void assertNotAdded(geode::Hook* hook) const {
+        if (std::find(m_hooks.begin(), m_hooks.end(), hook) != m_hooks.end()) {
+            geode::utils::terminate(
+                fmt::format("Globed module {} ({}) by {} tried to claim a hook that was already claimed ({})",
+                            this->name(), this->id(), this->author(), hook->getDisplayName()),
+                geode::Mod::get()
+            );
+        }
+    }
+
+    void assertNotAdded(geode::Patch* patch) const {
+        if (std::find(m_patches.begin(), m_patches.end(), patch) != m_patches.end()) {
+            geode::utils::terminate(
+                fmt::format("Globed module {} ({}) by {} tried to claim a patch that was already claimed ({:X})",
+                            this->name(), this->id(), this->author(), patch->getAddress()),
+                geode::Mod::get()
+            );
+        }
+    }
 };
 
 // static_assert(sizeof(Module) == 80);
