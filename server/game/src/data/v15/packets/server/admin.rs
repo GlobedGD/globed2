@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use globed_shared::{UserEntry, UserEntryNew, UserPunishment};
+use globed_shared::{UserEntryNew, UserPunishment};
 
 use crate::{data::*, managers::ComputedRole};
 

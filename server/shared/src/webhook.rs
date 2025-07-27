@@ -123,7 +123,7 @@ pub struct WebhookOpts<'a> {
 }
 
 #[allow(clippy::too_many_lines)]
-pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed> {
+pub fn embed_for_message(message: &WebhookMessage) -> Option<WebhookEmbed<'_>> {
     match message {
         WebhookMessage::AuthFail(_user_name) => None,
         WebhookMessage::NoticeToEveryone(username, player_count, message) => Some(WebhookEmbed {

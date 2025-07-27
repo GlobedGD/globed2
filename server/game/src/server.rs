@@ -7,7 +7,7 @@ use std::{
 
 use globed_shared::{
     ServerUserEntry, SyncMutex,
-    anyhow::{self, anyhow, bail},
+    anyhow::{self, anyhow},
     crypto_box::{PublicKey, SecretKey, aead::OsRng},
     esp::ByteBufferExtWrite as _,
     logger::*,

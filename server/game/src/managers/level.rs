@@ -21,7 +21,7 @@ impl LevelManagerPlayer {
         }
     }
 
-    pub fn to_borrowed_associated_data(&self) -> BorrowedAssociatedPlayerData {
+    pub fn to_borrowed_associated_data(&self) -> BorrowedAssociatedPlayerData<'_> {
         BorrowedAssociatedPlayerData {
             account_id: self.account_id,
             data: &self.data,
@@ -35,7 +35,7 @@ impl LevelManagerPlayer {
         }
     }
 
-    pub fn to_borrowed_associated_meta(&self) -> BorrowedAssociatedPlayerMetadata {
+    pub fn to_borrowed_associated_meta(&self) -> BorrowedAssociatedPlayerMetadata<'_> {
         BorrowedAssociatedPlayerMetadata {
             account_id: self.account_id,
             data: &self.meta,
