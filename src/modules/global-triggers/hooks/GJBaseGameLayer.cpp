@@ -1,0 +1,383 @@
+#include "GJBaseGameLayer.hpp"
+#include "GJEffectManager.hpp"
+#include "../Ids.hpp"
+
+#include <core/net/NetworkManagerImpl.hpp>
+
+#include <asp/time/SystemTime.hpp>
+
+using namespace geode::prelude;
+using namespace asp::time;
+
+namespace globed {
+#define $rid(name, offset) static constexpr inline int ITEM_##name = 80000 + offset
+    $rid(ACCOUNT_ID, 0);
+    $rid(LAST_JOINED, 1);
+    $rid(LAST_LEFT, 2);
+    $rid(TOTAL_PLAYERS, 3);
+    $rid(TOTAL_PLAYERS_JOINED, 4);
+    $rid(TOTAL_PLAYERS_LEFT, 5);
+    $rid(INITIALIZED, 6);
+    $rid(LOCAL_PING, 7);
+    $rid(IS_EDITOR, 8);
+    $rid(UNIX_TIME, 100);
+    $rid(UNIX_TIME_SUBMS, 101);
+    $rid(GLEPOCH_TIME, 102);
+    $rid(GLEPOCH_TIME_SUBMS, 103);
+    $rid(LAST_PAUSE_PLAYER, 200);
+    $rid(LAST_PAUSE_TIMESTAMP, 201);
+    $rid(LAST_PAUSE_TIMESTAMP_MS, 202);
+    $rid(LEVEL_ID, 500);
+#undef $rid
+
+GTriggersGJBGL* GTriggersGJBGL::get(GJBaseGameLayer* base) {
+    if (!base) base = GlobedGJBGL::get();
+
+    return static_cast<GTriggersGJBGL*>(base);
+}
+
+std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGameObject* obj) {
+    // TODO FIXME XXX oh my goodness
+    static_assert(GEODE_COMP_GD_VERSION == 22074);
+
+    int iVar15 = *(int *)((char*)obj + 0x6a0);
+    int iVar1 = *(int *)((char*)obj + 0x740);
+    int iVar2 = *(int *)((char*)obj + 0x748);
+    int iVar3 = *(int *)((char*)obj + 0x754);
+    int iVar4 = *(int *)((char*)obj + 0x764);
+    int iVar5 = *(int *)((char*)obj + 0x768);
+    int iVar6 = *(int *)((char*)obj + 0x76c);
+    int iVar7 = *(int *)((char*)obj + 0x694);
+    int iVar8 = *(int *)((char*)obj + 0x5c8);
+    int iVar9 = *(int *)((char*)obj + 0x744);
+    int iVar11 = *(int *)((char*)obj + 0x758);
+
+    if (iVar11 < 1) {
+        iVar11 = 1;
+    }
+
+    int iVar12 = *(int *)((char*)obj + 0x75c);
+    if (iVar12 < 3) {
+        iVar12 = 3;
+    }
+
+    int iVar10 = *(int *)((char*)obj + 0x770);
+    float fVar16 = __builtin_roundf(*(float*)((char*)obj + 0x74c) * 1000.0f) / 1000.f;
+    if (iVar2 < 1) {
+        iVar2 = 1;
+    }
+
+    bool bVar14, bVar13;
+    double dVar18, dVar19, someDouble;
+
+    if ((0 < iVar8) || (iVar2 == 3)) {
+        if ((iVar1 == 0) || ((iVar15 < 1 && (1 < iVar1 - 3u)))) {
+            bVar14 = false;
+        } else {
+            bVar14 = true;
+        }
+
+        if ((iVar9 == 0) || ((iVar7 < 1 && (1 < iVar9 - 3u)))) {
+            bVar13 = false;
+        } else {
+            bVar13 = true;
+        }
+
+        if (!bVar14 && bVar13) {
+            bVar14 = true;
+            bVar13 = false;
+            iVar1 = iVar9;
+            iVar15 = iVar7;
+        }
+
+        dVar18 = this->getItemValue(iVar1, iVar15);
+        someDouble = this->getItemValue(iVar9, iVar7); // ok
+        dVar19 = this->getItemValue(iVar2, iVar8);
+
+        if (bVar13) {
+            if (iVar11 == 1) {
+                dVar18 += someDouble;
+            } else if (iVar11 == 2) {
+                dVar18 -= someDouble;
+            } else if (iVar11 == 3) {
+                dVar18 *= someDouble;
+            } else if (iVar11 == 4) {
+                if (someDouble == 0.0) {
+                    dVar18 = 0.0;
+                } else {
+                    dVar18 /= someDouble;
+                }
+            } else {
+                dVar18 = 0.0;
+            }
+        }
+
+        double _x = fVar16;
+        if (bVar14) {
+            if (iVar12 == 1) {
+                _x = dVar18 + _x;
+            } else if (iVar12 == 2) {
+                _x = dVar18 - _x;
+            } else if (iVar12 == 3) {
+                _x = dVar18 * _x;
+            } else if (iVar12 == 4) {
+                if (_x == 0.0) {
+                    _x = 0.0;
+                } else {
+                    _x = dVar18 / _x;
+                }
+            } else {
+                _x = 0.0;
+            }
+        }
+
+        if (iVar4 != 0) {
+            if (iVar4 == 1) {
+                _x = round(_x);
+            } else if (iVar4 == 2) {
+                _x = floor(_x);
+            } else if (iVar4 == 3) {
+                _x = ceil(_x);
+            }
+        }
+
+        if (iVar6 != 0) {
+            if (iVar6 == 1) {
+                _x = __builtin_fabs(_x);
+            } else if (iVar6 == 2) {
+                _x = -__builtin_fabs(_x);
+            }
+        }
+
+        if (iVar3 != 0) {
+            if (iVar3 == 1) {
+                _x += dVar19;
+            } else if (iVar3 == 2) {
+                _x = dVar19 - _x;
+            } else if (iVar3 == 3) {
+                _x *= dVar19;
+            } else if (iVar3 == 4) {
+                if (_x == 0.0) {
+                    _x = 0.0;
+                } else {
+                    _x = dVar19 / _x;
+                }
+            } else {
+                _x = 0.0;
+            }
+        }
+
+        if (iVar5 == 1) {
+            _x = round(_x);
+        } else if (iVar5 == 2) {
+            _x = floor(_x);
+        } else if (iVar5 == 3) {
+            _x = ceil(_x);
+        }
+
+        if (iVar10 == 1) {
+            _x = __builtin_fabs(_x);
+        } else if (iVar10 == 2) {
+            _x = -__builtin_fabs(_x);
+        }
+
+        if (iVar2 == 1) {
+            return _x;
+        } else if (iVar2 == 2) {
+            m_effectManager->updateTimer(iVar8, _x);
+        } else if (iVar2 == 3) {
+            *(bool*)((char*)this + 0x860) = true;
+            *(int*)((char*)this + 0x85c) = _x;
+        }
+
+    }
+
+    return std::nullopt;
+}
+
+void GTriggersGJBGL::activateItemEditTrigger(ItemTriggerGameObject* obj) {
+    int targetId = obj->m_targetGroupID;
+
+    if (!globed::isCustomItem(targetId)) {
+        GJBaseGameLayer::activateItemEditTrigger(obj);
+        return;
+    }
+
+    if (globed::isReadonlyCustomItem(targetId)) {
+        return; // do nothing
+    }
+
+    auto efm = static_cast<HookedGJEffectManager*>(m_effectManager);
+
+    int oldValue = efm->countForCustomItem(targetId);
+    auto newValue = this->activateItemEditTriggerReimpl(obj);
+
+    if (!newValue) {
+        log::warn("Item edit trigger returned null, not updating (id {}, prev val {})", targetId, oldValue);
+        return;
+    }
+
+    CounterChange cc{(uint32_t)targetId, (int32_t)*newValue, CounterChangeType::Set};
+    GlobalTriggersModule::get().queueCounterChange(cc);
+}
+
+double GTriggersGJBGL::getItemValue(int a, int b) {
+    if (a == 1 && globed::isCustomItem(b)) {
+        auto value = static_cast<HookedGJEffectManager*>(m_effectManager)->countForCustomItem(b);
+        // log::debug("getItemValue({}, {}) = {}", a, b, value);
+        return value;
+    }
+
+    double x = GJBaseGameLayer::getItemValue(a, b);
+    return x;
+}
+
+void GTriggersGJBGL::postInit() {
+    this->registerListener();
+    this->registerSchedules();
+
+    this->updateCustomItem(ITEM_TOTAL_PLAYERS, 1);
+    this->updateCustomItem(ITEM_LEVEL_ID, m_level->m_levelID);
+    this->updateCustomItem(ITEM_IS_EDITOR, m_isEditor);
+}
+
+void GTriggersGJBGL::registerListener() {
+    m_fields->m_listener = NetworkManagerImpl::get().listen<msg::LevelDataMessage>([this](const auto& msg) {
+        auto& fields = *m_fields.self();
+
+        for (auto& event : msg.events) {
+            this->handleEvent(event);
+        }
+
+        bool first = fields.m_firstPacket;
+        fields.m_firstPacket = false;
+
+        if (first) {
+            this->updateCustomItem(ITEM_LAST_JOINED, cachedSingleton<GJAccountManager>()->m_accountID);
+            this->updateCustomItem(ITEM_INITIALIZED, 1);
+        }
+
+        for (auto& player : msg.players) {
+            // check if the player paused this frame
+            bool prevPause = fields.m_pausedPlayers[player.accountId];
+            fields.m_pausedPlayers[player.accountId] = player.isPaused;
+
+            if (!prevPause && player.isPaused) {
+                this->recordPlayerPause(player.accountId);
+            }
+        }
+
+        return ListenerResult::Continue;
+    });
+}
+
+void GTriggersGJBGL::registerSchedules() {
+    this->schedule(schedule_selector(GTriggersGJBGL::updateItems));
+}
+
+void GTriggersGJBGL::handlePlayerJoin(int accountId) {
+    auto& fields = *m_fields.self();
+
+    this->updateCustomItem(ITEM_LAST_JOINED, accountId);
+    this->updateCustomItem(ITEM_TOTAL_PLAYERS_JOINED, ++fields.m_totalJoins);
+    this->updateCustomItem(ITEM_TOTAL_PLAYERS, GlobedGJBGL::get(this)->m_fields->m_players.size() + 1); // +1 to account for ourself
+}
+
+void GTriggersGJBGL::handlePlayerLeave(int accountId) {
+    auto& fields = *m_fields.self();
+
+    this->updateCustomItem(ITEM_LAST_LEFT, accountId);
+    this->updateCustomItem(ITEM_TOTAL_PLAYERS_LEFT, ++fields.m_totalLeaves);
+    this->updateCustomItem(ITEM_TOTAL_PLAYERS, GlobedGJBGL::get(this)->m_fields->m_players.size()); // no +1, because that player is about to be removed
+
+    fields.m_pausedPlayers.erase(accountId);
+}
+
+void GTriggersGJBGL::recordPlayerPause(int accountId) {
+    auto& fields = *m_fields.self();
+    auto now = SystemTime::now();
+
+    this->updateCustomItem(ITEM_LAST_PAUSE_PLAYER, accountId);
+    this->updateCustomItem(ITEM_LAST_PAUSE_TIMESTAMP, now.timeSinceEpoch().seconds());
+    this->updateCustomItem(ITEM_LAST_PAUSE_TIMESTAMP_MS, now.timeSinceEpoch().subsecMillis());
+}
+
+void GTriggersGJBGL::updateItems(float dt) {
+    // January 1st 2024
+    static SystemTime GLOBED_EPOCH = SystemTime::fromUnix(1704067200);
+
+    auto now = SystemTime::now();
+    auto unixTime = now.timeSinceEpoch();
+    auto globedTime = now.durationSince(GLOBED_EPOCH).value_or(Duration{});
+
+    this->updateCustomItem(ITEM_UNIX_TIME, unixTime.seconds());
+    this->updateCustomItem(ITEM_UNIX_TIME_SUBMS, unixTime.subsecMillis());
+
+    this->updateCustomItem(ITEM_GLEPOCH_TIME, globedTime.seconds());
+    this->updateCustomItem(ITEM_GLEPOCH_TIME_SUBMS, globedTime.subsecMillis());
+
+    // assign ping variables
+    auto ping = NetworkManagerImpl::get().getGamePing();
+    this->updateCustomItem(ITEM_LOCAL_PING, ping.millis());
+}
+
+void GTriggersGJBGL::handleEvent(const Event& event) {
+    if (event.type != EVENT_COUNTER_CHANGE) {
+        log::warn("Received event with unknown type {}", event.type);
+        return;
+    }
+
+    if (event.data.size() < 8) {
+        log::warn("Received invalid counter change event with size {}", event.data.size());
+        return;
+    }
+
+    uint64_t rawData;
+    std::memcpy(&rawData, event.data.data(), sizeof(rawData));
+
+    uint8_t rawType = (rawData >> 56) & 0xff;
+    uint32_t itemId = (rawData >> 32) & 0x00fffff;
+    int32_t value = static_cast<int32_t>(rawData & 0xffffffffULL);
+
+    CounterChange cc{};
+
+    if (rawType != (uint8_t) CounterChangeType::Set) {
+        log::warn("Received counter change with unexpected type {}", (int) rawType);
+        return;
+    }
+
+    cc.type = CounterChangeType::Set;
+    cc.itemId = itemId;
+    cc.value.asInt() = value;
+
+    log::debug("Got set event for item ID {}, value {}", cc.itemId, cc.value.asInt());
+
+    this->applyCounterChange(cc);
+}
+
+void GTriggersGJBGL::applyCounterChange(const CounterChange& change) {
+    if (change.type != CounterChangeType::Set) {
+        log::warn("applyCounterChange cannot handle type {}", (int) change.type);
+        return;
+    }
+
+    this->updateCustomItem(change.itemId, change.value.asInt());
+}
+
+void GTriggersGJBGL::updateCustomItem(int itemId, int value) {
+    if (!globed::isCustomItem(itemId)) {
+        log::warn("updateCustomItem called for non-custom item ID {}", itemId);
+        return;
+    }
+
+    auto efm = static_cast<HookedGJEffectManager*>(m_effectManager);
+    if (!efm) {
+        return;
+    }
+
+    if (efm->updateCountForCustomItem(itemId, value)) {
+        this->updateCounters(itemId, value);
+    }
+}
+
+}
