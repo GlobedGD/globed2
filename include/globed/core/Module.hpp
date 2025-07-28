@@ -3,6 +3,16 @@
 #include <Geode/Result.hpp>
 #include <Geode/utils/terminate.hpp>
 
+#define GLOBED_CLAIM_HOOKS(module, modify, ...) \
+    do { \
+        decltype(auto) __chmodule = (module);\
+        for (auto name : {__VA_ARGS__}) { \
+            if (auto h = self.getHook(name)) { \
+                __chmodule.claimHook(h.unwrap()); \
+            } else geode::log::error("Failed to claim hook '{}' for module {} ({}) ({}:{}): {}", name, __chmodule.name(), __chmodule.id(), __FILE__, __LINE__, h.unwrapErr()); \
+        } \
+    } while (0)
+
 namespace globed {
 
 class Core;
@@ -16,7 +26,11 @@ enum class AutoEnableMode {
     /// The module will be enabled when the user connects to a server, and will be disabled when the user disconnects.
     /// This is the default mode.
     Server,
+    /// The module will be enabled when the user joins a level while connected to a server, and will be disabled when the user leaves the level or disconnects.
+    /// Useful for modules that only need to be active when in a level.
+    Level,
 
+    /// Chooses the default mode, currently `Server`.
     Default = Server
 };
 
@@ -27,6 +41,10 @@ public:
     }
 
     inline virtual ~Module() {}
+
+    // Disable copying to prevent accidents
+    Module(const Module&) = delete;
+    Module& operator=(const Module&) = delete;
 
     /// This should return the human readable name of the module.
     virtual std::string_view name() const = 0;
@@ -76,6 +94,9 @@ public:
     geode::Result<> disable();
 
 protected:
+    Module(Module&&) = default;
+    Module& operator=(Module&&) = default;
+
     /// Called when the module is enabled. Override this to perform any initialization logic.
     virtual geode::Result<> onEnabled() {
         return geode::Ok();
@@ -88,9 +109,15 @@ protected:
 
     /// Called when the user joins a level while connected to a server.
     virtual void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {}
+    /// Called when the user joins a level while connected to a server, after the layer has been initialized.
+    virtual void onJoinLevelPostInit(GlobedGJBGL* gjbgl) {}
     /// Called when the user leaves a level or gets disconnected from a server.
     /// Only called if `onJoinLevel` was called before.
     virtual void onLeaveLevel(GlobedGJBGL* gjbgl, bool editor) {}
+    /// Called when another player joins the level. Only called if `onJoinLevel` was called before.
+    virtual void onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) {}
+    /// Called when another player leaves the level. Only called if `onPlayerJoin` was called with this player before.
+    virtual void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {}
 
 private:
     friend class Core;
@@ -130,5 +157,16 @@ private:
 };
 
 // static_assert(sizeof(Module) == 80);
+
+// template <typename Derived>
+// class ModuleCrtpBase : public Module {
+// public:
+//     using Module::Module;
+
+//     static Derived& get() {
+//         static std::shared_ptr<Derived> instance;
+//         return *instance;
+//     }
+// };
 
 }

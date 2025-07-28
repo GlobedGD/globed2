@@ -84,6 +84,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
         if (state == qn::ConnectionState::Connected) {
             log::debug("connected to game server at {}", m_gameServerUrl);
             m_gameEstablished = true;
+            m_gameEventQueue = {}; // TODO: move this into a separate function or smth
 
             // if there was a deferred join, try to login with session, otherwise just login
             if (m_gsDeferredJoin) {
@@ -187,6 +188,14 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
 
 bool NetworkManagerImpl::isConnected() const {
     return m_established;
+}
+
+Duration NetworkManagerImpl::getGamePing() {
+    return m_gameConn.getLatency();
+}
+
+Duration NetworkManagerImpl::getCentralPing() {
+    return m_centralConn.getLatency();
 }
 
 void NetworkManagerImpl::onCentralConnected() {
@@ -365,7 +374,24 @@ void NetworkManagerImpl::sendPlayerState(const PlayerState& state, const std::ve
         for (size_t i = 0; i < dataRequests.size(); ++i) {
             reqs.set(i, dataRequests[i]);
         }
-    }, false);
+
+        auto evs = playerData.initEvents(std::min<size_t>(m_gameEventQueue.size(), 64));
+        for (size_t i = 0; i < evs.size(); i++) {
+            auto& event = m_gameEventQueue.front();
+
+            auto ev = evs[i];
+            ev.setType(event.type);
+            ev.setData({(kj::byte*) event.data.data(), event.data.size()});
+
+            m_gameEventQueue.pop();
+        }
+    }, !m_gameEventQueue.empty());
+}
+
+void NetworkManagerImpl::queueGameEvent(Event&& event) {
+    if (!m_gameEstablished) return;
+
+    m_gameEventQueue.push(std::move(event));
 }
 
 void NetworkManagerImpl::sendRoomStateCheck() {

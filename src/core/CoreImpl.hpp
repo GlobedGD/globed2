@@ -27,8 +27,18 @@ public:
     // Call when disconnected from a server, disables all modules that have auto enable set to Server
     void onServerDisconnected();
 
+    // Call when joining a level while connected to a server, enables all modules that have auto enable set to Level
+    // Also calls `onJoinLevel` on each enabled module
     void onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor);
+    void onJoinLevelPostInit(GlobedGJBGL* gjbgl);
+
+    // Call when leaving a level, disables all modules that have auto enable set to Level
     void onLeaveLevel(GlobedGJBGL* gjbgl, bool editor);
+
+    // Call when another player joins the level, calls `onPlayerJoin` on each enabled module
+    void onPlayerJoin(GlobedGJBGL* gjbgl, int accountId);
+    // Call when another player leaves the level, calls `onPlayerLeave` on each enabled module
+    void onPlayerLeave(GlobedGJBGL* gjbgl, int accountId);
 
 private:
     std::vector<std::shared_ptr<Module>> m_modules;

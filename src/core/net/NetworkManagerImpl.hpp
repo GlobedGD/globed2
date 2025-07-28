@@ -5,6 +5,7 @@
 #include <globed/core/SessionId.hpp>
 #include <globed/core/data/PlayerState.hpp>
 #include <globed/core/data/RoomSettings.hpp>
+#include <globed/core/data/Event.hpp>
 #include <globed/core/net/MessageListener.hpp>
 #include <typeindex>
 
@@ -44,6 +45,11 @@ public:
     /// Returns whether the client is connected and authenticated with the central server
     bool isConnected() const;
 
+    /// Returns the average latency to the game server, or 0 if not connected
+    asp::time::Duration getGamePing();
+    /// Returns the average latency to the central server, or 0 if not connected
+    asp::time::Duration getCentralPing();
+
     // Message sending functions
 
     // Central server
@@ -58,6 +64,7 @@ public:
 
     // Game server
     void sendPlayerState(const PlayerState& state, const std::vector<int>& dataRequests);
+    void queueGameEvent(Event&& event);
 
     // Listeners
 
@@ -92,6 +99,7 @@ private:
     std::string m_gameServerUrl;
     std::optional<std::pair<std::string, SessionId>> m_gsDeferredConnectJoin;
     std::optional<SessionId> m_gsDeferredJoin;
+    std::queue<Event> m_gameEventQueue;
     bool m_gameEstablished = false;
 
     std::unordered_map<std::string, GameServer> m_gameServers;

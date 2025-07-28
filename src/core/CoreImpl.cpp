@@ -48,22 +48,50 @@ void CoreImpl::onServerConnected() {
 }
 
 void CoreImpl::onServerDisconnected() {
-    log::debug("Disabling Server modules");
+    log::debug("Disabling Server and Level modules");
 
     this->disableIf([](const Module& mod) {
-        return mod.m_autoEnableMode == AutoEnableMode::Server;
+        return mod.m_autoEnableMode == AutoEnableMode::Server || mod.m_autoEnableMode == AutoEnableMode::Level;
     });
 }
 
 void CoreImpl::onJoinLevel(GlobedGJBGL* gjbgl, GJGameLevel* level, bool editor) {
+    log::debug("Enabling Level modules");
+    this->enableIf([](const Module& mod) {
+        return mod.m_autoEnableMode == AutoEnableMode::Level;
+    });
+
     this->forEachEnabled([&](Module& mod) {
         mod.onJoinLevel(gjbgl, level, editor);
     });
 }
 
+void CoreImpl::onJoinLevelPostInit(GlobedGJBGL* gjbgl) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onJoinLevelPostInit(gjbgl);
+    });
+}
+
 void CoreImpl::onLeaveLevel(GlobedGJBGL* gjbgl, bool editor) {
+    log::debug("Disabling Level modules");
+    this->disableIf([](const Module& mod) {
+        return mod.m_autoEnableMode == AutoEnableMode::Level;
+    });
+
     this->forEachEnabled([&](Module& mod) {
         mod.onLeaveLevel(gjbgl, editor);
+    });
+}
+
+void CoreImpl::onPlayerJoin(GlobedGJBGL* gjbgl, int accountId) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onPlayerJoin(gjbgl, accountId);
+    });
+}
+
+void CoreImpl::onPlayerLeave(GlobedGJBGL* gjbgl, int accountId) {
+    this->forEachEnabled([&](Module& mod) {
+        mod.onPlayerLeave(gjbgl, accountId);
     });
 }
 

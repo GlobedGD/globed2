@@ -43,6 +43,8 @@ void GlobedGJBGL::setupPostInit() {
     this->setupUpdateLoop();
     this->setupUi();
     this->setupListeners();
+
+    CoreImpl::get().onJoinLevelPostInit(this);
 }
 
 void GlobedGJBGL::setupNecessary() {
@@ -351,6 +353,8 @@ void GlobedGJBGL::handlePlayerJoin(int playerId) {
     auto rp = std::make_unique<RemotePlayer>(playerId, this, fields.m_playerNode);
     fields.m_players.emplace(playerId, std::move(rp));
     fields.m_interpolator.addPlayer(playerId);
+
+    CoreImpl::get().onPlayerJoin(this, playerId);
 }
 
 void GlobedGJBGL::handlePlayerLeave(int playerId) {
@@ -361,8 +365,9 @@ void GlobedGJBGL::handlePlayerLeave(int playerId) {
     }
 
     auto& player = fields.m_players.at(playerId);
+    CoreImpl::get().onPlayerLeave(this, playerId);
 
-    // TODO: cleanup
+    // TODO: more cleanup?
     fields.m_players.erase(playerId);
     fields.m_interpolator.removePlayer(playerId);
     PlayerCacheManager::get().evictToLayer2(playerId);
@@ -382,6 +387,7 @@ bool GlobedGJBGL::active() {
 
 void GlobedGJBGL::onLevelDataReceived(const msg::LevelDataMessage& message) {
     auto& fields = *m_fields.self();
+
     fields.m_lastServerUpdate = fields.m_timeCounter;
 
     for (auto& player : message.players) {

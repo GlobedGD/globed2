@@ -5,6 +5,7 @@
 #include "PlayerDisplayData.hpp"
 #include "RoomPlayer.hpp"
 #include "RoomSettings.hpp"
+#include "Event.hpp"
 
 namespace globed::msg {
 
@@ -24,6 +25,7 @@ struct LevelDataMessage {
     std::vector<PlayerState> players;
     std::vector<int> culled;
     std::vector<PlayerDisplayData> displayDatas;
+    std::vector<Event> events;
 };
 
 }

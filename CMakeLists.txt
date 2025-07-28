@@ -18,6 +18,7 @@ project(globed2 VERSION 1.0.0)
 option(GLOBED_VOICE_SUPPORT "Enable voice chat support" ON)
 option(GLOBED_DEBUG "Enable debug mode" OFF)
 option(GLOBED_DEBUG_INTERPOLATION "Enable interpolation debugging, adds a TON of extra logs, and some visual elements" OFF)
+option(GLOBED_MODULE_GLOBAL_TRIGGERS "Global triggers module" OFF)
 
 # Configure platform sources
 if (ANDROID)
@@ -32,12 +33,21 @@ else()
     message(FATAL_ERROR "Unsupported platform!")
 endif()
 
+# Configure module sources
+set(MODULE_SOURCES "")
+
+if (GLOBED_MODULE_GLOBAL_TRIGGERS)
+    file(GLOB_RECURSE GLOBAL_TRIGGERS_SOURCES CONFIGURE_DEPENDS "src/modules/global-triggers/*.cpp")
+    list(APPEND MODULE_SOURCES ${GLOBAL_TRIGGERS_SOURCES})
+endif()
+
 # Configure rest of sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     src/core/*.cpp
     src/util/*.cpp
     src/ui/*.cpp
     ${PLATFORM_SOURCES}
+    ${MODULE_SOURCES}
 )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
@@ -74,11 +84,13 @@ CPMAddPackage(
             "BUILD_TESTING OFF"
             "WITH_FIBERS OFF"
 )
+# TODO update all these deps at some point xd
 CPMAddPackage("gh:GlobedGD/server-shared#master")
 CPMAddPackage("gh:dankmeme01/qunet#master")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
 CPMAddPackage("gh:dankmeme01/cue#b8ffad04")
 CPMAddPackage("gh:GlobedGD/argon@1.1.9")
+CPMAddPackage("gh:Prevter/sinaps#2541d6d")
 
 if (GLOBED_VOICE_SUPPORT)
     CPMAddPackage("gh:xiph/opus#v1.5.2")
@@ -86,4 +98,4 @@ if (GLOBED_VOICE_SUPPORT)
     target_link_libraries(${PROJECT_NAME} opus)
 endif()
 
-target_link_libraries(${PROJECT_NAME} CapnProto::capnp ServerShared qunet asp argon cue UIBuilder)
+target_link_libraries(${PROJECT_NAME} CapnProto::capnp ServerShared qunet asp argon cue UIBuilder sinaps)

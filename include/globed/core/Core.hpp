@@ -17,7 +17,7 @@ public:
     geode::Result<std::shared_ptr<Module>> addModule(T&& mod) {
         auto ptr = std::static_pointer_cast<Module>(std::make_shared<std::decay_t<T>>(std::forward<T>(mod)));
         GEODE_UNWRAP(this->addModule(ptr));
-        return Ok(ptr);
+        return geode::Ok(ptr);
     }
 
 private:

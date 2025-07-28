@@ -246,15 +246,17 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
     auto players = reader.getPlayers();
     auto culled = reader.getCulled();
     auto ddatas = reader.getDisplayDatas();
+    auto events = reader.getEvents();
 
     msg::LevelDataMessage outMsg;
     outMsg.players.reserve(players.size());
     outMsg.culled.reserve(culled.size());
     outMsg.displayDatas.reserve(ddatas.size());
+    outMsg.events.reserve(events.size());
 
     for (auto player : players) {
         if (auto s = data::decodePlayerState(player)) {
-            outMsg.players.emplace_back(*s);
+            outMsg.players.emplace_back(*std::move(s));
         } else {
             geode::log::warn("Server sent invalid player state data for {}, skipping", player.getAccountId());
         }
@@ -266,11 +268,20 @@ inline msg::LevelDataMessage decodeLevelDataMessage(const schema::game::LevelDat
 
     for (auto dd : ddatas) {
         if (auto s = data::decodeDisplayData(dd)) {
-            outMsg.displayDatas.push_back(*s);
+            outMsg.displayDatas.push_back(*std::move(s));
         } else {
             // can happen as an optimization
             geode::log::debug("Server sent invalid player display data, skipping");
         }
+    }
+
+    for (auto event : events) {
+        auto data = event.getData().asBytes();
+
+        Event ev;
+        ev.type = static_cast<uint16_t>(event.getType());
+        ev.data = std::vector<uint8_t>(data.begin(), data.end());
+        outMsg.events.push_back(std::move(ev));
     }
 
     return outMsg;
