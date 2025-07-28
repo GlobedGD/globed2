@@ -36,33 +36,37 @@ GTriggersGJBGL* GTriggersGJBGL::get(GJBaseGameLayer* base) {
     return static_cast<GTriggersGJBGL*>(base);
 }
 
+static float checkedDiv(float a, float b) {
+    if (b == 0.0f) {
+        return 0.0f;
+    }
+
+    return a / b;
+}
+
 std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGameObject* obj) {
     // TODO FIXME XXX oh my goodness
     static_assert(GEODE_COMP_GD_VERSION == 22074);
 
-    int iVar15 = *(int *)((char*)obj + 0x6a0);
-    int iVar1 = *(int *)((char*)obj + 0x740);
-    int iVar2 = *(int *)((char*)obj + 0x748);
-    int iVar3 = *(int *)((char*)obj + 0x754);
-    int iVar4 = *(int *)((char*)obj + 0x764);
-    int iVar5 = *(int *)((char*)obj + 0x768);
-    int iVar6 = *(int *)((char*)obj + 0x76c);
-    int iVar7 = *(int *)((char*)obj + 0x694);
-    int iVar8 = *(int *)((char*)obj + 0x5c8);
-    int iVar9 = *(int *)((char*)obj + 0x744);
-    int iVar11 = *(int *)((char*)obj + 0x758);
+    int iVar15 = obj->m_itemID;
+    int item1Mode = obj->m_item1Mode;
+    int iVar2 = obj->m_targetItemMode;
+    int iVar3 = obj->m_resultType1;
+    int iVar7 = obj->m_itemID2;
+    int iVar9 = obj->m_item2Mode;
+    int iVar11 = obj->m_resultType2;
 
     if (iVar11 < 1) {
         iVar11 = 1;
     }
 
-    int iVar12 = *(int *)((char*)obj + 0x75c);
+    int iVar12 = obj->m_resultType3;
     if (iVar12 < 3) {
         iVar12 = 3;
     }
 
-    int iVar10 = *(int *)((char*)obj + 0x770);
-    float fVar16 = __builtin_roundf(*(float*)((char*)obj + 0x74c) * 1000.0f) / 1000.f;
+    int iVar10 = obj->m_signType2;
+    float fVar16 = std::round(obj->m_mod1 * 1000.0f) / 1000.f;
     if (iVar2 < 1) {
         iVar2 = 1;
     }
@@ -70,29 +74,20 @@ std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGame
     bool bVar14, bVar13;
     double dVar18, dVar19, someDouble;
 
-    if ((0 < iVar8) || (iVar2 == 3)) {
-        if ((iVar1 == 0) || ((iVar15 < 1 && (1 < iVar1 - 3u)))) {
-            bVar14 = false;
-        } else {
-            bVar14 = true;
-        }
-
-        if ((iVar9 == 0) || ((iVar7 < 1 && (1 < iVar9 - 3u)))) {
-            bVar13 = false;
-        } else {
-            bVar13 = true;
-        }
+    if (obj->m_targetGroupID > 0 || iVar2 == 3) {
+        bVar14 = item1Mode != 0 && (iVar15 >= 1 || item1Mode <= 4);
+        bVar13 = iVar9 != 0 && (iVar7 >= 1 || iVar9 <= 4);
 
         if (!bVar14 && bVar13) {
             bVar14 = true;
             bVar13 = false;
-            iVar1 = iVar9;
+            item1Mode = iVar9;
             iVar15 = iVar7;
         }
 
-        dVar18 = this->getItemValue(iVar1, iVar15);
+        dVar18 = this->getItemValue(item1Mode, iVar15);
         someDouble = this->getItemValue(iVar9, iVar7); // ok
-        dVar19 = this->getItemValue(iVar2, iVar8);
+        dVar19 = this->getItemValue(iVar2, obj->m_targetGroupID);
 
         if (bVar13) {
             if (iVar11 == 1) {
@@ -102,11 +97,7 @@ std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGame
             } else if (iVar11 == 3) {
                 dVar18 *= someDouble;
             } else if (iVar11 == 4) {
-                if (someDouble == 0.0) {
-                    dVar18 = 0.0;
-                } else {
-                    dVar18 /= someDouble;
-                }
+                dVar18 = checkedDiv(dVar18, someDouble);
             } else {
                 dVar18 = 0.0;
             }
@@ -121,73 +112,59 @@ std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGame
             } else if (iVar12 == 3) {
                 _x = dVar18 * _x;
             } else if (iVar12 == 4) {
-                if (_x == 0.0) {
-                    _x = 0.0;
-                } else {
-                    _x = dVar18 / _x;
-                }
+                _x = checkedDiv(dVar18, _x);
             } else {
                 _x = 0.0;
             }
         }
 
-        if (iVar4 != 0) {
-            if (iVar4 == 1) {
-                _x = round(_x);
-            } else if (iVar4 == 2) {
-                _x = floor(_x);
-            } else if (iVar4 == 3) {
-                _x = ceil(_x);
-            }
+        if (obj->m_roundType1 == 1) {
+            _x = std::round(_x);
+        } else if (obj->m_roundType1 == 2) {
+            _x = std::floor(_x);
+        } else if (obj->m_roundType1 == 3) {
+            _x = std::ceil(_x);
         }
 
-        if (iVar6 != 0) {
-            if (iVar6 == 1) {
-                _x = __builtin_fabs(_x);
-            } else if (iVar6 == 2) {
-                _x = -__builtin_fabs(_x);
-            }
+        if (obj->m_signType1 == 1) {
+            _x = std::abs(_x);
+        } else if (obj->m_signType1 == 2) {
+            _x = -std::abs(_x);
         }
 
-        if (iVar3 != 0) {
-            if (iVar3 == 1) {
-                _x += dVar19;
-            } else if (iVar3 == 2) {
-                _x = dVar19 - _x;
-            } else if (iVar3 == 3) {
-                _x *= dVar19;
-            } else if (iVar3 == 4) {
-                if (_x == 0.0) {
-                    _x = 0.0;
-                } else {
-                    _x = dVar19 / _x;
-                }
-            } else {
-                _x = 0.0;
-            }
+        if (iVar3 == 1) {
+            _x += dVar19;
+        } else if (iVar3 == 2) {
+            _x = dVar19 - _x;
+        } else if (iVar3 == 3) {
+            _x *= dVar19;
+        } else if (iVar3 == 4) {
+            _x = checkedDiv(dVar19, _x);
+        } else if (iVar3 != 0) {
+            _x = 0.0;
         }
 
-        if (iVar5 == 1) {
-            _x = round(_x);
-        } else if (iVar5 == 2) {
-            _x = floor(_x);
-        } else if (iVar5 == 3) {
-            _x = ceil(_x);
+        if (obj->m_roundType2 == 1) {
+            _x = std::round(_x);
+        } else if (obj->m_roundType2 == 2) {
+            _x = std::floor(_x);
+        } else if (obj->m_roundType2 == 3) {
+            _x = std::ceil(_x);
         }
 
         if (iVar10 == 1) {
-            _x = __builtin_fabs(_x);
+            _x = std::abs(_x);
         } else if (iVar10 == 2) {
-            _x = -__builtin_fabs(_x);
+            _x = -std::abs(_x);
         }
 
         if (iVar2 == 1) {
             return _x;
         } else if (iVar2 == 2) {
-            m_effectManager->updateTimer(iVar8, _x);
+            m_effectManager->updateTimer(obj->m_targetGroupID, _x);
         } else if (iVar2 == 3) {
-            *(bool*)((char*)this + 0x860) = true;
-            *(int*)((char*)this + 0x85c) = _x;
+            m_gameState.m_unkBool32 = true;
+            m_gameState.m_points = _x;
         }
 
     }
