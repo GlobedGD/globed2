@@ -45,126 +45,79 @@ static float checkedDiv(float a, float b) {
 }
 
 std::optional<int> GTriggersGJBGL::activateItemEditTriggerReimpl(ItemTriggerGameObject* obj) {
-    // TODO FIXME XXX oh my goodness
-    static_assert(GEODE_COMP_GD_VERSION == 22074);
-
-    int iVar15 = obj->m_itemID;
+    int item1Id = obj->m_itemID;
     int item1Mode = obj->m_item1Mode;
-    int iVar2 = obj->m_targetItemMode;
-    int iVar3 = obj->m_resultType1;
-    int iVar7 = obj->m_itemID2;
-    int iVar9 = obj->m_item2Mode;
-    int iVar11 = obj->m_resultType2;
+    int item2Id = obj->m_itemID2;
+    int item2Mode = obj->m_item2Mode;
+    int resultType2 = std::max(obj->m_resultType2, 1);
+    int resultType3 = std::max(obj->m_resultType3, 3);
+    int targetMode = std::max(obj->m_targetItemMode, 1);
+    float mod1 = std::round(obj->m_mod1 * 1000.0f) / 1000.f;
 
-    if (iVar11 < 1) {
-        iVar11 = 1;
-    }
+    auto applyOperation = [](double a, double b, int op) -> double {
+        switch (op) {
+            case 1: return a + b;
+            case 2: return a - b;
+            case 3: return a * b;
+            case 4: return checkedDiv(a, b);
+            default: return 0.0;
+        }
+    };
 
-    int iVar12 = obj->m_resultType3;
-    if (iVar12 < 3) {
-        iVar12 = 3;
-    }
+    auto applyRounding = [](double val, int roundType) -> double {
+        switch (roundType) {
+            case 1: return std::round(val);
+            case 2: return std::floor(val);
+            case 3: return std::ceil(val);
+            default: return val;
+        }
+    };
 
-    int iVar10 = obj->m_signType2;
-    float fVar16 = std::round(obj->m_mod1 * 1000.0f) / 1000.f;
-    if (iVar2 < 1) {
-        iVar2 = 1;
-    }
+    auto applySign = [](double val, int signType) -> double {
+        switch (signType) {
+            case 1: return std::abs(val);
+            case 2: return -std::abs(val);
+            default: return val;
+        }
+    };
 
-    bool bVar14, bVar13;
-    double dVar18, dVar19, someDouble;
-
-    if (obj->m_targetGroupID > 0 || iVar2 == 3) {
-        bVar14 = item1Mode != 0 && (iVar15 >= 1 || item1Mode <= 4);
-        bVar13 = iVar9 != 0 && (iVar7 >= 1 || iVar9 <= 4);
+    if (obj->m_targetGroupID > 0 || targetMode == 3) {
+        bool bVar14 = item1Mode != 0 && (item1Id >= 1 || item1Mode <= 4);
+        bool bVar13 = item2Mode != 0 && (item2Id >= 1 || item2Mode <= 4);
 
         if (!bVar14 && bVar13) {
             bVar14 = true;
             bVar13 = false;
-            item1Mode = iVar9;
-            iVar15 = iVar7;
+            item1Mode = item2Mode;
+            item1Id = item2Id;
         }
 
-        dVar18 = this->getItemValue(item1Mode, iVar15);
-        someDouble = this->getItemValue(iVar9, iVar7); // ok
-        dVar19 = this->getItemValue(iVar2, obj->m_targetGroupID);
+        double value1 = this->getItemValue(item1Mode, item1Id);
+        double value2 = this->getItemValue(item2Mode, item2Id);
+        double targetValue = this->getItemValue(targetMode, obj->m_targetGroupID);
 
         if (bVar13) {
-            if (iVar11 == 1) {
-                dVar18 += someDouble;
-            } else if (iVar11 == 2) {
-                dVar18 -= someDouble;
-            } else if (iVar11 == 3) {
-                dVar18 *= someDouble;
-            } else if (iVar11 == 4) {
-                dVar18 = checkedDiv(dVar18, someDouble);
-            } else {
-                dVar18 = 0.0;
-            }
+            value1 = applyOperation(value1, value2, resultType2);
         }
 
-        double _x = fVar16;
+        double result = mod1;
         if (bVar14) {
-            if (iVar12 == 1) {
-                _x = dVar18 + _x;
-            } else if (iVar12 == 2) {
-                _x = dVar18 - _x;
-            } else if (iVar12 == 3) {
-                _x = dVar18 * _x;
-            } else if (iVar12 == 4) {
-                _x = checkedDiv(dVar18, _x);
-            } else {
-                _x = 0.0;
-            }
+            result = applyOperation(value1, result, resultType3);
         }
 
-        if (obj->m_roundType1 == 1) {
-            _x = std::round(_x);
-        } else if (obj->m_roundType1 == 2) {
-            _x = std::floor(_x);
-        } else if (obj->m_roundType1 == 3) {
-            _x = std::ceil(_x);
-        }
+        result = applyRounding(result, obj->m_roundType1);
+        result = applySign(result, obj->m_signType1);
+        if (result != 0) result = applyOperation(targetValue, result, obj->m_resultType1);
+        result = applyRounding(result, obj->m_roundType2);
+        result = applySign(result, obj->m_signType2);
 
-        if (obj->m_signType1 == 1) {
-            _x = std::abs(_x);
-        } else if (obj->m_signType1 == 2) {
-            _x = -std::abs(_x);
-        }
-
-        if (iVar3 == 1) {
-            _x += dVar19;
-        } else if (iVar3 == 2) {
-            _x = dVar19 - _x;
-        } else if (iVar3 == 3) {
-            _x *= dVar19;
-        } else if (iVar3 == 4) {
-            _x = checkedDiv(dVar19, _x);
-        } else if (iVar3 != 0) {
-            _x = 0.0;
-        }
-
-        if (obj->m_roundType2 == 1) {
-            _x = std::round(_x);
-        } else if (obj->m_roundType2 == 2) {
-            _x = std::floor(_x);
-        } else if (obj->m_roundType2 == 3) {
-            _x = std::ceil(_x);
-        }
-
-        if (iVar10 == 1) {
-            _x = std::abs(_x);
-        } else if (iVar10 == 2) {
-            _x = -std::abs(_x);
-        }
-
-        if (iVar2 == 1) {
-            return _x;
-        } else if (iVar2 == 2) {
-            m_effectManager->updateTimer(obj->m_targetGroupID, _x);
-        } else if (iVar2 == 3) {
+        if (targetMode == 1) {
+            return result;
+        } else if (targetMode == 2) {
+            m_effectManager->updateTimer(obj->m_targetGroupID, result);
+        } else if (targetMode == 3) {
             m_gameState.m_unkBool32 = true;
-            m_gameState.m_points = _x;
+            m_gameState.m_points = result;
         }
 
     }
