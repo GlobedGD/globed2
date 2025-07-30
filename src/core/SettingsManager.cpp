@@ -86,6 +86,13 @@ SettingsManager::SettingsManager() {
         "Enables debug logs from qunet.",
         false
     );
+
+    this->registerSetting(
+        "core.dev.fake-data",
+        "Fake Data",
+        "Enables fake data for testing purposes. In some places, fake data will be used instead of actual server responses.",
+        false
+    );
 }
 
 void SettingsManager::freeze() {

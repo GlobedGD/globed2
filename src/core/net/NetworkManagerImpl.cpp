@@ -425,6 +425,12 @@ void NetworkManagerImpl::sendLeaveRoom() {
     });
 }
 
+void NetworkManagerImpl::sendRequestRoomList() {
+    (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
+        auto requestRoomList = msg.initRequestRoomList();
+    });
+}
+
 void NetworkManagerImpl::addListener(const std::type_info& ty, void* listener) {
     std::type_index index{ty};
     auto listeners = m_listeners.lock();
@@ -485,7 +491,6 @@ static void updateServers(std::unordered_map<std::string, GameServer>& servers, 
                    gameServer.name, static_cast<int>(gameServer.id), gameServer.url, gameServer.region);
 
         servers[gameServer.stringId] = std::move(gameServer);
-
     }
 }
 
@@ -525,10 +530,59 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
             this->tryAuth();
         } break;
 
+        case CentralMessage::PLAYER_COUNTS: {
+            // TODO
+        } break;
+
         case CentralMessage::ROOM_STATE: {
             auto roomState = msg.getRoomState();
 
             this->invokeListeners(data::decodeRoomStateMessage(roomState));
+        } break;
+
+        case CentralMessage::ROOM_JOIN_FAILED: {
+            auto roomJoinFailed = msg.getRoomJoinFailed();
+
+            if (auto msg = data::decodeRoomJoinFailedMessage(roomJoinFailed)) {
+                this->invokeListeners(*msg);
+            } else {
+                log::warn("Received invalid room join failed message");
+            }
+        } break;
+
+        case CentralMessage::ROOM_CREATE_FAILED: {
+            auto roomCreateFailed = msg.getRoomCreateFailed();
+
+            if (auto msg = data::decodeRoomCreateFailedMessage(roomCreateFailed)) {
+                this->invokeListeners(*msg);
+            } else {
+                log::warn("Received invalid room create failed message");
+            }
+        } break;
+
+        case CentralMessage::ROOM_LIST: {
+            auto roomList = msg.getRoomList();
+
+            if (auto msg = data::decodeRoomListMessage(roomList)) {
+                this->invokeListeners(*msg);
+            } else {
+                log::warn("Received invalid room list message");
+            }
+        } break;
+
+        case CentralMessage::JOIN_FAILED: {
+            log::warn("Received join failed message: {}", (int) msg.getJoinFailed().getReason());
+        } break;
+
+        case CentralMessage::WARP_PLAYER: {
+            auto warpPlayer = msg.getWarpPlayer();
+            auto sessionId = SessionId{warpPlayer.getSession()};
+
+            this->invokeListeners(msg::WarpPlayerMessage{sessionId});
+        } break;
+
+        case CentralMessage::KICKED: {
+            // TODO
         } break;
 
         default: {
@@ -581,12 +635,20 @@ Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
                 case INVALID_PASSCODE: {
                     log::warn("Join session failed: invalid passcode");
                 } break;
+
+                case INVALID_ROOM: {
+                    log::warn("Join session failed: invalid room");
+                } break;
             }
         } break;
 
         case GameMessage::LEVEL_DATA: {
             auto data = msg.getLevelData();
             this->invokeListeners(data::decodeLevelDataMessage(data));
+        } break;
+
+        case GameMessage::KICKED: {
+            // TODO
         } break;
 
         default: {

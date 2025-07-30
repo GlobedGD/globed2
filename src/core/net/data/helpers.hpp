@@ -215,6 +215,22 @@ inline PlayerAccountData decodeAccountData(const schema::main::PlayerAccountData
     return out;
 }
 
+// Room player
+
+inline RoomPlayer decodeRoomPlayer(const schema::main::RoomPlayer::Reader& reader) {
+    RoomPlayer out{};
+    out.cube = reader.getCube();
+    out.color1 = reader.getColor1();
+    out.color2 = reader.getColor2();
+    out.glowColor = reader.getGlowColor();
+    out.session = SessionId(reader.getSession());
+
+    auto accountDataR = reader.getAccountData();
+    out.accountData = decodeAccountData(accountDataR);
+
+    return out;
+}
+
 // Room state
 
 inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessage::Reader& reader) {
@@ -227,17 +243,57 @@ inline msg::RoomStateMessage decodeRoomStateMessage(schema::main::RoomStateMessa
     out.players.reserve(players.size());
 
     for (auto player : players) {
-        RoomPlayer plr;
-        plr.cube = player.getCube();
-        plr.session = SessionId(player.getSession());
-
-        auto accountData = player.getAccountData();
-        plr.accountData = data::decodeAccountData(accountData);
+        out.players.push_back(decodeRoomPlayer(player));
     }
 
     out.settings = data::decodeRoomSettings(reader.getSettings());
 
     return out;
+}
+
+// Room join failed
+
+inline std::optional<msg::RoomJoinFailedMessage> decodeRoomJoinFailedMessage(schema::main::RoomJoinFailedMessage::Reader& reader) {
+    using enum schema::main::RoomJoinFailedReason;
+
+    msg::RoomJoinFailedMessage out{};
+    out.reason = static_cast<msg::RoomJoinFailedReason>(reader.getReason());
+
+    return out.reason <= msg::RoomJoinFailedReason::Last_ ? std::optional{out} : std::nullopt;
+}
+
+// Room create failed
+
+inline std::optional<msg::RoomCreateFailedMessage> decodeRoomCreateFailedMessage(schema::main::RoomCreateFailedMessage::Reader& reader) {
+    using enum schema::main::RoomCreateFailedReason;
+
+    msg::RoomCreateFailedMessage out{};
+    out.reason = static_cast<msg::RoomCreateFailedReason>(reader.getReason());
+
+    return out.reason <= msg::RoomCreateFailedReason::Last_ ? std::optional{out} : std::nullopt;
+}
+
+// Room listing
+
+inline std::optional<msg::RoomListMessage> decodeRoomListMessage(schema::main::RoomListMessage::Reader& reader) {
+    msg::RoomListMessage out{};
+    auto rooms = reader.getRooms();
+    out.rooms.reserve(rooms.size());
+
+    for (auto room : rooms) {
+        globed::RoomListingInfo info{};
+
+        info.roomId = room.getRoomId();
+        info.roomName = room.getRoomName();
+        info.roomOwner = decodeRoomPlayer(room.getRoomOwner());
+        info.playerCount = room.getPlayerCount();
+        info.hasPassword = room.getHasPassword();
+        info.settings = data::decodeRoomSettings(room.getSettings());
+
+        out.rooms.push_back(std::move(info));
+    }
+
+    return std::optional{out};
 }
 
 // Level data

@@ -4,6 +4,7 @@
 namespace globed {
 
 struct RoomSettings {
+    uint8_t serverId = 0;
     uint16_t playerLimit = 0;
     bool fasterReset = false;
     bool hidden = false;

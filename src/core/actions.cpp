@@ -18,4 +18,12 @@ void openUserProfile(int accountId, int userId, std::string_view username) {
     ProfilePage::create(accountId, myself)->show();
 }
 
+void openUserProfile(const RoomPlayer& player) {
+    openUserProfile(player.accountData);
+}
+
+void openUserProfile(const PlayerAccountData& player) {
+    openUserProfile(player.accountId, player.userId, player.username);
+}
+
 }

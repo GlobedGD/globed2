@@ -57,6 +57,7 @@ public:
     void sendCreateRoom(const std::string& name, uint32_t passcode, const RoomSettings& settings);
     void sendJoinRoom(uint32_t id, uint32_t passcode = 0);
     void sendLeaveRoom();
+    void sendRequestRoomList();
 
     // Both servers
     void sendJoinSession(SessionId id);
@@ -133,7 +134,7 @@ private:
     template <typename T>
     void invokeListeners(T&& message) {
         auto listenersLock = m_listeners.lock();
-        auto listeners = listenersLock->find(typeid(T));
+        auto listeners = listenersLock->find(typeid(std::decay_t<T>));
 
         // check if there are any non-threadsafe listeners, and defer to the main thread if so
         bool hasThreadUnsafe = false;

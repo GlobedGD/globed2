@@ -3,11 +3,12 @@
 #pragma once
 #include "PlayerState.hpp"
 #include "PlayerDisplayData.hpp"
-#include "RoomPlayer.hpp"
-#include "RoomSettings.hpp"
+#include "RoomListingInfo.hpp"
 #include "Event.hpp"
 
 namespace globed::msg {
+
+// Rooms
 
 struct RoomStateMessage {
     uint32_t roomId;
@@ -17,9 +18,44 @@ struct RoomStateMessage {
     RoomSettings settings;
 };
 
-struct WarpPlayerMessage {
-    uint64_t sessionId;
+enum class RoomJoinFailedReason : uint16_t {
+    NotFound = 0,
+    InvalidPasscode,
+    Full,
+
+    Last_ = Full,
 };
+
+struct RoomJoinFailedMessage {
+    RoomJoinFailedReason reason;
+};
+
+enum class RoomCreateFailedReason : uint16_t {
+    InvalidName = 0,
+    InvalidSettings,
+    InvalidPasscode,
+    InvalidServer,
+    ServerDown,
+    InappropriateName,
+
+    Last_ = InappropriateName,
+};
+
+struct RoomCreateFailedMessage {
+    RoomCreateFailedReason reason;
+};
+
+struct RoomListMessage {
+    std::vector<RoomListingInfo> rooms;
+};
+
+// Misc
+
+struct WarpPlayerMessage {
+    SessionId sessionId;
+};
+
+// Level data
 
 struct LevelDataMessage {
     std::vector<PlayerState> players;
