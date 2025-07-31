@@ -12,6 +12,8 @@ struct InputPopupOutcome {
 
 class InputPopup : public BasePopup<InputPopup, const char*> {
 public:
+    using BasePopup::setTitle; // publicize it
+
     static constexpr inline cocos2d::CCSize POPUP_SIZE = {};
 
     void setPlaceholder(const std::string& placeholder);

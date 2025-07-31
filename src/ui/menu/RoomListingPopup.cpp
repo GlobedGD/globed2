@@ -2,7 +2,9 @@
 #include "RoomListingCell.hpp"
 
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/PopupManager.hpp>
 #include <globed/util/Random.hpp>
+#include <ui/misc/InputPopup.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <UIBuilder.hpp>
 
@@ -63,25 +65,24 @@ bool RoomListingPopup::setup() {
     Build<CCSprite>::createSpriteName("GJ_plusBtn_001.png")
         .scale(0.9f)
         .intoMenuItem([this](auto) {
-            // TODO: show a popup to join a room
-            // auto popup = InputPopup::create("chatFont.fnt");
-            // popup->setPlaceholder("Room ID");
-            // popup->setCommonFilter(CommonFilter::Uint);
-            // popup->setMaxCharCount(7);
-            // popup->setCallback([](auto outcome) {
-            //     if (!outcome.cancelled) {
-            //         // parse the room ID
-            //         uint32_t id = geode::utils::numFromString<uint32_t>(outcome.text).unwrapOr(0);
-            //         if (id == 0) {
-            //             // TODO: popupmanager
-            //             FLAlertLayer::create("Error", "Invalid room ID", "Ok")->show();
-            //             return;
-            //         }
+            auto popup = InputPopup::create("chatFont.fnt");
+            popup->setTitle("Join Room");
+            popup->setPlaceholder("Room ID");
+            popup->setCommonFilter(CommonFilter::Uint);
+            popup->setMaxCharCount(7);
+            popup->setCallback([](auto outcome) {
+                if (!outcome.cancelled) {
+                    // parse the room ID
+                    uint32_t id = geode::utils::numFromString<uint32_t>(outcome.text).unwrapOr(0);
+                    if (id == 0) {
+                        globed::alert("Error", "Invalid room ID");
+                        return;
+                    }
 
-            //         NetworkManagerImpl::get().sendJoinRoom(id, 0); // TODO: passcode
-            //     }
-            // });
-            // popup->show();
+                    NetworkManagerImpl::get().sendJoinRoom(id, 0); // TODO: passcode
+                }
+            });
+            popup->show();
         })
         .pos(this->fromBottomLeft(3.f, 3.f))
         .id("add-room-btn")
