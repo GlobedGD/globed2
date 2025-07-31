@@ -7,7 +7,7 @@
 
 namespace globed {
 
-struct GLOBED_DLL GLOBED_NOVTABLE HookedEffectGameObject : geode::Modify<HookedEffectGameObject, EffectGameObject> {
+struct GLOBED_MODIFY_ATTR HookedEffectGameObject : geode::Modify<HookedEffectGameObject, EffectGameObject> {
     static void onModify(auto& self) {
         GLOBED_CLAIM_HOOKS(GlobalTriggersModule::get(), self,
             "EffectGameObject::triggerObject",

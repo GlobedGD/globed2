@@ -5,7 +5,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_DLL GLOBED_NOVTABLE HookedEditorPauseLayer : geode::Modify<HookedEditorPauseLayer, EditorPauseLayer> {
+struct GLOBED_MODIFY_ATTR HookedEditorPauseLayer : geode::Modify<HookedEditorPauseLayer, EditorPauseLayer> {
     $override
     void onSaveAndPlay(CCObject* sender) {
         EditorPauseLayer::onSaveAndPlay(sender);

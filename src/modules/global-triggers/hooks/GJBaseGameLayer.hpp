@@ -10,7 +10,7 @@
 
 namespace globed {
 
-struct GLOBED_DLL GLOBED_NOVTABLE GTriggersGJBGL : geode::Modify<GTriggersGJBGL, GJBaseGameLayer> {
+struct GLOBED_MODIFY_ATTR GTriggersGJBGL : geode::Modify<GTriggersGJBGL, GJBaseGameLayer> {
     struct Fields {
         std::optional<MessageListener<msg::LevelDataMessage>> m_listener;
         std::unordered_map<int, bool> m_pausedPlayers;

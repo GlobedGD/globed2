@@ -7,7 +7,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_DLL GLOBED_NOVTABLE HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayLayer> {
+struct GLOBED_MODIFY_ATTR HookedPlayLayer : geode::Modify<HookedPlayLayer, PlayLayer> {
     GlobedGJBGL* asBase() {
         return GlobedGJBGL::get(this);
     }

@@ -5,7 +5,7 @@ using namespace geode::prelude;
 
 namespace globed {
 
-struct GLOBED_DLL GLOBED_NOVTABLE HookedEditorLayer : geode::Modify<HookedEditorLayer, LevelEditorLayer> {
+struct GLOBED_MODIFY_ATTR HookedEditorLayer : geode::Modify<HookedEditorLayer, LevelEditorLayer> {
     $override
     bool init(GJGameLevel* level, bool a) {
         auto gjbgl = GlobedGJBGL::get(this);

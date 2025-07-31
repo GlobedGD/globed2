@@ -7,7 +7,7 @@
 
 namespace globed {
 
-struct GLOBED_DLL GLOBED_NOVTABLE HookedGJEffectManager : geode::Modify<HookedGJEffectManager, GJEffectManager> {
+struct GLOBED_MODIFY_ATTR HookedGJEffectManager : geode::Modify<HookedGJEffectManager, GJEffectManager> {
     struct Fields {
         std::unordered_map<int, int> m_customItems;
     };

@@ -9,7 +9,7 @@
 
 namespace globed {
 
-struct GLOBED_DLL GLOBED_NOVTABLE GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
+struct GLOBED_MODIFY_ATTR GlobedGJBGL : geode::Modify<GlobedGJBGL, GJBaseGameLayer> {
     struct Fields {
         bool m_active = false;
         bool m_editor = false;

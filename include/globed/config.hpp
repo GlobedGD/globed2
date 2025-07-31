@@ -28,3 +28,5 @@
 # define GLOBED_NOINLINE __attribute__((noinline))
 # define GLOBED_ALWAYS_INLINE __attribute__((always_inline)) inline
 #endif
+
+#define GLOBED_MODIFY_ATTR GLOBED_DLL GLOBED_NOVTABLE
