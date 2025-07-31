@@ -8,7 +8,10 @@
 #include "data/helpers.hpp"
 
 #include <argon/argon.hpp>
+#include <qunet/Pinger.hpp>
+#include <qunet/util/algo.hpp>
 #include <asp/time/Duration.hpp>
+#include <asp/time/sleep.hpp>
 
 using namespace geode::prelude;
 using namespace asp::time;
@@ -49,7 +52,29 @@ static globed::PlayerIconData gatherIconData() {
     return out;
 }
 
+static Duration getPingInterval(uint32_t sentPings) {
+    switch (sentPings) {
+        case 0: return Duration::fromSecs(1);
+        case 1: return Duration::fromSecs(2);
+        case 2: return Duration::fromSecs(3);
+        case 3: return Duration::fromSecs(5);
+        case 4: return Duration::fromSecs(10);
+        default: return Duration::fromSecs(300); // rare, because we already know the average latency
+    }
+}
+
 namespace globed {
+
+void GameServer::updateLatency(uint32_t latency) {
+    if (avgLatency == -1) {
+        avgLatency = latency;
+    } else {
+        avgLatency = qn::exponentialMovingAverage(avgLatency, latency, 0.2);
+    }
+
+    lastLatency = latency;
+}
+
 
 NetworkManagerImpl::NetworkManagerImpl() {
     // TODO: measure how much of an impact those have on bandwidth
@@ -124,9 +149,51 @@ NetworkManagerImpl::NetworkManagerImpl() {
             log::error("failed to process message from game server: {}", err);
         }
     });
+
+    m_workerThread.setName("NetworkManager worker");
+    m_workerThread.setLoopFunction([this](asp::StopToken<>& stopToken) {
+        // check if any game servers need to be pinged
+        if (this->isConnected()) {
+            auto servers = m_gameServers.lock();
+
+            for (auto& [srvkey, server] : *servers) {
+                if (server.lastPingTime.elapsed() > getPingInterval(server.sentPings)) {
+                    server.sentPings++;
+                    server.lastPingTime = Instant::now();
+
+                    // send a ping to the server
+                    auto res = qn::Pinger::get().pingUrl(server.url, [this, srvkey](qn::PingResult res) {
+                        if (res.timedOut) {
+                            log::debug("Ping to server {} timed out!", srvkey);
+                            return;
+                        }
+
+                        // update the server latency
+                        auto servers = m_gameServers.lock();
+                        auto it = servers->find(srvkey);
+                        if (it != servers->end()) {
+                            auto lat = (uint32_t)res.responseTime.millis();
+                            it->second.updateLatency(lat);
+                            log::debug("Ping to server {} arrived, latency: {}ms avg, {}ms last", srvkey, it->second.avgLatency, it->second.lastLatency);
+                        }
+                    });
+
+                    if (!res) {
+                        log::warn("Failed to ping game server {} ({}, id {}): {}", server.url, server.name, (int)server.id, res.unwrapErr());
+                        continue;
+                    }
+                }
+            }
+        }
+
+        asp::time::sleep(Duration::fromMillis(100));
+    });
+    m_workerThread.start();
 }
 
-NetworkManagerImpl::~NetworkManagerImpl() {}
+NetworkManagerImpl::~NetworkManagerImpl() {
+    m_workerThread.stopAndWait();
+}
 
 NetworkManagerImpl& NetworkManagerImpl::get() {
     return *NetworkManager::get().m_impl;
@@ -166,8 +233,10 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
         return std::nullopt;
     }
 
+    auto servers = m_gameServers.lock();
+
     if (auto value = globed::value<std::string>("core.net.preferred-server")) {
-        for (auto& srv : m_gameServers) {
+        for (auto& srv : *servers) {
             if (srv.second.stringId == *value) {
                 return srv.second.id;
             }
@@ -175,8 +244,8 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
     }
 
     // fallback to the server with the lowest latency
-    if (!m_gameServers.empty()) {
-        auto it = std::min_element(m_gameServers.begin(), m_gameServers.end(),
+    if (!servers->empty()) {
+        auto it = std::min_element(servers->begin(), servers->end(),
             [](const auto& a, const auto& b) {
                 return a.second.lastLatency < b.second.lastLatency;
             });
@@ -266,7 +335,7 @@ void NetworkManagerImpl::onCentralDisconnected() {
     CoreImpl::get().onServerDisconnected();
 
     m_established = false;
-    m_gameServers.clear();
+    m_gameServers.lock()->clear();
     m_knownArgonUrl.clear();
 }
 
@@ -285,7 +354,7 @@ void NetworkManagerImpl::sendJoinSession(SessionId id) {
 
     // find the game server
     uint8_t serverId = id.serverId();
-    for (auto& srv : m_gameServers) {
+    for (auto& srv : *m_gameServers.lock()) {
         if (srv.second.id == serverId) {
             this->joinSessionWith(srv.second.url, id);
             return;
@@ -480,12 +549,13 @@ static void updateServers(std::unordered_map<std::string, GameServer>& servers, 
     servers.clear();
 
     for (auto srv : newServers) {
-        GameServer gameServer;
-        gameServer.id = srv.getId();
-        gameServer.stringId = srv.getStringId();
-        gameServer.url = srv.getAddress();
-        gameServer.name = srv.getName();
-        gameServer.region = srv.getRegion();
+        GameServer gameServer {
+            .id = srv.getId(),
+            .stringId = srv.getStringId(),
+            .url = srv.getAddress(),
+            .name = srv.getName(),
+            .region = srv.getRegion()
+        };
 
         log::debug("Added game server: {} (ID: {}, URL: {}, Region: {})",
                    gameServer.name, static_cast<int>(gameServer.id), gameServer.url, gameServer.region);
@@ -506,7 +576,7 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 
             if (loginOk.hasServers()) {
                 auto servers = loginOk.getServers();
-                updateServers(m_gameServers, servers);
+                updateServers(*m_gameServers.lock(), servers);
             }
 
             m_established = true;

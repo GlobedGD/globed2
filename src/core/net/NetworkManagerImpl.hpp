@@ -24,7 +24,12 @@ struct GameServer {
     std::string url;
     std::string name;
     std::string region;
-    uint32_t lastLatency = -1;
+    uint32_t lastLatency = -1; // millis
+    uint32_t avgLatency = -1; // millis
+    uint32_t sentPings = 0;
+    asp::time::Instant lastPingTime = asp::time::Instant::now();
+
+    void updateLatency(uint32_t latency);
 };
 
 class NetworkManagerImpl {
@@ -103,10 +108,11 @@ private:
     std::queue<Event> m_gameEventQueue;
     bool m_gameEstablished = false;
 
-    std::unordered_map<std::string, GameServer> m_gameServers;
+    asp::Mutex<std::unordered_map<std::string, GameServer>> m_gameServers;
 
     // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
     asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>, true> m_listeners;
+    asp::Thread<> m_workerThread;
 
     void onCentralConnected();
     void onCentralDisconnected();
