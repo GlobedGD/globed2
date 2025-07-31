@@ -105,7 +105,8 @@ private:
 
     std::unordered_map<std::string, GameServer> m_gameServers;
 
-    asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>> m_listeners;
+    // Note: this mutex is recursive so that listeners can be added/removed inside listener callbacks
+    asp::Mutex<std::unordered_map<std::type_index, std::vector<void*>>, true> m_listeners;
 
     void onCentralConnected();
     void onCentralDisconnected();

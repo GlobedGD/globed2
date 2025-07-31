@@ -166,7 +166,7 @@ std::optional<uint8_t> NetworkManagerImpl::getPreferredServer() {
         return std::nullopt;
     }
 
-    if (auto value = globed::value<std::string>("preferred-server")) {
+    if (auto value = globed::value<std::string>("core.net.preferred-server")) {
         for (auto& srv : m_gameServers) {
             if (srv.second.stringId == *value) {
                 return srv.second.id;

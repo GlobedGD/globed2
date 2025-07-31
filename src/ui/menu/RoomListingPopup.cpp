@@ -5,6 +5,7 @@
 #include <globed/core/PopupManager.hpp>
 #include <globed/util/Random.hpp>
 #include <ui/misc/InputPopup.hpp>
+#include <ui/misc/LoadingPopup.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <UIBuilder.hpp>
 
@@ -12,8 +13,8 @@ using namespace geode::prelude;
 
 namespace globed {
 
-CCSize RoomListingPopup::POPUP_SIZE = {420.f, 240.f};
-CCSize RoomListingPopup::LIST_SIZE = {375.f, 160.f};
+const CCSize RoomListingPopup::POPUP_SIZE = {420.f, 240.f};
+const CCSize RoomListingPopup::LIST_SIZE = {375.f, 160.f};
 
 static std::vector<RoomListingInfo> makeFakeData();
 
@@ -70,7 +71,7 @@ bool RoomListingPopup::setup() {
             popup->setPlaceholder("Room ID");
             popup->setCommonFilter(CommonFilter::Uint);
             popup->setMaxCharCount(7);
-            popup->setCallback([](auto outcome) {
+            popup->setCallback([this](auto outcome) {
                 if (!outcome.cancelled) {
                     // parse the room ID
                     uint32_t id = geode::utils::numFromString<uint32_t>(outcome.text).unwrapOr(0);
@@ -78,6 +79,9 @@ bool RoomListingPopup::setup() {
                         globed::alert("Error", "Invalid room ID");
                         return;
                     }
+
+                    m_joinedRoomId = id;
+                    this->waitForResponse();
 
                     NetworkManagerImpl::get().sendJoinRoom(id, 0); // TODO: passcode
                 }
@@ -130,6 +134,56 @@ void RoomListingPopup::toggleModActions(bool enabled) {
 
     for (auto cell : m_list->iter<RoomListingCell>()) {
         cell->toggleModActions(enabled);
+    }
+}
+
+void RoomListingPopup::waitForResponse() {
+    // wait for either a room state mesage or a room join failed message
+
+    m_loadingPopup = LoadingPopup::create();
+    m_loadingPopup->setTitle("Joining Room...");
+    m_loadingPopup->setClosable(true);
+    m_loadingPopup->show();
+
+    m_successListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
+        // small sanity check to make sure it is actually the response we need
+        if (msg.roomId == m_joinedRoomId) {
+            this->stopWaiting(std::nullopt);
+        }
+
+        return ListenerResult::Continue;
+    });
+    m_successListener.value()->setPriority(-100);
+
+    m_failListener = NetworkManagerImpl::get().listen<msg::RoomJoinFailedMessage>([this](const auto& msg) {
+        using enum msg::RoomJoinFailedReason;
+        std::string reason;
+
+        // TODO: prompt for passcode if InvalidPasscode
+        switch (msg.reason) {
+            case NotFound: reason = "Room not found"; break;
+            case InvalidPasscode: reason = "Invalid passcode"; break;
+            case Full: reason = "Room is full"; break;
+            default: reason = "Unknown reason"; break;
+        }
+
+        this->stopWaiting(reason);
+
+        return ListenerResult::Stop;
+    });
+    m_failListener.value()->setPriority(-1);
+}
+
+void RoomListingPopup::stopWaiting(std::optional<std::string> failReason) {
+    m_loadingPopup->forceClose();
+    m_loadingPopup = nullptr;
+    m_failListener.reset();
+    m_successListener.reset();
+
+    if (failReason) {
+        globed::alert("Error", fmt::format("Failed to join room: <cy>{}</c>", *failReason));
+    } else {
+        this->onClose(nullptr);
     }
 }
 

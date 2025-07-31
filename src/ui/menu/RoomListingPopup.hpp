@@ -7,12 +7,14 @@
 
 namespace globed {
 
+class LoadingPopup;
+
 class RoomListingPopup : public BasePopup<RoomListingPopup> {
 protected:
     friend class RoomListingCell;
     friend class BasePopup;
-    static cocos2d::CCSize POPUP_SIZE;
-    static cocos2d::CCSize LIST_SIZE;
+    static const cocos2d::CCSize POPUP_SIZE;
+    static const cocos2d::CCSize LIST_SIZE;
 
     size_t m_roomCount = 0;
     bool m_modActionsOn = false;
@@ -20,11 +22,19 @@ protected:
     cue::ListNode* m_list;
     std::optional<MessageListener<msg::RoomListMessage>> m_roomListListener;
 
+    std::optional<MessageListener<msg::RoomStateMessage>> m_successListener;
+    std::optional<MessageListener<msg::RoomJoinFailedMessage>> m_failListener;
+    LoadingPopup* m_loadingPopup = nullptr;
+    uint32_t m_joinedRoomId = 0;
+
     bool setup() override;
     void updateTitle(size_t roomCount);
     void onReload(CCObject*);
     void toggleModActions(bool enabled);
     void populateList(const std::vector<RoomListingInfo>& rooms);
+
+    void waitForResponse();
+    void stopWaiting(std::optional<std::string> failReason);
 };
 
 }

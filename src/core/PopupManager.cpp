@@ -127,7 +127,6 @@ PopupRef PopupManager::quickPopup(
     float width
 ) {
     FLAlertLayer* alert;
-    log::debug("Btn2 = {}, empty: {}, len = {}", btn2.get(), btn2.empty(), btn2.size());
 
     if (!callback) {
         alert = FLAlertLayer::create(nullptr, title, content, btn1, btn2.getOrNull(), width);

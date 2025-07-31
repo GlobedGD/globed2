@@ -10,7 +10,9 @@ public:
     template <typename... Args2>
     static Derived* create(Args2&&... args) {
         auto ret = new Derived();
+
         if (ret->initAnchored(Derived::POPUP_SIZE.width, Derived::POPUP_SIZE.height, std::forward<Args2>(args)...)) {
+            // TODO: set no elasticity if fast menu is enabled?
             ret->autorelease();
             return ret;
         }

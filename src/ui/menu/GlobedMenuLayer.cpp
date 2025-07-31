@@ -5,6 +5,7 @@
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/InputPopup.hpp>
 #include <ui/menu/RoomListingPopup.hpp>
+#include <ui/menu/CreateRoomPopup.hpp>
 
 #include <cue/RepeatingBackground.hpp>
 #include <UIBuilder.hpp>
@@ -131,20 +132,6 @@ bool GlobedMenuLayer::init() {
         return ListenerResult::Continue;
     });
 
-    m_roomJoinFailedListener = NetworkManagerImpl::get().listen<msg::RoomJoinFailedMessage>([this](const auto& msg) {
-        auto reason = msg.reason;
-        log::debug("failed to join room: {}", static_cast<int>(reason));
-        // TODO show reason
-        return ListenerResult::Continue;
-    });
-
-    m_roomCreateFailedListener = NetworkManagerImpl::get().listen<msg::RoomCreateFailedMessage>([this](const auto& msg) {
-        auto reason = msg.reason;
-        log::debug("failed to create room: {}", static_cast<int>(reason));
-        // TODO show reason
-        return ListenerResult::Continue;
-    });
-
     this->update(0.f);
     this->scheduleUpdate();
 
@@ -205,8 +192,7 @@ void GlobedMenuLayer::initRoomButtons() {
 
         Build(ButtonSprite::create("Create Room", "bigFont.fnt", "GJ_button_01.png", BtnScale))
             .intoMenuItem([] {
-                // TODO: show a cool ass popup with room creation options
-                NetworkManagerImpl::get().sendCreateRoom("Cool room", 0, RoomSettings{});
+                CreateRoomPopup::create()->show();
             })
             .scaleMult(1.1f)
             .parent(m_roomButtonsMenu);

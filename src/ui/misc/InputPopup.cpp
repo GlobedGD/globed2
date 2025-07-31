@@ -38,10 +38,10 @@ void InputPopup::show() {
         m_mySize.width = std::clamp(m_maxCharCount * 10.f, 160.f, 400.f);
     }
 
-    m_mySize.height = 110.f;
+    m_mySize.height = 120.f;
 
     m_input->setWidth(m_mySize.width - 30.f);
-    m_input->setPosition(m_mySize.width / 2.f, m_mySize.height / 2.f + 15.f);
+    m_input->setPosition(m_mySize.width / 2.f, m_mySize.height / 2.f + 5.f);
     m_submitBtn->setPosition(m_mySize.width / 2.f, 24.f);
     m_mainLayer->setContentSize(m_mySize); // evil
     m_mainLayer->updateLayout();
