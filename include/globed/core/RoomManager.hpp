@@ -1,6 +1,7 @@
 #pragma once
 
 #include <globed/util/singleton.hpp>
+#include <globed/core/data/RoomSettings.hpp>
 
 namespace globed {
 
@@ -11,6 +12,8 @@ public:
     void joinLevel(int levelId);
     void leaveLevel();
 
+    bool isInGlobal();
+
 private:
     friend class SingletonLeakBase;
     RoomManager();
@@ -18,6 +21,7 @@ private:
 
     uint32_t m_roomId = 0;
     std::string m_roomName;
+    RoomSettings m_settings{};
 };
 
 }

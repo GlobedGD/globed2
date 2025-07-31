@@ -151,6 +151,14 @@ bool CreateRoomPopup::setup() {
                         passcode = *res;
                     }
 
+                    // pick the preferred server
+                    if (auto srv = NetworkManagerImpl::get().getPreferredServer()) {
+                        m_settings.serverId = *srv;
+                    } else {
+                        globed::alert("Error", "No game servers are available to host this room. This is a <cr>server issue</c>, please <cj>reconnect to the server and try again</c>.");
+                        return;
+                    }
+
                     this->waitForResponse();
 
                     // send the packet after setting up listeners, avoiding race condition if the server is on localhost
