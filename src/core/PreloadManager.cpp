@@ -290,6 +290,9 @@ void PreloadManager::doLoadBatch(std::vector<Item>& items) {
         texture->release(); // bring ref count back to 1
         delete image; // no longer needed
 
+        // cache the icon texture
+        this->setCachedIcon((int) state.item.iconType, state.item.iconId, texture);
+
         inited++;
     }
 
@@ -430,6 +433,7 @@ void PreloadManager::enterContext(PreloadContext context) {
         m_iconsLoaded = false;
         m_deathEffectsLoaded = false;
         m_loadedFrames.clear();
+        m_loadedIcons.clear();
     }
 
     this->initLoadQueue();
@@ -450,6 +454,21 @@ size_t PreloadManager::getTotalCount() {
 
 bool PreloadManager::deathEffectsLoaded() {
     return m_deathEffectsLoaded;
+}
+
+CCTexture2D* PreloadManager::getCachedIcon(int iconType, int id) {
+    auto key = std::make_pair(iconType, id);
+    auto it = m_loadedIcons.find(key);
+    if (it != m_loadedIcons.end()) {
+        return it->second;
+    }
+
+    return nullptr;
+}
+
+void PreloadManager::setCachedIcon(int iconType, int id, cocos2d::CCTexture2D* texture) {
+    auto key = std::make_pair(iconType, id);
+    m_loadedIcons[key] = texture;
 }
 
 // transforms a string like "icon-41" into "icon-41-hd.png" depending on the current texture quality.

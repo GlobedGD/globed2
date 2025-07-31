@@ -14,6 +14,15 @@ enum class TextureQuality {
     Low, Medium, High
 };
 
+// Lol
+struct PairIntIntHash {
+    inline size_t operator()(const std::pair<int, int>& p) const {
+        size_t h1 = std::hash<int>{}(p.first);
+        size_t h2 = std::hash<int>{}(p.second);
+        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+    }
+};
+
 TextureQuality getTextureQuality();
 unsigned char* getFileDataThreadSafe(const char* path, const char* mode, unsigned long* outSize);
 
@@ -43,6 +52,9 @@ public:
 
     /// Returns whether death effects have been loaded
     bool deathEffectsLoaded();
+
+    cocos2d::CCTexture2D* getCachedIcon(int iconType, int id);
+    void setCachedIcon(int iconType, int id, cocos2d::CCTexture2D* texture);
 
 private:
     friend class SingletonBase;
@@ -74,6 +86,7 @@ private:
     bool m_iconsLoaded = false;
     bool m_deathEffectsLoaded = false;
     std::vector<std::string> m_loadedFrames;
+    std::unordered_map<std::pair<int, int>, geode::Ref<cocos2d::CCTexture2D>, PairIntIntHash> m_loadedIcons;
 
     PreloadManager();
     ~PreloadManager();
