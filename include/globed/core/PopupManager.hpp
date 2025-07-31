@@ -1,6 +1,7 @@
 #pragma once
 
 #include <globed/util/singleton.hpp>
+#include <globed/util/CStr.hpp>
 #include <Geode/Geode.hpp>
 
 #include <queue>
@@ -67,48 +68,28 @@ class PopupManager : public SingletonNodeBase<PopupManager, true> {
 public:
     // Creates a popup with the given title and content (optionally button 1, 2 and width). Does not show the popup to the user.
     PopupRef alert(
-        const char* title,
+        CStr title,
         const std::string& content,
-        const char* btn1 = "Ok",
-        const char* btn2 = nullptr,
-        float width = 360.f
-    );
-
-    // Creates a popup with the given title and content (optionally button 1, 2 and width). Does not show the popup to the user.
-    PopupRef alert(
-        const std::string& title,
-        const std::string& content,
-        const char* btn1 = "Ok",
-        const char* btn2 = nullptr,
+        CStr btn1 = "Ok",
+        CStr btn2 = nullptr,
         float width = 360.f
     );
 
     // Creates a popup with the given title and content (optionally button 1, 2 and width). Does not show the popup to the user.
     // The callback is involved when the user presses either of the buttons in the popup.
     PopupRef quickPopup(
-        const std::string& title,
+        CStr title,
         const std::string& content,
-        const char* btn1 = "Ok",
-        const char* btn2 = nullptr,
-        std::function<void (FLAlertLayer*, bool)> callback = {},
-        float width = 360.f
-    );
-
-    // Creates a popup with the given title and content (optionally button 1, 2 and width). Does not show the popup to the user.
-    // The callback is involved when the user presses either of the buttons in the popup.
-    PopupRef quickPopup(
-        const char* title,
-        const std::string& content,
-        const char* btn1 = "Ok",
-        const char* btn2 = nullptr,
+        CStr btn1 = "Ok",
+        CStr btn2 = nullptr,
         std::function<void (FLAlertLayer*, bool)> callback = {},
         float width = 360.f
     );
 
     // Creates a popup with the given title and content as a formatted string. Does not show the popup to the user
-    template <typename TitleT, class... Args>
+    template <class... Args>
     PopupRef alertFormat(
-        TitleT title,
+        CStr title,
         fmt::format_string<Args...> fmt,
         Args&&... args
     ) {
@@ -132,5 +113,44 @@ private:
     void queuePopup(const PopupRef& popup);
     void update(float dt);
 };
+
+/// Creates a popup with the given title and content (optionally button 1, 2 and width) and shows it to the user.
+/// Shorthand for PopupManager::get().alert(args).showInstant()
+inline void alert(
+    CStr title,
+    const std::string& content,
+    CStr btn1 = "Ok",
+    CStr btn2 = nullptr,
+    float width = 360.f
+) {
+    PopupManager::get().alert(title, content, btn1, btn2, width).showInstant();
+}
+
+/// Creates a popup with the given title and content (optionally button 1, 2 and width) and shows it to the user.
+/// The callback is involved when the user presses either of the buttons in the popup.
+/// Shorthand for PopupManager::get().quickPopup(args).showInstant()
+inline void quickPopup(
+    CStr title,
+    const std::string& content,
+    CStr btn1 = "Ok",
+    CStr btn2 = nullptr,
+    std::function<void (FLAlertLayer*, bool)> callback = {},
+    float width = 360.f
+) {
+    PopupManager::get().quickPopup(
+        title, content, btn1, btn2, std::move(callback), width
+    ).showInstant();
+}
+
+/// Creates a popup with the given title and content as a formatted string and shows it to the user.
+/// Shorthand for PopupManager::get().alertFormat(args).showInstant()
+template <class... Args>
+void alertFormat(
+    CStr title,
+    fmt::format_string<Args...> fmt,
+    Args&&... args
+) {
+    PopupManager::get().alertFormat(title, fmt, std::forward<Args>(args)...).showInstant();
+}
 
 }

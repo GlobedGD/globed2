@@ -109,53 +109,28 @@ bool PopupRef::hasFields() const {
 PopupManager::PopupManager() {}
 
 PopupRef PopupManager::alert(
-    const char* title,
+    CStr title,
     const std::string& content,
-    const char* btn1,
-    const char* btn2,
+    CStr btn1,
+    CStr btn2,
     float width
 ) {
     return this->quickPopup(title, content, btn1, btn2, {}, width);
 }
 
-PopupRef PopupManager::alert(
-    const std::string& title,
-    const std::string& content,
-    const char* btn1,
-    const char* btn2,
-    float width
-) {
-    return alert(title.c_str(), content, std::move(btn1), std::move(btn2), std::move(width));
-}
-
 PopupRef PopupManager::quickPopup(
-    const std::string& title,
+    CStr title,
     const std::string& content,
-    const char* btn1,
-    const char* btn2,
+    CStr btn1,
+    CStr btn2,
     std::function<void (FLAlertLayer*, bool)> callback,
     float width
 ) {
-    return this->quickPopup(title.c_str(), content, btn1, btn2, std::move(callback), width);
-}
-
-PopupRef PopupManager::quickPopup(
-    const char* title,
-    const std::string& content,
-    const char* btn1,
-    const char* btn2,
-    std::function<void (FLAlertLayer*, bool)> callback,
-    float width
-) {
-    if (btn2 && strlen(btn2) == 0) {
-        btn2 = nullptr;
-    }
-
     FLAlertLayer* alert;
     if (!callback) {
-        alert = FLAlertLayer::create(nullptr, title, content, btn1, btn2, width);
+        alert = FLAlertLayer::create(nullptr, title, content, btn1, btn2.empty() ? nullptr : btn2, width);
     } else {
-        alert = geode::createQuickPopup(title, content, btn1, btn2, [callback = std::move(callback)](auto alert, bool btn2) {
+        alert = geode::createQuickPopup(title, content, btn1, btn2.empty() ? nullptr : btn2, [callback = std::move(callback)](auto alert, bool btn2) {
             callback(alert, btn2);
         }, false);
     }
@@ -284,7 +259,5 @@ void PopupManager::changedScene(CCScene* newScene) {
         m_savedAlertCount = 0;
     }
 }
-
-
 
 }
