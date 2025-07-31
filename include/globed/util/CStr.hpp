@@ -17,19 +17,24 @@ public:
     inline CStr(const CStr& other) = default;
     inline CStr& operator=(const CStr& other) = default;
 
-    operator const char*() const {
+    inline operator const char*() const {
         return m_ptr;
     }
 
-    const char* get() const {
+    inline const char* get() const {
         return m_ptr;
     }
 
-    size_t size() const {
+    // Returns the pointer if the string is not empty, otherwise returns nullptr.
+    inline const char* getOrNull() const {
+        return m_ptr[0] ? m_ptr : nullptr;
+    }
+
+    inline size_t size() const {
         return strlen(m_ptr);
     }
 
-    bool empty() const {
+    inline bool empty() const {
         return m_ptr[0] == '\0';
     }
 

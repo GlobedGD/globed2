@@ -127,10 +127,12 @@ PopupRef PopupManager::quickPopup(
     float width
 ) {
     FLAlertLayer* alert;
+    log::debug("Btn2 = {}, empty: {}, len = {}", btn2.get(), btn2.empty(), btn2.size());
+
     if (!callback) {
-        alert = FLAlertLayer::create(nullptr, title, content, btn1, btn2.empty() ? nullptr : btn2, width);
+        alert = FLAlertLayer::create(nullptr, title, content, btn1, btn2.getOrNull(), width);
     } else {
-        alert = geode::createQuickPopup(title, content, btn1, btn2.empty() ? nullptr : btn2, [callback = std::move(callback)](auto alert, bool btn2) {
+        alert = geode::createQuickPopup(title, content, btn1, btn2.getOrNull(), [callback = std::move(callback)](auto alert, bool btn2) {
             callback(alert, btn2);
         }, false);
     }
