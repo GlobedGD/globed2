@@ -1,6 +1,7 @@
 #include "GlobedMenuLayer.hpp"
 #include <globed/core/SettingsManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
+#include <globed/core/actions.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <ui/misc/PlayerListCell.hpp>
 #include <ui/misc/InputPopup.hpp>
@@ -13,11 +14,73 @@
 using namespace geode::prelude;
 using namespace asp::time;
 
-static constexpr float CELL_HEIGHT = 27.f;
 static constexpr CCSize PLAYER_LIST_MENU_SIZE{420.f, 280.f};
 static constexpr CCSize PLAYER_LIST_SIZE{PLAYER_LIST_MENU_SIZE.width * 0.8f, 180.f};
+static constexpr float CELL_HEIGHT = 27.f;
+static constexpr CCSize CELL_SIZE{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
 
 namespace globed {
+
+namespace {
+
+class PlayerCell : public PlayerListCell {
+public:
+    static PlayerListCell* create(
+        int accountId,
+        int userId,
+        const std::string& username,
+        const cue::Icons& icons,
+        SessionId sessionId
+    ) {
+        auto ret = new PlayerCell();
+        ret->m_sessionId = sessionId;
+
+        if (ret->init(accountId, userId, username, icons, CELL_SIZE)) {
+            ret->autorelease();
+            return ret;
+        }
+
+        delete ret;
+        return nullptr;
+    }
+
+    static PlayerListCell* createMyself(SessionId sessionId) {
+        auto ret = new PlayerCell();
+        ret->m_sessionId = sessionId;
+
+        if (ret->initMyself(CELL_SIZE)) {
+            ret->autorelease();
+            return ret;
+        }
+
+        delete ret;
+        return nullptr;
+    }
+
+protected:
+    SessionId m_sessionId;
+
+    bool customSetup() {
+        if (m_sessionId.asU64() != 0) {
+            // add button to join the session
+            Build<CCSprite>::createSpriteName("GJ_playBtn2_001.png")
+                .scale(0.31f)
+                .intoMenuItem([this] {
+                    globed::warpToSession(m_sessionId, false);
+                })
+                .zOrder(10)
+                .pos(this->getContentWidth() - 30.f, this->getContentHeight() / 2.f)
+                .scaleMult(1.1f)
+                .parent(m_rightMenu);
+
+            m_rightMenu->updateLayout();
+        }
+
+        return true;
+    }
+};
+
+}
 
 bool GlobedMenuLayer::init() {
     if (!BaseLayer::init(false)) return false;
@@ -125,12 +188,15 @@ bool GlobedMenuLayer::init() {
         .parent(m_playerListMenu);
 
     m_roomStateListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
+        log::debug("Packet arrived");
         if (msg.roomId != m_roomId) {
             this->initNewRoom(msg.roomId, msg.roomName, msg.players);
         }
 
         return ListenerResult::Continue;
     });
+
+    log::debug("Init over");
 
     this->update(0.f);
     this->scheduleUpdate();
@@ -139,6 +205,8 @@ bool GlobedMenuLayer::init() {
 }
 
 void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players) {
+    log::debug("Init new room");
+
     m_roomId = id;
     m_roomNameLabel->setString(fmt::format("{} ({})", name, id).c_str());
 
@@ -148,7 +216,7 @@ void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const st
     CCSize cellSize{PLAYER_LIST_SIZE.width, CELL_HEIGHT};
 
     for (auto& player : players) {
-        m_playerList->addCell(PlayerListCell::create(
+        m_playerList->addCell(PlayerCell::create(
             player.accountData.accountId,
             player.accountData.userId,
             player.accountData.username,
@@ -159,13 +227,13 @@ void GlobedMenuLayer::initNewRoom(uint32_t id, const std::string& name, const st
                 .color2 = player.color2,
                 .glowColor = NO_GLOW,
             },
-            cellSize
+            player.session
         ));
     }
 
     // add ourself
     auto gam = cachedSingleton<GJAccountManager>();
-    m_playerList->addCell(PlayerListCell::createMyself(cellSize));
+    m_playerList->addCell(PlayerCell::createMyself(SessionId{}));
 
     // TODO: sort
 
@@ -263,6 +331,7 @@ void GlobedMenuLayer::update(float dt) {
         if (m_roomId == -1 && (!m_lastRoomUpdate || m_lastRoomUpdate->elapsed() > Duration::fromSecs(1))) {
             // request room state
             m_lastRoomUpdate = Instant::now();
+            log::debug("Sending check");
             NetworkManagerImpl::get().sendRoomStateCheck();
         }
     }

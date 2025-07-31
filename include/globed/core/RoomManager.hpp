@@ -13,6 +13,8 @@ public:
     void leaveLevel();
 
     bool isInGlobal();
+    uint32_t getRoomId();
+    std::optional<uint8_t> pickServerId();
 
 private:
     friend class SingletonLeakBase;

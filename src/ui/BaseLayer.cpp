@@ -1,5 +1,6 @@
 #include "BaseLayer.hpp"
 #include <UIBuilder.hpp>
+#include <globed/util/gd.hpp>
 
 using namespace geode::prelude;
 
@@ -58,16 +59,11 @@ void BaseLayer::initBackground(cocos2d::ccColor3B color) {
 }
 
 void BaseLayer::keyBackClicked() {
-    CCDirector::get()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
+    globed::popScene();
 }
 
 void BaseLayer::switchTo() {
-    auto scene = CCScene::create();
-    scene->addChild(this);
-
-    CCDirector::get()->pushScene(
-        CCTransitionFade::create(0.5f, scene)
-    );
+    globed::pushScene(this);
 }
 
 }

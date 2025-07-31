@@ -49,7 +49,35 @@ bool PlayerListCell::init(
 
     m_usernameBtn->setPositionY(m_usernameBtn->getPositionY() + 1.f);
 
+    m_rightMenu = Build<CCMenu>::create()
+        .anchorPoint(1.f, 0.5f)
+        .pos(cellSize.width - 5.f, cellSize.height / 2.f)
+        .contentSize(cellSize.width - 10.f - 10.f, cellSize.height - 4.f)
+        .layout(RowLayout::create()->setGap(5.f)->setAxisAlignment(AxisAlignment::End)->setAxisReverse(true))
+        .parent(this);
+
+    this->customSetup();
+
     return true;
+}
+
+bool PlayerListCell::initMyself(cocos2d::CCSize cellSize) {
+    auto gam = cachedSingleton<GJAccountManager>();
+    auto gm = cachedSingleton<GameManager>();
+
+    return this->init(
+        gam->m_accountID,
+        gm->m_playerUserID,
+        gam->m_username,
+        cue::Icons {
+            .type = IconType::Cube,
+            .id = gm->m_playerFrame,
+            .color1 = gm->m_playerColor,
+            .color2 = gm->m_playerColor2,
+            .glowColor = gm->m_playerGlow ? gm->m_playerGlowColor : -1,
+        },
+        cellSize
+    );
 }
 
 PlayerListCell* PlayerListCell::create(
@@ -70,22 +98,14 @@ PlayerListCell* PlayerListCell::create(
 }
 
 PlayerListCell* PlayerListCell::createMyself(cocos2d::CCSize cellSize) {
-    auto gam = cachedSingleton<GJAccountManager>();
-    auto gm = cachedSingleton<GameManager>();
+    auto ret = new PlayerListCell();
+    if (ret->initMyself(cellSize)) {
+        ret->autorelease();
+        return ret;
+    }
 
-    return PlayerListCell::create(
-        gam->m_accountID,
-        gm->m_playerUserID,
-        gam->m_username,
-        cue::Icons {
-            .type = IconType::Cube,
-            .id = gm->m_playerFrame,
-            .color1 = gm->m_playerColor,
-            .color2 = gm->m_playerColor2,
-            .glowColor = gm->m_playerGlow ? gm->m_playerGlowColor : -1,
-        },
-        cellSize
-    );
+    delete ret;
+    return nullptr;
 }
 
 }

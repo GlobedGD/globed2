@@ -181,7 +181,7 @@ void RoomListingPopup::stopWaiting(std::optional<std::string> failReason) {
     m_successListener.reset();
 
     if (failReason) {
-        globed::alert("Error", fmt::format("Failed to join room: <cy>{}</c>", *failReason));
+        globed::alertFormat("Error", "Failed to join room: <cy>{}</c>", *failReason);
     } else {
         this->onClose(nullptr);
     }

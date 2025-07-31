@@ -22,6 +22,7 @@ protected:
     int m_userId;
     CCMenuItemSpriteExtra* m_usernameBtn;
     cue::PlayerIcon* m_cubeIcon;
+    cocos2d::CCMenu* m_rightMenu;
 
     bool init(
         int accountId,
@@ -30,6 +31,12 @@ protected:
         const cue::Icons& icons,
         cocos2d::CCSize cellSize
     );
+
+    bool initMyself(cocos2d::CCSize cellSize);
+
+    inline virtual bool customSetup() {
+        return true;
+    }
 };
 
 }
