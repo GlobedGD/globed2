@@ -305,6 +305,11 @@ void GlobedMenuLayer::update(float dt) {
             m_connStateLabel->setString("Establishing connection...");
         } break;
 
+        case ConnectionState::Authenticating: {
+            newState = MenuState::Connecting;
+            m_connStateLabel->setString("Authenticating...");
+        } break;
+
         case ConnectionState::Connected: {
             newState = MenuState::Connected;
         } break;
