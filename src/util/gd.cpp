@@ -38,7 +38,8 @@ void pushScene(cocos2d::CCLayer* layer) {
 }
 
 void pushScene(cocos2d::CCScene* scene) {
-    // TODO: fast menu?
+    // note: (applies to functions below too), fade transition is already removed by gd if fast menu is enabled
+    // so we don't need to worry about that here
     cachedSingleton<CCDirector>()->pushScene(CCTransitionFade::create(.5f, scene));
 }
 
@@ -49,12 +50,10 @@ void replaceScene(cocos2d::CCLayer* layer) {
 }
 
 void replaceScene(cocos2d::CCScene* scene) {
-    // TODO: fast menu?
     cachedSingleton<CCDirector>()->replaceScene(CCTransitionFade::create(.5f, scene));
 }
 
 void popScene() {
-    // TODO: fast menu?
     cachedSingleton<CCDirector>()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
 }
 
