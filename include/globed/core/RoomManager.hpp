@@ -13,6 +13,7 @@ public:
     void leaveLevel();
 
     bool isInGlobal();
+    bool isOwner();
     uint32_t getRoomId();
     std::optional<uint8_t> pickServerId();
 
@@ -22,6 +23,7 @@ private:
     ~RoomManager() = default;
 
     uint32_t m_roomId = 0;
+    int m_roomOwner = 0;
     std::string m_roomName;
     RoomSettings m_settings{};
 };

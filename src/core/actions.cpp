@@ -16,7 +16,14 @@ namespace globed {
 static SessionId g_warpctx;
 
 void warpToSession(SessionId session, bool openLevel) {
+    // ignore if we are the room host
+    if (RoomManager::get().isOwner()) {
+        return;
+    }
+
     g_warpctx = session;
+
+    log::debug("Warping to session {} (room: {}, level: {})", session.asU64(), session.roomId(), session.levelId());
 
     auto levelId = session.levelId();
 
@@ -88,7 +95,7 @@ void openUserProfile(const PlayerAccountData& player) {
 
 $on_mod(Loaded) {
     NetworkManagerImpl::get().listenGlobal<msg::WarpPlayerMessage>([](const auto& msg) {
-        globed::warpToSession(msg.sessionId);
+        globed::warpToSession(msg.sessionId, true);
         return ListenerResult::Stop;
     });
 }

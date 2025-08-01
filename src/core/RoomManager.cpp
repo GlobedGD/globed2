@@ -31,6 +31,10 @@ bool RoomManager::isInGlobal() {
     return m_roomId == 0;
 }
 
+bool RoomManager::isOwner() {
+    return m_roomOwner == cachedSingleton<GJAccountManager>()->m_accountID;
+}
+
 uint32_t RoomManager::getRoomId() {
     return m_roomId;
 }
@@ -57,6 +61,7 @@ RoomManager::RoomManager() {
         if (msg.roomId != m_roomId) {
             m_roomId = msg.roomId;
             m_roomName = msg.roomName;
+            m_roomOwner = msg.roomOwner;
 
             // a change in rooms resets the warp context as well
             globed::_clearWarpContext();
@@ -68,5 +73,7 @@ RoomManager::RoomManager() {
     });
     listener->setPriority(-10000);
 }
+
+$on_mod(Loaded) { RoomManager::get(); }
 
 }
