@@ -10,6 +10,12 @@ namespace globed {
 
 const cocos2d::CCSize WarpLoadPopup::POPUP_SIZE = { 180.f, 80.f };
 
+WarpLoadPopup::~WarpLoadPopup() {
+    auto* glm = GameLevelManager::sharedState();
+    glm->m_levelDownloadDelegate = nullptr;
+    glm->m_levelManagerDelegate = nullptr;
+}
+
 bool WarpLoadPopup::setup(int levelId, bool openLevel) {
     this->setTitle("Loading Level");
     m_levelId = levelId;
@@ -29,10 +35,6 @@ bool WarpLoadPopup::setup(int levelId, bool openLevel) {
 
 void WarpLoadPopup::onClose(cocos2d::CCObject* obj) {
     BasePopup::onClose(obj);
-
-    auto* glm = GameLevelManager::sharedState();
-    glm->m_levelDownloadDelegate = nullptr;
-    glm->m_levelManagerDelegate = nullptr;
 }
 
 void WarpLoadPopup::loadLevelsFinished(cocos2d::CCArray* levels, char const* p1, int p2) {

@@ -8,6 +8,7 @@ namespace globed {
 class WarpLoadPopup : public BasePopup<WarpLoadPopup, int, bool>, public LevelDownloadDelegate, public LevelManagerDelegate {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
+    ~WarpLoadPopup();
 
 private:
     cocos2d::CCLabelBMFont* m_statusLabel;
