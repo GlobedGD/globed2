@@ -1,5 +1,7 @@
 #include "GlobedMenuLayer.hpp"
 #include <globed/core/SettingsManager.hpp>
+#include <globed/core/RoomManager.hpp>
+#include <globed/core/PopupManager.hpp>
 #include <globed/core/net/NetworkManager.hpp>
 #include <globed/core/actions.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
@@ -367,6 +369,20 @@ void GlobedMenuLayer::setMenuState(MenuState state) {
     }
 
     m_connectMenu->updateLayout();
+}
+
+void GlobedMenuLayer::keyBackClicked() {
+    auto& rm = RoomManager::get();
+    if (!rm.isInFollowerRoom() || rm.isOwner()) {
+        // only the owner of a follower room can leave to the main menu
+        BaseLayer::keyBackClicked();
+    } else {
+        // TODO: make this not the case
+        globed::alert(
+            "Error",
+            "You are in a follower room, you <cr>cannot</c> leave to the main menu. Only the room owner can choose which levels to play."
+        );
+    }
 }
 
 GlobedMenuLayer* GlobedMenuLayer::create() {

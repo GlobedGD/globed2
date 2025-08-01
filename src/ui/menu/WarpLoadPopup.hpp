@@ -5,7 +5,7 @@
 
 namespace globed {
 
-class WarpLoadPopup : public BasePopup<WarpLoadPopup, int, bool>, public LevelDownloadDelegate, public LevelManagerDelegate {
+class WarpLoadPopup : public BasePopup<WarpLoadPopup, int, bool, bool>, public LevelDownloadDelegate, public LevelManagerDelegate {
 public:
     static const cocos2d::CCSize POPUP_SIZE;
     ~WarpLoadPopup();
@@ -13,9 +13,9 @@ public:
 private:
     cocos2d::CCLabelBMFont* m_statusLabel;
     int m_levelId;
-    bool m_openLevel;
+    bool m_openLevel, m_replaceScene;
 
-    bool setup(int levelId, bool openLevel) override;
+    bool setup(int levelId, bool openLevel, bool replaceScene) override;
     void onClose(cocos2d::CCObject*) override;
 
     void loadLevelsFinished(cocos2d::CCArray* p0, char const* p1, int p2) override;

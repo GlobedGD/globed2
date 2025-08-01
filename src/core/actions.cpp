@@ -6,6 +6,7 @@
 #include <globed/util/singleton.hpp>
 #include <core/net/NetworkManagerImpl.hpp>
 #include <core/hooks/GJBaseGameLayer.hpp>
+#include <core/hooks/GameManager.hpp>
 #include <ui/menu/WarpLoadPopup.hpp>
 #include <ui/menu/GlobedMenuLayer.hpp>
 
@@ -14,22 +15,54 @@ using namespace geode::prelude;
 namespace globed {
 
 static SessionId g_warpctx;
+static std::optional<SessionId> g_awaitingWarp;
 
 void warpToSession(SessionId session, bool openLevel) {
-    // ignore if we are the room host
-    if (RoomManager::get().isOwner()) {
+    auto& rm = RoomManager::get();
+    // ignore if we are the room host or not a follower room
+    if (rm.isOwner() || !rm.isInFollowerRoom()) {
+        g_awaitingWarp.reset();
         return;
     }
 
-    g_warpctx = session;
+    auto putOnHold = [&] {
+        g_awaitingWarp = session;
+
+        Loader::get()->queueInMainThread([openLevel] {
+            if (g_awaitingWarp.has_value()) {
+                warpToSession(g_awaitingWarp.value(), openLevel);
+            }
+        });
+    };
+
+    // delay in case it's a bad time to warp right now
+    auto scene = CCScene::get();
+    if (typeinfo_cast<CCTransitionScene*>(scene)) {
+        // put it on hold
+        putOnHold();
+        return;
+    }
+
+    auto children = scene->getChildrenExt();
+    if (children.size() > 0) {
+        if (auto pl = typeinfo_cast<PlayLayer*>(children[0])) {
+            HookedGameManager::get().setNoopSceneEnum();
+            pl->onQuit();
+            globed::replaceScene(GlobedMenuLayer::create());
+
+            putOnHold();
+            return;
+        }
+    }
 
     log::debug("Warping to session {} (room: {}, level: {})", session.asU64(), session.roomId(), session.levelId());
 
-    auto levelId = session.levelId();
+    g_awaitingWarp.reset();
+    g_warpctx = session;
 
+    auto levelId = session.levelId();
     if (levelId == 0) {
-        // level 0 means warp to main menu
-        GlobedMenuLayer::create()->switchTo();
+        // level 0 means warp to main menu aka do nothing
         return;
     }
 
@@ -37,19 +70,20 @@ void warpToSession(SessionId session, bool openLevel) {
     if (classify.kind == GameLevelKind::Main) {
         // main levels, go to that page in LevelSelectLayer if `openLevel` is false
         if (!openLevel) {
-            globed::pushScene(LevelSelectLayer::scene(levelId - 1));
+            globed::replaceScene(LevelSelectLayer::scene(levelId - 1));
         } else {
-            globed::pushScene(PlayLayer::scene(classify.level, false, false));
+            globed::replaceScene(PlayLayer::scene(classify.level, false, false));
         }
     } else if (classify.kind == GameLevelKind::Tower) {
         // tower levels, always go straight to playlayer
         auto level = GameLevelManager::get()->getMainLevel(levelId, false);
         // TODO: idk if they are the same
         log::debug("level 1: {}, 2: {}", level, classify.level);
-        globed::pushScene(PlayLayer::scene(level, false, false));
+        globed::replaceScene(PlayLayer::scene(level, false, false));
     } else {
         // custom levels, show a loading popup
-        WarpLoadPopup::create(levelId, openLevel)->show();
+        // replace scene if openLevel is true, push scene otherwise
+        WarpLoadPopup::create(levelId, openLevel, openLevel)->show();
     }
 }
 

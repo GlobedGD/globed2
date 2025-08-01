@@ -16,10 +16,11 @@ WarpLoadPopup::~WarpLoadPopup() {
     glm->m_levelManagerDelegate = nullptr;
 }
 
-bool WarpLoadPopup::setup(int levelId, bool openLevel) {
+bool WarpLoadPopup::setup(int levelId, bool openLevel, bool replaceScene) {
     this->setTitle("Loading Level");
     m_levelId = levelId;
     m_openLevel = openLevel;
+    m_replaceScene = replaceScene;
 
     m_statusLabel = Build<CCLabelBMFont>::create("Fetching level data..", "bigFont.fnt")
         .pos(this->fromTop(50.f))
@@ -77,9 +78,11 @@ void WarpLoadPopup::levelDownloadFinished(GJGameLevel* level) {
     // depending on whether open level is true or not, we should either open `LevelInfoLayer` or create a `PlayLayer`
 
     if (m_openLevel) {
-        globed::pushScene(PlayLayer::scene(level, false, false));
+        auto scene = PlayLayer::scene(level, false, false);
+        m_replaceScene ? globed::replaceScene(scene) : globed::pushScene(scene);
     } else {
-        globed::pushScene(LevelInfoLayer::create(level, false));
+        auto layer = LevelInfoLayer::create(level, false);
+        m_replaceScene ? globed::replaceScene(layer) : globed::pushScene(layer);
     }
 }
 

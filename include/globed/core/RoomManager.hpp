@@ -13,6 +13,7 @@ public:
     void leaveLevel();
 
     bool isInGlobal();
+    bool isInFollowerRoom();
     bool isOwner();
     uint32_t getRoomId();
     std::optional<uint8_t> pickServerId();

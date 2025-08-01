@@ -36,9 +36,11 @@ private:
     uint32_t m_roomId = -1;
     std::optional<asp::time::Instant> m_lastRoomUpdate;
 
-    bool init();
-    void update(float dt);
+    bool init() override;
+    void update(float dt) override;
     void setMenuState(MenuState state);
+
+    void keyBackClicked() override;
 
     void initNewRoom(uint32_t id, const std::string& name, const std::vector<RoomPlayer>& players);
     void initRoomButtons();
