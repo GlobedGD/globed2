@@ -100,8 +100,9 @@ void PreloadManager::initLoadQueue() {
     }
 
     // Death effects
-    // TODO: skip if death effects are disabled in settings
-    if (!m_deathEffectsLoaded) {
+    // skip if death effects are disabled in settings or default death effects are enabled
+    bool loadDe = globed::setting<bool>("core.player.death-effects") && !globed::setting<bool>("core.player.default-death-effects");
+    if (!m_deathEffectsLoaded && loadDe) {
         m_deathEffectsLoaded = true;
 
         for (size_t i = 1; i < 20; i++) {

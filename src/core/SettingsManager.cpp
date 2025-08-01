@@ -69,7 +69,7 @@ SettingsManager::SettingsManager() {
         "core.player.default-death-effects",
         "Default Death Effects",
         "Whether to use the default death effects for other players.",
-        true
+        false
     );
 
     // Developer settings
