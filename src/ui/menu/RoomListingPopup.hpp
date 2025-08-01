@@ -33,6 +33,7 @@ protected:
     void toggleModActions(bool enabled);
     void populateList(const std::vector<RoomListingInfo>& rooms);
 
+    void doJoinRoom(uint32_t roomId, bool hasPassword);
     void waitForResponse();
     void stopWaiting(std::optional<std::string> failReason);
 };

@@ -254,11 +254,7 @@ void RoomListingCell::recreateButton() {
         m_rightButton = Build<ButtonSprite>::create("Join", "bigFont.fnt", "GJ_button_01.png", 0.8f)
             .scale(0.7f)
             .intoMenuItem([this] {
-                if (m_info.hasPassword) {
-                    // TODO: prompt for password
-                } else {
-                    NetworkManagerImpl::get().sendJoinRoom(m_info.roomId);
-                }
+                m_popup->doJoinRoom(m_info.roomId, m_info.hasPassword);
             })
             .scaleMult(1.15f)
             .zOrder(btnorder::Join)

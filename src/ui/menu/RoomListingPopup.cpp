@@ -75,15 +75,7 @@ bool RoomListingPopup::setup() {
                 if (!outcome.cancelled) {
                     // parse the room ID
                     uint32_t id = geode::utils::numFromString<uint32_t>(outcome.text).unwrapOr(0);
-                    if (id == 0) {
-                        globed::alert("Error", "Invalid room ID");
-                        return;
-                    }
-
-                    m_joinedRoomId = id;
-                    this->waitForResponse();
-
-                    NetworkManagerImpl::get().sendJoinRoom(id, 0); // TODO: passcode
+                    this->doJoinRoom(id, false);
                 }
             });
             popup->show();
@@ -137,6 +129,18 @@ void RoomListingPopup::toggleModActions(bool enabled) {
     }
 }
 
+void RoomListingPopup::doJoinRoom(uint32_t roomId, bool hasPassword) {
+    if (roomId == 0) {
+        globed::alert("Error", "Invalid room ID");
+        return;
+    }
+
+    m_joinedRoomId = roomId;
+    this->waitForResponse();
+
+    NetworkManagerImpl::get().sendJoinRoom(roomId, 0); // TODO: passcode
+}
+
 void RoomListingPopup::waitForResponse() {
     // wait for either a room state mesage or a room join failed message
 
@@ -146,6 +150,7 @@ void RoomListingPopup::waitForResponse() {
     m_loadingPopup->show();
 
     m_successListener = NetworkManagerImpl::get().listen<msg::RoomStateMessage>([this](const auto& msg) {
+        log::debug("Got success {}, waiting for {}!", msg.roomId, m_joinedRoomId);
         // small sanity check to make sure it is actually the response we need
         if (msg.roomId == m_joinedRoomId) {
             this->stopWaiting(std::nullopt);
@@ -156,6 +161,8 @@ void RoomListingPopup::waitForResponse() {
     m_successListener.value()->setPriority(-100);
 
     m_failListener = NetworkManagerImpl::get().listen<msg::RoomJoinFailedMessage>([this](const auto& msg) {
+        log::debug("Got fail!");
+
         using enum msg::RoomJoinFailedReason;
         std::string reason;
 
@@ -175,6 +182,7 @@ void RoomListingPopup::waitForResponse() {
 }
 
 void RoomListingPopup::stopWaiting(std::optional<std::string> failReason) {
+    log::debug("Stop waiting!");
     m_loadingPopup->forceClose();
     m_loadingPopup = nullptr;
     m_failListener.reset();
