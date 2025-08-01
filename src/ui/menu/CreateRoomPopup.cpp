@@ -21,7 +21,7 @@ bool CreateRoomPopup::setup() {
     this->setID("create-room-popup"_spr);
     this->setTitle("Create Room", "goldFont.fnt", 1.0f);
 
-    auto inputsWrapper = Build<CCNode>::create()
+    m_inputsWrapper = Build<CCNode>::create()
         .id("inputs-wrapper")
         .anchorPoint(0.f, 0.5f)
         .pos(this->centerLeft() + CCPoint{15.f, 10.f})
@@ -33,7 +33,7 @@ bool CreateRoomPopup::setup() {
     auto smallInputsWrapper = Build<CCNode>::create()
         .id("small-wrapper")
         .layout(RowLayout::create()->setAutoScale(false))
-        .parent(inputsWrapper)
+        .parent(m_inputsWrapper)
         .collect();
 
     // room name
@@ -57,7 +57,7 @@ bool CreateRoomPopup::setup() {
         )
         .updateLayout()
         .intoParent() // into name-wrapper
-        .parent(inputsWrapper)
+        .parent(m_inputsWrapper)
         .intoNewChild(TextInput::create(POPUP_SIZE.width * 0.515f, "", "chatFont.fnt"))
         .with([&](TextInput* input) {
             input->setCommonFilter(CommonFilter::Any);
@@ -104,6 +104,17 @@ bool CreateRoomPopup::setup() {
         .intoParent()
         .updateLayout();
 
+    // classic / follower room
+    m_followerWrapper = Build<CCMenu>::create()
+        .id("follower-wrapper")
+        .zOrder(-1)
+        .layout(RowLayout::create()->setAutoScale(false)->setGap(5.f))
+        .contentSize(POPUP_SIZE.width * 0.515f, 0.f)
+        .parent(m_inputsWrapper);
+    m_followerWrapper->setLayoutOptions(AxisLayoutOptions::create()->setNextGap(8.f));
+
+    this->setFollowerMode(false);
+
     // cancel/create buttons
     Build<CCMenu>::create()
         .id("btn-wrapper")
@@ -114,6 +125,7 @@ bool CreateRoomPopup::setup() {
                 .intoMenuItem([this](auto) {
                     this->onClose(nullptr);
                 })
+                .scaleMult(1.1f)
                 .collect()
         )
         .child(
@@ -164,6 +176,7 @@ bool CreateRoomPopup::setup() {
                     // send the packet after setting up listeners, avoiding race condition if the server is on localhost
                     NetworkManagerImpl::get().sendCreateRoom(roomName, passcode, m_settings);
                 })
+                .scaleMult(1.1f)
                 .collect()
         )
         .pos(this->fromBottom(25.f))
@@ -171,7 +184,7 @@ bool CreateRoomPopup::setup() {
 
     smallInputsWrapper->setContentWidth(roomNameWrapper->getScaledContentWidth());
     smallInputsWrapper->updateLayout();
-    inputsWrapper->updateLayout();
+    m_inputsWrapper->updateLayout();
 
     // safe mode button
     Build<CCSprite>::create("white-period.png"_spr)
@@ -257,6 +270,43 @@ bool CreateRoomPopup::setup() {
         .pos(settingsList->getScaledContentSize() / 2.f);
 
     return true;
+}
+
+void CreateRoomPopup::setFollowerMode(bool follower) {
+    m_followerWrapper->removeAllChildren();
+
+    m_settings.isFollower = follower;
+
+    Build<ButtonSprite>::create("Classic", "bigFont.fnt", follower ? "GJ_button_05.png" : "GJ_button_01.png", 0.8f)
+        .scale(0.8f)
+        .intoMenuItem([this](auto) {
+            this->setFollowerMode(false);
+        })
+        .scaleMult(1.1f)
+        .parent(m_followerWrapper);
+
+    Build<ButtonSprite>::create("Follower", "bigFont.fnt", follower ? "GJ_button_01.png" : "GJ_button_05.png", 0.8f)
+        .scale(0.8f)
+        .intoMenuItem([this](auto) {
+            this->setFollowerMode(true);
+        })
+        .scaleMult(1.1f)
+        .parent(m_followerWrapper);
+
+    auto btn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
+        .scale(0.5f)
+        .intoMenuItem([this](auto) {
+            globed::alert(
+                "Info",
+                "Follower rooms only allow the host to join levels, and the rest of the players will be instantly warped to the level the host joins."
+            );
+        })
+        .parent(m_followerWrapper)
+        .collect();
+
+    m_followerWrapper->updateLayout();
+
+    btn->setPositionY(btn->getPositionY() + 14.f);
 }
 
 void CreateRoomPopup::onCheckboxToggled(cocos2d::CCObject* p) {

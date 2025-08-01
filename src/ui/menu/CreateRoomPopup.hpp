@@ -21,6 +21,8 @@ private:
     geode::TextInput* m_nameInput;
     geode::TextInput* m_passcodeInput;
     geode::TextInput* m_playerLimitInput;
+    CCNode* m_followerWrapper;
+    CCNode* m_inputsWrapper;
     RoomSettings m_settings{};
     CCMenuItemSpriteExtra* m_safeModeBtn = nullptr;
     CCMenuItemToggler* m_twoPlayerBtn = nullptr;
@@ -31,6 +33,7 @@ private:
 
     bool setup() override;
     void onCheckboxToggled(cocos2d::CCObject*);
+    void setFollowerMode(bool enabled);
     void showSafeModePopup(bool firstTime);
     void showRoomNameWarnPopup();
 

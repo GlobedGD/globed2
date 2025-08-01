@@ -27,7 +27,7 @@ ConnectionState NetworkManager::getConnectionState() {
         case qn::ConnectionState::Connecting:
             return ConnectionState::Connecting;
         case qn::ConnectionState::Connected:
-            return ConnectionState::Connected;
+            return m_impl->isConnected() ? ConnectionState::Connected : ConnectionState::Authenticating;
         case qn::ConnectionState::Closing:
             return ConnectionState::Closing;
         case qn::ConnectionState::Reconnecting:

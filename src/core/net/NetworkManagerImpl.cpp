@@ -269,6 +269,8 @@ Duration NetworkManagerImpl::getCentralPing() {
 
 void NetworkManagerImpl::onCentralConnected() {
     log::debug("connection to central server established, trying to log in");
+
+    m_established = false;
     this->tryAuth();
 }
 

@@ -12,6 +12,7 @@ enum class ConnectionState {
     DnsResolving,
     Pinging,
     Connecting,
+    Authenticating,
     Connected,
     Closing,
     Reconnecting,
