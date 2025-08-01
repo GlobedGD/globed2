@@ -109,7 +109,7 @@ NetworkManagerImpl::NetworkManagerImpl() {
         if (state == qn::ConnectionState::Connected) {
             log::debug("connected to game server at {}", m_gameServerUrl);
             m_gameEstablished = true;
-            m_gameEventQueue = {}; // TODO: move this into a separate function or smth
+            this->resetGameVars();
 
             // if there was a deferred join, try to login with session, otherwise just login
             if (m_gsDeferredJoin) {
@@ -199,6 +199,11 @@ NetworkManagerImpl& NetworkManagerImpl::get() {
     return *NetworkManager::get().m_impl;
 }
 
+void NetworkManagerImpl::resetGameVars() {
+    m_gameTickrate = 0;
+    m_gameEventQueue = {};
+}
+
 Result<> NetworkManagerImpl::connectCentral(std::string_view url) {
     if (m_centralConn.connected()) {
         return Err("Already connected to central server");
@@ -265,6 +270,10 @@ Duration NetworkManagerImpl::getGamePing() {
 
 Duration NetworkManagerImpl::getCentralPing() {
     return m_centralConn.getLatency();
+}
+
+uint32_t NetworkManagerImpl::getGameTickrate() {
+    return m_gameTickrate;
 }
 
 void NetworkManagerImpl::onCentralConnected() {
@@ -669,7 +678,10 @@ Result<> NetworkManagerImpl::onCentralDataReceived(CentralMessage::Reader& msg) 
 Result<> NetworkManagerImpl::onGameDataReceived(GameMessage::Reader& msg) {
     switch (msg.which()) {
         case GameMessage::LOGIN_OK: {
+            auto loginOk = msg.getLoginOk();
+
             m_gameEstablished = true;
+            m_gameTickrate = loginOk.getTickrate();
             log::debug("Successfully logged in to game server");
         } break;
 

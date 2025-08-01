@@ -55,6 +55,9 @@ public:
     /// Returns the average latency to the central server, or 0 if not connected
     asp::time::Duration getCentralPing();
 
+    /// Returns the tickrate to the connected game server, or 0 if not connected
+    uint32_t getGameTickrate();
+
     // Message sending functions
 
     // Central server
@@ -107,6 +110,7 @@ private:
     std::optional<SessionId> m_gsDeferredJoin;
     std::queue<Event> m_gameEventQueue;
     bool m_gameEstablished = false;
+    uint32_t m_gameTickrate = 0;
 
     asp::Mutex<std::unordered_map<std::string, GameServer>> m_gameServers;
 
@@ -120,6 +124,8 @@ private:
     geode::Result<> onGameDataReceived(GameMessage::Reader& msg);
     geode::Result<> sendToCentral(std::function<void(CentralMessage::Builder&)> func);
     geode::Result<> sendToGame(std::function<void(GameMessage::Builder&)> func, bool reliable = true);
+
+    void resetGameVars();
 
     // Returns the user token for the current central server
     std::optional<std::string> getUToken();

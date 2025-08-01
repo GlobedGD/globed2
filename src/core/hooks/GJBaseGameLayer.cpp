@@ -73,7 +73,6 @@ void GlobedGJBGL::setupAudio() {
 
 void GlobedGJBGL::setupUpdateLoop() {
     auto& fields = *m_fields.self();
-    fields.m_sendDataInterval = 1.f / 30.f; // TODO: make this configurable by the server
 
     // this has to be deferred. why? i don't know! but bugs happen otherwise
     Loader::get()->queueInMainThread([this] {
@@ -185,10 +184,21 @@ void GlobedGJBGL::selUpdate(float tsdt) {
         }
     }
 
-    // send player data to the server
-    if (fields.m_timeCounter - fields.m_lastDataSend >= fields.m_sendDataInterval) {
-        fields.m_lastDataSend += fields.m_sendDataInterval;
-        this->selSendPlayerData(dt);
+    // readjust send interval if needed
+    if (fields.m_sendDataInterval == 0.f) {
+        auto& nm = NetworkManagerImpl::get();
+        auto tr = nm.getGameTickrate();
+
+        if (tr != 0) {
+            float interval = 1.f / (float)tr;
+            fields.m_sendDataInterval = interval;
+        }
+    } else {
+        // send player data to the server
+        if (fields.m_timeCounter - fields.m_lastDataSend >= fields.m_sendDataInterval) {
+            fields.m_lastDataSend += fields.m_sendDataInterval;
+            this->selSendPlayerData(dt);
+        }
     }
 }
 
