@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Geode/ui/Popup.hpp>
+#include <Geode/binding/GameManager.hpp>
+#include <globed/util/singleton.hpp>
 
 namespace globed {
 
@@ -12,7 +14,10 @@ public:
         auto ret = new Derived();
 
         if (ret->initAnchored(Derived::POPUP_SIZE.width, Derived::POPUP_SIZE.height, std::forward<Args2>(args)...)) {
-            // TODO: set no elasticity if fast menu is enabled?
+            if (cachedSingleton<GameManager>()->getGameVariable("0168")) {
+                ret->m_noElasticity = true;
+            }
+
             ret->autorelease();
             return ret;
         }

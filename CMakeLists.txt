@@ -84,7 +84,7 @@ CPMAddPackage(
             "BUILD_TESTING OFF"
             "WITH_FIBERS OFF"
 )
-# TODO update all these deps at some point xd
+# TODO(public): update all these deps at some point xd
 CPMAddPackage("gh:GlobedGD/server-shared#master")
 CPMAddPackage("gh:dankmeme01/qunet#master")
 CPMAddPackage("gh:dankmeme01/uibuilder#456706b")
