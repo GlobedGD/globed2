@@ -35,80 +35,83 @@ bool HookedGJEffectManager::updateCountForCustomItem(int itemId, int value) {
     int prev = fields.m_customItems[itemId];
     fields.m_customItems[itemId] = value;
 
+    bool ret = prev != value;
+
     if (g_dontUpdateCountTriggers) {
-        return prev != value;
+        return ret;
     }
 
     // update count triggers haha
     // please dont even begin to try to understand any of this
     // TODO clean this up
 
-    if (m_countTriggerActions.contains(itemId)) {
-        auto& actions = m_countTriggerActions.at(itemId);
+    if (!m_countTriggerActions.contains(itemId)) {
+        return ret;
+    }
 
-        auto comparator = value < prev
-            ? [](const CountTriggerAction& a, const CountTriggerAction& b){ return b.m_targetCount < a.m_targetCount; }
-            : [](const CountTriggerAction& a, const CountTriggerAction& b){ return a.m_targetCount < b.m_targetCount; };
+    auto& actions = m_countTriggerActions.at(itemId);
 
-        // yeah whatever you say robby
-        std::sort(actions.begin(), actions.end(), comparator);
+    auto comparator = value < prev
+        ? [](const CountTriggerAction& a, const CountTriggerAction& b){ return b.m_targetCount < a.m_targetCount; }
+        : [](const CountTriggerAction& a, const CountTriggerAction& b){ return a.m_targetCount < b.m_targetCount; };
 
-        for (size_t i = 0; i < actions.size();) {
-            auto& action = actions[i];
+    // yeah whatever you say robby
+    std::sort(actions.begin(), actions.end(), comparator);
 
-            if (action.m_previousCount == value) {
-                i++;
-                continue;
+    for (size_t i = 0; i < actions.size(); ) {
+        auto& action = actions[i];
+
+        if (action.m_previousCount == value) {
+            i++;
+            continue;
+        }
+
+        bool multiActivate = action.m_multiActivate;
+        int prevCount = action.m_previousCount;
+        action.m_previousCount = value;
+
+        auto stuff = [&]{
+            auto unkVecInt = action.m_remapKeys;
+            bool unk10 = action.m_activateGroup;
+            int unk14 = action.m_triggerUniqueID;
+            int unk18 = action.m_controlID;
+            int groupId = action.m_targetGroupID;
+
+            if (!action.m_multiActivate) {
+                actions.erase(actions.begin() + i);
             }
 
-            bool multiActivate = action.m_multiActivate;
-            int prevCount = action.m_previousCount;
-            action.m_previousCount = value;
-
-            auto stuff = [&]{
-
-                auto unkVecInt = action.m_remapKeys;
-                bool unk10 = action.m_activateGroup;
-                int unk14 = action.m_triggerUniqueID;
-                int unk18 = action.m_controlID;
-                int groupId = action.m_targetGroupID;
-
-                if (!action.m_multiActivate) {
-                    actions.erase(actions.begin() + i);
-                }
-
-                if (!m_triggerEffectDelegate) {
-                    // i cant be bothered im not gonna lie
-                    // this->toggleGroup(groupId, unk10);
-                } else {
-                    m_triggerEffectDelegate->toggleGroupTriggered(groupId, unk10, unkVecInt, unk14, unk18);
-                }
-            };
-
-            if (action.m_targetCount <= prevCount) {
-                if ((action.m_targetCount < prevCount) && (value <= action.m_targetCount)) {
-                    stuff();
-                } else {
-                    i++;
-                    continue;
-                }
-            } else if (value < action.m_targetCount) {
-                i++;
-                continue;
+            if (!m_triggerEffectDelegate) {
+                // i cant be bothered im not gonna lie
+                // this->toggleGroup(groupId, unk10);
             } else {
+                m_triggerEffectDelegate->toggleGroupTriggered(groupId, unk10, unkVecInt, unk14, unk18);
+            }
+        };
+
+        if (action.m_targetCount <= prevCount) {
+            if ((action.m_targetCount < prevCount) && (value <= action.m_targetCount)) {
                 stuff();
-            }
-
-            // log::debug("Action: 0 = {}, 4 = {}, 8 = {}, c = {}, 10 = {}, 14 = {}, 18 = {}, 1c = {}, set = {}", action.m_unk0, action.m_unk4, action.m_unk8, action.m_unkc, action.m_unk10, action.m_unk14, action.m_unk18, action.m_unk1c, action.m_unkVecInt);
-            // m_triggerEffectDelegate->toggleGroupTriggered(id)
-
-            if (multiActivate) {
+            } else {
                 i++;
+                continue;
             }
+        } else if (value < action.m_targetCount) {
+            i++;
+            continue;
+        } else {
+            stuff();
+        }
+
+        // log::debug("Action: 0 = {}, 4 = {}, 8 = {}, c = {}, 10 = {}, 14 = {}, 18 = {}, 1c = {}, set = {}", action.m_unk0, action.m_unk4, action.m_unk8, action.m_unkc, action.m_unk10, action.m_unk14, action.m_unk18, action.m_unk1c, action.m_unkVecInt);
+        // m_triggerEffectDelegate->toggleGroupTriggered(id)
+
+        if (multiActivate) {
+            i++;
         }
     }
 
-    return prev != value;
+    return ret;
 }
 
 void HookedGJEffectManager::reset() {
