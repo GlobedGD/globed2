@@ -287,6 +287,7 @@ void NetworkManagerImpl::tryAuth() {
     } else if (!m_knownArgonUrl.empty()) {
         m_waitingForArgon = true;
 
+        (void) argon::setServerUrl(m_knownArgonUrl);
         auto res = argon::startAuth([&](Result<std::string> res) {
             m_waitingForArgon = false;
 
