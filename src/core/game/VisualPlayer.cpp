@@ -6,12 +6,14 @@
 #include <UIBuilder.hpp>
 
 static constexpr int ROBOT_FIRE_ACTION = 1325385193;
+static constexpr float NAME_OFFSET = 28.f;
+static constexpr float STATUS_ICONS_OFFSET = NAME_OFFSET + 15.f;
 
 using namespace geode::prelude;
 
 namespace globed {
 
-bool VisualPlayer::init(GJBaseGameLayer* gameLayer, bool isSecond) {
+bool VisualPlayer::init(GJBaseGameLayer* gameLayer, CCNode* playerNode, bool isSecond) {
     if (!PlayerObject::init(1, 1, gameLayer, gameLayer->m_objectLayer, gameLayer->m_isEditor)) {
         return false;
     }
@@ -31,8 +33,8 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, bool isSecond) {
 
     m_nameLabel = Build<NameLabel>::create("")
         .visible(showName)
-        .pos(0.f, 25.f)
-        .parent(this)
+        .pos(0.f, NAME_OFFSET)
+        .parent(playerNode)
         .store(m_nameLabel);
 
     if (!isSecond && setting<bool>("core.player.status-icons")) {
@@ -40,8 +42,8 @@ bool VisualPlayer::init(GJBaseGameLayer* gameLayer, bool isSecond) {
         m_statusIcons = Build<PlayerStatusIcons>::create(opacity)
             .scale(0.8f)
             .anchorPoint(0.5f, 0.f)
-            .pos(0.f, showName ? 40.f : 25.f)
-            .parent(this)
+            .pos(0.f, showName ? STATUS_ICONS_OFFSET : NAME_OFFSET)
+            .parent(playerNode)
             .id("status-icons"_spr);
     }
 
@@ -135,11 +137,11 @@ void VisualPlayer::updateFromData(const PlayerObjectData& data, const PlayerStat
             dir = gjbgl->getCameraDirection();
         }
 
-        m_nameLabel->setPosition(dir.vector * 25.f);
+        m_nameLabel->setPosition(data.position + dir.vector * NAME_OFFSET);
         m_nameLabel->setRotation(dir.angle);
 
         if (m_statusIcons) {
-            m_statusIcons->setPosition(dir.vector * (m_nameLabel->isVisible() ? 40.f : 25.f));
+            m_statusIcons->setPosition(data.position + dir.vector * (m_nameLabel->isVisible() ? STATUS_ICONS_OFFSET : NAME_OFFSET));
             m_statusIcons->setRotation(dir.angle);
         }
     }
@@ -541,9 +543,9 @@ bool VisualPlayer::isPlayerNearby(const PlayerObjectData& data, const GameCamera
            pos.y >= cameraBottom && pos.y <= cameraTop;
 }
 
-VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, bool isSecond) {
+VisualPlayer* VisualPlayer::create(GJBaseGameLayer* gameLayer, CCNode* playerNode, bool isSecond) {
     auto ret = new VisualPlayer();
-    if (ret->init(gameLayer, isSecond)) {
+    if (ret->init(gameLayer, playerNode, isSecond)) {
         ret->autorelease();
         return ret;
     }

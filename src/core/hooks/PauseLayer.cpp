@@ -40,6 +40,8 @@ struct GLOBED_MODIFY_ATTR HookedPauseLayer : geode::Modify<HookedPauseLayer, Pau
                     }
                 }
             );
+        } else {
+            PauseLayer::onQuit(sender);
         }
     }
 };

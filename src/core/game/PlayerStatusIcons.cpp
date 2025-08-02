@@ -22,6 +22,9 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
         return;
     }
 
+    log::debug("Updating flags!");
+    m_flags = flags;
+
     if (!flags.paused && !flags.practicing && !flags.speaking && !flags.editing && !flags.speakingMuted) {
         this->setVisible(false);
         return;
@@ -29,7 +32,6 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
 
     this->setVisible(true);
     this->removeAllChildren();
-
 
     m_iconWrapper = Build<CCNode>::create()
         .anchorPoint(0.f, 0.5f)
