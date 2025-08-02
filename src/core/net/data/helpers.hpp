@@ -8,7 +8,7 @@ namespace globed::data {
 
 /// Player state
 
-inline void encodePlayerState(const PlayerState& state, auto& data) {
+inline void encodePlayerState(const PlayerState& state, auto&& data) {
     data.setAccountId(state.accountId);
     data.setTimestamp(state.timestamp);
     data.setFrameNumber(state.frameNumber);
@@ -66,7 +66,7 @@ inline std::optional<PlayerState> decodePlayerState(const schema::game::PlayerDa
     out.isEditorBuilding = reader.getIsEditorBuilding();
     out.isLastDeathReal = reader.getIsLastDeathReal();
 
-    auto initPlayer = [](auto& src, PlayerObjectData& dst) {
+    auto initPlayer = [](auto&& src, PlayerObjectData& dst) {
         dst.position.x = src.getPositionX();
         dst.position.y = src.getPositionY();
         dst.rotation = src.getRotation();
@@ -114,7 +114,7 @@ inline std::optional<PlayerState> decodePlayerState(const schema::game::PlayerDa
 
 // Icon data
 
-inline void encodeIconData(const PlayerIconData& icons, auto& data) {
+inline void encodeIconData(const PlayerIconData& icons, auto&& data) {
     data.setCube(icons.cube);
     data.setShip(icons.ship);
     data.setBall(icons.ball);
@@ -154,7 +154,7 @@ inline std::optional<PlayerIconData> decodeIconData(const schema::shared::Player
 
 // Room settings
 
-inline void encodeRoomSettings(const RoomSettings& settings, auto& data) {
+inline void encodeRoomSettings(const RoomSettings& settings, auto&& data) {
     data.setPlayerLimit(settings.playerLimit);
     data.setFasterReset(settings.fasterReset);
     data.setHidden(settings.hidden);

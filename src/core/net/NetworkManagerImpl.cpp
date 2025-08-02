@@ -294,6 +294,7 @@ void NetworkManagerImpl::tryAuth() {
             auto loginUToken = msg.initLoginUToken();
             loginUToken.setToken(*stoken);
             loginUToken.setAccountId(accountId);
+            data::encodeIconData(gatherIconData(), loginUToken.initIcons());
         });
     } else if (!m_knownArgonUrl.empty()) {
         m_waitingForArgon = true;
@@ -323,6 +324,7 @@ void NetworkManagerImpl::tryAuth() {
             data.setUsername(gam->m_username);
             data.setAccountId(accountId);
             data.setUserId(userId);
+            data::encodeIconData(gatherIconData(), loginPlain.initIcons());
         });
     }
 }
@@ -330,9 +332,10 @@ void NetworkManagerImpl::tryAuth() {
 void NetworkManagerImpl::doArgonAuth(std::string token) {
     (void) this->sendToCentral([&](CentralMessage::Builder& msg) {
         log::debug("attempting login with argon token");
-        auto loginUToken = msg.initLoginArgon();
-        loginUToken.setToken(token);
-        loginUToken.setAccountId(GJAccountManager::get()->m_accountID);
+        auto loginArgon = msg.initLoginArgon();
+        loginArgon.setToken(token);
+        loginArgon.setAccountId(GJAccountManager::get()->m_accountID);
+        data::encodeIconData(gatherIconData(), loginArgon.initIcons());
     });
 }
 
@@ -420,9 +423,7 @@ void NetworkManagerImpl::sendGameLoginJoinRequest(SessionId id) {
         loginJoin.setToken(this->getUToken().value_or(""));
         loginJoin.setSessionId(id);
         loginJoin.setPasscode(0); // TODO
-
-        auto iconBuilder = loginJoin.initIcons();
-        data::encodeIconData(gatherIconData(), iconBuilder);
+        data::encodeIconData(gatherIconData(), loginJoin.initIcons());
     });
 }
 
@@ -431,9 +432,7 @@ void NetworkManagerImpl::sendGameLoginRequest() {
         auto login = msg.initLoginUToken();
         login.setAccountId(GJAccountManager::get()->m_accountID);
         login.setToken(this->getUToken().value_or(""));
-
-        auto iconBuilder = login.initIcons();
-        data::encodeIconData(gatherIconData(), iconBuilder);
+        data::encodeIconData(gatherIconData(), login.initIcons());
     });
 }
 
@@ -487,8 +486,7 @@ void NetworkManagerImpl::sendCreateRoom(const std::string& name, uint32_t passco
         createRoom.setName(name);
         createRoom.setPasscode(passcode);
 
-        auto sb = createRoom.initSettings();
-        data::encodeRoomSettings(settings, sb);
+        data::encodeRoomSettings(settings, createRoom.initSettings());
     });
 }
 
