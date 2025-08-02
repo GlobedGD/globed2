@@ -22,7 +22,6 @@ void PlayerStatusIcons::updateStatus(const PlayerStatusFlags& flags, bool force)
         return;
     }
 
-    log::debug("Updating flags!");
     m_flags = flags;
 
     if (!flags.paused && !flags.practicing && !flags.speaking && !flags.editing && !flags.speakingMuted) {
